@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.33 2004-10-03 04:48:37 robocop Exp $
+ *  $Id: keywords.cpp,v 1.34 2004-10-13 18:37:32 dimitr Exp $
  *
  */
 
@@ -100,6 +100,7 @@ static const TOK tokens[] = {
 	{CONTAINING, "CONTAINING", 1},
 	{COUNT, "COUNT", 1},
 	{CREATE, "CREATE", 1},
+	{CROSS, "CROSS", 2},
 	{CSTRING, "CSTRING", 1},
 	{CURRENT, "CURRENT", 1},
 	{CURRENT_CONNECTION, "CURRENT_CONNECTION", 2},

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.116 2004-10-04 08:14:49 robocop Exp $
+ * $Id: ddl.cpp,v 1.117 2004-10-13 18:37:31 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2173,11 +2173,7 @@ static dsql_nod* define_insert_action( dsql_req* request)
 
 	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		/*
-		   Handle VIEWS with UNION : nod_select now points to nod_list
-		   which in turn points to nod_select_expr
-		 */
-		!(select_expr = select_node->nod_arg[0]->nod_arg[0]) ||
+		!(select_expr = select_node->nod_arg[e_sel_query_spec]->nod_arg[0]) ||
 		!(from_list = select_expr->nod_arg[e_sel_from]) ||
 		from_list->nod_count != 1)
 		return NULL;
@@ -3307,17 +3303,13 @@ static void define_update_action(
 
 // check whether this is an updatable view definition 
 
-	dsql_nod* select_node = 0;
-	dsql_nod* select_expr = 0;
-	dsql_nod* from_list = 0;
+	dsql_nod* select_node = NULL;
+	dsql_nod* select_expr = NULL;
+	dsql_nod* from_list = NULL;
 	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		/*
-		   Handle VIEWS with UNION : nod_select now points to nod_list
-		   which in turn points to nod_select_expr
-		 */
-		!(select_expr = select_node->nod_arg[0]->nod_arg[0]) ||
-		!(from_list = select_expr->nod_arg[e_sel_from]) ||
+		!(select_expr = select_node->nod_arg[e_sel_query_spec]->nod_arg[0]) ||
+		!(from_list = select_expr->nod_arg[e_qry_from]) ||
 		from_list->nod_count != 1)
 	{
 		return;
@@ -3336,7 +3328,7 @@ static void define_update_action(
    are not computed */
 
 	dsql_nod* values_node = ddl_node->nod_arg[e_view_fields];
-	dsql_nod* fields_node = select_expr->nod_arg[e_sel_list];
+	dsql_nod* fields_node = select_expr->nod_arg[e_qry_list];
 	if (!fields_node)
 	{
 		const dsql_str* rel_name =
@@ -3418,12 +3410,12 @@ static void define_update_action(
 	}
 
 	if (and_arg <= 1)
-		and_node->nod_arg[and_arg] = select_expr->nod_arg[e_sel_where];
+		and_node->nod_arg[and_arg] = select_expr->nod_arg[e_qry_where];
 	else {
 		dsql_nod* old_and = and_node;
 		and_node = MAKE_node(nod_and, (int) 2);
 		and_node->nod_arg[0] = old_and;
-		and_node->nod_arg[1] = select_expr->nod_arg[e_sel_where];
+		and_node->nod_arg[1] = select_expr->nod_arg[e_qry_where];
 	}
 	*base_and_node = and_node;
 }
@@ -3566,11 +3558,8 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	if (request->req_context_number)
 		reset_context_stack(request);
 	request->req_context_number++;
-	dsql_nod* select = node->nod_arg[e_view_select];
-	dsql_nod* select_expr = select->nod_arg[0];
-	dsql_nod* rse =
-		PASS1_rse(request, select_expr, select->nod_arg[e_select_order],
-				  select->nod_arg[e_select_rows], NULL);
+	dsql_nod* select_expr = node->nod_arg[e_view_select];
+	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
 
 	// store the blr and source string for the view definition
 
@@ -3604,13 +3593,19 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	{
 		const dsql_ctx* context = temp.object();
 		const dsql_rel* relation = context->ctx_relation;
-		if (relation)
+		const dsql_prc* procedure = context->ctx_procedure;
+		if (relation || procedure)
 		{
-			request->append_cstring(isc_dyn_view_relation, relation->rel_name);
+			if (procedure)
+			{
+				// Disallow procedure-based views
+				ERRD_post(isc_wish_list, 0);
+			}
+			const char* name = relation ? relation->rel_name : procedure->prc_name;
+			request->append_cstring(isc_dyn_view_relation, name);
 			request->append_number(isc_dyn_view_context, context->ctx_context);
 			request->append_cstring(isc_dyn_view_context_name,
-						context->ctx_alias ? context->ctx_alias : relation->
-						rel_name);
+						context->ctx_alias ? context->ctx_alias : name);
 			request->append_uchar(isc_dyn_end);
 		}
 	}
@@ -3734,6 +3729,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  0);
 		}
 
+		// change this node to nod_list
+		select_expr = select_expr->nod_arg[e_sel_query_spec];
+
 		if (select_expr->nod_count != 1)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
@@ -3742,11 +3740,11 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  // Only one table allowed for VIEW WITH CHECK OPTION 
 					  0);
 		}
-		/*
-		   Handle VIEWS with UNION : nod_select now points to nod_list
-		   which in turn points to nod_select_expr
-		 */
-		else if (select_expr->nod_arg[0]->nod_arg[e_sel_from]->nod_count != 1)
+
+		// change this node to nod_query_spec
+		select_expr = select_expr->nod_arg[0];
+
+		if (select_expr->nod_arg[e_qry_from]->nod_count != 1)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
@@ -3755,12 +3753,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  0);
 		}
 
-		/*
-		   Handle VIEWS with UNION : nod_select now points to nod_list
-		   which in turn points to nod_select_expr
-		 */
-		select_expr = select_expr->nod_arg[0];
-		if (!(select_expr->nod_arg[e_sel_where]))
+		if (!(select_expr->nod_arg[e_qry_where]))
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
@@ -3769,9 +3762,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  0);
 		}
 
-		if (select_expr->nod_arg[e_sel_distinct] ||
-			select_expr->nod_arg[e_sel_group] ||
-			select_expr->nod_arg[e_sel_having])
+		if (select_expr->nod_arg[e_qry_distinct] ||
+			select_expr->nod_arg[e_qry_group] ||
+			select_expr->nod_arg[e_qry_having])
 		{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_command_err,
@@ -3791,9 +3784,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		   criteria for the view, suitably fixed up so that the fields in
 		   the view are referenced */
 
-		check->nod_arg[e_cnstr_condition] = select_expr->nod_arg[e_sel_where];
+		check->nod_arg[e_cnstr_condition] = select_expr->nod_arg[e_qry_where];
 
-		// Define the triggers   
+		// Define the triggers
 
 		create_view_triggers(request, check, rse->nod_arg[e_rse_items]);
 	}
@@ -3820,12 +3813,8 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
-	dsql_nod* select = ddl_node->nod_arg[e_view_select];
-/*
-   Handle VIEWS with UNION : nod_select now points to nod_list
-   which in turn points to nod_select_expr
-*/
-	dsql_nod* select_expr = select->nod_arg[0]->nod_arg[0];
+	dsql_nod* select_expr = ddl_node->nod_arg[e_view_select];
+	select_expr = select_expr->nod_arg[e_sel_query_spec]->nod_arg[0];
 	dsql_nod* view_fields = ddl_node->nod_arg[e_view_fields];
 
 /* make the "define trigger" node the current request ddl node so
@@ -3938,7 +3927,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 
 			dsql_nod* condition = MAKE_node(nod_not, 1);
 			condition->nod_arg[0] =
-				replace_field_names(select_expr->nod_arg[e_sel_where], items,
+				replace_field_names(select_expr->nod_arg[e_qry_where], items,
 									view_fields, false);
 			request->append_uchar(blr_begin);
 			request->append_uchar(blr_if);
@@ -3950,7 +3939,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 		if (trig_type == PRE_STORE_TRIGGER) {
 			dsql_nod* condition = MAKE_node(nod_not, 1);
 			condition->nod_arg[0] =
-				replace_field_names(select_expr->nod_arg[e_sel_where], items,
+				replace_field_names(select_expr->nod_arg[e_qry_where], items,
 									view_fields, true);
 			request->append_uchar(blr_if);
 			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));

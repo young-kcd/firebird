@@ -211,6 +211,7 @@ enum nod_t
 	nod_join_left,
 	nod_join_right,
 	nod_join_full,
+	nod_join_cross,
 	// sql transaction support 
 	nod_access,
 	nod_wait,
@@ -331,7 +332,8 @@ enum nod_t
 	nod_fetch_seek,
 	nod_exec_block,		// EXECUTE BLOCK support
 	nod_param_val,		// default value for SP parameters support
-	nod_rows	// ROWS support
+	nod_rows,	// ROWS support
+	nod_query_spec
 };
 
 typedef nod_t NOD_TYPE;
@@ -388,7 +390,10 @@ enum nod_flags_vals {
 	REF_ACTION_NONE			= 8,
 	// Node flag indicates that this node has a different type or result
 	// depending on the SQL dialect.
-	NOD_COMP_DIALECT		= 16
+	NOD_COMP_DIALECT		= 16,
+
+	NOD_SELECT_EXPR_SINGLETON	= 1,
+	NOD_SELECT_EXPR_VALUE		= 2
 };
 
 // Parameters to MAKE_constant 
@@ -415,8 +420,6 @@ enum dsql_constant_type {
  */
 enum node_args {
 	e_select_expr = 0,		// nod_select
-	e_select_order,
-	e_select_rows,
 	e_select_update,
 	e_select_lock,
 	e_select_count,
@@ -495,7 +498,6 @@ enum node_args {
 	e_rse_reduced,
 	e_rse_items,
 	e_rse_first,
-	e_rse_singleton,
 	e_rse_plan,
 	e_rse_skip,
 	e_rse_lock,
@@ -552,18 +554,20 @@ enum node_args {
 	e_msg_text,
 	e_msg_count,
 
-	e_sel_limit = 0,		// nod_select_expr
-	e_sel_distinct,
-	e_sel_list,
-	e_sel_from,
-	e_sel_where,
-	e_sel_group,
-	e_sel_having,
-	e_sel_plan,
+	e_sel_query_spec = 0,	// nod_select_expr
 	e_sel_order,
 	e_sel_rows,
-	e_sel_singleton,
 	e_sel_count,
+
+	e_qry_limit = 0,		// nod_query_spec
+	e_qry_distinct,
+	e_qry_list,
+	e_qry_from,
+	e_qry_where,
+	e_qry_group,
+	e_qry_having,
+	e_qry_plan,
+	e_qry_count,
 
 	e_ins_relation = 0,		// nod_insert
 	e_ins_fields,

@@ -1801,8 +1801,11 @@ static void gen_join_rse( dsql_req* request, const dsql_nod* rse)
 			stuff(request, blr_full);
 	}
 
-	stuff(request, blr_boolean);
-	GEN_expr(request, rse->nod_arg[e_join_boolean]);
+	if (rse->nod_arg[e_join_boolean])
+	{
+		stuff(request, blr_boolean);
+		GEN_expr(request, rse->nod_arg[e_join_boolean]);
+	}
 
 	stuff(request, blr_end);
 }
@@ -2091,7 +2094,7 @@ void GEN_return( dsql_req* request, const dsql_nod* parameters, bool eos_flag)
  **/
 static void gen_rse( dsql_req* request, const dsql_nod* rse)
 {
-	if (rse->nod_arg[e_rse_singleton]
+	if ((rse->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 		&& !(request->req_dbb->dbb_flags & DBB_v3))
 	{
 			stuff(request, blr_singular);
@@ -2115,7 +2118,8 @@ static void gen_rse( dsql_req* request, const dsql_nod* rse)
 		{
 			dsql_nod* node = *ptr;
 			if (node->nod_type == nod_relation ||
-				node->nod_type == nod_aggregate || node->nod_type == nod_join)
+				node->nod_type == nod_aggregate ||
+				node->nod_type == nod_join)
 			{
 				GEN_expr(request, node);
 			}

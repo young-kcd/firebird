@@ -258,3 +258,4 @@
 #define BLOCK 514
 #define IIF 515
 #define SCALAR_ARRAY 516
+#define CROSS 517

@@ -26,7 +26,7 @@
 
 dsql_ctx* PASS1_make_context(dsql_req*, dsql_nod*);
 dsql_nod* PASS1_node(dsql_req*, dsql_nod*, bool);
-dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*);
+dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*);
 dsql_nod* PASS1_statement(dsql_req*, dsql_nod*, bool);
 
 #endif // DSQL_PASS1_PROTO_H

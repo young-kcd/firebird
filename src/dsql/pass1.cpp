@@ -220,7 +220,7 @@ static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
-static dsql_nod* pass1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*);
+static dsql_nod* pass1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_searched_case(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_sel_list(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_simple_case(dsql_req*, dsql_nod*, bool);
@@ -228,7 +228,7 @@ static dsql_nod* pass1_sort(dsql_req*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_udf(dsql_req*, dsql_nod*, bool);
 static void pass1_udf_args(dsql_req*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStack&,
 	bool);
-static dsql_nod* pass1_union(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
+static dsql_nod* pass1_union(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
 static dsql_nod* pass1_update(dsql_req*, dsql_nod*);
@@ -635,8 +635,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		const DsqlContextStack::iterator base(*request->req_context);
 		node = MAKE_node(nod_via, e_via_count);
-		dsql_nod* rse = PASS1_rse(request, input, input->nod_arg[e_sel_order],
-					  input->nod_arg[e_sel_rows], NULL);
+		dsql_nod* rse = PASS1_rse(request, input, NULL);
 		node->nod_arg[e_via_rse] = rse;
 		node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
 		node->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
@@ -651,9 +650,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		const DsqlContextStack::iterator base(*request->req_context);
 		node = MAKE_node(input->nod_type, 1);
 		input = input->nod_arg[0];
-		node->nod_arg[0] =
-			PASS1_rse(request, input, input->nod_arg[e_sel_order],
-					  input->nod_arg[e_sel_rows], NULL);
+		node->nod_arg[0] = PASS1_rse(request, input, NULL);
 
 		// Finish off by cleaning up contexts 
 
@@ -780,14 +777,13 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
 						  isc_arg_gds, isc_dsql_subselect_err, 0);
 
-			if (sub2->nod_arg[e_sel_singleton]) {
+			if (sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON) {
 				const DsqlContextStack::iterator base(*request->req_context);
 				node = MAKE_node(input->nod_type, 2);
 				node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
 				dsql_nod* temp = MAKE_node(nod_via, e_via_count);
 				node->nod_arg[1] = temp;
-				dsql_nod* rse = PASS1_rse(request, sub2, sub2->nod_arg[e_sel_order],
-							  sub2->nod_arg[e_sel_rows], NULL);
+				dsql_nod* rse = PASS1_rse(request, sub2, NULL);
 				temp->nod_arg[e_via_rse] = rse;
 				temp->nod_arg[e_via_value_1] =
 					rse->nod_arg[e_rse_items]->nod_arg[0];
@@ -1004,19 +1000,19 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
     @param request
     @param input
-    @param order
     @param update_lock
 
  **/
-dsql_nod* PASS1_rse(dsql_req* request, dsql_nod* input, dsql_nod* order,
-	dsql_nod* rows, dsql_nod* update_lock)
+dsql_nod* PASS1_rse(dsql_req* request, dsql_nod* input, dsql_nod* update_lock)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(order, dsql_type_nod);
+	DEV_BLKCHK(update_lock, dsql_type_nod);
+
+	fb_assert(input->nod_type == nod_select_expr);
 
 	request->req_scope_level++;
-	dsql_nod* node = pass1_rse(request, input, order, rows, update_lock);
+	dsql_nod* node = pass1_rse(request, input, NULL, NULL, update_lock, 0);
 	request->req_scope_level--;
 
 	return node;
@@ -1461,8 +1457,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_select:
 		{
-		node = PASS1_rse(request, input->nod_arg[e_select_expr], input->nod_arg[e_select_order],
-			input->nod_arg[e_select_rows], input->nod_arg[e_select_lock]);
+		node = PASS1_rse(request, input->nod_arg[e_select_expr], 
+						 input->nod_arg[e_select_lock]);
 
 		if (input->nod_arg[e_select_update]) {
 			request->req_type = REQ_SELECT_UPD;
@@ -1572,10 +1568,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		DsqlContextStack* const base_context = request->req_context;
 		DsqlContextStack temp;
 		request->req_context = &temp;
+		dsql_nod* select = input->nod_arg[e_cur_rse];
 		input->nod_arg[e_cur_rse] =
-			PASS1_rse(request, input->nod_arg[e_cur_rse],
-					  input->nod_arg[e_cur_rse]->nod_arg[e_sel_order],
-					  input->nod_arg[e_cur_rse]->nod_arg[e_sel_rows], NULL);
+			PASS1_rse(request, select->nod_arg[e_select_expr],
+					  select->nod_arg[e_select_lock]);
 		request->req_context->clear();
 		request->req_context = base_context;
 		// assign number and store in the request stack
@@ -2902,7 +2898,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	dsql_nod* select = input->nod_arg[1];
+	dsql_nod* select_expr = input->nod_arg[1];
 	const DsqlContextStack::iterator base(*request->req_context);
 
 	dsql_nod* node = MAKE_node(ntype, 1);
@@ -2910,18 +2906,22 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 // Build first the node from our base-context so that the right context is
 // used while parsing the nodes
 	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
-	dsql_nod* rse =
-		PASS1_rse(request, select, select->nod_arg[e_sel_order],
-				  select->nod_arg[e_sel_rows], NULL);
+	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
 	node->nod_arg[0] = rse;
 
+	const dsql_nod* const query_spec = select_expr->nod_arg[e_sel_query_spec];
+	if (query_spec->nod_count > 1)
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
+				  isc_token_err, // Token unknown 
+				  isc_arg_gds, isc_random, isc_arg_string, "UNION", 0);
 
 // adjust the scope level back to the sub-rse, so that 
 // the fields in the select list will be properly recognized
 	request->req_scope_level++;
 	request->req_in_select_list++;
-	temp->nod_arg[1] =
-		PASS1_node(request, select->nod_arg[e_sel_list]->nod_arg[0], false);
+	dsql_nod* const column =
+		query_spec->nod_arg[0]->nod_arg[e_qry_list]->nod_arg[0];
+	temp->nod_arg[1] = PASS1_node(request, column, false);
 	request->req_in_select_list--;
 	request->req_scope_level--;
 
@@ -3592,17 +3592,9 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		request->req_dt_base_context : &temp;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
-	// Calling pass1_rse (for nod_select) which will call internally PASS1_rse.
-	// nod_select can contain ORDER BY information.
-	// We need to keep scope_level on the same level and because PASS1_rse 
-	// increments scope_level with 1 we decrease it first.
-	request->req_scope_level--;
-	dsql_nod* const select = input->nod_arg[e_derived_table_rse];
-	dsql_nod* rse =
-		pass1_rse(request, select->nod_arg[e_select_expr], select->nod_arg[e_select_order],
-			select->nod_arg[e_select_rows], NULL);
+	dsql_nod* const select_expr = input->nod_arg[e_derived_table_rse];
+	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
 	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
-	request->req_scope_level++;
 
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
@@ -3844,8 +3836,8 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
    if there is an alias, check only against the first matching */
 
 	DsqlContextStack ambiguous_ctx_stack;
-	dsql_nod* node = 0; // This var must be initialized.
-	
+	dsql_nod* node = NULL; // This var must be initialized.
+
 	// AB: Loop through the scope_levels starting by its own.
 	bool done = false;
 	USHORT current_scope_level = request->req_scope_level + 1;
@@ -4552,20 +4544,18 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
 	request->req_type = REQ_INSERT;
 	dsql_nod* node = MAKE_node(nod_store, e_sto_count);
 
-// Process SELECT expression, if present 
+// Process SELECT expression, if present
 
 	dsql_nod* values;
 	dsql_nod* rse = input->nod_arg[e_ins_select];
 	if (rse) {
-		node->nod_arg[e_sto_rse] = rse =
-			PASS1_rse(request, rse, rse->nod_arg[e_sel_order],
-					  rse->nod_arg[e_sel_rows], NULL);
+		node->nod_arg[e_sto_rse] = rse = PASS1_rse(request, rse, NULL);
 		values = rse->nod_arg[e_rse_items];
 	}
 	else
 		values = PASS1_node(request, input->nod_arg[e_ins_values], false);
 
-// Process relation 
+// Process relation
 
 	dsql_nod* temp_rel = pass1_relation(request, input->nod_arg[e_ins_relation]);
 	node->nod_arg[e_sto_relation] = temp_rel;
@@ -4573,13 +4563,13 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(context, dsql_type_ctx);
 	dsql_rel* relation = context->ctx_relation;
 
-// If there isn't a field list, generate one 
+// If there isn't a field list, generate one
 
 	dsql_nod* fields = input->nod_arg[e_ins_fields];
 	if (fields) {
 		fields = PASS1_node(request, fields, false);
         // begin IBO hack 
-		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to 
+		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to
 		// const dsql_nod* const* .... etc. It chokes GCC 3.4.0
         dsql_nod** ptr = fields->nod_arg;
         for (const dsql_nod* const* const end = ptr + fields->nod_count;
@@ -4604,7 +4594,7 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
                              input->nod_arg[e_ins_fields]->nod_arg[ptr - fields->nod_arg]);
             }
         }
-        // end IBO hack 
+        // end IBO hack
     }
 	else {
         // CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list. 
@@ -4620,7 +4610,7 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
 		fields = MAKE_list(stack);
 	}
 
-// Match field fields and values 
+// Match field fields and values
 
 	if (fields->nod_count != values->nod_count) {
 		// count of column list and value list don't match 
@@ -4673,10 +4663,14 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	dsql_nod* node = MAKE_node(input->nod_type, input->nod_count);
-	// First process type.
+
+	// First process type
+
 	node->nod_arg[e_join_type] = 
 		PASS1_node(request, input->nod_arg[e_join_type], proc_flag);
-	// Process relations.
+
+	// Process relations
+
 	switch (node->nod_arg[e_join_type]->nod_type) {
 		case nod_join_inner: 
 			node->nod_arg[e_join_left_rel] = 
@@ -4710,12 +4704,22 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 		break;
 
 		default:
-			fb_assert(false);	// join type expected.
+			fb_assert(false);	// join type expected
 		break;
 	}
-	// Process boolean (ON clause).
+
+	// Process boolean
+
+	dsql_nod* boolean = input->nod_arg[e_join_boolean];
+	if (boolean && (boolean->nod_type == nod_flag || boolean->nod_type == nod_list))
+	{
+		// Process NATURAL JOIN or USING clause
+		ERRD_post(isc_wish_list, 0);
+	}
+
 	node->nod_arg[e_join_boolean] = 
 		PASS1_node(request, input->nod_arg[e_join_boolean], proc_flag);
+
 	return node;
 }
 
@@ -5255,7 +5259,7 @@ static dsql_rel* pass1_base_table( dsql_req* request, const dsql_rel* relation,
   
     @brief	Compile a record selection expression.  
  	The input node may either be a "select_expression" 
- 	or a "list" (an implicit union).
+ 	or a "list" (an implicit union) or a "query specification".
  
 
     @param request
@@ -5263,10 +5267,11 @@ static dsql_rel* pass1_base_table( dsql_req* request, const dsql_rel* relation,
     @param order
     @param rows
     @param update_lock
+	@param flags
 
  **/
 static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
-	dsql_nod* rows, dsql_nod* update_lock)
+	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -5274,18 +5279,32 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 	tsql* tdsql = DSQL_get_thread_data();
 
-// Handle implicit union case first.  Maybe it's not a union 
-
-	if (input->nod_type == nod_list) {
+	if (input->nod_type == nod_select_expr)
+	{
+		return pass1_rse(request, input->nod_arg[e_sel_query_spec],
+						 input->nod_arg[e_sel_order], input->nod_arg[e_sel_rows],
+						 update_lock, input->nod_flags);
+	}
+	else if (input->nod_type == nod_list)
+	{
 		if (input->nod_count == 1)
-			return PASS1_rse(request, input->nod_arg[0], order, rows, update_lock);
-		else {
+		{
+			return pass1_rse(request, input->nod_arg[0], order, rows,
+							 update_lock, flags);
+		}
+		else
+		{
 			if (update_lock)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
 						  isc_token_err, // Token unknown 
 						  isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
-			return pass1_union(request, input, order, rows);
+
+			return pass1_union(request, input, order, rows, flags);
 		}
+	}
+	else 
+	{
+		fb_assert(input->nod_type == nod_query_spec);
 	}
 
 // Save the original base of the context stack and process relations 
@@ -5299,7 +5318,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	request->req_dt_base_context = request->req_context;
 
 	dsql_nod* list = rse->nod_arg[e_rse_streams] =
-		PASS1_node(request, input->nod_arg[e_sel_from], false);
+		PASS1_node(request, input->nod_arg[e_qry_from], false);
 
 	// Save new current context for derived tables, because in other 
 	// elements a reference to outer context is allowed. 
@@ -5318,7 +5337,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	} // end scope block
 	
 // Process LIMIT and/or ROWS, if any 
-	dsql_nod* node = input->nod_arg[e_sel_limit];
+
+	dsql_nod* node = input->nod_arg[e_qry_limit];
 	if (node && rows) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				  isc_arg_gds, isc_token_err,	// Token unknown 
@@ -5346,7 +5366,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 // Process boolean, if any 
 
-	if (node = input->nod_arg[e_sel_where]) {
+	if ( (node = input->nod_arg[e_qry_where]) ) {
 		++request->req_in_where_clause;
 		rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, false);
 		--request->req_in_where_clause;
@@ -5369,7 +5389,17 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 // Process select list, if any. If not, generate one 
 
-	if (node = input->nod_arg[e_sel_list]) {
+	node = input->nod_arg[e_qry_list];
+
+	if ((flags & NOD_SELECT_EXPR_VALUE) && (!node || node->nod_count > 1))
+	{
+		// More than one column (or asterisk) is specified in column_singleton
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_dsql_command_err,
+				  isc_arg_gds, isc_dsql_count_mismatch, 0);
+	}
+
+	if (node) {
 		++request->req_in_select_list;
 		rse->nod_arg[e_rse_items] = pass1_sel_list(request, node);
 		--request->req_in_select_list;
@@ -5409,7 +5439,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 	if (order) {
 		++request->req_in_order_by_clause;
-		rse->nod_arg[e_rse_sort] = pass1_sort(request, order, input->nod_arg[e_sel_list]);
+		rse->nod_arg[e_rse_sort] = pass1_sort(request, order, input->nod_arg[e_qry_list]);
 		--request->req_in_order_by_clause;
 	}
 
@@ -5419,8 +5449,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	dsql_nod* parent_rse = NULL;
 	dsql_nod* aggregate = NULL;
 
-	if (input->nod_arg[e_sel_group] || 
-		input->nod_arg[e_sel_having] ||
+	if (input->nod_arg[e_qry_group] || 
+		input->nod_arg[e_qry_having] ||
 		(rse->nod_arg[e_rse_items] && aggregate_found(request, rse->nod_arg[e_rse_items])) ||
 		(rse->nod_arg[e_rse_sort] && aggregate_found(request, rse->nod_arg[e_rse_sort])))
 	{
@@ -5460,13 +5490,13 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 // Process GROUP BY clause, if any 
 
-	if (node = input->nod_arg[e_sel_group])
+	if ( (node = input->nod_arg[e_qry_group]) )
 	{
 		/* if there are positions in the group by clause then replace them 
 		   by the (newly pass) items from the select_list */
 		++request->req_in_group_by_clause;
 		aggregate->nod_arg[e_agg_group] = 
-			pass1_group_by_list(request, input->nod_arg[e_sel_group], input->nod_arg[e_sel_list]);
+			pass1_group_by_list(request, input->nod_arg[e_qry_group], input->nod_arg[e_qry_list]);
 		--request->req_in_group_by_clause;
 
 		/* AB: An field pointing to another parent_context isn't
@@ -5485,33 +5515,18 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 
 // parse a user-specified access plan 
 
-	if (node = input->nod_arg[e_sel_plan]) {
-		/* disallow plans in a trigger for the short term,
-		   until we can figure out why they don't work: bug #6057 */
-
-		/* dimitr: I've commented out the following protection, because it's proven
-				   by Ignacio J. Ortega and myself that now triggers work
-				   with indexes in plans as expected, so it seems that the reason
-				   for the mentioned bug #6057 is already fixed (2002-10-25)
-
-		if (request->req_flags & REQ_trigger)
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, isc_token_err,
-					  isc_arg_gds, isc_random, isc_arg_string, "PLAN", 0);
-		
-		*/
-
-		rse->nod_arg[e_rse_plan] = PASS1_node(request, node, false);
-	}
+	rse->nod_arg[e_rse_plan] =
+		PASS1_node(request, input->nod_arg[e_qry_plan], false);
 
 	// AB: Pass select-items for distinct operation again, because for 
 	// sub-selects a new contextnumber should be generated
-	if (input->nod_arg[e_sel_distinct]) {
+	if (input->nod_arg[e_qry_distinct]) {
 		if (update_lock) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown 
 					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 		}
-		if (node = input->nod_arg[e_sel_list]) {
+		if ( (node = input->nod_arg[e_qry_list]) ) {
 			++request->req_in_select_list;
 			target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(request, node);
 			--request->req_in_select_list;
@@ -5529,45 +5544,17 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 		}		
 	}
 
-// Unless there was a parent, we're done 
-
-	if (!parent_context) {
-		rse->nod_arg[e_rse_singleton] = input->nod_arg[e_sel_singleton];
-		return rse;
-	}
-
-// Reset context of select items to point to the parent stream 
-	parent_rse->nod_arg[e_rse_items] =
-		remap_fields(request, rse->nod_arg[e_rse_items], parent_context);
-	rse->nod_arg[e_rse_items] = NULL;
-
-	// AB: Check for invalid contructions inside selected-items list
-	list = parent_rse->nod_arg[e_rse_items];
-	{ // scope block
-	const dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count;
-		ptr < end; ptr++)
+	if (parent_context)
 	{
-		if (invalid_reference(parent_context, *ptr,
-			aggregate->nod_arg[e_agg_group], false, false))
-		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				isc_arg_gds, isc_dsql_agg_column_err,
-				isc_arg_string, "select list", 0);
-			// Invalid expression in the select list
-			// (not contained in either an aggregate or the GROUP BY clause)
-		}
-	}
-	} // end scope block
+		// Reset context of select items to point to the parent stream 
 
-// Reset context of order items to point to the parent stream 
-	if (order) {
-		parent_rse->nod_arg[e_rse_sort] =
-			remap_fields(request, rse->nod_arg[e_rse_sort], parent_context);
-		rse->nod_arg[e_rse_sort] = NULL;
+		parent_rse->nod_arg[e_rse_items] =
+			remap_fields(request, rse->nod_arg[e_rse_items], parent_context);
+		rse->nod_arg[e_rse_items] = NULL;
 
-		// AB: Check for invalid contructions inside the ORDER BY clause
-		list = target_rse->nod_arg[e_rse_sort];
+		// AB: Check for invalid contructions inside selected-items list
+		list = parent_rse->nod_arg[e_rse_items];
+		{ // scope block
 		const dsql_nod* const* ptr = list->nod_arg;
 		for (const dsql_nod* const* const end = ptr + list->nod_count;
 			ptr < end; ptr++)
@@ -5577,60 +5564,90 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_agg_column_err,
-					isc_arg_string, "ORDER BY clause", 0);
-				// Invalid expression in the ORDER BY clause
+					isc_arg_string, "select list", 0);
+				// Invalid expression in the select list
 				// (not contained in either an aggregate or the GROUP BY clause)
 			}
 		}
-	}
+		} // end scope block
 
-// And, of course, reduction clauses must also apply to the parent 
-	if (input->nod_arg[e_sel_distinct]) {
-		parent_rse->nod_arg[e_rse_reduced] =
-			remap_fields(request, parent_rse->nod_arg[e_rse_reduced], parent_context);
-	}
+		// Reset context of order items to point to the parent stream 
 
-// Process HAVING clause, if any 
+		if (order) {
+			parent_rse->nod_arg[e_rse_sort] =
+				remap_fields(request, rse->nod_arg[e_rse_sort], parent_context);
+			rse->nod_arg[e_rse_sort] = NULL;
 
-	if (node = input->nod_arg[e_sel_having]) {
-		++request->req_in_having_clause;
-		parent_rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, false);
-		--request->req_in_having_clause;
-
-		parent_rse->nod_arg[e_rse_boolean] =
-			remap_fields(request, parent_rse->nod_arg[e_rse_boolean], parent_context);
-
-		// AB: Check for invalid contructions inside the HAVING clause
-		list = parent_rse->nod_arg[e_rse_boolean];
-		dsql_nod** ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count;
-			ptr < end; ptr++)
-		{
-			if (invalid_reference(parent_context, *ptr,
-				aggregate->nod_arg[e_agg_group], false, false))
+			// AB: Check for invalid contructions inside the ORDER BY clause
+			list = target_rse->nod_arg[e_rse_sort];
+			const dsql_nod* const* ptr = list->nod_arg;
+			for (const dsql_nod* const* const end = ptr + list->nod_count;
+				ptr < end; ptr++)
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_dsql_agg_having_err,
-					isc_arg_string, "HAVING clause", 0);
-				// Invalid expression in the HAVING clause
-				// (neither an aggregate nor contained in the GROUP BY clause)
+				if (invalid_reference(parent_context, *ptr,
+					aggregate->nod_arg[e_agg_group], false, false))
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						isc_arg_gds, isc_dsql_agg_column_err,
+						isc_arg_string, "ORDER BY clause", 0);
+					// Invalid expression in the ORDER BY clause
+					// (not contained in either an aggregate or the GROUP BY clause)
+				}
 			}
 		}
 
-#ifdef	CHECK_HAVING
-		if (aggregate)
-			if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
-								  aggregate->nod_arg[e_agg_group]))
+		// And, of course, reduction clauses must also apply to the parent 
+
+		if (input->nod_arg[e_qry_distinct]) {
+			parent_rse->nod_arg[e_rse_reduced] =
+				remap_fields(request, parent_rse->nod_arg[e_rse_reduced], parent_context);
+		}
+
+		// Process HAVING clause, if any 
+
+		if ( (node = input->nod_arg[e_qry_having]) ) {
+			++request->req_in_having_clause;
+			parent_rse->nod_arg[e_rse_boolean] = PASS1_node(request, node, false);
+			--request->req_in_having_clause;
+
+			parent_rse->nod_arg[e_rse_boolean] =
+				remap_fields(request, parent_rse->nod_arg[e_rse_boolean], parent_context);
+
+			// AB: Check for invalid contructions inside the HAVING clause
+			list = parent_rse->nod_arg[e_rse_boolean];
+			dsql_nod** ptr = list->nod_arg;
+			for (const dsql_nod* const* const end = ptr + list->nod_count;
+				ptr < end; ptr++)
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_field_ref_err, 0);
-				// invalid field reference 
+				if (invalid_reference(parent_context, *ptr,
+					aggregate->nod_arg[e_agg_group], false, false))
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						isc_arg_gds, isc_dsql_agg_having_err,
+						isc_arg_string, "HAVING clause", 0);
+					// Invalid expression in the HAVING clause
+					// (neither an aggregate nor contained in the GROUP BY clause)
+				}
+			}
+
+#ifdef CHECK_HAVING
+			if (aggregate)
+			{
+				if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
+									aggregate->nod_arg[e_agg_group]))
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+							isc_arg_gds, isc_field_ref_err, 0);
+					// invalid field reference 
+				}
 			}
 #endif
+		}
+		rse = parent_rse;
 	}
 
-	parent_rse->nod_arg[e_rse_singleton] = input->nod_arg[e_sel_singleton];
-	return parent_rse;
+	rse->nod_flags = flags;
+	return rse;
 }
 
 
@@ -5921,7 +5938,9 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* s_lis
 			node1 = node1->nod_arg[e_coll_source];
 		}
 
-		if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long) {
+		if (node1->nod_type == nod_constant &&
+			node1->nod_desc.dsc_dtype == dtype_long)
+		{
 			const ULONG position = (IPTR) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list || 
 				(position > (ULONG) s_list->nod_count))
@@ -6055,7 +6074,7 @@ static void pass1_udf_args(dsql_req* request, dsql_nod* input,
 
  **/
 static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
-	dsql_nod* order_list, dsql_nod* rows)
+	dsql_nod* order_list, dsql_nod* rows, USHORT flags)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -6076,7 +6095,9 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end;
 		 ++ptr, ++uptr)
 	{
-		*uptr = PASS1_rse(request, *ptr, NULL, NULL, NULL);
+		request->req_scope_level++;
+		*uptr = pass1_rse(request, *ptr, NULL, NULL, NULL, 0);
+		request->req_scope_level--;
         while (*(request->req_context) != base)
 		{
             request->req_union_context.push(request->req_context->pop());
@@ -6241,6 +6262,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 		union_rse->nod_arg[e_rse_reduced] = union_items;
 	}
 
+	union_rse->nod_flags = flags;
 	return union_rse;
 }
 
@@ -6967,7 +6989,7 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 				ptr < end; ptr++)
 			{
 				remap_streams_to_parent_context(*ptr, parent_context);
-				}
+			}
 		break;
 		}
 
