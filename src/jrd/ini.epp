@@ -77,7 +77,7 @@ static void store_global_field(TDBB, GFLD*, BLK*);
 static void store_intlnames(TDBB, DBB);
 static void store_message(TDBB, CONST TRIGMSG*, BLK*);
 static void store_relation_field(TDBB, CONST UCHAR*, CONST UCHAR*, int, BLK*, int);
-static void store_trigger(TDBB, CONST TRG*, BLK*);
+static void store_trigger(TDBB, CONST JRD_TRG*, BLK*);
 
 
 /* This is the table used in defining triggers; note that
@@ -86,7 +86,7 @@ static void store_trigger(TDBB, CONST TRG*, BLK*);
    changed to RDB$TRIGGER_9 to handle SQL security on relations whose
    name is > 27 characters */
 
-static CONST TRG FAR_VARIABLE triggers[] =
+static CONST JRD_TRG FAR_VARIABLE triggers[] =
 {
 	{ "RDB$TRIGGER_1", (UCHAR) nam_user_privileges,
 		RDB$TRIGGERS.RDB$TRIGGER_TYPE.PRE_MODIFY, sizeof(trigger3), trigger3,
@@ -258,7 +258,7 @@ void INI_format(const TEXT* owner)
 	CONST UCHAR*	relfld;
 	CONST UCHAR*	fld;
 	GFLD*			gfield;
-	CONST TRG*		trigger;
+	CONST JRD_TRG*		trigger;
 	CONST TRIGMSG*	message;
 	CONST GEN*		generator;
 	TEXT			string[32];
@@ -327,8 +327,8 @@ void INI_format(const TEXT* owner)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (REQ)handle1);
-	CMP_release(tdbb, (REQ)handle2);
+	CMP_release(tdbb, (JRD_REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle2);
 	handle1 = handle2 = NULL;
 
 /* Store global FIELDS */
@@ -338,14 +338,14 @@ void INI_format(const TEXT* owner)
 		store_global_field(tdbb, gfield, &handle1);
 	}
 
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 	handle1 = NULL;
 
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 	END_STORE
 
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 	handle1 = NULL;
 
 /* Create indices for system relations */
@@ -365,7 +365,7 @@ void INI_format(const TEXT* owner)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 /* Store symbols for international character sets & collations */
 
@@ -378,7 +378,7 @@ void INI_format(const TEXT* owner)
 	{
 		store_generator(tdbb, generator, &handle1);
 	}
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 /* store system-defined triggers */
 
@@ -387,7 +387,7 @@ void INI_format(const TEXT* owner)
 	{
 		store_trigger(tdbb, trigger, &handle1);
 	}
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 /* store trigger messages to go with triggers */
 
@@ -396,7 +396,7 @@ void INI_format(const TEXT* owner)
 	{
 		store_message(tdbb, message, &handle1);
 	}
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 	DFW_perform_system_work();
 
@@ -456,7 +456,7 @@ USHORT INI_get_trig_flags(TEXT* trig_name)
  *      Return the trigger flags for a system trigger.
  *
  **************************************/
-	CONST TRG* trig;
+	CONST JRD_TRG* trig;
 
 	for (trig = triggers; trig->trg_length > 0; trig++)
 	{
@@ -486,7 +486,7 @@ void INI_init(void)
  *
  **************************************/
 	DBB				dbb;
-	REL				relation;
+	JRD_REL				relation;
 	FMT				format;
 	FLD				field;
 	VEC				formats;
@@ -496,7 +496,7 @@ void INI_init(void)
 	CONST UCHAR*	fld_;
 	fmt::fmt_desc_iterator	desc;
 	CONST GFLD*		gfield;
-	CONST TRG*		trigger;
+	CONST JRD_TRG*		trigger;
 	TDBB			tdbb;
 	vec::iterator	itr;
 
@@ -565,7 +565,7 @@ void INI_init2(void)
  *	the database when it was created.
  *
  **************************************/
-	REL				relation;
+	JRD_REL				relation;
 	FMT				format;
 	int				n;
 	CONST UCHAR*	relfld;
@@ -595,7 +595,7 @@ void INI_init2(void)
         **
         ******************************************************/
 			id = relfld[RFLD_R_ID];
-			relation = (REL)(*vector)[id];
+			relation = (JRD_REL)(*vector)[id];
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
@@ -672,8 +672,8 @@ void INI_init2(void)
 }
 
 
-TRG* INI_lookup_sys_trigger(REL				relation,
-							TRG*			trigger,
+JRD_TRG* INI_lookup_sys_trigger(JRD_REL				relation,
+							JRD_TRG*			trigger,
 							CONST UCHAR**	blr,
 							UCHAR*			trigger_type,
 							CONST SCHAR**	trigger_name,
@@ -691,8 +691,8 @@ TRG* INI_lookup_sys_trigger(REL				relation,
  **************************************/
 
 /* function should actually return (const TRIG*) */
-    const TRG* constTrigger =  (trigger) ? trigger + 1 : triggers;
-	trigger = const_cast<TRG*>(constTrigger);
+    const JRD_TRG* constTrigger =  (trigger) ? trigger + 1 : triggers;
+	trigger = const_cast<JRD_TRG*>(constTrigger);
 
 	for (; trigger->trg_relation; trigger++)
 	{
@@ -880,7 +880,7 @@ static void add_global_fields( USHORT minor_version)
 	}
 
 	if (handle) {
-		CMP_release(tdbb, (REQ)handle);
+		CMP_release(tdbb, (JRD_REQ)handle);
 	}
 
 	DFW_perform_system_work();
@@ -905,7 +905,7 @@ static void add_index_set(DBB		dbb,
  *
  **************************************/
 	TDBB	tdbb;
-	REL		relation;
+	JRD_REL		relation;
 	TEXT	string[32];
 	CONST struct ini_idx_t*	index;
 	CONST ini_idx_t::ini_idx_segment_t*segment;
@@ -967,17 +967,17 @@ static void add_index_set(DBB		dbb,
 			}
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_unique_flag;
-			IDX_create_index(tdbb, relation, &idx, (UCHAR*)string, (USHORT*) NULL_PTR, (TRA) NULL_PTR,
+			IDX_create_index(tdbb, relation, &idx, (UCHAR*)string, (USHORT*) NULL_PTR, (JRD_TRA) NULL_PTR,
 							 &selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;
 
 	}
 	if (handle1) {
-		CMP_release(tdbb, (REQ)handle1);
+		CMP_release(tdbb, (JRD_REQ)handle1);
 	}
 	if (handle2) {
-		CMP_release(tdbb, (REQ)handle2);
+		CMP_release(tdbb, (JRD_REQ)handle2);
 	}
 }
 
@@ -998,7 +998,7 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
  *
  **************************************/
 	TDBB			tdbb;
-	CONST TRG*		trig;
+	CONST JRD_TRG*		trig;
 	CONST TRIGMSG*	message;
 	BLK				handle1;
 	BLK				handle2;
@@ -1028,10 +1028,10 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 	}
 
 	if (handle1) {
-		CMP_release(tdbb, (REQ)handle1);
+		CMP_release(tdbb, (JRD_REQ)handle1);
 	}
 	if (handle2) {
-		CMP_release(tdbb, (REQ)handle2);
+		CMP_release(tdbb, (JRD_REQ)handle2);
 	}
 }
 
@@ -1093,10 +1093,10 @@ static void add_relation_fields( USHORT minor_version)
 	}
 
 	if (s_handle) {
-		CMP_release(tdbb, (REQ)s_handle);
+		CMP_release(tdbb, (JRD_REQ)s_handle);
 	}
 	if (m_handle) {
-		CMP_release(tdbb, (REQ)m_handle);
+		CMP_release(tdbb, (JRD_REQ)m_handle);
 	}
 
 	DFW_perform_system_work();
@@ -1196,7 +1196,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 			PRIV.RDB$OBJECT_TYPE = obj_relation;
 		END_STORE;
 
-		CMP_release(tdbb, (REQ)handle1);
+		CMP_release(tdbb, (JRD_REQ)handle1);
 	}
 
 	handle1 = NULL;
@@ -1208,7 +1208,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 		CLS.RDB$ACL = blob_id_1;
 	END_STORE;
 
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 	handle1 = NULL;
 
@@ -1219,7 +1219,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
 
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 	handle1 = NULL;
 
@@ -1233,7 +1233,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 
 	END_FOR;
 
-	CMP_release(tdbb, (REQ)handle1);
+	CMP_release(tdbb, (JRD_REQ)handle1);
 
 }
 
@@ -1254,7 +1254,7 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
  *
  **************************************/
 	TDBB			tdbb;
-	CONST TRG*		trigger;
+	CONST JRD_TRG*		trigger;
 	CONST TRIGMSG*	message;
 
 	tdbb = GET_THREAD_DATA;
@@ -1356,7 +1356,7 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
  *
  **************************************/
 	DBB dbb;
-	TRA trans;
+	JRD_TRA trans;
 	struct blb *blob;
 
 	SET_TDBB(tdbb);
@@ -1504,7 +1504,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (REQ)handle);
+	CMP_release(tdbb, (JRD_REQ)handle);
 	handle = NULL;
 
 	for (collptr = coll_types; collptr->init_collation_name; collptr++)
@@ -1517,7 +1517,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 		END_STORE;
 	}
 
-	CMP_release(tdbb, (REQ)handle);
+	CMP_release(tdbb, (JRD_REQ)handle);
 	handle = NULL;
 }
 
@@ -1587,7 +1587,7 @@ static void store_relation_field(TDBB			tdbb,
 }
 
 
-static void store_trigger(TDBB tdbb, CONST TRG* trigger, BLK* handle)
+static void store_trigger(TDBB tdbb, CONST JRD_TRG* trigger, BLK* handle)
 {
 /**************************************
  *
@@ -1601,7 +1601,7 @@ static void store_trigger(TDBB tdbb, CONST TRG* trigger, BLK* handle)
  *
  **************************************/
 	DBB dbb;
-	TRA trans;
+	JRD_TRA trans;
 	DSC desc;
 	struct blb *blob;
 

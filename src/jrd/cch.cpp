@@ -1649,7 +1649,7 @@ void CCH_mark(TDBB tdbb, WIN * window, USHORT mark_system)
  *
  **************************************/
 	DBB dbb;
-	TRA transaction;
+	JRD_TRA transaction;
 	ULONG trans_bucket;
 	SLONG number;
 	register BDB bdb;

@@ -132,7 +132,7 @@ int FORM_get_blob( QLI_NOD value, PAR parameter)
  *
  **************************************/
 	MSG message;
-	REQ request;
+	QLI_REQ request;
 	DBB dbb;
 	DSC *desc;
 	FFL field;

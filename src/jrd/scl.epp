@@ -85,9 +85,9 @@ static BOOLEAN check_hex(CONST TEXT*, USHORT);
 static BOOLEAN check_number(CONST TEXT*, USHORT);
 static BOOLEAN check_user_group(CONST TEXT*, USHORT, STR*, ULONG*);
 static BOOLEAN check_string(CONST TEXT*, CONST TEXT*);
-static SLONG compute_access(TDBB, SCL, REL, CONST TEXT*, CONST TEXT*);
+static SLONG compute_access(TDBB, SCL, JRD_REL, CONST TEXT*, CONST TEXT*);
 static TEXT *save_string(TEXT*, TEXT**);
-static SLONG walk_acl(TDBB, CONST TEXT*, REL, CONST TEXT*, CONST TEXT*, STR*, ULONG*);
+static SLONG walk_acl(TDBB, CONST TEXT*, JRD_REL, CONST TEXT*, CONST TEXT*, STR*, ULONG*);
 
 typedef struct {
 	USHORT p_names_priv;
@@ -113,7 +113,7 @@ static CONST P_NAMES p_names[] =
 
 
 void SCL_check_access(SCL			s_class,
-					  REL			view,
+					  JRD_REL			view,
 					  CONST TEXT*	trg_name,
 					  CONST TEXT*	prc_name,
 					  USHORT		mask,
@@ -246,7 +246,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
                 default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
         END_FOR;
 
-        CMP_release(tdbb, (REQ) request);
+        CMP_release(tdbb, (JRD_REQ) request);
     }
     else {
         idx_name_ptr = aux_idx_name;
@@ -264,7 +264,7 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
                 default_s_class = SCL_get_class (REL.RDB$DEFAULT_CLASS);
         END_FOR;
 	
-        CMP_release (tdbb, (REQ)request);
+        CMP_release (tdbb, (JRD_REQ)request);
     }
 
 
@@ -308,11 +308,11 @@ void SCL_check_index( TDBB tdbb, TEXT * index_name, UCHAR index_id, USHORT mask)
 
 	END_FOR;
 
-	CMP_release(tdbb, (REQ) request);
+	CMP_release(tdbb, (JRD_REQ) request);
 	}
 	catch (...) {
 		if (request) {
-			CMP_release(tdbb, (REQ) request);
+			CMP_release(tdbb, (JRD_REQ) request);
 		}
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
@@ -358,14 +358,14 @@ void SCL_check_procedure( DSC * dsc_name, USHORT mask)
 
 	request = (BLK) CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request) PRC IN RDB$PROCEDURES WITH
-		PRC.RDB$PROCEDURE_NAME EQ name 
+	FOR(REQUEST_HANDLE request) JRD_PRC IN RDB$PROCEDURES WITH
+		JRD_PRC.RDB$PROCEDURE_NAME EQ name 
 
         if (!REQUEST(irq_p_security))
 			REQUEST(irq_p_security) = request;
 
-		if (!PRC.RDB$SECURITY_CLASS.NULL)
-			s_class = SCL_get_class(PRC.RDB$SECURITY_CLASS);
+		if (!JRD_PRC.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(JRD_PRC.RDB$SECURITY_CLASS);
 	END_FOR;
 
 	if (!REQUEST(irq_p_security))
@@ -490,7 +490,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 	q = s_class->scl_name;
 	while ( (*q++ = *p++) )
 		;
-	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, (REL)NULL_PTR,
+	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class, (JRD_REL)NULL_PTR,
 												 (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 
 	if (s_class->scl_flags & SCL_exists)
@@ -522,7 +522,7 @@ int SCL_get_mask(CONST TEXT* relation_name, CONST TEXT* field_name)
  *
  **************************************/
 	TDBB tdbb;
-	REL relation;
+	JRD_REL relation;
 	FLD field;
 	SSHORT id;
 	USHORT access;
@@ -688,7 +688,7 @@ void SCL_init(BOOLEAN	create,
                     if (!REQUEST(irq_get_role_name))
                         REQUEST(irq_get_role_name) = request;
 
-					EXE_unwind(tdbb, (REQ) request);
+					EXE_unwind(tdbb, (JRD_REQ) request);
 					ERR_post(isc_login_same_as_role_name,
 							 gds_arg_string, ERR_cstring(login_name), 0);
 
@@ -781,7 +781,7 @@ void SCL_init(BOOLEAN	create,
 				tdbb->tdbb_attachment->att_security_class =
 					SCL_get_class(X.RDB$SECURITY_CLASS);
 		END_FOR;
-		CMP_release(tdbb, (REQ) handle);
+		CMP_release(tdbb, (JRD_REQ) handle);
 
 		FOR(REQUEST_HANDLE handle1)
 			FIRST 1 REL IN RDB$RELATIONS WITH REL.
@@ -798,7 +798,7 @@ void SCL_init(BOOLEAN	create,
 				}
 			}
 		END_FOR;
-		CMP_release(tdbb, (REQ) handle1);
+		CMP_release(tdbb, (JRD_REQ) handle1);
 	}
 	else
 		user->usr_flags |= USR_owner;
@@ -867,7 +867,7 @@ SCL SCL_recompute_class(TDBB tdbb, TEXT * string)
 		return NULL;
 
 	s_class->scl_flags = (USHORT) compute_access(tdbb, s_class,
-												 (REL) NULL_PTR, (TEXT*) NULL_PTR,
+												 (JRD_REL) NULL_PTR, (TEXT*) NULL_PTR,
 												 (TEXT*) NULL_PTR);
 
 	if (s_class->scl_flags & SCL_exists)
@@ -1109,7 +1109,7 @@ static BOOLEAN check_string(CONST TEXT* acl, CONST TEXT* string)
 
 static SLONG compute_access(TDBB		tdbb,
 							SCL			s_class,
-							REL			view,
+							JRD_REL			view,
 							CONST TEXT*	trg_name,
 							CONST TEXT*	prc_name)
 {
@@ -1239,7 +1239,7 @@ static TEXT *save_string(TEXT* string, TEXT** ptr)
 
 static SLONG walk_acl(TDBB			tdbb,
 					  CONST TEXT*	acl,
-					  REL			view,
+					  JRD_REL			view,
 					  CONST TEXT*	trg_name,
 					  CONST TEXT*	prc_name,
 					  STR*			start_ptr,

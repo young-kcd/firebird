@@ -107,7 +107,7 @@ static SYN parse_prompt(void);
 static QFL parse_qualified_filter(void);
 static QFN parse_qualified_function(void);
 static QPR parse_qualified_procedure(void);
-static REL parse_qualified_relation(void);
+static QLI_REL parse_qualified_relation(void);
 static SYN parse_ready(NOD_T);
 static SYN parse_relational(USHORT *);
 static SYN parse_relation(void);
@@ -145,7 +145,7 @@ static SYN parse_udf_or_field(void);
 static SYN parse_update(void);
 static SYN parse_value(USHORT *, USHORT *);
 static int potential_rse(void);
-static REL resolve_relation(SYM, SYM);
+static QLI_REL resolve_relation(SYM, SYM);
 static SYN syntax_node(NOD_T, USHORT);
 static int test_end(void);
 
@@ -832,7 +832,7 @@ static SYN parse_assignment(void)
  *
  **************************************/
 	SYN node, field;
-	REL relation;
+	QLI_REL relation;
 	NAM name, name2;
 
 	node = SYNTAX_NODE(nod_assign, s_asn_count);
@@ -999,7 +999,7 @@ static SYN parse_declare(void)
 	USHORT dtype, length, scale;
 	SSHORT sub_type, sub_type_missing;
 	TEXT *edit_string, *query_header;
-	REL relation;
+	QLI_REL relation;
 	NAM db_name, rel_name;
 
 	PAR_token();
@@ -1235,13 +1235,13 @@ static SYN parse_def_relation(void)
  *	whose field definitions we will copy.  
  *
  **************************************/
-	REL relation;
+	QLI_REL relation;
 	FLD field, *ptr;
 	SYN node;
 
 	PAR_real();
 	node = SYNTAX_NODE(nod_def_relation, 2);
-	relation = (REL) ALLOCD(type_rel);
+	relation = (QLI_REL) ALLOCD(type_rel);
 	node->syn_arg[0] = (SYN) relation;
 	relation->rel_database = parse_database();
 	relation->rel_symbol = parse_symbol();
@@ -1253,7 +1253,7 @@ static SYN parse_def_relation(void)
 		PAR_real();
 		MATCH(KW_RELATION);
 		PAR_real();
-		relation = (REL) ALLOCD(type_rel);
+		relation = (QLI_REL) ALLOCD(type_rel);
 		node->syn_arg[1] = (SYN) relation;
 		relation->rel_database = parse_database();
 		relation->rel_symbol = parse_symbol();
@@ -2607,7 +2607,7 @@ static SYN parse_modify_relation(void)
  *
  **************************************/
 	SYN node;
-	REL relation;
+	QLI_REL relation;
 	FLD field;
 
 	node = SYNTAX_NODE(nod_mod_relation, 2);
@@ -3201,7 +3201,7 @@ static QPR parse_qualified_procedure(void)
 }
 
 
-static REL parse_qualified_relation(void)
+static QLI_REL parse_qualified_relation(void)
 {
 /**************************************
  *
@@ -3217,7 +3217,7 @@ static REL parse_qualified_relation(void)
  *
  **************************************/
 	SYM db_symbol;
-	REL relation;
+	QLI_REL relation;
 
 	PAR_real();
 
@@ -4152,7 +4152,7 @@ static SYN parse_show(void)
  *
  **************************************/
 	SYN node;
-	REL relation;
+	QLI_REL relation;
 	LLS stack;
 	SYM symbol;
 	ENUM show_t sw;
@@ -4475,7 +4475,7 @@ static SYN parse_sql_alter(void)
  *
  **************************************/
 	SYN node;
-	REL relation;
+	QLI_REL relation;
 	FLD field;
 
 	PAR_real_token();
@@ -4951,13 +4951,13 @@ static SYN parse_sql_table_create(void)
  *	Parse the SQL CREATE TABLE statement.
  *
  **************************************/
-	REL relation;
+	QLI_REL relation;
 	FLD field, *ptr;
 	SYN node;
 
 	PAR_real();
 	node = SYNTAX_NODE(nod_sql_cr_table, 1);
-	relation = (REL) ALLOCD(type_rel);
+	relation = (QLI_REL) ALLOCD(type_rel);
 	node->syn_arg[0] = (SYN) relation;
 	relation->rel_database = parse_database();
 	relation->rel_symbol = parse_symbol();
@@ -4998,7 +4998,7 @@ static SYN parse_sql_view_create(void)
  **************************************/
 	SYN node;
 	LLS stack;
-	REL relation;
+	QLI_REL relation;
 
 	PAR_real();
 
@@ -5006,7 +5006,7 @@ static SYN parse_sql_view_create(void)
 	node = SYNTAX_NODE(nod_sql_cr_view, s_crv_count);
 	stack = NULL;
 
-	relation = (REL) ALLOCD(type_rel);
+	relation = (QLI_REL) ALLOCD(type_rel);
 	node->syn_arg[s_crv_name] = (SYN) relation;
 	relation->rel_database = parse_database();
 	relation->rel_symbol = parse_symbol();
@@ -5704,7 +5704,7 @@ static int potential_rse(void)
 }
 
 
-static REL resolve_relation( SYM db_symbol, SYM relation_symbol)
+static QLI_REL resolve_relation( SYM db_symbol, SYM relation_symbol)
 {
 /**************************************
  *
@@ -5718,7 +5718,7 @@ static REL resolve_relation( SYM db_symbol, SYM relation_symbol)
  *	NULL (don't error!).
  *
  **************************************/
-	REL relation;
+	QLI_REL relation;
 	SYM temp;
 	DBB dbb;
 
@@ -5734,7 +5734,7 @@ static REL resolve_relation( SYM db_symbol, SYM relation_symbol)
 		for (; db_symbol; db_symbol = db_symbol->sym_homonym)
 			for (temp = relation_symbol; temp; temp = temp->sym_homonym)
 				if (temp->sym_type == SYM_relation) {
-					relation = (REL) temp->sym_object;
+					relation = (QLI_REL) temp->sym_object;
 					if (relation->rel_database == (DBB) db_symbol->sym_object)
 						return relation;
 				}
@@ -5746,7 +5746,7 @@ static REL resolve_relation( SYM db_symbol, SYM relation_symbol)
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		for (temp = relation_symbol; temp; temp = temp->sym_homonym)
 			if (temp->sym_type == SYM_relation) {
-				relation = (REL) temp->sym_object;
+				relation = (QLI_REL) temp->sym_object;
 				if (relation->rel_database == dbb)
 					return relation;
 			}

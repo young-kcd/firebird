@@ -591,14 +591,14 @@ static SLONG execute_any( QLI_NOD node)
  *	absolutely nothing to do.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	MSG message;
 	USHORT *flag;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (REQ) node->nod_arg[e_any_request])
+	if (request = (QLI_REQ) node->nod_arg[e_any_request])
 		EXEC_start_request(request, (MSG) node->nod_arg[e_any_send]);
 	else if (message = (MSG) node->nod_arg[e_any_send])
 		EXEC_send(message);
@@ -712,14 +712,14 @@ static DSC *execute_function( QLI_NOD node)
  *	Execute a statistical expression.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	MSG message;
 	PAR parameter;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (REQ) node->nod_arg[e_fun_request])
+	if (request = (QLI_REQ) node->nod_arg[e_fun_request])
 		EXEC_start_request(request, (MSG) node->nod_arg[e_fun_send]);
 	else if (message = (MSG) node->nod_arg[e_fun_send])
 		EXEC_send(message);
@@ -824,14 +824,14 @@ static DSC *execute_statistical( QLI_NOD node)
  *	Execute a statistical expression.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	MSG message;
 	PAR parameter;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (REQ) node->nod_arg[e_stt_request])
+	if (request = (QLI_REQ) node->nod_arg[e_stt_request])
 		EXEC_start_request(request, (MSG) node->nod_arg[e_stt_send]);
 	else if (message = (MSG) node->nod_arg[e_stt_send])
 		EXEC_send(message);
@@ -1078,8 +1078,8 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	USHORT buffer_length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	SSHORT l1, l2, result;
-	CTX context;
-	REQ request;
+	QLI_CTX context;
+	QLI_REQ request;
 	DBB dbb;
 
 /* Get operator definition string (control string) */
@@ -1133,7 +1133,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 		gds__free(buffer);
 
 	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
-		context = (CTX) node->nod_arg[e_fld_context];
+		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
 		ERRQ_database_error(dbb, status_vector);
@@ -1491,8 +1491,8 @@ static int string_boolean( QLI_NOD node)
 	SSHORT l1, l2, l3, l, result;
 	USHORT buffer_length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	CTX context;
-	REQ request;
+	QLI_CTX context;
+	QLI_REQ request;
 	DBB dbb;
 
 	if (!(desc1 = EVAL_value(node->nod_arg[0])) ||
@@ -1541,7 +1541,7 @@ static int string_boolean( QLI_NOD node)
 		gds__free(buffer);
 
 	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
-		context = (CTX) node->nod_arg[e_fld_context];
+		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
 		ERRQ_database_error(dbb, status_vector);

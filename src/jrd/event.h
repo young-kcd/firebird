@@ -159,7 +159,7 @@ typedef struct req {
 	void (*req_ast) ();			/* Asynchronous routine */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id, dummy */
-} *REQ;
+} *JRD_REQ;
 
 /* Request interest block */
 

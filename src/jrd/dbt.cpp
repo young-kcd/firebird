@@ -176,34 +176,34 @@ fmt[] = {
 },
 req[] = {
 	"REQUEST",
-		FLD(REQ, "COUNT: %x", req_count),
-		FLD(REQ, "Impure: %x", req_impure_size),
-		FLD(REQ, "Incarn: %x", req_incarnation),
-		FLD(REQ, "Pool: %x", req_pool),
-		FLD(REQ, "Sub req: %x", req_sub_requests),
-		FLD(REQ, "Trans: %x", req_transaction),
-		FLD(REQ, "Next req: %x", req_request),
-		FLD(REQ, "Msg: %x", req_message),
-		FLD(REQ, "Length: %x", req_length),
-		FLD(REQ, "#msgs: %x", req_nmsgs),
-		FLD(REQ, "Max send: %x", req_msend),
-		FLD(REQ, "Max receive: %x", req_mreceive),
-		FLD(REQ, "Top: %x", req_top_node),
-		FLD(REQ, "Next: %x", req_next),
-		FLD(REQ, "Label: %x", req_label),
-		FLD(REQ, "Op: %x", req_operation),
-		FLD(REQ, "Flags: %x", req_flags),
+		FLD(JRD_REQ, "COUNT: %x", req_count),
+		FLD(JRD_REQ, "Impure: %x", req_impure_size),
+		FLD(JRD_REQ, "Incarn: %x", req_incarnation),
+		FLD(JRD_REQ, "Pool: %x", req_pool),
+		FLD(JRD_REQ, "Sub req: %x", req_sub_requests),
+		FLD(JRD_REQ, "Trans: %x", req_transaction),
+		FLD(JRD_REQ, "Next req: %x", req_request),
+		FLD(JRD_REQ, "Msg: %x", req_message),
+		FLD(JRD_REQ, "Length: %x", req_length),
+		FLD(JRD_REQ, "#msgs: %x", req_nmsgs),
+		FLD(JRD_REQ, "Max send: %x", req_msend),
+		FLD(JRD_REQ, "Max receive: %x", req_mreceive),
+		FLD(JRD_REQ, "Top: %x", req_top_node),
+		FLD(JRD_REQ, "Next: %x", req_next),
+		FLD(JRD_REQ, "Label: %x", req_label),
+		FLD(JRD_REQ, "Op: %x", req_operation),
+		FLD(JRD_REQ, "Flags: %x", req_flags),
 		0
 },
 tra[] = {
 	"TRANSACTION",
-		FLD(TRA, "Number: %ld", tra_number),
-		FLD(TRA, "Oldest: %ld", tra_oldest),
-		FLD(TRA, "Next: %x", tra_next),
-		FLD(TRA, "Pool: %x", tra_pool),
-		FLD(TRA, "Lock: %x", tra_lock),
-		FLD(TRA, "Locks: %x", tra_relation_locks),
-		FLD(TRA, "Flags: %x", tra_flags),
+		FLD(JRD_TRA, "Number: %ld", tra_number),
+		FLD(JRD_TRA, "Oldest: %ld", tra_oldest),
+		FLD(JRD_TRA, "Next: %x", tra_next),
+		FLD(JRD_TRA, "Pool: %x", tra_pool),
+		FLD(JRD_TRA, "Lock: %x", tra_lock),
+		FLD(JRD_TRA, "Locks: %x", tra_relation_locks),
+		FLD(JRD_TRA, "Flags: %x", tra_flags),
 		0
 },
 nod[] = {
@@ -337,8 +337,8 @@ static TEXT_PTR log[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR prc[] = {
 	"PROCEDURE",
-		FLD(PRC, "%s", prc_name),
-		FLD(PRC, "Id: %d", prc_id), 0};
+		FLD(JRD_PRC, "%s", prc_name),
+		FLD(JRD_PRC, "Id: %d", prc_id), 0};
 static TEXT_PTR prm[] = {	"PARAMETER", FLD(PRM, "%s", prm_name), 0};
 static TEXT_PTR idb[] = {	"INDEX BLOCK", 0};
 static TEXT_PTR bkm[] = {	"BOOKMARK BLOCK", 0};
@@ -444,8 +444,8 @@ struct symb dbt_symbols[] = {
     SYM (DBB, dbb_requests)
     SYM (REL, rel_formats)
     SYM (REL, rel_pages)
-    SYM (REQ, req_top_node)
-    SYM (REQ, req_next)
+    SYM (JRD_REQ, req_top_node)
+    SYM (JRD_REQ, req_next)
 */
 	(SCHAR *) 0, 0, symb_routine, 0
 };

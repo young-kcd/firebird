@@ -113,7 +113,7 @@ void EXT_erase(RPB * rpb, int *transaction)
 }
 
 
-EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
+EXT EXT_file(JRD_REL relation, TEXT * file_name, SLONG * description)
 {
 /**************************************
  *
@@ -251,7 +251,7 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 }
 
 
-void EXT_fini(REL relation)
+void EXT_fini(JRD_REL relation)
 {
 /**************************************
  *
@@ -289,8 +289,8 @@ int EXT_get(RSB rsb)
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
-	REL relation;
+	JRD_REQ request;
+	JRD_REL relation;
 	EXT file;
 	RPB *rpb;
 	REC record;
@@ -390,8 +390,8 @@ void EXT_open(RSB rsb)
  *
  **************************************/
 	TDBB tdbb;
-	REL relation;
-	REQ request;
+	JRD_REL relation;
+	JRD_REQ request;
 	RPB *rpb;
 	REC record;
 	FMT format;
@@ -426,7 +426,7 @@ RSB EXT_optimize(register OPT opt, SSHORT stream, JRD_NOD * sort_ptr)
  **************************************/
 	TDBB tdbb;
 	register CSB csb;
-	REL relation;
+	JRD_REL relation;
 	RSB rsb_;
 /* all these are un refrenced due to the code commented below
 JRD_NOD		node, inversion;
@@ -487,7 +487,7 @@ if (opt->opt_count)
 }
 
 
-void EXT_ready(REL relation)
+void EXT_ready(JRD_REL relation)
 {
 /**************************************
  *
@@ -514,7 +514,7 @@ void EXT_store(RPB * rpb, int *transaction)
  *	Update an external file.
  *
  **************************************/
-	REL relation;
+	JRD_REL relation;
 	REC record;
 	FMT format;
 	EXT file;
@@ -592,7 +592,7 @@ void EXT_store(RPB * rpb, int *transaction)
 }
 
 
-void EXT_trans_commit(TRA transaction)
+void EXT_trans_commit(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -607,7 +607,7 @@ void EXT_trans_commit(TRA transaction)
 }
 
 
-void EXT_trans_prepare(TRA transaction)
+void EXT_trans_prepare(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -622,7 +622,7 @@ void EXT_trans_prepare(TRA transaction)
 }
 
 
-void EXT_trans_rollback(TRA transaction)
+void EXT_trans_rollback(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -637,7 +637,7 @@ void EXT_trans_rollback(TRA transaction)
 }
 
 
-void EXT_trans_start(TRA transaction)
+void EXT_trans_start(JRD_TRA transaction)
 {
 /**************************************
  *

@@ -227,7 +227,7 @@ int DBG_analyze(int pool_id)
 				p->sum_count++;
 				p->sum_length += length;
 				if (type == (SSHORT) type_nod) {
-					p = nodes + (int) ((NOD) block)->nod_type;
+					p = nodes + (int) ((JRD_NOD) block)->nod_type;
 					p->sum_count++;
 					p->sum_length += length;
 				}
@@ -450,7 +450,7 @@ int DBG_block(register BLK block)
 			   block->blk_length);
 	if (block->blk_type == (SCHAR) type_nod)
 		ib_fprintf(dbg_file, " -- %s",
-				   node_names[(int) ((NOD) block)->nod_type]);
+				   node_names[(int) ((JRD_NOD) block)->nod_type]);
 
 	prt_fields(reinterpret_cast < char *>(block), fields);
 
@@ -705,7 +705,7 @@ int DBG_pool(JrdMemoryPool *pool)
 }
 
 
-int DBG_pretty(register NOD node, register int column)
+int DBG_pretty(register JRD_NOD node, register int column)
 {
 /**************************************
  *
@@ -719,8 +719,8 @@ int DBG_pretty(register NOD node, register int column)
  **************************************/
 	RSE rse;
 	REL relation;
-	PRC procedure;
-	NOD *ptr, *end;
+	JRD_PRC procedure;
+	JRD_NOD *ptr, *end;
 	IRB retrieval;
 	register int i;
 
@@ -812,7 +812,7 @@ int DBG_pretty(register NOD node, register int column)
 		return TRUE;
 
 	case nod_exec_proc:
-		procedure = (PRC) node->nod_arg[e_esp_procedure];
+		procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
 		ib_fprintf(dbg_file, ", name: %s (%X)\n",
 				   procedure->prc_name->str_data, procedure);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;

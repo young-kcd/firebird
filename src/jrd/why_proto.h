@@ -104,7 +104,7 @@ extern STATUS API_ROUTINE isc_dsql_set_cursor_name(STATUS *, struct hndl **,
 												   SCHAR *, USHORT);
 extern STATUS API_ROUTINE isc_dsql_sql_info(STATUS *, struct hndl **, SSHORT,
 											SCHAR *, SSHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_prepare_transaction2(STATUS *, TRA *, USHORT,
+extern STATUS API_ROUTINE isc_prepare_transaction2(STATUS *, struct hndl **, USHORT,
 												   UCHAR *);
 extern STATUS API_ROUTINE isc_que_events(STATUS *, struct hndl **, SLONG *,
 										 USHORT, UCHAR *, FPTR_VOID, void *);

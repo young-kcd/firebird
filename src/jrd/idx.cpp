@@ -71,18 +71,18 @@ typedef struct ifl {
 	USHORT ifl_key_length;
 } *IFL;
 
-static IDX_E check_duplicates(TDBB, REC, IDX *, IIB *, REL);
-static IDX_E check_foreign_key(TDBB, REC, REL, TRA, IDX *, REL *, USHORT *);
-static IDX_E check_partner_index(TDBB, REL, REC, TRA, IDX *, REL, SSHORT);
+static IDX_E check_duplicates(TDBB, REC, IDX *, IIB *, JRD_REL);
+static IDX_E check_foreign_key(TDBB, REC, JRD_REL, JRD_TRA, IDX *, JRD_REL *, USHORT *);
+static IDX_E check_partner_index(TDBB, JRD_REL, REC, JRD_TRA, IDX *, JRD_REL, SSHORT);
 static BOOLEAN duplicate_key(UCHAR *, UCHAR *, IFL);
-static SLONG get_root_page(TDBB, REL);
+static SLONG get_root_page(TDBB, JRD_REL);
 static void index_block_flush(IDB);
-static IDX_E insert_key(TDBB, REL, REC, TRA, WIN *, IIB *, REL *, USHORT *);
+static IDX_E insert_key(TDBB, JRD_REL, REC, JRD_TRA, WIN *, IIB *, JRD_REL *, USHORT *);
 static BOOLEAN key_equal(KEY *, KEY *);
-static void signal_index_deletion(TDBB, REL, USHORT);
+static void signal_index_deletion(TDBB, JRD_REL, USHORT);
 
 
-void IDX_check_access(TDBB tdbb, CSB csb, REL view, REL relation, FLD field)
+void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, FLD field)
 {
 /**************************************
  *
@@ -100,7 +100,7 @@ void IDX_check_access(TDBB tdbb, CSB csb, REL view, REL relation, FLD field)
  **************************************/
 	WIN window, referenced_window;
 	IDX idx, referenced_idx;
-	REL referenced_relation;
+	JRD_REL referenced_relation;
 	FLD referenced_field;
 	IRT referenced_root;
 	USHORT index_id, i;
@@ -159,10 +159,10 @@ void IDX_check_access(TDBB tdbb, CSB csb, REL view, REL relation, FLD field)
 
 void IDX_create_index(
 					  TDBB tdbb,
-					  REL relation,
+					  JRD_REL relation,
 					  IDX * idx,
 					  UCHAR * index_name,
-					  USHORT * index_id, TRA transaction, float *selectivity)
+					  USHORT * index_id, JRD_TRA transaction, float *selectivity)
 {
 /**************************************
  *
@@ -185,7 +185,7 @@ void IDX_create_index(
 	SCB sort_handle;
 	SKD key_desc;
 	UCHAR *p, *q, pad;
-	REL partner_relation;
+	JRD_REL partner_relation;
 	USHORT partner_index_id;
 	BOOLEAN cancel = FALSE;
 	IDX_E result = idx_e_ok;
@@ -457,7 +457,7 @@ void IDX_create_index(
 }
 
 
-IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
+IDB IDX_create_index_block(TDBB tdbb, JRD_REL relation, UCHAR id)
 {
 /**************************************
  *
@@ -504,7 +504,7 @@ IDB IDX_create_index_block(TDBB tdbb, REL relation, UCHAR id)
 }
 
 
-void IDX_delete_index(TDBB tdbb, REL relation, USHORT id)
+void IDX_delete_index(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -530,7 +530,7 @@ void IDX_delete_index(TDBB tdbb, REL relation, USHORT id)
 }
 
 
-void IDX_delete_indices(TDBB tdbb, REL relation)
+void IDX_delete_indices(TDBB tdbb, JRD_REL relation)
 {
 /**************************************
  *
@@ -564,7 +564,7 @@ void IDX_delete_indices(TDBB tdbb, REL relation)
 
 IDX_E IDX_erase(TDBB tdbb,
 				RPB * rpb,
-				TRA transaction, REL * bad_relation, USHORT * bad_index)
+				JRD_TRA transaction, JRD_REL * bad_relation, USHORT * bad_index)
 {
 /**************************************
  *
@@ -671,7 +671,7 @@ void IDX_garbage_collect(TDBB tdbb, RPB * rpb, LLS going, LLS staying)
 IDX_E IDX_modify(TDBB tdbb,
 				 RPB * org_rpb,
 				 RPB * new_rpb,
-				 TRA transaction, REL * bad_relation, USHORT * bad_index)
+				 JRD_TRA transaction, JRD_REL * bad_relation, USHORT * bad_index)
 {
 /**************************************
  *
@@ -729,8 +729,8 @@ IDX_E IDX_modify(TDBB tdbb,
 IDX_E IDX_modify_check_constraints(TDBB tdbb,
 								   RPB * org_rpb,
 								   RPB * new_rpb,
-								   TRA transaction,
-								   REL * bad_relation, USHORT * bad_index)
+								   JRD_TRA transaction,
+								   JRD_REL * bad_relation, USHORT * bad_index)
 {
 /**************************************
  *
@@ -801,7 +801,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 }
 
 
-float IDX_statistics(TDBB tdbb, REL relation, USHORT id)
+float IDX_statistics(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -823,7 +823,7 @@ float IDX_statistics(TDBB tdbb, REL relation, USHORT id)
 
 IDX_E IDX_store(TDBB tdbb,
 				RPB * rpb,
-				TRA transaction, REL * bad_relation, USHORT * bad_index)
+				JRD_TRA transaction, JRD_REL * bad_relation, USHORT * bad_index)
 {
 /**************************************
  *
@@ -878,7 +878,7 @@ static IDX_E check_duplicates(
 							  TDBB tdbb,
 							  REC record,
 							  IDX * record_idx,
-							  IIB * insertion, REL relation_2)
+							  IIB * insertion, JRD_REL relation_2)
 {
 /**************************************
  *
@@ -896,7 +896,7 @@ static IDX_E check_duplicates(
 	IDX *insertion_idx;
 	DSC desc1, desc2;
 	USHORT field_id, flag, i, flag_2;
-	REL relation_1;
+	JRD_REL relation_1;
 
 	SET_TDBB(tdbb);
 
@@ -957,10 +957,10 @@ static IDX_E check_duplicates(
 static IDX_E check_foreign_key(
 							   TDBB tdbb,
 							   REC record,
-							   REL relation,
-							   TRA transaction,
+							   JRD_REL relation,
+							   JRD_TRA transaction,
 							   IDX * idx,
-REL * bad_relation, USHORT * bad_index)
+JRD_REL * bad_relation, USHORT * bad_index)
 {
 /**************************************
  *
@@ -976,7 +976,7 @@ REL * bad_relation, USHORT * bad_index)
  **************************************/
 	IDX_E result;
 	int index_number;
-	REL partner_relation;
+	JRD_REL partner_relation;
 	USHORT index_id;
 
 	SET_TDBB(tdbb);
@@ -1029,11 +1029,11 @@ REL * bad_relation, USHORT * bad_index)
 
 static IDX_E check_partner_index(
 								 TDBB tdbb,
-								 REL relation,
+								 JRD_REL relation,
 								 REC record,
-								 TRA transaction,
+								 JRD_TRA transaction,
 								 IDX * idx,
-REL partner_relation, SSHORT index_id)
+JRD_REL partner_relation, SSHORT index_id)
 {
 /**************************************
  *
@@ -1145,7 +1145,7 @@ static BOOLEAN duplicate_key(UCHAR * record1, UCHAR * record2, IFL ifl_data)
 }
 
 
-static SLONG get_root_page(TDBB tdbb, REL relation)
+static SLONG get_root_page(TDBB tdbb, JRD_REL relation)
 {
 /**************************************
  *
@@ -1222,11 +1222,11 @@ static void index_block_flush(IDB index_block)
 
 static IDX_E insert_key(
 						TDBB tdbb,
-						REL relation,
+						JRD_REL relation,
 						REC record,
-						TRA transaction,
+						JRD_TRA transaction,
 						WIN * window_ptr,
-IIB * insertion, REL * bad_relation, USHORT * bad_index)
+IIB * insertion, JRD_REL * bad_relation, USHORT * bad_index)
 {
 /**************************************
  *
@@ -1320,7 +1320,7 @@ static BOOLEAN key_equal(KEY * key1, KEY * key2)
 }
 
 
-static void signal_index_deletion(TDBB tdbb, REL relation, USHORT id)
+static void signal_index_deletion(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *

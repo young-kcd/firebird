@@ -56,7 +56,7 @@ static void show_dbb(DBB);
 static void show_dbb_parameters(DBB);
 static int show_field_detail(DBB, TEXT *, TEXT *, SYN);
 static int show_field_instances(DBB, TEXT *);
-static void show_fields(REL, FLD);
+static void show_fields(QLI_REL, FLD);
 static void show_filt(QFL);
 static int show_filter_detail(DBB, TEXT *);
 static void show_filts(DBB);
@@ -73,13 +73,13 @@ static void show_gbl_field(SYN);
 static int show_gbl_field_detail(DBB, TEXT *);
 static void show_gbl_fields(DBB);
 static int show_gbl_fields_detail(DBB);
-static int show_indices_detail(REL);
+static int show_indices_detail(QLI_REL);
 static void show_matching(void);
 static void show_names(TEXT *, USHORT, TEXT *);
 static void show_proc(QPR);
 static void show_procs(DBB);
-static void show_rel(REL);
-static void show_rel_detail(REL);
+static void show_rel(QLI_REL);
+static void show_rel_detail(QLI_REL);
 static void show_rels(DBB, ENUM show_t, SSHORT);
 static int show_security_class_detail(DBB, TEXT *);
 static int show_security_classes_detail(DBB);
@@ -87,7 +87,7 @@ static void show_string(USHORT, TEXT *, USHORT, TEXT *);
 static void show_sys_trigs(DBB);
 static void show_text_blob(DBB, TEXT *, USHORT, SLONG *, USHORT, SLONG *,
 						   int);
-static void show_trig(REL);
+static void show_trig(QLI_REL);
 static int show_trigger_detail(DBB, TEXT *);
 static void show_trigger_header(TEXT *, USHORT, USHORT, USHORT, SLONG *, DBB,
 								TEXT *);
@@ -98,7 +98,7 @@ static int show_triggers_detail(DBB);
 static void show_var(NAM);
 static void show_vars(void);
 static void show_versions(void);
-static void show_view(REL);
+static void show_view(QLI_REL);
 static int show_views_detail(DBB);
 static int truncate_string(TEXT *);
 static void view_info(DBB, TEXT *, TEXT *, SSHORT, SSHORT);
@@ -148,7 +148,7 @@ void SHOW_stuff( SYN node)
  *
  **************************************/
 	SYN *ptr, value;
-	REL relation;
+	QLI_REL relation;
 	DBB dbb;
 	ENUM show_t sw;
 	USHORT i, count;
@@ -261,16 +261,16 @@ void SHOW_stuff( SYN node)
 			break;
 
 		case show_relation:
-			show_rel((REL) value);
-			show_fields((REL) value, (FLD) NULL_PTR);
-			show_view((REL) value);
-			show_rel_detail((REL) value);
+			show_rel((QLI_REL) value);
+			show_fields((QLI_REL) value, (FLD) NULL_PTR);
+			show_view((QLI_REL) value);
+			show_rel_detail((QLI_REL) value);
 			break;
 
 		case show_indices:
 			if (value) {
-				show_rel((REL) value);
-				if (!show_indices_detail((REL) value))
+				show_rel((QLI_REL) value);
+				if (!show_indices_detail((QLI_REL) value))
 					ERRQ_msg_put(93, NULL, NULL, NULL, NULL, NULL);	/* Msg93 No indices defined */
 				break;
 			}
@@ -371,7 +371,7 @@ void SHOW_stuff( SYN node)
 			break;
 
 		case show_trigger:
-			show_trig((REL) value);
+			show_trig((QLI_REL) value);
 			break;
 
 		case show_triggers:
@@ -1030,7 +1030,7 @@ static int show_field_instances( DBB database, TEXT * field_name)
 }
 
 
-static void show_fields( REL relation, FLD fields)
+static void show_fields( QLI_REL relation, FLD fields)
 {
 /**************************************
  *
@@ -1838,7 +1838,7 @@ static int show_gbl_fields_detail( DBB database)
 }
 
 
-static int show_indices_detail( REL relation)
+static int show_indices_detail( QLI_REL relation)
 {
 /**************************************
  *
@@ -2062,7 +2062,7 @@ static void show_procs( DBB database)
 }
 
 
-static void show_rel( REL relation)
+static void show_rel( QLI_REL relation)
 {
 /**************************************
  *
@@ -2082,7 +2082,7 @@ static void show_rel( REL relation)
 }
 
 
-static void show_rel_detail( REL relation)
+static void show_rel_detail( QLI_REL relation)
 {
 /**************************************
  *
@@ -2164,7 +2164,7 @@ static void show_rels( DBB dbb, ENUM show_t sw, SSHORT width)
  *
  **************************************/
 	SYN *ptr, value;
-	REL relation;
+	QLI_REL relation;
 	TEXT buffer[256];
 
 	switch (sw) {
@@ -2376,7 +2376,7 @@ static void show_text_blob(
 }
 
 
-static void show_trig( REL relation)
+static void show_trig( QLI_REL relation)
 {
 /**************************************
  *
@@ -2723,7 +2723,7 @@ static void show_vars(void)
  **************************************/
 
 	ERRQ_msg_put(132, NULL, NULL, NULL, NULL, NULL);	/* Msg132 Variables: */
-	show_fields((REL) NULL_PTR, QLI_variables);
+	show_fields((QLI_REL) NULL_PTR, QLI_variables);
 }
 
 
@@ -2750,7 +2750,7 @@ static void show_versions(void)
 }
 
 
-static void show_view( REL relation)
+static void show_view( QLI_REL relation)
 {
 /**************************************
  *

@@ -67,7 +67,7 @@ class tra : public pool_alloc_rpt<SCHAR, type_tra>
 	UCHAR tra_callback_count;	/* callback count for 'execute varchar' */
 	UCHAR tra_transactions[1];
 };
-typedef tra *TRA;
+typedef tra *JRD_TRA;
 
 #define TRA_system		1L		/* system transaction */
 #define TRA_update		2L		/* update is permitted */

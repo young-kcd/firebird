@@ -120,10 +120,10 @@ static void event_list(void)
 				if (!interest->rint_request)
 					ib_printf("(0)");
 				else {
-					REQ request;
+					JRD_REQ request;
 					PRB process;
 
-					request = (REQ) ABS_PTR(interest->rint_request);
+					request = (JRD_REQ) ABS_PTR(interest->rint_request);
 					process = (PRB) ABS_PTR(request->req_process);
 					ib_printf("%6d ", process->prb_process_id);
 				}
@@ -153,10 +153,10 @@ static void event_list(void)
 					if (!interest->rint_request)
 						ib_printf("(0)");
 					else {
-						REQ request;
+						JRD_REQ request;
 						PRB process;
 
-						request = (REQ) ABS_PTR(interest->rint_request);
+						request = (JRD_REQ) ABS_PTR(interest->rint_request);
 						process = (PRB) ABS_PTR(request->req_process);
 						ib_printf("%6d ", process->prb_process_id);
 					}
@@ -187,7 +187,7 @@ static void event_table_dump(void)
 	PRB process;
 	FRB free;
 	EVNT event, parent;
-	REQ request;
+	JRD_REQ request;
 	SES session;
 	RINT interest;
 	SLONG offset;
@@ -223,8 +223,8 @@ static void event_table_dump(void)
 			break;
 
 		case type_req:
-			ib_printf("REQ (%ld)\n", block->hdr_length);
-			request = (REQ) block;
+			ib_printf("JRD_REQ (%ld)\n", block->hdr_length);
+			request = (JRD_REQ) block;
 			ib_printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
 					  request->req_process, request->req_interests,
 					  request->req_ast, request->req_ast_arg);

@@ -27,12 +27,12 @@
 extern "C" {
 
 extern STATUS DLL_EXPORT BLF_close_blob(TDBB, struct ctl **);
-extern STATUS DLL_EXPORT BLF_create_blob(TDBB, TRA, struct ctl **, SLONG *,
+extern STATUS DLL_EXPORT BLF_create_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
 										 USHORT, UCHAR *, STATUS(*)(), BLF);
 extern STATUS DLL_EXPORT BLF_get_segment(TDBB, struct ctl **, USHORT *,
 										 USHORT, UCHAR *);
 extern BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
-extern STATUS DLL_EXPORT BLF_open_blob(TDBB, TRA, struct ctl **, SLONG *,
+extern STATUS DLL_EXPORT BLF_open_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
 									   USHORT, UCHAR *, STATUS(*)(), BLF);
 extern STATUS DLL_EXPORT BLF_put_segment(TDBB, struct ctl **, USHORT,
 										 UCHAR *);

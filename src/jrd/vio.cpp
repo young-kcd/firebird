@@ -85,30 +85,30 @@
 extern "C" {
 
 
-static void bump_count(TDBB, USHORT, REL);
-static void check_class(TDBB, TRA, RPB *, RPB *, USHORT);
+static void bump_count(TDBB, USHORT, JRD_REL);
+static void check_class(TDBB, JRD_TRA, RPB *, RPB *, USHORT);
 static void check_control(TDBB);
 static BOOLEAN check_user(TDBB, DSC *);
 static void delete_(TDBB, RPB *, SLONG, JrdMemoryPool *);
 static UCHAR *delete_tail(TDBB, RPB *, SLONG, UCHAR *, UCHAR *);
-static void expunge(TDBB, RPB *, TRA, SLONG);
+static void expunge(TDBB, RPB *, JRD_TRA, SLONG);
 static void garbage_collect(TDBB, RPB *, SLONG, LLS);
 static void garbage_collect_idx(TDBB, RPB *, RPB *, REC);
 #ifdef GARBAGE_THREAD
 static void THREAD_ROUTINE garbage_collector(DBB);
 #endif
-static SAV get_free_save_point_block(TRA);
+static SAV get_free_save_point_block(JRD_TRA);
 static void list_staying(TDBB, RPB *, LLS *);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(TDBB, RPB *);
 #endif
-static BOOLEAN prepare_update(TDBB, TRA, SLONG, RPB *, RPB *, RPB *, LLS *);
+static BOOLEAN prepare_update(TDBB, JRD_TRA, SLONG, RPB *, RPB *, RPB *, LLS *);
 static BOOLEAN purge(TDBB, RPB *);
-static REC replace_gc_record(REL, REC *, USHORT);
-static void replace_record(TDBB, RPB *, LLS *, TRA);
+static REC replace_gc_record(JRD_REL, REC *, USHORT);
+static void replace_record(TDBB, RPB *, LLS *, JRD_TRA);
 static void set_system_flag(RPB *, USHORT, SSHORT);
-static void update_in_place(TDBB, TRA, RPB *, RPB *);
-static void verb_post(TDBB, TRA, RPB *, REC, RPB *, BOOLEAN, BOOLEAN);
+static void update_in_place(TDBB, JRD_TRA, RPB *, RPB *);
+static void verb_post(TDBB, JRD_TRA, RPB *, REC, RPB *, BOOLEAN, BOOLEAN);
 
 /* Pick up relation ids */
 
@@ -167,7 +167,7 @@ SLONG VIO_savepoint_large(struct sav *savepoint, SLONG size)
 	return count;
 }
 
-void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
+void VIO_backout(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -192,7 +192,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
  **************************************/
 	DBB dbb;
 	RPB temp, temp2;
-	REL relation;
+	JRD_REL relation;
 	REC data, old_data, gc_rec1, gc_rec2;
 	LLS going, staying;
 
@@ -394,7 +394,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
 
 int VIO_chase_record_version(
 							 TDBB tdbb,
-							 RPB * rpb, RSB rsb, TRA transaction, BLK pool)
+							 RPB * rpb, RSB rsb, JRD_TRA transaction, BLK pool)
 {
 /**************************************
  *
@@ -414,7 +414,7 @@ int VIO_chase_record_version(
 	RPB temp;
 	ATT attachment;
 #ifdef PC_ENGINE
-	REQ request;
+	JRD_REQ request;
 	IRSB impure;
 #endif
 
@@ -840,7 +840,7 @@ int VIO_check_if_updated(TDBB tdbb, RPB * rpb)
  *	has been committed.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	USHORT state;
 
 	SET_TDBB(tdbb);
@@ -1039,7 +1039,7 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
 }
 
 
-BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
+BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -1056,8 +1056,8 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
  *  another user 
  *
  **************************************/
-	REL relation, r2;
-	PRC procedure;
+	JRD_REL relation, r2;
+	JRD_PRC procedure;
 	RPB temp;
 	DSC desc, desc2;
 	LLS stack;
@@ -1065,7 +1065,7 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 	BOOLEAN same_tx = FALSE;
 	TEXT relation_name[32], revokee[32], privilege[32], procedure_name[32];
 	SLONG tid_fetch;
-	REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -1403,7 +1403,7 @@ void VIO_fini(TDBB tdbb)
 #endif
 
 
-int VIO_garbage_collect(TDBB tdbb, RPB * rpb, TRA transaction)
+int VIO_garbage_collect(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -1512,7 +1512,7 @@ int VIO_garbage_collect(TDBB tdbb, RPB * rpb, TRA transaction)
 }
 
 
-REC VIO_gc_record(TDBB tdbb, REL relation)
+REC VIO_gc_record(TDBB tdbb, JRD_REL relation)
 {
 /**************************************
  *
@@ -1580,7 +1580,7 @@ REC VIO_gc_record(TDBB tdbb, REL relation)
 }
 
 
-int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, TRA transaction, BLK pool)
+int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, JRD_TRA transaction, BLK pool)
 {
 /**************************************
  *
@@ -1637,7 +1637,7 @@ int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, TRA transaction, BLK pool)
 
 int VIO_get_current(
 					TDBB tdbb,
-					RPB * rpb, TRA transaction, BLK pool, USHORT foreign_key)
+					RPB * rpb, JRD_TRA transaction, BLK pool, USHORT foreign_key)
 {
 /**************************************
  *
@@ -1884,7 +1884,7 @@ void VIO_init(TDBB tdbb)
 #endif
 
 
-BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
+BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -1896,7 +1896,7 @@ BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
  *	Modify an existing record.
  *
  **************************************/
-	REL relation;
+	JRD_REL relation;
 	RPB temp;
 	DSC desc1, desc2;
 	LLS stack;
@@ -2095,7 +2095,7 @@ BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 BOOLEAN VIO_next_record(TDBB tdbb,
 						RPB * rpb,
 						RSB rsb,
-						TRA transaction,
+						JRD_TRA transaction,
 						BLK pool, BOOLEAN backwards, BOOLEAN onepage)
 {
 /**************************************
@@ -2221,7 +2221,7 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 }
 
 
-void VIO_start_save_point(TDBB tdbb, TRA transaction)
+void VIO_start_save_point(TDBB tdbb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2249,7 +2249,7 @@ void VIO_start_save_point(TDBB tdbb, TRA transaction)
 }
 
 
-void VIO_store(TDBB tdbb, RPB * rpb, TRA transaction)
+void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2261,10 +2261,10 @@ void VIO_store(TDBB tdbb, RPB * rpb, TRA transaction)
  *	Store a new record.
  *
  **************************************/
-	REL relation;
+	JRD_REL relation;
 	DSC desc, desc2;
 	SSHORT id;
-	REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -2393,7 +2393,7 @@ void VIO_store(TDBB tdbb, RPB * rpb, TRA transaction)
 }
 
 
-BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
+BOOLEAN VIO_sweep(TDBB tdbb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2406,7 +2406,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
  *
  **************************************/
 	DBB dbb;
-	REL relation;
+	JRD_REL relation;
 	RPB rpb;
 	VEC vector;
 	USHORT i;
@@ -2433,7 +2433,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
 
 		for (i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
 		{
-			if ((relation = (REL) (*vector)[i]) && relation->rel_pages &&
+			if ((relation = (JRD_REL) (*vector)[i]) && relation->rel_pages &&
 				!(relation->rel_flags & (REL_deleted | REL_deleting)))
 			{
 				rpb.rpb_relation = relation;
@@ -2483,7 +2483,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, TRA transaction)
 }
 
 
-void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
+void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2507,7 +2507,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
  *
  **************************************/
 	VCT action;
-	REL relation;
+	JRD_REL relation;
 	REC record, dead_record;
 	RPB rpb, new_rpb;
 	LLS stack;
@@ -2745,7 +2745,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 
 void VIO_merge_proc_sav_points(
 							   TDBB tdbb,
-							   TRA transaction, SAV * sav_point_list)
+							   JRD_TRA transaction, SAV * sav_point_list)
 {
 /**************************************
  *
@@ -2795,7 +2795,7 @@ void VIO_merge_proc_sav_points(
 }
 
 
-static void bump_count(TDBB tdbb, USHORT count_id, REL relation)
+static void bump_count(TDBB tdbb, USHORT count_id, JRD_REL relation)
 {
 /**************************************
  *
@@ -2842,7 +2842,7 @@ static void bump_count(TDBB tdbb, USHORT count_id, REL relation)
 
 static void check_class(
 						TDBB tdbb,
-						TRA transaction,
+						JRD_TRA transaction,
 						RPB * old_rpb, RPB * new_rpb, USHORT id)
 {
 /**************************************
@@ -3058,7 +3058,7 @@ static UCHAR *delete_tail(
 }
 
 
-static void expunge(TDBB tdbb, RPB * rpb, TRA transaction, SLONG prior_page)
+static void expunge(TDBB tdbb, RPB * rpb, JRD_TRA transaction, SLONG prior_page)
 {
 /**************************************
  *
@@ -3259,8 +3259,8 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 	SLONG count, dp_sequence, last;
 	ULONG id;
 	BOOLEAN found, flush;
-	REL relation;
-	TRA transaction;
+	JRD_REL relation;
+	JRD_TRA transaction;
 	RPB rpb;
 	EVENT gc_event;
 
@@ -3372,7 +3372,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 		VEC vector;
 		for (id = 0; (vector = dbb->dbb_relations) && id < vector->count(); ++id)
 		{
-			relation = (REL) (*vector)[id];
+			relation = (JRD_REL) (*vector)[id];
 
 			if (relation &&
 				relation->rel_gc_bitmap != 0 &&
@@ -3547,7 +3547,7 @@ gc_exit:
 #endif
 
 
-static SAV get_free_save_point_block(TRA transaction)
+static SAV get_free_save_point_block(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -3709,7 +3709,7 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
  **************************************/
 
 	DBB dbb      = tdbb->tdbb_database;
-	REL relation = rpb->rpb_relation;
+	JRD_REL relation = rpb->rpb_relation;
 
 /* If this is a large sequential scan then defer the release
    of the data page to the LRU tail until the garbage collector
@@ -3740,7 +3740,7 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
 
 
 static BOOLEAN prepare_update(	TDBB	tdbb,
-							TRA		transaction,
+							JRD_TRA		transaction,
 							SLONG	commit_tid_read,
 							RPB*	rpb,
 							RPB*	temp,
@@ -4109,7 +4109,7 @@ static BOOLEAN purge(TDBB tdbb, RPB* rpb)
 	LLS staying;
 	RPB temp;
 	REC record, gc_rec;
-	REL relation;
+	JRD_REL relation;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -4173,7 +4173,7 @@ static BOOLEAN purge(TDBB tdbb, RPB* rpb)
 }
 
 
-static REC replace_gc_record(REL relation, REC * gc_record, USHORT length)
+static REC replace_gc_record(JRD_REL relation, REC * gc_record, USHORT length)
 {
 /**************************************
  *
@@ -4215,7 +4215,7 @@ static REC replace_gc_record(REL relation, REC * gc_record, USHORT length)
 
 
 static void replace_record(
-						   TDBB tdbb, RPB * rpb, LLS * stack, TRA transaction)
+						   TDBB tdbb, RPB * rpb, LLS * stack, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -4287,7 +4287,7 @@ static void set_system_flag(RPB * rpb, USHORT field_id, SSHORT flag)
 
 static void update_in_place(
 							TDBB tdbb,
-							TRA transaction, RPB * org_rpb, RPB * new_rpb)
+							JRD_TRA transaction, RPB * org_rpb, RPB * new_rpb)
 {
 /**************************************
  *
@@ -4304,7 +4304,7 @@ static void update_in_place(
 	RPB temp2;
 	REC prior, old_data, gc_rec;
 	LLS going, staying, *stack;
-	REL relation;
+	JRD_REL relation;
 	UCHAR *address;
 	SLONG page;
 	USHORT line, length, format_number;
@@ -4421,7 +4421,7 @@ static void update_in_place(
 
 static void verb_post(
 					  TDBB tdbb,
-					  TRA transaction,
+					  JRD_TRA transaction,
 					  RPB * rpb,
 					  REC old_data,
 					  RPB * new_rpb, BOOLEAN same_tx, BOOLEAN new_ver)

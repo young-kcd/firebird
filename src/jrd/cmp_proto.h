@@ -35,7 +35,7 @@ struct req* DLL_EXPORT CMP_compile(USHORT, UCHAR*, USHORT);
 struct req* DLL_EXPORT CMP_compile2(TDBB, UCHAR*, USHORT);
 struct csb_repeat* DLL_EXPORT CMP_csb_element(struct Csb**, USHORT);
 void DLL_EXPORT CMP_expunge_transaction(struct tra*);
-void DLL_EXPORT CMP_decrement_prc_use_count(TDBB, PRC);
+void DLL_EXPORT CMP_decrement_prc_use_count(TDBB, JRD_PRC);
 struct req* DLL_EXPORT CMP_find_request(TDBB, USHORT, USHORT);
 void DLL_EXPORT CMP_fini(TDBB);
 struct fmt* DLL_EXPORT CMP_format(TDBB, struct Csb*, USHORT);

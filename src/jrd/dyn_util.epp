@@ -121,7 +121,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
  *
  **************************************/
 	DBB dbb;
-	REQ req_handle;
+	JRD_REQ req_handle;
 	SINT64 value;
 
 	SET_TDBB(tdbb);
@@ -477,7 +477,7 @@ BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
  *	Get protection mask for relation or relation_field
  *
  **************************************/
-	volatile REQ request;
+	volatile JRD_REQ request;
 	struct
 	{
 		SCHAR relation_name[32];

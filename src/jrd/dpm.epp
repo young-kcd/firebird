@@ -81,11 +81,11 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define SPACE_FUDGE	RHDF_SIZE
 
 static void delete_tail(TDBB, RHDF, USHORT);
-static void fragment(TDBB, RPB *, SSHORT, DCC, SSHORT, TRA);
-static void extend_relation(TDBB, REL, WIN *);
+static void fragment(TDBB, RPB *, SSHORT, DCC, SSHORT, JRD_TRA);
+static void extend_relation(TDBB, JRD_REL, WIN *);
 static UCHAR *find_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
 static BOOLEAN get_header(WIN *, SSHORT, register RPB *);
-static PPG get_pointer_page(TDBB, REL, WIN *, USHORT, USHORT);
+static PPG get_pointer_page(TDBB, JRD_REL, WIN *, USHORT, USHORT);
 static void journal_segment(TDBB, WIN *, USHORT);
 static RHD locate_space(TDBB, register RPB *, SSHORT, LLS *, REC, USHORT);
 static void mark_full(TDBB, register RPB *);
@@ -463,7 +463,7 @@ int DPM_compress( TDBB tdbb, DPG page)
 }
 
 
-void DPM_create_relation( TDBB tdbb, REL relation)
+void DPM_create_relation( TDBB tdbb, JRD_REL relation)
 {
 /**************************************
  *
@@ -541,7 +541,7 @@ void DPM_create_relation( TDBB tdbb, REL relation)
 }
 
 
-SLONG DPM_data_pages(TDBB tdbb, REL relation)
+SLONG DPM_data_pages(TDBB tdbb, JRD_REL relation)
 {
 /**************************************
  *
@@ -623,7 +623,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 	USHORT pp_sequence;
 	SLONG *ptr, number, sequence;
 	JRNP journal;
-	REL relation;
+	JRD_REL relation;
 	dpg::dpg_repeat *index;
 
 	SET_TDBB(tdbb);
@@ -792,7 +792,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 }
 
 
-void DPM_delete_relation( TDBB tdbb, REL relation)
+void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
 {
 /**************************************
  *
@@ -889,7 +889,7 @@ void DPM_delete_relation( TDBB tdbb, REL relation)
 		X.RDB$RELATION_ID EQ relation->rel_id ERASE X;
 	END_FOR;
 
-	CMP_release(tdbb, (REQ)handle);
+	CMP_release(tdbb, (JRD_REQ)handle);
 	CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
 }
 
@@ -1403,7 +1403,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 	}
 	else {
 		if (!(vector = blob->blb_pages)) {
-			TRA transaction;
+			JRD_TRA transaction;
 
 			transaction = blob->blb_transaction;
 			vector = blob->blb_pages =
@@ -1668,7 +1668,7 @@ void DPM_pages(
 
 
 #ifdef SUPERSERVER_V2
-SLONG DPM_prefetch_bitmap(TDBB tdbb, REL relation, SBM bitmap, SLONG number)
+SLONG DPM_prefetch_bitmap(TDBB tdbb, JRD_REL relation, SBM bitmap, SLONG number)
 {
 /**************************************
  *
@@ -1739,7 +1739,7 @@ void DPM_scan_pages( TDBB tdbb)
  **************************************/
 	DBB dbb;
 	BLK request;
-	REL relation;
+	JRD_REL relation;
 	VCL *address, vector;
 	WIN window;
 	PPG ppage;
@@ -2060,7 +2060,7 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
 }
 
 
-void DPM_update( TDBB tdbb, register RPB * rpb, LLS * stack, TRA transaction)
+void DPM_update( TDBB tdbb, register RPB * rpb, LLS * stack, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2258,7 +2258,7 @@ static void fragment(
 					 TDBB tdbb,
 					 RPB * rpb,
 					 SSHORT available_space,
-					 DCC dcc, SSHORT length, TRA transaction)
+					 DCC dcc, SSHORT length, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2470,7 +2470,7 @@ static void fragment(
 }
 
 
-static void extend_relation( TDBB tdbb, REL relation, WIN * window)
+static void extend_relation( TDBB tdbb, JRD_REL relation, WIN * window)
 {
 /**************************************
  *
@@ -2793,7 +2793,7 @@ static BOOLEAN get_header( WIN * window, SSHORT line, register RPB * rpb)
 
 static PPG get_pointer_page(
 							TDBB tdbb,
-							REL relation,
+							JRD_REL relation,
 							WIN * window, USHORT sequence, USHORT lock)
 {
 /**************************************
@@ -2893,7 +2893,7 @@ static RHD locate_space(
  **************************************/
 	DBB dbb;
 	register WIN *window;
-	REL relation;
+	JRD_REL relation;
 	register PPG ppage;
 	USHORT pp_sequence, slot, i;
 	SLONG dp_number, pp_number, sequence;
@@ -2995,7 +2995,7 @@ static void mark_full( TDBB tdbb, register RPB * rpb)
 	UCHAR *byte, bit, flags;
 	USHORT slot, pp_sequence;
 	SLONG sequence;
-	REL relation;
+	JRD_REL relation;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;

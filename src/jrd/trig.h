@@ -54,7 +54,7 @@ typedef struct trg
 	CONST UCHAR*	trg_blr;
 	USHORT			trg_flags;
 	UCHAR			trg_ods_version;
-} TRG;
+} JRD_TRG;
 
 /* trigger message structure */
 

@@ -61,7 +61,7 @@ void RPT_report( QLI_NOD loop)
  **************************************/
 	RPT report;
 	QLI_NOD node, output;
-	REQ request;
+	QLI_REQ request;
 	MSG message;
 	DSC *desc;
 	BRK control;
@@ -82,7 +82,7 @@ void RPT_report( QLI_NOD loop)
 /* If there is a request associated  with the loop, start it and possibly
    send a message slong with it. */
 
-	if (request = (REQ) loop->nod_arg[e_for_request])
+	if (request = (QLI_REQ) loop->nod_arg[e_for_request])
 		EXEC_start_request(request, (MSG) loop->nod_arg[e_for_send]);
 	else if (message = (MSG) loop->nod_arg[e_for_send])
 		EXEC_send(message);

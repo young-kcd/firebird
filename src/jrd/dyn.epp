@@ -95,7 +95,7 @@ static void store_privilege(GBL, TEXT *, TEXT *, TEXT *, TEXT *, SSHORT,
 static void	set_field_class_name(GBL, TEXT *, TEXT *);
 
 
-void DYN_ddl(ATT attachment, TRA transaction, USHORT length, UCHAR * ddl)
+void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 {
 /**************************************
  *
@@ -974,7 +974,7 @@ void DYN_rundown_request(BLK handle, SSHORT id)
 		return;
 	}
 
-	EXE_unwind(tdbb, (REQ)handle);
+	EXE_unwind(tdbb, (JRD_REQ)handle);
 	if (id >= 0 && !DYN_REQUEST(id)) {
 		DYN_REQUEST(id) = handle;
 	}

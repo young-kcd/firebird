@@ -197,7 +197,7 @@ int INF_database_info(
  **************************************/
 	TDBB tdbb;
 	DBB dbb;
-	TRA transaction;
+	JRD_TRA transaction;
 	STR str;
 	FIL file;
 	SCHAR item, *end_items, *end, buffer[256], *p, *q;
@@ -837,7 +837,7 @@ SCHAR *INF_put_item(SCHAR item,
 
 
 int INF_request_info(
-					 REQ request,
+					 JRD_REQ request,
 					 SCHAR * items,
 					 SSHORT item_length, SCHAR * info, SSHORT buffer_length)
 {
@@ -979,7 +979,7 @@ int INF_request_info(
 
 
 int INF_transaction_info(
-						 TRA transaction,
+						 JRD_TRA transaction,
 						 SCHAR * items,
 						 SSHORT item_length,
 						 SCHAR * info, SSHORT buffer_length)

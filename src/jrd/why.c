@@ -39,7 +39,7 @@
  *
  */
 /*
-$Id: why.c,v 1.25 2002-11-14 08:23:53 dimitr Exp $
+$Id: why.c,v 1.26 2002-11-17 00:10:49 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -191,7 +191,7 @@ typedef struct hndl
 	struct hndl**	user_handle;
 	struct clean*	cleanup;
 	TEXT*			db_path;
-} *HNDL, *REQ, *DBB, *TRA, *BLB, *ATT, *STMT, *SVC;
+} *HNDL, *JRD_REQ, *DBB, *JRD_TRA, *BLB, *ATT, *STMT, *SVC;
 
 #define HANDLE_invalid		0
 #define HANDLE_database		1
@@ -210,7 +210,7 @@ typedef struct hndl
 typedef struct clean
 {
 	struct clean*	clean_next;
-	void			(*clean_routine)(TRA, SLONG);
+	void			(*clean_routine)(JRD_TRA, SLONG);
 	SLONG			clean_arg;
 } *CLEAN;
 
@@ -240,12 +240,12 @@ static void event_ast_stub(UCHAR *, USHORT, UCHAR *);
 #endif /* PIPE_CLIENT || SUPERCLIENT */
 #endif /* EVENTS_WILDCARDING */
 static void exit_handler(EVENT);
-static TRA find_transaction(DBB, TRA);
+static JRD_TRA find_transaction(DBB, JRD_TRA);
 static void free_block(void*);
-static int get_database_info(STATUS *, TRA, UCHAR **);
+static int get_database_info(STATUS *, JRD_TRA, UCHAR **);
 static PTR get_entrypoint(int, int);
 static SCHAR *get_sqlda_buffer(SCHAR *, USHORT, XSQLDA *, USHORT, USHORT *);
-static STATUS get_transaction_info(STATUS *, TRA, UCHAR **);
+static STATUS get_transaction_info(STATUS *, JRD_TRA, UCHAR **);
 
 #ifdef INITIALIZE_PATHS
 static void init_paths(void);
@@ -254,10 +254,10 @@ static void init_paths(void);
 static void iterative_sql_info(STATUS *, STMT *, SSHORT, SCHAR *, SSHORT,
 							   SCHAR *, USHORT, XSQLDA *);
 static STATUS no_entrypoint(STATUS *);
-static STATUS open_blob(STATUS *, ATT *, TRA *, BLB *, SLONG *, USHORT,
+static STATUS open_blob(STATUS *, ATT *, JRD_TRA *, BLB *, SLONG *, USHORT,
 						UCHAR *, SSHORT, SSHORT);
 static STATUS open_marker_file(STATUS *, TEXT *, TEXT *);
-static STATUS prepare(STATUS *, TRA);
+static STATUS prepare(STATUS *, JRD_TRA);
 static void release_dsql_support(DASUP);
 static void release_handle(HNDL);
 static void save_error_string(STATUS *);
@@ -1189,7 +1189,7 @@ STATUS API_ROUTINE GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
 }
 
 
-STATUS API_ROUTINE GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
+STATUS API_ROUTINE GDS_COMMIT(STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1202,7 +1202,7 @@ STATUS API_ROUTINE GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 	CLEAN clean;
 
 	GET_STATUS;
@@ -1256,7 +1256,7 @@ STATUS API_ROUTINE GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
 
 
 STATUS API_ROUTINE GDS_COMMIT_RETAINING(STATUS * user_status,
-										TRA * tra_handle)
+										JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1273,7 +1273,7 @@ STATUS API_ROUTINE GDS_COMMIT_RETAINING(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 
 	GET_STATUS;
 	transaction = *tra_handle;
@@ -1294,7 +1294,7 @@ STATUS API_ROUTINE GDS_COMMIT_RETAINING(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_COMPILE(STATUS * user_status,
 							   ATT * db_handle,
-							   REQ * req_handle,
+							   JRD_REQ * req_handle,
 							   USHORT GDS_VAL(blr_length), SCHAR * blr)
 {
 /**************************************
@@ -1308,7 +1308,7 @@ STATUS API_ROUTINE GDS_COMPILE(STATUS * user_status,
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
-	REQ request;
+	JRD_REQ request;
 
 	GET_STATUS;
 	NULL_CHECK(req_handle, isc_bad_req_handle, HANDLE_request);
@@ -1346,7 +1346,7 @@ STATUS API_ROUTINE GDS_COMPILE(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_COMPILE2(STATUS * user_status,
 								ATT * db_handle,
-								REQ * req_handle,
+								JRD_REQ * req_handle,
 								USHORT GDS_VAL(blr_length), SCHAR * blr)
 {
 /**************************************
@@ -1371,7 +1371,7 @@ STATUS API_ROUTINE GDS_COMPILE2(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_CREATE_BLOB(STATUS * user_status,
 								   ATT * db_handle,
-								   TRA * tra_handle,
+								   JRD_TRA * tra_handle,
 								   BLB * blob_handle, SLONG * blob_id)
 {
 /**************************************
@@ -1392,7 +1392,7 @@ STATUS API_ROUTINE GDS_CREATE_BLOB(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_CREATE_BLOB2(STATUS * user_status,
 									ATT * db_handle,
-									TRA * tra_handle,
+									JRD_TRA * tra_handle,
 									BLB * blob_handle,
 									SLONG * blob_id,
 									SSHORT GDS_VAL(bpb_length), UCHAR * bpb)
@@ -1732,7 +1732,7 @@ STATUS API_ROUTINE GDS_DATABASE_INFO(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
 						   ATT * db_handle,
-						   TRA * tra_handle,
+						   JRD_TRA * tra_handle,
 						   USHORT GDS_VAL(length), UCHAR * ddl)
 {
 /**************************************
@@ -1747,7 +1747,7 @@ STATUS API_ROUTINE GDS_DDL(STATUS * user_status,
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT database;
-	TRA transaction;
+	JRD_TRA transaction;
 
 #if !defined(PIPE_CLIENT) && !defined(SUPERCLIENT)
 	TEXT *image;
@@ -1814,7 +1814,7 @@ STATUS API_ROUTINE GDS_DETACH(STATUS * user_status, ATT * handle)
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
-	REQ request;
+	JRD_REQ request;
 	STMT statement;
 	BLB blob;
 	CLEAN clean;
@@ -1947,7 +1947,7 @@ STATUS API_ROUTINE GDS_DROP_DATABASE(STATUS * user_status, ATT * handle)
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
-	REQ request;
+	JRD_REQ request;
 	STMT statement;
 	BLB blob;
 	CLEAN clean;
@@ -2283,7 +2283,7 @@ STATUS API_ROUTINE isc_dsql_describe_bind(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_DSQL_EXECUTE(STATUS * user_status,
-									TRA * tra_handle,
+									JRD_TRA * tra_handle,
 									STMT * stmt_handle,
 									USHORT dialect, XSQLDA * sqlda)
 {
@@ -2304,7 +2304,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_DSQL_EXECUTE2(STATUS * user_status,
-									 TRA * tra_handle,
+									 JRD_TRA * tra_handle,
 									 STMT * stmt_handle,
 									 USHORT dialect,
 									 XSQLDA * in_sqlda, XSQLDA * out_sqlda)
@@ -2363,7 +2363,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(STATUS * user_status,
-									  TRA * tra_handle,
+									  JRD_TRA * tra_handle,
 									  STMT * stmt_handle,
 									  USHORT blr_length,
 									  SCHAR * blr,
@@ -2388,7 +2388,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(STATUS * user_status,
-									   TRA * tra_handle,
+									   JRD_TRA * tra_handle,
 									   STMT * stmt_handle,
 									   USHORT in_blr_length,
 									   SCHAR * in_blr,
@@ -2412,7 +2412,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(STATUS * user_status,
  **************************************/
 	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
-	TRA transaction, handle = NULL;
+	JRD_TRA transaction, handle = NULL;
 	PTR entry;
 	CLEAN clean;
 
@@ -2509,7 +2509,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(STATUS * user_status,
 									   ATT * db_handle,
-									   TRA * tra_handle,
+									   JRD_TRA * tra_handle,
 									   USHORT length,
 									   SCHAR * string,
 									   USHORT dialect, XSQLDA * sqlda)
@@ -2532,7 +2532,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 										  ATT * db_handle,
-										  TRA * tra_handle,
+										  JRD_TRA * tra_handle,
 										  USHORT length,
 										  SCHAR * string,
 										  USHORT dialect, XSQLDA * sqlda)
@@ -2556,7 +2556,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(STATUS * user_status,
 										ATT * db_handle,
-										TRA * tra_handle,
+										JRD_TRA * tra_handle,
 										USHORT length,
 										SCHAR * string,
 										USHORT dialect,
@@ -2627,7 +2627,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(STATUS * user_status,
 									   ATT * db_handle,
-									   TRA * tra_handle,
+									   JRD_TRA * tra_handle,
 									   USHORT length,
 									   SCHAR * string,
 									   USHORT dialect,
@@ -2654,7 +2654,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(STATUS * user_status,
 										  ATT * db_handle,
-										  TRA * tra_handle,
+										  JRD_TRA * tra_handle,
 										  USHORT length,
 										  SCHAR * string,
 										  USHORT dialect,
@@ -2683,7 +2683,7 @@ STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(STATUS * user_status,
 										ATT * db_handle,
-										TRA * tra_handle,
+										JRD_TRA * tra_handle,
 										USHORT length,
 										SCHAR * string,
 										USHORT dialect,
@@ -2708,7 +2708,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(STATUS * user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	TRA crdb_trans_handle;
+	JRD_TRA crdb_trans_handle;
 	STATUS temp_status[ISC_STATUS_LENGTH];
 	STATUS local[ISC_STATUS_LENGTH], *status, *s;
 	BOOLEAN stmt_eaten;
@@ -2797,7 +2797,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(STATUS * user_status,
 										ATT * db_handle,
-										TRA * tra_handle,
+										JRD_TRA * tra_handle,
 										USHORT length,
 										SCHAR * string,
 										USHORT dialect,
@@ -2824,7 +2824,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(STATUS * user_status,
  **************************************/
 	STATUS s, *status, local[ISC_STATUS_LENGTH];
 	ATT dbb;
-	TRA transaction, handle = NULL;
+	JRD_TRA transaction, handle = NULL;
 	PTR entry;
 	CLEAN clean;
 
@@ -3312,7 +3312,7 @@ STATUS API_ROUTINE GDS_DSQL_INSERT_M(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_DSQL_PREPARE(STATUS * user_status,
-									TRA * tra_handle,
+									JRD_TRA * tra_handle,
 									STMT * stmt_handle,
 									USHORT length,
 									SCHAR * string,
@@ -3391,7 +3391,7 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_DSQL_PREPARE_M(STATUS * user_status,
-									  TRA * tra_handle,
+									  JRD_TRA * tra_handle,
 									  STMT * stmt_handle,
 									  USHORT length,
 									  SCHAR * string,
@@ -3413,7 +3413,7 @@ STATUS API_ROUTINE GDS_DSQL_PREPARE_M(STATUS * user_status,
  **************************************/
 	STATUS *status, local[ISC_STATUS_LENGTH];
 	STMT statement;
-	TRA handle = NULL, transaction;
+	JRD_TRA handle = NULL, transaction;
 
 	GET_STATUS;
 
@@ -3666,7 +3666,7 @@ STATUS API_ROUTINE GDS_GET_SEGMENT(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_GET_SLICE(STATUS * user_status,
 								 ATT * db_handle,
-								 TRA * tra_handle,
+								 JRD_TRA * tra_handle,
 								 SLONG * array_id,
 								 USHORT GDS_VAL(sdl_length),
 								 UCHAR * sdl,
@@ -3687,7 +3687,7 @@ STATUS API_ROUTINE GDS_GET_SLICE(STATUS * user_status,
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
-	TRA transaction;
+	JRD_TRA transaction;
 
 	GET_STATUS;
 	dbb = *db_handle;
@@ -3727,7 +3727,7 @@ STATUS gds__handle_cleanup(STATUS * user_status, HNDL * user_handle)
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	HNDL handle;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 	CLEAN clean;
 
 	GET_STATUS;
@@ -3744,7 +3744,7 @@ STATUS gds__handle_cleanup(STATUS * user_status, HNDL * user_handle)
 
 		/* Call the associated cleanup handlers */
 
-		transaction = (TRA) handle;
+		transaction = (JRD_TRA) handle;
 		while (clean = transaction->cleanup) {
 			transaction->cleanup = clean->clean_next;
 			(*clean->clean_routine) (transaction, clean->clean_arg);
@@ -3770,7 +3770,7 @@ STATUS gds__handle_cleanup(STATUS * user_status, HNDL * user_handle)
 
 STATUS API_ROUTINE GDS_OPEN_BLOB(STATUS * user_status,
 								 ATT * db_handle,
-								 TRA * tra_handle,
+								 JRD_TRA * tra_handle,
 								 BLB * blob_handle, SLONG * blob_id)
 {
 /**************************************
@@ -3791,7 +3791,7 @@ STATUS API_ROUTINE GDS_OPEN_BLOB(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_OPEN_BLOB2(STATUS * user_status,
 								  ATT * db_handle,
-								  TRA * tra_handle,
+								  JRD_TRA * tra_handle,
 								  BLB * blob_handle,
 								  SLONG * blob_id,
 								  SSHORT GDS_VAL(bpb_length), UCHAR * bpb)
@@ -3813,7 +3813,7 @@ STATUS API_ROUTINE GDS_OPEN_BLOB2(STATUS * user_status,
 }
 
 
-STATUS API_ROUTINE GDS_PREPARE(STATUS * user_status, TRA * tra_handle)
+STATUS API_ROUTINE GDS_PREPARE(STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -3831,7 +3831,7 @@ STATUS API_ROUTINE GDS_PREPARE(STATUS * user_status, TRA * tra_handle)
 
 
 STATUS API_ROUTINE GDS_PREPARE2(STATUS * user_status,
-								TRA * tra_handle,
+								JRD_TRA * tra_handle,
 								USHORT GDS_VAL(msg_length), UCHAR * msg)
 {
 /**************************************
@@ -3846,7 +3846,7 @@ STATUS API_ROUTINE GDS_PREPARE2(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 
 	GET_STATUS;
 	transaction = *tra_handle;
@@ -3902,7 +3902,7 @@ STATUS API_ROUTINE GDS_PUT_SEGMENT(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_PUT_SLICE(STATUS * user_status,
 								 ATT * db_handle,
-								 TRA * tra_handle,
+								 JRD_TRA * tra_handle,
 								 SLONG * array_id,
 								 USHORT GDS_VAL(sdl_length),
 								 UCHAR * sdl,
@@ -3922,7 +3922,7 @@ STATUS API_ROUTINE GDS_PUT_SLICE(STATUS * user_status,
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
-	TRA transaction;
+	JRD_TRA transaction;
 
 	GET_STATUS;
 	dbb = *db_handle;
@@ -4011,7 +4011,7 @@ STATUS API_ROUTINE GDS_QUE_EVENTS(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_RECEIVE(STATUS * user_status,
-							   REQ * req_handle,
+							   JRD_REQ * req_handle,
 							   USHORT GDS_VAL(msg_type),
 							   USHORT GDS_VAL(msg_length),
 							   SCHAR * msg, SSHORT GDS_VAL(level))
@@ -4033,7 +4033,7 @@ STATUS API_ROUTINE GDS_RECEIVE(STATUS * user_status,
 						(ULONG) 1);
 #else
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
+	JRD_REQ request;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -4055,7 +4055,7 @@ STATUS API_ROUTINE GDS_RECEIVE(STATUS * user_status,
 
 #ifdef SCROLLABLE_CURSORS
 STATUS API_ROUTINE GDS_RECEIVE2(STATUS * user_status,
-								REQ * req_handle,
+								JRD_REQ * req_handle,
 								USHORT GDS_VAL(msg_type),
 								USHORT GDS_VAL(msg_length),
 								SCHAR * msg,
@@ -4074,7 +4074,7 @@ STATUS API_ROUTINE GDS_RECEIVE2(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
+	JRD_REQ request;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -4098,7 +4098,7 @@ STATUS API_ROUTINE GDS_RECEIVE2(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_RECONNECT(STATUS * user_status,
 								 ATT * db_handle,
-								 TRA * tra_handle,
+								 JRD_TRA * tra_handle,
 								 SSHORT GDS_VAL(length), UCHAR * id)
 {
 /**************************************
@@ -4143,7 +4143,7 @@ STATUS API_ROUTINE GDS_RECONNECT(STATUS * user_status,
 }
 
 
-STATUS API_ROUTINE GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
+STATUS API_ROUTINE GDS_RELEASE_REQUEST(STATUS * user_status, JRD_REQ * req_handle)
 {
 /**************************************
  *
@@ -4156,7 +4156,7 @@ STATUS API_ROUTINE GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request, *ptr;
+	JRD_REQ request, *ptr;
 	DBB dbb;
 
 	GET_STATUS;
@@ -4187,7 +4187,7 @@ STATUS API_ROUTINE GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
 
 
 STATUS API_ROUTINE GDS_REQUEST_INFO(STATUS * user_status,
-									REQ * req_handle,
+									JRD_REQ * req_handle,
 									SSHORT GDS_VAL(level),
 									SSHORT GDS_VAL(item_length),
 									SCHAR * items,
@@ -4205,7 +4205,7 @@ STATUS API_ROUTINE GDS_REQUEST_INFO(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
+	JRD_REQ request;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -4268,7 +4268,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
 
 
 STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
-										  TRA * tra_handle)
+										  JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -4281,7 +4281,7 @@ STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 
 	GET_STATUS;
 	transaction = *tra_handle;
@@ -4300,7 +4300,7 @@ STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
 }
 
 
-STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
+STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -4313,7 +4313,7 @@ STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 	CLEAN clean;
 
 	GET_STATUS;
@@ -4397,7 +4397,7 @@ else
 
 
 STATUS API_ROUTINE GDS_SEND(STATUS * user_status,
-							REQ * req_handle,
+							JRD_REQ * req_handle,
 							USHORT GDS_VAL(msg_type),
 							USHORT GDS_VAL(msg_length),
 							SCHAR * msg, SSHORT GDS_VAL(level))
@@ -4413,7 +4413,7 @@ STATUS API_ROUTINE GDS_SEND(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
+	JRD_REQ request;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -4667,8 +4667,8 @@ STATUS API_ROUTINE GDS_SERVICE_START(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
-									  REQ * req_handle,
-									  TRA * tra_handle,
+									  JRD_REQ * req_handle,
+									  JRD_TRA * tra_handle,
 									  USHORT GDS_VAL(msg_type),
 									  USHORT GDS_VAL(msg_length),
 									  SCHAR * msg, SSHORT GDS_VAL(level))
@@ -4684,8 +4684,8 @@ STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
-	TRA transaction;
+	JRD_REQ request;
+	JRD_TRA transaction;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -4709,8 +4709,8 @@ STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_START(STATUS * user_status,
-							 register REQ * req_handle,
-							 register TRA * tra_handle, SSHORT GDS_VAL(level))
+							 register JRD_REQ * req_handle,
+							 register JRD_TRA * tra_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *
@@ -4723,8 +4723,8 @@ STATUS API_ROUTINE GDS_START(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
-	TRA transaction;
+	JRD_REQ request;
+	JRD_TRA transaction;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -4744,7 +4744,7 @@ STATUS API_ROUTINE GDS_START(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_START_MULTIPLE(STATUS * user_status,
-									  TRA * tra_handle,
+									  JRD_TRA * tra_handle,
 									  USHORT GDS_VAL(count), TEB * vector)
 {
 /**************************************
@@ -4758,7 +4758,7 @@ STATUS API_ROUTINE GDS_START_MULTIPLE(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status, temp[ISC_STATUS_LENGTH], *s;
-	TRA transaction, sub, *ptr;
+	JRD_TRA transaction, sub, *ptr;
 	DBB database;
 	USHORT n;
 
@@ -4848,7 +4848,7 @@ STATUS API_ROUTINE GDS_START_MULTIPLE(STATUS * user_status,
 
 
 STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(STATUS * user_status,
-												TRA * tra_handle,
+												JRD_TRA * tra_handle,
 												SSHORT count, ...)
 {
 /**************************************
@@ -4899,7 +4899,7 @@ STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(STATUS * user_status,
 
 STATUS API_ROUTINE GDS_TRANSACT_REQUEST(STATUS * user_status,
 										ATT * db_handle,
-										TRA * tra_handle,
+										JRD_TRA * tra_handle,
 										USHORT blr_length,
 										SCHAR * blr,
 										USHORT in_msg_length,
@@ -4919,7 +4919,7 @@ STATUS API_ROUTINE GDS_TRANSACT_REQUEST(STATUS * user_status,
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	ATT dbb;
-	TRA transaction;
+	JRD_TRA transaction;
 
 	GET_STATUS;
 	dbb = *db_handle;
@@ -4943,7 +4943,7 @@ STATUS API_ROUTINE GDS_TRANSACT_REQUEST(STATUS * user_status,
 
 
 STATUS API_ROUTINE gds__transaction_cleanup(STATUS * user_status,
-											TRA * tra_handle,
+											JRD_TRA * tra_handle,
 											void (*routine) (), SLONG arg)
 {
 /**************************************
@@ -4957,7 +4957,7 @@ STATUS API_ROUTINE gds__transaction_cleanup(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status, *s;
-	TRA transaction;
+	JRD_TRA transaction;
 	CLEAN clean;
 
 	GET_STATUS;
@@ -5013,7 +5013,7 @@ STATUS API_ROUTINE gds__transaction_cleanup(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_TRANSACTION_INFO(STATUS * user_status,
-										TRA * tra_handle,
+										JRD_TRA * tra_handle,
 										SSHORT GDS_VAL(item_length),
 										SCHAR * items,
 										SSHORT GDS_VAL(buffer_length),
@@ -5030,7 +5030,7 @@ STATUS API_ROUTINE GDS_TRANSACTION_INFO(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction, sub;
+	JRD_TRA transaction, sub;
 	SCHAR *ptr, *end;
 	SSHORT buffer_len, item_len;
 
@@ -5083,7 +5083,7 @@ STATUS API_ROUTINE GDS_TRANSACTION_INFO(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_UNWIND(STATUS * user_status,
-							  REQ * req_handle, SSHORT GDS_VAL(level))
+							  JRD_REQ * req_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *
@@ -5097,7 +5097,7 @@ STATUS API_ROUTINE GDS_UNWIND(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	REQ request;
+	JRD_REQ request;
 
 	GET_STATUS;
 	request = *req_handle;
@@ -5472,7 +5472,7 @@ static void exit_handler(EVENT why_event)
 #endif
 
 
-static TRA find_transaction(DBB dbb, TRA transaction)
+static JRD_TRA find_transaction(DBB dbb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -5511,7 +5511,7 @@ static void free_block(void* block)
 }
 
 
-static int get_database_info(STATUS * status, TRA transaction, UCHAR ** ptr)
+static int get_database_info(STATUS * status, JRD_TRA transaction, UCHAR ** ptr)
 {
 /**************************************
  *
@@ -5649,7 +5649,7 @@ static SCHAR *get_sqlda_buffer(SCHAR * buffer,
 
 
 static STATUS get_transaction_info(STATUS * status,
-								   TRA transaction, UCHAR ** ptr)
+								   JRD_TRA transaction, UCHAR ** ptr)
 {
 /**************************************
  *
@@ -5789,7 +5789,7 @@ static void init_paths(void)
 
 static STATUS open_blob(STATUS * user_status,
 						ATT * db_handle,
-						TRA * tra_handle,
+						JRD_TRA * tra_handle,
 						BLB * blob_handle,
 						SLONG * blob_id,
 						USHORT bpb_length,
@@ -5806,7 +5806,7 @@ static STATUS open_blob(STATUS * user_status,
  *
  **************************************/
 	STATUS local[ISC_STATUS_LENGTH], *status;
-	TRA transaction;
+	JRD_TRA transaction;
 	ATT dbb;
 	BLB blob;
 	SSHORT from, to;
@@ -6040,7 +6040,7 @@ static STATUS no_entrypoint(STATUS * user_status)
 }
 
 
-static STATUS prepare(STATUS * status, TRA transaction)
+static STATUS prepare(STATUS * status, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -6053,7 +6053,7 @@ static STATUS prepare(STATUS * status, TRA transaction)
  *	for a multi-database transaction.
  *
  **************************************/
-	TRA sub;
+	JRD_TRA sub;
 	UCHAR *p, *description;
 	UCHAR tdr_buffer[1024];
 	USHORT length = 0;

@@ -60,7 +60,7 @@ typedef struct req {
     USHORT	req_context;		/* Next available context */
     USHORT	req_msg_number;		/* Next available message number */
     USHORT	req_label;		/* Next available label */
-} *REQ;
+} *QLI_REQ;
 
 #define REQ_rse_compiled	1
 #define REQ_project		2	/* Set during generation of project clause */
@@ -94,7 +94,7 @@ typedef struct ctx {
     struct ctx	*ctx_parent;		/* Parent context for map */
     struct map	*ctx_map;		/* Map items, if any */
     USHORT	ctx_context;		/* Context in request */
-} *CTX;
+} *QLI_CTX;
 
 /* Aggregate/union map block */
 
@@ -356,7 +356,7 @@ typedef struct nod {
 #define EXTERN	extern
 #endif
 
-EXTERN REQ	QLI_requests;			/* Requests in statement */
+EXTERN QLI_REQ	QLI_requests;			/* Requests in statement */
 
 #undef EXTERN
 

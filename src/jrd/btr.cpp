@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.12 2002-11-14 08:23:53 dimitr Exp $
+$Id: btr.cpp,v 1.13 2002-11-17 00:10:48 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -165,8 +165,8 @@ static void copy_key(KEY *, KEY *);
 static CONTENTS delete_node(TDBB, WIN *, BTN);
 static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(TDBB, JRD_NOD, DSC *, int *);
-static SLONG fast_load(TDBB, REL, IDX *, USHORT, SCB, float *);
-static IRT fetch_root(TDBB, WIN *, REL);
+static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, float *);
+static IRT fetch_root(TDBB, WIN *, JRD_REL);
 static BTN find_node(register BTR, KEY *, USHORT);
 static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
 static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *);
@@ -204,7 +204,7 @@ inline void quad_put(SLONG value, UCHAR * data)
 
 extern "C" {
 USHORT BTR_all(TDBB tdbb,
-			   REL relation,
+			   JRD_REL relation,
 			   IDX ** start_buffer,
 			   IDX ** csb_idx, STR * csb_idx_allocation, SLONG * idx_size)
 {
@@ -260,7 +260,7 @@ USHORT BTR_all(TDBB tdbb,
 
 
 void BTR_create(TDBB tdbb,
-				REL relation,
+				JRD_REL relation,
 				IDX * idx,
 				USHORT key_length, SCB sort_handle, float *selectivity)
 {
@@ -353,7 +353,7 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 		delete_tree(tdbb, relation_id, id, next, prior);
 	}
 }
-BOOLEAN BTR_description(REL relation,
+BOOLEAN BTR_description(JRD_REL relation,
 						register IRT root, register IDX * idx, SSHORT id)
 {
 /**************************************
@@ -910,7 +910,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, register IIB * insertion)
 
 
 IDX_E BTR_key(TDBB tdbb,
-			  REL relation, REC record, register IDX * idx, KEY * key)
+			  JRD_REL relation, REC record, register IDX * idx, KEY * key)
 {
 /**************************************
  *
@@ -950,7 +950,7 @@ IDX_E BTR_key(TDBB tdbb,
 		/* for expression indices, compute the value of the expression */
 
 		if (idx->idx_expression) {
-			REQ current_request;
+			JRD_REQ current_request;
 			current_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = idx->idx_expression_request;
 			tdbb->tdbb_request->req_rpb[0].rpb_record = record;
@@ -1041,7 +1041,7 @@ IDX_E BTR_key(TDBB tdbb,
 }
 
 
-USHORT BTR_key_length(REL relation, IDX * idx)
+USHORT BTR_key_length(JRD_REL relation, IDX * idx)
 {
 /**************************************
  *
@@ -1252,7 +1252,7 @@ BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
 #endif
 
 
-USHORT BTR_lookup(TDBB tdbb, REL relation, USHORT id, register IDX * buffer)
+USHORT BTR_lookup(TDBB tdbb, JRD_REL relation, USHORT id, register IDX * buffer)
 {
 /**************************************
  *
@@ -1369,7 +1369,7 @@ void BTR_make_key(TDBB tdbb,
 
 
 BOOLEAN BTR_next_index(TDBB tdbb,
-					   REL relation, TRA transaction, IDX * idx, WIN * window)
+					   JRD_REL relation, JRD_TRA transaction, IDX * idx, WIN * window)
 {
 /**************************************
  *
@@ -1576,7 +1576,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, register IIB * insertion)
 }
 
 
-void BTR_reserve_slot(TDBB tdbb, REL relation, TRA transaction, IDX * idx)
+void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * idx)
 {
 /**************************************
  *
@@ -1674,7 +1674,7 @@ void BTR_reserve_slot(TDBB tdbb, REL relation, TRA transaction, IDX * idx)
 }
 
 
-float BTR_selectivity(TDBB tdbb, REL relation, USHORT id)
+float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -2566,7 +2566,7 @@ static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, int *missing)
 	return temp;
 }
 static SLONG fast_load(TDBB tdbb,
-					   REL relation,
+					   JRD_REL relation,
 					   IDX * idx,
 					   USHORT key_length, SCB sort_handle, float *selectivity)
 {
@@ -2998,7 +2998,7 @@ static SLONG fast_load(TDBB tdbb,
 }
 
 
-static IRT fetch_root(TDBB tdbb, WIN * window, REL relation)
+static IRT fetch_root(TDBB tdbb, WIN * window, JRD_REL relation)
 {
 /**************************************
  *

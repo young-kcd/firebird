@@ -139,7 +139,7 @@ typedef struct rel {
     USHORT	rel_flags;		/* Misc flags */
     USHORT	rel_system_flag;	/* System flag */
     USHORT	rel_max_field_pos;	/* highest used field position */
-} *REL;
+} *QLI_REL;
 
 #define REL_fields	1		/* Fields have been fetched */
 #define REL_system	2		/* Relation is system relation */

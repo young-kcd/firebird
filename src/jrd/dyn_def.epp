@@ -424,7 +424,7 @@ void DYN_define_constraint(GBL		gbl,
 			not_null = FALSE;
 			DYN_terminate(RFR.RDB$FIELD_NAME, sizeof(RFR.RDB$FIELD_NAME));
 			strcpy(null_field_name, RFR.RDB$FIELD_NAME);
-			EXE_unwind(tdbb, (REQ)request);
+			EXE_unwind(tdbb, (JRD_REQ)request);
 			break;
 		}
 
@@ -490,7 +490,7 @@ void DYN_define_constraint(GBL		gbl,
 					found = FALSE;
 				}
 				if (found) {
-					EXE_unwind(tdbb,(REQ)request);
+					EXE_unwind(tdbb,(JRD_REQ)request);
 					break;
 				}
 				list_ptr = field_list;
@@ -2036,7 +2036,7 @@ void DYN_define_index(GBL		gbl,
 					if (list_ptr)
 						found = FALSE;
 					if (found) {
-						EXE_unwind(tdbb,(REQ)request);
+						EXE_unwind(tdbb,(JRD_REQ)request);
 						break;
 					}
 					list_ptr = field_list;
@@ -4038,7 +4038,7 @@ void DYN_define_trigger(GBL		gbl,
 /* the sed script dyn_def.sed adds the foll. lines of code to the
    dyn_def.c file.
    if (ignore_perm)
-       ((REQ)request)->req_flags |= req_ignore_perm;
+       ((JRD_REQ)request)->req_flags |= req_ignore_perm;
    after the request is compiled and before the request is sent.
    It makes the current request (to define the trigger) go through
    without checking any permissions lower in the engine */
@@ -4047,7 +4047,7 @@ void DYN_define_trigger(GBL		gbl,
 	END_STORE;
 
 	if (ignore_perm)
-		((REQ) request)->req_flags &= ~req_ignore_perm;
+		((JRD_REQ) request)->req_flags &= ~req_ignore_perm;
 
 	if (!DYN_REQUEST(drq_s_triggers)) {
 		DYN_REQUEST(drq_s_triggers) = request;
@@ -4420,8 +4420,8 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 		{
 			request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
 		}
-		EXE_start(tdbb, (REQ) request, gbl->gbl_transaction);
-		EXE_receive(tdbb, (REQ) request, 0, 32, (UCHAR*)name);
+		EXE_start(tdbb, (JRD_REQ) request, gbl->gbl_transaction);
+		EXE_receive(tdbb, (JRD_REQ) request, 0, 32, (UCHAR*)name);
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}

@@ -51,7 +51,7 @@
 
 typedef struct gbl
 {
-	TRA gbl_transaction;
+	JRD_TRA gbl_transaction;
 } *GBL;
 
 typedef struct dyn_fld {

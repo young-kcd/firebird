@@ -161,7 +161,7 @@ const TEXT* DLL_EXPORT ERR_cstring(const TEXT* in_string)
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
-									REL		relation,
+									JRD_REL		relation,
 									USHORT index_number)
 {
 /**************************************

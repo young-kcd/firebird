@@ -97,10 +97,10 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse);
 static SLONG create_process(void);
 static void delete_event(EVNT);
 static void delete_process(SLONG);
-static void delete_request(REQ);
+static void delete_request(JRD_REQ);
 static void delete_session(SLONG);
 static AST_TYPE deliver(void);
-static void deliver_request(REQ);
+static void deliver_request(JRD_REQ);
 static void exit_handler(void *);
 #ifdef EVENTS_WILDCARDING
 static EVNT	find_event(USHORT, TEXT *, EVNT, BOOLEAN, EVNT);
@@ -118,7 +118,7 @@ static void probe_processes(void);
 static void punt(TEXT *);
 static void release(void);
 static void remove_que(SRQ *);
-static BOOLEAN request_completed(REQ);
+static BOOLEAN request_completed(JRD_REQ);
 static STATUS return_ok(STATUS *);
 static void THREAD_ROUTINE watcher_thread(void *);
 
@@ -214,7 +214,7 @@ void EVENT_cancel(SLONG request_id)
  *
  **************************************/
 	PRB process;
-	REQ request;
+	JRD_REQ request;
 	SES session;
 	SRQ *que, *que2;
 
@@ -228,7 +228,7 @@ void EVENT_cancel(SLONG request_id)
 	QUE_LOOP(process->prb_sessions, que2) {
 		session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 		QUE_LOOP(session->ses_requests, que) {
-			request = (REQ) ((UCHAR *) que - OFFSET(REQ, req_requests));
+			request = (JRD_REQ) ((UCHAR *) que - OFFSET(JRD_REQ, req_requests));
 			if (request->req_request_id == request_id) {
 				delete_request(request);
 				RELEASE;
@@ -399,7 +399,7 @@ int EVENT_post(STATUS * status_vector,
  *	Post an event.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	SRQ *que;
 	PRB process;
 	EVNT event, parent;
@@ -431,7 +431,7 @@ int EVENT_post(STATUS * status_vector,
 		QUE_LOOP(event->evnt_interests, que) {
 			interest = (RINT) ((UCHAR *) que - OFFSET(RINT, rint_interests));
 			if (interest->rint_request) {
-				request = (REQ) ABS_PTR(interest->rint_request);
+				request = (JRD_REQ) ABS_PTR(interest->rint_request);
 
 #ifdef EVENTS_WILDCARDING
 				/* Allocate and fill the APE block, link it to the interest */
@@ -546,7 +546,7 @@ SLONG EVENT_que(STATUS * status_vector,
 	UCHAR *p, *end, *find_end;
 	USHORT count, flag, len;
 	SES session;
-	REQ request;
+	JRD_REQ request;
 	EVNT event, parent;
 	RINT interest, prior;
 	PTR *ptr, *ptr2;
@@ -555,7 +555,7 @@ SLONG EVENT_que(STATUS * status_vector,
 /* Allocate request block */
 
 	ACQUIRE;
-	request = (REQ) alloc_global(type_req, (SLONG) sizeof(struct req), FALSE);
+	request = (JRD_REQ) alloc_global(type_req, (SLONG) sizeof(struct req), FALSE);
 	session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;
@@ -574,7 +574,7 @@ SLONG EVENT_que(STATUS * status_vector,
 	if (!(parent = find_event(string_length, string, 0))) {
 #endif /* EVENTS_WILDCARDING */
 		parent = make_event(string_length, string, 0);
-		request = (REQ) ABS_PTR(request_offset);
+		request = (JRD_REQ) ABS_PTR(request_offset);
 		session = (SES) ABS_PTR(session_id);
 	}
 
@@ -608,7 +608,7 @@ SLONG EVENT_que(STATUS * status_vector,
 				make_event(len, reinterpret_cast < char *>(p), parent_offset);
 			parent = (EVNT) ABS_PTR(parent_offset);
 			session = (SES) ABS_PTR(session_id);
-			request = (REQ) ABS_PTR(request_offset);
+			request = (JRD_REQ) ABS_PTR(request_offset);
 			ptr = (PTR *) ABS_PTR(ptr_offset);
 		}
 		p += count;
@@ -631,7 +631,7 @@ SLONG EVENT_que(STATUS * status_vector,
 			interest->rint_event = event_offset;
 
 			parent = (EVNT) ABS_PTR(parent_offset);
-			request = (REQ) ABS_PTR(request_offset);
+			request = (JRD_REQ) ABS_PTR(request_offset);
 			ptr = (PTR *) ABS_PTR(ptr_offset);
 			session = (SES) ABS_PTR(session_id);
 		}
@@ -1001,7 +1001,7 @@ static void delete_process(SLONG process_offset)
 }
 
 
-static void delete_request(REQ request)
+static void delete_request(JRD_REQ request)
 {
 /**************************************
  *
@@ -1066,7 +1066,7 @@ static void delete_session(SLONG session_id)
  **************************************/
 	SES session;
 	SRQ requests;
-	REQ request;
+	JRD_REQ request;
 	EVNT event;
 	RINT interest;
 #ifdef MULTI_THREAD
@@ -1104,7 +1104,7 @@ static void delete_session(SLONG session_id)
 	while (!QUE_EMPTY(session->ses_requests)) {
 		requests = session->ses_requests;
 		request =
-			(REQ) ((UCHAR *) QUE_NEXT(requests) - OFFSET(REQ, req_requests));
+			(JRD_REQ) ((UCHAR *) QUE_NEXT(requests) - OFFSET(JRD_REQ, req_requests));
 		delete_request(request);
 	}
 
@@ -1138,7 +1138,7 @@ static AST_TYPE deliver(void)
  *
  **************************************/
 	PRB process;
-	REQ request;
+	JRD_REQ request;
 	SES session;
 	SRQ *que, *que2;
 	USHORT flag;
@@ -1163,7 +1163,7 @@ static AST_TYPE deliver(void)
 		for (flag = TRUE; flag;) {
 			flag = FALSE;
 			QUE_LOOP(session->ses_requests, que) {
-				request = (REQ) ((UCHAR *) que - OFFSET(REQ, req_requests));
+				request = (JRD_REQ) ((UCHAR *) que - OFFSET(JRD_REQ, req_requests));
 				if (request_completed(request)) {
 					deliver_request(request);
 					process = (PRB) ABS_PTR(EVENT_process_offset);
@@ -1183,7 +1183,7 @@ static AST_TYPE deliver(void)
 }
 
 
-static void deliver_request(REQ request)
+static void deliver_request(JRD_REQ request)
 {
 /**************************************
  *
@@ -1749,7 +1749,7 @@ static void remove_que(SRQ * node)
 }
 
 
-static BOOLEAN request_completed(REQ request)
+static BOOLEAN request_completed(JRD_REQ request)
 {
 /**************************************
  *

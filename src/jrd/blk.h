@@ -40,7 +40,7 @@ BLKDEF(type_pgc, pgc, 0)
 BLKDEF(type_rel, rel, 0)
 BLKDEF(type_fmt, fmt, sizeof(((FMT) 0)->fmt_desc[0]))   /* Done */
 BLKDEF(type_vcl, vcl, sizeof(((VCL) 0)->vcl_long[0]))   /* Done */
-BLKDEF(type_req, req, sizeof(((REQ) 0)->req_rpb[0]))    /* Done */
+BLKDEF(type_req, req, sizeof(((JRD_REQ) 0)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, tra, 1)
 BLKDEF(type_nod, nod, sizeof(((JRD_NOD) 0)->nod_arg[0]))    /* Done */
 BLKDEF(type_csb, Csb, sizeof(((CSB) 0)->csb_rpt[0]))    /* Done */

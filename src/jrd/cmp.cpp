@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.21 2002-11-16 18:48:00 skidder Exp $
+$Id: cmp.cpp,v 1.22 2002-11-17 00:10:48 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -114,7 +114,7 @@ rel_MAX} RIDS;
   ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
-#define REQ_TAIL		sizeof (((REQ) 0)->req_rpb[0])
+#define REQ_TAIL		sizeof (((JRD_REQ) 0)->req_rpb[0])
 #define MAP_LENGTH		256
 
 /* RITTER - changed HP10 to HPUX */
@@ -136,26 +136,26 @@ static UCHAR *alloc_map(TDBB, CSB *, USHORT);
 static JRD_NOD catenate_nodes(TDBB, LLS);
 static JRD_NOD copy(TDBB, CSB *, JRD_NOD, UCHAR *, USHORT, USHORT);
 static void expand_view_nodes(TDBB, CSB, USHORT, LLS *, NOD_T);
-static void ignore_dbkey(TDBB, CSB, RSE, REL);
+static void ignore_dbkey(TDBB, CSB, RSE, JRD_REL);
 static JRD_NOD make_defaults(TDBB, CSB *, USHORT, JRD_NOD);
 static JRD_NOD make_validation(TDBB, CSB *, USHORT);
-static JRD_NOD pass1(TDBB, CSB *, JRD_NOD, REL, USHORT, BOOLEAN);
+static JRD_NOD pass1(TDBB, CSB *, JRD_NOD, JRD_REL, USHORT, BOOLEAN);
 static void pass1_erase(TDBB, CSB *, JRD_NOD);
 static JRD_NOD pass1_expand_view(TDBB, CSB, USHORT, USHORT, USHORT);
 static void pass1_modify(TDBB, CSB *, JRD_NOD);
-static RSE pass1_rse(TDBB, CSB *, RSE, REL, USHORT);
-static void pass1_source(TDBB, CSB *, RSE, JRD_NOD, JRD_NOD *, LLS *, REL, USHORT);
+static RSE pass1_rse(TDBB, CSB *, RSE, JRD_REL, USHORT);
+static void pass1_source(TDBB, CSB *, RSE, JRD_NOD, JRD_NOD *, LLS *, JRD_REL, USHORT);
 static JRD_NOD pass1_store(TDBB, CSB *, JRD_NOD);
-static JRD_NOD pass1_update(TDBB, CSB *, REL, TRIG_VEC, USHORT, USHORT, USHORT, REL,
+static JRD_NOD pass1_update(TDBB, CSB *, JRD_REL, TRIG_VEC, USHORT, USHORT, USHORT, JRD_REL,
 						USHORT);
 static JRD_NOD pass2(TDBB, register CSB, register JRD_NOD, JRD_NOD);
 static void pass2_rse(TDBB, CSB, RSE);
 static JRD_NOD pass2_union(TDBB, CSB, JRD_NOD);
 static void plan_check(CSB, RSE);
 static void plan_set(CSB, RSE, JRD_NOD);
-static void post_procedure_access(TDBB, CSB, PRC);
+static void post_procedure_access(TDBB, CSB, JRD_PRC);
 static RSB post_rse(TDBB, CSB, RSE);
-static void	post_trigger_access(TDBB, CSB, REL, TRIG_VEC, REL);
+static void	post_trigger_access(TDBB, CSB, JRD_REL, TRIG_VEC, JRD_REL);
 static void process_map(TDBB, CSB, JRD_NOD, FMT *);
 static BOOLEAN stream_in_rse(USHORT, RSE);
 static SSHORT strcmp_space(TEXT *, TEXT *);
@@ -165,7 +165,7 @@ static USHORT base_stream(CSB, JRD_NOD *, BOOLEAN);
 #endif
 
 
-int DLL_EXPORT CMP_clone_active(REQ request)
+int DLL_EXPORT CMP_clone_active(JRD_REQ request)
 {
 /**************************************
  *
@@ -188,7 +188,7 @@ int DLL_EXPORT CMP_clone_active(REQ request)
 	if ( (vector = request->req_sub_requests) )
 		for (sub_req = vector->begin(), end = vector->end();
 			 sub_req < end; sub_req++)
-			if (*sub_req && ((REQ)(*sub_req))->req_flags & req_in_use)
+			if (*sub_req && ((JRD_REQ)(*sub_req))->req_flags & req_in_use)
 				return TRUE;
 
 	return FALSE;
@@ -225,8 +225,8 @@ JRD_NOD DLL_EXPORT CMP_clone_node(TDBB tdbb, CSB csb, JRD_NOD node)
 }
 
 
-REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
-								 REQ request, USHORT level, BOOLEAN validate)
+JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
+								 JRD_REQ request, USHORT level, BOOLEAN validate)
 {
 /**************************************
  *
@@ -239,13 +239,13 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
  *	If the incarnation doesn't exist, clone the request.
  *
  **************************************/
-	REQ clone;
+	JRD_REQ clone;
 	VEC vector;
 	RPB *rpb1, *rpb2, *end;
 	USHORT n;
 	ACC access;
 	SCL class_;
-	PRC procedure;
+	JRD_PRC procedure;
 	TEXT *prc_sec_name;
 
 	DEV_BLKCHK(request, type_req);
@@ -259,7 +259,7 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 
 	if ((vector = request->req_sub_requests) &&
 		level < vector->count() &&
-		(clone = (REQ) (*vector)[level])) return clone;
+		(clone = (JRD_REQ) (*vector)[level])) return clone;
 
 /* We need to clone the request -- find someplace to put it */
 
@@ -322,7 +322,7 @@ REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 }
 
 
-REQ DLL_EXPORT CMP_compile(USHORT blr_length,
+JRD_REQ DLL_EXPORT CMP_compile(USHORT blr_length,
 						   UCHAR * blr, USHORT internal_flag)
 {
 /**************************************
@@ -346,7 +346,7 @@ REQ DLL_EXPORT CMP_compile(USHORT blr_length,
 }
 
 
-REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
+JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -359,7 +359,7 @@ REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
  *
  **************************************/
 
-	REQ request = 0;
+	JRD_REQ request = 0;
 	ACC access;
 
 	SET_TDBB(tdbb);
@@ -434,7 +434,7 @@ csb_repeat* DLL_EXPORT CMP_csb_element(CSB* csb, USHORT element)
 }
 
 
-void DLL_EXPORT CMP_expunge_transaction(TRA transaction)
+void DLL_EXPORT CMP_expunge_transaction(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -448,7 +448,7 @@ void DLL_EXPORT CMP_expunge_transaction(TRA transaction)
  *
  **************************************/
 	VEC vector;
-	REQ request;
+	JRD_REQ request;
 	vec::iterator sub, end;
 
 	DEV_BLKCHK(transaction, type_tra);
@@ -460,13 +460,13 @@ void DLL_EXPORT CMP_expunge_transaction(TRA transaction)
 		if ( (vector = request->req_sub_requests) )
 			for (sub = vector->begin(), end = vector->end();
 				 sub < end; sub++)
-				if (*sub && ((REQ)(*sub))->req_transaction == transaction)
-					((REQ)(*sub))->req_transaction = NULL;
+				if (*sub && ((JRD_REQ)(*sub))->req_transaction == transaction)
+					((JRD_REQ)(*sub))->req_transaction = NULL;
 	}
 }
 
 
-REQ DLL_EXPORT CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
+JRD_REQ DLL_EXPORT CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 {
 /**************************************
  *
@@ -480,7 +480,7 @@ REQ DLL_EXPORT CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
  *
  **************************************/
 	DBB dbb;
-	REQ request, clone;
+	JRD_REQ request, clone;
 	USHORT n;
 
 	SET_TDBB(tdbb);
@@ -492,8 +492,8 @@ REQ DLL_EXPORT CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
    there're nothing to do */
 
 	THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
-	if ((which == IRQ_REQUESTS && !(request = (REQ) REQUEST(id))) ||
-		(which == DYN_REQUESTS && !(request = (REQ) DYN_REQUEST(id))) ||
+	if ((which == IRQ_REQUESTS && !(request = (JRD_REQ) REQUEST(id))) ||
+		(which == DYN_REQUESTS && !(request = (JRD_REQ) DYN_REQUEST(id))) ||
 		!(request->req_flags & (req_active | req_reserved))) {
 		if (request)
 			request->req_flags |= req_reserved;
@@ -787,7 +787,7 @@ void DLL_EXPORT CMP_get_desc(
 	case nod_scalar:
 		{
 			JRD_NOD sub;
-			REL relation;
+			JRD_REL relation;
 			USHORT id;
 			FLD field;
 			ARR array;
@@ -1617,7 +1617,7 @@ void DLL_EXPORT CMP_get_desc(
 }
 
 
-IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, REL relation, USHORT id)
+IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -1693,7 +1693,7 @@ SLONG DLL_EXPORT CMP_impure(CSB csb, USHORT size)
 }
 
 
-REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
+JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 {
 /**************************************
  *
@@ -1706,7 +1706,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
  *
  **************************************/
 
-	REQ request = 0;
+	JRD_REQ request = 0;
 	LLS temp;
 	vec::iterator ptr;
 
@@ -1714,7 +1714,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 
 	SET_TDBB(tdbb);
 
-	REQ old_request = tdbb->tdbb_request;
+	JRD_REQ old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = NULL;
 
 	try {
@@ -1766,13 +1766,13 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 		{
 		case rsc_relation:
 			{
-				REL relation = resource->rsc_rel;
+				JRD_REL relation = resource->rsc_rel;
 				MET_post_existence(tdbb, relation);
 				break;
 			}
 		case rsc_index:
 			{
-				REL relation = resource->rsc_rel;
+				JRD_REL relation = resource->rsc_rel;
 				IDL index =
 					CMP_get_index_lock(tdbb, relation, resource->rsc_id);
 				if (index)
@@ -1790,7 +1790,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 			}
 		case rsc_procedure:
 			{
-				PRC procedure = resource->rsc_prc;
+				JRD_PRC procedure = resource->rsc_prc;
 				procedure->prc_use_count++;
 #ifdef DEBUG_PROCS
 				{
@@ -1882,7 +1882,7 @@ REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 							   CSB			csb,
 							   TEXT*		security_name,
-							   REL			view,
+							   JRD_REL			view,
 							   CONST TEXT*	trig,
 							   CONST TEXT*	proc,
 							   USHORT		mask,
@@ -2002,10 +2002,10 @@ void DLL_EXPORT CMP_post_resource(
 	switch (type) {
 	case rsc_relation:
 	case rsc_index:
-		resource->rsc_rel = (REL) rel_or_prc;
+		resource->rsc_rel = (JRD_REL) rel_or_prc;
 		break;
 	case rsc_procedure:
-		resource->rsc_prc = (PRC) rel_or_prc;
+		resource->rsc_prc = (JRD_PRC) rel_or_prc;
 		break;
 	default:
 		BUGCHECK(220);			/* msg 220 unknown resource */
@@ -2046,7 +2046,7 @@ void DLL_EXPORT CMP_release_resource(
 }
 
 
-void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, PRC procedure)
+void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 {
 /*********************************************
  *
@@ -2093,7 +2093,7 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, PRC procedure)
 }
 
 
-void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
+void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 {
 /**************************************
  *
@@ -2105,9 +2105,9 @@ void DLL_EXPORT CMP_release(TDBB tdbb, REQ request)
  *	Release an unneeded and unloved request.
  *
  **************************************/
-	REQ *next;
+	JRD_REQ *next;
 	IDL index;
-	REL relation;
+	JRD_REL relation;
 	RSC resource;
 	ATT attachment;
 
@@ -2182,9 +2182,9 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
  *	release any data structures.
  *
  **************************************/
-	REL relation;
+	JRD_REL relation;
 	vec::iterator ptr, end;
-	PRC procedure;
+	JRD_PRC procedure;
 	vec::iterator pptr, pend;
 	IDL index;
 	VEC vector;
@@ -2203,7 +2203,7 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
    all existence locks that might have been taken
 */
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
-		if ( (relation = (REL)*ptr) ) {
+		if ( (relation = (JRD_REL)*ptr) ) {
 			if (relation->rel_existence_lock) {
 				LCK_release(tdbb, relation->rel_existence_lock);
 				relation->rel_use_count = 0;
@@ -2222,7 +2222,7 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
    might have been taken
 */
 	for (pptr = vector->begin(), pend = vector->end(); pptr < pend; pptr++)
-		if ( (procedure = (PRC)*pptr) ) {
+		if ( (procedure = (JRD_PRC)*pptr) ) {
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 				procedure->prc_use_count = 0;
@@ -2439,7 +2439,7 @@ static JRD_NOD copy(
 				field_id = (USHORT) input->nod_arg[e_fld_id];
 			stream = (USHORT) input->nod_arg[e_fld_stream];
 			if (remap_fld) {
-				REL relation;
+				JRD_REL relation;
 				FLD field;
 
 				relation = (*csb)->csb_rpt[stream].csb_relation;
@@ -2573,8 +2573,8 @@ static JRD_NOD copy(
 			node->nod_arg[e_rel_view] = input->nod_arg[e_rel_view];
 
 			element = CMP_csb_element(csb, new_stream);
-			element->csb_relation = (REL) node->nod_arg[e_rel_relation];
-			element->csb_view = (REL) node->nod_arg[e_rel_view];
+			element->csb_relation = (JRD_REL) node->nod_arg[e_rel_relation];
+			element->csb_view = (JRD_REL) node->nod_arg[e_rel_view];
 			element->csb_view_stream = remap[0];
 
 	/** If there was a parent stream no., then copy the flags 
@@ -2776,7 +2776,7 @@ static void expand_view_nodes(
 }
 
 
-static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, REL view)
+static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, JRD_REL view)
 {
 /**************************************
  *
@@ -2802,7 +2802,7 @@ static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, REL view)
 		if (node->nod_type == nod_relation) {
 			USHORT stream;
 			csb_repeat *tail;
-			REL relation;
+			JRD_REL relation;
 
 			stream = (USHORT) node->nod_arg[e_rel_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
@@ -2845,7 +2845,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB * csb, USHORT stream, JRD_NOD statem
 	LLS stack;
 	VEC vector;
 	vec::iterator ptr1, end;
-	REL relation;
+	JRD_REL relation;
 	USHORT field_id;
 	UCHAR *map, local_map[MAP_LENGTH];
 
@@ -2909,7 +2909,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB * csb, USHORT stream)
 	LLS stack;
 	VEC vector;
 	vec::iterator ptr1, end;
-	REL relation;
+	JRD_REL relation;
 	USHORT field_id;
 	UCHAR *map, local_map[MAP_LENGTH];
 
@@ -2968,7 +2968,7 @@ static JRD_NOD pass1(
 				 TDBB tdbb,
 				 CSB * csb,
 				 JRD_NOD node,
-				 REL view, USHORT view_stream, BOOLEAN validate_expr)
+				 JRD_REL view, USHORT view_stream, BOOLEAN validate_expr)
 {
 /**************************************
  *
@@ -2993,7 +2993,7 @@ static JRD_NOD pass1(
 	JRD_NOD sub, *ptr, *end;
 	USHORT stream;
 	csb_repeat *tail;
-	PRC procedure;
+	JRD_PRC procedure;
 
 	SET_TDBB(tdbb);
 
@@ -3012,7 +3012,7 @@ static JRD_NOD pass1(
 	case nod_field:
 		{
 			LLS stack;
-			REL relation;
+			JRD_REL relation;
 			FLD field;
 			UCHAR *map, local_map[MAP_LENGTH];
 
@@ -3190,7 +3190,7 @@ static JRD_NOD pass1(
 	*/
 
 	case nod_exec_proc:
-		procedure = (PRC) node->nod_arg[e_esp_procedure];
+		procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
 		post_procedure_access(tdbb, *csb, procedure);
 		CMP_post_resource(tdbb, &(*csb)->csb_resources, (BLK) procedure,
 						  rsc_procedure, procedure->prc_id);
@@ -3334,7 +3334,7 @@ static void pass1_erase(TDBB tdbb, CSB * csb, JRD_NOD node)
  *	is kosher, fix it up.
  *
  **************************************/
-	REL relation, parent, view;
+	JRD_REL relation, parent, view;
 	JRD_NOD source, view_node;
 	UCHAR *map;
 	USHORT stream, new_stream, parent_stream = 0;
@@ -3447,7 +3447,7 @@ static JRD_NOD pass1_expand_view(
  *
  **************************************/
 	JRD_NOD assign, node;
-	REL relation;
+	JRD_REL relation;
 	VEC fields;
 	vec::iterator ptr, end;
 	FLD field;
@@ -3509,7 +3509,7 @@ static void pass1_modify(TDBB tdbb, CSB * csb, JRD_NOD node)
  *
  **************************************/
 	JRD_NOD source, view_node;
-	REL relation, parent, view;
+	JRD_REL relation, parent, view;
 	UCHAR *map;
 	USHORT view_stream, stream, new_stream, parent_stream = 0;
 	TRIG_VEC trigger;
@@ -3622,7 +3622,7 @@ static void pass1_modify(TDBB tdbb, CSB * csb, JRD_NOD node)
 
 static RSE pass1_rse(
 					 TDBB tdbb,
-					 CSB * csb, RSE rse, REL view, USHORT view_stream)
+					 CSB * csb, RSE rse, JRD_REL view, USHORT view_stream)
 {
 /**************************************
  *
@@ -3752,7 +3752,7 @@ static void pass1_source(
 						 RSE rse,
 						 JRD_NOD source,
 						 JRD_NOD * boolean,
-						 LLS * stack, REL parent_view, USHORT view_stream)
+						 LLS * stack, JRD_REL parent_view, USHORT view_stream)
 {
 /**************************************
  *
@@ -3768,7 +3768,7 @@ static void pass1_source(
 	DBB dbb;
 	RSE view_rse;
 	JRD_NOD *arg, *end, node;
-	REL view;
+	JRD_REL view;
 	UCHAR *map;
 	USHORT stream;
 	csb_repeat *element;
@@ -3840,7 +3840,7 @@ static void pass1_source(
 /* Special case procedure */
 
 	if (source->nod_type == nod_procedure) {
-		PRC procedure;
+		JRD_PRC procedure;
 
 		pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
 		procedure = MET_lookup_procedure_id(tdbb, 
@@ -3870,7 +3870,7 @@ static void pass1_source(
    prepare to check protection of relation when a field in the stream of the 
    relation is accessed */
 
-	view = (REL) source->nod_arg[e_rel_relation];
+	view = (JRD_REL) source->nod_arg[e_rel_relation];
 	CMP_post_resource(tdbb, &(*csb)->csb_resources, (BLK) view, rsc_relation,
 					  view->rel_id);
 	source->nod_arg[e_rel_view] = (JRD_NOD) parent_view;
@@ -4003,7 +4003,7 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB * csb, JRD_NOD node)
  *
  **************************************/
 	JRD_NOD source, original, view_node, very_orig;
-	REL relation, parent, view;
+	JRD_REL relation, parent, view;
 	UCHAR *map;
 	USHORT stream, new_stream, trigger_seen, parent_stream = 0;
 	TRIG_VEC trigger;
@@ -4102,10 +4102,10 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB * csb, JRD_NOD node)
 static JRD_NOD pass1_update(
 						TDBB tdbb,
 						CSB * csb,
-						REL relation,
+						JRD_REL relation,
 						TRIG_VEC trigger,
 						USHORT stream,
-USHORT update_stream, USHORT priv, REL view, USHORT view_stream)
+USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
 {
 /**************************************
  *
@@ -4870,7 +4870,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 	JRD_NOD plan_relation_node, *ptr, *end;
 	USHORT stream;
 	UCHAR *map, *map_base, *duplicate_map;
-	REL relation, plan_relation, view_relation, duplicate_relation;
+	JRD_REL relation, plan_relation, view_relation, duplicate_relation;
 	STR alias, plan_alias;
 	TEXT *p;
 	csb_repeat *tail, *duplicate_tail;
@@ -4890,7 +4890,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 		return;
 
 	plan_relation_node = plan->nod_arg[e_retrieve_relation];
-	plan_relation = (REL) plan_relation_node->nod_arg[e_rel_relation];
+	plan_relation = (JRD_REL) plan_relation_node->nod_arg[e_rel_relation];
 	plan_alias = (STR) plan_relation_node->nod_arg[e_rel_alias];
 
 /* find the tail for the relation specified in the rse */
@@ -5048,7 +5048,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 }
 
 
-static void post_procedure_access(TDBB tdbb, CSB csb, PRC procedure)
+static void post_procedure_access(TDBB tdbb, CSB csb, JRD_PRC procedure)
 {
 /**************************************
  *
@@ -5159,7 +5159,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 }
 
 
-static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, TRIG_VEC triggers, REL view)
+static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG_VEC triggers, JRD_REL view)
 {
 /**************************************
  *
@@ -5209,7 +5209,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, REL owner_relation, TRIG_VEC
 			be checked only at DDL time. If we discover another thing in the fluffy SQL
 			standard, we can revisit those lines.
 			read_only = TRUE;
-			for (access = ((REQ)(*ptr))->req_access; access;
+			for (access = ((JRD_REQ)(*ptr))->req_access; access;
 				 access = access->acc_next) if (access->acc_mask & ~SCL_read) {
 					read_only = FALSE;
 					break;

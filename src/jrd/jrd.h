@@ -497,7 +497,7 @@ class prc : public pool_alloc_rpt<SCHAR, type_prc>
 	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 };
-typedef prc* PRC;
+typedef prc* JRD_PRC;
 
 #define PRC_scanned           1		/* Field expressions scanned */
 #define PRC_system            2
@@ -615,7 +615,7 @@ public:
 	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
-typedef rel* REL;
+typedef rel* JRD_REL;
 
 #define REL_scanned					1		/* Field expressions scanned (or being scanned) */
 #define REL_system					2

@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.11 2002-11-12 05:05:01 skywalker Exp $
+$Id: fun.epp,v 1.12 2002-11-17 00:10:49 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -131,7 +131,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	SLONG*		arg_ptr		= args;
 	LLS			blob_stack	= 0;
 	LLS			array_stack = 0;
-	REQ			request		= tdbb->tdbb_request;
+	JRD_REQ			request		= tdbb->tdbb_request;
 	USHORT		null_flag	= (USHORT)(request->req_flags & req_null);
 	fun_repeat*	return_ptr	= function->fun_rpt + function->fun_return_arg;
 	JRD_NOD*		ptr			= node->nod_arg;

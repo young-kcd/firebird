@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.21 2002-11-16 17:41:11 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.22 2002-11-17 00:10:48 hippoman Exp $ 
  */
 
 /*
@@ -220,7 +220,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register JRD_NOD node)
  *      destination node of an assignment.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 	VLU impure;
 	DSC *desc;
 	FMT format;
@@ -362,7 +362,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register JRD_NOD node)
  *      Evaluate a boolean.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	JRD_NOD *ptr;
 	DSC *desc[2];
 	USHORT value;
@@ -724,7 +724,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register JRD_NOD node)
  *      Evaluate a value expression.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 	VLU impure;
 
 	DEV_BLKCHK(node, type_nod);
@@ -1159,7 +1159,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register JRD_NOD node)
 }
 
 
-BOOLEAN DLL_EXPORT EVL_field(register REL relation,
+BOOLEAN DLL_EXPORT EVL_field(register JRD_REL relation,
 							 register REC record,
 							 register USHORT id, register DSC * desc)
 {
@@ -1335,7 +1335,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
  *              0       We processed everything now process (EOF)
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	JRD_NOD group, map, *ptr, *end, from, field;
 	DSC temp, *desc;
 	VLUX impure;
@@ -2964,7 +2964,7 @@ static DSC *binary_value(TDBB tdbb, JRD_NOD node, VLU impure)
  *      Evaluate a binary value expression.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 	DSC *desc1, *desc2;
 	double divisor;
 	ULONG flags;
@@ -3105,7 +3105,7 @@ static SSHORT compute_agg_distinct(TDBB tdbb, JRD_NOD node)
  *      the aggregate.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	DSC *desc;
 	VLUX impure;
 	ASB asb;
@@ -3191,7 +3191,7 @@ static DSC *concatenate(TDBB tdbb, JRD_NOD node, VLU impure)
  *      Concatenate two strings.  
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	DSC *value1, *value2;
 	ULONG flags;
 
@@ -3289,8 +3289,8 @@ static DSC *dbkey(TDBB tdbb, JRD_NOD node, VLU impure)
  *
  **************************************/
 	RPB *rpb;
-	REQ request;
-	REL relation;
+	JRD_REQ request;
+	JRD_REL relation;
 
 	SET_TDBB(tdbb);
 
@@ -3337,7 +3337,7 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
  *      Evaluate a statistical expression.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	DSC *desc, *value;
 	ULONG flag;
 	USHORT *invariant_flags;
@@ -3611,7 +3611,7 @@ static DSC *get_mask(TDBB tdbb, JRD_NOD node, VLU impure)
  **************************************/
 	TEXT *p1, *p2, relation_name[32], field_name[32];
 	DSC *value;
-	REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 
@@ -3691,7 +3691,7 @@ static SSHORT init_agg_distinct(TDBB tdbb, JRD_NOD node)
  *      Initialize a sort for distinct aggregate.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	ASB asb;
 	SCB handle;
 	SKD *sort_key;
@@ -3735,7 +3735,7 @@ static DSC *lock_record(TDBB tdbb, JRD_NOD node, VLU impure)
  *      pointing to the lock handle.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	DSC *desc;
 	USHORT lock_level;
 	RSB rsb;
@@ -3816,7 +3816,7 @@ static DSC *lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 	DSC *desc;
 	USHORT lock_level;
 	JRD_NOD relation_node;
-	REL relation;
+	JRD_REL relation;
 	LCK lock = NULL;
 
 	SET_TDBB(tdbb);
@@ -3839,7 +3839,7 @@ static DSC *lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 /* perform the actual lock (or unlock) */
 
 	relation_node = node->nod_arg[e_lockrel_relation];
-	relation = (REL) relation_node->nod_arg[e_rel_relation];
+	relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
 	if (!lock_level)
 		RLCK_unlock_relation(0, relation);
 	else
@@ -3894,7 +3894,7 @@ static DSC *lock_state(TDBB tdbb, JRD_NOD node, VLU impure)
  *
  **************************************/
 	DBB dbb;
-	REQ request;
+	JRD_REQ request;
 	DSC *desc;
 	SLONG id;
 
@@ -4370,7 +4370,7 @@ static DSC *record_version(TDBB tdbb, JRD_NOD node, VLU impure)
  *
  **************************************/
 	RPB *rpb;
-	REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 
@@ -4447,7 +4447,7 @@ static DSC *scalar(TDBB tdbb, JRD_NOD node, VLU impure)
 	SLONG subscripts[16], *p;
 	JRD_NOD list, *ptr, *end;
 	DSC *desc;
-	REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 

@@ -966,7 +966,7 @@ void PAG_header(TEXT * file_name, USHORT file_length)
 	DBB dbb;
 	HDR header;
 	register VCL vector;
-	register REL relation;
+	register JRD_REL relation;
 	SCHAR *temp_buffer, *temp_page;
 
 	tdbb = GET_THREAD_DATA;

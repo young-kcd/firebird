@@ -370,12 +370,12 @@ typedef struct dpb
 static BLB		check_blob(TDBB, STATUS*, BLB*);
 static STATUS	check_database(TDBB, ATT, STATUS*);
 static void		cleanup(void*);
-static STATUS	commit(STATUS*, TRA*, USHORT);
+static STATUS	commit(STATUS*, JRD_TRA*, USHORT);
 static STR		copy_string(TEXT*, USHORT);
 static BOOLEAN	drop_files(FIL);
 static STATUS	error(STATUS*);
 static void		find_intl_charset(TDBB, ATT, DPB*);
-static TRA		find_transaction(TDBB, TRA, STATUS);
+static JRD_TRA		find_transaction(TDBB, JRD_TRA, STATUS);
 static void		get_options(UCHAR *, USHORT, TEXT **, ULONG, DPB *);
 static SLONG	get_parameter(UCHAR**);
 static TEXT*	get_string_parameter(UCHAR **, TEXT **, ULONG *);
@@ -391,10 +391,10 @@ static BOOLEAN	handler_NT(SSHORT);
 
 static DBB		init(TDBB, STATUS*, TEXT*, USHORT);
 static void		make_jrn_data(UCHAR*, USHORT*, TEXT*, USHORT, TEXT*, USHORT);
-static STATUS	prepare(TDBB, TRA, STATUS*, USHORT, UCHAR*);
+static STATUS	prepare(TDBB, JRD_TRA, STATUS*, USHORT, UCHAR*);
 static void		release_attachment(ATT);
 static STATUS	return_success(TDBB);
-static BOOLEAN	rollback(TDBB, TRA, STATUS*, USHORT);
+static BOOLEAN	rollback(TDBB, JRD_TRA, STATUS*, USHORT);
 
 static void		shutdown_database(DBB, BOOLEAN);
 static void		strip_quotes(TEXT*, TEXT*);
@@ -433,7 +433,7 @@ IHNDL	internal_db_handles = 0;
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(REQ request, struct tdbb* tdbb)
+static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
 {
 	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
 	{
@@ -1613,7 +1613,7 @@ STATUS DLL_EXPORT GDS_CLOSE_BLOB(STATUS * user_status, BLB * blob_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
+STATUS DLL_EXPORT GDS_COMMIT(STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1637,7 +1637,7 @@ STATUS DLL_EXPORT GDS_COMMIT(STATUS * user_status, TRA * tra_handle)
 }
 
 
-STATUS DLL_EXPORT GDS_COMMIT_RETAINING(STATUS * user_status, TRA * tra_handle)
+STATUS DLL_EXPORT GDS_COMMIT_RETAINING(STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -1658,7 +1658,7 @@ STATUS DLL_EXPORT GDS_COMMIT_RETAINING(STATUS * user_status, TRA * tra_handle)
 
 STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
 							  ATT * db_handle,
-							  REQ * req_handle,
+							  JRD_REQ * req_handle,
 							  SSHORT blr_length, SCHAR * blr)
 {
 /**************************************
@@ -1670,7 +1670,7 @@ STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
  * Functional description
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	ATT attachment;
 	struct tdbb thd_context;
 
@@ -1714,7 +1714,7 @@ STATUS DLL_EXPORT GDS_COMPILE(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
 								   ATT * db_handle,
-								   TRA * tra_handle,
+								   JRD_TRA * tra_handle,
 								   BLB * blob_handle,
 								   BID blob_id,
 								   USHORT bpb_length, UCHAR * bpb)
@@ -1729,7 +1729,7 @@ STATUS DLL_EXPORT GDS_CREATE_BLOB2(STATUS * user_status,
  *	Open an existing blob.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	BLB blob;
 	struct tdbb thd_context;
 
@@ -2183,7 +2183,7 @@ STATUS DLL_EXPORT GDS_DATABASE_INFO(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 						  ATT * db_handle,
-						  TRA * tra_handle, USHORT ddl_length, SCHAR * ddl)
+						  JRD_TRA * tra_handle, USHORT ddl_length, SCHAR * ddl)
 {
 /**************************************
  *
@@ -2195,7 +2195,7 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
  *
  **************************************/
 	ATT attachment;
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 	STATUS temp_status[ISC_STATUS_LENGTH];
 
@@ -2621,7 +2621,7 @@ STATUS DLL_EXPORT GDS_GET_SEGMENT(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
 								ATT * db_handle,
-								TRA * tra_handle,
+								JRD_TRA * tra_handle,
 								SLONG * array_id,
 								USHORT sdl_length,
 								UCHAR * sdl,
@@ -2640,7 +2640,7 @@ STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2685,7 +2685,7 @@ STATUS DLL_EXPORT GDS_GET_SLICE(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
 								 ATT * db_handle,
-								 TRA * tra_handle,
+								 JRD_TRA * tra_handle,
 								 BLB * blob_handle,
 								 BID blob_id, USHORT bpb_length, UCHAR * bpb)
 {
@@ -2700,7 +2700,7 @@ STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
  *
  **************************************/
 	BLB blob;
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2739,7 +2739,7 @@ STATUS DLL_EXPORT GDS_OPEN_BLOB2(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_PREPARE(STATUS * user_status,
-							  TRA * tra_handle, USHORT length, UCHAR * msg)
+							  JRD_TRA * tra_handle, USHORT length, UCHAR * msg)
 {
 /**************************************
  *
@@ -2752,7 +2752,7 @@ STATUS DLL_EXPORT GDS_PREPARE(STATUS * user_status,
  *	phase commit.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2820,7 +2820,7 @@ STATUS DLL_EXPORT GDS_PUT_SEGMENT(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
 								ATT * db_handle,
-								TRA * tra_handle,
+								JRD_TRA * tra_handle,
 								SLONG * array_id,
 								USHORT sdl_length,
 								UCHAR * sdl,
@@ -2839,7 +2839,7 @@ STATUS DLL_EXPORT GDS_PUT_SLICE(STATUS * user_status,
  *
  **************************************/
 
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -2936,7 +2936,7 @@ STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
-							  REQ * req_handle,
+							  JRD_REQ * req_handle,
 							  USHORT msg_type,
 							  USHORT msg_length, SCHAR * msg, SSHORT level
 #ifdef SCROLLABLE_CURSORS
@@ -2954,7 +2954,7 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	VEC vector;
 	USHORT lev;
 	struct tdbb thd_context;
@@ -2979,7 +2979,7 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 		if ( (lev = level) )
 			if (!(vector = request->req_sub_requests) ||
 				lev >= vector->count() ||
-				!(request = (REQ) (*vector)[lev]))
+				!(request = (JRD_REQ) (*vector)[lev]))
 					ERR_post(gds_req_sync, 0);
 	
 	#ifdef SCROLLABLE_CURSORS
@@ -3008,7 +3008,7 @@ STATUS DLL_EXPORT GDS_RECEIVE(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
 								ATT * db_handle,
-								TRA * tra_handle, SSHORT length, UCHAR * id)
+								JRD_TRA * tra_handle, SSHORT length, UCHAR * id)
 {
 /**************************************
  *
@@ -3020,7 +3020,7 @@ STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	ATT attachment;
 	struct tdbb thd_context;
 
@@ -3057,7 +3057,7 @@ STATUS DLL_EXPORT GDS_RECONNECT(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
+STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, JRD_REQ * req_handle)
 {
 /**************************************
  *
@@ -3069,7 +3069,7 @@ STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
  *	Release a request.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	ATT attachment;
 	struct tdbb thd_context;
 
@@ -3104,7 +3104,7 @@ STATUS DLL_EXPORT GDS_RELEASE_REQUEST(STATUS * user_status, REQ * req_handle)
 
 
 STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
-								   REQ * req_handle,
+								   JRD_REQ * req_handle,
 								   SSHORT level,
 								   SSHORT item_length,
 								   SCHAR * items,
@@ -3121,7 +3121,7 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
  *
  **************************************/
 	USHORT lev;
-	REQ request;
+	JRD_REQ request;
 	VEC vector;
 	struct tdbb thd_context;
 
@@ -3146,7 +3146,7 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 		if ( (lev = level) )
 			if (!(vector = request->req_sub_requests) ||
 				lev >= vector->count() ||
-				!(request = (REQ) (*vector)[lev]))
+				!(request = (JRD_REQ) (*vector)[lev]))
 					ERR_post(gds_req_sync, 0);
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
@@ -3161,7 +3161,7 @@ STATUS DLL_EXPORT GDS_REQUEST_INFO(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(STATUS * user_status,
-										 TRA * tra_handle)
+										 JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -3173,7 +3173,7 @@ STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(STATUS * user_status,
  *	Abort a transaction but keep the environment valid
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3197,7 +3197,7 @@ STATUS DLL_EXPORT GDS_ROLLBACK_RETAINING(STATUS * user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
+STATUS DLL_EXPORT GDS_ROLLBACK(STATUS * user_status, JRD_TRA * tra_handle)
 {
 /**************************************
  *
@@ -3209,7 +3209,7 @@ STATUS DLL_EXPORT GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3277,7 +3277,7 @@ STATUS DLL_EXPORT GDS_SEEK_BLOB(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
-						   REQ * req_handle,
+						   JRD_REQ * req_handle,
 						   USHORT msg_type,
 						   USHORT msg_length, SCHAR * msg, SSHORT level)
 {
@@ -3291,7 +3291,7 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	VEC vector;
 	USHORT lev;
 	struct tdbb thd_context;
@@ -3316,7 +3316,7 @@ STATUS DLL_EXPORT GDS_SEND(STATUS * user_status,
 		if ( (lev = level) )
 			if (!(vector = request->req_sub_requests) ||
 				lev >= vector->count() ||
-				!(request = (REQ) (*vector)[lev]))
+				!(request = (JRD_REQ) (*vector)[lev]))
 					ERR_post(gds_req_sync, 0);
 	
 		EXE_send(tdbb, request, msg_type, msg_length,
@@ -3558,8 +3558,8 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
 
 
 STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
-									 REQ * req_handle,
-									 TRA * tra_handle,
+									 JRD_REQ * req_handle,
+									 JRD_TRA * tra_handle,
 									 USHORT msg_type,
 									 USHORT msg_length,
 									 SCHAR * msg, SSHORT level)
@@ -3580,7 +3580,7 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	REQ request = *req_handle;
+	JRD_REQ request = *req_handle;
 	CHECK_HANDLE(request, type_req, gds_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
@@ -3594,7 +3594,7 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		TRA transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
+		JRD_TRA transaction = find_transaction(tdbb, *tra_handle, gds_req_wrong_db);
 	
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, FALSE);
@@ -3621,8 +3621,8 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_START(STATUS * user_status,
-							register REQ * req_handle,
-							register TRA * tra_handle, SSHORT level)
+							register JRD_REQ * req_handle,
+							register JRD_TRA * tra_handle, SSHORT level)
 {
 /**************************************
  *
@@ -3634,8 +3634,8 @@ STATUS DLL_EXPORT GDS_START(STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	TRA transaction;
-	REQ request;
+	JRD_TRA transaction;
+	JRD_REQ request;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -3680,7 +3680,7 @@ STATUS DLL_EXPORT GDS_START(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
-									 TRA * tra_handle,
+									 JRD_TRA * tra_handle,
 									 USHORT count, TEB * vector)
 {
 /**************************************
@@ -3693,7 +3693,7 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	volatile TRA transaction, prior;
+	volatile JRD_TRA transaction, prior;
 	STATUS temp_status[ISC_STATUS_LENGTH];
 	TEB *v, *end;
 	ATT attachment;
@@ -3760,7 +3760,7 @@ STATUS DLL_EXPORT GDS_START_MULTIPLE(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_START_TRANSACTION(STATUS * user_status,
-										TRA * tra_handle, SSHORT count, ...)
+										JRD_TRA * tra_handle, SSHORT count, ...)
 {
 /**************************************
  *
@@ -3791,7 +3791,7 @@ STATUS DLL_EXPORT GDS_START_TRANSACTION(STATUS * user_status,
 
 STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 									   ATT*		db_handle,
-									   TRA*		tra_handle,
+									   JRD_TRA*		tra_handle,
 									   USHORT	blr_length,
 									   SCHAR*	blr,
 									   USHORT	in_msg_length,
@@ -3810,9 +3810,9 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
  *
  **************************************/
 	ATT attachment;
-	TRA transaction;
+	JRD_TRA transaction;
 	CSB csb;
-	REQ request;
+	JRD_REQ request;
 	JRD_NOD in_message, out_message, node;
 	ACC access;
 	SCL class_;
@@ -3957,7 +3957,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 
 
 STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
-									   TRA * tra_handle,
+									   JRD_TRA * tra_handle,
 									   SSHORT item_length,
 									   SCHAR * items,
 									   SSHORT buffer_length, SCHAR * buffer)
@@ -3972,7 +3972,7 @@ STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -4006,7 +4006,7 @@ STATUS DLL_EXPORT GDS_TRANSACTION_INFO(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
-							 REQ * req_handle, SSHORT level)
+							 JRD_REQ * req_handle, SSHORT level)
 {
 /**************************************
  *
@@ -4021,7 +4021,7 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
  **************************************/
 	DBB dbb;
 	ATT attachment, attach;
-	REQ request;
+	JRD_REQ request;
 	VEC vector;
 	USHORT lev;
 	struct tdbb thd_context;
@@ -4074,7 +4074,7 @@ STATUS DLL_EXPORT GDS_UNWIND(STATUS * user_status,
 		if ( (lev = level) ) {
 			if (!(vector = request->req_sub_requests) ||
 				lev >= vector->count() ||
-				!(request = (REQ) (*vector)[lev]))
+				!(request = (JRD_REQ) (*vector)[lev]))
 			{
 				ERR_post(gds_req_sync, 0);
 			}
@@ -4323,7 +4323,7 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
  ******************************************************/
 	IB_FILE *fptr;
 	TEXT fname[MAXPATHLEN];
-	PRC procedure;
+	JRD_PRC procedure;
 	vec::iterator ptr, end;
 	VEC procedures;
 
@@ -4424,8 +4424,8 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, BOOLEAN punt)
 
 		if ((attachment->att_flags & ATT_cancel_raise) &&
 			!(attachment->att_flags & ATT_cancel_disable)) {
-			REQ request;
-			TRA transaction;
+			JRD_REQ request;
+			JRD_TRA transaction;
 
 			if ((!(request = tdbb->tdbb_request) ||
 				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
@@ -4640,7 +4640,7 @@ static BLB check_blob(TDBB tdbb, STATUS * user_status, BLB * blob_handle)
  *
  **************************************/
 	BLB blob;
-	TRA transaction;
+	JRD_TRA transaction;
 
 	SET_TDBB(tdbb);
 	blob = *blob_handle;
@@ -4778,7 +4778,7 @@ static void cleanup(void *arg)
 
 static STATUS commit(
 					 STATUS * user_status,
-					 TRA * tra_handle, USHORT retaining_flag)
+					 JRD_TRA * tra_handle, USHORT retaining_flag)
 {
 /**************************************
  *
@@ -4790,7 +4790,7 @@ static STATUS commit(
  *	Commit a transaction.
  *
  **************************************/
-	TRA transaction, next;
+	JRD_TRA transaction, next;
 	STATUS *ptr;
 	DBB dbb;
 	struct tdbb thd_context;
@@ -4897,7 +4897,7 @@ static BOOLEAN drop_files(FIL file)
 }
 
 
-static TRA find_transaction(TDBB tdbb, TRA transaction, STATUS error_code)
+static JRD_TRA find_transaction(TDBB tdbb, JRD_TRA transaction, STATUS error_code)
 {
 /**************************************
  *
@@ -4923,7 +4923,7 @@ static TRA find_transaction(TDBB tdbb, TRA transaction, STATUS error_code)
 		}
 
 	ERR_post(error_code, 0);
-	return ((TRA) NULL);		/* Added to remove compiler warnings */
+	return ((JRD_TRA) NULL);		/* Added to remove compiler warnings */
 }
 
 
@@ -5721,7 +5721,7 @@ static void make_jrn_data(UCHAR*	data,
 
 
 static STATUS prepare(TDBB		tdbb,
-					  TRA		transaction,
+					  JRD_TRA		transaction,
 					  STATUS*	status_vector,
 					  USHORT	length,
 					  UCHAR*	msg)
@@ -5937,7 +5937,7 @@ static STATUS return_success(TDBB tdbb)
 
 
 static BOOLEAN rollback(TDBB	tdbb,
-						TRA		next,
+						JRD_TRA		next,
 						STATUS*	status_vector,
 						USHORT	retaining_flag)
 {
@@ -5952,7 +5952,7 @@ static BOOLEAN rollback(TDBB	tdbb,
  *
  **************************************/
 	DBB dbb;
-	TRA transaction;
+	JRD_TRA transaction;
 	STATUS local_status[ISC_STATUS_LENGTH];
 
 	SET_TDBB(tdbb);
@@ -6061,9 +6061,9 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 
 		for (; ptr < end; ++ptr)
 		{
-			if (*ptr && ((REL)(*ptr))->rel_file)
+			if (*ptr && ((JRD_REL)(*ptr))->rel_file)
 			{
-				EXT_fini((REL)(*ptr));
+				EXT_fini((JRD_REL)(*ptr));
 			}
 		}
 	}
@@ -6473,9 +6473,9 @@ static void purge_attachment(TDBB		tdbb,
  **************************************/
 	BKM bookmark;
 	DBB dbb;
-	REQ request;
+	JRD_REQ request;
 	SCL class_;
-	TRA transaction, next;
+	JRD_TRA transaction, next;
 	USR user;
 	USHORT count;
 

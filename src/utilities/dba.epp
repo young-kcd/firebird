@@ -115,7 +115,7 @@ typedef struct rel {
 	ULONG rel_total_space;
 	SSHORT rel_id;
 	SCHAR rel_name[32];
-} *REL;
+} *DBA_REL;
 
 /* kidnapped from jrd/pio.h and abused */
 
@@ -134,11 +134,11 @@ typedef struct dba_fil {
 } *DBA_FIL;
 
 static SCHAR *alloc(SLONG);
-static void analyze_data(REL, BOOLEAN);
-static BOOLEAN analyze_data_page(REL, DPG, BOOLEAN);
-static ULONG analyze_fragments(REL, RHDF);
-static ULONG analyze_versions(REL, RHDF);
-static void analyze_index(REL, DBA_IDX);
+static void analyze_data(DBA_REL, BOOLEAN);
+static BOOLEAN analyze_data_page(DBA_REL, DPG, BOOLEAN);
+static ULONG analyze_fragments(DBA_REL, RHDF);
+static ULONG analyze_versions(DBA_REL, RHDF);
+static void analyze_index(DBA_REL, DBA_IDX);
 
 #if (defined WIN_NT)
 static void db_error(SLONG);
@@ -195,7 +195,7 @@ typedef struct tdba {
 	struct thdd tdba_thd_data;
 	UCHAR *dba_env;
 	DBA_FIL files;
-	REL relations;
+	DBA_REL relations;
 	SSHORT page_size;
 	SLONG page_number;
 	PAG buffer1;
@@ -267,7 +267,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
  *
  **************************************/
 	IN_SW_TAB in_sw_tab;
-	REL relation;
+	DBA_REL relation;
 	DBA_IDX index;
 	HDR header;
 	LIP logp;
@@ -439,13 +439,13 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			else if (in_sw_tab->in_sw == IN_SW_DBA_RELATION) {
 				sw_relation = TRUE;
 				while (argv < end && **argv != '-') {
-					REL *next;
+					DBA_REL *next;
 
 					if (strlen(*argv) > 31) {
 						argv++;
 						continue;
 					}
-					relation = (REL) ALLOC(sizeof(struct rel));
+					relation = (DBA_REL) ALLOC(sizeof(struct rel));
 					strcpy(relation->rel_name, *argv++);
 					truncate_name(relation->rel_name);
 					relation->rel_id = -1;
@@ -671,7 +671,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		}
 		else
 		{
-			relation = (REL) ALLOC(sizeof(struct rel));
+			relation = (DBA_REL) ALLOC(sizeof(struct rel));
 			relation->rel_next = tddba->relations;
 			tddba->relations = relation;
 			relation->rel_id = X.RDB$RELATION_ID;
@@ -968,7 +968,7 @@ static SCHAR *alloc( SLONG size)
 }
 
 
-static void analyze_data( REL relation, BOOLEAN sw_record)
+static void analyze_data( DBA_REL relation, BOOLEAN sw_record)
 {
 /**************************************
  *
@@ -1004,7 +1004,7 @@ static void analyze_data( REL relation, BOOLEAN sw_record)
 }
 
 
-static BOOLEAN analyze_data_page( REL relation, DPG page, BOOLEAN sw_record)
+static BOOLEAN analyze_data_page( DBA_REL relation, DPG page, BOOLEAN sw_record)
 {
 /**************************************
  *
@@ -1071,7 +1071,7 @@ static BOOLEAN analyze_data_page( REL relation, DPG page, BOOLEAN sw_record)
 }
 
 
-static ULONG analyze_fragments( REL relation, RHDF header)
+static ULONG analyze_fragments( DBA_REL relation, RHDF header)
 {
 /**************************************
  *
@@ -1112,7 +1112,7 @@ static ULONG analyze_fragments( REL relation, RHDF header)
 }
 
 
-static void analyze_index( REL relation, DBA_IDX index)
+static void analyze_index( DBA_REL relation, DBA_IDX index)
 {
 /**************************************
  *
@@ -1209,7 +1209,7 @@ static void analyze_index( REL relation, DBA_IDX index)
 }
 
 
-static ULONG analyze_versions( REL relation, RHDF header)
+static ULONG analyze_versions( DBA_REL relation, RHDF header)
 {
 /**************************************
  *

@@ -66,7 +66,7 @@ extern USHORT QLI_prompt_count, QLI_reprompt;
 static DSC *assignment(QLI_NOD, DSC *, QLI_NOD, QLI_NOD, PAR);
 static void commit_retaining(QLI_NOD);
 static int copy_blob(QLI_NOD, PAR);
-static void db_error(REQ, STATUS *);
+static void db_error(QLI_REQ, STATUS *);
 static void execute_abort(QLI_NOD);
 static void execute_assignment(QLI_NOD);
 static void execute_for(QLI_NOD);
@@ -76,7 +76,7 @@ static void execute_print(QLI_NOD);
 static void execute_repeat(QLI_NOD);
 static void execute_store(QLI_NOD);
 static void map_data(MSG);
-static void print_counts(REQ);
+static void print_counts(QLI_REQ);
 static void set_null(MSG);
 static void transaction_state(QLI_NOD, DBB);
 
@@ -106,7 +106,7 @@ void EXEC_abort(void)
  *
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	REQ request;
+	QLI_REQ request;
 
 	for (request = QLI_requests; request; request = request->req_next)
 		if (request->req_handle)
@@ -226,8 +226,8 @@ void *EXEC_open_blob( QLI_NOD node)
  *
  **************************************/
 	FLD field;
-	CTX context;
-	REQ request;
+	QLI_CTX context;
+	QLI_REQ request;
 	DBB dbb;
 	DSC *desc, static_desc;
 	UCHAR segment[20], bpb[20], *p;
@@ -247,7 +247,7 @@ void *EXEC_open_blob( QLI_NOD node)
 	if (node->nod_type != nod_field)
 		BUGCHECK(34);			/* Msg34 print_blob: expected field node */
 
-	context = (CTX) node->nod_arg[e_fld_context];
+	context = (QLI_CTX) node->nod_arg[e_fld_context];
 	request = context->ctx_request;
 	dbb = request->req_database;
 	blob = NULL;
@@ -406,7 +406,7 @@ DSC *EXEC_receive(MSG message, PAR parameter)
  *	Receive a message from a running request.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = message->msg_request;
@@ -438,7 +438,7 @@ void EXEC_send( MSG message)
  *	any data to the message.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = message->msg_request;
@@ -453,7 +453,7 @@ void EXEC_send( MSG message)
 }
 
 
-void EXEC_start_request( REQ request, MSG message)
+void EXEC_start_request( QLI_REQ request, MSG message)
 {
 /**************************************
  *
@@ -675,9 +675,9 @@ static int copy_blob( QLI_NOD value, PAR parameter)
  *	copy the blob ids.
  *
  **************************************/
-	CTX context;
+	QLI_CTX context;
 	MSG message;
-	REQ from_request, to_request;
+	QLI_REQ from_request, to_request;
 	DBB to_dbb, from_dbb;
 	DSC *from_desc, *to_desc;
 	QLI_NOD field;
@@ -702,7 +702,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 /* Find the sending and receiving requests.  If they are the same
    and no filtering is necessary, a simple assignment will suffice. */
 
-	context = (CTX) value->nod_arg[e_fld_context];
+	context = (QLI_CTX) value->nod_arg[e_fld_context];
 	from_request = context->ctx_request;
 	from_dbb = from_request->req_database;
 	message = parameter->par_message;
@@ -817,7 +817,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 }
 
 
-static void db_error( REQ request, STATUS * status_vector)
+static void db_error( QLI_REQ request, STATUS * status_vector)
 {
 /**************************************
  *
@@ -932,14 +932,14 @@ static void execute_for( QLI_NOD node)
  *	absolutely nothing to do.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	MSG message;
 	DSC *desc;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (REQ) node->nod_arg[e_for_request])
+	if (request = (QLI_REQ) node->nod_arg[e_for_request])
 		EXEC_start_request(request, (MSG) node->nod_arg[e_for_send]);
 	else if (message = (MSG) node->nod_arg[e_for_send])
 		EXEC_send(message);
@@ -1100,7 +1100,7 @@ static void execute_store( QLI_NOD node)
  *	here.
  *
  **************************************/
-	REQ request;
+	QLI_REQ request;
 	MSG message;
 
 	if (message = (MSG) node->nod_arg[e_sto_send])
@@ -1112,7 +1112,7 @@ static void execute_store( QLI_NOD node)
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	if (request = (REQ) node->nod_arg[e_sto_request])
+	if (request = (QLI_REQ) node->nod_arg[e_sto_request])
 		EXEC_start_request(request, (MSG) node->nod_arg[e_sto_send]);
 	else if (message)
 		EXEC_send(message);
@@ -1159,7 +1159,7 @@ static void map_data( MSG message)
 }
 
 
-static void print_counts( REQ request)
+static void print_counts( QLI_REQ request)
 {
 /**************************************
  *

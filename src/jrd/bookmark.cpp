@@ -52,7 +52,7 @@ BKM BKM_allocate(RSB rsb, USHORT length)
 	DBB dbb;
 	ATT attachment;
 	BKM bookmark;
-	REQ request;
+	JRD_REQ request;
 	IRSB impure;
 
 

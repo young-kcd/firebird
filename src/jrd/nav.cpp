@@ -168,7 +168,7 @@ BOOLEAN NAV_find_record(RSB rsb,
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	IRSB_NAV impure;
 	IDX *idx;
 	KEY key_value;
@@ -795,7 +795,7 @@ BOOLEAN NAV_reset_position(RSB rsb, RPB * new_rpb)
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	KEY key_value;
 	IRSB_NAV impure;
 	IDX *idx;
@@ -1076,7 +1076,7 @@ static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	IRSB_NAV impure;
 	RPB *rpb;
 	WIN window;
@@ -1173,7 +1173,7 @@ static BOOLEAN find_record(
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	IRSB_NAV impure;
 	RPB *rpb;
 	JRD_NOD retrieval_node;
@@ -1611,7 +1611,7 @@ static BOOLEAN get_record(
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	IDX *idx;
 	KEY value;
 	USHORT old_att_flags;

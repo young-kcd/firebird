@@ -74,7 +74,7 @@ static PTR filters[] = {
 extern "C" {
 
 static STATUS open_blob(TDBB,
-						TRA,
+						JRD_TRA,
 						CTL*,
 						SLONG*,
 						USHORT,
@@ -141,7 +141,7 @@ STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 
 
 STATUS DLL_EXPORT BLF_create_blob(TDBB tdbb,
-								  TRA tra_handle,
+								  JRD_TRA tra_handle,
 								  CTL * filter_handle,
 								  SLONG * blob_id,
 								  USHORT bpb_length,
@@ -255,7 +255,7 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 
 
 STATUS DLL_EXPORT BLF_open_blob(TDBB tdbb,
-								TRA tra_handle,
+								JRD_TRA tra_handle,
 								CTL * filter_handle,
 								SLONG * blob_id,
 								USHORT bpb_length,
@@ -323,7 +323,7 @@ STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 
 static STATUS open_blob(
 						TDBB tdbb,
-						TRA tra_handle,
+						JRD_TRA tra_handle,
 						CTL * filter_handle,
 						SLONG * blob_id,
 USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)

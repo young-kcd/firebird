@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.22 2002-11-16 18:48:01 skidder Exp $
+$Id: par.cpp,v 1.23 2002-11-17 00:10:49 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -92,7 +92,7 @@ static CONST struct {
 };
 
 static void error(CSB, ...);
-static SSHORT find_proc_field(PRC, TEXT *);
+static SSHORT find_proc_field(JRD_PRC, TEXT *);
 static JRD_NOD par_args(TDBB, CSB *, USHORT);
 static JRD_NOD par_cast(TDBB, CSB *);
 static XCP par_condition(TDBB, CSB *);
@@ -110,7 +110,7 @@ static JRD_NOD par_modify(TDBB, CSB *);
 static USHORT par_name(CSB *, TEXT *);
 static JRD_NOD par_plan(TDBB, CSB *);
 static JRD_NOD par_procedure(TDBB, CSB *, SSHORT);
-static void par_procedure_parms(TDBB, CSB *, PRC, JRD_NOD *, JRD_NOD *, USHORT);
+static void par_procedure_parms(TDBB, CSB *, JRD_PRC, JRD_NOD *, JRD_NOD *, USHORT);
 static JRD_NOD par_relation(TDBB, CSB *, SSHORT, BOOLEAN);
 static JRD_NOD par_rse(TDBB, CSB *, SSHORT);
 static JRD_NOD par_sort(TDBB, CSB *, BOOLEAN);
@@ -128,11 +128,11 @@ static void warning(CSB, ...);
 
 
 JRD_NOD PAR_blr(TDBB	tdbb,
-			REL		relation,
+			JRD_REL		relation,
 			UCHAR*	blr,
 			CSB		view_csb,
 			CSB*	csb_ptr,
-			REQ*	request_ptr,
+			JRD_REQ*	request_ptr,
 			BOOLEAN	trigger,
 			USHORT	flags)
 {
@@ -400,7 +400,7 @@ JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
 	USHORT stream;
 	TEXT name[32];
 	FLD field;
-	REL temp_rel;
+	JRD_REL temp_rel;
 	JRD_NOD temp_node;
 
 	SET_TDBB(tdbb);
@@ -674,7 +674,7 @@ static void error(CSB csb, ...)
 }
 
 
-static SSHORT find_proc_field(PRC procedure, TEXT * name)
+static SSHORT find_proc_field(JRD_PRC procedure, TEXT * name)
 {
 /**************************************
  *
@@ -1026,7 +1026,7 @@ static JRD_NOD par_exec_proc(TDBB tdbb, CSB * csb, SSHORT operator_)
  *
  **************************************/
 	JRD_NOD node, dep_node;
-	PRC procedure;
+	JRD_PRC procedure;
 
 	SET_TDBB(tdbb);
 
@@ -1130,15 +1130,15 @@ static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
  *	Parse a field.
  *
  **************************************/
-	REL relation;
-	PRC procedure;
+	JRD_REL relation;
+	JRD_PRC procedure;
 	TEXT name[32];
 	JRD_NOD node;
 	SSHORT stream, id, context, flags;
 	csb_repeat *tail;
-	PRC scan_proc;
+	JRD_PRC scan_proc;
 	FLD field;
-	REL temp_rel;
+	JRD_REL temp_rel;
 	BOOLEAN is_column = FALSE;
 
 	SET_TDBB(tdbb);
@@ -1623,7 +1623,7 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 		TEXT name[32], *p;
 		SSHORT stream, n;
 		SLONG index_id, relation_id;
-		REL relation;
+		JRD_REL relation;
 
 		plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
@@ -1643,7 +1643,7 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 
 		relation_node = par_relation(tdbb, csb, n, FALSE);
 		plan->nod_arg[e_retrieve_relation] = relation_node;
-		relation = (REL) relation_node->nod_arg[e_rel_relation];
+		relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
 
 		n = BLR_BYTE;
 		if (n >= (*csb)->csb_count)
@@ -1758,7 +1758,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
  *
  **************************************/
 	JRD_NOD node;
-	PRC procedure;
+	JRD_PRC procedure;
 	USHORT stream;
 
 	SET_TDBB(tdbb);
@@ -1802,7 +1802,7 @@ static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 static void par_procedure_parms(
 								TDBB tdbb,
 								CSB * csb,
-								PRC procedure,
+								JRD_PRC procedure,
 								JRD_NOD * message_ptr,
 								JRD_NOD * parameter_ptr, USHORT input_flag)
 {
@@ -1918,7 +1918,7 @@ static JRD_NOD par_relation(
  *
  **************************************/
 	JRD_NOD node;
-	REL relation;
+	JRD_REL relation;
 	TEXT name[32];
 	STR alias_string = NULL;
 	SSHORT id, stream, length, context;

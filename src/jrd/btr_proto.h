@@ -37,7 +37,7 @@ extern USHORT BTR_all(TDBB, struct rel *, struct idx **, struct idx **,
 extern void BTR_create(TDBB, struct rel *, struct idx *, USHORT, struct scb *,
 					   float *);
 extern void BTR_delete_index(TDBB, struct win *, USHORT);
-extern BOOLEAN BTR_description(REL, register struct irt *,
+extern BOOLEAN BTR_description(JRD_REL, register struct irt *,
 							   register struct idx *, SSHORT);
 extern void BTR_evaluate(struct tdbb *, struct irb *, struct sbm **);
 extern struct btn *BTR_find_leaf(struct btr *, struct key *, UCHAR *, UCHAR *,

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.30 2002-11-14 07:42:50 dimitr Exp $
+$Id: exe.cpp,v 1.31 2002-11-17 00:10:48 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -114,8 +114,8 @@ extern "C" {
 IDX_E IDX_modify_check_constraints(TDBB tdbb,
 								   RPB * org_rpb,
 								   RPB * new_rpb,
-								   TRA transaction,
-								   REL * bad_relation, USHORT * bad_index);	// defined in idx.cpp
+								   JRD_TRA transaction,
+								   JRD_REL * bad_relation, USHORT * bad_index);	// defined in idx.cpp
 
 
 #ifdef SHLIB_DEFS
@@ -126,34 +126,34 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 static void assign_xcp_message(TDBB, STR *, const TEXT *);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
-static void execute_looper(TDBB, REQ, TRA, ENUM req::req_s);
-static void exec_sql(TDBB, REQ, DSC *);
+static void execute_looper(TDBB, JRD_REQ, JRD_TRA, ENUM req::req_s);
+static void exec_sql(TDBB, JRD_REQ, DSC *);
 static void execute_procedure(TDBB, JRD_NOD);
-static REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
-static JRD_NOD looper(TDBB, REQ, JRD_NOD);
+static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
+static JRD_NOD looper(TDBB, JRD_REQ, JRD_NOD);
 static JRD_NOD modify(TDBB, register JRD_NOD, SSHORT);
 static void writelock(TDBB, register JRD_NOD);
 static JRD_NOD receive_msg(TDBB, register JRD_NOD);
-static void release_blobs(TDBB, REQ);
-static void release_proc_save_points(REQ);
+static void release_blobs(TDBB, JRD_REQ);
+static void release_proc_save_points(JRD_REQ);
 #ifdef SCROLLABLE_CURSORS
-static JRD_NOD seek_rse(TDBB, REQ, JRD_NOD);
-static void seek_rsb(TDBB, REQ, RSB, USHORT, SLONG);
+static JRD_NOD seek_rse(TDBB, JRD_REQ, JRD_NOD);
+static void seek_rsb(TDBB, JRD_REQ, RSB, USHORT, SLONG);
 #endif
 static JRD_NOD selct(TDBB, register JRD_NOD);
 static JRD_NOD send_msg(TDBB, register JRD_NOD);
 static void set_error(TDBB, XCP, JRD_NOD);
 static JRD_NOD stall(TDBB, register JRD_NOD);
 static JRD_NOD store(TDBB, register JRD_NOD, SSHORT);
-static BOOLEAN test_and_fixup_error(TDBB, const XCP, REQ);
-static void trigger_failure(TDBB, REQ);
+static BOOLEAN test_and_fixup_error(TDBB, const XCP, JRD_REQ);
+static void trigger_failure(TDBB, JRD_REQ);
 static void validate(TDBB, JRD_NOD);
 
 #ifdef PC_ENGINE
 static BOOLEAN check_crack(RSB, USHORT);
 static JRD_NOD find(TDBB, register JRD_NOD);
 static JRD_NOD find_dbkey(TDBB, register JRD_NOD);
-static LCK implicit_record_lock(TRA, RPB *);
+static LCK implicit_record_lock(JRD_TRA, RPB *);
 static JRD_NOD release_bookmark(TDBB, JRD_NOD);
 static JRD_NOD set_bookmark(TDBB, JRD_NOD);
 static JRD_NOD set_index(TDBB, register JRD_NOD);
@@ -238,7 +238,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
-	REQ request = tdbb->tdbb_request;
+	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 /* Get descriptors of receiving and sending fields/parmaters, variables, etc. */
@@ -443,7 +443,7 @@ BOOLEAN EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
  *	or EOF, according to the flags passed.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	RPB *rpb;
 	IRSB impure;
 
@@ -469,7 +469,7 @@ BOOLEAN EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
 #endif
 
 
-REQ EXE_find_request(TDBB tdbb, REQ request, BOOLEAN validate)
+JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, BOOLEAN validate)
 {
 /**************************************
  *
@@ -485,7 +485,7 @@ REQ EXE_find_request(TDBB tdbb, REQ request, BOOLEAN validate)
 #ifdef ANY_THREADING
 	DBB dbb;
 #endif
-	REQ clone, next;
+	JRD_REQ clone, next;
 	USHORT n, clones, count;
 	VEC vector;
 
@@ -583,7 +583,7 @@ void EXE_mark_crack(TDBB tdbb, RSB rsb, USHORT flag)
 
 
 void EXE_receive(TDBB		tdbb,
-				 REQ		request,
+				 JRD_REQ		request,
 				 USHORT		msg,
 				 USHORT		length,
 				 UCHAR*		buffer)
@@ -601,7 +601,7 @@ void EXE_receive(TDBB		tdbb,
  **************************************/
 	JRD_NOD message;
 	FMT format;
-	TRA transaction;
+	JRD_TRA transaction;
 	SAV save_sav_point;
 
 	SET_TDBB(tdbb);
@@ -693,7 +693,7 @@ void EXE_receive(TDBB		tdbb,
 
 
 #ifdef SCROLLABLE_CURSORS
-void EXE_seek(TDBB tdbb, REQ request, USHORT direction, ULONG offset)
+void EXE_seek(TDBB tdbb, JRD_REQ request, USHORT direction, ULONG offset)
 {
 /**************************************
  *
@@ -734,7 +734,7 @@ void EXE_seek(TDBB tdbb, REQ request, USHORT direction, ULONG offset)
 
 
 void EXE_send(TDBB		tdbb,
-			  REQ		request,
+			  JRD_REQ		request,
 			  USHORT	msg,
 			  USHORT	length,
 			  UCHAR*	buffer)
@@ -752,7 +752,7 @@ void EXE_send(TDBB		tdbb,
  **************************************/
 	JRD_NOD node, message, *ptr, *end;
 	FMT format;
-	TRA transaction;
+	JRD_TRA transaction;
 #ifdef SCROLLABLE_CURSORS
 	USHORT save_operation;
 	JRD_NOD save_next = NULL, save_message;
@@ -843,7 +843,7 @@ void EXE_send(TDBB		tdbb,
 }
 
 
-void EXE_start(TDBB tdbb, REQ request, TRA transaction)
+void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -943,7 +943,7 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 }
 
 
-void EXE_unwind(TDBB tdbb, REQ request)
+void EXE_unwind(TDBB tdbb, JRD_REQ request)
 {
 /**************************************
  *
@@ -958,7 +958,7 @@ void EXE_unwind(TDBB tdbb, REQ request)
  **************************************/
 	vec::iterator ptr, end;
 	JrdMemoryPool *old_pool;
-	REQ old_request;
+	JRD_REQ old_request;
 
 	DEV_BLKCHK(request, type_req);
 
@@ -1089,12 +1089,12 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
  *
  **************************************/
 	DBB dbb;
-	REQ request, trigger;
+	JRD_REQ request, trigger;
 	RPB *rpb;
-	REL relation;
+	JRD_REL relation;
 	REC record;
 	FMT format;
-	TRA transaction;
+	JRD_TRA transaction;
 #ifdef PC_ENGINE
 	RSB rsb = NULL;
 	IRSB impure;
@@ -1251,7 +1251,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 	if (!relation->rel_file & !relation->rel_view_rse)
 	{
-		REL bad_relation;
+		JRD_REL bad_relation;
 		USHORT bad_index;
 
 		IDX_E error_code =
@@ -1305,8 +1305,8 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 static void execute_looper(
 						   TDBB tdbb,
-						   REQ request,
-						   TRA transaction, ENUM req::req_s next_state)
+						   JRD_REQ request,
+						   JRD_TRA transaction, ENUM req::req_s next_state)
 {
 /**************************************
  *
@@ -1350,7 +1350,7 @@ static void execute_looper(
 }
 
 
-static void exec_sql(TDBB tdbb, REQ request, DSC* dsc)
+static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 {
 /**************************************
  *
@@ -1430,15 +1430,15 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
  *	by assigning the output parameters.
  *
  **************************************/
-	REQ request, proc_request;
+	JRD_REQ request, proc_request;
 	JRD_NOD in_message, out_message, temp;
 	FMT format;
 	USHORT in_msg_length, out_msg_length;
 	SCHAR *in_msg, *out_msg;
-	PRC procedure;
+	JRD_PRC procedure;
 	STR temp_buffer = NULL;
 	SLONG save_point_number;
-	TRA transaction;
+	JRD_TRA transaction;
 	JrdMemoryPool *old_pool;
 
 	SET_TDBB(tdbb);
@@ -1465,7 +1465,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 		out_msg = (SCHAR *) request + out_message->nod_impure;
 	}
 
-	procedure = (PRC) node->nod_arg[e_esp_procedure];
+	procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
 	proc_request = EXE_find_request(tdbb, procedure->prc_request, FALSE);
 
 	if (!out_message) {
@@ -1541,7 +1541,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 }
 
 
-static REQ execute_triggers(TDBB		tdbb,
+static JRD_REQ execute_triggers(TDBB		tdbb,
 							TRIG_VEC*	triggers,
 							REC			old_rec,
 							REC			new_rec)
@@ -1558,7 +1558,7 @@ static REQ execute_triggers(TDBB		tdbb,
  *
  **************************************/
 
-	volatile REQ trigger = NULL;
+	volatile JRD_REQ trigger = NULL;
 
 	//DEV_BLKCHK(*triggers, type_vec);
 	DEV_BLKCHK(old_rec, type_rec);
@@ -1570,9 +1570,9 @@ static REQ execute_triggers(TDBB		tdbb,
 
 	SET_TDBB(tdbb);
 
-	TRA transaction = tdbb->tdbb_request->req_transaction;
+	JRD_TRA transaction = tdbb->tdbb_request->req_transaction;
 	TRIG_VEC vector = *triggers;
-	REQ result = NULL;
+	JRD_REQ result = NULL;
 
 	try
 	{
@@ -1591,7 +1591,7 @@ static REQ execute_triggers(TDBB		tdbb,
 				result = trigger;
 				break;
 			}
-			trigger = (REQ)NULL_PTR;
+			trigger = (JRD_REQ)NULL_PTR;
 		}
 
 		if (vector != *triggers) {
@@ -1631,7 +1631,7 @@ static JRD_NOD find(TDBB tdbb, register JRD_NOD node)
  **************************************/
 
 	SET_TDBB(tdbb);
-	REQ request = tdbb->tdbb_request;
+	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == req::req_evaluate)
@@ -1711,7 +1711,7 @@ static JRD_NOD find_dbkey(TDBB tdbb, register JRD_NOD node)
  **************************************/
 
 	SET_TDBB(tdbb);
-	REQ request = tdbb->tdbb_request;
+	JRD_REQ request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == req::req_evaluate)
@@ -1736,7 +1736,7 @@ static JRD_NOD find_dbkey(TDBB tdbb, register JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-static LCK implicit_record_lock(TRA transaction, RPB * rpb)
+static LCK implicit_record_lock(JRD_TRA transaction, RPB * rpb)
 {
 /**************************************
  *
@@ -1756,7 +1756,7 @@ static LCK implicit_record_lock(TRA transaction, RPB * rpb)
 
 	DEV_BLKCHK(transaction, type_tra);
 
-	REL relation = rpb->rpb_relation;
+	JRD_REL relation = rpb->rpb_relation;
 	LCK record_locking = relation->rel_record_locking;
 
 /* occasionally we should check whether we really still need to 
@@ -1781,7 +1781,7 @@ static LCK implicit_record_lock(TRA transaction, RPB * rpb)
 #endif
 
 
-static JRD_NOD looper(TDBB tdbb, REQ request, JRD_NOD in_node)
+static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 {
 /**************************************
  *
@@ -1803,7 +1803,7 @@ static JRD_NOD looper(TDBB tdbb, REQ request, JRD_NOD in_node)
 	SSHORT which_mod_trig   = 0;
 	volatile JRD_NOD top_node = 0;
 	volatile JRD_NOD prev_node;
-	TRA transaction;
+	JRD_TRA transaction;
 
 /* If an error happens during the backout of a savepoint, then the transaction
    must be marked 'dead' because that is the only way to clean up after a
@@ -1835,7 +1835,7 @@ static JRD_NOD looper(TDBB tdbb, REQ request, JRD_NOD in_node)
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
 	tdbb->tdbb_default = request->req_pool;
 
-	REQ old_request = tdbb->tdbb_request;
+	JRD_REQ old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
 	tdbb->tdbb_transaction = transaction;
 
@@ -2700,14 +2700,14 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
  *
  **************************************/
 	DBB dbb;
-	register REQ request, trigger;
+	register JRD_REQ request, trigger;
 	STA impure;
 	FMT org_format, new_format;
 	SSHORT org_stream, new_stream;
 	REC org_record, new_record;
 	RPB *org_rpb, *new_rpb;
-	REL relation;
-	TRA transaction;
+	JRD_REL relation;
+	JRD_TRA transaction;
 #ifdef PC_ENGINE
 	RSB rsb = NULL;
 	LCK record_locking;
@@ -2844,7 +2844,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 		else if (!relation->rel_view_rse)
 		{
 			SSHORT bad_index;
-			REL bad_relation;
+			JRD_REL bad_relation;
 			IDX_E error_code;
 
 			// Repeat it as many times as underlying record modifies
@@ -2886,7 +2886,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 		if (!relation->rel_file && !relation->rel_view_rse)
 		{
 			SSHORT bad_index;
-			REL bad_relation;
+			JRD_REL bad_relation;
 			IDX_E error_code;
 
 			if ( (error_code = IDX_modify_check_constraints(tdbb,
@@ -3036,15 +3036,15 @@ static void writelock(TDBB tdbb, register JRD_NOD node)
  *
  **************************************/ 
 	DBB dbb;
-	register REQ request, trigger;
+	register JRD_REQ request, trigger;
 //	STA impure;
 	FMT org_format, new_format;
 	SSHORT org_stream;
 	REC org_record, new_record;
 	RPB *org_rpb;
 	rpb new_rpb;
-	REL relation;
-	TRA transaction;
+	JRD_REL relation;
+	JRD_TRA transaction;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3154,7 +3154,7 @@ static void writelock(TDBB tdbb, register JRD_NOD node)
 	if (!relation->rel_view_rse && !relation->rel_file)
 	{
 		SSHORT bad_index;
-		REL bad_relation;
+		JRD_REL bad_relation;
 		IDX_E error_code;
 		
 		RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
@@ -3198,7 +3198,7 @@ static JRD_NOD receive_msg(TDBB tdbb, register JRD_NOD node)
  *	the statement isn't every formalled evaluated.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3221,7 +3221,7 @@ static JRD_NOD receive_msg(TDBB tdbb, register JRD_NOD node)
 }
 
 
-static void release_blobs(TDBB tdbb, REQ request)
+static void release_blobs(TDBB tdbb, JRD_REQ request)
 {
 /**************************************
  *
@@ -3233,7 +3233,7 @@ static void release_blobs(TDBB tdbb, REQ request)
  *	Release temporary blobs assigned by this request.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	BLB *blob;
 	ARR *array;
 
@@ -3279,7 +3279,7 @@ static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
  *	Deallocate the passed bookmark.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3295,7 +3295,7 @@ static JRD_NOD release_bookmark(TDBB tdbb, JRD_NOD node)
 #endif
 
 
-static void release_proc_save_points(REQ request)
+static void release_proc_save_points(JRD_REQ request)
 {
 /**************************************
  *
@@ -3307,7 +3307,7 @@ static void release_proc_save_points(REQ request)
  *	Release temporary blobs assigned by this request.
  *
  **************************************/
-	TRA transaction;
+	JRD_TRA transaction;
 	SAV sav_point, temp_sav_point;
 
 /* Release savepoints assigned by this request */
@@ -3324,7 +3324,7 @@ static void release_proc_save_points(REQ request)
 
 
 #ifdef SCROLLABLE_CURSORS
-static JRD_NOD seek_rse(TDBB tdbb, REQ request, JRD_NOD node)
+static JRD_NOD seek_rse(TDBB tdbb, JRD_REQ request, JRD_NOD node)
 {
 /**************************************
  *
@@ -3369,7 +3369,7 @@ static JRD_NOD seek_rse(TDBB tdbb, REQ request, JRD_NOD node)
 #ifdef SCROLLABLE_CURSORS
 static void seek_rsb(
 					 TDBB tdbb,
-					 REQ request, RSB rsb, USHORT direction, SLONG offset)
+					 JRD_REQ request, RSB rsb, USHORT direction, SLONG offset)
 {
 /**************************************
  *
@@ -3563,7 +3563,7 @@ static JRD_NOD selct(TDBB tdbb, register JRD_NOD node)
  *	operation "req_proceed."
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3595,7 +3595,7 @@ static JRD_NOD send_msg(TDBB tdbb, register JRD_NOD node)
  *	Execute a SEND statement.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3635,7 +3635,7 @@ static JRD_NOD set_bookmark(TDBB tdbb, JRD_NOD node)
  *	specified bookmark.
  *
  **************************************/
-	REQ request;
+	JRD_REQ request;
 	BKM bookmark;
 	USHORT stream;
 	RPB *rpb;
@@ -3694,7 +3694,7 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
  *	and jump to handle error accordingly.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 	TEXT name[32], relation_name[32], *s, *r;
 	TEXT message[XCP_MESSAGE_LENGTH + 1], temp[XCP_MESSAGE_LENGTH + 1];
 	USHORT length = 0;
@@ -3788,10 +3788,10 @@ static JRD_NOD set_index(TDBB tdbb, register JRD_NOD node)
  *	Execute a SET INDEX statement.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 	USHORT stream, id;
 	RPB *rpb;
-	REL relation;
+	JRD_REL relation;
 	IDX idx;
 
 	SET_TDBB(tdbb);
@@ -3842,7 +3842,7 @@ static JRD_NOD stall(TDBB tdbb, register JRD_NOD node)
  *	A gds__receive () will unblock the user.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3878,7 +3878,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
  *
  **************************************/
 
-	REQ trigger;
+	JRD_REQ trigger;
 	FMT format;
 	SSHORT n;
 	USHORT length;
@@ -3890,12 +3890,12 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 	DBB dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
-	REQ    request     = tdbb->tdbb_request;
-	TRA    transaction = request->req_transaction;
+	JRD_REQ    request     = tdbb->tdbb_request;
+	JRD_TRA    transaction = request->req_transaction;
 	STA    impure      = (STA) ((SCHAR *) request + node->nod_impure);
 	SSHORT stream      = (USHORT) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 	RPB*   rpb         = &request->req_rpb[stream];
-	REL    relation    = rpb->rpb_relation;
+	JRD_REL    relation    = rpb->rpb_relation;
 
 	switch (request->req_operation) {
 	case req::req_evaluate:
@@ -3939,7 +3939,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 		else if (!relation->rel_view_rse)
 		{
 			SSHORT bad_index;
-			REL bad_relation;
+			JRD_REL bad_relation;
 
 			VIO_store(tdbb, rpb, transaction);
 			IDX_E error_code = IDX_store(tdbb,
@@ -4045,7 +4045,7 @@ static JRD_NOD stream(TDBB tdbb, register JRD_NOD node)
  *	Execute a STREAM statement.
  *
  **************************************/
-	register REQ request;
+	register JRD_REQ request;
 	RSB rsb;
 
 	SET_TDBB(tdbb);
@@ -4073,7 +4073,7 @@ static JRD_NOD stream(TDBB tdbb, register JRD_NOD node)
 #endif
 
 
-static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, REQ request)
+static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, JRD_REQ request)
 {
 /**************************************
  *
@@ -4177,7 +4177,7 @@ static BOOLEAN test_and_fixup_error(TDBB tdbb, XCP conditions, REQ request)
 }
 
 
-static void trigger_failure(TDBB tdbb, REQ trigger)
+static void trigger_failure(TDBB tdbb, JRD_REQ trigger)
 {
 /**************************************
  *
@@ -4260,8 +4260,8 @@ static void validate(TDBB tdbb, JRD_NOD list)
 
 			JRD_NOD			node;
 			VEC			vector;
-			REL			relation;
-			REQ			request;
+			JRD_REL			relation;
+			JRD_REQ			request;
 			FLD			field;
 			const char*	value;
 			TEXT		temp[128];

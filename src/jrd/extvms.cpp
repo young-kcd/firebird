@@ -82,7 +82,7 @@ void EXT_close(RSB rsb)
 	TDBB tdbb;
 	REL relation;
 	EXT file;
-	REQ request;
+	JRD_REQ request;
 	RPB *rpb;
 	int status;
 
@@ -342,7 +342,7 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
  **************************************/
 	REL relation;
 	EXT file;
-	REQ request;
+	JRD_REQ request;
 	REC record;
 	FMT format;
 	int offset, status;
@@ -387,7 +387,7 @@ EXT_open(RSB rsb)
  **************************************/
 	TDBB tdbb;
 	REL relation;
-	REQ request;
+	JRD_REQ request;
 	RPB *rpb;
 	REC record;
 	FMT format;
@@ -875,7 +875,7 @@ static get_dbkey(RSB rsb)
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	REL relation;
 	EXT file;
 	RPB *rpb;
@@ -952,7 +952,7 @@ static get_indexed(RSB rsb)
 	REL relation;
 	FMT format;
 	IDX *index;
-	REQ request;
+	JRD_REQ request;
 	RPB *rpb;
 	UCHAR key_buffer[256], *p;
 	int status, result;
@@ -1075,7 +1075,7 @@ static BOOLEAN get_sequential(RSB rsb)
  *
  **************************************/
 	TDBB tdbb;
-	REQ request;
+	JRD_REQ request;
 	REL relation;
 	EXT file;
 	RPB *rpb;
@@ -1192,7 +1192,7 @@ static open_indexed(RSB rsb)
 	TDBB tdbb;
 	REL relation;
 	EXT file;
-	REQ request;
+	JRD_REQ request;
 	RPB *rpb;
 	NOD node;
 	IRB retrieval;
@@ -1232,7 +1232,7 @@ static open_sequential(RSB rsb)
 	TDBB tdbb;
 	REL relation;
 	EXT file;
-	REQ request;
+	JRD_REQ request;
 	RPB *rpb;
 	int status;
 
