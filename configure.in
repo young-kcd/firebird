@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.2 2003-07-19 06:20:33 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.3 2003-08-19 21:20:20 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -532,6 +532,9 @@ AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_d
 
 AC_CONFIG_COMMANDS(,,[
 dnl ### GEN ### directories for preprocessed cpp, databases and output
+mkdir -p gen
+dnl # rebuild version header if needed
+./src/misc/writeBuildNum.sh rebuildHeader
 mkdir -p gen/alice
 mkdir -p gen/burp
 mkdir -p gen/dsql
