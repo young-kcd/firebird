@@ -1,3 +1,11 @@
+2002-12-18 16:01  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.h, dsql.tab.h, gen.cpp,
+	keywords.cpp, node.h, parse.cpp, parse.y, pass1.cpp:
+	
+	Fixed bug with BREAK and partially implemented labels and LEAVE
+	statement.
+
 2002-12-17 20:42  skidder
 
 	* firebird2/src/common/classes/alloc.cpp:
