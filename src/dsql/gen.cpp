@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.34 2003-08-13 11:09:57 robocop Exp $
+$Id: gen.cpp,v 1.35 2003-08-14 07:11:24 fsg Exp $
 */
 
 #include "firebird.h"
@@ -2172,6 +2172,7 @@ static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
  **/
 static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 {
+        DSQL_NOD list, *ptr, * end; 
 	DSQL_FLD field;
 	DSC constant_desc;
 	DSQL_REL relation;
@@ -2186,9 +2187,8 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	constant_desc.dsc_address = (UCHAR *) & constant;
 
 /* Set up parameter for things in the select list */
-
-	DSQL_NOD list = rse->nod_arg[e_rse_items];
-	for (DSQL_NOD *ptr = list->nod_arg, *end = ptr + list->nod_count; ptr < end; ptr++) {
+        list = rse->nod_arg[e_rse_items];
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 		DSQL_NOD item = *ptr;
 		PAR parameter = MAKE_parameter(request->req_receive, TRUE, TRUE, 0);
 		parameter->par_node = item;
