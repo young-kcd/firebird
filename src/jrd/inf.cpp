@@ -457,7 +457,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
-				const Firebird::PathName& str_fn = tdbb->tdbb_attachment->att_filename;
+				const Firebird::PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
 				SSHORT l = str_fn.length();
 				*p++ = l;
