@@ -305,13 +305,8 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 }
 
 void MemoryPool::deletePool(MemoryPool* pool) {
-	/* dimitr: 1. I think we need an abstract base class or a global macro
-				  in locks.h to avoid these architecture checks.
-			   2. The lock is copied before the extent that contains the pool
-				  itself is freed, because otherwise it contains garbage. The
-				  lock will be destroyed automatically at exit. */
-	/* skidder: Working with a copy of spinlock or critical section is not 
-	            a correct operation. We simply need to delete object earlier */
+	/* dimitr: I think we need an abstract base class or a global macro
+			   in locks.h to avoid these architecture checks. */
 #ifdef SUPERSERVER
 	pool->lock.~Spinlock();
 #else
