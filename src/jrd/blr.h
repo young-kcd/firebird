@@ -286,6 +286,7 @@
 /* FB2 specific BLR */
 #define blr_exec_sql		(unsigned char)176
 #define blr_internal_info	(unsigned char)177
+#define blr_nullsfirst		(unsigned char)178
 
 #endif /* _JRD_BLR_H_ */
 

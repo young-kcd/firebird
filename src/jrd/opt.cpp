@@ -27,7 +27,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.10 2002-07-29 15:37:54 skywalker Exp $
+$Id: opt.cpp,v 1.11 2002-09-10 18:33:59 skidder Exp $
 */
 
 #include "firebird.h"
@@ -3347,7 +3347,8 @@ static RSB gen_navigation(TDBB tdbb,
 			|| (ptr[sort->nod_count]
 				&& !(idx->idx_flags & idx_descending))
 			|| (!ptr[sort->nod_count]
-				&& (idx->idx_flags & idx_descending)))
+				&& (idx->idx_flags & idx_descending))
+			|| ptr[2*sort->nod_count] /* do not use index if NULLS FIRST is used */ )
 #endif
 			return NULL;
 #ifdef SCROLLABLE_CURSORS
@@ -4091,6 +4092,8 @@ static RSB gen_sort(TDBB tdbb,
 			(USHORT) map_length++; sort_key->skd_dtype = SKD_text;
 		sort_key->skd_length = 1;
 		sort_key->skd_flags = SKD_ascending;
+		if (*(node_ptr + sort->nod_count*2))
+		  sort_key->skd_flags |= SKD_descending;
 		++sort_key;
 		/* Make key for sort key proper */
 #ifdef VAX

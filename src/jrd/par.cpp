@@ -25,7 +25,7 @@
  * 2001.07.28: Added parse code for blr_skip to support LIMIT.
  */
 /*
-$Id: par.cpp,v 1.10 2002-08-22 08:20:27 dimitr Exp $
+$Id: par.cpp,v 1.11 2002-09-10 18:34:00 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2086,22 +2086,31 @@ static NOD par_sort(TDBB tdbb, CSB * csb, BOOLEAN flag)
  *	BLR_SORT, BLR_PROJECT, and BLR_GROUP.
  *
  **************************************/
-	NOD clause, *ptr, *ptr2;
+	NOD clause, *ptr, *ptr2, *ptr3;
 	SSHORT count;
 
 	SET_TDBB(tdbb);
 
 	count = (unsigned int) BLR_BYTE;
-	clause = PAR_make_node(tdbb, count * 2);
+	clause = PAR_make_node(tdbb, count * 3);
 	clause->nod_type = nod_sort;
 	clause->nod_count = count;
 	ptr = clause->nod_arg;
 	ptr2 = ptr + count;
+	ptr3 = ptr2 + count;	
 
 	while (--count >= 0) {
-		if (flag)
+		if (flag) {
+			UCHAR code = BLR_BYTE;
+			if (code == blr_nullsfirst) {
+				*ptr3++ = (NOD) (SLONG) TRUE;
+				code = BLR_BYTE;
+			} else
+				*ptr3++ = (NOD) (SLONG) FALSE;
+			  
 			*ptr2++ =
-				(NOD) (SLONG) ((BLR_BYTE == blr_descending) ? TRUE : FALSE);
+				(NOD) (SLONG) ((code == blr_descending) ? TRUE : FALSE);
+		}
 		*ptr++ = parse(tdbb, csb, VALUE);
 	}
 
