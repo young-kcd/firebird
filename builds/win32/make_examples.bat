@@ -125,11 +125,6 @@ if "%VS_VER%"=="msvc6" (
 :: The script intldml.sql contains a reference to intlemp.fdb that must be changed
 @del isql.tmp
 @echo s;intlemp.fdb;localhost:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
-:: sed "s/\\/\\\\/g" < isql.tmp > isql.tmp2
-:: sed "s/;/\//g" < isql.tmp2 > isql.sed
-:: sed -f isql.sed < intldml.sql > intldml.tmp
-:: copy intldml.sql intldml.ori
-:: copy intldml.tmp intldml.sql
 @%ROOT_PATH%\gen\examples\intlbld.exe %DB_PATH%/gen/examples/intlemp.fdb
 @cd %ROOT_PATH%\builds\win32
 
