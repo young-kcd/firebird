@@ -4214,9 +4214,11 @@ static SLONG open_semaphores(
 	}
 	
 	if (semaphores) {
+		union semun arg;
 		semid_ds buf;	
+		arg.buf = &buf;
 		// Get number of semaphores in opened set
-		if (semctl(semid, 0, IPC_STAT, &buf) == -1) {
+		if (semctl(semid, 0, IPC_STAT, arg) == -1) {
 			error(status_vector, "semctl", errno);
 			return -1;
 		}
@@ -4257,9 +4259,11 @@ static SLONG create_semaphores(
 		} 
 		else
 		{
-			semid_ds buf;	
+			union semun arg;
+			semid_ds buf;
+			arg.buf = &buf;
 			// Get number of semaphores in opened set
-			if (semctl(semid, 0, IPC_STAT, &buf) == -1) {
+			if (semctl(semid, 0, IPC_STAT, arg) == -1) {
 				error(status_vector, "semctl", errno);
 				return -1;
 			}

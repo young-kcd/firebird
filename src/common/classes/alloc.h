@@ -46,7 +46,7 @@
 
 #define MAX_TREE_DEPTH 4
 // Must be a power of 2
-#define ALLOC_ALIGNMENT 4
+#define ALLOC_ALIGNMENT ALIGNMENT
 
 #define MEM_ALIGN(X) FB_ALIGN(X,ALLOC_ALIGNMENT)
 

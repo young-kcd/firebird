@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.6 2003-10-09 23:08:30 skidder Exp $
+dnl $Id: configure.in,v 1.141.2.7 2003-10-10 23:17:04 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -48,6 +48,15 @@ case "$target" in
     AC_DEFINE(FREEBSD)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
+    SHRLIB_EXT=so
+    ;;
+
+  sparc*-*-linux-*)
+    MAKEFILE_PREFIX=linux_sparc32
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX)
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
@@ -422,7 +431,7 @@ AC_MSG_CHECKING(alignment of long)
 AC_TRY_RUN([main () {
   struct s {
     char a;
-    long b;
+    long long b;
   };
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)

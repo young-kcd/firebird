@@ -182,12 +182,6 @@ static const char * FB_PID_FILE = "fb_%d";
 
 extern "C" {
 
-#ifdef sparc
-#ifndef SOLARIS
-extern int ib_printf();
-#endif
-#endif
-
 #if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN )
 extern int errno;
 extern SCHAR *sys_errlist[];
