@@ -663,6 +663,19 @@ void IDX_garbage_collect(TDBB tdbb, RPB * rpb, LLS going, LLS staying)
 				rec1 = (REC) stack1->lls_object;
 				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
 
+				/* Cancel index if there are duplicates in the remaining records */
+
+				for (stack2 = stack1->lls_next; stack2; stack2 = stack2->lls_next) {
+					rec2 = (REC) stack2->lls_object;
+					if (rec2->rec_number == rec1->rec_number) {
+						BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0);
+						if (key_equal(&key1, &key2))
+							break;
+					}
+				}
+				if (stack2)
+					continue;
+
 				/* Make sure the index doesn't exist in any record remaining */
 
 				for (stack2 = staying; stack2; stack2 = stack2->lls_next) {
