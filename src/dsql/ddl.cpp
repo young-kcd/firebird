@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.44 2003-03-15 08:14:54 dimitr Exp $
+ * $Id: ddl.cpp,v 1.45 2003-04-08 00:31:20 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1125,12 +1125,12 @@ static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 	if (constant)
 	{
 		request->append_number(gds_dyn_trg_sequence,
-				   (SSHORT) (constant ? constant->nod_arg[0] : 0));
+				   (SSHORT)(SLONG) (constant ? constant->nod_arg[0] : 0));
 	}
 
 	if ((constant = node->nod_arg[e_cnstr_type]) != NULL)
 	{
-		const SSHORT type = (SSHORT) constant->nod_arg[0];
+		const SSHORT type = (SSHORT)(SLONG) constant->nod_arg[0];
 		request->append_number(gds_dyn_trg_type, type);
 	}
 
@@ -1347,13 +1347,13 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 
 			case nod_num_log_buffers:
 				request->append_uchar(gds_dyn_log_num_of_buffers);
-				temp_short = (SSHORT) (element->nod_arg[0]);
+				temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
 
 			case nod_log_buffer_size:
 				request->append_uchar(gds_dyn_log_buffer_size);
-				temp_short = (SSHORT) (element->nod_arg[0]);
+				temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
 
@@ -2042,9 +2042,9 @@ static void define_filter( DSQL_REQ request)
 	request->append_cstring(gds_dyn_def_filter,
 				((STR) (ptr[e_filter_name]))->str_data);
 	request->append_number(gds_dyn_filter_in_subtype,
-			   (SSHORT) ((ptr[e_filter_in_type])->nod_arg[0]));
+			   (SSHORT)(SLONG) ((ptr[e_filter_in_type])->nod_arg[0]));
 	request->append_number(gds_dyn_filter_out_subtype,
-			   (SSHORT) ((ptr[e_filter_out_type])->nod_arg[0]));
+			   (SSHORT)(SLONG) ((ptr[e_filter_out_type])->nod_arg[0]));
 	request->append_cstring(gds_dyn_func_entry_point,
 				((STR) (ptr[e_filter_entry_pt]))->str_data);
 	request->append_cstring(gds_dyn_func_module_name,
@@ -2650,12 +2650,12 @@ static void define_shadow(DSQL_REQ request)
 				  gds_arg_gds, gds_dsql_shadow_number_err, 0);
 	}
 
-	request->append_number(gds_dyn_def_shadow, (SSHORT) (ptr[e_shadow_number]));
+	request->append_number(gds_dyn_def_shadow, (SSHORT)(SLONG) (ptr[e_shadow_number]));
 	request->append_cstring(gds_dyn_def_file, ((STR) (ptr[e_shadow_name]))->str_data);
 	request->append_number(gds_dyn_shadow_man_auto,
-			   (SSHORT) ((ptr[e_shadow_man_auto])->nod_arg[0]));
+			   (SSHORT)(SLONG) ((ptr[e_shadow_man_auto])->nod_arg[0]));
 	request->append_number(gds_dyn_shadow_conditional,
-			   (SSHORT) ((ptr[e_shadow_conditional])->nod_arg[0]));
+			   (SSHORT)(SLONG) ((ptr[e_shadow_conditional])->nod_arg[0]));
 
 	request->append_file_start(0);
 
@@ -2786,15 +2786,15 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 
 	if (constant = node->nod_arg[e_trg_active])
 		request->append_number(gds_dyn_trg_inactive,
-				   (SSHORT) constant->nod_arg[0]);
+				   (SSHORT)(SLONG) constant->nod_arg[0]);
 
 	if (constant = node->nod_arg[e_trg_position])
 		request->append_number(gds_dyn_trg_sequence,
-				   (SSHORT) constant->nod_arg[0]);
+				   (SSHORT)(SLONG) constant->nod_arg[0]);
 
 	if (constant = node->nod_arg[e_trg_type]) {
-		request->append_number(gds_dyn_trg_type, (SSHORT) constant->nod_arg[0]);
-		trig_type = (USHORT) constant->nod_arg[0];
+		request->append_number(gds_dyn_trg_type, (SSHORT)(SLONG) constant->nod_arg[0]);
+		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
 	}
 	else {
 		assert(node->nod_type == nod_mod_trigger);
@@ -2867,7 +2867,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 		for (DSQL_NOD* ptr = temp->nod_arg; ptr < end; ++ptr)
 		{
 			DSQL_NOD    message = *ptr;
-			SSHORT number  = (SSHORT) message->nod_arg[e_msg_number];
+			SSHORT number  = (SSHORT)(SLONG) message->nod_arg[e_msg_number];
 			if (message->nod_type == nod_del_trigger_msg)
 			{
 				request->append_number(gds_dyn_delete_trigger_msg, number);
@@ -2928,7 +2928,7 @@ static void define_udf( DSQL_REQ request)
         // CVC: This is case of "returns <type> [by value|reference]"
 		/* Some data types can not be returned as value */
 
-		if (((int) (ret_val_ptr[1]->nod_arg[0]) == FUN_value) &&
+		if (((int)(SLONG) (ret_val_ptr[1]->nod_arg[0]) == FUN_value) &&
 			(field->fld_dtype == dtype_text ||
 			 field->fld_dtype == dtype_varying ||
 			 field->fld_dtype == dtype_cstring ||
@@ -2972,7 +2972,7 @@ static void define_udf( DSQL_REQ request)
         // CVC: This is case of "returns parameter <N>"
 
 
-		position = (SSHORT) (ret_val_ptr[1]->nod_arg[0]);
+		position = (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]);
 		/* Function modifies an argument whose value is the function return value */
 
 		if (!arguments || position > arguments->nod_count || position < 1) {
@@ -2998,10 +2998,10 @@ static void define_udf( DSQL_REQ request)
 		if (field->fld_dtype == dtype_blob)
 		{
         /* CVC: I need to test returning blobs by descriptor before allowing the        change there. For now, I ignore the return type specification. */
-			BOOLEAN free_it = ((SSHORT) ret_val_ptr[1]->nod_arg[0] < 0);
+			BOOLEAN free_it = ((SSHORT)(SLONG) ret_val_ptr[1]->nod_arg[0] < 0);
 			request->append_number(gds_dyn_def_function_arg, blob_position);
 			request->append_number(gds_dyn_func_mechanism,
-					   (SSHORT) ((free_it ? -1 : 1) * FUN_blob_struct));
+					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
 			/* if we have the free_it set then the blob has
 			   to be freed on return */
 		}
@@ -3009,7 +3009,7 @@ static void define_udf( DSQL_REQ request)
 		{
 			request->append_number(gds_dyn_def_function_arg, (SSHORT) 0);
 			request->append_number(gds_dyn_func_mechanism,
-					   (SSHORT) (ret_val_ptr[1]->nod_arg[0]));
+					   (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]));
 		}
 
 		request->append_cstring(gds_dyn_function_name, udf_name);
@@ -3044,7 +3044,7 @@ static void define_udf( DSQL_REQ request)
 			request->append_number(gds_dyn_def_function_arg, (SSHORT) position);
 
             if (param_node [e_udf_param_type]) {
-                SSHORT arg_mechanism = (SSHORT) (param_node [e_udf_param_type]->nod_arg [0]);
+                SSHORT arg_mechanism = (SSHORT)(SLONG) (param_node [e_udf_param_type]->nod_arg [0]);
 				request->append_number(gds_dyn_func_mechanism, arg_mechanism);
             }
             else if (field->fld_dtype == dtype_blob) {
@@ -3648,13 +3648,13 @@ static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, 
 	if (constant)
 	{
 		request->append_number(gds_dyn_trg_sequence,
-				   (SSHORT) (constant ? constant->nod_arg[0] : 0));
+				   (SSHORT)(SLONG) (constant ? constant->nod_arg[0] : 0));
 	}
 
 	constant = node->nod_arg[e_cnstr_type];
 	if (constant)
 	{
-		trig_type = (USHORT) constant->nod_arg[0];
+		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
 		request->append_number(gds_dyn_trg_type, trig_type);
 	}
 	else
@@ -4137,7 +4137,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_del_shadow:
 		request->append_number(gds_dyn_delete_shadow,
-				   (SSHORT) (node->nod_arg[0]));
+				   (SSHORT)(SLONG) (node->nod_arg[0]));
 		request->append_uchar(gds_dyn_end);
 		break;
 
@@ -4587,13 +4587,13 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 
 		case nod_num_log_buffers:
 			request->append_uchar(gds_dyn_log_num_of_buffers);
-			temp_short = (SSHORT) (element->nod_arg[0]);
+			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
 
 		case nod_log_buffer_size:
 			request->append_uchar(gds_dyn_log_buffer_size);
-			temp_short = (SSHORT) (element->nod_arg[0]);
+			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
 		case nod_drop_log:
@@ -5059,7 +5059,7 @@ static void modify_relation( DSQL_REQ request)
 				const_node = element->nod_arg[e_mod_fld_pos_new_position];
 
                 /* CVC: Since now the parser accepts pos=1..N, let's subtract one here. */
-                constant = (SSHORT) const_node->nod_arg [0] - 1;
+                constant = (SSHORT)(SLONG) const_node->nod_arg [0] - 1;
 
 				request->append_cstring(gds_dyn_rel_name,
 							relation_name->str_data);
@@ -5800,7 +5800,7 @@ static void stuff_matching_blr(DSQL_REQ request, DSQL_NOD for_columns, DSQL_NOD 
 
 		num_fields++;
 
-		if (prim_columns->nod_count - num_fields >= (unsigned) 2) {
+		if (prim_columns->nod_count - num_fields >= 2) {
 			request->append_uchar(blr_and);
 		}
 
@@ -5851,7 +5851,7 @@ static void stuff_trg_firing_cond(DSQL_REQ request, DSQL_NOD prim_columns)
 
 		num_fields++;
 
-		if (prim_columns->nod_count - num_fields >= (unsigned) 2)
+		if (prim_columns->nod_count - num_fields >= 2)
 			request->append_uchar(blr_or);
 
 		prim_key_flds++;

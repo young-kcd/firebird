@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.30 2003-03-31 19:11:53 arnobrinkman Exp $
+$Id: gen.cpp,v 1.31 2003-04-08 00:31:20 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -81,7 +81,7 @@ static const SCHAR db_key_name[] = "DB_KEY";
 
 /* STUFF is defined in dsql.h for use in common with ddl.c */
 
-#define STUFF_WORD(word)	stuff_word (request, (USHORT)(word))
+#define STUFF_WORD(word)	stuff_word (request, word)
 #define STUFF_CSTRING(cstring)	stuff_cstring (request, (char*) (cstring))
 
 /* The following are passed as the third argument to gen_constant */
@@ -1044,12 +1044,12 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
     case nod_label:
         STUFF(blr_label);
-        STUFF((int) node->nod_arg[e_label_number]);
+        STUFF((int)(SLONG) node->nod_arg[e_label_number]);
         return;
 	
     case nod_breakleave:
         STUFF(blr_leave);
-        STUFF((int) node->nod_arg[e_breakleave_number]);
+        STUFF((int)(SLONG) node->nod_arg[e_breakleave_number]);
         return;
 
 	case nod_store:
@@ -1064,7 +1064,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_abort:
 		STUFF(blr_leave);
-		STUFF((int) node->nod_arg[e_abrt_number]);
+		STUFF((int)(SLONG) node->nod_arg[e_abrt_number]);
 		return;
 
 	case nod_start_savepoint:
@@ -1131,14 +1131,14 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_while:
 		STUFF(blr_label);
-		STUFF((int) node->nod_arg[e_while_number]);
+		STUFF((int)(SLONG) node->nod_arg[e_while_number]);
 		STUFF(blr_loop);
 		STUFF(blr_begin);
 		STUFF(blr_if);
 		GEN_expr(request, node->nod_arg[e_while_cond]);
 		GEN_statement(request, node->nod_arg[e_while_action]);
 		STUFF(blr_leave);
-		STUFF((int) node->nod_arg[e_while_number]);
+		STUFF((int)(SLONG) node->nod_arg[e_while_number]);
 		STUFF(blr_end);
 		return;
 
@@ -1539,7 +1539,7 @@ static void gen_error_condition( DSQL_REQ request, DSQL_NOD node)
 	switch (node->nod_type) {
 	case nod_sqlcode:
 		STUFF(blr_sql_code);
-		STUFF_WORD(node->nod_arg[0]);
+		STUFF_WORD((USHORT)(ULONG) node->nod_arg[0]);
 		return;
 
 	case nod_gdscode:

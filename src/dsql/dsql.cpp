@@ -1846,7 +1846,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	TEXT s[64];
 
 	TEXT* p = buffer;
-	p += sprintf(p, "%.7X ", node);
+	p += sprintf(p, "%.7X ", (unsigned int) node);
 
 	if (column) {
 		USHORT l = column * 3;
@@ -2406,7 +2406,8 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		FREE_MEM_RETURN;
 
 	case nod_position:
-		PRINTF("%sposition %d\n", buffer, *ptr);
+		// nod_position is an ULONG according to pass1.cpp
+		PRINTF("%sposition %"ULONGFORMAT"\n", buffer, (ULONG) *ptr);
 		FREE_MEM_RETURN;
 
 	case nod_relation:
@@ -2441,7 +2442,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 
 	case nod_parameter:
 		if (node->nod_column){
-			PRINTF("%sparameter: %d\n",	buffer,(USHORT)node->nod_arg[e_par_parameter]);
+			PRINTF("%sparameter: %d\n",	buffer,(USHORT)(ULONG)node->nod_arg[e_par_parameter]);
 		}else{
 			PAR	par=(PAR)node->nod_arg[e_par_parameter];
 			PRINTF("%sparameter: %d\n",	buffer,par->par_index);
@@ -3197,7 +3198,7 @@ static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
 	PAR parameter, null;
 
 	if (node->nod_type == nod_constant)
-		return (SSHORT) node->nod_arg[0];
+		return (SSHORT)(SLONG) node->nod_arg[0];
 
 	parameter = (PAR) node->nod_arg[e_par_parameter];
 	if (null = parameter->par_null)
@@ -3972,7 +3973,7 @@ static void map_in_out(	DSQL_REQ		request,
 			flag = NULL;
 			if ((null = parameter->par_null) != NULL)
 			{
-				USHORT null_offset = (USHORT)(null->par_user_desc.dsc_address);
+				USHORT null_offset = (USHORT)(ULONG) (null->par_user_desc.dsc_address);
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 					break;
@@ -4218,7 +4219,7 @@ static USHORT parse_blr(
 		align = type_alignments[desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
-		desc.dsc_address = (UCHAR *) offset;
+		desc.dsc_address = (UCHAR *) (ULONG) offset;
 		offset += desc.dsc_length;
 
 		if (*blr++ != blr_short || *blr++ != 0)
@@ -4239,7 +4240,7 @@ static USHORT parse_blr(
 					null->par_user_desc.dsc_dtype = dtype_short;
 					null->par_user_desc.dsc_scale = 0;
 					null->par_user_desc.dsc_length = sizeof(SSHORT);
-					null->par_user_desc.dsc_address = (UCHAR *) null_offset;
+					null->par_user_desc.dsc_address = (UCHAR *)(ULONG) null_offset;
 				}
 			}
 	}

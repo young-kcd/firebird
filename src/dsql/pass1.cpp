@@ -641,7 +641,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 									  TRUE, TRUE,
 									  /* Pass 0 here to restore older parameter 
 										ordering behavior */
-									  (USHORT)input->nod_arg[0]);
+									  (USHORT)(ULONG) input->nod_arg[0]);
 		return node;
 
 	case nod_udf:
@@ -1178,7 +1178,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		if (input->nod_arg[e_flp_action]) {
             /* CVC: Let's add the ability to BREAK the for_select same as the while.
                but only if the command is FOR SELECT, otherwise we have singular SELECT. */
-			node->nod_arg [e_flp_number] = (DSQL_NOD) ++request->req_loop_level;
+			node->nod_arg [e_flp_number] = (DSQL_NOD) (ULONG) ++request->req_loop_level;
 
 			node->nod_arg[e_flp_action] = PASS1_statement(request, 
                                                           input->nod_arg
@@ -1361,7 +1361,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 				gds_arg_gds, gds_random, gds_arg_string, "BREAK/LEAVE", 0);
 		/* dimitr: should be something like this:
 			input->nod_arg[e_breakleave_number] = (DSQL_NOD) pass1_label(request, input); */
-        input->nod_arg[e_breakleave_number] = (DSQL_NOD) request->req_loop_level;
+        input->nod_arg[e_breakleave_number] = (DSQL_NOD) (ULONG) request->req_loop_level;
 		}
         return input;
 
@@ -1420,7 +1420,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 
         /* CVC: loop numbers should be incremented before analyzing the body
            to preserve nesting <==> increasing level number. */
-		node->nod_arg [e_while_number] = (DSQL_NOD) ++request->req_loop_level;
+		node->nod_arg [e_while_number] = (DSQL_NOD) (ULONG) ++request->req_loop_level;
 		node->nod_arg[e_while_action] =
 			PASS1_statement(request, input->nod_arg[e_while_action], proc_flag);
 		request->req_loop_level--;
@@ -4737,7 +4737,7 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list)
 		if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long) {
 			position = (SLONG) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list || 
-				(position > (ULONG) s_list->nod_count)) {
+				((ULONG) position > s_list->nod_count)) {
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds,
 					gds_dsql_command_err, gds_arg_gds, gds_order_by_err, 0);	/* invalid ORDER BY clause */
 			}
