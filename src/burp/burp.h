@@ -717,7 +717,7 @@ typedef struct act {
 
 const size_t ACT_LEN = sizeof(act);
 
-const long MAX_LENGTH = -1UL;
+const unsigned long MAX_LENGTH = -1UL;
 
 /* This structure has been cloned from spit.c */
 
