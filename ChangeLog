@@ -1,3 +1,33 @@
+2002-02-24  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+2002-02-24  seanleyne
+	* src/dsql/array.epp:
+	* src/dsql/parse.y:
+	* src/isql/isql.epp:
+	* src/jrd/dfw.epp:
+	* src/jrd/dyn_def.epp:
+	* src/jrd/dyn_mod.epp:
+	* src/jrd/dyn_util.epp:
+	* src/jrd/met.epp:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+		Code cleanup, removed old Win3.1 port from routines I missed
+		the first time
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/dsql/parse.cpp:
+		Code cleanup, corrected some mistakes (;-[) in my removal of
+		the Win3.1 port.
+
 2002-02-23  dimitr
 	* src/misc/writeBuildNum.sh:
 	* src/misc/writeBuildNum.sh:
