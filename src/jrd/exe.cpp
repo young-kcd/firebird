@@ -1789,7 +1789,7 @@ static void stuff_stack_trace(const jrd_req* request)
 	}
 
 	if (!isEmpty)
-		ERR_post_nothrow(isc_random, isc_arg_string, ERR_cstring(sTrace), 0);
+		ERR_post_nothrow(isc_stack_trace, isc_arg_string, ERR_cstring(sTrace), 0);
 }
 
 
@@ -3688,7 +3688,11 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
  *
  **************************************/
 	SqlIdentifier name, relation_name;
-	TEXT message[XCP_MESSAGE_LENGTH + 1], temp[XCP_MESSAGE_LENGTH + 1];
+	TEXT message[XCP_MESSAGE_LENGTH + 1];
+
+	// since temp used as vary, we need size of vary::vary_length 
+	// (USHORT) extra chars
+	TEXT temp[XCP_MESSAGE_LENGTH + sizeof(USHORT)]; 
 
 	SET_TDBB(tdbb);
 
