@@ -9,5 +9,3 @@
 /usr/include/ibase.h
 /usr/include/iberror.h
 /usr/include/ib_util.h
-
-/etc/init.d/firebird

@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.4 2003-09-08 19:30:24 brodsom Exp $
+#   $Id: makeInstallImage.sh.in,v 1.5 2003-10-27 18:00:44 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -91,10 +91,7 @@ copyFiles() {
     mkdir $DestDir/doc 
     mkdir $DestDir/doc/sql.extensions
     mkdir $DestDir/UDF 
-#    mkdir $DestDir/misc
-
-    mkdir $TargetDir/etc 
-    mkdir $TargetDir/etc/init.d
+    mkdir $DestDir/misc
 
     mkdir -p $TargetDir/usr/lib
     mkdir -p $TargetDir/usr/include
@@ -121,7 +118,7 @@ copyFiles() {
 
     cp $BuiltFBDir/bin/SSchangeRunUser.sh $DestDir/bin
     cp $BuiltFBDir/bin/SSrestoreRootRunUser.sh $DestDir/bin
-    cp $BuildRootDir/src/install/arch-specific/linux/super/SSchangePasswd.sh $DestDir/bin/changeDBAPassword.sh
+    cp $BuiltFBDir/bin/changeDBAPassword.sh $DestDir/bin
 
     # Copy examples only if we have them
 
@@ -151,14 +148,21 @@ copyFiles() {
     cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
 	    
-
-    # Note that this copies files from outside the build tree.
+#   Note that this copies files from outside the build tree.
     cp $BuildRootDir/doc/README.user.* $DestDir/doc
     cp $BuildRootDir/doc/README.user $DestDir/README
     cp $BuildRootDir/doc/sql.extensions/* $DestDir/doc/sql.extensions
+    
+#   Miscellaneous config and startup files
     cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
-    cp $BuiltFBDir/misc/firebird.initd $TargetDir/etc/init.d/firebird
+    cp $BuiltFBDir/misc/firebird.init.d.generic $DestDir/misc
+    cp $BuiltFBDir/misc/firebird.init.d.mandrake $DestDir/misc
+    cp $BuiltFBDir/misc/firebird.init.d.suse $DestDir/misc
+    cp $BuiltFBDir/misc/firebird.init.d.debian $DestDir/misc
+    cp $BuiltFBDir/misc/firebird.init.d.gentoo $DestDir/misc
+    cp $BuiltFBDir/misc/rc.config.firebird $DestDir/misc
 
+#   Sample of aliases.conf
     echo "#" >> $DestDir/aliases.conf
     echo "# List of known database aliases" >> $DestDir/aliases.conf
     echo "# ------------------------------" >> $DestDir/aliases.conf
