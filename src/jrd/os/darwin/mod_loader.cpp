@@ -1,5 +1,27 @@
 /*
- *  mod_loader.cpp
+ *	PROGRAM:		JRD Module Loader
+ *	MODULE:			mod_loader.cpp
+ *	DESCRIPTION:	Darwin-specific class for loadable modules.
+ *
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by John Bellardo
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2002 John Bellardo <bellardo at cs.ucsd.edu>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  *
  */
 
@@ -46,9 +68,7 @@ void ModuleLoader::doctorModuleExtention(Firebird::string& name)
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 {
 	NSObjectFileImage image;
-	NSSymbol initSym;
-	void (*init)(void);
-	
+
 	/* Create an object file image from the given path */
 	const NSObjectFileImageReturnCode retVal =
 		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
@@ -80,7 +100,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 	/* link the image */
 	NSModule mod_handle =
 		NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
-	NSDestroyObjectFileImage(image) ;
+	NSDestroyObjectFileImage(image);
 	if (mod_handle == NULL)
 	{
 		/*printf("NSLinkModule() failed for dlopen()");*/
@@ -88,9 +108,10 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 		return 0;
 	}
 	
-	initSym = NSLookupSymbolInModule(mod_handle, "__init");
+	NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
 	if (initSym != NULL)
 	{
+		void (*init)(void);
 		init = ( void (*)(void)) NSAddressOfSymbol(initSym);
 		init();
 	}
@@ -100,13 +121,11 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 
 DarwinModule::~DarwinModule()
 {
-	NSSymbol symbol;  
-	void (*fini)(void);
-	
 	/* Make sure the fini function gets called, if there is one */
-	symbol = NSLookupSymbolInModule(module, "__fini");
+	NSSymbol symbol = NSLookupSymbolInModule(module, "__fini");
 	if (symbol != NULL)
 	{
+		void (*fini)(void);
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
 	}   
@@ -116,9 +135,7 @@ DarwinModule::~DarwinModule()
 
 void *DarwinModule::findSymbol(const Firebird::string& symName)
 {
-	NSSymbol symbol;  
-
-	symbol = NSLookupSymbolInModule(module, symName.c_str());
+	NSSymbol symbol = NSLookupSymbolInModule(module, symName.c_str());
 	if (symbol == NULL)
 	{
 		Firebird::string newSym = '_' + symName;
@@ -131,3 +148,4 @@ void *DarwinModule::findSymbol(const Firebird::string& symName)
 	}
 	return NSAddressOfSymbol(symbol);
 }
+
