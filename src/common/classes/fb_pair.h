@@ -69,9 +69,11 @@ template<typename parLeft, typename parRight>
 
 template<typename BasePair> 
 	struct Pair : public BasePair {
+		typedef typename Pair::first_type Pair_first_type;
+		typedef typename Pair::second_type Pair_second_type;
 		Pair(MemoryPool& p) : BasePair(p) { }
-		Pair(MemoryPool& p, const BasePair::first_type& v1, 
-			const BasePair::second_type& v2) : BasePair(p, v1, v2) { }
+		Pair(MemoryPool& p, const Pair_first_type& v1, 
+			const Pair_second_type& v2) : BasePair(p, v1, v2) { }
 		Pair(MemoryPool& p, const Pair& lp) 
 			: BasePair(p, lp) { }
 		Pair() : BasePair(AutoStorage::getAutoMemoryPool()) { }
