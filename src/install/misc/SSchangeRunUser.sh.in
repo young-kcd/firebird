@@ -150,7 +150,7 @@ checkIfUserIsPresent() {
 
 checkInstallUser
 
-IBRootDir=/opt/firebird
+IBRootDir=@prefix@
 IBBin=$IBRootDir/bin
 
 if [ -z "$RunUser" ]
