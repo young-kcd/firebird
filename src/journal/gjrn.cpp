@@ -469,10 +469,7 @@ static int start_disable( int argc, SCHAR ** argv)
 	dpb_length = sizeof(disable_dpb);
 
 	handle = NULL;
-	gds__attach_database(status_vector,
-						 0,
-						 GDS_VAL(database),
-						 GDS_REF(handle), dpb_length, GDS_VAL(dpb));
+	gds__attach_database(status_vector, 0, database, &handle, dpb_length, dpb);
 
 	if (status_vector[1]) {
 		error = TRUE;
@@ -480,7 +477,7 @@ static int start_disable( int argc, SCHAR ** argv)
 	}
 
 	if (handle)
-		gds__detach_database(status_vector, GDS_REF(handle));
+		gds__detach_database(status_vector, &handle);
 
 	return error;
 }
@@ -664,10 +661,8 @@ static int start_dump( int argc, SCHAR ** argv)
 		dpb_length = p - dpb;
 
 		handle = NULL;
-		gds__attach_database(status_vector,
-							 0,
-							 GDS_VAL(database),
-							 GDS_REF(handle), dpb_length, GDS_VAL(dpb));
+		gds__attach_database(status_vector, 0, database, &handle, dpb_length, 
+							 dpb);
 
 		dump_id = (USHORT) status_vector[3];
 		start_page = status_vector[5];
@@ -684,13 +679,13 @@ static int start_dump( int argc, SCHAR ** argv)
 			gds__print_status(status_vector);
 
 			if (handle)
-				gds__detach_database(status_vector, GDS_REF(handle));
+				gds__detach_database(status_vector, &handle);
 
 			Firebird::status_exception::raise(FINI_ERROR);
 		}
 
 		if (handle)
-			gds__detach_database(status_vector, GDS_REF(handle));
+			gds__detach_database(status_vector, &handle);
 
 		/* Check if error && no space */
 
@@ -838,10 +833,7 @@ static int start_enable( int argc, SCHAR ** argv)
 	dpb_length = p - dpb;
 
 	handle = NULL;
-	gds__attach_database(status_vector,
-						 0,
-						 GDS_VAL(database),
-						 GDS_REF(handle), dpb_length, GDS_VAL(dpb));
+	gds__attach_database(status_vector, 0, database, &handle, dpb_length, dpb);
 
 	if (status_vector[1]) {
 		error = TRUE;
@@ -849,7 +841,7 @@ static int start_enable( int argc, SCHAR ** argv)
 	}
 
 	if (handle)
-		gds__detach_database(status_vector, GDS_REF(handle));
+		gds__detach_database(status_vector, &handle);
 
 	return error;
 }
