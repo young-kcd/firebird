@@ -4764,7 +4764,6 @@ static int swallow_single_line_comment (void)
 }
 
 
-
 static int yylex (
     USHORT	client_dialect,
     USHORT	db_dialect,
@@ -4791,12 +4790,14 @@ STR	delimited_id_str;
 
 /* CVC: Experiment to see if -- can be implemented as one-line comment. 
 This is almost the same block than below in the loop when \n is detected,
-but here we should "unget" the first character if there're not 2 hyphens. */
+but here we should "unget" the first character if there're not 2 hyphens.
+
 if (first_time) {
 	first_time = FALSE;
 	if (swallow_single_line_comment() < 0)
 		return -1;
 }
+*/
 
 for (;;)
     {
@@ -4805,37 +4806,44 @@ for (;;)
     
     c = *ptr++;
 
-    while (c == '\n') {
-		lines++;
-		line_start = ptr /* + 1*/; /* CVC: +1 left out. */
-		/* CVC: Experiment to see if -- can be implemented as one-line comment. */
-		if (swallow_single_line_comment() < 0)
-			return -1;
-		c = *ptr++;
-	}
+	/* Process comments */
 
-
-    if ((c == '/') && (*ptr == '*'))
-	{
-	ptr++;
-	while (ptr < end)
-	    {
-	    if ((c = *ptr++) == '*')
-		{
-		if (*ptr == '/')
-		    break;
-		}
-	    if (c == '\n')
-		{
-		lines++;
-		line_start = ptr /* + 1*/; /* CVC: +1 left out. */
-
-		}
+    if ((c == '-') && (*ptr == '-')) {
+		
+		/* single-line */
+		
+		ptr++;
+		while (ptr < end) {
+			if ((c = *ptr++) == '\n') {
+				lines++;
+				line_start = ptr /* + 1*/; /* CVC: +1 left out. */
+				break;
+			}
 	    }
-	if (ptr >= end)
-	    return -1;
-	ptr++;
-	continue;
+		if (ptr >= end)
+			return -1;
+		continue;
+	}
+    else if ((c == '/') && (*ptr == '*')) {
+		
+		/* multi-line */
+		
+		ptr++;
+		while (ptr < end) {
+			if ((c = *ptr++) == '*') {
+				if (*ptr == '/')
+					break;
+			}
+			if (c == '\n') {
+				lines++;
+				line_start = ptr /* + 1*/; /* CVC: +1 left out. */
+
+			}
+	    }
+		if (ptr >= end)
+			return -1;
+		ptr++;
+		continue;
 	}
 
 #if (! ( defined JPN_SJIS || defined JPN_EUC) )
