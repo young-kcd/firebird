@@ -6,7 +6,7 @@
 - no spaces allowed between function name and leading left paren - do
 "foo()", not "foo ()".
 - spaces around operation - do "c = a + b;"
-- spaces between function's parameters.
+- spaces between function's parameters
 - no spaces with pointer sign - do "*p++ = *q++" and "char *a".
 - Mandatory braces around scoped code. Closing brace always aligned to the
 first char of the keyword introducing the scope - i.e.
@@ -22,7 +22,9 @@ or
 		//code
 	}
 
-second form is preferable.
+first form is not allowed if condition exeeds one line. Braces may be omitted 
+only if condition doesn't exceed one line and conditional statement also doesn't 
+exceed one line.
 
 - No spaces in C++ cast expressions. Do "static_cast<type*>(ptr)", not
 "static_cast < type * > ( ptr )".
@@ -31,3 +33,4 @@ second form is preferable.
 - Don't break the build. Before commiting do full build cycle from
 scratch (on all available platforms).
 - Always end source files, including headers, with a newline.
+- Prefer C++ style for comments
