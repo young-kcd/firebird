@@ -61,13 +61,13 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
 #ifdef PC_ENGINE
-	SLONG tra_range_id;			/* unique id of cache range within transaction */
+	SLONG tra_range_id;				/* unique id of cache range within transaction */
 #endif
 	struct dfw *tra_deferred_work;	/* work deferred to commit time */
-	class Rsc *tra_resources;	/* resource existence list */
-	class traRpbList *tra_rpblist;
-	UCHAR tra_use_count;		/* use count for safe AST delivery */
-	UCHAR tra_callback_count;	/* callback count for 'execute varchar' */
+	class Rsc *tra_resources;		/* resource existence list */
+	class traRpbList *tra_rpblist;	/* active RPB's of given transaction */
+	UCHAR tra_use_count;			/* use count for safe AST delivery */
+	UCHAR tra_callback_count;		/* callback count for 'execute statement' */
 	UCHAR tra_transactions[1];
 };
 typedef jrd_tra *JRD_TRA;
