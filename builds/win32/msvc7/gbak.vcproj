@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gbak"
-			IntermediateDirectory=".\debug\gbak"
+			OutputDirectory="..\..\..\temp\debug\gbak"
+			IntermediateDirectory="..\..\..\temp\debug\gbak"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gbak/gbak.pch"
-				AssemblerListingLocation=".\debug\gbak/"
-				ObjectFile=".\debug\gbak/"
-				ProgramDataBaseFileName=".\debug\gbak/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gbak/gbak.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gbak/"
+				ObjectFile="..\..\..\temp\debug\gbak/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gbak/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -44,11 +44,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gbak/gbak.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gbak/gbak.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gbak/gbak.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gbak/gbak.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -66,8 +66,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gbak"
-			IntermediateDirectory=".\release\gbak"
+			OutputDirectory="..\..\..\temp\release\gbak"
+			IntermediateDirectory="..\..\..\temp\release\gbak"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -85,10 +85,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gbak/gbak.pch"
-				AssemblerListingLocation=".\release\gbak/"
-				ObjectFile=".\release\gbak/"
-				ProgramDataBaseFileName=".\release\gbak/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gbak/gbak.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gbak/"
+				ObjectFile="..\..\..\temp\release\gbak/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gbak/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -102,11 +102,11 @@
 				OutputFile="release/firebird/bin/gbak.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gbak/gbak.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gbak/gbak.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gbak/gbak.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gbak/gbak.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

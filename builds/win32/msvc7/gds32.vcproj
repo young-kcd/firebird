@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gds32"
-			IntermediateDirectory=".\release\gds32"
+			OutputDirectory="..\..\..\temp\release\gds32"
+			IntermediateDirectory="..\..\..\temp\release\gds32"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gds32/gds32.pch"
-				AssemblerListingLocation=".\release\gds32/"
-				ObjectFile=".\release\gds32/"
-				ProgramDataBaseFileName=".\release\gds32/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gds32/gds32.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gds32/"
+				ObjectFile="..\..\..\temp\release\gds32/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gds32/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -48,15 +48,15 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\gds32.def"
-				ProgramDatabaseFile=".\release\gds32/gds32.pdb"
-				ImportLibrary=".\release\gds32/gds32.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\gds32/gds32.pdb"
+				ImportLibrary="..\..\..\temp\release\gds32/gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\gds32/gds32.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gds32/gds32.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -74,8 +74,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gds32"
-			IntermediateDirectory=".\debug\gds32"
+			OutputDirectory="..\..\..\temp\debug\gds32"
+			IntermediateDirectory="..\..\..\temp\debug\gds32"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -87,10 +87,10 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GDS32"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gds32/gds32.pch"
-				AssemblerListingLocation=".\debug\gds32/"
-				ObjectFile=".\debug\gds32/"
-				ProgramDataBaseFileName=".\debug\gds32/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gds32/gds32.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gds32/"
+				ObjectFile="..\..\..\temp\debug\gds32/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gds32/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -106,15 +106,15 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\gds32_debug.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gds32/gds32.pdb"
-				ImportLibrary=".\debug\gds32/gds32.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\gds32/gds32.pdb"
+				ImportLibrary="..\..\..\temp\debug\gds32/gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\gds32/gds32.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gds32/gds32.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

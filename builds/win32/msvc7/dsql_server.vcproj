@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\dsql_server_ss"
-			IntermediateDirectory=".\release\dsql_server_ss"
+			OutputDirectory="..\..\..\temp\release\dsql_server_ss"
+			IntermediateDirectory="..\..\..\temp\release\dsql_server_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\dsql_server_ss/dsql_server.pch"
-				AssemblerListingLocation=".\release\dsql_server_ss/"
-				ObjectFile=".\release\dsql_server_ss/"
-				ProgramDataBaseFileName=".\release\dsql_server_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\dsql_server_ss/dsql_server.pch"
+				AssemblerListingLocation="..\..\..\temp\release\dsql_server_ss/"
+				ObjectFile="..\..\..\temp\release\dsql_server_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\dsql_server_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -42,7 +42,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\dsql_server_ss\dsql_server.lib"
+				OutputFile="..\..\..\temp\release\dsql_server_ss\dsql_server.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\dsql_server_ss"
-			IntermediateDirectory=".\debug\dsql_server_ss"
+			OutputDirectory="..\..\..\temp\debug\dsql_server_ss"
+			IntermediateDirectory="..\..\..\temp\debug\dsql_server_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -74,10 +74,10 @@
 				PreprocessorDefinitions="DEBUG,_DEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,DEV_BUILD,_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\dsql_server_ss/dsql_server.pch"
-				AssemblerListingLocation=".\debug\dsql_server_ss/"
-				ObjectFile=".\debug\dsql_server_ss/"
-				ProgramDataBaseFileName=".\debug\dsql_server_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\dsql_server_ss/dsql_server.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\dsql_server_ss/"
+				ObjectFile="..\..\..\temp\debug\dsql_server_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\dsql_server_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\dsql_server_ss\dsql_server.lib"
+				OutputFile="..\..\..\temp\debug\dsql_server_ss\dsql_server.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

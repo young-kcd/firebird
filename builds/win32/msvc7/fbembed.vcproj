@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\fbembed"
-			IntermediateDirectory=".\debug\fbembed"
+			OutputDirectory="..\..\..\temp\debug\fbembed"
+			IntermediateDirectory="..\..\..\temp\debug\fbembed"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbembed/fbembed.pch"
-				AssemblerListingLocation=".\debug\fbembed/"
-				ObjectFile=".\debug\fbembed/"
-				ProgramDataBaseFileName=".\debug\fbembed/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fbembed/fbembed.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\fbembed/"
+				ObjectFile="..\..\..\temp\debug\fbembed/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\fbembed/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
@@ -44,15 +44,15 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbembed/fbembed.pdb"
-				ImportLibrary=".\debug\fbembed/fbembed.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbembed/fbembed.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbembed/fbembed.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbembed/fbembed.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbembed/fbembed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -70,8 +70,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\fbembed"
-			IntermediateDirectory=".\release\fbembed"
+			OutputDirectory="..\..\..\temp\release\fbembed"
+			IntermediateDirectory="..\..\..\temp\release\fbembed"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -90,10 +90,10 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\release\fbembed/fbembed.pch"
-				AssemblerListingLocation=".\release\fbembed/"
-				ObjectFile=".\release\fbembed/"
-				ProgramDataBaseFileName=".\release\fbembed/"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbembed/fbembed.pch"
+				AssemblerListingLocation="..\..\..\temp\release\fbembed/"
+				ObjectFile="..\..\..\temp\release\fbembed/"
+				ProgramDataBaseFileName="..\..\..\temp\release\fbembed/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -107,15 +107,15 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
-				ProgramDatabaseFile=".\release\fbembed/fbembed.pdb"
-				ImportLibrary=".\release\fbembed/fbembed.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\fbembed/fbembed.pdb"
+				ImportLibrary="..\..\..\temp\release\fbembed/fbembed.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\fbembed/fbembed.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbembed/fbembed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

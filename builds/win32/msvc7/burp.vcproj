@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\burp_ss"
-			IntermediateDirectory=".\release\burp_ss"
+			OutputDirectory="..\..\..\temp\release\burp_ss"
+			IntermediateDirectory="..\..\..\temp\release\burp_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\burp_ss/burp.pch"
-				AssemblerListingLocation=".\release\burp_ss/"
-				ObjectFile=".\release\burp_ss/"
-				ProgramDataBaseFileName=".\release\burp_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\burp_ss/burp.pch"
+				AssemblerListingLocation="..\..\..\temp\release\burp_ss/"
+				ObjectFile="..\..\..\temp\release\burp_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\burp_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -42,7 +42,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\burp_ss\burp.lib"
+				OutputFile="..\..\..\temp\release\burp_ss\burp.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\burp_ss"
-			IntermediateDirectory=".\debug\burp_ss"
+			OutputDirectory="..\..\..\temp\debug\burp_ss"
+			IntermediateDirectory="..\..\..\temp\debug\burp_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -74,19 +74,19 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\burp_ss/burp.pch"
-				AssemblerListingLocation=".\debug\burp_ss/"
-				ObjectFile=".\debug\burp_ss/"
-				ProgramDataBaseFileName=".\debug\burp_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\burp_ss/burp.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\burp_ss/"
+				ObjectFile="..\..\..\temp\debug\burp_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\burp_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\burp_ss\burp.lib"
+				OutputFile="..\..\..\temp\debug\burp_ss\burp.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\engine_ss"
-			IntermediateDirectory=".\debug\engine_ss"
+			OutputDirectory="..\..\..\temp\debug\engine_ss"
+			IntermediateDirectory="..\..\..\temp\debug\engine_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,19 +25,19 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,SERVER_SHUTDOWN,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\engine_ss/engine.pch"
-				AssemblerListingLocation=".\debug\engine_ss/"
-				ObjectFile=".\debug\engine_ss/"
-				ProgramDataBaseFileName=".\debug\engine_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\engine_ss/engine.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\engine_ss/"
+				ObjectFile="..\..\..\temp\debug\engine_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\engine_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\engine_ss\engine.lib"
+				OutputFile="..\..\..\temp\debug\engine_ss\engine.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -56,8 +56,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\engine_ss"
-			IntermediateDirectory=".\release\engine_ss"
+			OutputDirectory="..\..\..\temp\release\engine_ss"
+			IntermediateDirectory="..\..\..\temp\release\engine_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -76,10 +76,10 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\release\engine_ss/engine.pch"
-				AssemblerListingLocation=".\release\engine_ss/"
-				ObjectFile=".\release\engine_ss/"
-				ProgramDataBaseFileName=".\release\engine_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\engine_ss/engine.pch"
+				AssemblerListingLocation="..\..\..\temp\release\engine_ss/"
+				ObjectFile="..\..\..\temp\release\engine_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\engine_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -87,7 +87,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\engine_ss\engine.lib"
+				OutputFile="..\..\..\temp\release\engine_ss\engine.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

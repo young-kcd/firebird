@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\instreg"
-			IntermediateDirectory=".\debug\instreg"
+			OutputDirectory="..\..\..\temp\debug\instreg"
+			IntermediateDirectory="..\..\..\temp\debug\instreg"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\instreg/instreg.pch"
-				AssemblerListingLocation=".\debug\instreg/"
-				ObjectFile=".\debug\instreg/"
-				ProgramDataBaseFileName=".\debug\instreg/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\instreg/instreg.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\instreg/"
+				ObjectFile="..\..\..\temp\debug\instreg/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\instreg/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -43,11 +43,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\instreg/instreg.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\instreg/instreg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\instreg/instreg.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\instreg/instreg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -65,8 +65,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\instreg"
-			IntermediateDirectory=".\release\instreg"
+			OutputDirectory="..\..\..\temp\release\instreg"
+			IntermediateDirectory="..\..\..\temp\release\instreg"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -84,10 +84,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\instreg/instreg.pch"
-				AssemblerListingLocation=".\release\instreg/"
-				ObjectFile=".\release\instreg/"
-				ProgramDataBaseFileName=".\release\instreg/"
+				PrecompiledHeaderFile="..\..\..\temp\release\instreg/instreg.pch"
+				AssemblerListingLocation="..\..\..\temp\release\instreg/"
+				ObjectFile="..\..\..\temp\release\instreg/"
+				ProgramDataBaseFileName="..\..\..\temp\release\instreg/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -100,11 +100,11 @@
 				OutputFile="release/firebird/bin/instreg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\instreg/instreg.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\instreg/instreg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\instreg/instreg.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\instreg/instreg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

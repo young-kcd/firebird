@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\fbclient"
-			IntermediateDirectory=".\debug\fbclient"
+			OutputDirectory="..\..\..\temp\debug\fbclient"
+			IntermediateDirectory="..\..\..\temp\debug\fbclient"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbclient/fbclient.pch"
-				AssemblerListingLocation=".\debug\fbclient/"
-				ObjectFile=".\debug\fbclient/"
-				ProgramDataBaseFileName=".\debug\fbclient/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fbclient/fbclient.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\fbclient/"
+				ObjectFile="..\..\..\temp\debug\fbclient/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\fbclient/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -45,15 +45,15 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbclient/fbclient.pdb"
-				ImportLibrary=".\debug\fbclient/fbclient.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbclient/fbclient.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbclient/fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbclient/fbclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbclient/fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -71,8 +71,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\fbclient"
-			IntermediateDirectory=".\release\fbclient"
+			OutputDirectory="..\..\..\temp\release\fbclient"
+			IntermediateDirectory="..\..\..\temp\release\fbclient"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -90,10 +90,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;I386;_X86_=1;WIN32;_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\fbclient/fbclient.pch"
-				AssemblerListingLocation=".\release\fbclient/"
-				ObjectFile=".\release\fbclient/"
-				ProgramDataBaseFileName=".\release\fbclient/"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbclient/fbclient.pch"
+				AssemblerListingLocation="..\..\..\temp\release\fbclient/"
+				ObjectFile="..\..\..\temp\release\fbclient/"
+				ProgramDataBaseFileName="..\..\..\temp\release\fbclient/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -108,15 +108,15 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
-				ProgramDatabaseFile=".\release\fbclient/fbclient.pdb"
-				ImportLibrary=".\release\fbclient/fbclient.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\fbclient/fbclient.pdb"
+				ImportLibrary="..\..\..\temp\release\fbclient/fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\fbclient/fbclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbclient/fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

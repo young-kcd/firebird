@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\engine_es"
-			IntermediateDirectory=".\release\engine_es"
+			OutputDirectory="..\..\..\temp\release\engine_es"
+			IntermediateDirectory="..\..\..\temp\release\engine_es"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -32,10 +32,10 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER,EMBEDDED"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\release\engine_es/engine_embed.pch"
-				AssemblerListingLocation=".\release\engine_es/"
-				ObjectFile=".\release\engine_es/"
-				ProgramDataBaseFileName=".\release\engine_es/"
+				PrecompiledHeaderFile="..\..\..\temp\release\engine_es/engine_embed.pch"
+				AssemblerListingLocation="..\..\..\temp\release\engine_es/"
+				ObjectFile="..\..\..\temp\release\engine_es/"
+				ProgramDataBaseFileName="..\..\..\temp\release\engine_es/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -62,8 +62,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\engine_es"
-			IntermediateDirectory=".\debug\engine_es"
+			OutputDirectory="..\..\..\temp\debug\engine_es"
+			IntermediateDirectory="..\..\..\temp\debug\engine_es"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -75,13 +75,13 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD,EMBEDDED"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\engine_es/engine_embed.pch"
-				AssemblerListingLocation=".\debug\engine_es/"
-				ObjectFile=".\debug\engine_es/"
-				ProgramDataBaseFileName=".\debug\engine_es/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\engine_es/engine_embed.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\engine_es/"
+				ObjectFile="..\..\..\temp\debug\engine_es/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\engine_es/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -499,6 +499,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dbg.h">

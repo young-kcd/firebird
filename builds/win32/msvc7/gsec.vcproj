@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gsec"
-			IntermediateDirectory=".\release\gsec"
+			OutputDirectory="..\..\..\temp\release\gsec"
+			IntermediateDirectory="..\..\..\temp\release\gsec"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gsec/gsec.pch"
-				AssemblerListingLocation=".\release\gsec/"
-				ObjectFile=".\release\gsec/"
-				ProgramDataBaseFileName=".\release\gsec/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gsec/gsec.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gsec/"
+				ObjectFile="..\..\..\temp\release\gsec/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gsec/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -47,11 +47,11 @@
 				OutputFile="release/firebird/bin/gsec.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gsec/gsec.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gsec/gsec.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gsec/gsec.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gsec/gsec.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -69,8 +69,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gsec"
-			IntermediateDirectory=".\debug\gsec"
+			OutputDirectory="..\..\..\temp\debug\gsec"
+			IntermediateDirectory="..\..\..\temp\debug\gsec"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -82,10 +82,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gsec/gsec.pch"
-				AssemblerListingLocation=".\debug\gsec/"
-				ObjectFile=".\debug\gsec/"
-				ProgramDataBaseFileName=".\debug\gsec/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gsec/gsec.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gsec/"
+				ObjectFile="..\..\..\temp\debug\gsec/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gsec/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -100,11 +100,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gsec/gsec.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gsec/gsec.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gsec/gsec.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gsec/gsec.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

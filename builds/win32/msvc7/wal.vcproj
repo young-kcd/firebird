@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\wal_ss"
-			IntermediateDirectory=".\debug\wal_ss"
+			OutputDirectory="..\..\..\temp\debug\wal_ss"
+			IntermediateDirectory="..\..\..\temp\debug\wal_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,19 +25,19 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\wal_ss/wal.pch"
-				AssemblerListingLocation=".\debug\wal_ss/"
-				ObjectFile=".\debug\wal_ss/"
-				ProgramDataBaseFileName=".\debug\wal_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\wal_ss/wal.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\wal_ss/"
+				ObjectFile="..\..\..\temp\debug\wal_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\wal_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\wal_ss\wal.lib"
+				OutputFile="..\..\..\temp\debug\wal_ss\wal.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -56,8 +56,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\wal_ss"
-			IntermediateDirectory=".\release\wal_ss"
+			OutputDirectory="..\..\..\temp\release\wal_ss"
+			IntermediateDirectory="..\..\..\temp\release\wal_ss"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -75,10 +75,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\wal_ss/wal.pch"
-				AssemblerListingLocation=".\release\wal_ss/"
-				ObjectFile=".\release\wal_ss/"
-				ProgramDataBaseFileName=".\release\wal_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\wal_ss/wal.pch"
+				AssemblerListingLocation="..\..\..\temp\release\wal_ss/"
+				ObjectFile="..\..\..\temp\release\wal_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\wal_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\wal_ss\wal.lib"
+				OutputFile="..\..\..\temp\release\wal_ss\wal.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

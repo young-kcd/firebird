@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\burp_cs"
-			IntermediateDirectory=".\release\burp_cs"
+			OutputDirectory="..\..\..\temp\release\burp_cs"
+			IntermediateDirectory="..\..\..\temp\release\burp_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\burp_cs/burp_classic.pch"
-				AssemblerListingLocation=".\release\burp_cs/"
-				ObjectFile=".\release\burp_cs/"
-				ProgramDataBaseFileName=".\release\burp_cs/"
+				PrecompiledHeaderFile="..\..\..\temp\release\burp_cs/burp_classic.pch"
+				AssemblerListingLocation="..\..\..\temp\release\burp_cs/"
+				ObjectFile="..\..\..\temp\release\burp_cs/"
+				ProgramDataBaseFileName="..\..\..\temp\release\burp_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\burp_cs"
-			IntermediateDirectory=".\debug\burp_cs"
+			OutputDirectory="..\..\..\temp\debug\burp_cs"
+			IntermediateDirectory="..\..\..\temp\debug\burp_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -74,13 +74,13 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\burp_cs/burp_classic.pch"
-				AssemblerListingLocation=".\debug\burp_cs/"
-				ObjectFile=".\debug\burp_cs/"
-				ProgramDataBaseFileName=".\debug\burp_cs/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\burp_cs/burp_classic.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\burp_cs/"
+				ObjectFile="..\..\..\temp\debug\burp_cs/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\burp_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>

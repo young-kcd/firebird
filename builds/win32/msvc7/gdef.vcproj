@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gdef"
-			IntermediateDirectory=".\debug\gdef"
+			OutputDirectory="..\..\..\temp\debug\gdef"
+			IntermediateDirectory="..\..\..\temp\debug\gdef"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gdef/gdef.pch"
-				AssemblerListingLocation=".\debug\gdef/"
-				ObjectFile=".\debug\gdef/"
-				ProgramDataBaseFileName=".\debug\gdef/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gdef/gdef.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gdef/"
+				ObjectFile="..\..\..\temp\debug\gdef/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gdef/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -43,11 +43,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gdef/gdef.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gdef/gdef.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gdef/gdef.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gdef/gdef.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -65,8 +65,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gdef"
-			IntermediateDirectory=".\release\gdef"
+			OutputDirectory="..\..\..\temp\release\gdef"
+			IntermediateDirectory="..\..\..\temp\release\gdef"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -84,10 +84,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gdef/gdef.pch"
-				AssemblerListingLocation=".\release\gdef/"
-				ObjectFile=".\release\gdef/"
-				ProgramDataBaseFileName=".\release\gdef/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gdef/gdef.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gdef/"
+				ObjectFile="..\..\..\temp\release\gdef/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gdef/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -100,11 +100,11 @@
 				OutputFile="release/firebird/bin/gdef.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gdef/gdef.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gdef/gdef.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gdef/gdef.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gdef/gdef.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

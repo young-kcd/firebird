@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\remote_cs"
-			IntermediateDirectory=".\release\remote_cs"
+			OutputDirectory="..\..\..\temp\release\remote_cs"
+			IntermediateDirectory="..\..\..\temp\release\remote_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,SERVER_SHUTDOWN,IPSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\remote_cs/remote_classic.pch"
-				AssemblerListingLocation=".\release\remote_cs/"
-				ObjectFile=".\release\remote_cs/"
-				ProgramDataBaseFileName=".\release\remote_cs/"
+				PrecompiledHeaderFile="..\..\..\temp\release\remote_cs/remote_classic.pch"
+				AssemblerListingLocation="..\..\..\temp\release\remote_cs/"
+				ObjectFile="..\..\..\temp\release\remote_cs/"
+				ProgramDataBaseFileName="..\..\..\temp\release\remote_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\remote_cs"
-			IntermediateDirectory=".\debug\remote_cs"
+			OutputDirectory="..\..\..\temp\debug\remote_cs"
+			IntermediateDirectory="..\..\..\temp\debug\remote_cs"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -74,13 +74,13 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,SERVER_SHUTDOWN,IPSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\remote_cs/remote_classic.pch"
-				AssemblerListingLocation=".\debug\remote_cs/"
-				ObjectFile=".\debug\remote_cs/"
-				ProgramDataBaseFileName=".\debug\remote_cs/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\remote_cs/remote_classic.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\remote_cs/"
+				ObjectFile="..\..\..\temp\debug\remote_cs/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\remote_cs/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>

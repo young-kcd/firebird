@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gsplit"
-			IntermediateDirectory=".\debug\gsplit"
+			OutputDirectory="..\..\..\temp\debug\gsplit"
+			IntermediateDirectory="..\..\..\temp\debug\gsplit"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gsplit/gsplit.pch"
-				AssemblerListingLocation=".\debug\gsplit/"
-				ObjectFile=".\debug\gsplit/"
-				ProgramDataBaseFileName=".\debug\gsplit/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gsplit/gsplit.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gsplit/"
+				ObjectFile="..\..\..\temp\debug\gsplit/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gsplit/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -44,11 +44,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gsplit/gsplit.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gsplit/gsplit.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gsplit/gsplit.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gsplit/gsplit.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -66,8 +66,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gsplit"
-			IntermediateDirectory=".\release\gsplit"
+			OutputDirectory="..\..\..\temp\release\gsplit"
+			IntermediateDirectory="..\..\..\temp\release\gsplit"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -85,10 +85,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gsplit/gsplit.pch"
-				AssemblerListingLocation=".\release\gsplit/"
-				ObjectFile=".\release\gsplit/"
-				ProgramDataBaseFileName=".\release\gsplit/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gsplit/gsplit.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gsplit/"
+				ObjectFile="..\..\..\temp\release\gsplit/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gsplit/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -102,11 +102,11 @@
 				OutputFile="release/firebird/bin/gsplit.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gsplit/gsplit.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gsplit/gsplit.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gsplit/gsplit.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gsplit/gsplit.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\ipserver"
-			IntermediateDirectory=".\debug\ipserver"
+			OutputDirectory="..\..\..\temp\debug\ipserver"
+			IntermediateDirectory="..\..\..\temp\debug\ipserver"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,19 +25,19 @@
 				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,_X86_,DEV_BUILD,SUPERSERVER"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\ipserver/ipserver.pch"
-				AssemblerListingLocation=".\debug\ipserver/"
-				ObjectFile=".\debug\ipserver/"
-				ProgramDataBaseFileName=".\debug\ipserver/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\ipserver/ipserver.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\ipserver/"
+				ObjectFile="..\..\..\temp\debug\ipserver/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\ipserver/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\debug\ipserver\ipserver.lib"
+				OutputFile="..\..\..\temp\debug\ipserver\ipserver.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -56,8 +56,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\ipserver"
-			IntermediateDirectory=".\release\ipserver"
+			OutputDirectory="..\..\..\temp\release\ipserver"
+			IntermediateDirectory="..\..\..\temp\release\ipserver"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -75,10 +75,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_,SUPERSERVER"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\ipserver/ipserver.pch"
-				AssemblerListingLocation=".\release\ipserver/"
-				ObjectFile=".\release\ipserver/"
-				ProgramDataBaseFileName=".\release\ipserver/"
+				PrecompiledHeaderFile="..\..\..\temp\release\ipserver/ipserver.pch"
+				AssemblerListingLocation="..\..\..\temp\release\ipserver/"
+				ObjectFile="..\..\..\temp\release\ipserver/"
+				ProgramDataBaseFileName="..\..\..\temp\release\ipserver/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\release\ipserver\ipserver.lib"
+				OutputFile="..\..\..\temp\release\ipserver\ipserver.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

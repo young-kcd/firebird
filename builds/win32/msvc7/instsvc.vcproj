@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\instsvc"
-			IntermediateDirectory=".\release\instsvc"
+			OutputDirectory="..\..\..\temp\release\instsvc"
+			IntermediateDirectory="..\..\..\temp\release\instsvc"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\instsvc/instsvc.pch"
-				AssemblerListingLocation=".\release\instsvc/"
-				ObjectFile=".\release\instsvc/"
-				ProgramDataBaseFileName=".\release\instsvc/"
+				PrecompiledHeaderFile="..\..\..\temp\release\instsvc/instsvc.pch"
+				AssemblerListingLocation="..\..\..\temp\release\instsvc/"
+				ObjectFile="..\..\..\temp\release\instsvc/"
+				ProgramDataBaseFileName="..\..\..\temp\release\instsvc/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -47,11 +47,11 @@
 				OutputFile="release/firebird/bin/instsvc.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\instsvc/instsvc.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\instsvc/instsvc.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\instsvc/instsvc.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\instsvc/instsvc.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -69,8 +69,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\instsvc"
-			IntermediateDirectory=".\debug\instsvc"
+			OutputDirectory="..\..\..\temp\debug\instsvc"
+			IntermediateDirectory="..\..\..\temp\debug\instsvc"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -82,10 +82,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\instsvc/instsvc.pch"
-				AssemblerListingLocation=".\debug\instsvc/"
-				ObjectFile=".\debug\instsvc/"
-				ProgramDataBaseFileName=".\debug\instsvc/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\instsvc/instsvc.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\instsvc/"
+				ObjectFile="..\..\..\temp\debug\instsvc/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\instsvc/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -100,11 +100,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\instsvc/instsvc.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\instsvc/instsvc.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\instsvc/instsvc.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\instsvc/instsvc.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

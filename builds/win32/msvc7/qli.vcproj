@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\qli"
-			IntermediateDirectory=".\debug\qli"
+			OutputDirectory="..\..\..\temp\debug\qli"
+			IntermediateDirectory="..\..\..\temp\debug\qli"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,DEV_BUILD,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\qli/qli.pch"
-				AssemblerListingLocation=".\debug\qli/"
-				ObjectFile=".\debug\qli/"
-				ProgramDataBaseFileName=".\debug\qli/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\qli/qli.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\qli/"
+				ObjectFile="..\..\..\temp\debug\qli/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\qli/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -43,11 +43,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\qli/qli.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\qli/qli.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\qli/qli.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\qli/qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -65,8 +65,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\qli"
-			IntermediateDirectory=".\release\qli"
+			OutputDirectory="..\..\..\temp\release\qli"
+			IntermediateDirectory="..\..\..\temp\release\qli"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -84,10 +84,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\qli/qli.pch"
-				AssemblerListingLocation=".\release\qli/"
-				ObjectFile=".\release\qli/"
-				ProgramDataBaseFileName=".\release\qli/"
+				PrecompiledHeaderFile="..\..\..\temp\release\qli/qli.pch"
+				AssemblerListingLocation="..\..\..\temp\release\qli/"
+				ObjectFile="..\..\..\temp\release\qli/"
+				ProgramDataBaseFileName="..\..\..\temp\release\qli/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -100,11 +100,11 @@
 				OutputFile="release/firebird/bin/qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\qli/qli.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\qli/qli.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\qli/qli.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\qli/qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\isql"
-			IntermediateDirectory=".\debug\isql"
+			OutputDirectory="..\..\..\temp\debug\isql"
+			IntermediateDirectory="..\..\..\temp\debug\isql"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
-				PrecompiledHeaderFile=".\debug\isql/isql.pch"
-				AssemblerListingLocation=".\debug\isql/"
-				ObjectFile=".\debug\isql/"
-				ProgramDataBaseFileName=".\debug\isql/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\isql/"
+				ObjectFile="..\..\..\temp\debug\isql/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\isql/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -44,11 +44,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\isql/isql.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\isql/isql.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\isql/isql.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\isql/isql.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -66,8 +66,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\isql"
-			IntermediateDirectory=".\release\isql"
+			OutputDirectory="..\..\..\temp\release\isql"
+			IntermediateDirectory="..\..\..\temp\release\isql"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -85,10 +85,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="4"
-				PrecompiledHeaderFile=".\release\isql/isql.pch"
-				AssemblerListingLocation=".\release\isql/"
-				ObjectFile=".\release\isql/"
-				ProgramDataBaseFileName=".\release\isql/"
+				PrecompiledHeaderFile="..\..\..\temp\release\isql/isql.pch"
+				AssemblerListingLocation="..\..\..\temp\release\isql/"
+				ObjectFile="..\..\..\temp\release\isql/"
+				ProgramDataBaseFileName="..\..\..\temp\release\isql/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -102,11 +102,11 @@
 				OutputFile="release/firebird/bin/isql.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\isql/isql.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\isql/isql.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\isql/isql.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\isql/isql.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

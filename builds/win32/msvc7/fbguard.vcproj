@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\fbguard"
-			IntermediateDirectory=".\release\fbguard"
+			OutputDirectory="..\..\..\temp\release\fbguard"
+			IntermediateDirectory="..\..\..\temp\release\fbguard"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -31,10 +31,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\fbguard/fbguard.pch"
-				AssemblerListingLocation=".\release\fbguard/"
-				ObjectFile=".\release\fbguard/"
-				ProgramDataBaseFileName=".\release\fbguard/"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
+				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
+				ObjectFile="..\..\..\temp\release\fbguard/"
+				ProgramDataBaseFileName="..\..\..\temp\release\fbguard/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -47,7 +47,7 @@
 				OutputFile="release/firebird/bin/fbguard.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\fbguard/fbguard.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\fbguard/fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"/>
 			<Tool
@@ -56,7 +56,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\release\fbguard/fbguard.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbguard/fbguard.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -74,8 +74,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\fbguard"
-			IntermediateDirectory=".\debug\fbguard"
+			OutputDirectory="..\..\..\temp\debug\fbguard"
+			IntermediateDirectory="..\..\..\temp\debug\fbguard"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -87,10 +87,10 @@
 				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\fbguard/fbguard.pch"
-				AssemblerListingLocation=".\debug\fbguard/"
-				ObjectFile=".\debug\fbguard/"
-				ProgramDataBaseFileName=".\debug\fbguard/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
+				ObjectFile="..\..\..\temp\debug\fbguard/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\fbguard/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -105,7 +105,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\fbguard/fbguard.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fbguard/fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"/>
 			<Tool
@@ -114,7 +114,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\debug\fbguard/fbguard.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbguard/fbguard.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debug\gstat"
-			IntermediateDirectory=".\debug\gstat"
+			OutputDirectory="..\..\..\temp\debug\gstat"
+			IntermediateDirectory="..\..\..\temp\debug\gstat"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,10 +25,10 @@
 				PreprocessorDefinitions="_DEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\debug\gstat/gstat.pch"
-				AssemblerListingLocation=".\debug\gstat/"
-				ObjectFile=".\debug\gstat/"
-				ProgramDataBaseFileName=".\debug\gstat/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gstat/gstat.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gstat/"
+				ObjectFile="..\..\..\temp\debug\gstat/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gstat/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -43,11 +43,11 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\debug\gstat/gstat.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gstat/gstat.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\debug\gstat/gstat.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gstat/gstat.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -65,8 +65,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\release\gstat"
-			IntermediateDirectory=".\release\gstat"
+			OutputDirectory="..\..\..\temp\release\gstat"
+			IntermediateDirectory="..\..\..\temp\release\gstat"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -84,10 +84,10 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\release\gstat/gstat.pch"
-				AssemblerListingLocation=".\release\gstat/"
-				ObjectFile=".\release\gstat/"
-				ProgramDataBaseFileName=".\release\gstat/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gstat/gstat.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gstat/"
+				ObjectFile="..\..\..\temp\release\gstat/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gstat/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -100,11 +100,11 @@
 				OutputFile="release/firebird/bin/gstat.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\release\gstat/gstat.pdb"
+				ProgramDatabaseFile="..\..\..\temp\release\gstat/gstat.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\release\gstat/gstat.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gstat/gstat.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
