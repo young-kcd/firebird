@@ -87,7 +87,7 @@ static NOD pass1_variable(REQ, NOD);
 static NOD post_map(NOD, CTX);
 static void remap_streams_to_parent_context(NOD, CTX);
 static FLD resolve_context(REQ, STR, STR, CTX);
-static BOOLEAN set_parameter_type(NOD, NOD, BOOLEAN);
+static BOOLEAN set_parameter_type(NOD, NOD, BOOLEAN, BOOLEAN = FALSE);
 static void set_parameters_name(NOD, NOD);
 static void set_parameter_name(NOD, NOD, DSQL_REL);
 
@@ -959,7 +959,7 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 					MAKE_desc_from_field(&desc_node.nod_desc, field);
-					set_parameter_type(*ptr, &desc_node, FALSE);
+					set_parameter_type(*ptr, &desc_node, FALSE, TRUE);
 				}
 			}
 		}
@@ -3941,7 +3941,7 @@ static FLD resolve_context( REQ request, STR name, STR qualifier, CTX context)
 
 static BOOLEAN set_parameter_type(
 								  NOD in_node,
-								  NOD node, BOOLEAN force_varchar)
+								  NOD node, BOOLEAN force_varchar, BOOLEAN node_stack_var )
 {
 /**************************************
  *
@@ -3958,7 +3958,9 @@ static BOOLEAN set_parameter_type(
 	BOOLEAN result = 0;
 
 	DEV_BLKCHK(in_node, dsql_type_nod);
-	DEV_BLKCHK(node, dsql_type_nod);
+#ifdef DEV_BUILD
+	if (!node_stack_var) DEV_BLKCHK(node, dsql_type_nod);
+#endif
 
 	if (in_node == NULL)
 		return FALSE;
