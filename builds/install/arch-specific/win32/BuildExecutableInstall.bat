@@ -178,11 +178,8 @@ if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @echo   Copying ib_util etc
-for %%v in ( src\extlib\ib_util.h lang_helpers\ib_util.pas ) do (
-	((copy %ROOT_PATH%\%%v %FBBUILD_OUTPUT%\include\%%v > nul) || (call :WARNING Copying %%v failed.))
-)
-::copy %ROOT_PATH%\src\extlib\ib_util.h %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.h failed.)
-::copy %ROOT_PATH%\lang_helpers\ib_util.pas %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.pas failed.)
+copy %ROOT_PATH%\src\extlib\ib_util.h %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.h failed.)
+copy %ROOT_PATH%\lang_helpers\ib_util.pas %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.pas failed.)
 
 
 @echo   Copying fbclient lib etc
@@ -237,6 +234,11 @@ for %%v in ( fbudf.sql fbudf.txt ) do (
     goto :EOF
   )
 )
+
+::UDF upgrade script and doc
+mkdir %FBBUILD_OUTPUT%\misc\upgrade\ib_udf 2>nul
+@copy %ROOT_PATH%\src\misc\upgrade\v2\ib_udf*.* %FBBUILD_OUTPUT%\misc\upgrade\ib_udf\
+
 
 @echo   Copying other documentation...
 @copy %ROOT_PATH%\builds\install\arch-specific\win32\installation_readme.txt %FBBUILD_OUTPUT%\doc\installation_readme.txt > nul
@@ -360,7 +362,9 @@ endlocal
 @copy %ROOT_PATH%\builds\misc\security.gbak %FBBUILD_OUTPUT%\security2.fbk > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security2.fbk failed ) & (goto :EOF))
 
-@copy %ROOT_PATH%\src\misc\upgrade\v2\security_database.sql %FBBUILD_OUTPUT%\bin\security_database.sql
+::Migration from old security db to new one
+mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
+@copy %ROOT_PATH%\src\misc\upgrade\v2\security_database.* %FBBUILD_OUTPUT%\misc\upgrade\security
 
 :: Make sure that qli's help.fdb is available
 ::===============================================

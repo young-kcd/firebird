@@ -84,8 +84,8 @@
 #define no_pdb
 #define i18n
 
-;------Undefine specifically for this Alpha build
-#undef  i18n
+;------If necessary we can turn off i18n by uncommenting this undefine
+;#undef  i18n
 
 ;Some strings to distinguish the name of final executable
 #ifdef ship_pdb
@@ -137,16 +137,18 @@ LanguageDetectionMethod=uilanguage
 [Languages]
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
 #ifdef i18n
+;Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: builds\install\arch-specific\win32\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\ba\ProcitajMe.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: builds\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: builds\install\arch-specific\win32\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: builds\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: builds\install\arch-specific\win32\de\liesmich.txt
 Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
-Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalação_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt
+Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalacao_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt
 Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: builds\install\arch-specific\win32\si\instalacija_precitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
 #endif
 
 [Messages]
 en.BeveledLabel=English
 #ifdef i18n
+;ba.BeveledLabel=Bosanski
 fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
 hu.BeveledLabel=Magyar
@@ -157,6 +159,7 @@ si.BeveledLabel=Slovenski
 [CustomMessages]
 #include "custom_messages.inc"
 #ifdef i18n
+;#include "ba\custom_messages_ba.inc"
 #include "fr\custom_messages_fr.inc"
 #include "de\custom_messages_de.inc"
 #include "hu\custom_messages_hu.inc"
@@ -240,6 +243,7 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ClassicServerComponent; Comment: Run Firebird Classic Server (with guardian)
+Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 #define App_Name = SetupSetting("AppName")
 Name: {group}\Firebird 2.0.0 Release Notes; Filename: {app}\doc\Firebird_v2.0.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 Name: {group}\Firebird 1.5.2 Release Notes; Filename: {app}\doc\Firebird_v1.5.2.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
@@ -261,11 +265,12 @@ Source: builds\install\misc\IDPLicense.txt; DestDir: {app}; Components: ClientCo
 Source: builds\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
 ;Translated files
-Source: src\install\arch-specific\win32\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
-Source: src\install\arch-specific\win32\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
-Source: src\install\arch-specific\win32\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
-Source: src\install\arch-specific\win32\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
-Source: src\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+;Source: builds\install\arch-specific\win32\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+Source: builds\install\arch-specific\win32\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
+Source: builds\install\arch-specific\win32\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
+Source: builds\install\arch-specific\win32\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
+Source: builds\install\arch-specific\win32\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
+Source: builds\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: SaveFirebirdConf
 Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
@@ -313,6 +318,7 @@ Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: C
 Source: output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
 Source: output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
 
+;Other stuff
 Source: output\help\*.*; DestDir: {app}\help; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\include\*.*; DestDir: {app}\include; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
@@ -321,10 +327,14 @@ Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: output\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
 
+Source: output\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
+Source: output\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
+
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
-;FIXME Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-;FIXME Source: output\system32\Firebird2Control.cpl; DestDir: {sys}\FIREBI~1.CPL; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+;Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+;Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif
+
 #ifdef examples
 Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
 Source: output\examples\api\*.*; DestDir: {app}\examples\api; Components: DevAdminComponent;  Flags: ignoreversion;
@@ -391,6 +401,7 @@ Var
 #include "FirebirdInstallEnvironmentChecks.inc"
 
 
+
 function SummarizeInstalledProducts: String;
 var
   InstallSummaryArray: TArrayofString;
@@ -450,9 +461,9 @@ If ((ProductsInstalled AND FB2) = FB2) then
 ;
 
 if ProductsInstalledCount = 1 then
-  StatusDescription := Format2(ExpandConstant('{cm:InstallProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
+  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
 else
-  StatusDescription := Format2(ExpandConstant('{cm:InstallProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
+  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
 
   Result := StatusDescription
     +#13
@@ -476,12 +487,12 @@ begin
   if ProductsInstalledCount = 0 then
     //There is a possibility that all our efforts to detect an
     //install were in vain and Firebird 1.5 _is_ running...
-    if ( FirebirdOneFiveRunning ) then begin
+    if ( FirebirdDefaultServerRunning ) then begin
       result := false;
-      MsgBox( #13+ExpandConstant('{cm:Fb15Running1}')
+      MsgBox( #13+ExpandConstant('{cm:FbRunning1,1.5}')
       +#13
-      +#13+ExpandConstant('{cm:Fb15Running2}')
-      +#13+ExpandConstant('{cm:Fb15Running3}')
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
       +#13, mbError, MB_OK);
       exit;
       end
@@ -490,17 +501,36 @@ begin
       exit;
     end;
 
-  //If Fb15 RC is installed then we can install over it.
+  //If Fb15 RC or Fb15 is installed then we can install over it.
   //unless we find the server running.
   if (ProductsInstalledCount = 1) AND
     (((ProductsInstalled AND FB15) = FB15) OR
      ((ProductsInstalled AND FB15RC) = FB15RC)) then
-    if ( FirebirdOneFiveRunning ) then begin
+    if ( FirebirdDefaultServerRunning ) then begin
       result := false;
-      MsgBox( #13+ExpandConstant('{cm:Fb15Running1}')
+      MsgBox( #13+ExpandConstant('{cm:FbRunning1,1.5}')
       +#13
-      +#13+ExpandConstant('{cm:Fb15Running2}')
-      +#13+ExpandConstant('{cm:Fb15Running3}')
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
+      +#13, mbError, MB_OK);
+      exit;
+      end
+    else begin
+      result := true;
+      exit;
+    end
+  ;
+  
+  //If Fb2.0 is installed then we can install over it.
+  //unless we find the server running.
+  if (ProductsInstalledCount = 1) AND
+    ((ProductsInstalled AND FB2) = FB2) then
+    if ( FirebirdDefaultServerRunning ) then begin
+      result := false;
+      MsgBox( #13+ExpandConstant('{cm:FbRunning1,2.0}')
+      +#13
+      +#13+ExpandConstant('{cm:FbRunning2,2.0}')
+      +#13+ExpandConstant('{cm:FbRunning3,2.0}')
       +#13, mbError, MB_OK);
       exit;
       end
@@ -724,11 +754,18 @@ begin
 end;
 
 
+function NonDefaultLanguage: boolean;
+//return true if language other than default is chosen
+begin
+  result := (ActiveLanguage <> 'en');
+end;
+
+
 procedure CurPageChanged(CurPage: Integer);
 begin
   case CurPage of
     wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
-    wpInfoBefore:   WizardForm.INFOAFTERMEMO.font.name:='Courier New';
+    wpInfoAfter:    WizardForm.INFOAFTERMEMO.font.name:='Courier New';
     wpSelectTasks:  WizardForm.TASKSLIST.height := WizardForm.TASKSLIST.height+30;
     wpFinished:     ; // Create some links to Firebird and IBP here?.
   end;
@@ -738,6 +775,7 @@ end;
 procedure CurStepChanged(CurStep: Integer);
 var
   AppStr: String;
+  ReadMeFileStr: String;
 begin
    case CurStep of
     csCopy: begin
@@ -753,11 +791,21 @@ begin
         AppStr := StartApp('')+' -a';
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
-
+      
+      //Fix up conf file
       RemoveSavedConfIfNoDiff;
       UpdateFirebirdConf;
+      
+      //Reset shared library count if necessary
       CheckSharedLibCountAtEnd;
 
+      //Move lang specific readme from doc dir to root of install.
+      if NonDefaultLanguage then begin
+        ReadMeFileStr := ExpandConstant('{cm:ReadMeFile}');
+        if FileCopy(GetAppPath+'\doc\'+ReadMeFileStr, GetAppPath+'\'+ReadMeFileStr, false) then
+          DeleteFile(GetAppPath+'\doc\'+ReadMeFileStr);
+      end;
+      
     end;
   end;
 end;

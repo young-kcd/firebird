@@ -3,22 +3,12 @@
 Firebird 2.0.0       (Win32 Build)
 ==================================
 
-****** NOTE ******
-
-Please ignore this document for the time being.
-
-This document is just a placeholder. NONE of the 
-information refers to Firebird 2.0. An up-to-date 
-readme file will be provided with a future version.
-
-**** END NOTE ****
-
-o Introduction                               TODO
-o Intended Users                             TODO
-o Features in this release (all platforms)   TODO
-o Bugs fixed in this release                 TODO
-o Installation					
-o Known Issues					
+o Introduction
+o Intended Users
+o Features in this release (all platforms)
+o Bugs fixed in this release
+o Installation
+o Known Issues
 o Reporting Bugs
 o Requesting New Features
 
@@ -26,46 +16,64 @@ o Requesting New Features
 Introduction
 ============
 
+Welcome to the first Alpha release of Firebird 2.0.
+
 
 Intended Users
 ==============
+
+This alpha release is not intended for production use. It is released for
+evaluation purposes and is expected to be tested by experienced users of
+Firebird. It is hoped that all alpha testers will read the release notes first.
+
+ o DO NOT install this version if you have never used Firebird before.
+   Use Firebird v1.5.2 instead.
 
 
 Features in this release (all platforms)
 ========================================
 
+See doc/Firebird_v2.0.ReleaseNotes.pdf for more information.
+
 
 Bugs fixed in this release (all platforms)
 ==========================================
+
+See doc/Firebird_v2.0.ReleaseNotes.pdf for more information.
 
 
 Installing the self-installing executable
 =========================================
 
-Please run the executable and read the accompanying installation 
+Please run the executable and read the accompanying installation
 instructions that are contained within the setup wizard.
 
 
 Known Issues
 ============
 
-There are no known issues at this time.
-  
+ o The installation process fails to detect a running Firebird 2.0 server.
+   Ultimately the installation will fail, when it attempts to overwrite a file
+   that is active.
+
+ o The security database has changed! See the DOC directory for more details.
+   Users who wish to migrate an old security database to the new format can
+   use the upgrade script in misc/upgrade/security
 
 Reporting Bugs
 ==============
 
 o Are you sure you understand how Firebird works?
 
-  Perhaps you are seeing the correct behaviour and you really have a 
+  Perhaps you are seeing the correct behaviour and you really have a
   support question. In this case contact the ib-support list server.
- 
-  You may subscribe here: 
+
+  You may subscribe here:
 
     mailto:ib-support-subscribe@yahoogroups.com
 
 
-o Still think it is a bug? 
+o Still think it is a bug?
 
   Check the list of Open Bugs. This can be found at
 
@@ -73,7 +81,7 @@ o Still think it is a bug?
 
   An older version is contained in the doc directory of this release.
 
-Otherwise, if you are reasonably sure it is a bug then please 
+Otherwise, if you are reasonably sure it is a bug then please
 try to develop a reproducible test case. You can then submit it
 to the Firebird bug tracker at:
 
@@ -83,8 +91,8 @@ to the Firebird bug tracker at:
 Requesting New Features
 =======================
 
-Before submitting feature requests please review the existing 
-feature request list. Chances are that someone has already thought 
+Before submitting feature requests please review the existing
+feature request list. Chances are that someone has already thought
 of it. Existing feature requests can be browed here:
 
   http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse

@@ -19,6 +19,7 @@ Contents
 
 o Before installation
 o Installing on systems with older versions of Firebird
+o Installing on systems with Firebird 2.0
 o New features of the installer
 o Deprecated features related to installation
 o Uninstallation
@@ -30,59 +31,41 @@ Before installation
 -------------------
 
 It is recommended that you UNINSTALL all previous
-versions of Firebird or InterBase
-before installing this package.
+versions of Firebird or InterBase before installing
+this package.
 
 
 Installation on systems with older version of Firebird
 ------------------------------------------------------
 
-  **** IMPORTANT ****
+The security database has been changed. The new
+database is called security2.fdb and uses a
+strengthened password encryption algorithm. You can
+find out more info about the new security features in
+doc/README.sha1.txt.
 
-The format of the security database has changed. Do
-not install Firebird 2.0 Alpha 1 into a directory that
-contains a previous version of Firebird.
+The new database structure and the changed encryption
+presents several migration problems for sites that have
+many user ids. The installer makes no attempt to carry
+out this migration.  For Alpha 1 it must be done
+manually. A possible migration technique is available
+in misc/upgrade/security/. A future test release will
+address the issue of user migration more fully.
 
-The installer always retains an existing security
-database if it finds one. It never overwrites it. If you
-attempt to use an older version of the security database
-with Firebird 2.0 Alpha 1 or later you will receive this
-message:
 
-  cannot attach to password database
+Installing on systems with Firebird 2.0 Alpha 1
+-----------------------------------------------
 
-For this reason it is recommended that you install into
-a new directory and run the migration script to upgrade
-the old database.
-
-Here are the steps in detail:
-  1. Install to a new directory.
-  2. Make a file copy of the old security database.
-     (Make sure your old Firebird is not running.)
-  3. Start firebird using it's new, native security2.fdb.
-  4. Connect to your old security database as SYSDBA and
-     run the script.
-  5. Stop firebird.
-  6. Copy upgraded database to firebird's home directory.
-  7. Set LegacyHash parameter in firebird.conf to 1.
-  8. Start firebird.
-
-Now you should be able to connect to firebird 2.0 server
-using your old logins and passwords. But be careful - as
-long as you have LegacyHash = 1, firebird's security
-doesn't work completely. You must change SYSDBA
-password, let users change their passwords (yes, since
-2.0 each user can change his password himself) and set
-LegacyHash back to default value of 0.
-
+The installer cannot automatically detect if a
+Firebird 2.0 Alpha 1 server is running. Therefore you
+will receive no warning until the installer attempts
+to overwrite an active file.
 
 
 New features of the installer in Firebird 2.0.0 Alpha 1
 -------------------------------------------------------
 
-There are no new features in Alpha 1.
-Internationalization has been temporarily disabled.
-It will be re-enabled for Alpha 2.
+There are no new installer features in Alpha 1.
 
 
 New features of the installer in Firebird 1.5.2
