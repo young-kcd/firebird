@@ -28,11 +28,11 @@
 extern "C" {
 #endif
 
-void DLL_EXPORT	CCH_do_log_shutdown(TDBB, SSHORT);
-void DLL_EXPORT CCH_shutdown_database(struct dbb *);
+void		CCH_do_log_shutdown(TDBB, SSHORT);
+void		CCH_shutdown_database(struct dbb *);
 
 USHORT		CCH_checksum(struct bdb *);
-int		CCH_down_grade_dbb(void *ast_argument);
+int			CCH_down_grade_dbb(void *ast_argument);
 BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
 BOOLEAN		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
 void		CCH_expand(TDBB, ULONG);

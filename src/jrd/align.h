@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef _JRD_ALIGN_H_
-#define _JRD_ALIGN_H_
+#ifndef JRD_ALIGN_H
+#define JRD_ALIGN_H
 
 /* 
 Maximum alignments for corresponding data types are defined in dsc.h
@@ -126,4 +126,5 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	sizeof(SINT64)				/* dtype_int64 */
 };
 
-#endif /* _JRD_ALIGN_H_ */
+#endif /* JRD_ALIGN_H */
+

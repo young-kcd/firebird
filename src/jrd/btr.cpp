@@ -70,7 +70,7 @@ extern "C" {
 /*********************************************
       eliminate this conversion - kk
 #ifdef VMS
-extern double	MTH$CVT_G_D();
+double	MTH$CVT_G_D();
 #endif
 **********************************************/
 
@@ -4220,3 +4220,4 @@ static bool scan(TDBB tdbb,
 
 
 } // extern "C"
+

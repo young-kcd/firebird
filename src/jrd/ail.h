@@ -33,29 +33,30 @@
 extern "C" {
 #endif
 
-extern void AIL_add_log(void);
-extern void AIL_checkpoint_finish(ISC_STATUS *, struct dbb *, SLONG, TEXT *,
+void	AIL_add_log(void);
+void	AIL_checkpoint_finish(ISC_STATUS *, struct dbb *, SLONG, TEXT *,
 								  SLONG, SLONG);
-extern void AIL_commit(SLONG);
-extern void AIL_disable(void);
-extern void AIL_drop_log(void);
-extern void AIL_drop_log_force(void);
-extern void AIL_enable(TEXT *, USHORT, UCHAR *, USHORT, SSHORT);
-extern void AIL_fini(void);
-extern void AIL_get_file_list(struct lls **);
-extern void AIL_init(TEXT *, SSHORT, struct win *, USHORT, struct sbm **);
-extern void AIL_init_log_page(struct log_info_page *, SLONG);
-extern void AIL_journal_tid(void);
-extern void AIL_process_jrn_error(SLONG);
-extern void AIL_put(struct dbb *, ISC_STATUS *, struct jrnh *, USHORT, UCHAR *,
+void	AIL_commit(SLONG);
+void	AIL_disable(void);
+void	AIL_drop_log(void);
+void	AIL_drop_log_force(void);
+void	AIL_enable(TEXT *, USHORT, UCHAR *, USHORT, SSHORT);
+void	AIL_fini(void);
+void	AIL_get_file_list(struct lls **);
+void	AIL_init(TEXT *, SSHORT, struct win *, USHORT, struct sbm **);
+void	AIL_init_log_page(struct log_info_page *, SLONG);
+void	AIL_journal_tid(void);
+void	AIL_process_jrn_error(SLONG);
+void	AIL_put(struct dbb *, ISC_STATUS *, struct jrnh *, USHORT, UCHAR *,
 					USHORT, ULONG, ULONG, ULONG *, ULONG *);
-extern void AIL_recover_page(SLONG, struct pag *);
-extern void AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);
-extern void AIL_shutdown(SCHAR *, SLONG *, SLONG *, SLONG *, SSHORT);
-extern void AIL_upd_cntrl_pt(TEXT *, USHORT, ULONG, ULONG, ULONG);
+void	AIL_recover_page(SLONG, struct pag *);
+void	AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);
+void	AIL_shutdown(SCHAR *, SLONG *, SLONG *, SLONG *, SSHORT);
+void	AIL_upd_cntrl_pt(TEXT *, USHORT, ULONG, ULONG, ULONG);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
 #endif /* JRD_AIL_H */
+

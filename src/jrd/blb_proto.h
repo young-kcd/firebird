@@ -73,7 +73,7 @@ void BLB_scalar(TDBB, jrd_tra*, bid*, USHORT, SLONG*, vlu*);
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 extern "C" {
-void DLL_EXPORT BLB_map_blobs(TDBB, struct blb*, struct blb*);
+void BLB_map_blobs(TDBB, struct blb*, struct blb*);
 }
 #endif
 

@@ -28,8 +28,8 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
-#ifndef _JRD_BLR_H_
-#define _JRD_BLR_H_
+#ifndef JRD_BLR_H
+#define JRD_BLR_H
 
 /*  WARNING: if you add a new BLR representing a data type, and the value
  *           is greater than the numerically greatest value which now
@@ -295,4 +295,5 @@
 #define blr_savepoint_undo	(unsigned char)2
 #define blr_savepoint_release_single	(unsigned char)3
 
-#endif /* _JRD_BLR_H_ */
+#endif /* JRD_BLR_H */
+

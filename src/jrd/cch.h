@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_CCH_H_
-#define _JRD_CCH_H_
+#ifndef JRD_CCH_H
+#define JRD_CCH_H
 
 #include "../include/fb_blk.h"
 
@@ -230,4 +230,4 @@ typedef prf *PRF;
 
 #define PRF_active	1			/* prefetch block currently in use */
 
-#endif /* _JRD_CCH_H_ */
+#endif /* JRD_CCH_H */

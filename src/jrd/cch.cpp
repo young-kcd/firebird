@@ -384,7 +384,7 @@ USHORT CCH_checksum(BDB bdb)
 }
 
 
-void DLL_EXPORT CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
+void CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
 {
 /**************************************
  *
@@ -2636,7 +2636,7 @@ BOOLEAN CCH_rollover_to_shadow(DBB dbb, FIL file, BOOLEAN inAst)
 }
 
 
-void DLL_EXPORT CCH_shutdown_database(DBB dbb)
+void CCH_shutdown_database(DBB dbb)
 {
 /**************************************
  *

@@ -1,5 +1,5 @@
-#ifndef _JRD_BLOCK_CACHE_H_
-#define _JRD_BLOCK_CACHE_H_
+#ifndef JRD_BLOCK_CACHE_H
+#define JRD_BLOCK_CACHE_H
 
 #include "../common/classes/alloc.h"
 #include "../jrd/smp_impl.h"
@@ -65,4 +65,5 @@ BlockCache<T>::~BlockCache()
 	} */
 }
 
-#endif
+#endif // JRD_BLOCK_CACHE_H
+

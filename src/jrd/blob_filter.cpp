@@ -74,17 +74,17 @@ static PTR filters[] = {
 extern "C" {
 
 static ISC_STATUS open_blob(TDBB,
-						JRD_TRA,
-						CTL*,
-						SLONG*,
-						USHORT,
-						UCHAR*,
-						PTR,
-						USHORT,
-						BLF);
+							JRD_TRA,
+							CTL*,
+							SLONG*,
+							USHORT,
+							UCHAR*,
+							PTR,
+							USHORT,
+							BLF);
 
 
-ISC_STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
+ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 {
 /**************************************
  *
@@ -140,12 +140,14 @@ ISC_STATUS DLL_EXPORT BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 }
 
 
-ISC_STATUS DLL_EXPORT BLF_create_blob(TDBB tdbb,
-								  JRD_TRA tra_handle,
-								  CTL * filter_handle,
-								  SLONG * blob_id,
-								  USHORT bpb_length,
-								  UCHAR * bpb, ISC_STATUS (*callback)(), BLF filter)
+ISC_STATUS BLF_create_blob(TDBB tdbb,
+							JRD_TRA tra_handle,
+							CTL * filter_handle,
+							SLONG * blob_id,
+							USHORT bpb_length,
+							UCHAR * bpb,
+							ISC_STATUS (*callback)(),
+							BLF filter)
 {
 /**************************************
  *
@@ -164,10 +166,11 @@ ISC_STATUS DLL_EXPORT BLF_create_blob(TDBB tdbb,
 }
 
 
-ISC_STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
-								  CTL * filter_handle,
-								  USHORT * length,
-								  USHORT buffer_length, UCHAR * buffer)
+ISC_STATUS BLF_get_segment(TDBB tdbb,
+							CTL * filter_handle,
+							USHORT * length,
+							USHORT buffer_length,
+							UCHAR * buffer)
 {
 /**************************************
  *
@@ -214,7 +217,7 @@ ISC_STATUS DLL_EXPORT BLF_get_segment(TDBB tdbb,
 }
 
 
-BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
+BLF BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 {
 /**************************************
  *
@@ -253,12 +256,14 @@ BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB tdbb, SSHORT from, SSHORT to)
 }
 
 
-ISC_STATUS DLL_EXPORT BLF_open_blob(TDBB tdbb,
-								JRD_TRA tra_handle,
-								CTL * filter_handle,
-								SLONG * blob_id,
-								USHORT bpb_length,
-								UCHAR * bpb, ISC_STATUS (*callback)(), BLF filter)
+ISC_STATUS BLF_open_blob(TDBB tdbb,
+						JRD_TRA tra_handle,
+						CTL * filter_handle,
+						SLONG * blob_id,
+						USHORT bpb_length,
+						UCHAR * bpb,
+						ISC_STATUS (*callback)(),
+						BLF filter)
 {
 /**************************************
  *
@@ -276,9 +281,10 @@ ISC_STATUS DLL_EXPORT BLF_open_blob(TDBB tdbb,
 }
 
 
-ISC_STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
-								  CTL * filter_handle,
-								  USHORT length, UCHAR * buffer)
+ISC_STATUS BLF_put_segment(TDBB tdbb,
+							CTL * filter_handle,
+							USHORT length,
+							UCHAR * buffer)
 {
 /**************************************
  *
@@ -321,11 +327,15 @@ ISC_STATUS DLL_EXPORT BLF_put_segment(TDBB tdbb,
 
 
 static ISC_STATUS open_blob(
-						TDBB tdbb,
-						JRD_TRA tra_handle,
-						CTL * filter_handle,
-						SLONG * blob_id,
-USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
+					TDBB tdbb,
+					JRD_TRA tra_handle,
+					CTL * filter_handle,
+					SLONG * blob_id,
+					USHORT bpb_length,
+					UCHAR * bpb,
+					PTR callback,
+					USHORT action,
+					BLF filter)
 {
 /**************************************
  *

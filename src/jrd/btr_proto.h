@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_BTR_PROTO_H_
-#define _JRD_BTR_PROTO_H_
+#ifndef JRD_BTR_PROTO_H
+#define JRD_BTR_PROTO_H
 
 #include "../jrd/btr.h"
 #include "../jrd/ods.h"
@@ -32,37 +32,38 @@
 extern "C" {
 #endif
 
-extern USHORT BTR_all(TDBB, struct jrd_rel *, struct idx **, struct idx **,
+USHORT		BTR_all(TDBB, struct jrd_rel *, struct idx **, struct idx **,
 					  struct str **, SLONG *);
-extern void BTR_create(TDBB, struct jrd_rel *, struct idx *, USHORT, struct scb *,
+void		BTR_create(TDBB, struct jrd_rel *, struct idx *, USHORT, struct scb *,
 					   float *);
-extern void BTR_delete_index(TDBB, struct win *, USHORT);
-extern bool BTR_description(JRD_REL, struct irt *, struct idx *, SSHORT);
-extern void BTR_evaluate(struct tdbb *, struct irb *, struct sbm **);
-extern struct btn *BTR_find_leaf(struct btr *, struct key *, UCHAR *, USHORT *,
+void		BTR_delete_index(TDBB, struct win *, USHORT);
+bool		BTR_description(JRD_REL, struct irt *, struct idx *, SSHORT);
+void		BTR_evaluate(struct tdbb *, struct irb *, struct sbm **);
+struct btn*	BTR_find_leaf(struct btr *, struct key *, UCHAR *, USHORT *,
 								 int, bool);
-extern struct btr *BTR_find_page(struct tdbb *, struct irb *, struct win *,
+struct btr*	BTR_find_page(struct tdbb *, struct irb *, struct win *,
 								 struct idx *, struct key *, struct key *, bool);
-extern void BTR_insert(struct tdbb *, struct win *, struct iib *);
-extern enum idx_e BTR_key(struct tdbb *, struct jrd_rel *, struct rec *,
+void		BTR_insert(struct tdbb *, struct win *, struct iib *);
+enum idx_e	BTR_key(struct tdbb *, struct jrd_rel *, struct rec *,
 						  struct idx *, struct key *, idx_null_state *);
-extern USHORT BTR_key_length(struct jrd_rel *, struct idx *);
-extern struct btn *BTR_last_node(struct btr *, struct exp *, struct btx **);
-extern struct btr *BTR_left_handoff(struct tdbb *, struct win *, struct btr *,
+USHORT		BTR_key_length(struct jrd_rel *, struct idx *);
+struct btn*	BTR_last_node(struct btr *, struct exp *, struct btx **);
+struct btr*	BTR_left_handoff(struct tdbb *, struct win *, struct btr *,
 									SSHORT);
-extern USHORT BTR_lookup(TDBB, struct jrd_rel *, USHORT, struct idx *);
-extern void BTR_make_key(struct tdbb *, USHORT, struct jrd_nod **, struct idx *,
+USHORT		BTR_lookup(TDBB, struct jrd_rel *, USHORT, struct idx *);
+void		BTR_make_key(struct tdbb *, USHORT, struct jrd_nod **, struct idx *,
 						 struct key *, USHORT);
-extern bool BTR_next_index(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *,
+bool		BTR_next_index(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *,
 							struct win *);
-extern struct btn *BTR_next_node(struct btn *, struct btx **);
-extern struct btn *BTR_previous_node(struct btn *, struct btx **);
-extern void BTR_remove(struct tdbb *, struct win *, struct iib *);
-extern void BTR_reserve_slot(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *);
-extern float BTR_selectivity(TDBB, struct jrd_rel *, USHORT);
+struct btn*	BTR_next_node(struct btn *, struct btx **);
+struct btn*	BTR_previous_node(struct btn *, struct btx **);
+void		BTR_remove(struct tdbb *, struct win *, struct iib *);
+void		BTR_reserve_slot(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *);
+float		BTR_selectivity(TDBB, struct jrd_rel *, USHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* _JRD_BTR_PROTO_H_ */
+#endif // JRD_BTR_PROTO_H
+

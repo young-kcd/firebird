@@ -21,22 +21,22 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_BLF_PROTO_H_
-#define _JRD_BLF_PROTO_H_
+#ifndef JRD_BLF_PROTO_H
+#define JRD_BLF_PROTO_H
 
 extern "C" {
 
-extern ISC_STATUS DLL_EXPORT BLF_close_blob(TDBB, struct ctl **);
-extern ISC_STATUS DLL_EXPORT BLF_create_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
+ISC_STATUS	BLF_close_blob(TDBB, struct ctl **);
+ISC_STATUS	BLF_create_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
 										 USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
-extern ISC_STATUS DLL_EXPORT BLF_get_segment(TDBB, struct ctl **, USHORT *,
+ISC_STATUS	BLF_get_segment(TDBB, struct ctl **, USHORT *,
 										 USHORT, UCHAR *);
-extern BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
-extern ISC_STATUS DLL_EXPORT BLF_open_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
+BLF			BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
+ISC_STATUS	BLF_open_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
 									   USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
-extern ISC_STATUS DLL_EXPORT BLF_put_segment(TDBB, struct ctl **, USHORT,
+ISC_STATUS	BLF_put_segment(TDBB, struct ctl **, USHORT,
 										 UCHAR *);
 
 } /* extern "C" */
 
-#endif /* _JRD_BLF_PROTO_H_ */
+#endif /* JRD_BLF_PROTO_H */

@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef _JRD_BTR_H_
-#define _JRD_BTR_H_
+#ifndef JRD_BTR_H
+#define JRD_BTR_H
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -214,4 +214,5 @@ typedef struct exp {
 
 #define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + BTN_PREFIX (yyy) + BTN_LENGTH (yyy))
 
-#endif /* _JRD_BTR_H_ */
+#endif /* JRD_BTR_H */
+

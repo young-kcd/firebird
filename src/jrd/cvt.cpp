@@ -89,7 +89,7 @@
 #endif
 
 #ifdef VMS
-extern double MTH$CVT_D_G(), MTH$CVT_G_D();
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 /* ERR_post is used to flag whether we were called from mov.c or
@@ -1316,7 +1316,7 @@ USHORT CVT_make_string(DSC*          desc,
 }
 
 
-void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
+void CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 {
 /**************************************
  *

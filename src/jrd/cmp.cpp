@@ -174,7 +174,7 @@ inline static char* clone_cstring(JrdMemoryPool* pool, const char* source) {
     return result;
 }
 
-int DLL_EXPORT CMP_clone_active(JRD_REQ request)
+int CMP_clone_active(JRD_REQ request)
 {
 /**************************************
  *
@@ -204,7 +204,7 @@ int DLL_EXPORT CMP_clone_active(JRD_REQ request)
 }
 
 
-JRD_NOD DLL_EXPORT CMP_clone_node(TDBB tdbb, CSB csb, JRD_NOD node)
+JRD_NOD CMP_clone_node(TDBB tdbb, CSB csb, JRD_NOD node)
 {
 /**************************************
  *
@@ -234,8 +234,7 @@ JRD_NOD DLL_EXPORT CMP_clone_node(TDBB tdbb, CSB csb, JRD_NOD node)
 }
 
 
-JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
-								 JRD_REQ request, USHORT level, BOOLEAN validate)
+JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN validate)
 {
 /**************************************
  *
@@ -325,8 +324,7 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 }
 
 
-JRD_REQ DLL_EXPORT CMP_compile(USHORT blr_length,
-						   UCHAR * blr, USHORT internal_flag)
+JRD_REQ CMP_compile(USHORT blr_length, UCHAR * blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -349,7 +347,7 @@ JRD_REQ DLL_EXPORT CMP_compile(USHORT blr_length,
 }
 
 
-JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
+JRD_REQ CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -411,7 +409,7 @@ JRD_REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 }
 
 
-csb_repeat* DLL_EXPORT CMP_csb_element(CSB csb, USHORT element)
+csb_repeat* CMP_csb_element(CSB csb, USHORT element)
 {
 /**************************************
  *
@@ -434,7 +432,7 @@ csb_repeat* DLL_EXPORT CMP_csb_element(CSB csb, USHORT element)
 }
 
 
-void DLL_EXPORT CMP_expunge_transaction(JRD_TRA transaction)
+void CMP_expunge_transaction(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -466,7 +464,7 @@ void DLL_EXPORT CMP_expunge_transaction(JRD_TRA transaction)
 }
 
 
-JRD_REQ DLL_EXPORT CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
+JRD_REQ CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 {
 /**************************************
  *
@@ -522,7 +520,7 @@ JRD_REQ DLL_EXPORT CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 }
 
 
-void DLL_EXPORT CMP_fini(TDBB tdbb)
+void CMP_fini(TDBB tdbb)
 {
 /**************************************
  *
@@ -541,7 +539,7 @@ void DLL_EXPORT CMP_fini(TDBB tdbb)
 }
 
 
-FMT DLL_EXPORT CMP_format(TDBB tdbb, CSB csb, USHORT stream)
+FMT CMP_format(TDBB tdbb, CSB csb, USHORT stream)
 {
 /**************************************
  *
@@ -574,9 +572,7 @@ FMT DLL_EXPORT CMP_format(TDBB tdbb, CSB csb, USHORT stream)
 }
 
 
-void DLL_EXPORT CMP_get_desc(
-							 TDBB tdbb,
-							 CSB csb, JRD_NOD node, DSC * desc)
+void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 {
 /**************************************
  *
@@ -1617,7 +1613,7 @@ void DLL_EXPORT CMP_get_desc(
 }
 
 
-IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
+IDL CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -1667,7 +1663,7 @@ IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
 }
 
 
-SLONG DLL_EXPORT CMP_impure(CSB csb, USHORT size)
+SLONG CMP_impure(CSB csb, USHORT size)
 {
 /**************************************
  *
@@ -1693,7 +1689,7 @@ SLONG DLL_EXPORT CMP_impure(CSB csb, USHORT size)
 }
 
 
-JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB csb)
+JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 {
 /**************************************
  *
@@ -1865,15 +1861,15 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB csb)
 }
 
 
-int DLL_EXPORT CMP_post_access(TDBB			tdbb,
-							   CSB			csb,
-							   TEXT*		security_name,
-							   SLONG		view_id,
-							   const TEXT*	trig,
-							   const TEXT*	proc,
-							   USHORT		mask,
-							   const TEXT*	type_name,
-							   const TEXT*	name)
+int CMP_post_access(TDBB tdbb,
+					CSB csb,
+					TEXT* security_name,
+					SLONG view_id,
+					const TEXT* trig,
+					const TEXT* proc,
+					USHORT mask,
+					const TEXT* type_name,
+					const TEXT* name)
 {
 /**************************************
  *
@@ -1955,10 +1951,11 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 }
 
 
-void DLL_EXPORT CMP_post_resource(
-								  TDBB tdbb,
-								  RSC * rsc_ptr,
-								  BLK rel_or_prc, enum rsc_s type, USHORT id)
+void CMP_post_resource(TDBB tdbb,
+						RSC * rsc_ptr,
+						BLK rel_or_prc,
+						enum rsc_s type,
+						USHORT id)
 {
 /**************************************
  *
@@ -2000,9 +1997,7 @@ void DLL_EXPORT CMP_post_resource(
 }
 
 
-void DLL_EXPORT CMP_release_resource(
-									 RSC * rsc_ptr,
-									 enum rsc_s type, USHORT id)
+void CMP_release_resource(RSC * rsc_ptr, enum rsc_s type, USHORT id)
 {
 /**************************************
  *
@@ -2032,7 +2027,7 @@ void DLL_EXPORT CMP_release_resource(
 }
 
 
-void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
+void CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 {
 /*********************************************
  *
@@ -2087,7 +2082,7 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 }
 
 
-void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
+void CMP_release(TDBB tdbb, JRD_REQ request)
 {
 /**************************************
  *
@@ -2176,7 +2171,7 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 }
 
 
-void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
+void CMP_shutdown_database(TDBB tdbb)
 {
 /**************************************
  *

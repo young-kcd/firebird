@@ -49,7 +49,7 @@
 #include "../jrd/req.h"
 
 #ifdef VMS
-extern double MTH$CVT_D_G(), MTH$CVT_G_D();
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 #ifndef WORDS_BIGENDIAN

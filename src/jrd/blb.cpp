@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.36 2003-09-12 01:58:51 brodsom Exp $
+$Id: blb.cpp,v 1.37 2003-10-03 01:34:14 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -784,7 +784,7 @@ SLONG BLB_lseek(BLB blob, USHORT mode, SLONG offset)
 
 extern "C" {
 
-void DLL_EXPORT BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
+void BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 {
 /**************************************
  *

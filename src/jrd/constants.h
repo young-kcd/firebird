@@ -24,8 +24,8 @@
  *   for automatically created triggers that aren't system triggers.
  */
 
-#ifndef _JRD_CONSTANTS_H_
-#define _JRD_CONSTANTS_H_
+#ifndef JRD_CONSTANTS_H
+#define JRD_CONSTANTS_H
 
 /* BLOb Subtype definitions */
 
@@ -94,4 +94,4 @@ enum frb_sysflag {
 // Maximum length of single line returned from pretty printer
 #define PRETTY_BUFFER_SIZE 1024
 
-#endif /* _JRD_CONSTANTS_H_ */
+#endif /* JRD_CONSTANTS_H */

@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _JRD_CVT2_PROTO_H_
-#define _JRD_CVT2_PROTO_H_
+#ifndef JRD_CVT2_PROTO_H
+#define JRD_CVT2_PROTO_H
 
-extern SSHORT CVT2_compare(struct dsc *, struct dsc *, FPTR_VOID);
-extern SSHORT CVT2_blob_compare(struct dsc *, struct dsc *, FPTR_VOID);
-extern void CVT2_get_name(struct dsc *, TEXT *, FPTR_VOID);
-extern USHORT CVT2_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
+SSHORT	CVT2_compare(struct dsc *, struct dsc *, FPTR_VOID);
+SSHORT	CVT2_blob_compare(struct dsc *, struct dsc *, FPTR_VOID);
+void	CVT2_get_name(struct dsc *, TEXT *, FPTR_VOID);
+USHORT	CVT2_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
 								USHORT, struct str **, FPTR_VOID);
 
-#endif /* _JRD_CVT2_PROTO_H_ */
+#endif // JRD_CVT2_PROTO_H

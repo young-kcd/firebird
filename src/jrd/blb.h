@@ -105,4 +105,4 @@ class map : public pool_alloc<type_map>
 };
 typedef map *MAP;
 
-#endif /* _JRD_BLB_H_ */
+#endif /* JRD_BLB_H */
