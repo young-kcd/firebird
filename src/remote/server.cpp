@@ -1230,12 +1230,20 @@ void port::disconnect(PACKET* send, PACKET* receive)
 	RTR transaction;
 	ISC_STATUS_ARRAY status_vector;
 
+	RDB rdb = this->port_context;
+
 	if (this->port_flags & PORT_async)
+	{
+		if (rdb && rdb->rdb_port && !(rdb->rdb_port->port_flags & PORT_disconnect))
+		{
+			PACKET *packet = &rdb->rdb_packet;
+			packet->p_operation = op_dummy;
+			rdb->rdb_port->send(packet);
+		}
 		return;
+	}
 
 	this->port_flags |= PORT_disconnect;
-
-	RDB rdb = this->port_context;
 
 	if (!rdb) {
 		REMOTE_free_packet(this, send);
