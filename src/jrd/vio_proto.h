@@ -35,7 +35,7 @@ void	VIO_bump_count(TDBB, USHORT, struct jrd_rel *, bool);
 int		VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
 									struct jrd_tra *, struct blk *, BOOLEAN);
 #ifdef PC_ENGINE
-int		IO_check_if_updated(TDBB, struct rpb *);
+int		VIO_check_if_updated(TDBB, struct rpb *);
 #endif
 void	VIO_data(TDBB, struct rpb *, struct blk *);
 void	VIO_erase(TDBB, struct rpb *, struct jrd_tra *);
