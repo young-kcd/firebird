@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.2 2003-10-03 01:48:29 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.3 2003-10-14 13:10:05 eku Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -69,6 +69,10 @@
 
 #ifdef HAVE_SYS_SIGNAL_H
 #include <sys/signal.h>
+#endif
+
+#ifdef HAVE_SYS_SIGINFO_H
+#include <sys/siginfo.h>
 #endif
 
 #include <errno.h>
