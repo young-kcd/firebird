@@ -53,7 +53,8 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 
 @echo.
 @echo Completed Preparations for build
-@echo You many now continue by running BUILD_ALL.BAT
+@echo    You may now run makeX_boot.bat
+@echo.   where X is your version of MSVC - 6 or 7.
 @echo.
 
 @goto :END
