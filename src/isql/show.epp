@@ -791,7 +791,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
  **************************************
  *
  * Functional description
- *	Show grants for given role name
+ *	Show grants for each role name
  *	This function is also called by extract for privileges.
  *	All membership privilege may have the with_admin option set.
  *
@@ -805,7 +805,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 		PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 		PRV.RDB$USER_TYPE     EQ obj_user     AND
 		PRV.RDB$PRIVILEGE     EQ 'M'
-		SORTED BY  PRV.RDB$RELATION_NAME, PRV.RDB$USER
+		SORTED BY PRV.RDB$RELATION_NAME, PRV.RDB$USER
 
 		if (first) {
 			if (*first && optional_msg) {
@@ -822,14 +822,13 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 		else
 			with_option[0] = '\0';
 
-		fb_utils::exact_name(PRV.RDB$RELATION_NAME);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+		const char* role = fb_utils::exact_name(PRV.RDB$RELATION_NAME);
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		{
 			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
-					 user_string, with_option, terminator, NEWLINE);
+			role = SQL_identifier;
 		}
-		else
-			sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", PRV.RDB$RELATION_NAME,
+		sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", role,
 					 user_string, with_option, terminator, NEWLINE);
 
 		ISQL_printf (isqlGlob.Out, Print_buffer);

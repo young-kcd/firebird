@@ -893,15 +893,10 @@ static processing_state list_all_grants2(bool show_role_list,
  *	Get separate permissions on table/views and then procedures.
  *
  **************************************/
-	bool first = true;
+	bool first_role = true;
 	TEXT prev_owner[44];
 
-/******************************************************************
-**
-**	process GRANT roles
-**
-*******************************************************************/
-
+	// Process GRANT roles
 	if (isqlGlob.major_ods >= ODS_VERSION9 && show_role_list)
 	{
 		prev_owner[0] = '\0';
@@ -909,17 +904,16 @@ static processing_state list_all_grants2(bool show_role_list,
 		FOR XX IN RDB$ROLES
 			SORTED BY XX.RDB$ROLE_NAME
 
-			if (first)
+			if (first_role)
 			{
-				sprintf (Print_buffer, "%s/* Grant role for this database */%s",
+				sprintf (Print_buffer, "%s/* Grant roles for this database */%s",
 						 NEWLINE,
 						 NEWLINE);
 				ISQL_printf (isqlGlob.Out, Print_buffer);
+				first_role = false;
 			}
 
-			first = false;
-
-			// Null terminate name string 
+			// Null terminate name string
 			fb_utils::exact_name(XX.RDB$ROLE_NAME);
 			fb_utils::exact_name(XX.RDB$OWNER_NAME);
 
@@ -953,33 +947,28 @@ static processing_state list_all_grants2(bool show_role_list,
 		END_ERROR;
 	}
 
-/* This version of cursor gets only sql tables identified by security class
-   and misses views, getting only null view_source */
+	// This version of cursor gets only sql tables identified by security class
+	// and misses views, getting only null view_source
+	
+	char banner[100];
+	sprintf(banner, "%s/* Grant permissions for this database */%s",
+					 NEWLINE,
+					 NEWLINE);
 
-	first = true;
+	bool first = true;
 
 	FOR REL IN RDB$RELATIONS WITH
 		(REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
 		REL.RDB$SECURITY_CLASS STARTING "SQL$"
 		SORTED BY REL.RDB$RELATION_NAME
 
-		if (first) {
-			sprintf (Print_buffer, "%s/* Grant permissions for this database */%s",
-					 NEWLINE,
-					 NEWLINE);
-			if (show_role_list) {
-				ISQL_printf (isqlGlob.Out, Print_buffer);
-				first = false;
-			}
-		}
-
-		// Null terminate name string 
+		// Null terminate name string
 
 		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
 		const processing_state rc =
-			SHOW_grants2 (REL.RDB$RELATION_NAME, terminator, obj_relation,
-						   first ? Print_buffer : 0);
+			SHOW_grants2(REL.RDB$RELATION_NAME, terminator, obj_relation,
+						   first ? banner : 0);
 		if (rc == SKIP) {
 			first = false;
 		}
@@ -990,41 +979,23 @@ static processing_state list_all_grants2(bool show_role_list,
 		return OBJECT_NOT_FOUND;
 	END_ERROR;
 
-	if (first) {
-		sprintf(Print_buffer, "%s/* Grant permissions for this database */%s",
-				NEWLINE, NEWLINE);
-		if (show_role_list) {
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			first = false;
-		}
-	}
-
 	if (first)
-		SHOW_grant_roles2 (terminator, &first, Print_buffer);
+		SHOW_grant_roles2(terminator, &first, banner);
 	else
-		SHOW_grant_roles (terminator, 0);
+		SHOW_grant_roles(terminator, 0);
 
 
-// Again for stored procedures 
+	// Again for stored procedures
 	FOR PRC IN RDB$PROCEDURES
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 
-		if (first) {
-			sprintf (Print_buffer, "%s/* Grant permissions for this database */%s",
-					 NEWLINE, NEWLINE);
-			if (show_role_list) {
-				ISQL_printf (isqlGlob.Out, Print_buffer);
-				first = false;
-			}
-		}
-
-		// Null terminate name string 
+		// Null terminate name string
 
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 
 		const processing_state rc =
-			SHOW_grants2 (PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
-						   first ? Print_buffer: 0);
+			SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
+						   first ? banner: 0);
 		if (rc == SKIP)
 			first = false;
 
@@ -1034,7 +1005,7 @@ static processing_state list_all_grants2(bool show_role_list,
 		return OBJECT_NOT_FOUND;
 	END_ERROR;
 
-	return first ? OBJECT_NOT_FOUND : SKIP;
+	return first_role && first ? OBJECT_NOT_FOUND : SKIP;
 }
 
 
