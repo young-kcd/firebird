@@ -132,7 +132,6 @@ public:
 	int				indexes;
 	jrd_nod*		boolean;
 	jrd_nod*		inversion;
-	indexSketch*	sketch;
 	IndexScratch*	scratch;
 	bool			used;
 	bool			unique;

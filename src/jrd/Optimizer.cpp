@@ -853,7 +853,7 @@ IndexScratch::~IndexScratch()
 
 InversionCandidate::InversionCandidate(MemoryPool& p) :
 	selectivity(1.0), indexes(0), nonFullMatchedSegments(MAX_INDEX_SEGMENTS + 1),
-	matchedSegments(0), boolean(NULL), inversion(NULL), sketch(NULL), 
+	matchedSegments(0), boolean(NULL), inversion(NULL), scratch(NULL), 
 	used(false), unique(false), matches(p), dependentFromStreams(p)
 {
 /**************************************
@@ -2162,7 +2162,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		if (invCandidate2) {
 			inversions.add(invCandidate2);
 		}
-		// Make inversion based on indexOrSketches and scope
+		// Make inversion based on indexOrScratches and scope
 		if (boolean->nod_arg[1]->nod_type != nod_or) {
 			getInversionCandidates(&inversions, &indexOrScratches, scope);
 		}
