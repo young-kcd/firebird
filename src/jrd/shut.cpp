@@ -227,7 +227,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 
 	if (flag & isc_dpb_shut_transaction) {
 		exclusive = false;
-		flag = isc_dpb_shut_force;
+		flag = isc_dpb_shut_force | (flag & isc_dpb_shut_mode_mask);
 	}
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
