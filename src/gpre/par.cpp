@@ -1323,6 +1323,9 @@ static act* par_based()
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("dot in qualified field reference");
 		SQL_resolve_identifier("<fieldname>", NULL, NAME_SIZE + 1);
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+			PAR_error("Field length too long");
+			
 		gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 		if (!field) {
 			fb_utils::snprintf(s, sizeof(s),

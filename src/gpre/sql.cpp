@@ -976,6 +976,7 @@ void SQL_relation_name(TEXT* r_name,
 	if (symbol) {
 		if (strlen(symbol->sym_name) >= NAME_SIZE)
 			PAR_error("Database alias too long");
+			
 		strcpy(db_name, symbol->sym_name); // this is the alias, not the path
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
@@ -984,18 +985,18 @@ void SQL_relation_name(TEXT* r_name,
 
 	SQL_resolve_identifier("<Table name>", NULL, NAME_SIZE + 1);
 	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
-		PAR_error("Table, owner, or database name too long");
+		PAR_error("Table or owner name too long");
 
 	strcpy(r_name, gpreGlob.token_global.tok_string);
 	PAR_get_token();
 
 	if (MSC_match(KW_DOT)) {
 		// the table name was really a owner specifier 
-
-		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
-			PAR_error("TABLE name too long");
 		strcpy(owner_name, r_name);
 		SQL_resolve_identifier("<Table name>", NULL, NAME_SIZE);
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+			PAR_error("TABLE name too long");
+			
 		strcpy(r_name, gpreGlob.token_global.tok_string);
 		PAR_get_token();
 	}
@@ -1271,12 +1272,11 @@ static act* act_alter_index(void)
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
+	char i_name[NAME_SIZE + 1];
+	SQL_resolve_identifier("<index name>", i_name, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 		PAR_error("Index name too long");
-
-	char i_name[NAME_SIZE];
-	SQL_resolve_identifier("<column name>", i_name, NAME_SIZE);
-
+		
 	PAR_get_token();
 
 	IND index = make_index(request, i_name);
@@ -1366,6 +1366,7 @@ static act* act_alter_table(void)
 									   cnstrt_str->cnstrt_name->str_string, NAME_SIZE + 1);
 				if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 					PAR_error("Constraint name too long");
+					
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 				PAR_get_token();
@@ -1805,19 +1806,17 @@ static act* act_create_domain(void)
 static act* act_create_generator(void)
 {
 	TEXT* generator_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
-	SQL_resolve_identifier("<identifier>", generator_name, NAME_SIZE + 1);
-
+	SQL_resolve_identifier("<generator>", generator_name, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("Generator name too long");
+		
 	gpre_req* request = MSC_request(REQ_ddl);
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
 		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only CREATE GENERATOR in context of single database");
 
-	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
-		PAR_error("Generator name too long");
-
-
-//  create action block 
+//  create action block
 	act* action = MSC_action(request, ACT_create_generator);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) generator_name;
@@ -1841,11 +1840,10 @@ static act* act_create_index(bool dups,
 
 //  get index and table names and create index and relation blocks 
 
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
-		PAR_error("Index name too long");
-
 	SCHAR i_name[NAME_SIZE + 1];
-	SQL_resolve_identifier("<column name>", i_name, NAME_SIZE + 1);
+	SQL_resolve_identifier("<index name>", i_name, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("Index name too long");
 
 	PAR_get_token();
 
@@ -2316,7 +2314,7 @@ static act* act_declare_filter(void)
 	FLTR filter = (FLTR) MSC_alloc(FLTR_LEN);
 	filter->fltr_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", filter->fltr_name, NAME_SIZE + 1);
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 		PAR_error("Filter name too long");
 
 	PAR_get_token();
@@ -2464,9 +2462,10 @@ static act* act_declare_udf(void)
 	decl_udf* udf_declaration = (decl_udf*) MSC_alloc(DECL_UDF_LEN);
 	TEXT* udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", udf_name, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("External function name too long");
+		
 	udf_declaration->decl_udf_name = udf_name;
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
-		PAR_error("external function name too long");
 	PAR_get_token();
 
 //  create action block 
@@ -2771,6 +2770,9 @@ static act* act_drop(void)
 		PAR_get_token();
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name, NAME_SIZE + 1);
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+			PAR_error("Domain name too long");
+			
 		action = MSC_action(request, ACT_drop_domain);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) identifier_name;
@@ -2786,6 +2788,9 @@ static act* act_drop(void)
 		PAR_get_token();
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name, NAME_SIZE + 1);
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+			PAR_error("Filter name too long");
+			
 		action = MSC_action(request, ACT_drop_filter);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) identifier_name;
@@ -2806,6 +2811,9 @@ static act* act_drop(void)
 
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name, NAME_SIZE + 1);
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+			PAR_error("External function name too long");
+			
 		action = MSC_action(request, ACT_drop_udf);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) identifier_name;
@@ -2816,7 +2824,10 @@ static act* act_drop(void)
 		{
 		request = MSC_request(REQ_ddl);
 		PAR_get_token();
-		SQL_resolve_identifier("<identifier>", NULL, NAME_SIZE + 1);
+		SQL_resolve_identifier("<index name>", NULL, NAME_SIZE + 1);
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+			PAR_error("Index name too long");
+			
 		IND index = make_index(request, gpreGlob.token_global.tok_string);
 		action = MSC_action(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
@@ -3169,6 +3180,9 @@ static act* act_grant_revoke( enum act_t type)
 					SCHAR col_name[NAME_SIZE + 1];
 					do {
 						SQL_resolve_identifier("<column name>", col_name, NAME_SIZE + 1);
+						if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+							PAR_error("Field name too long");
+							
 						STR field_name = (STR) MSC_string(col_name);
 						MSC_push((GPRE_NOD) field_name, fields);
 						fields = &(*fields)->lls_next;
@@ -3683,6 +3697,9 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 
 	// Funny, as if we can have relation names up to MAX_SYM_SIZE.
 	SQL_resolve_identifier("<column_name>", f_token->tok_string, f_token->tok_length + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("Field name too long");
+		
 	CPR_token();
 
 	if (act_op == ACT_blob_open) {
@@ -4090,12 +4107,12 @@ static act* act_set_generator(void)
 	else
 		PAR_error("Can SET GENERATOR in context of single database only");
 
-	if (gpreGlob.token_global.tok_length > NAME_SIZE)
-		PAR_error("Generator name too long");
-
 	SGEN setgen = (SGEN) MSC_alloc(SGEN_LEN);
 	setgen->sgen_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", setgen->sgen_name, NAME_SIZE + 1);
+	if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+		PAR_error("Generator name too long");
+		
 	if (!MET_generator(setgen->sgen_name, request->req_database)) {
 		SCHAR s[ERROR_LENGTH];
 		fb_utils::snprintf(s, sizeof(s),
@@ -4217,8 +4234,9 @@ static act* act_set_statistics(void)
 		stats->sts_flags = STS_index;
 		stats->sts_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<index name>", stats->sts_name->str_string, NAME_SIZE + 1);
-		if (gpreGlob.token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 			PAR_error("Index name too long");
+			
 		PAR_get_token();
 	}
 	else
@@ -5472,8 +5490,9 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 		new_constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
 							   new_constraint->cnstrt_name->str_string, NAME_SIZE + 1);
-		if (gpreGlob.token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 			PAR_error("Constraint name too long");
+			
 		PAR_get_token();
 	}
 
@@ -5516,8 +5535,9 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 			SQL_resolve_identifier("referred <table name>",
 								   new_constraint->cnstrt_referred_rel->str_string,
 								   NAME_SIZE + 1);
-			if (gpreGlob.token_global.tok_length > NAME_SIZE)
+			if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 				PAR_error("Referred table name too long");
+				
 			PAR_get_token();
 
 			if (MSC_match(KW_LEFT_PAREN)) {
@@ -5525,6 +5545,9 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 
 				field_name = (STR) MSC_alloc(NAME_SIZE + 1);
 				SQL_resolve_identifier("<column name>", field_name->str_string, NAME_SIZE + 1);
+				if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+					PAR_error("Referred field name too long");
+					
 				MSC_push((GPRE_NOD) field_name, &new_constraint->cnstrt_referred_fields);
 				CPR_token();
 				EXP_match_paren();
@@ -5763,8 +5786,9 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 		constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
 							   constraint->cnstrt_name->str_string, NAME_SIZE + 1);
-		if (gpreGlob.token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 			PAR_error("Constraint name too long");
+			
 		PAR_get_token();
 	}
 
@@ -5799,6 +5823,9 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 		do {
 			STR field_name = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("<column name>", field_name->str_string, NAME_SIZE + 1);
+			if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+				PAR_error("Field name too long");
+				
 			MSC_push((GPRE_NOD) field_name, fields);
 			fields = &(*fields)->lls_next;
 			++num_for_key_flds;
@@ -5819,8 +5846,9 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 			SQL_resolve_identifier("referred <table name>",
 								   constraint->cnstrt_referred_rel->str_string,
 								   NAME_SIZE + 1);
-			if (gpreGlob.token_global.tok_length > NAME_SIZE)
+			if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 				PAR_error("Referred table name too long");
+				
 			PAR_get_token();
 
 			constraint->cnstrt_referred_fields = NULL;
@@ -5833,6 +5861,9 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 					STR field_name = (STR) MSC_alloc(NAME_SIZE + 1);
 					SQL_resolve_identifier("<column name>",
 										   field_name->str_string, NAME_SIZE + 1);
+					if (gpreGlob.token_global.tok_length >= NAME_SIZE)
+						PAR_error("Referred field name too long");
+						
 					MSC_push((GPRE_NOD) field_name, fields);
 					fields = &(*fields)->lls_next;
 					++num_prim_key_flds;
