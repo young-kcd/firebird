@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.31 2003-10-17 23:41:25 brodsom Exp $
+//	$Id: sql.cpp,v 1.32 2003-10-28 13:39:32 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -3228,8 +3228,8 @@ static ACT act_grant_revoke( enum act_t type)
 	}
 
 	bool grant_option_legal = true;
-	USN usernames = 0;
-	USN user = 0;
+	GPRE_USN usernames = 0;
+	GPRE_USN user = 0;
 	USHORT user_dyn = 0;
 	SCHAR s[ERROR_LENGTH];
 

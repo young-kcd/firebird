@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.15 2003-10-16 08:50:59 robocop Exp $
+//	$Id: msc.cpp,v 1.16 2003-10-28 13:39:32 brodsom Exp $
 //
 //  
 //  
@@ -510,9 +510,9 @@ GPRE_NOD MSC_unary(NOD_T type, GPRE_NOD arg)
 //		Set up for a new username.
 //  
 
-USN MSC_username(SCHAR* name, USHORT name_dyn)
+GPRE_USN MSC_username(SCHAR* name, USHORT name_dyn)
 {
-	USN username = (USN) MSC_alloc(USN_LEN);
+	GPRE_USN username = (GPRE_USN) MSC_alloc(USN_LEN);
 	username->usn_name = (SCHAR*) MSC_alloc(strlen(name) + 1);
 	strcpy(username->usn_name, name);
 	username->usn_dyn = name_dyn;

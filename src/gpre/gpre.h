@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.50 2003-10-17 23:41:27 brodsom Exp $
+ * $Id: gpre.h,v 1.51 2003-10-28 13:39:32 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -311,14 +311,14 @@ const size_t TXT_LEN = sizeof(txt);
 
 /* User name -- used for SQL GRANT/REVOKE */
 
-typedef struct usn {
-	usn* usn_next;
+typedef struct gpre_usn {
+	gpre_usn* usn_next;
 	SCHAR *usn_name;
 	USHORT usn_dyn;				/* describes the type of user via a dyn-verb,
 								   i.e. gds__dyn_grant_user/view/proc/trig */
-} *USN;
+} *GPRE_USN;
 
-const size_t USN_LEN = sizeof(usn);
+const size_t USN_LEN = sizeof(gpre_usn);
 
 
 /* value block, used to store a set of values */
