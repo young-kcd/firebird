@@ -867,7 +867,7 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 {
 /**************************************
  *
- *	I n v e r s i o  n C a n d i d a t e
+ *	I n v e r s i o n C a n d i d a t e
  *
  **************************************
  *

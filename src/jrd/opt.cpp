@@ -4537,7 +4537,7 @@ static RecordSource* gen_outer(thread_db* tdbb,
 			              stream_i.stream_num,
 			              NULL, // AB: the sort clause for the inner stream of an
 						        // OUTER JOIN is never usefull for index retrieval.
-			              project_clause,
+			              NULL, // dimitr: the same for DISTINCT via navigational index
 			              bOuter,
 			              true,
 			              ppNod);
