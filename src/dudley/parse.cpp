@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
 #define PARSER_MAIN
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/flags.h"
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"

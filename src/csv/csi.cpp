@@ -20,12 +20,12 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
+#include "firebird.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../csv/csi.h"
 #include "../jrd/license.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/inf.h"
 #include "../jrd/thd.h"
 #include "../csv/csi_proto.h"

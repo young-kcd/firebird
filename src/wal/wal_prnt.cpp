@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../wal/wal.h"

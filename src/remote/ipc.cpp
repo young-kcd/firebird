@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <mpe.h>
 #include "../remote/remote.h"
 #include "../remote/ipc.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/thd.h"
 #include "../remote/ipc_proto.h"
 #include "../remote/remot_proto.h"

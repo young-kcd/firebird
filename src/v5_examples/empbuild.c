@@ -25,8 +25,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/common.h"
-#include "../jrd/gds.h"
+//#include "../jrd/common.h"
+
+#include "gds.h"
+
+/* Some #defines that are used in the program - they actually come from
+   jrd/common.h but should not be exposed externally with those name so 
+   are reproduced here MOD 15-07-2001
+*/
+/* typedef char TEXT; */
+#define FINI_OK 0
+#define FINI_ERROR 44
 
 /* 
 **  Empbuild.e   GPRE with manual switch, since it creates the database 
@@ -183,7 +192,7 @@ static char
 
 /*EXEC SQL SET DATABASE DB = COMPILETIME "empbuild.gdb" RUNTIME :Db_name;*/
 
-main (
+int main (
     int		argc,
     char	*argv[])
 {

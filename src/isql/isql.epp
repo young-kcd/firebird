@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-  $Id: isql.epp,v 1.1 2001-07-12 06:32:02 bellardo Exp $
+  $Id: isql.epp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -31,6 +31,7 @@
   2001/05/20  Neil McCalden  add planonly option
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +68,7 @@
 #endif
 // jrd/gds.h already pulls in the error codes, so remove codes.h
 // #include "../jrd/codes.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../isql/isql.h"
 #include "../jrd/perf.h"
 #include "../jrd/license.h"

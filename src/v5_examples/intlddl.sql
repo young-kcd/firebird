@@ -36,6 +36,7 @@
  **  - Added 4 sorting stored procedures--may be changed in next build.
  **/
 
+/* set echo; */
 
 /*
  *   Define domains.

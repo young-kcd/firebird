@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.1.1.1 2001-05-23 13:26:41 tamlin Exp $
+ * $Id: guard.cpp,v 1.2 2001-07-29 23:43:24 skywalker Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -30,6 +30,7 @@
 #define FIREBIRD_USER		"firebird"
 #define INTERBASE_USER_SHORT	"interbas"
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <sys/types.h>
 

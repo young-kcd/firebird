@@ -24,13 +24,14 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.3 2001-07-12 05:46:03 bellardo Exp $
+//	$Id: alice.cpp,v 1.4 2001-07-29 23:43:20 skywalker Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
 //                         readonly databases.
 //
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -38,7 +39,7 @@
 #define FB_FROM_ALICE_CPP
 
 #include "../jrd/ib_stdio.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../jrd/ibsetjmp.h"
@@ -69,9 +70,6 @@
 #if (defined WIN_NT || defined PC_PLATFORM)
 #include <io.h>
 #endif
-
-
-extern "C" {
 
 
 #ifndef MAXPATHLEN
@@ -745,5 +743,3 @@ static void expand_filename(TEXT * filename, TEXT * expanded_name)
 	strcpy(expanded_name, filename);
 }
 
-
-} // extern "C"

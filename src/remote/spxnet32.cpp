@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <string.h>
@@ -38,7 +39,7 @@
 #define GETHOSTNAME gethostname
 
 #include "../remote/remote.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/iberr.h"
 #include "../jrd/thd.h"
 #include "../remote/spxnet32_proto.h"

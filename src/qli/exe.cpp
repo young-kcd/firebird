@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <setjmp.h>
 
 #define REQUESTS_MAIN
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -53,7 +54,8 @@
 #define FOPEN_WRITE_TYPE	"w"
 #endif
 
-extern int *QLI_env;
+extern jmp_buf QLI_env;
+
 extern USHORT QLI_prompt_count, QLI_reprompt;
 
 typedef struct vary {
@@ -522,7 +524,8 @@ static DSC *assignment(
 	UCHAR *p;
 	MSG message;
 	USHORT l, *missing_flag, trash;
-	int *old_env, status;
+	jmp_buf old_env;
+    int status;
 	jmp_buf env;
 
 	old_env = QLI_env;
@@ -1002,7 +1005,8 @@ static void execute_output( NOD node)
  *
  **************************************/
 	PRT print;
-	int *old_env, status;
+	jmp_buf old_env;
+    int status;
 	jmp_buf env;
 
 	print = (PRT) node->nod_arg[e_out_print];

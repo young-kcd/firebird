@@ -26,10 +26,11 @@
 #define WNET_trace	1
 #endif
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../remote/remote.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/thd.h"
 #include "../jrd/iberr.h"
 

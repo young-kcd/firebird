@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//  $Id: form.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -35,9 +35,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: form.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: form.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../gpre/gpre.h"
 #include "../gpre/form.h"
 #include "../pyxis/phase1.h"

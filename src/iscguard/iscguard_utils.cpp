@@ -27,6 +27,7 @@
 */
 
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <windows.h>
 #include "../iscguard/iscguard.h"

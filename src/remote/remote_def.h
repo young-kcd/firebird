@@ -112,12 +112,6 @@
 #define ARCHITECTURE		arch_epson
 #endif
 
-#ifdef I386
-#ifndef ARCHITECTURE
-#define ARCHITECTURE		arch_intel_32
-#endif
-#endif
-
 #ifdef _PPC_
 #define ARCHITECTURE		arch_nt_ppc
 #endif
@@ -137,6 +131,13 @@
 #ifdef DARWIN
 #define	ARCHITECTURE		arch_darwin_ppc
 #endif
+
+#ifdef I386
+#ifndef ARCHITECTURE
+#define ARCHITECTURE		arch_intel_32
+#endif
+#endif
+
 
 
 #define SRVR_server		1	/* 0x0001 server */

@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
 #include "../jrd/kanji.h"
 #endif

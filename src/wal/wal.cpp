@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/time.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../wal/wal.h"
 #include "../jrd/jrn.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../wal/wal_proto.h"
 #include "../wal/walc_proto.h"
 #include "../jrd/gds_proto.h"
@@ -1088,7 +1089,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
 	if (gds__thread_start
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (main_walw), argv, 0, 0, 0)) {
 		WALC_release(WAL_handle);
-		IBERR_build_status(status_vector, gds__bug_check,
+		IBERR_build_status(status_vector, gds_bug_check,
 						   gds_arg_string, "cannot start thread", 0);
 		return FAILURE;
 	}
@@ -1544,7 +1545,7 @@ static SSHORT sync_with_wal_writer( STATUS * status_vector, WAL WAL_handle)
 	}
 
 	if (done != SUCCESS)
-		WAL_ERROR(status_vector, gds__wal_err_ww_sync,
+		WAL_ERROR(status_vector, gds_wal_err_ww_sync,
 				  WAL_handle->wal_dbname);
 
 	return done;

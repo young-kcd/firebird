@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../iscguard/cntlg_proto.h"

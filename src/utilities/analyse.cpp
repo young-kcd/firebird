@@ -21,7 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifdef VMS
+#ifdef V
+#include "firebird.h"MS
 #include <types.h>
 #include "times.h"
 #else

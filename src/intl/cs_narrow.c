@@ -22,6 +22,7 @@
  */
 
 
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern USHORT CV_nc_to_unicode();

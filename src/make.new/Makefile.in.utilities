@@ -1,0 +1,253 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.utilities,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+
+CREATEDB_Sources= create_db.cpp
+CREATEDB_Objects = $(CREATEDB_Sources:%.cpp=$(OBJ)/%.o)
+
+DROP_Sources = drop.cpp dropv3.cpp
+DROP_Objects = $(DROP_Sources:%.cpp=$(OBJ)/%.o)
+
+GSEC_Sources =  gsec.cpp security.cpp
+GSEC_Objects = $(GSEC_Sources:%.cpp=$(OBJ)/%.o)
+
+GSTAT_Sources =  dba.cpp ppg.cpp
+GSTAT_Objects = $(GSTAT_Sources:%.cpp=$(OBJ)/%.o)
+
+IBGUARD_Sources =  guard.cpp util.cpp
+IBGUARD_Objects = $(IBGUARD_Sources:%.cpp=$(OBJ)/%.o)
+
+IBMGR_Sources =  	ibmgr.cpp srvrmgr.cpp
+IBMGR_Objects = $(IBMGR_Sources:%.cpp=$(OBJ)/%.o)
+
+REBUILD_Sources =  rebuild.cpp rstore.cpp rmet.cpp 
+REBUILD_Objects = $(REBUILD_Sources:%.cpp=$(OBJ)/%.o)
+
+RELAY_Sources =  relay.cpp
+RELAY_Objects = $(RELAY_Sources:%.cpp=$(OBJ)/%.o)
+
+
+AllObjects = $(SECURITY_Objects) $(CREATEDB_Object) $(DROP_Object) \
+			 $(GSEC_Objects) $(GSTAT_Object) $(IBGUARD_Objects) \
+			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects)
+
+Dependencies = $(AllObjects:.o=.d)
+
+
+
+
+.PHONY: create_db
+
+
+unexport ISC_USER
+unexport ISC_PASSWORD
+
+
+
+all:		gstat gds_drop  gsec gds_relay gsec
+
+super_server_targets:	ibguard ibmgr_bin
+
+
+
+# These three are essential for the build process
+create_db   : $(CREATE_DB)  $(GDS_DROP)
+gsecx        : $(GSEC)              # The x added to make the target unique
+security    : $(ISC_GDB)  jrdlib_dependencies
+
+# These are more utility targets.
+gstat       : $(GSTAT)
+gds_drop    : $(GDS_DROP)
+gds_relay   : $(GDS_RELAY)
+
+# These are used by super server only
+ibmgr       : $(IBMGR_BIN)
+ibguard     : $(IBGUARD)
+
+
+
+$(CREATE_DB):	$(CREATEDB_Objects) $(LIB)/jrd_static.a 
+	$(STATICEXE_LINK) $(STATICLINK_OPTS) $^   -o $@ $(STATICLINK_LIBS)
+	$(CHMOD_7) $@
+
+
+$(GDS_DROP):		$(DROP_Objects) $(LIB)/jrd_static.a
+	$(STATICEXE_LINK) $(STATICLINK_OPTS) $^ -o $@ $(STATICLINK_LIBS)
+	$(CHMOD_S7) $@
+
+
+
+# The security build target basically ends up with a isc4.gdb user store
+# database.  it is the end of a bit of work since we have had to bootstrap
+# things to get to the point were we can use isql and gdef to create a 
+# database.  
+
+
+
+isc4.gdb : $(ISC_GDB)
+	-ln -sf $(ISC_GDB) $@
+
+
+# I think in the following it is more luck that anything that the
+# relative path back from $(FIREBIRD) to $(SRC) works - but it does.
+$(ISC_GDB) : isc4.sql isc4.gdl
+	( cd $(FIREBIRD); $(BIN)/isql -z -i $(SRC)/isc4.sql)
+	( cd $(FIREBIRD); $(BIN)/gdef -z $(SRC)/isc4.gdl)
+	-ln -sf $(ISC_GDB) isc.gdb
+
+
+# Ok it's a big step but we finally start adding security related objects
+# to the libgds.so file
+
+.PHONY: build_alt_use_boot build_alt_use_main jrdlib_dependencies
+
+
+# The following two are used to create an empty security.cpp file which
+# is used in the linking of the boot build process and then reset the 
+# security.epp file for building in the main process.  It is done like
+# this to simpliy the build targets in the makefile.
+# 
+
+build_alt_use_boot:
+	-$(RM) security.cpp
+	touch security.cpp
+
+build_alt_use_main:
+	-$(RM) security.cpp
+	touch security.epp
+
+jrdlib_dependencies: $(SECURITY_Objects)
+
+
+
+# We use a marker file to indicate that the sysdba user has been
+# added to the isc4.gdb user database.
+
+sysdba_user: have_added_sysdba_user.flg
+
+have_added_sysdba_user.flg : $(ISC_GDB)  $(GSEC)
+	-$(GSEC) -da $(ISC_GDB) -delete $(ISC_USER)
+	$(GSEC) -da $(ISC_GDB) -add $(ISC_USER) -pw $(ISC_PASSWORD)
+	$(GBAK_STATIC) -z $(ISC_GDB) $(ISC_GBAK)
+	$(CHMOD_6) $(ISC_GDB) $(ISC_GBAK)
+	date > $@
+
+
+
+
+# gsec 
+# 
+# JMB $(ENC_LINK) already in shared library
+# JMB security.o already in shared library
+# no it aint MOD 13-7-2001
+
+
+$(GSEC):	$(GSEC_Objects)	 $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+
+
+# dba/gstat
+
+
+$(GSTAT):	$(GSTAT_Objects)	 $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+# ibguard
+
+
+$(IBGUARD):	$(IBGUARD_Objects)	 $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+# ibmgr
+
+
+$(IBMGR_BIN):	$(IBMGR_Objects)	 $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+# rebuild 
+
+
+$(GDS_REBUILD):	$(REBUILD_Objects)	 $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+# relay
+
+
+
+$(GDS_RELAY):	$(RELAY_Objects)	 $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^  -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+dba.cpp:	yachts.lnk dba.epp
+yachts.lnk: 
+	ln -fs $(SRC)/refDatabases/empty.gdb yachts.lnk
+
+
+
+
+# This ain't ones that I need, so i've just copied it for the moment
+
+install_reg.exe:	install_reg.o registry.o
+	-$(RM) install_reg.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)install_reg install_reg.o registry.o $(CONLIBSDLL) $(ADVAPILIB)
+	$(MV) install_reg.exe $(INSTALL_REG)
+	$(RM) install_reg.exe
+	$(TOUCH) install_reg.exe
+
+install_svc.exe:	install_svc.o services.o
+	-$(RM) install_svc.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)install_svc install_svc.o services.o $(CONLIBSDLL) $(ADVAPILIB)
+	$(MV) install_svc.exe $(INSTALL_SVC)
+	$(RM) install_svc.exe
+	$(TOUCH) install_svc.exe
+
+include $(Dependencies)

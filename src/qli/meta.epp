@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../qli/dtr.h"
@@ -3932,7 +3933,7 @@ static void set_capabilities( DBB database)
 
 /* Look for desireable fields in system relations */
 
-	for (rel_field_table = rfr_table; rel_field_table->relation;
+	for (rel_field_table = const_cast<RFR_TAB>(rfr_table); rel_field_table->relation;
 		 rel_field_table++) {
 		FOR(REQUEST_HANDLE req) x IN DB.RDB$RELATION_FIELDS
 			WITH x.RDB$RELATION_NAME = rel_field_table->relation

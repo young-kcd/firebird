@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../remote/remote.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../jrd/thd.h"
 #include "../utilities/install_nt.h"

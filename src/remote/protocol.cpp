@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../remote/remote.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/sdl.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"

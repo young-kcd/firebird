@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gen.cpp,v 1.1.1.1 2001-05-23 13:25:34 tamlin Exp $
+$Id: gen.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdio.h>
 #include "../dsql/dsql.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/align.h"
 #include "../dsql/node.h"
 #include "../jrd/intl.h"
@@ -40,7 +41,7 @@ $Id: gen.cpp,v 1.1.1.1 2001-05-23 13:25:34 tamlin Exp $
 #include "../dsql/metd_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/dsc_proto.h"
-#include "../include/iberror.h"
+#include "gen/iberror.h"
 
 ASSERT_FILENAME static void gen_aggregate(REQ, NOD);
 static void gen_cast(REQ, NOD);

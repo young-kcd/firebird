@@ -24,9 +24,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//	$Id: pat.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../gpre/gpre.h"

@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../dudley/ddl.h"
 #include "../jrd/license.h"
 #include "../dudley/gener_proto.h"

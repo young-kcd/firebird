@@ -21,8 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"

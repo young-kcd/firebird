@@ -25,18 +25,19 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: cob.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
 //
 
- /* $Id: cob.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $ */
+ /* $Id: cob.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $ */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 #ifdef UNIXWARE
 #include <sys/fcntl.h>
 #endif
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../gpre/gpre.h"
 #include "../gpre/form.h"
 #include "../gpre/pat.h"

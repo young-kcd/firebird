@@ -69,6 +69,14 @@ typedef struct col {
     :		literal insertion
 */
 
+/* Unfortunately libtool defines a macro -DPIC which mucks up the defintion 
+   of the following struct, fortunately we do not use the PIC macro
+*/
+
+#ifdef PIC
+#undef PIC
+#endif
+
 typedef ENUM pic_t {
     pic_alpha = 1,
     pic_numeric,

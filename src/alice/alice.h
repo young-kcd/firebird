@@ -34,7 +34,7 @@
 
 
 #ifdef __cplusplus
-extern "C" {
+//extern "C" {
 #endif
 
 #ifndef MAXPATHLEN
@@ -222,7 +222,7 @@ extern struct tgbl *gdgbl;
 #define	NOOUTPUT	2
 
 #ifdef __cplusplus
-} /* extern "C" */
+//} /* extern "C" */
 #endif
 
 #endif /* _ALICE_ALICE_H_ */

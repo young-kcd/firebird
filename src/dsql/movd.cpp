@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 #include <stdarg.h>
 #include <string.h>
 
 #include "../dsql/dsql.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
@@ -81,9 +82,9 @@ static void post_error( STATUS status, ...)
 	v = tdsql->tsql_status;
 	v_end = v + 20;
 	*v++ = gds_arg_gds;
-	*v++ = gds__dsql_error;
+	*v++ = gds_dsql_error;
 	*v++ = gds_arg_gds;
-	*v++ = gds__sqlerr;
+	*v++ = gds_sqlerr;
 	*v++ = gds_arg_number;
 	*v++ = -303;
 

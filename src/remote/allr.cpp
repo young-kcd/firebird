@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/ibsetjmp.h"
 #include "../remote/remote.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../remote/allr_proto.h"
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
@@ -90,11 +91,11 @@ UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
 	STATUS* status_vector = trdb->trdb_status_vector;
 	if (status_vector) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__virmemexh;
+		*status_vector++ = gds_virmemexh;
 		*status_vector = gds_arg_end;
 	}
 
-	LONGJMP(*trdb->trdb_setjmp, gds__virmemexh);
+	LONGJMP(*trdb->trdb_setjmp, gds_virmemexh);
 	return NULL;	/* compiler silencer */
 }
 
@@ -115,7 +116,7 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 		{
 			TEXT errmsg[128];
 			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds__bug_check;
+			status_vector[1] = gds_bug_check;
 			status_vector[2] = gds_arg_string;
 			status_vector[4] = gds_arg_end;
 			const SSHORT lookup_result =
@@ -137,7 +138,7 @@ BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
 			}
 		}
 
-		LONGJMP(*trdb->trdb_setjmp, gds__bug_check);
+		LONGJMP(*trdb->trdb_setjmp, gds_bug_check);
 	}
 
 	// Compute block length, recasting count to make sure the calculation

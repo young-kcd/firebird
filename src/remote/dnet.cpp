@@ -21,13 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netdnet/dn.h>
 #include <netdnet/dnetdb.h>
 #include "../jrd/ib_stdio.h"
 #include <signal.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include <errno.h>
 #include <pwd.h>
 #include "../remote/remote.h"

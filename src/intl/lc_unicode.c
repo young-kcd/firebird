@@ -22,6 +22,7 @@
  */
 
 
+#include "firebird.h"
 #include "../intl/ldcommon.h"
 
 extern USHORT famasc_key_length();

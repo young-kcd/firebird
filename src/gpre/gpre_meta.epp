@@ -26,11 +26,12 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.1 2001-07-12 06:32:02 bellardo Exp $
+ *	$Id: gpre_meta.epp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
  */
 
+#include "firebird.h"
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
 #include "../gpre/parse.h"
@@ -490,7 +491,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 
 		/* open the blob */
 		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds__trans, (void**) &blob_handle,
-							  blob_id, sizeof(blr_bpb), blr_bpb);
+							  blob_id, sizeof(blr_bpb), const_cast<unsigned char*>(blr_bpb));
 		if (stat) {
 			gds__print_status(status_vect);
 			CPR_exit(FINI_ERROR);
@@ -599,7 +600,7 @@ BOOLEAN MET_get_column_default(REL relation,
 		/* open the blob */
 		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds__trans,
 							  (void**) &blob_handle, blob_id, sizeof(blr_bpb),
-							  blr_bpb);
+							  const_cast<unsigned char*>(blr_bpb));
 		if (stat) {
 			gds__print_status(status_vect);
 			CPR_exit(FINI_ERROR);

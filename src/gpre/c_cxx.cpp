@@ -25,14 +25,15 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: c_cxx.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "gpre.h"
 #include "../gpre/form.h"
 #include "../gpre/pat.h"

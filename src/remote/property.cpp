@@ -30,6 +30,7 @@
 #error This is a Win32 only file.
 #endif
 
+#include "firebird.h"
 #include <windows.h>
 #include <shellapi.h>
 #include <prsht.h>

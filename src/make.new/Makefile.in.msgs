@@ -1,0 +1,187 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.msgs,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+unexport ISC_USER
+unexport ISC_PASSWORD
+
+
+.PHONY: msgs
+
+
+msgs:  msg.gdb $(Programs) do_check message_file
+
+
+Programs = $(BIN)/check_messages $(BIN)/build_file
+
+
+do_check: $(Programs)
+	$(BIN)/check_messages -d $(MSGSDIR)master_msg_db -l
+
+
+
+CHECK_OBJECTS= check_msgs.o
+
+$(BIN)/check_messages:	$(CHECK_OBJECTS) $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+BUILD_OBJECTS=build_file.o
+
+$(BIN)/build_file:	$(BUILD_OBJECTS) $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(CHMOD_7) $@
+
+
+
+message_file : $(INTERBASE)/interbase.msg
+
+$(FIREBIRD)/interbase.msg : $(Programs) indicator.msg
+	$(BIN)/build_file -d $(MSGSDIR)master_msg_db -f $(INTERBASE)/interbase.msg
+	$(CHMOD_6) $(INTERBASE)/interbase.msg
+
+
+
+
+indicator.msg indicator.incl:
+	$(BIN)/check_messages -d $(MSGSDIR)master_msg_db
+
+indicator.loc:
+	$(BIN)/check_messages -d $(MSGSDIR)master_msg_db -l
+
+#build_file:	build_file.o
+#	-$(RM) build_file
+#	$(CXX) $(LINK_OPTS) build_file.o -o build_file $(GDSSHR_LINK)
+#	$(CHMOD_7) build_file
+
+
+
+
+msg.gdb:
+	ln -fs ../refDatabases/msg.gdb msg.gdb
+	ln -fs ../refDatabases/msg.gdb master_msg_db
+
+
+
+
+
+
+all:		build_file$(EXEC_EXT) check_messages$(EXEC_EXT) \
+	enter_messages$(EXEC_EXT) modify_messages$(EXEC_EXT) \
+	change_messages$(EXEC_EXT)
+
+
+LOCALES=	
+
+
+# I know nother about these other than the default being set to none.  I 
+# assume that as we get into it someone will want to use them and fix the 
+# following.
+
+msgs_intl locales.msg:	$(LOCALES)
+
+
+fr_FR.msg:	build_file$(EXEC_EXT) indicator.msg indicator.loc
+	-$(RM) fr_FR.msg $(OBJS)/ifirebird/intl/fr_FR.msg
+	./build_file -d $(MSGSDIR)master_msg_db \
+	-l fr_FR	\
+	-p $(OBJS)/firebird/intl
+	$(TOUCH) fr_FR.msg
+	$(CHMOD_6) fr_FR.msg $(OBJS)/firebird/intl/fr_FR.msg
+
+de_DE.msg:	build_file$(EXEC_EXT) indicator.msg indicator.loc
+	-$(RM) de_DE.msg source/interbase/intl/de_DE.msg
+	./build_file -d $(MSGSDIR)master_msg_db \
+	-l de_DE	\
+	-p source/interbase/intl
+	$(TOUCH) de_DE.msg
+	$(CHMOD_6) de_DE.msg source/interbase/intl/de_DE.msg
+
+ja_JP_EUC.msg:	build_file$(EXEC_EXT) indicator.msg indicator.loc
+	-$(RM) ja_JP_EUC.msg source/interbase/intl/ja_JP_EUC.msg
+	./build_file -d $(MSGSDIR)master_msg_db \
+	-l ja_JP.EUC	\
+	-p source/interbase/intl
+	$(TOUCH) ja_JP_EUC.msg
+	$(CHMOD_6) ja_JP_EUC.msg source/interbase/intl/ja_JP_EUC.msg
+
+
+
+enter_messages:	enter_msgs.o $(GDSSHR)
+	-$(RM) enter_messages
+	$(CC) $(LINK_OPTS) enter_msgs.o -o enter_messages $(GDSSHR_LINK)
+	$(CHMOD_7) enter_messages
+
+modify_messages: modify_msgs.o $(GDSSHR)
+	-$(RM) modify_messages
+	$(CC) $(LINK_OPTS) modify_msgs.o -o modify_messages $(GDSSHR_LINK)
+	$(CHMOD_7) modify_messages
+
+change_messages: change_msgs.o $(GDSSHR)
+	-$(RM) change_messages
+	$(CC) $(LINK_OPTS) change_msgs.o -o change_messages $(GDSSHR_LINK)
+	$(CHMOD_7) change_messages
+
+build_file.exe:	build_file.o
+	-$(RM) build_file.exe
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)build_file build_file.o $(GDSSHR_LINK)
+	$(CHMOD_7) build_file.exe
+ 
+check_messages.exe:	check_msgs.o
+	-$(RM) check_messages.exe
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)check_messages check_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) check_messages.exe
+
+enter_messages.exe:	enter_msgs.o
+	-$(RM) enter_messages.exe
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)enter_messages enter_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) enter_messages.exe
+
+modify_messages.exe:	modify_msgs.o
+	-$(RM) modify_messages.exe
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)modify_messages modify_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) modify_messages.exe
+
+change_messages.exe:	change_msgs.o
+	-$(RM) change_messages.exe
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)change_messages change_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) change_messages.exe
+
+

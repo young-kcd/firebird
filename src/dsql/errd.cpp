@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
@@ -30,7 +31,7 @@
 
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
@@ -244,7 +245,7 @@ void ERRD_post( STATUS status, ...)
 		 status_vector[2] != gds_arg_warning)) {
 		/* this is a blank status vector */
 		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__dsql_error;
+		status_vector[1] = gds_dsql_error;
 		status_vector[2] = gds_arg_end;
 	}
 

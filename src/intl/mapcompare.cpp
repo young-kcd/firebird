@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
 

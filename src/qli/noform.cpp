@@ -22,6 +22,7 @@
  */
 
 
+#include "firebird.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/form.h"

@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "../include/fb_config.h"
 #include <stdlib.h>
 #include "ib_udf.h"
 

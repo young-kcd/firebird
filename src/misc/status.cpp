@@ -7,12 +7,13 @@
 // be used freely. Any other use is prohibited.
 //
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include "../misc/status.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/gds_proto.h"
 
 

@@ -21,12 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
+
 #define DDL_MAIN
+
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/license.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/exe_proto.h"

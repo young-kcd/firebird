@@ -21,7 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
+
 #define QLI_MAIN
+
 #include "../jrd/ib_stdio.h"
 #include <setjmp.h>
 #include <stdlib.h>
@@ -32,7 +35,7 @@
 #include "../qli/compile.h"
 #include "../jrd/perf.h"
 #include "../jrd/license.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../qli/all_proto.h"
 #include "../qli/compi_proto.h"
 #include "../qli/err_proto.h"
@@ -62,7 +65,7 @@
 
 /* Program wide globals */
 
-int *QLI_env;					/* Error return environment */
+jmp_buf QLI_env;					/* Error return environment */
 
 TEXT *QLI_error;
 USHORT sw_verify, sw_trace, sw_forms, sw_buffers;
@@ -295,7 +298,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			PAR_token();
 		}
 	}
-	QLI_env = NULL;
+	memset(QLI_env, 0, sizeof(QLI_env));
 	QLI_error = NULL;
 
 /* Loop until end of file or forced exit */
@@ -400,7 +403,7 @@ static USHORT process_statement( USHORT flush_flag)
 		return status;
 	}
 
-	QLI_env = env;
+	QLI_env =  env;
 
 /* Set up the appropriate prompt and get the first significant token.  If
    we don't get one, we're at end of file */

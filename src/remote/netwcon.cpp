@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "firebird.h"
 #include <nwsnut.h>
 #include <time.h>
 #include <signal.h>

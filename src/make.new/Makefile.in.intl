@@ -1,0 +1,77 @@
+
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.intl,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+INTL_OBJECTS1=	ld.o         cv_narrow.o \
+		cs_narrow.o  lc_ascii.o lc_narrow.o lc_latin1.o lc_dos.o \
+		cs_unicode.o lc_unicode.o \
+		cs_utffss.o \
+		cs_big5.o    cv_big5.o   lc_big5.o \
+		cs_gb2312.o  cv_gb2312.o lc_gb2312.o \
+		cs_jis.o     cv_jis.o    lc_jis.o \
+		cs_ksc.o     cv_ksc.o    lc_ksc.o
+
+INTL_OBJECTS2=	ld2.o
+INTL_OBJECTS=	$(INTL_OBJECTS1) $(INTL_OBJECTS2)
+
+
+# ld2.cpp contains the lookup that is used if the objects are in the same
+# library as the libgds.a (or .so).
+
+
+
+# 
+INTL_P_OBJECTS1=$(INTL_OBJECTS1:%.o=%.lo)
+
+INTL_DIR = $(INTERBASE)/intl
+
+intl: $(LIBGDSINTL_LA)
+
+$(LIBGDSINTL_LA) : $(INTL_OBJECTS1)
+	$(LIB_LINK)  $(LIB_LINK_OPTIONS) -o$(LIBGDSINTL_LA) $(^:.o=.lo)
+
+
+# In the original there was a few quite involved things being done to make
+# the gdsintl.lib target for win32 machines, I've removed them to avoid
+# clutter, but you might want to go back and have a look if you ae doing a
+# WIN32 thing and see if anyof it was useful.
+# MOD 26-July-2001
+
+

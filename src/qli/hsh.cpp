@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #ifdef JPN_SJIS
@@ -44,7 +45,8 @@ struct word {
 	SCHAR *keyword;
 } keywords[] = {
 #include "../qli/words.h"
-KW_continuation, "-\n"};
+   {KW_continuation, "-\n"}
+};
 
 #define NUMWORDS	(sizeof (keywords) / sizeof (struct word))
 

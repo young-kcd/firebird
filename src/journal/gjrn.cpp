@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <setjmp.h>
 #include <stdlib.h>
@@ -28,7 +29,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/license.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../journal/journal.h"
 #include "../journal/conso_proto.h"
 #include "../journal/gjrn_proto.h"

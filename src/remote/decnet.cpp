@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include descrip
 #include iodef
 #include nfbdef
@@ -28,7 +29,7 @@
 
 #include "../jrd/ib_stdio.h"
 #include "../remote/remote.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/thd.h"
 #include "../remote/decne_proto.h"
 #include "../remote/remot_proto.h"

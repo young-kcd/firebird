@@ -28,6 +28,7 @@
  *  Set the static full_debug to 1 to turn on ib_printf debugging.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #define DEBUG
 #include <assert.h>

@@ -22,17 +22,23 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden 
  */
  
- /* $Id: head.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $ */
+ /* $Id: head.cpp,v 1.3 2001-07-29 23:43:23 skywalker Exp $ */
  
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
+
 #include <stdarg.h>
 #include <signal.h>
 #include <errno.h>
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 #include "../pipe/pipe.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../jrd/inf.h"
 #include "../pipe/allp_proto.h"
@@ -91,7 +97,7 @@
 	    if (!read_pipe || !write_pipe) \
 	        { \
 		user_status [0] = gds_arg_gds; \
-		user_status [1] = gds__conn_lost;	/* Msg 328 Connection lost to pipe server */ \
+		user_status [1] = gds_conn_lost;	/* Msg 328 Connection lost to pipe server */ \
 		user_status [2] = gds_arg_end; \
 		return user_status [1]; \
 		}; \
@@ -417,7 +423,7 @@ STATUS GDS_ATTACH_DATABASE (
  **************************************/
 RDB	rdb;
 
-NULL_CHECK (handle, gds__bad_db_handle);
+NULL_CHECK (handle, gds_bad_db_handle);
 
 if (!(rdb = init (user_status, op_attach, 
 	(UCHAR*)file_name, GDS_VAL (file_length), (UCHAR*)dpb, GDS_VAL (dpb_length))))
@@ -450,7 +456,7 @@ STATUS GDS_ATTACH_SERVICE (
  **************************************/
 RDB	rdb;
 
-NULL_CHECK (handle, gds__bad_svc_handle);
+NULL_CHECK (handle, gds_bad_svc_handle);
 
 if (!(rdb = init (user_status, op_attach_service, 
 	(UCHAR*)service_name, service_length, (UCHAR*)spb, spb_length)))
@@ -485,9 +491,9 @@ RDB	rdb;
 USHORT	l;
 UCHAR	*p;
 
-CHECK_HANDLE ((*blob), type_rbl, gds__bad_segstr_handle);
+CHECK_HANDLE ((*blob), type_rbl, gds_bad_segstr_handle);
 rdb = (*blob)->rbl_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -529,9 +535,9 @@ if (!(blob = *blob_handle))
     return SUCCESS;
     }
 
-CHECK_HANDLE (blob, type_rbl, gds__bad_segstr_handle);
+CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
 rdb = blob->rbl_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -565,12 +571,12 @@ USHORT	l;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
 
 rdb = *handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -605,9 +611,9 @@ USHORT	l;
 UCHAR	*p;
 
 blob = *blob_handle;
-CHECK_HANDLE (blob, type_rbl, gds__bad_segstr_handle);
+CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
 rdb = blob->rbl_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -650,9 +656,9 @@ USHORT	l;
 UCHAR	*p;
 
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 rdb = (*rtr_handle)->rtr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -686,13 +692,13 @@ USHORT	l;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 rdb = (*rtr_handle)->rtr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -727,9 +733,9 @@ UCHAR	*p;
 
 /* Check and validate handles, etc. */
 
-NULL_CHECK (req_handle, gds__bad_req_handle);
+NULL_CHECK (req_handle, gds_bad_req_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -776,11 +782,11 @@ RBL	blob;
 USHORT	l;
 UCHAR	*p;
 
-NULL_CHECK (blob_handle, gds__bad_segstr_handle);
+NULL_CHECK (blob_handle, gds_bad_segstr_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -834,14 +840,14 @@ USHORT	l;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
-NULL_CHECK (blob_handle, gds__bad_segstr_handle);
+NULL_CHECK (blob_handle, gds_bad_segstr_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -895,7 +901,7 @@ RDB	rdb;
 UCHAR	p;
 USHORT	l;
 
-NULL_CHECK (handle, gds__bad_db_handle);
+NULL_CHECK (handle, gds_bad_db_handle);
 
 if (!(l = GDS_VAL (file_length)))
     l = strlen (file_name);
@@ -933,7 +939,7 @@ USHORT	l;
 UCHAR	*p, temp [1024], *temp_buffer;
 
 rdb = *handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -984,13 +990,13 @@ USHORT	l;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -1027,7 +1033,7 @@ USHORT	l;
 UCHAR	*p;
 
 rdb = *handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1094,7 +1100,7 @@ USHORT	l;
 UCHAR	*p;
 
 rdb = *handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_svc_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_svc_handle);
 
 ESTABLISH_PIPES;
 
@@ -1133,12 +1139,12 @@ UCHAR	*p;
 STATUS  code;
 
 rdb = *handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
 code = release_object (op_drop_database, rdb->rdb_handle, user_status);
-if (code && (code != gds__drdb_completed_with_errs))
+if (code && (code != gds_drdb_completed_with_errs))
     return user_status [1];
 
 while (rrq = rdb->rdb_requests)
@@ -1188,9 +1194,9 @@ UCHAR	*p;
 
 /* Check and validate handles, etc. */
 
-NULL_CHECK (stmt_handle, gds__bad_req_handle);
+NULL_CHECK (stmt_handle, gds_bad_req_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1240,11 +1246,11 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 if (transaction = *rtr_handle)
-    CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+    CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1309,11 +1315,11 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 if (transaction = *rtr_handle)
-    CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+    CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1381,9 +1387,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 if (transaction = *rtr_handle)
-    CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+    CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -1456,9 +1462,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 if (transaction = *rtr_handle)
-    CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+    CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -1528,9 +1534,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1576,9 +1582,9 @@ RSR	statement;
 /* Check and validate handles, etc. */
 
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1627,9 +1633,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1678,11 +1684,11 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 if (transaction = *rtr_handle)
-    CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+    CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -1732,9 +1738,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1777,9 +1783,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 statement = *stmt_handle;
-CHECK_HANDLE (statement, type_rsr, gds__bad_req_handle);
+CHECK_HANDLE (statement, type_rsr, gds_bad_req_handle);
 rdb = statement->rsr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1823,9 +1829,9 @@ USHORT	state;
 /* Sniff out handles, etc, and find the various blocks. */
 
 blob = *blob_handle;
-CHECK_HANDLE (blob, type_rbl, gds__bad_segstr_handle);
+CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
 rdb = blob->rbl_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -1866,7 +1872,7 @@ v [1] = gds_arg_end;
 
 if (blob->rbl_flags & RBL_eof)
     {
-    *v = gds__segstr_eof;
+    *v = gds_segstr_eof;
     return user_status [1];
     }
 
@@ -1903,7 +1909,7 @@ while (TRUE)
 	    {
 	    blob->rbl_fragment_length = l - buffer_length;  
 	    l = buffer_length;
-	    *v = gds__segment;                               
+	    *v = gds_segment;                               
 	    }
 
 	/* and, just for yucks, see if we're exactly using up the fragment
@@ -1912,7 +1918,7 @@ while (TRUE)
 	if (l == buffer_length && 
 	    l == blob->rbl_length && 
 	    (blob->rbl_flags & RBL_segment))
-	    *v = gds__segment;
+	    *v = gds_segment;
 	
     	/* finally set up the return length, decrement the current length,
 	   copy the data, and indicate where to start next time. */ 
@@ -1939,7 +1945,7 @@ while (TRUE)
     if (blob->rbl_flags & RBL_eof_pending)
 	{
 	blob->rbl_flags |= RBL_eof;
-	*v = gds__segstr_eof;
+	*v = gds_segstr_eof;
 	break;
 	}
 
@@ -1999,13 +2005,13 @@ ULONG	l, length;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *tra_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -2057,11 +2063,11 @@ RBL	blob;
 USHORT	l;
 UCHAR	*p;
 
-NULL_CHECK (blob_handle, gds__bad_segstr_handle);
+NULL_CHECK (blob_handle, gds_bad_segstr_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -2113,14 +2119,14 @@ USHORT	l;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
-NULL_CHECK (blob_handle, gds__bad_segstr_handle);
+NULL_CHECK (blob_handle, gds_bad_segstr_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -2171,9 +2177,9 @@ USHORT	l;
 UCHAR	*p;
 
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 rdb = (*rtr_handle)->rtr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2214,9 +2220,9 @@ UCHAR	*p;
 /* Sniff out handles, etc, and find the various blocks. */
 
 blob = *blob_handle;
-CHECK_HANDLE (blob, type_rbl, gds__bad_segstr_handle);
+CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
 rdb = blob->rbl_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2301,13 +2307,13 @@ ULONG	l, length;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *tra_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -2358,7 +2364,7 @@ USHORT	l;
 UCHAR	*p;
 
 #ifdef V2_BRIDGE
-return handle_error (user_status, gds__unavailable);
+return handle_error (user_status, gds_unavailable);
 
 #else
 /* If the event pipe is not fully active, finish initialization */
@@ -2383,7 +2389,7 @@ if (!event_pipe)
 /* Check and validate handles, etc. */
 
 rdb = *handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 PUT_BYTE (op_que_events);
@@ -2432,7 +2438,7 @@ USHORT	l;
 UCHAR	*p;
 
 rdb = *service;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_svc_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_svc_handle);
 
 ESTABLISH_PIPES;
 
@@ -2484,9 +2490,9 @@ UCHAR	*p;
 USHORT	l;
 
 request = *req_handle;
-CHECK_HANDLE (request, type_rrq, gds__bad_req_handle);
+CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
 rdb = request->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2530,9 +2536,9 @@ RTR	transaction;
 STATUS	*temp, l;
 UCHAR	*p;
 
-NULL_CHECK (rtr_handle, gds__bad_trans_handle);
+NULL_CHECK (rtr_handle, gds_bad_trans_handle);
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2570,9 +2576,9 @@ USHORT	l;
 UCHAR	*p;
 
 request = *req_handle;
-CHECK_HANDLE (request, type_rrq, gds__bad_req_handle);
+CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
 rdb = request->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2608,9 +2614,9 @@ RDB	rdb;
 USHORT	l;
 UCHAR	*p;
 
-CHECK_HANDLE ((*request), type_rrq, gds__bad_req_handle);
+CHECK_HANDLE ((*request), type_rrq, gds_bad_req_handle);
 rdb = (*request)->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2648,9 +2654,9 @@ USHORT	l;
 UCHAR	*p;
 
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 rdb = (*rtr_handle)->rtr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2686,9 +2692,9 @@ USHORT	l;
 UCHAR	*p;
 
 blob = *blob_handle;
-CHECK_HANDLE (blob, type_rbl, gds__bad_segstr_handle);
+CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
 rdb = blob->rbl_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2730,9 +2736,9 @@ USHORT	l;
 UCHAR	*p;
 
 request = *req_handle;
-CHECK_HANDLE (request, type_rrq, gds__bad_req_handle);
+CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
 rdb = request->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2775,11 +2781,11 @@ USHORT	l;
 UCHAR	*p;
 
 request = *req_handle;
-CHECK_HANDLE (request, type_rrq, gds__bad_req_handle);
+CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 rdb = request->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2820,11 +2826,11 @@ USHORT	l;
 UCHAR	*p;
 
 request = *req_handle;
-CHECK_HANDLE (request, type_rrq, gds__bad_req_handle);
+CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
 transaction = *rtr_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 rdb = request->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -2861,7 +2867,7 @@ RDB	rdb;
 USHORT	l, i;
 UCHAR	*p;
 
-NULL_CHECK (rtr_handle, gds__bad_trans_handle);
+NULL_CHECK (rtr_handle, gds_bad_trans_handle);
 
 #ifdef GATEWAY
 /* We must peek at the rdb so that we know who to talk to.
@@ -2869,7 +2875,7 @@ NULL_CHECK (rtr_handle, gds__bad_trans_handle);
    single database transaction. */
 
 rdb = (RDB) **vector;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 #endif
 
 ESTABLISH_PIPES;
@@ -2881,7 +2887,7 @@ args = vector;
 for (i = 0; i < GDS_VAL (count); i++)
     {
     rdb = (RDB) *(*args++);
-    CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+    CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
     PUT_HANDLE (rdb->rdb_handle);
     l = (SSHORT) *args++;
     PUT_WORD (l);
@@ -2919,7 +2925,7 @@ RDB	rdb;
 USHORT	l, i;
 UCHAR	*p;
 
-NULL_CHECK (rtr_handle, gds__bad_trans_handle);
+NULL_CHECK (rtr_handle, gds_bad_trans_handle);
 
 #ifdef GATEWAY
 /* We must peek at the rdb so that we know who to talk to.
@@ -2928,7 +2934,7 @@ NULL_CHECK (rtr_handle, gds__bad_trans_handle);
 
 VA_START (args, count);
 rdb = *(va_arg (args, RDB*));
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 #endif
 
 ESTABLISH_PIPES;
@@ -2940,7 +2946,7 @@ VA_START (args, count);
 for (i = 0; i < GDS_VAL (count); i++)
     {
     rdb = *(va_arg (args, RDB*));
-    CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+    CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
     PUT_HANDLE (rdb->rdb_handle);
     l = va_arg (args, int);
     PUT_WORD (l);
@@ -2985,9 +2991,9 @@ UCHAR	*p;
 /* Check and validate handles, etc. */
 
 rdb = *db_handle;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *tra_handle;
-CHECK_HANDLE (transaction, type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
 
 ESTABLISH_PIPES;
 
@@ -3031,9 +3037,9 @@ RDB	rdb;
 USHORT	l;
 UCHAR	*p;
 
-CHECK_HANDLE ((*transaction), type_rtr, gds__bad_trans_handle);
+CHECK_HANDLE ((*transaction), type_rtr, gds_bad_trans_handle);
 rdb = (*transaction)->rtr_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -3070,9 +3076,9 @@ USHORT	l;
 UCHAR	*p;
 
 request = *req_handle;
-CHECK_HANDLE (request, type_rrq, gds__bad_req_handle);
+CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
 rdb = request->rrq_rdb;
-CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
+CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 
 ESTABLISH_PIPES;
 
@@ -3707,12 +3713,12 @@ static void pipe_io_error (
  **************************************/
 
 *user_status++ = gds_arg_gds;
-*user_status++ = gds__conn_lost;	/* Connection lost to pipe server */
+*user_status++ = gds_conn_lost;	/* Connection lost to pipe server */
 
 if (operation)
     {
     *user_status++ = gds_arg_gds;
-    *user_status++ = gds__sys_request;
+    *user_status++ = gds_sys_request;
     *user_status++ = gds_arg_string;
     *user_status++ = (STATUS) operation;
     *user_status++ = gds_arg_string;

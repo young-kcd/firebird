@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/sym.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
 #include "../jrd/align.h"

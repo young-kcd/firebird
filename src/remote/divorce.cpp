@@ -25,6 +25,7 @@
 #define FD_SETSIZE 256
 #endif /* SUPERSERVER */
 
+#include "firebird.h"
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/types.h>

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +33,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/iberr.h"
 #include "../jrd/llio.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../wal/wal_proto.h"
 #include "../wal/walc_proto.h"
@@ -122,7 +123,7 @@ typedef struct walwl {
 #define WALW_WRITER_TIMEOUT_USECS	3000000
 #define WALW_DISABLING_JRN		1
 #define MAXLOGS				32
-#define WALW_ERROR(status_vector)	IBERR_build_status (status_vector, gds__walw_err, 0)
+#define WALW_ERROR(status_vector)	IBERR_build_status (status_vector, gds_walw_err, 0)
 
 #define ENV			((WALWL)WAL_handle->wal_local_info_ptr)->walwl_env
 #define LOG_FD			((WALWL)WAL_handle->wal_local_info_ptr)->walwl_log_fd
@@ -422,7 +423,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 							 &WAL_segment->wals_log_partition_offset,
 							 &log_type) != SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, FAILURE,
-										 (STATUS) gds__wal_err_rollover2);
+										 (STATUS) gds_wal_err_rollover2);
 	}
 
 	if (strlen(WAL_segment->wals_jrn_dirname))
@@ -458,7 +459,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 
 	if (ret != SUCCESS) {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (STATUS) gds__wal_err_setup);
+								 (STATUS) gds_wal_err_setup);
 		if (JOURNAL_HANDLE)
 			JRN_fini(status_vector, &(JOURNAL_HANDLE));
 		WALW_WRITER_RETURN(ret);
@@ -526,7 +527,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 				SUCCESS) report_walw_bug_or_error(status_vector, WAL_handle,
 												  ret,
 												  (STATUS)
-												  gds__wal_err_logwrite);
+												  gds_wal_err_logwrite);
 
 			WALC_acquire(WAL_handle, &WAL_segment);
 			acquired = TRUE;
@@ -675,7 +676,7 @@ static void close_log(
 	if ((ret = write_log_header_and_reposition(status_vector, logname, LOG_FD,
 											   log_header)) != SUCCESS)
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (STATUS) gds__wal_err_logwrite);
+								 (STATUS) gds_wal_err_logwrite);
 	LLIO_close(0, LOG_FD);
 
 	if (PRINT_DEBUG_MSGS) {
@@ -704,7 +705,7 @@ static void close_log(
 
 		if (ret != SUCCESS)
 			report_walw_bug_or_error(status_vector, WAL_handle, ret,
-									 (STATUS) gds__wal_err_jrn_comm);
+									 (STATUS) gds_wal_err_jrn_comm);
 	}
 }
 
@@ -896,7 +897,7 @@ static SSHORT flush_all_buffers( STATUS * status_vector, WAL WAL_handle)
 									   WAL_segment->wals_logname,
 									   LOG_FD)) != SUCCESS) {
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
-										 gds__wal_err_logwrite);
+										 gds_wal_err_logwrite);
 				return FAILURE;
 			}
 			release_wal_block(WAL_segment, wblk);
@@ -1394,16 +1395,16 @@ static SSHORT increase_buffers(
 										&WAL_handle->wal_shmem_data,
 										new_wal_length, TRUE);
 
-	if (status_vector[1] == gds__unavailable) {
+	if (status_vector[1] == gds_unavailable) {
 		WAL_segment = WAL_handle->wal_segment;
 		WAL_segment->wals_flags2 |= WALS2_CANT_EXPAND;
 		return SUCCESS;
 	}
 	if (WAL_segment == (WALS) NULL) {
-		WAL_ERROR(status_vector, gds__wal_cant_expand, DBNAME);
+		WAL_ERROR(status_vector, gds_wal_cant_expand, DBNAME);
 		WAL_handle->wal_segment = NULL;
 		report_walw_bug_or_error(status_vector, WAL_handle, FAILURE,
-								 (STATUS) gds__wal_err_expansion);
+								 (STATUS) gds_wal_err_expansion);
 	}
 
 	old_num_buffers = WAL_segment->wals_maxbufs;
@@ -1469,7 +1470,7 @@ static SSHORT init_raw_partitions( STATUS * status_vector, WAL WAL_handle)
 									  logf->logf_partitions);
 			if (ret_val != SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret_val,
-										 (STATUS) gds__wal_err_logwrite);
+										 (STATUS) gds_wal_err_logwrite);
 		}
 	}
 
@@ -1519,7 +1520,7 @@ static SSHORT journal_connect( STATUS * status_vector, WAL WAL_handle)
 		WAL_segment->wals_flags |= WALS_JOURNAL_ENABLED;
 	else
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (STATUS) gds__wal_err_jrn_comm);
+								 (STATUS) gds_wal_err_jrn_comm);
 
 	return ret;
 }
@@ -1609,7 +1610,7 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
 	if (ret != SUCCESS) {
 		WAL_segment->wals_flags &= ~WALS_JOURNAL_ENABLED;
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 (STATUS) gds__wal_err_jrn_comm);
+								 (STATUS) gds_wal_err_jrn_comm);
 	}
 	else {
 		WAL_segment->wals_flags &= ~WALS_ENABLE_JOURNAL;
@@ -1809,9 +1810,9 @@ static SSHORT rollover_log(
 	log_type = 0L;
 	if (get_next_logname(status_vector, WAL_segment, new_logname,
 						 &new_log_partition_offset, &log_type) != SUCCESS) {
-		WAL_ERROR_APPEND(status_vector, gds__wal_err_rollover, new_logname);
+		WAL_ERROR_APPEND(status_vector, gds_wal_err_rollover, new_logname);
 		report_walw_bug_or_error(status_vector, WAL_handle, FAILURE,
-								 gds__wal_err_rollover2);
+								 gds_wal_err_rollover2);
 		ROLLOVER_LOG_RETURN(FAILURE);
 	}
 
@@ -1882,7 +1883,7 @@ static SSHORT rollover_log(
 
 			if (ret != SUCCESS)
 				report_walw_bug_or_error(status_vector, WAL_handle, ret,
-										 gds__wal_err_jrn_comm);
+										 gds_wal_err_jrn_comm);
 		}
 
 		WAL_segment->wals_flags |= WALS_ROLLOVER_HAPPENED;
@@ -1896,7 +1897,7 @@ static SSHORT rollover_log(
 	}
 	else {
 		report_walw_bug_or_error(status_vector, WAL_handle, ret,
-								 gds__wal_err_rollover2);
+								 gds_wal_err_rollover2);
 		ROLLOVER_LOG_RETURN(FAILURE);
 	}
 }
@@ -2117,12 +2118,12 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 	}
 	else if (read_len < sizeof(struct walfh)) {
 		LLIO_close(0, log_fd);
-		WAL_ERROR(status_vector, gds__logh_small, logname);
+		WAL_ERROR(status_vector, gds_logh_small, logname);
 		return FAILURE;
 	}
 	else if (log_header->walfh_version != WALFH_VERSION) {
 		LLIO_close(0, log_fd);
-		WAL_ERROR(status_vector, gds__logh_inv_version, logname);
+		WAL_ERROR(status_vector, gds_logh_inv_version, logname);
 		return FAILURE;
 	}
 	else if (log_header->walfh_flags & WALFH_OPEN) {
@@ -2145,7 +2146,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 
 			if (strlen(log_header->walfh_next_logname) != 0) {
 				LLIO_close(0, log_fd);
-				WAL_ERROR(status_vector, gds__logh_open_flag, logname);
+				WAL_ERROR(status_vector, gds_logh_open_flag, logname);
 				return FAILURE;
 			}
 		}
@@ -2156,7 +2157,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 			   'valid looking' block. */
 
 			LLIO_close(0, log_fd);
-			WAL_ERROR(status_vector, gds__logh_open_flag2, logname);
+			WAL_ERROR(status_vector, gds_logh_open_flag2, logname);
 			return FAILURE;
 		}
 	}

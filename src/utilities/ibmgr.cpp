@@ -20,16 +20,17 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.cpp,v 1.1.1.1 2001-05-23 13:26:41 tamlin Exp $
+ * $Id: ibmgr.cpp,v 1.2 2001-07-29 23:43:24 skywalker Exp $
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <pwd.h>
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../utilities/ibmgr.h"
 #include "../utilities/ibmgrswi.h"
 #include "../jrd/license.h"

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../csv/csi.h"
 #include "../csv/css_proto.h"
 #include "../jrd/gds_proto.h"

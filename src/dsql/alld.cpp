@@ -68,12 +68,13 @@ nested FOR loops are added.
     THREAD_ENTER;               // First statment after FOR loop
 ***************************************************************/
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/sym.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../jrd/gds_proto.h"
@@ -95,7 +96,7 @@ extern "C" {
 #define	BLOCK_ROUNDUP(size)	ROUNDUP (size, MAX(BLOCK_FACTOR,ALIGNMENT))
 #define EXPAND_BLOCKSIZE(b)	(BLOCKS_TO_SIZE ((b)->blk_length))
 
-#define BLKDEF(type, root, tail)	sizeof (struct root), tail,
+#define BLKDEF(type, root, tail)	{ sizeof (struct root), tail },
 	static CONST struct {
 	USHORT typ_root_length;
 	USHORT typ_tail_length;
@@ -442,8 +443,8 @@ void* ALLD_malloc(ULONG size)
 
 	if (tdsql && tdsql->tsql_setjmp)
 	{
-		ERRD_post(gds__sys_request, gds_arg_string, "gds__alloc", gds_arg_gds,
-				  gds__virmemexh, gds_arg_end);
+		ERRD_post(gds_sys_request, gds_arg_string, "gds__alloc", gds_arg_gds,
+				  gds_virmemexh, gds_arg_end);
 	}
 
 /* Commentary:  This expands out to a call to ERRD_error - which

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../wal/wal.h"
 #include "../wal/walc_proto.h"
 #ifdef NETWARE_386

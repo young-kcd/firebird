@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: canonical.cpp,v 1.1.1.1 2001-05-23 13:26:05 tamlin Exp $
+$Id: canonical.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../remote/remote.h"

@@ -1,0 +1,100 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.gpre,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+
+
+
+GPRECommon_Sources = cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
+		hsh.cpp int.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
+		pat.cpp pretty.cpp sqe.cpp sql.cpp noform.cpp
+
+GPREBoot_Sources=  gpre_meta_boot.cpp
+GPRE_Sources=	   gpre_meta.cpp
+
+GPRECommon_Objects = $(GPRECommon_Sources:%.cpp=$(OBJ)/%.o)
+GPREBoot_Objects = $(GPREBoot_Sources:%.cpp=$(OBJ)/%.o)
+GPRE_Objects = $(GPRE_Sources:%.cpp=$(OBJ)/%.o)
+
+
+AllObjects = $(GPRECommon_Objects) $(GPREBoot_Objects) $(GPRE_Objects) \
+			 $(GPRELIB_Objects)
+
+
+Dependencies = $(AllObjects:.o=.d)
+
+
+
+
+.PHONY: gpre_boot gpre_static gpre
+
+gpre_boot : $(GPRE_BOOT)
+
+gpre_static : $(GPRE_STATIC)
+
+gpre : $(GPRE)
+
+
+$(GPRE_BOOT):	$(GPRECommon_Objects) $(GPREBoot_Objects) $(LIB)/jrd_boot.a
+	$(STATICEXE_LINK) -o $(GPRE_BOOT) $(DARWIN_FOUNDATION_LINK) $^  $(STATICLINK_LIBS)
+
+
+$(GPRE_STATIC):$(GPRECommon_Objects) $(GPRE_Objects) $(LIB)/jrd_static.a
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ $(COREFOUNDATION_LINK) -o $@ $(STATICLINK_LIBS)
+	$(CHMOD_7) $@
+
+# DARWIN - COREFOUNDATION_LINK should go into darwin link opts or libs.
+
+
+$(GPRE):$(GPRECommon_Objects) $(GPRE_Objects) $(LIBGDS_LA)
+	$(EXE_LINK) $(LINK_OPTS) $^ $(COREFOUNDATION_LINK) -o $@ $(LINK_LIBS) 
+	$(CHMOD_7) $@
+
+
+
+# In phase2 we add the same objects as before, we just rebuild them as
+# portable and load them into a shared libgds.so library.
+
+.PHONY: jrdlib_dependencies
+
+
+jrdlib_dependencies: $(GPRELIB_Objects)
+
+
+include $(Dependencies)

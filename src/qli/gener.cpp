@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
+$Id: gener.cpp,v 1.3 2001-07-29 23:43:23 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../qli/dtr.h"
 #include "../jrd/align.h"
 #include "../qli/exe.h"

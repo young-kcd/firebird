@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csu.cpp,v 1.1.1.1 2001-05-23 13:25:33 tamlin Exp $
+$Id: csu.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../csv/csi.h"
 #include "../jrd/license.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/thd.h"
 #include "../csv/css_proto.h"
 #include "../jrd/gds_proto.h"

@@ -485,7 +485,7 @@ typedef struct walrs {
 
 #define WAL_CHECK_BUG(WAL_handle, WAL_segment) if (WAL_segment->wals_flags & WALS_BUG_HAPPENED) \
     {                                                                       \
-    IBERR_build_status (status_vector, gds__wal_subsys_corrupt,             \
+    IBERR_build_status (status_vector, gds_wal_subsys_corrupt,             \
                         gds_arg_gds, WAL_segment->wals_last_bug, 0);        \
     WALC_release(WAL_handle);                                               \
     return FAILURE;                                                         \
@@ -494,10 +494,10 @@ typedef struct walrs {
 #define WAL_CHECK_BUG_ERROR(WAL_handle, WAL_segment) if (WAL_segment->wals_flags & WALS_BUG_OR_ERROR_HAPPENED) \
     {                                                                       \
     if (WAL_segment->wals_flags & WALS_BUG_HAPPENED)                        \
-        IBERR_build_status (status_vector, gds__wal_subsys_corrupt,         \
+        IBERR_build_status (status_vector, gds_wal_subsys_corrupt,         \
                             gds_arg_gds, WAL_segment->wals_last_bug, 0);    \
     else                                                                    \
-        IBERR_build_status (status_vector, gds__wal_subsys_error,           \
+        IBERR_build_status (status_vector, gds_wal_subsys_error,           \
                             gds_arg_gds, WAL_segment->wals_last_err, 0);    \
     WALC_release(WAL_handle);                                               \
     return FAILURE;                                                         \

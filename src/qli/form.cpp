@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/form.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../pyxis/phase1.h"
 #include "../pyxis/pyxis_proto.h"
 #include "../pyxis/phase2.h"

@@ -21,12 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
+
+/************************************************************************
+ * This file is a template for users to implement a gdsintl2.so library 
+ * with their own international character sets in it.
+ * It is not part of the 
+ *
+ */
+
+#include "firebird.h"
+
+
 #include "../jrd/ib_stdio.h"
+#include "../jrd/gds_proto.h" 
 #include "../intl/ldcommon.h"
+#include "../intl/ld_proto.h"
 
 
 #ifdef DEV_BUILD
-LD2_assert(filename, lineno)
+void LD2_assert(filename, lineno)
 	 SCHAR *filename;
 	 int lineno;
 {
@@ -43,7 +56,7 @@ LD2_assert(filename, lineno)
  *	a shared module entry point on all platforms, whereas gds__log is.
  *
  **************************************/
-	TEXT buffer[100];
+	TEXT buffer[MAXPATHLEN];
 
 	sprintf(buffer, "Assertion failed: INTL file \"%s\", line %d\n", filename,
 			lineno);
@@ -78,59 +91,39 @@ LD2_assert(filename, lineno)
 	    return (0);\
 	    }
 
-USHORT DLL_EXPORT LD2_lookup(
-							 USHORT objtype,
-							 FPTR_SHORT * fun, SSHORT parm1, SSHORT parm2)
-{
-/**************************************
- *
- *	L D 2 _ l o o k u p 
- *
- **************************************
- *
- * Functional description
- *
- *	Lookup an international object implementation via object type
- *	and id (one id for charsets & collations, two ids for converters).
- *
- *	Note: This routine is a cousin of intl/ld.c:LD_lookup
- *
- * Return:
- *	If object implemented by this module:
- *		(fun)	set to the object initializer
- *		0	returned	
- *	Otherwise:
- *		(fun)	set to nil.
- *		1	returned
- *
- **************************************/
 
-	switch (objtype) {
-	case type_texttype:
-		switch (parm1) {
-		default:
-			*fun = NULL;
-			return 1;
-		};
-	case type_charset:
-		switch (parm1) {
-		default:
-			*fun = NULL;
-			return 1;
-		};
-	case type_csconvert:
-		{
-			*fun = NULL;
-			return 1;
-		}
-	default:
+
+USHORT DLL_EXPORT LD2_lookup(USHORT objtype,
+                            FPTR_SHORT * fun, SSHORT parm1, SSHORT parm2)
+{
+
+   switch (objtype) {
+   case type_texttype:
+       switch (parm1) {
+       default:
+           *fun = NULL;
+           return 1;
+       };
+   case type_charset:
+       switch (parm1) {
+       default:
+           *fun = NULL;
+           return 1;
+       };
+   case type_csconvert:
+       {
+           *fun = NULL;
+           return 1;
+       }
+   default:
 #ifdef DEV_BUILD
-		assert(0);
+       assert(0);
 #endif
-		*fun = NULL;
-		return 1;
-	}
+       *fun = NULL;
+       return 1;
+   }
 }
+
 
 #undef DRIVER
 #undef CHARSET_INIT

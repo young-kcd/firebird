@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/time.h"
 #include "../jrd/common.h"
 
@@ -33,7 +34,7 @@
 #include <dos.h>
 
 #include "../remote/remote.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/iberr.h"
 #include "../jrd/thd.h"
 #include "../remote/ntoh_proto.h"

@@ -1,0 +1,312 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.remote,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+
+# For historical reasons the objects that come from remote and are loaded into
+# libjrd.a/so are defined in INTERFACE_Objects rather than REMOTE_Objects 
+# which would have matched the pattern for the rest. There is not problem
+# other than it has a different name.
+
+SERVER_Sources = server.cpp
+SERVER_Objects = $(SERVER_Sources:%.cpp=$(OBJ)/%.o)
+
+INETSERVER_Sources= inet_server.cpp 
+INETSERVER_Objects = $(INETSERVER_Sources:%.cpp=$(OBJ)/%.o)
+
+LOCKDRIVER_Objects = $(LOCKDRIVER_Sources:%.cpp=$(OBJ)/%.o)
+
+AllObjects = $(INTERFACE_Objects) $(SERVER_Objects) $(INETSERVER_Objects) 
+
+Dependencies = $(All_Objects:.o=.d) 
+
+
+.PHONY: jrd_static
+
+jrd_static : $(LIB)/jrd_static.a($(INTERFACE_Objects))
+
+$(LIB)/jrd_static.a(%.o) : %.o
+	ar crv $@  $%
+
+
+
+# In phase2 we add the same objects as before, we just rebuild them as
+# portable and load them into a shared libgds.so library.
+
+.PHONY: jrdlib_dependencies
+
+
+
+jrdlib_dependencies: $(INTERFACE_Objects)
+
+
+
+
+
+
+.PHONY: all inet_server
+
+all: inet_server
+
+
+
+inet_server : $(BIN)/gds_inet_server
+
+$(BIN)/gds_inet_server:	$(SERVER_Objects) $(INETSERVER_Objects) $(LIBGDS_LA)
+	$(CC) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(CHMOD_S7) $@
+
+
+
+
+#___ old stuff ____ to be deleted when super compile is working ____
+
+DEBUG_INET_INSTALL=$(OBJS)/firebird/bin/inet_dbg$(EXEC_EXT)
+
+JRD_LINK=	$(OBJS)/jrd/isc.o $(OBJS)/jrd/isc_sync.o \
+		$(OBJS)/jrd/sdl.o $(OBJS)/jrd/thd.o $(OBJS)/jrd/iberr.o
+JRD_LINK2=	$(OBJS)/jrd/isc_file.o
+
+
+
+#JMB - SERVER_OBJECTS=		divorce.o server.o
+#SERVER_OBJECTS=		server.o
+#INTERFACE_P_OBJECTS=	interface.bin allr.bin inet.bin merge.bin parser.bin \
+#			protocol.bin remote.bin $(NET_P_OBJECTS)
+
+REMOTE_J_OBJECTS=	merge.j
+
+REMOTE_CLIENT_P_OBJECTS=	allr.bin inet.bin interface.bin merge.bin \
+				parser.bin protocol.bin \
+				remote.bin $(NET_P_OBJECTS)
+
+all:		rem_objects $(REMOTE_P_OBJS) inet_server$(EXEC_EXT) \
+		$(INET_LIBRARY) $(DNET_SERVER) $(AMBX_SERVER) $(WNET_SERVER) \
+		rem_$(SPECIAL_OBJECTS)_objects
+
+
+remotelib:	$(INTERFACE_OBJECTS) $(JRD_LINK)
+	-$(RM) remotelib
+	/com/bind <bind_remotelib
+	$(CHMOD_7) remotelib
+	$(MV) remotelib $(OBJS)/firebird/lib/remotelib
+	$(TOUCH) remotelib
+	$(CHMOD_6) remotelib
+
+
+super_server:	inet_server.o $(SERVER_OBJECTS)	$(SUPER_BACKEND)
+	-$(RM) super_server
+	$(CC) $(LINK_OPTS) $(UDF_LINK_OPTS) inet_server.o $(SERVER_OBJECTS) -o super_server $(SUPER_LINK)
+	$(MV) super_server $(SUPER_SERVER_DEST)
+	$(TOUCH) super_server
+	$(CHMOD_6) super_server
+
+super_client_objects:	$(REMOTE_CLIENT_P_OBJECTS)
+	-$(RM) super_client_objects
+	$(TOUCH) super_client_objects
+	$(CHMOD_6) super_client_objects
+
+# This target is for building with Purify(tm) memory checker
+super_server.pure:	super_server
+	-$(RM) super_server.pure
+	$(PURIFY) $(CC) $(LINK_OPTS) $(UDF_LINK_OPTS) inet_server.o $(SERVER_OBJECTS) -o super_server.pure $(SUPER_LINK)
+	$(MV) super_server.pure $(OBJS)/firebird/bin/gds_super_server.pure 
+	$(TOUCH) super_server.pure
+	$(CHMOD_6) super_server.pure
+
+# This target is for building with Quantify(tm) pure-tool
+super_server.quantify:  super_server
+	-$(RM) super_server.quantify
+	$(QUANTIFY) $(CC) $(LINK_OPTS) $(UDF_LINK_OPTS) inet_server.o $(SERVER_OBJECTS) -o super_server.quantify $(SUPER_LINK)
+	$(MV) super_server.quantify $(OBJS)/firebird/bin/gds_super_server.quantify
+	$(TOUCH) super_server.quantify
+	$(CHMOD_6) super_server.quantify
+
+# JMB $(JRD_LINK) is not used in $(CC) line, so removed it from dependancies
+# JMB $(REMOTE_OBJECTS) are already in the shared library
+
+
+inet_server.exe: inet_server.o server.o $(REMOTE_OBJECTS) \
+		$(JRD_LINK) $(REMOTE_GDSSHR)
+	-$(RM) inet_server.exe remote.rsp
+	$(ECHO) inet_server.o server.o $(REMOTE_OBJECTS) \
+		$(JRD_LINK) $(JRD_LINK2) > remote.rsp
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)inet_server \
+		@remote.rsp $(GDSSHR_LINK) $(WSOCKLIB) $(ADVAPILIB) $(MPRLIB)
+	$(MV) inet_server.exe $(INET_SERVER_DEST)
+	$(RM) inet_server.exe remote.rsp
+	$(TOUCH) inet_server.exe
+
+
+# DECnet server
+
+dnet_server:	dnet_server.o $(SERVER_OBJECTS) $(REMOTE_OBJECTS) \
+		$(JRD_LINK) $(REMOTE_GDSSHR)
+	-$(RM) dnet_server
+	$(CC) $(LINK_OPTS) dnet_server.o $(SERVER_OBJECTS) \
+		-o dnet_server $(REMOTE_GDSSHR_LINK)
+	$(CHMOD_S7) dnet_server
+	$(MV) dnet_server $(DNET_SERVER_DEST)
+	$(TOUCH) dnet_server
+	$(CHMOD_6) dnet_server
+
+
+nt_server.exe: nt_server.o server.o cntl.o $(REMOTE_OBJECTS) $(JRD_LINK)
+	-$(RM) nt_server.exe
+	$(CC) $(LINK_OPTS) $(O_EXE_SWITCH)nt_server \
+		nt_server.o server.o cntl.o $(REMOTE_GDSSHR_LINK)
+	$(MV) nt_server.exe $(NT_SERVER_DEST)
+	$(RM) nt_server.exe
+	$(TOUCH) nt_server.exe
+
+inet_server.a:	inet_server.o $(SERVER_OBJECTS) $(SCO_OBJS_REMLIB)
+	-$(RM) inet_server.a
+	$(AR) inet_server.a inet_server.o $(SERVER_OBJECTS) $(SCO_OBJS_REMLIB)
+	-ranlib inet_server.a
+	$(CHMOD_6) inet_server.a
+	$(MV) inet_server.a $(INET_LIB_DEST)
+	$(TOUCH) inet_server.a
+	$(CHMOD_6) inet_server.a
+
+dnet_server.a:	dnet_server.o $(SERVER_OBJECTS)
+	-$(RM) dnet_server.a
+	$(AR) dnet_server.a dnet_server.o $(SERVER_OBJECTS)
+	-ranlib dnet_server.a
+	$(CHMOD_6) dnet_server.a
+	$(MV) dnet_server.a $(DNET_LIB_DEST)
+	$(TOUCH) dnet_server.a
+	$(CHMOD_6) dnet_server.a
+
+debug_PROD:	
+
+debug_DEV:	debug_inet_server
+	-$(RM) debug_DEV
+	-$(RM) $(DEBUG_INET_INSTALL)
+	-$(MV) inet_dbg $(DEBUG_INET_INSTALL)
+	-$(CHMOD_S7) $(DEBUG_INET_INSTALL)
+	$(TOUCH) debug_DEV
+	$(CHMOD_6) debug_DEV
+
+debug:		debug_inet_server debug_$(DNET_SERVER) debug_$(AMBX_SERVER)
+
+debug_inet_server:	inet_server.o $(SERVER_OBJECTS) $(INTERFACE_OBJECTS) \
+			$(JRD_LINK) $(GDSLIB_BACKEND)
+	-$(RM) debug_inet_server
+	$(CC) $(LINK_OPTS) -g inet_server.o $(SERVER_OBJECTS) $(INTERFACE_OBJECTS) \
+		-o inet_dbg $(GDSLIB_LINK) $(COREFOUNDATION_LINK)
+	$(TOUCH) debug_inet_server
+	$(CHMOD_6) debug_inet_server
+
+debug_dnet_server:	dnet_server.o $(SERVER_OBJECTS) $(REMOTE_OBJECTS) \
+			$(JRD_LINK) $(GDSLIB_BACKEND)
+	$(CC) $(LINK_OPTS) -g dnet_server.o $(SERVER_OBJECTS) \
+		-o dnet_dbg $(GDSLIB_LINK)
+
+debug_gds_server:	ambx_server.o $(SERVER_OBJECTS) $(GDSLIB_BACKEND)
+	$(CC) $(LINK_OPTS) ambx_server.o $(SERVER_OBJECTS) \
+		-o server_dbg $(GDSLIB_LINK)
+
+debug_nt:
+	$(CC) $(DEBUG_LINK_OPTS) $(O_EXE_SWITCH)nt_dbg nt_server.o server.o cntl.o $(REMOTE_OBJECTS) $(GDSLIB_LINK)
+
+debug_:
+
+allr.o:		allr.cpp remote.h $(SOURCE)/jrd/blk.h $(SOURCE)/jrd/ibsetjmp.h \
+		allr_proto.h $(SOURCE)/jrd/gds_proto.h
+ambx.o:		ambx.cpp remote.h $(SOURCE)/jrd/thd.h
+ambx_server.o:	ambx_server.cpp remote.h $(SOURCE)/jrd/license.h
+cntl.o:		cntl.cpp remote.h $(SOURCE)/jrd/thd.h
+decnet.o:	decnet.cpp remote.h $(SOURCE)/jrd/thd.h
+decnet_server.o: decnet_server.cpp remote.h $(SOURCE)/jrd/license.h $(SOURCE)/jrd/thd.h
+dnet.o:		dnet.cpp remote.h 
+divorce.o:	divorce.cpp
+inet.o:		inet.cpp remote.h inet_proto.h remot_proto.h \
+		$(SOURCE)/jrd/thd.h $(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_proto.h
+inet_server.o:	inet_server.cpp remote.h \
+		allr_proto.h inet_proto.h serve_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/thd.h \
+		$(SOURCE)/jrd/gds_proto.h
+interface.o:	interface.cpp remote.h $(SOURCE)/jrd/ibsetjmp.h \
+		inet_proto.h inter_proto.h merge_proto.h parse_proto.h \
+		remot_proto.h \
+		$(SOURCE)/jrd/thd.h $(SOURCE)/jrd/license.h \
+		$(SOURCE)/jrd/cvt_proto.h $(SOURCE)/jrd/enc_proto.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_f_proto.h \
+		$(SOURCE)/jrd/sdl_proto.h
+ipc.o:		ipc.cpp remote.h ipc.h $(SOURCE)/jrd/thd.h
+ipc_server.o:	ipc_server.cpp remote.h ipc.h $(SOURCE)/jrd/license.h
+merge.o:	merge.cpp remote.h \
+		allr_proto.h merge_proto.h \
+		$(SOURCE)/jrd/gds_proto.h
+mgr.o:		mgr.cpp remote.h $(SOURCE)/jrd/license.h
+mslan.o:	mslan.cpp remote.h lanentry.h $(SOURCE)/jrd/thd.h
+mslansrv.o:	mslansrv.cpp remote.h lanman.h $(SOURCE)/jrd/license.h
+nt_server.o:	nt_server.cpp remote.h $(SOURCE)/jrd/license.h $(SOURCE)/jrd/thd.h
+parser.o:	parser.cpp remote.h \
+		allr_proto.h parse_proto.h \
+		$(SOURCE)/jrd/align.h
+protocol.o:	protocol.cpp remote.h \
+		allr_proto.h parse_proto.h proto_proto.h remot_proto.h \
+		$(SOURCE)/jrd/sdl.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/sdl_proto.h
+remote.h:	protocol.h $(SOURCE)/jrd/blk.h xdr.h allr_proto.h \
+		$(SOURCE)/jrd/dsc.h $(SOURCE)/jrd/thd.h
+remote.o:	remote.cpp remote.h allr_proto.h remot_proto.h \
+		$(SOURCE)/jrd/gds_proto.h
+server.o:	server.cpp remote.h $(SOURCE)/jrd/ibsetjmp.h \
+		allr_proto.h merge_proto.h parse_proto.h remot_proto.h \
+		serve_proto.h \
+		$(SOURCE)/jrd/thd.h  $(SOURCE)/jrd/isc.h $(SOURCE)/jrd/license.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_proto.h \
+		$(SOURCE)/jrd/sch_proto.h \
+		$(SOURCE)/jrd/thd_proto.h
+xdr.h:		types.h in.h
+winvx.o:	winvx.cpp types.h in.h
+wnet.o:		wnet.cpp remote.h $(SOURCE)/jrd/license.h $(SOURCE)/jrd/thd.h
+xdr.o:		xdr.cpp xdr.h
+
+
+force:
+	$(ECHO) force
+
+# .j objects are a special SOLARIS make
+merge.j:	merge.o
+
+
+include $(Dependencies)

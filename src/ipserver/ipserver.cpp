@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <signal.h>
 #include <errno.h>
@@ -28,7 +29,7 @@
 
 #include "../ipserver/ipc.h"
 #include "../jrd/license.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../ipserver/alli_proto.h"
 #include "../jrd/thd_proto.h"

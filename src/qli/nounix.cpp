@@ -21,6 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
+
 #ifdef __STDC__
 int pipe(void)
 #else

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
+//  $Id: gpre.cpp,v 1.4 2001-07-29 23:43:22 skywalker Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,11 +38,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: gpre.cpp,v 1.4 2001-07-29 23:43:22 skywalker Exp $
 //
 
 #define GPRE_MAIN
 #define PARSER_MAIN
+#include "firebird.h"
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>

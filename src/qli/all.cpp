@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: all.cpp,v 1.3 2001-07-29 23:43:23 skywalker Exp $
 */
 
 /***************************************************
@@ -41,6 +41,7 @@ $Id: all.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
    - THANK YOU
 ***************************************************/
 
+#include "firebird.h"
 #include <string.h>
 #include "../qli/everything.h"
 #include "../qli/all_proto.h"
@@ -48,13 +49,13 @@ $Id: all.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #include "../qli/mov_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define BLKDEF(type, root, tail) sizeof (struct root), tail,
+#define BLKDEF(type, root, tail) { sizeof (struct root), tail },
 
 static struct {
 	SSHORT typ_root_length;
 	SSHORT typ_tail_length;
 } block_sizes[] = {
-	0, 0,
+	{0, 0},
 #include "../qli/blk.h"
 0};
 

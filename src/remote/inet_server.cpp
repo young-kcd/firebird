@@ -23,8 +23,9 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
+$Id: inet_server.cpp,v 1.3 2001-07-29 23:43:24 skywalker Exp $
 */
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
@@ -50,6 +51,11 @@ $Id: inet_server.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 #include <sys/wait.h>
 #endif
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+
 #ifdef WINDOWS_ROUTER
 #define MAX_ARGS	6
 #endif /* WINDOWS_ROUTER */
@@ -61,7 +67,7 @@ $Id: inet_server.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 #ifdef SUPERSERVER
 #include <unistd.h>
 #include <errno.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/pwd.h"
 #endif
 
@@ -113,7 +119,7 @@ $Id: inet_server.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((SCHAR *)(p), sizeof(*(p)))
+#define FD_ZERO(p)	memset((SCHAR *)(p), 0, sizeof(*(p)))
 #endif
 #endif
 
@@ -132,10 +138,6 @@ extern "C" {
 
 
 static int assign(SCHAR *);
-#ifndef DECOSF
-extern "C" void *memset(void* , int , size_t);
-static int bzero(void *, int);
-#endif
 static void name_process(UCHAR *);
 static void signal_handler(void);
 #ifdef SUPERSERVER
@@ -517,28 +519,6 @@ static int assign( SCHAR * string)
 }
 #endif
 
-
-#if !(defined DECOSF)
-static int bzero( void * addr, int length)
-{
-/**************************************
- *
- *	b z e r o
- *
- **************************************
- *
- * Functional description
- *	Zero a block of memory.
- *
- **************************************/
-	SCHAR *address = (SCHAR*) addr;
-
-	if (length)
-		do
-			*address++ = 0;
-		while (--length);
-}
-#endif
 
 
 

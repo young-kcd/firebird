@@ -24,17 +24,18 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.2 2001-07-10 17:35:12 awharrison Exp $
+//	$Id: exe.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
 //                         readonly databases.
 //
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../alice/alice.h"

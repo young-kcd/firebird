@@ -24,9 +24,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: noform.cpp,v 1.1.1.1 2001-05-23 13:25:32 tamlin Exp $
+//	$Id: noform.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../gpre/gpre.h"
 #include "../gpre/form.h"
 #include "../gpre/form_proto.h"

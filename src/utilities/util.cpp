@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.1.1.1 2001-05-23 13:26:41 tamlin Exp $
+$Id: util.cpp,v 1.2 2001-07-29 23:43:24 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <sys/types.h>
 #include <sys/stat.h>

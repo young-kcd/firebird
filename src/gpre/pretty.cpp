@@ -25,13 +25,14 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: pretty.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
 
@@ -123,13 +124,12 @@ const char *menu_strings[] = {
 	"VERTICAL"
 };
 
-int PRETTY_print_cdb(
-					 SCHAR * blr,
 //____________________________________________________________
 //  
 //		Pretty print create database parameter buffer thru callback routine.
 //  
 
+int PRETTY_print_cdb( SCHAR * blr,
 					 int (*routine) (), SCHAR * user_arg, SSHORT language)
 {
 

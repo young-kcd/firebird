@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <windows.h>
 #include <string.h>
 #define MSG_DEFINED

@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <signal.h>
 #include <errno.h>
 #include "../pipe/pipe.h"
 #include "../jrd/license.h"
-#include "../include/jrd/gds.h" 
+#include "../jrd/gds.h" 
 #include "../jrd/gds_proto.h"
 #include "../pipe/allp_proto.h"
 #include "../remote/merge_proto.h"

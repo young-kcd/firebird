@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "firebird.h"
 #include <windows.h>
 #include <stdio.h>
 #include <shellapi.h>

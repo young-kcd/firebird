@@ -35,6 +35,7 @@
  *  
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <nmpipe.h>
 #define INCL_ERRORS

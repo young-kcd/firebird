@@ -26,11 +26,12 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.1 2001-07-12 06:32:02 bellardo Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
  */
 
+#include "firebird.h"
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
 #include "../gpre/parse.h"

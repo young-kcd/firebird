@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../jrd/license.h"
 #include "../remote/ambx_proto.h"

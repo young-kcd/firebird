@@ -26,7 +26,7 @@
 
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/dsc.h"
 #include "../burp/burp_proto.h"
 #include "../burp/misc_proto.h"

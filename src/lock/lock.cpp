@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: lock.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
+$Id: lock.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/time.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
@@ -36,7 +37,7 @@ $Id: lock.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 #include "../lock/lock.h"
 #include "../lock/lock_proto.h"
 #endif /* LINKS_EXIST */
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/isc_proto.h"
@@ -48,6 +49,14 @@ $Id: lock.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
+#ifdef HAVE_TIME_H
+#include <time.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -631,8 +640,8 @@ SLONG LOCK_enq(	PTR		prior_request,
 		request->lrq_data = data;
 		if (!(lock_id = grant_or_que(request, lock, lck_wait))) {
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = (lck_wait > 0) ? gds__deadlock :
-				((lck_wait < 0) ? gds__lock_timeout : gds__lock_conflict);
+			*status_vector++ = (lck_wait > 0) ? gds_deadlock :
+				((lck_wait < 0) ? gds_lock_timeout : gds_lock_conflict);
 			*status_vector++ = gds_arg_end;
 		}
 		ASSERT_RELEASED;
@@ -846,9 +855,9 @@ If this happens on another classic platform add that platform too. - Shailesh
 		(reinterpret_cast < FPTR_INT_VOID_PTR > (blocking_action_thread),
 		 &LOCK_owner_offset, THREAD_critical, 0, 0)) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__lockmanerr;
+		*status_vector++ = gds_lockmanerr;
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__sys_request;
+		*status_vector++ = gds_sys_request;
 		*status_vector++ = gds_arg_string;
 		*status_vector++ = (STATUS) "CreateThread";
 		*status_vector++ = gds_arg_win32;
@@ -875,9 +884,9 @@ If this happens on another classic platform add that platform too. - Shailesh
 	if (status = gds__thread_start((FPTR_INT) blocking_action_thread,
 								   &LOCK_owner_offset, THREAD_high, 0, 0)) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__lockmanerr;
+		*status_vector++ = gds_lockmanerr;
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__sys_request;
+		*status_vector++ = gds_sys_request;
 		*status_vector++ = gds_arg_string;
 		*status_vector++ = (STATUS) "thr_create";
 		*status_vector++ = gds_arg_unix;
@@ -1022,7 +1031,7 @@ void LOCK_manager( PTR manager_owner_offset)
 		   by setting an alarm clock. */
 
 		ret = ISC_event_wait(1, &event_ptr, &value,
-							 LOCKMANTIMEOUT * 1000000, lock_alarm_handler,
+							 LOCKMANTIMEOUT * 1000000, (FPTR_VOID) lock_alarm_handler,
 							 event_ptr);
 
 #ifdef DEBUG
@@ -1636,7 +1645,7 @@ static UCHAR *alloc( SSHORT size, STATUS * status_vector)
 
 			if (status_vector) {
 				*status_vector++ = gds_arg_gds;
-				*status_vector++ = gds__random;
+				*status_vector++ = gds_random;
 				*status_vector++ = gds_arg_string;
 				*status_vector++ = (STATUS) "lock manager out of room";
 				*status_vector++ = gds_arg_end;
@@ -2052,9 +2061,9 @@ static void bug( STATUS * status_vector, CONST TEXT * string)
 
 		if (status_vector) {
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__lockmanerr;
+			*status_vector++ = gds_lockmanerr;
 			*status_vector++ = gds_arg_gds;
-			*status_vector++ = gds__random;
+			*status_vector++ = gds_random;
 			*status_vector++ = gds_arg_string;
 			*status_vector++ = (STATUS) string;
 			*status_vector++ = gds_arg_end;
@@ -2176,8 +2185,8 @@ int *ast_argument, STATUS * status_vector)
 		++LOCK_header->lhb_timeouts;
 	release(owner_offset);
 	*status_vector++ = gds_arg_gds;
-	*status_vector++ = (lck_wait > 0) ? gds__deadlock :
-		((lck_wait < 0) ? gds__lock_timeout : gds__lock_conflict);
+	*status_vector++ = (lck_wait > 0) ? gds_deadlock :
+		((lck_wait < 0) ? gds_lock_timeout : gds_lock_conflict);
 	*status_vector++ = gds_arg_end;
 
 	return FALSE;
@@ -2801,7 +2810,7 @@ static USHORT fork_lock_manager( STATUS * status_vector)
 	gds__prefix(string, LOCK_MANAGER);
 #endif
 	if (statistics(string, &stat_buf) == -1) {
-		bug(status_vector, "can't start lock manager");
+		bug(status_vector, "can't start lock manager: gds_lock_mgr");
 		return FALSE;
 	}
 

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../jrd/time.h"
 #include "../jrd/jrd.h"
@@ -30,7 +31,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/flags.h"
 #include "../jrd/isc_signal.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/llio.h"
 #include "../wal/walc_proto.h"
 #include "../wal/walf_proto.h"
@@ -212,7 +213,7 @@ SSHORT WALC_bug( STATUS * status_vector, TEXT * dbname, TEXT * string)
  **************************************/
 	STATUS local_status[20];
 
-	IBERR_build_status(local_status, gds__wal_bugcheck,
+	IBERR_build_status(local_status, gds_wal_bugcheck,
 					   gds_arg_string, dbname,
 					   gds_arg_number, (SLONG) getpid(),
 					   gds_arg_string, string, 0);
@@ -220,7 +221,7 @@ SSHORT WALC_bug( STATUS * status_vector, TEXT * dbname, TEXT * string)
 	gds__print_status(local_status);
 
 	if (status_vector) {
-		IBERR_build_status(status_vector, gds__bug_check,
+		IBERR_build_status(status_vector, gds_bug_check,
 						   gds_arg_string, string, 0);
 		return FAILURE;
 	}
@@ -437,7 +438,7 @@ SSHORT WALC_init(STATUS * status_vector,
 /* NOMEM: return error status, FREE: error returns & WAL_fini() */
 	if (!wal) {
 		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds__virmemexh;
+		status_vector[1] = gds_virmemexh;
 		status_vector[2] = gds_arg_end;
 		return FAILURE;
 	}
@@ -449,7 +450,7 @@ SSHORT WALC_init(STATUS * status_vector,
 										   (void(*)(void *, sh_mem *, int))wal_init_routine,
 										   (void *) &wal_args, length,
 										   &wal->wal_shmem_data)) == NULL) {
-		WAL_ERROR_APPEND(status_vector, gds__wal_illegal_attach, dbname);
+		WAL_ERROR_APPEND(status_vector, gds_wal_illegal_attach, dbname);
 		WALC_save_status_strings(status_vector);
 		gds__free((SLONG *) wal);
 		return FAILURE;
@@ -839,7 +840,7 @@ static SSHORT setup_wal_params(
 
 		default:
 			sprintf(err_buffer, "%d", (int) *(p - 1));
-			WAL_ERROR(status_vector, gds__wal_invalid_wpb, err_buffer);
+			WAL_ERROR(status_vector, gds_wal_invalid_wpb, err_buffer);
 			WALC_save_status_strings(status_vector);
 			return FAILURE;
 		}
@@ -902,7 +903,7 @@ static SSHORT setup_wal_params(
 	if (wal_args->walc_log_names_count && wal_args->walc_log_rr_files_info) {
 		/* First make sure that an overflow log file specification is provided */
 		if (!wal_args->walc_log_ovflow_file_info) {
-			IBERR_build_status(status_vector, gds__wal_ovflow_log_required,
+			IBERR_build_status(status_vector, gds_wal_ovflow_log_required,
 							   0);
 			return FAILURE;
 		}

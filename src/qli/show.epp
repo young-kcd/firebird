@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/gds.h"
@@ -445,7 +446,7 @@ static void display_acl( DBB dbb, SLONG blob_id[2])
  *
  **************************************/
 
-	display_blob(dbb, blob_id, "\t    ", sizeof(acl_bpb), acl_bpb, TRUE);
+	display_blob(dbb, blob_id, "\t    ", sizeof(acl_bpb), const_cast<UCHAR*>(acl_bpb), TRUE);
 }
 
 
@@ -522,7 +523,7 @@ static void display_blr( DBB dbb, SLONG blob_id[2])
  *
  **************************************/
 
-	display_blob(dbb, blob_id, "\t    ", sizeof(blr_bpb), blr_bpb, TRUE);
+	display_blob(dbb, blob_id, "\t    ", sizeof(blr_bpb), const_cast<UCHAR*>(blr_bpb), TRUE);
 }
 
 
@@ -823,7 +824,7 @@ static void show_dbb_parameters( DBB database)
 	if (gds__database_info(status_vector,
 						   GDS_REF(database->dbb_handle),
 						   sizeof(db_items),
-						   db_items,
+						   const_cast<char*>(db_items),
 						   sizeof(buffer),
 						   (char*) buffer))
 			ERRQ_database_error(database, status_vector);

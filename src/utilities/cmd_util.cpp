@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/iberr.h"

@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: dsql.cpp,v 1.5 2001-07-14 00:44:14 skywalker Exp $
+$Id: dsql.cpp,v 1.6 2001-07-29 23:43:21 skywalker Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -56,13 +56,14 @@ nested FOR loops are added.
 
 #define DSQL_MAIN
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/sym.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/thd.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
@@ -82,7 +83,7 @@ nested FOR loops are added.
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/why_proto.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 
 ASSERT_FILENAME
 #ifdef VMS

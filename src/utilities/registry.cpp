@@ -21,7 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
+#include "../jrd/isc_proto.h"
 #include <stdlib.h>
 #include <windows.h>
 #include "../jrd/common.h"
@@ -32,8 +34,7 @@
 static USHORT remove_subkeys(HKEY, USHORT, USHORT(*)());
 
 
-USHORT REGISTRY_install(
-						HKEY hkey_node,
+USHORT REGISTRY_install(HKEY hkey_node,
 						TEXT * directory, USHORT(*err_handler) ())
 {
 /**************************************
@@ -53,7 +54,7 @@ USHORT REGISTRY_install(
 	SLONG status;
 
 	if ((status = RegCreateKeyEx(hkey_node,
-								 "SOFTWARE\\Borland\\InterBase\\CurrentVersion",
+                                 WIN32_REG_KEY_PATH_CURRENT_VERSION,
 								 0,
 								 "",
 								 REG_OPTION_NON_VOLATILE,
@@ -104,7 +105,7 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 	SLONG status;
 
 	if ((status = RegOpenKeyEx(hkey_node,
-							   "SOFTWARE\\Borland\\InterBase",
+                               WIN32_REG_KEY_PATH,
 							   0,
 							   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
 							   KEY_WRITE, &hkey_kit)) != ERROR_SUCCESS) {
@@ -120,7 +121,7 @@ USHORT REGISTRY_remove(HKEY hkey_node,
 	if (ret == FAILURE)
 		return FAILURE;
 
-	if (status = RegDeleteKey(hkey_node, "SOFTWARE\\Borland\\InterBase")) {
+	if (status = RegDeleteKey(hkey_node, WIN32_REG_KEY_PATH)) {
 		if (silent_flag)
 			return FAILURE;
 		return (*err_handler) (status, "RegDeleteKey", NULL);

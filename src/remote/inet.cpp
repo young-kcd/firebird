@@ -23,8 +23,9 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
+$Id: inet.cpp,v 1.3 2001-07-29 23:43:24 skywalker Exp $
 */
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <string.h>
@@ -38,6 +39,10 @@ $Id: inet.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
+
+//#ifdef HAVE_GRP_H
+#include <grp.h>
+//#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -89,7 +94,7 @@ NETDB_DEFINE_CONTEXT
 #endif
 
 #include "../remote/remote.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/iberr.h"
 #include "../jrd/thd.h"
 #include "../remote/inet_proto.h"
@@ -536,7 +541,7 @@ static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #define pause		(*_libgds_pause)
 #define getenv		(*_libgds_getenv)
 #ifndef SCO
-#define initgroups      (*_libgds_initgroups)
+//#define initgroups      (*_libgds_initgroups)
 #define sigvector       (*_libgds_sigvec)
 #else
 #define htonl		(*_libgds_htonl)
@@ -569,8 +574,9 @@ extern int shutdown();
 extern int setitimer();
 extern int pause();
 extern char *getenv();
+
 #ifndef SCO
-extern int initgroups();
+//extern int initgroups();
 extern int sigvector();
 extern int getppid();
 #else
@@ -906,7 +912,8 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
  *	is for a server process.
  *
  **************************************/
-	int l, n;
+	socklen_t l;
+    int n;
 	SOCKET s;
 	PORT port;
 	TEXT *protocol;
@@ -1162,7 +1169,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 /* We're a server, so wait for a host to show up */
 
 	if (flag & SRVR_multi_client) {
-		int optlen;
+		socklen_t optlen;
 		struct linger lingerInfo;
 
 		lingerInfo.l_onoff = 0;
@@ -1718,7 +1725,8 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
  **************************************/
 	P_RESP *response;
 	SOCKET n;
-	int l, status;
+	socklen_t l;
+    int status;
 	PORT new_port;
 	struct sockaddr_in address;
 #if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
@@ -1818,7 +1826,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 	PORT new_port;
 	P_RESP *response;
 	SOCKET n;
-	int length;
+    socklen_t length;
 	struct sockaddr_in address;
 #ifndef VMS
 	struct hostent *host;
@@ -1954,7 +1962,8 @@ static int check_host(
  **************************************/
 	TEXT user[64], rhosts[MAXPATHLEN], *hosts_file;
 	IB_FILE *fp;
-	int length, result;
+	socklen_t length;
+    int result;
 	struct sockaddr_in address;
 	struct hostent *host;
 
@@ -2659,7 +2668,7 @@ static PORT select_accept( PORT main_port)
  *
  **************************************/
 	PORT port;
-	int l;
+	socklen_t l;
 	struct sockaddr_in address;
 	int optval = 1;
 #if !(defined NETWARE_386 || defined PC_PLATFORM || \

@@ -21,7 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../include/jrd/gds.h"
+#include "firebird.h"
+#include "../jrd/gds.h"
 #include "../utilities/rebuild.h"
 #include "../utilities/rebui_proto.h"
 #include "../utilities/rstor_proto.h"

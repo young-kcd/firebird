@@ -1,0 +1,141 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.wal,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+AllObjects = $(WAL_Objects) 
+
+Dependencies = $(All_Objects:.o=.d) 
+
+
+
+
+.PHONY: jrd_static
+
+jrd_static : $(LIB)/jrd_static.a($(WAL_Objects))
+
+$(LIB)/jrd_static.a(%.o) : %.o
+	ar crv $@  $%
+
+
+
+# In phase2 we add the same objects as before, we just rebuild them as
+# portable and load them into a shared libgds.so library.
+
+.PHONY: jrdlib_dependencies
+
+
+
+jrdlib_dependencies: $(WAL_Objects)
+
+
+
+# end
+
+
+
+
+#__ the old stuff to be removed ____
+
+WALW_OBJECTS=	walc.o walf.o walw.o walw_main.o
+
+WAL_P_OBJECTS=	wal.bin walc.bin walf.bin walr.bin
+
+JRD_OBJECTS=	$(OBJS)/jrd/gds.o $(OBJS)/jrd/iberr.o \
+		$(OBJS)/jrd/isc.o $(OBJS)/jrd/isc_file.o $(OBJS)/jrd/isc_ipc.o \
+		$(OBJS)/jrd/isc_sync.o $(OBJS)/jrd/llio.o $(OBJS)/jrd/misc.o
+
+WAL_WRITER=	$(OBJS)/firebird/bin/gds_wal_writer$(EXEC_EXT)
+WAL_PRINT=	$(OBJS)/firebird/bin/gds_wal_print$(EXEC_EXT)
+
+all:	wal_objects $(WAL_P_OBJS) wal_writer$(EXEC_EXT)
+
+
+wal_print:	wal_prnt.o $(WAL_OBJECTS) $(JRD_OBJECTS)
+	-$(RM) wal_print
+	$(CXX) $(LINK_OPTS) wal_prnt.o $(WAL_OBJECTS) $(JRD_OBJECTS) \
+		-o wal_print $(SCO_SOCKET_LIB) $(SO_THREAD_LIB) $(NSL_LIB)
+	$(CHMOD_7) wal_print
+	$(MV) wal_print $(WAL_PRINT)
+	$(TOUCH) wal_print
+	$(CHMOD_6) wal_print
+
+wal_print.exe:	wal_prnt.o $(WAL_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/thd.o
+	-$(RM) wal_print.exe wal.rsp
+	$(ECHO) wal_prnt.o $(WAL_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/thd.o > wal.rsp
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)wal_print \
+		@wal.rsp $(CONLIBSDLL) $(ADVAPILIB) $(MPRLIB)
+	$(MV) wal_print.exe $(WAL_PRINT)
+	$(RM) wal_print.exe wal.rsp
+	$(TOUCH) wal_print.exe
+
+wal_writer:	$(WALW_OBJECTS) divorce.o $(JRD_OBJECTS) $(OBJS)/jrd/jrn.o
+	-$(RM) wal_writer
+	$(CXX) $(LINK_OPTS) $(WALW_OBJECTS) divorce.o $(JRD_OBJECTS) $(OBJS)/jrd/jrn.o \
+		-o wal_writer $(SO_SOCKET_LIB) \
+		$(SCO_SOCKET_LIB) $(SO_THREAD_LIB) $(SOCKET_LIB)
+	$(CHMOD_S7) wal_writer
+	$(MV) wal_writer $(WAL_WRITER)
+	$(TOUCH) wal_writer
+	$(CHMOD_6) wal_writer
+
+wal_writer.exe:	$(WALW_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/jrn.o $(OBJS)/jrd/thd.o
+	-$(RM) wal_writer.exe wal.rsp
+	$(ECHO) $(WALW_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/jrn.o $(OBJS)/jrd/thd.o > wal.rsp
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)wal_writer \
+		@wal.rsp $(CONLIBSDLL) $(ADVAPILIB) $(MPRLIB)
+	$(MV) wal_writer.exe $(WAL_WRITER)
+	$(RM) wal_writer.exe wal.rsp
+	$(TOUCH) wal_writer.exe
+
+driver:		driver.o $(WAL_OBJECTS) $(JRD_OBJECTS)
+	-$(RM) driver
+	$(CXX) $(LINK_OPTS) driver.o $(WAL_OBJECTS) $(JRD_OBJECTS) \
+		-o driver $(SCO_SOCKET_LIB) $(SO_THREAD_LIB) $(NSL_LIB)
+	$(CHMOD_7) driver
+
+driver.exe:	driver.o $(WAL_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/thd.o
+	-$(RM) driver.exe wal.rsp
+	$(ECHO) driver.o $(WAL_OBJECTS) $(JRD_OBJECTS) $(OBJS)/jrd/thd.o > wal.rsp
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)driver \
+		@wal.rsp $(CONLIBSDLL) $(ADVAPILIB) $(MPRLIB)
+	$(RM) wal.rsp
+
+
+include $(Dependencies)
+

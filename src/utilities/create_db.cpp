@@ -1,3 +1,6 @@
+
+#include "firebird.h"
+
 #include "../jrd/ibase.h"
 #include <stdio.h>
 
@@ -19,7 +22,7 @@ int main(int argc, char **argv)
     *d++ = (UCHAR) isc_dpb_version1;
     *d++ = (UCHAR) isc_dpb_set_db_readonly;
     *d++ = 1;
-    *d++ = TRUE;
+    *d++ = GDS_TRUE;
     len = d - dpb;
 
     isc_create_database(sv, 0, argv[1], &db, 0, 0, 0);

@@ -22,9 +22,10 @@
  * Toni Martir: Added verbose backup records as BACKUP_VERBOSE_INTERVAL
  */
 /*
-$Id: backup.epp,v 1.1 2001-07-12 06:32:01 bellardo Exp $
+$Id: backup.epp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <memory.h>
 #include <string.h>

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <signal.h>
 #include <process.h>
 #include "../remote/remote.h"

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//  $Id: sqe.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,8 +38,9 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//	$Id: sqe.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
 //
+#include "firebird.h"
 #include <stdio.h>
 #include <string.h>
 #include "../gpre/gpre.h"

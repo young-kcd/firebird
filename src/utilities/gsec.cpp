@@ -22,13 +22,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/jrd.h"
@@ -73,7 +74,7 @@ void UTIL_error_redirect(STATUS *, USHORT, TEXT *, TEXT *);
 void UTIL_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-void util_output(CONST SCHAR *, ...);
+static void util_output(CONST SCHAR *, ...);
 
 static void data_print(void *, USER_DATA, BOOLEAN);
 static int get_line(int *, SCHAR **, TEXT *, TSEC);

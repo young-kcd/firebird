@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "firebird.h"
 #include "/sys5/usr/include/sys/types.h"
 #include "/sys5/usr/include/sys/ipc.h"
 #include "/sys5/usr/include/sys/shm.h"

@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
+$Id: drop.cpp,v 1.3 2001-07-29 23:43:24 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <sys/param.h>
@@ -35,10 +36,27 @@ $Id: drop.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
 #include "../lock/lock.h"
+#include "../lock/lock_proto.h"
 #include "../jrd/license.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../utilities/drpv3_proto.h"
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #define FTOK_KEY		15
 
@@ -230,7 +248,7 @@ static void remove_resource(
 	SH_MEM_T shmem_data;
 	SLONG key, shmid, semid;
 	TEXT expanded_filename[MAXPATHLEN];
-	int pid;
+	pid_t pid;
 
 #ifdef MANAGER_PROCESS
 /* Shutdown lock manager process so that shared memory
@@ -241,7 +259,8 @@ static void remove_resource(
 			execl(orig_argv[0], orig_argv[0], "-s", 0);
 			_exit(FINI_ERROR);
 		}
-		wait(pid);
+        // wait(pid)  // this is wrong wait takes a *int anyway.
+		waitpid(pid, 0, 0);
 	}
 #endif
 
@@ -318,7 +337,7 @@ static void remove_resource(
 #ifdef SCO_EV					/* 5.5 SCO Port: SCO needs waitpid() to function properly */
 		waitpid(pid, 0, 0);
 #else
-		wait(pid);
+		waitpid(pid,NULL,0);
 #endif
 	}
 #endif

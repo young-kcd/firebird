@@ -22,10 +22,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../dsql/chars.h"
 #include "../dsql/prepa_proto.h"
 #include "../dsql/utld_proto.h"

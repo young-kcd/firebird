@@ -1,0 +1,69 @@
+#ifndef AUTOCONFIG_H
+#define AUTOCONFIG_H
+
+
+/* Headers */
+#undef HAVE_ASSERT_H
+#undef HAVE_UNISTD_H
+#undef HAVE_FCNTL_H
+#undef HAVE_SYS_TYPES_H
+#undef HAVE_TIME_H
+#undef HAVE_SYS_TIME_H
+#undef HAVE_SYS_STAT_H
+#undef HAVE_CTYPE_H
+#undef HAVE_SYS_UIO_H
+#undef HAVE_LIB_IO_H
+#undef HAVE_WAIT_H
+#undef HAVE_SYS_WAIT_H
+#undef HAVE_SYS_PARAM_H
+#undef HAVE_VARARGS_H
+#undef HAVE_STDARG_H
+#undef HAVE_STDLIB_H
+#undef HAVE_STRING_H
+#undef HAVE_SIGNAL_H
+
+
+/* Is the platform big endian? */
+#define WORDS_BIGENDIAN 0
+
+/* CPU types */
+#undef PowerPC
+#undef sparc
+#undef i386
+#undef mips
+#undef alpha
+
+/* various OS efforts */
+#undef DARWIN
+#undef LINUX
+#undef FREEBSD
+#undef NETBSD
+#undef apollo
+#undef sun
+#undef SOLARIS
+#undef MAC
+#undef NeXT
+#undef hpux
+#undef ultrix
+#undef PC_PLATFORM
+#undef NETWARE_386
+#undef WINDOWS_ONLY
+#undef VMS
+#undef AIX
+#undef OS2_ONLY
+#undef WIN_NT
+#undef SCO_EV
+#undef DGUX
+#undef DECOSF
+#undef sgi
+#undef mpexl
+#undef _CRAY
+#undef DELTA
+#undef M88K
+#undef UNIXWARE
+#undef NCR3000
+#undef IMP
+#undef EPSON
+
+
+#endif

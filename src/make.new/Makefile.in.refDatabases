@@ -1,0 +1,106 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in.refDatabases,v 1.1 2001-07-29 23:43:23 skywalker Exp $
+# 
+
+ROOT=../..
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+@SET_MAKE@
+
+# If we export the username/password we get an error because we can't connect
+# to isc4.gdb!  So we won't export them while we make the databases...
+#
+unexport ISC_USER
+unexport ISC_PASSWORD
+export DYLD_FRAMEWORK_PATH
+DYLD_FRAMEWORK_PATH=	$(OBJS)/firebird
+export INTERBASE
+
+
+
+.PHONY: empty_db refDatabases
+
+# This is where you are going to have trouble if there is one, at creating 
+# the first empty database.  Things to watch out for, gds_lock_mgr not being
+# able to be started, $INTERBASE variable pointing in the wrong place, 
+# shared library path LD_LIBRARY_PATH not pointing to new stuff (mind you this
+# point it should be creating using create_db statically linked). 
+# Also you don't need to worry about lock mgr not being able to set uid to
+# superuser.  You do not have to be root to build classic, it's just a warning
+# and the build process works fine. 
+
+empty_db : empty.gdb
+
+empty.gdb : $(BIN)/create_db
+	-$(RM) $@
+	$(BIN)/create_db  $@
+	touch $@
+	chmod 444 $@
+
+
+
+# These are the rest of the databases used to build the system.  We also build
+# the help database from here.
+
+.PHONY: ref_databases
+
+ref_databases : msg.gdb help.gdb metadata.gdb $(FIREBIRD)/help/help.gdb
+
+msg.gdb:	$(SRC_ROOT)/msgs/msg.gbak
+	$(BIN)/gbak_static -MODE read_only -R $< msg.gdb
+	chmod 444 msg.gdb
+	touch $@
+
+help.gdb:	$(SRC_ROOT)/misc/help.gbak
+	$(BIN)/gbak_static -MODE read_only -R $< help.gdb
+	chmod 444 help.gdb
+	touch $@
+
+$(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
+	$(BIN)/gbak_static -MODE read_only -R $< $@
+	chmod 444 help.gdb
+	touch $@
+
+metadata.gdb:	$(SRC_ROOT)/misc/metadata.gbak
+	$(BIN)/gbak_static -MODE read_only -R $< metadata.gdb
+	chmod 444 metadata.gdb
+	touch $@
+
+# An alternative metadata creation method, this one is actually preferred
+# since it ensures the data is valid.
+
+metadata.gdb.x:	$(SRC_ROOT)/misc/metadata.sql
+	$(BIN)/isql -i $<
+	chmod 444 metadata.gdb
+	touch $@

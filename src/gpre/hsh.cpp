@@ -25,9 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: hsh.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
 #ifdef JPN_SJIS
@@ -53,11 +54,13 @@ static SYM key_symbols;
 static struct word {
 	SCHAR *keyword;
 	enum kwwords id;
-} keywords[] = {
+}  keywords[] = {
 #include "../gpre/hsh.h"
 };
 
 #define NUMWORDS (sizeof (keywords) / sizeof (struct word))
+
+
 
 
 //____________________________________________________________
@@ -94,6 +97,7 @@ void HSH_init(void)
 	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
+	fflush(stdout);
 	for (i = 0, word = keywords; i < NUMWORDS; i++, word++) {
 		for (string = word->keyword; *string; string++);
 		symbol = (SYM) ALLOC(SYM_LEN);

@@ -28,6 +28,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
@@ -36,7 +37,8 @@
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
 #include "../jrd/blr.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
+#include "gen/iberror.h"
 #include "../jrd/inf.h"
 #include "../jrd/align.h"
 #include "../jrd/gds_proto.h"
@@ -1507,7 +1509,7 @@ static NAME insert_name( TEXT * symbol, NAME* list_ptr, STMT stmt)
 	name = (NAME) gds__alloc((SLONG) sizeof(struct name) + l);
 /* FREE: by exit handler cleanup() or database_cleanup() */
 	if (!name)					/* NOMEM: */
-		error_post(gds__virmemexh, 0);
+		error_post(gds_virmemexh, 0);
 	name->name_stmt = stmt;
 	name->name_length = l;
 	p = name->name_symbol;
@@ -1565,13 +1567,13 @@ static STMT lookup_stmt(TEXT* name, NAME list, USHORT type)
 		return found->name_stmt;
 
 	if (type == NAME_statement) {
-		error_post(gds__dsql_error,
-				   gds_arg_gds, gds__sqlerr, gds_arg_number, (SLONG) - 518,
-				   gds_arg_gds, gds__dsql_request_err, 0);
+		error_post(gds_dsql_error,
+				   gds_arg_gds, gds_sqlerr, gds_arg_number, (SLONG) - 518,
+				   gds_arg_gds, gds_dsql_request_err, 0);
 	} else {
-		error_post(gds__dsql_error,
-				   gds_arg_gds, gds__sqlerr, gds_arg_number, (SLONG) - 504,
-				   gds_arg_gds, gds__dsql_cursor_err, 0);
+		error_post(gds_dsql_error,
+				   gds_arg_gds, gds_sqlerr, gds_arg_number, (SLONG) - 504,
+				   gds_arg_gds, gds_dsql_cursor_err, 0);
 	}
 	return NULL;
 }

@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "firebird.h"
 #include "/bsd4.2/usr/include/sys/time.h"
 #include "/bsd4.2/usr/include/sys/resource.h"
 

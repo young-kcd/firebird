@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../lock/lockv3s4.h"
 #include "../lock/prtv3_proto.h"

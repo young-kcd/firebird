@@ -24,9 +24,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.1.1.1 2001-05-23 13:25:33 tamlin Exp $
+//	$Id: all.cpp,v 1.2 2001-07-29 23:43:20 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"

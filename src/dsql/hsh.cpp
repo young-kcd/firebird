@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/sym.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"

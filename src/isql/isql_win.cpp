@@ -21,7 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#define  STRICT
+#define 
+#include "firebird.h" STRICT
 #include <windows.h>
 #pragma hdrstop
 #include "../jrd/ib_stdio.h"
@@ -39,7 +40,7 @@
 #include "../isql/isql.h"
 #include "../isql/isql_win.h"
 #include "../isql/isql_res.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../isql/isqlw_proto.h"
 #include "../isql/isql_proto.h"
 #include "../jrd/gds_proto.h"

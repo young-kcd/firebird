@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/time.h"
@@ -33,7 +34,7 @@
 #endif
 
 #include "../jrd/ods.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/license.h"
 #include "../journal/journal.h"
 

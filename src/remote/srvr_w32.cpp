@@ -77,11 +77,12 @@
  * copyright (c) 1993, 1996 by Borland International
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <windows.h>
 #include "../remote/remote.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../jrd/thd.h"
 #include "../jrd/license.h"

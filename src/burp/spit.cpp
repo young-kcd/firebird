@@ -25,6 +25,7 @@
  * Contributor(s): ______________________________________.
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
@@ -138,7 +139,7 @@ static int write_header(B_FIL, HEADER_REC, FILE_DESC, TEXT *);
 	******************************************************
 	*/
 
-SLONG main( int argc, char *argv[])
+int main( int argc, char *argv[])
 {
 
 	SCHAR **end, *prog_name, *string;

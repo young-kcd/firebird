@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"

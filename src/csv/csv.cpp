@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.1.1.1 2001-05-23 13:25:34 tamlin Exp $
+$Id: csv.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../csv/csi.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/license.h"
 #include "../csv/css_proto.h"
 #include "../jrd/gds_proto.h"

@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <setjmp.h>
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../dudley/parse.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/expan_proto.h"

@@ -17,7 +17,8 @@
  * Contributor(s): ______________________________________.
  */
 set sql dialect 1;
-create database 'employee.gdb';
+/* create database 'employee.gdb'; */
+create database 'empbuild.gdb';
 show version;
 input empddl.sql;
 quit;

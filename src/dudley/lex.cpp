@@ -21,11 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 #include "../jrd/kanji.h"

@@ -1,0 +1,149 @@
+
+
+#________________________________________________________________________
+#
+# jrd
+
+# to get at the database.  why.cpp is the normal one whybk.cpp is the one 
+# compiled with a BACKEND flag, it seems to be (from a quick look at 
+# the code) to allow the use of another library to talk to data from
+# and earlier version data file.  (Good way to achieve back portability)
+# In the current builds only why.cpp is used, to build using whybk.cpp you
+# will need to look at what is contained in the original makefiles.
+
+WHY_Sources = why.c
+WHY_BACKEND_Sources= whybk.c
+
+
+# why.c does the switch to determine the actual implementation to use
+JRD_Sources=	ail.cpp all.cpp alt.cpp bookmark.cpp blb.cpp blob_filter.cpp btr.cpp builtin.cpp \
+		cch.cpp cmp.cpp cvt.cpp cvt2.cpp \
+		dfw.cpp divorce.cpp dls.cpp dpm.cpp dsc.cpp dyn.cpp dyn_def.cpp dyn_del.cpp \
+		dyn_mod.cpp dyn_util.cpp enc.cpp err.cpp iberr.cpp \
+		event.cpp evl.cpp exe.cpp ext.cpp filters.cpp flu.cpp fun.cpp functions.cpp \
+		gds.cpp grant.cpp idx.cpp inf.cpp ini.cpp intl.cpp inuse.cpp \
+		isc.cpp isc_file.cpp isc_ipc.cpp isc_sync.cpp \
+		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp met.cpp \
+		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp pcmet.cpp \
+		perf.cpp pwd.cpp rec.cpp rlck.cpp \
+		rng.cpp rse.cpp sbm.cpp sch.cpp scl.cpp \
+		sdl.cpp sdw.cpp shut.cpp sort.cpp sqz.cpp status.cpp svc.cpp sym.cpp thd.cpp tpc.cpp \
+		tra.cpp utl.cpp val.cpp vio.cpp \
+		$(IO_Sources) $(DEBUG_Sources) $(WHY_Sources)
+
+JRD_ObjectsX = $(JRD_Sources:%.cpp=$(GEN_ROOT)/jrd/%.o)
+JRD_Objects = $(JRD_ObjectsX:%.c=$(GEN_ROOT)/jrd/%.o)   # One extra rule for why.c
+
+JRD_SharedObjects = $(JRD_Objects:.o=.lo)
+
+
+#  If your platform needs these then you may need
+# to include something like.
+# JRD_P_Sources := $(subst, flu.lo, , $(JRD_P_Sources))
+
+
+
+#________________________________________________________________________
+#
+# dsql
+
+DSQL_Sources=	alld.cpp array.cpp blob.cpp ddl.cpp dsql.cpp \
+	errd.cpp gen.cpp hsh.cpp make.cpp metd.cpp \
+	movd.cpp parse.cpp pass1.cpp preparse.cpp \
+	user_dsql.cpp utld.cpp
+
+DSQL_Objects=$(DSQL_Sources:%.cpp=$(GEN_ROOT)/dsql/%.o)
+DSQL_SharedObjects=$(DSQL_Objects:.o=.lo)
+
+
+#________________________________________________________________________
+#
+# lock
+
+
+LOCK_Sources = lock.cpp
+
+LOCK_Objects = $(LOCK_Sources:%.cpp=$(GEN_ROOT)/lock/%.o)
+LOCK_SharedObjects = $(LOCK_Objects:.o=.lo)
+
+
+#________________________________________________________________________
+#
+# remote
+
+REMOTE_Sources=		allr.cpp inet.cpp merge.cpp parser.cpp protocol.cpp remote.cpp \
+			$(NET_Sources)
+INTERFACE_Sources=	interface.cpp $(REMOTE_Sources)
+
+
+INTERFACE_Objects       =$(INTERFACE_Sources:%.cpp=$(GEN_ROOT)/remote/%.o)
+INTERFACE_SharedObjects =$(INTERFACE_Objects:.o=.lo)
+
+
+
+#________________________________________________________________________
+#
+# pipe
+
+PIPE_Sources=	head5.cpp allp.cpp
+
+PIPE_Objects = $(PIPE_Sources:%.cpp=$(GEN_ROOT)/pipe/%.o)
+PIPE_SharedObjects = $(PIPE_Objects:.o=.lo)
+
+
+
+#________________________________________________________________________
+#
+# intl
+
+# none currently.
+
+
+#________________________________________________________________________
+#
+# wal
+
+WAL_Sources=	wal.cpp walc.cpp walf.cpp walr.cpp wstatus.cpp walw.cpp
+
+WAL_Objects = $(WAL_Sources:%.cpp=$(GEN_ROOT)/wal/%.o)
+WAL_SharedObjects = $(WAL_Objects:.o=.lo)
+
+#________________________________________________________________________
+#
+# gpre
+
+GPRELIB_Sources = pretty.cpp
+GPRELIB_P_Sources = $(GPRELIB_Sources)
+
+GPRELIB_Objects = $(GPRELIB_Sources:%.cpp=$(GEN_ROOT)/gpre/%.o)
+GPRELIB_SharedObjects = $(GPRELIB_Objects:.o=.lo)
+
+
+#________________________________________________________________________
+#
+# utilities
+
+SECURITY_Sources=security.cpp
+
+SECURITY_Objects = $(SECURITY_Sources:%.cpp=$(GEN_ROOT)/utilities/%.o)
+SECURITY_SharedObjects = $(SECURITY_Objects:.o=.lo)
+
+
+
+#________________________________________________________________________
+#
+
+# These are the lists of object/shared object files that will go into libgds.a
+# and libgds.so.
+
+GDSLIB_Objects = $(JRD_Objects) \
+                $(DSQL_Objects) \
+                $(LOCK_Objects) \
+                $(INTERFACE_Objects) \
+                $(PIPE_Objects) \
+                $(WAL_Objects) \
+                $(GPRELIB_Objects) \
+                $(SECURITY_Objects)
+
+GDSLIB_SharedObjects = $(GDSLIB_Objects:.o=.lo)
+

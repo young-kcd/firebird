@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibsetjmp.h"
 #include <stdlib.h>
@@ -36,7 +37,7 @@
 #define NFS	1
 #endif
 
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/thd.h"
 #include "../jrd/license.h"
 #include "../jrd/fil.h"

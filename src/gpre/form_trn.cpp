@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form_trn.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//  $Id: form_trn.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
 //  Revision 1.3  2000/11/29 11:11:56  fsg
 //  Added some more PYXIS datatypes to form_trn.c
 //  
@@ -38,11 +38,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: form_trn.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//	$Id: form_trn.cpp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include "../jrd/common.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 
 //  
 //The datatypes from dsc.h 

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//  $Id: par.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,13 +37,14 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: par.cpp,v 1.3 2001-07-29 23:43:22 skywalker Exp $
 //
 
+#include "firebird.h"
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
 #include "../gpre/form.h"

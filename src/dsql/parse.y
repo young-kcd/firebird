@@ -22,13 +22,14 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#include "../include/iberror.h"
+#include "gen/iberror.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/sym.h"
@@ -3370,7 +3371,7 @@ typedef struct tok {
 
 static CONST TOK tokens [] = {
 #include "../dsql/keywords.h"
-    0, 0, 0
+    {0, 0, 0}
     };
 
 

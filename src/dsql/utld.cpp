@@ -21,15 +21,16 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: utld.cpp,v 1.1.1.1 2001-05-23 13:25:35 tamlin Exp $
+$Id: utld.cpp,v 1.2 2001-07-29 23:43:21 skywalker Exp $
 */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
 #include "../jrd/blr.h"
-#include "../jrd/codes.h"
+#include "../jrd/gdsold.h"
 #include "../jrd/inf.h"
 #include "../jrd/align.h"
 #include "../dsql/utld_proto.h"
@@ -110,7 +111,7 @@ XSQLDA * xsqlda, USHORT * return_index)
 	if (dialect >= DIALECT_xsqlda)
 	{
 		if (xsqlda->version != SQLDA_VERSION1)
-			return error_dsql_804(status, gds__dsql_sqlda_err);
+			return error_dsql_804(status, gds_dsql_sqlda_err);
 		xsqlda->sqld = n;
 
 		/* If necessary, inform the application that more sqlda items are needed */
@@ -132,12 +133,12 @@ XSQLDA * xsqlda, USHORT * return_index)
 
 /* Loop over the variables being described. */
 
-	while (*info != gds__info_end)
+	while (*info != gds_info_end)
 	{
-		while ((item = *info++) != gds__info_sql_describe_end)
+		while ((item = *info++) != gds_info_sql_describe_end)
 			switch (item)
 			{
-			case gds__info_sql_sqlda_seq:
+			case gds_info_sql_sqlda_seq:
 				index = static_cast<USHORT>(get_numeric_info(&info));
 				if (xsqlda)
 					xvar = xsqlda->sqlvar + index - 1;
@@ -148,54 +149,54 @@ XSQLDA * xsqlda, USHORT * return_index)
 				}
 				break;
 
-			case gds__info_sql_type:
+			case gds_info_sql_type:
 				xvar->sqltype =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case gds__info_sql_sub_type:
+			case gds_info_sql_sub_type:
 				xvar->sqlsubtype =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case gds__info_sql_scale:
+			case gds_info_sql_scale:
 				xvar->sqlscale =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case gds__info_sql_length:
+			case gds_info_sql_length:
 				xvar->sqllen =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case gds__info_sql_field:
+			case gds_info_sql_field:
 				xvar->sqlname_length =
 					static_cast<SSHORT>(get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname)));
 				break;
 
-			case gds__info_sql_relation:
+			case gds_info_sql_relation:
 				xvar->relname_length =
 					static_cast<SSHORT>(get_string_info(&info, xvar->relname, sizeof(xvar->relname)));
 				break;
 
-			case gds__info_sql_owner:
+			case gds_info_sql_owner:
 				xvar->ownname_length =
 					static_cast<SSHORT>(get_string_info(&info, xvar->ownname, sizeof(xvar->ownname)));
 				break;
 
-			case gds__info_sql_alias:
+			case gds_info_sql_alias:
 				xvar->aliasname_length =
 					static_cast<SSHORT>
 					(get_string_info
 					 (&info, xvar->aliasname, sizeof(xvar->aliasname)));
 				break;
 
-			case gds__info_truncated:
+			case gds_info_truncated:
 				if (return_index)
 					*return_index = last_index;
 
 			default:
-				return error_dsql_804(status, gds__dsql_sqlda_err);
+				return error_dsql_804(status, gds_dsql_sqlda_err);
 			}
 
 		if (!xsqlda)
@@ -205,8 +206,8 @@ XSQLDA * xsqlda, USHORT * return_index)
 			last_index = index;
 	}
 
-	if (*info != gds__info_end)
-		return error_dsql_804(status, gds__dsql_sqlda_err);
+	if (*info != gds_info_end)
+		return error_dsql_804(status, gds_dsql_sqlda_err);
 
 	return SUCCESS;
 }
@@ -249,7 +250,7 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 		if (dialect >= DIALECT_xsqlda)
 		{
 			if (xsqlda->version != SQLDA_VERSION1)
-				return error_dsql_804(status, gds__dsql_sqlda_err);
+				return error_dsql_804(status, gds_dsql_sqlda_err);
 			n = xsqlda->sqld;
 		}
 		else
@@ -333,7 +334,7 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 				reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
 			/* FREE: unknown */
 			if (!dasup->dasup_clauses[clause].dasup_blr)	/* NOMEM: */
-				return error_dsql_804(status, gds__virmemexh);
+				return error_dsql_804(status, gds_virmemexh);
 			memset(dasup->dasup_clauses[clause].dasup_blr, 0, blr_len);
 			dasup->dasup_clauses[clause].dasup_blr_buf_len = blr_len;
 			dasup->dasup_clauses[clause].dasup_blr_length = 0;
@@ -443,7 +444,7 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 				dtype = dtype_quad;
 				break;
 			default:
-				return error_dsql_804(status, gds__dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 			}
 
 			CH_STUFF(p, blr_short);
@@ -473,7 +474,7 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 				reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
 			/* FREE: unknown */
 			if (!dasup->dasup_clauses[clause].dasup_msg)	/* NOMEM: */
-				return error_dsql_804(status, gds__virmemexh);
+				return error_dsql_804(status, gds_virmemexh);
 			memset(dasup->dasup_clauses[clause].dasup_msg, 0, msg_len);
 			dasup->dasup_clauses[clause].dasup_msg_buf_len = msg_len;
 		}
@@ -572,14 +573,14 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 
 			/* Make sure user has specified a data location */
 			if (!xvar->sqldata)
-				return error_dsql_804(status, gds__dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 
 			memcpy(xvar->sqldata, msg_buf + offset, len);
 			if (xvar->sqltype & 1)
 			{
 				/* Make sure user has specified a location for null indicator */
 				if (!xvar->sqlind)
-					return error_dsql_804(status, gds__dsql_sqlda_value_err);
+					return error_dsql_804(status, gds_dsql_sqlda_value_err);
 				*xvar->sqlind = *null_ind;
 			}
 		}
@@ -593,7 +594,7 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 			{
 				/* Make sure user has specified a location for null indicator */
 				if (!xvar->sqlind)
-					return error_dsql_804(status, gds__dsql_sqlda_value_err);
+					return error_dsql_804(status, gds_dsql_sqlda_value_err);
 				*null_ind = *xvar->sqlind;
 			}
 			else
@@ -601,11 +602,11 @@ STATUS DLL_EXPORT UTLD_parse_sqlda(STATUS * status,
 
 			/* Make sure user has specified a data location (unless NULL) */
 			if (!xvar->sqldata && !*null_ind)
-				return error_dsql_804(status, gds__dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 
 			/* Copy data - unless known to be NULL */
 			if ((offset + len) <= sizeof(msg_buf))
-				return error_dsql_804(status, gds__dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 			if (!*null_ind)
 				memcpy(msg_buf + offset, xvar->sqldata, len);
 		}
@@ -725,9 +726,9 @@ static STATUS error_dsql_804( STATUS * status, STATUS err)
 
 	p = status;
 	*p++ = gds_arg_gds;
-	*p++ = gds__dsql_error;
+	*p++ = gds_dsql_error;
 	*p++ = gds_arg_gds;
-	*p++ = gds__sqlerr;
+	*p++ = gds_sqlerr;
 	*p++ = gds_arg_number;
 	*p++ = -804;
 	*p++ = gds_arg_gds;

@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/time.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../qli/compile.h"
 #include "../qli/report.h"
 #include "../qli/format.h"

@@ -25,12 +25,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+//	$Id: cmd.cpp,v 1.3 2001-07-29 23:43:21 skywalker Exp $
 //
 
+#include "firebird.h"
 #include <string.h>
 #include "../gpre/gpre.h"
-#include "../include/jrd/gds.h"
+#include "../jrd/gds.h"
 #include "../jrd/flags.h"
 #include "../jrd/constants.h"
 #include "../gpre/cmd_proto.h"

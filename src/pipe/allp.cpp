@@ -21,22 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../pipe/pipe.h"
 
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 
-#define BLKDEF(type, root, tail) sizeof (struct root), tail,
+#define BLKDEF(type, root, tail) {sizeof (struct root), tail},
 static struct {
     SSHORT	typ_root_length;
     SSHORT	typ_tail_length;
     } PIPE_block_sizes[] =
     {
-    0,0,
-
+        {0,0},
 #include "../pipe/blk.h"
-    0};
+        {0,0}
+    };
 
 #include "../pipe/allp_proto.h"
 #include "../jrd/gds_proto.h"

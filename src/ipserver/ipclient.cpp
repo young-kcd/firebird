@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
@@ -31,7 +32,7 @@
 #include <windows.h>
 
 #include "../ipserver/ipc.h"
-#include "../jrd/codes.h"
+#include "gen/codes.h"
 #include "../jrd/license.h"
 #include "../jrd/inf.h"
 #include "../jrd/gds_proto.h"
