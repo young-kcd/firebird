@@ -272,8 +272,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_db_size_in_pages:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(NUMBER_PAGES, msg, (TEXT*) (IPTR)value_out, NULL,
-							 NULL, NULL, NULL);
+				ISQL_msg_get(NUMBER_PAGES, msg, (TEXT*) (IPTR)value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -284,8 +283,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_sweep_interval:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(SWEEP_INTERV, msg, (TEXT*)(IPTR) value_out, NULL,
-							 NULL, NULL, NULL);
+				ISQL_msg_get(SWEEP_INTERV, msg, (TEXT*)(IPTR) value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -320,8 +318,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(BASE_LEVEL, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
-							 NULL, NULL);
+				ISQL_msg_get(BASE_LEVEL, msg, (TEXT*)(IPTR)value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -331,8 +328,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_limbo:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(LIMBO, msg, (TEXT*)(IPTR)value_out, NULL, NULL, NULL,
-							 NULL);
+				ISQL_msg_get(LIMBO, msg, (TEXT*)(IPTR)value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -922,8 +918,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 // Only show version works if there is no db attached
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
 		TEXT msg_string[MSG_LENGTH];
-		gds__msg_format(NULL, ISQL_MSG_FAC, VERSION, sizeof(msg_string),
-						msg_string, FB_VERSION, NULL, NULL, NULL, NULL);
+		ISQL_msg_get(VERSION, msg_string, FB_VERSION);
 		sprintf(Print_buffer, "%s%s", msg_string, NEWLINE);
 		ISQL_printf(isqlGlob.Out, Print_buffer);
 		isc_version(&DB, local_fprintf, NULL);
@@ -1255,11 +1250,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	if (ret == NOT_FOUND) {
 		TEXT key_string[MSG_LENGTH];
 		if (*cmd[2] == '"')
-			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(key_string),
-							key_string, lcmd[2], NULL, NULL, NULL, NULL);
+			ISQL_msg_get(key, key_string, lcmd[2]);
 		else
-			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(key_string),
-							key_string, cmd[2], NULL, NULL, NULL, NULL);
+			ISQL_msg_get(key, key_string, cmd[2]);
 		STDERROUT(key_string);
 	}
 
@@ -2066,22 +2059,41 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 	if (!*object)
 	{
 		bool odd = true;
-		FOR FUN IN RDB$FUNCTIONS
-			WITH FUN.RDB$SYSTEM_FLAG EQ sys_flag
-			/*OR (sys_flag == 0 AND FUN.RDB$SYSTEM_FLAG MISSING)*/
-			//NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
-			SORTED BY FUN.RDB$FUNCTION_NAME
+		if (!sys_flag)
+		{
+			FOR FUN IN RDB$FUNCTIONS
+				WITH FUN.RDB$SYSTEM_FLAG EQ 0
+				OR FUN.RDB$SYSTEM_FLAG MISSING
+				SORTED BY FUN.RDB$FUNCTION_NAME
 
-			first = false;
-			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-			sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			odd = !odd;
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ERR;
-		END_ERROR;
+				first = false;
+				fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+				sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+				ISQL_printf (isqlGlob.Out, Print_buffer);
+				odd = !odd;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ERR;
+			END_ERROR;
+		}
+		else
+		{
+			FOR FUN IN RDB$FUNCTIONS
+				WITH FUN.RDB$SYSTEM_FLAG EQ sys_flag
+				SORTED BY FUN.RDB$FUNCTION_NAME
+
+				first = false;
+				fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+				sprintf (Print_buffer, "%-38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+				ISQL_printf (isqlGlob.Out, Print_buffer);
+				odd = !odd;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ERR;
+			END_ERROR;
+		}
 		if (!first)
 		{
 			ISQL_printf(isqlGlob.Out, NEWLINE);

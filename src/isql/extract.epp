@@ -172,7 +172,6 @@ int EXTRACT_ddl(int flag,
 	}
 
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
-	SCHAR errbuf[MSG_LENGTH];
 	int ret_code = FINI_OK;
 
 // If a table name was passed, extract only that table and domains 
@@ -180,8 +179,8 @@ int EXTRACT_ddl(int flag,
 	{
 		if (EXTRACT_list_table(tabname, NULL, true, default_char_set_id))
 		{
-			gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
-							errbuf, tabname, NULL, NULL, NULL, NULL);
+			SCHAR errbuf[MSG_LENGTH];
+			ISQL_msg_get(NOT_FOUND, errbuf, tabname);
 			STDERROUT(errbuf);
 			ret_code = FINI_ERROR;
 		}
@@ -1139,8 +1138,7 @@ static void list_all_procs()
 
 	END_FOR
 	ON_ERROR
-		ISQL_msg_get(GEN_ERR, msg, (TEXT*) (IPTR) isc_sqlcode(gds_status), NULL,
-					 NULL, NULL, NULL);
+		ISQL_msg_get(GEN_ERR, msg, (TEXT*) (IPTR) isc_sqlcode(gds_status));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
 		ISQL_errmsg(gds_status);
 		return;
