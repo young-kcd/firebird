@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: config_root.cpp,v 1.2 2002-11-10 16:27:56 nmcc Exp $
+ *  $Id: config_root.cpp,v 1.3 2002-12-02 13:06:06 eku Exp $
  */
 
 #include "firebird.h"
@@ -49,7 +49,7 @@
 
 typedef Firebird::string string;
 
-const string CONFIG_FILE = "firebird.conf";
+const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
@@ -57,6 +57,7 @@ const string CONFIG_FILE = "firebird.conf";
  */
 
 #ifdef HAVE__PROC_SELF_EXE
+
 static string getExePathViaProcEntry() 
 {
     char buffer[MAXPATHLEN];
@@ -150,5 +151,5 @@ string ConfigRoot::getRootDirectory() const
 
 string ConfigRoot::getConfigFile() const
 {
-	return "/etc/" + CONFIG_FILE;
+	return root_dir + CONFIG_FILE;
 }
