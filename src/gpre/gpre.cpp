@@ -128,7 +128,7 @@ static DBB sw_databases;
 // FSG 14.Nov.2000
 static bool sw_verbose;
 static bool sw_standard_out;
-static USHORT sw_first;
+static bool sw_first;
 static bool sw_lines;
 static bool sw_trace;
 static bool sw_alsys;
@@ -254,17 +254,10 @@ int main(int argc, char* argv[])
 {
 	gpre_sym* symbol;
 	int i;
-	TEXT	spare_file_name[256];
-	TEXT	spare_out_file_name[256];
 	bool renamed;
 	bool explicitt;
 	const ext_table_t* ext_tab;
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
-#ifdef VMS
-	FILE *temp;
-	TEXT temp_name[256];
-	SSHORT c;
-#endif
 
 	gpreGlob.module_lc_ctype	= NULL;
 	gpreGlob.errors_global	= 0;
@@ -381,6 +374,7 @@ int main(int argc, char* argv[])
 //  one of the right type there.
 //  
 
+	TEXT spare_file_name[MAXPATHLEN];
 	if (gpreGlob.sw_language == lang_undef)
 		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language;
 			 ext_tab++) 
@@ -738,6 +732,8 @@ int main(int argc, char* argv[])
 //  If this is Alpha OpenVMS, then we also have to do some more
 //  work, since RMS is a little different...
 //  
+	FILE *temp;
+	TEXT temp_name[MAXPATHLEN];
 
 #ifndef __ALPHA
 	temp = (FILE *) gds__temp_file(TRUE, "temp", 0);
@@ -746,6 +742,7 @@ int main(int argc, char* argv[])
 	temp = (FILE *) gds__temp_file(TRUE, "temp", temp_name);
 #endif
 	if (temp != (FILE *) - 1) {
+		SSHORT c;
 		while ((c = get_char(input_file)) != EOF)
 			putc(c, temp);
 		fclose(input_file);
@@ -823,6 +820,7 @@ int main(int argc, char* argv[])
 //  What could be easier?
 //  
 
+	TEXT spare_out_file_name[MAXPATHLEN];
 	if (!sw_standard_out) {
 		const ext_table_t* out_src_ext_tab = src_ext_tab;
 		if (use_lang_internal_gxx_output) {
@@ -2451,8 +2449,6 @@ static SLONG pass1(const TEXT* base_directory)
 
 static void pass2( SLONG start_position)
 {
-	SLONG i;
-
 	SSHORT c = 0;
 
 //  FSG 14.Nov.2000 
@@ -2470,9 +2466,10 @@ static void pass2( SLONG start_position)
 
 //  Put out a distintive module header 
 
-	if (!sw_first++)
+	if (!sw_first)
 	{
-		for (i = 0; i < 5; ++i)
+		sw_first = true;
+		for (int i = 0; i < 5; ++i)
 		{
 			fprintf(gpreGlob.out_file,
 					   "%s********** Preprocessed module -- do not edit **************%s\n",
@@ -2494,13 +2491,13 @@ static void pass2( SLONG start_position)
 	// Let's prepare for worst case: a lot of small dirs, many "\" to duplicate.
 	char backlash_fixed_file_name[MAXPATHLEN + MAXPATHLEN];
 	{ // scope
-	char* p = backlash_fixed_file_name;
-	for (const char* q = file_name; *q;)
-	{
-		if ((*p++ = *q++) == '\\')
-			*p++ = '\\';
-	}
-	*p = 0;
+		char* p = backlash_fixed_file_name;
+		for (const char* q = file_name; *q;)
+		{
+			if ((*p++ = *q++) == '\\')
+				*p++ = '\\';
+		}
+		*p = 0;
 	} // scope
 
 //
@@ -2587,7 +2584,8 @@ static void pass2( SLONG start_position)
 
 		// Next, dump the text of the action to the output stream. 
 
-		for (i = 0; i <= action->act_length; ++i, ++current) {
+		for (SLONG i = 0; i <= action->act_length; ++i, ++current) 
+		{
 			if (c == EOF) {
 				CPR_error("internal error -- unexpected EOF in action");
 				return;
