@@ -481,7 +481,11 @@ unsigned short CsConvert_Unicode_Binary::convert(
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	res = nSrc>nDest?nDest:nSrc;
+#ifdef WORDS_BIGENDIAN
+	MOVE_FAST(pSrcUC,pDest,res);
+#else
 	swab((char *)pSrcUC,(char *)pDest,res);
+#endif
 	*err_position = res;
 
 	return res;
@@ -525,7 +529,11 @@ unsigned short CsConvert_Binary_Unicode::convert(
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	res = nSrc>nDest?nDest:nSrc;
+#ifdef WORDS_BIGENDIAN
+	MOVE_FAST(pSrc,pDestUC,res);
+#else
 	swab((char *)pSrc,(char *)pDestUC,res);
+#endif
 	*err_position = res;
 
 	return res;
