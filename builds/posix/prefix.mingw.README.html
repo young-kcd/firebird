@@ -32,23 +32,20 @@ some in mingw libraries some in the FB sources and some in the building process.
 <p>The following packages from http://www.mingw.org are needed</p>
 <p>MSYS
 <ul>
-<li>MSYS-1.0.9-2003.02.17-1.exe</li>
+<li>MSYS-1.0.8.exe</li>
 <li>msysDTK-1.0.1.exe</li>
 </ul>
 </p>
 <p>MinGW
 <ul>
 <li>MinGW-2.0.0-3.exe</li>
-<li>gcc-3.2.2-20030208-1.tar.gz (3.2.2 relase candidate)</li>
-<li>MinGW_win32api-2.2.tar.gz</li>
-<li>mingw-runtime-2.4.tar.gz</li>
-<li>binutils-2.13.90-20030111.tar.gz</li>
+<li>MinGW_win32api-2.1.tar.gz</li>
+<li>mingw-runtime-2.3.tar.gz</li>
 </ul>
 </p>
 <p>STEPS
 <ol>
 <li>Install minGW with the exe package</li>
-<li>Uncompress the four minGW tar.gz files into the mingw directory</li>
 <li>Install MSYS</li>
 <li>Install msysDTK</li>
 </ol>
@@ -81,15 +78,6 @@ to<br>
 &nbsp;&nbsp;&nbsp;-$(LN) <font color="red">$(LIBFBEMBED_SO)</font> $(LIBFBEMBED_SOBASENAME)<br>
 &nbsp;&nbsp;&nbsp;-$(LN) <font color="red">$(LIBFBEMBED_SOBASENAME)</font> $(LIBFBEMBED_SONAME)<br>
 </li>
-<li>The source Mingw/include/c++/3.2.2/bits/basic_string.tcc must be patched.<br>
-    replace 'std::min' with 'min'</li>
-<li>The source Mingw/include/c++/3.2.2/limits must be patched, before the first use of min() and max() the two must be undefined.<br>
-Add <br>
-&nbsp;&nbsp;&nbsp;#undef min<br>
-&nbsp;&nbsp;&nbsp;#undef max<br>
-before<br> 
-&nbsp;&nbsp;&nbsp;template&lt;typename _Tp&gt; <br>
-&nbsp;&nbsp;&nbsp;struct numeric_limits : public __numeric_limits_base</li>
 </ul>
 
 <h3>BUILD PROCESS</h3>
