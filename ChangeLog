@@ -1,3 +1,47 @@
+2005-02-02 03:25  skidder
+
+	* firebird2/src/utilities/ntrace/os/posix/platform.cpp (1.1):
+	
+	file platform.cpp was initially added on branch B2_0_BV_Stable3.
+
+2005-02-02 03:22  skidder
+
+	* firebird2/src/jrd/os/posix/FileObject.cpp (1.1):
+	
+	file FileObject.cpp was initially added on branch B2_0_BV_Stable3.
+
+2005-02-02 03:18  skidder
+
+	* firebird2/builds/posix/fbtrace.vers (1.1):
+	
+	file fbtrace.vers was initially added on branch B2_0_BV_Stable3.
+
+2005-02-02 00:55  arnobrinkman
+
+	* firebird2/doc/sql.extensions/: README.case (1.2), README.coalesce
+	(1.2), README.data_type_results_of_aggregations.txt (1.1),
+	README.derived_tables.txt (1.3), README.nullif (1.3):
+	
+	update readme's with method used for determing result data type
+
+2005-02-01 21:05  dimitr
+
+	* firebird2/src/jrd/exe.h (1.66):
+	
+	Cleanup.
+
+2005-02-01 16:02  hvlad
+
+	* firebird2/src/jrd/: idx.cpp (1.87), vio.cpp (1.127):
+	
+	Temporary disable precise PK\FK constraints checking logic
+
+2005-02-01 15:39  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.217):
+	
+	fix some dependency issues
+
 2005-01-31 08:28  robocop
 
 	* firebird2/src/jrd/dyn_del.epp (1.43):
