@@ -30,12 +30,17 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.27 2004-06-25 01:44:13 skidder Exp $
+ *  $Id: firebird.h,v 1.28 2004-07-30 22:38:02 skidder Exp $
  *
  */
 
 
 #include "gen/autoconfig.h"
+
+// Using our debugging code is pointless when we may use Valgrind features
+#if defined(DEV_BUILD) && !defined(USE_VALGRIND)
+#define DEBUG_GDS_ALLOC
+#endif
 
 #if defined(WIN_NT)
 #define FB_DLL_EXPORT __declspec(dllexport)

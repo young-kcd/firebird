@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.22 2004-03-25 23:12:31 skidder Exp $
+#   $Id: make.rules,v 1.23 2004-07-30 22:37:44 skidder Exp $
 #
 
 #____________________________________________________________________________
@@ -45,7 +45,7 @@ CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include
 ifeq ($(IsProdTypeBuild),Y)
   CFLAGS:= $(CFLAGS) $(PROD_FLAGS) $(SUPER_FLAG) -DPROD_BUILD
 else
-  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) $(SUPER_FLAG) -DDEV_BUILD -DDEBUG_GDS_ALLOC
+  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) $(SUPER_FLAG) -DDEV_BUILD
 endif
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)

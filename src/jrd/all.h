@@ -52,8 +52,8 @@ class JrdMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	JrdMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL)/*, lls_cache(*this)*/ {}
-	~JrdMemoryPool() {}	
+	JrdMemoryPool();
+	~JrdMemoryPool();
 public:
 	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
 	static JrdMemoryPool *createPool();

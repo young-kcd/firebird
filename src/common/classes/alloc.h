@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.44 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: alloc.h,v 1.45 2004-07-30 22:37:57 skidder Exp $
  *
  */
 
@@ -56,6 +56,10 @@
 #define THROW_BAD_ALLOC throw (std::bad_alloc)
 #endif
 
+#ifdef USE_VALGRIND
+#define VALGRIND_REDZONE 8
+#define DELAYED_FREE_COUNT 1024
+#endif
 
 namespace Firebird {
 
@@ -96,6 +100,9 @@ struct MemoryBlock {
 #ifdef DEBUG_GDS_ALLOC
 	const char* mbk_file;
 	int mbk_line;
+#endif
+#if defined(USE_VALGRIND) && (VALGRIND_REDZONE != 0)
+	const char mbk_valgrind_redzone[VALGRIND_REDZONE];
 #endif
 };
 
@@ -213,6 +220,14 @@ private:
 							// It is protected by parent pool mutex along with redirect list
 	// Statistics group for the pool
 	MemoryStats *stats;
+	
+#ifdef USE_VALGRIND
+	// Circular FIFO buffer of read/write protected blocks pending free operation
+	void* delayedFree[DELAYED_FREE_COUNT];
+	int delayedFreeHandles[DELAYED_FREE_COUNT];
+	size_t delayedFreeCount;
+	size_t delayedFreePos;
+#endif
 
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t &size);

@@ -65,10 +65,6 @@
 #define _X86_
 #endif
 
-#ifdef DEV_BUILD
-#define DEBUG_GDS_ALLOC
-#endif
-
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
 /* Headers */

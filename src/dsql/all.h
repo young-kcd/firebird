@@ -33,8 +33,8 @@ class DsqlMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	DsqlMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL) { }
-	~DsqlMemoryPool() {}	
+	DsqlMemoryPool();
+	~DsqlMemoryPool();
 public:
 	static DsqlMemoryPool* createPool();
 	
