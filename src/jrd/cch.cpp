@@ -111,8 +111,8 @@ static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 static int blocking_ast_bdb(void*);
 #endif
 static void btc_flush(thread_db*, SLONG, const bool, ISC_STATUS*);
-static bool btc_insert_balance(BufferDesc**, bool, SCHAR);
-static bool btc_remove_balance(BufferDesc**, bool, SCHAR);
+static bool btc_insert_balance(BufferDesc**, bool, SSHORT);
+static bool btc_remove_balance(BufferDesc**, bool, SSHORT);
 static void cache_bugcheck(int);
 #ifdef CACHE_READER
 static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
@@ -2946,7 +2946,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 /* find where new node should fit in tree */
 
 	int stackp = -1;
-	SCHAR comp = 0;
+	SSHORT comp = 0;
 
 	while (p)
 	{
@@ -3025,7 +3025,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 #endif //BALANCED_DIRTY_PAGE_TREE
 
 
-static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
+static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 {
 /**************************************
  *
@@ -3303,7 +3303,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 
 	BufferDesc* p = bcb->bcb_btree;
 	int stackp = -1;
-	SCHAR comp;
+	SSHORT comp;
 
 	while (true)
 	{
@@ -3505,7 +3505,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 #endif //BALANCED_DIRTY_PAGE_TREE
 
 
-static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
+static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 {
 /**************************************
  *
@@ -3537,7 +3537,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 			if (comp < 0)
 			{
 				p1 = p->bdb_right;
-				const SCHAR b1 = p1->bdb_balance;
+				const SSHORT b1 = p1->bdb_balance;
 
 				if ((b1 == 0) || (b1 == -comp))
 				{
@@ -3571,7 +3571,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 					// double RL or LR rotation
 
 					p2 = p1->bdb_left; 
-					const SCHAR b2 = p2->bdb_balance;
+					const SSHORT b2 = p2->bdb_balance;
 
 					if ( (p1->bdb_left = p2->bdb_right) )
 					{
@@ -3615,7 +3615,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 			else
 			{
 				p1 = p->bdb_left;
-				const SCHAR b1 = p1->bdb_balance;
+				const SSHORT b1 = p1->bdb_balance;
 
 				if ((b1 == 0) || (b1 == -comp))
 				{
@@ -3649,7 +3649,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 					// double RL or LR rotation
 
 					p2 = p1->bdb_right;
-					const SCHAR b2 = p2->bdb_balance;
+					const SSHORT b2 = p2->bdb_balance;
 
 					if ( (p1->bdb_right = p2->bdb_left) )
 					{

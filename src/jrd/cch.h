@@ -53,7 +53,7 @@ const ULONG MAX_PAGE_BUFFERS = 131072;
 
 struct BalancedTreeNode {
 	BufferDesc* bdb_node;
-	SLONG comp;
+	SSHORT comp;
 };
 
 /* BufferControl -- Buffer control block -- one per system */
@@ -112,7 +112,7 @@ class BufferDesc : public pool_alloc<type_bdb>
 	BufferDesc*	bdb_left;				/* dirty page binary tree link */
 	BufferDesc*	bdb_right;				/* dirty page binary tree link */
 	BufferDesc*	bdb_parent;				/* dirty page binary tree link */
-	SCHAR		bdb_balance;			/* AVL-tree balance (-1, 0, 1) */
+	SSHORT		bdb_balance;			/* AVL-tree balance (-1, 0, 1) */
 	que			bdb_lower;				/* lower precedence que */
 	que			bdb_higher;				/* higher precedence que */
 	que			bdb_waiters;			/* latch wait que */
