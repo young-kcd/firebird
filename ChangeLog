@@ -1,3 +1,123 @@
+2002-09-01 17:49  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.620):
+	
+	increment build number
+
+2002-09-01 17:49  dimitr
+
+	* firebird2/src/dsql/parse.y (1.22):
+	
+	- allowed user-defined index names for PK/FK/UK constraints - fixed
+	ugly hardcoded name checks for primary/foreign keys - implemented
+	RECREATE VIEW statement
+
+2002-09-01 17:44  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.619), writeBuildNum.sh
+	(1.618), writeBuildNum.sh (1.617):
+	
+	increment build number
+
+2002-09-01 17:44  dimitr
+
+	* firebird2/src/: dsql/ddl.cpp (1.13), dsql/dsql.cpp (1.21),
+	dsql/metd.epp (1.8), dsql/node.h (1.10), dsql/parse.cpp (1.22),
+	dsql/parse.y (1.21), dsql/pass1.cpp (1.17), gpre/gpre_meta.epp
+	(1.4), jrd/dfw.epp (1.11), jrd/dyn_def.epp (1.10), jrd/met.epp
+	(1.14):
+	
+	- allowed user-defined index names for PK/FK/UK constraints - fixed
+	ugly hardcoded name checks for primary/foreign keys - implemented
+	RECREATE VIEW statement
+
+2002-08-31 15:12  dimitr
+
+	* firebird2/src/jrd/ods101.gdl (1.1):
+	
+	Minor ODS change (version 10.1). New indices on system tables:	 -
+	define index RDB$INDEX_41	for RDB$INDICES      
+	RDB$FOREIGN_KEY;   - define index RDB$INDEX_42	     for
+	RDB$RELATION_CONSTRAINTS       RDB$RELATION_NAME,
+	RDB$CONSTRAINT_TYPE;
+
+2002-08-31 15:12  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.616):
+	
+	increment build number
+
+2002-08-31 11:25  fsg
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.614), writeBuildNum.sh
+	(1.615):
+	
+	increment build number
+
+2002-08-31 11:25  fsg
+
+	* firebird2/: builds/posix/Makefile.in.example5 (1.1),
+	builds/posix/Makefile.in.firebird (1.3),
+	builds/posix/Makefile.in.refDatabases (1.3), src/jrd/common.h
+	(1.25):
+	
+	Some minor fixes to get it compiled under linux again, some of them
+	submitted by Nickolay Samofatov
+
+2002-08-28 17:50  dimitr
+
+	* firebird2/src/jrd/: grant.gdl (1.2), trig.h (1.3):
+	
+	Fixed bug, when nobody could alter or drop a trigger which name
+	contains 'RDB$'.
+
+2002-08-28 17:48  dimitr
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.612), writeBuildNum.sh
+	(1.613):
+	
+	increment build number
+
+2002-08-28 17:48  dimitr
+
+	* firebird2/src/utilities/: install_svc.cpp (1.4), regis_proto.h
+	(1.2), registry.cpp (1.4), servi_proto.h (1.2), services.cpp (1.4):
+	
+	Some changes to make gdef, instreg and instsvc compilable.
+
+2002-08-28 11:20  dimitr
+
+	* firebird2/src/misc/writeBuildNum.sh (1.611):
+	
+	increment build number
+
+2002-08-28 11:20  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.4), fbclient.dsp
+	(1.3), gdef.dsp (1.1), instreg.dsp (1.1), instsvc.dsp (1.1):
+	
+	Added new projects to the workspace:   - gdef.exe   - instreg.exe  
+	- instsvc.exe
+
+2002-08-28 11:05  eku
+
+	* firebird2/src/misc/: writeBuildNum.sh (1.609), writeBuildNum.sh
+	(1.610):
+	
+	increment build number
+
+2002-08-28 11:05  eku
+
+	* firebird2/builds/posix/Makefile.in.install (1.2):
+	
+	make.XXX files are now under $ROOT/gen and not $ROOT/src.
+
+2002-08-28 10:25  fsg
+
+	* firebird2/src/misc/writeBuildNum.sh (1.608):
+	
+	increment build number
+
 2002-08-28 10:02  eku
 
 	* firebird2/src/misc/writeBuildNum.sh (1.607):
