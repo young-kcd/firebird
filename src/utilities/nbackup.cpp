@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.7 2003-09-09 16:47:26 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.8 2003-09-15 10:14:22 skidder Exp $
  *
  */
  
@@ -82,6 +82,10 @@
 
 void usage() {
 	fprintf(stderr, 
+		"Physical Backup Manager    Copyright (C) 2003 Firebird development team\n"
+		"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
+		"  Designed and implemented by Nickolay Samofatov <skidder@bssys.com>\n"
+		"  This work was funded through a grant from BroadView Software, Inc.\n\n"
 		"Usage: nbackup <options>\n"
 		"valid options are: \n"
 		"  -L <database>                         Lock database for filesystem copy\n"
