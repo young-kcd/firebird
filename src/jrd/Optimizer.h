@@ -44,6 +44,16 @@
 
 namespace Jrd {
 
+const int REDUCE_SELECTIVITY_FACTOR_BETWEEN = 10;
+const int REDUCE_SELECTIVITY_FACTOR_LESS = 50;
+const int REDUCE_SELECTIVITY_FACTOR_GREATER = 50;
+const int REDUCE_SELECTIVITY_FACTOR_STARTING = 100;
+
+const int SELECTIVITY_THRESHOLD_FACTOR_ADD = 5;
+
+const double MAXIMUM_SELECTIVITY = 1.0;
+
+
 class jrd_nod;
 struct index_desc;
 class OptimizerBlk;

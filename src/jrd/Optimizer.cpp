@@ -755,8 +755,7 @@ USHORT nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
 
 
 IndexScratchSegment::IndexScratchSegment(MemoryPool& p) :
-	matches(p), lowerValue(NULL), upperValue(NULL), 
-	scope(0), scanType(segmentScanNone)
+	matches(p)
 {
 /**************************************
  *
@@ -767,6 +766,10 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p) :
  * Functional description
  *
  **************************************/
+	lowerValue = NULL;
+	upperValue = NULL;
+	scope = 0;
+	scanType = segmentScanNone;
 }
 
 IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment) :
@@ -792,8 +795,7 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* seg
 }
 
 IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx) :
-	segments(p), selectivity(1.0), candidate(false), scopeCandidate(false),
-	lowerCount(0), upperCount(0), nonFullMatchedSegments(0), idx(idx)
+	segments(p) 	
 {
 /**************************************
  *
@@ -805,6 +807,14 @@ IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx) :
  *
  **************************************/
 	// Allocate needed segments
+	selectivity = MAXIMUM_SELECTIVITY;
+	candidate = false;
+	scopeCandidate = false;
+	lowerCount = 0;
+	upperCount = 0;
+	nonFullMatchedSegments = 0;
+	this->idx = idx;
+
 	segments.grow(idx->idx_count);
 
 	IndexScratchSegment** segment = segments.begin();
@@ -861,9 +871,7 @@ IndexScratch::~IndexScratch()
 }
 
 InversionCandidate::InversionCandidate(MemoryPool& p) :
-	selectivity(1.0), indexes(0), nonFullMatchedSegments(MAX_INDEX_SEGMENTS + 1),
-	matchedSegments(0), boolean(NULL), inversion(NULL), scratch(NULL), 
-	used(false), unique(false), matches(p), dependentFromStreams(p)
+	matches(p), dependentFromStreams(p)
 {
 /**************************************
  *
@@ -874,13 +882,21 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
  * Functional description
  *
  **************************************/
+	selectivity = MAXIMUM_SELECTIVITY;
+	indexes = 0;
+	nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
+	matchedSegments = 0;
+	boolean = NULL;
+	inversion = NULL;
+	scratch = NULL;
+	used = false;
+	unique = false;
 }
 
 OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, 
 									   SSHORT streamNumber, bool outer, 
 									   bool inner, jrd_nod** sortNode) :
-	pool(p), indexScratches(p), inversionCandidates(p), tdbb(NULL),
-	createIndexScanNodes(false), alias(NULL), setConjunctionsMatched(false)
+	pool(p), indexScratches(p), inversionCandidates(p)
 {
 /**************************************
  *
@@ -891,6 +907,11 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
  * Functional description
  *
  **************************************/
+	tdbb = NULL;
+	createIndexScanNodes = false;
+	alias = NULL;
+	setConjunctionsMatched = false;
+
 	SET_TDBB(tdbb);
 	this->database = tdbb->tdbb_database;
 	this->stream = streamNumber;
@@ -1365,7 +1386,7 @@ InversionCandidate* OptimizerRetrieval::getCost()
 		// No index will be used
 		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 		invCandidate->indexes = 0;
-		invCandidate->selectivity = 1.0;
+		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
 		return invCandidate;
 	}
 }
@@ -1378,7 +1399,6 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
  *
  **************************************
  *
- * Functional description
  * Return an inversionCandidate which 
  * contains a created inversion when an
  * index could be used.
@@ -1396,7 +1416,7 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 		// No index will be used
 		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 		invCandidate->indexes = 0;
-		invCandidate->selectivity = 1.0;
+		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
 		return invCandidate;
 	}
 }
@@ -1425,7 +1445,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 		scratch[i]->nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
 		if (scratch[i]->candidate) {
 			matches.clear();
-			scratch[i]->selectivity = 1.0;
+			scratch[i]->selectivity = MAXIMUM_SELECTIVITY;
 			for (int j = 0; j < scratch[i]->idx->idx_count; j++) {
 				IndexScratchSegment* segment = scratch[i]->segments[j];
 				if (segment->scope == scope) {
@@ -1473,34 +1493,32 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						case segmentScanBetween:
 							scratch[i]->lowerCount++;
 							scratch[i]->upperCount++;
-							selectivity = selectivity -
-								((selectivity - scratch[i]->idx->idx_rpt[j].idx_selectivity) / 2);
+							selectivity = scratch[i]->idx->idx_rpt[j].idx_selectivity * REDUCE_SELECTIVITY_FACTOR_BETWEEN;
 							break;
 
 						case segmentScanLess:
 							scratch[i]->upperCount++;
-							selectivity = selectivity -
-								((selectivity - scratch[i]->idx->idx_rpt[j].idx_selectivity) / 5);
+							selectivity = scratch[i]->idx->idx_rpt[j].idx_selectivity * REDUCE_SELECTIVITY_FACTOR_LESS;
 							break;
 
 						case segmentScanGreater:
 							scratch[i]->lowerCount++;
-							selectivity = selectivity -
-								((selectivity - scratch[i]->idx->idx_rpt[j].idx_selectivity) / 5);
+							selectivity = scratch[i]->idx->idx_rpt[j].idx_selectivity * REDUCE_SELECTIVITY_FACTOR_GREATER;
 							break;
 
 						case segmentScanStarting:
 							scratch[i]->lowerCount++;
 							scratch[i]->upperCount++;
-							selectivity = selectivity -
-								((selectivity - scratch[i]->idx->idx_rpt[j].idx_selectivity) / 10);
+							selectivity = scratch[i]->idx->idx_rpt[j].idx_selectivity * REDUCE_SELECTIVITY_FACTOR_STARTING;
 							break;
 
 						default:
 							break;
 					}
 					// The selectivity can never be worser than the previous segment
-					scratch[i]->selectivity = selectivity;
+					if (selectivity < scratch[i]->selectivity) {
+						scratch[i]->selectivity = selectivity;
+					}
 					if (segment->scanType != segmentScanNone) {
 						matches.join(segment->matches);
 						scratch[i]->nonFullMatchedSegments = scratch[i]->idx->idx_count - j;
@@ -1805,8 +1823,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		// If we have a candidate which is interesting build the inversion
 		// else we're done.
 		if (bestPosition >= 0) {
-			//if (bestSelectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR)) {
-			if (bestSelectivity < (totalSelectivity * 5)) {
+			if (bestSelectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
 
 				// Estimate new selectivity
 				// Assign selectivity for the formula
@@ -2334,8 +2351,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 	return true;
 }
 
-IndexRelationship::IndexRelationship() :
-	stream(0), unique(false), cost(0)
+IndexRelationship::IndexRelationship()
 {
 /**************************************
  *
@@ -2346,12 +2362,13 @@ IndexRelationship::IndexRelationship() :
  *  Initialize
  *
  **************************************/
+	stream = 0;
+	unique = false;
+	cost = 0;
 }
 
 
 InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
-	stream(0), baseUnique(false), baseCost(0), baseIndexes(0), 
-	baseConjunctionMatches(0), used(false),
 	indexedRelationships(p), previousExpectedStreams(p)
 {
 /**************************************
@@ -2363,6 +2380,13 @@ InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
  *  Initialize
  *
  **************************************/
+	stream = 0;
+	baseUnique = false;
+	baseCost = 0;
+	baseIndexes = 0; 
+	baseConjunctionMatches = 0;
+	used = false;
+
 	indexedRelationships.shrink(0);
 	previousExpectedStreams.shrink(0);
 }
@@ -2389,7 +2413,7 @@ bool InnerJoinStreamInfo::independent() const
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	streams,
 		RiverStack& river_stack, jrd_nod** sort_clause, 
 		jrd_nod** project_clause, jrd_nod* plan_clause) :
-	pool(p), tdbb(NULL), innerStreams(p)
+	pool(p), innerStreams(p)
 {
 /**************************************
  *
@@ -2400,6 +2424,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	
  *  Initialize
  *
  **************************************/
+	tdbb = NULL;
 	SET_TDBB(tdbb);
 	this->database = tdbb->tdbb_database;
 	this->optimizer = opt;
@@ -2612,7 +2637,7 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 		*resulting_cardinality = cardinality;
 	}
 	else {
-		*resulting_cardinality = MAX(cardinality, 1.0);
+		*resulting_cardinality = MAX(cardinality, MAXIMUM_SELECTIVITY);
 	}
 
 	const bool useIndexRetrieval = (candidate->indexes >= 1);
