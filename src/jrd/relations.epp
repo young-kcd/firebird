@@ -421,11 +421,6 @@ static void build_fields_h(void){
 	CHECK_CLOSE(fields, FIELDS_H, "tmpcode3", "w", genDirectory);
 }
 
-// Peticion para los names
-//select rdb$field_name from rdb$fields where rdb$system_flag='1'
-//union  select rdb$relation_name from rdb$relations where rdb$system_flag='1'
-//union select rdb$field_name from rdb$relation_fields where rdb$system_flag='1'
-//order by 1
 
 static void build_names_h(void){
 /*******************************************
