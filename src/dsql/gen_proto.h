@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DSQL_GEN_PROTO_H_
-#define _DSQL_GEN_PROTO_H_
+#ifndef DSQL_GEN_PROTO_H
+#define DSQL_GEN_PROTO_H
 
 extern UCHAR GEN_expand_buffer(dsql_req*, UCHAR);
 extern void GEN_expr(dsql_req*, dsql_nod*);
@@ -32,4 +32,9 @@ extern void GEN_return(DSQL_REQ, DSQL_NOD, bool);
 extern void GEN_start_transaction(dsql_req*, dsql_nod*);
 extern void GEN_statement(dsql_req*, dsql_nod*);
 
-#endif /*  _DSQL_GEN_PROTO_H_  */
+inline UCHAR stuff(dsql_req* request, UCHAR byte){
+	return ((BLOB_PTR*)request->req_blr < (BLOB_PTR*)request->req_blr_yellow) ?
+		(*request->req_blr++ = byte) : GEN_expand_buffer(request, byte);
+}
+
+#endif //  DSQL_GEN_PROTO_H

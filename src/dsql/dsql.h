@@ -62,14 +62,7 @@ typedef err* ERR;
 
 // this table is used in data allocation to determine
 // whether a block has a variable length tail
-#define BLKDEF(type, root, tail) type,
-
-enum blk_t {
-	dsql_type_MIN = 0,
 #include "../dsql/blk.h"
-dsql_type_MAX};
-
-#undef BLKDEF
 
 // generic block used as header to all allocated structures
 
@@ -92,7 +85,7 @@ typedef str* STR;
 
 // values used in str_flags
 
-#define	STR_delimited_id	0x1L
+const long STR_delimited_id		= 0x1L;
 
 //! macros and block used to implement a generic stack mechanism
 class dsql_lls : public pool_alloc<dsql_type_lls>
@@ -163,10 +156,12 @@ public:
 typedef dbb* DBB;
 
 //! values used in dbb_flags
-#define DBB_no_arrays	0x1
-#define DBB_v3			0x2
-#define DBB_no_charset	0x4
-#define DBB_read_only	0x8
+enum dbb_flags_vals {
+	DBB_no_arrays	= 0x1,
+	DBB_v3			= 0x2,
+	DBB_no_charset	= 0x4,
+	DBB_read_only	= 0x8
+};
 
 //! Relation block
 class dsql_rel : public pool_alloc_rpt<SCHAR, dsql_type_dsql_rel>
@@ -186,12 +181,12 @@ public:
 typedef dsql_rel* DSQL_REL;
 
 // rel_flags bits
-
-#define REL_new_relation	1	//!< relation is newly defined, not committed yet
-#define REL_dropped			2	//!< relation has been dropped
-#define REL_view            4   //!< relation is a view 
-#define REL_external        8   //!< relation is an external table
-
+enum rel_flags_vals {
+	REL_new_relation	= 1, //!< relation is newly defined, not committed yet
+	REL_dropped			= 2, //!< relation has been dropped
+	REL_view			= 4, //!< relation is a view 
+	REL_external		= 8  //!< relation is an external table
+};
 
 class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
 {
@@ -223,13 +218,15 @@ typedef dsql_fld* DSQL_FLD;
 
 // values used in fld_flags
 
-#define FLD_computed	1
-#define FLD_drop	2
-#define FLD_dbkey	4
-#define FLD_national	8		//!< field uses NATIONAL character set
-#define FLD_nullable	16
+enum fld_flags_vals {
+	FLD_computed	= 1,
+	FLD_drop		= 2,
+	FLD_dbkey		= 4,
+	FLD_national	= 8, //!< field uses NATIONAL character set
+	FLD_nullable	= 16
+};
 
-#define MAX_ARRAY_DIMENSIONS 16	//!< max array dimensions
+const int MAX_ARRAY_DIMENSIONS = 16; //!< max array dimensions
 
 //! database/log/cache file block
 class fil : public pool_alloc<dsql_type_fil>
@@ -266,8 +263,10 @@ typedef dsql_prc* DSQL_PRC;
 
 // prc_flags bits
 
-#define PRC_new_procedure	1	//!< procedure is newly defined, not committed yet
-#define PRC_dropped			2	//!< procedure has been dropped
+enum prc_flags_vals {
+	PRC_new_procedure	= 1, //!< procedure is newly defined, not committed yet
+	PRC_dropped			= 2  //!< procedure has been dropped
+};
 
 //! User defined function block
 class udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
@@ -301,8 +300,10 @@ enum FUN_T
 
 /* udf_flags bits */
 
-#define UDF_new_udf        1   /*!< udf is newly declared, not committed yet */
-#define UDF_dropped        2   /*!< udf has been dropped */
+enum udf_flags_vals {
+	UDF_new_udf		= 1, //!< udf is newly declared, not committed yet
+	UDF_dropped		= 2  //!< udf has been dropped
+};
 
 // Variables - input, output & local
 
@@ -320,10 +321,11 @@ public:
 typedef var* VAR;
 
 // values used in var_flags
-
-#define VAR_input	1
-#define VAR_output	2
-#define VAR_local	4
+enum var_flags_vals {
+	VAR_input	= 1,
+	VAR_output	= 2,
+	VAR_local	= 4
+};
 
 
 // Symbolic names for international text types
@@ -345,9 +347,10 @@ public:
 typedef intlsym* INTLSYM;
 
 // values used in intlsym_type
-
-#define INTLSYM_collation	1
-#define	INTLSYM_charset		2
+enum intlsym_type_vals {
+	INTLSYM_collation	= 1,
+	INTLSYM_charset		= 2
+};
 
 // values used in intlsym_flags
 
@@ -442,19 +445,20 @@ typedef dsql_req* DSQL_REQ;
 
 
 // values used in req_flags
-
-#define REQ_cursor_open		1
-#define REQ_save_metadata	2
-#define REQ_prepared		4
-#define REQ_embedded_sql_cursor	8
-#define REQ_procedure		16
-#define REQ_trigger		32
-#define REQ_orphan		64
-#define REQ_enforce_scope	128
-#define REQ_no_batch		256
-#define REQ_backwards		512
-#define REQ_blr_version4	1024
-#define REQ_blr_version5	2048
+enum req_flags_vals {
+	REQ_cursor_open			= 1,
+	REQ_save_metadata		= 2,
+	REQ_prepared			= 4,
+	REQ_embedded_sql_cursor	= 8,
+	REQ_procedure			= 16,
+	REQ_trigger				= 32,
+	REQ_orphan				= 64,
+	REQ_enforce_scope		= 128,
+	REQ_no_batch			= 256,
+	REQ_backwards			= 512,
+	REQ_blr_version4		= 1024,
+	REQ_blr_version5		= 2048
+};
 
 //! Blob
 class blb : public pool_alloc<dsql_type_blb>
@@ -654,13 +658,6 @@ extern unsigned DSQL_debug;
 #define	ASSERT_FILENAME
 
 #endif // DEV_BUILD
-
-// macro to stuff blr
-// this is used in both ddl.cpp and gen.cpp, and is put here for commonality
-
-#define STUFF(byte)     ((BLOB_PTR*)request->req_blr < (BLOB_PTR*)request->req_blr_yellow) ?\
-			(*request->req_blr++ = (UCHAR)(byte)) : GEN_expand_buffer (request, (UCHAR)(byte))
-
 
 #endif // DSQL_DSQL_H
 

@@ -40,7 +40,6 @@
 #define BUGCHECK(string)	DDL_error (string)
 #define SYNTAX_ERROR(string)	PARSE_syntax_error (string)
 #define IBERROR(string)		DDL_error (string)
-#define BLKCHK(blk, type)	if (blk->blk_type != (SCHAR) type) BUGCHECK ("expected type")
 #define LLS_PUSH(object,stack)	DDL_push ((DUDLEY_NOD) object, stack)
 #define LLS_POP(stack)		DDL_pop (stack)
 

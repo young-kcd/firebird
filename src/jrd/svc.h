@@ -35,11 +35,6 @@
 #include "../jrd/svc_proto.h"
 #include "../jrd/isc_s_proto.h"
 
-#ifndef JRD_IBASE_H
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"		/* needed for the C++ version of SVC_STATUS_ARG */
-#endif
-
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 

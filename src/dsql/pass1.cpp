@@ -1239,15 +1239,15 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		node = input;
 		/* if exception value is defined,
 		   pass value node */
-		if (input->nod_arg[e_xcp_msg])
+		if (input->nod_arg[e_xcps_msg])
 		{
-			node->nod_arg[e_xcp_msg] = PASS1_node(request,
-												  input->nod_arg[e_xcp_msg],
+			node->nod_arg[e_xcps_msg] = PASS1_node(request,
+												  input->nod_arg[e_xcps_msg],
 												  proc_flag);
 		}
 		else
 		{
-			node->nod_arg[e_xcp_msg] = 0;
+			node->nod_arg[e_xcps_msg] = 0;
 		}
 		return pass1_savepoint(request, node);
 

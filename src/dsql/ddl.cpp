@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.66 2003-10-01 10:57:58 aafemt Exp $
+ * $Id: ddl.cpp,v 1.67 2003-10-01 18:11:23 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -392,7 +392,7 @@ bool DDL_ids(const dsql_req* request)
 
 //
 // Emit blr that describes a descriptor.
-// Note that this depends on the same STUFF variant
+// Note that this depends on the same stuff variant
 // as used in gen.c
 //
 void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, bool use_subtype)
@@ -4016,10 +4016,10 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 		break;
 
     case nod_redef_relation:
-		STUFF (gds_dyn_begin);
-		delete_relation_view (request, node, true); /* silent. */
+		stuff(request, gds_dyn_begin);
+		delete_relation_view(request, node, true); /* silent. */
 		define_relation (request);
-		STUFF (gds_dyn_end);
+		stuff(request, gds_dyn_end);
 		break;
 
 	case nod_def_view:
@@ -4029,10 +4029,10 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 		break;
 
     case nod_redef_view:
-		STUFF(gds_dyn_begin);
+		stuff(request, gds_dyn_begin);
 		delete_relation_view(request, node, true); /* silent. */
 		define_view(request, node->nod_type);
-		STUFF(gds_dyn_end);
+		stuff(request, gds_dyn_end);
 		break;
 
 	case nod_def_exception:
@@ -4048,10 +4048,10 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 		break;
 
     case nod_redef_procedure:
-        STUFF (gds_dyn_begin);
-        delete_procedure (request, node, true); /* silent. */
-        define_procedure (request, node->nod_type);
-        STUFF (gds_dyn_end);
+        stuff(request, gds_dyn_begin);
+        delete_procedure(request, node, true); /* silent. */
+        define_procedure(request, node->nod_type);
+        stuff(request, gds_dyn_end);
         break;
 
 

@@ -160,23 +160,23 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 		return;
 
 	case nod_extract:
-		STUFF(blr_extract);
-		STUFF(*(SLONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address);
+		stuff(request, blr_extract);
+		stuff(request, *(SLONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address);
 		GEN_expr(request, node->nod_arg[e_extract_value]);
 		return;
 
 	case nod_dbkey:
 		node = node->nod_arg[0];
 		context = (DSQL_CTX) node->nod_arg[e_rel_context];
-		STUFF(blr_dbkey);
-		STUFF(context->ctx_context);
+		stuff(request, blr_dbkey);
+		stuff(request, context->ctx_context);
 		return;
 
 	case nod_rec_version:
 		node = node->nod_arg[0];
 		context = (DSQL_CTX) node->nod_arg[e_rel_context];
-		STUFF(blr_record_version);
-		STUFF(context->ctx_context);
+		stuff(request, blr_record_version);
+		stuff(request, context->ctx_context);
 		return;
 
 	case nod_dom_value:
@@ -186,8 +186,8 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 			  ddl_node->nod_type == nod_mod_domain))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
 						  gds_arg_gds, gds_dsql_domain_err, 0);
-		STUFF(blr_fid);
-		STUFF(0);				/* Context   */
+		stuff(request, blr_fid);
+		stuff(request, 0);				/* Context   */
 		stuff_word(request, 0);			/* Field id  */
 		return;
 
@@ -199,23 +199,23 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 		return;
 
 	case nod_user_name:
-		STUFF(blr_user_name);
+		stuff(request, blr_user_name);
 		return;
 
 	case nod_current_time:
-		STUFF(blr_current_time);
+		stuff(request, blr_current_time);
 		return;
 
 	case nod_current_timestamp:
-		STUFF(blr_current_timestamp);
+		stuff(request, blr_current_timestamp);
 		return;
 
 	case nod_current_date:
-		STUFF(blr_current_date);
+		stuff(request, blr_current_date);
 		return;
 
     case nod_current_role:
-        STUFF (blr_current_role);
+        stuff(request, blr_current_role);
         return;
 
 	case nod_udf:
@@ -225,13 +225,13 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 	case nod_variable:
 		variable = (VAR) node->nod_arg[e_var_variable];
 		if (variable->var_flags & VAR_input) {
-			STUFF(blr_parameter2);
-			STUFF(variable->var_msg_number);
+			stuff(request, blr_parameter2);
+			stuff(request, variable->var_msg_number);
 			stuff_word(request, variable->var_msg_item);
 			stuff_word(request, variable->var_msg_item + 1);
 		}
 		else {
-			STUFF(blr_variable);
+			stuff(request, blr_variable);
 			stuff_word(request, variable->var_variable_number);
 		}
 		return;
@@ -243,8 +243,8 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 	case nod_map:
 		map = (DSQL_MAP) node->nod_arg[e_map_map];
 		context = (DSQL_CTX) node->nod_arg[e_map_context];
-		STUFF(blr_fid);
-		STUFF(context->ctx_context);
+		stuff(request, blr_fid);
+		stuff(request, context->ctx_context);
 		stuff_word(request, map->map_position);
 		return;
 
@@ -265,12 +265,12 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 		return;
 
 	case nod_exists:
-		STUFF(blr_any);
+		stuff(request, blr_any);
 		gen_rse(request, node->nod_arg[0]);
 		return;
 
 	case nod_singular:
-		STUFF(blr_unique);
+		stuff(request, blr_unique);
 		gen_rse(request, node->nod_arg[0]);
 		return;
 
@@ -492,7 +492,7 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 			break;
 		}
 
-		STUFF(operator_);
+		stuff(request, operator_);
 		gen_rse(request, node->nod_arg[0]);
 		if (operator_ != blr_count)
 			GEN_expr(request, node->nod_arg[0]->nod_arg[e_rse_items]);
@@ -506,7 +506,7 @@ void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 				  0);
 	}
 
-	STUFF(operator_);
+	stuff(request, operator_);
 
 	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
 		GEN_expr(request, *ptr);
@@ -582,8 +582,8 @@ void GEN_port( DSQL_REQ request, DSQL_MSG message)
 	tdsql = GET_THREAD_DATA;
 
 	if (request->req_blr_string) {
-		STUFF(blr_message);
-		STUFF(message->msg_number);
+		stuff(request, blr_message);
+		stuff(request, message->msg_number);
 		stuff_word(request, message->msg_parameter);
 	}
 
@@ -660,9 +660,9 @@ void GEN_request( DSQL_REQ request, DSQL_NOD node)
 	}
 
 	if (request->req_flags & REQ_blr_version4)
-		STUFF(blr_version4);
+		stuff(request, blr_version4);
 	else
-		STUFF(blr_version5);
+		stuff(request, blr_version5);
 		
 	if (request->req_type == REQ_SAVEPOINT) 
 	{
@@ -675,7 +675,7 @@ void GEN_request( DSQL_REQ request, DSQL_NOD node)
 	else 
 	{	
 	
-		STUFF(blr_begin);
+		stuff(request, blr_begin);
 
 		if (request->req_type == REQ_SELECT ||
 			request->req_type == REQ_SELECT_UPD ||
@@ -689,8 +689,8 @@ void GEN_request( DSQL_REQ request, DSQL_NOD node)
 			else {
 				GEN_port(request, message);
 				if (request->req_type != REQ_EXEC_PROCEDURE) {
-					STUFF(blr_receive);
-					STUFF(message->msg_number);
+					stuff(request, blr_receive);
+					stuff(request, message->msg_number);
 				}
 			}
 			message = request->req_receive;
@@ -700,10 +700,10 @@ void GEN_request( DSQL_REQ request, DSQL_NOD node)
 				GEN_port(request, message);
 			GEN_statement(request, node);
 		}		
-		STUFF(blr_end);
+		stuff(request, blr_end);
 	}
 	
-	STUFF(blr_eoc);
+	stuff(request, blr_eoc);
 }
 
 
@@ -763,7 +763,7 @@ void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 /* Stuff some version info. */
 
 	if (count = node->nod_count)
-		STUFF(gds_tpb_version1);
+		stuff(request, gds_tpb_version1);
 
 	while (count--) {
 		ptr = node->nod_arg[count];
@@ -779,9 +779,9 @@ void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 
 			sw_access = 1;
 			if (ptr->nod_flags & NOD_READ_ONLY)
-				STUFF(gds_tpb_read);
+				stuff(request, gds_tpb_read);
 			else
-				STUFF(gds_tpb_write);
+				stuff(request, gds_tpb_write);
 			break;
 
 		case nod_wait:
@@ -791,9 +791,9 @@ void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 
 			sw_wait = 1;
 			if (ptr->nod_flags & NOD_NO_WAIT)
-				STUFF(gds_tpb_nowait);
+				stuff(request, gds_tpb_nowait);
 			else
-				STUFF(gds_tpb_wait);
+				stuff(request, gds_tpb_wait);
 			break;
 
 		case nod_isolation:
@@ -804,21 +804,21 @@ void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 			sw_isolation = 1;
 
 			if (ptr->nod_flags & NOD_CONCURRENCY)
-				STUFF(gds_tpb_concurrency);
+				stuff(request, gds_tpb_concurrency);
 			else if (ptr->nod_flags & NOD_CONSISTENCY)
-				STUFF(gds_tpb_consistency);
+				stuff(request, gds_tpb_consistency);
 			else {
-				STUFF(gds_tpb_read_committed);
+				stuff(request, gds_tpb_read_committed);
 
 				if ((ptr->nod_count) && (ptr->nod_arg[0]) &&
 					(ptr->nod_arg[0]->nod_type == nod_version)) {
 					if (ptr->nod_arg[0]->nod_flags & NOD_VERSION)
-						STUFF(gds_tpb_rec_version);
+						stuff(request, gds_tpb_rec_version);
 					else
-						STUFF(gds_tpb_no_rec_version);
+						stuff(request, gds_tpb_no_rec_version);
 				}
 				else
-					STUFF(gds_tpb_no_rec_version);
+					stuff(request, gds_tpb_no_rec_version);
 			}
 
 			break;
@@ -868,13 +868,13 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	switch (node->nod_type) {
 	case nod_assign:
-		STUFF(blr_assignment);
+		stuff(request, blr_assignment);
 		GEN_expr(request, node->nod_arg[0]);
 		GEN_expr(request, node->nod_arg[1]);
 		return;
 
 	case nod_block:
-		STUFF(blr_block);
+		stuff(request, blr_block);
 		GEN_statement(request, node->nod_arg[e_blk_action]);
 		if (node->nod_count > 1) {
 			temp = node->nod_arg[e_blk_errs];
@@ -882,37 +882,37 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 				 ptr < end; ptr++)
 				GEN_statement(request, *ptr);
 		}
-		STUFF(blr_end);
+		stuff(request, blr_end);
 		return;
 
 	case nod_erase:
 		if ((temp = node->nod_arg[e_era_rse]) != NULL) {
-			STUFF(blr_for);
+			stuff(request, blr_for);
 			GEN_expr(request, temp);
 		}
 		temp = node->nod_arg[e_era_relation];
 		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
-		STUFF(blr_erase);
-		STUFF(context->ctx_context);
+		stuff(request, blr_erase);
+		stuff(request, context->ctx_context);
 		return;
 
 	case nod_erase_current:
-		STUFF(blr_erase);
+		stuff(request, blr_erase);
 		context = (DSQL_CTX) node->nod_arg[e_erc_context];
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 		return;
 
 	case nod_exec_procedure:
 		if (request->req_type == REQ_EXEC_PROCEDURE) {
 			if (message = request->req_receive) {
-				STUFF(blr_begin);
-				STUFF(blr_send);
-				STUFF(message->msg_number);
+				stuff(request, blr_begin);
+				stuff(request, blr_send);
+				stuff(request, message->msg_number);
 			}
 		}
 		else
 			message = NULL;
-		STUFF(blr_exec_proc);
+		stuff(request, blr_exec_proc);
 		name = (STR) node->nod_arg[e_exe_procedure];
 		stuff_cstring(request, name->str_data);
 		if (temp = node->nod_arg[e_exe_inputs]) {
@@ -932,7 +932,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		else
 			stuff_word(request, 0);
 		if (message)
-			STUFF(blr_end);
+			stuff(request, blr_end);
 		return;
 
 	case nod_for_select:
@@ -941,57 +941,57 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_set_generator:
 	case nod_set_generator2:
-		STUFF(blr_set_generator);
+		stuff(request, blr_set_generator);
 		string = (STR) node->nod_arg[e_gen_id_name];
 		stuff_cstring(request, string->str_data);
 		GEN_expr(request, node->nod_arg[e_gen_id_value]);
 		return;
 
 	case nod_if:
-		STUFF(blr_if);
+		stuff(request, blr_if);
 		GEN_expr(request, node->nod_arg[e_if_condition]);
 		GEN_statement(request, node->nod_arg[e_if_true]);
 		if (node->nod_arg[e_if_false])
 			GEN_statement(request, node->nod_arg[e_if_false]);
 		else
-			STUFF(blr_end);
+			stuff(request, blr_end);
 		return;
 
 	case nod_list:
-		STUFF(blr_begin);
+		stuff(request, blr_begin);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
 			GEN_statement(request, *ptr);
-		STUFF(blr_end);
+		stuff(request, blr_end);
 		return;
 
 	case nod_modify:
 		if ((temp = node->nod_arg[e_mod_rse]) != NULL) {
-			STUFF(blr_for);
+			stuff(request, blr_for);
 			GEN_expr(request, temp);
 		}
-		STUFF(blr_modify);
+		stuff(request, blr_modify);
 		temp = node->nod_arg[e_mod_source];
 		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 		temp = node->nod_arg[e_mod_update];
 		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 		GEN_statement(request, node->nod_arg[e_mod_statement]);
 		return;
 
 	case nod_modify_current:
-		STUFF(blr_modify);
+		stuff(request, blr_modify);
 		context = (DSQL_CTX) node->nod_arg[e_mdc_context];
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 		temp = node->nod_arg[e_mdc_update];
 		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 		GEN_statement(request, node->nod_arg[e_mdc_statement]);
 		return;
 
 	case nod_on_error:
-		STUFF(blr_error_handler);
+		stuff(request, blr_error_handler);
 		temp = node->nod_arg[e_err_errs];
 		stuff_word(request, temp->nod_count);
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end;
@@ -1002,36 +1002,36 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_post:
 		if ( (temp = node->nod_arg[e_pst_argument]) ) {
-			STUFF(blr_post_arg);
+			stuff(request, blr_post_arg);
 			GEN_expr(request, node->nod_arg[e_pst_event]);
 			GEN_expr(request, temp);
 		}
 		else {
-			STUFF(blr_post);
+			stuff(request, blr_post);
 			GEN_expr(request, node->nod_arg[e_pst_event]);
 		}
 		return;
 
 	case nod_exec_sql:
-		STUFF(blr_exec_sql);
+		stuff(request, blr_exec_sql);
 		GEN_expr(request, node->nod_arg[e_exec_sql_stmnt]);
 		return;
 
 	case nod_exec_into:
 		if (node->nod_arg[e_exec_into_block]) {
-			STUFF(blr_label);
-			STUFF((int) (IPTR) node->nod_arg[e_exec_into_label]->nod_arg[e_label_number]);
+			stuff(request, blr_label);
+			stuff(request, (int) (IPTR) node->nod_arg[e_exec_into_label]->nod_arg[e_label_number]);
 		}
-		STUFF(blr_exec_into);
+		stuff(request, blr_exec_into);
 		temp = node->nod_arg[e_exec_into_list];
 		stuff_word(request, temp->nod_count);
 		GEN_expr(request, node->nod_arg[e_exec_into_stmnt]);
 		if (node->nod_arg[e_exec_into_block]) {
-			STUFF(0); // Non-singleton
+			stuff(request, 0); // Non-singleton
 			GEN_statement(request, node->nod_arg[e_exec_into_block]);
 		}
 		else
-			STUFF(1); // Singleton
+			stuff(request, 1); // Singleton
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; 
 				ptr < end; ptr++)
 			GEN_expr(request, *ptr);
@@ -1042,71 +1042,71 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		return;
 
 	case nod_exit:
-		STUFF(blr_leave);
-		STUFF(0);
+		stuff(request, blr_leave);
+		stuff(request, 0);
 		return;
 
     case nod_breakleave:
-        STUFF(blr_leave);
-        STUFF((int) (IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
+        stuff(request, blr_leave);
+        stuff(request, (int) (IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
         return;
 
 	case nod_store:
 		if ((temp = node->nod_arg[e_sto_rse]) != NULL) {
-			STUFF(blr_for);
+			stuff(request, blr_for);
 			GEN_expr(request, temp);
 		}
-		STUFF(blr_store);
+		stuff(request, blr_store);
 		GEN_expr(request, node->nod_arg[e_sto_relation]);
 		GEN_statement(request, node->nod_arg[e_sto_statement]);
 		return;
 
 	case nod_abort:
-		STUFF(blr_leave);
-		STUFF((int) (IPTR) node->nod_arg[e_abrt_number]);
+		stuff(request, blr_leave);
+		stuff(request, (int) (IPTR) node->nod_arg[e_abrt_number]);
 		return;
 
 	case nod_start_savepoint:
-		STUFF(blr_start_savepoint);
+		stuff(request, blr_start_savepoint);
 		return;
 
 	case nod_end_savepoint:
-		STUFF(blr_end_savepoint);
+		stuff(request, blr_end_savepoint);
 		return;
 
 	case nod_user_savepoint:
-		STUFF(blr_user_savepoint);
-		STUFF(blr_savepoint_set);
+		stuff(request, blr_user_savepoint);
+		stuff(request, blr_savepoint_set);
 		stuff_cstring(request, ((STR)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_release_savepoint:
-		STUFF(blr_user_savepoint);
+		stuff(request, blr_user_savepoint);
 		if (node->nod_arg[1]) {
-			STUFF(blr_savepoint_release_single);
+			stuff(request, blr_savepoint_release_single);
 		}
 		else {
-			STUFF(blr_savepoint_release);
+			stuff(request, blr_savepoint_release);
 		}
 		stuff_cstring(request, ((STR)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_undo_savepoint:
-		STUFF(blr_user_savepoint);
-		STUFF(blr_savepoint_undo);
+		stuff(request, blr_user_savepoint);
+		stuff(request, blr_savepoint_undo);
 		stuff_cstring(request, ((STR)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_exception_stmt:
-		STUFF(blr_abort);
-		string = (STR) node->nod_arg[e_xcp_name];
-		temp = node->nod_arg[e_xcp_msg];
+		stuff(request, blr_abort);
+		string = (STR) node->nod_arg[e_xcps_name];
+		temp = node->nod_arg[e_xcps_msg];
 		/* if exception name is undefined,
 		   it means we have re-initiate semantics here,
 		   so blr_raise verb should be generated */
 		if (!string)
 		{
-			STUFF(blr_raise);
+			stuff(request, blr_raise);
 			return;
 		}
 		/* if exception value is defined,
@@ -1114,13 +1114,13 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		   so blr_exception_msg verb should be generated */
 		if (temp)
 		{
-			STUFF(blr_exception_msg);
+			stuff(request, blr_exception_msg);
 		}
 		/* otherwise go usual way,
 		   i.e. generate blr_exception */
 		else
 		{
-			STUFF(blr_exception);
+			stuff(request, blr_exception);
 		}
 		if (!(string->str_flags & STR_delimited_id))
 		{
@@ -1142,21 +1142,21 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 		return;
 
 	case nod_while:
-		STUFF(blr_label);
-		STUFF((int) (IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
-		STUFF(blr_loop);
-		STUFF(blr_begin);
-		STUFF(blr_if);
+		stuff(request, blr_label);
+		stuff(request, (int) (IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
+		stuff(request, blr_loop);
+		stuff(request, blr_begin);
+		stuff(request, blr_if);
 		GEN_expr(request, node->nod_arg[e_while_cond]);
 		GEN_statement(request, node->nod_arg[e_while_action]);
-		STUFF(blr_leave);
-		STUFF((int) (IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
-		STUFF(blr_end);
+		stuff(request, blr_leave);
+		stuff(request, (int) (IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
+		stuff(request, blr_end);
 		return;
 
 	case nod_sqlcode:
 	case nod_gdscode:
-		STUFF(blr_abort);
+		stuff(request, blr_abort);
 		gen_error_condition(request, node);
 		return;
 
@@ -1185,22 +1185,22 @@ static void gen_aggregate( DSQL_REQ request, DSQL_NOD node)
 	DSQL_CTX context;
 
 	context = (DSQL_CTX) node->nod_arg[e_agg_context];
-	STUFF(blr_aggregate);
-	STUFF(context->ctx_context);
+	stuff(request, blr_aggregate);
+	stuff(request, context->ctx_context);
 	gen_rse(request, node->nod_arg[e_agg_rse]);
 
 /* Handle GROUP BY clause */
 
-	STUFF(blr_group_by);
+	stuff(request, blr_group_by);
 
 	if ((list = node->nod_arg[e_agg_group]) != NULL) {
-		STUFF(list->nod_count);
+		stuff(request, list->nod_count);
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
 			GEN_expr(request, *ptr);
 	}
 	else
-		STUFF(0);
+		stuff(request, 0);
 
 /* Generate value map */
 
@@ -1223,7 +1223,7 @@ static void gen_cast( DSQL_REQ request, DSQL_NOD node)
 {
 	DSQL_FLD field;
 
-	STUFF(blr_cast);
+	stuff(request, blr_cast);
 	field = (DSQL_FLD) node->nod_arg[e_cast_target];
 	DDL_put_field_dtype(request, field, true);
 	GEN_expr(request, node->nod_arg[e_cast_source]);
@@ -1257,13 +1257,13 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 
 	// blr_value_if is used for building the coalesce function
 	list = node->nod_arg[0];
-	STUFF(blr_cast);
+	stuff(request, blr_cast);
 	gen_descriptor(request, &node->nod_desc, true);
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
 	{
 		// IF (expression IS NULL) THEN
-		STUFF(blr_value_if);
-		STUFF(blr_missing);
+		stuff(request, blr_value_if);
+		stuff(request, blr_missing);
 		GEN_expr(request, *ptr);
 	}
 	// Return values
@@ -1271,7 +1271,7 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 	end = list->nod_arg;
 	ptr = end + list->nod_count;
 	// if all expressions are NULL return NULL
-	STUFF(blr_null);
+	stuff(request, blr_null);
 	for (ptr--; ptr >= end; ptr--)
 	{
 		GEN_expr(request, *ptr);
@@ -1300,7 +1300,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, bool negate_value)
 
 	DSC tmp_desc;
 
-	STUFF(blr_literal);
+	stuff(request, blr_literal);
 
 	if ((desc->dsc_dtype == dtype_double)
 		&& (request->req_dbb->dbb_flags & DBB_v3))
@@ -1350,7 +1350,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, bool negate_value)
 		l = (USHORT) desc->dsc_scale;	/* length of string literal */
 		if (negate_value) {
 			stuff_word(request, l + 1);
-			STUFF('-');
+			stuff(request, '-');
 		}
 		else {
 			stuff_word(request, l);
@@ -1358,7 +1358,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, bool negate_value)
 
 		if (l)
 			do
-				STUFF(*p++);
+				stuff(request, *p++);
 			while (--l);
 		break;
 
@@ -1389,15 +1389,15 @@ static void gen_constant( DSQL_REQ request, DSC * desc, bool negate_value)
 
 		if ((i64value >= (SINT64) MIN_SLONG) &&
 			(i64value <= (SINT64) MAX_SLONG)) {
-			STUFF(blr_long);
-			STUFF(desc->dsc_scale);
+			stuff(request, blr_long);
+			stuff(request, desc->dsc_scale);
 			stuff_word(request, i64value);
 			stuff_word(request, i64value >> 16);
 			break;
 		}
 		else {
-			STUFF(blr_int64);
-			STUFF(desc->dsc_scale);
+			stuff(request, blr_int64);
+			stuff(request, desc->dsc_scale);
 			stuff_word(request, i64value);
 			stuff_word(request, i64value >> 16);
 			stuff_word(request, i64value >> 32);
@@ -1422,7 +1422,7 @@ static void gen_constant( DSQL_REQ request, DSC * desc, bool negate_value)
 		gen_descriptor(request, desc, true);
 		if (l)
 			do
-				STUFF(*p++);
+				stuff(request, *p++);
 			while (--l);
 		break;
 
@@ -1452,13 +1452,13 @@ static void gen_descriptor( DSQL_REQ request, DSC * desc, bool texttype)
 	switch (desc->dsc_dtype) {
 	case dtype_text:
 		if (request->req_dbb->dbb_flags & DBB_v3)
-			STUFF(blr_text);
+			stuff(request, blr_text);
 		else if (texttype || desc->dsc_ttype == ttype_binary) {
-			STUFF(blr_text2);
+			stuff(request, blr_text2);
 			stuff_word(request, desc->dsc_ttype);
 		}
 		else {
-			STUFF(blr_text2);	/* automatic transliteration */
+			stuff(request, blr_text2);	/* automatic transliteration */
 			stuff_word(request, ttype_dynamic);
 		}
 
@@ -1467,62 +1467,62 @@ static void gen_descriptor( DSQL_REQ request, DSC * desc, bool texttype)
 
 	case dtype_varying:
 		if (request->req_dbb->dbb_flags & DBB_v3)
-			STUFF(blr_varying);
+			stuff(request, blr_varying);
 		else if (texttype || desc->dsc_ttype == ttype_binary) {
-			STUFF(blr_varying2);
+			stuff(request, blr_varying2);
 			stuff_word(request, desc->dsc_ttype);
 		}
 		else {
-			STUFF(blr_varying2);	/* automatic transliteration */
+			stuff(request, blr_varying2);	/* automatic transliteration */
 			stuff_word(request, ttype_dynamic);
 		}
 		stuff_word(request, desc->dsc_length - sizeof(USHORT));
 		break;
 
 	case dtype_short:
-		STUFF(blr_short);
-		STUFF(desc->dsc_scale);
+		stuff(request, blr_short);
+		stuff(request, desc->dsc_scale);
 		break;
 
 	case dtype_long:
-		STUFF(blr_long);
-		STUFF(desc->dsc_scale);
+		stuff(request, blr_long);
+		stuff(request, desc->dsc_scale);
 		break;
 
 	case dtype_quad:
-		STUFF(blr_quad);
-		STUFF(desc->dsc_scale);
+		stuff(request, blr_quad);
+		stuff(request, desc->dsc_scale);
 		break;
 
 	case dtype_int64:
-		STUFF(blr_int64);
-		STUFF(desc->dsc_scale);
+		stuff(request, blr_int64);
+		stuff(request, desc->dsc_scale);
 		break;
 
 	case dtype_real:
-		STUFF(blr_float);
+		stuff(request, blr_float);
 		break;
 
 	case dtype_double:
-		STUFF(blr_double);
+		stuff(request, blr_double);
 		break;
 
 	case dtype_sql_date:
-		STUFF(blr_sql_date);
+		stuff(request, blr_sql_date);
 		break;
 
 	case dtype_sql_time:
-		STUFF(blr_sql_time);
+		stuff(request, blr_sql_time);
 		break;
 
 	case dtype_timestamp:
-		STUFF(blr_timestamp);
+		stuff(request, blr_timestamp);
 		break;
 
 	case dtype_blob:
 	case dtype_array:
-		STUFF(blr_quad);
-		STUFF(0);
+		stuff(request, blr_quad);
+		stuff(request, 0);
 		break;
 
 	default:
@@ -1550,24 +1550,24 @@ static void gen_error_condition( DSQL_REQ request, DSQL_NOD node)
 
 	switch (node->nod_type) {
 	case nod_sqlcode:
-		STUFF(blr_sql_code);
+		stuff(request, blr_sql_code);
 		stuff_word(request, (USHORT)(ULONG) node->nod_arg[0]);
 		return;
 
 	case nod_gdscode:
-		STUFF(blr_gds_code);
+		stuff(request, blr_gds_code);
 		string = (STR) node->nod_arg[0];
 		stuff_cstring(request, string->str_data);
 		return;
 
 	case nod_exception:
-		STUFF(blr_exception);
+		stuff(request, blr_exception);
 		string = (STR) node->nod_arg[0];
 		stuff_cstring(request, string->str_data);
 		return;
 
 	case nod_default:
-		STUFF(blr_default_code);
+		stuff(request, blr_default_code);
 		return;
 
 	default:
@@ -1619,21 +1619,21 @@ static void gen_field( DSQL_REQ request, DSQL_CTX context, DSQL_FLD field, DSQL_
 
 
 	if (indices)
-		STUFF(blr_index);
+		stuff(request, blr_index);
 
 	if (DDL_ids(request)) {
-		STUFF(blr_fid);
-		STUFF(context->ctx_context);
+		stuff(request, blr_fid);
+		stuff(request, context->ctx_context);
 		stuff_word(request, field->fld_id);
 	}
 	else {
-		STUFF(blr_field);
-		STUFF(context->ctx_context);
+		stuff(request, blr_field);
+		stuff(request, context->ctx_context);
 		stuff_cstring(request, field->fld_name);
 	}
 
 	if (indices) {
-		STUFF(indices->nod_count);
+		stuff(request, indices->nod_count);
 		for (ptr = indices->nod_arg, end = ptr + indices->nod_count;
 			 ptr < end; ptr++)
 			GEN_expr(request, *ptr);
@@ -1661,18 +1661,21 @@ static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
     /* CVC: Only put a label if this is not singular; otherwise,
        what loop is the user trying to abandon? */
     if (for_select->nod_arg[e_flp_action]) {
-        STUFF(blr_label);
-        STUFF((int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
+        stuff(request, blr_label);
+        stuff(request, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
     }
 
 /* Generate FOR loop */
 
-	STUFF(blr_for);
+	stuff(request, blr_for);
 
 	if (!for_select->nod_arg[e_flp_action] &&
-		!(request->req_dbb->dbb_flags & DBB_v3)) STUFF(blr_singular);
+		!(request->req_dbb->dbb_flags & DBB_v3))
+	{
+		stuff(request, blr_singular);
+	}
 	gen_rse(request, rse);
-	STUFF(blr_begin);
+	stuff(request, blr_begin);
 
 /* Build body of FOR loop */
 
@@ -1693,13 +1696,13 @@ static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
 				  gds_arg_gds, gds_dsql_count_mismatch, 0);
 	for (ptr = list->nod_arg, ptr_to = list_to->nod_arg,
 		 end = ptr + list->nod_count; ptr < end; ptr++, ptr_to++) {
-		STUFF(blr_assignment);
+		stuff(request, blr_assignment);
 		GEN_expr(request, *ptr);
 		GEN_expr(request, *ptr_to);
 	}
 	if (for_select->nod_arg[e_flp_action])
 		GEN_statement(request, for_select->nod_arg[e_flp_action]);
-	STUFF(blr_end);
+	stuff(request, blr_end);
 }
 
 
@@ -1718,7 +1721,7 @@ static void gen_gen_id( DSQL_REQ request, DSQL_NOD node)
 {
 	STR string;
 
-	STUFF(blr_gen_id);
+	stuff(request, blr_gen_id);
 	string = (STR) node->nod_arg[e_gen_id_name];
 	stuff_cstring(request, string->str_data);
 	GEN_expr(request, node->nod_arg[e_gen_id_value]);
@@ -1741,27 +1744,27 @@ static void gen_join_rse( DSQL_REQ request, DSQL_NOD rse)
 {
 	DSQL_NOD node;
 
-	STUFF(blr_rs_stream);
-	STUFF(2);
+	stuff(request, blr_rs_stream);
+	stuff(request, 2);
 
 	GEN_expr(request, rse->nod_arg[e_join_left_rel]);
 	GEN_expr(request, rse->nod_arg[e_join_rght_rel]);
 
 	node = rse->nod_arg[e_join_type];
 	if (node->nod_type != nod_join_inner) {
-		STUFF(blr_join_type);
+		stuff(request, blr_join_type);
 		if (node->nod_type == nod_join_left)
-			STUFF(blr_left);
+			stuff(request, blr_left);
 		else if (node->nod_type == nod_join_right)
-			STUFF(blr_right);
+			stuff(request, blr_right);
 		else
-			STUFF(blr_full);
+			stuff(request, blr_full);
 	}
 
-	STUFF(blr_boolean);
+	stuff(request, blr_boolean);
 	GEN_expr(request, rse->nod_arg[e_join_boolean]);
 
-	STUFF(blr_end);
+	stuff(request, blr_end);
 }
 
 
@@ -1785,7 +1788,7 @@ static void gen_map( DSQL_REQ request, DSQL_MAP map)
 	for (temp = map; temp; temp = temp->map_next)
 		temp->map_position = count++;
 
-	STUFF(blr_map);
+	stuff(request, blr_map);
 	stuff_word(request, count);
 
 	for (temp = map; temp; temp = temp->map_next) {
@@ -1814,15 +1817,15 @@ static void gen_parameter( DSQL_REQ request, PAR parameter)
 	message = parameter->par_message;
 
 	if ((null = parameter->par_null) != NULL) {
-		STUFF(blr_parameter2);
-		STUFF(message->msg_number);
+		stuff(request, blr_parameter2);
+		stuff(request, message->msg_number);
 		stuff_word(request, parameter->par_parameter);
 		stuff_word(request, null->par_parameter);
 		return;
 	}
 
-	STUFF(blr_parameter);
-	STUFF(message->msg_number);
+	stuff(request, blr_parameter);
+	stuff(request, message->msg_number);
 	stuff_word(request, parameter->par_parameter);
 }
 
@@ -1849,10 +1852,10 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 	list = plan_expression->nod_arg[1];
 	if (list->nod_count > 1) {
 		if (node = plan_expression->nod_arg[0])
-			STUFF(blr_merge);
+			stuff(request, blr_merge);
 		else
-			STUFF(blr_join);
-		STUFF(list->nod_count);
+			stuff(request, blr_join);
+		stuff(request, list->nod_count);
 	}
 
 /* stuff one or more plan items */
@@ -1866,7 +1869,7 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 
 		/* if we're here, it must be a nod_plan_item */
 
-		STUFF(blr_retrieve);
+		stuff(request, blr_retrieve);
 
 		/* stuff the relation--the relation id itself is redundant except 
 		   when there is a need to differentiate the base tables of views */
@@ -1879,11 +1882,11 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 		arg = node->nod_arg[1];
 		switch (arg->nod_type) {
 		case nod_natural:
-			STUFF(blr_sequential);
+			stuff(request, blr_sequential);
 			break;
 
 		case nod_index_order:
-			STUFF(blr_navigational);
+			stuff(request, blr_navigational);
 			index_string = (STR) arg->nod_arg[0];
 			stuff_cstring(request, index_string->str_data);
 			if (!arg->nod_arg[1])
@@ -1891,9 +1894,9 @@ static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 			// dimitr: FALL INTO, if the plan item is ORDER ... INDEX (...)
 
 		case nod_index:
-			STUFF(blr_indices);
+			stuff(request, blr_indices);
 			arg = (arg->nod_type == nod_index) ? arg->nod_arg[0] : arg->nod_arg[1];
-			STUFF(arg->nod_count);
+			stuff(request, arg->nod_count);
 			for (ptr2 = arg->nod_arg, end2 = ptr2 + arg->nod_count;
 				 ptr2 < end2; ptr2++) {
 				index_string = (STR) * ptr2;
@@ -1931,33 +1934,33 @@ static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 	if (relation) {
 		if (DDL_ids(request)) {
 			if (context->ctx_alias)
-				STUFF(blr_rid2);
+				stuff(request, blr_rid2);
 			else
-				STUFF(blr_rid);
+				stuff(request, blr_rid);
 			stuff_word(request, relation->rel_id);
 		}
 		else {
 			if (context->ctx_alias)
-				STUFF(blr_relation2);
+				stuff(request, blr_relation2);
 			else
-				STUFF(blr_relation);
+				stuff(request, blr_relation);
 			stuff_cstring(request, relation->rel_name);
 		}
 
 		if (context->ctx_alias)
 			stuff_cstring(request, context->ctx_alias);
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 	}
 	else if (procedure) {
 		if (DDL_ids(request)) {
-			STUFF(blr_pid);
+			stuff(request, blr_pid);
 			stuff_word(request, procedure->prc_id);
 		}
 		else {
-			STUFF(blr_procedure);
+			stuff(request, blr_procedure);
 			stuff_cstring(request, procedure->prc_name);
 		}
-		STUFF(context->ctx_context);
+		stuff(request, context->ctx_context);
 		stuff_word(request, procedure->prc_in_count);
 		DSQL_NOD inputs = context->ctx_proc_inputs;
 		if (inputs)
@@ -1986,10 +1989,10 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, bool eos_flag)
 		return;
 
 	if (!eos_flag)
-		STUFF(blr_begin);
-	STUFF(blr_send);
-	STUFF(1);
-	STUFF(blr_begin);
+		stuff(request, blr_begin);
+	stuff(request, blr_send);
+	stuff(request, 1);
+	stuff(request, blr_begin);
 
 	USHORT outputs = 0;
 	DSQL_NOD parameters = procedure->nod_arg[e_prc_outputs];
@@ -1999,30 +2002,30 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, bool eos_flag)
 			outputs++;
 			DSQL_NOD parameter = *ptr;
 			VAR variable = (VAR) parameter->nod_arg[e_var_variable];
-			STUFF(blr_assignment);
-			STUFF(blr_variable);
+			stuff(request, blr_assignment);
+			stuff(request, blr_variable);
 			stuff_word(request, variable->var_variable_number);
-			STUFF(blr_parameter2);
-			STUFF(variable->var_msg_number);
+			stuff(request, blr_parameter2);
+			stuff(request, variable->var_msg_number);
 			stuff_word(request, variable->var_msg_item);
 			stuff_word(request, variable->var_msg_item + 1);
 		}
 	}
-	STUFF(blr_assignment);
-	STUFF(blr_literal);
-	STUFF(blr_short);
-	STUFF(0);
+	stuff(request, blr_assignment);
+	stuff(request, blr_literal);
+	stuff(request, blr_short);
+	stuff(request, 0);
 	if (eos_flag)
 		stuff_word(request, 0);
 	else
 		stuff_word(request, 1);
-	STUFF(blr_parameter);
-	STUFF(1);
+	stuff(request, blr_parameter);
+	stuff(request, 1);
 	stuff_word(request, 2 * outputs);
-	STUFF(blr_end);
+	stuff(request, blr_end);
 	if (!eos_flag) {
-		STUFF(blr_stall);
-		STUFF(blr_end);
+		stuff(request, blr_stall);
+		stuff(request, blr_end);
 	}
 }
 
@@ -2041,20 +2044,20 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, bool eos_flag)
 static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 {
 	if (rse->nod_arg[e_rse_singleton]
-		&& !(request->req_dbb->dbb_flags & DBB_v3)) STUFF(blr_singular);
+		&& !(request->req_dbb->dbb_flags & DBB_v3)) stuff(request, blr_singular);
 
-	STUFF(blr_rse);
+	stuff(request, blr_rse);
 
 	DSQL_NOD list = rse->nod_arg[e_rse_streams];
 
 // Handle source streams
 
 	if (list->nod_type == nod_union) {
-		STUFF(1);
+		stuff(request, 1);
 		gen_union(request, rse);
 	}
 	else if (list->nod_type == nod_list) {
-		STUFF(list->nod_count);
+		stuff(request, list->nod_count);
 		for (DSQL_NOD *ptr = list->nod_arg, *end = ptr + list->nod_count; ptr < end;
 			 ptr++) {
 			DSQL_NOD node = *ptr;
@@ -2068,27 +2071,27 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 		}
 	}
 	else {
-		STUFF(1);
+		stuff(request, 1);
 		GEN_expr(request, list);
 	}
 
 	if (rse->nod_arg[e_rse_lock])
-		STUFF(blr_writelock);
+		stuff(request, blr_writelock);
 
 	DSQL_NOD node;
 
 	if ((node = rse->nod_arg[e_rse_first]) != NULL) {
-		STUFF(blr_first);
+		stuff(request, blr_first);
 		GEN_expr(request, node);
 	}
 
     if ((node = rse->nod_arg [e_rse_skip]) != NULL) {
-        STUFF (blr_skip);
+        stuff(request, blr_skip);
         GEN_expr (request, node);
     }
 
 	if ((node = rse->nod_arg[e_rse_boolean]) != NULL) {
-		STUFF(blr_boolean);
+		stuff(request, blr_boolean);
 		GEN_expr(request, node);
 	}
 
@@ -2096,8 +2099,8 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 		gen_sort(request, list);
 
 	if ((list = rse->nod_arg[e_rse_reduced]) != NULL) {
-		STUFF(blr_project);
-		STUFF(list->nod_count);
+		stuff(request, blr_project);
+		stuff(request, list->nod_count);
 		for (DSQL_NOD *ptr = list->nod_arg, *end = ptr + list->nod_count; ptr < end;
 			 ptr++)
 			GEN_expr(request, *ptr);
@@ -2106,7 +2109,7 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 /* if the user specified an access plan to use, add it here */
 
 	if ((node = rse->nod_arg[e_rse_plan]) != NULL) {
-		STUFF(blr_plan);
+		stuff(request, blr_plan);
 		gen_plan(request, node);
 	}
 
@@ -2119,16 +2122,16 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 
 	if (request->req_type == REQ_SELECT &&
 		request->req_dbb->dbb_base_level >= 5) {
-		STUFF(blr_receive);
-		STUFF(request->req_async->msg_number);
-		STUFF(blr_seek);
+		stuff(request, blr_receive);
+		stuff(request, request->req_async->msg_number);
+		stuff(request, blr_seek);
 		PAR parameter = request->req_async->msg_parameters;
 		gen_parameter(request, parameter->par_next);
 		gen_parameter(request, parameter);
 	}
 #endif
 
-	STUFF(blr_end);
+	stuff(request, blr_end);
 }
 
 
@@ -2147,7 +2150,7 @@ static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 {
 	// blr_value_if is used for building the case expression
 
-	STUFF(blr_cast);
+	stuff(request, blr_cast);
 	gen_descriptor(request, &node->nod_desc, true);
 	SSHORT count = node->nod_arg[e_searched_case_search_conditions]->nod_count;
 	DSQL_NOD boolean_list = node->nod_arg[e_searched_case_search_conditions];
@@ -2155,7 +2158,7 @@ static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 	for (DSQL_NOD *bptr = boolean_list->nod_arg, *end = bptr + count, *rptr = results_list->nod_arg; 
 			bptr < end; bptr++, rptr++)
 	{
-		STUFF(blr_value_if);
+		stuff(request, blr_value_if);
 		GEN_expr(request, *bptr);
 		GEN_expr(request, *rptr);
 	}
@@ -2487,28 +2490,28 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 // If there is a send message, build a RECEIVE
 
 	if ((message = request->req_send) != NULL) {
-		STUFF(blr_receive);
-		STUFF(message->msg_number);
+		stuff(request, blr_receive);
+		stuff(request, message->msg_number);
 	}
 
 // Generate FOR loop
 
 	message = request->req_receive;
 
-	STUFF(blr_for);
+	stuff(request, blr_for);
 	if (!(request->req_dbb->dbb_flags & DBB_v3))
-		STUFF(blr_stall);
+		stuff(request, blr_stall);
 	gen_rse(request, rse);	
 	
-	STUFF(blr_send);
-	STUFF(message->msg_number);
-	STUFF(blr_begin);
+	stuff(request, blr_send);
+	stuff(request, message->msg_number);
+	stuff(request, blr_begin);
 
 // Build body of FOR loop
 
 	// Add invalid usage here
 	
-	STUFF(blr_assignment);
+	stuff(request, blr_assignment);
 	constant = 1;
 	gen_constant(request, &constant_desc, USE_VALUE);
 	gen_parameter(request, request->req_eof);
@@ -2516,28 +2519,28 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	for (PAR parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next) {
 		if (parameter->par_node) {
-			STUFF(blr_assignment);
+			stuff(request, blr_assignment);
 			GEN_expr(request, parameter->par_node);
 			gen_parameter(request, parameter);
 		}
 		if (context = parameter->par_dbkey_ctx) {
-			STUFF(blr_assignment);
-			STUFF(blr_dbkey);
-			STUFF(context->ctx_context);
+			stuff(request, blr_assignment);
+			stuff(request, blr_dbkey);
+			stuff(request, context->ctx_context);
 			gen_parameter(request, parameter);
 		}
 		if (context = parameter->par_rec_version_ctx) {
-			STUFF(blr_assignment);
-			STUFF(blr_record_version);
-			STUFF(context->ctx_context);
+			stuff(request, blr_assignment);
+			stuff(request, blr_record_version);
+			stuff(request, context->ctx_context);
 			gen_parameter(request, parameter);
 		}
 	}
 
-	STUFF(blr_end);
-	STUFF(blr_send);
-	STUFF(message->msg_number);
-	STUFF(blr_assignment);
+	stuff(request, blr_end);
+	stuff(request, blr_send);
+	stuff(request, message->msg_number);
+	stuff(request, blr_assignment);
 	constant = 0;
 	gen_constant(request, &constant_desc, USE_VALUE);
 	gen_parameter(request, request->req_eof);
@@ -2559,7 +2562,7 @@ static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 {
 	/* blr_value_if is used for building the case expression */
 
-	STUFF(blr_cast);
+	stuff(request, blr_cast);
 	gen_descriptor(request, &node->nod_desc, true);
 	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
 	DSQL_NOD when_list = node->nod_arg[e_simple_case_when_operands];
@@ -2568,8 +2571,8 @@ static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 	for (DSQL_NOD *wptr = when_list->nod_arg, *end = wptr + count, *rptr = results_list->nod_arg; 
 			wptr < end; wptr++, rptr++)
 	{
-		STUFF(blr_value_if);
-		STUFF(blr_eql);
+		stuff(request, blr_value_if);
+		stuff(request, blr_eql);
 		GEN_expr(request, node->nod_arg[e_simple_case_case_operand]);
 		GEN_expr(request, *wptr);
 		GEN_expr(request, *rptr);
@@ -2594,16 +2597,16 @@ static void gen_sort( DSQL_REQ request, DSQL_NOD list)
 {
 	DSQL_NOD *ptr, *end;
 
-	STUFF(blr_sort);
-	STUFF(list->nod_count);
+	stuff(request, blr_sort);
+	stuff(request, list->nod_count);
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 		if ((*ptr)->nod_arg[e_order_nulls])
-			STUFF(blr_nullsfirst);
+			stuff(request, blr_nullsfirst);
 		if ((*ptr)->nod_arg[e_order_flag])
-			STUFF(blr_descending);
+			stuff(request, blr_descending);
 		else
-			STUFF(blr_ascending);
+			stuff(request, blr_ascending);
 		GEN_expr(request, (*ptr)->nod_arg[e_order_field]);
 	}
 }
@@ -2645,13 +2648,13 @@ static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_lev
 		if ((*ptr)->nod_type != nod_relation_name)
 			continue;
 
-		STUFF(lock_mode);
+		stuff(request, lock_mode);
 
 		/* stuff table name */
 		STR temp = (STR) ((*ptr)->nod_arg[e_rln_name]);
 		stuff_cstring(request, reinterpret_cast < char *>(temp->str_data));
 
-		STUFF(lock_level);
+		stuff(request, lock_level);
 	}
 }
 
@@ -2672,17 +2675,17 @@ static void gen_udf( DSQL_REQ request, DSQL_NOD node)
 	DSQL_NOD list, *ptr, *end;
 
 	UDF udf = (UDF) node->nod_arg[0];
-	STUFF(blr_function);
+	stuff(request, blr_function);
 	stuff_cstring(request, udf->udf_name);
 
 	if ((node->nod_count == 2) && (list = node->nod_arg[1])) {
-		STUFF(list->nod_count);
+		stuff(request, list->nod_count);
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
 			GEN_expr(request, *ptr);
 	}
 	else
-		STUFF(0);
+		stuff(request, 0);
 }
 
 
@@ -2699,7 +2702,7 @@ static void gen_udf( DSQL_REQ request, DSQL_NOD node)
  **/
 static void gen_union( DSQL_REQ request, DSQL_NOD union_node)
 {
-	STUFF(blr_union);
+	stuff(request, blr_union);
 
 // Obtain the context for UNION from the first DSQL_MAP node 
 	DSQL_NOD items = union_node->nod_arg[e_rse_items];
@@ -2709,17 +2712,17 @@ static void gen_union( DSQL_REQ request, DSQL_NOD union_node)
 		map_item = map_item->nod_arg[e_alias_value]; 
 	}
 	DSQL_CTX union_context = (DSQL_CTX) map_item->nod_arg[e_map_context];
-	STUFF(union_context->ctx_context);
+	stuff(request, union_context->ctx_context);
 
 	DSQL_NOD streams = union_node->nod_arg[e_rse_streams];
-	STUFF(streams->nod_count);	/* number of substreams */
+	stuff(request, streams->nod_count);	/* number of substreams */
 
 	for (DSQL_NOD *ptr = streams->nod_arg, *end = ptr + streams->nod_count; ptr < end;
 		 ptr++) {
 		DSQL_NOD sub_rse = *ptr;
 		gen_rse(request, sub_rse);
 		items = sub_rse->nod_arg[e_rse_items];
-		STUFF(blr_map);
+		stuff(request, blr_map);
 		stuff_word(request, items->nod_count);
 		USHORT count = 0;
 		for (DSQL_NOD *iptr = items->nod_arg, *iend = iptr + items->nod_count;
@@ -2747,9 +2750,9 @@ static void stuff_cstring( DSQL_REQ request, char *string)
 {
 	UCHAR c;
 
-	STUFF(strlen(string));
+	stuff(request, strlen(string));
 	while ((c = *string++))
-		STUFF(c);
+		stuff(request, c);
 }
 
 
@@ -2768,6 +2771,6 @@ static void stuff_cstring( DSQL_REQ request, char *string)
 static void stuff_word( DSQL_REQ request, USHORT word)
 {
 
-	STUFF(word);
-	STUFF(word >> 8);
+	stuff(request, word);
+	stuff(request, word >> 8);
 }

@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef _DSQL_UTLD_PROTO_H_
-#define _DSQL_UTLD_PROTO_H_
+#ifndef DSQL_UTLD_PROTO_H
+#define DSQL_UTLD_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,4 +42,4 @@ extern void DLL_EXPORT UTLD_save_status_strings(ISC_STATUS *);
 } /* extern "C" */
 #endif
 
-#endif /*  _DSQL_UTLD_PROTO_H_  */
+#endif //  DSQL_UTLD_PROTO_H

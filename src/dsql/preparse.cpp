@@ -52,11 +52,19 @@ enum pp_vals {
 const int MAX_TOKEN_SIZE = 1024;
 
 
-/* use STUFF_DPB in place of STUFF to avoid confusion with BLR STUFF
+/* use stuff_dpb in place of STUFF to avoid confusion with BLR STUFF
    macro defined in dsql.h */
 
-#define STUFF_DPB(blr)	{*dpb++ = (SCHAR)(blr);}
-#define STUFF_DPB_INT(blr)	{STUFF_DPB (blr); STUFF_DPB ((blr) >> 8); STUFF_DPB ((blr) >> 16); STUFF_DPB ((blr) >> 24);}
+static inline void stuff_dpb(SCHAR*& dpb, SCHAR blr){
+	*dpb++ = blr;
+}
+
+static inline void stuff_dpb_int(SCHAR*& dpb, int blr){
+	stuff_dpb(dpb, blr);
+	stuff_dpb(dpb, blr >> 8);
+	stuff_dpb(dpb, blr >> 16);
+	stuff_dpb(dpb, blr >> 24);
+}
 
 static void generate_error(ISC_STATUS *, SCHAR *, SSHORT, SSHORT);
 static SSHORT get_next_token(SCHAR **, SCHAR *, SCHAR *, USHORT *);
@@ -182,13 +190,13 @@ int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
 		return TRUE;
 	}
 
-	STUFF_DPB(gds_dpb_version1);
-	STUFF_DPB(isc_dpb_overwrite);
-	STUFF_DPB(1);
-	STUFF_DPB(0);
-	STUFF_DPB(isc_dpb_sql_dialect);
-	STUFF_DPB(4);
-	STUFF_DPB_INT(dialect);
+	stuff_dpb(dpb, gds_dpb_version1);
+	stuff_dpb(dpb, isc_dpb_overwrite);
+	stuff_dpb(dpb, 1);
+	stuff_dpb(dpb, 0);
+	stuff_dpb(dpb, isc_dpb_sql_dialect);
+	stuff_dpb(dpb, 4);
+	stuff_dpb_int(dpb, dialect);
 	do {
 		result = get_next_token(&stmt, stmt_end, token, &token_length);
 		if (result == NO_MORE_TOKENS) {
@@ -216,9 +224,9 @@ int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
 						break;
 					}
 					page_size = atol(token);
-					STUFF_DPB(gds_dpb_page_size);
-					STUFF_DPB(4);
-					STUFF_DPB_INT(page_size);
+					stuff_dpb(dpb, gds_dpb_page_size);
+					stuff_dpb(dpb, 4);
+					stuff_dpb_int(dpb, page_size);
 					matched = true;
 					break;
 
@@ -230,12 +238,12 @@ int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
 						break;
 					}
 
-					STUFF_DPB(gds_dpb_user_name);
+					stuff_dpb(dpb, gds_dpb_user_name);
 					l = token_length;
-					STUFF_DPB(l);
+					stuff_dpb(dpb, l);
 					ch = token;
 					while (*ch)
-						STUFF_DPB(*ch++);
+						stuff_dpb(dpb, *ch++);
 					matched = true;
 					break;
 
@@ -247,12 +255,12 @@ int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
 						break;
 					}
 
-					STUFF_DPB(gds_dpb_password);
+					stuff_dpb(dpb, gds_dpb_password);
 					l = token_length;
-					STUFF_DPB(l);
+					stuff_dpb(dpb, l);
 					ch = token;
 					while (*ch)
-						STUFF_DPB(*ch++);
+						stuff_dpb(dpb, *ch++);
 					matched = true;
 					break;
 
@@ -268,12 +276,12 @@ int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
 						break;
 					}
 
-					STUFF_DPB(gds_dpb_lc_ctype);
+					stuff_dpb(dpb, gds_dpb_lc_ctype);
 					l = token_length;
-					STUFF_DPB(l);
+					stuff_dpb(dpb, l);
 					ch = token;
 					while (*ch)
-						STUFF_DPB(*ch++);
+						stuff_dpb(dpb, *ch++);
 					matched = true;
 					break;
 

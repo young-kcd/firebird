@@ -32,8 +32,6 @@
 #define BUGCHECK(number)	ERRQ_bugcheck (number)
 #define SYNTAX_ERROR(number)	ERRQ_syntax (number)
 #define IBERROR(number)		ERRQ_error (number, NULL, NULL, NULL, NULL, NULL)
-#define BLKCHK(blk,type)	if (blk->blk_type != (SCHAR) type) BUGCHECK (0)
-				/* MSG 0 - expected type */
 
 #define ALL_release(blk)	ALLQ_release (blk)
 #define ALLOCD(type)		ALLQ_alloc (QLI_default_pool, type, 0)

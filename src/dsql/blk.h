@@ -21,25 +21,30 @@
  * Contributor(s): ______________________________________.
  */
 
-BLKDEF(dsql_type_ctx, dsql_ctx, 0)
-BLKDEF(dsql_type_par, par, 0)
-BLKDEF(dsql_type_map, map, 0)	/* Unique */
-BLKDEF(dsql_type_req, dsql_req, 0)
-BLKDEF(dsql_type_dbb, dbb, 0)
-BLKDEF(dsql_type_dsql_rel, dsql_rel, 1)
-BLKDEF(dsql_type_fld, dsql_fld, 1)
-BLKDEF(dsql_type_fil, fil, 0)
-BLKDEF(dsql_type_nod, dsql_nod, sizeof(((DSQL_NOD) NULL)->nod_arg[0]))
-BLKDEF(dsql_type_msg, msg, 0)
-BLKDEF(dsql_type_lls, dsql_lls, 0)	/* linked list stack */
-BLKDEF(dsql_type_str, str, 1)	/* random string block */
-BLKDEF(dsql_type_sym, sym, 1)	/* symbol block */
-BLKDEF(dsql_type_err, err, 0)
-BLKDEF(dsql_type_opn, opn, 0)
-BLKDEF(dsql_type_tra, dsql_tra, 0)
-BLKDEF(dsql_type_udf, udf, 1)
-BLKDEF(dsql_type_var, var, 1)
-BLKDEF(dsql_type_blb, blb, 0)
-BLKDEF(dsql_type_prc, dsql_prc, 1)
-BLKDEF(dsql_type_intlsym, intlsym, 1)
-BLKDEF(dsql_type_vec, vec, 0)
+enum blk_t {
+	dsql_type_MIN = 0,
+	dsql_type_ctx,
+	dsql_type_par,
+	dsql_type_map, // Unique
+	dsql_type_req,
+	dsql_type_dbb,
+	dsql_type_dsql_rel,
+	dsql_type_fld,
+	dsql_type_fil,
+	dsql_type_nod,
+	dsql_type_msg,
+	dsql_type_lls, // linked list stack
+	dsql_type_str, // random string block
+	dsql_type_sym, // symbol block
+	dsql_type_err,
+	dsql_type_opn,
+	dsql_type_tra,
+	dsql_type_udf,
+	dsql_type_var,
+	dsql_type_blb,
+	dsql_type_prc,
+	dsql_type_intlsym,
+	dsql_type_vec,
+	dsql_type_MAX
+};
+

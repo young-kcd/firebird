@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.16 2003-09-28 00:36:27 brodsom Exp $
+$Id: utld.cpp,v 1.17 2003-10-01 18:11:23 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -58,10 +58,19 @@ static void print_xsqlda(XSQLDA *);
 static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
 static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
 
-#define CH_STUFF(p,value)	{if ((SCHAR) *(p) == (SCHAR) (value)) (p)++; else\
-				{*(p)++ = (value); same_flag = false;}}
-#define CH_STUFF_WORD(p,value)	{CH_STUFF (p, (value) & 255);\
-				CH_STUFF (p, (value) >> 8);}
+static inline void ch_stuff(BLOB_PTR*& p, SCHAR value, bool& same_flag){
+	if (*p == value) 
+		p++; 
+	else {
+		*p++ = value;
+		same_flag = false;
+	}
+}
+
+static inline void ch_stuff_word(BLOB_PTR*& p, SCHAR value, bool& same_flag){
+	ch_stuff(p, (value) & 255, same_flag);
+	ch_stuff(p, (value) >> 8, same_flag);
+}
 
 /* these statics define a round-robin data area for storing
    textual error messages returned to the user */
@@ -352,10 +361,10 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 
 		bool same_flag = (blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
 
-        /* turn off same_flag because it breaks execute & execute2 when
-           more than one statement is prepared */
+		/* turn off same_flag because it breaks execute & execute2 when
+		   more than one statement is prepared */
 
-        same_flag = false;
+		same_flag = false;
 
 		dasup->dasup_clauses[clause].dasup_blr_length = blr_len;
 
@@ -368,22 +377,22 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 
 	/** The define SQL_DIALECT_V5 is not available here, Hence using
 	constant 1.
-    **/
+	**/
 		if (dialect > 1) {
-			CH_STUFF(p, blr_version5)
-                }
-        else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
-            (p)++; 
-        }
-        else {
-            *(p)++ = (blr_version4); 
-            same_flag = false;
-        }
-        
-		CH_STUFF(p, blr_begin);
-		CH_STUFF(p, blr_message);
-		CH_STUFF(p, 0);
-		CH_STUFF_WORD(p, par_count);
+			ch_stuff(p, blr_version5, same_flag);
+		}
+		else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
+			(p)++; 
+		}
+		else {
+			*(p)++ = (blr_version4); 
+			same_flag = false;
+		}
+		
+		ch_stuff(p, blr_begin, same_flag);
+		ch_stuff(p, blr_message, same_flag);
+		ch_stuff(p, 0, same_flag);
+		ch_stuff_word(p, par_count, same_flag);
 		msg_len = 0;
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
@@ -403,76 +412,76 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 			switch (dtype)
 			{
 			case SQL_VARYING:
-				CH_STUFF(p, blr_varying);
-				CH_STUFF_WORD(p, len);
+				ch_stuff(p, blr_varying, same_flag);
+				ch_stuff_word(p, len, same_flag);
 				dtype = dtype_varying;
 				len += sizeof(USHORT);
 				break;
 			case SQL_TEXT:
-				CH_STUFF(p, blr_text);
-				CH_STUFF_WORD(p, len);
+				ch_stuff(p, blr_text, same_flag);
+				ch_stuff_word(p, len, same_flag);
 				dtype = dtype_text;
 				break;
 			case SQL_DOUBLE:
-				CH_STUFF(p, blr_double);
+				ch_stuff(p, blr_double, same_flag);
 				dtype = dtype_double;
 				break;
 			case SQL_FLOAT:
-				CH_STUFF(p, blr_float);
+				ch_stuff(p, blr_float, same_flag);
 				dtype = dtype_real;
 				break;
 			case SQL_D_FLOAT:
-				CH_STUFF(p, blr_d_float);
+				ch_stuff(p, blr_d_float, same_flag);
 				dtype = dtype_d_float;
 				break;
 			case SQL_TYPE_DATE:
-				CH_STUFF(p, blr_sql_date);
+				ch_stuff(p, blr_sql_date, same_flag);
 				dtype = dtype_sql_date;
 				break;
 			case SQL_TYPE_TIME:
-				CH_STUFF(p, blr_sql_time);
+				ch_stuff(p, blr_sql_time, same_flag);
 				dtype = dtype_sql_time;
 				break;
 			case SQL_TIMESTAMP:
-				CH_STUFF(p, blr_timestamp);
+				ch_stuff(p, blr_timestamp, same_flag);
 				dtype = dtype_timestamp;
 				break;
 			case SQL_BLOB:
-				CH_STUFF(p, blr_quad);
-				CH_STUFF(p, 0);
+				ch_stuff(p, blr_quad, same_flag);
+				ch_stuff(p, 0, same_flag);
 				dtype = dtype_blob;
 				break;
 			case SQL_ARRAY:
-				CH_STUFF(p, blr_quad);
-				CH_STUFF(p, 0);
+				ch_stuff(p, blr_quad, same_flag);
+				ch_stuff(p, 0, same_flag);
 				dtype = dtype_array;
 				break;
 			case SQL_LONG:
-				CH_STUFF(p, blr_long);
-				CH_STUFF(p, xvar->sqlscale);
+				ch_stuff(p, blr_long, same_flag);
+				ch_stuff(p, xvar->sqlscale, same_flag);
 				dtype = dtype_long;
 				break;
 			case SQL_SHORT:
-				CH_STUFF(p, blr_short);
-				CH_STUFF(p, xvar->sqlscale);
+				ch_stuff(p, blr_short, same_flag);
+				ch_stuff(p, xvar->sqlscale, same_flag);
 				dtype = dtype_short;
 				break;
 			case SQL_INT64:
-				CH_STUFF(p, blr_int64);
-				CH_STUFF(p, xvar->sqlscale);
+				ch_stuff(p, blr_int64, same_flag);
+				ch_stuff(p, xvar->sqlscale, same_flag);
 				dtype = dtype_int64;
 				break;
 			case SQL_QUAD:
-				CH_STUFF(p, blr_quad);
-				CH_STUFF(p, xvar->sqlscale);
+				ch_stuff(p, blr_quad, same_flag);
+				ch_stuff(p, xvar->sqlscale, same_flag);
 				dtype = dtype_quad;
 				break;
 			default:
 				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 			}
 
-			CH_STUFF(p, blr_short);
-			CH_STUFF(p, 0);
+			ch_stuff(p, blr_short, same_flag);
+			ch_stuff(p, 0, same_flag);
 
 			align = type_alignments[dtype];
 			if (align)
@@ -484,8 +493,8 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
 			msg_len += sizeof(SSHORT);
 		}
 
-		CH_STUFF(p, blr_end);
-		CH_STUFF(p, blr_eoc);
+		ch_stuff(p, blr_end, same_flag);
+		ch_stuff(p, blr_eoc, same_flag);
 
 		/* Make sure the message buffer is large enough.  If it isn't, allocate
 		   a new one. */

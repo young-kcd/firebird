@@ -50,7 +50,7 @@ typedef struct gen_t {
 	UCHAR *gen_end;
 	ISC_STATUS *gen_status;
 	USHORT gen_internal;
-} *GEN;
+} *GEN_T;
 
 static void adjust_length(ISC_ARRAY_DESC *);
 static void copy_exact_name (char *, char*, SSHORT);
@@ -60,16 +60,24 @@ static ISC_STATUS gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *, SSHORT *, UCHAR **,
 					  SSHORT *);
 static ISC_STATUS lookup_desc(ISC_STATUS *, FRBRD **, FRBRD **, SCHAR *, SCHAR *,
 						  ISC_ARRAY_DESC *, SCHAR *);
-static ISC_STATUS stuff(GEN, SSHORT, ...);
-static ISC_STATUS stuff_literal(GEN, SLONG);
-static ISC_STATUS stuff_string(GEN, UCHAR, SCHAR *);
+static ISC_STATUS stuff_args(gen_t*, SSHORT, ...);
+static ISC_STATUS stuff_literal(gen_t*, SLONG);
+static ISC_STATUS stuff_string(gen_t*, UCHAR, SCHAR *);
 
-/* STUFF_SDL used in place of STUFF to avoid confusion with BLR STUFF
+/* stuff_sdl used in place of STUFF to avoid confusion with BLR STUFF
    macro defined in dsql.h */
 
-#define STUFF_SDL(byte)	 if (stuff (gen, 1, byte)) return status [1]
-#define STUFF_SDL_WORD(word) if (stuff (gen, 2, word, word >> 8)) return status [1]
-#define STUFF_SDL_LONG(word) if (stuff (gen, 4, word, word >> 8, word >> 16, word >> 24)) return status [1]
+static inline ISC_STATUS stuff_sdl(gen_t* gen, int byte){
+	return stuff_args(gen, 1, byte);
+}
+
+static inline ISC_STATUS stuff_sdl_word(gen_t* gen, int word){
+	return stuff_args(gen, 2, word, word >> 8);
+}
+
+static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word){
+	return stuff_args(gen, 4, word, word >> 8, word >> 16, word >> 24);
+}
 
 
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
@@ -402,22 +410,26 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 	gen->gen_status = status;
 	gen->gen_internal = 0;
 
-	if (stuff
-		(gen, 4, gds_sdl_version1, gds_sdl_struct, 1,
-		 desc->array_desc_dtype)) return status[1];
+	if (stuff_args(gen, 4, gds_sdl_version1, gds_sdl_struct, 1,
+				   desc->array_desc_dtype))
+	{
+		return status[1];
+	}
 
 	switch (desc->array_desc_dtype) {
 	case blr_short:
 	case blr_long:
 	case blr_int64:
 	case blr_quad:
-		STUFF_SDL(desc->array_desc_scale);
+		if (stuff_sdl(gen, desc->array_desc_scale))
+			return status[1];
 		break;
 
 	case blr_text:
 	case blr_cstring:
 	case blr_varying:
-		STUFF_SDL_WORD(desc->array_desc_length);
+		if (stuff_sdl_word(gen, desc->array_desc_length))
+			return status[1];
 		break;
 	default:
 		break;
@@ -443,11 +455,11 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 	for (n = from; n != to; n += increment) {
 		tail = desc->array_desc_bounds + n;
 		if (tail->array_bound_lower == 1) {
-			if (stuff(gen, 2, gds_sdl_do1, n))
+			if (stuff_args(gen, 2, gds_sdl_do1, n))
 				return status[1];
 		}
 		else {
-			if (stuff(gen, 2, gds_sdl_do2, n))
+			if (stuff_args(gen, 2, gds_sdl_do2, n))
 				return status[1];
 			if (stuff_literal(gen, (SLONG) tail->array_bound_lower))
 				return status[1];
@@ -456,14 +468,15 @@ static ISC_STATUS gen_sdl(ISC_STATUS * status,
 			return status[1];
 	}
 
-	if (stuff(gen, 5, gds_sdl_element, 1, gds_sdl_scalar, 0, dimensions))
+	if (stuff_args(gen, 5, gds_sdl_element, 1, gds_sdl_scalar, 0, dimensions))
 		return status[1];
 
 	for (n = 0; n < dimensions; n++)
-		if (stuff(gen, 2, gds_sdl_variable, n))
+		if (stuff_args(gen, 2, gds_sdl_variable, n))
 			return status[1];
 
-	STUFF_SDL(gds_sdl_eoc);
+	if (stuff_sdl(gen, gds_sdl_eoc))
+		return status[1];
 	*sdl_length = gen->gen_sdl - *gen->gen_sdl_ptr;
 
 	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
@@ -534,7 +547,7 @@ SCHAR * relation_name, ISC_ARRAY_DESC * desc, SCHAR * global)
 }
 
 
-static ISC_STATUS stuff( GEN gen, SSHORT count, ...)
+static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 {
 /**************************************
  *
@@ -582,7 +595,7 @@ static ISC_STATUS stuff( GEN gen, SSHORT count, ...)
 }
 
 
-static ISC_STATUS stuff_literal( GEN gen, SLONG literal)
+static ISC_STATUS stuff_literal(gen_t* gen, SLONG literal)
 {
 /**************************************
  *
@@ -599,19 +612,21 @@ static ISC_STATUS stuff_literal( GEN gen, SLONG literal)
 	status = gen->gen_status;
 
 	if (literal >= -128 && literal <= 127)
-		return stuff(gen, 2, gds_sdl_tiny_integer, literal);
+		return stuff_args(gen, 2, gds_sdl_tiny_integer, literal);
 
 	if (literal >= -32768 && literal <= 32767)
-		return stuff(gen, 3, gds_sdl_short_integer, literal, literal >> 8);
+		return stuff_args(gen, 3, gds_sdl_short_integer, literal, literal >> 8);
 
-	STUFF_SDL(gds_sdl_long_integer);
-	STUFF_SDL_LONG(literal);
+	if (stuff_sdl(gen, gds_sdl_long_integer))
+		return status[1];
+	if (stuff_sdl_long(gen, literal))
+		return status[1];
 
 	return FB_SUCCESS;
 }
 
 
-static ISC_STATUS stuff_string( GEN gen, UCHAR sdl, SCHAR * string)
+static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, SCHAR * string)
 {
 /**************************************
  *
@@ -627,11 +642,15 @@ static ISC_STATUS stuff_string( GEN gen, UCHAR sdl, SCHAR * string)
 
 	status = gen->gen_status;
 
-	STUFF_SDL(sdl);
-	STUFF_SDL(strlen(string));
+	if (stuff_sdl(gen, sdl))
+		return status[1];
+	if (stuff_sdl(gen, strlen(string)))
+		return status[1];
 
-	while (*string)
-		STUFF_SDL(*string++);
+	while (*string) {
+		if (stuff_sdl(gen, *string++))
+			return status[1];
+	}
 
 	return FB_SUCCESS;
 }
