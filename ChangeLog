@@ -1,3 +1,29 @@
+2005-03-24 22:49  arnobrinkman
+
+	* firebird2/src/jrd/Optimizer.cpp (1.14):
+	
+	Fix bug #1169728 with explicit navigational PLAN no comparisons in
+	the WHERE clause were matched against the navigational index
+
+2005-03-24 22:45  arnobrinkman
+
+	* firebird2/src/jrd/nav.cpp (1.48):
+	
+	Fix bug #1169884 with IS NULL on segments in compound index and
+	using navigational index
+
+2005-03-24 12:16  aafemt
+
+	* firebird2/builds/posix/Makefile.in.examples (1.4):
+	
+	Comment out dirs with broken files
+
+2005-03-24 12:13  aafemt
+
+	* firebird2/configure.in (1.220):
+	
+	Comment out dirs with broken files
+
 2005-03-23 21:35  hvlad
 
 	* firebird2/src/jrd/tra.cpp (1.99):
