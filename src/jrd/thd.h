@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.35 2004-08-16 12:28:20 alexpeshkoff Exp $
+$Id: thd.h,v 1.36 2004-08-27 17:39:34 skidder Exp $
 */
 
 #ifndef JRD_THD_H
@@ -153,6 +153,8 @@ private:
 	MemoryPool*	thdd_pool;
 
 public:
+    thdd() : thdd_prior_context(NULL), thdd_type(0), thdd_pool(NULL) {}
+
 	void makeDefaultPool()
 	{
 		thdd* previous = getSpecific();
