@@ -2742,7 +2742,7 @@ static void put_message(SSHORT msg_num, DJB database)
  *	Write out informational message to the log.
  *
  **************************************/
-	SLONG clock;
+	time_t clock;
 	struct tm times;
 	UCHAR message[MSG_LENGTH];
 
@@ -3520,7 +3520,7 @@ static void time_stamp(GDS__QUAD * date)
  *	Get the current time in gds format.
  *
  **************************************/
-	SLONG clock;
+	time_t clock;
 	struct tm times;
 
 	clock = time(NULL);
