@@ -367,6 +367,9 @@ TEXTTYPE_ENTRY(WIN1251_c0_init)
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1251_c0_init, CS_WIN1251, CC_C);
+	cache->texttype_fn_to_upper =		(FPTR_SHORT) cp1251_to_upper;
+	cache->texttype_fn_to_lower =		(FPTR_SHORT) cp1251_to_lower;
+	cache->texttype_fn_str_to_upper =	(FPTR_short) cp1251_str_to_upper;
 
 	TEXTTYPE_RETURN;
 }
@@ -479,6 +482,23 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 		? (UCHAR) ((ch)-ASCII_UPPER_A+ASCII_LOWER_A) \
 		: (UCHAR) (ch))
 
+#define CP1251_UPPER_A 0xC0
+#define CP1251_LOWER_A 0xE0
+#define CP1251_UPPER_YA 0xDF
+#define CP1251_LOWER_YA 0xFF
+
+#define CP1251_UPPER(ch) \
+	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
+		? (UCHAR) ((ch)-ASCII_LOWER_A+ASCII_UPPER_A) \
+		: (((UCHAR) (ch) >= (UCHAR) CP1251_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) CP1251_LOWER_YA)) \
+		? (UCHAR) ((ch)-CP1251_LOWER_A+CP1251_UPPER_A) \
+        : (UCHAR) (ch))
+#define	CP1251_LOWER(ch) \
+	((((UCHAR) (ch) >= (UCHAR) ASCII_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_UPPER_Z)) \
+		? (UCHAR) ((ch)-ASCII_UPPER_A+ASCII_LOWER_A) \
+		: (((UCHAR) (ch) >= (UCHAR) CP1251_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) CP1251_UPPER_YA)) \
+		? (UCHAR) ((ch)-CP1251_UPPER_A+CP1251_LOWER_A) \
+        : (UCHAR) (ch))
 
 
 /*
@@ -620,12 +640,54 @@ USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch)
 }
 
 
+USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch)
+{
+	return ((USHORT) CP1251_UPPER(ch));
+}
+
+
+
+SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
+{
+	BYTE *p;
+	assert(pStr != NULL);
+	assert(pOutStr != NULL);
+	assert(iLen <= 32000);		/* almost certainly an error */
+	assert(iOutLen <= 32000);	/* almost certainly an error */
+	assert(iOutLen >= iLen);
+	p = pOutStr;
+	while (iLen && iOutLen) {
+		*pOutStr++ = CP1251_UPPER(*pStr);
+		pStr++;
+		iLen--;
+		iOutLen--;
+	};
+	if (iLen != 0)
+		return (-1);
+	return (pOutStr - p);
+}
+
+
+
+
+USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch)
+{
+	return (CP1251_LOWER(ch));
+}
+
 #undef ASCII_LOWER
 #undef ASCII_UPPER
 #undef ASCII_LOWER_Z
 #undef ASCII_UPPER_Z
 #undef ASCII_LOWER_A
 #undef ASCII_UPPER_A
+
+#undef CP1251_LOWER
+#undef CP1251_UPPER
+#undef CP1251_LOWER_YA
+#undef CP1251_UPPER_YA
+#undef CP1251_LOWER_A
+#undef CP1251_UPPER_A
 
 #undef ASCII_SPACE
 #undef LANGASCII_MAX_KEY

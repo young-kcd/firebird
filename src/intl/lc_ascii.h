@@ -31,6 +31,10 @@ USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch);
 USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch);
 SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 
+USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch);
+USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch);
+SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
+
 SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count);
 
 /*
