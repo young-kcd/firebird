@@ -123,6 +123,10 @@ SOURCE=..\..\..\src\common\classes\alloc.cpp
 
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\locks.cpp
+# End Source File
 # End Group
 # Begin Group "Header files"
 
