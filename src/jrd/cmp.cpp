@@ -3630,7 +3630,7 @@ static void pass1_erase(TDBB tdbb, CSB * csb, JRD_NOD node)
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent)
 			parent = tail->csb_view;
-                post_trigger_access(*csb, relation, ExternalAccess::exa_delete, view);
+		post_trigger_access(*csb, relation, ExternalAccess::exa_delete, view);
 
 		/* If this is a view trigger operation, get an extra stream to play with */
 
@@ -3663,7 +3663,6 @@ static void pass1_erase(TDBB tdbb, CSB * csb, JRD_NOD node)
 				node->nod_count =
 					MAX(node->nod_count, (USHORT) e_erase_statement + 1);
 			}
-
 			return;
 		}
 
@@ -3672,6 +3671,10 @@ static void pass1_erase(TDBB tdbb, CSB * csb, JRD_NOD node)
 
 		map = (*csb)->csb_rpt[stream].csb_map;
 		if (trigger) {
+			node->nod_arg[e_erase_statement] =
+				pass1_expand_view(tdbb, *csb, stream, new_stream, FALSE);
+			node->nod_count =
+				MAX(node->nod_count, (USHORT) e_erase_statement + 1);
 			view_node = copy(tdbb, csb, node, map, 0, NULL, FALSE);
 			node->nod_arg[e_erase_sub_erase] = view_node;
 			node->nod_count =
