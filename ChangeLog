@@ -1,3 +1,22 @@
+2004-03-13 23:17  skidder
+
+	* firebird2/src/utilities/nbackup.cpp:
+	
+	Fix POSIX build issue resulting from my cleanup. Strange, but Win32
+	build was fine here
+
+2004-03-13 09:29  skidder
+
+	* firebird2/src/include/fb_blk.h:
+	
+	Please GCC in pool_alloc_rpt template declaration
+
+2004-03-13 02:57  skidder
+
+	* firebird2/src/jrd/nbak.cpp:
+	
+	Correction
+
 2004-03-12 21:19  skidder
 
 	* firebird2/src/: include/fb_blk.h, jrd/cmp.cpp, jrd/exe.h,
