@@ -35,8 +35,6 @@
 
 #define	SPE_HAN(b1, b2)	(((b1) == 0xa4) && (((b2) == 0xa2) || ((b2) == 0xa4) || ((b2) == 0xa7) || ((b2) == 0xa8) || ((b2) == 0xa9) || ((b2) == 0xb1) || ((b2) == 0xb2) || ((b2) == 0xb3) || ((b2) == 0xb5) || ((b2) == 0xb6) || ((b2) == 0xb7) || ((b2) == 0xb8) || ((b2) == 0xb9) || ((b2) == 0xba) || ((b2) == 0xbb) || ((b2) == 0xbc) || ((b2) == 0xbd) || ((b2) == 0xbe)))
 
-#define	LANGKSC_MAX_KEY	4096
-
 USHORT CVKSC_ksc_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
 							const UCHAR* ksc_str, USHORT ksc_len,
 							SSHORT *err_code, USHORT *err_position);

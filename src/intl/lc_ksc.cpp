@@ -138,7 +138,7 @@ const UCHAR gen_han[18][2] =
 	{ 0xc7, 0xce }
 };
 
-
+#define	LANGKSC_MAX_KEY	4096
 #define		ASCII_SPACE	32
 
 
