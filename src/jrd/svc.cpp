@@ -2550,7 +2550,7 @@ static void service_get(Service* service,
 
 			if (temp_len) {
 				/* If data is available, read as much as will fit in buffer */
-				temp_len = MIN(temp_len, length - (buf - buffer));
+				temp_len = MIN(temp_len, (DWORD) (length - (buf - buffer)));
 				const USHORT bytes_read =
 					service_read(service, buf, (USHORT) temp_len, flags);
 				buf += bytes_read;
