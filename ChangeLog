@@ -1,3 +1,9 @@
+2005-02-06 11:50  alexpeshkoff
+
+	* firebird2/src/dsql/ddl.cpp (1.50.2.4):
+	
+	Fixed AV in DDL.
+
 2005-02-01 14:59  kkuznetsov
 
 	* firebird2/doc/README.install.Solaris_on_Intel (1.1.2.3):
