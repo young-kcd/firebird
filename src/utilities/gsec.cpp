@@ -42,6 +42,7 @@
 #include "../utilities/cmd_util_proto.h"
 #ifdef WIN_NT
 #include <windows.h>
+#include <io.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -279,6 +280,18 @@ int UTIL_gsec(
 		SecurityDatabase::getPath(user_info_name);
 #else
 		SECURITY_get_db_path(NULL, user_info_name);
+#ifdef WIN_NT
+		// dimitr: temporary hack to make Services API available
+		// for the engine without support of local protocol.
+		// Once XNET is implemented in win32 CS, remove this ugly code.
+		if (tdsec->tsec_service_gsec && !tdsec->tsec_service_thd)
+		{
+			TEXT host[MAXPATHLEN];
+			strcpy(host, "localhost:");
+			strcat(host, user_info_name);
+			strcpy(user_info_name, host);
+		}
+#endif
 #endif
 		u = user_info_name;
 	}
@@ -294,7 +307,7 @@ int UTIL_gsec(
 	}
 
 	if (user_data->dba_password_entered) {
-		if (tdsec->tsec_service_thd)
+		if (tdsec->tsec_service_gsec)
 			*dpb++ = isc_dpb_password_enc;
 		else
 			*dpb++ = isc_dpb_password;
@@ -400,69 +413,73 @@ static void data_print( void *arg, USER_DATA data, BOOLEAN first)
  *	if first is TRUE print the header then the data
  *
  **************************************/
+	tsec* tdsec = GET_THREAD_DATA;
+
 #ifdef SUPERSERVER
-	TSEC tdsec;
-	int i, len;
-	tdsec = GET_THREAD_DATA;
-
-/* Send the username */
-	len = strlen(data->user_name);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) isc_spb_sec_username);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) len);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (len >> 8));
-	for (i = 0; i < len; i++)
-		SVC_putc(tdsec->tsec_service_blk, (UCHAR) data->user_name[i]);
-
-/* Send the first name */
-	len = strlen(data->first_name);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) isc_spb_sec_firstname);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) len);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (len >> 8));
-	for (i = 0; i < len; i++)
-		SVC_putc(tdsec->tsec_service_blk, (UCHAR) data->first_name[i]);
-
-/* Send the middle name */
-	len = strlen(data->middle_name);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) isc_spb_sec_middlename);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) len);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (len >> 8));
-	for (i = 0; i < len; i++)
-		SVC_putc(tdsec->tsec_service_blk, (UCHAR) data->middle_name[i]);
-
-/* Send the last name */
-	len = strlen(data->last_name);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) isc_spb_sec_lastname);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) len);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (len >> 8));
-	for (i = 0; i < len; i++)
-		SVC_putc(tdsec->tsec_service_blk, (UCHAR) data->last_name[i]);
-
-/* Send the uid */
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) isc_spb_sec_userid);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) data->uid);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (data->uid >> 8));
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (data->uid >> 16));
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (data->uid >> 24));
-
-/* Send the gid */
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) isc_spb_sec_groupid);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) data->gid);
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (data->gid >> 8));
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (data->gid >> 16));
-	SVC_putc(tdsec->tsec_service_blk, (UCHAR) (data->gid >> 24));
-
+#define STUFF_USER(item) SVC_putc(tdsec->tsec_service_blk, item)
 #else
-	if (first) {
-		UTIL_print(GsecMsg26, NULL, NULL, NULL, NULL, NULL);
-		UTIL_print(GsecMsg27, NULL, NULL, NULL, NULL, NULL);
+#define STUFF_USER(item) ib_fputc(item, ib_stderr)
+#endif
+	if (tdsec->tsec_service_gsec) {
+		int i, len;
+		/* Send the username */
+		len = strlen(data->user_name);
+		STUFF_USER((UCHAR) isc_spb_sec_username);
+		STUFF_USER((UCHAR) len);
+		STUFF_USER((UCHAR) (len >> 8));
+		for (i = 0; i < len; i++)
+			STUFF_USER((UCHAR) data->user_name[i]);
+
+		/* Send the first name */
+		len = strlen(data->first_name);
+		STUFF_USER((UCHAR) isc_spb_sec_firstname);
+		STUFF_USER((UCHAR) len);
+		STUFF_USER((UCHAR) (len >> 8));
+		for (i = 0; i < len; i++)
+			STUFF_USER((UCHAR) data->first_name[i]);
+
+		/* Send the middle name */
+		len = strlen(data->middle_name);
+		STUFF_USER((UCHAR) isc_spb_sec_middlename);
+		STUFF_USER((UCHAR) len);
+		STUFF_USER((UCHAR) (len >> 8));
+		for (i = 0; i < len; i++)
+			STUFF_USER((UCHAR) data->middle_name[i]);
+
+		/* Send the last name */
+		len = strlen(data->last_name);
+		STUFF_USER((UCHAR) isc_spb_sec_lastname);
+		STUFF_USER((UCHAR) len);
+		STUFF_USER((UCHAR) (len >> 8));
+		for (i = 0; i < len; i++)
+			STUFF_USER((UCHAR) data->last_name[i]);
+
+		/* Send the uid */
+		STUFF_USER((UCHAR) isc_spb_sec_userid);
+		STUFF_USER((UCHAR) data->uid);
+		STUFF_USER((UCHAR) (data->uid >> 8));
+		STUFF_USER((UCHAR) (data->uid >> 16));
+		STUFF_USER((UCHAR) (data->uid >> 24));
+
+		/* Send the gid */
+		STUFF_USER((UCHAR) isc_spb_sec_groupid);
+		STUFF_USER((UCHAR) data->gid);
+		STUFF_USER((UCHAR) (data->gid >> 8));
+		STUFF_USER((UCHAR) (data->gid >> 16));
+		STUFF_USER((UCHAR) (data->gid >> 24));
+	}
+	else {
+		if (first) {
+			UTIL_print(GsecMsg26, NULL, NULL, NULL, NULL, NULL);
+			UTIL_print(GsecMsg27, NULL, NULL, NULL, NULL, NULL);
 /* msg26: "    user name                    uid   gid     full name" */
 /* msg27: "-------------------------------------------------------------------------------------------" */
-	}
+		}
 
-	util_output("%-31.31s %5d %5d      %s %s %s\n", data->user_name,
-				data->uid, data->gid, data->first_name, data->middle_name,
-				data->last_name);
-#endif
+		util_output("%-31.31s %5d %5d      %s %s %s\n", data->user_name,
+					data->uid, data->gid, data->first_name, data->middle_name,
+					data->last_name);
+	}
 }
 
 
