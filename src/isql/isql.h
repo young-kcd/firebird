@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.2 2001-07-12 05:46:04 bellardo Exp $
+ * $Id: isql.h,v 1.3 2001-08-27 15:29:18 skywalker Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -360,6 +360,6 @@ typedef struct sqltypes {
 #define NEWLINE 	"\n"
 #endif
 
-#define TAB "        "
+#define TAB_AS_SPACES "        "
 
 #endif /* _ISQL_ISQL_H_ */

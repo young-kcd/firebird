@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.fbutil,v 1.5 2001-08-21 09:41:00 skywalker Exp $
+#   $Id: Makefile.in.fbutil,v 1.6 2001-08-27 15:29:18 skywalker Exp $
 # 
 
 ROOT=../..
@@ -59,11 +59,20 @@ $(LIB)/fbutil_boot.a:	$(FBUTIL_Objects)
 jrdlib_dependencies: $(FBUTIL_Objects)
 
 
+libtestx.so.2 : $(FBUTIL_Objects)
+#	g++ -shared -o $@ $^ $(STATICLINK_LIBS)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) -o $@ $^
+
 # The following was just for testing
 
-testx: main.o $(FBUTIL_Objects)
-	g++ -o $@ $^ $(STATICLINK_LIBS)
+testx: main.o
+#	g++ -v -shared -o $@ $^ -L. -ltestx $(STATICLINK_LIBS)
+	g++ -v  -o $@ $^ -L. -ltestx.so.2
 
+testx2:
+	-rm libtestx.so testx
+	make libtestx.so.2
+	make testx
 
 
 clean:

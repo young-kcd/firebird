@@ -19,7 +19,6 @@
 #ifndef _JRD_GDSASSERT_H_
 #define _JRD_GDSASSERT_H_
 
-#ifndef assert
 
 #ifdef DEV_BUILD
 
@@ -38,15 +37,24 @@
 #else
 #define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "GDS Assertion failure: %s %ld\n", __FILE__, __LINE__); abort();}}
 #endif
-#define assert(ex)	_assert(ex)
 
 #else
 
 #define _assert(ex)				/* nothing */
-#define assert(ex)				/* nothing */
 
 #endif /* DEV_BUILD */
 
+#define gds_assert(ex) _assert(ex)
+
+
+/* It's a bit poor, since asset is a standard function but this was the way it
+   was done.  It is preferable to use the gds_assert(x) function, but I've left
+   the following for back compatibility since I don't want to wade through that
+   much code at the moment.
+*/
+
+#ifndef assert
+#define assert(ex)	_assert(ex)
 #endif /* assert */
 
 #endif /* _JRD_GDSASSERT_H_ */

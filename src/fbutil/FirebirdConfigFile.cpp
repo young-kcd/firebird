@@ -17,7 +17,6 @@ FirebirdConfigFile::FirebirdConfigFile()
 {
     isLoadedFlg = false;
     configFile = "/etc/firebird.conf";
-    cout << "Got ya" << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -198,11 +197,17 @@ void FirebirdConfigFile::checkLoadConfig() {
 
 void FirebirdConfigFile::loadConfig() {
 
+    isLoadedFlg = true;
+
     ifstream configFile(configFile.c_str());
 
+    if (!configFile) {
+        // config file does not exist, a warning message would be nice.
+        return;
+    }
     string inputLine;
     
-    while (!configFile.eof()) {
+    while (!configFile.eof() ) {
         getline(configFile, inputLine);
 
 		stripComments(inputLine);

@@ -170,7 +170,7 @@ keepOrigDBAPassword() {
     echo "daemon init routine in the file /etc/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
 
     chmod u=r,go= $DBAPasswordFile
@@ -197,7 +197,7 @@ generateNewDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     chmod u=r,go= $DBAPasswordFile
 
@@ -488,7 +488,7 @@ resetInetdServer() {
     # Make sure the links are in place 
     if  [ -z "$FirebirdInstallPrefix" ]
        then
-        FirebirdInstallPrefix=%prefix%
+        FirebirdInstallPrefix=@prefix@
     fi
 
 # Hopefully we are done with this link.
@@ -499,7 +499,7 @@ resetInetdServer() {
 #    fi 
 
 
-    FBRootDir=$FirebirdInstallPrefix/firebird
+    FBRootDir=$FirebirdInstallPrefix
     FBBin=$FBRootDir/bin
     RunUser=root
 #    RunUser=firebird

@@ -1,8 +1,12 @@
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(src/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
+AC_PREFIX_DEFAULT(/usr/local/firebird)
 
 AC_CONFIG_HEADER(src/include/gen/autoconfig.h:src/make.new/config/config.h.in)
+
+# possibly needed if we use install-sh program
+#AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_CANONICAL_SYSTEM
 
@@ -32,8 +36,9 @@ AC_CHECK_HEADERS(stdlib.h)
 AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
+AC_CHECK_HEADERS(readline/readline.h)
 
-#AC_CHECK_TYPE(socklen_t, int)
+
 AC_MSG_CHECKING(Checking for socklen_t type)
 AC_TRY_COMPILE([#include <stdlib.h>
 #include <sys/types.h>
@@ -65,11 +70,27 @@ FIREBIRD_ARCH_TYPE=classic
 #FIREBIRD_ARCH_TYPE=super
 AC_SUBST(FIREBIRD_ARCH_TYPE)
 
+
+
+CPU_TYPE=$host_cpu
+AC_SUBST(CPU_TYPE)
 # The following file defines the version number strings
 source src/misc/writeBuildNum.sh
+FIREBIRD_PACKAGE_VERSION="0a.Dev1"
+
+
+FIREBIRD_LIBGDS_SO=libgds.so.${FIREBIRD_VERSION}
+FIREBIRD_LIBGDS_SO_LNK=libgds.so
+FIREBIRD_LIBGDS_SO_X_LNK=libgds.so.${MajorVer}
+
+AC_SUBST(FIREBIRD_LIBGDS_SO)
+AC_SUBST(FIREBIRD_LIBGDS_SO_LNK)
+AC_SUBST(FIREBIRD_LIBGDS_SO_X_LNK)
 
 
 AC_SUBST(FIREBIRD_VERSION)
+AC_SUBST(FIREBIRD_PACKAGE_VERSION)
+
 
 #AC_DEFINE_UNQUOTED(FB_BUILD_TYPE, "$BuildType")
 #AC_DEFINE_UNQUOTED(FB_MAJOR_VER, "$MajorVer")
@@ -80,6 +101,9 @@ AC_SUBST(FIREBIRD_VERSION)
 #AC_DEFINE_UNQUOTED(FILE_VER_NUMBER, $FILE_VER_NUMBER)
 #AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
 #AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
+
+
+
 
 PROD_BUILD_FLG= 
 #PROD_BUILD_FLG=Y
@@ -108,6 +132,9 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/qli])
 AC_OUTPUT_COMMANDS([mkdir -p gen/utilities])
 AC_OUTPUT_COMMANDS([mkdir -p gen/fbutil])
 
+AC_OUTPUT_COMMANDS([mkdir -p gen/install])
+AC_OUTPUT_COMMANDS([mkdir -p gen/install/scripts])
+
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/include])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/intl])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/UDF])
@@ -116,6 +143,10 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/examples/v5])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/lib])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/misc])
 AC_OUTPUT_COMMANDS([mkdir -p gen/firebird/help])
+
+AC_OUTPUT_COMMANDS([chmod a+x gen/install/install.sh])
+AC_OUTPUT_COMMANDS([chmod a+x gen/install/scripts/*.sh])
+
 
 AC_OUTPUT( \
 src/make.rules:src/make.new/make.rules \
@@ -143,7 +174,14 @@ src/qli/Makefile:src/make.new/Makefile.in.qli \
 src/remote/Makefile:src/make.new/Makefile.in.remote \
 src/utilities/Makefile:src/make.new/Makefile.in.utilities \
 src/wal/Makefile:src/make.new/Makefile.in.wal \
-src/install/Makefile:src/install/Makefile.in:src/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in \
+src/install/Makefile:src/make.new/Makefile.in.install \
 src/Makefile:src/make.new/Makefile.in.firebird \
 Makefile:Makefile.in \
+gen/install/scripts/preinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preinstall.sh.in \
+gen/install/scripts/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/install.sh.in \
+gen/install/scripts/postinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postinstall.sh.in \
+gen/install/scripts/preuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preuninstall.sh.in \
+gen/install/scripts/postuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postuninstall.sh.in \
+gen/install/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/tarInstall.sh.in \
+src/install/misc/firebird.xinetd \
 )

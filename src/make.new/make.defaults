@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.8 2001-08-20 08:15:33 skywalker Exp $
+#   $Id: make.defaults,v 1.9 2001-08-27 15:29:18 skywalker Exp $
 # 
 
 
@@ -43,9 +43,27 @@
 
 #_____________________________________________________________________________
 
-FIREBIRD_ARCH_TYPE = @FIREBIRD_ARCH_TYPE@
-INSTALL_PREFIX = @prefix@
-FIREBIRD_VERSION = @FIREBIRD_VERSION@
+
+RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
+
+
+FirebirdInstallPrefix = @prefix@
+CpuType=@CPU_TYPE@
+FirebirdVersion=@FIREBIRD_VERSION@
+PackageVersion=@FIREBIRD_PACKAGE_VERSION@
+
+
+ArchType=@FIREBIRD_ARCH_TYPE@
+ifeq ($(ArchType),classic)
+	ArchPrefix=CS
+else
+	ArchPrefix=SS
+endif
+
+SharedLibraryName=@FIREBIRD_LIBGDS_SO@
+SharedLibrarySoName=@FIREBIRD_LIBGDS_SO_X_LNK@
+SharedLibraryBaseName=@FIREBIRD_LIBGDS_SO_LNK@
+
 
 
 # Default programs and tools to be used in the build process
@@ -82,7 +100,12 @@ EXEC_EXT=
 
 JRD_BOOT=		$(LIB)/jrd_boot.a
 
-LIBGDS_SO = $(LIB)/libgds.so
+
+
+LIBGDS_SO = $(LIB)/$(SharedLibraryName)
+LIBGDS_SO_X_LNK = $(LIB)/$(SharedLibrarySoName)
+LIBGDS_SO_LNK = $(LIB)/$(SharedLibraryBaseName)
+
 LIBGDS_A = $(LIB)/libgds.a
 
 
@@ -92,10 +115,15 @@ ifdef UseSharedLibraries
 #    LIBGDS_LINK = $(LIBGDS_SO)
     LIBGDS_LINK =
     LINK_LIBS := -L$(LIB) -lgds $(LINK_LIBS)
+
+#    LIBGDS_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib 
+#    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,$(FirebirdInstallPrefix)/lib 
+    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,/usr/lib 
 else
     LIBGDS_LA = $(LIBGDS_A)
     LIBGDS_DEP = $(LIBGDS_LA)
     LIBGDS_LINK =
+    LIBGDS_LINK_OPTIONS =
 endif
 
 

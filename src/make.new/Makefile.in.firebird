@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.9 2001-08-21 09:41:00 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.10 2001-08-27 15:29:18 skywalker Exp $
 # 
 
 ROOT=..
@@ -41,6 +41,11 @@ include     $(ROOT)/src/make.shared.variables
 ISC_USER=	sysdba
 ISC_PASSWORD=	masterkey
 LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib:/usr/lib
+
+
+#RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
+
+LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
 
 export ISC_USER
 export ISC_PASSWORD

@@ -51,8 +51,8 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        echo "An instance of the Firebird/InterBase Super server seems to be running." 
-        echo "Please quit all interbase applications and then proceed"
+        echo "An instance of the Firebird super server seems to be running." 
+        echo "Please quit all firebird applications and then proceed"
         exit 1 
     fi
 
@@ -60,9 +60,18 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        echo "An instance of the Firebird/InterBase server seems to be running." 
-        echo "Please quit all interbase applications and then proceed." 
+        echo "An instance of the Firebird  server seems to be running." 
+        echo "Please quit all Firebird applications and then proceed." 
         exit 1 
+    fi
+
+    checkString=`netstat -an | egrep '3050.*LISTEN'`
+
+    if [ ! -z "$checkString" ]
+      then
+        echo "An instance of the Firebird server seems to be running."
+        echo "Please quit all Firebird applications and then proceed."
+        exit 1
     fi
 
 
@@ -134,7 +143,7 @@ archivePriorInstallSystemFiles() {
         echo ""
         echo "--- Warning ----------------------------------------------"
         echo "    The installation target directory: $FBRootDir"
-        echo "    Already contains a prior installation of InterBase/Firebird."
+        echo "    Already contains a prior installation of Firebird."
         echo "    This and files found in /usr/include and /usr/lib will be"
         echo "    archived in the file : ${ArchiveMainFile}"
         echo "" 
@@ -160,7 +169,7 @@ archivePriorInstallSystemFiles() {
         fi
       done
 
-    for i in gds_pyxis.a gds.a libgds.so.0 libgds.so ib_util.so
+    for i in gds.a @FIREBIRD_LIBGDS_SO@ ib_util.so
       do
         DestFile=usr/lib/$i
         if [ -e $DestFile ]
@@ -218,9 +227,9 @@ checkForRPMInstall() {
 
     if  [ -z "$FirebirdInstallPrefix" ]
        then
-        FirebirdInstallPrefix=%prefix%
+        FirebirdInstallPrefix=@prefix@
     fi
-    FBRootDir=$FirebirdInstallPrefix/firebird
+    FBRootDir=$FirebirdInstallPrefix
     FBBin=$FBRootDir/bin
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
     ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"

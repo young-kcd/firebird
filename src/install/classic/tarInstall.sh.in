@@ -83,33 +83,28 @@ export InteractiveInstall
 
 checkInstallUser
 
-# Ok, If the env variable exists then we are doing
+# Ok, If the dir ../../gen exists then we are in the build tree
 # the install from the CVS tree
 
-if [ ! -z "$FirebirdInstallPrefix" ]
+if [ -d "../../gen" ]
   then
-    ScriptsSrcDir=.
-
-    ($ScriptsSrcDir/classic/CSpreinstall.sh )
-
-    ($ScriptsSrcDir/classic/CSinstall.sh)
-
-    ($ScriptsSrcDir/classic/CSpostinstall.sh)
-fi
-
-# Here we are installing from a install tar.gz file
-
-if [ -e scripts ]
-  then
+    FirebirdBuildPrefix=".."
+  else
     echo "Extracting install data"
     runAndCheckExit "tar -xzf firebird.tar.gz"
-
-    (./scripts/CSpreinstall.sh)
-    (./scripts/CSinstall.sh)
-    (./scripts/CSpostinstall.sh)
-
-    rm -rf firebird
+    FirebirdBuildPrefix="."
 fi
+
+export FirebirdBuildPrefix
+
+(./scripts/preinstall.sh)
+(./scripts/install.sh)
+(./scripts/postinstall.sh)
+
+#if [ -d firebird ]
+#  then
+#    rm -rf firebird
+#fi
 
 echo "Install completed"
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.jrd,v 1.7 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: Makefile.in.jrd,v 1.8 2001-08-27 15:29:18 skywalker Exp $
 # 
 
 ROOT=../..
@@ -95,10 +95,12 @@ jrdlib_main : $(LIBGDS_LA)
 
 
 $(LIBGDS_SO) : $(GDSLIB_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS)  -o $@ $^
+	$(LIB_LINK) $(LIBGDS_LINK_OPTIONS)  -o $@ $^
+	-$(LN) $(@F) $(LIBGDS_SO_X_LNK) 
+	-$(LN) $(notdir $(LIBGDS_SO_X_LNK)) $(LIBGDS_SO_LNK) 
 
 $(LIBGDS_A) : $(GDSLIB_Objects)
-	$(STATICLIB_LINK) $(LIB_LINK_OPTIONS)  $@ $^
+	$(STATICLIB_LINK) $(LIBGDS_LINK_OPTIONS)  $@ $^
 
 
 #____________________________________________________________________________

@@ -12,9 +12,8 @@
 
     if  [ -z "$FirebirdInstallPrefix" ]
        then
-        FirebirdInstallPrefix=%prefix%
+        FirebirdInstallPrefix=@prefix@
     fi
-
 
     if  [ -z "$FirebirdBuildPrefix" ]
        then
@@ -22,7 +21,7 @@
     fi
 
     BuildDir=$FirebirdBuildPrefix/firebird
-    DestDir=$FirebirdInstallPrefix/firebird
+    DestDir=$FirebirdInstallPrefix
 
 
 #  I think this is done as part of the build now.
@@ -91,12 +90,20 @@
 #    cp $BuildDir/include/gds.hxx $DestDir/include 
     cp $BuildDir/include/*.h $DestDir/include 
 
-    cp -f $BuildDir/lib/libgds.so /usr/lib/libgds.so.0 
-    if [ -L /usr/lib/libgds.so ]
+
+    cp -f $BuildDir/lib/@FIREBIRD_LIBGDS_SO@ /usr/lib/@FIREBIRD_LIBGDS_SO@
+    if [ -L /usr/lib/@FIREBIRD_LIBGDS_SO_LNK@ ]
       then
-        rm -f /usr/lib/libgds.so
+        rm -f /usr/lib/@FIREBIRD_LIBGDS_SO_LNK@
     fi
-    ln -s libgds.so.0 /usr/lib/libgds.so
+    ln -s @FIREBIRD_LIBGDS_SO@  /usr/lib/@FIREBIRD_LIBGDS_SO_LNK@
+
+
+    if [ -L /usr/lib/@FIREBIRD_LIBGDS_SO_X_LNK@ ]
+      then
+        rm -f /usr/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
+    fi
+    ln -s @FIREBIRD_LIBGDS_SO@  /usr/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
 
 #    cp -f $BuildDir/lib/gds.a /usr/lib/libgds.a 
     cp -f $BuildDir/lib/ib_util.so /usr/lib/libib_util.so 

@@ -9,8 +9,8 @@ service gds_db
 	user			= root
 	log_on_success		+= USERID
 	log_on_failure 		+= USERID
-	server			= /usr/local/firebird/bin/gds_inet_server
-#	server			= ${exec_prefix}/sbin/gds_inet_server
+	server			= @prefix@/bin/gds_inet_server
+#	server			= @sbindir@/gds_inet_server
 #	server			= @exec_bindir@/gds_inet_server
     disable         = no
 }

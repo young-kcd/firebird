@@ -1,0 +1,17 @@
+Summary: Firebird Relational Database Server and Client tools.
+Name: FirebirdCS 
+Version: 2.0.0
+Release: 0.Dev1
+Copyright: Distributable 
+Group: Applications/Databases 
+Source: FirebirdCS0.9src.tar.gz 
+URL: http://firebird.sourceforge.net 
+Prefix: /opt 
+AutoReqProv: no 
+BuildArchitectures: i386
+# BuildRoot: /var/tmp/%{name}-buildroot
+
+%description
+Firebird is a powerful, high-performance relational database designed to be embedded into
+applications on multiple platforms.  
+

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.9 2001-08-21 09:41:00 skywalker Exp $
+#   $Id: make.rules,v 1.10 2001-08-27 15:29:18 skywalker Exp $
 # 
 
 #____________________________________________________________________________
@@ -119,11 +119,11 @@ ifdef UseLibToolForLink
     STATICEXE_LINK = libtool @CC@ -all-static
 else
 
-    LIB_LINK= ld -shared 
+    LIB_LINK= g++ -shared
     STATICLIB_LINK= ar cruvs 
-    LIB_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib
+#    LIB_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib
 #    LIB_LINK_OPTIONS = -soname libgds.so.2 -rpath /usr/lib
-#    LIB_LINK_OPTIONS =
+    LIB_LINK_OPTIONS =
 
     EXE_LINK = g++
     STATICEXE_LINK = g++
@@ -135,10 +135,13 @@ endif
 
 
 LINK_OPTIONS=
-LINK_LIBS= -lm -lstdc++ -lgcc -lc -ldl -lcrypt
-#LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
-STATICLINK_LIBS = -lm -lstdc++ -lgcc -lc -ldl -lcrypt
 
+ReadlineLibs = -lreadline -ltermcap
+LINK_LIBS= -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
+STATICLINK_LIBS = -lm -lstdc++ $(ReadlineLibs) -lc -ldl -lcrypt
+
+#LINK_LIBS= -L$(LIB)  -lgds -lm -lc -ldl -lcrypt
+# -lgcc
 
 
 # These should no longer be required but I've left here

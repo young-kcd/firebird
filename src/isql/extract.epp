@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.2 2001-07-29 23:43:22 skywalker Exp $
+ * $Id: extract.epp,v 1.3 2001-08-27 15:29:18 skywalker Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -364,7 +364,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
         }
 	    else
 		{
-            sprintf (Print_buffer, ",%s%s", NEWLINE, TAB);
+            sprintf (Print_buffer, ",%s%s", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer); 
         }
 	
@@ -1420,11 +1420,11 @@ static void list_check(void)
 		{
             ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, (TEXT**) &SQL_identifier, DBL_QUOTE);
             sprintf (Print_buffer, "ALTER TABLE %s ADD %s%s", 
-                     SQL_identifier, NEWLINE, TAB);
+                     SQL_identifier, NEWLINE, TAB_AS_SPACES);
         }
 	    else
             sprintf (Print_buffer, "ALTER TABLE %s ADD %s%s", 
-                     TRG.RDB$RELATION_NAME, NEWLINE, TAB);
+                     TRG.RDB$RELATION_NAME, NEWLINE, TAB_AS_SPACES);
 	    ISQL_printf (Out, Print_buffer);
         
 	    /* If the name of the constraint is not INTEG..., print it */
@@ -1623,7 +1623,7 @@ static void list_create_db(void)
 		{ 
             if (FIL.RDB$FILE_SEQUENCE)
 			{ 
-                sprintf (Print_buffer, "%sFILE '%s' ", TAB, FIL.RDB$FILE_NAME);
+                sprintf (Print_buffer, "%sFILE '%s' ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
                 ISQL_printf (Out, Print_buffer);
             }
             else
@@ -1978,13 +1978,13 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
         
         if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 		{
-            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB);
+            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
             SHOW_print_metadata_text_blob (Out, &FLD.RDB$DEFAULT_SOURCE);
         }
         if (!FLD.RDB$VALIDATION_SOURCE.NULL)
 		{ 
-            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB);
+            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
             ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, (SLONG*) gds_trans);
         }
@@ -2169,13 +2169,13 @@ static void list_domains( SSHORT default_char_set_id)
         
 	    if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 		{ 
-            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB);
+            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
             SHOW_print_metadata_text_blob (Out, &FLD.RDB$DEFAULT_SOURCE);
         }
 	    if (!FLD.RDB$VALIDATION_SOURCE.NULL)
 		{ 
-            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB);
+            sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
             ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, (SLONG*) gds_trans);
         }
@@ -2293,7 +2293,7 @@ static void list_filters(void)
         
 	    sprintf (Print_buffer, "DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s%sENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
                  FIL.RDB$FUNCTION_NAME, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE, 
-                 NEWLINE, TAB, FIL.RDB$ENTRYPOINT, FIL.RDB$MODULE_NAME, Term, NEWLINE,
+                 NEWLINE, TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, FIL.RDB$MODULE_NAME, Term, NEWLINE,
                  NEWLINE);
 	    ISQL_printf (Out, Print_buffer);
         

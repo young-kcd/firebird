@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in,v 1.6 2001-08-20 08:15:32 skywalker Exp $
+#   $Id: Makefile.in.install,v 1.1 2001-08-27 15:29:18 skywalker Exp $
 # 
 
 ROOT=../..
@@ -43,7 +43,7 @@ FirebirdInstallPrefix=@prefix@
 
  @SET_MAKE@
 
-FIREBIRD=$(FirebirdInstallPrefix)/firebird
+FIREBIRD=$(FirebirdInstallPrefix)
 
 export -n FIREBIRD
 export -n INTERBASE
@@ -62,27 +62,17 @@ BuildRoot=$(GEN_ROOT)
 InstallRoot=.
 
 
-FirebirdVersion=@FIREBIRD_VERSION@
-ArchType=@FIREBIRD_ARCH_TYPE@
-
-PackageVersion=$(FirebirdVersion)-1
-
 FirebirdBuildPrefix=$(GEN_ROOT)
 
-export FirebirdBuildPrefix
-export FirebirdInstallPrefix
-export PackageVersion
+#export FirebirdBuildPrefix
+#export FirebirdInstallPrefix
+#export PackageVersion
 
 
-ifeq ($(ArchType),classic)
-	ArchPrefix=CS
-else
-	ArchPrefix=SS
-endif
 
 
-# This means something like: FirebirdCS-2.0.0-1.tar.gz
-TarFile=Firebird$(ArchPrefix)-$(PackageVersion).tar.gz
+# This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
+TarFile=Firebird$(ArchPrefix)-$(FirebirdVersion)-$(PackageVersion).$(CpuType).tar.gz
 PkgSrcDir=$(InstallRoot)/$(ArchType)
 
 
@@ -97,7 +87,7 @@ runinstall: $(LastInstallFlg)
 
 
 $(LastInstallFlg) : $(BIN)/gsec
-	$(ArchType)/$(ArchPrefix)TarInstall.sh
+	(cd $(GEN_ROOT)/install; ./install.sh)
 #	(cd $(ROOT); sh $(InstallRoot)/classic/CSTarInstall.sh)
 #	touch $(LastInstallFlg)
 
@@ -116,11 +106,6 @@ $(TarFile) :  buildInstallDir
 TarInstallDir=$(GEN_ROOT)/install
 
 buildInstallDir:
-	mkdir -p $(TarInstallDir)/scripts
 #	(cd $(BuildRoot); tar -czf - interbase ) | cat > $(CSTarInstallDir)/interbase.tar.gz
-	cp $(PkgSrcDir)/??preinstall.sh $(TarInstallDir)/scripts
-	cp $(PkgSrcDir)/??install.sh $(TarInstallDir)/scripts
-	cp $(PkgSrcDir)/??postinstall.sh $(TarInstallDir)/scripts
-	cp $(PkgSrcDir)/??TarInstall.sh $(TarInstallDir)/install.sh
 	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
 
