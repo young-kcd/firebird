@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.30 2003-06-24 10:33:04 dimitr Exp $
+  $Id: isql.epp,v 1.31 2003-07-06 07:05:22 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -2705,7 +2705,7 @@ static void do_isql(void)
 
 /* Should have a valid Temp file pointer */
 	fb_assert(Ofp != (IB_FILE *) - 1);
-		ib_fclose(Ofp);
+	ib_fclose(Ofp);
 	unlink(Tmpfile);
 
 	if (errbuf)
