@@ -2517,7 +2517,9 @@ static bool delete_procedure(	TDBB	tdbb,
 		// used by other compiled requests
 		if (procedure->prc_use_count && !MET_clear_cache(tdbb, procedure))
 		{
-			gds__log("Deleting unfreed procedure %s",work->dfw_name);
+#ifdef DEV_BUILD
+			gds__log("Deleting unfreed procedure %s", work->dfw_name);
+#endif
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
 			if (procedure->prc_existence_lock) {
@@ -3859,7 +3861,9 @@ static bool modify_procedure(	TDBB	tdbb,
 #endif /* SUPERSERVER */
 		if (procedure->prc_use_count && !MET_clear_cache(tdbb,procedure))
 		{
-			gds__log("Modifying unfreed procedure %s",work->dfw_name);
+#ifdef DEV_BUILD
+			gds__log("Modifying unfreed procedure %s", work->dfw_name);
+#endif
 			USHORT prc_alter_count = procedure->prc_alter_count;
 			if (prc_alter_count > MAX_PROC_ALTER)
 			{
