@@ -4650,7 +4650,7 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list, D
  *
  **************************************/
 	DSQL_NOD node, *ptr, *end, *ptr2, node1, node2;
-	ULONG position;
+	SLONG position;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -4677,16 +4677,8 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list, D
 		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; /* asc/desc flag */
 		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; /* nulls first/last flag */
 		node1 = node1->nod_arg[e_order_field];
-		if (node1->nod_type == nod_field_name) {
-			if (parent_context) {			
-				node2->nod_arg[e_order_field] = copy_field(pass1_field(request, node1, 0), parent_context);
-			}
-			else {
-				node2->nod_arg[e_order_field] = pass1_field(request, node1, 0);
-			}
-        }
-		else if (node1->nod_type == nod_position) {
-			position = (ULONG) (node1->nod_arg[0]);
+		if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long) {
+			position = (SLONG) (node1->nod_arg[0]);
 			if ((position < 1) || !s_list
 				|| (position >
 					(ULONG) s_list->nod_count)) ERRD_post(gds_sqlerr,
@@ -4702,11 +4694,14 @@ static DSQL_NOD pass1_sort( DSQL_REQ request, DSQL_NOD input, DSQL_NOD s_list, D
 				node2->nod_arg[e_order_field] =
 					PASS1_node(request, s_list->nod_arg[position - 1], 0);
 			}
-		}
-		else
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
-					  0);
+		} else {
+			if (parent_context) {			
+				node2->nod_arg[e_order_field] = copy_field(PASS1_node(request, node1, 0), parent_context);
+			}
+			else {
+				node2->nod_arg[e_order_field] = PASS1_node(request, node1, 0);
+			}
+        }
 
 		if ((*ptr)->nod_arg[e_order_collate]) {
 			DEV_BLKCHK((*ptr)->nod_arg[e_order_collate], dsql_type_str);
@@ -4824,7 +4819,7 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 	DSQL_CTX union_context;
 	MAP map_;
 	SSHORT count = 0;
-	ULONG number;
+	SLONG number;
 	SSHORT i, j;				/* for-loop counters */
 	TSQL tdsql;
 	DLLS base;
@@ -4935,11 +4930,11 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 			 ptr < end; ptr++, uptr++) {
 			order1 = *ptr;
 			position = order1->nod_arg[e_order_field];
-			if (position->nod_type != nod_position)
+			if (position->nod_type != nod_constant || position->nod_desc.dsc_dtype != dtype_long)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */
 						  0);
-			number = (ULONG) position->nod_arg[0];
+			number = (SLONG) position->nod_arg[0];
 			if (number < 1 || number > union_items->nod_count)
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 						  gds_arg_gds, gds_dsql_command_err, gds_arg_gds, gds_order_by_err,	/* invalid ORDER BY clause */

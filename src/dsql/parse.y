@@ -2698,9 +2698,7 @@ order_list	: order_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-order_item	: column_name collate_clause order_direction nulls_placement
-			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2, $4); }
-		| ordinal collate_clause order_direction nulls_placement
+order_item	: value collate_clause order_direction nulls_placement
 			{ $$ = make_node (nod_order, e_order_count, $1, $3, $2, $4); }
 		;
 
