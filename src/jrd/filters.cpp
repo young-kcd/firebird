@@ -41,7 +41,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd_proto.h"
 
-static ISC_STATUS caller(USHORT, CTL, USHORT, SCHAR *, USHORT *);
+static ISC_STATUS caller(USHORT, CTL, USHORT, UCHAR*, USHORT*);
 static void dump_blr(void*, SSHORT, const char*);
 static void move(const char*, char*, USHORT);
 static ISC_STATUS string_filter(USHORT, CTL);
@@ -68,7 +68,7 @@ static const UCHAR char_tab[128] =
 /* Miscellaneous filter stuff (should be moved someday) */
 
 typedef struct tmp {
-	struct tmp* tmp_next;
+	tmp* tmp_next;
 	USHORT tmp_length;
 	TEXT tmp_string[1];
 } *TMP;
@@ -133,7 +133,7 @@ ISC_STATUS filter_acl(USHORT action, CTL control)
  *	Get next segment from a access control list.
  *
  **************************************/
-	SCHAR *p, *temp, c, buffer[512];
+	UCHAR *p, *temp, c, buffer[512];
 	TEXT line[256], *out;
 	SLONG l;
 	USHORT length;
@@ -147,7 +147,7 @@ ISC_STATUS filter_acl(USHORT action, CTL control)
 
 	l = control->ctl_source_handle->ctl_total_length;
 	p = temp =
-		(l <= (SLONG) sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
+		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!p)						/* NOMEM: */
 		return isc_virmemexh;
@@ -216,7 +216,7 @@ ISC_STATUS filter_blr(USHORT action, CTL control)
  *	doesn't complain.
  *
  **************************************/
-	SCHAR *temp, buffer[512];
+	UCHAR *temp, buffer[512];
 	USHORT length;
 	SLONG l;
 	ISC_STATUS status;
@@ -227,7 +227,7 @@ ISC_STATUS filter_blr(USHORT action, CTL control)
 /* Initialize for retrieval */
 
 	l = 1 + control->ctl_source_handle->ctl_total_length;
-	temp = (l <=(SLONG) sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
+	temp = (l <=(SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!temp)					/* NOMEM: */
 		return isc_virmemexh;
@@ -237,8 +237,7 @@ ISC_STATUS filter_blr(USHORT action, CTL control)
 	if (!status) {
 		if ((l > length) && (temp[length - 1] != blr_eoc))
 			temp[length] = blr_eoc;
-		gds__print_blr(reinterpret_cast<const UCHAR*>(temp),
-					   dump_blr, control, 0);
+		gds__print_blr(temp, dump_blr, control, 0);
 	}
 
 	control->ctl_data[1] = control->ctl_data[0];
@@ -279,7 +278,7 @@ ISC_STATUS filter_format(USHORT action, CTL control)
 		status = caller(ACTION_get_segment,
 						control,
 						sizeof(desc),
-						reinterpret_cast < char *>(&desc), &length);
+						reinterpret_cast<UCHAR*>(&desc), &length);
 		if (status != FB_SUCCESS && status != isc_segment)
 			return status;
 		if (desc.dsc_dtype)
@@ -332,7 +331,10 @@ ISC_STATUS filter_runtime(USHORT action, CTL control)
  **************************************/
 	USHORT length, buff_len, n, blr;
 	ISC_STATUS status;
-	TEXT *p, *q, *buff, temp[256], line[128];
+	TEXT *q, line[128];
+	UCHAR* p;
+	UCHAR temp[256];
+	UCHAR* buff;
 
 	if (action == ACTION_close)
 		return string_filter(action, control);
@@ -438,8 +440,7 @@ ISC_STATUS filter_runtime(USHORT action, CTL control)
 	}
 
 	if (blr) {
-		gds__print_blr(reinterpret_cast<const UCHAR*>(p),
-					   dump_blr, control, 0);
+		gds__print_blr(p, dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}
 
@@ -551,11 +552,8 @@ ISC_STATUS filter_text(USHORT action, CTL control)
 					((l = (control->ctl_buffer_length - buffer_used)) > 0)))
 	{
 		l = control->ctl_buffer_length - buffer_used;
-		status = caller(ACTION_get_segment,
-						control,
-						l,
-						reinterpret_cast <
-						char *>(control->ctl_buffer + buffer_used), &l);
+		status = caller(ACTION_get_segment, control, l,
+						control->ctl_buffer + buffer_used, &l);
 		if (status == isc_segment)
 			control->ctl_data[2] = isc_segment;
 		else if (status)
@@ -878,7 +876,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 		/* hand the text off to the next stage of the filter */
 
 		status = caller(ACTION_put_segment, control, result_length,
-						(SCHAR *) aux->ctlaux_buffer1, NULL);
+						aux->ctlaux_buffer1, NULL);
 
 		if (status)
 			return status;
@@ -942,7 +940,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 		status = caller(ACTION_get_segment,
 						control,
 						(USHORT) (aux->ctlaux_buffer1_len - length),
-						(SCHAR *) (aux->ctlaux_buffer1 + length),
+						aux->ctlaux_buffer1 + length,
 						(USHORT *) & bytes_read_from_source);
 		if (status == isc_segment)	/* source has more segment bytes */
 			aux->ctlaux_source_blob_status = status;
@@ -1019,7 +1017,7 @@ ISC_STATUS filter_trans(USHORT action, CTL control)
  *	Pretty print a transaction description.
  *
  **************************************/
-	SCHAR *p, *end, *temp, c, buffer[512];
+	UCHAR *p, *end, *temp, c, buffer[512];
 	TEXT *out, line[256];
 	USHORT length;
 	ISC_STATUS status;
@@ -1032,7 +1030,7 @@ ISC_STATUS filter_trans(USHORT action, CTL control)
 
 	l = control->ctl_source_handle->ctl_total_length;
 	p = temp =
-		(l <= (SLONG) sizeof(buffer)) ? buffer : (SCHAR *) gds__alloc((SLONG) l);
+		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 /* FREE: at procedure exit */
 	if (!p)						/* NOMEM: */
 		return isc_virmemexh;
@@ -1063,7 +1061,7 @@ ISC_STATUS filter_trans(USHORT action, CTL control)
 
 			case TDR_TRANSACTION_ID:
 				id =
-					gds__vax_integer(reinterpret_cast<const UCHAR*>(p), length);
+					gds__vax_integer(p, length);
 				sprintf(out, "    Transaction id: %ld", id);
 				break;
 
@@ -1091,7 +1089,7 @@ static ISC_STATUS caller(
 					 USHORT action,
 					 CTL control,
 					 USHORT buffer_length,
-					 SCHAR * buffer, USHORT * return_length)
+					 UCHAR* buffer, USHORT* return_length)
 {
 /**************************************
  *
@@ -1108,7 +1106,7 @@ static ISC_STATUS caller(
 
 	source = control->ctl_source_handle;
 	source->ctl_status = control->ctl_status;
-	source->ctl_buffer = reinterpret_cast < UCHAR * >(buffer);
+	source->ctl_buffer = buffer;
 	source->ctl_buffer_length = buffer_length;
 
 	status =
@@ -1252,7 +1250,7 @@ static void string_put(CTL control, const char* line)
 	USHORT l;
 
 	l = strlen(line);
-	string = (TMP) gds__alloc((SLONG) (sizeof(struct tmp) + l));
+	string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + l));
 /* FREE: on ACTION_close in string_filter() */
 	if (!string) {				/* NOMEM: */
 		fb_assert(FALSE);			/* out of memory */
