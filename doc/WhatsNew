@@ -84,11 +84,6 @@
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
-    * Fixed unregistered bug.
-        Memory leak in conversion from string to blob.
-      Contributor(s):
-        Nickolay Samofatov <nickolay at broadviewsoftware.com>
-
     * Fixed bug SF #750664.
         Problems with generators in a read-only database.
       Contributor(s):

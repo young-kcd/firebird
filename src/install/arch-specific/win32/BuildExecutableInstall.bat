@@ -32,15 +32,22 @@
 
 :SET_PARAMS
 ::Assume we are preparing a production build
-@set BUILDTYPE=release
+set BUILDTYPE=release
 ::Don't ship pdb files by default
-@set SHIP_PDB=no_pdb
-
+set SHIP_PDB=no_pdb
+::Reset "make" vars to null
+if DEFINED FBBUILD_ZIP_PACK (set FBBUILD_ZIP_PACK=)
+if DEFINED FBBUILD_ISX_PACK (set FBBUILD_ISX_PACK=)
+if DEFINED FBBUILD_EMB_PACK (set FBBUILD_EMB_PACK=)
 
 :: See what we have on the command line
-for %%v in ( %1 %2 )  do (
+for %%v in ( %1 %2 %3 %4 %5 )  do (
   ( if /I "%%v"=="DEBUG" (set BUILDTYPE=debug) )
   ( if /I "%%v"=="PDB" (set SHIP_PDB=ship_pdb) )
+  ( if /I "%%v"=="ZIP" (set FBBUILD_ZIP_PACK=1) )
+  ( if /I "%%v"=="ISX" (set FBBUILD_ISX_PACK=1) )
+  ( if /I "%%v"=="EMB" (set FBBUILD_EMB_PACK=1) )
+  ( if /I "%%v"=="ALL" ( (set FBBUILD_ZIP_PACK=1) & (set FBBUILD_ISX_PACK=1) & (set FBBUILD_EMB_PACK=1) ) )
 )
 @goto :EOF
 
@@ -146,7 +153,7 @@ for %%v in (fbclient ib_util) do @(
 
 if DEFINED FB_EXTERNAL_DOCS (
 	@echo copying pdf docs.
-	@for %%v in (QuickStartGuide.pdf Firebird_v1.5.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
+	@for %%v in (QuickStartGuide.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
 ) else (
  @echo.
  @echo The FB_EXTERNAL_DOCS environment var is not defined
@@ -163,8 +170,8 @@ if DEFINED FB_EXTERNAL_DOCS (
 ::rename the examples directory
 :: /Y is not necessary in a script, but is added to document 
 :: that no prompting will take place
-if EXIST output\v5_examples (
-@move /Y output\v5_examples output\examples > nul 2>&1
+if EXIST %ROOT_PATH%\output\v5_examples (
+@move /Y %ROOT_PATH%\output\v5_examples %ROOT_PATH%\output\examples > nul 2>&1
 )
 
 @goto :EOF
@@ -250,11 +257,13 @@ endlocal
 @goto :EOF
 
 
-:ZIP_PACK
-::=======
+:GEN_ZIP
+::======
+
+@Echo Generating zip package
 :: Generate the directory tree to be zipped
 @mkdir %ROOT_PATH%\zip_pack 2>nul
-@copy /Y %ROOT_PATH%\output %ROOT_PATH%\zip_pack
+@copy /Y %ROOT_PATH%\output %ROOT_PATH%\zip_pack > nul
 for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
 	@mkdir %ROOT_PATH%\zip_pack\%%v 2>nul
 	@copy /Y %ROOT_PATH%\output\%%v\*.* %ROOT_PATH%\zip_pack\%%v\ > nul
@@ -270,17 +279,26 @@ for %%v in (bin\gpre_boot.exe bin\gpre_static.exe doc\installation_readme.txt ) 
 
 :: Add license
 for %%v in (IPLicense.txt IDPLicense.txt ) do ( 
-	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\zip_pack\%%v 
+	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\zip_pack\%%v > nul 
 )
 
 ::And readme 
-@copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\zip_pack\
+@copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\zip_pack\ > nul
 
-::Now we can zip it up and copy the package to the install images directory.
+goto :EOF
 
+
+:ZIP_PACK
+::=======
+if "%FBBUILD_ZIP_PACK%" NEQ "1" goto :EOF
 if defined PKZIP (
-	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip %ROOT_PATH%\zip_pack\*.*	
-	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip %ROOT_PATH%\zip_pack\*.*	
+	if "%SHIP_PDB%" == "ship_pdb" (
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip	
+		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32_pdb.zip %ROOT_PATH%\zip_pack\*.*
+	) else (
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip	
+	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_win32.zip %ROOT_PATH%\zip_pack\*.*
+	)
 ) else (
 @Echo.
 @Echo Couldn't find pkzip.
@@ -290,24 +308,85 @@ if defined PKZIP (
 
 @goto :EOF
 
+
+:GEN_EMBEDDED
+::===========
+:: Generate the directory tree for the embedded zip pack
+@mkdir %ROOT_PATH%\emb_pack 2>nul
+
+for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %ROOT_PATH%\output\%%v %ROOT_PATH%\emb_pack\%%v > nul)
+
+for %%v in ( doc intl udf ) do (@mkdir %ROOT_PATH%\emb_pack\%%v 2>nul)
+
+@copy /Y %ROOT_PATH%\temp\release\firebird\bin\fbembed.* %ROOT_PATH%\emb_pack > nul
+@copy /Y %ROOT_PATH%\output\doc\Firebird*.pdf %ROOT_PATH%\emb_pack\doc\ > nul
+@copy /Y %ROOT_PATH%\output\intl\*.* %ROOT_PATH%\emb_pack\intl\ > nul
+@copy /Y %ROOT_PATH%\output\udf\*.* %ROOT_PATH%\emb_pack\udf\ > nul
+
+
+::grab install notes for embedded zip pack
+@copy %ROOT_PATH%\doc\README.user.embedded %ROOT_PATH%\emb_pack\doc\README_embedded.txt > nul
+@copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\emb_pack\doc\WhatsNew.txt > nul
+
+:: Add license
+for %%v in (IPLicense.txt IDPLicense.txt ) do ( 
+	@copy %ROOT_PATH%\src\install\misc\%%v %ROOT_PATH%\emb_pack\%%v > nul 
+)
+
+::And readme 
+@copy %ROOT_PATH%\src\install\arch-specific\win32\readme.txt %ROOT_PATH%\emb_pack\ > nul
+
+
+@goto :EOF
+
+
+:EMB_PACK
+::=======
+if "%FBBUILD_EMB_PACK%" NEQ "1" goto :EOF
+@echo Now building embedded package
+
+::Now we can zip it up and copy the package to the install images directory.
+if defined PKZIP (
+	if "%SHIP_PDB%" == "ship_pdb" (
+		del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip 	
+		%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32_pdb.zip %ROOT_PATH%\emb_pack\*.*
+	) else (
+	 	del %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32.zip
+	 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %ROOT_PATH%\builds\win32\install_image\Firebird-%PRODUCT_VER_STRING%_embed_win32.zip %ROOT_PATH%\emb_pack\*.*
+	)		
+) else (
+@Echo.
+@Echo Couldn't find pkzip.
+@Echo.
+)
+
+goto :EOF
+
+
 :TOUCH_ALL
 ::========
 ::Set file timestamp to something meaningful.
 ::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\output\*.*)) 
+	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\output\*.*) 
+	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\emb_pack\*.*) 
+	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\zip_pack\*.*)
+)
 @goto :EOF
 
 
-:RUN_ISX
+:ISX_PACK
 ::=======
 :: Now let's go and build the installable .exe
 :: Obviously this will fail if InnoSetup 
 :: Extensions is not installed.
 ::=================================================
-
-start FirebirdInstall_%PRODUCT_VER_STRING%.iss
+if "%FBBUILD_ISX_PACK%" NEQ "1" goto :EOF
+if NOT DEFINED INNO_SETUP_PATH (@echo INNO_SETUP_PATH variable not defined & goto :EOF)
+@Echo Now let's compile the InnoSetup scripts
+@Echo.
+%INNO_SETUP_PATH%\iscc %ROOT_PATH%\src\install\arch-specific\win32\FirebirdInstall_%PRODUCT_VER_STRING%.iss
 @goto :EOF
 
 
@@ -319,10 +398,22 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 @echo   Currently the recognised params are:
 @echo.
 @echo       DEBUG  Use binaries from 'debug' dir, not 'release' dir.
-@echo              (Requires a debug build.)
+@echo              (Requires a debug build. NOTE: A debug build is  
+@echo               not required to create packages with debug info.)
 @echo.    
 @echo       PDB    Include pdb files. 
-@echo              (Doubles the size of the installable executable.)
+@echo              (These files roughly double the size of the package.)
+@echo.
+@echo       ISX    Create installable binary from InnoSetup Extensions compiler.
+@echo              (You need to set the INNO_SETUP_PATH environment variable.)
+@echo.
+@echo       ZIP    Create Zip package.
+@echo              (PKZIP is currently used and the PKZIP env var must be set.)
+@echo.
+@echo       EMB    Create Embedded package. 
+@echo              (PKZIP is currently used and the PKZIP env var must be set.)
+@echo.
+@echo       ALL    Build InnoSetup, Zip and Embedded packages. 
 @echo.
 @echo       HELP   This help screen.
 @echo.
@@ -343,37 +434,41 @@ start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 
 @Echo.
 @Echo Reading command-line parameters
-@(@call :SET_PARAMS %1 %2 )|| (@goto :EOF) 
+@(@call :SET_PARAMS %1 %2 )|| (@echo Error calling SET_PARAMS & @goto :EOF) 
 @Echo.
 @Echo Setting version number
-@(@call :SED_MAGIC ) || (@goto :EOF)
+@(@call :SED_MAGIC ) || (@echo Error calling SED_MAGIC & @goto :EOF)
 @Echo.
 @Echo Copying additonal files needed for installation, documentation etc.
-@(@call :COPY_XTRA ) || (@goto :EOF)
+@(@call :COPY_XTRA ) || (@echo Error calling COPY_XTRA & @goto :EOF)
 @Echo.
 @Echo Concatenating header files for ibase.h
-@(@call :IBASE_H ) || (@goto :EOF)
+@(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)
 @Echo.
 @Echo alias conf
-@(@call :ALIAS_CONF ) || (@goto :EOF)
+@(@call :ALIAS_CONF ) || (@echo Error calling ALIAS_CONF & @goto :EOF)
 @Echo.
 @Echo gbak_sec_db
-@(@call :GBAK_SEC_DB ) || (@goto :EOF)
+@(@call :GBAK_SEC_DB ) || (@echo Error calling GBAK_SEC_DB & @goto :EOF)
 @Echo.
 @Echo fb_msg
-@(@call :FB_MSG ) || (@goto :EOF)
-::@Echo.
+@(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
+@Echo.
+@Echo gen_embedded
+@(@call :GEN_EMBEDDED ) || (@echo Error calling GEN_EMBEDDED & @goto :EOF)
+@Echo.
+@Echo gen_zip
+@(@call :GEN_ZIP ) || (@echo Error calling GEN_ZIP & @goto :EOF)
 ::@Echo Creating .local files for libraries
-::@(@call :TOUCH_LOCAL ) || (@goto :EOF)
+::@(@call :TOUCH_LOCAL ) || (@echo Error calling TOUCH_LOCAL & @goto :EOF)
 @Echo.
-@(@call :TOUCH_ALL ) || (@goto :EOF)
+@(@call :TOUCH_ALL ) || (@echo Error calling TOUCH_ALL & @goto :EOF)
 @Echo.
-@Echo Generating zip package
-@(@call :ZIP_PACK ) || (@goto :EOF)
+@(@call :ZIP_PACK ) || (@echo Error calling ZIP_PACK & @goto :EOF)
 @Echo.
-@Echo Now let's run InnoSetup extensions
+@(@call :EMB_PACK ) || (@echo Error calling EMB_PACK & @goto :EOF)
 @Echo.
-@(@call :RUN_ISX ) || (@goto :EOF)
+@(@call :ISX_PACK ) || (@echo Error calling ISX_PACK & @goto :EOF)
 @goto :EOF
 
 :END
