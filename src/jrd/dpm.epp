@@ -433,8 +433,11 @@ int DPM_compress( thread_db* tdbb, data_page* page)
 	{
 		if (index->dpg_offset)
 		{
-			const SSHORT l = index->dpg_length;
-			space -= ROUNDUP(l, ODS_ALIGNMENT);
+			// 11-Aug-2004. Nickolay Samofatov.
+			// Copy block of pre-aligned length to avoid putting rubbish from stack into database
+			// This should also work just a little bit faster too.
+			const SSHORT l = ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
+			space -= l;
 			MOVE_FAST((UCHAR *) page + index->dpg_offset, temp_page + space,
 					  l);
 			index->dpg_offset = space;
