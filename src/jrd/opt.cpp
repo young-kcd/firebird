@@ -101,7 +101,7 @@ static USHORT distribute_equalities(LLS *, CSB, USHORT);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
 static BOOLEAN dump_rsb(JRD_REQ, RSB, SCHAR **, SSHORT *);
 static BOOLEAN estimate_cost(TDBB, OPT, USHORT, double *, double *);
-static bool expression_contains(JRD_NOD, NOD_T);
+static bool expression_possible_unknown(JRD_NOD);
 static bool expression_contains_stream(JRD_NOD, UCHAR);
 #ifdef EXPRESSION_INDICES
 static BOOLEAN expression_equal(TDBB, JRD_NOD, JRD_NOD);
@@ -447,7 +447,7 @@ RSB OPT_compile(TDBB tdbb,
 					LLS* stackItem = &parent_stack;
 					for (; *stackItem; stackItem = &(*stackItem)->lls_next) {
 						JRD_NOD deliverNode = (JRD_NOD) (*stackItem)->lls_object;
-						if (!expression_contains(deliverNode, nod_missing)) {
+						if (!expression_possible_unknown(deliverNode)) {
 							LLS_PUSH(deliverNode, &deliverStack);
 						}
 					}
@@ -568,6 +568,16 @@ RSB OPT_compile(TDBB tdbb,
 	// AB: Add parent conjunctions to conjunct_stack, keep in mind
 	// the outer-streams! For outer streams put missing (IS NULL)
 	// conjunctions in the missingStack.
+	//
+	// opt_rpt[0..opt_base_conjuncts-1] = defined conjunctions to this stream
+	// opt_rpt[0..opt_base_parent_conjuncts-1] = defined conjunctions to this 
+	//   stream and allowed distributed conjunctions (with parent)
+	// opt_rpt[0..opt_base_missing_conjuncts-1] = defined conjunctions to this 
+	//   stream and allowed distributed conjunctions and allowed parent
+	// opt_rpt[0..opt_conjuncts_count-1] = all conjunctions
+	//
+	// allowed = booleans that can never evaluate to NULL/Unknown or turn
+	//   NULL/Unkown into a True or False.
 	SLONG distributed_count = 0;
 	LLS missingStack = NULL;
 	if (parent_stack && parent_stack->lls_object)
@@ -577,7 +587,7 @@ RSB OPT_compile(TDBB tdbb,
 		{
 			node = (JRD_NOD) parent_stack->lls_object;
 			if ((rse->rse_jointype != blr_inner) &&
-				expression_contains(node, nod_missing))
+				expression_possible_unknown(node))
 			{
 				// parent missing conjunctions shouldn't be 
 				// distributed to FULL OUTER JOIN streams at all
@@ -2683,18 +2693,18 @@ static BOOLEAN estimate_cost(TDBB tdbb,
 }
 
 
-static bool expression_contains(JRD_NOD node, NOD_T node_type)
+static bool expression_possible_unknown(JRD_NOD node)
 {
 /**************************************
  *
- *      e x p r e s s i o n _ c o n t a i n s
+ *      e x p r e s s i o n _ p o s s i b l e _ u n k n o w n
  *
  **************************************
  *
  * Functional description
- *  Search if somewhere in the expression the give 
- *  node_type is burried. Return true if a unknown
- *  node is passed.
+ *  Check if expression could return NULL
+ *  or expression can turn NULL into 
+ *  a True/False.
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
@@ -2703,163 +2713,74 @@ static bool expression_contains(JRD_NOD node, NOD_T node_type)
 		return false;
 	}
 
-	if (node->nod_type == node_type) {
-		return true;
-	}
-	else {
+	switch (node->nod_type) {
 
-		RSE rse = NULL;
+		case nod_cast:
+			return expression_possible_unknown(node->nod_arg[e_cast_source]);
 
-		switch (node->nod_type) {
+		case nod_extract:
+			return expression_possible_unknown(node->nod_arg[e_extract_value]);
 
-			case nod_cast:
-				return expression_contains(node->nod_arg[e_cast_source], node_type);
+		case nod_field:
+		case nod_rec_version:
+		case nod_dbkey:
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			return false;
 
-			case nod_extract:
-				return expression_contains(node->nod_arg[e_extract_value], node_type);
+		case nod_or:
+		case nod_and:
 
-			case nod_function:
-				return expression_contains(node->nod_arg[e_fun_args], node_type);
+		case nod_add:
+		case nod_add2:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_subtract:
+		case nod_subtract2:
 
-			case nod_procedure:
-				return expression_contains(node->nod_arg[e_prc_inputs], node_type);
+		case nod_upcase:
+		case nod_substr:
 
-			case nod_any:
-			case nod_unique:
-			case nod_ansi_any:
-			case nod_ansi_all:
-			case nod_exists:
-				return expression_contains(node->nod_arg[e_any_rse], node_type);
-
-			case nod_field:
-			case nod_dbkey:
-			case nod_argument:
-			case nod_current_date:
-			case nod_current_role:
-			case nod_current_time:
-			case nod_current_timestamp:
-			case nod_gen_id:
-			case nod_gen_id2:
-			case nod_internal_info:
-			case nod_literal:
-			case nod_null:
-			case nod_user_name:
-			case nod_variable:
-				return false;
-
-			case nod_rse:
-				rse = (RSE) node;
-				break;
-
-			case nod_average:
-			case nod_count:
-			case nod_count2:
-			case nod_from:
-			case nod_max:
-			case nod_min:
-			case nod_total:
-				{
-					JRD_NOD nodeDefault = node->nod_arg[e_stat_rse];
-					if (nodeDefault && expression_contains(nodeDefault, node_type)) {
-						return true;
-					}
-					rse = (RSE) node->nod_arg[e_stat_rse];
-					JRD_NOD value = node->nod_arg[e_stat_value];
-					if (value && expression_contains(value, node_type)) {
-						return true;
-					}
-				}
-				break;
-
-			case nod_or:
-			case nod_and:
-
-			case nod_add:
-			case nod_add2:
-			case nod_agg_average:
-			case nod_agg_average2:
-			case nod_agg_average_distinct:
-			case nod_agg_average_distinct2:
-			case nod_agg_max:
-			case nod_agg_min:
-			case nod_agg_total:
-			case nod_agg_total2:
-			case nod_agg_total_distinct:
-			case nod_agg_total_distinct2:
-			case nod_concatenate:
-			case nod_divide:
-			case nod_divide2:
-			case nod_multiply:
-			case nod_multiply2:
-			case nod_negate:
-			case nod_subtract:
-			case nod_subtract2:
-
-			case nod_upcase:
-			case nod_substr:
-
-			case nod_like:
-			case nod_between:
-			case nod_sleuth:
-			case nod_missing:
-			case nod_value_if:
-			case nod_matches:
-			case nod_contains:
-			case nod_starts:
-			case nod_eql:
-			case nod_neq:
-			case nod_geq:
-			case nod_gtr:
-			case nod_lss:
-			case nod_leq:
+		case nod_like:
+		case nod_between:
+		case nod_contains:
+		case nod_starts:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+		{
+			JRD_NOD* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (JRD_NOD* end = ptr + node->nod_count; ptr < end; ptr++)
 			{
-				JRD_NOD* ptr = node->nod_arg;
-				// Check all sub-nodes of this node.
-				for (JRD_NOD* end = ptr + node->nod_count;
-					ptr < end; ptr++)
-				{
-					if (expression_contains(*ptr, node_type)) {
-						return true;
-					}
+				if (expression_possible_unknown(*ptr)) {
+					return true;
 				}
-
-				return false;
 			}
 
-
-			default :
-				return true;
+			return false;
 		}
 
-
-		if (rse) {
-
-			JRD_NOD sub;
-			if ((sub = rse->rse_first) && expression_contains(sub, node_type)) {
-				return true;
-			}
-
-			if ((sub = rse->rse_skip) && expression_contains(sub, node_type)) {
-				return true;
-			}
-
-			if ((sub = rse->rse_boolean) && expression_contains(sub, node_type)) {
-				return true;
-			}
-
-			if ((sub = rse->rse_sorted) && expression_contains(sub, node_type)) {
-				return true;
-			}
-
-			if ((sub = rse->rse_projection) && expression_contains(sub, node_type)) {
-				return true;
-			}
-
-		}
-
-		return false;
+		default :
+			return true;
 	}
-
 }
 
 
@@ -4812,7 +4733,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 	// mark the stream to denote unmatched booleans.
 
 	opt_boolean = NULL;
-	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_base_parent_conjuncts : opt->opt_conjuncts_count);
+	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts_count);
 	tail = opt->opt_rpt;
 	if (outer_flag) {
 		tail += opt->opt_base_parent_conjuncts;
@@ -4836,18 +4757,11 @@ static RSB gen_retrieval(TDBB     tdbb,
 			if ((inversion && expression_contains_stream(node, stream)) ||
 				(!inversion && computable(csb, node, stream, false, true))) 
 			{
-				// Don't allow adding IS NULL conjunction to outer stream 
-				// from parent node, because a FULL OUTER JOIN could return
-				// wrong results with it.
-				if (!outer_flag ||
-					(outer_flag && !expression_contains(node, nod_missing)))
-				{
-					compose(&opt_boolean, node, nod_and);
-					tail->opt_flags |= opt_used;
-			
-					if (!outer_flag && !(tail->opt_flags & opt_matched)) {
-						csb_tail->csb_flags |= csb_unmatched;
-					}
+				compose(&opt_boolean, node, nod_and);
+				tail->opt_flags |= opt_used;
+		
+				if (!outer_flag && !(tail->opt_flags & opt_matched)) {
+					csb_tail->csb_flags |= csb_unmatched;
 				}
 			}				
 		}
