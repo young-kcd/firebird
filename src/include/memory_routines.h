@@ -35,7 +35,7 @@ extern inline short gather_short(char* &);
 extern inline long gather_long(char* &);
 */
 
-inline short get_short(const char* p)
+inline SSHORT get_short(const SCHAR* p)
 {
 /**************************************
  *
@@ -53,13 +53,13 @@ inline short get_short(const char* p)
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
 	// According to CTO32L definition in common.h this trick work for VAX/VMS
-	return *reinterpret_cast<const short*>(p);
+	return *reinterpret_cast<const SSHORT*>(p);
 #else
 	// Non-IA32
 
 union {
- short n;
- char c[2]; } value;
+ SSHORT n;
+ SCHAR c[2]; } value;
 
 	value.c[0] = p[0];
 	value.c[1] = p[1];
@@ -69,7 +69,7 @@ union {
 #endif	// endianness
 }
 
-inline long get_long(const char* p)
+inline SLONG get_long(const SCHAR* p)
 {
 /**************************************
  *
@@ -86,13 +86,13 @@ inline long get_long(const char* p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	return *reinterpret_cast<const long*>(p);
+	return *reinterpret_cast<const SLONG*>(p);
 #else
 	// Non-IA32
 
 union {
- long n;
- char c[4]; } value;
+ SLONG n;
+ SCHAR c[4]; } value;
 
 	value.c[0] = p[0];
 	value.c[1] = p[1];
@@ -104,7 +104,7 @@ union {
 #endif	// endianness
 }
 
-inline unsigned long get_long(const unsigned char* p)
+inline ULONG get_long(const UCHAR* p)
 {
 /**************************************
  *
@@ -122,7 +122,7 @@ inline unsigned long get_long(const unsigned char* p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	return *reinterpret_cast<const unsigned long*>(p);
+	return *reinterpret_cast<const ULONG*>(p);
 #else
 	// Non-IA32 a bit slower implementation but faster than using union
 #ifndef WORDS_BIGENDIAN
@@ -133,7 +133,7 @@ inline unsigned long get_long(const unsigned char* p)
 #endif
 }
 
-inline short gather_short(char* &p)
+inline SSHORT gather_short(SCHAR* &p)
 {
 /**************************************
  *
@@ -151,16 +151,16 @@ inline short gather_short(char* &p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	short value;
-	value = *reinterpret_cast<const short*>(p);
+	SSHORT value;
+	value = *reinterpret_cast<const SSHORT*>(p);
 	p += 2;
 	return value;
 #else
 	// Non-IA32
 
 union {
- short n;
- char c[2]; } value;
+ SSHORT n;
+ SCHAR c[2]; } value;
 
 	value.c[0] = *p++;
 	value.c[1] = *p++;
@@ -170,7 +170,7 @@ union {
 #endif	// endianness
 }
 
-inline long gather_long(char* &p)
+inline SLONG gather_long(SCHAR* &p)
 {
 /**************************************
  *
@@ -188,16 +188,16 @@ inline long gather_long(char* &p)
 
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS)
 	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	long value;
-	value = *reinterpret_cast<const long*>(p);
+	SLONG value;
+	value = *reinterpret_cast<const SLONG*>(p);
 	p += 4;
 	return value;
 #else
 	// Non-IA32
 
 union {
- long n;
- char c[4]; } value;
+ SLONG n;
+ SCHAR c[4]; } value;
 
 	value.c[0] = *p++;
 	value.c[1] = *p++;
