@@ -38,7 +38,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/isc.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../lock/lock.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
