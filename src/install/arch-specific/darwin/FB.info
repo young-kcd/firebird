@@ -6,7 +6,7 @@ DeleteWarning
 
 ### Package Flags
 
-NeedsAuthorization NO
+NeedsAuthorization YES
 Required YES
 Relocatable YES
 RequiresReboot NO

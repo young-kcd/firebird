@@ -3,23 +3,23 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleGetInfoString</key>
-	<string>Firebird 1.5 RC 7</string>
+	<string>_MFB_BUILD_SUFFIX_</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.firebirdsql.Firebird</string>
 	<key>CFBundleName</key>
-	<string>Firebird 1.5 RC 7</string>
+	<string>_MFB_BUILD_SUFFIX_</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.5 RC 7</string>
+	<string>_SMFB_BUILD_SUFFIX_</string>
 	<key>IFMajorVersion</key>
-	<integer>1</integer>
+	<integer>_MAJOR_VERS_</integer>
 	<key>IFMinorVersion</key>
-	<integer>5</integer>
+	<integer>_MINOR_VERS_</integer>
 	<key>IFPkgFlagAllowBackRev</key>
 	<false/>
 	<key>IFPkgFlagAuthorizationAction</key>
-	<string>NoAuthorization</string>
+	<string>AdminAuthorization</string>
 	<key>IFPkgFlagDefaultLocation</key>
-	<string>/tmp/install</string>
+	<string>/Library/Frameworks</string>
 	<key>IFPkgFlagInstallFat</key>
 	<false/>
 	<key>IFPkgFlagIsRequired</key>

@@ -19,6 +19,9 @@ all: package
 FB_INST_VERS:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/' -e 's/ /-/g')
 FB_VER_SUFFIX:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 FB_VER_SUFFIX_SM:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/')
+FB_VER_SUFFIX_M:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Release Candidate/RC/')
+FB_MAJOR_VERS:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/majorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
+FB_MINOR_VERS:=$(shell cpp -DDARWIN -I.  install/arch-specific/darwin/minorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 
 package packages dist: INST_NM=Firebird-CS-$(FB_INST_VERS)
 package packages dist: BLOCKSIZE=1048576
@@ -32,10 +35,19 @@ package packages dist:
 		$(ROOT)/gen/firebird/frameworks/FirebirdCS.framework
 	mkdir -p $(DIR)/$(INST_NM).pkg/Contents/Resources
 	mv $(DIR)/Archive.* $(DIR)/$(INST_NM).pkg/Contents
-	cp install/arch-specific/darwin/Info.plist $(DIR)/$(INST_NM).pkg/Contents
 	cp install/arch-specific/darwin/PkgInfo $(DIR)/$(INST_NM).pkg/Contents
-	sed -e 's/_FB_BUILD_SUFFIX_/$(FB_VER_SUFFIX)/g' -e \
-			's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
+	sed -e 's/_FB_BUILD_SUFFIX_/$(FB_VER_SUFFIX)/g' \
+			-e 's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
+			-e 's/_MFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_M)/g' \
+			-e 's/_MAJOR_VERS_/$(FB_MAJOR_VERS)/g' \
+			-e 's/_MINOR_VERS_/$(FB_MINOR_VERS)/g' \
+			install/arch-specific/darwin/Info.plist \
+			> $(DIR)/$(INST_NM).pkg/Contents/Info.plist
+	sed -e 's/_FB_BUILD_SUFFIX_/$(FB_VER_SUFFIX)/g' \
+			-e 's/_SMFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_SM)/g' \
+			-e 's/_MFB_BUILD_SUFFIX_/$(FB_VER_SUFFIX_M)/g' \
+			-e 's/_MAJOR_VERS_/$(FB_MAJOR_VERS)/g' \
+			-e 's/_MINOR_VERS_/$(FB_MINOR_VERS)/g' \
 			install/arch-specific/darwin/Description.plist \
 			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
 	cp install/arch-specific/darwin/installer_background.pdf \
@@ -55,8 +67,6 @@ package packages dist:
 	ln -s ../Archive.bom $(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).bom
 	ln -s ../Archive.pax.gz \
 				$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).pax.gz
-	cp install/arch-specific/darwin/FB.info \
-			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).info
 	echo "NumFiles 0" > \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/$(INST_NM).sizes
 	echo -n "InstalledSize " >> \
