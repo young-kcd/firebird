@@ -1,3 +1,59 @@
+2005-01-12 13:19  alexpeshkoff
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp (1.27):
+	
+	fixed AV during SS shutdown on NT
+
+2005-01-12 09:30  robocop
+
+	* firebird2/src/common/config/: config.cpp (1.59), config_file.cpp
+	(1.27):
+	
+	Misc.
+
+2005-01-12 06:50  robocop
+
+	* firebird2/src/gpre/pat.cpp (1.27):
+	
+	Misc.
+
+2005-01-12 06:09  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.125):
+	
+	Fix irrelevant SF Bug #512975.	CR-LF => blank. No trimming is
+	made.
+
+2005-01-12 05:33  robocop
+
+	* firebird2/src/: common/classes/locks.cpp (1.7), jrd/y_handle.h
+	(1.13), jrd/os/thd_priority.h (1.23), jrd/os/win32/thd_priority.cpp
+	(1.26):
+	
+	Correct the year in Alex' changed licenses.
+
+2005-01-12 05:24  robocop
+
+	* firebird2/src/common/config/: config_file.cpp (1.26),
+	config_file.h (1.12):
+	
+	Change the license.  Also, these two files were done by Dmitry
+	Yemanov, not Mark, according to viewCVS.
+
+2005-01-12 05:22  robocop
+
+	* firebird2/src/: dsql/keywords.cpp (1.41), include/editline.h
+	(1.2), jrd/os/posix/config_root.cpp (1.14):
+	
+	Change the license with Mark's permission.
+
+2005-01-12 05:20  robocop
+
+	* firebird2/src/dsql/: dsql.cpp (1.138), keywords.h (1.19),
+	pass1.cpp (1.187):
+	
+	Misc.
+
 2005-01-11 11:08  alexpeshkoff
 
 	* firebird2/src/remote/inet.cpp (1.135):
