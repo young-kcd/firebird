@@ -2864,10 +2864,6 @@ static void do_isql()
 	if (lastInputLine)
 		free(lastInputLine);
 		
-#ifdef HAVE_EDITLINE_H
-	clear_history();
-#endif
-		
 	while (global_Cols) {
 		collist* p = global_Cols;
 		global_Cols = global_Cols->collist_next;
