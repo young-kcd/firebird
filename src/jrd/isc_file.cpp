@@ -87,9 +87,9 @@
 #include "../jrd/lnmdef.h"
 
 
-#define LOGICAL_NAME_TABLE	"LNM$FILE_DEV"
-#define DEFAULT_FILE_NAME	".fdb"
-#define INET_FLAG		'^'
+const char* LOGICAL_NAME_TABLE	= "LNM$FILE_DEV";
+const char* DEFAULT_FILE_NAME	".fdb";
+const char INET_FLAG		= '^';
 
 typedef struct itm {
 	SSHORT itm_length;
@@ -98,7 +98,9 @@ typedef struct itm {
 	SSHORT *itm_return_length;
 } ITM;
 
-#endif /* of ifdef VMS */
+#else /* of ifdef VMS */
+const char INET_FLAG		= ':';
+#endif
 
 
 #ifdef SUPERSERVER
@@ -117,22 +119,29 @@ typedef struct itm {
 #include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
 #endif
 
-/* EKU: if you get a compiler warning/error about redefinition of MTAB,
-        please remove the define from the platform-specific section below
-        and not here! */
 #ifdef MNTTAB
-#define MTAB			MNTTAB
+const char* MTAB		= MNTTAB;
+#elif defined(_PATH_MNTTAB)
+const char* MTAB		= _PATH_MNTTAB;
+#elif defined(hpux)
+const char* MTAB		= "/etc/mnttab";
+#elif defined(SOLARIS)
+const char* MTAB		= "/etc/mnttab";
+#elif defined(FREEBSD)
+const char* MTAB		= "/etc/fstab";
+#elif defined(SCO_UNIX)
+const char* MTAB		= "/etc/mount";
 #else
-#ifdef _PATH_MNTTAB
-#define MTAB			_PATH_MNTTAB
-#else
-#define MTAB			"/etc/mtab"
-#endif
+const char* MTAB		= "/etc/mtab";
 #endif
 
 #ifdef HAVE_SETMNTENT
 #define MTAB_OPEN(path,type)	setmntent(path, "r")
 #define MTAB_CLOSE(stream)	endmntent(stream)
+#elif defined(SCO_UNIX)
+/* EKU: popen/pclose to access a file??? */
+#define MTAB_OPEN(path,type)	popen (path, type)
+#define MTAB_CLOSE(stream)	pclose (stream)
 #else
 #define MTAB_OPEN(path,type)	fopen(path, type)
 #define MTAB_CLOSE(stream)	fclose(stream)
@@ -141,26 +150,10 @@ typedef struct itm {
 
 
 #ifdef hpux
-#define MTAB			"/etc/mnttab"
 /* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif
-#endif
-
-#ifdef SOLARIS
-#define MTAB			"/etc/mnttab"
-#endif
-
-#ifdef FREEBSD
-#define MTAB			"/etc/fstab"
-#endif
-
-#ifdef SCO_UNIX
-/* EKU: popen/pclose to access a file??? */
-#define MTAB			"/etc/mount"
-#define MTAB_OPEN(path,type)	popen (path, type)
-#define MTAB_CLOSE(stream)	pclose (stream)
 #endif
 
 #if (defined AIX || defined AIX_PPC)
@@ -177,10 +170,6 @@ typedef struct mnt {
 
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
-#endif
-
-#ifndef INET_FLAG
-#define INET_FLAG	':'
 #endif
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.70 2004-05-17 22:27:56 brodsom Exp $
+$Id: why.cpp,v 1.71 2004-05-18 16:48:26 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -119,14 +119,12 @@ $Id: why.cpp,v 1.70 2004-05-17 22:27:56 brodsom Exp $
 #define F_TLOCK		2
 #endif
 
-#define IO_RETRY	20
+const int IO_RETRY	= 20;
 
 #ifdef DEV_BUILD
 #define CHECK_STATUS(v)		check_status_vector(v, !FB_SUCCESS)
 #define CHECK_STATUS_SUCCESS(v)	check_status_vector(v, FB_SUCCESS)
-#endif
-
-#ifndef CHECK_STATUS
+#else
 #define CHECK_STATUS(v)			/* nothing */
 #define CHECK_STATUS_SUCCESS(v)	/* nothing */
 #endif
@@ -493,65 +491,65 @@ static const TEXT glbunknown[10] = "<unknown>";
  *  much frustration
  ******************************************************/
 
-#define PROC_ATTACH_DATABASE	0
-#define PROC_BLOB_INFO			1
-#define PROC_CANCEL_BLOB		2
-#define PROC_CLOSE_BLOB			3
-#define PROC_COMMIT				4
-#define PROC_COMPILE			5
-#define PROC_CREATE_BLOB		6
-#define PROC_CREATE_DATABASE	7
-#define PROC_DATABASE_INFO		8
-#define PROC_DETACH				9
-#define PROC_GET_SEGMENT		10
-#define PROC_OPEN_BLOB			11
-#define PROC_PREPARE			12
-#define PROC_PUT_SEGMENT		13
-#define PROC_RECONNECT			14
-#define PROC_RECEIVE			15
-#define PROC_RELEASE_REQUEST	16
-#define PROC_REQUEST_INFO		17
-#define PROC_ROLLBACK			18
-#define PROC_SEND				19
-#define PROC_START_AND_SEND		20
-#define PROC_START				21
-#define PROC_START_MULTIPLE		22
-#define PROC_START_TRANSACTION	23
-#define PROC_TRANSACTION_INFO	24
-#define PROC_UNWIND				25
-#define PROC_COMMIT_RETAINING	26
-#define PROC_QUE_EVENTS			27
-#define PROC_CANCEL_EVENTS		28
-#define PROC_DDL				29
-#define PROC_OPEN_BLOB2			30
-#define PROC_CREATE_BLOB2		31
-#define PROC_GET_SLICE			32
-#define PROC_PUT_SLICE			33
-#define PROC_SEEK_BLOB			34
-#define PROC_TRANSACT_REQUEST	35
-#define PROC_DROP_DATABASE		36
+const int PROC_ATTACH_DATABASE	= 0;
+const int PROC_BLOB_INFO		= 1;
+const int PROC_CANCEL_BLOB		= 2;
+const int PROC_CLOSE_BLOB		= 3;
+const int PROC_COMMIT			= 4;
+const int PROC_COMPILE			= 5;
+const int PROC_CREATE_BLOB		= 6;
+const int PROC_CREATE_DATABASE	= 7;
+const int PROC_DATABASE_INFO	= 8;
+const int PROC_DETACH			= 9;
+const int PROC_GET_SEGMENT		= 10;
+const int PROC_OPEN_BLOB		= 11;
+const int PROC_PREPARE			= 12;
+const int PROC_PUT_SEGMENT		= 13;
+const int PROC_RECONNECT		= 14;
+const int PROC_RECEIVE			= 15;
+const int PROC_RELEASE_REQUEST	= 16;
+const int PROC_REQUEST_INFO		= 17;
+const int PROC_ROLLBACK			= 18;
+const int PROC_SEND				= 19;
+const int PROC_START_AND_SEND	= 20;
+const int PROC_START			= 21;
+const int PROC_START_MULTIPLE	= 22;
+const int PROC_START_TRANSACTION= 23;
+const int PROC_TRANSACTION_INFO	= 24;
+const int PROC_UNWIND			= 25;
+const int PROC_COMMIT_RETAINING	= 26;
+const int PROC_QUE_EVENTS		= 27;
+const int PROC_CANCEL_EVENTS	= 28;
+const int PROC_DDL				= 29;
+const int PROC_OPEN_BLOB2		= 30;
+const int PROC_CREATE_BLOB2		= 31;
+const int PROC_GET_SLICE		= 32;
+const int PROC_PUT_SLICE		= 33;
+const int PROC_SEEK_BLOB		= 34;
+const int PROC_TRANSACT_REQUEST	= 35;
+const int PROC_DROP_DATABASE	= 36;
 
-#define PROC_DSQL_ALLOCATE		37
-#define PROC_DSQL_EXECUTE		38
-#define PROC_DSQL_EXECUTE2		39
-#define PROC_DSQL_EXEC_IMMED	40
-#define PROC_DSQL_EXEC_IMMED2	41
-#define PROC_DSQL_FETCH			42
-#define	PROC_DSQL_FREE			43
-#define PROC_DSQL_INSERT		44
-#define PROC_DSQL_PREPARE		45
-#define PROC_DSQL_SET_CURSOR	46
-#define PROC_DSQL_SQL_INFO		47
+const int PROC_DSQL_ALLOCATE	= 37;
+const int PROC_DSQL_EXECUTE		= 38;
+const int PROC_DSQL_EXECUTE2	= 39;
+const int PROC_DSQL_EXEC_IMMED	= 40;
+const int PROC_DSQL_EXEC_IMMED2	= 41;
+const int PROC_DSQL_FETCH		= 42;
+const int PROC_DSQL_FREE		= 43;
+const int PROC_DSQL_INSERT		= 44;
+const int PROC_DSQL_PREPARE		= 45;
+const int PROC_DSQL_SET_CURSOR	= 46;
+const int PROC_DSQL_SQL_INFO	= 47;
 
-#define PROC_SERVICE_ATTACH		48
-#define PROC_SERVICE_DETACH		49
-#define PROC_SERVICE_QUERY		50
-#define PROC_SERVICE_START		51
+const int PROC_SERVICE_ATTACH	= 48;
+const int PROC_SERVICE_DETACH	= 49;
+const int PROC_SERVICE_QUERY	= 50;
+const int PROC_SERVICE_START	= 51;
 
-#define PROC_ROLLBACK_RETAINING 52
-#define PROC_CANCEL_OPERATION	53
+const int PROC_ROLLBACK_RETAINING	= 52;
+const int PROC_CANCEL_OPERATION	= 53;
 
-#define PROC_count				54
+const int PROC_count			= 54;
 
 typedef struct
 {
@@ -5469,7 +5467,7 @@ static const PTR get_entrypoint(int proc,
 
 	if (image && name)
 	{
-#define BufSize 128		
+const int BufSize = 128;
 		TEXT Buffer[BufSize];
 		const SLONG NameLength = strlen(name) + 1;
 		fb_assert(NameLength < BufSize);
