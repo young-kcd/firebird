@@ -1,3 +1,22 @@
+2004-01-17 18:49  alexpeshkoff
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Removed hack, which loaded fbclient.dll at server startup - UDF's
+	work fine in 9x without it now.
+
+2004-01-17 17:41  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fixed trivial AV when exiting w/o connect or create database
+
+2004-01-17 17:33  alexpeshkoff
+
+	* firebird2/src/jrd/ibinitdll.cpp:
+	
+	Added explicit thread subsystem initialization for fbclient
+
 2004-01-16 14:05  hvlad
 
 	* firebird2/src/dsql/: dsql.tab.h, parse.cpp:
