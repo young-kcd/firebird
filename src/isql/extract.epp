@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.5 2002-06-29 13:39:10 skywalker Exp $
+ * $Id: extract.epp,v 1.6 2002-07-09 14:41:37 dimitr Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -100,7 +100,7 @@ extern "C" CONST SQLTYPES Column_types[];
 extern CONST SCHAR *Integral_subtypes[];
 extern CONST SCHAR *Sub_types[];
 extern CONST SCHAR *Trigger_types[];
-extern SCHAR	*UDF_param_types [];
+extern CONST SCHAR *UDF_param_types[];
 
 static SCHAR *Procterm = "^";	/* TXNN: script use only */
 
