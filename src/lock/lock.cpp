@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.51 2003-05-16 20:35:18 skidder Exp $
+$Id: lock.cpp,v 1.52 2003-05-25 18:59:19 skidder Exp $
 */
 
 #include "firebird.h"
@@ -104,6 +104,7 @@ $Id: lock.cpp,v 1.51 2003-05-16 20:35:18 skidder Exp $
 
 #ifdef MANAGER_PROCESS
 #include <sys/stat.h>
+#include <sys/file.h>
 #define statistics	stat
 static BOOLEAN LOCK_post_manager;
 #endif
@@ -3226,6 +3227,8 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 #endif
 
 	LOCK_header = (LHB) shmem_data->sh_mem_address;
+	// Reflect real number of semaphores available
+	LOCK_sem_count = shmem_data->sh_mem_semaphores;
 
 	if (!initialize) {
 		return;

@@ -186,7 +186,8 @@ static void		error(ISC_STATUS *, TEXT *, ISC_STATUS);
 #ifdef UNIX
 static void		alarm_handler(void);
 static SLONG	find_key(ISC_STATUS *, TEXT *);
-static SLONG	init_semaphores(ISC_STATUS *, SLONG, int);
+static SLONG	open_semaphores(ISC_STATUS *, SLONG, int&);
+static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
 #endif
 
@@ -2101,35 +2102,9 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 
 /* Get semaphore for mutex */
 
-#if !(defined SOLARIS_MT || defined POSIX_THREADS)
-	if (shmem_data->sh_mem_semaphores &&
-		(semid =
-		 init_semaphores(status_vector, key,
-						 shmem_data->sh_mem_semaphores)) < 0) {
-		close(fd);
-#ifdef HAVE_FLOCK
-		/* unlock init file */
-		flock(fd_init, LOCK_UN);
-#else
-		lock.l_type = F_UNLCK;
-		lock.l_whence = 0;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		fcntl(fd, F_SETLK, &lock);
-#endif
-		close(fd_init);
-		return NULL;
-	}
-#endif
-
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
 
-#if !(defined SOLARIS_MT || defined POSIX_THREADS)
-	shmem_data->sh_mem_mutex_arg = semid;
-#else
-	shmem_data->sh_mem_mutex_arg = 0;
-#endif
 
 	shmem_data->sh_mem_handle = fd;
 
@@ -2171,6 +2146,41 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 			*status_vector++ = gds_arg_end;
 			return NULL;
 		}
+
+		// Create semaphores here
+#if !(defined SOLARIS_MT || defined POSIX_THREADS)
+		if (shmem_data->sh_mem_semaphores &&
+			(semid =
+			 create_semaphores(status_vector, key,
+							 shmem_data->sh_mem_semaphores)) < 0) {
+#ifdef HAVE_FLOCK
+			/* unlock both files */
+			flock(fd, LOCK_UN);
+			flock(fd_init, LOCK_UN);
+#else
+			/* unlock the file and the init file to release the other process */
+			lock.l_type = F_UNLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			fcntl(fd, F_SETLK, &lock);
+
+			lock.l_type = F_UNLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			fcntl(fd_init, F_SETLK, &lock);
+#endif
+			munmap((char *) address, length);
+			close(fd);
+			close(fd_init);
+			return NULL;
+		}
+		shmem_data->sh_mem_mutex_arg = semid;
+#else
+		shmem_data->sh_mem_mutex_arg = 0;
+#endif
+
 		if (trunc_flag)
 			ftruncate(fd, length);
 		(*init_routine) (init_arg, shmem_data, TRUE);
@@ -2240,6 +2250,39 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 			close(fd);
 			return NULL;
 		}
+		// Open semaphores here
+#if !(defined SOLARIS_MT || defined POSIX_THREADS)
+		if (shmem_data->sh_mem_semaphores &&
+			(semid =
+			 open_semaphores(status_vector, key,
+							 shmem_data->sh_mem_semaphores)) < 0) {
+#ifdef HAVE_FLOCK
+			/* unlock both files */
+			flock(fd, LOCK_UN);
+			flock(fd_init, LOCK_UN);
+#else
+			/* unlock the file and the init file to release the other process */
+			lock.l_type = F_UNLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			fcntl(fd, F_SETLK, &lock);
+
+			lock.l_type = F_UNLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			fcntl(fd_init, F_SETLK, &lock);
+#endif
+			munmap((char *) address, length);
+			close(fd);
+			close(fd_init);
+			return NULL;
+		}
+		shmem_data->sh_mem_mutex_arg = semid;
+#else
+		shmem_data->sh_mem_mutex_arg = 0;
+#endif
 		if (init_routine)
 			(*init_routine) (init_arg, shmem_data, FALSE);
 	}
@@ -2516,17 +2559,6 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 
 /* Get semaphore for mutex */
 
-#ifndef POSIX_THREADS
-	if (shmem_data->sh_mem_semaphores &&
-		(semid =
-		 init_semaphores(status_vector, key,
-						 shmem_data->sh_mem_semaphores)) < 0) {
-		shmdt(address);
-		next_shared_memory -= length;
-		ib_fclose(fp);
-		return NULL;
-	}
-#endif /* POSIX_THREADS */
 
 /* If we're the only one with shared memory mapped, see if
    we can initialize it.  If we can't, return failure. */
@@ -2549,13 +2581,27 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
 
+
+	shmem_data->sh_mem_handle = shmid;
+
 #ifndef POSIX_THREADS
+	if (shmem_data->sh_mem_semaphores &&
+		(semid =
+		 (init_flag ? 
+			create_semaphores(status_vector, key,
+						 shmem_data->sh_mem_semaphores) :
+			open_semaphores(status_vector, key,
+						 shmem_data->sh_mem_semaphores)) ) < 0) 
+	{
+		shmdt(address);
+		next_shared_memory -= length;
+		ib_fclose(fp);
+		return NULL;
+	}
 	shmem_data->sh_mem_mutex_arg = semid;
 #else
 	shmem_data->sh_mem_mutex_arg = 0;
 #endif
-
-	shmem_data->sh_mem_handle = shmid;
 
 	if (init_routine)
 		(*init_routine) (init_arg, shmem_data, init_flag);
@@ -4144,13 +4190,52 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
 
 
 #ifdef UNIX
-static SLONG init_semaphores(
+static SLONG open_semaphores(
+							 ISC_STATUS * status_vector,
+							 SLONG key, int& semaphores)
+{
+/**************************************
+ *
+ *	o p e n _ s e m a p h o r e s		( U N I X )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open existing block of semaphores.
+ *
+ **************************************/
+	// Open semaphore set
+	SLONG semid = semget(key, 0, PRIV);
+	if (semid == -1) {
+		error(status_vector, "semget", errno);
+		return -1;
+	}
+	
+	if (semaphores) {
+		semid_ds buf;	
+		// Get number of semaphores in opened set
+		if (semctl(semid, 0, IPC_STAT, &buf) == -1) {
+			error(status_vector, "semctl", errno);
+			return -1;
+		}
+		if (semaphores != buf.sem_nsems) {
+			gds__log("Number of requested semaphores (%d) "
+				"is not equal to the size of existing set (%d)", 
+				semaphores, buf.sem_nsems);
+			semaphores = buf.sem_nsems;
+		}
+	}
+
+	return semid;
+}
+
+static SLONG create_semaphores(
 							 ISC_STATUS * status_vector,
 							 SLONG key, int semaphores)
 {
 /**************************************
  *
- *	i n i t _ s e m a p h o r e s		( U N I X )
+ *	c r e a t e _ s e m a p h o r e s		( U N I X )
  *
  **************************************
  *
@@ -4159,16 +4244,42 @@ static SLONG init_semaphores(
  *
  **************************************/
 	SLONG semid;
-
-	semid = semget(key, semaphores, IPC_CREAT | IPC_EXCL | PRIV);
-
-	if (semid == -1) {
-		semid = semget(key, semaphores, PRIV);
-		if (semid == -1)
-			error(status_vector, "semget", errno);
-	}
-
-	return semid;
+	do {
+		// Try to open existing semaphore set
+		semid = semget(key, 0, PRIV);
+		if (semid == -1) {
+			if (errno != ENOENT) {
+				error(status_vector, "semget", errno);
+				return -1;
+			}
+		} 
+		else
+		{
+			semid_ds buf;	
+			// Get number of semaphores in opened set
+			if (semctl(semid, 0, IPC_STAT, &buf) == -1) {
+				error(status_vector, "semctl", errno);
+				return -1;
+			}
+			if (buf.sem_nsems >= semaphores)
+				return semid;
+			// Number of semaphores in existing set is too small. Discard it.
+			if (semctl(semid, 0, IPC_RMID) == -1) {
+				error(status_vector, "semctl", errno);
+				return -1;
+			}
+		}
+		
+		// Try to create new semaphore set
+		semid = semget(key, semaphores, IPC_CREAT | IPC_EXCL | PRIV);
+		if (semid != -1) 
+			return semid;
+		else
+			if (errno != EEXIST) {
+				error(status_vector, "semget", errno);
+				return -1;
+			}
+	} while (true);
 }
 #endif
 
