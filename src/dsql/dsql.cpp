@@ -25,7 +25,7 @@
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.13 2002-06-27 12:14:54 paul_reeves Exp $
+$Id: dsql.cpp,v 1.14 2002-06-28 13:49:47 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -3679,11 +3679,13 @@ static void map_in_out(	REQ		request,
 
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next) if (parameter->par_index) {
-			/* Make sure the message given to us is long enough */
+			 /* Make sure the message given to us is long enough */
 
 			desc = parameter->par_user_desc;
 			length = (SLONG) desc.dsc_address + desc.dsc_length;
 			if (length > msg_length)
+				break;
+			if (!desc.dsc_dtype)
 				break;
 
 			flag = NULL;
