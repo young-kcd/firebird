@@ -1,0 +1,19 @@
+  You can't use pre-2.0 security database in firebird 2.0 or higher directly.
+  If you try to put old security.fdb into firebird's new home directory, you
+will get a message - cannot attach to password database. That's OK and is by 
+design. In order to be able to use old database, you must run appropriate 
+upgrade script - security_database.sql. To do so:
+  1. Put your old security database in some known to you place (not new home
+directory). Always have a copy of it!
+  2. Start firebird using it's new, native security.fdb.
+  3. Connect to your old security database as SYSDBA and run the script.
+  4. Stop firebird.
+  5. Copy upgraded database to firebird's home directory.
+  6. Set LegacyHash parameter in firebird.conf to 1.
+  7. Start firebird.
+
+  Now you should be able to connect to firebird 2.0 server using your old 
+logins and passwords. But be careful - as long as you have LegacyHash = 1,
+firebird's security doesn't work completely. You must change SYSDBA password,
+let users change their passwords (yes, since 2.0 each user can change his 
+password himself) and set LegacyHash back to default value of 0.
