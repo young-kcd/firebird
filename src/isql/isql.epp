@@ -1621,7 +1621,7 @@ void ISQL_print_validation(FILE* fp,
 		if (isComputedField) {
 			// computed field SQL syntax correction 
 
-			while (isspace(*p))
+			while (isspace((UCHAR)*p))
 				p++;
 			if (*p == '(')
 				issql = true;
@@ -1629,7 +1629,7 @@ void ISQL_print_validation(FILE* fp,
 		else {
 			// Validation SQL syntax correction 
 
-			while (isspace(*p))
+			while (isspace((UCHAR)*p))
 				p++;
 			if (!strncmp(p, "check", 5) || !strncmp(p, "CHECK", 5))
 				issql = true;
@@ -3086,7 +3086,7 @@ static processing_state escape(const TEXT* cmd)
 	shellcmd += strlen("shell");
 
 // eat whitespace at beginning of command 
-	while (*shellcmd && isspace(*shellcmd))
+	while (*shellcmd && isspace((UCHAR)*shellcmd))
 		shellcmd++;
 
 // If no command given just spawn a shell 
@@ -3184,7 +3184,7 @@ static processing_state frontend(const TEXT* statement)
 			}
 			else {
 				//  Prevent overflow 
-				while (*p && !isspace(*p) && j < BUFFER_LENGTH256 - 1) {
+				while (*p && !isspace((UCHAR)*p) && j < BUFFER_LENGTH256 - 1) {
 					j++;
 					*a++ = *p++;
 				}
@@ -3195,7 +3195,7 @@ static processing_state frontend(const TEXT* statement)
 			lparms[i] = (TEXT*) ISQL_ALLOC((SLONG) (length + 1));
 			strncpy(parms[i], buffer, length);
 			parms[i][length] = '\0';
-			while (*p && isspace(*p))
+			while (*p && isspace((UCHAR)*p))
 				p++;
 			strcpy(lparms[i], parms[i]);
 			if (!role_found)
@@ -3885,7 +3885,7 @@ static processing_state get_statement(TEXT* statement,
 		// Any non-space character is significant if not in comment
 		if (state != in_comment &&
 			state != in_single_line_comment &&
-			!isspace(c) && c != EOF)
+			!isspace((UCHAR)c) && c != EOF)
 		{
 			valuable_count++;
 			if (valuable_count == 1) // this is the first valuable char in stream
@@ -4288,7 +4288,7 @@ void ISQL_truncate_term(TEXT* str,
  * CVC: Notice isspace may be influenced by locales.
  **************************************/
 	int i;
-	for (i = len - 1; i >= 0 && ((isspace(str[i])) || (str[i] == 0)); i--);
+	for (i = len - 1; i >= 0 && ((isspace((UCHAR)str[i])) || (str[i] == 0)); i--);
 	str[i + 1] = 0;
 }
 
