@@ -56,9 +56,9 @@ extern bool_t	xdr_wrapstring (register XDR *, register SCHAR **);
  * a local function is defined to do the same task.
  * MOD 12-Nov-2002 */
 
-#ifdef HAVE_XDR_HYPER
-extern bool_t xdr_hyper(register XDR *, SINT64 *);
-#endif
+//#ifdef HAVE_XDR_HYPER
+//extern bool_t xdr_hyper(register XDR *, SINT64 *);
+//#endif
 
 
 
