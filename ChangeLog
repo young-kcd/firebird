@@ -1,3 +1,50 @@
+2005-01-22 22:21  dimitr
+
+	* firebird2/doc/WhatsNew (1.52):
+	
+	More docs.
+
+2005-01-22 22:17  dimitr
+
+	* firebird2/doc/: sql.extensions/README.expression_indices (1.1),
+	sql.extensions/README.null_value (1.1), sql.extensions/README.rows
+	(1.1), sql.extensions/README.select_expressions (1.1),
+	sql.extensions/README.view_updates (1.1), README.xnet (1.1):
+	
+	Placeholders for further docs.
+
+2005-01-22 22:13  dimitr
+
+	* firebird2/doc/sql.extensions/README.iif (1.1):
+	
+	More docs.
+
+2005-01-22 22:03  dimitr
+
+	* firebird2/doc/sql.extensions/: README.distinct (1.1),
+	README.sequence_generators (1.1):
+	
+	More docs.
+
+2005-01-22 21:26  dimitr
+
+	* firebird2/doc/sql.extensions/: README.context_variables (1.4),
+	README.cursors (1.3), README.plan (1.1):
+	
+	More docs.
+
+2005-01-22 05:23  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.83):
+	
+	Misc.
+
+2005-01-22 05:16  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.132):
+	
+	Misc.
+
 2005-01-21 15:09  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.188):
