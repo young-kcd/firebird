@@ -29,7 +29,8 @@
 
 /* This is the title used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
-#define APP_NAME			"InterBase Server"
+
+#define APP_NAME			"Firebird Server"
 #define APP_LABEL			"Firebird Server"
 
 #define ON_NOTIFYICON		WM_USER + 2
@@ -39,13 +40,14 @@
 #define DRV_STRINGLEN		32
 #define TMP_STRINGLEN		512
 
-
 #define CHECK_VOLUME(a)		((a)->dbcv_devicetype == DBT_DEVTYP_VOLUME)
 #define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)
 
 /* This is the class name used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
-static  char *szClassName       = "IB_Server";
+
+static char *szClassName = "FB_Server";
+static char *szWindowName = "Firebird Server";
 
 #define	IP_CONNECT_MESSAGE	WM_USER + 1
 

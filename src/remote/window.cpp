@@ -113,7 +113,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 #endif
 
 	if (!(usServerFlagMask & SRVR_ipc)) {
-		szClassName = "IB_Disabled";
+		szClassName = "FB_Disabled";
 	}
 	else {
 
