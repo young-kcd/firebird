@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.20 2003-09-12 16:35:39 brodsom Exp $
+//	$Id: exp.cpp,v 1.21 2003-09-13 14:47:38 skidder Exp $
 //
 
 #include "firebird.h"
@@ -397,17 +397,7 @@ SINT64 EXP_SINT64_ordinal(USHORT advance_flag)
 	bool negate;
 	SINT64 n;
 	char buffer[64];
-	char format[8];
-
-#ifdef SOLARIS
-#ifdef SOLARIS26
-	sprintf(format, "%c%sd", '%', QUADFORMAT);
-#else
-	sprintf(format, "%s", "%lld");
-#endif
-#else
-	sprintf(format, "%c%sd", '%', QUADFORMAT);
-#endif
+	char format[8] = "%"QUADFORMAT"d";
 
 	negate = (MATCH(KW_MINUS));
 
