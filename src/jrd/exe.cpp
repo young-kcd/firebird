@@ -41,9 +41,6 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: exe.cpp,v 1.68.2.2 2003-08-04 07:15:31 dimitr Exp $
-*/
 
 #include "firebird.h"
 #if TIME_WITH_SYS_TIME
