@@ -51,11 +51,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
-//#ifdef SUPERSERVER
-//	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
-//#else
+#ifdef SUPERSERVER
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
+#else
 	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 0},			// bytes
-//#endif
+#endif
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
