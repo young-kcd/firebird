@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.5 2002-11-11 15:17:01 skywalker Exp $
+#  $Id: Makefile.in,v 1.6 2002-11-11 16:07:37 skywalker Exp $
 #
 ROOT=..
 
@@ -110,17 +110,10 @@ packages: tarfile rpmfile
 
 tarfile:  $(TarFile)
 
-#
-#$(TarFile) :  buildInstallDir
-#	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
-
 $(TarFile) :  buildTarDir
 	(cd $(GEN_ROOT); tar -czf $(TarFile) $(TarDir))
 
 
-# No longer needed: MOD 7-Nov-2002
-#buildInstallDir:
-#	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
 
 buildImageDir:
 	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
@@ -144,7 +137,7 @@ rpmfile: $(RPMFile)
 $(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
 	rpm -bb $(GEN_ROOT)/install/rpmscript
 #	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
-	cp $(PackageDir)/$(RPMFile) .
+	cp $(PackageDir)/$(RPMFile) $(GEN_ROOT)
 
 
 .PHONY: $(GEN_ROOT)/install/rpmscript
