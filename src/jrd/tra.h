@@ -34,6 +34,7 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
+#include "../common/classes/tree.h"
 
 /* Transaction block */
 
@@ -204,14 +205,31 @@ typedef dfw *DFW;
 
 /* Verb actions */
 
+class UndoItem {
+public:
+	SLONG rec_number;
+	class rec* rec_data;
+    static const SLONG& generate(void *sender, const UndoItem& item) {
+		return item.rec_number;
+    }
+	UndoItem() {
+	}
+	UndoItem(SLONG rec_number, rec* rec_data) {
+		this->rec_number = rec_number;
+		this->rec_data = rec_data;
+	}
+};
+
+typedef Firebird::BePlusTree<UndoItem, SLONG, MemoryPool, UndoItem> UndoItemTree;
+//BePlusTree<int> shit;
+
 class vct : public pool_alloc<type_vct>
 {
     public:
 	struct vct *vct_next;		/* Next action within verb */
 	struct jrd_rel *vct_relation;	/* Relation involved */
 	struct sbm *vct_records;	/* Record involved */
-	struct sbm *vct_undo;		/* Record involved that have to be replaced */
-	struct lls *vct_data;		/* Data for undo records */
+	UndoItemTree* vct_undo;     /* Data for undo records */
 };
 typedef vct *VCT;
 

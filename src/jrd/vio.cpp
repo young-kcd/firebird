@@ -2652,7 +2652,6 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 	JRD_REL relation;
 	REC record, dead_record;
 	RPB rpb, new_rpb;
-	LLS stack;
 	SAV sav_point;
 	BOOLEAN same_tx = FALSE;
 	JrdMemoryPool *old_pool;
@@ -2735,63 +2734,56 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 						CCH_RELEASE(tdbb, &rpb.rpb_window);
 					if (rpb.rpb_transaction != transaction->tra_number)
 						BUGCHECK(185);	/* msg 185 wrong record version */
-					if (!SBM_test(action->vct_undo, rpb.rpb_number))
+					if (!action->vct_undo || !action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number))
 						VIO_backout(tdbb, &rpb, transaction);
 					else {
-						for (stack = action->vct_data; stack;
-							 stack = stack->lls_next) {
-							record = (REC) stack->lls_object;
-							if (record->rec_number == rpb.rpb_number)
-								break;
-						}
-						if (stack) {
-							same_tx =
-								(record->rec_flags & REC_same_tx) ? TRUE :
-								FALSE;
+						record = action->vct_undo->current().rec_data;
+						same_tx =
+							(record->rec_flags & REC_same_tx) ? TRUE :
+							FALSE;
 
-							/* Have we done BOTH an update and delete to this record
-							   in the same transaction? */
+						/* Have we done BOTH an update and delete to this record
+						   in the same transaction? */
 
-							if (same_tx) {
-								VIO_backout(tdbb, &rpb, transaction);
-								/* Nickolay Samofatov, 01 Mar 2003: 
-								  If we don't have data for the record and
-								  it was modified and deleted under our savepoint
-								  we need to back it out to the state as it were
-								  before our transaction started */
-								if (record->rec_length == 0 && record->rec_flags & REC_new_version) {
-									if (!DPM_get(tdbb, &rpb, LCK_write))
-										BUGCHECK(186);	/* msg 186 record disappeared */
-									if (rpb.rpb_flags & rpb_delta)
-										VIO_data(tdbb, &rpb,
-												 reinterpret_cast <
-												 blk * >(tdbb->tdbb_default));
-									else
-										CCH_RELEASE(tdbb, &rpb.rpb_window);
-
-									VIO_backout(tdbb, &rpb, transaction);
-								}
-							}
-							if (record->rec_length != 0) {
-								dead_record = rpb.rpb_record;
-								new_rpb = rpb;
-								new_rpb.rpb_record = record;
-								new_rpb.rpb_address = record->rec_data;
-								new_rpb.rpb_length = record->rec_length;
-								if (!(rpb.rpb_flags & rpb_delta)) {
-									if (!DPM_get(tdbb, &rpb, LCK_write))
-										BUGCHECK(186);	/* msg 186 record disappeared */
+						if (same_tx) {
+							VIO_backout(tdbb, &rpb, transaction);
+							/* Nickolay Samofatov, 01 Mar 2003: 
+							  If we don't have data for the record and
+							  it was modified and deleted under our savepoint
+							  we need to back it out to the state as it were
+							  before our transaction started */
+							if (record->rec_length == 0 && record->rec_flags & REC_new_version) {
+								if (!DPM_get(tdbb, &rpb, LCK_write))
+									BUGCHECK(186);	/* msg 186 record disappeared */
+								if (rpb.rpb_flags & rpb_delta)
 									VIO_data(tdbb, &rpb,
 											 reinterpret_cast <
 											 blk * >(tdbb->tdbb_default));
-								}
-								update_in_place(tdbb, transaction, &rpb,
-												&new_rpb);
-								if (!(transaction->tra_flags & TRA_system))
-									garbage_collect_idx(tdbb, &rpb, &new_rpb,
-														NULL);
-								rpb.rpb_record = dead_record;
+								else
+									CCH_RELEASE(tdbb, &rpb.rpb_window);
+
+								VIO_backout(tdbb, &rpb, transaction);
 							}
+						}
+						if (record->rec_length != 0) {
+							dead_record = rpb.rpb_record;
+							new_rpb = rpb;
+							new_rpb.rpb_record = record;
+							new_rpb.rpb_address = record->rec_data;
+							new_rpb.rpb_length = record->rec_length;
+							if (!(rpb.rpb_flags & rpb_delta)) {
+								if (!DPM_get(tdbb, &rpb, LCK_write))
+									BUGCHECK(186);	/* msg 186 record disappeared */
+								VIO_data(tdbb, &rpb,
+										 reinterpret_cast <
+										 blk * >(tdbb->tdbb_default));
+							}
+							update_in_place(tdbb, transaction, &rpb,
+											&new_rpb);
+							if (!(transaction->tra_flags & TRA_system))
+								garbage_collect_idx(tdbb, &rpb, &new_rpb,
+													NULL);
+							rpb.rpb_record = dead_record;
 						}
 					}
 				}
@@ -2801,8 +2793,9 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 
 				while (SBM_next
 					   (action->vct_records, &rpb.rpb_number,
-						RSE_get_forward)) {
-					if (!SBM_test(action->vct_undo, rpb.rpb_number))
+						RSE_get_forward)) 
+				{
+					if (!action->vct_undo || !action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number))
 						verb_post(tdbb, transaction, &rpb, 0, 0, FALSE,
 								  FALSE);
 					else {
@@ -2815,12 +2808,7 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 						if (!DPM_get(tdbb, &rpb, LCK_read))
 							BUGCHECK(186);	/* msg 186 record disappeared */
 						CCH_RELEASE(tdbb, &rpb.rpb_window);
-						for (stack = action->vct_data; stack;
-							 stack = stack->lls_next) {
-							record = (REC) stack->lls_object;
-							if (record->rec_number == rpb.rpb_number)
-								break;
-						}
+						record = action->vct_undo->current().rec_data;
 						same_tx =
 							(record->rec_flags & REC_same_tx) ? TRUE : FALSE;
 						new_ver =
@@ -2845,11 +2833,13 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 				delete rpb.rpb_record;
 		}
 		SBM_reset(&action->vct_records);
-		SBM_reset(&action->vct_undo);
-
-		while (action->vct_data)
-			delete LLS_POP(&action->vct_data);
-
+		if (action->vct_undo) {
+			if (action->vct_undo->getFirst()) do {
+				delete action->vct_undo->current().rec_data;
+			} while (action->vct_undo->getNext());
+			delete action->vct_undo;
+			action->vct_undo = NULL;
+		}
 		action->vct_next = sav_point->sav_verb_free;
 		sav_point->sav_verb_free = action;
 	}
@@ -4580,9 +4570,8 @@ static void verb_post(
  **************************************/
 	VCT action;
 	JrdMemoryPool *old_pool;
-	REC data, record;
+	REC data;
 	UCHAR *p, *q, *end;
-	LLS stack;
 
 	SET_TDBB(tdbb);
 
@@ -4612,7 +4601,6 @@ static void verb_post(
 			/* An update-in-place is being posted to this savepoint, and this
 			   savepoint hasn't seen this record before. */
 
-			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
 			data = FB_NEW_RPT(*tdbb->tdbb_default, old_data->rec_length) rec();
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = old_data->rec_length;
@@ -4622,13 +4610,14 @@ static void verb_post(
 			for (q = old_data->rec_data, p = data->rec_data, end =
 				 q + old_data->rec_length; q < end; q++)
 				*p++ = *q;
-			LLS_PUSH(data, &action->vct_data);
+			if (!action->vct_undo)
+				action->vct_undo = new UndoItemTree(tdbb->tdbb_default);
+			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
 		}
 		else if (same_tx) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint hasn't seen this record before. */
 
-			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
 			data = FB_NEW_RPT(*tdbb->tdbb_default, 1) rec;
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
@@ -4636,33 +4625,30 @@ static void verb_post(
 				data->rec_flags |= (REC_same_tx | REC_new_version);
 			else
 				data->rec_flags |= REC_same_tx;
-			LLS_PUSH(data, &action->vct_data);
+
+			if (!action->vct_undo)
+				action->vct_undo = new UndoItemTree(tdbb->tdbb_default);
+			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
 		}
 	}
 	else if (same_tx) {
-		if (SBM_test(action->vct_undo, rpb->rpb_number)) {
+		if (action->vct_undo && action->vct_undo->locate(Firebird::locEqual, rpb->rpb_number)) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has already undo for this record. */
-
-			for (stack = action->vct_data; stack; stack = stack->lls_next) {
-				record = (REC) stack->lls_object;
-				if (record->rec_number == rpb->rpb_number) {
-					record->rec_flags |= REC_same_tx;
-					break;
-				}
-			}
+			action->vct_undo->current().rec_data->rec_flags |= REC_same_tx;
 		}
 		else {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has seen this record before but it doesn't have
 			   undo data. */
 
-			SBM_set(tdbb, &action->vct_undo, rpb->rpb_number);
 			data = FB_NEW_RPT(*tdbb->tdbb_default, 1) rec();
 			data->rec_number = rpb->rpb_number;
 			data->rec_length = 0;
 			data->rec_flags |= (REC_same_tx | REC_new_version);
-			LLS_PUSH(data, &action->vct_data);
+			if (!action->vct_undo)
+				action->vct_undo = new UndoItemTree(tdbb->tdbb_default);
+			action->vct_undo->add(UndoItem(rpb->rpb_number, data));
 		}
 		if (old_data) {
 			/* The passed old_data will not be used.  Thus, garbage collect. */
