@@ -52,6 +52,10 @@ public:
 
 class DirectoryList {
 private:
+	// ListMode must be changed together with ListKeys in dir_list.cpp
+	enum ListMode {NotInitialized = -1, 
+		None = 0, Restrict = 1, Full = 2};
+	ListMode Mode;
 	ParsedPath * ConfigDirs;
 	int nDirs;
 	// Initialize loads data from Config Manager.
@@ -59,6 +63,19 @@ private:
 	// load them dynamically. Now called locally
 	// when IsPathInList() invoked first time.
 	void Initialize(void);
+	// Clear allocated memory and reinitialize
+	void Clear(void) {
+		delete[] ConfigDirs;
+		ConfigDirs = 0;
+		nDirs = 0;
+		Mode = NotInitialized;
+	}
+	// Check, whether Value begins with Key, 
+	// followed by any character from Next.
+	// If Next is empty, Value shoult exactly match Key.
+	// If Key found, sets Mode to KeyMode and returns true.
+	bool KeyWord(const ListMode KeyMode, Firebird::string& Value, 
+		Firebird::string Key, Firebird::string Next);
 protected:
 	// Used for various configuration parameters - 
 	// returns parameter string from Config Manager.

@@ -60,14 +60,14 @@
 
 static IB_FILE *ext_fopen(const char *filename, const char *mode);
 
-static class ExternalFilesDirectoryList : public DirectoryList {
+static class ExternalFileDirectoryList : public DirectoryList {
 	const Firebird::string GetConfigString(void) const {
-		return Firebird::string(Config::getExternalTablesDirs());
+		return Firebird::string(Config::getExternalFileAccess());
 	}
-} iExternalFilesDirectoryList;
+} iExternalFileDirectoryList;
 
 static IB_FILE *ext_fopen(const char *filename, const char *mode) {
-	if (!iExternalFilesDirectoryList.IsPathInList(filename))
+	if (!iExternalFileDirectoryList.IsPathInList(filename))
 		return 0;
 	return ib_fopen(filename, mode);
 }
@@ -162,7 +162,7 @@ EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 	Firebird::string Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
 	if (Path.length() == 0)	{	// path component not present in file_name
-		iExternalFilesDirectoryList.ExpandFileName(Path, Name, 4);
+		iExternalFileDirectoryList.ExpandFileName(Path, Name, 4);
 		file_name = Path.c_str();
 	}
 

@@ -98,8 +98,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
-	{TYPE_STRING,		"ExternalTablesDirs",		(ConfigValue) "ext"},		// location(s) of external tables
-	{TYPE_STRING,		"DatabasesDirs",			(ConfigValue) "/"}		// location(s) of databases
+	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
+	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"}	// location(s) of databases
 };
 
 /******************************************************************************
@@ -422,12 +422,12 @@ const char *Config::getRemoteBindAddress()
 	return (const char*) sysConfig.values[KEY_REMOTE_BIND_ADDRESS];
 }
 
-const char *Config::getExternalTablesDirs()
+const char *Config::getExternalFileAccess()
 {
-	return (const char*) sysConfig.values[KEY_EXTERNAL_TABLES_DIRS];
+	return (const char*) sysConfig.values[KEY_EXTERNAL_FILE_ACCESS];
 }
 
-const char *Config::getDatabasesDirs()
+const char *Config::getDatabaseAccess()
 {
-	return (const char*) sysConfig.values[KEY_DATABASES_DIRS];
+	return (const char*) sysConfig.values[KEY_DATABASE_ACCESS];
 }

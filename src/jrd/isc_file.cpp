@@ -1739,15 +1739,15 @@ static void share_name_from_unc(
 }
 #endif /* WIN_NT */
 
-bool ISC_verify_databases_dirs(TEXT *name) {
+bool ISC_verify_database_access(TEXT *name) {
 #ifndef SUPERCLIENT
-	static class DatabasesDirectoryList : public DirectoryList {
+	static class DatabaseDirectoryList : public DirectoryList {
 		const Firebird::string GetConfigString(void) const {
-			return Firebird::string(Config::getDatabasesDirs());
+			return Firebird::string(Config::getDatabaseAccess());
 		}
-	} iDatabasesDirectoryList;
+	} iDatabaseDirectoryList;
 
-	if (!iDatabasesDirectoryList.IsPathInList(name)) {
+	if (!iDatabaseDirectoryList.IsPathInList(name)) {
 		return false;
 	}
 #endif

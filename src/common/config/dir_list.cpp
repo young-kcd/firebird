@@ -23,10 +23,11 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
+#include "../jrd/gds_proto.h"
 
 #define New FB_NEW(*getDefaultMemoryPool())
-#define NONE "-"
-#define ROOT "/"
+/*#define NONE "-"
+#define ROOT "/" */
 
 ParsedPath::ParsedPath(void) {
 	PathElem = 0;
@@ -76,7 +77,7 @@ bool ParsedPath::operator==(const char* path) const {
 
 Firebird::string ParsedPath::SubPath(int n) const {
 	Firebird::string rc = PathElem[0];
-	if (PathUtils::isRelative(rc + PathUtils::dir_sep) && rc != NONE)
+	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
 	for (int i = 1; i < n; i++) {
 		Firebird::string newpath;
@@ -118,14 +119,65 @@ bool ParsedPath::Contains(const ParsedPath& pPath) const {
 DirectoryList::DirectoryList() {
 	ConfigDirs = 0;
 	nDirs = 0;
+	Mode = NotInitialized;
 }
 
 DirectoryList::~DirectoryList() {
-	delete[] ConfigDirs;
+	Clear();
+}
+
+bool DirectoryList::KeyWord(
+		const ListMode KeyMode, 
+		Firebird::string& Value, 
+		Firebird::string Key, 
+		Firebird::string Next
+) {
+	if (Value.length() < Key.length()) {
+		return false;
+	}
+	Firebird::string KeyValue = Value.substr(0, Key.length());
+	if (KeyValue != Key) {
+		return false;
+	}
+	if (Next.length() > 0) {
+		if (Value.length() == Key.length()) {
+			return false;
+		}
+		KeyValue = Value.substr(Key.length());
+		if (Next.find(KeyValue[0]) == Firebird::string::npos) {
+			return false;
+		}
+		int startPos = KeyValue.find_first_not_of(Next);
+		if (startPos == Firebird::string::npos) {
+			return false;
+		}
+		Value = KeyValue.substr(startPos);
+	}
+	else {
+		if (Value.length() > Key.length()) {
+			return false;
+		}
+		Value.erase();
+	}
+	Mode = KeyMode;
+	return true;
 }
 
 void DirectoryList::Initialize(void) {
-	const Firebird::string val = GetConfigString();
+	Clear();
+
+	Firebird::string val = GetConfigString();
+	if (KeyWord(None, val, "None", "") || 
+		KeyWord(Full, val, "Full", "")) {
+		return;
+	}
+	if (! KeyWord(Restrict, val, "Restrict", " \t")) {
+		gds__log("DirectoryList: unknown parameter '%s', "
+			"defaulting to None", val.c_str());
+		Mode = None;
+		return;
+	}
+
 	nDirs = 1;
 	unsigned int i;
 	for (i = 0; i < val.length(); i++) {
@@ -143,7 +195,7 @@ void DirectoryList::Initialize(void) {
 			if (i > Last) {
 				dir = val.substr(Last, i-Last);
 			}
-			if (PathUtils::isRelative(dir) && dir != NONE && dir != ROOT) {
+			if (PathUtils::isRelative(dir)) {
 				Firebird::string newdir;
 				PathUtils::concatPath(newdir, Root, dir);
 				dir = newdir;
@@ -156,7 +208,7 @@ void DirectoryList::Initialize(void) {
 	if (i > Last) {
 		dir = val.substr(Last, i - Last);
 	}
-	if (PathUtils::isRelative(dir) && dir != NONE && dir != ROOT) {
+	if (PathUtils::isRelative(dir)) {
 		Firebird::string newdir;
 		PathUtils::concatPath(newdir, Root, dir);
 		dir = newdir;
@@ -165,12 +217,17 @@ void DirectoryList::Initialize(void) {
 }
 
 bool DirectoryList::IsPathInList(const Firebird::string& path) {
-	if (!ConfigDirs)
+	if (Mode == NotInitialized)
 		Initialize();
 
-	// Handle special case 1
-	if (ConfigDirs[0] == ROOT)					// all open
+	// Handle special cases
+	switch(Mode) {
+	case NotInitialized:
+	case None:
+		return false;
+	case Full:
 		return true;
+	}
 
 	// Disable any up-dir(..) references - in case our path_utils
 	// and OS handle paths in slightly different ways,
@@ -179,10 +236,6 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 	// "GET /scripts/..%252f../winnt/system32/cmd.exe?/c+dir HTTP/1.0"
 	//								(live from apache access log :)
 	if (path.find(PathUtils::up_dir_link) != Firebird::string::npos)
-		return false;
-
-	// Handle special case 2
-	if (nDirs == 1 && ConfigDirs[0] == NONE)	// all closed
 		return false;
 
 	Firebird::string varpath = path;

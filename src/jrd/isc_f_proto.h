@@ -42,7 +42,7 @@ extern int ISC_expand_share(TEXT *, TEXT *);
 extern int ISC_file_lock(SSHORT);
 extern int ISC_file_unlock(SSHORT);
 extern int ISC_strip_filename(TEXT *);
-extern bool ISC_verify_databases_dirs(TEXT *);
+extern bool ISC_verify_database_access(TEXT *);
 
 #ifdef __cplusplus
 } /* extern "C" */

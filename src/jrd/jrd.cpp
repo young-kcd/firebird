@@ -6639,8 +6639,8 @@ static bool verify_database_name(TEXT *name, STATUS *status)
 		return true;
 	
 	// Check for .conf
-	if (!ISC_verify_databases_dirs(name)) {
-		static TEXT *tempdiag = "DatabasesDirs - access denied";
+	if (!ISC_verify_database_access(name)) {
+		static TEXT *tempdiag = "Database Access denied";
 		status[0] = gds_arg_gds;
 		status[1] = gds_io_error;
 		status[2] = gds_arg_string;
