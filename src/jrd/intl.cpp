@@ -417,17 +417,17 @@ public:
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return reinterpret_cast<Algorithm*>(object)->processNextChunk(
+		return static_cast<Algorithm*>(object)->processNextChunk(
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 	static void destroy(void* object) {
-		delete reinterpret_cast<Algorithm*>(object);
+		delete static_cast<Algorithm*>(object);
 	}
 	static void reset(void* object) {
-		reinterpret_cast<Algorithm*>(object)->reset();
+		static_cast<Algorithm*>(object)->reset();
 	}
 	static bool result(void* object) {
-		return reinterpret_cast<Algorithm*>(object)->getResult();
+		return static_cast<Algorithm*>(object)->getResult();
 	}
 };
 

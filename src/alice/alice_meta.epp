@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.33 2004-03-09 00:16:49 skidder Exp $
+ *	$Id: alice_meta.epp,v 1.34 2004-03-19 06:14:29 robocop Exp $
  */
 
 #include "firebird.h"
@@ -95,7 +95,7 @@ static inline void return_error(const ISC_STATUS* user_status)
 void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 {
 	FRBRD* request = NULL;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = handle))
 		return;
@@ -125,7 +125,7 @@ void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 void MET_get_state(ISC_STATUS* user_status, TDR trans)
 {
 	FRBRD* request = NULL;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = trans->tdr_db_handle) ||
 		!(trans->tdr_db_caps & CAP_transactions))
@@ -171,7 +171,7 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 {
 	FRBRD* request = NULL;
 	TDR trans = NULL;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = handle))
 		return 0;
@@ -220,7 +220,7 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 
 void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!(DB = trans->tdr_db_handle))
 		return;
@@ -246,7 +246,7 @@ void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
 
 static alice_str* alloc_string(const TEXT** ptr)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	const TEXT* p = *ptr;
 
@@ -275,7 +275,7 @@ static alice_str* alloc_string(const TEXT** ptr)
 static USHORT get_capabilities(ISC_STATUS* user_status)
 {
 	USHORT capabilities = CAP_none;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 //  Look for desired fields in system relations 
 	FRBRD* req = NULL;
@@ -313,7 +313,7 @@ static TDR get_description(ISC_QUAD* blob_id)
 {
 	TEXT buffer[1024];
 	TEXT* bigger_buffer = 0;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	const TEXT* p = buffer;
 	const USHORT length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer);
@@ -395,7 +395,7 @@ static TDR get_description(ISC_QUAD* blob_id)
 
 static void parse_fullpath(TDR trans)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 //  start at the end of the full pathname 
 
@@ -474,7 +474,7 @@ static void parse_fullpath(TDR trans)
 static USHORT snarf_blob(ISC_QUAD* blob_id,
 						 USHORT buffer_length, TEXT* buffer)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (buffer_length)
 		buffer[0] = 0;

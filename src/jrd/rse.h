@@ -42,6 +42,8 @@ class jrd_nod;
 struct sort_key_def;
 class SparseBitmap;
 class str;
+struct sort_work_file;
+struct sort_context;
 
 // Record source block (RSB) types
 
@@ -120,15 +122,15 @@ const USHORT rsb_writelock = 16;		// records should be locked for writing
 
 // Merge (equivalence) file block
 
-typedef struct mfb {
-	struct sfb *mfb_sfb;				// merge file uses SORT I/O routines
+struct merge_file {
+	sort_work_file*	mfb_sfb;			// merge file uses SORT I/O routines
 	ULONG mfb_equal_records;			// equality group cardinality
 	ULONG mfb_record_size;				// matches sort map length
 	ULONG mfb_current_block;			// current merge block in buffer
 	ULONG mfb_block_size;				// merge block I/O size
 	ULONG mfb_blocking_factor;			// merge equality records per block
-	UCHAR *mfb_block_data;				// merge block I/O buffer
-} *MFB;
+	UCHAR*	mfb_block_data;				// merge block I/O buffer
+};
 
 #define MERGE_BLOCK_SIZE	65536
 
@@ -161,7 +163,7 @@ typedef struct irsb_index {
 
 typedef struct irsb_sort {
 	ULONG irsb_flags;
-	struct scb *irsb_sort_handle;
+	sort_context*	irsb_sort_handle;
 } *IRSB_SORT;
 
 typedef struct irsb_procedure {
@@ -179,7 +181,7 @@ typedef struct irsb_mrg {
 		SLONG irsb_mrg_equal_current;	// last fetched record from equal queue
 		SLONG irsb_mrg_last_fetched;	// first sort merge record of next group
 		SSHORT irsb_mrg_order;			// logical merge order by substream
-		struct mfb irsb_mrg_file;		// merge equivalence file
+		merge_file irsb_mrg_file;		// merge equivalence file
 	} irsb_mrg_rpt[1];
 } *IRSB_MRG;
 
@@ -273,14 +275,14 @@ const USHORT SMB_tag = 2;		// beast is a tag sort
 // indexed relationships block (IRL) holds 
 // information about potential join orders
 
-class irl : public pool_alloc<type_irl>
+class IndexedRelationship : public pool_alloc<type_irl>
 {
 public:
-	struct irl *irl_next;		// next irl block for stream
-	USHORT irl_stream;			// stream reachable by relation
-	USHORT irl_unique;			// is this stream reachable by unique index?
+	IndexedRelationship*	irl_next;		// next IRL block for stream
+	USHORT					irl_stream;		// stream reachable by relation
+	USHORT					irl_unique;		// is this stream reachable by unique index?
 };
-typedef irl *IRL;
+
 
 
 // Must be less then MAX_SSHORT. Not used for static arrays.
@@ -334,10 +336,10 @@ public:
 	};
 	struct opt_stream {
 		// Streams and their options
-		IRL opt_relationships;				// streams directly reachable by index
-		double opt_best_stream_cost;		// best cost of retrieving first n = streams
-		USHORT opt_best_stream;				// stream in best join order seen so far
-		USHORT opt_stream_number;			// stream in position of join order
+		IndexedRelationship* opt_relationships;	// streams directly reachable by index
+		double opt_best_stream_cost;			// best cost of retrieving first n = streams
+		USHORT opt_best_stream;					// stream in best join order seen so far
+		USHORT opt_stream_number;				// stream in position of join order
 		UCHAR opt_stream_flags;
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
@@ -377,10 +379,10 @@ public:
 // within an index; a pointer to this block is passed to the user as a
 // handle to facilitate returning to this position
 
-class bkm : public pool_alloc_rpt<SCHAR, type_bkm>
+class Bookmark : public pool_alloc_rpt<SCHAR, type_bkm>
 {
 public:
-	struct bkm *bkm_next;
+	Bookmark* bkm_next;
 	struct dsc bkm_desc;		// bookmark descriptor describing the bookmark handle
 	ULONG bkm_handle;			// bookmark handle containing pointer to this block
 	SLONG bkm_number;			// current record number
@@ -392,7 +394,7 @@ public:
 	struct dsc bkm_key_desc;	// descriptor containing current key value
 	UCHAR bkm_key_data[1];		// current key value
 };
-typedef bkm *BKM;
+
 
 const USHORT bkm_bof = 1;
 const USHORT bkm_eof = 2;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.17 2004-02-02 11:00:52 robocop Exp $
+//	$Id: all.cpp,v 1.18 2004-03-19 06:14:29 robocop Exp $
 //
 
 #include "firebird.h"
@@ -47,9 +47,9 @@
 
 void ALLA_fini(void)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
-	for (tgbl::pool_vec_t::iterator curr = tdgbl->pools.begin();
+	for (Tgbl::pool_vec_t::iterator curr = tdgbl->pools.begin();
 					curr != tdgbl->pools.end(); ++curr)
 	{
 		AliceMemoryPool::deletePool(*curr);
@@ -69,7 +69,7 @@ void ALLA_fini(void)
 
 void ALLA_init(void)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 #ifdef NOT_USED_OR_REPLACED
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool =
 		AliceMemoryPool::create_new_pool();
@@ -82,7 +82,7 @@ void ALLA_init(void)
 
 
 
-void AliceMemoryPool::ALLA_push(class blk *object, alice_lls** stack)
+void AliceMemoryPool::ALLA_push(blk* object, alice_lls** stack)
 {
 /**************************************
  *
@@ -94,7 +94,7 @@ void AliceMemoryPool::ALLA_push(class blk *object, alice_lls** stack)
  *	Push an object on an LLS stack.
  *
  **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 	AliceMemoryPool* pool = tdgbl->ALICE_default_pool;
 
 	alice_lls* node = pool->lls_cache.newBlock();
@@ -141,7 +141,7 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
  *
  **************************************/
 
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	// TMN: John, is this correct?
     AliceMemoryPool* pool = new(0, parent) AliceMemoryPool(parent);
@@ -172,10 +172,11 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 }
 #endif
 
-void AliceMemoryPool::deletePool(AliceMemoryPool* pool) {
-	TGBL tdgbl = GET_THREAD_DATA;
+void AliceMemoryPool::deletePool(AliceMemoryPool* pool) 
+{
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
-	tgbl::pool_vec_t::iterator curr;
+	Tgbl::pool_vec_t::iterator curr;
 	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{
 		if (*curr == pool)

@@ -760,24 +760,13 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
  *	security class to be effective.
  *
  **************************************/
-	BLK request, request2;
 	TEXT field_name[32], user[32], s_class[32];
-	UCHAR *field_acl, *relation_acl;
 	USHORT priv, field_public, aggregate_public;
-	USHORT field_priv, relation_priv;
 	DSC desc;
 	SSHORT user_type;
-	int field_buffer_start_index, i;
-
-	STR relation_buffer = *str_relation_buffer;
-
-	STR str_field_buffer = NULL, str_field_buffer_start = NULL;
-
-	ULONG field_length, start_length;
-	ULONG *field_length_ptr = &field_length;
-        //ULONG *start_length_ptr =
-	//	&start_length;
-
+	
+	STR str_field_buffer = 0;
+	STR str_field_buffer_start = 0;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -790,16 +779,18 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	str_field_buffer       = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
 	str_field_buffer_start->str_length = str_field_buffer->str_length = *length_ptr - 1;
 
+	ULONG field_length, start_length;
 	field_length = start_length = *length_ptr;
+	ULONG* field_length_ptr = &field_length;
 
-
-
+	STR relation_buffer = *str_relation_buffer;
 	MOVE_FAST(relation_buffer->str_data, str_field_buffer->str_data,
 			  (int) (*acl_ptr - relation_buffer->str_data));
-	field_buffer_start_index = (int) (*acl_ptr - relation_buffer->str_data);
-	field_acl = str_field_buffer->str_data + field_buffer_start_index;
-	relation_acl = relation_buffer->str_data + field_buffer_start_index;
+	const int field_buffer_start_index = (int) (*acl_ptr - relation_buffer->str_data);
+	UCHAR* field_acl = str_field_buffer->str_data + field_buffer_start_index;
+	UCHAR* relation_acl = relation_buffer->str_data + field_buffer_start_index;
 
+	int i;
 /* remember this starting point for subsequent fields. */
 	for (i = 0; field_buffer_start_index > i;
 		 i++, str_field_buffer_start->str_data[i] =
@@ -809,8 +800,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	user[0] = 0;
 	aggregate_public = public_priv;
 
-	request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
-	request2 = NULL;
+	blk* request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
+	blk* request2 = NULL;
 
 	FOR(REQUEST_HANDLE request)
 		FLD IN RDB$RELATION_FIELDS CROSS
@@ -838,7 +829,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 			{
 				if (strcmp(user, "PUBLIC"))
 				{
-					field_priv = 
+					const USHORT field_priv =
 						(USHORT)(	public_priv |
 									priv |
 									squeeze_acl(str_field_buffer->str_data,
@@ -851,7 +842,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 								field_priv,
 								&str_field_buffer,
 								field_length_ptr);
-					relation_priv =
+					const USHORT relation_priv =
 						(USHORT)(	public_priv |
 									priv |
 									squeeze_acl(relation_buffer->str_data,
@@ -953,7 +944,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	{
 		if (strcmp(user, "PUBLIC"))
 		{
-			field_priv =
+			const USHORT field_priv =
 				(USHORT)(	public_priv |
 							priv |
 							squeeze_acl(str_field_buffer->str_data,
@@ -966,7 +957,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 						field_priv,
 						&str_field_buffer,
 						field_length_ptr);
-			relation_priv =
+			const USHORT relation_priv =
 				(USHORT)(	public_priv |
 							priv |
 							squeeze_acl(relation_buffer->str_data,

@@ -738,7 +738,7 @@ void SCL_init(bool create,
 
 	const USHORT length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
-	usr* user = FB_NEW_RPT(*dbb->dbb_permanent, length) usr();
+	UserId* user = FB_NEW_RPT(*dbb->dbb_permanent, length) UserId();
 	tdbb->tdbb_attachment->att_user = user;
 	p = user->usr_data;
 	user->usr_user_name = save_string(name, &p);
@@ -1213,7 +1213,7 @@ static SLONG walk_acl(thread_db* tdbb,
 
 	// Munch ACL. If we find a hit, eat up privileges.
 
-	struct usr user = *tdbb->tdbb_attachment->att_user;
+	UserId user = *tdbb->tdbb_attachment->att_user;
 	const TEXT* role_name = user.usr_sql_role_name;
 
 	if (view && (view->rel_flags & REL_sql_relation))

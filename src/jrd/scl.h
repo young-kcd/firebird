@@ -54,7 +54,7 @@ typedef scl *SCL;
 
 /* information about the user */
 
-class usr : public pool_alloc_rpt<SCHAR, type_usr>
+class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 {
     public:
 	TEXT *usr_user_name;		/* User name */
@@ -68,7 +68,6 @@ class usr : public pool_alloc_rpt<SCHAR, type_usr>
 	USHORT usr_flags;			/* Misc. crud */
 	TEXT usr_data[2];
 };
-typedef usr *USR;
 
 #define USR_locksmith	1		/* User has great karma */
 #define USR_dba		2			/* User has DBA privileges */

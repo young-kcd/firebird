@@ -164,7 +164,7 @@ typedef struct isr {
 
 /* Index retrieval block -- hold stuff for index retrieval */
 
-class irb : public pool_alloc_rpt<jrd_nod*, type_irb>
+class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 {
     public:
 	IDX irb_desc;				/* Index descriptor */
@@ -176,7 +176,6 @@ class irb : public pool_alloc_rpt<jrd_nod*, type_irb>
 	KEY *irb_key;				/* key for equality retrieval */
 	jrd_nod* irb_value[1];
 };
-typedef irb *IRB;
 
 #define irb_partial	1			/* Partial match: not all segments or starting of key only */
 #define irb_starting	2		/* Only compute "starting with" key for index segment */

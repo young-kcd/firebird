@@ -30,21 +30,22 @@
 class Rsb;
 struct record_param;
 class jrd_nod;
+class Bookmark;
 
 void RSE_close(thread_db*, Rsb*);
 #ifdef PC_ENGINE
 bool RSE_find_dbkey(thread_db*, Rsb*, jrd_nod*, jrd_nod*);
 bool RSE_find_record(thread_db*, Rsb*, USHORT, USHORT, jrd_nod*);
 #endif
-BOOLEAN RSE_get_record(thread_db*, Rsb*, enum rse_get_mode);
+bool RSE_get_record(thread_db*, Rsb*, enum rse_get_mode);
 #ifdef PC_ENGINE
-struct bkm *RSE_get_bookmark(thread_db*, Rsb*);
+Bookmark* RSE_get_bookmark(thread_db*, Rsb*);
 void RSE_mark_crack(thread_db*, Rsb*, USHORT);
 #endif
 void RSE_open(thread_db*, Rsb*);
 #ifdef PC_ENGINE
 bool RSE_reset_position(thread_db*, Rsb*, record_param*);
-bool RSE_set_bookmark(thread_db*, Rsb*, record_param*, struct bkm*);
+bool RSE_set_bookmark(thread_db*, Rsb*, record_param*, Bookmark*);
 #endif
 
 #ifdef PC_ENGINE

@@ -729,7 +729,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	const jrd_prc* procedure;
 	const jrd_nod* const* ptr;
 	const jrd_nod* const* end;
-	const irb* retrieval;
+	const IndexRetrieval* retrieval;
 
 	switch (node->nod_type) {
 	case nod_rse:
@@ -780,7 +780,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 		return TRUE;
 
 	case nod_index:
-		retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+		retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 		ib_fprintf(dbg_file, ", id: %d\n", retrieval->irb_index);
 		for (ptr = retrieval->irb_value, end =
 			 ptr + retrieval->irb_lower_count; ptr < end; ptr++)

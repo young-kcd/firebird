@@ -97,7 +97,8 @@ size_t SortMem::MemoryBlock::write(ISC_STATUS *status, size_t position, char *bu
  *	File block implementation
  */
 
-SortMem::FileBlock::FileBlock(Block *tail, size_t length, struct sfb *blk, size_t position)
+SortMem::FileBlock::FileBlock(Block *tail, size_t length, sort_work_file* blk, 
+							  size_t position)
 	: Block(tail, length), file(blk), offset(position)
 {
 }
@@ -137,7 +138,7 @@ size_t SortMem::FileBlock::write(ISC_STATUS *status, size_t position, char *buff
  *	Virtual scratch file implementation
  */
 
-SortMem::SortMem(struct sfb *blk, size_t size)
+SortMem::SortMem(sort_work_file* blk, size_t size)
 	: internal(blk), logical_size(0), physical_size(0), file_size(0), head(0), tail(0)
 {
 	// Initialize itself

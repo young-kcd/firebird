@@ -34,6 +34,10 @@
    word contains the relation id of the blob and the second the record
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
+
+class BlobControl;
+class jrd_req;
+class jrd_tra;
    
 struct bid {
 	ULONG bid_relation_id;		/* Relation id (or null) */
@@ -50,14 +54,14 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
     public:
 	Attachment*	blb_attachment;	/* database attachment */
-	jrd_rel *blb_relation;	/* Relation, if known */
-	class jrd_tra *blb_transaction;	/* Parent transaction block */
-	blb *blb_next;		/* Next blob in transaction */
-	UCHAR *blb_segment;			/* Next segment to be addressed */
-	struct ctl *blb_filter;		/* Blob filter control block, if any */
-	bid blb_blob_id;		/* Id of materialized blob */
-	class jrd_req *blb_request;	/* request that assigned temporary blob */
-	vcl *blb_pages;		/* Vector of pages */
+	jrd_rel*	blb_relation;	/* Relation, if known */
+	jrd_tra*	blb_transaction;	/* Parent transaction block */
+	blb*		blb_next;		/* Next blob in transaction */
+	UCHAR*		blb_segment;	/* Next segment to be addressed */
+	BlobControl*	blb_filter;	/* Blob filter control block, if any */
+	bid			blb_blob_id;	/* Id of materialized blob */
+	jrd_req*	blb_request;	/* request that assigned temporary blob */
+	vcl*		blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 	USHORT blb_level;			/* Storage type */
 	USHORT blb_max_segment;		/* Longest segment */

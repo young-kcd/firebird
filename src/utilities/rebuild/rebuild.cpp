@@ -51,7 +51,7 @@
 
 Database dbb_struct;
 thread_db tdbb_struct, *gdbb;
-struct pgc dim;
+PageControl dim;
 jrd_tra dull;
 
 const ULONG* tips;

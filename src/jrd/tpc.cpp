@@ -42,8 +42,8 @@
 #include "../jrd/tra_proto.h"
 #include <memory>
 
-static TPC allocate_tpc(thread_db*, ULONG);
-static void cache_transactions(thread_db*, TPC*, ULONG);
+static TxPageCache* allocate_tpc(thread_db*, ULONG);
+static void cache_transactions(thread_db*, TxPageCache**, ULONG);
 static int extend_cache(thread_db*, SLONG);
 
 
@@ -63,7 +63,7 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const tpc* tip_cache = dbb->dbb_tip_cache;
+	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
 		TPC_initialize_tpc(tdbb, number);
 		tip_cache = dbb->dbb_tip_cache;
@@ -112,7 +112,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	tpc* tip_cache = dbb->dbb_tip_cache;
+	TxPageCache* tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
 		cache_transactions(tdbb, NULL, (ULONG) 0);
 		return;
@@ -126,7 +126,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 
 	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
-	tpc** tip_cache_ptr;
+	TxPageCache** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
 	{
@@ -162,7 +162,7 @@ void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const SSHORT shift = TRANS_SHIFT(number);
 
-	for (tpc* tip_cache = dbb->dbb_tip_cache; tip_cache;
+	for (TxPageCache* tip_cache = dbb->dbb_tip_cache; tip_cache;
 		 tip_cache = tip_cache->tpc_next) 
 	{
 		if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip)) {
@@ -197,7 +197,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const tpc* tip_cache = dbb->dbb_tip_cache;
+	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
 		cache_transactions(tdbb, NULL, (ULONG) 0);
 		tip_cache = dbb->dbb_tip_cache;
@@ -304,7 +304,7 @@ void TPC_update_cache(thread_db* tdbb, const tx_inv_page* tip_page, SLONG sequen
    any tip cache pages we can release--this is cheaper and 
    easier than finding out when a TIP page is dropped */
 
-	tpc* tip_cache;
+	TxPageCache* tip_cache;
 	while ( (tip_cache = dbb->dbb_tip_cache) ) {
 		if (dbb->dbb_oldest_transaction >=
 			tip_cache->tpc_base + trans_per_tip) 
@@ -336,7 +336,7 @@ void TPC_update_cache(thread_db* tdbb, const tx_inv_page* tip_page, SLONG sequen
 }
 
 
-static TPC allocate_tpc(thread_db* tdbb, ULONG base)
+static TxPageCache* allocate_tpc(thread_db* tdbb, ULONG base)
 {
 /**************************************
  *
@@ -355,14 +355,16 @@ static TPC allocate_tpc(thread_db* tdbb, ULONG base)
 /* allocate a TIP cache block with enough room for 
    all desired transactions */
 
-	tpc* tip_cache = FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) tpc();
+	TxPageCache* tip_cache = 
+		FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) TxPageCache();
 	tip_cache->tpc_base = base;
 
 	return tip_cache;
 }
 
 
-static void cache_transactions(thread_db* tdbb, TPC* tip_cache_ptr, ULONG oldest)
+static void cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, 
+							   ULONG oldest)
 {
 /**************************************
  *
@@ -394,8 +396,8 @@ static void cache_transactions(thread_db* tdbb, TPC* tip_cache_ptr, ULONG oldest
 	CCH_RELEASE(tdbb, &window);
 #endif
 
-/* allocate tpc blocks to hold all transaction states --
-   assign one tpc block per page to simplify cache maintenance */
+/* allocate TxPageCache blocks to hold all transaction states --
+   assign one TxPageCache block per page to simplify cache maintenance */
 
 	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 	if (!tip_cache_ptr)
@@ -437,8 +439,8 @@ static int extend_cache(thread_db* tdbb, SLONG number)
    all transactions from that point up to the
    most recent transaction */
 
-	const tpc* tip_cache = 0;
-	tpc** tip_cache_ptr;
+	const TxPageCache* tip_cache = 0;
+	TxPageCache** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
 	{

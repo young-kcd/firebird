@@ -54,10 +54,10 @@
 
 
 static void activate_shadow(void);
-static Shadow* allocate_shadow(struct jrd_file*, USHORT, USHORT);
+static Shadow* allocate_shadow(jrd_file*, USHORT, USHORT);
 static bool check_for_file(const SCHAR*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
-static void check_if_got_ast(struct jrd_file*);
+static void check_if_got_ast(jrd_file*);
 #endif
 static void copy_header(void);
 static void update_dbb_to_sdw(Database*);

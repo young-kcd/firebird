@@ -884,7 +884,7 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
  **************************************/
 	Database* dbb = GET_DBB;
 
-	PGC control = dbb->dbb_pcontrol;
+	PageControl* control = dbb->dbb_pcontrol;
 	ib_fprintf(dbg_file,
 			   "PAGE INVENTORY PAGE\t checksum %d\t generation %ld\n\tMin page: %ld\n\tFree pages:\n\t",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,

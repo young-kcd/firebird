@@ -41,11 +41,13 @@ class jrd_rel;
 class jrd_prc;
 class Record;
 class jrd_nod;
-struct srpb;
+class SaveRecordParam;
 class vec;
 class jrd_tra;
 class Savepoint;
 class Resource;
+class AccessItem;
+class RefreshRange;
 
 /* record parameter block */
 
@@ -56,7 +58,7 @@ struct record_param {
 	jrd_rel*	rpb_relation;	/* relation of record */
 	Record*		rpb_record;		/* final record block */
 	Record*		rpb_prior;		/* prior record block if this is a delta record */
-	srpb*		rpb_copy;		/* record_param copy for singleton verification */
+	SaveRecordParam*	rpb_copy;		/* record_param copy for singleton verification */
 	Record*		rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
@@ -127,12 +129,12 @@ class Record : public pool_alloc_rpt<SCHAR, type_rec>
 
 /* save record_param block */
 
-class srpb : public pool_alloc<type_srpb>
+class SaveRecordParam : public pool_alloc<type_srpb>
 {
     public:
 	record_param srpb_rpb[1];		/* record parameter blocks */
 };
-typedef srpb* SRPB;
+
 
 /* request block */
 
@@ -148,7 +150,7 @@ public:
 	vec*		req_sub_requests;	// vector of sub-requests
 	jrd_tra*	req_transaction;
 	jrd_req*	req_request;		/* next request in Database */
-	struct acc*	req_access;			/* Access items to be checked */
+	AccessItem*	req_access;			/* Access items to be checked */
 	vec*		req_variables;		/* Vector of variables, if any */
 	Resource*	req_resources;		/* Resources (relations and indices) */
 	jrd_nod*	req_message;		/* Current message for send/receive */
@@ -156,7 +158,7 @@ public:
 	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
 	vec*		req_refresh_ranges;	/* Vector of refresh_ranges */
-	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
+	RefreshRange*	req_begin_ranges;	/* Vector of refresh_ranges */
 	jrd_prc*	req_procedure;		/* procedure, if any */
 	const TEXT*	req_trg_name;		/* name of request (trigger), if any */
 	USHORT		req_length;			/* message length for send/receive */
@@ -281,24 +283,23 @@ class Resource : public pool_alloc<type_rsc>
 
 /* Index lock block */
 
-class idl : public pool_alloc<type_idl>
+class IndexLock : public pool_alloc<type_idl>
 {
     public:
-	idl*		idl_next;		/* Next index lock block for relation */
+	IndexLock*	idl_next;		/* Next index lock block for relation */
 	Lock*		idl_lock;		/* Lock block */
 	jrd_rel*	idl_relation;	/* Parent relation */
 	USHORT		idl_id;			/* Index id */
 	USHORT		idl_count;		/* Use count */
 };
-typedef idl *IDL;
 
 
 /* Access items */
 
-class acc : public pool_alloc<type_acc>
+class AccessItem : public pool_alloc<type_acc>
 {
     public:
-	acc*	acc_next;
+	AccessItem*	acc_next;
 	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
 	SLONG	acc_view_id;
 	const TEXT*	acc_trg_name;
@@ -307,7 +308,6 @@ class acc : public pool_alloc<type_acc>
 	const TEXT*	acc_type;
 	USHORT		acc_mask;
 };
-typedef acc *ACC;
 
 #endif // JRD_REQ_H
 

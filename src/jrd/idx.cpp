@@ -237,7 +237,7 @@ void IDX_create_index(
 	void* callback_arg =
 		(idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	SCB sort_handle = SORT_init(tdbb->tdbb_status_vector,
+	sort_context* sort_handle = SORT_init(tdbb->tdbb_status_vector,
 							key_length + sizeof(struct isr),
 							1, &key_desc, callback, callback_arg,
 							tdbb->tdbb_attachment, 0);
@@ -438,7 +438,7 @@ void IDX_create_index(
 }
 
 
-IDB IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id)
+IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id)
 {
 /**************************************
  *
@@ -455,7 +455,7 @@ IDB IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	IDB index_block = FB_NEW(*dbb->dbb_permanent) idb();
+	IndexBlock* index_block = FB_NEW(*dbb->dbb_permanent) IndexBlock();
 	index_block->idb_id = id;
 
 /* link the block in with the relation linked list */
@@ -1063,7 +1063,7 @@ static IDX_E check_partner_index(
 	IDX partner_idx;
 	IIB insertion;
 	KEY key;
-	struct irb retrieval;
+	IndexRetrieval retrieval;
 
 	SET_TDBB(tdbb);
 
@@ -1091,7 +1091,7 @@ static IDX_E check_partner_index(
 		   generating a bitmap of duplicate records  */
 
 		SparseBitmap* bitmap = NULL;
-		MOVE_CLEAR(&retrieval, sizeof(struct irb));
+		MOVE_CLEAR(&retrieval, sizeof(IndexRetrieval));
 		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
 		MOVE_FAST(&partner_idx, &retrieval.irb_desc,
@@ -1201,7 +1201,7 @@ static int index_block_flush(void* ast_object)
  *	out and release the lock.
  *
  **************************************/
-	IDB index_block = static_cast<IDB>(ast_object);
+	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
 	thread_db thd_context, *tdbb;
 
 /* Since this routine will be called asynchronously, we must establish
@@ -1350,7 +1350,7 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
  *	processes to get rid of index info.
  *
  **************************************/
-	IDB index_block;
+	IndexBlock* index_block;
 	Lock* lock = NULL;
 
 	SET_TDBB(tdbb);

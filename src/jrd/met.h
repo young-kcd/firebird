@@ -54,15 +54,14 @@ typedef enum rsr_t {
 
 /* Temporary field block */
 
-class tfb : public pool_alloc<type_tfb>
+class TemporaryField : public pool_alloc<type_tfb>
 {
     public:
-	tfb *tfb_next;		/* next block in chain */
-	USHORT tfb_id;				/* id of field in relation */
-	USHORT tfb_flags;
-	DSC tfb_desc;
+	TemporaryField*	tfb_next;		/* next block in chain */
+	USHORT			tfb_id;				/* id of field in relation */
+	USHORT			tfb_flags;
+	DSC				tfb_desc;
 };
-typedef tfb *TFB;
 
 #define TFB_computed		1
 #define TFB_array			2

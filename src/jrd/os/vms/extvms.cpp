@@ -910,7 +910,7 @@ static bool get_indexed(Rsb* rsb)
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 
 	NOD node = rsb->rsb_arg[0];
-	IRB retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	IDX* index = &retrieval->irb_desc;
 
 /* If this is the first time through on this stream, and a lower
@@ -1122,7 +1122,7 @@ static open_indexed(Rsb* rsb)
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	NOD node = (NOD) rsb->rsb_arg[0];
-	IRB retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	IDX* index = &retrieval->irb_desc;
 
 /* Create internal RMS rab (irab) for stream.  Connect

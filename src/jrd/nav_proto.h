@@ -29,6 +29,7 @@
 struct record_param;
 class jrd_nod;
 class Rsb;
+class Bookmark;
 
 #ifdef SCROLLABLE_CURSORS
 struct jrd_exp* NAV_expand_index(struct win*, struct irsb_nav*);
@@ -38,10 +39,9 @@ bool NAV_get_record(thread_db* tdbb, Rsb*, struct irsb_nav*, record_param*,
 
 #ifdef PC_ENGINE
 bool NAV_find_record(Rsb*, USHORT, USHORT, jrd_nod*);
-void NAV_get_bookmark(Rsb*, struct irsb_nav*, struct bkm*);
+void NAV_get_bookmark(Rsb*, struct irsb_nav*, Bookmark*);
 bool NAV_reset_position(Rsb*, record_param*);
-bool NAV_set_bookmark(Rsb*, struct irsb_nav*, record_param*,
-								struct bkm*);
+bool NAV_set_bookmark(Rsb*, struct irsb_nav*, record_param*, Bookmark*);
 #endif
 
 #endif // JRD_NAV_PROTO_H

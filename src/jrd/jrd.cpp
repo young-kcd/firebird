@@ -3768,7 +3768,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	Csb* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
 	request = CMP_make_request(tdbb, csb);
 
-	for (const acc* access = request->req_access; access;
+	for (const AccessItem* access = request->req_access; access;
 		access = access->acc_next)
 	{
 		const scl* sec_class = SCL_get_class(access->acc_security_name);
@@ -6122,12 +6122,11 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 				if (flag == JRD_info_drivemask)
 				{
-					// Fix those rogue definitions!
-					struct scb* scb;
-					struct sfb* sfb;
-					for (scb = attach->att_active_sorts; scb; scb = scb->scb_next)
+					for (const sort_context* scb = attach->att_active_sorts; scb; 
+						scb = scb->scb_next)
 					{
-						for (sfb = scb->scb_sfb; sfb; sfb = sfb->sfb_next)
+						for (const sort_work_file* sfb = scb->scb_sfb; sfb;
+							sfb = sfb->sfb_next)
 						{
 							ExtractDriveLetter(sfb->sfb_file_name, &drive_mask);
 						}
@@ -6412,12 +6411,12 @@ static void purge_attachment(thread_db*		tdbb,
 				SCL_release(sec_class);
 			}
 			
-			usr* user = attachment->att_user;
+			UserId* user = attachment->att_user;
 			if (user) {
 				delete user;
 			}
 			
-			bkm* bookmark;
+			Bookmark* bookmark;
 			while ( (bookmark = attachment->att_bookmarks) ) {
 				attachment->att_bookmarks = bookmark->bkm_next;
 				delete bookmark;

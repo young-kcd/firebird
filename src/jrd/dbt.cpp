@@ -180,12 +180,12 @@ jrd_file[] = {
 		FLD(jrd_file*, "File desc: %x", fil_desc),
 		0
 },
-pgc[] = {
+PageControl[] = {
 	"PAGE CONTROL",
-		FLD(PGC, "High water: %d", pgc_high_water),
-		FLD(PGC, "Pages/PIP: %x", pgc_ppp),
-		FLD(PGC, "First PIP: %x", pgc_pip),
-		FLD(PGC, "Bytes/PIP: %x", pgc_bytes),
+		FLD(PageControl*, "High water: %d", pgc_high_water),
+		FLD(PageControl*, "Pages/PIP: %x", pgc_ppp),
+		FLD(PageControl*, "First PIP: %x", pgc_pip),
+		FLD(PageControl*, "Bytes/PIP: %x", pgc_bytes),
 		0
 },
 
@@ -283,12 +283,12 @@ DeferredWork[] = {
 		FLD(DeferredWork*, "name: %s", dfw_name),
 		0
 },
-tfb[] = {
+TemporaryField[] = {
 	"TEMPORARY FIELD BLOCK",
-		FLD(TFB, "id: %d", tfb_id),
-		FLD(TFB, "dtype: %d", tfb_desc.dsc_dtype),
-		FLD(TFB, "scale: %d", tfb_desc.dsc_scale),
-		FLD(TFB, "len: %d", tfb_desc.dsc_length),
+		FLD(TemporaryField*, "id: %d", tfb_id),
+		FLD(TemporaryField*, "dtype: %d", tfb_desc.dsc_dtype),
+		FLD(TemporaryField*, "scale: %d", tfb_desc.dsc_scale),
+		FLD(TemporaryField*, "len: %d", tfb_desc.dsc_length),
 		0
 },
 str[] = {
@@ -330,39 +330,39 @@ blb[] = {
 		FLD(blb*, "Next: %x", blb_segment),
 		0
 },
-irb[] = {
+IndexRetrieval[] = {
 
 	"INDEX RETRIEVAL",
-		FLD(IRB, "index: %d", irb_index),
-		FLD(IRB, "relation: %x", irb_relation),
-		FLD(IRB, "lower bounds: %d", irb_lower_count),
-		FLD(IRB, "upper boudns: %d", irb_upper_count),
+		FLD(IndexRetrieval*, "index: %d", irb_index),
+		FLD(IndexRetrieval*, "relation: %x", irb_relation),
+		FLD(IndexRetrieval*, "lower bounds: %d", irb_lower_count),
+		FLD(IndexRetrieval*, "upper boudns: %d", irb_upper_count),
 		0
 },
-ctl[] = {
+BlobControl[] = {
 	"BLOB CONTROL", 0
 };
 
 static TEXT_PTR scl[] = {	"SECURITY CLASS", 0};
 static TEXT_PTR fld[] = {	"FIELD", 0};
 static TEXT_PTR ExternalFile[] = {	"EXTERNAL FILE", 0};
-static TEXT_PTR mfb[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
+static TEXT_PTR merge_file[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
 static TEXT_PTR River[] = {	"SORT MERGE RIVER", 0};
 static TEXT_PTR plc[] = {	"PAGE/LOCK SERVER CONNECTION", 0};
-static TEXT_PTR usr[] = {	"USER IDENTIFICATION BLOCK ", 0};
+static TEXT_PTR UserId[] = {	"USER IDENTIFICATION BLOCK ", 0};
 static TEXT_PTR Attachment[] = {	"ATTACHMENT BLOCK", 0};
-static TEXT_PTR sym[] = {	"SYMBOL", 0};
+static TEXT_PTR Symbol[] = {	"SYMBOL", 0};
 static TEXT_PTR fun[] = {	"FUNCTION", 0};
-static TEXT_PTR irl[] = {	"INDEXED RELATIONSHIP", 0};
-static TEXT_PTR acc[] = {	"ACCESS", 0};
+static TEXT_PTR IndexedRelationship[] = {	"INDEXED RELATIONSHIP", 0};
+static TEXT_PTR AccessItem[] = {	"ACCESS", 0};
 static TEXT_PTR Resource[] = {	"RESOURCE", 0};
-static TEXT_PTR idl[] = {	"INDEX LOCK", 0};
+static TEXT_PTR IndexLock[] = {	"INDEX LOCK", 0};
 static TEXT_PTR Shadow[] = {	"SHADOW", 0};
 static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
 static TEXT_PTR VerbAction[] = {	"VERB", 0};
 static TEXT_PTR BlockingThread[] = {	"BLOCKED THREAD", 0};
-static TEXT_PTR blf[] = {	"BLOB FILTER", 0};
-static TEXT_PTR arr[] = {	"ARRAY DESCRIPTION", 0};
+static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
+static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
@@ -373,10 +373,10 @@ static TEXT_PTR jrd_prc[] =
 		FLD(jrd_prc*, "Id: %d", prc_id), 0
 };
 static TEXT_PTR prm[] = {	"PARAMETER", FLD(PRM, "%s", prm_name), 0};
-static TEXT_PTR idb[] = {	"INDEX BLOCK", 0};
-static TEXT_PTR bkm[] = {	"BOOKMARK BLOCK", 0};
-static TEXT_PTR rng[] = {	"REFRESH RANGE BLOCK", 0};
-static TEXT_PTR tpc[] = {	"TIP CACHE BLOCK", 0};
+static TEXT_PTR IndexBlock[] = {	"INDEX BLOCK", 0};
+static TEXT_PTR Bookmark[] = {	"BOOKMARK BLOCK", 0};
+static TEXT_PTR RefreshRange[] = {	"REFRESH RANGE BLOCK", 0};
+static TEXT_PTR TxPageCache[] = {	"TIP CACHE BLOCK", 0};
 static TEXT_PTR xcp[] = {	"EXCEPTION LIST BLOCK", 0};
 static TEXT_PTR Opt[] = {	"OPTIMIZATION BLOCK", 0};
 static TEXT_PTR Prefetch[] = {	"PRF", 0};
@@ -438,7 +438,7 @@ static TEXT_PTR thread_db[] = {
 static TEXT_PTR Service[] =		{	"SERVICE MANAGER BLOCK", 0};
 static TEXT_PTR LatchWait[] =		{	"LATCH WAIT BLOCK", 0};
 static TEXT_PTR ViewContext[] =		{	"VIEW CONTEXT BLOCK", 0};
-static TEXT_PTR srpb[] =	{	"RPB BLOCK", 0};
+static TEXT_PTR SaveRecordParam[] =	{	"RPB BLOCK", 0};
 
 
 static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
@@ -446,7 +446,7 @@ static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
 	(*dbg_window) (), (*dbg_rpb) (), (*dbg_bdbs) (), (*dbg_analyze) (),
 	(*dbg_check) (), (*dmp_page) (), (*dmp_active) (), (*dmp_dirty) (),
 	(*dbg_verify) ();
-#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) NULL)->name),
+
 
 struct symb dbt_symbols[] = {
 	{"blk", &dbg_block, symb_printer, sizeof(int)},
@@ -469,6 +469,7 @@ struct symb dbt_symbols[] = {
 	{"verify", &dbg_verify, symb_routine, 0},
 
 /*
+#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) NULL)->name),
     "Database", &Database, symb_absolute, sizeof(Database),
     SYM (Database*, dbb_bcb)
     SYM (Database*, dbb_relations)

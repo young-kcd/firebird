@@ -66,6 +66,7 @@ class SparseBitmap;
 class vec;
 class Resource;
 class str;
+class AccessItem;
 
 // NOTE: The definition of structures rse and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
@@ -223,7 +224,7 @@ typedef struct inv {
 /* ASB impure area */
 
 struct iasb {
-	scb* iasb_sort_handle;
+	sort_context* iasb_sort_handle;
 };
 
 
@@ -568,7 +569,7 @@ public:
 	const UCHAR*	csb_blr;
 	const UCHAR*	csb_running;
 	jrd_nod*		csb_node;
-	struct acc*		csb_access;			/* Access items to be checked */
+	AccessItem*		csb_access;			/* Access items to be checked */
 	vec*			csb_variables;		/* Vector of variables, if any */
 	Resource*		csb_resources;		/* Resources (relations and indexes) */
 	class lls*		csb_dependencies;	/* objects this request depends upon */

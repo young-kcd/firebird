@@ -41,11 +41,11 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd_proto.h"
 
-static ISC_STATUS caller(USHORT, ctl*, USHORT, UCHAR*, USHORT*);
+static ISC_STATUS caller(USHORT, BlobControl*, USHORT, UCHAR*, USHORT*);
 static void dump_blr(void*, SSHORT, const char*);
 static void move(const char*, char*, USHORT);
-static ISC_STATUS string_filter(USHORT, ctl*);
-static void string_put(ctl*, const char*);
+static ISC_STATUS string_filter(USHORT, BlobControl*);
+static void string_put(BlobControl*, const char*);
 
 /* Note:  This table is used to indicate which bytes could represent
  *	  ASCII characters - and is used to filter "untyped" blobs
@@ -121,7 +121,7 @@ static const TEXT dtypes[][36] = {
 };
 
 
-ISC_STATUS filter_acl(USHORT action, ctl* control)
+ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -201,7 +201,7 @@ ISC_STATUS filter_acl(USHORT action, ctl* control)
 }
 
 
-ISC_STATUS filter_blr(USHORT action, ctl* control)
+ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -247,7 +247,7 @@ ISC_STATUS filter_blr(USHORT action, ctl* control)
 }
 
 
-ISC_STATUS filter_format(USHORT action, ctl* control)
+ISC_STATUS filter_format(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -312,7 +312,7 @@ ISC_STATUS filter_format(USHORT action, ctl* control)
 }
 
 
-ISC_STATUS filter_runtime(USHORT action, ctl* control)
+ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -451,7 +451,7 @@ ISC_STATUS filter_runtime(USHORT action, ctl* control)
 }
 
 
-ISC_STATUS filter_text(USHORT action, ctl* control)
+ISC_STATUS filter_text(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -471,7 +471,7 @@ ISC_STATUS filter_text(USHORT action, ctl* control)
  *	    ctl_data [3]	length of temp space
  *
  **************************************/
-	ctl* source;
+	BlobControl* source;
 
 	switch (action) {
 	case ACTION_open:
@@ -628,7 +628,7 @@ ISC_STATUS filter_text(USHORT action, ctl* control)
 }
 
 
-ISC_STATUS filter_transliterate_text(USHORT action, ctl* control)
+ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -647,7 +647,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, ctl* control)
 	struct ctlaux {
 		CsConvert ctlaux_obj1;	/* Intl object that does tx for us */
 		BYTE *ctlaux_buffer1;	/* Temporary buffer for transliteration */
-		ctl* ctlaux_subfilter;	/* For chaining transliterate filters */
+		BlobControl* ctlaux_subfilter;	/* For chaining transliterate filters */
 		ISC_STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
 		USHORT ctlaux_buffer1_len;	/* size of ctlaux_buffer1 in bytes */
 		USHORT ctlaux_expansion_factor;	/* factor for text expand/contraction */
@@ -661,7 +661,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, ctl* control)
 
 	ctlaux* aux = (ctlaux*) control->ctl_data[0];
 	
-	ctl* source;
+	BlobControl* source;
 	ISC_STATUS status;
 	SSHORT err_code;
 	USHORT err_position;
@@ -725,7 +725,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, ctl* control)
 
 			// ISC_STATUS to pointer!
 			aux->ctlaux_subfilter =
-				(ctl*) caller(ACTION_alloc, control, 0, NULL, NULL);
+				(BlobControl*) caller(ACTION_alloc, control, 0, NULL, NULL);
 
 			/* This is freed in BLF_close_filter */
 
@@ -989,7 +989,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, ctl* control)
 }
 
 
-ISC_STATUS filter_trans(USHORT action, ctl* control)
+ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -1070,7 +1070,7 @@ ISC_STATUS filter_trans(USHORT action, ctl* control)
 
 static ISC_STATUS caller(
 					 USHORT action,
-					 ctl* control,
+					 BlobControl* control,
 					 USHORT buffer_length,
 					 UCHAR* buffer, USHORT* return_length)
 {
@@ -1084,7 +1084,7 @@ static ISC_STATUS caller(
  *	Call next source filter.
  *
  **************************************/
-	ctl* source = control->ctl_source_handle;
+	BlobControl* source = control->ctl_source_handle;
 	source->ctl_status = control->ctl_status;
 	source->ctl_buffer = buffer;
 	source->ctl_buffer_length = buffer_length;
@@ -1111,7 +1111,7 @@ static void dump_blr(void* arg, SSHORT offset, const char* line)
  *	Callback routine for BLR dumping.
  *
  **************************************/
-	ctl* control = reinterpret_cast<ctl*>(arg);
+	BlobControl* control = static_cast<BlobControl*>(arg);
 	TEXT buffer[256];
 
 	const SLONG l = (USHORT) control->ctl_data[3] + strlen(line);
@@ -1156,7 +1156,7 @@ static void move(const char* from, char* to, USHORT length)
 }
 
 
-static ISC_STATUS string_filter(USHORT action, ctl* control)
+static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -1213,7 +1213,7 @@ static ISC_STATUS string_filter(USHORT action, ctl* control)
 }
 
 
-static void string_put(ctl* control, const char* line)
+static void string_put(BlobControl* control, const char* line)
 {
 /**************************************
  *

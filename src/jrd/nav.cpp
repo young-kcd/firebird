@@ -427,7 +427,7 @@ bool NAV_find_record(Rsb* rsb,
 
 
 #ifdef PC_ENGINE
-void NAV_get_bookmark(Rsb* rsb, IRSB_NAV impure, BKM bookmark)
+void NAV_get_bookmark(Rsb* rsb, IRSB_NAV impure, Bookmark* bookmark)
 {
 /**************************************
  *
@@ -523,7 +523,8 @@ bool NAV_get_record(thread_db* tdbb,
 	KEY key;
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = 
+		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// set the upper (or lower) limit for navigational retrieval
 	KEY upper, lower;
@@ -836,7 +837,7 @@ bool NAV_reset_position(Rsb* rsb, record_param* new_rpb)
 
 
 #ifdef PC_ENGINE
-bool NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, record_param* rpb, BKM bookmark)
+bool NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, record_param* rpb, Bookmark* bookmark)
 {
 /**************************************
  *
@@ -1165,7 +1166,8 @@ static bool find_record(
 	WIN window(-1);
 
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = 
+		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// save the current equality retrieval key
 	KEY* const tmp = retrieval->irb_key;
@@ -1692,7 +1694,8 @@ static UCHAR* nav_open(
 
 	// Find the starting leaf page
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IRB retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval =
+		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 	IDX *idx = (IDX *) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	KEY lower, upper;
 	btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,

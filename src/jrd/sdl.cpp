@@ -40,7 +40,7 @@
 
 struct sdl_arg {
 	USHORT sdl_arg_mode;
-	ADS sdl_arg_desc;
+	internal_array_desc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
 	SLONG* sdl_arg_variables;
@@ -119,7 +119,7 @@ UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size,
 
 
 SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
-							const ads* desc,
+							const internal_array_desc* desc,
 							USHORT dimensions,
 							const SLONG* subscripts)
 {
@@ -134,25 +134,25 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
  *	reference. 
  *
  **************************************/
-	if (dimensions != desc->ads_dimensions) {
+	if (dimensions != desc->iad_dimensions) {
 		error(status_vector, isc_invalid_dimension,
-			  isc_arg_number, (SLONG) desc->ads_dimensions,
+			  isc_arg_number, (SLONG) desc->iad_dimensions,
 			  isc_arg_number, (SLONG) dimensions, 0);
 		return -1;
 	}
 
 	SLONG subscript = 0;
 
-	const ads::ads_repeat* range = desc->ads_rpt;
-	for (const ads::ads_repeat* const end = range + desc->ads_dimensions;
+	const internal_array_desc::iad_repeat* range = desc->iad_rpt;
+	for (const internal_array_desc::iad_repeat* const end = range + desc->iad_dimensions;
 		 range < end; ++range)
 	{
 		const SLONG n = *subscripts++;
-		if (n < range->ads_lower || n > range->ads_upper) {
+		if (n < range->iad_lower || n > range->iad_upper) {
 			error(status_vector, isc_out_of_bounds, 0);
 			return -1;
 		}
-		subscript += (n - range->ads_lower) * range->ads_length;
+		subscript += (n - range->iad_lower) * range->iad_length;
 	}
 
 	return subscript;
@@ -319,7 +319,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
 		bool mode,
 		UCHAR* array,
-		ADS array_desc,
+		internal_array_desc* array_desc,
 		SLONG* variables,
 		SDL_walk_callback callback,
 		SLICE argument)
@@ -498,9 +498,9 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 	case isc_sdl_scalar:
 		op = *p++;
 		count = *p++;
-		if (arg && count != arg->sdl_arg_desc->ads_dimensions) {
+		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
 			error(arg->sdl_arg_status_vector, isc_invalid_dimension,
-				  isc_arg_number, (SLONG) arg->sdl_arg_desc->ads_dimensions,
+				  isc_arg_number, (SLONG) arg->sdl_arg_desc->iad_dimensions,
 				  isc_arg_number, (SLONG) count, 0);
 			return NULL;
 		}
@@ -625,11 +625,11 @@ static bool execute(sdl_arg* arg)
 	SLONG stack[64];
 	SLONG value, count, subscript;
 	dsc element_desc;
-	const ads::ads_repeat* range;
+	const internal_array_desc::iad_repeat* range;
 
-	ADS array_desc = arg->sdl_arg_desc;
-	const ads::ads_repeat* const range_end = 
-		array_desc->ads_rpt + array_desc->ads_dimensions;
+	internal_array_desc* array_desc = arg->sdl_arg_desc;
+	const internal_array_desc::iad_repeat* const range_end = 
+		array_desc->iad_rpt + array_desc->iad_dimensions;
 	SLONG* variables = arg->sdl_arg_variables;
 	const IPTR* next = arg->sdl_arg_compiled;
 	SLONG* stack_ptr = stack + 64;
@@ -694,20 +694,20 @@ static bool execute(sdl_arg* arg)
 		case op_scalar:
 			value = *next++;
 			next++;				/* Skip count, unsupported. */
-			for (range = array_desc->ads_rpt, subscript = 0;
+			for (range = array_desc->iad_rpt, subscript = 0;
 				 range < range_end; ++range) 
 			{
 				const SLONG n = *stack_ptr++;
-				if (n < range->ads_lower || n > range->ads_upper) {
+				if (n < range->iad_lower || n > range->iad_upper) {
 					error(arg->sdl_arg_status_vector, isc_out_of_bounds, 0);
 					return false;
 				}
-				subscript += (n - range->ads_lower) * range->ads_length;
+				subscript += (n - range->iad_lower) * range->iad_length;
 			}
-			element_desc = array_desc->ads_rpt[value].ads_desc;
+			element_desc = array_desc->iad_rpt[value].iad_desc;
 			element_desc.dsc_address = (BLOB_PTR *) arg->sdl_arg_array +
 				(IPTR) element_desc.dsc_address +
-				(array_desc->ads_element_length * subscript);
+				(array_desc->iad_element_length * subscript);
 
 			/* Is this element within the array bounds? */
 			fb_assert_continue((BLOB_PTR *) element_desc.dsc_address >=
@@ -715,7 +715,7 @@ static bool execute(sdl_arg* arg)
 			fb_assert_continue((BLOB_PTR *) element_desc.dsc_address +
 								element_desc.dsc_length <=
 								(BLOB_PTR *) arg->sdl_arg_array +
-								array_desc->ads_total_length);
+								array_desc->iad_total_length);
 			break;
 
 		case op_element:

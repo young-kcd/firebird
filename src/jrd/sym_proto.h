@@ -24,9 +24,11 @@
 #ifndef JRD_SYM_PROTO_H
 #define JRD_SYM_PROTO_H
 
-void		SYM_insert(struct sym*);
-struct sym*	SYM_lookup(const TEXT*);
-void		SYM_remove(struct sym*);
+class Symbol;
+
+void	SYM_insert(Symbol*);
+Symbol*	SYM_lookup(const TEXT*);
+void	SYM_remove(Symbol*);
 
 #endif // JRD_SYM_PROTO_H
 

@@ -29,7 +29,7 @@
 class jrd_req;
 struct record_param;
 class jrd_nod;
-class rng;
+class RefreshRange;
 
 void RNG_add_page(ULONG);
 void RNG_add_record(record_param*);
@@ -39,7 +39,7 @@ struct dsc *RNG_begin(jrd_nod*, struct vlu *);
 jrd_nod *RNG_delete(jrd_nod*);
 void RNG_delete_ranges(jrd_req *);
 jrd_nod* RNG_end(jrd_nod*);
-void RNG_release_locks(rng*);
+void RNG_release_locks(RefreshRange*);
 void RNG_release_ranges(jrd_req *);
 void RNG_shutdown_attachment(class Attachment*);
 #endif

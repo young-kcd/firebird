@@ -24,13 +24,12 @@
 #ifndef JRD_TPC_H
 #define JRD_TPC_H
 
-class tpc : public pool_alloc_rpt<SCHAR, type_tpc>
+class TxPageCache : public pool_alloc_rpt<SCHAR, type_tpc>
 {
     public:
-	struct tpc *tpc_next;
-	SLONG tpc_base;				/* id of first transaction in this block */
-	UCHAR tpc_transactions[1];	/* two bits per transaction */
+	TxPageCache*	tpc_next;
+	SLONG			tpc_base;				/* id of first transaction in this block */
+	UCHAR			tpc_transactions[1];	/* two bits per transaction */
 };
-typedef tpc *TPC;
 
 #endif /* JRD_TPC_H */

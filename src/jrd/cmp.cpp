@@ -280,7 +280,9 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 							 0, SCL_execute, object_procedure,
 							 reinterpret_cast<char*>(procedure->prc_name->str_data));
 		}
-		for (acc* access = request->req_access; access; access = access->acc_next) {
+		for (const AccessItem* access = request->req_access; access;
+			access = access->acc_next) 
+		{
 			const scl* sec_class = SCL_get_class(access->acc_security_name);
 			SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
 							 access->acc_prc_name, access->acc_mask,
@@ -379,7 +381,8 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 			request->req_flags |= req_internal;
 		}
 
-		for (const acc* access = request->req_access; access; access = access->acc_next)
+		for (const AccessItem* access = request->req_access; access;
+			access = access->acc_next)
 		{
 			const scl* sec_class = SCL_get_class(access->acc_security_name);
 			SCL_check_access(sec_class, access->acc_view_id, access->acc_trg_name,
@@ -784,11 +787,11 @@ void CMP_get_desc(thread_db* tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 							 nod_arg[e_fld_stream]].csb_relation;
 			const USHORT id = (USHORT)(IPTR) sub->nod_arg[e_fld_id];
 			const jrd_fld* field = MET_get_field(relation, id);
-			const arr* array;
+			const ArrayField* array;
 			if (!field || !(array = field->fld_array)) {
 				IBERROR(223);	// msg 223 argument of scalar operation must be an array
 			}
-			*desc = array->arr_desc.ads_rpt[0].ads_desc;
+			*desc = array->arr_desc.iad_rpt[0].iad_desc;
 			return;
 		}
 
@@ -1665,7 +1668,7 @@ void CMP_get_desc(thread_db* tdbb, Csb* csb, jrd_nod* node, DSC * desc)
 }
 
 
-IDL CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
+IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 {
 /**************************************
  *
@@ -1689,14 +1692,14 @@ IDL CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	// for for an existing block
 
-	idl* index;
+	IndexLock* index;
 	for (index = relation->rel_index_locks; index; index = index->idl_next) {
 		if (index->idl_id == id) {
 			return index;
 		}
 	}
 
-	index = FB_NEW(*dbb->dbb_permanent) idl();
+	index = FB_NEW(*dbb->dbb_permanent) IndexLock();
 	index->idl_next = relation->rel_index_locks;
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;
@@ -1894,7 +1897,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 		case Resource::rsc_index:
 			{
 				jrd_rel* relation = resource->rsc_rel;
-				IDL index =
+				IndexLock* index =
 					CMP_get_index_lock(tdbb, relation, resource->rsc_id);
 				if (index)
 				{
@@ -1999,8 +2002,8 @@ void CMP_post_access(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	ACC access, last_entry = NULL;
-
+	AccessItem* last_entry = NULL;
+	AccessItem* access;
 	for (access = csb->csb_access; access; access = access->acc_next)
 	{
 		if (!strcmp_null(access->acc_security_name, security_name) &&
@@ -2019,7 +2022,7 @@ void CMP_post_access(thread_db* tdbb,
 		}
 	}
 
-	access = FB_NEW(*tdbb->tdbb_default) acc;
+	access = FB_NEW(*tdbb->tdbb_default) AccessItem;
 
 	// append the security class to the existing list
 
@@ -2216,7 +2219,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			case Resource::rsc_index:
 				{
 					jrd_rel* relation = resource->rsc_rel;
-					idl* index = CMP_get_index_lock(tdbb, relation,
+					IndexLock* index = CMP_get_index_lock(tdbb, relation,
 													 resource->rsc_id);
 					if (index) {
 						if (index->idl_count)
@@ -2307,7 +2310,7 @@ void CMP_shutdown_database(thread_db* tdbb)
 				relation->rel_flags |= REL_check_existence;
 				relation->rel_use_count = 0;
 			}
-			for (idl* index = relation->rel_index_locks; index;
+			for (IndexLock* index = relation->rel_index_locks; index;
 				 index = index->idl_next)
 			{
 				if (index->idl_lock) {
@@ -5378,7 +5381,7 @@ static void post_procedure_access(thread_db* tdbb, Csb* csb, jrd_prc* procedure)
 	// this request also inherits all the access requirements that
 	// the procedure has
 	if (procedure->prc_request) {
-		for (acc* access = procedure->prc_request->req_access; access;
+		for (const AccessItem* access = procedure->prc_request->req_access; access;
 			 access = access->acc_next)
 		{
 			if (access->acc_trg_name ||
@@ -5530,7 +5533,7 @@ static void post_trigger_access(thread_db* tdbb, Csb* csb, jrd_rel* owner_relati
 			// we must check for read-only to make sure people don't abuse the
 			// REFERENCES privilege
 
-			for (acc* access = ptr->request->req_access; access;
+			for (const AccessItem* access = ptr->request->req_access; access;
 				 access = access->acc_next)
 			{
 				/* CVC:	Can't make any sense of this code, hence I disabled it.

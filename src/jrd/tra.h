@@ -45,6 +45,8 @@ class vec;
 class Savepoint;
 class Record;
 class VerbAction;
+class ArrayField;
+
 
 /* Transaction block */
 
@@ -61,7 +63,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	jrd_tra*	tra_sibling;	/* next transaction in group */
 	JrdMemoryPool* tra_pool;		/* pool for transaction */
 	blb*		tra_blobs;		/* Linked list of active blobs */
-	struct arr *tra_arrays;		/* Linked list of active arrays */
+	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
 	vec*		tra_relation_locks;	/* locks for relations */
 	SparseBitmap*	tra_commit_sub_trans;	/* commited sub-transactions */

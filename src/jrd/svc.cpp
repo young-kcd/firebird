@@ -3803,8 +3803,7 @@ static void get_action_svc_data(
 	const ISC_ULONG ll =
 		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_ULONG));
-#pragma FB_COMPILER_MESSAGE("Using %lu for a neutral type ISC_ULONG")
-	sprintf(buf, "%lu ", ll);
+	sprintf(buf, "%"ULONGFORMAT" ", ll);
 	if (*cmd) {
 		sprintf(*cmd, "%lu ", ll);
 		*cmd += strlen(buf);

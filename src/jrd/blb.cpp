@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.58 2004-03-18 05:55:20 robocop Exp $
+$Id: blb.cpp,v 1.59 2004-03-19 06:14:46 robocop Exp $
 */
 
 #include "firebird.h"
@@ -77,15 +77,15 @@ inline bool SEGMENTED(const blb* blob)
 	return !(blob->blb_flags & BLB_stream);
 }
 
-static ARR alloc_array(jrd_tra*, ADS);
+static ArrayField* alloc_array(jrd_tra*, internal_array_desc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
-static ISC_STATUS blob_filter(USHORT, CTL, SSHORT, SLONG);
+static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
 static void check_BID_validity(const blb*, thread_db*);
 static blb* copy_blob(thread_db*, const bid*, bid*);
 static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
-static ARR find_array(jrd_tra*, const bid*);
-static BLF find_filter(thread_db*, SSHORT, SSHORT);
+static ArrayField* find_array(jrd_tra*, const bid*);
+static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static void get_replay_blob(thread_db*, const bid*);
@@ -220,7 +220,7 @@ blb* BLB_create2(thread_db* tdbb,
 	blob->blb_sub_type = to;
 
 	bool filter_required = false;
-	blf* filter = NULL;
+	BlobFilter* filter = NULL;
 	if (to && from != to) {
 		filter = find_filter(tdbb, from, to);
 		filter_required = true;
@@ -231,7 +231,7 @@ blb* BLB_create2(thread_db* tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = FB_NEW(*dbb->dbb_permanent) blf();
+			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter();
 			filter->blf_filter = filter_transliterate_text;
 			filter_required = true;
 		}
@@ -360,7 +360,8 @@ void BLB_garbage_collect(
 }
 
 
-blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id, ADS desc)
+blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
+				   internal_array_desc* desc)
 {
 /**************************************
  *
@@ -376,16 +377,16 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id, AD
 
 	blb* blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 
-	if (blob->blb_length < sizeof(ads)) {
+	if (blob->blb_length < sizeof(internal_array_desc)) {
 		BLB_close(tdbb, blob);
 		IBERROR(193);			/* msg 193 null or invalid array */
 	}
 
-	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(ads));
+	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(internal_array_desc));
 
-	const USHORT n = desc->ads_length - sizeof(ads);
+	const USHORT n = desc->iad_length - sizeof(internal_array_desc);
 	if (n) {
-		BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc) + sizeof(ads), n);
+		BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc) + sizeof(internal_array_desc), n);
 	}
 
 	return blob;
@@ -664,14 +665,14 @@ SLONG BLB_get_slice(thread_db* tdbb,
 		ERR_punt();
 	}
 
-	SLONG stuff[ADS_LEN(16) / 4];
-	ads* desc = (ads*) stuff;
+	SLONG stuff[IAD_LEN(16) / 4];
+	internal_array_desc* desc = (internal_array_desc*) stuff;
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, desc);
-	SLONG length = desc->ads_total_length;
+	SLONG length = desc->iad_total_length;
 
 /* Get someplace to put data */
 
-	UCHAR* data = (UCHAR*) database->dbb_permanent->allocate(desc->ads_total_length, 0
+	UCHAR* data = (UCHAR*) database->dbb_permanent->allocate(desc->iad_total_length, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__, __LINE__
 #endif
@@ -680,7 +681,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 /* zero out memory, so that it does not have to be done for
    each element */
 
-	memset(data, 0, desc->ads_total_length);
+	memset(data, 0, desc->iad_total_length);
 
 	SLONG offset = 0;
 
@@ -703,10 +704,10 @@ SLONG BLB_get_slice(thread_db* tdbb,
 								  info.sdl_info_upper);
 		if (from != -1 && to != -1) {
 			if (from) {
-				offset = from * desc->ads_element_length;
-				BLB_lseek(blob, 0, offset + (SLONG) desc->ads_length);
+				offset = from * desc->iad_element_length;
+				BLB_lseek(blob, 0, offset + (SLONG) desc->iad_length);
 			}
-			length = (to - from + 1) * desc->ads_element_length;
+			length = (to - from + 1) * desc->iad_element_length;
 		}
 	}
 
@@ -895,7 +896,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 /* If the source is a permanent blob, then the blob must be copied.
    Otherwise find the temporary blob referenced.  */
 
-	arr* array = 0;
+	ArrayField* array = 0;
 	blb* blob = 0;
 	bool materialized_blob, refetch_flag;
 	
@@ -1059,7 +1060,7 @@ blb* BLB_open2(thread_db* tdbb,
 	blob->blb_target_interp = to_charset;
 	blob->blb_source_interp = from_charset;
 
-	blf* filter = NULL;
+	BlobFilter* filter = NULL;
 	bool filter_required = false;
 	if (to && from != to) {
 		filter = find_filter(tdbb, from, to);
@@ -1071,14 +1072,14 @@ blb* BLB_open2(thread_db* tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
-			filter = FB_NEW(*dbb->dbb_permanent) blf();
+			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter();
 			filter->blf_filter = filter_transliterate_text;
 			filter_required = true;
 		}
 	}
 
 	if (filter_required) {
-		ctl* control = 0;
+		BlobControl* control = 0;
 		if (BLF_open_blob(tdbb,
 						  transaction,
 						  &control,
@@ -1380,7 +1381,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		IBERROR(197);			/* msg 197 field for array not known */
 	}
 
-	arr* array_desc = field->fld_array;
+	ArrayField* array_desc = field->fld_array;
 	if (!array_desc)
 	{
 		ERR_post(isc_invalid_dimension, isc_arg_number, (SLONG) 0,
@@ -1393,7 +1394,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	2.  Array is still in "temporary" state.
 	3.  Array exists and is being updated.
 */
-	arr* array = 0;
+	ArrayField* array = 0;
 	slice arg;
 	if (blob_id->bid_relation_id)
 	{
@@ -1416,14 +1417,14 @@ void BLB_put_slice(	thread_db*	tdbb,
 		else
 		{
 			// CVC: maybe char temp[ADS_LEN(16)]; may work.
-			SLONG temp[ADS_LEN(16) / 4];
-			ads* p_ads = reinterpret_cast<ads*>(temp);
+			SLONG temp[IAD_LEN(16) / 4];
+			internal_array_desc* p_ads = reinterpret_cast<internal_array_desc*>(temp);
 			blb* blob = BLB_get_array(tdbb, transaction, blob_id, p_ads);
 			array =	alloc_array(transaction, p_ads);
 			array->arr_effective_length =
-				blob->blb_length - array->arr_desc.ads_length;
+				blob->blb_length - array->arr_desc.iad_length;
 			BLB_get_data(tdbb, blob, array->arr_data,
-						 array->arr_desc.ads_total_length);
+						 array->arr_desc.iad_total_length);
 			arg.slice_high_water =
 				(BLOB_PTR*) array->arr_data + array->arr_effective_length;
 			array->arr_blob = allocate_blob(tdbb, transaction);
@@ -1481,7 +1482,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 }
 
 
-void BLB_release_array(ARR array)
+void BLB_release_array(ArrayField* array)
 {
 /**************************************
  *
@@ -1501,7 +1502,9 @@ void BLB_release_array(ARR array)
 	jrd_tra* transaction = array->arr_transaction;
 	if (transaction)
 	{
-		for (arr** ptr = &transaction->tra_arrays; *ptr; ptr = &(*ptr)->arr_next) {
+		for (ArrayField** ptr = &transaction->tra_arrays; *ptr; 
+			ptr = &(*ptr)->arr_next) 
+		{
 			if (*ptr == array) {
 				*ptr = array->arr_next;
 				break;
@@ -1530,11 +1533,11 @@ void BLB_scalar(thread_db*	tdbb,
  *
  **************************************/
 
-	SLONG stuff[ADS_LEN(16) / 4];
+	SLONG stuff[IAD_LEN(16) / 4];
 
 	SET_TDBB(tdbb);
 
-	ads* array_desc = (ADS) stuff;
+	internal_array_desc* array_desc = (internal_array_desc*) stuff;
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, array_desc);
 
 /* Get someplace to put data.  If the local buffer isn't large enough,
@@ -1543,7 +1546,7 @@ void BLB_scalar(thread_db*	tdbb,
 	UCHAR* const temp_ptr = reinterpret_cast<UCHAR*>(temp);
 
 	str* temp_str = 0;
-	dsc desc = array_desc->ads_rpt[0].ads_desc;
+	dsc desc = array_desc->iad_rpt[0].iad_desc;
 	if (desc.dsc_length <= sizeof(temp)) {
 		desc.dsc_address = temp_ptr;
 	}
@@ -1566,8 +1569,8 @@ void BLB_scalar(thread_db*	tdbb,
 		ERR_punt();
 	}
 
-	const SLONG offset = number * array_desc->ads_element_length;
-	BLB_lseek(blob, 0, offset + (SLONG) array_desc->ads_length);
+	const SLONG offset = number * array_desc->iad_element_length;
+	BLB_lseek(blob, 0, offset + (SLONG) array_desc->iad_length);
 	BLB_get_segment(tdbb, blob, temp_ptr,
 					desc.dsc_length);
 
@@ -1584,7 +1587,7 @@ void BLB_scalar(thread_db*	tdbb,
 }
 
 
-static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
+static ArrayField* alloc_array(jrd_tra* transaction, internal_array_desc* proto_desc)
 {
 /**************************************
  *
@@ -1601,12 +1604,12 @@ static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
 
 	// Compute size and allocate block
 
-	const USHORT n = MAX(proto_desc->ads_struct_count, proto_desc->ads_dimensions);
-	arr* array = FB_NEW_RPT(*transaction->tra_pool, n) arr();
+	const USHORT n = MAX(proto_desc->iad_struct_count, proto_desc->iad_dimensions);
+	ArrayField* array = FB_NEW_RPT(*transaction->tra_pool, n) ArrayField();
 
 	// Copy prototype descriptor
 
-	MOVE_FAST(proto_desc, &array->arr_desc, proto_desc->ads_length);
+	MOVE_FAST(proto_desc, &array->arr_desc, proto_desc->iad_length);
 
 	// Link into transaction block
 
@@ -1617,7 +1620,7 @@ static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
 	// Allocate large block to hold array
 
 	array->arr_data =
-		(UCHAR*)dbb->dbb_permanent->allocate(array->arr_desc.ads_total_length, 0
+		(UCHAR*)dbb->dbb_permanent->allocate(array->arr_desc.iad_total_length, 0
 #ifdef DEBUG_GDS_ALLOC
 		  ,__FILE__, __LINE__
 #endif
@@ -1668,7 +1671,7 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 
 
 static ISC_STATUS blob_filter(	USHORT	action,
-							CTL		control,
+							BlobControl*	control,
 							SSHORT	mode,
 							SLONG	offset)
 {
@@ -1702,7 +1705,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 	switch (action) {
 	case ACTION_open:
 		blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
-		control->ctl_source_handle = (CTL) blob;
+		control->ctl_source_handle = (BlobControl*) blob;
 		control->ctl_total_length = blob->blb_length;
 		control->ctl_max_segment = blob->blb_max_segment;
 		control->ctl_number_segments = blob->blb_count;
@@ -1723,7 +1726,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 
 	case ACTION_create:
 		control->ctl_source_handle =
-			(CTL) BLB_create2(tdbb, transaction, blob_id, 0, NULL);
+			(BlobControl*) BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 		return FB_SUCCESS;
 
 	case ACTION_put_segment:
@@ -1739,7 +1742,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 
 	case ACTION_alloc:
 	    // pointer to ISC_STATUS!!!
-		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) ctl();
+		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) BlobControl();
 
 	case ACTION_free:
 		delete control;
@@ -1964,7 +1967,7 @@ static void delete_blob_id(
 }
 
 
-static ARR find_array(jrd_tra* transaction, const bid* blob_id)
+static ArrayField* find_array(jrd_tra* transaction, const bid* blob_id)
 {
 /**************************************
  *
@@ -1976,7 +1979,7 @@ static ARR find_array(jrd_tra* transaction, const bid* blob_id)
  *      Find array from temporary blob id.
  *
  **************************************/
-	arr* array = transaction->tra_arrays;
+	ArrayField* array = transaction->tra_arrays;
 
 	for (; array; array = array->arr_next) {
 		if (array->arr_temp_id == blob_id->bid_stuff.bid_temp_id) {
@@ -1988,7 +1991,7 @@ static ARR find_array(jrd_tra* transaction, const bid* blob_id)
 }
 
 
-static BLF find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
+static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 {
 /**************************************
  *
@@ -2004,7 +2007,7 @@ static BLF find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	blf* cache = dbb->dbb_blob_filters;
+	BlobFilter* cache = dbb->dbb_blob_filters;
 	for (; cache; cache = cache->blf_next) {
 		if (cache->blf_from == from && cache->blf_to == to)
 			return cache;
@@ -2419,7 +2422,7 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 /* Validate array */
 
-	arr* array = find_array(transaction, blob_id);
+	ArrayField* array = find_array(transaction, blob_id);
 	if (!array)
 		return NULL;
 
@@ -2432,7 +2435,7 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 	BLB_put_segment(tdbb, blob,
 					reinterpret_cast<const UCHAR*>(&array->arr_desc),
-					array->arr_desc.ads_length);
+					array->arr_desc.iad_length);
 
 /* Write out actual array */
 	const USHORT seg_limit = 32768;

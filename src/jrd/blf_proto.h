@@ -27,16 +27,18 @@
 // Does this file really need the extern C for external blob filters?
 extern "C" {
 
-ISC_STATUS	BLF_close_blob(thread_db*, ctl**);
-ISC_STATUS	BLF_create_blob(thread_db*, jrd_tra*, ctl**, struct bid*,
+//class BlobControl;
+
+ISC_STATUS	BLF_close_blob(thread_db*, BlobControl**);
+ISC_STATUS	BLF_create_blob(thread_db*, jrd_tra*, BlobControl**, struct bid*,
 										 USHORT, const UCHAR*,
-										 FPTR_BFILTER_CALLBACK, BLF);
-ISC_STATUS	BLF_get_segment(thread_db*, ctl**, USHORT*, USHORT, UCHAR*);
-BLF			BLF_lookup_internal_filter(thread_db*, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(thread_db*, jrd_tra*, ctl**, const struct bid*,
+										 FPTR_BFILTER_CALLBACK, BlobFilter*);
+ISC_STATUS	BLF_get_segment(thread_db*, BlobControl**, USHORT*, USHORT, UCHAR*);
+BlobFilter*	BLF_lookup_internal_filter(thread_db*, SSHORT, SSHORT);
+ISC_STATUS	BLF_open_blob(thread_db*, jrd_tra*, BlobControl**, const struct bid*,
 									   USHORT, const UCHAR*,
-									   FPTR_BFILTER_CALLBACK, BLF);
-ISC_STATUS	BLF_put_segment(thread_db*, ctl**, USHORT, const UCHAR*);
+									   FPTR_BFILTER_CALLBACK, BlobFilter*);
+ISC_STATUS	BLF_put_segment(thread_db*, BlobControl**, USHORT, const UCHAR*);
 
 } /* extern "C" */
 

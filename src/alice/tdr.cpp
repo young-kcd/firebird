@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.32 2004-01-03 10:59:34 robocop Exp $
+//	$Id: tdr.cpp,v 1.33 2004-03-19 06:14:29 robocop Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -184,7 +184,7 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 						 const TEXT* pathname)
 {
 	UCHAR dpb[128];
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (tdgbl->ALICE_data.ua_debug)
 		ALICE_print(68, pathname, 0, 0, 0, 0);
@@ -292,7 +292,7 @@ void TDR_list_limbo(FRBRD* handle, const TEXT* name, const ULONG switches)
 {
 	UCHAR buffer[1024];
 	ISC_STATUS_ARRAY status_vector;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (isc_database_info(status_vector, &handle, sizeof(limbo_info),
 						   reinterpret_cast<const char*>(limbo_info),
@@ -519,7 +519,7 @@ bool TDR_reconnect_multiple(FRBRD* handle,
 
 static void print_description(const tdr* trans)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (!trans)
 	{
@@ -713,7 +713,7 @@ static ULONG ask(void)
 {
 	UCHAR response[32];
 	char* const resp_ptr = reinterpret_cast<char*>(response);
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	ULONG switches = 0;
 
@@ -759,7 +759,7 @@ static void reattach_database(TDR trans)
 	UCHAR buffer[1024];
 	// sizeof(buffer) - 1 => leave space for the terminator.
 	const UCHAR* const end = buffer + sizeof(buffer) - 1;
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	ISC_get_host(reinterpret_cast<char*>(buffer), sizeof(buffer));
 

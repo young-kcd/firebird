@@ -329,18 +329,16 @@ TOK LEX_token(void)
  *	Parse and return the next token.
  *
  **************************************/
-	TOK token;
 	SSHORT c, next;
-	TEXT class_, *p;
 	SYM symbol;
 
-	token = &DDL_token;
-	p = token->tok_string;
+	TOK token = &DDL_token;
+	TEXT* p = token->tok_string;
 	*p++ = c = skip_white();
 
 /* On end of file, generate furious but phony end of line tokens */
 
-	class_ = classes[c];
+	TEXT char_class = classes[c];
 
 	if (DDL_eof) {
 		p = token->tok_string;
@@ -356,14 +354,14 @@ TOK LEX_token(void)
 		*p = '\0';
 		return NULL;
 	}
-	else if (class_ & CHR_letter) {
+	else if (char_class & CHR_letter) {
 		while (classes[c = nextchar()] & CHR_ident)
 			*p++ = c;
 
 		retchar(c);
 		token->tok_type = tok_ident;
 	}
-	else if (class_ & CHR_digit) {
+	else if (char_class & CHR_digit) {
 		while (classes[c = nextchar()] & CHR_digit)
 			*p++ = c;
 		if (c == '.') {
@@ -374,7 +372,7 @@ TOK LEX_token(void)
 		retchar(c);
 		token->tok_type = tok_number;
 	}
-	else if ((class_ & CHR_quote) && !DDL_description) {
+	else if ((char_class & CHR_quote) && !DDL_description) {
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
@@ -521,22 +519,25 @@ static int skip_white(void)
  *	Skip over white space and comments in input stream
  *
  **************************************/
-	SSHORT c, next, class_;
+	SSHORT c;
 
 	while ((c = nextchar()) != EOF) {
 
-		class_ = classes[c];
-		if (class_ & CHR_white)
+		const SSHORT char_class = classes[c];
+		if (char_class & CHR_white)
 			continue;
 		if (c == '/') {
-			if ((next = nextchar()) != '*') {
+			SSHORT next = nextchar();
+			if (next != '*') {
 				retchar(next);
 				return c;
 			}
 			c = nextchar();
 			while ((next = nextchar()) &&
 				   (next != EOF) && !(c == '*' && next == '/'))
+			{
 				c = next;
+			}
 			continue;
 		}
 		break;

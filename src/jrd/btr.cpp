@@ -175,7 +175,7 @@ static void copy_key(const KEY*, KEY*);
 static CONTENTS delete_node(thread_db*, WIN *, UCHAR *);
 static void delete_tree(thread_db*, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(thread_db*, jrd_nod*, DSC *, bool *);
-static SLONG fast_load(thread_db*, jrd_rel*, IDX *, USHORT, SCB, SelectivityList&);
+static SLONG fast_load(thread_db*, jrd_rel*, IDX *, USHORT, sort_context*, SelectivityList&);
 static index_root_page* fetch_root(thread_db*, WIN *, jrd_rel*);
 static UCHAR* find_node_start_point(btree_page*, KEY *, UCHAR *, USHORT *, bool, bool, bool = false, SLONG = NO_VALUE);
 static UCHAR* find_area_start_point(btree_page*, const KEY*, UCHAR *, USHORT *, bool, bool, SLONG = NO_VALUE);
@@ -251,7 +251,7 @@ void BTR_create(thread_db* tdbb,
 				jrd_rel* relation,
 				IDX * idx,
 				USHORT key_length,
-				SCB sort_handle,
+				sort_context* sort_handle,
 				SelectivityList& selectivity)
 {
 /**************************************
@@ -394,7 +394,7 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, IDX * idx, SSHORT
 }
 
 
-void BTR_evaluate(thread_db* tdbb, IRB retrieval, SparseBitmap** bitmap)
+void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, SparseBitmap** bitmap)
 {
 /**************************************
  *
@@ -501,9 +501,9 @@ UCHAR* BTR_find_leaf(btree_page* bucket, KEY* key, UCHAR* value,
 
 
 btree_page* BTR_find_page(thread_db* tdbb,
-				  IRB retrieval,
-				  WIN * window,
-				  IDX * idx, KEY * lower, KEY * upper, bool backwards)
+				  IndexRetrieval* retrieval,
+				  WIN* window,
+				  IDX* idx, KEY* lower, KEY* upper, bool backwards)
 {
 /**************************************
  *
@@ -2511,7 +2511,7 @@ static SLONG fast_load(thread_db* tdbb,
 					   jrd_rel* relation,
 					   IDX * idx,
 					   USHORT key_length,
-					   SCB sort_handle,
+					   sort_context* sort_handle,
 					   SelectivityList& selectivity)
 {
 /**************************************

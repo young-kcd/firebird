@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.61 2004-03-18 05:55:25 robocop Exp $
+ * $Id: rse.cpp,v 1.62 2004-03-19 06:14:48 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -107,7 +107,7 @@ static bool fetch_left(thread_db*, Rsb*, IRSB, RSE_GET_MODE);
 #else
 static bool fetch_left(thread_db*, Rsb*, IRSB);
 #endif
-static UCHAR *get_merge_data(thread_db*, MFB, SLONG);
+static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, Rsb*, IRSB_PROCEDURE, record_param*);
 static BOOLEAN get_record(thread_db*, Rsb*, Rsb*, RSE_GET_MODE);
 static bool get_union(thread_db*, Rsb*, IRSB);
@@ -119,11 +119,11 @@ static void open_sort(thread_db*, Rsb*, IRSB_SORT, UINT64);
 static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, Rsb*);
 static void push_rpbs(thread_db*, jrd_req*, Rsb*);
-static ULONG read_merge_block(thread_db*, MFB, ULONG);
+static ULONG read_merge_block(thread_db*, merge_file*, ULONG);
 static bool reject(const UCHAR*, const UCHAR*, void*);
 static void restore_record(record_param*);
 static void save_record(thread_db*, record_param*);
-static void write_merge_block(thread_db*, MFB, ULONG);
+static void write_merge_block(thread_db*, merge_file*, ULONG);
 
 #ifdef SMALL_FILE_NAMES
 #define SCRATCH         "fb_m"
@@ -407,7 +407,7 @@ bool RSE_find_record(thread_db* tdbb,
 #endif
 
 
-BOOLEAN RSE_get_record(thread_db* tdbb, Rsb* rsb, RSE_GET_MODE mode)
+bool RSE_get_record(thread_db* tdbb, Rsb* rsb, RSE_GET_MODE mode)
 {
 /**************************************
  *
@@ -446,8 +446,8 @@ BOOLEAN RSE_get_record(thread_db* tdbb, Rsb* rsb, RSE_GET_MODE mode)
 	const bool count = (request->req_flags & req_count_records) != 0;
 	request->req_flags &= ~req_count_records;
 
-	BOOLEAN result;
-	while ( (result = get_record(tdbb, rsb, NULL, mode)) )
+	bool result;
+	while ( (result = get_record(tdbb, rsb, NULL, mode) ? true: false) )
 	{
 		if (rsb->rsb_flags & rsb_writelock)
 		{
@@ -491,7 +491,7 @@ BOOLEAN RSE_get_record(thread_db* tdbb, Rsb* rsb, RSE_GET_MODE mode)
 
 
 #ifdef PC_ENGINE
-BKM RSE_get_bookmark(thread_db* tdbb, Rsb* rsb)
+Bookmark* RSE_get_bookmark(thread_db* tdbb, Rsb* rsb)
 {
 /**************************************
  *
@@ -517,7 +517,7 @@ BKM RSE_get_bookmark(thread_db* tdbb, Rsb* rsb)
 	case rsb_navigate:
 		{
 			IRSB_NAV impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-			bkm* bookmark = BKM_allocate(rsb, impure->irsb_nav_length);
+			Bookmark* bookmark = BKM_allocate(rsb, impure->irsb_nav_length);
 			NAV_get_bookmark(rsb, impure, bookmark);
 			return bookmark;
 		}
@@ -526,7 +526,7 @@ BKM RSE_get_bookmark(thread_db* tdbb, Rsb* rsb)
 	case rsb_sequential:
 		{
 			record_param* rpb = request->req_rpb + rsb->rsb_stream;
-			bkm* bookmark = BKM_allocate(rsb, (USHORT) 0);
+			Bookmark* bookmark = BKM_allocate(rsb, (USHORT) 0);
 			bookmark->bkm_number = rpb->rpb_number;
 			bookmark->bkm_key_desc.dsc_dtype = dtype_long;
 			bookmark->bkm_key_desc.dsc_length = sizeof(bookmark->bkm_number);
@@ -854,7 +854,7 @@ bool RSE_reset_position(thread_db* tdbb, Rsb* rsb, record_param* new_rpb)
 
 
 #ifdef PC_ENGINE
-bool RSE_set_bookmark(thread_db* tdbb, Rsb* rsb, record_param* rpb, BKM bookmark)
+bool RSE_set_bookmark(thread_db* tdbb, Rsb* rsb, record_param* rpb, Bookmark* bookmark)
 {
 /**************************************
  *
@@ -931,8 +931,8 @@ static void close_merge(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 		   and the sort file block. Also delete the merge file
 		   if one exists. */
 
-		MFB mfb = &tail->irsb_mrg_file;
-		SFB sfb = mfb->mfb_sfb;
+		merge_file* mfb = &tail->irsb_mrg_file;
+		sort_work_file* sfb = mfb->mfb_sfb;
 		if (sfb) {
 			if (sfb->sfb_file_name) {
 				close(sfb->sfb_file);
@@ -1425,7 +1425,7 @@ static bool fetch_left(thread_db* tdbb, Rsb* rsb, IRSB impure)
 #endif
 
 
-static UCHAR *get_merge_data(thread_db* tdbb, MFB mfb, SLONG record)
+static UCHAR *get_merge_data(thread_db* tdbb, merge_file* mfb, SLONG record)
 {
 /**************************************
  *
@@ -1541,7 +1541,7 @@ static bool get_merge_fetch(
 	/* copy out the data from this sort merge block to the
 	current record in the record parameter block */
 
-	MFB mfb = &tail->irsb_mrg_file;
+	merge_file* mfb = &tail->irsb_mrg_file;
 	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 			  get_merge_data(tdbb, mfb, record));
 
@@ -1580,7 +1580,7 @@ static bool get_merge_fetch(thread_db* tdbb, Rsb* rsb, SSHORT stream)
 
 	tail->irsb_mrg_equal_current = record;
 
-	MFB mfb = &tail->irsb_mrg_file;
+	merge_file* mfb = &tail->irsb_mrg_file;
 	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 				  get_merge_data(tdbb, mfb, record));
 
@@ -1639,7 +1639,7 @@ static bool get_merge_join(
 	{
 		Rsb* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
-		MFB mfb = &tail->irsb_mrg_file;
+		merge_file* mfb = &tail->irsb_mrg_file;
 
 		/* reset equality group record positions */
 
@@ -1705,7 +1705,7 @@ static bool get_merge_join(
 						goto recycle;
 					}
 					Rsb* sort_rsb = *ptr;
-					MFB mfb = &tail->irsb_mrg_file;
+					merge_file* mfb = &tail->irsb_mrg_file;
 					mfb->mfb_current_block = 0;
 					mfb->mfb_equal_records = 0;
 
@@ -1735,7 +1735,7 @@ static bool get_merge_join(
 
 		Rsb* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
-		MFB mfb = &tail->irsb_mrg_file;
+		merge_file* mfb = &tail->irsb_mrg_file;
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		UCHAR* first_data;
 		if (key_length > sizeof(key))
@@ -1791,7 +1791,7 @@ static bool get_merge_join(
 			if (stack) {
 				continue;
 			}
-			MFB mfb = &tail2->irsb_mrg_file;
+			merge_file* mfb = &tail2->irsb_mrg_file;
 			ULONG blocks = mfb->mfb_equal_records / mfb->mfb_blocking_factor;
 			if (++blocks > most_blocks) {
 				most_blocks = blocks;
@@ -1844,7 +1844,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 	{
 		Rsb* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
-		MFB mfb = &tail->irsb_mrg_file;
+		merge_file* mfb = &tail->irsb_mrg_file;
 
 		/* reset equality group record positions */
 
@@ -1901,7 +1901,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 						goto recycle;
 					}
 					Rsb* sort_rsb = *ptr;
-					MFB mfb = &tail->irsb_mrg_file;
+					merge_file* mfb = &tail->irsb_mrg_file;
 					mfb->mfb_current_block = 0;
 					mfb->mfb_equal_records = 0;
 
@@ -1926,7 +1926,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 
 		Rsb* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
-		MFB mfb = &tail->irsb_mrg_file;
+		merge_file* mfb = &tail->irsb_mrg_file;
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		UCHAR* first_data;
 		if (key_length > sizeof(key))
@@ -1983,7 +1983,7 @@ static bool get_merge_join(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 			if (stack) {
 				continue;
 			}
-			MFB mfb = &tail2->irsb_mrg_file;
+			merge_file* mfb = &tail2->irsb_mrg_file;
 			ULONG blocks = mfb->mfb_equal_records / mfb->mfb_blocking_factor;
 			if (++blocks > most_blocks) {
 				most_blocks = blocks;
@@ -2034,7 +2034,7 @@ static SLONG get_merge_record(
 		return -1;
 
 	SortMap* map = (SortMap*) rsb->rsb_arg[0];
-	MFB mfb = &impure->irsb_mrg_file;
+	merge_file* mfb = &impure->irsb_mrg_file;
 	const SLONG record = mfb->mfb_equal_records;
 
 	const ULONG merge_block = record / mfb->mfb_blocking_factor;
@@ -2367,7 +2367,7 @@ static BOOLEAN get_record(thread_db*	tdbb,
 						{
 							request->req_flags &= ~req_null;
 							// select for ANY/ALL processing
-							const BOOLEAN select_value = EVL_boolean(tdbb, select_node);
+							const bool select_value = EVL_boolean(tdbb, select_node);
 
 							/* see if any record in select stream */
 
@@ -2449,7 +2449,7 @@ static BOOLEAN get_record(thread_db*	tdbb,
 							if (select_node) {
 								request->req_flags &= ~req_null;
 								// select for ANY/ALL processing
-								const BOOLEAN select_value = EVL_boolean(tdbb, select_node);
+								const bool select_value = EVL_boolean(tdbb, select_node);
 								if (select_value) {
 									any_false = true;
 									break;
@@ -2496,7 +2496,7 @@ static BOOLEAN get_record(thread_db*	tdbb,
 							if (select_node) {
 								request->req_flags &= ~req_null;
 								// select for ANY/ALL processing
-								const BOOLEAN select_value = EVL_boolean(tdbb, select_node);
+								const bool select_value = EVL_boolean(tdbb, select_node);
 								if (select_value) {
 									any_false = true;
 									break;
@@ -2992,7 +2992,7 @@ static void open_merge(thread_db* tdbb, Rsb* rsb, IRSB_MRG impure)
 		tail->irsb_mrg_last_fetched = -1;
 		tail->irsb_mrg_order = tail - impure->irsb_mrg_rpt;
 
-		MFB mfb = &tail->irsb_mrg_file;
+		merge_file* mfb = &tail->irsb_mrg_file;
 		mfb->mfb_equal_records = 0;
 		mfb->mfb_current_block = 0;
 		mfb->mfb_record_size = ROUNDUP_LONG(map->smb_length);
@@ -3100,7 +3100,7 @@ static void open_sort(thread_db* tdbb, Rsb* rsb, IRSB_SORT impure, UINT64 max_re
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
-	SCB handle = SORT_init(tdbb->tdbb_status_vector,
+	sort_context* handle = SORT_init(tdbb->tdbb_status_vector,
 						   map->smb_length,
 						   map->smb_keys,
 						   map->smb_key_desc,
@@ -3110,7 +3110,7 @@ static void open_sort(thread_db* tdbb, Rsb* rsb, IRSB_SORT impure, UINT64 max_re
 	if (!(impure->irsb_sort_handle = handle))
 		ERR_punt();
 
-	// Mark scb with the impure area pointer
+	// Mark sort_context with the impure area pointer
 
 	handle->scb_impure = impure;
 
@@ -3527,7 +3527,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 }
 
 
-static ULONG read_merge_block(thread_db* tdbb, MFB mfb, ULONG block)
+static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 {
 /**************************************
  *
@@ -3581,7 +3581,7 @@ static void restore_record(record_param* rpb)
  *
  **************************************/
 	Record* rec_copy;
-	SRPB rpb_copy = rpb->rpb_copy;
+	SaveRecordParam* rpb_copy = rpb->rpb_copy;
 	if (rpb_copy && (rec_copy = rpb_copy->srpb_rpb->rpb_record)) {
 		Record* record = rpb->rpb_record;
 		const USHORT size = rec_copy->rec_length;
@@ -3632,7 +3632,7 @@ static void resynch_merge(
 		 ptr += 2, tail++)
 	{
 		Rsb* sort_rsb = *ptr;
-		MFB mfb = &tail->irsb_mrg_file;
+		merge_file* mfb = &tail->irsb_mrg_file;
 
 		/* increment (or decrement) past each record in the substream 
 		   which has been stored in the merge equivalence group; assume 
@@ -3683,14 +3683,14 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 	Record* record = rpb->rpb_record;
 	if (record) {
 		const SLONG size = record->rec_length;
-		SRPB rpb_copy = rpb->rpb_copy;
+		SaveRecordParam* rpb_copy = rpb->rpb_copy;
 		if (rpb_copy) {
 			Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
 			if (rec_copy)
 				delete rec_copy;
 		}
 		else
-			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->tdbb_default) srpb(); 
+			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->tdbb_default) SaveRecordParam(); 
 
 		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
 		Record* rec_copy = FB_NEW_RPT(*tdbb->tdbb_default, size) Record();
@@ -3730,7 +3730,7 @@ static void unget_sort(thread_db* tdbb, Rsb* rsb, UCHAR * data)
 #endif
 
 
-static void write_merge_block(thread_db* tdbb, MFB mfb, ULONG block)
+static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 {
 /**************************************
  *
@@ -3743,27 +3743,27 @@ static void write_merge_block(thread_db* tdbb, MFB mfb, ULONG block)
  *	the file doesn't exist, by all means, create one.
  *
  **************************************/
-	SFB sfb_ = mfb->mfb_sfb;
-	if (!sfb_) {
-		sfb_ = mfb->mfb_sfb = FB_NEW(*getDefaultMemoryPool()) sfb;
-		memset(sfb_, 0, sizeof(struct sfb));
+	sort_work_file* sfb = mfb->mfb_sfb;
+	if (!sfb) {
+		sfb = mfb->mfb_sfb = FB_NEW(*getDefaultMemoryPool()) sort_work_file;
+		memset(sfb, 0, sizeof(sort_work_file));
 	}
-	if (!sfb_->sfb_file_name) {
+	if (!sfb->sfb_file_name) {
 		TEXT file_name[128];
 
 		// Cast is ok because stdio_flag is false
-		sfb_->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name); 
-		if (sfb_->sfb_file == -1)
-			SORT_error(tdbb->tdbb_status_vector, sfb_, "open", isc_io_error,
+		sfb->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name); 
+		if (sfb->sfb_file == -1)
+			SORT_error(tdbb->tdbb_status_vector, sfb, "open", isc_io_error,
 					   errno);
-		sfb_->sfb_file_name = 
+		sfb->sfb_file_name = 
 			FB_NEW(*getDefaultMemoryPool()) char[strlen(file_name) + 1];
-		strcpy(sfb_->sfb_file_name, file_name);
+		strcpy(sfb->sfb_file_name, file_name);
 
-		sfb_->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb_, mfb->mfb_block_size);
+		sfb->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb, mfb->mfb_block_size);
 	}
 
-	sfb_->sfb_mem->write(tdbb->tdbb_status_vector,
+	sfb->sfb_mem->write(tdbb->tdbb_status_vector,
 						 mfb->mfb_block_size * block,
 						 reinterpret_cast<char*>(mfb->mfb_block_data),
 						 mfb->mfb_block_size);

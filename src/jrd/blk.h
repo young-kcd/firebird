@@ -36,7 +36,7 @@ BLKDEF(type_bdb, BufferDesc, 0)
 BLKDEF(type_pre, Precedence, 0)
 BLKDEF(type_lck, Lock, 1)
 BLKDEF(type_fil, jrd_file, 1)
-BLKDEF(type_pgc, pgc, 0)
+BLKDEF(type_pgc, PageControl, 0)
 BLKDEF(type_rel, jrd_rel, 0)
 BLKDEF(type_fmt, fmt, sizeof(((fmt*) NULL)->fmt_desc[0]))   /* Done */
 BLKDEF(type_vcl, vcl, sizeof(((vcl*) NULL)->vcl_long[0]))   /* Done */
@@ -49,31 +49,31 @@ BLKDEF(type_rec, Record, 1)	/* record parameter */
 BLKDEF(type_rsb, Rsb, sizeof(((Rsb*) NULL)->rsb_arg[0]))	/* Done record source */
 BLKDEF(type_bms, BitmapSegment, 0)	/* bit map segment */
 BLKDEF(type_dfw, DeferredWork, 1)	/* deferred work block */
-BLKDEF(type_tfb, tfb, 0)	/* temporary field block */
+BLKDEF(type_tfb, TemporaryField, 0)	/* temporary field block */
 BLKDEF(type_str, str, 1)	/* random string block */
 BLKDEF(type_dcc, Dcc, 0)	/* data compression control */
 BLKDEF(type_sbm, SparseBitmap, sizeof(((SparseBitmap*) NULL)->sbm_segments[0]))	/* done sparse bit map */
 BLKDEF(type_smb, SortMap, sizeof(((SortMap*) NULL)->smb_rpt[0]))	/* done sort map block */
 BLKDEF(type_blb, blb, 1)
-BLKDEF(type_irb, irb, sizeof(((irb*) NULL)->irb_value[0]))	/* Done Index retrieval */
+BLKDEF(type_irb, IndexRetrieval, sizeof(((IndexRetrieval*) NULL)->irb_value[0]))	/* Done Index retrieval */
 BLKDEF(type_scl, scl, 1)
 BLKDEF(type_fld, fld, 1)
 BLKDEF(type_ext, ExternalFile, 1)	/* External file */
-BLKDEF(type_mfb, mfb, 0)	/* merge (equivalence) file block */
+BLKDEF(type_mfb, merge_file, 0)	/* merge (equivalence) file block */
 BLKDEF(type_riv, River, 1)	/* River block -- used in optimizer */
-BLKDEF(type_usr, usr, 0)	/* User identification block */
+BLKDEF(type_usr, UserId, 0)	/* User identification block */
 BLKDEF(type_att, Attachment, 0)	/* Database attachment */
-BLKDEF(type_sym, sym, 0)
+BLKDEF(type_sym, Symbol, 0)
 BLKDEF(type_fun, fun, sizeof(((fun*) NULL)->fun_rpt[0]))	/* Done Function definition */
-BLKDEF(type_irl, irl, 0)
-BLKDEF(type_acc, acc, 0)
-BLKDEF(type_idl, idl, 0)
+BLKDEF(type_irl, IndexedRelationship, 0)
+BLKDEF(type_acc, AccessItem, 0)
+BLKDEF(type_idl, IndexLock, 0)
 BLKDEF(type_rsc, Resource, 0)
 BLKDEF(type_sdw, Shadow, 0)
 BLKDEF(type_vct, VerbAction, 0)	/* Verb actions */
 BLKDEF(type_btb, BlockingThread, 0)
-BLKDEF(type_blf, blf, 0)
-BLKDEF(type_arr, arr, sizeof(((ads*) NULL)->ads_rpt[0]))	/* Done, but funny   Array description */
+BLKDEF(type_blf, BlobFilter, 0)
+BLKDEF(type_arr, ArrayField, sizeof(((internal_array_desc*) NULL)->iad_rpt[0]))	/* Done, but funny   Array description */
 BLKDEF(type_map, blb_map, 0)
 BLKDEF(type_log, fblog, 0)
 BLKDEF(type_dls, dls, 1)
@@ -82,18 +82,18 @@ BLKDEF(type_prc, jrd_prc, 1)	/* procedure block */
 BLKDEF(type_prm, prm, 1)	/* parameter block */
 BLKDEF(type_sav, Savepoint, 0)	/* save points */
 BLKDEF(type_xcp, xcp, sizeof(((xcp*) NULL)->xcp_rpt[0]))	/* exception condition list */
-BLKDEF(type_idb, idb, 0)	/* index block for caching index info */
-BLKDEF(type_bkm, bkm, 1)	/* bookmark block for storing current location */
-BLKDEF(type_tpc, tpc, 1)	/* TIP page cache block */
-BLKDEF(type_rng, rng, 1)	/* refresh range */
+BLKDEF(type_idb, IndexBlock, 0)	/* index block for caching index info */
+BLKDEF(type_bkm, Bookmark, 1)	/* bookmark block for storing current location */
+BLKDEF(type_tpc, TxPageCache, 1)	/* TIP page cache block */
+BLKDEF(type_rng, RefreshRange, 1)	/* refresh range */
 BLKDEF(type_svc, Service, 1)	/* services */
 BLKDEF(type_lwt, LatchWait, 0)	/* latch wait block */
 BLKDEF(type_vcx, ViewContext, 0)	/* view context block */
-BLKDEF(type_srpb, srpb, 0)	/* save record_param block */
+BLKDEF(type_srpb, SaveRecordParam, 0)	/* save record_param block */
 BLKDEF(type_opt, Opt, 0)
 BLKDEF(type_prf, Prefetch, 0)
 BLKDEF(type_rse, rse, 0)
 BLKDEF(type_lit, Literal, 0)
 BLKDEF(type_asb, asb, 0)
 BLKDEF(type_srl, srl, 0)
-BLKDEF(type_ctl, ctl, 0)
+BLKDEF(type_ctl, BlobControl, 0)

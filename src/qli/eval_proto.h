@@ -24,12 +24,15 @@
 #ifndef QLI_EVAL_PROTO_H
 #define QLI_EVAL_PROTO_H
 
-int			EVAL_boolean (struct qli_nod*);
-void		EVAL_break_compute (struct qli_nod*);
-void		EVAL_break_increment (struct qli_nod*);
-void		EVAL_break_init (struct qli_nod*);
-struct dsc*	EVAL_parameter (qli_par*);
-struct dsc*	EVAL_value (struct qli_nod*);
+struct qli_nod;
+struct dsc;
+
+int		EVAL_boolean (qli_nod*);
+void	EVAL_break_compute (qli_nod*);
+void	EVAL_break_increment (qli_nod*);
+void	EVAL_break_init (qli_nod*);
+dsc*	EVAL_parameter (qli_par*);
+dsc*	EVAL_value (qli_nod*);
 
 #endif // QLI_EVAL_PROTO_H
 

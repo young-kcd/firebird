@@ -34,7 +34,7 @@
 static SSHORT hash_func(const SCHAR*);
 
 
-void SYM_insert(SYM symbol)
+void SYM_insert(Symbol* symbol)
 {
 /**************************************
  *
@@ -50,7 +50,7 @@ void SYM_insert(SYM symbol)
 
 	const int h = hash_func(symbol->sym_string);
 
-	for (sym* old = dbb->dbb_hash_table[h]; old; old = old->sym_collision) {
+	for (Symbol* old = dbb->dbb_hash_table[h]; old; old = old->sym_collision) {
 		if (!strcmp(symbol->sym_string, old->sym_string)) {
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
@@ -63,7 +63,7 @@ void SYM_insert(SYM symbol)
 }
 
 
-SYM SYM_lookup(const TEXT* string)
+Symbol* SYM_lookup(const TEXT* string)
 {
 /**************************************
  *
@@ -77,7 +77,7 @@ SYM SYM_lookup(const TEXT* string)
  **************************************/
 	Database* dbb = GET_DBB;
 
-	for (sym* symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
+	for (Symbol* symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
 		if (!strcmp(string, symbol->sym_string)) 
@@ -88,7 +88,7 @@ SYM SYM_lookup(const TEXT* string)
 }
 
 
-void SYM_remove(SYM symbol)
+void SYM_remove(Symbol* symbol)
 {
 /**************************************
  *
@@ -104,11 +104,11 @@ void SYM_remove(SYM symbol)
 
 	const int h = hash_func(symbol->sym_string);
 
-	for (sym** next = &dbb->dbb_hash_table[h]; *next;
+	for (Symbol** next = &dbb->dbb_hash_table[h]; *next;
 		 next = &(*next)->sym_collision)
 	{
 		if (symbol == *next) {
-			sym* homonym = symbol->sym_homonym;
+			Symbol* homonym = symbol->sym_homonym;
 			if (homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
@@ -120,7 +120,7 @@ void SYM_remove(SYM symbol)
 			}
 		}
 		else {
-			for (sym** ptr = &(*next)->sym_homonym; *ptr;
+			for (Symbol** ptr = &(*next)->sym_homonym; *ptr;
 				 ptr = &(*ptr)->sym_homonym)
 			{
 				if (symbol == *ptr) {

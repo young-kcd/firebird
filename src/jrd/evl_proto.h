@@ -29,25 +29,25 @@
 // Implemented in evl.cpp
 dsc*		EVL_assign_to(thread_db* tdbb, jrd_nod*);
 SparseBitmap**	EVL_bitmap(thread_db* tdbb, jrd_nod*);
-BOOLEAN		EVL_boolean(thread_db* tdbb, jrd_nod*);
+bool		EVL_boolean(thread_db* tdbb, jrd_nod*);
 dsc*		EVL_expr(thread_db* tdbb, jrd_nod*);
 bool		EVL_field(jrd_rel*, Record*, USHORT, dsc*);
 USHORT		EVL_group(thread_db* tdbb, Rsb*, jrd_nod*, USHORT);
 void		EVL_make_value(thread_db* tdbb, const dsc*, vlu*);
 
 // Obsolete functions to support MATCHES and SLEUTH
-USHORT		EVL_mb_matches(thread_db* tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
-USHORT		EVL_mb_sleuth_check(thread_db* tdbb, TextType, USHORT, const UCHAR*, USHORT,
+bool		EVL_mb_matches(thread_db* tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
+bool		EVL_mb_sleuth_check(thread_db* tdbb, TextType, USHORT, const UCHAR*, USHORT,
 								const UCHAR*,USHORT);
 USHORT		EVL_mb_sleuth_merge(thread_db* tdbb, TextType, const UCHAR*, USHORT, const UCHAR*,
 								USHORT, UCHAR*, USHORT);
-USHORT		EVL_nc_matches(thread_db* tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
-USHORT		EVL_nc_sleuth_check(thread_db* tdbb, TextType, USHORT, const UCHAR*, USHORT,
+bool		EVL_nc_matches(thread_db* tdbb, TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
+bool		EVL_nc_sleuth_check(thread_db* tdbb, TextType, USHORT, const UCHAR*, USHORT,
 								const UCHAR*, USHORT);
 USHORT		EVL_nc_sleuth_merge(thread_db* tdbb, TextType, const UCHAR*, USHORT, const UCHAR*,
 								USHORT, UCHAR*, USHORT);
-USHORT		EVL_wc_matches(thread_db* tdbb, TextType, const USHORT*, SSHORT, const USHORT*, SSHORT);
-USHORT		EVL_wc_sleuth_check(thread_db* tdbb, TextType, USHORT, const USHORT*, USHORT,
+bool		EVL_wc_matches(thread_db* tdbb, TextType, const USHORT*, SSHORT, const USHORT*, SSHORT);
+bool		EVL_wc_sleuth_check(thread_db* tdbb, TextType, USHORT, const USHORT*, USHORT,
 								const USHORT*, USHORT);
 USHORT		EVL_wc_sleuth_merge(thread_db* tdbb, TextType, const USHORT*, USHORT, const USHORT*,
 								USHORT, USHORT*, USHORT);

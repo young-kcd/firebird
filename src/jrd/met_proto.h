@@ -55,7 +55,7 @@ void		MET_lookup_cnstrt_for_trigger(thread_db*, TEXT*, TEXT*, const TEXT*);
 void		MET_lookup_exception(thread_db*, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
 SLONG		MET_lookup_exception_number(thread_db*, const TEXT*);
 int			MET_lookup_field(thread_db*, jrd_rel*, const TEXT*, const TEXT*);
-BLF			MET_lookup_filter(thread_db*, SSHORT, SSHORT);
+BlobFilter*	MET_lookup_filter(thread_db*, SSHORT, SSHORT);
 SLONG		MET_lookup_generator(thread_db*, const TEXT*);
 void		MET_lookup_generator_id(thread_db*, SLONG, TEXT *);
 void		MET_lookup_index(thread_db*, TEXT*, const TEXT*, USHORT);

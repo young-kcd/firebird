@@ -102,6 +102,8 @@
 #include "../jrd/execute_statement.h"
 #include "../dsql/dsql_proto.h"
 #include "../jrd/rpb_chain.h"
+#include "../../common/classes/auto.h"
+
 
 // status_xcp class implementation
 
@@ -1349,8 +1351,8 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
  *	Execute a string as SQL operator.
  *
  **************************************/
-	vary* v = reinterpret_cast<vary*>(
-		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
+	Firebird::AutoPtrFromString<vary> v(reinterpret_cast<vary*>(
+		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]));
 	v->vary_length = BUFFER_LARGE;
 	ISC_STATUS_ARRAY local;
 
@@ -1387,7 +1389,7 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 		ERR_punt();
 	}
 
-	delete v;
+	//delete v;
 }
 
 
@@ -3204,7 +3206,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 
 		/* Release arrays assigned by this request */
 
-		for (arr** array = &transaction->tra_arrays; *array;) {
+		for (ArrayField** array = &transaction->tra_arrays; *array;) {
 			DEV_BLKCHK(*array, type_arr);
 			if ((*array)->arr_request == request)
 				BLB_release_array(*array);
@@ -3573,7 +3575,7 @@ static jrd_nod* set_bookmark(thread_db* tdbb, jrd_nod* node)
 	BLKCHK(node, type_nod);
 
 	if (request->req_operation == jrd_req::req_evaluate) {
-		bkm* bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
+		Bookmark* bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
 		const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_setmark_stream];
 		record_param* rpb = &request->req_rpb[stream];
 		Rsb* rsb = *((Rsb**) node->nod_arg[e_setmark_rsb]);

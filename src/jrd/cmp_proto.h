@@ -39,7 +39,7 @@ jrd_req* CMP_find_request(thread_db*, USHORT, USHORT);
 void CMP_fini(thread_db*);
 fmt* CMP_format(thread_db*, Csb*, USHORT);
 void CMP_get_desc(thread_db*, Csb*, jrd_nod*, dsc*);
-idl* CMP_get_index_lock(thread_db*, jrd_rel*, USHORT);
+IndexLock* CMP_get_index_lock(thread_db*, jrd_rel*, USHORT);
 SLONG CMP_impure(Csb*, USHORT);
 jrd_req* CMP_make_request(thread_db*, Csb*);
 void CMP_post_access(thread_db*, Csb*, const TEXT*, SLONG,

@@ -135,7 +135,7 @@ enum tdr_state_vals {
 
 // a couple of obscure blocks used only in data allocator routines 
 
-//class alice_vec : public pool_alloc_rpt<class blk*, alice_type_vec>
+//class alice_vec : public pool_alloc_rpt<blk*, alice_type_vec>
 //{
 //public:
 //	ULONG vec_count;
@@ -160,10 +160,10 @@ enum redirect_vals {
 	NOOUTPUT = 2
 };
 
-class tgbl
+class Tgbl
 {
 public:
-	tgbl(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
+	Tgbl(AliceMemoryPool* p) : pools(0, (AliceMemoryPool*)0,
 				pool_vec_t::allocator_type(*p)) {}
 	
 	thdd			tgbl_thd_data;
@@ -185,23 +185,23 @@ public:
 	bool			sw_service;
 	bool			sw_service_thd;
 };
-typedef tgbl* TGBL;
+
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
 #endif
 
 #ifdef SUPERSERVER
-#define GET_THREAD_DATA		((TGBL) THD_get_specific())
+#define GET_THREAD_DATA		((Tgbl*) THD_get_specific())
 #define SET_THREAD_DATA		THD_put_specific ((THDD) tdgbl);	\
 				tdgbl->tgbl_thd_data.thdd_type =				\
 					THDD_TYPE_TALICE
 #define RESTORE_THREAD_DATA	THD_restore_specific();
 #else
-extern tgbl *gdgbl;
+extern Tgbl* gdgbl;
 
 #define GET_THREAD_DATA		(gdgbl)
-#define SET_THREAD_DATA		gdgbl = const_cast<tgbl*>(tdgbl); \
+#define SET_THREAD_DATA		gdgbl = tdgbl; \
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
 #define RESTORE_THREAD_DATA
 #endif

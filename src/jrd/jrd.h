@@ -122,6 +122,16 @@ class str;
 class jrd_rel;
 class ExternalFile;
 class ViewContext;
+class IndexBlock;
+class IndexLock;
+class Bookmark;
+class ArrayField;
+class BlobFilter;
+class PageControl;
+class Symbol;
+class UserId;
+struct sort_context;
+class TxPageCache;
 
 
 class Database : private pool_alloc<type_dbb>
@@ -161,10 +171,10 @@ public:
 	SLONG dbb_shadow_sync_count;	/* to synchronize changes to shadows */
 	Lock*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
 	struct plc *dbb_connection;	/* connection block */
-	struct pgc *dbb_pcontrol;	/* page control */
+	PageControl*	dbb_pcontrol;	/* page control */
 	class vcl *dbb_t_pages;	/* pages number for transactions */
 	class vcl *dbb_gen_id_pages;	/* known pages for gen_id */
-	struct blf *dbb_blob_filters;	/* known blob filters */
+	BlobFilter*	dbb_blob_filters;	/* known blob filters */
 	class lls *dbb_modules;	/* external function/filter modules */
 	MUTX_T *dbb_mutexes;		/* Database block mutexes */
 	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
@@ -243,10 +253,10 @@ public:
 	Firebird::vector<class TextType*>		dbb_text_objects;	/* intl text type descriptions */
 	Firebird::vector<class CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 //	struct wal *dbb_wal;		/* WAL handle for WAL API */
-	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
+	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
 	class BackupManager *backup_manager; /* physical backup manager */
-	class sym *dbb_hash_table[HASH_SIZE];	/* keep this at the end */
+	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 private:
 	Database(MemoryPool& p)
@@ -442,11 +452,11 @@ public:
 	Database*	att_database;		// Parent databasea block
 	Attachment*	att_next;			// Next attachment to database
 	Attachment*	att_blocking;		// Blocking attachment, if any
-	class usr*	att_user;			// User identification
+	UserId*		att_user;			// User identification
 	jrd_tra*	att_transactions;	// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
 	jrd_req*	att_requests;		// Requests belonging to attachment
-	struct scb*	att_active_sorts;	// Active sorts
+	sort_context*	att_active_sorts;	// Active sorts
 	Lock*		att_id_lock;		// Attachment lock (if any)
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
@@ -455,7 +465,7 @@ public:
 	class scl*	att_security_classes;	// security classes
 	class vcl*	att_counts[DBB_max_count];
 	vec*		att_relation_locks;	// explicit persistent locks for relations
-	struct bkm*	att_bookmarks;		// list of bookmarks taken out using this attachment
+	Bookmark*	att_bookmarks;		// list of bookmarks taken out using this attachment
 	Lock*		att_record_locks;	// explicit or implicit record locks taken out during attachment
 	vec*		att_bkm_quick_ref;	// correspondence table of bookmarks
 	vec*		att_lck_quick_ref;	// correspondence table of locks
@@ -528,7 +538,7 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 								   (it will usually be 0)
 								*/
 	Lock* prc_existence_lock;	/* existence lock, if any */
-	str*		prc_name;		/* pointer to ascic name */
+	str*		prc_name;		/* pointer to ascii name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 };
 
@@ -638,14 +648,14 @@ public:
 	ULONG rel_write_locks;		/* count of records write locked in relation (implicit or explicit) */
 	ULONG rel_lock_total;		/* count of records locked since database first attached */
 
-	struct idl *rel_index_locks;	/* index existence locks */
-	struct idb *rel_index_blocks;	/* index blocks for caching index info */
-	trig_vec   *rel_pre_erase; 	/* Pre-operation erase trigger */
-	trig_vec   *rel_post_erase;	/* Post-operation erase trigger */
-	trig_vec   *rel_pre_modify;	/* Pre-operation modify trigger */
-	trig_vec   *rel_post_modify;	/* Post-operation modify trigger */
-	trig_vec   *rel_pre_store;		/* Pre-operation store trigger */
-	trig_vec   *rel_post_store;	/* Post-operation store trigger */
+	IndexLock*	rel_index_locks;	/* index existence locks */
+	IndexBlock*	rel_index_blocks;	/* index blocks for caching index info */
+	trig_vec*	rel_pre_erase; 	/* Pre-operation erase trigger */
+	trig_vec*	rel_post_erase;	/* Post-operation erase trigger */
+	trig_vec*	rel_pre_modify;	/* Pre-operation modify trigger */
+	trig_vec*	rel_post_modify;	/* Post-operation modify trigger */
+	trig_vec*	rel_pre_store;		/* Pre-operation store trigger */
+	trig_vec*	rel_post_store;	/* Post-operation store trigger */
 	prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
@@ -677,7 +687,7 @@ class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 	jrd_nod*	fld_source;			/* source for view fields */
 	jrd_nod*	fld_default_value;	/* default value, if any */
 	TEXT*		fld_security_name;	/* pointer to security class name for field */
-	struct arr*	fld_array;			/* array description, if array */
+	ArrayField*	fld_array;			/* array description, if array */
 	const TEXT*	fld_name;			/* Field name */
 	UCHAR		fld_length;			/* Field name length */
 	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
@@ -687,17 +697,17 @@ class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 
 /* Index block to cache index information */
 
-class idb : public pool_alloc<type_idb>
+class IndexBlock : public pool_alloc<type_idb>
 {
     public:
-	idb*		idb_next;
+	IndexBlock*	idb_next;
 	jrd_nod*	idb_expression;			/* node tree for index expression */
 	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
 	struct dsc	idb_expression_desc;	/* descriptor for expression result */
 	Lock*		idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
 };
-typedef idb *IDB;
+
 
 
 /* view context block to cache view aliases */
@@ -834,17 +844,17 @@ typedef enum sym_t {
     SYM_label					/* CVC: I need to track labels if LEAVE is implemented. */
 } SYM_T;
 
-class sym : public pool_alloc<type_sym>
+class Symbol : public pool_alloc<type_sym>
 {
     public:
-	TEXT *sym_string;			/* address of asciz string */
+	TEXT*	sym_string;			/* address of asciz string */
 /*  USHORT	sym_length; *//* length of asciz string */
-	SYM_T sym_type;				/* symbol type */
-	BLK sym_object;		/* general pointer to object */
-	sym *sym_collision;	/* collision pointer */
-	sym *sym_homonym;	/* homonym pointer */
+	SYM_T	sym_type;				/* symbol type */
+	BLK		sym_object;		/* general pointer to object */
+	Symbol*	sym_collision;	/* collision pointer */
+	Symbol*	sym_homonym;	/* homonym pointer */
 };
-typedef sym *SYM;
+
 
 /* Random string block -- jack of all kludges */
 

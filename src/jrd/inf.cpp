@@ -198,10 +198,8 @@ int INF_database_info(const SCHAR* items,
  *
  **************************************/
 	SCHAR buffer[256];
-	SCHAR site[256];
-	SSHORT length, l;
+	SSHORT length;
 	SLONG id;
-	USR user;
 	SLONG err_val;
 	bool header_refreshed = false;
 
@@ -460,9 +458,11 @@ int INF_database_info(const SCHAR* items,
 			{
 				const Firebird::PathName& str_fn = tdbb->tdbb_attachment->att_filename;
 				STUFF(p, 2);
-				*p++ = l = str_fn.length();
+				SSHORT l = str_fn.length();
+				*p++ = l;
 				for (q = str_fn.c_str(); *q;)
 					*p++ = *q++;
+				SCHAR site[256];
 				ISC_get_host(site, sizeof(site));
 				*p++ = l = strlen(site);
 				for (q = site; *q;)
@@ -534,12 +534,13 @@ int INF_database_info(const SCHAR* items,
 				if (att->att_flags & ATT_shutdown)
 					continue;
                 
-                user = att->att_user;
+                const UserId* user = att->att_user;
 				if (user) {
 					const char* user_name = user->usr_user_name ?
 						user->usr_user_name : "(SQL Server)";
 					p = buffer;
-					*p++ = l = strlen (user_name);
+					SSHORT l = strlen (user_name);
+					*p++ = l;
 					for (q = user_name; l; l--)
 						*p++ = *q++;
 					length = p - buffer;

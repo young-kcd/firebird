@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.97 2004-03-18 05:55:23 robocop Exp $
+$Id: met.epp,v 1.98 2004-03-19 06:14:47 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1482,7 +1482,7 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const TEXT* name,
 }
 
 
-BLF MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
+BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 {
 /**************************************
  *
@@ -1497,7 +1497,7 @@ BLF MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 	Database* dbb = tdbb->tdbb_database;
 
 	FPTR_BFILTER_CALLBACK filter = NULL;
-	BLF blf_ = NULL;
+	BlobFilter* blf = NULL;
 
 	blk* request = CMP_find_request(tdbb, irq_r_filters, IRQ_REQUESTS);
 
@@ -1514,11 +1514,11 @@ BLF MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 								  ISC_EXT_LIB_PATH_ENV, true);
 		if (filter)
 		{
-			blf_ = FB_NEW(*dbb->dbb_permanent) blf();
-			blf_->blf_next = NULL;
-			blf_->blf_from = from;
-			blf_->blf_to = to;
-			blf_->blf_filter = filter;
+			blf = FB_NEW(*dbb->dbb_permanent) BlobFilter();
+			blf->blf_next = NULL;
+			blf->blf_from = from;
+			blf->blf_to = to;
+			blf->blf_filter = filter;
 			str* exception_msg =
 				FB_NEW_RPT(*dbb->dbb_permanent,
 							  strlen(EXCEPTION_MESSAGE) +
@@ -1527,7 +1527,7 @@ BLF MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 							  strlen(X.RDB$MODULE_NAME) + 1) str();
 			sprintf((char*)exception_msg->str_data, EXCEPTION_MESSAGE,
 					X.RDB$FUNCTION_NAME, X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
-			blf_->blf_exception_message = exception_msg;
+			blf->blf_exception_message = exception_msg;
 		}
 		
 		MOD module = FLU_lookup_module(X.RDB$MODULE_NAME);
@@ -1563,7 +1563,7 @@ BLF MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 	if (!REQUEST(irq_r_filters))
 		REQUEST(irq_r_filters) = request;
 
-	return blf_;
+	return blf;
 }
 
 
@@ -3126,7 +3126,7 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 		const USHORT save_proc_flags = procedure->prc_flags;
 		const USHORT save_use_count = procedure->prc_use_count;
 		memset(((SCHAR *)&procedure->prc_id), 0,
-			   sizeof(struct jrd_prc) - ((SCHAR *)&procedure->prc_id-(SCHAR *)procedure));
+			   sizeof(jrd_prc) - ((SCHAR *)&procedure->prc_id - (SCHAR *)procedure));
 		procedure->prc_flags = save_proc_flags;
 		procedure->prc_use_count = save_use_count;
 	}
@@ -3232,7 +3232,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	USHORT length, view_context, field_id;
-	ARR array;
+	ArrayField* array;
 	trig_vec* triggers[TRIGGER_MAX];
 	VEC vector;
 	jrd_fld* field;
@@ -3471,8 +3471,8 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_dimensions:
-				field->fld_array = array = FB_NEW_RPT(*dbb->dbb_permanent, n) arr();
-				array->arr_desc.ads_dimensions = n;
+				field->fld_array = array = FB_NEW_RPT(*dbb->dbb_permanent, n) ArrayField();
+				array->arr_desc.iad_dimensions = n;
 				break;
 
 			case RSR_array_desc:

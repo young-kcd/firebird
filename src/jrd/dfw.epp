@@ -184,23 +184,23 @@ static void check_dependencies(thread_db*, const TEXT*, const TEXT*, USHORT, jrd
 static void check_filename(const TEXT*, USHORT);
 static bool formatsAreEqual(const fmt*, const fmt*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
-static void get_array_desc(thread_db*, const TEXT*, ads*);
+static void get_array_desc(thread_db*, const TEXT*, internal_array_desc*);
 static void get_procedure_dependencies(DeferredWork*);
 static void get_trigger_dependencies(DeferredWork*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
-static fmt*	make_format(thread_db*, jrd_rel*, USHORT *, TFB);
+static fmt*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static USHORT name_length(const TEXT*);
 static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t,
 	dsc*, USHORT);
 static void put_summary_blob(blb*, enum rsr_t, bid*);
 static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
-static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TFB);
+static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
 	const TEXT*, bool);
 //static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, VEC *, UCHAR *, UCHAR *, BOOLEAN);
 //static bool shadow_defined(thread_db*);
-static bool validate_text_type (thread_db*, ISC_STATUS *, TFB);
+static bool validate_text_type (thread_db*, ISC_STATUS *, TemporaryField*);
 
 static const UCHAR nonnull_validation_blr[] =
 {
@@ -2286,8 +2286,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  * Functional description
  *
  **************************************/
-	IDL index, *ptr;
-	IDB index_block, *iptr;
+	IndexLock* index;
 	jrd_rel* relation;
 	USHORT id, wait;
 
@@ -2374,7 +2373,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			{
 				/* Release index existence lock and memory. */
 
-				for (ptr = &relation->rel_index_locks;
+				for (IndexLock** ptr = &relation->rel_index_locks;
 					*ptr;
 					ptr = &(*ptr)->idl_next)
 				{
@@ -2393,13 +2392,13 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				/* Release index refresh lock and memory. */
 
-				for (iptr = &relation->rel_index_blocks;
+				for (IndexBlock** iptr = &relation->rel_index_blocks;
 					*iptr;
 					 iptr = &(*iptr)->idb_next)
 				{
 					if ((*iptr)->idb_id == id)
 					{
-						index_block = *iptr;
+						IndexBlock* index_block = *iptr;
 						*iptr = index_block->idb_next;
 
 						/* Lock was released in IDX_delete_index(). */
@@ -3100,7 +3099,8 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 }
 
 
-static void get_array_desc(thread_db* tdbb, const TEXT* field_name, ads* desc)
+static void get_array_desc(thread_db* tdbb, const TEXT* field_name, 
+	internal_array_desc* desc)
 {
 /**************************************
  *
@@ -3117,18 +3117,18 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, ads* desc)
 
 	blk* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
 
-	ads::ads_repeat* ranges = 0;
+	internal_array_desc::iad_repeat* ranges = 0;
 	FOR (REQUEST_HANDLE request)
 		D IN RDB$FIELD_DIMENSIONS WITH D.RDB$FIELD_NAME EQ field_name
         if (!REQUEST(irq_r_fld_dim))
 		{
             REQUEST(irq_r_fld_dim) = request;
 		}
-		if (D.RDB$DIMENSION >= 0 && D.RDB$DIMENSION < desc->ads_dimensions)
+		if (D.RDB$DIMENSION >= 0 && D.RDB$DIMENSION < desc->iad_dimensions)
 		{
-			ranges = desc->ads_rpt + D.RDB$DIMENSION;
-			ranges->ads_lower = D.RDB$LOWER_BOUND;
-			ranges->ads_upper = D.RDB$UPPER_BOUND;
+			ranges = desc->iad_rpt + D.RDB$DIMENSION;
+			ranges->iad_lower = D.RDB$LOWER_BOUND;
+			ranges->iad_upper = D.RDB$UPPER_BOUND;
 		}
 	END_FOR;
 
@@ -3137,20 +3137,20 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, ads* desc)
 		REQUEST(irq_r_fld_dim) = request;
 	}
 
-	desc->ads_count = 1;
+	desc->iad_count = 1;
 
-	for (ranges = desc->ads_rpt + desc->ads_dimensions;
-		 --ranges >= desc->ads_rpt;)
+	for (ranges = desc->iad_rpt + desc->iad_dimensions;
+		 --ranges >= desc->iad_rpt;)
 	{
-		ranges->ads_length = desc->ads_count;
-		desc->ads_count *= ranges->ads_upper - ranges->ads_lower + 1;
+		ranges->iad_length = desc->iad_count;
+		desc->iad_count *= ranges->iad_upper - ranges->iad_lower + 1;
 	}
 
-	desc->ads_version = ADS_VERSION_1;
-	desc->ads_length =
-		ADS_LEN(MAX(desc->ads_struct_count, desc->ads_dimensions));
-	desc->ads_element_length = desc->ads_rpt[0].ads_desc.dsc_length;
-	desc->ads_total_length = desc->ads_element_length * desc->ads_count;
+	desc->iad_version = IAD_VERSION_1;
+	desc->iad_length =
+		IAD_LEN(MAX(desc->iad_struct_count, desc->iad_dimensions));
+	desc->iad_element_length = desc->iad_rpt[0].iad_desc.dsc_length;
+	desc->iad_total_length = desc->iad_element_length * desc->iad_count;
 }
 
 
@@ -3313,7 +3313,8 @@ static void load_trigs(thread_db* tdbb, jrd_rel* relation, trig_vec** triggers)
 }
 
 
-static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, TFB stack)
+static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
+	TemporaryField* stack)
 {
 /**************************************
  *
@@ -3325,7 +3326,7 @@ static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, TFB
  *	Make a format block for a relation.
  *
  **************************************/
-	TFB tfb;
+	TemporaryField* tfb;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3473,7 +3474,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *
  **************************************/
 	BLK request_fmt1, request_fmtx;
-	TFB stack, external, tfb_;
+	TemporaryField* stack;
+	TemporaryField* external;
 	jrd_rel* relation;
 	blb* blob;
 	bid blob_id;
@@ -3640,9 +3642,9 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					/* Make a temporary field block */
 
-					tfb_ = FB_NEW(*tdbb->tdbb_default) tfb;
-					tfb_->tfb_next = stack;
-					stack = tfb_;
+					TemporaryField* tfb = FB_NEW(*tdbb->tdbb_default) TemporaryField;
+					tfb->tfb_next = stack;
+					stack = tfb;
 
 					/* for text data types, grab the CHARACTER_SET and
 					   COLLATION to give the type of international text */
@@ -3656,14 +3658,14 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					if (!RFR.RDB$COLLATION_ID.NULL)
 						collation = RFR.RDB$COLLATION_ID;
 
-					DSC_make_descriptor(&tfb_->tfb_desc, FLD.RDB$FIELD_TYPE,
+					DSC_make_descriptor(&tfb->tfb_desc, FLD.RDB$FIELD_TYPE,
 										FLD.RDB$FIELD_SCALE,
 										FLD.RDB$FIELD_LENGTH,
 										FLD.RDB$FIELD_SUB_TYPE,
 										FLD.RDB$CHARACTER_SET_ID, collation);
 
 					/* Make sure the text type specified is implemented */
-				    if (!(validate_text_type(tdbb, status, tfb_)))
+				    if (!(validate_text_type(tdbb, status, tfb)))
 					{
 						EXE_unwind(tdbb, (jrd_req*)request_fmt1);
 						EXE_unwind(tdbb, (jrd_req*)request_fmtx);
@@ -3676,25 +3678,25 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					// dimitr: view fields shoudn't be marked as computed
 					if (null_view && !FLD.RDB$COMPUTED_BLR.isEmpty())
-						tfb_->tfb_flags |= TFB_computed;
+						tfb->tfb_flags |= TFB_computed;
 
-					tfb_->tfb_id = RFR.RDB$FIELD_ID;
+					tfb->tfb_id = RFR.RDB$FIELD_ID;
 
 					if ((n = FLD.RDB$DIMENSIONS))
-						setup_array(tdbb, blob, FLD.RDB$FIELD_NAME, n, tfb_);
+						setup_array(tdbb, blob, FLD.RDB$FIELD_NAME, n, tfb);
 
 					if (external_flag)
 					{
-						tfb_ = FB_NEW(*tdbb->tdbb_default) tfb;
-						tfb_->tfb_next = external;
-						external = tfb_;
+						tfb = FB_NEW(*tdbb->tdbb_default) TemporaryField;
+						tfb->tfb_next = external;
+						external = tfb;
 						fb_assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);
-						tfb_->tfb_desc.dsc_dtype = (UCHAR)FLD.RDB$EXTERNAL_TYPE;
+						tfb->tfb_desc.dsc_dtype = (UCHAR)FLD.RDB$EXTERNAL_TYPE;
 						fb_assert(FLD.RDB$EXTERNAL_SCALE >= MIN_SCHAR &&
 								FLD.RDB$EXTERNAL_SCALE <= MAX_SCHAR);
-						tfb_->tfb_desc.dsc_scale = (SCHAR)FLD.RDB$EXTERNAL_SCALE;
-						tfb_->tfb_desc.dsc_length = FLD.RDB$EXTERNAL_LENGTH;
-						tfb_->tfb_id = RFR.RDB$FIELD_ID;
+						tfb->tfb_desc.dsc_scale = (SCHAR)FLD.RDB$EXTERNAL_SCALE;
+						tfb->tfb_desc.dsc_length = FLD.RDB$EXTERNAL_LENGTH;
+						tfb->tfb_id = RFR.RDB$FIELD_ID;
 					}
 				END_FOR;
 
@@ -4259,7 +4261,7 @@ static bool shadow_defined(thread_db* tdbb)
 
 
 static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHORT n,
-	TFB tfb)
+	TemporaryField* tfb)
 {
 /**************************************
  *
@@ -4277,13 +4279,13 @@ static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHO
 
 	put_summary_record(blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
 	tfb->tfb_flags |= TFB_array;
-	ads* array = reinterpret_cast<ADS>(stuff);
-	MOVE_CLEAR(array, (SLONG) sizeof(ads));
-	array->ads_dimensions = n;
-	array->ads_struct_count = 1;
-	array->ads_rpt[0].ads_desc = tfb->tfb_desc;
+	internal_array_desc* array = reinterpret_cast<internal_array_desc*>(stuff);
+	MOVE_CLEAR(array, (SLONG) sizeof(internal_array_desc));
+	array->iad_dimensions = n;
+	array->iad_struct_count = 1;
+	array->iad_rpt[0].iad_desc = tfb->tfb_desc;
 	get_array_desc(tdbb, field_name, array);
-	put_summary_record(blob, RSR_array_desc, (UCHAR*) array, array->ads_length);
+	put_summary_record(blob, RSR_array_desc, (UCHAR*) array, array->iad_length);
 }
 
 
@@ -4431,7 +4433,8 @@ static void setup_trigger_details(thread_db* tdbb,
 }	
 
 
-static bool validate_text_type(thread_db* tdbb, ISC_STATUS* status, TFB tfb)
+static bool validate_text_type(thread_db* tdbb, ISC_STATUS* status,
+	TemporaryField* tfb)
 {
 /**************************************
  *

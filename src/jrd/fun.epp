@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.39 2004-03-11 05:03:57 robocop Exp $
+$Id: fun.epp,v 1.40 2004-03-19 06:14:47 robocop Exp $
 */
 
 #include "firebird.h"
@@ -103,7 +103,7 @@ typedef struct blob_t {
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
-static SLONG get_scalar_array(fun_repeat*, DSC*, SAD, LLS*);
+static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, LLS*);
 
 
 void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
@@ -269,7 +269,7 @@ void FUN_evaluate(FUN function, jrd_nod* node, VLU value)
 		}
 		else if ((SSHORT) abs(tail->fun_mechanism) == FUN_scalar_array)
 		{
-			length = get_scalar_array(tail, input, (SAD)temp_ptr, &array_stack);
+			length = get_scalar_array(tail, input, (scalar_array_desc*)temp_ptr, &array_stack);
 		}
 		else
 		{
@@ -798,7 +798,7 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 #ifdef V4_THREADING
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
-	for (SYM symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (Symbol* symbol = SYM_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
 	    if (symbol->sym_type == SYM_fun) {
 #ifdef V4_THREADING
@@ -919,7 +919,7 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
 		else
 		{
 			prior = function;
-			SYM new_symbol = FB_NEW(*dbb->dbb_permanent) sym;
+			Symbol* new_symbol = FB_NEW(*dbb->dbb_permanent) Symbol;
 			function->fun_symbol = new_symbol;
 			new_symbol->sym_object = (BLK) function;
 			str* string = FB_NEW_RPT(*dbb->dbb_permanent, strlen(name)) str;
@@ -1073,7 +1073,7 @@ static SSHORT blob_get_segment(
 
 static SLONG get_scalar_array(fun_repeat*	arg,
 							  DSC*	value,
-							  SAD	scalar_desc,
+							  scalar_array_desc*	scalar_desc,
 							  LLS*	stack)
 {
 /**************************************
@@ -1092,32 +1092,32 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 /* Get first the array descriptor, then the array */
 
-	SLONG stuff[ADS_LEN(16) / 4];
-	ads* array_desc = (ads*) stuff;
+	SLONG stuff[IAD_LEN(16) / 4];
+	internal_array_desc* array_desc = (internal_array_desc*) stuff;
 	blb* blob = BLB_get_array(tdbb,
 						tdbb->tdbb_request->req_transaction,
 						(bid*)value->dsc_address,
 						array_desc);
 						
 	UCHAR* data =
-		FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->ads_total_length];
-	BLB_get_data(tdbb, blob, data, array_desc->ads_total_length);
-	const USHORT dimensions = array_desc->ads_dimensions;
+		FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->iad_total_length];
+	BLB_get_data(tdbb, blob, data, array_desc->iad_total_length);
+	const USHORT dimensions = array_desc->iad_dimensions;
 
 /* Convert array, if necessary */
 
 	dsc to = arg->fun_desc;
-	dsc from = array_desc->ads_rpt[0].ads_desc;
+	dsc from = array_desc->iad_rpt[0].iad_desc;
 
 	if (to.dsc_dtype != from.dsc_dtype ||
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length)
 	{
-		SLONG n = array_desc->ads_count;
+		SLONG n = array_desc->iad_count;
 		UCHAR* temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
 		to.dsc_address = temp;
 		from.dsc_address = data;
 		for (; n; --n, to.dsc_address += to.dsc_length,
-			 from.dsc_address += array_desc->ads_element_length)
+			 from.dsc_address += array_desc->iad_element_length)
 		{
 			MOV_move(&from, &to);
 		}
@@ -1132,15 +1132,16 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;
 
-	const ads::ads_repeat* tail1 = array_desc->ads_rpt;
-	sad::sad_repeat* tail2 = scalar_desc->sad_rpt;
-	for (const sad::sad_repeat* const end = tail2 + dimensions; tail2 < end;
+	const internal_array_desc::iad_repeat* tail1 = array_desc->iad_rpt;
+	scalar_array_desc::sad_repeat* tail2 = scalar_desc->sad_rpt;
+	for (const scalar_array_desc::sad_repeat* const end = tail2 + dimensions; tail2 < end;
 		++tail1, ++tail2)
 	{
-		tail2->sad_upper = tail1->ads_upper;
-		tail2->sad_lower = tail1->ads_lower;
+		tail2->sad_upper = tail1->iad_upper;
+		tail2->sad_lower = tail1->iad_lower;
 	}
 
-	return sizeof(sad) + (dimensions - 1) * sizeof(sad::sad_repeat);
+	return sizeof(scalar_array_desc) + 
+		(dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 

@@ -698,7 +698,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		BLB_close(tdbb, blob1);
 		BLB_close(tdbb, blob2);
 	}
-	/* We do not accept arrays for now. Maybe ADS in the future. */
+	/* We do not accept arrays for now. Maybe internal_array_desc in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
 		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 	/* The second parameter should be a string. */

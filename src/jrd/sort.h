@@ -32,6 +32,7 @@
 
 // Forward declaration
 class SortMem;
+struct sort_work_file;
 
 /* SORTP is used throughout sort.c as a pointer into arrays of
    longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
@@ -70,7 +71,7 @@ typedef IPTR SORT_PTR;
    the back pointer is not written to the disk, this is how the records
    look in the run files. */
 
-typedef struct sort_record
+struct sort_record
 {
 	ULONG sort_record_key[1];
 	/* Sorting key.  Mangled by diddle_key to
@@ -98,16 +99,16 @@ typedef struct sort_record
                                                  sizeof(sr_bckptr)
 */
 
-} SORT_RECORD;
+};
 
 #define MAX_SORT_RECORD		65535	/* bytes */
 
 /* the record struct actually contains the keyids etc, and the back_pointer
-   which points to the SORT_RECORD structure. */
+   which points to the sort_record structure. */
 typedef struct sr
 {
-	struct sort_record **sr_bckptr;	/* Pointer back to sort list entry */
-	struct sort_record sr_sort_record;
+	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
+	sort_record		sr_sort_record;
 } SR;
 
 /* scb_longs includes the size of sr_bckptr.  */
@@ -183,35 +184,35 @@ typedef struct rmh
 
 /* Run control block */
 
-typedef struct run
+struct run_control
 {
 	struct rmh	run_header;
-	struct run*	run_next;			/* Next (actually last) run */
+	run_control*	run_next;			/* Next (actually last) run */
 	ULONG		run_records;		/* Records (remaining) in run */
 #ifdef SCROLLABLE_CURSORS
 	ULONG		run_max_records;	/* total number of records in run */
 #endif
 	USHORT		run_depth;			/* Number of "elementary" runs */
-	struct sfb*	run_sfb;			/* Run sort file block */
+	sort_work_file*	run_sfb;			/* Run sort file block */
 	ULONG		run_seek;			/* Offset in file of run */
 	ULONG		run_size;			/* Length of run in work file */
 #ifdef SCROLLABLE_CURSORS
 	ULONG		run_cached;			/* amount of cached data from run file */
 #endif
-	SORT_RECORD*run_record;			/* Next record in run */
+	sort_record*	run_record;			/* Next record in run */
 	SORTP*		run_buffer;			/* Run buffer */
 	SORTP*		run_end_buffer;		/* End of buffer */
 	ULONG		run_buff_alloc;		/* ALlocated buffer flag */
-} *RUN;
+};
 
 /* Merge control block */
 
 typedef struct mrg
 {
 	struct rmh		mrg_header;
-	SORT_RECORD*	mrg_record_a;
+	sort_record*	mrg_record_a;
 	struct rmh*		mrg_stream_a;
-	SORT_RECORD*	mrg_record_b;
+	sort_record*	mrg_record_b;
 	struct rmh*		mrg_stream_b;
 } *MRG;
 
@@ -226,9 +227,9 @@ typedef struct wfs
 
 /* Sort work file control block */
 
-typedef struct sfb
+struct sort_work_file
 {
-	struct sfb *sfb_next;
+	sort_work_file*	sfb_next;
 	int sfb_file;				/* File descriptor */
 	TEXT *sfb_file_name;		/* ALLOC: File name for deletion */
 	ULONG sfb_file_size;		/* Real size of the work file */
@@ -236,22 +237,23 @@ typedef struct sfb
 	struct wfs *sfb_free_wfs;	/* ALLOC: Free space in work file */
 	DLS sfb_dls;				/* Place where file is created */
 	SortMem* sfb_mem;
-} *SFB;
+};
 
 /* Sort Context Block */
+// Context or Control???
 
 // Used by SORT_init
 typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 
-typedef struct scb
+struct sort_context
 {
-	struct scb *scb_next;		/* Next known sort in system */
+	sort_context*	scb_next;	/* Next known sort in system */
 	SORTP *scb_memory;			/* ALLOC: Memory for sort */
 	SORTP *scb_end_memory;		/* End of memory */
 	ULONG scb_size_memory;		/* Bytes allocated */
 	SR *scb_last_record;		/* Address of last record */
-	SORT_RECORD **scb_first_pointer;	/* Memory for sort */
-	SORT_RECORD **scb_next_pointer;	/* Address for next pointer */
+	sort_record**	scb_first_pointer;	/* Memory for sort */
+	sort_record**	scb_next_pointer;	/* Address for next pointer */
 #ifdef SCROLLABLE_CURSORS
 	SORTP **scb_last_pointer;	/* Address for last pointer in block */
 #endif
@@ -261,10 +263,10 @@ typedef struct scb
 	ULONG scb_key_length;		/* Key length */
 	ULONG scb_records;			/* Number of records */
 	UINT64 scb_max_records;		/* Maximum number of records to store */
-	struct sfb *scb_sfb;		/* ALLOC: List of scratch files, if open */
-	struct run *scb_runs;		/* ALLOC: Run on scratch file, if any */
+	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */
+	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
 	struct mrg *scb_merge;		/* Top level merge block */
-	struct run *scb_free_runs;	/* ALLOC: Currently unused run blocks */
+	run_control*	scb_free_runs;	/* ALLOC: Currently unused run blocks */
 	SORTP* scb_merge_space;		/* ALLOC: memory space to do merging */
 	ULONG scb_flags;			/* see flag bits below */
 	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
@@ -275,14 +277,14 @@ typedef struct scb
 	class Attachment*	scb_attachment;	/* back pointer to attachment */
 	struct irsb_sort *scb_impure;	/* back pointer to request's impure area */
 	sort_key_def scb_description[1];
-} *SCB;
+};
 
 /* flags as set in scb_flags */
 
 #define scb_initialized		1
 #define scb_sorted		2		/* stream has been sorted */
 
-#define SCB_LEN(n_k)	(sizeof (struct scb) + (SLONG)(n_k) * sizeof (sort_key_def))
+#define SCB_LEN(n_k)	(sizeof (sort_context) + (SLONG)(n_k) * sizeof (sort_key_def))
 
 #endif // JRD_SORT_H
 

@@ -50,13 +50,13 @@ static DSC* execute_statistical(qli_nod*);
 static bool like(const UCHAR*, SSHORT, const UCHAR*, SSHORT, const UCHAR);
 static TEXT* make_blob_buffer(FRBRD *, USHORT *);
 static bool matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
-static int sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
-static int sleuth_check(USHORT, const UCHAR*, const UCHAR* const,
+static bool sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
+static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const,
 	const UCHAR*, const UCHAR* const);
-static int sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
+static bool sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
 static int sleuth_merge(const UCHAR*, const UCHAR* const , const UCHAR*,
 	const UCHAR* const, UCHAR* const);
-static int string_boolean(qli_nod*);
+static bool string_boolean(qli_nod*);
 static bool string_function(qli_nod*, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
 const int TEMP_LENGTH =	128;
@@ -110,7 +110,7 @@ int EVAL_boolean( qli_nod* node)
 			!(value2 = EVAL_value(node->nod_arg[1])) ||
 			(value2->dsc_missing & DSC_missing)) 
 		{
-			return FALSE;
+			return false;
 		}
 		if (node->nod_flags & nod_comparison)
 			result = MOVQ_compare(value1, value2);
@@ -146,31 +146,30 @@ int EVAL_boolean( qli_nod* node)
 
 	case nod_between:
 		if (result < 0)
-			return FALSE;
+			return false;
 		if (!(value2 = EVAL_value(node->nod_arg[2])) ||
 			(value2->dsc_missing & DSC_missing))
 		{
-			return FALSE;
+			return false;
 		}
-		result = MOVQ_compare(value1, value2);
-		if (result > 0)
-			return FALSE;
-		return TRUE;
+		if (MOVQ_compare(value1, value2) > 0)
+			return false;
+		return true;
 
 	case nod_missing:
 		value1 = EVAL_value(node->nod_arg[0]);
 		if (value1)
-			return (value1->dsc_missing & DSC_missing);
-		return TRUE;
+			return (value1->dsc_missing & DSC_missing) != 0;
+		return true;
 
 	case nod_and:
 		if (!result)
-			return FALSE;
+			return false;
 		return EVAL_boolean(node->nod_arg[1]);
 
 	case nod_or:
 		if (result)
-			return TRUE;
+			return true;
 		return EVAL_boolean(node->nod_arg[1]);
 
 	case nod_not:
@@ -189,7 +188,7 @@ int EVAL_boolean( qli_nod* node)
 
 	default:
 		BUGCHECK(28);			// Msg28 EVAL_boolean: not finished
-		return FALSE;
+		return false;
 	}
 }
 
@@ -927,7 +926,7 @@ static bool matches(
 }
 
 
-static int sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc* desc3)
+static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc* desc3)
 {
 /**************************************
  *
@@ -970,7 +969,7 @@ static int sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc*
 
 // Source string is a blob, things get interesting
 
-	SSHORT result = FALSE;
+	bool result = false;
 
 	FRBRD* blob = EXEC_open_blob(node->nod_arg[0]);
 
@@ -986,7 +985,7 @@ static int sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc*
 		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1),
 			(UCHAR*) control, (UCHAR*) (control + l2)))
 		{
-			result = TRUE;
+			result = true;
 			break;
 		}
 
@@ -1003,7 +1002,7 @@ static int sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc*
 	return result;
 }
 
-static int sleuth_check(
+static bool sleuth_check(
 						   USHORT flags,
 						   const UCHAR* search,
 						   const UCHAR* const end_search,
@@ -1027,61 +1026,61 @@ static int sleuth_check(
 			c = cond_upper(c, flags);
 			if (match >= end_match || *match != '*') {
 				if (search >= end_search)
-					return FALSE;
+					return false;
 				const UCHAR d = *search++;
 				if (c != cond_upper(d, flags))
-					return FALSE;
+					return false;
 			}
 			else {
 				++match;
 				for (;;)
 					if (sleuth_check(flags, search, end_search, match, end_match))
-						return TRUE;
+						return true;
 					else if (search < end_search) {
 						const UCHAR d = *search++;
 						if (c != cond_upper(d, flags))
-							return FALSE;
+							return false;
 					}
 					else
-						return FALSE;
+						return false;
 			}
 		}
 		else if (c == '?')
 			if (match >= end_match || *match != '*') {
 				if (search >= end_search)
-					return FALSE;
+					return false;
 				search++;
 			}
 			else {
 				if (++match >= end_match)
-					return TRUE;
+					return true;
 				for (;;)
 					if (sleuth_check(flags, search, end_search, match, end_match))
-						return TRUE;
+						return true;
 					else if (++search >= end_search)
-						return FALSE;
+						return false;
 			}
 		else if (c == '[') {
-			const UCHAR* class_ = match;
+			const UCHAR* char_class = match;
 			while (*match++ != ']')
 				if (match >= end_match)
-					return FALSE;
+					return false;
 			const UCHAR* const end_class = match - 1;
 			if (match >= end_match || *match != '*') {
-				if (!sleuth_class(flags, class_, end_class, *search++))
-					return FALSE;
+				if (!sleuth_class(flags, char_class, end_class, *search++))
+					return false;
 			}
 			else {
 				++match;
 				for (;;)
 					if (sleuth_check(flags, search, end_search, match, end_match))
-						return TRUE;
+						return true;
 					else if (search < end_search) {
-						if (!sleuth_class(flags, class_, end_class, *search++))
-							return FALSE;
+						if (!sleuth_class(flags, char_class, end_class, *search++))
+							return false;
 					}
 					else
-						return FALSE;
+						return false;
 			}
 		}
 		else if (c == '+') {
@@ -1097,14 +1096,14 @@ static int sleuth_check(
 	}
 
 	if (search < end_search)
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 
-static int sleuth_class( const USHORT flags,
-						const UCHAR* class_, const UCHAR* const end_class,
+static bool sleuth_class( const USHORT flags,
+						const UCHAR* char_class, const UCHAR* const end_class,
 						UCHAR character)
 {
 /**************************************
@@ -1117,30 +1116,30 @@ static int sleuth_class( const USHORT flags,
  *	See if a character is a member of a class.
  *
  **************************************/
-	USHORT result = TRUE;
+	bool result = true;
 	character = cond_upper(character, flags);
 
-	if (*class_ == '~') {
-		++class_;
-		result = FALSE;
+	if (*char_class == '~') {
+		++char_class;
+		result = false;
 	}
 
-	while (class_ < end_class) {
-		const UCHAR c = *class_++;
+	while (char_class < end_class) {
+		const UCHAR c = *char_class++;
 		if (c == '@') {
-			if (*class_++ == character)
-				return TRUE;
+			if (*char_class++ == character)
+				return true;
 		}
-		else if (*class_ == '-') {
-			class_ += 2;
-			if (character >= c && character <= class_[-1])
+		else if (*char_class == '-') {
+			char_class += 2;
+			if (character >= c && character <= char_class[-1])
 				return result;
 		}
 		else if (character == c)
 			return result;
 	}
 
-	return (result) ? FALSE : TRUE;
+	return !result;
 }
 
 
@@ -1240,7 +1239,7 @@ static int sleuth_merge(
 }
 
 
-static int string_boolean( qli_nod* node)
+static bool string_boolean( qli_nod* node)
 {
 /**************************************
  *
@@ -1262,7 +1261,7 @@ static int string_boolean( qli_nod* node)
 		(node->nod_arg[2] && (!(desc3 = EVAL_value(node->nod_arg[2])) ||
 							  (desc3->dsc_missing & DSC_missing))))
 	{
-		return FALSE;
+		return false;
 	}
 
 	if (node->nod_type == nod_sleuth)
@@ -1280,12 +1279,12 @@ static int string_boolean( qli_nod* node)
 		TEXT temp1[TEMP_LENGTH];
 		const TEXT* p1;
 		SSHORT l1 = MOVQ_get_string(desc1, &p1, (vary*) temp1, TEMP_LENGTH);
-		return string_function(node, l1, p1, l2, p2) ? TRUE : FALSE;
+		return string_function(node, l1, p1, l2, p2);
 	}
 
 // Source string is a blob, things get interesting
 
-	SSHORT result = FALSE;
+	bool result = false;
 	FRBRD* blob = EXEC_open_blob(node->nod_arg[0]);
 
     TEXT fixed_buffer[512];
@@ -1301,7 +1300,7 @@ static int string_boolean( qli_nod* node)
 							 buffer_length, buffer))
 	{
 		if (string_function(node, l3, buffer, l2, p2)) {
-			result = TRUE;
+			result = true;
 			break;
 		}
 	}

@@ -30,12 +30,12 @@
 class Attachment;
 class vec;
 
-class rng : public pool_alloc_rpt<SCHAR, type_rng>
+class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
 {
     public:
-	rng*		rng_next;			/* next in list of ranges being created */
-	Attachment*	rng_attachment;		/* attachment that owns range */
-	rng*		rng_lck_next;		/* next in list of ranges interested in a lock */
+	RefreshRange*	rng_next;			/* next in list of ranges being created */
+	Attachment*		rng_attachment;		/* attachment that owns range */
+	RefreshRange*	rng_lck_next;		/* next in list of ranges interested in a lock */
 	vec*		rng_relation_locks;	/* relation locks */
 	vec*		rng_relation_trans;	/* relation transactions */
 	vec*		rng_record_locks;	/* record locks */
@@ -50,7 +50,6 @@ class rng : public pool_alloc_rpt<SCHAR, type_rng>
 	USHORT rng_event_length;	/* length of event name */
 	UCHAR rng_event[1];			/* event name to post */
 };
-typedef rng *RNG;
 
 #define RNG_posted	1			/* range has already been posted */
 

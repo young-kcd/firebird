@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.56 2004-03-18 05:54:16 robocop Exp $
+//	$Id: alice.cpp,v 1.57 2004-03-19 06:14:29 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -87,12 +87,12 @@ static const USHORT val_err_table[] = {
 // defined in burp.cpp as well, and is not relevant for SUPERSERVER
 
 #ifndef SUPERSERVER
-struct tgbl *gdgbl;
+Tgbl* gdgbl;
 #endif
 
 const int ALICE_MSG_FAC = 3;
 
-static inline void exit_local(int code, tgbl* tdgbl)
+static inline void exit_local(int code, Tgbl* tdgbl)
 {
 	tdgbl->exit_code = code;
 	Firebird::status_exception::raise();
@@ -193,7 +193,7 @@ int common_main(int			argc,
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	tgbl* tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
+	Tgbl* tdgbl = (Tgbl*) gds__alloc(sizeof(Tgbl));
 	if (!tdgbl) {
 		//  NOMEM: return error, FREE: during function exit in the SETJMP
 		return FINI_ERROR;
@@ -201,7 +201,7 @@ int common_main(int			argc,
 
 	SET_THREAD_DATA;
 	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(tgbl));
+	memset((void *) tdgbl, 0, sizeof(Tgbl));
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
 	tdgbl->ALICE_permanent_pool = NULL;
@@ -698,7 +698,7 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
 		int i = 0, j;
-		TGBL tdgbl = GET_THREAD_DATA;
+		Tgbl* tdgbl = GET_THREAD_DATA;
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 			while (*status && (++i < ISC_STATUS_LENGTH)) {
@@ -737,7 +737,7 @@ void ALICE_error(USHORT	number,
 				 const TEXT*	arg4,
 				 const TEXT*	arg5)
 {
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 	TEXT buffer[256];
 
 #ifdef SUPERSERVER
@@ -780,7 +780,7 @@ static void alice_output(const SCHAR* format, ...)
 	UCHAR buf[1000];
 	int exit_code;
 
-	TGBL tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = GET_THREAD_DATA;
 
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));

@@ -135,7 +135,7 @@ static Rsb* gen_sort(thread_db*, OPT, UCHAR *, UCHAR *, Rsb*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OPT, LLS *);
 static Rsb* gen_union(thread_db*, OPT, jrd_nod*, UCHAR *, USHORT);
 static void get_inactivities(Csb*, ULONG *);
-static IRL indexed_relationship(thread_db*, OPT, USHORT);
+static IndexedRelationship* indexed_relationship(thread_db*, OPT, USHORT);
 static STR make_alias(thread_db*, Csb*, Csb::csb_repeat*);
 static jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 static Rsb* make_cross(thread_db*, OPT, LLS);
@@ -886,7 +886,7 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OPT opt_, jrd_rel* relation, IDX * idx)
 /* Allocate both a index retrieval node and block. */
 
 	jrd_nod* node = make_index_node(tdbb, relation, opt_->opt_csb, idx);
-	IRB retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
 
 /* Pick up lower bound segment values */
@@ -1111,9 +1111,10 @@ void OPT_set_index(thread_db* tdbb,
    and remove its resource from the request */
 
 	if (old_rsb->rsb_type == rsb_navigate) {
-		irb* retrieval = (IRB) index_node->nod_arg[e_idx_retrieval];
+		IndexRetrieval* retrieval =
+			(IndexRetrieval*) index_node->nod_arg[e_idx_retrieval];
 		const USHORT index_id = retrieval->irb_index;
-		idl* index = CMP_get_index_lock(tdbb, relation, index_id);
+		IndexLock* index = CMP_get_index_lock(tdbb, relation, index_id);
 		if (index) {
 			if (index->idl_count)
 				--index->idl_count;
@@ -1127,7 +1128,7 @@ void OPT_set_index(thread_db* tdbb,
 /* get lock on new index */
 
 	if (idx) {
-		idl* index = CMP_get_index_lock(tdbb, relation, idx->idx_id);
+		IndexLock* index = CMP_get_index_lock(tdbb, relation, idx->idx_id);
 		if (index) {
 			if (!index->idl_count) {
 				LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, TRUE);
@@ -1329,7 +1330,7 @@ static bool check_relationship(OPT opt, USHORT position, USHORT stream)
 	for (tail = opt->opt_streams.begin(), end = tail + position; tail < end; tail++)
 	{
 		const USHORT n = tail->opt_stream_number;
-		for (IRL relationship = opt->opt_streams[n].opt_relationships;
+		for (IndexedRelationship* relationship = opt->opt_streams[n].opt_relationships;
 		     relationship;
 		     relationship = relationship->irl_next)
 		{
@@ -2230,7 +2231,7 @@ static bool dump_index(const jrd_nod* node,
 		}
 	}
 	else if (node->nod_type == nod_index) {
-		irb* retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+		IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 		MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
 						 (USHORT) (retrieval->irb_index + 1));
 		SSHORT length = strlen(index_name);
@@ -2977,8 +2978,8 @@ static void find_best(thread_db* tdbb,
 	// relationships to this stream.  If there are any, we 
 	// won't consider (now) indirect relationships.
 	if (!done) {
-		IRL relationship;
-		for (relationship = stream_data->opt_relationships; relationship;
+		for (IndexedRelationship* relationship = stream_data->opt_relationships;
+			relationship;
 			 relationship = relationship->irl_next) 
 		{
 			if (relationship->irl_unique &&
@@ -3001,7 +3002,8 @@ static void find_best(thread_db* tdbb,
 	// Next, handle any streams that have direct indexed relationships to this
 	// stream.  If there are any, we won't consider (now) indirect relationships
 	if (!done) {
-		for (IRL relationship = stream_data->opt_relationships; relationship;
+		for (IndexedRelationship* relationship = stream_data->opt_relationships;
+			relationship;
 			 relationship = relationship->irl_next)
 		{
 			if (!(opt->opt_streams[relationship->irl_stream].opt_stream_flags & opt_stream_used)) 
@@ -3748,7 +3750,7 @@ static void gen_join(thread_db*     tdbb,
 			if (*t2 != *stream) {
 				Csb::csb_repeat* csb_tail2 = &csb->csb_rpt[*t2];
 				csb_tail2->csb_flags |= csb_active;
-				IRL relationship = indexed_relationship(tdbb, opt, *t2);
+				IndexedRelationship* relationship = indexed_relationship(tdbb, opt, *t2);
 				if (relationship) {
 					relationship->irl_next = tail->opt_relationships;
 					tail->opt_relationships = relationship;
@@ -3764,7 +3766,7 @@ static void gen_join(thread_db*     tdbb,
 			ib_fprintf(opt_debug_file,
 					   "gen_join () -- relationships from stream %2.2d: ",
 					   *stream);
-			for (IRL relationship = tail->opt_relationships;
+			for (IndexedRelationship* relationship = tail->opt_relationships;
 			     relationship;
 			     relationship = relationship->irl_next)
 			{
@@ -4479,7 +4481,8 @@ static Rsb* gen_retrieval(thread_db*     tdbb,
 				}
 
 				jrd_nod* idx_node = OPT_make_index(tdbb, opt, relation, idx);
-				IRB	retrieval = (IRB) idx_node->nod_arg[e_idx_retrieval];
+				IndexRetrieval*	retrieval =
+					(IndexRetrieval*) idx_node->nod_arg[e_idx_retrieval];
 				compose(&inversion, idx_node, nod_bit_and);
 				idx->idx_runtime_flags |= idx_used_with_and;
 				index_used = true;
@@ -5239,7 +5242,7 @@ static void get_inactivities(Csb* csb, ULONG * dependencies)
 }
 
 
-static IRL indexed_relationship(thread_db* tdbb, OPT opt, USHORT stream)
+static IndexedRelationship* indexed_relationship(thread_db* tdbb, OPT opt, USHORT stream)
 {
 /**************************************
  *
@@ -5267,7 +5270,7 @@ static IRL indexed_relationship(thread_db* tdbb, OPT opt, USHORT stream)
 	Csb*              csb       = opt->opt_csb;
 	Csb::csb_repeat*      csb_tail  = &csb->csb_rpt[stream];
 	Opt::opt_conjunct* opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
-	IRL relationship = NULL;
+	IndexedRelationship* relationship = NULL;
 
 /* Loop thru indexes looking for a match */
 	IDX* idx = csb_tail->csb_idx;
@@ -5300,7 +5303,7 @@ static IRL indexed_relationship(thread_db* tdbb, OPT opt, USHORT stream)
 
 		if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 			if (!relationship) {
-				relationship = FB_NEW(*tdbb->tdbb_default) irl();
+				relationship = FB_NEW(*tdbb->tdbb_default) IndexedRelationship();
 			}
 			if (idx->idx_flags & idx_unique) {
 				relationship->irl_unique = TRUE;
@@ -5482,7 +5485,8 @@ static jrd_nod* make_index_node(thread_db* tdbb, jrd_rel* relation, Csb* csb, ID
 	jrd_nod* node = PAR_make_node(tdbb, e_idx_length);
 	node->nod_type = nod_index;
 	node->nod_count = 0;
-	irb* retrieval = FB_NEW_RPT(*tdbb->tdbb_default, idx->idx_count * 2) irb();
+	IndexRetrieval* retrieval =
+		FB_NEW_RPT(*tdbb->tdbb_default, idx->idx_count * 2) IndexRetrieval();
 	node->nod_arg[e_idx_retrieval] = (jrd_nod*) retrieval;
 	retrieval->irb_index = idx->idx_id;
 	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));
@@ -5737,7 +5741,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
 		return NULL;
 	}
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
-	irb* retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
 	if ((dbb->dbb_ods_version < ODS_VERSION11) || (idx->idx_flags & idx_descending)) {
 		// AB: irb_starting? Why?
@@ -5778,7 +5782,6 @@ static jrd_nod* make_starts(thread_db* tdbb,
  *	return a inversion type node.
  *
  **************************************/
-	IRB retrieval;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);
@@ -5824,7 +5827,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		return NULL;
 	}
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
-	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
+	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
 	retrieval->irb_generic = irb_starting;
 	retrieval->irb_lower_count = retrieval->irb_upper_count = 1;

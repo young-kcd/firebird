@@ -1555,7 +1555,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 
 /* Stash away a copy of the revoker's name, in uppercase form */
 
-	const usr* revoking_user = tdbb->tdbb_attachment->att_user;
+	const UserId* revoking_user = tdbb->tdbb_attachment->att_user;
 	{ // this block to make sure there's no other bug due to wrong  scope
 	TEXT* q = revoking_user_name;
 	for (const TEXT* p = revoking_user->usr_user_name; *p; p++, q++)

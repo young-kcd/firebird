@@ -586,7 +586,7 @@ PAG PAG_allocate(WIN * window)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	pgc* control = dbb->dbb_pcontrol;
+	PageControl* control = dbb->dbb_pcontrol;
 	// Not sure if this can be moved inside the loop. Maybe some data members
 	// should persist across iterations?
 	WIN pip_window(-1);
@@ -1138,7 +1138,7 @@ void PAG_init(void)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	pgc* control = FB_NEW(*dbb->dbb_permanent) pgc();
+	PageControl* control = FB_NEW(*dbb->dbb_permanent) PageControl();
 	dbb->dbb_pcontrol = control;
 	control->pgc_bytes = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 	control->pgc_ppp = control->pgc_bytes * 8;
@@ -1417,7 +1417,7 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 		ib_printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number);
 #endif
 
-	pgc* control = dbb->dbb_pcontrol;
+	PageControl* control = dbb->dbb_pcontrol;
 	const SLONG sequence = number / control->pgc_ppp;
 	const SLONG relative_bit = number % control->pgc_ppp;
 

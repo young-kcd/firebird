@@ -70,15 +70,15 @@ private:
 	class FileBlock : public Block {
 	private:
 		// Sort file block
-		struct sfb *file;
+		sort_work_file*	file;
 		// File offset
-		size_t offset;
+		size_t	offset;
 
 	public:
 		size_t read(ISC_STATUS*, size_t, char*, size_t);
 		size_t write(ISC_STATUS*, size_t, char*, size_t);
 
-		FileBlock(Block*, size_t, struct sfb*, size_t);
+		FileBlock(Block*, size_t, sort_work_file*, size_t);
 		~FileBlock();
 	};
 
@@ -92,7 +92,7 @@ private:
 	// Total amount of allocated virtual memory
 	static size_t mem_total_size;
 
-	struct sfb *internal;
+	sort_work_file*	internal;
 
 	// Virtual scratch file size
 	size_t logical_size;
@@ -117,7 +117,7 @@ public:
 	// Write bytes into the scratch file
 	size_t write(ISC_STATUS*, size_t, char*, size_t);
 
-	SortMem(struct sfb*, size_t);
+	SortMem(sort_work_file*, size_t);
 	~SortMem();
 };
 

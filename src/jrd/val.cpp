@@ -882,7 +882,7 @@ static void garbage_collect(thread_db* tdbb, VDR control)
 	SET_TDBB(tdbb);
 
 	Database* dbb = tdbb->tdbb_database;
-	PGC pgc = dbb->dbb_pcontrol;
+	PageControl* pgc = dbb->dbb_pcontrol;
 	WIN window(-1);
 
 	for (sequence = 0, number = 0; number < control->vdr_max_page; sequence++) {
@@ -1693,7 +1693,7 @@ static void walk_pip(thread_db* tdbb, VDR control)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	PGC pgc = dbb->dbb_pcontrol;
+	PageControl* pgc = dbb->dbb_pcontrol;
 	page_inv_page* page;
 
 	for (USHORT sequence = 0;; sequence++) {

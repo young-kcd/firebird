@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.68 2004-03-18 05:55:22 robocop Exp $ 
+  * $Id: evl.cpp,v 1.69 2004-03-19 06:14:47 robocop Exp $ 
  */
 
 /*
@@ -159,7 +159,7 @@ static dsc* negate_dsc(thread_db*, const dsc*, VLU);
 static dsc* record_version(thread_db*, const jrd_nod*, VLU);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
 static dsc* scalar(thread_db*, jrd_nod*, VLU);
-static SSHORT sleuth(thread_db*, jrd_nod*, dsc*, dsc*);
+static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
 static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
 	const UCHAR*, const UCHAR*);
 static bool nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
@@ -167,8 +167,8 @@ static bool wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*
 						const UCS2_CHAR*, const UCS2_CHAR*);
 static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
 						UCS2_CHAR);
-static SSHORT string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
-static SSHORT string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
+static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
+static bool string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
 static dsc* substring(thread_db*, VLU, dsc*, SLONG, SLONG);
 static dsc* upcase(thread_db*, const dsc*, VLU);
 static dsc* internal_info(thread_db*, const dsc*, VLU);
@@ -367,7 +367,7 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 		{
 			inv* impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			BTR_evaluate(tdbb,
-						 reinterpret_cast<irb*>(node->nod_arg[e_idx_retrieval]),
+						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
 						 &impure->inv_bitmap);
 			return &impure->inv_bitmap;
 		}
@@ -379,7 +379,7 @@ SparseBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 }
 
 
-BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
+bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
@@ -392,7 +392,7 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
  *
  **************************************/
 	dsc*   desc[2];
-	USHORT value;
+	bool value;
 	SSHORT comparison;
 	VLU    impure;
 	bool computed_invariant = false;
@@ -458,13 +458,14 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			else
 				desc[1] = EVL_expr(tdbb, *ptr++);
 			
-			/* If either of expressions above returned NULL set req_null flag and return FALSE */
+			// If either of expressions above returned NULL set req_null flag 
+			// and return false
 
 			if (flags & req_null)
 				request->req_flags |= req_null;
 
 			if (request->req_flags & req_null)
-				return FALSE;
+				return false;
 
 			force_equal |= request->req_flags & req_same_tx_upd;
 
@@ -546,21 +547,21 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			{
 				// First term is FALSE, why the whole expression is false.
 				// NULL flag is already turned off a few lines above.
-				return FALSE;
+				return false;
 			}
 
-			const USHORT value2 = EVL_boolean(tdbb, *ptr);
+			const bool value2 = EVL_boolean(tdbb, *ptr);
 			const USHORT secondnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
 
 			if ((!value && !firstnull) || (!value2 && !secondnull)) {
-				return FALSE;	/* at least one operand was FALSE */
+				return false;	/* at least one operand was FALSE */
 			}
 			else if (value && value2) {
-				return TRUE;	/* both true */
+				return true;	/* both true */
 			}
 			request->req_flags |= req_null;
-			return FALSE;		/* otherwise, return null */
+			return false;		/* otherwise, return null */
 		}
 
 	case nod_any:
@@ -585,7 +586,7 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 					{
 						request->req_flags &= ~req_null;
 					}
-					return impure->vlu_misc.vlu_short;
+					return impure->vlu_misc.vlu_short != 0;
 				}
 			}
 
@@ -618,7 +619,7 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				{
 					*invariant_flags |= VLU_null;
 				}
-				impure->vlu_misc.vlu_short = value;
+				impure->vlu_misc.vlu_short = value ? TRUE : FALSE;
 			}
 			return value;
 		}
@@ -635,22 +636,22 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	case nod_missing:
 		EVL_expr(tdbb, *ptr);
 		if (request->req_flags & req_null) {
-			value = TRUE;
+			value = true;
 			request->req_flags &= ~req_null;
 		}
 		else {
 			if (request->req_flags & req_clone_data_from_default_clause) {
-				value = TRUE;
+				value = true;
 				request->req_flags &= ~req_clone_data_from_default_clause;
 			}
 			else
-				value = FALSE;
+				value = false;
 		}
 		return value;
 
 	case nod_not:
 		if (request->req_flags & req_null)
-			return FALSE;
+			return false;
 		return !value;
 
 	case nod_or:
@@ -682,13 +683,13 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			{
 				// First term is TRUE, why the whole expression is true.
 				// NULL flag is already turned off a few lines above.
-				return TRUE;
+				return true;
 			}
 			
-			const USHORT value2 = EVL_boolean(tdbb, *ptr);
+			const bool value2 = EVL_boolean(tdbb, *ptr);
 			if (value || value2) {
 				request->req_flags &= ~req_null;
-				return TRUE;
+				return true;
 			}
 
 			/* restore saved NULL state */
@@ -696,7 +697,7 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			if (flags & req_null) {
 				request->req_flags |= req_null;
 			}
-			return FALSE;
+			return false;
 		}
 
 	case nod_unique:
@@ -715,7 +716,7 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 						request->req_flags |= req_null;
 					else
 						request->req_flags &= ~req_null;
-					return impure->vlu_misc.vlu_short;
+					return impure->vlu_misc.vlu_short != 0;
 				}
 			}
 
@@ -741,35 +742,34 @@ BOOLEAN EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				if (request->req_flags & req_null) {
 					*invariant_flags |= VLU_null;
 				}
-				impure->vlu_misc.vlu_short = value;
+				impure->vlu_misc.vlu_short = value ? TRUE : FALSE;
 			}
 			return value;
 		}
 
 	case nod_eql:
-		return ((comparison == 0) ? TRUE : FALSE);
+		return (comparison == 0);
 	case nod_neq:
-		return ((comparison != 0) ? TRUE : FALSE);
+		return (comparison != 0);
 	case nod_gtr:
-		return ((comparison > 0) ? TRUE : FALSE);
+		return (comparison > 0);
 	case nod_geq:
-		return ((comparison >= 0) ? TRUE : FALSE);
+		return (comparison >= 0);
 	case nod_lss:
-		return ((comparison < 0) ? TRUE : FALSE);
+		return (comparison < 0);
 	case nod_leq:
-		return ((comparison <= 0) ? TRUE : FALSE);
+		return (comparison <= 0);
 
 	case nod_between:
 		desc[1] = EVL_expr(tdbb, node->nod_arg[2]);
 		if (request->req_flags & req_null)
-			return FALSE;
-		return (comparison >= 0 && MOV_compare(desc[0], desc[1]) <= 0) ?
-			TRUE : FALSE;
+			return false;
+		return (comparison >= 0 && MOV_compare(desc[0], desc[1]) <= 0);
 
 	default:
 		BUGCHECK(231);			/* msg 231 EVL_boolean: invalid operation */
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -1118,14 +1118,14 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_get_bookmark:
 		{
-			bkm* bookmark =
+			Bookmark* bookmark =
 				RSE_get_bookmark(tdbb, *(Rsb**) node->nod_arg[e_getmark_rsb]);
 			return &bookmark->bkm_desc;
 		}
 
 	case nod_bookmark:
 		{
-			bkm* bookmark = BKM_lookup(node->nod_arg[e_bookmark_id]);
+			Bookmark* bookmark = BKM_lookup(node->nod_arg[e_bookmark_id]);
 			return &bookmark->bkm_key_desc;
 		}
 
@@ -1928,7 +1928,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, VLU value)
 
 
 
-USHORT EVL_mb_matches(thread_db* tdbb,
+bool EVL_mb_matches(thread_db* tdbb,
 						TextType obj,
 						const UCHAR* p1,
 						SSHORT l1,
@@ -1971,7 +1971,7 @@ USHORT EVL_mb_matches(thread_db* tdbb,
 	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
 	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
-	const USHORT ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
+	const bool ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
 
 	if (pp1 != buffer1)
 		delete buf1;
@@ -1982,7 +1982,7 @@ USHORT EVL_mb_matches(thread_db* tdbb,
 }
 
 
-USHORT EVL_mb_sleuth_check(thread_db* tdbb,
+bool EVL_mb_sleuth_check(thread_db* tdbb,
 							TextType obj,
 							USHORT flags,
 							const UCHAR* search,
@@ -2025,7 +2025,7 @@ USHORT EVL_mb_sleuth_check(thread_db* tdbb,
 
 	len1 = obj.to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
 
-	const USHORT ret_val =
+	const bool ret_val =
 		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
 							reinterpret_cast<const UCS2_CHAR*>(match),
 							match_bytes);
@@ -3559,7 +3559,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 	iasb* asb_impure = (iasb*) ((char*) request + agSortBlk->nod_impure);
 	const sort_key_def* sort_key = agSortBlk->asb_key_desc;
 
-	scb* handle =
+	sort_context* handle =
 		SORT_init(tdbb->tdbb_status_vector,
 				  ROUNDUP_LONG(sort_key->skd_length), 1, sort_key,
 				  reject_duplicate, 0,
@@ -4302,7 +4302,7 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, VLU impure)
 }
 
 
-static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
+static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* desc2)
 {
 /**************************************
  *
@@ -4314,16 +4314,13 @@ static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
  *      Execute SLEUTH operator.
  *
  **************************************/
-	UCHAR *p1, *p2, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
-		buffer[BUFFER_LARGE], control[BUFFER_SMALL];
-	USHORT ttype;
-
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(node, type_nod);
 
 /* Choose interpretation for the operation */
 
+ 	USHORT ttype;
 	if (desc1->dsc_dtype == dtype_blob) {
 		if (desc1->dsc_sub_type == BLOB_text)
 			ttype = desc1->dsc_scale;	/* Load blob character set */
@@ -4339,18 +4336,25 @@ static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 /* Get operator definition string (control string) */
 
 	dsc* desc3 = EVL_expr(tdbb, node->nod_arg[2]);
+
+	UCHAR* p1;
+	UCHAR temp1[TEMP_LENGTH];
 	str* sleuth_str = NULL;
 	SSHORT l1 =
 		MOV_make_string2(desc3, ttype, &p1,
 						 reinterpret_cast<vary*>(temp1), TEMP_SIZE(temp1),
 						 &sleuth_str);
 /* Get address and length of search string */
+	UCHAR* p2;
+	UCHAR temp2[TEMP_LENGTH];
 	str* match_str = NULL;
 	SSHORT l2 =
 		MOV_make_string2(desc2, ttype, &p2,
 						 reinterpret_cast<vary*>(temp2), TEMP_SIZE(temp2),
 						 &match_str);
+
 /* Merge search and control strings */
+	UCHAR control[BUFFER_SMALL];
 	l2 = obj.sleuth_merge(tdbb, p2, l2, p1, l1, control,
 										 BUFFER_SMALL);
 
@@ -4358,7 +4362,7 @@ static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 
 /* Note: resulting string from sleuth_merge is either UCS2_CHAR or NCHAR 
    and never Multibyte (see note in EVL_mb_sleuth_check) */
-	SSHORT ret_val;
+	bool ret_val;
 	str* data_str = NULL;
 	if (desc1->dsc_dtype != dtype_blob) {
 		/* Source is not a blob, do a simple search */
@@ -4376,13 +4380,14 @@ static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 			BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
 					 reinterpret_cast<bid*>(desc1->dsc_address));
 
-		ret_val = FALSE;
+		UCHAR buffer[BUFFER_LARGE];
+		ret_val = false;
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
 			if (obj.sleuth_check(tdbb, 0, buffer, l1, control, l2))
 			{
-				ret_val = TRUE;
+				ret_val = true;
 				break;
 			}
 		}
@@ -4401,7 +4406,8 @@ static SSHORT sleuth(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2)
 }
 
 
-static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* desc2, bool computed_invariant)
+static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, 
+							 dsc* desc2, bool computed_invariant)
 {
 /**************************************
  *
@@ -4416,10 +4422,10 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
  **************************************/
 	UCHAR *p1, *p2 = NULL, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		buffer[BUFFER_LARGE];
-	SSHORT l1, l2 = 0;
-	USHORT type1, xtype1;
+	SSHORT l2 = 0;
+	USHORT type1;
 	STR match_str = NULL;
-	SSHORT ret_val;
+	bool ret_val;
 
 	SET_TDBB(tdbb);
 
@@ -4443,7 +4449,8 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 							 	 TEMP_SIZE(temp2), &match_str);
 		}
 
-		l1 =
+		USHORT xtype1;
+		const SSHORT l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
 							   reinterpret_cast<vary*>(temp1),
 							   TEMP_SIZE(temp1));
@@ -4482,14 +4489,15 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
 
-		ret_val = FALSE;
+		ret_val = false;
 		switch (node->nod_type) {
 		case nod_starts: 
 			{
 				Firebird::StartsEvaluator<UCHAR> evaluator(p2, l2);
 				while (!(blob->blb_flags & BLB_eof)) {
-					l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !evaluator.processNextChunk(buffer, l1)) break;
+					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+					if (l1 && !evaluator.processNextChunk(buffer, l1))
+						break;
 				}
 				ret_val = evaluator.getResult();
 			}
@@ -4501,9 +4509,6 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 				UCS2_CHAR escape = 0;
 				/* ensure 3rd argument (escape char) is in operation text type */
 				if (node->nod_count == 3 && !computed_invariant) {
-					const char* q1;
-					UCHAR temp3[TEMP_LENGTH];
-
 					/* Convert ESCAPE to operation character set */
 					DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
 					if (request->req_flags & req_null) {
@@ -4512,9 +4517,12 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 							impure->vlu_flags |= VLU_computed;
 							impure->vlu_flags |= VLU_null;
 						}
-						ret_val = FALSE;
+						ret_val = false;
 						break;
 					}
+
+					const char* q1;
+					UCHAR temp3[TEMP_LENGTH];
 					const USHORT l3 = MOV_make_string(dsc,
 										 type1, &q1, (vary*) temp3,
 										 TEMP_SIZE(temp3));
@@ -4546,8 +4554,9 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 					evaluator = obj.like_create(tdbb, p2, l2, escape);
 
 				while (!(blob->blb_flags & BLB_eof)) {
-					l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !obj.like_process(tdbb, evaluator, buffer, l1)) break;
+					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+					if (l1 && !obj.like_process(tdbb, evaluator, buffer, l1))
+						break;
 				}
 
 				ret_val = obj.like_result(evaluator);
@@ -4575,8 +4584,9 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 					evaluator = obj.contains_create(tdbb, p2, l2);
 
 				while (!(blob->blb_flags & BLB_eof)) {
-					l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !obj.contains_process(tdbb, evaluator, buffer, l1)) break;
+					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+					if (l1 && !obj.contains_process(tdbb, evaluator, buffer, l1))
+						break;
 				}
 
 				ret_val = obj.contains_result(evaluator);
@@ -4595,7 +4605,7 @@ static SSHORT string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, dsc* de
 }
 
 
-static SSHORT string_function(
+static bool string_function(
 							  thread_db* tdbb,
 							  jrd_nod* node,
 							  SSHORT l1,
@@ -4622,7 +4632,7 @@ static SSHORT string_function(
 
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
-			return FALSE;
+			return false;
 		return (memcmp(p1, p2, l2) == 0);
 	}
 
@@ -4664,7 +4674,7 @@ static SSHORT string_function(
 					impure->vlu_flags |= VLU_computed;
 					impure->vlu_flags |= VLU_null;
 				}
-				return FALSE;
+				return false;
 			}
 			const USHORT l3 = MOV_make_string(dsc,
 								 ttype, &q1, (vary*) temp3,
@@ -4714,17 +4724,6 @@ static dsc* substring(
  *      Perform substring function.
  *
  **************************************/
-	UCHAR temp[32];
-	USHORT ttype;
-	TextType obj1 = NULL;
-	/* CVC: I didn't bother to define a larger buffer because:
-			- Native types when converted to string don't reach 31 bytes plus terminator.
-			- String types do not need and do not use the buffer ("temp") to be pulled.
-			- The types that can cause an error() issued inside the low level MOV/CVT
-			routines because the "temp" is not enough are blob and array but at this time
-			they aren't accepted, so they will cause error() to be called anyway.
-	*/
-
 	SET_TDBB(tdbb);
 	dsc desc;
 	desc.dsc_dtype = dtype_text;
@@ -4738,6 +4737,8 @@ static dsc* substring(
 	USHORT offset = (USHORT) offset_arg;
 	USHORT length = (USHORT) length_arg;
 
+	USHORT ttype;
+	TextType obj1 = NULL;
 	if (dtype_blob == value->dsc_dtype && (BLOB_text != value->dsc_sub_type
 		|| (ttype = value->dsc_scale) == ttype_ascii || ttype == ttype_none || ttype == ttype_binary
 		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL)) != NULL
@@ -4756,7 +4757,7 @@ static dsc* substring(
 		}
 		else
 		{
-			USHORT bufflen = MAX(BUFFER_LARGE, length);
+			const USHORT bufflen = MAX(BUFFER_LARGE, length);
 			STR temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
 			UCHAR *buffer = temp_str->str_data;
 		
@@ -4781,6 +4782,14 @@ static dsc* substring(
 		return &impure->vlu_desc;
 	}
 
+	/* CVC: I didn't bother to define a larger buffer because:
+			- Native types when converted to string don't reach 31 bytes plus terminator.
+			- String types do not need and do not use the buffer ("temp") to be pulled.
+			- The types that can cause an error() issued inside the low level MOV/CVT
+			routines because the "temp" is not enough are blob and array but at this time
+			they aren't accepted, so they will cause error() to be called anyway.
+	*/
+	UCHAR temp[32];
 	desc.dsc_length =
 		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
 						   reinterpret_cast<vary*>(temp), sizeof(temp));

@@ -244,7 +244,6 @@ void DYN_define_constraint(GBL		gbl,
 	SqlIdentifier null_field_name, trigger_name;
 	int all_count, unique_count;
 	LLS field_list = NULL, list_ptr;
-	STR str_;
 	USHORT primary_flag = FALSE, foreign_flag = FALSE, not_null;
 	UCHAR ri_action = 0;
 
@@ -417,9 +416,9 @@ void DYN_define_constraint(GBL		gbl,
 		}
 
 		unique_count++;
-		str_ = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(IDS.RDB$FIELD_NAME) - 1) str();
-		strcpy((char*)str_->str_data, IDS.RDB$FIELD_NAME);
-		LLS_PUSH(str_, &field_list);
+		str* str_fld = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(IDS.RDB$FIELD_NAME) - 1) str();
+		strcpy((char*)str_fld->str_data, IDS.RDB$FIELD_NAME);
+		LLS_PUSH(str_fld, &field_list);
 	END_FOR;
 	if (!DYN_REQUEST(drq_c_unq_nam)) {
 		DYN_REQUEST(drq_c_unq_nam) = request;
@@ -1640,7 +1639,7 @@ void DYN_define_index(GBL		gbl,
 	LLS field_list = NULL;
 	LLS seg_list = NULL;
 	LLS list_ptr;
-	STR str_;
+	STR str_fld;
 	USHORT key_length, length, referred_cols = 0;
 	SqlIdentifier trigger_name;
 
@@ -1750,16 +1749,16 @@ void DYN_define_index(GBL		gbl,
 				break;
 				
 			case isc_dyn_fld_name:
-				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
+				str_fld = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
 				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
-					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
-				LLS_PUSH(str_, &seg_list);
+					(TEXT*)str_fld->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
+				LLS_PUSH(str_fld, &seg_list);
 				seg_count++;
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
 						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-						F.RDB$FIELD_NAME EQ str_->str_data AND
+						F.RDB$FIELD_NAME EQ str_fld->str_data AND
 						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
                     if (!DYN_REQUEST(drq_l_lfield))
 					{
@@ -1859,11 +1858,11 @@ void DYN_define_index(GBL		gbl,
 				break;
 
 			case isc_dyn_idx_ref_column:
-				str_ = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
+				str_fld = FB_NEW_RPT(*tdbb->tdbb_default, MAX_SQL_IDENTIFIER_LEN) str();
 				DYN_get_string(reinterpret_cast<const TEXT**>(ptr),
-					(TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
-				fb_utils::fb_exact_name_limit((TEXT*)str_->str_data, MAX_SQL_IDENTIFIER_SIZE);
-				LLS_PUSH(str_, &field_list);
+					(TEXT*)str_fld->str_data, MAX_SQL_IDENTIFIER_SIZE, true);
+				fb_utils::fb_exact_name_limit((TEXT*)str_fld->str_data, MAX_SQL_IDENTIFIER_SIZE);
+				LLS_PUSH(str_fld, &field_list);
 				referred_cols++;
 				break;
 
@@ -1992,13 +1991,13 @@ void DYN_define_index(GBL		gbl,
 			request = CMP_find_request(tdbb, drq_s_idx_segs, DYN_REQUESTS);
 			id = drq_s_idx_segs;
 			while (seg_list) {
-				str_ = (STR) LLS_POP(&seg_list);
+				str_fld = (STR) LLS_POP(&seg_list);
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$INDEX_SEGMENTS
                     strcpy((char*)X.RDB$INDEX_NAME, (char*)IDX.RDB$INDEX_NAME);
-					strcpy(X.RDB$FIELD_NAME, (char*)str_->str_data);
+					strcpy(X.RDB$FIELD_NAME, (char*)str_fld->str_data);
 					X.RDB$FIELD_POSITION = --fld_count;
-					delete str_;
+					delete str_fld;
 				END_STORE;
 			}
 			if (!DYN_REQUEST(drq_s_idx_segs))

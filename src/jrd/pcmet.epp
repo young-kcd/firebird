@@ -217,7 +217,7 @@ void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
 
 /* check the index blocks for the relation to see if we 
    have a cached block */
-	idb* index_block;
+	IndexBlock* index_block;
 	for (index_block = relation->rel_index_blocks; index_block;
 		 index_block = index_block->idb_next)
 	{

@@ -637,7 +637,6 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 	FRBRD *DB, *gds_trans;
 	dsql_dbb* dbb;
 	isc_req_handle handle;
-	UCHAR *str_;
 	USHORT length;
 
 	dbb = request->req_dbb;
@@ -668,9 +667,9 @@ dsql_str* METD_get_default_charset(dsql_req* request)
         dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_str;
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
-        str_ = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
+		const UCHAR* str_charset = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
         for (char* p = dbb->dbb_dfl_charset->str_data; length; --length) {
-            *p++ = *str_++;
+            *p++ = *str_charset++;
 		}
 
         THREAD_EXIT;

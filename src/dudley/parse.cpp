@@ -1316,20 +1316,19 @@ static void define_security_class(void)
  *	Parse an access control list.
  *
  **************************************/
-	SCL class_;
-	SCE element, *next;
-
-	class_ = (SCL) DDL_alloc(sizeof(scl));
-	class_->scl_name = PARSE_symbol(tok_ident);
+	SCL sec_class = (SCL) DDL_alloc(sizeof(scl));
+	sec_class->scl_name = PARSE_symbol(tok_ident);
 	if (DDL_token.tok_keyword == KW_DESCRIPTION)
-		class_->scl_description = parse_description();
+		sec_class->scl_description = parse_description();
 
 /* Pick up entries. Use the users's order */
 
 	while (true) {
-		if (!(element = parse_identifier()))
+		SCE element = parse_identifier();
+		if (!element)
 			return;
-		for (next = &class_->scl_entries; *next; next = &(*next)->sce_next);
+		SCE* next;
+		for (next = &sec_class->scl_entries; *next; next = &(*next)->sce_next);
 		*next = element;
 		element->sce_privileges = parse_privileges();
 		if (!PARSE_match(KW_COMMA))
@@ -1338,7 +1337,7 @@ static void define_security_class(void)
 
 	parse_end();
 
-	make_action(act_a_security, (DBB) class_);
+	make_action(act_a_security, (DBB) sec_class);
 }
 
 
@@ -1785,9 +1784,7 @@ static void drop_relation(void)
  *	Parse DROP RELATION statement.
  *
  **************************************/
-	DUDLEY_REL relation;
-
-	relation = PARSE_relation();
+	DUDLEY_REL relation = PARSE_relation();
 	parse_end();
 
 	if (relation->rel_flags & rel_marked_for_creation)
@@ -1811,13 +1808,11 @@ static void drop_security_class(void)
  *	Parse DROP SECURITY_CLASS statement.
  *
  **************************************/
-	SCL class_;
-
-	class_ = (SCL) DDL_alloc(sizeof(scl));
-	class_->scl_name = PARSE_symbol(tok_ident);
+	SCL sec_class = (SCL) DDL_alloc(sizeof(scl));
+	sec_class->scl_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_security, (DBB) class_);
+	make_action(act_d_security, (DBB) sec_class);
 }
 
 
@@ -1833,9 +1828,7 @@ static void drop_shadow(void)
  *	Parse DROP SHADOW statement.
  *
  **************************************/
-	int number;
-
-	number = PARSE_number();
+	const int number = PARSE_number();
 	parse_end();
 
 	make_action(act_d_shadow, (DBB)(IPTR) number);
@@ -1973,17 +1966,14 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
  *	Generate a trigger name for an old style trigger.  
  *
  **************************************/
-	TEXT *p, *q, *end;
-	SYM symbol;
-
-	symbol = (SYM) DDL_alloc(SYM_LEN + GDS_NAME_LEN);
+	SYM symbol = (SYM) DDL_alloc(SYM_LEN + GDS_NAME_LEN);
 	symbol->sym_string = symbol->sym_name;
-	p = symbol->sym_string;
-	end = p + GDS_NAME_LEN;
+	TEXT* p = symbol->sym_string;
+	const TEXT* const end = p + GDS_NAME_LEN;
 
 /* Start by copying relation name */
 
-	q = relation->rel_name->sym_string;
+	const TEXT* q = relation->rel_name->sym_string;
 
 	while (*q && p < end)
 		*p++ = *q++;
@@ -2027,9 +2017,7 @@ static int get_system_flag(void)
  *	Return the (signed) numeric system flag value.
  *
  **************************************/
-	SSHORT number;
-
-	number = PARSE_number();
+	const SSHORT number = PARSE_number();
 
 	if (number == 1)
 		PARSE_error(157, 0, 0);	/* msg 157: System flag value of 1 is reserved for system relations */
@@ -2123,11 +2111,7 @@ static void grant_user_privilege(void)
  *	Parse a SQL grant statement.
  *
  **************************************/
-	USERPRIV upriv;
-	UPFE upf;
-	USRE usr;
-
-	upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
+	USERPRIV upriv = (USERPRIV) DDL_alloc(sizeof(userpriv));
 	upriv->userpriv_flags = 0;
 
 	while (true) {
@@ -2171,7 +2155,7 @@ static void grant_user_privilege(void)
 				{
 					break;
 				}
-				upf = (UPFE) DDL_alloc(sizeof(upfe));
+				UPFE upf = (UPFE) DDL_alloc(sizeof(upfe));
 				upf->upfe_fldname = PARSE_symbol(tok_ident);
 				upf->upfe_next = upriv->userpriv_upflist;
 				upriv->userpriv_upflist = upf;
@@ -2199,7 +2183,7 @@ static void grant_user_privilege(void)
 /* get the userlist */
 
 	while (true) {
-		usr = (USRE) DDL_alloc(sizeof(usre));
+		USRE usr = (USRE) DDL_alloc(sizeof(usre));
 		usr->usre_name = PARSE_symbol(tok_ident);
 		usr->usre_next = upriv->userpriv_userlist;
 		upriv->userpriv_userlist = usr;
@@ -2237,14 +2221,12 @@ static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
  *	In either case, if nothing matches, return NULL.
  *
  **************************************/
-	DUDLEY_CTX context;
-	SYM name;
 
 /* If no name is given, look for a nameless one. */
 
 	if (!symbol) {
 		for (; contexts; contexts = contexts->lls_next) {
-			context = (DUDLEY_CTX) contexts->lls_object;
+			DUDLEY_CTX context = (DUDLEY_CTX) contexts->lls_object;
 			if (!context->ctx_name && !context->ctx_view_rse)
 				return context;
 		}
@@ -2254,9 +2236,10 @@ static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 /* Other search by name */
 
 	for (; contexts; contexts = contexts->lls_next) {
-		context = (DUDLEY_CTX) contexts->lls_object;
-		if ((name = context->ctx_name) &&
-			!strcmp(name->sym_string, symbol->sym_string)) return context;
+		DUDLEY_CTX context = (DUDLEY_CTX) contexts->lls_object;
+		SYM name = context->ctx_name;
+		if (name && !strcmp(name->sym_string, symbol->sym_string)) 
+			return context;
 	}
 
 	return NULL;
@@ -2274,15 +2257,15 @@ static DUDLEY_FLD lookup_global_field( DUDLEY_FLD field)
  * Functional description
  *
  **************************************/
-	SYM symbol, name;
 
 /* Find symbol */
 
-	name = (field->fld_source) ? field->fld_source : field->fld_name;
+	SYM name = (field->fld_source) ? field->fld_source : field->fld_name;
 
-	if (symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
-								  SYM_global))
-			return (DUDLEY_FLD) symbol->sym_object;
+	SYM symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
+								  SYM_global);
+	if (symbol)
+		return (DUDLEY_FLD) symbol->sym_object;
 
 	PARSE_error(230, name->sym_string, 0);	/* msg 230: global field %s isn't defined */
 
@@ -2302,9 +2285,7 @@ static ACT make_action( enum act_t type, DBB object)
  *	Allocate and link an action block.
  *
  **************************************/
-	ACT action;
-
-	action = (ACT) DDL_alloc(sizeof(act));
+	ACT action = (ACT) DDL_alloc(sizeof(act));
 	action->act_type = type;
 	action->act_next = DDL_actions;
 	action->act_object = object;
@@ -2326,14 +2307,12 @@ static ACT make_computed_field( DUDLEY_FLD field)
  * Functional description
  *
  **************************************/
-	DUDLEY_FLD computed;
-	SYM symbol;
 	TEXT s[64];
-	USHORT i, l;
 
 /* Start by generating a unique name */
 
-	for (i = 1;; i++) {
+	USHORT l;
+	for (USHORT i = 1;; i++) {
 		sprintf(s, "RDB$%d", i);
 		l = strlen(s);
 		if (!HSH_lookup(s, l))
@@ -2342,13 +2321,15 @@ static ACT make_computed_field( DUDLEY_FLD field)
 
 /* Make up new symbol block */
 
-	field->fld_source = symbol = (SYM) DDL_alloc(SYM_LEN + l);
+	SYM symbol = (SYM) DDL_alloc(SYM_LEN + l);
+	field->fld_source = symbol;
 	symbol->sym_type = SYM_global;
 	symbol->sym_length = l;
 	symbol->sym_string = symbol->sym_name;
 	strcpy(symbol->sym_name, s);
 
-	field->fld_source_field = computed = create_global_field(field);
+	DUDLEY_FLD computed = create_global_field(field);
+	field->fld_source_field = computed;
 	symbol->sym_object = (DUDLEY_CTX) computed;
 	return make_global_field(computed);
 }
@@ -2366,14 +2347,12 @@ static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation)
  *	Make context for trigger.
  *
  **************************************/
-	DUDLEY_CTX context;
-	SYM symbol;
-
-	context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
+	DUDLEY_CTX context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
 	context->ctx_relation = relation;
 
 	if (string) {
-		context->ctx_name = symbol = (SYM) DDL_alloc(SYM_LEN);
+		SYM symbol = (SYM) DDL_alloc(SYM_LEN);
+		context->ctx_name = symbol;
 		symbol->sym_object = context;
 		symbol->sym_string = string;
 		symbol->sym_length = strlen(string);
@@ -2395,11 +2374,10 @@ static ACT make_global_field( DUDLEY_FLD field)
  * Functional description
  *
  **************************************/
-	SYM symbol;
 
 /* Make sure symbol is unique */
 
-	symbol = field->fld_name;
+	SYM symbol = field->fld_name;
 	symbol->sym_object = (DUDLEY_CTX) field;
 	symbol->sym_type = SYM_global;
 
@@ -2427,30 +2405,24 @@ static void mod_old_trigger(void)
  *      (first part was done earlier)
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_TRG trigger;
-	int flags, type, sequence;
-	SYM name, symbol;
-
-	relation = PARSE_relation();
+	DUDLEY_REL relation = PARSE_relation();
 
 	while (!PARSE_match(KW_END_TRIGGER)) {
-		flags = type = sequence = 0;
+		int flags = 0, type = 0, sequence = 0;
 		get_trigger_attributes(&flags, &type, &sequence);
 		if (!type)
 			PARSE_error(165, DDL_token.tok_string, 0);	/* msg 165: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"  */
-		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
+		DUDLEY_TRG trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_relation = relation;
 		trigger->trg_mflag = flags & ~trg_mflag_order;
 		if (trigger->trg_mflag & trg_mflag_type)
 			trigger->trg_type = trig_table[type & ~trig_inact];
-		trigger->trg_name = name =
-			gen_trigger_name(trigger->trg_type, relation);
-		if (!
-			(symbol =
-			 HSH_typed_lookup(name->sym_string, name->sym_length,
-							  SYM_trigger))) PARSE_error(166,
-														 name->sym_string, 0);	/* msg 166: Trigger %s does not exist */
+		SYM name = gen_trigger_name(trigger->trg_type, relation);
+		trigger->trg_name = name;
+		SYM symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
+							  SYM_trigger);
+		if (!symbol)
+			PARSE_error(166, name->sym_string, 0);	/* msg 166: Trigger %s does not exist */
 		modify_trigger_action(trigger, relation);
 		make_action(act_m_trigger, (DBB) trigger);
 	}
@@ -2471,7 +2443,6 @@ static void modify_field(void)
  *
  **************************************/
 	SYM symbol;
-	DUDLEY_FLD field;
 
 	if (!local_context)
 		LLS_PUSH((DUDLEY_NOD) DDL_alloc(sizeof(dudley_ctx)), &local_context);
@@ -2484,7 +2455,7 @@ static void modify_field(void)
 
 	if (!symbol)
 		PARSE_error(167, DDL_token.tok_string, 0);	/*msg 167: expected global field name, encountered \"%s\" */
-	field = (DUDLEY_FLD) symbol->sym_object;
+	DUDLEY_FLD field = (DUDLEY_FLD) symbol->sym_object;
 	LEX_token();
 	field->fld_flags |= fld_modify;
 
@@ -2578,10 +2549,7 @@ static void modify_relation(void)
  *	Parse a MODIFY RELATION statement.
  *
  **************************************/
-	DUDLEY_REL relation;
-	DUDLEY_FLD field, global;
-
-	relation = PARSE_relation();
+	DUDLEY_REL relation = PARSE_relation();
 	make_action(act_m_relation, (DBB) relation);
 
 	if (PARSE_match(KW_EXTERNAL_FILE)) {
@@ -2618,10 +2586,11 @@ static void modify_relation(void)
 			if (PARSE_match(KW_ADD)) {
 				PARSE_match(KW_FIELD);
 				{
-					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+					DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					parse_field(field);
 					field->fld_relation = relation;
 					field->fld_database = database;
+					DUDLEY_FLD global;
 					if (field->fld_computed)
 						make_computed_field(field);
 					else if (!(field->fld_flags & fld_local))
@@ -2644,7 +2613,7 @@ static void modify_relation(void)
 			}
 			else if (PARSE_match(KW_MODIFY)) {
 				PARSE_match(KW_FIELD);
-				field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+				DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 				field->fld_flags |= (fld_modify | fld_local);
 				parse_field(field);
 				field->fld_relation = relation;
@@ -2674,7 +2643,7 @@ static void modify_relation(void)
 				}
 				else {
 					PARSE_match(KW_FIELD);
-					field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+					DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 					field->fld_flags |= fld_local;
 					field->fld_relation = relation;
 					field->fld_database = database;

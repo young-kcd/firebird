@@ -28,13 +28,13 @@
 extern "C" {
 #endif
 
-ISC_STATUS filter_acl(USHORT, ctl*);
-ISC_STATUS filter_blr(USHORT, ctl*);
-ISC_STATUS filter_format(USHORT, ctl*);
-ISC_STATUS filter_runtime(USHORT, ctl*);
-ISC_STATUS filter_text(USHORT, ctl*);
-ISC_STATUS filter_transliterate_text(USHORT, ctl*);
-ISC_STATUS filter_trans(USHORT, ctl*);
+ISC_STATUS filter_acl(USHORT, BlobControl*);
+ISC_STATUS filter_blr(USHORT, BlobControl*);
+ISC_STATUS filter_format(USHORT, BlobControl*);
+ISC_STATUS filter_runtime(USHORT, BlobControl*);
+ISC_STATUS filter_text(USHORT, BlobControl*);
+ISC_STATUS filter_transliterate_text(USHORT, BlobControl*);
+ISC_STATUS filter_trans(USHORT, BlobControl*);
 
 #ifdef __cplusplus
 } /* extern "C" */
