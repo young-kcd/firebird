@@ -293,10 +293,10 @@ TempDirectoryList::TempDirectoryList() : items(0)
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	for (int i = 0; i < DirCount(); i++) {
+	for (size_t i = 0; i < DirCount(); i++) {
 		Item item;
 		Firebird::PathName dir = dir_list[i];
-		int pos = dir.rfind(" ");
+		size_t pos = dir.rfind(" ");
 		long size = atol(dir.substr(pos + 1, Firebird::PathName::npos).c_str());
 		if (pos != Firebird::PathName::npos && !size) {
 			pos = Firebird::PathName::npos;
