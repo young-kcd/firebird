@@ -31,7 +31,7 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2002.12.22 Alex Peshkoff: Bugcheck(291) fix for update_in_place
  *							 of record, modified by pre_trigger
- * 2002.01.03 Nickolay Samofatov: Fixed database corruption when backing out
+ * 2003.03.01 Nickolay Samofatov: Fixed database corruption when backing out
  *                           the savepoint after large number of DML operations 
  *                           (so transaction-level savepoint is dropped) and 
  *							 record was updated _not_ under the savepoint and 
@@ -2754,7 +2754,7 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 
 							if (same_tx) {
 								VIO_backout(tdbb, &rpb, transaction);
-								/* Nickolay Samofatov, 01 Mar 2002: 
+								/* Nickolay Samofatov, 01 Mar 2003: 
 								  If we don't have data for the record and
 								  it was modified and deleted under our savepoint
 								  we need to back it out to the state as it were
