@@ -61,12 +61,13 @@ goto :EOF
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
-@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl, stats) do @call :PREPROCESS jrd %%i GDS
+@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i GDS
 @for %%i in (codes) do @call :PREPROCESS misc %%i
 @for %%i in (build_file) do @call :PREPROCESS msgs %%i
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
 @for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
 @for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
+@for %%i in (stats) do @call :PREPROCESS utilities %%i
 @for %%i in (server, rebuild) do @call :PREPROCESS journal %%i
 
 @goto :EOF
