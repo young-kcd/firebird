@@ -428,14 +428,14 @@ static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
 	}
 }
 
-inline static void api_entry_point_init(STATUS* user_status)
+static void api_entry_point_init(STATUS* user_status)
 {
 	user_status[0] = gds_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = gds_arg_end;
 }
 
-inline static struct tdbb* set_thread_data(struct tdbb& thd_context)
+static struct tdbb* set_thread_data(struct tdbb& thd_context)
 {
 	struct tdbb* tdbb = &thd_context;
 	MOVE_CLEAR(tdbb, sizeof(struct tdbb));
@@ -467,14 +467,14 @@ static TDBB get_thread_data()
 	return (TDBB)p1;
 }
 
-inline static void CHECK_DBB(DBB dbb)
+static void CHECK_DBB(DBB dbb)
 {
 #ifdef DEV_BUILD
 	assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
 #endif	// DEV_BUILD
 }
 
-inline static void check_tdbb(TDBB tdbb)
+static void check_tdbb(TDBB tdbb)
 {
 #ifdef DEV_BUILD
 	assert(tdbb &&
@@ -484,7 +484,7 @@ inline static void check_tdbb(TDBB tdbb)
 #endif	// DEV_BUILD
 }
 
-inline static DBB get_dbb()
+static DBB get_dbb()
 {
 	return get_thread_data()->tdbb_database;
 }

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.21 2003-02-13 13:33:55 dimitr Exp $
+$Id: btr.cpp,v 1.22 2003-02-13 22:49:16 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -79,7 +79,7 @@ extern double	MTH$CVT_G_D();
 
 #define MAX_LEVELS	16
 
-inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
+void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 {
 	*x_to++ = *x_from++;
 }
@@ -191,12 +191,12 @@ static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
 
 }                             // extern "C"
 
-inline SLONG BTR_get_quad(UCHAR * p)
+SLONG BTR_get_quad(UCHAR * p)
 {
 	return BTR_get_quad(reinterpret_cast < char *>(p));
 }
 
-inline void quad_put(SLONG value, UCHAR * data)
+void quad_put(SLONG value, UCHAR * data)
 {
 	quad_put(value, reinterpret_cast < SCHAR * >(data));
 }

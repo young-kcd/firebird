@@ -118,7 +118,7 @@ extern "C" {
 
 #ifdef __cplusplus
 
-inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
+void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
 {
 	if (value)
 	{

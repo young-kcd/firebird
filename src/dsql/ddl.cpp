@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.37 2003-02-13 11:59:26 dimitr Exp $
+ * $Id: ddl.cpp,v 1.38 2003-02-13 22:42:38 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -166,7 +166,7 @@ static void set_nod_value_attributes(DSQL_NOD, DSQL_FLD);
 #endif
 
 #ifdef DEV_BUILD
-static inline void BLKCHK(const void* p, USHORT type)
+static void BLKCHK(const void* p, USHORT type)
 {
 	if (p && MemoryPool::blk_type(p) != type) {
 		ERRD_bugcheck("Invalid block type");

@@ -45,7 +45,7 @@
 #define LEAF_PAGE_SIZE 100
 #define NODE_PAGE_SIZE 100
 
-/*inline void* operator new (size_t size, void *place) {
+/* void* operator new (size_t size, void *place) {
 	return place;
 }*/
 

@@ -71,7 +71,7 @@ public:
 	static bool asBoolean(const string&);
 	static const char* asString(const string&);
 
-	inline static const ConfigImpl& instance();
+	static const ConfigImpl& instance();
 
 private:
 	ConfigImpl();
