@@ -50,8 +50,8 @@
 #define min _cpp_min
 #undef max
 #define max _cpp_max
-#endif
 #include <xutility>
+#endif
 
 
 namespace Jrd {
