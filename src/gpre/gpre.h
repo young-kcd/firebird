@@ -67,7 +67,9 @@
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
+#ifndef BOOT_BUILD
 #define FTN_BLK_DATA
+#endif
 #endif
 #endif
 
