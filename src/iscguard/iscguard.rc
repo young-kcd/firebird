@@ -19,7 +19,7 @@
 #include <windows.h>
 #include "iscguard.rh"
 #include "windows.h"
-#include "../jrd/version_95.rc"
+#include "../jrd/version.rc"
 
 STRINGTABLE 
 {

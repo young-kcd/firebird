@@ -16,35 +16,33 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#include <ver.h>
+
+#include <winver.h>
 #include "../jrd/build_no.h"
 
-
 VS_VERSION_INFO VERSIONINFO
-FILEFLAGSMASK   VS_FF_DEBUG | VS_FF_PRERELEASE
+FILEFLAGSMASK   VS_FF_PRERELEASE
 FILEFLAGS       VS_FF_PRERELEASE | VS_FF_SPECIALBUILD
 FILEVERSION     FILE_VER_NUMBER
 PRODUCTVERSION  FILE_VER_NUMBER
-FILEOS          VOS_DOS_WINDOWS16
+FILEOS          VOS_NT_WINDOWS32
 
 FILETYPE        VFT_APP
-FILESUBTYPE     VS_USER_DEFINED
-
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "Firebird Project\0"
-      VALUE "FileDescription", "FirebirdSQL Server\0"
+      VALUE "Comments", "This product created by the Firebird - All Copyright (c) retained by the individual contributors - original code Copyright (c) 2000 Inprise Corporation and predecessors.\0"
+      VALUE "CompanyName", "FirebirdSQL Project\0"
+      VALUE "FileDescription", "Firebird SQL Server\0"
       VALUE "FileVersion", FILE_VER_STRING
       VALUE "InternalName", "Firebird\0"
       VALUE "LegalCopyright", "All Copyright (c) retained by individual contributors - original code Copyright (c) 2000 Inprise Corporation\0"
-      VALUE "ProductName", "FirebirdSQL Server\0"
+      VALUE "ProductName", "Firebird SQL Server\0"
       VALUE "ProductVersion", PRODUCT_VER_STRING
-
+      VALUE "SpecialBuild", FB_BUILD_SUFFIX
     END
-
   END
 
   BLOCK "VarFileInfo"

@@ -765,10 +765,6 @@ SOURCE=..\..\..\src\jrd\jrd_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\jrd_ver.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\jrn.h
 # End Source File
 # Begin Source File
