@@ -106,10 +106,17 @@ public:
 	static void raise(const char* syscall);
 };
 
+// Moved what() here due to gpre. Didn't want to use macros for gpre_static.
 class fatal_exception : public status_exception
 {
 public:
 	explicit fatal_exception(const char* message);
+	// Keep in sync with the constructor above, please; "message" becomes 4th element
+	// after status_exception's constructor invokes fill_status().
+	const char* what() const throw()
+	{
+		return reinterpret_cast<const char*>(value()[3]);
+	}
 	static void raise(const char* message);
 };
 

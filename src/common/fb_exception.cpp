@@ -66,7 +66,7 @@ void status_exception::fill_status(ISC_STATUS status, va_list status_args)
 	*ptr++ = isc_arg_gds;
 	*ptr++ = status;
 	do {
-		ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);		
+		const ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);
 		if (type == isc_arg_end) 
 			break;
 
@@ -83,7 +83,7 @@ void status_exception::fill_status(ISC_STATUS status, va_list status_args)
 		case isc_arg_string:
 		case isc_arg_interpreted:
 			{
-				char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
+				const char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
 				const size_t len = strlen(temp);
 				char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				memcpy(string, temp, len + 1);
@@ -181,9 +181,19 @@ void system_call_failed::raise(const char* syscall)
 /********************************* fatal_exception ********************************/
 
 fatal_exception::fatal_exception(const char* message) :
-	status_exception(isc_random, message, isc_arg_end)
+	status_exception(isc_random, isc_arg_string, message, isc_arg_end)
 {
 }
+
+// Moved to the header due to gpre. Gpre non-static can't receive it, but we
+// want to avoid problems with picky compilers that can't find what().
+// We can't link this file into normal gpre.
+// Keep in sync with the constructor above, please; "message" becomes 4th element
+// after status_exception's constructor invokes fill_status().
+//const char* fatal_exception::what() const throw()
+//{
+//	return reinterpret_cast<const char*>(value()[3]);
+//}
 
 void fatal_exception::raise(const char* message)
 {
