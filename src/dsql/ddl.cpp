@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.38 2003-02-13 22:42:38 brodsom Exp $
+ * $Id: ddl.cpp,v 1.39 2003-02-15 02:05:01 hippoman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -256,7 +256,7 @@ void DDL_execute(DSQL_REQ request)
 
 #ifdef DEBUG
 #if !(defined REQUESTER && defined SUPERCLIENT)
-	if (DSQL_debug > 0)
+	if (DSQL_debug & 4)
 		PRETTY_print_dyn(request->req_blr_string->str_data,
 							NULL,
 							"%4d %s\n",

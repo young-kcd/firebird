@@ -4323,7 +4323,7 @@ void LEX_string (
     first_time = TRUE;
 	param_number = 1;
 #ifdef DEV_BUILD
-    if (DSQL_debug > 10)
+    if (DSQL_debug & 32)
         printf("%.*s\n", (int)length, string);
 #endif
 }
@@ -4627,8 +4627,8 @@ static void prepare_console_debug (int level, int *yydeb)
  *
  *************************************/
     DSQL_debug = level;
-    if (level > 100)
-        *yydeb = level - 100;
+    if (level >> 8)
+        *yydeb = level >> 8;
     /* CVC: I added this code form Mike Nordell to see the output from internal
        operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
        When n>0, the output console is activated; otherwise it's closed. */

@@ -958,7 +958,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 	DEV_BLKCHK(input, dsql_type_nod);
 
 #ifdef DEV_BUILD
-	if (DSQL_debug > 2)
+	if (DSQL_debug & 2)
 		DSQL_pretty(input, 0);
 #endif
 
@@ -1458,7 +1458,7 @@ DSQL_NOD PASS1_statement(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 		LLS_POP(&request->req_context);
 
 #ifdef DEV_BUILD
-	if (DSQL_debug > 1)
+	if (DSQL_debug & 1)
 		DSQL_pretty(node, 0);
 #endif
 
@@ -4147,7 +4147,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	}
 
 #ifdef DEV_BUILD
-	if (DSQL_debug > 2)
+	if (DSQL_debug & 16)
 		DSQL_pretty(input, 0);
 #endif
 

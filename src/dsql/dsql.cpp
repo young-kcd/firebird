@@ -4300,7 +4300,7 @@ static DSQL_REQ prepare(
 /* have the access method compile the request */
 
 #ifdef DEV_BUILD
-	if (DSQL_debug) {
+	if (DSQL_debug & 64) {
 		gds__print_blr(reinterpret_cast<UCHAR*>(request->req_blr_string->str_data), 0, 0, 0);
 	}
 #endif
