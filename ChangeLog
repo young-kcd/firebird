@@ -1,3 +1,35 @@
+2003-05-01 15:28  dimitr
+
+	* firebird2/: src/common/config/config_file.cpp,
+	builds/win32/msvc6/fbclient.dsp:
+	
+	Bugfix
+
+2003-05-01 14:46  dimitr
+
+	* firebird2/src/jrd/dls.cpp:
+	
+	Cleanup
+
+2003-05-01 14:19  dimitr
+
+	* firebird2/src/: common/config/dir_list.cpp,
+	common/config/dir_list.h, jrd/dls.cpp, jrd/dls_proto.h:
+	
+	Temporary directory management
+
+2003-05-01 13:45  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Temporary directory management
+
+2003-05-01 13:35  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.h:
+	
+	Temporary directory management
+
 2003-04-29 20:42  skidder
 
 	* firebird2/src/lock/lock.cpp:
