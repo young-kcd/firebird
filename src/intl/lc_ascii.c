@@ -91,22 +91,110 @@ TEXTTYPE_ENTRY(DOS160_init)
 #include "../intl/collations/undef.h"
 
 
-TEXTTYPE_ENTRY(LATIN1_cp_init)
+TEXTTYPE_ENTRY(ISO88591_cp_init)
 {
 	static CONST ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(parm1, LATIN1_cp_init, CS_LATIN1, CC_C);
+	FAMILY_ASCII(parm1, ISO88591_cp_init, CS_ISO8859_1, CC_C);
 
 	TEXTTYPE_RETURN;
 }
 
 #include "../intl/collations/undef.h"
 
-TEXTTYPE_ENTRY (LATIN2_cp_init)
+TEXTTYPE_ENTRY (ISO88592_cp_init)
 {
     static CONST ASCII	POSIX[] = "C.ISO8859_2";
 
-    FAMILY_ASCII (parm1, LATIN2_cp_init, CS_LATIN2, CC_C); 
+    FAMILY_ASCII (parm1, ISO88592_cp_init, CS_ISO8859_2, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88593_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_3";
+
+    FAMILY_ASCII (parm1, ISO88593_cp_init, CS_ISO8859_3, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88594_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_4";
+
+    FAMILY_ASCII (parm1, ISO88594_cp_init, CS_ISO8859_4, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88595_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_5";
+
+    FAMILY_ASCII (parm1, ISO88595_cp_init, CS_ISO8859_5, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88596_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_6";
+
+    FAMILY_ASCII (parm1, ISO88596_cp_init, CS_ISO8859_6, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88597_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_7";
+
+    FAMILY_ASCII (parm1, ISO88597_cp_init, CS_ISO8859_7, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88598_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_8";
+
+    FAMILY_ASCII (parm1, ISO88598_cp_init, CS_ISO8859_8, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO88599_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_9";
+
+    FAMILY_ASCII (parm1, ISO88599_cp_init, CS_ISO8859_9, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY (ISO885913_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_13";
+
+    FAMILY_ASCII (parm1, ISO885913_cp_init, CS_ISO8859_13, CC_C); 
     
     TEXTTYPE_RETURN;
 }
@@ -166,6 +254,90 @@ TEXTTYPE_ENTRY(DOS863_c0_init)
 	static CONST ASCII POSIX[] = "C.DOS863";
 
 	FAMILY_ASCII(parm1, DOS863_c0_init, CS_DOS_863, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS737_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS737";
+
+	FAMILY_ASCII(parm1, DOS737_c0_init, CS_DOS_737, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS775_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS775";
+
+	FAMILY_ASCII(parm1, DOS775_c0_init, CS_DOS_775, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS858_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS858";
+
+	FAMILY_ASCII(parm1, DOS858_c0_init, CS_DOS_858, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS862_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS862";
+
+	FAMILY_ASCII(parm1, DOS862_c0_init, CS_DOS_862, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS864_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS864";
+
+	FAMILY_ASCII(parm1, DOS864_c0_init, CS_DOS_864, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS866_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS866";
+
+	FAMILY_ASCII(parm1, DOS866_c0_init, CS_DOS_866, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+
+TEXTTYPE_ENTRY(DOS869_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.DOS869";
+
+	FAMILY_ASCII(parm1, DOS869_c0_init, CS_DOS_869, CC_C);
 
 	TEXTTYPE_RETURN;
 }
@@ -238,6 +410,39 @@ TEXTTYPE_ENTRY(WIN1254_c0_init)
 	static CONST ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(parm1, WIN1254_c0_init, CS_WIN1254, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY(WIN1255_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.ISO8859_5";
+
+	FAMILY_ASCII(parm1, WIN1255_c0_init, CS_WIN1255, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY(WIN1256_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.ISO8859_1";
+
+	FAMILY_ASCII(parm1, WIN1256_c0_init, CS_WIN1256, CC_C);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/collations/undef.h"
+
+TEXTTYPE_ENTRY(WIN1257_c0_init)
+{
+	static CONST ASCII POSIX[] = "C.ISO8859_1";
+
+	FAMILY_ASCII(parm1, WIN1257_c0_init, CS_WIN1257, CC_C);
 
 	TEXTTYPE_RETURN;
 }

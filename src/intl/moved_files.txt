@@ -6,6 +6,14 @@ cs_jis_20208_1990.c
 cs2jis_p.h
 mac_*
 
+-------------------------------------> Changed name
+
+lc_unicode.c	> lc_unicode_ucs2.c
+cs_unicode.c	> cs_unicode_ucs2.c
+cs_utffss.c	> cs_unicode_fss.c
+cs_latin1.c	> cs_iso8859_1.c
+cs_latin2.c	> cs_iso8859_2.c
+
 -------------------------------------> Moved to charsets
 
 cs_437.h
@@ -20,8 +28,8 @@ cs_big5.h
 cs_gb2312.h
 cs_jis_0208_1990.h
 cs_ksc5601.h
-cs_latin1.h
-cs_latin2.h
+cs_latin1.h	> cs_iso8859_1.h
+cs_latin2.h	> cs_iso8859_2.h
 cs_next.h
 cs_sjis.h
 cs_w1250.h

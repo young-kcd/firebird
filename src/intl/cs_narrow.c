@@ -46,27 +46,99 @@ static void common_8bit_init(csptr, id, name, to_unicode_tbl,
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (BYTE *) " ";
 	csptr->charset_well_formed = (FPTR_SHORT) NULL;
-	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, id,
+	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
 					CV_nc_to_unicode, to_unicode_tbl, NULL);
-	CV_convert_init(&csptr->charset_from_unicode, id, CS_UNICODE101,
+	CV_convert_init(&csptr->charset_from_unicode, id, CS_UNICODE_UCS2,
 					CV_unicode_to_nc, from_unicode_tbl1, from_unicode_tbl2);
 }
 
 
-CHARSET_ENTRY(CS_iso_latin1)
+CHARSET_ENTRY(CS_iso_ISO8859_1)
 {
-#include "../intl/charsets/cs_latin1.h"
+#include "../intl/charsets/cs_iso8859_1.h"
 
-	common_8bit_init(csptr, CS_LATIN1, "LATIN1", to_unicode_map,
+	common_8bit_init(csptr, CS_ISO8859_1, "ISO88591", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
 	CHARSET_RETURN;
 }
 
-CHARSET_ENTRY (CS_iso_latin2)
+CHARSET_ENTRY (CS_iso_ISO8859_2)
 {
-#include "../intl/charsets/cs_latin2.h"
+#include "../intl/charsets/cs_iso8859_2.h"
 
-    common_8bit_init (csptr, CS_LATIN2, "LATIN2", to_unicode_map,
+    common_8bit_init (csptr, CS_ISO8859_2, "ISO88592", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_3)
+{
+#include "../intl/charsets/cs_iso8859_3.h"
+
+    common_8bit_init (csptr, CS_ISO8859_3, "ISO88593", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_4)
+{
+#include "../intl/charsets/cs_iso8859_4.h"
+
+    common_8bit_init (csptr, CS_ISO8859_4, "ISO88594", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_5)
+{
+#include "../intl/charsets/cs_iso8859_5.h"
+
+    common_8bit_init (csptr, CS_ISO8859_5, "ISO88595", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_6)
+{
+#include "../intl/charsets/cs_iso8859_6.h"
+
+    common_8bit_init (csptr, CS_ISO8859_6, "ISO88596", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_7)
+{
+#include "../intl/charsets/cs_iso8859_7.h"
+
+    common_8bit_init (csptr, CS_ISO8859_7, "ISO88597", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_8)
+{
+#include "../intl/charsets/cs_iso8859_8.h"
+
+    common_8bit_init (csptr, CS_ISO8859_8, "ISO88598", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_9)
+{
+#include "../intl/charsets/cs_iso8859_9.h"
+
+    common_8bit_init (csptr, CS_ISO8859_9, "ISO88599", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
+CHARSET_ENTRY (CS_iso_ISO8859_13)
+{
+#include "../intl/charsets/cs_iso8859_13.h"
+
+    common_8bit_init (csptr, CS_ISO8859_13, "ISO885913", to_unicode_map,
                       from_unicode_mapping_array, from_unicode_map);
     CHARSET_RETURN;
 }
@@ -143,6 +215,69 @@ CHARSET_ENTRY(CS_dos_863)
 	CHARSET_RETURN;
 }
 
+CHARSET_ENTRY(CS_dos_737)
+{
+#include "../intl/charsets/cs_737.h"
+
+	common_8bit_init(csptr, CS_DOS_737, "DOS737", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_dos_775)
+{
+#include "../intl/charsets/cs_775.h"
+
+	common_8bit_init(csptr, CS_DOS_775, "DOS775", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_dos_858)
+{
+#include "../intl/charsets/cs_858.h"
+
+	common_8bit_init(csptr, CS_DOS_858, "DOS858", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_dos_862)
+{
+#include "../intl/charsets/cs_862.h"
+
+	common_8bit_init(csptr, CS_DOS_862, "DOS862", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_dos_864)
+{
+#include "../intl/charsets/cs_864.h"
+
+	common_8bit_init(csptr, CS_DOS_864, "DOS864", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_dos_866)
+{
+#include "../intl/charsets/cs_866.h"
+
+	common_8bit_init(csptr, CS_DOS_866, "DOS866", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_dos_869)
+{
+#include "../intl/charsets/cs_869.h"
+
+	common_8bit_init(csptr, CS_DOS_869, "DOS869", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
 CHARSET_ENTRY(CS_cyrl)
 {
 #include "../intl/charsets/cs_cyrl.h"
@@ -193,6 +328,33 @@ CHARSET_ENTRY(CS_win1254)
 #include "../intl/charsets/cs_w1254.h"
 
 	common_8bit_init(csptr, CS_WIN1254, "WIN1254", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_win1255)
+{
+#include "../intl/charsets/cs_w1255.h"
+
+	common_8bit_init(csptr, CS_WIN1255, "WIN1255", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_win1256)
+{
+#include "../intl/charsets/cs_w1256.h"
+
+	common_8bit_init(csptr, CS_WIN1256, "WIN1256", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_win1257)
+{
+#include "../intl/charsets/cs_w1257.h"
+
+	common_8bit_init(csptr, CS_WIN1257, "WIN1257", to_unicode_map,
 					 from_unicode_mapping_array, from_unicode_map);
 	CHARSET_RETURN;
 }

@@ -45,7 +45,7 @@ fixed with errors
 			so this is not an error
 
 No errors
-#include "../intl/cs_latin1.h"
+#include "../intl/cs_iso8859_1.h"
 */
 
 /* 

@@ -48,9 +48,9 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 	csptr->charset_space_character = (BYTE *) & space;	/* 0x20 */
 	csptr->charset_well_formed = (FPTR_SHORT) NULL;
 
-	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE101, CS_JIS_0208,
+	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_JIS_0208,
 					CV_wc_to_wc, to_unicode_mapping_array, to_unicode_map);
-	CV_convert_init(&csptr->charset_from_unicode, CS_JIS_0208, CS_UNICODE101,
+	CV_convert_init(&csptr->charset_from_unicode, CS_JIS_0208, CS_UNICODE_UCS2,
 					CV_wc_to_wc, from_unicode_mapping_array,
 					from_unicode_map);
 	CHARSET_RETURN;

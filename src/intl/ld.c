@@ -87,36 +87,51 @@ EXTERN_texttype(DOS861_c1_init);
 EXTERN_texttype(DOS863_c0_init);
 EXTERN_texttype(DOS863_c1_init);
 
+EXTERN_texttype(DOS737_c0_init);
+EXTERN_texttype(DOS775_c0_init);
+EXTERN_texttype(DOS858_c0_init);
+EXTERN_texttype(DOS862_c0_init);
+EXTERN_texttype(DOS864_c0_init);
+EXTERN_texttype(DOS866_c0_init);
+EXTERN_texttype(DOS869_c0_init);
+
 EXTERN_texttype(CYRL_c0_init);
 EXTERN_texttype(CYRL_c1_init);
 EXTERN_texttype(CYRL_c2_init);
 
 /* Latin 1 character set */
-EXTERN_texttype(LATIN1_cp_init);
+EXTERN_texttype(ISO88591_cp_init);
 
 /* Latin 1 collations */
-EXTERN_texttype(LAT139_init);
-EXTERN_texttype(LAT140_init);
-EXTERN_texttype(LAT141_init);
-EXTERN_texttype(LAT142_init);
-EXTERN_texttype(LAT143_init);
-EXTERN_texttype(LAT144_init);
-EXTERN_texttype(LAT145_init);
-EXTERN_texttype(LAT146_init);
-EXTERN_texttype(LAT148_init);
-EXTERN_texttype(LAT149_init);
-EXTERN_texttype(LAT151_init);
-EXTERN_texttype(LAT152_init);
-EXTERN_texttype(LAT153_init);
-EXTERN_texttype(LAT154_init);
+EXTERN_texttype(ISO88591_39_init);
+EXTERN_texttype(ISO88591_40_init);
+EXTERN_texttype(ISO88591_41_init);
+EXTERN_texttype(ISO88591_42_init);
+EXTERN_texttype(ISO88591_43_init);
+EXTERN_texttype(ISO88591_44_init);
+EXTERN_texttype(ISO88591_45_init);
+EXTERN_texttype(ISO88591_46_init);
+EXTERN_texttype(ISO88591_48_init);
+EXTERN_texttype(ISO88591_49_init);
+EXTERN_texttype(ISO88591_51_init);
+EXTERN_texttype(ISO88591_52_init);
+EXTERN_texttype(ISO88591_53_init);
+EXTERN_texttype(ISO88591_54_init);
 
 /* Latin 2 character set */
-EXTERN_texttype (LATIN2_cp_init);
+EXTERN_texttype (ISO88592_cp_init);
 
 /* latin 2 collations */
 EXTERN_texttype (ISO88592_c1_init);
 
-
+EXTERN_texttype (ISO88593_cp_init);
+EXTERN_texttype (ISO88594_cp_init);
+EXTERN_texttype (ISO88595_cp_init);
+EXTERN_texttype (ISO88596_cp_init);
+EXTERN_texttype (ISO88597_cp_init);
+EXTERN_texttype (ISO88598_cp_init);
+EXTERN_texttype (ISO88599_cp_init);
+EXTERN_texttype (ISO885913_cp_init);
 
 EXTERN_texttype(WIN1250_c0_init);
 EXTERN_texttype(WIN1250_c1_init);
@@ -142,6 +157,10 @@ EXTERN_texttype(WIN1253_c1_init);
 EXTERN_texttype(WIN1254_c0_init);
 EXTERN_texttype(WIN1254_c1_init);
 
+EXTERN_texttype(WIN1255_c0_init);
+EXTERN_texttype(WIN1256_c0_init);
+EXTERN_texttype(WIN1257_c0_init);
+
 EXTERN_texttype(NEXT_c0_init);
 EXTERN_texttype(NEXT_c1_init);
 EXTERN_texttype(NEXT_c2_init);
@@ -166,13 +185,24 @@ EXTERN_texttype(UNI201_init);
 EXTERN_texttype(JIS220_init);
 EXTERN_texttype(JIS230_init);
 
-EXTERN_charset(CS_iso_latin1);
-EXTERN_charset(CS_iso_latin2);
+EXTERN_charset(CS_iso_ISO8859_1);
+EXTERN_charset(CS_iso_ISO8859_2);
+EXTERN_charset(CS_iso_ISO8859_3);
+EXTERN_charset(CS_iso_ISO8859_4);
+EXTERN_charset(CS_iso_ISO8859_5);
+EXTERN_charset(CS_iso_ISO8859_6);
+EXTERN_charset(CS_iso_ISO8859_7);
+EXTERN_charset(CS_iso_ISO8859_8);
+EXTERN_charset(CS_iso_ISO8859_9);
+EXTERN_charset(CS_iso_ISO8859_13);
 EXTERN_charset(CS_win1250);
 EXTERN_charset(CS_win1251);
 EXTERN_charset(CS_win1252);
 EXTERN_charset(CS_win1253);
 EXTERN_charset(CS_win1254);
+EXTERN_charset(CS_win1255);
+EXTERN_charset(CS_win1256);
+EXTERN_charset(CS_win1257);
 EXTERN_charset(CS_next);
 EXTERN_charset(CS_cyrl);
 EXTERN_charset(CS_dos_437);
@@ -183,7 +213,14 @@ EXTERN_charset(CS_dos_860);
 EXTERN_charset(CS_dos_861);
 EXTERN_charset(CS_dos_863);
 EXTERN_charset(CS_dos_865);
-EXTERN_charset(CS_unicode_101);
+EXTERN_charset(CS_dos_737);
+EXTERN_charset(CS_dos_775);
+EXTERN_charset(CS_dos_858);
+EXTERN_charset(CS_dos_862);
+EXTERN_charset(CS_dos_864);
+EXTERN_charset(CS_dos_866);
+EXTERN_charset(CS_dos_869);
+EXTERN_charset(CS_unicode_ucs2);
 EXTERN_charset(CS_unicode_fss);
 EXTERN_charset(CS_sjis);
 EXTERN_charset(CS_euc_j);
@@ -197,8 +234,8 @@ EXTERN_texttype(BIG5_init);
 EXTERN_texttype(KSC_5601_init);
 EXTERN_texttype(GB_2312_init);
 
-EXTERN_convert(CV_dos_437_x_latin1);
-EXTERN_convert(CV_dos_865_x_latin1);
+EXTERN_convert(CV_dos_437_x_iso8859_1);
+EXTERN_convert(CV_dos_865_x_iso8859_1);
 EXTERN_convert(CV_dos_437_x_dos_865);
 EXTERN_convert(CVJIS_sjis_x_eucj);
 
@@ -311,8 +348,8 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 	    DRIVER (CS_DOS_437, DOS101_init);
 	    DRIVER (CS_DOS_850, DOS160_init);
 	    DRIVER (CS_DOS_865, DOS107_init);
-	    DRIVER (CS_LATIN1,  LATIN1_cp_init);
-	    DRIVER (CS_LATIN2,  LATIN2_cp_init);
+	    DRIVER (CS_ISO8859_1,  ISO88591_cp_init);
+	    DRIVER (CS_ISO8859_2,  ISO88592_cp_init);
 	    DRIVER (CS_UNICODE_FSS, UNI201_init);
 	    DRIVER (CS_SJIS,    JIS220_init);
 	    DRIVER (CS_EUCJ,    JIS230_init);
@@ -322,20 +359,20 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 	    DRIVER (105, DOS105_init);
 	    DRIVER (106, DOS106_init);
 	    DRIVER (107, DOS107_init);
-	    DRIVER (139, LAT139_init);
-	    DRIVER (140, LAT140_init);
-	    DRIVER (141, LAT141_init);
-	    DRIVER (142, LAT142_init);
-	    DRIVER (143, LAT143_init);
-	    DRIVER (144, LAT144_init);
-	    DRIVER (145, LAT145_init);
-	    DRIVER (146, LAT146_init);
-	    DRIVER (148, LAT148_init);
-	    DRIVER (149, LAT149_init);
-	    DRIVER (151, LAT151_init);
-	    DRIVER (152, LAT152_init);
-	    DRIVER (153, LAT153_init);
-	    DRIVER (154, LAT154_init);
+	    DRIVER (139, ISO88591_39_init);
+	    DRIVER (140, ISO88591_40_init);
+	    DRIVER (141, ISO88591_41_init);
+	    DRIVER (142, ISO88591_42_init);
+	    DRIVER (143, ISO88591_43_init);
+	    DRIVER (144, ISO88591_44_init);
+	    DRIVER (145, ISO88591_45_init);
+	    DRIVER (146, ISO88591_46_init);
+	    DRIVER (148, ISO88591_48_init);
+	    DRIVER (149, ISO88591_49_init);
+	    DRIVER (151, ISO88591_51_init);
+	    DRIVER (152, ISO88591_52_init);
+	    DRIVER (153, ISO88591_53_init);
+	    DRIVER (154, ISO88591_54_init);
 	    DRIVER (160, DOS160_init);
 	    DRIVER (200, UNI200_init);
 	    DRIVER (201, UNI201_init);
@@ -369,11 +406,11 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 #undef COLLATE_ALIAS
 
 /*
-	    CHARSET_INIT (CS_LATIN1,     CS_iso_latin1);
+	    CHARSET_INIT (CS_ISO8859_1,     CS_iso_ISO8859_1);
 	    CHARSET_INIT (CS_DOS_437,    CS_dos_437);
 	    CHARSET_INIT (CS_DOS_850,    CS_dos_850);
 	    CHARSET_INIT (CS_DOS_865,    CS_dos_865);
-	    CHARSET_INIT (CS_UNICODE101, CS_unicode_101);
+	    CHARSET_INIT (CS_UNICODE_UCS2, CS_unicode_ucs2);
 	    CHARSET_INIT (CS_UNICODE_FSS, CS_unicode_fss);
 	    CHARSET_INIT (CS_SJIS,       CS_sjis);
 	    CHARSET_INIT (CS_EUCJ,       CS_euc_j);
@@ -384,8 +421,8 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 		};
 	case type_csconvert:
 		{
-			CONVERT_INIT_BI(CS_DOS_437, CS_LATIN1, CV_dos_437_x_latin1);
-			CONVERT_INIT_BI(CS_DOS_865, CS_LATIN1, CV_dos_865_x_latin1);
+			CONVERT_INIT_BI(CS_DOS_437, CS_ISO8859_1, CV_dos_437_x_iso8859_1);
+			CONVERT_INIT_BI(CS_DOS_865, CS_ISO8859_1, CV_dos_865_x_iso8859_1);
 			CONVERT_INIT_BI(CS_DOS_437, CS_DOS_865, CV_dos_437_x_dos_865);
 			CONVERT_INIT_BI(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj);
 			*fun = NULL;
