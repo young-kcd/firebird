@@ -3296,7 +3296,7 @@ static void define_update_action(
  *
  * Function
  *	Define an action statement which, given a view
- *	definition, will map a update to a record from
+ *	definition, will map an update to a record from
  *	a view of a single relation into the
  *	base relation.
  *

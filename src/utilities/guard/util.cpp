@@ -98,7 +98,7 @@ pid_t UTIL_start_process(const char* process, char** argv)
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
 #if (defined SOLARIS_MT)
-	pid_t pid =fork1();
+	pid_t pid = fork1();
 	if (!pid) {
 		if (execv(string, argv) == -1) {
 /*			ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n",

@@ -349,7 +349,7 @@ global:
 	KEYWORD_getTokens;
 
 #--------------------------------------
-#functions needed by Solaris utilityes
+#functions needed by Solaris utilities
 	SCH_ast;
 
 #commented it out with new style of thd //Konstantin

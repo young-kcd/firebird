@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		thd.cpp
+ *	MODULE:		ThreadData.cpp
  *	DESCRIPTION:	Thread support routines
  *
  * The contents of this file are subject to the Interbase Public

@@ -660,7 +660,8 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 									number |= (UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
 								}
 							}
-						}*/
+						}
+*/
 					}
 				}
 			}
@@ -711,7 +712,8 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 										}
 									}
 								}
-							}*/
+							}
+*/
 						}
 					}
 				}
