@@ -1,3 +1,49 @@
+2003-09-03 23:18  arnobrinkman
+
+	* firebird2/src/jrd/: cvt2.cpp, rse.cpp:
+	
+	bugfix: MERGE caused engine crash when it was comparing two NULL
+	values (when NULL was result of a calculation
+	(add/multiply/divide...))
+
+2003-09-03 18:35  brodsom
+
+	* firebird2/src/journal/archive.cpp:
+	
+	-Fix wrong change (Thanks to Claudio)
+
+2003-09-03 18:33  brodsom
+
+	* firebird2/src/jrd/blob_filter.cpp:
+	
+	-Remove unneeded casts
+
+2003-09-03 18:31  brodsom
+
+	* firebird2/src/burp/restore.epp:
+	
+	-Fix wrong struct removal.
+
+2003-09-03 12:10  brodsom
+
+	* firebird2/src/wal/walw.cpp:
+	
+	Remove obsolete comment
+
+2003-09-03 09:37  dimitr
+
+	* firebird2/src/utilities/: dba.epp, gstat/dba.epp:
+	
+	Fixed gstat crach reported by Phil Shrimpton.
+
+2003-09-03 03:46  brodsom
+
+	*
+	
+	-Add all the examples to the installer
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_15.iss
+	:
+
 2003-09-02 20:26  brodsom
 
 	* firebird2/: src/journal/server.epp, src/journal/archive.cpp,
