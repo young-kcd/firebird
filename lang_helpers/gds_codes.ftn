@@ -1078,6 +1078,8 @@ C --
       PARAMETER (GDS__wrong_backup_state               = 335544832)
       INTEGER*4 GDS__wal_backup_err                  
       PARAMETER (GDS__wal_backup_err                   = 335544833)
+      INTEGER*4 GDS__invalid_cursor_state            
+      PARAMETER (GDS__invalid_cursor_state             = 335544834)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
