@@ -1147,6 +1147,25 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	if (!DYN_REQUEST(drq_e_trg_msgs2))
 		DYN_REQUEST(drq_e_trg_msgs2) = request;
 
+	// CVC: Moved this block here to avoid SF Bug #1111570.
+	request = CMP_find_request(tdbb, drq_e_rel_con3, DYN_REQUESTS);
+	id = drq_e_rel_con3;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		CRT IN RDB$RELATION_CONSTRAINTS WITH
+			CRT.RDB$RELATION_NAME EQ relation_name AND
+			(CRT.RDB$CONSTRAINT_TYPE EQ CHECK_CNSTRT OR
+			 CRT.RDB$CONSTRAINT_TYPE EQ NOT_NULL_CNSTRT)
+
+		if (!DYN_REQUEST(drq_e_rel_con3))
+            DYN_REQUEST(drq_e_rel_con3) = request;
+
+		ERASE CRT;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_rel_con3))
+		DYN_REQUEST(drq_e_rel_con3) = request;
+
 	request = CMP_find_request(tdbb, drq_e_rel_flds, DYN_REQUESTS);
 	id = drq_e_rel_flds;
 
@@ -1160,7 +1179,9 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 
 		if (!RFR.RDB$SECURITY_CLASS.NULL
 			&& !strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		{
 			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
+		}
 
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
 
@@ -1207,24 +1228,6 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	if (!found) {
 		goto dyn_punt_61;
 	}
-
-	request = CMP_find_request(tdbb, drq_e_rel_con3, DYN_REQUESTS);
-	id = drq_e_rel_con3;
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		CRT IN RDB$RELATION_CONSTRAINTS WITH
-			CRT.RDB$RELATION_NAME EQ relation_name AND
-			(CRT.RDB$CONSTRAINT_TYPE EQ CHECK_CNSTRT OR
-			 CRT.RDB$CONSTRAINT_TYPE EQ NOT_NULL_CNSTRT)
-
-		if (!DYN_REQUEST(drq_e_rel_con3))
-            DYN_REQUEST(drq_e_rel_con3) = request;
-
-		ERASE CRT;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_e_rel_con3))
-		DYN_REQUEST(drq_e_rel_con3) = request;
 
 /* Triggers must be deleted after check constraints   */
 
