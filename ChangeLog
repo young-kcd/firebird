@@ -1,3 +1,109 @@
+2003-09-04 23:40  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Don't forget unnamed derived tables
+
+2003-09-04 23:37  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Added some comments and boolean replacement
+
+2003-09-04 23:26  brodsom
+
+	* firebird2/src/jrd/os/: thd_priority.h, win32/thd_priority.cpp:
+	
+	-Replace BOOLEAN, TRUE and FALSE
+
+2003-09-04 23:22  brodsom
+
+	* firebird2/src/: lock/lock.cpp, lock/lock_proto.h, lock/print.cpp,
+	jrd/os/vms/extvms.cpp, jrd/os/vms/map.cpp, jrd/os/vms/vms.cpp,
+	jrd/os/vms/vmsevent.cpp, dsql/parse.cpp, dsql/parse.y,
+	dsql/pass1.cpp, dsql/preparse.cpp, dsql/user_dsql.cpp,
+	dsql/dsql.cpp, dsql/hsh.cpp:
+	
+	-Replace BOOLEAN, TRUE and FALSE
+
+2003-09-04 23:20  brodsom
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Replace BOOLEAN, TRUE and FALSE
+
+2003-09-04 19:51  skidder
+
+	* firebird2/src/extern/editline/editline.c:
+	
+	Apply small patch for AMD64 build
+
+2003-09-04 18:59  brodsom
+
+	* firebird2/builds/win32/msvc6/archive.dsp:
+	
+	Correction
+
+2003-09-04 17:52  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	fix posix SS build - script files are copied for both SS and CS
+
+2003-09-04 17:26  brodsom
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Correction
+
+2003-09-04 17:20  brodsom
+
+	* firebird2/src/journal/: archive.cpp, console.cpp, gjrn.cpp,
+	miscj.cpp, oldr.cpp, rebui_proto.h, rebuild.epp, serve_proto.h,
+	server.epp:
+	
+	-Some cleaning -Two fixes and one new comment(Thanks to claudio)
+
+2003-09-04 17:05  arnobrinkman
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	Remove generated comment
+
+2003-09-04 17:02  arnobrinkman
+
+	* firebird2/src/dsql/: gen.cpp, make.cpp, node.h, pass1.cpp:
+	
+	Changed internally derived-table support to better
+	readable/understanding code
+
+2003-09-04 15:46  brodsom
+
+	* firebird2/: src/utilities/stats.epp, builds/win32/preprocess.bat,
+	src/jrd/stats.epp:
+	
+	Move stats.epp to utilities
+
+2003-09-04 15:45  brodsom
+
+	* firebird2/src/dudley/: exe.epp, extract.epp, hsh.cpp, parse.cpp,
+	trn.cpp, trn_proto.h:
+	
+	-Replace BOOLEAN, TRUE, FALSE
+
+2003-09-04 15:45  brodsom
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Fix cast warning
+
+2003-09-04 01:52  arnobrinkman
+
+	* firebird2/src/dsql/: ddl.cpp, ddl_proto.h, dsql.cpp, gen.cpp,
+	gen_proto.h, make.cpp, make_proto.h, pass1.cpp, pass1_proto.h:
+	
+	Change types that were used as booleans to the real bool type
+
 2003-09-03 23:18  arnobrinkman
 
 	* firebird2/src/jrd/: cvt2.cpp, rse.cpp:
