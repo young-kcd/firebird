@@ -1530,7 +1530,7 @@ static void init(FRBRD** db_handle)
 	gds__database_cleanup(local_status,
 						  db_handle,
 						  cleanup_database,
-						  (SLONG) FALSE);
+						  NULL);
 }
 
 

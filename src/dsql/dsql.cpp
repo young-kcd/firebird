@@ -3849,7 +3849,7 @@ static DBB init(FRBRD** db_handle)
 	gds__database_cleanup(user_status,
 						  db_handle,
 						  cleanup_database,
-						  (SLONG) FALSE);
+						  NULL);
 	THREAD_ENTER;
 
 /* Determine if the database is V3 or V4 */
