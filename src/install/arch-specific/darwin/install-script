@@ -7,9 +7,9 @@
 # $3:  ????? Path to install Volume????
 # $4:  ?????
 
-FB_FW='$2/Firebird.framework'
-FB_RES='$FB_FW/Versions/A/Resources'
-INST_RES='$FB_RES/installer_files'
+FB_FW="$2/Firebird.framework"
+FB_RES="$FB_FW/Versions/A/Resources"
+INST_RES="$FB_RES/installer_files"
 
 # Install and start sysv semaphores
 if test `uname -r | sed -e 's/\.[0-9]*//g'` -lt 6; then
@@ -78,7 +78,8 @@ fi
 #ln -s Versions/Current/Resources $FB_FW/Resources
 #ln -s Versions/Current/Firebird $FB_FW/Firebird
 #ln -s A $FB_FW/Versions/Current
-chown -R firebird.firebird "$FB_FW"
+chown -R firebird "$FB_FW"
+chgrp -R firebird "$FB_FW"
 
 # set the permissions correctly
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
@@ -114,38 +115,72 @@ fi
 #fi
 
 #
-# If TCP is installed, update both services and servers databases
+# Add gds_db to the services file, if available
 #
 HUPNEEDED='n'	# Relevant to Classic only
 if [ -f /etc/services ]; then
     grep -s gds_db /etc/services  > /dev/null 2>&1
     if test $? != 0 ; then
-	HUPNEEDED='y'
-        cat /etc/services "$FB_RES/English.lproj/var/services.isc" > /etc/.interbase.temp.install.services
-	mv /etc/.interbase.temp.install.services /etc/services
-    fi
-fi
-if [ -f /etc/inetd.conf ]; then
-    if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	# Remove gds_db service. We do not want gds_inet_server to be invoked
-        echo "Installing Firebird SuperServer"
-	cat /etc/inetd.conf | grep -v gds_db > /etc/.interbase.temp.install.inetd.conf
-	mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
-	HUPNEEDED='y'
-    else
-	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
-	if test $? != 0 ; then
-	    HUPNEEDED='y'
-            cp /etc/inetd.conf /etc/inetd.conf.fbsave
-            sed -e
-			"s/\/usr\/interbase/\/Library\/Frameworks\/Firebird.framework\/Resources/g" "$FB_FW/Resources/English.lproj/var/inetd.conf.isc" > /etc/.fb.inetd.conf.entry
-	    cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
-	    mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
-            rm -f /etc/.fb.inetd.conf.entry
-	fi
+		HUPNEEDED='y'
+    	cat /etc/services > /etc/.interbase.temp.install.services
+    	echo "gds_db      3050/tcp                 # Firebird Database Protocol" >> /etc/.interbase.temp.install.services
+		cp /etc/services /etc/services.fbsave
+		mv /etc/.interbase.temp.install.services /etc/services
     fi
 fi
 
+if [ -f /etc/inetd.conf ]; then
+	cp /etc/inetd.conf /etc/inetd.conf.fbsave
+fi
+
+# Remove all traces of CS first
+if [ -f /etc/inetd.conf ]; then
+	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
+	if test $? != 0 ; then
+		cat /etc/inetd.conf | grep -v gds_db > /etc/.interbase.temp.install.inetd.conf
+		mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
+		HUPNEEDED='y'
+	fi
+fi
+
+if [ -f /etc/xinetd.d/firebird ]; then
+	rm /etc/xinetd.d/firebird
+	HUPNEEDED='y'
+fi
+
+# Install ourselves in the correct place
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	echo -n
+else
+	if [ -f /var/run/xinetd.pid -a -d /etc/xinetd.d ]; then
+		cat > /etc/xinetd.d/firebird <<EOF
+service gds_db
+{
+        disable			= no
+        socket_type     = stream
+        wait            = no
+        user            = firebird
+EOF
+		echo "server          = $FB_RES/bin/fb_inet_server" >> /etc/xinetd.d/firebird
+		cat >> /etc/xinetd.d/firebird << EOF
+        groups          = yes
+}
+EOF
+	    HUPNEEDED='y'
+	else
+		if [ -f /etc/inetd.conf ]; then
+            echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_inet_server fb_inet_server" > /etc/.fb.inetd.conf.entry
+	    	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
+	    	mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
+            rm -f /etc/.fb.inetd.conf.entry
+	    	HUPNEEDED='y'
+		fi
+	fi
+fi
+
+
+# Make sure the hosts.equiv files are set correctly
+cp /etc/hosts.equiv /etc/hosts.equiv.fbsave
 if grep -x "localhost" /etc/hosts.equiv > /dev/null; then                
 	echo -n
 else     
@@ -157,16 +192,26 @@ else
     echo "localhost.localdomain" >> /etc/hosts.equiv    
 fi    
 
+
+# Install the saved security database, if any
 if test -f /tmp/fb-security-database-update.fdb; then
 	mv -f /tmp/fb-security-database-update.fdb "$FB_RES/English.lproj/var/security.fdb"
 	rm -f /tmp/fb-security-database-update.fdb
 fi
 
 
+# Tell inetd/xinetd to reload their configuration files.
 if [ "$HUPNEEDED" = 'y' ]
 then
-    INETPID=`ps -axe | grep inetd | awk '{print $1}'`
-    kill -HUP `cat /var/run/inetd.conf`
+    #INETPID=`ps -axe | grep inetd | awk '{print $1}'`
+	if [ -f /var/run/inetd.pid ]
+	then
+    	kill -HUP `cat /var/run/inetd.pid`
+	fi
+	if [ -f /var/run/xinetd.pid ]
+	then
+    	kill -HUP `cat /var/run/xinetd.pid`
+	fi
 fi
 
 
