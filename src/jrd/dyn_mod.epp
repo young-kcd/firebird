@@ -1403,9 +1403,9 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		{
 			switch (X.RDB$SYSTEM_FLAG)
 			{
-			case frb_sysflag_check_constraint:
-			case frb_sysflag_referential_constraint:
-			case frb_sysflag_view_check:
+			case fb_sysflag_check_constraint:
+			case fb_sysflag_referential_constraint:
+			case fb_sysflag_view_check:
 				continue;
 			default:
 				break;

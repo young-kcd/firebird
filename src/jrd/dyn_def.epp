@@ -3916,7 +3916,7 @@ void DYN_define_trigger(Global*		gbl,
 				X.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 				X.RDB$SYSTEM_FLAG.NULL = FALSE;
 				/* fb_assert(!ignore_perm || ignore_perm 
-					&& X.RDB$SYSTEM_FLAG == frb_sysflag_referential_constraint); */
+					&& X.RDB$SYSTEM_FLAG == fb_sysflag_referential_constraint); */
 				break;
 
 			default:

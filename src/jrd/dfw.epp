@@ -4395,7 +4395,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 	FOR (REQUEST_HANDLE request_fmtx)
 		TRG IN RDB$TRIGGERS
 		WITH TRG.RDB$RELATION_NAME = relation->rel_name 
-		AND (TRG.RDB$SYSTEM_FLAG BT frb_sysflag_check_constraint AND frb_sysflag_view_check
+		AND (TRG.RDB$SYSTEM_FLAG BT fb_sysflag_check_constraint AND fb_sysflag_view_check
 			OR ((TRG.RDB$SYSTEM_FLAG = 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
 				AND ANY 
 			CHK IN RDB$CHECK_CONSTRAINTS CROSS

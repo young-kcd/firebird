@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2001.10.08 Claudio Valderrama: frb_sysflag enum with numbering
+ * 2001.10.08 Claudio Valderrama: fb_sysflag enum with numbering
  *   for automatically created triggers that aren't system triggers.
  */
 
@@ -92,13 +92,13 @@ const int SQL_SECCLASS_PREFIX_LEN = 4;
 /* System flag meaning - mainly Firebird. */
 /******************************************/
 
-enum frb_sysflag {
-	frb_sysflag_user = 0,
-	frb_sysflag_system = 1,
-	frb_sysflag_qli = 2,
-	frb_sysflag_check_constraint = 3,
-	frb_sysflag_referential_constraint = 4,
-	frb_sysflag_view_check = 5
+enum fb_sysflag {
+	fb_sysflag_user = 0,
+	fb_sysflag_system = 1,
+	fb_sysflag_qli = 2,
+	fb_sysflag_check_constraint = 3,
+	fb_sysflag_referential_constraint = 4,
+	fb_sysflag_view_check = 5
 };
 
 
