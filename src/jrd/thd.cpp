@@ -659,10 +659,9 @@ private:
 	Arg arg;
 public:
 	ThreadArgs(Routine r, Arg a) : routine(r), arg(a) { }
-	ThreadArgs(const ThreadArgs* t) : routine(t->routine), arg(t->arg) { }
+	ThreadArgs(const ThreadArgs& t) : routine(t.routine), arg(t.arg) { }
 	void run() {routine(arg);}
 private:
-	operator ThreadArgs();
 	ThreadArgs& operator=(const ThreadArgs&);
 };
 
@@ -670,8 +669,8 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 	fb_assert(arg);
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
 	{
-		ThreadArgs localArgs(reinterpret_cast<ThreadArgs*>(arg));
-		delete arg;
+		ThreadArgs localArgs(*reinterpret_cast<ThreadArgs*>(arg));
+		delete reinterpret_cast<ThreadArgs*>(arg);
 		localArgs.run();
 		return 0;
 	}
