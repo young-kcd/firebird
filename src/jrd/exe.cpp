@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.62 2003-05-26 15:45:29 dimitr Exp $
+$Id: exe.cpp,v 1.63 2003-05-27 15:44:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1402,7 +1402,8 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 
 	SET_TDBB(tdbb);
 	p = 0;
-	l = dsc ? MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
+	l = (dsc && !(request->req_flags & req_null)) ?
+		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
 	if (p) {
 		if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
 			status[0] = gds_arg_gds;

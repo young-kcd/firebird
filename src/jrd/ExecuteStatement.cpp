@@ -90,7 +90,8 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	v->vary_length = BUFFER_LARGE;
 	UCHAR *p = 0;
 	DSC* dsc = EVL_expr(tdbb, sql);
-	SLONG l = dsc ? MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0;
+	SLONG l = (dsc && !(tdbb->tdbb_request->req_flags & req_null)) ?
+		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0;
 	if (! p) {
 		tdbb->tdbb_status_vector[0] = gds_arg_gds;
 		tdbb->tdbb_status_vector[1] = gds_convert_error;
