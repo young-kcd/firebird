@@ -7308,7 +7308,8 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 			{
 				table_name = NULL;
 			}
-			else if (!strcmp(table_name, OLD_CONTEXT)) 
+			else if ((!strcmp(table_name, OLD_CONTEXT)) || 
+				(!strcmp(table_name, TEMP_CONTEXT))) 
 			{
 				// Only use the OLD context if it is explicit used. That means the 
 				// qualifer should hold the "OLD" alias.
