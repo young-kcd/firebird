@@ -218,7 +218,7 @@ MDLS* DLS_get_access(void)
 	if (!is_initialized) {
 		is_initialized = true;
 		Firebird::TempDirectoryList dir_list;
-		for (size_t i = 0; i < dir_list.Count(); i++) {
+		for (int i = 0; i < dir_list.Count(); i++) {
 			DLS_add_dir(dir_list[i].second, dir_list[i].first.c_str());
 		}
 	}
