@@ -19,15 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- */
-
-/*
- * Modified by: Patrick J. P. Griffin
- * Date: 11/29/2000
- * Problem:   Bug 116733 Too many generators corrupt database.
- *            DPM_gen_id was not calculating page and offset correctly.
- * Change:    Add typedef struct gpg to properly document the layout
- *            of the generator page.
+ *
+ * 2000.11.29 Patrick J. P. Griffin: fixed bug SF #116733
+ *	Add typedef struct gpg to properly document the layout of the generator page
+ * 2002.08.26 Dmitry Yemanov: minor ODS change (new indices on system tables)
  */
 
 #ifndef _JRD_ODS_H_
@@ -86,9 +81,10 @@
 
 /* Minor versions for ODS 10 */
 
-#define ODS_CURRENT10	0		/* V6.0 features. SQL delimited identifier,
-								   SQLDATE, and 64-bit exact numeric
-								   type */
+#define ODS_CURRENT10_0	0		/* V6.0 features. SQL delimited identifier,
+								   SQLDATE, and 64-bit exact numeric type */
+#define ODS_SYSINDEX10	1		/* New system indices */
+#define ODS_CURRENT10	1
 
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
@@ -99,6 +95,7 @@
 #define ODS_9_0         ENCODE_ODS (ODS_VERSION9, 0)
 #define ODS_9_1         ENCODE_ODS (ODS_VERSION9, 1)
 #define ODS_10_0        ENCODE_ODS (ODS_VERSION10, 0)
+#define ODS_10_1        ENCODE_ODS (ODS_VERSION10, 1)
 
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 4 bits are major version number */
@@ -111,7 +108,7 @@
 									   the highest */
 #define ODS_CURRENT	ODS_CURRENT10	/* the highest defined minor version
 									   number for this ODS_VERSION!! */
-#define ODS_CURRENT_VERSION	ODS_10_0	/* Current ODS version in use which includes 
+#define ODS_CURRENT_VERSION	ODS_10_1	/* Current ODS version in use which includes 
 										   both Major and Minor ODS versions! */
 
 
