@@ -4163,9 +4163,9 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	volatile BLK request, old_request;
+	volatile BLK request;
 	UCHAR verb;
-	volatile SSHORT id, old_id;
+	volatile SSHORT id;
 
 	MET_exact_name(view);
 	if (!view[0])
@@ -4183,7 +4183,8 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
  * but implementation was definitely wrong,
  * so it's commented our till the better times
  *
-		old_request = request, old_id = id;
+		volatile SSHORT old_id = id;
+		volatile BLK old_request = request;
 
 		request = (BLK) CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
 		id = drq_e_view_rels;

@@ -3519,8 +3519,6 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 	BLK temp;
 	USHORT version, n, external_flag;
 	BOOLEAN null_view, computed_field;
-	SLONG stuff[64];
-	ADS array;
 	STATUS status[ISC_STATUS_LENGTH];
 	SSHORT collation;
 	TRIG_VEC triggers[TRIGGER_MAX];
