@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31 2003-06-30 10:42:49 brodsom Exp $
+$Id: restore.epp,v 1.31.2.1 2004-02-06 07:45:34 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1903,6 +1903,7 @@ USHORT		field_number, max_segment, length;
 UCHAR		*buffer, static_buffer [1024];
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
+UCHAR blob_type = 0;
 
 tdgbl = GET_THREAD_DATA;
 
@@ -1927,7 +1928,7 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_blob_data)
 	    break;
 
 	case att_blob_type:
-	    (void) get_numeric();
+	    blob_type = (UCHAR) get_numeric();
 	    break;
 
 	default:
@@ -1951,11 +1952,13 @@ if (!field)
 blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
 blob = NULL;
 
-if (isc_create_blob (status_vector, 
+char blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, blob_type};
+ 
+if (isc_create_blob2 (status_vector, 
 	GDS_REF (tdgbl->db_handle), 
 	GDS_REF (gds_trans), 
 	 GDS_REF (blob), 
-	(ISC_QUAD*)GDS_VAL (blob_id)))
+	(ISC_QUAD*)GDS_VAL (blob_id), sizeof(blob_desc), blob_desc))
     BURP_error_redirect (status_vector, 37, 0, 0); 
     /* msg 37 gds__create_blob failed */
 

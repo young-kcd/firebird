@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.24.2.2 2003-08-19 13:02:24 skidder Exp $
+$Id: backup.epp,v 1.24.2.3 2004-02-06 07:45:34 skidder Exp $
 */
 
 #include "firebird.h"
@@ -190,7 +190,8 @@ static const struct rfr_tab_t rfr_table[] = {
 static const SCHAR blob_items[] =
 {
 	isc_info_blob_max_segment,
-	isc_info_blob_num_segments
+	isc_info_blob_num_segments,
+	isc_info_blob_type
 };
 static const SCHAR blr_items[] =
 {
