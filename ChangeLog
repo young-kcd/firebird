@@ -1,3 +1,44 @@
+2005-03-13 17:12  alexpeshkoff
+
+	* firebird2/configure.in (1.217):
+	
+	merge 1.5 install files to 2.0
+
+2005-03-13 17:04  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/:
+	classic/makeInstallImage.sh.in (1.9), classic/postinstall.sh.in
+	(1.9), classic/postuninstall.sh.in (1.2), classic/preinstall.sh.in
+	(1.5), classic/preuninstall.sh.in (1.3), classic/rpmheader.txt.in
+	(1.3), misc/changeDBAPassword.sh.in (1.3),
+	misc/changeGdsLibraryCompatibleLink.sh.in (1.1),
+	misc/createAliasDB.sh.in (1.1), misc/firebird.init.d.debian.in
+	(1.2), misc/firebird.init.d.mandrake.in (1.2),
+	misc/firebird.init.d.suse.in (1.2):
+	
+	merge 1.5 install files to 2.0
+
+2005-03-13 17:00  alexpeshkoff
+
+	* firebird2/builds/install/misc/: changeDBAPassword.sh.in (1.2),
+	fb_config.in (1.1):
+	
+	merge 1.5 install files to 2.0
+
+2005-03-13 13:17  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp (1.85):
+	
+	Fix typos found by Tom Cole
+
+2005-03-13 06:36  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.92):
+	
+	After Dmitry fixed improper loopback connection via XNET on
+	2005-03-09, I can no longer connect locally on Win32. Here's the
+	fix.
+
 2005-03-12 03:46  robocop
 
 	* firebird2/src/jrd/functions.cpp (1.23):
