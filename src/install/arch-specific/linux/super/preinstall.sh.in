@@ -215,15 +215,15 @@ checkForRPMInstall() {
 
 
 #------------------------------------------------------------------------
-#  Check for presence of editor 'ed'
+#  Check for presence of editor 'ex'
 
-checkForEd() {
-    ed <<EOS >/dev/null 2>&1
+checkForEx() {
+    ex <<EOS >/dev/null 2>&1
 EOS
     if [ $? -ne 0 ]
       then
 	echo "+------------------- ERROR -----------------------+"
-	echo "| Your system miss traditional unix editor 'ed'.  |"
+	echo "| Your system miss editor 'ex'.                   |"
 	echo "| Please install it before running setup program. |"
 	echo "+-------------------------------------------------+"
 	exit 127
@@ -238,7 +238,7 @@ EOS
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
     ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
 
-    checkForEd
+    checkForEx
     
 # Ok so any of the following packages are a problem
 # these don't work at least in the latest rpm manager, since it 
