@@ -31,17 +31,30 @@
 #ifndef CLASSES_AUTO_PTR_H
 #define CLASSES_AUTO_PTR_H
 
-template <typename Where>
+namespace Firebird {
+
+template <typename What>
+class SimpleDelete
+{
+public:
+	static void clear(What *ptr)
+	{
+		delete ptr;
+	}
+};
+	
+template <typename Where, typename Clear = SimpleDelete<Where> >
 class AutoPtr {
 private:
-	Where *ptr;
+	Where* ptr;
 public:
-	AutoPtr<Where>(Where *v) {ptr = v;}
-	operator Where* () {return ptr;}
-	Where* operator-> () {return ptr;}
-	~AutoPtr<Where>() {delete ptr;}
+	AutoPtr<Where, Clear>(Where* v) {ptr = v;}
+	operator Where*() {return ptr;}
+	operator bool() {return ptr ? true : false;}
+	operator !() {return ptr ? false : true;}
+	Where* operator->() {return ptr;}
+	~AutoPtr<Where, Clear>() {Clear::clear(ptr);}
 };
-
 
 // CVC: It turns out that AutoPtr was designed to deallocate single objects,
 // not arrays. Worse even, we need in many places to allocate dynamically an
@@ -50,22 +63,27 @@ public:
 // deallocation logic and therefore we have undefined behavior, typically a leak.
 // See execute_statement.cpp for an example. This is the reason this
 // AutoPtrFromString beast was created.
+// Alex: It should be gone after full Ñ++ code conversion
 
-template <typename Where>
-class AutoPtrFromString {
-private:
-	Where* ptr;
+template <typename What>
+class CharArrayDelete
+{
 public:
-	AutoPtrFromString<Where>(Where* v) {ptr = v;}
-	operator Where* () {return ptr;}
-	Where* operator-> () {return ptr;}
-	~AutoPtrFromString<Where>()
+	static void clear(What *ptr)
 	{
-		char* p = reinterpret_cast<char*>(ptr);
-		delete[] p;
+		delete reinterpret_cast<char*>(ptr);
 	}
 };
+	
+template <typename Where>
+class AutoPtrFromString : public AutoPtr<Where, CharArrayDelete<Where> >
+{
+public:
+	AutoPtrFromString<Where>(Where *v) 
+		: AutoPtr<Where, CharArrayDelete<Where> >(v) { }
+};
 
+} //namespace Firebird
 
 #endif // CLASSES_AUTO_PTR_H
 
