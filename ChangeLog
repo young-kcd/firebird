@@ -1,3 +1,48 @@
+2003-04-16 12:16  aafemt
+
+	* firebird2/src/: alice/alice.h, alice/tdr.cpp, burp/backup.epp,
+	burp/burp.cpp, burp/burp.h, burp/canonical.cpp, burp/restore.epp,
+	dsql/dsql.cpp, dsql/errd.cpp, dsql/metd.epp, dsql/movd.cpp,
+	dsql/preparse.cpp, dsql/user_dsql.cpp, dudley/exe.epp,
+	dudley/extract.epp, dudley/lex.cpp, gpre/gpre_meta.epp,
+	ipserver/ipc.h, ipserver/ipclient.cpp, ipserver/ipserver.cpp,
+	isql/show.epp, journal/archive.cpp, journal/gjrn.cpp,
+	journal/journal_vms.e, journal/rebuild.e, journal/server.e,
+	jrd/ExecuteStatement.cpp, jrd/ail.cpp, jrd/all_old.cpp,
+	jrd/alt.cpp, jrd/blob_filter.cpp, jrd/cch.cpp, jrd/common.h,
+	jrd/dfw.epp, jrd/dyn.epp, jrd/err.cpp, jrd/event.cpp, jrd/exe.cpp,
+	jrd/ibase.h, jrd/iberr.cpp, jrd/jrd.cpp, jrd/jrd_pwd.h,
+	jrd/map.cpp, jrd/perf.cpp, jrd/print.cpp, jrd/rdb.cpp,
+	jrd/rdbgpas.cpp, jrd/rdbint.cpp, jrd/rng.cpp, jrd/tra.cpp,
+	jrd/utl.cpp, jrd/vio.cpp, jrd/why.cpp, jrd/y-valve.cpp,
+	lock/driver.cpp, lock/lock.cpp, lock/manager.cpp, lock/print.cpp,
+	qli/all.cpp, qli/eval.cpp, qli/exe.cpp, qli/format.cpp,
+	qli/gener.cpp, qli/lex.cpp, qli/meta.epp, qli/proc.epp,
+	qli/show.epp, remote/ibconfig.cpp, remote/inet_server.cpp,
+	remote/interface.cpp, remote/mgr.cpp, remote/protocol.cpp,
+	remote/remote.h, remote/server.cpp, remote/srvr_w32.cpp,
+	utilities/cache.cpp, utilities/cmd_util.cpp,
+	utilities/create_db.cpp, utilities/dba.epp, utilities/dba_full.epp,
+	utilities/drop.cpp, utilities/gsec.cpp, utilities/gsec.h,
+	utilities/print_pool.cpp, utilities/sbc_print.cpp,
+	utilities/security.epp, utilities/srvrmgr.cpp, v5_examples/api1.c,
+	v5_examples/api10.c, v5_examples/api11.c, v5_examples/api12.c,
+	v5_examples/api13.c, v5_examples/api14.e, v5_examples/api15.c,
+	v5_examples/api16.c, v5_examples/api16t.c, v5_examples/api2.c,
+	v5_examples/api3.c, v5_examples/api4.c, v5_examples/api5.c,
+	v5_examples/api6.c, v5_examples/api7.c, v5_examples/api8.c,
+	v5_examples/api9.c, v5_examples/apifull.c, v5_examples/empbuild.c,
+	v5_examples/winevent.c, wal/driver.cpp, wal/wal.cpp,
+	wal/wal_prnt.cpp, wal/walc.cpp, wal/walw.cpp:
+	
+	Introduce of ISC_STATUS_ARRAY
+
+2003-04-16 12:10  aafemt
+
+	* firebird2/src/include/fb_types.h:
+	
+	Introduce of ISC_STATUS_ARRAY
+
 2003-04-15 17:26  skidder
 
 	* firebird2/src/install/misc/: CSchangeRunUser.sh,
