@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.57 2003-07-18 21:34:42 skidder Exp $
+$Id: lock.cpp,v 1.58 2003-07-30 15:14:14 skidder Exp $
 */
 
 #include "firebird.h"
@@ -5068,7 +5068,16 @@ static USHORT wait_for_request(
 			ret = FB_FAILURE;
 		THREAD_ENTER;
 #else
-		for (int i=(timeout - current_time) * 100; i>0; i++) {
+		for (int i=(timeout - current_time) * 100; i>0; i--) {
+			// Check for timeout every 16 cycles.
+			// This is 160 ms normally, but may be significanltly
+			// more if system is loaded heavily
+			if (!(i & 0x0F)) {
+				if (GET_TIME > timeout) {
+					ret = FB_FAILURE;
+					break;
+				}
+			}
 			ret = WaitForSingleObject(wakeup_event[0], 10);
 			if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED) {
 				ret = FB_SUCCESS;
