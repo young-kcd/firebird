@@ -556,7 +556,7 @@ ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS * status_vector,
 						  GDS_VAL(db_handle),
 						  GDS_VAL(event_id),
 						  events_length,
-						  reinterpret_cast<UCHAR*>(GDS_VAL(events)),
+						  GDS_VAL(events),
 						  GDS_VAL(ast_address),
 						  GDS_VAL((int *) ast_argument));
 }
