@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: rwlock.h,v 1.21 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: rwlock.h,v 1.22 2004-08-28 02:51:11 skidder Exp $
  *
  */
 
@@ -244,12 +244,12 @@ private:
 	RWLock(const RWLock& source);
 public:
 	RWLock() {		
-#ifdef LINUX
+#if defined(LINUX) && !defined(USE_VALGRIND)
 		pthread_rwlockattr_t attr;
 		if (pthread_rwlockattr_init(&attr))
 			system_call_failed::raise("pthread_rwlockattr_init");
-		if (pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP))
-			system_call_failed::raise("pthread_rwlockattr_setkind_np");			
+		// Do not worry if target misses support for this option
+		pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
 		if (pthread_rwlock_init(&lock, NULL))
 			system_call_failed::raise("pthread_rwlock_init");
 		if (pthread_rwlockattr_destroy(&attr))
