@@ -3422,7 +3422,9 @@ static void seek_rsb(
 		break;
 
 	default:
-		BUGCHECK(232);
+		// was: BUGCHECK(232);
+		// replaced with this error to be consistent with find()
+		ERR_post(isc_invalid_direction, 0);
 	}
 
 /* the actual offset to seek may be one less because the next time 
@@ -3530,6 +3532,8 @@ static void seek_rsb(
 		break;
 
 	default:
+		// Should never go here, because of the boundary
+		// check above, but anyway...
 		BUGCHECK(232);
 	}
 
@@ -4199,8 +4203,8 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]))
 		{
 			/* Validation error -- report result */
-			const char*	value;
-			TEXT		temp[128];
+			const char* value;
+			TEXT temp[128];
 
 			jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
 			jrd_req* request = tdbb->tdbb_request;
@@ -4210,7 +4214,8 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 								reinterpret_cast<vary*>(temp),
 								sizeof(temp)) : 0;
 
-			if (request->req_flags & req_null ||
+			if (!desc ||
+				request->req_flags & req_null ||
 				request->req_flags & req_clone_data_from_default_clause)
 			{
 				value = "*** null ***";
