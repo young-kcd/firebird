@@ -1,3 +1,93 @@
+2004-08-23 22:44  skidder
+
+	* firebird2/src/: jrd/dmp.cpp (1.27), jrd/ods.h (1.29), jrd/pag.cpp
+	(1.79), jrd/os/posix/unix.cpp (1.33), utilities/gstat/dba.epp
+	(1.45), utilities/gstat/ppg.cpp (1.20),
+	utilities/rebuild/rebuild.cpp (1.15):
+	
+	Introduce concept of ODS type to be able to distinguish between
+	Interbase databases, Firebird databases, databases created by
+	debugging builds of Firebird and private forks
+
+2004-08-23 20:45  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.111):
+	
+	Fixed a server crash I introduced recently.
+
+2004-08-23 11:55  aafemt
+
+	* firebird2/builds/win32/prepare.bat (1.32):
+	
+	Create msg.fdb from scripts instead of backup
+
+2004-08-23 11:53  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.msgs (1.15),
+	Makefile.in.refDatabases (1.22):
+	
+	Create msg.fdb from scripts instaed of backup
+
+2004-08-23 11:52  aafemt
+
+	* firebird2/src/msgs/history.sql (1.1):
+	
+	Content of messages DB's HISTORY table
+
+2004-08-23 11:49  aafemt
+
+	* firebird2/src/msgs/templates.sql (1.1):
+	
+	Content of messages DB's TEMPLATES table
+
+2004-08-23 11:47  aafemt
+
+	* firebird2/src/msgs/transmsgs.de_DE.sql (1.1):
+	
+	German translation of messages (probably spoiled)
+
+2004-08-23 11:45  aafemt
+
+	* firebird2/src/msgs/transmsgs.fr_FR.sql (1.1):
+	
+	French translation of messages (probably spoiled)
+
+2004-08-23 11:43  aafemt
+
+	* firebird2/src/msgs/locales.sql (1.1):
+	
+	Content of messages DB's LOCALES table
+
+2004-08-23 11:41  aafemt
+
+	* firebird2/src/msgs/system_errors.sql (1.1):
+	
+	Content of messages DB's SYSTEM_ERRORS table
+
+2004-08-23 11:39  aafemt
+
+	* firebird2/src/msgs/messages.sql (1.1):
+	
+	Content of messages DB's MESSAGES table
+
+2004-08-23 11:35  aafemt
+
+	* firebird2/src/msgs/symbols.sql (1.1):
+	
+	Content of messages DB's SYMBOLS table
+
+2004-08-23 11:33  aafemt
+
+	* firebird2/src/msgs/facilities.sql (1.1):
+	
+	Content of messages DB's FACILITIES table
+
+2004-08-23 11:07  aafemt
+
+	* firebird2/src/msgs/build_file.epp (1.23):
+	
+	Get ready for dialect 3
+
 2004-08-22 23:31  skidder
 
 	* firebird2/src/common/classes/: class_perf.cpp (1.14),
