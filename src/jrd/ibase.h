@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.20 2002-12-16 16:23:28 alexpeshkoff Exp $
+$Id: ibase.h,v 1.21 2002-12-16 21:19:44 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -41,6 +41,7 @@ $Id: ibase.h,v 1.20 2002-12-16 16:23:28 alexpeshkoff Exp $
 
 
 #include "fb_types.h"
+#include "y_handle.h"
 
 #define isc_version4
 
@@ -88,6 +89,25 @@ typedef unsigned __int64	ISC_UINT64;
 #else /* Not Windows */
 #define  ISC_EXPORT_VARARG
 #endif /* Windows/NT */
+
+/********************************/
+/* InterBase Handle Definitions */
+/********************************/
+
+#ifndef __y_handle_h__
+typedef void ISC_FAR* isc_att_handle;
+typedef void ISC_FAR* isc_blob_handle;
+typedef void ISC_FAR* isc_db_handle;
+typedef void ISC_FAR* isc_form_handle;
+typedef void ISC_FAR* isc_req_handle;
+typedef void ISC_FAR* isc_stmt_handle;
+typedef void ISC_FAR* isc_svc_handle;
+typedef void ISC_FAR* isc_tr_handle;
+typedef void ISC_FAR* isc_win_handle;
+#define FRBRD void
+#endif /* __y_handle_h__ */
+typedef void (ISC_FAR* isc_callback) ();
+typedef ISC_LONG isc_resv_handle;
 
 /*******************************************************************/
 /* 64 bit Integers                                                 */
@@ -362,26 +382,6 @@ typedef struct
 
 #define FB_SQLDA
 #endif
-
-/********************************/
-/* InterBase Handle Definitions */
-/********************************/
-
-#ifndef __y_handle_h__
-typedef void ISC_FAR* isc_att_handle;
-typedef void ISC_FAR* isc_blob_handle;
-typedef void ISC_FAR* isc_db_handle;
-typedef void ISC_FAR* isc_form_handle;
-typedef void ISC_FAR* isc_req_handle;
-typedef void ISC_FAR* isc_stmt_handle;
-typedef void ISC_FAR* isc_svc_handle;
-typedef void ISC_FAR* isc_tr_handle;
-typedef void ISC_FAR* isc_win_handle;
-#define FRBRD void
-#endif /* __y_handle_h__ */
-typedef void (ISC_FAR* isc_callback) ();
-typedef ISC_LONG isc_resv_handle;
-
 
 /***************************/
 /* OSRI database functions */

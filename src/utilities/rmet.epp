@@ -31,7 +31,7 @@
 #include "../utilities/rmet_proto.h"
 #include "../jrd/gds_proto.h"
 
-DATABASE DB = STATIC FILENAME "ODS.RDB";
+DATABASE DB = STATIC FILENAME "rebuild.gdb";
 
 
 ULONG *RMET_tips(TEXT * db_in)

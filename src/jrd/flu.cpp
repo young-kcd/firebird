@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.22 2002-12-16 16:22:22 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.23 2002-12-16 21:19:43 skidder Exp $
 */
 
 #include "firebird.h"
@@ -301,7 +301,7 @@ void FLU_unregister_module(MOD module)
 #ifdef VMS
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+							   CONST TEXT * name, TEXT * ib_path_env_var)
 {
 /**************************************
  *
@@ -363,7 +363,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 #if (defined OLD_AIX || defined OLD_AIX_PPC)
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
+							   CONST TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************
@@ -416,7 +416,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #ifdef HP10
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
-							   TEXT * name, TEXT * ib_path_env_var)
+							   CONST TEXT * name, TEXT * ib_path_env_var)
 {
 /**************************************
  *
@@ -641,7 +641,7 @@ static MOD search_for_module(TEXT * module, CONST TEXT * name)
 #ifdef DYNAMIC_SHARED_LIBRARIES
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
+							   CONST TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************
@@ -1207,7 +1207,7 @@ NSModule ISC_link_with_module (TEXT*);
 
 FPTR_INT ISC_lookup_entrypoint (
     TEXT        *module,
-    TEXT        *name,
+    CONST TEXT        *name,
     TEXT        *ib_path_env_var)
 {
 /**************************************
@@ -1509,7 +1509,7 @@ NSModule ISC_link_with_module (
 
 #ifndef LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
+							   CONST TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************

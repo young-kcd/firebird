@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.1 2002-12-16 16:34:01 alexpeshkoff Exp $
+$Id: why.cpp,v 1.2 2002-12-16 21:19:47 skidder Exp $
 */
 
 #include "firebird.h"
@@ -104,6 +104,10 @@ $Id: why.cpp,v 1.1 2002-12-16 16:34:01 alexpeshkoff Exp $
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef HAVE_FLOCK
+#include <sys/file.h>			/* for flock() */
 #endif
 
 #ifdef WIN_NT
@@ -6177,7 +6181,7 @@ static void save_error_string(STATUS * status)
 				/* 
 				 * This strncpy should really be a memcpy
 				 */
-				strncpy(p, reinterpret_cast<CHAR*>(*status), l);
+				strncpy(p, reinterpret_cast<char*>(*status), l);
 				*status++ = (STATUS) p;	/* string in static memory */
 				p += l;
 				len -= l;
@@ -6190,10 +6194,10 @@ static void save_error_string(STATUS * status)
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
-			l = (ULONG) strlen(reinterpret_cast<CHAR*>(*status)) + 1;
+			l = (ULONG) strlen(reinterpret_cast<char*>(*status)) + 1;
 			if (l < len)
 			{
-				strncpy(p, reinterpret_cast<CHAR*>(*status), l);
+				strncpy(p, reinterpret_cast<char*>(*status), l);
 				*status++ = (STATUS) p;	/* string in static memory */
 				p += l;
 				len -= l;

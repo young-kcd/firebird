@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.3 2002-09-24 13:01:12 eku Exp $
+#  $Id: Makefile.in.jrd,v 1.4 2002-12-16 21:19:17 skidder Exp $
 #
 ROOT=../..
 
@@ -737,7 +737,7 @@ msg.gdb:
 
 # BACKEND
 
-whybk.o:	why.c
+whybk.o:	why.cpp
 	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DBACKEND $< -o $@
 
 # Special compiles of modules to omit parts not needed for pipe access
@@ -747,7 +747,7 @@ utlp.o:		utl.cpp
 	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DPIPE_CLIENT $< -o $@
 utlp.j:		utl.o
 	$(CXX) -c $(PIC_J_CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DPIPE_CLIENT $< -o $@
-whyp.o:		why.c
+whyp.o:		why.cpp
 	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DPIPE_CLIENT $< -o $@
 whyp.j:		why.o
 	$(CC) -c $(PIC_J_CFLAGS) $(VERSION_FLAG) -DPIPE_CLIENT $< -o $@
@@ -756,9 +756,9 @@ whyp.j:		why.o
 # full backend linked in.  It omits an interface to the V3 bridge, which
 # is included with the pipe client and not needed in the pipe server.
 whyps.o:	why.o
-	-$(RM) whyps.c
-	$(CP) why.c whyps.c
-	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DPIPE_SERVER_YVALUE whyps.c
+	-$(RM) whyps.cpp
+	$(CP) why.cpp whyps.cpp
+	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DPIPE_SERVER_YVALUE whyps.cpp
 
 # SHARED BRIDGE
 

@@ -13,20 +13,20 @@ typedef blk* BLK;
 //typedef PtrWrapper<BLK> BlkPtr;
 typedef blk* BlkPtr;
 
-template<SSHORT TYPE = 0>
+template<SSHORT BLOCK_TYPE = 0>
 class pool_alloc : public blk
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
         void* operator new(size_t s, MemoryPool& p, char* file, int line)
-            { return p.allocate(s, TYPE, file, line); }
+            { return p.allocate(s, BLOCK_TYPE, file, line); }
         void* operator new[](size_t s, MemoryPool& p, char* file, int line)
-            { return p.allocate(s, TYPE, file, line); }
+            { return p.allocate(s, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p )
-            { return p.allocate(s, TYPE); }
+            { return p.allocate(s, BLOCK_TYPE); }
         void* operator new[](size_t s, MemoryPool& p)
-            { return p.allocate(s, TYPE); }
+            { return p.allocate(s, BLOCK_TYPE); }
 #endif
 
         void operator delete(void* mem, MemoryPool& p)
@@ -43,16 +43,16 @@ private:
     void* operator new[](size_t s) { return 0; }
 };
 
-template<class RPT, SSHORT TYPE = 0>
+template<class RPT, SSHORT BLOCK_TYPE = 0>
 class pool_alloc_rpt : public blk
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
         void* operator new(size_t s, MemoryPool& p, int rpt, char *file, int line)
-            { return p.allocate(s + sizeof(RPT)*rpt, TYPE, file, line); }
+            { return p.allocate(s + sizeof(RPT)*rpt, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p, int rpt)
-            { return p.allocate(s + sizeof(RPT)*rpt, TYPE); }
+            { return p.allocate(s + sizeof(RPT)*rpt, BLOCK_TYPE); }
 #endif
         void operator delete(void* mem, MemoryPool& p,int rpt)
             { if (mem) p.deallocate(mem); }
@@ -72,19 +72,19 @@ private:
     void* operator new[](size_t s) { return 0; }
 };
 
-/* template<class BASE, class RPT, UCHAR TYPE>
+/* template<class BASE, class RPT, UCHAR BLOCK_TYPE>
 class vector_rpt : public BASE
 {
     private:
         MemoryPool::allocator<RPT> rptAllocator;
         vector_rpt(int size, MemoryPool& pool)
-          : rptAllocator(pool, TYPE), rpt(size, rptAllocator) {}
+          : rptAllocator(pool, BLOCK_TYPE), rpt(size, rptAllocator) {}
 
     public:
         std::vector<RPT>    rpt;
 
-        static vector_rpt<BASE,RPT,TYPE>* allocate(int size, MemoryPool& p)
-            { return new(p) vector_rpt<BASE,RPT,TYPE>(size,p); }
+        static vector_rpt<BASE,RPT,BLOCK_TYPE>* allocate(int size, MemoryPool& p)
+            { return new(p) vector_rpt<BASE,RPT,BLOCK_TYPE>(size,p); }
 }; */
 
 #endif	/* INCLUDE_FB_BLK */

@@ -11,10 +11,9 @@
 # In the current builds only why.cpp is used, to build using whybk.cpp you
 # will need to look at what is contained in the original makefiles.
 
-WHY_Sources = why.c
-WHY_BACKEND_Sources= whybk.c
+WHY_Sources = why.cpp
 
-# why.c does the switch to determine the actual implementation to use
+# why.cpp does the switch to determine the actual implementation to use
 
 
 JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \

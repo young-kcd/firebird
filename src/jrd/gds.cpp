@@ -1869,9 +1869,6 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	now = time((time_t *)0);
 #endif
 
-	_timeb wtm;
-	_ftime(&wtm);
-
 	gds__prefix(name, LOGFILE);
 
 	oldmask = umask(0111);

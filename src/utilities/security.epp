@@ -34,7 +34,7 @@
 #include "../utilities/gsec.h"
 #include "../utilities/secur_proto.h"
 
-DATABASE DB = STATIC FILENAME "isc.gdb";
+DATABASE DB = STATIC FILENAME "isc4.gdb";
 
 #define MAX_PASSWORD_LENGTH	31
 #define SYSDBA_USER_NAME	"SYSDBA"
