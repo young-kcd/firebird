@@ -1,3 +1,16 @@
+2004-09-07 10:35  robocop
+
+	* firebird2/src/common/classes/alloc.h (1.51):
+	
+	Misc: fix typo in a comment
+
+2004-09-07 09:03  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.178):
+	
+	fixed problems with DatabseAccess verification during Create
+	Database
+
 2004-09-06 21:17  dimitr
 
 	* firebird2/src/dsql/parse.y (1.145):
