@@ -3718,22 +3718,25 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
 						 priv, parent, parent_stream);
 
-		if (csb->csb_rpt[new_stream].csb_flags & csb_view_update) {
-			// we have a view either updateable or non-updateable
-			node->nod_arg[e_erase_statement] =
-				pass1_expand_view(tdbb, csb, stream, new_stream, false);
-			node->nod_count =
-				MAX(node->nod_count, (USHORT) e_erase_statement + 1);
-		}
-
-		if (!source)
+		if (!source) {
+			if (csb->csb_rpt[new_stream].csb_flags & csb_view_update) {
+				node->nod_arg[e_erase_statement] =
+					pass1_expand_view(tdbb, csb, stream, new_stream, false);
+				node->nod_count =
+					MAX(node->nod_count, (USHORT) e_erase_statement + 1);
+			}
 			return;
+		}
 
 		// We have a updateable view. If there is a trigger on it, create a
 		// dummy erase record.
 
 		UCHAR* map = csb->csb_rpt[stream].csb_map;
 		if (trigger) {
+			// dimitr: remains of the old updatable view semantics,
+			//		   we should never get here
+			fb_assert(false);
+
 			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			node->nod_arg[e_erase_sub_erase] = view_node;
 			node->nod_count =
@@ -3742,8 +3745,9 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_arg[e_erase_statement] = 0;
 			node->nod_arg[e_erase_sub_erase] = 0;
 		}
-		else
+		else {
 			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
+		}
 
 		// So far, so good. Lookup view context in instance map to get target
 		// stream.
@@ -3786,8 +3790,6 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 	for (const vec::const_iterator end = fields->end();
 			ptr < end; ptr++, id++)
 	{
-		// dimitr: let's make computed fields updatable in views
-		// if (*ptr && !((jrd_fld*)(*ptr))->fld_computation) {
 		if (*ptr) {
 			if (remap) {
 				const jrd_fld* field = MET_get_field(relation, id);
@@ -3888,6 +3890,10 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		parent = relation;
 		parent_stream = stream;
 		if (trigger) {
+			// dimitr: remains of the old updatable view semantics,
+			//		   we should never get here
+			fb_assert(false);
+
 			node->nod_arg[e_mod_map_view] =
 				pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count =
@@ -4415,6 +4421,10 @@ static jrd_nod* pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 			}
 		}
 		else {
+			// dimitr: remains of the old updatable view semantics,
+			//		   we should never get here
+			fb_assert(false);
+
 			CMP_post_resource(&csb->csb_resources, relation,
 							  Resource::rsc_relation, relation->rel_id);
 			trigger_seen = true;
