@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.23 2003-02-20 00:24:33 tamlin Exp $
+$Id: btr.cpp,v 1.24 2003-02-20 06:57:44 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -79,7 +79,7 @@ extern double	MTH$CVT_G_D();
 
 #define MAX_LEVELS	16
 
-inline void MOVE_BYTE(const UCHAR*& x_from, UCHAR*& x_to)
+inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 {
 	*x_to++ = *x_from++;
 }
@@ -177,7 +177,7 @@ static INT64_KEY make_int64_key(SINT64, SSHORT);
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
 static void quad_put(SLONG, SCHAR *);
-static void quad_move(const UCHAR*, UCHAR*);
+static void quad_move(UCHAR*, UCHAR*);
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
 static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
@@ -4165,7 +4165,7 @@ static void quad_put(SLONG value, SCHAR* data)
 }
 
 
-static void quad_move(const UCHAR* a, UCHAR* b)
+static void quad_move(UCHAR* a, UCHAR* b)
 {
 /**************************************
  *
