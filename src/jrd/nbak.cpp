@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.cpp,v 1.43 2004-10-08 08:13:22 robocop Exp $
+ *  $Id: nbak.cpp,v 1.44 2004-10-16 12:52:09 dimitr Exp $
  *
  */
 
@@ -1085,7 +1085,10 @@ bool BackupManager::actualize_state() throw() {
 		}
 	}
 
-	const int new_backup_state = header->hdr_flags & Ods::hdr_backup_mask;
+	const int new_backup_state =
+		(database->dbb_ods_version >= ODS_VERSION11) ?
+		header->hdr_flags & Ods::hdr_backup_mask :
+		nbak_state_normal;
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
 	// our allocation table and file handle 
