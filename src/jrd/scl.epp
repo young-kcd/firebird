@@ -83,7 +83,7 @@ static SLONG compute_access(TDBB, SCL, JRD_REL, const TEXT*, const TEXT*);
 static TEXT *save_string(TEXT*, TEXT**);
 static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
 
-inline void check_and_move(UCHAR* to, UCHAR from, STR* start, ULONG* length_ptr)
+static inline void check_and_move(UCHAR* to, UCHAR from, STR* start, ULONG* length_ptr)
 {
 	if (((*start)->str_data + *length_ptr) < (to + 1))
 	{
