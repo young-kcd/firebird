@@ -1894,8 +1894,19 @@ static void define_field(
 		define_dimensions(request, field);
 	}
 
+	// dimitr:  store the final position of the vector to insert a not null
+	//			item later, if required. This is a kind of a hack, but I see
+	//			no other way to ensure that NOT NULL is properly understood
+	//			everywhere in the column constraint definition.	A better
+	//			solution would be a special class which handles all append_*
+	//			operations for BLR/DYN (we could store constraints in the
+	//			separate object and then merge them into req_blr_data), but
+	//			this is for another day.
+	const size_t end = request->req_blr_data.getCount();
+	request->append_uchar(isc_dyn_end);
+
 	// check for constraints
-	bool cnstrt_flag = false;
+	bool not_null_flag = false;
 	if (node = element->nod_arg[e_dfl_constraint])
 	{
 		const dsql_nod* const* const end_ptr = node->nod_arg + node->nod_count;
@@ -1909,6 +1920,7 @@ static void define_field(
                 switch (node1->nod_type)
 				{
 				case nod_null:
+				case nod_primary:
 					if (default_null_flag)
 					{
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
@@ -1916,25 +1928,19 @@ static void define_field(
 								  isc_arg_gds, isc_invalid_clause,
 								  isc_arg_string, "default null not null", 0);
 					}
-					request->append_uchar(isc_dyn_fld_not_null);
-					if (!cnstrt_flag) {
-						request->append_uchar(isc_dyn_end);	// For field definition  
-						cnstrt_flag = true;
+					if (!not_null_flag)
+					{
+						request->append_cstring(isc_dyn_rel_constraint,
+										string ? string->str_data : 0);
+						request->append_uchar(isc_dyn_fld_not_null);
+						request->append_uchar(isc_dyn_end);
+						not_null_flag = true;
 					}
-					request->append_cstring(isc_dyn_rel_constraint,
-									string ? string->str_data : 0);
-					request->append_uchar(isc_dyn_fld_not_null);
-					request->append_uchar(isc_dyn_end);	// For NOT NULL Constraint definition  
-					break;
-				case nod_primary:
+					if (node1->nod_type == nod_null)
+						break;
+					// nod_primary falls into
 				case nod_unique:
 				{
-					if (!cnstrt_flag)
-					{
-						request->append_uchar(isc_dyn_end);	// For field definition  
-						cnstrt_flag = true;
-					}
-
 					const char* constraint_name = string ? string->str_data : 0;
 					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 
@@ -1970,20 +1976,12 @@ static void define_field(
 				}
 				case nod_foreign:
 				{
-					if (!cnstrt_flag) {
-						request->append_uchar(isc_dyn_end);	// For field definition  
-						cnstrt_flag = true;
-					}
 					const char* constraint_name = string ? string->str_data : 0;
 					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 					foreign_key(request, node1, constraint_name);
 					break;
 				}
 				case nod_def_constraint:
-					if (!cnstrt_flag) {
-						request->append_uchar(isc_dyn_end);	// For field definition  
-						cnstrt_flag = true;
-					}
 					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
 					check_constraint(request, node1,
@@ -1994,8 +1992,10 @@ static void define_field(
 		}
 	}
 
-	if (!cnstrt_flag) {
-		request->append_uchar(isc_dyn_end);
+	if (not_null_flag)
+	{
+		// dimitr: insert a not null item right before column's isc_dyn_end
+		request->req_blr_data.insert(end, isc_dyn_fld_not_null);
 	}
 }
 
