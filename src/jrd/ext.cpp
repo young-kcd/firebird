@@ -57,26 +57,35 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
+#include "../common/classes/init.h"
 
 namespace {
-IB_FILE *ext_fopen(const char *filename, const char *mode);
+	IB_FILE *ext_fopen(const char *filename, const char *mode);
 
-class ExternalFileDirectoryList : public DirectoryList {
-	const Firebird::PathName GetConfigString(void) const {
-		return Firebird::PathName(Config::getExternalFileAccess());
+	class ExternalFileDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString(void) const {
+			return Firebird::PathName(Config::getExternalFileAccess());
+		}
+	public:
+		ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		{
+			initialize();
+		}
+	};
+	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
+
+	IB_FILE *ext_fopen(const char *filename, const char *mode) {
+		if (!iExternalFileDirectoryList().isPathInList(filename))
+			ERR_post(isc_conf_access_denied,
+				isc_arg_string, "external file",
+				isc_arg_string, ERR_cstring(filename),
+				isc_arg_end);
+
+		return ib_fopen(filename, mode);
 	}
-} iExternalFileDirectoryList;
-
-IB_FILE *ext_fopen(const char *filename, const char *mode) {
-	if (!iExternalFileDirectoryList.IsPathInList(filename))
-		ERR_post(isc_conf_access_denied,
-			isc_arg_string, "external file",
-			isc_arg_string, ERR_cstring(filename),
-			isc_arg_end);
-
-	return ib_fopen(filename, mode);
 }
-};
 
 #ifdef WIN_NT
 #define FOPEN_TYPE	"a+b"
@@ -160,7 +169,7 @@ EXT EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
 	Firebird::PathName Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
 	if (Path.length() == 0)	{	// path component not present in file_name
-		iExternalFileDirectoryList.ExpandFileName(Path, Name, 4);
+		iExternalFileDirectoryList().expandFileName(Path, Name, 4);
 		file_name = Path.c_str();
 	}
 

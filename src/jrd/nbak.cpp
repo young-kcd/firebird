@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.25 2004-03-13 01:57:52 skidder Exp $
+ *  $Id: nbak.cpp,v 1.26 2004-03-14 13:39:46 alexpeshkoff Exp $
  *
  */
 
@@ -504,7 +504,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 /********************************** CORE LOGIC ********************************/
 
 void BackupManager::generate_filename() throw() {
-	strncpy(diff_name, (char*)database->dbb_filename->str_data, sizeof(diff_name));
+	strncpy(diff_name, (char*)database->dbb_filename.c_str(), sizeof(diff_name));
 	strncat(diff_name, ".delta", sizeof(diff_name)-strlen(diff_name)-1);
 }
 

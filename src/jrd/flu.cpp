@@ -43,13 +43,14 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.45 2004-02-20 06:43:00 robocop Exp $
+$Id: flu.cpp,v 1.46 2004-03-14 13:39:45 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
+#include "../common/classes/init.h"
 
 #include "../jrd/common.h"
 #include "../jrd/flu.h"
@@ -831,6 +832,22 @@ static int condition_handler(int *sig, int *mech, int *enbl)
 }
 #endif
 
+namespace {
+	class UdfDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString(void) const {
+			return Firebird::PathName(Config::getUdfAccess());
+		}
+	public:
+		UdfDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		{
+			initialize();
+		}
+	};
+	Firebird::InitInstance<UdfDirectoryList> iUdfDirectoryList;
+}
+
 static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError)
 {
 /**************************************
@@ -847,12 +864,7 @@ static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError
 #ifndef REQUIRED_MODULE_ACCESS
 	return NULL;
 #else
-	static class UdfDirectoryList : public DirectoryList {
-		const Firebird::PathName GetConfigString(void) const {
-			return Firebird::PathName(Config::getUdfAccess());
-		}
-	} iUdfDirectoryList;
-
+	
 	Firebird::PathName path, relative;
 	Firebird::PathName absolute_module = module_name;
 
@@ -860,12 +872,12 @@ static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError
 	PathUtils::splitLastComponent(path, relative, absolute_module);
 	if (path.length() == 0 && PathUtils::isRelative(absolute_module)) {
 		relative = absolute_module;
-		iUdfDirectoryList.ExpandFileName(absolute_module, relative, REQUIRED_MODULE_ACCESS);
+		iUdfDirectoryList().expandFileName(absolute_module, relative, REQUIRED_MODULE_ACCESS);
 	}
 
 	// The module name, including directory path,
 	// must satisfy UdfAccess entry in config file.
-	if (!iUdfDirectoryList.IsPathInList(absolute_module)) {
+	if (!iUdfDirectoryList().isPathInList(absolute_module)) {
 		if (ShowAccessError) {
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "UDF library",

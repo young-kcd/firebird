@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.59 2004-03-11 05:03:58 robocop Exp $
+ * $Id: rse.cpp,v 1.60 2004-03-14 13:39:46 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3311,7 +3311,7 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
  *
  **************************************/
 	// temporary sparse bitmap of the used streams
-	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams(request->req_pool);
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams(*request->req_pool);
 
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
@@ -3424,7 +3424,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, Rsb* rsb)
 	SET_TDBB(tdbb);
 
 	// temporary sparse bitmap of the used streams
-	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams(request->req_pool);
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams(*request->req_pool);
 
 	switch (rsb->rsb_type) {
 	case rsb_indexed:

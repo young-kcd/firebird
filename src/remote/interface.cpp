@@ -36,6 +36,7 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/jrd_proto.h"
 #include <stdarg.h>
 
 #ifndef NO_NFS
@@ -4617,25 +4618,19 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
  *      settings that the server should know about.
  *
  ************************************************/
-	char cwd[MAXPATHLEN];
+	Firebird::PathName cwd;
 
 	if (node_name && !strcmp(node_name, "localhost"))
 	{
-		fb_getcwd(cwd, sizeof(cwd));
+		fb_getcwd(cwd);
 	}
-	else
-	{
-		/** Remote database. Pass Null **/
-		cwd[0] = 0;
-	}
-	const USHORT len = strlen(cwd);
 	if (*length == 0) {
 		dpb_or_spb[(*length)++] = isc_dpb_version1;
 	}
 	dpb_or_spb[(*length)++] = isc_dpb_working_directory;
-	dpb_or_spb[(*length)++] = len;
-	memcpy(&(dpb_or_spb[(*length)]), cwd, len);
-	*length += len;
+	dpb_or_spb[(*length)++] = cwd.length();
+	memcpy(&(dpb_or_spb[(*length)]), cwd.c_str(), cwd.length());
+	*length += cwd.length();
 }
 
 

@@ -38,6 +38,7 @@
  */
 
 #include "firebird.h"
+#include "fb_string.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -797,7 +798,6 @@ void DYN_define_file(GBL		gbl,
 	BLK request;
 	SLONG temp;
 	USHORT man_auto;
-	TEXT temp_f1[MAXPATHLEN], temp_f[MAXPATHLEN];
 	SSHORT id;
 
 	thread_db* tdbb = GET_THREAD_DATA;
@@ -811,14 +811,16 @@ void DYN_define_file(GBL		gbl,
 
 	request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
+	TEXT temp_f1[MAXPATHLEN];
 	GET_STRING(ptr, temp_f1);
-	ISC_expand_filename(temp_f1, 0, temp_f);
-	if (!strcmp((char*)dbb->dbb_filename->str_data, temp_f)) {
+	Firebird::PathName temp_f;
+	ISC_expand_filename(temp_f1, temp_f);
+	if (dbb->dbb_filename == temp_f) {
 		DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f
+		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f.c_str()
             DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	END_FOR;
 
@@ -826,7 +828,7 @@ void DYN_define_file(GBL		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES 
-        strcpy(X.RDB$FILE_NAME, temp_f);
+        strcpy(X.RDB$FILE_NAME, temp_f.c_str());
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
 		X.RDB$FILE_FLAGS.NULL = FALSE;
@@ -2515,7 +2517,6 @@ void DYN_define_log_file(
 	UCHAR verb;
 	BLK request;
 	SSHORT id;
-	STR db_filename;
 
 	thread_db* tdbb = GET_THREAD_DATA;
 	Database* dbb = tdbb->tdbb_database;
@@ -2553,12 +2554,11 @@ void DYN_define_log_file(
 		X.RDB$FILE_P_OFFSET.NULL = TRUE;
 
 		if (default_log) {
-			db_filename = dbb->dbb_filename;
-			if (db_filename->str_length >= sizeof(X.RDB$FILE_NAME))
+			if (dbb->dbb_filename.length() >= sizeof(X.RDB$FILE_NAME))
 				DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
-			memcpy(X.RDB$FILE_NAME, db_filename->str_data,
-				   (int) db_filename->str_length);
-			X.RDB$FILE_NAME[db_filename->str_length] = '\0';
+			memcpy(X.RDB$FILE_NAME, dbb->dbb_filename.c_str(), 
+				dbb->dbb_filename.length());
+			X.RDB$FILE_NAME[dbb->dbb_filename.length()] = '\0';
 			X.RDB$FILE_FLAGS.NULL = FALSE;
 			X.RDB$FILE_FLAGS = LOG_default | LOG_serial;
 		}

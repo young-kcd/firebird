@@ -1686,7 +1686,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	if (count != (SLONG) bcb_->bcb_count) {
 		gds__log
 			("Database: %s\n\tAllocated %ld page buffers of %ld requested",
-			 tdbb->tdbb_attachment->att_filename->str_data, bcb_->bcb_count, count);
+			 tdbb->tdbb_attachment->att_filename.c_str(), bcb_->bcb_count, count);
 	}
 
 	if (dbb->dbb_lock->lck_logical != LCK_EX) {
@@ -3243,8 +3243,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
 	tdbb->tdbb_default = dbb->dbb_bufferpool;
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) att;
-	tdbb->tdbb_attachment->att_database = dbb;
+	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) att(dbb);
 	tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if

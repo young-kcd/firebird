@@ -43,6 +43,7 @@
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
 
+#include "../common/classes/auto.h"
 #include "../jrd/execute_statement.h"
 
 WHY_DBB GetWhyAttachment(ISC_STATUS* status,
@@ -91,7 +92,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 	fb_assert(tdbb->tdbb_transaction->tra_pool);
 	// We allocated char[N]; therefore, make sure we deallocate char's and with delete[]
-	AutoPtrFromString<vary> v = reinterpret_cast<vary*> (
+	Firebird::AutoPtrFromString<vary> v = reinterpret_cast<vary*> (
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	UCHAR* p = 0;

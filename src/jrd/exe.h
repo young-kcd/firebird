@@ -585,10 +585,10 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
-		csb_fors(&p),
-		csb_invariants(&p),
-		csb_current_nodes(&p),
-		csb_rpt(&p, len)
+		csb_fors(p),
+		csb_invariants(p),
+		csb_current_nodes(p),
+		csb_rpt(p, len)
 	{}
 
 	static Csb* newCsb(MemoryPool& p, size_t len)

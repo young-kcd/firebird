@@ -1542,7 +1542,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	const USHORT segments = root->irt_rpt[id].irt_keys;
 
 	SSHORT count, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(tdbb->tdbb_default);
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->tdbb_default);
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
@@ -2311,7 +2311,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		// remove jump nodes pointing to the deleted node or node
 		// next to the deleted one.
 		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) 
-			jumpNodeList(tdbb->tdbb_default);
+			jumpNodeList(*tdbb->tdbb_default);
 
 		IndexJumpInfo jumpInfo;
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
@@ -2562,7 +2562,7 @@ static SLONG fast_load(thread_db* tdbb,
 	typedef Firebird::vector<jumpNodeList*> jumpNodeListContainer;
 	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->tdbb_default) 
 		jumpNodeListContainer(*tdbb->tdbb_default);
-	jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default));
+	jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) jumpNodeList(*tdbb->tdbb_default));
 
 	keyList* jumpKeys = FB_NEW(*tdbb->tdbb_default) keyList(*tdbb->tdbb_default);
 	jumpKeys->push_back(FB_NEW(*tdbb->tdbb_default) dynKey);
@@ -2652,7 +2652,7 @@ static SLONG fast_load(thread_db* tdbb,
 	ULONG duplicates = 0;
 	const USHORT segments = idx->idx_count;
 	SSHORT segment, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(tdbb->tdbb_default);
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->tdbb_default);
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
@@ -2979,7 +2979,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 					// Initialize jumpNodes variables for new level
 					jumpNodes->push_back(FB_NEW(*tdbb->tdbb_default) 
-						jumpNodeList(tdbb->tdbb_default));
+						jumpNodeList(*tdbb->tdbb_default));
 					jumpKeys->push_back(FB_NEW(*tdbb->tdbb_default) dynKey);
 					(*jumpKeys)[level]->keyLength = 0;
 					(*jumpKeys)[level]->keyData = 
@@ -4392,7 +4392,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		newBucket->btr_length += l;
 		
 		// Generate new jump nodes.
-		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default);
+		jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(*tdbb->tdbb_default);
 		USHORT jumpersNewSize = 0;
 		// Update jump information on scratch page, so generate_jump_nodes
 		// can deal with it.
@@ -4971,7 +4971,7 @@ static SLONG insert_node(thread_db* tdbb,
 	USHORT newPrefixTotalBySplit = 0;
 	USHORT splitJumpNodeIndex = 0;
 	IndexJumpInfo jumpInfo;
-	jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(tdbb->tdbb_default);
+	jumpNodeList* jumpNodes = FB_NEW(*tdbb->tdbb_default) jumpNodeList(*tdbb->tdbb_default);
 
 	USHORT ensureEndInsert = 0;
 	if (endOfPage) {

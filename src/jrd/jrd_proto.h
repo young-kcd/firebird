@@ -40,6 +40,9 @@
 #endif	/* __cplusplus */
 
 #ifdef __cplusplus
+
+#include "fb_string.h"
+
 extern "C" {
 #endif
 
@@ -168,7 +171,7 @@ void	JRD_wlck_unlock(struct mutx_t *);
 
 #ifdef SUPERSERVER
 void	JRD_print_all_counters(const TEXT*);
-USHORT	JRD_getdir(TEXT*, USHORT);
+bool	JRD_getdir(Firebird::PathName&);
 #endif
 
 #ifdef DEBUG_PROCS
@@ -178,6 +181,20 @@ void	JRD_print_procedure_info(thread_db*, const char*);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+inline bool fb_getcwd(Firebird::PathName& pn)
+{
+	char buffer[MAXPATHLEN];
+#if defined(WIN_NT)
+	_getcwd(buffer, MAXPATHLEN);
+#elif defined(HAVE_GETCWD)
+	getcwd(buffer, MAXPATHLEN);
+#else
+	getwd(buffer);
+#endif
+	pn = buffer;
+	return bool(buffer);
+}
 
 #endif /* JRD_JRD_PROTO_H */
 

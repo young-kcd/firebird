@@ -3574,8 +3574,7 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
 
 /* Pseudo attachment needed for lock owner identification. */
 
-		tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_permanent) att();
-		tdbb->tdbb_attachment->att_database = dbb;
+		tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_permanent) att(dbb);
 		tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
 		tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
 

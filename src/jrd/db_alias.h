@@ -22,5 +22,5 @@
 
 #ifndef DB_ALIAS_H
 #define DB_ALIAS_H
-bool ResolveDatabaseAlias(const char* alias, char* database);
+bool ResolveDatabaseAlias(const Firebird::PathName& alias, Firebird::PathName& database);
 #endif

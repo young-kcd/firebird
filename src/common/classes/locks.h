@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.11 2004-03-07 07:58:25 robocop Exp $
+ *  $Id: locks.h,v 1.12 2004-03-14 13:40:09 alexpeshkoff Exp $
  *
  */
 
@@ -179,6 +179,6 @@ public:
 
 #endif /* MULTI_THREAD */
 
-}
+} //namespace Firebird
 
 #endif // CLASSES_LOCKS_H

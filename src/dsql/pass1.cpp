@@ -174,7 +174,8 @@ public:
 	}
 };
 
-typedef Firebird::SortedArray<const char*, const char*,
+typedef Firebird::SortedArray<const char*, 
+			Firebird::EmptyStorage<const char*>, const char*, 
 			Firebird::DefaultKeyValue<const char*>,
 			CStrCmp>
 		StrArray;
@@ -1254,7 +1255,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_arg[e_exe_blk_body] = input->nod_arg[e_exe_blk_body];
 
 		{
-			StrArray names( getDefaultMemoryPool(),
+			StrArray names( *getDefaultMemoryPool(),
 				node->nod_arg[e_exe_blk_inputs] ? 
 					node->nod_arg[e_exe_blk_inputs]->nod_count : 0 +
 				node->nod_arg[e_exe_blk_outputs] ? 

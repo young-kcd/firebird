@@ -281,15 +281,8 @@ void ERR_log(int facility, int number, const TEXT* message)
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	const UCHAR* dbname = 0;
-	if (tdbb && tdbb->tdbb_attachment)
-	{
-		dbname = ((tdbb->tdbb_attachment->att_filename) ?
-			tdbb->tdbb_attachment->att_filename->str_data : NULL);
-	}
-
-	gds__log("Database: %s\n\t%s",
-		(dbname) ? reinterpret_cast<const SCHAR*>(dbname) : "",
+	gds__log("Database: %s\n\t%s", (tdbb && tdbb->tdbb_attachment) ?
+		tdbb->tdbb_attachment->att_filename.c_str() : "",
 		errmsg, 0);
 }
 #endif
@@ -496,9 +489,8 @@ void ERR_punt(void)
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		const UCHAR* dbname = ((tdbb->tdbb_attachment->att_filename) ?
-			tdbb->tdbb_attachment->att_filename->str_data : NULL);
-		gds__log_status(reinterpret_cast<const char*>(dbname),
+		gds__log_status(tdbb->tdbb_attachment->att_filename ?
+			tdbb->tdbb_attachment->att_filename.c_str() : NULL,
 			tdbb->tdbb_status_vector);
 	}
 

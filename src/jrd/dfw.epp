@@ -49,6 +49,7 @@
  */
 
 #include "firebird.h"
+#include "fb_string.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
@@ -743,7 +744,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 	USHORT section, shadow_number;
 	SLONG start, max;
 	BLK handle, handle2;
-	TEXT temp[MAXPATHLEN];
+	Firebird::PathName temp;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -792,9 +793,9 @@ static bool add_file(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 				   ** for shadows in add_shadow ()) */
 			if (work->dfw_type != dfw_add_shadow)
 			{
-				ISC_expand_filename(X.RDB$FILE_NAME, 0, temp);
+				ISC_expand_filename(X.RDB$FILE_NAME, temp);
 				MODIFY X USING
-					strcpy(X.RDB$FILE_NAME, temp);
+					strcpy(X.RDB$FILE_NAME, temp.c_str());
 				END_MODIFY;
 			}
 
@@ -879,7 +880,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, Deferred_work* work,
 	USHORT sequence, add_sequence;
 	bool finished;
 	ULONG min_page;
-	TEXT expanded_fname[1024];
+	Firebird::PathName expanded_fname;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -910,9 +911,9 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, Deferred_work* work,
 		FOR(REQUEST_HANDLE handle)
 			F IN RDB$FILES
 				WITH F.RDB$FILE_NAME EQ work->dfw_name
-            ISC_expand_filename(F.RDB$FILE_NAME, 0, expanded_fname);
+			ISC_expand_filename(F.RDB$FILE_NAME, expanded_fname);
 			MODIFY F USING
-				strcpy(F.RDB$FILE_NAME, expanded_fname);
+				strcpy(F.RDB$FILE_NAME, expanded_fname.c_str());
 			END_MODIFY;
 
 			for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
@@ -982,7 +983,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, Deferred_work* work,
 			X IN RDB$FILES CROSS
 				Y IN RDB$FILES
 				OVER RDB$SHADOW_NUMBER
-				WITH X.RDB$FILE_NAME EQ expanded_fname
+				WITH X.RDB$FILE_NAME EQ expanded_fname.c_str()
 				SORTED BY Y.RDB$FILE_START
 				/* for the first file, create a brand new shadow; for secondary
 				   files that have a starting page specified, add a file */
@@ -1592,7 +1593,7 @@ static bool create_index(	thread_db*	tdbb,
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
-					SelectivityList selectivity(tdbb->tdbb_default);
+					SelectivityList selectivity(*tdbb->tdbb_default);
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
 					IDX_statistics(tdbb, relation, id, selectivity);
 					DFW_update_index(work->dfw_name, id, selectivity);
@@ -1776,7 +1777,7 @@ static bool create_index(	thread_db*	tdbb,
 		}
 
 		fb_assert(work->dfw_id == dbb->dbb_max_idx);
-		SelectivityList selectivity(tdbb->tdbb_default);
+		SelectivityList selectivity(*tdbb->tdbb_default);
 		IDX_create_index(tdbb, relation, &idx, work->dfw_name,
 						 &work->dfw_id, transaction, selectivity);
 		fb_assert(work->dfw_id == idx.idx_id);

@@ -1843,7 +1843,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 					MsgInvariantArray* msg_invariants;
 					if (!msg->nod_arg[e_msg_invariants]) {
 						msg_invariants = FB_NEW(*tdbb->tdbb_default) 
-							MsgInvariantArray(tdbb->tdbb_default);
+							MsgInvariantArray(*tdbb->tdbb_default);
 						msg->nod_arg[e_msg_invariants] = 
 							reinterpret_cast<jrd_nod*>(msg_invariants);
 					}
@@ -1866,7 +1866,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, Csb* csb)
 
 			if (!(*var_invariants)) {
 				*var_invariants = FB_NEW(*tdbb->tdbb_default) 
-					VarInvariantArray(tdbb->tdbb_default);
+					VarInvariantArray(*tdbb->tdbb_default);
 			}
 			int pos;
 			if (!(*var_invariants)->find((*link_ptr)->nod_impure, pos))
@@ -3174,7 +3174,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				{
 					(*i_node)->nod_variables = 
 						FB_NEW(*tdbb->tdbb_default) 
-							Firebird::Array<jrd_nod*>(tdbb->tdbb_default);
+							Firebird::Array<jrd_nod*>(*tdbb->tdbb_default);
 				}
 				(*i_node)->nod_variables->add(node);
 			}

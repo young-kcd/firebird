@@ -33,7 +33,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../common/classes/auto.h"
 
 #define MAX_CALLBACKS	50
 

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.108 2004-03-12 07:00:46 skidder Exp $
+$Id: common.h,v 1.109 2004-03-14 13:39:44 alexpeshkoff Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1088,16 +1088,6 @@ inline int fb_stricmp(const char* a, const char* b)
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-inline char* fb_getcwd(char* output_buf, size_t len)
-{
-#if defined(WIN_NT)
-	return _getcwd(output_buf, len);
-#elif defined(HAVE_GETCWD)
-	return getcwd(output_buf, len);
-#else
-	return getwd(output_buf);
-#endif
-}
 
 #endif /* JRD_COMMON_H */
 

@@ -22,10 +22,10 @@ namespace Firebird
 	{
 	public:
 		vector(int len) : std::vector<T, Firebird::allocator<T> >(len) {}
-		vector(int len, MemoryPool &p, SSHORT type = 0)
+		vector(int len, MemoryPool& p, SSHORT type = 0)
 			: std::vector<T, Firebird::allocator<T> >(len, T(),
 				Firebird::allocator<T>(p, type)) {}
-		vector(MemoryPool &p, SSHORT type = 0)
+		vector(MemoryPool& p, SSHORT type = 0)
 			: std::vector<T, Firebird::allocator<T> >(
 					Firebird::allocator<T>(p, type) ) {}
 	};

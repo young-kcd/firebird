@@ -2024,7 +2024,7 @@ static USHORT distribute_equalities(LLS * org_stack, Csb* csb, USHORT base_count
  *		operation '$'.
  *
  **************************************/
-	Firebird::HalfStaticArray<LLS, OPT_STATIC_ITEMS> classes(GET_THREAD_DATA->tdbb_default);
+	Firebird::HalfStaticArray<LLS, OPT_STATIC_ITEMS> classes(*GET_THREAD_DATA->tdbb_default);
 	LLS *eq_class, stack;
 
 	DEV_BLKCHK(*org_stack, type_lls);
@@ -2901,7 +2901,7 @@ static void find_best(thread_db* tdbb,
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test.
 	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> 
-		stream_flags(tdbb->tdbb_default), conjunct_flags(tdbb->tdbb_default);
+		stream_flags(*tdbb->tdbb_default), conjunct_flags(*tdbb->tdbb_default);
 	stream_flags.grow(csb->csb_n_stream);
 	conjunct_flags.grow(opt->opt_base_conjuncts);
 	int i;
@@ -4287,10 +4287,10 @@ static Rsb* gen_retrieval(thread_db*     tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
-		Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> idx_walk_vector(tdbb->tdbb_default);
+		Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> idx_walk_vector(*tdbb->tdbb_default);
 		idx_walk_vector.grow(csb_tail->csb_indices);
 		IDX** idx_walk = idx_walk_vector.begin();
-		Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(tdbb->tdbb_default);
+		Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(*tdbb->tdbb_default);
 		idx_priority_level_vector.grow(csb_tail->csb_indices);
 		UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
@@ -4382,10 +4382,10 @@ static Rsb* gen_retrieval(thread_db*     tdbb,
 		// when necessary build the index
 
 		Firebird::HalfStaticArray<SSHORT, OPT_STATIC_ITEMS>
-			conjunct_position_vector(tdbb->tdbb_default);
+			conjunct_position_vector(*tdbb->tdbb_default);
 
 		Firebird::HalfStaticArray<Opt::opt_conjunct*, OPT_STATIC_ITEMS> 
-			matching_nodes_vector(tdbb->tdbb_default);
+			matching_nodes_vector(*tdbb->tdbb_default);
 
 		for (i = 0; i < idx_walk_count; i++)
 		{
@@ -4983,7 +4983,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
 		river1->riv_number = cnt++;
 	}
 
-	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch(tdbb->tdbb_default);
+	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch(*tdbb->tdbb_default);
 	scratch.grow(opt->opt_base_conjuncts * cnt);
 	jrd_nod** classes = scratch.begin();
 
@@ -5042,7 +5042,7 @@ static bool gen_sort_merge(thread_db* tdbb, OPT opt, LLS * org_rivers)
    to indicate that nothing could be done. */
 
 	USHORT river_cnt = 0, stream_cnt = 0;
-	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(tdbb->tdbb_default, cnt);
+	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(*tdbb->tdbb_default, cnt);
 	for (eq_class = classes; eq_class < last_class; eq_class += cnt) {
 		i = river_count(cnt, eq_class);
 		if (i > river_cnt) {
@@ -5611,11 +5611,11 @@ static jrd_nod* make_inversion(thread_db* tdbb, OPT opt, jrd_nod* boolean, USHOR
 
 	// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
 	Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> 
-		idx_walk_vector(tdbb->tdbb_default);
+		idx_walk_vector(*tdbb->tdbb_default);
 	idx_walk_vector.grow(csb_tail->csb_indices);
 	IDX** idx_walk = idx_walk_vector.begin();
 	Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> 
-		idx_priority_level_vector(tdbb->tdbb_default);
+		idx_priority_level_vector(*tdbb->tdbb_default);
 	idx_priority_level_vector.grow(csb_tail->csb_indices);
 	UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
@@ -6738,7 +6738,7 @@ static void sort_indices_by_selectivity(csb_repeat* csb_tail)
 
 	IDX* selected_idx = NULL;
 	USHORT i, j;
-	Firebird::Array<IDX> idx_sort(GET_THREAD_DATA->tdbb_default, csb_tail->csb_indices);
+	Firebird::Array<IDX> idx_sort(*GET_THREAD_DATA->tdbb_default, csb_tail->csb_indices);
 	float selectivity;
 	bool same_selectivity = false;
 
@@ -6808,7 +6808,7 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
  *    Sort indices based on the priority level.
  *
  ***************************************************/
-	Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> idx_csb(GET_THREAD_DATA->tdbb_default);
+	Firebird::HalfStaticArray<IDX*, OPT_STATIC_ITEMS> idx_csb(*GET_THREAD_DATA->tdbb_default);
 	idx_csb.grow(csb_tail->csb_indices);
 	memcpy(idx_csb.begin(), idx_walk, csb_tail->csb_indices * sizeof(IDX*));
 

@@ -390,7 +390,7 @@ static bool bad_mode(bool ignore) {
 		*status++ = isc_bad_shutdown_mode;
 		*status++ = isc_arg_string;
 		*status++ = (ISC_STATUS) (IPTR) 
-			ERR_cstring(reinterpret_cast<const TEXT*>(tdbb->tdbb_database->dbb_filename->str_data));
+			ERR_cstring(reinterpret_cast<const TEXT*>(tdbb->tdbb_database->dbb_filename.c_str()));
 		*status++ = isc_arg_end;
 	}
 	return ignore;

@@ -1397,8 +1397,8 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran) {
 		ERR_post(isc_shutinprog, isc_arg_cstring,
-				 tdbb->tdbb_attachment->att_filename->str_length,
-				 tdbb->tdbb_attachment->att_filename->str_data,
+				 tdbb->tdbb_attachment->att_filename.length(),
+				 tdbb->tdbb_attachment->att_filename.c_str(),
 				 0);
 	}
 
@@ -2643,8 +2643,7 @@ static BOOLEAN start_sweeper(thread_db* tdbb, Database* dbb)
 	LCK_release(tdbb, &temp_lock);
 
 	/* allocate space for the string and a null at the end */
-	const char* pszFilename =
-		reinterpret_cast<const char*>(tdbb->tdbb_attachment->att_filename->str_data);
+	const char* pszFilename = tdbb->tdbb_attachment->att_filename.c_str();
 
 	char* database = (char*)gds__alloc(strlen(pszFilename) + 1);
 

@@ -959,7 +959,7 @@ static void add_index_set(Database*	dbb,
 			}
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
-			SelectivityList selectivity(tdbb->tdbb_default);
+			SelectivityList selectivity(*tdbb->tdbb_default);
 			IDX_create_index(tdbb, relation, &idx, string, NULL, NULL,
 							 selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;

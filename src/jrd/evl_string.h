@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.7 2004-02-20 06:42:59 robocop Exp $
+ *  $Id: evl_string.h,v 1.8 2004-03-14 13:39:45 alexpeshkoff Exp $
  *
  */
 
@@ -112,11 +112,11 @@ static void preKmp(const CharType *x, int m, SSHORT kmpNext[]) {
 
 class StaticAllocator {
 public:
-	StaticAllocator(MemoryPool* _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {};
+	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {};
 
 	~StaticAllocator() {
 		for (int i=0; i < chunksToFree.getCount(); i++)
-			pool->deallocate(chunksToFree[i]);
+			pool.deallocate(chunksToFree[i]);
 	}
 
 	void* alloc(SSHORT count) {
@@ -127,14 +127,14 @@ public:
 			return result;
 		}
 		else {
-			result = pool->allocate(count);
+			result = pool.allocate(count);
 			chunksToFree.add(result);
 			return result;
 		}
 	}
 private:
 	Array<void*> chunksToFree;
-	MemoryPool* pool;
+	MemoryPool& pool;
 	char allocBuffer[STATIC_PATTERN_BUFFER];
 	int allocated;
 };
@@ -142,7 +142,7 @@ private:
 template <typename CharType>
 class ContainsEvaluator : private StaticAllocator {
 public:
-	ContainsEvaluator(MemoryPool* _pool, const CharType* _pattern_str, SSHORT _pattern_len) : 
+	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SSHORT _pattern_len) : 
 		StaticAllocator(_pool),	pattern_len(_pattern_len)
 	{
 		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len*sizeof(CharType)));
@@ -207,7 +207,7 @@ enum MatchType {
 template <typename CharType>
 class LikeEvaluator : private StaticAllocator {
 public:
-	LikeEvaluator(MemoryPool* _pool, const CharType* _pattern_str, 
+	LikeEvaluator(MemoryPool& _pool, const CharType* _pattern_str, 
 		SSHORT pattern_len, CharType escape_char, CharType sql_match_any, 
 		CharType sql_match_one);
 
@@ -258,7 +258,7 @@ private:
 
 template <typename CharType>
 LikeEvaluator<CharType>::LikeEvaluator(
-	MemoryPool* _pool, const CharType* _pattern_str, SSHORT pattern_len, 
+	MemoryPool& _pool, const CharType* _pattern_str, SSHORT pattern_len, 
 	CharType escape_char, CharType sql_match_any, CharType sql_match_one)
 : StaticAllocator(_pool), patternItems(_pool), branches(_pool), match_type(MATCH_NONE)
 {

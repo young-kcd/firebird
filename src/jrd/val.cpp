@@ -769,7 +769,7 @@ static RTN corrupt(thread_db* tdbb, VDR control, USHORT err_code, jrd_rel* relat
 	const TEXT* string = msg_table[err_code];
 
 	sprintf(s, "Database: %s\n\t",
-			tdbb->tdbb_attachment->att_filename->str_data);
+			tdbb->tdbb_attachment->att_filename.c_str());
 			
 	TEXT* p;
 	for (p = s; *p; p++)

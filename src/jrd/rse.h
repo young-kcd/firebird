@@ -339,7 +339,7 @@ public:
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
-	Opt(JrdMemoryPool* pool) : opt_conjuncts(pool), opt_streams(pool) {}
+	Opt(JrdMemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
 };
 typedef Opt* OPT;
 

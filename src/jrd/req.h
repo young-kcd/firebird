@@ -135,7 +135,7 @@ typedef srpb *SRPB;
 class jrd_req : public pool_alloc_rpt<rpb, type_req>
 {
 public:
-	jrd_req(JrdMemoryPool* pool) : req_fors(pool), req_invariants(pool) { };
+	jrd_req(JrdMemoryPool* pool) : req_fors(*pool), req_invariants(*pool) { };
 	ATT			req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number

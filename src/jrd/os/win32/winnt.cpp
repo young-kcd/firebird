@@ -395,7 +395,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 		}
 
-		(*dbb->dbb_decrypt) (reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data),
+		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(),
 							 spare_buffer, length, address);
 	}
 	else
@@ -608,7 +608,7 @@ bool PIO_read(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_vec
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 		}
 
-		(*dbb->dbb_decrypt) (reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data),
+		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(),
 							 spare_buffer, size, page);
 	}
 	else
@@ -821,7 +821,7 @@ bool PIO_write(jrd_file* file, Buffer_desc* bdb, PAG page, ISC_STATUS* status_ve
 	if (dbb->dbb_encrypt_key) {
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		(*dbb->dbb_encrypt) (reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data),
+		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(),
 							 page, size, spare_buffer);
 
 		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)

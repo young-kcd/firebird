@@ -458,10 +458,10 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
-				const str* str_fn = tdbb->tdbb_attachment->att_filename;
+				const Firebird::PathName& str_fn = tdbb->tdbb_attachment->att_filename;
 				STUFF(p, 2);
-				*p++ = l = str_fn->str_length;
-				for (q = reinterpret_cast<const SCHAR*>(str_fn->str_data); *q;)
+				*p++ = l = str_fn.length();
+				for (q = str_fn.c_str(); *q;)
 					*p++ = *q++;
 				ISC_get_host(site, sizeof(site));
 				*p++ = l = strlen(site);

@@ -30,6 +30,7 @@
 
 
 #include "firebird.h"
+#include "fb_string.h"
 #include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 #include "../common/classes/alloc.h"
@@ -496,9 +497,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 /* Open database and go to work */
 
-	TEXT temp_buf[MAXPATHLEN];
-	if (ResolveDatabaseAlias(name, temp_buf)) {
-		name = temp_buf;
+	Firebird::PathName temp_buf = name;
+	if (ResolveDatabaseAlias(temp_buf, temp_buf)) {
+		name = temp_buf.c_str();
 	}
 
 	dba_fil* current = db_open(name, strlen(name));

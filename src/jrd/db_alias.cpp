@@ -27,16 +27,15 @@
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"
-#include "../jrd/gds_proto.h"
 
 typedef Firebird::PathName string;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-bool ResolveDatabaseAlias(const char* alias, char* database)
+bool ResolveDatabaseAlias(const string& alias, string& database)
 {
-	TEXT alias_filename[MAXPATHLEN];
-	gds__prefix(alias_filename, const_cast<char*>(ALIAS_FILE));
+	string alias_filename;
+	Firebird::Prefix(alias_filename, ALIAS_FILE);
 	ConfigFile aliasConfig(false);
 	aliasConfig.setConfigFile(alias_filename);
 
@@ -45,17 +44,17 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 	string corrected_alias = alias;
 	std::replace(corrected_alias.begin(), corrected_alias.end(), incorrect_dir_sep, correct_dir_sep);
 	
-	string value = aliasConfig.getString(corrected_alias);
+	database = aliasConfig.getString(corrected_alias);
 
-	if (!value.empty())
+	if (!database.empty())
 	{
-		std::replace(value.begin(), value.end(), incorrect_dir_sep, correct_dir_sep);
-		if (PathUtils::isRelative(value)) {
+		std::replace(database.begin(), database.end(), incorrect_dir_sep, correct_dir_sep);
+		if (PathUtils::isRelative(database)) {
 			gds__log("Value %s configured for alias %s "
-				"is not a fully qualified path name, ignored", value.c_str(), alias);
+				"is not a fully qualified path name, ignored", 
+						database.c_str(), alias.c_str());
 			return false;
 		}
-		strcpy(database, value.c_str());
 		return true;
 	}
 

@@ -1615,8 +1615,6 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
  *
  * Functional description
  *	Find appropriate file prefix.
- *	Override conditional defines with
- *	the enviroment variable FIREBIRD if it is set.
  *
  **************************************/
 	resultString[0] = 0;
