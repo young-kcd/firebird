@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.1.2.2 2003-11-06 12:23:29 stryqx Exp $
+#   $Id: install.sh.in,v 1.1.2.3 2004-01-12 05:57:39 stryqx Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -235,8 +235,8 @@ chmod -R ug=rx,o= $InstallFirebirdPrefix/intl/fbintl
 chmod -R a=rx $InstallFirebirdPrefix/lib/*
 
 cd $InstallFirebirdPrefix/lib
-ln -sf libfbclient.so libgds.so
-ln -sf libfbclient.so.1 libgds.so.1
+ln -sf libfbembed.so libgds.so
+ln -sf libfbembed.so.1 libgds.so.1
 
 cd $InstallFirebirdPrefix/bin
 for i in `ls`
