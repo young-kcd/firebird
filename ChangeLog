@@ -1,3 +1,21 @@
+2004-02-19 09:12  dimitr
+
+	* firebird2/src/jrd/isc_version.h:
+	
+	Updated version info.
+
+2004-02-19 08:57  dimitr
+
+	* firebird2/src/jrd/isc_version.h:
+	
+	Updated version info.
+
+2004-02-19 02:41  skidder
+
+	* firebird2/src/utilities/ibmgr/ibmgr.cpp:
+	
+	Fix POSIX SS build
+
 2004-02-18 12:10  aafemt
 
 	* firebird2/src/common/classes/fb_string.cpp:
