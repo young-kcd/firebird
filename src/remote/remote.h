@@ -351,7 +351,7 @@ enum state_t
 
 
 #ifndef WIN_NT
-typdef int HANDLE;
+typedef int HANDLE;
 #endif  /* WIN_NT */
 
 

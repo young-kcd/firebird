@@ -44,47 +44,29 @@
 
 #ifdef VMS
 const P_ARCH ARCHITECTURE	= arch_vms;
-#endif
-
-#ifdef sun
-#ifdef sparc
+#elif defined(sun)
+#	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
-#elif defined(i386)
+#	elif defined(i386)
 const P_ARCH ARCHITECTURE	= arch_sun386;
-#else
+#	else
 const P_ARCH ARCHITECTURE	= arch_sun;
-#endif
-#endif
-
-#ifdef hpux
+#	endif
+#elif defined(hpux)
 const P_ARCH ARCHITECTURE	= arch_hpux;
-#endif
-
-#if (defined AIX || defined AIX_PPC)
+#elif (defined AIX || defined AIX_PPC)
 const P_ARCH ARCHITECTURE	= arch_rt;
-#endif
-
-#ifdef SCO_EV
+#elif defined(SCO_EV)
 const P_ARCH ARCHITECTURE	= arch_sco_ev;
-#endif
-
-#ifdef LINUX
+#elif defined(LINUX)
 const P_ARCH ARCHITECTURE	= arch_linux;
-#endif
-
-#ifdef FREEBSD
+#elif defined(FREEBSD)
 const P_ARCH ARCHITECTURE	= arch_freebsd;
-#endif
-
-#ifdef NETBSD
+#elif defined(NETBSD)
 const P_ARCH ARCHITECTURE	= arch_netbsd;
-#endif
-
-#ifdef DARWIN
+#elif defined(DARWIN)
 const P_ARCH ARCHITECTURE	= arch_darwin_ppc;
-#endif
-
-#ifdef I386
+#elif defined(I386)
 const P_ARCH ARCHITECTURE	= arch_intel_32;
 #endif
 

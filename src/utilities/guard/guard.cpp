@@ -15,20 +15,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.7 2004-05-17 00:21:46 brodsom Exp $
+ * $Id: guard.cpp,v 1.8 2004-05-18 00:45:46 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
-const USHORT FOREVER	= 1;
-const USHORT ONETIME	= 2;
-const USHORT IGNORE		= 3;
-const USHORT NORMAL_EXIT= 0;
-
-const char* SUPER_SERVER_BINARY	= "bin/fbserver";
-
-const char* INTERBASE_USER		= "interbase";
-const char* FIREBIRD_USER		= "firebird";
-const char* INTERBASE_USER_SHORT= "interbas";
 
 #include "firebird.h"
 #include <stdio.h>
@@ -51,6 +41,16 @@ const char* INTERBASE_USER_SHORT= "interbas";
 #include "../jrd/file_params.h"
 #include "../utilities/guard/util_proto.h"
 
+const USHORT FOREVER	= 1;
+const USHORT ONETIME	= 2;
+const USHORT IGNORE		= 3;
+const USHORT NORMAL_EXIT= 0;
+
+const char* SUPER_SERVER_BINARY	= "bin/fbserver";
+
+const char* INTERBASE_USER		= "interbase";
+const char* FIREBIRD_USER		= "firebird";
+const char* INTERBASE_USER_SHORT= "interbas";
 
 int CLIB_ROUTINE main( int argc, char **argv)
 {

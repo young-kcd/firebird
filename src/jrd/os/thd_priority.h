@@ -122,17 +122,19 @@ inline void THPS_ENTER(){
 }
 inline void THPS_EXIT(){
 }
+#ifdef WIN_NT
 inline thdd* THPS_GET(DWORD specific_key){
 	return (thdd*) TlsGetValue(specific_key);
 }
 inline void THPS_SET(DWORD specific_key, thdd* new_context){
 	TlsSetValue(specific_key, (LPVOID) new_context);
 }
+inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority){
+}
+#endif
 inline void THPS_INIT(){
 }
 inline void THPS_FINI(){
-}
-inline void THPS_ATTACH(HANDLE handle, DWORD thread_id, int priority){
 }
 inline bool THPS_BOOSTDONE() {
 	return false;

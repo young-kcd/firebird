@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.7 2004-05-17 00:28:58 brodsom Exp $
+ * $Id: ibmgr.h,v 1.8 2004-05-18 00:45:14 brodsom Exp $
  */
 
 #ifndef UTILITIES_IBMGR_H
@@ -27,12 +27,12 @@
 
 #define OUTFILE			stderr
 
-const char* SYSDBA_USER_NAME	= "SYSDBA";
-const char* FIREBIRD_USER_NAME	= "firebird";
-const char* INTERBASE_USER_NAME	= "interbase";
-const char* INTERBASE_USER_SHORT= "interbas";
-const char* SERVER_GUARDIAN		= "bin/fbguard";
-const char* USER_INFO_NAME		= "security.fdb";
+static const char* SYSDBA_USER_NAME	= "SYSDBA";
+static const char* FIREBIRD_USER_NAME	= "firebird";
+static const char* INTERBASE_USER_NAME	= "interbase";
+static const char* INTERBASE_USER_SHORT= "interbas";
+static const char* SERVER_GUARDIAN	= "bin/fbguard";
+static const char* USER_INFO_NAME	= "security.fdb";
 
 const USHORT MSG_FAC	= 18;
 const int MSG_LEN		= 128;
