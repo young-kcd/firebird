@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.15 2004-09-26 22:37:24 skidder Exp $
+#  $Id: Makefile.in.client.gpre,v 1.16 2004-10-07 20:25:40 skidder Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -39,7 +39,8 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp common/utils.cpp
+GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp common/utils.cpp \
+common/fb_exception.cpp common/classes/alloc.cpp
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
