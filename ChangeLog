@@ -1,3 +1,15 @@
+2004-12-10 06:34  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.38):
+	
+	Add description for my last change
+
+2004-12-10 06:30  skidder
+
+	* firebird2/src/burp/backup.epp (1.24.2.5):
+	
+	Backport fix for Firebird 1.0 regression
+
 2004-12-09 15:43  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.33):
