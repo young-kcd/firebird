@@ -50,13 +50,6 @@ static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
  *  the list is at all times terminated by a NULL pointer.
  */
 
-/* external function directory list */
-
-static FDLS first_fdls = { 0, { 0 } };
-#ifdef V4_THREADING
-static BOOLEAN fdls_mutex_init = FALSE;
-static MUTX_T fdls_mutex[1];
-#endif
 
 BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 {
