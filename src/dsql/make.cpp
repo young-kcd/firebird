@@ -520,6 +520,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -667,6 +668,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -843,6 +845,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -886,6 +889,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -935,6 +939,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -970,6 +975,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -1007,6 +1013,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_scale = 0;
+			desc->dsc_flags |= DSC_nullable;
 			return;
 		}
 
@@ -1187,6 +1194,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		if (null_replacement)
 		{
 			MAKE_desc(desc, null_replacement, NULL);
+			desc->dsc_flags |= DSC_nullable;
 		}
 		else
 		{
