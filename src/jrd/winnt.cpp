@@ -158,7 +158,7 @@ void PIO_close(FIL main_file)
 			MaybeCloseFile(&file->fil_force_write_desc))
 		{
 #ifdef SUPERSERVER_V2
-			for (i = 0; i < MAX_FILE_IO; i++)
+			for (int i = 0; i < MAX_FILE_IO; i++)
 			{
 				if (file->fil_io_events[i])
 				{
@@ -595,10 +595,8 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 	dbb = bdb->bdb_dbb;
 	size = dbb->dbb_page_size;
 
-	file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr);
-	if (!file) {
+	if (!(file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr)))
 		return FALSE;
-	}
 
 	desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
@@ -641,15 +639,12 @@ int PIO_read(FIL file, BDB bdb, PAG page, STATUS * status_vector)
 				return nt_error("GetOverlappedResult", file, isc_io_read_err,
 								status_vector);
 			}
-			else
 #else
-			{
-				if (ostype == OS_CHICAGO) {
-					THD_MUTEX_UNLOCK(file->fil_mutex);
-				}
-				return nt_error("ReadFile", file, isc_io_read_err,
-								status_vector);
+			if (ostype == OS_CHICAGO) {
+				THD_MUTEX_UNLOCK(file->fil_mutex);
 			}
+			return nt_error("ReadFile", file, isc_io_read_err,
+							status_vector);
 #endif
 		}
 	}
@@ -744,7 +739,7 @@ int PIO_read_ahead(DBB		dbb,
 		}
 		else if (piob && !pages) {
 			piob->piob_flags = PIOB_pending;
-			piob->piob_desc = desc;
+			piob->piob_desc = reinterpret_cast<long>(desc);
 			piob->piob_file = file;
 			piob->piob_io_length = segmented_length;
 		}
@@ -858,27 +853,28 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
 	else
 #endif
 	{
-		if (WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
-			actual_length == size);
+		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
+			actual_length == size)
+		{
 #ifdef SUPERSERVER_V2
-		else if (!GetOverlappedResult(	desc,
+			if (!GetOverlappedResult(	desc,
 										overlapped_ptr,
 										&actual_length,
 										TRUE)
 				|| actual_length != size)
-		{
-			release_io_event(file, overlapped_ptr);
-			return nt_error("GetOverlappedResult", file, isc_io_write_err,
-							status_vector);
-		}
+			{
+				release_io_event(file, overlapped_ptr);
+				return nt_error("GetOverlappedResult", file, isc_io_write_err,
+								status_vector);
+			}
 #else
-		else {
-			if (ostype == OS_CHICAGO)
+			if (ostype == OS_CHICAGO) {
 				THD_MUTEX_UNLOCK(file->fil_mutex);
+			}
 			return nt_error("WriteFile", file, isc_io_write_err,
 							status_vector);
-		}
 #endif
+		}
 	}
 
 #ifdef SUPERSERVER_V2
@@ -1067,6 +1063,9 @@ static FIL setup_file(DBB		dbb,
 		reinterpret_cast<SLONG>(INVALID_HANDLE_VALUE);
 	file->fil_length = file_length;
 	file->fil_max_page = -1;
+#ifdef SUPERSERVER_V2
+	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(SLONG));
+#endif
 	MOVE_FAST(file_name, file->fil_string, file_length);
 	file->fil_string[file_length] = 0;
 	THD_MUTEX_INIT(file->fil_mutex);

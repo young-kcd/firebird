@@ -1389,7 +1389,9 @@ void CCH_init(TDBB tdbb, ULONG number)
 	DBB dbb;
 	register BCB bcb_ = 0;
 	SLONG count;
-	//EVENT event;
+#ifdef CACHE_READER
+	EVENT event;
+#endif
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1454,7 +1456,9 @@ void CCH_init(TDBB tdbb, ULONG number)
 	event = dbb->dbb_reader_event;
 	ISC_event_init(event, 0, 0);
 	count = ISC_event_clear(event);
-	if (gds_thread_start((FPTR_INT) cache_reader, dbb, THREAD_high, 0, 0))
+	if (gds__thread_start
+		(reinterpret_cast < FPTR_INT_VOID_PTR > (cache_reader), dbb,
+		 THREAD_high, 0, 0))
 		ERR_bugcheck_msg("cannot start thread");
 
 	THREAD_EXIT;
@@ -1840,7 +1844,7 @@ void CCH_prefetch(TDBB tdbb, SLONG * pages, SSHORT count)
 	DBB dbb;
 	BCB bcb;
 	SLONG page, first_page, *end;
-	struct plb *old_pool;
+	JrdMemoryPool *old_pool;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -4786,7 +4790,7 @@ static void prefetch_epilogue(PRF prefetch, STATUS * status_vector)
 	for (i = 0; i < prefetch->prf_max_prefetch; i++) {
 		if (*next_bdb) {
 			page = (*next_bdb)->bdb_buffer;
-			if (next_buffer != page)
+			if (next_buffer != reinterpret_cast<char*>(page))
 				MOVE_FASTER(next_buffer, (SCHAR *) page,
 							(ULONG) dbb->dbb_page_size);
 			if (page->pag_checksum == CCH_checksum(*next_bdb)) {
@@ -4927,7 +4931,7 @@ static void prefetch_prologue(PRF prefetch, SLONG * start_page)
    directly to database buffers. */
 
 	if (prefetch->prf_page_count == 1 && (bdb = prefetch->prf_bdbs[0]))
-		prefetch->prf_io_buffer = bdb->bdb_buffer;
+		prefetch->prf_io_buffer = reinterpret_cast<char*>(bdb->bdb_buffer);
 	else
 		prefetch->prf_io_buffer = prefetch->prf_aligned_buffer;
 

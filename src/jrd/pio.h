@@ -141,7 +141,7 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 	int *fil_trace;				/* Trace file, if any */
 	MUTX_T fil_mutex[1];
 #ifdef SUPERSERVER_V2
-	SLONG fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
+	void* fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
 #endif
 	USHORT fil_flags;
 	USHORT fil_length;			/* Length of expanded file name */

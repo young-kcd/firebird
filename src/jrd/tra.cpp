@@ -303,7 +303,7 @@ void TRA_cleanup(TDBB tdbb)
 				if (tip->tip_next)
 					*byte |= tra_committed << shift;
 				else
-					*byte | = tra_active << shift;
+					*byte |= tra_active << shift;
 			}
 		}
 #endif
@@ -1327,7 +1327,7 @@ void TRA_set_state(TDBB tdbb, TRA transaction, SLONG number, SSHORT state)
 	else {
 		THREAD_EXIT;
 		THREAD_ENTER;
-		tip = CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
+		tip = reinterpret_cast<TIP>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
 		if (generation == tip->tip_header.pag_generation)
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 		CCH_RELEASE(tdbb, &window);
@@ -2190,7 +2190,8 @@ static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
 			journal.jrndh_nti = header->hdr_bumped_transaction;
 			journal.jrndh_oit = dbb->dbb_oldest_transaction;
 			journal.jrndh_oat = dbb->dbb_oldest_active;
-			CCH_journal_record(tdbb, window, &journal, JRNDH_SIZE, 0, 0);
+			CCH_journal_record(tdbb, window,
+				reinterpret_cast<unsigned char*>(&journal), JRNDH_SIZE, 0, 0);
 			CCH_RELEASE(tdbb, window);
 		}
 	}

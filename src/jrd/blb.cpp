@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.7 2002-04-04 07:10:40 bellardo Exp $
+$Id: blb.cpp,v 1.8 2002-04-29 15:05:11 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2053,7 +2053,7 @@ static BLP get_next_page(TDBB tdbb, BLB blob, WIN * window)
 			for (i = 0;
 				 i < dbb->dbb_prefetch_pages
 				 && sequence <= blob->blb_max_sequence;) pages[i++] =
-					vector->vcl_long[sequence++];
+					(*vector)[sequence++];
 
 			CCH_PREFETCH(tdbb, pages, i);
 		}
