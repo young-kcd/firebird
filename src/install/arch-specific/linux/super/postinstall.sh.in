@@ -360,15 +360,15 @@ updateHostsDotFile() {
     fi
 
     newLine="localhost"
-    oldLine=`grep "$newLine" $hostEquivFile`
-    replaceLineInFile "$hostEquivFile" "$newLine" "$oldLine" Silent
+    oldLine=`grep "^$newLine\$" $hostEquivFile`
+    replaceLineInFile "$hostEquivFile" "$newLine" "$oldLine"
 
     newLine="localhost.localdomain"
-    oldLine=`grep "$newLine" $hostEquivFile`
+    oldLine=`grep "^$newLine\$" $hostEquivFile`
     replaceLineInFile "$hostEquivFile" "$newLine" "$oldLine"
 
     newLine="`hostname`"
-    oldLine=`grep "$newLine" $hostEquivFile`
+    oldLine=`grep "^$newLine\$" $hostEquivFile`
     replaceLineInFile "$hostEquivFile" "$newLine" "$oldLine"
     
 }
