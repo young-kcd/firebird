@@ -22,7 +22,7 @@
  * Toni Martir: Added verbose backup records as BACKUP_VERBOSE_INTERVAL
  */
 /*
-$Id: backup.epp,v 1.4 2002-01-04 11:34:14 skywalker Exp $
+$Id: backup.epp,v 1.5 2002-06-27 10:14:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1109,7 +1109,9 @@ static void put_array( FLD field, REL relation, ISC_QUAD * blob_id)
 	STUFF(field->fld_type);
 
 	if (field->fld_type == blr_short ||
-		field->fld_type == blr_long || field->fld_type == blr_quad)
+		field->fld_type == blr_long ||
+		field->fld_type == blr_quad ||
+		field->fld_type == blr_int64)
 		STUFF(field->fld_scale);
 
 	if (field->fld_type == blr_text || field->fld_type == blr_varying)
