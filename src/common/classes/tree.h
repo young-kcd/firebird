@@ -257,7 +257,7 @@ private:
 		int level;
 		NodeList *parent;
 		NodeList *next, *prev;
-		static const Key& generate(void *sender, void *item) { 
+		static const Key& generate(const void *sender, void *item) { 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
 			return KeyOfValue::generate(item,*((ItemList *)item)->begin());

@@ -127,7 +127,9 @@ typedef srpb *SRPB;
 class jrd_req : public pool_alloc_rpt<rpb, type_req>
 {
 public:
-	jrd_req(JrdMemoryPool* pool) : req_fors(pool), req_invariants(pool) { };
+	jrd_req(JrdMemoryPool* pool) :
+                req_external(*pool), req_access(*pool), req_resources(*pool),
+                req_fors(*pool), req_invariants(*pool) { };
 	ATT			req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
@@ -136,9 +138,10 @@ public:
 	struct vec*	req_sub_requests;	// vector of sub-requests
 	struct jrd_tra* req_transaction;
 	jrd_req*		req_request;	/* next request in dbb */
-	struct acc*	req_access;		/* Access items to be checked */
+        ExternalAccessList req_external;	/* Access to procedures/triggers to be checked */ 
+	AccessItemList req_access;		/* Access items to be checked */
 	struct vec*	req_variables;	/* Vector of variables, if any */
-	class Rsc*	req_resources;	/* Resources (relations and indices) */
+	ResourceList req_resources;		/* Resources (relations and indices) */
 	struct jrd_nod*	req_message;	/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
 	struct jrd_nod *req_async_message;	/* Asynchronous message (used in scrolling) */
@@ -247,27 +250,6 @@ enum {
 };
 
 
-/* Resources */
-
-/* TMN: Had to remove this enum from bein nested in struct rsc since we now use C++,
- * but this enum is used in the C API. Can you say "legacy"? :-(
- */
-enum rsc_s {
-	rsc_relation,
-	rsc_procedure,
-	rsc_index
-};
-
-class Rsc : public pool_alloc<type_rsc>
-{
-    public:
-	class Rsc *rsc_next;		/* Next resource in request */
-	struct jrd_rel *rsc_rel;		/* Relation block */
-	struct jrd_prc *rsc_prc;		/* Relation block */
-	USHORT rsc_id;				/* Id of parent */
-	enum rsc_s rsc_type;
-};
-typedef Rsc *RSC;
 
 /* Index lock block */
 
@@ -283,20 +265,5 @@ class idl : public pool_alloc<type_idl>
 typedef idl *IDL;
 
 
-/* Access items */
-
-class acc : public pool_alloc<type_acc>
-{
-    public:
-	struct acc*	acc_next;
-	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
-	SLONG	acc_view_id;
-	const TEXT*	acc_trg_name;
-	const TEXT*	acc_prc_name;
-	const TEXT*	acc_name;
-	const TEXT*	acc_type;
-	USHORT		acc_mask;
-};
-typedef acc *ACC;
 
 #endif /* _JRD_REQ_H_ */

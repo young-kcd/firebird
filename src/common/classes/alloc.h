@@ -76,7 +76,7 @@ struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
 struct BlockInfo {
 	MemoryBlock *block;
 	size_t length;
-	static bool compare(const BlockInfo& i1, const BlockInfo& i2) {
+	static bool greaterThan(const BlockInfo& i1, const BlockInfo& i2) {
 		return (i1.length > i2.length) || 
 			(i1.length == i2.length && i1.block > i2.block);
 	}

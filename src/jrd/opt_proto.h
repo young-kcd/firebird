@@ -38,7 +38,9 @@ extern struct jrd_nod *OPT_make_dbkey(struct opt *, struct jrd_nod *,
 extern struct jrd_nod *OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
 								  struct idx *);
 extern int OPT_match_index(struct opt *, USHORT, struct idx *);
+#ifdef PC_ENGINE
 extern void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
 						  struct idx *);
+#endif
 
 #endif /* _JRD_OPT_PROTO_H_ */

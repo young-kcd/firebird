@@ -998,7 +998,7 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
 }
 
 
-
+#ifdef PC_ENGINE
 void OPT_set_index(TDBB tdbb,
 				   JRD_REQ request, RSB * rsb_ptr, JRD_REL relation, IDX * idx)
 {
@@ -1158,6 +1158,7 @@ void OPT_set_index(TDBB tdbb,
 
 	*rsb_ptr = new_rsb;
 }
+#endif
 
 
 static BOOLEAN augment_stack(JRD_NOD node, LLS * stack)
@@ -5706,12 +5707,12 @@ static JRD_NOD make_index_node(TDBB tdbb, JRD_REL relation, CSB csb, IDX * idx)
 /* check whether this is during a compile or during
    a SET INDEX operation */
 	if (csb)
-		CMP_post_resource(tdbb, &csb->csb_resources,
-						  reinterpret_cast < BLK > (relation), rsc_index,
+		CMP_post_resource(&csb->csb_resources,
+						  reinterpret_cast < BLK > (relation), Resource::rsc_index,
 						  idx->idx_id);
 	else
-		CMP_post_resource(tdbb, &tdbb->tdbb_request->req_resources,
-						  reinterpret_cast < BLK > (relation), rsc_index,
+		CMP_post_resource(&tdbb->tdbb_request->req_resources,
+						  reinterpret_cast < BLK > (relation), Resource::rsc_index,
 						  idx->idx_id);
 	node = PAR_make_node(tdbb, e_idx_length);
 	node->nod_type = nod_index;
@@ -6845,7 +6846,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
  ***************************************************/
 	IDX *idx, *selected_idx = NULL;
 	USHORT i, j;
-	Firebird::Array<IDX> idx_sort(GET_THREAD_DATA->tdbb_default, csb_tail->csb_indices);
+	Firebird::Array<IDX> idx_sort(*GET_THREAD_DATA->tdbb_default, csb_tail->csb_indices);
 	float selectivity;
 	BOOLEAN same_selectivity;
 

@@ -36,12 +36,15 @@
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
 #include "../jrd/rpb_chain.h"
+#include "../jrd/exe.h"
+
 
 /* Transaction block */
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
+	jrd_tra(MemoryPool& p) : tra_resources(p) {}
 	struct att *tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -64,7 +67,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	SLONG tra_range_id;				/* unique id of cache range within transaction */
 #endif
 	struct dfw *tra_deferred_work;	/* work deferred to commit time */
-	class Rsc *tra_resources;		/* resource existence list */
+	ResourceList tra_resources;		/* resource existence list */
 	class traRpbList *tra_rpblist;	/* active RPB's of given transaction */
 	UCHAR tra_use_count;			/* use count for safe AST delivery */
 	UCHAR tra_callback_count;		/* callback count for 'execute statement' */
@@ -212,7 +215,7 @@ class UndoItem {
 public:
 	SLONG rec_number;
 	class rec* rec_data;
-    static const SLONG& generate(void *sender, const UndoItem& item) {
+    static const SLONG& generate(const void *sender, const UndoItem& item) {
 		return item.rec_number;
     }
 	UndoItem() {

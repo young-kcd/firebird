@@ -2579,7 +2579,7 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 
 	BLK request;
 	JRD_REL relation;
-	RSC rsc;
+	Resource* rsc;
 	USHORT wait, view_count, adjusted;
 
 	SET_TDBB(tdbb);
@@ -2646,7 +2646,7 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 		adjusted = FALSE;
 		if (relation->rel_use_count == 1)
 		{
-			for (rsc = transaction->tra_resources; rsc; rsc = rsc->rsc_next)
+			for (rsc = transaction->tra_resources.begin(); rsc < transaction->tra_resources.end(); rsc++)
 			{
 				if (rsc->rsc_rel == relation)
 				{

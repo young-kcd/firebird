@@ -43,7 +43,7 @@ extern void TRA_header_write(TDBB, struct dbb *, SLONG);
 extern void TRA_init(TDBB);
 extern void TRA_invalidate(struct dbb *, ULONG);
 extern void TRA_link_transaction(TDBB, struct jrd_tra *);
-extern void TRA_post_resources(TDBB, struct jrd_tra *, class Rsc *);
+extern void TRA_post_resources(TDBB, struct jrd_tra *, ResourceList&);
 extern BOOLEAN TRA_precommited(TDBB, SLONG, SLONG);
 extern void TRA_prepare(TDBB, struct jrd_tra *, USHORT, UCHAR *);
 extern struct jrd_tra *TRA_reconnect(TDBB, UCHAR *, USHORT);

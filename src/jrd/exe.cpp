@@ -1092,7 +1092,7 @@ inline void PreModifyEraseTriggers(TDBB tdbb,
 		if (! tdbb->tdbb_transaction->tra_rpblist) {
 			tdbb->tdbb_transaction->tra_rpblist = 
 				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
-					traRpbList(tdbb->tdbb_transaction->tra_pool);
+					traRpbList(*tdbb->tdbb_transaction->tra_pool);
 		}
 		int rpblevel = tdbb->tdbb_transaction->
 						tra_rpblist->PushRpb(rpb);

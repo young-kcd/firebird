@@ -33,7 +33,7 @@ void		SCL_check_access(struct scl*, SLONG, const TEXT*,
 							const TEXT*, const TEXT*);
 void		SCL_check_procedure(struct dsc*, USHORT);
 void		SCL_check_relation(struct dsc*, USHORT);
-struct scl*	SCL_get_class(/* INOUT */ TEXT*);
+struct scl*	SCL_get_class(const TEXT*);
 int			SCL_get_mask(const TEXT*, const TEXT*);
 void		SCL_init(BOOLEAN, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, BOOLEAN);
 void		SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);

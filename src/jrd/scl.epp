@@ -438,7 +438,7 @@ void SCL_check_relation( DSC * dsc_name, USHORT mask)
 }
 
 
-SCL SCL_get_class(/* INOUT */ TEXT* string)
+SCL SCL_get_class(const TEXT* _string)
 {
 /**************************************
  *
@@ -462,17 +462,25 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 
 /* Name may be absent or terminated with NULL or blank.  Clean up name. */
 
-	if (!string)
+	if (!_string) {
 		return NULL;
+	}
+ 
+	TEXT string[255];
+	strcpy(string, _string);
+
+	if (!string) {
+		return NULL;
+	}
 
 	MET_exact_name(string);
 
-	if (!string[0])
+	if (!string[0]) 
 		return NULL;
-
+	
 	attachment = tdbb->tdbb_attachment;
 
-/* Look for the class already known */
+	// Look for the class already known 
 
 	for (s_class = attachment->att_security_classes;
 		 s_class;
@@ -483,7 +491,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 		}
 	}
 
-/* Class isn't known.  So make up a new security class block */
+	// Class isn't known.  So make up a new security class block 
 
 	s_class = FB_NEW_RPT(*dbb->dbb_permanent, strlen(string)) scl();
 	strcpy(s_class->scl_name, string);
@@ -498,7 +506,6 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
 	}
 
 	delete s_class;
-
 	return NULL;
 }
 

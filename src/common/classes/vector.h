@@ -1,32 +1,45 @@
 /*
  *	PROGRAM:	Client/Server Common Code
  *	MODULE:		vector.h
- *	DESCRIPTION:	Several fast and simple container classes
+ *	DESCRIPTION:	static array of simple elements
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * You may obtain a copy of the Licence at
+ * http://www.gnu.org/licences/lgpl.html
+ * 
+ * As a special exception this file can also be included in modules
+ * with other source code as long as that source code has been 
+ * released under an Open Source Initiative certificed licence.  
+ * More information about OSI certification can be found at: 
+ * http://www.opensource.org 
+ * 
+ * This module is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public Licence for more details.
+ * 
+ * This module was created by members of the firebird development 
+ * team.  All individual contributions remain the Copyright (C) of 
+ * those individuals and all rights are reserved.  Contributors to 
+ * this file are either listed below or can be obtained from a CVS 
+ * history command.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Created by: Nickolay Samofatov <skidder@bssys.com>
  *
- * The Original Code was created by Inprise Corporation
- * and its predecessors. Portions created by Inprise Corporation are
- * Copyright (C) Inprise Corporation.
+ *  Contributor(s):
+ * 
  *
- * Created by: Nickolay Samofatov <skidder@bssys.com>
+ *  $Id: vector.h,v 1.1.2.2 2004-09-14 22:01:42 skidder Exp $
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
  */
  
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include <assert.h>
+#include "../jrd/gdsassert.h"
 #include <string.h>
 
 namespace Firebird {
@@ -38,34 +51,34 @@ public:
 	Vector() : count(0) {}
 	void clear() { count = 0; };
 	T& operator[](int index) {
-  		assert(index >= 0 && index < count);
+  		fb_assert(index >= 0 && index < count);
   		return data[index];
 	}
 	T* begin() { return data; }
-	T* end() { return data+count; }
+	T* end() { return data + count; }
 	void insert(int index, const T& item) {
-	  assert(index >= 0 && index <= count);
-	  assert(count < Capacity);
-	  memmove(data+index+1, data+index, sizeof(T)*(count++-index));
+	  fb_assert(index >= 0 && index <= count);
+	  fb_assert(count < Capacity);
+	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
 	}
 
 	int add(const T& item) {
-		assert(count < Capacity);
+		fb_assert(count < Capacity);
 		data[count++] = item;
   		return count;
 	};
 	void remove(int index) {
-  		assert(index >= 0 && index < count);
-  		memmove(data+index, data+index+1, sizeof(T)*(--count-index));
+  		fb_assert(index >= 0 && index < count);
+  		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void shrink(int newCount) {
-		assert(newCount <= count);
+		fb_assert(newCount <= count);
 		count = newCount;
 	};
-	void join(Vector<T,Capacity>& L) {
-		assert(count + L.count <= Capacity);
-		memcpy(data + count, L.data, sizeof(T)*L.count);
+	void join(Vector<T, Capacity>& L) {
+		fb_assert(count + L.count <= Capacity);
+		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
 	int getCount() const { return count; }
@@ -79,7 +92,7 @@ protected:
 template <typename T>
 class DefaultComparator {
 public:
-	static bool compare(const T& i1, const T& i2) {
+	static bool greaterThan(const T& i1, const T& i2) {
 	    return i1 > i2;
 	}
 };
@@ -88,7 +101,7 @@ public:
 template <typename T>
 class DefaultKeyValue {
 public:
-	static const T& generate(void *sender, const T& Item) { return Item; }
+	static const T& generate(const void* sender, const T& Item) { return Item; }
 };
 
 // Fast sorted array of simple objects
@@ -99,27 +112,28 @@ template <typename Value, int Capacity, typename Key = Value,
 class SortedVector : public Vector<Value, Capacity> {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
-	bool find(const Key& item, int& pos) {
-		int highBound=this->count, lowBound=0;
+	bool find(const Key& item, int& pos) const {
+		int highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
-			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::compare(item, KeyOfValue::generate(this,this->data[temp])))
-				lowBound = temp+1;
+			const int temp = (highBound + lowBound) >> 1;
+			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
+				lowBound = temp + 1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
 		return highBound != this->count &&
-			!Cmp::compare(KeyOfValue::generate(this,this->data[lowBound]), item);
+			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;
-  	    find(KeyOfValue::generate(this,item),pos);
-		insert(pos,item);
+  	    find(KeyOfValue::generate(this, item), pos);
+		insert(pos, item);
 		return pos;
 	}
 };
 
-};
+} // namespace Firebird
 
 #endif
+

@@ -44,20 +44,18 @@ void DLL_EXPORT CMP_get_desc(TDBB, struct Csb*,
 struct idl* DLL_EXPORT CMP_get_index_lock(TDBB, struct jrd_rel*, USHORT);
 SLONG DLL_EXPORT CMP_impure(struct Csb*, USHORT);
 struct jrd_req* DLL_EXPORT CMP_make_request(TDBB, struct Csb**);
-int DLL_EXPORT CMP_post_access(TDBB,
+void CMP_post_access(TDBB,
 								  struct Csb*,
-								  /* INOUT */ TEXT*,
+								  const TEXT*,
 								  SLONG,
-								  const TEXT*,
-								  const TEXT*,
 								  USHORT,
 								  const TEXT*,
 								  const TEXT*);
-void DLL_EXPORT CMP_post_resource(TDBB, struct Rsc**, struct blk*,
-									 enum rsc_s, USHORT);
-void DLL_EXPORT CMP_release_resource(struct Rsc**, enum rsc_s,
-										USHORT);
+void DLL_EXPORT CMP_post_resource(ResourceList*, BLK, Resource::rsc_s, USHORT);
+#ifdef PC_ENGINE
+void DLL_EXPORT CMP_release_resource(ResourceList&, Resource::rsc_s, USHORT);
+#endif
 void DLL_EXPORT CMP_release(TDBB, struct jrd_req*);
 void DLL_EXPORT CMP_shutdown_database(TDBB);
-
+void CMP_verify_access(TDBB, jrd_req*);
 #endif /* JRD_CMP_PROTO_H */

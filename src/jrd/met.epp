@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.61.2.4 2004-04-10 03:28:46 skidder Exp $
+$Id: met.epp,v 1.61.2.5 2004-09-14 22:01:51 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -172,31 +172,42 @@ extern int ib_fprintf();
 
 
 // Decompile all triggers from vector
-void release_cached_triggers(TDBB tdbb, TRIG_VEC vector) 
+static void release_cached_triggers(TDBB tdbb, TRIG_VEC vector)
 {
 	trig_vec::iterator ptr, end;
-	
+
 	if (!vector) return;
-			
+
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 		ptr->release(tdbb);
 }
 
+static void inc_int_use_count(JRD_REQ req) {
+	// Increment int_use_count for all procedures in resource list of request
+	const ResourceList& list = req->req_resources;
+	int i;
+	for(list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+	    i < list.getCount(); i++)
+	{
+		const Resource& resource = list[i];
+		if (resource.rsc_type != Resource::rsc_procedure)
+			break;
+		fb_assert(resource.rsc_prc->prc_int_use_count >= 0);
+		++resource.rsc_prc->prc_int_use_count;
+	}
+}
+
+
 // Increment int_use_count for all procedures used by triggers
-void post_used_procedures(TDBB tdbb, TRIG_VEC vector) 
+static void post_used_procedures(TDBB tdbb, TRIG_VEC vector)
 {
 	trig_vec::iterator ptr, end;
-	
+
 	if (!vector) return;
-			
+
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
 		if (ptr->request && !CMP_clone_active(ptr->request)) {
-			for (RSC resource = ptr->request->req_resources; resource;
-				 resource = resource->rsc_next)
-			{
-				if (resource->rsc_type == rsc_procedure)
-					resource->rsc_prc->prc_int_use_count++;
-			}
+        		inc_int_use_count(ptr->request);
 		}
 }
 
@@ -234,20 +245,24 @@ void MET_update_partners(TDBB tdbb)
 }
 
 void adjust_dependencies(JRD_PRC procedure) {
-	if (procedure->prc_int_use_count==-1) 
+	if (procedure->prc_int_use_count==-1)
 	// Already processed
 		return;
 	procedure->prc_int_use_count=-1; // Mark as undeletable
 	if (procedure->prc_request) {
-		for (RSC resource = procedure->prc_request->req_resources; resource;
-		  resource = resource->rsc_next) 
+		// Loop over procedures from resource list of prc_request
+		const ResourceList& list = procedure->prc_request->req_resources;
+		int i;
+		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+			 i < list.getCount(); i++) 
 		{
-			if (resource->rsc_type == rsc_procedure) {
-				procedure = resource->rsc_prc;
-				if (procedure->prc_int_use_count==procedure->prc_use_count) {
-					// Mark it and all dependent procedures as undeletable
-					adjust_dependencies(procedure); 
-				}
+			const Resource& resource = list[i];
+			if (resource.rsc_type != Resource::rsc_procedure) 
+				break;
+			procedure = resource.rsc_prc;
+			if (procedure->prc_int_use_count == procedure->prc_use_count) {
+				// Mark it and all dependent procedures as undeletable
+				adjust_dependencies(procedure); 
 			}
 		}
 	}
@@ -293,14 +308,7 @@ void MET_verify_cache(TDBB tdbb) {
 			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
 			{
-				for (RSC resource = procedure->prc_request->req_resources; resource;
-					 resource = resource->rsc_next)
-				{
-					if (resource->rsc_type == rsc_procedure) {
-				  	    assert(resource->rsc_prc->prc_int_use_count >= 0);
-						resource->rsc_prc->prc_int_use_count++;				
-					}
-				}
+        			inc_int_use_count(procedure->prc_request);
 			}
 		}
 		
@@ -322,13 +330,18 @@ void MET_verify_cache(TDBB tdbb) {
 					if ( (prc = JRD_PRC(*ptr)) && prc->prc_request /*&&
 						!(prc->prc_flags & PRC_obsolete)*/ ) 
 					{
-						for (RSC resource = prc->prc_request->req_resources; resource;
-							resource = resource->rsc_next)
+						// Loop over procedures from resource list of prc_request
+						const ResourceList& list = prc->prc_request->req_resources;
+						int i;
+						for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+						     i < list.getCount(); i++) 
 						{
-							if (resource->rsc_type == rsc_procedure)
-								if (resource->rsc_prc == procedure) {
-									buf += sprintf(buf, "%d:%s\n", prc->prc_id, prc->prc_name->str_data);
-								}
+							const Resource& resource = list[i];
+							if (resource.rsc_type != Resource::rsc_procedure) 
+								break;
+							if (resource.rsc_prc == procedure) {
+								buf += sprintf(buf, "%d:%s\n", prc->prc_id, prc->prc_name->str_data);
+							}
 						}
 					}
 				}
@@ -374,45 +387,40 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 	MET_verify_cache(tdbb);
 #endif
 	dbb = tdbb->tdbb_database;
-	
+
 	relations = dbb->dbb_relations;
-	
+
 	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
 	{
 		relation = JRD_REL(*ptr);
-		if (!relation) continue;		
-		release_cached_triggers(tdbb,relation->rel_pre_store);		
+		if (!relation) continue;
+		release_cached_triggers(tdbb,relation->rel_pre_store);
 		release_cached_triggers(tdbb,relation->rel_post_store);
-		release_cached_triggers(tdbb,relation->rel_pre_erase);		
-		release_cached_triggers(tdbb,relation->rel_post_erase);		
-		release_cached_triggers(tdbb,relation->rel_pre_modify);		
-		release_cached_triggers(tdbb,relation->rel_post_modify);		
+		release_cached_triggers(tdbb,relation->rel_pre_erase);
+		release_cached_triggers(tdbb,relation->rel_post_erase);
+		release_cached_triggers(tdbb,relation->rel_pre_modify);
+		release_cached_triggers(tdbb,relation->rel_post_modify);
 	}
- 
+
 	VEC procedures;
 	JRD_PRC procedure;
 	BOOLEAN result = TRUE;
 
-	if ( (procedures = dbb->dbb_procedures) ) {	
+	if ( (procedures = dbb->dbb_procedures) ) {
 		/* Walk procedures and calculate internal dependencies */
 		for (ptr = procedures->begin(), end = procedures->end();
-			ptr < end; ptr++) 
+			ptr < end; ptr++)
 		{
 			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
-				 !(procedure->prc_flags & PRC_obsolete) ) 
+				 !(procedure->prc_flags & PRC_obsolete) )
 			{
-				for (RSC resource = procedure->prc_request->req_resources; resource;
-					 resource = resource->rsc_next)
-				{
-					if (resource->rsc_type == rsc_procedure)
-						resource->rsc_prc->prc_int_use_count++;				
-				}
+				inc_int_use_count(procedure->prc_request);
 			}
 		}
-		
+
 		/* Walk procedures again and adjust dependencies for procedures which will not be removed */
 		for (ptr = procedures->begin(), end = procedures->end();
-			ptr < end; ptr++) 
+			ptr < end; ptr++)
 		{
 			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
 				 !(procedure->prc_flags & PRC_obsolete) && 
@@ -522,12 +530,7 @@ BOOLEAN MET_procedure_in_use(TDBB tdbb, JRD_PRC proc)
 		if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
 			 !(procedure->prc_flags & PRC_obsolete) ) 
 		{
-			for (RSC resource = procedure->prc_request->req_resources; resource;
-				 resource = resource->rsc_next)
-			{
-				if (resource->rsc_type == rsc_procedure)
-					resource->rsc_prc->prc_int_use_count++;				
-			}
+			inc_int_use_count(procedure->prc_request);
 		}
 	}
 		
@@ -787,7 +790,7 @@ void MET_delete_shadow( TDBB tdbb, USHORT shadow_number)
  *
  **************************************
  *
- * Functional description 
+ * Functional description
  *      When any of the shadows in RDB$FILES for a particular
  *      shadow are deleted, stop shadowing to that file and
  *      remove all other files from the same shadow.

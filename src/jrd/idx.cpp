@@ -153,10 +153,10 @@ void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, JRD_FL
 				CMP_post_access(tdbb, csb,
 								referenced_relation->rel_security_name, 
 									(view ? view->rel_id : 0),
-								0, 0, SCL_sql_references, "TABLE",
+								SCL_sql_references, "TABLE",
 								referenced_relation->rel_name);
 				CMP_post_access(tdbb, csb,
-								referenced_field->fld_security_name, 0, 0, 0,
+								referenced_field->fld_security_name, 0,
 								SCL_sql_references, "COLUMN",
 								referenced_field->fld_name);
 			}
