@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.17 2002-11-14 08:26:20 dimitr Exp $ */
+ /* $Id: head.cpp,v 1.18 2002-11-20 10:28:07 kkuznetsov Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -67,17 +67,9 @@
 #include <vfork.h>
 #endif
 
-#ifdef sparc
-#ifdef SOLARIS
-#include <fcntl.h>
-#endif
-#endif
 
-#ifdef SOLX86
-#include <fcntl.h>
-#endif
 
-#if (defined SCO_UNIX || defined SINIXZ)
+#if (defined SCO_UNIX || defined SINIXZ ||defined SOLARIS)
 #include <fcntl.h>
 #endif
 
@@ -108,6 +100,11 @@
 	    }
 
 #define statistics	stat
+
+#if (defined __cplusplus) && (defined SOLX86) 
+extern "C" {
+#endif
+
 
 typedef void	(*PTR)();
 
@@ -207,6 +204,11 @@ static RDB	PSI_databases = NULL;
 #define DEBUGMSG(x)	/* nothing */
 #endif
 
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
+
+
 /* Macros that generates code for all of the KILLER_SIGNALS get and
    put routines. */
 
@@ -280,6 +282,11 @@ static RDB	PSI_databases = NULL;
 
 #define NULL_CHECK(ptr, code) if (*ptr) return handle_error (user_status, code)
 
+
+#if (defined __cplusplus) && (defined SOLX86)
+extern "C" {
+#endif
+
 #ifdef SHLIB_DEFS
 #define fcntl		(*_libgds_fcntl)
 #define fdopen		(*_libgds_fdopen)
@@ -399,6 +406,12 @@ extern int		putenv();
 #define GDS_DSQL_SET_CURSOR	PSI5_set_cursor_name
 #define GDS_DSQL_SQL_INFO	PSI5_sql_info
 #endif
+
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
+
+
 
 STATUS GDS_ATTACH_DATABASE (
     STATUS	*user_status,
@@ -2998,7 +3011,7 @@ GET_STRING (GET_WORD, buffer);
 RETURN_SUCCESS;
 }
 
-STATUS GDS_UNWIND (
+STATUS  GDS_UNWIND (
     STATUS	*user_status,
     RRQ		*req_handle,
     SSHORT	GDS_VAL (level))
