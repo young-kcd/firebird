@@ -1,3 +1,9 @@
+2002-12-15 14:03  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Cleanup.
+
 2002-12-14 22:43  skidder
 
 	* firebird2/src/common/classes/: tree.h, vector.h:
