@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.29 2003-04-11 07:28:47 dimitr Exp $
+$Id: btr.cpp,v 1.30 2003-05-05 14:25:40 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1486,6 +1486,7 @@ BTN BTR_next_node(BTN node, BTX * expanded_node)
 	return NEXT_NODE(node);
 }
 
+
 BTN BTR_previous_node(BTN node, BTX * expanded_node)
 {
 /**************************************
@@ -1509,6 +1510,8 @@ BTN BTR_previous_node(BTN node, BTX * expanded_node)
 
 	return node;
 }
+
+
 void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 {
 /**************************************
