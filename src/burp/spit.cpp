@@ -60,10 +60,9 @@
 #include <io.h>
 #endif
 
-#define	MODE_READ	O_RDONLY
-
-#define	MODE_WRITE	O_WRONLY | O_CREAT
-#define	MASK		0666
+static const int MODE_READ	= O_RDONLY;
+static const int MODE_WRITE	= O_WRONLY | O_CREAT;
+static const int MASK		= 0666;
 
 /* Definitions for GSPLIT */
 enum gsplit_option

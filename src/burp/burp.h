@@ -44,9 +44,11 @@
 static inline UCHAR* BURP_alloc(ULONG size){
 	return MISC_alloc_burp(size);
 }
+
 static inline UCHAR* BURP_alloc_zero(ULONG size){
 	return MISC_alloc_burp(size);
 }
+
 static inline void BURP_free(void *block){
 	MISC_free_burp(block);
 }
@@ -886,13 +888,11 @@ const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
 
 #ifndef IO_BUFFER_SIZE
 #ifdef BUFSIZ
-#define IO_BUFFER_SIZE		BUFSIZ
+const int GBAK_IO_BUFFER_SIZE = (16 * (BUFSIZ));
 #else
-#define IO_BUFFER_SIZE		1024
+const int GBAK_IO_BUFFER_SIZE = (16 * (1024));
 #endif
 #endif
-
-const int GBAK_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
 
 /* Burp will always write a backup in multiples of the following number
  * of bytes.  The initial value is the smallest which ensures that writes
@@ -913,21 +913,18 @@ inline static ULONG BURP_UP_TO_BLOCK(ULONG size)
    so that other files can see them for multivolume opens */
 
 #ifdef WIN_NT
-#define MODE_READ	GENERIC_READ
-#define MODE_WRITE	GENERIC_WRITE
+static const int MODE_READ	= GENERIC_READ;
+static const int MODE_WRITE	= GENERIC_WRITE;
+#else 
+#	ifdef VMS
+static const int MODE_READ	= O_RDONLY;
+static const int MODE_WRITE	= O_WRONLY | O_CREAT | O_TRUNC;
+#	else
+static const int MODE_READ	= O_RDONLY;
+static const int MODE_WRITE	= O_WRONLY | O_CREAT
+#	endif
 #endif
 
-#ifdef VMS
-#define MODE_WRITE	O_WRONLY | O_CREAT | O_TRUNC
-#endif
-
-#ifndef MODE_READ
-#define MODE_READ	O_RDONLY
-#endif
-
-#ifndef MODE_WRITE
-#define MODE_WRITE	O_WRONLY | O_CREAT
-#endif
 
 /* Burp Messages */
 

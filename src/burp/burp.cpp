@@ -106,17 +106,10 @@
 tgbl *gdgbl;
 #endif
 
-#ifndef FOPEN_WRITE_TYPE
-#define FOPEN_WRITE_TYPE	"w"
-#endif
+const char* FOPEN_WRITE_TYPE = "w";
+const char* FOPEN_READ_TYPE	 = "r";
 
-#ifndef FOPEN_READ_TYPE
-#define FOPEN_READ_TYPE		"r"
-#endif
-
-#ifndef OPEN_MASK
-#define OPEN_MASK		0666
-#endif
+const int OPEN_MASK	 = 0666;
 
 #ifdef VMS
 const char* SWITCH_CHAR	= "/";

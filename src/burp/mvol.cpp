@@ -67,9 +67,7 @@
 #include <unistd.h>
 #endif
 
-
-
-#define	OPEN_MASK	((int) 0666)
+const int OPEN_MASK	= 0666;
 
 #ifdef VMS
 const char* TERM_INPUT	= "sys$input";
@@ -86,14 +84,14 @@ const char* TERM_OUTPUT	= "/dev/tty";
 
 const int MAX_HEADER_SIZE	= 512;
 
-#define BITS_ON(word,bits)	((bits) == ((word)&(bits)))
+static inline int get(TGBL tdgbl){
+	return (--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255);
+}
 
-#define GET()				(--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255)
-#define GET_ATTRIBUTE(att)		((att) = (att_type) GET())
-
-#define PUT(c)				--(tdgbl->mvol_io_cnt); *(tdgbl->mvol_io_ptr)++ = (UCHAR) (c)
-#define PUT_NUMERIC(attribute, value)	put_numeric ((attribute), (value))
-#define PUT_ASCIZ(attribute, string)	put_asciz ((attribute), (string))
+static inline void put(TGBL tdgbl, ULONG c){
+	--(tdgbl->mvol_io_cnt);
+	*(tdgbl->mvol_io_ptr)++ = (UCHAR) (c);
+}
 
 #ifdef DEBUG
 static UCHAR debug_on = 0;		// able to turn this on in debug mode 
@@ -772,11 +770,11 @@ static void bad_attribute(USHORT attribute, USHORT type)
 	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
 	BURP_print(80, name, (void*) (ULONG) attribute, NULL, NULL, NULL);
 	// msg 80  don't recognize %s attribute %ld -- continuing 
-	SSHORT l = GET();
+	SSHORT l = get(tdgbl);
 	if (l)
 	{
 		do {
-			GET();
+			get(tdgbl);
 		} while (--l);
 	}
 }
@@ -817,7 +815,7 @@ static int get_text(UCHAR* text, SSHORT length)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	l = GET();
+	l = get(tdgbl);
 	length -= l;
 	l2 = l;
 
@@ -829,7 +827,7 @@ static int get_text(UCHAR* text, SSHORT length)
 	if (l)
 	{
 		do {
-			*text++ = GET();
+			*text++ = get(tdgbl);
 		} while (--l);
 	}
 
@@ -919,7 +917,7 @@ static DESC next_volume( DESC handle, int mode, bool full_buffer)
 #ifdef WIN_NT
 		if (mode == MODE_WRITE)
 #else
-		if (BITS_ON(mode, O_WRONLY) || BITS_ON(mode, O_RDWR))
+		if ( (mode = mode & O_WRONLY) || (mode = mode & O_RDWR))
 #endif // WIN_NT 
 		{
 			if (!write_header(new_desc, 0L, full_buffer))
@@ -1072,13 +1070,13 @@ static void put_asciz( SCHAR attribute, const TEXT * string)
 		l++;
 	}
 
-	PUT(attribute);
-	PUT(l);
+	put(tdgbl, attribute);
+	put(tdgbl, l);
 	if (l)
 	{
 		do
 		{
-			PUT(*string++);
+			put(tdgbl, *string++);
 		} while (--l);
 	}
 }
@@ -1096,11 +1094,11 @@ static void put_numeric( SCHAR attribute, int value)
 	ULONG vax_value = gds__vax_integer((UCHAR *) & value, sizeof(value));
 	UCHAR *p = (UCHAR *) & vax_value;
 
-	PUT(attribute);
-	PUT(sizeof(value));
+	put(tdgbl, attribute);
+	put(tdgbl, sizeof(value));
 
 	for (USHORT i = 0; i < sizeof(value); i++) {
-		PUT(*p++);
+		put(tdgbl, *p++);
 	}
 }
 
@@ -1134,10 +1132,10 @@ static bool read_header(DESC    handle,
 #endif
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 
-	if (GET_ATTRIBUTE(attribute) != rec_burp)
+	if ((attribute = (att_type) get(tdgbl)) != rec_burp)
 		BURP_error_redirect(0, 45, NULL, NULL);	// msg 45 expected backup description record 
 
-	while (GET_ATTRIBUTE(attribute) != att_end)
+	while ((attribute = (att_type) get(tdgbl)) != att_end)
 	{
 		switch (attribute)
 		{
@@ -1154,14 +1152,14 @@ static bool read_header(DESC    handle,
 			break;
 
 		case att_backup_date:
-			l = GET();
+			l = get(tdgbl);
 			if (init_flag)
 				p = tdgbl->gbl_backup_start_time;
 			else
 				p = buffer;
 			if (l)
 				do
-					*p++ = GET();
+					*p++ = get(tdgbl);
 				while (--l);
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_backup_start_time))
@@ -1175,7 +1173,7 @@ static bool read_header(DESC    handle,
 			break;
 
 		case att_backup_file:
-			l = GET();
+			l = get(tdgbl);
 			if (init_flag)
 			{
 				p = tdgbl->mvol_db_name_buffer;
@@ -1187,7 +1185,7 @@ static bool read_header(DESC    handle,
 			if (l)
 			{
 				do {
-					*p++ = GET();
+					*p++ = get(tdgbl);
 				} while (--l);
 			}
 			*p = 0;
@@ -1256,23 +1254,23 @@ static bool write_header(DESC   handle,
 	{
 		tdgbl->mvol_io_header = tdgbl->mvol_io_buffer;
 
-		PUT(rec_burp);
-		PUT_NUMERIC(att_backup_format, ATT_BACKUP_FORMAT);
+		put(tdgbl, rec_burp);
+		put_numeric(att_backup_format, ATT_BACKUP_FORMAT);
 
 		if (tdgbl->gbl_sw_compress)
-			PUT_NUMERIC(att_backup_compress, 1);
+			put_numeric(att_backup_compress, 1);
 
 		if (tdgbl->gbl_sw_transportable)
-			PUT_NUMERIC(att_backup_transportable, 1);
+			put_numeric(att_backup_transportable, 1);
 
-		PUT_NUMERIC(att_backup_blksize, backup_buffer_size);
+		put_numeric(att_backup_blksize, backup_buffer_size);
 
 		tdgbl->mvol_io_volume = tdgbl->mvol_io_ptr + 2;
-		PUT_NUMERIC(att_backup_volume, tdgbl->mvol_volume_count);
+		put_numeric(att_backup_volume, tdgbl->mvol_volume_count);
 
-		PUT_ASCIZ(att_backup_file, tdgbl->gbl_database_file_name);
-		PUT_ASCIZ(att_backup_date, tdgbl->gbl_backup_start_time);
-		PUT(att_end);
+		put_asciz(att_backup_file, tdgbl->gbl_database_file_name);
+		put_asciz(att_backup_date, tdgbl->gbl_backup_start_time);
+		put(tdgbl, att_end);
 
 		tdgbl->mvol_io_data = tdgbl->mvol_io_ptr;
 	}
