@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.10 2004-02-02 11:02:11 robocop Exp $
+ * $Id: ibmgr.cpp,v 1.11 2004-02-19 01:41:38 skidder Exp $
  */
 
 #include "firebird.h"
@@ -73,7 +73,7 @@
 
 static void copy_str_upper(TEXT *, TEXT *);
 static bool get_line(int *, SCHAR **, TEXT *);
-static SSHORT get_switches(int, TEXT **, IN_SW_TAB, IBMGR_DATA *, bool *);
+static SSHORT get_switches(int, TEXT **, in_sw_tab_t*, IBMGR_DATA *, bool *);
 static SSHORT parse_cmd_line(int, TEXT **);
 static void print_config(void);
 static void print_help(void);
@@ -294,7 +294,7 @@ if (sw_service_gsec)
 static SSHORT get_switches(
 						   int argc,
 						   TEXT ** argv,
-						   IN_SW_TAB in_sw_table,
+						   in_sw_tab_t* in_sw_table,
 						   IBMGR_DATA * ibmgr_data, bool * quitflag)
 {
 /**************************************
@@ -310,8 +310,9 @@ static SSHORT get_switches(
  *		 ERR_OTHER  non-syntax error.
  *
  **************************************/
-	TEXT *p, *q, *string, msg[MSG_LEN];
-	IN_SW_TAB in_sw_tab;
+	TEXT *p, *string, msg[MSG_LEN];
+	const TEXT *q;
+	in_sw_tab_t* in_sw_tab;
 	USHORT in_sw;
 	USHORT last_sw;
 	bool sw_version = false;
@@ -834,7 +835,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv)
 	ibmgr_data.par_entered = 0;
 
 	ret =
-		get_switches(argc, argv, (IN_SW_TAB ) &ibmgr_in_sw_table, &ibmgr_data, &quitflag);
+		get_switches(argc, argv, (in_sw_tab_t*) &ibmgr_in_sw_table, &ibmgr_data, &quitflag);
 	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
