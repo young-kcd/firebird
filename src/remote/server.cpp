@@ -2944,8 +2944,8 @@ bool process_packet(rem_port* port,
 	// BRS: This is the same as REM_set_thread_data but it not set status vector to null
 	trdb* tdrdb = &thd_context;
 	tdrdb->trdb_status_vector = port->port_status_vector;
-	tdrdb->putSpecific();
 	tdrdb->thdd_type = THDD_TYPE_TRDB;
+	tdrdb->putSpecific();
 
 	try {
 		P_OP op = receive->p_operation;
