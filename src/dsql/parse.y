@@ -2081,8 +2081,8 @@ alter_column_name  : keyword_or_column
    in the previous versions */
 
 keyword_or_column	: valid_symbol_name
+		| ADMIN					/* added in IB 5.0 */
 		| COLUMN				/* added in IB 6.0 */
-		| TYPE
 		| EXTRACT
 		| YEAR
 		| MONTH
@@ -2097,8 +2097,12 @@ keyword_or_column	: valid_symbol_name
 		| CURRENT_TIMESTAMP
 		| CURRENT_USER			/* added in FB 1.0 */
 		| CURRENT_ROLE
+		| RECREATE
 		| CURRENT_CONNECTION	/* added in FB 1.5 */
 		| CURRENT_TRANSACTION
+		| BIGINT
+		| CASE
+		| RELEASE
 		| ROW_COUNT
 		| SAVEPOINT
 		| OPEN					/* added in FB 2.0 */
@@ -4142,7 +4146,13 @@ valid_symbol_name	: SYMBOL
 /* list of non-reserved words */
 
 non_reserved_word :
-	KW_BREAK				/* added in FB 1.0 */
+	ACTION					/* added in IB 5.0 */
+	| CASCADE
+	| FREE_IT
+	| RESTRICT
+	| ROLE
+	| TYPE					/* added in IB 6.0 */
+	| KW_BREAK				/* added in FB 1.0 */
 	| KW_DESCRIPTOR
 	| SUBSTRING
 	| COALESCE				/* added in FB 1.5 */
