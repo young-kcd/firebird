@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.17.2.1 2003-09-15 08:06:30 dimitr Exp $
+//	$Id: tdr.cpp,v 1.17.2.2 2003-10-16 13:12:07 alexpeshkoff Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -793,7 +793,7 @@ static void reattach_database(TDR trans)
 		*p++ = ':';
 		for (q = trans->tdr_fullpath->str_data; *q;)
 			*p++ = *q++;
-		*q = 0;
+		*p = 0;
 		if (TDR_attach_database
 			(status_vector, trans,
 			 reinterpret_cast < char *>(buffer))) return;
@@ -811,7 +811,7 @@ static void reattach_database(TDR trans)
 		*p++ = ':';
 		for (q = (UCHAR *) trans->tdr_filename; *q;)
 			*p++ = *q++;
-		*q = 0;
+		*p = 0;
 		if (TDR_attach_database
 			(status_vector, trans,
 			 reinterpret_cast < char *>(buffer))) return;
