@@ -756,9 +756,10 @@ typedef hdr_split* HDR_SPLIT;
    to 18. Otherwise we will not be able to join the gbk files v5.x */
 
 const size_t HDR_SPLIT_SIZE	= sizeof(hdr_split);
-static const char* HDR_SPLIT_TAG5	= "InterBase/gsplit, ";
-static const char* HDR_SPLIT_TAG6	= "InterBase/gbak,   ";
-static const char* HDR_SPLIT_TAG	= HDR_SPLIT_TAG6;
+static const char HDR_SPLIT_TAG5[]	= "InterBase/gsplit, ";
+static const char HDR_SPLIT_TAG6[]	= "InterBase/gbak,   ";
+// CVC: Don't convert to const char* or you will have to fix the sizeof()'s!!!
+#define HDR_SPLIT_TAG HDR_SPLIT_TAG6
 const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes 
 
 // Global switches and data 
