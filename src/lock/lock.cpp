@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.56.2.3 2003-08-11 21:07:34 skidder Exp $
+$Id: lock.cpp,v 1.56.2.4 2003-09-28 20:50:04 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1486,7 +1486,7 @@ static void acquire( PTR owner_offset)
   we have only one address space and we do not need to adjust our
   mapping because another process has changed size of the lock table.
 */
-#if !defined SUPERSERVER && defined HAVE_MMAP
+#if !defined SUPERSERVER && (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY status_vector;
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
@@ -1611,12 +1611,8 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
   mainly because it is not tested and is not really needed as long SS builds
   do not use lock manager for page locks. On all other platforms we grow
   lock table automatically.
-  Do not remap file for Win32 CS because we use mapped objects for 
-  synchronization and there is no (documented) way to have multiple 
-  coherent memory mappings of different size on Windows to apply
-  ISC_map_object approach
 */
-#if (defined WIN_NT && defined SUPERSERVER) || (!defined SUPERSERVER && defined HAVE_MMAP)
+#if defined WIN_NT || (!defined SUPERSERVER && defined HAVE_MMAP)
 		ULONG length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
 		LHB header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
