@@ -641,19 +641,19 @@ void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    TEXT* filename,
                                    ULONG lineno)
 {
-	return Firebird::processMemoryPool->allocate(size_request, 0, filename, lineno);
-//	return Firebird::processMemoryPool->calloc(size_request, 0, filename, lineno);
+	return getDefaultMemoryPool()->allocate(size_request, 0, filename, lineno);
+//	return getDefaultMemoryPool()->calloc(size_request, 0, filename, lineno);
 }
 #else
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return Firebird::processMemoryPool->allocate(size_request);
-//	return Firebird::processMemoryPool->calloc(size_request);
+	return getDefaultMemoryPool()->allocate(size_request);
+//	return getDefaultMemoryPool()->calloc(size_request);
 }
 #endif
 
 ULONG API_ROUTINE gds__free(void* blk) {
-	Firebird::processMemoryPool->deallocate(blk);
+	getDefaultMemoryPool()->deallocate(blk);
 	return 0;
 }
 
@@ -663,9 +663,8 @@ void* operator new(size_t s) {
 #if defined(DEV_BUILD)
 	printf("You MUST allocate all memory from a pool.  Don't use the default global new().\n");
 #endif	// DEV_BUILD
-	if (!Firebird::processMemoryPool) Firebird::processMemoryPool = MemoryPool::createPool();
-//	return Firebird::processMemoryPool->calloc(s, 0
-	return Firebird::processMemoryPool->allocate(s, 0
+//	return getDefaultMemoryPool()->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__
 #endif
@@ -676,9 +675,8 @@ void* operator new[](size_t s) {
 #if defined(DEV_BUILD)
 	printf("You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
 #endif	// DEV_BUILD
-	if (!Firebird::processMemoryPool) Firebird::processMemoryPool = MemoryPool::createPool();
-//	return Firebird::processMemoryPool->calloc(s, 0
-	return Firebird::processMemoryPool->allocate(s, 0
+//	return getDefaultMemoryPool()->->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__,__LINE__
 #endif
