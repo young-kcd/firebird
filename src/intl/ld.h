@@ -1035,9 +1035,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.7 2002-06-05 11:02:46 dimitr Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.8 2002-10-02 09:40:21 eku Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.7  2002/06/05 11:02:46  dimitr
+//	Fixed compile problems on Win32.
+//	
 //	Revision 1.6  2002/04/09 23:25:13  bellardo
 //	changes necessary to get the intl lib compiling after adding the new
 //	memory management, an additional intl c++ interface, and a slight
