@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_PAT_H_
-#define _GPRE_PAT_H_
+#ifndef GPRE_PAT_H
+#define GPRE_PAT_H
 
 /* 
 Substitution codes: 
@@ -74,17 +74,17 @@ struct pat {
 	BLB pat_blob;
 	POR pat_port;
 	POR pat_port2;
-	TEXT *pat_string1;
-	TEXT *pat_string2;
-	TEXT *pat_string3;
-	TEXT *pat_string4;
-	TEXT *pat_string5;
-	TEXT *pat_string6;
-	TEXT *pat_string7;
+	const TEXT* pat_string1;
+	const TEXT* pat_string2;
+	const TEXT* pat_string3;
+	const TEXT* pat_string4;
+	const TEXT* pat_string5;
+	const TEXT* pat_string6;
+	const TEXT* pat_string7;
 	USHORT pat_ident1;
 	USHORT pat_ident2;
-	TEXT *pat_vector1;
-	TEXT *pat_vector2;
+	const TEXT* pat_vector1;
+	const TEXT* pat_vector2;
 	int pat_value1;
 	int pat_value2;
 	int pat_value3;
@@ -97,4 +97,5 @@ struct pat {
 
 typedef pat PAT;
 
-#endif /* _GPRE_PAT_H_ */
+#endif /* GPRE_PAT_H */
+

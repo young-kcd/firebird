@@ -3,7 +3,7 @@
  *____________________________________________________________
  *  
  *		PROGRAM:	C preprocessor
- *		MODULE:		gpre_meta.e
+ *		MODULE:		gpre_meta_boot.cpp
  *		DESCRIPTION:	Meta data interface to system
  *  
  *  The contents of this file are subject to the Interbase Public
@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.23 2003-10-03 01:53:33 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.24 2003-10-05 06:53:00 robocop Exp $
  */
 
 #include "firebird.h"
@@ -65,8 +65,8 @@ static SLONG array_size(GPRE_FLD);
 static void get_array(DBB, TEXT *, GPRE_FLD);
 static int get_intl_char_subtype(SSHORT *, UCHAR *, USHORT, DBB);
 static int resolve_charset_and_collation(SSHORT *, UCHAR *, UCHAR *);
-static int symbol_length(TEXT *);
-static int upcase(TEXT *, TEXT *);
+static int symbol_length(TEXT*);
+static int upcase(const TEXT*, TEXT*);
 #endif
 
 /*____________________________________________________________
@@ -854,14 +854,11 @@ static int resolve_charset_and_collation(
  *		Compute significant length of symbol.
  */  
 
-static int symbol_length( TEXT * string)
+static int symbol_length(const TEXT* string)
 {
-	TEXT *p;
-	int len;
+	size_t len = strlen(string);
 
-	len = strlen(string);
-
-	p = string + (len - 1);
+	const TEXT* p = string + (len - 1);
 
 	for (; p >= string && *p == ' '; p--);
 	if (p < string)
@@ -877,7 +874,7 @@ static int symbol_length( TEXT * string)
  *		length of string.
  */
 
-static int upcase( TEXT * from, TEXT * to)
+static int upcase(const TEXT* from, TEXT* to)
 {
 	TEXT *p, *end, c;
 
@@ -904,7 +901,7 @@ ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
 
 extern "C" {
 
-void CVT_move (dsc * a, dsc * b, FPTR_VOID c)
+void CVT_move (const dsc* a, dsc* b, FPTR_VOID c)
 {  
     assert(0);
     /* Not available in boot_gpre */
@@ -919,3 +916,4 @@ void ERR_post(ISC_STATUS status, ...)
 }
 
 } // extern "C"
+

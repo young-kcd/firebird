@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.15 2003-09-24 10:39:20 aafemt Exp $
+//	$Id: pat.cpp,v 1.16 2003-10-05 06:56:48 robocop Exp $
 //
 
 #include "firebird.h"
@@ -116,19 +116,13 @@ static struct ops {
 //		Expand a pattern.
 //  
 
-void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
+void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 {
-	TEXT buffer[512], c, *p, temp1[16], temp2[16];
-	bool sw_ident;
-	bool sw_gen;
-	USHORT n;
+	TEXT buffer[512], temp1[16], temp2[16];
 	SSHORT value;				/* value needs to be signed since some of the
 								   values printed out are signed.  */
 	SLONG long_value;
-	bool long_flag;
-	bool handle_flag;
-	REF reference;
-	TEXT *string, *ref, *refend, *val, *valend, *q;
+	TEXT *ref, *refend, *val, *valend, *q;
 
 	ref = "";
 	refend = "";
@@ -164,12 +158,13 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 #endif
 	}
 
-	p = buffer;
+	TEXT* p = buffer;
 	*p++ = '\n';
-	sw_gen = true;
-	for (n = column; n; --n)
+	bool sw_gen = true;
+	for (USHORT n = column; n; --n)
 		*p++ = ' ';
 
+	TEXT c;
 	while (c = *pattern++) {
 		if (c != '%') {
 			if (sw_gen) {
@@ -180,10 +175,10 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			}
 			continue;
 		}
-		sw_ident = false;
-		string = NULL;
-		reference = NULL;
-		handle_flag = long_flag = false;
+		bool sw_ident = false;
+		const TEXT* string = NULL;
+		REF reference = NULL;
+		bool handle_flag = false, long_flag = false;
 		ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
 			if (oper_iter->ops_string[0] == pattern[0] &&

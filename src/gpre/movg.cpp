@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: movg.cpp,v 1.4 2003-10-05 06:54:37 robocop Exp $
 //
 
 #include "firebird.h"
@@ -54,7 +54,7 @@ static void post_error(void);
 //		Move (and possible convert) something to something else.
 //  
 
-void MOVG_move(DSC * from, DSC * to)
+void MOVG_move(const dsc* from, dsc* to)
 {
 
 	CVT_move(from, to, (FPTR_VOID) post_error);
