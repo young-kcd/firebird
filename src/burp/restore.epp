@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.59 2004-01-09 22:34:09 arnobrinkman Exp $
+$Id: restore.epp,v 1.60 2004-01-12 18:56:47 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -6956,7 +6956,7 @@ void update_view_dbkey_lengths()
 		R IN RDB$RELATIONS 
 		WITH 
 		  R.RDB$VIEW_BLR NOT MISSING AND
-		  R.RDB$SYSTEM_FLAG NE 1
+		  (R.RDB$SYSTEM_FLAG NE 1 OR R.RDB$SYSTEM_FLAG MISSING)
 
 		USHORT result = get_view_base_relation_count(R.RDB$RELATION_NAME, 0);
 
