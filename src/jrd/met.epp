@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.60 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: met.epp,v 1.61 2003-06-30 13:11:40 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -221,17 +221,19 @@ void adjust_dependencies(JRD_PRC procedure) {
 	// Already processed
 		return;
 	procedure->prc_int_use_count=-1; // Mark as undeletable
-	for (RSC resource = procedure->prc_request->req_resources; resource;
+	if (procedure->prc_request) {
+		for (RSC resource = procedure->prc_request->req_resources; resource;
 		  resource = resource->rsc_next) 
-	{
-		if (resource->rsc_type == rsc_procedure) {
-			procedure = resource->rsc_prc;
-			if (procedure->prc_int_use_count==procedure->prc_use_count) {
-				// Mark it and all dependent procedures as undeletable
-				adjust_dependencies(procedure); 
+		{
+			if (resource->rsc_type == rsc_procedure) {
+				procedure = resource->rsc_prc;
+				if (procedure->prc_int_use_count==procedure->prc_use_count) {
+					// Mark it and all dependent procedures as undeletable
+					adjust_dependencies(procedure); 
+				}
+				else
+					procedure->prc_int_use_count=-1;
 			}
-			else
-				procedure->prc_int_use_count=-1;
 		}
 	}
 }
@@ -262,7 +264,7 @@ void MET_verify_cache(TDBB tdbb) {
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) /*&& procedure->prc_request &&
+			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
 			{
 				assert(procedure->prc_int_use_count == 0);
@@ -273,7 +275,7 @@ void MET_verify_cache(TDBB tdbb) {
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) /*&& procedure->prc_request &&
+			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
 			{
 				for (RSC resource = procedure->prc_request->req_resources; resource;
@@ -291,7 +293,7 @@ void MET_verify_cache(TDBB tdbb) {
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) && /*procedure->prc_request &&
+			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request && /*
 				 !(procedure->prc_flags & PRC_obsolete) && */
 				 procedure->prc_use_count < procedure->prc_int_use_count)
 			{
@@ -302,7 +304,7 @@ void MET_verify_cache(TDBB tdbb) {
 				for (ptr = procedures->begin(), end = procedures->end();
 					ptr < end; ptr++) 
 				{
-					if ( (prc = JRD_PRC(*ptr)) /*&& prc->prc_request &&
+					if ( (prc = JRD_PRC(*ptr)) && prc->prc_request /*&&
 						!(prc->prc_flags & PRC_obsolete)*/ ) 
 					{
 						for (RSC resource = prc->prc_request->req_resources; resource;

@@ -2072,7 +2072,9 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 		( (*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id]
 		 //!= &procedure->prc_header)) {
 		 != (BLK) procedure)) {
-		CMP_release(tdbb, procedure->prc_request);
+		if (procedure->prc_request) {
+			CMP_release(tdbb, procedure->prc_request);
+		}
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
 	}
