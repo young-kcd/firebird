@@ -2131,10 +2131,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					case blr_savepoint_set:
 						// Release the savepoint
 						if (found) {
-							previous->sav_next = savepoint->sav_next;
 							Savepoint* const current = transaction->tra_save_point;
 							transaction->tra_save_point = savepoint;
 							verb_cleanup(tdbb, transaction);
+							previous->sav_next = transaction->tra_save_point;
 							transaction->tra_save_point = current;
 						}
 
@@ -2145,10 +2145,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					case blr_savepoint_release_single:
 					{
 						// Release the savepoint
-						previous->sav_next = savepoint->sav_next;
 						Savepoint* const current = transaction->tra_save_point;
 						transaction->tra_save_point = savepoint;
 						verb_cleanup(tdbb, transaction);
+						previous->sav_next = transaction->tra_save_point;
 						transaction->tra_save_point = current;
 						break;
 					}
