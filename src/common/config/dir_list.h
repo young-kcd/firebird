@@ -25,6 +25,7 @@
 #include "fb_types.h"
 #include "fb_string.h"
 #include "fb_vector.h"
+#include "../common/config/config_file.h"
 
 //
 // This class is used internally by DirectoryList
@@ -106,6 +107,13 @@ public:
 	void ExpandFileName(Firebird::string & Path, 
 						const Firebird::string & Name,
 						int Access);
+
+	// Temporary - while we use STL basic_string 
+	// for string representation we don't have this
+	static void Trim(Firebird::string & s) {
+		ConfigFile::stripLeadingWhiteSpace(s);
+		ConfigFile::stripTrailingWhiteSpace(s);
+	}
 };
 
 class TempDirectoryList : private DirectoryList {

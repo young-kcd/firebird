@@ -26,8 +26,6 @@
 #include "../jrd/gds_proto.h"
 
 #define New FB_NEW(*getDefaultMemoryPool())
-/*#define NONE "-"
-#define ROOT "/" */
 
 ParsedPath::ParsedPath(void) {
 	PathElem = 0;
@@ -204,6 +202,7 @@ void DirectoryList::Initialize(bool simple_mode) {
 			Firebird::string dir = "";
 			if (i > Last) {
 				dir = val.substr(Last, i-Last);
+				Trim(dir);
 			}
 			if (PathUtils::isRelative(dir)) {
 				Firebird::string newdir;
@@ -217,6 +216,7 @@ void DirectoryList::Initialize(bool simple_mode) {
 	Firebird::string dir = "";
 	if (i > Last) {
 		dir = val.substr(Last, i - Last);
+		Trim(dir);
 	}
 	if (PathUtils::isRelative(dir)) {
 		Firebird::string newdir;
