@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.17 2003-04-16 10:17:14 aafemt Exp $
+ * $Id: show.epp,v 1.18 2003-08-26 23:11:54 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -1072,9 +1072,8 @@ int SHOW_metadata( SCHAR ** cmd, SCHAR ** lcmd)
 /* Only show version works if there is no db attached */
 
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
-		gds__msg_format(NULL_PTR, ISQL_MSG_FAC, VERSION, sizeof(msg_string),
-						msg_string, FB_VERSION, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
-						(TEXT*) NULL_PTR);
+		gds__msg_format(NULL, ISQL_MSG_FAC, VERSION, sizeof(msg_string),
+						msg_string, FB_VERSION, NULL, NULL, NULL, NULL);
 		sprintf(Print_buffer, "%s%s", msg_string, NEWLINE);
 		ISQL_printf(Out, Print_buffer);
 		isc_version(&DB, (FPTR_VOID) local_fprintf, NULL);
@@ -1396,13 +1395,11 @@ int SHOW_metadata( SCHAR ** cmd, SCHAR ** lcmd)
 
 	if (ret == NOT_FOUND) {
 		if (*cmd[2] == '"')
-			gds__msg_format(NULL_PTR, ISQL_MSG_FAC, key, sizeof(msg_string),
-							msg_string, lcmd[2], (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
-							(TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
+			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(msg_string),
+							msg_string, lcmd[2], NULL, NULL, NULL, NULL);
 		else
-			gds__msg_format(NULL_PTR, ISQL_MSG_FAC, key, sizeof(msg_string),
-							msg_string, cmd[2], (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR,
-							(TEXT*) NULL_PTR);
+			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(msg_string),
+							msg_string, cmd[2], NULL, NULL, NULL, NULL);
 		STDERROUT(msg_string, 1);
 	}
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.10 2003-02-13 09:42:16 dimitr Exp $
+ * $Id: extract.epp,v 1.11 2003-08-26 23:11:54 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -207,7 +207,7 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 	{
 		if (EXTRACT_list_table(tabname, NULL, 1, default_char_set_id))
 		{
-			gds__msg_format(NULL_PTR, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
+			gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 							errbuf, tabname, NULL, NULL, NULL, NULL);
 			STDERROUT(errbuf, 1);
 			ret_code = (SSHORT) FINI_ERROR;

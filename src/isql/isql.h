@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.10 2003-07-16 18:48:57 brodsom Exp $
+ * $Id: isql.h,v 1.11 2003-08-26 23:11:54 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -94,8 +94,6 @@
 #define DEFTERM		";"
 #define DEFCHARSET	"NONE"
 #define NULL_DISP_LEN    6
-
-#define NULL_PTR	((void*) 0)
 
 /* Error codes */
 

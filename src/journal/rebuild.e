@@ -3572,7 +3572,7 @@ static FIL seek_file(DRB database, FIL fil, CACHE buffer, SLONG * new_offset)
 		(status, fil->fil_desc,
 		 fil->fil_string, *new_offset, LLIO_SEEK_BEGIN) == FB_FAILURE) {
 		gds__print_status(status);
-		return (FIL) NULL;
+		return NULL;
 	}
 
 	return fil;

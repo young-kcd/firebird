@@ -378,7 +378,7 @@ static void add_backup_entry(DJB dbb, SLONG pid, SLONG fid)
 	for (i = 0; ((i < MAX_ARCHIVE) && (dbb->djb_bfi[i].bi_pid > 0)); i++);
 
 	if (i == MAX_ARCHIVE) {
-		put_line(NULL_PTR, 104, 0, 0, 0);
+		put_line(NULL, 104, 0, 0, 0);
 		return;
 	}
 
@@ -479,7 +479,7 @@ static void backup_wal(
 	END_STORE 
     ON_ERROR 
         ROLLBACK lts_tr;
-	    put_line(NULL_PTR, 105, 0, 0, 0);
+	    put_line(NULL, 105, 0, 0, 0);
 	    return;
 	END_ERROR;
 
@@ -488,7 +488,7 @@ static void backup_wal(
         ROLLBACK lts_tr 
         ON_ERROR 
         END_ERROR;
-	    put_line(NULL_PTR, 210, 0, 0, 0);
+	    put_line(NULL, 210, 0, 0, 0);
         return;
 	END_ERROR;
 
@@ -496,7 +496,7 @@ static void backup_wal(
 
 	archives_running++;
 
-	put_line(NULL_PTR, 107, (TEXT *) file_id, (TEXT *) file_name, 0);
+	put_line(NULL, 107, (TEXT *) file_id, (TEXT *) file_name, 0);
 
 /* If there is space in the array, add it to the array.  Otherwise return */
 
@@ -676,7 +676,7 @@ static void delete_connection(CNCT connection)
 /* If this is a console, log it */
 
 	if (connection->cnct_flags & CNCT_console)
-		put_message(95, (DJB) NULL_PTR);
+		put_message(95, NULL);
 
 /* Disconnect from database */
 
@@ -698,7 +698,7 @@ static void delete_connection(CNCT connection)
 
 	for (ptr = &connections;; ptr = &(*ptr)->cnct_next)
 		if (!*ptr) {
-			put_line(NULL_PTR, 108, 0, 0, 0);
+			put_line(NULL, 108, 0, 0, 0);
 			return;
 		}
 		else if (*ptr == connection) {
@@ -908,7 +908,7 @@ static void delete_wal(void)
                 strcpy(J.DELETE_STATUS, LOG_DELETED);
             END_MODIFY 
             ON_ERROR 
-                put_line(NULL_PTR, 118, 0, 0, 0);
+                put_line(NULL, 118, 0, 0, 0);
                 ROLLBACK;
                 START_TRANSACTION;
                 break;
@@ -951,7 +951,7 @@ static void disable(CNCT connection, LTJC * msg)
             strcpy(D.STATUS, DB_DISABLED);
         END_MODIFY 
         ON_ERROR 
-           put_line(NULL_PTR, 109, 0, 0, 0);
+           put_line(NULL, 109, 0, 0, 0);
            ROLLBACK;
            START_TRANSACTION;
            break;
@@ -1077,14 +1077,14 @@ static void enable(CNCT connection, LTJC * msg)
 
 	if ((dir_name) && strlen(dir_name)) {
 		build_indexed_name(arch_name, dir_name, msg->ltjc_seqno);
-		if (LLIO_open(NULL_PTR, arch_name, LLIO_OPEN_NEW_RW, FALSE, &fd)) {
+		if (LLIO_open(NULL, arch_name, LLIO_OPEN_NEW_RW, FALSE, &fd)) {
 			reply.jrnr_response = jrnr_archive_error;
 			send_reply(connection, (JRNH *) & reply, sizeof(reply));
 			delete_connection(connection);
 			return;
 		}
 
-		LLIO_close(NULL_PTR, fd);
+		LLIO_close(NULL, fd);
 
 		/* get rid of file created */
 
@@ -1121,7 +1121,7 @@ static void error(ISC_STATUS status, TEXT * string)
  *
  **************************************/
 
-	put_line(NULL_PTR, GEN_ERR, (TEXT *) string, 0, 0);
+	put_line(NULL, GEN_ERR, (TEXT *) string, 0, 0);
 	perror(string);
 }
 #endif
@@ -1143,7 +1143,7 @@ static void error(ISC_STATUS status, TEXT * string)
 	TEXT buffer[MAX_PATH_LENGTH];
 	SSHORT l;
 
-	put_line(NULL_PTR, GEN_ERR, (TEXT *) string, 0, 0);
+	put_line(NULL, GEN_ERR, (TEXT *) string, 0, 0);
 
 	if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 							NULL,
@@ -1152,9 +1152,9 @@ static void error(ISC_STATUS status, TEXT * string)
 							buffer,
 							sizeof(buffer),
 							NULL)))
-			put_line(NULL_PTR, 211, (TEXT *) status, 0, 0);
+			put_line(NULL, 211, (TEXT *) status, 0, 0);
 	else
-		put_line(NULL_PTR, 212, (TEXT *) buffer, 0, 0);
+		put_line(NULL, 212, (TEXT *) buffer, 0, 0);
 }
 #endif
 
@@ -1231,14 +1231,14 @@ static void get_message(JRNH * buffer, int length)
 
 	init_handles(&ready);
 
-/* set timeout to NULL_PTR to wait until we get something */
+/* set timeout to NULL to wait until we get something */
 /* want more than 32 later */
 
 	for (;;) {
 #ifdef UNIX_JOURNALLING
-		ready_cnt = select(32, &ready, NULL_PTR, NULL_PTR, NULL_PTR);
+		ready_cnt = select(32, &ready, NULL, NULL, NULL);
 #else
-		ready_cnt = select(FD_SETSIZE, &ready, NULL_PTR, NULL_PTR, NULL_PTR);
+		ready_cnt = select(FD_SETSIZE, &ready, NULL, NULL, NULL);
 #endif
 		if (ready_cnt > 0)
 			break;
@@ -1265,13 +1265,13 @@ static void get_message(JRNH * buffer, int length)
 			else if (TEST_BIT(handles[slot_journal], &ready))
 				handle = handles[slot_journal];
 			if (handle) {
-				nfd = accept(handle, NULL_PTR, NULL);
+				nfd = accept(handle, NULL, NULL);
 				if (nfd < 0)
 					error((ISC_STATUS) errno, "accept");
 				connection = alloc_connect(nfd, 0);
 				if (handle == handles[slot_console]) {
 					connection->cnct_flags = CNCT_console;
-					put_message(146, (DJB) NULL_PTR);
+					put_message(146, NULL);
 				}
 			}
 		}
@@ -1349,7 +1349,7 @@ static void get_message(JRNH * buffer, int length)
 		new_connection->cnct_overlapped = connection->cnct_overlapped;
 		if (connection == &pending_connections[slot_console]) {
 			new_connection->cnct_flags |= CNCT_console;
-			put_message(146, (DJB) NULL_PTR);
+			put_message(146, NULL);
 			open_mailbox(CONSOLE_FILE, slot_console);
 		}
 		else
@@ -1710,7 +1710,7 @@ static void process_command(CNCT connection, TEXT * string)
 
 	switch (command->cmds_command) {
 	case cmd_shutdown:
-		put_message(98, (DJB) NULL_PTR);
+		put_message(98, NULL);
 		state |= state_shut_pending;
 		response.jrnr_response = jrnr_shutdown;
 		send_reply(connection, (JRNH *) & response, sizeof(response));
@@ -1883,7 +1883,7 @@ static void process_archive_end(CNCT connection, LTJA * msg)
             strcpy(J.ARCHIVE_NAME, name);
 	    END_MODIFY 
         ON_ERROR 
-            put_line(NULL_PTR, 126, 0, 0, 0);
+            put_line(NULL, 126, 0, 0, 0);
             ROLLBACK;
             START_TRANSACTION;
             break;
@@ -1906,7 +1906,7 @@ static void process_archive_end(CNCT connection, LTJA * msg)
 
 	put_message(99, database);
 
-	put_line(NULL_PTR, 178, file_name, (TEXT *) file_id, 0);
+	put_line(NULL, 178, file_name, (TEXT *) file_id, 0);
 
 	delete_connection(connection);
 	archives_running--;
@@ -1932,8 +1932,8 @@ static void process_archive_error(CNCT connection, LTJA * msg)
 
 	database = connection->cnct_database;
 
-	put_line(NULL_PTR, 179, (TEXT *) file_id, 0, 0);
-	put_line(NULL_PTR, (SSHORT) msg->ltja_error_code, 0, 0, 0);
+	put_line(NULL, 179, (TEXT *) file_id, 0, 0);
+	put_line(NULL, (SSHORT) msg->ltja_error_code, 0, 0, 0);
 
 	put_message(99, database);
 
@@ -1991,7 +1991,7 @@ static void process_control_point(CNCT connection, LTJW * msg)
 
 	database = connection->cnct_database;
 
-	put_line(NULL_PTR, 117, (TEXT *) msg->ltjw_seqno,
+	put_line(NULL, 117, (TEXT *) msg->ltjw_seqno,
 			 (TEXT *) msg->ltjw_offset, 0);
 
 	commit();
@@ -2058,7 +2058,7 @@ static void process_disable_database(CNCT connection, TEXT * dbname)
             strcpy(D.STATUS, DB_DISABLED);
 	   END_MODIFY 
        ON_ERROR 
-           put_line(NULL_PTR, 109, 0, 0, 0);
+           put_line(NULL, 109, 0, 0, 0);
 	       ROLLBACK;
            START_TRANSACTION;
            break;
@@ -2131,14 +2131,14 @@ static void process_dump_file(CNCT connection, LTJW * msg)
         time_stamp(&X.CREATION_DATE);
 	END_STORE 
     ON_ERROR 
-        put_line(NULL_PTR, 119, 0, 0, 0);
+        put_line(NULL, 119, 0, 0, 0);
 	    ROLLBACK;
         START_TRANSACTION;
 	END_ERROR;
 
 	commit();
 
-	put_line(NULL_PTR, 120, (TEXT *) msg->ltjw_mode, (TEXT *) msg->ltjw_data,
+	put_line(NULL, 120, (TEXT *) msg->ltjw_mode, (TEXT *) msg->ltjw_data,
 			 0);
 
 	reply.jrnr_response = jrnr_ack;
@@ -2172,7 +2172,7 @@ static void process_end_dump(CNCT connection, LTJW * msg)
             time_stamp(&X.DUMP_DATE);
 	    END_MODIFY 
         ON_ERROR 
-            put_line(NULL_PTR, 121, 0, 0, 0);
+            put_line(NULL, 121, 0, 0, 0);
 	        ROLLBACK;
             START_TRANSACTION;
             break;
@@ -2181,7 +2181,7 @@ static void process_end_dump(CNCT connection, LTJW * msg)
 
 	commit();
 
-	put_line(NULL_PTR, 122, (TEXT *) msg->ltjw_mode, 0, 0);
+	put_line(NULL, 122, (TEXT *) msg->ltjw_mode, 0, 0);
 
 	reply.jrnr_response = jrnr_end_dump;
 	send_reply(connection, (JRNH *) & reply, sizeof(reply));
@@ -2370,7 +2370,7 @@ static void process_message(CNCT connection, JRNH * msg, USHORT length)
 		break;
 
 	default:
-		put_line(NULL_PTR, 123, (TEXT *) msg->jrnh_type, 0, 0);
+		put_line(NULL, 123, (TEXT *) msg->jrnh_type, 0, 0);
 	}
 }
 
@@ -2529,7 +2529,7 @@ static void process_start_dump(CNCT connection, LTJW * msg)
             X.END_PARTITION_OFFSET = 0;
         END_STORE 
         ON_ERROR 
-            put_line(NULL_PTR, 124, 0, 0, 0);
+            put_line(NULL, 124, 0, 0, 0);
 	        ROLLBACK;
             START_TRANSACTION;
             goto end_proc;
@@ -2548,7 +2548,7 @@ static void process_start_dump(CNCT connection, LTJW * msg)
 	
 	END_FOR;
 
-	put_line(NULL_PTR, 125, (TEXT *) dump_id, 0, 0);
+	put_line(NULL, 125, (TEXT *) dump_id, 0, 0);
 
   end_proc:
 
@@ -2607,7 +2607,7 @@ static void process_wal_file(CNCT connection, LTJW * msg)
                 X.FILE_SIZE = msg->ltjw_offset;
 	        END_STORE 
             ON_ERROR 
-                put_line(NULL_PTR, 126, 0, 0, 0);
+                put_line(NULL, 126, 0, 0, 0);
 	            ROLLBACK;
                 START_TRANSACTION;
                 break;
@@ -2625,7 +2625,7 @@ static void process_wal_file(CNCT connection, LTJW * msg)
 	                strcpy(X.FILE_STATUS, LOG_CLOSED);
 	            END_MODIFY 
                 ON_ERROR 
-                    put_line(NULL_PTR, 126, 0, 0, 0);
+                    put_line(NULL, 126, 0, 0, 0);
 	                ROLLBACK;
                     START_TRANSACTION;
                     break;
@@ -2635,9 +2635,9 @@ static void process_wal_file(CNCT connection, LTJW * msg)
 	END_FOR;
 
 	if (msg->ltjw_mode == JRNW_OPEN)
-		put_line(NULL_PTR, 127, (TEXT *) msg->ltjw_data, 0, 0);
+		put_line(NULL, 127, (TEXT *) msg->ltjw_data, 0, 0);
 	else
-		put_line(NULL_PTR, 128, (TEXT *) msg->ltjw_data, 0, 0);
+		put_line(NULL, 128, (TEXT *) msg->ltjw_data, 0, 0);
 
 	commit();
 
@@ -2684,7 +2684,7 @@ static void process_wal_file(CNCT connection, LTJW * msg)
 /* if database is configured for deletion of 'older' files, do so now */
 
 	if (database->djb_flags & DJB_set_delete)
-		delete_history_files((CNCT) NULL, database->djb_db_name,
+		delete_history_files(NULL, database->djb_db_name,
 							 database->djb_id, last_dump);
 }
 
@@ -3156,7 +3156,7 @@ static DJB start_database(
             strcpy(D.STATUS, DB_INACTIVE);
 	    END_MODIFY 
         ON_ERROR 
-            put_line(NULL_PTR, 134, 0, 0, 0);
+            put_line(NULL, 134, 0, 0, 0);
             ROLLBACK;
             START_TRANSACTION;
             break;
@@ -3189,7 +3189,7 @@ static DJB start_database(
             strcpy(X.ARCHIVE_MODE, NO_ARCH);
 	END_STORE 
     ON_ERROR 
-        put_line(NULL_PTR, 135, 0, 0, 0);
+        put_line(NULL, 135, 0, 0, 0);
 	    ROLLBACK;
         START_TRANSACTION;
     END_ERROR;
@@ -3270,8 +3270,8 @@ static int start_server(UCHAR * journal_dir,
 		   all files.  However the static variable which holds the file
 		   descriptor still has a value. */
 
-		gds__msg_close(NULL_PTR);
-		divorce_terminal(NULL_PTR);
+		gds__msg_close(NULL);
+		divorce_terminal(NULL);
 #endif
 #endif
 		strcpy(logfile, journal_directory);
@@ -3279,7 +3279,7 @@ static int start_server(UCHAR * journal_dir,
 		log = fopen(logfile, "a");
 	}
 
-	put_message(102, (DJB) NULL);
+	put_message(102, NULL);
 
 	open_mailbox(CONSOLE_FILE, slot_console);
 	open_mailbox(JOURNAL_FILE, slot_journal);
@@ -3288,7 +3288,7 @@ static int start_server(UCHAR * journal_dir,
 /* Ignore end of child process for UNIX only */
 /* SUN leaves behind <defunct> processes if SIG_IGN is used */
 
-	ISC_signal(SIGCLD, signal_child, NULL_PTR);
+	ISC_signal(SIGCLD, signal_child, NULL);
 #endif
 
 /* Check in with database */
@@ -3298,7 +3298,7 @@ static int start_server(UCHAR * journal_dir,
 
 	READY 
     ON_ERROR 
-        put_line(NULL_PTR, 152, 0, 0, 0);
+        put_line(NULL, 152, 0, 0, 0);
 	    GJRN_abort(152);
 	END_ERROR;
 
@@ -3307,9 +3307,9 @@ static int start_server(UCHAR * journal_dir,
 
 	FOR X IN JOURNAL state &= ~state_initialize;
         if (X.USE_COUNT) {
-            put_line(NULL_PTR, 136, 0, 0, 0);
+            put_line(NULL, 136, 0, 0, 0);
             FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE AND D.USE_COUNT NE 0
-                put_line(NULL_PTR, 137, (TEXT *) D.DB_NAME, (TEXT *) D.DB_ID, 0);
+                put_line(NULL, 137, (TEXT *) D.DB_NAME, (TEXT *) D.DB_ID, 0);
                 MODIFY D USING 
                     D.USE_COUNT = 0;
 	            END_MODIFY;
@@ -3336,7 +3336,7 @@ static int start_server(UCHAR * journal_dir,
 /* Initialize list of valid databases */
 
     FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE
-        database = make_database((CNCT) NULL, D.DB_NAME, D.ARCHIVE_BASE_NAME);
+        database = make_database(NULL, D.DB_NAME, D.ARCHIVE_BASE_NAME);
 	
         database->djb_id = D.DB_ID;
 	
@@ -3358,7 +3358,7 @@ static int start_server(UCHAR * journal_dir,
                     strcpy(J.ARCHIVE_STATUS, ARCHIVE_PENDING);
 	            END_MODIFY 
                 ON_ERROR 
-                    put_line(NULL_PTR, 138, 0, 0, 0);
+                    put_line(NULL, 138, 0, 0, 0);
 	                ROLLBACK;
                     START_TRANSACTION;
                     break;
@@ -3387,7 +3387,7 @@ static int start_server(UCHAR * journal_dir,
 		}
 		if (state & state_status) {
 			state &= ~state_status;
-			report_status((CNCT) NULL_PTR);
+			report_status(NULL);
 		}
 		commit();
 		get_message((JRNH *) message_buffer, sizeof(message_buffer));
@@ -3421,7 +3421,7 @@ static int start_server(UCHAR * journal_dir,
                     strcpy(J.ARCHIVE_STATUS, ARCHIVE_PENDING);
 	            END_MODIFY 
                 ON_ERROR 
-                    put_line(NULL_PTR, 138, 0, 0, 0);
+                    put_line(NULL, 138, 0, 0, 0);
                     ROLLBACK;
                     START_TRANSACTION;
                     break;
@@ -3441,7 +3441,7 @@ static int start_server(UCHAR * journal_dir,
 
 		if (state & state_status) {
 			state &= ~state_status;
-			report_status((CNCT) NULL_PTR);
+			report_status(NULL);
 		}
 		commit();
 		get_message((JRNH *) message_buffer, sizeof(message_buffer));
@@ -3471,7 +3471,7 @@ static int start_server(UCHAR * journal_dir,
 			set_use_count(database);
 		}
 
-	put_message(103, (DJB) NULL);
+	put_message(103, NULL);
     
 	if (log)
 		fclose(log);
