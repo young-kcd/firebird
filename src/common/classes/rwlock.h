@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: rwlock.h,v 1.22 2004-08-28 02:51:11 skidder Exp $
+ *  $Id: rwlock.h,v 1.23 2004-11-07 10:52:32 robocop Exp $
  *
  */
 
@@ -342,7 +342,7 @@ namespace Firebird {
 class ReadLockGuard {
 public:
 	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
-	~ReadLockGuard() { lock->endRead(); };
+	~ReadLockGuard() { lock->endRead(); }
 private:
 	// Forbid copy constructor
 	ReadLockGuard(const ReadLockGuard& source);
@@ -353,7 +353,7 @@ private:
 class WriteLockGuard {
 public:
 	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
-	~WriteLockGuard() { lock->endWrite(); };
+	~WriteLockGuard() { lock->endWrite(); }
 private:
 	// Forbid copy constructor
 	WriteLockGuard(const WriteLockGuard& source);

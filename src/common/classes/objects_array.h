@@ -89,12 +89,12 @@ namespace Firebird
 		size_t add(const T& item) {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			return inherited::add(dataL);
-		};
+		}
 		T& add() {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
 			inherited::add(dataL);
 			return *dataL;
-		};
+		}
 		void push(const T& item) {
 			add(item);
 		}
@@ -117,7 +117,7 @@ namespace Firebird
 				delete getPointer(i);
 			}
 			inherited::shrink(newCount);
-		};
+		}
 		iterator begin() {
 			return iterator(this, 0);
 		}

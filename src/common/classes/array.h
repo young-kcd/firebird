@@ -82,7 +82,7 @@ public:
 	{
 		freeData();
 	}
-	void clear() { count = 0; };
+	void clear() { count = 0; }
 protected:
 	const T& getElement(size_t index) const {
   		fb_assert(index < count);
@@ -148,7 +148,7 @@ public:
 		ensureCapacity(count + 1);
 		data[count++] = item;
   		return count;
-	};
+	}
 	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
@@ -161,7 +161,7 @@ public:
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
 		count = newCount;
-	};
+	}
 	// Grow size of our array and zero-initialize new items
 	void grow(size_t newCount) {
 		fb_assert(newCount >= count);

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: vector.h,v 1.12 2004-07-22 07:17:58 robocop Exp $
+ *  $Id: vector.h,v 1.13 2004-11-07 10:52:32 robocop Exp $
  *
  */
  
@@ -41,7 +41,7 @@ template <typename T, size_t Capacity>
 class Vector {
 public:
 	Vector() : count(0) {}
-	void clear() { count = 0; };
+	void clear() { count = 0; }
 	T& operator[](size_t index) {
   		fb_assert(index < count);
   		return data[index];
@@ -59,7 +59,7 @@ public:
 		fb_assert(count < Capacity);
 		data[count++] = item;
   		return count;
-	};
+	}
 	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
@@ -67,7 +67,7 @@ public:
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
 		count = newCount;
-	};
+	}
 	void join(Vector<T, Capacity>& L) {
 		fb_assert(count + L.count <= Capacity);
 		memcpy(data + count, L.data, sizeof(T) * L.count);

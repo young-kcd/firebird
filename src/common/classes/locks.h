@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: locks.h,v 1.17 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: locks.h,v 1.18 2004-11-07 10:52:32 robocop Exp $
  *
  */
 
@@ -176,7 +176,7 @@ class MutexLockGuard {
 public:
 	explicit MutexLockGuard(Mutex &alock) 
 		: lock(&alock) { lock->enter(); }
-	~MutexLockGuard() { lock->leave(); };
+	~MutexLockGuard() { lock->leave(); }
 private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);

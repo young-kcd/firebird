@@ -117,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #ifdef DEV_BUILD
 			fprintf(stderr, "gds_relay error on kill()");
 #endif
-		};
+		}
 	}
 
 	exit(FINI_OK);

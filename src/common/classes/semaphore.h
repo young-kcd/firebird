@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: semaphore.h,v 1.14 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: semaphore.h,v 1.15 2004-11-07 10:52:32 robocop Exp $
  *
  */
 
@@ -147,7 +147,7 @@ public:
 			else if (errno == EBUSY) {
 				rt = false;
 				return rt;
-			};
+			}
 			
 			system_call_failed::raise("mutex_lock");
 		}
