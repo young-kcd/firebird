@@ -85,7 +85,7 @@ if errorlevel 1 call :ERROR Debug build failed
 @copy %ROOT_PATH%\gen\dbs\SECURITY2.FDB %ROOT_PATH%\output\security2.fdb >nul
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 ::@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
-@copy %ROOT_PATH%\builds\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
+@copy %ROOT_PATH%\builds\misc\security.gbak %ROOT_PATH%\output\security2.fbk > nul
 :: DOCS
 ::@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul
 ::@copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
