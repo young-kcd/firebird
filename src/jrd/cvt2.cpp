@@ -121,6 +121,12 @@ SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 	CHARSET_ID charset1, charset2;
 	TDBB tdbb = NULL;
 
+	// AB: Maybe we need a other error-message, but at least throw 
+	// a message when 1 or both input paramters are empty.
+	if (!arg1 || !arg2) {
+		BUGCHECK(189);	// msg 189 comparison not supported for specified data types.
+	}
+
 /* Handle the simple (matched) ones first */
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&

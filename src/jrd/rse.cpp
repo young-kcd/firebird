@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.32 2003-08-28 13:16:03 brodsom Exp $
+ * $Id: rse.cpp,v 1.33 2003-09-03 21:18:27 arnobrinkman Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -1007,29 +1007,33 @@ static SSHORT compare(TDBB tdbb, JRD_NOD node1, JRD_NOD node2)
  *	sort merge join.
  *
  **************************************/
-	JRD_NOD *ptr1, *ptr2, *end;
-	DSC *desc1, *desc2;
-	JRD_REQ request;
-	ULONG flags;
-	SSHORT result;
-
 	SET_TDBB(tdbb);
 
-	request = tdbb->tdbb_request;
-
+	JRD_REQ request = tdbb->tdbb_request;
+	JRD_NOD *ptr1, *ptr2, *end;
 	for (ptr1 = node1->nod_arg, end = ptr1 + node1->nod_count, ptr2 =
-		 node2->nod_arg; ptr1 < end; ptr1++, ptr2++) {
-		desc1 = EVL_expr(tdbb, *ptr1);
-		flags = request->req_flags;
-		desc2 = EVL_expr(tdbb, *ptr2);
+		 node2->nod_arg; ptr1 < end; ptr1++, ptr2++) 
+	{
+		dsc* desc1 = EVL_expr(tdbb, *ptr1);
+		ULONG flags = request->req_flags;
+		dsc* desc2 = EVL_expr(tdbb, *ptr2);
 		if (flags & req_null) {
-			if (!(request->req_flags & req_null))
+			if (!(request->req_flags & req_null)) {
 				return -1;
+			}
+			else {
+				return 1;
+			}
 		}
-		else if (request->req_flags & req_null)
+		else if (request->req_flags & req_null) {
 			return 1;
-		if ( (result = MOV_compare(desc1, desc2)) )
+		}
+		// AB: MOV_compare can't handle NULL parameters
+		// therefor check before passing all null flags.
+		SSHORT result = MOV_compare(desc1, desc2);
+		if (result != 0) {
 			return result;
+		}
 	}
 
 	return 0;
