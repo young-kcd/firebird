@@ -167,7 +167,7 @@ static DSQL_NOD explode_outputs(DSQL_REQ, DSQL_PRC);
 static void field_error(TEXT *, TEXT *, DSQL_NOD);
 static PAR find_dbkey(DSQL_REQ, DSQL_NOD);
 static PAR find_record_version(DSQL_REQ, DSQL_NOD);
-static BOOLEAN invalid_reference(DSQL_CTX, DSQL_NOD, DSQL_NOD, BOOLEAN);
+static BOOLEAN invalid_reference(DSQL_CTX, DSQL_NOD, DSQL_NOD, BOOLEAN, BOOLEAN);
 static void mark_ctx_outer_join(DSQL_NOD);
 static BOOLEAN node_match(DSQL_NOD, DSQL_NOD, BOOLEAN);
 static DSQL_NOD pass1_alias_list(DSQL_REQ, DSQL_NOD);
@@ -1547,6 +1547,11 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 					if ((ldeepest_level == 0) || (ldeepest_level == request->req_scope_level)) {
 						aggregate = TRUE;
 					}
+					else {
+						// Check also for a nested aggregate that could belong to this context
+						aggregate |=
+							aggregate_found2(request, node->nod_arg[0], current_level, &ldeepest_level, FALSE);
+					}
 				}
 				else {
 					// we have Count(*)
@@ -1574,7 +1579,9 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 				return TRUE;			
 			}
 			else {
-				return FALSE;
+				MAP lmap = reinterpret_cast<MAP>(node->nod_arg[e_map_map]);
+				aggregate = aggregate_found2(request, lmap->map_node, current_level, deepest_level, ignore_sub_selects);
+				return aggregate;
 			}
 
 			// for expressions in which an aggregate might
@@ -1900,7 +1907,7 @@ static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 					if (invalid_reference
 						(NULL, node,
 						 aggregate->
-						 nod_arg[e_agg_group], FALSE)) ERRD_post(gds_sqlerr,
+						 nod_arg[e_agg_group], FALSE, FALSE)) ERRD_post(gds_sqlerr,
 																 gds_arg_number,
 																 (SLONG) - 104,
 																 gds_arg_gds,
@@ -1918,7 +1925,7 @@ static void explode_asterisk( DSQL_NOD node, DSQL_NOD aggregate, DLLS * stack)
 					if (invalid_reference
 						(NULL, node,
 						 aggregate->
-						 nod_arg[e_agg_group], FALSE)) ERRD_post(gds_sqlerr,
+						 nod_arg[e_agg_group], FALSE, FALSE)) ERRD_post(gds_sqlerr,
 																 gds_arg_number,
 																 (SLONG) - 104,
 																 gds_arg_gds,
@@ -2133,7 +2140,7 @@ static PAR find_record_version( DSQL_REQ request, DSQL_NOD relation_name)
     @param inside_map
 
  **/
-static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list, BOOLEAN inside_map)
+static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list, BOOLEAN inside_own_map, BOOLEAN inside_higher_map)
 {
 	DSQL_NOD *ptr, *end;
 	BOOLEAN invalid;
@@ -2168,10 +2175,11 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			lcontext = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_map_context]);
 			lmap = reinterpret_cast<MAP>(node->nod_arg[e_map_map]);
 			if (lcontext->ctx_scope_level == context->ctx_scope_level) {
-				invalid |= invalid_reference(context, lmap->map_node, list, TRUE);
+				invalid |= invalid_reference(context, lmap->map_node, list, TRUE, FALSE);
 			}
 			else {
-				invalid |= invalid_reference(context, lmap->map_node, list, FALSE);
+				BOOLEAN linside_higher_map = lcontext->ctx_scope_level > context->ctx_scope_level;
+				invalid |= invalid_reference(context, lmap->map_node, list, FALSE, linside_higher_map);
 			}
 			break;
 
@@ -2204,22 +2212,22 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_agg_total:
 		case nod_agg_average2:
 		case nod_agg_total2:
-			if (!inside_map) {
+			if (!inside_own_map) {
 				// We are not in an aggregate from the same scope_level so 
 				// check for valid fields inside this aggregate
 				if (node->nod_count) {
 					invalid |= 
-						invalid_reference(context, node->nod_arg[0], list, inside_map);
+						invalid_reference(context, node->nod_arg[0], list, inside_own_map, inside_higher_map);
 				}
 			} 
-			else {
+			if (!inside_higher_map) {
 				if (node->nod_count) {
 					// If there's another aggregate with the same scope_level or
 					// an higher one then it's a invalid aggregate, because
 					// aggregate-functions from the same or higher context can't 
 					// be part of each other. 
 					if (pass1_found_aggregate(node->nod_arg[0], context->ctx_scope_level,
-											  FIELD_MATCH_TYPE_HIGHER_EQUAL, TRUE)) {
+											  FIELD_MATCH_TYPE_EQUAL, TRUE)) {
 						ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 							gds_arg_gds, gds_dsql_agg_nested_err, 0);
 						// Nested aggregate functions are not allowed
@@ -2235,7 +2243,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			// If there are no arguments given to the UDF then it's always valid
 			if (node->nod_count == 2) {
 				invalid |= 
-					invalid_reference(context, node->nod_arg[1], list, inside_map);
+					invalid_reference(context, node->nod_arg[1], list, inside_own_map, inside_higher_map);
 			}
 			break;
 
@@ -2244,12 +2252,12 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_singular:   
 			for (ptr = node->nod_arg, end = ptr + node->nod_count;
 				 ptr < end; ptr++) {
-				invalid |= invalid_reference(context, *ptr, list, inside_map);
+				invalid |= invalid_reference(context, *ptr, list, inside_own_map, inside_higher_map);
 			}
 			break;
 
 		case nod_order:
-			invalid |= invalid_reference(context, node->nod_arg[e_order_field], list, inside_map);
+			invalid |= invalid_reference(context, node->nod_arg[e_order_field], list, inside_own_map, inside_higher_map);
 			break;
 
 		case nod_coalesce:
@@ -2307,18 +2315,18 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_list:
 			for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
 				invalid |= 
-					invalid_reference(context, *ptr, list, inside_map);
+					invalid_reference(context, *ptr, list, inside_own_map, inside_higher_map);
 			}
 			break;
 
 		case nod_alias:
 			invalid |=
-				invalid_reference(context, node->nod_arg[e_alias_value], list, inside_map);
+				invalid_reference(context, node->nod_arg[e_alias_value], list, inside_own_map, inside_higher_map);
 			break;
 
 		case nod_aggregate:
 			invalid |= 
-				invalid_reference(context, node->nod_arg[e_agg_rse], list, inside_map);
+				invalid_reference(context, node->nod_arg[e_agg_rse], list, inside_own_map, inside_higher_map);
 			break;
 
 		case nod_relation:
@@ -2328,7 +2336,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 				// If input parameters exists check if the parameters are valid
 				if (lrelation_context->ctx_proc_inputs) {
 					invalid |=
-						invalid_reference(context, lrelation_context->ctx_proc_inputs, list, inside_map);
+						invalid_reference(context, lrelation_context->ctx_proc_inputs, list, inside_own_map, inside_higher_map);
 				}
 			}
 			break;
@@ -4488,7 +4496,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	// AB: Check for invalid contructions inside selected-items list
 	list = parent_rse->nod_arg[e_rse_items];
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-		if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
+		if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE, FALSE))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 			  gds_arg_gds, gds_dsql_agg_column_err,
 			  gds_arg_string, "select list", 0);
@@ -4505,7 +4513,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		// AB: Check for invalid contructions inside the ORDER BY clause
 		list = target_rse->nod_arg[e_rse_sort];
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-			if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
+			if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE, FALSE))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				  gds_arg_gds, gds_dsql_agg_column_err,
 				  gds_arg_string, "ORDER BY clause", 0);
@@ -4533,7 +4541,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		// AB: Check for invalid contructions inside the HAVING clause
 		list = parent_rse->nod_arg[e_rse_boolean];
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
-			if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE))
+			if (invalid_reference(parent_context, *ptr, aggregate->nod_arg[e_agg_group], FALSE, FALSE))
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 				  gds_arg_gds, gds_dsql_agg_having_err,
 				  gds_arg_string, "HAVING clause", 0);
