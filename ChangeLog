@@ -1,3 +1,30 @@
+2005-02-15 13:17  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.224):
+	
+	Allow some more complex expressions to be unmapped
+
+2005-02-15 12:52  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.223), Optimizer.cpp (1.7):
+	
+	Minor stuff.
+
+2005-02-15 11:03  fsg
+
+	* firebird2/src/jrd/Optimizer.cpp (1.6):
+	
+	Fix Claudio's fix.  FSG
+
+2005-02-15 07:39  robocop
+
+	* firebird2/src/jrd/Optimizer.cpp (1.5):
+	
+	Temporary fix for problems reported by Alex and Frank.	Since this
+	is Arno's new file, I didn't want to touch more.  Folks may prefer
+	to use the ugly MIN/MAX macros (which I abhor) instead of the
+	template versions in xutility, but I digress.
+
 2005-02-14 22:02  fsg
 
 	* firebird2/builds/posix/make.shared.variables (1.48):
