@@ -524,7 +524,7 @@ static DSC *assignment(	NOD		from_node,
 	jmp_buf old_env;
 	jmp_buf env;
 
-	old_env = QLI_env;
+	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	QLI_reprompt = FALSE;
 	QLI_prompt_count = 0;
 	missing_flag = &trash;
@@ -545,7 +545,7 @@ static DSC *assignment(	NOD		from_node,
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 
-	QLI_env = env;
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
 	from_desc = EVAL_value(from_node);
 
 	if (from_desc->dsc_missing & DSC_initial) {
@@ -571,14 +571,14 @@ static DSC *assignment(	NOD		from_node,
 	}
 
 	QLI_reprompt = FALSE;
-	QLI_env = old_env;
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
 
 	return from_desc;
 
 	}	// try
 	catch (...) {
 		if (QLI_abort || !QLI_prompt_count) {
-			QLI_env = old_env;
+			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
 		}
 
@@ -1014,15 +1014,15 @@ static void execute_output( NOD node)
 
 /* Set up error handling */
 
-	old_env = QLI_env;
-	QLI_env = env;
+	memcpy(old_env, QLI_env, sizeof(QLI_env));
+	memcpy(QLI_env, env, sizeof(QLI_env));
 
 	try {
 
 /* Finally, execute the query */
 
 	EXEC_execute(node->nod_arg[e_out_statement]);
-	QLI_env = old_env;
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
 	ib_fclose((IB_FILE *) print->prt_file);
 
 	}	// try
@@ -1030,7 +1030,7 @@ static void execute_output( NOD node)
 		if (print->prt_file) {
 			ib_fclose((IB_FILE *) print->prt_file);
 		}
-		QLI_env = old_env;
+		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		throw;
 	}
 }

@@ -290,7 +290,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	{
 		got_started = 1;
 		try {
-			QLI_env = env;
+			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
 		catch (...) {
@@ -398,7 +398,7 @@ static USHORT process_statement( USHORT flush_flag)
 
 	try {
 
-	QLI_env =  env;
+	memcpy(QLI_env, env, sizeof(QLI_env));
 
 /* Set up the appropriate prompt and get the first significant token.  If
    we don't get one, we're at end of file */

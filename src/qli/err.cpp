@@ -34,7 +34,7 @@
 #include "../jrd/gds_proto.h"
 
 extern UCHAR *QLI_error;
-extern jmp_buf *QLI_env;
+extern jmp_buf QLI_env;
 
 static TEXT ERRQ_message[256];
 
