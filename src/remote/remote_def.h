@@ -72,17 +72,16 @@ const P_ARCH ARCHITECTURE	= arch_intel_32;
 
 
 // port_server_flags
-const USHORT SRVR_server		= 1;	/* 0x0001 server */
-const USHORT SRVR_multi_client	= 2;	/* 0x0002 multi-client server */
-const USHORT SRVR_debug			= 4;	/* 0x0004 */
-const USHORT SRVR_inet			= 8;	/* 0x0008 Inet protocol */
-const USHORT SRVR_wnet			= 16;	/* 0x0010 Wnet (named pipe) protocol (WinNT) */
-const USHORT SRVR_ipc			= 64;	/* 0x0040 IPC protocol (Win32) */
-const USHORT SRVR_non_service	= 128;	/* 0x0080 Not running as an NT service */
-const USHORT SRVR_high_priority	= 256;	/* 0x0100 fork off server at high priority */
-const USHORT SRVR_auto_unload	= 512;	/* 0x0200 Unload server after last disconnect */
-const USHORT SRVR_xnet			= 1024; /* 0x0400 IPC protocol via server */
-const USHORT SRVR_thread_per_port	= 2048;	/* 0x0800 Bind thread to a port */
-const USHORT SRVR_no_icon		= 4096;	/* 0x1000 Tell the server not to show the icon */
-#endif /* REMOTE_REMOTE_DEF_H */
 
+const USHORT SRVR_server			= 1;	// server
+const USHORT SRVR_multi_client		= 2;	// multi-client server
+const USHORT SRVR_debug				= 4;	// debug run
+const USHORT SRVR_inet				= 8;	// Inet protocol
+const USHORT SRVR_wnet				= 16;	// Wnet (named pipe) protocol (WinNT)
+const USHORT SRVR_xnet				= 32;	// Xnet protocol (Win32)
+const USHORT SRVR_non_service		= 64;	// not running as an NT service
+const USHORT SRVR_high_priority		= 128;	// fork off server at high priority
+const USHORT SRVR_thread_per_port	= 256;	// bind thread to a port
+const USHORT SRVR_no_icon			= 512;	// tell the server not to show the icon
+
+#endif /* REMOTE_REMOTE_DEF_H */

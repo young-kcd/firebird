@@ -680,7 +680,6 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (!protocol) {
 		const unsigned short port2 = Config::getRemoteServicePort();
-		const char* Service = Config::getRemoteServiceName();
 		if (port2) {
 			// EKU: since temp is 128 byte long, the port number will always
 			// fit into the buffer, hence snprintf replaced with sprintf
@@ -688,7 +687,7 @@ rem_port* INET_connect(const TEXT* name,
 			protocol = temp;
 		}
 		else {
-			protocol = Service;
+			protocol = Config::getRemoteServiceName();
 		}
 	}
 
