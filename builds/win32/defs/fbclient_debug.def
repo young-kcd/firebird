@@ -134,7 +134,6 @@ EXPORTS
 
 	; Array functions
 
-	isc_array_gen_sdl	@217
 	isc_array_get_slice	@218
 	isc_array_lookup_bounds	@219
 	isc_array_lookup_desc	@220

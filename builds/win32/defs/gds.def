@@ -264,7 +264,6 @@ EXPORTS
 	_isc_format_implementation     @237
 
 ; ..\DSQL\ARRAY.C
-	_isc_array_gen_sdl		@225
 	_isc_array_get_slice		@226
 	_isc_array_lookup_bounds	@227
 	_isc_array_lookup_desc		@228

@@ -222,7 +222,6 @@ EXPORTS
     isc_embed_dsql_open2=fbclient.isc_embed_dsql_open2 @214
     isc_embed_dsql_prepare=fbclient.isc_embed_dsql_prepare @215
     isc_embed_dsql_release=fbclient.isc_embed_dsql_release @216
-    isc_array_gen_sdl=fbclient.isc_array_gen_sdl @217
     isc_array_get_slice=fbclient.isc_array_get_slice @218
     isc_array_lookup_bounds=fbclient.isc_array_lookup_bounds @219
     isc_array_lookup_desc=fbclient.isc_array_lookup_desc @220
