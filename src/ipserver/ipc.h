@@ -633,7 +633,7 @@ typedef struct {
 
 /* Windows names used to identify various named objects */
 
-#define IPI_PREFIX_NAME			"InterBaseIPI"
+#define IPI_PREFIX_NAME			"FirebirdIPI"
 
 #define	IPI_MAPPED_FILE_NAME	"%sMappedArea%d"
 #define	IPI_CLIENT_SEM_NAME		"%sClientSem%d_%d"
