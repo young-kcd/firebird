@@ -4328,6 +4328,8 @@ void JRD_print_all_counters(char *fname)
 	return;
 }
 
+#endif
+
 #ifdef DEBUG_PROCS
 void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 {
@@ -4368,7 +4370,7 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 	if (procedures = tdbb->tdbb_database->dbb_procedures) {
 		for (ptr = procedures->begin(), end = procedures->end();
 					ptr < end; ptr++)
-			if ( (procedure = *ptr) )
+			if ( (procedure = (jrd_prc*)*ptr) )
 				ib_fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
 						   (procedure->
 							prc_name) ? (char *) procedure->prc_name->
@@ -4387,7 +4389,6 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
 
 }
 #endif /* DEBUG_PROCS */
-#endif /* SUPERSERVER */
 
 
 #ifdef MULTI_THREAD

@@ -73,6 +73,7 @@
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
+#include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/opt_proto.h"

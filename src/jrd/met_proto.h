@@ -76,6 +76,9 @@ extern BOOLEAN 		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
 extern BOOLEAN		MET_relation_default_class (TDBB, const TEXT *, const TEXT *);
 void MET_release_existence(struct jrd_rel *);
 void MET_release_triggers(TDBB, TRIG_VEC *);
+#ifdef DEV_BUILD
+void MET_verify_cache(TDBB);
+#endif
 BOOLEAN MET_clear_cache(TDBB, JRD_PRC);
 void MET_remove_procedure(TDBB, int, JRD_PRC);
 void MET_revoke(TDBB, struct jrd_tra *, TEXT *, TEXT *, TEXT *);

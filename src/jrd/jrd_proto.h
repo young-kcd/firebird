@@ -157,6 +157,10 @@ extern void JRD_print_all_counters(TEXT *);
 extern USHORT JRD_getdir(TEXT *, USHORT);
 #endif
 
+#ifdef DEBUG_PROCS
+extern void JRD_print_procedure_info(TDBB, char *);
+#endif
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

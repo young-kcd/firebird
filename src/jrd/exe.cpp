@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.63 2003-05-27 15:44:54 dimitr Exp $
+$Id: exe.cpp,v 1.64 2003-06-01 16:22:47 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2648,12 +2648,12 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
 
-#if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
-		memory_count++;
-		if ((memory_count % memory_debug) == 0) {
-			ALL_check_memory();
-		}
-#endif
+//#if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
+//		memory_count++;
+//		if ((memory_count % memory_debug) == 0) {
+//			ALL_check_memory();
+//		}
+//#endif
 	}	// try
 	catch (const std::exception&) {
 		// If we already have a pending error, and took another, simply

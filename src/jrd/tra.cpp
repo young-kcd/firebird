@@ -62,6 +62,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/enc_proto.h"
+#include "../jrd/jrd_proto.h"
 
 #ifndef VMS
 #include "../lock/lock_proto.h"

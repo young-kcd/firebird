@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.58 2003-05-19 06:57:08 alexpeshkoff Exp $
+$Id: met.epp,v 1.59 2003-06-01 16:22:47 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -236,6 +236,103 @@ void adjust_dependencies(JRD_PRC procedure) {
 	}
 }
 
+#ifdef DEV_BUILD
+void MET_verify_cache(TDBB tdbb) {
+/**************************************
+ *
+ *      M E T _ v e r i f y _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Check if all links between procedures are properly counted
+ *
+ **************************************/
+	DBB				dbb;
+	vec::iterator	ptr, end;
+
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+	
+	VEC procedures;
+	JRD_PRC procedure;
+	BOOLEAN result = TRUE;
+
+	if ( (procedures = dbb->dbb_procedures) ) {	
+		for (ptr = procedures->begin(), end = procedures->end();
+			ptr < end; ptr++) 
+		{
+			if ( (procedure = JRD_PRC(*ptr)) /*&& procedure->prc_request &&
+				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
+			{
+				assert(procedure->prc_int_use_count == 0);
+			}
+		}
+		
+		/* Walk procedures and calculate internal dependencies */
+		for (ptr = procedures->begin(), end = procedures->end();
+			ptr < end; ptr++) 
+		{
+			if ( (procedure = JRD_PRC(*ptr)) /*&& procedure->prc_request &&
+				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
+			{
+				for (RSC resource = procedure->prc_request->req_resources; resource;
+					 resource = resource->rsc_next)
+				{
+					if (resource->rsc_type == rsc_procedure) {
+				  	    assert(resource->rsc_prc->prc_int_use_count >= 0);
+						resource->rsc_prc->prc_int_use_count++;				
+					}
+				}
+			}
+		}
+		
+		/* Walk procedures again and check dependencies */
+		for (ptr = procedures->begin(), end = procedures->end();
+			ptr < end; ptr++) 
+		{
+			if ( (procedure = JRD_PRC(*ptr)) && /*procedure->prc_request &&
+				 !(procedure->prc_flags & PRC_obsolete) && */
+				 procedure->prc_use_count < procedure->prc_int_use_count)
+			{
+				char buffer[1024], *buf = buffer;
+				buf += sprintf(buf, "Procedure %d:%s is not properly counted (use count=%d, prc use=%d). Used by: \n", 
+					procedure->prc_id, procedure->prc_name->str_data, procedure->prc_use_count, procedure->prc_int_use_count);
+				JRD_PRC prc;
+				for (ptr = procedures->begin(), end = procedures->end();
+					ptr < end; ptr++) 
+				{
+					if ( (prc = JRD_PRC(*ptr)) /*&& prc->prc_request &&
+						!(prc->prc_flags & PRC_obsolete)*/ ) 
+					{
+						for (RSC resource = prc->prc_request->req_resources; resource;
+							resource = resource->rsc_next)
+						{
+							if (resource->rsc_type == rsc_procedure)
+								if (resource->rsc_prc == procedure) {
+									buf += sprintf(buf, "%d:%s\n", prc->prc_id, prc->prc_name->str_data);
+								}
+						}
+					}
+				}
+				gds__log(buffer);
+				assert(false);
+			}
+		}
+		
+		/* Fix back int_use_count */		
+		for (ptr = procedures->begin(), end = procedures->end();
+				ptr < end; ptr++) 
+		{
+			if ( (procedure = JRD_PRC(*ptr)) )
+			{				
+				procedure->prc_int_use_count = 0;
+			}
+		}		
+	}
+}
+#endif
+
 BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 {
 /**************************************
@@ -256,6 +353,9 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 	vec::iterator	ptr, end;
 
 	SET_TDBB(tdbb);
+#ifdef DEV_BUILD
+	MET_verify_cache(tdbb);
+#endif
 	dbb = tdbb->tdbb_database;
 	
 	relations = dbb->dbb_relations;
@@ -315,21 +415,26 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
-				!(procedure->prc_flags & PRC_obsolete) && (procedure != proc) )
+			if ( (procedure = JRD_PRC(*ptr))  )
 			{
 				
-				if ( procedure->prc_int_use_count >= 0 && 
-				     procedure->prc_use_count == procedure->prc_int_use_count ) 
+				if ( procedure->prc_request && 
+					 !(procedure->prc_flags & PRC_obsolete) && 
+					 procedure->prc_int_use_count >= 0 &&  
+					 procedure->prc_use_count == procedure->prc_int_use_count && 
+					 procedure != proc ) 
 				{
 					CMP_release(tdbb, procedure->prc_request);
 					procedure->prc_request = NULL;
 					LCK_release(tdbb, procedure->prc_existence_lock);
 					procedure->prc_existence_lock = NULL;
 					procedure->prc_flags |= PRC_obsolete;
-				} else
-					// Leave it in state 0 to avoid extra pass next time to clear it
-					procedure->prc_int_use_count = 0;
+				}
+				// Leave it in state 0 to avoid extra pass next time to clear it
+				// Note: we need to adjust prc_int_use_count for all procedures
+				// in cache because any of them may have been affected from
+				// dependencies earlier. Even procedures that were not scanned yet !
+				procedure->prc_int_use_count = 0;
 			}
 		}
 		
@@ -346,6 +451,9 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 		}
 		
 	}
+#ifdef DEV_BUILD
+	MET_verify_cache(tdbb);
+#endif
 	return result;
 }
 
@@ -2617,6 +2725,8 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	try {
 
 	procedure->prc_flags |= (PRC_being_scanned | flags);
+	procedure->prc_flags &= ~PRC_obsolete;
+	
 	procedure->prc_id = id;
 	(*vector)[id] = (BLK) procedure;
 
@@ -2652,8 +2762,6 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 			procedure->prc_name = save_name(tdbb, P.RDB$PROCEDURE_NAME);
 		}
 		procedure->prc_id = P.RDB$PROCEDURE_ID;
-		procedure->prc_use_count = 0;
-		procedure->prc_int_use_count = 0;
 		if (!P.RDB$SECURITY_CLASS.NULL)
 		{
 			procedure->prc_security_name =
@@ -3011,7 +3119,6 @@ void MET_remove_procedure( TDBB tdbb, int id, JRD_PRC procedure)
 	DBB dbb;
 	VEC vector;
 	SSHORT i;
-	USHORT save_proc_flags;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -3079,16 +3186,17 @@ void MET_remove_procedure( TDBB tdbb, int id, JRD_PRC procedure)
 	if (procedure->prc_format)
 		delete procedure->prc_format;
 
-	if (!(procedure->prc_flags & PRC_being_altered))
+	if (!(procedure->prc_flags & PRC_being_altered) && !procedure->prc_use_count)
 	{
 		delete procedure;
 	}
 	else
 	{
-		save_proc_flags = procedure->prc_flags;		
+		USHORT save_proc_flags = procedure->prc_flags, save_use_count = procedure->prc_use_count;		
 		memset(((SCHAR *)&procedure->prc_id), 0,
 			   sizeof(struct jrd_prc) - ((SCHAR *)&procedure->prc_id-(SCHAR *)procedure));
 		procedure->prc_flags = save_proc_flags;
+		procedure->prc_use_count = save_use_count;
 	}
 }
 

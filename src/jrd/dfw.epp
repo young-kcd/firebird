@@ -3179,6 +3179,10 @@ static void get_procedure_dependencies(DFW work)
 
 	if (!REQUEST(irq_c_prc_dpd))
 		REQUEST(irq_c_prc_dpd) = (BLK) handle;
+	
+#ifdef DEV_BUILD
+	MET_verify_cache(tdbb);
+#endif
 
 /* get any dependencies now by parsing the blr */
 
@@ -3200,6 +3204,10 @@ static void get_procedure_dependencies(DFW work)
 			CMP_release(tdbb, request);
 		else
 			JrdMemoryPool::deletePool(tdbb->tdbb_default);
+	
+#ifdef DEV_BUILD
+		MET_verify_cache(tdbb);
+#endif
 
 		tdbb->tdbb_default = old_pool;
 	}
@@ -3863,6 +3871,7 @@ static bool modify_procedure(	TDBB	tdbb,
 		{
 #ifdef DEV_BUILD
 			gds__log("Modifying unfreed procedure %s", work->dfw_name);
+			MET_clear_cache(tdbb,procedure);
 #endif
 			USHORT prc_alter_count = procedure->prc_alter_count;
 			if (prc_alter_count > MAX_PROC_ALTER)
