@@ -71,7 +71,7 @@ Universal triggers (FB 1.5)
        trigger invocation forbids one of them (e.g. OLD context for INSERT operation),
        then all fields of that context will eveluate to NULL. If you assign to
        unproper context, runtime exception will be thrown.
-    4. You may use new context variables INSERTING/UPDATEING/DELETING to check the
+    4. You may use new context variables INSERTING/UPDATING/DELETING to check the
        operation type at runtime.
 
   See also:
