@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.12 2002-11-30 17:40:23 hippoman Exp $
+//	$Id: c_cxx.cpp,v 1.13 2002-12-16 15:51:37 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -1355,7 +1355,7 @@ static void gen_compile( ACT action, int column)
 	BLB blob;
 	PAT args;
 	TEXT *pattern1 =
-		"isc_compile_request%IF2%EN (%V1, (void**) &%DH, (void**) &%RH, (short) sizeof (%RI), (char ISC_FAR *) %RI);",
+		"isc_compile_request%IF2%EN (%V1, (FRBRD**) &%DH, (FRBRD**) &%RH, (short) sizeof (%RI), (char ISC_FAR *) %RI);",
 		*pattern2 = "if (!%RH%IF && %S1%EN)";
 
 	args.pat_request = request = action->act_request;
@@ -1456,7 +1456,7 @@ static void gen_create_database( ACT action, int column)
 	column += INDENT;
 	BEGIN;
 	printa(column,
-		   "isc_start_transaction (%s, (void**) &%s, (short) 1, &%s, (short) 0, (char*) 0);",
+		   "isc_start_transaction (%s, (FRBRD**) &%s, (short) 1, &%s, (short) 0, (char*) 0);",
 		   status_vector(action), trname, db->dbb_name->sym_string);
 	printa(column, "if (%s)", trname);
 	column += INDENT;
@@ -1467,10 +1467,10 @@ static void gen_create_database( ACT action, int column)
 			   trname, request->req_length, request->req_ident);
 	column -= INDENT;
 	printa(column, "if (!%s [1])", status_name);
-	printa(column + INDENT, "isc_commit_transaction (%s, (void**) &%s);",
+	printa(column + INDENT, "isc_commit_transaction (%s, (FRBRD**) &%s);",
 		   status_vector(action), trname);
 	printa(column, "if (%s [1])", status_name);
-	printa(column + INDENT, "isc_rollback_transaction (%s, (void**) &%s);",
+	printa(column + INDENT, "isc_rollback_transaction (%s, (FRBRD**) &%s);",
 		   status_vector(NULL), trname);
 	SET_SQLCODE;
 	END;
@@ -1778,10 +1778,10 @@ static void gen_ddl( ACT action, int column)
 	if (sw_auto) {
 		column -= INDENT;
 		printa(column, "if (!%s [1])", status_name);
-		printa(column + INDENT, "isc_commit_transaction (%s, (void**) &%s);",
+		printa(column + INDENT, "isc_commit_transaction (%s, (FRBRD**) &%s);",
 			   status_vector(action), transaction_name);
 		printa(column, "if (%s [1])", status_name);
-		printa(column + INDENT, "isc_rollback_transaction (%s, (void**) &%s);",
+		printa(column + INDENT, "isc_rollback_transaction (%s, (FRBRD**) &%s);",
 			   status_vector(NULL), transaction_name);
 	}
 
@@ -2507,7 +2507,7 @@ static void gen_finish( ACT action, int column)
 	RDY ready;
 	PAT args;
 	TEXT *pattern1 = "if (%S2)\n\
-    isc_%S1_transaction (%V1, (void**) &%S2);";
+    isc_%S1_transaction (%V1, (FRBRD**) &%S2);";
 
 	args.pat_vector1 = status_vector(action);
 	args.pat_string2 = transaction_name;
@@ -3531,7 +3531,7 @@ static void gen_receive( ACT action, int column, POR port)
 {
 	PAT args;
 	TEXT *pattern =
-		"isc_receive (%V1, (void**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
+		"isc_receive (%V1, (FRBRD**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
@@ -3989,7 +3989,7 @@ static void gen_send( ACT action, POR port, int column)
 {
 	PAT args;
 	TEXT *pattern =
-		"isc_send (%V1, (void**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
+		"isc_send (%V1, (FRBRD**) &%RH, (short) %PN, (short) %PL, &%PI, (short) %RL);";
 
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
@@ -4084,8 +4084,8 @@ static void gen_start( ACT action, POR port, int column, BOOLEAN sending)
 {
 	PAT args;
 	TEXT *pattern1 =
-		"isc_start_and_send (%V1, (void**) &%RH, (void**) &%S1, (short) %PN, (short) %PL, &%PI, (short) %RL);";
-	TEXT *pattern2 = "isc_start_request (%V1, (void**) &%RH, (void**) &%S1, (short) %RL);";
+		"isc_start_and_send (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %PN, (short) %PL, &%PI, (short) %RL);";
+	TEXT *pattern2 = "isc_start_request (%V1, (FRBRD**) &%RH, (FRBRD**) &%S1, (short) %RL);";
 	REF reference;
 
 	if (port && sending) {
@@ -4177,7 +4177,7 @@ static void gen_t_start( ACT action, int column)
 			}
 		}
 
-	printa(column, "isc_start_transaction (%s, (void**) &%s, (short) %d",
+	printa(column, "isc_start_transaction (%s, (FRBRD**) &%s, (short) %d",
 		   vector,
 		   (trans->tra_handle) ? trans->tra_handle : transaction_name,
 		   trans->tra_db_count);
@@ -4263,13 +4263,13 @@ static void gen_trans( ACT action, int column)
 {
 
 	if (action->act_type == ACT_commit_retain_context)
-		printa(column, "isc_commit_retaining (%s, (void**) &%s);",
+		printa(column, "isc_commit_retaining (%s, (FRBRD**) &%s);",
 			   status_vector(action),
 			   (action->act_object) ? (TEXT *) (action->
 												act_object) :
 			   transaction_name);
 	else
-		printa(column, "isc_%s_transaction (%s, (void**) &%s);",
+		printa(column, "isc_%s_transaction (%s, (FRBRD**) &%s);",
 			   (action->act_type ==
 				ACT_commit) ? "commit" : (action->act_type ==
 										  ACT_rollback) ? "rollback" :
@@ -4827,7 +4827,7 @@ static void t_start_auto(
 	else
 		for (count = 0, db = isc_databases; db; db = db->dbb_next, count++);
 
-	printa(column, "isc_start_transaction (%s, (void**) &%s, (short) %d",
+	printa(column, "isc_start_transaction (%s, (FRBRD**) &%s, (short) %d",
 		   vector, trname, count);
 
 //  Some systems don't like infinitely long lines.  Limit them to 256. 

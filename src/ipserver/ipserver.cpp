@@ -64,7 +64,7 @@ static void insert(ICC);
 static void ipi_end_thread(ICC);
 static void ipi_server(ICC);
 static IPM make_map(USHORT);
-static ITR make_transaction(IDB, HANDLE);
+static ITR make_transaction(IDB, struct why_hndl *);
 static void open_blob(ICC, P_OP);
 static void prepare_statement(ICC);
 static void put_segment(ICC);
@@ -821,7 +821,7 @@ static void allocate_statement( ICC icc)
  **************************************/
 	IDB idb;
 	IPSERVER_ISR statement;
-	HANDLE handle;
+	struct why_hndl* handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	STATUS result;
 	ips_dsql *ips;
@@ -875,7 +875,7 @@ static void attach_database( ICC icc, P_OP operation)
 	USHORT file_length, dpb_length, expanded_length;
 	UCHAR *file_name, file_buf[256], *dpb, dpb_buf[256];
 	UCHAR *expanded, expanded_buf[256];
-	HANDLE handle;
+	struct why_hndl* handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	STATUS result;
 	IDB idb;
@@ -1083,7 +1083,7 @@ static void compile( ICC icc)
 	IRQ request;
 	USHORT blr_length;
 	UCHAR *blr;
-	HANDLE handle;
+	struct why_hndl* handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	STATUS result;
 	ips_compile_req *ips;
@@ -1553,7 +1553,7 @@ static void execute_immediate( ICC icc, P_OP operation)
  **************************************/
 	IDB idb;
 	ITR transaction;
-	HANDLE handle;
+	struct why_hndl* handle;
 	USHORT length, dialect, in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length, parser_version;
 	UCHAR *string, *in_blr, *in_msg, *out_blr, *out_msg;
@@ -1707,7 +1707,7 @@ static void execute_statement( ICC icc, P_OP operation)
  **************************************/
 	ITR transaction;
 	IPSERVER_ISR statement;
-	HANDLE handle;
+	struct why_hndl* handle;
 	USHORT in_blr_length, in_msg_type, in_msg_length,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
@@ -2080,7 +2080,7 @@ static void info( ICC icc, P_OP operation)
  *      Issue information.
  *
  **************************************/
-	HANDLE handle;
+	struct why_hndl* handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT item_length, recv_item_length, buffer_length, incarnation;
 	UCHAR *buffer, *items, *recv_items;
@@ -2103,7 +2103,7 @@ static void info( ICC icc, P_OP operation)
 	GET_COMM_OBJECT;
 	comm->ips_operation = op_info_blob;
 	ips = &comm->ips_operations.ips_op_object;
-	handle = (HANDLE) ips->ips_handle;
+	handle = (struct why_hndl *)ips->ips_handle;
 	if (operation == op_info_request)
 		incarnation = (USHORT) ips->ips_parameter;
 
@@ -2340,7 +2340,7 @@ static IPM make_map( USHORT map_number)
 }
 
 
-static ITR make_transaction( IDB idb, HANDLE handle)
+static ITR make_transaction( IDB idb, struct why_hndl * handle)
 {
 /**************************************
  *
@@ -2382,7 +2382,7 @@ static void open_blob( ICC icc, P_OP op)
 	IDB idb;
 	IBL blob;
 	ITR transaction;
-	HANDLE handle;
+	struct why_hndl * handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	STATUS result;
 	USHORT bpb_length;
@@ -2500,7 +2500,7 @@ static void prepare_statement( ICC icc)
 	USHORT length, item_length, buffer_length, dialect, parser_version;
 	UCHAR *string, *items, items_buf[128], *buffer;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	HANDLE handle;
+	struct why_hndl * handle;
 	ips_dsql *ips;
 	ips_string *ips_prep_string;
 	ips_string *ips_prep_items;
@@ -2902,7 +2902,7 @@ static void reconnect( ICC icc)
 	ITR transaction;
 	USHORT length;
 	UCHAR *buffer;
-	HANDLE handle;
+	struct why_hndl * handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	ips_reconnect *ips;
 	ips_string *ips_recon;
@@ -2942,7 +2942,7 @@ static void reconnect( ICC icc)
 		else
 		{
 			gds__handle_cleanup(status_vector,
-								(struct hndl **) GDS_REF(handle));
+								(struct why_hndl **) GDS_REF(handle));
 			NOT_NULL(transaction, TRUE);
 		}
 	}
@@ -3452,7 +3452,7 @@ static void service_attach( ICC icc)
  **************************************/
 	USHORT service_length, spb_length;
 	UCHAR service_name[256], *spb, spb_buf[256];
-	HANDLE handle;
+	struct why_hndl * handle;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	STATUS result;
 	IDB idb;
@@ -3694,7 +3694,7 @@ static void shutdown_attachments( ICC icc)
 								 GDS_REF(idb->idb_transactions->itr_handle));
 				else
 					gds__handle_cleanup(status_vector,
-										(struct hndl **) GDS_REF(idb->
+										(struct why_hndl **) GDS_REF(idb->
 																 idb_transactions->
 																 itr_handle));
 
@@ -3838,7 +3838,7 @@ static void start_transaction( ICC icc)
 	ITR transaction;
 	USHORT count, c;
 	UCHAR *buffer;
-	HANDLE handle;
+	struct why_hndl * handle;
 	ULONG **v, *vector[3 * 16];
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	ips_start_trans *ips;

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.12 2002-12-06 13:43:10 eku Exp $
+ *	$Id: gpre_meta.epp,v 1.13 2002-12-16 15:52:01 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -47,7 +47,8 @@
 #define MAX_USER_LENGTH		33
 #define MAX_PASSWORD_LENGTH	33
 
-DATABASE DB = FILENAME "yachts.lnk" RUNTIME dbb->dbb_filename;
+//DATABASE DB = FILENAME "yachts.lnk" RUNTIME dbb->dbb_filename;
+DATABASE DB = FILENAME "ok:C:\GDB\ODS.RDB" RUNTIME dbb->dbb_filename;
 
 extern enum lang_t sw_language;
 extern USHORT sw_cstring;
@@ -192,7 +193,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 		//}
 	}
 
-	dbb->dbb_handle = (SLONG*) DB;
+	dbb->dbb_handle = DB;
 
 	if (sw_version && print_version) {
 		ib_printf("    Version(s) for database \"%s\"\n", dbb->dbb_filename);
@@ -456,7 +457,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 							   TEXT * domain_name,
 							   TEXT * buffer, USHORT buff_length)
 {
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 	BOOLEAN has_default;
@@ -489,7 +490,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 		blob_id = &GPRE_FLD.RDB$DEFAULT_VALUE;
 
 		/* open the blob */
-		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans, (void**) &blob_handle,
+		stat = isc_open_blob2(status_vect, &DB, &gds_trans, &blob_handle,
 							  blob_id, sizeof(blr_bpb), const_cast<unsigned char*>(blr_bpb));
 		if (stat) {
 			gds__print_status(status_vect);
@@ -498,7 +499,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 		/* fetch segments. Assume buffer is big enough.  */
 			ptr_in_buffer = buffer;
 		while (TRUE) {
-			stat = isc_get_segment(status_vect, (void**) &blob_handle, (USHORT*) &length,
+			stat = isc_get_segment(status_vect, &blob_handle, (USHORT*) &length,
 								   buff_length, ptr_in_buffer);
 			ptr_in_buffer = ptr_in_buffer + length;
 			buff_length = buff_length - length;
@@ -555,7 +556,7 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 							   TEXT * buffer, USHORT buff_length)
 {
 	DBB dbb;
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 	BOOLEAN has_default;
@@ -597,8 +598,8 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 
 	if (has_default) {
 		/* open the blob */
-		stat = isc_open_blob2(status_vect, (void**) &DB, (void**) &gds_trans,
-							  (void**) &blob_handle, blob_id, sizeof(blr_bpb),
+		stat = isc_open_blob2(status_vect, &DB, &gds_trans,
+							  &blob_handle, blob_id, sizeof(blr_bpb),
 							  const_cast<unsigned char*>(blr_bpb));
 		if (stat) {
 			gds__print_status(status_vect);
@@ -657,7 +658,7 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 {
 	LLS fields = NULL, *ptr_fields;
-	SLONG *DB, *gds_trans;
+	FRBRD *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	STR field_name;
 	TEXT *tmp;
@@ -1452,7 +1453,7 @@ void MET_load_hash_table( DBB dbb)
 	GPRE_FLD dbkey;
 	UDF udf;
 	TEXT *p;
-	int *handle, *handle2;
+	FRBRD *handle, *handle2;
 	USHORT post_v3_flag;
 	SLONG length;
 	INTLSYM iname;
@@ -1477,7 +1478,7 @@ void MET_load_hash_table( DBB dbb)
 
 	START_TRANSACTION;
 
-	dbb->dbb_transaction = (SLONG*) gds_trans;
+	dbb->dbb_transaction = gds_trans;
 	handle = handle2 = NULL;
 
 /*  Determine if the database is V3.  */
@@ -1490,7 +1491,7 @@ void MET_load_hash_table( DBB dbb)
 		X.RDB$SYSTEM_FLAG = 1 post_v3_flag = TRUE;
 
 	END_FOR;
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 
 	if (!post_v3_flag)
 		dbb->dbb_flags |= DBB_v3;
@@ -1543,7 +1544,7 @@ void MET_load_hash_table( DBB dbb)
 		END_FOR;
 	}
 
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 
 /*  Pick up all procedures (necessary to parse parts of the GDML grammar) */
 
@@ -1565,7 +1566,7 @@ void MET_load_hash_table( DBB dbb)
 		END_ERROR;
 
 	if (handle)
-		gds__release_request(gds_status, (void**) GDS_REF(handle));
+		gds__release_request(gds_status, GDS_REF(handle));
 
 /*  Pickup any user defined functions.  If the database does not support UDF's,
  *  this may fail
@@ -1618,9 +1619,9 @@ void MET_load_hash_table( DBB dbb)
 	}
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 	if (handle2)
-		gds__release_request(gds_status, (void**) GDS_REF(handle2));
+		gds__release_request(gds_status, GDS_REF(handle2));
 
 /*  Pick up all Collation names, might have several collations
  *  for a given character set.
@@ -1670,9 +1671,9 @@ void MET_load_hash_table( DBB dbb)
 		/* assume pre V4 database, no collations */
 		END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 	if (handle2)
-		gds__release_request(gds_status, (void**) GDS_REF(handle2));
+		gds__release_request(gds_status, GDS_REF(handle2));
 
 /*  Now pick up all character set names - with the subtype set to
  *  the type of the default collation for the character set.
@@ -1718,9 +1719,9 @@ void MET_load_hash_table( DBB dbb)
 		/* assume pre V4 database, no character sets */
 		END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 	if (handle2)
-		gds__release_request(gds_status, (void**) GDS_REF(handle2));
+		gds__release_request(gds_status, GDS_REF(handle2));
 
 /*  Pick up name of database default character set for SQL  */
 
@@ -1738,7 +1739,7 @@ void MET_load_hash_table( DBB dbb)
 		/* Assume V3 Db, no default charset */
 		END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 
 /*  Pick up all generators for the database  */
 
@@ -1750,7 +1751,7 @@ void MET_load_hash_table( DBB dbb)
 
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(handle));
+	gds__release_request(gds_status, GDS_REF(handle));
 
 /*  now that we have attached to the database, resolve the character set
  *  request (if any) (and if we can)
@@ -2084,7 +2085,7 @@ static int resolve_charset_and_collation(
 										 UCHAR * charset, UCHAR * collation)
 {
 	int found = 0;
-	int *request = NULL;
+	FRBRD *request = NULL;
 
 	assert(id != NULL);
 
@@ -2104,7 +2105,7 @@ static int resolve_charset_and_collation(
 				/* Assume V3 DB, without default character set */
 				END_ERROR;
 
-			gds__release_request(gds_status, (void**) GDS_REF(request));
+			gds__release_request(gds_status, GDS_REF(request));
 
 			if (charset == NULL)
 				charset = (UCHAR *) DEFAULT_CHARACTER_SET_NAME;
@@ -2125,7 +2126,7 @@ static int resolve_charset_and_collation(
 
 		END_FOR ON_ERROR END_ERROR;
 
-		gds__release_request(gds_status, (void**) GDS_REF(request));
+		gds__release_request(gds_status, GDS_REF(request));
 
 		return (found);
 	}
@@ -2140,7 +2141,7 @@ static int resolve_charset_and_collation(
 		*id = MAP_CHARSET_TO_TTYPE(CS.RDB$CHARACTER_SET_ID);
 		END_FOR ON_ERROR END_ERROR;
 
-		gds__release_request(gds_status, (void**) GDS_REF(request));
+		gds__release_request(gds_status, GDS_REF(request));
 
 		return (found);
 	}
@@ -2158,7 +2159,7 @@ static int resolve_charset_and_collation(
 	*id = MAP_CHARSET_TO_TTYPE(CS.RDB$CHARACTER_SET_ID);
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds_status, (void**) GDS_REF(request));
+	gds__release_request(gds_status, GDS_REF(request));
 
 	return (found);
 }

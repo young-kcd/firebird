@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.24 2002-12-06 13:43:10 eku Exp $
+ * $Id: gpre.h,v 1.25 2002-12-16 15:51:51 alexpeshkoff Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -63,6 +63,7 @@
 
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
+#include "../jrd/y_handle.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -542,8 +543,8 @@ typedef struct dbb {
 	USHORT dbb_id;				/* database id in program */
 	USHORT dbb_flags;			/* Misc flag bytes */
 	struct sym *dbb_name;		/* database name */
-	SLONG *dbb_handle;			/* OUR db handle */
-	SLONG *dbb_transaction;		/* default transaction */
+	FRBRD *dbb_handle;			/* OUR db handle */
+	FRBRD *dbb_transaction;		/* default transaction */
 	struct rrl *dbb_rrls;		/* temporary list of relation locks */
 	struct tpb *dbb_tpbs;		/* real tpbs for this db */
 	TEXT *dbb_filename;
@@ -561,22 +562,22 @@ typedef struct dbb {
 	TEXT *dbb_def_charset;		/* charset for CREATE DATABASE */
 	SSHORT dbb_know_subtype;	/* Use an charset subtype id on messages */
 	SSHORT dbb_char_subtype;	/* subtype to use for all SCHAR messages */
-	int *dbb_field_request;
-	int *dbb_flds_request;
-	int *dbb_relation_request;
-	int *dbb_procedure_request;
-	int *dbb_udf_request;
-	int *dbb_trigger_request;
-	int *dbb_proc_prms_request;
-	int *dbb_proc_prm_fld_request;
-	int *dbb_index_request;
-	int *dbb_type_request;
-	int *dbb_array_request;
-	int *dbb_dimension_request;
-	int *dbb_domain_request;
-	int *dbb_generator_request;
-	int *dbb_view_request;
-	int *dbb_primary_key_request;
+	FRBRD *dbb_field_request;
+	FRBRD *dbb_flds_request;
+	FRBRD *dbb_relation_request;
+	FRBRD *dbb_procedure_request;
+	FRBRD *dbb_udf_request;
+	FRBRD *dbb_trigger_request;
+	FRBRD *dbb_proc_prms_request;
+	FRBRD *dbb_proc_prm_fld_request;
+	FRBRD *dbb_index_request;
+	FRBRD *dbb_type_request;
+	FRBRD *dbb_array_request;
+	FRBRD *dbb_dimension_request;
+	FRBRD *dbb_domain_request;
+	FRBRD *dbb_generator_request;
+	FRBRD *dbb_view_request;
+	FRBRD *dbb_primary_key_request;
 	int dbb_scope;				/* scope of the database handle */
 	int dbb_allocation;
 	int dbb_pagesize;

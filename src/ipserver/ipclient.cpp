@@ -64,7 +64,7 @@ static void event_thread(void);
 static void extract_status(ICC, STATUS *);
 static STATUS handle_error(STATUS *, STATUS);
 static SSHORT init(STATUS *, ICC *);
-static ITR make_transaction(STATUS *, IDB, HANDLE);
+static ITR make_transaction(STATUS *, IDB, struct why_hndl *);
 static SSHORT name_length(TEXT *);
 static BOOL pack_strings(ICC);
 static void release_blob(IBL);
@@ -291,7 +291,7 @@ USHORT GDS_VAL(dpb_length), SCHAR * dpb, SCHAR * expanded_filename)
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (HANDLE) (ips->ips_handle);
+	idb->idb_handle = (struct why_hndl *) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -638,7 +638,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 	request = (IRQ) ALLOC(type_irq);
 	*req_handle = request;
 	NOT_NULL(request);
-	request->irq_handle = (HANDLE) ips->ips_rq_handle;
+	request->irq_handle = (struct why_hndl *) ips->ips_rq_handle;
 	request->irq_idb = idb;
 	request->irq_next = idb->idb_requests;
 	idb->idb_requests = request;
@@ -695,7 +695,7 @@ STATUS GDS_CREATE_BLOB(STATUS * user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (struct why_hndl *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -762,7 +762,7 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (struct why_hndl *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -850,7 +850,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (HANDLE) (ips->ips_handle);
+	idb->idb_handle = (struct why_hndl *) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -1139,7 +1139,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS * user_status,
 	statement = (IPSERVER_ISR) ALLOC(type_ipserver_isr);
 	*stmt_handle = statement;
 	NOT_NULL(statement);
-	statement->isr_handle = (HANDLE) ips->ips_st_handle;
+	statement->isr_handle = (struct why_hndl *) ips->ips_st_handle;
 	statement->isr_idb = idb;
 	statement->isr_next = idb->idb_sql_requests;
 	statement->isr_batch_flag = 0;
@@ -1172,7 +1172,7 @@ STATUS GDS_DSQL_EXECUTE(STATUS * user_status,
 	IDB idb;
 	ITR transaction;
 	IPSERVER_ISR statement;
-	HANDLE handle;
+	struct why_hndl * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1210,7 +1210,7 @@ STATUS GDS_DSQL_EXECUTE(STATUS * user_status,
 
 	/* take care of transactions */
 
-	handle = (HANDLE) ips->ips_tr_handle;
+	handle = (struct why_hndl *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1249,7 +1249,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS * user_status,
 	IDB idb;
 	ITR transaction;
 	IPSERVER_ISR statement;
-	HANDLE handle;
+	struct why_hndl * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr_in;
 	ips_string *ips_blr_out;
@@ -1294,7 +1294,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS * user_status,
 
 	/* take care of transactions */
 
-	handle = (HANDLE) ips->ips_tr_handle;
+	handle = (struct why_hndl *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1330,7 +1330,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
  **************************************/
 	IDB idb;
 	ITR transaction;
-	HANDLE handle;
+	struct why_hndl * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr;
 	ips_string *ips_msg;
@@ -1371,7 +1371,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 
 	/* take care of transacion handles */
 
-	handle = (HANDLE) ips->ips_tr_handle;
+	handle = (struct why_hndl *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1412,7 +1412,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
  **************************************/
 	IDB idb;
 	ITR transaction;
-	HANDLE handle;
+	struct why_hndl * handle;
 	ips_dsql *ips;
 	ips_string *ips_blr_in;
 	ips_string *ips_msg_in;
@@ -1462,7 +1462,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 
 	/* handle transactions */
 
-	handle = (HANDLE) ips->ips_tr_handle;
+	handle = (struct why_hndl *) ips->ips_tr_handle;
 	if (transaction && !handle) {
 		release_transaction(transaction);
 		*itr_handle = NULL;
@@ -1667,7 +1667,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status,
 
 	/* free statement resources */
 
-	statement->isr_handle = (HANDLE) ips->ips_handle;
+	statement->isr_handle = (struct why_hndl *) ips->ips_handle;
 	if (!statement->isr_handle) {
 		release_sql_request(statement);
 		*stmt_handle = NULL;
@@ -2069,7 +2069,7 @@ STATUS GDS_OPEN_BLOB(STATUS * user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (struct why_hndl *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -2135,7 +2135,7 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 	blob = (IBL) ALLOCV(type_ibl, BLOB_LENGTH);
 	*blob_handle = blob;
 	NOT_NULL(blob);
-	blob->ibl_handle = (HANDLE) ips->ips_bl_handle;
+	blob->ibl_handle = (struct why_hndl *) ips->ips_bl_handle;
 	blob->ibl_buffer_length = BLOB_LENGTH;
 	blob->ibl_idb = idb;
 	blob->ibl_itr = transaction;
@@ -2517,7 +2517,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (HANDLE) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (struct why_hndl *) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -2869,7 +2869,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 	idb->idb_next = icc->icc_databases;
 	idb->idb_thread = icc;
 	icc->icc_databases = idb;
-	idb->idb_handle = (HANDLE) (ips->ips_handle);
+	idb->idb_handle = (struct why_hndl *) (ips->ips_handle);
 	RETURN_SUCCESS;
 }
 
@@ -3204,7 +3204,7 @@ STATUS GDS_START_MULTIPLE(STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (HANDLE) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (struct why_hndl *) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -3282,7 +3282,7 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 	if (check_response(icc, user_status))
 		RETURN_ERROR(user_status[1]);
 	*itr_handle =
-		make_transaction(user_status, idb, (HANDLE) ips->ips_tr_handle);
+		make_transaction(user_status, idb, (struct why_hndl *) ips->ips_tr_handle);
 	RETURN_SUCCESS;
 }
 
@@ -3978,7 +3978,7 @@ static SSHORT init( STATUS * user_status, ICC * picc)
 }
 
 
-static ITR make_transaction( STATUS * user_status, IDB idb, HANDLE handle)
+static ITR make_transaction( STATUS * user_status, IDB idb, struct why_hndl * handle)
 {
 /**************************************
  *
