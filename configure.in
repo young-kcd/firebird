@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.69 2002-11-06 20:37:10 skidder Exp $
+dnl $Id: configure.in,v 1.70 2002-11-07 13:05:35 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -28,15 +28,15 @@ CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
 AC_SUBST(CPU_TYPE)
 
 case "$target" in
-*-*-darwin*)      MAKEFILE_PREFIX=darwin  ; PLATFORM=DARWIN    ; AC_DEFINE(DARWIN);;
-*-*-freebsd*)     MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD   ; AC_DEFINE(FREEBSD);;
-*-*-linux*)       MAKEFILE_PREFIX=linux   ; PLATFORM=LINUX     ; AC_DEFINE(LINUX) ;;
-*-*-netbsd*)      MAKEFILE_PREFIX=netbsd  ; PLATFORM=NETBSD    ; AC_DEFINE(NETBSD) ;;
-*-*-hpux*)        MAKEFILE_PREFIX=hpux    ; PLATFORM=hpux      ; AC_DEFINE(hpux) ;;
-i386-pc-solaris*) MAKEFILE_PREFIX=solx86  ; PLATFORM=solx86    ; AC_DEFINE(solx86) ;;
-sparc-sun-solaris*) MAKEFILE_PREFIX=solaris  ; PLATFORM=SOLARIS    ; AC_DEFINE(SOLARIS) ;;
-i*-sni-sysv4)     MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ) ;;
-*-*-mingw*)       MAKEFILE_PREFIX=mingw   ; PLATFORM=win32     ; AC_DEFINE(WIN_NT) ;;
+*-*-darwin*)        MAKEFILE_PREFIX=darwin  ; PLATFORM=DARWIN    ; AC_DEFINE(DARWIN)  ;;
+*-*-freebsd*)       MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD   ; AC_DEFINE(FREEBSD) ;;
+*-*-linux*)         MAKEFILE_PREFIX=linux   ; PLATFORM=LINUX     ; AC_DEFINE(LINUX)   ;;
+*-*-netbsd*)        MAKEFILE_PREFIX=netbsd  ; PLATFORM=NETBSD    ; AC_DEFINE(NETBSD)  ;;
+*-*-hpux*)          MAKEFILE_PREFIX=hpux    ; PLATFORM=hpux      ; AC_DEFINE(hpux)    ;;
+i386-pc-solaris*)   MAKEFILE_PREFIX=solx86  ; PLATFORM=solx86    ; AC_DEFINE(solx86)  ;;
+sparc-sun-solaris*) MAKEFILE_PREFIX=solaris ; PLATFORM=SOLARIS   ; AC_DEFINE(SOLARIS) ;;
+i*-sni-sysv4)       MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ)  ;;
+*-*-mingw*)         MAKEFILE_PREFIX=mingw   ; PLATFORM=win32     ; AC_DEFINE(WIN_NT)  ;;
 esac
 
 AC_SUBST(PLATFORM)
@@ -300,6 +300,15 @@ case $PLATFORM in
     # kkuznetsov: this still not worked. Why knows why?
     AC_DEFINE(GPRECOMMON_Files)
     AC_SUBST(GPRECOMMON_Files, " thd.cpp ")
+    ;;
+
+  win32)
+    FB_PIPE_NAME=interbas
+    AC_ARG_WITH(pipe-name,
+      [  --with-pipe-name        specify wnet pipe name (default=interbas)],
+      [FB_SERVICE_NAME=${withval}])
+    AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
+    AC_SUBST(FB_PIPE_NAME)
     ;;
 
   *)
@@ -582,6 +591,10 @@ esac
 
 echo           "Service name : $FB_SERVICE_NAME"
 echo           "Service port : $FB_SERVICE_PORT"
+
+case $PLATFORM in
+ win32)   echo "   Pipe name : $FB_PIPE_NAME";;
+esac
 
 case $PROD_BUILD_FLG in
  Y)       echo "       Debug : disabled";;
