@@ -41,11 +41,11 @@
 #include <unistd.h>
 #endif
 
-static inline UCHAR* BURP_alloc(int size){
-	return MISC_alloc_burp((ULONG) size);
+static inline UCHAR* BURP_alloc(ULONG size){
+	return MISC_alloc_burp(size);
 }
-static inline UCHAR* BURP_alloc_zero(int size){
-	return MISC_alloc_burp((ULONG) size);
+static inline UCHAR* BURP_alloc_zero(ULONG size){
+	return MISC_alloc_burp(size);
 }
 static inline void BURP_free(void *block){
 	MISC_free_burp(block);
@@ -613,7 +613,7 @@ typedef struct gfld {
 	USHORT		gfld_flags;
 } *GFLD;
 
-enum gfld_flags_vals{
+enum gfld_flags_vals {
 	GFLD_validation_blr		= 1,
 	GFLD_validation_source	= 2,
 	GFLD_validation_source2	= 4
@@ -931,7 +931,7 @@ inline static ULONG BURP_UP_TO_BLOCK(ULONG size)
 
 /* Burp Messages */
 
-enum burp_messages_vals{
+enum burp_messages_vals {
 	msgVerbose_write_charsets		= 211,
 	msgVerbose_write_collations		= 212,
 	msgErr_restore_charset			= 213,

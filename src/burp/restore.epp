@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.45 2003-09-20 23:24:14 brodsom Exp $
+$Id: restore.epp,v 1.46 2003-09-22 14:13:52 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -121,11 +121,6 @@ const struct s_t_cvtbl {
 	{220,	CS_SJIS,		0},				/* codepoint collation */
 	{230,	CS_EUCJ,		0}				/* codepoint collation */
 	};
-
-/* When skipping started, scan_next_attr will be changed from NO_SKIP     */
-/* to BEFORE_SKIP. When scanning for next valid attribute after skipping, */
-/* it will flip-flop between BEFORE_SKIP and AFTER_SKIP. When next valid  */
-/* attribute is found, it will be changed back to NO_SKIP by 'SKIP_SCAN'  */
 
 enum scan_attr_t {
 	NO_SKIP		= 0,	/* Not in skipping and scanning mode */
@@ -238,10 +233,16 @@ inline UCHAR* get_block(tgbl* tdgbl, UCHAR* p, ULONG n)
 	return MVOL_read_block(tdgbl, p, n);
 }
 
+// When skipping started, scan_next_attr will be changed from NO_SKIP
+// to BEFORE_SKIP. When scanning for next valid attribute after skipping,
+// it will flip-flop between BEFORE_SKIP and AFTER_SKIP. When next valid
+// attribute is found, it will be changed back to NO_SKIP by 'SKIP_SCAN'
+
 static inline void SKIP_INIT(scan_attr_t *scan_next_attr)
 {
 	*scan_next_attr = NO_SKIP;
 }
+
 static inline bool SKIP_SCAN(scan_attr_t *scan_next_attr)
 {
 	return (*scan_next_attr == AFTER_SKIP ?
@@ -452,8 +453,11 @@ int RESTORE_restore (TEXT	*file_name,
 		if (gds_status [1])
 			general_on_error ();
 		/* Check to see if there is a warning */
-		if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 && gds_status [2] != gds_arg_end)
-		BURP_print_warning (gds_status);  
+		if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 
+			&& gds_status [2] != gds_arg_end)
+		{
+			BURP_print_warning (gds_status);
+		}
 	}
 
 	EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
@@ -550,8 +554,11 @@ int RESTORE_restore (TEXT	*file_name,
 	END_ERROR;
 
 	/* Check to see if there is a warning */
-	if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 && gds_status [2] != gds_arg_end)
+	if (gds_status [0] == gds_arg_gds && gds_status [1] == 0 
+		&& gds_status [2] != gds_arg_end)
+	{
 		BURP_print_warning (gds_status);
+	}
 
 	BURP_verbose (88, NULL, NULL, NULL, NULL, NULL);
 	/* msg 88 finishing, closing, and going home */
@@ -592,7 +599,8 @@ int RESTORE_restore (TEXT	*file_name,
 	/* set sync writes to engine default */
 	*d++ = (UCHAR) gds_dpb_force_write;
 	*d++ = 1;
-	*d++ = (UCHAR) tdgbl->hdr_forced_writes;	/* set forced writes to the value which was in the header */
+	*d++ = (UCHAR) tdgbl->hdr_forced_writes;	
+	// set forced writes to the value which was in the header
 
 	SSHORT l = d - dpb;
 	// long? Are you sure? Why not FRBRD* ???
@@ -711,8 +719,9 @@ void add_files (const UCHAR	*file_name)
 			file->fil_length -= start - 1;
 		else
 		{
-			BURP_print (96, (void*) file->fil_length, (void*) (start - 1), NULL, NULL, NULL);
-				/* msg 96  length given for initial file (%ld) is less than minimum (%ld) */
+			BURP_print (96, (void*) file->fil_length, (void*) (start - 1), NULL,
+						NULL, NULL);
+			// msg 96  length given for initial file (%ld) is less than minimum (%ld)
 			file->fil_length = 0;
 		}
 
@@ -767,7 +776,8 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 
 	if (!tdgbl->gbl_sw_skip_count)
 	{
-		gds__msg_format (NULL, 12, type, sizeof(t_name), t_name, NULL, NULL, NULL, NULL, NULL);
+		gds__msg_format(NULL, 12, type, sizeof(t_name), t_name, NULL, NULL,
+						NULL, NULL, NULL);
 		BURP_print (80, t_name, (void*) bad_attr, NULL, NULL, NULL);
 		/* msg 80  don't recognize %s attribute %ld -- continuing */
 		skip_l = get(tdgbl);
@@ -919,7 +929,8 @@ void create_database (const TEXT *file_name)
 	if (tdgbl->gbl_sw_page_size &&
 		(tdgbl->gbl_sw_page_size < page_size))
 	{
-		BURP_print (110, (void*) page_size, (void*) (ULONG) tdgbl->gbl_sw_page_size, NULL, NULL, NULL);
+		BURP_print (110, (void*) page_size,
+					(void*) (ULONG) tdgbl->gbl_sw_page_size, NULL, NULL, NULL);
 	/* msg 110 Reducing the database page size from %ld bytes to %ld bytes */
 	}
 
@@ -1593,7 +1604,8 @@ void get_array (BURP_REL	relation,
 			for (range = field->fld_ranges, count = 0; range < end_ranges;
 				range += 2, count++)
 			{
-				stuff(&blr, gds_sdl_do2); stuff(&blr, count);
+				stuff(&blr, gds_sdl_do2);
+				stuff(&blr, count);
 				//
 				// Normally we loop through all dimensions chopping off slices
 				// and writing them. This works fine but this also means that
@@ -2095,7 +2107,8 @@ bool get_character_set (void)
 			case att_charset_name:
 				X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 				GET_TEXT(X.RDB$CHARACTER_SET_NAME);
-				BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME, NULL, NULL, NULL, NULL);
+				BURP_verbose (msgVerbose_restore_charset,
+							  X.RDB$CHARACTER_SET_NAME, NULL, NULL, NULL, NULL);
 				break;
 
 			case att_charset_form:
@@ -2238,7 +2251,8 @@ bool get_collation (void)
 			case att_coll_name:
 				X.RDB$COLLATION_NAME.NULL = FALSE;
 				GET_TEXT(X.RDB$COLLATION_NAME);
-				BURP_verbose (msgVerbose_restore_collation, X.RDB$COLLATION_NAME, NULL, NULL, NULL, NULL);
+				BURP_verbose(msgVerbose_restore_collation, X.RDB$COLLATION_NAME,
+							 NULL, NULL, NULL, NULL);
 				break;
 
 			case att_coll_id:
@@ -3203,29 +3217,29 @@ bool get_files (void)
 						/* msg 116 restoring file %s */
 					X.RDB$FILE_NAME, NULL, NULL, NULL, NULL);
 				break;
-													   
+
 			case att_file_sequence:
 				X.RDB$FILE_SEQUENCE = (USHORT) get_numeric();
 				break;
-													   
+
 			case att_file_start:
 				X.RDB$FILE_START = get_numeric();
 				break;
-													   
+
 			case att_file_length:
 				X.RDB$FILE_LENGTH = get_numeric();
 				break;
-													   
+
 			case att_file_flags:
 				X.RDB$FILE_FLAGS |= get_numeric();
 				break;
-													   
+
 			case att_shadow_number:
 				X.RDB$SHADOW_NUMBER = (USHORT) get_numeric();
 				if (tdgbl->gbl_sw_kill && X.RDB$SHADOW_NUMBER)
 					X.RDB$FILE_FLAGS |= FILE_inactive;
 				break;
-													   
+
 			default:
 				bad_attribute (scan_next_attr, attribute, 85); 
 				/* msg 85 file */
@@ -3392,7 +3406,7 @@ bool get_function (void)
 	return true;
 }
 
-void get_function_arg (void)
+void get_function_arg()
 {
 /**************************************
  *

@@ -125,7 +125,7 @@ const char* SWITCH_CHAR	= "-";
 #endif
 
 
-const char* OUTPUT_SUPPRESS	= "SUPPRESS";
+const char* output_suppress	= "SUPPRESS";
 const int BURP_MSG_FAC		= 12;
 
 enum gbak_action
@@ -161,7 +161,7 @@ const ULONG GBYTE	= MBYTE * KBYTE;
 static bool fAnsiCP = false;
 static inline void translate_cp(SCHAR *a){
 	if (!fAnsiCP) 
-		AnsiToOem(a, a)
+		AnsiToOem(a, a);
 }
 #else
 static inline void translate_cp(SCHAR *a){
@@ -281,7 +281,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		if (!string[1])
 			string = "-*NONE*";
 		const in_sw_tab_t* in_sw_tab = burp_in_sw_table;
-        const TEXT *q;
+		const TEXT *q;
 		for (; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
 		    TEXT c;
@@ -423,7 +423,7 @@ int common_main(int		argc,
 //tgbl	thd_context;
 
 	volatile gbak_action action = QUIT;
-	volatile tgbl *tdgbl = (tgbl*) gds__alloc(sizeof(*tdgbl));
+	volatile tgbl *tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
 // NOMEM: return error, FREE: during function exit in the SETJMP 
 	if (tdgbl == NULL)
 	{
@@ -435,7 +435,7 @@ int common_main(int		argc,
 
 	SET_THREAD_DATA;
 	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(*tdgbl));
+	memset((void *) tdgbl, 0, sizeof(tgbl));
 	tdgbl->burp_env = reinterpret_cast<UCHAR*>(env);
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
 	tdgbl->output_proc = output_proc;
@@ -692,10 +692,10 @@ int common_main(int		argc,
 
 				const TEXT *p = redirect;
 				TEXT c;
-				string = const_cast<TEXT*>(OUTPUT_SUPPRESS);
+				const TEXT *q = output_suppress;
 				tdgbl->sw_redirect = NOOUTPUT;
 				while (c = *p++) {
-					if (UPPER(c) != *string++) {
+					if (UPPER(c) != *q++) {
 						tdgbl->sw_redirect = REDIRECT;
 						break;
 					}
@@ -2002,7 +2002,7 @@ static int api_gbak(int argc,
 	tgbl ldgbl;
 	tgbl* tdgbl = &ldgbl;
 	SET_THREAD_DATA;
-	memset((void *) tdgbl, 0, sizeof(*tdgbl));
+	memset((void *) tdgbl, 0, sizeof(tgbl));
 	tdgbl->output_proc = output_main;
 
     TEXT *usr, *pswd;

@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.26 2003-09-18 21:56:26 brodsom Exp $
+$Id: canonical.cpp,v 1.27 2003-09-22 14:13:53 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -78,7 +78,7 @@ static xdr_t::xdr_ops burp_ops =
 	burp_destroy
 };
 
-const int INCREMENT = 1024;
+const int increment = 1024;
 
 
 ULONG CAN_encode_decode(BURP_REL relation,
@@ -464,7 +464,7 @@ static bool_t expand_buffer( XDR * xdrs)
 	LSTRING *buffer;
 
 	buffer = (LSTRING *) xdrs->x_public;
-	length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + INCREMENT;
+	length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + increment;
 	buffer->lstr_allocated = buffer->lstr_length = length;
 
 	caddr_t new_ = (caddr_t) BURP_alloc(length);
@@ -476,7 +476,7 @@ static bool_t expand_buffer( XDR * xdrs)
 
 	xdrs->x_base = new_;
 	xdrs->x_private = p;
-	xdrs->x_handy += INCREMENT;
+	xdrs->x_handy += increment;
 
 	buffer->lstr_address = (UCHAR *) new_;
 

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.35 2003-09-18 10:56:32 brodsom Exp $
+//	$Id: alice.cpp,v 1.36 2003-09-22 14:11:14 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -198,7 +198,7 @@ int common_main(int			argc,
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	volatile tgbl* tdgbl = (tgbl*) gds__alloc(sizeof(*tdgbl));
+	volatile tgbl* tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
 	if (!tdgbl) {
 		//  NOMEM: return error, FREE: during function exit in the SETJMP
 		return FINI_ERROR;
@@ -206,7 +206,7 @@ int common_main(int			argc,
 
 	SET_THREAD_DATA;
 	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(*tdgbl));
+	memset((void *) tdgbl, 0, sizeof(tgbl));
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
 	tdgbl->ALICE_permanent_pool = NULL;
