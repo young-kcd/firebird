@@ -34,29 +34,16 @@
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../common/config/config.h"
 
 
 extern "C" {
 
 
 #define DUMMY_INTERVAL		60	/* seconds */
-#define CONNECTION_TIMEOUT	180	/* seconds */
 #define ATTACH_FAILURE_SPACE	2048	/* bytes */
 
 static TEXT *attach_failures = NULL, *attach_failures_ptr;
-
-static SLONG conn_timeout = CONNECTION_TIMEOUT;
-static SLONG dummy_interval = DUMMY_INTERVAL;
-
-#define CONNECTION_TIMEOUT_IDX    0
-#define DUMMY_PACKET_INTRVL_IDX   1
-
-static struct ipccfg INET_cfgtbl[] = {
-	{ISCCFG_CONN_TIMEOUT, 0, &conn_timeout, 0, 0},
-	{ISCCFG_DUMMY_INTRVL, 0, &dummy_interval, 0, 0},
-     {NULL, 0, NULL, 0, 0}
-};
 
 static void cleanup_memory(void *);
 static SLONG get_parameter(UCHAR **);
@@ -433,15 +420,12 @@ void DLL_EXPORT REMOTE_get_timeout_params(
 		   information from the configuration file and set the missing
 		   values */
 
-		ISC_get_config(LOCK_HEADER, INET_cfgtbl);
-
 		if (!got_dpb_connect_timeout)
-			port->port_connect_timeout = conn_timeout;
+			port->port_connect_timeout = Config::getConnectionTimeout();
 
 		if (!got_dpb_dummy_packet_interval) {
-			if (INET_cfgtbl[DUMMY_PACKET_INTRVL_IDX].ipccfg_found)
-				port->port_flags |= PORT_dummy_pckt_set;
-			port->port_dummy_packet_interval = dummy_interval;
+			port->port_flags |= PORT_dummy_pckt_set;
+			port->port_dummy_packet_interval = Config::getDummyPacketInterval();
 		}
 	}
 /* Insure a meaningful keepalive interval has been set. Otherwise, too

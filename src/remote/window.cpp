@@ -54,6 +54,8 @@
 #include "../remote/xnet_proto.h"
 #undef NO_PORT
 
+#include "../common/config/config.h"
+
 
 extern "C" {
 
@@ -64,37 +66,14 @@ HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
 
-static ULONG WND_ipc_map;
-static ULONG WND_priority;
-static ULONG WND_working_min;
-static ULONG WND_working_max;
-#ifdef SUPERSERVER
-extern SLONG free_map_debug;
-extern SLONG trace_pools;
-#endif
-
-static struct ipccfg WND_hdrtbl[] = {
-	ISCCFG_IPCMAP, -1, reinterpret_cast < SLONG * >(&WND_ipc_map), 0, 0,
-	ISCCFG_PRIORITY, -1, reinterpret_cast < SLONG * >(&WND_priority), 0, 0,
-	ISCCFG_MEMMIN, -1, reinterpret_cast < SLONG * >(&WND_working_min), 0, 0,
-	ISCCFG_MEMMAX, -1, reinterpret_cast < SLONG * >(&WND_working_max), 0, 0,
-#ifdef SUPERSERVER
-	ISCCFG_TRACE_POOLS, 0, &trace_pools, 0, 0,
-#endif
-	NULL, -1, NULL, 0, 0
-};
-
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
 static char *MakeVersionString(char *, int, USHORT);
 static BOOL CanEndServer(HWND, BOOL);
 
-#define SVC_CONFIG 4			// Startup Configuration Entry point for ibcfg.exe.
-
 // Window Procedure
 void __stdcall WINDOW_shutdown(HANDLE);
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
-
 
 
 int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
@@ -125,8 +104,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 /* initialize interprocess server */
 
-	ISC_get_config(LOCK_HEADER, WND_hdrtbl);
-
 	if (!(usServerFlagMask & SRVR_ipc)) {
 		szClassName = "IB_Disabled";
 	}
@@ -134,7 +111,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 #ifndef XNET
 
-		if (!IPS_init(hWnd, 0, (USHORT) WND_ipc_map, 0)) {
+		if (!IPS_init(hWnd, 0, (USHORT) Config::getIpcMapSize(), 0)) {
 			// The initialization failed.  Check to see if there is another
 			// server running.  If so, bring up it's property sheet and quit
 			// otherwise assume that a stale client is still around and tell
@@ -189,13 +166,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 		}
 #endif
 	}
-
-/* 
- * Call ISC_set_config with the values we just read to
- * make them take effect. 
-*/
-	ISC_set_config(NULL, WND_hdrtbl);
-	WND_ipc_map /= 1024;
 
 /* initialize main window */
 	wcl.hInstance = hInstance;
