@@ -93,6 +93,10 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\common\config\config_file.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
 # End Source File
 # End Group
@@ -106,13 +110,6 @@ SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\perf.cpp
-
-!IF  "$(CFG)" == "fbembed - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "REMOTE files"
