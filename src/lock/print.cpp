@@ -452,15 +452,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (LOCK_header->lhb_acquire_blocks) {
 		// CVC: MSVC up to v6 couldn't convert UINT64 to double.
-#if defined(_MSC_VER) && _MSC_VER <= 1200
 		const float bottleneck =
 			(float) ((100. * (SINT64) LOCK_header->lhb_acquire_blocks) /
 					 (SINT64) LOCK_header->lhb_acquires);
-#else
-		const float bottleneck =
-			(float) ((100. * LOCK_header->lhb_acquire_blocks) /
-					 LOCK_header->lhb_acquires);
-#endif
 		FPRINTF(outfile, "\tMutex wait: %3.1f%%\n", bottleneck);
 	}
 	else
