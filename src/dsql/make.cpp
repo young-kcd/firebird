@@ -1505,7 +1505,7 @@ dsql_nod* MAKE_list(DsqlNodStack& stack)
 	dsql_nod* node = MAKE_node(nod_list, count);
 	dsql_nod** ptr = node->nod_arg + count;
 
-	while (stack)
+	while (stack.notEmpty())
 	{
 		*--ptr = stack.pop();
 	}

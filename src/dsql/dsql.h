@@ -465,6 +465,14 @@ public:
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
+
+private:
+	// Request should never be destroyed using delete.
+	// It dies together with it's pool in release_request().
+	~dsql_req();
+	// To avoid posix warning about missing public destructor declare 
+	// MemoryPool as friend class. In fact IT releases request memory!
+	friend class MemoryPool;
 };
 
 

@@ -4821,6 +4821,9 @@ static dsql_req* prepare(
 						sizeof(ISC_STATUS) * len);
 	}
 
+// free blr memory
+	request->req_blr_data.free();
+
 	if (status)
 		punt();
 
@@ -4959,6 +4962,9 @@ static void release_request(dsql_req* request, bool top_level)
 		isc_release_request(status_vector, &request->req_handle);
 		THREAD_ENTER;
 	}
+
+// free blr memory
+	request->req_blr_data.free();
 
 // Only release the entire request for top level requests 
 

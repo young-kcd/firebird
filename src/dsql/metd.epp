@@ -1078,7 +1078,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
     userFunc->udf_arguments->nod_count = arg_count;
     
     ptr = userFunc->udf_arguments->nod_arg + arg_count;
-    while (stack) {
+    while (stack.notEmpty()) {
         *--ptr = stack.pop();
 		// dimitr: adjust the UDF arguments for CSTRING
 		if ((*ptr)->nod_desc.dsc_dtype == dtype_cstring)
