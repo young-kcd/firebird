@@ -1359,6 +1359,11 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 		*length = sizeof(SSHORT);
 		dtype = dtype_short;
 		break;
+ 
+   	case KW_BIGINT:
+		*length = sizeof(SINT64);
+		dtype = dtype_int64;
+		break;
 
 	case KW_LONG:
 		*length = sizeof(SLONG);
@@ -1390,7 +1395,7 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 		return dtype_blob;
 	}
 
-	if (dtype == dtype_short || dtype == dtype_long) {
+	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_int64 ) {
 		if (PAR_match(KW_SCALE)) {
 			const bool m = (PAR_match(KW_MINUS)) ? true : false;
 			*scale = parse_ordinal();
@@ -4298,6 +4303,10 @@ static int parse_sql_dtype( USHORT * length, USHORT * scale)
 	case KW_INTEGER:
 		*length = sizeof(SLONG);
 		return dtype_long;
+
+	case KW_BIGINT:
+		*length = sizeof(SINT64);
+		return dtype_int64;
 
 	case KW_REAL:
 	case KW_FLOAT:

@@ -729,6 +729,10 @@ static void show_datatype(
 		msg = 104;
 		break;
 
+	case dtype_int64:
+		msg = 329;
+		break;
+
 	case dtype_blob:
 		ERRQ_msg_partial(105, NULL, NULL, NULL, NULL, NULL);	// Msg105 blob
 		if (segment_length) {
@@ -779,7 +783,7 @@ static void show_datatype(
 		ERRQ_msg_partial(433, NULL, NULL, NULL, NULL, NULL);	// Msg433  array
 	}
 
-	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_quad) {
+	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_quad || dtype == dtype_int64) {
 		if (scale) {
 			ERRQ_msg_partial(111, (TEXT*)(IPTR) scale, NULL, NULL, NULL, NULL);
 			// Msg111 , scale %d

@@ -2701,6 +2701,8 @@ static int field_length( USHORT dtype, USHORT length)
 		return sizeof(float);
 	case dtype_double:
 		return sizeof(double);
+      case dtype_int64:
+            return sizeof(SINT64); 
 
 	case dtype_sql_time:
 	case dtype_sql_date:

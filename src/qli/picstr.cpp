@@ -440,6 +440,20 @@ static TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 			sprintf(buff, "-(%d)9", 11 + scale);
 		break;
 
+	case dtype_int64:
+        /* replace 16 with 20 later 
+		   (as soon as I have sorted out the rounding issues)
+		   FSG*/ 
+		if (!scale)
+			return "-(16)9";
+		if (scale < 0 && scale > -16)
+			sprintf(buff, "-(%d).9(%d)", 16 + scale, -scale);
+		else if (scale < 0)
+			sprintf(buff, "-.9(%d)", -scale);
+		else
+			sprintf(buff, "-(%d)9", 17 + scale);
+		break;
+
 	case dtype_sql_date:
 	case dtype_timestamp:
 		return "DD-MMM-YYYY";

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.35 2004-05-16 01:41:20 brodsom Exp $
+$Id: gener.cpp,v 1.36 2004-06-03 14:00:56 fsg Exp $
 */
 
 #include "firebird.h"
@@ -667,7 +667,12 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		STUFF(blr_short);
 		STUFF(desc->dsc_scale);
 		break;
-
+   
+	case dtype_int64:
+		STUFF(blr_int64);
+		STUFF(desc->dsc_scale);
+		break;
+	
 	case dtype_long:
 		STUFF(blr_long);
 		STUFF(desc->dsc_scale);
@@ -679,10 +684,6 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		STUFF(desc->dsc_scale);
 		break;
 
-	case dtype_int64:
-		STUFF(blr_int64);
-		STUFF(desc->dsc_scale);
-		break;
 
 	case dtype_real:
 		STUFF(blr_float);
@@ -1280,7 +1281,7 @@ static void gen_literal(const dsc* desc, qli_req* request)
 		STUFF_WORD(value);
 		STUFF_WORD(value >> 16);
 		break;
-
+    case dtype_int64:
 	case dtype_quad:
 	case dtype_timestamp:
 		value = *(SLONG *) p;

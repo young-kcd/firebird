@@ -77,6 +77,7 @@ static const dtypes_t dtypes_table[] = {
 	{ dtype_sql_date, "SQL date" },
 	{ dtype_sql_time, "SQL time" },
 	{ dtype_blob, "blob" },
+	{ dtype_int64, "big integer" },
 	{ 0, 0 }
 };
 
@@ -118,8 +119,8 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 			if (*(SLONG *) p1 > *(SLONG *) p2)
 				return 1;
 			return -1;
-
-		case dtype_timestamp:
+		case dtype_int64:
+       	case dtype_timestamp:
 		case dtype_quad:
 			if (((SLONG *) p1)[0] < ((SLONG *) p2)[0])
 				return -1;
@@ -498,6 +499,10 @@ double MOVQ_get_double(const dsc* desc)
 		value = *((SLONG *) desc->dsc_address);
 		break;
 
+	case dtype_int64:
+		value = *((SINT64 *) desc->dsc_address);
+		break;
+
 	case dtype_real:
 		return *((float *) desc->dsc_address);
 
@@ -554,6 +559,10 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 	switch (desc->dsc_dtype) {
 	case dtype_short:
 		value = *((SSHORT *) p);
+		break;
+
+	case dtype_int64:
+		value = *((SINT64 *) p);
 		break;
 
 	case dtype_long:
@@ -842,6 +851,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 				}
 			}
 
+		case dtype_int64:
 		case dtype_short:
 		case dtype_long:
 		case dtype_real:
@@ -888,6 +898,10 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 	case dtype_long:
 		*(SLONG *) p = MOVQ_get_long(from, to->dsc_scale);
+		return;
+
+	case dtype_int64:
+		*(SINT64 *) p = MOVQ_get_long(from, to->dsc_scale);
 		return;
 
 	case dtype_real:
