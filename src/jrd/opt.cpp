@@ -3886,11 +3886,15 @@ static RSB gen_retrieval(TDBB tdbb,
 	JRD_REL relation;
 	STR alias;
 	RSB rsb;
-	IDX *idx, *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
+	IDX *idx;
+	static IDX *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
 	JRD_NOD node, opt_boolean, inversion;
-	SSHORT i, j, count, last_idx, idx_walk_count, position, conjunct_position[MAX_INDICES];
-	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
-	Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
+	SSHORT i, j, count, last_idx, idx_walk_count, position;
+	static SSHORT conjunct_position[MAX_INDICES];
+	SLONG last_priority_level;
+	static SLONG idx_priority_level[MAX_INDICES];
+	Opt::opt_repeat *tail, *opt_end, *idx_tail, *idx_end;
+	static Opt::opt_repeat *matching_nodes[MAX_INDICES];
 	csb_repeat *csb_tail;
 	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
@@ -5166,8 +5170,10 @@ static JRD_NOD make_inversion(TDBB tdbb,
  *
  **************************************/
 	JRD_REL relation;
-	IDX *idx, *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
-	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
+	IDX *idx;
+	static IDX *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
+	SLONG last_priority_level;
+	static SLONG idx_priority_level[MAX_INDICES];
 	JRD_NOD inversion, inversion2, node;
 	SSHORT i, j, last_idx, idx_walk_count;
 	csb_repeat *csb_tail;
