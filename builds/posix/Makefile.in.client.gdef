@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.6 2003-10-20 01:45:06 brodsom Exp $
+#  $Id: Makefile.in.client.gdef,v 1.7 2004-01-07 00:31:18 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=client.gdef
@@ -51,10 +51,6 @@ GDEF_Files=	exe.epp extract.epp \
 GDEF_Sources = $(addprefix dudley/, $(GDEF_Files))
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
-WALF_Files= walf.cpp
-WALF_Sources = $(addprefix wal/, $(WALF_Files))
-WALF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WALF_Sources))))
-
 JRD_Files= iberr.cpp isc.cpp isc_file.cpp llio.cpp misc.cpp status.cpp
 JRD_Sources = $(addprefix jrd/, $(JRD_Files))
 JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
@@ -63,7 +59,7 @@ GPRE_Files= pretty.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
-AllObjects = $(GDEF_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects)
+AllObjects = $(GDEF_Objects) $(JRD_Objects) $(GPRE_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -73,8 +69,8 @@ all:	gdef
 
 gdef:   $(BIN)/gdef
 
-$(BIN)/gdef: $(GDEF_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(BIN)/gdef: $(GDEF_Objects) $(JRD_Objects) $(GPRE_Objects) $(LIBFBCLIENT_SO)  
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(JRD_Objects) $(GPRE_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 

@@ -29,16 +29,16 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
                    \
-        ail.cpp all.cpp bookmark.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
+        all.cpp bookmark.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
 		cch.cpp cmp.cpp cvt2.cpp db_alias.cpp \
 		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
 		ExecuteStatement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
-		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp  \
-		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp \
-		plugin_manager.cpp pwd.cpp rec.cpp rlck.cpp \
+		jrd.cpp lck.cpp llio.cpp log.cpp  \
+		misc.cpp mov.cpp nav.cpp opt.cpp pag.cpp par.cpp \
+		plugin_manager.cpp pwd.cpp rlck.cpp \
 		rng.cpp rpb_chain.cpp rse.cpp sbm.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
 		svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
@@ -114,19 +114,6 @@ INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_
 
 # none currently.
 
-
-#________________________________________________________________________
-#
-# wal
-
-WAL_ClientFiles = 
-
-WAL_ServerFiles=	walf.cpp wal.cpp walc.cpp walr.cpp walw.cpp
-
-WAL_Files = $(WAL_ClientFiles) $(WAL_ServerFiles)
-
-WAL_Sources = $(addprefix wal/, $(WAL_Files))
-WAL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_Sources))))
 
 #________________________________________________________________________
 #
@@ -233,7 +220,7 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp utils.cpp
 FBCOMMON_ServerFiles = 
 
 FBCOMMON_Files = $(FBCOMMON_ClientFiles) $(FBCOMMON_ServerFiles)
@@ -264,7 +251,6 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
-                $(WAL_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
                 $(FBUTIL_Objects) \
@@ -295,7 +281,6 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
-                $(WAL_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects)
 

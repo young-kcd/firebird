@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.19 2003-11-04 06:25:11 eku Exp $
+#  $Id: Makefile.in.libfbclient,v 1.20 2004-01-07 00:31:18 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -69,10 +69,6 @@ GPRELIB_ClientSources = $(addprefix gpre/, $(GPRELIB_ClientFiles))
 GPRELIB_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_ClientSources))))
 
 
-WAL_ClientSources = $(addprefix wal/, $(WAL_ClientFiles))
-WAL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_ClientSources))))
-
-
 SECURITY_ClientSources_gsec = $(addprefix utilities/gsec/, $(SECURITY_ClientFiles_gsec))
 SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources_gsec))))
 
@@ -91,7 +87,6 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(DSQL_ClientObjects) \
 					$(REMOTE_ClientObjects) \
 					$(GPRELIB_ClientObjects) \
-					$(WAL_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.qli,v 1.1 2003-10-20 01:44:59 brodsom Exp $
+#  $Id: Makefile.in.client.qli,v 1.2 2004-01-07 00:31:18 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=client.qli
@@ -47,10 +47,6 @@ QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 QLI_Sources = $(addprefix qli/, $(QLI_Files))
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
-WALF_Files= walf.cpp
-WALF_Sources = $(addprefix wal/, $(WALF_Files))
-WALF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WALF_Sources))))
-
 JRD_Files= iberr.cpp isc.cpp isc_file.cpp llio.cpp misc.cpp status.cpp
 JRD_Sources = $(addprefix jrd/, $(JRD_Files))
 JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
@@ -59,7 +55,7 @@ GPRE_Files= pretty.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
-AllObjects = $(QLI_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects)
+AllObjects = $(QLI_Objects) $(JRD_Objects) $(GPRE_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -71,7 +67,7 @@ all:	qli
 
 qli : create_yachts $(LIBFBCLIENT_SO) $(QLI)
 
-$(QLI): $(QLI_Objects) $(WALF_Objects) $(JRD_Objects) $(GPRE_Objects)
+$(QLI): $(QLI_Objects) $(JRD_Objects) $(GPRE_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
