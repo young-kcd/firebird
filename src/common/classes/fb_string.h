@@ -488,10 +488,10 @@ namespace Firebird
 			return add(&c, 1);
 		}
 
-		inline StringBase<StringComparator> ToString() {
+		inline StringBase<StringComparator> ToString() const {
 			return StringBase<StringComparator>(c_str());
 		}
-		inline StringBase<PathNameComparator> ToPathName() {
+		inline StringBase<PathNameComparator> ToPathName() const {
 			return StringBase<PathNameComparator>(c_str());
 		}
 
