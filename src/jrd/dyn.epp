@@ -1698,6 +1698,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			break;
 
 		case isc_dyn_grant_options:
+		case isc_dyn_grant_admin_options:
 			options = DYN_get_number(ptr);
 			break;
 
