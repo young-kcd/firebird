@@ -1,3 +1,32 @@
+2003-03-23 18:16  dimitr
+
+	* firebird2/src/remote/interface.cpp:
+	
+	Cleanup.
+
+2003-03-23 17:50  alexpeshkoff
+
+	* firebird2/src/: common/config/dir_list.cpp,
+	common/config/dir_list.h, jrd/dls.cpp, jrd/dls_proto.h,
+	jrd/dyn_def.epp, jrd/ext.cpp, jrd/ext_proto.h, jrd/isc.cpp,
+	jrd/isc.h, jrd/os/posix/path_utils.cpp,
+	jrd/os/win32/path_utils.cpp, jrd/os/path_utils.h:
+	
+	External files access restriction cleanup
+
+2003-03-23 13:06  alexpeshkoff
+
+	* firebird2/src/remote/: allr.cpp, allr_proto.h:
+	
+	Implemented a bit more informative memory leaks debugging in remote
+
+2003-03-23 10:05  dimitr
+
+	* firebird2/src/jrd/: ini.epp, jrd.cpp:
+	
+	After some research, I've disabled the automatic ODS upgrade due to
+	lack of reliability.
+
 2003-03-22 20:04  seanleyne
 
 	* firebird2/src/install/misc/firebird.conf:
