@@ -789,6 +789,13 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			}
 		}
 
+		if (free_streams[0]) {
+			// Deactivate streams
+			for (i = 1; i <= sub_streams[0]; i++) {
+				csb->csb_rpt[sub_streams[i]].csb_flags &= ~csb_active;
+			}
+		}
+
 		// attempt to form joins in decreasing order of desirability 
 		gen_join(tdbb, opt, streams, rivers_stack, &sort, &project,
 				 rse->rse_plan);
@@ -798,6 +805,10 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			   && gen_sort_merge(tdbb, opt, rivers_stack));
 
 		if (dependent_streams[0]) {
+			// Reactivate streams
+			for (i = 1; i <= sub_streams[0]; i++) {
+				csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;
+			}
 			// attempt to form joins in decreasing order of desirability 
 			gen_join(tdbb, opt, dependent_streams, rivers_stack, &sort, 
 				&project, rse->rse_plan);
@@ -3723,7 +3734,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 			const index_desc* idx = csb_tail->csb_idx->items;
 
 			// Walk through all indexes from this relation
-			for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
+			for (USHORT i = 0; i < csb_tail->csb_indices; i++, idx++) {
 
 				// Ignore index when not specified in explicit PLAN
 				if (idx->idx_runtime_flags & idx_plan_dont_use) {
