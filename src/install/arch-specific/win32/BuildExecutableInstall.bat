@@ -97,8 +97,8 @@ goto :EOF
 :GBAK_SEC_DB
 :: let's make sure that we have a backup of the security database handy.
 ::======================================================================
-gbak -b ..\..\..\..\builds\win32\output\security.fdb ..\..\..\..\builds\win32\output\security.fbk
-if %ERRORLEVEL% GEQ 1 ( (call :ERROR GBAK failed ) & (goto :EOF))
+copy ..\..\..\misc\security.gbak ..\..\..\..\builds\win32\output\security.fbk
+if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security.fbk failed ) & (goto :EOF))
 
 :: Make sure that qli's help.gdb is available
 :: For now it has the .gdb. file extension
@@ -110,20 +110,16 @@ goto :EOF
 
 :FB_MSG
 ::=================================================================
-:: firebird.msg is not being generated as part of the build process
-:: so we need to cheat - let's get it from our existing install of 
-:: Firebird 1.0
+:: firebird.msg is being generated as part of the build process
+:: in builds\win32 by build_msg.bat copying from there to output dir
 ::=================================================================
-if "%INTERBASE%" == "" (( 
-						echo Cannot locate Firebird 1.0 install
+if not exist ..\..\..\..\builds\win32\firebird.msg (( 
+						echo Cannot locate firebird.msg 
 						) & ( 
-						echo The interbase.msg file is needed to build the Firebird 1.5 kit
-						) & (
-						echo Is the INTERBASE env var defined?
+						echo you need to run the build_msg scriptfile
 						)
 						) else (
-						copy "%INTERBASE%"\interbase.msg ..\..\..\..\builds\win32\output\firebird.msg
-						rem copy %INTERBASE%\udf\fbudf.dll ..\..\..\..\builds\win32\output\udf
+						copy ..\..\..\..\builds\win32\firebird.msg ..\..\..\..\builds\win32\output\firebird.msg
 						)
 goto :EOF
 
