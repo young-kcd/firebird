@@ -1,3 +1,10 @@
+2005-01-11 11:08  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.135):
+	
+	1. fixed AV during SS shutdown on NT 2. removed duplicated
+	WSACleanup() call
+
 2005-01-10 19:04  alexpeshkoff
 
 	* firebird2/src/: jrd/y_handle.h (1.12), jrd/os/thd_priority.h
