@@ -1,3 +1,18 @@
+2004-08-04 18:01  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/: postinstall.in
+	(1.1.2.3), postremove.in (1.1.2.2), preinstall.in (1.1.2.2),
+	prototype.in (1.1.2.3):
+	
+	Some correctness and fixes
+
+2004-08-04 16:03  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/: postinstall.in
+	(1.1.2.2), prototype.in (1.1.2.2):
+	
+	Some more files added to Solaris binary distibution
+
 2004-08-03 18:21  kkuznetsov
 
 	* firebird2/: configure.in (1.141.2.24),
