@@ -37,10 +37,6 @@
  *
  */
 
-#if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
-#error This file is not to be used for Win32 builds. Please use isc_sync_win32.cpp
-#endif
-
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
 #endif
@@ -237,7 +233,7 @@ static BOOLEAN mutex_test(MTX);
 #endif
 
 #if defined(WIN_NT)
-static void make_object_name(TEXT *, TEXT *, TEXT *);
+static void make_object_name(TEXT *, const TEXT *, const TEXT *);
 #endif
 
 #ifndef sigvector
@@ -1296,15 +1292,15 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
  **************************************/
 
 	for (; count > 0; --count, ++events, ++values)
-		if (!(*events)->event_shared) {
-			if ((*events)->event_count >= *values)
-				return FALSE;
+	{
+		EVENT pEvent = *events;
+		if (pEvent->event_shared) {
+			pEvent = pEvent->event_shared;
 		}
-		else {
-			if ((*events)->event_shared->event_count >= *values)
-				return FALSE;
+		if (pEvent->event_count >= *values) {
+			return FALSE;
 		}
-
+	}
 	return TRUE;
 }
 
@@ -1329,10 +1325,11 @@ SLONG DLL_EXPORT ISC_event_clear(EVENT event)
 
 	ResetEvent((HANDLE) event->event_handle);
 
-	if (!event->event_shared)
-		return event->event_count + 1;
-	else
-		return event->event_shared->event_count + 1;
+	EVENT pEvent = event;
+	if (pEvent->event_shared) {
+		pEvent = pEvent->event_shared;
+	}
+	return pEvent->event_count + 1;
 }
 
 
@@ -1371,18 +1368,18 @@ int DLL_EXPORT ISC_event_init(EVENT event, int type, int semnum)
 	event->event_type = type;
 	event->event_shared = NULL;
 
-	if (!
-		(event->event_handle =
-		 ISC_make_signal(TRUE, TRUE, process_id, type))) return FALSE;
+	event->event_handle = ISC_make_signal(TRUE, TRUE, process_id, type);
 
-	return TRUE;
+	return (event->event_handle) ? TRUE : FALSE;
 }
 
 
 int ISC_event_init_shared(
-						  EVENT lcl_event,
-						  int type,
-						  TEXT * name, EVENT shr_event, USHORT init_flag)
+	EVENT lcl_event,
+	int type,
+	TEXT * name,
+	EVENT shr_event,
+	USHORT init_flag)
 {
 /**************************************
  *
@@ -1448,11 +1445,12 @@ int DLL_EXPORT ISC_event_post(EVENT event)
 
 
 int DLL_EXPORT ISC_event_wait(
-							  SSHORT count,
-							  EVENT * events,
-							  SLONG * values,
-							  SLONG micro_seconds,
-void (*timeout_handler) (), void *handler_arg)
+		      SSHORT count,
+		      EVENT * events,
+		      SLONG * values,
+		      SLONG micro_seconds,
+		      void (*timeout_handler) (),
+		      void *handler_arg)
 {
 /**************************************
  *
@@ -1467,7 +1465,6 @@ void (*timeout_handler) (), void *handler_arg)
 
 	EVENT *ptr, *end;
 	HANDLE handles[16], *handle_ptr;
-	SLONG timeout;
 
 	/* If we're not blocked, the rest is a gross waste of time */
 
@@ -1481,7 +1478,7 @@ void (*timeout_handler) (), void *handler_arg)
 
 	/* Go into wait loop */
 
-	timeout = (micro_seconds > 0) ? micro_seconds / 1000 : INFINITE;
+	DWORD timeout = (micro_seconds > 0) ? micro_seconds / 1000 : INFINITE;
 
 	for (;;) {
 		if (!ISC_event_blocked(count, events, values)) {
@@ -1687,13 +1684,22 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
  *     between abort() and exit(3).
  *
  **************************************/
-	TEXT *log_msg;
-
-	if (!SCH_thread_enter_check())
+	ULONG result;
+	bool is_critical = true;
+	
+	if (!SCH_thread_enter_check ())
+	{
 		THREAD_ENTER;
+	}
 
-	if (err_msg)
-		log_msg = (TEXT *) gds__alloc(strlen(err_msg) + 256);
+	TDBB tdbb = GET_THREAD_DATA;
+
+	if (!err_msg)
+	{
+		err_msg = "";
+	}
+
+	TEXT *log_msg = (TEXT *) gds__alloc(strlen(err_msg) + 256);
 
 	switch (except_code) {
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -1784,7 +1790,9 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 	case EXCEPTION_STACK_OVERFLOW:
 		ERR_post(isc_exception_stack_overflow, 0);
 		/* This will never be called, but to be safe it's here */
-		return EXCEPTION_CONTINUE_EXECUTION;
+		result = EXCEPTION_CONTINUE_EXECUTION;
+		is_critical = false;
+		break;
 
 	case EXCEPTION_BREAKPOINT:
 	case EXCEPTION_SINGLE_STEP:
@@ -1797,20 +1805,39 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 		/* Pass these exception on to someone else,
 		   probably the OS or the debugger, since there
 		   isn't a dam thing we can do with them */
-		free(log_msg);
-		return EXCEPTION_CONTINUE_SEARCH;
-	default:
-		sprintf(log_msg, "%s An exception occurred that does\n"
-				"\t\tnot have a description.  Exception number %X.\n"
-				"\tThis exception will cause the Firebird server\n"
-				"\tto terminate abnormally.", err_msg, except_code);
+		result = EXCEPTION_CONTINUE_SEARCH;
+		is_critical = false;
 		break;
+	default:
+		/* If we've catched our own software exception,
+		   continue rewinding the stack to properly handle it
+		   and deliver an error information to the client side */
+		if (tdbb->tdbb_status_vector[0] == 1 && tdbb->tdbb_status_vector[1] > 0)
+		{
+			result = EXCEPTION_CONTINUE_SEARCH;
+			is_critical = false;
+		}
+		else
+		{
+			sprintf (log_msg, "%s An exception occurred that does\n"
+					"\t\tnot have a description.  Exception number %X.\n"
+					"\tThis exception will cause the Firebird server\n"
+					"\tto terminate abnormally.", err_msg, except_code);
+		}
+		break; 
 	}
-	if (err_msg) {
-		gds__log(log_msg);
-		gds__free(log_msg);
+
+	gds__log(log_msg);
+	gds__free(log_msg);
+
+	if (is_critical)
+	{
+		exit(3);
 	}
-	exit(3);
+	else
+	{
+		return result;
+	}
 }
 
 #endif /* WIN_NT */
@@ -1819,8 +1846,10 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 
 #ifdef WIN_NT
 void *ISC_make_signal(
-					  BOOLEAN create_flag,
-					  BOOLEAN manual_reset, int process_id, int signal_number)
+	  BOOLEAN create_flag,
+	  BOOLEAN manual_reset,
+	  int process_id,
+	  int signal_number)
 {
 /**************************************
  *
@@ -1834,17 +1863,20 @@ void *ISC_make_signal(
  *	in naming the object.
  *
  **************************************/
-	TEXT event_name[64];
 
 	if (!signal_number)
 		return CreateEvent(NULL, manual_reset, FALSE, NULL);
 
-	sprintf(event_name, "_interbase_process%u_signal%d", process_id,
-			signal_number);
-	return (create_flag) ? CreateEvent(ISC_get_security_desc(), manual_reset,
-									   FALSE,
-									   event_name) :
-		OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
+	TEXT event_name[64];
+	sprintf(event_name, "_interbase_process%u_signal%d", process_id, signal_number);
+
+	HANDLE hEvent;
+	if (create_flag) {
+		hEvent = CreateEvent(ISC_get_security_desc(), manual_reset, FALSE, event_name);
+	} else {
+		hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
+	}
+	return hEvent;
 }
 #endif
 
@@ -2619,17 +2651,19 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 #ifdef WIN_NT
 #define ISC_MAP_FILE_DEFINED
-UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
-#if 0
-							   // TMN: Parameter is in errors!
-							   void (*init_routine) (void *, struct sh_mem *,
-													 int),
+UCHAR *DLL_EXPORT ISC_map_file(
+	   STATUS * status_vector,
+	   TEXT * filename,
+#if 1
+	   // TMN: Parameter is in errors!
+	   void (*init_routine) (void *, struct sh_mem *, int),
 #else
-							   // MUST of course match header.
-							   FPTR_VOID init_routine,
+	   // MUST of course match header.
+	   FPTR_VOID init_routine,
 #endif
-							   void *init_arg,
-							   SLONG length, SH_MEM shmem_data)
+	   void *init_arg,
+	   SLONG length,
+	   SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2645,8 +2679,8 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
  **************************************/
 	TEXT expanded_filename[MAXPATHLEN], hostname[64], *p;
 	TEXT map_file[MAXPATHLEN];
-	HANDLE file_handle, file_obj, event_handle, header_obj;
-	int file_exists, init_flag;
+	HANDLE file_handle, event_handle;
+	int  init_flag;
 	DWORD ret_event, fdw_create;
 	int retry_count = 0;
 
@@ -2670,9 +2704,12 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 		length = -length;
 
 	file_handle = CreateFile(map_file,
-							 GENERIC_READ | GENERIC_WRITE,
-							 FILE_SHARE_READ | FILE_SHARE_WRITE,
-							 NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+				 GENERIC_READ | GENERIC_WRITE,
+				 FILE_SHARE_READ | FILE_SHARE_WRITE,
+				 NULL,
+				 OPEN_ALWAYS,
+				 FILE_ATTRIBUTE_NORMAL,
+				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		error(status_vector, "CreateFile", GetLastError());
 		return NULL;
@@ -2680,7 +2717,7 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 
 /* Check if file already exists */
 
-	file_exists = (GetLastError() == ERROR_ALREADY_EXISTS) ? TRUE : FALSE;
+	const bool file_exists = (GetLastError() == ERROR_ALREADY_EXISTS);
 
 /* Create an event that can be used to determine if someone has already
    initialized shared memory. */
@@ -2712,7 +2749,7 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__unavailable;
+		*status_vector++ = gds_unavailable;
 		*status_vector++ = gds_arg_end;
 		return NULL;
 	}
@@ -2769,9 +2806,12 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 		fdw_create = OPEN_ALWAYS;
 
 	file_handle = CreateFile(map_file,
-							 GENERIC_READ | GENERIC_WRITE,
-							 FILE_SHARE_READ | FILE_SHARE_WRITE,
-							 NULL, fdw_create, FILE_ATTRIBUTE_NORMAL, NULL);
+				 GENERIC_READ | GENERIC_WRITE,
+				 FILE_SHARE_READ | FILE_SHARE_WRITE,
+				 NULL,
+				 fdw_create,
+				 FILE_ATTRIBUTE_NORMAL,
+				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		CloseHandle(event_handle);
 		error(status_vector, "CreateFile", GetLastError());
@@ -2783,10 +2823,12 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 
 	make_object_name(expanded_filename, filename, "_mapping");
 
-	header_obj = CreateFileMapping((HANDLE) - 1,
-								   ISC_get_security_desc(),
-								   PAGE_READWRITE,
-								   0, 2 * sizeof(SLONG), expanded_filename);
+	HANDLE header_obj = CreateFileMapping ((HANDLE) -1,
+				ISC_get_security_desc(),
+				PAGE_READWRITE,
+				0,
+				2 * sizeof (SLONG),
+				expanded_filename);
 	if (header_obj == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(event_handle);
@@ -2794,8 +2836,8 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 		return NULL;
 	}
 
-	SLONG *header_address =
-		(SLONG *) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
+	SLONG* header_address =
+		(SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (header_address == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
@@ -2820,10 +2862,13 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 	for (p = expanded_filename; *p; p++);
 	sprintf(p, "%d", header_address[1]);
 
-	file_obj = CreateFileMapping(file_handle,
-								 ISC_get_security_desc(),
-								 PAGE_READWRITE,
-								 0, length, expanded_filename);
+	HANDLE file_obj =
+		CreateFileMapping(file_handle,
+				  ISC_get_security_desc(),
+				  PAGE_READWRITE,
+				  0,
+				  length,
+				  expanded_filename);
 	if (file_obj == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
 		UnmapViewOfFile(header_address);
@@ -2833,8 +2878,8 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 		return NULL;
 	}
 
-	UCHAR *address =
-		(UCHAR *) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	UCHAR* address =
+		(UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
@@ -2858,10 +2903,9 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 	strcpy(shmem_data->sh_mem_name, expanded_filename);
 
 	if (init_routine)
-		reinterpret_cast < void (*) (void *, sh_mem *,
-									 int) >(*init_routine) (init_arg,
-															shmem_data,
-															init_flag);
+		// Lie a bit to make it compile...
+		reinterpret_cast < void (*) (void *, sh_mem *, int) >
+			(*init_routine) (init_arg, shmem_data, init_flag);
 
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
@@ -3521,7 +3565,7 @@ int DLL_EXPORT ISC_mutex_init(MTX mutex, TEXT * mutex_name)
  *	Initialize a mutex.
  *
  **************************************/
-	TEXT name_buffer[MAXPATHLEN];
+	char name_buffer[MAXPATHLEN];
 
 	make_object_name(name_buffer, mutex_name, "_mutex");
 	mutex->mtx_handle =
@@ -3543,10 +3587,8 @@ int DLL_EXPORT ISC_mutex_lock(MTX mutex)
  *	Sieze a mutex.
  *
  **************************************/
-	SLONG status;
 
-	status = WaitForSingleObject(mutex->mtx_handle, INFINITE);
-
+	const DWORD status = WaitForSingleObject(mutex->mtx_handle, INFINITE);
 	return (!status || status == WAIT_ABANDONED) ? 0 : 1;
 }
 
@@ -3563,10 +3605,8 @@ int DLL_EXPORT ISC_mutex_lock_cond(MTX mutex)
  *	Conditionally sieze a mutex.
  *
  **************************************/
-	SLONG status;
 
-	status = WaitForSingleObject(mutex->mtx_handle, 0L);
-
+	const DWORD status = WaitForSingleObject (mutex->mtx_handle, 0L);
 	return (!status || status == WAIT_ABANDONED) ? 0 : 1;
 }
 
@@ -3684,8 +3724,9 @@ UCHAR *ISC_remap_file(STATUS * status_vector,
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
 UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
-								 SH_MEM shmem_data,
-								 SLONG new_length, USHORT flag)
+				 SH_MEM shmem_data,
+				 SLONG new_length,
+				 USHORT flag)
 {
 /**************************************
  *
@@ -3697,8 +3738,6 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
  *	Try to re-map a given file.
  *
  **************************************/
-	TEXT expanded_filename[MAXPATHLEN];
-	HANDLE file_obj;
 
 	if (flag)
 		if (SetFilePointer
@@ -3721,14 +3760,19 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
  * is generated with the mapped file is created.
  */
 
+	HANDLE file_obj;
+
 	while (1) {
+		TEXT expanded_filename[MAXPATHLEN];
 		sprintf(expanded_filename, "%s%d", shmem_data->sh_mem_name,
 				shmem_data->sh_mem_hdr_address[1] + 1);
 
 		file_obj = CreateFileMapping(shmem_data->sh_mem_handle,
-									 ISC_get_security_desc(),
-									 PAGE_READWRITE,
-									 0, new_length, expanded_filename);
+					     ISC_get_security_desc(),
+					     PAGE_READWRITE,
+					     0,
+					     new_length,
+					     expanded_filename);
 
 		if (!((GetLastError() == ERROR_ALREADY_EXISTS) && flag))
 			break;
@@ -3742,8 +3786,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 		return NULL;
 	}
 
-	UCHAR *address =
-		(UCHAR *) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	LPVOID address = MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
@@ -3759,11 +3802,11 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 	UnmapViewOfFile(shmem_data->sh_mem_address);
 	CloseHandle(shmem_data->sh_mem_object);
 
-	shmem_data->sh_mem_address = address;
+	shmem_data->sh_mem_address = reinterpret_cast<UCHAR*>(address);
 	shmem_data->sh_mem_length_mapped = new_length;
 	shmem_data->sh_mem_object = file_obj;
 
-	return address;
+	return reinterpret_cast<UCHAR*>(address);
 }
 #endif
 
@@ -4035,8 +4078,9 @@ void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 #ifdef WIN_NT
 #define UNMAP_FILE
 void DLL_EXPORT ISC_unmap_file(
-							   STATUS * status_vector,
-							   SH_MEM shmem_data, USHORT flag)
+				STATUS * status_vector,
+				SH_MEM shmem_data,
+				USHORT flag)
 {
 /**************************************
  *
@@ -4055,8 +4099,8 @@ void DLL_EXPORT ISC_unmap_file(
 	UnmapViewOfFile(shmem_data->sh_mem_address);
 	CloseHandle(shmem_data->sh_mem_object);
 	if (flag & ISC_MEM_REMOVE)
-		if (SetFilePointer(shmem_data->sh_mem_handle, 0, NULL, FILE_BEGIN) !=
-			0xFFFFFFFF) SetEndOfFile(shmem_data->sh_mem_handle);
+	  if (SetFilePointer(shmem_data->sh_mem_handle, 0, NULL, FILE_BEGIN) != 0xFFFFFFFF)
+	    SetEndOfFile(shmem_data->sh_mem_handle);
 	CloseHandle(shmem_data->sh_mem_handle);
 	UnmapViewOfFile(shmem_data->sh_mem_hdr_address);
 	CloseHandle(shmem_data->sh_mem_hdr_object);
@@ -4265,8 +4309,9 @@ static BOOLEAN mutex_test(MTX mutex)
 
 #ifdef WIN_NT
 static void make_object_name(
-							 TEXT * buffer,
-							 TEXT * object_name, TEXT * object_type)
+			     TEXT * buffer,
+			     const TEXT * object_name,
+			     const TEXT * object_type)
 {
 /**************************************
  *
@@ -4279,7 +4324,7 @@ static void make_object_name(
  *	Also replace the file separator with "_".
  *
  **************************************/
-	TEXT hostname[64], *p, c;
+	char hostname[64], *p, c;
 
 	sprintf(buffer, object_name, ISC_get_host(hostname, sizeof(hostname)));
 	for (p = buffer; c = *p; p++)

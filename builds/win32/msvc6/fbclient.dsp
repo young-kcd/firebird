@@ -138,19 +138,12 @@ SOURCE=..\..\..\src\jrd\isc_sync.cpp
 
 !IF  "$(CFG)" == "fbclient - Win32 Debug"
 
-# PROP Exclude_From_Build 1
-
 !ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
 
 # PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
 
 !ENDIF 
 
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_sync_win32.cpp
 # End Source File
 # Begin Source File
 
