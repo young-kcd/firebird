@@ -1,3 +1,77 @@
+2004-02-20 07:42  robocop
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_proto.h, alice/exe.cpp, burp/backup.epp, burp/burp.cpp,
+	burp/burp_proto.h, burp/restore.epp, common/classes/alloc.cpp,
+	common/classes/alloc.h, common/classes/fb_string.cpp,
+	common/classes/rwlock.h, dudley/ddl.cpp, gpre/gpre.cpp,
+	gpre/gpre.h, gpre/par.cpp, intl/ldcommon.h, ipserver/ipserver.cpp,
+	jrd/ExecuteStatement.cpp, jrd/all.h, jrd/blb.cpp, jrd/blb.h,
+	jrd/blf_proto.h, jrd/blk.h, jrd/blob_filter.cpp, jrd/btn.cpp,
+	jrd/btn.h, jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h, jrd/cch.cpp,
+	jrd/cch.h, jrd/cch_proto.h, jrd/cmp.cpp, jrd/cmp_proto.h,
+	jrd/constants.h, jrd/cvt.cpp, jrd/cvt2.cpp, jrd/dbg.cpp, jrd/dbg.h,
+	jrd/dbt.cpp, jrd/dfw.epp, jrd/dfw_proto.h, jrd/dls.cpp,
+	jrd/dls_proto.h, jrd/dmp.cpp, jrd/dpm.epp, jrd/dpm_proto.h,
+	jrd/dsc.cpp, jrd/dyn.epp, jrd/dyn.h, jrd/dyn_def.epp,
+	jrd/dyn_del.epp, jrd/dyn_mod.epp, jrd/dyn_proto.h,
+	jrd/dyn_util.epp, jrd/entry.h, jrd/err.cpp, jrd/err_proto.h,
+	jrd/event.cpp, jrd/event.h, jrd/evl.cpp, jrd/evl_like.cpp,
+	jrd/evl_string.h, jrd/exe.cpp, jrd/exe.h, jrd/exe_proto.h,
+	jrd/ext.cpp, jrd/fil.h, jrd/filters.cpp, jrd/flu.cpp, jrd/fun.epp,
+	jrd/fun_proto.h, jrd/gds.cpp, jrd/gdsassert.h, jrd/grant.epp,
+	jrd/grant_proto.h, jrd/idx.cpp, jrd/idx_proto.h, jrd/inf.cpp,
+	jrd/inf_proto.h, jrd/ini.epp, jrd/intl.cpp, jrd/intl_builtin.cpp,
+	jrd/intl_classes.h, jrd/inuse.cpp, jrd/inuse_proto.h, jrd/isc.cpp,
+	jrd/isc_file.cpp, jrd/isc_proto.h, jrd/isc_s_proto.h,
+	jrd/isc_sync.cpp, jrd/jrd.cpp, jrd/jrd.h, jrd/jrd_proto.h,
+	jrd/lck.cpp, jrd/lck.h, jrd/lck_proto.h, jrd/lls.h, jrd/log.cpp,
+	jrd/log.h, jrd/log2.h, jrd/met.epp, jrd/met.h, jrd/met_proto.h,
+	jrd/mov.cpp, jrd/nav.cpp, jrd/nav_proto.h, jrd/nbak.cpp,
+	jrd/nbak.h, jrd/ods.h, jrd/opt.cpp, jrd/opt_proto.h, jrd/pag.cpp,
+	jrd/pag_proto.h, jrd/par.cpp, jrd/par_proto.h, jrd/pcmet.epp,
+	jrd/pcmet_proto.h, jrd/pwd.cpp, jrd/qatest.cpp, jrd/req.h,
+	jrd/rlck.cpp, jrd/rlck_proto.h, jrd/rng.cpp, jrd/rng.h,
+	jrd/rng_proto.h, jrd/rpb_chain.h, jrd/rse.cpp, jrd/rse.h,
+	jrd/scl.epp, jrd/scl.h, jrd/scl_proto.h, jrd/sdw.cpp, jrd/sdw.h,
+	jrd/sdw_proto.h, jrd/shut.cpp, jrd/shut_proto.h, jrd/smp.h,
+	jrd/smp_impl.h, jrd/sort.cpp, jrd/sort_mem.h, jrd/sort_proto.h,
+	jrd/sqz.h, jrd/sqz_proto.h, jrd/svc.cpp, jrd/svc.h, jrd/tpc.cpp,
+	jrd/tpc_proto.h, jrd/tra.cpp, jrd/tra.h, jrd/tra_proto.h,
+	jrd/val.cpp, jrd/val.h, jrd/vio.cpp, jrd/vio_proto.h,
+	jrd/os/fbsyslog.h, jrd/os/pio.h, jrd/os/pio_proto.h,
+	jrd/os/thd_priority.h, jrd/os/darwin/mod_loader.cpp,
+	jrd/os/posix/unix.cpp, jrd/os/vms/extvms.cpp, jrd/os/vms/map.cpp,
+	jrd/os/vms/map_proto.h, jrd/os/vms/rdb.cpp, jrd/os/vms/rdbint.cpp,
+	jrd/os/vms/vms.cpp, jrd/os/win32/isc_ipc.cpp,
+	jrd/os/win32/winnt.cpp, misc/print.cpp, qli/all.cpp,
+	qli/command.cpp, qli/compile.cpp, qli/dtr.cpp, qli/dtr.h,
+	qli/err.cpp, qli/eval.cpp, qli/exe.cpp, qli/exe.h, qli/expand.cpp,
+	qli/format.cpp, qli/format.h, qli/gener.cpp, qli/help.epp,
+	qli/lex.cpp, qli/meta.epp, qli/meta_proto.h, qli/mov.cpp,
+	qli/mov_proto.h, qli/parse.cpp, qli/picst_proto.h, qli/picstr.cpp,
+	qli/proc.epp, qli/proc_proto.h, qli/show.epp, remote/allr.cpp,
+	remote/allr_proto.h, remote/protocol.cpp, remote/remote.cpp,
+	remote/remote.h, remote/server.cpp, remote/xnet.cpp,
+	utilities/analyse.cpp, utilities/nbackup.cpp,
+	utilities/sbc_print.cpp, utilities/gsec/gsec.cpp,
+	utilities/gsec/gsec.h, utilities/gsec/gsec_proto.h,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	utilities/gstat/ppg.cpp, utilities/gstat/ppg_proto.h,
+	utilities/ibmgr/ibmgr.cpp, utilities/ibmgr/ibmgr.h,
+	utilities/ibmgr/ibmgrswi.h, utilities/ibmgr/srvrmgr.cpp,
+	utilities/ibmgr/srvrmgr_proto.h, utilities/rebuild/rebuild.cpp,
+	utilities/rebuild/rstore.epp:
+	
+	Big cleanup.  God have pity on platform maintainers.  I only can
+	compile/test Win32; sorry, folks.
+
+2004-02-20 07:30  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	no message
+
 2004-02-19 09:12  dimitr
 
 	* firebird2/src/jrd/isc_version.h:
