@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.26 2004-05-06 15:01:29 brodsom Exp $
+ * $Id: drop.cpp,v 1.27 2004-05-17 00:18:51 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -66,7 +66,7 @@
 #include <string.h>
 #endif
 
-#define FTOK_KEY		15
+const int FTOK_KEY		= 15;
 
 #ifndef HAVE_MMAP
 static void dummy_init(void);

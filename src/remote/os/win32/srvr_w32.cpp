@@ -125,7 +125,7 @@ static USHORT server_flag;
 
 static const SERVICE_TABLE_ENTRY service_table[] =
 {
-	{REMOTE_SERVICE, CNTL_main_thread},
+	{(TEXT*) REMOTE_SERVICE, CNTL_main_thread},
 	{NULL, NULL}
 };
 
@@ -253,7 +253,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		}
 	}
 	else if (!(server_flag & SRVR_non_service)) {
-		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
+		CNTL_init((FPTR_VOID) start_connections_thread, (TEXT*) REMOTE_SERVICE);
 //
 // BRS There is a error in MinGW (3.1.0) headers 
 // the parameter of StartServiceCtrlDispatcher is declared const in msvc headers

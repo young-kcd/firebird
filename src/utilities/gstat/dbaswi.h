@@ -30,18 +30,18 @@
    switch constants refer to data items.  The remaining switch constants
    refer to actual switches. */
 
-#define IN_SW_DBA_0			0	/* not a known switch */
-#define IN_SW_DBA_SYSTEM		1	/* analyze system relations */
-#define IN_SW_DBA_DATA			2	/* analyze data pages */
-#define IN_SW_DBA_INDEX			3	/* analyze index leaf pages */
-#define IN_SW_DBA_VERSION		4	/* display version number */
-#define IN_SW_DBA_HEADER		5	/* analyze header page */
-#define IN_SW_DBA_LOG			6	/* analze log pages */
-#define IN_SW_DBA_DATAIDX		7	/* analyze data and index pages */
-#define IN_SW_DBA_USERNAME		8	/* username */
-#define IN_SW_DBA_PASSWORD		9	/* password */
-#define IN_SW_DBA_RECORD		10	/* analyze record versions */
-#define IN_SW_DBA_RELATION		11	/* analyze specific relations */
+const int IN_SW_DBA_0			= 0;	/* not a known switch */
+const int IN_SW_DBA_SYSTEM		= 1;	/* analyze system relations */
+const int IN_SW_DBA_DATA		= 2;	/* analyze data pages */
+const int IN_SW_DBA_INDEX		= 3;	/* analyze index leaf pages */
+const int IN_SW_DBA_VERSION		= 4;	/* display version number */
+const int IN_SW_DBA_HEADER		= 5;	/* analyze header page */
+const int IN_SW_DBA_LOG			= 6;	/* analze log pages */
+const int IN_SW_DBA_DATAIDX		= 7;	/* analyze data and index pages */
+const int IN_SW_DBA_USERNAME	= 8;	/* username */
+const int IN_SW_DBA_PASSWORD	= 9;	/* password */
+const int IN_SW_DBA_RECORD		= 10;	/* analyze record versions */
+const int IN_SW_DBA_RELATION	= 11;	/* analyze specific relations */
 
 static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_DATAIDX,		0,				"ALL",		0,0,0,	FALSE,	22,	0, NULL},	/* msg 22: -a      analyze data and index pages */

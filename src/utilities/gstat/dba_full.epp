@@ -47,8 +47,8 @@
 #include "../jrd/jrd_pwd.h"
 #endif
 
-#define LOCKSMITH_USER "SYSDBA"
-#define LOCKSMITH_PASSWORD "masterkey"
+const char* LOCKSMITH_USER	= "SYSDBA";
+const char* LOCKSMITH_PASSWORD	= "masterkey";
 
 /* For Netware the follow DB handle and isc_status is #defined to be a  */
 /* local variable on the stack in main.  This is to avoid multiple      */
@@ -57,9 +57,8 @@ DATABASE DB = STATIC "yachts.lnk";
 #define DB          db_handle
 #define isc_status  status_vector
 
-#define ALLOC(size)	alloc ((SLONG) size);
-#define BUCKETS		5
-#define WINDOW_SIZE	(1 << 17)
+const SSHORT BUCKETS	= 5;
+//#define WINDOW_SIZE	(1 << 17)
 
 struct dba_rel {
 	dba_rel* rel_next;
@@ -349,8 +348,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	FPRINTF(sw_outfile, "\nDatabase \"%s\"\n\n", file_name);
 
 	tddba->page_size = header->hdr_page_size;
-	tddba->buffer1 = (PAG) ALLOC(tddba->page_size);
-	tddba->global_buffer = (PAG) ALLOC(tddba->page_size);
+	tddba->buffer1 = (PAG) alloc(tddba->page_size);
+	tddba->global_buffer = (PAG) alloc(tddba->page_size);
 
 /* gather continuation files */
 
@@ -473,7 +472,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			  continue;
 		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL)
 			continue;
-		dba_rel* arelation = (dba_rel*) ALLOC(sizeof(struct dba_rel));
+		dba_rel* arelation = (dba_rel*) alloc(sizeof(struct dba_rel));
 		arelation->rel_next = tddba->relations;
 		tddba->relations = arelation;
 		arelation->rel_id = X.RDB$RELATION_ID;
@@ -496,7 +495,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 				SORTED BY DESC Y.RDB$INDEX_NAME 
             if (Y.RDB$INDEX_INACTIVE)
 				  continue;
-			idx* aindex = (idx*) ALLOC(sizeof(idx));
+			idx* aindex = (idx*) alloc(sizeof(idx));
 			aindex->idx_next = arelation->rel_indexes;
 			arelation->rel_indexes = aindex;
 			strcpy(aindex->idx_name, Y.RDB$INDEX_NAME);
@@ -1011,14 +1010,14 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1147,14 +1146,14 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next =
-			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
 		fil = tddba->files =
-			(dba_fil*) ALLOC(sizeof(dba_fil) + strlen(file_name) + 1);
+			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 

@@ -94,7 +94,7 @@ log_info* log_entry;
 
 /* contains the guardian service */
 static const SERVICE_TABLE_ENTRY service_table[] = {
-	{ISCGUARD_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread},
+	{(CHAR*) ISCGUARD_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread},
 	{NULL, NULL}
 };
 

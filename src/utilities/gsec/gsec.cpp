@@ -57,8 +57,8 @@ static bool fAnsiCP = false;
 #define TRANSLATE_CP(a)
 #endif
 
-#define MAXARGS		20			/* max number of args allowed on command line */
-#define MAXSTUFF	1000		/* longest interactive command line */
+const int MAXARGS		= 20;		/* max number of args allowed on command line */
+const USHORT MAXSTUFF	= 1000;		/* longest interactive command line */
 
 #ifndef SUPERSERVER
 struct tsec *gdsec;

@@ -30,28 +30,28 @@
    switch constants refer to data items.  The remaining switch constants
    refer to actual switches. */
 
-#define IN_SW_GSEC_0			0	/* not a known switch */
-#define IN_SW_GSEC_UID			1	/* uid is specified */
-#define IN_SW_GSEC_GID			2	/* gid is specified */
-#define IN_SW_GSEC_SYSU			3	/* sys_user_name is specified */
-#define IN_SW_GSEC_GROUP		4	/* group is specified */
-#define IN_SW_GSEC_PASSWORD		5	/* password is specified */
-#define IN_SW_GSEC_FNAME		6	/* first name is specified */
-#define IN_SW_GSEC_MNAME		7	/* middle name/initial is specified */
-#define IN_SW_GSEC_LNAME		8	/* last name is specified */
-#define IN_SW_GSEC_ADD			9	/* add a user */
-#define IN_SW_GSEC_DEL			10	/* delete a user */
-#define IN_SW_GSEC_DIS			11	/* display user(s) */
-#define IN_SW_GSEC_MOD			12	/* modify a user */
-#define IN_SW_GSEC_QUIT			13	/* quit from interactive session */
-#define IN_SW_GSEC_HELP			14	/* help */
-#define IN_SW_GSEC_Z			15	/* version */
-#define IN_SW_GSEC_DATABASE		16	/* database, if other than installed */
-#define IN_SW_GSEC_DBA_USER_NAME	17	/* Database Admin. User name */
-#define IN_SW_GSEC_DBA_PASSWORD		18	/* Database Admin. Password */
-#define IN_SW_GSEC_SQL_ROLE_NAME	19	/* SQL Role to assume */
-#define IN_SW_GSEC_AMBIG		20	/* ambiguous switch */
-#define IN_SW_GSEC_USERNAME		21	/* placeholder for the username */
+const int IN_SW_GSEC_0				= 0;	/* not a known switch */
+const int IN_SW_GSEC_UID			= 1;	/* uid is specified */
+const int IN_SW_GSEC_GID			= 2;	/* gid is specified */
+const int IN_SW_GSEC_SYSU			= 3;	/* sys_user_name is specified */
+const int IN_SW_GSEC_GROUP			= 4;	/* group is specified */
+const int IN_SW_GSEC_PASSWORD		= 5;	/* password is specified */
+const int IN_SW_GSEC_FNAME			= 6;	/* first name is specified */
+const int IN_SW_GSEC_MNAME			= 7;	/* middle name/initial is specified */
+const int IN_SW_GSEC_LNAME			= 8;	/* last name is specified */
+const int IN_SW_GSEC_ADD			= 9;	/* add a user */
+const int IN_SW_GSEC_DEL			= 10;	/* delete a user */
+const int IN_SW_GSEC_DIS			= 11;	/* display user(s) */
+const int IN_SW_GSEC_MOD			= 12;	/* modify a user */
+const int IN_SW_GSEC_QUIT			= 13;	/* quit from interactive session */
+const int IN_SW_GSEC_HELP			= 14;	/* help */
+const int IN_SW_GSEC_Z				= 15;	/* version */
+const int IN_SW_GSEC_DATABASE		= 16;	/* database, if other than installed */
+const int IN_SW_GSEC_DBA_USER_NAME	= 17;	/* Database Admin. User name */
+const int IN_SW_GSEC_DBA_PASSWORD	= 18;	/* Database Admin. Password */
+const int IN_SW_GSEC_SQL_ROLE_NAME	= 19;	/* SQL Role to assume */
+const int IN_SW_GSEC_AMBIG			= 20;	/* ambiguous switch */
+const int IN_SW_GSEC_USERNAME		= 21;	/* placeholder for the username */
 
 
 static struct in_sw_tab_t gsec_in_sw_table [] = {

@@ -66,7 +66,7 @@
 #define QUE_LOOP_BACK(que_head,que)	for (que = (SRQ) QUE_PREV (que_head);\
 	que != &que_head; que = (SRQ) QUE_PREV ((*que)))
 
-#define DEFAULT_SIZE	8192
+const SLONG DEFAULT_SIZE	= 8192;
 
 static void cache_init(void);
 static void db_get_sbc(const SCHAR*, SCHAR*, SLONG*, SSHORT*);

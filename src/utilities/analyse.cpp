@@ -58,19 +58,19 @@ static int file;
 
 /* Physical IO trace events */
 
-#define trace_create	1
-#define trace_open	2
-#define trace_page_size	3
-#define trace_read	4
-#define trace_write	5
-#define trace_close	6
+const SSHORT trace_create	= 1;
+const SSHORT trace_open		= 2;
+const SSHORT trace_page_size	= 3;
+const SSHORT trace_read		= 4;
+const SSHORT trace_write	= 5;
+const SSHORT trace_close	= 6;
 
 static USHORT page_size;
 static int map_length, map_base, map_count;
 static PAG global_buffer;
 static UCHAR *map_region;
 
-#define MAX_PAGES	50000
+const int MAX_PAGES	= 50000;
 
 static USHORT read_counts[MAX_PAGES], write_counts[MAX_PAGES];
 

@@ -15,20 +15,20 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.6 2004-05-09 05:48:33 robocop Exp $
+ * $Id: guard.cpp,v 1.7 2004-05-17 00:21:46 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
-#define FOREVER		1
-#define ONETIME		2
-#define IGNORE          3
-#define NORMAL_EXIT	0
+const USHORT FOREVER	= 1;
+const USHORT ONETIME	= 2;
+const USHORT IGNORE		= 3;
+const USHORT NORMAL_EXIT= 0;
 
-#define SUPER_SERVER_BINARY	"bin/fbserver"
+const char* SUPER_SERVER_BINARY	= "bin/fbserver";
 
-#define INTERBASE_USER		"interbase"
-#define FIREBIRD_USER		"firebird"
-#define INTERBASE_USER_SHORT	"interbas"
+const char* INTERBASE_USER		= "interbase";
+const char* FIREBIRD_USER		= "firebird";
+const char* INTERBASE_USER_SHORT= "interbas";
 
 #include "firebird.h"
 #include <stdio.h>

@@ -29,15 +29,15 @@ DATABASE DB = "yachts.lnk";
 extern SCHAR *gds__alloc();
 extern SLONG gds__vax_integer();
 
-#define ITEM_seq_reads	0
-#define ITEM_idx_reads	1
-#define ITEM_inserts	2
-#define ITEM_updates	3
-#define ITEM_deletes	4
-#define ITEM_backouts	5
-#define ITEM_purges	6
-#define ITEM_expunges	7
-#define ITEM_count	8
+const SSHORT ITEM_seq_reads	= 0;
+const SSHORT ITEM_idx_reads	= 1;
+const SSHORT ITEM_inserts	= 2;
+const SSHORT ITEM_updates	= 3;
+const SSHORT ITEM_deletes	= 4;
+const SSHORT ITEM_backouts	= 5;
+const SSHORT ITEM_purges	= 6;
+const SSHORT ITEM_expunges	= 7;
+const SSHORT ITEM_count		= 8;
 
 typedef struct stats {
 	SSHORT stats_count;

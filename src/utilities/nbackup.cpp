@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.26 2004-05-13 23:20:46 brodsom Exp $
+ *  $Id: nbackup.cpp,v 1.27 2004-05-17 00:18:51 brodsom Exp $
  *
  */
  
@@ -69,8 +69,8 @@
 #define O_LARGEFILE 0
 #endif
 
-#define EXIT_OK 0
-#define EXIT_ERROR 1
+const int EXIT_OK		= 0;
+const int EXIT_ERROR	= 1;
 
 void usage()
 {

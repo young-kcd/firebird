@@ -38,8 +38,8 @@
 
 DATABASE DB = STATIC FILENAME "security.fdb";
 
-#define MAX_PASSWORD_LENGTH	31
-#define SYSDBA_USER_NAME	"SYSDBA"
+const int MAX_PASSWORD_LENGTH	= 31;
+static const char* SYSDBA_USER_NAME	= "SYSDBA";
 
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
@@ -360,7 +360,7 @@ void SECURITY_get_db_path(const TEXT* server, TEXT* buffer)
  *         would connect via tcpip
  *
  **************************************/
-#define RESPBUF	256
+	const int RESPBUF	= 256;
 	ISC_STATUS_ARRAY status;
 	isc_svc_handle svc_handle = 0;
 	TEXT svc_name[256];
