@@ -79,12 +79,14 @@
     #cp -r $BuildDir/doc $DestDir 
     cp $BuildDir/firebird.msg $DestDir/firebird.msg 
     cp $BuildDir/isc4.gdb $DestDir/isc4.gdb 
-    cp $BuildDir/isc_config $DestDir/isc_config
+    #cp $BuildDir/isc_config $DestDir/isc_config
 
     cp -f $BuildDir/include/gds.h /usr/include/gds.h 
     cp -f $BuildDir/include/iberror.h /usr/include/iberror.h 
     cp -f $BuildDir/include/ibase.h /usr/include/ibase.h 
     cp -f $BuildDir/include/ib_util.h /usr/include/ib_util.h 
+
+    cp -f $BuildDir/misc/firebird.conf /etc/firebird.conf
 
 #    cp $BuildDir/include/gds.f $DestDir/include 
 #    cp $BuildDir/include/gds.hxx $DestDir/include 

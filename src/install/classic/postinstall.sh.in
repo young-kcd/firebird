@@ -70,7 +70,7 @@ addFirebirdUser() {
     testStr=`grep firebird /etc/passwd`
     if [ -z "$testDir" ]
       then
-        useradd -o -r -m -d $IBRootDir -s /bin/bash \
+        useradd -o -r -m -d $FBRootDir -s /bin/bash \
             -c "Firebird Database Administrator" -g firebird -u 84 firebird 
 
         # >/dev/null 2>&1 
@@ -93,6 +93,8 @@ deleteFirebirdUser() {
 #------------------------------------------------------------------------
 #  changeXinetdServiceUser
 #  Change the run user of the xinetd service
+#  ex is used in place of ed, since at least on one mandrake release ed
+#  was not installed, but ex seems to always be installed MOD 7-Nov-2002
 
 changeXinetdServiceUser() {
 
@@ -114,7 +116,7 @@ EOF
 updateInetdEntry() {
 
     FileName=/etc/inetd.conf
-    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
+    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $FBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
     oldLine=`grep "^gds_db" $FileName`
 
     replaceLineInFile "$FileName" "$newLine" "$oldLine"
@@ -126,7 +128,7 @@ updateInetdEntry() {
 updateXinetdEntry() {
 
     InitFile=/etc/xinetd.d/firebird
-    cp $IBRootDir/misc/firebird.xinetd $InitFile
+    cp $FBRootDir/misc/firebird.xinetd $InitFile
     chown root:root $InitFile
     chmod o=rw,go=r $InitFile
     changeXinetdServiceUser
@@ -159,7 +161,7 @@ updateInetdServiceEntry() {
 
 keepOrigDBAPassword() {
 
-    DBAPasswordFile=$IBRootDir/SYSDBA.password
+    DBAPasswordFile=$FBRootDir/SYSDBA.password
     
     NewPasswd='masterkey'
     echo "Firebird initial install password " > $DBAPasswordFile
@@ -173,7 +175,7 @@ keepOrigDBAPassword() {
     echo "daemon init routine in the file /etc/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your should password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
 
     chmod u=r,go= $DBAPasswordFile
@@ -189,7 +191,7 @@ keepOrigDBAPassword() {
 
 generateNewDBAPassword() {
 
-    DBAPasswordFile=$IBRootDir/SYSDBA.password
+    DBAPasswordFile=$FBRootDir/SYSDBA.password
     
     NewPasswd=`/usr/bin/mkpasswd -l 8`
     if [ -z "$NewPasswd" ]
@@ -205,11 +207,11 @@ generateNewDBAPassword() {
     echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
-    echo "/opt/interbase/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
+    echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     chmod u=r,go= $DBAPasswordFile
 
-    $IBBin/gsec -user sysdba -password masterkey <<EOF
+    $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
 
@@ -227,7 +229,7 @@ askUserForNewDBAPassword() {
     while [ -z "$NewPasswd" ]
       do
 # If using a generated password
-#         DBAPasswordFile=$IBRootDir/SYSDBA.password
+#         DBAPasswordFile=$FBRootDir/SYSDBA.password
 #         NewPasswd=`mkpasswd -l 8`
 #         echo "Password for SYSDBA on `hostname` is : $NewPasswd" > $DBAPasswordFile
 #         chmod ga-rwx $DBAPasswordFile
@@ -236,7 +238,7 @@ askUserForNewDBAPassword() {
           NewPasswd=$Answer
           if [ ! -z "$NewPasswd" ]
             then
-             $IBBin/gsec -user sysdba -password masterkey <<EOF
+             $FBBin/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
               echo ""
@@ -282,13 +284,13 @@ changeDBAPassword() {
 fixFilePermissions() {
 
     # Turn other access off.
-    chmod -R o= $IBRootDir
+    chmod -R o= $FBRootDir
 
 
     # Now fix up the mess.
 
     # fix up directories 
-    for i in `find $IBRootDir -print`
+    for i in `find $FBRootDir -print`
     do
         FileName=$i
         if [ -d $FileName ]
@@ -298,7 +300,7 @@ fixFilePermissions() {
     done
 
 
-    cd $IBBin
+    cd $FBBin
 
 
     # set up the defaults for bin
@@ -323,7 +325,7 @@ fixFilePermissions() {
     done
 
 
-    cd $IBRootDir
+    cd $FBRootDir
 
     # Fix lock files
     for i in isc_init1 isc_lock1 isc_event1 
@@ -333,13 +335,13 @@ fixFilePermissions() {
       done
 
 
-    chmod ug=rw,o= interbase.log
+    chmod ug=rw,o= firebird.log
 
-    chmod a=r interbase.msg
+    chmod a=r firebird.msg
     chmod a=r README
     chmod ug=rw,o= help/help.gdb
     chmod ug=rw,o= isc4.gdb
-    chmod a=r isc_config
+    #chmod a=r isc_config
 
     # Set a default of read all files in includes
 
@@ -386,12 +388,12 @@ fixFilePermissions() {
 fixFilePermissionsRoot() {
 
     # Turn other access off.
-    chmod -R o= $IBRootDir
+    chmod -R o= $FBRootDir
 
     # Now fix up the mess.
 
     # fix up directories 
-    for i in `find $IBRootDir -print`
+    for i in `find $FBRootDir -print`
     do
         FileName=$i
         if [ -d $FileName ]
@@ -401,7 +403,7 @@ fixFilePermissionsRoot() {
     done
 
 
-    cd $IBBin
+    cd $FBBin
 
 
     # set up the defaults for bin
@@ -419,7 +421,7 @@ fixFilePermissionsRoot() {
     done
 
 
-    cd $IBRootDir
+    cd $FBRootDir
 
     # Set a default of read all files in includes
 
@@ -443,9 +445,9 @@ fixFilePermissionsRoot() {
       done
 
 
-    chmod a=rw interbase.log
+    chmod a=rw firebird.log
 
-    chmod a=r interbase.msg
+    chmod a=r firebird.msg
     chmod a=r README
     chmod a=rw help/help.gdb
     chmod a=rw isc4.gdb
@@ -515,26 +517,41 @@ resetInetdServer() {
 
 #= Main Post ===============================================================
 
+
+
     # Make sure the links are in place 
-    if [ ! -L /opt/interbase -a ! -d /opt/interbase ] 
-      then 
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=@prefix@
+    fi
+
+
+    # Make sure the links are in place 
+    #if [ ! -L /opt/interbase -a ! -d /opt/interbase ] 
+    #  then 
     # Main link and... 
-        ln -s $RPM_INSTALL_PREFIX/interbase /opt/interbase 
-    fi 
+    #    ln -s $RPM_INSTALL_PREFIX/interbase /opt/interbase 
+    #fi 
 
 
-    IBRootDir=/opt/interbase
-    IBBin=$IBRootDir/bin
+    FBRootDir=$FirebirdInstallPrefix
+    FBBin=$FBRootDir/bin
     RunUser=root
 #    RunUser=firebird
 
 
     # Update /etc/services
 
+    # The \n is needed, some /etc/services files are missing a trailing
+    # line feed - MOD 7-Nov-2002
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # InterBase Database Remote Protocol"
+    newLine="\ngds_db          3050/tcp  # FirebirdSQL Database Remote Protocol\n"
     oldLine=`grep "^gds_db" $FileName`
-    replaceLineInFile "$FileName" "$newLine" "$oldLine"
+    if [ -z "$oldLine" ]
+      then
+        echo $newLine >> $FileName
+    #    replaceLineInFile "$FileName" "$newLine" "$oldLine"
+    fi
 
     UpdateHostsDotEquivFile
 
@@ -546,7 +563,7 @@ resetInetdServer() {
 
 
     # Create Lock files
-    cd $IBRootDir
+    cd $FBRootDir
 
     for i in isc_init1 isc_lock1 isc_event1 
       do
@@ -559,9 +576,15 @@ resetInetdServer() {
 
 
     # Update ownership and SUID bits for programs.
-    chown -R $RunUser.$RunUser $IBRootDir
-#    fixFilePermissions
-    fixFilePermissionsRoot
+    chown -R $RunUser.$RunUser $FBRootDir
+
+    if [ "$RunUser" = "root" ]
+      then
+        fixFilePermissionsRoot
+    else
+        fixFilePermissions
+    fi
+
 
     # Update the /etc/inetd.conf or xinetd entry
     updateInetdServiceEntry
@@ -571,11 +594,11 @@ resetInetdServer() {
     resetInetdServer
 
 
-    cd $IBRootDir
+    cd $FBRootDir
     
     # Change sysdba password
-    #changeDBAPassword
-    keepOrigDBAPassword
+    changeDBAPassword
+    #keepOrigDBAPassword
 
 
 

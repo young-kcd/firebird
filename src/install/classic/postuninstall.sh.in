@@ -70,10 +70,12 @@ removeInetDService() {
       then 
 
         # Lose the gds_db line from /etc/services 
+        # Leave it there, it was probably there already and does no
+        # harm. MOD 7-Nov-2002
 
-        FileName=/etc/services
-        oldLine=`grep "^gds_db" $FileName`
-        removeLineFromFile "$FileName" "$oldLine"
+        #FileName=/etc/services
+        #oldLine=`grep "^gds_db" $FileName`
+        #removeLineFromFile "$FileName" "$oldLine"
 
         
         if [ -d /etc/xinetd.d ]

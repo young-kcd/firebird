@@ -1,0 +1,140 @@
+#! /bin/sh
+
+# Script to copy install files from the build/transport area
+
+BuildSrcDir=firebird/install/linux
+
+BuildDir=./firebird
+
+
+TargetDir=buildroot
+
+RealRootDir=@prefix@
+FBRootDir=${RealRootDir#/}   # strip off leading / 
+DestDir=$TargetDir/$FBRootDir
+
+
+
+#------------------------------------------------------------------------
+#  copyFiles
+# This function copies all the files for a classic distribution into a
+# directory heirachy mirroring the installation.
+
+copyFiles() {
+# The guts of the tranfer of files and other directories
+
+    if [ -d $TargetDir ]
+      then 
+        rm -fr $TargetDir
+    fi 
+    mkdir -p $DestDir 
+    mkdir $DestDir/bin 
+    mkdir $DestDir/examples 
+    mkdir $DestDir/help 
+    mkdir $DestDir/include 
+    mkdir $DestDir/intl 
+    mkdir $DestDir/lib
+    mkdir $DestDir/doc 
+    mkdir $DestDir/UDF 
+    mkdir $DestDir/misc
+    mkdir $TargetDir/etc 
+#    mkdir $TargetDir/etc/init.d
+#    mkdir $TargetDir/var
+#    mkdir $TargetDir/var/adm
+#    mkdir $TargetDir/var/adm/fillup-templates
+
+#    mkdir -p $TargetDir/usr/sbin
+    mkdir -p $TargetDir/usr/lib
+    mkdir -p $TargetDir/usr/include
+
+    cp -f $BuildDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
+
+    cp $BuildDir/bin/gbak $DestDir/bin/gbak 
+    cp $BuildDir/bin/gdef $DestDir/bin/gdef 
+    cp $BuildDir/bin/gds_lock_print $DestDir/bin/gds_lock_print 
+    cp $BuildDir/bin/gds_drop $DestDir/bin/gds_drop 
+    cp $BuildDir/bin/gds_lock_mgr $DestDir/bin/gds_lock_mgr 
+    cp $BuildDir/bin/gds_pipe $DestDir/bin/gds_pipe 
+    cp $BuildDir/bin/gfix $DestDir/bin/gfix 
+    cp $BuildDir/bin/gpre $DestDir/bin/gpre 
+    cp $BuildDir/bin/gsec $DestDir/bin/gsec 
+    cp $BuildDir/bin/gsplit $DestDir/bin/gsplit 
+    cp $BuildDir/bin/gstat $DestDir/bin/gstat 
+    cp $BuildDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
+    cp $BuildDir/bin/isql $DestDir/bin/isql 
+    cp $BuildDir/bin/qli $DestDir/bin/qli 
+
+    cp $BuildDir/bin/CSchangeRunUser.sh $DestDir/bin
+    cp $BuildDir/bin/CSrestoreRootRunUser.sh $DestDir/bin
+    cp $BuildDir/bin/changeDBAPassword.sh $DestDir/bin
+
+    cp $BuildDir/examples/v5/*.[ceh] $DestDir/examples 
+    cp $BuildDir/examples/v5/*.sql $DestDir/examples 
+    cp $BuildDir/examples/v5/*.gbk $DestDir/examples 
+    cp $BuildDir/examples/v5/*.gdb $DestDir/examples 
+    cp $BuildDir/examples/v5/makefile $DestDir/examples 
+    cp $BuildDir/help/help.gbak $DestDir/help 
+    cp $BuildDir/help/help.gdb $DestDir/help 
+
+    #cp -r $BuildSrcDir/doc $DestDir 
+    #cp -r $BuildDir/doc $DestDir 
+
+    cp $BuildDir/firebird.msg $DestDir/firebird.msg 
+    cp $BuildDir/isc4.gdb $DestDir/isc4.gdb 
+    #cp $BuildDir/isc_config $DestDir/isc_config
+
+
+#    cp $BuildDir/include/gds.f $DestDir/include 
+#    cp $BuildDir/include/gds.hxx $DestDir/include 
+    cp $BuildDir/include/*.h $DestDir/include 
+
+
+    cp -f $BuildDir/lib/@FIREBIRD_LIBGDS_SO@ $DestDir/lib/@FIREBIRD_LIBGDS_SO@
+    ln -s @FIREBIRD_LIBGDS_SO@  $DestDir/lib/@FIREBIRD_LIBGDS_SO_LNK@
+    ln -s @FIREBIRD_LIBGDS_SO@  $DestDir/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
+
+#    cp -f $BuildDir/lib/gds.a /usr/lib/libgds.a 
+    cp -f $BuildDir/lib/ib_util.so $DestDir/lib/libib_util.so 
+
+
+    cp $BuildDir/intl/libfbintl.so $DestDir/intl/fbintl
+    cp $BuildDir/UDF/ib_udf.so $DestDir/UDF/
+    cp $BuildDir/UDF/fb_udf.so $DestDir/UDF/
+
+#    cp $BuildDir/README $DestDir/README
+
+    cp $BuildSrcDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
+
+    cp -f $BuildDir/misc/firebird.conf $DestDir/etc/firebird.conf
+
+
+# Create links from /usr/lib to install area.
+
+    ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO@ $TargetDir/usr/lib/@FIREBIRD_LIBGDS_SO@
+    ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO_LNK@ $TargetDir/usr/lib/@FIREBIRD_LIBGDS_SO_LNK@
+    ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO_X_LNK@ $TargetDir/usr/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
+    ln -s ../../$FBRootDir/lib/libgds.a $TargetDir/usr/lib/libgds.a
+    ln -s ../../$FBRootDir/lib/libib_util.so $TargetDir/usr/lib/libib_util.so
+
+
+# link include files to /usr/include 
+	for i in gds.h iberror.h ibase.h ib_util.h
+	   do
+		   ln -s ../../$FBRootDir/include/$i $TargetDir/usr/include/$i
+	   done
+
+    (cd $DestDir; touch firebird.log;)
+
+#     chmod u=rw,go= firebird.log)
+#    (cd $DestDir; chmod uga+rw examples/*.gdb)
+
+#    chown -R root:root $TargetDir
+    
+}
+
+
+#=== MAIN ====================================================================
+
+
+copyFiles
+
