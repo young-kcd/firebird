@@ -2667,7 +2667,7 @@ static ISC_STATUS detach(ISC_STATUS * status_vector,
 	ISC_STATUS_ARRAY alt_vector;
 
 	if (!dbb->dbb_handle)
-		return NULL;
+		return FB_SUCCESS;
 
 	status = status_vector;
 
