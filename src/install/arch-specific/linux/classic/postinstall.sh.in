@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.10.2.5 2003-12-14 04:03:33 skywalker Exp $
+#   $Id: postinstall.sh.in,v 1.10.2.6 2003-12-14 04:13:24 skywalker Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -642,11 +642,6 @@ buildUninstallFile() {
 
     cp -r scripts $FBRootDir/misc/
     cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
-
-    if [ -f /var/run/xinetd.pid ]
-      then
-        kill -USR2 `cat /var/run/xinetd.pid`
-    fi
 }
 
 #------------------------------------------------------------------------
