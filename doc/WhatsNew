@@ -167,6 +167,11 @@
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
+    * UNION enhanced
+        Fixed field type coersion logic in unions
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
     * New backup technology
         Implemented fast on-line physical incremental backup facilities
       Contributor(s):
