@@ -269,9 +269,6 @@ typedef union {
 		long i1:32;
 #endif
 	} b32;
-#if defined(B64)
-	B64 b64;
-#endif
 } C_block;
 
 
