@@ -1,0 +1,113 @@
+
+
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
+# 
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
+# 
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
+# 
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
+#
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#  Contributor(s):
+# 
+#
+#  $Id: Makefile.in.install,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#
+ROOT=../..
+
+
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+
+FirebirdInstallPrefix=@prefix@
+
+ @SET_MAKE@
+
+FIREBIRD=$(FirebirdInstallPrefix)
+
+export -n FIREBIRD
+export -n INTERBASE
+
+.PHONY: all CSrpmscript SSrpmscript ssinstall runclassicinstall \
+        classicpackages
+
+
+# Some of these targets are run from the root tree of the build.
+# those need to know where the install subdirectory is kept.
+# Others are run locally these need to know the path back to the
+# root of the build tree.
+
+BuildRoot=$(GEN_ROOT)
+
+InstallRoot=.
+
+
+FirebirdBuildPrefix=$(GEN_ROOT)
+
+#export FirebirdBuildPrefix
+#export FirebirdInstallPrefix
+#export PackageVersion
+
+
+
+
+# This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
+TarFile=Firebird$(ArchPrefix)-$(FirebirdVersion)-$(PackageVersion).$(CpuType).tar.gz
+PkgSrcDir=$(InstallRoot)/$(ArchType)
+
+
+LastInstallFlg=.lastinstallflg
+
+
+install: runinstall
+dist : packages
+
+
+runinstall: $(LastInstallFlg)
+
+
+$(LastInstallFlg) : $(BIN)/gsec
+	(cd $(GEN_ROOT)/install; ./install.sh)
+#	(cd $(ROOT); sh $(InstallRoot)/classic/CSTarInstall.sh)
+#	touch $(LastInstallFlg)
+
+
+
+
+
+packages: tarfile
+
+tarfile:  $(TarFile)
+
+$(TarFile) :  buildInstallDir
+	(cd $(GEN_ROOT); tar -czf $(TarFile) install)
+
+
+TarInstallDir=$(GEN_ROOT)/install
+
+buildInstallDir:
+#	(cd $(BuildRoot); tar -czf - interbase ) | cat > $(CSTarInstallDir)/interbase.tar.gz
+	(cd $(GEN_ROOT); tar -czf install/firebird.tar.gz firebird)
+

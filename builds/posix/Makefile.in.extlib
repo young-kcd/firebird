@@ -1,0 +1,117 @@
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
+# 
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
+# 
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
+# 
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
+#
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#  Contributor(s):
+# 
+#
+#  $Id: Makefile.in.extlib,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#
+ROOT=..
+ObjModuleName=extlib
+
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.defaults
+include     $(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.shared.variables
+
+@SET_MAKE@
+
+UDF=	$(FIREBIRD)/UDF
+
+
+UDF_Files = ib_udf.c
+UDF_Sources = $(addprefix extlib/, $(UDF_Files))
+UDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UDF_Sources))))
+
+FBUDF_Files = fbudf.cpp
+FBUDF_Sources = $(addprefix extlib/fbudf/, $(FBUDF_Files))
+FBUDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUDF_Sources))))
+
+UTIL_Files = ib_util.c
+UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
+UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
+
+
+AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
+Dependencies = $(AllObjects:.o=.d)
+
+
+.PHONY: all lib_ib_udf lib_ib_util lib_fb_udf
+
+all: lib_ib_udf lib_fb_udf lib_ib_util 
+
+
+# The libraires in this directory could do with a bit more work, since they
+# the previous code (presumably by John) that does the ar crv stuff, might
+# work still, even if the .o files have directory prefixes on them.
+# And the udf stuff doesn't want to do .so.X.X.X extensions in UDF directory
+# or the loader gets confused with loading the links.
+# MOD 29-July-2002
+
+
+
+# ib_udf.so
+#
+# User defined functions.  (I've put the .so extension back onto the library)
+# 
+
+lib_ib_udf: $(UDF)/ib_udf.so
+
+#$(UDF)/ib_udf.so(%.o) : %.o
+#	ar crv $@  $%
+
+$(UDF)/ib_udf.so:	$(UDF_Objects)
+	$(LIB_LINK) -Wl,-soname,ib_udf.so -Wl,-rpath,/usr/lib -o $@ $^
+#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
+#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
+
+
+
+
+lib_fb_udf: $(UDF)/fb_udf.so
+
+$(UDF)/fb_udf.so:	$(FBUDF_Objects)
+	$(LIB_LINK) -Wl,-soname,fb_udf.so -Wl,-rpath,/usr/lib -o $@ $^
+#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
+#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
+
+
+# ib_util
+
+lib_ib_util: $(LIB)/ib_util.so
+
+$(LIB)/ib_util.so:	$(UTIL_Objects)
+	$(LIB_LINK) -Wl,-soname,ib_util.so -Wl,-rpath,/usr/lib -o $@ $^
+#	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
+#	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
+
+#$(LIB)/ib_util.so(%.o) : %.o
+#	ar crv $@  $%
+
+
+FORCE:
+
+-include $(Dependencies)

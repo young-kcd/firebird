@@ -1,0 +1,210 @@
+#
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: make.defaults,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+# 
+
+
+#_____________________________________________________________________________
+
+
+
+# This file contains default values that are used by the build process do not
+# change these here, but override them in the platform specific file
+# prefix.xxx where xxx is the platform name using the form SH := bash 
+# see the readme file with the Makefile.in files for more details.
+
+
+
+#_____________________________________________________________________________
+
+
+#RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
+RealFirebirdPath = @NEW_FIREBIRD_DIR@
+
+
+FirebirdInstallPrefix = @prefix@
+CpuType=@CPU_TYPE@
+FirebirdVersion=@FIREBIRD_VERSION@
+PackageVersion=@FIREBIRD_PACKAGE_VERSION@
+
+
+ifeq (@FIREBIRD_ARCH_TYPE@,classic)
+	ArchPrefix=CS
+else
+	ArchPrefix=SS
+endif
+
+SharedLibraryName=@FIREBIRD_LIBGDS_SO@
+SharedLibrarySoName=@FIREBIRD_LIBGDS_SO_X_LNK@
+SharedLibraryBaseName=@FIREBIRD_LIBGDS_SO_LNK@
+
+
+
+# Default programs and tools to be used in the build process
+
+SH=			sh -c
+RM=			rm -f
+CHMOD=			chmod
+CHMOD_6=		chmod 666
+CHMOD_7=		chmod 777
+CHMOD_S7=		chmod 06777
+MV=			mv -f
+TOUCH=			touch
+CP=			cp
+ECHO=			echo
+QUIET_ECHO=		@echo
+CD=			cd
+CAT=			cat
+AR=			ar crsu
+LN=    ln -s 
+RANLIB=			@RANLIB@
+
+# Default extensions
+
+ARCH_EXT=		.a
+EXEC_EXT=
+#      FSG 1.Dez.2000
+#SHRLIB_EXT=             .so
+
+
+#_____________________________________________________________________________
+
+
+# From jrd
+
+JRD_BOOT=		$(LIB)/jrd_boot.a
+
+
+
+# The shared library name for the embedded (or classic) library
+# 
+LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
+LIBFBEMBED_SOBASENAME = $(LIB)/$(SharedLibrarySoName)
+LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
+
+LIBGDS_A = $(LIB)/libgds.a
+
+# Shared library names for client side of fbserver (or super) version
+# used to link all the utilities to enable them to connect over the wire
+# to the fbserver. MOD 28-July-2002
+LIBFBCLIENT_SO = $(LIB)/libfbclient.so.1.0.0
+LIBFBCLIENT_SOBASENAME=$(LIB)/libfbclient.so.1
+LIBFBCLIENT_SONAME=$(LIB)/libfbclient.so
+
+
+# intl will load dynamically, and having the whole soname set with version
+# confuses the dynamic load process.  So we only have the .so file
+# MOD 28-July-2002
+
+LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.so
+#LIBFBINTL_SOBASENAME=$(FIREBIRD)/intl/libfbintl.so.1
+#LIBFBINTL_SONAME=$(FIREBIRD)/intl/libfbintl.so
+
+LIBFBCOMMON_A = $(LIB)/libfbcommon.a
+LIBFBSTATIC_A = $(LIB)/libfbstatic.a
+
+ifdef UseSharedLibraries   
+    LIBGDS_LA = $(LIBGDS_SO)
+    LIBGDS_DEP =
+#    LIBGDS_LINK = $(LIBGDS_SO)
+    LIBGDS_LINK =
+#    LINK_LIBS := -L$(LIB) -lgdssuper  $(LINK_LIBS)
+#    LINK_LIBS := -L$(LIB) -lgds $(LINK_LIBS)
+
+#    LIBGDS_LINK_OPTIONS = -soname libgds.so -rpath /usr/lib 
+#    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,$(FirebirdInstallPrefix)/lib 
+    LIBGDS_LINK_OPTIONS = -Wl,-soname,$(SharedLibrarySoName) -Wl,-rpath,/usr/lib 
+else
+    LIBGDS_LA = $(LIBGDS_A)
+    LIBGDS_DEP = $(LIBGDS_LA)
+    LIBGDS_LINK =
+    LIBGDS_LINK_OPTIONS =
+endif
+
+
+# From lock
+GDS_LOCK_MGR    = $(BIN)/gds_lock_mgr
+
+# From utilities 
+CREATE_DB       = $(BIN)/create_db$(EXEC_EXT)
+GDS_DROP        = $(BIN)/gds_drop$(EXEC_EXT)
+GSTAT           = $(BIN)/gstat$(EXEC_EXT)
+GSEC            = $(BIN)/gsec$(EXEC_EXT)
+GDS_REBUILD     = $(BIN)/gds_rebuild$(EXEC_EXT)
+GDS_RELAY       = $(BIN)/gds_relay$(EXEC_EXT)
+GDS_INSTALL     = $(BIN)/gds_install$(EXEC_EXT)
+GDS_INSTALL     = $(BIN)/gds_install_service$(EXEC_EXT)
+FBGUARD         = $(BIN)/fbguard$(EXEC_EXT)
+FBMGR_BIN       = $(BIN)/fbmgr.bin$(EXEC_EXT)
+ISC_GDB         = $(FIREBIRD)/isc4.gdb
+ISC_GBAK        = $(BIN)/isc4.gbak
+
+# From qli
+QLI            = $(BIN)/qli$(EXEC_EXT)
+
+# From isql
+ISQL            = $(BIN)/isql$(EXEC_EXT)
+ISQL_STATIC     = $(BIN)/isql_static$(EXEC_EXT)
+MUISQL          = $(BIN)/muisql$(EXEC_EXT)
+
+# From burp
+GBAK_STATIC     = $(BIN)/gbak_static$(EXEC_EXT)
+GBAK            = $(BIN)/gbak$(EXEC_EXT)
+
+# From gpre
+# (gpre current is a link to one of the others)
+GPRE_BOOT       = $(BIN)/gpre_boot$(EXEC_EXT)
+GPRE_STATIC     = $(BIN)/gpre_static$(EXEC_EXT)
+GPRE            = $(BIN)/gpre$(EXEC_EXT)
+GPRE_CURRENT    = $(BIN)/gpre_current$(EXEC_EXT)
+
+
+# From msgs
+CHECK_MESSAGES  = $(BIN)/check_messages$(EXEC_EXT)
+BUILD_FILE      = $(BIN)/build_file$(EXEC_EXT)
+INTERBASE_MSG   = $(FIREBIRD)/interbase.msg
+
+ENTER_MESSAGES  = $(BIN)/enter_messages$(EXEC_EXT)
+MODIFY_MESSAGES = $(BIN)/modify_messages$(EXEC_EXT)
+CHANGE_MESSAGES = $(BIN)/change_messages$(EXEC_EXT)
+
+fr_FR_MSG       = $(FIREBIRD)/fr_FR.msg
+de_DE_MSG       = $(FIREBIRD)/de_DE.msg
+ja_JP_MSG       = $(FIREBIRD)/ja_JP.msg
+
+
+
+
+#Platform Manager
+#For want of a better suggestion we may as well default to posix
+PLATFORM_PATH	=	jrd/os/posix
+
+
+
+

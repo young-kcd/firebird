@@ -1,0 +1,285 @@
+
+
+#________________________________________________________________________
+#
+# jrd
+
+# to get at the database.  why.cpp is the normal one whybk.cpp is the one
+# compiled with a BACKEND flag, it seems to be (from a quick look at
+# the code) to allow the use of another library to talk to data from
+# and earlier version data file.  (Good way to achieve back portability)
+# In the current builds only why.cpp is used, to build using whybk.cpp you
+# will need to look at what is contained in the original makefiles.
+
+WHY_Sources = why.c
+WHY_BACKEND_Sources= whybk.c
+
+# why.c does the switch to determine the actual implementation to use
+
+
+JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \
+		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
+		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
+		thd.cpp utl.cpp \
+        $(WHY_Sources)
+
+# These are in the win32 release but not unix one for super? 
+#err.cpp flu.cpp functions.cpp 
+
+JRD_ServerFiles=  blob_filter.epp dpm.epp dyn.epp dyn_def.epp \
+        dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
+        grant.epp ini.epp met.epp pcmet.epp scl.epp \
+                   \
+        ail.cpp all.cpp bookmark.cpp blb.cpp btr.cpp builtin.cpp \
+		cch.cpp cmp.cpp cvt2.cpp db_alias.cpp \
+		dfw.cpp divorce.cpp \
+		err.cpp iberr.cpp \
+		event.cpp evl.cpp exe.cpp ext.cpp filters.cpp flu.cpp functions.cpp \
+		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
+		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp  \
+		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp \
+		plugin_manager.cpp pwd.cpp rec.cpp rlck.cpp \
+		rng.cpp rse.cpp sbm.cpp \
+		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
+        svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
+		$(IO_Sources) $(DEBUG_Sources)
+
+
+JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
+
+# expands list to jrd/xx.cpp ...
+JRD_Sources = $(addprefix jrd/, $(JRD_Files))
+
+# expands list to ../<module>/jrd/xx.o entries
+JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
+
+
+
+#  If your platform needs these then you may need
+# to include something like.
+# JRD_P_Sources := $(subst, flu.lo, , $(JRD_P_Sources))
+
+
+
+#________________________________________________________________________
+#
+# dsql
+
+DSQL_ClientFiles = array.epp blob.epp \
+                   preparse.cpp user_dsql.cpp utld.cpp keywords.cpp
+
+DSQL_ServerFiles=	metd.epp \
+                alld.cpp ddl.cpp dsql.cpp \
+	            errd.cpp gen.cpp hsh.cpp make.cpp \
+	            movd.cpp parse.cpp pass1.cpp
+
+
+DSQL_Files = $(DSQL_ClientFiles) $(DSQL_ServerFiles)
+
+DSQL_Sources = $(addprefix dsql/, $(DSQL_Files))
+DSQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_Sources))))
+
+
+#________________________________________________________________________
+#
+# lock
+
+
+LOCK_Files = lock.cpp
+
+LOCK_Sources = $(addprefix lock/, $(LOCK_Files))
+LOCK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCK_Sources))))
+
+
+#________________________________________________________________________
+#
+# remote
+
+REMOTE_ClientFiles =  allr.cpp inet.cpp interface.cpp merge.cpp \
+            parser.cpp protocol.cpp remote.cpp 
+
+INTERFACE_Files=	$(REMOTE_ClientFiles)
+
+
+INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files))
+INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
+
+
+#________________________________________________________________________
+#
+# pipe
+
+PIPE_Files=	head5.cpp allp.cpp
+
+PIPE_Sources = $(addprefix pipe/, $(PIPE_Files))
+PIPE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(PIPE_Sources))))
+
+
+
+#________________________________________________________________________
+#
+# intl
+
+# none currently.
+
+
+#________________________________________________________________________
+#
+# wal
+
+WAL_Files=	wal.cpp walc.cpp walf.cpp walr.cpp wstatus.cpp walw.cpp
+
+WAL_Sources = $(addprefix wal/, $(WAL_Files))
+WAL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_Sources))))
+
+#________________________________________________________________________
+#
+# gpre
+
+GPRELIB_Files = pretty.cpp
+
+GPRELIB_Sources = $(addprefix gpre/, $(GPRELIB_Files))
+GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sources))))
+
+
+
+#________________________________________________________________________
+#
+# alice
+
+ALICE_Files=
+ifeq ($(ArchType),super)
+    ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
+endif
+
+ALICE_Sources = $(addprefix alice/, $(ALICE_Files))
+ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources))))
+
+#________________________________________________________________________
+#
+# alice
+
+BURP_Files=
+ifeq ($(ArchType),super)
+    BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
+endif
+
+BURP_Sources = $(addprefix burp/, $(BURP_Files))
+BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources))))
+
+
+#________________________________________________________________________
+#
+# utilities
+
+SECURITY_ClientFiles = security.cpp
+
+SECURITY_ServerFiles:=
+
+ifeq ($(ArchType),super)
+    SECURITY_ServerFiles:= $(SECURITY_ServerFiles) gsec.cpp dba.epp ppg.cpp cmd_util.cpp
+endif
+
+SECURITY_Files = $(SECURITY_ClientFiles) $(SECURITY_ServerFiles)
+
+SECURITY_Sources = $(addprefix utilities/, $(SECURITY_Files))
+SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_Sources))))
+
+#________________________________________________________________________
+#
+# fbutil
+
+FBUTIL_ClientFiles=FirebirdConfig.cpp FirebirdConfigFile.cpp
+FBUTIL_ServerFiles=
+
+FBUTIL_Files = $(FBUTIL_ClientFiles) $(FBUTIL_ServerFiles)
+
+FBUTIL_Sources = $(addprefix fbutil/, $(FBUTIL_Files))
+FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Sources))))
+
+#________________________________________________________________________
+#
+# common/memory
+
+FBMEMORY_ClientFiles=allocators.cpp memory_pool.cpp
+FBMEMORY_ServerFiles=
+
+FBMEMORY_Files= $(FBMEMORY_ClientFiles) $(FBMEMORY_ServerFiles)
+
+FBMEMORY_Sources = $(addprefix common/memory/, $(FBMEMORY_Files))
+FBMEMORY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMEMORY_Sources))))
+
+#________________________________________________________________________
+#
+# common
+
+FBCOMMON_ClientFiles = fb_exception.cpp
+FBCOMMON_ServerFiles = 
+
+FBCOMMON_Files = $(FBCOMMON_ClientFiles) $(FBCOMMON_ServerFiles)
+
+FBCOMMON_Sources = $(addprefix common/, $(FBCOMMON_Files))
+FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_Sources))))
+
+
+#________________________________________________________________________
+#
+# Platform Manager
+
+OS_SPECIFIC_Files=	path_utils.cpp mod_loader.cpp
+
+OS_SPECIFIC_Sources = $(addprefix $(PLATFORM_PATH)/, $(OS_SPECIFIC_Files))
+OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))
+
+
+#________________________________________________________________________
+#
+
+# These are the lists of object/shared object files that will go into libgds.a
+# and libgds.so.
+
+LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
+                $(JRD_Objects) \
+                $(DSQL_Objects) \
+                $(LOCK_Objects) \
+                $(INTERFACE_Objects) \
+                $(PIPE_Objects) \
+                $(WAL_Objects) \
+                $(GPRELIB_Objects) \
+                $(SECURITY_Objects) \
+                $(FBUTIL_Objects) \
+				$(FBMEMORY_Objects) \
+                $(FBCOMMON_Objects) \
+                $(BURP_Objects) \
+                $(ALICE_Objects)
+
+# Objects differences for server (super) and embedded (classic) libraries 
+# have been worked out above in this file, based on macros, so here they
+# both refer to the same thing. (better way always possible) 
+# MOD 29-July-2002
+
+LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
+
+
+# The following library is a 'reduced' set (although not that reduced) 
+# to enable easy compilation of a boot kit containing a simple gpre and 
+# gbak modules.  These are then used to compile the rest of the system.
+# MOD 29-July-2002
+
+# Notice that $(SECURITY_Objects) are missing, because that file can't be
+# compiled until later in the build process.
+
+LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
+				$(JRD_Objects) \
+                $(DSQL_Objects) \
+                $(LOCK_Objects) \
+                $(INTERFACE_Objects) \
+                $(PIPE_Objects) \
+                $(WAL_Objects) \
+                $(GPRELIB_Objects) 
+
+
+# Not needed since loaded into libfbmemory.a already
+#                $(FBUTIL_Objects) \
+#				$(FBMEMORY_Objects)
+

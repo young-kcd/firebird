@@ -1,0 +1,91 @@
+
+
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
+# 
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
+# 
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
+# 
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
+#
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#  Contributor(s):
+# 
+#
+#  $Id: Makefile.in.embed.qli,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#
+ROOT=..
+ObjModuleName=embed.qli
+
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.defaults
+include     $(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.shared.variables
+
+@SET_MAKE@
+
+
+QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
+		expand.cpp exe.cpp noform.cpp format.cpp gener.cpp help.cpp \
+		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
+		report.cpp show.cpp
+QLI_Sources = $(addprefix qli/, $(QLI_Files))
+QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
+
+AllObjects = $(QLI_Objects) 
+Dependencies = $(AllObjects:.o=.d)
+
+
+
+.PHONY: all qli
+
+all:	qli   
+
+
+qli : $(QLI)
+
+$(QLI): $(QLI_Objects) $(LIBFBEMBED_SO)  
+	$(CC) $(LINK_OPTS) $(QLI_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(CHMOD_S7) $@
+
+
+
+# qli_help
+#
+# qli_help is now directly build in the refDatabase directory, and doesn't 
+# need to be rebuilt here.
+
+
+# These need to change to $(GEN_SRC) at some stage
+$(SRC)/meta.cpp $(SRC)/proc.cpp $(SRC)/show.cpp: yachts.lnk 
+$(SRC)/help.cpp:	help.gdb 
+
+
+yachts.lnk:
+	ln -fs $(SRC_ROOT)/refDatabases/metadata.gdb yachts.lnk
+
+help.gdb:
+	ln -fs $(SRC_ROOT)/refDatabases/help.gdb help.gdb
+
+FORCE:
+
+
+-include $(Dependencies)
+
