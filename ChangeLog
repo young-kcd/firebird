@@ -1,3 +1,11 @@
+2004-10-24 13:57  arnobrinkman
+
+	* firebird2/src/jrd/: opt.cpp (1.73.2.24), rse.h (1.13.2.2):
+	
+	bugfix: Fix wrong results with OUTER JOINs that exists since FB1.5
+	
+	Backport fix from HEAD as asked by Dmitry :-)
+
 2004-10-23 20:08  skidder
 
 	* firebird2/doc/WhatsNew (1.36.2.30):
