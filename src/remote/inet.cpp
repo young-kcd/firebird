@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.86 2003-11-11 12:16:51 brodsom Exp $
+$Id: inet.cpp,v 1.87 2003-11-15 20:16:29 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1128,6 +1128,9 @@ PORT INET_server(int sock)
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
 
+	int optval = 1;
+	setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+			   (SCHAR *) & optval, sizeof(optval));
 	return port;
 }
 
