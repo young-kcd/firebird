@@ -2717,10 +2717,6 @@ static void THREAD_ROUTINE sweep_database(char* database)
 
 	const SSHORT dpb_length = dpb - sweep_dpb;
 
-	/* Register as internal database handle */
-	ihndl*	ihandle;
-
-
 	ISC_STATUS_ARRAY status_vector;
 
 	// Temporary disable security for this thread to proceed with internal attachment
