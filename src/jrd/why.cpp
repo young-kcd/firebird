@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.52 2004-02-02 11:01:35 robocop Exp $
+$Id: why.cpp,v 1.53 2004-02-03 11:25:29 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -3783,7 +3783,7 @@ ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
 									 USHORT sdl_length,
 									 const UCHAR* sdl,
 									 USHORT param_length,
-									 const UCHAR* param,
+									 const SLONG* param,
 									 SLONG slice_length,
 									 UCHAR* slice)
 {

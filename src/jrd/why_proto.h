@@ -181,7 +181,7 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS*, FRBRD**, USHORT,
 ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS*, FRBRD**, USHORT, const UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
-									 USHORT, const UCHAR*, USHORT, const UCHAR*,
+									 USHORT, const UCHAR*, USHORT, const SLONG*,
 									 SLONG, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FRBRD**, SLONG*, USHORT,
