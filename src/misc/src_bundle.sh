@@ -4,8 +4,11 @@
 # and prepare it as an official "source distribution"
 #
 
+# Determine root of local checkout
+SRCROOT=`dirname $0`/../..
+
 # Set the CVS root from the local checkout if possible
-ROOT=`cat CVS/Root`
+ROOT=`cat $SRCROOT/CVS/Root`
 if [ "x$ROOT" == 'x' ]; then
     ROOT=":pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird"
 fi
