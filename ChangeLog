@@ -1,3 +1,22 @@
+2004-09-13 23:06  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.147), met.epp (1.138), opt.cpp
+	(1.193), tra.cpp (1.86):
+	
+	A number of little corrections.
+
+2004-09-13 21:36  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.77):
+	
+	Fixed another my bug, spotted by Arno.
+
+2004-09-13 07:13  skidder
+
+	* firebird2/src/jrd/val.h (1.28):
+	
+	Fix error in my code spotted by Claudio
+
 2004-09-12 12:48  dimitr
 
 	* firebird2/src/dsql/make.cpp (1.76):
