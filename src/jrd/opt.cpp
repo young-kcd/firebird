@@ -1042,8 +1042,16 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 
 /* If we are matching less than the full index, this is a partial match */
 
-	if (retrieval->irb_upper_count < idx->idx_count)
-		retrieval->irb_generic |= irb_partial;
+	if (idx->idx_flags & idx_descending) {
+		if (retrieval->irb_lower_count < idx->idx_count) {
+			retrieval->irb_generic |= irb_partial;
+		}
+	}
+	else {
+		if (retrieval->irb_upper_count < idx->idx_count) {
+			retrieval->irb_generic |= irb_partial;
+		}
+	}
 
 /* mark the index as utilized for the purposes of this compile */
 
