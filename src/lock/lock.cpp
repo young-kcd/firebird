@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.66 2003-08-28 12:58:07 brodsom Exp $
+$Id: lock.cpp,v 1.67 2003-09-01 07:51:50 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -2817,7 +2817,7 @@ static USHORT fork_lock_manager( ISC_STATUS * status_vector)
 
 	if (!(pid = vfork())) {
 		if (!vfork()) {
-			execl(string, string, (SCHAR *) 0);
+			execl(string, string, NULL);
 			_exit(FINI_ERROR);
 		}
 		_exit(FINI_OK);

@@ -195,7 +195,7 @@ public:
 };
 typedef jrd_req *JRD_REQ;
 
-#define REQ_SIZE	(sizeof (struct jrd_req) - sizeof (((JRD_REQ) 0)->req_rpb[0]))
+#define REQ_SIZE	(sizeof (struct jrd_req) - sizeof (((JRD_REQ) NULL)->req_rpb[0]))
 
 /* Flags for req_flags */
 #define req_active				0x1L

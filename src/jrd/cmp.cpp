@@ -113,7 +113,7 @@ rel_MAX} RIDS;
   ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
-#define REQ_TAIL		sizeof (((JRD_REQ) 0)->req_rpb[0])
+#define REQ_TAIL		sizeof (((JRD_REQ) NULL)->req_rpb[0])
 #define MAP_LENGTH		256
 
 /* RITTER - changed HP10 to HPUX */
@@ -276,7 +276,7 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 		if ( (procedure = request->req_procedure) ) {
 			prc_sec_name = (procedure->prc_security_name ?
 							(TEXT *) procedure->
-							prc_security_name->str_data : (TEXT *) 0);
+							prc_security_name->str_data : NULL);
 			class_ = SCL_get_class(prc_sec_name);
 			SCL_check_access(class_, 0, 0,
 							 0, SCL_execute, object_procedure,
@@ -5139,7 +5139,7 @@ static void post_procedure_access(TDBB tdbb, CSB csb, JRD_PRC procedure)
 
 	prc_sec_name = (procedure->prc_security_name ?
 					(TEXT *) procedure->
-					prc_security_name->str_data : (TEXT *) 0);
+					prc_security_name->str_data : NULL);
 
 /* This request must have EXECUTE permission on the stored procedure */
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,

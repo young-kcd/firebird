@@ -207,7 +207,7 @@ SSHORT WAL_checkpoint_finish(ISC_STATUS * status_vector,
  * zero length record for this purpose. */
 
 	wal_put2(status_vector, WAL_handle, chkpt_rec, 0,
-			 (UCHAR *) 0, 0, log_seqno, log_offset, TRUE);
+			 NULL, 0, log_seqno, log_offset, TRUE);
 
 /* Now save the checkpoint record offset to be used by WAL writer later after
    it flushes the block containing the checkpoint record.  We need to do this
@@ -356,7 +356,7 @@ SSHORT WAL_commit(ISC_STATUS * status_vector,
 	SLONG dummy_offset;
 
 	if (len && wal_put2(status_vector, WAL_handle, commit_logrec, len,
-						(UCHAR *) 0, 0, log_seqno, log_offset, 0) != FB_SUCCESS)
+						NULL, 0, log_seqno, log_offset, 0) != FB_SUCCESS)
 		return FB_FAILURE;
 
 	ret = FB_SUCCESS;

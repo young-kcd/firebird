@@ -1987,12 +1987,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 		 * from waiting infinitely if the client goes away
 		 */
 		while (!(service->svc_flags & SVC_detached)) {
-			if (ISC_event_wait(1,
-								&evnt_ptr,
-								&count,
-								60 * 1000,
-								(FPTR_VOID) 0,
-								0))
+			if (ISC_event_wait(1, &evnt_ptr, &count, 60 * 1000, NULL, 0))
 			{
 				continue;
 			}

@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.48 2003-08-28 13:16:03 brodsom Exp $
+$Id: par.cpp,v 1.49 2003-09-01 07:58:04 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -242,7 +242,7 @@ int PAR_desc(CSB * csb, DSC * desc)
 
 	desc->dsc_scale = 0;
 	desc->dsc_sub_type = 0;
-	desc->dsc_address = (UCHAR *) 0;
+	desc->dsc_address = NULL;
 	desc->dsc_flags = 0;
 
 	switch (dtype = BLR_BYTE) {
@@ -1748,7 +1748,7 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 	}
 
 	syntax_error(*csb, "plan item");
-	return ((JRD_NOD) 0);			/* Added to remove compiler warning */
+	return NULL;			/* Added to remove compiler warning */
 }
 
 

@@ -40,10 +40,10 @@ static const struct
 } REM_block_sizes[] =
 {
 	{type_MIN	, 0, 0},
-	{type_vec	, sizeof(vec)		, sizeof(((VEC) 0)->vec_object[0])},
+	{type_vec	, sizeof(vec)		, sizeof(((VEC) NULL)->vec_object[0])},
 	{type_rdb	, sizeof(rdb)		, 0},
-	{type_fmt	, sizeof(fmt)		, sizeof(((FMT) 0)->fmt_desc[0])},
-	{type_rrq	, sizeof(rrq)		, sizeof(((RRQ) 0)->rrq_rpt [0])},
+	{type_fmt	, sizeof(fmt)		, sizeof(((FMT) NULL)->fmt_desc[0])},
+	{type_rrq	, sizeof(rrq)		, sizeof(((RRQ) NULL)->rrq_rpt [0])},
 	{type_rtr	, sizeof(rtr)		, 0},
 	{type_str	, sizeof(str)		, 1},	// random string block
 	{type_rbl	, sizeof(rbl)		, 1},

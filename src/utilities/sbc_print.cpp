@@ -188,7 +188,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 /* Handle switches, etc. */
 
-	dbname = (SCHAR *) 0;
+	dbname = NULL;
 	nbuf = 0;
 	nfree_buf = 0;
 	argv++;

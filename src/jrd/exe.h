@@ -120,7 +120,7 @@ typedef rse* RSE;
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((JRD_NOD) 0)->nod_arg[0])
+#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((JRD_NOD) NULL)->nod_arg[0])
 
 
 /* Literal value */

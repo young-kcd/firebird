@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.22 2003-08-09 18:00:13 brodsom Exp $
+//  $Id: par.cpp,v 1.23 2003-09-01 07:48:27 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.22 2003-08-09 18:00:13 brodsom Exp $
+//	$Id: par.cpp,v 1.23 2003-09-01 07:48:27 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -915,8 +915,8 @@ void PAR_init()
 	SQL_init();
 
 	cur_error = cur_fetch = cur_for = cur_modify = cur_store = cur_form =
-		cur_menu = (LLS) 0;
-	cur_statement = cur_item = (ACT) 0;
+		cur_menu = NULL;
+	cur_statement = cur_item = NULL;
 	bas_extern_flag = FALSE;
 
 	cur_routine = MAKE_ACTION(0, ACT_routine);

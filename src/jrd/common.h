@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.79 2003-08-28 22:52:19 brodsom Exp $
+$Id: common.h,v 1.80 2003-09-01 07:58:04 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -855,8 +855,8 @@ typedef struct
 
 #define JRD_BUGCHK 15			/* facility code for bugcheck messages */
 #ifndef OFFSET
-#define OFFSET(struct,fld)      ((int) &((struct) 0)->fld)
-#define OFFSETA(struct,fld)     ((int) ((struct) 0)->fld)
+#define OFFSET(struct,fld)      ((int) &((struct) NULL)->fld)
+#define OFFSETA(struct,fld)     ((int) ((struct) NULL)->fld)
 #endif
 
 #ifndef ODS_ALIGNMENT

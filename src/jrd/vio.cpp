@@ -1459,7 +1459,7 @@ void VIO_fini(TDBB tdbb)
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		ISC_event_post(dbb->dbb_gc_event); /* Wake up running thread */
 		THREAD_EXIT;
-		ISC_event_wait(1, &gc_event_fini, &count, 0, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &gc_event_fini, &count, 0, NULL, 0);
 		THREAD_ENTER;
 		/* Cleanup finalization event */
 		ISC_event_fini(gc_event_fini);
@@ -1935,7 +1935,7 @@ void VIO_init(TDBB tdbb)
 			ERR_bugcheck_msg("cannot start thread");
 		}
 		THREAD_EXIT;
-		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, NULL, 0);
 		THREAD_ENTER;
 		/* Clean up initialization event */
 		ISC_event_fini(gc_event_init);
@@ -3534,7 +3534,7 @@ static void THREAD_ROUTINE garbage_collector(DBB dbb)
 				while (dbb->dbb_flags & DBB_suspend_bgio) {
 					count = ISC_event_clear(gc_event);
 					THREAD_EXIT;
-					ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+					ISC_event_wait(1, &gc_event, &count, 10 * 1000000, NULL, 0);
 					THREAD_ENTER;
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 						goto gc_exit;
@@ -3671,7 +3671,8 @@ rel_exit:
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
 					THREAD_EXIT;
-					int timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+					int timeout = ISC_event_wait(1, &gc_event, &count, 
+												 10 * 1000000, NULL, 0);
 					THREAD_ENTER;
 					dbb->dbb_flags |= DBB_gc_active;
 					if (!timeout) {
@@ -4402,7 +4403,7 @@ static REC replace_gc_record(JRD_REL relation, REC * gc_record, USHORT length)
 
 /* V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 	BUGCHECK(288);				/* msg 288 garbage collect record disappeared */
-	return ((REC) 0);			/* Added to remove compiler warnings */
+	return NULL;			/* Added to remove compiler warnings */
 }
 
 

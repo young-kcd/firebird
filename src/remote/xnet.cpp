@@ -395,7 +395,7 @@ PORT XNET_connect(TEXT * name,
  *
  **************************************/
 #ifdef SUPERCLIENT
-	XCC xcc = (XCC) 0;
+	XCC xcc = NULL;
 	XPM xpm;
 	ULONG number;
 	USHORT mapped_area, mapped_position;

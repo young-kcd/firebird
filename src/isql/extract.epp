@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.11 2003-08-26 23:11:54 brodsom Exp $
+ * $Id: extract.epp,v 1.12 2003-09-01 07:49:57 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -135,7 +135,7 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 
 	if (!DB)
 	{
-		if (isc_attach_database(gds_status, 0, Db_name, &DB, 0, (SCHAR *) 0))
+		if (isc_attach_database(gds_status, 0, Db_name, &DB, 0, NULL))
 		{
 			ISQL_errmsg(gds_status);
 			return (SSHORT) FINI_ERROR;
@@ -187,12 +187,7 @@ SSHORT EXTRACT_ddl( int flag, SCHAR * tabname)
 
 	if (!gds_trans)
 	{
-		if (isc_start_transaction(gds_status,
-									&gds_trans,
-									1,
-									&DB,
-									0,
-									(SCHAR *) 0))
+		if (isc_start_transaction(gds_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(gds_status);
 			return (SSHORT) FINI_ERROR;

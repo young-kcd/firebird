@@ -28,7 +28,7 @@
 #include "../jrd/everything.h"
 #include "../jrd/dbg.h"
 
-#define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) 0)->field)
+#define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) NULL)->field)
 
 extern "C" {
 
@@ -416,7 +416,7 @@ static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
 	(*dbg_window) (), (*dbg_rpb) (), (*dbg_bdbs) (), (*dbg_analyze) (),
 	(*dbg_check) (), (*dmp_page) (), (*dmp_active) (), (*dmp_dirty) (),
 	(*dbg_verify) ();
-#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) 0)->name),
+#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) NULL)->name),
 
 struct symb dbt_symbols[] = {
 	{"blk", &dbg_block, symb_printer, sizeof(int)},
@@ -449,7 +449,7 @@ struct symb dbt_symbols[] = {
     SYM (JRD_REQ, req_top_node)
     SYM (JRD_REQ, req_next)
 */
-	(SCHAR *) 0, 0, symb_routine, 0
+	{NULL, 0, symb_routine, 0}
 };
 
 #define BLKDEF(type, name, tail) (TEXT*) name,

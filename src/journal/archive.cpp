@@ -69,8 +69,7 @@ int CLIB_ROUTINE main( int argc,
 	SLONG size;
 	SLONG db_id;
 	ISC_STATUS_ARRAY status;
-	JRN journal;
-	journal = (JRN) 0;
+	JRN journal = NULL;
 
 	argv++;
 

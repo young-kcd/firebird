@@ -71,7 +71,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	handle = NULL;
-	isc_service_attach((SLONG *) 0, 0, service_path, &handle,
+	isc_service_attach(NULL, 0, service_path, &handle,
 					   (SSHORT) (spb - spb_buffer), spb_buffer);
 
 	if (strstr(service_path, "start_cache")) {
@@ -89,7 +89,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	item = gds__info_end;
 	do {
-		isc_service_query((SLONG *) 0, &handle, send_item_length, send_items,
+		isc_service_query(NULL, &handle, send_item_length, send_items,
 						  sizeof(recv_items), recv_items, sizeof(buffer),
 						  buffer);
 		if (send_items == send_buffer)
@@ -117,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	} while (item == gds__info_truncated
 			 || (send_items == send_buffer && send_item_length));
 
-	isc_service_detach((SLONG *) 0, &handle);
+	isc_service_detach(NULL, &handle);
 
 	exit(FINI_OK);
 }

@@ -1197,11 +1197,11 @@ void PAG_init(void)
 		|| (dbb->dbb_ods_version >= ODS_VERSION10))
 		control->pgc_gpg =
 			(dbb->dbb_page_size -
-			 OFFSETA(GPG, gpg_values)) / sizeof(((GPG) 0)->gpg_values);
+			 OFFSETA(GPG, gpg_values)) / sizeof(((GPG) NULL)->gpg_values);
 	else
 		control->pgc_gpg =
 			(dbb->dbb_page_size -
-			 OFFSETA(PPG, ppg_page)) / sizeof(((PPG) 0)->ppg_page);
+			 OFFSETA(PPG, ppg_page)) / sizeof(((PPG) NULL)->ppg_page);
 
 
 

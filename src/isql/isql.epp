@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.38 2003-08-28 12:59:18 brodsom Exp $
+  $Id: isql.epp,v 1.39 2003-09-01 07:49:57 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -532,8 +532,7 @@ void ISQL_array_dimensions( TEXT * fieldname)
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
 		};
@@ -929,8 +928,7 @@ SSHORT ISQL_get_field_length(TEXT * field_name)
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return 0;
 		};
@@ -986,8 +984,7 @@ void ISQL_get_character_sets(SSHORT char_set_id,
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
 		};
@@ -1081,8 +1078,7 @@ void ISQL_get_default_source(TEXT * rel_name,
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
 		};
@@ -1143,8 +1139,7 @@ SSHORT ISQL_get_index_segments(TEXT * segs,
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return 0;
 		};
@@ -1212,8 +1207,7 @@ BOOLEAN ISQL_get_base_column_null_flag(TEXT * view_name,
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FALSE;
 		};
@@ -1280,8 +1274,7 @@ BOOLEAN ISQL_get_null_flag(TEXT * rel_name, TEXT * field_name)
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FALSE;
 		};
@@ -1406,8 +1399,7 @@ BOOLEAN ISQL_is_domain(TEXT * field_name)
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FALSE;
 		};
@@ -1628,16 +1620,14 @@ static SSHORT add_row(TEXT * tabname)
 /* There may have been a commit transaction before we got here */
 
 	if (!M__trans)
-		if (isc_start_transaction
-			(isc_status, &M__trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FAIL;
 		};
 
 /* Start default transaction for prepare */
 	if (!D__trans)
-		if (isc_start_transaction
-			(isc_status, &D__trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FAIL;
 		};
@@ -1957,7 +1947,7 @@ static SSHORT add_row(TEXT * tabname)
 
 			if (isc_dsql_exec_immed2
 				(isc_status, &DB, &M__trans, 0, insertstring, SQL_dialect,
-				 isqlda, (XSQLDA *) 0)) {
+				 isqlda, NULL)) {
 				ISQL_errmsg(isc_status);
 				break;
 			}
@@ -2056,8 +2046,7 @@ static void col_check( TEXT * tabname, SSHORT * colnumber)
 
 /* Transaction for all frontend commands */
 	if (DB && !gds_trans)
-		if (isc_start_transaction
-			(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
 		};
@@ -2490,8 +2479,7 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 		/* Start the user transaction */
 
 		if (!M__trans) {
-			if (isc_start_transaction
-				(isc_status, &M__trans, 1, &DB, 0, (SCHAR *) 0))
+			if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
 				ISQL_errmsg(isc_status);
 			if (D__trans)
 				COMMIT_TRANS(&D__trans);
@@ -3172,8 +3160,7 @@ static SSHORT frontend( TEXT * statement)
 	else if (!strcmp(parms[0], "SHOW")) {
 		/* Transaction for all frontend commands */
 		if (DB && !gds_trans)
-			if (isc_start_transaction
-				(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 				ISQL_errmsg(isc_status);
 				/* Free the frontend command */
 				for (j = 0; j < MAX_TERMS; j++)
@@ -3193,8 +3180,7 @@ static SSHORT frontend( TEXT * statement)
 	}
 	else if (!strcmp(parms[0], "ADD")) {
 		if (DB && !gds_trans)
-			if (isc_start_transaction
-				(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 				ISQL_errmsg(isc_status);
 				/* Free the frontend command */
 				for (j = 0; j < MAX_TERMS; j++)
@@ -3214,8 +3200,7 @@ static SSHORT frontend( TEXT * statement)
 	}
 	else if (!strcmp(parms[0], "COPY")) {
 		if (DB && !gds_trans)
-			if (isc_start_transaction
-				(isc_status, &gds_trans, 1, &DB, 0, (SCHAR *) 0)) {
+			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 				ISQL_errmsg(isc_status);
 				/* Free the frontend command */
 				for (j = 0; j < MAX_TERMS; j++)
@@ -5067,20 +5052,19 @@ static SSHORT newdb(TEXT * dbname, TEXT * usr, TEXT * psw, TEXT * numbufs,
     /* CVC: We do not require those pesky transactions for -x or -a options.
        Metadata extraction works exclusively with default transaction gds__trans. */
 
-    if (start_user_trans) {
+	if (start_user_trans) {
 
-        /* Start the user transaction  and default transaction */
+		/* Start the user transaction  and default transaction */
 
-        if (!M__trans) {
-            if (isc_start_transaction
-                (isc_status, &M__trans, 1, &DB, 0,
-                 (SCHAR *) 0)) ISQL_errmsg(isc_status);
-            if (D__trans)
-                COMMIT_TRANS(&D__trans);
-            if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
-                                      (V4) ? 5 : 0, (V4) ? default_tpb : NULL))
-                ISQL_errmsg(isc_status);
-        }
+		if (!M__trans) {
+			if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
+				ISQL_errmsg(isc_status);
+			if (D__trans)
+				COMMIT_TRANS(&D__trans);
+			if (isc_start_transaction(isc_status, &D__trans, 1, &DB,
+									  (V4) ? 5 : 0, (V4) ? default_tpb : NULL))
+				ISQL_errmsg(isc_status);
+		}
 
 
         /* Allocate a new user statement for this database */
@@ -5214,7 +5198,7 @@ static SSHORT newtrans( TEXT * statement)
 /* M__trans = 0 after the commit or rollback. ready for a new transaction */
 
 	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, statement,
-								   SQL_dialect, (XSQLDA *) 0)) {
+								   SQL_dialect, NULL)) {
 		ISQL_errmsg(isc_status);
 		return FAIL;
 	}
@@ -6212,9 +6196,8 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 /* If somebody did a commit or rollback, we are out of a transaction */
 
 	if (!M__trans)
-		if (isc_start_transaction
-			(isc_status, &M__trans, 1, &DB, 0,
-			 (SCHAR *) 0)) ISQL_errmsg(isc_status);
+		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL)) 
+			ISQL_errmsg(isc_status);
 
 /* No need to start a default transaction unless there is no current one */
 

@@ -654,7 +654,7 @@ PAG CCH_fake(TDBB tdbb, WIN * window, SSHORT latch_wait)
 
 	bdb = get_buffer(tdbb, window->win_page, LATCH_exclusive, latch_wait);
 	if (!bdb)
-		return (PAG) 0;			/* latch timeout occurred */
+		return NULL;			/* latch timeout occurred */
 
 /* If a dirty orphaned page is being reused - better write it first
    to clear current precedences and checkpoint state. This would also
@@ -666,7 +666,7 @@ PAG CCH_fake(TDBB tdbb, WIN * window, SSHORT latch_wait)
 
 		if (!latch_wait) {
 			release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
-			return (PAG) 0;
+			return NULL;
 		}
 
 		if (!write_buffer
@@ -737,7 +737,7 @@ PAG CCH_fetch(TDBB tdbb,
 	if (fetch_lock_return == 1)
 		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow);	/* must read page from disk */
 	else if (fetch_lock_return == -2 || fetch_lock_return == -1)
-		return (PAG) 0;			/* latch or lock timeout */
+		return NULL;			/* latch or lock timeout */
 
 	bdb = window->win_bdb;
 
@@ -1109,7 +1109,7 @@ void CCH_fini(TDBB tdbb)
 		ISC_event_post(event);
 		count = ISC_event_clear(event);
 		THREAD_EXIT;
-		ISC_event_wait(1, &event, &count, 0, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &event, &count, 0, NULL, 0);
 		THREAD_ENTER;
 		/* Now dispose off the cache reader associated semaphore */
 		ISC_event_fini(event);
@@ -1130,7 +1130,7 @@ void CCH_fini(TDBB tdbb)
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
 		THREAD_EXIT;
-		ISC_event_wait(1, &event, &count, 0, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &event, &count, 0, NULL, 0);
 		THREAD_ENTER;
 		/* Cleanup initialization event */
 		ISC_event_fini(event);
@@ -1440,7 +1440,7 @@ PAG CCH_handoff(TDBB	tdbb,
 	if (must_read == -2 || must_read == -1) {
 		*window = temp;
 		CCH_RELEASE(tdbb, window);
-		return (PAG) 0;
+		return NULL;
 	}
 
 	if (release_tail)
@@ -1578,7 +1578,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 		ERR_bugcheck_msg("cannot start thread");
 
 	THREAD_EXIT;
-	ISC_event_wait(1, &event, &count, 5 * 1000000, (FPTR_VOID) 0, 0);
+	ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
 	THREAD_ENTER;
 #endif
 
@@ -1595,7 +1595,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 			ERR_bugcheck_msg("cannot start thread");
 		}
 		THREAD_EXIT;
-		ISC_event_wait(1, &event, &count, 5 * 1000000, (FPTR_VOID) 0, 0);
+		ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
 		THREAD_ENTER;
 		/* Clean up initialization event */
 		ISC_event_fini(event);
@@ -3168,8 +3168,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 
 		if (dbb->dbb_flags & DBB_suspend_bgio) {
 			THREAD_EXIT;
-			ISC_event_wait(1, &reader_event, &count, 10 * 1000000,
-						   (FPTR_VOID) 0, 0);
+			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
 			THREAD_ENTER;
 			continue;
 		}
@@ -3230,8 +3229,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 		else {
 			bcb->bcb_flags &= ~BCB_reader_active;
 			THREAD_EXIT;
-			ISC_event_wait(1, &reader_event, &count, 10 * 1000000,
-						   (FPTR_VOID) 0, 0);
+			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
 			THREAD_ENTER;
 		}
 		bcb = dbb->dbb_bcb;
@@ -3331,7 +3329,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
 				THREAD_EXIT;
-				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
 				THREAD_ENTER;
 				continue;
 			}
@@ -3437,7 +3435,7 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 			else {
 				bcb->bcb_flags &= ~BCB_writer_active;
 				THREAD_EXIT;
-				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, (FPTR_VOID) 0, 0);
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
 				THREAD_ENTER;
 			}
 			bcb = dbb->dbb_bcb;
@@ -3990,7 +3988,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 					if ( (latch_return =
 						latch_bdb(tdbb, latch, bdb, page, latch_wait)) ) {
 						if (latch_return == 1)
-							return (BDB) 0;	/* permitted timeout happened */
+							return NULL;	/* permitted timeout happened */
 						BCB_MUTEX_ACQUIRE;
 						goto find_page;
 					}
@@ -4031,7 +4029,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 			}
 
 			BCB_MUTEX_RELEASE;
-			return (BDB) 0;
+			return NULL;
 		}
 #endif
 
@@ -4487,12 +4485,11 @@ static SSHORT latch_bdb(
 		THREAD_EXIT;
 		if (latch_wait == 1)
 			timeout_occurred =
-				ISC_event_wait(1, &event, &count, 120 * 1000000,
-							   (FPTR_VOID) 0, event);
+				ISC_event_wait(1, &event, &count, 120 * 1000000, NULL, event);
 		else
 			timeout_occurred =
 				ISC_event_wait(1, &event, &count, -latch_wait * 1000000,
-							   (FPTR_VOID) 0, event);
+							   NULL, event);
 		THREAD_ENTER;
 		LATCH_MUTEX_ACQUIRE;
 	}

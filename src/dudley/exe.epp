@@ -3116,11 +3116,10 @@ static USHORT get_prot_mask( TEXT * relation, TEXT * field)
 		strcpy(msg.field_name, "");
 
 	if (!req_handle)
-		isc_compile_request2((SLONG *) 0, &DB, &req_handle, sizeof(blr), blr);
-	isc_start_request((SLONG *) 0, &req_handle, &gds_trans, 0);
-	isc_start_and_send((SLONG *) 0, &req_handle, &gds_trans, 0, sizeof(msg),
-					   &msg, 0);
-	isc_receive((SLONG *) 0, &req_handle, 1, sizeof(output), &output, 0);
+		isc_compile_request2(NULL, &DB, &req_handle, sizeof(blr), blr);
+	isc_start_request(NULL, &req_handle, &gds_trans, 0);
+	isc_start_and_send(NULL, &req_handle, &gds_trans, 0, sizeof(msg), &msg, 0);
+	isc_receive(NULL, &req_handle, 1, sizeof(output), &output, 0);
 
 	return output.prot_mask;
 }
@@ -4026,11 +4025,10 @@ static void set_generator( DUDLEY_NOD node)
 
 	req_handle1 = 0;
 	blr = (SCHAR *) current_blr.str_start;
-	isc_compile_request2((SLONG *) 0, &DB, &req_handle1, l, blr);
-	isc_start_request((SLONG *) 0, &req_handle1, &gds_trans, 0);
-	isc_receive((SLONG *) 0, &req_handle1, 0, sizeof(gen_value), &gen_value,
-				0);
-	isc_release_request((SLONG *) 0, &req_handle1);
+	isc_compile_request2(NULL, &DB, &req_handle1, l, blr);
+	isc_start_request(NULL, &req_handle1, &gds_trans, 0);
+	isc_receive(NULL, &req_handle1, 0, sizeof(gen_value), &gen_value, 0);
+	isc_release_request(NULL, &req_handle1);
 
 /* the difference between output.current and new is the amount we
    want to change the generator by */
@@ -4050,10 +4048,10 @@ static void set_generator( DUDLEY_NOD node)
 
 	req_handle2 = 0;
 	blr = (SCHAR *) new_blr.str_start;
-	isc_compile_request2((SLONG *) 0, &DB, &req_handle2, l, blr);
-	isc_start_request((SLONG *) 0, &req_handle2, &gds_trans, 0);
-	isc_receive((SLONG *) 0, &req_handle2, 0, sizeof(gen_value), &gen_value, 0);
-	isc_release_request((SLONG *) 0, &req_handle2);
+	isc_compile_request2(NULL, &DB, &req_handle2, l, blr);
+	isc_start_request(NULL, &req_handle2, &gds_trans, 0);
+	isc_receive(NULL, &req_handle2, 0, sizeof(gen_value), &gen_value, 0);
+	isc_release_request(NULL, &req_handle2);
 
 	for (i = 5; (gen_value != new_val) && --i;) {
 		*number = new_val - gen_value;
@@ -4064,11 +4062,10 @@ static void set_generator( DUDLEY_NOD node)
 
 		req_handle2 = 0;
 		blr = (SCHAR *) new_blr.str_start;
-		isc_compile_request2((SLONG *) 0, &DB, &req_handle2, l, blr);
-		isc_start_request((SLONG *) 0, &req_handle2, &gds_trans, 0);
-		isc_receive((SLONG *) 0, &req_handle2, 0, sizeof(gen_value),
-					&gen_value, 0);
-		isc_release_request((SLONG *) 0, &req_handle2);
+		isc_compile_request2(NULL, &DB, &req_handle2, l, blr);
+		isc_start_request(NULL, &req_handle2, &gds_trans, 0);
+		isc_receive(NULL, &req_handle2, 0, sizeof(gen_value), &gen_value, 0);
+		isc_release_request(NULL, &req_handle2);
 	}
 
 	gds__free(current_blr.str_start);

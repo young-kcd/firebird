@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.34 2003-08-28 13:14:37 brodsom Exp $
+$Id: blb.cpp,v 1.35 2003-09-01 07:58:04 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -169,7 +169,7 @@ BLB BLB_create(TDBB tdbb, JRD_TRA transaction, BID blob_id)
  **************************************/
 
 	SET_TDBB(tdbb);
-	return BLB_create2(tdbb, transaction, blob_id, 0, (UCHAR *) 0);
+	return BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 }
 
 
@@ -1730,8 +1730,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 	case ACTION_create:
 		control->ctl_source_handle =
 			(CTL) BLB_create2(tdbb, transaction,
-							  reinterpret_cast<bid*>(blob_id), 0,
-							  (UCHAR *) 0);
+							  reinterpret_cast<bid*>(blob_id), 0, NULL);
 		return FB_SUCCESS;
 
 	case ACTION_put_segment:
@@ -2443,7 +2442,7 @@ static BLB store_array(TDBB tdbb, JRD_TRA transaction, BID blob_id)
 
 /* Create blob for array */
 
-	blob = BLB_create2(tdbb, transaction, blob_id, 0, (UCHAR *) 0);
+	blob = BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 	blob->blb_flags |= BLB_stream;
 
 /* Write out array descriptor */

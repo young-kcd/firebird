@@ -102,7 +102,7 @@ extern int errno;
 #define ERRNO		GetLastError()
 #endif
 
-#define HIGH_WATER(x)		((int) &((DPG) 0)->dpg_rpt [x])
+#define HIGH_WATER(x)		((int) &((DPG) NULL)->dpg_rpt [x])
 #define MOVE_BYTE(x_from,x_to)	*x_to++ = *x_from++;
 
 DATABASE DB =

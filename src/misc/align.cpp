@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.1 2003-07-14 09:29:10 brodsom Exp $
+$Id: align.cpp,v 1.2 2003-09-01 07:52:18 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	short offset, length, faults;
 	ALIGNMENT *rule;
 
-	offset = (int) &((XYZ) 0)->b;
+	offset = (int) &((XYZ) NULL)->b;
 	length = sizeof(struct xyz);
 	faults = check_double();
 

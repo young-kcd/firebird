@@ -29,7 +29,7 @@ BLKDEF(dsql_type_dbb, dbb, 0)
 BLKDEF(dsql_type_dsql_rel, dsql_rel, 1)
 BLKDEF(dsql_type_fld, dsql_fld, 1)
 BLKDEF(dsql_type_fil, fil, 0)
-BLKDEF(dsql_type_nod, dsql_nod, sizeof(((DSQL_NOD) 0)->nod_arg[0]))
+BLKDEF(dsql_type_nod, dsql_nod, sizeof(((DSQL_NOD) NULL)->nod_arg[0]))
 BLKDEF(dsql_type_msg, msg, 0)
 BLKDEF(dsql_type_lls, dsql_lls, 0)	/* linked list stack */
 BLKDEF(dsql_type_str, str, 1)	/* random string block */

@@ -2790,9 +2790,9 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 			blob->blb_to = PASS1_node(request, list->nod_arg[1], FALSE);
 	}
 	if (!blob->blb_from)
-		blob->blb_from = MAKE_constant((STR) 0, 1);
+		blob->blb_from = MAKE_constant((STR) 0, CONSTANT_SLONG);
 	if (!blob->blb_to)
-		blob->blb_to = MAKE_constant((STR) 0, 1);
+		blob->blb_to = MAKE_constant((STR) 0, CONSTANT_SLONG);
 
 	for (parameter = blob->blb_open_in_msg->msg_parameters; parameter;
 		 parameter = parameter->par_next)
@@ -3754,8 +3754,8 @@ static DSQL_NOD pass1_field( DSQL_REQ request, DSQL_NOD input, USHORT list)
         return node;    
     }
 
-	field_error(qualifier ? (TEXT *) qualifier->str_data : (TEXT *) 0,
-				name ? (TEXT *) name->str_data : (TEXT *) 0, input);
+	field_error(qualifier ? (TEXT *) qualifier->str_data : NULL,
+				name ? (TEXT *) name->str_data : NULL, input);
 
 	// CVC: field_error() calls ERRD_post() that never returns, so the next line
 	// is only to make the compiler happy.

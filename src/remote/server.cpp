@@ -2717,7 +2717,7 @@ static RTR make_transaction (RDB rdb, FRBRD *handle)
 	}
 	else {
 		ALLR_release(transaction);
-		transaction = (RTR) 0;
+		transaction = NULL;
 	}
 
 	return transaction;

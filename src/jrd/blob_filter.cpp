@@ -372,7 +372,7 @@ USHORT bpb_length, UCHAR * bpb, PTR callback, USHORT action, BLF filter)
 
 	temp.ctl_internal[0] = (void *) dbb;
 	temp.ctl_internal[1] = (void *) tra_handle;
-	temp.ctl_internal[2] = (void *) 0;
+	temp.ctl_internal[2] = (void *) NULL;
 	prior = (CTL) (*callback) (ACTION_alloc, &temp);
 	prior->ctl_source = callback;
 	prior->ctl_status = user_status;

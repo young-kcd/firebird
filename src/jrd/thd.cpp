@@ -1510,8 +1510,7 @@ void THD_sleep(ULONG milliseconds)
 	ISC_event_init(&timer, 0, 0);
 	count = ISC_event_clear(&timer);
 
-	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000,
-						  (FPTR_VOID) 0, 0);
+	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000, NULL, 0);
 	ISC_event_fini(&timer);
 #else /* !ANY_THREADING */
 	int seconds;

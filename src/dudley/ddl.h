@@ -305,7 +305,7 @@ typedef struct dudley_idx {
 #define IDX_type_flag	8
 #define IDX_statistics_flag	16
 
-#define IDX_LEN(cnt) (sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) 0)->idx_field[0]))
+#define IDX_LEN(cnt) (sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]))
 
 
 /* Linked list stack stuff */
@@ -353,7 +353,7 @@ typedef struct dudley_nod {
 	struct dudley_nod *nod_arg[1];		/* argument */
 } *DUDLEY_NOD;
 
-#define NOD_LEN(cnt) (sizeof (struct dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) 0)->nod_arg[0]))
+#define NOD_LEN(cnt) (sizeof (struct dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]))
 
 
 /* Relation block, not to be confused with siblings or in-laws */

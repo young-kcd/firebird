@@ -3742,7 +3742,7 @@ static JRD_NOD set_index(TDBB tdbb, JRD_NOD node)
 
 		RSE_close(tdbb, *(RSB *) node->nod_arg[e_index_rsb]);
 		OPT_set_index(tdbb, request, (RSB *) node->nod_arg[e_index_rsb],
-					  relation, id ? &idx : (IDX *) 0);
+					  relation, id ? &idx : NULL);
 		RSE_open(tdbb, *(RSB *) node->nod_arg[e_index_rsb]);
 
 		request->req_operation = jrd_req::req_return;

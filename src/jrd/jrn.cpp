@@ -182,7 +182,7 @@ int JRN_archive_begin(
 /* Establish contact with the journal server */
 
 	return retry_connect(status_vector, ret_journal, journal_name, j_length,
-						 (LTJC *) & record, LTJA_SIZE, (UCHAR *) 0, 0);
+						 (LTJC *) & record, LTJA_SIZE, NULL, 0);
 }
 
 
@@ -230,7 +230,7 @@ int JRN_archive_end(
 	if (
 		(ret_val =
 		 jrn_put(status_vector, journal, (JRNH *) & record, LTJA_SIZE,
-				 (UCHAR *) 0, 0)) != FB_SUCCESS)
+				 NULL, 0)) != FB_SUCCESS)
 		return ret_val;
 
 	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
@@ -285,7 +285,7 @@ int JRN_archive_error(
 	if (
 		(ret_val =
 		 jrn_put(status_vector, journal, (JRNH *) & record, LTJA_SIZE,
-				 (UCHAR *) 0, 0)) != FB_SUCCESS)
+				 NULL, 0)) != FB_SUCCESS)
 		return ret_val;
 
 	if ((ret_val = journal_close(status_vector, journal)) != FB_SUCCESS)
@@ -404,7 +404,7 @@ int JRN_fini(ISC_STATUS * status_vector, JRN * jrn)
 	if (
 		(ret_val =
 		 jrn_put(status_vector, journal, (JRNH *) & record, LTJC_SIZE,
-				 (UCHAR *) 0, 0)) != FB_SUCCESS)
+				 NULL, 0)) != FB_SUCCESS)
 		return ret_val;
 
 /* Read reply.  This will fail since the server will break the connection.
@@ -543,8 +543,7 @@ SLONG seqno, SLONG offset, SLONG p_offset, USHORT mode)
  **************************************/
 
 	return JRN_put_wal_info(status_vector, journal, walname, w_length, seqno,
-							offset, p_offset, mode, 1, (USHORT *) 0,
-							JRN_WAL_NAME);
+							offset, p_offset, mode, 1, NULL, JRN_WAL_NAME);
 }
 
 
@@ -574,7 +573,7 @@ int JRN_put_old_start(
  *
  **************************************/
 
-	return JRN_put_wal_info(status_vector, journal, (TEXT *) 0, 0, seqno,
+	return JRN_put_wal_info(status_vector, journal, NULL, 0, seqno,
 							offset, p_offset, 0, 0, dump_id,
 							JRN_START_ONLINE_DMP);
 }
@@ -603,8 +602,8 @@ int JRN_put_old_end(
  *	FB_SUCCESS/FB_FAILURE/BUGCHECK/ERROR.
  **************************************/
 
-	return JRN_put_wal_info(status_vector, journal, (TEXT *) 0, 0, seqno,
-							offset, p_offset, dump_id, 0, (USHORT *) 0,
+	return JRN_put_wal_info(status_vector, journal, NULL, 0, seqno,
+							offset, p_offset, dump_id, 0, NULL,
 							JRN_END_ONLINE_DMP);
 }
 
@@ -639,8 +638,7 @@ SLONG file_size, USHORT file_seqno, USHORT dump_id)
 
 	return JRN_put_wal_info(status_vector, journal, old_file_name,
 							file_length, (SLONG) 0, file_size, (SLONG) 0,
-							dump_id, file_seqno, (USHORT *) 0,
-							JRN_ONLINE_DMP_FILE);
+							dump_id, file_seqno, NULL, JRN_ONLINE_DMP_FILE);
 }
 
 

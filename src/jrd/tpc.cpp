@@ -117,7 +117,7 @@ void TPC_initialize_tpc(TDBB tdbb, SLONG number)
 	CHECK_DBB(dbb);
 
 	if (!(tip_cache = dbb->dbb_tip_cache)) {
-		cache_transactions(tdbb, (TPC *) 0, (ULONG) 0);
+		cache_transactions(tdbb, NULL, (ULONG) 0);
 		return;
 	}
 
@@ -204,7 +204,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
 
 	TPC tip_cache = dbb->dbb_tip_cache;
 	if (!tip_cache) {
-		cache_transactions(tdbb, (TPC *) 0, (ULONG) 0);
+		cache_transactions(tdbb, NULL, (ULONG) 0);
 		tip_cache = dbb->dbb_tip_cache;
 	}
 

@@ -29,33 +29,33 @@
 // BLKDEF(type_hnk, hnk, 0)
 // BLKDEF(type_plb, plb, 0)
 
-BLKDEF(type_vec, vec, sizeof(((VEC) 0)->vec_object[0]))
+BLKDEF(type_vec, vec, sizeof(((VEC) NULL)->vec_object[0]))
 BLKDEF(type_dbb, dbb, 0)
-BLKDEF(type_bcb, bcb, sizeof(((BCB) 0)->bcb_rpt[0]))   /* Done 2 */
+BLKDEF(type_bcb, bcb, sizeof(((BCB) NULL)->bcb_rpt[0]))   /* Done 2 */
 BLKDEF(type_bdb, bdb, 0)
 BLKDEF(type_pre, pre, 0)
 BLKDEF(type_lck, lck, 1)
 BLKDEF(type_fil, fil, 1)
 BLKDEF(type_pgc, pgc, 0)
 BLKDEF(type_rel, jrd_rel, 0)
-BLKDEF(type_fmt, fmt, sizeof(((FMT) 0)->fmt_desc[0]))   /* Done */
-BLKDEF(type_vcl, vcl, sizeof(((VCL) 0)->vcl_long[0]))   /* Done */
-BLKDEF(type_req, jrd_req, sizeof(((JRD_REQ) 0)->req_rpb[0]))    /* Done */
+BLKDEF(type_fmt, fmt, sizeof(((FMT) NULL)->fmt_desc[0]))   /* Done */
+BLKDEF(type_vcl, vcl, sizeof(((VCL) NULL)->vcl_long[0]))   /* Done */
+BLKDEF(type_req, jrd_req, sizeof(((JRD_REQ) NULL)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, jrd_tra, 1)
-BLKDEF(type_nod, jrd_nod, sizeof(((JRD_NOD) 0)->nod_arg[0]))    /* Done */
-BLKDEF(type_csb, Csb, sizeof(((CSB) 0)->csb_rpt[0]))    /* Done */
+BLKDEF(type_nod, jrd_nod, sizeof(((JRD_NOD) NULL)->nod_arg[0]))    /* Done */
+BLKDEF(type_csb, Csb, sizeof(((CSB) NULL)->csb_rpt[0]))    /* Done */
 BLKDEF(type_lls, lls, 0)	/* linked list stack */
 BLKDEF(type_rec, rec, 1)	/* record parameter */
-BLKDEF(type_rsb, Rsb, sizeof(((RSB) 0)->rsb_arg[0]))	/* Done record source */
+BLKDEF(type_rsb, Rsb, sizeof(((RSB) NULL)->rsb_arg[0]))	/* Done record source */
 BLKDEF(type_bms, bms, 0)	/* bit map segment */
 BLKDEF(type_dfw, dfw, 1)	/* deferred work block */
 BLKDEF(type_tfb, tfb, 0)	/* temporary field block */
 BLKDEF(type_str, str, 1)	/* random string block */
 BLKDEF(type_dcc, Dcc, 0)	/* data compression control */
-BLKDEF(type_sbm, sbm, sizeof(((SBM) 0)->sbm_segments[0]))	/* done sparse bit map */
-BLKDEF(type_smb, smb, sizeof(((SMB) 0)->smb_rpt[0]))	/* done sort map block */
+BLKDEF(type_sbm, sbm, sizeof(((SBM) NULL)->sbm_segments[0]))	/* done sparse bit map */
+BLKDEF(type_smb, smb, sizeof(((SMB) NULL)->smb_rpt[0]))	/* done sort map block */
 BLKDEF(type_blb, blb, 1)
-BLKDEF(type_irb, irb, sizeof(((IRB) 0)->irb_value[0]))	/* Done Index retrieval */
+BLKDEF(type_irb, irb, sizeof(((IRB) NULL)->irb_value[0]))	/* Done Index retrieval */
 BLKDEF(type_jrn, jrn, 1)
 BLKDEF(type_scl, scl, 1)
 BLKDEF(type_fld, fld, 1)
@@ -65,7 +65,7 @@ BLKDEF(type_riv, riv, 1)	/* River block -- used in optimizer */
 BLKDEF(type_usr, usr, 0)	/* User identification block */
 BLKDEF(type_att, att, 0)	/* Database attachment */
 BLKDEF(type_sym, sym, 0)
-BLKDEF(type_fun, fun, sizeof(((FUN) 0)->fun_rpt[0]))	/* Done Function definition */
+BLKDEF(type_fun, fun, sizeof(((FUN) NULL)->fun_rpt[0]))	/* Done Function definition */
 BLKDEF(type_irl, irl, 0)
 BLKDEF(type_acc, acc, 0)
 BLKDEF(type_idl, idl, 0)
@@ -74,7 +74,7 @@ BLKDEF(type_sdw, sdw, 0)
 BLKDEF(type_vct, vct, 0)	/* Verb actions */
 BLKDEF(type_btb, btb, 0)
 BLKDEF(type_blf, blf, 0)
-BLKDEF(type_arr, arr, sizeof(((ADS) 0)->ads_rpt[0]))	/* Done, but funny   Array description */
+BLKDEF(type_arr, arr, sizeof(((ADS) NULL)->ads_rpt[0]))	/* Done, but funny   Array description */
 BLKDEF(type_map, map, 0)
 BLKDEF(type_log, log, 0)
 BLKDEF(type_dls, dls, 1)
@@ -85,7 +85,7 @@ BLKDEF(type_csconvert_alloc_id, csconvert, 0)	/* Intl character set converter */
 BLKDEF(type_prc, jrd_prc, 1)	/* procedure block */
 BLKDEF(type_prm, prm, 1)	/* parameter block */
 BLKDEF(type_sav, sav, 0)	/* save points */
-BLKDEF(type_xcp, xcp, sizeof(((XCP) 0)->xcp_rpt[0]))	/* exception condition list */
+BLKDEF(type_xcp, xcp, sizeof(((XCP) NULL)->xcp_rpt[0]))	/* exception condition list */
 BLKDEF(type_idb, idb, 0)	/* index block for caching index info */
 BLKDEF(type_bkm, bkm, 1)	/* bookmark block for storing current location */
 BLKDEF(type_tpc, tpc, 1)	/* TIP page cache block */

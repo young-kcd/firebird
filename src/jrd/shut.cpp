@@ -334,7 +334,7 @@ static BOOLEAN shutdown_locks(DBB dbb)
 /* Since no attachment is actively running, release all
    attachment-specfic locks while they're not looking. */
 
-	shut_attachment = (ATT) 0;
+	shut_attachment = NULL;
 
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next) {

@@ -5846,7 +5846,7 @@ static void release_attachment(ATT attachment)
 
 	if (attachment->att_val_errors) {
 		delete attachment->att_val_errors;
-		attachment->att_val_errors = (VCL) 0;
+		attachment->att_val_errors = NULL;
 	}
 
 /* Release the persistent locks taken out during the attachment */

@@ -470,7 +470,7 @@ static void backup_wal(
 		put_line(NULL, 106, 0, 0, 0);
 		return;
 	}
-	lts_tr = (SLONG *) 0;
+	lts_tr = NULL;
 	START_TRANSACTION lts_tr;
 
 	STORE(TRANSACTION_HANDLE lts_tr) X IN LOG_ARCHIVE_STATUS
@@ -1803,7 +1803,7 @@ static void process_archive_begin(CNCT connection, LTJA * msg)
 
 	connection->cnct_version = msg->ltja_header.jrnh_version;
 
-	if (database = lookup_database((SCHAR *) 0, db_id, 1)) {
+	if (database = lookup_database(NULL, db_id, 1)) {
 		put_message(100, database);
 		connection->cnct_db_next = database->djb_connections;
 		database->djb_connections = connection;
@@ -1822,7 +1822,7 @@ static void process_archive_begin(CNCT connection, LTJA * msg)
     FOR D IN DATABASES WITH D.DB_ID EQ db_id AND D.STATUS EQ DB_DISABLED
         reply.jrnr_response = jrnr_accepted;
 	    send_reply(connection, (JRNH *) & reply, sizeof(reply));
-        connection->cnct_database = (DJB) 0;
+        connection->cnct_database = NULL;
         return;
     END_FOR;
 
@@ -2208,7 +2208,7 @@ static void process_erase_database(CNCT connection, USHORT db_id)
 
 	commit();
 
-	if (!(database = lookup_database((SCHAR *) 0, db_id, 0))) {
+	if (!(database = lookup_database(NULL, db_id, 0))) {
         FOR D IN DATABASES WITH D.DB_ID EQ db_id 
             strcpy(dbname, D.DB_NAME);
 	        found = 1;
@@ -2869,7 +2869,7 @@ static void restart_all_backups(int count)
 /* restart back up of files which were marked pending, but never started */
 
     FOR J IN JOURNAL_FILES WITH J.ARCHIVE_STATUS EQ ARCHIVE_PENDING
-        if (!(database = lookup_database((SCHAR *) 0, J.DB_ID, 1)))
+        if (!(database = lookup_database(NULL, J.DB_ID, 1)))
             continue;
 	
         if (database->djb_retry > max_retry)

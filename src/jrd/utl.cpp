@@ -1908,7 +1908,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	else
 		return NULL;
 
-	bstream = BLOB_open(blob, (SCHAR *) 0, 0);
+	bstream = BLOB_open(blob, NULL, 0);
 
 	if (*mode == 'w' || *mode == 'W') {
 		bstream->bstr_mode |= BSTR_output;
