@@ -15,11 +15,13 @@
 
 ::===========
 :RELEASE
+@echo Building...
 devenv Firebird2.sln %CLEAN% /OUT Firebird2.log
 @goto :EOF
 
 ::===========
 :DEBUG
+@echo Building...
 devenv Firebird2.sln %CLEAN% debug /OUT Firebird2.log
 @goto :EOF
 
