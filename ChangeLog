@@ -1,3 +1,92 @@
+2004-01-21 16:50  paul_reeves
+
+	* firebird2/: builds/win32/clean_all.bat,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	
+	Update build number. Make isc_get_client_version return ISC_
+	version. Improve Installable Exe builder, especially to add support
+	for pdb files and make final name more descriptive.
+	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	, src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/jrd/isc_version.h, src/jrd/utl.cpp:
+
+2004-01-21 08:15  skidder
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.client.gpre,
+	builds/posix/Makefile.in.embed.gpre,
+	builds/posix/Makefile.in.static.gpre, builds/win32/msvc6/gpre.dsp,
+	builds/win32/msvc6/gpre_boot.dsp,
+	builds/win32/msvc6/gpre_static.dsp, builds/win32/msvc7/gpre.vcproj,
+	builds/win32/msvc7/gpre_boot.vcproj,
+	builds/win32/msvc7/gpre_static.vcproj, examples/functions.c,
+	examples/api/apifull.c, examples/dyn/dynfull.e,
+	examples/stat/stat10.e, examples/stat/stat11.e,
+	examples/stat/stat4.e, examples/udf/udflib.c, src/burp/backup.epp,
+	src/burp/burp.cpp, src/burp/canonical.cpp, src/burp/mvol.cpp,
+	src/burp/restore.epp, src/common/config/config_impl.h,
+	src/dsql/ddl.cpp, src/dsql/dsql.cpp, src/dsql/gen.cpp,
+	src/dsql/make.cpp, src/dsql/metd.epp, src/dsql/parse.y,
+	src/dsql/pass1.cpp, src/dsql/user_dsql.cpp, src/dudley/expr.cpp,
+	src/gpre/c_cxx.cpp, src/gpre/cmd.cpp, src/gpre/cme.cpp,
+	src/gpre/exp.cpp, src/gpre/gpre.cpp, src/gpre/int.cpp,
+	src/gpre/int_cxx.cpp, src/gpre/par.cpp, src/gpre/sqe.cpp,
+	src/gpre/sql.cpp, src/isql/extract.epp, src/isql/isql.epp,
+	src/isql/show.epp, src/jrd/alt.cpp, src/jrd/blb.cpp, src/jrd/blb.h,
+	src/jrd/cch.cpp, src/jrd/cmp.cpp, src/jrd/common.h,
+	src/jrd/cvt2.cpp, src/jrd/dfw.epp, src/jrd/dpm.epp, src/jrd/dsc.h,
+	src/jrd/dyn.epp, src/jrd/dyn.h, src/jrd/dyn_def.epp,
+	src/jrd/dyn_mod.epp, src/jrd/evl.cpp, src/jrd/exe.cpp,
+	src/jrd/ext.cpp, src/jrd/filters.cpp, src/jrd/fun.epp,
+	src/jrd/gds.cpp, src/jrd/grant.epp, src/jrd/ibase.h,
+	src/jrd/idx.cpp, src/jrd/inf.cpp, src/jrd/ini.epp,
+	src/jrd/intl.cpp, src/jrd/jrd.cpp, src/jrd/met.epp,
+	src/jrd/met_proto.h, src/jrd/nav.cpp, src/jrd/opt.cpp,
+	src/jrd/par.cpp, src/jrd/rse.cpp, src/jrd/scl.epp, src/jrd/sdl.cpp,
+	src/jrd/sort.cpp, src/jrd/tra.h, src/jrd/utl.cpp, src/jrd/val.h,
+	src/jrd/vio.cpp, src/jrd/why.cpp, src/jrd/why_proto.h,
+	src/jrd/os/posix/unix.cpp, src/lock/lock.cpp,
+	src/remote/interface.cpp, src/remote/parser.cpp,
+	src/remote/protocol.cpp, src/remote/server.cpp:
+	
+	Further AMD64 fixes. Given this fixes you may start playing with
+	databases using isql_static.
+
+2004-01-20 18:38  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Backport the fix into 1.5 tree
+
+2004-01-20 18:37  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Fix race condition (incompletely fixed a month ago) in scheduler.
+	Noted by Alex Peshkoff.
+
+2004-01-20 04:09  skidder
+
+	* firebird2/src/jrd/ibinitdll.cpp:
+	
+	Rollback Alex initialization code since it is not needed anymore. 
+	I added implicit threading subsystem initialization during
+	scheduler initialization : read at first y-valve subsystem entry.
+
+2004-01-20 04:02  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Backport fix for thread scheduler initialization race condition
+	that affected client library stability and was the reason of crash
+	from Barry's coredump
+
+2004-01-20 03:52  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Fix Firebird initialization race condition
+
 2004-01-17 18:49  alexpeshkoff
 
 	* firebird2/src/remote/srvr_w32.cpp:
