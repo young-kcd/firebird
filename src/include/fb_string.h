@@ -569,12 +569,12 @@ namespace Firebird
 			AdjustRange(length(), p0, n0);
 			const size_type ml = n0 < n ? n0 : n;
 			const int rc = Comparator::compare(&c_str()[p0], s, ml);
-			return rc ? rc : n - n0;
+			return rc ? rc : n0 - n;
 		}
 		int compare(const_pointer s, size_type n) const {
 			const size_type ml = length() < n ? length() : n;
 			const int rc = Comparator::compare(c_str(), s, ml);
-			return rc ? rc : n - length();
+			return rc ? rc : length() - n;
 		}
 
 		inline bool operator< (const StringType& str) const {return compare(str) <  0;}
