@@ -713,8 +713,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
 	        if (!REQUEST(irq_m_index_seg))
 		        REQUEST(irq_m_index_seg) = (BLK)request;
 			MODIFY SEG USING
-				SEG.RDB$STATISTICS =
-					selectivity.getCount() ? selectivity[SEG.RDB$FIELD_POSITION] : 0.0;
+				SEG.RDB$STATISTICS = selectivity[SEG.RDB$FIELD_POSITION];
 			END_MODIFY;
 		END_FOR;
 
@@ -730,8 +729,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
             REQUEST(irq_m_index) = (BLK)request;
 		MODIFY IDX USING
 			IDX.RDB$INDEX_ID = id + 1;
-			IDX.RDB$STATISTICS =
-				selectivity.getCount() ? selectivity.back() : 0.0;
+			IDX.RDB$STATISTICS = selectivity.back();
 		END_MODIFY;
 	END_FOR;
 

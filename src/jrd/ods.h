@@ -278,7 +278,7 @@ typedef struct irt {
 	struct irt_repeat {
 		SLONG irt_root;			/* page number of index root */
 		union {
-			float irt_selectivity;	/* selectivity of index */
+			float irt_selectivity;	/* selectivity of index - NOT USED since ODS11 */
 			SLONG irt_transaction;	/* transaction in progress */
 		} irt_stuff;
 		USHORT irt_desc;		/* offset to key descriptions */
@@ -292,6 +292,7 @@ typedef struct irt {
 typedef struct irtd {
 	USHORT irtd_field;
 	USHORT irtd_itype;
+	float irtd_selectivity;
 } IRTD;
 
 #define irt_unique	1

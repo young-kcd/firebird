@@ -65,6 +65,7 @@ typedef struct idx {
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
+		float idx_selectivity;	/* segment selectivity */
 	} idx_rpt[16];
 } IDX;
 
@@ -189,6 +190,6 @@ typedef irb *IRB;
 
 //#define NEXT_EXPANDED(xxx,yyy)	(BTX) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
-typedef Firebird::HalfStaticArray<float, 1> SelectivityList;
+typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
 #endif /* JRD_BTR_H_ */

@@ -184,7 +184,7 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
 static bool scan(TDBB, UCHAR *, SBM *, USHORT, USHORT, KEY *, USHORT, SCHAR);
-
+static void update_selectivity(IRT, USHORT, const SelectivityList&);
 
 USHORT BTR_all(TDBB    tdbb,
 			   JRD_REL relation,
@@ -277,8 +277,8 @@ void BTR_create(TDBB tdbb,
 	IRT root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
 	root->irt_rpt[idx->idx_id].irt_root = idx->idx_root;
-	root->irt_rpt[idx->idx_id].irt_stuff.irt_selectivity = selectivity.back();
 	root->irt_rpt[idx->idx_id].irt_flags &= ~irt_in_progress;
+	update_selectivity(root, idx->idx_id, selectivity);
 
 	if (dbb->dbb_wal) {
 		CCH_journal_page(tdbb, &window);
@@ -336,8 +336,7 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 }
 
 
-bool BTR_description(JRD_REL relation,
-						IRT root, IDX * idx, SSHORT id)
+bool BTR_description(JRD_REL relation, IRT root, IDX * idx, SSHORT id)
 {
 /**************************************
  *
@@ -350,25 +349,21 @@ bool BTR_description(JRD_REL relation,
  *  Index id's must fit in a short - formerly a UCHAR.
  *
  **************************************/
-	irt::irt_repeat * irt_desc;
-	idx::idx_repeat * idx_desc;
-	irtd* key_descriptor;
-	USHORT i;
-
+	DBB dbb = GET_DBB;
+	
 	if (id >= root->irt_count) {
 		return false;
 	}
 
-	irt_desc = &root->irt_rpt[id];
+	irt::irt_repeat* irt_desc = &root->irt_rpt[id];
 
 	if (irt_desc->irt_root == 0) {
 		return false;
 	}
 
 	//fb_assert(id <= MAX_USHORT);
-	idx->idx_id = (USHORT)id;
+	idx->idx_id = (USHORT) id;
 	idx->idx_root = irt_desc->irt_root;
-	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
 	idx->idx_count = irt_desc->irt_keys;
 	idx->idx_flags = irt_desc->irt_flags;
 	idx->idx_runtime_flags = 0;
@@ -381,12 +376,18 @@ bool BTR_description(JRD_REL relation,
 	idx->idx_expression_request = NULL;
 
 	// pick up field ids and type descriptions for each of the fields
-	key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
-	idx_desc = idx->idx_rpt;
-	for (i = 0; i < idx->idx_count; i++, key_descriptor++, idx_desc++) {
+	irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
+	idx::idx_repeat* idx_desc = idx->idx_rpt;
+	for (int i = 0; i < idx->idx_count; i++, key_descriptor++, idx_desc++) {
 		idx_desc->idx_field = key_descriptor->irtd_field;
 		idx_desc->idx_itype = key_descriptor->irtd_itype;
+		idx_desc->idx_selectivity =
+			(dbb->dbb_ods_version >= ODS_VERSION11) ?
+				key_descriptor->irtd_selectivity :
+				irt_desc->irt_stuff.irt_selectivity;
 	}
+	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
+
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn) {
 		PCMET_lookup_index(relation, idx);
@@ -1461,6 +1462,10 @@ void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * id
 	bool maybe_no_room = false;
 retry:
 	l = idx->idx_count * sizeof(IRTD);
+	// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
+	if (dbb->dbb_ods_version < ODS_VERSION11)
+		l -= sizeof(float);
+
 	space = dbb->dbb_page_size;
 	slot = NULL;
 
@@ -1580,12 +1585,10 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 
 	UCHAR *p1, *p2, *p1_end, *p2_end;
 	SSHORT count, stuff_count, pos, i;
-	Firebird::HalfStaticArray<SLONG, 4> duplicatesList(tdbb->tdbb_default);
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(tdbb->tdbb_default);
 	duplicatesList.grow(segments);
-	SLONG* segmentDuplicates = duplicatesList.begin();
-	for (i = 0; i < segments; i++) {
-		segmentDuplicates[i] = 0;
-	}
+	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
+
 	DBB dbb = tdbb->tdbb_database;
 
 	// go through all the leaf nodes and count them; 
@@ -1602,8 +1605,7 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 			++nodes;
 			l = node.length + node.prefix;
 
-			if ((dbb->dbb_ods_version >= ODS_VERSION11) && 
-				(segments >= 2) && !firstNode) 
+			if (segments > 1 && !firstNode) 
 			{
 
 				// Initialize variables for segment duplicate check.
@@ -1659,7 +1661,7 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 					count = 0; // All segments are duplicates
 				}
 				for (i = count + 1; i <= segments; i++) {
-					segmentDuplicates[segments - i]++;
+					duplicatesList[segments - i]++;
 				}
 
 			}
@@ -1691,8 +1693,7 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 
-		if (node.recordNumber == END_LEVEL || 
-			!(page = bucket->btr_sibling)) 
+		if (node.recordNumber == END_LEVEL || !(page = bucket->btr_sibling))
 		{
 			break;
 		}
@@ -1704,23 +1705,15 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 	CCH_RELEASE_TAIL(tdbb, &window);
 
 	// calculate the selectivity 
-	float totalSelectivity = 
-		(float) ((nodes) ? 1.0 / (float) (nodes - duplicates) : 0.0);
-	if (dbb->dbb_ods_version >= ODS_VERSION11) {
-		selectivity.grow(segments);
-	}
-	else {
-		selectivity.grow(1);
-	}
-	float* selectivities = selectivity.begin();
-	if ((dbb->dbb_ods_version >= ODS_VERSION11) && (segments >= 2)) {
+	selectivity.grow(segments);
+	if (segments > 1) {
 		for (i = 0; i < segments; i++) {
-			selectivities[i] = 
-				(float) ((nodes) ? 1.0 / (float) (nodes - segmentDuplicates[i]) : 0.0);
+			selectivity[i] = 
+				(float) ((nodes) ? 1.0 / (float) (nodes - duplicatesList[i]) : 0.0);
 		}	
 	}
 	else {
-		selectivities[0] = totalSelectivity;
+		selectivity[0] = (float) ((nodes) ? 1.0 / (float) (nodes - duplicates) : 0.0);
 	}
 
 	// Store the selectivity on the root page
@@ -1728,7 +1721,7 @@ void BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id, SelectivityList& se
 	window.win_flags = 0;
 	root = (IRT) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
-	root->irt_rpt[id].irt_stuff.irt_selectivity = totalSelectivity;
+	update_selectivity(root, id, selectivity);
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -2723,12 +2716,10 @@ static SLONG fast_load(TDBB tdbb,
 	const USHORT segments = idx->idx_count;
 	UCHAR *p1, *p2, *p1_end, *p2_end;
 	SSHORT segment, stuff_count, pos, i;
-	Firebird::HalfStaticArray<SLONG, 4> duplicatesList(tdbb->tdbb_default);
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(tdbb->tdbb_default);
 	duplicatesList.grow(segments);
-	SLONG* segmentDuplicates = duplicatesList.begin();
-	for (i = 0; i < segments; i++) {
-		segmentDuplicates[i] = 0;
-	}
+	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
+
 	try {
 
 		// If there's an error during index construction, fall
@@ -2889,8 +2880,7 @@ static SLONG fast_load(TDBB tdbb,
 			previousNode = newNode;
 
 			// if we have a compound-index calculate duplicates per segment.
-			if ((dbb->dbb_ods_version >= ODS_VERSION11) && 
-				(segments >= 2) && (count > 1)) 
+			if (segments > 1 && count > 1) 
 			{
 				// Initialize variables for segment duplicate check.
 				// count holds the current checking segment (starting by
@@ -2945,7 +2935,7 @@ static SLONG fast_load(TDBB tdbb,
 					segment = 0; // All segments are duplicates
 				}
 				for (i = segment + 1; i <= segments; i++) {
-					segmentDuplicates[segments - i]++;
+					duplicatesList[segments - i]++;
 				}
 
 			}
@@ -3300,22 +3290,16 @@ static SLONG fast_load(TDBB tdbb,
 		CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0);
 
 		// Calculate selectivity, also per segment when newer ODS
-		if (dbb->dbb_ods_version >= ODS_VERSION11) {
-			selectivity.grow(segments);
-		}
-		else {
-			selectivity.grow(1);
-		}
-		float* selectivities = selectivity.begin();
-		if ((dbb->dbb_ods_version >= ODS_VERSION11) && (segments >= 2)) {
+		selectivity.grow(segments);
+		if (segments > 1) {
 			for (i = 0; i < segments; i++) {
-				selectivities[i] = 
-					(float) ((count) ? 1.0 / (float) (count - segmentDuplicates[i]) : 0.0);
+				selectivity[i] = 
+					(float) ((count) ? 1.0 / (float) (count - duplicatesList[i]) : 0.0);
 			}	
 		}
 		else {
-			selectivities[0] = 
-				(float) ((count) ? (1.0 / (double) (count - duplicates)) : 0.0);
+			selectivity[0] = 
+				(float) ((count) ? (1.0 / (float) (count - duplicates)) : 0.0);
 		}
 
 		return window->win_page;
@@ -5997,4 +5981,32 @@ static bool scan(TDBB tdbb, UCHAR *pointer, SBM *bitmap, USHORT to_segment,
 
 	// NOTREACHED
 	return false;	// superfluous return to shut lint up
+}
+
+
+void update_selectivity(IRT root, USHORT id, const SelectivityList& selectivity)
+{
+/**************************************
+ *
+ *	u p d a t e _ s e l e c t i v i t y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Update selectivity on the index root page.
+ *
+ **************************************/
+	DBB dbb = GET_DBB;
+
+	irt::irt_repeat* irt_desc = &root->irt_rpt[id];
+	const USHORT idx_count = irt_desc->irt_keys;
+	fb_assert(selectivity.getCount() == idx_count);
+
+	if (dbb->dbb_ods_version >= ODS_VERSION11) {
+		// dimitr: per-segment selectivities exist only for ODS11 and above
+		irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
+		for (int i = 0; i < idx_count; i++, key_descriptor++)
+			key_descriptor->irtd_selectivity = selectivity[i];
+	}
+	irt_desc->irt_stuff.irt_selectivity = selectivity.back();
 }
