@@ -1,3 +1,16 @@
+2002-12-12 13:08  dimitr
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
+	builds/posix/make.defaults, builds/posix/prefix.mingw:
+	
+	Changes by Dimitry Sibiryakov.
+
+2002-12-12 12:02  dimitr
+
+	* firebird2/src/jrd/lck.cpp:
+	
+	Fixed broken win32 builds.
+
 2002-12-11 21:52  skidder
 
 	* firebird2/: configure.in, builds/posix/Makefile.in.firebird,
