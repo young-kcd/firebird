@@ -1205,11 +1205,7 @@ static ISC_STATUS executeSecurityCommand(
  * Functional description
  *
  *    Executes command according to input_user_data
- *    and userInfo. Use direct access to database or
- *	  call service manager depending on protocol used.
- *	  Embedded may use direct access to database or
- *	  service manager depending upon used protocol,
- *	  client always calls remote service manager.
+ *    and userInfo. Calls service manager to do job.
  **************************************/
 
 	isc_svc_handle handle = attachRemoteServiceManager(
