@@ -1,3 +1,18 @@
+2003-06-18 15:29  alexpeshkoff
+
+	* firebird2/doc/sql.extensions/README.execute_statement:
+	
+	Initial revision of EXECUTE STATEMENT description
+
+2003-06-18 10:08  alexpeshkoff
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	fixed bug, submitted to fb-devel by Cosmin Popa <cosmin@aplix.ro>
+	after execution of pre-(update/delete) triggers, non-existent
+	deadlock was raised, conflict was with version, created by current
+	transaction
+
 2003-06-16 17:42  alexpeshkoff
 
 	* firebird2/src/: jrd/dfw.epp, jrd/ExecuteStatement.cpp,
