@@ -1,3 +1,133 @@
+2003-08-26 20:45  brodsom
+
+	* firebird2/src/utilities/: ibmgr/srvrmgr.cpp, ibmgr/ibmgr.cpp,
+	rebuild/rebuild.cpp:
+	
+	Remove BOOLEAN, TRUE and FALSE macros
+
+2003-08-26 20:43  brodsom
+
+	* firebird2/src/utilities/gstat/dba.epp:
+	
+	Replace EXIT macro with dba_exit inline function
+
+2003-08-26 20:43  brodsom
+
+	* firebird2/src/utilities/gstat/dba_full.epp:
+	
+	Replace EXIT macro with dba_full_exit inline function
+
+2003-08-26 20:40  brodsom
+
+	* firebird2/src/utilities/gsec/: gsec.cpp, gsec.h:
+	
+	Replace EXIT macro with gsec_exit inline function
+
+2003-08-26 12:58  aafemt
+
+	* firebird2/src/common/classes/alloc.h:
+	
+	removing word 'struct' from variable declarations as obsolete
+
+2003-08-26 12:42  brodsom
+
+	* firebird2/src/utilities/install/: install_reg.cpp,
+	install_svc.cpp, regis_proto.h, registry.cpp:
+	
+	Remove BOOLEAN, TRUE and FALSE macros
+
+2003-08-26 12:29  aafemt
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	some magic for yday() by Vladimir Tcvigun
+
+2003-08-26 09:23  dimitr
+
+	* firebird2/src/: utilities/gstat/dbaswi.h, jrd/ibase.h,
+	jrd/svc.cpp:
+	
+	Added support for "-r" and "-t" GSTAT switches to the Services API.
+	Thanks to Vlad Horsun.
+
+2003-08-26 09:20  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp, jrd.h:
+	
+	Added attachment timestamp (to support future extentions)
+
+2003-08-26 09:15  dimitr
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Fixed SUBSTRING function
+
+2003-08-26 09:12  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.cpp, dsql.h, gen.cpp,
+	make.cpp, node.h, parse.cpp, parse.y, pass1.cpp:
+	
+	1. MAP renamed to DSQL_MAP 2. Minor cleanup 3. Fixed BREAK/LEAVE
+	code to support FOR EXECUTE STATEMENT loops 4. Added support for
+	loop labels and LEAVE <label> statement 5. Fixed SUBSTRING to
+	support value expressions as its arguments
+
+2003-08-26 08:57  dimitr
+
+	* firebird2/src/dsql/: gen.cpp, node.h, pass1.cpp:
+	
+	Fixed BREAK/LEAVE incompatibility with FOR EXECUTE STATEMENT loops.
+
+2003-08-26 08:54  brodsom
+
+	* firebird2/src/utilities/: ibmgr/ibmgr.cpp, ibmgr/ibmgr.h,
+	ibmgr/srvrmgr.cpp, analyse.cpp, drop.cpp:
+	
+	Remove BOOLEAN, TRUE and FALSE macros
+
+2003-08-26 08:52  brodsom
+
+	* firebird2/src/utilities/gstat/: dba.epp, dba_full.epp:
+	
+	Remove BOOLEAN, TRUE and FALSE macros Some code formatting
+
+2003-08-26 08:49  brodsom
+
+	* firebird2/src/utilities/: gsec/gsec.cpp, gsec/secur_proto.h,
+	gsec/security.epp, guard/guard.cpp:
+	
+	Remove BOOLEAN, TRUE and FALSE macros
+
+2003-08-26 08:45  brodsom
+
+	* firebird2/src/utilities/common/cmd_util.cpp:
+	
+	Remove BOOLEAN, TRUE and FALSE macros
+
+2003-08-26 01:35  arnobrinkman
+
+	* firebird2/src/dsql/: make.cpp, pass1.cpp:
+	
+	1) Make COALESCE/CASE output descriptor more SQL-standard.     
+	Exception is that we allow mixing datatypes with (var)char (except
+	blob), because all datatypes are convertable to character-type and
+	because this functionallity was available from 1st day COALESCE is
+	introduced inside Firebird.  2) Fix bug with expressions without
+	fields inside aggregate-functions.  Example :	SELECT	   (SELECT
+	Count(1) FROM RDB$DATABASE)   FROM     RDB$RELATIONS
+
+2003-08-26 00:40  arnobrinkman
+
+	* firebird2/src/dsql/: make.cpp, make_proto.h, pass1.cpp:
+	
+	1) Make COALESCE/CASE output descriptor more SQL-standard.     
+	Exception is that we allow mixing datatypes with (var)char (except
+	blob), because all datatypes are convertable to character-type and
+	because this functionallity was available from 1st day COALESCE is
+	introduced inside Firebird.  2) Fix bug with expressions without
+	fields inside aggregate-functions.  Example :	SELECT	   (SELECT
+	Count(1) FROM RDB$DATABASE)   FROM     RDB$RELATIONS
+
 2003-08-25 17:09  alexpeshkoff
 
 	* firebird2/src/jrd/ExecuteStatement.cpp:
