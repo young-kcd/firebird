@@ -320,8 +320,8 @@ static USHORT   param_number;
 %token MANUAL
 %token MAXIMUM
 %token MAX_SEGMENT
-%token MESSAGE
 %token MERGE
+%token MESSAGE
 %token MINIMUM
 %token MODULE_NAME
 %token NAMES
