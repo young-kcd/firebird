@@ -111,6 +111,8 @@ void TimeStamp::decode_date(ISC_DATE nday, struct tm* times)
 	// zero-initialize them.
 	memset(times, 0, sizeof(struct tm));
 
+	const ISC_DATE origin = nday;
+
 	nday -= 1721119 - 2400001;
 	const SLONG century = (4 * nday - 1) / 146097;
 	nday = 4 * nday - 1 - 146097 * century;
@@ -139,7 +141,7 @@ void TimeStamp::decode_date(ISC_DATE nday, struct tm* times)
 
 	times->tm_yday = yday(times);
 
-	if ((times->tm_wday = (nday + 3) % 7) < 0)
+	if ((times->tm_wday = (origin + 3) % 7) < 0)
 		times->tm_wday += 7;
 }
 
