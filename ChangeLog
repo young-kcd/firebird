@@ -1,3 +1,58 @@
+2003-08-22 15:09  robocop
+
+	* firebird2/src/msgs/build_file.epp:
+	
+	One warning less
+
+2003-08-22 12:56  aafemt
+
+	* firebird2/src/: dsql/dsql.h, dsql/make_proto.h, dsql/node.h,
+	dsql/sym.h, gpre/gpre.h, journal/console.cpp, jrd/cmp.cpp,
+	jrd/common.h, jrd/dfw.epp, jrd/dfw_proto.h, jrd/exe.cpp, jrd/exe.h,
+	jrd/ini.h, jrd/jrd.h, jrd/jrn.h, jrd/met.epp, jrd/req.h,
+	jrd/rse.cpp, jrd/tra.h, jrd/val.h, jrd/vio.cpp, qli/command.cpp,
+	qli/compile.h, qli/dtr.h, qli/exe.h, qli/format.h, qli/parse.cpp,
+	qli/parse.h, qli/show.epp:
+	
+	ENUM removal
+
+2003-08-22 12:29  aafemt
+
+	* firebird2/builds/posix/make.rules:
+	
+	Object files are in temp dir now
+
+2003-08-22 12:26  aafemt
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.intl:
+	
+	Make intl compilable
+
+2003-08-22 01:05  arnobrinkman
+
+	* firebird2/builds/win32/msvc6/fbembed.dsp:
+	
+	update fbembed
+
+2003-08-22 00:35  skidder
+
+	* firebird2/src/: remote/remote.cpp, common/config/config.cpp:
+	
+	Fix kernel memory leak
+
+2003-08-22 00:32  skidder
+
+	* firebird2/: doc/WhatsNew, src/install/misc/firebird.conf:
+	
+	Fix kernel memory leak
+
+2003-08-22 00:27  skidder
+
+	* firebird2/: doc/WhatsNew, builds/install/misc/firebird.conf,
+	src/remote/remote.cpp, src/common/config/config.cpp:
+	
+	Fix kernel memory leak
+
 2003-08-21 18:22  brodsom
 
 	* firebird2/src/intl/: lc_big5.cpp, lc_big5.h, lc_iso8859_1.cpp,
