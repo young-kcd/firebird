@@ -31,40 +31,6 @@
 #define KANJISHORT(s)	(s & 0xff80)
 #define KANJI_MASK	0x80
 
-#ifdef JPN_EUC
-#define KANJI1(c)	EUC1(c)
-#define KANJI2(c)	EUC2(c)
-#else
-#ifdef JPN_SJIS
-#define KANJI1(c)	SJIS1(c)
-#define KANJI2(c)	SJIS2(c)
-#endif /* JPN_SJIS */
-#endif /* JPN_EUC */
-
-#ifdef JPN_EUC
-#define JPN1_CHAR(c)	EUC1(c)
-#else
-#ifdef JPN_SJIS
-#define JPN1_CHAR(c)	(SJIS1(c) || SJIS_SINGLE(c))
-#endif /* JPN_SJIS */
-#endif /* JPN_EUC  */
-
-#ifdef JPN_EUC
-#define	KANJI_check		KANJI_check_euc
-#else
-#ifdef JPN_SJIS
-#define KANJI_check		KANJI_check_sjis
-#endif /* JPN_SJIS */
-#endif /*JPN_EUC */
-
-#ifdef JPN_EUC
-#define KANJI_byte2short	KANJI_euc_byte2short
-#else
-#ifdef JPN_SJIS
-#define KANJI_byte2short	KANJI_sjis_byte2short
-#endif /* JPN_SJIS */
-#endif /*JPN_EUC */
-
 extern USHORT KANJI_check_euc(UCHAR *, USHORT);
 extern USHORT KANJI_check_sjis(UCHAR *, USHORT);
 extern USHORT KANJI_euc2sjis(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);

@@ -479,45 +479,10 @@ static SSHORT get_next_token(
 /* Is is a symbol */
 
 	if (class_ & CHR_LETTER) {
-#if (! ( defined JPN_SJIS || defined JPN_EUC) )
 		*p++ = UPPER(c);
 		for (; s < stmt_end && classes[*s] & CHR_IDENT && p < token_end; s++) {
 			*p++ = UPPER(*s);
 		}
-#else
-		for (; s <= stmt_end; c = *s++, c = c & 0xff) {
-			if (KANJI1(c)) {
-				*p++ = UPPER(c);
-				if (s >= stmt_end)
-					break;
-
-				c = *s++;
-				c = c & 0xff;
-				if (!KANJI2(c)) {
-					s--;
-					break;
-				}
-				else
-					*p++ = c;
-			}
-			else {
-#ifdef JPN_SJIS
-				if ((SJIS_SINGLE(c)) || (classes[c] & CHR_IDENT))
-#else
-				if (classes[c] & CHR_IDENT)
-#endif
-				{
-					*p++ = UPPER(c);
-					if (s >= stmt_end)
-						break;
-				}
-				else {
-					s--;
-					break;
-				}
-			}
-		}
-#endif /* JPN_SJIS || JPN_EUC */
 
 		/* what happend to token size check. It went to hell */
 

@@ -4569,12 +4569,7 @@ for (;;)
 		continue;
 	}
 
-#if (! ( defined JPN_SJIS || defined JPN_EUC) )
     tok_class = classes [c];
-#else
-    c = c & 0xff;
-    tok_class = (JPN1_CHAR(c) ? CHR_LETTER : classes[c]);
-#endif /*JPN_SJIS || JPN_EUC */
 
     if (!(tok_class & CHR_WHITE))
 	break;
@@ -4870,7 +4865,6 @@ c   = *ptr++;
 
 if (tok_class & CHR_LETTER)
     {
-#if (! ( defined JPN_SJIS || defined JPN_EUC) )
     p = string;
     CHECK_COPY_INCR(p, UPPER (c));
     for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
@@ -4879,45 +4873,6 @@ if (tok_class & CHR_LETTER)
 	    return -1;
 	CHECK_COPY_INCR(p, UPPER (*ptr));
         }
-#else
-    for (; ptr <= end ; c = *ptr++ , c = c & 0xff)
-        {
-        if (KANJI1(c))
-            {
-	    CHECK_COPY_INCR(p, UPPER (c));
-            if (ptr >= end) 
-		break; 
-            
-	    c = *ptr++;
-            c = c & 0xff;
-            if (!KANJI2(c))
-                {
-                ptr--;
-                break;
-                }
-            else
-		CHECK_COPY_INCR(p,c);
-            }
-	else
-            {
-#ifdef JPN_SJIS
-            if ((SJIS_SINGLE(c)) || (classes[c] & CHR_IDENT) )
-#else
-            if (classes[c] & CHR_IDENT)
-#endif 
-		{	
-		CHECK_COPY_INCR(p, UPPER(c));
-		if (ptr >= end)
-	    	    break;
-		}
-            else
-		{
-		ptr--;
-                break;
-		}
-            }
-        }
-#endif /* JPN_SJIS || JPN_EUC */
 
     CHECK_BOUND(p);
     *p = 0;
