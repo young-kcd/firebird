@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.8 2003-02-19 06:14:39 eku Exp $
+ * $Id: ibmgr.cpp,v 1.8.2.1 2003-10-09 13:10:26 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -236,7 +236,7 @@ static int get_line( int *argc, SCHAR ** argv, TEXT * stuff)
 	TEXT msg[MSG_LEN];
 
 	SRVRMGR_msg_get(MSG_PROMPT, msg);
-	ib_printf("%s ", msg);		/* "IBMGR> " */
+	ib_printf("%s ", msg);		/* "FBMGR> " */
 /*
 if (sw_service_gsec)
     ib_putc ('\001', ib_stdout);
@@ -762,9 +762,9 @@ static void print_help(void)
 
 	ib_fprintf(OUTFILE, "\n\n");
 	ib_fprintf(OUTFILE,
-			   "Usage:		ibmgr -command [-option [parameter]]\n\n");
-	ib_fprintf(OUTFILE, "or		ibmgr<RETURN>\n");
-	ib_fprintf(OUTFILE, "		IBMGR> command [-option [parameter]]\n\n");
+			   "Usage:		fbmgr -command [-option [parameter]]\n\n");
+	ib_fprintf(OUTFILE, "or		fbmgr<RETURN>\n");
+	ib_fprintf(OUTFILE, "		FBMGR> command [-option [parameter]]\n\n");
 	ib_fprintf(OUTFILE, "		shut  [-now]		shutdown server\n");
 	ib_fprintf(OUTFILE, "		show			show host and user\n");
 	ib_fprintf(OUTFILE, "		user <user_name>	set user name\n");
@@ -776,14 +776,14 @@ static void print_help(void)
 	ib_fprintf(OUTFILE,
 			   "as an option switches for commands like start or shut.\n");
 	ib_fprintf(OUTFILE, "For example, to shutdown server you can: \n\n");
-	ib_fprintf(OUTFILE, "ibmgr -shut -password <password>\n\n");
+	ib_fprintf(OUTFILE, "fbmgr -shut -password <password>\n\n");
 	ib_fprintf(OUTFILE, "or\n\n");
-	ib_fprintf(OUTFILE, "ibmgr<RETURN>\n");
-	ib_fprintf(OUTFILE, "IBMGR> shut -password <password>\n\n");
+	ib_fprintf(OUTFILE, "fbmgr<RETURN>\n");
+	ib_fprintf(OUTFILE, "FBMGR> shut -password <password>\n\n");
 	ib_fprintf(OUTFILE, "or\n\n");
-	ib_fprintf(OUTFILE, "ibmgr<RETURN>\n");
-	ib_fprintf(OUTFILE, "IBMGR> password <password>\n");
-	ib_fprintf(OUTFILE, "IBMGR> shut\n\n\n");
+	ib_fprintf(OUTFILE, "fbmgr<RETURN>\n");
+	ib_fprintf(OUTFILE, "FBMGR> password <password>\n");
+	ib_fprintf(OUTFILE, "FBMGR> shut\n\n\n");
 }
 
 

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.13 2003-04-16 10:18:37 aafemt Exp $
+ * $Id: srvrmgr.cpp,v 1.13.2.1 2003-10-09 13:10:26 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -205,7 +205,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 
 	switch (number) {
 	case MSG_PROMPT:
-		strcpy(msg, "IBMGR>");
+		strcpy(msg, "FBMGR>");
 		break;
 	case MSG_OPSPEC:
 		strcpy(msg, "operation already specified");
@@ -223,7 +223,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 		strcpy(msg, "can not change host, password or user");
 		break;
 	case MSG_VERSION:
-		strcpy(msg, "ibmgr version");
+		strcpy(msg, "fbmgr version");
 		break;
 	case MSG_INVSW:
 		strcpy(msg, "invalid switch");
