@@ -1,3 +1,9 @@
+2004-12-21 20:30  dimitr
+
+	* firebird2/src/jrd/: drq.h (1.8), dyn_del.epp (1.42):
+	
+	Fixed DROP TABLE bug.
+
 2004-12-20 18:44  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.200):
