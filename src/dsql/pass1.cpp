@@ -4442,10 +4442,10 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		/* AB: An aggregate pointing to another parent_context isn't
 		   allowed. fields in HAVING items can ONLY point to the same
 		   scope_level items */
-		/*if (pass1_found_field(parent_rse->nod_arg[e_rse_boolean], 
+		if (pass1_found_field(parent_rse->nod_arg[e_rse_boolean], 
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_field_ref_err, 0); */ /* invalid field reference */
+				gds_arg_gds, gds_field_ref_err, 0); /* invalid field reference */
 
 #ifdef	CHECK_HAVING
 		if (aggregate)
