@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\fbclient_static"
 # PROP Intermediate_Dir "..\..\..\temp\release\fbclient_static"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /GR /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /GR /O2 /I "../../../src/include" /I "../../../src/include/gen" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "IPSERV" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /D "_LIB" /D "NDEBUG" /D "BOOT_BUILD" /YX /FD /c
+# ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GR /GX /O2 /I "../../../src/include" /I "../../../src/include/gen" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "IPSERV" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /D "_LIB" /D "NDEBUG" /D "BOOT_BUILD" /YX /FD /c
 # ADD BASE RSC /l 0xc0a /d "NDEBUG"
 # ADD RSC /l 0xc0a /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\fbclient_static"
 # PROP Intermediate_Dir "..\..\..\temp\debug\fbclient_static"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "DEV_BUILD" /D "IPSERV" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /D "_LIB" /D "BOOT_BUILD" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "DEV_BUILD" /D "IPSERV" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /D "_LIB" /D "BOOT_BUILD" /YX /FD /GZ /c
 # ADD BASE RSC /l 0xc0a /d "_DEBUG"
 # ADD RSC /l 0xc0a /d "_DEBUG"
 BSC32=bscmake.exe
@@ -314,6 +314,10 @@ SOURCE=..\..\..\src\jrd\status.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\thd.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
 # End Source File
 # Begin Source File
 

@@ -469,6 +469,10 @@ SOURCE=..\..\..\src\jrd\os\win32\thd_priority.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\tpc.cpp
 # End Source File
 # Begin Source File

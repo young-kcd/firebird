@@ -188,6 +188,10 @@ SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # Begin Source File
