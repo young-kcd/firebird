@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.38 2003-01-15 12:08:59 dimitr Exp $
+$Id: exe.cpp,v 1.39 2003-02-10 00:09:35 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -102,10 +102,6 @@ $Id: exe.cpp,v 1.38 2003-01-15 12:08:59 dimitr Exp $
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/isc_s_proto.h"
-
-#ifdef HSDEBUGSTACK
-#include "TestStck.h"
-#endif
 
 extern "C" {
 
@@ -2590,9 +2586,6 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
 
-#ifdef HSDEBUGSTACK
-		TestStack();
-#endif
 #if defined(DEBUG_GDS_ALLOC) && defined(PROD_BUILD)
 		memory_count++;
 		if ((memory_count % memory_debug) == 0) {
