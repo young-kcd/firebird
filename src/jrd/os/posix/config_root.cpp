@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: config_root.cpp,v 1.1 2002-11-05 16:49:05 skywalker Exp $
+ *  $Id: config_root.cpp,v 1.2 2002-11-10 16:27:56 nmcc Exp $
  */
 
 #include "firebird.h"
@@ -140,7 +140,7 @@ ConfigRoot::ConfigRoot()
     }
 
     // As a last resort get it from the default install directory
-    root_dir = ISC_PREFIX;    
+    root_dir = FB_PREFIX;    
 }
 
 string ConfigRoot::getRootDirectory() const

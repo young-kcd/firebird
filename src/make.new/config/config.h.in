@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.50 2002-11-10 14:09:02 dimitr Exp $"
+#ident "$Id: config.h.in,v 1.51 2002-11-10 16:27:54 nmcc Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -141,6 +141,6 @@
 #undef SCO_EV
 #undef SINIXZ
 
-#define FB_PREFIX /usr/local/firebird
+#define FB_PREFIX "/usr/local/firebird"
 
 #endif
