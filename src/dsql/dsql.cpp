@@ -31,9 +31,6 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
-/*
-$Id: dsql.cpp,v 1.36 2002-12-16 15:37:31 alexpeshkoff Exp $
-*/
 /**************************************************************
 V4 Multi-threading changes.
 
@@ -1666,14 +1663,17 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 				length =
 					get_plan_info(request, (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
 
-				if (length)
-					info = put_item(item, length, buffer, info, end_info);
+				if (length) {
+					info = put_item(item, length, buffer_ptr, info, end_info);
+				}
 
-				if (length > sizeof(buffer))
+				if (length > sizeof(buffer)) {
 					gds__free(buffer_ptr);
+				}
 
-				if (!info)
+				if (!info) {
 					return return_success();
+				}
 			}
 			else if (!message ||
 				 	(item != gds_info_sql_num_variables
