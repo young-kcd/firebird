@@ -2,7 +2,7 @@
 # this should be compiled with optimization turned off and with NDEBUG undefined
 ulimit -s unlimited
 ulimit -c unlimited
-g++ -ggdb -Wall -I../../include -DTESTING_ONLY -DEV_BUILD -DDEBUG_GDS_ALLOC class_test.cpp alloc.cpp ../fb_exception.cpp 2> aa
+g++ -ggdb -Wall -I../../include -DTESTING_ONLY -DDEV_BUILD class_test.cpp alloc.cpp ../fb_exception.cpp 2> aa
 #valgrind --tool=memcheck ./a.out
 
 #export LD_LIBRARY_PATH=/usr/local/lib64

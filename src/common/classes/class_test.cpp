@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.21 2004-08-28 05:19:23 skidder Exp $
+ *  $Id: class_test.cpp,v 1.22 2004-08-28 23:14:46 skidder Exp $
  *
  */
 
@@ -366,7 +366,7 @@ void testBePlusTree() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-const int ALLOC_ITEMS	= 5000000;
+const int ALLOC_ITEMS	= 1000000;
 const int MAX_ITEM_SIZE	= 300;
 const int BIG_ITEMS		= ALLOC_ITEMS / 10;
 const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
