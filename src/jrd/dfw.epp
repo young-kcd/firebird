@@ -1373,12 +1373,13 @@ static bool formatsAreEqual(fmt* old_format, fmt* new_format)
 		return false;
     }
 
-    fmt::fmt_desc_const_iterator  old_desc = old_format->fmt_desc.begin();
-    const fmt::fmt_desc_const_iterator  old_end = old_format->fmt_desc.end();
+    fmt::fmt_desc_const_iterator old_desc = old_format->fmt_desc.begin();
+    const fmt::fmt_desc_const_iterator old_end = old_format->fmt_desc.end();
 
-    fmt::fmt_desc_const_iterator new_desc = old_format->fmt_desc.begin();
+    fmt::fmt_desc_const_iterator new_desc = new_format->fmt_desc.begin();
 
-    while (old_desc != old_end) {
+    while (old_desc != old_end)
+    {
 		if ((old_desc->dsc_dtype != new_desc->dsc_dtype)
 			|| (old_desc->dsc_scale != new_desc->dsc_scale)
 			|| (old_desc->dsc_length != new_desc->dsc_length)
