@@ -1,3 +1,60 @@
+2004-06-03 17:09  kkuznetsov
+
+	* firebird2/src/jrd/alt_proto.h (1.10):
+	
+	Fix some more differents in function signatures from *.h to *.cpp
+
+2004-06-03 16:00  fsg
+
+	* firebird2/src/qli/: compile.cpp (1.24), eval.cpp (1.43),
+	gener.cpp (1.36), meta.epp (1.48), mov.cpp (1.35), parse.cpp
+	(1.35), picstr.cpp (1.24), show.epp (1.37), symbols.h (1.4):
+	
+	First step to allow qli to work with relations containing bigints
+	
+	It is possible now to copy table contents between databases, insert
+	bigints via qli and show works nearly as expected.  Displaying
+	bigints and evaluation of expressions containing bigints still
+	doesn't work.
+
+2004-06-03 12:08  kkuznetsov
+
+	* firebird2/src/dsql/user__proto.h (1.8):
+	
+	Fix linkage errors caused by different declaration of extern "c"
+	functions
+
+2004-06-03 09:42  robocop
+
+	* firebird2/src/gpre/sql.cpp (1.47):
+	
+	Style: opening braces too far to the right
+
+2004-06-03 09:31  robocop
+
+	* firebird2/src/gpre/: c_cxx.cpp (1.50), cme.cpp (1.30), cmp.cpp
+	(1.32), cob.cpp (1.46), ftn.cpp (1.48), gpre.h (1.69),
+	gpre_meta.epp (1.44), hsh.cpp (1.20), jrdmet.cpp (1.18), par.cpp
+	(1.51), pas.cpp (1.40), pretty.cpp (1.27), sqe.cpp (1.33), sql.cpp
+	(1.46), sql_proto.h (1.11):
+	
+	Misc changes: - const - variables in scope - style - a duplicate
+	function deleted - some unneeded casts removed
+
+2004-06-01 18:21  brodsom
+
+	* firebird2/src/: jrd/ibase.h (1.81), utilities/gstat/dba.epp
+	(1.41), utilities/gstat/dbaswi.h (1.5), utilities/gstat/ppg.cpp
+	(1.18), utilities/gstat/ppg_proto.h (1.9):
+	
+	new switch to be used in gstat (service & util) test
+
+2004-06-01 00:57  skidder
+
+	* firebird2/src/jrd/shut.cpp (1.30):
+	
+	Fix -tran shutdown which I broke when introduced new shutdown modes
+
 2004-05-31 23:39  skidder
 
 	* firebird2/src/utilities/gstat/dba.epp (1.40):
