@@ -14,11 +14,11 @@
 #
 # All Rights Reserved.
 # Contributor(s): __Konstantin Kuznetsov___________________________________.
-# This file can be used to build FB on Solaris 8 x 86 with gcc 2.95 and bash
+# This file can be used to build FB on Solaris 2.6 x 86 with gcc 3.3.3 and bash
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.1.2.1 2003-10-09 23:08:34 skidder Exp $
+# $Id: prefix.solx86gcc,v 1.1.2.2 2004-07-01 16:04:13 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -26,8 +26,8 @@
 
 #FirebirdInstallPrefix = @prefix@
 
-WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
-COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
+WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
+COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer  -fmessage-length=0 -MMD  -fPIC
 
 #SFIO= /export/home/interbase/SfIO
 #SfIO is a pretty portable stdIO 
@@ -41,7 +41,7 @@ SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
+#STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
 
 
 ifdef SFIO
@@ -50,8 +50,8 @@ endif
 
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
 
-PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -m486  -MMD -p -fPIC
-DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb  $(WARNINGS)  -MMD -p -fPIC
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -mcpu=pentium 
+DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
 
 OS_ServerFiles=inet_server.cpp
 
@@ -61,8 +61,10 @@ GPRECommon_Sources= $(GPRECOMMON_Files)
 LIB_LINK_OPTIONS:= -G 
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
-#LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin fb_lock_print
+LIB_LINK_MAPFILE= -Xlinker -M
 
-Physical_IO_Module=unix.cpp
+#LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+
+Physical_IO_Module= unix.cpp

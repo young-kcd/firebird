@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.22 2004-06-23 06:33:11 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.23 2004-07-01 16:03:52 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -323,7 +323,15 @@ AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(libio.h)
 AC_CHECK_HEADERS(locale.h)
 AC_CHECK_HEADERS(math.h)
-AC_CHECK_HEADERS(pthread.h)
+case "$PLATFORM" in
+  SOLARIS|solx86)
+	AC_CHECK_HEADERS(thread.h)
+  ;;
+  *)
+	AC_CHECK_HEADERS(pthread.h)
+  ;;
+esac
+
 AC_CHECK_HEADERS(sys/types.h)
 AC_CHECK_HEADERS(sys/stat.h)
 AC_CHECK_HEADERS(sys/uio.h)
@@ -357,7 +365,15 @@ AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c,main)
 AC_CHECK_LIB(m, main)
 if test "$FIREBIRD_ARCH_TYPE" = "super"; then
+case "$PLATFORM" in
+  SOLARIS|solx86)
+dnl #Solaris always check for lthread not only SuperServer
+  ;;
+  *)
   AC_CHECK_LIB(pthread, main)
+    ;;
+esac
+
 fi
 AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)

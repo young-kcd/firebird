@@ -37,8 +37,8 @@
 #ifndef SOLARIS
 #include <pthread.h>
 #else
-#include <sys/mutex.h>
 #include <thread.h>
+#include <synch.h>
 #endif
 #endif
 #endif /* MULTI_THREAD */
@@ -102,13 +102,13 @@ public:
 #else
 #ifdef SOLARIS
 // Who knows why Solaris 2.6 have not THIS funny spins?
-//The next code is not comlpeted but let me compile //Konstantin
+// //Konstantin
 class Spinlock {
 private:
 	mutex_t spinlock;
 public:
 	Spinlock() {
-		if (mutex_init(&spinlock, MUTEX_SPIN, NULL))
+		if (mutex_init(&spinlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise();
 	}
 	~Spinlock() {
