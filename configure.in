@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.95 2002-11-21 11:54:34 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.96 2002-11-22 14:11:28 dimitr Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -273,7 +273,7 @@ AC_CHECK_FUNCS(gettimeofday)
 if test "$ac_cv_func_gettimeofday" = "yes"; then
   dnl EKU: SINIX-Z has no prototype for gettimeofday() so the following test
   dnl      will always succeed, which is wrong.
-  case $PLATFORM in
+  case "$PLATFORM" in
   SINIX-Z)
     ;;
   *)
@@ -385,7 +385,7 @@ dnl      volunters are welcome!
 
 
 dnl EKU: Add any platform specific tests below
-case $PLATFORM in
+case "$PLATFORM" in
   LINUX)
     dnl MOD: Check for /proc/self/exe mainly used on linux systems
     dnl      this is used to determine path to executable file.
@@ -597,7 +597,7 @@ MAKE_SRC_DIR=builds/posix
 
 dnl EKU: handle platform specific installation and packaging
 
-case $PLATFORM in
+case "$PLATFORM" in
   LINUX)
     mkdir -p gen/install/scripts
     mkdir -p gen/install/misc
@@ -705,7 +705,7 @@ esac
 echo           "Service name : $FB_SERVICE_NAME"
 echo           "Service port : $FB_SERVICE_PORT"
 
-case $PLATFORM in
+case "$PLATFORM" in
  win32)   echo "   Pipe name : $FB_PIPE_NAME";;
 esac
 
