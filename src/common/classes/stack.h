@@ -81,11 +81,11 @@ namespace Firebird {
 
 			void split(int elem, Entry* target) 
 			{
-				fb_assert(elem > 0 && elem < count);
+				fb_assert(elem > 0 && elem < this->count);
 				fb_assert(target->count == 0);
-				target->count = count - elem;
-				memcpy(target->data, &data[elem], target->count * sizeof(Object));
-				count = elem;
+				target->count = this->count - elem;
+				memcpy(target->data, &this->data[elem], target->count * sizeof(Object));
+				this->count = elem;
 			}
 
 			Entry* dup(MemoryPool& p)
