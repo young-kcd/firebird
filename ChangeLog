@@ -1,3 +1,29 @@
+2003-06-20 19:55  kkuznetsov
+
+	* firebird2/: builds/posix/prefix.solx86,
+	builds/posix/prefix.solx86gcc, src/common/classes/tree.h:
+	
+	Trying to make FB2 compiler independant add prefix for SUN C
+	compiler and fix fist compilation error
+
+2003-06-19 20:13  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Fixed the config option.
+
+2003-06-19 20:10  dimitr
+
+	* firebird2/src/common/config/: config.cpp, config.h:
+	
+	Fixed the config option.
+
+2003-06-19 15:47  alexpeshkoff
+
+	* firebird2/src/utilities/install_svc.cpp:
+	
+	reject -l switch in any mode besides "install"
+
 2003-06-18 15:29  alexpeshkoff
 
 	* firebird2/doc/sql.extensions/README.execute_statement:
