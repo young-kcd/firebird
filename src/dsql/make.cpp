@@ -879,8 +879,13 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
            the fact that any UDF can return NULL simply returning a NULL 
            pointer. */
         desc->dsc_flags = DSC_nullable;
-
-		desc->dsc_ttype = udf->udf_sub_type;
+		
+		if (desc->dsc_dtype <= dtype_any_text) {		
+			desc->dsc_ttype = udf->udf_character_set_id;
+		}
+		else {
+			desc->dsc_ttype = udf->udf_sub_type;
+		}
 		return;
 
 	case nod_gen_id:
