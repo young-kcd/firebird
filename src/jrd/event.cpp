@@ -1034,8 +1034,10 @@ static void deliver_request(EVT_REQ request)
 			fb_assert(event_buffer == buffer);	/* we're in this block only once */
 			// CVC: We don't check at run-time in the release version, it's
 			// likely to produce a buffer overrun if we reach MAX_EVENT_BUFFER,
-			// since new_buffer will be again and again this number.
-			UCHAR* new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
+			// since new_buffer will be again and again this number. FIXED.
+			UCHAR* new_buffer = 0;
+			if (event_buffer == buffer)
+				new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
 			/* FREE: at procedure exit */
 			if (!new_buffer)
 			{	/* NOMEM: */
