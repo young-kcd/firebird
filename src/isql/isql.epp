@@ -82,9 +82,6 @@
 
 #include <string>
 
-
-#define TIME_ERR	101
-
 enum literal_string_type
 {
 	INIT_STR_FLAG			= 0,
@@ -128,22 +125,27 @@ DATABASE DB = COMPILETIME "yachts.lnk";
 
 //  Print lengths of numeric values 
 
-#define MAXCHARSET_LENGTH  32	// CHARSET names 
-#define SHORT_LEN	7			// NUMERIC (4,2) = -327.68 
-#define LONG_LEN	12			// NUMERIC (9,2) = -21474836.48 
-#define INT64_LEN	21			// NUMERIC(18,2) = -92233720368547758.08 
-#define QUAD_LEN	19
-#define FLOAT_LEN	14			/* -1.2345678E+38 */
-#define DOUBLE_LEN	23			/* -1.234567890123456E+300 */
-#define DATE_LEN	11			// 11 for date only 
-#define DATETIME_LEN	25		// 25 for date-time 
-#define TIME_ONLY_LEN   13		// 13 for time only 
-#define DATE_ONLY_LEN   11
-#define UNKNOWN_LEN	 20		// Unknown type: %d 
+const int MAXCHARSET_LENGTH	= 32;	// CHARSET names
+const int SHORT_LEN		= 7;	// NUMERIC (4,2) = -327.68
+const int LONG_LEN		= 12;	// NUMERIC (9,2) = -21474836.48
+const int INT64_LEN		= 21;	// NUMERIC(18,2) = -92233720368547758.08
+const int QUAD_LEN		= 19;
+const int FLOAT_LEN		= 14;	// -1.2345678E+38
+const int DOUBLE_LEN		= 23;	// -1.234567890123456E+300
+const int DATE_LEN		= 11;	// 11 for date only 
+const int DATETIME_LEN		= 25;	// 25 for date-time 
+const int TIME_ONLY_LEN		= 13;	// 13 for time only 
+const int DATE_ONLY_LEN		= 11;
+const int UNKNOWN_LEN		= 20;	// Unknown type: %d 
 
-#define MAX_TERMS	10			/* max # of terms in an interactive cmd */
+const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
-#define COMMIT_TRANS(x)	{if (isc_commit_transaction (isc_status, x)) { ISQL_errmsg (isc_status); isc_rollback_transaction (isc_status, x); }}
+static inline void commit_trans(isc_tr_handle* x){
+	if (isc_commit_transaction (isc_status, x)) {
+		ISQL_errmsg (isc_status); 
+		isc_rollback_transaction (isc_status, x);
+	}
+}
 
 typedef struct indev {
 	indev* indev_next;
@@ -203,6 +205,7 @@ static const char* sqltype_to_string(USHORT);
 
 XSQLDA* global_sqlda;
 XSQLDA** global_sqldap;
+// The dialect spoken by the database, should be 0 when no database is connected.
 USHORT dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
 bool connecting_to_pre_v6_server = false;
@@ -1461,7 +1464,8 @@ void ISQL_disconnect_database(bool nQuietMode)
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
 	db_SQL_dialect = 0;
-
+	// BRS this is also needed to fix #910430.
+	dialect_spoken = 0;
 	return;
 }
 
@@ -2597,7 +2601,7 @@ static processing_state create_db(const TEXT* statement,
 			if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
 				ISQL_errmsg(isc_status);
 			if (D__trans)
-				COMMIT_TRANS(&D__trans);
+				commit_trans(&D__trans);
 			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 					ISQL_errmsg(isc_status);
 		}
@@ -2754,11 +2758,11 @@ static void do_isql()
 			}
 			else {
 				if (D__trans)
-					COMMIT_TRANS(&D__trans);
+					commit_trans(&D__trans);
 				if (M__trans)
-					COMMIT_TRANS(&M__trans);
+					commit_trans(&M__trans);
 				if (gds_trans)
-					COMMIT_TRANS(&gds_trans);
+					commit_trans(&gds_trans);
 			}
 			/*
 			 * If there is  current user statement, free it
@@ -2867,7 +2871,8 @@ static processing_state drop_db()
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
 	db_SQL_dialect = 0;
-
+	// BRS this is also needed to fix #910430.
+	dialect_spoken = 0;
 
 // Zero database name 
 
@@ -3247,7 +3252,7 @@ static processing_state frontend(const TEXT* statement)
 			}
 		ret = SHOW_metadata(parms, lparms);
 		if (gds_trans)
-			COMMIT_TRANS(&gds_trans);
+			commit_trans(&gds_trans);
 	}
 	else if (!strcmp(parms[0], "ADD")) {
 		if (DB && !gds_trans)
@@ -3263,7 +3268,7 @@ static processing_state frontend(const TEXT* statement)
 			}
 		ret = add_row(parms[1]);
 		if (gds_trans)
-			COMMIT_TRANS(&gds_trans);
+			commit_trans(&gds_trans);
 	}
 	else if (!strcmp(parms[0], "COPY")) {
 		if (DB && !gds_trans)
@@ -3279,7 +3284,7 @@ static processing_state frontend(const TEXT* statement)
 			}
 		ret = copy_table(parms[1], parms[2], lparms[3]);
 		if (gds_trans)
-			COMMIT_TRANS(&gds_trans);
+			commit_trans(&gds_trans);
 	}
 #ifdef MU_ISQL
 /*
@@ -3625,7 +3630,7 @@ static processing_state frontend(const TEXT* statement)
 
 // In case any default transaction was started - commit it here 
 	if (gds_trans)
-		COMMIT_TRANS(&gds_trans);
+		commit_trans(&gds_trans);
 
 // Free the frontend command 
 	frontend_free_parms(parms, lparms);
@@ -4314,10 +4319,14 @@ void ISQL_get_version(bool call_by_create_db)
 	}
 
 	if (major_ods < ODS_VERSION8) {
-		TEXT message[100];
-		sprintf(message,
-		"This version of ISQL needs IB 4.0 or newer\n");
-		ISQL_printf(Out, message);
+		TEXT* errbuf = (TEXT*) ISQL_ALLOC((SLONG) MSG_LENGTH);
+		if (errbuf) {
+			gds__msg_format(NULL, ISQL_MSG_FAC, SERVER_TOO_OLD, MSG_LENGTH,
+					errbuf, NULL, NULL, NULL, NULL, NULL);
+			STDERROUT(errbuf, 1);
+			ISQL_FREE(errbuf);
+		}
+		return;
 	}
 
 /* If the remote server did not respond to our request for
@@ -5065,7 +5074,7 @@ static processing_state newdb(TEXT* dbname,
 			if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
 				ISQL_errmsg(isc_status);
 			if (D__trans)
-				COMMIT_TRANS(&D__trans);
+				commit_trans(&D__trans);
 			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 				ISQL_errmsg(isc_status);
 		}
@@ -5079,7 +5088,7 @@ static processing_state newdb(TEXT* dbname,
 			if (M__trans)
 				end_trans();
 			if (D__trans)
-				COMMIT_TRANS(&D__trans);
+				commit_trans(&D__trans);
 			isc_detach_database(isc_status, &DB);
 			DB = 0;
 			global_Db_name[0] = '\0';
@@ -6477,7 +6486,7 @@ static int process_statement(const TEXT* string,
 				ISQL_errmsg(isc_status);
 				ret = ERR;
 			}
-			COMMIT_TRANS(&D__trans);
+			commit_trans(&D__trans);
 
 			// check for warnings 
 			if (isc_status[2] == isc_arg_warning)
@@ -6507,7 +6516,7 @@ static int process_statement(const TEXT* string,
 		if ((statement_type == isc_info_sql_stmt_commit) ||
 			(statement_type == isc_info_sql_stmt_rollback))
 		{
-				COMMIT_TRANS(&D__trans);
+				commit_trans(&D__trans);
 		}
 
 		// Print statistics report 

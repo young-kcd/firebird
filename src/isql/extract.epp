@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.32 2004-04-24 21:43:35 skidder Exp $
+ * $Id: extract.epp,v 1.33 2004-04-26 07:54:22 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -83,17 +83,16 @@ static void list_views();
 
 static void get_procedure_args(char*);
 
-#define MAX_INTSUBTYPES	2
-#define MAXSUBTYPES	8
-#define MAX_UDFPARAM_TYPES 4
-
 extern IB_FILE* Out;
 
 // Command terminator and procedure terminator 
 
 extern const sqltypes Column_types[];
+const int MAX_INTSUBTYPES = 2;
 extern const SCHAR* Integral_subtypes[];
+const int MAXSUBTYPES = 8;
 extern const SCHAR* Sub_types[];
+const int MAX_UDFPARAM_TYPES = 4;
 extern const SCHAR* UDF_param_types[];
 
 extern const char* trigger_action(int);

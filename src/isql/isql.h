@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.24 2004-04-24 14:38:27 brodsom Exp $
+ * $Id: isql.h,v 1.25 2004-04-26 07:54:17 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -42,26 +42,26 @@
    hope this will last a year or so :-)
    FSG 17.Nov.2000
 */
-#define PRINT_BUFFER_LENGTH	2048
-#define MAXTERM_LENGTH  	32	// SQL termination character 
-#define USER_LENGTH 		128
-#define PASSWORD_LENGTH 	128
-#define ROLE_LENGTH     	128
+const int PRINT_BUFFER_LENGTH	= 2048;
+const int MAXTERM_LENGTH		= 32;	// SQL termination character 
+const int USER_LENGTH 			= 128;
+const int PASSWORD_LENGTH		= 128;
+const int ROLE_LENGTH			= 128;
 
 /* these constants are purely idiotic; there's no point in having
    a predefined constant with no meaning, but that's Ed Simon the
    master programmer for you! */
 
-#define BUFFER_LENGTH128	128
-#define BUFFER_LENGTH155	155
-#define BUFFER_LENGTH256	256
-#define BUFFER_LENGTH360	360
-#define BUFFER_LENGTH400	400
-#define BUFFER_LENGTH512	512
-#define BUFFER_LENGTH80		 80
-#define BUFFER_LENGTH60		 60
-#define BUFFER_LENGTH120	120
-#define BUFFER_LENGTH180	180
+const int BUFFER_LENGTH128	= 128;
+const int BUFFER_LENGTH155	= 155;
+const int BUFFER_LENGTH256	= 256;
+const int BUFFER_LENGTH360	= 360;
+const int BUFFER_LENGTH400	= 400;
+const int BUFFER_LENGTH512	= 512;
+const int BUFFER_LENGTH80	= 80;
+const int BUFFER_LENGTH60	= 60;
+const int BUFFER_LENGTH120	= 120;
+const int BUFFER_LENGTH180	= 180;
 
 // Define the possible states of processing commands 
 
@@ -82,142 +82,141 @@ enum processing_state {
 
 // Which blob subtypes to print 
 
-#define ALL_BLOBS	-2
-#define NO_BLOBS	-1
+const int ALL_BLOBS	= -2;
+const int NO_BLOBS	= -1;
 
 // Flag to decode all vs sql only objects 
-#define SQL_objects	0
-#define ALL_objects	1
+const int SQL_objects	= 0;
+const int ALL_objects	= 1;
 
-#define WORDLENGTH	32
-#define DEFTERM		";"
-#define DEFCHARSET	"NONE"
-#define NULL_DISP_LEN    6
+const int WORDLENGTH			= 32;
+static const char* DEFTERM		= ";";
+static const char* DEFCHARSET	= "NONE";
+const int NULL_DISP_LEN			= 6;
 
 // Error codes 
 
-#define MSG_LENGTH	256
-#define ISQL_MSG_FAC	17
+const int MSG_LENGTH	= 256;
+const int ISQL_MSG_FAC	= 17;
 
-#define GEN_ERR 	0			// General non-zero SQLCODE error 
-#define USAGE1 		1			// Usage message 1 
-#define SWITCH 		2			// Bad command line arg 
-#define NO_DB 		3			// No database specified 
-#define FILE_OPEN_ERR	4		// Can't open specified file 
-#define COMMIT_PROMPT	5		// Commit or rollback question 
-#define COMMIT_MSG	6			// Committing ... 
-#define ROLLBACK_MSG	7		// Rolling back 
-#define	CMD_ERR		8			// Unknown frontend command 
-#define ADD_PROMPT	9			// Prompt for add function 
-#define VERSION		10			// Version string for -z 
-#define USAGE2 		11			// Usage message 2 
-#define NUMBER_PAGES	12		// Number of DB pages allocated = %d \n 
-#define SWEEP_INTERV	13		// Sweep interval = %d \n 
-#define NUM_WAL_BUFF	14		// Number of wal buffers = %d \n 
-#define WAL_BUFF_SIZE	15		// Wal buffer size = %d \n 
-#define CKPT_LENGTH	16			// Check point length = %d \n 
-#define CKPT_INTERV	17			// Check point interval = %d \n 
-#define WAL_GRPC_WAIT	18		// Wal group commit wait = %d \n 
-#define BASE_LEVEL	19			// Base level = %d \n 
-#define LIMBO		20			// Transaction in limbo = %d \n 
-// Help list 
-#define HLP_FRONTEND	21		// Frontend commands:\n 
-#define HLP_BLOBVIEW	22		/* BLOBVIEW [<blobid as high:low>] -- edit a blob\n */
-#define HLP_BLOBDMP	23			/* BLOBDUMP <blobid as high:low> <file> -- dump blob to a file\n */
-#define HLP_EDIT	24			/* EDIT [<filename>] -- edit and read a SQL file\n\tWithout file name, edits current command buffer\n */
-#define HLP_INPUT	25			/* INput <filename> -- enter a named SQL file\n */
-#define HLP_OUTPUT	26			/* OUTput [<filename>] -- write output to named file\n */
-#define HLP_SHELL	27			/* SHELL <shell command> -- execute command shell\n */
-#define HLP_HELP	28			// HELP -- Displays this menu\n 
-#define HLP_SETCOM	29			// "Set commands: " 
-#define HLP_SET		30			// \tSET -- Display current options \n 
-#define HLP_SETAUTO	31			// \tSET AUTOcommit  -- toggle autocommit of DDL statments\n 
-#define HLP_SETBLOB	32			/* \tSET BLOBdisplay [ALL|N]-- Display blobs of type N\n\t SET BLOB turns off blob display\n */
-#define HLP_SETCOUNT	33		// \tSET COUNT  -- toggle count of selected rows on/off \n 
-#define HLP_SETECHO	34			// \tSET ECHO  -- toggle command echo on/off \n 
-#define HLP_SETSTAT	35			// \tSET STATs -- toggles performance statistics display\n 
-#define HLP_SETTERM	36			/* \tSET TERM <string> -- changes termination character\n */
-#define HLP_SHOW	37			/* SHOW <object type> [<object name>] -- displays information on metadata\n */
-#define HLP_OBJTYPE	38			/* "  <object type> = 'DB', 'TABLE', 'PROCedure', 'INDEX',\n   'GRANT', 'DOMAIN', 'VERSION'\n" */
-#define HLP_EXIT	39			// EXIT -- Exit program and commit changes\n 
-#define HLP_QUIT	40			// QUIT -- Exit program and rollback changes\n\n 
-#define HLP_ALL		41			// All commands may be abbreviated to letters in CAPs\n 
-#define HLP_SETSCHEMA	42		/* \tSET SCHema/DB <db name> -- changes current database\n */
-#define YES_ANS		43			// Yes 
-#define REPORT1		44			// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n 
+const int GEN_ERR 					= 0;	// General non-zero SQLCODE error 
+const int USAGE1 					= 1;	// Usage message 1 
+const int SWITCH 					= 2;	// Bad command line arg 
+const int NO_DB 					= 3;	// No database specified 
+const int FILE_OPEN_ERR				= 4;	// Can't open specified file 
+const int COMMIT_PROMPT				= 5;	// Commit or rollback question 
+const int COMMIT_MSG				= 6;	// Committing ... 
+const int ROLLBACK_MSG				= 7;	// Rolling back 
+const int CMD_ERR					= 8;	// Unknown frontend command 
+const int ADD_PROMPT				= 9;	// Prompt for add function 
+const int VERSION					= 10;		// Version string for -z 
+const int USAGE2 					= 11;		// Usage message 2 
+const int NUMBER_PAGES				= 12;		// Number of DB pages allocated = %d \n 
+const int SWEEP_INTERV				= 13;		// Sweep interval = %d \n 
+const int NUM_WAL_BUFF				= 14;		// Number of wal buffers = %d \n 
+const int WAL_BUFF_SIZE				= 15;		// Wal buffer size = %d \n 
+const int CKPT_LENGTH				= 16;		// Check point length = %d \n 
+const int CKPT_INTERV				= 17;		// Check point interval = %d \n 
+const int WAL_GRPC_WAIT				= 18;		// Wal group commit wait = %d \n 
+const int BASE_LEVEL				= 19;		// Base level = %d \n 
+const int LIMBO						= 20;		// Transaction in limbo = %d \n 
+// Help list	
+const int HLP_FRONTEND				= 21;		// Frontend commands:\n 
+const int HLP_BLOBVIEW				= 22;		// BLOBVIEW [<blobid as high:low>] -- edit a blob\n
+const int HLP_BLOBDMP				= 23;		// BLOBDUMP <blobid as high:low> <file> -- dump blob to a file\n
+const int HLP_EDIT					= 24;		// EDIT [<filename>] -- edit and read a SQL file\n\tWithout file name, edits current command buffer\n
+const int HLP_INPUT					= 25;		// INput <filename> -- enter a named SQL file\n
+const int HLP_OUTPUT				= 26;		// OUTput [<filename>] -- write output to named file\n
+const int HLP_SHELL					= 27;		// SHELL <shell command> -- execute command shell\n
+const int HLP_HELP					= 28;		// HELP -- Displays this menu\n 
+const int HLP_SETCOM				= 29;		// "Set commands: " 
+const int HLP_SET					= 30;		// \tSET -- Display current options \n 
+const int HLP_SETAUTO				= 31;		// \tSET AUTOcommit  -- toggle autocommit of DDL statments\n 
+const int HLP_SETBLOB				= 32;		// \tSET BLOBdisplay [ALL|N]-- Display blobs of type N\n\t SET BLOB turns off blob display\n
+const int HLP_SETCOUNT				= 33;		// \tSET COUNT  -- toggle count of selected rows on/off \n 
+const int HLP_SETECHO				= 34;		// \tSET ECHO  -- toggle command echo on/off \n 
+const int HLP_SETSTAT				= 35;		// \tSET STATs -- toggles performance statistics display\n 
+const int HLP_SETTERM				= 36;		// \tSET TERM <string> -- changes termination character\n 
+const int HLP_SHOW					= 37;		// SHOW <object type> [<object name>] -- displays information on metadata\n 
+const int HLP_OBJTYPE				= 38;		// "  <object type> = 'DB', 'TABLE', 'PROCedure', 'INDEX',\n   'GRANT', 'DOMAIN', 'VERSION'\n"
+const int HLP_EXIT					= 39;		// EXIT -- Exit program and commit changes\n 
+const int HLP_QUIT					= 40;		// QUIT -- Exit program and rollback changes\n\n 
+const int HLP_ALL					= 41;		// All commands may be abbreviated to letters in CAPs\n 
+const int HLP_SETSCHEMA				= 42;		// \tSET SCHema/DB <db name> -- changes current database\n
+const int YES_ANS					= 43;		// Yes 
+const int REPORT1					= 44;		// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n 
 #if (defined WIN_NT)
-#define REPORT2		93			// Buffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n 
+const int REPORT2					= 93;		// Buffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n 
 #else
-#define REPORT2		45			// Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n 
+const int REPORT2					= 45;		// Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n 
 #endif
-#define BLOB_SUBTYPE	46		// Blob display set to subtype %d. This blob: subtype = %d\n 
-#define BLOB_PROMPT	47			/* Blob: %s, type 'edit' or filename to load> */
-#define DATE_PROMPT	48			/* Enter %s as M/D/Y> */
-#define NAME_PROMPT	49			/* Enter %s> */
-#define DATE_ERR	50			// Bad date %s\n 
-#define CON_PROMPT	51			/* "CON> " */
-#define HLP_SETLIST	52			// \tSET LIST -- toggles column or table display\n 
-#define NOT_FOUND 	53			// %s not found\n 
-#define COPY_ERR 	54			// Errors occured(possibly duplicate domains) in creating %s in %s\n" 
-#define SERVER_TOO_OLD  55		// Server version too old to support the isql command 
-#define REC_COUNT 	56			// Total returned: %ld 
-#define	UNLICENSED	57			// Unlicensed for database "%s" 
-#define HLP_SETWIDTH	58		/* \tSET WIDTH <column name> [<width>] --sets/unsets print width for column name */
-#define HLP_SETPLAN	59			// Toggle display of query access plan 
-#define HLP_SETTIME	60			// Toggle display of timestamp with DATE values 
-#define HLP_EDIT2	61			// edits current command buffer\n 
-#define HLP_OUTPUT2	62			// \tWithout file name, returns output to ib_stdout\n 
-#define HLP_SETNAMES	63		// Set current character set 
-#define HLP_OBJTYPE2	64		// More objects 
-#define HLP_SETBLOB2	65		// \t SET BLOB turns off blob display\n 
-#define HLP_SET_ROOT	66		// (Use HELP SET for set options) 
-#define	NO_TABLES	67			// There are no tables in this database 
-#define	NO_TABLE	68			// There is no table %s in this database 
-#define	NO_VIEWS	69			// There are no views in this database 
-#define	NO_VIEW		70			// There is no view %s in this database 
-#define	NO_INDICES_ON_REL 71	// There are no indices on table %s in this database 
-#define	NO_REL_OR_INDEX	72		// There is no table or index %s in this database 
-#define	NO_INDICES	73			// There are no indices in this database 
-#define	NO_DOMAIN	74			// There is no domain %s in this database 
-#define	NO_DOMAINS	75			// There are no domains in this database 
-#define	NO_EXCEPTION	76		// There is no exception %s in this database 
-#define	NO_EXCEPTIONS	77		// There are no exceptions in this database 
-#define	NO_FILTER	78			// There is no filter %s in this database 
-#define	NO_FILTERS	79			// There are no filters in this database 
-#define	NO_FUNCTION	80			// There is no user-defined function %s in this database 
-#define	NO_FUNCTIONS	81		// There are no user-defined functions in this database 
-#define	NO_GEN		82			// There is no generator %s in this database 
-#define	NO_GENS		83			// There are no generators in this database 
-#define	NO_GRANT_ON_REL	84		// There is no privilege granted on table %s in this database 
-#define	NO_GRANT_ON_PROC 85		// There is no privilege granted on stored procedure %s in this database 
-#define	NO_REL_OR_PROC	86		// There is no table or stored procedure %s in this database 
-#define	NO_PROC		87			// There is no stored procedure %s in this database 
-#define	NO_PROCS	88			// There are no stored procedures in this database 
-#define	NO_TRIGGERS_ON_REL 89	// There are no triggers on table %s in this database 
-#define	NO_REL_OR_TRIGGER 90	// There is no table or trigger %s in this database 
-#define	NO_TRIGGERS	91			// There are no triggers in this database 
-#define	NO_CHECKS_ON_REL 92		// There are no check constraints on table %s in this database 
-#define BUFFER_OVERFLOW  94		// An isql command exceeded maximum buffer size 
+const int BLOB_SUBTYPE				= 46;		// Blob display set to subtype %d. This blob: subtype = %d\n 
+const int BLOB_PROMPT				= 47;		// Blob: %s, type 'edit' or filename to load>
+const int DATE_PROMPT				= 48;		// Enter %s as M/D/Y>
+const int NAME_PROMPT				= 49;		// Enter %s>
+const int DATE_ERR					= 50;		// Bad date %s\n 
+const int CON_PROMPT				= 51;		// "CON> "
+const int HLP_SETLIST				= 52;		// \tSET LIST -- toggles column or table display\n 
+const int NOT_FOUND 				= 53;		// %s not found\n 
+const int COPY_ERR 					= 54;		// Errors occured(possibly duplicate domains) in creating %s in %s\n" 
+const int SERVER_TOO_OLD			= 55;		// Server version too old to support the isql command 
+const int REC_COUNT 				= 56;		// Total returned: %ld 
+const int UNLICENSED				= 57;		// Unlicensed for database "%s" 
+const int HLP_SETWIDTH				= 58;		// \tSET WIDTH <column name> [<width>] --sets/unsets print width for column name
+const int HLP_SETPLAN				= 59;		// Toggle display of query access plan 
+const int HLP_SETTIME				= 60;		// Toggle display of timestamp with DATE values 
+const int HLP_EDIT2					= 61;		// edits current command buffer\n 
+const int HLP_OUTPUT2				= 62;		// \tWithout file name, returns output to ib_stdout\n 
+const int HLP_SETNAMES				= 63;		// Set current character set 
+const int HLP_OBJTYPE2				= 64;		// More objects 
+const int HLP_SETBLOB2				= 65;		// \t SET BLOB turns off blob display\n 
+const int HLP_SET_ROOT				= 66;		// (Use HELP SET for set options) 
+const int NO_TABLES					= 67;		// There are no tables in this database 
+const int NO_TABLE					= 68;		// There is no table %s in this database 
+const int NO_VIEWS					= 69;		// There are no views in this database 
+const int NO_VIEW					= 70;		// There is no view %s in this database 
+const int NO_INDICES_ON_REL			= 71;		// There are no indices on table %s in this database 
+const int NO_REL_OR_INDEX			= 72;		// There is no table or index %s in this database 
+const int NO_INDICES				= 73;		// There are no indices in this database 
+const int NO_DOMAIN					= 74;		// There is no domain %s in this database 
+const int NO_DOMAINS				= 75;		// There are no domains in this database 
+const int NO_EXCEPTION				= 76;		// There is no exception %s in this database 
+const int NO_EXCEPTIONS				= 77;		// There are no exceptions in this database 
+const int NO_FILTER					= 78;		// There is no filter %s in this database 
+const int NO_FILTERS				= 79;		// There are no filters in this database 
+const int NO_FUNCTION				= 80;		// There is no user-defined function %s in this database 
+const int NO_FUNCTIONS				= 81;		// There are no user-defined functions in this database 
+const int NO_GEN					= 82;		// There is no generator %s in this database 
+const int NO_GENS					= 83;		// There are no generators in this database 
+const int NO_GRANT_ON_REL			= 84;		// There is no privilege granted on table %s in this database 
+const int NO_GRANT_ON_PROC			= 85;		// There is no privilege granted on stored procedure %s in this database 
+const int NO_REL_OR_PROC			= 86;		// There is no table or stored procedure %s in this database 
+const int NO_PROC					= 87;		// There is no stored procedure %s in this database 
+const int NO_PROCS					= 88;		// There are no stored procedures in this database 
+const int NO_TRIGGERS_ON_REL		= 89;		// There are no triggers on table %s in this database 
+const int NO_REL_OR_TRIGGER			= 90;		// There is no table or trigger %s in this database 
+const int NO_TRIGGERS				= 91;		// There are no triggers in this database 
+const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database 
+const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size 
 #ifdef SCROLLABLE_CURSORS
-#define HLP_SETFETCH	95		/* \tSET AUTOfetch  -- toggle autofetch of
-								   records\n */
+const int HLP_SETFETCH				= 95;		// \tSET AUTOfetch  -- toggle autofetch of
+											// records\n 
 #endif
 
-#define NO_ROLES		95		// There are no roles in this database 
-#define NO_REL_OR_PROC_OR_ROLE	96	/* There is no table, stored procedure, or
-									   role %s in this database */
-#define NO_GRANT_ON_ROL		97	/* There is no membership privilege granted
-								   on %s in this database */
-#define UNEXPECTED_EOF		98	/* Expected end of statement, encountered
-								   EOF */
-#define TIME_ERR		101		// Bad TIME: %s\n 
-#define HLP_OBJTYPE3	102		// Some more objects 
-#define NO_ROLE			103
-#define USAGE3 			104		// Usage message 3 
-#define INCOMPLETE_STR  105		// Incomplete string in %s 
-#define HLP_SETSQLDIALECT	106	/* \tSET SQL DIALECT <n>    -- set sql dialect to <n> */
-#define NO_GRANT_ON_ANY 107 // There is no privilege granted in this database. 
-#define HLP_SETPLANONLY 108 // Toggle display of query plan without executing 
+const int NO_ROLES					= 95;		// There are no roles in this database 
+const int NO_REL_OR_PROC_OR_ROLE	= 96;		// There is no table, stored procedure, or
+											// role %s in this database
+const int NO_GRANT_ON_ROL			= 97;		// There is no membership privilege granted
+											// on %s in this database
+const int UNEXPECTED_EOF			= 98;		// Expected end of statement, encountered EOF
+const int TIME_ERR					= 101;		// Bad TIME: %s\n 
+const int HLP_OBJTYPE3				= 102;		// Some more objects 
+const int NO_ROLE					= 103;
+const int USAGE3 					= 104;		// Usage message 3 
+const int INCOMPLETE_STR			= 105;		// Incomplete string in %s 
+const int HLP_SETSQLDIALECT			= 106;		//\tSET SQL DIALECT <n>    -- set sql dialect to <n>
+const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
+const int HLP_SETPLANONLY			= 108;		// Toggle display of query plan without executing 
 
 #ifndef DEBUG
 #define Trace		0
@@ -255,21 +254,20 @@ struct sqltypes {
 	SCHAR type_name[WORDLENGTH];
 };
 
-#define MAXSUBTYPES 8			// Top of subtypes array 
 //
 // Use T_FLOAT and T_CHAR to avoid collisions with windows defines
 //
-#define SMALLINT	7
-#define INTEGER		8
-#define QUAD		9
-#define T_FLOAT		10
-#define T_CHAR		14
-#define DOUBLE_PRECISION 27
-#define DATE		35
-#define VARCHAR		37
-#define CSTRING		40
-#define BLOB_ID		45
-#define BLOB		261
+const int SMALLINT		= 7;
+const int INTEGER		= 8;
+const int QUAD			= 9;
+const int T_FLOAT		= 10;
+const int T_CHAR		= 14;
+const int DOUBLE_PRECISION = 27;
+const int DATE			= 35;
+const int VARCHAR		= 37;
+const int CSTRING		= 40;
+const int BLOB_ID		= 45;
+const int BLOB			= 261;
 
 #ifdef VMS
 #include <descrip.h>

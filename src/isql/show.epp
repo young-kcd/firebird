@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.41 2004-04-24 21:43:35 skidder Exp $
+ * $Id: show.epp,v 1.42 2004-04-26 07:54:16 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -129,7 +129,7 @@ extern const sqltypes Column_types[] = {
 
 // Integral subtypes
 
-#define MAX_INTSUBTYPES	2
+const int MAX_INTSUBTYPES	= 2;
 
 const SCHAR* Integral_subtypes[] = {
 	"UNKNOWN",					// Defined type, NTX: keyword
@@ -139,7 +139,7 @@ const SCHAR* Integral_subtypes[] = {
 
 // Blob subtypes
 
-#define MAXSUBTYPES 8
+const int MAXSUBTYPES		= 8;
 
 const SCHAR* Sub_types[] = {
 	"UNKNOWN",					// NTX: keyword
@@ -170,7 +170,7 @@ BY REFERENCE is the default for scalars and can't be specified explicitly;
 BY ISC_DESCRIPTOR is the default for BLOBs and can't be used explicitly;
 BY SCALAR_ARRAY_DESCRIPTOR should be supported in DSQL in the future, since
 the server has already the capability to deliver arrays to UDFs. */
-#define MAX_UDFPARAM_TYPES 4
+const int MAX_UDFPARAM_TYPES = 4;
 const SCHAR* UDF_param_types[] = {
 	" BY VALUE",			// NTX: keyword
 	"",						// BY REFERENCE
@@ -181,13 +181,15 @@ const SCHAR* UDF_param_types[] = {
 };
 
 
-#define priv_UNKNOWN	1
-#define priv_SELECT	2
-#define priv_INSERT	4
-#define priv_UPDATE	8
-#define priv_DELETE	16
-#define priv_EXECUTE	32
-#define priv_REFERENCES	64
+enum priv_flag { 
+	priv_UNKNOWN	= 1,
+	priv_SELECT	= 2,
+	priv_INSERT	= 4,
+	priv_UPDATE	= 8,
+	priv_DELETE	= 16,
+	priv_EXECUTE	= 32,
+	priv_REFERENCES	= 64
+};
 
 
 static const struct {
