@@ -1001,6 +1001,7 @@ generator_clause : symbol_generator_name
 role_clause : symbol_role_name
 			{ $$ = make_node (nod_def_role, 
 						(int) 1, $1); }
+		;
 
 
 
@@ -1279,10 +1280,12 @@ simple_column_def_name  : simple_column_name
 
 data_type_descriptor :	init_data_type data_type
 			{ $$ = $1; }
+		;
 
 init_data_type :
 			{ lex.g_field = make_field (NULL);
 			  $$ = (DSQL_NOD) lex.g_field; }
+		;
 
 
 default_opt	: DEFAULT default_value
@@ -1318,6 +1321,7 @@ column_constraint_list	: column_constraint_def
 
 column_constraint_def : constraint_name_opt column_constraint
             { $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
+		;
 
 
 column_constraint : NOT KW_NULL 
@@ -1952,6 +1956,7 @@ alter_clause	: EXCEPTION symbol_exception_name sql_string
 
 domain_default_opt2	: DEFAULT begin_trigger default_value
 				{ $$ = $3; }
+		;
 
 domain_check_constraint2 	: CHECK begin_trigger '(' search_condition ')' end_trigger
 				  { $$ = make_node (nod_def_constraint, 
@@ -2062,11 +2067,13 @@ alter_data_type_or_domain	: non_array_type begin_trigger
 				| simple_column_name begin_string
                           		{ $$ = make_node (nod_def_domain, (int) e_dom_count,
                                         	    $1, NULL, NULL, NULL, NULL); }
+		;
 
 alter_col_name	: simple_column_name
 			{ lex.g_field_name = $1;
 			  lex.g_field = make_field ($1);
 			  $$ = (DSQL_NOD) lex.g_field; }
+		;
 
 drop_behaviour	: RESTRICT
 			{ $$ = make_node (nod_restrict, 0, NULL); }
@@ -2770,6 +2777,7 @@ table_list	: simple_table_name
 set_statistics	: SET STATISTICS INDEX symbol_index_name
 			{$$ = make_node (nod_set_statistics, 
 				(int)e_stat_count, $4); }
+		;
 
 
 /* SELECT statement */
