@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.106 2004-04-10 03:56:34 skidder Exp $
+$Id: met.epp,v 1.107 2004-04-10 19:03:42 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3065,8 +3065,10 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
  * are allocated.  That will not be freed up.
  */
 
-	if (procedure->prc_existence_lock)
+	if (procedure->prc_existence_lock) {
 		delete procedure->prc_existence_lock;
+		procedure->prc_existence_lock = NULL;
+	}
 
 /* deallocate input param structures */
 	SSHORT i;
@@ -3079,6 +3081,8 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 			}
 		}
 		delete vector;
+		procedure->prc_inputs = 0;
+		procedure->prc_input_fields = NULL;
 	}
 
 /* deallocate output param structures */
@@ -3092,10 +3096,14 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 			}
 		}
 		delete vector;
+		procedure->prc_outputs = 0;
+		procedure->prc_output_fields = NULL;
 	}
 
-	if (procedure->prc_format)
+	if (procedure->prc_format) {
 		delete procedure->prc_format;
+		procedure->prc_format = NULL;
+	}
 
 	if (!(procedure->prc_flags & PRC_being_altered) && !procedure->prc_use_count)
 	{
@@ -3103,12 +3111,12 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 	}
 	else
 	{
-		const USHORT save_proc_flags = procedure->prc_flags;
-		const USHORT save_use_count = procedure->prc_use_count;
-		memset(((SCHAR *)&procedure->prc_id), 0,
-			   sizeof(jrd_prc) - ((SCHAR *)&procedure->prc_id - (SCHAR *)procedure));
-		procedure->prc_flags = save_proc_flags;
-		procedure->prc_use_count = save_use_count;
+		// Fully clear procedure block. Some pieces of code check for empty 
+		// procedure name and ID, this is why we do it.
+		procedure->prc_name = "";
+		procedure->prc_security_name = "";
+		procedure->prc_defaults = 0;
+		procedure->prc_id = 0;
 	}
 }
 
