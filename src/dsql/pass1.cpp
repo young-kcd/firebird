@@ -154,7 +154,7 @@
 
 ASSERT_FILENAME					/* Define things assert() needs */
 static BOOLEAN aggregate_found(DSQL_REQ, DSQL_NOD);
-static BOOLEAN aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT *, USHORT *);
+static BOOLEAN aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT *, USHORT *, BOOLEAN);
 static DSQL_NOD ambiguity_check (DSQL_NOD, DSQL_REQ, DSQL_FLD, DLLS, DLLS);
 static void assign_fld_dtype_from_dsc(DSQL_FLD, DSC *);
 static DSQL_NOD compose(DSQL_NOD, DSQL_NOD, NOD_TYPE);
@@ -1489,13 +1489,14 @@ static BOOLEAN aggregate_found( DSQL_REQ request, DSQL_NOD node)
 	current_level = request->req_scope_level;
 	deepest_level = 0;
 
-	aggregate = aggregate_found2(request, node, &current_level, &deepest_level);
+	aggregate = aggregate_found2(request, node, &current_level, &deepest_level, FALSE);
 
 	return aggregate;
 }
 
 
-static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * current_level, USHORT * deepest_level)
+static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * current_level, 
+								USHORT * deepest_level, BOOLEAN ignore_sub_selects)
 {
 /**************************************
  *
@@ -1511,9 +1512,9 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
  *	field is true if a non-aggregate field reference is seen.
  *
  **************************************/
-	BOOLEAN aggregate;
 	DSQL_NOD *ptr, *end;
 	DSQL_CTX lcontext;
+	BOOLEAN aggregate = FALSE;
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(node, dsql_type_nod);
@@ -1529,10 +1530,11 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 		case nod_agg_min:
 		case nod_agg_total:
 		case nod_agg_count:
-			aggregate = FALSE;
 			if (node->nod_count) {
 				*deepest_level = request->req_scope_level;
-				aggregate_found2(request, node->nod_arg[0], current_level, deepest_level);
+				/* If we are already in a aggregate function don't search inside sub-selects for
+				   the deepest field used else we would have a wrong deepest_level value */
+				aggregate_found2(request, node->nod_arg[0], current_level, deepest_level, TRUE);
 				if (*deepest_level == request->req_scope_level) {
 					aggregate = TRUE;
 				}
@@ -1559,7 +1561,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 			}*/
 
 		case nod_alias:
-			aggregate = aggregate_found2(request, node->nod_arg[e_alias_value], current_level, deepest_level);
+			aggregate = aggregate_found2(request, node->nod_arg[e_alias_value], current_level, deepest_level, ignore_sub_selects);
 			return aggregate;
 
 		case nod_map:
@@ -1575,35 +1577,38 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 			  be buried, recursively check for one */
 
 		case nod_via:
-			aggregate = aggregate_found2(request, node->nod_arg[e_via_rse], current_level, deepest_level);
+			if (!ignore_sub_selects) {
+				aggregate = aggregate_found2(request, node->nod_arg[e_via_rse], current_level, deepest_level, ignore_sub_selects);
+			}
 			return aggregate;
 
 		case nod_exists:
 		case nod_singular:
-			aggregate = aggregate_found2(request, node->nod_arg[0], current_level, deepest_level);
+			aggregate = aggregate_found2(request, node->nod_arg[0], current_level, deepest_level, ignore_sub_selects);
 			return aggregate;
 
 		case nod_aggregate:
-			aggregate = aggregate_found2(request, node->nod_arg[e_agg_rse], current_level, deepest_level);
+			if (!ignore_sub_selects) {
+				aggregate = aggregate_found2(request, node->nod_arg[e_agg_rse], current_level, deepest_level, ignore_sub_selects);
+			}
 			return aggregate;
 
 		case nod_rse:
 			(*current_level)++;
-			aggregate = FALSE;
-			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_streams], current_level, deepest_level);
+			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_streams], current_level, deepest_level, ignore_sub_selects);
 			if (node->nod_arg[e_rse_boolean]) {
 				aggregate |= 
-					aggregate_found2(request, node->nod_arg[e_rse_boolean], current_level, deepest_level);
+					aggregate_found2(request, node->nod_arg[e_rse_boolean], current_level, deepest_level, ignore_sub_selects);
 			}
 			if (node->nod_arg[e_rse_items]) {
 				aggregate |= 
-					aggregate_found2(request, node->nod_arg[e_rse_items], current_level, deepest_level);
+					aggregate_found2(request, node->nod_arg[e_rse_items], current_level, deepest_level, ignore_sub_selects);
 			}
 			(*current_level)--;
 			return aggregate;	
 
 		case nod_order:
-			aggregate = aggregate_found2(request, node->nod_arg[e_order_field], current_level, deepest_level);
+			aggregate = aggregate_found2(request, node->nod_arg[e_order_field], current_level, deepest_level, ignore_sub_selects);
 			return aggregate;
 
 		case nod_or:
@@ -1649,11 +1654,10 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 		case nod_simple_case:
 		case nod_searched_case:
 		case nod_list:
-			aggregate = FALSE;
 			for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
 				if (*ptr) {
 					DEV_BLKCHK(*ptr, dsql_type_nod);
-					aggregate |= aggregate_found2(request, *ptr, current_level, deepest_level);
+					aggregate |= aggregate_found2(request, *ptr, current_level, deepest_level, ignore_sub_selects);
 				}
 			}
 			return aggregate;
@@ -1663,7 +1667,7 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 		case nod_gen_id2:
 		case nod_udf:
 			if (node->nod_count == 2)
-				return (aggregate_found2(request, node->nod_arg[1], current_level, deepest_level));
+				return (aggregate_found2(request, node->nod_arg[1], current_level, deepest_level, ignore_sub_selects));
 			else
 				return FALSE;
 
@@ -2127,7 +2131,6 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			lcontext = reinterpret_cast<DSQL_CTX>(node->nod_arg[e_map_context]);
 			lmap = reinterpret_cast<MAP>(node->nod_arg[e_map_map]);
 			if (lcontext->ctx_scope_level == context->ctx_scope_level) {
-				/* From know we should use the map-context as reference */
 				invalid |= invalid_reference(context, lmap->map_node, list, TRUE);
 			}
 			else {
@@ -2149,7 +2152,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 			   If the context-scope-level from this field is 
 			   lower or the sameas the scope-level from the 
 			   given context then it is an invalid field */
-			if (lcontext->ctx_scope_level <= context->ctx_scope_level) {
+			if (lcontext->ctx_scope_level == context->ctx_scope_level) {
 				/* Return TRUE (invalid) if this Field isn't inside 
 				   the GROUP BY clause , that should already been 
 				   seen in the match_node above */
@@ -5088,7 +5091,7 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
 		case nod_agg_average2:
 		case nod_agg_total2:
 			lcurrent_level = current_level;
-			if (aggregate_found2(request, field, &lcurrent_level, &ldeepest_level)) {
+			if (aggregate_found2(request, field, &lcurrent_level, &ldeepest_level, TRUE)) {
 				return post_map(field, context);
 			}
 			else {
