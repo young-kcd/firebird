@@ -15,7 +15,8 @@ PSQL cursors (FB 2.0)
     CLOSE <cursor_name>;
     
   Example(s):
-    1. DECLARE C CURSOR FOR ( SELECT RDB$RELATION_NAME
+    1. DECLARE RNAME CHAR(31);
+       DECLARE C CURSOR FOR ( SELECT RDB$RELATION_NAME
                               FROM RDB$RELATIONS );
        BEGIN
          OPEN C;
