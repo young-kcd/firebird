@@ -4269,6 +4269,9 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	case nod_total:
 	case nod_from:
 		rse_node = node->nod_arg[e_stat_rse];
+		if (! rse_node) {
+			ERR_post(gds_wish_list, 0);
+		}
 		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
 			LLS_PUSH(node, &csb->csb_invariants);
