@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.36 2003-12-31 05:35:43 robocop Exp $
+ *  $Id: fb_types.h,v 1.37 2004-01-12 05:40:01 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -65,17 +65,15 @@ typedef unsigned long long int	ISC_UINT64;
 	// EKU: Firebird requires (S)LONG to be 32 bit
 	typedef int SLONG;
 	typedef unsigned int ULONG;
-	typedef long SQUAD;
-	typedef unsigned long UQUAD;
-#   define NATIVE_QUAD
 #else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
-	typedef struct {
-		SLONG high;
-		ULONG low;
-	} SQUAD;
 #endif // SIZEOF_LONG == 8
+
+typedef struct {
+	SLONG high;
+	ULONG low;
+} SQUAD;
 
 struct GDS_QUAD_t {
 	SLONG gds_quad_high;
