@@ -113,6 +113,7 @@ const char INET_FLAG		= ':';
 
 /* Unix/NFS specific stuff */
 #ifndef NO_NFS
+
 #ifdef HAVE_MNTENT_H
 #include <mntent.h>	/* get setmntent/endmntent */
 #endif
@@ -120,10 +121,22 @@ const char INET_FLAG		= ':';
 #include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
 #endif
 
-#ifdef MNTTAB
+/*
+ AP: Only _PATH_MOUNTED is worth staying alive from all this company.
+	 MOUNTED & MNTTAB are deprecated, _PATH_MNTTAB gives wrong result.
+	 21-nov-2004
+#if   defined(MOUNTED)
+const char* MTAB		= MOUNTED;
+#elif defined(_PATH_MOUNTED)
+const char* MTAB		= _PATH_MOUNTED;
+#elif defined(MNTTAB)
 const char* MTAB		= MNTTAB;
 #elif defined(_PATH_MNTTAB)
 const char* MTAB		= _PATH_MNTTAB;
+*/
+
+#if   defined(_PATH_MOUNTED)
+const char* MTAB		= _PATH_MOUNTED;
 #elif defined(hpux)
 const char* MTAB		= "/etc/mnttab";
 #elif defined(SOLARIS)
@@ -147,8 +160,8 @@ const char* MTAB		= "/etc/mtab";
 #define MTAB_OPEN(path,type)	fopen(path, type)
 #define MTAB_CLOSE(stream)	fclose(stream)
 #endif
-#endif /* NO_NFS */
 
+#endif /* NO_NFS */
 
 #ifdef hpux
 /* RITTER - added HP11 to the pre-processor condition below */
@@ -162,29 +175,52 @@ const char* MTAB		= "/etc/mtab";
 #endif
 
 
-struct mnt {
-	TEXT *mnt_node;
-	TEXT *mnt_mount;
-	TEXT *mnt_path;
-};
-typedef mnt MNT;
-
-
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
 #endif
-
 
 namespace {
     typedef Firebird::PathName tstring;
     typedef tstring::size_type size;
     typedef tstring::iterator iter;
     const size npos = tstring::npos;
-}
+
+#ifndef NO_NFS
+	class osMtab {
+	public:
+#if (defined AIX || defined AIX_PPC)
+		TEXT* temp;
+		int context;
+		
+		osMtab() : temp(0), context(0) { }
+		~osMtab() { delete[] temp; }
+		bool ok() { return true; }
+#else
+		FILE* mtab;
+		
+		osMtab() : mtab(MTAB_OPEN(MTAB, "r")) { }
+		~osMtab() { if (mtab) MTAB_CLOSE(mtab); }
+		bool ok() { return mtab; }
+#endif
+	};
+
+	class Mnt {
+	private:
+		osMtab mtab;
+	public:
+/*		Mnt() : AutoMemory(), mtab(), node(getPool()), 
+				mount(getPool()), path(getPool()) { } */
+		bool ok() { return mtab.ok(); }
+		bool get();
+		tstring node, mount, path;
+	};
+#endif //NO_NFS
+} // anonymous namespace 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-static void expand_filename2(tstring&);
+static void expand_filename2(tstring&, bool);
 #endif
+
 
 #if defined(WIN_NT)
 static void translate_slashes(tstring&);
@@ -192,14 +228,6 @@ static void expand_share_name(tstring&);
 static void share_name_from_resource(tstring&, LPNETRESOURCE);
 static void share_name_from_unc(tstring&, LPREMOTE_NAME_INFO);
 static bool get_full_path(const tstring&, tstring&);
-#endif
-
-#ifndef NO_NFS
-#if (defined AIX || defined AIX_PPC)
-static bool get_mounts(MNT *, TEXT *, TEXT **, int *);
-#else
-static bool get_mounts(MNT *, TEXT *, FILE *);
-#endif
 #endif
 
 #ifdef hpux
@@ -227,49 +255,36 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 
     // If we are ignoring NFS remote mounts then do not bother checking here
     // and pretend it's only local. MOD 16-Nov-2002
-    if (! Config::getRemoteFileOpenAbility()) {
+	
+    if (Config::getRemoteFileOpenAbility()) {
         return false;
     }
 
 	tstring max_node, max_path;
-	TEXT mnt_buffer[BUFFER_LARGE];
-	int len = 0;
+	size_t len = 0;
 
 	// Search mount points
-	MNT mount;
-#if (defined AIX || defined AIX_PPC)
-	TEXT* temp = 0;
-	int context = 0;
-	while (get_mounts(&mount, mnt_buffer, &temp, &context))
-#else
-	FILE* mtab = MTAB_OPEN(MTAB, "r");
-	if (!mtab) {
+	Mnt mount;
+	if (!mount.ok()) 
+	{
 		return false;
 	}
-	while (get_mounts(&mount, mnt_buffer, mtab))
-#endif
+	while (mount.get())
 	{
 		// first, expand any symbolic links in the mount point
-		tstring expand_mount = mount.mnt_mount;
-		ISC_expand_filename(expand_mount, false);
+		ISC_expand_filename(mount.mount, false);
 
-		// see how much of the mount point matches the expanded_filename
-		const TEXT* p = expanded_filename.begin();
-		const TEXT* q = expand_mount.begin();
-		while (*q && *q == *p++)
+		// if the whole mount point is not contained in the expanded_filename
+		// or the mount point is not a valid pathname in the expanded_filename,
+		// skip it
+		if (expanded_filename.length() <= mount.mount.length() 
+			|| expanded_filename.compare(0, mount.mount.length(), mount.mount) != 0
+			|| expanded_filename[mount.mount.length()] != '/')
 		{
-			++q;
-		}
-
-		/* if the whole mount point is not contained in the expanded_filename
-		   OR the mount point is not a valid pathname in the expanded_filename,
-		   skip it */
-		if (*q || *p != '/')
-		{
-			if (expand_mount == "/" && *mount.mnt_path) 
+			if (mount.mount == "/" && mount.path.hasData()) 
 			{
-				/* root mount point = diskless client case */
-				strcat(mount.mnt_path, "/");
+				// root mount point = diskless client case
+				mount.path += '/';
 			}
 			else
 			{
@@ -277,15 +292,14 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 			}
 		}
 
-		/* the longest mount point contained in the expanded_filename wins */
-
-		if (q - mount.mnt_mount >= len) 
+		// the longest mount point contained in the expanded_filename wins
+		if (mount.mount.length() >= len) 
 		{
-			len = q - mount.mnt_mount;
-			if (mount.mnt_node) 
+			len = mount.mount.length();
+			if (mount.node.hasData()) 
 			{
-				max_node = mount.mnt_node;
-				max_path = mount.mnt_path;
+				max_node = mount.node;
+				max_path = mount.path;
 			}
 			else 
 			{
@@ -309,21 +323,12 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		expanded_filename.replace(0, len, max_path);
 		node_name = max_node;
 	}
-/* RITTER - added HP11 to the pre-processor condition below */
+// RITTER - added HP11 to the pre-processor condition below
 #if defined(hpux) && (!(defined HP10 || defined HP11))
 	else
 	{
 		flag = get_server(expanded_filename, node_name);
 	}
-#endif
-
-#if (defined AIX || defined AIX_PPC)
-	if (temp)
-	{
-		gds__free(temp);
-	}
-#else
-	MTAB_CLOSE(mtab);
 #endif
 
 	return flag;
@@ -487,7 +492,7 @@ bool ISC_check_if_remote(const tstring& file_name, bool implicit_flag)
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-void ISC_expand_filename(tstring& buff, bool)
+void ISC_expand_filename(tstring& buff, bool expand_mounts)
 {
 /**************************************
  *
@@ -501,7 +506,7 @@ void ISC_expand_filename(tstring& buff, bool)
  *
  **************************************/
 
-	expand_filename2(buff);
+	expand_filename2(buff, expand_mounts);
 }
 #endif
 
@@ -705,7 +710,7 @@ static bool ShortToLongPathName(tstring& Path)
     return true;
 }
 
-void ISC_expand_filename(tstring& file_name, bool expand_share)
+void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 {
 /**************************************
  *
@@ -763,7 +768,7 @@ void ISC_expand_filename(tstring& file_name, bool expand_share)
 		// This happen if remote interface of our server 
 		// rejected WNet connection or we were called with:
 		// localhost:R:\Path\To\Database, where R - remote disk
-		if (dtype == DRIVE_REMOTE && expand_share)
+		if (dtype == DRIVE_REMOTE && expand_mounts)
 		{
 			ISC_expand_share(file_name);
 			translate_slashes(file_name);
@@ -1056,7 +1061,7 @@ int ISC_strip_extension(TEXT* file_name)
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-static void expand_filename2(tstring& buff)
+static void expand_filename2(tstring& buff, bool expand_mounts)
 {
 /**************************************
  *
@@ -1091,7 +1096,7 @@ static void expand_filename2(tstring& buff)
 		if (password) 
 		{
 			buff = password->pw_dir;
-			expand_filename2(buff);
+			expand_filename2(buff, expand_mounts);
 		}
 	}
 
@@ -1106,7 +1111,6 @@ static void expand_filename2(tstring& buff)
 	}
 
 // Process file name segment by segment looking for symbolic links.
-// See ISC_analyze_nfs for how NFS mount points are  handled.
 	while (*from) 
 	{
 
@@ -1179,8 +1183,21 @@ static void expand_filename2(tstring& buff)
 		}
 
 		/* Whole link needs translating -- recurse */
-		expand_filename2(buff);
+		expand_filename2(buff, expand_mounts);
 	}
+
+// If needed, call ISC_analyze_nfs to handle NFS mount points.
+#ifndef NO_NFS
+	if (expand_mounts)
+	{
+		tstring nfsServer;
+		if (ISC_analyze_nfs(buff, nfsServer))
+		{
+			buff.insert(0, ':');
+			buff.insert(0, nfsServer);
+		}
+	}
+#endif //NO_NFS
 }
 #endif
 
@@ -1296,12 +1313,11 @@ static bool get_full_path(const tstring& part, tstring& full)
 #endif
 
 
+namespace {
 #ifndef NO_NFS
 #if (defined AIX || defined AIX_PPC)
 #define GET_MOUNTS
-static bool get_mounts(
-						  MNT * mount,
-						  TEXT * mnt_buffer, TEXT ** buffer, int *count)
+bool Mnt::get()
 {
 /**************************************
  *
@@ -1373,7 +1389,7 @@ static bool get_mounts(
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
 #if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */
-static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
+bool Mnt::get()
 {
 /**************************************
  *
@@ -1417,7 +1433,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 		return false;
 }
 #else // !GETMNTENT_TAKES_TWO_ARGUMENTS 
-static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
+bool Mnt::get()
 {
 /**************************************
  *
@@ -1429,44 +1445,37 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
  *	Get ALL mount points.
  *
  **************************************/
-	struct mntent *mptr;
-
-/* Start by finding a mount point. */
-
-	TEXT* p = buffer;
-
-	while ((mptr = getmntent(file)) != (struct mntent *)0) {
-		/* Include non-NFS (local) mounts - some may be longer than
-		   NFS mount points */
-
-/****
-    if (strcmp (mptr->mnt_type, MNTTYPE_NFS))
-	continue;
-****/
-
-		mount->mnt_node = p;
-		const TEXT* q = mptr->mnt_fsname;
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-		while (*p++ = *q++); // empty loop's body.
-		mount->mnt_mount = mptr->mnt_dir;
-		return true;
+	// Start by finding a mount point. */
+	fb_assert(mtab.mtab);
+	struct mntent* mptr = getmntent(mtab.mtab);
+	if (!mptr)
+	{
+		return false;
 	}
 
-	return false;
+	// Include non-NFS (local) mounts - some may be longer than
+	// NFS mount points, therefore ignore mnt_type
+
+	const char* iflag = strchr(mptr->mnt_fsname, ':');
+	
+	if (iflag)
+	{
+		node = tstring(mptr->mnt_fsname, iflag - mptr->mnt_fsname);
+		path = tstring(++iflag);
+	}
+	else {
+		node.erase();
+		path.erase();
+	}
+	mount = mptr->mnt_dir;
+	return true;
 }
 #endif // GETMNTENT_TAKES_TWO_ARGUMENTS
 #endif // HAVE_GETMNTENT && !SOLARIS
 
 #ifdef SCO_UNIX
 #define GET_MOUNTS
-static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
+bool Mnt::get()
 {
 /**************************************
  *
@@ -1527,7 +1536,7 @@ static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
 #endif // SCO_UNIX
 
 #ifndef GET_MOUNTS
-static bool get_mounts(MNT * mount, TEXT * buffer, FILE * file)
+bool Mnt::get()
 {
 /**************************************
  *
@@ -1630,6 +1639,7 @@ static bool get_server(tstring&, tstring& node_name)
 #endif
 #endif // hpux
 #endif // NO_NFS
+} // anonymous namespace
 
 
 #ifdef WIN_NT
@@ -1765,4 +1775,3 @@ bool ISC_verify_database_access(const Firebird::PathName& name)
 #endif
 	return true;
 }
-
