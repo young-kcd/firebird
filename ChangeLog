@@ -1,3 +1,17 @@
+2004-04-24 23:43  skidder
+
+	* firebird2/src/isql/: extract.epp (1.32), isql.epp (1.75),
+	show.epp (1.41):
+	
+	Return ISQL to buildable state after Blas' cleanup
+
+2004-04-24 16:38  brodsom
+
+	* firebird2/src/isql/: extract.epp (1.31), isql.epp (1.74), isql.h
+	(1.24), isql_win.cpp (1.13), show.epp (1.40):
+	
+	-Remove unneeded headers
+
 2004-04-23 20:39  brodsom
 
 	* firebird2/src/isql/: show.epp (1.39), extract.epp (1.30),
