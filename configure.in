@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.72 2002-11-09 13:23:55 skywalker Exp $
+dnl $Id: configure.in,v 1.73 2002-11-11 05:54:24 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -64,7 +64,16 @@ AC_ARG_ENABLE(superserver,
      no)  FIREBIRD_ARCH_TYPE=classic;;
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-superserver);;
    esac])
+
+
+case $FIREBIRD_ARCH_TYPE in
+ super)   ARCH_TYPE_SUFFIX="SS";;
+ classic) ARCH_TYPE_SUFFIX="CS";;
+esac
+
+
 AC_SUBST(FIREBIRD_ARCH_TYPE)
+AC_SUBST(ARCH_TYPE_SUFFIX)
 
 PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(debug,
@@ -493,9 +502,23 @@ mkdir -p gen/libfbembed/common/memory
 mkdir -p gen/libfbembed/common/config
 ])
 
+
+dnl I've used AC_CONFIG_COMMMANDS since it seems to work 
+dnl but I did think I wanted AC_CONFIG_COMMANDS_POST, but I couldn't get
+dnl it to work as I expected. MOD 10-Nov-2002
+
+AC_CONFIG_COMMANDS([posttinstall],
+[
+chmod a+x gen/install/scripts/*.sh
+chmod a+x gen/install/sinixz/*
+chmod a+x gen/install/*sh
+])
+
+
+
 MAKE_SRC_DIR=builds/posix
 
-INSTALL_SRC_DIR=src/install/${FIREBIRD_ARCH_TYPE}
+INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
 
 AC_DEFINE_UNQUOTED(ISC_PREFIX,$(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
@@ -544,14 +567,26 @@ dnl Linux start
 dnl
 dnl EKU: These files should reside in src/install/arch-specific/linux
 dnl
-dnl gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
+gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
 gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
-gen/install/scripts/install.sh:${INSTALL_SRC_DIR}/install.sh.in
+
+dnl these next two are old MOD 7-Nov-2002
+dnl gen/install/scripts/install.sh:${INSTALL_SRC_DIR}/install.sh.in
+dnl gen/install/install.sh:${INSTALL_SRC_DIR}/tarInstall.sh.in
+dnl
+
+
+gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
+gen/install/scripts/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
+gen/install/scripts/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
+gen/install/scripts/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
 gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
 gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
 gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
-gen/install/install.sh:${INSTALL_SRC_DIR}/tarInstall.sh.in
-src/install/misc/firebird.xinetd
+gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
+gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
+
+dnl gen/src/install/misc/firebird.xinetd
 dnl Linux end
 dnl SINIX-Z start
 gen/install/sinixz/Makefile:src/install/arch-specific/sinixz/Makefile.in
@@ -574,9 +609,6 @@ dnl AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
 dnl AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
 
 
-
-dnl EKU: must be executed after AC_OUTPUT
-chmod a+x gen/install/install.sh gen/install/scripts/*.sh
 
 
 dnl Print out the build configuration (the most interesting thing)
