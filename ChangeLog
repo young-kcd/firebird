@@ -1,3 +1,84 @@
+2004-03-28 11:10  robocop
+
+	* firebird2/: builds/win32/defs/fbclient.def (1.9),
+	builds/win32/msvc6/fbclient.dsp (1.44),
+	builds/win32/msvc6/fbembed.dsp (1.33), src/common/classes/alloc.cpp
+	(1.47), src/common/classes/fb_atomic.h (1.2),
+	src/common/classes/fb_tls.h (1.2), src/common/classes/rwlock.h
+	(1.17), src/common/classes/tree.h (1.25), src/dsql/keywords.cpp
+	(1.30), src/dsql/keywords.h (1.17), src/dsql/parse.cpp (1.110),
+	src/dsql/parse.y (1.127), src/dudley/parse.cpp (1.39),
+	src/jrd/all.h (1.14), src/jrd/blb.cpp (1.62), src/jrd/blb_proto.h
+	(1.18), src/jrd/blk.h (1.21), src/jrd/blp.h (1.11),
+	src/jrd/bookmark.cpp (1.15), src/jrd/bookmark.h (1.8),
+	src/jrd/btn.cpp (1.12), src/jrd/btn.h (1.9), src/jrd/btr.cpp
+	(1.79), src/jrd/btr.h (1.28), src/jrd/btr_proto.h (1.24),
+	src/jrd/cch.cpp (1.77), src/jrd/cch.h (1.17), src/jrd/cmp.cpp
+	(1.107), src/jrd/cmp_proto.h (1.23), src/jrd/constants.h (1.13),
+	src/jrd/dbg.cpp (1.22), src/jrd/dbt.cpp (1.24), src/jrd/dflt.h
+	(1.4), src/jrd/dfw.epp (1.94), src/jrd/dls.cpp (1.22),
+	src/jrd/dls_proto.h (1.11), src/jrd/dmp.cpp (1.20), src/jrd/dpm.epp
+	(1.38), src/jrd/dpm_proto.h (1.13), src/jrd/dsc_proto.h (1.7),
+	src/jrd/dyn.epp (1.53), src/jrd/dyn.h (1.17), src/jrd/dyn_def.epp
+	(1.61), src/jrd/dyn_del.epp (1.27), src/jrd/dyn_mod.epp (1.40),
+	src/jrd/err.cpp (1.37), src/jrd/event.cpp (1.44),
+	src/jrd/event_proto.h (1.12), src/jrd/evl.cpp (1.73),
+	src/jrd/evl_proto.h (1.15), src/jrd/exe.cpp (1.109), src/jrd/exe.h
+	(1.44), src/jrd/exe_proto.h (1.12), src/jrd/execute_statement.cpp
+	(1.5), src/jrd/ext.cpp (1.47), src/jrd/ext_proto.h (1.14),
+	src/jrd/fil.h (1.9), src/jrd/fun.epp (1.43), src/jrd/fun_proto.h
+	(1.10), src/jrd/grant.epp (1.32), src/jrd/grant_proto.h (1.10),
+	src/jrd/ibase.h (1.70), src/jrd/idx.cpp (1.50), src/jrd/idx_proto.h
+	(1.19), src/jrd/inf.cpp (1.42), src/jrd/ini.epp (1.42),
+	src/jrd/ini.h (1.13), src/jrd/intl_proto.h (1.14),
+	src/jrd/intlobj.h (1.20), src/jrd/isc.cpp (1.46), src/jrd/isc.h
+	(1.12), src/jrd/isc_f_proto.h (1.13), src/jrd/isc_file.cpp (1.75),
+	src/jrd/isc_s_proto.h (1.14), src/jrd/isc_sync.cpp (1.80),
+	src/jrd/jrd.cpp (1.147), src/jrd/jrd.h (1.84), src/jrd/jrd_proto.h
+	(1.27), src/jrd/lck.cpp (1.36), src/jrd/met.epp (1.102),
+	src/jrd/met_proto.h (1.37), src/jrd/mov.cpp (1.16),
+	src/jrd/mov_proto.h (1.9), src/jrd/nav.cpp (1.38),
+	src/jrd/nav_proto.h (1.14), src/jrd/nod.h (1.10), src/jrd/ods.h
+	(1.21), src/jrd/opt.cpp (1.145), src/jrd/opt_proto.h (1.11),
+	src/jrd/par.cpp (1.84), src/jrd/par_proto.h (1.13),
+	src/jrd/pcmet.epp (1.19), src/jrd/pcmet_proto.h (1.11),
+	src/jrd/req.h (1.35), src/jrd/rlck.cpp (1.24), src/jrd/rlck_proto.h
+	(1.11), src/jrd/rng.cpp (1.22), src/jrd/rng_proto.h (1.9),
+	src/jrd/rse.cpp (1.65), src/jrd/rse.h (1.28), src/jrd/rse_proto.h
+	(1.11), src/jrd/sbm.cpp (1.15), src/jrd/sch.cpp (1.20),
+	src/jrd/scl.epp (1.46), src/jrd/scl.h (1.8), src/jrd/scl_proto.h
+	(1.15), src/jrd/sdl.cpp (1.33), src/jrd/sdl.h (1.6),
+	src/jrd/sdw.cpp (1.41), src/jrd/sdw_proto.h (1.13),
+	src/jrd/shut.cpp (1.22), src/jrd/sort.cpp (1.60), src/jrd/sort.h
+	(1.20), src/jrd/sqz.cpp (1.16), src/jrd/sqz.h (1.7),
+	src/jrd/sqz_proto.h (1.12), src/jrd/tra.cpp (1.64), src/jrd/tra.h
+	(1.27), src/jrd/utl.cpp (1.60), src/jrd/val.cpp (1.42),
+	src/jrd/vio.cpp (1.83), src/jrd/vio_proto.h (1.20), src/jrd/why.cpp
+	(1.61), src/jrd/os/pio.h (1.5), src/jrd/os/pio_proto.h (1.12),
+	src/jrd/os/posix/unix.cpp (1.22), src/jrd/os/vms/extvms.cpp (1.17),
+	src/jrd/os/vms/vmsevent.cpp (1.11), src/jrd/os/vms/vmslo_proto.h
+	(1.5), src/jrd/os/vms/vmslock.cpp (1.6), src/lock/driver.cpp
+	(1.13), src/lock/lock.cpp (1.89), src/lock/lock_proto.h (1.7),
+	src/lock/manager.cpp (1.9), src/misc/blrtable.cpp (1.7),
+	src/qli/compile.cpp (1.22), src/utilities/drop.cpp (1.23),
+	src/utilities/gstat/dba_full.epp (1.21),
+	src/utilities/rebuild/rebui_proto.h (1.5):
+	
+	Cleanup.  Fixed a linking error with MSVC6, too.
+
+2004-03-28 07:34  skidder
+
+	* firebird2/builds/posix/: Makefile.in.client.gpre (1.13),
+	Makefile.in.embed.gpre (1.13):
+	
+	Fix build of FORTRAN preprocessor. Breakage reported by FSG
+
+2004-03-28 01:38  skidder
+
+	* firebird2/src/common/classes/rwlock.h (1.16):
+	
+	Fix error in my previous commits spotted by claudio
+
 2004-03-27 14:36  alexpeshkoff
 
 	* firebird2/src/: dsql/dsql.cpp (1.54.2.2),
