@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.39 2003-09-12 01:58:51 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.40 2003-09-28 18:49:21 dimitr Exp $ 
  */
 
 /*
@@ -1652,12 +1652,9 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 				/* "Put" the value to sort. */
 				asb = (ASB) from->nod_arg[1];
 				asb_impure = (IASB) ((SCHAR *) request + asb->nod_impure);
-				if (SORT_put(tdbb->tdbb_status_vector,
-							 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
-							 reinterpret_cast<unsigned long**>(&data)))
-				{
-					  ERR_punt();
-				}
+				SORT_put(tdbb->tdbb_status_vector,
+						 reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+						 reinterpret_cast<unsigned long**>(&data));
 				MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
 				asb->asb_desc.dsc_address = data;
 				MOV_move(desc, &asb->asb_desc);
@@ -3179,8 +3176,8 @@ static SSHORT compute_agg_distinct(TDBB tdbb, JRD_NOD node)
 
 /* Sort the values already "put" to sort */
 
-	if (SORT_sort(	tdbb->tdbb_status_vector,
-					reinterpret_cast<SCB> (asb_impure->iasb_sort_handle)))
+	if (!SORT_sort(tdbb->tdbb_status_vector,
+				   reinterpret_cast<SCB>(asb_impure->iasb_sort_handle)))
 	{
 		ERR_punt();
 	}

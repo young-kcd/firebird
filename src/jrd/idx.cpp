@@ -367,19 +367,9 @@ void IDX_create_index(
 					--relation->rel_scan_count;
 				BUGCHECK(174);	/* msg 174 index key too big */
 			}
-			if (SORT_put
-				(tdbb->tdbb_status_vector, sort_handle,
-				 reinterpret_cast < ULONG ** >(&p))) {
-				do {
-					if (record != gc_record)
-						delete record;
-				} while (stack && (record = (REC) LLS_POP(&stack)));
-				SORT_fini(sort_handle, tdbb->tdbb_attachment);
-				gc_record->rec_flags &= ~REC_gc_active;
-				if (primary.rpb_window.win_flags & WIN_large_scan)
-					--relation->rel_scan_count;
-				ERR_punt();
-			}
+
+			SORT_put(tdbb->tdbb_status_vector, sort_handle,
+					 reinterpret_cast<ULONG**>(&p));
 
 			/* try to catch duplicates early */
 
@@ -393,8 +383,7 @@ void IDX_create_index(
 				if (primary.rpb_window.win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
 				ERR_post(gds_no_dup, gds_arg_string,
-						 ERR_cstring(reinterpret_cast < char *>(index_name)),
-						 0);
+						 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
 			}
 
 			l = key.key_length;
@@ -427,7 +416,7 @@ void IDX_create_index(
 	if (primary.rpb_window.win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 
-	if (cancel || SORT_sort(tdbb->tdbb_status_vector, sort_handle)) {
+	if (cancel || !SORT_sort(tdbb->tdbb_status_vector, sort_handle)) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_punt();
 	}

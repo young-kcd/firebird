@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.35 2003-09-28 18:23:26 dimitr Exp $
+ * $Id: rse.cpp,v 1.36 2003-09-28 18:49:21 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3183,9 +3183,8 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 		// "Put" a record to sort. Actually, get the address of a place
 		// to build a record.
 
-		if (SORT_put(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
-					 (ULONG **) &data))
-			ERR_punt();
+		SORT_put(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
+				(ULONG **) &data);
 
 		// Zero out the sort key. This solve a multitude of problems.
 
@@ -3235,7 +3234,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, UINT64 max_records)
 		}
 	}
 
-	if (SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle))
+	if (!SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle))
 		ERR_punt();
 
 	// For the sake of prudence, set all record parameter blocks to contain

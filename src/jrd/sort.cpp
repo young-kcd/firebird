@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.43 2003-09-28 18:23:26 dimitr Exp $
+ * $Id: sort.cpp,v 1.44 2003-09-28 18:49:21 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -145,7 +145,6 @@ static void merge_runs(SCB, USHORT);
 static void quick(SLONG, SORTP **, USHORT);
 static ULONG order(SCB);
 static void put_run(SCB);
-//static void release_merge(MRG);
 static void sort(SCB);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG
@@ -778,13 +777,13 @@ SCB SORT_init(ISC_STATUS * status_vector,
 
 /* Next, try to allocate a "big block".  How big?  Big enough! */
 	try {
-		#ifdef DEBUG_MERGE
+#ifdef DEBUG_MERGE
 		/* To debug the merge algorithm, force the in-memory pool to be VERY small */
 		scb->scb_size_memory = 2000;
 		scb->scb_memory =
 			(SORTP *) gds__alloc((SLONG) scb->scb_size_memory);
 		/* FREE: scb_memory is freed by local_fini() */
-		#else
+#else
 		/* Try to get a big chunk of memory, if we can't try smaller and
 		smaller chunks until we can get the memory.  If we get down to
 		too small a chunk - punt and report not enough memory. */
@@ -797,7 +796,7 @@ SCB SORT_init(ISC_STATUS * status_vector,
 				 (SORTP *) gds__alloc((SLONG) scb->scb_size_memory)) )
 			/* FREE: scb_memory is freed by local_fini() */
 				break;
-		#endif /* DEBUG_MERGE */
+#endif /* DEBUG_MERGE */
 	} catch(const std::exception&) {
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
@@ -827,7 +826,7 @@ SCB SORT_init(ISC_STATUS * status_vector,
 }
 
 
-int SORT_put(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
+void SORT_put(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
 {
 /**************************************
  *
@@ -847,14 +846,13 @@ int SORT_put(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
  **************************************/
 	RUN run;
 	USHORT count, depth;
-	SR *record;
 
 	scb->scb_status_vector = status_vector;
 
 /* Find the last record passed in, and zap the keys something comparable
    by unsigned longword compares. */
 
-	record = scb->scb_last_record;
+	SR* record = scb->scb_last_record;
 
 	if (record != (SR *) scb->scb_end_memory)
 #ifdef SCROLLABLE_CURSORS
@@ -904,8 +902,6 @@ int SORT_put(ISC_STATUS * status_vector, SCB scb, ULONG ** record_address)
 	scb->scb_records++;
 #endif
 	*record_address = (ULONG *) record->sr_sort_record.sort_record_key;
-
-	return FB_SUCCESS;
 }
 
 
@@ -1008,7 +1004,7 @@ void SORT_shutdown(ATT att)
 }
 
 
-int SORT_sort(ISC_STATUS * status_vector, SCB scb)
+bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 {
 /**************************************
  *
@@ -1052,7 +1048,7 @@ int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 		scb->scb_flags |= scb_initialized;
 #endif
 		scb->scb_flags |= scb_sorted;
-		return FB_SUCCESS;
+		return true;
 	}
 
 /* Write the last records as a run */
@@ -1082,7 +1078,7 @@ int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 		*status_vector++ = gds_arg_gds;
 		*status_vector++ = gds_sort_mem_err;
 		*status_vector = gds_arg_end;
-		return gds_sort_mem_err;
+		return false;
 	}
 
 	m1 = streams;
@@ -1106,7 +1102,7 @@ int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
-			return gds_sort_mem_err;
+			return false;
 		}
 		memset(merge_pool, 0, (count - 1) * sizeof(struct mrg));
 	}
@@ -1199,7 +1195,7 @@ int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
-			return gds_sort_mem_err;
+			return false;
 		}
 		/* Link the new buffer into the chain of buffers */
 		run->run_buff_alloc = 1;
@@ -1209,7 +1205,7 @@ int SORT_sort(ISC_STATUS * status_vector, SCB scb)
 	}
 
 	scb->scb_flags |= scb_sorted;
-	return FB_SUCCESS;
+	return true;
 }
 
 
