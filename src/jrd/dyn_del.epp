@@ -156,18 +156,15 @@ void DYN_delete_exception( GBL gbl, UCHAR ** ptr)
  *	deletes an exception.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	USHORT found;
 	TEXT t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, t);
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_xcp, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_xcp, DYN_REQUESTS);
 
 	try {
 
@@ -211,16 +208,13 @@ void DYN_delete_filter( GBL gbl, UCHAR ** ptr)
  *	deletes a blob filter.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	USHORT found;
 	TEXT f[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
 
 	try {
 
@@ -268,16 +262,13 @@ void DYN_delete_function( GBL gbl, UCHAR ** ptr)
  *	deletes a user defined function.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	volatile USHORT id, found;
 	TEXT f[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
 	id = drq_e_func_args;
 
 	try {
@@ -348,15 +339,14 @@ void DYN_delete_generator(GBL gbl, UCHAR **ptr)
  *  space allocated in the page won't be released.
  *
  **************************************/
-	TDBB tdbb;
-	DBB	dbb;
-	BLK	request;
 	USHORT found;
 	TEXT t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
+	BLK request = NULL;
+	
 	try {
         GET_STRING(ptr, t);
         
@@ -405,16 +395,13 @@ void DYN_delete_global_field( GBL gbl, UCHAR ** ptr)
  *	deletes a global field.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	volatile USHORT id, found;
 	TEXT f[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
 	id = drq_l_fld_src;
 
 	try {
@@ -491,16 +478,13 @@ void DYN_delete_index( GBL gbl, UCHAR ** ptr)
  *	deletes an index.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	USHORT found;
 	TEXT i[32], r[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
 
 	try {
 	GET_STRING(ptr, i);
@@ -583,14 +567,11 @@ void DYN_delete_local_field(
  *  delete_f_key_constraint function for detail.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request, old_request;
 	volatile USHORT id, found;
 	TEXT tbl_nm[32], col_nm[32], constraint[32], index_name[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, col_nm);
 
@@ -603,7 +584,7 @@ void DYN_delete_local_field(
 	else
 		GET_STRING(ptr, tbl_nm);
 
-	request = (BLK) CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
 	id = drq_l_dep_flds;
 
 	try {
@@ -700,6 +681,8 @@ void DYN_delete_local_field(
 
 	request = (BLK) CMP_find_request(tdbb, drq_e_l_idx, DYN_REQUESTS);
 	id = drq_e_l_idx;
+	
+	BLK old_request = NULL;
 
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -796,8 +779,6 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
  *	deletes a stored procedure parameter.
  *
  **************************************/
-
-	BLK old_request, request;
 	volatile USHORT old_id, id, found;
 	TEXT name[32];
 
@@ -809,11 +790,12 @@ void DYN_delete_parameter( GBL gbl, UCHAR ** ptr, TEXT * proc_name)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
 	id = drq_e_prms;
 
 	try {
 
+	BLK old_request = NULL;
 	found = FALSE;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PP IN RDB$PROCEDURE_PARAMETERS WITH PP.RDB$PROCEDURE_NAME EQ proc_name
@@ -889,15 +871,12 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
  *	deletes a stored procedure.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK old_request, request;
 	volatile USHORT old_id, id, found;
 	TEXT name[32];
 
 	GET_STRING(ptr, name);
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	tdbb->tdbb_flags |= TDBB_prc_being_dropped;
 	if (MET_lookup_procedure(tdbb, name, TRUE) == 0)
@@ -909,11 +888,14 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
 
 	tdbb->tdbb_flags &= ~TDBB_prc_being_dropped;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_prms, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_prms, DYN_REQUESTS);
 	id = drq_e_prms;
 
-	try {
 
+	try {
+	
+    BLK old_request = NULL;
+    
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PP IN RDB$PROCEDURE_PARAMETERS WITH PP.RDB$PROCEDURE_NAME EQ name
 
@@ -1047,21 +1029,18 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
  *	and fields.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	volatile USHORT id, found;
 	TEXT relation_name[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (relation)
 		strcpy(relation_name, relation);
 	else
 		GET_STRING(ptr, relation_name);
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	id = drq_e_rel_con2;
 
 	try {
@@ -1288,22 +1267,17 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
  *      members of the role.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	volatile USHORT id;
 	//volatile USHORT err_num;
 	TEXT role_name[32], role_owner[32], user[32];
         //TEXT security_class[32];
 	TEXT *ptr1, *ptr2;
-	BOOLEAN del_role_ok = TRUE;
-	USHORT major_version, minor_original;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
 		DYN_error(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
@@ -1311,6 +1285,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 		return;	// never reached
 	}
 
+	BLK request = NULL;
 
 	try {
 
@@ -1326,6 +1301,8 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 
 		request = (BLK) CMP_find_request(tdbb, drq_drop_role, DYN_REQUESTS);
 		id = drq_drop_role;
+		
+		bool del_role_ok = true;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			XX IN RDB$ROLES WITH
@@ -1335,8 +1312,6 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 			DYN_terminate(XX.RDB$OWNER_NAME, sizeof(XX.RDB$OWNER_NAME));
 			strcpy(role_owner, XX.RDB$OWNER_NAME);
 
-#pragma FB_COMPILER_MESSAGE("TMN: LOCKSMITH!")
-
 			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
 				(strcmp(role_owner, user) == 0))
 			{
@@ -1344,7 +1319,7 @@ void DYN_delete_role( GBL gbl, UCHAR ** ptr)
 			}
 			else
 			{
-				del_role_ok = FALSE;
+				del_role_ok = false;
 			}
 
 		END_FOR;
@@ -1449,13 +1424,10 @@ void DYN_delete_shadow( GBL gbl, UCHAR ** ptr)
  *	Delete a shadow.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	int shadow_number;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /*****
 the code commented out in this routine was meant to delete the
@@ -1468,7 +1440,7 @@ STR	file;
 files = NULL;
 *****/
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_shadow, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_shadow, DYN_REQUESTS);
 
 	try {
 
@@ -1525,16 +1497,13 @@ void DYN_delete_trigger( GBL gbl, UCHAR ** ptr)
  *	deletes an trigger.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	USHORT id, found;
 	TEXT r[32], t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
 	id = drq_e_trg_msgs;
 
 	try {
@@ -1662,15 +1631,12 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
  *	deletes an trigger message.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	USHORT found;
 	int number;
 	TEXT t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	number = DYN_get_number(ptr);
 	if (trigger_name)
@@ -1681,7 +1647,7 @@ void DYN_delete_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
 		DYN_error_punt(FALSE, 70, NULL, NULL, NULL, NULL, NULL);
 	/* msg 70: "TRIGGER NAME expected" */
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_trg_msg, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_trg_msg, DYN_REQUESTS);
 
 	try {
 
@@ -1734,15 +1700,12 @@ static BOOLEAN delete_constraint_records(GBL	gbl,
  *	based on a constraint name.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	BOOLEAN found;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
 
 	try {
 
@@ -1786,15 +1749,12 @@ static BOOLEAN delete_dimension_records(GBL gbl, TEXT* field_name)
  *	pertaining to a field.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	BOOLEAN found;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
 
 	try {
 
@@ -1859,14 +1819,12 @@ static void delete_f_key_constraint(TDBB	tdbb,
  *                               RDB$RELATION_CONSTRAINTS.RDB$INDEX_NAME
  *  
  **************************************/
-	DBB dbb;
-	BLK request;
 	BOOLEAN found;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_rel_const, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_rel_const, DYN_REQUESTS);
 
 	try {
 
@@ -1915,13 +1873,9 @@ static void delete_gfield_for_lfield( GBL gbl, TEXT * lfield_name)
  *	deletes a global field for a given local field.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-	request = (BLK) CMP_find_request(tdbb, drq_e_l_gfld, DYN_REQUESTS);
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_l_gfld, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS
@@ -1960,15 +1914,12 @@ static BOOLEAN delete_index_segment_records( GBL gbl, TEXT * index_name)
  *	pertaining to an index.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	BOOLEAN found;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
 
 	try {
 
@@ -2044,3 +1995,4 @@ static BOOLEAN delete_security_class2( GBL gbl, TEXT * security_class)
 
 	return found;
 }
+

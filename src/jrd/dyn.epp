@@ -82,12 +82,13 @@ DATABASE DB = STATIC "ODS.RDB";
 
 
 static void grant(GBL, UCHAR **);
-static bool grantor_can_grant_role(TDBB, GBL, TEXT *, TEXT *);
-static bool grantor_can_grant(GBL, TEXT *, TEXT *, TEXT *, TEXT *, bool);
+static bool grantor_can_grant_role(TDBB, GBL, const TEXT*, const TEXT*);
+static bool grantor_can_grant(GBL, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, bool);
 static void	revoke_permission(GBL, UCHAR **);
-static void store_privilege(GBL, TEXT *, TEXT *, TEXT *, TEXT *, SSHORT,
-							SSHORT, int);
-static void	set_field_class_name(GBL, TEXT *, TEXT *);
+static void store_privilege(GBL, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, SSHORT, SSHORT, int);
+static void	set_field_class_name(GBL, const TEXT*, const TEXT*);
 
 
 void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
@@ -193,11 +194,11 @@ void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 
 void DYN_error(USHORT	status_flag,
 			   USHORT	number,
-			   TEXT*	arg1,
-			   TEXT*	arg2,
-			   TEXT*	arg3,
-			   TEXT*	arg4,
-			   TEXT*	arg5)
+			   const TEXT*	arg1,
+			   const TEXT*	arg2,
+			   const TEXT*	arg3,
+			   const TEXT*	arg4,
+			   const TEXT*	arg5)
 {
 /**************************************
  *
@@ -209,12 +210,7 @@ void DYN_error(USHORT	status_flag,
  *	DDL failed.
  *
  **************************************/
-	TDBB tdbb;
-	ISC_STATUS_ARRAY local_status;
-	ISC_STATUS *v1, *v2, *end, arg;
-
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	if (tdbb->tdbb_status_vector[1] == gds_no_meta_update)
 		return;
@@ -226,7 +222,8 @@ void DYN_error(USHORT	status_flag,
 						sizeof(TEXT) * BUFFER_MEDIUM, error_buffer, arg1,
 						arg2, arg3, arg4, arg5);
 
-	v1 = local_status;
+	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS* v1 = local_status;
 
 	*v1++ = gds_arg_gds;
 	*v1++ = gds_no_meta_update;
@@ -237,11 +234,12 @@ void DYN_error(USHORT	status_flag,
 		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
 	}
 	if (status_flag) {
-		v2 = tdbb->tdbb_status_vector;
+		ISC_STATUS* v2 = tdbb->tdbb_status_vector;
 
 		/* check every other argument for end of vector */
 
-		end = local_status + sizeof(local_status) - 1;
+		ISC_STATUS arg;
+		ISC_STATUS* const end = local_status + sizeof(local_status) - 1;
 		while (v1 < end &&
 			   ((arg = *v2++) != gds_arg_cstring || v1 + 1 < end) &&
 			   (*v1++ = arg)) {
@@ -251,20 +249,21 @@ void DYN_error(USHORT	status_flag,
 		}
 	}
 	*v1 = gds_arg_end;
-	end = v1 + 1;
+	ISC_STATUS* const end = v1 + 1;
 
-	for (v1 = local_status, v2 = tdbb->tdbb_status_vector; v1 < end;)
-		*v2++ = *v1++;
+	ISC_STATUS* dest;
+	for (v1 = local_status, dest = tdbb->tdbb_status_vector; v1 < end;)
+		*dest++ = *v1++;
 }
 
 
 void DYN_error_punt(USHORT	status_flag,
 					USHORT	number,
-					TEXT*	arg1,
-					TEXT*	arg2,
-					TEXT*	arg3,
-					TEXT*	arg4,
-					TEXT*	arg5)
+					const TEXT*	arg1,
+					const TEXT*	arg2,
+					const TEXT*	arg3,
+					const TEXT*	arg4,
+					const TEXT*	arg5)
 {
 /**************************************
  *
@@ -282,8 +281,8 @@ void DYN_error_punt(USHORT	status_flag,
 }
 
 
-BOOLEAN DYN_is_it_sql_role(GBL		gbl,
-						   TEXT*	input_name,
+bool DYN_is_it_sql_role(GBL		gbl,
+						   const TEXT*	input_name,
 						   TEXT*	output_name,
 						   TDBB		tdbb)
 {
@@ -295,26 +294,21 @@ BOOLEAN DYN_is_it_sql_role(GBL		gbl,
  *
  * Functional description
  *
- *	If input_name is found in RDB$ROLES, then returns TRUE. Otherwise
- *    returns FALSE.
+ *	If input_name is found in RDB$ROLES, then returns true. Otherwise
+ *    returns false.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	BOOLEAN found;
-	USHORT major_version, minor_original;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
-	found = FALSE;
+	USHORT major_version = dbb->dbb_ods_version;
+	USHORT minor_original = dbb->dbb_minor_original;
+	bool found = false;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 		return found;
 
-	request = (BLK) CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$ROLES WITH
@@ -322,7 +316,7 @@ BOOLEAN DYN_is_it_sql_role(GBL		gbl,
 			if (!DYN_REQUEST(drq_get_role_nm))
 				DYN_REQUEST(drq_get_role_nm) = request;
 
-		found = TRUE;
+		found = true;
 		DYN_terminate(X.RDB$OWNER_NAME, sizeof(X.RDB$OWNER_NAME));
 		strcpy(output_name, X.RDB$OWNER_NAME);
 
@@ -641,14 +635,13 @@ USHORT DYN_get_string(TEXT ** ptr, TEXT * field, USHORT size, USHORT err_flag)
  *	Strings need enough space for null pad.
  *
  **************************************/
-	TEXT *p;
-	USHORT l, e, length;
-
-	e = 0;
-	p = *ptr;
-	length = (UCHAR) * p++;
+	USHORT e = 0;
+	TEXT* p = *ptr;
+	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-	if ( (l = length) ) {
+	
+	USHORT l = length;
+	if (l) {
 		if (length >= size) {
 			if (err_flag)
 				DYN_error_punt(FALSE, 159, NULL, NULL, NULL, NULL, NULL);
@@ -683,15 +676,10 @@ USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
  *	Write out a blr blob.
  *
  **************************************/
-	TDBB	tdbb;
-	BLB		blob;
-	USHORT	length;
-	UCHAR*	p;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	p = *ptr;
-	length = *p++;
+	UCHAR *p = *ptr;
+	USHORT length = *p++;
 	length |= (*p++) << 8;
 
 	if (!length) {
@@ -700,7 +688,7 @@ USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, GDS__QUAD* blob_id)
 	}
 
 	try {
-		blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
+		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
@@ -726,24 +714,22 @@ USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, GDS__QUAD * blob_id)
  *	Write out a text blob.
  *
  **************************************/
-	TDBB tdbb;
-	USHORT length;
-	UCHAR *p, *end;
-	BLB blob;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	p = *ptr;
-	length = *p++;
+	UCHAR* p = *ptr;
+	USHORT length = *p++;
 	length |= (*p++) << 8;
 
 	if (!length) {
 		*ptr = p;
 		return length;
 	}
+	
+	// make the code die at some place if DYN_error_punt doesn't jump far away.
+	UCHAR *end = NULL;
 
 	try {
-		blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
+		BLB blob = BLB_create(tdbb, gbl->gbl_transaction, (BID)blob_id);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
 		{
@@ -805,11 +791,8 @@ USHORT DYN_skip_attribute(UCHAR ** ptr)
  *	size of count bytes).
  *
  **************************************/
-	UCHAR *p;
-	USHORT length;
-
-	p = *ptr;
-	length = *p++;
+	UCHAR* p = *ptr;
+	USHORT length = *p++;
 	length |= (*p++) << 8;
 	*ptr = p + length;
 
@@ -830,10 +813,8 @@ void DYN_terminate( TEXT * string, int length)
  *	terminated with a NULL.
  *
  **************************************/
-	TEXT *p, *q;
-
-	q = string - 1;
-	for (p = string; *p && --length; p++) {
+	TEXT* q = string - 1;
+	for (TEXT* p = string; *p && --length; p++) {
 		if (*p != BLANK)
 			q = p;
 	}
@@ -855,8 +836,6 @@ static void grant( GBL gbl, UCHAR ** ptr)
  *
  **************************************/
 
-	BLK request;
-	//volatile SSHORT err_num;
 	volatile SSHORT id;
 	TEXT privileges[16];
 	TEXT object[32];
@@ -872,8 +851,8 @@ static void grant( GBL gbl, UCHAR ** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	USHORT major_version  = (SSHORT) dbb->dbb_ods_version;
-	USHORT minor_original = (SSHORT) dbb->dbb_minor_original;
+	USHORT major_version  = dbb->dbb_ods_version;
+	USHORT minor_original = dbb->dbb_minor_original;
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
@@ -994,6 +973,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 		}
 	}
 
+	BLK request = NULL;
 
 	try {
 
@@ -1177,10 +1157,10 @@ do_punt:	// ugly, rethink logic of this function
 
 
 static bool grantor_can_grant(	GBL		gbl,
-								TEXT*	grantor,
-								TEXT*	privilege,
-								TEXT*	relation_name,
-								TEXT*	field_name,
+								const TEXT*	grantor,
+								const TEXT*	privilege,
+								const TEXT*	relation_name,
+								const TEXT*	field_name,
 								bool	top_level)
 {
 /**************************************
@@ -1194,40 +1174,28 @@ static bool grantor_can_grant(	GBL		gbl,
  *		FALSE otherwise.
  *
  **************************************/
-
-	TDBB tdbb;
-	DBB dbb;
-/* Remember the grant option for non field-specific user-privileges, and the
-   grant option for the user-privileges for the input field.
-   -1 = no privilege found (yet)
-   0 = privilege without grant option found
-   1 = privilege with grant option found */
-	SSHORT go_rel = -1;
-	SSHORT go_fld = -1;
-	BLK request;
-	BOOLEAN sql_relation = FALSE;
-	BOOLEAN relation_exists = FALSE;
-	BOOLEAN field_exists = FALSE;
-	BOOLEAN grantor_is_owner = FALSE;
 	volatile USHORT err_num;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Verify that the input relation exists. */
 
-	request = (BLK) CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
 
 
 	try {
 
 	err_num = 182;				/* for the longjump */
+	bool sql_relation = false;
+	bool relation_exists = false;
 /* SELECT RDB$RELATIONS failed in grant */
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
-			REL.RDB$RELATION_NAME = relation_name relation_exists = TRUE;
+			REL.RDB$RELATION_NAME = relation_name
+		relation_exists = true;
 		if ((!REL.RDB$FLAGS.NULL) && (REL.RDB$FLAGS & REL_sql))
-			sql_relation = TRUE;
+			sql_relation = true;
 		if (!DYN_REQUEST(drq_gcg4))
 			DYN_REQUEST(drq_gcg4) = request;
 	END_FOR;
@@ -1244,6 +1212,8 @@ static bool grantor_can_grant(	GBL		gbl,
 	if (field_name[0])
 	{
 		err_num = 183;
+		bool field_exists = false;
+		
 		/* SELECT RDB$RELATION_FIELDS failed in grant */
 		request = (BLK) CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1251,7 +1221,7 @@ static bool grantor_can_grant(	GBL		gbl,
 				G_FLD.RDB$RELATION_NAME = relation_name AND
 				G_FLD.RDB$FIELD_NAME = field_name if (!DYN_REQUEST(drq_gcg5))
 				DYN_REQUEST(drq_gcg5) = request;
-			field_exists = TRUE;
+			field_exists = true;
 		END_FOR;
 		if (!DYN_REQUEST(drq_gcg5))
 			DYN_REQUEST(drq_gcg5) = request;
@@ -1273,6 +1243,7 @@ static bool grantor_can_grant(	GBL		gbl,
    entries in the rdb$user_privileges table.  Give the owner of a GDML
    table all privileges. */
 	err_num = 184;
+	bool grantor_is_owner = false;
 /* SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant */
 
 	request = (BLK) CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
@@ -1282,13 +1253,22 @@ static bool grantor_can_grant(	GBL		gbl,
 			REL.RDB$OWNER_NAME = UPPERCASE(grantor)
 			if (!DYN_REQUEST(drq_gcg2))
 			DYN_REQUEST(drq_gcg2) = request;
-		grantor_is_owner = TRUE;
+		grantor_is_owner = true;
 	END_FOR;
 	if (!DYN_REQUEST(drq_gcg2))
 		DYN_REQUEST(drq_gcg2) = request;
 	if (!sql_relation && grantor_is_owner) {
 		return true;
 	}
+
+	// Remember the grant option for non field-specific user-privileges, and
+	// the grant option for the user-privileges for the input field.
+	// -1 = no privilege found (yet)
+	// 0 = privilege without grant option found
+	// 1 = privilege with grant option found
+	SSHORT go_rel = -1;
+	SSHORT go_fld = -1;
+
 
 /* Verify that the grantor has the grant option for this relation/field
    in the rdb$user_privileges.  If not, then we don't need to look further. */
@@ -1460,8 +1440,8 @@ static bool grantor_can_grant(	GBL		gbl,
 
 static bool grantor_can_grant_role(	TDBB	tdbb,
 									GBL		gbl,
-									TEXT*	grantor,
-									TEXT*	role_name)
+									const TEXT* grantor,
+									const TEXT* role_name)
 {
 /**************************************
  *
@@ -1574,47 +1554,38 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
  *	1994-August-2 Rich Damon & David Schnepper
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	//BLK old_request;
 	volatile USHORT old_id, id;
 	UCHAR verb;
-	SSHORT user_type, obj_type;
-	TEXT privileges[16], object[32], field[32], user[32], *p, *q, temp[2];
-	USHORT all_privs = FALSE;
-	int options;
-	USHORT grant_erased;
-	USR revoking_user;
+	TEXT privileges[16], object[32], field[32], user[32], temp[2];
 	TEXT revoking_user_name[32], dummy_name[32];
 	//TEXT grantor[32], *ptr2;
-        TEXT *ptr1;
-	USHORT major_version, minor_original;
+    TEXT *ptr1;
 
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	major_version = (SSHORT) dbb->dbb_ods_version;
-	minor_original = (SSHORT) dbb->dbb_minor_original;
+	USHORT major_version = dbb->dbb_ods_version;
+	USHORT minor_original = dbb->dbb_minor_original;
 
 /* Stash away a copy of the revoker's name, in uppercase form */
 
-	revoking_user = tdbb->tdbb_attachment->att_user;
-	for (p = revoking_user->usr_user_name, q = revoking_user_name; *p;
-		 p++, q++)
+	const usr* revoking_user = tdbb->tdbb_attachment->att_user;
+	TEXT* q = revoking_user_name;
+	for (const TEXT* p = revoking_user->usr_user_name; *p; p++, q++)
 		*q = UPPER7(*p);
 	*q = 0;
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
 		strcpy(privileges, ALL_PRIVILEGES);
-		all_privs = TRUE;
 	}
 
 	object[0] = field[0] = user[0] = 0;
-	obj_type = user_type = -1;
-	options = 0;
+
+	int options = 0;
+	SSHORT user_type = -1;
+	SSHORT obj_type = -1;
 
 	while ((verb = *(*ptr)++) != gds_dyn_end)
 		switch (verb) {
@@ -1718,7 +1689,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 			DYN_unsupported_verb();
 		}
 
-	request = (BLK)CMP_find_request(tdbb,
+	BLK request = (BLK)CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
 						DYN_REQUESTS);
 	id = field[0] ? drq_e_grant1 : drq_e_grant2;
@@ -1726,9 +1697,9 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 	try {
 
 	temp[1] = 0;
-	for (p = privileges; (temp[0] = *p); p++)
+	for (const TEXT* pr = privileges; (temp[0] = *pr); pr++)
 	{
-		grant_erased = FALSE;
+		bool grant_erased = false;
 
 		if (field[0])
 		{
@@ -1748,7 +1719,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 					(!strcmp(PRIV.RDB$GRANTOR, revoking_user_name)))
 				{
 					ERASE PRIV;
-					grant_erased = TRUE;
+					grant_erased = true;
 				};
 
 			END_FOR;
@@ -1778,7 +1749,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 				if ((revoking_user->usr_flags & USR_locksmith) ||
 					(!strcmp(PRIV.RDB$GRANTOR, revoking_user_name))) {
 					ERASE PRIV;
-					grant_erased = TRUE;
+					grant_erased = true;
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant2))
@@ -1829,7 +1800,7 @@ static void revoke_permission(GBL gbl, UCHAR ** ptr)
 }
 
 
-static void set_field_class_name(GBL gbl, TEXT * relation, TEXT	* field)
+static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* field)
 {
 /**************************************
  *
@@ -1842,17 +1813,13 @@ static void set_field_class_name(GBL gbl, TEXT * relation, TEXT	* field)
  *      field has a unique class name.
  *
  **************************************/
-	BLK	request, request2 = NULL;
-	BOOLEAN	unique = FALSE;
-	TDBB tdbb;
-	DBB	dbb;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-
-	request = (BLK) CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
+	BLK request2 = NULL;
+	
+	bool unique = false;
 
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS 
@@ -1867,12 +1834,12 @@ static void set_field_class_name(GBL gbl, TEXT * relation, TEXT	* field)
 			DPM_gen_id(tdbb, 
 				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 0, (SINT64) 1));
 
-			unique = TRUE;
+			unique = true;
 			request2 = (BLK) CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
 			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				RFR1 IN RDB$RELATION_FIELDS 
 				WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
-				unique = FALSE;
+				unique = false;
 			END_FOR;
 	    }
 
@@ -1891,10 +1858,10 @@ static void set_field_class_name(GBL gbl, TEXT * relation, TEXT	* field)
 
 
 static void store_privilege(GBL		gbl,
-							TEXT*	object,
-							TEXT*	user,
-							TEXT*	field,
-							TEXT*	privilege,
+							const TEXT*	object,
+							const TEXT*	user,
+							const TEXT*	field,
+							const TEXT*	privilege,
 							SSHORT	user_type,
 							SSHORT	obj_type,
 							int		option)
@@ -1910,14 +1877,10 @@ static void store_privilege(GBL		gbl,
  *	routine should not.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	request = (BLK) CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 
 /* need to unwind our own request here!! SM 27-Sep-96 */
 
@@ -1949,3 +1912,4 @@ static void store_privilege(GBL		gbl,
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
 	}
 }
+

@@ -119,14 +119,12 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
  *	Generate a unique id using a generator.
  *
  **************************************/
-	DBB dbb;
-	JRD_REQ req_handle;
 	SINT64 value;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
+	JRD_REQ req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
 	if (!req_handle)
 	{
@@ -170,19 +168,19 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
  *	Generate a name unique to RDB$RELATION_CONSTRAINTS.
  *
  **************************************/
-	DBB dbb;
 	volatile BLK request;
-	USHORT found;
 	volatile SSHORT id;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
 
 	try {
 
+	bool found = false;
+	
 	do {
 		id = drq_g_nxt_con;
 		sprintf(buffer, "INTEG_%" QUADFORMAT "d",
@@ -195,14 +193,14 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 X IN RDB$RELATION_CONSTRAINTS
 				WITH X.RDB$CONSTRAINT_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_con))
                 DYN_REQUEST(drq_f_nxt_con) = request;
-			found = TRUE;
+			found = true;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_con))
@@ -231,18 +229,18 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
  *	Generate a name unique to RDB$FIELDS.
  *
  **************************************/
-	DBB dbb;
 	volatile BLK request;
-	USHORT found;
 	volatile SSHORT id;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
-
+	
 	try {
+	
+	bool found = false;
 
 	do {
 		id = drq_g_nxt_fld;
@@ -256,13 +254,13 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_fld))
 				DYN_REQUEST(drq_f_nxt_fld) = request;
-			found = TRUE;
+			found = true;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_fld))
@@ -282,7 +280,8 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 void DYN_UTIL_generate_field_position(
 									  TDBB tdbb,
 									  GBL gbl,
-									  TEXT * relation_name, SLONG * field_pos)
+									  const TEXT* relation_name,
+									  SLONG * field_pos)
 {
 /**************************************
  *
@@ -294,7 +293,6 @@ void DYN_UTIL_generate_field_position(
  *	Generate a field position if not specified
  *
  **************************************/
-	DBB dbb;
 	volatile BLK request;
 	SLONG field_position = -1;
 
@@ -302,7 +300,7 @@ void DYN_UTIL_generate_field_position(
 		return;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 
@@ -347,19 +345,19 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
  *	Generate a name unique to RDB$INDICES.
  *
  **************************************/
-	DBB dbb;
 	volatile BLK request;
-	USHORT found;
 	volatile SSHORT id;
 	SCHAR *format;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
 
 	try {
+
+	bool found = false;
 
 	do {
 		if (verb == gds_dyn_def_primary_key)
@@ -379,13 +377,13 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_idx))
 				DYN_REQUEST(drq_f_nxt_idx) = request;
-			found = TRUE;
+			found = true;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_idx))
@@ -413,18 +411,18 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
  *	Generate a name unique to RDB$TRIGGERS.
  *
  **************************************/
-	DBB dbb;
 	volatile BLK request;
-	USHORT found;
 	volatile SSHORT id;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
 
 	try {
+	
+	bool found = false;
 
 	do {
 		id = drq_g_nxt_trg;
@@ -438,13 +436,13 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;
 
-		found = FALSE;
+		found = false;
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_trg))
 				DYN_REQUEST(drq_f_nxt_trg) = request;
-			found = TRUE;
+			found = true;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_trg))
@@ -533,11 +531,10 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
  * Functional description
  *
  **************************************/
-	DBB dbb;
 	volatile BLK request;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
@@ -560,3 +557,4 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
 	}
 }
+

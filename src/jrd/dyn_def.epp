@@ -115,10 +115,10 @@ static const UCHAR who_blr[] =
 };
 
 
-static void check_unique_name(TDBB, GBL, TEXT *, BOOLEAN);
-static BOOLEAN find_field_source(TDBB, GBL, TEXT *, USHORT, TEXT *, TEXT *);
-static BOOLEAN get_who(TDBB, GBL, SCHAR *);
-static BOOLEAN is_it_user_name(GBL, TEXT *, TDBB);
+static void check_unique_name(TDBB, GBL, const TEXT*, bool);
+static bool find_field_source(TDBB, GBL, const TEXT*, USHORT, const TEXT*, TEXT*);
+static bool get_who(TDBB, GBL, SCHAR *);
+static bool is_it_user_name(GBL, const TEXT*, TDBB);
 
 
 
@@ -146,15 +146,13 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
  *	Define a database cache file.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	UCHAR verb;
 	volatile BLK request;
 	USHORT found = FALSE;
 	volatile SSHORT id;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	request = NULL;
 
 	try {
@@ -249,10 +247,7 @@ void DYN_define_constraint(GBL		gbl,
  *	constraint, also an index for the constraint.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request;
-	BLK old_request;
 	volatile SSHORT id, old_id;
 	UCHAR verb;
 	TEXT constraint_name[32], index_name[32], referred_index_name[32];
@@ -263,8 +258,8 @@ void DYN_define_constraint(GBL		gbl,
 	USHORT found, primary_flag = FALSE, foreign_flag = FALSE, not_null;
 	UCHAR ri_action = 0;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	constraint_name[0] = 0;
 	GET_STRING(ptr, constraint_name);
@@ -530,6 +525,8 @@ void DYN_define_constraint(GBL		gbl,
 
 		request = (BLK) CMP_find_request(tdbb, drq_s_ref_con, DYN_REQUESTS);
 		id = drq_s_ref_con;
+		
+		BLK old_request = NULL;
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REF IN RDB$REF_CONSTRAINTS
@@ -803,8 +800,6 @@ void DYN_define_file(GBL		gbl,
  *	Define a database or shadow file.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	UCHAR verb;
 	volatile BLK request;
 	SLONG temp;
@@ -812,8 +807,8 @@ void DYN_define_file(GBL		gbl,
 	TEXT temp_f1[MAXPATHLEN], temp_f[MAXPATHLEN];
 	volatile SSHORT id;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 
@@ -913,14 +908,12 @@ void DYN_define_difference(GBL		gbl,
  *	Define backup difference file.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request;
 	USHORT found = FALSE;
 	volatile SSHORT id;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 	request = NULL;
 
 	try {
@@ -1191,13 +1184,11 @@ void DYN_define_function_arg(GBL gbl, UCHAR** ptr, TEXT* function_name)
  *	Define a user defined function argument.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	UCHAR verb;
 	volatile BLK request = NULL;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	try {
 
@@ -1637,7 +1628,6 @@ void DYN_define_index(GBL		gbl,
  **************************************/
 
 	volatile BLK request;
-	BLK old_request;
 	volatile SSHORT id, old_id;
 	const size_t field_name_size = 32;
 	TEXT index_name[32];
@@ -1682,6 +1672,8 @@ void DYN_define_index(GBL		gbl,
 
 	referenced_relation[0] = 0;
 	key_length = 0;
+	BLK old_request = NULL;
+	
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES 
         IDX.RDB$UNIQUE_FLAG.NULL = TRUE;
@@ -2196,10 +2188,7 @@ void DYN_define_local_field(GBL		gbl,
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request;
-	BLK old_request;
 	volatile SSHORT id, old_id;
 	UCHAR verb, *blr;
 	TEXT local_field_name[32];
@@ -2211,8 +2200,8 @@ void DYN_define_local_field(GBL		gbl,
 	TEXT *source;
 	SLONG fld_pos;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	local_field_name[0] = 0;
 	GET_STRING(ptr, local_field_name);
@@ -2414,7 +2403,7 @@ void DYN_define_local_field(GBL		gbl,
 		}
 
 		if (blr) {
-			old_request = request;
+			BLK old_request = request;
 			old_id = id;
 			request =
 				(BLK) CMP_find_request(tdbb, drq_s_gfields2, DYN_REQUESTS);
@@ -2519,16 +2508,14 @@ void DYN_define_log_file(
  *	Define a database or shadow file.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	UCHAR verb;
 	volatile BLK request;
 	USHORT found = FALSE;
 	volatile SSHORT id;
 	STR db_filename;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
@@ -2649,8 +2636,6 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	UCHAR verb;
 	TEXT parameter_name[32];
 	volatile BLK request;
@@ -2662,8 +2647,8 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	parameter_name[0] = 0;
 	GET_STRING(ptr, parameter_name);
@@ -2879,16 +2864,14 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request;
 	UCHAR verb;
 	USHORT sql_prot;
 	volatile SSHORT id;
 	TEXT procedure_name[PROC_NAME_SIZE], owner_name[32], *p;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	procedure_name[0] = 0;
 	GET_STRING(ptr, procedure_name);
@@ -2905,7 +2888,7 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 	try {
 
 	id = drq_l_prc_name;
-	check_unique_name(tdbb, gbl, procedure_name, TRUE);
+	check_unique_name(tdbb, gbl, procedure_name, true);
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
@@ -2975,7 +2958,7 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 		DYN_REQUEST(drq_s_prcs) = request;
 
 	if (sql_prot) {
-		if (get_who(tdbb, gbl, owner_name))
+		if (!get_who(tdbb, gbl, owner_name))
 			DYN_error_punt(TRUE, 134, NULL, NULL, NULL, NULL, NULL);
 		/* msg 134: "STORE RDB$PROCEDURES failed" */
 
@@ -3039,18 +3022,15 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request;
-	BLK old_request;
 	UCHAR verb;
 	USHORT sql_prot, is_a_view, priv;
 	volatile SSHORT id, old_id;
 	ISC_STATUS *s;
 	TEXT relation_name[32], owner_name[32], field_name[32], *p;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	sql_prot = is_a_view = FALSE;
 
@@ -3070,7 +3050,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 	try {
 
 	id = drq_l_rel_name;
-	check_unique_name(tdbb, gbl, relation_name, FALSE);
+	check_unique_name(tdbb, gbl, relation_name, false);
 	request = (BLK) CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
 	id = drq_s_rels;
 
@@ -3148,12 +3128,12 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 			}
 
 		if (sql_prot) {
-			if (get_who(tdbb, gbl, owner_name))
+			if (!get_who(tdbb, gbl, owner_name))
 				DYN_error_punt(TRUE, 115, NULL, NULL, NULL, NULL, NULL);
 			/* msg 115: "CREATE VIEW failed" */
 
 			if (is_a_view) {
-				old_request = request;
+				BLK old_request = request;
 				old_id = id;
 				request =
 					(BLK) CMP_find_request(tdbb, drq_l_view_rels,
@@ -3271,13 +3251,11 @@ void DYN_define_role( GBL gbl, UCHAR ** ptr)
  *     ROLES cannot be named the same as any existing user name 
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request = NULL;
 	TEXT dummy_name[32], owner_name[32], role_name[32], *p;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	if (private_getODS() < ODS_9_0)
 	{
@@ -3456,18 +3434,15 @@ void DYN_define_sql_field(GBL		gbl,
  *	an global field name.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
 	volatile BLK request;
-	BLK old_request;
 	volatile SSHORT id, old_id;
 	UCHAR verb;
 	TEXT sql_field_name[32];
 	USHORT dtype;
 	SLONG fld_pos;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	sql_field_name[0] = 0;
 	GET_STRING(ptr, sql_field_name);
@@ -3484,6 +3459,7 @@ void DYN_define_sql_field(GBL		gbl,
 
 	request = (BLK) CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
 	id = drq_s_sql_lfld;
+	BLK old_request = NULL;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS 
@@ -4158,8 +4134,8 @@ void DYN_define_view_relation( GBL gbl, UCHAR ** ptr, TEXT * view)
 
 static void check_unique_name(	TDBB	tdbb,
 								GBL		gbl,
-								TEXT*	object_name,
-								BOOLEAN	proc_flag)
+								const TEXT*	object_name,
+								bool	proc_flag)
 {
 /**************************************
  *
@@ -4234,12 +4210,12 @@ local_punt_false_132:
 }
 
 
-static BOOLEAN find_field_source(TDBB	tdbb,
+static bool find_field_source(TDBB	tdbb,
 								 GBL	gbl,
-								 TEXT*	view_name,
+								 const TEXT* view_name,
 								 USHORT	context,
-								 TEXT*	local_name,
-								 TEXT*	field_name)
+								 const TEXT* local_name,
+								 TEXT* output_field_name)
 {
 /**************************************
  *
@@ -4253,7 +4229,6 @@ static BOOLEAN find_field_source(TDBB	tdbb,
  **************************************/
 
 	volatile BLK request;
-	BOOLEAN found;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -4267,8 +4242,9 @@ circumstances, it will return either TRUE or FALSE. When TRUE, we found a field 
 for the view's name/context/field and are loading this value in the last parameter,
 that can be used against rdb$fields' rdb$field_name. */
 
+	bool found = false;
+	
 	try {
-		found = FALSE;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS CROSS
 				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
@@ -4280,9 +4256,9 @@ that can be used against rdb$fields' rdb$field_name. */
 				DYN_REQUEST(drq_l_fld_src2) = request;
 			}
 
-			found = TRUE;
+			found = true;
 			DYN_terminate(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
-			strcpy(field_name, RFR.RDB$FIELD_SOURCE);
+			strcpy(output_field_name, RFR.RDB$FIELD_SOURCE);
 		END_FOR;
 		if (!DYN_REQUEST(drq_l_fld_src2)) {
 			DYN_REQUEST(drq_l_fld_src2) = request;
@@ -4298,7 +4274,7 @@ that can be used against rdb$fields' rdb$field_name. */
 }
 
 
-static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
+static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
 {
 /**************************************
  *
@@ -4322,20 +4298,20 @@ static BOOLEAN get_who( TDBB tdbb, GBL gbl, SCHAR * name)
 			request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
 		}
 		EXE_start(tdbb, (JRD_REQ) request, gbl->gbl_transaction);
-		EXE_receive(tdbb, (JRD_REQ) request, 0, 32, (UCHAR*)name);
+		EXE_receive(tdbb, (JRD_REQ) request, 0, 32, (UCHAR*) output_name);
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}
 	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_l_user_name);
-		return FB_FAILURE;
+		return false;
 	}
 
-	return FB_SUCCESS;
+	return true;
 }
 
 
-BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
+bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
 {
 /**************************************
  *
@@ -4350,11 +4326,11 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
  **************************************/
 
 	volatile BLK request;
-	BOOLEAN found = FALSE;
 	volatile USHORT request_id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
+	bool found = false;
 
 	try {
 
@@ -4370,7 +4346,7 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
 				(PRIV.RDB$GRANTOR EQ role_name AND
 				 PRIV.RDB$OBJECT_TYPE = obj_relation)
 
-				found = TRUE;
+				found = true;
 
 		END_FOR;
 
@@ -4391,7 +4367,7 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
 			REL IN RDB$RELATIONS WITH
 				REL.RDB$OWNER_NAME EQ role_name 
 
-			found = TRUE;
+			found = true;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_get_rel_owner)) {
@@ -4407,3 +4383,4 @@ BOOLEAN is_it_user_name(GBL gbl, TEXT* role_name, TDBB tdbb)
 
 	return found;
 }
+

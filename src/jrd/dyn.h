@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef	_JRD_DYN_H_
-#define _JRD_DYN_H_
+#ifndef	JRD_DYN_H
+#define JRD_DYN_H
 
 #define ALL_PRIVILEGES		"SIUDR"
 		/* all applicable grant/revoke privileges */
@@ -69,15 +69,17 @@ typedef struct dyn_fld {
 
 } *DYN_FLD;
 
-extern void DYN_error(USHORT, USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void DYN_error_punt(USHORT, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
-						   TEXT *);
+extern void DYN_error(USHORT, USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+extern void DYN_error_punt(USHORT, USHORT, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*, const TEXT*);
 extern void DYN_execute(GBL, UCHAR **, TEXT *, TEXT *, TEXT *, TEXT *,
 						TEXT *);
 extern SLONG DYN_get_number(UCHAR **);
 extern USHORT DYN_get_string(TEXT **, TEXT *, USHORT, USHORT);
 extern void DYN_get_string2(TEXT **, TEXT *, USHORT);
-extern BOOLEAN DYN_is_it_sql_role(GBL, TEXT *, TEXT *, TDBB);
+// This function doesn't need to be exported currently.
+extern bool DYN_is_it_sql_role(GBL, const TEXT*, TEXT*, TDBB);
 extern USHORT DYN_put_blr_blob(GBL, UCHAR **, GDS__QUAD *);
 extern USHORT DYN_put_blr_blob2(GBL, UCHAR **, GDS__QUAD *);
 extern USHORT DYN_put_text_blob(GBL, UCHAR **, GDS__QUAD *);
@@ -87,4 +89,5 @@ extern USHORT DYN_skip_attribute(UCHAR **);
 extern USHORT DYN_skip_attribute2(UCHAR **);
 extern void DYN_unsupported_verb(void);
 
-#endif /* _JRD_DYN_H_ */
+#endif /* JRD_DYN_H */
+

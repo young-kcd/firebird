@@ -759,7 +759,8 @@ static ISC_STATUS error(ISC_STATUS * status_vector,
 	*status_vector++ = gds_arg_string;
 	*status_vector++ = (ISC_STATUS) string;
 	*status_vector++ = gds_arg_vms;
-	*status_vector++ = status; *status_vector++ = gds_arg_end;
+	*status_vector++ = status;
+	*status_vector++ = gds_arg_end;
 	return gds__sys_request;
 }
 
@@ -974,3 +975,4 @@ static int return_ok(ISC_STATUS * status_vector)
 	*status_vector = gds_arg_end; 
 	return 0;
 }
+

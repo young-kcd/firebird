@@ -85,7 +85,7 @@ DATABASE DB = STATIC "ODS.RDB";
 #define MAX_CHARS_DOUBLE	22	/* 15 digits + 2 signs + E + decimal + 3 digit exp */
 #define MAX_CHARS_FLOAT		13	/* 7 digits + 2 signs + E + decimal + 2 digit exp */
 
-static UCHAR alloc_info[] = { gds_info_allocation, gds_info_end };
+static const UCHAR alloc_info[] = { gds_info_allocation, gds_info_end };
 static void drop_cache(GBL);
 static void change_backup_mode(GBL, UCHAR verb);
 static void drop_log(GBL);
@@ -93,16 +93,17 @@ static void drop_log(GBL);
 // Function not defined in this file MOD 04-July-2002
 // static void modify_lfield_type(GBL, UCHAR **, TEXT *, TEXT *);
 
-static void modify_lfield_position(TDBB, DBB, GBL, TEXT *, TEXT *, USHORT,
-								   USHORT);
-static BOOLEAN check_view_dependency(TDBB, DBB, GBL, TEXT *, TEXT *);
-static BOOLEAN check_sptrig_dependency(TDBB, DBB, GBL, TEXT *, TEXT *);
-static void modify_lfield_index(TDBB, DBB, GBL, TEXT *, TEXT *, TEXT *);
-static BOOLEAN field_exists(TDBB, DBB, GBL, TEXT *, TEXT *);
-static BOOLEAN domain_exists(TDBB, DBB, GBL, TEXT *);
+static void modify_lfield_position(TDBB, DBB, GBL, const TEXT*, const TEXT*,
+	USHORT, USHORT);
+static bool check_view_dependency(TDBB, DBB, GBL, const TEXT*, const TEXT*);
+static bool check_sptrig_dependency(TDBB, DBB, GBL, const TEXT*, const TEXT*);
+static void modify_lfield_index(TDBB, DBB, GBL, const TEXT*, const TEXT*,
+	const TEXT*);
+static bool field_exists(TDBB, DBB, GBL, const TEXT*, const TEXT*);
+static bool domain_exists(TDBB, DBB, GBL, const TEXT*);
 static void get_domain_type(TDBB, DBB, GBL, DYN_FLD);
-static ULONG check_update_fld_type(DYN_FLD, DYN_FLD);
-static void modify_err_punt(TDBB, ULONG, DYN_FLD, DYN_FLD);
+static ULONG check_update_fld_type(const dyn_fld*, const dyn_fld*);
+static void modify_err_punt(TDBB, ULONG, const dyn_fld*, const dyn_fld*);
 
 
 void DYN_modify_database( GBL gbl, UCHAR ** ptr)
@@ -117,9 +118,6 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
  *	Modify a database.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	SSHORT length;
 	SLONG start;
 	UCHAR verb, s[128];
@@ -131,10 +129,10 @@ void DYN_modify_database( GBL gbl, UCHAR ** ptr)
 	USHORT first_log_file = TRUE;
 #endif
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	BLK request = NULL;
 
 	try {
 
@@ -278,30 +276,27 @@ void DYN_modify_exception( GBL gbl, UCHAR ** ptr)
  *	Modify an exception.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found;
 	UCHAR verb;
 	TEXT t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
 	GET_STRING(ptr, t);
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$EXCEPTIONS
 			WITH X.RDB$EXCEPTION_NAME EQ t
 
         if (!DYN_REQUEST(drq_m_xcp)) DYN_REQUEST(drq_m_xcp) = request;
 
-		found = TRUE;
+		found = true;
 		MODIFY X
 			while ((verb = *(*ptr)++) != gds_dyn_end)
 				switch (verb) {
@@ -350,10 +345,8 @@ void DYN_modify_global_field(
  * Note: a global field here is a SQL domain.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request, old_request;
-	USHORT found, single_validate = FALSE;
+	BLK old_request;
+	USHORT single_validate = FALSE;
 	UCHAR verb;
 	DYN_FLD orig_dom, new_dom;
 	BOOLEAN dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
@@ -369,8 +362,8 @@ void DYN_modify_global_field(
 	SSHORT field_adjusted_count = 0;
 	TEXT *err_one_type_change_only = "Only one data type change to the domain allowed at a time";
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	dtype = scale = prec = subtype = charlen = collation = fldlen = nullflg =
 		charset = FALSE;
@@ -380,7 +373,8 @@ void DYN_modify_global_field(
 		bdeldflt = bflddftval = bflddfltsrc = FALSE;
 
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
@@ -401,14 +395,14 @@ void DYN_modify_global_field(
 
 	GET_STRING(ptr, orig_dom->dyn_fld_name);
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ orig_dom->dyn_fld_name
 
         if (!DYN_REQUEST(drq_m_gfield))
             DYN_REQUEST(drq_m_gfield) = request;
 
-		found = TRUE;
+		found = true;
 
 		DSC_make_descriptor(&orig_dom->dyn_dsc,
 							FLD.RDB$FIELD_TYPE,
@@ -713,16 +707,15 @@ void DYN_modify_global_field(
 		 */
 
 		if (dtype) {
-			ULONG retval;
-
 			DSC_make_descriptor(&new_dom->dyn_dsc,
 								new_dom->dyn_dtype,
 								new_dom->dyn_dsc.dsc_scale,
 								new_dom->dyn_dsc.dsc_length,
 								new_dom->dyn_dsc.dsc_sub_type,
 								new_dom->dyn_charset, new_dom->dyn_collation);
-			if ((retval = check_update_fld_type(orig_dom, new_dom)) !=
-				FB_SUCCESS) modify_err_punt(tdbb, retval, orig_dom, new_dom);
+            ULONG retval = check_update_fld_type(orig_dom, new_dom);
+			if (retval != FB_SUCCESS)
+				modify_err_punt(tdbb, retval, orig_dom, new_dom);
 		}
 
 		MODIFY FLD USING
@@ -897,29 +890,26 @@ void DYN_modify_index( GBL gbl, UCHAR ** ptr)
  *	Modify an existing index
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found;
 	UCHAR verb;
 	TEXT name[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
 	GET_STRING(ptr, name);
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
 
         if (!DYN_REQUEST(drq_m_index)) DYN_REQUEST(drq_m_index) = request;
 
-		found = TRUE;
+		found = true;
 		MODIFY IDX USING
 			while ((verb = *(*ptr)++) != gds_dyn_end)
 				switch (verb) {
@@ -986,18 +976,15 @@ void DYN_modify_local_field(
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found, position, existing_position;
+	USHORT position, existing_position;
 	USHORT sfflag, qnflag, qhflag, esflag, dflag, system_flag, scflag, nnflag,
 		ntflag, npflag;
 	UCHAR verb;
 	TEXT f[32], r[32], *query_name, *query_header, *edit_string, *description,
 		*security_class, *new_name;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, f);
 	r[0] = 0;
@@ -1060,11 +1047,12 @@ void DYN_modify_local_field(
 			DYN_execute(gbl, ptr, relation_name, field_name, NULL, NULL, NULL);
 		}
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS
 			WITH FLD.RDB$FIELD_NAME EQ f AND FLD.RDB$RELATION_NAME EQ r
@@ -1072,7 +1060,7 @@ void DYN_modify_local_field(
         if (!DYN_REQUEST(drq_m_lfield))
             DYN_REQUEST(drq_m_lfield) = request;
 
-		found = TRUE;
+		found = true;
 
 		MODIFY FLD USING
 			if (npflag)
@@ -1175,31 +1163,28 @@ void DYN_modify_procedure( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	UCHAR verb;
-	USHORT found;
 	TEXT procedure_name[PROC_NAME_SIZE];
 
 	GET_STRING(ptr, procedure_name);
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = NULL;
+	BLK request = NULL;
+	bool found = false;
 
 	try {
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_prcs, DYN_REQUESTS);
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME = procedure_name
 
         if (!DYN_REQUEST(drq_m_prcs))
 			DYN_REQUEST(drq_m_prcs) = request;
-		found = TRUE;
+		found = true;
 
 		/* Set NULL flags to TRUE only for fields which must be specified in the DYN string.
 		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
@@ -1285,24 +1270,21 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
  *	Modify an existing relation
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found;
 	UCHAR verb;
 	TEXT name[32], field_name[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	field_name[0] = 0;
 	GET_STRING(ptr, name);
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ name
 
@@ -1311,7 +1293,7 @@ void DYN_modify_relation( GBL gbl, UCHAR ** ptr)
 
 		if (!REL.RDB$VIEW_BLR.NULL)
 			DYN_error_punt(FALSE, 177, NULL, NULL, NULL, NULL, NULL);
-		found = TRUE;
+		found = true;
 		MODIFY REL USING
 			while ((verb = *(*ptr)++) != gds_dyn_end)
 				switch (verb) {
@@ -1386,17 +1368,14 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
  *	Modify a trigger for a relation.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found;
 	UCHAR verb, *blr;
 	TEXT trigger_name[32], *source;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
@@ -1404,7 +1383,7 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 	source = NULL;
 	blr = NULL;
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name
 
@@ -1428,7 +1407,7 @@ void DYN_modify_trigger( GBL gbl, UCHAR ** ptr)
 			}
 		}
 */
-		found = TRUE;
+		found = true;
 		MODIFY X
 			while ((verb = *(*ptr)++) != gds_dyn_end)
 				switch (verb) {
@@ -1521,17 +1500,14 @@ void DYN_modify_trigger_msg( GBL gbl, UCHAR ** ptr, TEXT * trigger_name)
  *	Modify a trigger message.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	int number;
 	UCHAR verb;
 	TEXT t[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
 	try {
 
@@ -1594,15 +1570,11 @@ void DYN_modify_view( GBL gbl, UCHAR ** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
 	UCHAR verb;
-	USHORT found;
 	TEXT view_name[32];
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	view_name[0] = 0;
 	GET_STRING(ptr, view_name);
@@ -1611,12 +1583,15 @@ void DYN_modify_view( GBL gbl, UCHAR ** ptr)
 	if (!view_name[0])
 		DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
+	
+	BLK request = NULL;
+	bool found = false;
 
 	try {
 
 	request = (BLK) CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
 
-	found = FALSE;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		VRL IN RDB$VIEW_RELATIONS CROSS REL IN RDB$RELATIONS
 			WITH VRL.RDB$VIEW_NAME EQ REL.RDB$RELATION_NAME AND
@@ -1625,7 +1600,7 @@ void DYN_modify_view( GBL gbl, UCHAR ** ptr)
         if (!DYN_REQUEST(drq_m_relation))
 			DYN_REQUEST(drq_m_relation) = request;
 
-		found = TRUE;
+		found = true;
 		MODIFY REL
 			REL.RDB$SYSTEM_FLAG.NULL = TRUE;
 			REL.RDB$VIEW_BLR.NULL = TRUE;
@@ -1692,15 +1667,11 @@ static void drop_cache( GBL gbl)
  *	Drop the database cache
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found = FALSE;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	request = (BLK) CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
@@ -1708,7 +1679,7 @@ static void drop_cache( GBL gbl)
 		X IN RDB$FILES WITH X.RDB$FILE_FLAGS EQ FILE_cache 
 
         ERASE X;
-		found = TRUE;
+		found = true;
 
 	END_FOR;
 
@@ -1744,16 +1715,13 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
  *  begin or end backup
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found = FALSE;
 	bool invalid_state = false;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	request = (BLK) CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
@@ -1761,7 +1729,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 		X IN RDB$FILES
 
 		if (X.RDB$FILE_FLAGS & FILE_difference) {
-			found = TRUE;
+			found = true;
 			switch (verb) {
 			case gds_dyn_drop_difference:
 				ERASE X;
@@ -1860,15 +1828,11 @@ static void drop_log( GBL gbl)
  *	Delete all log files
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request;
-	USHORT found = FALSE;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
-
-	request = (BLK) CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
+	bool found = false;
 
 	try {
 
@@ -1876,7 +1840,7 @@ static void drop_log( GBL gbl)
 		X IN RDB$LOG_FILES 
 
         ERASE X;
-		found = TRUE;
+		found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_d_log))
@@ -1899,8 +1863,8 @@ static void drop_log( GBL gbl)
 static void modify_lfield_position(TDBB tdbb,
 								   DBB dbb,
 								   GBL gbl,
-								   TEXT * relation_name,
-								   TEXT * field_name,
+								   const TEXT* relation_name,
+								   const TEXT* field_name,
 								   USHORT new_position,
 								   USHORT existing_position)
 {
@@ -1931,13 +1895,11 @@ static void modify_lfield_position(TDBB tdbb,
  *
  ***********************************************************/
 	volatile BLK request = NULL;
-	USHORT new_pos = 0;
-	SLONG max_position = -1;
-	BOOLEAN move_down = FALSE;
 
 	try {
 
 /* Find the position of the last field in the relation */
+	SLONG max_position = -1;
 	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
 
 /* if the existing position of the field is less than the new position of
@@ -1945,8 +1907,9 @@ static void modify_lfield_position(TDBB tdbb,
  * increase the value in RDB$FIELD_POSITION by one
  */
 
+	bool move_down = false;
 	if (existing_position < new_position)
-		move_down = TRUE;
+		move_down = true;
 
 /* Retrieve the records for the fields which have a position between the
  * existing field position and the new field position
@@ -1988,7 +1951,7 @@ static void modify_lfield_position(TDBB tdbb,
  * duplicate field positions and no gaps in the position sequence (this can
  * not be guaranteed by the query above */
 
-	new_pos = 0;
+	USHORT new_pos = 0;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS WITH FLD.RDB$RELATION_NAME EQ relation_name
 			SORTED BY ASCENDING FLD.RDB$FIELD_POSITION
@@ -2009,10 +1972,11 @@ static void modify_lfield_position(TDBB tdbb,
 	}
 }
 
-static BOOLEAN check_view_dependency(TDBB tdbb,
+static bool check_view_dependency(TDBB tdbb,
 									 DBB dbb,
 									 GBL gbl,
-									 TEXT * relation_name, TEXT * field_name)
+									 const TEXT* relation_name,
+									 const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2021,12 +1985,13 @@ static BOOLEAN check_view_dependency(TDBB tdbb,
  *
  *  Functional Description:
  *	Checks to see if the given field is referenced in a view. If the field
- *	is referenced in a view, return TRUE, else return FALSE
+ *	is referenced in a view, return true, else return false
+ *  CVC: The function never has a chance to return true because it punts.
  *
  ***********************************************************/
 	BLK request = NULL;
-	BOOLEAN retval = FALSE;
-	TEXT *view_name;
+	bool retval = false;
+	TEXT *view_name = NULL;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
@@ -2039,7 +2004,7 @@ static BOOLEAN check_view_dependency(TDBB tdbb,
 			Y.RDB$RELATION_NAME EQ Z.RDB$VIEW_NAME AND
 			X.RDB$RELATION_NAME EQ Z.RDB$RELATION_NAME AND
 			Y.RDB$VIEW_CONTEXT EQ Z.RDB$VIEW_CONTEXT 
-        retval = TRUE;
+        retval = true;
 		view_name = Z.RDB$VIEW_NAME;
 	END_FOR;
 
@@ -2054,11 +2019,11 @@ static BOOLEAN check_view_dependency(TDBB tdbb,
 
 }
 
-static BOOLEAN check_sptrig_dependency(TDBB tdbb,
+static bool check_sptrig_dependency(TDBB tdbb,
 									   DBB dbb,
 									   GBL gbl,
-									   TEXT * relation_name,
-									   TEXT * field_name)
+									   const TEXT* relation_name,
+									   const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2067,19 +2032,19 @@ static BOOLEAN check_sptrig_dependency(TDBB tdbb,
  *
  *  Functional Description:
  *	Checks to see if the given field is referenced in a stored procedure
- *	or trigger.  If the field is refereneced, return TRUE, else return
- *	FALSE 
+ *	or trigger.  If the field is refereneced, return true, else return
+ *  false, but true causes the function to punt instead.
  ***********************************************************/
 	BLK request = NULL;
-	BOOLEAN retval = FALSE;
-	TEXT *dep_name;
+	bool retval = false;
+	TEXT *dep_name = NULL;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
 			DEP IN RDB$DEPENDENCIES WITH
 			DEP.RDB$DEPENDED_ON_NAME EQ relation_name AND
 			DEP.RDB$FIELD_NAME EQ field_name 
-        retval = TRUE;
+        retval = true;
 		dep_name = DEP.RDB$DEPENDENT_NAME;
 	END_FOR;
 
@@ -2096,9 +2061,9 @@ static BOOLEAN check_sptrig_dependency(TDBB tdbb,
 static void modify_lfield_index(TDBB	tdbb,
 								DBB		dbb,
 								GBL		gbl,
-								TEXT*	relation_name,
-								TEXT*	field_name,
-								TEXT*	new_fld_name)
+								const TEXT*	relation_name,
+								const TEXT*	field_name,
+								const TEXT*	new_fld_name)
 {
 /***********************************************************
  *
@@ -2133,9 +2098,11 @@ static void modify_lfield_index(TDBB	tdbb,
 	CMP_release(tdbb, (JRD_REQ)request);
 }
 
-static BOOLEAN field_exists(TDBB tdbb,
+static bool field_exists(TDBB tdbb,
 							DBB dbb,
-							GBL gbl, TEXT * relation_name, TEXT * field_name)
+							GBL gbl,
+							const TEXT* relation_name,
+							const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2146,20 +2113,20 @@ static BOOLEAN field_exists(TDBB tdbb,
  *	Checks to see if the given field already exists in a relation
  ***********************************************************/
 	BLK request = NULL;
-	BOOLEAN retval = FALSE;
+	bool retval = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS WITH
 			FLD.RDB$RELATION_NAME EQ relation_name AND
 			FLD.RDB$FIELD_NAME EQ field_name 
-        retval = TRUE;
+        retval = true;
 	END_FOR;
 
 	CMP_release(tdbb, (JRD_REQ)request);
 	return retval;
 }
 
-static BOOLEAN domain_exists(TDBB tdbb, DBB dbb, GBL gbl, TEXT * field_name)
+static bool domain_exists(TDBB tdbb, DBB dbb, GBL gbl, const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2170,11 +2137,11 @@ static BOOLEAN domain_exists(TDBB tdbb, DBB dbb, GBL gbl, TEXT * field_name)
  *	Checks to see if the given field already exists in a relation
  ***********************************************************/
 	BLK request = NULL;
-	BOOLEAN retval = FALSE;
+	bool retval = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ field_name 
-        retval = TRUE;
+        retval = true;
 	END_FOR;
 
 	CMP_release(tdbb, (JRD_REQ)request);
@@ -2229,11 +2196,8 @@ void DYN_modify_sql_field(GBL		gbl,
  *	produces a warning. This condition raises an error, too.
  *
  **************************************/
-	TDBB tdbb;
-	DBB dbb;
-	BLK request = NULL, first_request;
 	UCHAR verb;
-	BOOLEAN found = FALSE, update_domain = FALSE;
+	BOOLEAN update_domain = FALSE;
 	BOOLEAN dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
 	DYN_FLD orig_fld, new_fld, dom_fld;
@@ -2241,8 +2205,8 @@ void DYN_modify_sql_field(GBL		gbl,
 	SSHORT field_adjusted_count = 0;
 	TEXT *err_one_type_change_only = "Only one data type change to the field allowed at a time";
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 	try {
 
@@ -2274,13 +2238,17 @@ void DYN_modify_sql_field(GBL		gbl,
 	check_sptrig_dependency(tdbb, dbb, gbl, relation_name,
 							orig_fld->dyn_fld_name);
 
+	BLK request = NULL;
+	BLK first_request = NULL;
+	bool found = false;
+	
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$RELATION_NAME = relation_name
 			AND RFR.RDB$FIELD_NAME = orig_fld->dyn_fld_name
         first_request = request;
 		request = NULL;
 
-		found = TRUE;
+		found = true;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
@@ -2447,8 +2415,6 @@ void DYN_modify_sql_field(GBL		gbl,
 
 
 		if (update_domain) {
-			ULONG retval;
-
 			/* CVC: Since get_domain_type() called above already called DSC_make_descriptor,
 					there's no point in calling it again, since it will increment AGAIN the length
 					of varchar fields! This bug detected thanks to new check field dyn_charbytelen.
@@ -2460,8 +2426,9 @@ void DYN_modify_sql_field(GBL		gbl,
 								dom_fld->dyn_charset, dom_fld->dyn_collation);
 			*/
 
-			if ((retval = check_update_fld_type(orig_fld, dom_fld)) !=
-				FB_SUCCESS) modify_err_punt(tdbb, retval, orig_fld, dom_fld);
+			ULONG retval = check_update_fld_type(orig_fld, dom_fld);
+			if (retval != FB_SUCCESS)
+				modify_err_punt(tdbb, retval, orig_fld, dom_fld);
 
 			/* if the original definition was a base field type, remove the entries from RDB$FIELDS */
 			if (!strncmp(orig_fld->dyn_fld_source, "RDB$", 4)) {
@@ -2482,17 +2449,15 @@ void DYN_modify_sql_field(GBL		gbl,
 			first_request = request;
 		}
 		else {
-			ULONG retval;
-
 			DSC_make_descriptor(&new_fld->dyn_dsc,
 								new_fld->dyn_dtype,
 								new_fld->dyn_dsc.dsc_scale,
 								new_fld->dyn_dsc.dsc_length,
 								new_fld->dyn_dsc.dsc_sub_type,
 								new_fld->dyn_charset, new_fld->dyn_collation);
-
-			if ((retval = check_update_fld_type(orig_fld, new_fld)) !=
-				FB_SUCCESS) modify_err_punt(tdbb, retval, orig_fld, new_fld);
+			ULONG retval = check_update_fld_type(orig_fld, new_fld);
+			if (retval != FB_SUCCESS)
+				modify_err_punt(tdbb, retval, orig_fld, new_fld);
 
 			/* check to see if the original data type for the field was based on a domain.  If it
 			 * was (and now it isn't), remove the domain information and replace it with a generated
@@ -2668,7 +2633,7 @@ void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)
  **************************************
  *
  * Functional description
- *	Retrives the type information for a domain so
+ *	Retrieves the type information for a domain so
  *      that it can be compared to a local field before
  *      modifying the datatype of a field.
  *
@@ -2683,7 +2648,8 @@ void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)
 							FLD.RDB$FIELD_SCALE,
 							FLD.RDB$FIELD_LENGTH,
 							FLD.RDB$FIELD_SUB_TYPE,
-							FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID);
+							FLD.RDB$CHARACTER_SET_ID,
+							FLD.RDB$COLLATION_ID);
 
 		dom_fld->dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 		dom_fld->dyn_dtype = FLD.RDB$FIELD_TYPE;
@@ -2696,7 +2662,8 @@ void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)
 	CMP_release(tdbb, (JRD_REQ)request);
 }
 
-static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
+static ULONG check_update_fld_type(const dyn_fld* orig_fld,
+									const dyn_fld* new_fld)
 {
 /**************************************
  *
@@ -2755,12 +2722,11 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
 		case blr_varying:
 		case blr_cstring:
 			{
-				USHORT maxflen = 0;
 				/* CVC: Because our caller invoked DSC_make_descriptor() on new_fld previously,
 						we should have the added bytes for varchar. For cstring, we are used, since
 						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
 
-				maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
 				/* We can have this assertion since this case is for both string fields. */
 				assert(DSC_string_length(&new_fld->dyn_dsc) - maxflen
@@ -2818,9 +2784,7 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
 		case blr_cstring:
 		case blr_cstring2:
 			{
-				USHORT maxflen = 0;
-
-				maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
 				if (new_fld->dyn_dsc.dsc_length < maxflen)
 					return isc_dyn_char_fld_too_small;
@@ -2927,9 +2891,7 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
 		case blr_varying:
 		case blr_cstring:
 			{
-				USHORT maxflen = 0;
-
-				maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
 				if (new_fld->dyn_dsc.dsc_length < maxflen)
 					return isc_dyn_char_fld_too_small;
@@ -2952,7 +2914,8 @@ static ULONG check_update_fld_type(DYN_FLD orig_fld, DYN_FLD new_fld)
 
 static void modify_err_punt(TDBB tdbb,
 							ULONG errorcode,
-							DYN_FLD orig_fld_def, DYN_FLD new_fld_def)
+							const dyn_fld* orig_fld_def,
+							const dyn_fld* new_fld_def)
 {
 /**************************************
  *
@@ -3014,3 +2977,4 @@ static void modify_err_punt(TDBB tdbb,
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
 }
+

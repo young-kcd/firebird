@@ -42,7 +42,7 @@ extern "C" {
 /* When converting non-text values to text, how many bytes to allocate
    for holding the text image of the value.  */
 
-static USHORT const _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
+static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 {
 	0,							/* dtype_null */
 	0,							/* dtype_text */
@@ -764,7 +764,7 @@ void DLL_EXPORT DSC_make_descriptor(
 									USHORT blr_type,
 									SSHORT scale,
 									USHORT length,
-SSHORT sub_type, SSHORT charset, SSHORT collation)
+	SSHORT sub_type, SSHORT charset, SSHORT collation)
 {
 /**************************************
  *
@@ -883,23 +883,23 @@ SSHORT sub_type, SSHORT charset, SSHORT collation)
 }
 
 
-int DLL_EXPORT DSC_string_length(DSC* desc)
+int DLL_EXPORT DSC_string_length(const dsc* desc)
 {
-	/**************************************
-     *
-     *	D S C _ s t r i n g _ l e n g t h
-     *
-     **************************************
-     *
-     * Functional description
-     *	Estimate length of string (in bytes) based on descriptor.
-     *	Estimated length assumes representing string in 
-     *	narrow-char ASCII format.
-     *
-     *	Note that this strips off the short at the
-     *	start of dtype_varying, and the NULL for dtype_cstring.
-     *
-     **************************************/
+/**************************************
+ *
+ *	D S C _ s t r i n g _ l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Estimate length of string (in bytes) based on descriptor.
+ *	Estimated length assumes representing string in 
+ *	narrow-char ASCII format.
+ *
+ *	Note that this strips off the short at the
+ *	start of dtype_varying, and the NULL for dtype_cstring.
+ *
+ **************************************/
 
 	switch (desc->dsc_dtype) {
 	case dtype_text:
@@ -925,16 +925,16 @@ int DLL_EXPORT DSC_string_length(DSC* desc)
 
 const TEXT *DSC_dtype_tostring(UCHAR dtype)
 {
-	/**************************************
-     *
-     *	D S C _ d t y p e _ t o s t r i n g
-     *
-     **************************************
-     *
-     * Functional description
-     *	Convert a datatype to its textual representation	
-     *	
-     **************************************/
+/**************************************
+ *
+ *	D S C _ d t y p e _ t o s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert a datatype to its textual representation	
+ *	
+ **************************************/
 	if (dtype < FB_NELEM(DSC_dtype_names))
 		return DSC_dtype_names[dtype];
 	else
@@ -942,19 +942,22 @@ const TEXT *DSC_dtype_tostring(UCHAR dtype)
 }
 
 
-void DLL_EXPORT DSC_get_dtype_name(DSC * desc, TEXT * buffer, USHORT len)
+void DLL_EXPORT DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
 {
-	/**************************************
-     *
-     *	D S C _ g e t _ d t y p e _ n a m e
-     *
-     **************************************
-     *
-     * Functional description
-     *	Convert a datatype to its textual representation	
-     *	
-     **************************************/
+/**************************************
+ *
+ *	D S C _ g e t _ d t y p e _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert a datatype to its textual representation	
+ *	
+ **************************************/
+	// This function didn't put a string terminator even though
+	// it's calling strncpy that doesn't put it if source > target.
 	strncpy(buffer, DSC_dtype_tostring(desc->dsc_dtype), len);
+	buffer[len - 1] = 0;
 }
 
 

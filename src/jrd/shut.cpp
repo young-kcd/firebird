@@ -127,9 +127,6 @@ BOOLEAN SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-#pragma FB_COMPILER_MESSAGE("Locksmith?!")
-
-//	if (!attachment->att_user->usr_flags & (USR_locksmith | USR_owner)) {
 	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
 		return FALSE;
 	}
