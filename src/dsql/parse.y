@@ -152,11 +152,6 @@ extern DSQL_NOD	DSQL_parse;
 #endif
 
 }	// extern "C"
-static DSQL_FLD	g_field;
-static FIL	g_file;
-static DSQL_NOD	g_field_name;
-static TEXT	*beginning;
-static SSHORT log_defined, cache_defined;
 static void	yyerror (TEXT *);
 
 #define YYPARSE_PARAM_TYPE
@@ -172,7 +167,6 @@ static void	yyerror (TEXT *);
     }
 #define CHECK_COPY_INCR(to,ch){CHECK_BOUND(to); *to++=ch;}
 
-static int dsql_debug;
 
 static TEXT	*lex_position (void);
 #ifdef NOT_USED_OR_REPLACED
@@ -189,15 +183,40 @@ static void	prepare_console_debug (int, int  *);
 static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
 #endif
 static void	stack_nodes (DSQL_NOD, DLLS *);
-static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
+inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
 static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
 
-static TEXT	*ptr, *end, *last_token, *line_start;
-static TEXT	*last_token_bk, *line_start_bk;
-static SSHORT	lines, att_charset;
-static SSHORT	lines_bk;
-static USHORT   param_number;
+struct LexerState {
+	/* This is, in fact, parser state. Not used in lexer itself */
+	DSQL_FLD g_field;
+    FIL	g_file;
+	DSQL_NOD g_field_name;
+	SSHORT log_defined, cache_defined;
+	int dsql_debug;
+	
+	/* Actual lexer state begins from here */
+	TEXT *beginning;
+	TEXT	*ptr, *end, *last_token, *line_start;
+	TEXT	*last_token_bk, *line_start_bk;
+	SSHORT	lines, att_charset;
+	SSHORT	lines_bk;
+	USHORT	param_number;
+	/* Fields to handle FIRST/SKIP as non-reserved keywords */
+	bool after_select; /* Check this to detect SKIP/FIRST occurence after SELECT */
+	bool limit_clause; /* We are inside of limit clause. Need to detect SKIP after FIRST */
+	bool first_detection; /* Detect FIRST unconditionally */
+	
+	int yylex (
+		USHORT	client_dialect,
+		USHORT	db_dialect,
+		USHORT	parser_version,
+		BOOLEAN	*stmt_ambiguous);
+};
+
+/* Get ready for thread-safety. Move this to BISON object pointer when we 
+   switch to generating "pure" reenterant parser. */
+static struct LexerState lex;
 
 %}
 
@@ -727,11 +746,11 @@ udf_decl_clause : symbol_UDF_name arg_desc_list1 RETURNS return_value1
 
 udf_data_type	: simple_type
 		| BLOB
-			{ g_field->fld_dtype = dtype_blob; }
+			{ lex.g_field->fld_dtype = dtype_blob; }
 		| CSTRING '(' pos_short_integer ')' charset_clause
 			{ 
-			g_field->fld_dtype = dtype_cstring; 
-			g_field->fld_character_length = (USHORT) $3; }
+			lex.g_field->fld_dtype = dtype_cstring; 
+			lex.g_field->fld_character_length = (USHORT) $3; }
 		;
 
 arg_desc_list1	: 
@@ -996,8 +1015,8 @@ equals		:
 		;
 
 db_name		: sql_string
-			{ log_defined = FALSE;
-			  cache_defined = FALSE;
+			{ lex.log_defined = FALSE;
+			  lex.cache_defined = FALSE;
 			  $$ = (DSQL_NOD) $1; }
 		;
 
@@ -1052,55 +1071,55 @@ db_log_option   : GROUP_COMMIT_WAIT equals long_integer
 		;
 
 db_log		: db_default_log_spec
-			{ if (log_defined)
+			{ if (lex.log_defined)
 			    yyabandon (-260, isc_log_redef);  /* Log redefined */
-			  log_defined = TRUE;
+			  lex.log_defined = TRUE;
 			  $$ = $1; }
 		| db_rem_log_spec
-			{ if (log_defined)
+			{ if (lex.log_defined)
 			    yyabandon (-260, isc_log_redef);
-			  log_defined = TRUE;
+			  lex.log_defined = TRUE;
 			  $$ = $1; }
 		;	
 
 db_rem_log_spec	: LOGFILE '(' logfiles ')' OVERFLOW logfile_desc
-			{ g_file->fil_flags |= LOG_serial | LOG_overflow; 
-			  if (g_file->fil_partitions)
+			{ lex.g_file->fil_flags |= LOG_serial | LOG_overflow; 
+			  if (lex.g_file->fil_partitions)
 			      yyabandon (-261, isc_partition_not_supp);
 			/* Partitions not supported in series of log file specification */
 			 $$ = make_node (nod_list, 2, $3, $6); }  
 		| LOGFILE BASENAME logfile_desc
-			{ g_file->fil_flags |= LOG_serial;
-			  if (g_file->fil_partitions)
+			{ lex.g_file->fil_flags |= LOG_serial;
+			  if (lex.g_file->fil_partitions)
 			      yyabandon (-261, isc_partition_not_supp);
 			  $$ = $3; }
 		;
 
 db_default_log_spec : LOGFILE 
-			{ g_file = make_file(); 
-			  g_file->fil_flags = LOG_serial | LOG_default;
+			{ lex.g_file = make_file(); 
+			  lex.g_file->fil_flags = LOG_serial | LOG_default;
 			  $$ = make_node (nod_log_file_desc, (int) 1,
-						(DSQL_NOD) g_file);}
+						(DSQL_NOD) lex.g_file);}
 		;
 
 db_file		: file1 sql_string file_desc1
-			{ g_file->fil_name = (STR) $2; 
+			{ lex.g_file->fil_name = (STR) $2; 
 			  $$ = (DSQL_NOD) make_node (nod_file_desc, (int) 1,
-						(DSQL_NOD) g_file); }
+						(DSQL_NOD) lex.g_file); }
 		;
 
 /*
 db_cache	: CACHE sql_string cache_length 
 			{ 
-			  if (cache_defined)
+			  if (lex.cache_defined)
 			      yyabandon (-260, isc_cache_redef);
 				  */ /* Cache redefined */ /*
-			  g_file = make_file();
-			  g_file->fil_length = (SLONG) $3;
-			  g_file->fil_name = (STR) $2;
-			  cache_defined = TRUE;
+			  lex.g_file = make_file();
+			  lex.g_file->fil_length = (SLONG) $3;
+			  lex.g_file->fil_name = (STR) $2;
+			  lex.cache_defined = TRUE;
 			  $$ = (DSQL_NOD) make_node (nod_cache_file_desc, (int) 1,
-					 (DSQL_NOD) g_file); } 
+					 (DSQL_NOD) lex.g_file); } 
 		;
 */
 
@@ -1124,26 +1143,26 @@ logfile_desc	: logfile_name logfile_attrs
 			{ 
 		         check_log_file_attrs(); 
 			 $$ = (DSQL_NOD) make_node (nod_log_file_desc, (int) 1,
-                                                (DSQL_NOD) g_file); }
+                                                (DSQL_NOD) lex.g_file); }
 		;
 logfile_name	: sql_string 
-			{ g_file = make_file();
-			  g_file->fil_name = (STR) $1; } 
+			{ lex.g_file = make_file();
+			  lex.g_file->fil_name = (STR) $1; } 
 		;
 logfile_attrs	: 
 		| logfile_attrs logfile_attr
 		;
 
 logfile_attr	: KW_SIZE equals long_integer
-			{ g_file->fil_length = (SLONG) $3; }
+			{ lex.g_file->fil_length = (SLONG) $3; }
 /*
 		| RAW_PARTITIONS equals pos_short_integer
-			{ g_file->fil_partitions = (SSHORT) $3; 
-			  g_file->fil_flags |= LOG_raw; } */
+			{ lex.g_file->fil_partitions = (SSHORT) $3; 
+			  lex.g_file->fil_flags |= LOG_raw; } */
 		;
 
 file1		: KW_FILE
-			{ g_file  = make_file ();}
+			{ lex.g_file  = make_file ();}
 		;
 
 file_desc1	:
@@ -1155,9 +1174,9 @@ file_desc	: file_clause
 		;
 
 file_clause	: STARTING file_clause_noise long_integer
-			{ g_file->fil_start = (SLONG) $3;}
+			{ lex.g_file->fil_start = (SLONG) $3;}
 		| LENGTH equals long_integer page_noise
-			{ g_file->fil_length = (SLONG) $3;}
+			{ lex.g_file->fil_length = (SLONG) $3;}
 		;
 
 file_clause_noise :
@@ -1223,7 +1242,7 @@ column_def	: column_def_name data_type_or_domain default_opt
 
 def_computed	: computed_by '(' begin_trigger value end_trigger ')'
 			{ 
-			g_field->fld_flags |= FLD_computed;
+			lex.g_field->fld_flags |= FLD_computed;
 			$$ = make_node (nod_def_computed, 2, $4, $5); }
 		;
 
@@ -1246,14 +1265,14 @@ collate_clause	: COLLATE symbol_collation_name
 
 
 column_def_name	: simple_column_name
-			{ g_field_name = $1;
-			  g_field = make_field ($1);
-			  $$ = (DSQL_NOD) g_field; }
+			{ lex.g_field_name = $1;
+			  lex.g_field = make_field ($1);
+			  $$ = (DSQL_NOD) lex.g_field; }
 		;
 
 simple_column_def_name  : simple_column_name
-				{ g_field = make_field ($1);
-				  $$ = (DSQL_NOD) g_field; }
+				{ lex.g_field = make_field ($1);
+				  $$ = (DSQL_NOD) lex.g_field; }
 			;
 
 
@@ -1261,8 +1280,8 @@ data_type_descriptor :	init_data_type data_type
 			{ $$ = $1; }
 
 init_data_type :
-			{ g_field = make_field (NULL);
-			  $$ = (DSQL_NOD) g_field; }
+			{ lex.g_field = make_field (NULL);
+			  $$ = (DSQL_NOD) lex.g_field; }
 
 
 default_opt	: DEFAULT default_value
@@ -1305,7 +1324,7 @@ column_constraint : NOT KW_NULL
                   | REFERENCES simple_table_name column_parens_opt
 			referential_trigger_action constraint_index_opt
                         { $$ = make_node (nod_foreign, e_for_count,
-                        make_node (nod_list, (int) 1, g_field_name), $2, $3, $4, $5); }
+                        make_node (nod_list, (int) 1, lex.g_field_name), $2, $3, $4, $5); }
 
                   | check_constraint
                   | UNIQUE constraint_index_opt
@@ -1786,22 +1805,22 @@ joined_view_table	: view_table join_type JOIN view_table ON search_condition
 /* these rules will capture the input string for storage in metadata */
 
 begin_string	: 
-			{ beginning = lex_position(); }
+			{ lex.beginning = lex_position(); }
 		;
 
 end_string	:
-			{ $$ = (DSQL_NOD) MAKE_string(beginning, 
-			       (lex_position() == end) ?
-			       lex_position()-beginning : last_token-beginning);}
+			{ $$ = (DSQL_NOD) MAKE_string(lex.beginning, 
+			       (lex_position() == lex.end) ?
+			       lex_position()-lex.beginning : lex.last_token-lex.beginning);}
 		;
 
 begin_trigger	: 
-			{ beginning = last_token; }
+			{ lex.beginning = lex.last_token; }
 		;
 
 end_trigger	:
-			{ $$ = (DSQL_NOD) MAKE_string(beginning, 
-					lex_position()-beginning); }
+			{ $$ = (DSQL_NOD) MAKE_string(lex.beginning, 
+					lex_position()-lex.beginning); }
 		;
 
 
@@ -2022,8 +2041,6 @@ keyword_or_column	: valid_symbol_name
 		| CURRENT_TIMESTAMP
 		| CURRENT_USER			/* added in FB 1.0 */
 		| CURRENT_ROLE
-		| FIRST
-		| SKIP
 		| CURRENT_CONNECTION	/* added in FB 1.5 */
 		| CURRENT_TRANSACTION
 		| ROW_COUNT
@@ -2046,9 +2063,9 @@ alter_data_type_or_domain	: non_array_type begin_trigger
                                         	    $1, NULL, NULL, NULL, NULL); }
 
 alter_col_name	: simple_column_name
-			{ g_field_name = $1;
-			  g_field = make_field ($1);
-			  $$ = (DSQL_NOD) g_field; }
+			{ lex.g_field_name = $1;
+			  lex.g_field = make_field ($1);
+			  $$ = (DSQL_NOD) lex.g_field; }
 
 drop_behaviour	: RESTRICT
 			{ $$ = make_node (nod_restrict, 0, NULL); }
@@ -2068,8 +2085,8 @@ alter_index_clause	: symbol_index_name ACTIVE
 /* ALTER DATABASE */
 
 init_alter_db	: 
-			{ log_defined = FALSE;
-			  cache_defined = FALSE;
+			{ lex.log_defined = FALSE;
+			  lex.cache_defined = FALSE;
 			  $$ = (DSQL_NOD) NULL; }
 		;
 
@@ -2166,14 +2183,14 @@ non_array_type	: simple_type
 		;
 
 array_type	: non_charset_simple_type '[' array_spec ']'
-		    { g_field->fld_ranges = make_list ($3);
-		      g_field->fld_dimensions = g_field->fld_ranges->nod_count / 2;
-		      g_field->fld_element_dtype = g_field->fld_dtype;
+		    { lex.g_field->fld_ranges = make_list ($3);
+		      lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
+		      lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
 		      $$ = $1; }
 		| character_type '[' array_spec ']' charset_clause
-		    { g_field->fld_ranges = make_list ($3);
-		      g_field->fld_dimensions = g_field->fld_ranges->nod_count / 2;
-		      g_field->fld_element_dtype = g_field->fld_dtype;
+		    { lex.g_field->fld_ranges = make_list ($3);
+		      lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
+		      lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
 		      $$ = $1; }
 		;
 
@@ -2218,18 +2235,18 @@ non_charset_simple_type	: national_character_type
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "BIGINT",
 				    0);
-			g_field->fld_dtype = dtype_int64; 
-			g_field->fld_length = sizeof (SINT64); 
+			lex.g_field->fld_dtype = dtype_int64; 
+			lex.g_field->fld_length = sizeof (SINT64); 
 			}
 		| integer_keyword
 			{ 
-			g_field->fld_dtype = dtype_long; 
-			g_field->fld_length = sizeof (SLONG); 
+			lex.g_field->fld_dtype = dtype_long; 
+			lex.g_field->fld_length = sizeof (SLONG); 
 			}
 		| SMALLINT
 			{ 
-			g_field->fld_dtype = dtype_short; 
-			g_field->fld_length = sizeof (SSHORT); 
+			lex.g_field->fld_dtype = dtype_short; 
+			lex.g_field->fld_length = sizeof (SSHORT); 
 			}
 		| DATE
 			{ 
@@ -2239,15 +2256,15 @@ non_charset_simple_type	: national_character_type
 			    /* Post warning saying that DATE is equivalent to TIMESTAMP */
 		            ERRD_post_warning (isc_sqlwarn, gds_arg_number, (SLONG) 301, 
                                                isc_arg_warning, isc_dtype_renamed, 0);
-			    g_field->fld_dtype = dtype_timestamp; 
-			    g_field->fld_length = sizeof (GDS_TIMESTAMP);
+			    lex.g_field->fld_dtype = dtype_timestamp; 
+			    lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			    }
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 			    yyabandon (-104, isc_transitional_date);
 			else
 			    {
-			    g_field->fld_dtype = dtype_sql_date; 
-			    g_field->fld_length = sizeof (ULONG);
+			    lex.g_field->fld_dtype = dtype_sql_date; 
+			    lex.g_field->fld_length = sizeof (ULONG);
 			    }
 			}
 		| TIME
@@ -2264,13 +2281,13 @@ non_charset_simple_type	: national_character_type
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "TIME",
 				    0);
-			g_field->fld_dtype = dtype_sql_time; 
-			g_field->fld_length = sizeof (SLONG);
+			lex.g_field->fld_dtype = dtype_sql_time; 
+			lex.g_field->fld_length = sizeof (SLONG);
 			}
 		| TIMESTAMP
 			{ 
-			g_field->fld_dtype = dtype_timestamp; 
-			g_field->fld_length = sizeof (GDS_TIMESTAMP);
+			lex.g_field->fld_dtype = dtype_timestamp; 
+			lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			}
 		;
 
@@ -2284,55 +2301,55 @@ integer_keyword	: INTEGER
 
 blob_type	: BLOB blob_subtype blob_segsize charset_clause
 			{ 
-			g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_dtype = dtype_blob; 
 			}
 		| BLOB '(' unsigned_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_blob; 
-			g_field->fld_seg_length = (USHORT) $3;
-			g_field->fld_sub_type = 0;
+			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_seg_length = (USHORT) $3;
+			lex.g_field->fld_sub_type = 0;
 			}
 		| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_blob; 
-			g_field->fld_seg_length = (USHORT) $3;
-			g_field->fld_sub_type = (USHORT) $5;
+			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_seg_length = (USHORT) $3;
+			lex.g_field->fld_sub_type = (USHORT) $5;
 			}
 		| BLOB '(' ',' signed_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_blob; 
-			g_field->fld_seg_length = 80;
-			g_field->fld_sub_type = (USHORT) $4;
+			lex.g_field->fld_dtype = dtype_blob; 
+			lex.g_field->fld_seg_length = 80;
+			lex.g_field->fld_sub_type = (USHORT) $4;
 			}
 		;
 
 blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
 		  	{
-			g_field->fld_seg_length = (USHORT) $3;
+			lex.g_field->fld_seg_length = (USHORT) $3;
 		  	}
 		|
 		  	{
-			g_field->fld_seg_length = (USHORT) 80;
+			lex.g_field->fld_seg_length = (USHORT) 80;
 		  	}
 		;
 
 blob_subtype	: SUB_TYPE signed_short_integer
 			{
-			g_field->fld_sub_type = (USHORT) $2;
+			lex.g_field->fld_sub_type = (USHORT) $2;
 			}
 		| SUB_TYPE symbol_blob_subtype_name
 			{
-			g_field->fld_sub_type_name = $2;
+			lex.g_field->fld_sub_type_name = $2;
 			}
 		|
 			{
-			g_field->fld_sub_type = (USHORT) 0;
+			lex.g_field->fld_sub_type = (USHORT) 0;
 			}
 		;
 
 charset_clause	: CHARACTER SET symbol_character_set_name
 			{
-			g_field->fld_character_set = $3;
+			lex.g_field->fld_character_set = $3;
 			}
 		|
 		;
@@ -2343,38 +2360,38 @@ charset_clause	: CHARACTER SET symbol_character_set_name
 
 national_character_type	: national_character_keyword '(' pos_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_text; 
-			g_field->fld_character_length = (USHORT) $3; 
-			g_field->fld_flags |= FLD_national;
+			lex.g_field->fld_dtype = dtype_text; 
+			lex.g_field->fld_character_length = (USHORT) $3; 
+			lex.g_field->fld_flags |= FLD_national;
 			}
 		| national_character_keyword
 			{ 
-			g_field->fld_dtype = dtype_text; 
-			g_field->fld_character_length = 1; 
-			g_field->fld_flags |= FLD_national;
+			lex.g_field->fld_dtype = dtype_text; 
+			lex.g_field->fld_character_length = 1; 
+			lex.g_field->fld_flags |= FLD_national;
 			}
 		| national_character_keyword VARYING '(' pos_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_varying; 
-			g_field->fld_character_length = (USHORT) $4; 
-			g_field->fld_flags |= FLD_national;
+			lex.g_field->fld_dtype = dtype_varying; 
+			lex.g_field->fld_character_length = (USHORT) $4; 
+			lex.g_field->fld_flags |= FLD_national;
 			}
 		;
 
 character_type	: character_keyword '(' pos_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_text; 
-			g_field->fld_character_length = (USHORT) $3; 
+			lex.g_field->fld_dtype = dtype_text; 
+			lex.g_field->fld_character_length = (USHORT) $3; 
 			}
 		| character_keyword
 			{ 
-			g_field->fld_dtype = dtype_text; 
-			g_field->fld_character_length = 1; 
+			lex.g_field->fld_dtype = dtype_text; 
+			lex.g_field->fld_character_length = 1; 
 			}
 		| varying_keyword '(' pos_short_integer ')'
 			{ 
-			g_field->fld_dtype = dtype_varying; 
-			g_field->fld_character_length = (USHORT) $3; 
+			lex.g_field->fld_dtype = dtype_varying; 
+			lex.g_field->fld_character_length = (USHORT) $3; 
 			}
 		;
 
@@ -2398,15 +2415,15 @@ national_character_keyword : NCHAR
 
 numeric_type	: KW_NUMERIC prec_scale
                         { 
-			  g_field->fld_sub_type = dsc_num_type_numeric;
+			  lex.g_field->fld_sub_type = dsc_num_type_numeric;
 			}
 		| decimal_keyword prec_scale
 			{  
-			   g_field->fld_sub_type = dsc_num_type_decimal;
-			   if (g_field->fld_dtype == dtype_short)
+			   lex.g_field->fld_sub_type = dsc_num_type_decimal;
+			   if (lex.g_field->fld_dtype == dtype_short)
 				{
-				g_field->fld_dtype = dtype_long;
-				g_field->fld_length = sizeof (SLONG);
+				lex.g_field->fld_dtype = dtype_long;
+				lex.g_field->fld_length = sizeof (SLONG);
 				};
 			}
 		;
@@ -2420,9 +2437,9 @@ ordinal		: pos_short_integer
 
 prec_scale	: 
 			{
-			g_field->fld_dtype = dtype_long; 
-		    	g_field->fld_length = sizeof (SLONG); 
-			g_field->fld_precision = 9;
+			lex.g_field->fld_dtype = dtype_long; 
+		    	lex.g_field->fld_length = sizeof (SLONG); 
+			lex.g_field->fld_precision = 9;
 		    	}
 		| '(' signed_long_integer ')'
 			{         
@@ -2443,8 +2460,8 @@ prec_scale	:
 					   0);
 			    if (client_dialect <= SQL_DIALECT_V5)
 			        {
-				g_field->fld_dtype = dtype_double;
-				g_field->fld_length = sizeof (double);
+				lex.g_field->fld_dtype = dtype_double;
+				lex.g_field->fld_length = sizeof (double);
 			        }
 			    else
 			        {
@@ -2461,22 +2478,22 @@ prec_scale	:
 					gds_arg_end );
 
 				    }
-				g_field->fld_dtype = dtype_int64;
-				g_field->fld_length = sizeof (SINT64);
+				lex.g_field->fld_dtype = dtype_int64;
+				lex.g_field->fld_length = sizeof (SINT64);
 			        }
 			    }
 			else 
 			    if ((SLONG) $2 < 5)
 			    	{
-			    	g_field->fld_dtype = dtype_short; 
-			    	g_field->fld_length = sizeof (SSHORT); 
+			    	lex.g_field->fld_dtype = dtype_short; 
+			    	lex.g_field->fld_length = sizeof (SSHORT); 
 			    	}
 			    else
 			    	{
-			    	g_field->fld_dtype = dtype_long; 
-			    	g_field->fld_length = sizeof (SLONG); 
+			    	lex.g_field->fld_dtype = dtype_long; 
+			    	lex.g_field->fld_length = sizeof (SLONG); 
 			    	}
-			g_field->fld_precision = (USHORT) $2;
+			lex.g_field->fld_precision = (USHORT) $2;
 			}
 		| '(' signed_long_integer ',' signed_long_integer ')'
 			{ 
@@ -2500,8 +2517,8 @@ prec_scale	:
 					   0);
 			    if (client_dialect <= SQL_DIALECT_V5)
 			        {
-				g_field->fld_dtype = dtype_double;
-				g_field->fld_length = sizeof (double); 
+				lex.g_field->fld_dtype = dtype_double;
+				lex.g_field->fld_length = sizeof (double); 
 			        }
 			    else
 			        {
@@ -2518,25 +2535,25 @@ prec_scale	:
 					gds_arg_end );
 				  }
 				  /* client_dialect >= SQL_DIALECT_V6 */
-				g_field->fld_dtype = dtype_int64;
-				g_field->fld_length = sizeof (SINT64);
+				lex.g_field->fld_dtype = dtype_int64;
+				lex.g_field->fld_length = sizeof (SINT64);
 			        }
 			    }
 			else
 			    {
 			    if ((SLONG) $2 < 5)
 			    	{
-			    	g_field->fld_dtype = dtype_short; 
-			    	g_field->fld_length = sizeof (SSHORT); 
+			    	lex.g_field->fld_dtype = dtype_short; 
+			    	lex.g_field->fld_length = sizeof (SSHORT); 
 			    	}
 			    else
 			    	{
-			    	g_field->fld_dtype = dtype_long; 
-			    	g_field->fld_length = sizeof (SLONG); 
+			    	lex.g_field->fld_dtype = dtype_long; 
+			    	lex.g_field->fld_length = sizeof (SLONG); 
 			    	}
 			    }
-			g_field->fld_precision = (USHORT) $2;
-			g_field->fld_scale = - (SSHORT) $4;
+			lex.g_field->fld_precision = (USHORT) $2;
+			lex.g_field->fld_scale = - (SSHORT) $4;
 			}
 		;
 
@@ -2552,29 +2569,29 @@ float_type	: KW_FLOAT precision_opt
 			{ 
 			if ((SLONG) $2 > 7)
 			    {
-			    g_field->fld_dtype = dtype_double;
-			    g_field->fld_length = sizeof (double); 
+			    lex.g_field->fld_dtype = dtype_double;
+			    lex.g_field->fld_length = sizeof (double); 
 			    }
 			else
 			    {
-			    g_field->fld_dtype = dtype_real; 
-			    g_field->fld_length = sizeof (float);
+			    lex.g_field->fld_dtype = dtype_real; 
+			    lex.g_field->fld_length = sizeof (float);
 			    }
 			}
 		| KW_LONG KW_FLOAT precision_opt
 			{ 
-			g_field->fld_dtype = dtype_double; 
-			g_field->fld_length = sizeof (double); 
+			lex.g_field->fld_dtype = dtype_double; 
+			lex.g_field->fld_length = sizeof (double); 
 			}
 		| REAL
 			{ 
-			g_field->fld_dtype = dtype_real; 
-			g_field->fld_length = sizeof (float); 
+			lex.g_field->fld_dtype = dtype_real; 
+			lex.g_field->fld_length = sizeof (float); 
 			}
 		| KW_DOUBLE PRECISION
 			{ 
-			g_field->fld_dtype = dtype_double; 
-			g_field->fld_length = sizeof (double); 
+			lex.g_field->fld_dtype = dtype_double; 
+			lex.g_field->fld_length = sizeof (double); 
 			}
 		;
 
@@ -2779,7 +2796,7 @@ order_list	: order_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-order_item	: value order_direction nulls_placement
+order_item	: value order_direction nulls_clause
 			{ $$ = make_node (nod_order, e_order_count, $1, $2, $3); }
 		;
 
@@ -2790,11 +2807,15 @@ order_direction	: ASC
 		|
 			{ $$ = 0; }
 		;
-		
-nulls_placement : NULLS FIRST
+
+nulls_placement : FIRST
 			{ $$ = make_node (nod_flag, 0, NULL); }
-		| NULLS LAST
+		| LAST
 			{ $$ = 0; }
+		;
+
+nulls_clause : NULLS begin_first nulls_placement end_first
+			{ $$ = $3; }
 		|
 			{ $$ = 0; }
 		;
@@ -2845,9 +2866,25 @@ ordered_select_expr	: SELECT limit_clause
 					$2, $3, $4, $5, $6, $7, $8, $9, $10, NULL); }
 		;                                               
 
-limit_clause	: first_clause skip_clause
+begin_limit	: 
+			{ lex.limit_clause = true; }
+		;
+
+end_limit	:
+			{ lex.limit_clause = false; }
+		;
+		
+begin_first	: 
+			{ lex.first_detection = true; }
+		;
+
+end_first	:
+			{ lex.first_detection = false; }
+		;
+		
+limit_clause	: first_clause skip_clause end_limit
 			{ $$ = make_node (nod_limit, e_limit_count, $2, $1); }
-		|   first_clause
+		|   first_clause end_limit
 			{ $$ = make_node (nod_limit, e_limit_count, NULL, $1); }
 		|   skip_clause 
 			{ $$ = make_node (nod_limit, e_limit_count, $1, NULL); }
@@ -2855,17 +2892,17 @@ limit_clause	: first_clause skip_clause
 			{ $$ = 0; }
 		;
 
-first_clause	: FIRST long_integer
+first_clause	: FIRST long_integer begin_limit
 			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
-		| FIRST '(' value ')'
+		| FIRST '(' value ')' begin_limit
 			{ $$ = $3; }
-		| FIRST parameter
+		| FIRST parameter begin_limit
 			{ $$ = $2; }
 		;
 
 skip_clause	: SKIP long_integer
 			{ $$ = MAKE_constant ((STR) $2, CONSTANT_SLONG); }
-		| SKIP '(' value ')'
+		| SKIP '(' end_limit value ')'
 			{ $$ = $3; }
 		| SKIP parameter
 			{ $$ = $2; }
@@ -3553,7 +3590,7 @@ u_numeric_constant : NUMERIC
 
 u_constant	: u_numeric_constant
 		| sql_string
-			{ $$ = MAKE_str_constant ((STR) $1, att_charset); }
+			{ $$ = MAKE_str_constant ((STR) $1, lex.att_charset); }
 		| DATE STRING
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
@@ -4001,13 +4038,16 @@ void LEX_string (
  *
  **************************************/
 
-    line_start = ptr = string;
-    end = string + length;
-    lines = 1;
-    att_charset = character_set;
-    line_start_bk = line_start;
-    lines_bk = lines;
-	param_number = 1;
+    lex.line_start = lex.ptr = string;
+    lex.end = string + length;
+    lex.lines = 1;
+    lex.att_charset = character_set;
+    lex.line_start_bk = lex.line_start;
+    lex.lines_bk = lex.lines;
+	lex.param_number = 1;
+	lex.after_select = false;
+	lex.limit_clause = false;	
+	lex.first_detection = false;
 #ifdef DEV_BUILD
     if (DSQL_debug & 32)
         printf("%.*s\n", (int)length, string);
@@ -4028,20 +4068,20 @@ static void check_log_file_attrs (void)
  *
  *********************************************/
 
-    if (g_file->fil_partitions) {
-        if (!g_file->fil_length) {
+    if (lex.g_file->fil_partitions) {
+        if (!lex.g_file->fil_length) {
             yyabandon (-261, isc_log_length_spec);
             /* Total length of a partitioned log must be specified */
         }
         
-        if (PARTITION_SIZE (OneK * g_file->fil_length, g_file->fil_partitions) <
+        if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
             (OneK*MIN_LOG_LENGTH)) {
             yyabandon (-239, isc_partition_too_small);
             /* Log partition size too small */
         }
     }
     else {
-        if ((g_file->fil_length) && (g_file->fil_length < MIN_LOG_LENGTH)) {
+        if ((lex.g_file->fil_length) && (lex.g_file->fil_length < MIN_LOG_LENGTH)) {
             yyabandon (-239, isc_log_too_small);   /* Log size too small */
         }
     }     
@@ -4062,7 +4102,7 @@ static TEXT *lex_position (void)
  *
  **************************************/
 
-return ptr;
+return lex.ptr;
 }
 
 
@@ -4215,10 +4255,10 @@ tdsql = GET_THREAD_DATA;
 
 node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 node->nod_type = nod_parameter;
-node->nod_line = (USHORT) lines_bk;
-node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
+node->nod_line = (USHORT) lex.lines_bk;
+node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 node->nod_count = 1;
-node->nod_arg[0] = (DSQL_NOD)param_number++;
+node->nod_arg[0] = (DSQL_NOD)lex.param_number++;
 
 return node;
 }
@@ -4248,8 +4288,8 @@ tdsql = GET_THREAD_DATA;
 
 node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 node->nod_type = type;
-node->nod_line = (USHORT) lines_bk;
-node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
+node->nod_line = (USHORT) lex.lines_bk;
+node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 node->nod_count = count;
 p = node->nod_arg;
 VA_START (ptr, count);
@@ -4286,8 +4326,8 @@ tdsql = GET_THREAD_DATA;
 node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 node->nod_type = type;
 node->nod_flags = flag;
-node->nod_line = (USHORT) lines_bk;
-node->nod_column = (USHORT) (last_token_bk - line_start_bk + 1);
+node->nod_line = (USHORT) lex.lines_bk;
+node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 node->nod_count = count;
 p = node->nod_arg;
 VA_START (ptr, count);
@@ -4476,8 +4516,16 @@ for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
     stack_nodes (*ptr, stack);
 }
 
+inline static int yylex (
+    USHORT	client_dialect,
+    USHORT	db_dialect,
+    USHORT	parser_version,
+    BOOLEAN	*stmt_ambiguous)
+{
+	return lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+}
 
-static int yylex (
+int LexerState::yylex (
     USHORT	client_dialect,
     USHORT	db_dialect,
     USHORT	parser_version,
@@ -4503,6 +4551,8 @@ SSHORT	c;
 USHORT	buffer_len;
 
 STR	delimited_id_str;
+bool was_after_select = after_select;
+after_select = false;
 
 /* Find end of white space and skip comments */
 
@@ -4852,7 +4902,7 @@ c   = *ptr++;
 
 
 if (tok_class & CHR_LETTER)
-    {
+{
     p = string;
     CHECK_COPY_INCR(p, UPPER (c));
     for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
@@ -4865,17 +4915,45 @@ if (tok_class & CHR_LETTER)
     CHECK_BOUND(p);
     *p = 0;
     sym = HSHD_lookup (NULL_PTR, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+	/* 23 May 2003. Nickolay Samofatov
+	 * Detect FIRST/SKIP as non-reserved keywords
+	 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
+	 *   immediately before parameter mark ('?'), opening brace ('(') or number
+	 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
+	 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
+	 * 4. In all other cases we return them as SYMBOL
+	 */
     if (sym)
 	{
-	yylval = (DSQL_NOD) sym->sym_object;
-	return sym->sym_keyword;
+		if ((sym->sym_keyword == FIRST && !first_detection) || sym->sym_keyword == SKIP) {
+			if (was_after_select || limit_clause) {
+				LexerState savedState = lex;
+				int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+				lex = savedState;
+				if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
+					yylval = (DSQL_NOD) MAKE_string(string, p - string);
+					last_token_bk = last_token;
+					line_start_bk = line_start;
+					lines_bk = lines;
+					return SYMBOL;
+				} else {
+					yylval = (DSQL_NOD) sym->sym_object;
+					return sym->sym_keyword;
+				}
+			} /* else fall down and return token as SYMBOL */
+		} else {
+			yylval = (DSQL_NOD) sym->sym_object;
+			if (sym->sym_keyword == SELECT) 
+				after_select = true;
+			return sym->sym_keyword;
+		}
 	}
     yylval = (DSQL_NOD) MAKE_string(string, p - string);
     last_token_bk = last_token;
     line_start_bk = line_start;
     lines_bk = lines;
 	return SYMBOL;
-    }
+}
 
 /* Must be punctuation -- test for double character punctuation */
 
@@ -4917,11 +4995,11 @@ else
     {
     ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
  	gds_arg_gds, gds_dsql_token_unk_err, 
-	gds_arg_number, (SLONG) lines, 
-	gds_arg_number, (SLONG) (last_token - line_start + 1), /*CVC: +1*/
+	gds_arg_number, (SLONG) lex.lines, 
+	gds_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
 	    /* Token unknown - line %d, char %d */
  	gds_arg_gds, gds_random, 
-	gds_arg_cstring, (int) (ptr - last_token), last_token,
+	gds_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
  	0);
     }
 }
