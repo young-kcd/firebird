@@ -1929,6 +1929,7 @@ const unsigned char gds_interp_jpn_euc = 6;
 #endif
 
 
+#ifdef PYXIS
 /*****************************/
 /* Forms Package definitions */
 /*****************************/
@@ -2089,6 +2090,8 @@ const unsigned char PYXIS_MENU_VERTICAL = 7;
  * const unsigned char PYXIS_MENU_END = -1;
  */
 const unsigned char PYXIS_MENU_END = 0xFF;
+
+#endif
 
 #endif
 

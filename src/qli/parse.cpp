@@ -75,7 +75,9 @@ static SYN parse_extract(void);
 static QLI_FLD parse_field(int);
 static SYN parse_field_name(SYN *);
 static SYN parse_for(void);
+#ifdef PYXIS
 static SYN parse_form(void);
+#endif
 static SYN parse_from(USHORT *, USHORT *);
 static SYN parse_function(void);
 static TEXT *parse_header(void);
@@ -1533,8 +1535,10 @@ static SYN parse_edit(void)
 			LEX_edit((SLONG) start->lls_object, (SLONG) stop->lls_object);
 		}
 	}
+#ifdef PYXIS
 	else if (MATCH(KW_FORM))
 		IBERROR(484);			/* FORMs not supported */
+#endif
 	else {
 		type = nod_edit_proc;
 		node = SYNTAX_NODE(type, 2);
@@ -1811,10 +1815,10 @@ static SYN parse_for(void)
 	SYN node;
 
 	PAR_token();
-
+#ifdef PYXIS
 	if (MATCH(KW_FORM))
 		IBERROR(484);			/* FORMs not supported */
-
+#endif
 	node = SYNTAX_NODE(nod_for, s_for_count);
 	node->syn_arg[s_for_rse] = parse_rse();
 	node->syn_arg[s_for_statement] = parse_statement();
@@ -1822,7 +1826,7 @@ static SYN parse_for(void)
 	return node;
 }
 
-
+#ifdef PYXIS
 static SYN parse_form(void)
 {
 /**************************************
@@ -1837,7 +1841,7 @@ static SYN parse_form(void)
  **************************************/
 	IBERROR(484);				/* FORMs not supported */
 }
-
+#endif
 
 static SYN parse_from( USHORT * paren_count, USHORT * bool_flag)
 {
@@ -2439,9 +2443,11 @@ static SYN parse_modify(void)
 	node = SYNTAX_NODE(nod_modify, s_mod_count);
 
 	if (MATCH(KW_USING))
+#if PYXIS
 		if (MATCH(KW_FORM))
 			IBERROR(484);		/* FORMs not supported */
 		else
+#endif
 			node->syn_arg[s_mod_statement] = parse_statement();
 	else if (!KEYWORD(KW_SEMI)) {
 		stack = NULL;
@@ -3906,12 +3912,12 @@ static SYN parse_set(void)
 			sw = set_echo;
 			PAR_token();
 			break;
-
+#ifdef PYXIS
 		case KW_FORM:
 		case KW_FORMS:
 			IBERROR(484);		/* FORMs not supported */
 			break;
-
+#endif
 		case KW_MATCHING_LANGUAGE:
 			sw = set_matching_language;
 			PAR_token();
@@ -4176,9 +4182,11 @@ static SYN parse_show(void)
 			sw = show_filters;
 		else if (MATCH(KW_FUNCTIONS))
 			sw = show_functions;
+#ifdef PYXIS
 		else if (MATCH(KW_FORMS)) {
 			sw = show_forms;
 		}
+#endif
 		else if (MATCH(KW_GLOBAL)) {
 			PAR_real();
 			if (MATCH(KW_FIELD)) {
@@ -4227,8 +4235,10 @@ static SYN parse_show(void)
 					sw = show_filters;
 				else if (MATCH(KW_FUNCTIONS))
 					sw = show_functions;
+#ifdef PYXIS
 				else if (MATCH(KW_FORMS))
 					sw = show_forms;
+#endif
 				else if (MATCH(KW_GLOBAL)) {
 					PAR_real();
 					if (MATCH(KW_FIELD)) {
@@ -4262,7 +4272,10 @@ static SYN parse_show(void)
 					   sw == show_security_classes
 					   || sw == show_system_triggers
 					   || sw == show_system_relations || sw == show_procedures
-					   || sw == show_forms || sw == show_filters
+#ifdef PYXIS
+					   || sw == show_forms 
+#endif
+					   || sw == show_filters
 					   || sw == show_functions || sw == show_global_fields))
 			if (MATCH(KW_FOR)) {
 				MATCH(KW_DATABASE);
@@ -5321,9 +5334,11 @@ static SYN parse_store(void)
 
 	MATCH(KW_USING);
 
+#ifdef PYXIS
 	if (MATCH(KW_FORM))
 		IBERROR(484);			/* FORMs not supported */
 	else
+#endif
 		node->syn_arg[s_sto_statement] = parse_statement();
 
 	return node;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.8 2003-02-08 00:36:51 brodsom Exp $
+//	$Id: pretty.cpp,v 1.9 2003-03-11 13:36:09 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -236,7 +236,7 @@ int PRETTY_print_dyn(
 	return 0;
 }
 
-
+#ifdef PYXIS
 int
 PRETTY_print_form_map(SCHAR * blr,
 //____________________________________________________________
@@ -330,7 +330,7 @@ PRETTY_print_form_map(SCHAR * blr,
 
 	return 0;
 }
-
+#endif
 
 int PRETTY_print_mblr(
 					  SCHAR * blr,
@@ -346,7 +346,7 @@ int PRETTY_print_mblr(
 	return PRETTY_print_dyn(blr, routine, user_arg, language);
 }
 
-
+#ifdef PYXIS
 int
 PRETTY_print_menu(SCHAR * blr,
 //____________________________________________________________
@@ -416,7 +416,7 @@ PRETTY_print_menu(SCHAR * blr,
 
 	return 0;
 }
-
+#endif
 
 int
 PRETTY_print_sdl(SCHAR * blr,
