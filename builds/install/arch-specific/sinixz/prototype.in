@@ -1,4 +1,4 @@
-# $Id: prototype.in,v 1.1 2003-07-08 22:58:56 brodsom Exp $
+# $Id: prototype.in,v 1.2 2003-07-09 09:21:24 fsg Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -80,7 +80,7 @@ s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
 #s none /usr/lib/libgds.so=@prefix@/lib/libfbembed.so
 
 d none @prefix@/UDF  0755 root root
-f none @prefix@/UDF/fb_udf.so=$SRCDIR/UDF/fb_udf.so  0755 root root
+f none @prefix@/UDF/fbudf.so=$SRCDIR/UDF/fbudf.so  0755 root root
 f none @prefix@/UDF/ib_udf.so=$SRCDIR/UDF/ib_udf.so  0755 root root
 
 # EOF

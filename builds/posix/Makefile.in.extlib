@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.10 2003-05-25 00:04:15 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.11 2003-07-09 09:21:25 fsg Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -59,9 +59,9 @@ AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
-.PHONY: all lib_ib_udf lib_ib_util lib_fb_udf
+.PHONY: all lib_ib_udf lib_ib_util lib_fbudf
 
-all: lib_ib_udf lib_fb_udf lib_ib_util 
+all: lib_ib_udf lib_fbudf lib_ib_util 
 
 
 # The libraires in this directory could do with a bit more work, since they
@@ -92,10 +92,10 @@ $(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
 
 
 
-lib_fb_udf: $(UDF)/fb_udf.$(SHRLIB_EXT)
+lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT)
 
-$(UDF)/fb_udf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fb_udf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(UTIL_Objects)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
 #	-$(LN) $(@F) $(LIBFBINTL_SOBASENAME) 
 #	-$(LN) $(notdir $(LIBFBINTL_SOBASENAME)) $(LIBFBINTL_SONAME)
 

@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1 2003-07-08 22:59:26 brodsom Exp $
+#   $Id: makeInstallImage.sh.in,v 1.2 2003-07-09 09:21:24 fsg Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -138,7 +138,7 @@ copyFiles() {
     cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
     cp $BuiltFBDir/intl/libfbintl.so $DestDir/intl/fbintl
     cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
-    cp $BuiltFBDir/UDF/fb_udf.so $DestDir/UDF/
+    cp $BuiltFBDir/UDF/fbudf.so $DestDir/UDF/
 
 #   Copy the sql-declarations into the UDF-directory  
     cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
