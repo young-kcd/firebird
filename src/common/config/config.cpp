@@ -65,7 +65,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_BOOLEAN,		"OldParameterOrdering",		(ConfigValue) false},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
-	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) false},
+	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
 #ifdef SUPERSERVER
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},		// pages
 #else

@@ -38,6 +38,7 @@
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
+ * 2005.04.01 Konstantin Kuznetsov - allow setting NoNagle option in Classic
  *
  */
 
@@ -75,14 +76,14 @@
 #include <unistd.h>
 #endif
 
+#include <netinet/tcp.h>
+
+
 #ifdef SUPERSERVER
 #ifdef	WIN_NT
 #define FD_SETSIZE 1024
 #endif
 
-#ifdef SET_TCP_NO_DELAY
-#include <netinet/tcp.h>
-#endif
 
 #endif /* SUPERSERVER */
 
@@ -1024,6 +1025,7 @@ rem_port* INET_server(int sock)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
+	int n = 0;
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
@@ -1032,8 +1034,23 @@ rem_port* INET_server(int sock)
 	port->port_handle = (HANDLE) sock;
 
 	int optval = 1;
-	setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR *) & optval, sizeof(optval));
+	if (n==-1) {
+		gds__log("inet server err: setting KEEPALIVE socket option \n");
+	}	
+
+	if (Config::getTcpNoNagle()) {
+		n = setsockopt(sock, SOL_SOCKET,TCP_NODELAY, 
+			   (SCHAR *) &optval, sizeof(optval));
+#ifdef DEBUG
+		gds__log("inet log: disabled Nagle algorithm \n");
+#endif
+		if (n == -1) {
+			gds__log("inet server err: setting NODELAY socket option \n");
+		}
+	}
+
 	return port;
 }
 
