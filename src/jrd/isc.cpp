@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.27 2003-02-19 06:14:37 eku Exp $
+$Id: isc.cpp,v 1.28 2003-02-19 12:54:38 eku Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -177,6 +177,7 @@ static LKSB wake_lock;
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #endif
 
 #ifndef O_RDWR
