@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.19 2003-01-25 03:12:46 brodsom Exp $
+$Id: restore.epp,v 1.20 2003-02-13 09:19:08 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -85,7 +85,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 #define RESTORE_VERBOSE_INTERVAL	10000
 #define	cvtbl_len	28
-static CONST struct s_t_cvtbl {
+static const struct s_t_cvtbl {
 	SSHORT	sub_type;
 	SSHORT	character_set_id;
 	SSHORT	collation_id;
@@ -188,7 +188,7 @@ static USHORT	flag_on_line = TRUE;	/* indicates whether we will bring
                                            TRUE - we will
                                            FALSE - we will not */
 #ifdef sparc
-CONST SSHORT old_sparcs[] =
+const SSHORT old_sparcs[] =
     {0, 0, 0, 2, 0, 0, 0, 0, 2, 4, 4, 4, 8, 8, 0, 0, 8, 8, 8};
 #endif 
 
@@ -1184,7 +1184,7 @@ static int get_acl (
  *
  **************************************/
 
-static CONST SCHAR blr_items [] = {isc_info_blob_max_segment, 
+static const SCHAR blr_items [] = {isc_info_blob_max_segment, 
 			     isc_info_blob_total_length,
 			     isc_info_blob_num_segments};
 STATUS	status_vector[ISC_STATUS_LENGTH];
@@ -6480,7 +6480,7 @@ BURP_FLD	field;
 ULONG	offset, length, dtype, alignment;
 TGBL	    tdgbl;
 
-CONST SSHORT	*alignments = old_sparcs;
+const SSHORT	*alignments = old_sparcs;
 
 tdgbl = GET_THREAD_DATA;
 

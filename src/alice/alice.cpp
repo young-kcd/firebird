@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.19 2003-02-11 20:14:54 brodsom Exp $
+//	$Id: alice.cpp,v 1.20 2003-02-13 09:14:28 dimitr Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -110,9 +110,9 @@ static int output_thread(SLONG, UCHAR*);
 static int output_main(SLONG, UCHAR*);
 static int output_svc(SLONG, UCHAR*);
 #ifdef __GNUC__
-static void alice_output(CONST SCHAR*, ...) __attribute__ ((format(printf,1,2)));
+static void alice_output(const SCHAR*, ...) __attribute__ ((format(printf,1,2)));
 #else
-static void alice_output(CONST SCHAR*, ...);
+static void alice_output(const SCHAR*, ...);
 #endif
 
 
@@ -780,7 +780,7 @@ static void ALICE_error(USHORT number)
 //		Platform independent output routine.
 //
 
-static void alice_output(CONST SCHAR * format, ...)
+static void alice_output(const SCHAR * format, ...)
 {
 	va_list arglist;
 	UCHAR buf[1000];

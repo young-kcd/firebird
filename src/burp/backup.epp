@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.15 2002-12-16 16:17:54 alexpeshkoff Exp $
+$Id: backup.epp,v 1.16 2003-02-13 09:19:07 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -157,12 +157,12 @@ static UCHAR debug_on = 0;		/* able to turn this on in debug mode */
 */
 
 typedef struct rfr_tab_t {
-	CONST TEXT *relation;
-	CONST TEXT *field;
+	const TEXT *relation;
+	const TEXT *field;
 	int bit_mask;
 } *RFR_TAB;
 
-static CONST struct rfr_tab_t rfr_table[] = {
+static const struct rfr_tab_t rfr_table[] = {
 	{"RDB$INDICES", "RDB$INDEX_INACTIVE", BCK_idx_inactive},
 /* Backup of V2 triggers no longer supported 1996-Aug-05 David Schnepper  
 	{"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	BCK_triggers}, 
@@ -182,23 +182,23 @@ static CONST struct rfr_tab_t rfr_table[] = {
 	{0, 0, 0}
 };
 
-static CONST SCHAR blob_items[] =
+static const SCHAR blob_items[] =
 {
 	isc_info_blob_max_segment,
 	isc_info_blob_num_segments
 };
-static CONST SCHAR blr_items[] =
+static const SCHAR blr_items[] =
 {
 	isc_info_blob_max_segment,
 	isc_info_blob_total_length
 };
-static CONST SCHAR source_items[] =
+static const SCHAR source_items[] =
 {
 	isc_info_blob_max_segment,
 	isc_info_blob_total_length,
 	isc_info_blob_num_segments
 };
-static CONST SCHAR db_info_items[] =
+static const SCHAR db_info_items[] =
 {
 	isc_info_db_sql_dialect,
 	isc_info_page_size,
@@ -209,12 +209,12 @@ static CONST SCHAR db_info_items[] =
 	isc_info_db_read_only,
 	isc_info_end
 };
-static CONST SCHAR limbo_tpb[] =
+static const SCHAR limbo_tpb[] =
 {
 	isc_tpb_version1,
 	isc_tpb_ignore_limbo
 };
-static CONST SCHAR limbo_nau_tpb[] =
+static const SCHAR limbo_nau_tpb[] =
 {
 	isc_tpb_version1,
 	isc_tpb_ignore_limbo,

@@ -137,9 +137,9 @@ static int output_netware(SLONG, UCHAR *);
 static int output_main(SLONG, UCHAR *);
 static int output_svc(SLONG, UCHAR *);
 #ifdef __GNUC__
-static void burp_output(CONST SCHAR *, ...) __attribute__ ((format(printf,1,2)));
+static void burp_output(const SCHAR *, ...) __attribute__ ((format(printf,1,2)));
 #else
-static void burp_output(CONST SCHAR *, ...);
+static void burp_output(const SCHAR *, ...);
 #endif
 
 #ifndef	SUPERSERVER
@@ -1918,7 +1918,7 @@ static SSHORT open_files(TEXT * file1,
 }
 
 
-static void burp_output( CONST SCHAR * format, ...)
+static void burp_output( const SCHAR * format, ...)
 {
 /**************************************
  *
