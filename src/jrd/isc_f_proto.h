@@ -41,7 +41,6 @@ extern int ISC_expand_logical(TEXT *, USHORT, TEXT *);
 extern int ISC_expand_share(TEXT *, TEXT *);
 extern int ISC_file_lock(SSHORT);
 extern int ISC_file_unlock(SSHORT);
-extern void ISC_parse_filename(TEXT *, TEXT *, TEXT *, TEXT *);
 extern int ISC_strip_filename(TEXT *);
 
 #ifdef __cplusplus

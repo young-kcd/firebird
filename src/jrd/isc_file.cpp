@@ -1006,59 +1006,6 @@ int ISC_expand_share(TEXT * file_name, TEXT * expanded_name)
 }
 #endif	// WIN_NT
 
-
-#ifdef PARSE_FILENAME
-#ifndef REQUESTER
-void ISC_parse_filename(
-						TEXT * filename,
-						TEXT * node, TEXT * device, TEXT * path)
-{
-/**************************************
- *
- *	I S C _ p a r s e _ f i l e n a m e
- *
- **************************************
- *
- * Functional description
- *	Decompose a PC filename into node name, device name,
- *	and path name.  Leading slashes are retained for node names,
- *	as are trailing colons on device names.
- *
- **************************************/
-	TEXT c, *p, slash;
-
-	slash = (*filename == '/') ? '/' : '\\';
-
-	if (filename[0] == slash && filename[1] == slash) {
-		*node++ = *filename++;
-		*node++ = *filename++;
-		while (*filename && *filename != slash)
-			*node++ = *filename++;
-	}
-
-	*node = 0;
-
-	for (p = filename; *p && *p != ':'; p++);
-
-	if (*p) {
-		if (*filename == slash)
-			++filename;
-		while (filename < p)
-			*device++ = *filename++;
-		*device++ = *filename++;
-	}
-
-	*device = 0;
-
-	while (c = *filename++)
-		*path++ = (c == '/') ? '\\' : c;
-
-	*path = 0;
-}
-#endif
-#endif
-
-
 #ifdef SUPERSERVER
 int ISC_strip_extension(TEXT * file_name)
 {
