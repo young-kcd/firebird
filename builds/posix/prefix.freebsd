@@ -15,8 +15,8 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.freebsd:	$(VERSION)	@PLATFORM@
-#$Id: prefix.freebsd,v 1.1 2002-10-12 04:59:10 stryqx Exp $
+#$Id: prefix.freebsd,v 1.2 2002-11-05 01:49:38 nmcc Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
-PROD_FLAGS=-O -DNDEBUG -DFREEBSD 
-DEV_FLAGS=-ggdb -DFREEBSD -DDEBUG_GDS_ALLOC
+PROD_FLAGS=-O -DNDEBUG -DFREEBSD -pipe -MMD -p -fPIC
+DEV_FLAGS=-ggdb -DFREEBSD -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall
