@@ -67,8 +67,9 @@
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
-    * Fixed v1.5 bug.
+    * Fixed unregistered bug.
         Solved a number of problems with the win32 lock manager.
+        Problems manifested themselves as low performance when several operations were waiting on locks simultaneously.
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -125,7 +126,7 @@
         Olivier Mascia <om at tipgroup.com>
 
     * Fixed v1.5 bug.
-        Memory corruptions in the API implementation.
+        Memory corruptions in the embedded DSQL API implementation.
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
