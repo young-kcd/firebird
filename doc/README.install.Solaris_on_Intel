@@ -1,0 +1,84 @@
+______________________________________________________________________________
+FireBird 1.5 Installation's On Solaris Intel (IA)
+______________________________________________________________________________
+
+STATUS:  Still a work in progress 
+
+AUTHORS: Konstantin Kuznetsov (kkuznetsov@users.sourceforge.net)
+
+COPYRIGHT: All rights retained by authors.
+           For distribution with Firebird source and binaries
+           (Someone who knows this legal stuff will update it later)
+
+1.OVERVIEW
+
+  What your got?
+  Solaris Intel Firebird > 1.5 version packages will use following name conversion
+	Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg.tar.Z
+  where 
+	@ARCH_TYPE_SUFFIX@ is ClassicServer or SuperServer
+	FirebirdVersion - is a version number
+	BuildNum - build number
+	PackageVersion - probably zero
+  Package is a compressed using "compress" utility tar archive included Solaris
+  package and some readme files.
+
+2. SOFTWARE REQUREMENTS
+2.1 Classic Server
+ 
+  Firebird Classic server is compiled on Solaris Intel 2.6 using gcc 3.3.3.
+  So to got it started your need:
+	- Solaris Os version >=2.6 on 32bit Intel (like!) Pentium CPU 
+	  if it's 2.6 recommended patches required	  
+	- GNU C/C+ runtime for gcc 3.3.3 at least libgcc_s.so.1 libstdc++.so.5
+	  on http://sunfreeware.com/ it's called  libgcc-3.3-XXX probably
+	  in a future I'll create package of it from my machine.
+
+3. INSTALLATION SCENARIO
+3.1 MAIN PROCESS   
+	1) Extract package using uncompress and tar -xvf 
+	2) Use pkgadd -d  	Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg
+           to install it running as root
+	3) Verify it working 
+		>isql localhost:/usr/local/firebird/secirity.fdb -user sysdba -pass masterkey
+	or telnet gds_db localhost
+3.2 WHAT INSTALL SCRIPTS TRY DO
+	1. add 	this line to /etc/inet/services
+  			gds_db 3050/tcp # Firebird2 Database Remote Protocol
+	2. add this line to /etc/inet/inetd.conf
+# Firebird2 Database Remote Server
+gds_db stream tcp nowait.30000 root /usr/local/firebird/bin/fb_inet_server fb_inet_server
+	3. add some variables to /etc/profile
+# Enhance PATH for Firebird2
+PATH=$PATH:/usr/local/firebird/bin
+export PATH
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/firebird/lib:/usr/local/firebird/intl
+export LD_LIBRARY_PATH
+INTERBASE=/usr/local/firebird
+export INTERBASE
+	4. backup all these unmodified files in some where /var/sadm/FB2SI/save
+	5. restart inetd
+
+3.3 WHAT YOUR CAN IMPROVE
+	I advise some more to do
+
+	Your can add /usr/local/firebird to LD_LIBRARY_PATH of running from user
+	or probably inetd start script.
+	Your can add localhost and hostname to /etc/hosts.equiv
+	
+4. SECURITY ISSUES
+	I strongly advise run al type of server (Classic or Super) from non root
+	user:
+	1) add group firebird
+	2) add user firebird member of firebird group
+	3) chown -R firebird /usr/local/firebird
+	   chgrp -R firbird /usr/local/firebird
+	4) change user in inetd.conf if your run Classic
+
+5. MORE READINGS
+	www.firebirdsql.org
+	www.ibase.ru (in russian)
+
+6. UNINSTALL
+	pgkrm FB2SI
+	Warning: it try to restore backuped system files!
