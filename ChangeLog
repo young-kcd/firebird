@@ -1,3 +1,323 @@
+2003-11-07 16:39  brodsom
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp:
+	
+	fix const cast (error in mingw)
+
+2003-11-07 15:18  brodsom
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	firebird.init.d.debian.in, firebird.init.d.generic.in,
+	firebird.init.d.gentoo.in, firebird.init.d.mandrake.in,
+	firebird.init.d.suse.in, rc.config.firebird.in:
+	
+	Add needed files from B1_5
+
+2003-11-07 15:10  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.cpp, dsql.tab.h, keywords.cpp,
+	make.cpp, node.h, parse.cpp, parse.y, pass1.cpp, pass1_proto.h:
+	
+	Added ROWS clause. FIRST/SKIP remains allowed in unions, although I
+	still think it doesn't have much sense.
+
+2003-11-07 14:24  brodsom
+
+	* firebird2/src/: jrd/evl.cpp, jrd/why.cpp, jrd/os/vms/jio.cpp,
+	jrd/os/vms/map.cpp, jrd/os/vms/vms.cpp,
+	remote/os/win32/propty_proto.h, remote/os/win32/wnet.cpp:
+	
+	Extern function cleaning
+
+2003-11-07 14:21  brodsom
+
+	* firebird2/src/: dsql/pass1.cpp, include/memory_routines.h:
+	
+	Extern function cleaning
+
+2003-11-07 14:19  brodsom
+
+	* firebird2/src/: remote/server.cpp, jrd/why_proto.h:
+	
+	Extern "C" cleaning correction (detected by Claudio)
+
+2003-11-07 12:37  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.client.archive,
+	Makefile.in.client.journal, Makefile.in.embed.archive,
+	Makefile.in.embed.journal:
+	
+	Corrections
+
+2003-11-07 12:12  epocman
+
+	* firebird2/src/utilities/install/: install_nt.h, services.cpp:
+	
+	Minor synch details with 1.5 branch. Absolutely no interface nor
+	functional changes, except correction of remote service name which
+	was incorrect in HEAD branch.
+
+2003-11-07 12:11  epocman
+
+	* firebird2/src/utilities/: install_nt.h, install_reg.cpp,
+	registry.cpp, services.cpp:
+	
+	Minor synch details with HEAD branch. Absolutely no interface nor
+	functional changes.
+
+2003-11-07 09:05  robocop
+
+	* firebird2/src/: burp/backup.epp, burp/restore.epp,
+	common/classes/alloc.cpp, common/classes/alloc.h, dudley/exe.epp,
+	dudley/parse.cpp, gpre/cob.cpp, journal/console.cpp, jrd/alt.cpp,
+	jrd/blob_filter.cpp, jrd/btr_proto.h, jrd/cch_proto.h, jrd/cmp.cpp,
+	jrd/cmp_proto.h, jrd/dbg.cpp, jrd/dbg_proto.h, jrd/dbt.cpp,
+	jrd/dfw.epp, jrd/dfw_proto.h, jrd/dmp.cpp, jrd/dmp_proto.h,
+	jrd/dpm_proto.h, jrd/dsc.cpp, jrd/dsc_proto.h, jrd/dyn_def.epp,
+	jrd/dyn_util.epp, jrd/entry.h, jrd/event.cpp, jrd/exe.h,
+	jrd/exe_proto.h, jrd/ext.cpp, jrd/ext_proto.h, jrd/flu.cpp,
+	jrd/gds.cpp, jrd/gds_proto.h, jrd/gdsold.h, jrd/grant_proto.h,
+	jrd/ibase.h, jrd/idx.cpp, jrd/idx_proto.h, jrd/ini_proto.h,
+	jrd/isc_f_proto.h, jrd/isc_file.cpp, jrd/jrd.cpp, jrd/jrd_proto.h,
+	jrd/lck.cpp, jrd/lck_proto.h, jrd/opt.cpp, jrd/par.cpp,
+	jrd/par_proto.h, jrd/pwd.cpp, jrd/sbm_proto.h, jrd/sch.cpp,
+	jrd/sdw.cpp, jrd/sdw_proto.h, jrd/sqz.cpp, jrd/sqz_proto.h,
+	jrd/sym.cpp, jrd/thd.cpp, jrd/thd_proto.h, jrd/why.cpp,
+	jrd/why_proto.h, jrd/os/vms/rdb.cpp, jrd/os/vms/rdbint.cpp,
+	jrd/os/win32/isc_ipc.cpp, qli/gener.cpp, remote/allr.cpp,
+	remote/allr_proto.h, remote/divorce.cpp, remote/inet.cpp,
+	remote/inet_proto.h, remote/inet_server.cpp, remote/inter_proto.h,
+	remote/interface.cpp, remote/merge.cpp, remote/parse_proto.h,
+	remote/parser.cpp, remote/server.cpp, remote/xnet.cpp,
+	remote/xnet_proto.h, remote/os/win32/chop.cpp,
+	remote/os/win32/chop_proto.h, remote/os/win32/cntl.cpp,
+	remote/os/win32/cntl_proto.h, remote/os/win32/srvr_w32.cpp,
+	remote/os/win32/wnet.cpp, remote/os/win32/wnet_proto.h:
+	
+	const correctness, variables in scope, cleanup, etc.
+
+2003-11-07 08:58  robocop
+
+	* firebird2/src/ipserver/: ipapi_proto.h, ipclient.cpp,
+	ipserver.cpp:
+	
+	const correctness, cleanup, etc.  Borland's joke: ipclient.cpp
+	didn't include ipapi_proto.h, so the declarations and definitions
+	went out of sync
+
+2003-11-07 00:25  brodsom
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fix output format bug (win32)
+
+2003-11-07 00:24  brodsom
+
+	* firebird2/src/burp/: burp.h, restore.epp:
+	
+	Remove v3.3 to v4 restore
+
+2003-11-06 20:12  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h:
+	
+	Try and get the buyild number more or less correct for the actual
+	commits to the B1_5_Release branch. Undo a feature of the Win32
+	install script that doesn't work.
+
+2003-11-06 18:56  brodsom
+
+	* firebird2/src/: dsql/parse_proto.h, dsql/prepa_proto.h,
+	dsql/utld_proto.h, jrd/btr_proto.h, jrd/cch_proto.h,
+	jrd/cmp_proto.h, jrd/dsc_proto.h, jrd/intlobj.h, jrd/isc_proto.h,
+	jrd/isc_s_proto.h, jrd/jrd.h, jrd/met_proto.h, jrd/sdl_proto.h,
+	jrd/sort.h:
+	
+	Extern "C" cleaning
+
+2003-11-06 18:55  brodsom
+
+	* firebird2/src/: journal/rebuild.epp, journal/server.epp,
+	journal/gjrn.cpp, utilities/install/registry.cpp:
+	
+	Warning fixes
+
+2003-11-06 17:51  dimitr
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Minor corrections by Paul Beach.
+
+2003-11-06 17:21  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Correction.
+
+2003-11-06 16:56  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Correction.
+
+2003-11-06 14:05  paul_reeves
+
+	* firebird2/doc/README.Win32LibraryInstallation.txt:
+	
+	file README.Win32LibraryInstallation.txt was initially added on
+	branch B1_5_Release.
+
+2003-11-06 14:05  paul_reeves
+
+	* firebird2/: doc/README.Win32LibraryInstallation.txt,
+	
+	More tweaks to the Win32 installer. Documentation added about
+	library installation policy. Installation notes for the binary
+	installer updated.
+	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
+	c, src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/install/arch-specific/win32/installation_readme.txt:
+
+2003-11-06 13:25  stryqx
+
+	* firebird2/builds/install/arch-specific/freebsd/install.sh.in:
+	
+	Even though the libgds symlinks are commented out, make them
+	correct.
+
+2003-11-06 13:23  stryqx
+
+	* firebird2/src/install/arch-specific/freebsd/install.sh.in:
+	
+	Save some disk space by copying the symlinks as symlinks.
+
+2003-11-06 13:20  stryqx
+
+	* firebird2/builds/install/arch-specific/freebsd/install.sh.in:
+	
+	A better solution - copy the symlinks as symlinks.
+
+2003-11-06 13:13  stryqx
+
+	* firebird2/builds/install/arch-specific/freebsd/install.sh.in:
+	
+	Make the install less noisy for 2.0.  Save some disk space by
+	symlinking libfbclient.so.2 and libfbembed.so.2 to
+	libfbclient.so.2.0.0 and libfbembed.so.2.0.0 respectively.
+
+2003-11-06 12:56  stryqx
+
+	* firebird2/src/journal/server.epp:
+	
+	Fix typo.
+
+2003-11-06 10:31  stryqx
+
+	* firebird2/configure.in:
+	
+	Look for the install script template for FreeBSD in the right
+	location.
+
+2003-11-06 10:28  stryqx
+
+	* firebird2/configure.in:
+	
+	Let configure know about the FreeBSD install script.
+
+2003-11-06 10:25  stryqx
+
+	* firebird2/configure.in:
+	
+	Let configure know about the FreeBSD install script.
+
+2003-11-06 10:20  stryqx
+
+	* firebird2/builds/install/arch-specific/freebsd/: Makefile.in,
+	install.sh.in:
+	
+	First cut at the install script for FreeBSD.  Package management
+	for FreeBSD binaries will be done via the FreeBSD Ports Tree.
+
+2003-11-06 10:11  stryqx
+
+	* firebird2/src/install/arch-specific/freebsd/: Makefile.in,
+	install.sh.in:
+	
+	First cut at the install script for FreeBSD.  Package management
+	for FreeBSD binaries will be done via the FreeBSD Ports Tree.
+
+2003-11-06 10:11  stryqx
+
+	* firebird2/src/install/arch-specific/freebsd/install.sh.in:
+	
+	file install.sh.in was initially added on branch B1_5_Release.
+
+2003-11-06 04:02  brodsom
+
+	* firebird2/src/: jrd/os/pio_proto.h, jrd/os/posix/isc_ipc.cpp,
+	jrd/os/posix/unix.cpp, jrd/os/vms/vms.cpp,
+	jrd/os/win32/isc_ipc.cpp, jrd/os/win32/winnt.cpp,
+	remote/server.cpp, remote/xnet_proto.h, remote/interface.cpp,
+	remote/merge.cpp, remote/merge_proto.h, remote/remot_proto.h,
+	remote/remote.cpp, remote/allr.cpp, remote/allr_proto.h,
+	remote/inet.cpp, remote/inet_proto.h, remote/inet_server.cpp,
+	remote/inter_proto.h, remote/os/win32/chop.cpp,
+	remote/os/win32/chop_proto.h, remote/os/win32/window.cpp:
+	
+	Extern "C" cleaning
+
+2003-11-06 03:59  brodsom
+
+	* firebird2/src/: extlib/fbudf/stdafx.h, include/old_fb_blk.h,
+	ipserver/ipclient.cpp, jrd/why_proto.h, jrd/vio_proto.h,
+	jrd/why.cpp, jrd/vio.cpp, jrd/utl_proto.h, jrd/utl.cpp,
+	jrd/svc.cpp, jrd/svc.h, jrd/svc_proto.h, jrd/sym.cpp,
+	jrd/sym_proto.h, jrd/thd.cpp, jrd/thd_proto.h, jrd/tra_proto.h,
+	jrd/sqz.cpp, jrd/sqz_proto.h, jrd/sdw.cpp, jrd/sdw_proto.h,
+	jrd/par.cpp, jrd/par_proto.h, jrd/perf.cpp, jrd/quad.cpp,
+	jrd/quad_proto.h, jrd/sbm_proto.h, jrd/sch.cpp, jrd/sch_proto.h,
+	jrd/scl_proto.h, jrd/lck.cpp, jrd/lck_proto.h, jrd/mov.cpp,
+	jrd/mov_proto.h, jrd/nodebug.cpp, jrd/pag.cpp, jrd/pag_proto.h,
+	jrd/jrd.cpp, jrd/isc_sync.cpp, jrd/isc_f_proto.h, jrd/gds.cpp,
+	jrd/grammar.cpp, jrd/grant_proto.h, jrd/idx.cpp, jrd/idx_proto.h,
+	jrd/inf_proto.h, jrd/ini_proto.h, jrd/isc.h, jrd/ext.cpp,
+	jrd/ext_proto.h, jrd/exe.cpp, jrd/exe_proto.h, jrd/event.cpp,
+	jrd/event_proto.h, jrd/dsc.h, jrd/dyn_proto.h, jrd/dbt.cpp,
+	jrd/dfw_proto.h, jrd/dmp.cpp, jrd/dmp_proto.h, jrd/dpm_proto.h,
+	jrd/dsc.cpp, jrd/cch_proto.h, jrd/dbg.cpp, jrd/dbg_proto.h,
+	jrd/btr.cpp, jrd/cch.cpp, jrd/blb.cpp, jrd/blb_proto.h,
+	jrd/blob_filter.cpp, jrd/ail.h, jrd/ail.cpp:
+	
+	Extern "C" cleaning
+
+2003-11-06 03:31  brodsom
+
+	* firebird2/src/journal/: console.cpp, server.epp:
+	
+	make journal build in posix
+
+2003-11-06 02:52  brodsom
+
+	* firebird2/src/journal/: console.cpp, rebuild.epp, server.epp:
+	
+	corrections
+
+2003-11-06 01:25  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: A user specified PLAN with MERGE and JOINS crashed the
+	server, noted by Dmitry.    simplified : PLAN MERGE (JOIN ..., JOIN
+	...)
+
+2003-11-06 01:21  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: A user specified PLAN with MERGE and JOINS crashed the
+	server, noted by Dmitry.    simplified : PLAN MERGE (JOIN ..., JOIN
+	...)
+
 2003-11-05 17:54  brodsom
 
 	* firebird2/builds/install/arch-specific/mingw/prepare_mingw.sh:
