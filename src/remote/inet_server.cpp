@@ -31,9 +31,7 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: inet_server.cpp,v 1.47 2004-11-27 03:33:18 robocop Exp $
-*/
+
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,13 +141,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
  *	Run the server with apollo mailboxes.
  *
  **************************************/
-	int n, clients;
 	rem_port* port;
-	int child, channel;
-	TEXT *p, c;
-#if !(defined VMS)
-	int mask;
-#endif
 
 // 01 Sept 2003, Nickolay Samofatov
 // In GCC version 3.1-3.3 we need to install special error handler
@@ -167,7 +159,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	argv++;
 	bool debug = false, standalone = false;
 	INET_SERVER_flag = 0;
-	channel = 0;
+	int channel = 0;
 	protocol[0] = 0;
 	bool multi_client = false, multi_threaded = false;
 
@@ -176,11 +168,12 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	multi_client = multi_threaded = standalone = true;
 #endif
 
-	clients = 0;
+	int clients = 0;
 	bool done = false;
 
 	while (argv < end) {
-		p = *argv++;
+		TEXT c;
+		const TEXT* p = *argv++;
 		if (*p++ == '-')
 			while (c = *p++) {
 				switch (UPPER(c)) {
@@ -282,7 +275,8 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #if !(defined SUPERSERVER || defined VMS)
 	if (multi_client && !debug) {
 		set_signal(SIGUSR1, signal_handler);
-		for (n = 0; n < 100; n++) {
+		int child;
+		for (int n = 0; n < 100; n++) {
 			INET_SERVER_start = 0;
 			if (!(child = fork()))
 				break;
@@ -329,7 +323,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		}
 
 		if (!debug) {
-			mask = 0; // FD_ZERO(&mask);
+			int mask = 0; // FD_ZERO(&mask);
 			mask |= 1 << 2; // FD_SET(2, &mask);
 			divorce_terminal(mask);
 		}
@@ -438,7 +432,6 @@ static int assign( SCHAR * string)
  *
  **************************************/
 	SSHORT channel;
-	int status;
 	struct dsc$descriptor_s desc;
 
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
@@ -446,7 +439,7 @@ static int assign( SCHAR * string)
 	desc.dsc$w_length = strlen(string);
 	desc.dsc$a_pointer = string;
 
-	status = sys$assign(&desc, &channel, NULL, NULL);
+	int status = sys$assign(&desc, &channel, NULL, NULL);
 
 	return (status & 1) ? channel : 0;
 }
