@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.13 2003-07-04 16:19:37 brodsom Exp $
+//	$Id: sql.cpp,v 1.14 2003-07-04 16:45:22 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -101,7 +101,7 @@ static ACT act_open_blob(ACT_T, SYM);
 static ACT act_prepare(void);
 static ACT act_procedure(void);
 static ACT act_select(void);
-static ACT act_set(void);
+static ACT act_set(TEXT*);
 static ACT act_set_dialect(void);
 static ACT act_set_generator(void);
 static ACT act_set_names(void);
@@ -204,7 +204,6 @@ ACT SQL_action(TEXT * base_directory)
 	default:
 		SYNTAX_ERROR("SQL operation");
 	}
-
 	switch (keyword) {
 	case KW_ALTER:
 		action = act_alter();
@@ -311,7 +310,7 @@ ACT SQL_action(TEXT * base_directory)
 		break;
 
 	case KW_SET:
-		action = act_set();
+		action = act_set(base_directory);
 		break;
 
 	case KW_UPDATE:
@@ -4093,7 +4092,7 @@ static ACT act_select(void)
 //		Parse a SET <something>
 //  
 
-static ACT act_set(void)
+static ACT act_set(TEXT* base_directory)
 {
 
 	if (MATCH(KW_TRANSACTION))
@@ -4106,7 +4105,7 @@ static ACT act_set(void)
 		return act_set_statistics();
 
 	if (MATCH(KW_SCHEMA) || MATCH(KW_DATABASE))
-		return PAR_database((USHORT) TRUE, NULL);
+		return PAR_database((USHORT) TRUE, base_directory);
 
 	if (MATCH(KW_GENERATOR))
 		return act_set_generator();
