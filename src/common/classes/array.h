@@ -34,8 +34,11 @@ namespace Firebird {
 
 // Static part of the array
 template <typename T, int Capacity>
-class InlineStorage {
+class InlineStorage : public AutoStorage {
 public:
+	explicit InlineStorage(MemoryPool& p) : AutoStorage(p) { }
+	InlineStorage() : AutoStorage() { }
+protected:
 	T* getStorage() {
 		return buffer;
 	}
@@ -48,27 +51,37 @@ private:
 
 // Used when array doesn't have static part
 template <typename T>
-class EmptyStorage {
+class EmptyStorage : public AutoStorage {
 public:
+	explicit EmptyStorage(MemoryPool& p) : AutoStorage(p) { }
+	EmptyStorage() : AutoStorage() { }
+protected:
 	T* getStorage() { return NULL; }
 	int getStorageSize() const { return 0; }
 };
 
 // Dynamic array of simple types
 template <typename T, typename Storage = EmptyStorage<T> >
-class Array : private Storage {
+class Array : protected Storage {
 public:
-	Array(MemoryPool* p) : 
-	  count(0), capacity(getStorageSize()), data(getStorage()), pool(p)  {}
-	Array(MemoryPool* p, int InitialCapacity) : count(0), 
-		capacity(getStorageSize()), data(getStorage()), pool(p)  
+	explicit Array(MemoryPool& p) : 
+		Storage(p), count(0), capacity(getStorageSize()), data(getStorage()) { }
+	explicit Array(MemoryPool& p, int InitialCapacity) : 
+		Storage(p), count(0), capacity(getStorageSize()), data(getStorage())
+	{
+		ensureCapacity(InitialCapacity);
+	}
+	Array() : count(0), 
+		capacity(getStorageSize()), data(getStorage()) { }
+	explicit Array(int InitialCapacity) : count(0), 
+		capacity(getStorageSize()), data(getStorage())
 	{
 		ensureCapacity(InitialCapacity);
 	}
 	~Array()
 	{
 		if (data != getStorage())
-			pool->deallocate(data);
+			getPool().deallocate(data);
 	}
 	void clear() { count = 0; };
 protected:
@@ -156,21 +169,20 @@ public:
 protected:
 	int count, capacity;
 	T* data;
-	MemoryPool* pool;
 	void ensureCapacity(int newcapacity) {
 		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
 			}
 			T* newdata = reinterpret_cast<T*>
-				(pool->allocate(sizeof(T) * newcapacity
+				(getPool().allocate(sizeof(T) * newcapacity
 #ifdef DEBUG_GDS_ALLOC
 		, 1, __FILE__, __LINE__
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);
 			if (data != getStorage())
-				pool->deallocate(data);
+				getPool().deallocate(data);
 			data = newdata;
 			capacity = newcapacity;
 		}
@@ -178,14 +190,17 @@ protected:
 };
 
 // Dynamic sorted array of simple objects
-template <typename Value, 
+template <typename Value,
+	typename Storage = EmptyStorage<Value>, 
 	typename Key = Value, 
 	typename KeyOfValue = DefaultKeyValue<Value>, 
 	typename Cmp = DefaultComparator<Key> >
-class SortedArray : public Array<Value> {
+class SortedArray : public Array<Value, Storage> {
 public:
-	SortedArray(MemoryPool* p, int s) : Array<Value>(p, s) {}
-	SortedArray(MemoryPool* p) : Array<Value>(p) {}
+	explicit SortedArray(MemoryPool& p, int s) : Array<Value, Storage>(p, s) {}
+	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
+	explicit SortedArray(int s) : Array<Value, Storage>(s) {}
+	SortedArray() : Array<Value, Storage>() {}
 	bool find(const Key& item, int& pos) {
 		int highBound = count, lowBound = 0;
 		while (highBound > lowBound) {
@@ -211,9 +226,12 @@ public:
 template <typename T, int InlineCapacity>
 class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> > {
 public:
-	HalfStaticArray(MemoryPool* p) : Array<T,InlineStorage<T, InlineCapacity> > (p) {}
-	HalfStaticArray(MemoryPool* p, int InitialCapacity) : 
+	explicit HalfStaticArray(MemoryPool& p) : Array<T,InlineStorage<T, InlineCapacity> > (p) {}
+	explicit HalfStaticArray(MemoryPool& p, int InitialCapacity) : 
 		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}
+	HalfStaticArray() : Array<T,InlineStorage<T, InlineCapacity> > () {}
+	explicit HalfStaticArray(int InitialCapacity) : 
+		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 
 }	// Firebird
