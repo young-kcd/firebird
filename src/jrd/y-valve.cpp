@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.5 2002-08-26 12:18:12 eku Exp $
+$Id: y-valve.cpp,v 1.6 2002-10-18 13:26:59 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -4236,6 +4236,8 @@ STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
 
 	RETURN_SUCCESS;
 }
+
+
 STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
 {
 /**************************************
@@ -4259,8 +4261,10 @@ STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
 
 	for (sub = transaction; sub; sub = sub->next)
 		if (sub->implementation != SUBSYSTEMS &&
-			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle))
-			return error(status, local);
+			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle)) {
+			if (status[1] != isc_network_error)
+				return error(status, local);
+		}
 
 	subsystem_exit();
 

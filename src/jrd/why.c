@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.12 2002-07-29 15:37:54 skywalker Exp $
+$Id: why.c,v 1.13 2002-10-18 13:26:58 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -4289,6 +4289,8 @@ STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(STATUS * user_status,
 
 	RETURN_SUCCESS;
 }
+
+
 STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
 {
 /**************************************
@@ -4312,8 +4314,10 @@ STATUS API_ROUTINE GDS_ROLLBACK(STATUS * user_status, TRA * tra_handle)
 
 	for (sub = transaction; sub; sub = sub->next)
 		if (sub->implementation != SUBSYSTEMS &&
-			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle))
-			return error(status, local);
+			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle)) {
+			if (status[1] != isc_network_error)
+				return error(status, local);
+		}
 
 	subsystem_exit();
 
