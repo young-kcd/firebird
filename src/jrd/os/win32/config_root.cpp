@@ -36,7 +36,6 @@
 
 typedef Firebird::string string;
 
-//static const char *REGISTRY_KEY = "RootDirectory"; // To be discussed with Dmitry
 static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
@@ -44,23 +43,21 @@ static const char *CONFIG_FILE = "firebird.conf";
  *	Platform-specific root locator
  */
 
-/* To be discussed with Dmitry
 void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
 {
 	HKEY hkey;
 	DWORD type;
 
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_CUR_VER,
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
 		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
 	{
 		return;
 	}
 
-	RegQueryValueEx(hkey, REGISTRY_KEY, NULL, &type,
+	RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, NULL, &type,
 		reinterpret_cast<UCHAR*>(buffer), &buffer_length);
 	RegCloseKey(hkey);
 }
-*/
 
 ConfigRoot::ConfigRoot()
 {
@@ -69,9 +66,9 @@ ConfigRoot::ConfigRoot()
 	buffer[0] = 0;
 
 	// check the registry first
-//#if !defined(EMBEDDED)
-//	getRootFromRegistry(buffer, sizeof(buffer)); // To be discussed with Dmitry
-//#endif
+#if !defined(EMBEDDED)
+	getRootFromRegistry(buffer, sizeof(buffer));
+#endif
 	if (buffer[0])
 	{
 		root_dir = buffer;

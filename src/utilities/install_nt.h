@@ -24,8 +24,6 @@
 #ifndef _UTILITIES_INSTALL_NT_H_
 #define _UTILITIES_INSTALL_NT_H_
 
-#define FB_DEFAULT_INSTANCE	  	"DefaultInstance"
-
 #define REMOTE_SERVICE			"FirebirdSQLDefaultInstance"
 #define REMOTE_DISPLAY_NAME		"Firebird SQL Server - DefaultInstance"
 #define REMOTE_SS_EXECUTABLE	"bin\\fbserver"
