@@ -845,7 +845,14 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		SDW_init(options.dpb_activate_shadow,
 				options.dpb_delete_shadow,
 				sbm_recovery);
+
+		/* dimitr: disabled due to unreliable behaviour of minor ODS upgrades
+			a) in the case of any failure it's impossible to attach the database
+			b) there's no way to handle failures properly, because upgrade is
+			   being made in the context of system transaction which doesn't use
+			   the backout logic
 		INI_update_database();
+		*/
 	}
 
     /* Attachments to a ReadOnly database need NOT do garbage collection */
@@ -1177,7 +1184,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /*
  * if the attachment is through gbak and this the attachment is not by owner
- * or sysdba   then return error. This has been added here to allow for the
+ * or sysdba then return error. This has been added here to allow for the
  * GBAK security feature of only allowing the owner or sysdba to backup a
  * database. smistry 10/5/98
  */

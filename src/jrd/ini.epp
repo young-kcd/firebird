@@ -785,8 +785,6 @@ void INI_update_database(void)
 **   perform the necessary modifications
 ********************************************************************/
 
-	try {
-
 	if (major_version == ODS_VERSION8)
 	{
 	/*** NOTE: The following two functions/structures need to understand
@@ -805,17 +803,6 @@ void INI_update_database(void)
 
 	add_index_set(dbb, TRUE, major_version, minor_version);
 	add_new_triggers(major_version, minor_version);
-
-	DFW_perform_system_work();
-
-	}
-	catch (const std::exception&) {
-		char buffer[128];
-		sprintf(buffer, "unsuccessful minor ODS upgrade, from version %d.%d to %d.%d",
-				major_version, minor_version, ODS_VERSION, ODS_CURRENT);
-		ERR_log(0, 0, buffer);
-		return;
-	}
 
 	/* if the database was updated; mark it with the current ODS minor
 	   version so other process will attempt to do so. We mark this after
@@ -849,6 +836,8 @@ void INI_update_database(void)
 
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	CCH_RELEASE(tdbb, &window);
+
+	DFW_perform_system_work();
 }
 
 #ifdef NOT_USED_OR_REPLACED
