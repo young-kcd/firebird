@@ -345,7 +345,7 @@ static void usage(void)
 
 	ib_printf("Usage:\n");
 	ib_printf
-		("    instsvc {install InterBase_directory [-auto | -demand] } [-g] [-z]\n");
+		("    instsvc {install Firebird_directory [-auto | -demand] } [-g] [-z]\n");
 	ib_printf
 		("            {remove                                        } [-g] \n");
 	ib_printf

@@ -53,9 +53,9 @@ static int file;
 
 /* keep the LOCALE_PAT names in sync with gds.h */
 
-#if (defined WIN_NT)
+#ifdef WIN_NT
 #include <io.h>
-#define FILENAME	"interbas.msg"
+#define FILENAME	"firebird.msg"
 #define LOCALE_PAT	"%.8s.msg"
 #define PATH_SEPARATOR	'\\'
 #endif
@@ -63,13 +63,13 @@ static int file;
 #ifdef PC_PLATFORM
 #include <fcntl.h>
 #include <io.h>
-#define FILENAME	"interbas.msg"
+#define FILENAME	"firebird.msg"
 #define LOCALE_PAT	"%.8s.msg"
 #define PATH_SEPARATOR	'\\'
 #endif
 
 #ifndef FILENAME
-#define FILENAME	"interbase.msg"
+#define FILENAME	"firebird.msg"
 #define LOCALE_PAT	"%.10s.msg"
 #define PATH_SEPARATOR	'/'
 #endif

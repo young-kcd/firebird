@@ -27,17 +27,17 @@
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 #define REMOTE_SERVICE		"InterBaseServer"
 #define REMOTE_DISPLAY_NAME	"Firebird Server"
-#define REMOTE_EXECUTABLE	"bin\\ibserver"
+#define REMOTE_EXECUTABLE	"bin\\fbserver"
 #define ISCGUARD_SERVICE	"Firebird Guardian"
 #define ISCGUARD_DISPLAY_NAME "Firebird Guardian Service"
-#define ISCGUARD_EXECUTABLE	"bin\\ibguard"
+#define ISCGUARD_EXECUTABLE	"bin\\fbguard"
 #define GUARDIAN_MUTEX      "InterBaseGuardianMutex"
 /* Starting with 128 the service prams are user defined */
 #define SERVICE_CREATE_GUARDIAN_MUTEX 128
 #else
 #define REMOTE_SERVICE		"InterBaseRemoteService"
 #define REMOTE_DISPLAY_NAME	"Firebird Remote Service"
-#define REMOTE_EXECUTABLE	"bin\\ibremote"
+#define REMOTE_EXECUTABLE	"bin\\fbremote"
 #endif
 #define REMOTE_DEPENDENCIES	"Tcpip\0\0"
 

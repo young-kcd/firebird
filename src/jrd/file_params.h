@@ -62,7 +62,7 @@
 #define GUARD_FILE		"[000000]isc_guard1.%s"
 #endif
 
-#if defined WIN_NT
+#ifdef WIN_NT
 #define EVENT_FILE		"%s.evn"
 #define LOCK_FILE		"%s.lck"
 #define CSI_FILE		"%s.csv"
@@ -143,35 +143,35 @@
 #ifdef PC_PLATFORM
 #ifdef NETWARE_386
 #define WORKFILE	"sys:\\tmp\\"
-#define ISC_PREFIX	"sys:\\interbas\\"
+#define ISC_PREFIX	"sys:\\firebird\\"
 #define TEMP_PATTERN	""
 #else
 #define WORKFILE	""
-#define ISC_PREFIX	"c:/interbas/"
+#define ISC_PREFIX	"c:/firebird/"
 #define TEMP_PATTERN	"XXXXXX"
 #endif
-#define MSG_FILE	"interbas.msg"
+#define MSG_FILE	"firebird.msg"
 #define MSG_FILE_LANG	"%.8s.msg"
 #define LOCALE_MAX	5
-#define LOGFILE		"interbas.log"
+#define LOGFILE		"firebird.log"
 #endif
 
 #ifdef WIN_NT
 #define WORKFILE	"c:\\temp\\"
 #define ISC_PREFIX	"c:\\Program Files\\Firebird\\FBServer/"
 #define ISC_PREFIX_SUBPATH "\\Firebird\\FBServer/"
-#define MSG_FILE	"interbase.msg"
+#define MSG_FILE	"firebird.msg"
 #define MSG_FILE_LANG	"intl/%.8s.msg"
 #define LOCALE_MAX	6
-#define LOGFILE		"interbase.log"
+#define LOGFILE		"firebird.log"
 #define TEMP_PATTERN	"XXXXXX"
 #endif
 
 #ifdef VMS
-#define MSG_FILE	"[sysmsg]interbase_msg.dat"
-#define MSG_FILE_LANG	"[sysmsg]interbase_%.10s.dat"
+#define MSG_FILE	"[sysmsg]firebird_msg.dat"
+#define MSG_FILE_LANG	"[sysmsg]firebird_%.10s.dat"
 #define LOCALE_MAX	10
-#define LOGFILE		"[syserr]interbase.log"
+#define LOGFILE		"[syserr]firebird.log"
 #define WORKFILE	"SYS$SCRATCH:"
 #define ISC_LOGICAL	"interbase:"
 #define ISC_LOGICAL_LOCK	"interbase_lock:"
@@ -196,13 +196,13 @@ static struct isc_vms_prefix trans_prefix[] =
 #endif
 
 #ifndef MSG_FILE
-#define MSG_FILE	"interbase.msg"
+#define MSG_FILE	"firebird.msg"
 #define MSG_FILE_LANG	"intl/%.10s.msg"
 #define LOCALE_MAX	10
 #endif
 
 #ifndef LOGFILE
-#define LOGFILE		"interbase.log"
+#define LOGFILE		"firebird.log"
 #endif
 
 #ifndef TEMP_PATTERN
