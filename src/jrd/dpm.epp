@@ -1131,10 +1131,6 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, USHORT initialize, SINT64 va
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_read_only_database, 0);
 		}
-		if (tdbb->tdbb_transaction && (tdbb->tdbb_transaction->tra_flags & TRA_readonly)) {
-			CCH_RELEASE(tdbb, &window);
-			ERR_post(isc_read_only_trans, 0);
-		}
 		CCH_MARK_SYSTEM(tdbb, &window);
 
 		/* Initialize or increment the quad value in an ODS 10 or later
