@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.50 2003-02-13 09:30:10 dimitr Exp $
+$Id: inet.cpp,v 1.51 2003-02-14 14:26:05 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1358,7 +1358,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 
 		case CNCT_passwd:
 			p = password;
-			if ((length = *id++) != NULL)
+			if ((length = *id++) != 0)
 				do
 					*p++ = *id++;
 				while (--length);
@@ -1367,7 +1367,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 
 		case CNCT_group:
 			p = (TEXT *) & eff_gid;
-			if ((length = *id++) != NULL)
+			if ((length = *id++) != 0)
 				do
 					*p++ = *id++;
 				while (--length);
@@ -1943,7 +1943,7 @@ static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
 
 	for (;;) {
 		for (p = line;
-			 ((c = ib_getc(proxy)) != NULL) && c != EOF && c != '\n';)
+			 ((c = ib_getc(proxy)) != 0) && c != EOF && c != '\n';)
 			*p++ = c;
 		*p = 0;
 		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user)
@@ -2949,7 +2949,7 @@ static XDR_INT inet_destroy( XDR * xdrs)
  *
  **************************************/
 
-	return NULL;
+	return (XDR_INT)0;
 }
 
 static void inet_gen_error( PORT port, STATUS status, ...)
@@ -3180,7 +3180,7 @@ static int inet_error(
 					   operation, 0);
 	}
 
-	return (int) NULL;
+	return 0;
 }
 
 static bool_t inet_putbytes( XDR * xdrs, SCHAR * buff, u_int count)
