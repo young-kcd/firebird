@@ -1923,6 +1923,24 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 	}
 }
 
+static bool check_for_nod_from(JRD_NOD node)
+{
+/**************************************
+ *
+ *	c h e c k _ f o r _ n o d _ f r o m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check for nod_from under >=0 nod_cast nodes.
+ *
+ **************************************/
+	if (node->nod_type == nod_from)
+		return true;
+	if (node->nod_type == nod_cast)
+		return check_for_nod_from(node->nod_arg[e_cast_source]);
+	return false;
+}
 
 static SLONG decompose(TDBB tdbb,
 					   JRD_NOD boolean_node, LLS * stack, CSB csb)
@@ -1953,7 +1971,7 @@ static SLONG decompose(TDBB tdbb,
 
 	if (boolean_node->nod_type == nod_between) {
 		arg = boolean_node->nod_arg[0];
-		if (arg->nod_type == nod_from) {
+		if (check_for_nod_from(arg)) {
 			/* Without this ERR_punt(), server was crashing with sub queries 
 			 * under "between" predicate, Bug No. 73766 */
 			ERR_post(isc_optimizer_between_err, 0);
