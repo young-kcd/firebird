@@ -909,13 +909,13 @@ int THD_wlck_destroy(WLCK_T * wlock)
  **************************************/
 	int status;
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	ib_fprintf(ib_stderr, "calling rwlock_destroy %x\n", wlock);
 #endif
 
 	status = rwlock_destroy(wlock);
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	if (status)
 		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
 #endif
@@ -937,13 +937,13 @@ int THD_wlck_init(WLCK_T * wlock)
  **************************************/
 	int status;
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	ib_fprintf(ib_stderr, "calling rwlock_init %x\n", wlock);
 #endif
 
 	status = rwlock_init(wlock, USYNC_THREAD, NULL);
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	if (status)
 		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
 #endif
@@ -965,7 +965,7 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
  **************************************/
 	int status;
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	if (type == WLCK_read)
 		ib_fprintf(ib_stderr, "calling rwlock_rdlock %x\n", wlock);
 	else
@@ -977,7 +977,7 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
 	else
 		status = rw_wrlock(wlock);
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	if (status)
 		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
 #endif
@@ -999,13 +999,13 @@ int THD_wlck_unlock(WLCK_T * wlock)
  **************************************/
 	int status;
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	ib_fprintf(ib_stderr, "calling rwlock_unlock %x\n", wlock);
 #endif
 
 	status = rw_unlock(wlock);
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	if (status)
 		ib_fprintf(ib_stderr, "status = %d errno = %d\n", status, errno);
 #endif
@@ -1068,7 +1068,7 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
  **************************************/
 	int status, incr;
 
-#ifdef THREAD_DEBUG
+#ifdef DEBUG_THREAD
 	if (type == WLCK_read)
 		ib_fprintf(ib_stderr, "calling rwlock_rdlock %x\n", wlock);
 	else

@@ -318,14 +318,14 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 
 	for (; count > 0; --count, ++events, ++values)
 		if ((*events)->event_count >= *values) {
-#ifdef ISC_SYNC_DEBUG
+#ifdef DEBUG_ISC_SYNC
 			ib_printf("ISC_event_blocked: FALSE (eg something to report)\n");
 			ib_fflush(ib_stdout);
 #endif
 			return FALSE;
 		}
 
-#ifdef ISC_SYNC_DEBUG
+#ifdef DEBUG_ISC_SYNC
 	ib_printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
 	ib_fflush(ib_stdout);
 #endif
@@ -546,14 +546,14 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 
 	for (; count > 0; --count, ++events, ++values)
 		if ((*events)->event_count >= *values) {
-#ifdef ISC_SYNC_DEBUG
+#ifdef DEBUG_ISC_SYNC
 			ib_printf("ISC_event_blocked: FALSE (eg something to report)\n");
 			ib_fflush(ib_stdout);
 #endif
 			return FALSE;
 		}
 
-#ifdef ISC_SYNC_DEBUG
+#ifdef DEBUG_ISC_SYNC
 	ib_printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
 	ib_fflush(ib_stdout);
 #endif
@@ -840,14 +840,14 @@ int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
 
 	for (; count > 0; --count, ++events, ++values)
 		if ((*events)->event_count >= *values) {
-#ifdef ISC_SYNC_DEBUG
+#ifdef DEBUG_ISC_SYNC
 			ib_printf("ISC_event_blocked: FALSE (eg something to report)\n");
 			ib_fflush(ib_stdout);
 #endif
 			return FALSE;
 		}
 
-#ifdef ISC_SYNC_DEBUG
+#ifdef DEBUG_ISC_SYNC
 	ib_printf("ISC_event_blocked: TRUE (eg nothing happened yet)\n");
 	ib_fflush(ib_stdout);
 #endif

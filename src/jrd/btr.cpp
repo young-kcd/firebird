@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.15 2003-01-16 17:47:04 skidder Exp $
+$Id: btr.cpp,v 1.16 2003-02-10 00:03:54 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3146,7 +3146,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	BTR gc_page, parent_page, left_page, right_page = NULL;
 	BTN node, parent_node, last_node;
 	SLONG number, left_number;
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 	SLONG previous_number;
 #endif
 	USHORT relation_number, l;
@@ -3226,7 +3226,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 	left_window.win_flags = 0;
 	left_page = (BTR) CCH_FETCH(tdbb, &left_window, LCK_write, pag_index);
 	while (left_page->btr_sibling != window->win_page) {
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);
 		CORRUPT(204);			/* msg 204 index inconsistent */
@@ -3270,7 +3270,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 				CCH_RELEASE(tdbb, &left_window);
 			CCH_RELEASE(tdbb, window);
 			CCH_RELEASE(tdbb, &right_window);
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 			CORRUPT(204);		/* msg 204 index inconsistent */
 #endif
 			return contents_above_threshold;
@@ -3280,7 +3280,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 /* Find the node on the parent's level--the parent page could 
    have split while we didn't have it locked */
 
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 	previous_number = 0;
 #endif
 	for (parent_node = parent_page->btr_nodes;;) {
@@ -3299,7 +3299,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		if (number == window->win_page || number == END_LEVEL)
 			break;
 
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 		previous_number = number;
 #endif
 		parent_node = NEXT_NODE(parent_node);
@@ -3313,7 +3313,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			CCH_RELEASE(tdbb, &right_window);
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, window);
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 		CORRUPT(204);			/* msg 204 index inconsistent */
 #endif
 		return contents_above_threshold;
@@ -3403,7 +3403,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 		return contents_above_threshold;
 	}
 
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 	{
 		SLONG next_number;
 		BTN next_parent_node;
@@ -3512,7 +3512,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 
 	left_page->btr_length = p - (UCHAR *) left_page;
 
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 	if (left_page->btr_length > dbb->dbb_page_size) {
 		CCH_RELEASE(tdbb, &left_window);
 		CCH_RELEASE(tdbb, window);
@@ -4205,7 +4205,7 @@ static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
 
 		if (number == END_LEVEL) {
 			CCH_RELEASE(tdbb, window);
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 			CORRUPT(204);		/* msg 204 index inconsistent */
 #endif
 			return contents_above_threshold;
@@ -4296,7 +4296,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		|| key->key_length != BTN_LENGTH(node) + BTN_PREFIX(node))
 #endif /* IGNORE_NULL_IDX_KEY */
 	{
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, window);
 		CORRUPT(204);			/* msg 204 index inconsistent */
 #endif
@@ -4308,7 +4308,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 	if ( (l = BTN_LENGTH(node)) )
 		do
 			if (*p++ != *q++) {
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 				CCH_RELEASE(tdbb, window);
 				CORRUPT(204);	/* msg 204 index inconsistent */
 #endif
@@ -4333,7 +4333,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		if (number == END_LEVEL)
 #endif /* IGNORE_NULL_IDX_KEY */
 		{
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
 			CORRUPT(204);		/* msg 204 index inconsistent */
 #endif
@@ -4360,7 +4360,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 				!= key->key_length)
 #endif /* IGNORE_NULL_IDX_KEY */
 			{
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 				CCH_RELEASE(tdbb, window);
 				CORRUPT(204);	/* msg 204 index inconsistent */
 #endif
@@ -4379,7 +4379,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 		node = page->btr_nodes;
 		if ((l = BTN_LENGTH(node))
 			!= key->key_length) {
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
 			CORRUPT(204);		/* msg 204 index inconsistent */
 #endif
@@ -4391,7 +4391,7 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 			q = key->key_data;
 			do
 				if (*p++ != *q++) {
-#ifdef BTR_DEBUG
+#ifdef DEBUG_BTR
 					CCH_RELEASE(tdbb, window);
 					CORRUPT(204);	/* msg 204 index inconsistent */
 #endif

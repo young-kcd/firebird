@@ -39,7 +39,7 @@
 #include <process.h>
 #include <windows.h>
 
-// #define THREAD_PSCHED_DEBUG
+// #define DEBUG_THREAD_PSCHED
 
 MUTX_T ThreadPriorityScheduler::mutex;
 MemoryPool * ThreadPriorityScheduler::pool = 0;
@@ -186,7 +186,7 @@ ThreadPriorityScheduler * ThreadPriorityScheduler::Attach(void) {
 			chain = m;
 			TlsSetValue(specific_key, m);
 			THD_mutex_unlock(&mutex);
-#ifdef THREAD_PSCHED_DEBUG
+#ifdef DEBUG_THREAD_PSCHED
 			gds__log("^ handle=%p priority=%d", m->handle, 
 				m->flags & THPS_BOOSTED ? 
 				THREAD_PRIORITY_HIGHEST : THREAD_PRIORITY_NORMAL);
@@ -259,7 +259,7 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 									THREAD_PRIORITY_HIGHEST))
 							Firebird::system_call_failed::raise();
 
-#ifdef THREAD_PSCHED_DEBUG
+#ifdef DEBUG_THREAD_PSCHED
 						gds__log("+ handle=%p priority=%d", t->handle, THREAD_PRIORITY_HIGHEST);
 #endif
 						t->flags |= THPS_BOOSTED;
@@ -280,7 +280,7 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 						if (! SetThreadPriority(t->handle, 
 									THREAD_PRIORITY_NORMAL))
 							Firebird::system_call_failed::raise();
-#ifdef THREAD_PSCHED_DEBUG
+#ifdef DEBUG_THREAD_PSCHED
 						gds__log("- handle=%p priority=%d", t->handle, THREAD_PRIORITY_NORMAL);
 #endif
 						t->flags &= ~THPS_BOOSTED;
@@ -331,7 +331,7 @@ start_label:
 				}
 				ThreadPriorityScheduler *m = *pt;
 				*pt = m->next;
-#ifdef THREAD_PSCHED_DEBUG
+#ifdef DEBUG_THREAD_PSCHED
 				gds__log("~ handle=%p", m->handle);
 #endif
 				CloseHandle(m->handle);

@@ -1691,7 +1691,7 @@ static void release(void)
  **************************************/
 	int mutex_state;
 
-#ifdef EVENT_DEBUG
+#ifdef DEBUG_EVENT
 	validate();
 #endif
 
@@ -1789,7 +1789,7 @@ static STATUS return_ok(STATUS * status_vector)
 }
 
 
-#ifdef EVENT_DEBUG
+#ifdef DEBUG_EVENT
 static int validate(void)
 {
 /**************************************
