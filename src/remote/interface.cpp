@@ -5652,7 +5652,9 @@ static void THREAD_ROUTINE event_thread( PORT port)
 		stuff = port->receive(&packet);
 		THREAD_EXIT;
 
-		if (!stuff || packet.p_operation == op_exit) {
+		P_OP operation = packet.p_operation;
+
+		if (!stuff || operation == op_exit || operation == op_disconnect) {
 			/* Actually, the remote server doing the watching died.
 			   Clean up and leave. */
 
@@ -5663,7 +5665,7 @@ static void THREAD_ROUTINE event_thread( PORT port)
 
 		/* If the packet was an event, we handle it */
 
-		if (packet.p_operation == op_event) {
+		if (operation == op_event) {
 			pevent = &packet.p_event;
 
 			THREAD_ENTER;
