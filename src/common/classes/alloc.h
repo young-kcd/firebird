@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.48 2004-08-22 21:28:19 skidder Exp $
+ *  $Id: alloc.h,v 1.49 2004-08-28 05:15:02 skidder Exp $
  *
  */
 
@@ -342,7 +342,7 @@ public:
 	void deallocate(void* block);
 	
 	// Check pool for internal consistent. When enabled, call is very expensive
-	bool verify_pool();
+	bool verify_pool(bool fast_checks_only = false);
 
 	// Print out pool contents. This is debugging routine
 	void print_contents(FILE*, bool = false);
