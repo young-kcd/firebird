@@ -2539,7 +2539,7 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
  *	Compile a parsed request into something more interesting.
  *
  **************************************/
-	DSQL_NOD node, temp, rse, select;
+	DSQL_NOD node, temp, rse, select, aggregate;
 	DLLS base;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -2547,16 +2547,16 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 
 	select = input->nod_arg[1];
 	base = request->req_context;
+
+	node = MAKE_node(ntype, 1);
+	node->nod_arg[0] = rse = 
+		PASS1_rse(request, select, select->nod_arg[e_sel_order], NULL);
+
 	temp = MAKE_node(input->nod_type, 2);
 	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 
-	node = MAKE_node(ntype, 1);
-	node->nod_arg[0] = rse =
-		PASS1_rse(request, select, select->nod_arg[e_sel_order], NULL);
-
 /* adjust the scope level back to the sub-rse, so that 
    the fields in the select list will be properly recognized */
-
 	request->req_scope_level++;
 	request->req_in_select_list++;
 	temp->nod_arg[1] =
@@ -2564,7 +2564,18 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 	request->req_in_select_list--;
 	request->req_scope_level--;
 
-	rse->nod_arg[e_rse_boolean] =
+/* AB: Check if this is an aggregate so we know where to add 
+   it to the where-clause. 
+   SF BUG # [ 213859 ] Subquery connected with 'IN' clause */
+	if (rse->nod_arg[e_rse_streams] && 
+		(rse->nod_arg[e_rse_streams]->nod_type == nod_list) &&
+		(rse->nod_arg[e_rse_streams]->nod_arg[0]) &&
+		(rse->nod_arg[e_rse_streams]->nod_arg[0]->nod_type == nod_aggregate)) {
+		aggregate = rse->nod_arg[e_rse_streams]->nod_arg[0];
+		rse = aggregate->nod_arg[e_agg_rse];
+	}
+
+	rse->nod_arg[e_rse_boolean] = 
 		compose(rse->nod_arg[e_rse_boolean], temp, nod_and);
 
 	while (request->req_context != base)
