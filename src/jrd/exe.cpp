@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.51 2003-04-16 10:17:40 aafemt Exp $
+$Id: exe.cpp,v 1.52 2003-04-22 08:45:52 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -104,6 +104,7 @@ $Id: exe.cpp,v 1.51 2003-04-16 10:17:40 aafemt Exp $
 #include "../jrd/isc_s_proto.h"
 
 #include "../jrd/ExecuteStatement.h"
+#include "../dsql/dsql_proto.h"
 
 extern "C" {
 
@@ -1364,13 +1365,6 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
  *
  **************************************/
 
-	extern ISC_STATUS DLL_EXPORT callback_execute_immediate(
-		ISC_STATUS *status,
-		int* jrd_attachment_handle,
-		int* jrd_transaction_handle,
-		UCHAR *sql_operator,
-		int len);
-
 	UCHAR *p;
 	vary *v = reinterpret_cast <vary*> (
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
@@ -1395,9 +1389,9 @@ static void exec_sql(TDBB tdbb, JRD_REQ request, DSC* dsc)
 		else {
 			tdbb->tdbb_transaction->tra_callback_count++;
 			callback_execute_immediate(status,
-									   reinterpret_cast <int*> (tdbb->tdbb_attachment),
-									   reinterpret_cast <int*> (tdbb->tdbb_transaction),
-									   p, l);
+									   tdbb->tdbb_attachment,
+									   tdbb->tdbb_transaction,
+									   reinterpret_cast<TEXT *>(p), l);
 			tdbb->tdbb_transaction->tra_callback_count--;
 		}
 	}
