@@ -33,7 +33,16 @@ AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(string.h)
 AC_CHECK_HEADERS(signal.h)
 
-AC_CHECK_TYPE(socklen_t, int)
+#AC_CHECK_TYPE(socklen_t, int)
+AC_MSG_CHECKING(Checking for socklen_t type)
+AC_TRY_COMPILE([#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+],
+[socklen_t a;],
+[AC_MSG_RESULT(yes)],
+[AC_DEFINE(socklen_t, int) AC_MSG_RESULT(no)])
+
 
 AC_C_BIGENDIAN
 AC_C_CONST

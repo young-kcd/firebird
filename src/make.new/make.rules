@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.rules,v 1.6 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: make.rules,v 1.7 2001-08-14 17:41:39 skywalker Exp $
 # 
 
 #____________________________________________________________________________
@@ -79,7 +79,7 @@ export FIREBIRD
 # I would like to remove this one.
 SOURCE=$(ROOT)/src
 
-CFLAGS:= $(CFLAGS) -g -pipe -MMD -p -fPIC -I$(ROOT)/src -I$(ROOT)/src/include
+CFLAGS:= $(CFLAGS) -g -pipe -MMD -p -fPIC -Wall -I$(ROOT)/src -I$(ROOT)/src/include
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS) 
 
