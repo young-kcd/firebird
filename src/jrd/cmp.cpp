@@ -4624,6 +4624,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	case nod_concatenate:
+    case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_negate:
