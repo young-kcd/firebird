@@ -2145,9 +2145,12 @@ alter_index_clause	: symbol_index_name ACTIVE
 alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
 				MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); }
-		| symbol_generator_name RESTART WITH signed_64bit_integer
+		| symbol_generator_name RESTART WITH NUMBER64BIT
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
 				MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)); }
+		| symbol_generator_name RESTART WITH '-' NUMBER64BIT
+			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
+				make_node(nod_negate, 1, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))); }
 		;
 
 
@@ -2687,9 +2690,12 @@ set		: set_transaction
 set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
 				MAKE_constant ((dsql_str*) $5, CONSTANT_SLONG)); }
-		| SET GENERATOR symbol_generator_name TO signed_64bit_integer
+		| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-				MAKE_constant((dsql_str*)$5, CONSTANT_SINT64)); }
+				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)); }
+		| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
+			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
+				make_node(nod_negate, 1, MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))); }
 		;
 
 
@@ -3858,12 +3864,7 @@ long_integer	: NUMBER
 			{ $$ = $1;}
 		;
 
-signed_64bit_integer	: NUMBER64BIT
-		| '-' NUMBER64BIT
-			{ $$ = (dsql_nod*) - (IPTR) $2; }
-		;
 
-	
 /* functions */
 
 function	: aggregate_function
