@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.15 2003-09-10 17:46:44 brodsom Exp $
+//	$Id: exe.cpp,v 1.16 2003-09-15 13:11:01 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -41,6 +41,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../alice/alice.h"
+#include "../alice/alice_proto.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
 #include "../alice/all_proto.h"

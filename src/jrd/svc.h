@@ -154,13 +154,15 @@ public:
 };
 typedef svc *SVC;
 
+typedef int(*pfn_svc_main) (SVC);
+
 typedef struct serv
 {
 	USHORT		serv_action;
 	const TEXT*	serv_name;
 	const TEXT*	serv_std_switches;
 	const TEXT*	serv_executable;
-	const void (*serv_thd) ();
+	pfn_svc_main	serv_thd;
 	BOOLEAN*	in_use;
 } *SERV;
 
@@ -176,5 +178,7 @@ typedef struct serv
 
 
 } /* extern "C" */
+
+typedef int(*pfn_svc_output)(SLONG, UCHAR*);
 
 #endif /* JRD_SVC_H */

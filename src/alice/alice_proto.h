@@ -24,8 +24,11 @@
 #ifndef _ALICE_ALICE_PROTO_H_
 #define _ALICE_ALICE_PROTO_H_
 
+#ifdef SUPERSERVER
+int ALICE_main(SVC service);
+#endif
+
 void	ALICE_down_case(TEXT*, TEXT*);
-int		ALICE_gfix(int, char**, int(*)(SLONG, UCHAR*), SLONG);
 void	ALICE_print(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_error(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
 void	ALICE_print_status(ISC_STATUS*);

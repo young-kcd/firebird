@@ -37,8 +37,9 @@ void   SVC_query(class svc*, USHORT, SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*);
 ISC_STATUS SVC_query2(class svc*, struct tdbb*, USHORT, SCHAR *, USHORT, SCHAR*, USHORT, SCHAR*);
 void*  SVC_start(class svc*, USHORT, SCHAR*);
 void   SVC_finish(class svc*, USHORT);
-void   SVC_read_ib_log(class svc*);
+int   SVC_read_ib_log(class svc*);
 const TEXT* SVC_err_string(const TEXT*, USHORT);
+int SVC_output(SLONG, UCHAR *);
 
 #ifdef SERVER_SHUTDOWN
 typedef void (*shutdown_fct_t) (ULONG);

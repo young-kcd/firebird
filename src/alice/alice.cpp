@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.32 2003-09-14 01:08:37 brodsom Exp $
+//	$Id: alice.cpp,v 1.33 2003-09-15 13:11:01 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -46,7 +46,6 @@
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
-#include "../alice/alice_proto.h"
 #include "../alice/all_proto.h"
 #include "../alice/exe_proto.h"
 #include "../jrd/ib_stdio.h"
@@ -59,6 +58,7 @@
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../alice/alice_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -107,11 +107,11 @@ static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(TEXT*, TEXT*);
 #ifdef SUPERSERVER
-static int output_thread(SLONG, UCHAR*);
+static int output_svc(SLONG, UCHAR*);
 #else
 static int output_main(SLONG, UCHAR*);
 #endif
-static int output_svc(SLONG, UCHAR*);
+static int common_main(int, char**, pfn_svc_output, SLONG);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -123,10 +123,10 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 //	Entry point for GFIX in case of service manager.
 //
 
-int main_gfix(SVC service)
+int ALICE_main(SVC service)
 {
-	int exit_code = ALICE_gfix(service->svc_argc, service->svc_argv,
-					output_thread, (SLONG) service);
+	int exit_code = common_main(service->svc_argc, service->svc_argv,
+					SVC_output, (SLONG) service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL) {
@@ -140,13 +140,12 @@ int main_gfix(SVC service)
 	return exit_code;
 }
 
-
 //____________________________________________________________
 //
 //	Routine which is passed to GFIX for calling back when there is output.
 //
 
-static int output_thread(SLONG output_data, UCHAR * output_buf)
+static int output_svc(SLONG output_data, UCHAR * output_buf)
 {
 	SVC_fprintf((SVC) output_data, "%s", output_buf);
 
@@ -163,7 +162,7 @@ static int output_thread(SLONG output_data, UCHAR * output_buf)
 
 int CLIB_ROUTINE main(int argc, char *argv[])
 {
-	int exit_code = ALICE_gfix(argc, argv, output_main, (SLONG) NULL);
+	int exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
 
 	return exit_code;
 }
@@ -184,27 +183,14 @@ static int output_main(SLONG output_data, UCHAR * output_buf)
 
 //____________________________________________________________
 //
-//		Routine which is passed to GFIX for calling back when there is output
-//		if gfix is run as a service
-//
-
-static int output_svc(SLONG output_data, UCHAR * output_buf)
-{
-	ib_fprintf(ib_stdout, "%s", output_buf);
-	return 0;
-}
-
-
-//____________________________________________________________
-//
 //		Routine called by command line utility, and server manager
 //		Parse switches and do work
 //
 
-int ALICE_gfix(int			argc,
-			   char*		argv[],
-			   int(*output_proc) (SLONG, UCHAR*),
-			   SLONG		output_data)
+int common_main(int			argc,
+				char*		argv[],
+				pfn_svc_output	output_proc,
+				SLONG		output_data)
 {
 	IN_SW_TAB table = alice_in_sw_table;
 
@@ -212,9 +198,11 @@ int ALICE_gfix(int			argc,
 	TEXT*	database;
 	TEXT	string[512];
 	ULONG	switches;
+#ifdef SERVICE_REDIRECT
 	SLONG	redir_in;
 	SLONG	redir_out;
 	SLONG	redir_err;
+#endif
 
 #if defined (WIN95)
 	fAnsiCP = (GetConsoleCP() == GetACP());
@@ -264,6 +252,12 @@ int ALICE_gfix(int			argc,
 		argv++;
 		argc--;
 	}
+//
+// BRS: 15-Sep-2003
+// This code could not be used actually (see SVC_attach, comment by Dmitry)
+// Until a more detailed analysis is made it is preserved under an ifdef
+//
+#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdgbl->sw_service = true;
 		tdgbl->output_proc = output_svc;
@@ -296,6 +290,8 @@ int ALICE_gfix(int			argc,
 		argv += 4;
 		argc -= 4;
 	}
+#endif
+
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
 

@@ -33,7 +33,6 @@
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../jrd/dsc.h"
-#include "../burp/burp_proto.h"
 #include "../burp/misc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"

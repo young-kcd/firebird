@@ -137,7 +137,7 @@ typedef struct tsec {
     bool		tsec_sw_version;
     bool		tsec_service_gsec;
     bool		tsec_service_thd;
-    int(*tsec_output_proc)(SLONG, UCHAR*);
+    pfn_svc_output	tsec_output_proc;
     SLONG       	tsec_output_data;
     IB_FILE        	*tsec_output_file;
     SVC			tsec_service_blk;

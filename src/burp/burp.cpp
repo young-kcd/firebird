@@ -141,12 +141,12 @@ static void close_out_transaction(volatile gbak_action, isc_tr_handle *);
 static SLONG get_number(const SCHAR *);
 static ULONG get_size(const SCHAR *, FIL);
 static gbak_action open_files(const TEXT *, TEXT **, USHORT, USHORT, USHORT);
+static int common_main(int, char **, pfn_svc_output, SLONG);
 #ifdef SUPERSERVER
-static int output_netware(SLONG, UCHAR *);
+static int output_svc(SLONG, UCHAR *);
 #else
 static int output_main(SLONG, UCHAR *);
 #endif
-static int output_svc(SLONG, UCHAR *);
 static void burp_output(const SCHAR *, ...) ATTRIBUTE_FORMAT(1,2);
 
 #ifndef	SUPERSERVER
@@ -169,7 +169,7 @@ static bool fAnsiCP = false;
 
 
 #ifdef SUPERSERVER
-int main_gbak(SVC service)
+int BURP_main(SVC service)
 {
 /**************************************
  *
@@ -178,11 +178,11 @@ int main_gbak(SVC service)
  **************************************
  *
  * Functional description
- *	Netware entry point for GBAK.
+ *	Entrypoint for GBAK via services manager.
  *
  **************************************/
-	int exit_code = BURP_gbak(service->svc_argc, service->svc_argv,
-						  output_netware, (SLONG) service);
+	int exit_code = common_main(service->svc_argc, service->svc_argv,
+						  SVC_output, (SLONG) service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL)
@@ -196,7 +196,7 @@ int main_gbak(SVC service)
 }
 
 
-static int output_netware(SLONG output_data, UCHAR* output_buf)
+static int output_svc(SLONG output_data, UCHAR* output_buf)
 {
 /**************************************
  *
@@ -370,7 +370,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 							 d_user, d_service, flag_restore, flag_verbose);
 	}
 	else
-		exit_code = BURP_gbak(argc, argv, output_main, (SLONG) NULL);
+		exit_code = common_main(argc, argv, output_main, (SLONG) NULL);
 
 	return exit_code;
 }
@@ -395,27 +395,10 @@ static int output_main( SLONG output_data, UCHAR * output_buf)
 #endif	// SUPERSERVER
 
 
-static int output_svc( SLONG output_data, UCHAR * output_buf)
-{
-/**************************************
- *
- *	o u t p u t _ s v c
- *
- **************************************
- *
- * Functional description
- *	Routine which is passed to GBAK for calling back when there is output
- *      if gbak is run as a service
- *
- **************************************/
-	ib_fprintf(ib_stdout, "%s", output_buf);
-	return 0;
-}
-
-int BURP_gbak(int		argc,
-			  char*		argv[],
-			  int(*output_proc)(SLONG, UCHAR*),
-			  SLONG		output_data)
+int common_main(int		argc,
+				char*		argv[],
+				pfn_svc_output output_proc,
+				SLONG		output_data)
 {
 /**************************************
  *
@@ -438,7 +421,12 @@ int BURP_gbak(int		argc,
 	TEXT *file2 = NULL;
 #endif
 
-	SLONG redir_in, redir_out, redir_err;
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
+
   	JMP_BUF					env;
 
 // TMN: This variable should probably be removed, but I left it in 
@@ -504,6 +492,12 @@ int BURP_gbak(int		argc,
 		argv++;
 		argc--;
 	}
+//
+// BRS: 15-Sep-2003
+// This code could not be used actually (see SVC_attach, comment by Dmitry)
+// Until a more detailed analysis is made it is preserved under an ifdef
+//
+#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdgbl->gbl_sw_service_gbak = TRUE;
 		tdgbl->output_proc = output_svc;
@@ -530,6 +524,7 @@ int BURP_gbak(int		argc,
 		argv += 4;
 		argc -= 4;
 	}
+#endif
 
 #if defined (WIN95)
 	if (!fAnsiCP)

@@ -34,6 +34,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/jrd.h"
 #include "../utilities/gsec/gsec.h"
+#include "../utilities/gsec/gsec_proto.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/license.h"
 #include "../jrd/svc_proto.h"
@@ -62,13 +63,7 @@ static bool fAnsiCP = false;
 struct tsec *gdsec;
 #endif
 
-int UTIL_gsec(int, char **, int(*output_proc)(SLONG, UCHAR*), SLONG);
-/* Output reporting utilities */
-void UTIL_print_status(ISC_STATUS *);
-void UTIL_error_redirect(ISC_STATUS *, USHORT, TEXT *, TEXT *);
-void UTIL_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-void UTIL_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-void UTIL_print_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+static int common_main(int, char **, pfn_svc_output, SLONG);
 static void util_output(const SCHAR *, ...);
 
 static void data_print(void *, USER_DATA, bool);
@@ -76,8 +71,9 @@ static bool get_line(int *, SCHAR **, TEXT *, TSEC);
 static bool get_switches(int, TEXT **, IN_SW_TAB, TSEC, bool *);
 static SSHORT parse_cmd_line(int, TEXT **, TSEC);
 static void printhelp(void);
-int output_svc(SLONG, UCHAR *);
-#ifndef SUPERSERVER
+#ifdef SUPERSERVER
+static int output_svc(SLONG, UCHAR *);
+#else
 static int output_main(SLONG, UCHAR *);
 #endif
 
@@ -89,7 +85,7 @@ void inline gsec_exit(int code, TSEC tdsec)
 }
 
 #ifdef SUPERSERVER
-int main_gsec( SVC service)
+int GSEC_main(SVC service)
 {
 /**********************************************
  *
@@ -101,8 +97,8 @@ int main_gsec( SVC service)
  **********************************************/
 	int exit_code;
 
-	exit_code = UTIL_gsec(service->svc_argc, service->svc_argv,
-						  output_svc, (SLONG) service);
+	exit_code = common_main(service->svc_argc, service->svc_argv,
+						  SVC_output, (SLONG) service);
 
 	service->svc_handle = 0;
 	if (service->svc_service->in_use != NULL)
@@ -149,7 +145,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
-	UTIL_gsec(argc, argv, output_main, (SLONG) NULL);
+	common_main(argc, argv, output_main, (SLONG) NULL);
 	return 0;
 }
 
@@ -171,10 +167,10 @@ static int output_main( SLONG output_data, UCHAR * output_buf)
 
 #endif /* SUPERSERVER */
 
-int UTIL_gsec(int argc,
-			  char *argv[],
-			  int(*output_proc)(SLONG, UCHAR*),
-			  SLONG output_data)
+int common_main(int argc,
+				char *argv[],
+				pfn_svc_output output_proc,
+				SLONG output_data)
 {
 /**************************************
  *
@@ -191,7 +187,11 @@ int UTIL_gsec(int argc,
 	ISC_STATUS *status;
 	FRBRD *db_handle = NULL;		/* user info database handle */
 	TEXT user_info_name[MAXPATHLEN], *u;	/* user info database name */
-	SLONG redir_in, redir_out, redir_err;
+#ifdef SERVICE_REDIRECT
+	SLONG redir_in;
+	SLONG redir_out;
+	SLONG redir_err;
+#endif
 	int local_argc;
 	SCHAR *local_argv[MAXARGS];
 	TEXT stuff[MAXSTUFF];		/* a place to put stuff */
@@ -257,8 +257,15 @@ int UTIL_gsec(int argc,
 		argc--;
 	}
 #endif
+//
+// BRS: 15-Sep-2003
+// This code could not be used actually (see SVC_attach, comment by Dmitry)
+// Until a more detailed analysis is made it is preserved under an ifdef
+//
+#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdsec->tsec_service_gsec = true;
+		tdsec->output_proc = output_svc;
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
 		redir_err = atol(argv[4]);
@@ -279,6 +286,7 @@ int UTIL_gsec(int argc,
 		argv += 4;
 		argc -= 4;
 	}
+#endif
 
 	status = tdsec->tsec_status;
 	ret = parse_cmd_line(argc, argv, tdsec);
@@ -325,7 +333,7 @@ int UTIL_gsec(int argc,
 	dpb_length = dpb - dpb_buffer;
 
 	if (isc_attach_database(status, 0, u, &db_handle, dpb_length, dpb_buffer))
-		UTIL_error_redirect(status, GsecMsg15, NULL, NULL);
+		GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
 
 
 	if (!tdsec->tsec_interactive) {
@@ -341,9 +349,9 @@ int UTIL_gsec(int argc,
 			ret = SECURITY_exec_line(status, db_handle, user_data,
 									 data_print, NULL);
 			if (ret) {
-				UTIL_print(ret, user_data->user_name, NULL, NULL, NULL, NULL);
+				GSEC_print(ret, user_data->user_name, NULL, NULL, NULL, NULL);
 				if (status[1])
-					UTIL_print_status(status);
+					GSEC_print_status(status);
 			}
 		}
 	}
@@ -361,10 +369,10 @@ int UTIL_gsec(int argc,
 					ret = SECURITY_exec_line(status, db_handle, user_data,
 											 data_print, NULL);
 					if (ret) {
-						UTIL_print(ret, user_data->user_name, NULL, NULL,
+						GSEC_print(ret, user_data->user_name, NULL, NULL,
 								   NULL, NULL);
 						if (status[1])
-							UTIL_print_status(status);
+							GSEC_print_status(status);
 						break;
 					}
 				}
@@ -375,7 +383,7 @@ int UTIL_gsec(int argc,
 	if (db_handle) {
 		ISC_STATUS_ARRAY loc_status;
 		if (isc_detach_database(loc_status, &db_handle))
-			UTIL_error_redirect(loc_status, 0, NULL, NULL);
+			GSEC_error_redirect(loc_status, 0, NULL, NULL);
 	}
 	gsec_exit(FINI_OK, tdsec);
 	return 0;					// silence compiler warning
@@ -465,8 +473,8 @@ static void data_print( void *arg, USER_DATA data, bool first)
 
 #else
 	if (first) {
-		UTIL_print(GsecMsg26, NULL, NULL, NULL, NULL, NULL);
-		UTIL_print(GsecMsg27, NULL, NULL, NULL, NULL, NULL);
+		GSEC_print(GsecMsg26, NULL, NULL, NULL, NULL, NULL);
+		GSEC_print(GsecMsg27, NULL, NULL, NULL, NULL, NULL);
 /* msg26: "    user name                    uid   gid     full name" */
 /* msg27: "-------------------------------------------------------------------------------------------" */
 	}
@@ -496,7 +504,7 @@ static bool get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
 	TEXT *cursor, c;
 	bool first;
 
-	UTIL_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
 	*argc = 1;
 	cursor = stuff;
 	count = MAXSTUFF - 1;
@@ -597,9 +605,9 @@ static bool get_switches(
 					user_data->user_name[l] = UPPER(string[l]);
 				if (l == 32) {
 #ifdef SUPERSERVER
-					UTIL_error(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
+					GSEC_error(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
 #else
-					UTIL_print(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
+					GSEC_print(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
 #endif
 					/* invalid user name (maximum 31 bytes allowed) */
 					return false;
@@ -611,7 +619,7 @@ static bool get_switches(
 				for (l = 0; l < 9 && string[l] && string[l] != ' '; l++)
 					user_data->password[l] = string[l];
 				if (l == 9) {
-					UTIL_print(GsecMsg77, NULL, NULL, NULL, NULL, NULL);
+					GSEC_print(GsecMsg77, NULL, NULL, NULL, NULL, NULL);
 					/* warning password maximum 8 significant bytes used */
 				}
 				user_data->password[l] = '\0';
@@ -664,9 +672,9 @@ static bool get_switches(
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
 #ifdef SUPERSERVER
-				UTIL_error(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
+				GSEC_error(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
 #else
-				UTIL_print(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
+				GSEC_print(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
 #endif
 				/* gsec - invalid parameter, no switch defined */
 				return false;
@@ -721,7 +729,7 @@ static bool get_switches(
 			case IN_SW_GSEC_QUIT:
 			case IN_SW_GSEC_HELP:
 				if (user_data->operation) {
-					UTIL_error(GsecMsg30, NULL, NULL, NULL, NULL, NULL);
+					GSEC_error(GsecMsg30, NULL, NULL, NULL, NULL, NULL);
 					/* gsec - operation already specified */
 					return false;
 				}
@@ -861,7 +869,7 @@ static bool get_switches(
 					break;
 				}
 				if (err_msg_no) {
-					UTIL_error(err_msg_no, NULL, NULL, NULL, NULL, NULL);
+					GSEC_error(err_msg_no, NULL, NULL, NULL, NULL, NULL);
 					return false;
 				}
 				break;
@@ -874,17 +882,17 @@ static bool get_switches(
 				break;
 			case IN_SW_GSEC_0:
 #ifdef SUPERSERVER
-				UTIL_error(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
+				GSEC_error(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
 #else
-				UTIL_print(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
+				GSEC_print(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
 #endif
 				/* gsec - invalid switch specified */
 				return false;
 			case IN_SW_GSEC_AMBIG:
 #ifdef SUPERSERVER
-				UTIL_error(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
+				GSEC_error(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
 #else
-				UTIL_print(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
+				GSEC_print(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
 #endif
 				/* gsec - ambiguous switch specified */
 				return false;
@@ -901,7 +909,7 @@ static bool get_switches(
 			user_data->middle_name_entered || user_data->last_name_entered)
 			switch (user_data->operation) {
 			case 0:
-				UTIL_error(GsecMsg42, NULL, NULL, NULL, NULL, NULL);
+				GSEC_error(GsecMsg42, NULL, NULL, NULL, NULL, NULL);
 				/* gsec - no operation specified for parameters */
 				return false;
 			case ADD_OPER:
@@ -912,7 +920,7 @@ static bool get_switches(
 			case DIS_OPER:
 			case QUIT_OPER:
 			case HELP_OPER:
-				UTIL_error(GsecMsg43, NULL, NULL, NULL, NULL, NULL);
+				GSEC_error(GsecMsg43, NULL, NULL, NULL, NULL, NULL);
 				/* gsec - no parameters allowed for this operation */
 				return false;
 			}
@@ -938,154 +946,154 @@ static void printhelp(void)
  **************************************/
 
 	util_output("\n%s", "   ");
-	UTIL_print(GsecMsg45, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg45, NULL, NULL, NULL, NULL, NULL);
 /* gsec utility - maintains user password database */
 
 	util_output("\n%s", "   ");
-	UTIL_print(GsecMsg46, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg46, NULL, NULL, NULL, NULL, NULL);
 	util_output("%s", "     ");
-	UTIL_print_partial(GsecMsg2, NULL, NULL, NULL, NULL, NULL);
-	UTIL_print_partial(GsecMsg82, NULL, NULL, NULL, NULL, NULL);
-	UTIL_print(GsecMsg47, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print_partial(GsecMsg2, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print_partial(GsecMsg82, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg47, NULL, NULL, NULL, NULL, NULL);
 /* gsec [ <options> ... ] -<command> [ <parameter> ... ] */
 
 	util_output("\n%s", "   ");
-	UTIL_print(GsecMsg48, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg48, NULL, NULL, NULL, NULL, NULL);
 /* interactive usage: */
 
 	util_output("%s", "     ");
-	UTIL_print_partial(GsecMsg2, NULL, NULL, NULL, NULL, NULL);
-	UTIL_print(GsecMsg82, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print_partial(GsecMsg2, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg82, NULL, NULL, NULL, NULL, NULL);
 /* gsec [ <options> ... ] */
 
 	util_output("%s", "     ");
-	UTIL_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print_partial(GsecMsg1, NULL, NULL, NULL, NULL, NULL);
 	util_output("\n%s", "     ");
-	UTIL_print(GsecMsg47, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg47, NULL, NULL, NULL, NULL, NULL);
 /* GSEC> <command> [ <parameter> ... ] */
 
 	util_output("\n%s", "   ");
-	UTIL_print(GsecMsg83, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg83, NULL, NULL, NULL, NULL, NULL);
 /* available options: */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg84, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg84, NULL, NULL, NULL, NULL, NULL);
 /* -user <database administrator name> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg85, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg85, NULL, NULL, NULL, NULL, NULL);
 /* -password <database administrator password> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg86, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg86, NULL, NULL, NULL, NULL, NULL);
 /* -role <database administrator SQL role name> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg87, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg87, NULL, NULL, NULL, NULL, NULL);
 /* -database <security database> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg88, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg88, NULL, NULL, NULL, NULL, NULL);
 /* -z */
 
 	util_output("\n%s", "   ");
-	UTIL_print(GsecMsg49, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg49, NULL, NULL, NULL, NULL, NULL);
 /* available commands: */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg50, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg50, NULL, NULL, NULL, NULL, NULL);
 /* adding a new user: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg51, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg51, NULL, NULL, NULL, NULL, NULL);
 /* add <name> [ <parameter> ... ] */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg52, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg52, NULL, NULL, NULL, NULL, NULL);
 /* deleting a current user: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg53, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg53, NULL, NULL, NULL, NULL, NULL);
 /* delete <name> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg54, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg54, NULL, NULL, NULL, NULL, NULL);
 /* displaying all users: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg55, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg55, NULL, NULL, NULL, NULL, NULL);
 /* display */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg56, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg56, NULL, NULL, NULL, NULL, NULL);
 /* displaying one user: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg57, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg57, NULL, NULL, NULL, NULL, NULL);
 /* display <name> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg58, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg58, NULL, NULL, NULL, NULL, NULL);
 /* modifying a user's parameters: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg59, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg59, NULL, NULL, NULL, NULL, NULL);
 /* modify <name> <parameter> [ <parameter> ... ] */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg60, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg60, NULL, NULL, NULL, NULL, NULL);
 /* help: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg61, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg61, NULL, NULL, NULL, NULL, NULL);
 /* ? (interactive only) */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg62, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg62, NULL, NULL, NULL, NULL, NULL);
 /* help */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg89, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg89, NULL, NULL, NULL, NULL, NULL);
 /* displaying version number: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg90, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg90, NULL, NULL, NULL, NULL, NULL);
 /* z (interactive only) */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg63, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg63, NULL, NULL, NULL, NULL, NULL);
 /* quit interactive session: */
 
 	util_output("%s", "       ");
-	UTIL_print(GsecMsg64, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg64, NULL, NULL, NULL, NULL, NULL);
 /* quit (interactive only) */
 
 	util_output("\n%s", "   ");
-	UTIL_print(GsecMsg65, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg65, NULL, NULL, NULL, NULL, NULL);
 /* available parameters: */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg66, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg66, NULL, NULL, NULL, NULL, NULL);
 /* -pw <password> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg67, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg67, NULL, NULL, NULL, NULL, NULL);
 /* -uid <uid> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg68, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg68, NULL, NULL, NULL, NULL, NULL);
 /* -gid <gid> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg71, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg71, NULL, NULL, NULL, NULL, NULL);
 /* -fname <firstname> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg72, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg72, NULL, NULL, NULL, NULL, NULL);
 /* -mname <middlename> */
 
 	util_output("%s", "     ");
-	UTIL_print(GsecMsg73, NULL, NULL, NULL, NULL, NULL);
+	GSEC_print(GsecMsg73, NULL, NULL, NULL, NULL, NULL);
 /* -lname <lastname> */
 	util_output("\n", NULL);
 }
@@ -1118,9 +1126,9 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
 	ret = 0;
 	if (!get_switches(argc, argv, gsec_in_sw_table, tdsec, &quitflag)) {
 #ifdef SUPERSERVER
-		UTIL_error(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
+		GSEC_error(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
 #else
-		UTIL_print(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
+		GSEC_print(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
 #endif
 		/* gsec - error in switch specifications */
 		ret = -1;
@@ -1133,7 +1141,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
 		else if (user_data->operation != DIS_OPER &&
 				 user_data->operation != QUIT_OPER &&
 				 !user_data->user_name_entered) {
-			UTIL_error(GsecMsg18, NULL, NULL, NULL, NULL, NULL);
+			GSEC_error(GsecMsg18, NULL, NULL, NULL, NULL, NULL);
 			/* gsec - no user name specified */
 			ret = -1;
 		}
@@ -1147,7 +1155,7 @@ static SSHORT parse_cmd_line( int argc, TEXT ** argv, TSEC tdsec)
 	return ret;
 }
 
-void UTIL_print_status( ISC_STATUS * status_vector)
+void GSEC_print_status( ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1226,7 +1234,7 @@ static void util_output( const SCHAR * format, ...)
 		gsec_exit(exit_code, tdsec);
 }
 
-void UTIL_error_redirect(
+void GSEC_error_redirect(
 						 ISC_STATUS * status_vector,
 						 USHORT errcode, TEXT * arg1, TEXT * arg2)
 {
@@ -1241,11 +1249,11 @@ void UTIL_error_redirect(
  *
  **************************************/
 
-	UTIL_print_status(status_vector);
-	UTIL_error(errcode, arg1, arg2, NULL, NULL, NULL);
+	GSEC_print_status(status_vector);
+	GSEC_error(errcode, arg1, arg2, NULL, NULL, NULL);
 }
 
-void UTIL_error(
+void GSEC_error(
 				USHORT errcode,
 				TEXT * arg1,
 				TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
@@ -1278,11 +1286,11 @@ void UTIL_error(
 	tdsec = GET_THREAD_DATA;
 #endif
 
-	UTIL_print(errcode, arg1, arg2, arg3, arg4, arg5);
+	GSEC_print(errcode, arg1, arg2, arg3, arg4, arg5);
 	gsec_exit(FINI_ERROR, tdsec);
 }
 
-void UTIL_print(
+void GSEC_print(
 				USHORT number,
 				TEXT * arg1,
 				TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
@@ -1305,7 +1313,7 @@ void UTIL_print(
 	util_output("%s\n", buffer);
 }
 
-void UTIL_print_partial(
+void GSEC_print_partial(
 						USHORT number,
 						TEXT * arg1,
 						TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)

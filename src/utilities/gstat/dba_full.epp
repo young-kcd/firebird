@@ -261,6 +261,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		argv++;
 		argc--;
 	}
+//
+// BRS: 15-Sep-2003
+// This code could not be used actually (see SVC_attach, comment by Dmitry)
+// Until a more detailed analysis is made it is preserved under an ifdef
+//
+#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
@@ -272,6 +278,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
 		redir_err = _open_osfhandle(redir_err, 0);
+#endif
 		if (redir_in != 0)
 			if (dup2((int) redir_in, 0))
 				close((int) redir_in);

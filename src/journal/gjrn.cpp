@@ -116,6 +116,12 @@ int CLIB_ROUTINE main(int argc,
 		argv++;
 		argc--;
 	}
+//
+// BRS: 15-Sep-2003
+// This code could not be used actually (see SVC_attach, comment by Dmitry)
+// Until a more detailed analysis is made it is preserved under an ifdef
+//
+#ifdef SERVICE_REDIRECT
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		sw_service_gjrn = true;
 		redir_in = atol(argv[2]);
@@ -138,6 +144,7 @@ int CLIB_ROUTINE main(int argc,
 		argv += 4;
 		argc -= 4;
 	}
+#endif
 
 	try {
 

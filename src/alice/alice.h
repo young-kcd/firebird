@@ -31,7 +31,6 @@
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
 #include "../alice/all.h"
-#include "../alice/alice_proto.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
 

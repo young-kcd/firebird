@@ -24,7 +24,10 @@
 #ifndef BURP_BURP_PROTO_H
 #define BURP_BURP_PROTO_H
 
-extern int	BURP_gbak(int, char **, int(*output_proc)(SLONG, UCHAR*), SLONG);
+#ifdef SUPERSERVER
+extern int BURP_main(SVC service);
+#endif
+
 extern void	BURP_abort(void);
 extern void	BURP_svc_error(USHORT, USHORT, const void *, USHORT, const void *,
 	USHORT, const void *, USHORT, const void *, USHORT, const void *);

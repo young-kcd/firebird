@@ -213,7 +213,7 @@ static USHORT service_read(SVC, SCHAR *, USHORT, USHORT);
 #endif
 
 #ifdef DEBUG
-void test_thread(SVC);
+int test_thread(SVC);
 void test_cmd(USHORT, SCHAR *, TEXT **);
 #define TEST_THREAD test_thread
 #define TEST_CMD test_cmd
@@ -234,19 +234,22 @@ static BOOLEAN svc_initialized = FALSE, thd_initialized = FALSE;
 
 /* Service Functions */
 #ifdef SUPERSERVER
-extern int main_gbak(SVC service);
-extern int main_gfix(SVC service);
+//extern int main_gbak(SVC service);
+#include "../burp/burp_proto.h"
+//extern int main_gfix(SVC service);
+#include "../alice/alice_proto.h"
 extern int main_wal_print();
 extern int main_lock_print();
 extern int main_gstat(SVC service);
-extern int main_gsec(SVC service);
+//extern int main_gsec(SVC service);
+#include "../utilities/gsec/gsec_proto.h"
 
-#define MAIN_GBAK		main_gbak
-#define MAIN_GFIX		main_gfix
+#define MAIN_GBAK		BURP_main
+#define MAIN_GFIX		ALICE_main
 #define MAIN_WAL_PRINT	main_wal_print
 #define MAIN_LOCK_PRINT	main_lock_print
 #define MAIN_GSTAT		main_gstat
-#define MAIN_GSEC		main_gsec
+#define MAIN_GSEC		GSEC_main
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
@@ -292,8 +295,6 @@ void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
   in use flag (for compatibility)
 */
 
-typedef const void (*PFN_SERV_t) ();
-
 static const serv services[] =
 {
 
@@ -301,9 +302,9 @@ static const serv services[] =
 	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
 	{ isc_action_max, "start_cache", "-svc", "bin/fb_cache_manager", NULL, 0 },
 	{ isc_action_max, "analyze_database", "-svc", "bin/gstat", NULL, 0 },
-	{ isc_action_max, "backup", "-svc -b", "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
-	{ isc_action_max, "create", "-svc -c", "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
-	{ isc_action_max, "restore", "-svc -r", "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
+	{ isc_action_max, "backup", "-svc -b", "bin/gbak",	MAIN_GBAK, 0 },
+	{ isc_action_max, "create", "-svc -c", "bin/gbak",	MAIN_GBAK, 0 },
+	{ isc_action_max, "restore", "-svc -r", "bin/gbak",	MAIN_GBAK, 0 },
 	{ isc_action_max, "gdef", "-svc", "bin/gdef", NULL, 0 },
 	{ isc_action_max, "gsec", "-svc", "bin/gsec", NULL, 0 },
 	{ isc_action_max, "disable_journal", "-svc -disable", "bin/gjrn", NULL, 0 },
@@ -319,29 +320,29 @@ static const serv services[] =
 /* NEW VERSION 2 calls, the name field MUST be different from those names above
  */
 	{ isc_action_max, "service_mgr", NULL, NULL, NULL, 0 },
-	{ isc_action_svc_backup, "Backup Database", NULL, "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
-	{ isc_action_svc_restore, "Restore Database", NULL, "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
-	{ isc_action_svc_repair, "Repair Database", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0 },
+	{ isc_action_svc_backup, "Backup Database", NULL, "bin/gbak",	MAIN_GBAK, 0 },
+	{ isc_action_svc_restore, "Restore Database", NULL, "bin/gbak",	MAIN_GBAK, 0 },
+	{ isc_action_svc_repair, "Repair Database", NULL, "bin/gfix",	MAIN_GFIX, 0 },
 // disabled for win32 CS
 #if !(defined(WIN_NT) && !defined(SUPERSERVER))
-	{ isc_action_svc_add_user, "Add User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
-	{ isc_action_svc_delete_user, "Delete User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
-	{ isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
-	{ isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
+	{ isc_action_svc_add_user, "Add User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
+	{ isc_action_svc_delete_user, "Delete User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
+	{ isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
+	{ isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
 #endif
-	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0 },
+	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	MAIN_GFIX, 0 },
 // disabled for win32 CS
 #if !(defined(WIN_NT) && !defined(SUPERSERVER))
-	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
-	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0 },
+	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	TEST_THREAD, 0 },
+	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	MAIN_GSTAT, 0 },
 #endif
-	{ isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(SVC_read_ib_log), 0 },
+	{ isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	SVC_read_ib_log, 0 },
 /* actions with no names are undocumented */
-	{ isc_action_svc_set_config, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
-	{ isc_action_svc_default_config, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
-	{ isc_action_svc_set_env, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
-	{ isc_action_svc_set_env_lock, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
-	{ isc_action_svc_set_env_msg, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
+	{ isc_action_svc_set_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
+	{ isc_action_svc_default_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
+	{ isc_action_svc_set_env, NULL, NULL, NULL,	TEST_THREAD, 0 },
+	{ isc_action_svc_set_env_lock, NULL, NULL, NULL,	TEST_THREAD, 0 },
+	{ isc_action_svc_set_env_msg, NULL, NULL, NULL,	TEST_THREAD, 0 },
 	{ 0, NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -826,6 +827,19 @@ void SVC_putc(SVC service, UCHAR ch)
 	if (!(service->svc_flags & SVC_detached))
 		service_enqueue_byte(ch, service);
 }
+
+//____________________________________________________________
+//
+//	Routine which is used by the service for calling back when there is output.
+//
+
+int SVC_output(SLONG output_data, UCHAR * output_buf)
+{
+	SVC_fprintf((SVC) output_data, "%s", output_buf);
+
+	return 0;
+}
+
 #endif /*SUPERSERVER*/
 	ISC_STATUS SVC_query2(SVC service,
 					  TDBB tdbb,
@@ -2026,7 +2040,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 }
 
 
-void SVC_read_ib_log(SVC service)
+int SVC_read_ib_log(SVC service)
 {
 /**************************************
  *
@@ -2096,6 +2110,7 @@ void SVC_read_ib_log(SVC service)
 #else
 	SVC_cleanup(service);
 #endif
+	return (FINI_OK);
 }
 
 
@@ -3810,9 +3825,10 @@ static BOOLEAN get_action_svc_parameter(
  * test that the paths for starting services and parsing command-lines
  * are followed correctly.
  */
-void test_thread(SVC service)
+int test_thread(SVC service)
 {
 	gds__log("Starting service");
+	return FINI_OK;
 }
 
 void test_cmd(USHORT spb_length, SCHAR * spb, TEXT ** switches)
