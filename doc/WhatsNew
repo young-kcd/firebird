@@ -1,4 +1,93 @@
   **************
+  * v1.5 Beta 2
+  **************
+
+    * Renamed ISC4.GDB.
+        The security database has been renamed to ???.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * New configuration file.
+        firebird.conf is finally published.
+      Note:
+        Directory handling options are not available yet.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * New user-defined functions.
+        Functions LPAD and RPAD are added to IB_UDF library.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 1 bug.
+        ISQL wasn't able to extract universal triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Sometimes GFIX didn't allow to specify "-user" and "-password" switches ("incompatible swiches" error).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Security connection cache.
+        Connection to the security database is now cached, thus allowing to decrease time of subsequent database attachments.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Some improvements.
+        1. Reduce memory usage by the server.
+        2. Direct external I/O when the memory is not available for the sorting.
+        3. Increased number of streams and predicates supported by the optimizer.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed bug SF #508594.
+        LEFT JOIN with VIEWs.
+      Comment:
+        Simple LEFT JOIN on a VIEW with only an ON clause didn't use an index even if it was possible.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Beta 1 bug.
+        Server crashes during retrieval of the database statistics.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 1 bug.
+        Wrong context was used with FieldX IN (sub-select) predicate.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Beta 1 bug.
+        Yet another "deadlock" error during metadata updates.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 1 bug.
+        It wasn't possible to use non-aggregate related-fields from an aggregate query inside a sub-query.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Beta 1 bug.
+        The client library cannot be loaded in some cases.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 1 bug.
+        The guardian service cannot stop the server.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * New character sets.
+        DOS737, DOS775, DOS858, DOS862, DOS864, DOS866, DOS869,
+        WIN1255, WIN1256, WIN1257,
+        ISO8859_3, ISO8859_4, ISO8859_5, ISO8859_6, ISO8859_7, ISO8859_8, ISO8859_9, ISO8859_13
+      Note:
+        Collations for the above charsets are not available yet.
+      Contributor(s):
+        Blas Rodriguez Somoza <blas@puertareal.com>
+
+  **************
   * v1.5 Beta 1
   **************
 
