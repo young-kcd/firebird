@@ -94,11 +94,6 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\extlib\ib_udf.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\extlib\ib_udf.cpp
 # End Source File
 # End Group
