@@ -56,10 +56,11 @@ extern BOOLEAN VIO_next_record(TDBB, struct rpb *, class Rsb *, struct tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
 extern struct rec *VIO_record(TDBB, register struct rpb *, struct fmt *,
 							  JrdMemoryPool *);
-extern void VIO_start_save_point(TDBB, struct tra *, TEXT *);
+extern void VIO_start_save_point(TDBB, struct tra *);
 extern void VIO_store(TDBB, struct rpb *, struct tra *);
 extern BOOLEAN VIO_sweep(TDBB, struct tra *);
 extern void VIO_verb_cleanup(TDBB, struct tra *);
+extern SLONG VIO_savepoint_large(struct sav *, SLONG);
 
 #ifdef __cplusplus
 } /* extern "C" */

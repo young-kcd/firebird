@@ -1151,22 +1151,53 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, FALSE);
 
-/* If there is a transaction-level savepoint, then use that to undo
-   this transaction's work and mark it committed in the TIP page
-   instead (avoids a need for a database sweep). */
+/*  Find out if there is a transaction savepoint we can use to rollback our transaction */
 	BOOLEAN tran_sav = FALSE;
 	for (SAV temp = transaction->tra_save_point; temp; temp=temp->sav_next)
-		if (temp->sav_flags & SAV_trans_level)
+		if (temp->sav_flags & SAV_trans_level) {
 			tran_sav = TRUE;
-
-	if (tran_sav)
-	{
-		/* Undo all user savepoints*/
+			break;
+		}
+	
+/* Measure transaction savepoint size if there is one. We'll use it for undo
+  only if it is small enough */
+	SLONG count = SAV_LARGE;
+	if (tran_sav) {
+		for (SAV temp = transaction->tra_save_point; temp; temp=temp->sav_next) {
+		    count = VIO_savepoint_large(temp, count);
+			if (count < 0)
+				break;
+		}
+	}
+	
+	// We are going to use savepoint to undo transaction
+	if (tran_sav && count > 0) {
+		// Undo all user savepoints work
 		while (transaction->tra_save_point->sav_flags & SAV_user) {
 			++transaction->tra_save_point->sav_verb_count;	/* cause undo */
 			VIO_verb_cleanup(tdbb, transaction);
+		}			
+	} else {
+		// Free all savepoint data
+		// We can do it in reverse order because nothing except simple deallocation
+		// of memory is really done in VIO_verb_cleanup when we pass NULL as sav_next
+		while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user) {
+			SAV next=transaction->tra_save_point->sav_next;
+			transaction->tra_save_point->sav_next = NULL;
+			VIO_verb_cleanup(tdbb, transaction);
+			transaction->tra_save_point = next;				
 		}
-			
+		if (transaction->tra_save_point) {
+			if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
+				BUGCHECK(287);		/* Too many savepoints */
+			/* This transaction savepoint contains wrong data now. Clean it up */
+			VIO_verb_cleanup(tdbb, transaction);	/* get rid of transaction savepoint */
+		}
+	}
+
+	// Only transaction savepoint could be there
+	if (transaction->tra_save_point)
+	{
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		/* Too many savepoints */
 
@@ -1714,7 +1745,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 
 	if ((trans != dbb->dbb_sys_trans) &&
 		!(trans->tra_flags & TRA_no_auto_undo)) {
-		VIO_start_save_point(tdbb, trans, NULL);
+		VIO_start_save_point(tdbb, trans);
 		trans->tra_save_point->sav_flags |= SAV_trans_level;
 	}
 
@@ -2713,15 +2744,20 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
    'transaction' control block: get rid of the transaction-level
    savepoint and possibly start a new transaction-level savepoint. */
 
-	// Close all user savepoints. This may happen only at commit time
-	while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user)
+	// Get rid of all user savepoints
+	// Why we can do this in reverse order described in commit method
+	while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user) {
+		SAV next=transaction->tra_save_point->sav_next;
+		transaction->tra_save_point->sav_next = NULL;
 		VIO_verb_cleanup(tdbb, transaction);
+		transaction->tra_save_point = next;				
+	}
 	
 	if (transaction->tra_save_point) {
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		/* Too many savepoints */
-		VIO_verb_cleanup(tdbb, transaction);	/* get rid of savepoint */
-		VIO_start_save_point(tdbb, transaction, NULL);	/* start new savepoint */
+		VIO_verb_cleanup(tdbb, transaction);	/* get rid of transaction savepoint */
+		VIO_start_save_point(tdbb, transaction);	/* start new savepoint */
 		transaction->tra_save_point->sav_flags |= SAV_trans_level;
 	}
 

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.25 2002-10-31 05:05:57 seanleyne Exp $
+$Id: exe.cpp,v 1.26 2002-11-03 17:29:51 skidder Exp $
 */
 
 #include "firebird.h"
@@ -628,7 +628,7 @@ void EXE_receive(TDBB		tdbb,
 		request->req_proc_sav_point = save_sav_point;
 
 		if (!transaction->tra_save_point) {
-			VIO_start_save_point(tdbb, transaction, NULL);
+			VIO_start_save_point(tdbb, transaction);
 		}
 	}
 	
@@ -918,16 +918,9 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 	}
 
 /* Start a save point if not in middle of one  */
-
-// 29.10.2002 - Nickolay Samofatov
-// I commented out savepoint handling logic here and below
-// because I had no idea why is it needed but it added
-// unnecessary overhead and prevented new savepoint logic from working.
-// All insert/update/delete operations are surrounded by savepoint
-// handling code at the DSQL layer.
-//	if (transaction && (transaction != dbb->dbb_sys_trans)) {
-//		VIO_start_save_point(tdbb, transaction, NULL);
-//	}
+	if (transaction && (transaction != dbb->dbb_sys_trans)) {
+		VIO_start_save_point(tdbb, transaction);
+	}
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
 #endif
@@ -938,13 +931,14 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 
 /* If any requested modify/delete/insert ops have completed, forget them */
 
-//	if (transaction && (transaction != dbb->dbb_sys_trans) &&
-//		transaction->tra_save_point &&
-//		!transaction->tra_save_point->sav_verb_count) {
+	if (transaction && (transaction != dbb->dbb_sys_trans) &&
+		transaction->tra_save_point &&
+		!(transaction->tra_save_point->sav_flags & SAV_user) &&
+		!transaction->tra_save_point->sav_verb_count) {
 		/* Forget about any undo for this verb */
 
-//		VIO_verb_cleanup(tdbb, transaction);
-//	}
+		VIO_verb_cleanup(tdbb, transaction);
+	}
 }
 
 
@@ -1311,7 +1305,7 @@ static void execute_looper(
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 		if (transaction && (transaction != dbb->dbb_sys_trans))
-			VIO_start_save_point(tdbb, transaction, NULL);
+			VIO_start_save_point(tdbb, transaction);
 
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
@@ -2005,37 +1999,47 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 			break;
 			
 		case nod_user_savepoint:
-			VIO_start_save_point(tdbb, transaction, (TEXT*)node->nod_arg[e_sav_name]);
+			if (transaction != dbb->dbb_sys_trans) {
+				// Use the savepoint created by EXE_start
+				transaction->tra_save_point->sav_flags |= SAV_user;
+				strcpy(transaction->tra_save_point->sav_name, (TEXT*)node->nod_arg[e_sav_name]);
+			}
 			node = node->nod_parent;
 			request->req_operation = req::req_return;
 			break;
 
 		case nod_undo_savepoint:
-			savepoint = transaction->tra_save_point;
 			
-			// Find savepoint to undo
-			while(TRUE) {
-				if (!savepoint || !(savepoint->sav_flags & SAV_user))
-					ERR_post(gds_invalid_savepoint,
-						gds_arg_number, (SLONG) node->nod_arg[e_sav_name], 0);
+			if (transaction != dbb->dbb_sys_trans) {
+				// Skip the savepoint created by EXE_start
+				savepoint = transaction->tra_save_point->sav_next;
+			
+				// Find savepoint to undo
+				while(TRUE) {
+					if (!savepoint || !(savepoint->sav_flags & SAV_user))
+						ERR_post(gds_invalid_savepoint,
+							gds_arg_number, (SLONG) node->nod_arg[e_sav_name], 0);
 								
-				if (!strcmp((TEXT*)node->nod_arg[e_sav_name],(TEXT*)savepoint->sav_name))
-					break;
+					if (!strcmp((TEXT*)node->nod_arg[e_sav_name],(TEXT*)savepoint->sav_name))
+						break;
 				
-				savepoint = savepoint->sav_next;
-			}
-			sav_number = savepoint->sav_number;
+					savepoint = savepoint->sav_next;
+				}
+				sav_number = savepoint->sav_number;
 			
-			// Actually undo the savepoint
-			while ( transaction->tra_save_point && 
-				transaction->tra_save_point->sav_number >= sav_number ) 
-			{
-				transaction->tra_save_point->sav_verb_count++;
-				VERB_CLEANUP;
-			}
+				// Actually undo the savepoint
+				while ( transaction->tra_save_point && 
+					transaction->tra_save_point->sav_number >= sav_number ) 
+				{
+					transaction->tra_save_point->sav_verb_count++;
+					VERB_CLEANUP;
+				}
 			
-			// Now set the savepoint again to allow to return to it later
-			VIO_start_save_point(tdbb, transaction, (TEXT*)node->nod_arg[e_sav_name]);
+				// Now set the savepoint again to allow to return to it later
+				VIO_start_save_point(tdbb, transaction);
+				transaction->tra_save_point->sav_flags |= SAV_user;
+				strcpy(transaction->tra_save_point->sav_name, (TEXT*)node->nod_arg[e_sav_name]);
+			}
 			node = node->nod_parent;
 			request->req_operation = req::req_return;
 			break;
@@ -2046,7 +2050,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				/* Start a save point */
 
 				if (transaction != dbb->dbb_sys_trans)
-					VIO_start_save_point(tdbb, transaction, NULL);
+					VIO_start_save_point(tdbb, transaction);
 
 			default:
 				node = node->nod_parent;
@@ -2098,7 +2102,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 			case req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
-					VIO_start_save_point(tdbb, transaction, NULL);
+					VIO_start_save_point(tdbb, transaction);
 					save_point = transaction->tra_save_point;
 					count = save_point->sav_number;
 					MOVE_FAST(&count,
@@ -2591,7 +2595,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 		}
 
-		/* Since an error happened, the current savepoint needs to be undone. */
+		/* Since an error happened, the current savepoint needs to be undone. */		
 		if (transaction != dbb->dbb_sys_trans) {
 			++transaction->tra_save_point->sav_verb_count;
 			VERB_CLEANUP;
@@ -2625,7 +2629,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 	// in the case of a pending error condition (one which did not
 	// result in a exception to the top of looper), we need to
 	// delete the last savepoint
-
+	
 	if (error_pending) {
 		if (transaction != dbb->dbb_sys_trans) {
 			SAV save_point;
@@ -2636,8 +2640,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 															 <= save_point->
 															 sav_number));
 				 save_point = transaction->tra_save_point) {
-				if (error_pending)
-					++transaction->tra_save_point->sav_verb_count;
+				//if (error_pending)				
+				++transaction->tra_save_point->sav_verb_count;
 				VERB_CLEANUP;
 			}
 		}

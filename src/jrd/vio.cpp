@@ -106,7 +106,6 @@ static BOOLEAN prepare_update(TDBB, TRA, SLONG, RPB *, RPB *, RPB *, LLS *);
 static BOOLEAN purge(TDBB, RPB *);
 static REC replace_gc_record(REL, REC *, USHORT);
 static void replace_record(TDBB, RPB *, LLS *, TRA);
-static SLONG savepoint_size(TRA);
 static void set_system_flag(RPB *, USHORT, SSHORT);
 static void update_in_place(TDBB, TRA, RPB *, RPB *);
 static void verb_post(TDBB, TRA, RPB *, REC, RPB *, BOOLEAN, BOOLEAN);
@@ -135,6 +134,38 @@ static CONST SCHAR gc_tpb[] = { isc_tpb_version1, isc_tpb_read,
 };
 #endif
 
+
+SLONG VIO_savepoint_large(struct sav *savepoint, SLONG size)
+{
+/**************************************
+ *
+ *	s a v e p o i n t _ b i g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a measure of how big the current savepoint has gotten.
+ *      The number returned is the size minus number of 'sbm' and 'bms' 
+ *      structs	that are allocated.  This number does not take into account
+ *	    the data allocated to 'vct_undo'. Function stops counting when return
+ *      value gets negative
+ *
+ **************************************/
+	VCT verb_actions;
+	SLONG count;
+
+	count = size;
+	verb_actions = savepoint->sav_verb_actions;
+
+	while (verb_actions) {
+		count -= SBM_size(&verb_actions->vct_records);
+		if (count < 0)
+			break;
+		verb_actions = verb_actions->vct_next;
+	}	
+
+	return count;
+}
 
 void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
 {
@@ -2190,7 +2221,7 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 }
 
 
-void VIO_start_save_point(TDBB tdbb, TRA transaction, TEXT* name)
+void VIO_start_save_point(TDBB tdbb, TRA transaction)
 {
 /**************************************
  *
@@ -2214,10 +2245,6 @@ void VIO_start_save_point(TDBB tdbb, TRA transaction, TEXT* name)
 
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
-	if (name) {
-	  sav_point->sav_flags |= SAV_user;
-	  strcpy(sav_point->sav_name, name);
-	}
 	transaction->tra_save_point = sav_point;
 }
 
@@ -2487,7 +2514,6 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 	SAV sav_point;
 	BOOLEAN same_tx = FALSE;
 	JrdMemoryPool *old_pool;
-	SLONG savep_size;
 
 	SET_TDBB(tdbb);
 
@@ -2510,11 +2536,10 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
    level savepoint is the transaction level savepoint, then get rid of
    the transaction level savepoint now (instead of after making the
    transaction level savepoint very very big). */
-	savep_size = savepoint_size(transaction);
 	transaction->tra_save_point = sav_point->sav_next;
 	if (transaction->tra_save_point &&
 		(transaction->tra_save_point->sav_flags & SAV_trans_level) &&
-		savep_size > 500)
+		VIO_savepoint_large(sav_point,SAV_LARGE) < 0)
 		VIO_verb_cleanup(tdbb, transaction);	/* get rid of tx-level savepoint */
 
 /* Cleanup/merge deferred work/event post */
@@ -2710,7 +2735,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 
 	if (transaction->tra_save_point &&
 		(transaction->tra_save_point->sav_flags & SAV_trans_level) &&
-		savepoint_size(transaction) > 500)
+		VIO_savepoint_large(transaction->tra_save_point,SAV_LARGE) < 0)
 		VIO_verb_cleanup(tdbb, transaction);	/* get rid of savepoint */
 
 	tdbb->tdbb_default = old_pool;
@@ -4229,35 +4254,6 @@ static void replace_record(
 		rpb->rpb_prior = rpb->rpb_record;
 }
 
-
-static SLONG savepoint_size(TRA transaction)
-{
-/**************************************
- *
- *	s a v e p o i n t _ s i z e
- *
- **************************************
- *
- * Functional description
- *	Return a measure of how big the current savepoint has gotten.
- *      The number returned is the number of 'sbm' and 'bms' structs
- *	that are allocated.  This number does not take into account
- *	the data allocated to 'vct_undo'.
- *
- **************************************/
-	VCT verb_actions;
-	SLONG count;
-
-	count = 0;
-	verb_actions = transaction->tra_save_point->sav_verb_actions;
-
-	while (verb_actions) {
-		count += SBM_size(&verb_actions->vct_records);
-		verb_actions = verb_actions->vct_next;
-	}
-
-	return count;
-}
 
 
 static void set_system_flag(RPB * rpb, USHORT field_id, SSHORT flag)

@@ -142,6 +142,9 @@ typedef sav *SAV;
 #define SAV_event_post		2	/* event posted in the save point */
 #define SAV_user            4   /* named user savepoint as opposed to system ones */
 
+#define SAV_LARGE         500   /* Number of allocated record structs when transaction sweep
+                                  becomes preferred over transaction savepoint undo */
+
 /* Deferred work blocks are used by the meta data handler to keep track
    of work deferred to commit time.  This are usually used to perform
    meta data updates */
