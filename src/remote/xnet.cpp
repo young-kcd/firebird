@@ -376,10 +376,11 @@ rem_port* XNET_analyze(
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
-	sprintf(buffer, "%s/P%d", port->port_version->str_data,
-			port->port_protocol);
+	Firebird::string temp;
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
+
 	ALLR_free((UCHAR *) port->port_version);
-	port->port_version = REMOTE_make_string(buffer);
+	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
@@ -440,12 +441,6 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	XPM xpm = NULL;
 	XPS xps = NULL;
 
-	XNET_RESPONSE response;
-
-	TEXT name_buffer[128];
-	FILE_ID file_handle = 0;
-	CADDR_T mapped_address = 0;
-
 	if (!xnet_initialized) {
 		xnet_initialized = TRUE;
 		CurrentProcessId = GetCurrentProcessId();
@@ -484,6 +479,7 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 		return NULL;
 	}
 
+	XNET_RESPONSE response;
 	memcpy(&response, xnet_connect_map, XNET_CONNECT_RESPONZE_SIZE);
 	ReleaseMutex(xnet_connect_mutex);
 	xnet_connect_fini();
@@ -500,6 +496,10 @@ rem_port* XNET_connect(const TEXT* name, PACKET* packet,
 	const ULONG map_num = response.map_num;
 	const ULONG slot_num = response.slot_num;
 	const time_t timestamp = response.timestamp;
+	
+	TEXT name_buffer[128];
+	FILE_ID file_handle = 0;
+	CADDR_T mapped_address = 0;
 
 	try {
 
@@ -2213,11 +2213,10 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 		if ((manager) &&
 			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
 		{
-			LPQUERY_SERVICE_CONFIG config;
 			SCHAR buffer[1024];
 			DWORD config_len;
 
-			config = (LPQUERY_SERVICE_CONFIG) buffer;
+			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
 			THREAD_EXIT();
 			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len))
 			{

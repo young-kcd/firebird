@@ -31,9 +31,7 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
-/*
-$Id: protocol.h,v 1.24 2004-12-26 13:47:56 alexpeshkoff Exp $
-*/
+
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
 
@@ -350,11 +348,11 @@ where
 
 */
 
-const UCHAR CNCT_user		= 1;	/* User name */
+const UCHAR CNCT_user		= 1;	// User name
 const UCHAR CNCT_passwd		= 2;
-const UCHAR CNCT_ppo			= 3;	/* Apollo person, project, organization */
+//const UCHAR CNCT_ppo			= 3;	Apollo person, project, organization. OBSOLETE.
 const UCHAR CNCT_host		= 4;
-const UCHAR CNCT_group		= 5;	/* Effective Unix group id */
+const UCHAR CNCT_group		= 5;	// Effective Unix group id
 const UCHAR CNCT_user_verification	= 6;	/* Attach/create using this connection
 					   will use user verification */
 

@@ -297,10 +297,10 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
-	sprintf(buffer, "%s/P%d", port->port_version->str_data,
-			port->port_protocol);
+	Firebird::string temp;
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
 	ALLR_free(port->port_version);
-	port->port_version = REMOTE_make_string(buffer);
+	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
@@ -372,8 +372,7 @@ rem_port* WNET_connect(const TEXT*		name,
 #ifndef REQUESTER
 /* We're a server, so wait for a host to show up */
 
-	LPSECURITY_ATTRIBUTES security_attr;
-	security_attr = ISC_get_security_desc();
+	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 	THREAD_EXIT();
 	TEXT command_line[MAXPATHLEN + 32];
 	command_line[0] = 0;
@@ -440,13 +439,13 @@ rem_port* WNET_connect(const TEXT*		name,
 
 			if (manager && service)
 			{
-				LPQUERY_SERVICE_CONFIG config;
 				SCHAR buffer[1024];
 				DWORD config_len;
 
-				config = (LPQUERY_SERVICE_CONFIG) buffer;
+				LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
 				if (!QueryServiceConfig
-					(service, config, sizeof(buffer), &config_len)) {
+					(service, config, sizeof(buffer), &config_len))
+				{
 					THREAD_ENTER();
 					config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
 					/* NOMEM: handled by ALLR_alloc, FREE: in this block */

@@ -145,10 +145,11 @@ int WINAPI WinMain(
 // the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
 //
 #if defined(MINGW)
-		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
+		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table)))
 #else
-		if (!StartServiceCtrlDispatcher(service_table)) {
+		if (!StartServiceCtrlDispatcher(service_table))
 #endif
+		{
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
 		}
@@ -625,7 +626,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 							(LPARAM) hWndGbl);
 				if (
 					(procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE,
-								 ServerPid)) == NULL) 
+								 ServerPid)) == NULL)
 				{
 					error = GetLastError();
 					success = FALSE;
@@ -949,7 +950,7 @@ THREAD_ENTRY_DECLARE  swap_icons(THREAD_ENTRY_PARAM param)
  *****************************************************************************/
 	Firebird::ContextPoolHolder threadContext(getDefaultMemoryPool());
 
-	HWND hWnd = reinterpret_cast<HWND>(param);
+	HWND hWnd = static_cast<HWND>(param);
 	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
 	HICON hIconNormal = (HICON) LoadImage(hInstance,
 									MAKEINTRESOURCE(IDI_IBGUARD),
@@ -1002,7 +1003,7 @@ void write_log(int log_action, const char* buff)
 {
 /******************************************************************************
  *
- *  W r i t e L o g
+ *  w r i t e _ l o g
  *
  ******************************************************************************
  *
@@ -1120,13 +1121,12 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *  Description:  Invoke the Windows Help facility with context of nId.
  *      
  *****************************************************************/
-	HCURSOR hOldCursor;
 	char szPathFileName[1024 + 256 + 1];
 
 	GetModuleFileName(hInst, szPathFileName, sizeof(szPathFileName));
 
 /* Show hour glass cursor */
-	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	strcpy(strrchr(szPathFileName, '\\') + 1, "fbserver.hlp");
 	WinHelp(hWnd, szPathFileName, HELP_CONTEXT, wId);
