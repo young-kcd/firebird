@@ -19,6 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *	02 Nov 2001: Mike Nordell - Synch with FB1 changes.
  */
 
 
@@ -79,9 +80,9 @@ nested FOR loops are added.
 #include "../dsql/errd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/gdsassert.h"
 
-ASSERT_FILENAME					/* Define things dsql/assert needed */
+ASSERT_FILENAME				/* Define things dsql/assert needed */
+
 extern "C" {
 #define MIN_ALLOCATION	1024
 #if (defined PC_PLATFORM && !defined NETWARE_386)
@@ -157,7 +158,10 @@ BLK ALLD_alloc( PLB pool, UCHAR type, ULONG count)
 	SLONG best_tail, tail;
 	ULONG needed_blocks;
 
-	assert(pool != NULL);
+	if (!pool) {
+		BUGCHECK ("Bad pool, ALLD_alloc");
+	}
+
 	DEV_BLKCHK(pool, type_plb);
 
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
@@ -167,45 +171,50 @@ BLK ALLD_alloc( PLB pool, UCHAR type, ULONG count)
 
 	size = block_sizes[type].typ_root_length;
 
-	if ((tail = block_sizes[type].typ_tail_length) && count >= 1)
+	if ((tail = block_sizes[type].typ_tail_length) && count >= 1) {
 		size += (count - 1) * tail;
+	}
 
-#ifdef DEV_BUILD
-	if (size <= sizeof(struct blk) || size >= MAX_BLOCK)
+	if (size <= sizeof(struct blk) || size >= MAX_BLOCK) {
 		BUGCHECK("bad block size");
-#endif
+	}
 
 	needed_blocks = SIZE_TO_BLOCKS(BLOCK_ROUNDUP(size));
 
-	assert(BLOCKS_TO_SIZE(needed_blocks) >= size);
+	if (BLOCKS_TO_SIZE (needed_blocks) < size) {
+		BUGCHECK ("ALLD_alloc rounded down when it should round up");
+	}
 
 /* Find best fit.  Best fit is defined to be the free block of shortest
    tail.  If there isn't a fit, extend the pool and try, try again. */
 
-	while (TRUE) {
+	while (TRUE)
+	{
 		best = NULL;
 		best_tail = MAX_BLOCK;
-		for (ptr = &pool->plb_free; ((free = *ptr) != NULL);
-			 ptr =
-			 &free->frb_next) if ((SCHAR HUGE_PTR *) free ==
-								  (SCHAR HUGE_PTR *) free->frb_next) {
+		for (ptr = &pool->plb_free; ((free = *ptr) != NULL); ptr = &free->frb_next)
+		{
+			if ((SCHAR HUGE_PTR *) free == (SCHAR HUGE_PTR *) free->frb_next)
+			{
 				BUGCHECK("corrupt pool");
 			}
 		/* Is this block big enough?  
 		 * And have less leftover than the best one found? */
-			else
-				if (
-					((tail
-					  =
+			else if (
+					((tail =
 					  ((ULONG) free->frb_header.blk_length -
-					   needed_blocks)) >= 0) && (tail < best_tail)) {
+					   needed_blocks)) >= 0) && (tail < best_tail))
+			{
 				best = ptr;
 				best_tail = tail;
-				if (tail == 0)
+				if (tail == 0) {
 					break;
+				}
 			}
-		if (best)
+		}
+		if (best) {
 			break;
+		}
 
 		extend_pool(pool, size);
 	}
@@ -215,17 +224,21 @@ BLK ALLD_alloc( PLB pool, UCHAR type, ULONG count)
    the entire free block as our block (a little extra won't hurt). */
 
 	free = *best;
-	if (best_tail > SIZE_TO_BLOCKS(BLOCK_ROUNDUP(sizeof(struct frb)))) {
+	if (best_tail > SIZE_TO_BLOCKS(BLOCK_ROUNDUP(sizeof(struct frb))))
+	{
 		/* Carve off the needed size from the bottom of the free block */
 		l = free->frb_header.blk_length - needed_blocks;
 
 		block = (BLK) ((UCHAR *) free + BLOCKS_TO_SIZE(l));
 
 		/* Reset the length of the free block */
-		assert(l <= MAX_USHORT);
+		if (needed_blocks < 0) {
+			BUGCHECK ("ALLD_alloc: asking for less than nothing");
+		}
 		free->frb_header.blk_length = (USHORT) l;
 	}
-	else {
+	else
+	{
 		/* There isn't left over in the free block to save in the free list */
 		/* So give the client the whole free block */
 
@@ -240,11 +253,17 @@ BLK ALLD_alloc( PLB pool, UCHAR type, ULONG count)
 /* Zero the whole allocated structure */
 	memset(block, 0, BLOCKS_TO_SIZE(needed_blocks));
 
-/* Now set the block header (yeah, we just zero'ed it, sue me) */
+/* Note that only the last 8 bits of the pool id are
+   stored in the block header.  find_pool does the
+   necessary expansion  */
+
 	block->blk_type = type;
-	assert(pool->plb_pool_id <= MAX_UCHAR);
-	block->blk_pool_id = (UCHAR) pool->plb_pool_id;
-	assert(needed_blocks <= MAX_USHORT);
+	block->blk_pool_id = (UCHAR)pool->plb_pool_id;
+
+	if (needed_blocks > (ULONG) MAX_USHORT) {
+		BUGCHECK ("ALLD_alloc: too greedy");
+	}
+
 	block->blk_length = (USHORT) needed_blocks;
 
 #ifdef SUPERSERVER
@@ -276,8 +295,9 @@ BLK ALLD_extend(BLK * pointer, ULONG size)
 	register SLONG *p1, *p2;
 	register SCHAR *c1, *c2;
 
-	assert(pointer != NULL);
-	assert(*pointer != NULL);
+	if (!pointer || !(*pointer)) {
+		BUGCHECK ("bad pointer in ALLD_extend");
+	}
 
 	block = *pointer;
 	pool = find_pool(block);
@@ -289,25 +309,29 @@ BLK ALLD_extend(BLK * pointer, ULONG size)
 
 /* Copy the bytes a longword at a time */
 	if ((l = length >> SHIFTLONG) != 0)
-		do
+	{
+		do {
 			*p1++ = *p2++;
-		while (--l);
+		} while (--l);
+	}
 
 /* Copy any remaining bytes */
-	if (length &= 3) {
+	if (length &= 3)
+	{
 		c1 = (SCHAR *) p1;
 		c2 = (SCHAR *) p2;
-		do
+		do {
 			*c1++ = *c2++;
-		while (--length);
+		} while (--length);
 	}
 
 	release(reinterpret_cast<FRB>(block), pool);
 
-	if (new_->blk_type == (SCHAR) type_vec)
+	if (new_->blk_type == (SCHAR) type_vec) {
 		((VEC) new_)->vec_count = size;
-	else if (new_->blk_type == (SCHAR) type_vcl)
+	} else if (new_->blk_type == (SCHAR) type_vcl) {
 		((VCL) new_)->vcl_count = size;
+	}
 
 	*pointer = new_;
 
@@ -330,7 +354,9 @@ void ALLD_fini(void)
 	BLK *vector, *until;
 	PLB pool;
 
-	assert(init_flag);			/* Must _init before _fini */
+	if (!init_flag) {	// Must _init before _fini
+		BUGCHECK ("ALLD_fini - finishing before starting");
+	}
 
 /* if there are no pools, we've already finished. */
 
@@ -341,10 +367,13 @@ void ALLD_fini(void)
  * objects in reverse order, and be careful not to refer to pools
  * during the process.
  */
-	for (vector = pools->vec_object + pools->vec_count, until =
-		 pools->vec_object; --vector >= until;)
-		if ((pool = (PLB) * vector) != NULL)
+	for (vector = pools->vec_object + pools->vec_count,
+		until = pools->vec_object; --vector >= until;)
+	{
+		if ((pool = (PLB) * vector) != NULL) {
 			ALLD_rlpool(pool);
+		}
+	}
 
 	pools = NULL;
 	init_flag = FALSE;
@@ -394,7 +423,8 @@ USHORT ALLD_init(void)
 	tdsql = GET_THREAD_DATA;
 
 	init = (init_flag == FALSE);
-	if (!init_flag) {
+	if (!init_flag)
+	{
 		init_flag = TRUE;
 
 		pools = (VEC) temp_vector;
@@ -451,7 +481,7 @@ void* ALLD_malloc(ULONG size)
  * promply depends on tdsql being non-NULL.  Knock, knock, anyone home?
  */
 	IBERROR(-1, "out of memory");
-	return ((UCHAR *) NULL);	/* Added to remove warnings */
+	return 0;	// Not reached
 }
 
 
@@ -493,7 +523,7 @@ PLB ALLD_pool(void)
 	if (trace_pools)
 	{
 		temp_pool.plb_blk_type_count =
-			reinterpret_cast <long*>(gds__alloc(sizeof(alld_block_type_count)));
+			reinterpret_cast <SLONG*>(gds__alloc(sizeof(alld_block_type_count)));
 		if (!temp_pool.plb_blk_type_count) {
 			trace_pools = 0;	/* No memory!! stop tracing pool info */
 		} else {
@@ -502,8 +532,9 @@ PLB ALLD_pool(void)
 	}
 #endif
 
-	if (pool_id == 0)
+	if (pool_id == 0) {
 		DSQL_permanent_pool = &temp_pool;
+	}
 
 	pool = (PLB) ALLD_alloc(&temp_pool, type_plb, 0);
 	pool->plb_pool_id = pool_id;
@@ -514,8 +545,9 @@ PLB ALLD_pool(void)
 #endif
 	pools->vec_object[pool_id] = (BLK) pool;
 
-	if (pool_id == 0)
+	if (pool_id == 0) {
 		DSQL_permanent_pool = pool;
+	}
 
 	return pool;
 }
@@ -539,19 +571,24 @@ void ALLD_print_memory_pool_info( IB_FILE * fptr)
 	HNK hnk;
 	int i, j, col;
 
-	if (!trace_pools)
+	if (!trace_pools) {
 		return;
+	}
 
 	ib_fprintf(fptr, "\n\tALLD_xx block types\n");
 	ib_fprintf(fptr, "\t--------------------");
 	for (i = 0, col = 0; i < type_MAX; i++)
-		if (alld_block_type_count[i]) {
-			if (col % 5 == 0)
+	{
+		if (alld_block_type_count[i])
+		{
+			if (col % 5 == 0) {
 				ib_fprintf(fptr, "\n\t");
+			}
 			ib_fprintf(fptr, "%s = %d  ", ALLD_types[i],
 					   alld_block_type_count[i]);
 			++col;
 		}
+	}
 	ib_fprintf(fptr, "\n");
 
 	if (!pools) {
@@ -559,29 +596,38 @@ void ALLD_print_memory_pool_info( IB_FILE * fptr)
 		return;
 	}
 	vector = pools;
-	for (j = 0, i = 0; i < (int) vector->vec_count; i++) {
+	for (j = 0, i = 0; i < (int) vector->vec_count; i++)
+	{
 		myPool = (PLB) vector->vec_object[i];
-		if (myPool)
+		if (myPool) {
 			++j;
+		}
 	}
 	ib_fprintf(fptr, "\t    There are %d pools", j);
-	for (i = 0; i < (int) vector->vec_count; i++) {
+	for (i = 0; i < (int) vector->vec_count; i++)
+	{
 		myPool = (PLB) vector->vec_object[i];
-		if (!myPool)
+		if (!myPool) {
 			continue;
+		}
 		ib_fprintf(fptr, "\n\t    Pool %d", myPool->plb_pool_id);
-		for (j = 0, hnk = myPool->plb_hunks; hnk; hnk = hnk->hnk_next)
+		for (j = 0, hnk = myPool->plb_hunks; hnk; hnk = hnk->hnk_next) {
 			j++;
-		if (j)
+		}
+		if (j) {
 			ib_fprintf(fptr, " has %d hunks", j);
+		}
 		for (j = 0, col = 0; j < type_MAX; j++)
+		{
 			if (myPool->plb_blk_type_count[j]) {
-				if (col % 5 == 0)
+				if (col % 5 == 0) {
 					ib_fprintf(fptr, "\n\t    ");
+				}
 				ib_fprintf(fptr, "%s = %d  ", ALLD_types[j],
 						   myPool->plb_blk_type_count[j]);
 				++col;
 			}
+		}
 	}
 }
 #endif
@@ -750,14 +796,17 @@ static void extend_pool( PLB pool, ULONG size)
 
 	DEV_BLKCHK(pool, type_plb);
 
-	size =
-		(size + sizeof(struct hnk) + MIN_ALLOCATION -
-		 1) & ~((ULONG) MIN_ALLOCATION - 1);
+	size = (size + sizeof(struct hnk) + MIN_ALLOCATION - 1)
+			& ~((ULONG) MIN_ALLOCATION - 1);
 	block = (BLK) ALLD_malloc(size);
-	assert(SIZE_TO_BLOCKS(size) <= MAX_USHORT);
+
+	if (SIZE_TO_BLOCKS (size) > MAX_USHORT) {
+		BUGCHECK ("too greedy in extend pool of alld.c");
+	}
+
 	block->blk_length = (USHORT) SIZE_TO_BLOCKS(size);
 	block->blk_type = (SCHAR) type_frb;
-	assert(pool->plb_pool_id <= MAX_UCHAR);
+
 	block->blk_pool_id = (UCHAR) pool->plb_pool_id;
 #ifdef SUPERSERVER
 	if (trace_pools) {
@@ -792,22 +841,34 @@ static PLB find_pool( BLK block)
 	USHORT pool_id;
 
 	if (pools->vec_count < 256)
+	{
 		if ((pool_id = block->blk_pool_id) < pools->vec_count &&
 			(pool = (PLB) pools->vec_object[pool_id]))
+		{
 			return pool;
+		}
 		else
+		{
 			BUGCHECK("bad pool id");
+		}
+	}
 
-	for (pool_id = block->blk_pool_id; pool_id < pools->vec_count;
-		 pool_id += 256) if (pool = (PLB) pools->vec_object[pool_id]) {
+	for (pool_id = block->blk_pool_id; pool_id < pools->vec_count; pool_id += 256)
+	{
+		if (pool = (PLB) pools->vec_object[pool_id])
+		{
 			hunk = pool->plb_hunks;
 			for (; hunk; hunk = hunk->hnk_next)
-				if ((SCHAR HUGE_PTR *) block >=
-					(SCHAR HUGE_PTR *) hunk->hnk_address
+			{
+				if ((SCHAR HUGE_PTR *) block >= (SCHAR HUGE_PTR *) hunk->hnk_address
 					&& (SCHAR HUGE_PTR *) block <
 					(SCHAR HUGE_PTR *) hunk->hnk_address + hunk->hnk_length)
+				{
 					return pool;
+				}
+			}
 		}
+	}
 	BUGCHECK("bad pool id");
 	return (PLB) NULL;			/* Added to remove warnings */
 }
@@ -829,23 +890,24 @@ static void release( FRB block, PLB pool)
  *
  **************************************/
 	register FRB prior, free;
-	FRB *ptr;
-#ifdef SUPERSERVER
-	UCHAR blk_header_type;
-#endif
+	FRB* ptr;
 
 	DEV_BLKCHK(pool, type_plb);
 
 #ifdef SUPERSERVER
-	blk_header_type = block->frb_header.blk_type;
+	UCHAR blk_header_type = block->frb_header.blk_type;
 #endif
 	block->frb_header.blk_type = (SCHAR) type_frb;
 	prior = NULL;
 
 	for (ptr = &pool->plb_free; (free = *ptr) != NULL;
-		 prior = free, ptr =
-		 &free->frb_next) if ((SCHAR HUGE_PTR *) block <=
-							  (SCHAR HUGE_PTR *) free) break;
+		 prior = free, ptr = &free->frb_next)
+	{
+		 if ((SCHAR HUGE_PTR *) block <= (SCHAR HUGE_PTR *) free)
+		 {
+			 break;
+		 }
+	}
 
 #ifdef DEBUG_GDS_ALLOC
 /* Debugging code to erase memory locations after a release - 
@@ -859,11 +921,16 @@ static void release( FRB block, PLB pool)
 	{
 		ULONG size;
 		size = BLOCKS_TO_SIZE(block->frb_header.blk_length);
-		assert(size >= sizeof(struct blk));
+		if (size < sizeof (struct blk))
+		{
+			BUGCHECK ("Releasing less that 4 bytes: alld.c/release");
+		}
 		size -= sizeof(struct blk);
 		if (size)
+		{
 			memset((SCHAR *) block + sizeof(struct blk),
 				   ALLD_RELEASED_PATTERN, size);
+		}
 	};
 #endif	/* DEBUG_GDS_ALLOC */
 
@@ -878,9 +945,11 @@ static void release( FRB block, PLB pool)
 
 /* Try to merge the free block with the next one down. */
 
-	if (free) {
+	if (free)
+	{
 		if ((SCHAR HUGE_PTR *) block + EXPAND_BLOCKSIZE(&block->frb_header) ==
-			(SCHAR HUGE_PTR *) free) {
+			(SCHAR HUGE_PTR *) free)
+		{
 			block->frb_header.blk_length += free->frb_header.blk_length;
 			block->frb_next = free->frb_next;
 #ifdef DEBUG_GDS_ALLOC
@@ -890,16 +959,19 @@ static void release( FRB block, PLB pool)
 		}
 		else if ((SCHAR HUGE_PTR *) block +
 				 EXPAND_BLOCKSIZE(&block->frb_header) >
-				 (SCHAR HUGE_PTR *) free) {
+				 (SCHAR HUGE_PTR *) free)
+		{
 			BUGCHECK("released block overlaps following free block");
 		}
 	}
 
 /* Try and merge the block with the prior free block */
 
-	if (prior) {
+	if (prior)
+	{
 		if ((SCHAR HUGE_PTR *) prior + EXPAND_BLOCKSIZE(&prior->frb_header) ==
-			(SCHAR HUGE_PTR *) block) {
+			(SCHAR HUGE_PTR *) block)
+		{
 			prior->frb_header.blk_length += block->frb_header.blk_length;
 			prior->frb_next = block->frb_next;
 #ifdef DEBUG_GDS_ALLOC
@@ -909,7 +981,8 @@ static void release( FRB block, PLB pool)
 		}
 		else if ((SCHAR HUGE_PTR *) prior +
 				 EXPAND_BLOCKSIZE(&prior->frb_header) >
-				 (SCHAR HUGE_PTR *) block) {
+				 (SCHAR HUGE_PTR *) block)
+		{
 			BUGCHECK("released block overlaps prior free block");
 		}
 	}
