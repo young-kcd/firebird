@@ -488,6 +488,12 @@ void SCH_exit(void)
 
 	thread = active_thread;
 
+	// This is to prevent nasty crash if error (for example, IO error) 
+	// happens during attach to database in SS builds. Exception
+	// handler there calls THREAD_EXIT without preceding THREAD_ENTER
+	// in this case (during shutdown of CACHE_WRITER or CACHE_READER)
+	if (!thread) return; 
+
 	if (thread == thread->thread_next)
 		active_thread = NULL;
 	else {
