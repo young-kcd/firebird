@@ -1368,8 +1368,14 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 		try {
 
-			if (!length)
+			if (!string) {
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
+					isc_arg_gds, isc_command_end_err, 0);	// Unexpected end of command
+			}
+
+			if (!length) {
 				length = strlen(string);
+			}
 
 // Figure out which parser version to use 
 /* Since the API to dsql8_prepare is public and can not be changed, there needs to
