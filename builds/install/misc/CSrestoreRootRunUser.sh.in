@@ -312,7 +312,7 @@ chmod ugo=rw firebird.log
 # make databases writable by all
 chmod ugo=rw examples/*.fdb
 chmod ugo=rw help/*.fdb
-chmod ugo=rw security.fdb
+chmod ugo=rw security2.fdb
 
 
 

@@ -40,7 +40,7 @@
 #include "../jrd/jrd_pwd.h"
 #endif
 
-DATABASE DB = STATIC FILENAME "security.fdb";
+DATABASE DB = STATIC FILENAME "security2.fdb";
 
 static const char* SYSDBA_USER_NAME	= "SYSDBA";
 
@@ -60,7 +60,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
  * Functional description
  *	Process a command line for the security data base manager.
  *	This is used to add and delete users from the user information
- *	database (security.fdb).   It also displays information
+ *	database (security2.fdb).   It also displays information
  *	about current users and allows modification of current
  *	users' parameters.   
  *	Returns 0 on success, otherwise returns a Gsec message number

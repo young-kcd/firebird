@@ -14,7 +14,7 @@ d none  /usr/lib     ? ? ?
 
 d none @prefix@ 0755 root root
 
-v CONFIG.prsv @prefix@/security.fdb=$SRCDIR/security.fdb  0666 root root
+v CONFIG.prsv @prefix@/security2.fdb=$SRCDIR/security2.fdb  0666 root root
 f none @prefix@/firebird.msg=$SRCDIR/firebird.msg  0644 root root
 f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg  0644 root root
 f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg  0644 root root

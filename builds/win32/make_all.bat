@@ -82,7 +82,7 @@ if errorlevel 1 call :ERROR Debug build failed
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output > nul
 @copy %ROOT_PATH%\builds\install\misc\firebird.conf %ROOT_PATH%\output >nul
 :: DATABASES
-@copy %ROOT_PATH%\gen\dbs\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
+@copy %ROOT_PATH%\gen\dbs\SECURITY2.FDB %ROOT_PATH%\output\security2.fdb >nul
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 ::@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
 @copy %ROOT_PATH%\builds\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul

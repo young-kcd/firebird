@@ -6391,7 +6391,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
  **/
 static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS* status)
 {
-	// Check for security.fdb
+	// Check for security2.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
 	static Firebird::PathName ExpandedSecurityNameBuffer(*getDefaultMemoryPool());
 	if (! SecurityNameBuffer[0]) {

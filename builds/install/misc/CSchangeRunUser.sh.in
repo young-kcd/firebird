@@ -266,7 +266,7 @@ fixFilePermissions() {
 	chmod a=r firebird.conf
     chmod a=r firebird.msg
     chmod ug=rw,o= help/help.fdb
-    chmod ug=rw,o= security.fdb
+    chmod ug=rw,o= security2.fdb
 
 
     # Set a default of read all files in examples

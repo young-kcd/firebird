@@ -56,9 +56,9 @@ public:
 	{
 		static const char* USER_INFO_NAME =
 #ifdef VMS
-					"[sysmgr]security.fdb";
+					"[sysmgr]security2.fdb";
 #else
-					"security.fdb";
+					"security2.fdb";
 #endif
 
 		gds__prefix(path_buffer, USER_INFO_NAME);

@@ -1152,7 +1152,7 @@ ISC_STATUS SVC_query2(Service* service,
 
 
 		case isc_info_svc_user_dbpath:
-			/* The path to the user security database (security.fdb) */
+			/* The path to the user security database (security2.fdb) */
 			SecurityDatabase::getPath(buffer);
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer,
@@ -1571,7 +1571,7 @@ void SVC_query(Service*		service,
 
 
 		case isc_info_svc_user_dbpath:
-			/* The path to the user security database (security.fdb) */
+			/* The path to the user security database (security2.fdb) */
 			SecurityDatabase::getPath(buffer);
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))

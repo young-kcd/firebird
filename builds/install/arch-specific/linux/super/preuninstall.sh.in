@@ -45,7 +45,7 @@ stopServerIfRunning() {
 
     IBRootDir=@prefix@
     IBBin=$IBRootDir/bin
-    SecurityDatabase=security.fdb
+    SecurityDatabase=security2.fdb
 
 
     stopServerIfRunning

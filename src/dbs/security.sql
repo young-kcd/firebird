@@ -54,7 +54,7 @@ COMMIT;
 /*  Index definition users_bg table */
 CREATE UNIQUE INDEX USER_NAME_INDEX ON USERS_BG(USER_NAME);
 
-/*  View: USERS. Let's existing tools access security.fdb. */
+/*  View: USERS. Let's existing tools access security database. */
 CREATE VIEW USERS (USER_NAME, SYS_USER_NAME, GROUP_NAME, UID, GID, PASSWD,
 		PRIVILEGE, COMMENT, FIRST_NAME, MIDDLE_NAME, LAST_NAME, FULL_NAME) AS 
 	SELECT USER_NAME, SYS_USER_NAME, GROUP_NAME, UID, GID, PASSWD, 

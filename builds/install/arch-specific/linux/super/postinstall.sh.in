@@ -555,8 +555,8 @@ EOF
     
     # Security database
     # Nobody besides firebird permitted to even read this file
-    chown $RunUser.$RunUser security.fdb
-    chmod 0600 security.fdb
+    chown $RunUser.$RunUser security2.fdb
+    chmod 0600 security2.fdb
 
     # make examples writable by firebird
     for i in examples/*.fdb

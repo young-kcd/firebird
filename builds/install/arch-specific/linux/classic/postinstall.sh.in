@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.7 2004-01-29 06:32:06 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.8 2005-02-24 12:23:02 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -396,7 +396,7 @@ fixFilePermissions() {
     chmod a=r firebird.msg
     chmod a=r README
     chmod ug=rw,o= help/help.fdb
-    chmod ug=rw,o= security.fdb
+    chmod ug=rw,o= security2.fdb
 
     # Set a default of read all files in includes
 
@@ -516,7 +516,7 @@ fixFilePermissionsRoot() {
     chmod a=r firebird.msg
     chmod a=r README
     chmod a=rw help/help.fdb
-    chmod a=rw security.fdb
+    chmod a=rw security2.fdb
 
     # fix up permissions for loadable plugins
     chmod a=rx intl/fbintl UDF/fbudf.so UDF/ib_udf.so

@@ -364,7 +364,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		gds__log(err_buf);
 	}
 
-/* Server tries to attach to security.fdb to make sure everything is OK
+/* Server tries to attach to security2.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.
