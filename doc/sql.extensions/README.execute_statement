@@ -94,8 +94,8 @@ END
 N O T E S
 =========
 
-For all forms of EXECUTE STATEMENT SQL, the DSQL string can not contain any
-parameters. All variable substitution into the static part of the SQL 
+I. For all forms of EXECUTE STATEMENT SQL, the DSQL string can not contain 
+any parameters. All variable substitution into the static part of the SQL 
 statement should be performed before EXECUTE STATEMENT.
 
 EXECUTE STATEMENT is potentially dangerous, because:
@@ -122,3 +122,8 @@ correct datatype. This helps to avoid some errors where unpredictable
 type-casting would otherwise cause exceptions in some conditions but not
 in others.  For example, the string '1234' would convert to an int 1234, 
 but 'abc' would give a conversion error.
+
+II. If the stored procedure has special privileges on some objects, the 
+dynamic statement submitted in the EXECUTE STATEMENT string does not 
+inherit them. Privileges are restricted to those granted to the user who 
+is executing the procedure.
