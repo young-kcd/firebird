@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.107 2004-06-09 18:57:04 brodsom Exp $
+$Id: lock.cpp,v 1.108 2004-08-26 18:14:14 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -2658,7 +2658,7 @@ static LBL find_lock(
 
 	ULONG hash_value = 0;
 	{ // scope
-	UCHAR* p;
+	UCHAR* p = NULL; // silence uninitialized warning
 	const UCHAR* q = value;
 	for (USHORT l = 0; l < length; l++) {
 		if (!(l & 3))
@@ -4869,6 +4869,9 @@ static USHORT wait_for_request(
 
 	if (lck_wait < 0) {
 		lock_timeout = current_time + (-lck_wait);
+	}
+	else {
+		lock_timeout = 0; // silence uninitialized warning
 	}
 	SLONG deadlock_timeout = current_time + scan_interval;
 
