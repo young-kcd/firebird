@@ -115,10 +115,12 @@ Const
 Var
   ProductsInstalled: Integer;
   ProductsInstalledCount: Integer;
-  ForceInstall: Boolean;        //If /force set on command-line we install _and_
-                                //configure the server (unless an existing Fb 15
-                                //server is running.
-  InstallAndConfigure: Integer; //
+  ForceInstall: Boolean;       // If /force set on command-line we install _and_
+                                // configure. Default is to install and configure only if
+                                // no other working installation is found (unless we are installing 
+                                // over the same version)
+                                
+  InstallAndConfigure: Integer;
 
 Type
   TProduct = record
@@ -137,11 +139,6 @@ Type
     FirebirdVersion:String;
   end;
 
-  TExistingInstall = record
-    Description:  String;
-    InstallType:  Integer;
-    ActualVersion:String;
-  end;
 
 Var
   ProductsInstalledArray: Array of TProduct;
@@ -389,7 +386,7 @@ begin
             if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
               ProductsInstalled := ProductsInstalled + FB1;
               ProductsInstalledCount := ProductsInstalledCount + 1;
-              ProductsInstalledArray[product].FirebirdVersion := ConvertIBVerStrToFbVerStr(ProductsInstalledArray[product].ActualVersion);
+              ProductsInstalledArray[product].ActualVersion := ConvertIBVerStrToFbVerStr(ProductsInstalledArray[product].ActualVersion);
               end;
             end
           else
@@ -397,7 +394,7 @@ begin
         end;
 
         FB15RCInstall: begin
-          if CompareVersion(ProductsInstalledArray[product].ClientVersion, '6.3.0.0',2) <> 0 then
+          if CompareVersion(ProductsInstalledArray[product].ClientVersion, '1.5.0.0',2) <> 0 then
             ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
           if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
             ProductsInstalled := ProductsInstalled + FB15RC;
@@ -406,7 +403,7 @@ begin
         end;
 
         FB15Install: begin
-          if CompareVersion(ProductsInstalledArray[product].ClientVersion, '6.3.0.0',2) <> 0 then
+          if CompareVersion(ProductsInstalledArray[product].ClientVersion, '1.5.0.0',2) <> 0 then
             ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
           if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
             ProductsInstalled := ProductsInstalled + FB15;
@@ -416,7 +413,9 @@ begin
         end;
 
         FB2Install: begin
-          if CompareVersion(ProductsInstalledArray[product].ClientVersion, '6.3.0.0',2) < 1 then
+          //We don't know (yet) what we should be comparing against here, ClientVersion
+          //should be equal or greater than 1.6.0.0
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '1.6.0.0',2) < 0) then
             ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
           if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
             ProductsInstalled := ProductsInstalled + FB2;
@@ -482,47 +481,46 @@ var
 procedure SetupSharedFilesArray;
 begin
 if UsingWin2k then
-  SetArrayLength(SharedFileArray,24)
+  SetArrayLength(SharedFileArray,21)
 else
-  SetArrayLength(SharedFileArray,20);
+  SetArrayLength(SharedFileArray,18);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\firebird.msg';
 
-SharedFileArray[2].Filename := ExpandConstant('{app}')+'\bin\gds32.dll';
-SharedFileArray[3].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
+SharedFileArray[2].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
 
-SharedFileArray[4].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
-SharedFileArray[5].Filename := ExpandConstant('{app}')+'\bin\gbak.exe';
-SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gfix.exe';
-SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gsec.exe';
-SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
-SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
-SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
-SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
-SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
-SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
-SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
+SharedFileArray[3].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
+SharedFileArray[4].Filename := ExpandConstant('{app}')+'\bin\gbak.exe';
+SharedFileArray[5].Filename := ExpandConstant('{app}')+'\bin\gfix.exe';
+SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gsec.exe';
+SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
+SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
+SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
+SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
+SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
+SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
+SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
 
 if ClassicInstallChosen then
-  SharedFileArray[15].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
+  SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
 else
-  SharedFileArray[15].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
+  SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
 
 if UsingWinNT then
-  SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
+  SharedFileArray[15].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
 else
-  SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
+  SharedFileArray[15].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
 
-SharedFileArray[17].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
-SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
+SharedFileArray[16].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
+SharedFileArray[17].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
 
-SharedFileArray[19].Filename := ExpandConstant('{sys}')+'\gds32.dll';
+//SharedFileArray[18].Filename := ExpandConstant('{sys}')+'\gds32.dll';
 
 if UsingWin2k then begin
-  SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\fbclient.local';
-  SharedFileArray[21].Filename := ExpandConstant('{app}')+'\bin\msvcrt.local';
-  SharedFileArray[22].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.local';
+  SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\fbclient.local';
+  SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\msvcrt.local';
+  SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.local';
 end;
 
 
@@ -647,27 +645,10 @@ begin
 end;
 
 
-
-
-
 function InstallGds32: boolean;
-var
-  sysdir: String;
-  i:      Integer;
 begin
-
-  if ConfigureFirebird then begin
-    result := true;
-    for i:=0 to GetArrayLength(SharedFileArray)-1 do
-      if SharedFileArray[i].Filename = ExpandConstant('{sys}')+'\gds32.dll' then begin
-        SharedFileArray[i].Count := 0;
-        Break;
-      end
-    end
-  else
-    result := false;
+  result := ConfigureFirebird;
 end;
-
 
 
 function InstallGds32Stub: boolean;
@@ -675,13 +656,6 @@ var
   i: integer;
 begin
   result := Not ConfigureFirebird;
-
-  if result then
-    //Make sure that we don't increase the shared lib count for gds32!
-    for i:=0 to GetArrayLength(SharedFileArray)-1 do
-      if SharedFileArray[i].Filename = ExpandConstant('{sys}')+'\gds32.dll' then begin
-        SharedFileArray[i].Count := SharedFileArray[i].Count-1; //Because we will increment this again at the end.
-        Break;
-      end
 end;
+
 

@@ -194,7 +194,7 @@ Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: output\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion
 ;Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\doc\Firebird_v15.103_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
+Source: output\doc\Firebird_v15.104_ReleaseNotes.pdf; DestDir: {app}\doc\Firebird_v15.ReleaseNotes.pdf; Components: DevAdminComponent; Flags: ignoreversion
 ;Source: firebird\install\doc_all_platforms\Firebird_v1_5_*.html; DestDir: {app}\doc; Components: DevAdminComponent;  Flags: ignoreversion;
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete
@@ -223,7 +223,7 @@ program Setup;
 //Var
 //  ProductVersion = '1.5.0';
 
-(*To Do
+{To Do
 
 --remove old, incorrect registry entries that exist from RC installs
 
@@ -233,6 +233,7 @@ program Setup;
 Var
   InstallRootDir: String;
   FirebirdConfSaved: boolean;
+
 
 #include "FirebirdInstallSupportFunctions.inc"
 #include "FirebirdInstallEnvironmentChecks.inc"
@@ -261,10 +262,6 @@ else
 SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
 for product := 0 to MaxProdInstalled -1 do begin
   if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
-    if pos('InterBase',ProductsInstalledArray[product].RegVersion)=0 then //Firebird
-      InstallSummaryArray[i] := '-- '+Format1(ProductsInstalledArray[product].Description,
-            ProductsInstalledArray[product].FirebirdVersion)
-    else
       InstallSummaryArray[i] := Format1(ProductsInstalledArray[product].Description,
             ProductsInstalledArray[product].ActualVersion);
 
@@ -283,7 +280,11 @@ for product := 0 to MaxProdInstalled -1 do begin
 
     if ((ProductsInstalledArray[product].InstallType AND BrokenInstall) = BrokenInstall) then
       InstallSummaryArray[i] := InstallSummaryArray[i]
-      + #13 + '   (Install appears broken due to version string mismatch.)';
+      + #13 + '   (Install appears broken due to version string mismatch.)'
+    else
+      InstallSummaryArray[i] := InstallSummaryArray[i]
+      + #13 + '   (Installation appears to be correct.)'
+    ;
 
     i:= i+1;
   end;
@@ -376,7 +377,7 @@ begin
     
   //By default we want to install and confugure,
   //unless subsequent analysis suggest otherwise.
-  InstallAndConfigure := Install + Configure
+  InstallAndConfigure := Install + Configure;
 
   InitExistingInstallRecords;
   AnalyzeEnvironment;
