@@ -112,6 +112,9 @@
 /* Do we build (need) the lock manager process? */
 #undef MANAGER_PROCESS
 
+/* Support databases on Raw Devices (UNIX only) */
+#undef SUPPORT_RAW_DEVICES
+
 /* CPU types */
 #undef PowerPC
 #undef sparc

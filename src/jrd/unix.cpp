@@ -137,6 +137,11 @@ static void close_marker_file(TEXT *);
 static FIL seek_file(FIL, BDB, UINT64 *, STATUS *);
 static FIL setup_file(DBB, TEXT *, USHORT, int);
 static BOOLEAN unix_error(TEXT *, FIL, STATUS, STATUS *);
+#ifdef SUPPORT_RAW_DEVICES
+static BOOLEAN  raw_devices_check_file (TEXT *);
+static BOOLEAN  raw_devices_validate_database (int, TEXT *, USHORT);
+static int  raw_devices_unlink_database (TEXT *);
+#endif
 
 #ifdef hpux
 union fcntlun {
@@ -321,7 +326,14 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
 	flag =
 		SYNC | O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
 #else
+#ifdef SUPPORT_RAW_DEVICES
+	flag = O_RDWR |
+			(raw_devices_check_file(file_name) ? 0 : O_CREAT) |
+			(overwrite ? O_TRUNC : O_EXCL) |
+			O_BINARY;
+#else
 	flag = O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
+#endif
 #endif
 
 	if ((desc = open(file_name, flag, MASK)) == -1)
@@ -675,6 +687,23 @@ FIL PIO_open(DBB dbb,
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
 	}
+
+#ifdef SUPPORT_RAW_DEVICES
+	/* At this point the file has successfully been opened in either RW or RO
+	 * mode. Check if it is a special file (i.e. raw block device) and if a
+	 * valid database is on it. If not, return an error.
+	 */
+	if (raw_devices_check_file(file_name)
+		&& !raw_devices_validate_database(desc, file_name, file_length))
+	{
+		ERR_post (isc_io_error,
+					gds_arg_string, "open",
+					gds_arg_cstring, file_length,
+						ERR_string (file_name, file_length),
+					isc_arg_gds, isc_io_open_err,
+					gds_arg_unix, ENOENT, 0);
+	}
+#endif /* SUPPORT_RAW_DEVICES */
 
 	return setup_file(dbb, string, length, desc);
 }
@@ -1168,5 +1197,188 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 
 #endif /* defined PREAD_PWRITE && ! (defined SOLARIS_MT || LINUX) */
 
+int PIO_unlink (
+	TEXT *file_name)
+{
+/**************************************
+ *
+ *	P I O _ u n l i n k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Delete a database file.
+ *
+ **************************************/
+
+#ifdef SUPPORT_RAW_DEVICES
+	if (raw_devices_check_file(file_name))
+		return raw_devices_unlink_database(file_name);
+	else
+#endif
+		return unlink(file_name);
+}
+
+#ifdef SUPPORT_RAW_DEVICES
+static BOOLEAN
+raw_devices_check_file (
+	TEXT *file_name)
+{
+/**************************************
+ *
+ *	raw_devices_check_file
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checks if the supplied file name is a special file
+ *
+ **************************************/
+	struct stat s;
+
+	return (stat(file_name, &s) == 0
+			&& (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
+}
+
+static BOOLEAN
+raw_devices_validate_database (
+	int desc,
+	TEXT *file_name,
+	USHORT file_length)
+{
+/**************************************
+ *
+ *	raw_devices_validate_database
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checks if the special file contains a valid database
+ *
+ **************************************/
+	char header[MIN_PAGE_SIZE];
+	HDR hp = (HDR)header;
+	ssize_t bytes;
+	BOOLEAN retval = FALSE;
+	int i;
+
+	/* Read in database header. Code lifted from PIO_header. */
+	if (desc == -1)
+		ERR_post (isc_io_error,
+					gds_arg_string, "raw_devices_validate_database",
+					gds_arg_string, ERR_string (file_name, file_length),
+					isc_arg_gds, isc_io_read_err,
+					gds_arg_unix, errno, 0);
+
+	for (i = 0; i < IO_RETRY; i++)
+	{
+		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
+			ERR_post (isc_io_error,
+						gds_arg_string, "lseek",
+						gds_arg_string, ERR_string (file_name, file_length),
+						isc_arg_gds, isc_io_read_err,
+						gds_arg_unix, errno, 0);
+		if ((bytes = read (desc, header, sizeof(header))) == sizeof(header))
+			goto read_finished;
+		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
+			ERR_post (isc_io_error,
+						gds_arg_string, "read",
+						gds_arg_string, ERR_string (file_name, file_length),
+						isc_arg_gds, isc_io_read_err,
+						gds_arg_unix, errno, 0);
+	}
+
+	ERR_post (isc_io_error,
+				gds_arg_string, "read_retry",
+				gds_arg_string, ERR_string (file_name, file_length),
+				isc_arg_gds, isc_io_read_err,
+				gds_arg_unix, errno, 0);
+
+  read_finished:
+	/* Rewind file pointer */
+	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
+		ERR_post (isc_io_error,
+					gds_arg_string, "lseek",
+					gds_arg_string, ERR_string (file_name, file_length),
+					isc_arg_gds, isc_io_read_err,
+					gds_arg_unix, errno, 0);
+
+	/* Validate database header. Code lifted from PAG_header. */
+	if (hp->hdr_header.pag_type != pag_header || hp->hdr_sequence)
+		goto quit;
+
+#ifdef ODS_8_TO_CURRENT
+	/* This Server understands ODS greater than 8 *ONLY* upto current major
+	 * ODS_VERSION defined in ods.h, Refuse connections to older or newer ODS's.
+	 */
+	if ((hp->hdr_ods_version < ODS_VERSION8)
+		|| (hp->hdr_ods_version > ODS_VERSION))
+#else
+	if (hp->hdr_ods_version != ODS_VERSION)
+#endif
+		goto quit;
+
+	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
+		goto quit;
+
+	/* At this point we think we have identified a database on the device.
+ 	 * PAG_header will validate the entire structure later.
+ 	 */
+	retval = TRUE;
+
+  quit:
+#ifdef DEV_BUILD
+	gds__log ("raw_devices_validate_database: %s -> %s\n",
+				file_name, retval ? "true" : "false");
+#endif
+	return retval;
+}
+
+static int
+raw_devices_unlink_database (
+	TEXT *file_name)
+{
+	char header[MIN_PAGE_SIZE];
+	size_t file_length = strlen(file_name);
+	ssize_t bytes;
+	int desc, i;
+
+	for (i = 0; i < IO_RETRY; i++)
+	{
+		if ((desc = open (file_name, O_RDWR | O_BINARY)) != -1)
+			break;
+		if (!SYSCALL_INTERRUPTED(errno))
+			ERR_post (isc_io_error,
+						gds_arg_string, "open",
+						gds_arg_string, ERR_string (file_name, file_length),
+						isc_arg_gds, isc_io_open_err,
+						gds_arg_unix, errno, 0);
+	}
+
+	memset(header, 0xa5, sizeof(header));
+
+	for (i = 0; i < IO_RETRY; i++)
+	{
+		if ((bytes = write (desc, header, sizeof(header))) == sizeof(header))
+			break;
+		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
+			continue;
+		ERR_post (isc_io_error,
+			gds_arg_string, "write",
+			gds_arg_string, ERR_string (file_name, file_length),
+			isc_arg_gds, isc_io_write_err,
+			gds_arg_unix, errno, 0);
+	}
+
+	(void)close(desc);
+
+#if DEV_BUILD
+	gds__log ("raw_devices_unlink_database: %s -> %s\n",
+				file_name, i < IO_RETRY ? "true" : "false");
+#endif
+
+	return 0;
+}
+#endif /* SUPPORT_RAW_DEVICES */
 
 } // extern "C"

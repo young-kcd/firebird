@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.49 2002-09-23 07:49:33 eku Exp $
+dnl $Id: configure.in,v 1.50 2002-10-01 05:47:58 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -72,6 +72,19 @@ AC_ARG_ENABLE(debug,
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-debug);;
    esac])
 AC_SUBST(PROD_BUILD_FLG)
+
+RAW_DEVICES_FLG=N
+AC_ARG_ENABLE(raw-devices,
+  [  --enable-raw-devices    enable databases on raw devices (default=no)],
+  [case "$enableval" in
+     yes) RAW_DEVICES_FLG=Y;;
+     no)  RAW_DEVICES_FLG=N;;
+     *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-debug);;
+   esac])
+
+if test "$RAW_DEVICES_FLG" = "Y"; then
+  AC_DEFINE(SUPPORT_RAW_DEVICES)
+fi
 
 LOCK_MANAGER=N
 MANAGER_PROCESS_TARGET=
@@ -497,6 +510,11 @@ esac
 case $ac_cv_sys_file_offset_bits in
  no)      echo "  64 bit I/O : disabled";;
  64)      echo "  64 bit I/O : enabled";;
+esac
+
+case $RAW_DEVICES_FLG in
+ Y)       echo " Raw devices : enabled";;
+ N)       echo " Raw devices : disabled";;
 esac
 
 if test "$FIREBIRD_ARCH_TYPE" = "classic"; then

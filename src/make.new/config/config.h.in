@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.36 2002-09-20 08:28:51 eku Exp $"
+#ident "$Id: config.h.in,v 1.37 2002-10-01 05:47:59 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -96,6 +96,9 @@
 
 /* Do we build (need) the lock manager process? */
 #undef MANAGER_PROCESS
+
+/* Support databases on Raw Devices (UNIX only) */
+#undef SUPPORT_RAW_DEVICES
 
 /* CPU types */
 #undef PowerPC

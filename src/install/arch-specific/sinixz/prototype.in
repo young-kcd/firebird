@@ -1,4 +1,4 @@
-# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/sinixz/prototype.in,v 1.4 2002-09-24 12:58:43 eku Exp $
+# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/sinixz/prototype.in,v 1.5 2002-10-01 05:47:58 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -16,11 +16,11 @@ d none  /opt         ? ? ?
 
 d none @prefix@ 0755 root root
 
-f none @prefix@/isc4.gdb=$SRCDIR/isc4.gdb 0444 root root
-f none @prefix@/firebird.msg=$SRCDIR/firebird.msg 0644 root root
-#f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0644 root root
-#f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg 0644 root root
-#f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg 0644 root root
+f none @prefix@/isc4.gdb=$SRCDIR/isc4.gdb  0644 root root
+f none @prefix@/firebird.msg=$SRCDIR/firebird.msg  0644 root root
+#f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg  0644 root root
+#f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg  0644 root root
+#f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg  0644 root root
 
 d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/CSchangeRunUser.sh=$SRCDIR/bin/CSchangeRunUser.sh  0555 root root
