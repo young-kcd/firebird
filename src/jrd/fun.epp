@@ -29,7 +29,7 @@
  * the length of string types containing binary data (char. set octets).
  */
 /*
-$Id: fun.epp,v 1.22.2.3 2004-04-06 07:51:12 skidder Exp $
+$Id: fun.epp,v 1.22.2.4 2004-04-17 01:13:22 skidder Exp $
 */
 
 #include "firebird.h"
@@ -66,10 +66,12 @@ $Id: fun.epp,v 1.22.2.3 2004-04-06 07:51:12 skidder Exp $
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/blb.h"
 
+typedef void* UDF_ARG;
+
 #ifdef VMS
-#define CALL_UDF(ptr, udftype)     (*(udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
+#define CALL_UDF(ptr, udftype)     (*(udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
 #else
-#define CALL_UDF(ptr, udftype)     ((udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
+#define CALL_UDF(ptr, udftype)     ((udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
 #endif
 
 DATABASE DB = FILENAME "ODS.RDB";
@@ -99,7 +101,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
  *
  **************************************/
 
-	SLONG	args[MAX_UDF_ARGUMENTS + 1];
+	UDF_ARG	args[MAX_UDF_ARGUMENTS + 1];
 	USHORT	length;
 	UCHAR	temp[800];
 	STR		temp_string;
@@ -131,7 +133,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 	}
 
 	MOVE_CLEAR(args, sizeof(args));
-	SLONG*		arg_ptr		= args;
+	UDF_ARG*		arg_ptr		= args;
 	LLS			blob_stack	= 0;
 	LLS			array_stack = 0;
 	JRD_REQ			request		= tdbb->tdbb_request;
@@ -186,14 +188,12 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 		} else {
 			input = EVL_expr(tdbb, *ptr++);
 		}
-		SLONG**	ap = (SLONG **) arg_ptr;
 
 		// If we're passing data type ISC descriptor, there's
 		// nothing left to be done
 
 		if (tail->fun_mechanism == FUN_descriptor) {
-			*ap++ = (SLONG *) input;
-			arg_ptr = (SLONG *) ap;
+			*arg_ptr++ = input;
 			continue;
 		}
 
@@ -210,7 +210,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				UCHAR* p = (UCHAR *) arg_ptr;
 				MOVE_CLEAR(p, (SLONG) length);
 				p += length;
-				arg_ptr = (SLONG *) p;
+				arg_ptr = reinterpret_cast<UDF_ARG*>(p);
 				continue;
 			}
 			else
@@ -237,7 +237,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 						 * these problems, but can still occur in GDML.
 						 * 1994-September-28 David Schnepper 
 						 */
-						*arg_ptr++ = (SLONG) s;
+						*arg_ptr++ = (UDF_ARG)(IPTR) s;
 						continue;
 					}
 					{
@@ -251,7 +251,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				l = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
 				if (tail->fun_mechanism == FUN_value)
 				{
-					*arg_ptr++ = l;
+					*arg_ptr++ = (UDF_ARG)(IPTR)l;
 					continue;
 				}
 				lp = (SLONG *) temp_ptr;
@@ -262,7 +262,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				l = MOV_get_sql_time(input);
 				if (tail->fun_mechanism == FUN_value)
 				{
-					*arg_ptr++ = l;
+					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
 				}
 				lp = (SLONG *) temp_ptr;
@@ -273,7 +273,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				l = MOV_get_sql_date(input);
 				if (tail->fun_mechanism == FUN_value)
 				{
-					*arg_ptr++ = l;
+					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
 				}
 				lp = (SLONG *) temp_ptr;
@@ -290,7 +290,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 					{
 						pi64 = (SINT64 *) arg_ptr;
 						*pi64++ = i64;
-						arg_ptr = (SLONG *) pi64;
+						arg_ptr = reinterpret_cast<UDF_ARG*>(pi64);
 						continue;
 					}
 					pi64 = (SINT64 *) temp_ptr;
@@ -311,7 +311,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 						 */
 						double* dp = (double *) arg_ptr;
 						*dp++ = (double) f;
-						arg_ptr = (SLONG *) dp;
+						arg_ptr = reinterpret_cast<UDF_ARG*>(dp);
 						continue;
 					}
 					float* fp = (float *) temp_ptr;
@@ -334,7 +334,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 				{
 					dp = (double *) arg_ptr;
 					*dp++ = d;
-					arg_ptr = (SLONG *) dp;
+					arg_ptr = reinterpret_cast<UDF_ARG*>(dp);
 					continue;
 				}
 				dp = (double *) temp_ptr;
@@ -420,8 +420,7 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 			}
 		}
 
-		*ap++ = (SLONG *) temp_ptr;
-		arg_ptr = (SLONG *) ap;
+		*arg_ptr++ = temp_ptr;
 		temp_ptr += length;
 	}
 
