@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.19 2002-09-26 18:13:02 skidder Exp $
+$Id: met.epp,v 1.20 2002-09-27 22:59:24 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -175,6 +175,77 @@ extern int ib_fprintf();
 static inline void gds__vtov(CONST UCHAR* s1, SCHAR* s2, SSHORT val)
 {
 	gds__vtov(reinterpret_cast<CONST SCHAR*>(s1), s2, val);
+}
+
+// Decompile all triggers from vector
+void release_cached_triggers(TDBB tdbb, TRIG_VEC vector) 
+{
+	trig_vec::iterator ptr, end;
+	
+	if (!vector) return;
+			
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
+		ptr->release(tdbb);
+}
+
+void MET_clear_cache(TDBB tdbb)
+{
+/**************************************
+ *
+ *      M E T _ c l e a r _ t r i g g e r _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Try to release all resources locked by cached triggers
+ *
+ **************************************/
+	DBB				dbb;
+	VEC				relations;
+	REL				relation;
+	vec::iterator	ptr, end;
+	trig_vec::iterator tptr, tend;
+
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	relations = dbb->dbb_relations;
+
+	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+	{
+		relation = REL(*ptr);
+		if (!relation) continue;		
+		release_cached_triggers(tdbb,relation->rel_pre_store);		
+		release_cached_triggers(tdbb,relation->rel_post_store);
+		release_cached_triggers(tdbb,relation->rel_pre_erase);		
+		release_cached_triggers(tdbb,relation->rel_post_erase);		
+		release_cached_triggers(tdbb,relation->rel_pre_modify);		
+		release_cached_triggers(tdbb,relation->rel_post_modify);		
+	}
+ 
+	VEC procedures;
+	PRC procedure;
+
+	if ( (procedures = dbb->dbb_procedures) )
+		do {
+			procedure = NULL;
+			for (ptr = procedures->begin(), end = procedures->end();
+					ptr < end; ptr++) 
+			{
+				if ( (procedure = PRC(*ptr)) && (procedure->prc_use_count == 0) ) 
+				{
+					CMP_release(tdbb, procedure->prc_request);
+					procedure->prc_flags &= ~PRC_being_altered;
+					MET_remove_procedure(tdbb, procedure->prc_id, procedure);
+					// Begin iteration again because vector contents was modified
+					// There are ways to do it more efficiently, but such condition 
+					// currently happens very rarely. Only when procedure is created
+					// and we are trying to drop one of indices it uses w/o server
+					// restart
+					break;
+				}
+			}
+		} while (procedure);
 }
 
 
@@ -2286,7 +2357,7 @@ void MET_parse_sys_trigger(TDBB tdbb, REL relation)
 				request->req_flags |= req_ignore_perm;
 			}
 
-			save_trigger_data(tdbb, ptr, relation, request, NULL, NULL, FALSE, 0);
+			save_trigger_data(tdbb, ptr, relation, request, NULL, NULL, TRUE, 0);
 		}
 	}
 
@@ -2854,13 +2925,11 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
 	VEC vector;
 	SSHORT i;
 	USHORT save_proc_flags;
-	BOOLEAN free_procedure_block = TRUE;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
 	if (!procedure) {
-		free_procedure_block = FALSE;
 	/** If we are in here then dfw.e/modify_procedure() called us **/
 		if (!(vector = dbb->dbb_procedures))
 			return;
@@ -2871,10 +2940,13 @@ void MET_remove_procedure( TDBB tdbb, int id, PRC procedure)
 
 /* Procedure that is being altered may have references
    to it by other procedures via pointer to current meta
-   data structure, so don't loose the structure or the pointer. 
+   data structure, so don't loose the structure or the pointer. */
+// Nickolay Samofatov, 28 Sep 2002. Enabled this code. Why was it disabled ?
+// Its absence caused coredumps in some cases because its request and other
+// data is freed after this call and procedure block is no longer valid
+
 if (!(procedure->prc_flags & PRC_being_altered))
     (*vector)[id] = (BLK) NULL_PTR;
-*/
 
 /* deallocate all structure which were allocated.  The procedure
  * blr is originally read into a new pool from which all request

@@ -551,7 +551,7 @@ typedef struct trig {
 	class rel* relation; // Trigger parent relation
 	class str* name; // Trigger name
 	void compile(tdbb* _tdbb); // Ensure that trigger is compiled
-	BOOLEAN release(); // Try to free trigger request
+	BOOLEAN release(tdbb* _tdbb); // Try to free trigger request
 } *TRIG;
 
 typedef Firebird::vector<trig> trig_vec;

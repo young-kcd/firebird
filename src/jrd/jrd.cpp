@@ -242,9 +242,10 @@ void trig::compile(tdbb* _tdbb) {
 		}  catch (...) {			
 			_tdbb->tdbb_default = old_pool;
 			compile_in_progress = FALSE;
-			if (request)
+			if (request) {
 				CMP_release(_tdbb,request);
-			else
+				request = NULL;
+			} else
 				delete new_pool;
 			throw;
 		}
@@ -261,10 +262,12 @@ void trig::compile(tdbb* _tdbb) {
 	}
 }
 
-// Not yet implemented. 
-// Inteded to be used when process is asked to release resources
-BOOLEAN trig::release() {
-	return FALSE;
+BOOLEAN trig::release(tdbb* _tdbb) {
+	if (!blr/*sys_trigger*/ || !request || CMP_clone_active(request)) 
+		return FALSE;	
+	
+	CMP_release(_tdbb, request);
+	request = NULL;	
 }
 
 extern "C" {

@@ -2290,6 +2290,9 @@ static bool delete_index(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		if (index)
 		{
 			wait = (transaction->tra_flags & TRA_nowait) ? FALSE : TRUE;
+			// Try to clear trigger cache to release lock
+			if (index->idl_count)
+				MET_clear_cache(tdbb);
 			if (index->idl_count ||
 				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX, wait))
 			{
@@ -2775,6 +2778,15 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, DFW work, TRA transaction)
 		relation->rel_name = NULL;
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
+		
+		// Release relation triggers
+		MET_release_triggers(tdbb, &relation->rel_pre_store);
+		MET_release_triggers(tdbb, &relation->rel_post_store);
+		MET_release_triggers(tdbb, &relation->rel_pre_erase);
+		MET_release_triggers(tdbb, &relation->rel_post_erase);
+		MET_release_triggers(tdbb, &relation->rel_pre_modify);
+		MET_release_triggers(tdbb, &relation->rel_post_modify);
+	
 		CMP_release(tdbb, (REQ)request);
 		break;
 	}

@@ -30,7 +30,7 @@
  *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.12 2002-09-26 18:13:02 skidder Exp $
+$Id: cmp.cpp,v 1.13 2002-09-27 22:59:23 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1644,6 +1644,7 @@ IDL DLL_EXPORT CMP_get_index_lock(TDBB tdbb, REL relation, USHORT id)
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;
 	index->idl_id = id;
+	index->idl_count = 0;
 
 	index->idl_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
 	lock->lck_parent = dbb->dbb_lock;
