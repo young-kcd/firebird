@@ -1,3 +1,17 @@
+2004-11-06 07:12  skidder
+
+	* firebird2/doc/WhatsNew (1.36.2.33):
+	
+	Add description for savepoints fix
+
+2004-11-06 07:07  skidder
+
+	* firebird2/src/jrd/exe.cpp (1.68.2.11):
+	
+	Fix possible server crash when EXECUTE_IMMEDIATE is used to release
+	or rollback transaction to non-existing savepoint. Reported by
+	David Rushby as a part of 1.5.2 field test
+
 2004-11-04 07:16  robocop
 
 	* firebird2/src/isql/isql.epp (1.32.2.8):
