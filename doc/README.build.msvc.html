@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE> New Document </TITLE>
+<META NAME="Generator" CONTENT="EditPlus">
+<META NAME="Author" CONTENT="">
+<META NAME="Keywords" CONTENT="">
+<META NAME="Description" CONTENT="">
+</HEAD>
+
+<BODY>
+<H2>VisualStudio build Notes</H2>
+<hr/>
+Last Update: June 4 2003<br>
+Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
+
+<h3>0.-Introduction</h3>
+<blockquote>
+
+<p>There are two VisualStudio builds, msvc6 and msvc7. The msvc6 build is the official build of FB in win32.</p>
+
+</blockquote>
+<h3>1.-TODO</h3>
+<blockquote>
+
+</blockquote>
+<h3>2.-Prerrequisites</h3>
+<blockquote>
+
+<p>To prepare the standard msvc6 build of FB you need:</p>
+<ul>
+<li>Microsoft VisualStudio 6 or 7.</li>
+<li>A running Firebird server</li>
+</ul>
+
+<p>If you intend to modify the dsql parser file (parse.y) you will need a parser generator, bison or byacc (Berkeley yacc) and the sed utility. At this time byacc 1.9 is the official parser generator although in the future it will be switched to bison. The tested versions of byacc are 1.9 or newer and for bison 1.28 or newer.</p>
+<p>If you intend to prepare an installable build, you will need innosetup and the sed utility.</p>
+<p>To download the utilities use the following links</p>
+<ul>
+<li>Inno setup <a href="http://www.jrsoftware.org/">http://www.jrsoftware.org/</a></li>
+<li>Sed and Bison 1.35 <a href="http://gnuwin32.sourceforge.net/">http://gnuwin32.sourceforge.net/</a></li>
+<li>Byacc 1.9 <a href="ftp://garbo.uwasa.fi/pc/unix/">ftp://garbo.uwasa.fi/pc/unix/</a></li>
+</ul>
+
+</blockquote>
+<h3>2.-Installing the utilities</h3>
+<blockquote>
+
+<h4>2.1.-Visual Studio</h4>
+<ol>
+<li>Install VisualStudio 6/7</li>
+<li>If you use VisualStudio 6, before building Firebird and its tools, you need to apply some patches from the following site<br>
+<a href="http://www.dinkumware.com/vc_fixes.html">http://www.dinkumware.com/vc_fixes.html</a>
+</li>
+</ol>
+
+<h4>2.2.-Sed and bison</h4>
+
+<h4>2.3.-Inno setup</h4>
+
+</blockquote>
+<h3>4.- Building</h3>
+<blockquote>
+
+<h4>4.1.-Standard build</h4>
+<ol>
+<li>Open a command line window.</li>
+<li>Go to the firebird2 builds\win32 directory.</li>
+<li>Run the following batches in order (where X is the version number of your VisualStudio)</li>
+<ol>
+<li>prepare.bat [FIREBIRD]</li>
+<li>makeX_boot.bat</li>
+<li>makeX_all.bat [DEBUG] [CLEAN]</li>
+</ol>
+</ol>
+<ul>
+<p>After the build finish, the firebird directory with the binaries is created as "output".</p> 
+<li>To make a clean build from scratch after making changes to the code use the clean_all.bat script</li>
+</ul>
+<h4>4.2.-Parser rebuild</h4>
+<p>If you change parser.cpp or parser.sed you will need to rebuild parser.cpp, to do so use parser.bat</p>
+<h4>4.3.-Installer build</h4>
+<p>To build an install package ........</p>
+
+</blockquote>
+</BODY>
+</HTML>
