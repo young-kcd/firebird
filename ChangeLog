@@ -1,3 +1,158 @@
+2004-11-17 23:01  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.173):
+	
+	Fix bug in aggregate-functions which burried EXISTS/SINGULAR
+	predicate.
+	
+	See bug #1063254
+
+2004-11-17 21:41  hvlad
+
+	* firebird2/src/jrd/par.cpp (1.108):
+	
+	Fixed broken stored procedures default parameters handling. Thanks
+	to Nickolay
+
+2004-11-17 20:45  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.126):
+	
+	no message
+
+2004-11-17 20:33  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.160), exe.h (1.61), opt.cpp
+	(1.201):
+	
+	Fixed bugs SF #459059 and #543106.
+
+2004-11-17 19:27  dimitr
+
+	* firebird2/src/dsql/: dsql.h (1.69), misc_func.cpp (1.8),
+	pass1.cpp (1.172):
+	
+	Some corrections and cleanup.
+
+2004-11-17 19:18  dimitr
+
+	* firebird2/src/jrd/: blp.h (1.15), gds.cpp (1.162):
+	
+	Added missing BLR handling to the internal blob filter
+
+2004-11-17 16:23  dimitr
+
+	* firebird2/src/msgs/: messages.sql (1.13), system_errors.sql
+	(1.6):
+	
+	1) Reworked error reporting 2) Allowed positioned updates for
+	explicit cursors 3) Fixed some possible server crashes
+
+2004-11-17 16:17  dimitr
+
+	* firebird2/src/: jrd/exe.cpp (1.134), include/gen/codetext.h
+	(1.16), include/gen/iberror.h (1.15), include/gen/msgs.h (1.21),
+	include/gen/rdb_codes.h (1.16), include/gen/sql_code.h (1.18):
+	
+	1) Reworked error reporting 2) Allowed positioned updates for
+	explicit cursors 3) Fixed some possible server crashes
+
+2004-11-17 16:01  dimitr
+
+	* firebird2/src/msgs/: messages.sql (1.12), system_errors.sql
+	(1.5):
+	
+	1) Reworked error reporting 2) Allowed positioned updates for
+	explicit cursors 3) Fixed some possible server crashes
+
+2004-11-17 15:48  dimitr
+
+	* firebird2/src/: dsql/dsql.cpp (1.132), dsql/dsql.tab.h (1.46),
+	dsql/node.h (1.52), dsql/parse.cpp (1.134), dsql/parse.y (1.159),
+	dsql/pass1.cpp (1.171), dsql/user_dsql.cpp (1.43),
+	include/gen/codetext.h (1.15), include/gen/iberror.h (1.14),
+	include/gen/msgs.h (1.20), include/gen/rdb_codes.h (1.15),
+	include/gen/sql_code.h (1.17):
+	
+	1) Reworked error reporting 2) Allowed positioned updates for
+	explicit cursors 3) Fixed some possible server crashes
+
+2004-11-17 13:33  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.125):
+	
+	Fixed bug found by Claudio.
+
+2004-11-17 13:25  hvlad
+
+	* firebird2/src/remote/server.cpp (1.100):
+	
+	Fix buffer overflow when string carried with status vector is too
+	large. String will be truncated to 1023 bytes
+
+2004-11-17 13:20  hvlad
+
+	* firebird2/src/isql/isql.h (1.38):
+	
+	Allow isql to show large exception messages
+
+2004-11-17 13:19  hvlad
+
+	* firebird2/src/jrd/: exe.h (1.60), fields.h (1.7), ini.epp (1.61),
+	ini.h (1.20), status.h (1.5):
+	
+	Enlarge exception messages from 80 to 1023 bytes
+
+2004-11-17 09:59  robocop
+
+	* firebird2/src/jrd/mov.cpp (1.21):
+	
+	Misc and comment.
+
+2004-11-17 09:57  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.132):
+	
+	Totally misc.
+
+2004-11-17 09:57  robocop
+
+	* firebird2/src/jrd/sha.cpp (1.3):
+	
+	If sha_info.data is already BYTE*, why casting it to BYTE* again?
+
+2004-11-17 09:55  robocop
+
+	* firebird2/src/: common/classes/alloc.cpp (1.73),
+	common/classes/alloc.h (1.55), jrd/gds.cpp (1.161),
+	remote/os/win32/window.cpp (1.12):
+	
+	Poor man's version of the old gds_alloc_report.
+
+2004-11-17 09:39  robocop
+
+	* firebird2/src/jrd/inuse.cpp (1.8):
+	
+	Misc.
+
+2004-11-17 06:20  robocop
+
+	* firebird2/src/utilities/run_service.cpp (1.12):
+	
+	Correction.
+
+2004-11-17 06:19  robocop
+
+	* firebird2/src/utilities/print_pool.cpp (1.9):
+	
+	Misc.
+
+2004-11-17 06:18  robocop
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.7):
+	
+	Prevent garbage from being used.
+
 2004-11-16 12:44  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/call_service.cpp (1.6):
