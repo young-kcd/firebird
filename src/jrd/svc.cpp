@@ -53,7 +53,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/pwd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd_proto.h"
@@ -571,13 +570,9 @@ SVC SVC_attach(USHORT	service_length,
 		}
 		if (options.spb_user_name || id == -1)
 		{
-			PWD_verify_user(name,
-                    options.spb_user_name,
-                    options.spb_password,
-                    options.spb_password_enc,
-                    &id,
-                    &group,
-                    &node_id);
+			SecurityDatabase::verifyUser(name, options.spb_user_name,
+					                     options.spb_password, options.spb_password_enc,
+										 &id, &group, &node_id);
 		}
 
 /* Check that the validated user has the authority to access this service */
@@ -1234,7 +1229,7 @@ void SVC_putc(SVC service, UCHAR ch)
 
 		case isc_info_svc_user_dbpath:
 			/* The path to the user security database (isc4.gdb) */
-			PWD_get_user_dbpath(buffer);
+			SecurityDatabase::getPath(buffer);
 
 			if (!(info = INF_put_item(item, strlen(buffer), buffer,
 									  info, end))) {
@@ -1738,7 +1733,7 @@ void SVC_query(SVC		service,
 
 		case isc_info_svc_user_dbpath:
 			/* The path to the user security database (isc4.gdb) */
-			PWD_get_user_dbpath(reinterpret_cast < char *>(buffer));
+			SecurityDatabase::getPath(reinterpret_cast<char*>(buffer));
 
 			if (!(info = INF_put_item(item,
 									  strlen(reinterpret_cast<char*>(buffer)),

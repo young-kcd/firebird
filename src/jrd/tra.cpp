@@ -54,7 +54,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/pwd_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/sbm_proto.h"
 #include "../jrd/sch_proto.h"

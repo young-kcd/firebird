@@ -59,7 +59,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/pwd_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../include/fb_exception.h"
 
@@ -632,13 +631,8 @@ void SCL_init(BOOLEAN	create,
 
     	if (!internal)
     	{
-        	PWD_verify_user(name,
-                           user_name,
-                           password,
-                           password_enc,
-                           &id,
-                           &group,
-                           &node_id);
+        	SecurityDatabase::verifyUser(name, user_name, password, password_enc,
+										 &id, &group, &node_id);
        }
 
        /* if the name from the user database is defined as SYSDBA,

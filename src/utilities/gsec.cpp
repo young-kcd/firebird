@@ -36,7 +36,6 @@
 #include "../utilities/gsec.h"
 #include "../jrd/pwd.h"
 #include "../jrd/license.h"
-#include "../jrd/pwd_proto.h"
 #include "../jrd/svc_proto.h"
 #include "../utilities/secur_proto.h"
 #include "../utilities/gsecswi.h"
@@ -280,7 +279,7 @@ int UTIL_gsec(
 	else {
 #ifdef SUPERSERVER
 /* there is no need to call the services manager to get this information */
-		PWD_get_user_dbpath(user_info_name);
+		SecurityDatabase::getPath(user_info_name);
 #else
 		SECURITY_get_db_path(NULL, user_info_name);
 #endif

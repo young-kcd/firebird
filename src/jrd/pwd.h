@@ -21,53 +21,61 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
+ * 2003.02.02 Dmitry Yemanov: Implemented cached security database connection
  */
-/*
-$Id: pwd.h,v 1.7 2002-11-10 14:04:54 dimitr Exp $
-*/
 
 #ifndef _JRD_PWD_H_
 #define _JRD_PWD_H_
 
-#define PASSWORD_SALT		"9z"
-#define MAX_PASSWORD_ENC_LENGTH	12
+#include "../jrd/ibase.h"
 
+#define MAX_PASSWORD_ENC_LENGTH 12
+#define PASSWORD_SALT  "9z"
+
+class SecurityDatabase
+{
+	typedef struct {
+		SLONG gid;
+		SLONG uid;
+		SSHORT flag;
+		SCHAR password[34];
+	} user_record;
+
+public:
+
+	static void getPath(TEXT*);
+	static void initialize();
+	static void shutdown();
+	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
+
+private:
+
+	static const UCHAR PWD_REQUEST[256];
+	static const UCHAR TPB[4];
+
+	STATUS status[ISC_STATUS_LENGTH];
+
+	isc_db_handle lookup_db;
+	isc_req_handle lookup_req;
+
+	static const bool is_cached;
+
+	int counter;
+
+	void fini();
+	void init();
+	bool lookup_user(TEXT*, int*, int*, TEXT*);
+	bool prepare();
+
+	static SecurityDatabase& instance();
+
+	SecurityDatabase() : lookup_db(0), lookup_req(0), counter(0) {}
+};
 
 #ifdef VMS
 #define USER_INFO_NAME	"[sysmgr]isc4.gdb"
-#endif
-
-#if defined(WIN_NT)
-#define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#ifdef SINIXZ
-#define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#ifdef LINUX
-#define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#if defined FREEBSD || defined NETBSD
-#define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#ifdef DARWIN
-#define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#ifdef AIX_PPC
-#define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#ifndef USER_INFO_NAME
-#ifdef SUPERSERVER
-#define USER_INFO_NAME   "isc4.gdb"
 #else
-#define USER_INFO_NAME   FB_PREFIX "/isc4.gdb"
-#endif /* SUPERSERVER */
-#endif /* USER_INFO_NAME */
+#define USER_INFO_NAME	"isc4.gdb"
+#endif
 
 #endif /* _JRD_PWD_H_ */

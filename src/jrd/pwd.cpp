@@ -19,36 +19,30 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2003.02.02 Dmitry Yemanov: Implemented cached security database connection
  */
-/*
-$Id: pwd.cpp,v 1.10 2003-01-24 09:30:54 dimitr Exp $
-*/
 
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pwd.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/pwd_proto.h"
 #include "../jrd/sch_proto.h"
 
-/* blr to search database for user name record */
+#ifdef SUPERSERVER
+const bool SecurityDatabase::is_cached = true;
+#else
+const bool SecurityDatabase::is_cached = false;
+#endif
 
-static const UCHAR pwd_request[] = {
+/* BLR to search database for user name record */
+
+const UCHAR SecurityDatabase::PWD_REQUEST[256] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 1, 4, 0,
@@ -94,144 +88,54 @@ static const UCHAR pwd_request[] = {
 	blr_eoc
 };
 
-typedef struct
-{
-	SLONG	gid;
-	SLONG	uid;
-	SSHORT	flag;
-	SCHAR	password[34];
-} user_record;
+/* Transaction parameter buffer */
 
-static CONST char tpb[4] =
-{
+const UCHAR SecurityDatabase::TPB[4] = {
 	isc_tpb_version1,
-	isc_tpb_write,
+	isc_tpb_read,
 	isc_tpb_concurrency,
 	isc_tpb_wait
 };
 
+/******************************************************************************
+ *
+ *	Static instance of the database
+ */
 
-extern "C" {
-
-
-static BOOLEAN lookup_user(TEXT*, int*, int*, TEXT*);
-static BOOLEAN open_user_db(isc_db_handle*, SLONG*);
-
-
-void PWD_get_user_dbpath(TEXT* path_buffer)
+SecurityDatabase& SecurityDatabase::instance()
 {
-/**************************************
- *
- *      P W D _ g e t _ u s e r _ d b p a t h
- *
- **************************************
- *
- * Functional description:
- *      Return the path to the user database.  This
- *      Centralizes the knowledge of where the db is
- *      so gsec, lookup_user, etc. can be consistent.
- *
- **************************************/
-
-#pragma FB_COMPILER_MESSAGE("TMN: What wierdness is this?")
-#if (defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined SUPERSERVER || defined AIX_PPC || defined DARWIN || defined SINIXZ )
-	gds__prefix(path_buffer, USER_INFO_NAME);
-#else
-	strcpy(path_buffer, USER_INFO_NAME);
-#endif
+	static SecurityDatabase db;
+	return db;
 }
 
+/******************************************************************************
+ *
+ *	Private interface
+ */
 
-void PWD_verify_user(TEXT*	name,
-					 TEXT*	user_name,
-					 TEXT*	password,
-					 TEXT*	password_enc,
-					 int*	uid,
-					 int*	gid,
-					 int*	node_id)
+void SecurityDatabase::fini()
 {
-/**************************************
- *
- *      P W D _ v e r i f y _ u s e r
- *
- **************************************
- *
- * Functional description:
- *      Verify a user in the security database.
- *
- **************************************/
-	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
-	BOOLEAN notfound;
-
-	if (user_name)
+	if (counter == 1)
 	{
-		for (p = name, q = user_name; *q; q++, p++)
-		{
-			*p = UPPER7(*q);
-		}
-		*p = 0;
+		counter = 0;
+		THREAD_EXIT;
+		isc_detach_database(status, &lookup_db);
+		THREAD_ENTER;
 	}
-
-/* Look up the user name in the userinfo database and use the parameters
-   found there.  This means that another database must be accessed, and
-   that means the current context must be saved and restored. */
-
-#ifdef EMBEDDED
-	return;
-#else
-	notfound = lookup_user(name, uid, gid, pw1);
-#endif
-
-/* Punt if the user has specified neither a raw nor an encrypted password,
-   or if the user has specified both a raw and an encrypted password, 
-   or if the user name specified was not in the password database
-   (or if there was no password database - it's still not found) */
-
-	if ((!password && !password_enc) ||
-		(password && password_enc) ||
-		notfound)
-	{
-		ERR_post(gds_login, 0);
-	}
-
-	if (password) {
-		strcpy(pwt, ENC_crypt(password, PASSWORD_SALT));
-		password_enc = pwt + 2;
-	}
-	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
-	if (strncmp(pw1, pw2 + 2, 11)) {
-		ERR_post(gds_login, 0);
-	}
-
-	*node_id = 0;
 }
 
-
-static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
+void SecurityDatabase::init()
 {
-/**************************************
- *
- *      l o o k u p _ u s e r
- *
- **************************************
- *
- * Functional description:
- *      Look the name up in the local userinfo
- *      database.   If it is found, fill in the
- *      user and group ids, as found in the
- *      database for that user.   Also return
- *      the encrypted password.
- *
- **************************************/
-	BOOLEAN			notfound;		/* user found flag */
-	isc_db_handle	uinfo;			/* database handle */
-	isc_tr_handle	lookup_trans;	/* default transaction handle */
-	STATUS			status[ISC_STATUS_LENGTH];		/* status vector */
-	isc_req_handle	lookup_req;		/* request handle */
-	TEXT			uname[129];		/* user name buffer */
-	user_record		user;			/* user record */
+	counter += (is_cached) ? 1 : 0;
+}
 
-/* Start by clearing the output data */
+bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
+{
+	bool notfound = true;	// user found flag
+	TEXT uname[129];		// user name buffer
+	user_record user;		// user record
+
+	/* Start by clearing the output data */
 
 	if (uid)
 		*uid = 0;
@@ -239,103 +143,78 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 		*gid = 0;
 	if (pwd)
 		*pwd = '\0';
-	notfound = TRUE;
+
 	strncpy(uname, user_name, 129);
 
-/* get local copies of handles, so this depends on no static variables */
+	/* Attach database and compile request */
 
-/* the database is opened here, but this could also be done when the
-   first database is opened */
-
-	if (!open_user_db(&uinfo, status))
+	if (!prepare())
 	{
+		if (lookup_db)
+		{
+			isc_detach_database(status, &lookup_db);
+		}
 		THREAD_ENTER;
+		counter += (is_cached) ? 1 : 0;
 		ERR_post(gds_psw_attach, 0);
 	}
 
-	lookup_req = NULL;
-	lookup_trans = NULL;
+	/* Lookup */
 
-	if (isc_start_transaction(	status,
-								&lookup_trans,
-								(short) 1,
-								&uinfo,
-								(short)sizeof(tpb),
-								tpb))
+	isc_tr_handle lookup_trans = 0;
+
+	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		isc_detach_database(status, &uinfo);
 		THREAD_ENTER;
 		ERR_post(gds_psw_start_trans, 0);
 	}
 
-	if (!isc_compile_request(	status,
-								&uinfo,
-								&lookup_req,
-								(short)sizeof(pwd_request),
-								reinterpret_cast<char*>(const_cast<UCHAR*>(pwd_request))))
+	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
 	{
-		if (!isc_start_and_send(status,
-								&lookup_req,
-								&lookup_trans,
-								(short) 0,
-								(short) sizeof(uname),
-								uname, (short) 0))
+		while (1)
 		{
-			while (1)
-			{
-				isc_receive(status,
-							&lookup_req,
-							(short) 1,
-							(short) sizeof(user),
-							&user,
-							(short) 0);
-				if (!user.flag || status[1])
-					break;
-				notfound = FALSE;
-				if (uid)
-					*uid = user.uid;
-				if (gid)
-					*gid = user.gid;
-				if (pwd)
-					strncpy(pwd, user.password, 32);
-			}
+			isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
+			if (!user.flag || status[1])
+				break;
+			notfound = false;
+			if (uid)
+				*uid = user.uid;
+			if (gid)
+				*gid = user.gid;
+			if (pwd)
+				strncpy(pwd, user.password, 32);
 		}
 	}
 
-/* the database is closed and the request is released here, but this
-   could be postponed until all databases are closed */
+	isc_rollback_transaction(status, &lookup_trans);
 
-	isc_rollback_transaction(status,
-							 &lookup_trans);
-	isc_detach_database(status, &uinfo);
+	if (!is_cached)
+	{
+		isc_detach_database(status, &lookup_db);
+	}
 	THREAD_ENTER;
 
 	return notfound;
 }
 
-
-static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
+bool SecurityDatabase::prepare()
 {
-/**************************************
- *
- *      o p e n _ u s e r _ d b
- *
- **************************************
- *
- * Functional description:
- *      Open the user information database
- *      and return the handle.
- *
- *      returns TRUE if successfully opened
- *              FALSE if not
- *
- **************************************/
-	TEXT			user_info_name[MAXPATHLEN];
-	isc_db_handle	uinfo;			/* database handle */
-	IHNDL			ihandle;
-	SCHAR*			dpb;
-	SCHAR			dpb_buffer[256];
-	SSHORT			dpb_len;
+	TEXT user_info_name[MAXPATHLEN];
+	IHNDL ihandle;
+	SCHAR* dpb;
+	SCHAR dpb_buffer[256];
+	SSHORT dpb_len;
+
+	/* dimitr: access to the class members in this routine should be synchronized
+			   when fine grained locking will be implemented for the SS architecture */
+
+	if (counter > 1)
+	{
+		THREAD_EXIT;
+		return true;
+	}
+
+	counter -= (is_cached) ? 1 : 0;
 
 	/* Register as internal database handle */
 
@@ -343,28 +222,28 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
 	{
 		if (ihandle->ihndl_object == NULL)
 		{
-			ihandle->ihndl_object = &uinfo;
+			ihandle->ihndl_object = &lookup_db;
 			break;
 		}
 	}
 
 	if (!ihandle)
 	{
-		ihandle = (IHNDL) gds__alloc ((SLONG) sizeof (struct ihndl));
-		ihandle->ihndl_object = &uinfo;
+		ihandle = (IHNDL) gds__alloc ((SLONG) sizeof(struct ihndl));
+		ihandle->ihndl_object = &lookup_db;
 		ihandle->ihndl_next = internal_db_handles;
 		internal_db_handles = ihandle;
 	}
 
 	THREAD_EXIT;
 
-/* initialize the data base's name */
+	lookup_db = 0;
 
-	uinfo = NULL;
+	/* initialize the data base's name */
 
-	PWD_get_user_dbpath(user_info_name);
+	getPath(user_info_name);
 
-/* Perhaps build up a dpb */
+	/* Perhaps build up a dpb */
 
 	dpb = dpb_buffer;
 
@@ -386,46 +265,106 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
 	memcpy(dpb, szPassword, nPswdLen);
 	dpb += nPswdLen;
 
-	*dpb++ = isc_dpb_sec_attach;	/* Attachment is for the security database */
-	*dpb++ = 1;					/* Parameter value length */
-	*dpb++ = TRUE;				/* Parameter value */
+	*dpb++ = isc_dpb_sec_attach;	// Attachment is for the security database
+	*dpb++ = 1;						// Parameter value length
+	*dpb++ = TRUE;					// Parameter value
 
 	dpb_len = dpb - dpb_buffer;
 
-	isc_attach_database(status,
-						0,
-						user_info_name,
-						&uinfo,
-						dpb_len,
-						dpb_buffer);
+	isc_attach_database(status, 0, user_info_name, &lookup_db, dpb_len, dpb_buffer);
 
 	if (status[1] == gds_login)
 	{
 		/* we may be going against a V3 database which does not
-		 * understand this combination.
-		 */
+		 * understand this combination */
 
-		isc_attach_database(status,
-							0,
-							user_info_name,
-							&uinfo,
-							0,
-							0);
+		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
-
-	*uihandle = uinfo;
 
 	assert(ihandle->ihndl_object == &uinfo);
 	ihandle->ihndl_object = NULL;
 
+	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
+						reinterpret_cast<char*>(const_cast<UCHAR*>(PWD_REQUEST)));
+
 	if (status[1])
 	{
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
+/******************************************************************************
+ *
+ *	Public interface
+ */
 
-}	// extern "C"
+void SecurityDatabase::getPath(TEXT* path_buffer)
+{
+	gds__prefix(path_buffer, USER_INFO_NAME);
+}
 
+void SecurityDatabase::initialize()
+{
+	instance().init();
+}
+
+void SecurityDatabase::shutdown()
+{
+	instance().fini();
+}
+
+void SecurityDatabase::verifyUser(TEXT* name,
+								  TEXT* user_name,
+								  TEXT* password,
+								  TEXT* password_enc,
+								  int* uid,
+								  int* gid,
+								  int* node_id)
+{
+	bool notfound;
+	TEXT *p, *q, pw1[33], pw2[33], pwt[33];
+
+	if (user_name)
+	{
+		for (p = name, q = user_name; *q; q++, p++)
+		{
+			*p = UPPER7(*q);
+		}
+		*p = 0;
+	}
+
+	/* Look up the user name in the userinfo database and use the parameters
+	   found there.  This means that another database must be accessed, and
+	   that means the current context must be saved and restored. */
+
+#ifdef EMBEDDED
+	return;
+#else
+	notfound = instance().lookup_user(name, uid, gid, pw1);
+#endif
+
+	/* Punt if the user has specified neither a raw nor an encrypted password,
+	   or if the user has specified both a raw and an encrypted password, 
+	   or if the user name specified was not in the password database
+	   (or if there was no password database - it's still not found) */
+
+	if ((!password && !password_enc) ||
+		(password && password_enc) ||
+		notfound)
+	{
+		ERR_post(gds_login, 0);
+	}
+
+	if (password) {
+		strcpy(pwt, ENC_crypt(password, PASSWORD_SALT));
+		password_enc = pwt + 2;
+	}
+	strcpy(pw2, ENC_crypt(password_enc, PASSWORD_SALT));
+	if (strncmp(pw1, pw2 + 2, 11)) {
+		ERR_post(gds_login, 0);
+	}
+
+	*node_id = 0;
+}

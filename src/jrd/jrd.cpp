@@ -1250,16 +1250,15 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		PAG_set_page_buffers(options.dpb_page_buffers);
 	}
 
-        if (options.dpb_set_db_readonly) {
-                if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-                        ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-                                 gds_arg_string, 
-                                 ERR_string(reinterpret_cast < char *>(file_name), fl), 
-                                 0); 
-                }
-
-                PAG_set_db_readonly(dbb, options.dpb_db_readonly);
-        }
+	if (options.dpb_set_db_readonly) {
+		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
+			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
+					 gds_arg_string,
+					 ERR_string(reinterpret_cast < char *>(file_name), fl), 
+					 0); 
+		}
+		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
+	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 /* don't record the attach until now in case the log is added during the attach */
@@ -5678,6 +5677,8 @@ static DBB init(TDBB	tdbb,
 
 	INTL_init(tdbb);
 
+	SecurityDatabase::initialize();
+
 	return dbb_;
 
 	}	// try
@@ -6113,6 +6114,8 @@ static void shutdown_database(DBB dbb, BOOLEAN release_pools)
 		dbb::deleteDbb(dbb);
 		tdbb->tdbb_database = NULL;
 	}
+
+	SecurityDatabase::shutdown();
 }
 
 
@@ -6239,7 +6242,7 @@ TEXT *JRD_num_attachments(TEXT * buf, USHORT len, USHORT flag, USHORT * atts,
 				ExtractDriveLetter(files->fil_string, &drive_mask);
 #endif
 
-		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
+		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
 			!(dbb->dbb_ast_flags & DBB_shutdown
 			  && dbb->dbb_ast_flags & DBB_shutdown_locks)) {
 			num_dbs++;
