@@ -30,7 +30,6 @@
 #define JRD_ISC_S_PROTO_H
 
 #include "../jrd/isc.h"
-extern "C" {
 BOOLEAN	ISC_check_restart(void);
 int		ISC_event_blocked(USHORT, struct event_t **, SLONG *);
 SLONG	ISC_event_clear(struct event_t *);
@@ -83,6 +82,5 @@ void	ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_unmap_file(ISC_STATUS *, struct sh_mem *, USHORT);
 
-}
 
 #endif // JRD_ISC_S_PROTO_H
