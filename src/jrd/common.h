@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.22 2002-08-26 12:10:18 eku Exp $
+$Id: common.h,v 1.23 2002-08-27 11:47:12 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1343,5 +1343,20 @@ typedef struct in_sw_tab_t {
 /* Just to be safe we will still define READONLY_DATABASE as it gets phased out */
 #define READONLY_DATABASE 1
 
-#endif /* JRD_COMMON_H */
+/* CLIB_ROUNTINE macro is already defined here,
+   so we can safely declare SIG_FPTR type */
+#ifdef SUN3_3
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
+#else
+#if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
+typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
+#else
+#if (defined(DARWIN))
+typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
+#else
+typedef RETSIGTYPE (*SIG_FPTR) ();
+#endif
+#endif
+#endif
 
+#endif /* JRD_COMMON_H */

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.6 2002-08-26 12:13:20 eku Exp $
+ *  $Id: fb_types.h,v 1.7 2002-08-27 11:47:11 dimitr Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -170,25 +170,6 @@ typedef USHORT FLD_LENGTH;
 #define GDS_ULONG ULONG
 
 #define GDS_STATUS	long
-
-/* EKU: common.h defines CLIB_ROUTINE.
-        Is this the right place to include this file? */
-#include "firebird.h"
-#include "../jrd/common.h"
-
-#ifdef SUN3_3
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
-#else
-#if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
-#else
-#if (defined(DARWIN))
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
-#else
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif
-#endif
-#endif
 
 #endif /* INCLUDE_FB_TYPES_H */
 
