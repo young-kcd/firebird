@@ -1,3 +1,28 @@
+2004-10-27 03:03  asfernandes
+
+	* firebird2/src/intl/collations/bl88591ptbr0.h (1.1):
+	
+	file bl88591ptbr0.h was initially added on branch B2_0_intl.
+
+2004-10-27 02:20  skidder
+
+	* firebird2/src/jrd/ibase.h (1.91):
+	
+	Fix warning in VS2003 build I added recently
+
+2004-10-27 00:23  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.198):
+	
+	1) fix outer join issues 2) fix problem with ORDER BY <index> and
+	missing NULLs
+
+2004-10-26 09:21  robocop
+
+	* firebird2/src/dsql/: gen.cpp (1.74), node.h (1.49):
+	
+	Misc.
+
 2004-10-25 12:31  robocop
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.9),
