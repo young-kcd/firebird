@@ -82,10 +82,8 @@
 #include <vfork.h>
 #endif
 
-#ifdef sparc
 #ifdef SOLARIS
 #include <fcntl.h>
-#endif
 #endif
 
 #ifdef SCO_UNIX
