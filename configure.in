@@ -1,7 +1,8 @@
-dnl $Id: configure.in,v 1.57 2002-11-01 13:22:35 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.58 2002-11-02 17:25:57 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
+AC_PREREQ(2.53)
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(src/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
