@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.116 2004-06-14 11:20:37 fsg Exp $
+$Id: inet.cpp,v 1.117 2004-06-21 02:48:47 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -3387,7 +3387,7 @@ static int packet_receive(
 	// on Linux systems (and possibly others too) select will eventually
 	// change timout values so save it here for later reuse.
 	// Thanks to Brad Pepers who reported this bug  FSG 3 MAY 2001
-	timeval savetime = timeout;
+	const timeval savetime = timeout;
 
 	int ph = (int) port->port_handle;
 

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.31 2004-06-13 23:49:28 skidder Exp $
+ *  $Id: tree.h,v 1.32 2004-06-21 02:48:40 robocop Exp $
  *
  */
 
@@ -215,12 +215,12 @@ private:
 			// ItemList reference below is ISO C++ compliant.
 			// If your compiler has broken name lookup sequence then conditionally
 			// add ItemList typedef for you compiler with whichever syntax it likes
-			return KeyOfValue::generate(item,*((ItemList *)item)->begin());
+			return KeyOfValue::generate(item, *((ItemList *)item)->begin());
 		}
 		static void setNodeParentAndLevel(void *node, int level, NodeList *parent) {
 			if (level) {
 				((NodeList *)node)->parent = parent;
-				((NodeList *)node)->level = level-1;
+				((NodeList *)node)->level = level - 1;
 			}
 			else
 				((ItemList *)node)->parent = parent;
@@ -395,7 +395,7 @@ public:
 			if (curPos < 0) {
 				if (curr->prev) {
 					curr = curr->prev;
-					curPos = curr->getCount()-1;
+					curPos = curr->getCount() - 1;
 				} else {
 					// If we reached beginning of the list just return false and do not invalidate position
 					curPos = 0;

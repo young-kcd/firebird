@@ -1141,7 +1141,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 	//-------------------------------------------------------------------------- 
 	//  [Arno Brinkman] 2003-08-23
 	//  
-	//  This function is made to determine a output descriptor from a give list
+	//  This function is made to determine a output descriptor from a given list
 	//  of expressions according to the latest SQL-standard that was available.
 	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002) 
 	//  
