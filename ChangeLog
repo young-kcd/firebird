@@ -1,3 +1,123 @@
+2003-08-06 23:13  skidder
+
+	* firebird2/src/jrd/sch.cpp:
+	
+	Fix crash on IO error during database startup. I'm not sure this is
+	very proper fix, but if it is we need to backport it to 1.5
+
+2003-08-06 22:22  skidder
+
+	* firebird2/src/jrd/nbak.cpp:
+	
+	Make Linux part build again
+
+2003-08-06 22:21  skidder
+
+	* firebird2/src/dsql/: dsql.tab.h, keywords.cpp, parse.cpp,
+	parse.y:
+	
+	Make Windows happier. DIFFERENCE defined as a macro there
+
+2003-08-06 22:03  skidder
+
+	* firebird2/builds/win32/msvc7/nbackup.vcproj:
+	
+	Add makefile for NBACKUP
+
+2003-08-06 22:00  skidder
+
+	* firebird2/: builds/win32/msvc7/Firebird2.sln, src/jrd/nbak.cpp,
+	src/utilities/nbackup.cpp:
+	
+	Make NBACKUP tool work on Windows. Seems to work.
+
+2003-08-06 20:06  skidder
+
+	* firebird2/: builds/win32/msvc7/engine.vcproj,
+	builds/win32/msvc7/engine_classic.vcproj,
+	builds/win32/msvc7/engine_embed.vcproj, src/common/classes/tree.h,
+	src/jrd/cch.cpp, src/jrd/nbak.cpp, src/jrd/os/guid.h,
+	src/jrd/os/win32/guid.cpp:
+	
+	Win32 engine builds and seems to work
+
+2003-08-06 19:22  skidder
+
+	* firebird2/src/jrd/: dyn_def.epp, pag.cpp:
+	
+	Fix warnings
+
+2003-08-06 19:21  skidder
+
+	* firebird2/src/common/classes/rwlock.h:
+	
+	Correction
+
+2003-08-06 19:15  brodsom
+
+	* firebird2/builds/win32/msvc6/build_msg.dsp:
+	
+	This file should be in the branch but due to some CVS mistery it is
+	not.
+
+2003-08-06 18:55  skidder
+
+	* firebird2/src/common/classes/tree.h:
+	
+	Make the inferior MSVC7 compiler happy
+
+2003-08-06 18:30  skidder
+
+	* firebird2/:
+	builds/install/arch-specific/linux/classic/makeInstallImage.sh.in,
+	builds/install/arch-specific/linux/super/install.sh.in,
+	builds/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	builds/install/arch-specific/linux/super/rpmfiles.txt.in,
+	builds/posix/Makefile.in.client.util,
+	builds/posix/Makefile.in.embed.util, builds/posix/make.defaults,
+	builds/posix/make.shared.variables, builds/posix/prefix.darwin,
+	builds/posix/prefix.example, builds/posix/prefix.freebsd,
+	builds/posix/prefix.linux, builds/posix/prefix.mingw,
+	builds/posix/prefix.sinixz, builds/posix/prefix.solaris,
+	builds/posix/prefix.solx86, builds/posix/prefix.solx86gcc,
+	src/common/classes/class_perf.cpp, src/common/classes/locks.h,
+	src/common/classes/rwlock.h, src/common/classes/test.sh,
+	src/common/classes/tree.h, src/dsql/ddl.cpp, src/dsql/dsql.tab.h,
+	src/dsql/keywords.cpp, src/dsql/node.h, src/dsql/parse.cpp,
+	src/dsql/parse.y, src/include/gen/ids.h, src/jrd/cch.cpp,
+	src/jrd/common.h, src/jrd/db_alias.cpp, src/jrd/db_alias.h,
+	src/jrd/dfw.epp, src/jrd/drq.h, src/jrd/dyn_def.epp,
+	src/jrd/dyn_df_proto.h, src/jrd/dyn_mod.epp, src/jrd/fields.h,
+	src/jrd/flags.h, src/jrd/gdsold.h, src/jrd/ibase.h, src/jrd/idx.h,
+	src/jrd/ini.epp, src/jrd/jrd.cpp, src/jrd/jrd.h, src/jrd/lck.cpp,
+	src/jrd/lck.h, src/jrd/log.cpp, src/jrd/names.h, src/jrd/nbak.cpp,
+	src/jrd/nbak.h, src/jrd/ods.h, src/jrd/pag.cpp,
+	src/jrd/pag_proto.h, src/jrd/relations.h, src/jrd/shut.cpp,
+	src/jrd/tra.h, src/jrd/trig.h, src/jrd/vio.cpp, src/jrd/os/guid.h,
+	src/jrd/os/posix/guid.cpp, src/jrd/os/win32/guid.cpp,
+	src/utilities/nbackup.cpp:
+	
+	Implementation of fast physical incremental backup
+
+2003-08-06 18:21  brodsom
+
+	* firebird2/builds/win32/: prepare.bat, prepare.bat:
+	
+	Patch. previoulsy when the directory parameter have spaces (as in
+	the example) the script fail.
+
+2003-08-06 17:41  brodsom
+
+	* firebird2/builds/win32/: make_boot.bat, preprocess.bat:
+	
+	Correction (no need to build relations.cpp)
+
+2003-08-06 17:41  brodsom
+
+	* firebird2/clean.sh:
+	
+	Correction
+
 2003-08-05 00:18  skidder
 
 	* firebird2/builds/posix/Makefile.in.extlib:
