@@ -63,6 +63,7 @@ EXPORTS
 	gds__get_segment	@39
 	gds__get_slice	@40
 	gds__interprete	@41
+	gds_interprete_cpp
 	gds__log	@42
 	gds__log_status	@142
 	gds__map_blobs	@240
@@ -230,6 +231,7 @@ EXPORTS
 	; Error-handling functions
 
 	isc_interprete	@141
+	isc_interprete_cpp
 	isc_print_sqlerror	@150
 	isc_print_status	@151
 	isc_sqlcode	@165

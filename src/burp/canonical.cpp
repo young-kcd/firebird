@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.28 2003-09-25 11:48:59 robocop Exp $
+$Id: canonical.cpp,v 1.29 2003-09-29 12:42:59 robocop Exp $
 */
 
 #include "firebird.h"
@@ -45,11 +45,6 @@ $Id: canonical.cpp,v 1.28 2003-09-25 11:48:59 robocop Exp $
 
 // TMN: Currently we can't include remote/remote.h because we'd get
 // conflicting blk_t definitions (we are gonna fix this, in due time).
-// Because this file needs the remote definition of VARY, which
-// coincidentally is different from _all_ other modules in the code,
-// we have to make the type definition here.
-
-typedef vary* VARY;
 
 
 static XDR_INT burp_destroy(XDR*);
@@ -96,25 +91,24 @@ ULONG CAN_encode_decode(BURP_REL relation,
  *	encode and decode canonical backup.
  *
  **************************************/
-	XDR xdr, *xdrs;
 	BURP_FLD field;
-	FLD_LENGTH length;
-	SSHORT dtype, n;
+	SSHORT n;
 	UCHAR *p;
-	RCRD_OFFSET offset;
-	USHORT array_fld;
 
-	xdrs = &xdr;
+	XDR xdr;
+	XDR* xdrs = &xdr;
 
 	xdr_init(xdrs, buffer, (direction) ? XDR_ENCODE : XDR_DECODE);
 
-	offset = 0;
+	RCRD_OFFSET offset = 0;
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
 		p = data + field->fld_offset;
-		if (array_fld = field->fld_flags & FLD_array)
+		bool array_fld = ((field->fld_flags & FLD_array) != 0);
+		FLD_LENGTH length;
+		if (array_fld)
 			length = 8;
 		else
 			length = field->fld_length;
@@ -122,6 +116,7 @@ ULONG CAN_encode_decode(BURP_REL relation,
 			offset = field->fld_offset + length;
 		if (field->fld_type == blr_varying && !array_fld)
 			offset += sizeof(SSHORT);
+		SSHORT dtype;
 		if (field->fld_type == blr_blob || array_fld)
 			dtype = dtype_blob;
 		else
@@ -137,7 +132,7 @@ ULONG CAN_encode_decode(BURP_REL relation,
 
 		case dtype_varying:
 			{
-				VARY pVary = reinterpret_cast<VARY>(p);
+				vary* pVary = reinterpret_cast<vary*>(p);
 				if (!xdr_short(	xdrs,
 								reinterpret_cast<SSHORT*>(&pVary->vary_length)))
 				{
@@ -241,9 +236,8 @@ ULONG CAN_slice(LSTRING * buffer,
  *	encode and decode canonical backup.
  *
  **************************************/
-	XDR xdr, *xdrs;
-
-	xdrs = &xdr;
+	XDR xdr;
+	XDR* xdrs = &xdr;
 
 	xdr_init(xdrs, buffer, (direction) ? XDR_ENCODE : XDR_DECODE);
 
@@ -413,9 +407,7 @@ static bool_t burp_putlong( XDR * xdrs, SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	SLONG l;
-
-	l = htonl(*lp);
+	SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
 									   reinterpret_cast<char*>(AOF32L(l)),
 									   4);
@@ -460,11 +452,9 @@ static bool_t expand_buffer( XDR * xdrs)
  **************************************/
 
 	caddr_t p, q;
-	SSHORT length;
-	LSTRING *buffer;
 
-	buffer = (LSTRING *) xdrs->x_public;
-	length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + increment;
+	LSTRING* buffer = (LSTRING*) xdrs->x_public;
+	SSHORT length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + increment;
 	buffer->lstr_allocated = buffer->lstr_length = length;
 
 	caddr_t new_ = (caddr_t) BURP_alloc(length);
@@ -497,10 +487,9 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, UCHAR * buffer)
  *	Handle a data item by relative descriptor and buffer.
  *
  **************************************/
-	UCHAR *p;
 	SSHORT n;
 
-	p = buffer + (int) desc->dsc_address;
+	UCHAR* p = buffer + (int) desc->dsc_address;
 
 	switch (desc->dsc_dtype)
 	{
@@ -513,7 +502,7 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, UCHAR * buffer)
 
 	case dtype_varying:
 		{
-			VARY pVary = reinterpret_cast<VARY>(p);
+			vary* pVary = reinterpret_cast<vary*>(p);
 			if (!xdr_short(xdrs,
 							reinterpret_cast<short*>(&pVary->vary_length)))
 			{
@@ -665,12 +654,6 @@ static bool_t xdr_slice(XDR* xdrs,
  *	Move a slice of an array under
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-	ULONG n;
-	UCHAR *p, *end;
-	DSC *desc;
-	sdl_info info;
-
 	if (!xdr_long(xdrs, reinterpret_cast<long*>(&slice->lstr_length)))
 		  return FALSE;
 
@@ -714,14 +697,16 @@ static bool_t xdr_slice(XDR* xdrs,
 
 // Get descriptor of array element 
 
+	ISC_STATUS_ARRAY status_vector;
+	sdl_info info;
 	if (SDL_info(status_vector, sdl, &info, 0))
 		return FALSE;
 
-	desc = &info.sdl_info_element;
-	n = slice->lstr_length / desc->dsc_length;
-	p = slice->lstr_address;
+	dsc* desc = &info.sdl_info_element;
+	const ULONG n = slice->lstr_length / desc->dsc_length;
+	UCHAR* p = slice->lstr_address;
 
-	for (end = p + n * desc->dsc_length; p < end; p += desc->dsc_length) {
+	for (UCHAR* const end = p + n * desc->dsc_length; p < end; p += desc->dsc_length) {
 		if (!xdr_datum(xdrs, desc, p)) {
 			return FALSE;
 		}

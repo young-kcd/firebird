@@ -145,3 +145,4 @@ typedef struct dasup
 #define DASUP_CLAUSE_bind	1
 
 #endif // DSQL_SQLDA_H
+

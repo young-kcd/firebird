@@ -34,7 +34,7 @@ const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
 	{"INSERTING/UPDATING/DELETING", REQ_trigger}
 };
 
-char *InternalInfo::getAlias(internal_info_id info_id)
+char* InternalInfo::getAlias(internal_info_id info_id)
 {
 	return attr_array[info_id].alias_name;
 }

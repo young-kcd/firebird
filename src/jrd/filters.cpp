@@ -1159,7 +1159,7 @@ static void dump_blr(void* arg, SSHORT offset, const char* line)
 }
 
 
-static void move(const char *from, char *to, USHORT length)
+static void move(const char* from, char* to, USHORT length)
 {
 /**************************************
  *
@@ -1173,9 +1173,9 @@ static void move(const char *from, char *to, USHORT length)
  **************************************/
 
 	if (length)
-		do
+		do {
 			*to++ = *from++;
-		while (--length);
+		} while (--length);
 }
 
 
@@ -1236,7 +1236,7 @@ static ISC_STATUS string_filter(USHORT action, CTL control)
 }
 
 
-static void string_put(CTL control, const char *line)
+static void string_put(CTL control, const char* line)
 {
 /**************************************
  *

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		prepa_proto.h
- *	DESCRIPTION:	Prototype Header file for preparse.c
+ *	DESCRIPTION:	Prototype Header file for preparse.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -38,3 +38,4 @@ extern int DLL_EXPORT PREPARSE_execute(ISC_STATUS *, FRBRD **, FRBRD **,
 
 
 #endif //  DSQL_PREPA_PROTO_H
+

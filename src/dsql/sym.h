@@ -60,3 +60,4 @@ public:
 typedef sym *SYM;
 
 #endif // DSQL_SYM_H
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		gds_proto.h
- *	DESCRIPTION:	Prototype header file for gds.c
+ *	DESCRIPTION:	Prototype header file for gds.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -79,8 +79,14 @@ void	API_ROUTINE isc_encode_sql_date(void*, GDS_DATE*);
 void	API_ROUTINE isc_encode_sql_time(void*, GDS_TIME*);
 void	API_ROUTINE isc_encode_timestamp(void*, GDS_TIMESTAMP*);
 ULONG	API_ROUTINE gds__free(void*);
-SLONG	API_ROUTINE gds__interprete(char*, const ISC_STATUS**);
-void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, const ISC_STATUS*, SSHORT*);
+
+/* CVC: This function was created to be used inside the engine, but I don't see
+a problem if it's used from outside, too. */
+SLONG	API_ROUTINE gds_interprete_cpp(char* const, const ISC_STATUS**);
+/* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
+SLONG	API_ROUTINE gds__interprete(char*, ISC_STATUS**);
+void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);
+
 void	API_ROUTINE gds__log(const TEXT*, ...);
 void	API_ROUTINE gds__trace(const char*);
 void	API_ROUTINE gds__trace_raw(const char*, int = 0);
@@ -130,7 +136,7 @@ void	API_ROUTINE gds__vtof(SCHAR*, SCHAR*, USHORT);
 void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
 void	API_ROUTINE isc_print_sqlerror(SSHORT, ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
-SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
+SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
 void	gds__cleanup(void);
 void	gds__ulstr(char* buffer, ULONG value, int maxlen, char filler);
 

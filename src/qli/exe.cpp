@@ -56,8 +56,6 @@
 #define FOPEN_WRITE_TYPE	"w"
 #endif
 
-typedef vary VARY;
-
 extern jmp_buf QLI_env;
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
@@ -271,7 +269,7 @@ file* EXEC_open_output(QLI_NOD node)
 	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
 	TEXT* p = NULL;
 	TEXT temp[64];
-	SSHORT l = MOVQ_get_string(desc, &p, (VARY*) temp, sizeof(temp));
+	SSHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
 
 	TEXT filename[256];
 	TEXT* q = filename;
@@ -777,7 +775,7 @@ static void execute_abort( QLI_NOD node)
 	    UCHAR temp[80];
 		USHORT l =
 			MOVQ_get_string(EVAL_value(node->nod_arg[0]), (TEXT**) &ptr,
-				(VARY*) temp, sizeof(temp));
+				(vary*) temp, sizeof(temp));
 
 		UCHAR msg[128];
 		MOVQ_terminate((SCHAR*) ptr, (SCHAR*) msg, l, sizeof(msg));

@@ -619,7 +619,7 @@ typedef Csb* CSB;
 #define csb_blr_version4 	0x8	/* The blr is of version 4 */
 
 #define csb_active 	1
-#define csb_used	2           /* Context have already been defined (BLR parsing only) */
+#define csb_used	2           /* Context has already been defined (BLR parsing only) */
 #define csb_view_update	4		/* View update w/wo trigger is in progress */
 #define csb_trigger	8			/* NEW or OLD context in trigger */
 #define csb_no_dbkey	16		/* Stream doesn't have a dbkey */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		pass1_proto.h
- *	DESCRIPTION:	Prototype Header file for pass1.c
+ *	DESCRIPTION:	Prototype Header file for pass1.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,3 +30,4 @@ extern struct dsql_nod *PASS1_rse(struct dsql_req *, struct dsql_nod *, struct d
 extern struct dsql_nod *PASS1_statement(struct dsql_req *, struct dsql_nod *, bool);
 
 #endif // DSQL_PASS1_PROTO_H
+

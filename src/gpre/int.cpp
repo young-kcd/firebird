@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.17 2003-09-28 21:35:59 skidder Exp $
+//	$Id: int.cpp,v 1.18 2003-09-29 12:43:03 robocop Exp $
 //
 
 #include "firebird.h"
@@ -273,7 +273,7 @@ static void gen_at_end( ACT action, int column)
 //		Callback routine for BLR pretty printer.
 //  
 
-static void gen_blr(void *user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	ib_fprintf(out_file, "%s\n", string);
 }

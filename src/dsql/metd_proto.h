@@ -57,3 +57,4 @@ DSQL_REL METD_get_view_relation(dsql_req*   request,
 								USHORT      level);
 
 #endif // DSQL_METD_PROTO_H
+

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.16 2003-09-28 21:35:59 skidder Exp $
+//	$Id: pretty.cpp,v 1.17 2003-09-29 12:43:03 robocop Exp $
 //
 
 #include "firebird.h"
@@ -69,7 +69,7 @@ static int blr_format(CTL, const char *, ...);
 static int error(CTL, int, TEXT *, int);
 static int indent(CTL, SSHORT);
 static int print_blr_dtype(CTL, bool);
-static void print_blr_line(void *, SSHORT, const char*);
+static void print_blr_line(void*, SSHORT, const char*);
 static int print_byte(CTL, SSHORT);
 static int print_char(CTL, SSHORT);
 static int print_dyn_verb(CTL, SSHORT);
@@ -113,9 +113,9 @@ const char *map_strings[] = {
 //		Pretty print create database parameter buffer thru callback routine.
 //  
 
-int PRETTY_print_cdb( UCHAR * blr,
+int PRETTY_print_cdb( UCHAR* blr,
 					  FPTR_PRINT_CALLBACK routine,
-					  void * user_arg, SSHORT language)
+					  void* user_arg, SSHORT language)
 {
 
 	ctl ctl_buffer;
@@ -172,14 +172,14 @@ int PRETTY_print_cdb( UCHAR * blr,
 
 
 int PRETTY_print_dyn(
-					 UCHAR *blr,
+					 UCHAR* blr,
 //____________________________________________________________
 //  
 //		Pretty print dynamic DDL thru callback routine.
 //  
 
 					 FPTR_PRINT_CALLBACK routine, 
-					 void *user_arg, SSHORT language)
+					 void* user_arg, SSHORT language)
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
@@ -223,7 +223,7 @@ int PRETTY_print_dyn(
 
 
 int
-PRETTY_print_sdl(UCHAR * blr,
+PRETTY_print_sdl(UCHAR* blr,
 //____________________________________________________________
 //  
 //		Pretty print slice description language.
@@ -486,7 +486,7 @@ static int print_blr_dtype(CTL control,
 //		Print a line of pretty-printed BLR.
 //  
 
-static void print_blr_line(void *arg, SSHORT offset, const char* line)
+static void print_blr_line(void* arg, SSHORT offset, const char* line)
 {
 	CTL control = reinterpret_cast<CTL>(arg);
 	bool comma = false;

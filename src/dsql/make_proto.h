@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		make_proto.h
- *	DESCRIPTION:	Prototype Header file for make.c
+ *	DESCRIPTION:	Prototype Header file for make.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -48,3 +48,4 @@ struct dsql_nod* MAKE_variable(class dsql_fld* , const TEXT* , USHORT, USHORT,
 
 
 #endif // DSQL_MAKE_PROTO_H
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		server.c
+ *	MODULE:		server.cpp
  *	DESCRIPTION:	Remote server
  *
  * The contents of this file are subject to the Interbase Public
@@ -4207,7 +4207,7 @@ ISC_STATUS port::send_response(	PACKET*	send,
 			*v++ = *status_vector++;
 			continue;
 		}
-		l = (USHORT) gds__interprete(p, &status_vector);
+		l = (USHORT) isc_interprete_cpp(p, &status_vector);
 		if (l == 0)
 			break;
 		*v++ = gds_arg_interpreted;

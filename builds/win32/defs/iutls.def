@@ -67,6 +67,7 @@ EXPORTS
 	_gds__ftof                     @13
 	_gds__interprete               @14
 	_gds__interprete_a             @15
+	_gds_interprete_cpp
 	_gds__log                      @16
 	_gds__log_status               @17
 	_gds__msg_close                @18

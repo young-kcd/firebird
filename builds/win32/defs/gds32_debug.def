@@ -57,6 +57,7 @@ EXPORTS
     gds__get_segment=fbclient.gds__get_segment @39
     gds__get_slice=fbclient.gds__get_slice @40
     gds__interprete=fbclient.gds__interprete @41
+    gds_interprete_cpp=fbclient.gds_interprete_cpp
     gds__log=fbclient.gds__log @42
     gds__msg_format=fbclient.gds__msg_format @43
     gds__msg_lookup=fbclient.gds__msg_lookup @44
@@ -148,6 +149,7 @@ EXPORTS
     isc_get_segment=fbclient.isc_get_segment @139
     isc_get_slice=fbclient.isc_get_slice @140
     isc_interprete=fbclient.isc_interprete @141
+    isc_interprete_cpp=fbclient.isc_interprete_cpp
     gds__log_status=fbclient.gds__log_status @142
     isc_open=fbclient.isc_open @143
     isc_open_blob=fbclient.isc_open_blob @144

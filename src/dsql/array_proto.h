@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		array_proto.h
- *	DESCRIPTION:	Prototype Header file for array.e
+ *	DESCRIPTION:	Prototype Header file for array.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -41,3 +41,4 @@ extern ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS *, SCHAR *, SCHAR *,
 											 ISC_ARRAY_DESC *);
 
 #endif // DSQL_ARRAY_PROTO_H
+

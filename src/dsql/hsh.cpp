@@ -58,6 +58,7 @@ static inline void lock_hash()
 {
 	THD_mutex_lock (&hash_mutex);
 }
+
 static inline void unlock_hash()
 {
 	THD_mutex_unlock (&hash_mutex);
@@ -66,6 +67,7 @@ static inline void unlock_hash()
 static inline void lock_hash()
 {
 }
+
 static inline void unlock_hash()
 {
 }

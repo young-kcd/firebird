@@ -24,8 +24,8 @@
 #ifndef _GPRE_PRETT_PROTO_H_
 #define _GPRE_PRETT_PROTO_H_
 
-extern int PRETTY_print_cdb(UCHAR *, FPTR_PRINT_CALLBACK, void*, SSHORT);
-extern int PRETTY_print_dyn(UCHAR *, FPTR_PRINT_CALLBACK, void*, SSHORT);
-extern int PRETTY_print_sdl(UCHAR *, FPTR_PRINT_CALLBACK, void*, SSHORT);
+extern int PRETTY_print_cdb(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
+extern int PRETTY_print_dyn(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
+extern int PRETTY_print_sdl(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
 
 #endif /* _GPRE_PRETT_PROTO_H_ */

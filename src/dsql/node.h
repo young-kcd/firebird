@@ -879,3 +879,4 @@ typedef dsql_nod* DSQL_NOD;
 #define e_derived_field_count			4  
 
 #endif // DSQL_NODE_H
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		blob_proto.h
- *	DESCRIPTION:	Prototype Header file for blob.e
+ *	DESCRIPTION:	Prototype Header file for blob.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -35,3 +35,4 @@ extern ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS *, UCHAR *, UCHAR *,
 											ISC_BLOB_DESC *);
 
 #endif // DSQL_BLOB_PROTO_H
+

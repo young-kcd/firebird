@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.28 2003-09-28 21:35:58 skidder Exp $
+//	$Id: ftn.cpp,v 1.29 2003-09-29 12:43:03 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -71,7 +71,7 @@ static void	gen_blob_close (ACT);
 static void	gen_blob_end (ACT);
 static void	gen_blob_for (ACT);
 static void	gen_blob_open (ACT);
-static void	gen_blr (void *, SSHORT, const char *);
+static void	gen_blr (void*, SSHORT, const char*);
 static void	gen_clear_handles(ACT);
 #ifdef NOT_USED_OR_REPLACED
 static void	gen_compatibility_symbol( TEXT *, TEXT *, TEXT *);
@@ -1109,7 +1109,7 @@ static void gen_blob_open( ACT action)
 //		Callback routine for BLR pretty printer.
 //  
 
-static void gen_blr(void *user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	int from, to, len, c_len;
 
@@ -1121,11 +1121,11 @@ static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 	while (from < len) {
 		if (to < len) {
 			char buffer[81];
-			strncpy(buffer, string+from, 80-c_len);
-			buffer[80-c_len] = 0;
+			strncpy(buffer, string + from, 80 - c_len);
+			buffer[80 - c_len] = 0;
 			ib_fprintf(out_file, "%s%s\n", COMMENT, buffer);
 		} else
-			ib_fprintf(out_file, "%s%s\n", COMMENT, string+from);
+			ib_fprintf(out_file, "%s%s\n", COMMENT, string + from);
 		from = to;
 		to = to + 80 - c_len;
 	}

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Windows Interactive SQL utility
- *	MODULE:		isql_win.c
+ *	MODULE:		isql_win.cpp
  *	DESCRIPTION:	Windows shell for ISQL
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,7 +22,7 @@
  */
 
 #define STRICT
-#include "firebird.h" 
+#include "firebird.h"
 #include <windows.h>
 #pragma hdrstop
 #include "../jrd/ib_stdio.h"
@@ -2390,3 +2390,4 @@ BOOL CALLBACK _export transDlgProc(HWND hDlg,
 
 	return TRUE;
 }
+

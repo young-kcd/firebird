@@ -24,7 +24,7 @@
 #ifndef QLI_MOV_PROTO_H
 #define QLI_MOV_PROTO_H
 
-extern int			MOVQ_compare(dsc*, dsc*);
+extern int			MOVQ_compare(const dsc*, const dsc*);
 extern double		MOVQ_date_to_double(const dsc*);
 extern int			MOVQ_decompose (const TEXT*, USHORT, SLONG *);
 extern void			MOVQ_double_to_date (double, SLONG [2]);
@@ -33,7 +33,7 @@ extern double		MOVQ_get_double(const dsc*);
 extern SLONG		MOVQ_get_long(const dsc*, SSHORT);
 extern int			MOVQ_get_string(const dsc*, TEXT**, vary*, USHORT);
 extern void			MOVQ_move(const dsc*, dsc*);
-extern void			MOVQ_terminate (const SCHAR*, SCHAR*, SSHORT, SSHORT);
+extern void			MOVQ_terminate (const SCHAR*, SCHAR*, USHORT, USHORT);
 
 #endif /* QLI_MOV_PROTO_H */
 

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		ddl_proto.h
- *	DESCRIPTION:	Prototype Header file for ddl_proto.h
+ *	DESCRIPTION:	Prototype Header file for ddl.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -40,3 +40,4 @@ void DDL_resolve_intl_type(dsql_req*, dsql_fld*, str*);
 void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, str*, bool);
 
 #endif // DSQL_DDL_PROTO_H
+

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.23 2003-09-28 21:35:59 skidder Exp $
+//	$Id: pas.cpp,v 1.24 2003-09-29 12:43:03 robocop Exp $
 //
 
 #include "firebird.h"
@@ -956,7 +956,7 @@ static void gen_blob_open( ACT action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //  
 
-static void gen_blr(void *user_arg, SSHORT offset, const char *string)
+static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	int indent, length;
 	const char *p, *q;
@@ -987,8 +987,8 @@ static void gen_blr(void *user_arg, SSHORT offset, const char *string)
 		}
 		q++;
 		char buffer[256];
-		strncpy(buffer, p, q-p);
-		buffer[q-p] = 0;
+		strncpy(buffer, p, q - p);
+		buffer[q - p] = 0;
 		printa(indent, buffer);
 		length = length - (q - p);
 		p = q;
@@ -3630,7 +3630,7 @@ static void make_ready(
 //		Print a fixed string at a particular column.
 //  
 
-static void printa( int column, const char *string, ...)
+static void printa( int column, const char* string, ...)
 {
 	va_list ptr;
 

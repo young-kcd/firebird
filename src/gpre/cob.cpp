@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.29 2003-09-28 21:35:58 skidder Exp $
+//	$Id: cob.cpp,v 1.30 2003-09-29 12:43:03 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -279,7 +279,7 @@ static void	gen_blob_close (ACT);
 static void	gen_blob_end (ACT);
 static void	gen_blob_for (ACT);
 static void	gen_blob_open (ACT);
-static void	gen_blr (void *, SSHORT, const char*);
+static void	gen_blr (void*, SSHORT, const char*);
 static void	gen_clear_handles (ACT);
 static void	gen_compile (ACT);
 static void	gen_create_database (ACT);
@@ -1282,7 +1282,7 @@ static void gen_blob_open( ACT action)
 //		Callback routine for BLR pretty printer.
 //  
 
-static void gen_blr(void *user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	int indent, length, comment, i, max_line, max_diff;
 	const char *p, *q;
@@ -1328,8 +1328,8 @@ static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 			ib_fputc(' ', out_file);
 		q++;
 		char buffer[256];
-		strncpy(buffer, p, q-p);
-		buffer[q-p] = 0;
+		strncpy(buffer, p, q - p);
+		buffer[q - p] = 0;
 		ib_fprintf(out_file, "%s\n", buffer);
 		length = length - (q - p);
 		p = q;

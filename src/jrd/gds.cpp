@@ -702,7 +702,7 @@ void GDS_breakpoint(int parameter)
 #endif
 
 
-SINT64 API_ROUTINE isc_portable_integer(UCHAR* ptr, SSHORT length)
+SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
 {
 /**************************************
  *
@@ -734,7 +734,7 @@ SINT64 API_ROUTINE isc_portable_integer(UCHAR* ptr, SSHORT length)
 	value = shift = 0;
 
 	while (--length >= 0) {
-		value += ((SINT64) * ptr++) << shift;
+		value += ((SINT64) *ptr++) << shift;
 		shift += 8;
 	}
 
@@ -782,7 +782,37 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 }
 #endif // DEBUG_GDS_ALLOC
 
-SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
+
+/* CVC: See comment below. Basically, it provides the needed const correctness,
+but throws away the const to make the callee happy, knowing that the callee
+indeed treats vector as it was a pointer with the const prefix.
+Maybe this function could be private and thus made inline? */
+SLONG API_ROUTINE gds_interprete_cpp(char* const s, const ISC_STATUS** vector)
+{
+/**************************************
+ *
+ *	g d s _ i n t e r p r e t e _ c p p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Translate a status code with arguments to a string.  Return the
+ *	length of the string while updating the vector address.  If the
+ *	message is null (end of messages) or invalid, return 0;
+ *
+ **************************************/
+	return gds__interprete(s, const_cast<ISC_STATUS**>(vector));
+}
+
+/* CVC: This non-const signature is needed for compatibility. The reason is
+that, unlike int* that can be assigned to const int* transparently to the caller,
+int** CANNOT be assigned to const int**, so applications would have to be
+fixed to provide such const int**; while it may be more correct from the
+semantic POV, we can't estimate how much work it's for app developers.
+Therefore, we go back to the old signature and provide gds_interprete_cpp
+for compliance, to be used inside the engine, too. September, 2003. */
+
+SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 {
 /**************************************
  *
@@ -796,12 +826,6 @@ SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
  *	message is null (end of messages) or invalid, return 0;
  *
  **************************************/
-#ifdef VMS
-	ISC_STATUS status;
-	TEXT flags[4];
-	struct dsc$descriptor_s desc;
-#endif
-
 	if (!**vector)
 		return 0;
 
@@ -905,16 +929,20 @@ SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
 
 #ifdef VMS
 	case gds_arg_vms:
-		l = 0;
-		desc.dsc$b_class = DSC$K_CLASS_S;
-		desc.dsc$b_dtype = DSC$K_DTYPE_T;
-		desc.dsc$w_length = 128;
-		desc.dsc$a_pointer = s;
-		status = sys$getmsg(code, &l, &desc, 15, flags);
-		if (status & 1)
-			s[l] = 0;
-		else
-			sprintf(s, "uninterpreted VMS code %x", code);	/* TXNN */
+		{
+			l = 0;
+			struct dsc$descriptor_s desc;
+			desc.dsc$b_class = DSC$K_CLASS_S;
+			desc.dsc$b_dtype = DSC$K_DTYPE_T;
+			desc.dsc$w_length = 128;
+			desc.dsc$a_pointer = s;
+			TEXT flags[4];
+			ISC_STATUS status = sys$getmsg(code, &l, &desc, 15, flags);
+			if (status & 1)
+				s[l] = 0;
+			else
+				sprintf(s, "uninterpreted VMS code %x", code);	/* TXNN */
+		}
 		break;
 #endif
 
@@ -930,11 +958,13 @@ SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
 		  && !(l = (SSHORT)FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
-										 0, /* TMN: Fallback to system known language */
+										 0, // TMN: Fallback to system known language
 										 s,
 										 128,
-										 NULL))) 
+										 NULL)))
+		{
 			sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
+		}
 		break;
 #endif
 
@@ -948,7 +978,7 @@ SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
 	if (temp)
 		gds__free((SLONG *) temp);
 
-	*vector = v;
+	*vector = const_cast<ISC_STATUS*>(v);
 	const TEXT* end = s;
 	while (*end)
 		end++;
@@ -957,10 +987,12 @@ SLONG API_ROUTINE gds__interprete(char* s, const ISC_STATUS** vector)
 }
 
 
+/* CVC: This special function for ADA has been restored to non-const vector,
+ too, in case its usage was broken. */
 void API_ROUTINE gds__interprete_a(
-								   SCHAR * s,
-								   SSHORT * length,
-								   const ISC_STATUS* vector, SSHORT * offset)
+								   SCHAR* s,
+								   SSHORT* length,
+								   ISC_STATUS* vector, SSHORT* offset)
 {
 /**************************************
  *
@@ -976,7 +1008,7 @@ void API_ROUTINE gds__interprete_a(
  *	the concept of indexing into the vector.
  *
  **************************************/
-	const ISC_STATUS *v = vector + *offset;
+	ISC_STATUS *v = vector + *offset;
 	*length = (SSHORT) gds__interprete(s, &v);
 	*offset = v - vector;
 }
@@ -990,7 +1022,8 @@ Firebird::Spinlock trace_mutex;
 HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 #endif
 
-void API_ROUTINE gds__trace_raw(const char* text, int length) {
+void API_ROUTINE gds__trace_raw(const char* text, int length)
+{
 /**************************************
  *
  *	g d s _ t r a c e _ r a w
@@ -1048,6 +1081,7 @@ void API_ROUTINE gds__trace_raw(const char* text, int length) {
 	close(file);
 #endif
 }
+
 void API_ROUTINE gds__trace(const TEXT * text)
 {
 /**************************************
@@ -1057,7 +1091,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
  **************************************
  *
  * Functional description
- *	Post trace event to a log file. Function records to date and time
+ *	Post trace event to a log file. Function records date and time
  *  This function tries to be async-signal safe
  *
  **************************************/
@@ -1195,7 +1229,7 @@ void API_ROUTINE gds__log_status(TEXT * database, const ISC_STATUS* status_vecto
 			p++;
 		*p++ = '\n';
 		*p++ = '\t';
-	} while (gds__interprete(p, &status_vector));
+	} while (gds_interprete_cpp(p, &status_vector));
 
 	p[-2] = 0;
 	gds__log(buffer, 0);
@@ -1888,7 +1922,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 
 	const ISC_STATUS* vector = vec;
 
-	if (!gds__interprete(s, &vector)) {
+	if (!gds_interprete_cpp(s, &vector)) {
 		gds__free((SLONG *) s);
 		return vec[1];
 	}
@@ -1896,7 +1930,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 	gds__put_error(s);
 	s[0] = '-';
 
-	while (gds__interprete(s + 1, &vector))
+	while (gds_interprete_cpp(s + 1, &vector))
 		gds__put_error(s);
 
 	gds__free((SLONG *) s);
@@ -2568,7 +2602,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
 #endif
 
 
-SLONG API_ROUTINE gds__vax_integer(const UCHAR * ptr, SSHORT length)
+SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 {
 /**************************************
  *
@@ -3649,11 +3683,13 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 	resultString[len + alen] = 0;
 }
 
-void gds__default_printer(void* arg, SSHORT offset, const TEXT* line) {
+void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
+{
 	ib_printf("%4d %s\n", offset, line);
 }
 
-void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line) {
+void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
+{
 	// Assume that line is not too long
 	char buffer[PRETTY_BUFFER_SIZE+10], *p = buffer;
 	gds__ulstr(p, offset, 4, ' ');

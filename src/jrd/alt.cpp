@@ -697,9 +697,9 @@ void API_ROUTINE gds__encode_date(void *time_structure, GDS_QUAD * date)
 	isc_encode_date(time_structure, date);
 }
 
-SLONG API_ROUTINE isc_vax_integer(SCHAR * input, SSHORT length)
+SLONG API_ROUTINE isc_vax_integer(const SCHAR* input, SSHORT length)
 {
-	return gds__vax_integer((UCHAR *) input, length);
+	return gds__vax_integer(reinterpret_cast<const UCHAR*>(input), length);
 }
 
 #ifndef REQUESTER
@@ -713,9 +713,17 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
 }
 #endif
 
-ISC_STATUS API_ROUTINE isc_interprete(SCHAR* buffer, const ISC_STATUS** status_vector_p)
+/* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
+SLONG API_ROUTINE isc_interprete(SCHAR* buffer, ISC_STATUS** status_vector_p)
 {
 	return gds__interprete(buffer, status_vector_p);
+}
+
+/* This const params version used in the engine and other places. */
+SLONG API_ROUTINE isc_interprete_cpp(SCHAR* const buffer,
+	const ISC_STATUS** status_vector_p)
+{
+	return gds__interprete(buffer, const_cast<ISC_STATUS**>(status_vector_p));
 }
 
 int API_ROUTINE isc_version(

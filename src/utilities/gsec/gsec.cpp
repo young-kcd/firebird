@@ -1143,7 +1143,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
  **************************************
  *
  * Functional description
- *	Print error message. Use isc_interprete
+ *	Print error message. Use isc_interprete_cpp
  *	to allow redirecting output.
  *
  **************************************/
@@ -1162,10 +1162,10 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 #endif
 
 		SCHAR s[1024];
-		if (isc_interprete(s, &vector)) {
+		if (isc_interprete_cpp(s, &vector)) {
 			TRANSLATE_CP(s);
 			util_output("%s\n", s);
-			while (isc_interprete(s, &vector)) {
+			while (isc_interprete_cpp(s, &vector)) {
 				TRANSLATE_CP(s);
 				util_output("%s\n", s);
 			}

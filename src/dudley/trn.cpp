@@ -1094,6 +1094,7 @@ static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
  *
  **************************************/
 	char temp[1024]; // This buffer size should be more than enough
+	fb_assert(strlen(string) < sizeof(temp));
 	strcpy(temp, string);
 
 	SCHAR *p, *q, *r;

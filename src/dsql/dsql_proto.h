@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		dsql_proto.h
- *	DESCRIPTION:	Prototype Header file for dsql.c
+ *	DESCRIPTION:	Prototype Header file for dsql.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -74,3 +74,4 @@ extern ISC_STATUS callback_execute_immediate(
 #endif
 
 #endif //  DSQL_DSQL_PROTO_H
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic  SQL RUNTIME SUPPORT
  *	MODULE:		alld_proto.h
- *	DESCRIPTION:	Prototype Header file for alld.c
+ *	DESCRIPTION:	Prototype Header file for alld.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

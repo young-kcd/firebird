@@ -287,3 +287,4 @@ static const SCHAR classes[] = {
 /* 254     */ 0,
 /* 255     */ 0
 };
+

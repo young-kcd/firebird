@@ -163,6 +163,7 @@ extern "C" {
   GDS_STATUS GDS_EXPORT isc_transaction_info  (long*, gds_tr_handle*, short, char*, short, char*);
   GDS_STATUS GDS_EXPORT isc_unwind_request  (long*, gds_tr_handle*, short);
   GDS_STATUS GDS_EXPORT isc_interprete  (char*, long**);
+  GDS_STATUS GDS_EXPORT isc_interprete_cpp(char* const buffer, const long**);
   GDS_STATUS GDS_EXPORT isc_sql_interprete  (short, char*, short);
   GDS_STATUS GDS_EXPORT isc_print_sql_error  (long, long*);
   GDS_STATUS GDS_EXPORT isc_print_status  (long*);
@@ -261,7 +262,7 @@ extern "C" {
     void     GDS_EXPORT isc_vtof (char*, char*, short);
     void     GDS_EXPORT isc_vtov (char*, char*, short);
     void     GDS_EXPORT isc_version (gds_db_handle*, gds_callback, long);
-  GDS_STATUS GDS_EXPORT isc_vax_integer (char*, short);
+  GDS_STATUS GDS_EXPORT isc_vax_integer (const char*, short);
     void     GDS_EXPORT isc_set_debug (long);
   GDS_STATUS GDS_EXPORT isc_encode_date (void*, GDS_QUAD*);
   GDS_STATUS GDS_EXPORT isc_decode_date (GDS_QUAD*, void*);

@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        IB Server and Server Manager
- *      MODULE:         ibconfig.c
+ *      MODULE:         ibconfig.cpp
  *      DESCRIPTION:    IB Configuration implementation for both
  *                  Server Manager and Server Property sheet
  *
@@ -681,7 +681,7 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
  **************************************
  *
  * Functional description
- *      Print error message. Use isc_interprete
+ *      Print error message. Use isc_interprete_cpp
  *      to allow redirecting output.
  *
  **************************************/
@@ -692,13 +692,13 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
-		if (isc_interprete(szErrStr, &vector)) {
+		if (isc_interprete_cpp(szErrStr, &vector)) {
 			SCHAR *ptr = szErrStr + strlen(szErrStr);;
 
 			*ptr++ = '\r';
 			*ptr++ = '\n';
 			*ptr++ = '-';
-			while (isc_interprete(ptr, &vector)) {
+			while (isc_interprete_cpp(ptr, &vector)) {
 				ptr += strlen(ptr);
 				*ptr++ = '\r';
 				*ptr++ = '\n';

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.46 2003-09-25 11:49:06 robocop Exp $
+$Id: ibase.h,v 1.47 2003-09-29 12:43:06 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -636,9 +636,14 @@ ISC_STATUS ISC_EXPORT isc_get_slice(ISC_STATUS *,
 									void *,
 									ISC_LONG *);
 
-ISC_STATUS ISC_EXPORT isc_interprete(char*,
+/* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
+ISC_LONG ISC_EXPORT isc_interprete(char*,
+									 ISC_STATUS**);
+									 
+/* This const params version used in the engine and other places. */
+ISC_LONG ISC_EXPORT isc_interprete_cpp(char* const,
 									 const ISC_STATUS**);
-
+									 
 ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS *,
 									isc_db_handle *,
 									isc_tr_handle *,
@@ -725,10 +730,10 @@ ISC_STATUS ISC_EXPORT isc_transact_request(ISC_STATUS *,
 										   unsigned short,
 										   char *);
 
-ISC_LONG ISC_EXPORT isc_vax_integer(char *,
+ISC_LONG ISC_EXPORT isc_vax_integer(const char*,
 									short);
 
-ISC_INT64 ISC_EXPORT isc_portable_integer(unsigned char *,
+ISC_INT64 ISC_EXPORT isc_portable_integer(const unsigned char*,
 										  short);
 
 /*************************************/

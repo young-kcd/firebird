@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.27 2003-09-28 21:35:58 skidder Exp $
+//	$Id: ada.cpp,v 1.28 2003-09-29 12:43:03 robocop Exp $
 //
 
 #include "firebird.h"
@@ -58,7 +58,7 @@ static void	gen_blob_close (ACT, USHORT);
 static void	gen_blob_end (ACT, USHORT);
 static void	gen_blob_for (ACT, USHORT);
 static void	gen_blob_open (ACT, USHORT);
-static void	gen_blr (void *, SSHORT, const char*);
+static void	gen_blr (void*, SSHORT, const char*);
 static void	gen_clear_handles (ACT, int);
 static void	gen_compile (ACT, int);
 static void	gen_create_database (ACT, int);
@@ -900,7 +900,7 @@ static void gen_blob_open( ACT action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //  
 
-static void gen_blr(void *user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	int from, to, len, c_len;
 
@@ -912,11 +912,11 @@ static void gen_blr(void *user_arg, SSHORT offset, const char* string)
 	while (from < len) {
 		if (to < len) {
 			char buffer[121];
-			strncpy(buffer, string+from, 120-c_len);
-			buffer[120-c_len] = 0;
+			strncpy(buffer, string + from, 120 - c_len);
+			buffer[120 - c_len] = 0;
 			ib_fprintf(out_file, "%s%s\n", COMMENT, buffer);
 		} else
-			ib_fprintf(out_file, "%s%s\n", COMMENT, string+from);
+			ib_fprintf(out_file, "%s%s\n", COMMENT, string + from);
 		from = to;
 		to = to + 120 - c_len;
 	}

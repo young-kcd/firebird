@@ -1289,7 +1289,7 @@ void BURP_print_status(const ISC_STATUS* status_vector)
  **************************************
  *
  * Functional description
- *	Print error message. Use isc_interprete
+ *	Print error message. Use isc_interprete_cpp
  *	to allow redirecting output.
  *
  **************************************/
@@ -1308,11 +1308,11 @@ void BURP_print_status(const ISC_STATUS* status_vector)
 #endif
 
         SCHAR s[1024];
-		if (isc_interprete(s, &vector)) {
+		if (isc_interprete_cpp(s, &vector)) {
 			translate_cp(s);
 			BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR: 
 			burp_output("%s\n", s);
-			while (isc_interprete(s, &vector)) {
+			while (isc_interprete_cpp(s, &vector)) {
 				translate_cp(s);
 				BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR:
 				burp_output("    %s\n", s);
@@ -1331,7 +1331,7 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
  **************************************
  *
  * Functional description
- *	Print warning message. Use isc_interprete
+ *	Print warning message. Use isc_interprete_cpp
  *	to allow redirecting output.
  *
  **************************************/
@@ -1342,11 +1342,11 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 		// print the warning message 
 		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
-		if (isc_interprete(s, &vector)) {
+		if (isc_interprete_cpp(s, &vector)) {
 			translate_cp(s);
 			BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 			burp_output("%s\n", s);
-			while (isc_interprete(s, &vector)) {
+			while (isc_interprete_cpp(s, &vector)) {
 				translate_cp(s);
 				BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 				burp_output("    %s\n", s);
@@ -2139,7 +2139,7 @@ static int api_gbak(int argc,
 
 	const char *sl;
 	do {
-		if (isc_service_query(status, (&svc_handle), NULL, 0,NULL,
+		if (isc_service_query(status, (&svc_handle), NULL, 0, NULL,
 								sizeof(sendbuf), sendbuf,
 								sizeof(respbuf), respbuf))
 		{

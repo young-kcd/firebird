@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.14 2003-09-17 10:49:29 aafemt Exp $
+ * $Id: isql.h,v 1.15 2003-09-29 12:43:05 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -40,7 +40,7 @@
 
 /* Increased this to allow display of somewhat lengthy plans
    hope this will last a year or so :-)
-   FSG 17.Nov.2000 
+   FSG 17.Nov.2000
 */
 #define PRINT_BUFFER_LENGTH	2048
 #define MAXTERM_LENGTH  	32	/* SQL termination character */
@@ -48,8 +48,8 @@
 #define PASSWORD_LENGTH 	128
 #define ROLE_LENGTH     	128
 
-/* these constants are purely idiotic; there's no point in having 
-   a predefined constant with no meaning, but that's Ed Simon the 
+/* these constants are purely idiotic; there's no point in having
+   a predefined constant with no meaning, but that's Ed Simon the
    master programmer for you! */
 
 #define BUFFER_LENGTH128	128
@@ -245,7 +245,6 @@ EXTERN USHORT SQL_dialect;
 EXTERN USHORT db_SQL_dialect;
 #undef EXTERN
 
-typedef vary VARY;
 
 struct sqltypes {
 	SSHORT type;
@@ -309,3 +308,4 @@ struct sqltypes {
 #define TAB_AS_SPACES "        "
 
 #endif /* ISQL_ISQL_H */
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		pass1.c
+ *	MODULE:		pass1.cpp
  *	DESCRIPTION:	First-pass compiler for request trees.
  *
  * The contents of this file are subject to the Interbase Public
@@ -168,7 +168,7 @@ static void assign_fld_dtype_from_dsc(DSQL_FLD, DSC *);
 static DSQL_NOD compose(DSQL_NOD, DSQL_NOD, NOD_TYPE);
 static void explode_asterisk(DSQL_REQ, DSQL_NOD, DSQL_NOD, DLLS *);
 static DSQL_NOD explode_outputs(DSQL_REQ, DSQL_PRC);
-static void field_error(TEXT *, TEXT *, DSQL_NOD);
+static void field_error(const TEXT*, const TEXT*, DSQL_NOD);
 static PAR find_dbkey(DSQL_REQ, DSQL_NOD);
 static PAR find_record_version(DSQL_REQ, DSQL_NOD);
 static bool invalid_reference(DSQL_CTX, DSQL_NOD, DSQL_NOD, bool, bool);
@@ -2066,7 +2066,7 @@ static DSQL_NOD explode_outputs( DSQL_REQ request, DSQL_PRC procedure)
     @param flawed_node
 
  **/
-static void field_error( TEXT * qualifier_name, TEXT * field_name, DSQL_NOD flawed_node)
+static void field_error(const TEXT* qualifier_name, const TEXT* field_name, DSQL_NOD flawed_node)
 {
     TEXT field_string [64], linecol [64];
 
@@ -3251,8 +3251,8 @@ static DSQL_NOD pass1_dbkey( DSQL_REQ request, DSQL_NOD input)
 
 /* field unresolved */
 
-	field_error(reinterpret_cast <char *>(qualifier ? qualifier->str_data : 0),
-				const_cast <char *>(DB_KEY_STRING), input);
+	field_error(reinterpret_cast<char*>(qualifier ? qualifier->str_data : 0),
+				DB_KEY_STRING, input);
 
 	return NULL;
 }
@@ -6098,7 +6098,7 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 
     /* field unresolved */
 
-    /* CVC: That's all [the fix], folks! */
+    // CVC: That's all [the fix], folks!
 
     if (var_name)
         field_error (0, (TEXT *) var_name->str_data, input);

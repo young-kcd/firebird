@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Command Oriented Query Language
+ *	PROGRAM:	QLI Command Oriented Query Language
  *	MODULE:		eval.cpp
  *	DESCRIPTION:	Value and boolean expression evaluator
  *
@@ -38,29 +38,33 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
-typedef vary VARY;
-
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
 static SLONG execute_any(QLI_NOD);
-static DSC *execute_concatenate(QLI_NOD, DSC *, DSC *);
-static DSC *execute_edit(QLI_NOD);
-static DSC *execute_function(QLI_NOD);
-static DSC *execute_prompt(QLI_NOD);
-static DSC *execute_statistical(QLI_NOD);
-static bool like(UCHAR *, SSHORT, UCHAR *, SSHORT, const UCHAR);
-static TEXT *make_blob_buffer(FRBRD *, USHORT *);
-static int matches(TEXT *, SSHORT, TEXT *, SSHORT);
-static int sleuth(QLI_NOD, DSC *, DSC *, DSC *);
-static int sleuth_check(USHORT, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
-static int sleuth_class(USHORT, UCHAR *, UCHAR *, UCHAR);
-static int sleuth_merge(UCHAR *, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
+static DSC* execute_concatenate(QLI_NOD, const dsc*, const dsc*);
+static DSC* execute_edit(QLI_NOD);
+static DSC* execute_function(QLI_NOD);
+static DSC* execute_prompt(QLI_NOD);
+static DSC* execute_statistical(QLI_NOD);
+static bool like(const UCHAR*, SSHORT, const UCHAR*, SSHORT, const UCHAR);
+static TEXT* make_blob_buffer(FRBRD *, USHORT *);
+static int matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
+static int sleuth(QLI_NOD, const dsc*, const dsc*, const dsc*);
+static int sleuth_check(USHORT, const UCHAR*, const UCHAR* const,
+	const UCHAR*, const UCHAR* const);
+static int sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
+static int sleuth_merge(const UCHAR*, const UCHAR* const , const UCHAR*,
+	const UCHAR* const, UCHAR* const);
 static int string_boolean(QLI_NOD);
-static bool string_function(QLI_NOD, SSHORT, TEXT *, SSHORT, TEXT *);
+static bool string_function(QLI_NOD, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
-#define	TEMP_LENGTH		128
-#define SLEUTH_insensitive	1
-#define COND_UPPER(c)		((flags & SLEUTH_insensitive) ? UPPER(c) : c)
+const int TEMP_LENGTH =	128;
+const USHORT SLEUTH_insensitive	= 1;
+//#define COND_UPPER(c)		((flags & SLEUTH_insensitive) ? UPPER(c) : c)
+inline UCHAR cond_upper(const UCHAR c, const USHORT flags)
+{
+	return (flags & SLEUTH_insensitive) ? UPPER(c) : c;
+}
 
 static const UCHAR special[127] =
 {
@@ -582,7 +586,7 @@ static SLONG execute_any( QLI_NOD node)
 }
 
 
-static DSC *execute_concatenate( QLI_NOD node, DSC * value1, DSC * value2)
+static dsc* execute_concatenate( QLI_NOD node, const dsc* value1, const dsc* value2)
 {
 /**************************************
  *
@@ -596,11 +600,11 @@ static DSC *execute_concatenate( QLI_NOD node, DSC * value1, DSC * value2)
  **************************************/
 	TEXT temp1[32], temp2[32], *address1, *address2;
 
-	USHORT length1 = MOVQ_get_string(value1, &address1, (VARY*)temp1, sizeof(temp1));
-	USHORT length2 = MOVQ_get_string(value2, &address2, (VARY*)temp2, sizeof(temp2));
+	USHORT length1 = MOVQ_get_string(value1, &address1, (vary*)temp1, sizeof(temp1));
+	USHORT length2 = MOVQ_get_string(value2, &address2, (vary*)temp2, sizeof(temp2));
 	dsc* desc = &node->nod_desc;
-	VARY* vary = (VARY*) desc->dsc_address;
-	TEXT* p = vary->vary_string;
+	vary* avary = (vary*) desc->dsc_address;
+	TEXT* p = avary->vary_string;
 	length1 = MIN(length1, desc->dsc_length - 2);
 	length2 = MAX(MIN(length2, desc->dsc_length - 2 - length1), 0);
 
@@ -614,7 +618,7 @@ static DSC *execute_concatenate( QLI_NOD node, DSC * value1, DSC * value2)
 			*p++ = *address2++;
 		} while (--length2);
 
-	vary->vary_length = p - vary->vary_string;
+	avary->vary_length = p - avary->vary_string;
 
 	return desc;
 }
@@ -792,8 +796,8 @@ static DSC *execute_statistical( QLI_NOD node)
 }
 
 static bool like(
-				   UCHAR * p1,
-				   SSHORT l1, UCHAR * p2, SSHORT l2, const UCHAR escape_char)
+				   const UCHAR* p1, SSHORT l1,
+				   const UCHAR* p2, SSHORT l2, const UCHAR escape_char)
 {
 /**************************************
  *
@@ -838,7 +842,7 @@ static bool like(
 }
 
 
-static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
+static TEXT* make_blob_buffer( FRBRD* blob, USHORT* length)
 {
 /**************************************
  *
@@ -857,9 +861,8 @@ static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
 	gds__blob_size(&blob, &size, &segment_count, &max_segment);
 
 	if (max_segment >= *length) {
-		TEXT *buffer;
 		*length = max_segment;
-		buffer = (TEXT *) gds__alloc((SLONG) * length);
+		TEXT* buffer = (TEXT*) gds__alloc((SLONG) *length);
 #ifdef DEBUG_GDS_ALLOC
 		// We don't care about QLI specific memory leaks for V4.0
 		gds_alloc_flag_unfreed((void *) buffer);	// QLI: don't care
@@ -871,7 +874,7 @@ static TEXT *make_blob_buffer( FRBRD * blob, USHORT * length)
 }
 
 static int matches(
-					  TEXT * p1, SSHORT l1, TEXT * p2, SSHORT l2)
+					  const TEXT* p1, SSHORT l1, const TEXT* p2, SSHORT l2)
 {
 /**************************************
  *
@@ -886,10 +889,8 @@ static int matches(
  *	of characters.
  *
  **************************************/
-	TEXT c;
-
 	while (--l2 >= 0) {
-		c = *p2++;
+		const TEXT c = *p2++;
 		if (c == '*') {
 			if (l2 == 0)
 				return TRUE;
@@ -907,7 +908,7 @@ static int matches(
 }
 
 
-static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
+static int sleuth( QLI_NOD node, const dsc* desc1, const dsc* desc2, const dsc* desc3)
 {
 /**************************************
  *
@@ -922,46 +923,43 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
  **************************************/
 	TEXT *p1, *p2, *buffer, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
 		fixed_buffer[512], control[256];
-	FRBRD *blob;
-	USHORT buffer_length;
-	ISC_STATUS_ARRAY status_vector;
-	SSHORT l1, l2, result;
-	QLI_CTX context;
-	QLI_REQ request;
-	DBB dbb;
 
 /* Get operator definition string (control string) */
 
-	l1 = MOVQ_get_string(desc3, &p1, (VARY*) temp1, TEMP_LENGTH);
+	SSHORT l1 = MOVQ_get_string(desc3, &p1, (vary*) temp1, TEMP_LENGTH);
 
 // Get address and length of search string
 
-	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
+	SSHORT l2 = MOVQ_get_string(desc2, &p2, (vary*) temp2, TEMP_LENGTH);
 
 // Merge search and control strings
 
-	l2 = sleuth_merge((UCHAR*) p2, (UCHAR*) (p2 + l2), (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control);
+	l2 = sleuth_merge((UCHAR*) p2, (UCHAR*) (p2 + l2), (UCHAR*) p1, (
+						UCHAR*) (p1 + l1), (UCHAR*) control);
 
 // If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
-		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
-		return sleuth_check(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
+		l1 = MOVQ_get_string(desc1, &p1, (vary*) temp1, TEMP_LENGTH);
+		return sleuth_check(0, (UCHAR*) p1, (UCHAR*) (p1 + l1),
+							(UCHAR*) control, (UCHAR*) (control + l2));
 	}
 
 // Source string is a blob, things get interesting
 
-	result = FALSE;
+	SSHORT result = FALSE;
 
-	blob = EXEC_open_blob(node->nod_arg[0]);
+	FRBRD* blob = EXEC_open_blob(node->nod_arg[0]);
 
-	buffer_length = sizeof(fixed_buffer);
+	USHORT buffer_length = sizeof(fixed_buffer);
 
 	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
 		buffer = fixed_buffer;
 
+	ISC_STATUS_ARRAY status_vector;
 	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1, buffer_length, buffer))
-		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
+		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1),
+			(UCHAR*) control, (UCHAR*) (control + l2)))
 		{
 			result = TRUE;
 			break;
@@ -971,9 +969,9 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 		gds__free(buffer);
 
 	if (gds__close_blob(status_vector, &blob)) {
-		context = (QLI_CTX) node->nod_arg[e_fld_context];
-		request = context->ctx_request;
-		dbb = request->req_database;
+		QLI_CTX context = (QLI_CTX) node->nod_arg[e_fld_context];
+		QLI_REQ request = context->ctx_request;
+		DBB dbb = request->req_database;
 		ERRQ_database_error(dbb, status_vector);
 	}
 
@@ -982,9 +980,10 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 static int sleuth_check(
 						   USHORT flags,
-						   UCHAR * search,
-						   UCHAR * end_search,
-						   UCHAR * match, UCHAR * end_match)
+						   const UCHAR* search,
+						   const UCHAR* const end_search,
+						   const UCHAR* match,
+						   const UCHAR* const end_match)
 {
 /**************************************
  *
@@ -996,29 +995,26 @@ static int sleuth_check(
  *	Evaluate the "sleuth" search operator.
  *
  **************************************/
-	UCHAR c, d, *class_, *end_class;
-
 	while (match < end_match) {
-		c = *match++;
+		UCHAR c = *match++;
 		if ((c == '@' && (c = *match++)) || !special[c])
 		{
-			c = COND_UPPER(c);
+			c = cond_upper(c, flags);
 			if (match >= end_match || *match != '*') {
 				if (search >= end_search)
 					return FALSE;
-				d = *search++;
-				if (c != COND_UPPER(d))
+				const UCHAR d = *search++;
+				if (c != cond_upper(d, flags))
 					return FALSE;
 			}
 			else {
 				++match;
 				for (;;)
-					if (sleuth_check
-						(flags, search, end_search, match,
-						 end_match)) return TRUE;
+					if (sleuth_check(flags, search, end_search, match, end_match))
+						return TRUE;
 					else if (search < end_search) {
-						d = *search++;
-						if (c != COND_UPPER(d))
+						const UCHAR d = *search++;
+						if (c != cond_upper(d, flags))
 							return FALSE;
 					}
 					else
@@ -1035,18 +1031,17 @@ static int sleuth_check(
 				if (++match >= end_match)
 					return TRUE;
 				for (;;)
-					if (sleuth_check
-						(flags, search, end_search, match,
-						 end_match)) return TRUE;
+					if (sleuth_check(flags, search, end_search, match, end_match))
+						return TRUE;
 					else if (++search >= end_search)
 						return FALSE;
 			}
 		else if (c == '[') {
-			class_ = match;
+			const UCHAR* class_ = match;
 			while (*match++ != ']')
 				if (match >= end_match)
 					return FALSE;
-			end_class = match - 1;
+			const UCHAR* const end_class = match - 1;
 			if (match >= end_match || *match != '*') {
 				if (!sleuth_class(flags, class_, end_class, *search++))
 					return FALSE;
@@ -1054,13 +1049,11 @@ static int sleuth_check(
 			else {
 				++match;
 				for (;;)
-					if (sleuth_check
-						(flags, search, end_search, match,
-						 end_match)) return TRUE;
+					if (sleuth_check(flags, search, end_search, match, end_match))
+						return TRUE;
 					else if (search < end_search) {
-						if (!sleuth_class
-							(flags, class_, end_class,
-							 *search++)) return FALSE;
+						if (!sleuth_class(flags, class_, end_class, *search++))
+							return FALSE;
 					}
 					else
 						return FALSE;
@@ -1085,8 +1078,9 @@ static int sleuth_check(
 }
 
 
-static int sleuth_class( USHORT flags,
-						UCHAR * class_, UCHAR * end_class, UCHAR character)
+static int sleuth_class( const USHORT flags,
+						const UCHAR* class_, const UCHAR* const end_class,
+						UCHAR character)
 {
 /**************************************
  *
@@ -1098,11 +1092,8 @@ static int sleuth_class( USHORT flags,
  *	See if a character is a member of a class.
  *
  **************************************/
-	UCHAR c;
-	USHORT result;
-
-	result = TRUE;
-	character = COND_UPPER(character);
+	USHORT result = TRUE;
+	character = cond_upper(character, flags);
 
 	if (*class_ == '~') {
 		++class_;
@@ -1110,7 +1101,7 @@ static int sleuth_class( USHORT flags,
 	}
 
 	while (class_ < end_class) {
-		c = *class_++;
+		const UCHAR c = *class_++;
 		if (c == '@') {
 			if (*class_++ == character)
 				return TRUE;
@@ -1129,10 +1120,11 @@ static int sleuth_class( USHORT flags,
 
 
 static int sleuth_merge(
-						UCHAR * match,
-						UCHAR * end_match,
-						UCHAR * control,
-						UCHAR * end_control, UCHAR * combined)
+						const UCHAR* match,
+						const UCHAR* const end_match,
+						const UCHAR* control,
+						const UCHAR* const end_control,
+						UCHAR* const combined)
 {
 /**************************************
  *
@@ -1156,19 +1148,20 @@ static int sleuth_merge(
  *	is not a bug.
  *
  **************************************/
-	UCHAR c, *comb, **v, *vector[128], **end_vector, *p, max_op, temp[256],
-		*t;
+	UCHAR c;
 
-	comb = combined;
-	v = vector;
-	t = temp;
+	UCHAR* comb = combined;
+	UCHAR* vector[128];
+	UCHAR** v = vector;
+	UCHAR temp[256];
+	UCHAR* t = temp;
 
 // Parse control string into substitution strings and initializing string
 
 	while (control < end_control) {
 		c = *control++;
 		if (*control == '=') {
-			end_vector = vector + c;
+			UCHAR** end_vector = vector + c;
 			while (v <= end_vector)
 				*v++ = 0;
 			*end_vector = t;
@@ -1190,11 +1183,12 @@ static int sleuth_merge(
 			*comb++ = c;
 	}
 
-	max_op = v - vector;
+	const UCHAR max_op = v - vector;
 
 // Interpret matching string, substituting where appropriate
 
 	while (c = *match++) {
+	    UCHAR* p;
 
 		// if we've got a defined character, slurp the definition
 		if (c <= max_op && (p = vector[c])) {
@@ -1235,15 +1229,6 @@ static int string_boolean( QLI_NOD node)
  *
  **************************************/
 	DSC *desc1, *desc2, *desc3;
-	TEXT *p1, *p2, *buffer, fixed_buffer[512];
-	TEXT temp1[TEMP_LENGTH], temp2[TEMP_LENGTH];
-	FRBRD *blob;
-	SSHORT l1, l2, result;
-	USHORT buffer_length;
-	ISC_STATUS_ARRAY status_vector;
-	QLI_CTX context;
-	QLI_REQ request;
-	DBB dbb;
 
 	if (!(desc1 = EVAL_value(node->nod_arg[0])) ||
 		(desc1->dsc_missing & DSC_missing) ||
@@ -1260,29 +1245,37 @@ static int string_boolean( QLI_NOD node)
 
 // Get address and length of strings
 
-	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
+	TEXT* p2;
+	TEXT temp2[TEMP_LENGTH];
+	SSHORT l2 = MOVQ_get_string(desc2, &p2, (vary*) temp2, TEMP_LENGTH);
 
 // If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
-		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
+		TEXT temp1[TEMP_LENGTH];
+		TEXT* p1;
+		SSHORT l1 = MOVQ_get_string(desc1, &p1, (vary*) temp1, TEMP_LENGTH);
 		return string_function(node, l1, p1, l2, p2) ? TRUE : FALSE;
 	}
 
 // Source string is a blob, things get interesting
 
-	result = FALSE;
-	blob = EXEC_open_blob(node->nod_arg[0]);
+	SSHORT result = FALSE;
+	FRBRD* blob = EXEC_open_blob(node->nod_arg[0]);
 
-	buffer_length = sizeof(fixed_buffer);
+    TEXT fixed_buffer[512];
+	USHORT buffer_length = sizeof(fixed_buffer);
 
-	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
+	TEXT* buffer = make_blob_buffer( blob, &buffer_length);
+	if (!buffer)
 		buffer = fixed_buffer;
 
-	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1,
+	ISC_STATUS_ARRAY status_vector;
+	SSHORT l3 = 0;
+	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l3,
 							 buffer_length, buffer))
 	{
-		if (string_function(node, l1, buffer, l2, p2)) {
+		if (string_function(node, l3, buffer, l2, p2)) {
 			result = TRUE;
 			break;
 		}
@@ -1292,10 +1285,10 @@ static int string_boolean( QLI_NOD node)
 		gds__free(buffer);
 
 	if (gds__close_blob(status_vector, &blob)) {
-		context = (QLI_CTX) node->nod_arg[e_fld_context];
-		request = context->ctx_request;
-		dbb = request->req_database;
-		ERRQ_database_error(dbb, status_vector);
+		qli_ctx* context = (QLI_CTX) node->nod_arg[e_fld_context];
+		qli_req* request = context->ctx_request;
+		dbb* database = request->req_database;
+		ERRQ_database_error(database, status_vector);
 	}
 
 	return result;
@@ -1304,7 +1297,7 @@ static int string_boolean( QLI_NOD node)
 
 static bool string_function(
 						   QLI_NOD node,
-						   SSHORT l1, TEXT * p1, SSHORT l2, TEXT * p2)
+						   SSHORT l1, const TEXT* p1, SSHORT l2, const TEXT* p2)
 {
 /**************************************
  *
@@ -1317,8 +1310,6 @@ static bool string_function(
  *	or STARTS WITH.
  *
  **************************************/
-	TEXT *q1, *q2, c1, c2, temp[16];
-	SSHORT l;
 
 // Handle "STARTS WITH"
 
@@ -1336,9 +1327,10 @@ static bool string_function(
 	if (node->nod_type == nod_containing) {
 		while (l1 >= l2) {
 			--l1;
-			q1 = p1++;
-			q2 = p2;
-			l = l2;
+			const TEXT* q1 = p1++;
+			const TEXT* q2 = p2;
+			SSHORT l = l2;
+			TEXT c1, c2;
 			do {
 				if (--l < 0)
 					return true;
@@ -1352,9 +1344,11 @@ static bool string_function(
 // Handle LIKE
 
 	if (node->nod_type == nod_like) {
-		c1 = 0;
+		TEXT c1 = 0;
+		TEXT temp[16];
+		TEXT* q1 = NULL;
 		if (node->nod_count > 2 &&
-			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (VARY*) temp,
+			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (vary*) temp,
 							sizeof(temp)))
 		{
 			c1 = *q1;

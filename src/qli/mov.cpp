@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Access Method
+ *	PROGRAM:	QLI Access Method
  *	MODULE:		mov.cpp
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *
@@ -29,7 +29,7 @@
 #include "../jrd/intl.h"
 #include "../qli/err_proto.h"
 #include "../jrd/gds_proto.h"
-
+#include "../jrd/gdsassert.h"
 #include "../qli/mov_proto.h"
 
 static void date_error(const TEXT*, const USHORT);
@@ -43,8 +43,6 @@ static void string_to_date(const TEXT*, USHORT, SLONG[2]);
 static void string_to_time(TEXT *, USHORT, SLONG[2]);
 static TEXT *type_name(USHORT);
 
-
-typedef vary VARY;
 
 
 #define LETTER(c)	(c >= 'A' && c <= 'Z')
@@ -98,7 +96,7 @@ static const dtypes_t dtypes_table[] = {
 };
 
 
-int MOVQ_compare( DSC * arg1, DSC * arg2)
+int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 {
 /**************************************
  *
@@ -110,9 +108,6 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
  *	Compare two descriptors.  Return (-1, 0, 1) if a<b, a=b, or a>b.
  *
  **************************************/
-	DSC desc;
-	UCHAR *p1, *p2;
-	SSHORT length, length2, fill;
 	SLONG date[2];
 
 /* Handle the simple (matched) ones first */
@@ -120,8 +115,8 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&
 		arg1->dsc_scale == arg2->dsc_scale)
 	{
-		p1 = arg1->dsc_address;
-		p2 = arg2->dsc_address;
+		const UCHAR* p1 = arg1->dsc_address;
+		const UCHAR* p2 = arg2->dsc_address;
 
 		switch (arg1->dsc_dtype) {
 		case dtype_short:
@@ -167,8 +162,28 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 			return -1;
 
 		case dtype_text:
-			if (arg1->dsc_length >= arg2->dsc_length) {
-				if (length = arg2->dsc_length)
+			{
+			    SSHORT length;
+				if (arg1->dsc_length >= arg2->dsc_length) {
+					if (length = arg2->dsc_length)
+						do {
+							if (*p1++ != *p2++)
+								if (p1[-1] > p2[-1])
+									return 1;
+								else
+									return -1;
+						} while (--length);
+					if (length = arg1->dsc_length - arg2->dsc_length)
+						do {
+							if (*p1++ != ' ')
+								if (p1[-1] > ' ')
+									return 1;
+								else
+									return -1;
+						} while (--length);
+					return 0;
+				}
+				if (length = arg1->dsc_length)
 					do {
 						if (*p1++ != *p2++)
 							if (p1[-1] > p2[-1])
@@ -176,42 +191,27 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 							else
 								return -1;
 					} while (--length);
-				if (length = arg1->dsc_length - arg2->dsc_length)
-					do {
-						if (*p1++ != ' ')
-							if (p1[-1] > ' ')
-								return 1;
-							else
-								return -1;
-					} while (--length);
-				return 0;
-			}
-			if (length = arg1->dsc_length)
+				length = arg2->dsc_length - arg1->dsc_length;
 				do {
-					if (*p1++ != *p2++)
-						if (p1[-1] > p2[-1])
+					if (*p2++ != ' ')
+						if (' ' > p2[-1])
 							return 1;
 						else
 							return -1;
 				} while (--length);
-			length = arg2->dsc_length - arg1->dsc_length;
-			do {
-				if (*p2++ != ' ')
-					if (' ' > p2[-1])
-						return 1;
-					else
-						return -1;
-			} while (--length);
-			return 0;
+				return 0;
+			}
 		}
 	}
 
 // Handle mixed string comparisons
 
 	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying) {
-		length = MOVQ_get_string(arg1, (TEXT**) &p1, 0, 0);
-		length2 = MOVQ_get_string(arg2, (TEXT**) &p2, 0, 0);
-		fill = length - length2;
+	    const UCHAR* p1;
+	    const UCHAR* p2;
+		SSHORT length = MOVQ_get_string(arg1, (TEXT**) &p1, 0, 0);
+		SSHORT length2 = MOVQ_get_string(arg2, (TEXT**) &p2, 0, 0);
+		SSHORT fill = length - length2;
 		if (length >= length2) {
 			if (length2)
 				do {
@@ -255,6 +255,8 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 	if (arg1->dsc_dtype < arg2->dsc_dtype)
 		return (-MOVQ_compare(arg2, arg1));
 
+	dsc desc;
+	
 	switch (arg1->dsc_dtype) {
 	case dtype_timestamp:
 		desc.dsc_dtype = dtype_timestamp;
@@ -286,13 +288,10 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 	case dtype_short:
 	case dtype_long:
 		{
-			SSHORT scale;
-			SLONG temp1, temp2;
+			const SSHORT scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 
-			scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
-
-			temp1 = MOVQ_get_long(arg1, scale);
-			temp2 = MOVQ_get_long(arg2, scale);
+			const SLONG temp1 = MOVQ_get_long(arg1, scale);
+			const SLONG temp2 = MOVQ_get_long(arg2, scale);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -302,10 +301,8 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 
 	case dtype_real:
 		{
-			float temp1, temp2;
-
-			temp1 = MOVQ_get_double(arg1);
-			temp2 = MOVQ_get_double(arg2);
+			const float temp1 = MOVQ_get_double(arg1);
+			const float temp2 = MOVQ_get_double(arg2);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -315,10 +312,8 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 
 	case dtype_double:
 		{
-			double temp1, temp2;
-
-			temp1 = MOVQ_get_double(arg1);
-			temp2 = MOVQ_get_double(arg2);
+			const double temp1 = MOVQ_get_double(arg1);
+			const double temp2 = MOVQ_get_double(arg2);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -713,7 +708,7 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 }
 
 
-int MOVQ_get_string(const dsc* desc, TEXT ** address, VARY * temp, USHORT length)
+int MOVQ_get_string(const dsc* desc, TEXT** address, vary* temp, USHORT length)
 {
 /**************************************
  *
@@ -750,7 +745,7 @@ int MOVQ_get_string(const dsc* desc, TEXT ** address, VARY * temp, USHORT length
 // No luck -- convert value to varying string.
 
 	if (desc->dsc_dtype == dtype_varying) {
-		VARY* varying = (VARY*) desc->dsc_address;
+		vary* varying = (vary*) desc->dsc_address;
 		*address = varying->vary_string;
 		return varying->vary_length;
 	}
@@ -784,8 +779,7 @@ void MOVQ_move(const dsc* from, dsc* to)
 	SLONG l;
 	UCHAR *ptr;
 
-	// This is USHORT!!
-	SSHORT length = from->dsc_length;
+	USHORT length = from->dsc_length;
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
@@ -905,8 +899,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 			case dtype_varying:
 				length = MIN(length, to->dsc_length - sizeof(SSHORT));
-				((VARY *) p)->vary_length = length;
-				p = (UCHAR *) ((VARY *) p)->vary_string;
+				((vary*) p)->vary_length = length;
+				p = (UCHAR*) ((vary*) p)->vary_string;
 				if (length)
 					do {
 						*p++ = *q++;
@@ -977,8 +971,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 void MOVQ_terminate(const SCHAR* from,
 					SCHAR* to,
-					SSHORT length,
-					SSHORT max_length)
+					USHORT length,
+					USHORT max_length)
 {
 /**************************************
  *
@@ -993,6 +987,7 @@ void MOVQ_terminate(const SCHAR* from,
  *
  **************************************/
 
+	fb_assert(max_length != 0);
 	if (length) {
 		length = MIN(length, max_length - 1);
 		do {
@@ -1001,6 +996,7 @@ void MOVQ_terminate(const SCHAR* from,
 		*to++ = '\0';
 	}
 	else {
+	    // It seems like the correct condition uses --max_length instead
 		while (max_length-- && (*to++ = *from++));
 		*--to = '\0';
 	}

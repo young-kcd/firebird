@@ -28,7 +28,7 @@
 class InternalInfo {
 private:
 	struct InfoAttr {
-		char *alias_name;
+		char* alias_name;
 		unsigned short req_mask;
 	};
 	static const InfoAttr attr_array[max_internal_id];
@@ -38,3 +38,4 @@ public:
 };
 
 #endif // DSQL_MISC_FUNC_H
+
