@@ -489,7 +489,7 @@ namespace internal
 			--v->timestamp_date;
 			v->timestamp_time += tenthmsec_in_day + secs;
 		}
-		else if ((v->timestamp_time += secs) >= tenthmsec_in_day)
+		else if ((v->timestamp_time += secs) >= static_cast<unsigned long>(tenthmsec_in_day))
 		{
 			++v->timestamp_date;
 			v->timestamp_time -= tenthmsec_in_day;
