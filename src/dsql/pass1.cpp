@@ -5249,7 +5249,7 @@ static DSQL_NOD post_map( DSQL_NOD node, DSQL_CTX context)
 static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, USHORT current_level)
 {
 	DSQL_NOD *ptr, *end;
-	DSQL_CTX lcontext;
+	DSQL_CTX lcontext, lrelation_context;
 	MAP lmap;
 	USHORT ldeepest_level, lcurrent_level;
 
@@ -5391,6 +5391,18 @@ static DSQL_NOD remap_field(DSQL_REQ request, DSQL_NOD field, DSQL_CTX context, 
 		case nod_udf:
 			if (field->nod_count == 2) {
 				field->nod_arg[1] = remap_field(request, field->nod_arg[1], context, current_level);
+			}
+			return field;
+
+		case nod_relation:
+			lrelation_context = reinterpret_cast<DSQL_CTX>(field->nod_arg[e_rel_context]);
+			// Check if relation is a procedure
+			if (lrelation_context->ctx_procedure) {
+				// If input parameters exists remap those
+				if (lrelation_context->ctx_proc_inputs) {
+					lrelation_context->ctx_proc_inputs = 
+						remap_field(request, lrelation_context->ctx_proc_inputs, context, current_level);
+				}
 			}
 			return field;
 	
