@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.3 2002-12-17 14:58:14 skidder Exp $
+$Id: why.cpp,v 1.4 2002-12-22 13:32:04 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -2734,7 +2734,7 @@ STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(STATUS * user_status,
 
 		crdb_trans_handle = NULL;
 		if (GDS_START_TRANSACTION(status, &crdb_trans_handle, 1,
-								  db_handle, 0, (SCHAR *) 0)) {
+								  db_handle, 0, 0)) {
 			save_error_string(status);
 			GDS_DROP_DATABASE(temp_status, db_handle);
 			*db_handle = NULL;
@@ -5131,7 +5131,7 @@ static SCHAR *alloc(SLONG length)
  **************************************/
 	SCHAR *block;
 
-	if (block = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length)))
+	if (block = reinterpret_cast<SCHAR *>(gds__alloc((SLONG) (sizeof(SCHAR) * length))))
 		memset(block, 0, length);
 	return block;
 }
@@ -5501,7 +5501,7 @@ static int get_database_info(STATUS * status, WHY_TRA transaction, TEXT ** ptr)
 	database = transaction->parent;
 	q = database->db_path;
 	*p++ = TDR_DATABASE_PATH;
-	*p++ = (TEXT) strlen((SCHAR *) q);
+	*p++ = (TEXT) strlen(reinterpret_cast<SCHAR *>(q));
 	while (*q)
 		*p++ = *q++;
 
@@ -5529,7 +5529,7 @@ static PTR get_entrypoint(int proc, int implementation)
 	TEXT *image;
 #endif
 
-	ENTRY *ent = (ENTRY *)(entrypoints + implementation * PROC_count + proc);
+	ENTRY *ent = const_cast<ENTRY *>(entrypoints + implementation * PROC_count + proc);
 	PTR entrypoint = ent->address;
 
 	if (entrypoint)
@@ -6047,7 +6047,7 @@ static STATUS prepare(STATUS * status, WHY_TRA transaction)
 
 	ISC_get_host(p + 2, length - 16);
 	*p++ = TDR_HOST_SITE;
-	*p = (UCHAR) strlen((SCHAR *) p + 1);
+	*p = (UCHAR) strlen(reinterpret_cast<SCHAR *>(p) + 1);
 
 	while (*++p);
 
