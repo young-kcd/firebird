@@ -1,3 +1,10 @@
+2003-06-29 22:36  skidder
+
+	* firebird2/src/dsql/: dsql.h, metd.epp, pass1.cpp:
+	
+	Add checks to allow explicit pessimistic locks only in cases when
+	we really support them
+
 2003-06-28 15:59  dimitr
 
 	* firebird2/src/dsql/ddl.cpp:
