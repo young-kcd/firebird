@@ -537,7 +537,7 @@ FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
 	(void)gettimeofday(&tv);
 #endif
 
-	tm times = *localtime(reinterpret_cast<const time_t *>(&tv.tv_sec));
+	tm times = *localtime(reinterpret_cast<const time_t*>(&tv.tv_sec));
 
 #ifdef HAVE_PTHREAD_H
 	pthread_mutex_unlock(&loctimelock);  // ctime critical section end
