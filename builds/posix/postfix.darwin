@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.7 2003-11-25 23:09:06 bellardo Exp $
+#$Id: postfix.darwin,v 1.1.2.8 2003-11-25 23:18:50 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -119,3 +119,18 @@ darwin_finish_ss_framework: extlib
 	#cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
 	#cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
+
+darwin_postbuild_target: package
+	@echo
+	@echo
+	@echo
+	@echo "**********************************************************"
+	@echo
+	@echo Build Successful!!
+	@echo
+	@echo You can find the installer packages in gen/firebird, and the raw
+	@echo frameworks in gen/firebird/frameworks
+	@echo
+	@echo Run \"make install\" as root (or via sudo) to install your binary.
+	@echo
+	@echo Enjoy

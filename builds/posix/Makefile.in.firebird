@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.8 2003-11-25 22:13:25 bellardo Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.9 2003-11-25 23:18:50 bellardo Exp $
 #
 
 ROOT=..
@@ -140,7 +140,7 @@ export DYLD_FRAMEWORK_PATH
 # either _classic or _super.
 
 
-firebird : firebird_@FIREBIRD_ARCH_TYPE@
+firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
 
 firebird_classic firebird_embedded: firebird_basic classic_targets extlib
 firebird_super firebird_server: firebird_basic super_targets extlib

@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.16 2003-11-25 23:09:07 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.17 2003-11-25 23:18:50 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 LD=@CXX@
@@ -50,3 +50,5 @@ PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
 
 PLAT_SUPER_PRE_TARGET=darwin_setup_framework
 PLAT_SUPER_POST_TARGET=darwin_finish_ss_framework
+
+PLATFORM_POSTBUILD_TARGET=darwin_postbuild_target
