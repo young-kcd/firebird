@@ -1,0 +1,288 @@
+Firebird Datenbank Server 1.5.2 
+==================================================
+
+Dieses Dokument ist ein Leitfaden, um dieses Paket
+von Firebird 1.5 auf der Win32 Plattform zu installieren.
+Diese Hinweise beziehen sich konkret auf das
+Installationspaket und nicht auf Firebird 1.5
+allgemein.
+
+
+Inhalt
+------
+
+o Vor der Installation
+o Installation auf einem System mit Firebird 2.0 Unstable
+o Neue Funktionen des Installers
+o Veraltete Funktionen des Installers
+o Deinstallation
+o Andere Hinweise
+o Installation über eine Batch-Datei
+
+
+Vor der Installation
+--------------------
+
+Es wird empfohlen, dass Sie alle früheren Versionen von
+Firebird 1.0, Firebird 1.5 oder InterBase DEINSTALLIEREN,
+bevor Sie dieses Paket installieren.
+
+
+Installation auf einem System mit Firebird 2.0 Unstable
+-------------------------------------------------------
+
+Der Firebird 1.5.2 Installationsprozess kann eine
+laufende Version von Firebird 2.0 Unstable nicht
+erkennen. Falls Sie eine frühe, instabile Version
+von Firebird 2.0 laufen haben, so ist es wichtig,
+dass Sie den Server stoppen, bevor Sie versuchen,
+Firebird 1.5.2 zu installieren.
+
+
+Neue Funktionen des Installers in Firebird 1.5.2
+------------------------------------------------
+
+Die Unterstützung für mehrere Sprachen wurde dem
+Installer hinzugefügt. Dies erweitert allerdings
+NUR den Installationsprozess.
+
+
+Neue Funktionen des Installers in Firebird 1.5
+----------------------------------------------
+
+o Dieser Installer kombiniert die Binärdateien von
+  Super Server und Classic Server in einem
+  Installationspaket. Sie können wählen, ob Sie
+  den einen oder anderen Servertyp installieren
+  möchten, jedoch nicht beide gleichzeitig. Um
+  den Servertyp zu wechseln, ist es notwendig,
+  dass Sie das Paket deinstallieren und neu
+  installieren.
+  
+o Die Regeln für die Installation der Bibliotheken
+  haben sich wesentlich geändert. Diese sind im
+  Detail in .\docs\README.Win32LibraryInstallation.txt
+  beschrieben, welche nach der Installation
+  verfügbar sind.
+
+  Diese neuen Regeln haben zur Folge, dass der
+  Installer überprüft, ob eine Installation von
+  Firebird oder InterBase existiert.
+  
+  - Falls Firebird 1.5 bereits installiert ist,
+    wird versucht, über diese drüber zu installieren.
+    Wenn der Server läuft, wird die Installation
+    angehalten.
+
+  - Falls eine andere Version von Firebird oder
+    InterBase bereits installiert ist, wird der
+    Benutzer darauf hingewiesen. Wenn der Benutzer
+    die Installation fortsetzt, werden die Einträge
+    in der Registry erstellt, aber die Konfiguration
+    wird Firebird nicht starten. Weder als Dienst,
+    noch als Anwendung. Dies muss manuell gemacht
+    werden.
+
+  - Der Installer besitzt einen neuen Kommandozeilenschalter
+      /force
+    welcher erlaubt, dass das obige Verhalten überschrieben
+    wird.
+
+
+o Falls eine geänderte Datei firebird.conf im
+  Installationsverzeichnis existiert, wird diese unter
+  folgendem Namen abgespeichert:
+    firebird.conf.saved.n
+  wo n eine Zahl ist. Der Installer installiert immer
+  die Standard firebird.conf Datei, um die Konsistenz
+  des Installationsprozesses gewährleisten zu können.
+  Ansonsten müsste der Installer die existierende
+  (und möglicherweise fehlerhafte) Konfigurationsdatei
+  parsen.
+
+
+Veraltete Funktionen des Installers
+-----------------------------------
+
+o Firebird 1.0 reservierte einen neuen Registrierungsschlüssel
+  für die Verwendung von Firebird. Dieser war:
+  
+    HKLM\SOFTWARE\FirebirdSQL 
+  Dieser ist nun veraltet und wird vom Installer
+  gelöscht. Falls Sie eine Anwendung haben, die diesen
+  Eintrag verwendet, dann sollten Sie diesen Eintrag am
+  besten manuell wieder hinzufügen. Wie auch immer,
+  die empfohlene Vorgehensweise ist, dass Sie Ihre
+  Anwendung neu übersetzen und den neuen Schlüssel
+  verwenden.
+  
+o Frühere Firebird 1.5 Release Candidates installierten
+  fbclient.dll in das <system> Verzeichnis. Dieses
+  Verhalten ist nun veraltet. Eine Option zur
+  Installation in das <system> Verzeichnis ist nun
+  im Installationsprozess integriert. Es wird jedoch
+  empfohlen, dass Ihre Anwendung der neuen Verwendung
+  von fbclient entspricht.
+  
+
+Deinstallation
+--------------
+
+o Es wird empfohlen, dass dieses Paket durch die
+  vorhandene Deinstallations-Routine deinstalliert
+  wird. Dies kann über die Systemsteuerung erfolgen.
+  Alternativ dazu, kann unins000.exe im Installationsverzeichnis
+  auch direkt aufgerufen werden.
+  
+o Falls Firebird als Anwendung (anstatt eines 
+  Dienstes) läuft, wird empfohlen, dass der Server
+  manuell gestoppt wird, bevor die Deinstallation
+  durchgeführt wird. Der Grund dafür ist, dass der
+  Uninstaller nicht in der Lage ist, einen laufenden
+  Server zu stoppen. Falls ein Server während der
+  Deinstallation läuft, so wird die Deinstallation,
+  jedoch mit Fehlern, fertiggestellt. Sie müssen
+  die Überreste danach per Hand entfernen.
+
+
+Andere Hinweise
+---------------
+
+  Firebird benötigt WinSock2. Alle Win32 Plattformen
+  sollten dies haben, ausgenommen Win95. Ein Test, ob
+  WinSock2 vorgefunden werden kann, wird während der
+  Installation durchgeführt. Falls WinSock2 nicht
+  vorhanden ist, dann wird die Installation fehlschlagen.
+  Besuchen Sie diesen Link:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  um herauszufinden, wie Sie WinSock aktualisieren.
+
+
+Installation über eine Batch-Datei
+----------------------------------
+
+Das Setup-Programm kann über eine Batch-Datei
+aufgerufen werden. Die folgenden Parameter können
+dafür verwendet werden:
+
+
+/SP- 
+  Deaktiviert den 'Dies wird... Wollen Sie fortfahren?'
+  Dialog zu Beginn der Installation.
+
+/SILENT, /VERYSILENT 
+  Instruiert die Setuproutine in einem Modus SILENT
+  bzw. VERYSILENT auszuführen. Wenn es sich um
+  SILENT handelt, dann wird der Wizard und das
+  Hintergrundfenster nicht angezeigt, aber das
+  Fenster mit der Fortschrittsanzeige schon. Falls
+  die Setuproutine im Modus VERYSILENT ausgeführt
+  wird, dann wird das Fenster mit der Fortschrittsanzeige
+  nicht angezeigt. Alles andere ist identisch zur
+  herkömmlichen Installation, so zum Beispiel werden
+  Fehlermeldungen angezeigt bzw. der Dialog zu Beginn der
+  Installation wird ebenfalls aufgerufen (sofern dieser
+  nicht mit dem '/SP-' Kommandozeilenschalter unterdrückt
+  wurde).
+
+  Falls ein Neustart notwendig ist und der '/NORESTART'
+  Schalter nicht verwendet (siehe unten) wurde und
+  das Setup im Modus SILENT ausgeführt wurde, dann wird
+  ein Neu starten? Dialog angezeigt. Bei VERYSILENT
+  wird ohne Rückfrage neu gestartet.
+
+/NORESTART 
+  Instruiert die Setuproutine keinen Neustart zu
+  veranlassen, sogar wenn dieser notwendig wäre.
+  
+/DIR="x:\Verzeichnisname"  
+  Überschreibt das Standardverzeichnis, das auf der
+  Ziel-Ordner wählen Wizard-Seite vorgeschlagen wird.
+  Ein vollständig qualifizierter Pfadname muss angegeben
+  werden. Falls die Direktive DisableDirPage in der Sektion
+  [Setup] auf yes gesetzt wurde, dann wird dieser Schalter
+  ignoriert.
+
+/GROUP="Ordnername" 
+  Überschreibt den Standardordner, der auf der Startmenü-
+  Ornder auswählen Wizard-Seite vorgeschlagen wird. Falls
+  die Direktive DisableProgramGroupPage in der Sektion
+  [Setup] auf yes gesetzt wurde, dann wird dieser
+  Schalter ignoriert.
+
+/NOICONS 
+  Instruiert die Setuproutine die Checkbox auf der
+  Startmenü-Ordner Wizard-Seite zum Erstellen von
+  Icons zunächst abzuwählen.
+
+/COMPONENTS="Eine durch Komma getrennte Liste von Komponentennamen" 
+
+  Wählen Sie aus von - SuperServerComponent, 
+                       ClassicServerComponent, 
+                       ServerComponent, 
+                       DevAdminComponent und
+                       ClientComponent
+
+  Überschreibt die Standardwerte der Komponenteneinstellungen.
+  Wenn dieser Kommandozeilenschalter verwendet wird, so wählt
+  die Setuproutine automatisch eine benutzerdefinierte
+  Installation aus. Eine vollständige Installation benötigt
+  die Kombination mehrerer Komponenten. Zum Beispiel:
+  
+  /COMPONENTS="SuperServerComponent, ServerComponent, 
+               DevAdminComponent, ClientComponent"
+  
+  würde für eine vollständige Installation benötigt werden.
+
+
+/FORCE
+
+  Teilt dem Installer mit, dass die Analyse der vorhandenen
+  Umgebung ignoriert werden soll. Es wird versucht,
+  Firebird 1.5 zu installieren und zu konfigurieren,
+  als wenn keine vorherige Version von Firebird oder
+  InterBase installiert wäre.
+  
+  Dies kann hilfreich sein, wenn Sie eine fehlerhafte
+  Installation vorfinden, die Sie nicht deinstallieren
+  können. Oder es könnte auch ein Weg sein, Ihre
+  Benutzer zu ärgern, indem eine funktionierende
+  InterBase Installation überschrieben wird. Es
+  ist Ihre Wahl.
+
+
+/NOCPL
+
+  Installiert nicht das Systemsteuerungs-Applet. Dies
+  ist aus folgenden zwei Gründen hilfreich:
+  
+  o Installieren/Deinstallieren des Systemsteuerungs-Applets
+    erfordert oft einen Systemneustart.
+
+  o Sie möchten ein alternatives Applet verwenden.
+
+  
+/NOGDS32
+
+  Installiert keine Kopie der Clientbibliothek in das
+  Systemverzeichnis, sogar wenn die Analyse ergeben
+  hat, dass dies OK wäre.
+
+
+/COPYFBCLIENT
+
+  Kopiert fbclient.dll in das Systemverzeichnis. Dies
+  wird empfohlen, falls es sich um eine Clientinstallation
+  handelt, für die sichergestellt ist, dass diese nur
+  auf eine Serverversion zugreift. Wenn es wahrscheinlich
+  ist, dass Ihre Clientanwendung unterschiedliche
+  Serverversionen verwendet, dann ist dieses Vorgehen
+  nicht empfehlenswert. Studieren Sie
+
+    doc/README.Win32LibraryInstallation.txt
+
+  für weitere Informationen.
+
+
