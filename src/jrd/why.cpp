@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.84 2004-11-07 14:43:14 alexpeshkoff Exp $
+$Id: why.cpp,v 1.85 2004-11-08 05:13:16 robocop Exp $
 */
 
 #include "firebird.h"
@@ -557,14 +557,14 @@ const int PROC_count			= 54;
 
 struct ENTRY
 {
-	TEXT *name;
+	const TEXT* name;
 	PTR address;
 };
 
 struct IMAGE
 {
-	TEXT *name;
-	TEXT *path;
+	const TEXT* name;
+	TEXT path[MAXPATHLEN]; // avoid problems with code changing literals.
 };
 
 /* Define complicated table for multi-subsystem world */
@@ -597,7 +597,7 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 #include "../jrd/entry.h"
 #endif
 
-static const IMAGE images[] =
+static IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
 
@@ -619,7 +619,7 @@ static const IMAGE images[] =
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
 
-static const ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
+static ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
 
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
@@ -2080,7 +2080,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 	GET_STATUS;
 
 	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-									dialect, &buffer_len))) {
+									dialect, &buffer_len)))
+	{
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
@@ -5437,7 +5438,7 @@ static const PTR get_entrypoint(int proc,
  *
  **************************************/
 
-	const ENTRY *ent = entrypoints + implementation * PROC_count + proc;
+	ENTRY *ent = entrypoints + implementation * PROC_count + proc;
 	const PTR entrypoint = ent->address;
 
 	if (entrypoint)
@@ -5464,11 +5465,7 @@ static const PTR get_entrypoint(int proc,
 		PTR entry = (PTR) ISC_lookup_entrypoint(image, NamePointer, NULL, false);
 		if (entry)
 		{
-			// This const_cast appears to be safe, because:
-			// 1. entrypoints table is modified ONLY once for each entry
-			// 2. even when some threads try to modify it concurrently,
-			//	  they will write SAME results in that table
-			*const_cast<PTR*>(&ent->address) = entry;
+			ent->address = entry;
 			return entry;
 		}
 	}
@@ -5579,7 +5576,7 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 							   SSHORT item_length,
 							   const SCHAR * items,
 							   SSHORT buffer_length,
-							   SCHAR * buffer,
+							   SCHAR* buffer,
 							   USHORT dialect,
 							   XSQLDA * sqlda)
 {
@@ -5596,7 +5593,7 @@ static void iterative_sql_info(ISC_STATUS * user_status,
  *
  **************************************/
 	USHORT last_index;
-	SCHAR new_items[32], *p;
+	SCHAR new_items[32];
 
 	while (UTLD_parse_sql_info(	user_status,
 								dialect,
@@ -5604,7 +5601,7 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 								sqlda,
 								&last_index) && last_index)
 	{
-		p = new_items;
+		char* p = new_items;
 		*p++ = isc_info_sql_sqlda_start;
 		*p++ = 2;
 		*p++ = last_index;
@@ -5622,6 +5619,7 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 		}
 	}
 }
+
 
 static ISC_STATUS open_blob(ISC_STATUS* user_status,
 							FB_API_HANDLE* db_handle,
