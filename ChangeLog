@@ -1,3 +1,159 @@
+2003-02-28 00:07  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Comments added
+
+2003-02-27 22:43  brodsom
+
+	* firebird2/src/: gpre/c_cxx.cpp, gpre/cob.cpp, burp/burp.cpp,
+	alice/alice.cpp:
+	
+	New macro defined in firebird.h to remove compiler dependencies
+	from cpp sources.
+
+2003-02-27 22:34  brodsom
+
+	* firebird2/src/: jrd/gds.cpp, include/firebird.h, gpre/int.cpp:
+	
+	New macro defined in firebird.h to remove compiler dependencies
+	from cpp sources.
+
+2003-02-27 22:09  brodsom
+
+	* firebird2/src/: jrd/ibase.h, include/fb_types.h:
+	
+	Join two compiler dependent defines. Put in fb_types.h since it is
+	always included in ibase.h
+
+2003-02-27 21:06  brodsom
+
+	* firebird2/src/jrd/: scroll_cursors.h, ibase.h:
+	
+	Change ISC_EXPORT to GDS_EXPORT the value is always equal. (Also
+	ISC_EXPORT_VARARG to GDS_EXPORT_VARARG to maintain the name
+	similar)
+
+2003-02-27 19:50  tamlin
+
+	* firebird2/src/jrd/rse.h:
+	
+	NO code changes, just reformatting for your viewing pleasure.
+
+2003-02-27 19:46  tamlin
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Basic code cleanup and fixed a problem spotted by Dmitry Yemanov.
+
+2003-02-27 19:22  brodsom
+
+	* firebird2/src/qli/: gener.cpp, meta.epp, noform.cpp, format.cpp,
+	expand.cpp, form.h, form_proto.h, eval.cpp, exe.cpp, exe.h,
+	dtr.cpp, dtr.h, blk.h, compile.cpp:
+	
+	Add PYXIS define to isolate pyxis code. When this change were
+	tested enough, the pyxis code can be removed.
+
+2003-02-27 18:27  brodsom
+
+	* firebird2/builds/win32/: make6_release.bat, make6_debug.bat:
+	
+	Add gpre project to build batch
+
+2003-02-27 17:53  brodsom
+
+	* firebird2/: builds/win32/msvc6/gpre.dsp, builds/win32/gpre.mak,
+	src/include/gen/autoconfig_msvc.h, src/gpre/gpre.h:
+	
+	Add Fortran files and move GPRE_* defines from autoconf header to
+	makefiles.
+
+2003-02-27 17:38  hippoman
+
+	* firebird2/src/dsql/dsql.h:
+	
+	* Changed comments to point to used code
+
+2003-02-27 17:28  tamlin
+
+	* firebird2/src/jrd/: rse.h, opt.cpp, par.cpp, cmp.cpp:
+	
+	Fix optimizer crasher with too many streams (UCHAR
+	overflow/wrap-around).
+
+2003-02-27 17:27  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, common_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	engine_classic.dsp, fb_inet_server.dsp, fb_lock_print.dsp,
+	fbclient.dsp, fbembed.dsp, fbguard.dsp, fbserver.dsp, fbudf.dsp,
+	gbak.dsp, gdef.dsp, gds32.dsp, gfix.dsp, gpre.dsp, gpre_boot.dsp,
+	gsec.dsp, gsplit.dsp, gstat.dsp, ib_udf.dsp, ib_util.dsp,
+	instreg.dsp, instsvc.dsp, intl.dsp, intlcpp.dsp, ipserver.dsp,
+	isql.dsp, lock.dsp, lock_classic.dsp, qli.dsp, remote.dsp,
+	remote_classic.dsp, utilities.dsp, utilities_classic.dsp, wal.dsp,
+	wal_classic.dsp:
+	
+	Fixed build problem pointed by Arno (caused the server to crash in
+	some cases).
+
+2003-02-27 17:04  brodsom
+
+	* firebird2/src/gpre/: words.h, pas.cpp, noform.cpp, par.cpp,
+	hsh.h, gpre.h, gpre.cpp, ftn.cpp, form_trn.cpp, form_proto.h,
+	form.h, form__proto.h, exp_proto.h, exp.cpp, cob.cpp, cmp_proto.h,
+	cmp.cpp, cmd.cpp, c_cxx.cpp, ada.cpp:
+	
+	Add PYXIS define to isolate pyxis code. When this change were
+	tested enough, the pyxis code can be removed.
+
+2003-02-27 16:35  dimitr
+
+	* firebird2/builds/win32/msvc6/: engine_classic.dsp, fbembed.dsp,
+	fbudf.dsp:
+	
+	Updated project files.
+
+2003-02-27 14:59  brodsom
+
+	* firebird2/src/alice/exe.cpp:
+	
+	Remove unneeded include and ifdef
+
+2003-02-27 14:55  brodsom
+
+	* firebird2/src/jrd/: why.cpp, y-valve.cpp:
+	
+	Remove CONST_IMAGE (Thanks to Claudio)
+
+2003-02-27 06:07  aafemt
+
+	* firebird2/src/jrd/intl_builtin.cpp:
+	
+	unicode<->binary conversion fixed for bigendian processors. Thanks
+	to Claudio V. Not tested.
+
+2003-02-27 05:36  brodsom
+
+	* firebird2/src/: include/fb_types.h, jrd/gdsold.h, jrd/ibase.h:
+	
+	Remove GDS_FAR, win_handle, form_handle (Thanks to Claudio)
+
+2003-02-27 00:41  arnobrinkman
+
+	* firebird2/src/dsql/gen.cpp:
+	
+	comment added
+
+2003-02-27 00:28  arnobrinkman
+
+	* firebird2/src/dsql/dsql.h:
+	
+	bugfix: With a large amount of SQL the server crashed on generating
+	blr. Due a USHORT was used for str_length.
+
 2003-02-26 17:52  skidder
 
 	*
