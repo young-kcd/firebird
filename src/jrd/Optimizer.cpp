@@ -585,23 +585,28 @@ double getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Format* 
 	Database* dbb = tdbb->tdbb_database;
 
 	if (relation->rel_file) {
+		// Is there really no way to do better?
+		// Don't we know the file-size and record-size?
 		return (double) 10000;
 	}
 	else {
-		//csb_tail->csb_cardinality =
-		//	(float) DPM_data_pages(tdbb, relation) *
-		//	        dbb->dbb_page_size / format->fmt_length;
-
 		// Estimated number of total records for this relation, 
-		// we assume that the records are compressed to 60%
+		// we assume that the records are compressed to 50%
 		// Every record has also a header and a jump section (13 + 4)
 		USHORT minRecordSize = sizeof(Ods::data_page::dpg_repeat) + RHD_SIZE;
 		if (!(dbb->dbb_flags & DBB_no_reserve)) {
 			minRecordSize += RHDF_SIZE;
 		}
 
+		// Get the number of data-pages for this relation
 		SLONG dataPages = DPM_data_pages(tdbb, relation);
+
+		// AB: If we have only 1 data-page then the cardinality calculation 
+		// is to worse to be usefull, therefore rely on the record count 
+		// from the data-page.
 		if (dataPages == 1) {
+			// AB: I'm not sure if this code really belongs here, may be 
+			// a better place is dpm.cpp
 			vcl* vector = relation->rel_pages;
 			if (vector) {
 				WIN window(-1);
@@ -1783,6 +1788,16 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					break;
 				}				
 
+				if (inversion[currentPosition]->selectivity == 0) {
+					bestPosition = currentPosition;
+					bestSelectivity = inversion[currentPosition]->selectivity;
+					bestNonFullMatchedSegments = 
+						inversion[currentPosition]->nonFullMatchedSegments;
+					bestMatchedSegments = inversion[currentPosition]->matchedSegments;
+					bestIndexes = inversion[currentPosition]->indexes;
+					break;
+				}
+
 				// Check if selectivity is almost the same
 				double diffSelectivity = (bestSelectivity / 
 					inversion[currentPosition]->selectivity);
@@ -1835,7 +1850,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					worstSel = bestSelectivity;
 					bestSel = totalSelectivity;
 				}
-				totalSelectivity = (bestSel + (((worstSel - bestSel) / (1 - bestSel)) * bestSel)) / 2;
+				if (bestSel == 0) {
+					totalSelectivity = 0;
+				}
+				else {
+					totalSelectivity = (bestSel + (((worstSel - bestSel) / (1 - bestSel)) * bestSel)) / 2;
+				}
 
 				// Exclude index from next pass
 				inversion[bestPosition]->used = true;
@@ -2588,6 +2608,12 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
  *	is cheaper as withRelationship.
  *
  **************************************/
+	if (checkRelationship->cost == 0) {
+		return true;
+	}
+	if (withRelationship->cost == 0) {
+		return false;
+	}
 	double compareValue = checkRelationship->cost / withRelationship->cost;
 	if ((compareValue >= 0.98) && (compareValue <= 1.02)) {
 		// cost is nearly the same, now check on cardinality.
@@ -2625,11 +2651,19 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	const InversionCandidate* candidate = optimizerRetrieval->getCost();
 	double selectivity = candidate->selectivity;
 	if (candidate->indexes) {
+		// Based on the page-size we make an estimated number of keys per index leaf page.
+		// This is really a wild estimated number because it depends on key size and how good
+		// the prefix compression does its work.
 		const double nodesPerPage = ((double)database->dbb_page_size / 10);
+		// The estimated index cost reflects the number of pages fetched for this index read.
+		// The number of pages is an index pointer page + the B-Tree level - 1 (leaf page) +
+		// index leaf pages to be read.
 		const double indexCost = 2 + ((cardinality * selectivity) / nodesPerPage);
 		*cost = (cardinality * selectivity) + (candidate->indexes * indexCost);
 	}
 	else {
+		// No indexes are used, this meant for every record a data-page is read.
+		// Thus the number of pages to be read is the same as the number of records.
 		*cost = cardinality;
 	}
 
