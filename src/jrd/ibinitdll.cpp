@@ -25,6 +25,12 @@
 #include <windows.h>
 
 HINSTANCE hIBDLLInstance;
+
+#ifdef GDS32
+HINSTANCE hFBDLLInstance;
+const char *FBDLLNAME = "fbclient.dll";
+#endif
+
 #ifdef SUPERSERVER
 
 #ifdef  _MSC_VER
@@ -40,12 +46,34 @@ BOOL WINAPI _CRT_INIT(HINSTANCE HIdummy, DWORD DWdummy, LPVOID LPVdummy)
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
-
 	/* save instance value */
-
 	hIBDLLInstance = h;
+
+#ifdef GDS32
+	char buffer[MAXPATHLEN], *p;
+	int l;
+
+	switch (reason)	{
+	case DLL_PROCESS_ATTACH:
+		GetModuleFileName(hIBDLLInstance, buffer, sizeof(buffer));
+		l = strlen(buffer);
+		p = buffer + l;
+		while (l-- && *p-- != '\\');
+		p++;
+		strcpy(++p, FBDLLNAME);
+		p += strlen(FBDLLNAME);
+		*p = 0;
+		hFBDLLInstance = LoadLibrary(buffer);
+		if (!hFBDLLInstance) {
+			hFBDLLInstance = LoadLibrary(FBDLLNAME);
+		}
+		break;
+	case DLL_PROCESS_DETACH:
+		FreeLibrary(hFBDLLInstance);
+	}
+#endif
 
 	return TRUE;
 }
 
-#endif /* else of ifdef SUPERSERVER */
+#endif /* SUPERSERVER */
