@@ -314,6 +314,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 
 	switch (node->nod_type) {
 	case nod_constant:
+	case nod_variable:
 		*desc = node->nod_desc;
 		return;
 
