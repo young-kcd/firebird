@@ -72,7 +72,7 @@ public:
 	USHORT	nod_count;			/* Number of arguments */
 	nod*	nod_arg[1];
 };
-typedef nod* NOD;
+typedef nod* JRD_NOD;
 
 #define nod_comparison 	1
 #define nod_id		1			/* marks a field node as a blr_fid guy */
@@ -119,7 +119,7 @@ typedef rse* RSE;
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_delta	(sizeof(struct rse)-sizeof(struct nod))/sizeof(((NOD) 0)->nod_arg[0])
+#define rse_delta	(sizeof(struct rse)-sizeof(struct nod))/sizeof(((JRD_NOD) 0)->nod_arg[0])
 
 
 /* Literal value */
@@ -138,7 +138,7 @@ public:
 };
 typedef lit* LIT;
 
-#define lit_delta	(sizeof(dsc) / sizeof(NOD*))
+#define lit_delta	(sizeof(dsc) / sizeof(JRD_NOD*))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
@@ -158,7 +158,7 @@ public:
 };
 typedef asb* ASB;
 
-#define asb_delta	((sizeof(struct asb) - sizeof(struct nod)) / sizeof (NOD*))
+#define asb_delta	((sizeof(struct asb) - sizeof(struct nod)) / sizeof (JRD_NOD*))
 
 
 /* Various structures in the impure area */
@@ -378,7 +378,7 @@ typedef struct iasb {
 
 #define e_dcl_id		0
 #define e_dcl_desc		1
-#define e_dcl_length		(1 + sizeof (DSC)/sizeof (NOD))	/* Room for descriptor */
+#define e_dcl_length		(1 + sizeof (DSC)/sizeof (JRD_NOD))	/* Room for descriptor */
 
 #define e_dep_object		0	/* node for registering dependencies */
 #define e_dep_object_type	1

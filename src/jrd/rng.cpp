@@ -206,7 +206,7 @@ void RNG_add_record(RPB * rpb)
 
 
 #ifdef PC_ENGINE
-NOD RNG_add_relation(NOD node)
+JRD_NOD RNG_add_relation(JRD_NOD node)
 {
 /**************************************
  *
@@ -225,7 +225,7 @@ NOD RNG_add_relation(NOD node)
 	USHORT range_number;
 	VEC refresh_ranges;
 	RNG refresh_range;
-	NOD relation_node;
+	JRD_NOD relation_node;
 	REL relation;
 	LCK relation_lock;
 	VEC relation_locks;
@@ -359,7 +359,7 @@ void RNG_add_uncommitted_record(RPB * rpb)
 
 
 #ifdef PC_ENGINE
-DSC *RNG_begin(NOD node, VLU impure)
+DSC *RNG_begin(JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -464,7 +464,7 @@ DSC *RNG_begin(NOD node, VLU impure)
 
 
 #ifdef PC_ENGINE
-NOD RNG_delete(NOD node)
+JRD_NOD RNG_delete(JRD_NOD node)
 {
 /**************************************
  *
@@ -538,7 +538,7 @@ void RNG_delete_ranges(REQ request)
 
 
 #ifdef PC_ENGINE
-NOD RNG_end(NOD node)
+JRD_NOD RNG_end(JRD_NOD node)
 {
 /**************************************
  *

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.10 2002-10-31 05:05:57 seanleyne Exp $
+ * $Id: rse.cpp,v 1.11 2002-11-11 19:42:47 hippoman Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -82,7 +82,7 @@
 
 static void close_merge(TDBB, RSB, IRSB_MRG);
 static void close_procedure(TDBB, RSB);
-static SSHORT compare(TDBB, NOD, NOD);
+static SSHORT compare(TDBB, JRD_NOD, JRD_NOD);
 static SSHORT compare_longs(SLONG *, SLONG *, USHORT);
 #ifdef SCROLLABLE_CURSORS
 static BOOLEAN fetch_record(TDBB, RSB, SSHORT, RSE_GET_MODE);
@@ -236,7 +236,7 @@ void RSE_close(TDBB tdbb, RSB rsb)
 
 
 #ifdef PC_ENGINE
-BOOLEAN RSE_find_dbkey(TDBB tdbb, RSB rsb, NOD find_key, NOD record_version)
+BOOLEAN RSE_find_dbkey(TDBB tdbb, RSB rsb, JRD_NOD find_key, JRD_NOD record_version)
 {
 /**************************************
  *
@@ -358,7 +358,7 @@ BOOLEAN RSE_find_dbkey(TDBB tdbb, RSB rsb, NOD find_key, NOD record_version)
 #ifdef PC_ENGINE
 BOOLEAN RSE_find_record(TDBB tdbb,
 						RSB rsb,
-						USHORT operator, USHORT direction, NOD find_key)
+						USHORT operator, USHORT direction, JRD_NOD find_key)
 {
 /**************************************
  *
@@ -598,7 +598,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 
 		switch (rsb->rsb_type) {
 		case rsb_indexed:
-			impure->irsb_bitmap = EVL_bitmap(tdbb, (NOD) rsb->rsb_arg[0]);
+			impure->irsb_bitmap = EVL_bitmap(tdbb, (JRD_NOD) rsb->rsb_arg[0]);
 			impure->irsb_prefetch_number = -1;
 
 		case rsb_navigate:
@@ -667,7 +667,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 
         case rsb_first:
             ((IRSB_FIRST)impure)->irsb_count =
-                MOV_get_int64 (EVL_expr (tdbb, (NOD) rsb->rsb_arg [0]), 0);
+                MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
             
             if (((IRSB_FIRST)impure)->irsb_count < 1)
                 ERR_post (gds_bad_limit_param, 0);
@@ -677,7 +677,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 
         case rsb_skip:
             ((IRSB_SKIP)impure)->irsb_count =
-                MOV_get_int64 (EVL_expr (tdbb, (NOD) rsb->rsb_arg [0]), 0);
+                MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
             
             if (((IRSB_SKIP)impure)->irsb_count < 0)
                 ERR_post (gds_bad_skip_param, 0);
@@ -963,7 +963,7 @@ static void close_procedure(TDBB tdbb, RSB rsb)
 }
 
 
-static SSHORT compare(TDBB tdbb, NOD node1, NOD node2)
+static SSHORT compare(TDBB tdbb, JRD_NOD node1, JRD_NOD node2)
 {
 /**************************************
  *
@@ -976,7 +976,7 @@ static SSHORT compare(TDBB tdbb, NOD node1, NOD node2)
  *	sort merge join.
  *
  **************************************/
-	NOD *ptr1, *ptr2, *end;
+	JRD_NOD *ptr1, *ptr2, *end;
 	DSC *desc1, *desc2;
 	REQ request;
 	ULONG flags;
@@ -1285,7 +1285,7 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 					break;
 				}
 				if (rsb->rsb_arg[RSB_LEFT_boolean] &&
-					!EVL_boolean(tdbb, (NOD) rsb->rsb_arg[RSB_LEFT_boolean])) {
+					!EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[RSB_LEFT_boolean])) {
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
 					join_to_nulls(tdbb, rsb, RSB_LEFT_streams);
@@ -1301,7 +1301,7 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 					RSE_get_forward))
 					if (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
 						|| EVL_boolean(tdbb,
-									   (NOD)
+									   (JRD_NOD)
 									   rsb->rsb_arg[RSB_LEFT_inner_boolean]))
 				{
 					impure->irsb_flags |= irsb_joined;
@@ -1340,15 +1340,15 @@ static BOOLEAN fetch_left(TDBB tdbb, RSB rsb, IRSB impure)
 					if (
 						(!rsb->rsb_arg[RSB_LEFT_boolean]
 						 || EVL_boolean(tdbb,
-										(NOD) rsb->rsb_arg[RSB_LEFT_boolean]))
+										(JRD_NOD) rsb->rsb_arg[RSB_LEFT_boolean]))
 						&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
 							|| EVL_boolean(tdbb,
-										   (NOD)
+										   (JRD_NOD)
 										   rsb->rsb_arg
 										   [RSB_LEFT_inner_boolean]))
 						&& (full == rsb->rsb_arg[RSB_LEFT_inner]
 							|| EVL_boolean(tdbb,
-										   (NOD)
+										   (JRD_NOD)
 										   rsb->rsb_arg
 										   [RSB_LEFT_inner]->rsb_arg[0])))
 						break;
@@ -1814,7 +1814,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 
 		map_sort_data(request, map, get_merge_data(tdbb, mfb, record));
 		if (ptr != highest_ptr &&
-			compare(tdbb, (NOD) highest_ptr[1], (NOD) ptr[1]) < 0)
+			compare(tdbb, (JRD_NOD) highest_ptr[1], (JRD_NOD) ptr[1]) < 0)
 			highest_ptr = ptr;
 	}
 
@@ -1826,7 +1826,7 @@ static BOOLEAN get_merge_join(TDBB tdbb, RSB rsb, IRSB_MRG impure)
 			 ptr < end; ptr += 2, tail++)
 			if (highest_ptr != ptr)
 				while ( (result =
-					   compare(tdbb, (NOD) highest_ptr[1], (NOD) ptr[1])) ) {
+					   compare(tdbb, (JRD_NOD) highest_ptr[1], (JRD_NOD) ptr[1])) ) {
 					if (result < 0) {
 						highest_ptr = ptr;
 						goto recycle;
@@ -2216,8 +2216,8 @@ static BOOLEAN get_record(TDBB			tdbb,
 		{
 			int result;
 			SSHORT select_value;	/* select for ANY/ALL processing */
-			NOD select_node;	/* ANY/ALL select node pointer */
-			NOD column_node;	/* ANY/ALL column node pointer */
+			JRD_NOD select_node;	/* ANY/ALL select node pointer */
+			JRD_NOD column_node;	/* ANY/ALL column node pointer */
 
 			/* For ANY and ALL clauses (ALL is handled as a negated ANY),
 			   we must first detect them, and then make sure that the returned
@@ -2233,7 +2233,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 			   select expression on the left, and the column comparison
 			   on the right. */
 
-			column_node = (NOD) rsb->rsb_any_boolean;
+			column_node = (JRD_NOD) rsb->rsb_any_boolean;
 			if (column_node &&
 				(request->req_flags & (req_ansi_all | req_ansi_any)))
 			{
@@ -2247,7 +2247,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 				}
 				else
 				{
-					select_node = (NOD) NULL;
+					select_node = (JRD_NOD) NULL;
 				}
 			}
 			if (column_node && (request->req_flags & req_ansi_any))
@@ -2271,7 +2271,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 					any_true = FALSE;
 					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
 					{
-						if (EVL_boolean(tdbb, (NOD) rsb->rsb_arg[0]))
+						if (EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0]))
 						{
 							/* found a TRUE value */
 
@@ -2331,7 +2331,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 					result = FALSE;
 					while (get_record(tdbb, rsb->rsb_next, rsb, mode)) {
-						if (EVL_boolean(tdbb, (NOD) rsb->rsb_arg[0])) {
+						if (EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0])) {
 							result = TRUE;
 							break;
 						}
@@ -2363,7 +2363,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 						/* look for a FALSE (and not null either) */
 
-						if (!EVL_boolean(tdbb, (NOD) rsb->rsb_arg[0]) &&
+						if (!EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0]) &&
 							!(request->req_flags & req_null)) {
 
 							/* make sure it wasn't FALSE because there's
@@ -2408,7 +2408,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 						/* look for a FALSE or null */
 
-						if (!EVL_boolean(tdbb, (NOD) rsb->rsb_arg[0])) {
+						if (!EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0])) {
 
 							/* make sure it wasn't FALSE because there's
 							   no select stream record */
@@ -2443,7 +2443,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 				result = FALSE;
 				while (get_record(tdbb, rsb->rsb_next, rsb, mode)) {
-					if (EVL_boolean(tdbb, (NOD) rsb->rsb_arg[0])) {
+					if (EVL_boolean(tdbb, (JRD_NOD) rsb->rsb_arg[0])) {
 						result = TRUE;
 						break;
 					}
@@ -2634,7 +2634,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 
 	case rsb_aggregate:
 		if ( (impure->irsb_count = EVL_group(tdbb, (BLK) rsb->rsb_next,
-										   (NOD) rsb->rsb_arg[0],
+										   (JRD_NOD) rsb->rsb_arg[0],
 										   impure->irsb_count)) ) break;
 		return FALSE;
 
@@ -2740,7 +2740,7 @@ static BOOLEAN get_union(TDBB tdbb, RSB rsb, IRSB impure)
  *
  **************************************/
 	RSB *rsb_ptr;
-	NOD map, *ptr, *end;
+	JRD_NOD map, *ptr, *end;
 
 	SET_TDBB(tdbb);
 	rsb_ptr = rsb->rsb_arg + impure->irsb_count;
@@ -2758,7 +2758,7 @@ static BOOLEAN get_union(TDBB tdbb, RSB rsb, IRSB impure)
 
 /* We've got a record, map it into the target record */
 
-	map = (NOD) rsb_ptr[1];
+	map = (JRD_NOD) rsb_ptr[1];
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 		EXE_assignment(tdbb, *ptr);
@@ -2827,7 +2827,7 @@ static void map_sort_data(REQ request, SMB map, UCHAR * data)
 	UCHAR flag;
 	DSC from, to;
 	RPB *rpb;
-	NOD node;
+	JRD_NOD node;
 	REC record;
 	smb_repeat * item, *end_item;
 
@@ -2945,7 +2945,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
  *	Initialize a procedural view.
  *
  **************************************/
-	NOD inputs, *ptr, *end, in_message;
+	JRD_NOD inputs, *ptr, *end, in_message;
 	PRC procedure;
 	REQ request, proc_request;
 	FMT format;
@@ -2955,7 +2955,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
 
 	SET_TDBB(tdbb);
 
-	inputs = (NOD) rsb->rsb_arg[RSB_PRC_inputs];
+	inputs = (JRD_NOD) rsb->rsb_arg[RSB_PRC_inputs];
 	procedure = rsb->rsb_procedure;
 	request = tdbb->tdbb_request;
 
@@ -2977,7 +2977,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
 			EXE_assignment(tdbb, *ptr);
 
 		request->req_operation = saved_state;
-		in_message = (NOD) rsb->rsb_arg[RSB_PRC_in_msg];
+		in_message = (JRD_NOD) rsb->rsb_arg[RSB_PRC_in_msg];
 		format = (FMT) in_message->nod_arg[e_msg_format];
 		iml = format->fmt_length;
 		im = (UCHAR *) request + in_message->nod_impure;
@@ -3016,7 +3016,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure)
 	DSC *from, to, temp;
 	REQ request;
 	RPB *rpb;
-	NOD node;
+	JRD_NOD node;
 	int records;
 	SSHORT stream;
 	SCB handle;

@@ -3813,7 +3813,7 @@ STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(STATUS*	user_status,
 	TRA transaction;
 	CSB csb;
 	REQ request;
-	NOD in_message, out_message, node;
+	JRD_NOD in_message, out_message, node;
 	ACC access;
 	SCL class_;
 	FMT format;

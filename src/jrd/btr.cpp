@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.9 2002-10-31 05:05:56 seanleyne Exp $
+$Id: btr.cpp,v 1.10 2002-11-11 19:42:44 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -164,7 +164,7 @@ static USHORT compute_prefix(KEY *, UCHAR *, USHORT);
 static void copy_key(KEY *, KEY *);
 static CONTENTS delete_node(TDBB, WIN *, BTN);
 static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
-static DSC *eval(TDBB, NOD, DSC *, int *);
+static DSC *eval(TDBB, JRD_NOD, DSC *, int *);
 static SLONG fast_load(TDBB, REL, IDX *, USHORT, SCB, float *);
 static IRT fetch_root(TDBB, WIN *, REL);
 static BTN find_node(register BTR, KEY *, USHORT);
@@ -1285,7 +1285,7 @@ USHORT BTR_lookup(TDBB tdbb, REL relation, USHORT id, register IDX * buffer)
 
 void BTR_make_key(TDBB tdbb,
 				  USHORT count,
-				  NOD * exprs, IDX * idx, KEY * key, USHORT fuzzy)
+				  JRD_NOD * exprs, IDX * idx, KEY * key, USHORT fuzzy)
 {
 /**************************************
  *
@@ -2530,7 +2530,7 @@ static void delete_tree(TDBB tdbb,
 }
 
 
-static DSC *eval(TDBB tdbb, NOD node, DSC * temp, int *missing)
+static DSC *eval(TDBB tdbb, JRD_NOD node, DSC * temp, int *missing)
 {
 /**************************************
  *

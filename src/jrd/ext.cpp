@@ -411,7 +411,7 @@ void EXT_open(RSB rsb)
 }
 
 
-RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
+RSB EXT_optimize(register OPT opt, SSHORT stream, JRD_NOD * sort_ptr)
 {
 /**************************************
  *
@@ -429,7 +429,7 @@ RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
 	REL relation;
 	RSB rsb_;
 /* all these are un refrenced due to the code commented below
-NOD		node, inversion;
+JRD_NOD		node, inversion;
 register opt::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
 */

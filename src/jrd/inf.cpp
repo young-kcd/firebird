@@ -851,7 +851,7 @@ int INF_request_info(
  *	Return information about requests.
  *
  **************************************/
-	NOD node;
+	JRD_NOD node;
 	FMT format;
 	SCHAR item, *end_items, *end, buffer[256], *buffer_ptr;
 	SSHORT state;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.19 2002-10-29 16:27:45 tamlin Exp $ 
+  * $Id: evl.cpp,v 1.20 2002-11-11 19:42:44 hippoman Exp $ 
  */
 
 /*
@@ -136,43 +136,43 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
  *  The order should be made to agree as part of the next code cleanup.
  */
 
-static DSC *add(DSC *, NOD, VLU);
-static DSC *add2(DSC *, NOD, VLU);
-static DSC *add_datetime(DSC *, NOD, VLU);
-static DSC *add_sql_date(DSC *, NOD, VLU);
-static DSC *add_sql_time(DSC *, NOD, VLU);
-static DSC *add_timestamp(DSC *, NOD, VLU);
-static DSC *binary_value(TDBB, NOD, VLU);
-static DSC *cast(TDBB, DSC *, NOD, VLU);
-static SSHORT compute_agg_distinct(TDBB, NOD);
-static DSC *concatenate(TDBB, NOD, VLU);
-static DSC *dbkey(TDBB, NOD, VLU);
-static DSC *eval_statistical(TDBB, NOD, VLU);
+static DSC *add(DSC *, JRD_NOD, VLU);
+static DSC *add2(DSC *, JRD_NOD, VLU);
+static DSC *add_datetime(DSC *, JRD_NOD, VLU);
+static DSC *add_sql_date(DSC *, JRD_NOD, VLU);
+static DSC *add_sql_time(DSC *, JRD_NOD, VLU);
+static DSC *add_timestamp(DSC *, JRD_NOD, VLU);
+static DSC *binary_value(TDBB, JRD_NOD, VLU);
+static DSC *cast(TDBB, DSC *, JRD_NOD, VLU);
+static SSHORT compute_agg_distinct(TDBB, JRD_NOD);
+static DSC *concatenate(TDBB, JRD_NOD, VLU);
+static DSC *dbkey(TDBB, JRD_NOD, VLU);
+static DSC *eval_statistical(TDBB, JRD_NOD, VLU);
 static SINT64 get_day_fraction(DSC * d);
-static DSC *get_mask(TDBB, NOD, VLU);
+static DSC *get_mask(TDBB, JRD_NOD, VLU);
 static SINT64 get_timestamp_to_isc_ticks(DSC * d);
-static SSHORT init_agg_distinct(TDBB, NOD);
+static SSHORT init_agg_distinct(TDBB, JRD_NOD);
 #ifdef PC_ENGINE
-static DSC *lock_record(TDBB, NOD, VLU);
-static DSC *lock_relation(TDBB, NOD, VLU);
+static DSC *lock_record(TDBB, JRD_NOD, VLU);
+static DSC *lock_relation(TDBB, JRD_NOD, VLU);
 #endif
-static DSC *lock_state(TDBB, NOD, VLU);
-static DSC *multiply(DSC *, VLU, NOD);
-static DSC *multiply2(DSC *, VLU, NOD);
-static DSC *divide2(DSC *, VLU, NOD);
+static DSC *lock_state(TDBB, JRD_NOD, VLU);
+static DSC *multiply(DSC *, VLU, JRD_NOD);
+static DSC *multiply2(DSC *, VLU, JRD_NOD);
+static DSC *divide2(DSC *, VLU, JRD_NOD);
 static DSC *negate_dsc(TDBB, DSC *, VLU);
-static DSC *record_version(TDBB, NOD, VLU);
+static DSC *record_version(TDBB, JRD_NOD, VLU);
 static BOOLEAN reject_duplicate(UCHAR *, UCHAR *, int);
-static DSC *scalar(TDBB, NOD, VLU);
-static SSHORT sleuth(TDBB, NOD, DSC *, DSC *);
+static DSC *scalar(TDBB, JRD_NOD, VLU);
+static SSHORT sleuth(TDBB, JRD_NOD, DSC *, DSC *);
 static BOOLEAN nc_sleuth_check(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR *,
 							   UCHAR *);
 static BOOLEAN nc_sleuth_class(class TextType*, USHORT, UCHAR *, UCHAR *, UCHAR);
 static BOOLEAN wc_sleuth_check(class TextType*, USHORT, WCHAR *, WCHAR *, WCHAR *,
 							   WCHAR *);
 static BOOLEAN wc_sleuth_class(class TextType*, USHORT, WCHAR *, WCHAR *, WCHAR);
-static SSHORT string_boolean(TDBB, NOD, DSC *, DSC *);
-static SSHORT string_function(TDBB, NOD, SSHORT, UCHAR *,
+static SSHORT string_boolean(TDBB, JRD_NOD, DSC *, DSC *);
+static SSHORT string_function(TDBB, JRD_NOD, SSHORT, UCHAR *,
 							  SSHORT, UCHAR *, USHORT);
 static DSC *substring(TDBB, VLU, DSC *, USHORT, USHORT);
 static DSC *upcase(TDBB, DSC *, VLU);
@@ -207,7 +207,7 @@ static CONST UCHAR special[256] = {
 
 
 
-DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register NOD node)
+DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register JRD_NOD node)
 {
 /**************************************
  *
@@ -224,7 +224,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register NOD node)
 	VLU impure;
 	DSC *desc;
 	FMT format;
-	NOD message;
+	JRD_NOD message;
 	REC record;
 
 	SET_TDBB(tdbb);
@@ -285,7 +285,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register NOD node)
 }
 
 
-SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, register NOD node)
+SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, register JRD_NOD node)
 {
 /**************************************
  *
@@ -350,7 +350,7 @@ SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, register NOD node)
 }
 
 
-BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
+BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register JRD_NOD node)
 {
 /**************************************
  *
@@ -363,7 +363,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
  *
  **************************************/
 	REQ request;
-	NOD *ptr;
+	JRD_NOD *ptr;
 	DSC *desc[2];
 	USHORT value;
 	SSHORT comparison;
@@ -393,7 +393,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 	case nod_between:
 	case nod_sleuth:
 		{
-			NOD rec_version;
+			JRD_NOD rec_version;
 			ULONG flags;
 			SSHORT force_equal;
 
@@ -529,7 +529,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 			rse = (RSE) (node->nod_arg[e_any_rse]);
 			rsb = (RSB) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any) {
-				rsb->rsb_any_boolean = (NOD) rse->rse_boolean;
+				rsb->rsb_any_boolean = (JRD_NOD) rse->rse_boolean;
 				if (node->nod_type == nod_ansi_any)
 					request->req_flags |= req_ansi_any;
 				else
@@ -712,7 +712,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register NOD node)
 }
 
 
-DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
+DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register JRD_NOD node)
 {
 /**************************************
  *
@@ -756,7 +756,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 	case nod_argument:
 		{
 			FMT format;
-			NOD message;
+			JRD_NOD message;
 			DSC *desc;
 
 			if (node->nod_arg[e_arg_flag]) {
@@ -1091,7 +1091,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 		DSC *values[3];
 
 		if (node->nod_count) {
-			NOD *ptr, *end;
+			JRD_NOD *ptr, *end;
 			DSC **v;
 
 			for (ptr = node->nod_arg, end = ptr + node->nod_count, v = values;
@@ -1316,7 +1316,7 @@ BOOLEAN DLL_EXPORT EVL_field(register REL relation,
 }
 
 
-USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, NOD node, USHORT state)
+USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 {
 /**************************************
  *
@@ -1336,7 +1336,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, NOD node, USHORT state)
  *
  **************************************/
 	REQ request;
-	NOD group, map, *ptr, *end, from, field;
+	JRD_NOD group, map, *ptr, *end, from, field;
 	DSC temp, *desc;
 	VLUX impure;
 	struct vlu vtemp;
@@ -2263,7 +2263,7 @@ USHORT DLL_EXPORT EVL_wc_contains(TDBB tdbb_dumm,
 
 
 
-static DSC *add(DSC * desc, NOD node, VLU value)
+static DSC *add(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2349,7 +2349,7 @@ static DSC *add(DSC * desc, NOD node, VLU value)
 }
 
 
-static DSC *add2(DSC * desc, NOD node, VLU value)
+static DSC *add2(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2459,7 +2459,7 @@ static DSC *add2(DSC * desc, NOD node, VLU value)
 }
 
 
-static DSC *add_datetime(DSC * desc, NOD node, VLU value)
+static DSC *add_datetime(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2521,7 +2521,7 @@ static DSC *add_datetime(DSC * desc, NOD node, VLU value)
 }
 
 
-static DSC *add_sql_date(DSC * desc, NOD node, VLU value)
+static DSC *add_sql_date(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2623,7 +2623,7 @@ static DSC *add_sql_date(DSC * desc, NOD node, VLU value)
 }
 
 
-static DSC *add_sql_time(DSC * desc, NOD node, VLU value)
+static DSC *add_sql_time(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2720,7 +2720,7 @@ static DSC *add_sql_time(DSC * desc, NOD node, VLU value)
 }
 
 
-static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
+static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 {
 /**************************************
  *
@@ -2952,7 +2952,7 @@ static DSC *add_timestamp(DSC * desc, NOD node, VLU value)
 }
 
 
-static DSC *binary_value(TDBB tdbb, NOD node, VLU impure)
+static DSC *binary_value(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3032,7 +3032,7 @@ static DSC *binary_value(TDBB tdbb, NOD node, VLU impure)
 }
 
 
-static DSC *cast(TDBB tdbb, DSC * value, NOD node, VLU impure)
+static DSC *cast(TDBB tdbb, DSC * value, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3092,7 +3092,7 @@ static DSC *cast(TDBB tdbb, DSC * value, NOD node, VLU impure)
 }
 
 
-static SSHORT compute_agg_distinct(TDBB tdbb, NOD node)
+static SSHORT compute_agg_distinct(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3179,7 +3179,7 @@ static SSHORT compute_agg_distinct(TDBB tdbb, NOD node)
 }
 
 
-static DSC *concatenate(TDBB tdbb, NOD node, VLU impure)
+static DSC *concatenate(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3275,7 +3275,7 @@ static DSC *concatenate(TDBB tdbb, NOD node, VLU impure)
 }
 
 
-static DSC *dbkey(TDBB tdbb, NOD node, VLU impure)
+static DSC *dbkey(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3325,7 +3325,7 @@ static DSC *dbkey(TDBB tdbb, NOD node, VLU impure)
 }
 
 
-static DSC *eval_statistical(TDBB tdbb, NOD node, VLU impure)
+static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3597,7 +3597,7 @@ static SINT64 get_day_fraction(DSC * d)
 
 
 
-static DSC *get_mask(TDBB tdbb, NOD node, VLU impure)
+static DSC *get_mask(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3679,7 +3679,7 @@ static SINT64 get_timestamp_to_isc_ticks(DSC * d)
 }
 
 
-static SSHORT init_agg_distinct(TDBB tdbb, NOD node)
+static SSHORT init_agg_distinct(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3722,7 +3722,7 @@ static SSHORT init_agg_distinct(TDBB tdbb, NOD node)
 
 
 #ifdef PC_ENGINE
-static DSC *lock_record(TDBB tdbb, NOD node, VLU impure)
+static DSC *lock_record(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3800,7 +3800,7 @@ static DSC *lock_record(TDBB tdbb, NOD node, VLU impure)
 
 
 #ifdef PC_ENGINE
-static DSC *lock_relation(TDBB tdbb, NOD node, VLU impure)
+static DSC *lock_relation(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3815,7 +3815,7 @@ static DSC *lock_relation(TDBB tdbb, NOD node, VLU impure)
  **************************************/
 	DSC *desc;
 	USHORT lock_level;
-	NOD relation_node;
+	JRD_NOD relation_node;
 	REL relation;
 	LCK lock = NULL;
 
@@ -3875,7 +3875,7 @@ static DSC *lock_relation(TDBB tdbb, NOD node, VLU impure)
 #endif
 
 
-static DSC *lock_state(TDBB tdbb, NOD node, VLU impure)
+static DSC *lock_state(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -3946,7 +3946,7 @@ static DSC *lock_state(TDBB tdbb, NOD node, VLU impure)
 }
 
 
-static DSC *multiply(DSC * desc, VLU value, NOD node)
+static DSC *multiply(DSC * desc, VLU value, JRD_NOD node)
 {
 /**************************************
  *
@@ -4046,7 +4046,7 @@ static DSC *multiply(DSC * desc, VLU value, NOD node)
 }
 
 
-static DSC *multiply2(DSC * desc, VLU value, NOD node)
+static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
 {
 /**************************************
  *
@@ -4144,7 +4144,7 @@ static DSC *multiply2(DSC * desc, VLU value, NOD node)
 }
 
 
-static DSC *divide2(DSC * desc, VLU value, NOD node)
+static DSC *divide2(DSC * desc, VLU value, JRD_NOD node)
 {
 /**************************************
  *
@@ -4355,7 +4355,7 @@ static DSC *negate_dsc(TDBB tdbb, DSC * desc, VLU value)
 
 	return &value->vlu_desc;
 }
-static DSC *record_version(TDBB tdbb, NOD node, VLU impure)
+static DSC *record_version(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -4432,7 +4432,7 @@ static BOOLEAN reject_duplicate(UCHAR * data1, UCHAR * data2, int user_arg)
 }
 
 
-static DSC *scalar(TDBB tdbb, NOD node, VLU impure)
+static DSC *scalar(TDBB tdbb, JRD_NOD node, VLU impure)
 {
 /**************************************
  *
@@ -4445,7 +4445,7 @@ static DSC *scalar(TDBB tdbb, NOD node, VLU impure)
  *
  **************************************/
 	SLONG subscripts[16], *p;
-	NOD list, *ptr, *end;
+	JRD_NOD list, *ptr, *end;
 	DSC *desc;
 	REQ request;
 
@@ -4481,7 +4481,7 @@ static DSC *scalar(TDBB tdbb, NOD node, VLU impure)
 }
 
 
-static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
+static SSHORT sleuth(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 {
 /**************************************
  *
@@ -4606,7 +4606,7 @@ static SSHORT sleuth(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 }
 
 
-static SSHORT string_boolean(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
+static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 {
 /**************************************
  *
@@ -4728,7 +4728,7 @@ static SSHORT string_boolean(TDBB tdbb, NOD node, DSC * desc1, DSC * desc2)
 
 static SSHORT string_function(
 							  TDBB tdbb,
-							  NOD node,
+							  JRD_NOD node,
 							  SSHORT l1,
 							  UCHAR * p1, SSHORT l2, UCHAR * p2, USHORT ttype)
 {

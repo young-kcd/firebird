@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.14 2002-10-31 10:38:03 dimitr Exp $
+$Id: blb.cpp,v 1.15 2002-11-11 19:42:43 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -820,7 +820,7 @@ void DLL_EXPORT BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
 #endif	// REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
 
-void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
+void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 }
 
 
-void BLB_move_from_string(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
+void BLB_move_from_string(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 {
 /**************************************
  *

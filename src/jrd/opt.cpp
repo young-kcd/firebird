@@ -76,79 +76,79 @@
 #include "../jrd/dbg_proto.h"
 
 
-static BOOLEAN augment_stack(NOD, LLS *);
+static BOOLEAN augment_stack(JRD_NOD, LLS *);
 static void check_indices(csb_repeat *);
 static BOOLEAN check_relationship(OPT, USHORT, USHORT);
 static void check_sorts(RSE);
-static void class_mask(USHORT, NOD *, ULONG *);
+static void class_mask(USHORT, JRD_NOD *, ULONG *);
 static void clear_bounds(OPT, IDX *);
-static NOD compose(NOD *, NOD, NOD_T);
-static BOOLEAN computable(CSB, register NOD, SSHORT, BOOLEAN);
-static void compute_dependencies(NOD, ULONG *);
-static void compute_dbkey_streams(CSB, NOD, UCHAR *);
+static JRD_NOD compose(JRD_NOD *, JRD_NOD, NOD_T);
+static BOOLEAN computable(CSB, register JRD_NOD, SSHORT, BOOLEAN);
+static void compute_dependencies(JRD_NOD, ULONG *);
+static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
-static SLONG decompose(TDBB, register NOD, LLS *, CSB);
+static SLONG decompose(TDBB, register JRD_NOD, LLS *, CSB);
 static USHORT distribute_equalities(LLS *, CSB);
-static BOOLEAN dump_index(NOD, SCHAR **, SSHORT *);
+static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
 static BOOLEAN dump_rsb(REQ, RSB, SCHAR **, SSHORT *);
 static BOOLEAN estimate_cost(TDBB, OPT, USHORT, double *, double *);
 #ifdef EXPRESSION_INDICES
-static BOOLEAN expression_equal(TDBB, NOD, NOD);
+static BOOLEAN expression_equal(TDBB, JRD_NOD, JRD_NOD);
 #endif
-static void find_best(TDBB, register OPT, USHORT, USHORT, UCHAR *, NOD,
+static void find_best(TDBB, register OPT, USHORT, USHORT, UCHAR *, JRD_NOD,
 					  double, double);
-static NOD find_dbkey(NOD, USHORT, SLONG *);
-static USHORT find_order(TDBB, register OPT, UCHAR *, NOD);
+static JRD_NOD find_dbkey(JRD_NOD, USHORT, SLONG *);
+static USHORT find_order(TDBB, register OPT, UCHAR *, JRD_NOD);
 static void find_rsbs(RSB, LLS *, LLS *);
-static void form_rivers(TDBB, OPT, UCHAR *, LLS *, NOD *, NOD *, NOD);
-static BOOLEAN form_river(TDBB, OPT, USHORT, UCHAR *, UCHAR *, LLS *, NOD *,
-						  NOD *, NOD);
-static RSB gen_aggregate(TDBB, OPT, NOD);
-static RSB gen_boolean(TDBB, register OPT, RSB, NOD);
-static RSB gen_first(TDBB, register OPT, RSB, NOD);
-static void gen_join(TDBB, OPT, UCHAR *, LLS *, NOD *, NOD *, NOD);
-static RSB gen_navigation(TDBB, OPT, USHORT, REL, STR, IDX *, NOD *);
+static void form_rivers(TDBB, OPT, UCHAR *, LLS *, JRD_NOD *, JRD_NOD *, JRD_NOD);
+static BOOLEAN form_river(TDBB, OPT, USHORT, UCHAR *, UCHAR *, LLS *, JRD_NOD *,
+						  JRD_NOD *, JRD_NOD);
+static RSB gen_aggregate(TDBB, OPT, JRD_NOD);
+static RSB gen_boolean(TDBB, register OPT, RSB, JRD_NOD);
+static RSB gen_first(TDBB, register OPT, RSB, JRD_NOD);
+static void gen_join(TDBB, OPT, UCHAR *, LLS *, JRD_NOD *, JRD_NOD *, JRD_NOD);
+static RSB gen_navigation(TDBB, OPT, USHORT, REL, STR, IDX *, JRD_NOD *);
 #ifdef SCROLLABLE_CURSORS
 static RSB gen_nav_rsb(TDBB, OPT, USHORT, REL, STR, IDX *, RSE_GET_MODE);
 #else
 static RSB gen_nav_rsb(TDBB, OPT, USHORT, REL, STR, IDX *);
 #endif
-static RSB gen_outer(TDBB, OPT, RSE, LLS, NOD *, NOD *);
-static RSB gen_procedure(TDBB, OPT, NOD);
+static RSB gen_outer(TDBB, OPT, RSE, LLS, JRD_NOD *, JRD_NOD *);
+static RSB gen_procedure(TDBB, OPT, JRD_NOD);
 static RSB gen_residual_boolean(TDBB, register OPT, RSB);
-static RSB gen_retrieval(TDBB, OPT, SSHORT, NOD *, NOD *, BOOLEAN, BOOLEAN,
-						 NOD *);
-static RSB gen_rsb(TDBB, OPT, RSB, NOD, SSHORT, REL, STR, NOD, float);
-static RSB	gen_skip (TDBB, OPT, RSB, NOD);
-static RSB gen_sort(TDBB, OPT, UCHAR *, UCHAR *, RSB, NOD, USHORT);
+static RSB gen_retrieval(TDBB, OPT, SSHORT, JRD_NOD *, JRD_NOD *, BOOLEAN, BOOLEAN,
+						 JRD_NOD *);
+static RSB gen_rsb(TDBB, OPT, RSB, JRD_NOD, SSHORT, REL, STR, JRD_NOD, float);
+static RSB	gen_skip (TDBB, OPT, RSB, JRD_NOD);
+static RSB gen_sort(TDBB, OPT, UCHAR *, UCHAR *, RSB, JRD_NOD, USHORT);
 static BOOLEAN gen_sort_merge(TDBB, OPT, LLS *);
-static RSB gen_union(TDBB, OPT, NOD, UCHAR *, USHORT);
+static RSB gen_union(TDBB, OPT, JRD_NOD, UCHAR *, USHORT);
 static void get_inactivities(CSB, ULONG *);
 static IRL indexed_relationship(TDBB, OPT, USHORT);
 static STR make_alias(TDBB, CSB, csb_repeat *);
-static NOD make_binary_node(NOD_T, NOD, NOD, USHORT);
+static JRD_NOD make_binary_node(NOD_T, JRD_NOD, JRD_NOD, USHORT);
 static RSB make_cross(TDBB, OPT, LLS);
-static NOD make_index_node(TDBB, REL, CSB, IDX *);
-static NOD make_inference_node(CSB, NOD, NOD, NOD);
-static NOD make_inversion(TDBB, register OPT, NOD, USHORT);
-static NOD make_missing(TDBB, register OPT, REL, NOD, USHORT, IDX *);
-static NOD make_starts(TDBB, register OPT, REL, NOD, USHORT, IDX *);
-static BOOLEAN map_equal(NOD, NOD, NOD);
+static JRD_NOD make_index_node(TDBB, REL, CSB, IDX *);
+static JRD_NOD make_inference_node(CSB, JRD_NOD, JRD_NOD, JRD_NOD);
+static JRD_NOD make_inversion(TDBB, register OPT, JRD_NOD, USHORT);
+static JRD_NOD make_missing(TDBB, register OPT, REL, JRD_NOD, USHORT, IDX *);
+static JRD_NOD make_starts(TDBB, register OPT, REL, JRD_NOD, USHORT, IDX *);
+static BOOLEAN map_equal(JRD_NOD, JRD_NOD, JRD_NOD);
 static void mark_indices(csb_repeat *, SSHORT);
-static SSHORT match_index(TDBB, register OPT, SSHORT, register NOD, IDX *);
-static BOOLEAN match_indices(TDBB, register OPT, SSHORT, register NOD, IDX *);
+static SSHORT match_index(TDBB, register OPT, SSHORT, register JRD_NOD, IDX *);
+static BOOLEAN match_indices(TDBB, register OPT, SSHORT, register JRD_NOD, IDX *);
 static USHORT nav_rsb_size(RSB, USHORT, USHORT);
-static BOOLEAN node_equality(NOD, NOD);
-static NOD optimize_like(TDBB, NOD);
+static BOOLEAN node_equality(JRD_NOD, JRD_NOD);
+static JRD_NOD optimize_like(TDBB, JRD_NOD);
 static void print_order(OPT, USHORT, double, double);
-static USHORT river_count(USHORT, NOD *);
-static BOOLEAN river_reference(RIV, NOD);
-static BOOLEAN search_stack(NOD, LLS);
+static USHORT river_count(USHORT, JRD_NOD *);
+static BOOLEAN river_reference(RIV, JRD_NOD);
+static BOOLEAN search_stack(JRD_NOD, LLS);
 static void set_active(OPT, RIV);
-static void set_direction(NOD, NOD);
+static void set_direction(JRD_NOD, JRD_NOD);
 static void set_inactive(OPT, RIV);
 static void set_made_river(OPT, RIV);
-static void set_position(NOD, NOD, NOD);
+static void set_position(JRD_NOD, JRD_NOD, JRD_NOD);
 static void set_rse_inactive(CSB, RSE);
 static void sort_indices(csb_repeat *);
 
@@ -289,7 +289,7 @@ RSB OPT_compile(TDBB tdbb,
 	OPT opt_;
 	IDX *idx;
 	RIV river;
-	NOD node, *ptr, *end, sort, project, aggregate;
+	JRD_NOD node, *ptr, *end, sort, project, aggregate;
 	LLS conjunct_stack, rivers_stack, *stack_end;
 	RSB rsb;
 	REL relation;
@@ -530,7 +530,7 @@ RSB OPT_compile(TDBB tdbb,
 	/* Msg442: size of optimizer block exceeded */
 
 	for (i = 0; i < conjunct_count; i++) {
-		opt_->opt_rpt[i].opt_conjunct = node = (NOD) LLS_POP(&conjunct_stack);
+		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
 		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
 	}
 
@@ -540,7 +540,7 @@ RSB OPT_compile(TDBB tdbb,
 	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
 		 parent_stack = parent_stack->lls_next, conjunct_count++) {
 		opt_->opt_rpt[conjunct_count].opt_conjunct = node =
-			(NOD) parent_stack->lls_object;
+			(JRD_NOD) parent_stack->lls_object;
 		compute_dependencies(node,
 							 opt_->opt_rpt[conjunct_count].opt_dependencies);
 	}
@@ -693,7 +693,7 @@ RSB OPT_compile(TDBB tdbb,
 }
 
 
-NOD OPT_make_dbkey(register OPT opt_, NOD boolean, USHORT stream)
+JRD_NOD OPT_make_dbkey(register OPT opt_, JRD_NOD boolean, USHORT stream)
 {
 /**************************************
  *
@@ -711,7 +711,7 @@ NOD OPT_make_dbkey(register OPT opt_, NOD boolean, USHORT stream)
  *
  **************************************/
 	CSB csb;
-	NOD value, dbkey;
+	JRD_NOD value, dbkey;
 	SLONG n;
 	TDBB tdbb;
 
@@ -765,14 +765,14 @@ NOD OPT_make_dbkey(register OPT opt_, NOD boolean, USHORT stream)
 	dbkey->nod_count = 1;
 	dbkey->nod_type = nod_bit_dbkey;
 	dbkey->nod_arg[0] = value;
-	dbkey->nod_arg[1] = (NOD) n;
+	dbkey->nod_arg[1] = (JRD_NOD) n;
 	dbkey->nod_impure = CMP_impure(csb, sizeof(struct inv));
 
 	return dbkey;
 }
 
 
-NOD OPT_make_index(TDBB tdbb, OPT opt_, REL relation, IDX * idx)
+JRD_NOD OPT_make_index(TDBB tdbb, OPT opt_, REL relation, IDX * idx)
 {
 /**************************************
  *
@@ -785,7 +785,7 @@ NOD OPT_make_index(TDBB tdbb, OPT opt_, REL relation, IDX * idx)
  *
  **************************************/
 	IRB retrieval;
-	NOD node, *lower, *upper, *end_node;
+	JRD_NOD node, *lower, *upper, *end_node;
 	Opt::opt_repeat * tail, *end;
 
 	SET_TDBB(tdbb);
@@ -878,7 +878,7 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
  **************************************/
 	TDBB tdbb;
 	register CSB csb;
-	NOD node;
+	JRD_NOD node;
 	USHORT n;
 	register Opt::opt_repeat * tail, *opt_end;
 
@@ -925,8 +925,8 @@ void OPT_set_index(TDBB tdbb,
 	RSB old_rsb, new_rsb;
 	USHORT index_id, i;
 	OPT opt;
-	NOD inversion = NULL;
-	NOD index_node, new_index_node;
+	JRD_NOD inversion = NULL;
+	JRD_NOD index_node, new_index_node;
 	IRB retrieval;
 	IDL index;
 	VEC vector;
@@ -952,9 +952,9 @@ void OPT_set_index(TDBB tdbb,
    a boolean expression mapped to an index */
 
 	if (old_rsb->rsb_type == rsb_indexed)
-		inversion = (NOD) old_rsb->rsb_arg[0];
+		inversion = (JRD_NOD) old_rsb->rsb_arg[0];
 	else if (old_rsb->rsb_type == rsb_navigate)
-		inversion = (NOD) old_rsb->rsb_arg[RSB_NAV_inversion];
+		inversion = (JRD_NOD) old_rsb->rsb_arg[RSB_NAV_inversion];
 
 /* set up a dummy optimizer block just for the purposes 
    of the set index, to pass information to subroutines */
@@ -992,7 +992,7 @@ void OPT_set_index(TDBB tdbb,
 /* find index node if the old rsb was navigational */
 
 	if (old_rsb->rsb_type == rsb_navigate)
-		index_node = (NOD) old_rsb->rsb_arg[RSB_NAV_index];
+		index_node = (JRD_NOD) old_rsb->rsb_arg[RSB_NAV_index];
 	else
 		index_node = NULL;
 
@@ -1002,7 +1002,7 @@ void OPT_set_index(TDBB tdbb,
    structure, and vice versa to convert the other way */
 
 	if (idx) {
-		new_index_node = (NOD) new_rsb->rsb_arg[RSB_NAV_index];
+		new_index_node = (JRD_NOD) new_rsb->rsb_arg[RSB_NAV_index];
 		if (old_rsb->rsb_type == rsb_navigate)
 			new_index_node->nod_impure = index_node->nod_impure;
 		else {
@@ -1055,7 +1055,7 @@ void OPT_set_index(TDBB tdbb,
 }
 
 
-static BOOLEAN augment_stack(NOD node, LLS * stack)
+static BOOLEAN augment_stack(JRD_NOD node, LLS * stack)
 {
 /**************************************
  *
@@ -1073,7 +1073,7 @@ static BOOLEAN augment_stack(NOD node, LLS * stack)
 	DEV_BLKCHK(*stack, type_lls);
 
 	for (temp = *stack; temp; temp = temp->lls_next)
-		if (node_equality(node, (NOD) temp->lls_object))
+		if (node_equality(node, (JRD_NOD) temp->lls_object))
 			return FALSE;
 
 	LLS_PUSH(node, stack);
@@ -1096,7 +1096,7 @@ static void check_indices(csb_repeat * csb_tail)
  *         
  **************************************/
 	TEXT index_name[32];
-	NOD plan, access_type;
+	JRD_NOD plan, access_type;
 	REL relation;
 	IDX *idx;
 	USHORT i;
@@ -1192,9 +1192,9 @@ static void check_sorts(RSE rse)
  *	Try to optimize out unnecessary sorting. 
  *
  **************************************/
-	NOD sort, project, group, sub_rse;
-	NOD *group_ptr, *project_ptr, *sort_ptr;
-	NOD *group_end, *project_end, *sort_end;
+	JRD_NOD sort, project, group, sub_rse;
+	JRD_NOD *group_ptr, *project_ptr, *sort_ptr;
+	JRD_NOD *group_end, *project_end, *sort_end;
 
 	DEV_BLKCHK(rse, type_nod);
 
@@ -1301,7 +1301,7 @@ static void check_sorts(RSE rse)
 }
 
 
-static void class_mask(USHORT count, NOD * class_, ULONG * mask)
+static void class_mask(USHORT count, JRD_NOD * class_, ULONG * mask)
 {
 /**************************************
  *
@@ -1364,7 +1364,7 @@ static void clear_bounds(OPT opt, IDX * idx)
 }
 
 
-static NOD compose(NOD * node1, NOD node2, NOD_T node_type)
+static JRD_NOD compose(JRD_NOD * node1, JRD_NOD node2, NOD_T node_type)
 {
 /**************************************
  *
@@ -1391,7 +1391,7 @@ static NOD compose(NOD * node1, NOD node2, NOD_T node_type)
 
 
 static BOOLEAN computable(CSB csb,
-						  register NOD node, SSHORT stream, BOOLEAN idx_use)
+						  register JRD_NOD node, SSHORT stream, BOOLEAN idx_use)
 {
 /**************************************
  *
@@ -1422,7 +1422,7 @@ static BOOLEAN computable(CSB csb,
  *
  **************************************/
 	RSE rse;
-	NOD *ptr, *end, sub, value;
+	JRD_NOD *ptr, *end, sub, value;
 	USHORT n;
 	BOOLEAN result;
 
@@ -1543,7 +1543,7 @@ static BOOLEAN computable(CSB csb,
 }
 
 
-static void compute_dependencies(NOD node, ULONG * dependencies)
+static void compute_dependencies(JRD_NOD node, ULONG * dependencies)
 {
 /**************************************
  *
@@ -1556,7 +1556,7 @@ static void compute_dependencies(NOD node, ULONG * dependencies)
  *
  **************************************/
 	RSE rse;
-	NOD *ptr, *end, sub, value;
+	JRD_NOD *ptr, *end, sub, value;
 	USHORT n;
 
 	DEV_BLKCHK(node, type_nod);
@@ -1634,7 +1634,7 @@ static void compute_dependencies(NOD node, ULONG * dependencies)
 }
 
 
-static void compute_dbkey_streams(CSB csb, NOD node, UCHAR * streams)
+static void compute_dbkey_streams(CSB csb, JRD_NOD node, UCHAR * streams)
 {
 /**************************************
  *
@@ -1647,7 +1647,7 @@ static void compute_dbkey_streams(CSB csb, NOD node, UCHAR * streams)
  *	dbkey may need to be carried through a sort.
  *
  **************************************/
-	NOD clauses, *ptr, *end;
+	JRD_NOD clauses, *ptr, *end;
 	RSE rse;
 
 	DEV_BLKCHK(csb, type_csb);
@@ -1683,7 +1683,7 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
  *	Identify the streams that make up an rse.
  *
  **************************************/
-	NOD *ptr, *end, node;
+	JRD_NOD *ptr, *end, node;
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
@@ -1700,7 +1700,7 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 
 
 static SLONG decompose(TDBB tdbb,
-					   register NOD boolean_node, LLS * stack, CSB csb)
+					   register JRD_NOD boolean_node, LLS * stack, CSB csb)
 {
 /**************************************
  *
@@ -1712,7 +1712,7 @@ static SLONG decompose(TDBB tdbb,
  *	Decompose a boolean into a stack of conjuctions.
  *
  **************************************/
-	NOD arg, node;
+	JRD_NOD arg, node;
 
 	DEV_BLKCHK(boolean_node, type_nod);
     DEV_BLKCHK(*stack, type_lls);
@@ -1780,7 +1780,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
  *
  **************************************/
 	LLS classes[MAX_OPT_ITEMS], *class_, *class2, *end, stack, temp;
-	NOD boolean, node1, node2, new_node, arg1, arg2;
+	JRD_NOD boolean, node1, node2, new_node, arg1, arg2;
 	USHORT reverse, count, n;
 
 	DEV_BLKCHK(*org_stack, type_lls);
@@ -1791,7 +1791,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 	end = classes;
 
 	for (stack = *org_stack; stack; stack = stack->lls_next) {
-		boolean = (NOD) stack->lls_object;
+		boolean = (JRD_NOD) stack->lls_object;
 		if (boolean->nod_type != nod_eql)
 			continue;
 		node1 = boolean->nod_arg[0];
@@ -1827,10 +1827,10 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 	for (class_ = classes; class_ < end; class_++)
 		for (stack = *class_; stack; stack = stack->lls_next)
 			for (class2 = class_ + 1; class2 < end; class2++)
-				if (search_stack((NOD) stack->lls_object, *class2)) {
+				if (search_stack((JRD_NOD) stack->lls_object, *class2)) {
 					DEBUG;
 					while (*class2)
-						augment_stack((NOD) LLS_POP(class2), class_);
+						augment_stack((JRD_NOD) LLS_POP(class2), class_);
 				}
 
 	count = 0;
@@ -1844,8 +1844,8 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 			for (stack = *class_; stack; stack = stack->lls_next)
 				for (temp = stack->lls_next; temp; temp = temp->lls_next) {
 					boolean =
-						make_binary_node(nod_eql, (NOD) stack->lls_object,
-										 (NOD) temp->lls_object, TRUE);
+						make_binary_node(nod_eql, (JRD_NOD) stack->lls_object,
+										 (JRD_NOD) temp->lls_object, TRUE);
 					if (augment_stack(boolean, org_stack)) {
 						DEBUG;
 						count++;
@@ -1858,7 +1858,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 /* Now make a second pass looking for non-field equalities */
 
 	for (stack = *org_stack; stack; stack = stack->lls_next) {
-		boolean = (NOD) stack->lls_object;
+		boolean = (JRD_NOD) stack->lls_object;
 		if (boolean->nod_type != nod_eql &&
 			boolean->nod_type != nod_gtr &&
 			boolean->nod_type != nod_geq &&
@@ -1884,13 +1884,13 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 		for (class_ = classes; class_ < end; class_++)
 			if (search_stack(node1, *class_)) {
 				for (temp = *class_; temp; temp = temp->lls_next)
-					if (!node_equality(node1, (NOD) temp->lls_object)) {
+					if (!node_equality(node1, (JRD_NOD) temp->lls_object)) {
 						if (reverse) {
 							arg1 = boolean->nod_arg[0];
-							arg2 = (NOD) temp->lls_object;
+							arg2 = (JRD_NOD) temp->lls_object;
 						}
 						else {
-							arg1 = (NOD) temp->lls_object;
+							arg1 = (JRD_NOD) temp->lls_object;
 							arg2 = boolean->nod_arg[1];
 						}
 
@@ -1910,7 +1910,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 }
 
 
-static BOOLEAN dump_index(NOD node,
+static BOOLEAN dump_index(JRD_NOD node,
 						  SCHAR ** buffer_ptr, SSHORT * buffer_length)
 {
 /**************************************
@@ -2041,7 +2041,7 @@ static BOOLEAN dump_rsb(REQ request,
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
 		*buffer++ = gds_info_rsb_indexed;
-		if (!dump_index((NOD) rsb->rsb_arg[0], &buffer, buffer_length))
+		if (!dump_index((JRD_NOD) rsb->rsb_arg[0], &buffer, buffer_length))
 			return FALSE;
 		if (--(*buffer_length) < 0)
 			return FALSE;
@@ -2050,7 +2050,7 @@ static BOOLEAN dump_rsb(REQ request,
 	case rsb_navigate:
 		*buffer++ = gds_info_rsb_navigate;
 		if (!dump_index
-			((NOD) rsb->rsb_arg[RSB_NAV_index], &buffer,
+			((JRD_NOD) rsb->rsb_arg[RSB_NAV_index], &buffer,
 			 buffer_length)) return FALSE;
 		if (--(*buffer_length) < 0)
 			return FALSE;
@@ -2257,7 +2257,7 @@ static BOOLEAN estimate_cost(TDBB tdbb,
  **************************************/
 	CSB csb;
 	IDX *idx;
-	NOD node;
+	JRD_NOD node;
 	USHORT indexes, i, unique, equalities, inequalities, index_hits, count;
 	SSHORT n;
 	ULONG inactivities[OPT_BITS];
@@ -2367,7 +2367,7 @@ static BOOLEAN estimate_cost(TDBB tdbb,
 
 
 #ifdef EXPRESSION_INDICES
-static BOOLEAN expression_equal(TDBB tdbb, NOD node1, NOD node2)
+static BOOLEAN expression_equal(TDBB tdbb, JRD_NOD node1, JRD_NOD node2)
 {
 /**************************************
  *
@@ -2505,7 +2505,7 @@ static void find_best(TDBB tdbb,
 					  USHORT stream,
 					  USHORT position,
 					  UCHAR * streams,
-					  NOD plan_node, double cost, double cardinality)
+					  JRD_NOD plan_node, double cost, double cardinality)
 {
 /**************************************
  *
@@ -2679,7 +2679,7 @@ static void find_best(TDBB tdbb,
 }
 
 
-static NOD find_dbkey(NOD dbkey, USHORT stream, SLONG * position)
+static JRD_NOD find_dbkey(JRD_NOD dbkey, USHORT stream, SLONG * position)
 {
 /**************************************
  *
@@ -2692,7 +2692,7 @@ static NOD find_dbkey(NOD dbkey, USHORT stream, SLONG * position)
  *	a dbkey for specified stream.
  *
  **************************************/
-	NOD dbkey_temp, *ptr, *end;
+	JRD_NOD dbkey_temp, *ptr, *end;
 	DEV_BLKCHK(dbkey, type_nod);
 	if (dbkey->nod_type == nod_dbkey) {
 		if ((USHORT) dbkey->nod_arg[0] == stream)
@@ -2712,7 +2712,7 @@ static NOD find_dbkey(NOD dbkey, USHORT stream, SLONG * position)
 
 
 static USHORT find_order(TDBB tdbb,
-						 register OPT opt, UCHAR * streams, NOD plan_node)
+						 register OPT opt, UCHAR * streams, JRD_NOD plan_node)
 {
 /**************************************
  *
@@ -2831,8 +2831,8 @@ static void form_rivers(TDBB tdbb,
 						OPT opt,
 						UCHAR * streams,
 						LLS * river_stack,
-						NOD * sort_clause,
-						NOD * project_clause, NOD plan_clause)
+						JRD_NOD * sort_clause,
+						JRD_NOD * project_clause, JRD_NOD plan_clause)
 {
 /**************************************
  *
@@ -2845,7 +2845,7 @@ static void form_rivers(TDBB tdbb,
  *	to the user-specified plan.
  *
  **************************************/
-	NOD *ptr, *end, plan_node, relation_node;
+	JRD_NOD *ptr, *end, plan_node, relation_node;
 	USHORT count;
 	UCHAR temp[MAX_STREAMS];
 	SET_TDBB(tdbb);
@@ -2896,8 +2896,8 @@ static BOOLEAN form_river(TDBB tdbb,
 						  UCHAR * streams,
 						  UCHAR * temp,
 						  LLS * river_stack,
-						  NOD * sort_clause,
-						  NOD * project_clause, NOD plan_clause)
+						  JRD_NOD * sort_clause,
+						  JRD_NOD * project_clause, JRD_NOD plan_clause)
 {
 /**************************************
  *
@@ -2976,7 +2976,7 @@ static BOOLEAN form_river(TDBB tdbb,
 
 
 
-static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
+static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 {
 /**************************************
  *
@@ -2993,8 +2993,8 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 	RSB rsb;
 	CSB csb;
 	USHORT count;
-	NOD map, operator_, aggregate;
-	NOD *ptr, *end, from;
+	JRD_NOD map, operator_, aggregate;
+	JRD_NOD *ptr, *end, from;
 	DSC descriptor, *desc;
 	ASB asb;
 	SKD *sort_key;
@@ -3021,7 +3021,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 		aggregate->nod_arg[0] = operator_->nod_arg[e_asgn_from];
 		/* in the max case, flag the sort as descending */
 		if (operator_->nod_type == nod_agg_max)
-			aggregate->nod_arg[1] = (NOD) TRUE;
+			aggregate->nod_arg[1] = (JRD_NOD) TRUE;
 		rse->rse_aggregate = aggregate;
 	}
 
@@ -3056,8 +3056,8 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 			|| (from->nod_type == nod_agg_average_distinct2)
 			|| (from->nod_type == nod_agg_average_distinct)) {
 			count =
-				asb_delta + 1 + (sizeof(SKD) + sizeof(NOD *) -
-								 1) / sizeof(NOD *);
+				asb_delta + 1 + (sizeof(SKD) + sizeof(JRD_NOD *) -
+								 1) / sizeof(JRD_NOD *);
 			asb = (ASB) PAR_make_node(tdbb, count);
 			asb->nod_type = nod_asb;
 			asb->nod_count = 0;
@@ -3089,7 +3089,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(struct iasb));
 			asb->asb_desc = *desc;
-			from->nod_arg[1] = (NOD) asb;
+			from->nod_arg[1] = (JRD_NOD) asb;
 			from->nod_count = 2;
 		}
 	}
@@ -3098,7 +3098,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, NOD node)
 }
 
 
-static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
+static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3128,7 +3128,7 @@ static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
 }
 
 
-static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
+static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3167,7 +3167,7 @@ static void gen_join(TDBB tdbb,
 					 OPT opt,
 					 UCHAR * streams,
 					 LLS * river_stack,
-					 NOD * sort_clause, NOD * project_clause, NOD plan_clause)
+					 JRD_NOD * sort_clause, JRD_NOD * project_clause, JRD_NOD plan_clause)
 {
 /**************************************
  *
@@ -3301,7 +3301,7 @@ static void gen_join(TDBB tdbb,
 static RSB gen_navigation(TDBB tdbb,
 						  OPT opt,
 						  USHORT stream,
-						  REL relation, STR alias, IDX * idx, NOD * sort_ptr)
+						  REL relation, STR alias, IDX * idx, JRD_NOD * sort_ptr)
 {
 /**************************************
  *
@@ -3316,7 +3316,7 @@ static RSB gen_navigation(TDBB tdbb,
  *	the wrong place for ascending indices, so don't use them.
  *
  **************************************/
-	NOD node, *ptr, *end, sort;
+	JRD_NOD node, *ptr, *end, sort;
 	idx::idx_repeat * idx_tail;
 #ifdef SCROLLABLE_CURSORS
 	RSE_GET_MODE last_mode, mode;
@@ -3460,7 +3460,7 @@ static RSB gen_nav_rsb(TDBB tdbb,
 static RSB gen_outer(TDBB tdbb,
 					 OPT opt,
 					 RSE rse,
-					 LLS river_stack, NOD * sort_clause, NOD * project_clause)
+					 LLS river_stack, JRD_NOD * sort_clause, JRD_NOD * project_clause)
 {
 /**************************************
  *
@@ -3483,7 +3483,7 @@ static RSB gen_outer(TDBB tdbb,
 		USHORT stream_num;
 	} stream_o, stream_i, *stream_ptr[2];
 	RIV river;
-	NOD node, boolean, inner_boolean;
+	JRD_NOD node, boolean, inner_boolean;
 	SSHORT i;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(rse, type_nod);
@@ -3568,7 +3568,7 @@ static RSB gen_outer(TDBB tdbb,
 }
 
 
-static RSB gen_procedure(TDBB tdbb, OPT opt, NOD node)
+static RSB gen_procedure(TDBB tdbb, OPT opt, JRD_NOD node)
 {
 /**************************************
  *
@@ -3615,7 +3615,7 @@ static RSB gen_residual_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb)
  *	must still be applied to the result stream.
  *
  **************************************/
-	NOD node, boolean;
+	JRD_NOD node, boolean;
 	register Opt::opt_repeat * tail, *opt_end;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
@@ -3639,10 +3639,10 @@ static RSB gen_residual_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb)
 static RSB gen_retrieval(TDBB tdbb,
 						 OPT opt,
 						 SSHORT stream,
-						 NOD * sort_ptr,
-						 NOD * project_ptr,
+						 JRD_NOD * sort_ptr,
+						 JRD_NOD * project_ptr,
 						 BOOLEAN outer_flag,
-						 BOOLEAN inner_flag, NOD * return_boolean)
+						 BOOLEAN inner_flag, JRD_NOD * return_boolean)
 {
 /**************************************
  *
@@ -3660,7 +3660,7 @@ static RSB gen_retrieval(TDBB tdbb,
 	STR alias;
 	RSB rsb;
 	IDX *idx, *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
-	NOD node, opt_boolean, inversion;
+	JRD_NOD node, opt_boolean, inversion;
 	SSHORT i, j, count, last_idx, idx_walk_count;
 	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
 	USHORT idx_field_count, idx_eql_count;
@@ -3994,9 +3994,9 @@ static RSB gen_retrieval(TDBB tdbb,
 static RSB gen_rsb(TDBB tdbb,
 				   OPT opt,
 				   RSB rsb,
-				   NOD inversion,
+				   JRD_NOD inversion,
 				   SSHORT stream,
-				   REL relation, STR alias, NOD boolean, float cardinality)
+				   REL relation, STR alias, JRD_NOD boolean, float cardinality)
 {
 /**************************************
  *
@@ -4058,7 +4058,7 @@ static RSB gen_rsb(TDBB tdbb,
 	return rsb;
 }
 
-static RSB gen_skip (TDBB tdbb, register OPT opt, RSB prior_rsb, NOD node)
+static RSB gen_skip (TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
@@ -4100,7 +4100,7 @@ static RSB gen_sort(TDBB tdbb,
 					OPT opt,
 					UCHAR * streams,
 					UCHAR * dbkey_streams,
-					RSB prior_rsb, NOD sort, USHORT project_flag)
+					RSB prior_rsb, JRD_NOD sort, USHORT project_flag)
 {
 /**************************************
  *
@@ -4119,7 +4119,7 @@ static RSB gen_sort(TDBB tdbb,
 	CSB csb;
 	SLONG id;
 	ULONG map_length = 0;
-	NOD node, *node_ptr, *end_node;
+	JRD_NOD node, *node_ptr, *end_node;
 	UCHAR *ptr, *end_ptr;
 	USHORT stream, items, count, flag_offset;
 	SMB map;
@@ -4377,7 +4377,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	ULONG selected_rivers[OPT_BITS], selected_rivers2[OPT_BITS];
 	UCHAR *stream;
 	VEC scratch;
-	NOD *classes, *class_, *selected_classes[MAX_OPT_ITEMS],
+	JRD_NOD *classes, *class_, *selected_classes[MAX_OPT_ITEMS],
 		**selected_class, *last_class, node, node1, node2, sort, *ptr;
 	RSB rsb, merge_rsb;
 	RSB *rsb_tail;
@@ -4395,8 +4395,8 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	}
 
 	scratch = vec::newVector(*dbb->dbb_permanent, opt->opt_count * cnt);
-	classes = (NOD *) &*(scratch->begin());
-    //    classes = (NOD *) &(scratch->[0]);
+	classes = (JRD_NOD *) &*(scratch->begin());
+    //    classes = (JRD_NOD *) &(scratch->[0]);
 /* Compute equivalence classes among streams.  This involves finding groups
    of streams joined by field equalities.  */
 	last_class = classes;
@@ -4539,7 +4539,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 
 static RSB gen_union(TDBB tdbb,
 					 OPT opt,
-					 NOD union_node, UCHAR * streams, USHORT nstreams)
+					 JRD_NOD union_node, UCHAR * streams, USHORT nstreams)
 {
 /**************************************
  *
@@ -4553,7 +4553,7 @@ static RSB gen_union(TDBB tdbb,
  **************************************/
 	RSB rsb, *rsb_ptr;
 	USHORT count;
-	NOD clauses, *ptr, *end;
+	JRD_NOD clauses, *ptr, *end;
 	CSB csb;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(union_node, type_nod);
@@ -4625,7 +4625,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
  **************************************/
 	CSB csb;
 	IDX *idx;
-	NOD node;
+	JRD_NOD node;
 	IRL relationship;
 	USHORT i;
 	register Opt::opt_repeat * tail, *opt_end;
@@ -4752,7 +4752,7 @@ static STR make_alias(TDBB tdbb, CSB csb, csb_repeat * base_tail)
 }
 
 
-static NOD make_binary_node(NOD_T type, NOD arg1, NOD arg2, USHORT flag)
+static JRD_NOD make_binary_node(NOD_T type, JRD_NOD arg1, JRD_NOD arg2, USHORT flag)
 {
 /**************************************
  *
@@ -4764,7 +4764,7 @@ static NOD make_binary_node(NOD_T type, NOD arg1, NOD arg2, USHORT flag)
  *	Make a binary node.
  *
  **************************************/
-	NOD node;
+	JRD_NOD node;
 	TDBB tdbb;
 	tdbb = GET_THREAD_DATA;
 	DEV_BLKCHK(arg1, type_nod);
@@ -4821,7 +4821,7 @@ static RSB make_cross(TDBB tdbb, OPT opt, LLS stack)
 }
 
 
-static NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
+static JRD_NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
 {
 /**************************************
  *
@@ -4833,7 +4833,7 @@ static NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
  *	Make an index node and an index retrieval block.
  *
  **************************************/
-	NOD node;
+	JRD_NOD node;
 	IRB retrieval;
 	DEV_BLKCHK(relation, type_rel);
 	DEV_BLKCHK(csb, type_csb);
@@ -4852,7 +4852,7 @@ static NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
 	node->nod_type = nod_index;
 	node->nod_count = 0;
 	retrieval = FB_NEW_RPT(*tdbb->tdbb_default, idx->idx_count * 2) irb();
-	node->nod_arg[e_idx_retrieval] = (NOD) retrieval;
+	node->nod_arg[e_idx_retrieval] = (JRD_NOD) retrieval;
 	retrieval->irb_index = idx->idx_id;
 	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));
 	if (csb)
@@ -4861,7 +4861,7 @@ static NOD make_index_node(TDBB tdbb, REL relation, CSB csb, IDX * idx)
 }
 
 
-static NOD make_inference_node(CSB csb, NOD boolean, NOD arg1, NOD arg2)
+static JRD_NOD make_inference_node(CSB csb, JRD_NOD boolean, JRD_NOD arg1, JRD_NOD arg2)
 {
 /**************************************
  *
@@ -4898,7 +4898,7 @@ static NOD make_inference_node(CSB csb, NOD boolean, NOD arg1, NOD arg2)
  *
  *
  **************************************/
-	NOD node;
+	JRD_NOD node;
 	USHORT n;
 	TDBB tdbb;
 	tdbb = GET_THREAD_DATA;
@@ -4921,8 +4921,8 @@ static NOD make_inference_node(CSB csb, NOD boolean, NOD arg1, NOD arg2)
 }
 
 
-static NOD make_inversion(TDBB tdbb,
-						  register OPT opt, NOD boolean, USHORT stream)
+static JRD_NOD make_inversion(TDBB tdbb,
+						  register OPT opt, JRD_NOD boolean, USHORT stream)
 {
 /**************************************
  *
@@ -4939,7 +4939,7 @@ static NOD make_inversion(TDBB tdbb,
  **************************************/
 	REL relation;
 	IDX *idx;
-	NOD inversion, inversion2, node;
+	JRD_NOD inversion, inversion2, node;
 	SSHORT i;
 	csb_repeat *csb_tail;
 	float selectivity;
@@ -5061,9 +5061,9 @@ static NOD make_inversion(TDBB tdbb,
 }
 
 
-static NOD make_missing(TDBB tdbb,
+static JRD_NOD make_missing(TDBB tdbb,
 						register OPT opt,
-						REL relation, NOD boolean, USHORT stream, IDX * idx)
+						REL relation, JRD_NOD boolean, USHORT stream, IDX * idx)
 {
 /**************************************
  *
@@ -5078,7 +5078,7 @@ static NOD make_missing(TDBB tdbb,
  *	character string fields, so they won't be used.
  *
  **************************************/
-	NOD field, node, value;
+	JRD_NOD field, node, value;
 	IRB retrieval;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
@@ -5106,9 +5106,9 @@ static NOD make_missing(TDBB tdbb,
 }
 
 
-static NOD make_starts(TDBB tdbb,
+static JRD_NOD make_starts(TDBB tdbb,
 					   register OPT opt,
-					   REL relation, NOD boolean, USHORT stream, IDX * idx)
+					   REL relation, JRD_NOD boolean, USHORT stream, IDX * idx)
 {
 /**************************************
  *
@@ -5121,7 +5121,7 @@ static NOD make_starts(TDBB tdbb,
  *	return a inversion type node.
  *
  **************************************/
-	NOD value, field, node;
+	JRD_NOD value, field, node;
 	IRB retrieval;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
@@ -5173,7 +5173,7 @@ static NOD make_starts(TDBB tdbb,
 }
 
 
-static BOOLEAN map_equal(NOD field1, NOD field2, NOD map)
+static BOOLEAN map_equal(JRD_NOD field1, JRD_NOD field2, JRD_NOD map)
 {
 /**************************************
  *
@@ -5187,7 +5187,7 @@ static BOOLEAN map_equal(NOD field1, NOD field2, NOD map)
  *	Order of the input fields is important.
  *
  **************************************/
-	NOD *map_ptr, *map_end, map_from, map_to;
+	JRD_NOD *map_ptr, *map_end, map_from, map_to;
 	DEV_BLKCHK(field1, type_nod);
 	DEV_BLKCHK(field2, type_nod);
 	DEV_BLKCHK(map, type_nod);
@@ -5229,7 +5229,7 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
  *	in the user-specified access plan.
  *
  **************************************/
-	NOD access_type, plan, *arg, *end;
+	JRD_NOD access_type, plan, *arg, *end;
 	IDX *idx;
 	USHORT i, plan_count = 0;
 	if (!(plan = csb_tail->csb_plan))
@@ -5270,7 +5270,7 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
 
 static SSHORT match_index(TDBB tdbb,
 						  register OPT opt,
-						  SSHORT stream, register NOD boolean, IDX * idx)
+						  SSHORT stream, register JRD_NOD boolean, IDX * idx)
 {
 /**************************************
  *
@@ -5285,7 +5285,7 @@ static SSHORT match_index(TDBB tdbb,
  *	were not reliable and will not be used.
  *
  **************************************/
-	NOD match, value;
+	JRD_NOD match, value;
 	SSHORT i, forward, count;
 	Opt::opt_repeat * ptr;
 	DEV_BLKCHK(opt, type_opt);
@@ -5389,7 +5389,7 @@ static SSHORT match_index(TDBB tdbb,
 
 static BOOLEAN match_indices(TDBB tdbb,
 							register OPT opt,
-							SSHORT stream, register NOD boolean, IDX * idx)
+							SSHORT stream, register JRD_NOD boolean, IDX * idx)
 {
 /**************************************
  *
@@ -5465,7 +5465,7 @@ static USHORT nav_rsb_size(RSB rsb, USHORT key_length, USHORT size)
 }
 
 
-static BOOLEAN node_equality(NOD node1, NOD node2)
+static BOOLEAN node_equality(JRD_NOD node1, JRD_NOD node2)
 {
 /**************************************
  *
@@ -5513,7 +5513,7 @@ static BOOLEAN node_equality(NOD node1, NOD node2)
 }
 
 
-static NOD optimize_like(TDBB tdbb, NOD like_node)
+static JRD_NOD optimize_like(TDBB tdbb, JRD_NOD like_node)
 {
 /**************************************
  *
@@ -5533,7 +5533,7 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
  *	still needed.
  *
  **************************************/
-	NOD search_node, escape_node, node;
+	JRD_NOD search_node, escape_node, node;
 	DSC *search_desc, *escape_desc;
 	UCHAR *p, *end, *q, *p_start;
 	SSHORT count;
@@ -5657,7 +5657,7 @@ static void print_order(OPT opt,
 #endif
 
 
-static USHORT river_count(USHORT count, NOD * class_)
+static USHORT river_count(USHORT count, JRD_NOD * class_)
 {
 /**************************************
  *
@@ -5687,7 +5687,7 @@ static USHORT river_count(USHORT count, NOD * class_)
 }
 
 
-static BOOLEAN river_reference(RIV river, NOD node)
+static BOOLEAN river_reference(RIV river, JRD_NOD node)
 {
 /**************************************
  *
@@ -5713,7 +5713,7 @@ static BOOLEAN river_reference(RIV river, NOD node)
 }
 
 
-static BOOLEAN search_stack(NOD node, LLS stack)
+static BOOLEAN search_stack(JRD_NOD node, LLS stack)
 {
 /**************************************
  *
@@ -5729,7 +5729,7 @@ static BOOLEAN search_stack(NOD node, LLS stack)
 	DEV_BLKCHK(node, type_nod);
 	DEV_BLKCHK(stack, type_lls);
 	for (; stack; stack = stack->lls_next)
-		if (node_equality(node, (NOD) stack->lls_object))
+		if (node_equality(node, (JRD_NOD) stack->lls_object))
 			return TRUE;
 	return FALSE;
 }
@@ -5758,7 +5758,7 @@ static void set_active(OPT opt, RIV river)
 }
 
 
-static void set_direction(NOD from_clause, NOD to_clause)
+static void set_direction(JRD_NOD from_clause, JRD_NOD to_clause)
 {
 /**************************************
  *
@@ -5771,7 +5771,7 @@ static void set_direction(NOD from_clause, NOD to_clause)
  *	clause to the same direction as another clause. 	
  *
  **************************************/
-	NOD *from_ptr, *to_ptr, *end;
+	JRD_NOD *from_ptr, *to_ptr, *end;
 	DEV_BLKCHK(from_clause, type_nod);
 	DEV_BLKCHK(to_clause, type_nod);
 /* all three clauses are allocated with twice the number of arguments to 
@@ -5839,7 +5839,7 @@ static void set_made_river(OPT opt, RIV river)
 }
 
 
-static void set_position(NOD from_clause, NOD to_clause, NOD map)
+static void set_position(JRD_NOD from_clause, JRD_NOD to_clause, JRD_NOD map)
 {
 /**************************************
  *
@@ -5853,9 +5853,9 @@ static void set_position(NOD from_clause, NOD to_clause, NOD map)
  *	using a mapping between the streams.
  *
  **************************************/
-	NOD *from_ptr, *to_ptr;
-	NOD *from_end, *to_end;
-	NOD *to_swap, swap;
+	JRD_NOD *from_ptr, *to_ptr;
+	JRD_NOD *from_end, *to_end;
+	JRD_NOD *to_swap, swap;
 	DEV_BLKCHK(from_clause, type_nod);
 	DEV_BLKCHK(to_clause, type_nod);
 	DEV_BLKCHK(map, type_nod);
@@ -5897,7 +5897,7 @@ static void set_rse_inactive(CSB csb, RSE rse)
  *    Set all the streams involved in an rse as inactive. Do it recursively.
  *
  ***************************************************/
-	NOD node, *ptr, *end;
+	JRD_NOD node, *ptr, *end;
 	SSHORT stream;
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
 		 ptr < end; ptr++) {
