@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.28 2003-03-24 14:41:39 skidder Exp $
+$Id: btr.cpp,v 1.29 2003-04-11 07:28:47 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -322,6 +322,7 @@ void BTR_create(TDBB tdbb,
 	CCH_RELEASE(tdbb, &window);
 }
 
+
 void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 {
 /**************************************
@@ -371,6 +372,8 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 		delete_tree(tdbb, relation_id, id, next, prior);
 	}
 }
+
+
 BOOLEAN BTR_description(JRD_REL relation,
 						IRT root, IDX * idx, SSHORT id)
 {
