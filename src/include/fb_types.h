@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.26 2003-09-28 21:36:00 skidder Exp $
+ *  $Id: fb_types.h,v 1.27 2003-10-05 22:51:28 brodsom Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -41,81 +41,42 @@
 /******************************************************************/
 /* Define type, export and other stuff based on c/c++ and Windows */
 /******************************************************************/
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#ifndef __GNUC__
-typedef __int64				ISC_INT64;
-typedef unsigned __int64	ISC_UINT64;
-#define  ISC_INT64_DEFINED
-#endif
-#define  ISC_EXPORT	__stdcall
-#define  ISC_EXPORT_VARARG	__cdecl
+	#define  ISC_EXPORT	__stdcall
+	#define  ISC_EXPORT_VARARG	__cdecl
 #else
-#define  ISC_EXPORT
-#define  ISC_EXPORT_VARARG
+	#define  ISC_EXPORT
+	#define  ISC_EXPORT_VARARG
 #endif
 
 /*******************************************************************/
 /* 64 bit Integers                                                 */
 /*******************************************************************/
 
-#ifdef  ISC_INT64_DEFINED
-#undef  ISC_INT64_DEFINED
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__)) && !defined(__GNUC__)
+typedef __int64				ISC_INT64;
+typedef unsigned __int64	ISC_UINT64;
 #else
 typedef long long int			ISC_INT64;
 typedef unsigned long long int	ISC_UINT64;
 #endif
 
 #if SIZEOF_LONG == 8
-	/* EKU: Firebird requires (S)LONG to be 32 bit */
-#   define LONG_DEFINED
-    typedef int SLONG;
-    typedef unsigned int ULONG;
-
-#   define SQUAD_DEFINED
-    typedef long SQUAD;
-    typedef unsigned long UQUAD;
+	// EKU: Firebird requires (S)LONG to be 32 bit
+	typedef int SLONG;
+	typedef unsigned int ULONG;
+	typedef long SQUAD;
+	typedef unsigned long UQUAD;
 #   define NATIVE_QUAD
-#endif /* SIZEOF_LONG == 8 */
-
-
-
-/* Basic data types */
-
-
-#ifdef NOT_USED_OR_REPLACED
-typedef signed char SCHAR;
 #else
-/* TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
- * "char" is really intended. This currently forces us to this bad definition.
- */
-typedef char SCHAR;
-#endif
+	typedef long SLONG;
+	typedef unsigned long ULONG;
+	typedef struct {
+		SLONG high;
+		ULONG low;
+	} SQUAD;
+#endif // SIZEOF_LONG == 8
 
-
-typedef unsigned char UCHAR;
-typedef short SSHORT;
-typedef unsigned short USHORT;
-
-
-#ifndef LONG_DEFINED			/* 32 bit */
-typedef long SLONG;
-typedef unsigned long ULONG;
-#else
-#undef LONG_DEFINED
-#endif
-
-
-#ifndef SQUAD_DEFINED			/* 64 bit */
-typedef struct {
-	SLONG high;
-	ULONG low;
-} SQUAD;
-#endif
-
-
-#ifndef DEFINED_GDS_QUAD
-#define DEFINED_GDS_QUAD
 struct GDS_QUAD_t {
 	SLONG gds_quad_high;
 	ULONG gds_quad_low;
@@ -123,7 +84,19 @@ struct GDS_QUAD_t {
 
 typedef struct GDS_QUAD_t GDS_QUAD;
 
-#endif /* DEFINED_GDS_QUAD */
+// Basic data types
+
+// typedef signed char SCHAR;
+// TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
+// "char" is really intended. This currently forces us to this bad definition.
+//
+typedef char SCHAR;
+
+
+typedef unsigned char UCHAR;
+typedef short SSHORT;
+typedef unsigned short USHORT;
+
 
 //
 // TMN: some misc data types from all over the place
