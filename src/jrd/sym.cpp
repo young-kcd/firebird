@@ -27,16 +27,17 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/sym_proto.h"
+#include "../jrd/sym.h"
 #include "../jrd/thd_proto.h"
 
 
 using namespace Jrd;
 
-static SSHORT hash_func(const SCHAR*);
+namespace {
+	SSHORT hash_func(const Firebird::string&);
+}
 
-
-void SYM_insert(Symbol* symbol)
+void Symbol::insert()
 {
 /**************************************
  *
@@ -50,22 +51,24 @@ void SYM_insert(Symbol* symbol)
  **************************************/
 	Database* dbb = GET_DBB;
 
-	const int h = hash_func(symbol->sym_string);
+	const int h = hash_func(sym_string);
 
-	for (Symbol* old = dbb->dbb_hash_table[h]; old; old = old->sym_collision) {
-		if (!strcmp(symbol->sym_string, old->sym_string)) {
-			symbol->sym_homonym = old->sym_homonym;
-			old->sym_homonym = symbol;
+	for (Symbol* old = dbb->dbb_hash_table[h]; old; old = old->sym_collision)
+	{
+		if (sym_string == old->sym_string)
+		{
+			sym_homonym = old->sym_homonym;
+			old->sym_homonym = this;
 			return;
 		}
 	}
 
-	symbol->sym_collision = dbb->dbb_hash_table[h];
-	dbb->dbb_hash_table[h] = symbol;
+	sym_collision = dbb->dbb_hash_table[h];
+	dbb->dbb_hash_table[h] = this;
 }
 
 
-Symbol* SYM_lookup(const TEXT* string)
+Symbol* Symbol::lookup(const Firebird::string& string)
 {
 /**************************************
  *
@@ -82,7 +85,7 @@ Symbol* SYM_lookup(const TEXT* string)
 	for (Symbol* symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
-		if (!strcmp(string, symbol->sym_string)) 
+		if (string == symbol->sym_string) 
 			return symbol;
 	}
 
@@ -90,7 +93,7 @@ Symbol* SYM_lookup(const TEXT* string)
 }
 
 
-void SYM_remove(Symbol* symbol)
+void Symbol::remove()
 {
 /**************************************
  *
@@ -104,20 +107,20 @@ void SYM_remove(Symbol* symbol)
  **************************************/
 	Database* dbb = GET_DBB;
 
-	const int h = hash_func(symbol->sym_string);
+	const int h = hash_func(sym_string);
 
 	for (Symbol** next = &dbb->dbb_hash_table[h]; *next;
 		 next = &(*next)->sym_collision)
 	{
-		if (symbol == *next) {
-			Symbol* homonym = symbol->sym_homonym;
+		if (this == *next) {
+			Symbol* homonym = sym_homonym;
 			if (homonym) {
-				homonym->sym_collision = symbol->sym_collision;
+				homonym->sym_collision = sym_collision;
 				*next = homonym;
 				return;
 			}
 			else {
-				*next = symbol->sym_collision;
+				*next = sym_collision;
 				return;
 			}
 		}
@@ -125,8 +128,8 @@ void SYM_remove(Symbol* symbol)
 			for (Symbol** ptr = &(*next)->sym_homonym; *ptr;
 				 ptr = &(*ptr)->sym_homonym)
 			{
-				if (symbol == *ptr) {
-					*ptr = symbol->sym_homonym;
+				if (this == *ptr) {
+					*ptr = sym_homonym;
 					return;
 				}
 			}
@@ -136,8 +139,9 @@ void SYM_remove(Symbol* symbol)
 	BUGCHECK(164);				/* msg 164 failed to remove symbol from hash table */
 }
 
+namespace {
 
-static SSHORT hash_func(const SCHAR* string)
+SSHORT hash_func(const Firebird::string& str)
 {
 /**************************************
  *
@@ -155,12 +159,12 @@ static SSHORT hash_func(const SCHAR* string)
 
 	int value = 0;
 
-	SCHAR c;
-	while ( (c = *string++) ) {
-		value = (value << 1) + UPPER7(c);
+	for (const char *s = str.c_str(); *s; s++)
+	{
+		value = (value << 1) + UPPER7(*s);
 	}
 
 	return ((value >= 0) ? value : -value) % HASH_SIZE;
 }
 
-
+} //noname namespace
