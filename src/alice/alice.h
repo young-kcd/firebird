@@ -187,7 +187,7 @@ typedef tgbl *TGBL;
 #ifdef FB_FROM_ALICE_CPP
 #define SET_THREAD_DATA		THD_put_specific ((THDD) tdgbl);	\
 				tdgbl->tgbl_thd_data.thdd_type =				\
-					reinterpret_cast<volatile ULONG>(THDD_TYPE_TALICE)
+					THDD_TYPE_TALICE
 #else /* FB_FROM_ALICE_CPP */
 #define SET_THREAD_DATA		THD_put_specific ((THDD) tdgbl);	\
 				tdgbl->tgbl_thd_data.thdd_type =				\

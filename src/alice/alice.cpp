@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.6 2001-12-25 04:53:56 tamlin Exp $
+//	$Id: alice.cpp,v 1.7 2001-12-25 07:57:04 tamlin Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -93,12 +93,11 @@ struct tgbl *gdgbl;
 						Firebird::status_longjmp_error::raise(1);  }
 
 #if defined (WIN95) && !defined (GUI_TOOLS)
-static BOOL fAnsiCP = FALSE;
-#define	TRANSLATE_CP(a) if (!fAnsiCP) AnsiToOem(a, a)
-#else
-#define TRANSLATE_CP(a)
+static bool fAnsiCP = false;
 #endif
 
+static void ALICE_error(USHORT number);	// overloaded to keep down param count
+static inline void translate_cp(LPSTR sz);
 static void expand_filename(TEXT*, TEXT*);
 static int output_thread(SLONG, UCHAR*);
 static int output_main(SLONG, UCHAR*);
@@ -206,7 +205,6 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	IN_SW_TAB table = alice_in_sw_table;
 
 	USHORT	error;
-	USHORT	i;
 	TEXT*	database;
 	TEXT	string[512];
 	ULONG	switches;
@@ -215,7 +213,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	SLONG	redir_err;
 
 #if defined (WIN95) && !defined (GUI_TOOLS)
-	BOOL fAnsiCP fAnsiCP = (GetConsoleCP() == GetACP());
+	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
 	VOLATILE tgbl* tdgbl = (struct tgbl*) gds__alloc(sizeof(*tdgbl));
@@ -224,12 +222,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 		return FINI_ERROR;
 	}
 
-// TMN
-#if 0
 	SET_THREAD_DATA;
-#else
-	tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TALICE;
-#endif
 	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdgbl, 0, sizeof(*tdgbl));
 	tdgbl->output_proc = output_proc;
@@ -276,21 +269,27 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95) && !defined (GUI_TOOLS)
-		fAnsiCP = TRUE;
+		fAnsiCP = true;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
 		redir_err = _open_osfhandle(redir_err, 0);
 #endif
-		if (redir_in != 0)
-			if (dup2((int) redir_in, 0))
+		if (redir_in != 0) {
+			if (dup2((int) redir_in, 0)) {
 				close((int) redir_in);
-		if (redir_out != 1)
-			if (dup2((int) redir_out, 1))
+			}
+		}
+		if (redir_out != 1) {
+			if (dup2((int) redir_out, 1)) {
 				close((int) redir_out);
-		if (redir_err != 2)
-			if (dup2((int) redir_err, 2))
+			}
+		}
+		if (redir_err != 2) {
+			if (dup2((int) redir_err, 2)) {
 				close((int) redir_err);
+			}
+		}
 		argv += 4;
 		argc -= 4;
 	}
@@ -319,7 +318,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 #if defined (WIN95) && !defined (GUI_TOOLS)
 //  There is a small problem with SuperServer on NT, since it is a
 //  Windows app, it uses the ANSI character set.  All the console
-//  apps use the OEN character set.  We need to pass the database
+//  apps use the OEM character set.  We need to pass the database
 //  name in the correct character set.
 // if (GetConsoleCP != GetACP())
 //    OemToAnsi(database, database);
@@ -368,7 +367,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & sw_begin_log) {
 			if (--argc <= 0) {
-				ALICE_error(5, 0, 0, 0, 0, 0);	/* msg 5: replay log pathname required */
+				ALICE_error(5);	/* msg 5: replay log pathname required */
 			}
 			expand_filename(*argv++,	/* TMN: cast away volatile */
 							(TEXT *) tdgbl->ALICE_data.ua_log_file);
@@ -376,31 +375,31 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & (sw_buffers)) {
 			if (--argc <= 0) {
-				ALICE_error(6, 0, 0, 0, 0, 0);	/* msg 6: number of page buffers for cache required */
+				ALICE_error(6);	/* msg 6: number of page buffers for cache required */
 			}
 			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7, 0, 0, 0, 0, 0);	/* msg 7: numeric value required */
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 			if (tdgbl->ALICE_data.ua_page_buffers < 0) {
-				ALICE_error(8, 0, 0, 0, 0, 0);	/* msg 8: positive numeric value required */
+				ALICE_error(8);	/* msg 8: positive numeric value required */
 			}
 		}
 
 		if (table->in_sw_value & (sw_housekeeping)) {
 			if (--argc <= 0) {
-				ALICE_error(9, 0, 0, 0, 0, 0);	/* msg 9: number of transactions per sweep required */
+				ALICE_error(9);	/* msg 9: number of transactions per sweep required */
 			}
 			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7, 0, 0, 0, 0, 0);	/* msg 7: numeric value required */
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 			if (tdgbl->ALICE_data.ua_sweep_interval < 0) {
-				ALICE_error(8, 0, 0, 0, 0, 0);	/* msg 8: positive numeric value required */
+				ALICE_error(8);	/* msg 8: positive numeric value required */
 			}
 		}
 
@@ -409,7 +408,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 				// TMN: Error in use of error-code. Either the following
 				// comment is right, or the one 16 lines above, but
 				// not both.
-				ALICE_error(9, 0, 0, 0, 0, 0);	/* msg 9: dialect info is required XXX */
+				ALICE_error(113);	/* msg 113: dialect info is required XXX */
 			}
 
 			ALICE_down_case(*argv++, string);
@@ -417,24 +416,24 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) &&
 				(strcmp(string, "0")))
 			{
-				ALICE_error(7, 0, 0, 0, 0, 0);	/* msg 7: numeric value required */
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 
 			if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
 			{
-				ALICE_error(8, 0, 0, 0, 0, 0);	/* msg 8: positive numeric value
+				ALICE_error(8);	/* msg 8: positive numeric value
 												   required */
 			}
 		}
 
 		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase)) {
 			if (--argc <= 0) {
-				ALICE_error(10, 0, 0, 0, 0, 0);	/* msg 10: transaction number or "all" required */
+				ALICE_error(10);	/* msg 10: transaction number or "all" required */
 			}
 			ALICE_down_case(*argv++, string);
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
 				if (strcmp(string, "all")) {
-					ALICE_error(10, 0, 0, 0, 0, 0);	/* msg 10: transaction number or "all" required */
+					ALICE_error(10);	/* msg 10: transaction number or "all" required */
 				} else {
 					switches |= sw_list;
 				}
@@ -443,7 +442,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & sw_write) {
 			if (--argc <= 0) {
-				ALICE_error(11, 0, 0, 0, 0, 0);	/* msg 11: "sync" or "async" required */
+				ALICE_error(11);	/* msg 11: "sync" or "async" required */
 			}
 			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, ALICE_SW_SYNC)) {
@@ -451,13 +450,13 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
 				tdgbl->ALICE_data.ua_force = FALSE;
 			} else {
-				ALICE_error(11, 0, 0, 0, 0, 0);	/* msg 11: "sync" or "async" required */
+				ALICE_error(11);	/* msg 11: "sync" or "async" required */
 			}
 		}
 
 		if (table->in_sw_value & sw_use) {
 			if (--argc <= 0) {
-				ALICE_error(12, 0, 0, 0, 0, 0);	/* msg 12: "full" or "reserve" required */
+				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
 			}
 			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, "full")) {
@@ -465,13 +464,13 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 			} else if (!strcmp(string, "reserve")) {
 				tdgbl->ALICE_data.ua_use = FALSE;
 			} else {
-				ALICE_error(12, 0, 0, 0, 0, 0);	/* msg 12: "full" or "reserve" required */
+				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
 			}
 		}
 
 		if (table->in_sw_value & sw_user) {
 			if (--argc <= 0) {
-				ALICE_error(13, 0, 0, 0, 0, 0);	/* msg 13: user name required */
+				ALICE_error(13);	/* msg 13: user name required */
 			}
 			tdgbl->ALICE_data.ua_user =
 				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
@@ -479,7 +478,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & sw_password) {
 			if (--argc <= 0) {
-				ALICE_error(14, 0, 0, 0, 0, 0);	/* msg 14: password required */
+				ALICE_error(14);	/* msg 14: password required */
 			}
 			tdgbl->ALICE_data.ua_password =
 				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
@@ -487,34 +486,34 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & sw_disable) {
 			if (--argc <= 0) {
-				ALICE_error(15, 0, 0, 0, 0, 0);	/* msg 15: subsystem name  */
+				ALICE_error(15);	/* msg 15: subsystem name  */
 			}
 			ALICE_down_case(*argv++, string);
 			if (strcmp(string, "wal")) {
-				ALICE_error(16, 0, 0, 0, 0, 0);	/* msg 16: "wal" required */
+				ALICE_error(16);	/* msg 16: "wal" required */
 			}
 		}
 
 		if (table->in_sw_value & (sw_attach | sw_force | sw_tran | sw_cache)) {
 			if (--argc <= 0) {
-				ALICE_error(17, 0, 0, 0, 0, 0);	/* msg 17: number of seconds required */
+				ALICE_error(17);	/* msg 17: number of seconds required */
 			}
 			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7, 0, 0, 0, 0, 0);	/* msg 7: numeric value required */
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 			if (tdgbl->ALICE_data.ua_shutdown_delay < 0
 				|| tdgbl->ALICE_data.ua_shutdown_delay > 32767)
 			{
-				ALICE_error(18, 0, 0, 0, 0, 0);	/* msg 18: numeric value between 0 and 32767 inclusive required */
+				ALICE_error(18);	/* msg 18: numeric value between 0 and 32767 inclusive required */
 			}
 		}
 
 		if (table->in_sw_value & sw_mode) {
 			if (--argc <= 0) {
-				ALICE_error(110, 0, 0, 0, 0, 0);	/* msg 110: "read_only" or "read_write" required */
+				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
 			}
 			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
@@ -522,7 +521,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 			} else if (!strcmp(string, ALICE_SW_MODE_RW)) {
 				tdgbl->ALICE_data.ua_read_only = FALSE;
 			} else {
-				ALICE_error(110, 0, 0, 0, 0, 0);	/* msg 110: "read_only" or "read_write" required */
+				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
 			}
 		}
 
@@ -533,7 +532,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	if ((switches & sw_shut)
 		&& !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
-		ALICE_error(19, 0, 0, 0, 0, 0);	/* msg 19: must specify type of shutdown */
+		ALICE_error(19);	/* msg 19: must specify type of shutdown */
 	}
 
 //  catch the case where -z is only command line option
@@ -565,7 +564,7 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	}
 
 	if (!database) {
-		ALICE_error(23, 0, 0, 0, 0, 0);	/* msg 23: please retry, giving a database name */
+		ALICE_error(23);	/* msg 23: please retry, giving a database name */
 	}
 
 	//  generate the database parameter block for the attach,
@@ -581,27 +580,29 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 	{
 		ret = EXE_action(database, switches);
 
-		USHORT count = 0;
+		// cast away volatile
+		const SLONG* ua_val_errors = 
+			const_cast<SLONG*>(tdgbl->ALICE_data.ua_val_errors);
 
-		for (i = 0; i < MAX_VAL_ERRORS; i++) {
-			if (tdgbl->ALICE_data.ua_val_errors[i]) {
-				count++;
-			}
-		}
-
-		if ((count)
-			&& !(tdgbl->ALICE_data.ua_val_errors[VAL_INVALID_DB_VERSION]))
+		if (!ua_val_errors[VAL_INVALID_DB_VERSION])
 		{
-			ALICE_print(24, 0, 0, 0, 0, 0);	/* msg 24: Summary of validation errors\n */
+			bool any_error = false;
 
-			for (i = 0; i < MAX_VAL_ERRORS; i++)
-			{
-				if (tdgbl->ALICE_data.ua_val_errors[i])
-				{
-					ALICE_print(val_err_table[i],
-								reinterpret_cast <
-								char *>(tdgbl->ALICE_data.ua_val_errors[i]),
-								0, 0, 0, 0);
+			for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
+				if (ua_val_errors[i]) {
+					any_error = true;
+					break;
+				}
+			}
+
+			if (any_error) {
+				ALICE_print(24, 0, 0, 0, 0, 0);	/* msg 24: Summary of validation errors\n */
+
+				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
+					if (ua_val_errors[i]) {
+						TEXT* szErr = reinterpret_cast<TEXT*>(ua_val_errors[i]);
+						ALICE_print(val_err_table[i], szErr, 0, 0, 0, 0);
+					}
 				}
 			}
 		}
@@ -680,7 +681,7 @@ void ALICE_print(USHORT	number,
 
 	gds__msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg1,
 					arg2, arg3, arg4, arg5);
-	TRANSLATE_CP(buffer);
+	translate_cp(buffer);
 	alice_output("%s\n", buffer);
 }
 
@@ -713,13 +714,13 @@ void ALICE_print_status(STATUS* status_vector)
 		}
 #endif
 		isc_interprete(s, &vector);
-		TRANSLATE_CP(s);
+		translate_cp(s);
 		alice_output("%s\n", s);
 
 		/* Continuation of error */
 		s[0] = '-';
 		while (isc_interprete(s + 1, &vector)) {
-			TRANSLATE_CP(s);
+			translate_cp(s);
 			alice_output("%s\n", s);
 		}
 	}
@@ -754,9 +755,19 @@ void ALICE_error(USHORT	number,
 
 	gds__msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg1,
 					arg2, arg3, arg4, arg5);
-	TRANSLATE_CP(buffer);
+	translate_cp(buffer);
 	alice_output("%s\n", buffer);
 	EXIT(FINI_ERROR);
+}
+
+
+
+//
+// Overload of ALICE_error to keep down parameter count.
+//
+static void ALICE_error(USHORT number)
+{
+	ALICE_error(number, 0, 0, 0, 0, 0);
 }
 
 
@@ -799,6 +810,22 @@ static void alice_output(CONST SCHAR * format, ...)
 	}
 }
 
+
+//
+// Translate the given string from Windows ANSI charset to the
+// to the current OEM charset iff:
+//  1. The macro WIN95 is defined AND
+//  2. The macro GUI_TOOLS is NOT defined AND
+//  3. The static variable fAnsiCP is false.
+//
+static inline void translate_cp(LPSTR sz)
+{
+#if defined (WIN95) && !defined (GUI_TOOLS)
+	if (!fAnsiCP) {
+		CharToOem(sz, sz);
+	}
+#endif
+}
 
 //____________________________________________________________
 //
