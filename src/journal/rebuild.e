@@ -104,7 +104,7 @@ extern int errno;
 #ifdef WIN_NT
 #include <sys/types.h>
 #include <sys/timeb.h>
-#include <winsock.h>
+#include <winsock2.h>
 #include <windows.h>
 #define TEXT		SCHAR
 #define SYS_ERROR	gds_arg_win32
