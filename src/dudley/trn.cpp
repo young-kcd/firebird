@@ -251,7 +251,7 @@ void TRN_translate(void)
 				break;
 
 			case act_d_shadow:
-				drop_shadow(dyn, (SLONG) (action->act_object));
+				drop_shadow(dyn, (IPTR) (action->act_object));
 				break;
 
 			case act_m_trigger_msg:
@@ -643,8 +643,6 @@ static void add_index( STR dyn, DUDLEY_IDX index)
  *	Generate dynamic DDL to create an index.
  *
  **************************************/
-	TEXT i;
-
 	put_symbol(dyn, isc_dyn_def_idx, index->idx_name);
 	put_symbol(dyn, isc_dyn_rel_name, index->idx_relation);
 	put_number(dyn, isc_dyn_idx_unique, (index->idx_unique) ? TRUE : FALSE);
@@ -654,7 +652,7 @@ static void add_index( STR dyn, DUDLEY_IDX index)
 
 	put_text(dyn, isc_dyn_description, index->idx_description);
 
-	for (i = 0; i < index->idx_count; i++)
+	for (int i = 0; i < index->idx_count; i++)
 		put_symbol(dyn, isc_dyn_fld_name, index->idx_field[i]);
 
 	check_dyn(dyn, 1);

@@ -593,12 +593,12 @@ void LEX_mark_statement(void)
 		 temp->line_next && QLI_statements;
 		 temp = temp->line_next)
 	{
-		if (temp->line_next->line_position == (SLONG) QLI_statements->lls_object)
+		if (temp->line_next->line_position == (IPTR) QLI_statements->lls_object)
 			return;
 	}
 
 	qli_lls* statement = (qli_lls*) ALLOCP(type_lls);
-	statement->lls_object = (BLK) temp->line_position;
+	statement->lls_object = (BLK)(IPTR) temp->line_position;
 	statement->lls_next = QLI_statements;
 	QLI_statements = statement;
 }
@@ -1071,7 +1071,7 @@ static void next_line(const bool eof_ok)
 			}
 			if (flag) {
 				TEXT* q;
-				for (q = p; classes[*q] & CHR_white; q++);
+				for (q = p; classes[static_cast<UCHAR>(*q)] & CHR_white; q++);
 				if (*q == '@') {
 					TEXT filename[MAXPATHLEN];
 					for (p = q + 1, q = filename; *p && *p != '\n';)

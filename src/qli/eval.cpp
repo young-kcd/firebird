@@ -210,11 +210,9 @@ void EVAL_break_compute( qli_nod* node)
 
 	if (node->nod_type == nod_rpt_average && node->nod_arg[e_stt_default])
 		if (node->nod_desc.dsc_dtype == dtype_long)
-			*(SLONG *) node->nod_desc.dsc_address /= (SLONG) node->
-				nod_arg[e_stt_default];
+			*(SLONG *) node->nod_desc.dsc_address /= (IPTR) node->nod_arg[e_stt_default];
 		else
-			*(double *) node->nod_desc.dsc_address /= (SLONG) node->
-				nod_arg[e_stt_default];
+			*(double *) node->nod_desc.dsc_address /= (IPTR) node->nod_arg[e_stt_default];
 }
 
 
@@ -248,21 +246,21 @@ void EVAL_break_increment( qli_nod* node)
 
 // If this is the first value, just move it in.
 
-	const SLONG count = (SLONG) node->nod_arg[e_stt_default] + 1;
+	const SLONG count = (IPTR) node->nod_arg[e_stt_default] + 1;
 	if (count == 1) {
 		if (desc2->dsc_missing)
 			desc1->dsc_missing = DSC_missing;
 		else {
 			desc1->dsc_missing = FALSE;
 			MOVQ_move(desc2, desc1);
-			node->nod_arg[e_stt_default] = (qli_nod*) (SLONG) count;
+			node->nod_arg[e_stt_default] = (qli_nod*) (IPTR) count;
 		}
 		return;
 	}
 	else if (desc2->dsc_missing)
 		return;
 
-	node->nod_arg[e_stt_default] = (qli_nod*) (SLONG) count;
+	node->nod_arg[e_stt_default] = (qli_nod*) (IPTR) count;
 	desc1->dsc_missing = FALSE;
 
 // Finish off as per operator
@@ -381,7 +379,7 @@ dsc* EVAL_value(qli_nod* node)
 	case nod_rpt_min:
 	case nod_rpt_total:
 	case nod_rpt_average:
-		if (!(SLONG) node->nod_arg[e_stt_default])
+		if (!(IPTR) node->nod_arg[e_stt_default])
 			desc->dsc_missing = DSC_missing;
 
 	case nod_rpt_count:
@@ -731,10 +729,11 @@ static DSC *execute_prompt( qli_nod* node)
 	vary* data = (vary*) desc->dsc_address;
 
 	TEXT* value =
-		(desc->dsc_length - 2 <= sizeof(buffer)) ? buffer : data->vary_string;
+		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ? 
+		  buffer : data->vary_string;
 	const int length =
-		(desc->dsc_length - 2 <=
-		 sizeof(buffer)) ? sizeof(buffer) : desc->dsc_length - 2;
+		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
+		  sizeof(buffer) : desc->dsc_length - 2;
 
 	for (;;) {
 		++QLI_prompt_count;

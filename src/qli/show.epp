@@ -160,7 +160,7 @@ void SHOW_stuff( qli_syntax* node)
 	qli_syntax** ptr = node->syn_arg;
 
 	for (USHORT i = 0; i < node->syn_count; i++) {
-		const show_t sw = (enum show_t) (int) * ptr++;
+		const show_t sw = (enum show_t)(IPTR)*ptr++;
 		qli_syntax* value = *ptr++;
 		if (sw != show_matching_language &&
 			sw != show_version &&
@@ -735,7 +735,7 @@ static void show_datatype(
 	case dtype_blob:
 		ERRQ_msg_partial(105, NULL, NULL, NULL, NULL, NULL);	// Msg105 blob
 		if (segment_length) {
-			ERRQ_msg_partial(106, (TEXT *) (ULONG) segment_length, NULL, NULL,
+			ERRQ_msg_partial(106, (TEXT*)(IPTR) segment_length, NULL, NULL,
 							 NULL, NULL);	// Msg106 , segment length %d
 		}
 		if (sub_type) {
@@ -757,13 +757,13 @@ static void show_datatype(
 		return;
 
 	case dtype_sql_date:
-		ERRQ_msg_partial(110, (TEXT *) (ULONG) length, NULL, NULL, NULL,
+		ERRQ_msg_partial(110, (TEXT*)(IPTR)length, NULL, NULL, NULL,
 						 NULL);
 		ERRQ_msg_partial(107, "SQL DATE", NULL, NULL, NULL, NULL);
 		return;
 
 	case dtype_sql_time:
-		ERRQ_msg_partial(110, (TEXT *) (ULONG) length, NULL, NULL, NULL,
+		ERRQ_msg_partial(110, (TEXT*)(IPTR)length, NULL, NULL, NULL,
 						 NULL);
 		ERRQ_msg_partial(107, "SQL TIME", NULL, NULL, NULL, NULL);
 		return;
@@ -776,7 +776,7 @@ static void show_datatype(
 		BUGCHECK(8);			// Msg8 show_fields: dtype not done
 	}
 
-	ERRQ_msg_partial(msg, (TEXT *) (ULONG) length, NULL, NULL, NULL, NULL);
+	ERRQ_msg_partial(msg, (TEXT*)(IPTR)length, NULL, NULL, NULL, NULL);
 
 	if (dimensions) {
 		ERRQ_msg_partial(433, NULL, NULL, NULL, NULL, NULL);	// Msg433  array
@@ -784,7 +784,7 @@ static void show_datatype(
 
 	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_quad) {
 		if (scale) {
-			ERRQ_msg_partial(111, (TEXT *) (SLONG) scale, NULL, NULL, NULL, NULL);
+			ERRQ_msg_partial(111, (TEXT*)(IPTR) scale, NULL, NULL, NULL, NULL);
 			// Msg111 , scale %d
 		}
 	}
@@ -874,7 +874,7 @@ static void show_dbb_parameters( DBB database)
 		d += length;
 	}
 
-	ERRQ_msg_put(116, (TEXT *) (SLONG) page_size, (TEXT *) allocation, NULL,
+	ERRQ_msg_put(116, (TEXT*)(IPTR)page_size, (TEXT*)(IPTR)allocation, NULL,
 				 NULL, NULL);	// Msg116 Page size is %d bytes.  Current allocation is %d pages.
 
 	MET_meta_transaction(database, false);
@@ -903,15 +903,15 @@ static void show_dbb_parameters( DBB database)
 				if (F.RDB$SHADOW_NUMBER) {
 					if (!(F.RDB$FILE_FLAGS & FILE_conditional)) {
 						ERRQ_msg_put(385,
-									 (TEXT *) (SLONG) F.RDB$SHADOW_NUMBER,
+									 (TEXT*)(IPTR) F.RDB$SHADOW_NUMBER,
 									 F.RDB$FILE_NAME,
-									 (TEXT *) F.RDB$FILE_START, NULL, NULL);
+									 (TEXT*)(IPTR) F.RDB$FILE_START, NULL, NULL);
 						// Msg385 Shadow %d, File:%s starting at page %d
 					}
 				}
 				else {
 						ERRQ_msg_put(263, F.RDB$FILE_NAME,
-									 (TEXT *) F.RDB$FILE_START, NULL, NULL, NULL);
+									 (TEXT*)(IPTR)F.RDB$FILE_START, NULL, NULL, NULL);
 						// Msg263 File:%s starting at page %d
 			 	}
 			END_FOR;
@@ -920,7 +920,7 @@ static void show_dbb_parameters( DBB database)
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_files])
 				F IN DB.RDB$FILES SORTED BY F.RDB$FILE_START
 					ERRQ_msg_put(263, F.RDB$FILE_NAME,
-								 (TEXT *) F.RDB$FILE_START, NULL, NULL, NULL);
+								 (TEXT*)(IPTR) F.RDB$FILE_START, NULL, NULL, NULL);
 					// Msg263 File:%s starting at page %d
 			END_FOR;
 		}
@@ -1216,8 +1216,8 @@ static int show_filter_detail( DBB database, TEXT* filter_name)
 					 database->dbb_symbol->sym_string, NULL, NULL);
 		ERRQ_msg_put(445, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);
 		// Msg445 Filter library is %s
-		ERRQ_msg_put(446, (TEXT *)(SLONG) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	// Msg446 Input sub-type is %d
-		ERRQ_msg_put(447, (TEXT *)(SLONG) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	// Msg447 Output sub-type is %d
+		ERRQ_msg_put(446, (TEXT*)(IPTR) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	// Msg446 Input sub-type is %d
+		ERRQ_msg_put(447, (TEXT*)(IPTR) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	// Msg447 Output sub-type is %d
 		show_text_blob(database, "\t", 448, &F.RDB$DESCRIPTION, 0, NULL, false);
 	END_FOR;
 	return count;
@@ -1471,7 +1471,7 @@ static int show_func_detail( DBB database, TEXT* func_name)
 			}
 			else {
 				ERRQ_msg_partial(428,
-								 (TEXT *) (SLONG) FA.RDB$ARGUMENT_POSITION,
+								 (TEXT*)(IPTR) FA.RDB$ARGUMENT_POSITION,
 								 NULL, NULL, NULL, NULL);	// Msg428 Argument %d is
 			}
 
@@ -2521,7 +2521,7 @@ static void show_trigger_messages( DBB database, const TEXT* name)
 			// msg 456: Messages associated with %s:\n
 			first = false;
 		}
-		ERRQ_msg_put(457, (TEXT *)(SLONG) M.RDB$MESSAGE_NUMBER, M.RDB$MESSAGE,
+		ERRQ_msg_put(457, (TEXT*)(IPTR) M.RDB$MESSAGE_NUMBER, M.RDB$MESSAGE,
 					 NULL, NULL, NULL);
 		// msg 457:     message %ld:  %s\n
 	END_FOR;
@@ -2578,7 +2578,7 @@ static void show_trigger_status(
 					NULL, NULL, NULL, NULL);
 
 	fb_utils::fb_exact_name(name);
-	ERRQ_msg_put(366, name, trigger_type, (TEXT *) (ULONG) sequence,
+	ERRQ_msg_put(366, name, trigger_type, (TEXT*)(IPTR) sequence,
 				 trigger_active, NULL);	// Msg366 Name: %s, Type: %s, Sequence: %d, Active: %s
 }
 
@@ -2867,7 +2867,7 @@ static void view_info(
 		// create some space according to how many levels deep we are;
 		// this is to avoid using %*s in the ib_printf, which doesn't work for OS/2
 		TEXT* p = spaces;
-		for (const TEXT* const end = spaces + MIN((level + 2) * 4, sizeof(spaces) - 1);
+		for (const TEXT* const end = spaces + MIN((level + 2) * 4, static_cast<int>(sizeof(spaces) - 1));
 			p < end;)
 		{
 			*p++ = ' ';

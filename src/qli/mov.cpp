@@ -447,8 +447,8 @@ void MOVQ_double_to_date( double real, SLONG fixed[2])
  *
  **************************************/
 
-	fixed[0] = real;
-	fixed[1] = (real - fixed[0]) * 24. * 60. * 60. * PRECISION;
+	fixed[0] = static_cast<SLONG>(real);
+	fixed[1] = static_cast<SLONG>((real - fixed[0]) * 24. * 60. * 60. * PRECISION);
 }
 
 
@@ -668,7 +668,7 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp,
 
 	if (desc->dsc_dtype == dtype_cstring) {
 		*address = (TEXT *) desc->dsc_address;
-		return MIN(strlen((char*)desc->dsc_address), desc->dsc_length - 1);
+		return MIN(static_cast<int>(strlen((char*)desc->dsc_address)), desc->dsc_length - 1);
 	}
 
 // No luck -- convert value to varying string.
@@ -1256,7 +1256,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
    string fields. */
 
 	SSHORT l = p - temp;
-	const SSHORT length = l + neg + decimal + pad;
+	const size_t length = l + neg + decimal + pad;
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||

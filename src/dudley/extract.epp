@@ -1723,7 +1723,7 @@ static void format_acl(const SCHAR * string)
 
 		case ACL_priv_list:
 			while (c = *p++)
-				ib_fputc(acl_privs[c], output_file);
+				ib_fputc(acl_privs[static_cast<UCHAR>(c)], output_file);
 			break;
 		}
 }

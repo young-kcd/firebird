@@ -1909,7 +1909,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
     TEXT fixed_buffer[4096];
 	TEXT* buffer;
     USHORT buffer_length;
-	if (max_segment < sizeof(fixed_buffer)) {
+	if (max_segment < static_cast<SLONG>(sizeof(fixed_buffer))) {
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
 	}
@@ -2044,9 +2044,9 @@ static bool check_global_field(DBB database,
 		{
 			if (field->fld_dtype &&
 				(X.RDB$FIELD_TYPE != blr_dtypes[field->fld_dtype] ||
-				 X.RDB$FIELD_LENGTH !=
-				 ((field->fld_dtype == dtype_varying) ? field->fld_length -
-				  sizeof(SSHORT) : field->fld_length) ||
+				 X.RDB$FIELD_LENGTH != static_cast<SLONG>(
+					((field->fld_dtype == dtype_varying) ? field->fld_length -
+					 sizeof(SSHORT) : field->fld_length)) ||
 				 X.RDB$FIELD_SCALE != field->fld_scale))
 			{
 				rollback_update(database);
@@ -3318,7 +3318,7 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		break;
 
 	default:
-		ERRQ_print_error(258, (TEXT *) op, NULL, NULL, NULL, NULL);	// Msg258 don't understand BLR operatr %d
+		ERRQ_print_error(258, (TEXT*)(IPTR) op, NULL, NULL, NULL, NULL);	// Msg258 don't understand BLR operatr %d
 	}
 
 	if (!node) {
@@ -3557,7 +3557,7 @@ static void sql_grant_revoke( qli_syntax* node, USHORT type)
  *	Build a DYN string for a SQL GRANT or REVOKE statement
  *
  *****************************************************/
-	const USHORT privileges = (USHORT) node->syn_arg[s_grant_privileges];
+	const USHORT privileges = (IPTR) node->syn_arg[s_grant_privileges];
 	qli_rel* relation = (qli_rel*) node->syn_arg[s_grant_relation];
 	DBB database = setup_update(relation->rel_database);
 	relation->rel_database = database;

@@ -383,7 +383,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		ib_rewind(ib_stdin);
 		//*buffer = 0;
 		if (DDL_errors > 1)
-			DDL_msg_partial(7, (TEXT *) (ULONG) DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
+			DDL_msg_partial(7, (TEXT *) (IPTR) DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
 		else if (DDL_errors)
 			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
 		else
@@ -510,7 +510,7 @@ int DDL_err(
  *
  **************************************/
 
-	DDL_msg_partial(15, DDL_file_name, (TEXT *) (ULONG) DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
+	DDL_msg_partial(15, DDL_file_name, (TEXT *) (IPTR) DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
 	DDL_msg_put(number, arg1, arg2, arg3, arg4, arg5);
 	if (DDL_errors++ > MAX_ERRORS) {
 		DDL_msg_put(16, (TEXT *) (SLONG) MAX_ERRORS, 0, 0, 0, 0);	/* msg 16: error count exceeds limit (%d) */

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.24 2004-03-07 07:58:51 robocop Exp $
+$Id: all.cpp,v 1.25 2004-03-14 05:51:48 skidder Exp $
 */
 
 /***************************************************
@@ -91,7 +91,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 
 // Compute block length
 
-	USHORT size = block_sizes[type].typ_root_length;
+	size_t size = block_sizes[type].typ_root_length;
 
 	SLONG tail = block_sizes[type].typ_tail_length;
 	if (tail)
@@ -111,7 +111,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 
 	FRB free;
 	FRB* best;
-	SLONG best_tail;
+	size_t best_tail;
 
 	while (true) {
 		best = NULL;
@@ -120,7 +120,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
 				BUGCHECK(434);	// memory pool free list is incorrect
 			else if ((tail = free->frb_header.blk_length - size) >= 0
-					 && tail < best_tail)
+					 && tail < static_cast<SLONG>(best_tail))
 			{
 				best = ptr;
 				best_tail = tail;
@@ -303,7 +303,7 @@ PLB ALLQ_pool(void)
  *	In SHORT, by mirrors.
  *
  **************************************/
-	int pool_id;
+	UCHAR pool_id;
 
 // Start by assigning a pool id
 
@@ -400,7 +400,7 @@ void ALLQ_release( FRB block)
  *
  **************************************/
 	block->frb_header.blk_type = (SCHAR) type_frb;
-	int pool_id = block->frb_header.blk_pool_id;
+	UCHAR pool_id = block->frb_header.blk_pool_id;
 
 	PLB pool;
 	if (pool_id >= global_pools->vec_count ||

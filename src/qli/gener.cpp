@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.31 2004-03-07 07:58:51 robocop Exp $
+$Id: gener.cpp,v 1.32 2004-03-14 05:51:48 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1523,7 +1523,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
-	if ((NOD_T) (int) node->nod_arg[e_rse_join_type] == (NOD_T) 0)
+	if ((NOD_T) (IPTR) node->nod_arg[e_rse_join_type] == (NOD_T) 0)
 		STUFF(blr_rse);
 	else
 		STUFF(blr_rs_stream);
@@ -1596,7 +1596,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 	if (list = node->nod_arg[e_rse_reduced])
 		gen_sort(list, request, blr_project);
 
-	const NOD_T join_type = (NOD_T) (int) node->nod_arg[e_rse_join_type];
+	const NOD_T join_type = (NOD_T) (IPTR) node->nod_arg[e_rse_join_type];
 	if (join_type != (NOD_T) 0 && join_type != nod_join_inner) {
 		STUFF(blr_join_type);
 		if (join_type == nod_join_left)

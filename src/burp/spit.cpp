@@ -556,7 +556,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 *********************************************************************
 */
 
-	SLONG byte_write, indx, ret_cd;
+	SLONG byte_write, ret_cd;
 	TEXT header_str[header_rec_len], num_arr[5];
 	header_rec hdr_rec;
 
@@ -575,13 +575,14 @@ static int gen_multy_bakup_files(b_fil* file_list,
 		return FB_FAILURE;
 	}
 
-	SLONG pos;
+	size_t pos;
 	for (pos = 0; pos < header_rec_len; pos++)
 		header_str[pos] = BLANK;
 
 	pos = 0;
 	ret_cd = set_hdr_str(header_str, header_rec_name,
 						 pos, sizeof(hdr_rec.name));
+	size_t indx;
 	for (indx = 0; indx < sizeof(hdr_rec.name); indx++)
 		hdr_rec.name[indx] = BLANK;
 
@@ -1031,8 +1032,8 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		return FB_FAILURE;
 	}
 
-	SLONG read_cnt = read(input_fl_desc, *io_buffer, header_rec_len);
-	if (read_cnt != header_rec_len) {
+	int read_cnt = read(input_fl_desc, *io_buffer, header_rec_len);
+	if (read_cnt != static_cast<int>(header_rec_len)) {
 		close(input_fl_desc);
 		ib_fprintf(ib_stderr,
 				   "progam fails to read gsplit header record in back-up file%s\n",
@@ -1056,7 +1057,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 
 	char_ptr1 = reinterpret_cast<char*>(*io_buffer + skip_to_num);
 	const TEXT* char_ptr2 = reinterpret_cast<char*>(*io_buffer + skip_to_total);
-	SLONG indx;
+	size_t indx;
 	for (indx = 0; indx < sizeof(hdr_rec.num); indx++) {
 		num_arr[indx] = *char_ptr1;
 		char_ptr1++;

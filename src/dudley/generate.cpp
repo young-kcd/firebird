@@ -430,7 +430,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_abort:
 		check_blr(blr, 2);
 		STUFF(blr_leave);
-		STUFF((int) node->nod_arg[0]);
+		STUFF((IPTR) node->nod_arg[0]);
 		return;
 
 	case nod_erase:

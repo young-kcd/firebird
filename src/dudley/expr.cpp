@@ -254,7 +254,7 @@ DUDLEY_NOD EXPR_statement(void)
 		number = PARSE_number();
 		if (number > 255)
 			PARSE_error(235, NULL, NULL);	/* msg 235: abort code cannot exceed 255 */
-		node->nod_arg[0] = (DUDLEY_NOD) (SLONG) number;
+		node->nod_arg[0] = (DUDLEY_NOD) (IPTR) number;
 	}
 	else if (PARSE_match(KW_ERASE)) {
 		node = PARSE_make_node(nod_erase, 1);
@@ -1088,7 +1088,7 @@ static DUDLEY_NOD parse_sort(void)
 		else if (PARSE_match(KW_DESCENDING))
 			direction = 1;
 		LLS_PUSH(EXPR_value(0, NULL), &stack);
-		LLS_PUSH((DUDLEY_NOD) (SLONG) direction, &stack);
+		LLS_PUSH((DUDLEY_NOD) (IPTR) direction, &stack);
 		if (!PARSE_match(KW_COMMA))
 			break;
 	}

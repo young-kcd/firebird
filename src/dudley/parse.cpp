@@ -1470,7 +1470,7 @@ static void define_trigger(void)
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
-				PARSE_error(142, (TEXT *)(SLONG)(trigmsg->trgmsg_number), 0);
+				PARSE_error(142, (TEXT *)(IPTR)(trigmsg->trgmsg_number), 0);
 			/* msg 142: message number %d exceeds 255 */
 			PARSE_match(KW_COLON);
 			trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
@@ -1838,7 +1838,7 @@ static void drop_shadow(void)
 	number = PARSE_number();
 	parse_end();
 
-	make_action(act_d_shadow, (DBB) number);
+	make_action(act_d_shadow, (DBB)(IPTR) number);
 }
 
 
@@ -2812,7 +2812,7 @@ static void modify_trigger(void)
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
-				PARSE_error(178, (TEXT *)(SLONG) trigmsg->trgmsg_number, 0);
+				PARSE_error(178, (TEXT *)(IPTR) trigmsg->trgmsg_number, 0);
 			/* msg 178: message number %d exceeds 255 */
 			if (msg_type == trgmsg_drop)
 				make_action(act_d_trigger_msg, (DBB) trigmsg);
@@ -3884,10 +3884,10 @@ static int parse_page_size(void)
 	else if (n1 <= 8192)
 		n2 = 8192;
 	else
-		PARSE_error(210, (TEXT *) n1, (TEXT *) MAX_PAGE_LEN);
+		PARSE_error(210, (TEXT *)(IPTR) n1, (TEXT *)(IPTR) MAX_PAGE_LEN);
 	/* msg 210: PAGE_SIZE specified (%d) longer than limit of %d bytes */
 	if (n1 != n2)
-		DDL_msg_put(211, (TEXT *) n1, (TEXT *) n2, NULL, NULL, NULL);
+		DDL_msg_put(211, (TEXT *)(IPTR) n1, (TEXT *)(IPTR) n2, NULL, NULL, NULL);
 	/* msg 211: PAGE_SIZE specified (%d) was rounded up to %d bytes\n */
 
 	return n2;
@@ -3942,7 +3942,7 @@ static SLONG parse_privileges(void)
 				break;
 
 			default:
-				PARSE_error(212, (TEXT *)(SLONG) p[-1], 0);
+				PARSE_error(212, (TEXT *)(IPTR) p[-1], 0);
 				/* msg 212: Unrecognized privilege \"%c\" or unrecognized identifier */
 			}
 		LEX_token();

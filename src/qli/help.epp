@@ -266,7 +266,7 @@ static void print_topic(
 	END_FOR;
 
 	if (count > 1)
-		ERRQ_msg_put(80, (TEXT *) (ULONG) count, *topics, NULL, NULL, NULL);	/* Msg80 [%d topics matched %s] */
+		ERRQ_msg_put(80, (TEXT*)(IPTR) count, *topics, NULL, NULL, NULL);	/* Msg80 [%d topics matched %s] */
 
 	count = 0;
 

@@ -955,7 +955,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 		if (check >= 1)
 			hex_overflow = true;
 		else {
-			SLONG nh = number;
+			SLONG nh = static_cast<SLONG>(number);
 			while (p-- > hex) {
 				*p = "0123456789abcdef"[nh & 15];
 				nh >>= 4;

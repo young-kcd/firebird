@@ -126,10 +126,14 @@ typedef struct srvr
 
 static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
+#ifdef MULTI_THREAD
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
 static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
+#endif
 static ISC_STATUS	attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
+#ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
+#endif
 static void		aux_request(rem_port*, P_REQ*, PACKET*);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 
@@ -682,6 +686,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 }
 
 
+#ifdef MULTI_THREAD
 static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que)
 {
 /**************************************
@@ -729,6 +734,7 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que)
 
 	return requests;
 }
+#endif
 
 
 static ISC_STATUS attach_database(
@@ -814,6 +820,7 @@ static ISC_STATUS attach_database(
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static void aux_connect( rem_port* port, P_REQ * request, PACKET* send)
 {
 /**************************************
@@ -826,11 +833,15 @@ static void aux_connect( rem_port* port, P_REQ * request, PACKET* send)
  *	We're receive a auxiliary connection on the main communications
  *	channel.  Accept connection and reply politely.
  *
+ * 13-Mar-2004, Nickolay Samofatov
+ *  This code is 64-bit unsafe, unused and also has a security hole, thus I disable it for now
+ *
  **************************************/
 	port->connect(0, 0);
 	rem_port* partner = (rem_port*) request->p_req_partner;
 	partner->port_async = port;
 }
+#endif
 
 
 static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
@@ -3110,9 +3121,11 @@ bool process_packet(rem_port* port,
 			aux_request(port, &receive->p_req, send);
 			break;
 
+#ifdef NOT_USED_OR_REPLACED
 		case op_aux_connect:
 			aux_connect(port, &receive->p_req, send);
 			break;
+#endif
 
 		case op_ddl:
 			port->ddl(&receive->p_ddl, send);
@@ -3337,8 +3350,15 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* send)
 	}
 
 	event->rvnt_ast = stuff->p_event_ast;
+	
 	// CVC: Going from SLONG to void*, problems when sizeof(void*) > 4
-	event->rvnt_arg = (void *) stuff->p_event_arg;
+	// Nickolay Samofatov. No problem actually. Event argument returned by server
+	// on event firing is not used by the client. Client looks up argument via 
+	// seaching client-side event table and remote event ID passed by server on
+	// event registration. As a result we may use this argument value for 
+	// server-side debugging only.
+	event->rvnt_arg = (void*)(IPTR) stuff->p_event_arg;
+	
 	event->rvnt_rid = stuff->p_event_rid;
 	event->rvnt_rdb = rdb;
 

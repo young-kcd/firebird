@@ -1528,7 +1528,7 @@ static qli_print_item* expand_print_item( qli_syntax* syn_item, qli_lls* right)
 
 	}
 
-	item->itm_count = (int) syn_item->syn_arg[0];
+	item->itm_count = (IPTR) syn_item->syn_arg[0];
 	return item;
 }
 
@@ -1822,7 +1822,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 // Handle implicit boolean from SQL xxx IN (yyy FROM relation) 
 
 	if (input->syn_arg[s_rse_outer]) {
-		qli_nod* eql_node = MAKE_NODE((enum nod_t)(int)input->syn_arg[s_rse_op], 2);
+		qli_nod* eql_node = MAKE_NODE((enum nod_t)(IPTR)input->syn_arg[s_rse_op], 2);
 		eql_node->nod_arg[0] =
 			expand_expression(input->syn_arg[s_rse_outer], old_stack);
 		eql_node->nod_arg[1] =
@@ -1909,9 +1909,7 @@ static qli_nod* expand_sort( qli_syntax* input, qli_lls* stack, qli_nod* list)
 	for (USHORT i = 0; i < node->nod_count; i++) {
 		qli_syntax* expr = *syn_ptr++;
 		if (expr->syn_type == nod_position) {
-			// FIXME: isn't plain 'unsigned long' better here?
-			// On 64bit platforms long is 64bit as well as pointer
-			const ULONG position = (ULONG) expr->syn_arg[0];
+			const IPTR position = (IPTR) expr->syn_arg[0];
 			if (!list || !position || position > list->nod_count)
 				IBERROR(152);	// Msg152 invalid ORDER BY ordinal
 			qli_print_item* item = (qli_print_item*) list->nod_arg[position - 1];

@@ -522,11 +522,11 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 3,
-								isc_arg_number, reinterpret_cast<void*>(ODS_VERSION),
-								isc_arg_number, reinterpret_cast<void*>(header->hdr_ods_version),
+								isc_arg_number, (void*)(IPTR)ODS_VERSION,
+								isc_arg_number, (void*)(IPTR)header->hdr_ods_version,
 								0, NULL, 0, NULL, 0, NULL);
 #endif
-		dba_error(3, (TEXT *) ODS_VERSION, (TEXT *)(ULONG) header->hdr_ods_version,
+		dba_error(3, (TEXT *)(IPTR) ODS_VERSION, (TEXT *)(IPTR) header->hdr_ods_version,
 				  0, 0, 0);		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
 	}
 
@@ -783,8 +783,8 @@ int CLIB_ROUTINE main(int argc, char** argv)
 				relation->rel_id);
 		if (sw_data)
 		{
-			dba_print(11, (TEXT *) relation->rel_pointer_page,
-					  (TEXT *) relation->rel_index_root, 0, 0, 0);
+			dba_print(11, (TEXT *)(IPTR) relation->rel_pointer_page,
+					  (TEXT *)(IPTR) relation->rel_index_root, 0, 0, 0);
 			// msg 11: "    Primary pointer page: %ld, Index root page: %ld" 
 			if (sw_record) {
 				double average = (relation->rel_records) ?
@@ -814,7 +814,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 				((double) relation->rel_data_pages *
 				 (tddba->page_size - DPG_SIZE)) : 0.0;
 			sprintf((char*) buf, "%.0f%%", average);
-			dba_print(12, (TEXT*) relation->rel_data_pages, (TEXT*) relation->rel_slots,
+			dba_print(12, (TEXT*)(IPTR) relation->rel_data_pages, (TEXT*)(IPTR) relation->rel_slots,
 					  (TEXT*) buf, 0, 0);	/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
 			dba_print(13, 0, 0, 0, 0, 0);	/* msg 13: "    Fill distribution:" */
 			print_distribution("\t", relation->rel_fill_distribution);
@@ -823,17 +823,17 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		
 		for (const dba_idx* index = relation->rel_indexes; index; index = index->idx_next)
 		{
-			dba_print(14, index->idx_name, (TEXT *)(SLONG) index->idx_id, 0, 0, 0);
+			dba_print(14, index->idx_name, (TEXT *)(IPTR) index->idx_id, 0, 0, 0);
 			// msg 14: "    Index %s (%d)" 
-			dba_print(15, (TEXT *)(SLONG) index->idx_depth,
-					  (TEXT *) index->idx_leaf_buckets,
-					  (TEXT *) index->idx_nodes, 0, 0);
+			dba_print(15, (TEXT *)(IPTR) index->idx_depth,
+					  (TEXT *)(IPTR) index->idx_leaf_buckets,
+					  (TEXT *)(IPTR) index->idx_nodes, 0, 0);
 			// msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld 
 			const double average = (index->idx_nodes) ?
 				index->idx_data_length / index->idx_nodes : 0;
 			sprintf((char*) buf, "%.2f", average);
-			dba_print(16, (TEXT*) buf, (TEXT*) index->idx_total_duplicates,
-					  (TEXT*) index->idx_max_duplicates, 0, 0);
+			dba_print(16, (TEXT*) buf, (TEXT*)(IPTR) index->idx_total_duplicates,
+					  (TEXT*)(IPTR) index->idx_max_duplicates, 0, 0);
 			// msg 16: \tAverage data length: %s, total dup: %ld, max dup: %ld"
 			dba_print(17, 0, 0, 0, 0, 0);
 			// msg 17: \tFill distribution:
@@ -1012,7 +1012,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 				++relation->rel_data_pages;
 				if (!analyze_data_page(relation, (const data_page*) db_read(*ptr), sw_record))
 				{
-					dba_print(18, (TEXT*) *ptr, 0, 0, 0, 0);
+					dba_print(18, (TEXT*)(IPTR) *ptr, 0, 0, 0, 0);
 					// msg 18: "    Expected data on page %ld" */
 				}
 			}
@@ -1240,7 +1240,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		page = bucket->btr_sibling;
 		bucket = (const btree_page*) db_read(page);
 		if (bucket->btr_header.pag_type != pag_index) {
-			dba_print(19, (const TEXT*) page, (const TEXT*) number, 0, 0, 0);
+			dba_print(19, (const TEXT*)(IPTR) page, (const TEXT*)(IPTR) number, 0, 0, 0);
 			// mag 19: "    Expected b-tree bucket on page %ld from %ld"
 			break;
 		}

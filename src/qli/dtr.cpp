@@ -251,7 +251,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				ERRQ_msg_put(469, (TEXT *) c, NULL, NULL, NULL, NULL);	// Msg469 qli: ignoring unknown switch %c 
+				ERRQ_msg_put(469, (TEXT *)(IPTR) c, NULL, NULL, NULL, NULL);	// Msg469 qli: ignoring unknown switch %c 
 				break;
 			}
 	}

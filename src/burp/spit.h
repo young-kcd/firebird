@@ -37,7 +37,7 @@ const int IO_BUFFER_SIZE		= (16 * K_BYTES);
 
 const int M_BYTES				= (K_BYTES * K_BYTES);
 const int G_BYTES				= (K_BYTES * M_BYTES);
-const int MAX_FILE_NM_LEN		= 27;	// size of header_rec.fl_name 
+const size_t MAX_FILE_NM_LEN		= 27;	// size of header_rec.fl_name 
 const int MAX_NUM_OF_FILES		= 9999;
 const int MIN_FILE_SIZE			= M_BYTES;
 const char NEW_LINE				= '\n';

@@ -55,7 +55,7 @@ static qli_syntax* negate(qli_syntax*);
 static KWWORDS next_keyword(void);
 static qli_syntax* parse_abort(void);
 static qli_syntax* parse_accept(void);
-static qli_syntax* parse_add(USHORT *, USHORT *);
+static qli_syntax* parse_add(USHORT *, bool *);
 static qli_syntax* parse_and(USHORT *);
 static qli_syntax* parse_assignment(void);
 static qli_syntax* parse_boolean(USHORT *);
@@ -1473,7 +1473,7 @@ static qli_syntax* parse_edit(void)
 			IBERROR(176);		// Msg176 No statements issued yet
 
 		if (MATCH(KW_ASTERISK))
-			LEX_edit((SLONG) 0, (SLONG) statement_list->lls_object);
+			LEX_edit(0, (IPTR) statement_list->lls_object);
 		else {
 		    int l = 0; // initialize, will catch changes in logic here.
 			if (KEYWORD(KW_SEMI))
@@ -1489,7 +1489,7 @@ static qli_syntax* parse_edit(void)
 				start = start->lls_next;
 			}
 			command_end();
-			LEX_edit((SLONG) start->lls_object, (SLONG) stop->lls_object);
+			LEX_edit((IPTR) start->lls_object, (IPTR) stop->lls_object);
 		}
 	}
 	else {
@@ -2765,7 +2765,7 @@ static qli_syntax* parse_print_list(void)
 			node->syn_arg[0] = INT_CAST 1;
 			if (op == nod_column || QLI_token->tok_type == tok_number)
 				node->syn_arg[0] = INT_CAST parse_ordinal();
-			if ((op == nod_skip) && ((int) node->syn_arg[0] < 1))
+			if ((op == nod_skip) && ((IPTR) node->syn_arg[0] < 1))
 				SYNTAX_ERROR(478);	/* Msg478 number > 0 */
 		}
 		LLS_PUSH(node, &stack);
@@ -4147,7 +4147,7 @@ static qli_syntax* parse_sort(void)
 				direction = 0;
 			else if (MATCH(KW_DESCENDING))
 				direction = 1;
-		LLS_PUSH((ULONG) direction, &stack);
+		LLS_PUSH((IPTR) direction, &stack);
 		if (!MATCH(KW_COMMA))
 			break;
 	}

@@ -302,32 +302,32 @@ void CMD_set( qli_syntax* node)
 	const qli_syntax* const* ptr = node->syn_arg;
 
 	for (USHORT i = 0; i < node->syn_count; i++) {
-		const USHORT foo = (USHORT)(ULONG) *ptr++;
+		const USHORT foo = (USHORT)(IPTR) *ptr++;
 		const enum set_t sw = (enum set_t) foo;
 		const qli_syntax* value = *ptr++;
 		switch (sw) {
 		case set_blr:
-			QLI_blr = (bool)(ULONG) value;
+			QLI_blr = (bool)(IPTR) value;
 			break;
 
 		case set_statistics:
-			QLI_statistics = (bool)(ULONG) value;
+			QLI_statistics = (bool)(IPTR) value;
 			break;
 
 		case set_columns:
-			QLI_name_columns = QLI_columns = (USHORT)(ULONG) value;
+			QLI_name_columns = QLI_columns = (USHORT)(IPTR) value;
 			break;
 
 		case set_lines:
-			QLI_lines = (USHORT)(ULONG) value;
+			QLI_lines = (USHORT)(IPTR) value;
 			break;
 
 		case set_semi:
-			QLI_semi = (bool)(ULONG) value;
+			QLI_semi = (bool)(IPTR) value;
 			break;
 
 		case set_echo:
-			QLI_echo = (bool)(ULONG) value;
+			QLI_echo = (bool)(IPTR) value;
 			break;
 
 		case set_form:
@@ -390,7 +390,7 @@ void CMD_set( qli_syntax* node)
 			break;
 
 		case set_count:
-			QLI_count = (USHORT)(ULONG) value;
+			QLI_count = (USHORT)(IPTR) value;
 			break;
 
 		case set_charset:
@@ -408,11 +408,11 @@ void CMD_set( qli_syntax* node)
 
 #ifdef DEV_BUILD
 		case set_explain:
-			QLI_explain = (bool)(ULONG) value;
+			QLI_explain = (bool)(IPTR) value;
 			break;
 
 		case set_hex_output:
-			QLI_hex_output = (bool)(ULONG) value;
+			QLI_hex_output = (bool)(IPTR) value;
 			break;
 #endif
 

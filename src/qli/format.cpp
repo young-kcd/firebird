@@ -45,7 +45,7 @@ extern USHORT QLI_columns, QLI_lines;
 #ifdef DEV_BUILD
 //extern bool QLI_hex_output; decl already done in dtr.h
 
-inline bool is_printable(const char x)
+inline bool is_printable(UCHAR x)
 {
 	return ((x >= ' ') && (x <= 127)) ||
 		     (x == '\n') ||
@@ -271,8 +271,8 @@ TEXT* FMT_format(qli_lls* stack)
 	const ULONG size = (max_offset + 1) * (number_segments + 1) + 2;
 
 	if (size >= 60000)
-		ERRQ_print_error(482, (TEXT *)(ULONG) max_offset,
-						 (TEXT *) (number_segments + 1), NULL, NULL, NULL);
+		ERRQ_print_error(482, (TEXT *)(IPTR) max_offset,
+						 (TEXT *)(IPTR) (number_segments + 1), NULL, NULL, NULL);
 
 	qli_str* header = (qli_str*) ALLOCDV(type_str, size);
 	TEXT* p = header->str_data;
