@@ -2650,12 +2650,13 @@ static void close_cursor( DSQL_REQ request)
 	THD_MUTEX_LOCK(&cursors_mutex);
 	open_cursor_ptr = &open_cursors;
 	for (; open_cursor = *open_cursor_ptr;
-		 open_cursor_ptr =
-		 &open_cursor->opn_next) if (open_cursor ==
-									 request->req_open_cursor) {
+		 open_cursor_ptr = &open_cursor->opn_next)
+	{
+		if (open_cursor == request->req_open_cursor) {
 			*open_cursor_ptr = open_cursor->opn_next;
 			break;
 		}
+	}
 
 	THD_MUTEX_UNLOCK(&cursors_mutex);
 
@@ -4231,9 +4232,9 @@ static USHORT parse_blr(
 		null_offset = offset;
 		offset += sizeof(SSHORT);
 
-		for (parameter = parameters; parameter;
-			 parameter =
-			 parameter->par_next) if (parameter->par_index == index) {
+		for (parameter = parameters; parameter; parameter = parameter->par_next)
+		{
+			if (parameter->par_index == index) {
 				parameter->par_user_desc = desc;
 				if (null = parameter->par_null) {
 					null->par_user_desc.dsc_dtype = dtype_short;
@@ -4242,6 +4243,7 @@ static USHORT parse_blr(
 					null->par_user_desc.dsc_address = (UCHAR *)(ULONG) null_offset;
 				}
 			}
+		}
 	}
 
 	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
