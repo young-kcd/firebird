@@ -775,6 +775,10 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	attachment->att_charset = options.dpb_interp;
 
+	SLONG clock = time(NULL);
+	struct tm times = *localtime(&clock);
+	isc_encode_timestamp(&times, &attachment->att_timestamp);
+
 	if (options.dpb_lc_messages) {
 		attachment->att_lc_messages =
 			copy_string(options.dpb_lc_messages,
@@ -1935,6 +1939,11 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	attachment->att_charset = options.dpb_interp;
+
+	SLONG clock = time(NULL);
+	struct tm times = *localtime(&clock);
+	isc_encode_timestamp(&times, &attachment->att_timestamp);
+
 	if (options.dpb_lc_messages)
 		attachment->att_lc_messages =
 			copy_string(options.dpb_lc_messages,

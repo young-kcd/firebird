@@ -446,6 +446,7 @@ public:
 	class vcl*	att_val_errors;
 	class str*	att_working_directory;	// Current working directory is cached
 	class str*	att_filename;			// alias used to attach the database
+	GDS_TIMESTAMP	att_timestamp;		// connection date and time
 };
 typedef att* ATT;
 
