@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.21 2004-11-07 13:47:05 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.util,v 1.22 2005-02-05 10:30:48 fsg Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -51,7 +51,7 @@ NBACKUP_Other_Sources = jrd/db_alias.cpp common/classes/fb_string.cpp common/cla
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 NBACKUP_Files= nbackup.cpp
 NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
-NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources))))
+NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources)))) $(CLUMPLETS_Objects)
 
 CREATEDB_Files= create_db.cpp
 CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
@@ -72,7 +72,7 @@ common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
-GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
+GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) $(CLUMPLETS_Objects)
 
 FBGUARD_Other_Sources = jrd/isc.cpp
 FBGUARD_Files =  guard.cpp util.cpp
@@ -127,7 +127,7 @@ $(CREATE_DB):	$(CREATEDB_Objects)
 
 nbackup: $(LIBFBCLIENT_SO) $(NBACKUP)
 
-$(NBACKUP):	$(NBACKUP_Objects) 
+$(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects)
 	$(LD) $(LINK_OPTS) $(NBACKUP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 fb_lock_print: $(LIBFBCLIENT_SO) $(LOCKPRINT)
@@ -138,9 +138,9 @@ $(LOCKPRINT):	$(LOCKPRINT_Objects)
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
-$(GSTAT):	$(GSTAT_Objects)
-	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
-
+$(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS )
+ 
 
 
 gds_drop: $(GDS_DROP)

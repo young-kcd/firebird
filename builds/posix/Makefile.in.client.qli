@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.qli,v 1.4 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.client.qli,v 1.5 2005-02-05 10:30:48 fsg Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -49,9 +49,9 @@ QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
 		report.cpp show.cpp
 QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
-QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
+QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources)))) $(CLUMPLETS_Objects)
 
-AllObjects = $(QLI_Objects)
+AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 

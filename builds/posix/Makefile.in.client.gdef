@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.9 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.client.gdef,v 1.10 2005-02-05 10:30:48 fsg Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -52,9 +52,9 @@ GDEF_Files=	exe.epp extract.epp \
 			hsh.cpp lex.cpp parse.cpp trn.cpp
 
 GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
-GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
+GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources)))) $(CLUMPLETS_Objects)
 
-AllObjects = $(GDEF_Objects)
+AllObjects = $(GDEF_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
