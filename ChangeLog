@@ -1,3 +1,50 @@
+2004-09-29 23:58  arnobrinkman
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.3):
+	
+	fix bug with singular bitmaps, in consideration with Nickolay
+
+2004-09-29 12:11  paul_reeves
+
+	* firebird2/src/remote/inet_server.cpp (1.44):
+	
+	No need to specifically log sigpipe errors when running SuperServer
+	on *nix
+
+2004-09-29 10:20  robocop
+
+	* firebird2/src/jrd/dbt.cpp (1.30):
+	
+	Don't know if it will work, but at least reflects the previous
+	changes in other places.
+
+2004-09-29 08:42  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.sql (1.6):
+	
+	Put comment on deprecated functions.
+
+2004-09-29 08:41  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.18):
+	
+	Fix problem reported by "jssahdra" in fb-support. Numeric overflow
+	caused resulting timestamp to go backwards instead of forward.
+
+2004-09-29 05:46  robocop
+
+	* firebird2/src/jrd/gdsassert.h (1.13):
+	
+	Do not override local fb_assert like the ones in gpre and dsql. 
+	(The problem appeared when I applied utils_proto.h in more places.)
+
+2004-09-29 05:44  robocop
+
+	* firebird2/src/isql/isql.epp (1.105):
+	
+	Solve assertion in latest MSVC regarding isspace() with two helper
+	functions. This is a mere reorganization of Adriano's fix.
+
 2004-09-29 00:00  skidder
 
 	* firebird2/builds/win32/msvc6/: engine.dsp (1.52),
