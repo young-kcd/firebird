@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.70 2004-11-01 07:51:54 hvlad Exp $
+ * $Id: sort.cpp,v 1.71 2004-11-01 08:23:40 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -755,7 +755,7 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 	scb->scb_key_length =
 		ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
 
-	while(unique_keys < scb->scb_keys) {
+	while (unique_keys < scb->scb_keys) {
 		p--;
 		unique_keys++;
 	}
@@ -2887,7 +2887,7 @@ static void sort(sort_context* scb)
 
 		ULONG l = scb->scb_unique_length;
 		DO_32_COMPARE(p, q, l);
-		if(l == 0) {
+		if (l == 0) {
 #ifdef SCROLLABLE_CURSORS
 			SORT_diddle_key((UCHAR *) * i, scb, false);
 			SORT_diddle_key((UCHAR *) * j, scb, false);
