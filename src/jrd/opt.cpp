@@ -97,7 +97,7 @@ static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
 static bool check_for_nod_from(JRD_NOD);
 static SLONG decompose(TDBB, JRD_NOD, LLS *, CSB);
-static USHORT distribute_equalities(LLS *, CSB);
+static USHORT distribute_equalities(LLS *, CSB, USHORT);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
 static BOOLEAN dump_rsb(JRD_REQ, RSB, SCHAR **, SSHORT *);
 static BOOLEAN estimate_cost(TDBB, OPT, USHORT, double *, double *);
@@ -359,7 +359,7 @@ RSB OPT_compile(TDBB tdbb,
 		conjunct_count =
 			decompose(tdbb, rse->rse_boolean, &conjunct_stack, csb);
 
-	conjunct_count += distribute_equalities(&conjunct_stack, csb);
+	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
 
 // find the end of the conjunct stack.
 	for (stack_end = &conjunct_stack; *stack_end;
@@ -546,7 +546,7 @@ RSB OPT_compile(TDBB tdbb,
 		 stack_end = &(*stack_end)->lls_next);
 	SLONG saved_conjunct_count = conjunct_count;
 	*stack_end = parent_stack;
-	conjunct_count += distribute_equalities(&conjunct_stack, csb);
+	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
 	if (parent_stack) {
 		// Find parent_stack position and reset it to NULL
 		for (stack_end = &conjunct_stack; *stack_end && !(*stack_end == parent_stack);
@@ -1981,7 +1981,7 @@ static SLONG decompose(TDBB tdbb,
 }
 
 
-static USHORT distribute_equalities(LLS * org_stack, CSB csb)
+static USHORT distribute_equalities(LLS * org_stack, CSB csb, USHORT base_count)
 {
 /**************************************
  *
@@ -2067,7 +2067,9 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 					boolean =
 						make_binary_node(nod_eql, (JRD_NOD) stack->lls_object,
 										 (JRD_NOD) temp->lls_object, TRUE);
-					if (augment_stack(boolean, org_stack)) {
+					if ((base_count + count < MAX_CONJUNCTS) &&
+						augment_stack(boolean, org_stack))
+					{
 						DEBUG;
 						count++;
 					}
@@ -2120,8 +2122,11 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 						 */
 						new_node =
 							make_inference_node(csb, boolean, arg1, arg2);
-						if (augment_stack(new_node, org_stack))
+						if ((base_count + count < MAX_CONJUNCTS) &&
+							augment_stack(new_node, org_stack))
+						{
 							count++;
+						}
 					}
 				break;
 			}
@@ -3003,7 +3008,7 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
  * Functional description
  *	Find all rsbs at or below the current one that map
  *	to a single stream.  Save the stream numbers in a list.
- *	For unions and aggregates also save the rsb pointer.
+ *	For unions/aggregates/procedures also save the rsb pointer.
  *
  **************************************/
 	RSB *ptr, *end;
@@ -3020,13 +3025,13 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
 	switch (rsb->rsb_type) {
 	case rsb_union:
 	case rsb_aggregate:
+	case rsb_procedure:
 		if (rsb_list)
 			LLS_PUSH(rsb, rsb_list);
 	case rsb_indexed:
 	case rsb_sequential:
 	case rsb_ext_sequential:
 	case rsb_ext_indexed:
-	case rsb_procedure:
 		/* No need to go any farther down with these */
 
 		LLS_PUSH((BLK) rsb->rsb_stream, stream_list);
@@ -3048,8 +3053,8 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
 			 ptr < end; ptr += 2)
 			find_rsbs(*ptr, stream_list, rsb_list);
 		break;
-        default:   /* Shut up compiler warnings */
-                break;
+	default:   /* Shut up compiler warnings */
+		break;
 	}
 
 	find_rsbs(rsb->rsb_next, stream_list, rsb_list);
@@ -3964,6 +3969,7 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, JRD_NOD node)
 	rsb->rsb_type = rsb_procedure;
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_prc_stream];
 	rsb->rsb_procedure = procedure;
+	rsb->rsb_format = procedure->prc_format;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_procedure));
 	rsb->rsb_arg[RSB_PRC_inputs] = (RSB) node->nod_arg[e_prc_inputs];
 	rsb->rsb_arg[RSB_PRC_in_msg] = (RSB) node->nod_arg[e_prc_in_msg];

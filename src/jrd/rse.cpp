@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.28.2.1 2003-07-17 08:22:26 dimitr Exp $
+ * $Id: rse.cpp,v 1.28.2.2 2003-11-18 16:44:58 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -762,12 +762,13 @@ void RSE_open(TDBB tdbb, RSB rsb)
 					~(irsb_first | irsb_in_opened | irsb_join_full);
 				impure->irsb_flags |= irsb_mustread;
 
-				/* Allocate a record block for each union and aggregate
+				/* Allocate a record block for each union/aggregate/procedure
 				   stream in the right sub-stream.  The block will be needed
 				   if we join to nulls before opening the rsbs */
 
 				for (stack = (LLS) rsb->rsb_arg[RSB_LEFT_rsbs]; stack;
-					 stack = stack->lls_next) {
+					 stack = stack->lls_next)
+				{
 					right_rsbs = (RSB) stack->lls_object;
 					VIO_record(tdbb,
 							   &request->req_rpb[right_rsbs->rsb_stream],
