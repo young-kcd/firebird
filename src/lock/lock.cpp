@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.9 2002-07-06 05:31:56 skywalker Exp $
+$Id: lock.cpp,v 1.10 2002-08-26 12:10:18 eku Exp $
 */
 
 #include "firebird.h"
@@ -108,7 +108,7 @@ static BOOLEAN LOCK_post_manager;
 #define ASSERT_ACQUIRED current_is_active_owner (TRUE,  __LINE__)
 #define ASSERT_RELEASED current_is_active_owner (FALSE, __LINE__)
 #define VALIDATE_LOCK_TABLE
-#if ((defined MMAP_SUPPORTED) && !(defined SUPERSERVER))
+#if ((defined HAVE_MMAP) && !(defined SUPERSERVER))
 #define LOCK_DEBUG_ACQUIRE
 #endif
 #endif
@@ -733,7 +733,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 #if (defined WIN_NT || defined NEXT || defined SOLARIS_MT)
 	shutdown_blocking_thread(status_vector);
 #else
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 	if (LOCK_owner) {
 		ISC_unmap_object(status_vector, &LOCK_data,(UCHAR**)&LOCK_owner,
 						 sizeof(struct own));
@@ -866,7 +866,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 #endif
 
 #ifndef SUPERSERVER
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #ifdef SOLARIS_MT
 /* Map the owner block separately so that threads waiting
    on synchronization variables embedded in the owner block
@@ -1436,7 +1436,7 @@ static void acquire( PTR owner_offset)
 	prior_active = LOCK_header->lhb_active_owner;
 
 #ifndef SUPERSERVER
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 	if (LOCK_owner) {
 		/* Record a "timestamp" of when this owner requested the lock table */
 		LOCK_owner->own_acquire_time = LOCK_header->lhb_acquires;
@@ -1504,7 +1504,7 @@ static void acquire( PTR owner_offset)
 		length = LOCK_header->lhb_length;
 /* Do not do Lock table remapping for SUPERSERVER. Specify required
    lock table size in the configuration file */
-#if !((defined SUPERSERVER) && (defined MMAP_SUPPORTED))
+#if !((defined SUPERSERVER) && (defined HAVE_MMAP))
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
 		if (!header)
@@ -1623,7 +1623,7 @@ static UCHAR *alloc( SSHORT size, STATUS * status_vector)
 		LOCK_header->lhb_used -= size;
 /* Do not do Lock table remapping for SUPERSERVER. Specify required
    lock table size in the configuration file */
-#if (!(defined SUPERSERVER) && (defined MMAP_SUPPORTED)) || defined (WIN_NT)
+#if (!(defined SUPERSERVER) && (defined HAVE_MMAP)) || defined (WIN_NT)
 		length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
@@ -2690,7 +2690,7 @@ static void exit_handler( void *arg)
 #if (defined WIN_NT || defined NEXT || defined SOLARIS_MT)
 		shutdown_blocking_thread(local_status);
 #else
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 		if (LOCK_owner)
 			ISC_unmap_object(local_status, &LOCK_data,
 				(UCHAR**)&LOCK_owner, sizeof(struct own));
@@ -4980,7 +4980,7 @@ static USHORT wait_for_request(
 		EVENT event_ptr;
 
 		owner = (OWN) ABS_PTR(owner_offset);
-#if (defined MMAP_SUPPORTED && !defined SUPERSERVER)
+#if (defined HAVE_MMAP && !defined SUPERSERVER)
 		if (!(LOCK_owner->own_flags & OWN_wakeup))
 #else
 		if (!(owner->own_flags & OWN_wakeup))
@@ -4992,7 +4992,7 @@ static USHORT wait_for_request(
 			/* YYY: NOTE - couldn't there be "missing events" here? */
 			/* We don't own the lock_table at this point, but we modify it! */
 
-#if (defined MMAP_SUPPORTED && !defined SUPERSERVER)
+#if (defined HAVE_MMAP && !defined SUPERSERVER)
 			event_ptr = LOCK_owner->own_wakeup;
 			value = ISC_event_clear(event_ptr);
 			event_ptr = LOCK_owner->own_wakeup;
@@ -5002,7 +5002,7 @@ static USHORT wait_for_request(
 			owner = (OWN) ABS_PTR(owner_offset);
 			event_ptr = owner->own_wakeup;
 #endif
-#if (defined MMAP_SUPPORTED && !defined SUPERSERVER)
+#if (defined HAVE_MMAP && !defined SUPERSERVER)
 			if (!(LOCK_owner->own_flags & OWN_wakeup))
 #else
 			if (!(owner->own_flags & OWN_wakeup))
@@ -5080,7 +5080,7 @@ static USHORT wait_for_request(
 		/* Only if we came out of the ISC_event_wait() because of a post_wakeup()
 		   by another owner is OWN_wakeup set.  This is the only SUCCESS case. */
 
-#if (defined MMAP_SUPPORTED && !defined SUPERSERVER)
+#if (defined HAVE_MMAP && !defined SUPERSERVER)
 		if (LOCK_owner->own_flags & OWN_wakeup)
 #else
 		owner = (OWN) ABS_PTR(owner_offset);

@@ -342,7 +342,7 @@ void WALC_fini( STATUS * status_vector, WAL * WAL_handle)
 	if (WAL_segment) {
 		WAL_segment->wals_num_attaches--;
 		flag = (wal->wal_flags & WAL_SHUTDOWN_HANDLE) ? ISC_SEM_REMOVE : 0;
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 		if (wal->wal_flags & WAL_CLEANUP_HANDLE)
 			flag |= ISC_MEM_REMOVE;
 #else

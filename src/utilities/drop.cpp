@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.6 2002-07-04 05:53:33 eku Exp $
+$Id: drop.cpp,v 1.7 2002-08-26 12:10:19 eku Exp $
 */
 
 #include "firebird.h"
@@ -75,7 +75,7 @@ static int orig_argc;
 static SCHAR **orig_argv;
 
 static struct ipccfg config_table[] = {
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 	{"V4_LOCK_MEM_SIZE", -1, &LOCK_shm_size, 0, 0},
 	{"ANY_LOCK_MEM_SIZE", -1, &LOCK_shm_size, -1, 0},
 	{"V4_EVENT_MEM_SIZE", -1, &EVENT_default_size, 0, 0},
@@ -230,7 +230,7 @@ static SLONG get_key( TEXT * filename)
 }
 
 
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 static void remove_resource(
 							TEXT * filename,
 							SLONG shm_length, SLONG sem_count, TEXT * label)
@@ -303,7 +303,7 @@ static void remove_resource(
 #endif
 
 
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 static void remove_resource(
 							TEXT * filename,
 							SLONG shm_length, SLONG sem_count, TEXT * label)
@@ -396,7 +396,7 @@ static int sem_exclusive( SLONG key, SLONG count)
 }
 
 
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 static int shm_exclusive( SLONG key, SLONG length)
 {
 /**************************************

@@ -720,7 +720,7 @@ static EVH acquire(void)
 		}
 #endif /* WIN_NT */
 
-#if (!(defined SUPERSERVER) && (defined MMAP_SUPPORTED))
+#if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
 		STATUS status_vector[20];
 		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
 #endif
@@ -804,7 +804,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 #endif /* WIN_NT */
 
 	EVH header = 0;
-#if !((defined SUPERSERVER) && (defined MMAP_SUPPORTED))
+#if !((defined SUPERSERVER) && (defined HAVE_MMAP))
 		header =
 			reinterpret_cast < EVH >
 			(ISC_remap_file(status_vector, &EVENT_data, ev_length, TRUE));

@@ -409,7 +409,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (LOCK_header
 		&& LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped) {
 		length = LOCK_header->lhb_length;
-#if (!(defined UNIX) || (defined MMAP_SUPPORTED))
+#if (!(defined UNIX) || (defined HAVE_MMAP))
 		LOCK_header =
 			(LHB) ISC_remap_file(status_vector, &shmem_data, length, FALSE);
 #endif

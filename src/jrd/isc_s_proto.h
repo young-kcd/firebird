@@ -79,7 +79,7 @@ void	ISC_semaphore_close(ULONG);
 void	ISC_sync_init(void);
 #endif
 
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 extern UCHAR *ISC_map_object(STATUS *, SH_MEM, SLONG, SLONG);
 extern BOOLEAN ISC_unmap_object(STATUS *, SH_MEM, UCHAR **, SLONG);
 #endif

@@ -50,7 +50,7 @@ static long get_key();
 static void dummy_init();
 static void get_lock_header();
 static int sem_exclusive(long , int );
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 static void remove_resource(int , TEXT *, int, int , TEXT *);
 #else
 static void remove_resource(int, TEXT *,int ,int ,TEXT *);
@@ -62,7 +62,7 @@ static struct {
 	char *tptr;
 	int *vptr;
 } LOCK_hdrtbl[] = {
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 	{"SHMSIZE", &LOCK_shm_size},
 #else
 	{"SEMKEY", &LOCK_sem_key},
@@ -204,7 +204,7 @@ static void get_lock_header()
 	char *p, *q, buf[40];
 	int i;
 
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 	LOCK_shm_size = DEFAULT_SIZE;
 #else
 #ifdef SUN_V3_LOCK_MANAGER
@@ -229,7 +229,7 @@ static void get_lock_header()
 }
 
 
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
                int sem_count, TEXT *label)
 {
@@ -296,7 +296,7 @@ static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
 #endif
 
 
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
               int sem_count, TEXT *label)
 {
@@ -376,7 +376,7 @@ static int sem_exclusive(long key, int count)
  **************************************/
 	int semid;
 
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 	return semget(key, count, IPC_EXCL);
 #else
 	if ((semid = semget(key, count, IPC_EXCL)) != -1)
@@ -387,7 +387,7 @@ static int sem_exclusive(long key, int count)
 }
 
 
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 static int shm_exclusive(long key, int length)
 {
 /**************************************

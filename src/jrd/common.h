@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.21 2002-08-22 10:48:23 eku Exp $
+$Id: common.h,v 1.22 2002-08-26 12:10:18 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -85,7 +85,6 @@ $Id: common.h,v 1.21 2002-08-22 10:48:23 eku Exp $
 #ifdef LINUX
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
-#define MMAP_SUPPORTED
 
 #ifdef SUPERSERVER
 #define SET_TCP_NO_DELAY
@@ -118,23 +117,44 @@ $Id: common.h,v 1.21 2002-08-22 10:48:23 eku Exp $
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
+#include <string.h>
+#include <sys/time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#undef GETTIMEOFDAY_RETURNS_TIMEZONE
+/* These prototypes are missing in the system header files :-( */
 int gettimeofday (struct timeval *tp);
 int munmap(void * addr, size_t len);
 int gethostname(char *name, size_t len);
+int socket(int domain, int type, int protocol);
+int connect(int s, struct sockaddr *name, int namelen);
+int send(int s, void *msg, int len, int flags);
+int recv(int s, void *buf, int len, int flags);
+int strcasecmp(const char *s1, const char *s2);
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *execptfds, struct timeval *timeout);
+int getsockopt(int s, int level, int optname, char *optval, int *optlen);
+int setsockopt(int s, int level, int optname, char *optval, int optlen);
+int bind(int s, struct sockaddr *name, int namelen);
+int listen(int s, int backlog);
+int accept(int s, struct sockaddr *ddr, int *addrlen);
+int getsockname(int s, struct sockaddr *name, int *namelen);
+int setsockname(int s, struct sockaddr *name, int *namelen);
+int getpeername(int s, struct sockaddr *name, int *namelen);
+int shutdown(int s, int how);
 
 #ifdef __cplusplus
     }
 #endif
 
+#include <dlfcn.h>
+#define dlopen(a,b)		dlopen((char *)(a),(b))
+#define dlsym(a,b)		dlsym((a), (char *)(b))
+
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
-#define MMAP_SUPPORTED
 
 #define ALIGNMENT	4
 #define DOUBLE_ALIGN	8
@@ -191,7 +211,6 @@ int gethostname(char *name, size_t len);
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
 #define NON_MNTENT
-#define MMAP_SUPPORTED
 #define MAP_ANONYMOUS
 #define MAP_ANNON
 #define LSEEK_OFFSET_CAST (off_t)
@@ -232,7 +251,6 @@ int gethostname(char *name, size_t len);
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
@@ -268,7 +286,6 @@ int gethostname(char *name, size_t len);
 #define ATEXIT(c)       atexit(c)
 
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
@@ -285,8 +302,6 @@ int gethostname(char *name, size_t len);
 /* SUN platforms--the 386i is obsolete */
 
 #ifdef sun
-#define MMAP_SUPPORTED
-
 /* Defined KILLER_SIGNALS for Sun - as we were getting lots of lockups
  * using pipe server.
  * 1995-February-24 David Schnepper
@@ -565,7 +580,6 @@ typedef unsigned int64 UATOM;
 #ifndef _POWER					/* IBM RS/6000 */
 #define AIX
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define NO_FLOCK
 #define SETPGRP         setpgid (0, 0)
 #define ATEXIT(c)       atexit (c)
@@ -586,7 +600,6 @@ typedef unsigned int64 UATOM;
 #else /* AIX PowerPC */
 #define AIX_PPC
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define NO_FLOCK
 #define SETPGRP         setpgid (0, 0)
 #define ATEXIT(c)       atexit (c)
@@ -738,7 +751,6 @@ typedef unsigned __int64 UINT64;
 #define SCO_UNIX        1
 #define                 IEEE
 #define SETPGRP         setpgrp()
-#define MMAP_SUPPORTED
 #define NO_FLOCK
 #define ATEXIT(c)       atexit (c)
 /*
@@ -767,7 +779,6 @@ typedef unsigned __int64 UINT64;
 #ifdef DGUX
 #define UNIX            1
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define NO_FLOCK
 #define SETPGRP         setpgid (0, 0)
 #define ATEXIT(c)       atexit (c)
@@ -800,7 +811,6 @@ typedef unsigned __int64 UINT64;
 #define INTL
 #define NO_PYXIS
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define HAS_64BIT_POINTERS		/* if a machine has 64 bit pointers you need this */
 #define SETPGRP         setpgrp (0, 0)
 #define UNIX            1
@@ -842,7 +852,6 @@ typedef unsigned long UATOM;
 #define IMPLEMENTATION  isc_info_db_impl_isc_sgi  /* 41 */
 #define DOUBLE_ALIGN    8
 #define                 IEEE
-#define MMAP_SUPPORTED
 #define NO_FLOCK
 #define INTL
 #define VOLATILE	volatile
@@ -911,7 +920,6 @@ typedef unsigned long DWORD;
 #define INTL
 #define SETPGRP         setpgrp()
 #define KILLER_SIGNALS
-#define MMAP_SUPPORTED
 #define NO_FLOCK
 #define NO_PYXIS
 #define I386            1
