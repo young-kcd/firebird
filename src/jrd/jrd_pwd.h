@@ -31,7 +31,9 @@
 #include "../jrd/smp_impl.h"
 #include "../jrd/thd.h"
 #include "../jrd/sha.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
 #include <time.h>
 
 const size_t MAX_PASSWORD_ENC_LENGTH = 12;	// passed by remote protocol
