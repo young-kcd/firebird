@@ -25,6 +25,7 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../remote/remote.h"
+#include "../jrd/os/thd_priority.h"
 #include "../jrd/thd.h"
 #include "../utilities/install_nt.h"
 #include "../remote/cntl_proto.h"
