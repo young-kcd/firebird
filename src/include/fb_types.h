@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.40 2004-01-27 18:19:42 skidder Exp $
+ *  $Id: fb_types.h,v 1.41 2004-01-29 05:56:33 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -69,14 +69,14 @@ typedef unsigned long long int	ISC_UINT64;
 // Temporarly restrict new definition until ULONG clash with Windows
 // type is solved. Win64 port is not possible before that point.
 // Cannot use SIZEOF_LONG define here because we are in a public header
-#if __WORDSIZE == 64
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 	// EKU: Firebird requires (S)LONG to be 32 bit
 	typedef int SLONG;
 	typedef unsigned int ULONG;
 #else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
-#endif // SIZEOF_LONG == 8*/
+#endif
 
 typedef struct {
 	SLONG high;

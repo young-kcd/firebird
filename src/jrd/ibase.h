@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.66 2004-01-27 18:19:22 skidder Exp $
+$Id: ibase.h,v 1.67 2004-01-29 05:56:52 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -60,7 +60,7 @@ $Id: ibase.h,v 1.66 2004-01-27 18:19:22 skidder Exp $
 // Temporarly restrict new definition until ULONG clash with Windows
 // type is solved. Win64 port is not possible before that point.
 // Cannot use SIZEOF_LONG define here because we are in a public header
-#if __WORDSIZE == 64
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 typedef	int		ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
 #else
