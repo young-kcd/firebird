@@ -95,7 +95,7 @@
 #define ALIGNMENT 4
 
 /* alignment of double */
-#define DOUBLE_ALIGN 4
+#define DOUBLE_ALIGN 8
 
 /* Functions */
 #define snprintf _snprintf
