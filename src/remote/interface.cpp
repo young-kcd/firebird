@@ -70,7 +70,9 @@
 #endif
 
 #if defined(WIN_NT)
+#if !defined(EMBEDDED)
 #define XNET
+#endif
 #include "../jrd/isc_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
 #include "../remote/xnet_proto.h"
