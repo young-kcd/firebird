@@ -1,3 +1,15 @@
+2003-06-03 12:26  skidder
+
+	* firebird2/src/burp/restore.epp:
+	
+	Correct workaround of GCC 3.2 bug. Weirdness of our code fixed.
+
+2003-06-03 12:14  aafemt
+
+	* firebird2/src/burp/restore.epp:
+	
+	Workaround for GCC 3.2 bug
+
 2003-06-02 18:11  skidder
 
 	* firebird2/src/dsql/parse.y:
