@@ -773,9 +773,8 @@ public:
 	BurpGlobals() : ThreadData(ThreadData::tddGBL)
 	{
 		// this is VERY dirty hack to keep current behaviour
-		memset (&gbl_database_file_name, 0, 
-			reinterpret_cast<char*>(&veryEnd) - 
-				reinterpret_cast<char*>(&gbl_database_file_name));
+		memset (&gbl_database_file_name, 0,
+			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
 	}
 
 	const TEXT*	gbl_database_file_name;
