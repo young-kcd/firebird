@@ -857,7 +857,8 @@ int common_main(int		argc,
 					}
 					if (!
 						(tdgbl->output_file =
-						 fopen(redirect, fopen_write_type))) {
+						 fopen(redirect, fopen_write_type)))
+					{
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
 						BURP_exit_local(FINI_ERROR, tdgbl);
@@ -1433,7 +1434,7 @@ void BURP_output_version(void* arg1, const TEXT* arg2)
  *
  **************************************/
 
-	burp_output(reinterpret_cast<const char*>(arg1), arg2);
+	burp_output(static_cast<const char*>(arg1), arg2);
 }
 
 
