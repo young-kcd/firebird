@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.70 2004-06-05 09:36:56 robocop Exp $
+ * $Id: gpre.h,v 1.71 2004-10-07 09:59:02 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1542,6 +1542,26 @@ extern GpreGlobals gpreGlob;
 #define assert_IS_SYM(x) fb_assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
 #define assert_IS_NOD(x) fb_assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
 #define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
+
+
+class gpre_exception: public std::exception
+{
+	char msg[MAXPATHLEN << 1];
+public:
+	gpre_exception()
+	{
+		msg[0] = 0;
+	}
+	gpre_exception(const char* errmsg)
+	{
+		strncpy(msg, errmsg, sizeof(msg));
+		msg[sizeof(msg) - 1] = 0;
+	}
+	const char* what() const throw()
+	{
+		return msg;
+	}
+};
 
 #endif /* GPRE_GPRE_H */
 

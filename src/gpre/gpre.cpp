@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.63 2004-08-26 21:44:11 brodsom Exp $
+//  $Id: gpre.cpp,v 1.64 2004-10-07 09:59:01 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -59,6 +59,7 @@
 #include "../gpre/par_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../gpre/gpreswi.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -164,8 +165,8 @@ struct ext_table_t
 {
 	lang_t			ext_language;
 	gpre_cmd_switch	ext_in_sw;
-	TEXT*			in;
-	TEXT*			out;
+	const TEXT*			in;
+	const TEXT*			out;
 };
 
 
@@ -933,7 +934,8 @@ int main(int argc, char* argv[])
 void CPR_abort()
 {
 	++fatals_global;
-	throw std::exception();
+	//throw std::exception();
+	throw gpre_exception("Program terminated.");
 }
 
 
@@ -945,9 +947,10 @@ void CPR_abort()
 
 void CPR_assert(const TEXT* file, int line)
 {
-	TEXT buffer[200];
+	TEXT buffer[MAXPATHLEN << 1];
 
-	sprintf(buffer, "GPRE assertion failure file '%s' line '%d'", file, line);
+	fb_utils::snprintf(buffer, sizeof(buffer),
+		"GPRE assertion failure file '%s' line '%d'", file, line);
 	CPR_bugcheck(buffer);
 }
 #endif
@@ -1215,7 +1218,8 @@ void CPR_s_error(const TEXT* string)
 {
 	TEXT s[512];
 
-	sprintf(s, "expected %s, encountered \"%s\"", string, gpreGlob.token_global.tok_string);
+	fb_utils::snprintf(s, sizeof(s),
+		"expected %s, encountered \"%s\"", string, gpreGlob.token_global.tok_string);
 	CPR_error(s);
 	PAR_unwind();
 }
@@ -1515,7 +1519,7 @@ static void finish_based( act* action)
 {
 	gpre_rel* relation;
 	gpre_fld* field;
-	TEXT s[128];
+	TEXT s[MAXPATHLEN << 1];
 
 	for (; action; action = action->act_rest) {
 		if (action->act_type != ACT_basedon)
@@ -1546,7 +1550,8 @@ static void finish_based( act* action)
 				relation =
 					MET_get_relation(db, based_on->bas_rel_name->str_string, "");
 				if (!relation) {
-					sprintf(s, "relation %s is not defined in database %s",
+					fb_utils::snprintf(s, sizeof(s),
+							"relation %s is not defined in database %s",
 							based_on->bas_rel_name->str_string,
 							based_on->bas_db_name->str_string);
 					CPR_error(s);
@@ -1566,7 +1571,7 @@ static void finish_based( act* action)
 					based_on->bas_flags |= BAS_segment;
 				}
 				else {
-					sprintf(s, "database %s is not defined",
+					fb_utils::snprintf(s, sizeof(s), "database %s is not defined",
 							based_on->bas_db_name->str_string);
 					CPR_error(s);
 					continue;
@@ -1584,7 +1589,8 @@ static void finish_based( act* action)
 						/* The field reference is ambiguous.  It exists in more
 						   than one database. */
 
-						sprintf(s, "field %s in relation %s ambiguous",
+						fb_utils::snprintf(s, sizeof(s),
+								"field %s in relation %s ambiguous",
 								based_on->bas_fld_name->str_string,
 								based_on->bas_rel_name->str_string);
 						CPR_error(s);

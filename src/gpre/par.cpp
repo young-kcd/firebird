@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.52 2004-06-05 09:36:56 robocop Exp $
+//  $Id: par.cpp,v 1.53 2004-10-07 09:59:02 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -53,6 +53,7 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
 #include "../gpre/sql_proto.h"
+#include "../common/utils_proto.h"
 
 static jmp_buf*	PAR_jmp_buf;
 
@@ -310,6 +311,15 @@ act* PAR_action(const TEXT* base_dir)
 		}
 
 		}	// try
+		catch (const gpre_exception&) {
+			throw;
+		}
+		catch (const Firebird::fatal_exception&)
+		{
+			// CVC: a fatal exception should be propagated.
+			// For example, a failure in our runtime.
+			throw;
+		}
 		catch (const std::exception&) {
 			gpreGlob.sw_sql = false;
 			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
@@ -331,6 +341,14 @@ act* PAR_action(const TEXT* base_dir)
 				cur_statement = NULL;
 				return par_variable();
 			}
+			catch (const gpre_exception&) {
+				throw;
+			}
+			catch (const Firebird::fatal_exception&)
+			{
+				// CVC: a fatal exception should be propagated.
+				throw;
+			}
 			catch (const std::exception&) {
 				return 0;
 			}
@@ -340,6 +358,14 @@ act* PAR_action(const TEXT* base_dir)
 				cur_statement = NULL;
 				return par_blob_field();
 			}
+			catch (const gpre_exception&) {
+				throw;
+			}
+			catch (const Firebird::fatal_exception&)
+			{
+				// CVC: a fatal exception should be propagated.
+				throw;
+			}
 			catch (const std::exception&) {
 				return 0;
 			}
@@ -348,6 +374,14 @@ act* PAR_action(const TEXT* base_dir)
 				PAR_jmp_buf = &env;
 				cur_statement = NULL;
 				return par_type();
+			}
+			catch (const gpre_exception&) {
+				throw;
+			}
+			catch (const Firebird::fatal_exception&)
+			{
+				// CVC: a fatal exception should be propagated.
+				throw;
 			}
 			catch (const std::exception&) {
 				return 0;
@@ -401,7 +435,7 @@ SSHORT PAR_blob_subtype(DBB db)
 
 act* PAR_database(bool sql, const TEXT* base_directory)
 {
-	TEXT s[256], *string;
+	TEXT s[MAXPATHLEN << 1], *string;
 
 	act* action = MSC_action(0, ACT_database);
 	DBB db = (DBB) MSC_alloc(DBB_LEN);
@@ -541,8 +575,24 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 	if (gpreGlob.sw_language != lang_fortran)
 		MSC_match(KW_SEMI_COLON);
 
-	if (!MET_database(db, true)) {
-		sprintf(s, "Couldn't access database %s = '%s'",
+	bool found_error = false;
+	try {
+		if (!MET_database(db, true))
+		    found_error = true;
+	}
+	// CVC: It avoids countless errors if the db can't be loaded.
+	catch (const Firebird::status_exception& exc)
+	{
+		found_error = true;
+		// CVC: Print the low level error. The lack of this caused me a lot of problems.
+		// Granted, status_exception doesn't help, but fatal_exception carries a
+		// meaningful message.
+		CPR_error(exc.what());
+	}
+	
+	if (found_error)
+	{
+		fb_utils::snprintf(s, sizeof(s), "Couldn't access database %s = '%s'",
 				db->dbb_name->sym_string, db->dbb_filename);
 		CPR_error(s);
 		CPR_abort();
