@@ -1,3 +1,30 @@
+2004-09-24 17:45  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.23.2.3):
+	
+	Don't rollback prepared 2PC sub-transaction
+
+2004-09-24 17:38  hvlad
+
+	* firebird2/src/dsql/: ddl.cpp (1.50.2.2), dsql.h (1.28.2.1):
+	
+	Corrects an error at DDL generation when the total size of all
+	generated BLR exceeds 64K, but each slice does not exceed 64K. For
+	ex, procedure sources is 55K and generated BLR is 12K
+
+2004-09-24 17:34  hvlad
+
+	* firebird2/src/jrd/tra.cpp (1.38.2.3):
+	
+	TRA_sweep don't release it's temp_lock in case of database shutdown
+
+2004-09-24 17:33  hvlad
+
+	* firebird2/src/jrd/cvt.cpp (1.20.2.2):
+	
+	Fix for lost least significant bits of value when rounding
+	floating-point value to  int \ int64 value
+
 2004-09-18 09:47  skidder
 
 	* firebird2/: doc/WhatsNew (1.36.2.22), src/dsql/pass1.cpp
