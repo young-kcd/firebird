@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -73,7 +73,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\common_cs/common_classic.pch"
@@ -135,10 +135,16 @@
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\dir_list.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="OTHER files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
 			</File>
@@ -163,6 +169,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\config_root.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\dir_list.h">
 			</File>
 		</Filter>
 	</Files>

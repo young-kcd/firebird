@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\fbguard/fbguard.pch"
@@ -83,7 +83,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"

@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\gds32/gds32.pch"
@@ -83,7 +83,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GDS32"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -104,7 +104,7 @@
 				OutputFile="debug/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\gds32_debug.def"
+				ModuleDefinitionFile="..\defs\gds32_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\gds32/gds32.pdb"
 				ImportLibrary=".\debug\gds32/gds32.lib"/>
@@ -162,7 +162,7 @@
 			RelativePath="..\defs\gds32.def">
 		</File>
 		<File
-			RelativePath="..\gds32_debug.def">
+			RelativePath="..\defs\gds32_debug.def">
 		</File>
 	</Files>
 	<Globals>

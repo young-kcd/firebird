@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,WIN32,_X86_"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\dsql_server_cs/dsql_server_classic.pch"
@@ -70,7 +70,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="DEBUG,_DEBUG,_LIB,_WINDOWS,WIN32,DEV_BUILD,_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"

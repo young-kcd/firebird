@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\fb_lock_print/fb_lock_print.pch"
@@ -78,7 +78,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,DEV_BUILD,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"

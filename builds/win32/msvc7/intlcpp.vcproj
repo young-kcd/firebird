@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\intlcpp/intlcpp.pch"
@@ -83,7 +83,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -206,9 +206,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intlcpp\ld.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intlcpp\ld2.cpp">
 			</File>
 		</Filter>
 		<Filter
