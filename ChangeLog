@@ -1,3 +1,32 @@
+2004-08-06 17:26  hvlad
+
+	* firebird2/src/jrd/: err.cpp (1.51), err_proto.h (1.20), exe.cpp
+	(1.117), jrd.h (1.109):
+	
+	Ability to show PSQL stack trace when exception occurs.
+
+2004-08-06 15:49  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
+	(1.1):
+	
+	file pkginfolg.in was initially added on branch B1_5_Release.
+
+2004-08-06 15:49  kkuznetsov
+
+	*
+	firebird2/src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
+	(1.1):
+	
+	file prototypelg.in was initially added on branch B1_5_Release.
+
+2004-08-06 15:49  kkuznetsov
+
+	* firebird2/doc/README.install.Solaris_on_Intel (1.1):
+	
+	file README.install.Solaris_on_Intel was initially added on branch
+	B1_5_Release.
+
 2004-08-04 12:08  aafemt
 
 	* firebird2/examples/api/api16.c (1.2):
