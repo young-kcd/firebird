@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.36 2004-11-04 18:54:03 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.37 2004-11-04 19:08:45 skidder Exp $
  *
  */
  
@@ -576,7 +576,7 @@ void nbackup::backup_database(int level, const char* fname)
 			Firebird::PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
 			char temp[MAXPATHLEN];
-			SNPRINTF(temp, sizeof(temp), "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
+			SNPRINTF(temp, sizeof(temp), "%s-%d-%04d%02d%02d-%02d%02d.nbk", fil.c_str(), level,
 				today->tm_year + 1900, today->tm_mon + 1, today->tm_mday,
 				today->tm_hour, today->tm_min);
 			temp[sizeof(temp) - 1] = 0;
