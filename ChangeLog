@@ -1,3 +1,195 @@
+2003-07-05 17:44  brodsom
+
+	* firebird2/generated/pyxis/placeholder.txt:
+	
+	Removing 'generated'
+
+2003-07-05 17:41  brodsom
+
+	* firebird2/generated/: makefile, alice/makefile,
+	alice/placeholder.txt, burp/makefile, burp/placeholder.txt,
+	dsql/makefile, dsql/placeholder.txt, dudley/makefile,
+	dudley/placeholder.txt, gpre/makefile, gpre/placeholder.txt,
+	isql/makefile, isql/placeholder.txt, journal/placeholder.txt,
+	jrd/makefile, jrd/placeholder.txt, msgs/makefile,
+	msgs/placeholder.txt:
+	
+	Removing 'generated'
+
+2003-07-05 17:24  brodsom
+
+	* firebird2/src/dsql/parse.awk:
+	
+	remove obsolete file
+
+2003-07-05 17:22  brodsom
+
+	* firebird2/builds/old_prefixes/: README.txt, prefix.aix,
+	prefix.aix_ppc, prefix.darwin, prefix.freebsd, prefix.hp10,
+	prefix.hp9.0, prefix.linux, prefix.mu, prefix.ncr3000,
+	prefix.netbsd, prefix.sco, prefix.sco_ev, prefix.solaris,
+	prefix.solaris_mt, prefix.solx86, prefix.sun4, prefix.sun4_acc,
+	prefix.win_nt, prefix.win_nts:
+	
+	Move old_prefixes to builds directory
+
+2003-07-05 17:17  brodsom
+
+	* firebird2/src/makefiles/: prefix.win_nts, README.txt, prefix.aix,
+	prefix.aix_ppc, prefix.darwin, prefix.freebsd, prefix.hp10,
+	prefix.hp9.0, prefix.linux, prefix.mu, prefix.ncr3000,
+	prefix.netbsd, prefix.sco, prefix.sco_ev, prefix.solaris,
+	prefix.solaris_mt, prefix.solx86, prefix.sun4, prefix.sun4_acc,
+	prefix.win_nt:
+	
+	Move old_prefixes to builds directory
+
+2003-07-05 16:48  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update
+
+2003-07-05 16:45  brodsom
+
+	* firebird2/: builds/win32/preprocess.bat,
+	builds/win32/clean_all.bat, builds/win32/make_all.bat,
+	builds/win32/make_boot.bat, builds/win32/make_examples.bat,
+	builds/win32/prepare.bat,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat:
+	
+	Move temporary 'dbs' below temporary 'gen'
+
+2003-07-05 16:23  dimitr
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	no message
+
+2003-07-05 14:45  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Fixed typo.
+
+2003-07-05 14:45  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	1) Cleanup 2) Some changes for the embedded server
+
+2003-07-05 14:11  dimitr
+
+	* firebird2/src/: jrd/gds.cpp, jrd/gds_proto.h,
+	common/config/dir_list.cpp:
+	
+	1) Cleanup 2) Some changes for the embedded server
+
+2003-07-05 05:31  brodsom
+
+	* firebird2/builds/win32/: clean_all.bat, make_examples.bat:
+	
+	Corrections
+
+2003-07-05 05:22  brodsom
+
+	* firebird2/: builds/win32/clean_all.bat,
+	builds/win32/make_all.bat, builds/win32/make_boot.bat,
+	builds/win32/make_examples.bat, builds/win32/parse.bat,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat:
+	
+	Use temporary compiler dir 'temp' below root
+
+2003-07-05 05:17  brodsom
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	build_msg.dsp, burp.dsp, burp_classic.dsp, codes.dsp, common.dsp,
+	common_classic.dsp, common_static.dsp, dsql_server.dsp,
+	dsql_server_classic.dsp, engine.dsp, engine_classic.dsp,
+	engine_embed.dsp, fb_inet_server.dsp, fb_lock_print.dsp,
+	fbclient.dsp, fbclient_static.dsp, fbembed.dsp, fbguard.dsp,
+	fbserver.dsp, fbudf.dsp, gbak.dsp, gdef.dsp, gds32.dsp, gfix.dsp,
+	gpre.dsp, gpre_boot.dsp, gpre_static.dsp, gsec.dsp, gsplit.dsp,
+	gstat.dsp, ib_udf.dsp, ib_util.dsp, instreg.dsp, instsvc.dsp,
+	intl.dsp, intlcpp.dsp, ipserver.dsp, isql.dsp, lock.dsp,
+	lock_classic.dsp, qli.dsp, remote.dsp, remote_classic.dsp,
+	utilities.dsp, utilities_classic.dsp, v5_examples.dsp, wal.dsp,
+	wal_classic.dsp:
+	
+	Use temporary compiler dir 'temp' below root
+
+2003-07-05 04:53  brodsom
+
+	* firebird2/:
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	builds/win32/clean_all.bat, builds/win32/make_boot.bat:
+	
+	Move firebird.msg to 'gen' directory
+
+2003-07-05 04:44  brodsom
+
+	* firebird2/builds/win32/: build_all.bat, build_boot.bat,
+	build_msg.bat, build_msg.mak, codes.mak, common_boot.mak,
+	fbclient_boot.mak, gpre.mak, gpre_boot.mak, make6_all.bat,
+	make6_boot.bat, make6_examples.bat, make7_all.bat, make7_boot.bat,
+	make7_examples.bat:
+	
+	Remove obsoleted build .bat and .mak
+
+2003-07-05 04:41  brodsom
+
+	* firebird2/src/install/arch-specific/win32/setenvvar.bat:
+	
+	Correction
+
+2003-07-05 04:35  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update
+
+2003-07-05 04:23  brodsom
+
+	* firebird2/builds/win32/clean_all.bat:
+	
+	Correction
+
+2003-07-05 04:18  brodsom
+
+	* firebird2/: builds/win32/clean_all.bat,
+	src/install/arch-specific/win32/setenvvar.bat:
+	
+	-Scripts with visual studio version detection -Move output
+	directory to a temporary below root -Use absolute paths (easier to
+	move)
+
+2003-07-05 04:14  brodsom
+
+	*
+	
+	-Scripts with visual studio version detection -Move output
+	directory to a temporary below root -Use absolute paths (easier to
+	move)
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t:
+
+2003-07-05 04:02  brodsom
+
+	* firebird2/builds/win32/make_examples.bat:
+	
+	-Scripts with visual studio version detection -Move output
+	directory to a temporary below root -Use absolute paths (easier to
+	move)
+
+2003-07-05 03:10  brodsom
+
+	* firebird2/builds/win32/: make_all.bat, make_boot.bat,
+	prepare.bat, preprocess.bat, setenvvar.bat:
+	
+	-Scripts with visual studio version detection -Move output
+	directory to a temporary below root -Use absolute paths (easier to
+	move)
+
 2003-07-04 21:21  brodsom
 
 	* firebird2/doc/README.build.msvc.html:
