@@ -3934,8 +3934,10 @@ valid_symbol_name	: SYMBOL
 
 /* list of non-reserved words */
 
-//non_reserved_word :
-//	;
+/*
+non_reserved_word :
+	;
+*/
 
 %%
 
