@@ -25,6 +25,6 @@
 #define _UTILITIES_REGIS_PROTO_H_
 
 extern USHORT	REGISTRY_install (HKEY, TEXT *, USHORT (*)(SLONG, TEXT *, HKEY));
-extern USHORT	REGISTRY_remove (HKEY, USHORT, USHORT (*)(SLONG, TEXT *, HKEY));
+extern USHORT	REGISTRY_remove (HKEY, bool, USHORT (*)(SLONG, TEXT *, HKEY));
 
 #endif /* _UTILITIES_REGIS_PROTO_H_ */

@@ -58,5 +58,7 @@ extern USHORT	SERVICES_stop (SC_HANDLE	manager,
 				TEXT	*service_name,
 				TEXT	*display_name,
 				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+extern USHORT	SERVICES_grant_logon_right (TEXT*,
+				USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
 #endif /* _UTILITIES_SERVI_PROTO_H_ */

@@ -60,12 +60,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	TEXT **end, *p, *q, *cmd;
 	TEXT directory[MAXPATHLEN];
-	USHORT sw_command, sw_version;
+	USHORT sw_command;
+	bool sw_version;
 	USHORT i, ret, len;
 	HKEY hkey_node;
 
 	sw_command = COMMAND_NONE;
-	sw_version = FALSE;
+	sw_version = false;
 
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
@@ -111,7 +112,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			switch (UPPER(*p))
 			{
 				case 'Z':
-					sw_version = TRUE;
+				sw_version = true;
 					break;
 
 				default:
@@ -142,7 +143,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			break;
 
 		case COMMAND_REMOVE:
-			ret = REGISTRY_remove(hkey_node, FALSE, reg_error);
+		ret = REGISTRY_remove(hkey_node, false, reg_error);
 			if (ret != FB_SUCCESS)
 				ib_printf("Firebird has not been deleted from the registry.\n");
 			else
@@ -194,7 +195,10 @@ static USHORT reg_error( SLONG status, TEXT * string, HKEY hkey)
 			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
+		{
+			CharToOem(buffer, buffer);
 			ib_printf("%s\n", buffer);
+		}
 	}
 
 	return FB_FAILURE;
@@ -213,11 +217,10 @@ static void usage(void)
  **************************************/
 
 	ib_printf("\nUsage:\n");
-	ib_printf("  instreg install\n");
-	ib_printf("          remove\n\n");
+	ib_printf("  instreg i[nstall]\n");
+	ib_printf("          r[emove]\n\n");
 	ib_printf("  This utility should be located and run from the 'bin' directory\n");
 	ib_printf("  of your Firebird installation.\n\n");
-	ib_printf("  '*' denotes the default values\n");
 	ib_printf("  '-z' can be used with any other option, prints version\n");
 
 	exit(FINI_OK);
