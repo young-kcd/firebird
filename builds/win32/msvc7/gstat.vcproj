@@ -157,6 +157,12 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\isc.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_file.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
