@@ -847,7 +847,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 	
 	TEXT* p = 0;
 	const TEXT* q;
-	const int temp_len = BUFFER_SMALL;
+	int temp_len = BUFFER_SMALL;
 	TEXT* temp = NULL;
 
 	for (;;)
@@ -856,7 +856,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		if (arg >= argend)
 			break;
 
-		int l;
+		int len;
 		const UCHAR x = (UCHAR) *v++;
 		switch (x)
 		{
@@ -875,15 +875,20 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 				if (!temp)		/* NOMEM: */
 					return 0;
 			}
-			l = 1 + (int) *v++; // CVC: Add one for the needed terminator.
+			len = 1 + (int) *v++; // CVC: Add one for the needed terminator.
 			q = (const TEXT*) *v++;
 
-			/* ensure that we do not overflow the buffer allocated */
-			l = (temp_len < l) ? temp_len : l;
-			if (l)
+			// ensure that we do not overflow the buffer allocated
+			len = (temp_len < len) ? temp_len : len;
+			if (len)
 			{
+				// CVC: On the next iteration, we don't have the full buffer
+				// but only the remainer of the buffer. We decrement here before
+				// the loop changes "len".
+				temp_len -= len;
 				*arg++ = p;
-				while (--l) // CVC: Decrement first to make room for the null terminator.
+				// We'll silently truncate the parameter to our available space.
+				while (--len) // CVC: Decrement first to make room for the null terminator.
 					*p++ = *q++;
 					
 				*p++ = 0;
