@@ -130,9 +130,9 @@ void EXT_erase(RPB * rpb, int *transaction)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$delete",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_delete_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$delete",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_delete_err, isc_arg_vms, status, 0);
 }
 
 
@@ -210,9 +210,9 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$open",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_open_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$open",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_open_err, isc_arg_vms, status, 0);
 
 /* If this is an indexed file, process keys.  For each known key,
    allocate a format a temporary key definition XAB.  Link the
@@ -233,9 +233,9 @@ EXT EXT_file(REL relation, TEXT * file_name, SLONG * description)
 		fab.fab$l_xab = NULL;
 		if (!(status & 1))
 			ERR_post(isc_io_error,
-					 gds_arg_string, "sys$display",
-					 gds_arg_string, file->ext_filename,
-					 isc_arg_gds, isc_io_access_err, gds_arg_vms, status, 0);
+					 isc_arg_string, "sys$display",
+					 isc_arg_string, file->ext_filename,
+					 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
 		index = (IDX *) index_buffer;
 		for (key = keys; key < end; key++)
 			if (match_index(format, key, index)) {
@@ -284,9 +284,9 @@ void EXT_fini(REL relation)
 		status = sys$close(&fab);
 		if (!(status & 1))
 			ERR_post(isc_io_error,
-					 gds_arg_string, "sys$close",
-					 gds_arg_string, file->ext_filename,
-					 isc_arg_gds, isc_io_close_err, gds_arg_vms, status, 0);
+					 isc_arg_string, "sys$close",
+					 isc_arg_string, file->ext_filename,
+					 isc_arg_gds, isc_io_close_err, isc_arg_vms, status, 0);
 	}
 
 	file->ext_ifi = 0;
@@ -367,9 +367,9 @@ void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 	status = sys$update(&rab);
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$update",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_write_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$update",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_write_err, isc_arg_vms, status, 0);
 }
 
 
@@ -574,9 +574,9 @@ void EXT_store(RPB * rpb, int *transaction)
 	status = sys$put(&rab);
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$put",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_write_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$put",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_write_err, isc_arg_vms, status, 0);
 
 }
 
@@ -747,9 +747,9 @@ static int connect(EXT file, USHORT key)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$connect",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_access_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$connect",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
 
 	return rab.rab$w_isi;
 }
@@ -773,9 +773,9 @@ static void disconnect(EXT file)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$disconnect",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_close_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$disconnect",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_close_err, isc_arg_vms, status, 0);
 }
 
 
@@ -1005,10 +1005,10 @@ static bool get_indexed(RSB rsb)
 				return false;
 			if (!(status & 1))
 				ERR_post(isc_io_error,
-						 gds_arg_string, "sys$find",
-						 gds_arg_string, file->ext_filename,
+						 isc_arg_string, "sys$find",
+						 isc_arg_string, file->ext_filename,
 						 isc_arg_gds, isc_io_read_err,
-						 gds_arg_vms, status, 0);
+						 isc_arg_vms, status, 0);
 		}
 
 /* Do an RMS sequential get on the stream.  If it comes back
@@ -1123,9 +1123,9 @@ static bool get_sequential(RSB rsb)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$get",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_read_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$get",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_read_err, isc_arg_vms, status, 0);
 
 	sys$free(&rab);
 	set_flags(relation, record);
@@ -1258,9 +1258,9 @@ static open_sequential(RSB rsb)
 		status = sys$ib_rewind(&rab);
 		if (!(status & 1))
 			ERR_post(isc_io_error,
-					 gds_arg_string, "sys$ib_rewind",
-					 gds_arg_string, file->ext_filename,
-					 isc_arg_gds, isc_io_access_err, gds_arg_vms, status, 0);
+					 isc_arg_string, "sys$ib_rewind",
+					 isc_arg_string, file->ext_filename,
+					 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
 	}
 }
 
@@ -1286,9 +1286,9 @@ static void position_by_rfa(EXT file, USHORT * rfa)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$get by RFA",
-				 gds_arg_string, file->ext_filename,
-				 isc_arg_gds, isc_io_access_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$get by RFA",
+				 isc_arg_string, file->ext_filename,
+				 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
 }
 
 

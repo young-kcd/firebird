@@ -30,7 +30,6 @@
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gdsold.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"
@@ -307,14 +306,14 @@ SLONG LOCK_enq(PTR prior_request;
  **************************************/
 
 			   if (code == SS$_DEADLOCK) {
-			   *status_vector++ = gds_arg_gds;
-			   *status_vector++ = gds__deadlock;}
+			   *status_vector++ = isc_arg_gds;
+			   *status_vector++ = isc_deadlock;}
 
-			   *status_vector++ = gds_arg_gds;
-			   *status_vector++ = gds__sys_request;
-			   *status_vector++ = gds_arg_string;
+			   *status_vector++ = isc_arg_gds;
+			   *status_vector++ = isc_sys_request;
+			   *status_vector++ = isc_arg_string;
 			   *status_vector++ = string;
-			   *status_vector++ = gds_arg_vms;
+			   *status_vector++ = isc_arg_vms;
 			   *status_vector++ = code; *status_vector++ = 0; return 0;}
 
 

@@ -31,7 +31,6 @@
 #include "../jrd/license.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gdsold.h"
 #include "../jrd/gds_proto.h"
 #include "../ipserver/alli_proto.h"
 #include "../jrd/thd_proto.h"

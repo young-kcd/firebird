@@ -107,7 +107,7 @@ int API_ROUTINE gds__version(FRBRD**, void(*) (), void*);
 void API_ROUTINE gds__set_debug(int);
 //
 // isc_ functions which are not mapped to gds_ functions (the gds_ ones are in utl.cpp)
-// Should analyzed
+// Should be analyzed
 //
 SLONG API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
 USHORT API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);

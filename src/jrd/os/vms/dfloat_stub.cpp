@@ -302,10 +302,10 @@ entry(gds__attach_database)
 	 static error(status)
 	 int *status;
 {
-	*status++ = gds_arg_gds;
-	*status++ = gds__unavailable;
-	*status++ = gds_arg_end;
+	*status++ = isc_arg_gds;
+	*status++ = isc_unavailable;
+	*status++ = isc_arg_end;
 
-	return gds__unavailable;
+	return isc_unavailable;
 }
 

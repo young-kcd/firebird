@@ -28,7 +28,6 @@
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gdsold.h"
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
@@ -408,7 +407,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 	tmp = temp;
 	pw1 = pw2 = workbuf;
 
-	gds_status[0] = gds_arg_gds;
+	gds_status[0] = isc_arg_gds;
 	code = vms_status[1];
 
 	if (code == 1)
@@ -425,14 +424,14 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 
 	gds_index = (code >> 3) - 2560000;
 
-	if (gds_index < 0 || gds_index > gds_err_max) {
-		gds_status[1] = gds__random;
-		gds_status[2] = gds_arg_string;
+	if (gds_index < 0 || gds_index > isc_err_max) {
+		gds_status[1] = isc_random;
+		gds_status[2] = isc_arg_string;
 		gds_status[3] = pw1;
-		gds_status[4] = gds_arg_end;
+		gds_status[4] = isc_arg_end;
 		while (*p)
 			*pw2++ = *p++;
-		return gds__random;
+		return isc_random;
 	}
 
 	flag = false;
@@ -456,7 +455,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		case 'U':
 			if (*p++ != 'L')
 				BUGCHECK(235);	/* msg 235 Unimplemented conversion, FAO directive X,U */
-			*tmp++ = gds_arg_number;
+			*tmp++ = isc_arg_number;
 			number = *tmp++ = *vms_status++;
 			flag = (number != 1);
 			sprintf(pw2, "%%x%x", number);
@@ -482,7 +481,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 				BUGCHECK(236);	/* msg 236 Error parsing RDB FAO msg string */
 
 			++p;
-			*tmp++ = gds_arg_cstring;
+			*tmp++ = isc_arg_cstring;
 			*tmp++ = length;
 			*tmp++ = pw2;
 			while (length--)
@@ -534,8 +533,8 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 			continue;
 		switch (*p) {
 		case 's':
-			*gds_status++ = gds_arg_cstring;
-			if (*tmp++ != gds_arg_cstring || flag) {
+			*gds_status++ = isc_arg_cstring;
+			if (*tmp++ != isc_arg_cstring || flag) {
 				flag = true;
 				*gds_status++ = 3;
 				*gds_status++ = pw2;
@@ -549,8 +548,8 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		case 'l':
 			++p;
 		case 'd':
-			*gds_status++ = gds_arg_number;
-			if (*tmp++ != gds_arg_number || flag) {
+			*gds_status++ = isc_arg_number;
+			if (*tmp++ != isc_arg_number || flag) {
 				flag = true;
 				*gds_status++ = -1;
 				break;
@@ -562,9 +561,9 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 			BUGCHECK(238);		/* msg 238 unknown parameter in RdB status vector */
 		}
 	}
-	*gds_status++ = gds_arg_interpreted;
+	*gds_status++ = isc_arg_interpreted;
 	*gds_status++ = pw1;
-	*gds_status++ = gds_arg_end;
+	*gds_status++ = isc_arg_end;
 
 	return code;
 }
@@ -823,7 +822,7 @@ static int translate_status(
 	rdb = *user_status;
 	count = 0;
 
-	if (*gds == gds_arg_interpreted) {
+	if (*gds == isc_arg_interpreted) {
 		q = gds[1];
 		rdb[0] = GDS$_MISC_INTERPRETED;
 		rdb[1] = DEFAULT_STATUS_FLAGS + 1;
@@ -832,12 +831,12 @@ static int translate_status(
 		return 2;
 	}
 
-	if (*gds++ != gds_arg_gds)
+	if (*gds++ != isc_arg_gds)
 		BUGCHECK(239);			/* msg 239 Interbase status vector inconsistent */
 
 	code = gds__decode(*gds, &fac, &class_);
 
-	if ((code < 0) || (code > gds_err_max)) {
+	if ((code < 0) || (code > isc_err_max)) {
 		rdb[0] = *gds;
 		rdb[1] = DEFAULT_STATUS_FLAGS;
 		return 0;
@@ -869,7 +868,7 @@ static int translate_status(
 		case 'Z':
 		case 'U':
 		case 'S':
-			if ((*gds++) != gds_arg_number)
+			if ((*gds++) != isc_arg_number)
 				BUGCHECK(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
 			*rdb++ = *gds++;
 			++count;
@@ -878,7 +877,7 @@ static int translate_status(
 		case 'A':
 			++p;
 			switch (*gds++) {
-			case gds_arg_cstring:
+			case isc_arg_cstring:
 				length = *pw2++ = *gds++;
 				q = *gds++;
 				do
@@ -886,7 +885,7 @@ static int translate_status(
 				while (--length);
 				break;
 
-			case gds_arg_string:
+			case isc_arg_string:
 				++pw2;
 				length = 0;
 				q = *gds++;

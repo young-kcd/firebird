@@ -26,7 +26,6 @@
 #include ssdef
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gdsold.h"
 #include "../jrd/rdb.h"
 #include "../jrd/common.h"
 #include "../jrd/mblr.h"

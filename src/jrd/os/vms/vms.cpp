@@ -241,9 +241,9 @@ FIL PIO_create(DBB dbb, const TEXT* string, SSHORT length, BOOLEAN overwrite)
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$create",
-				 gds_arg_cstring, length, ERR_string(string, length),
-				 isc_arg_gds, isc_io_create_err, gds_arg_vms, status, 0);
+				 isc_arg_string, "sys$create",
+				 isc_arg_cstring, length, ERR_string(string, length),
+				 isc_arg_gds, isc_io_create_err, isc_arg_vms, status, 0);
 
 /* File open succeeded.  Now expand the file name. */
 
@@ -362,10 +362,10 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 
 		if (!(status & 1) || !((status = iosb[0]) & 1))
 			ERR_post(isc_io_error,
-					 gds_arg_string, "QIO readvblk (get header)",
-					 gds_arg_cstring, file->fil_length,
+					 isc_arg_string, "QIO readvblk (get header)",
+					 isc_arg_cstring, file->fil_length,
 					 ERR_string(file->fil_string, file->fil_length),
-					 isc_arg_gds, isc_io_read_err, gds_arg_vms, status, 0);
+					 isc_arg_gds, isc_io_read_err, isc_arg_vms, status, 0);
 
 		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
 							 spare_buffer, length, address);
@@ -389,10 +389,10 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 
 		if (!(status & 1) || !((status = iosb[0]) & 1))
 			ERR_post(isc_io_error,
-					 gds_arg_string, "QIO readvblk (get header)",
-					 gds_arg_cstring, file->fil_length,
+					 isc_arg_string, "QIO readvblk (get header)",
+					 isc_arg_cstring, file->fil_length,
 					 ERR_string(file->fil_string, file->fil_length),
-					 isc_arg_gds, isc_io_read_err, gds_arg_vms, status, 0);
+					 isc_arg_gds, isc_io_read_err, isc_arg_vms, status, 0);
 	}
 }
 
@@ -451,10 +451,10 @@ SLONG PIO_max_alloc(DBB dbb)
 
 	if (!(status & 1) || !((status = iosb[0]) & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "QIO IO$_ACCESS",
-				 gds_arg_cstring, file->fil_length,
+				 isc_arg_string, "QIO IO$_ACCESS",
+				 isc_arg_cstring, file->fil_length,
 				 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
-				 isc_io_access_err, gds_arg_vms, status, 0);
+				 isc_io_access_err, isc_arg_vms, status, 0);
 
 	size = (fat.fat$w_hiblk[1] + (fat.fat$w_hiblk[0] << 16)) * 512;
 
@@ -505,10 +505,10 @@ FIL PIO_open(DBB dbb,
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$open",
-				 gds_arg_cstring, file_length, ERR_string(file_name,
+				 isc_arg_string, "sys$open",
+				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
-				 isc_arg_gds, isc_io_open_err, gds_arg_vms, status, 0);
+				 isc_arg_gds, isc_io_open_err, isc_arg_vms, status, 0);
 
 /* File open succeeded.  Now expand the file name. */
 
@@ -843,10 +843,10 @@ static FIL setup_file(DBB dbb,
 	status = sys$getdviw(15, chan, NULL, items, iosb, NULL, NULL, NULL);
 	if (status != 1)
 		ERR_post(isc_io_error,
-				 gds_arg_string, "sys$getdviw",
-				 gds_arg_cstring, file_length, ERR_string(file_name,
+				 isc_arg_string, "sys$getdviw",
+				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
-				 isc_arg_gds, isc_io_access_err, gds_arg_vms, status, 0);
+				 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
 
 /* Build lock string */
 
@@ -947,16 +947,16 @@ static bool vms_io_error(
 
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_io_error;
-	*status_vector++ = gds_arg_string;
+	*status_vector++ = isc_arg_string;
 	*status_vector++ = (ISC_STATUS) string;
-	*status_vector++ = gds_arg_string;
+	*status_vector++ = isc_arg_string;
 	*status_vector++ =
 		(ISC_STATUS) ERR_string(file->fil_string, file->fil_length);
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = operation;
-	*status_vector++ = gds_arg_vms;
+	*status_vector++ = isc_arg_vms;
 	*status_vector++ = code;
-	*status_vector++ = gds_arg_end;
+	*status_vector++ = isc_arg_end;
 
 	return false;
 }

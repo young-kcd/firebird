@@ -28,7 +28,6 @@
 #include "../jrd/lnmdef.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gdsold.h"
 #include "../jrd/common.h"
 
 #define RDB_IMAGE	"RDBVMSSHR"
@@ -126,7 +125,7 @@ int RDB_attach_database(
 
 	if (!RDB$ATTACH_DATABASE &&
 		!find_symbol(&RDB$ATTACH_DATABASE, "RDB$ATTACH_DATABASE")) {
-		user_status[0] = gds_arg_gds;
+		user_status[0] = isc_arg_gds;
 		user_status[1] = gds_unavailable;
 		user_status[0] = 0;
 		return user_status[1];
@@ -213,7 +212,7 @@ int RDB_cancel_blob(int *user_status, BLB * blob_handle)
 
 	if (!*blob_handle) {
 		if (user_status) {
-			*user_status++ = gds_arg_gds;
+			*user_status++ = isc_arg_gds;
 			*user_status++ = 0;
 		}
 		return 0;
@@ -399,7 +398,7 @@ int RDB_create_database(
 	init();
 	if (!RDB$CREATE_DATABASE &&
 		!find_symbol(&RDB$CREATE_DATABASE, "RDB$ATTACH_DATABASE")) {
-		user_status[0] = gds_arg_gds;
+		user_status[0] = isc_arg_gds;
 		user_status[1] = gds_unavailable;
 		user_status[0] = 0;
 		return user_status[1];
@@ -1099,7 +1098,7 @@ static ISC_STATUS bad_handle(ISC_STATUS *user_status, ISC_STATUS code)
 	ISC_STATUS *vector;
 
 	vector = (user_status) ? user_status : local_status;
-	*vector++ = gds_arg_gds;
+	*vector++ = isc_arg_gds;
 	*vector++ = code;
 	*vector = 0;
 

@@ -45,7 +45,7 @@
 #include <lckdef.h>
 #include "../jrd/vms.h"
 #define EVENT_FLAG	15
-#define SYS_ERROR	gds_arg_vms
+#define SYS_ERROR	isc_arg_vms
 #endif
 
 #ifndef VMS
@@ -62,7 +62,7 @@
 
 #include <sys/file.h>
 
-#define SYS_ERROR	gds_arg_unix
+#define SYS_ERROR	isc_arg_unix
 extern int errno;
 #endif
 
@@ -212,7 +212,7 @@ JIO_open(journal)
 	position_and_read(journal, 0L, &header, sizeof(header));
 
 	if (header.jfh_version != JFH_VERSION) {
-		ERR_post(gds__jrn_format_err, 0);
+		ERR_post(isc_jrn_format_err, 0);
 		/* Msg366 journal file wrong format */
 	}
 
@@ -307,7 +307,7 @@ JIO_put(journal, message, size)
 			acquire(journal, &data);
 		}
 		if (n == -1)
-			ERR_post(gds__jrn_file_full, 0);
+			ERR_post(isc_jrn_file_full, 0);
 		/* Msg840 intermediate journal file full */
 		data.data_items.segment = n;
 		data.data_items.block = 0;
@@ -661,8 +661,8 @@ static error(journal, value, string, operation)
 	SSHORT errcode;
 
 	ERR_post(isc_io_error,
-			 gds_arg_string, string,
-			 gds_arg_string, journal->jrn_server,
+			 isc_arg_string, string,
+			 isc_arg_string, journal->jrn_server,
 			 isc_arg_gds, operation, SYS_ERROR, value, 0);
 }
 
