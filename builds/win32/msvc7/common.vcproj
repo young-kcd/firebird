@@ -163,6 +163,12 @@
 			Name="OTHER files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\common\classes\ClumpletReader.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\ClumpletWriter.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp">
 			</File>
 			<File
@@ -176,9 +182,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\StringMap.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
@@ -195,6 +198,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\array.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\ClumpletReader.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\ClumpletWriter.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\config.h">
@@ -218,7 +227,7 @@
 				RelativePath="..\..\..\src\jrd\os\fbsyslog.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\StringMap.h">
+				RelativePath="..\..\..\src\common\classes\GenericMap.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">
