@@ -228,7 +228,13 @@ jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
 /* workspace is the exapnded name here */
 
 	length = PIO_expand(string, length, workspace);
-	jrd_file* file = setup_file(dbb, workspace, length, desc);
+	jrd_file *file;
+	try {
+		file = setup_file(dbb, workspace, length, desc);
+	} catch(const std::exception&) {
+		CloseHandle(desc);
+		throw;
+	}
 
 	return file;
 }
@@ -343,6 +349,9 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
  * Functional description
  *	Read the page header.  This assumes that the file has not been
  *	repositioned since the file was originally mapped.
+ *  The detail of Win32 implementation is that it doesn't assume 
+ *  this fact as seeks to first byte of file initially, but external
+ *  callers should not rely on this behavior
  *
  **************************************/
 	jrd_file* file = dbb->dbb_file;
@@ -552,7 +561,14 @@ jrd_file* PIO_open(DBB dbb,
 		}
 	}
 
-	return setup_file(dbb, string, length, desc);
+	jrd_file *file;
+	try {
+		file = setup_file(dbb, string, length, desc);
+	} catch(const std::exception&) {
+		CloseHandle(desc);
+		throw;
+	}
+	return file;
 }
 
 
@@ -1080,9 +1096,28 @@ static jrd_file* setup_file(DBB		dbb,
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		LCK_lock(NULL, lock,
-				 (dbb->dbb_flags & DBB_cache_manager) ? LCK_SR : LCK_SW,
-				 LCK_WAIT);
+		TDBB tdbb = GET_THREAD_DATA;
+		
+		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
+			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
+			// If we are in a single-threaded maintenance mode then clean up and stop waiting
+			SCHAR spare_memory[MIN_PAGE_SIZE*2];
+			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
+		
+			try {
+				dbb->dbb_file = file;
+				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
+				if ((reinterpret_cast<header_page*>(header_page_buffer)->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
+				dbb->dbb_file = NULL; // Will be set again later by the caller				
+			} catch(const std::exception&) {
+				delete dbb->dbb_lock;
+				dbb->dbb_lock = NULL;
+				delete file;
+				dbb->dbb_file = NULL; // Will be set again later by the caller
+				throw;
+			}
+		}
 	}
 
 	return file;
