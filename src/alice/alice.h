@@ -38,8 +38,7 @@
 
 #include "../alice/blk.h"
 
-enum val_values
-{
+enum val_errors {
 	VAL_INVALID_DB_VERSION	= 0,
 	VAL_RECORD_ERRORS		= 1,
 	VAL_BLOB_PAGE_ERRORS	= 2,
@@ -101,8 +100,7 @@ typedef struct tdr : public pool_alloc<alice_type_tdr>
 /* Transaction Description Record */
 
 const int TDR_VERSION		= 1;
-enum tdr_vals 
-{
+enum tdr_vals {
 	TDR_HOST_SITE		= 1,
 	TDR_DATABASE_PATH	= 2,
 	TDR_TRANSACTION_ID	= 3,
@@ -202,3 +200,4 @@ extern tgbl *gdgbl;
 #endif
 
 #endif	// ALICE_ALICE_H
+

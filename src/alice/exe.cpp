@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.17 2003-09-18 10:56:32 brodsom Exp $
+//	$Id: exe.cpp,v 1.18 2003-09-22 08:49:45 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -64,15 +64,16 @@ static TEXT val_errors[] =
 static inline void stuff_dpb(UCHAR **d, int blr)
 {
 	UCHAR *ptr = *d;
-	*ptr++ = (UCHAR)(blr);
+	*ptr++ = (UCHAR)blr;
 	*d = ptr;
 }
-static inline void stuff_dpb_int(UCHAR **d, int blr)
+
+static inline void stuff_dpb_long(UCHAR **d, int blr)
 {
 	stuff_dpb(d, blr);
-	stuff_dpb(d, (blr) >> 8);
-	stuff_dpb(d, (blr) >> 16);
-	stuff_dpb(d, (blr) >> 24);
+	stuff_dpb(d, blr >> 8);
+	stuff_dpb(d, blr >> 16);
+	stuff_dpb(d, blr >> 24);
 }
 
 
@@ -321,7 +322,7 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	else if (switches & sw_set_db_dialect) {
 		stuff_dpb(&dpb2, isc_dpb_set_db_sql_dialect);
 		stuff_dpb(&dpb2, 4);
-		stuff_dpb_int(&dpb2, tdgbl->ALICE_data.ua_db_SQL_dialect);
+		stuff_dpb_long(&dpb2, tdgbl->ALICE_data.ua_db_SQL_dialect);
 	}
 
 	if (tdgbl->ALICE_data.ua_user) {
