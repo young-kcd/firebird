@@ -139,8 +139,8 @@ SOURCE=..\..\..\src\misc\status.h
 # Begin Source File
 
 SOURCE=..\..\..\src\iscguard\iscguard.rc
-# ADD BASE RSC /l 0x41d /i "\Firebird\firebird_15\src\iscguard" /i "..\..\..\src\iscguard" /i "..\..\..\\"
-# ADD RSC /l 0x417 /i "\Firebird\firebird_15\src\iscguard" /i "..\..\..\src\iscguard" /i "..\..\..\\"
+# ADD BASE RSC /l 0x41d /i "..\..\..\src\iscguard" /i "..\..\..\\"
+# ADD RSC /l 0x417 /i "..\..\..\src\iscguard" /i "..\..\..\\"
 # End Source File
 # End Group
 # End Target
