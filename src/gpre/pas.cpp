@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.19 2003-09-13 12:22:11 brodsom Exp $
+//	$Id: pas.cpp,v 1.20 2003-09-16 10:18:34 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -159,7 +159,7 @@ static int first_flag;
 #define GDS_EVENT_COUNTS	"GDS__EVENT_COUNTS"
 #define GDS_EVENT_WAIT		"GDS__EVENT_WAIT"
 
-static inline set_sqlcode(ACT action, int column)
+static inline void set_sqlcode(ACT action, int column)
 {
 	if (action->act_flags & ACT_sql)
 		printa (column, "SQLCODE := gds__sqlcode (gds__status);");

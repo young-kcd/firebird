@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.23 2003-09-13 12:22:11 brodsom Exp $
+//	$Id: ada.cpp,v 1.24 2003-09-16 10:18:34 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -144,7 +144,7 @@ static int first_flag;
 #define FLOAT_DCL	"interbase.isc_float"
 #define DOUBLE_DCL	"interbase.isc_double"
 
-static inline set_sqlcode(ACT action, int column)
+static inline void set_sqlcode(ACT action, int column)
 {
 	if (action->act_flags & ACT_sql)
 		printa (column, "SQLCODE := interbase.sqlcode (isc_status);");
