@@ -56,7 +56,7 @@ hu.ReleaseNotes=Firebird 1.5 - Újdonságok (Acrobat Reader programot igényel)
 hu.Uninstall=A Firebird eltávolítása
 hu.Winsock2Web1=A Winsock 2 kiterjesztés nincs telepítve.
 hu.Winsock2Web2=Meg kívánja látogatni a Winsock 2 frissítés honlapját?
-hu.NoWinsock2=Kérem telepítse a Winsock 2 frissítést mielött folytatná!
+hu.NoWinsock2=Kérem telepítse a Winsock 2 frissítést mielõtt folytatná!
 hu.MSWinsock2Update=http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
   	 
 hu.RunCSNoGuardian=A Hagyományos Szerver futtatása (Guardian nélkül)
@@ -64,6 +64,3 @@ hu.RunSSNoGuardian=A Szuper Szerver futtatása (Guardian nélkül)
 hu.RunSSWithGuardian=A Szuper Szerver futtatása (Guardian segítségével)
 hu.RunCSWithGuardian=A Hagyományos Szerver futtatása (Guardian segítségével)
 hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
-
-hu.ReadmeFile=olvass_el.txt
-hu.InstallationReadmeFile=telepitesi_segedlet.txt

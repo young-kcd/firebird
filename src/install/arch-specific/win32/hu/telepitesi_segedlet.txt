@@ -3,8 +3,8 @@ Firebird Adatbázis Szerver 1.5.2
 
 Ez a dokumentum egy telepítési segédlet a Win32
 platformon mûködõ Firebird 1.5 telepítéséhez.
-Ez a leírás elsõsorban a telepítés menetét írja le, s
-nem a Firebird 1.5-rõl szól általánosságban.
+A telepítési segédlet elsõsorban a telepítés menetét
+írja le, s nem a Firebird 1.5-rõl szól általánosságban.
 
 
 Tartalomjegyzék
@@ -22,9 +22,9 @@ o Telepítés kötegelt (batch) fájlból
 Mielõtt telepítené
 ------------------
 
-Ajánlatos ELTÁVOLÍTANI a Firebird 1.0, Firebird 1.5
-vagy InterBase összes elõzõ verzióját, mielõtt telepíti
-ezt a változatot.
+Mielõtt telepíti ezt a változatot, ajánlatos
+ELTÁVOLÍTANI a Firebird 1.0, Firebird 1.5 vagy
+InterBase összes elõzõ verzióját.
 
 
 Telepítés már meglévõ Firebird 2.0 mellé
@@ -32,7 +32,7 @@ Telepítés már meglévõ Firebird 2.0 mellé
 
 A Firebird 1.5.2 telepítõje nem képes érzékelni a
 Firebird 2.0 (nem stabil) futó változatát. Amennyiben a
-célgépen a Firebird 2.0 (nem stabil) változata fut,
+célgépen a Firebird 2.0 (nem stabil) változata fut, úgy
 ajánlatos a szervert leállítani, mielõtt megpróbálja
 telepíteni a Firebird 1.5.2-t.
 
@@ -41,8 +41,8 @@ telepíteni a Firebird 1.5.2-t.
 -----------------------------------------
 
 A telepítõ immáron számos nyelven használható. A 
-többnyelvû támogatást jelenleg csak a telepítési eljárás
-során érheti el.
+többnyelvû támogatást jelenleg csak a telepítési
+eljárás során érhetõ el.
 
 
 A Firebird 1.5 telepítõjének új szolgáltatásai
@@ -55,10 +55,11 @@ o A telepítõ most már a Szuper Szerver és a Hagyományos
   megváltoztatásához el kell távolítani és újra kell
   telepíteni a Firebird Adatbázis Szervert.
 
-o A könyvtár telepítés szabályai jelentékeny mértékben 
-  megváltoztak. A részletekrõl a: .\docs\README.
-  Win32LibraryInstallation.txt dokumentumban  olvashat,
-  amely elérhetõ a telepítés után.
+o A kliens könyvtár telepítés szabályai jelentékeny
+  mértékben  megváltoztak. A részletekrõl a:
+  .\docs\README.Win32LibraryInstallation.txt
+  dokumentumban olvashat, amely elérhetõ a telepítés
+  után.
 
   Az új szabályok miatt a telepítõ megkeresi a már
   telepített Firebird vagy InterBase Adatbázis Szerver 
@@ -71,14 +72,14 @@ o A könyvtár telepítés szabályai jelentékeny mértékben
 
   - Ha egyéb verziója van telepítve a Firebird vagy
     InterBase Adatbázis Szervernek a felhasználó egy
-    figyelmeztetést kap. A telepítõ feltelepíti a
+    figyelmeztetést fog kapni. A telepítõ feltelepíti a
     Firebirdöt, és beállítja a szükséges regisztrációs-
     adatbázis bejegyzéseket, de nem konfigurálja a
     rendszert a Firebird automatikus elindítására, se
     szolgáltatás, se program módban. Ezt kézzel kell
-    majd  elvégeznie.
+    majd elvégeznie.
 
-  - A telepítõ új parancssori kapcsolója
+  - A telepítõ egyik új parancssori kapcsolója a
       /force
     amely a "nemtörõdöm" felhasználónak felülbírálja az 
     elõbb leírt mûködést.
@@ -106,27 +107,27 @@ o A Firebird 1.0 fenntartott egy regisztrációs-adatbázis
   amelyek igénylik ezt a bejegyzést, akkor ezt Önnek
   kézzel kell visszaírnia. Mindamellett ajánlott az Ön
   programját az új feltételeknek megfelelõen
-  újrafordítani, hogy az az új bejegyzést használja.
+  újrafordítani, hogy az új bejegyzést használja.
 
 o A korábbi Firebird 1.5 kiadás elõtti változatai, az
   fbclient.dll kliens könyvtárat a <system> mappában
   helyezték el. Ez a gyakorlat mostanra megszûnt. A
   telepítõben lévõ: "Az fbclient.dll másolása a <system>
   mappába." opció segítségével a telepítés ideje alatt
-  helyezhet  el egy példányt a <system> mappában.
+  helyezhet el egy példányt a <system> mappában.
   Mindamellett ajánlott az Ön programját az új
   feltételeknek megfelelõen újrafordítani, hogy az új
-  gyakorlat szerint használja  az fbclient.dll fájlt.
+  gyakorlat szerint használja az fbclient.dll fájlt.
 
 
 Eltávolítás
 -----------
 
-o Ajánlatos, hogy telepített alkalmazást szabályosan, a 
+o Ajánlatos, hogy telepített alkalmazást szabályosan, a
   mellékelt eltávolító programmal távolítsa el. Ezt a
   programot elindíthatja a Vezérlõpultról.
-  Alternatívaként elindíthatja a unins000.exe 
-  eltávolító alkalmazást közvetlenül a telepítés 
+  Alternatívaként elindíthatja a unins000.exe
+  eltávolító alkalmazást közvetlenül a telepítés
   mappájából.
 
 o Ha a Firebird alkalmazásként fut (szolgáltatás
@@ -280,7 +281,7 @@ lehetséges:
   eljárás nem  ajánlott. További részleteket megtudhat
   a:
 
-    doc/README.Win32LibraryInstallation.txt
+    .\doc\README.Win32LibraryInstallation.txt
 
   dokumentumból.
 
