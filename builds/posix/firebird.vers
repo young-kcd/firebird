@@ -349,6 +349,14 @@ global:
 	KEYWORD_stringIsAToken;
 	KEYWORD_getTokens;
 
+#--------------------------------------
+#functions needed by Solaris utilyties
+	THD_mutex_lock;
+	THD_mutex_unlock;
+	THD_mutex_destroy;
+	THD_mutex_init;
+#--------------------------------------
+
 local:
 	*;
 };
