@@ -18,7 +18,7 @@
 
 void FirebirdConfigFile::key_compare::uppercase(string& x) const
 {
-	for (int pos = 0; pos < x.length(); pos++)
+	for (size_t pos = 0; pos < x.length(); pos++)
 		x[pos] = toupper(x[pos]);
 }
 
