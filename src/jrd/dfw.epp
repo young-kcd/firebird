@@ -2542,13 +2542,10 @@ static bool delete_procedure(	TDBB	tdbb,
 			return false;
 		}
 
-		if (procedure->prc_use_count)
-		  MET_clear_cache(tdbb, procedure);
-		  
 		// "OBJECT IN USE" error should be emitted in this case, but some more
 		// code needs to be reviewed for that. Now you can drop procedure
 		// used by other compiled requests
-		if (procedure->prc_use_count)
+		if (procedure->prc_use_count && !MET_clear_cache(tdbb, procedure))
 		{
 			gds__log("Deleting unfreed procedure %s",work->dfw_name);
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
@@ -3889,9 +3886,7 @@ static bool modify_procedure(	TDBB	tdbb,
 		}
 		THREAD_ENTER;
 #endif /* SUPERSERVER */
-		if (procedure->prc_use_count)
-		  MET_clear_cache(tdbb,procedure);
-		if (procedure->prc_use_count)
+		if (procedure->prc_use_count && !MET_clear_cache(tdbb,procedure))
 		{
 			gds__log("Modifying unfreed procedure %s",work->dfw_name);
 			USHORT prc_alter_count = procedure->prc_alter_count;

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.33 2002-11-14 12:16:50 skidder Exp $
+$Id: met.epp,v 1.34 2002-11-14 13:39:02 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -236,7 +236,7 @@ void adjust_dependencies(PRC procedure) {
 	}
 }
 
-void MET_clear_cache(TDBB tdbb, PRC proc)
+BOOLEAN MET_clear_cache(TDBB tdbb, PRC proc)
 {
 /**************************************
  *
@@ -274,6 +274,7 @@ void MET_clear_cache(TDBB tdbb, PRC proc)
  
 	VEC procedures;
 	PRC procedure;
+	BOOLEAN result = TRUE;
 
 	if ( (procedures = dbb->dbb_procedures) ) {	
 		/* Walk procedures and calculate internal dependencies */
@@ -296,10 +297,15 @@ void MET_clear_cache(TDBB tdbb, PRC proc)
 			ptr < end; ptr++) 
 		{
 			if ( (procedure = PRC(*ptr)) && !(procedure->prc_flags & PRC_obsolete) && 
-				(procedure->prc_use_count != procedure->prc_int_use_count || procedure==proc) )
+				procedure->prc_use_count != procedure->prc_int_use_count && procedure != proc )
 			{
 				adjust_dependencies(procedure);
 			}
+		}
+		
+		if (proc) {
+		  result = proc->prc_use_count == proc->prc_int_use_count;
+		  adjust_dependencies(proc);
 		}
 		
 		/* Deallocate all used requests */		
@@ -311,7 +317,7 @@ void MET_clear_cache(TDBB tdbb, PRC proc)
 			{
 				
 				if ( procedure->prc_int_use_count >= 0 && 
-				     procedure->prc_use_count <= procedure->prc_int_use_count ) 
+				     procedure->prc_use_count == procedure->prc_int_use_count ) 
 				{
 					CMP_release(tdbb, procedure->prc_request);
 					procedure->prc_request = NULL;
@@ -336,6 +342,7 @@ void MET_clear_cache(TDBB tdbb, PRC proc)
 			}
 		}
 	}
+	return result;
 }
 
 

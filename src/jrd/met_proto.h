@@ -76,7 +76,7 @@ extern BOOLEAN 		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
 extern BOOLEAN		MET_relation_default_class (TDBB, const TEXT *, const TEXT *);
 void MET_release_existence(struct rel *);
 void MET_release_triggers(TDBB, TRIG_VEC *);
-void MET_clear_cache(TDBB, PRC);
+BOOLEAN MET_clear_cache(TDBB, PRC);
 void MET_remove_procedure(TDBB, int, PRC);
 void MET_revoke(TDBB, struct tra *, TEXT *, TEXT *, TEXT *);
 TEXT*MET_save_name(TDBB, CONST TEXT*);

@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.19 2002-11-14 07:35:44 dimitr Exp $
+$Id: cmp.cpp,v 1.20 2002-11-14 13:39:02 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2063,6 +2063,8 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB tdbb, PRC procedure)
 
 	assert(procedure->prc_use_count > 0);
 
+	if (procedure->prc_int_use_count > 0) procedure->prc_int_use_count--;
+	
 	--procedure->prc_use_count;
 
 #ifdef DEBUG_PROCS
