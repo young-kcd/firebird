@@ -38,6 +38,8 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thd_proto.h"
 
+#include <algorithm>
+
 #ifdef SUPERSERVER
 
 extern "C" {
@@ -102,18 +104,20 @@ void ALL_check_memory()
 
 
 JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
+	DBB dbb = GET_DBB;
 	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
 		cur_mem, max_mem);
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
 	new (&result->lls_cache) BlockCache<lls> (*result);
+	if (dbb) dbb->dbb_pools.push_back(result);
 	return result;
 }
 
 JrdMemoryPool *JrdMemoryPool::createPool() {
-#ifdef SUPERSERVER
     DBB dbb = GET_DBB;
+#ifdef SUPERSERVER
 	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
 		(int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
 #else
@@ -123,7 +127,17 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
 	new (&result->lls_cache) BlockCache<lls> (*result);
+	if (dbb) dbb->dbb_pools.push_back(result);
 	return result;
+}
+
+void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
+	DBB dbb = GET_DBB;
+	dbb::pool_vec_type::iterator itr =
+		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
+	if (itr) dbb->dbb_pools.erase(itr);
+	pool->lls_cache.~BlockCache<lls>();
+	MemoryPool::deletePool(pool);
 }
 
 TEXT* ALL_cstring(TEXT* in_string)
@@ -216,12 +230,10 @@ void ALL_init(void)
 	dbb = tdbb->tdbb_database;
 
 	pool = tdbb->tdbb_default = dbb->dbb_permanent;
-    //    dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
+//	dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
 	dbb->dbb_pools[0] = pool;
-
 	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
-	  //FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
-	dbb->dbb_pools[1] = dbb->dbb_bufferpool;
+//	FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 }
 
 void JrdMemoryPool::ALL_push(BLK object, register LLS * stack)

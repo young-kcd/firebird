@@ -230,27 +230,28 @@ public:
 
 private:
 	dbb(MemoryPool& p)
-	:	dbb_pools(10, p, type_dbb),
+	:	dbb_pools(1, p, type_dbb),
 		dbb_text_objects(p),
 		dbb_charsets(p)
 	{
 	}
-	
+
 	~dbb()
 	{
-		pool_vec_type::iterator itr;
-		
-		for(itr = dbb_pools.begin(); itr != dbb_pools.end(); ++itr)
+		pool_vec_type::iterator itr = dbb_pools.begin();
+		while (itr != dbb_pools.end())
 		{
-			if (*itr == dbb_bufferpool)
+			if (*itr && *itr == dbb_bufferpool)
 				dbb_bufferpool = 0;
 			if (*itr && *itr != dbb_permanent)
 				JrdMemoryPool::deletePool(*itr);
+			else
+				itr++;
 		}
-		if (dbb_bufferpool != 0)
+		if (dbb_bufferpool)
 			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
-	
+
 	// The delete operators are no-oped because the dbb memory is allocated from the
 	// dbb's own permanent pool.  That pool has already been released by the dbb
 	// destructor, so the memory has already been released.  Hence the operator

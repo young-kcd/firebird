@@ -49,10 +49,7 @@ protected:
 public:
 	static JrdMemoryPool *createPool(int *cur_mem, int *max_mem);
 	static JrdMemoryPool *createPool();
-	static void deletePool(JrdMemoryPool* pool) {
-		pool->lls_cache.~BlockCache<lls>();
-		MemoryPool::deletePool(pool);
-	}
+	static void deletePool(JrdMemoryPool* pool);
 
 	static class blk* ALL_pop(class lls**);
 	static void       ALL_push(class blk*, class lls**);
