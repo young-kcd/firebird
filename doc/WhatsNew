@@ -3,6 +3,21 @@
   **************
 
     * Fixed Beta 2 bug.
+        EXECUTE STATEMENT doesn't work in autocommit transactions.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 2 bug.
+        Server crashes due to problems in the optimizer.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Beta 2 bug.
+        Minor ODS upgrade is no longer critical. Now you can attach any ODS 10.0 database without errors (no need to backup/restore).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Beta 2 bug.
         "Wrong page type" error during some DDL operations.
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
