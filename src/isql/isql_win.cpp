@@ -54,13 +54,13 @@
 #include "../isql/isql_proto.h"
 #include "../jrd/gds_proto.h"
 
-typedef struct scrollkeys {
+struct scrollkeys {
 	WORD wVirtkey;
 	int iMessage;
 	WORD wRequest;
-} SCROLLKEYS;
+};
 
-SCROLLKEYS key2scroll[] = {
+scrollkeys key2scroll[] = {
 	{VK_HOME, WM_COMMAND, IDM_HOME},
 	{VK_END, WM_VSCROLL, SB_BOTTOM},
 	{VK_PRIOR, WM_VSCROLL, SB_PAGEUP},

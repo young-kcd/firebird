@@ -147,21 +147,21 @@ DATABASE DB = COMPILETIME "yachts.lnk";
 #define COMMIT_TRANS(x)	{if (isc_commit_transaction (isc_status, x)) { ISQL_errmsg (isc_status); isc_rollback_transaction (isc_status, x); }}
 
 typedef struct indev {
-	struct indev *indev_next;
+	indev* indev_next;
 	IB_FILE *indev_fpointer;
 } *INDEV;
 
-typedef struct collist {
-	struct collist *collist_next;
+struct collist {
+	collist* collist_next;
 	TEXT col_name[WORDLENGTH];
 	SSHORT col_len;
-} COLLIST;
+};
 
-typedef struct ri_actions {
+struct ri_actions {
 	SCHAR *ri_action_name;
 	SCHAR *ri_action_print_caps;
 	SCHAR *ri_action_print_mixed;
-} RI_ACTIONS;
+};
 
 static SSHORT add_row(TEXT *);
 static SSHORT blobedit(TEXT *, TEXT **);
@@ -216,7 +216,7 @@ bool Version_info = false;
 bool fAnsiCP;
 #endif
 
-static COLLIST *Cols = NULL;
+static collist* Cols = NULL;
 static SCHAR statistics[256];
 static INDEV Filelist;
 static TEXT Tmpfile[128];
@@ -310,7 +310,7 @@ static UCHAR	batch_tpb [] = {isc_tpb_version3, isc_tpb_read,
 
 /* InterBase Performance Statistic format Variables */
 
-static struct perf perf_before, perf_after;
+static perf perf_before, perf_after;
 static bool have_report = false; // translation of report strings 
 static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
 #ifdef NOT_USED_OR_REPLACED
@@ -319,7 +319,7 @@ static TEXT report_2[MSG_LENGTH];
 static TEXT rec_count[MSG_LENGTH];
 
 /* if the action is rrstrict, do not print anything at all */
-static RI_ACTIONS ri_actions_all[] = {
+static ri_actions ri_actions_all[] = {
 	{RI_ACTION_CASCADE, RI_ACTION_CASCADE, "Cascade"},
 	{RI_ACTION_NULL, RI_ACTION_NULL, "Set Null"},
 	{RI_ACTION_DEFAULT, RI_ACTION_DEFAULT, "Set Default"},
@@ -1621,7 +1621,7 @@ static SSHORT add_row(TEXT * tabname)
 	float *fvalue;
 	double *dvalue;
 	SCHAR bfile[120];
-	struct tm times;
+	tm times;
 	XSQLDA *sqlda = NULL, *isqlda;
 	XSQLVAR *var, *ivar;
 	SCHAR *p;
@@ -2739,7 +2739,7 @@ static void do_isql(void)
 	if (Filelist)
 		ISQL_FREE(Filelist);
 	while (Cols) {
-		COLLIST *p;
+		collist* p;
 		p = Cols;
 		Cols = Cols->collist_next;
 		ISQL_FREE(p);
@@ -2843,7 +2843,7 @@ static SSHORT edit(TEXT ** cmd)
 		if (fp = ib_fopen(path, "r")) {
 			/* Push the current ifp on the indev */
 
-			current = (INDEV) ISQL_ALLOC((SLONG) sizeof(struct indev));
+			current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
 			current->indev_fpointer = Ifp;
 			current->indev_next = NULL;
 			if (!Filelist)
@@ -2865,7 +2865,7 @@ static SSHORT edit(TEXT ** cmd)
 	else {
 		/* No file given, edit the temp file */
 
-		current = (INDEV) ISQL_ALLOC((SLONG) sizeof(struct indev));
+		current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
 		current->indev_fpointer = Ifp;
 		current->indev_next = NULL;
 		if (!Filelist)
@@ -4337,7 +4337,7 @@ void ISQL_ri_action_print(TEXT * ri_action_str,
  *      actions, so do not print it out.
  *
  **************************************/
-	RI_ACTIONS *ref_int;
+	ri_actions* ref_int;
 
 	for (ref_int = ri_actions_all; ref_int->ri_action_name; ref_int++) {
 		if (!strcmp(ref_int->ri_action_name, ri_action_str)) {
@@ -4444,14 +4444,12 @@ static SSHORT newsize(TEXT * colname,
  *	Add a column name and print width to collist
  *
  **************************************/
-	COLLIST *c, *p, *pold;
+	collist* p = Cols;
+	collist* pold = NULL;
 	SSHORT size;
 
 	if (!*colname || (strlen(colname) >= WORDLENGTH))
 		return ERR;
-
-	p = Cols;
-	pold = NULL;
 
 /* If no size is given, remove the entry */
 	if (!*sizestr) {
@@ -4476,7 +4474,7 @@ static SSHORT newsize(TEXT * colname,
 	if (size <= 0)
 		return ERR;
 
-	c = (COLLIST *) ISQL_ALLOC((SLONG) sizeof(struct collist));
+	collist* c = (collist*) ISQL_ALLOC((SLONG) sizeof(collist));
 	strcpy(c->col_name, colname);
 	c->col_len = size;
 	c->collist_next = NULL;
@@ -4512,7 +4510,6 @@ static SSHORT print_sets(void)
  *	Print the current set values
  *
  **************************************/
-	COLLIST *p;
 
 	ISQL_printf(Out, (TEXT*) "Print statistics:        ");
 	ISQL_printf(Out,(TEXT*)  (Stats ? "ON" : "OFF"));
@@ -4556,7 +4553,7 @@ static SSHORT print_sets(void)
 		ISQL_printf(Out, Print_buffer);
 	}
 	if (Cols) {
-		p = Cols;
+		collist* p = Cols;
 		sprintf(Print_buffer, "Column print widths:%s", NEWLINE);
 		ISQL_printf(Out, Print_buffer);
 		while (p) {
@@ -4714,7 +4711,7 @@ static SSHORT input(TEXT * infile)
 */
 
 	if (fp = ib_fopen(file, "r")) {
-		current = (INDEV) ISQL_ALLOC((SLONG) sizeof(struct indev));
+		current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
 		current->indev_fpointer = Ifp;
 		current->indev_next = NULL;
 #ifdef DEBUG_GDS_ALLOC
@@ -5524,7 +5521,7 @@ static SSHORT parse_arg(int argc,
 /* If not input, then set up first filelist */
 
 	if (Ifp == ib_stdin) {
-		Filelist = (INDEV) ISQL_ALLOC((SLONG) sizeof(struct indev));
+		Filelist = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
 		Filelist->indev_fpointer = Ifp;
 		Filelist->indev_next = NULL;
 #ifdef DEBUG_GDS_ALLOC
@@ -5559,7 +5556,7 @@ static SSHORT print_item(TEXT ** s,
 	VARY *vary;
 	SSHORT dtype;
 	SSHORT dscale;
-	struct tm times;
+	tm times;
 	SLONG length;
 	ISC_QUAD blobid;
 	TEXT blobbuf[30];
@@ -5899,7 +5896,6 @@ static SSHORT print_item(TEXT ** s,
 		case SQL_VARYING:
 			vary = (VARY *) var->sqldata;
 
-			/* Note: we allocated the dataspace 1 byte larger already */
 			// Note: we allocated the dataspace 1 byte larger already 
 			vary->vary_string[vary->vary_length] = 0;
  
@@ -6259,7 +6255,6 @@ static int process_statement(TEXT * string,
 	SLONG lines, offset;
 	SLONG *pad = NULL;
 	TEXT *line = NULL, *header, *header2, *p, *p2;
-	COLLIST *pc;
 	SLONG bufsize = 0;
 	SLONG linelength = 0;
 	SCHAR *plan_buffer;
@@ -6763,8 +6758,9 @@ static int process_statement(TEXT * string,
 		pad[i] = (length > namelength ? length : namelength);
 
 		/* Is there a collist entry, then use that width, but only for text */
-		if (type == SQL_TEXT || type == SQL_VARYING) {
-			pc = Cols;
+		if (type == SQL_TEXT || type == SQL_VARYING)
+		{
+			collist* pc = Cols;
 			while (pc) {
 				if (!strcmp(var->aliasname, pc->col_name)) {
 					pad[i] = pc->col_len;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.13 2003-09-09 11:03:37 robocop Exp $
+ * $Id: isql.h,v 1.14 2003-09-17 10:49:29 aafemt Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -247,10 +247,10 @@ EXTERN USHORT db_SQL_dialect;
 
 typedef vary VARY;
 
-typedef struct sqltypes {
+struct sqltypes {
 	SSHORT type;
 	SCHAR type_name[WORDLENGTH];
-} SQLTYPES;
+};
 
 #define MAXSUBTYPES 8			/* Top of subtypes array */
 

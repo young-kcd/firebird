@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.22 2003-09-10 17:48:23 brodsom Exp $
+ * $Id: show.epp,v 1.23 2003-09-17 10:49:29 aafemt Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -116,7 +116,7 @@ static const SCHAR *Object_types[] = {
     "User Defined Function"
 };
 
-extern const SQLTYPES Column_types[] = {
+extern const sqltypes Column_types[] = {
 	{SMALLINT, "SMALLINT"},		/* NTX: keyword */
 	{INTEGER, "INTEGER"},		/* NTX: keyword */
 	{QUAD, "QUAD"},				/* NTX: keyword */
