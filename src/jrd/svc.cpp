@@ -506,9 +506,28 @@ SVC SVC_attach(USHORT	service_length,
 /* Insert internal switch SERVICE_THD_PARAM in the service parameter block. */
 
 	SCHAR *p = spb, *end = spb + spb_length;
-	while (p < end) {
-		if (*p++ == isc_spb_command_line)
+	bool cmd_line_found = false;
+	while (!cmd_line_found && p < end) {
+		switch (*p++) {
+		case isc_spb_version1:
+		case isc_spb_version:
+			p++;
 			break;
+
+		case isc_spb_sys_user_name:
+		case isc_spb_user_name:
+		case isc_spb_password:
+		case isc_spb_password_enc:
+			{
+			USHORT length = *p++;
+			p += length;
+			}
+			break;
+
+		case isc_spb_command_line:
+			cmd_line_found = true;
+			break;
+		}
 	}
 
 	/* dimitr: it looks that we shouldn't execute the below code
@@ -516,7 +535,7 @@ SVC SVC_attach(USHORT	service_length,
 			   but I couldn't find where such a switch is specified
 			   by any of the client tools, so it seems that in fact
 			   it's not used at all. Hence I ignore this situation. */
-	if (p++ < end) {
+	if (cmd_line_found && p++ < end) {
 		USHORT ignored_length = 0;
 		if (!strncmp(p, "-svc ", 5))
 			ignored_length = 5;
