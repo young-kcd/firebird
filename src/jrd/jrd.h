@@ -960,11 +960,7 @@ typedef struct tdbb
 	struct iuo	tdbb_pages;
 
 #if defined(UNIX) && defined(SUPERSERVER)
-#if defined(FREEBSD)
     sigjmp_buf tdbb_sigsetjmp;
-#else
-    jmp_buf tdbb_sigsetjmp;
-#endif
 #endif
 } *TDBB;
 
