@@ -120,12 +120,15 @@ changeInitPassword() {
         echo ""
         echo Running ex to modify /etc/init.d/firebird
 
+        # to be sure that `ex' can write to file
+        chmod u=rwx,g=rx,o= $InitFile
+
         ex -s $InitFile <<EOF
 /ISC_PASSWORD/s/ISC_PASSWORD=.*/ISC_PASSWORD=$NewPasswd/g
 w
 q
 EOF
-    chmod u=rwx,g=rx,o= $InitFile
+        chmod u=rwx,g=rx,o= $InitFile
 
     fi
 }
@@ -235,10 +238,6 @@ askUserForNewDBAPassword() {
           NewPasswd=$Answer
           if [ ! -z "$NewPasswd" ]
             then
-
-             $FBBin/gsec -user sysdba -password masterkey <<EOF
-modify sysdba -pw $NewPasswd
-EOF
               echo ""
               writeNewPassword $NewPasswd
               changeInitPassword "$NewPasswd"
