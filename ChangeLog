@@ -1,3 +1,109 @@
+2003-04-02 17:13  alexpeshkoff
+
+	* firebird2/src/: jrd/os/win32/path_utils.cpp,
+	common/config/dir_list.cpp:
+	
+	Fixed use of / and c:\ in directories list
+
+2003-04-02 16:31  brodsom
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	- Avoid some not defined/not used warnings.
+
+2003-04-02 16:30  brodsom
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	- Avoid not defined warning and put some comments in C++ format.
+
+2003-04-02 14:07  brodsom
+
+	* firebird2/src/gpre/gpre.cpp:
+	
+	- Add some ifdefs to isolate better the langs
+
+2003-04-02 14:01  brodsom
+
+	* firebird2/src/jrd/jrd.h:
+	
+	- Remove unsigned-signed comparison warnings.
+
+2003-04-02 13:49  brodsom
+
+	* firebird2/src/gpre/pretty.cpp:
+	
+	- Remove ugly & unneeded casts
+
+2003-04-02 13:23  brodsom
+
+	* firebird2/src/jrd/utl.cpp:
+	
+	- Use 0 instead NULL to compare with USHORT
+
+2003-04-02 13:22  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	- Avoid unused variable warnings
+
+2003-04-02 13:21  brodsom
+
+	* firebird2/src/jrd/isc_ipc.cpp:
+	
+	- Avoid gcc wrong warning.
+
+2003-04-02 13:20  brodsom
+
+	* firebird2/src/jrd/isc.cpp:
+	
+	- Avoid partially bracketed warning
+
+2003-04-02 13:18  brodsom
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	- Avoid signed-unsigned comparison - alloc_mutex only used for
+	V4_THR - Correct landId argument.
+
+2003-04-02 13:14  brodsom
+
+	* firebird2/src/common/config/dir_list.cpp:
+	
+	- Avoid signed-unsigned comparison
+
+2003-04-02 13:13  brodsom
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, opt.cpp:
+	
+	- Comment unneeded checks or conditions
+
+2003-04-02 13:03  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	- Comment unneeded checks
+
+2003-04-02 12:58  brodsom
+
+	* firebird2/src/remote/: merge.cpp, wnet.cpp, xnet.cpp, xnet.h:
+	
+	- Remove unneeded define - Correct format - Use 0 instead of NULL
+	in comparison
+
+2003-04-02 01:47  brodsom
+
+	* firebird2/builds/posix/prefix.mingw.README.html:
+	
+	Update MINGW readme
+
+2003-04-02 01:22  brodsom
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	- USHORT dpb_sql_dialect can't be < 0 - databases_mutex is only
+	used when v4_threading is defined and superserver not.
+
 2003-04-01 23:59  brodsom
 
 	* firebird2/src/jrd/: perf.cpp, isc_sync.cpp, dpm.epp,
