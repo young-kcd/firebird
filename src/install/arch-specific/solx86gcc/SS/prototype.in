@@ -35,7 +35,7 @@ d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/enter_messages=$SRCDIR/bin/enter_messages  0755 root root
 
 f none @prefix@/bin/fbserver=$SRCDIR/bin/fbserver  0755 root root
-f none @prefix@/bin/fbguarg=$SRCDIR/bin/fbguard  0755 root root
+f none @prefix@/bin/fbguard=$SRCDIR/bin/fbguard  0755 root root
 f none @prefix@/bin/fbmgr.bin=$SRCDIR/bin/fbmgr.bin  0755 root root
 
 f none @prefix@/bin/gbak=$SRCDIR/bin/gbak  0755 root root
