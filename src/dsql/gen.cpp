@@ -652,7 +652,7 @@ void GEN_request( dsql_req* request, dsql_nod* node)
 			request->req_type == REQ_SELECT_UPD ||
 			request->req_type == REQ_EMBED_SELECT)
 		{
-      	  gen_select(request, node);
+			gen_select(request, node);
   		}
 		else if (request->req_type == REQ_EXEC_BLOCK ||
 				 request->req_type == REQ_SELECT_BLOCK )
@@ -665,10 +665,8 @@ void GEN_request( dsql_req* request, dsql_nod* node)
 				request->req_send = NULL;
 			else {
 				GEN_port(request, message);
-				if (request->req_type != REQ_EXEC_PROCEDURE) {
-					stuff(request, blr_receive);
-					stuff(request, message->msg_number);
-				}
+				stuff(request, blr_receive);
+				stuff(request, message->msg_number);
 			}
 			message = request->req_receive;
 			if (!message->msg_parameter)
