@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.49 2003-10-16 08:50:59 robocop Exp $
+ * $Id: gpre.h,v 1.50 2003-10-17 23:41:27 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -995,11 +995,6 @@ enum intlsym_type_vals {
 };
 
 /* values used in intlsym_flags */
-
-/* Macro for detecting fields which may have embedded nulls */
-
-#define SUBTYPE_ALLOWS_NULLS 1
-
 
 /* Field block.  Fields are what farms and databases are all about */
 

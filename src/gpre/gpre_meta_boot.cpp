@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.29 2003-10-16 08:50:59 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.30 2003-10-17 23:41:27 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -385,7 +385,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (sw_cstring && sub_type != SUBTYPE_ALLOWS_NULLS) {
+		if (sw_cstring && sub_type != dsc_text_type_fixed) {
 			++l;
 			dtype = dtype_cstring;
 		}

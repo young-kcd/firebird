@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.19 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: cmd.cpp,v 1.20 2003-10-17 23:41:27 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2617,7 +2617,7 @@ static void put_dtype( GPRE_REQ request, GPRE_FLD field)
 
 			/* Correct the length of C string for meta data operations */
 
-			if (sw_cstring && field->fld_sub_type != SUBTYPE_ALLOWS_NULLS)
+			if (sw_cstring && field->fld_sub_type != dsc_text_type_fixed)
 				length--;
 			dtype = blr_text;
 		}

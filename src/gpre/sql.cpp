@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.30 2003-10-16 08:50:59 robocop Exp $
+//	$Id: sql.cpp,v 1.31 2003-10-17 23:41:25 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -388,7 +388,7 @@ void SQL_adjust_field_dtype( GPRE_FLD field)
 			 */
 			if (field->fld_dtype != dtype_cstring)
 				field->fld_dtype = (sw_cstring
-									&& field->fld_sub_type != SUBTYPE_ALLOWS_NULLS) ?
+									&& field->fld_sub_type != dsc_text_type_fixed) ?
 					dtype_cstring : dtype_text;
 			if (field->fld_dtype == dtype_cstring)
 				field_length++;
