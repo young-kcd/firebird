@@ -1,3 +1,10 @@
+2003-11-24 19:02  alexpeshkoff
+
+	* firebird2/src/jrd/: svc.cpp, svc.cpp:
+	
+	Fixed serious bug in CS's services API Second, third, etc attempt
+	to start service executed exactly what was done by the first one.
+
 2003-11-23 21:17  skidder
 
 	* firebird2/src/: common/classes/array.h, jrd/cmp.cpp, jrd/evl.cpp,
