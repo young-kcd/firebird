@@ -38,6 +38,7 @@
 #include "../jrd/isc.h"
 #include "../jrd/license.h"
 #include "../jrd/jrd_time.h"
+#include "../common/classes/semaphore.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"
@@ -170,8 +171,9 @@ static SLONG		extra_threads		= 0;
 static SERVER_REQ	request_que			= NULL;
 static SERVER_REQ	free_requests		= NULL;
 static SERVER_REQ	active_requests		= NULL;
-static EVENT_T		thread_event[1];
 static SRVR			servers;
+
+static Firebird::Semaphore requests_semaphore;
 
 
 static const UCHAR request_info[] =
@@ -267,7 +269,6 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 
 	gds__thread_enable(-1);
 
-	ISC_event_init(thread_event, 0, 0);
 	THREAD_ENTER;
 
 	SET_THREAD_DATA;
@@ -421,6 +422,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 			/* No port to assign request to, add it to the waiting queue and wake up a
 			 * thread to handle it 
 			 */
+			REMOTE_TRACE(("Enqueue request %p", request));
 			pending_requests = append_request_next(request, &request_que);
 			port->port_requests_queued++;
 #ifdef DEBUG_REMOTE_MEMORY
@@ -448,7 +450,8 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
 									0);
 			}
 
-			ISC_event_post(thread_event);
+			REMOTE_TRACE(("Post event"));
+			requests_semaphore.release();
 		}
 	  finished:
 		;
@@ -4683,8 +4686,6 @@ static int THREAD_ROUTINE thread(void* flags)
  **************************************/
 	SERVER_REQ request, next, *req_ptr;
 	PORT port, parent_port;
-	SLONG value;
-	EVENT ptr;
 	SCHAR *thread;
 	USHORT inactive_count;
 	USHORT timedout_count;
@@ -4704,11 +4705,11 @@ static int THREAD_ROUTINE thread(void* flags)
 
 	for (;;)
 	{
-		value = ISC_event_clear(thread_event);
 		if (request = request_que)
 		{
 			inactive_count = 0;
 			timedout_count = 0;
+			REMOTE_TRACE(("Dequeue request %p", request_que));
 			request_que = request->req_next;
 			while (request)
 			{
@@ -4812,11 +4813,15 @@ static int THREAD_ROUTINE thread(void* flags)
 			}
 
 			threads_waiting++;
-			ptr = thread_event;
 			THREAD_EXIT;
 			/* Wait for 1 minute (60 seconds) on a new request */
-			if (ISC_event_wait(1, &ptr, &value, 60 * 1000000, 0, 0))
+			REMOTE_TRACE(("Wait for event"));
+			if (!requests_semaphore.tryEnter(60)) {
+				REMOTE_TRACE(("timeout!"));
 				timedout_count++;
+			} else {
+				REMOTE_TRACE(("got it"));
+			}
 			THREAD_ENTER;
 			--threads_waiting;
 		}

@@ -44,6 +44,16 @@
 #endif /* !VMS || !WIN_NT */
 
 
+// Uncomment this line if you need to trace module activity
+//#define REMOTE_DEBUG
+
+#ifdef REMOTE_DEBUG
+DEFINE_TRACE_ROUTINE(remote_trace);
+#define REMOTE_TRACE(args) remote_trace args
+#else
+#define REMOTE_TRACE(args) /* nothing */
+#endif
+
 #ifdef DEV_BUILD
 /* Debug packet/XDR memory allocation */
 
