@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.4 2003-09-08 20:23:31 skidder Exp $
+# $Id: prefix.solx86gcc,v 1.5 2003-10-27 09:29:33 robocop Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -27,7 +27,7 @@
 #FirebirdInstallPrefix = @prefix@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
-COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
+COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fwritable-strings
 
 #SFIO= /export/home/interbase/SfIO
 #SfIO is a pretty portable stdIO 

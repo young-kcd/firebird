@@ -9,7 +9,7 @@
 # 30-Dec-2002  nmcc FB2 initial working build on Solaris8 with gcc 3.2.1
 
 # Firebird defines specific to Solaris (and x86) build
-CFLAGS_COMMON= -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DBSD_COMP -DEXACT_NUMERICS  
+CFLAGS_COMMON= -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DBSD_COMP
 
 # compile flags for GCC compiler
 COMMON_GCC_FLAGS= -fwritable-strings -pipe -MMD -p -fPIC 
