@@ -28,7 +28,7 @@
 
 #define QLI_MAIN
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
@@ -374,7 +374,7 @@ static bool process_statement(bool flush_flag)
 // If the last statement wrote out anything to the terminal, skip a line 
 
 	if (QLI_skip_line) {
-		ib_printf("\n");
+		printf("\n");
 		QLI_skip_line = false;
 	}
 

@@ -66,11 +66,11 @@ int main()
 	int i;
 
 	if (sizeof(to_unicode_map) != 256 * sizeof(to_unicode_map[0]))
-		ib_printf("The to_unicode_map is too small! %d entries!\n",
+		printf("The to_unicode_map is too small! %d entries!\n",
 				  sizeof(to_unicode_map) / sizeof(to_unicode_map[0]));
 
 	if (sizeof(from_unicode_map) != 256 * sizeof(from_unicode_map[0]))
-		ib_printf("The from_unicode_map is too small! %d entries!\n",
+		printf("The from_unicode_map is too small! %d entries!\n",
 				  sizeof(from_unicode_map) / sizeof(from_unicode_map[0]));
 
 	for (i = 0; i <= 255; i++) {
@@ -79,7 +79,7 @@ int main()
 			continue;
 		const unsigned char ch2 = UNICODE_LOOKUP(uch);
 		if (ch2 != i) {
-			ib_printf
+			printf
 				("Mapping error: Character %02x -> Unicode %04x (index %3d) -> Char %02x\n",
 				 i, uch, UNICODE_INDEX(uch), ch2);
 
@@ -88,7 +88,7 @@ int main()
 			for (j = 0; j < sizeof(from_unicode_mapping_array); j++)
 				if (from_unicode_mapping_array[j] == i) {
 					/* Mapping table is wrong - recommend a fix for it */
-					ib_printf
+					printf
 						("Recommend from_unicode_map[0x%02x] be set to %d\n",
 						 uch / 256, j - (uch % 256));
 					break;
@@ -98,7 +98,7 @@ int main()
 				/* Oops - found a character that does exists in the character set
 				   but not in unicode - an obvious error! */
 
-				ib_printf
+				printf
 					("Error: Character %d does not exist in the from_unicode_mapping_array\n",
 					 i);
 
@@ -108,7 +108,7 @@ int main()
 
 	for (i = 0; i <= 255; i++) {
 		if (from_unicode_map[i] + 0xFF >= sizeof(from_unicode_mapping_array)) {
-			ib_printf("From_unicode array bounds error at position %02x00\n",
+			printf("From_unicode array bounds error at position %02x00\n",
 					  i);
 			continue;
 		}
@@ -120,7 +120,7 @@ int main()
 				continue;
 			const unsigned short uch2 = to_unicode_map[ch2];
 			if (uch != uch2) {
-				ib_printf
+				printf
 					("Mapping error: Unicode %04x -> ch %02x -> Unicode %04x\n",
 					 uch, ch2, uch2);
 
@@ -133,7 +133,7 @@ int main()
 				if (k > 255) {
 					/* This unicode doesn't exist in charset */
 					/* Mapping table is wrong - recommend a fix for it */
-					ib_printf
+					printf
 						("Recommend from_unicode_map[0x%02x] be set to %d\n",
 						 uch / 256, 0);
 				}
@@ -141,7 +141,7 @@ int main()
 		}
 	}
 
-	ib_printf("Test completed\n");
+	printf("Test completed\n");
 	return 0;
 }
 

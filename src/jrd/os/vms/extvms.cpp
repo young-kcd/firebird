@@ -1162,10 +1162,10 @@ static open_sequential(RecordSource* rsb)
 	else {
 		file->ext_flags &= ~EXT_eof;
 		rpb->rpb_ext_isi = rab.rab$w_isi = file->ext_isi;
-		const int status = sys$ib_rewind(&rab);
+		const int status = sys$rewind(&rab);
 		if (!(status & 1))
 			ERR_post(isc_io_error,
-					 isc_arg_string, "sys$ib_rewind",
+					 isc_arg_string, "sys$rewind",
 					 isc_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_access_err, isc_arg_vms, status, 0);
 	}

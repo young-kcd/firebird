@@ -24,10 +24,10 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 static int full_debug = 0;
-#define	FULL_DEBUG	if (full_debug) ib_printf
+#define	FULL_DEBUG	if (full_debug) printf
 
 
 #define DEBUG_INTL
@@ -46,16 +46,16 @@ void try_fc(char* c, FUN_PTR f)
 {
 	unsigned char buffer[200];
 	const int res = (*f) (strlen(c), c, sizeof(buffer), buffer);
-	ib_printf("%s => ", c);
+	printf("%s => ", c);
 	for (int i = 0; i < res; i++)
-		ib_printf("%d ", buffer[i]);
-	ib_printf("\n");
+		printf("%d ", buffer[i]);
+	printf("\n");
 }
 */
 
 void my_err()
 {
-	ib_printf("Error routine called!\n");
+	printf("Error routine called!\n");
 };
 
 int main(int argc, char** argv)
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 	argc = FB_NELEM(defaults);
 #else
 	if (argc <= 1) {
-		ib_printf("usage: dtest Intl_module_name\n");
+		printf("usage: dtest Intl_module_name\n");
 		return (1);
 	};
 	char** vector = argv;

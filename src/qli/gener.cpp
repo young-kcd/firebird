@@ -21,11 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.32 2004-03-14 05:51:48 skidder Exp $
+$Id: gener.cpp,v 1.33 2004-04-28 22:26:43 brodsom Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -234,9 +234,9 @@ static void explain(const UCHAR* explain_buffer)
 				char* r = relation_name;
 				while (length--) {
 					*r++ = *explain_buffer;
-					ib_putchar(*explain_buffer++);
+					putchar(*explain_buffer++);
 				}
-				ib_printf(",\n");
+				printf(",\n");
 				*r++ = 0;
 				break;
 			}
@@ -246,11 +246,11 @@ static void explain(const UCHAR* explain_buffer)
 			explain_printf(level, "isc_info_rsb_type, ", 0);
 			switch (*explain_buffer++) {
 			case isc_info_rsb_unknown:
-				ib_printf("unknown type\n");
+				printf("unknown type\n");
 				break;
 
 			case isc_info_rsb_indexed:
-				ib_printf("isc_info_rsb_indexed,\n");
+				printf("isc_info_rsb_indexed,\n");
 				level++;
 				explain_index_tree(level, relation_name,
 					reinterpret_cast<const SCHAR**>(&explain_buffer),
@@ -263,16 +263,16 @@ static void explain(const UCHAR* explain_buffer)
 
 			case isc_info_rsb_merge:
 				buffer_length--;
-				ib_printf("isc_info_rsb_merge, %d,\n", *explain_buffer++);
+				printf("isc_info_rsb_merge, %d,\n", *explain_buffer++);
 				break;
 
 			case isc_info_rsb_cross:
 				buffer_length--;
-				ib_printf("isc_info_rsb_cross, %d,\n", *explain_buffer++);
+				printf("isc_info_rsb_cross, %d,\n", *explain_buffer++);
 				break;
 
 			case isc_info_rsb_navigate:
-				ib_printf("isc_info_rsb_navigate,\n");
+				printf("isc_info_rsb_navigate,\n");
 				level++;
 				explain_index_tree(level, relation_name,
 					reinterpret_cast<const SCHAR**>(&explain_buffer),
@@ -281,67 +281,67 @@ static void explain(const UCHAR* explain_buffer)
 				break;
 
 			case isc_info_rsb_sequential:
-				ib_printf("isc_info_rsb_sequential,\n");
+				printf("isc_info_rsb_sequential,\n");
 				break;
 
 			case isc_info_rsb_sort:
-				ib_printf("isc_info_rsb_sort,\n");
+				printf("isc_info_rsb_sort,\n");
 				break;
 
 			case isc_info_rsb_first:
-				ib_printf("isc_info_rsb_first,\n");
+				printf("isc_info_rsb_first,\n");
 				break;
 
 			case isc_info_rsb_boolean:
-				ib_printf("isc_info_rsb_boolean,\n");
+				printf("isc_info_rsb_boolean,\n");
 				break;
 
 			case isc_info_rsb_union:
-				ib_printf("isc_info_rsb_union,\n");
+				printf("isc_info_rsb_union,\n");
 				break;
 
 			case isc_info_rsb_aggregate:
-				ib_printf("isc_info_rsb_aggregate,\n");
+				printf("isc_info_rsb_aggregate,\n");
 				break;
 
 			case isc_info_rsb_ext_sequential:
-				ib_printf("isc_info_rsb_ext_sequential,\n");
+				printf("isc_info_rsb_ext_sequential,\n");
 				break;
 
 			case isc_info_rsb_ext_indexed:
-				ib_printf("isc_info_rsb_ext_indexed,\n");
+				printf("isc_info_rsb_ext_indexed,\n");
 				break;
 
 			case isc_info_rsb_ext_dbkey:
-				ib_printf("isc_info_rsb_ext_dbkey,\n");
+				printf("isc_info_rsb_ext_dbkey,\n");
 				break;
 
 			case isc_info_rsb_left_cross:
-				ib_printf("isc_info_rsb_left_cross,\n");
+				printf("isc_info_rsb_left_cross,\n");
 				break;
 
 			case isc_info_rsb_select:
-				ib_printf("isc_info_rsb_select,\n");
+				printf("isc_info_rsb_select,\n");
 				break;
 
 			case isc_info_rsb_sql_join:
-				ib_printf("isc_info_rsb_sql_join,\n");
+				printf("isc_info_rsb_sql_join,\n");
 				break;
 
 			case isc_info_rsb_simulate:
-				ib_printf("isc_info_rsb_simulate,\n");
+				printf("isc_info_rsb_simulate,\n");
 				break;
 
 			case isc_info_rsb_sim_cross:
-				ib_printf("isc_info_rsb_sim_cross,\n");
+				printf("isc_info_rsb_sim_cross,\n");
 				break;
 
 			case isc_info_rsb_once:
-				ib_printf("isc_info_rsb_once,\n");
+				printf("isc_info_rsb_once,\n");
 				break;
 
 			case isc_info_rsb_procedure:
-				ib_printf("isc_info_rsb_procedure,\n");
+				printf("isc_info_rsb_procedure,\n");
 				break;
 
 			}
@@ -418,7 +418,7 @@ static void explain_index_tree(
 		explain_buffer += length;
 
 		MET_index_info(relation_name, index_name, index_info);
-		ib_printf("%s\n", index_info);
+		printf("%s\n", index_info);
 		break;
 	}
 
@@ -443,17 +443,17 @@ static void explain_printf( SSHORT level, const TEXT* control, const TEXT* strin
  **************************************
  *
  * Functional description
- *	Do a ib_printf with formatting.
+ *	Do a printf with formatting.
  *
  **************************************/
 
 	while (level--)
-		ib_printf("   ");
+		printf("   ");
 
 	if (string)
-		ib_printf(control, string);
+		printf(control, string);
 	else
-		ib_printf(control);
+		printf(control);
 }
 #endif
 

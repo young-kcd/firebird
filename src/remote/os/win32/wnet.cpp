@@ -27,7 +27,7 @@
 #endif
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../remote/remote.h"
 #include "../jrd/y_ref.h"
@@ -1599,7 +1599,7 @@ static void packet_print(const TEXT* string, const UCHAR* packet,
 		} while (--l);
 	}
 
-	ib_printf("%s\t: length = %d, checksum = %d\n", string, length, sum);
+	printf("%s\t: length = %d, checksum = %d\n", string, length, sum);
 }
 #endif
 

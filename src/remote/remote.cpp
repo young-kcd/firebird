@@ -169,7 +169,7 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 	USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
 
 #ifdef DEBUG
-	ib_fprintf(ib_stderr,
+	fprintf(stderr,
 			   "port_buff_size = %d fmt_net_length = %d fmt_length = %d overhead = %d\n",
 			   port->port_buff_size, format->fmt_net_length,
 			   format->fmt_length, op_overhead);
@@ -214,9 +214,9 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 		const char* p = getenv("DEBUG_BATCH_SIZE");
 		if (p)
 			result = atoi(p);
-		ib_fprintf(ib_stderr, "row_size = %lu num_packets = %d\n",
+		fprintf(stderr, "row_size = %lu num_packets = %d\n",
 				   row_size, num_packets);
-		ib_fprintf(ib_stderr, "result = %lu\n", result);
+		fprintf(stderr, "result = %lu\n", result);
 	}
 #endif
 
@@ -252,7 +252,7 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 	request->rrq_levels = (rrq*) ALLR_clone(&request->rrq_header);
 /* NOMEM: handled by ALLR_clone, FREE: REMOTE_remove_request() */
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("REMOTE_find_request       allocate request %x\n",
+	printf("REMOTE_find_request       allocate request %x\n",
 			  request->rrq_levels);
 #endif
 	request = request->rrq_levels;
@@ -270,7 +270,7 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 		REM_MSG msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 		tail->rrq_xdr = msg;
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("REMOTE_find_request       allocate message %x\n", msg);
+		printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
 #ifdef SCROLLABLE_CURSORS
@@ -434,9 +434,9 @@ void REMOTE_get_timeout_params(
 
 	port->port_dummy_timeout = port->port_dummy_packet_interval;
 #ifdef DEBUG
-	ib_printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
+	printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
 			  port->port_dummy_packet_interval, port->port_connect_timeout);
-	ib_fflush(ib_stdout);
+	fflush(ib_stdout);
 #endif
 }
 
@@ -457,7 +457,7 @@ rem_str* REMOTE_make_string(const SCHAR* input)
 	const USHORT length = strlen(input);
 	rem_str* string = (rem_str*) ALLOCV(type_str, length);
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("REMOTE_make_string        allocate string  %x\n", string);
+	printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif
 	strcpy(string->str_data, input);
 	string->str_length = length;
@@ -484,7 +484,7 @@ void REMOTE_release_messages( REM_MSG messages)
 			REM_MSG temp = message;
 			message = message->msg_next;
 #ifdef DEBUG_REMOTE_MEMORY
-			ib_printf("REMOTE_release_messages   free message     %x\n",
+			printf("REMOTE_release_messages   free message     %x\n",
 					  temp);
 #endif
 			ALLR_release(temp);
@@ -525,7 +525,7 @@ void REMOTE_release_request( rrq* request)
 			if (message) {
 				if (!request->rrq_level) {
 #ifdef DEBUG_REMOTE_MEMORY
-					ib_printf
+					printf
 						("REMOTE_release_request    free format      %x\n",
 						 tail->rrq_format);
 #endif
@@ -536,7 +536,7 @@ void REMOTE_release_request( rrq* request)
 		}
 		rrq* next = request->rrq_levels;
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("REMOTE_release_request    free request     %x\n", request);
+		printf("REMOTE_release_request    free request     %x\n", request);
 #endif
 		ALLR_release(request);
 		if (!(request = next))
@@ -728,7 +728,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 	rem_vec* new_vector = (rem_vec*) ALLOCV(type_vec, slot + 10);
 	port->port_object_vector = new_vector;
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
+	printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
 #endif
 	port->port_objects = new_vector->vec_object;
 	new_vector->vec_count = slot + 10;
@@ -740,7 +740,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 		while (q < end)
 			*p++ = *q++;
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("REMOTE_release_request    free vector      %x\n", vector);
+		printf("REMOTE_release_request    free vector      %x\n", vector);
 #endif
 		ALLR_release(vector);
 	}

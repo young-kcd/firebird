@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.33 2004-04-26 07:54:22 brodsom Exp $
+ * $Id: extract.epp,v 1.34 2004-04-28 22:13:46 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -42,7 +42,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>				// isdigit 
@@ -83,7 +83,7 @@ static void list_views();
 
 static void get_procedure_args(char*);
 
-extern IB_FILE* Out;
+extern FILE* Out;
 
 // Command terminator and procedure terminator 
 

@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.3 2003-08-26 06:52:42 brodsom Exp $
+ * $Id: guard.cpp,v 1.4 2004-04-28 22:18:58 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -31,7 +31,7 @@
 #define INTERBASE_USER_SHORT	"interbas"
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -97,7 +97,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				option = IGNORE;
 				break;
 			default:
-				ib_fprintf(ib_stderr,
+				fprintf(ib_stderr,
 						   "Usage: %s [-signore | -onetime | -forever (default)]\n",
 						   prog_name);
 				exit(-1);
@@ -113,7 +113,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		&& strcmp(user_name, FIREBIRD_USER)
 		&& strcmp(user_name, INTERBASE_USER_SHORT)) {
 		/* invalid user bail out */
-		ib_fprintf(ib_stderr,
+		fprintf(ib_stderr,
 				   "%s: Invalid user (must be %s, %s, %s or root).\n",
 				   prog_name, FIREBIRD_USER, INTERBASE_USER,
 				   INTERBASE_USER_SHORT);
@@ -127,7 +127,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if ((fd_guard = UTIL_ex_lock(GUARD_FILE)) < 0) {
 		/* could not get exclusive lock -- some other guardian is running */
 		if (fd_guard == -2)
-			ib_fprintf(ib_stderr, "%s: Program is already running.\n",
+			fprintf(ib_stderr, "%s: Program is already running.\n",
 					   prog_name);
 		exit(-3);
 	}
@@ -149,7 +149,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			/* could not fork the server */
 			gds__log("%s: guardian could not start %s\n", prog_name,
 					 server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
-			ib_fprintf(ib_stderr, "%s: Could not start %s\n", prog_name,
+			fprintf(stderr, "%s: Could not start %s\n", prog_name,
 					   server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
 			UTIL_ex_unlock(fd_guard);
 			exit(-4);

@@ -50,36 +50,36 @@
  * to the usual names supplied by the platform's stdio.
  */
 
-#define ib_stdin	stdin
+#define stdin	stdin
 #define ib_stdout	stdout
-#define ib_stderr	stderr
+#define stderr	stderr
 #define ib_clearerr	clearerr
 #define ib_fclose	fclose
 #define ib_feof		feof
 #define ib_ferror	ferror
-#define ib_fflush	fflush
+#define fflush	fflush
 #define ib_fgetc	fgetc
 #define ib_fgetpos	fgetpos
-#define ib_fgets	fgets
+#define fgets	fgets
 #define ib_fopen	fopen
-#define ib_fprintf	fprintf
-#define ib_fputc	fputc
-#define ib_fputs	fputs
+#define fprintf	fprintf
+#define fputc	fputc
+#define fputs	fputs
 #define ib_fread	fread
 #define ib_freopen	freopen
 #define ib_fscanf	fscanf
-#define ib_fseek	fseek
+#define fseek	fseek
 #define ib_fsetpos	fsetpos
 #define ib_ftell	ftell
 #define ib_fwrite	fwrite
-#define ib_getc		getc
-#define ib_getchar	getchar
+#define getc		getc
+#define getchar	getchar
 #define ib_perror	perror
-#define ib_printf	printf
-#define ib_putc		putc
-#define ib_putchar	putchar
-#define ib_puts		puts
-#define ib_rewind	rewind
+#define printf	printf
+#define putc		putc
+#define putchar	putchar
+#define puts		puts
+#define rewind	rewind
 #define ib_scanf	scanf
 #define ib_setbuf	setbuf
 #define ib_setvbuf	setvbuf
@@ -88,12 +88,12 @@
 #define ib_vfprintf	vfprintf
 #define ib_vprintf	vprintf
 #define ib_fdopen	fdopen
-#define ib_fileno	fileno
-#define IB_FILE         FILE
+#define FILEno	fileno
+#define FILE         FILE
 
-#define ib_gets		gets
+#define gets		gets
 #define ib_sprintf	sprintf
-#define ib_getc_unlocked getc_unlocked
-#define ib_putc_unlocked putc_unlocked
+#define getc_unlocked getc_unlocked
+#define putc_unlocked putc_unlocked
 
 #endif /* !IB_STDIO_H_ */

@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <windows.h>
 #include <ntsecapi.h>
 #include <aclapi.h>

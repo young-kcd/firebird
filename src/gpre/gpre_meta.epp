@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.37 2004-02-02 11:01:26 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.38 2004-04-28 22:05:56 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -196,7 +196,7 @@ bool MET_database(dbb* database, bool print_version)
 	database->dbb_handle = DB;
 
 	if (sw_version && print_version) {
-		ib_printf("    Version(s) for database \"%s\"\n", database->dbb_filename);
+		printf("    Version(s) for database \"%s\"\n", database->dbb_filename);
 		isc_version(&DB, NULL, NULL);
 	}
 
@@ -238,12 +238,12 @@ bool MET_database(dbb* database, bool print_version)
 			if ((sw_server_version != 0) && (sw_ods_version != 0))
 				compiletime_db_dialect = SQL_DIALECT_V5;
 			else
-				ib_printf("Internal error: Unexpected isc_info_value %d\n",
+				printf("Internal error: Unexpected isc_info_value %d\n",
 						  item);
 			break;
 			
 		default:
-			ib_printf("Internal error: Unexpected isc_info_value %d\n", item);
+			printf("Internal error: Unexpected isc_info_value %d\n", item);
 			break;
 		}
 		ptr += length;
@@ -271,7 +271,7 @@ bool MET_database(dbb* database, bool print_version)
 
 #ifdef DEBUG
 	if (sw_version && print_version)
-		ib_printf("Gpre Start up values. \
+		printf("Gpre Start up values. \
 	\n\tServer Ver                   : %d\
         \n\tCompile time db Ver          : %d\
 	\n\tCompile time db Sql Dialect  : %d\

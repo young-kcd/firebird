@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/divorce.h"
@@ -53,7 +53,7 @@ int main( int argc, char **argv)
 	SLONG owner_handle;
 
 	if (setreuid(0, 0) < 0)
-		ib_printf("lock manager: couldn't set uid to superuser\n");
+		printf("lock manager: couldn't set uid to superuser\n");
 
 	if (argc < 2)
 		divorce_terminal(0);

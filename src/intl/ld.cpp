@@ -258,7 +258,7 @@ void LD_assert(const SCHAR* filename, int lineno)
 #if !(defined VMS || defined WIN_NT)
 /*	gds__log(buffer); -- see note above */
 #endif
-	//ib_printf(buffer);
+	//printf(buffer);
 	printf(buffer);
 }
 #endif

@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
@@ -1329,7 +1329,7 @@ static void mutex_bugcheck(const TEXT* string, int mutex_state)
 	sprintf(msg, "EVENT: %s error, status = %d", string, mutex_state);
 	gds__log(msg);
 
-	ib_fprintf(ib_stderr, "%s\n", msg);
+	fprintf(stderr, "%s\n", msg);
 	exit(FINI_ERROR);
 }
 
@@ -1411,7 +1411,7 @@ static void punt(const TEXT* string)
  *
  **************************************/
 
-	ib_printf("(EVENT) punt: global region corrupt -- %s\n", string);
+	printf("(EVENT) punt: global region corrupt -- %s\n", string);
 }
 
 

@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/jrd_time.h"
@@ -50,7 +50,7 @@
 #endif
 
 #ifndef FPRINTF
-#define FPRINTF		ib_fprintf
+#define FPRINTF		fprintf
 #endif
 
 // gstat directly reads database files, therefore
@@ -60,7 +60,7 @@ void PPG_print_header(const header_page* header, SLONG page,
 #ifdef SUPERSERVER
 					  Jrd::Service* outfile)
 #else
-					  IB_FILE* outfile)
+					  FILE* outfile)
 #endif
 {
 /**************************************
@@ -288,7 +288,7 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 #ifdef SUPERSERVER
 				   Jrd::Service* outfile)
 #else
-				   IB_FILE* outfile)
+				   FILE* outfile)
 #endif
 {
 /**************************************

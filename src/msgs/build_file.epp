@@ -28,7 +28,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdlib.h>
 #include <string.h>
@@ -151,12 +151,12 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			}
 		}
 		if (sw_bad) {
-			ib_printf("Invalid option \"%s\".  Valid options are:\n", p);
-			ib_printf("\t-D\tDatabase name\n");
-			ib_printf("\t-F\tMessage file name\n");
-			ib_printf("\t-P\tMessage file path (should end with '/')\n");
-			ib_printf("\t-L\tLocale name\n");
-			ib_printf("\t-W\tVerbose warning messages\n");
+			printf("Invalid option \"%s\".  Valid options are:\n", p);
+			printf("\t-D\tDatabase name\n");
+			printf("\t-F\tMessage file name\n");
+			printf("\t-P\tMessage file path (should end with '/')\n");
+			printf("\t-L\tLocale name\n");
+			printf("\t-W\tVerbose warning messages\n");
 			exit(FINI_ERROR);
 		}
 	}
@@ -212,28 +212,28 @@ int CLIB_ROUTINE main( int argc, char** argv)
 					WITH LC.LOCALE != "pg_PG" AND LC.LOCALE != "piglatin";
 					locale = LC.LOCALE;
 					strcpy(this_locale, LC.LOCALE);
-					ib_printf("build_file: building locale %s", this_locale);
+					printf("build_file: building locale %s", this_locale);
 					sanitize(locale);
 					sprintf(filename, locale_pattern, locale);
 					if (pathname) {
 						strcat(pathname, filename);
-						ib_printf(" to file %s\n", pathname);
+						printf(" to file %s\n", pathname);
 						do_msgs(pathname, this_locale, sw_warning);
 					}
 					else {
-						ib_printf(" to file %s\n", filename);
+						printf(" to file %s\n", filename);
 						do_msgs(filename, this_locale, sw_warning);
 					}
 					pathname = NULL;
 				END_FOR;
 			}
 			else {
-				ib_printf("build_file: Unknown locale: %s\n", locale);
-				ib_printf("Valid options are:\n");
+				printf("build_file: Unknown locale: %s\n", locale);
+				printf("Valid options are:\n");
 				FOR LO IN LOCALES
-					ib_printf("\t%s\n", LO.LOCALE);
+					printf("\t%s\n", LO.LOCALE);
 				END_FOR;
-				ib_printf("\tall\n");
+				printf("\tall\n");
 			}
 			COMMIT;
 			FINISH DB;
@@ -291,7 +291,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	global_file = open(filename, O_WRONLY | O_CREAT | O_BINARY, 0666);
 	if (global_file == -1) {
-		ib_printf("Can't open %s\n", filename);
+		printf("Can't open %s\n", filename);
 		return FINI_ERROR;
 	}
 	global_file_position = 0;
@@ -335,11 +335,11 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 				found_one++;
 			END_FOR;
 			if (!found_one && sw_warning)
-				ib_printf
+				printf
 					("build_file: Warning - no %s translation of msg# %ld\n",
 					 locale, X.CODE);
 			if (found_one > 1 && sw_warning)
-				ib_printf
+				printf
 					("build_file: Warning - multiple %s translations of msg# %ld\n",
 					 locale, X.CODE);
 			if (found_one != 1)
@@ -406,7 +406,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 	global_file = -1;
 
 	if (warning_counter)
-		ib_printf("build_file: %d messages lack translations in locale %s\n",
+		printf("build_file: %d messages lack translations in locale %s\n",
 				  warning_counter, locale);
 
 	return FINI_OK;
@@ -471,14 +471,14 @@ static SLONG write_bucket( const msgnod* bucket, USHORT length)
 	const SLONG position = global_file_position;
 	int n = write(global_file, bucket, length);
 	if (n == -1) {
-		ib_fprintf(ib_stderr, "IO error on write()\n");
+		fprintf(stderr, "IO error on write()\n");
 		exit(FINI_ERROR);
 	}
 	
 	SLONG zero_bytes = 0;
 	n = write(global_file, &zero_bytes, padded_length - length);
 	if (n == -1) {
-		ib_fprintf(ib_stderr, "IO error on write()\n");
+		fprintf(stderr, "IO error on write()\n");
 		exit(FINI_ERROR);
 	}
 	global_file_position += padded_length;

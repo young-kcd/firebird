@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.39 2004-02-02 11:01:26 robocop Exp $
+//	$Id: cob.cpp,v 1.40 2004-04-28 22:05:56 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -38,7 +38,7 @@
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/y_ref.h"
@@ -238,7 +238,7 @@ static const char* const DCL_DOUBLE			= "USAGE IS COMP-2";
 
 extern DBB isc_databases;
 extern gpre_req* requests;
-extern IB_FILE *out_file;
+extern FILE *out_file;
 
 #ifdef NOT_USED_OR_REPLACED
 static void	align(int column);
@@ -681,7 +681,7 @@ void COB_action(const act* action, int column)
 	if ((action->act_flags & ACT_sql) && action->act_whenever)
 		gen_whenever(action->act_whenever);
 	else
-		ib_fprintf(out_file, names[COLUMN]);
+		fprintf(out_file, names[COLUMN]);
 }
 
 
@@ -813,7 +813,7 @@ void COB_print_buffer(TEXT* output_buffer,
 				*p = 0;
 			}
 
-			ib_fprintf(out_file, "%s\n", s);
+			fprintf(out_file, "%s\n", s);
 			if (open_quote) {
 				if (single_quote)
 					strcpy(s, names[CONTINUE_SINGLE_QUOTE]);
@@ -826,7 +826,7 @@ void COB_print_buffer(TEXT* output_buffer,
 		}
 	}
 	*p = 0;
-	ib_fprintf(out_file, "%s", s);
+	fprintf(out_file, "%s", s);
 	output_buffer[0] = 0;
 }
 
@@ -845,13 +845,13 @@ static void align( int column)
 	if (column < 0)
 		return;
 
-	ib_putc('\n', out_file);
+	putc('\n', out_file);
 
 	for (i = column / 8; i; --i)
-		ib_putc('\t', out_file);
+		putc('\t', out_file);
 
 	for (i = column % 8; i; --i)
-		ib_putc(' ', out_file);
+		putc(' ', out_file);
 }
 #endif
 
@@ -980,15 +980,15 @@ static void gen_any( const act* action)
 
 	request = action->act_request;
 
-	ib_fprintf(out_file, "%s_r (&%s, &%s",
+	fprintf(out_file, "%s_r (&%s, &%s",
 			   request->req_handle, request->req_handle, request->req_trans);
 
 	if (port = request->req_vport)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
-				ib_fprintf(out_file, ", %s", reference->ref_value);
+				fprintf(out_file, ", %s", reference->ref_value);
 
-	ib_fprintf(out_file, ")");
+	fprintf(out_file, ")");
 }
 
 
@@ -1005,7 +1005,7 @@ static void gen_at_end( const act* action)
 	request = action->act_request;
 	printa(names[COLUMN], false,
 		   "IF %s = 0 THEN", gen_name(s, request->req_eof, true));
-	ib_fprintf(out_file, names[COLUMN]);
+	fprintf(out_file, names[COLUMN]);
 }
 
 
@@ -1038,7 +1038,7 @@ static void gen_based( const act* action)
 //   for (dimension = field->fld_array_info->ary_dimension; dimension;
 //  dimension = dimension->dim_next)
 // { 
-// ib_fprintf (out_file, "
+// fprintf (out_file, "
 //  
 	}
 	else
@@ -1048,47 +1048,47 @@ static void gen_based( const act* action)
 	case dtype_short:
 	case dtype_long:
 		digits = (datatype == dtype_short) ? 4 : 9;
-		ib_fprintf(out_file, "%sPIC S", names[COLUMN]);
+		fprintf(out_file, "%sPIC S", names[COLUMN]);
 		if (field->fld_scale >= -digits && field->fld_scale <= 0) {
 			if (field->fld_scale > -digits)
-				ib_fprintf(out_file, "9(%d)", digits + field->fld_scale);
+				fprintf(out_file, "9(%d)", digits + field->fld_scale);
 			if (field->fld_scale)
-				ib_fprintf(out_file, "V9(%d)",
+				fprintf(out_file, "V9(%d)",
 						   digits - (digits + field->fld_scale));
-			ib_fprintf(out_file, USAGE_COMP);
+			fprintf(out_file, USAGE_COMP);
 		}
 		else if (field->fld_scale > 0)
-			ib_fprintf(out_file, "9(%d)P(%d)", digits, field->fld_scale);
+			fprintf(out_file, "9(%d)P(%d)", digits, field->fld_scale);
 		else
-			ib_fprintf(out_file, "VP(%d)9(%d)", -(field->fld_scale + digits),
+			fprintf(out_file, "VP(%d)9(%d)", -(field->fld_scale + digits),
 					   digits);
 		break;
 
 	case dtype_date:
 	case dtype_blob:
-		ib_fprintf(out_file, "%sPIC S9(18)%s", names[COLUMN], USAGE_COMP);
+		fprintf(out_file, "%sPIC S9(18)%s", names[COLUMN], USAGE_COMP);
 		break;
 
 	case dtype_quad:
-		ib_fprintf(out_file, "%sPIC S9(", names[COLUMN]);
-		ib_fprintf(out_file, "%d)", 18 + field->fld_scale);
+		fprintf(out_file, "%sPIC S9(", names[COLUMN]);
+		fprintf(out_file, "%d)", 18 + field->fld_scale);
 		if (field->fld_scale < 0)
-			ib_fprintf(out_file, "V9(%d)", -field->fld_scale);
+			fprintf(out_file, "V9(%d)", -field->fld_scale);
 		else if (field->fld_scale > 0)
-			ib_fprintf(out_file, "P(%d)", field->fld_scale);
-		ib_fprintf(out_file, USAGE_COMP);
+			fprintf(out_file, "P(%d)", field->fld_scale);
+		fprintf(out_file, USAGE_COMP);
 		break;
 
 	case dtype_text:
-		ib_fprintf(out_file, "%sPIC X(%d)", names[COLUMN], field->fld_length);
+		fprintf(out_file, "%sPIC X(%d)", names[COLUMN], field->fld_length);
 		break;
 
 	case dtype_real:
-		ib_fprintf(out_file, "%s%s", names[COLUMN], DCL_FLOAT);
+		fprintf(out_file, "%s%s", names[COLUMN], DCL_FLOAT);
 		break;
 
 	case dtype_double:
-		ib_fprintf(out_file, "%s%s", names[COLUMN], DCL_DOUBLE);
+		fprintf(out_file, "%s%s", names[COLUMN], DCL_DOUBLE);
 		break;
 
 	default:
@@ -1098,7 +1098,7 @@ static void gen_based( const act* action)
 	}
 
 	if (*based_on->bas_terminator == '.')
-		ib_fprintf(out_file, "%s\n", based_on->bas_terminator);
+		fprintf(out_file, "%s\n", based_on->bas_terminator);
 }
 
 
@@ -1296,14 +1296,14 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 			if (*q == '\'' && *(q - 1) != '\\')
 				open_quote = !open_quote;
 		}
-		ib_fprintf(out_file, "%s", names[COMMENT]);
+		fprintf(out_file, "%s", names[COMMENT]);
 		for (i = 0; i < indent; i++)
-			ib_fputc(' ', out_file);
+			fputc(' ', out_file);
 		q++;
 		char buffer[256];
 		strncpy(buffer, p, q - p);
 		buffer[q - p] = 0;
-		ib_fprintf(out_file, "%s\n", buffer);
+		fprintf(out_file, "%s\n", buffer);
 		length = length - (q - p);
 		p = q;
 		if (first_line) {
@@ -1314,10 +1314,10 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 		}
 	}
 
-	ib_fprintf(out_file, "%s", names[COMMENT]);
+	fprintf(out_file, "%s", names[COMMENT]);
 	for (i = 0; i < indent; i++)
-		ib_fputc(' ', out_file);
-	ib_fprintf(out_file, "%s\n", p);
+		fputc(' ', out_file);
+	fprintf(out_file, "%s\n", p);
 }
 
 
@@ -2747,15 +2747,15 @@ static void gen_function( const act* function)
 
 	request = action->act_request;
 
-	ib_fprintf(out_file, "static %s_r (request, transaction", request->req_handle);
+	fprintf(out_file, "static %s_r (request, transaction", request->req_handle);
 
 	if (port = request->req_vport)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
-				ib_fprintf(out_file, ", %s",
+				fprintf(out_file, ", %s",
 						   gen_name(s, reference->ref_source, true));
 
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port)
@@ -2797,15 +2797,15 @@ static void gen_function( const act* function)
 				CPR_error("gen_function: unsupported datatype");
 				return;
 			}
-			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
+			fprintf(out_file, "    %s\t%s;\n", dtype,
 					   gen_name(s, reference->ref_source, true));
 		}
 
-	ib_fprintf(out_file, "{\n");
+	fprintf(out_file, "{\n");
 	for (port = request->req_ports; port; port = port->por_next)
 		make_port(port);
 
-	ib_fprintf(out_file, "\n\n");
+	fprintf(out_file, "\n\n");
 	gen_s_start(action);
 	gen_receive(action, request->req_primary);
 
@@ -2818,7 +2818,7 @@ static void gen_function( const act* function)
 		}
 
 	port = request->req_primary;
-	ib_fprintf(out_file, "\nreturn %s;\n}\n",
+	fprintf(out_file, "\nreturn %s;\n}\n",
 			   gen_name(s, port->por_references, true));
 }
 
@@ -2878,7 +2878,7 @@ static void gen_get_or_put_slice(const act* action,
 	args.pat_string7 = (get) ? (TEXT*) ISC_GET_SLICE : (TEXT*) ISC_PUT_SLICE;
 
 	PATTERN_expand(column, (get) ? pattern1 : pattern2, &args);
-	ib_fprintf(out_file, "\n");
+	fprintf(out_file, "\n");
 }
 
 
@@ -2980,7 +2980,7 @@ static void gen_on_error( const act* action)
 {
 
 	printa(names[COLUMN], false, "IF %s (2) NOT = 0 THEN", names[isc_status_pos]);
-	ib_fprintf(out_file, names[COLUMN]);
+	fprintf(out_file, names[COLUMN]);
 }
 
 
@@ -3188,7 +3188,7 @@ static void gen_ready( const act* action)
 		set_sqlcode(action);
 	}
 
-	ib_fprintf(out_file, names[COLUMN]);
+	fprintf(out_file, names[COLUMN]);
 }
 
 
@@ -3561,7 +3561,7 @@ static void gen_slice( const act* action)
 
 //  Compute array size 
 
-	ib_fprintf(out_file, "    COMPUTE %s%ds = %d",
+	fprintf(out_file, "    COMPUTE %s%ds = %d",
 			   names[isc_b_pos],
 			   request->req_ident, slice->slc_field->fld_array->fld_length);
 
@@ -3571,12 +3571,12 @@ static void gen_slice( const act* action)
 			lower = (REF) tail->slc_lower->nod_arg[0];
 			upper = (REF) tail->slc_upper->nod_arg[0];
 			if (lower->ref_value)
-				ib_fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
+				fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
 						   lower->ref_value);
 			else
-				ib_fprintf(out_file, " * ( %s + 1)", upper->ref_value);
+				fprintf(out_file, " * ( %s + 1)", upper->ref_value);
 		}
-	ib_fprintf(out_file, "\n");
+	fprintf(out_file, "\n");
 
 //  Make assignments to variable vector 
 
@@ -3620,7 +3620,7 @@ static void gen_segment( const act* action)
 
 	blob = (blb*) action->act_object;
 
-	ib_fprintf(out_file, "%s%d",
+	fprintf(out_file, "%s%d",
 			   names[isc_a_pos],
 			   (action->act_type == ACT_segment) ? blob->blb_buff_ident :
 			   (action->act_type ==
@@ -3934,7 +3934,7 @@ static void gen_variable( const act* action)
 {
 	TEXT s[20];
 	const ref* reference = action->act_object;
-	ib_fprintf(out_file, "\n%s%s",
+	fprintf(out_file, "\n%s%s",
 			   names[COLUMN], gen_name(s, reference, false));
 }
 
@@ -3962,12 +3962,12 @@ static void gen_whenever(const swe* label)
 			condition = "SQLCODE = 100";
 			break;
 		}
-		ib_fprintf(out_file, "%sIF (%s) THEN GO TO %s",
+		fprintf(out_file, "%sIF (%s) THEN GO TO %s",
 				   names[COLUMN], condition, label->swe_label);
 		if (label->swe_condition == SWE_warning)
-			ib_fprintf(out_file, "\n%s", names[COLUMN_INDENT]);
+			fprintf(out_file, "\n%s", names[COLUMN_INDENT]);
 		label = label->swe_next;
-		ib_fprintf(out_file, " END-IF%s", (label) ? ".\n" : "");
+		fprintf(out_file, " END-IF%s", (label) ? ".\n" : "");
 	}
 }
 
@@ -3993,7 +3993,7 @@ static void make_array_declaration( REF reference)
 
 	field->fld_array_info->ary_declared = true;
 
-	ib_fprintf(out_file, "%s01  %s%dL.\n",
+	fprintf(out_file, "%s01  %s%dL.\n",
 			   names[COLUMN_0], names[isc_a_pos],
 			   field->fld_array_info->ary_ident);
 	strcpy(space, "       ");
@@ -4159,21 +4159,21 @@ static void make_port(const gpre_port* port)
 		case dtype_short:
 		case dtype_long:
 			digits = (field->fld_dtype == dtype_short) ? 4 : 9;
-			ib_fprintf(out_file, "%s03  %s%d PIC S",
+			fprintf(out_file, "%s03  %s%d PIC S",
 					   names[COLUMN], names[isc_a_pos], reference->ref_ident);
 			if (field->fld_scale >= -digits && field->fld_scale <= 0) {
 				if (field->fld_scale > -digits)
-					ib_fprintf(out_file, "9(%d)", digits + field->fld_scale);
+					fprintf(out_file, "9(%d)", digits + field->fld_scale);
 				if (field->fld_scale)
-					ib_fprintf(out_file, "V9(%d)",
+					fprintf(out_file, "V9(%d)",
 							   digits - (digits + field->fld_scale));
 			}
 			else if (field->fld_scale > 0)
-				ib_fprintf(out_file, "9(%d)P(%d)", digits, field->fld_scale);
+				fprintf(out_file, "9(%d)P(%d)", digits, field->fld_scale);
 			else
-				ib_fprintf(out_file, "VP(%d)9(%d)",
+				fprintf(out_file, "VP(%d)9(%d)",
 						   -(field->fld_scale + digits), digits);
-			ib_fprintf(out_file, "%s.\n", USAGE_COMP);
+			fprintf(out_file, "%s.\n", USAGE_COMP);
 			break;
 
 		case dtype_cstring:
@@ -4185,14 +4185,14 @@ static void make_port(const gpre_port* port)
 		case dtype_date:
 		case dtype_quad:
 		case dtype_blob:
-			ib_fprintf(out_file, "%s03  %s%d PIC S9(",
+			fprintf(out_file, "%s03  %s%d PIC S9(",
 					   names[COLUMN], names[isc_a_pos], reference->ref_ident);
-			ib_fprintf(out_file, "%d)", 18 + field->fld_scale);
+			fprintf(out_file, "%d)", 18 + field->fld_scale);
 			if (field->fld_scale < 0)
-				ib_fprintf(out_file, "V9(%d)", -field->fld_scale);
+				fprintf(out_file, "V9(%d)", -field->fld_scale);
 			else if (field->fld_scale > 0)
-				ib_fprintf(out_file, "P(%d)", field->fld_scale);
-			ib_fprintf(out_file, "%s.\n", USAGE_COMP);
+				fprintf(out_file, "P(%d)", field->fld_scale);
+			fprintf(out_file, "%s.\n", USAGE_COMP);
 			break;
 
 		case dtype_real:
@@ -4430,7 +4430,7 @@ static void printb(const TEXT* string, ...)
 	va_list ptr;
 
 	VA_START(ptr, string);
-	ib_vfprintf(out_file, string, ptr);
+	vfprintf(out_file, string, ptr);
 }
 #endif
 
@@ -4514,11 +4514,11 @@ static void t_start_auto(const gpre_req* request,
 		buffer[0] = 0;
 		for (count = 0, db = isc_databases; db; db = db->dbb_next, count++)
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
-				ib_fprintf(out_file, "%sIF %s = 0", names[COLUMN],
+				fprintf(out_file, "%sIF %s = 0", names[COLUMN],
 						   db->dbb_name->sym_string);
 				if (stat && buffer[0])
-					ib_fprintf(out_file, " AND %s(2) = 0", names[isc_status_pos]);
-				ib_fprintf(out_file, " THEN\n");
+					fprintf(out_file, " AND %s(2) = 0", names[isc_status_pos]);
+				fprintf(out_file, " THEN\n");
 				namelength = filename ? strlen(filename) : 0;
 #ifndef VMS
 				if (filename) {

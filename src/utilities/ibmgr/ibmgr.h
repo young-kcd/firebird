@@ -19,13 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.5 2004-02-20 06:43:26 robocop Exp $
+ * $Id: ibmgr.h,v 1.6 2004-04-28 22:18:19 brodsom Exp $
  */
 
 #ifndef UTILITIES_IBMGR_H
 #define UTILITIES_IBMGR_H
 
-#define OUTFILE			ib_stderr
+#define OUTFILE			stderr
 
 #define SYSDBA_USER_NAME	"SYSDBA"
 #define FIREBIRD_USER_NAME	"firebird"

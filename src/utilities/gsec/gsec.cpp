@@ -23,7 +23,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -136,7 +136,7 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
  *	Routine which is passed to GBAK for calling back when there is output.
  *
  **************************************/
-	ib_fprintf(ib_stderr, "%s", output_buf);
+	fprintf(stderr, "%s", output_buf);
 	return 0;
 }
 
@@ -189,7 +189,7 @@ int common_main(int argc,
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	tdsec->tsec_env = &env;
 	tdsec->tsec_output_proc = output_proc;
@@ -385,7 +385,7 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
 #ifdef SUPERSERVER
 #define STUFF_USER(item) SVC_putc(tdsec->tsec_service_blk, item)
 #else
-#define STUFF_USER(item) ib_fputc(item, ib_stderr)
+#define STUFF_USER(item) fputc(item, stderr)
 #endif
 	if (tdsec->tsec_service_gsec) {
 		int i, len;
@@ -475,7 +475,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, tsec* tdsec)
    done; otherwise, put it in the current argument */
 
 	while (*argc < MAXARGS && count > 0) {
-		TEXT c = ib_getc(ib_stdin);
+		TEXT c = getc(stdin);
 		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */
@@ -489,7 +489,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, tsec* tdsec)
 					}
 				}
 				*cursor++ = c;
-				c = ib_getc(ib_stdin);
+				c = getc(stdin);
 				if (c <= ' ' || c > '~')
 					break;
 			}

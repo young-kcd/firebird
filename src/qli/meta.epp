@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../qli/dtr.h"
 #include "../qli/compile.h"
@@ -625,7 +625,7 @@ void MET_delete_field( DBB database, NAM name)
 		REDUCED TO RFR.RDB$RELATION_NAME
 		if (!count)
 			  ERRQ_msg_put(238, name->nam_string, NULL, NULL, NULL, NULL);	// Msg238 Field %s is in use in the following relations:
-		ib_printf("\t%s\n", RFR.RDB$RELATION_NAME);
+		printf("\t%s\n", RFR.RDB$RELATION_NAME);
 		count++;
 	END_FOR
 	ON_ERROR

@@ -975,9 +975,9 @@ static bool validate_dsc_tables()
  *	is called as part of a DEV_BUILD assertion check
  *	only once per server.
  *
- * WARNING: the ib_fprintf's are commented out because trying to print
- *          to ib_stderr when the server is running detached will trash
- *          server memory.  If you uncomment the ib_printf's and build a
+ * WARNING: the fprintf's are commented out because trying to print
+ *          to stderr when the server is running detached will trash
+ *          server memory.  If you uncomment the printf's and build a
  *          kit, make sure that you run that server with the -d flag
  *          so it won't detach from its controlling terminal.
  *	
@@ -988,7 +988,7 @@ static bool validate_dsc_tables()
 			if ((DSC_add_result[op1][op2] >= DTYPE_TYPE_MAX) &&
 				(DSC_add_result[op1][op2] != DTYPE_CANNOT)) {
 /*
-	ib_fprintf (ib_stderr, "DSC_add_result [%d][%d] is %d, invalid.\n",
+	fprintf (stderr, "DSC_add_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_add_result [op1][op2]);
 */
 				return false;
@@ -997,7 +997,7 @@ static bool validate_dsc_tables()
 			/* Addition operator must be communitive */
 			if (DSC_add_result[op1][op2] != DSC_add_result[op2][op1]) {
 /*
-	ib_fprintf (ib_stderr,
+	fprintf (stderr,
 "Not commutative: DSC_add_result[%d][%d] = %d, ... [%d][%d] = %d\n",
 		 op1, op2, DSC_add_result [op1][op2],
 		 op2, op1, DSC_add_result [op2][op1] );
@@ -1010,7 +1010,7 @@ static bool validate_dsc_tables()
 			if ((DSC_sub_result[op1][op2] >= DTYPE_TYPE_MAX) &&
 				(DSC_sub_result[op1][op2] != DTYPE_CANNOT)) {
 /*
-	ib_fprintf (ib_stderr, "DSC_sub_result [%d][%d] is %d, invalid.\n",
+	fprintf (stderr, "DSC_sub_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_sub_result [op1][op2]);
 */
 				return false;
@@ -1020,7 +1020,7 @@ static bool validate_dsc_tables()
 			if (DSC_multiply_result[op1][op2] !=
 				DSC_multiply_result[op2][op1]) {
 /*
-	ib_fprintf (ib_stderr,
+	fprintf (stderr,
 "Not commutative: DSC_multiply_result [%d][%d] = %d,\n\t... [%d][%d] = %d\n",
 		 op1, op2, DSC_multiply_result [op1][op2],
 		 op2, op1, DSC_multiply_result [op2][op1]);
@@ -1032,7 +1032,7 @@ static bool validate_dsc_tables()
 			if (DSC_multiply_blr4_result[op1][op2] !=
 				DSC_multiply_blr4_result[op2][op1]) {
 /*
-	ib_fprintf (ib_stderr,
+	fprintf (stderr,
 "Not commutative: DSC_multiply_blr4_result [%d][%d] = %d\n\
 \t... [%d][%d] = %d\n",
 	    op1, op2, DSC_multiply_blr4_result [op1][op2],

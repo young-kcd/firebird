@@ -57,7 +57,7 @@ void LD2_assert(const char* filename, int lineno)
 #if !(defined VMS || defined WIN_NT)
 	gds__log(buffer);
 #else
-	ib_printf(buffer);
+	printf(buffer);
 #endif
 }
 #endif

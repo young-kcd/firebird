@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef VMS
@@ -74,7 +74,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	bool flag_loc;
 	bool do_locales = false;
 	bool sw_bad;
-	IB_FILE *ind_jrd, *ind_msg, *ind_loc;
+	FILE *ind_jrd, *ind_msg, *ind_loc;
 	ISC_TIMESTAMP date_jrd, date_msg, date_loc;
 	struct stat file_stat;
 
@@ -101,41 +101,41 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				sw_bad = true;
 			}
 		if (sw_bad) {
-			ib_printf("Invalid option \"%s\".  Valid options are:\n", p);
-			ib_printf("\t-D\tDatabase name\n");
-			ib_printf("\t-L\tCheck all locales\n");
+			printf("Invalid option \"%s\".  Valid options are:\n", p);
+			printf("\t-D\tDatabase name\n");
+			printf("\t-L\tCheck all locales\n");
 			exit(FINI_ERROR);
 		}
 	}
 
 	flag_jrd = flag_msg = true;
 
-	if (ind_jrd = ib_fopen(INCLUDE_INDICATOR, "r")) {
-		if (!fstat(ib_fileno(ind_jrd), &file_stat)) {
+	if (ind_jrd = fopen(INCLUDE_INDICATOR, "r")) {
+		if (!fstat(fileno(ind_jrd), &file_stat)) {
 			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_jrd);
 			flag_jrd = false;
 		}
-		ib_fclose(ind_jrd);
+		fclose(ind_jrd);
 	}
 
-	if (ind_msg = ib_fopen(MESSAGE_INDICATOR, "r")) {
-		if (!fstat(ib_fileno(ind_msg), &file_stat)) {
+	if (ind_msg = fopen(MESSAGE_INDICATOR, "r")) {
+		if (!fstat(fileno(ind_msg), &file_stat)) {
 			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_msg);
 			flag_msg = false;
 		}
-		ib_fclose(ind_msg);
+		fclose(ind_msg);
 	}
 
 	if (do_locales) {
 		flag_loc = true;
-		if (ind_loc = ib_fopen(LOCALE_INDICATOR, "r")) {
-			if (!fstat(ib_fileno(ind_loc), &file_stat)) {
+		if (ind_loc = fopen(LOCALE_INDICATOR, "r")) {
+			if (!fstat(fileno(ind_loc), &file_stat)) {
 				isc_encode_date(localtime(&file_stat.st_mtime),(ISC_QUAD*)  &date_loc);
 				flag_loc = false;
 			}
-/* Earlier the following ib_fclose was closing ind_msg again, due to which 
+/* Earlier the following fclose was closing ind_msg again, due to which 
    check_messages was crashing with SEGV signal - */
-			ib_fclose(ind_loc);	/* A bug in check_messages is fixed */
+			fclose(ind_loc);	/* A bug in check_messages is fixed */
 		}
 	}
 
@@ -170,21 +170,21 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	FINISH;
 
 	if (flag_jrd)
-		if (ind_jrd = ib_fopen(INCLUDE_INDICATOR, "w")) {
-			ib_fputc(' ', ind_jrd);
-			ib_fclose(ind_jrd);
+		if (ind_jrd = fopen(INCLUDE_INDICATOR, "w")) {
+			fputc(' ', ind_jrd);
+			fclose(ind_jrd);
 		}
 
 	if (flag_msg)
-		if (ind_msg = ib_fopen(MESSAGE_INDICATOR, "w")) {
-			ib_fputc(' ', ind_msg);
-			ib_fclose(ind_msg);
+		if (ind_msg = fopen(MESSAGE_INDICATOR, "w")) {
+			fputc(' ', ind_msg);
+			fclose(ind_msg);
 		}
 
 	if (flag_loc)
-		if (ind_loc = ib_fopen(LOCALE_INDICATOR, "w")) {
-			ib_fputc(' ', ind_loc);
-			ib_fclose(ind_loc);
+		if (ind_loc = fopen(LOCALE_INDICATOR, "w")) {
+			fputc(' ', ind_loc);
+			fclose(ind_loc);
 		}
 
 	exit(FINI_OK);

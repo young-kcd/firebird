@@ -32,7 +32,7 @@
 #include "firebird.h"
 #include "fb_string.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../common/classes/alloc.h"
 #include <errno.h>
 #include <string.h>
@@ -187,7 +187,7 @@ struct dba_mem {
 #endif
 
 #ifndef FPRINTF
-#define FPRINTF 	ib_fprintf
+#define FPRINTF 	fprintf
 #endif
 
 /* threading declarations for thread data */
@@ -209,7 +209,7 @@ struct tdba {
 	open_files *head_of_files_list;
 	Jrd::Service* dba_service_blk;
 #else
-	IB_FILE* sw_outfile;
+	FILE* sw_outfile;
 #endif
 	ISC_STATUS *dba_status;
 	ISC_STATUS_ARRAY dba_status_vector;
@@ -309,7 +309,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #ifdef SUPERSERVER
 	Jrd::Service* sw_outfile = tddba->sw_outfile = service;
 #else
-	IB_FILE* sw_outfile = tddba->sw_outfile = ib_stdout;
+	FILE* sw_outfile = tddba->sw_outfile = stdout;
 #endif
 
 #if defined (WIN95) && !defined (SUPERSERVER)
@@ -318,7 +318,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 	tddba->dba_status = tddba->dba_status_vector;
 	status_vector = tddba->dba_status;
 

@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
@@ -229,7 +229,7 @@ void ERRQ_msg_partial(
 
 	gds__msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
 					ERRQ_message, arg1, arg2, arg3, arg4, arg5);
-	ib_printf("%s", ERRQ_message);
+	printf("%s", ERRQ_message);
 }
 
 
@@ -255,7 +255,7 @@ void ERRQ_msg_put(
 
 	gds__msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
 					ERRQ_message, arg1, arg2, arg3, arg4, arg5);
-	ib_printf("%s\n", ERRQ_message);
+	printf("%s\n", ERRQ_message);
 }
 
 
@@ -296,7 +296,7 @@ void ERRQ_pending(void)
  **************************************/
 
 	if (QLI_error) {
-		ib_printf("%s\n", (const char*)QLI_error);
+		printf("%s\n", (const char*)QLI_error);
 		QLI_error = NULL;
 	}
 }

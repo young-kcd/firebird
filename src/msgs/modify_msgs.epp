@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
@@ -54,27 +54,27 @@ int main( int argc, char **argv)
 	SCHAR *p, *q;
 	SSHORT number;
 
-	ib_printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
-	ib_printf("You will be prompted for fac_code and message number\n");
-	ib_printf("Escape sequences will be translated to single bytes\n");
+	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
+	printf("You will be prompted for fac_code and message number\n");
+	printf("Escape sequences will be translated to single bytes\n");
 
 	READY;
 	START_TRANSACTION;
 
 	for (;;) {
-		ib_printf("Facility: ");
-		if (!ib_gets(facility))
+		printf("Facility: ");
+		if (!gets(facility))
 			break;
 		FOR Y IN FACILITIES WITH Y.FACILITY CONTAINING facility
-			ib_printf("Message number: ");
-			if (!ib_gets(innumber))
+			printf("Message number: ");
+			if (!gets(innumber))
 				break;
 			number = atoi(innumber);
 			FOR X IN MESSAGES WITH X.FAC_CODE = Y.FAC_CODE AND X.NUMBER = number
-				ib_printf(" Current text:");
+				printf(" Current text:");
 				explicit_print(X.TEXT);
-				ib_printf("\n New text: ");
-				if (!ib_gets(newtext))
+				printf("\n New text: ");
+				if (!gets(newtext))
 					break;
 
 				MODIFY X USING
@@ -118,7 +118,7 @@ int main( int argc, char **argv)
 								*p++ = '\'';
 								break;
 							default:
-								ib_printf
+								printf
 									("\n\n*** Escape sequence not understood; being copied unchanged  ***\n\n");
 								*p++ = '\\';
 								*p++ = *q;
@@ -162,42 +162,42 @@ static void explicit_print( TEXT * string)
 	while (*p) {
 		switch (*p) {
 		case '\n':
-			ib_putchar('\\');
-			ib_putchar('n');
+			putchar('\\');
+			putchar('n');
 			break;
 		case '\t':
-			ib_putchar('\\');
-			ib_putchar('t');
+			putchar('\\');
+			putchar('t');
 			break;
 		case '\f':
-			ib_putchar('\\');
-			ib_putchar('f');
+			putchar('\\');
+			putchar('f');
 			break;
 		case '\b':
-			ib_putchar('\\');
-			ib_putchar('b');
+			putchar('\\');
+			putchar('b');
 			break;
 		case '\r':
-			ib_putchar('\\');
-			ib_putchar('r');
+			putchar('\\');
+			putchar('r');
 			break;
 		case '\v':
-			ib_putchar('\\');
+			putchar('\\');
 			break;
 		case '\\':
-			ib_putchar('\\');
-			ib_putchar('\\');
+			putchar('\\');
+			putchar('\\');
 			break;
 		case '\"':
-			ib_putchar('\\');
-			ib_putchar('\"');
+			putchar('\\');
+			putchar('\"');
 			break;
 		case '\'':
-			ib_putchar('\\');
-			ib_putchar('\'');
+			putchar('\\');
+			putchar('\'');
 			break;
 		default:
-			ib_putchar(*p);
+			putchar(*p);
 		}
 		*p++;
 	}

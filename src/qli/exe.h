@@ -194,7 +194,7 @@ struct qli_print_item {
 
 struct qli_prt {
     blk		prt_header;
-    struct file*	prt_file;		// IB_FILE pointer 
+    struct file*	prt_file;		// FILE pointer 
     struct qli_rpt*	prt_report;		// Report block (if report) 
     void	(*prt_new_page)(qli_prt*, bool);	// New page routine, if any 
     USHORT	prt_lines_per_page;

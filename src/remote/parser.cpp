@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.15 2004-01-28 07:50:38 robocop Exp $
+$Id: parser.cpp,v 1.16 2004-04-28 22:25:51 brodsom Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
@@ -73,7 +73,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		count += (*blr++) << 8;
 		rem_fmt* format = (rem_fmt*) ALLOCV(type_fmt, count);
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("PARSE_messages            allocate format  %x\n", format);
+		printf("PARSE_messages            allocate format  %x\n", format);
 #endif
 		format->fmt_count = count;
 		USHORT offset = 0;
@@ -232,7 +232,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		format->fmt_net_length = net_length;
 		next = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("PARSE_messages            allocate message %x\n", next);
+		printf("PARSE_messages            allocate message %x\n", next);
 #endif
 		next->msg_next = message;
 		message = next;
@@ -304,7 +304,7 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 					/* NOMEM: ALLR_alloc() handled */
 					/* FREE:  Never freed, blr_d_float is VMS specific */
 #ifdef DEBUG_REMOTE_MEMORY
-					ib_printf
+					printf
 						("PARSE_prepare_messages    allocate blr     %x\n",
 						 new_blr);
 #endif

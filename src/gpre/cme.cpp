@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.24 2004-02-02 11:01:26 robocop Exp $
+//	$Id: cme.cpp,v 1.25 2004-04-28 22:05:57 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1368,7 +1368,7 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 	}
 
 	if (!field)
-		ib_puts("cmp_field: symbol missing");
+		puts("cmp_field: symbol missing");
 
 	if (field->fld_flags & FLD_dbkey)
 	{
@@ -1831,10 +1831,10 @@ static void cmp_value( const gpre_nod* node, gpre_req* request)
 	const ref* reference = (REF) node->nod_arg[0];
 
 	if (!reference)
-		ib_puts("cmp_value: missing reference");
+		puts("cmp_value: missing reference");
 
 	if (!reference->ref_port)
-		ib_puts("cmp_value: port missing");
+		puts("cmp_value: port missing");
 
 	const ref* flag = reference->ref_null;
 	if (flag)

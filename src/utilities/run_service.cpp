@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
@@ -48,7 +48,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SCHAR send_buffer[2048];
 
 	if (argc < 2) {
-		ib_printf("usage: run_service service_path [args]\n");
+		printf("usage: run_service service_path [args]\n");
 		exit(FINI_ERROR);
 	}
 
@@ -87,7 +87,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	if (send_item_length) {
-		ib_printf
+		printf
 			("It will take about 30 seconds to confirm that the cache manager\nis running.  Please wait...\n");
 	}
 
@@ -113,7 +113,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			}
 			if (*p++ == '\001') {
 				send_buffer[0] = isc_info_svc_line;
-				ib_fgets(send_buffer + 3, sizeof(send_buffer) - 3, ib_stdin);
+				fgets(send_buffer + 3, sizeof(send_buffer) - 3, stdin);
 				len = strlen(send_buffer + 3);
 				send_buffer[1] = len;
 				send_buffer[2] = len >> 8;

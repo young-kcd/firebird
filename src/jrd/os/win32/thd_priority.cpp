@@ -31,7 +31,7 @@
 #define THPS_TIME (Config::getPrioritySwitchDelay())	// ms between rescheds
 #define THPS_TICKS (Config::getDeadThreadsCollection())	// sched loops before thread killing
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <errno.h>
 #include "../jrd/common.h"
 #include "../jrd/thd_proto.h"

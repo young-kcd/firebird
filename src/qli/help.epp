@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -150,13 +150,13 @@ static int additional_topics( TEXT * parent, TEXT * banner, TEXT * string)
 		if (!(l = p - X.TOPIC))
 			continue;
 		if (++topics == 1 && banner)
-			ib_printf("%s%s%s\n", banner, string, parent);
+			printf("%s%s%s\n", banner, string, parent);
 		p =
 			line +
 			((ptr - line + COLUMN_WIDTH - 1) / COLUMN_WIDTH) * COLUMN_WIDTH;
 		if (p + l > line + RIGHT_MARGIN) {
 			*ptr = 0;
-			ib_printf("%s%s\n", INDENT, line);
+			printf("%s%s\n", INDENT, line);
 			p = ptr = line;
 		}
 		while (ptr < p)
@@ -170,7 +170,7 @@ static int additional_topics( TEXT * parent, TEXT * banner, TEXT * string)
 
 	if (ptr != line) {
 		*ptr = 0;
-		ib_printf("%s%s\n", INDENT, line);
+		printf("%s%s\n", INDENT, line);
 	}
 
 	return topics;
@@ -295,13 +295,13 @@ static void print_topic(
 			print_topic(level + 1, depth, topics + 1, max_level, string,
 						error_flag);
 		else {
-			ib_printf("\n%s\n\n", strip(string));
+			printf("\n%s\n\n", strip(string));
 			QLI_skip_line = true;
 			FOR B IN X.TEXT
 				if (QLI_abort)
 					return;
 				B.SEGMENT[B.LENGTH] = 0;
-				ib_printf("%s%s", INDENT, B.SEGMENT);
+				printf("%s%s", INDENT, B.SEGMENT);
 			END_FOR;
 			ERRQ_msg_format(81, sizeof(banner), banner, INDENT, NULL, NULL,
 							NULL, NULL);	// Msg81 %sSub-topics available:

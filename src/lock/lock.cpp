@@ -39,12 +39,12 @@
  */
 
 /*
-$Id: lock.cpp,v 1.89 2004-03-28 09:10:22 robocop Exp $
+$Id: lock.cpp,v 1.90 2004-04-28 22:31:15 brodsom Exp $
 */
 
 #include "firebird.h"
 #include "../jrd/jrd_time.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
@@ -149,12 +149,12 @@ static ULONG debug_acquire_count = 0;
 #endif
 
 #ifdef DEBUG_TRACE
-#define LOCK_TRACE(x)	{ time_t t; time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ;}
+#define LOCK_TRACE(x)	{ time_t t; time (&t); printf ("%s", ctime(&t) ); printf x ; fflush (stdout); gds__log x ;}
 #endif
 
 #ifdef DEBUG
 SSHORT LOCK_debug_level = 0;
-#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ; }
+#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time (&t); printf ("%s", ctime(&t) ); printf x ; fflush (stdout); gds__log x ; }
 #endif
 
 #ifndef DEBUG_MSG
@@ -1988,12 +1988,12 @@ static void bug( ISC_STATUS * status_vector, const TEXT* string)
 	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
 #endif
 	gds__log(s);
-	ib_fprintf(ib_stderr, "%s\n", s);
+	fprintf(stderr, "%s\n", s);
 
 #if !(defined WIN_NT)
 	/* The  strerror()  function  returns  the appropriate description string,
 	   or an unknown error message if the error code is unknown. */
-	ib_fprintf(ib_stderr, "--%s\n", strerror(errno));
+	fprintf(stderr, "--%s\n", strerror(errno));
 #endif
 
 	if (!LOCK_bugcheck++) {

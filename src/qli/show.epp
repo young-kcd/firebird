@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -182,7 +182,7 @@ void SHOW_stuff( qli_syntax* node)
 					if (QLI_abort)
 						return;
 				}
-				ib_printf("\n");
+				printf("\n");
 			}
 			if (QLI_variables)
 				show_vars();
@@ -208,7 +208,7 @@ void SHOW_stuff( qli_syntax* node)
 					show_fields(relation, NULL);
 				}
 			}
-			ib_printf("\n");
+			printf("\n");
 			break;
 
 		case show_relations:
@@ -529,7 +529,7 @@ static void display_blob(
 				buffer[length] = 0;
 		}
 		if (buffer[0])
-			ib_printf("%s%s\n", prefix, buffer);
+			printf("%s%s\n", prefix, buffer);
 	}
 
 	isc_close_blob(status_vector, &blob);
@@ -591,11 +591,11 @@ static void display_procedure( DBB database, const UCHAR* name, FRBRD *blob)
 
 	TEXT buffer[256];
 	while (PRO_get_line(blob, buffer, sizeof(buffer))) {
-		ib_printf("    %s", buffer);
+		printf("    %s", buffer);
 	}
 
 	PRO_close(database, blob);
-	ib_printf("\n");
+	printf("\n");
 }
 
 
@@ -975,7 +975,7 @@ static int show_field_detail(
 		}
 
 		if (count++)
-			ib_printf("\n");
+			printf("\n");
 
 		fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
 		fb_utils::fb_exact_name(F.RDB$FIELD_NAME);
@@ -1003,14 +1003,14 @@ static int show_field_detail(
 					   &F.RDB$DESCRIPTION, false);
 		ERRQ_msg_put(267, NULL, NULL, NULL, NULL, NULL);
 		// Msg267 Datatype information:
-		ib_printf("\t");
+		printf("\t");
 
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
 					  F.RDB$FIELD_SUB_TYPE, F.RDB$SEGMENT_LENGTH, dimensions);
 		if (dimensions && !idx_node)
 			array_dimensions(database, F.RDB$FIELD_NAME);
-		ib_printf("\n");
+		printf("\n");
 		show_blr(database, 341, &F.RDB$COMPUTED_SOURCE, 341,
 				 &F.RDB$COMPUTED_BLR);
 		show_blr(database, 342, &F.RDB$VALIDATION_SOURCE, 342,
@@ -1107,15 +1107,15 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 
 		symbol = field->fld_name;
 		USHORT l = symbol->sym_length;
-		ib_printf("        %s", symbol->sym_string);
+		printf("        %s", symbol->sym_string);
 
 		if (symbol = field->fld_query_name) {
 			l += symbol->sym_length + 3;
-			ib_printf(" (%s)", symbol->sym_string);
+			printf(" (%s)", symbol->sym_string);
 		}
 
 		for (l = max_name + 12 - l; l; --l)
-			ib_putchar(' ');
+			putchar(' ');
 		show_datatype(database, field->fld_dtype,
 					  (field->fld_dtype == dtype_varying) ?
 					  	field->fld_length - 2 : field->fld_length,
@@ -1127,7 +1127,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 		if (field->fld_flags & FLD_computed)
 			ERRQ_msg_put(119, NULL, NULL, NULL, NULL, NULL);	// Msg119 (computed expression) 
 		else
-			ib_printf("\n");
+			printf("\n");
 	}
 }
 
@@ -1281,7 +1281,7 @@ static int show_filters_detail( DBB database)
 	END_FOR;
 
 	if (buffer[0])
-		ib_printf("%s\n", buffer);
+		printf("%s\n", buffer);
 
 	return count;
 }
@@ -1479,7 +1479,7 @@ static int show_func_detail( DBB database, TEXT* func_name)
 			show_datatype(database, MET_get_datatype(FA.RDB$FIELD_TYPE),
 						  FA.RDB$FIELD_LENGTH, FA.RDB$FIELD_SCALE,
 						  FA.RDB$FIELD_SUB_TYPE, 0, array);
-			ib_printf("\n");
+			printf("\n");
 		END_FOR;
 
 		show_text_blob(database, "\t", 421, &F.RDB$DESCRIPTION, 0, NULL, false);
@@ -1549,7 +1549,7 @@ static int show_funcs_detail( DBB database)
 	END_FOR;
 
 	if (buffer[0])
-		ib_printf("%s\n", buffer);
+		printf("%s\n", buffer);
 
 	return count;
 }
@@ -1589,7 +1589,7 @@ static int show_insecure_fields(
 		if (relation_name && (strcmp(RFR.RDB$RELATION_NAME, relation_name)))
 			continue;
 		if (count++)
-			ib_printf("\n");
+			printf("\n");
 		fb_utils::fb_exact_name(RFR.RDB$FIELD_NAME);
 		fb_utils::fb_exact_name(F.RDB$FIELD_NAME);
 
@@ -1615,12 +1615,12 @@ static int show_insecure_fields(
 		show_text_blob(database, "\t", 339, &RFR.RDB$DESCRIPTION, 339,
 					   &F.RDB$DESCRIPTION, false);
 		ERRQ_msg_partial(340, NULL, NULL, NULL, NULL, NULL);	// Msg340 Datatype information:
-		ib_printf("\t");
+		printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
 					  F.RDB$FIELD_SUB_TYPE, F.RDB$SEGMENT_LENGTH,
 					  MET_dimensions(database, F.RDB$FIELD_NAME));
-		ib_printf("\n");
+		printf("\n");
 		show_blr(database, 341, &F.RDB$COMPUTED_SOURCE, 341,
 				 &F.RDB$COMPUTED_BLR);
 		show_blr(database, 342, &F.RDB$VALIDATION_SOURCE, 342,
@@ -1734,7 +1734,7 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 		F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = field_name
 
 		if (count++)
-			ib_printf("\n");
+			printf("\n");
 		fb_utils::fb_exact_name(F.RDB$FIELD_NAME);
 
 		ERRQ_msg_put(276, F.RDB$FIELD_NAME, database->dbb_symbol->sym_string,
@@ -1742,12 +1742,12 @@ static int show_gbl_field_detail( DBB database, const TEXT * field_name)
 
 		show_text_blob(database, "\t", 277, &F.RDB$DESCRIPTION, 0, NULL, false);
 		ERRQ_msg_put(278, NULL, NULL, NULL, NULL, NULL);	// Msg278 Datatype information:
-		ib_printf("\t");
+		printf("\t");
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
 					  F.RDB$FIELD_SUB_TYPE, F.RDB$SEGMENT_LENGTH,
 					  MET_dimensions(database, F.RDB$FIELD_NAME));
-		ib_printf("\n");
+		printf("\n");
 		show_blr(database, 279, &F.RDB$COMPUTED_SOURCE, 341,
 				 &F.RDB$COMPUTED_BLR);
 		show_blr(database, 280, &F.RDB$VALIDATION_SOURCE, 342,
@@ -1834,13 +1834,13 @@ static int show_gbl_fields_detail( DBB database)
 		}
 		if (!F.RDB$COMPUTED_BLR.NULL)
 			continue;
-		ib_printf("    %s", F.RDB$FIELD_NAME);
+		printf("    %s", F.RDB$FIELD_NAME);
 		show_datatype(database, MET_get_datatype(F.RDB$FIELD_TYPE),
 					  F.RDB$FIELD_LENGTH, F.RDB$FIELD_SCALE,
 					  F.RDB$FIELD_SUB_TYPE, F.RDB$SEGMENT_LENGTH,
 					  MET_dimensions(database, F.RDB$FIELD_NAME));
 		show_text_blob(database, "\t", 262, &F.RDB$DESCRIPTION, 0, NULL, false);
-		ib_printf("\n");
+		printf("\n");
 	END_FOR;
 
 	return count;
@@ -1896,7 +1896,7 @@ static int show_indices_detail( qli_rel* relation)
 					SORTED BY Y.RDB$FIELD_POSITION
 
 				fb_utils::fb_exact_name(Y.RDB$FIELD_NAME);
-				ib_printf("            %s\n", Y.RDB$FIELD_NAME);
+				printf("            %s\n", Y.RDB$FIELD_NAME);
 			END_FOR;
 
 #ifdef PC_ENGINE
@@ -1928,7 +1928,7 @@ static int show_indices_detail( qli_rel* relation)
 					Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
 					SORTED BY Y.RDB$FIELD_POSITION
 				fb_utils::fb_exact_name(Y.RDB$FIELD_NAME);
-				ib_printf("            %s\n", Y.RDB$FIELD_NAME);
+				printf("            %s\n", Y.RDB$FIELD_NAME);
 			END_FOR;
 		END_FOR;
 	}
@@ -1957,7 +1957,7 @@ static void show_matching(void)
 		strncpy(buffer, (char*) QLI_matching_language->con_data,
 				QLI_matching_language->con_desc.dsc_length);
 		buffer[QLI_matching_language->con_desc.dsc_length] = 0;
-		ib_printf("\n\t%s\n", buffer);
+		printf("\n\t%s\n", buffer);
 	}
 }
 
@@ -1979,7 +1979,7 @@ static void show_names( const TEXT* name, USHORT width, TEXT* buffer)
 	SSHORT len = sizeof(padded_name) - 1;
 	const SSHORT l1 = s - buffer;
 	if ((s != buffer) && ((l1 + len + 4) > width)) {
-		ib_printf("%s\n", buffer);
+		printf("%s\n", buffer);
 		buffer[0] = 0;
 		s = buffer;
 	}
@@ -2069,7 +2069,7 @@ static void show_procs( DBB database)
 		show_names(X.QLI$PROCEDURE_NAME, width, buffer);
 	END_FOR;
 	if (buffer[0])
-		ib_printf("%s\n", buffer);
+		printf("%s\n", buffer);
 }
 
 
@@ -2089,7 +2089,7 @@ static void show_rel( qli_rel* relation)
 	if (QLI_abort)
 		return;
 
-	ib_printf("    %s\n", relation->rel_symbol->sym_string);
+	printf("    %s\n", relation->rel_symbol->sym_string);
 }
 
 
@@ -2146,7 +2146,7 @@ static void show_rel_detail( qli_rel* relation)
 						// Msg380 Trigger defined for this relation
 						msg = 0;
 					}
-					ib_printf("\t");
+					printf("\t");
 					show_trigger_status(X.RDB$TRIGGER_NAME,
 										X.RDB$TRIGGER_TYPE,
 										X.RDB$TRIGGER_INACTIVE,
@@ -2186,8 +2186,8 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
 					show_names(relation->rel_symbol->sym_string, width, buffer);
 			}
 			if (buffer[0])
-				ib_printf("%s\n", buffer);
-			ib_printf("\n");
+				printf("%s\n", buffer);
+			printf("\n");
 			break;
 		}
 	case show_system_relations:
@@ -2201,8 +2201,8 @@ static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
 					show_names(relation->rel_symbol->sym_string, width, buffer);
 			}
 			if (buffer[0])
-				ib_printf("%s\n", buffer);
-			ib_printf("\n");
+				printf("%s\n", buffer);
+			printf("\n");
 		}
 	}
 }
@@ -2229,7 +2229,7 @@ static USHORT show_security_class_detail( DBB database, const TEXT * name)
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur_class])
 		S IN RDB$SECURITY_CLASSES WITH S.RDB$SECURITY_CLASS = name
 		if (fb_utils::fb_exact_name(S.RDB$SECURITY_CLASS)[0]) {
-			ib_printf("\t%s:\n", S.RDB$SECURITY_CLASS);
+			printf("\t%s:\n", S.RDB$SECURITY_CLASS);
 			display_acl(database, &S.RDB$ACL);
 		}
 		count++;
@@ -2265,7 +2265,7 @@ static USHORT show_security_classes_detail( DBB database)
 		}
 
 		if (fb_utils::fb_exact_name(S.RDB$SECURITY_CLASS)[0]) {
-			ib_printf("\t%s:\n", S.RDB$SECURITY_CLASS);
+			printf("\t%s:\n", S.RDB$SECURITY_CLASS);
 			display_acl(database, &S.RDB$ACL);
 		}
 		count++;
@@ -2527,7 +2527,7 @@ static void show_trigger_messages( DBB database, const TEXT* name)
 	END_FOR;
 
 	if (!first)
-		ib_printf("\n");
+		printf("\n");
 }
 
 
@@ -2705,14 +2705,14 @@ static void show_var( const nam* var_name)
 
 	ERRQ_msg_put(471, variable->fld_name->sym_string, NULL, NULL, NULL, NULL);	// Msg471 Variable %s
 	ERRQ_msg_put(475, NULL, NULL, NULL, NULL, NULL);
-	ib_printf("\t");
+	printf("\t");
 	show_datatype(NULL, variable->fld_dtype,
 				  (variable->fld_dtype == dtype_varying) ?
 				  	variable->fld_length - 2 : variable->fld_length,
 				  variable->fld_scale,
 				  variable->fld_sub_type, variable->fld_segment_length,
 				  (variable->fld_flags & FLD_array) ? 1 : 0);
-	ib_printf("\n");
+	printf("\n");
 	if (variable->fld_query_name) {
 		ERRQ_msg_put(472, variable->fld_query_name->sym_string, NULL, NULL,
 					 NULL, NULL);
@@ -2826,7 +2826,7 @@ static int show_views_detail( DBB database)
 			V IN RDB$VIEW_RELATIONS
 				WITH V.RDB$VIEW_NAME = X.RDB$RELATION_NAME
 				SORTED BY V.RDB$RELATION_NAME
-			ib_printf("	%s\n", V.RDB$RELATION_NAME);
+			printf("	%s\n", V.RDB$RELATION_NAME);
 		END_FOR;
 
 	END_FOR;
@@ -2865,7 +2865,7 @@ static void view_info(
 		fb_utils::fb_exact_name(RFR.RDB$RELATION_NAME);
 
 		// create some space according to how many levels deep we are;
-		// this is to avoid using %*s in the ib_printf, which doesn't work for OS/2
+		// this is to avoid using %*s in the printf, which doesn't work for OS/2
 		TEXT* p = spaces;
 		for (const TEXT* const end = spaces + MIN((level + 2) * 4, static_cast<int>(sizeof(spaces) - 1));
 			p < end;)

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.25 2004-04-26 07:54:17 brodsom Exp $
+ * $Id: isql.h,v 1.26 2004-04-28 22:13:46 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -166,7 +166,7 @@ const int HLP_SETWIDTH				= 58;		// \tSET WIDTH <column name> [<width>] --sets/u
 const int HLP_SETPLAN				= 59;		// Toggle display of query access plan 
 const int HLP_SETTIME				= 60;		// Toggle display of timestamp with DATE values 
 const int HLP_EDIT2					= 61;		// edits current command buffer\n 
-const int HLP_OUTPUT2				= 62;		// \tWithout file name, returns output to ib_stdout\n 
+const int HLP_OUTPUT2				= 62;		// \tWithout file name, returns output to stdout\n 
 const int HLP_SETNAMES				= 63;		// Set current character set 
 const int HLP_OBJTYPE2				= 64;		// More objects 
 const int HLP_SETBLOB2				= 65;		// \t SET BLOB turns off blob display\n 
@@ -237,7 +237,7 @@ const int HLP_SETPLANONLY			= 108;		// Toggle display of query plan without exec
 EXTERN isc_tr_handle M__trans;
 EXTERN isc_tr_handle D__trans;
 EXTERN isc_stmt_handle global_Stmt;
-EXTERN IB_FILE *Ofp, *Out, *Ifp, *Errfp;
+EXTERN FILE *Ofp, *Out, *Ifp, *Errfp;
 EXTERN SCHAR global_Term[MAXTERM_LENGTH];
 EXTERN SCHAR global_Db_name[128];
 EXTERN SCHAR global_Target_db[128];
@@ -291,9 +291,9 @@ const int BLOB			= 261;
 
 
 #ifndef	STDERROUT
-#define	STDERROUT(st,l)	{ ib_fprintf (Errfp, "%s", st);\
-			  if (l) ib_fprintf (Errfp, "\n");\
-			  ib_fflush (Errfp); }
+#define	STDERROUT(st,l)	{ fprintf (Errfp, "%s", st);\
+			  if (l) fprintf (Errfp, "\n");\
+			  fflush (Errfp); }
 #endif
 
 #ifndef ISQL_ALLOC

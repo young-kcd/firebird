@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd_time.h"
 #include "../qli/dtr.h"
@@ -605,7 +605,7 @@ void FMT_put(const TEXT* line, qli_prt* print)
 			for (p = buffer; p < end && *q;)
 				*p++ = *q++;
 			*p = 0;
-			ib_fprintf((IB_FILE *) print->prt_file, "%s", buffer);
+			fprintf((FILE *) print->prt_file, "%s", buffer);
 		}
 	else {
 		while (*q) {
@@ -618,13 +618,13 @@ void FMT_put(const TEXT* line, qli_prt* print)
 
 				for (p = buffer; p < end && *p; p++)
 					if (is_printable(*p))
-						ib_fprintf(ib_stdout, "%c", *p);
+						fprintf(stdout, "%c", *p);
 					else
-						ib_fprintf(ib_stdout, "[%2.2X]", *(UCHAR *) p);
+						fprintf(stdout, "[%2.2X]", *(UCHAR *) p);
 			}
 			else
 #endif
-				ib_fprintf(ib_stdout, "%s", buffer);
+				fprintf(stdout, "%s", buffer);
 		}
 		QLI_skip_line = true;
 	}

@@ -310,17 +310,17 @@ int yyparse()
 		if (yydebug) {
 			int yy_i;
 
-			ib_printf("State %d, token ", yy_state);
+			printf("State %d, token ", yy_state);
 			if (yychar == 0)
-				ib_printf("end-of-file\n");
+				printf("end-of-file\n");
 			else if (yychar < 0)
-				ib_printf("-none-\n");
+				printf("-none-\n");
 			else {
 				for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 					if (yytoks[yy_i].t_val == yychar)
 						break;
 				}
-				ib_printf("%s\n", yytoks[yy_i].t_name);
+				printf("%s\n", yytoks[yy_i].t_name);
 			}
 		}
 #endif /* YYDEBUG */
@@ -365,17 +365,17 @@ int yyparse()
 		if (yydebug && yytmp) {
 			int yy_i;
 
-			ib_printf("Received token ");
+			printf("Received token ");
 			if (yychar == 0)
-				ib_printf("end-of-file\n");
+				printf("end-of-file\n");
 			else if (yychar < 0)
-				ib_printf("-none-\n");
+				printf("-none-\n");
 			else {
 				for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 					if (yytoks[yy_i].t_val == yychar)
 						break;
 				}
-				ib_printf("%s\n", yytoks[yy_i].t_name);
+				printf("%s\n", yytoks[yy_i].t_name);
 			}
 		}
 #endif /* YYDEBUG */
@@ -401,18 +401,18 @@ int yyparse()
 			if (yydebug && yytmp) {
 				int yy_i;
 
-				ib_printf("Received token ");
+				printf("Received token ");
 				if (yychar == 0)
-					ib_printf("end-of-file\n");
+					printf("end-of-file\n");
 				else if (yychar < 0)
-					ib_printf("-none-\n");
+					printf("-none-\n");
 				else {
 					for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 						if (yytoks[yy_i].t_val == yychar) {
 							break;
 						}
 					}
-					ib_printf("%s\n", yytoks[yy_i].t_name);
+					printf("%s\n", yytoks[yy_i].t_name);
 				}
 			}
 #endif /* YYDEBUG */
@@ -475,7 +475,7 @@ int yyparse()
 #if YYDEBUG
 #	define _POP_ "Error recovery pops state %d, uncovers state %d\n"
 					if (yydebug)
-						ib_printf(_POP_, *yy_ps, yy_ps[-1]);
+						printf(_POP_, *yy_ps, yy_ps[-1]);
 #	undef _POP_
 #endif
 					yy_ps--;
@@ -498,18 +498,18 @@ int yyparse()
 				if (yydebug) {
 					int yy_i;
 
-					ib_printf("Error recovery discards ");
+					printf("Error recovery discards ");
 					if (yychar == 0)
-						ib_printf("token end-of-file\n");
+						printf("token end-of-file\n");
 					else if (yychar < 0)
-						ib_printf("token -none-\n");
+						printf("token -none-\n");
 					else {
 						for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 							if (yytoks[yy_i].t_val == yychar) {
 								break;
 							}
 						}
-						ib_printf("token %s\n", yytoks[yy_i].t_name);
+						printf("token %s\n", yytoks[yy_i].t_name);
 					}
 				}
 #endif /* YYDEBUG */
@@ -530,7 +530,7 @@ int yyparse()
 		   ** to be done.
 		 */
 		if (yydebug)
-			ib_printf("Reduce by (%d) \"%s\"\n", yy_n, yyreds[yy_n]);
+			printf("Reduce by (%d) \"%s\"\n", yy_n, yyreds[yy_n]);
 #endif
 		yytmp = yy_n;			/* value to switch over */
 		yypvt = yy_pv;			/* $vars top of value stack */
@@ -629,7 +629,7 @@ int yyparse()
 # line 102 "grammar.y"
 		{
 			system("csh");
-			ib_printf("\n");
+			printf("\n");
 		}
 		break;
 	case 11:

@@ -36,10 +36,10 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.10 2004-04-20 05:57:31 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.11 2004-04-28 22:35:33 brodsom Exp $ */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
@@ -483,7 +483,7 @@ static SLONG overflow_handler(void* arg)
  **************************************/
 
 #ifdef DEBUG_FPE_HANDLING
-	ib_fprintf(ib_stderr, "overflow_handler (%x)\n", arg);
+	fprintf(stderr, "overflow_handler (%x)\n", arg);
 #endif
 
 /* If we're within ISC world (inside why-value) when the FPE occurs
@@ -494,7 +494,7 @@ static SLONG overflow_handler(void* arg)
 	if (isc_enter_count) {
 		++overflow_count;
 #ifdef DEBUG_FPE_HANDLING
-		ib_fprintf(ib_stderr, "SIGFPE in isc code ignored %d\n",
+		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
 				   overflow_count);
 #endif
 		/* We've "handled" the FPE - let signal_handler know not to chain

@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -95,22 +95,22 @@ int main( int argc, char **argv)
 	memset(pub, 0, sizeof(pub));
 	memset(nstring, 0, sizeof(nstring));
 
-	ib_printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
-	ib_printf
+	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
+	printf
 		("You will be prompted for facility, module, routine and message text\n");
-	ib_printf
+	printf
 		("You *must* enter module and routine names for each message; be prepared\n");
-	ib_printf("You will be returned a message number for the message\n");
-	ib_printf("You may assign an optional symbol for the message\n");
-	ib_printf
+	printf("You will be returned a message number for the message\n");
+	printf("You may assign an optional symbol for the message\n");
+	printf
 		("Escape sequences may be entered and will be translated to single bytes\n");
 
 	READY;
 	START_TRANSACTION;
 
 	for (;;) {
-		ib_printf("Facility: ");
-		if (ib_gets((char*) facility)==NULL)
+		printf("Facility: ");
+		if (gets((char*) facility)==NULL)
 			break;
 		ascii_str_upper(facility);
 		count = 0;
@@ -124,22 +124,22 @@ int main( int argc, char **argv)
 			else {
 				MODIFY X USING
 					for (;;) {
-						ib_printf(" Module: ");
-						if (!ib_gets((char*) module))
+						printf(" Module: ");
+						if (!gets((char*) module))
 							break;
-						ib_printf(" Routine: ");
-						if (!ib_gets((char*) routine))
+						printf(" Routine: ");
+						if (!gets((char*) routine))
 							break;
-						ib_printf(" Text: ");
-						if (!ib_gets((char*) text))
+						printf(" Text: ");
+						if (!gets((char*) text))
 							break;
 						symbol[0] = 0;
 
 						/* All JRD messages are public.  Only ask if entering messages
 						 * in a component other than JRD */
 						if (X.FAC_CODE != 0) {
-							ib_printf("Public [y/n]: ");
-							ib_gets((char*) pub);
+							printf("Public [y/n]: ");
+							gets((char*) pub);
 							if (*pub == 'Y' || *pub == 'y')
 								public_msg = true;
 							else
@@ -148,8 +148,8 @@ int main( int argc, char **argv)
 						else
 							public_msg = true;
 
-						ib_printf(" Symbol: ");
-						if (!ib_gets((char*) symbol))
+						printf(" Symbol: ");
+						if (!gets((char*) symbol))
 							break;
 
 						if (public_msg) {
@@ -196,12 +196,12 @@ int main( int argc, char **argv)
 							strcpy(Y.ROUTINE, (char*) routine);
 							strcpy(Y.SYMBOL, (char*) symbol);
 							if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT))) {
-								ib_printf
+								printf
 									("Message too long: max length: %d\n",
 									 sizeof(Y.TEXT));
 								break;
 							}
-							ib_printf("Message number: %d\n", X.MAX_NUMBER);
+							printf("Message number: %d\n", X.MAX_NUMBER);
 							X.MAX_NUMBER = X.MAX_NUMBER + 1;
 						END_STORE;
 					}
@@ -209,10 +209,10 @@ int main( int argc, char **argv)
 			}
 		END_FOR;
 		if (!count) {
-			ib_printf("Facilty %s not found\n  Known facilities are:\n",
+			printf("Facilty %s not found\n  Known facilities are:\n",
 					  facility);
 			FOR F IN FACILITIES SORTED BY F.FACILITY
-				ib_printf("    %s\n", F.FACILITY);
+				printf("    %s\n", F.FACILITY);
 			END_FOR;
 		}
 	}
@@ -262,8 +262,8 @@ static bool get_sql_class( UCHAR * sql_class)
 	SSHORT length;
 
 	while (1) {
-		ib_printf(" SQLCLASS: ");
-		ib_gets((char*) sql_class);
+		printf(" SQLCLASS: ");
+		gets((char*) sql_class);
 		length = strlen((char*) sql_class);
 		if (length == 0 || !isalnum(sql_class[0]))
 			break;
@@ -271,7 +271,7 @@ static bool get_sql_class( UCHAR * sql_class)
 		if (length == 2)
 			return true;
 		else
-			ib_fprintf(ib_stderr, "Sqlclass is two characters!\n");
+			fprintf(stderr, "Sqlclass is two characters!\n");
 	}
 
 	return false;
@@ -300,8 +300,8 @@ static bool get_sql_code( SSHORT * sql_code)
 	bool ret = false;
 
 	while (1) {
-		ib_printf(" SQLCODE: ");
-		if (!ib_gets((char*) nstring))
+		printf(" SQLCODE: ");
+		if (!gets((char*) nstring))
 			break;
 		p = nstring;
 		sign = 1;
@@ -331,7 +331,7 @@ static bool get_sql_code( SSHORT * sql_code)
 			break;
 		}
 		else {
-			ib_fprintf(ib_stderr, "SQLCode is now required!\n");
+			fprintf(stderr, "SQLCode is now required!\n");
 		}
 	}
 
@@ -355,9 +355,9 @@ static bool get_sql_code( SSHORT * sql_code)
 			END_FOR;
 		}
 		if (!got_it) {
-			ib_printf("Warning: SQL code %d is not in the SQLERR facility.\n",
+			printf("Warning: SQL code %d is not in the SQLERR facility.\n",
 					  sql_num);
-			ib_printf("You will need to add it there too.\n");
+			printf("You will need to add it there too.\n");
 		}
 	}
 	return ret;
@@ -380,8 +380,8 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
 	SSHORT length;
 
 	while (1) {
-		ib_printf(" SQLSUBCLASS: ");
-		ib_gets((char*) sql_sub_class);
+		printf(" SQLSUBCLASS: ");
+		gets((char*) sql_sub_class);
 		length = strlen((char*) sql_sub_class);
 		if (length == 0 || !isalnum(sql_sub_class[0]))
 			break;
@@ -389,7 +389,7 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
 		if (length == 3)
 			return true;
 		else {
-			ib_fprintf(ib_stderr, "Sqlsubclass is three characters!\n");
+			fprintf(stderr, "Sqlsubclass is three characters!\n");
 			continue;
 		}
 	}
@@ -413,9 +413,9 @@ static bool get_symbol( UCHAR * symbol)
  *
  **************************************/
 	while (true) {
-		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
-		ib_printf(" Symbol: ");
-		ib_gets((char*) symbol);
+		fprintf(stderr, "Symbols are required for system errors!\n");
+		printf(" Symbol: ");
+		gets((char*) symbol);
 		if (!strlen((char*) symbol) || !isalnum(symbol[0]))
 			return false;
 		else
@@ -442,13 +442,13 @@ static int store_sql_msg(void)
 	SSHORT sql_num;
 
 	for (;;) {
-		ib_printf("Enter the sqlcode: ");
-		if (!ib_gets((char*) nstring))
+		printf("Enter the sqlcode: ");
+		if (!gets((char*) nstring))
 			break;;
 
 		sql_num = atoi((char*) nstring);
-		ib_printf(" Text: ");
-		if (!ib_gets((char*) text))
+		printf(" Text: ");
+		if (!gets((char*) text))
 			break;
 
 		STORE Y IN MESSAGES USING
@@ -464,7 +464,7 @@ static int store_sql_msg(void)
 			/* translate escape sequences to single bytes */
 
 			if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT))) {
-				ib_printf("Message too long: max length: %d\n",
+				printf("Message too long: max length: %d\n",
 						  sizeof(Y.TEXT));
 				return 0;
 			}
@@ -529,7 +529,7 @@ static int translate( UCHAR * source, UCHAR * target, SSHORT length)
 				*p++ = '\'';
 				break;
 			default:
-				ib_printf
+				printf
 					("\n\n*** Escape sequence not understood; being copied unchanged ***\n\n");
 				*p++ = '\\';
 				*p++ = *q;

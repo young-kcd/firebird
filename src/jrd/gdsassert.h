@@ -24,7 +24,7 @@
 
 #include <stdlib.h>		// abort()
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/gds_proto.h"
 
 
@@ -43,8 +43,8 @@
 
 #else	// !SUPERSERVER
 
-#define fb_assert(ex)	{if (!(ex)) {ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
 
 #endif	// SUPERSERVER
 

@@ -51,7 +51,7 @@
 #endif
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../dsql/keywords.h"
 #include "../jrd/gds_proto.h"
 #include <iostream>
@@ -149,7 +149,7 @@ static inline void commit_trans(isc_tr_handle* x){
 
 typedef struct indev {
 	indev* indev_next;
-	IB_FILE* indev_fpointer;
+	FILE* indev_fpointer;
 } *INDEV;
 
 struct collist {
@@ -190,9 +190,9 @@ static processing_state newdb(TEXT*, const TEXT*, const TEXT*, const TEXT*, cons
 static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
 static processing_state newtrans(const TEXT*);
-static processing_state parse_arg(int, SCHAR**, SCHAR*, IB_FILE**);
+static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
 static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
-static processing_state print_item_blob(IB_FILE*, const XSQLVAR*, FRBRD*);
+static processing_state print_item_blob(FILE*, const XSQLVAR*, FRBRD*);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
 static processing_state print_line(XSQLDA*, const SLONG*, TEXT*);
 static int process_statement(const TEXT*, XSQLDA**);
@@ -248,8 +248,8 @@ static bool Heading = true;
 static int Termlen = 0;
 static SCHAR ISQL_charset[MAXCHARSET_LENGTH] = { 0 };
 static bool Merge_diagnostic = false;
-static IB_FILE* Diag;
-static IB_FILE* Help;
+static FILE* Diag;
+static FILE* Help;
 static const TEXT* const sql_prompt = "SQL> ";
 #ifdef SCROLLABLE_CURSORS
 static const TEXT* const fetch_prompt = "FETCH> ";
@@ -353,13 +353,13 @@ static const ri_actions ri_actions_all[] =
 // hence we've got problems sharing file handles with FBCLIENT.
 // Since temp files are deleted by ISQL, let's create them here as well.
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
-static IB_FILE* create_temp_file(const TEXT* string, TEXT* expanded_string)
+static FILE* create_temp_file(const TEXT* string, TEXT* expanded_string)
 {
 	gds__temp_dir(expanded_string);
 	strcat(expanded_string, string);
 	strcat(expanded_string, TEMP_PATTERN);
 	mktemp(expanded_string);
-	return ib_fopen(expanded_string, "w+b");
+	return fopen(expanded_string, "w+b");
 }
 #define gds__temp_file(flag, string, expanded_string) create_temp_file(string, expanded_string)
 #endif
@@ -452,9 +452,9 @@ int ISQL_main(int argc,
 	tabname[0] = '\0';
 	db_SQL_dialect = 0;
 
-// Output goes to ib_stdout by default
-	Out = ib_stdout;
-	Errfp = ib_stderr;
+// Output goes to stdout by default
+	Out = stdout;
+	Errfp = stderr;
 
 	processing_state ret = parse_arg(argc, argv, tabname, NULL);
 
@@ -472,9 +472,9 @@ int ISQL_main(int argc,
 	if (Merge_diagnostic)
 	    Diag = Out;
 	else
-		Diag = ib_stdout;
+		Diag = stdout;
 		
-	Help = ib_stdout;
+	Help = stdout;
 
 	if (Merge_stderr)
 		Errfp = Out;
@@ -662,8 +662,8 @@ void ISQL_prompt(const TEXT* string)
 	userPrompt = (const char*) string;
 
 	//#ifndef HAVE_READLINE_READLINE_H
-	//	ib_fprintf(ib_stdout, userPrompt.c_str());
-	//	ib_fflush(ib_stdout);
+	//	fprintf(stdout, userPrompt.c_str());
+	//	fflush(stdout);
 	//#endif
 
 }
@@ -689,7 +689,7 @@ static void readNextInputLine(const char* prompt)
 			lastInputLine = NULL;
 		}
 
-		if (Ifp == ib_stdin) {
+		if (Ifp == stdin) {
 	#ifdef HAVE_EDITLINE_H
 			lastInputLine = readline((char*) prompt);
 
@@ -699,8 +699,8 @@ static void readNextInputLine(const char* prompt)
 
 	#else
 			// Write the prompt out.
-			ib_fprintf(ib_stdout, prompt);
-			ib_fflush(ib_stdout);
+			fprintf(stdout, prompt);
+			fflush(stdout);
 
 			std::string inputLine;
 
@@ -717,17 +717,17 @@ static void readNextInputLine(const char* prompt)
 		else {
 			// Write the prompt out, only if !Interactive && Echo
 			if (!Interactive && Echo) {
-				ib_fprintf(ib_stdout, prompt);
-				ib_fflush(ib_stdout);
+				fprintf(stdout, prompt);
+				fflush(stdout);
 			}
 
 			const int growStep = 128;
 			int size = 0;
 			int pos = 0;
 			while (true) {
-				int c = ib_getc(Ifp);
+				int c = getc(Ifp);
 				if (c == 0x0D)
-					c = ib_getc(Ifp);
+					c = getc(Ifp);
 				if (c == EOF)
 					break;
 				if (pos >= size - 2) {
@@ -751,8 +751,8 @@ static void readNextInputLine(const char* prompt)
 			&& lastInputLine[0] == '-' && lastInputLine[1] == '-')
 		{
 			if (Interactive || Echo) {
-				ib_fprintf(ib_stdout, "%s\n", lastInputLine);
-				ib_fflush(ib_stdout);
+				fprintf(stdout, "%s\n", lastInputLine);
+				fflush(stdout);
 			}
 		}
 		else
@@ -880,7 +880,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
  *
  * Functional description
  *	Report error conditions
- *	Simulate isc_print_status exactly, to control ib_stderr
+ *	Simulate isc_print_status exactly, to control stderr
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 #if defined (WIN95)
@@ -928,7 +928,7 @@ void ISQL_warning(ISC_STATUS* status)
  *
  * Functional desription
  *	Report warning
- *	Simulate isc_print_status exactly, to control ib_stderr
+ *	Simulate isc_print_status exactly, to control stderr
  **************************************/
 #if defined (WIN95)
 #define TRANSLATE_CP if (!fAnsiCP) AnsiToOem(buf, buf)
@@ -1556,7 +1556,7 @@ void ISQL_msg_get(USHORT number,
 }
 
 
-void ISQL_print_validation(IB_FILE* fp,
+void ISQL_print_validation(FILE* fp,
 						   ISC_QUAD* blobid,
 						   bool isComputedField,
 						   FRBRD* trans)
@@ -1641,7 +1641,7 @@ void ISQL_print_validation(IB_FILE* fp,
 }
 
 
-void ISQL_printf(IB_FILE* fp,
+void ISQL_printf(FILE* fp,
 				 const char* buffer)
 {
 /**************************************
@@ -1653,8 +1653,8 @@ void ISQL_printf(IB_FILE* fp,
  *	Centralized printing facility
  *
  **************************************/
-	ib_fprintf(fp, "%s", buffer);
-	ib_fflush(fp); // John's fix.
+	fprintf(fp, "%s", buffer);
+	fflush(fp); // John's fix.
 }
 
 static processing_state add_row(const TEXT* tabname)
@@ -1799,7 +1799,7 @@ static processing_state add_row(const TEXT* tabname)
 
 /*
 **  For each column, get the type, and length then prompt for a value
-**  and ib_scanf the resulting string into a buffer of the right type.
+**  and scanf the resulting string into a buffer of the right type.
 */
 
 	SCHAR infobuf[BUFFER_LENGTH180];
@@ -1850,7 +1850,7 @@ static processing_state add_row(const TEXT* tabname)
 
 			readNextInputLine(msg);
 			//			ISQL_prompt(msg);
-			//			if (!ib_fgets(buffer, BUFFER_LENGTH512, ib_stdin)
+			//			if (!fgets(buffer, BUFFER_LENGTH512, stdin)
 			//				|| !strlen(buffer)) {
 			if (lastInputLine == NULL || strlen(lastInputLine) == 0) {
 				done = true;
@@ -2308,7 +2308,7 @@ static processing_state copy_table(const TEXT* source_tbl,
 /* Call list_table with a temporary file, then hand that file to a
    new version of isql */
 
-	IB_FILE* const holdout = Out;
+	FILE* const holdout = Out;
 
 // If there is an alternate database, extract the domains 
 	bool domain_flag = false;
@@ -2316,8 +2316,8 @@ static processing_state copy_table(const TEXT* source_tbl,
 		domain_flag = true;
 
 	TEXT ftmp[128];
-	Out = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, ftmp);
-	if (Out == (IB_FILE*) - 1) {
+	Out = (FILE*) gds__temp_file(TRUE, SCRATCH, ftmp);
+	if (Out == (FILE*) - 1) {
 		// If we can't open a temp file then bail 
 
 		gds__msg_format(NULL, ISQL_MSG_FAC, FILE_OPEN_ERR, sizeof(errbuf),
@@ -2341,10 +2341,10 @@ static processing_state copy_table(const TEXT* source_tbl,
 		gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 						errbuf, source, NULL, NULL, NULL, NULL);
 		STDERROUT(errbuf, 1);
-		ib_fclose(Out);
+		fclose(Out);
 	}
 	else {
-		ib_fclose(Out);
+		fclose(Out);
 
 		// easy to make a copy in another database 
 		const TEXT* altdb = global_Db_name;
@@ -2646,8 +2646,8 @@ static void do_isql()
 
 // File used to edit sessions 
 
-	Ofp = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, Tmpfile);
-	if (Ofp == (IB_FILE*) - 1)
+	Ofp = (FILE*) gds__temp_file(TRUE, SCRATCH, Tmpfile);
+	if (Ofp == (FILE*) - 1)
 	{
 		// If we can't open a temp file then bail 
 
@@ -2814,8 +2814,8 @@ static void do_isql()
 	gds_trans = NULL;
 
 // Should have a valid Temp file pointer 
-	fb_assert(Ofp != (IB_FILE*) - 1);
-	ib_fclose(Ofp);
+	fb_assert(Ofp != (FILE*) - 1);
+	fclose(Ofp);
 	unlink(Tmpfile);
 
 	if (errbuf)
@@ -2916,7 +2916,7 @@ static processing_state edit(const TEXT* const* cmd)
 	if (*file) {
 		TEXT path[MAXPATHLEN];
 		strip_quotes(file, path);
-		IB_FILE* fp = ib_fopen(path, "r");
+		FILE* fp = fopen(path, "r");
 		if (fp) {
 			// Push the current ifp on the indev 
 
@@ -2953,9 +2953,9 @@ static processing_state edit(const TEXT* const* cmd)
 			flist->indev_next = current;
 		}
 		// Close the file, edit it, then reopen and read from the top 
-		ib_fclose(Ofp);
+		fclose(Ofp);
 		gds__edit(Tmpfile, 0);
-		Ofp = ib_fopen(Tmpfile, "r+");
+		Ofp = fopen(Tmpfile, "r+");
 		Ifp = Ofp;
 	}
 
@@ -2996,7 +2996,7 @@ static processing_state end_trans()
 							infobuf, NULL, NULL, NULL, NULL, NULL);
 			readNextInputLine(infobuf);
 			//			ISQL_prompt(infobuf);
-			//			ib_fgets(buffer, BUFFER_LENGTH80, ib_stdin);
+			//			fgets(buffer, BUFFER_LENGTH80, stdin);
 			if (isyesno(lastInputLine)) {	// check for Yes answer 
 				gds__msg_format(NULL, ISQL_MSG_FAC, COMMIT_MSG, sizeof(infobuf),
 								infobuf, NULL, NULL, NULL, NULL, NULL);
@@ -3740,8 +3740,8 @@ static processing_state get_statement(TEXT** statement_ref,
 
 	if (Interactive || Echo) {
 		ISQL_prompt(statement_prompt);
-		//		ib_fprintf(ib_stdout, statement_prompt);
-		//		ib_fflush(ib_stdout);
+		//		fprintf(stdout, statement_prompt);
+		//		fflush(stdout);
 	}
 
 // Clear out statement buffer 
@@ -3766,9 +3766,9 @@ static processing_state get_statement(TEXT** statement_ref,
 	while (!done) {
 		const SSHORT c = getNextInputChar();
 		switch (c) {
-		//		switch (c = ib_getc(Ifp)) {
+		//		switch (c = getc(Ifp)) {
 		case EOF:
-			// Go back to ib_getc if we get interrupted by a signal. 
+			// Go back to getc if we get interrupted by a signal. 
 
 			if (SYSCALL_INTERRUPTED(errno)) {
 				errno = 0;
@@ -3781,10 +3781,10 @@ static processing_state get_statement(TEXT** statement_ref,
 			if (!flist->indev_next)
 				return FOUND_EOF;
 
-			// If this is not ib_tmpfile, close it 
+			// If this is not tmpfile, close it 
 
 			if (Ifp != Ofp)
-				ib_fclose(Ifp);
+				fclose(Ifp);
 
 			// Save the last flist so it can be deleted 
 
@@ -4049,13 +4049,13 @@ static processing_state get_statement(TEXT** statement_ref,
 	if (ret == CONT) {
 
 		/* Place each non frontend statement in the temp file if we are reading
-		   ** from ib_stdin.  Add newline to make the file more readable
+		   ** from stdin.  Add newline to make the file more readable
 		 */
 
-		if (Ifp == ib_stdin) {
-			ib_fputs(statement, Ofp);
-			ib_fputs(global_Term, Ofp);
-			ib_fputc('\n', Ofp);
+		if (Ifp == stdin) {
+			fputs(statement, Ofp);
+			fputs(global_Term, Ofp);
+			fputc('\n', Ofp);
 		}
 	}
 
@@ -4626,7 +4626,7 @@ static processing_state help(const TEXT* what)
 		HLP_HELP,				/*HELP					   -- display this menu */
 		HLP_INPUT,				/*INput	<filename>		-- take input from the named SQL file */
 		HLP_OUTPUT,				/*OUTput   [<filename>]	  -- write output to named file */
-		HLP_OUTPUT2,			/*OUTput					 -- return output to ib_stdout */
+		HLP_OUTPUT2,			/*OUTput					 -- return output to stdout */
 		HLP_SET_ROOT,			/*SET	  <option>		  -- (use HELP SET for list) */
 		HLP_SHELL,				/*SHELL	<command>		 -- execute Operating System command in sub-shell */
 		HLP_SHOW,				/*SHOW	 <object> [<name>] -- display system information */
@@ -4729,7 +4729,7 @@ static processing_state input(const TEXT* infile)
 **  Filelist is a global pointing to base of list.
 */
 
-	IB_FILE* fp = ib_fopen(file, "r");
+	FILE* fp = fopen(file, "r");
 	if (fp) {
 		indev* current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
 		current->indev_fpointer = Ifp;
@@ -5148,11 +5148,11 @@ static processing_state newoutput(const TEXT* outfile)
 		TEXT path[MAXPATHLEN];
 		strip_quotes(outfile, path);
 		outfile = path;
-		IB_FILE* fp = ib_fopen(outfile, "a");
+		FILE* fp = fopen(outfile, "a");
 		if (fp)
 		{
-			if (Out && Out != ib_stdout)
-				ib_fclose(Out);
+			if (Out && Out != stdout)
+				fclose(Out);
 			Out = fp;
 			if (Merge_stderr)
 				Errfp = Out;
@@ -5171,10 +5171,10 @@ static processing_state newoutput(const TEXT* outfile)
 		}
 	}
 	else {
-		// Revert to ib_stdout 
-		if (Out != ib_stdout) {
-			ib_fclose(Out);
-			Out = ib_stdout;
+		// Revert to stdout 
+		if (Out != stdout) {
+			fclose(Out);
+			Out = stdout;
 			if (Merge_stderr)
 				Errfp = Out;
 			if (Merge_diagnostic)
@@ -5291,7 +5291,7 @@ static processing_state newtrans(const TEXT* statement)
 static processing_state parse_arg(int argc,
 						SCHAR** argv,
 						SCHAR* tabname,
-						IB_FILE** sess)
+						FILE** sess)
 {
 /**************************************
  *
@@ -5348,9 +5348,9 @@ static processing_state parse_arg(int argc,
 			strncpy(ISQL_charset, DEFCHARSET, MAXCHARSET_LENGTH);
 	} // scope
 
-// redirected ib_stdin means act like -i was set 
+// redirected stdin means act like -i was set 
 
-	Ifp = ib_stdin;
+	Ifp = stdin;
 
 // Terminators  are initialized 
 
@@ -5568,7 +5568,7 @@ static processing_state parse_arg(int argc,
 
 // If not input, then set up first filelist 
 
-	if (Ifp == ib_stdin) {
+	if (Ifp == stdin) {
 		Filelist = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
 		Filelist->indev_fpointer = Ifp;
 		Filelist->indev_next = NULL;
@@ -6004,7 +6004,7 @@ static SSHORT print_item(TEXT** s,
 }
 
 
-static processing_state print_item_blob(IB_FILE* fp,
+static processing_state print_item_blob(FILE* fp,
 						   const XSQLVAR* var,
 						   FRBRD* trans)
 {

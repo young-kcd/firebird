@@ -30,7 +30,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
@@ -60,10 +60,10 @@
 #endif
 
 #ifndef FPRINTF
-#define FPRINTF         ib_fprintf
+#define FPRINTF         fprintf
 #endif
 
-typedef IB_FILE* OUTFILE;
+typedef FILE* OUTFILE;
 
 #define SW_I_ACQUIRE	1
 #define SW_I_OPERATION	2
@@ -119,14 +119,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  * Functional description
  *	Check switches passed in and prepare to dump the lock table
- *	to ib_stdout.
+ *	to stdout.
  *
  **************************************/
-	OUTFILE outfile = ib_stdout;
+	OUTFILE outfile = stdout;
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		argv++;

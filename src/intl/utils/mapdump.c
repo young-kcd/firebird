@@ -68,8 +68,8 @@ main()
 
 	for (i = 0; i <= 255; i++) {
 		uch = to_unicode_map[i];
-		ib_printf("0x%02X\t0x%04X\t#\n", i, uch);
+		printf("0x%02X\t0x%04X\t#\n", i, uch);
 	}
 
-	ib_printf("Test completed\n");
+	printf("Test completed\n");
 }

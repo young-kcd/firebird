@@ -29,7 +29,7 @@
 #ifndef INCLUDE_FB_STRING_H
 #define INCLUDE_FB_STRING_H
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
  
 #include "../include/fb_types.h"
@@ -339,7 +339,7 @@ namespace Firebird
 		inline void alltrim(const_pointer ToTrim = " ") {
 			baseTrim(TrimBoth, ToTrim);
 		}
-		bool LoadFromFile(IB_FILE *file);
+		bool LoadFromFile(FILE *file);
 		void printf(const char* Format, ...);
 		inline ~AbstractString() {
 			if (actualSize > smallStorageSize)

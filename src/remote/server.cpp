@@ -30,7 +30,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -321,7 +321,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				zap_packet(&request->req_send, true);
 				zap_packet(&request->req_receive, true);
 #ifdef DEBUG_REMOTE_MEMORY
-				ib_printf("SRVR_multi_thread         allocate request %x\n",
+				printf("SRVR_multi_thread         allocate request %x\n",
 						  request);
 #endif
 			}
@@ -383,10 +383,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					port->port_requests_queued++;
 					append_request_chain(request, &active->req_chain);
 #ifdef DEBUG_REMOTE_MEMORY
-					ib_printf
+					printf
 						("SRVR_multi_thread    ACTIVE     request_queued %d\n",
 						 port->port_requests_queued);
-					ib_fflush(ib_stdout);
+					fflush(stdout);
 #endif
 #ifdef CANCEL_OPERATION
 					if (operation == op_exit || operation == op_disconnect)
@@ -412,10 +412,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					port->port_requests_queued++;
 					append_request_chain(request, &active->req_chain);
 #ifdef DEBUG_REMOTE_MEMORY
-					ib_printf
+					printf
 						("SRVR_multi_thread    PENDING     request_queued %d\n",
 						 port->port_requests_queued);
-					ib_fflush(ib_stdout);
+					fflush(stdout);
 #endif
 #ifdef CANCEL_OPERATION
 					if (operation == op_exit || operation == op_disconnect)
@@ -432,10 +432,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			pending_requests = append_request_next(request, &request_que);
 			port->port_requests_queued++;
 #ifdef DEBUG_REMOTE_MEMORY
-			ib_printf
+			printf
 				("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
 				 port->port_requests_queued);
-			ib_fflush(ib_stdout);
+			fflush(stdout);
 #endif
 
 			/* NOTE: we really *should* have something that limits how many
@@ -811,7 +811,7 @@ static ISC_STATUS attach_database(
 		RDB rdb = (RDB) ALLOC(type_rdb);
 		port->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("attach_databases(server)  allocate rdb     %x\n", rdb);
+		printf("attach_databases(server)  allocate rdb     %x\n", rdb);
 #endif
 		rdb->rdb_port = port;
 		rdb->rdb_handle = handle;
@@ -1106,7 +1106,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compile, PACKET* send)
 
 	rrq* request = (rrq*) ALLOCV(type_rrq, max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("compile(server)           allocate request %x\n", request);
+	printf("compile(server)           allocate request %x\n", request);
 #endif
 	request->rrq_handle = handle;
 	request->rrq_rdb = rdb;
@@ -1283,14 +1283,14 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	REMOTE_free_packet(this, receive);
 
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("disconnect(server)        free rdb         %x\n", rdb);
+	printf("disconnect(server)        free rdb         %x\n", rdb);
 #endif
 	this->port_context = NULL;
 	ALLR_release(rdb);
 	if (this->port_object_vector)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("disconnect(server)        free vector      %x\n",
+		printf("disconnect(server)        free vector      %x\n",
 				  this->port_object_vector);
 #endif
 		ALLR_release(this->port_object_vector);
@@ -1299,7 +1299,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	if (this->port_connection)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("disconnect(server)        free string      %x\n",
+		printf("disconnect(server)        free string      %x\n",
 				  this->port_connection);
 #endif
 		ALLR_release(this->port_connection);
@@ -1308,7 +1308,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	if (this->port_version)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("disconnect(server)        free string      %x\n",
+		printf("disconnect(server)        free string      %x\n",
 				  this->port_version);
 #endif
 		ALLR_release(this->port_version);
@@ -1317,7 +1317,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	if (this->port_passwd)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("disconnect(server)        free string      %x\n",
+		printf("disconnect(server)        free string      %x\n",
 				  this->port_passwd);
 #endif
 		ALLR_release(this->port_passwd);
@@ -1326,7 +1326,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	if (this->port_user_name)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("disconnect(server)        free string      %x\n",
+		printf("disconnect(server)        free string      %x\n",
 				  this->port_user_name);
 #endif
 		ALLR_release(this->port_user_name);
@@ -1335,7 +1335,7 @@ void rem_port::disconnect(PACKET* send, PACKET* receive)
 	if (this->port_host)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("disconnect(server)        free string      %x\n",
+		printf("disconnect(server)        free string      %x\n",
 				  this->port_host);
 #endif
 		ALLR_release(this->port_host);
@@ -2305,7 +2305,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 		buffer = blob->rbl_buffer;
 	}
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("get_segment(server)       allocate buffer  %x\n", buffer);
+	printf("get_segment(server)       allocate buffer  %x\n", buffer);
 #endif
 	send->p_resp.p_resp_data.cstr_address = buffer;
 
@@ -2323,7 +2323,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 		const ISC_STATUS status =
 			this->send_response(send, blob->rbl_id, length, status_vector);
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("get_segment(server)       free buffer      %x\n", buffer);
+		printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
 		if (status_vector[1] == isc_segstr_eof)
 			if (blob->rbl_buffer != blob->rbl_data) {
@@ -2376,7 +2376,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* send)
 								status_vector);
 
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("get_segment(server)       free buffer      %x\n", buffer);
+	printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
 
 	if (status_vector[1] == isc_segstr_eof)
@@ -2426,7 +2426,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
 	if (slice) {
 		memset(slice, 0, stuff->p_slc_length);
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("get_slice(server)         allocate buffer  %x\n", slice);
+		printf("get_slice(server)         allocate buffer  %x\n", slice);
 #endif
 	}
 	P_SLR* response = &send->p_slr;
@@ -2457,7 +2457,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* send)
 
 	if (slice) {
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("get_slice(server)         free buffer      %x\n", slice);
+		printf("get_slice(server)         free buffer      %x\n", slice);
 #endif
 		if (slice != temp_buffer)
 			ALLR_free(slice);
@@ -2493,7 +2493,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	UCHAR* const buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
 	memset(buffer, 0, stuff->p_info_buffer_length);
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("info(server)              allocate buffer  %x\n", buffer);
+	printf("info(server)              allocate buffer  %x\n", buffer);
 #endif
 
 	UCHAR temp[1024];
@@ -2501,7 +2501,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	if (op == op_info_database && stuff->p_info_buffer_length > sizeof(temp)) {
 	    temp_buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
 #ifdef DEBUG_REMOTE_MEMORY
-	    ib_printf("info(server)              allocate buffer  %x\n", temp_buffer);
+	    printf("info(server)              allocate buffer  %x\n", temp_buffer);
 #endif
 	}
 	else
@@ -2610,7 +2610,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 
 	if (temp_buffer != temp) {
 #ifdef DEBUG_REMOTE_MEMORY
-    	ib_printf ("info(server)              free buffer      %x\n", temp_buffer);
+    	printf ("info(server)              free buffer      %x\n", temp_buffer);
 #endif
     	ALLR_free(temp_buffer);
 	}
@@ -2622,7 +2622,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	const ISC_STATUS status = this->send_response(send, stuff->p_info_object,
 						   stuff->p_info_buffer_length, status_vector);
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("info(server)              free buffer      %x\n", buffer);
+	printf("info(server)              free buffer      %x\n", buffer);
 #endif
 	ALLR_free(buffer);
 
@@ -2754,7 +2754,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* send)
 	else {
 		RBL blob = (RBL) ALLOCV(type_rbl, 1);
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("open_blob(server)         allocate blob    %x\n", blob);
+		printf("open_blob(server)         allocate blob    %x\n", blob);
 #endif
 		blob->rbl_buffer_length = 1;
 		blob->rbl_buffer = blob->rbl_data;
@@ -3344,7 +3344,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* send)
 	{
 		event = (RVNT) ALLOC(type_rvnt);
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("que_events(server)        allocate event   %x\n", event);
+		printf("que_events(server)        allocate event   %x\n", event);
 #endif
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
@@ -3654,7 +3654,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* send)
 
 			message = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
-			ib_printf("receive_msg(server)       allocate message %x\n",
+			printf("receive_msg(server)       allocate message %x\n",
 					  message);
 #endif
 			message->msg_number = prior->msg_number;
@@ -3742,7 +3742,7 @@ static void release_blob(RBL blob)
 	}
 
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("release_blob(server)      free blob        %x\n", blob);
+	printf("release_blob(server)      free blob        %x\n", blob);
 #endif
 	if (blob->rbl_buffer != blob->rbl_data) {
 		ALLR_free(blob->rbl_buffer);
@@ -3865,7 +3865,7 @@ static void release_transaction( RTR transaction)
 		}
 
 #ifdef DEBUG_REMOTE_MEMORY
-	ib_printf("release_transact(server)  free transaction %x\n", transaction);
+	printf("release_transact(server)  free transaction %x\n", transaction);
 #endif
 	ALLR_release(transaction);
 }
@@ -4308,7 +4308,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* send)
 		RDB rdb = (RDB) ALLOC(type_rdb);
 		this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-		ib_printf("attach_service(server)  allocate rdb     %x\n", rdb);
+		printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
 		rdb->rdb_port = this;
 		rdb->rdb_handle = handle;
@@ -4579,7 +4579,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 			if (operation == op_reconnect)
 				transaction->rtr_flags |= RTR_limbo;
 #ifdef DEBUG_REMOTE_MEMORY
-			ib_printf("start_transaction(server) allocate trans   %x\n",
+			printf("start_transaction(server) allocate trans   %x\n",
 					  transaction);
 #endif
 		}
@@ -4750,9 +4750,9 @@ static int THREAD_ROUTINE thread(void* flags)
 				else {
 					port->port_requests_queued--;
 #ifdef DEBUG_REMOTE_MEMORY
-					ib_printf("thread    ACTIVE     request_queued %d\n",
+					printf("thread    ACTIVE     request_queued %d\n",
 							  port->port_requests_queued);
-					ib_fflush(ib_stdout);
+					fflush(stdout);
 #endif
 				}
 

@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
@@ -63,7 +63,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		argv++;
@@ -93,7 +93,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef UNIX
 	if (setreuid(0, 0) < 0)
-		ib_printf("Shared cache manager: couldn't set uid to superuser\n");
+		printf("Shared cache manager: couldn't set uid to superuser\n");
 
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
@@ -125,7 +125,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 
 				case 'Z':
-					ib_printf("Shared cache manager version %s\n",
+					printf("Shared cache manager version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 				}

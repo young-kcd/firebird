@@ -26,7 +26,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
@@ -117,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 				if (!cmd)
 				{
-					ib_printf("Unknown command \"%s\"\n", *argv);
+					printf("Unknown command \"%s\"\n", *argv);
 					usage();
 				}
 				sw_command = commands[i].code;
@@ -135,7 +135,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 				if (!cln)
 				{
-					ib_printf("Unknown library \"%s\"\n", *argv);
+					printf("Unknown library \"%s\"\n", *argv);
 					usage();
 				}
 				sw_client = clients[i].code;
@@ -155,14 +155,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 
 				default:
-					ib_printf("Unknown switch \"%s\"\n", p);
+					printf("Unknown switch \"%s\"\n", p);
 					usage();
 			}
 		}
 	}
 
 	if (sw_version)
-		ib_printf("instclient version %s\n", GDS_VERSION);
+		printf("instclient version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE || sw_client == CLIENT_NONE)
 	{
@@ -180,21 +180,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			switch (status)
 			{
 				case FB_INSTALL_SAME_VERSION_FOUND :
-					ib_printf("Existing %s (same version) found.\n", clientname);
-					ib_printf("No update needed.\n");
+					printf("Existing %s (same version) found.\n", clientname);
+					printf("No update needed.\n");
 					break;
 				case FB_INSTALL_NEWER_VERSION_FOUND :
-					ib_printf("Existing %s (newer version) found.\n", clientname);
-					ib_printf("You can force replacing the DLL with -f[orce] switch.\n");
-					ib_printf("Though this could break some other InterBase(R) "
+					printf("Existing %s (newer version) found.\n", clientname);
+					printf("You can force replacing the DLL with -f[orce] switch.\n");
+					printf("Though this could break some other InterBase(R) "
 						"or Firebird installation.\n");
 					break;
 				case FB_INSTALL_COPY_REQUIRES_REBOOT :
-					ib_printf("%s has been scheduled for installation "
+					printf("%s has been scheduled for installation "
 						"at the next system reboot.\n", clientname);
 					break;
 				case FB_SUCCESS :
-					ib_printf("%s has been installed to the "
+					printf("%s has been installed to the "
 						"System directory.\n", clientname);
 					break;
 			}
@@ -205,21 +205,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			switch (status)
 			{
 				case FB_INSTALL_FILE_NOT_FOUND :
-					ib_printf("%s was not found in the System directory.\n",
+					printf("%s was not found in the System directory.\n",
 						clientname);
 					break;
 				case FB_INSTALL_CANT_REMOVE_ALIEN_VERSION :
-					ib_printf("The installed %s appears to be from an "
+					printf("The installed %s appears to be from an "
 						"unsupported version.\n", clientname);
-					ib_printf("It probably belongs to another version of "
+					printf("It probably belongs to another version of "
 						"Firebird or InterBase(R).\n");
 					break;
 				case FB_INSTALL_FILE_PROBABLY_IN_USE :
-					ib_printf("The %s can't be removed. It is probably "
+					printf("The %s can't be removed. It is probably "
 						"currently in use.\n", clientname);
 					break;
 				case FB_SUCCESS :
-					ib_printf("The %s has been removed from the "
+					printf("The %s has been removed from the "
 						"System directory.\n", clientname);
 					break;
 			}
@@ -231,11 +231,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			switch (status)
 			{
 				case FB_INSTALL_FILE_NOT_FOUND :
-					ib_printf("%s was not found in the System directory.\n",
+					printf("%s was not found in the System directory.\n",
 						clientname);
 					break;
 				case FB_SUCCESS :
-					ib_printf("Installed %s version : %u.%u.%u.%u "
+					printf("Installed %s version : %u.%u.%u.%u "
 						"(shared DLL count %d)\n", clientname,
 						verMS >> 16, verMS & 0x0000ffff,
 						verLS >> 16, verLS & 0x0000ffff,
@@ -274,11 +274,11 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 	if (status == 0)
 	{
 		// Allows to report non System errors
-		ib_printf("%s\n", string);
+		printf("%s\n", string);
 	}
 	else
 	{
-		ib_printf("Error %u occurred during \"%s\".\n", status, string);
+		printf("Error %u occurred during \"%s\".\n", status, string);
 
 		if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 								NULL,
@@ -288,12 +288,12 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 								sizeof(buffer),
 								NULL)))
 		{
-			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
+			printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
 		{
 			CharToOem(buffer, buffer);
-			ib_printf("%s", buffer);	// '\n' is included in system messages
+			printf("%s", buffer);	// '\n' is included in system messages
 		}
 	}
 	return FB_FAILURE;
@@ -311,32 +311,32 @@ static void usage(void)
  *
  **************************************/
 
-	ib_printf("Usage:\n");
-	ib_printf("  instclient i[nstall] [ -f[orce] ] library\n");
-	ib_printf("             q[uery] library\n");
-	ib_printf("             r[emove] library\n");
-	ib_printf("\n");
-	ib_printf("  where library is:  f[bclient] | g[ds32] \n");
-	ib_printf("\n");
-	ib_printf("  This utility should be located and run from the 'bin' directory\n");
-	ib_printf("  of your Firebird installation.\n");
-	ib_printf("  '-z' can be used with any other option, prints version\n");
-	ib_printf("\n");
-	ib_printf("Purpose:\n");
-	ib_printf("  This utility manages deployment of the Firebird client library \n");
-	ib_printf("  into the Windows system directory. It caters for two installation\n");
-	ib_printf("  scenarios:\n");
-	ib_printf("\n");
-	ib_printf("    Deployment of the native fbclient.dll.\n");
-	ib_printf("    Deployment of gds32.dll to support legacy applications.\n");
-	ib_printf("\n");
-	ib_printf("  Version information and shared library counts are handled \n");
-	ib_printf("  automatically. You may provide the -f[orce] option to override\n");
-	ib_printf("  version checks.\n");
-	ib_printf("\n");
-	ib_printf("  Please, note that if you -f[orce] the installation, you might have\n");
-	ib_printf("  to reboot the machine in order to finalize the copy and you might\n");
-	ib_printf("  break some other Firebird or InterBase(R) version on the system.\n");
+	printf("Usage:\n");
+	printf("  instclient i[nstall] [ -f[orce] ] library\n");
+	printf("             q[uery] library\n");
+	printf("             r[emove] library\n");
+	printf("\n");
+	printf("  where library is:  f[bclient] | g[ds32] \n");
+	printf("\n");
+	printf("  This utility should be located and run from the 'bin' directory\n");
+	printf("  of your Firebird installation.\n");
+	printf("  '-z' can be used with any other option, prints version\n");
+	printf("\n");
+	printf("Purpose:\n");
+	printf("  This utility manages deployment of the Firebird client library \n");
+	printf("  into the Windows system directory. It caters for two installation\n");
+	printf("  scenarios:\n");
+	printf("\n");
+	printf("    Deployment of the native fbclient.dll.\n");
+	printf("    Deployment of gds32.dll to support legacy applications.\n");
+	printf("\n");
+	printf("  Version information and shared library counts are handled \n");
+	printf("  automatically. You may provide the -f[orce] option to override\n");
+	printf("  version checks.\n");
+	printf("\n");
+	printf("  Please, note that if you -f[orce] the installation, you might have\n");
+	printf("  to reboot the machine in order to finalize the copy and you might\n");
+	printf("  break some other Firebird or InterBase(R) version on the system.\n");
 
 	exit(FINI_ERROR);
 }

@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.12 2004-02-20 06:43:26 robocop Exp $
+ * $Id: ibmgr.cpp,v 1.13 2004-04-28 22:18:19 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -36,7 +36,7 @@
 #include <sys/types.h>
 #endif
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -123,9 +123,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 */
 	const struct passwd* pw = getpwuid(getuid());
 	if (pw == NULL) {
-		ib_perror("getpwuid");
+		perror("getpwuid");
 		SRVRMGR_msg_get(MSG_GETPWFAIL, msg);
-		ib_fprintf(OUTFILE, "%s\n", msg);
+		fprintf(OUTFILE, "%s\n", msg);
 		exit(FINI_ERROR);
 	}
 
@@ -183,7 +183,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			ret = SRVRMGR_exec_line(&ibmgr_data);
 			if (ret) {
 				SRVRMGR_msg_get(ret, msg);
-				ib_fprintf(OUTFILE, "%s\n", msg);
+				fprintf(OUTFILE, "%s\n", msg);
 			}
 /* We also need to check the shutdown flag here (if operation was
    -shut -[noat|notr]) and, depending on what we want to do, either
@@ -212,7 +212,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				ret = SRVRMGR_exec_line(&ibmgr_data);
 				if (ret) {
 					SRVRMGR_msg_get(ret, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 				}
 			}
 		}
@@ -239,12 +239,12 @@ static bool get_line( int *argc, SCHAR** argv, TEXT* stuff)
 	TEXT msg[MSG_LEN];
 
 	SRVRMGR_msg_get(MSG_PROMPT, msg);
-	ib_printf("%s ", msg);		/* "IBMGR> " */
+	printf("%s ", msg);		/* "IBMGR> " */
 /*
 if (sw_service_gsec)
-    ib_putc ('\001', ib_stdout);
+    ib_putc ('\001', stdout);
 */
-	ib_fflush(ib_stdout);
+	ib_fflush(stdout);
 	*argc = 1;
 	TEXT* cursor = stuff;
 	USHORT count = MAXSTUFF - 1;
@@ -269,7 +269,7 @@ if (sw_service_gsec)
 					}
 				}
 				*cursor++ = c;
-				c = ib_getc(ib_stdin);
+				c = getc(stdin);
 				if (c <= ' ' || c > '~')
 					break;
 			}
@@ -334,7 +334,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_POOL:
 				if (strlen(string) >= MAXPATHLEN) {
 					SRVRMGR_msg_get(MSG_FLNMTOOLONG, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 				strcpy(ibmgr_data->print_file, string);
@@ -374,7 +374,7 @@ static SSHORT get_switches(
 				copy_str_upper(ibmgr_data->user, string);
 				if (strlen(ibmgr_data->user) > 127) {
 					SRVRMGR_msg_get(MSG_INVUSER, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 				ibmgr_data->reattach |= REA_USER;
@@ -382,7 +382,7 @@ static SSHORT get_switches(
 
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVPAR, msg);
-				ib_fprintf(OUTFILE, "%s\n", msg);
+				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 
 				/* The following switches do not take any parameters
@@ -402,12 +402,12 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_HELP:
 			case IN_SW_IBMGR_Z:
 				SRVRMGR_msg_get(MSG_SWNOPAR, msg);
-				ib_fprintf(OUTFILE, "%s\n", msg);
+				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 
 			default:
 #ifdef DEV_BUILD
-				ib_fprintf(OUTFILE,
+				fprintf(OUTFILE,
 						   "ASSERT: file %s line %"LINEFORMAT": last_sw = %d\n",
 						   __FILE__, __LINE__, last_sw);
 #endif
@@ -460,7 +460,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_HOST:
 			case IN_SW_IBMGR_POOL:
 				SRVRMGR_msg_get(MSG_REQPAR, msg);
-				ib_fprintf(OUTFILE, "%s\n", msg);
+				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 			}
 
@@ -478,7 +478,7 @@ static SSHORT get_switches(
 				 */
 				if (ibmgr_data->operation) {
 					SRVRMGR_msg_get(MSG_OPSPEC, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 				switch (in_sw) {
@@ -527,9 +527,9 @@ static SSHORT get_switches(
 				 */
 				if (ibmgr_data->shutdown) {
 					SRVRMGR_msg_get(MSG_SHUTDOWN, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					SRVRMGR_msg_get(MSG_CANTCHANGE, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_OTHER;
 				}
 				if (!ibmgr_data->operation)
@@ -567,7 +567,7 @@ static SSHORT get_switches(
 				}
 				if (err_msg_no) {
 					SRVRMGR_msg_get(err_msg_no, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 				break;
@@ -590,7 +590,7 @@ static SSHORT get_switches(
 				 */
 				if (!ibmgr_data->operation) {
 					SRVRMGR_msg_get(MSG_NOOPSPEC, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 
@@ -599,7 +599,7 @@ static SSHORT get_switches(
 				 */
 				if (ibmgr_data->suboperation) {
 					SRVRMGR_msg_get(MSG_INVSWSW, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 				err_msg_no = 0;
@@ -662,7 +662,7 @@ static SSHORT get_switches(
 				}
 				if (err_msg_no) {
 					SRVRMGR_msg_get(err_msg_no, msg);
-					ib_fprintf(OUTFILE, "%s\n", msg);
+					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
 				break;
@@ -678,23 +678,23 @@ static SSHORT get_switches(
 					ibmgr_data->operation = OP_VERSION;
 				if (!sw_version) {
 					SRVRMGR_msg_get(MSG_VERSION, msg);
-					ib_fprintf(OUTFILE, "%s %s\n", msg, GDS_VERSION);
+					fprintf(OUTFILE, "%s %s\n", msg, GDS_VERSION);
 				}
 				break;
 
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVSW, msg);
-				ib_fprintf(OUTFILE, "%s\n", msg);
+				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 
 			case IN_SW_IBMGR_AMBIG:
 				SRVRMGR_msg_get(MSG_AMBSW, msg);
-				ib_fprintf(OUTFILE, "%s\n", msg);
+				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 
 			default:
 #ifdef DEV_BUILD
-				ib_fprintf(OUTFILE, "ASSERT: file %s line %"LINEFORMAT": in_sw = %d\n",
+				fprintf(OUTFILE, "ASSERT: file %s line %"LINEFORMAT": in_sw = %d\n",
 						   __FILE__, __LINE__, in_sw);
 #endif
 				;
@@ -716,13 +716,13 @@ static SSHORT get_switches(
 	case IN_SW_IBMGR_PRINT:
 	case IN_SW_IBMGR_POOL:
 		SRVRMGR_msg_get(MSG_REQPAR, msg);
-		ib_fprintf(OUTFILE, "%s\n", msg);
+		fprintf(OUTFILE, "%s\n", msg);
 		return ERR_SYNTAX;
 	}
 
 #ifdef DEV_BUILD
 	if (!ibmgr_data->operation)
-		ib_fprintf(OUTFILE,
+		fprintf(OUTFILE,
 				   "ASSERT: file %s line %"LINEFORMAT": no operation has been specified\n",
 				   __FILE__, __LINE__);
 #endif
@@ -743,12 +743,12 @@ static void print_config(void)
  *
  **************************************/
 
-	ib_fprintf(OUTFILE, "\nHost:\t%s\nUser:\t%s\n\n",
+	fprintf(OUTFILE, "\nHost:\t%s\nUser:\t%s\n\n",
 			   ibmgr_data.host, ibmgr_data.user);
 #ifdef DEBUG
-	ib_fprintf(OUTFILE, "\nReal user:\t%s\nPassword:\t%s\n\n",
+	fprintf(OUTFILE, "\nReal user:\t%s\nPassword:\t%s\n\n",
 			   ibmgr_data.real_user, ibmgr_data.password);
-	ib_fprintf(OUTFILE,
+	fprintf(OUTFILE,
 			   "Attached:\t%s\nNew attach:\t%s %s %s\nShutdown:\t%s\n\n",
 			   ibmgr_data.attached ? "yes" : "no",
 			   ibmgr_data.reattach & REA_HOST ? "HOST" : "no",
@@ -773,30 +773,30 @@ static void print_help(void)
 	TEXT msg[MSG_LEN];
 	TEXT msg2[MSG_LEN];
 
-	ib_fprintf(OUTFILE, "\n\n");
-	ib_fprintf(OUTFILE,
+	fprintf(OUTFILE, "\n\n");
+	fprintf(OUTFILE,
 			   "Usage:		ibmgr -command [-option [parameter]]\n\n");
-	ib_fprintf(OUTFILE, "or		ibmgr<RETURN>\n");
-	ib_fprintf(OUTFILE, "		IBMGR> command [-option [parameter]]\n\n");
-	ib_fprintf(OUTFILE, "		shut  [-now]		shutdown server\n");
-	ib_fprintf(OUTFILE, "		show			show host and user\n");
-	ib_fprintf(OUTFILE, "		user <user_name>	set user name\n");
-	ib_fprintf(OUTFILE, "		password <password>	set DBA password\n");
-	ib_fprintf(OUTFILE, "		help			prints help text\n");
-	ib_fprintf(OUTFILE, "		quit			quit prompt mode\n\n");
-	ib_fprintf(OUTFILE,
+	fprintf(OUTFILE, "or		ibmgr<RETURN>\n");
+	fprintf(OUTFILE, "		IBMGR> command [-option [parameter]]\n\n");
+	fprintf(OUTFILE, "		shut  [-now]		shutdown server\n");
+	fprintf(OUTFILE, "		show			show host and user\n");
+	fprintf(OUTFILE, "		user <user_name>	set user name\n");
+	fprintf(OUTFILE, "		password <password>	set DBA password\n");
+	fprintf(OUTFILE, "		help			prints help text\n");
+	fprintf(OUTFILE, "		quit			quit prompt mode\n\n");
+	fprintf(OUTFILE,
 			   "Command switches 'user' and 'password' can also be used\n");
-	ib_fprintf(OUTFILE,
+	fprintf(OUTFILE,
 			   "as an option switches for commands like start or shut.\n");
-	ib_fprintf(OUTFILE, "For example, to shutdown server you can: \n\n");
-	ib_fprintf(OUTFILE, "ibmgr -shut -password <password>\n\n");
-	ib_fprintf(OUTFILE, "or\n\n");
-	ib_fprintf(OUTFILE, "ibmgr<RETURN>\n");
-	ib_fprintf(OUTFILE, "IBMGR> shut -password <password>\n\n");
-	ib_fprintf(OUTFILE, "or\n\n");
-	ib_fprintf(OUTFILE, "ibmgr<RETURN>\n");
-	ib_fprintf(OUTFILE, "IBMGR> password <password>\n");
-	ib_fprintf(OUTFILE, "IBMGR> shut\n\n\n");
+	fprintf(OUTFILE, "For example, to shutdown server you can: \n\n");
+	fprintf(OUTFILE, "ibmgr -shut -password <password>\n\n");
+	fprintf(OUTFILE, "or\n\n");
+	fprintf(OUTFILE, "ibmgr<RETURN>\n");
+	fprintf(OUTFILE, "IBMGR> shut -password <password>\n\n");
+	fprintf(OUTFILE, "or\n\n");
+	fprintf(OUTFILE, "ibmgr<RETURN>\n");
+	fprintf(OUTFILE, "IBMGR> password <password>\n");
+	fprintf(OUTFILE, "IBMGR> shut\n\n\n");
 }
 
 
@@ -837,7 +837,7 @@ static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 		}
 		return ACT_NONE;
 	}
@@ -845,7 +845,7 @@ static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 	case OP_SHUT:
 		if (strcmp(ibmgr_data.user, SYSDBA_USER_NAME)) {
 			SRVRMGR_msg_get(MSG_NOPERM, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			ret = ACT_NONE;
 			break;
 		}
@@ -854,9 +854,9 @@ static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 		 */
 		if (ibmgr_data.shutdown && ibmgr_data.suboperation != SOP_SHUT_IGN) {
 			SRVRMGR_msg_get(MSG_SHUTDOWN, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			SRVRMGR_msg_get(MSG_CANTSHUT, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			ret = ACT_NONE;
 		}
 		break;
@@ -869,7 +869,7 @@ static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 			strcmp(ibmgr_data.user, SYSDBA_USER_NAME))
 		{
 			SRVRMGR_msg_get(MSG_NOPERM, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			ret = ACT_NONE;
 			break;
 		}
@@ -897,9 +897,9 @@ static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 	if (quitflag)
 		if (ibmgr_data.shutdown) {
 			SRVRMGR_msg_get(MSG_SHUTDOWN, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			SRVRMGR_msg_get(MSG_CANTQUIT, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			ret = ACT_NONE;
 		}
 		else

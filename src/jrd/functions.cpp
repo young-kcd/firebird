@@ -23,11 +23,11 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
 
-/* defined in common.h, which is included by ib_stdio.h: typedef int (*FPTR_INT)(); */
+/* defined in common.h, which is included by stdio.h: typedef int (*FPTR_INT)(); */
 
 
 extern "C" {

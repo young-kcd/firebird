@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	ISC_STATUS_ARRAY status_vector;
 
 	if (!(EVENT_header = EVENT_init(status_vector, TRUE))) {
-		ib_fprintf(ib_stderr, "Can't access global event region\n");
+		fprintf(stderr, "Can't access global event region\n");
 		isc_print_status(status_vector);
 		return 1;
 	}
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	else if (argc == 1)
 		event_list();
 	else
-		ib_fprintf(ib_stderr, "usage: eventprint [-dump]\n");
+		fprintf(stderr, "usage: eventprint [-dump]\n");
 
 	return 0;
 }
@@ -100,12 +100,12 @@ static void event_list(void)
 		   comes from the lock key_id for the database, on Unix
 		   this is comprised of the device number and inode */
 
-		ib_printf("Database: ");
+		printf("Database: ");
 		p = (UCHAR *) database_event->evnt_name;
 		l = database_event->evnt_length;
 		while (l--)
-			ib_printf("%02x", *p++);
-		ib_printf(" count: %6ld\n", database_event->evnt_count);
+			printf("%02x", *p++);
+		printf(" count: %6ld\n", database_event->evnt_count);
 
 		{
 			RINT interest;
@@ -117,14 +117,14 @@ static void event_list(void)
 					(RINT) ((UCHAR *) interest_que -
 							OFFSET(RINT, rint_interests));
 				if (!interest->rint_request)
-					ib_printf("(0)");
+					printf("(0)");
 				else {
 					jrd_req* request;
 					PRB process;
 
 					request = (jrd_req*) ABS_PTR(interest->rint_request);
 					process = (PRB) ABS_PTR(request->req_process);
-					ib_printf("%6d ", process->prb_process_id);
+					printf("%6d ", process->prb_process_id);
 				}
 			}
 		}
@@ -137,7 +137,7 @@ static void event_list(void)
 			fb_assert(event->evnt_header.hdr_type == type_evnt);
 			if (event->evnt_parent != REL_PTR(database_event))
 				continue;
-			ib_printf("    \"%-15s\" count: %6ld Interest",
+			printf("    \"%-15s\" count: %6ld Interest",
 					  event->evnt_name, event->evnt_count);
 
 			{
@@ -150,18 +150,18 @@ static void event_list(void)
 						(RINT) ((UCHAR *) interest_que -
 								OFFSET(RINT, rint_interests));
 					if (!interest->rint_request)
-						ib_printf("(0)");
+						printf("(0)");
 					else {
 						jrd_req* request;
 						PRB process;
 
 						request = (jrd_req*) ABS_PTR(interest->rint_request);
 						process = (PRB) ABS_PTR(request->req_process);
-						ib_printf("%6d ", process->prb_process_id);
+						printf("%6d ", process->prb_process_id);
 					}
 				}
 			}
-			ib_printf("\n");
+			printf("\n");
 		}
 	}
 }
@@ -190,8 +190,8 @@ static void event_table_dump(void)
 	RINT interest;
 	SLONG offset;
 
-	ib_printf("%.5d GLOBAL REGION HEADER\n", 0);
-	ib_printf
+	printf("%.5d GLOBAL REGION HEADER\n", 0);
+	printf
 		("\tLength: %ld, version: %d, free: %ld, current: %ld, request_id: %ld\n",
 		 EVENT_header->evh_length, EVENT_header->evh_version,
 		 EVENT_header->evh_free, EVENT_header->evh_current_process,
@@ -203,38 +203,38 @@ static void event_table_dump(void)
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
 		 offset += block->hdr_length) 
 	{
-		ib_printf("\n%.5ld ", offset);
+		printf("\n%.5ld ", offset);
 		event_hdr* block = (event_hdr*) ABS_PTR(offset);
 		switch (block->hdr_type) {
 		case type_prb:
-			ib_printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
+			printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
 			process = (PRB) block;
-			ib_printf("\tFlags: %d, pid: %d\n",
+			printf("\tFlags: %d, pid: %d\n",
 					  process->prb_flags, process->prb_process_id);
 			prt_que("\tProcesses", &process->prb_processes);
 			prt_que("\tSessions", &process->prb_sessions);
 			break;
 
 		case type_frb:
-			ib_printf("FREE BLOCK (%ld)\n", block->hdr_length);
+			printf("FREE BLOCK (%ld)\n", block->hdr_length);
 			free = (FRB) block;
-			ib_printf("\tNext: %ld\n", free->frb_next);
+			printf("\tNext: %ld\n", free->frb_next);
 			break;
 
 		case type_req:
-			ib_printf("jrd_req* (%ld)\n", block->hdr_length);
+			printf("jrd_req* (%ld)\n", block->hdr_length);
 			request = (jrd_req*) block;
-			ib_printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
+			printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
 					  request->req_process, request->req_interests,
 					  request->req_ast, request->req_ast_arg);
-			ib_printf("\tRequest id: %ld\n", request->req_request_id);
+			printf("\tRequest id: %ld\n", request->req_request_id);
 			prt_que("\tRequests", &request->req_requests);
 			break;
 
 		case type_evnt:
-			ib_printf("EVENT (%ld)\n", block->hdr_length);
+			printf("EVENT (%ld)\n", block->hdr_length);
 			event = (EVNT) block;
-			ib_printf("\t\"%s\", count: %ld, parent: %ld\n",
+			printf("\t\"%s\", count: %ld, parent: %ld\n",
 					  event->evnt_name, event->evnt_count,
 					  event->evnt_parent);
 			prt_que("\tInterests", &event->evnt_interests);
@@ -242,35 +242,35 @@ static void event_table_dump(void)
 			break;
 
 		case type_ses:
-			ib_printf("SESSION (%ld)\n", block->hdr_length);
+			printf("SESSION (%ld)\n", block->hdr_length);
 			session = (SES) block;
-			ib_printf("\tInterests: %ld, process: %ld\n",
+			printf("\tInterests: %ld, process: %ld\n",
 					  session->ses_interests, session->ses_process);
 			prt_que("\tSessions", &session->ses_sessions);
 			prt_que("\tRequests", &session->ses_requests);
 			break;
 
 		case type_rint:
-			ib_printf("INTEREST (%ld)\n", block->hdr_length);
+			printf("INTEREST (%ld)\n", block->hdr_length);
 			interest = (RINT) block;
 			if (interest->rint_event) {
 				event = (EVNT) ABS_PTR(interest->rint_event);
 				if (event->evnt_parent) {
 					parent = (EVNT) ABS_PTR(event->evnt_parent);
-					ib_printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
+					printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
 							  event->evnt_name);
 				}
 				else
-					ib_printf("\t\"%s\"\n", event->evnt_name);
+					printf("\t\"%s\"\n", event->evnt_name);
 			}
-			ib_printf("\tEvent: %ld, request: %ld, next: %ld, count: %ld\n",
+			printf("\tEvent: %ld, request: %ld, next: %ld, count: %ld\n",
 					  interest->rint_event, interest->rint_request,
 					  interest->rint_next, interest->rint_count);
 			prt_que("\tInterests", &interest->rint_interests);
 			break;
 
 		default:
-			ib_printf("*** UNKNOWN *** (%ld)\n", block->hdr_length);
+			printf("*** UNKNOWN *** (%ld)\n", block->hdr_length);
 			break;
 		}
 		if (!block->hdr_length)
@@ -297,8 +297,8 @@ static void prt_que(UCHAR * string, SRQ * que)
 	offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward)
-		ib_printf("%s: *empty*\n", string);
+		printf("%s: *empty*\n", string);
 	else
-		ib_printf("%s: forward: %d, backward: %d\n",
+		printf("%s: forward: %d, backward: %d\n",
 				  string, que->srq_forward, que->srq_backward);
 }

@@ -24,11 +24,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.34 2004-02-02 11:01:27 robocop Exp $
+//	$Id: pas.cpp,v 1.35 2004-04-28 22:05:55 brodsom Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include <string.h>
@@ -512,7 +512,7 @@ void PAS_action(const act* action, int column)
 		gen_whenever(action->act_whenever, column);
 
 	if (action->act_error)
-		ib_fprintf(out_file, ";");
+		fprintf(out_file, ";");
 	else
 		endp(column);
 }
@@ -527,16 +527,16 @@ static void align(const int column)
 {
 	int i;
 
-	ib_putc('\n', out_file);
+	putc('\n', out_file);
 
 	if (column < 0)
 		return;
 
 	for (i = column / 8; i; --i)
-		ib_putc('\t', out_file);
+		putc('\t', out_file);
 
 	for (i = column % 8; i; --i)
-		ib_putc(' ', out_file);
+		putc(' ', out_file);
 }
 
 
@@ -572,22 +572,22 @@ static void asgn_from( const act* action, const ref* reference, int column)
 		if (reference->ref_value && (reference->ref_flags & REF_array_elem))
 			field = field->fld_array;
 		if (!field || (field->fld_flags & FLD_text))
-			ib_fprintf(out_file, "gds__ftof (%s%s, %s (%s), %s%s, %d);",
+			fprintf(out_file, "gds__ftof (%s%s, %s (%s), %s%s, %d);",
 					   REF_PAR, value, SIZEOF, value, REF_PAR, variable,
 					   field->fld_length);
 		else if (!reference->ref_master
-				 || (reference->ref_flags & REF_literal)) ib_fprintf(out_file,
+				 || (reference->ref_flags & REF_literal)) fprintf(out_file,
 																	 "%s := %s;",
 																	 variable,
 																	 value);
 		else {
-			ib_fprintf(out_file, "if %s < 0 then", value);
+			fprintf(out_file, "if %s < 0 then", value);
 			align(column + 4);
-			ib_fprintf(out_file, "%s := -1", variable);
+			fprintf(out_file, "%s := -1", variable);
 			align(column);
-			ib_fprintf(out_file, "else");
+			fprintf(out_file, "else");
 			align(column + 4);
-			ib_fprintf(out_file, "%s := 0;", variable);
+			fprintf(out_file, "%s := 0;", variable);
 		}
 	}
 }
@@ -610,7 +610,7 @@ static void asgn_sqlda_from( const ref* reference, int number, TEXT* string, int
 			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "gds__to_sqlda (gds__sqlda, %d, %s, %s(%s), %s);", number,
 				   SIZEOF, value, value, string);
 	}
@@ -637,19 +637,19 @@ static void asgn_to(const act* action, const ref* reference, int column)
 	}
 
 	if (field && (field->fld_flags & FLD_text))
-		ib_fprintf(out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
+		fprintf(out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
 				   REF_PAR, gen_name(s, source, true),
 				   field->fld_length,
 				   REF_PAR, reference->ref_value,
 				   SIZEOF, reference->ref_value);
 	else
-		ib_fprintf(out_file, "%s := %s;", reference->ref_value,
+		fprintf(out_file, "%s := %s;", reference->ref_value,
 				   gen_name(s, source, true));
 
 //  Pick up NULL value if one is there 
 
 	if (reference = reference->ref_null)
-		ib_fprintf(out_file, "%s := %s;", reference->ref_value,
+		fprintf(out_file, "%s := %s;", reference->ref_value,
 				   gen_name(s, reference, true));
 }
 
@@ -671,13 +671,13 @@ static void asgn_to_proc(const ref* reference, int column)
 		gen_name(s, reference, true);
 		align(column);
 		if (field && (field->fld_flags & FLD_text))
-			ib_fprintf(out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
+			fprintf(out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
 					   REF_PAR, gen_name(s, reference, true),
 					   field->fld_length,
 					   REF_PAR, reference->ref_value,
 					   SIZEOF, reference->ref_value);
 		else
-			ib_fprintf(out_file, "%s := %s;",
+			fprintf(out_file, "%s := %s;",
 					   reference->ref_value, gen_name(s, reference, true));
 
 	}
@@ -720,59 +720,59 @@ static void gen_based( const act* action, int column)
 		datatype = dtype_text;
 		if (!(length = field->fld_seg_length))
 			length = 256;
-		ib_fprintf(out_file, "%s [1..%"SLONGFORMAT"] of ", PACKED_ARRAY, length);
+		fprintf(out_file, "%s [1..%"SLONGFORMAT"] of ", PACKED_ARRAY, length);
 	}
 	else if (field->fld_array_info) {
 		datatype = field->fld_array_info->ary_dtype;
 		if (datatype <= dtype_varying)
-			ib_fprintf(out_file, "%s [", PACKED_ARRAY);
+			fprintf(out_file, "%s [", PACKED_ARRAY);
 		else
-			ib_fprintf(out_file, "array [");
+			fprintf(out_file, "array [");
 
 		for (dimension = field->fld_array_info->ary_dimension; dimension;
 			 dimension = dimension->dim_next) {
-			ib_fprintf(out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
+			fprintf(out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 					   dimension->dim_upper);
 			if (dimension->dim_next)
-				ib_fprintf(out_file, ", ");
+				fprintf(out_file, ", ");
 		}
 		if (datatype <= dtype_varying)
-			ib_fprintf(out_file, ", 1..%d", field->fld_array->fld_length);
+			fprintf(out_file, ", 1..%d", field->fld_array->fld_length);
 
-		ib_fprintf(out_file, "] of ");
+		fprintf(out_file, "] of ");
 	}
 	else {
 		datatype = field->fld_dtype;
 		if (datatype <= dtype_varying)
-			ib_fprintf(out_file, "%s [1..%d] of ", PACKED_ARRAY,
+			fprintf(out_file, "%s [1..%d] of ", PACKED_ARRAY,
 					   field->fld_length);
 	}
 
 	switch (datatype) {
 	case dtype_short:
-		ib_fprintf(out_file, "%s;", SHORT_DCL);
+		fprintf(out_file, "%s;", SHORT_DCL);
 		break;
 
 	case dtype_long:
-		ib_fprintf(out_file, "%s;", LONG_DCL);
+		fprintf(out_file, "%s;", LONG_DCL);
 		break;
 
 	case dtype_date:
 	case dtype_blob:
 	case dtype_quad:
-		ib_fprintf(out_file, "gds__quad;");
+		fprintf(out_file, "gds__quad;");
 		break;
 
 	case dtype_text:
-		ib_fprintf(out_file, "char;");
+		fprintf(out_file, "char;");
 		break;
 
 	case dtype_real:
-		ib_fprintf(out_file, "real;");
+		fprintf(out_file, "real;");
 		break;
 
 	case dtype_double:
-		ib_fprintf(out_file, "double;");
+		fprintf(out_file, "double;");
 		break;
 
 	default:
@@ -938,7 +938,7 @@ static void gen_blob_open( const act* action, USHORT column)
 		if (action->act_type == ACT_blob_create) {
 			printa(column, "if SQLCODE = 0 then");
 			align(column + INDENT);
-			ib_fprintf(out_file, "%s := %s;", reference->ref_value, s);
+			fprintf(out_file, "%s := %s;", reference->ref_value, s);
 		}
 	}
 }
@@ -1026,7 +1026,7 @@ static void gen_compile( const act* action, int column)
 		printa(column, "if %s = nil then", request->req_handle);
 
 	align(column + INDENT);
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   "GDS__COMPILE_REQUEST%s (%s, %s, %s, %d, gds__%d);\n",
 			   (request->req_flags & REQ_exp_hand) ? "" : "2",
 			   status_vector(action), symbol->sym_string, request->req_handle,
@@ -1055,13 +1055,13 @@ static void gen_create_database( const act* action, int column)
 	align(column);
 
 	if (request->req_length)
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "GDS__CREATE_DATABASE (%s, %d, '%s', %s, %d, gds__%d, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string,
 				   request->req_length, request->req_ident);
 	else
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "GDS__CREATE_DATABASE (%s, %d, '%s', %s, 0, 0, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string);
@@ -1196,11 +1196,11 @@ static void gen_database( const act* action, int column)
 		return;
 	global_first_flag = true;
 
-	ib_fprintf(out_file, "\n(**** GPRE Preprocessor Definitions ****)\n");
+	fprintf(out_file, "\n(**** GPRE Preprocessor Definitions ****)\n");
 #ifdef VMS
-	ib_fprintf(out_file, "%%include 'interbase:[syslib]gds.pas'\n");
+	fprintf(out_file, "%%include 'interbase:[syslib]gds.pas'\n");
 #else
-	ib_fprintf(out_file, "%%include '/interbase/include/gds.ins.pas';\n");
+	fprintf(out_file, "%%include '/interbase/include/gds.ins.pas';\n");
 #endif
 
 	indent = column + INDENT;
@@ -1212,12 +1212,12 @@ static void gen_database( const act* action, int column)
 		for (port = request->req_ports; port; port = port->por_next) {
 			if (flag) {
 				flag = false;
-				ib_fprintf(out_file, "type");
+				fprintf(out_file, "type");
 			}
 			make_port(port, indent);
 		}
 	}
-	ib_fprintf(out_file, "\nvar");
+	fprintf(out_file, "\nvar");
 	for (request = requests; request; request = request->req_routine) {
 		if (request->req_flags & REQ_local)
 			continue;
@@ -1444,7 +1444,7 @@ static void gen_ddl( const act* action, int column)
 	}
 
 	align(column);
-	ib_fprintf(out_file, "GDS__DDL (%s, %s, gds__trans, %d, gds__%d);",
+	fprintf(out_file, "GDS__DDL (%s, %s, gds__trans, %d, gds__%d);",
 			   status_vector(action),
 			   request->req_database->dbb_name->sym_string,
 			   request->req_length, request->req_ident);
@@ -1475,7 +1475,7 @@ static void gen_drop_database( const act* action, int column)
 	db = (DBB) action->act_object;
 	align(column);
 
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
@@ -1806,7 +1806,7 @@ static void gen_emodify( const act* action, int column)
 			continue;
 		field = reference->ref_field;
 		align(column);
-		ib_fprintf(out_file, "%s := %s;",
+		fprintf(out_file, "%s := %s;",
 				   gen_name(s1, reference, true), gen_name(s2, source, true));
 		if (field->fld_array_info)
 			gen_get_or_put_slice(action, reference, false, column);
@@ -2323,12 +2323,12 @@ static void gen_get_segment( const act* action, int column)
 		column += INDENT;
 		begin(column);
 		align(column);
-		ib_fprintf(out_file, "gds__ftof (gds__%d, gds__%d, %s, gds__%d);",
+		fprintf(out_file, "gds__ftof (gds__%d, gds__%d, %s, gds__%d);",
 				   blob->blb_buff_ident, blob->blb_len_ident,
 				   into->ref_value, blob->blb_len_ident);
 		if (into->ref_null_value) {
 			align(column);
-			ib_fprintf(out_file, "%s := gds__%d;",
+			fprintf(out_file, "%s := gds__%d;",
 					   into->ref_null_value, blob->blb_len_ident);
 		}
 		endp(column);
@@ -2483,10 +2483,10 @@ static void gen_put_segment( const act* action, int column)
 		blob = (blb*) action->act_request->req_blobs;
 		from = action->act_object;
 		align(column);
-		ib_fprintf(out_file, "gds__%d := %s;",
+		fprintf(out_file, "gds__%d := %s;",
 				   blob->blb_len_ident, from->ref_null_value);
 		align(column);
-		ib_fprintf(out_file, "gds__ftof (%s, gds__%d, gds__%d, gds__%d);",
+		fprintf(out_file, "gds__ftof (%s, gds__%d, gds__%d, gds__%d);",
 				   from->ref_value, blob->blb_len_ident,
 				   blob->blb_buff_ident, blob->blb_len_ident);
 	}
@@ -2580,7 +2580,7 @@ static void gen_receive( const act* action, int column, const gpre_port* port)
 	align(column);
 
 	const gpre_req* request = action->act_request;
-	ib_fprintf(out_file, "GDS__RECEIVE (%s, %s, %d, %d, %sgds__%d, %s);",
+	fprintf(out_file, "GDS__RECEIVE (%s, %s, %d, %d, %sgds__%d, %s);",
 			   status_vector(action),
 			   request->req_handle,
 			   port->por_msg_number,
@@ -2982,7 +2982,7 @@ static void gen_send( const act* action, const gpre_port* port, int column)
 	const gpre_req* request = action->act_request;
 	align(column);
 
-	ib_fprintf(out_file, "GDS__SEND (%s, %s, %d, %d, gds__%d, %s);",
+	fprintf(out_file, "GDS__SEND (%s, %s, %d, %d, gds__%d, %s);",
 			   status_vector(action),
 			   request->req_handle,
 			   port->por_msg_number,
@@ -3023,13 +3023,13 @@ static void gen_slice( const act* action, int column)
 			const ref* lower = (const ref*) tail->slc_lower->nod_arg[0];
 			const ref* upper = (const ref*) tail->slc_upper->nod_arg[0];
 			if (lower->ref_value)
-				ib_fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
+				fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
 						   lower->ref_value);
 			else
-				ib_fprintf(out_file, " * ( %s + 1)", upper->ref_value);
+				fprintf(out_file, " * ( %s + 1)", upper->ref_value);
 		}
 
-	ib_fprintf(out_file, ";");
+	fprintf(out_file, ";");
 
 //  Make assignments to variable vector 
 	const ref* reference;
@@ -3082,7 +3082,7 @@ static void gen_start( const act* action, const gpre_port* port, int column)
 					gen_get_or_put_slice(action, reference, false, column);
 		}
 
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "GDS__START_AND_SEND (%s, %s, %s, %d, %d, gds__%d, %s);",
 				   vector, request->req_handle, request_trans(action,
 															  request),
@@ -3091,7 +3091,7 @@ static void gen_start( const act* action, const gpre_port* port, int column)
 	}
 
 	else
-		ib_fprintf(out_file, "GDS__START_REQUEST (%s, %s, %s, %s);",
+		fprintf(out_file, "GDS__START_REQUEST (%s, %s, %s, %s);",
 				   vector,
 				   request->req_handle,
 				   request_trans(action, request),
@@ -3194,13 +3194,13 @@ static void gen_t_start( const act* action, int column)
 		   trans->tra_db_count);
 
 	for (tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
-		ib_putc(',', out_file);
+		putc(',', out_file);
 		align(column + INDENT);
-		ib_fprintf(out_file, "%%REF %s, %%IMMED %d, %%REF gds__tpb_%d",
+		fprintf(out_file, "%%REF %s, %%IMMED %d, %%REF gds__tpb_%d",
 				   tpb_val->tpb_database->dbb_name->sym_string,
 				   tpb_val->tpb_length, tpb_val->tpb_ident);
 	}
-	ib_fprintf(out_file, ")");
+	fprintf(out_file, ")");
 #else
 	printa(column, "GDS__START_MULTIPLE (%s, %s, %d, gds__teb);",
 		   status_vector(action),
@@ -3238,7 +3238,7 @@ static void gen_tpb( tpb* tpb_val, int column)
 			p++;
 		if (p - buffer > 60) {
 			align(column + INDENT);
-			ib_fprintf(out_file, " %s", buffer);
+			fprintf(out_file, " %s", buffer);
 			p = buffer;
 			*p = 0;
 		}
@@ -3253,7 +3253,7 @@ static void gen_tpb( tpb* tpb_val, int column)
 		sprintf(p, "chr(%d)", c);
 
 	align(column + INDENT);
-	ib_fprintf(out_file, "%s", buffer);
+	fprintf(out_file, "%s", buffer);
 
 	printa(column, "%s;\n", CLOSE_BRACKET);
 }
@@ -3270,12 +3270,12 @@ static void gen_trans( const act* action, int column)
 	align(column);
 
 	if (action->act_type == ACT_commit_retain_context)
-		ib_fprintf(out_file, "GDS__COMMIT_RETAINING (%s, %s);",
+		fprintf(out_file, "GDS__COMMIT_RETAINING (%s, %s);",
 				   status_vector(action),
 				   (action->act_object) ? (TEXT *) action->
 				   act_object : "gds__trans");
 	else
-		ib_fprintf(out_file, "GDS__%s_TRANSACTION (%s, %s);",
+		fprintf(out_file, "GDS__%s_TRANSACTION (%s, %s);",
 				   (action->act_type ==
 					ACT_commit) ? "COMMIT" : (action->act_type ==
 											  ACT_rollback) ? "ROLLBACK" :
@@ -3327,7 +3327,7 @@ static void gen_whenever( const swe* label, int column)
 	TEXT *condition;
 
 	if (label)
-		ib_fprintf(out_file, ";");
+		fprintf(out_file, ";");
 
 	while (label) {
 		switch (label->swe_condition) {
@@ -3344,7 +3344,7 @@ static void gen_whenever( const swe* label, int column)
 			break;
 		}
 		align(column);
-		ib_fprintf(out_file, "if %s then goto %s;", condition,
+		fprintf(out_file, "if %s then goto %s;", condition,
 				   label->swe_label);
 		label = label->swe_next;
 	}
@@ -3373,52 +3373,52 @@ static void make_array_declaration( const ref* reference)
 	field->fld_array_info->ary_declared = true;
 
 	if (field->fld_array_info->ary_dtype <= dtype_varying)
-		ib_fprintf(out_file, "gds__%d : %s [",
+		fprintf(out_file, "gds__%d : %s [",
 				   field->fld_array_info->ary_ident, PACKED_ARRAY);
 	else
-		ib_fprintf(out_file, "gds__%d : array [",
+		fprintf(out_file, "gds__%d : array [",
 				   field->fld_array_info->ary_ident);
 
 //   Print out the dimension part of the declaration  
 	for (dimension = field->fld_array_info->ary_dimension; dimension;
 		 dimension = dimension->dim_next) {
-		ib_fprintf(out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
+		fprintf(out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 				   dimension->dim_upper);
 		if (dimension->dim_next)
-			ib_fprintf(out_file, ", ");
+			fprintf(out_file, ", ");
 	}
 
 	if (field->fld_array_info->ary_dtype <= dtype_varying)
-		ib_fprintf(out_file, ", 1..%d", field->fld_array->fld_length);
+		fprintf(out_file, ", 1..%d", field->fld_array->fld_length);
 
-	ib_fprintf(out_file, "] of ");
+	fprintf(out_file, "] of ");
 
 	switch (field->fld_array_info->ary_dtype) {
 	case dtype_short:
-		ib_fprintf(out_file, SHORT_DCL);
+		fprintf(out_file, SHORT_DCL);
 		break;
 
 	case dtype_long:
-		ib_fprintf(out_file, LONG_DCL);
+		fprintf(out_file, LONG_DCL);
 		break;
 
 	case dtype_cstring:
 	case dtype_text:
 	case dtype_varying:
-		ib_fprintf(out_file, "char");
+		fprintf(out_file, "char");
 		break;
 
 	case dtype_date:
 	case dtype_quad:
-		ib_fprintf(out_file, "ISC_QUAD");
+		fprintf(out_file, "ISC_QUAD");
 		break;
 
 	case dtype_real:
-		ib_fprintf(out_file, "real");
+		fprintf(out_file, "real");
 		break;
 
 	case dtype_double:
-		ib_fprintf(out_file, "double");
+		fprintf(out_file, "double");
 		break;
 
 	default:
@@ -3430,7 +3430,7 @@ static void make_array_declaration( const ref* reference)
 
 //   Print out the database field  
 
-	ib_fprintf(out_file, ";\t(* %s *)\n", name);
+	fprintf(out_file, ";\t(* %s *)\n", name);
 }
 
 
@@ -3480,7 +3480,7 @@ static void make_port( const gpre_port* port, int column)
 		 reference = reference->ref_next)
 	{
 		if (flag)
-			ib_fprintf(out_file, ";");
+			fprintf(out_file, ";");
 		flag = true;
 		align(column + INDENT);
 		const gpre_fld* field = reference->ref_field;
@@ -3495,34 +3495,34 @@ static void make_port( const gpre_port* port, int column)
 
 		switch (field->fld_dtype) {
 		case dtype_real:
-			ib_fprintf(out_file, "gds__%d\t: real\t(* %s *)",
+			fprintf(out_file, "gds__%d\t: real\t(* %s *)",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_double:
-			ib_fprintf(out_file, "gds__%d\t: double\t(* %s *)",
+			fprintf(out_file, "gds__%d\t: double\t(* %s *)",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_short:
-			ib_fprintf(out_file, "gds__%d\t: %s\t(* %s *)",
+			fprintf(out_file, "gds__%d\t: %s\t(* %s *)",
 					   reference->ref_ident, SHORT_DCL, name);
 			break;
 
 		case dtype_long:
-			ib_fprintf(out_file, "gds__%d\t: %s\t(* %s *)",
+			fprintf(out_file, "gds__%d\t: %s\t(* %s *)",
 					   reference->ref_ident, LONG_DCL, name);
 			break;
 
 		case dtype_date:
 		case dtype_quad:
 		case dtype_blob:
-			ib_fprintf(out_file, "gds__%d\t: gds__quad\t(* %s *)",
+			fprintf(out_file, "gds__%d\t: gds__quad\t(* %s *)",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_text:
-			ib_fprintf(out_file, "gds__%d\t: %s [1..%d] of char\t(* %s *)",
+			fprintf(out_file, "gds__%d\t: %s [1..%d] of char\t(* %s *)",
 					   reference->ref_ident, PACKED_ARRAY, field->fld_length,
 					   name);
 			break;
@@ -3563,19 +3563,19 @@ static void make_ready(
 	align(column);
 	if (filename)
 #ifdef VMS
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "GDS__ATTACH_DATABASE_d (%s, %%STDESCR %s, %s, %s, %s);",
 				   vector, filename, db->dbb_name->sym_string,
 				   (request ? s1 : "0"), (request ? s2 : "0"));
 #else
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "GDS__ATTACH_DATABASE (%s, %s (%s), %s, %s, %s, %s);",
 				   vector, SIZEOF, filename, filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));
 #endif
 	else
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "GDS__ATTACH_DATABASE (%s, %d, '%s', %s, %s, %s);", vector,
 				   strlen(db->dbb_filename), db->dbb_filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
@@ -3594,7 +3594,7 @@ static void printa( int column, const char* string, ...)
 
 	VA_START(ptr, string);
 	align(column);
-	ib_vfprintf(out_file, string, ptr);
+	vfprintf(out_file, string, ptr);
 }
 
 
@@ -3661,11 +3661,11 @@ static void t_start_auto( const act* action, const gpre_req* request,
 		if (sw_auto)
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
 				align(column);
-				ib_fprintf(out_file, "if (%s = nil",
+				fprintf(out_file, "if (%s = nil",
 						   db->dbb_name->sym_string);
 				if (stat && buffer[0])
-					ib_fprintf(out_file, ") and (%s[2] = 0", vector);
-				ib_fprintf(out_file, ") then");
+					fprintf(out_file, ") and (%s[2] = 0", vector);
+				fprintf(out_file, ") then");
 				make_ready(db, filename, vector, column + INDENT, 0);
 				if (buffer[0])
 					if (and_count % 4)
@@ -3694,12 +3694,12 @@ static void t_start_auto( const act* action, const gpre_req* request,
 		   vector, request_trans(action, request), count);
 
 	for (db = isc_databases; db; db = db->dbb_next) {
-		ib_putc(',', out_file);
+		putc(',', out_file);
 		align(column + INDENT);
-		ib_fprintf(out_file, "%%REF %s, %%IMMED 0, %%REF 0",
+		fprintf(out_file, "%%REF %s, %%IMMED 0, %%REF 0",
 				   db->dbb_name->sym_string);
 	}
-	ib_fprintf(out_file, ");");
+	fprintf(out_file, ");");
 	column -= INDENT;
 
 #else

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.19 2004-02-02 11:01:26 robocop Exp $
+//	$Id: msc.cpp,v 1.20 2004-04-28 22:05:56 brodsom Exp $
 //
 //  
 //  
@@ -47,7 +47,7 @@
 //**************************************************
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"

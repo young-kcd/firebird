@@ -31,7 +31,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../remote/remote.h"
@@ -1836,7 +1836,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		REM_MSG message = statement->rsr_message;
 
 #ifdef DEBUG
-		ib_fprintf(ib_stdout, "Rows Pending in REM_fetch=%lu\n",
+		fprintf(stdout, "Rows Pending in REM_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
 
@@ -1890,7 +1890,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 					statement->rsr_reorder_level =
 						sqldata->p_sqldata_messages / 2;
 #ifdef DEBUG
-				ib_fprintf(ib_stdout,
+				fprintf(stdout,
 						   "Recalculating Rows Pending in REM_fetch=%lu\n",
 						   statement->rsr_rows_pending);
 #endif
@@ -3229,7 +3229,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			
 
 #ifdef DEBUG
-		ib_fprintf(ib_stdout, "Rows Pending in REM_receive=%d\n",
+		fprintf(stdout, "Rows Pending in REM_receive=%d\n",
 				   tail->rrq_rows_pending);
 #endif
 
@@ -3256,11 +3256,11 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		{	/* there's only one message type */
 
 #ifdef DEBUG
-			ib_fprintf(ib_stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
+			fprintf(stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
 			if (!message->msg_address)
-				ib_fprintf(ib_stderr, "Out of data - reordering\n");
+				fprintf(stderr, "Out of data - reordering\n");
 			else
-				ib_fprintf(ib_stderr, "Low on inventory - reordering\n");
+				fprintf(stderr, "Low on inventory - reordering\n");
 #endif
 
 			/* Format a request for data */
@@ -3334,16 +3334,16 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 				tail->rrq_rows_pending += data->p_data_messages;
 
 #ifdef DEBUG
-				ib_fprintf(ib_stdout,
+				fprintf(stdout,
 						   "Recalculating Rows Pending in REM_receive=%d\n",
 						   tail->rrq_rows_pending);
 #endif
 			}
 
 #ifdef DEBUG
-			ib_fprintf(ib_stderr, "port_flags %d max_msg %d\n", port->port_flags,
+			fprintf(stderr, "port_flags %d max_msg %d\n", port->port_flags,
 					   request->rrq_max_msg);
-			ib_fprintf(ib_stderr, "Fetch: Req One batch of %d messages\n",
+			fprintf(stderr, "Fetch: Req One batch of %d messages\n",
 					   data->p_data_messages);
 #endif
 
@@ -3352,7 +3352,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			tail->rrq_batch_count++;
 
 #ifdef DEBUG
-			ib_fprintf(ib_stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
+			fprintf(stderr, "Rows Pending %d\n", tail->rrq_rows_pending);
 #endif
 
 			/* Queue up receipt of the pending data */
@@ -5037,7 +5037,7 @@ static bool batch_dsql_fetch(trdb*	trdb,
 				statement->rsr_flags |= RSR_eof;
 				statement->rsr_rows_pending = 0;
 #ifdef DEBUG
-				ib_fprintf(ib_stdout,
+				fprintf(stdout,
 						   "Resetting Rows Pending in batch_dsql_fetch=%lu\n",
 						   statement->rsr_rows_pending);
 #endif
@@ -5052,7 +5052,7 @@ static bool batch_dsql_fetch(trdb*	trdb,
 		statement->rsr_msgs_waiting++;
 		statement->rsr_rows_pending--;
 #ifdef DEBUG
-		ib_fprintf(ib_stdout,
+		fprintf(stdout,
 				   "Decrementing Rows Pending in batch_dsql_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
@@ -5177,9 +5177,9 @@ static bool batch_gds_receive(trdb*		trdb,
 			--tail->rrq_batch_count;
 			check_response(rdb, packet);
 #ifdef DEBUG
-			ib_fprintf(ib_stderr, "End of batch. rows pending = %d\n",
+			fprintf(stderr, "End of batch. rows pending = %d\n",
 					   tail->rrq_rows_pending);
-			ib_fprintf(ib_stderr, "Got batch error %ld Max message = %d\n",
+			fprintf(stderr, "Got batch error %ld Max message = %d\n",
 					   tmp_status[1], request->rrq_max_msg);
 #endif
 			if (!request->rrq_status_vector[1]) {
@@ -5208,7 +5208,7 @@ static bool batch_gds_receive(trdb*		trdb,
 		tail->rrq_msgs_waiting++;
 		tail->rrq_rows_pending--;
 #ifdef DEBUG
-		ib_fprintf(ib_stdout,
+		fprintf(stdout,
 				   "Decrementing Rows Pending in batch_gds_receive=%d\n",
 				   tail->rrq_rows_pending);
 #endif
@@ -5219,7 +5219,7 @@ static bool batch_gds_receive(trdb*		trdb,
 			if (!(--tail->rrq_batch_count))
 				tail->rrq_rows_pending = 0;
 #ifdef DEBUG
-			ib_fprintf(ib_stderr, "End of batch waiting %d\n",
+			fprintf(stderr, "End of batch waiting %d\n",
 					   tail->rrq_rows_pending);
 #endif
 			dequeue_receive(port);

@@ -310,25 +310,25 @@ static int print_line(SCHAR *arg, SSHORT relation_id, SSHORT count,
  **************************************/
 	if (!*arg) {
 		*arg = 1;
-		ib_printf("%32s ", " ");
+		printf("%32s ", " ");
 		SSHORT n = count;
 		if (n) {
 			do {
-				ib_printf("%10s", *headers++);
+				printf("%10s", *headers++);
 			} while (--n);
 		}
-		ib_printf("\n");
+		printf("\n");
 	}
 
 	// This didn't work previously! GDML uses uppercased keywords.
 	FOR (REQUEST_HANDLE request_handle)
 		x IN RDB$RELATIONS
 		WITH x.RDB$RELATION_ID EQ relation_id
-		ib_printf("%32s", x.rdb$relation_name);
+		printf("%32s", x.rdb$relation_name);
 		for (const SLONG* const end = counts + count; counts < end; counts++) {
-			ib_printf("%10d", *counts);
+			printf("%10d", *counts);
 		}
-		ib_printf("\n");
+		printf("\n");
 	END_FOR
 
 	return 0;

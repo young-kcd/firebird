@@ -41,10 +41,10 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.100 2004-03-18 05:55:57 robocop Exp $
+$Id: inet.cpp,v 1.101 2004-04-28 22:25:51 brodsom Exp $
 */
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -125,7 +125,7 @@ extern int h_errno;
 #endif
 
 #ifdef VMS
-#include <ib_perror.h>
+#include <perror.h>
 #include <socket.h>
 #define NO_FORK
 #define MAX_PTYPE	ptype_batch_send
@@ -720,8 +720,8 @@ rem_port* INET_connect(const TEXT* name,
 #ifdef DEBUG
 	{
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "INET_connect\n");
-			ib_fflush(ib_stdout);
+			fprintf(stdout, "INET_connect\n");
+			fflush(stdout);
 		};
 		INET_start_time = inet_debug_timer();
 		const char* p = getenv("INET_force_error");
@@ -1734,10 +1734,10 @@ static int check_host(
 		strcpy(user, user_name);
 
 	if (result == -1) {
-		IB_FILE* fp = ib_fopen(GDS_HOSTS_FILE, "r");
+		FILE* fp = fopen(GDS_HOSTS_FILE, "r");
 		const TEXT* hosts_file = fp ? (TEXT*)GDS_HOSTS_FILE : (TEXT*)HOSTS_FILE;
 		if (fp)
-			ib_fclose(fp);
+			fclose(fp);
 
 		result = parse_hosts(hosts_file, host_name, user);
 		if (result == -1)
@@ -1775,7 +1775,7 @@ static bool check_proxy(rem_port* port,
 #else
 	gds__prefix(proxy_file, PROXY_FILE);
 #endif
-	IB_FILE* proxy = ib_fopen(proxy_file, "r");
+	FILE* proxy = fopen(proxy_file, "r");
 	if (!proxy)
 		return false;
 
@@ -1786,7 +1786,7 @@ static bool check_proxy(rem_port* port,
 	for (;;) {
 		int c;
 		TEXT* p = line;
-		while (((c = ib_getc(proxy)) != 0) && c != EOF && c != '\n')
+		while (((c = getc(proxy)) != 0) && c != EOF && c != '\n')
 		{
 			*p++ = c;
 		}
@@ -1811,7 +1811,7 @@ static bool check_proxy(rem_port* port,
 			break;
 	}
 
-	ib_fclose(proxy);
+	fclose(proxy);
 
 	return result;
 }
@@ -1909,15 +1909,15 @@ static void disconnect( rem_port* port)
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary) {
-		ib_fprintf(ib_stdout, "INET_count_send = %lu packets\n",
+		fprintf(stdout, "INET_count_send = %lu packets\n",
 				   INET_count_send);
-		ib_fprintf(ib_stdout, "INET_bytes_send = %lu bytes\n",
+		fprintf(stdout, "INET_bytes_send = %lu bytes\n",
 				   INET_bytes_send);
-		ib_fprintf(ib_stdout, "INET_count_recv = %lu packets\n",
+		fprintf(stdout, "INET_count_recv = %lu packets\n",
 				   INET_count_recv);
-		ib_fprintf(ib_stdout, "INET_bytes_recv = %lu bytes\n",
+		fprintf(stdout, "INET_bytes_recv = %lu bytes\n",
 				   INET_bytes_recv);
-		ib_fflush(ib_stdout);
+		fflush(stdout);
 	}
 #endif
 
@@ -2240,7 +2240,7 @@ static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
 	TEXT line[256], entry1[256], entry2[256];
 
 	int result = -1;
-	IB_FILE* fp = ib_fopen(file_name, "r");
+	FILE* fp = fopen(file_name, "r");
 
 	if (fp) {
 		for (;;) {
@@ -2248,7 +2248,7 @@ static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
 			entry1[1] = entry2[1] = 0;
 			int c;
 			TEXT* p = line;
-			while ((c = ib_getc(fp)) != EOF && c != '\n')
+			while ((c = getc(fp)) != EOF && c != '\n')
 				*p++ = c;
 			*p = 0;
 			sscanf(line, "%s", entry1);
@@ -2257,7 +2257,7 @@ static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
 			if (c == EOF || result > -1)
 				break;
 		}
-		ib_fclose(fp);
+		fclose(fp);
 	}
 
 	return result;
@@ -2396,10 +2396,10 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 				static ULONG op_rec_count = 0;
 				op_rec_count++;
 				if (INET_trace & TRACE_operations) {
-					ib_fprintf(ib_stdout, "%04lu: OP Recd %5lu opcode %d\n",
+					fprintf(stdout, "%04lu: OP Recd %5lu opcode %d\n",
 							   inet_debug_timer(),
 							   op_rec_count, packet->p_operation);
-					ib_fflush(ib_stdout);
+					fflush(stdout);
 				}
 			}
 #endif
@@ -2435,10 +2435,10 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 				static ULONG op_rec_count = 0;
 				op_rec_count++;
 				if (INET_trace & TRACE_operations) {
-					ib_fprintf(ib_stdout, "%05lu: OP Recd %5lu opcode %d\n",
+					fprintf(stdout, "%05lu: OP Recd %5lu opcode %d\n",
 							   inet_debug_timer(),
 							   op_rec_count, packet->p_operation);
-					ib_fflush(ib_stdout);
+					fflush(stdout);
 				}
 			};
 #endif
@@ -2742,10 +2742,10 @@ static int send_full( rem_port* port, PACKET * packet)
 		static ULONG op_sent_count = 0;
 		op_sent_count++;
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "%05lu: OP Sent %5lu opcode %d\n",
+			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d\n",
 					   inet_debug_timer(),
 					   op_sent_count, packet->p_operation);
-			ib_fflush(ib_stdout);
+			fflush(stdout);
 		};
 	};
 #endif
@@ -2771,10 +2771,10 @@ static int send_partial( rem_port* port, PACKET * packet)
 		static ULONG op_sentp_count = 0;
 		op_sentp_count++;
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n",
+			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n",
 					   inet_debug_timer(),
 					   op_sentp_count, packet->p_operation);
-			ib_fflush(ib_stdout);
+			fflush(stdout);
 		};
 	};
 #endif
@@ -3416,10 +3416,10 @@ static void packet_print(
 			sum += *packet++;
 		} while (--l);
 
-	ib_fprintf(ib_stdout,
+	fprintf(stdout,
 			   "%05lu:    PKT %s\t(%4d): length = %4d, checksum = %d\n",
 			   inet_debug_timer(), string, counter, length, sum);
-	ib_fflush(ib_stdout);
+	fflush(stdout);
 }
 #endif
 
@@ -3546,9 +3546,9 @@ static int packet_receive(
 #ifdef DEBUG
 				if (INET_trace & TRACE_operations)
 				{
-					ib_fprintf(ib_stdout, "%05lu: OP Sent: op_dummy\n",
+					fprintf(stdout, "%05lu: OP Sent: op_dummy\n",
 							   inet_debug_timer());
-					ib_fflush(ib_stdout);
+					fflush(stdout);
 				}
 #endif
 				packet.p_operation = op_dummy;
@@ -3635,16 +3635,16 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		THREAD_EXIT;
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "Before Send\n");
-			ib_fflush(ib_stdout);
+			fprintf(stdout, "Before Send\n");
+			fflush(stdout);
 		}
 #endif
 		SSHORT n = -1;
 		n = send((SOCKET) port->port_handle, data, length, 0);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
-			ib_fprintf(ib_stdout, "After Send n is %d\n", n);
-			ib_fflush(ib_stdout);
+			fprintf(stdout, "After Send n is %d\n", n);
+			fflush(stdout);
 		}
 #endif
 		THREAD_ENTER;

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.23 2004-03-28 09:10:27 robocop Exp $
+ * $Id: drop.cpp,v 1.24 2004-04-28 22:24:40 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -30,7 +30,7 @@
 */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <errno.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -138,12 +138,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					break;
 
 				default:
-					ib_printf("***Ignoring unknown switch %c.\n", *p);
+					printf("***Ignoring unknown switch %c.\n", *p);
 					break;
 				}
 
 	if (sw_version)
-		ib_printf("gds_drop version %s\n", GDS_VERSION);
+		printf("gds_drop version %s\n", GDS_VERSION);
 
 	if (sw_events)
 		remove_resource(EVENT_FILE, Config::getEventMemSize(), EVENT_SEMAPHORES,
@@ -245,13 +245,13 @@ static void remove_resource(
 	if (!ISC_map_file
 		(status_vector, expanded_filename, dummy_init, 0, shm_length,
 		 &shmem_data)) {
-		ib_printf("\n***Unable to access %s resources:\n", label);
+		printf("\n***Unable to access %s resources:\n", label);
 		gds__print_status(status_vector);
 		return;
 	}
 
 	if ((key = get_key(expanded_filename)) == -1) {
-		ib_printf("\n***Unable to get the key value of the %s file.\n",
+		printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;
 	}
@@ -259,22 +259,22 @@ static void remove_resource(
 	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1 ||
 		(semid = sem_exclusive(key, sem_count)) == -1) 
 	{
-		ib_printf("\n***File or semaphores for %s are currently in use.\n",
+		printf("\n***File or semaphores for %s are currently in use.\n",
 				  label);
 		return;
 	}
 
 	if (shmctl(shmid, IPC_RMID, 0) == -1)
-		ib_printf("\n***Error trying to drop %s file.  ERRNO = %d.\n", label,
+		printf("\n***Error trying to drop %s file.  ERRNO = %d.\n", label,
 				  errno);
 	else
-		ib_printf("Successfully removed %s file.\n", label);
+		printf("Successfully removed %s file.\n", label);
 
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
-		ib_printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
+		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
 				  label, errno);
 	else
-		ib_printf("Successfully removed %s semaphores.\n", label);
+		printf("Successfully removed %s semaphores.\n", label);
 }
 #endif
 
@@ -321,13 +321,13 @@ static void remove_resource(
 	gds__prefix_lock(expanded_filename, filename);
 
 	if ((key = get_key(expanded_filename)) == -1) {
-		ib_printf("\n***Unable to get the key value of the %s file.\n",
+		printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;
 	}
 
 	if ((semid = sem_exclusive(key, sem_count)) == -1) {
-		ib_printf("\n***Semaphores for %s are currently in use.\n", label);
+		printf("\n***Semaphores for %s are currently in use.\n", label);
 		return;
 	}
 
@@ -337,10 +337,10 @@ static void remove_resource(
 	#else
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
 	#endif
-		ib_printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
+		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
 				  label, errno);
 	else
-		ib_printf("Successfully removed %s semaphores.\n", label);
+		printf("Successfully removed %s semaphores.\n", label);
 }
 #endif
 

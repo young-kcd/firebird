@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/compile.h"

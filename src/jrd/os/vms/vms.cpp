@@ -49,7 +49,7 @@
 ***/
 
 #ifdef TRACE
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #endif
 
 
@@ -169,7 +169,7 @@ void PIO_close(jrd_file* main_file)
 #ifdef TRACE
 		if (file->fil_trace) {
 			trace_event(dbb->dbb_file, trace_close, 0, 0);
-			ib_fclose(file->fil_trace);
+			fclose(file->fil_trace);
 		}
 #endif
 	}
@@ -877,7 +877,7 @@ static void setup_trace(jrd_file* file, SSHORT event)
  *	Perform setup to create trace file.
  *
  **************************************/
-	file->fil_trace = ib_fopen("trace.log", "w");
+	file->fil_trace = fopen("trace.log", "w");
 	trace_event(file, event, file->fil_string, strlen(file->fil_string));
 }
 
@@ -897,11 +897,11 @@ static void trace_event(jrd_file* file, SSHORT type, SCHAR * ptr, SSHORT length)
 	if (!file->fil_trace)
 		return;
 
-	ib_putc(type, file->fil_trace);
-	ib_putc(length, file->fil_trace);
+	putc(type, file->fil_trace);
+	putc(length, file->fil_trace);
 
 	while (--length >= 0)
-		ib_putc(*ptr++, file->fil_trace);
+		putc(*ptr++, file->fil_trace);
 }
 #endif
 

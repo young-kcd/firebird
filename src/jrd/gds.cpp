@@ -38,7 +38,7 @@
 //#define ISC_TIME_SECONDS_PRECISION_SCALE	-4
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
@@ -75,7 +75,7 @@
 
 #ifdef VMS
 #include <file.h>
-#include <ib_perror.h>
+#include <perror.h>
 #include <descrip.h>
 #include <types.h>
 #include <stat.h>
@@ -1153,15 +1153,15 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 #ifdef WIN_NT
 	trace_mutex.enter();
 #endif
-	IB_FILE* file = ib_fopen(name, FOPEN_APPEND_TYPE);
+	FILE* file = fopen(name, FOPEN_APPEND_TYPE);
 	if (file != NULL)
 	{
-		ib_fprintf(file, "\n%s%s\t%.25s\t", 
+		fprintf(file, "\n%s%s\t%.25s\t", 
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		VA_START(ptr, text);
-		ib_vfprintf(file, text, ptr);
-		ib_fprintf(file, "\n\n");
-		ib_fclose(file);
+		vfprintf(file, text, ptr);
+		fprintf(file, "\n\n");
+		fclose(file);
 	}
 #ifdef WIN_NT
 	trace_mutex.leave();
@@ -1617,7 +1617,7 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 		const size_t len = strlen(regPrefix);
 		if (len > 0) {
 			if (len > sizeof(ib_prefix_val)) {
-				ib_perror("ib_prefix path size too large - truncated");                      
+				perror("ib_prefix path size too large - truncated");                      
 			}
 			strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
 			ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
@@ -2117,9 +2117,9 @@ void API_ROUTINE gds__put_error(const TEXT* string)
 #ifdef PUT_ERROR
 #undef PUT_ERROR
 #else
-	ib_fputs(string, ib_stderr);
-	ib_fputc('\n', ib_stderr);
-	ib_fflush(ib_stderr);
+	fputs(string, stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 #endif
 }
 
@@ -2316,7 +2316,7 @@ void* API_ROUTINE gds__temp_file(
  *      If unlink_flag is TRUE than file is marked as pre-deleted even if 
  *      expanded_string is not NULL.
  * NOTE 
- *      Function returns untyped handle that needs to be casted to either IB_FILE
+ *      Function returns untyped handle that needs to be casted to either FILE
  *      or used as file descriptor. This is ugly and needs to be fixed probably 
  *      via introducing two functions with different return types.
  *
@@ -2367,7 +2367,7 @@ void* API_ROUTINE gds__temp_file(
 	}
 	if ((int)result == -1) return result;
 	if (stdio_flag) {
-		if (!(result = ib_fdopen((int) result, "w+b")))
+		if (!(result = fdopen((int) result, "w+b")))
 			return (void *)-1;
 	}
 #else
@@ -2392,7 +2392,7 @@ void* API_ROUTINE gds__temp_file(
 		return result;
 
 	if (stdio_flag)
-		if (!(result = ib_fdopen((int)(IPTR)result, "w+")))
+		if (!(result = fdopen((int)(IPTR)result, "w+")))
 			return (void *)-1;
 
 	if (expanded_string)
@@ -3621,7 +3621,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 
 void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
 {
-	ib_printf("%4d %s\n", offset, line);
+	printf("%4d %s\n", offset, line);
 }
 
 void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)

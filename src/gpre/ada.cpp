@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.37 2004-02-02 11:01:11 robocop Exp $
+//	$Id: ada.cpp,v 1.38 2004-04-28 22:05:57 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -33,7 +33,7 @@
 #include <string.h>
 #endif
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/y_ref.h"
@@ -448,12 +448,12 @@ void ADA_print_buffer( TEXT* output_buffer, const int column)
 
 			if (multiline) {
 				for (i = column / 8; i; --i)
-					ib_putc('\t', out_file);
+					putc('\t', out_file);
 
 				for (i = column % 8; i; --i)
-					ib_putc(' ', out_file);
+					putc(' ', out_file);
 			}
-			ib_fprintf(out_file, "%s\n", s);
+			fprintf(out_file, "%s\n", s);
 			s[0] = 0;
 			p = s;
 			multiline = true;
@@ -462,11 +462,11 @@ void ADA_print_buffer( TEXT* output_buffer, const int column)
 	*p = 0;
 	if (multiline) {
 		for (i = column / 8; i; --i)
-			ib_putc('\t', out_file);
+			putc('\t', out_file);
 		for (i = column % 8; i; --i)
-			ib_putc(' ', out_file);
+			putc(' ', out_file);
 	}
-	ib_fprintf(out_file, "%s", s);
+	fprintf(out_file, "%s", s);
 	output_buffer[0] = 0;
 }
 
@@ -481,14 +481,14 @@ static void align( int column)
 	if (column < 0)
 		return;
 
-	ib_putc('\n', out_file);
+	putc('\n', out_file);
 
 	int i;
 	for (i = column / 8; i; --i)
-		ib_putc('\t', out_file);
+		putc('\t', out_file);
 
 	for (i = column % 8; i; --i)
-		ib_putc(' ', out_file);
+		putc(' ', out_file);
 }
 
 
@@ -599,7 +599,7 @@ static void gen_any( const act* action, int column)
 	align(column);
 	const gpre_req* request = action->act_request;
 
-	ib_fprintf(out_file, "%s_r (&%s, &%s",
+	fprintf(out_file, "%s_r (&%s, &%s",
 			   request->req_handle, request->req_handle, request->req_trans);
 
 	const gpre_port* port = request->req_vport;
@@ -607,11 +607,11 @@ static void gen_any( const act* action, int column)
 		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-				ib_fprintf(out_file, ", %s", reference->ref_value);
+				fprintf(out_file, ", %s", reference->ref_value);
 		}
 	}
 
-	ib_fprintf(out_file, ")");
+	fprintf(out_file, ")");
 }
 
 
@@ -904,10 +904,10 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 			char buffer[121];
 			strncpy(buffer, string + from, 120 - c_len);
 			buffer[120 - c_len] = 0;
-			ib_fprintf(out_file, "%s%s\n", COMMENT, buffer);
+			fprintf(out_file, "%s%s\n", COMMENT, buffer);
 		}
 		else
-			ib_fprintf(out_file, "%s%s\n", COMMENT, string + from);
+			fprintf(out_file, "%s%s\n", COMMENT, string + from);
 		from = to;
 		to = to + 120 - c_len;
 	}
@@ -940,7 +940,7 @@ static void gen_compatibility_symbol(
 {
 	const TEXT* v3_prefix = (isLangCpp(sw_language)) ? "gds_" : "gds__";
 
-	ib_fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
+	fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
 			   v4_prefix, symbol, trailer);
 }
 #endif
@@ -1149,7 +1149,7 @@ static void gen_database( const act* action, int column)
 		return;
 	first_flag = true;
 
-	ib_fprintf(out_file, "\n----- GPRE Preprocessor Definitions -----\n");
+	fprintf(out_file, "\n----- GPRE Preprocessor Definitions -----\n");
 
 	gpre_req* request;
 	for (request = requests; request; request = request->req_next) {
@@ -1158,7 +1158,7 @@ static void gen_database( const act* action, int column)
 		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port, column);
 	}
-	ib_fprintf(out_file, "\n");
+	fprintf(out_file, "\n");
 	for (request = requests; request; request = request->req_routine) {
 		if (request->req_flags & REQ_local)
 			continue;
@@ -2108,7 +2108,7 @@ static void gen_function( const act* function, int column)
 
 	gpre_req* request = action->act_request;
 
-	ib_fprintf(out_file, "static %s_r (request, transaction", request->req_handle);
+	fprintf(out_file, "static %s_r (request, transaction", request->req_handle);
 
 	TEXT s[64];
 	const gpre_port* port = request->req_vport;
@@ -2116,11 +2116,11 @@ static void gen_function( const act* function, int column)
 		for (REF reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-				ib_fprintf(out_file, ", %s",
+				fprintf(out_file, ", %s",
 						   gen_name(s, reference->ref_source, true));
 		}
 	}
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port) {
@@ -2165,16 +2165,16 @@ static void gen_function( const act* function, int column)
 				CPR_error("gen_function: unsupported datatype");
 				return;
 			}
-			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
+			fprintf(out_file, "    %s\t%s;\n", dtype,
 					   gen_name(s, reference->ref_source, true));
 		}
 	}
 
-	ib_fprintf(out_file, "{\n");
+	fprintf(out_file, "{\n");
 	for (port = request->req_ports; port; port = port->por_next)
 		make_port(port, column);
 
-	ib_fprintf(out_file, "\n\n");
+	fprintf(out_file, "\n\n");
 	gen_s_start(action, 0);
 	gen_receive(action, column, request->req_primary);
 
@@ -2188,7 +2188,7 @@ static void gen_function( const act* function, int column)
 	}
 
 	port = request->req_primary;
-	ib_fprintf(out_file, "\nreturn %s;\n}\n",
+	fprintf(out_file, "\nreturn %s;\n}\n",
 			   gen_name(s, port->por_references, true)
 		);
 }
@@ -2989,14 +2989,14 @@ static void gen_slice( const act* action, int column)
 			const ref* lower = (REF) tail->slc_lower->nod_arg[0];
 			const ref* upper = (REF) tail->slc_upper->nod_arg[0];
 			if (lower->ref_value)
-				ib_fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
+				fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
 						   lower->ref_value);
 			else
-				ib_fprintf(out_file, " * ( %s + 1)", upper->ref_value);
+				fprintf(out_file, " * ( %s + 1)", upper->ref_value);
 		}
 	}
 
-	ib_fprintf(out_file, ";");
+	fprintf(out_file, ";");
 
 //  Make assignments to variable vector 
 
@@ -3306,16 +3306,16 @@ static void make_array_declaration( REF reference, int column)
 		&& (field->fld_array->fld_length != 1)) 
 	{
 		if (field->fld_array->fld_sub_type == 1)
-			ib_fprintf(out_file, "subtype isc_%d_byte is %s(1..%d);\n",
+			fprintf(out_file, "subtype isc_%d_byte is %s(1..%d);\n",
 					   field->fld_array_info->ary_ident, BYTE_VECTOR_DCL,
 					   field->fld_array->fld_length);
 		else
-			ib_fprintf(out_file, "subtype isc_%d_string is string(1..%d);\n",
+			fprintf(out_file, "subtype isc_%d_string is string(1..%d);\n",
 					   field->fld_array_info->ary_ident,
 					   field->fld_array->fld_length);
 	}
 
-	ib_fprintf(out_file, "type isc_%dt is array (",
+	fprintf(out_file, "type isc_%dt is array (",
 			   field->fld_array_info->ary_ident);
 
 //   Print out the dimension part of the declaration  
@@ -3324,21 +3324,21 @@ static void make_array_declaration( REF reference, int column)
 		 i < field->fld_array_info->ary_dimension_count;
 		 dimension = dimension->dim_next, ++i)
 	{
-		ib_fprintf(out_file, "%s range %"SLONGFORMAT"..%"SLONGFORMAT
+		fprintf(out_file, "%s range %"SLONGFORMAT"..%"SLONGFORMAT
 				   ",\n                        ",
 				   LONG_DCL, dimension->dim_lower, dimension->dim_upper);
 	}
 
-	ib_fprintf(out_file, "%s range %"SLONGFORMAT"..%"SLONGFORMAT") of ",
+	fprintf(out_file, "%s range %"SLONGFORMAT"..%"SLONGFORMAT") of ",
 			   LONG_DCL, dimension->dim_lower, dimension->dim_upper);
 
 	switch (field->fld_array_info->ary_dtype) {
 	case dtype_short:
-		ib_fprintf(out_file, "%s", SHORT_DCL);
+		fprintf(out_file, "%s", SHORT_DCL);
 		break;
 
 	case dtype_long:
-		ib_fprintf(out_file, "%s", LONG_DCL);
+		fprintf(out_file, "%s", LONG_DCL);
 		break;
 
 	case dtype_cstring:
@@ -3346,31 +3346,31 @@ static void make_array_declaration( REF reference, int column)
 	case dtype_varying:
 		if (field->fld_array->fld_length == 1) {
 			if (field->fld_array->fld_sub_type == 1)
-				ib_fprintf(out_file, BYTE_DCL);
+				fprintf(out_file, BYTE_DCL);
 			else
-				ib_fprintf(out_file, "interbase.isc_character");
+				fprintf(out_file, "interbase.isc_character");
 		}
 		else {
 			if (field->fld_array->fld_sub_type == 1)
-				ib_fprintf(out_file, "isc_%d_byte",
+				fprintf(out_file, "isc_%d_byte",
 						   field->fld_array_info->ary_ident);
 			else
-				ib_fprintf(out_file, "isc_%d_string",
+				fprintf(out_file, "isc_%d_string",
 						   field->fld_array_info->ary_ident);
 		}
 		break;
 
 	case dtype_date:
 	case dtype_quad:
-		ib_fprintf(out_file, "interbase.quad");
+		fprintf(out_file, "interbase.quad");
 		break;
 
 	case dtype_real:
-		ib_fprintf(out_file, "%s", REAL_DCL);
+		fprintf(out_file, "%s", REAL_DCL);
 		break;
 
 	case dtype_double:
-		ib_fprintf(out_file, "%s", DOUBLE_DCL);
+		fprintf(out_file, "%s", DOUBLE_DCL);
 		break;
 
 	default:
@@ -3379,11 +3379,11 @@ static void make_array_declaration( REF reference, int column)
 		return;
 	}
 
-	ib_fprintf(out_file, ";\n");
+	fprintf(out_file, ";\n");
 
 //   Print out the database field  
 
-	ib_fprintf(out_file, "isc_%d : isc_%dt;\t--- %s\n\n",
+	fprintf(out_file, "isc_%d : isc_%dt;\t--- %s\n\n",
 			   field->fld_array_info->ary_ident,
 			   field->fld_array_info->ary_ident, name);
 }
@@ -3716,11 +3716,11 @@ static void t_start_auto(const act* action,
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				align(column);
-				ib_fprintf(out_file, "if (%s%s = 0", ada_package,
+				fprintf(out_file, "if (%s%s = 0", ada_package,
 						   db->dbb_name->sym_string);
 				if (stat && buffer[0])
-					ib_fprintf(out_file, "and %s(1) = 0", vector);
-				ib_fprintf(out_file, ") then");
+					fprintf(out_file, "and %s(1) = 0", vector);
+				fprintf(out_file, ") then");
 				make_ready(db, filename, vector, column + INDENT, 0);
 				endif(column);
 				if (buffer[0])

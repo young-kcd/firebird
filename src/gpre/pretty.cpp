@@ -25,11 +25,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.22 2004-02-02 11:01:27 robocop Exp $
+//	$Id: pretty.cpp,v 1.23 2004-04-28 22:05:55 brodsom Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/y_ref.h"
@@ -300,7 +300,7 @@ static int error( CTL control, int offset, TEXT * string, int arg)
 
 	PRINT_LINE;
 	sprintf(control->ctl_ptr, string, arg);
-	ib_fprintf(ib_stderr, control->ctl_ptr);
+	fprintf(stderr, control->ctl_ptr);
 	ADVANCE_PTR(control->ctl_ptr);
 	PRINT_LINE;
 

@@ -28,7 +28,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../remote/remote.h"
 #include "gen/iberror.h"
@@ -125,7 +125,7 @@ static rem_str* gfloat_buffer;
 
 #ifdef DEBUG
 static ULONG xdr_save_size = 0;
-#define DEBUG_PRINTSIZE(p)  ib_fprintf (ib_stderr, "xdr_protocol: %s op %d size %lu\n", \
+#define DEBUG_PRINTSIZE(p)  fprintf (stderr, "xdr_protocol: %s op %d size %lu\n", \
 		((xdrs->x_op == XDR_FREE)   ? "free" : \
 		 (xdrs->x_op == XDR_ENCODE) ? "enc " : \
 		 (xdrs->x_op == XDR_DECODE) ? "dec " : \
@@ -749,7 +749,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	default:
 #ifdef DEBUG
 		if (xdrs->x_op != XDR_FREE)
-			ib_fprintf(ib_stderr, "xdr_packet: operation %d not recognized\n",
+			fprintf(stderr, "xdr_packet: operation %d not recognized\n",
 					   p->p_operation);
 #endif
 		fb_assert(xdrs->x_op == XDR_FREE);

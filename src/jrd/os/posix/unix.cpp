@@ -29,7 +29,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -471,14 +471,14 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	if (i == IO_RETRY) {
 		if (bytes == 0) {
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "PIO_header: an empty page read!\n");
-			ib_fflush(ib_stderr);
+			fprintf(stderr, "PIO_header: an empty page read!\n");
+			fflush(stderr);
 #endif
 		}
 		else {
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "PIO_header: retry count exceeded\n");
-			ib_fflush(ib_stderr);
+			fprintf(stderr, "PIO_header: retry count exceeded\n");
+			fflush(stderr);
 #endif
 			unix_error("read_retry", file, isc_io_read_err, 0);
 		}
@@ -755,14 +755,14 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	if (i == IO_RETRY) {
 		if (bytes == 0) {
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "PIO_read: an empty page read!\n");
-			ib_fflush(ib_stderr);
+			fprintf(stderr, "PIO_read: an empty page read!\n");
+			fflush(stderr);
 #endif
 		}
 		else {
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "PIO_read: retry count exceeded\n");
-			ib_fflush(ib_stderr);
+			fprintf(stderr, "PIO_read: retry count exceeded\n");
+			fflush(stderr);
 #endif
 			unix_error("read_retry", file, isc_io_read_err, 0);
 		}
@@ -870,27 +870,27 @@ static void close_marker_file(TEXT * marker_filename)
 
 /* Open the marker file and save the marker_file_path for later. */
 
-	IB_FILE* fp = ib_fopen(marker_filename, "r");
+	FILE* fp = fopen(marker_filename, "r");
 	if (fp == NULL)
 		return;
-	if (ib_fgets(marker_file_path, sizeof(marker_file_path), fp) == NULL)
+	if (fgets(marker_file_path, sizeof(marker_file_path), fp) == NULL)
 		return;
 
 /* Read the fildes string, convert it into a file descriptor and close. */
 
 	int fd;
-	while (ib_fgets(fildes_str, sizeof(fildes_str), fp) != NULL) {
+	while (fgets(fildes_str, sizeof(fildes_str), fp) != NULL) {
 		sscanf(fildes_str, "%d", &fd);
 		close(fd);
 	}
 
 /* Remove all fildes from marker file by writing just the path to the file. */
 
-	if ((fp = ib_fopen(marker_filename, "w")) == NULL)
+	if ((fp = fopen(marker_filename, "w")) == NULL)
 		return;
 
-	ib_fputs(marker_file_path, fp);
-	ib_fclose(fp);
+	fputs(marker_file_path, fp);
+	fclose(fp);
 }
 #endif
 

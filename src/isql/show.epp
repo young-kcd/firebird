@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.42 2004-04-26 07:54:16 brodsom Exp $
+ * $Id: show.epp,v 1.43 2004-04-28 22:13:45 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -37,7 +37,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/license.h"
 #include <string.h>
 
@@ -976,7 +976,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 }
 
 
-void SHOW_print_metadata_text_blob(IB_FILE* fp,
+void SHOW_print_metadata_text_blob(FILE* fp,
 								   ISC_QUAD* blobid)
 {
 /**************************************
@@ -1411,12 +1411,12 @@ static void local_fprintf(void* format_ignored,
  *
  * Functional description
  *	Used to make sure that local calls to print stuff go to Out
- *	and not to ib_stdout if gds__version gets called.
+ *	and not to stdout if gds__version gets called.
  *
  **************************************/
 
-	ib_fprintf(Out, "%s", string);
-	ib_fprintf(Out, "%s", NEWLINE);
+	fprintf(Out, "%s", string);
+	fprintf(Out, "%s", NEWLINE);
 
 }
 
@@ -1568,7 +1568,7 @@ static void show_charsets(
 		END_FOR
 		ON_ERROR
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "show_charsets(%s %s) failed\n",
+			fprintf(stderr, "show_charsets(%s %s) failed\n",
 					   relation_name, field_name);
 #endif
 		END_ERROR;
@@ -1586,7 +1586,7 @@ static void show_charsets(
 		END_FOR
 		ON_ERROR
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "show_charsets(NULL %s) failed\n",
+			fprintf(stderr, "show_charsets(NULL %s) failed\n",
 					   field_name);
 #endif
 		END_ERROR;

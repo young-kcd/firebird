@@ -20,11 +20,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.9 2004-02-20 06:43:26 robocop Exp $
+ * $Id: srvrmgr.cpp,v 1.10 2004-04-28 22:18:18 brodsom Exp $
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -149,17 +149,17 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 			return MSG_SHUTOK;
 
 		case SOP_SHUT_NOAT:
-			ib_printf("SHUTDOWN NO ATTACHMENTS\n");
+			printf("SHUTDOWN NO ATTACHMENTS\n");
 			data->shutdown = true;
 			break;
 
 		case SOP_SHUT_NOTR:
-			ib_printf("SHUTDOWN NO TRANSACTIONS\n");
+			printf("SHUTDOWN NO TRANSACTIONS\n");
 			data->shutdown = true;
 			break;
 
 		case SOP_SHUT_IGN:
-			ib_printf("SHUTDOWN IGNORE\n");
+			printf("SHUTDOWN IGNORE\n");
 			data->shutdown = false;
 			break;
 		}
@@ -176,7 +176,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 
 	default:
 #ifdef DEV_BUILD
-		ib_fprintf(OUTFILE,
+		fprintf(OUTFILE,
 				   "ASSERT: file %s line %"LINEFORMAT": unknown operation %d\n",
 				   __FILE__, __LINE__, data->operation);
 #endif
@@ -341,7 +341,7 @@ static bool attach_service( ibmgr_data_t* data)
 		strcat(svc_name, ":query_server");
 
 #ifdef DEBUG
-		ib_fprintf(OUTFILE, "spb: \"%s\"\nsvc_name: \"%s\"\n", spb, svc_name);
+		fprintf(OUTFILE, "spb: \"%s\"\nsvc_name: \"%s\"\n", spb, svc_name);
 #endif
 
 		isc_service_attach(status, 0, svc_name, &data->attached, strlen(spb),
@@ -354,7 +354,7 @@ static bool attach_service( ibmgr_data_t* data)
 
 	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
-		ib_fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
+		fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
 #endif
 		fb_assert(status[1] != isc_svcnotdef);
 		isc_print_status(status);
@@ -393,7 +393,7 @@ static bool detach_service( ibmgr_data_t* data)
    MMM - need to check for that error and return true
 */
 #ifdef DEBUG
-		ib_fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
+		fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
 #endif
 		if (!data->shutdown)
 			isc_print_status(status);
@@ -453,7 +453,7 @@ static bool start_server( ibmgr_data_t* data)
 */
 	if (data->attached && !(data->reattach & REA_HOST)) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
-		ib_fprintf(OUTFILE, "%s\n", msg);
+		fprintf(OUTFILE, "%s\n", msg);
 		return true;
 	}
 
@@ -468,7 +468,7 @@ static bool start_server( ibmgr_data_t* data)
 */
 	if (server_is_up(data) == true) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
-		ib_fprintf(OUTFILE, "%s\n", msg);
+		fprintf(OUTFILE, "%s\n", msg);
 		return true;
 	}
 
@@ -490,7 +490,7 @@ static bool start_server( ibmgr_data_t* data)
 
 
 #ifdef DEBUG
-	ib_printf("Argument list:\n\"%s\"\n\"%s\"\n", argv[0], argv[1]);
+	printf("Argument list:\n\"%s\"\n\"%s\"\n", argv[0], argv[1]);
 #endif
 
 	pid_t pid;
@@ -524,27 +524,27 @@ static bool start_server( ibmgr_data_t* data)
 		 */
 		if (ret_value == pid) {
 #ifdef DEBUG
-			ib_printf("Guardian process %ld terminated\n", pid);
+			printf("Guardian process %ld terminated\n", pid);
 #endif
 			break;
 		}
 #ifdef DEBUG
 		else if (ret_value == -1) {
-			ib_printf("waitpid returned error, errno = %ld\n", errno);
+			printf("waitpid returned error, errno = %ld\n", errno);
 		}
 #endif
 
 #ifdef DEBUG
-		ib_printf("Attach retries left: %d\n", retry);
+		printf("Attach retries left: %d\n", retry);
 #endif
 		if (server_is_up(data) == true) {
 			SRVRMGR_msg_get(MSG_SRVUPOK, msg);
-			ib_fprintf(OUTFILE, "%s\n", msg);
+			fprintf(OUTFILE, "%s\n", msg);
 			return true;
 		}
 	}
 	SRVRMGR_msg_get(MSG_STARTERR, msg);
-	ib_fprintf(OUTFILE, "%s\n", msg);
+	fprintf(OUTFILE, "%s\n", msg);
 	return false;
 }
 
@@ -577,7 +577,7 @@ static bool server_is_ok( ibmgr_data_t* data)
 						NULL);
 	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
-		ib_fprintf(OUTFILE, "server_is_ok/isc_attach_database ERROR: %lu\n",
+		fprintf(OUTFILE, "server_is_ok/isc_attach_database ERROR: %lu\n",
 				   status[1]);
 #endif
 		return false;
@@ -585,7 +585,7 @@ static bool server_is_ok( ibmgr_data_t* data)
 	isc_detach_database(status, &db_handle);
 	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
-		ib_fprintf(OUTFILE, "server_is_ok/isc_detach_database ERROR: %lu\n",
+		fprintf(OUTFILE, "server_is_ok/isc_detach_database ERROR: %lu\n",
 				   status[1]);
 #endif
 		return false;
@@ -627,7 +627,7 @@ static bool server_is_up( ibmgr_data_t* data)
 
 	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
-		ib_fprintf(OUTFILE, "server_is_up ERROR: %lu\n", status[1]);
+		fprintf(OUTFILE, "server_is_up ERROR: %lu\n", status[1]);
 #endif
 		fb_assert(status[1] != isc_svcnotdef);
 

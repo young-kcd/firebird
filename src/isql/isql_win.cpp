@@ -25,7 +25,7 @@
 #include "firebird.h"
 #include <windows.h>
 #pragma hdrstop
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #if TIME_WITH_SYS_TIME
@@ -86,10 +86,10 @@ static SCHAR defInputFile[MAXPATHLEN];	// default input file name
 static SCHAR defOutputFile[MAXPATHLEN];	// default output file name 
 static SCHAR defHistFile[MAXPATHLEN];	// command history file name 
 static SCHAR defSessionFile[MAXPATHLEN];	// SQL session file 
-static IB_FILE *ipf;			// input file 
-static IB_FILE *opf;			// output file 
-static IB_FILE *chf;			// command history 
-static IB_FILE *sss;			// SQL session 
+static FILE *ipf;			// input file 
+static FILE *opf;			// output file 
+static FILE *chf;			// command history 
+static FILE *sss;			// SQL session 
 
 // global flags 
 
@@ -257,11 +257,11 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			ret = DialogBox(hInst, MAKEINTRESOURCE(EXEC_SQL), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
-				ib_fprintf(sss, "%s\n\r", tmpDialogParam);
-				ib_fflush(sss);
+				fprintf(sss, "%s\n\r", tmpDialogParam);
+				fflush(sss);
 				test_overwrite();
 				ISQL_sql_statement(tmpDialogParam, ipf, opf, chf);
-				ib_fprintf(opf, "\n\r\n\r");
+				fprintf(opf, "\n\r\n\r");
 				display_page(hWnd);
 			}
 			break;
@@ -326,10 +326,10 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				DialogBox(hInst, MAKEINTRESOURCE(SAVE_SESSION), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
-				ib_fflush(chf);
-				ib_fclose(chf);
+				fflush(chf);
+				fclose(chf);
 				xfer_file(defHistFile, tmpDialogParam, false);
-				chf = ib_fopen(defHistFile, "a");
+				chf = fopen(defHistFile, "a");
 			}
 			break;
 
@@ -341,10 +341,10 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				DialogBox(hInst, MAKEINTRESOURCE(SAVE_OUTPUT), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
-				ib_fflush(opf);
-				ib_fclose(opf);
+				fflush(opf);
+				fclose(opf);
 				xfer_file(defOutputFile, tmpDialogParam, false);
-				opf = ib_fopen(defOutputFile, "a");
+				opf = fopen(defOutputFile, "a");
 			}
 			break;
 
@@ -372,8 +372,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 					pusharg(scriptOutput);
 				else
 					pusharg(defOutputFile);
-				ib_fclose(opf);
-				ib_fclose(ipf);
+				fclose(opf);
+				fclose(ipf);
 
 				/* if database already open, exit and add database
 				   name to arguments */
@@ -387,19 +387,19 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				   an empty file */
 
 				if (gflags & OVERWRITE) {
-					opf = ib_fopen(defOutputFile, "w");
-					ib_fclose(opf);
+					opf = fopen(defOutputFile, "w");
+					fclose(opf);
 				}
 				ISQL_main(ISQL_argc, ISQL_argv);
 
 				// reopen default files and database 
 
-				ipf = ib_fopen(defInputFile, "r");
-				opf = ib_fopen(defOutputFile, "a");
+				ipf = fopen(defInputFile, "r");
+				opf = fopen(defOutputFile, "a");
 				if (gflags & DBINITED)
 					ISQL_init(newDataBase, newUserName, newPassword, ipf,
 							  opf);
-				ib_fprintf(opf, "\n\r\n\r");
+				fprintf(opf, "\n\r\n\r");
 				display_page(hWnd);
 			}
 			break;
@@ -429,20 +429,20 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 					pusharg("-database");
 					pusharg(extractTarget);
 				}
-				ib_fclose(opf);
-				ib_fclose(ipf);
+				fclose(opf);
+				fclose(ipf);
 				ISQL_exit_db();
 				ISQL_main(ISQL_argc, ISQL_argv);
 				ISQL_exit_db();
 
 				// reopen default files and database 
 
-				ipf = ib_fopen(defInputFile, "r");
-				opf = ib_fopen(defOutputFile, "a");
+				ipf = fopen(defInputFile, "r");
+				opf = fopen(defOutputFile, "a");
 				if (gflags & DBINITED)
 					ISQL_init(newDataBase, newUserName, newPassword, ipf,
 							  opf);
-				ib_fprintf(opf, "\n\r\n\r");
+				fprintf(opf, "\n\r\n\r");
 				display_page(hWnd);
 			}
 			break;
@@ -537,28 +537,28 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		case IDM_SHOW_VERSION:
 			test_overwrite();
 			ISQL_frontend_command("SHOW VERSION", ipf, opf, chf);
-			ib_fprintf(opf, "\n\r\n\r");
+			fprintf(opf, "\n\r\n\r");
 			display_page(hWnd);
 			break;
 
 		case IDM_SHOW_SYSTEM:
 			test_overwrite();
 			ISQL_frontend_command("SHOW SYSTEM", ipf, opf, chf);
-			ib_fprintf(opf, "\n\r\n\r");
+			fprintf(opf, "\n\r\n\r");
 			display_page(hWnd);
 			break;
 
 		case IDM_SHOW_SETTINGS:
 			test_overwrite();
 			ISQL_frontend_command("SET", ipf, opf, chf);
-			ib_fprintf(opf, "\n\r\n\r");
+			fprintf(opf, "\n\r\n\r");
 			display_page(hWnd);
 			break;
 
 		case IDM_SHOW_DATABASE:
 			test_overwrite();
 			ISQL_frontend_command("SHOW DATABASE", ipf, opf, chf);
-			ib_fprintf(opf, "\n\r\n\r");
+			fprintf(opf, "\n\r\n\r");
 			display_page(hWnd);
 			break;
 
@@ -638,7 +638,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				}
 				test_overwrite();
 				ISQL_frontend_command(buf, ipf, opf, chf);
-				ib_fprintf(opf, "\n\r\n\r");
+				fprintf(opf, "\n\r\n\r");
 				display_page(hWnd);
 			}
 			break;
@@ -800,7 +800,7 @@ void ISQL_win_err(const char* string)
  ***************************************************************/
 
 	if (Merge_stderr)
-		ib_fprintf(Out, "%s\n", string);
+		fprintf(Out, "%s\n", string);
 	else
 		MessageBox(NULL, string, SetUpData.errorString,
 				   MB_ICONEXCLAMATION | MB_OK);
@@ -822,16 +822,16 @@ static void close_isql()
 
 	ISQL_exit_db();
 	if (gflags & COMHIST)
-		ib_fclose(chf);
+		fclose(chf);
 	unlink(defHistFile);
 	if (gflags & DEFINPUT)
-		ib_fclose(ipf);
+		fclose(ipf);
 	unlink(defInputFile);
 	if (gflags & DEFOUTPUT)
-		ib_fclose(opf);
+		fclose(opf);
 	unlink(defOutputFile);
 	if (gflags & SESSFILE)
-		ib_fclose(sss);
+		fclose(sss);
 	unlink(defSessionFile);
 	DeleteObject(hnewsfont);
 }
@@ -858,8 +858,8 @@ static int cmdline_isql( HINSTANCE hInstance, LPSTR pCmdLine)
  *              return from ISQL
  *
  ********************************************************************/
-	IB_FILE *inputfile;			// input file 
-	IB_FILE *outputfile;		// output file 
+	FILE *inputfile;			// input file 
+	FILE *outputfile;		// output file 
 	SCHAR inputfilename[MAXPATHLEN];	// input file name 
 	SCHAR outputfilename[MAXPATHLEN];	// output file name 
 	SCHAR arg[MAXPATHLEN];		// current argument 
@@ -875,9 +875,9 @@ static int cmdline_isql( HINSTANCE hInstance, LPSTR pCmdLine)
 
 // create failsafe input file 
 
-	ib_fprintf(inputfile, "QUIT;\n");
-	ib_fclose(inputfile);
-	ib_fclose(outputfile);
+	fprintf(inputfile, "QUIT;\n");
+	fclose(inputfile);
+	fclose(outputfile);
 
 // create an argument vector, including the default files and command line args 
 
@@ -921,24 +921,24 @@ static void display_page( HWND hWnd)
  *      Throw the result up on the window.
  *
  ***************************************************************/
-	IB_FILE *fh;
+	FILE *fh;
 
 // Determine file size and some display paramaters. 
 	nVscrollPos = numlines;
 	numlines = 0;
 	maxwidth = 0;
-	ib_fflush(opf);
-	ib_fclose(opf);
-	fh = ib_fopen(defOutputFile, "r+b");
+	fflush(opf);
+	fclose(opf);
+	fh = fopen(defOutputFile, "r+b");
 	if (fh) {
-		while (ib_fgets(tmpDialogParam, sizeof(tmpDialogParam), fh)) {
+		while (fgets(tmpDialogParam, sizeof(tmpDialogParam), fh)) {
 			numlines++;
 			if (strlen(tmpDialogParam) > maxwidth)
 				maxwidth = strlen(tmpDialogParam);
 		}
-		ib_fclose(fh);
+		fclose(fh);
 	}
-	opf = ib_fopen(defOutputFile, "a");
+	opf = fopen(defOutputFile, "a");
 
 // Go setup scroll ranges for this file. 
 
@@ -998,9 +998,9 @@ static SSHORT init_isql(
 
 	if (!open_temp_file(hInstance, &ipf, defInputFile, IDS_DEF_IN_FILE))
 		return FALSE;
-	ib_fprintf(ipf, "QUIT;\n");
-	ib_fclose(ipf);
-	ipf = ib_fopen(defInputFile, "r");
+	fprintf(ipf, "QUIT;\n");
+	fclose(ipf);
+	ipf = fopen(defInputFile, "r");
 	gflags |= DEFINPUT;
 	if (!open_temp_file(hInstance, &opf, defOutputFile, IDS_DEF_OUT_FILE))
 		return FALSE;
@@ -1181,7 +1181,7 @@ static void init_isql_first( HINSTANCE hInstance)
 
 static SSHORT open_temp_file(
 							 HINSTANCE hInstance,
-							 IB_FILE** file,
+							 FILE** file,
 							 SCHAR* fileName, SSHORT errStrNum)
 {
 /********************************************************************
@@ -1198,8 +1198,8 @@ static SSHORT open_temp_file(
 	SCHAR errorString[100];
 	SCHAR message[100];
 
-	*file = (IB_FILE *) gds__temp_file(TRUE, "isql_", fileName);
-	if (*file == (IB_FILE *) - 1) {
+	*file = (FILE *) gds__temp_file(TRUE, "isql_", fileName);
+	if (*file == (FILE *) - 1) {
 		LoadString(hInstance, errStrNum, errorString, 100);
 		sprintf(message, errorString, fileName);
 		ISQL_win_err(message);
@@ -1277,7 +1277,7 @@ static void paint_isql( HWND hWnd)
 	SSHORT e;
 	SCHAR buf[1024];
 	SSHORT i;
-	IB_FILE *hfile;
+	FILE *hfile;
 
 	BeginPaint(hWnd, (LPPAINTSTRUCT) & ps);
 	hDC = ps.hdc;
@@ -1290,17 +1290,17 @@ static void paint_isql( HWND hWnd)
 		// Open the file to display 
 		// (files should not stay open over multiple windows messages) 
 
-		hfile = ib_fopen(defOutputFile, "r");
+		hfile = fopen(defOutputFile, "r");
 		if (hfile) {
 			// Skip lines outside window limits 
 
 			for (i = 0; i < nVscrollPos; i++)
-				ib_fgets(buf, sizeof(buf), hfile);
+				fgets(buf, sizeof(buf), hfile);
 
 			// Read visible lines 
 
 			for (i = 0; i < nPageMaxLines; i++) {
-				if (!ib_fgets(buf, sizeof(buf), hfile))
+				if (!fgets(buf, sizeof(buf), hfile))
 					break;
 
 				// figure out shortest text to put 
@@ -1313,7 +1313,7 @@ static void paint_isql( HWND hWnd)
 				buf[++e] = '\0';
 				TextOut(hDC, xChar * (-nHscrollPos + 0), yChar * i, buf, e);
 			}
-			ib_fclose(hfile);
+			fclose(hfile);
 		}
 	}
 
@@ -1397,8 +1397,8 @@ static void test_overwrite()
  ***************************************************************/
 
 	if (gflags & OVERWRITE) {
-		ib_fclose(opf);
-		opf = ib_fopen(defOutputFile, "w");
+		fclose(opf);
+		opf = fopen(defOutputFile, "w");
 		nVscrollPos = 0;
 		nHscrollPos = 0;
 	}
@@ -1421,20 +1421,20 @@ static void xfer_file(
  ***************************************************************/
 	SCHAR xferbuff[1024];
 
-	IB_FILE* xferin = ib_fopen(inFileName, "r");
+	FILE* xferin = fopen(inFileName, "r");
 	if (xferin) {
-        IB_FILE* xferout;
+        FILE* xferout;
 		if (appendFlag)
-			xferout = ib_fopen(outFileName, "a");
+			xferout = fopen(outFileName, "a");
 		else
-			xferout = ib_fopen(outFileName, "w");
+			xferout = fopen(outFileName, "w");
 		if (xferout) {
-			while (ib_fgets(xferbuff, sizeof(xferbuff), xferin)) {
-				ib_fprintf(xferout, "%s", xferbuff);
+			while (fgets(xferbuff, sizeof(xferbuff), xferin)) {
+				fprintf(xferout, "%s", xferbuff);
 			}
-			ib_fclose(xferout);
+			fclose(xferout);
 		}
-		ib_fclose(xferin);
+		fclose(xferin);
 	}
 }
 
@@ -1839,18 +1839,18 @@ BOOL CALLBACK _export execDlgProc(HWND hDlg,
  *             depends on message.
  *
 /********************************************************************/
-	IB_FILE *fh;
+	FILE *fh;
 	SCHAR buf[256];
 	SSHORT i;
 
 	switch (iMessage) {
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_SQL_COMMAND, EM_LIMITTEXT, 1024, 0L);
-		ib_fflush(sss);
-		ib_fclose(sss);
-		fh = ib_fopen(defSessionFile, "r");
+		fflush(sss);
+		fclose(sss);
+		fh = fopen(defSessionFile, "r");
 		if (fh) {
-			while (ib_fgets(buf, sizeof(buf), fh)) {
+			while (fgets(buf, sizeof(buf), fh)) {
 				for (i = strlen(buf); i; i--)
 					if (buf[i] >= ' ' && buf[i] <= '~')
 						break;
@@ -1860,9 +1860,9 @@ BOOL CALLBACK _export execDlgProc(HWND hDlg,
 				SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY),
 							LB_ADDSTRING, 0, (SLONG) buf);
 			}
-			ib_fclose(fh);
+			fclose(fh);
 		}
-		sss = ib_fopen(defSessionFile, "a");
+		sss = fopen(defSessionFile, "a");
 		return (TRUE);
 
 	case WM_COMMAND:

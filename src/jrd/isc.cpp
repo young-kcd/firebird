@@ -36,14 +36,14 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.46 2004-03-28 09:10:15 robocop Exp $
+$Id: isc.cpp,v 1.47 2004-04-28 22:36:25 brodsom Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
 #endif
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>

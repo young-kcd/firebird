@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.59 2004-02-20 06:42:41 robocop Exp $
+ * $Id: gpre.h,v 1.60 2004-04-28 22:05:56 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -61,7 +61,7 @@
 
 #include <stddef.h>				// offsetof
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 
@@ -1462,7 +1462,7 @@ EXTERN TEXT *default_lc_ctype;
 EXTERN TEXT *default_lc_messages;
 EXTERN gpre_req* requests;
 EXTERN gpre_lls* events;
-EXTERN IB_FILE *out_file;
+EXTERN FILE *out_file;
 EXTERN LANG_T sw_language;
 EXTERN int line, errors, warnings, fatals;
 EXTERN act* global_functions;

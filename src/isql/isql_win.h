@@ -33,7 +33,7 @@ static SSHORT init_isql(HINSTANCE, HINSTANCE, int);
 static void init_isql_added(HINSTANCE);
 static void init_isql_every(HINSTANCE, int);
 static void init_isql_first(HINSTANCE);
-static SSHORT open_temp_file(HINSTANCE, IB_FILE**, SCHAR*, SSHORT);
+static SSHORT open_temp_file(HINSTANCE, FILE**, SCHAR*, SSHORT);
 static void paint_isql(HWND);
 static void pusharg(const char*);
 static void setup_scroll(HWND);

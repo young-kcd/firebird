@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/y_ref.h"
@@ -42,7 +42,7 @@
 #include <descrip.h>
 #endif
 
-static void dump_procedure(DBB, IB_FILE*, const TEXT*, USHORT, FRBRD *);
+static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FRBRD *);
 static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
 
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
@@ -181,7 +181,7 @@ void CMD_extract( qli_syntax* node)
  **************************************/
 	DBB database;
 
-	IB_FILE* file = (IB_FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
+	FILE* file = (FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
 
 	qli_syntax* list = node->syn_arg[0];
 	if (list) {
@@ -220,7 +220,7 @@ void CMD_extract( qli_syntax* node)
 		_pclose(file);
 	else
 #endif
-		ib_fclose(file);
+		fclose(file);
 }
 
 
@@ -566,7 +566,7 @@ void CMD_transaction( qli_syntax* node)
 
 static void dump_procedure(
 						   DBB database,
-						   IB_FILE* file,
+						   FILE* file,
 						   const TEXT* name, USHORT length, FRBRD *blob)
 {
 /**************************************
@@ -581,14 +581,14 @@ static void dump_procedure(
  **************************************/
 	TEXT buffer[256];
 
-	ib_fprintf(file, "DELETE PROCEDURE %.*s;\n", length, name);
-	ib_fprintf(file, "DEFINE PROCEDURE %.*s\n", length, name);
+	fprintf(file, "DELETE PROCEDURE %.*s;\n", length, name);
+	fprintf(file, "DEFINE PROCEDURE %.*s\n", length, name);
 
 	while (PRO_get_line(blob, buffer, sizeof(buffer)))
-		ib_fputs(buffer, file);
+		fputs(buffer, file);
 
 	PRO_close(database, blob);
-	ib_fprintf(file, "END_PROCEDURE\n\n");
+	fprintf(file, "END_PROCEDURE\n\n");
 }
 
 
@@ -608,7 +608,7 @@ static void extract_procedure(
  *
  **************************************/
 	FRBRD* blob = PRO_open_blob(database, blob_id);
-	dump_procedure(database, static_cast<IB_FILE*>(file), name, length, blob);
+	dump_procedure(database, static_cast<FILE*>(file), name, length, blob);
 }
 
 

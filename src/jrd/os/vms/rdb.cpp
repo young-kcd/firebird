@@ -1437,6 +1437,6 @@ static int set_status(int *status, int code)
 }
 
 
-#define DUMMY(name) name () {ib_printf ("name entered\n"); return 0;}
+#define DUMMY(name) name () {printf ("name entered\n"); return 0;}
 DUMMY(rdb$dummy1);
 

@@ -25,18 +25,18 @@
 
 /*  define LIKE_JRD to have the lookup follow exactly the syntax
  *  used by intl.c in JRD.
- *  Set the static full_debug to 1 to turn on ib_printf debugging.
+ *  Set the static full_debug to 1 to turn on printf debugging.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  *
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #define DEBUG
 
 static int full_debug = 0;
-#define	FULL_DEBUG	if (full_debug) ib_printf
+#define	FULL_DEBUG	if (full_debug) printf
 
 
 
@@ -73,10 +73,10 @@ void try_fc(char* c, FPTR_INT f)
 {
 	unsigned char buffer[200];
 	const int res = (*f) (strlen(c), c, sizeof(buffer), buffer);
-	ib_printf("%s => ", c);
+	printf("%s => ", c);
 	for (int i = 0; i < res; i++)
-		ib_printf("%d ", buffer[i]);
-	ib_printf("\n");
+		printf("%d ", buffer[i]);
+	printf("\n");
 }
 
 int main(int argc, char** argv)
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
 	argc = FB_NELEM(defaults);
 #else
 	if (argc <= 1) {
-		ib_printf("usage: dtest Intl_module_name\n");
+		printf("usage: dtest Intl_module_name\n");
 		return (1);
 	}
 	char** vector = argv;
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
 			sprintf(module, INTL_MODULE, t_type);
 			gds__prefix(path, module);
 			sprintf(entry, INTL_INIT_ENTRY, t_type);
-			ib_printf("path=%s entry=%s\n", path, entry);
+			printf("path=%s entry=%s\n", path, entry);
 			func = (FPTR_INT) ISC_lookup_entrypoint(path, entry, NULL);
 		}
 #else
@@ -121,12 +121,12 @@ int main(int argc, char** argv)
 				(FPTR_INT) ISC_lookup_entrypoint(vector[i], "ld_init", NULL);
 #endif
 		if (func == NULL)
-			ib_printf("Cannot find %s.init\n", vector[i]);
+			printf("Cannot find %s.init\n", vector[i]);
 		else {
 			FULL_DEBUG("This testobj %ld\n", &this_textobj);
 			FULL_DEBUG("size of %d\n", sizeof(this_textobj));
 			if ((*func) (99, &this_textobj) != 99)
-				ib_printf("%s.Init returned bad result\n", vector[i]);
+				printf("%s.Init returned bad result\n", vector[i]);
 			else {
 				FULL_DEBUG("Called init ok\n");
 				FULL_DEBUG("ld_init is %ld %ld\n",
@@ -137,19 +137,19 @@ int main(int argc, char** argv)
 						   this_textobj.
 						   texttype_functions[(int) intl_fn_NULL], func);
 				if (func == NULL)
-					ib_printf("%s.Init OK can't find ID\n", vector[i]);
+					printf("%s.Init OK can't find ID\n", vector[i]);
 				else {
 					FULL_DEBUG("About to call ID fn\n");
 					(*func) (sizeof(buffer), buffer);
 					FULL_DEBUG("Back from ID fn \n");
-					ib_printf("%s.id => %s\n", vector[i], buffer);
+					printf("%s.id => %s\n", vector[i], buffer);
 				}
 
 				func = this_textobj.texttype_functions[intl_fn_string_to_key];
 
 				FULL_DEBUG("ld_to_key is %ld\n", func);
 				if (func == NULL)
-					ib_printf("%s: Can't find str_to_key\n", vector[i]);
+					printf("%s: Can't find str_to_key\n", vector[i]);
 				else {
 					try_fc("cote", func);
 					try_fc("COTE", func);

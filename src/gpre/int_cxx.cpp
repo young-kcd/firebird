@@ -25,11 +25,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.31 2004-03-30 08:33:54 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.32 2004-04-28 22:05:56 brodsom Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/y_ref.h"
@@ -175,13 +175,13 @@ static void align(const int column)
 	if (column < 0)
 		return;
 
-	ib_putc('\n', out_file);
+	putc('\n', out_file);
 
 	for (i = column / 8; i; --i)
-		ib_putc('\t', out_file);
+		putc('\t', out_file);
 
 	for (i = column % 8; i; --i)
-		ib_putc(' ', out_file);
+		putc(' ', out_file);
 }
 
 
@@ -214,17 +214,17 @@ static void asgn_from( REF reference, int column)
 		// gds$_vtov2 and jrd_vtof2 wherever necessary
 
 		if (!field || field->fld_dtype == dtype_text)
-			ib_fprintf(out_file, VTO_CALL,
+			fprintf(out_file, VTO_CALL,
 					   JRD_VTOF,
 					   value, variable,
 					   field ? field->fld_length : 0);
 		else if (!field || field->fld_dtype == dtype_cstring)
-			ib_fprintf(out_file, VTO_CALL,
+			fprintf(out_file, VTO_CALL,
 					   GDS_VTOV,
 					   value, variable,
 					   field ? field->fld_length : 0);
 		else
-			ib_fprintf(out_file, "%s = %s;", variable, value);
+			fprintf(out_file, "%s = %s;", variable, value);
 	}
 }
 
@@ -247,15 +247,15 @@ static void asgn_to( REF reference)
 	// emitting jrd_ftof call.
 
 	if (!field || field->fld_dtype == dtype_text)
-		ib_fprintf(out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
+		fprintf(out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
 				   s,
 				   field ? field->fld_length : 0,
 				   reference->ref_value, reference->ref_value);
 	else if (!field || field->fld_dtype == dtype_cstring)
-		ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
+		fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
 				   s, reference->ref_value, reference->ref_value);
 	else
-		ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
+		fprintf(out_file, "%s = %s;", reference->ref_value, s);
 }
 #endif
 
@@ -280,7 +280,7 @@ static void gen_at_end( const act* action, int column)
 
 static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
-	ib_fprintf(out_file, "%s\n", string);
+	fprintf(out_file, "%s\n", string);
 }
 
 
@@ -294,9 +294,9 @@ static void gen_compile( const gpre_req* request, int column)
 	column += INDENT;
 	const dbb* db = request->req_database;
 	const gpre_sym* symbol = db->dbb_name;
-	ib_fprintf(out_file, "if (!%s)", request->req_handle);
+	fprintf(out_file, "if (!%s)", request->req_handle);
 	align(column);
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%d, TRUE);",
 			   request->req_handle, request->req_ident);
 }
@@ -341,16 +341,16 @@ static void gen_emodify( const act* action, int column)
 		align(column);
 
 		if (field->fld_dtype == dtype_text)
-			ib_fprintf(out_file, "jrd_ftof (%s, %d, %s, %d);",
+			fprintf(out_file, "jrd_ftof (%s, %d, %s, %d);",
 					   gen_name(s1, source),
 					   field->fld_length,
 					   gen_name(s2, reference), field->fld_length);
 		else if (field->fld_dtype == dtype_cstring)
-			ib_fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
+			fprintf(out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
 					   gen_name(s1, source),
 					   gen_name(s2, reference), field->fld_length);
 		else
-			ib_fprintf(out_file, "%s = %s;",
+			fprintf(out_file, "%s = %s;",
 					   gen_name(s1, reference), gen_name(s2, source));
 	}
 
@@ -414,13 +414,13 @@ static void gen_for( const act* action, int column)
 
 	align(column);
 	const gpre_req* request = action->act_request;
-	ib_fprintf(out_file, "while (1)");
+	fprintf(out_file, "while (1)");
 	column += INDENT;
 	begin(column);
 	align(column);
 	gen_receive(action->act_request, request->req_primary);
 	align(column);
-	ib_fprintf(out_file, "if (!%s) break;", gen_name(s, request->req_eof));
+	fprintf(out_file, "if (!%s) break;", gen_name(s, request->req_eof));
 }
 
 
@@ -463,13 +463,13 @@ static void gen_raw( const gpre_req* request)
 		while (*p)
 			p++;
 		if (p - buffer > 60) {
-			ib_fprintf(out_file, "%s\n", buffer);
+			fprintf(out_file, "%s\n", buffer);
 			p = buffer;
 			*p = 0;
 		}
 	}
 
-	ib_fprintf(out_file, "%s%d", buffer, blr_eoc);
+	fprintf(out_file, "%s%d", buffer, blr_eoc);
 }
 
 
@@ -481,7 +481,7 @@ static void gen_raw( const gpre_req* request)
 static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
@@ -497,13 +497,13 @@ static void gen_request( const gpre_req* request)
 {
 
 	if (!(request->req_flags & REQ_exp_hand))
-		ib_fprintf(out_file, "static void\t*%s;\t// request handle \n",
+		fprintf(out_file, "static void\t*%s;\t// request handle \n",
 				   request->req_handle);
 
-	ib_fprintf(out_file, "static const UCHAR\tjrd_%d [%d] =",
+	fprintf(out_file, "static const UCHAR\tjrd_%d [%d] =",
 			   request->req_ident, request->req_length);
 	align(INDENT);
-	ib_fprintf(out_file, "{\t// blr string \n");
+	fprintf(out_file, "{\t// blr string \n");
 
 	if (sw_raw)
 		gen_raw(request);
@@ -587,13 +587,13 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 {
 	if (special) {
 		align(column);
-		ib_fprintf(out_file, "if (ignore_perm)");
+		fprintf(out_file, "if (ignore_perm)");
 		align(column);
-		ib_fprintf(out_file, "\trequest->req_flags |= req_ignore_perm;");
+		fprintf(out_file, "\trequest->req_flags |= req_ignore_perm;");
 	}
 	align(column);
 
-	ib_fprintf(out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
+	fprintf(out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle,
 			   port->por_msg_number, port->por_length, port->por_ident);
 }
@@ -609,7 +609,7 @@ static void gen_start( const gpre_req* request, const gpre_port* port,
 {
 	align(column);
 
-	ib_fprintf(out_file, "EXE_start (tdbb, %s, %s);",
+	fprintf(out_file, "EXE_start (tdbb, %s, %s);",
 			   request->req_handle, request->req_trans);
 
 	if (port)
@@ -639,7 +639,7 @@ static void gen_variable( const act* action, int column)
 	char s[20];
 
 	align(column);
-	ib_fprintf(out_file, gen_name(s, action->act_object));
+	fprintf(out_file, gen_name(s, action->act_object));
 
 }
 
@@ -663,60 +663,60 @@ static void make_port( gpre_port* port, int column)
 
 		switch (field->fld_dtype) {
 		case dtype_short:
-			ib_fprintf(out_file, "    SSHORT jrd_%d;\t// %s ",
+			fprintf(out_file, "    SSHORT jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_long:
-			ib_fprintf(out_file, "    SLONG  jrd_%d;\t// %s ",
+			fprintf(out_file, "    SLONG  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 // ** Begin sql date/time/timestamp *
 		case dtype_sql_date:
-			ib_fprintf(out_file, "    ISC_DATE  jrd_%d;\t// %s ",
+			fprintf(out_file, "    ISC_DATE  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_sql_time:
-			ib_fprintf(out_file, "    ISC_TIME  jrd_%d;\t// %s ",
+			fprintf(out_file, "    ISC_TIME  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_timestamp:
-			ib_fprintf(out_file, "    ISC_TIMESTAMP  jrd_%d;\t// %s ",
+			fprintf(out_file, "    ISC_TIMESTAMP  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 // ** End sql date/time/timestamp *
 
 		case dtype_int64:
-			ib_fprintf(out_file, "    ISC_INT64  jrd_%d;\t// %s ",
+			fprintf(out_file, "    ISC_INT64  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_quad:
-			ib_fprintf(out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
+			fprintf(out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 			
 		case dtype_blob:
-			ib_fprintf(out_file, "    bid  jrd_%d;\t// %s ",
+			fprintf(out_file, "    bid  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_cstring:
 		case dtype_text:
-			ib_fprintf(out_file, "    TEXT  jrd_%d [%d];\t// %s ",
+			fprintf(out_file, "    TEXT  jrd_%d [%d];\t// %s ",
 					   reference->ref_ident, field->fld_length, name);
 			break;
 
 		case dtype_real:
-			ib_fprintf(out_file, "    float  jrd_%d;\t// %s ",
+			fprintf(out_file, "    float  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_double:
-			ib_fprintf(out_file, "    double  jrd_%d;\t// %s ",
+			fprintf(out_file, "    double  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
@@ -731,7 +731,7 @@ static void make_port( gpre_port* port, int column)
 		}
 	}
 	align(column);
-	ib_fprintf(out_file, "} jrd_%d;", port->por_ident);
+	fprintf(out_file, "} jrd_%d;", port->por_ident);
 }
 
 
@@ -746,6 +746,6 @@ static void printa(const int column, const TEXT* string, ...)
 
 	VA_START(ptr, string);
 	align(column);
-	ib_vfprintf(out_file, string, ptr);
+	vfprintf(out_file, string, ptr);
 }
 

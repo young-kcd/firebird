@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -100,7 +100,7 @@ static rem_port* init_connection( UCHAR * node)
 	port->receive(&packet);
 
 	if (packet.p_operation != op_accept) {
-		ib_fprintf(ib_stderr, "remote server refused connection\n");
+		fprintf(stderr, "remote server refused connection\n");
 		return NULL;
 	}
 

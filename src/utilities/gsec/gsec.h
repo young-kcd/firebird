@@ -135,7 +135,7 @@ typedef struct tsec {
     bool				tsec_service_thd;
 	Jrd::pfn_svc_output	tsec_output_proc;
     Jrd::Service*		tsec_output_data;
-    IB_FILE*			tsec_output_file;
+    FILE*			tsec_output_file;
     Jrd::Service*		tsec_service_blk;
 } *TSEC;
 

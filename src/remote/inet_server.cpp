@@ -32,10 +32,10 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
+$Id: inet_server.cpp,v 1.36 2004-04-28 22:25:51 brodsom Exp $
 */
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"
@@ -237,7 +237,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 				case 'E':
 					if (ISC_get_prefix(p) == -1)
-						ib_printf("Invalid argument Ignored\n");
+						printf("Invalid argument Ignored\n");
 					else
 						argv++;	/* donot skip next argument if this one 
 								   is invalid */
@@ -250,32 +250,32 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
                 case 'H':
 				case '?':
-					ib_printf("Firebird TCP/IP server options are:\n");
-					ib_printf("  -d           : debug on\n");
+					printf("Firebird TCP/IP server options are:\n");
+					printf("  -d           : debug on\n");
                    
 #ifdef SUPERSERVER
                     // These options only applicable to super server
-					ib_printf("  -m           : multiclient - on\n");
-					ib_printf("  -s           : standalone - true\n");
-					ib_printf("  -i           : standalone - false\n");
+					printf("  -m           : multiclient - on\n");
+					printf("  -s           : standalone - true\n");
+					printf("  -i           : standalone - false\n");
 
-					ib_printf("  -t           : multithread - true  (non pc only)\n");
-					ib_printf("  -u           : multithread - false (pc only)\n");
-					ib_printf("  -t           : multithread (non pc only\n");
+					printf("  -t           : multithread - true  (non pc only)\n");
+					printf("  -u           : multithread - false (pc only)\n");
+					printf("  -t           : multithread (non pc only\n");
 #endif
 
-					ib_printf("  -p<protocol> : specify protocol\n");
-					ib_printf("  -h|? : print this help\n");
-                    ib_printf("\n");
-                    ib_printf("  (The following -e options used to be -h options)\n");
-					ib_printf("  -e<firebird_root_dir>   : set firebird_root path\n");            
-					ib_printf("  -el<firebird_lock_dir>   : set runtime firebird_lock dir\n");            
-					ib_printf("  -em<firebird_msg_dir>   : set firebird_msg dir path\n");            
-					ib_printf("  -z   : print version\n");            
+					printf("  -p<protocol> : specify protocol\n");
+					printf("  -h|? : print this help\n");
+                    printf("\n");
+                    printf("  (The following -e options used to be -h options)\n");
+					printf("  -e<firebird_root_dir>   : set firebird_root path\n");            
+					printf("  -el<firebird_lock_dir>   : set runtime firebird_lock dir\n");            
+					printf("  -em<firebird_msg_dir>   : set firebird_msg dir path\n");            
+					printf("  -z   : print version\n");            
 
 					exit(FINI_OK);
 				case 'Z':
-					ib_printf("Firebird TCP/IP server version %s\n",
+					printf("Firebird TCP/IP server version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 				}
@@ -327,7 +327,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				strcmp(user_name, INTERBASE_USER_SHORT))
 			{
 				/* invalid user -- bail out */
-				ib_fprintf(ib_stderr,
+				fprintf(stderr,
 						   "%s: Invalid user (must be %s, %s, %s or root).\n",
 						   "fbserver", FIREBIRD_USER_NAME,
 						   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
@@ -336,7 +336,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #endif
 #else
 			if (setreuid(0, 0) < 0)
-				ib_printf("Inet_server: couldn't set uid to superuser.\n");
+				printf("Inet_server: couldn't set uid to superuser.\n");
 #endif
 			INET_set_clients(clients);
 		}
@@ -366,7 +366,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		port = INET_server(channel);
 		THREAD_EXIT;
 		if (!port) {
-			ib_fprintf(ib_stderr, "fbserver: Unable to start INET_server\n");
+			fprintf(stderr, "fbserver: Unable to start INET_server\n");
 			exit(STARTUP_ERROR);
 		}
 	}

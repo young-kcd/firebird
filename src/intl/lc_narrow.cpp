@@ -98,7 +98,7 @@ USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
 
 
 #ifdef DEBUG
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 static ULONG do_debug = 0;
 #endif
 
@@ -121,8 +121,8 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 #ifdef DEBUG
 /* Dump out the input string */
 	if (do_debug) {
-		ib_printf("string: (%02d) '%*s'\n", iInLen, iInLen, pInChar);
-		ib_fflush(ib_stdout);
+		printf("string: (%02d) '%*s'\n", iInLen, iInLen, pInChar);
+		fflush(stdout);
 	}
 #endif	/* DEBUG */
 
@@ -263,11 +263,11 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 #ifdef DEBUG
 /* Dump out the computed key */
 	if (do_debug) {
-		ib_printf("   key: (%02d) ", (outbuff - pOutChar));
+		printf("   key: (%02d) ", (outbuff - pOutChar));
 		for (const UCHAR* p = pOutChar; p < outbuff; p++)
-			ib_printf("%2x ", *p);
-		ib_printf("\n");
-		ib_fflush(ib_stdout);
+			printf("%2x ", *p);
+		printf("\n");
+		fflush(stdout);
 	}
 #endif
 
@@ -564,9 +564,9 @@ static SSHORT fam2_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1,
 	SSHORT res2 = LC_NARROW_compare(obj, l1, s1, l2, s2);
 
 	if (SIGN(res1) != SIGN(res2)) {
-		ib_printf("different compares:\n%d %s\n%d %s\nold = %d new = %d\n",
+		printf("different compares:\n%d %s\n%d %s\nold = %d new = %d\n",
 				  l1, s1, l2, s2, res1, res2);
-		ib_fflush(ib_stdout);
+		fflush(stdout);
 		do_debug = 1;
 		res1 = old_fam2_compare(obj, l1, s1, l2, s2);
 		res2 = LC_NARROW_compare(obj, l1, s1, l2, s2);

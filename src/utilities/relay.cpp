@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <sys/param.h>
 #include <signal.h>
 
@@ -59,7 +59,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 #ifndef DEBUG
 	if (setreuid(0, 0) < 0)
-		ib_printf("gds_relay: couldn't set uid to superuser\n");
+		printf("gds_relay: couldn't set uid to superuser\n");
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
 	(void)setpgrp();
@@ -86,7 +86,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			while (c = *p++)
 				switch (UPPER(c)) {
 				case 'Z':
-					ib_printf("Interbase relay version %s\n", GDS_VERSION);
+					printf("Interbase relay version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
 	}
@@ -97,7 +97,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /* Close all files, except for the pipe input */
 	for (n = 0; n < NOFILE; n++)
 #ifdef DEV_BUILD
-		/* Don't close ib_stderr - we might need to report something */
+		/* Don't close stderr - we might need to report something */
 		if ((n != fd) && (n != 2))
 #else
 		if (n != fd)
@@ -110,12 +110,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		 * attempt communication with this V4 version.
 		 */
 		if (msg[2] != (msg[0] ^ msg[1])) {
-			ib_fprintf(ib_stderr, "gds_relay received inconsistant message");
+			fprintf(stderr, "gds_relay received inconsistant message");
 		}
 #endif
 		if (kill(msg[0], msg[1])) {
 #ifdef DEV_BUILD
-			ib_fprintf(ib_stderr, "gds_relay error on kill()");
+			fprintf(stderr, "gds_relay error on kill()");
 #endif
 		};
 	}

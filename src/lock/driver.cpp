@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
@@ -80,14 +80,14 @@ void main( int argc, char **argv)
 	ISC_STATUS status;
 	ISC_STATUS_ARRAY status_vector;
 
-	ib_printf("\nStand alone Lock Manager driver program.\n");
-	ib_printf("****************************************\n\n");
-	ib_printf("pid = %d\n\n", getpid());
-	ib_printf("\n");
+	printf("\nStand alone Lock Manager driver program.\n");
+	printf("****************************************\n\n");
+	printf("pid = %d\n\n", getpid());
+	printf("\n");
 
 	if (LOCK_init(status_vector, true,
 				  (SLONG) getpid(), 1, &lck_owner_handle)) {
-		ib_printf("LOCK_init failed\n");
+		printf("LOCK_init failed\n");
 		isc_print_status(status_vector);
 		exit(0);
 	}
@@ -108,8 +108,8 @@ void main( int argc, char **argv)
 					  0, wait, status_vector, lck_owner_handle);
 
 	while (true) {
-		ib_printf("Request: ");
-		status = ib_scanf("%s%s", op, arg);
+		printf("Request: ");
+		status = scanf("%s%s", op, arg);
 		if (status == EOF)
 			continue;
 		if (!strcmp(op, "rel")) {
@@ -119,7 +119,7 @@ void main( int argc, char **argv)
 				locks[n] = 0;
 			}
 			else
-				ib_printf("*** BAD LOCK\n");
+				printf("*** BAD LOCK\n");
 			continue;
 		}
 		else if (!strcmp(op, "ar")) {
@@ -135,64 +135,64 @@ void main( int argc, char **argv)
 		else if (!strcmp(op, "rd")) {
 			n = atoi(arg);
 			if (n >= slot || !(lock = locks[n])) {
-				ib_printf("bad lock\n");
+				printf("bad lock\n");
 				continue;
 			}
 			data = LOCK_read_data(lock);
-			ib_printf("lock data = %d\n", data);
+			printf("lock data = %d\n", data);
 			continue;
 		}
 		else if (!strcmp(op, "wd")) {
 			n = atoi(arg);
 			if (n >= slot || !(lock = locks[n])) {
-				ib_printf("bad lock\n");
+				printf("bad lock\n");
 				continue;
 			}
-			ib_scanf("%s", arg);
+			scanf("%s", arg);
 			data = atoi(arg);
 			LOCK_write_data(lock, data);
 			continue;
 		}
 		else if (!strcmp(op, "qd")) {
 			if (!(agg = lookup_agg(arg))) {
-				ib_printf("bad query aggregate\n");
+				printf("bad query aggregate\n");
 				continue;
 			}
 			data = LOCK_query_data(parent, 0, agg);
 			if (agg == LCK_ANY)
-				ib_printf("%s = %s\n", arg, ((data) ? "true" : "false"));
+				printf("%s = %s\n", arg, ((data) ? "true" : "false"));
 			else
-				ib_printf("%s = %d\n", arg, data);
+				printf("%s = %d\n", arg, data);
 			continue;
 		}
 		else if (!strcmp(op, "cvt")) {
 			n = atoi(arg);
-			ib_scanf("%s", op);
+			scanf("%s", op);
 			if (!(type = lookup_lock(op))) {
-				ib_printf("bad lock type\n");
+				printf("bad lock type\n");
 				continue;
 			}
 			if (n >= slot || !(lock = locks[n])) {
-				ib_printf("bad lock\n");
+				printf("bad lock\n");
 				continue;
 			}
 			if (!LOCK_convert(lock, type, wait, NULL, 0, status_vector))
 			{
-				ib_printf("*** CONVERSION FAILED: status_vector[1] = %d",
+				printf("*** CONVERSION FAILED: status_vector[1] = %d",
 						  status_vector[1]);
 				switch (status_vector[1])
 				{
 				case isc_lock_timeout:
-					ib_printf(" (isc_lock_timeout)\n");
+					printf(" (isc_lock_timeout)\n");
 					break;
 				case isc_lock_conflict:
-					ib_printf(" (isc_lock_conflict)\n");
+					printf(" (isc_lock_conflict)\n");
 					break;
 				case isc_deadlock:
-					ib_printf(" (isc_deadlock)\n");
+					printf(" (isc_deadlock)\n");
 					break;
 				default:
-					ib_printf("\n");
+					printf("\n");
 					break;
 				}
 			}
@@ -208,21 +208,21 @@ void main( int argc, char **argv)
 							(sw_release ? ast : NULL), slot,	/* AST and argument */
 							0, wait, status_vector, lck_owner_handle);
 			if (lock) {
-				ib_printf("lock# %d = %d\n", slot, lock);
+				printf("lock# %d = %d\n", slot, lock);
 				levels[slot] = type;
 				locks[slot++] = lock;
 			}
 			else {
-				ib_printf("*** LOCK REJECTED: status_vector[1] = %d",
+				printf("*** LOCK REJECTED: status_vector[1] = %d",
 						  status_vector[1]);
 				if (status_vector[1] == isc_lock_timeout)
-					ib_printf(" (isc_lock_timeout)\n");
+					printf(" (isc_lock_timeout)\n");
 				else if (status_vector[1] == isc_lock_conflict)
-					ib_printf(" (isc_lock_conflict)\n");
+					printf(" (isc_lock_conflict)\n");
 				else if (status_vector[1] == isc_deadlock)
-					ib_printf(" (isc_deadlock)\n");
+					printf(" (isc_deadlock)\n");
 				else
-					ib_printf("\n");
+					printf("\n");
 			}
 		}
 		else {
@@ -251,28 +251,28 @@ static int ast(void* slot_void)
 	
 	const int slot = (int)(IPTR) slot_void; // static cast
 
-	ib_printf("*** blocking AST for lock# %d ", slot);
+	printf("*** blocking AST for lock# %d ", slot);
 
 	if (sw_release < 0) {
-		ib_printf("In the AST routine.\n");
-		ib_printf("Enter ar value [1=nothing, 2=release, 3=downgrade]:");
-		ib_scanf("%d", &sw_release_use);
+		printf("In the AST routine.\n");
+		printf("Enter ar value [1=nothing, 2=release, 3=downgrade]:");
+		scanf("%d", &sw_release_use);
 	}
 
 	if (sw_release_use == 1) {
-		ib_printf("-- ignored ***\n");
+		printf("-- ignored ***\n");
 		return 0;
 	}
 
 	if (sw_release_use > 2 && levels[slot] == LCK_EX) {
 		LOCK_convert(locks[slot], LCK_SR, wait, NULL, 0, status_vector);
 		levels[slot] = LCK_SR;
-		ib_printf("-- down graded to SR ***\n");
+		printf("-- down graded to SR ***\n");
 		return 0;
 	}
 
 	LOCK_deq(locks[slot]);
-	ib_printf("-- released ***\n");
+	printf("-- released ***\n");
 	return 0;
 }
 
@@ -330,42 +330,42 @@ static void print_help(void)
 *
 ***************************************/
 
-	ib_printf("Command syntax is:\n");
-	ib_printf
+	printf("Command syntax is:\n");
+	printf
 		("\tnull <key>\tAcquire an 'null' lock on <key> (returns <lock#>)\n");
-	ib_printf
+	printf
 		("\tsr <key>\tAcquire an 'sr' lock on <key> (returns <lock#>)\n");
-	ib_printf
+	printf
 		("\tpr <key>\tAcquire an 'pr' lock on <key> (returns <lock#>)\n");
-	ib_printf
+	printf
 		("\tsw <key>\tAcquire an 'sw' lock on <key> (returns <lock#>)\n");
-	ib_printf
+	printf
 		("\tpw <key>\tAcquire an 'pw' lock on <key> (returns <lock#>)\n");
-	ib_printf
+	printf
 		("\tex <key>\tAcquire an 'ex' lock on <key> (returns <lock#>)\n");
-	ib_printf("\tw <value>\tSet wait parameter to LOCK_enq:\n");
-	ib_printf("\t\t\t\tvalue>0   willing to wait forever [default]\n");
-	ib_printf("\t\t\t\tvalue=0   not willing to wait\n");
-	ib_printf("\t\t\t\tvalue<0   willing to wait for that many seconds\n");
-	ib_printf("\tar <value>\tControls the AST\n");
-	ib_printf
+	printf("\tw <value>\tSet wait parameter to LOCK_enq:\n");
+	printf("\t\t\t\tvalue>0   willing to wait forever [default]\n");
+	printf("\t\t\t\tvalue=0   not willing to wait\n");
+	printf("\t\t\t\tvalue<0   willing to wait for that many seconds\n");
+	printf("\tar <value>\tControls the AST\n");
+	printf
 		("\t\t\t\tvalue=1   AST will not release nor downgrade [default]\n");
-	ib_printf("\t\t\t\tvalue=2   AST will release lock\n");
-	ib_printf("\t\t\t\tvalue=3   AST will attempt to downgrade first\n");
-	ib_printf("\t\t\t\tvalue<0   AST will prompt\n");
-	ib_printf("\t\t\t\tvalue=0   AST is not supplied\n");
-	ib_printf("\trel <lock#>\tRelease lock <lock#>\n");
-	ib_printf
+	printf("\t\t\t\tvalue=2   AST will release lock\n");
+	printf("\t\t\t\tvalue=3   AST will attempt to downgrade first\n");
+	printf("\t\t\t\tvalue<0   AST will prompt\n");
+	printf("\t\t\t\tvalue=0   AST is not supplied\n");
+	printf("\trel <lock#>\tRelease lock <lock#>\n");
+	printf
 		("\tcvt <lock#> <lock-type>\n\t\t\tConvert lock <lock#> to type <lock-type>\n");
-	ib_printf("\trd <lock#>\tRead data <lock#>\n");
-	ib_printf("\twd <lock#> <data>\tWrite <data> to <lock#>\n");
-	ib_printf
+	printf("\trd <lock#>\tRead data <lock#>\n");
+	printf("\twd <lock#> <data>\tWrite <data> to <lock#>\n");
+	printf
 		("\tqd <agg>\tQuery data for <agg := min,max,cnt,sum,avg,any>\n");
-	ib_printf("\tq <don't-care>\tQuit\n");
-	ib_printf("\nRemember the isc_config modifier:\n");
-	ib_printf("\tV4_LOCK_GRANT_ORDER {0 | 1}\n");
-	ib_printf("\t\t\t0 = disable lock-grant-order (no lock-fairness)\n");
-	ib_printf("\t\t\t1 = enable lock-grant-order [default]\n");
+	printf("\tq <don't-care>\tQuit\n");
+	printf("\nRemember the isc_config modifier:\n");
+	printf("\tV4_LOCK_GRANT_ORDER {0 | 1}\n");
+	printf("\t\t\t0 = disable lock-grant-order (no lock-fairness)\n");
+	printf("\t\t\t1 = enable lock-grant-order [default]\n");
 }
 
 

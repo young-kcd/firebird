@@ -39,7 +39,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/mov.c"
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -96,7 +96,7 @@ void start_time()
 	if (ftime(&tp) != -1)
 		last_time = (tp.time * 1000) + tp.millitm;
 	else
-		ib_printf("ftime() failed\n");
+		printf("ftime() failed\n");
 }
 
 void stop_time()
@@ -106,7 +106,7 @@ void stop_time()
 		intervals[curr_repeat++] = curr_time - last_time;
 	}
 	else
-		ib_printf("ftime() failed\n");
+		printf("ftime() failed\n");
 }
 
 void report_time(s)
@@ -132,7 +132,7 @@ void report_time(s)
 	avg_interval =
 		(sum_interval - (max_interval + min_interval)) / (curr_repeat - 3);
 
-	ib_printf("%s: %4ld avg ms %4ld min ms %4ld max ms\n",
+	printf("%s: %4ld avg ms %4ld min ms %4ld max ms\n",
 			  s, avg_interval, min_interval, max_interval);
 }
 
@@ -164,7 +164,7 @@ main(argc, argv)
 	}
 	report_time("Empty procedure call");
 
-	ib_printf("\n\nTiming memset (destination aligments & blocksizes)\n\n");
+	printf("\n\nTiming memset (destination aligments & blocksizes)\n\n");
 
 	for (k = 0; k < BSIZES; ++k) {
 		/* Aligned */
@@ -175,10 +175,10 @@ main(argc, argv)
 		/* Unaligned */
 		do_test_memset((UCHAR *) destination + 1, block_sizes[k]);
 	}
-	ib_fflush(ib_stdout);
+	fflush(stdout);
 
 
-	ib_printf
+	printf
 		("\n\nTiming memcpy (source aligments, destination alignments & blocksizes)\n\n");
 	for (k = 0; k < BSIZES; ++k) {
 		/* Both aligned */
@@ -198,7 +198,7 @@ main(argc, argv)
 					   block_sizes[k]);
 	}
 
-	ib_fflush(ib_stdout);
+	fflush(stdout);
 
 	exit(0);
 }

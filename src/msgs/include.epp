@@ -22,20 +22,20 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/common.h"
 
 DATABASE DB = "msg.fdb";
 
-IB_FILE *output;
+FILE *output;
 
 static bool check_option(SCHAR *, SSHORT *, SCHAR **);
 static int define_format(SCHAR *, SCHAR *);
 static int gen(SCHAR *, SCHAR *);
-static int process_line(IB_FILE *, SCHAR *);
-static int put_error(IB_FILE *, SCHAR **, SCHAR *, SSHORT);
-static int put_symbol(IB_FILE *, SCHAR *, SCHAR *, SLONG, SSHORT);
-static int put_symbols(IB_FILE *, SCHAR **, SCHAR *, SSHORT);
+static int process_line(FILE *, SCHAR *);
+static int put_error(FILE *, SCHAR **, SCHAR *, SSHORT);
+static int put_symbol(FILE *, SCHAR *, SCHAR *, SLONG, SSHORT);
+static int put_symbols(FILE *, SCHAR **, SCHAR *, SSHORT);
 
 #define OPT_byte	1
 #define OPT_signed	2
@@ -83,7 +83,7 @@ void main( int argc, char **argv)
 				sw_all = true;
 				continue;
 			}
-		ib_printf("Bad switch %s\n", *p);
+		printf("Bad switch %s\n", *p);
 		exit(FINI_ERROR);
 	}
 
@@ -96,7 +96,7 @@ void main( int argc, char **argv)
 
 	if (sw_all)
         FOR X IN TEMPLATES
-            gen(X.LANGUAGE, IB_FILE);
+            gen(X.LANGUAGE, FILE);
 	    END_FOR
 	else
 	    gen(language, file);
@@ -166,7 +166,7 @@ static int define_format( SCHAR * name, SCHAR * format)
 	SCHAR **ptr, *p;
 
 	if (!name) {
-		ib_printf("Format redefined\n");
+		printf("Format redefined\n");
 		return;
 	}
 
@@ -212,12 +212,12 @@ static int gen( SCHAR * language, SCHAR * filename)
 
 	FOR X IN TEMPLATES WITH X.LANGUAGE EQ language
 		if (!filename)
-			filename = IB_FILE;
-		if (!(output = ib_fopen(filename, "w"))) {
-			ib_perror(IB_FILE);
+			filename = FILE;
+		if (!(output = fopen(filename, "w"))) {
+			perror(FILE);
 			return;
 		}
-		ib_printf("Generating %s for %s\n", filename, X.LANGUAGE);
+		printf("Generating %s for %s\n", filename, X.LANGUAGE);
 		FOR Y IN X.TEMPLATE
 			end = Y.SEGMENT + Y.LENGTH;
 			*end = 0;
@@ -225,12 +225,12 @@ static int gen( SCHAR * language, SCHAR * filename)
 				end[-1] = 0;
 			process_line(output, Y.SEGMENT);
 		END_FOR;
-		ib_fclose(output);
+		fclose(output);
 	END_FOR;
 }
 
 
-static int process_line( IB_FILE * file, SCHAR * line_ptr)
+static int process_line( FILE * file, SCHAR * line_ptr)
 {
 /**************************************
  *
@@ -250,7 +250,7 @@ static int process_line( IB_FILE * file, SCHAR * line_ptr)
 /* If the line doesn't start with a $, just copy it */
 
 	if (*line != '$') {
-		ib_fprintf(output, "%s\n", line);
+		fprintf(output, "%s\n", line);
 		return;
 	}
 
@@ -294,7 +294,7 @@ static int process_line( IB_FILE * file, SCHAR * line_ptr)
 	}
 
 	if (!words[0]) {
-		ib_printf("no class for line\n");
+		printf("no class for line\n");
 		return;
 	}
 
@@ -307,13 +307,13 @@ static int process_line( IB_FILE * file, SCHAR * line_ptr)
 	else if (!strcmp(words[0], "SET") && words[1])
 		defaults = options;
 	else
-		ib_printf("don't understand %s\n", words[0]);
+		printf("don't understand %s\n", words[0]);
 
 }
 
 
 static int put_error(
-					 IB_FILE * file,
+					 FILE * file,
 					 SCHAR ** words, SCHAR * format, SSHORT options)
 {
 /**************************************
@@ -344,7 +344,7 @@ static int put_error(
 
 
 static int put_symbol(
-					  IB_FILE * file,
+					  FILE * file,
 					  SCHAR * format,
 					  SCHAR * symbol, SLONG value, SSHORT options)
 {
@@ -361,7 +361,7 @@ static int put_symbol(
 	SCHAR *p, buffer[64];
 
 	if (!format) {
-		ib_printf("No format for symbol\n");
+		printf("No format for symbol\n");
 		return;
 	}
 
@@ -382,12 +382,12 @@ static int put_symbol(
 		symbol = buffer;
 	}
 
-	ib_fprintf(file, format, symbol, value);
+	fprintf(file, format, symbol, value);
 }
 
 
 static int put_symbols(
-					   IB_FILE * file,
+					   FILE * file,
 					   SCHAR ** words, SCHAR * format, SSHORT options)
 {
 /**************************************
@@ -410,7 +410,7 @@ static int put_symbols(
 			put_symbol(file, format, X.SYMBOL, X.VALUE, options);
 		END_FOR;
 		if (!count)
-			ib_printf("No symbols found for %s/%s\n", words[0], words[1]);
+			printf("No symbols found for %s/%s\n", words[0], words[1]);
 	}
 	else {
 		FOR X IN SYMBOLS WITH X.CLASS EQ words[0] SORTED BY X.SEQUENCE
@@ -418,6 +418,6 @@ static int put_symbols(
 			put_symbol(file, format, X.SYMBOL, X.VALUE, options);
 		END_FOR;
 		if (!count)
-			ib_printf("No symbols found for %s\n", words[0]);
+			printf("No symbols found for %s\n", words[0]);
 	}
 }

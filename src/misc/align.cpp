@@ -17,12 +17,12 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.5 2004-03-01 03:35:16 skidder Exp $
+$Id: align.cpp,v 1.6 2004-04-28 22:29:19 brodsom Exp $
 */
 
 #include "firebird.h"
 #include <signal.h>
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 
 typedef struct xyz {
 	char a;
@@ -77,16 +77,16 @@ int main(int argc, char *argv[])
 	for (rule = rules; rule->rule_offset; ++rule)
 		if (rule->rule_offset == offset &&
 			rule->rule_length == length && rule->rule_faults == faults) {
-			ib_printf("\n/* %s */\n\n", rule->rule_system);
-			ib_printf("#define ALIGNMENT\t%d\n", rule->rule_base_align);
-			ib_printf("#define DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
-			ib_printf("#define FB_ALIGN(n,b)\t%s\n", rule->rule_rule);
+			printf("\n/* %s */\n\n", rule->rule_system);
+			printf("#define ALIGNMENT\t%d\n", rule->rule_base_align);
+			printf("#define DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
+			printf("#define FB_ALIGN(n,b)\t%s\n", rule->rule_rule);
 			check_byte_order();
-			ib_printf("\n");
+			printf("\n");
 			return 1;
 		}
 
-	ib_printf("Unknown system, double offset %d, structure length %d\n",
+	printf("Unknown system, double offset %d, structure length %d\n",
 			  offset, length);
 	check_byte_order();
 
@@ -104,7 +104,7 @@ static void check_byte_order(void)
 	order_test.c[1] = 2;
 
 	if (order_test.s == 0x0102)
-		ib_printf("#define WORDS_BIGENDIAN\t\t1\n");
+		printf("#define WORDS_BIGENDIAN\t\t1\n");
 }
 
 static int check_double(void)

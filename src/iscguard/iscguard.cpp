@@ -18,7 +18,7 @@
  */
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/gds_proto.h"
 #include <stdlib.h>
 #include <windows.h>

@@ -24,7 +24,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 	for (const VERB* verb = verbs; verb->internal; ++verb) {
 		const int blr = verb->blr;
 		if (table[blr]) {
-			ib_fprintf(ib_stderr, "BLRTABLE: duplicate blr %d\n", blr);
+			fprintf(stderr, "BLRTABLE: duplicate blr %d\n", blr);
 			exit(1);
 		}
 		table[blr] = verb->internal;
@@ -275,22 +275,22 @@ int main(int argc, char *argv[])
 			max = blr;
 	}
 
-	ib_printf("static const UCHAR blr_table4 [] = {\n");
+	printf("static const UCHAR blr_table4 [] = {\n");
 	print(table, max, "(UCHAR) ");
 
-	ib_printf("static const UCHAR blr_table [] = {\n");
+	printf("static const UCHAR blr_table [] = {\n");
 	print(table2, max, "(UCHAR) ");
 
-	ib_printf("static const SCHAR length_table [] = {\n");
+	printf("static const SCHAR length_table [] = {\n");
 	print(lengths, max, "");
 
-	ib_printf("static const SCHAR count_table [] = {\n");
+	printf("static const SCHAR count_table [] = {\n");
 	print(counts, max, "");
 
-	ib_printf("static const SCHAR type_table [] = {\n");
+	printf("static const SCHAR type_table [] = {\n");
 	print(types, max, "");
 
-	ib_printf("static const SCHAR sub_type_table [] = {\n");
+	printf("static const SCHAR sub_type_table [] = {\n");
 	print(sub_types, max, "");
 
 	return 0;
@@ -320,11 +320,11 @@ static void print(const SCHAR ** table, int max, const SCHAR * fudge)
 		while (*s)
 			s++;
 		if (s > buffer + 50) {
-			ib_printf("\t%s\n/*%3d*/", buffer, blr + 1);
+			printf("\t%s\n/*%3d*/", buffer, blr + 1);
 			s = buffer;
 			*s = 0;
 		}
 	}
 
-	ib_printf("\t%s 0};\n", buffer);
+	printf("\t%s 0};\n", buffer);
 }

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
@@ -50,11 +50,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	unsigned short path_length;
 
 	if (argc != 2 && argc != 1) {
-		ib_printf("Usage %s \n      %s filename\n");
+		printf("Usage %s \n      %s filename\n");
 		exit(1);
 	}
 	if (argc == 1) {
-		ib_printf(" Filename : ");
+		printf(" Filename : ");
 		gets(fname);
 	}
 	else
@@ -62,10 +62,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	sptr = sendbuf;
 	strcpy(buffer, fname);
-	ib_printf("Filename to dump pool info = %s \n", buffer);
+	printf("Filename to dump pool info = %s \n", buffer);
 	sprintf(svc_name, "localhost:anonymous");
 	if (isc_service_attach(status, 0, svc_name, &svc_handle, 0, NULL)) {
-		ib_printf("Failed to attach service\n");
+		printf("Failed to attach service\n");
 		return 0;
 	}
 
@@ -79,7 +79,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		(status, &svc_handle, NULL, 0, NULL, sptr - sendbuf, sendbuf, 256,
 		 respbuf))
 	{
-		ib_printf("Failed to query service\n");
+		printf("Failed to query service\n");
 		isc_service_detach(status, &svc_handle);
 		return 0;
 	}

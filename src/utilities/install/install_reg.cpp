@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include "../jrd/common.h"
@@ -95,7 +95,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			}
 			if (!cmd)
 			{
-				ib_printf("Unknown command \"%s\"\n", *argv);
+				printf("Unknown command \"%s\"\n", *argv);
 				usage();
 			}
 			sw_command = commands[i].code;
@@ -110,14 +110,14 @@ int CLIB_ROUTINE main( int argc, char** argv)
 					break;
 
 				default:
-					ib_printf("Unknown switch \"%s\"\n", p);
+					printf("Unknown switch \"%s\"\n", p);
 					usage();
 			}
 		}
 	}
 
 	if (sw_version)
-		ib_printf("instreg version %s\n", GDS_VERSION);
+		printf("instreg version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE)
 		usage();
@@ -130,17 +130,17 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		case COMMAND_INSTALL:
 			ret = REGISTRY_install(hkey_node, directory, reg_error);
 			if (ret != FB_SUCCESS)
-				ib_printf ("Firebird has not been installed in the registry.\n");
+				printf ("Firebird has not been installed in the registry.\n");
 			else
-				ib_printf("Firebird has been successfully installed in the registry.\n");
+				printf("Firebird has been successfully installed in the registry.\n");
 			break;
 
 		case COMMAND_REMOVE:
 		ret = REGISTRY_remove(hkey_node, false, reg_error);
 			if (ret != FB_SUCCESS)
-				ib_printf("Firebird has not been deleted from the registry.\n");
+				printf("Firebird has not been deleted from the registry.\n");
 			else
-				ib_printf("Firebird has been successfully deleted from the registry.\n");
+				printf("Firebird has been successfully deleted from the registry.\n");
 			break;
 	}
 
@@ -170,11 +170,11 @@ static USHORT reg_error( SLONG status, TEXT* string, HKEY hkey)
 	if (status == 0)
 	{
 		// Allows to report non System errors
-		ib_printf("%s\n", string);
+		printf("%s\n", string);
 	}
 	else
 	{
-		ib_printf("Error occurred during \"%s\"\n", string);
+		printf("Error occurred during \"%s\"\n", string);
 
 		const SSHORT l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 								NULL,
@@ -184,12 +184,12 @@ static USHORT reg_error( SLONG status, TEXT* string, HKEY hkey)
 								sizeof(buffer),
 								NULL);
 		if (!l) {
-			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
+			printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
 		{
 			CharToOem(buffer, buffer);
-			ib_printf("%s\n", buffer);
+			printf("%s\n", buffer);
 		}
 	}
 
@@ -208,12 +208,12 @@ static void usage(void)
  *
  **************************************/
 
-	ib_printf("\nUsage:\n");
-	ib_printf("  instreg i[nstall]\n");
-	ib_printf("          r[emove]\n\n");
-	ib_printf("  This utility should be located and run from the 'bin' directory\n");
-	ib_printf("  of your Firebird installation.\n\n");
-	ib_printf("  '-z' can be used with any other option, prints version\n");
+	printf("\nUsage:\n");
+	printf("  instreg i[nstall]\n");
+	printf("          r[emove]\n\n");
+	printf("  This utility should be located and run from the 'bin' directory\n");
+	printf("  of your Firebird installation.\n\n");
+	printf("  '-z' can be used with any other option, prints version\n");
 
 	exit(FINI_ERROR);
 }

@@ -202,7 +202,7 @@ USHORT CVKSC_ksc_byte2short(TEXTTYPE obj,
 	fb_assert(err_position != NULL);
 
 #ifdef DEBUG
-	ib_printf("dst_len = %d, src_len = %d\n src = %s\n", dst_len, src_len,
+	printf("dst_len = %d, src_len = %d\n src = %s\n", dst_len, src_len,
 			  src);
 #endif
 
@@ -239,7 +239,7 @@ USHORT CVKSC_ksc_byte2short(TEXTTYPE obj,
 		*err_code = CS_TRUNCATION_ERROR;
 
 #ifdef DEBUG
-	ib_printf("dest len = %d %d characters\n",
+	printf("dest len = %d %d characters\n",
 			  (dst - dst_start) * sizeof(*dst), dst - dst_start);
 	dump_short_hex(dst_start, (dst - dst_start) * sizeof(*dst));
 #endif

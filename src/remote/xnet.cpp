@@ -24,7 +24,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../remote/remote.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"

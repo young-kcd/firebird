@@ -26,7 +26,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <windows.h>
 #include "../jrd/common.h"
 #include "../jrd/license.h"
@@ -553,11 +553,11 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	ffi->dwProductVersionMS = verMS;
 
 	/*
-	ib_printf("Signature: %8.8x\n", ffi->dwSignature);
-	ib_printf("FileVersionMS : %8.8x\n", ffi->dwFileVersionMS);
-	ib_printf("FileVersionLS : %8.8x\n", ffi->dwFileVersionLS);
-	ib_printf("ProductVersionMS : %8.8x\n", ffi->dwProductVersionMS);
-	ib_printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
+	printf("Signature: %8.8x\n", ffi->dwSignature);
+	printf("FileVersionMS : %8.8x\n", ffi->dwFileVersionMS);
+	printf("FileVersionLS : %8.8x\n", ffi->dwFileVersionLS);
+	printf("ProductVersionMS : %8.8x\n", ffi->dwProductVersionMS);
+	printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
 	*/
 	
 	/*
@@ -588,7 +588,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 				// The unicode string is aligned on the next 32 bit value
 				// (See PSDK Version Info "String" pseudo structure.)
 				p = p + ((unsigned int)p % 4);
-				//ib_printf("FileVersion : %ls\n", p);
+				//printf("FileVersion : %ls\n", p);
 				while (! isdigit(*p)) ++p;	// Get to first digit
 				*p = (verMS >> 16) + '0';	// Patch major digit
 				while (*p != '.') ++p;		// Get to dot
@@ -620,7 +620,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 				// The unicode string is aligned on the next 32 bit value
 				// (See PSDK Version Info "String" pseudo structure.)
 				p = p + ((unsigned int)p % 4);
-				//ib_printf("ProductVersion : %ls\n", p);
+				//printf("ProductVersion : %ls\n", p);
 				while (! isdigit(*p)) ++p;	// Get to first digit
 				*p = (verMS >> 16) + '0';	// Patch major digit
 				while (*p != '.') ++p;		// Get to dot

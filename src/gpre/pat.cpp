@@ -24,11 +24,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.22 2004-01-28 07:50:27 robocop Exp $
+//	$Id: pat.cpp,v 1.23 2004-04-28 22:05:55 brodsom Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
@@ -436,11 +436,11 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 #endif
 
 	default:
-		ib_fprintf(out_file, buffer);
+		fprintf(out_file, buffer);
 		break;
 	}
 #else
-	ib_fprintf(out_file, buffer);
+	fprintf(out_file, buffer);
 #endif
 
 }

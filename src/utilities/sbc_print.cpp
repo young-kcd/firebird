@@ -27,7 +27,7 @@
 #include "../jrd/common.h"
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -115,7 +115,7 @@ static int file;
 
 SCHAR global_buffer[MAX_PAGE_SIZE];
 
-static IB_FILE* sw_outfile;
+static FILE* sw_outfile;
 
 const SCHAR* page_type[] = {
 	"pag_undefined    ",
@@ -152,7 +152,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		argv++;
@@ -180,7 +180,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		argc -= 4;
 	}
 
-	sw_outfile = ib_stderr;
+	sw_outfile = stderr;
 
 /* Handle switches, etc. */
 
@@ -250,7 +250,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	db_get_sbc(dbname, sw_file, &cache_buffers, &cache_flags);
 
 	if (cache_flags || !cache_buffers) {
-		ib_printf("No shared Cache\n");
+		printf("No shared Cache\n");
 		exit(FINI_ERROR);
 	}
 
@@ -273,7 +273,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	}
 
 	if (!CASH_header) {
-		ib_printf("Unable to access shared cache\n");
+		printf("Unable to access shared cache\n");
 		gds__print_status(status_vector);
 		exit(FINI_OK);
 	}
@@ -342,7 +342,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	prt_que("\tFree waiters", &sccb->sccb_free_waiters, 0, 0, 0);
 
-	ib_printf("\n");
+	printf("\n");
 
 	exit(FINI_OK);
 }
@@ -413,7 +413,7 @@ static void db_error( SLONG status)
 					   NULL))
 			sprintf(s, "unknown Windows NT error %ld", status);
 
-	ib_printf(s);
+	printf(s);
 	exit(FINI_ERROR);
 }
 
@@ -490,15 +490,15 @@ static void db_error( int status)
 	   string, or an unknown error message if the error code is unknown.
 	   EKU: p cannot be NULL! */
 #if 1
-	ib_printf(strerror(status));
+	printf(strerror(status));
 #else
 #ifndef VMS
-	ib_printf(strerror(status));
+	printf(strerror(status));
 #else
 	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
-		ib_printf("%s\n", p);
+		printf("%s\n", p);
 	else
-		ib_printf("uninterpreted code %x\n", status);
+		printf("uninterpreted code %x\n", status);
 #endif
 #endif
 	exit(FINI_ERROR);
@@ -569,15 +569,15 @@ static void print_error(void)
  *
  **************************************/
 
-	ib_printf("gds_cache_print <switches> <db name>\n");
-	ib_printf("Switches are:\n");
-	ib_printf("\t-m\t\t- mru order\n");
-	ib_printf("\t-n <buffers>\t- number of buffers\n");
-	ib_printf("\t-p <page>\t- specific page\n");
-	ib_printf("\t-f <buffers>\t- number of free\n");
-	ib_printf("\t-h \t\t- page headers\n");
-	ib_printf("\t-a \t\t- all except free pages\n");
-	ib_printf("\t-u \t\t- user process information\n");
+	printf("gds_cache_print <switches> <db name>\n");
+	printf("Switches are:\n");
+	printf("\t-m\t\t- mru order\n");
+	printf("\t-n <buffers>\t- number of buffers\n");
+	printf("\t-p <page>\t- specific page\n");
+	printf("\t-f <buffers>\t- number of free\n");
+	printf("\t-h \t\t- page headers\n");
+	printf("\t-a \t\t- all except free pages\n");
+	printf("\t-u \t\t- user process information\n");
 }
 
 
@@ -597,31 +597,31 @@ static void print_header( TEXT * expanded_filename)
 
 /* Print shared cache header block */
 
-	ib_printf("\nSHARED_CACHE BLOCK \t%s\n", expanded_filename);
-	ib_printf("\tVersion: %d.%d, Active process: %d, Length: %d, Used: %d\n",
+	printf("\nSHARED_CACHE BLOCK \t%s\n", expanded_filename);
+	printf("\tVersion: %d.%d, Active process: %d, Length: %d, Used: %d\n",
 			  CASH_header->shb_major_version,
 			  CASH_header->shb_minor_version,
 			  CASH_header->shb_active_process,
 			  CASH_header->shb_length, CASH_header->shb_used);
 
-	ib_printf("\tBuffer waits: %d, IO waits: %d, Cache repairs: %d\n",
+	printf("\tBuffer waits: %d, IO waits: %d, Cache repairs: %d\n",
 			  CASH_header->shb_buffer_waits,
 			  CASH_header->shb_io_waits, CASH_header->shb_cache_repairs);
 
-	ib_printf
+	printf
 		("\tLast Checkpoint Seqno: %d, Offset: %d, Partition offset: %d\n",
 		 CASH_header->shb_last_chk_seqno, CASH_header->shb_last_chk_offset,
 		 CASH_header->shb_last_chk_p_offset);
 
-	ib_printf("\tShort recovers: %d, Long recovers: %d\n",
+	printf("\tShort recovers: %d, Long recovers: %d\n",
 			  CASH_header->shb_short_recovers,
 			  CASH_header->shb_long_recovers);
 
-	ib_printf("\tLogical Reads: %d, Physical Reads: %d\n",
+	printf("\tLogical Reads: %d, Physical Reads: %d\n",
 			  CASH_header->shb_logical_reads,
 			  CASH_header->shb_physical_reads);
 
-	ib_printf("\tLogical Writes: %d, Physical Writes: %d\n",
+	printf("\tLogical Writes: %d, Physical Writes: %d\n",
 			  CASH_header->shb_logical_writes,
 			  CASH_header->shb_physical_writes);
 
@@ -630,8 +630,8 @@ static void print_header( TEXT * expanded_filename)
 				 CASH_header->shb_physical_reads) /
 		CASH_header->shb_logical_reads;
 
-	ib_printf("\tCache hit ratio: %3.1f\n", cache_hit * 100.);
-	ib_printf("\n");
+	printf("\tCache hit ratio: %3.1f\n", cache_hit * 100.);
+	printf("\n");
 }
 
 
@@ -654,7 +654,7 @@ static void print_page_header( SDB sdb)
 
 /* print sdb information */
 
-	ib_printf
+	printf
 		("\tPage: %ld Generation: %ld Length: %d SDB Flags: %d Precedence: %d\n",
 		 sdb->sdb_page, sdb->sdb_generation, sdb->sdb_length, sdb->sdb_flags,
 		 sdb->sdb_precedence);
@@ -663,9 +663,9 @@ static void print_page_header( SDB sdb)
 
 /* Print page header */
 
-	ib_printf("\tPage type: %s\n", page_type[(int) page->pag_type]);
+	printf("\tPage type: %s\n", page_type[(int) page->pag_type]);
 
-	ib_printf("\tFlags: %d.  Generation: %d.  SCN: %d.\n",
+	printf("\tFlags: %d.  Generation: %d.  SCN: %d.\n",
 			  (int) page->pag_flags, page->pag_generation,
 			  page->pag_scn);
 
@@ -681,37 +681,37 @@ static void print_page_header( SDB sdb)
 	}
 
 	if (sdb->sdb_flags) {
-		ib_printf("\tSDB Flags\n");
+		printf("\tSDB Flags\n");
 
 		if (sdb->sdb_flags & SDB_dirty)
-			ib_printf("\t\tPage Dirty\n");
+			printf("\t\tPage Dirty\n");
 		if (sdb->sdb_flags & SDB_marked)
-			ib_printf("\t\tPage Marked\n");
+			printf("\t\tPage Marked\n");
 		if (sdb->sdb_flags & SDB_faked)
-			ib_printf("\t\tPage Faked\n");
+			printf("\t\tPage Faked\n");
 		if (sdb->sdb_flags & SDB_journal)
-			ib_printf("\t\tJournal records present\n");
+			printf("\t\tJournal records present\n");
 		if (sdb->sdb_flags & SDB_journal_page)
-			ib_printf("\t\tFull page journal\n");
+			printf("\t\tFull page journal\n");
 		if (sdb->sdb_flags & SDB_write_pending)
-			ib_printf("\t\tWrite pending\n");
+			printf("\t\tWrite pending\n");
 		if (sdb->sdb_flags & SDB_read_pending)
-			ib_printf("\t\tRead pending\n");
+			printf("\t\tRead pending\n");
 		if (sdb->sdb_flags & SDB_free)
-			ib_printf("\t\tFree\n");
+			printf("\t\tFree\n");
 		if (sdb->sdb_flags & SDB_log_recovery)
-			ib_printf("\t\tLog recovery\n");
+			printf("\t\tLog recovery\n");
 		if (sdb->sdb_flags & SDB_check_use)
-			ib_printf("\t\tCheck use\n");
+			printf("\t\tCheck use\n");
 	}
 
 	if (sdb->sdb_journal) {
 		SDB journal_sdb = (SDB) ABS_PTR(sdb->sdb_journal);
-		ib_printf("\tJournal buffer information:\n");
-		ib_printf("\t\tCurrent Length %d\n", journal_sdb->sdb_length);
+		printf("\tJournal buffer information:\n");
+		printf("\t\tCurrent Length %d\n", journal_sdb->sdb_length);
 	}
 
-	ib_printf("\n");
+	printf("\n");
 }
 
 
@@ -729,18 +729,18 @@ static void print_process( PRB process)
  *
  **************************************/
 
-	ib_printf("PROCESS BLOCK %d\n", REL_PTR(process));
+	printf("PROCESS BLOCK %d\n", REL_PTR(process));
 
-	ib_printf("\tProcess id: %d, IO wait: %d, IO read: %d, flags: %d\n",
+	printf("\tProcess id: %d, IO wait: %d, IO read: %d, flags: %d\n",
 			  process->prb_process_id, process->prb_waiter,
 			  process->prb_reader, process->prb_flags);
 
-	ib_printf("\tPhysical Reads: %d, Logical Reads: %d\n",
+	printf("\tPhysical Reads: %d, Logical Reads: %d\n",
 			  process->prb_physical_reads, process->prb_logical_reads);
 
-	ib_printf("\tLogical Writes: %d\n", process->prb_logical_writes);
+	printf("\tLogical Writes: %d\n", process->prb_logical_writes);
 
-	ib_printf("\n");
+	printf("\n");
 }
 
 
@@ -766,7 +766,7 @@ static void prt_que(
 	const SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
-		ib_printf("%s: *empty*\n\n", string);
+		printf("%s: *empty*\n\n", string);
 		return;
 	}
 
@@ -783,7 +783,7 @@ static void prt_que(
 			(*routine) ((UCHAR *) next - param1);
 	}
 
-	ib_printf("%s (%ld):\tforward: %d, backward: %d\n\n",
+	printf("%s (%ld):\tforward: %d, backward: %d\n\n",
 			  string, count, que->srq_forward, que->srq_backward);
 }
 
@@ -805,7 +805,7 @@ static void prt_que_back(
 	const SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
-		ib_printf("%s: *empty*\n\n", string);
+		printf("%s: *empty*\n\n", string);
 		return;
 	}
 
@@ -822,7 +822,7 @@ static void prt_que_back(
 			(*routine) ((UCHAR *) next - param1);
 	}
 
-	ib_printf("%s (%ld):\tforward: %d, backward: %d\n\n",
+	printf("%s (%ld):\tforward: %d, backward: %d\n\n",
 			  string, count, que->srq_forward, que->srq_backward);
 }
 
@@ -842,11 +842,11 @@ static void print_sccb(void)
 
 /* Print shared cache header block */
 
-	ib_printf("\tBuffers: %d, Free: %d, Free min: %d, Checkpoint : %d\n",
+	printf("\tBuffers: %d, Free: %d, Free min: %d, Checkpoint : %d\n",
 			  sccb->sccb_count,
 			  sccb->sccb_free_count,
 			  sccb->sccb_free_min, sccb->sccb_checkpoint);
 
-	ib_printf("\tflags: %d\n\n", sccb->sccb_flags);
+	printf("\tflags: %d\n\n", sccb->sccb_flags);
 }
 

@@ -36,13 +36,13 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.9 2004-02-20 06:43:11 robocop Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.10 2004-04-28 22:34:56 brodsom Exp $ */
 
 #include <windows.h>
 #include <process.h>
 #include <signal.h>
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "gen/iberror.h"
@@ -278,7 +278,7 @@ static void overflow_handler(int signal, int code) throw()
  **************************************/
 
 #ifdef DEBUG_FPE_HANDLING
-	ib_fprintf(ib_stderr, "overflow_handler (%x)\n", arg);
+	fprintf(stderr, "overflow_handler (%x)\n", arg);
 #endif
 
 /* If we're within ISC world (inside why-value) when the FPE occurs
@@ -289,7 +289,7 @@ static void overflow_handler(int signal, int code) throw()
 	if (isc_enter_count) {
 		++overflow_count;
 #ifdef DEBUG_FPE_HANDLING
-		ib_fprintf(ib_stderr, "SIGFPE in isc code ignored %d\n",
+		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
 				   overflow_count);
 #endif
 		/* We've "handled" the FPE */

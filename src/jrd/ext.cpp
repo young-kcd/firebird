@@ -35,7 +35,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include "../jrd/jrd.h"
@@ -63,7 +63,7 @@
 using namespace Jrd;
 
 namespace {
-	IB_FILE *ext_fopen(const char *filename, const char *mode);
+	FILE *ext_fopen(const char *filename, const char *mode);
 
 	class ExternalFileDirectoryList : public Firebird::DirectoryList
 	{
@@ -79,14 +79,14 @@ namespace {
 	};
 	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
 
-	IB_FILE *ext_fopen(const char *filename, const char *mode) {
+	FILE *ext_fopen(const char *filename, const char *mode) {
 		if (!iExternalFileDirectoryList().isPathInList(filename))
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "external file",
 				isc_arg_string, ERR_cstring(filename),
 				isc_arg_end);
 
-		return ib_fopen(filename, mode);
+		return fopen(filename, mode);
 	}
 }
 
@@ -194,7 +194,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 		if (!(file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_READ_ONLY)))
 		{
 			ERR_post(isc_io_error,
-					 isc_arg_string, "ib_fopen",
+					 isc_arg_string, "fopen",
 					 isc_arg_string,
 					 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 					isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
@@ -223,7 +223,7 @@ void EXT_fini(jrd_rel* relation)
 	if (relation->rel_file) {
 		ExternalFile* file = relation->rel_file;
 		if (file->ext_ifi)
-			ib_fclose((IB_FILE *) file->ext_ifi);
+			fclose((FILE *) file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
 		delete relation->rel_file;
 		relation->rel_file = 0;
@@ -261,22 +261,22 @@ bool EXT_get(RecordSource* rsb)
 	SSHORT l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0 ||
-		(ib_fseek((IB_FILE *) file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
+		(fseek((FILE *) file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
 	{
 		ERR_post(isc_io_error,
-				 isc_arg_string, "ib_fseek",
+				 isc_arg_string, "fseek",
 				 isc_arg_string,
 				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
 	while (l--) {
-		const SSHORT c = ib_getc((IB_FILE *) file->ext_ifi);
+		const SSHORT c = getc((FILE *) file->ext_ifi);
 		if (c == EOF)
 			return false;
 		*p++ = c;
 	}
-	rpb->rpb_ext_pos = ib_ftell((IB_FILE *) file->ext_ifi);
+	rpb->rpb_ext_pos = ftell((FILE *) file->ext_ifi);
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -509,15 +509,15 @@ void EXT_store(record_param* rpb, int* transaction)
 	USHORT l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0
-		|| (ib_fseek((IB_FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
+		|| (fseek((FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
 	{
-		ERR_post(isc_io_error, isc_arg_string, "ib_fseek", isc_arg_string,
+		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
 				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 	for (; l--; ++p)
-		ib_putc(*p, (IB_FILE *) file->ext_ifi);
-	ib_fflush((IB_FILE *) file->ext_ifi);
+		putc(*p, (FILE *) file->ext_ifi);
+	fflush((FILE *) file->ext_ifi);
 }
 
 

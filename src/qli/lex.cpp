@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -78,7 +78,7 @@
 extern bool sw_verify;
 extern bool sw_trace;
 
-static bool get_line(IB_FILE *, TEXT *, USHORT);
+static bool get_line(FILE *, TEXT *, USHORT);
 static int nextchar(const bool);
 static void next_line(const bool);
 static void retchar();
@@ -87,7 +87,7 @@ static int skip_white(void);
 
 static qli_lls* QLI_statements;
 static int QLI_position;
-static IB_FILE *input_file = NULL, *trace_file = NULL;
+static FILE *input_file = NULL, *trace_file = NULL;
 static char trace_file_name[MAXPATHLEN];
 static SLONG trans_limit;
 
@@ -173,33 +173,33 @@ void LEX_edit( SLONG start, SLONG stop)
  **************************************/
 	TEXT filename[MAXPATHLEN];
 
-	IB_FILE* scratch = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, filename);
-	if (scratch == (IB_FILE *) - 1)
+	FILE* scratch = (FILE*) gds__temp_file(TRUE, SCRATCH, filename);
+	if (scratch == (FILE *) - 1)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 #ifdef WIN_NT
 	stop--;
 #endif
 
-	if (ib_fseek(trace_file, start, 0)) {
-		ib_fseek(trace_file, (SLONG) 0, 2);
-		IBERROR(59);			// Msg 59 ib_fseek failed
+	if (fseek(trace_file, start, 0)) {
+		fseek(trace_file, (SLONG) 0, 2);
+		IBERROR(59);			// Msg 59 fseek failed
 	}
 
 	while (++start <= stop) {
-		const SSHORT c = ib_getc(trace_file);
+		const SSHORT c = getc(trace_file);
 		if (c == EOF)
 			break;
-		ib_putc(c, scratch);
+		putc(c, scratch);
 	}
 
-	ib_fclose(scratch);
+	fclose(scratch);
 
 	if (gds__edit(filename, TRUE))
 		LEX_push_file(filename, true);
 
 	unlink(filename);
 
-	ib_fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -259,7 +259,7 @@ qli_tok* LEX_edit_string(void)
 	token->tok_keyword = KW_none;
 
 	if (sw_trace)
-		ib_puts(token->tok_string);
+		puts(token->tok_string);
 
 	return token;
 }
@@ -344,7 +344,7 @@ qli_tok* LEX_filename(void)
 	token->tok_keyword = KW_none;
 
 	if (sw_trace)
-		ib_puts(token->tok_string);
+		puts(token->tok_string);
 
 	return token;
 }
@@ -363,8 +363,8 @@ void LEX_fini(void)
  *
  **************************************/
 
-	if (trace_file && (trace_file != (IB_FILE *) - 1)) {
-		ib_fclose(trace_file);
+	if (trace_file && (trace_file != (FILE *) - 1)) {
+		fclose(trace_file);
 		unlink(trace_file_name);
 	}
 }
@@ -425,7 +425,7 @@ bool LEX_get_line(TEXT * prompt,
 // UNIX flavor
 
 	if (prompt)
-		ib_printf(prompt);
+		printf(prompt);
 
 	errno = 0;
 	TEXT* p = buffer;
@@ -434,7 +434,7 @@ bool LEX_get_line(TEXT * prompt,
 	SSHORT c;
 
 	while (true) {
-		c = ib_getc(input_file);
+		c = getc(input_file);
 		if (c == EOF) {
 			if (SYSCALL_INTERRUPTED(errno) && !QLI_abort) {
 				errno = 0;
@@ -443,11 +443,11 @@ bool LEX_get_line(TEXT * prompt,
 
 			// The check for this actually being a terminal that is at
 			//   end of file is to prevent looping through a redirected
-			//   ib_stdin (e.g., a script file).
+			//   stdin (e.g., a script file).
 
-			if (prompt && isatty(ib_fileno(ib_stdin))) {
-				ib_rewind(ib_stdin);
-				ib_putchar('\n');
+			if (prompt && isatty(fileno(stdin))) {
+				rewind(stdin);
+				putchar('\n');
 			}
 			if (QLI_abort)
 				continue;
@@ -472,7 +472,7 @@ bool LEX_get_line(TEXT * prompt,
 	}
 
 	if (sw_verify)
-		ib_fputs(buffer, ib_stdout);
+		fputs(buffer, stdout);
 
 	return true;
 }
@@ -556,8 +556,8 @@ void LEX_init(void)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
-	if (trace_file == (IB_FILE *) - 1)
+	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	if (trace_file == (FILE *) - 1)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 
 	QLI_token = (qli_tok*) ALLOCPV(type_tok, MAXSYMLEN);
@@ -566,10 +566,10 @@ void LEX_init(void)
 	QLI_line->line_size = sizeof(QLI_line->line_data);
 	QLI_line->line_ptr = QLI_line->line_data;
 	QLI_line->line_type = line_stdin;
-	QLI_line->line_source = (FRBRD *) ib_stdin;
+	QLI_line->line_source = (FRBRD *) stdin;
 
 	QLI_semi = false;
-	input_file = ib_stdin;
+	input_file = stdin;
 	HSH_init();
 }
 
@@ -623,7 +623,7 @@ void LEX_pop_line(void)
 	if (temp->line_type == line_blob)
 		PRO_close(temp->line_database, temp->line_source);
 	else if (temp->line_type == line_file)
-		ib_fclose((IB_FILE *) temp->line_source);
+		fclose((FILE *) temp->line_source);
 
 	ALL_release((FRB) temp);
 }
@@ -671,11 +671,11 @@ bool LEX_push_file(const TEXT* filename,
  *	if the error flag is set, otherwise return quietly.
  *
  **************************************/
-	IB_FILE *file = ib_fopen(filename, FOPEN_INPUT_TYPE);
+	FILE *file = fopen(filename, FOPEN_INPUT_TYPE);
 	if (!file) {
 	    TEXT buffer[64];
 		sprintf(buffer, "%s.com", filename);
-		if (!(file = ib_fopen(buffer, FOPEN_INPUT_TYPE))) {
+		if (!(file = fopen(buffer, FOPEN_INPUT_TYPE))) {
 			if (error_flag)
 				ERRQ_msg_put(67, filename, NULL, NULL, NULL, NULL);
 				// Msg 67 can't open command file \"%s\"\n
@@ -736,9 +736,9 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (ib_fseek(trace_file, start, 0)) {
-		ib_fseek(trace_file, (SLONG) 0, 2);
-		IBERROR(62);			// Msg 62 ib_fseek failed
+	if (fseek(trace_file, start, 0)) {
+		fseek(trace_file, (SLONG) 0, 2);
+		IBERROR(62);			// Msg 62 fseek failed
 	}
 
 	int length = stop - start;
@@ -749,7 +749,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 		TEXT* p = buffer;
 		while (length) {
 			--length;
-			const SSHORT c = ib_getc(trace_file);
+			const SSHORT c = getc(trace_file);
 			*p++ = c;
 			if (c == '\n') {
 #ifdef PC_FILE_SEEK
@@ -767,7 +767,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 				BUGCHECK(58);	// Msg 58 isc_put_segment failed
 	}
 
-	ib_fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -926,13 +926,13 @@ qli_tok* LEX_token(void)
 		token->tok_keyword = KW_none;
 
 	if (sw_trace)
-		ib_puts(token->tok_string);
+		puts(token->tok_string);
 
 	return token;
 }
 
 
-static bool get_line(IB_FILE * file,
+static bool get_line(FILE * file,
 					 TEXT * buffer,
 					 USHORT size)
 {
@@ -957,7 +957,7 @@ static bool get_line(IB_FILE * file,
 	SLONG length = size;
 
 	while (true) {
-		c = ib_getc(file);
+		c = getc(file);
 		if (c == EOF) {
 			if (SYSCALL_INTERRUPTED(errno) && !QLI_abort) {
 				errno = 0;
@@ -984,7 +984,7 @@ static bool get_line(IB_FILE * file,
 		IBERROR(477);			// Msg 477 input line too long
 
 	if (sw_verify)
-		ib_fputs(buffer, ib_stdout);
+		fputs(buffer, stdout);
 
 	return true;
 }
@@ -1053,7 +1053,7 @@ static void next_line(const bool eof_ok)
 				flag = PRO_get_line(QLI_line->line_source, p,
 								 QLI_line->line_size);
 				if (flag && QLI_echo)
-					ib_printf("%s", QLI_line->line_data);
+					printf("%s", QLI_line->line_data);
 			}
 		}
 		else {
@@ -1067,7 +1067,7 @@ static void next_line(const bool eof_ok)
 			else if (QLI_line->line_type == line_file) {
 				flag = get_line((FILE*) QLI_line->line_source, p, QLI_line->line_size);
 				if (QLI_echo)
-					ib_printf("%s", QLI_line->line_data);
+					printf("%s", QLI_line->line_data);
 			}
 			if (flag) {
 				TEXT* q;
@@ -1128,7 +1128,7 @@ static void next_line(const bool eof_ok)
 			p++;
 	else {
 		while (*p)
-			ib_putc(*p++, trace_file);
+			putc(*p++, trace_file);
 		QLI_position += (TEXT *) p - QLI_line->line_data;
 #ifdef PC_FILE_SEEK
 		// account for the extra line-feed on OS/2 and Windows NT

@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
@@ -117,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 			if (!cmd)
 			{
-				ib_printf("Unknown command \"%s\"\n", *argv);
+				printf("Unknown command \"%s\"\n", *argv);
 				usage();
 			}
 			sw_command = commands[i].code;
@@ -173,14 +173,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 
 				default:
-					ib_printf("Unknown switch \"%s\"\n", p);
+					printf("Unknown switch \"%s\"\n", p);
 					usage();
 			}
 		}
 	}
 
 	if (sw_version)
-		ib_printf("instsvc version %s\n", GDS_VERSION);
+		printf("instsvc version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE ||
 		(username != 0 && sw_command != COMMAND_INSTALL))
@@ -207,12 +207,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		
 		if (password == 0)
 		{
-			ib_printf("Enter %s user password : ", oem_username);
+			printf("Enter %s user password : ", oem_username);
 			p = keyb_password;
 			q = p + sizeof(keyb_password) - 1;	// keep room for '\0'
 			while (p < q && (*p++ = getch()) != '\r') putch('*'); // Win32 only
 			*(p - 1) = '\0';	// Cuts at '\r'
-			ib_printf("\n");
+			printf("\n");
 			OemToChar(keyb_password, keyb_password);
 			password = keyb_password;
 		}
@@ -223,17 +223,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			case FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED :
 				/*
 				// OM - I think it is better not to bother the admin with this message.
-				ib_printf("The 'Logon as a Service' right was already "
+				printf("The 'Logon as a Service' right was already "
 					"granted to %s\n", oem_username);
 				*/
 				break;
 			case FB_SUCCESS :
-				ib_printf("The 'Logon as a Service' right has been "
+				printf("The 'Logon as a Service' right has been "
 					"granted to %s\n", oem_username);
 				break;
 			case FB_FAILURE :
 			default :
-				ib_printf("Failed granting the 'Logon as a Service' right "
+				printf("Failed granting the 'Logon as a Service' right "
 					"to %s\n", oem_username);
 				exit(FINI_ERROR);
 				break;
@@ -263,7 +263,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						username, svc_error);
 				}
 				if (status == FB_SUCCESS && status2 == FB_SUCCESS)
-					ib_printf("Service \"%s\" successfully created.\n", ISCGUARD_DISPLAY_NAME);
+					printf("Service \"%s\" successfully created.\n", ISCGUARD_DISPLAY_NAME);
 
 				/* Set sw_startup to manual in preparation for install the service */
 				sw_startup = STARTUP_DEMAND;
@@ -280,7 +280,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					username, svc_error);
 			}
 			if (status == FB_SUCCESS && status2 == FB_SUCCESS)
-				ib_printf("Service \"%s\" successfully created.\n", REMOTE_DISPLAY_NAME);
+				printf("Service \"%s\" successfully created.\n", REMOTE_DISPLAY_NAME);
 			break;
 
 		case COMMAND_REMOVE:
@@ -292,12 +292,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					ISCGUARD_DISPLAY_NAME, svc_error);
 				if (status == FB_SUCCESS)
 				{
-					ib_printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
+					printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
 				}
 				else if (status == IB_SERVICE_RUNNING)
 				{
-					ib_printf("Service \"%s\" not deleted.\n", ISCGUARD_DISPLAY_NAME);
-					ib_printf("You must stop it before attempting to delete it.\n\n");
+					printf("Service \"%s\" not deleted.\n", ISCGUARD_DISPLAY_NAME);
+					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
 
@@ -309,12 +309,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 										 svc_error);
 				if (status == FB_SUCCESS)
 				{
-				    ib_printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
+				    printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
 				}
 				else if (status == IB_SERVICE_RUNNING)
 				{
-					ib_printf("Service \"%s\" not deleted.\n", REMOTE_DISPLAY_NAME);
-					ib_printf("You must stop it before attempting to delete it.\n\n");
+					printf("Service \"%s\" not deleted.\n", REMOTE_DISPLAY_NAME);
+					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
 			break;
@@ -328,7 +328,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 										sw_mode, svc_error);
 				if (status == FB_SUCCESS)
-				    ib_printf("Service \"%s\" successfully started.\n", ISCGUARD_DISPLAY_NAME);
+				    printf("Service \"%s\" successfully started.\n", ISCGUARD_DISPLAY_NAME);
 			}
 			else
 			{
@@ -336,7 +336,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 										sw_mode, svc_error);
 				if (status == FB_SUCCESS)
-					ib_printf("Service \"%s\" successfully started.\n", REMOTE_DISPLAY_NAME);
+					printf("Service \"%s\" successfully started.\n", REMOTE_DISPLAY_NAME);
 			}
 			break;
 
@@ -349,7 +349,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_stop(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, svc_error);
 				if (status == FB_SUCCESS)
-					ib_printf("Service \"%s\" successfully stopped.\n", ISCGUARD_DISPLAY_NAME);
+					printf("Service \"%s\" successfully stopped.\n", ISCGUARD_DISPLAY_NAME);
 			}
 			else
 			{
@@ -357,7 +357,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_stop(manager, REMOTE_SERVICE,
 					REMOTE_DISPLAY_NAME, svc_error);
 				if (status == FB_SUCCESS)
-					ib_printf("Service \"%s\" successfully stopped.\n", REMOTE_DISPLAY_NAME);
+					printf("Service \"%s\" successfully stopped.\n", REMOTE_DISPLAY_NAME);
 			}
 			break;
 
@@ -394,17 +394,17 @@ static void svc_query(TEXT* name, TEXT* display_name, SC_HANDLE manager)
 	service = OpenService(manager, name, SERVICE_ALL_ACCESS);
 	if (service)
 	{
-		ib_printf("\n%s IS installed.\n", display_name);
+		printf("\n%s IS installed.\n", display_name);
 		if (QueryServiceStatus(service, &service_status))
 		{
-			ib_printf("  Status  : ");
+			printf("  Status  : ");
 			switch (service_status.dwCurrentState)
 			{
-				case SERVICE_STOPPED : ib_printf("stopped\n"); break;
-				case SERVICE_START_PENDING : ib_printf("starting\n"); break;
-				case SERVICE_STOP_PENDING : ib_printf("stopping\n"); break;
-				case SERVICE_RUNNING : ib_printf("running\n"); break;
-				default: ib_printf("unknown state\n");
+				case SERVICE_STOPPED : printf("stopped\n"); break;
+				case SERVICE_START_PENDING : printf("starting\n"); break;
+				case SERVICE_STOP_PENDING : printf("stopping\n"); break;
+				case SERVICE_RUNNING : printf("running\n"); break;
+				default: printf("unknown state\n");
 			}
 		}
 		else
@@ -416,24 +416,24 @@ static void svc_query(TEXT* name, TEXT* display_name, SC_HANDLE manager)
 		{
 			CharToOem(qsc->lpBinaryPathName, qsc->lpBinaryPathName);
 			CharToOem(qsc->lpServiceStartName, qsc->lpServiceStartName);
-			ib_printf("  Path    : %s\n", qsc->lpBinaryPathName);
-			ib_printf("  Startup : ");
+			printf("  Path    : %s\n", qsc->lpBinaryPathName);
+			printf("  Startup : ");
 			switch (qsc->dwStartType)
 			{
-				case SERVICE_AUTO_START : ib_printf("automatic\n"); break;
-				case SERVICE_DEMAND_START : ib_printf("manual\n"); break;
-				case SERVICE_DISABLED : ib_printf("disabled\n"); break;
-				default : ib_printf("invalid setting\n");
+				case SERVICE_AUTO_START : printf("automatic\n"); break;
+				case SERVICE_DEMAND_START : printf("manual\n"); break;
+				case SERVICE_DISABLED : printf("disabled\n"); break;
+				default : printf("invalid setting\n");
 			}
 			if (! qsc->lpServiceStartName)
-				ib_printf("  Run as  : LocalSystem");
+				printf("  Run as  : LocalSystem");
 			else
-				ib_printf("  Run as  : %s", qsc->lpServiceStartName);
+				printf("  Run as  : %s", qsc->lpServiceStartName);
 
 			if (qsc->dwServiceType & SERVICE_INTERACTIVE_PROCESS)
-				ib_printf(" (Interactive)\n");
+				printf(" (Interactive)\n");
 			else
-				ib_printf("\n");
+				printf("\n");
 		}
 		else
 			svc_error(GetLastError(), "QueryServiceConfig", NULL);
@@ -443,7 +443,7 @@ static void svc_query(TEXT* name, TEXT* display_name, SC_HANDLE manager)
 		CloseServiceHandle(service);
 	}
 	else
-		ib_printf("\n%s is NOT installed.\n", display_name);
+		printf("\n%s is NOT installed.\n", display_name);
 
 	return;
 }
@@ -469,11 +469,11 @@ static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
 	if (status == 0)
 	{
 		// Allows to report non System errors
-		ib_printf("%s\n", string);
+		printf("%s\n", string);
 	}
 	else
 	{
-		ib_printf("Error occurred during \"%s\".\n", string);
+		printf("Error occurred during \"%s\".\n", string);
 
 		if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 								NULL,
@@ -483,12 +483,12 @@ static USHORT svc_error( SLONG status, TEXT * string, SC_HANDLE service)
 								sizeof(buffer),
 								NULL)))
 		{
-			ib_printf("Windows NT error %"SLONGFORMAT"\n", status);
+			printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}
 		else
 		{
 			CharToOem(buffer, buffer);
-			ib_printf("%s", buffer);	// '\n' is included in system messages
+			printf("%s", buffer);	// '\n' is included in system messages
 		}
 	}
 	return FB_FAILURE;
@@ -505,21 +505,21 @@ static void usage(void)
  * Functional description
  *
  **************************************/
-	ib_printf("\nUsage:\n");
-	ib_printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
-	ib_printf("                    [ -a[uto]* | -d[emand] ]\n");
-	ib_printf("                    [ -g[uardian] ]\n");
-	ib_printf("                    [ -l[ogin] username [password] ]\n\n");
-	ib_printf("          sta[rt]   [ -b[oostpriority] ]\n");
-	ib_printf("          sto[p]\n");
-	ib_printf("          q[uery]\n");
-	ib_printf("          r[emove]\n\n");
-	ib_printf("  This utility should be located and run from the 'bin' directory\n");
-	ib_printf("  of your Firebird installation.\n\n");
-	ib_printf("  '*' denotes the default values\n");
-	ib_printf("  '-z' can be used with any other option, prints version\n");
-	ib_printf("  'username' refers by default to a local account on this machine.\n");
-	ib_printf("  Use the format 'domain\\username' or 'server\\username' if appropriate.\n");
+	printf("\nUsage:\n");
+	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
+	printf("                    [ -a[uto]* | -d[emand] ]\n");
+	printf("                    [ -g[uardian] ]\n");
+	printf("                    [ -l[ogin] username [password] ]\n\n");
+	printf("          sta[rt]   [ -b[oostpriority] ]\n");
+	printf("          sto[p]\n");
+	printf("          q[uery]\n");
+	printf("          r[emove]\n\n");
+	printf("  This utility should be located and run from the 'bin' directory\n");
+	printf("  of your Firebird installation.\n\n");
+	printf("  '*' denotes the default values\n");
+	printf("  '-z' can be used with any other option, prints version\n");
+	printf("  'username' refers by default to a local account on this machine.\n");
+	printf("  Use the format 'domain\\username' or 'server\\username' if appropriate.\n");
 
 	exit(FINI_ERROR);
 }
@@ -533,7 +533,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	va_list ptr;
 
 	VA_START(ptr, text);
-	ib_vprintf(text, ptr);
-	ib_printf("\n\n");
+	vprintf(text, ptr);
+	printf("\n\n");
 }
 

@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <setjmp.h>
 
 #define REQUESTS_MAIN
@@ -288,7 +288,7 @@ file* EXEC_open_output(qli_nod* node)
 // If output is to a file, just do it
 
 	if (!node->nod_arg[e_out_pipe]) {
-	    IB_FILE* out_file = ib_fopen(filename, FOPEN_WRITE_TYPE);
+	    FILE* out_file = fopen(filename, FOPEN_WRITE_TYPE);
 		if (out_file)
 			return (file*) out_file;
 
@@ -303,7 +303,7 @@ file* EXEC_open_output(qli_nod* node)
 #else
 
 #ifdef WIN_NT
-	IB_FILE* out_file = _popen(filename, "w");
+	FILE* out_file = _popen(filename, "w");
 	if (out_file)
 		return (file*) out_file;
 #else
@@ -338,12 +338,12 @@ file* EXEC_open_output(qli_nod* node)
 
 	close(pair[0]);
 
-	IB_FILE* out_file = ib_fdopen(pair[1], "w");
+	FILE* out_file = fdopen(pair[1], "w");
 	if (out_file)
 		return (file*) out_file;
 #endif
 
-	IBERROR(37);				// Msg37 ib_fdopen failed
+	IBERROR(37);				// Msg37 fdopen failed
 #endif
 	return NULL;
 }
@@ -962,12 +962,12 @@ static void execute_output( qli_nod* node)
 
 	EXEC_execute(node->nod_arg[e_out_statement]);
 	memcpy(QLI_env, old_env, sizeof(QLI_env));
-	ib_fclose((IB_FILE *) print->prt_file);
+	fclose((FILE *) print->prt_file);
 
 	}	// try
 	catch (const std::exception&) {
 		if (print->prt_file) {
-			ib_fclose((IB_FILE *) print->prt_file);
+			fclose((FILE *) print->prt_file);
 		}
 		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		throw;
@@ -1121,19 +1121,19 @@ static void print_counts( qli_req* request)
 		if (number)
 			switch (item) {
 			case isc_info_req_select_count:
-				ib_printf("\nrecords selected: %ld\n", number);
+				printf("\nrecords selected: %ld\n", number);
 				break;
 
 			case isc_info_req_insert_count:
-				ib_printf("records inserted: %ld\n", number);
+				printf("records inserted: %ld\n", number);
 				break;
 
 			case isc_info_req_update_count:
-				ib_printf("records updated: %ld\n", number);
+				printf("records updated: %ld\n", number);
 				break;
 
 			case isc_info_req_delete_count:
-				ib_printf("records deleted: %ld\n", number);
+				printf("records deleted: %ld\n", number);
 				break;
 
 			default:

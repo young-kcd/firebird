@@ -24,11 +24,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.6 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: dyntable.cpp,v 1.7 2004-04-28 22:05:56 brodsom Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
@@ -131,7 +131,7 @@ main()
 	max = 0;
 	for (item = dyn_table; item->dyn_string; item++) {
 		if (table[item->dyn_value])
-			ib_fprintf(ib_stderr, "%s (%d) is duplicate\n",
+			fprintf(stderr, "%s (%d) is duplicate\n",
 					   item->dyn_string, item->dyn_value);
 		table[item->dyn_value] = item->dyn_string;
 		if (item->dyn_value > max)
@@ -140,7 +140,7 @@ main()
 
 	for (dyn = 0; dyn <= max; dyn++)
 		if (table[dyn])
-			ib_printf("    \"%s\",\n", table[dyn]);
+			printf("    \"%s\",\n", table[dyn]);
 		else
-			ib_printf("    NULL,\n");
+			printf("    NULL,\n");
 }

@@ -42,7 +42,7 @@
 #endif
 #endif
 
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <errno.h>
 #include "jrd.h"
 #include "ods.h"
@@ -53,7 +53,7 @@ static void db_error(int);
 static void db_open(UCHAR *, USHORT);
 static PAG db_read(SLONG);
 
-static IB_FILE *trace;
+static FILE *trace;
 static int file;
 
 /* Physical IO trace events */
@@ -110,18 +110,18 @@ void main( int argc, char **argv)
 
 
 	reads = writes = 0;
-	trace = ib_fopen("trace.log", "r");
+	trace = fopen("trace.log", "r");
 	page_size = 1024;
 
 	elapsed = times(&before);
 
-	while ((event = ib_getc(trace)) != trace_close && event != EOF)
+	while ((event = getc(trace)) != trace_close && event != EOF)
 		switch (event) {
 		case trace_open:
-			n = length = ib_getc(trace);
+			n = length = getc(trace);
 			p = string;
 			while (--n >= 0)
-				*p++ = ib_getc(trace);
+				*p++ = getc(trace);
 			*p = 0;
 			db_open(string, length);
 			break;
@@ -149,7 +149,7 @@ void main( int argc, char **argv)
 			break;
 
 		default:
-			ib_printf("don't understand event %d\n", event);
+			printf("don't understand event %d\n", event);
 			abort();
 		}
 
@@ -157,13 +157,13 @@ void main( int argc, char **argv)
 	cpu = after.tms_utime - before.tms_utime;
 	system = after.tms_stime - before.tms_stime;
 
-	ib_printf
+	printf
 		("File: %s:\n elapsed = %d.%.2d, cpu = %d.%.2d, system = %d.%.2d, reads = %d, writes = %d\n",
 		 string, elapsed / 60, (elapsed % 60) * 100 / 60, cpu / 60,
 		 (cpu % 60) * 100 / 60, system / 60, (system % 60) * 100 / 60, reads,
 		 writes);
 
-	ib_printf("High activity pages:\n");
+	printf("High activity pages:\n");
 
 	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES;
 		 n++, r++, w++)
@@ -189,46 +189,46 @@ static void analyse( int number, SCHAR * string, PAG page, int sequence)
  **************************************/
 
 	if (sequence)
-		ib_printf("%d.  %s\t%d\t\t", sequence, string, number);
+		printf("%d.  %s\t%d\t\t", sequence, string, number);
 	else
-		ib_printf("%s\t%d\t\t", string, number);
+		printf("%s\t%d\t\t", string, number);
 
 	switch (page->pag_type) {
 	case pag_header:
-		ib_printf("Header page\n");
+		printf("Header page\n");
 		break;
 
 	case pag_pages:
-		ib_printf("Page inventory page\n");
+		printf("Page inventory page\n");
 		break;
 
 	case pag_transactions:
-		ib_printf("Transaction inventory page\n");
+		printf("Transaction inventory page\n");
 		break;
 
 	case pag_pointer:
-		ib_printf("Pointer page, relation %d, sequence %d\n",
+		printf("Pointer page, relation %d, sequence %d\n",
 				  ((PPG) page)->ppg_relation, ((PPG) page)->ppg_sequence);
 		break;
 
 	case pag_data:
-		ib_printf("Data page, relation %d, sequence %d\n",
+		printf("Data page, relation %d, sequence %d\n",
 				  ((DPG) page)->dpg_relation, ((DPG) page)->dpg_sequence);
 		break;
 
 	case pag_root:
-		ib_printf("Index root page, relation %d\n",
+		printf("Index root page, relation %d\n",
 				  ((index_root_page*) page)->irt_relation);
 		break;
 
 	case pag_index:
-		ib_printf("B-Tree page, relation %d, index %d, level %d\n",
+		printf("B-Tree page, relation %d, index %d, level %d\n",
 				  ((BTR) page)->btr_relation, ((BTR) page)->btr_id,
 				  ((BTR) page)->btr_level);
 		break;
 
 	case pag_blob:
-		ib_printf
+		printf
 			("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
 			 page->pag_flags, ((BLP) page)->blp_lead_page,
 			 ((BLP) page)->blp_sequence, ((BLP) page)->blp_length);
@@ -236,7 +236,7 @@ static void analyse( int number, SCHAR * string, PAG page, int sequence)
 		break;
 
 	default:
-		ib_printf("Unknown type %d\n", page->pag_type);
+		printf("Unknown type %d\n", page->pag_type);
 		break;
 	}
 }
@@ -262,10 +262,10 @@ static SLONG get_long(void)
 	SCHAR *p;
 
 	p = (SCHAR *) & value.l;
-	x = i = ib_getc(trace);
+	x = i = getc(trace);
 
 	while (--i >= 0)
-		*p++ = ib_getc(trace);
+		*p++ = getc(trace);
 
 	if (x == 1)
 		return value.c;
@@ -289,7 +289,7 @@ static void db_error( int status)
  *
  **************************************/
 
-	ib_printf(strerror(status));
+	printf(strerror(status));
 	abort();
 }
 

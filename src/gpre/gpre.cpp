@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.55 2004-04-10 00:25:12 robocop Exp $
+//  $Id: gpre.cpp,v 1.56 2004-04-28 22:05:56 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -92,7 +92,7 @@ static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 #ifdef GPRE_FORTRAN
 static void			finish_based(act*);
 #endif
-static int			get_char(IB_FILE*);
+static int			get_char(FILE*);
 static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB,
 								 TEXT**);
 static TOK			get_token();
@@ -101,13 +101,13 @@ static SLONG		pass1(const TEXT*);
 static void			pass2(SLONG);
 static void			print_switches();
 static void			remember_label(const TEXT*);
-//static IB_FILE*		reposition_file(IB_FILE *, SLONG);
+//static FILE*		reposition_file(FILE *, SLONG);
 static void			return_char(SSHORT);
 static SSHORT		skip_white();
 
 // Program wide globals 
 
-IB_FILE *input_file, *trace_file;
+FILE *input_file, *trace_file;
 const TEXT*	file_name;
 TEXT*	out_file_name;
 SLONG position, last_position, line_position, first_position,
@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
 	const ext_table_t* ext_tab;
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 #ifdef VMS
-	IB_FILE *temp;
+	FILE *temp;
 	TEXT temp_name[256];
 	SSHORT c;
 #endif
@@ -355,7 +355,7 @@ int main(int argc, char* argv[])
 	//TEXT* db_base_directory = filename_array[3];
 
 	if (!file_name) {
-		ib_fprintf(ib_stderr, "gpre:  no source file named.\n");
+		fprintf(stderr, "gpre:  no source file named.\n");
 		CPR_exit(FINI_ERROR);
 	}
 
@@ -387,7 +387,7 @@ int main(int argc, char* argv[])
 		{
 			strcpy(spare_file_name, file_name);
 			if (file_rename(spare_file_name, ext_tab->in, NULL) &&
-				(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE)))
+				(input_file = fopen(spare_file_name, FOPEN_READ_TYPE)))
 			{
 				file_name = spare_file_name;
 				break;
@@ -400,7 +400,7 @@ int main(int argc, char* argv[])
 //  
 
 	if (sw_language == lang_undef) {
-		ib_fprintf(ib_stderr,
+		fprintf(stderr,
 				   "gpre: can't find %s with any known extension.  Giving up.\n",
 				   file_name);
 		CPR_exit(FINI_ERROR);
@@ -424,17 +424,17 @@ int main(int argc, char* argv[])
 		}
 		renamed = file_rename(spare_file_name, ext_tab->in, NULL);
 		if (renamed &&
-			(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE)))
+			(input_file = fopen(spare_file_name, FOPEN_READ_TYPE)))
 		{
 			file_name = spare_file_name;
 		}
-		else if (!(input_file = ib_fopen(file_name, FOPEN_READ_TYPE))) {
+		else if (!(input_file = fopen(file_name, FOPEN_READ_TYPE))) {
 			if (renamed) {
-				ib_fprintf(ib_stderr, "gpre: can't open %s or %s\n",
+				fprintf(stderr, "gpre: can't open %s or %s\n",
 						   file_name, spare_file_name);
 			}
 			else {
-				ib_fprintf(ib_stderr, "gpre: can't open %s\n", file_name);
+				fprintf(stderr, "gpre: can't open %s\n", file_name);
 			}
 			CPR_exit(FINI_ERROR);
 		}
@@ -671,7 +671,7 @@ int main(int argc, char* argv[])
 
 		case IN_SW_GPRE_O:
 			sw_standard_out = true;
-			out_file = ib_stdout;
+			out_file = stdout;
 			break;
 
 		case IN_SW_GPRE_R:
@@ -724,22 +724,22 @@ int main(int argc, char* argv[])
 //  
 
 #ifndef __ALPHA
-	temp = (IB_FILE *) gds__temp_file(TRUE, "temp", 0);
+	temp = (FILE *) gds__temp_file(TRUE, "temp", 0);
 	strcpy(temp_name, "temporary file");
 #else
-	temp = (IB_FILE *) gds__temp_file(TRUE, "temp", temp_name);
+	temp = (FILE *) gds__temp_file(TRUE, "temp", temp_name);
 #endif
-	if (temp != (IB_FILE *) - 1) {
+	if (temp != (FILE *) - 1) {
 		while ((c = get_char(input_file)) != EOF)
-			ib_putc(c, temp);
-		ib_fclose(input_file);
+			putc(c, temp);
+		fclose(input_file);
 #ifdef __ALPHA
-		ib_fclose(temp);
-		temp = ib_fopen(temp_name, FOPEN_READ_TYPE);
+		fclose(temp);
+		temp = fopen(temp_name, FOPEN_READ_TYPE);
 #endif
 	}
 	else {
-		ib_fprintf(ib_stderr, "gpre: can't open %s\n", temp_name);
+		fprintf(stderr, "gpre: can't open %s\n", temp_name);
 		CPR_exit(FINI_ERROR);
 	}
 
@@ -846,13 +846,13 @@ int main(int argc, char* argv[])
 		}
 
 		if (!(strcmp(out_file_name, file_name))) {
-			ib_fprintf(ib_stderr,
+			fprintf(stderr,
 					   "gpre: output file %s would duplicate input\n",
 					   out_file_name);
 			CPR_exit(FINI_ERROR);
 		}
-		if ((out_file = ib_fopen(out_file_name, FOPEN_WRITE_TYPE)) == NULL) {
-			ib_fprintf(ib_stderr, "gpre: can't open output file %s\n",
+		if ((out_file = fopen(out_file_name, FOPEN_WRITE_TYPE)) == NULL) {
+			fprintf(stderr, "gpre: can't open output file %s\n",
 					   out_file_name);
 			CPR_exit(FINI_ERROR);
 		}
@@ -875,7 +875,7 @@ int main(int argc, char* argv[])
 #endif
 
 	MET_fini(0);
-	ib_fclose(input_file);
+	fclose(input_file);
 #ifdef VMS
 #ifdef __ALPHA
 	delete(temp_name);
@@ -883,24 +883,24 @@ int main(int argc, char* argv[])
 #endif
 
 	if (!sw_standard_out) {
-		ib_fclose(out_file);
+		fclose(out_file);
 		if (errors)
 			unlink(out_file_name);
 	}
 
 	if (errors || warnings) {
 		if (!errors)
-			ib_fprintf(ib_stderr, "No errors, ");
+			fprintf(stderr, "No errors, ");
 		else if (errors == 1)
-			ib_fprintf(ib_stderr, "1 error, ");
+			fprintf(stderr, "1 error, ");
 		else
-			ib_fprintf(ib_stderr, "%3d errors, ", errors);
+			fprintf(stderr, "%3d errors, ", errors);
 		if (!warnings)
-			ib_fprintf(ib_stderr, "no warnings\n");
+			fprintf(stderr, "no warnings\n");
 		else if (warnings == 1)
-			ib_fprintf(ib_stderr, "1 warning\n");
+			fprintf(stderr, "1 warning\n");
 		else
-			ib_fprintf(ib_stderr, "%3d warnings\n", warnings);
+			fprintf(stderr, "%3d warnings\n", warnings);
 	}
 
 	CPR_exit((errors) ? FINI_ERROR : FINI_OK);
@@ -944,7 +944,7 @@ void CPR_assert(const TEXT* file, int line)
 
 void CPR_bugcheck(const TEXT* string)
 {
-	ib_fprintf(ib_stderr, "*** INTERNAL BUGCHECK: %s ***\n", string);
+	fprintf(stderr, "*** INTERNAL BUGCHECK: %s ***\n", string);
 	MET_fini(0);
 	CPR_abort();
 }
@@ -968,7 +968,7 @@ void CPR_end_text(gpre_txt* text)
 
 int CPR_error(const TEXT* string)
 {
-	ib_fprintf(ib_stderr, "(E) %s:%d: %s\n", file_name, line + 1, string);
+	fprintf(stderr, "(E) %s:%d: %s\n", file_name, line + 1, string);
 	errors++;
 
 	return 0;
@@ -987,13 +987,13 @@ void CPR_exit( int stat)
 	if (trace_file_name[0])
 	 {
 		if (trace_file)
-			ib_fclose(trace_file);
+			fclose(trace_file);
 		unlink(trace_file_name);
 	}
 
 #else
 	if (trace_file)
-		ib_fclose(trace_file);
+		fclose(trace_file);
 	if (trace_file_name[0])
 		unlink(trace_file_name);
 #endif
@@ -1009,7 +1009,7 @@ void CPR_exit( int stat)
 
 void CPR_warn(const TEXT* string)
 {
-	ib_fprintf(ib_stderr, "(W) %s:%d: %s\n", file_name, line + 1, string);
+	fprintf(stderr, "(W) %s:%d: %s\n", file_name, line + 1, string);
 	warnings++;
 }
 
@@ -1098,7 +1098,7 @@ TOK CPR_eol_token()
 	token.tok_keyword = (KWWORDS) token.tok_symbol->sym_keyword;
 
 	if (sw_trace)
-		ib_puts(token.tok_string);
+		puts(token.tok_string);
 
 	return &token;
 }
@@ -1115,33 +1115,33 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 	int length = text->txt_length;
 
 //  On PC-like platforms, '\n' will be 2 bytes.  The txt_position
-//  will be incorrect for ib_fseek.  The position is not adjusted
-//  just for PC-like platforms because, we use ib_fseek () and
-//  ib_getc to position ourselves at the token position.
+//  will be incorrect for fseek.  The position is not adjusted
+//  just for PC-like platforms because, we use fseek () and
+//  getc to position ourselves at the token position.
 //  We should keep both character position and byte position
-//  and use them appropriately. for now use ib_getc ()
+//  and use them appropriately. for now use getc ()
 //  
 
 #if (defined WIN_NT)
-	if (ib_fseek(trace_file, 0L, 0))
+	if (fseek(trace_file, 0L, 0))
 #else
-	if (ib_fseek(trace_file, start, 0))
+	if (fseek(trace_file, start, 0))
 #endif
 	{
-		ib_fseek(trace_file, 0L, 2);
-		CPR_error("ib_fseek failed for trace file");
+		fseek(trace_file, 0L, 2);
+		CPR_error("fseek failed for trace file");
 	}
 #if (defined WIN_NT)
 //  move forward to actual position 
 
 	while (start--)
-		ib_getc(trace_file);
+		getc(trace_file);
 #endif
 
 	TEXT* p = buffer;
 	while (length--)
-		*p++ = ib_getc(trace_file);
-	ib_fseek(trace_file, (SLONG) 0, 2);
+		*p++ = getc(trace_file);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -1166,7 +1166,7 @@ void CPR_raw_read()
 		position++;
 		if ((classes[c] == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
-			ib_puts(token_string);
+			puts(token_string);
 			token_string[0] = 0;
 			p = token_string;
 		}
@@ -1311,7 +1311,7 @@ static bool arg_is_string(SLONG argc,
 	const TEXT* str = *++argvstring;
 
 	if (!argc || *str == '-') {
-		ib_fprintf(ib_stderr, "%s", errstring);
+		fprintf(stderr, "%s", errstring);
 		print_switches();
 		return false;
 	}
@@ -1357,19 +1357,19 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 
 //  Position the input file and initialize various modules 
 
-	ib_fseek(input_file, start_position, 0);
+	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
 #if !(defined WIN_NT)
-	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
+	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
 //  PC-like platforms can't delete a file that is open.  Therefore
 //  we will save the name of the temp file for later deletion. 
 
-	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
 
-	if (trace_file == (IB_FILE *) - 1) {
+	if (trace_file == (FILE *) - 1) {
 		trace_file = NULL;
 		CPR_error("Couldn't open scratch file");
 		return 0;
@@ -1403,7 +1403,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 		CMP_compile_request(request);
 	}
 
-	ib_fseek(input_file, start_position, 0);
+	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
 	if (!errors)
@@ -1613,7 +1613,7 @@ static void finish_based( act* action)
 //		Return a character to the input stream.
 //  
 
-static int get_char( IB_FILE * file)
+static int get_char( FILE * file)
 {
 	if (input_char != input_buffer) {
 		return (int) *--input_char;
@@ -1621,14 +1621,14 @@ static int get_char( IB_FILE * file)
 	}
 	else
 	{
-		const USHORT pc = ib_getc(file);
+		const USHORT pc = getc(file);
 
 //  Dump this char to stderr, so we can see
 //  what input line will cause this ugly
 //  core dump.
 //  FSG 14.Nov.2000 
 		if (sw_verbose) {
-			ib_fprintf(ib_stderr, "%c", pc);
+			fprintf(stderr, "%c", pc);
 		}
 		return pc;
 	}
@@ -1857,7 +1857,7 @@ static bool get_switches(int			argc,
 			}
 
 			if (**argv != 'n' || **argv != 'N') {
-				ib_fprintf(ib_stderr,
+				fprintf(stderr,
 						   "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();
 				return false;
@@ -1877,7 +1877,7 @@ static bool get_switches(int			argc,
 				++argv;
 				inp = atoi(*argv);
 				if (inp < 1 || inp > 3) {
-					ib_fprintf(ib_stderr,
+					fprintf(stderr,
 							   "Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n ");
 					print_switches();
 					return false;
@@ -1891,14 +1891,14 @@ static bool get_switches(int			argc,
 
 		case IN_SW_GPRE_Z:
 			if (!sw_version) {
-				ib_printf("gpre version %s\n", GDS_VERSION);
+				printf("gpre version %s\n", GDS_VERSION);
 			}
 			sw_version = true;
 			break;
 
 		case IN_SW_GPRE_0:
 			if (*string != '?') {
-				ib_fprintf(ib_stderr, "gpre: unknown switch %s\n", string);
+				fprintf(stderr, "gpre: unknown switch %s\n", string);
 			}
 			print_switches();
 			return false;
@@ -2255,7 +2255,7 @@ static TOK get_token()
 	first_position = FALSE;
 
 	if (sw_trace)
-		ib_puts(token.tok_string);
+		puts(token.tok_string);
 
 	return &token;
 }
@@ -2316,7 +2316,7 @@ static int nextchar()
 
 	if (position > traced_position) {
 		traced_position = position;
-		ib_fputc(c, trace_file);
+		fputc(c, trace_file);
 	}
 
 	return c;
@@ -2337,7 +2337,7 @@ static SLONG pass1(const TEXT* base_directory)
 {
 //  FSG 14.Nov.2000
 	if (sw_verbose) {
-		ib_fprintf(ib_stderr,
+		fprintf(stderr,
 				   "*********************** PASS 1 ***************************\n");
 	}
 
@@ -2432,7 +2432,7 @@ static void pass2( SLONG start_position)
 
 //  FSG 14.Nov.2000 
 	if (sw_verbose) {
-		ib_fprintf(ib_stderr,
+		fprintf(stderr,
 				   "*********************** PASS 2 ***************************\n");
 	}
 
@@ -2449,18 +2449,18 @@ static void pass2( SLONG start_position)
 	{
 		for (i = 0; i < 5; ++i)
 		{
-			ib_fprintf(out_file,
+			fprintf(out_file,
 					   "%s********** Preprocessed module -- do not edit **************%s\n",
 					   comment_start, comment_stop);
 		}
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "%s**************** gpre version %s *********************%s\n",
 				   comment_start, GDS_VERSION, comment_stop);
 	}
 
 #ifdef GPRE_ADA
 	if ((sw_language == lang_ada) && (ada_flags & ADA_create_database))
-		ib_fprintf(out_file, "with unchecked_conversion;\nwith system;\n");
+		fprintf(out_file, "with unchecked_conversion;\nwith system;\n");
 #endif
 
 	// Let's prepare for worst case: a lot of small dirs, many "\" to duplicate.
@@ -2477,7 +2477,7 @@ static void pass2( SLONG start_position)
 
 //
 //if (sw_lines)
-//   ib_fprintf (out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
+//   fprintf (out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
 //  
 
 	SLONG line = 0;
@@ -2506,10 +2506,10 @@ static void pass2( SLONG start_position)
 				line++;
 				if (line_pending) {
 					if (line == 1)
-						ib_fprintf(out_file, "#line %ld \"%s\"\n", line,
+						fprintf(out_file, "#line %ld \"%s\"\n", line,
 								   backlash_fixed_file_name);
 					else
-						ib_fprintf(out_file, "\n#line %ld \"%s\"", line,
+						fprintf(out_file, "\n#line %ld \"%s\"", line,
 								   backlash_fixed_file_name);
 
 					line_pending = false;
@@ -2518,7 +2518,7 @@ static void pass2( SLONG start_position)
 					line++;
 				column = -1;
 			}
-			ib_putc(c, out_file);
+			putc(c, out_file);
 			if (c == '\t') {
 				column = (column + 8) & ~7;
 			}
@@ -2541,20 +2541,20 @@ static void pass2( SLONG start_position)
 		const SLONG start = column;
 		if (!(action->act_flags & ACT_mark)) {
 			if (sw_language == lang_fortran) {
-				ib_fputc('\n', out_file);
-				ib_fputs(comment_start, out_file);
+				fputc('\n', out_file);
+				fputs(comment_start, out_file);
 			}
 			else if (sw_language == lang_cobol)
 				if (continue_flag)
 					suppress_output = true;
 				else {
-					ib_fputc('\n', out_file);
-					ib_fputs(comment_start, out_file);
+					fputc('\n', out_file);
+					fputs(comment_start, out_file);
 					to_skip = (column < 7) ? comment_start_len - column : 0;
 					column = 0;
 				}
 			else
-				ib_fputs(comment_start, out_file);
+				fputs(comment_start, out_file);
 		}
 
 		// Next, dump the text of the action to the output stream. 
@@ -2574,12 +2574,12 @@ static void pass2( SLONG start_position)
 					const SSHORT d = get_char(input_file);
 					return_char(d);
 					if (d == comment_start[1])
-						ib_fputs(comment_stop, out_file);
+						fputs(comment_stop, out_file);
 				}
 				if (sw_language != lang_cobol || !sw_ansi || c == '\n'
 					|| to_skip-- <= 0)
 				{
-					ib_putc(c, out_file);
+					putc(c, out_file);
 				}
 				if (c == '\n') {
 					line++;
@@ -2587,7 +2587,7 @@ static void pass2( SLONG start_position)
 						(sw_language == lang_ada) ||
 						(sw_language == lang_cobol))
 					{
-						ib_fputs(comment_start, out_file);
+						fputs(comment_start, out_file);
 						to_skip =
 							(column < 7) ? comment_start_len - column : 0;
 						column = 0;
@@ -2599,7 +2599,7 @@ static void pass2( SLONG start_position)
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
 					prior == comment_stop[0] && c == comment_stop[1])
 				{
-					ib_fputs(comment_start, out_file);
+					fputs(comment_start, out_file);
 				}
 			}
 		}
@@ -2607,9 +2607,9 @@ static void pass2( SLONG start_position)
 		// Unless action was purely a marker, insert a comment terminator. 
 
 		if (!(action->act_flags & ACT_mark) && !suppress_output) {
-			ib_fputs(comment_stop, out_file);
+			fputs(comment_stop, out_file);
 			if ((sw_language == lang_fortran) || (sw_language == lang_cobol))
-				ib_fputc('\n', out_file);
+				fputc('\n', out_file);
 		}
 
 		suppress_output = false;
@@ -2633,21 +2633,21 @@ static void pass2( SLONG start_position)
 //  We're out of actions -- dump the remaining text to the output stream. 
 
 	if (!line && line_pending) {
-		ib_fprintf(out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
+		fprintf(out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
 		line_pending = false;
 	}
 
 
 	while ((c = get_char(input_file)) != EOF) {
 		if (c == '\n' && line_pending) {
-			ib_fprintf(out_file, "\n#line %ld \"%s\"", line + 1, backlash_fixed_file_name);
+			fprintf(out_file, "\n#line %ld \"%s\"", line + 1, backlash_fixed_file_name);
 			line_pending = false;
 		}
 		if (c == EOF) {
 			CPR_error("internal error -- unexpected EOF in tail");
 			return;
 		}
-		ib_putc(c, out_file);
+		putc(c, out_file);
 	}
 
 //  Last but not least, generate any remaining functions 
@@ -2667,24 +2667,24 @@ static void print_switches()
 {
 	const in_sw_tab_t* in_sw_table_iterator;
 
-	ib_fprintf(ib_stderr, "\tlegal switches are:\n");
+	fprintf(stderr, "\tlegal switches are:\n");
 	for (in_sw_table_iterator = gpre_in_sw_table;
 		 in_sw_table_iterator->in_sw;
 		 in_sw_table_iterator++)
 	{
 		if (in_sw_table_iterator->in_sw_text) {
-			ib_fprintf(ib_stderr, "%s%s\n", in_sw_table_iterator->in_sw_name,
+			fprintf(stderr, "%s%s\n", in_sw_table_iterator->in_sw_name,
 					   in_sw_table_iterator->in_sw_text);
         }
     }
 
-	ib_fprintf(ib_stderr, "\n\tand the internal 'illegal' switches are:\n");
+	fprintf(stderr, "\n\tand the internal 'illegal' switches are:\n");
 	for (in_sw_table_iterator = gpre_in_sw_table;
 		 in_sw_table_iterator->in_sw;
 		 in_sw_table_iterator++)
 	{
 		if (!in_sw_table_iterator->in_sw_text) {
-			ib_fprintf(ib_stderr, "%s\n", in_sw_table_iterator->in_sw_name);
+			fprintf(stderr, "%s\n", in_sw_table_iterator->in_sw_name);
         }
     }
 

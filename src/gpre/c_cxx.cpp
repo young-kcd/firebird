@@ -27,11 +27,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.43 2004-02-03 11:20:51 aafemt Exp $
+//	$Id: c_cxx.cpp,v 1.44 2004-04-28 22:05:57 brodsom Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
@@ -511,7 +511,7 @@ void C_CXX_action(const act* action, int column)
 		gen_whenever(action->act_whenever, column);
 
 	if (action->act_error)
-		ib_fprintf(out_file, ";");
+		fprintf(out_file, ";");
 	else
 		endp(column);
 }
@@ -528,14 +528,14 @@ static void align( int column)
 	if (column < 0)
 		return;
 
-	ib_putc('\n', out_file);
+	putc('\n', out_file);
 
 	int i;
 	for (i = column / 8; i; --i)
-		ib_putc('\t', out_file);
+		putc('\t', out_file);
 
 	for (i = column % 8; i; --i)
-		ib_putc(' ', out_file);
+		putc(' ', out_file);
 }
 
 
@@ -598,37 +598,37 @@ static void asgn_from( const act* action, REF reference, int column)
 		{
 			if (field->fld_sub_type == 1)
 				if (field->fld_length == 1)
-					ib_fprintf(out_file, "%s = %s;", variable, value);
+					fprintf(out_file, "%s = %s;", variable, value);
 				else
-					ib_fprintf(out_file,
+					fprintf(out_file,
 							   "isc_ftof (%s, sizeof (%s), %s, %d);", value,
 							   value, variable, field->fld_length);
 			else if (field->fld_flags & FLD_dbkey)
-				ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);", value,
+				fprintf(out_file, "isc_ftof (%s, %d, %s, %d);", value,
 						   field->fld_length, variable, field->fld_length);
 			else if (sw_cstring)
-				ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, %d);", value,
+				fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, %d);", value,
 						   variable, field->fld_length);
 			else if (reference->ref_source)
-				ib_fprintf(out_file, "isc_ftof (%s, sizeof (%s), %s, %d);",
+				fprintf(out_file, "isc_ftof (%s, sizeof (%s), %s, %d);",
 						   value, value, variable, field->fld_length);
 			else
-				ib_fprintf(out_file, "isc_vtof (%s, %s, %d);", value,
+				fprintf(out_file, "isc_vtof (%s, %s, %d);", value,
 						   variable, field->fld_length);
 		}
 		else if (!reference->ref_master
 				 || (reference->ref_flags & REF_literal))
 		{
-			ib_fprintf(out_file, "%s = %s;", variable, value);
+			fprintf(out_file, "%s = %s;", variable, value);
 		}
 		else {
-			ib_fprintf(out_file, "if (%s < 0)", value);
+			fprintf(out_file, "if (%s < 0)", value);
 			align(column + 4);
-			ib_fprintf(out_file, "%s = -1;", variable);
+			fprintf(out_file, "%s = -1;", variable);
 			align(column);
-			ib_fprintf(out_file, "else");
+			fprintf(out_file, "else");
 			align(column + 4);
-			ib_fprintf(out_file, "%s = 0;", variable);
+			fprintf(out_file, "%s = 0;", variable);
 		}
 	}
 }
@@ -661,7 +661,7 @@ static void asgn_to( const act* action, REF reference, int column)
 
 			if (reference = reference->ref_null) {
 				align(column);
-				ib_fprintf(out_file, "%s = %s;", reference->ref_value,
+				fprintf(out_file, "%s = %s;", reference->ref_value,
 						   gen_name(s, reference, true));
 			}
 			return;
@@ -669,19 +669,19 @@ static void asgn_to( const act* action, REF reference, int column)
 
 		gen_name(s, source, true);
 		if (field->fld_dtype > dtype_cstring)
-			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
+			fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		else if (field->fld_sub_type == 1 && field->fld_length == 1)
-			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
+			fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		else if (field->fld_flags & FLD_dbkey)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
+			fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s, field->fld_length, reference->ref_value,
 					   field->fld_length);
 		else if (!sw_cstring || field->fld_sub_type == 1)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
+			fprintf(out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
 					   field->fld_length, reference->ref_value,
 					   reference->ref_value);
 		else
-			ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
+			fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
 					   reference->ref_value, reference->ref_value);
 	}
 
@@ -689,7 +689,7 @@ static void asgn_to( const act* action, REF reference, int column)
 
 	if (reference = reference->ref_null) {
 		align(column);
-		ib_fprintf(out_file, "%s = %s;", reference->ref_value,
+		fprintf(out_file, "%s = %s;", reference->ref_value,
 				   gen_name(s, reference, true));
 	}
 }
@@ -713,19 +713,19 @@ static void asgn_to_proc(const ref* reference, int column)
 		align(column);
 
 		if (field->fld_dtype > dtype_cstring)
-			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
+			fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		else if (field->fld_sub_type == 1 && field->fld_length == 1)
-			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
+			fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		else if (field->fld_flags & FLD_dbkey)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
+			fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s, field->fld_length, reference->ref_value,
 					   field->fld_length);
 		else if (!sw_cstring || field->fld_sub_type == 1)
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
+			fprintf(out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
 					   field->fld_length, reference->ref_value,
 					   reference->ref_value);
 		else
-			ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
+			fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
 					   reference->ref_value, reference->ref_value);
 	}
 }
@@ -742,7 +742,7 @@ static void gen_any( const act* action, int column)
 	align(column);
 	gpre_req* request = action->act_request;
 
-	ib_fprintf(out_file, "%s_r (&%s, &%s",
+	fprintf(out_file, "%s_r (&%s, &%s",
 			   request->req_handle, request->req_handle, request->req_trans);
 
 	gpre_port* port = request->req_vport;
@@ -750,10 +750,10 @@ static void gen_any( const act* action, int column)
 		for (REF reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-				ib_fprintf(out_file, ", %s", reference->ref_value);
+				fprintf(out_file, ", %s", reference->ref_value);
 		}
 
-	ib_fprintf(out_file, ")");
+	fprintf(out_file, ")");
 }
 
 
@@ -801,50 +801,50 @@ static void gen_based( const act* action, int column)
 
 	switch (datatype) {
 	case dtype_short:
-		ib_fprintf(out_file, "short");
+		fprintf(out_file, "short");
 		break;
 
 	case dtype_long:
-		ib_fprintf(out_file, DCL_LONG);
+		fprintf(out_file, DCL_LONG);
 		break;
 
 	case dtype_quad:
-		ib_fprintf(out_file, DCL_QUAD);
+		fprintf(out_file, DCL_QUAD);
 		break;
 
 // ** Begin date/time/timestamp *
 	case dtype_sql_date:
-		ib_fprintf(out_file, "ISC_DATE");
+		fprintf(out_file, "ISC_DATE");
 		break;
 
 	case dtype_sql_time:
-		ib_fprintf(out_file, "ISC_TIME");
+		fprintf(out_file, "ISC_TIME");
 		break;
 
 	case dtype_timestamp:
-		ib_fprintf(out_file, "ISC_TIMESTAMP");
+		fprintf(out_file, "ISC_TIMESTAMP");
 		break;
 
 	case dtype_int64:
-		ib_fprintf(out_file, "ISC_INT64");
+		fprintf(out_file, "ISC_INT64");
 		break;
 
 	case dtype_blob:
-		ib_fprintf(out_file, "ISC_QUAD");
+		fprintf(out_file, "ISC_QUAD");
 		break;
 
 	case dtype_cstring:
 	case dtype_text:
 	case dtype_varying:
-		ib_fprintf(out_file, "char");
+		fprintf(out_file, "char");
 		break;
 
 	case dtype_real:
-		ib_fprintf(out_file, "float");
+		fprintf(out_file, "float");
 		break;
 
 	case dtype_double:
-		ib_fprintf(out_file, "double");
+		fprintf(out_file, "double");
 		break;
 
 	default:
@@ -863,25 +863,25 @@ static void gen_based( const act* action, int column)
 	while (based_on->bas_variables) {
 		variable = (TEXT*) MSC_pop(&based_on->bas_variables);
 		if (!first)
-			ib_fprintf(out_file, ",");
+			fprintf(out_file, ",");
 		first = false;
 		align(column);
-		ib_fprintf(out_file, "%s", variable);
+		fprintf(out_file, "%s", variable);
 		if (based_on->bas_flags & BAS_segment) {
 			if (*variable != '*')
-				ib_fprintf(out_file, "[%ld]", length);
+				fprintf(out_file, "[%ld]", length);
 		}
 		else if (field->fld_array_info) {
 			//  Print out the dimension part of the declaration
 
 			for (dimension = field->fld_array_info->ary_dimension; dimension;
 				 dimension = dimension->dim_next)
-				ib_fprintf(out_file, " [%ld]",
+				fprintf(out_file, " [%ld]",
 						   dimension->dim_upper - dimension->dim_lower + 1);
 
 			if (field->fld_array_info->ary_dtype <= dtype_varying &&
 				field->fld_length > 1)
-				ib_fprintf(out_file, " [%d]", field->fld_array->fld_length);
+				fprintf(out_file, " [%d]", field->fld_array->fld_length);
 		}
 		else
 			if (*variable != '*' &&
@@ -891,10 +891,10 @@ static void gen_based( const act* action, int column)
 // if (*variable != '*' && field->fld_dtype <= dtype_varying &&
 //    field->fld_length > 1)
 //  
-			ib_fprintf(out_file, "[%d]", field->fld_length);
+			fprintf(out_file, "[%d]", field->fld_length);
 	}
 
-	ib_fprintf(out_file, "%s\n", based_on->bas_terminator);
+	fprintf(out_file, "%s\n", based_on->bas_terminator);
 }
 
 
@@ -1030,7 +1030,7 @@ static void gen_blob_open( const act* action, USHORT column)
 
 	if ((action->act_flags & ACT_sql) && action->act_type == ACT_blob_open) {
 		align(column);
-		ib_fprintf(out_file, "%s = %s;", s, reference->ref_value);
+		fprintf(out_file, "%s = %s;", s, reference->ref_value);
 	}
 
 	if (args.pat_value1 = blob->blb_bpb_length)
@@ -1050,7 +1050,7 @@ static void gen_blob_open( const act* action, USHORT column)
 		if (action->act_type == ACT_blob_create) {
 			printa(column, "if (!SQLCODE)");
 			align(column + INDENT);
-			ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
+			fprintf(out_file, "%s = %s;", reference->ref_value, s);
 		}
 	}
 	else if ((action->act_error && (action->act_type != ACT_blob_for)))
@@ -1148,7 +1148,7 @@ static void gen_compatibility_symbol(
 	const char* v3_prefix = (isLangCpp(sw_language)) ? "gds_" : "gds__";
     //	v3_prefix = (sw_language == lang_cxx) ? "gds_" : "gds__";
 
-	ib_fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
+	fprintf(out_file, "#define %s%s\t%s%s%s\n", v3_prefix, symbol,
 			   v4_prefix, symbol, trailer);
 }
 
@@ -1188,11 +1188,11 @@ static void gen_compile( const act* action, int column)
 
 	const blb* blob = request->req_blobs;
 	if (blob) {
-		ib_fprintf(out_file, "\n");
+		fprintf(out_file, "\n");
 		align(column - INDENT);
 		for (; blob; blob = blob->blb_next)
-			ib_fprintf(out_file, "isc_%d = ", blob->blb_ident);
-		ib_fprintf(out_file, "0;");
+			fprintf(out_file, "isc_%d = ", blob->blb_ident);
+		fprintf(out_file, "0;");
 	}
 }
 
@@ -1268,7 +1268,7 @@ static void gen_create_database( const act* action, int column)
 	printa(column, "if (%s)", trname);
 	column += INDENT;
 	align(column);
-	ib_fprintf(out_file, "isc_ddl (%s, &%s, &%s, (short) %d, isc_%d);",
+	fprintf(out_file, "isc_ddl (%s, &%s, &%s, (short) %d, isc_%d);",
 			   status_vector(action),
 			   request->req_database->dbb_name->sym_string,
 			   trname, request->req_length, request->req_ident);
@@ -1383,8 +1383,8 @@ static void gen_database( const act* action, int column)
 		return;
 	global_first_flag = true;
 
-	ib_fprintf(out_file, "\n/**** GDS Preprocessor Definitions ****/\n");
-	ib_fprintf(out_file, "#ifndef JRD_IBASE_H\n#include %s\n#endif\n",
+	fprintf(out_file, "\n/**** GDS Preprocessor Definitions ****/\n");
+	fprintf(out_file, "#ifndef JRD_IBASE_H\n#include %s\n#endif\n",
 			   GDS_INCLUDE);
 
 	printa(column, "static %sISC_QUAD", CONST_STR);
@@ -1484,7 +1484,7 @@ static void gen_database( const act* action, int column)
 			}
 	}
 
-	ib_fprintf(out_file, "\n\n");
+	fprintf(out_file, "\n\n");
 	gen_compatibility_symbol("blob_null", "isc_",
 							 "\t/* compatibility symbols */");
 // ****
@@ -1501,12 +1501,12 @@ static void gen_database( const act* action, int column)
 	gen_compatibility_symbol("utility", "isc_",
 							 "\t/* end of compatibility symbols */");
 
-	ib_fprintf(out_file, "\n#ifndef isc_version4\n");
-	ib_fprintf(out_file, "    Generate a compile-time error.\n");
-	ib_fprintf(out_file,
+	fprintf(out_file, "\n#ifndef isc_version4\n");
+	fprintf(out_file, "    Generate a compile-time error.\n");
+	fprintf(out_file,
 			   "    Picking up a V3 include file after preprocessing with V4 GPRE.\n");
-	ib_fprintf(out_file, "#endif\n");
-	ib_fprintf(out_file, "\n/**** end of GPRE definitions ****/\n");
+	fprintf(out_file, "#endif\n");
+	fprintf(out_file, "\n/**** end of GPRE definitions ****/\n");
 }
 
 
@@ -1528,7 +1528,7 @@ static void gen_ddl( const act* action, int column)
 	}
 
 	align(column);
-	ib_fprintf(out_file, "isc_ddl (%s, &%s, &%s, (short) %d, isc_%d);",
+	fprintf(out_file, "isc_ddl (%s, &%s, &%s, (short) %d, isc_%d);",
 			   status_vector(action),
 			   request->req_database->dbb_name->sym_string,
 			   transaction_name, request->req_length, request->req_ident);
@@ -1557,7 +1557,7 @@ static void gen_drop_database( const act* action, int column)
 	DBB db = (DBB) action->act_object;
 	align(column);
 
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   "isc_drop_database (%s, %d, \"%s\", rdb$k_db_type_gds);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
@@ -1883,12 +1883,12 @@ static void gen_emodify( const act* action, int column)
 		gen_name(s2, reference, true);
 		if (field->fld_dtype > dtype_cstring ||
 			(field->fld_sub_type == 1 && field->fld_length == 1))
-			ib_fprintf(out_file, "%s = %s;", s2, s1);
+			fprintf(out_file, "%s = %s;", s2, s1);
 		else if (sw_cstring && !field->fld_sub_type)
-			ib_fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, %d);",
+			fprintf(out_file, "isc_vtov ((char*)%s, (char*)%s, %d);",
 					   s1, s2, field->fld_length);
 		else
-			ib_fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
+			fprintf(out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s1, field->fld_length, s2, field->fld_length);
 		if (field->fld_array_info)
 			gen_get_or_put_slice(action, reference, false, column);
@@ -2312,18 +2312,18 @@ static void gen_function( const act* function, int column)
 
 	gpre_req* request = action->act_request;
 
-	ib_fprintf(out_file, "static %s_r (request, transaction ", request->req_handle);
+	fprintf(out_file, "static %s_r (request, transaction ", request->req_handle);
 
 	gpre_port* port = request->req_vport;
 	if (port)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-			ib_fprintf(out_file, ", %s",
+			fprintf(out_file, ", %s",
 					   gen_name(s, reference->ref_source, true));
 		}
 
-	ib_fprintf(out_file,
+	fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
 	if (port)
@@ -2384,15 +2384,15 @@ static void gen_function( const act* function, int column)
 				CPR_error("gen_function: unsupported datatype");
 				return;
 			}
-			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
+			fprintf(out_file, "    %s\t%s;\n", dtype,
 					   gen_name(s, reference->ref_source, true));
 		}
 
-	ib_fprintf(out_file, "{\n");
+	fprintf(out_file, "{\n");
 	for (port = request->req_ports; port; port = port->por_next)
 		make_port(port, column);
 
-	ib_fprintf(out_file, "\n\n");
+	fprintf(out_file, "\n\n");
 	gen_s_start(action, 0);
 	gen_receive(action, column, request->req_primary);
 
@@ -2405,7 +2405,7 @@ static void gen_function( const act* function, int column)
 		}
 
 	port = request->req_primary;
-	ib_fprintf(out_file, "\nreturn %s;\n}\n",
+	fprintf(out_file, "\nreturn %s;\n}\n",
 			   gen_name(s, port->por_references, true));
 }
 
@@ -2498,12 +2498,12 @@ static void gen_get_segment( const act* action, int column)
 		column += INDENT;
 		begin(column);
 		align(column);
-		ib_fprintf(out_file, "isc_ftof (isc_%d, isc_%d, %s, isc_%d);",
+		fprintf(out_file, "isc_ftof (isc_%d, isc_%d, %s, isc_%d);",
 				   blob->blb_buff_ident, blob->blb_len_ident,
 				   into->ref_value, blob->blb_len_ident);
 		if (into->ref_null_value) {
 			align(column);
-			ib_fprintf(out_file, "%s = isc_%d;",
+			fprintf(out_file, "%s = isc_%d;",
 					   into->ref_null_value, blob->blb_len_ident);
 		}
 		endp(column);
@@ -2655,10 +2655,10 @@ static void gen_put_segment( const act* action, int column)
 		blob = (blb*) action->act_request->req_blobs;
 		REF from = action->act_object;
 		align(column);
-		ib_fprintf(out_file, "isc_%d = %s;",
+		fprintf(out_file, "isc_%d = %s;",
 				   blob->blb_len_ident, from->ref_null_value);
 		align(column);
-		ib_fprintf(out_file, "isc_ftof (%s, isc_%d, isc_%d, isc_%d);",
+		fprintf(out_file, "isc_ftof (%s, isc_%d, isc_%d, isc_%d);",
 				   from->ref_value, blob->blb_len_ident,
 				   blob->blb_buff_ident, blob->blb_len_ident);
 	}
@@ -3195,14 +3195,14 @@ static void gen_slice( const act* action, REF var_reference, int column)
 			REF lower = (REF) tail->slc_lower->nod_arg[0];
 			REF upper = (REF) tail->slc_upper->nod_arg[0];
 			if (lower->ref_value)
-				ib_fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
+				fprintf(out_file, " * ( %s - %s + 1)", upper->ref_value,
 						   lower->ref_value);
 			else
-				ib_fprintf(out_file, " * ( %s + 1)", upper->ref_value);
+				fprintf(out_file, " * ( %s + 1)", upper->ref_value);
 		}
 	}
 
-	ib_fprintf(out_file, ";");
+	fprintf(out_file, ";");
 
 //  Make assignments to variable vector 
 
@@ -3366,12 +3366,12 @@ static void gen_t_start( const act* action, int column)
 			remaining = 256 - column - INDENT;
 		}
 		remaining -= length;
-		ib_fprintf(out_file, ", &%s, (short) %d, isc_tpb_%d",
+		fprintf(out_file, ", &%s, (short) %d, isc_tpb_%d",
 				   tpb_iterator->tpb_database->dbb_name->sym_string,
 				   tpb_iterator->tpb_length, tpb_iterator->tpb_ident);
 	}
 
-	ib_fprintf(out_file, ");");
+	fprintf(out_file, ");");
 
 	set_sqlcode(action, column);
 }
@@ -3413,7 +3413,7 @@ static void gen_tpb(tpb* tpb_buffer, int column)
 			*p++ = ',';
 		if (p - buffer > 60) {
 			*p = 0;
-			ib_fprintf(out_file, " %s\n", buffer);
+			fprintf(out_file, " %s\n", buffer);
 			p = buffer;
 			for (length = 0; length < column + INDENT; length++)
 				*p++ = ' ';
@@ -3421,7 +3421,7 @@ static void gen_tpb(tpb* tpb_buffer, int column)
 		}
 	}
 
-	ib_fprintf(out_file, "%s};\n", buffer);
+	fprintf(out_file, "%s};\n", buffer);
 }
 
 
@@ -3516,7 +3516,7 @@ static void gen_whenever( const swe* label, int column)
 			break;
 		}
 		align(column);
-		ib_fprintf(out_file, "if (%s) goto %s;", condition, label->swe_label);
+		fprintf(out_file, "if (%s) goto %s;", condition, label->swe_label);
 		label = label->swe_next;
 	}
 }
@@ -3595,7 +3595,7 @@ static void make_array_declaration(ref* reference)
 		return;
 	}
 
-	ib_fprintf(out_file, "static %s isc_%d", dtype,
+	fprintf(out_file, "static %s isc_%d", dtype,
 			   field->fld_array_info->ary_ident);
 
 //   Print out the dimension part of the declaration  
@@ -3603,16 +3603,16 @@ static void make_array_declaration(ref* reference)
 	for (dim* dimension = field->fld_array_info->ary_dimension; dimension;
 		 dimension = dimension->dim_next)
 	{
-		ib_fprintf(out_file, " [%ld]",
+		fprintf(out_file, " [%ld]",
 				   dimension->dim_upper - dimension->dim_lower + 1);
 	}
 
 	if (field->fld_array_info->ary_dtype <= dtype_varying)
-		ib_fprintf(out_file, " [%d]", field->fld_array->fld_length);
+		fprintf(out_file, " [%d]", field->fld_array->fld_length);
 
 //   Print out the database field  
 
-	ib_fprintf(out_file, ";\t/* %s */\n", name);
+	fprintf(out_file, ";\t/* %s */\n", name);
 }
 
 
@@ -3750,10 +3750,10 @@ static void make_port(const gpre_port* port, int column)
 			}
 		}
 		if (fld_len)
-			ib_fprintf(out_file, "    %s isc_%d [%d];\t/* %s */",
+			fprintf(out_file, "    %s isc_%d [%d];\t/* %s */",
 					   dtype, reference->ref_ident, fld_len, name);
 		else
-			ib_fprintf(out_file, "    %s isc_%d;\t/* %s */",
+			fprintf(out_file, "    %s isc_%d;\t/* %s */",
 					   dtype, reference->ref_ident, name);
 	}
 
@@ -3811,14 +3811,14 @@ static void make_ready(
 
 	align(column);
 	if (filename)
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "isc_attach_database (%s, 0, %s, &%s, %s, %s);",
 				   vector,
 				   filename,
 				   db->dbb_name->sym_string,
 				   (request ? s1 : dpb_size_ptr), (request ? s2 : dpb_ptr));
 	else
-		ib_fprintf(out_file,
+		fprintf(out_file,
 				   "isc_attach_database (%s, 0, \"%s\", &%s, %s, %s);",
 				   vector,
 				   db->dbb_filename,
@@ -3851,7 +3851,7 @@ static void printa( int column, const char* string, ...)
 
 	VA_START(ptr, string);
 	align(column);
-	ib_vfprintf(out_file, string, ptr);
+	vfprintf(out_file, string, ptr);
 }
 
 
@@ -3865,7 +3865,7 @@ static void printb( const TEXT* string, ...)
 	va_list ptr;
 
 	VA_START(ptr, string);
-	ib_vfprintf(out_file, string, ptr);
+	vfprintf(out_file, string, ptr);
 }
 
 
@@ -3940,10 +3940,10 @@ static void t_start_auto(const act* action,
 		    TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				align(column);
-				ib_fprintf(out_file, "if (!%s", db->dbb_name->sym_string);
+				fprintf(out_file, "if (!%s", db->dbb_name->sym_string);
 				if (stat && buffer[0])
-					ib_fprintf(out_file, " && !%s [1]", vector);
-				ib_fprintf(out_file, ")");
+					fprintf(out_file, " && !%s [1]", vector);
+				fprintf(out_file, ")");
 				make_ready(db, filename, vector, (USHORT) (column + INDENT),
 						   0);
 				if (buffer[0])
@@ -3976,11 +3976,11 @@ static void t_start_auto(const act* action,
 			remaining = 256 - column - INDENT;
 		}
 		remaining -= length;
-		ib_fprintf(out_file, ", &%s, (short) 0, (char*) 0",
+		fprintf(out_file, ", &%s, (short) 0, (char*) 0",
 				   db->dbb_name->sym_string);
 	}
 
-	ib_fprintf(out_file, ");");
+	fprintf(out_file, ");");
 
 	if (sw_auto)
 		column -= INDENT;

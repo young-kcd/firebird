@@ -81,7 +81,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include "../remote/remote.h"
@@ -650,7 +650,7 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					break;
 
 				case 'Z':
-					ib_printf("Firebird remote server version %s\n",
+					printf("Firebird remote server version %s\n",
 							  FB_VERSION);
 					exit(FINI_OK);
 
