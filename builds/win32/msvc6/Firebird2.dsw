@@ -51,6 +51,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "fbclient"=.\fbclient.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "fbguard"=.\fbguard.dsp - Package Owner=<4>
 
 Package=<5>
@@ -60,7 +75,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -108,7 +123,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name remote
@@ -126,7 +141,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name common
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -141,7 +156,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -156,7 +171,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -171,7 +186,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -186,7 +201,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -201,7 +216,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
@@ -252,7 +267,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name gds32
+    Project_Dep_Name fbclient
     End Project Dependency
 }}}
 
