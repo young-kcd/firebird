@@ -1314,7 +1314,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 		{
 			class_string = "**unknown**";
 		}
-		sprintf(s, "%s (%s), version \"%.*s\"",
+		fb_utils::snprintf(s, sizeof(s), "%s (%s), version \"%.*s\"",
 				implementation_string, class_string, l, versions);
 
 		(*routine)(user_arg, s);
