@@ -102,7 +102,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 #include "../wal/wal.h"
 
 /* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
-#if !defined(_JRD_ERR_PROTO_H_)
+#if !defined(JRD_ERR_PROTO_H)
 extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
 #endif
 
