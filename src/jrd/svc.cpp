@@ -227,53 +227,7 @@ static shutdown_fct_t shutdown_fct = 0;
 static ULONG shutdown_param = 0L;
 #endif
 
-#ifdef WIN_NT
-static SLONG SVC_cache_default;
-static SLONG SVC_priority_class;
-static SLONG SVC_client_map;
-static SLONG SVC_working_set_min;
-static SLONG SVC_working_set_max;
-
-static struct ipccfg SVC_hdrtbl[] = {
-	{ISCCFG_DBCACHE, 0, &SVC_cache_default, 0, 0},
-	{ISCCFG_PRIORITY, 0, &SVC_priority_class, 0, 0},
-	{ISCCFG_IPCMAP, 0, &SVC_client_map, 0, 0},
-	{ISCCFG_MEMMIN, 0, &SVC_working_set_min, 0, 0},
-	{ISCCFG_MEMMAX, 0, &SVC_working_set_max, 0, 0},
-	{NULL, 0, NULL, 0, 0}
-};
-#else
-static SLONG SVC_conn_timeout;
-static SLONG SVC_dbcache;
-static SLONG SVC_deadlock;
-static SLONG SVC_dummy_intrvl;
-static SLONG SVC_lockspin;
-static SLONG SVC_lockhash;
-static SLONG SVC_evntmem;
-static SLONG SVC_lockorder;
-static SLONG SVC_anylockmem;
-static SLONG SVC_locksem;
-static SLONG SVC_locksig;
-
-static struct ipccfg SVC_hdrtbl[] = {
-	{ ISCCFG_CONN_TIMEOUT, 0, &SVC_conn_timeout, 0, 0 },
-	{ ISCCFG_DBCACHE, 0, &SVC_dbcache, 0, 0 },
-	{ ISCCFG_DEADLOCK, 0, &SVC_deadlock, 0, 0 },
-	{ ISCCFG_DUMMY_INTRVL, 0, &SVC_dummy_intrvl, 0, 0 },
-	{ ISCCFG_LOCKSPIN, 0, &SVC_lockspin, 0, 0 },
-	{ ISCCFG_LOCKHASH, 0, &SVC_lockhash, 0, 0 },
-	{ ISCCFG_EVNTMEM, 0, &SVC_evntmem, 0, 0 },
-	{ ISCCFG_LOCKORDER, 0, &SVC_lockorder, 0, 0 },
-	{ ISCCFG_ANYLOCKMEM, 0, &SVC_anylockmem, 0, 0 },
-	{ ISCCFG_ANYLOCKSEM, 0, &SVC_locksem, 0, 0 },
-	{ ISCCFG_ANYLOCKSIG, 0, &SVC_locksig, 0, 0 },
-	{ NULL, 0, NULL, 0, 0 }
-};
-#endif /* WIN_NT */
-
 #define SPB_SEC_USERNAME	"isc_spb_sec_username"
-#define SPB_LIC_KEY		"isc_spb_lic_key"
-#define SPB_LIC_ID		"isc_spb_lic_id"
 
 static MUTX_T svc_mutex[1], thd_mutex[1];
 static BOOLEAN svc_initialized = FALSE, thd_initialized = FALSE;
@@ -1099,28 +1053,17 @@ void SVC_putc(SVC service, UCHAR ch)
 				break;
 			}
 #endif
-
+/*
 		case isc_info_svc_get_config:
-			if (SVC_hdrtbl) {
-				IPCCFG h;
-				*info++ = item;
-				ISC_get_config(LOCK_HEADER, SVC_hdrtbl);
-				for (h = SVC_hdrtbl; h->ipccfg_keyword; h++) {
-					CK_SPACE_FOR_NUMERIC;
-					*info++ = h->ipccfg_key;
-					ADD_SPB_NUMERIC(info, *h->ipccfg_variable);
-				}
-				if (info < end)
-					*info++ = isc_info_flag_end;
-			}
+			// TODO: iterate through all integer-based config values
+			//		 and return them to the client
 			break;
 
 		case isc_info_svc_default_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
 				THREAD_ENTER;
-				if (ISC_set_config(LOCK_HEADER, NULL))
-					ERR_FILE_IN_USE;
+				// TODO: reset the config values to defaults
 				THREAD_EXIT;
 			}
 			else
@@ -1129,75 +1072,16 @@ void SVC_putc(SVC service, UCHAR ch)
 
 		case isc_info_svc_set_config:
 			*info++ = item;
-
-			length = (USHORT) isc_vax_integer(items, sizeof(USHORT));
-			items += sizeof(USHORT);
-
-			/* Check for proper user authority */
-
 			if (service->svc_user_flag & SVC_user_dba) {
-				int n;
-				UCHAR *p, *end;
-
-				end = reinterpret_cast < UCHAR * >(items + length);
-
-				/* count the number of parameters being set */
-
-				p = reinterpret_cast < UCHAR * >(items);
-				for (n = 0; p < end; n++)
-					p += p[1] + 2;
-
-				/* if there is at least one then do the configuration */
-
-				if (n++) {
-					IPCCFG tmpcfg;
-					/* allocate a buffer big enough to n struct ipccfg and
-					 * n ipccfg variables.
-					 */
-					tmpcfg =
-						(IPCCFG) gds__alloc(n * (sizeof(struct ipccfg) +
-												 ALIGNMENT) + length);
-					if (tmpcfg) {
-						p = (UCHAR *) tmpcfg + n * sizeof(struct ipccfg);
-						for (n = 0; (UCHAR *) items < end; n++) {
-							int nBytes;
-
-							tmpcfg[n].ipccfg_keyword = NULL;
-							tmpcfg[n].ipccfg_key = *items++;
-							tmpcfg[n].ipccfg_variable = (SLONG *) p;
-							nBytes = *items++;
-							*(ULONG *) p = isc_vax_integer(items, nBytes);
-							p += ROUNDUP(nBytes, ALIGNMENT);
-							items += nBytes;
-						}
-						tmpcfg[n].ipccfg_keyword = NULL;
-						tmpcfg[n].ipccfg_key = 0;
-						tmpcfg[n].ipccfg_variable = NULL;
-
-						THREAD_ENTER;
-						if (ISC_set_config(LOCK_HEADER, tmpcfg))
-							ERR_FILE_IN_USE;
-						THREAD_EXIT;
-						gds__free((ULONG *) tmpcfg);
-					}
-					else {
-						/* Return an error if there is no more memory to
-						 * access the ibconfig file.  Do not continue
-						 * processing the query request.
-						 */
-						THREAD_ENTER;
-						*status++ = isc_virmemexh;
-						*status++ = isc_arg_end;
-						return tdbb->tdbb_status_vector[1];
-					}
-				}
+				THREAD_ENTER;
+				// TODO: set the config values
+				THREAD_EXIT;
 			}
 			else {
-				items += length;
 				NEED_ADMIN_PRIVS("isc_info_svc_set_config");
 			}
 			break;
-
+*/
 		case isc_info_svc_version:
 			/* The version of the service manager */
 			CK_SPACE_FOR_NUMERIC;
@@ -1568,116 +1452,35 @@ void SVC_query(SVC		service,
 				break;
 			}
 #endif
-
+/*
 		case isc_info_svc_get_config:
-			if (SVC_hdrtbl) {
-				IPCCFG h;
-				UCHAR *p;
-				ISC_get_config(LOCK_HEADER, SVC_hdrtbl);
-				p = buffer;
-				for (h = SVC_hdrtbl; h->ipccfg_keyword; h++) {
-					*p++ = h->ipccfg_key;
-					length =
-						INF_convert(*h->ipccfg_variable,
-									reinterpret_cast < char *>(p + 1));
-					*p++ = (UCHAR) length;
-					p += length;
-				}
-				if (!
-					(info =
-					 INF_put_item(item, p - buffer,
-								  reinterpret_cast < char *>(buffer), info,
-								  end))) {
-					THREAD_ENTER;
-					return;
-				}
-			}
+			// TODO: iterate through all integer-based config values
+			//		 and return them to the client
 			break;
 
 		case isc_info_svc_default_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
 				THREAD_ENTER;
-				if (ISC_set_config(LOCK_HEADER, NULL))
-					*info++ = 3;	/* File in use */
-				else
-					*info++ = 0;	/* Success */
+				// TODO: reset the config values to defaults
 				THREAD_EXIT;
 			}
 			else
-				*info++ = 2;
+				NEED_ADMIN_PRIVS("isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
 			*info++ = item;
-
-			length = (USHORT) isc_vax_integer(items, sizeof(USHORT));
-			items += sizeof(USHORT);
-
-			/* Check for proper user authority */
-
 			if (service->svc_user_flag & SVC_user_dba) {
-				int n;
-				UCHAR *p, *end;
-
-				end = reinterpret_cast < UCHAR * >(items + length);
-
-				/* count the number of parameters being set */
-
-				p = reinterpret_cast < UCHAR * >(items);
-				for (n = 0; p < end; n++)
-					p += p[1] + 2;
-
-				/* if there is at least one then do the configuration */
-
-				if (n++) {
-					IPCCFG tmpcfg;
-					/* allocate a buffer big enough to n struct ipccfg and
-					 * n ipccfg variables.
-					 */
-					tmpcfg =
-						(IPCCFG) gds__alloc(n *
-											(sizeof(struct ipccfg) +
-											 ALIGNMENT) + length);
-					if (tmpcfg) {
-						p = (UCHAR *) tmpcfg + n * sizeof(struct ipccfg);
-						for (n = 0; (UCHAR *) items < end; n++) {
-							int nBytes;
-
-							tmpcfg[n].ipccfg_keyword = NULL;
-							tmpcfg[n].ipccfg_key = *items++;
-							tmpcfg[n].ipccfg_variable = (SLONG *) p;
-							nBytes = *items++;
-							*(ULONG *) p = isc_vax_integer(items, nBytes);
-							p += ROUNDUP(nBytes, ALIGNMENT);
-							items += nBytes;
-						}
-						tmpcfg[n].ipccfg_keyword = NULL;
-						tmpcfg[n].ipccfg_key = 0;
-						tmpcfg[n].ipccfg_variable = NULL;
-
-						THREAD_ENTER;
-						if (ISC_set_config(LOCK_HEADER, tmpcfg))
-							*info++ = 3;	/* File in use */
-						else
-							*info++ = 0;	/* Success */
-						THREAD_EXIT;
-						gds__free((ULONG *) tmpcfg);
-					}
-					else {
-						*info++ = 1;	/* No Memory */
-						items = reinterpret_cast < char *>(end);
-					}
-
-				}
-				*info++ = 0;	/* Success */
+				THREAD_ENTER;
+				// TODO: set the config values
+				THREAD_EXIT;
 			}
 			else {
-				items += length;
-				*info++ = 2;	/* No user authority */
+				NEED_ADMIN_PRIVS("isc_info_svc_set_config");
 			}
 			break;
-
+*/
 		case isc_info_svc_version:
 			/* The version of the service manager */
 
