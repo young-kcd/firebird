@@ -921,7 +921,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 								*p == end_quote)
 							{
 								// skip the escape quote here
-								options.dpb_role_name.erase(p);
+								options.dpb_role_name.erase(p--);
 							}
 							else
 							{
@@ -5661,7 +5661,7 @@ static ISC_STATUS return_success(thread_db* tdbb)
 	ISC_STATUS* p = user_status;
 
 /* If the status vector has not been initialized, then
-   initilalize the status vector to indicate success.
+   initialize the status vector to indicate success.
    Else pass the status vector along at it stands.  */
 	if (p[0] != isc_arg_gds ||
 		p[1] != FB_SUCCESS ||
