@@ -1,3 +1,53 @@
+2004-11-19 00:00  arnobrinkman
+
+	* firebird2/src/jrd/: btn.cpp (1.17), btn.h (1.14):
+	
+	Final ODS index structure change
+
+2004-11-18 20:53  skidder
+
+	*
+	
+	Fix problem with XP SP2 clients talking to POSIX server
+	(SF#1065511)
+	firebird2/builds/install/arch-specific/linux/misc/firebird.xinetd.i
+	n (1.3):
+
+2004-11-18 14:58  hvlad
+
+	* firebird2/src/jrd/: exe.cpp (1.135), exe.h (1.62):
+	
+	1. Use isc_stack_trace instead of isc_random 2. Correct exception
+	handling when dynamic string is used. See comments in exe.cpp
+
+2004-11-18 14:50  hvlad
+
+	* firebird2/src/: include/gen/codetext.h (1.17),
+	include/gen/iberror.h (1.16), include/gen/msgs.h (1.22),
+	include/gen/rdb_codes.h (1.17), include/gen/sql_code.h (1.19),
+	msgs/facilities.sql (1.7), msgs/messages.sql (1.14),
+	msgs/system_errors.sql (1.7):
+	
+	Added new isc_stack_trace error code for PL-SQL stack trace
+
+2004-11-18 10:14  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.127):
+	
+	Cleanup.
+
+2004-11-18 09:40  robocop
+
+	* firebird2/src/remote/server.cpp (1.101):
+	
+	Misc.
+
+2004-11-18 09:09  dimitr
+
+	* firebird2/src/msgs/facilities.sql (1.6):
+	
+	no message
+
 2004-11-17 23:01  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.173):
