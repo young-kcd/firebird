@@ -4,7 +4,7 @@
 # $0: full path to script
 # $1: full path to top level package dir, no trailing slash
 # $2: full path to installed location
-# $3:  ?????
+# $3:  ????? Path to install Volume????
 # $4:  ?????
 
 FB_FW='$2/Firebird.framework'
@@ -156,6 +156,11 @@ if grep -x "localhost.localdomain" /etc/hosts.equiv > /dev/null; then
 else     
     echo "localhost.localdomain" >> /etc/hosts.equiv    
 fi    
+
+if test -f /tmp/fb-security-database-update.fdb; then
+	mv -f /tmp/fb-security-database-update.fdb "$FB_RES/English.lproj/var/security.fdb"
+	rm -f /tmp/fb-security-database-update.fdb
+fi
 
 
 if [ "$HUPNEEDED" = 'y' ]

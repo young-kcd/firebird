@@ -1,3 +1,24 @@
 #!/bin/sh
+#
+# Script args:
+# $0: full path to script
+# $1: full path to top level package dir, no trailing slash
+# $2: full path to installed location
+# $3:  ????? Path to install Volume????
+# $4:  ?????
 
 
+if test -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/isc4.gdb"; then
+	mv -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/isc4.gdb" /tmp/fb-security-database-update.fdb
+fi
+if test -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/isc4.fdb"; then
+	mv -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/isc4.fdb" /tmp/fb-security-database-update.fdb
+fi
+if test -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/security.fdb"; then
+	mv -f "$2/Firebird.framework/Versions/A/Resources/English.lproj/var/security.fdb" /tmp/fb-security-database-update.fdb
+fi
+
+
+rm -rf "$2/Firebird.framework"
+
+exit 0
