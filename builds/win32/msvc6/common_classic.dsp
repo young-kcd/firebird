@@ -145,6 +145,10 @@ SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\StringMap.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\classes\timestamp.cpp
 # End Source File
 # Begin Source File
@@ -198,6 +202,10 @@ SOURCE=..\..\..\src\common\classes\init.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\objects_array.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\StringMap.h
 # End Source File
 # Begin Source File
 
