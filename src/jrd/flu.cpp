@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.31 2003-04-12 16:34:26 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.32 2003-04-14 07:23:14 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -139,7 +139,6 @@ static void terminate_at_space(char* psz)
 #include <windows.h>
 #include <stdlib.h>
 #include <io.h>
-/* Where is the international character set module found? */
 #endif
 
 

@@ -58,19 +58,21 @@
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
 
-static IB_FILE *ext_fopen(const char *filename, const char *mode);
+namespace {
+IB_FILE *ext_fopen(const char *filename, const char *mode);
 
-static class ExternalFileDirectoryList : public DirectoryList {
+class ExternalFileDirectoryList : public DirectoryList {
 	const Firebird::string GetConfigString(void) const {
 		return Firebird::string(Config::getExternalFileAccess());
 	}
 } iExternalFileDirectoryList;
 
-static IB_FILE *ext_fopen(const char *filename, const char *mode) {
+IB_FILE *ext_fopen(const char *filename, const char *mode) {
 	if (!iExternalFileDirectoryList.IsPathInList(filename))
 		return 0;
 	return ib_fopen(filename, mode);
 }
+};
 
 extern "C" {
 
