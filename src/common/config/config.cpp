@@ -67,7 +67,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
+#if defined(WIN_NT) && !defined(SUPERSERVER)
+	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
+#else
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
+#endif
 #ifdef SINIXZ
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
