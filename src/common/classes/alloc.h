@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.30 2003-12-05 10:35:29 robocop Exp $
+ *  $Id: alloc.h,v 1.31 2004-02-08 16:35:40 alexpeshkoff Exp $
  *
  */
 
@@ -310,11 +310,11 @@ void operator delete[](void* mem) throw();
 #endif
 
 #ifdef DEBUG_GDS_ALLOC
-static inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+static inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 //	return pool.calloc(s, 0, file, line);
 }
-static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 //	return pool.calloc(s, 0, file, line);
 }
