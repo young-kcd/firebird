@@ -1,40 +1,27 @@
-#ifndef INCLUDE_EDITLINE_H
-#define INCLUDE_EDITLINE_H
-
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * You may obtain a copy of the Licence at
- * http://www.gnu.org/licences/lgpl.html
- * 
- * As a special exception this file can also be included in modules
- * with other source code as long as that source code has been 
- * released under an Open Source Initiative certificed licence.  
- * More information about OSI certification can be found at: 
- * http://www.opensource.org 
- * 
- * This module is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public Licence for more details.
- * 
- * This module was created by members of the firebird development 
- * team.  All individual contributions remain the Copyright (C) of 
- * those individuals and all rights are reserved.  Contributors to 
- * this file are either listed below or can be obtained from a CVS 
- * history command.
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- *  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- *  Contributor(s):
- * 
+ *  The Original Code was created by Mark O'Donohue
+ *  for the Firebird Open Source RDBMS project.
  *
- *  $Id: editline.h,v 1.1 2002-10-07 01:29:11 skywalker Exp $
+ *  Copyright (c) 2002 Mark O'Donohue <skywalker@users.sourceforge.net>
+ *  and all contributors signed below.
  *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  */
 
+#ifndef INCLUDE_EDITLINE_H
+#define INCLUDE_EDITLINE_H
 
 // This file defines the ansi headers for the editline library which
 // did not have it's own ansi header. This is an external module
