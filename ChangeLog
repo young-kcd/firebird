@@ -1,3 +1,37 @@
+2004-08-06 15:49  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
+	(1.1):
+	
+	file pkginfolg.in was initially added on branch B1_5_Release.
+
+2004-08-06 15:49  kkuznetsov
+
+	*
+	firebird2/src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
+	(1.1):
+	
+	file prototypelg.in was initially added on branch B1_5_Release.
+
+2004-08-06 15:49  kkuznetsov
+
+	* firebird2/doc/README.install.Solaris_on_Intel (1.1):
+	
+	file README.install.Solaris_on_Intel was initially added on branch
+	B1_5_Release.
+
+2004-08-06 15:49  kkuznetsov
+
+	* firebird2/: configure.in (1.141.2.25),
+	doc/README.install.Solaris_on_Intel (1.1.2.1),
+	src/install/arch-specific/solx86gcc/Makefile.in (1.1.2.3),
+	src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in (1.1.2.1),
+	src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
+	(1.1.2.1):
+	
+	Added install script for gcc C++ runtime as separate package and
+	readme file
+
 2004-08-04 18:01  kkuznetsov
 
 	* firebird2/src/install/arch-specific/solx86gcc/CS/: postinstall.in
