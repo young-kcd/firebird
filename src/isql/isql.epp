@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.26 2003-03-07 21:30:39 tamlin Exp $
+  $Id: isql.epp,v 1.27 2003-04-03 09:26:18 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -250,6 +250,21 @@ static BOOLEAN global_numbufs = FALSE;
 static BOOLEAN have_trans = FALSE;	/* translation of word "Yes" */
 static TEXT yesword[MSG_LENGTH];
 static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
+
+static SCHAR *alpha_months[] = {
+	"JAN",
+	"FEB",
+	"MAR",
+	"APR",
+	"MAY",
+	"JUN",
+	"JUL",
+	"AUG",
+	"SEP",
+	"OCT",
+	"NOV",
+	"DEC"
+};
 
 #ifdef NOT_USED_OR_REPLACED
 static UCHAR db_version_info[] = { isc_info_ods_version,

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.13 2003-02-13 09:42:18 dimitr Exp $
+ * $Id: show.epp,v 1.14 2003-04-03 09:26:17 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -59,8 +59,6 @@
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
 #endif
-
-ASSERT_FILENAME
 
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 

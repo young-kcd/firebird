@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.7 2003-02-11 20:16:57 brodsom Exp $
+ * $Id: isql.h,v 1.8 2003-04-03 09:26:18 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -251,21 +251,6 @@ EXTERN SSHORT Merge_stderr;
 EXTERN USHORT SQL_dialect;
 EXTERN USHORT db_SQL_dialect;
 #undef EXTERN
-
-static SCHAR *alpha_months[] = {
-	"JAN",
-	"FEB",
-	"MAR",
-	"APR",
-	"MAY",
-	"JUN",
-	"JUL",
-	"AUG",
-	"SEP",
-	"OCT",
-	"NOV",
-	"DEC"
-};
 
 typedef vary VARY;
 
