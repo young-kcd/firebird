@@ -74,9 +74,14 @@ void PathUtils::splitLastComponent(Firebird::string& path, Firebird::string& fil
 	pos = orgPath.rfind(PathUtils::dir_sep);
 	if (pos == Firebird::string::npos)
 	{
-		path = "";
-		file = orgPath;
-		return;
+		pos = orgPath.rfind('/');	// temp hack to make it work with paths,
+									// not exoanded by ISC_expand_filename
+		if (pos == Firebird::string::npos)
+		{
+			path = "";
+			file = orgPath;
+			return;
+		}
 	}
 	
 	path.erase();
