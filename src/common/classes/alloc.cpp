@@ -23,6 +23,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "../../include/firebird.h"
 #include "alloc.h"
 #include <new>
 
@@ -110,8 +111,8 @@ void MemoryPool::verify_pool() {
 			assert(blk->prev == prev); // Prev is correct ?
 			BlockInfo temp = {blk, blk->length};
 			bool foundTree = freeBlocks.locate(temp), foundPending = false;
-			for (PendingFreeBlock *temp = pendingFree; temp; temp = temp->next)
-				if (temp == (PendingFreeBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock)))) {
+			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
+				if (tmp == (PendingFreeBlock *)((char*)blk+ALIGN(sizeof(MemoryBlock)))) {
 					assert(!foundPending); // Block may be in pending list only one time
 					foundPending = true;
 				}

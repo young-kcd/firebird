@@ -23,6 +23,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "../../include/firebird.h"
 #include "tree.h"
 #include "alloc.h"
 #include <stdio.h>
@@ -32,12 +33,13 @@ using namespace Firebird;
 void testVector() {
 	printf("Test Firebird::Vector: ");
 	Vector<int,100> v;
-	for (int i=0;i<100;i++)
+	int i;
+	for (i=0;i<100;i++)
 		v.add(i);
-	for (int i=0;i<50;i++)
+	for (i=0;i<50;i++)
 		v.remove(0);
 	bool passed = true;
-	for (int i=50;i<100;i++)
+	for (i=50;i<100;i++)
 		if (v[i-50] != i) passed = false;
 	printf(passed?"PASSED\n":"FAILED\n");
 }
@@ -45,12 +47,13 @@ void testVector() {
 void testSortedVector() {
 	printf("Test Firebird::SortedVector: ");
 	SortedVector<int,100> v;
-	for (int i=0;i<100;i++)
+	int i;
+	for (i=0;i<100;i++)
 		v.add(99-i);
-	for (int i=0;i<50;i++)
+	for (i=0;i<50;i++)
 		v.remove(0);
 	bool passed = true;
-	for (int i=50;i<100;i++)
+	for (i=50;i<100;i++)
 		if (v[i-50] != i) passed = false;
 	printf(passed?"PASSED\n":"FAILED\n");
 }
@@ -66,13 +69,14 @@ struct Test {
 };
 
 void testBePlusTree() {
-	MallocAllocator temp;
-	printf("Test Firebird::BePlusTree\n");
+    MallocAllocator temp;
+    printf("Test Firebird::BePlusTree\n");
 	
-	printf("Fill array with test data (%d items)...", TEST_ITEMS);
+    printf("Fill array with test data (%d items)...", TEST_ITEMS);
 	Vector<int, TEST_ITEMS> v;
 	int n = 0;
-	for (int i=0;i<TEST_ITEMS;i++) {
+	int i;
+	for (i=0;i<TEST_ITEMS;i++) {
 		n = n * 45578 - 17651;
 		// Fill it with quasi-random values in range 0...TEST_ITEMS-1
 		v.add(((i+n) % TEST_ITEMS + TEST_ITEMS)/2);
@@ -85,7 +89,7 @@ void testBePlusTree() {
 	BePlusTree<Test, int, MallocAllocator, Test, 
 		DefaultComparator<int>, 13, 13> tree2(&temp);
 	int cnt1 = 0, cnt2 = 0;
-	for (int i=0; i < v.getCount(); i++) {
+	for (i=0; i < v.getCount(); i++) {
 		if (tree1.locate(locEqual, v[i]))
 			tree1.current().count++;
 		else {
@@ -112,7 +116,7 @@ void testBePlusTree() {
 	bool passed = true;
 	
 	printf("Check that tree(2) contains test data: ");
-	for (int i=0; i< v.getCount(); i++) {
+	for (i=0; i< v.getCount(); i++) {
 		if(!tree1.locate(locEqual,v[i])) 
 			passed = false;
 	}
@@ -120,7 +124,7 @@ void testBePlusTree() {
 	passed = true;
 	
 	printf("Check that tree(13) contains test data: ");
-	for (int i=0; i< v.getCount(); i++) {
+	for (i=0; i< v.getCount(); i++) {
 		if(!tree2.locate(locEqual,v[i])) 
 			passed = false;
 	}
@@ -173,7 +177,7 @@ void testBePlusTree() {
 	printf(" DONE\n");
 	
 	printf("Check that tree(2) contains test data: ");
-	for (int i=0; i< v.getCount(); i++) {
+	for (i=0; i< v.getCount(); i++) {
 		if(!tree1.locate(locEqual,v[i])) 
 			passed = false;
 	}	
@@ -181,7 +185,7 @@ void testBePlusTree() {
 	passed = true;
 	
 	printf("Check that tree(13) contains test data: ");
-	for (int i=0; i < v.getCount(); i++) {
+	for (i=0; i < v.getCount(); i++) {
 		if(!tree2.locate(locEqual,v[i])) 
 			passed = false;
 	}	
@@ -215,7 +219,7 @@ void testBePlusTree() {
 	passed = true;
 	
 	printf("Remove the rest of data from the trees: ");
-	for (int i=0;i < v.getCount(); i++) {
+	for (i=0;i < v.getCount(); i++) {
 		if (!tree1.locate(locEqual, v[i]))
 			assert(false);
 		if (tree1.current().count > 1) 
@@ -241,7 +245,6 @@ void testBePlusTree() {
 	if (tree2.getLast())
 		passed = false;
 	printf(passed?"PASSED\n":"FAILED\n");
-
 }
 
 #define ALLOC_ITEMS 1000000
@@ -266,8 +269,9 @@ void testAllocator() {
 		bigItems(&allocator);
 	printf("Allocate %d items: ", ALLOC_ITEMS);
 	int n = 0;
+	int i;
 	pool->verify_pool();
-	for (int i=0;i<ALLOC_ITEMS;i++) {
+	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->alloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
 		items.add(temp);
@@ -287,7 +291,7 @@ void testAllocator() {
 	printf("Allocate %d big items: ", BIG_ITEMS);
 	n = 0;
 	pool->verify_pool();
-	for (int i=0;i<BIG_ITEMS;i++) {
+	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->alloc((n % BIG_SIZE + BIG_SIZE)/2+1)};
 		bigItems.add(temp);
@@ -313,7 +317,7 @@ void testAllocator() {
 	MemoryPool::deletePool(pool);
 }
 
-int main() {
+void main() {
 	testVector();
 	testSortedVector();
 	testBePlusTree();
