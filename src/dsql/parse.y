@@ -498,7 +498,6 @@ static struct LexerState lex;
 %token INSERTING
 %token UPDATING
 %token DELETING
-%token RELEASE
 /* Special pseudo-tokens introduced to handle case 
 	when our grammar is not LARL(1) */
 %token KW_INSERTING
