@@ -49,4 +49,13 @@ typedef struct scr {
 #define SCR_bold	2		/* Bold characters */
 #define SCR_underline	4		/* Underlined text */
 
+extern int SCR_create_window(WIN );
+extern int SCR_fini(WIN );
+extern int SCR_disable(WIN );
+extern int SCR_getchar(WIN , OBJ , int , int );
+extern int SCR_refresh_window(WIN , OBJ , int , int );
+extern int SCR_clear_window(WIN );
+extern int SCR_update_window(WIN , OBJ , int , int );
+extern int SCR_clear_object(WIN , OBJ );
+
 #endif /* _PYXIS_SCR_H_ */

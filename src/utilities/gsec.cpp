@@ -44,6 +44,10 @@
 #include <windows.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 extern "C" {
 
@@ -467,7 +471,7 @@ static void data_print( void *arg, USER_DATA data, BOOLEAN first)
 }
 
 
-static get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
+static int get_line( int *argc, SCHAR ** argv, TEXT * stuff, TSEC tdsec)
 {
 /**************************************
  *
@@ -1202,7 +1206,7 @@ static void util_output( CONST SCHAR * format, ...)
 	if (format[0] == '\0') {
 		exit_code =
 			tdsec->tsec_output_proc(tdsec->tsec_output_data,
-									reinterpret_cast < UCHAR * >(""));
+									(UCHAR * )(""));
 	}
 	else {
 		VA_START(arglist, format);

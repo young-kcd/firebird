@@ -24,6 +24,6 @@
 #ifndef _LOCK_PRTV3_PROTO_H_
 #define _LOCK_PRTV3_PROTO_H_
 
-extern int V3_lock_print(int, UCHAR **);
+extern int V3_lock_print(USHORT , UCHAR **);
 
 #endif /* _LOCK_PRTV3_PROTO_H_ */

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.1.1.1 2001-05-23 13:25:30 tamlin Exp $
+//	$Id: exp.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include <stdlib.h>
@@ -406,7 +406,7 @@ void EXP_left_paren( TEXT * string)
 {
 
 	if (!MATCH(KW_LEFT_PAREN))
-		SYNTAX_ERROR((string) ? string : "left parenthesis");
+		SYNTAX_ERROR((string) ? string : (char*)"left parenthesis");
 }
 
 

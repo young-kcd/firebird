@@ -132,7 +132,7 @@ NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_declare:
-		declare_global(node->syn_arg[0], node->syn_arg[1]);
+		declare_global((FLD) node->syn_arg[0], node->syn_arg[1]);
 		return NULL;
 
 	case nod_define:
@@ -149,7 +149,7 @@ NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_def_field:
-		MET_define_field(node->syn_arg[0], node->syn_arg[1]);
+		MET_define_field((DBB) node->syn_arg[0], (FLD) node->syn_arg[1]);
 		return NULL;
 
 	case nod_def_index:
@@ -157,23 +157,23 @@ NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_def_relation:
-		MET_define_relation(node->syn_arg[0], node->syn_arg[1]);
+		MET_define_relation((REL)node->syn_arg[0], (REL) node->syn_arg[1]);
 		return NULL;
 
 	case nod_del_relation:
-		MET_delete_relation(node->syn_arg[0]);
+		MET_delete_relation((REL)node->syn_arg[0]);
 		return NULL;
 
 	case nod_del_field:
-		MET_delete_field(node->syn_arg[0], node->syn_arg[1]);
+		MET_delete_field((DBB)node->syn_arg[0], (NAM) node->syn_arg[1]);
 		return NULL;
 
 	case nod_del_index:
-		MET_delete_index(node->syn_arg[0], node->syn_arg[1]);
+		MET_delete_index((DBB)node->syn_arg[0], (NAM) node->syn_arg[1]);
 		return NULL;
 
 	case nod_del_database:
-		MET_delete_database(node->syn_arg[0]);
+		MET_delete_database((DBB)node->syn_arg[0]);
 		return NULL;
 
 	case nod_edit_proc:
@@ -182,7 +182,7 @@ NOD EXP_expand( SYN node)
 
 	case nod_edit_form:
 		name = (NAM) node->syn_arg[1];
-		FORM_edit(node->syn_arg[0], name->nam_string);
+		FORM_edit((DBB)node->syn_arg[0], name->nam_string);
 		return NULL;
 
 	case nod_extract:
@@ -199,11 +199,11 @@ NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_mod_field:
-		MET_modify_field(node->syn_arg[0], node->syn_arg[1]);
+		MET_modify_field((DBB)node->syn_arg[0], (FLD) node->syn_arg[1]);
 		return NULL;
 
 	case nod_mod_relation:
-		MET_modify_relation(node->syn_arg[0], node->syn_arg[1]);
+		MET_modify_relation((REL) node->syn_arg[0], (FLD) node->syn_arg[1]);
 		return NULL;
 
 	case nod_mod_index:
@@ -239,7 +239,7 @@ NOD EXP_expand( SYN node)
 		return NULL;
 
 	case nod_sql_cr_table:
-		MET_define_sql_relation(node->syn_arg[0]);
+		MET_define_sql_relation((REL) node->syn_arg[0]);
 		return NULL;
 
 /****
@@ -250,7 +250,7 @@ NOD EXP_expand( SYN node)
 ****/
 
 	case nod_sql_al_table:
-		MET_sql_alter_table(node->syn_arg[0], node->syn_arg[1]);
+		MET_sql_alter_table((REL) node->syn_arg[0], (FLD) node->syn_arg[1]);
 		return NULL;
 	}
 
@@ -356,15 +356,15 @@ static SYM copy_symbol( SYM old)
  *	Copy a symbol into the permanent pool.
  *
  **************************************/
-	SYM new;
+	SYM new_sym;
 
-	new = (SYM) ALLOCPV(type_sym, old->sym_length);
-	new->sym_length = old->sym_length;
-	new->sym_type = old->sym_type;
-	new->sym_string = new->sym_name;
-	strcpy(new->sym_name, old->sym_name);
+	new_sym = (SYM) ALLOCPV(type_sym, old->sym_length);
+	new_sym->sym_length = old->sym_length;
+	new_sym->sym_type = old->sym_type;
+	new_sym->sym_string = new_sym->sym_name;
+	strcpy(new_sym->sym_name, old->sym_name);
 
-	return new;
+	return new_sym;
 }
 
 
@@ -384,7 +384,7 @@ static void declare_global( FLD variable, SYN field_node)
  **************************************/
 	TEXT *p, *q;
 	USHORT l;
-	FLD new, field, *ptr;
+	FLD new_fld, field, *ptr;
 
 /* If it's based_on, flesh it out & check datatype.  */
 
@@ -402,10 +402,10 @@ static void declare_global( FLD variable, SYN field_node)
 		if (!strcmp
 			(field->fld_name->sym_string, variable->fld_name->sym_string)) {
 			*ptr = field->fld_next;
-			ALLQ_release(field->fld_name);
+			ALLQ_release((FRB) field->fld_name);
 			if (field->fld_query_name)
-				ALLQ_release(field->fld_query_name);
-			ALLQ_release(field);
+				ALLQ_release((FRB) field->fld_query_name);
+			ALLQ_release((FRB) field);
 			break;
 		}
 
@@ -418,33 +418,33 @@ static void declare_global( FLD variable, SYN field_node)
 	if (q = variable->fld_query_header)
 		l += strlen(q);
 
-	new = (FLD) ALLOCPV(type_fld, l);
-	new->fld_name = copy_symbol(variable->fld_name);
-	new->fld_dtype = variable->fld_dtype;
-	new->fld_length = variable->fld_length;
-	new->fld_scale = variable->fld_scale;
-	new->fld_sub_type = variable->fld_sub_type;
-	new->fld_sub_type_missing = variable->fld_sub_type_missing;
-	new->fld_flags = variable->fld_flags | FLD_missing;
+	new_fld = (FLD) ALLOCPV(type_fld, l);
+	new_fld->fld_name = copy_symbol(variable->fld_name);
+	new_fld->fld_dtype = variable->fld_dtype;
+	new_fld->fld_length = variable->fld_length;
+	new_fld->fld_scale = variable->fld_scale;
+	new_fld->fld_sub_type = variable->fld_sub_type;
+	new_fld->fld_sub_type_missing = variable->fld_sub_type_missing;
+	new_fld->fld_flags = variable->fld_flags | FLD_missing;
 
 /* Copy query_name, edit string, query header */
 
-	p = (TEXT *) new->fld_data + new->fld_length;
+	p = (TEXT *) new_fld->fld_data + new_fld->fld_length;
 	if (q = variable->fld_edit_string) {
-		new->fld_edit_string = p;
+		new_fld->fld_edit_string = p;
 		while (*p++ = *q++);
 	}
 	if (variable->fld_query_name)
-		new->fld_query_name = copy_symbol(variable->fld_query_name);
+		new_fld->fld_query_name = copy_symbol(variable->fld_query_name);
 	if (q = variable->fld_query_header) {
-		new->fld_query_header = p;
+		new_fld->fld_query_header = p;
 		while (*p++ = *q++);
 	}
 
 /* Link new variable into variable chain */
 
-	new->fld_next = QLI_variables;
-	QLI_variables = new;
+	new_fld->fld_next = QLI_variables;
+	QLI_variables = new_fld;
 }
 
 
@@ -1083,7 +1083,7 @@ static NOD expand_field( SYN input, LLS stack, SYN subs)
 	}
 
 	if (context->ctx_type == CTX_FORM)
-		return make_form_field(context->ctx_form, field);
+		return make_form_field(context->ctx_form, (FFL) field);
 
 	node = make_field(field, context);
 	if (subs)
@@ -1107,7 +1107,7 @@ static NOD expand_field( SYN input, LLS stack, SYN subs)
 				stream_context->ctx_stream->nod_type != nod_rse)
 				continue;
 
-			ptr = stream_context->ctx_stream->nod_arg + e_rse_count;
+			ptr = (CTX*) stream_context->ctx_stream->nod_arg + e_rse_count;
 			end = ptr + stream_context->ctx_stream->nod_count;
 			for (; ptr < end; ptr++)
 				if (*ptr == context)
@@ -1521,7 +1521,7 @@ static NOD expand_modify( SYN input, LLS right, LLS left)
 		syn_ptr = syn_list->syn_arg;
 		for (i = 0; i < syn_list->syn_count; i++, syn_ptr++)
 			*ptr++ =
-				make_assignment(expand_expression(*syn_ptr, left), *syn_ptr,
+				make_assignment(expand_expression((SYN) *syn_ptr, left), (NOD) *syn_ptr,
 								right);
 	}
 	else
@@ -1635,7 +1635,7 @@ static NOD expand_print( SYN input, LLS right, LLS left)
 			if (((*sub)->syn_type == nod_print_item)
 				&& (syn_item = (*sub)->syn_arg[s_itm_value])
 				&& (syn_item->syn_type == nod_star))
-				count += generate_items(syn_item, new_right, &items, rse);
+				count += generate_items(syn_item, new_right, (LLS) &items, rse);
 			else {
 				LLS_PUSH(expand_print_item(*sub, new_right), &items);
 				count++;
@@ -2133,7 +2133,7 @@ static NOD expand_rse( SYN input, LLS * stack)
 /* Handle implicit boolean from SQL xxx IN (yyy FROM relation) */
 
 	if (input->syn_arg[s_rse_outer]) {
-		eql_node = MAKE_NODE((NOD_T) input->syn_arg[s_rse_op], 2);
+		eql_node = MAKE_NODE((enum nod_t)(int)input->syn_arg[s_rse_op], 2);
 		eql_node->nod_arg[0] =
 			expand_expression(input->syn_arg[s_rse_outer], old_stack);
 		eql_node->nod_arg[1] =
@@ -2251,7 +2251,7 @@ static NOD expand_statement( SYN input, LLS right, LLS left)
  **************************************/
 	SYN *syn_ptr, syn_node, field_node;
 	CTX context;
-	NOD node, (*routine) ();
+	NOD node, (*routine) (SYN, LLS, LLS);
 	LLS stack;
 	USHORT i;
 
@@ -2345,7 +2345,7 @@ static NOD expand_statement( SYN input, LLS right, LLS left)
 				if (field_node = syn_node->syn_arg[1]) {
 					if (field_node->syn_type == nod_index)
 						field_node = field_node->syn_arg[s_idx_field];
-					resolve_really(syn_node->syn_arg[0], field_node);
+					resolve_really((FLD) syn_node->syn_arg[0], field_node);
 				}
 				context->ctx_variable = (FLD) syn_node->syn_arg[0];
 				LLS_PUSH(context, &right);
@@ -2518,7 +2518,7 @@ static void expand_values( SYN input, LLS right)
 				while (temp) {
 					context = (CTX) LLS_POP(&temp);
 					value_count +=
-						generate_fields(context, &values,
+						generate_fields(context, (LLS) &values,
 										input->syn_arg[s_sto_rse]);
 				}
 			}
@@ -2526,10 +2526,10 @@ static void expand_values( SYN input, LLS right)
 				IBERROR(542);	/* this was a prompting expression.  won't do at all */
 		}
 		else if (input->syn_arg[s_sto_rse] && (value->syn_type == nod_star)) {
-			if (!(context = find_context(value->syn_arg[0], right)))
+			if (!(context = find_context((NAM) value->syn_arg[0], right)))
 				IBERROR(154);	/* Msg154 unrecognized context */
 			value_count +=
-				generate_fields(context, &values, input->syn_arg[s_sto_rse]);
+				generate_fields(context, (LLS) &values, input->syn_arg[s_sto_rse]);
 		}
 		else {
 			LLS_PUSH(value, &values);
@@ -2622,7 +2622,7 @@ static int generate_fields( CTX context, LLS values, SYN rse)
 		value = decompile_field(field, context);
 		if (group_list && invalid_syn_field(value, group_list))
 			continue;
-		LLS_PUSH(value, values);
+		LLS_PUSH(value, (LLS*) values);
 		count++;
 	}
 
@@ -2683,7 +2683,7 @@ static int generate_items( SYN symbol, LLS right, LLS items, NOD rse)
 		item->itm_type = item_value;
 		item->itm_value = make_field(field, context);
 		expand_edit_string(item->itm_value, item);
-		LLS_PUSH(item, items);
+		LLS_PUSH(item, (LLS*) items);
 		count++;
 	}
 
@@ -2953,7 +2953,7 @@ static NOD make_assignment( NOD target, NOD initial, LLS right)
 		prompt->nod_arg[e_edt_name] = (NOD) field->fld_name->sym_string;
 		if (initial) {
 			prompt->nod_count = 1;
-			prompt->nod_arg[e_edt_input] = expand_expression(initial, right);
+			prompt->nod_arg[e_edt_input] = expand_expression((SYN) initial, right);
 		}
 	}
 	else {
@@ -3378,7 +3378,7 @@ static FLD resolve( SYN node, LLS stack, CTX * out_context)
 		case CTX_RELATION:
 			if (context->ctx_primary) {
 				*out_context = context = context->ctx_primary;
-				if (!compare_names(node->syn_arg[0], context->ctx_symbol))
+				if (!compare_names((NAM) node->syn_arg[0], context->ctx_symbol))
 					break;
 			}
 			relation = context->ctx_relation;

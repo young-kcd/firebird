@@ -106,7 +106,7 @@ void	API_ROUTINE gds__prefix_msg(TEXT*, TEXT*);
 SLONG	API_ROUTINE gds__get_prefix(SSHORT, TEXT*);
 STATUS	API_ROUTINE gds__print_status(STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, UCHAR*, USHORT*, USHORT*);
-USHORT	API_ROUTINE gds__parse_bpb2(USHORT, UCHAR*, USHORT*, USHORT*,
+USHORT	API_ROUTINE gds__parse_bpb2(USHORT, UCHAR*, SSHORT*, SSHORT*,
 									  USHORT*, USHORT*);
 SLONG	API_ROUTINE gds__ftof(SCHAR*, USHORT GDS_VAL(length1), SCHAR*,
 							   USHORT GDS_VAL(length2));

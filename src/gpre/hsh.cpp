@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//	$Id: hsh.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include "../gpre/gpre.h"
@@ -227,7 +227,7 @@ void HSH_remove( register SYM symbol)
 //		Returns the hash function of a string.
 //  
 
-static hash( register SCHAR * string)
+static int hash( register SCHAR * string)
 {
 	register SLONG value;
 	SCHAR c;

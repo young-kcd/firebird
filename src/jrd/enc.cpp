@@ -8,9 +8,14 @@
 static TEXT *local_crypt(TEXT *, TEXT *);
 #endif
 
+#if defined(HAVE_UNISTD_H) && !defined(NO_CRYPT)
+#include <unistd.h>
+#define CRYPT_FUNC	crypt
+#else
 #ifndef NO_CRYPT
 extern TEXT *crypt();
 #define CRYPT_FUNC	crypt
+#endif
 #endif
 
 

@@ -46,7 +46,7 @@ static void extract_procedure(IB_FILE *, TEXT *, USHORT, DBB, SLONG *);
 extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
 
 static SCHAR db_items[] =
-	{ gds__info_page_size, gds__info_allocation, gds__info_end };
+	{ gds_info_page_size, gds_info_allocation, gds_info_end };
 
 
 int CMD_check_ready(void)
@@ -191,7 +191,7 @@ void CMD_extract( SYN node)
 	IB_FILE *file;
 	int *blob;
 
-	file = EXEC_open_output(node->syn_arg[1]);
+	file = (IB_FILE*) EXEC_open_output((NOD) node->syn_arg[1]);
 
 	if (list = node->syn_arg[0])
 		for (ptr = list->syn_arg, end = ptr + list->syn_count; ptr < end;
@@ -200,7 +200,7 @@ void CMD_extract( SYN node)
 			if (!(database = proc->qpr_database))
 				database = QLI_databases;
 			name = proc->qpr_name;
-			if (!(blob = PRO_fetch_procedure(database, name->nam_string))) {
+			if (!(blob = (int*) PRO_fetch_procedure(database, name->nam_string))) {
 				ERRQ_msg_put(89,	/* Msg89 Procedure %s not found in database %s */
 							 name->nam_string,
 							 database->dbb_symbol->sym_string, NULL, NULL,
@@ -214,7 +214,7 @@ void CMD_extract( SYN node)
 		CMD_check_ready();
 		for (database = QLI_databases; database;
 			 database =
-			 database->dbb_next) PRO_scan(database, extract_procedure, file);
+			 database->dbb_next) PRO_scan(database, (void (*)()) extract_procedure, file);
 	}
 
 #ifdef WIN_NT
@@ -247,7 +247,7 @@ void CMD_finish( SYN node)
 	}
 
 	for (i = 0; i < node->syn_count; i++)
-		MET_finish(node->syn_arg[i]);
+		MET_finish((DBB) node->syn_arg[i]);
 }
 
 
@@ -350,7 +350,7 @@ void CMD_set( SYN node)
 			length =
 				MIN(string->con_desc.dsc_length,
 					sizeof(QLI_default_password));
-			strncpy(QLI_default_password, string->con_data, length);
+			strncpy(QLI_default_password, (char*) string->con_data, length);
 			QLI_default_password[length] = 0;
 			break;
 
@@ -358,7 +358,7 @@ void CMD_set( SYN node)
 			string = (CON) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
 				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	/* Msg86 substitute prompt string too long */
-			strncpy(QLI_prompt_string, string->con_data,
+			strncpy(QLI_prompt_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_prompt_string[string->con_desc.dsc_length] = 0;
 			break;
@@ -367,21 +367,21 @@ void CMD_set( SYN node)
 			string = (CON) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
 				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	/* Msg87 substitute prompt string too long */
-			strncpy(QLI_cont_string, string->con_data,
+			strncpy(QLI_cont_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_cont_string[string->con_desc.dsc_length] = 0;
 			break;
 
 		case set_matching_language:
 			if (QLI_matching_language)
-				ALLQ_release(QLI_matching_language);
+				ALLQ_release((FRB) QLI_matching_language);
 			if (!(string = (CON) value)) {
 				QLI_matching_language = NULL;
 				break;
 			}
 			QLI_matching_language =
 				(CON) ALLOCPV(type_con, string->con_desc.dsc_length);
-			strncpy(QLI_matching_language->con_data, string->con_data,
+			strncpy((char*)QLI_matching_language->con_data, (char*)string->con_data,
 					string->con_desc.dsc_length);
 			QLI_matching_language->con_desc.dsc_dtype = dtype_text;
 			QLI_matching_language->con_desc.dsc_address =
@@ -400,7 +400,7 @@ void CMD_set( SYN node)
 			string = (CON) value;
 			length =
 				MIN(string->con_desc.dsc_length, sizeof(QLI_default_user));
-			strncpy(QLI_default_user, string->con_data, length);
+			strncpy(QLI_default_user, (char*)string->con_data, length);
 			QLI_default_user[length] = 0;
 			break;
 

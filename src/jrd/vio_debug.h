@@ -32,6 +32,6 @@
 #define DEBUG_TRACE_ALL		7
 #define DEBUG_TRACE_ALL_INFO	8
 
-static debug_flag;
+static int debug_flag;
 
 #endif /* _JRD_VIO_DEBUG_H_ */

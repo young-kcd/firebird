@@ -17,6 +17,9 @@ s/yychar/DSQL_yychar/g
 s/yyerrflag/DSQL_yyerrflag/g
 s/yyparse/dsql_yyparse/g
 s/static int dsql_yyparse/int dsql_yyparse/g
+s/yyssp/DSQL_yyssp/g
+s/yysslim/DSQL_yysslim/g
+s/yyss/DSQL_yyss/g
 /^#ident/d
 s/^static TOK tokens/static CONST TOK FAR_VARIABLE tokens/
 s/^__YYSCLASS yytabelem/__YYSCLASS CONST yytabelem FAR_VARIABLE/
@@ -26,6 +29,7 @@ s/^#include *<values.h> *$//g
 s/yylex(void)/yylex(USHORT, USHORT, USHORT, BOOLEAN *)/g
 s/yylex()/yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g
 s/dsql_yyparse(void);/dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN *);/g
+s/dsql_yyparse __P((void));/dsql_yyparse __P((USHORT, USHORT, USHORT, BOOLEAN *));/g
 s/dsql_yyparse(void)/dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)/g
 s/dsql_yyparse()/dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)/g
 s/YYLEX()/YYLEX(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g

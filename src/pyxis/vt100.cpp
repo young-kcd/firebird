@@ -44,9 +44,30 @@
 #include <fcntl.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 static USHORT width, height, graphics_mode;
-static int clear_window(), disable(), fini(), get_char(), text(),
-update_window();
+
+static int text(WIN , UCHAR*, SSHORT , SSHORT , SSHORT , USHORT);
+static int clear_window(WIN );
+static int disable(WIN );
+static int disable_forms(WIN);
+static int enable_forms(WIN );
+static int get_char(WIN , int , int );
+static int get_input(WIN , UCHAR *);
+static int get_size(WIN , int *, int *);
+static int position(WIN , SSHORT , SSHORT );
+static int read_char(WIN );
+static int update_window(WIN , int , int );
+static int fini(WIN );
 
 typedef struct seq {
 	UCHAR seq_key;
@@ -118,8 +139,7 @@ static UCHAR keypad[256], keypad_equiv[] = {
 };
 
 
-VT100_create_window(window)
-	 WIN window;
+int VT100_create_window(WIN window)
 {
 /**************************************
  *
@@ -138,12 +158,12 @@ VT100_create_window(window)
 
 /* Populate window with action routines */
 
-	window->win_clear = clear_window;
-	window->win_disable = disable;
-	window->win_fini = fini;
-	window->win_getchar = get_char;
+	window->win_clear = (int (*)()) clear_window;
+	window->win_disable = (int (*)()) disable;
+	window->win_fini = (int (*)()) fini;
+	window->win_getchar = (int (*)()) get_char;
 	window->win_text = text;
-	window->win_update = update_window;
+	window->win_update = (int (*)()) update_window;
 
 	if ((int) (window->win_input = (int *) open("/dev/tty", O_RDWR, 0660)) <
 		0)
@@ -181,8 +201,7 @@ VT100_create_window(window)
 }
 
 
-static clear_window(window)
-	 WIN window;
+static int clear_window(WIN window)
 {
 /**************************************
  *
@@ -205,8 +224,7 @@ static clear_window(window)
 }
 
 
-static disable(window)
-	 WIN window;
+static int disable(WIN window)
 {
 /**************************************
  *
@@ -225,8 +243,7 @@ static disable(window)
 
 
 #ifndef LINUX
-static disable_forms(window)
-	 WIN window;
+static int disable_forms(WIN window)
 {
 /**************************************
  *
@@ -243,7 +260,7 @@ static disable_forms(window)
 #ifndef VMS
 	struct sgttyb cruft;
 
-	n = ioctl(window->win_input, TIOCGETP, &cruft);
+	n = ioctl((int) window->win_input, TIOCGETP, &cruft);
 
 /* If CBREAK is not supported by ioctl, use RAW.  (for HP)  */
 
@@ -254,7 +271,7 @@ static disable_forms(window)
 #endif
 
 	cruft.sg_flags |= ECHO;		/* ECHO on */
-	n = ioctl(window->win_input, TIOCSETP, &cruft);
+	n = ioctl((int) window->win_input, TIOCSETP, &cruft);
 #endif
 
 /* Set normal characters, numeric keypad, non-graphics */
@@ -265,8 +282,7 @@ static disable_forms(window)
 	window->win_current_mode = 0;
 }
 #else /** Linux Stub **/
-static disable_forms(window)
-	 WIN window;
+static int disable_forms(WIN window)
 {
 /**************************************
  *
@@ -284,8 +300,7 @@ static disable_forms(window)
 
 
 #ifndef LINUX
-static enable_forms(window)
-	 WIN window;
+static int enable_forms(WIN window)
 {
 /**************************************
  *
@@ -302,7 +317,7 @@ static enable_forms(window)
 #ifndef VMS
 	struct sgttyb cruft;
 
-	n = ioctl(window->win_input, TIOCGETP, &cruft);
+	n = ioctl((int) window->win_input, TIOCGETP, &cruft);
 
 /* If CBREAK is not supported by ioctl, use RAW.  (for HP)  */
 
@@ -313,7 +328,7 @@ static enable_forms(window)
 #endif
 
 	cruft.sg_flags &= ~ECHO;	/* ECHO off */
-	n = ioctl(window->win_input, TIOCSETP, &cruft);
+	n = ioctl((int) window->win_input, TIOCSETP, &cruft);
 #endif
 
 	window->win_current_mode = 0;
@@ -321,8 +336,7 @@ static enable_forms(window)
 	clear_window(window);
 }
 #else  /** stub function for LINUX **/
-static enable_forms(window)
-	 WIN window;
+static int enable_forms(WIN window)
 {
 /**************************************
  *
@@ -338,8 +352,7 @@ static enable_forms(window)
 #endif
 
 
-static fini(window)
-	 WIN window;
+static int fini(WIN window)
 {
 /**************************************
  *
@@ -360,8 +373,7 @@ static fini(window)
 }
 
 
-static get_char(window, x, y)
-	 WIN window;
+static int get_char(WIN window, int x, int y)
 {
 /**************************************
  *
@@ -423,9 +435,7 @@ static get_char(window, x, y)
 }
 
 
-static get_input(window, buffer)
-	 WIN window;
-	 UCHAR *buffer;
+static int get_input(WIN window, UCHAR *buffer)
 {
 /**************************************
  *
@@ -480,9 +490,7 @@ static get_input(window, buffer)
 }
 
 
-static get_size(window, width, height)
-	 WIN window;
-	 int *width, *height;
+static int get_size(WIN window, int *width, int *height)
 {
 /**************************************
  *
@@ -502,7 +510,7 @@ static get_size(window, width, height)
 	position(window, 999, 999);
 	fputs("\33[6n", (FILE *) window->win_output);
 	fflush((FILE *) window->win_output);
-	n = get_input(window, buffer);
+	n = get_input(window, (UCHAR*) buffer);
 	buffer[n] = 0;
 	n = sscanf(buffer, "\33[%d;%dR", height, width);
 
@@ -510,9 +518,7 @@ static get_size(window, width, height)
 }
 
 
-static position(window, x, y)
-	 WIN window;
-	 SSHORT x, y;
+static int position(WIN window, SSHORT x, SSHORT y)
 {
 /**************************************
  *
@@ -536,8 +542,7 @@ static position(window, x, y)
 }
 
 
-static read_char(window)
-	 WIN window;
+static int read_char(WIN window)
 {
 /**************************************
  *
@@ -551,7 +556,7 @@ static read_char(window)
  **************************************/
 	SCHAR c;
 
-	if (read(window->win_input, &c, 1) <= 0)
+	if (read((int) window->win_input, &c, 1) <= 0)
 		return 0;
 
 	return c;
@@ -560,11 +565,7 @@ static read_char(window)
 
 
 
-static text(window, string, length, x, y, mode)
-	 WIN window;
-	 UCHAR *string;
-	 SSHORT length, x, y;
-	 USHORT mode;
+static int text(WIN window, UCHAR*string, SSHORT length, SSHORT x, SSHORT y, USHORT mode)
 {
 /**************************************
  *
@@ -636,9 +637,7 @@ static text(window, string, length, x, y, mode)
 }
 
 
-static update_window(window, x, y)
-	 WIN window;
-	 int x, y;
+static int update_window(WIN window, int x, int y)
 {
 /**************************************
  *

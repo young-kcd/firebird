@@ -44,6 +44,15 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/thd_proto.h"
 
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+
 #if !(defined REQUESTER && defined SUPERCLIENT)
 #include "../jrd/intlobj.h"
 #endif
@@ -203,7 +212,6 @@ static CONST TEXT *CONST months[] = {
 #if !defined (NATIVE_QUAD)
 #include "../jrd/quad.cpp"
 #endif
-
 
 #pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
 typedef void (*pfn_cvt_private_cludge) (int, int);

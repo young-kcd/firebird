@@ -41,6 +41,10 @@
 #include "../jrd/isc_s_proto.h"
 #include "../lock/prtv3_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #if (defined DELTA || defined sgi || defined ultrix)
 #include <sys/types.h>
 #endif
@@ -382,7 +386,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #else
 	LOCK_size_mapped = DEFAULT_SIZE;	/* length == 0 not supported by all non-UNIX */
 #endif
-	LOCK_header = (LHB) ISC_map_file(status_vector, lock_file, prt_lock_init, 0, -LOCK_size_mapped,	/* Negative to NOT truncate file */
+	LOCK_header = (LHB) ISC_map_file(status_vector, lock_file, (void (*)(void*, sh_mem*, int)) prt_lock_init, 0, -LOCK_size_mapped,	/* Negative to NOT truncate file */
 									 &shmem_data);
 
 	sprintf(expanded_lock_filename, lock_file,
@@ -616,7 +620,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #if !(defined WIN_NT || defined NETWARE_386)
 	if (!sw_nobridge) {
 		FPRINTF(outfile, "\nBRIDGE RESOURCES\n\n");
-		V3_lock_print(orig_argc, orig_argv);
+		V3_lock_print(orig_argc, (UCHAR**) orig_argv);
 	}
 #endif
 
@@ -647,7 +651,7 @@ static void prt_lock_activity(
 	ULONG factor;
 
 	clock = time(NULL);
-	d = *localtime(&clock);
+	d = *localtime((time_t*)&clock);
 
 	FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
@@ -687,7 +691,7 @@ static void prt_lock_activity(
 #endif
 #endif
 		clock = time(NULL);
-		d = *localtime(&clock);
+		d = *localtime((time_t*)&clock);
 
 		FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
@@ -959,7 +963,7 @@ static void prt_lock(
 				(c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
 				*p++ = c;
 			else {
-				sprintf(p, "<%d>", c);
+				sprintf((char*) p, "<%d>", c);
 				while (*p)
 					p++;
 			}
@@ -1122,12 +1126,12 @@ static void prt_owner_wait_cycle(
 		waiters->waitque_entry[waiters->waitque_depth++] = REL_PTR(owner);
 
 		FPRINTF(outfile, "\n");
-		owner_request = ABS_PTR(owner->own_pending_request);
+		owner_request = (LRQ) ABS_PTR(owner->own_pending_request);
 		assert(owner_request->lrq_type == type_lrq);
 		owner_conversion =
 			(owner_request->lrq_state > LCK_null) ? TRUE : FALSE;
 
-		lock = ABS_PTR(owner_request->lrq_lock);
+		lock = (LBL) ABS_PTR(owner_request->lrq_lock);
 		assert(lock->lbl_type == type_lbl);
 
 		counter = 0;
@@ -1169,7 +1173,7 @@ static void prt_owner_wait_cycle(
 					(owner_request->lrq_requested,
 					 lock_request->lrq_state)) continue;
 			};
-			lock_owner = ABS_PTR(lock_request->lrq_owner);
+			lock_owner = (OWN) ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
 								 waiters);
 		}

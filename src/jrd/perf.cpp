@@ -91,7 +91,7 @@ extern clock_t times();
 #endif
 
 
-API_ROUTINE perf_format(
+API_ROUTINE int perf_format(
 						PERF * before,
 						PERF * after,
 						SCHAR * string, SCHAR * buffer, SSHORT * buf_len)

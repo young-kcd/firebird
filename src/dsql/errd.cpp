@@ -24,7 +24,9 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
+#ifdef HAVE_STDARG_H
 #include <stdarg.h>
+#endif
 
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"

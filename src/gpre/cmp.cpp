@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.1.1.1 2001-05-23 13:25:30 tamlin Exp $
+//	$Id: cmp.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include <stdlib.h>
@@ -329,6 +329,7 @@ void CMP_compile_request( register REQ request)
 //		override of the field, -1 is returned.
 //  
 
+int
 CMP_display_code(FINT display, REF reference)
 {
 	int code;

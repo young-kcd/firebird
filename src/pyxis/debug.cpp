@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: debug.cpp,v 1.1.1.1 2001-05-23 13:26:33 tamlin Exp $
+ * $Id: debug.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
  * Revision 1.2  2000/11/24 17:23:02  fsg
  * Another little fix in pyxis/debug.c that nobody
  * ever will notice :-)
@@ -29,6 +29,8 @@
 
 #include "../pyxis/pyxis.h"
 #include "../pyxis/scr.h"
+
+#include <stdio.h>
 
 #define INDENT	2
 
@@ -70,9 +72,7 @@ static ATT_N special_attributes[] = {
 
 
 
-PYXIS_print(object, level)
-	 OBJ object;
-	 USHORT level;
+int PYXIS_print(OBJ object, USHORT level)
 {
 /**************************************
  *
@@ -128,9 +128,7 @@ PYXIS_print(object, level)
 }
 
 
-PYXIS_print_screen(screen, text)
-	 SCR screen;
-	 UCHAR *text;
+int PYXIS_print_screen(SCR screen, UCHAR *text)
 {
 /**************************************
  *

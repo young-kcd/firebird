@@ -1907,8 +1907,8 @@ static RTN walk_relation(TDBB tdbb, VDR control, REL relation)
 		TEXT s[64], *msg;
 		tdbb->tdbb_setjmp = (UCHAR *) old_env;
 		msg = (relation->rel_name) ?
-			"bugcheck during scan of table %d (%s)" :
-			"bugcheck during scan of table %d";
+			(TEXT*)"bugcheck during scan of table %d (%s)" :
+			(TEXT*)"bugcheck during scan of table %d";
 		sprintf(s, msg, relation->rel_id, relation->rel_name);
 		gds__log(s);
 #ifdef VAL_VERBOSE

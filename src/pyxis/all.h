@@ -52,4 +52,8 @@ typedef struct hnk {
     struct hnk	*hnk_next;	/* next memory hunk in structure */
 } *HNK;
 
+int PYXIS_free(SCHAR *memory);
+int PYXIS_release(register FRB block);
+
+
 #endif /* _PYXIS_ALL_H_ */

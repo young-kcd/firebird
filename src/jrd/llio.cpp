@@ -30,6 +30,18 @@
 #include "../jrd/iberr_proto.h"
 #include "../jrd/llio_proto.h"
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef NETWARE_386
 #include <fcntl.h>
 #include <share.h>
@@ -617,7 +629,12 @@ int LLIO_seek(
 			whence = SEEK_END;
 			break;
 		}
-		if (lseek((int) file_desc, offset, (int) whence) == -1) {
+
+		/* Darwin - Add the offset cast because the types are different
+ 		 * between the implicit declaration and the actual declaration,
+		 * causing problems with the stack frame, etc.  Bad.
+ 		 */
+		if (lseek((int) file_desc, LSEEK_OFFSET_CAST offset, (int) whence) == -1) {
 			if (status_vector)
 				io_error(status_vector, "lseek", filename, isc_io_access_err);
 			return FAILURE;

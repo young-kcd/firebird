@@ -33,6 +33,10 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -858,9 +862,10 @@ extern struct tgbl *gdgbl;
 #endif
 
 #if defined(__cplusplus)
+// I had funnies with this cast
 #define EXIT(code)	            {  tdgbl->exit_code = ((volatile int)code);          \
 												if (tdgbl->burp_env != NULL)        \
-											  		LONGJMP(reinterpret_cast<jmp_buf&>(const_cast<UCHAR*>(tdgbl->burp_env)), 1);  }
+											  		LONGJMP((jmp_buf)(const_cast<UCHAR*>(tdgbl->burp_env)), 1);  }
 #else
 #define EXIT(code)	            {  tdgbl->exit_code = ((volatile int)code);          \
 												if (tdgbl->burp_env != NULL)        \

@@ -23,6 +23,10 @@
 
 #include "../pipe/pipe.h"
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 #define BLKDEF(type, root, tail) sizeof (struct root), tail,
 static struct {
     SSHORT	typ_root_length;
@@ -52,7 +56,7 @@ UCHAR *ALLP_alloc (
  *
  **************************************/
 
-return gds__alloc (size);
+return (UCHAR*) gds__alloc (size);
 }
 
 BLK ALLP_block (
@@ -125,5 +129,5 @@ void ALLP_release (
  *
  **************************************/
 
-ALLP_free (block);
+ALLP_free ((UCHAR*) block);
 }

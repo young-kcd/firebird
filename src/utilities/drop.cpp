@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: drop.cpp,v 1.1.1.1 2001-05-23 13:26:41 tamlin Exp $
+$Id: drop.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 */
 
 #include "../jrd/ib_stdio.h"
@@ -159,7 +159,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		shut_manager("lock manager");
 #endif
 
-#if !(defined WIN_NT || defined NETWARE_386 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC )
+#if !(defined WIN_NT || defined NETWARE_386 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN)
 	if (!sw_nobridge) {
 		ib_printf("\nBRIDGE RESOURCES\n\n");
 		V3_drop(orig_argc, orig_argv);
@@ -302,6 +302,9 @@ static void remove_resource(
 	SLONG length, key, semid;
 	TEXT expanded_filename[MAXPATHLEN];
 	int pid;
+	#ifdef DARWIN
+	union  semun semctlArg;
+	#endif
 
 #ifdef MANAGER_PROCESS
 /* Shutdown lock manager process so that shared memory
@@ -333,7 +336,12 @@ static void remove_resource(
 		return;
 	}
 
+	#ifdef DARWIN
+	semctlArg.val = 0;
+	if (semctl(semid, sem_count, IPC_RMID, semctlArg) == -1)
+	#else
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
+	#endif
 		ib_printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
 				  label, errno);
 	else

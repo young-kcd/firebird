@@ -68,6 +68,14 @@
 #include <sys/param.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
 #ifndef NOFILE
 #define NOFILE     20
 #endif

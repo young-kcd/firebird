@@ -39,6 +39,10 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef sparc
 #ifndef SOLARIS
 #include <vfork.h>
@@ -79,10 +83,10 @@ static void transaction_state(NOD, DBB);
 #define COUNT_ITEMS	4
 
 static SCHAR count_info[] = {
-	gds__info_req_select_count,
-	gds__info_req_insert_count,
-	gds__info_req_update_count,
-	gds__info_req_delete_count
+	gds_info_req_select_count,
+	gds_info_req_insert_count,
+	gds_info_req_update_count,
+	gds_info_req_delete_count
 };
 
 
@@ -105,7 +109,7 @@ void EXEC_abort(void)
 	for (request = QLI_requests; request; request = request->req_next)
 		if (request->req_handle)
 			gds__unwind_request(status_vector,
-								GDS_REF(request->req_handle), 0);
+								(void**) GDS_REF(request->req_handle), 0);
 
 	QLI_abort = TRUE;
 }
@@ -249,18 +253,18 @@ void *EXEC_open_blob( NOD node)
 /* Format blob parameter block */
 
 	p = bpb;
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_type;
+	*p++ = gds_bpb_version1;
+	*p++ = gds_bpb_source_type;
 	*p++ = 2;
 	*p++ = desc->dsc_sub_type;
 	*p++ = desc->dsc_sub_type >> 8;
-	*p++ = gds__bpb_target_type;
+	*p++ = gds_bpb_target_type;
 	*p++ = 1;
 	*p++ = 1;
 
 #if (defined JPN_EUC || defined JPN_SJIS)
 	if (desc->dsc_sub_type == 1) {
-		*p++ = gds__bpb_target_interp;
+		*p++ = gds_bpb_target_interp;
 		*p++ = 2;
 		*p++ = QLI_interp;
 		*p++ = QLI_interp >> 8;
@@ -273,9 +277,9 @@ void *EXEC_open_blob( NOD node)
 						GDS_REF(dbb->dbb_handle),
 						GDS_REF(dbb->dbb_transaction),
 						GDS_REF(blob),
-						GDS_VAL(desc->dsc_address),
+						(GDS_QUAD*)GDS_VAL(desc->dsc_address),
 						bpb_length,
-						bpb)) ERRQ_database_error(dbb, status_vector);
+						(char*) bpb)) ERRQ_database_error(dbb, status_vector);
 
 	return blob;
 }
@@ -302,7 +306,7 @@ struct file *EXEC_open_output(NOD node)
 /* Evaluate filename and copy to a null terminated string */
 
 	desc = EVAL_value(node->nod_arg[e_out_file]);
-	l = MOVQ_get_string(desc, &p, temp, sizeof(temp));
+	l = MOVQ_get_string(desc, &p, (VARY*) temp, sizeof(temp));
 	q = filename;
 	if (l)
 		do
@@ -406,7 +410,7 @@ DSC *EXEC_receive(MSG message, PAR parameter)
 	request = message->msg_request;
 
 	if (gds__receive(status_vector,
-					 GDS_REF(request->req_handle),
+					 (void**) GDS_REF(request->req_handle),
 					 message->msg_number,
 					 message->msg_length,
 					 GDS_VAL(message->msg_buffer),
@@ -439,7 +443,7 @@ void EXEC_send( MSG message)
 
 	map_data(message);
 	if (gds__send(status_vector,
-				  GDS_REF(request->req_handle),
+				  (void**) GDS_REF(request->req_handle),
 				  message->msg_number,
 				  message->msg_length,
 				  GDS_VAL(message->msg_buffer),
@@ -465,7 +469,7 @@ void EXEC_start_request( REQ request, MSG message)
 	if (message) {
 		map_data(message);
 		if (!gds__start_and_send(status_vector,
-								 GDS_REF(request->req_handle),
+								 (void**) GDS_REF(request->req_handle),
 								 GDS_REF(request->req_database->
 										 dbb_transaction),
 								 message->msg_number, message->msg_length,
@@ -473,7 +477,7 @@ void EXEC_start_request( REQ request, MSG message)
 	}
 	else
 		if (!gds__start_request(status_vector,
-								GDS_REF(request->req_handle),
+								(void**) GDS_REF(request->req_handle),
 								GDS_REF(request->req_database->
 										dbb_transaction), 0)) return;
 
@@ -716,12 +720,12 @@ static int copy_blob( NOD value, PAR parameter)
 /* Format blob parameter block for the existing blob */
 
 	p = bpb;
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_type;
+	*p++ = gds_bpb_version1;
+	*p++ = gds_bpb_source_type;
 	*p++ = 2;
 	*p++ = from_desc->dsc_sub_type;
 	*p++ = from_desc->dsc_sub_type >> 8;
-	*p++ = gds__bpb_target_type;
+	*p++ = gds_bpb_target_type;
 	*p++ = 2;
 	*p++ = to_desc->dsc_sub_type;
 	*p++ = to_desc->dsc_sub_type >> 8;
@@ -731,8 +735,8 @@ static int copy_blob( NOD value, PAR parameter)
 	if ((to_desc->dsc_sub_type == 1) &&
 		(to_desc->dsc_scale != from_desc->dsc_scale)) {
 		p2 = bpb2x;
-		*p2++ = gds__bpb_version1;
-		*p2++ = gds__bpb_source_interp;
+		*p2++ = gds_bpb_version1;
+		*p2++ = gds_bpb_source_interp;
 		*p2++ = 2;
 		*p2++ = from_desc->dsc_scale;
 		*p2++ = from_desc->dsc_scale >> 8;
@@ -753,19 +757,19 @@ static int copy_blob( NOD value, PAR parameter)
 	if (gds__create_blob(status_vector,
 						 GDS_REF(to_dbb->dbb_handle),
 						 GDS_REF(to_dbb->dbb_transaction),
-						 GDS_REF(to_blob), GDS_VAL(to_desc->dsc_address)))
+						 (void**) GDS_REF(to_blob), (GDS__QUAD*) GDS_VAL(to_desc->dsc_address)))
 #endif
 		ERRQ_database_error(to_dbb, status_vector);
 
 	if (gds__open_blob2(status_vector,
 						GDS_REF(from_dbb->dbb_handle),
 						GDS_REF(from_dbb->dbb_transaction),
-						GDS_REF(from_blob),
-						GDS_VAL(from_desc->dsc_address),
+						(void**) GDS_REF(from_blob),
+						(GDS__QUAD*) GDS_VAL(from_desc->dsc_address),
 						bpb_length,
-						bpb)) ERRQ_database_error(from_dbb, status_vector);
+						(char*) bpb)) ERRQ_database_error(from_dbb, status_vector);
 
-	gds__blob_size(&from_blob, &size, &segment_count, &max_segment);
+	gds__blob_size((SLONG*) &from_blob, &size, &segment_count, &max_segment);
 
 	if (max_segment < sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
@@ -773,7 +777,7 @@ static int copy_blob( NOD value, PAR parameter)
 	}
 	else {
 		buffer_length = max_segment;
-		buffer = gds__alloc(buffer_length);
+		buffer = (UCHAR*) gds__alloc(buffer_length);
 #ifdef DEBUG_GDS_ALLOC
 		/* We don't care about QLI specific memory leaks for V4.0 */
 		gds_alloc_flag_unfreed((void *) buffer);	/* QLI: don't care */
@@ -782,23 +786,23 @@ static int copy_blob( NOD value, PAR parameter)
 	}
 
 	while (!gds__get_segment(status_vector,
-							 GDS_REF(from_blob),
+							 (void**) GDS_REF(from_blob),
 							 GDS_REF(length),
 							 buffer_length,
-							 GDS_VAL(buffer)))
+							 (char*) GDS_VAL(buffer)))
 			if (gds__put_segment(status_vector,
-								 GDS_REF(to_blob),
+								 (void**) GDS_REF(to_blob),
 								 length,
-								 GDS_VAL(buffer)))
+								 (char*) GDS_VAL(buffer)))
 				ERRQ_database_error(to_dbb, status_vector);
 
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, GDS_REF(from_blob)))
+	if (gds__close_blob(status_vector, (void**) GDS_REF(from_blob)))
 		ERRQ_database_error(from_dbb, status_vector);
 
-	if (gds__close_blob(status_vector, GDS_REF(to_blob)))
+	if (gds__close_blob(status_vector, (void**) GDS_REF(to_blob)))
 		ERRQ_database_error(to_dbb, status_vector);
 
 	return TRUE;
@@ -841,10 +845,10 @@ static void execute_abort( NOD node)
 
 	if (node->nod_count) {
 		l =
-			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr, temp,
+			MOVQ_get_string(EVAL_value(node->nod_arg[0]), (TEXT**) &ptr, (VARY*) temp,
 							sizeof(temp));
-		MOVQ_terminate(ptr, msg, l, sizeof(msg));
-		ERRQ_error(40, msg, NULL, NULL, NULL, NULL);	/* Msg40 Request terminated by statement: %s */
+		MOVQ_terminate((SCHAR*) ptr, (SCHAR*) msg, l, sizeof(msg));
+		ERRQ_error(40, (TEXT*) msg, NULL, NULL, NULL, NULL);	/* Msg40 Request terminated by statement: %s */
 	}
 
 	IBERROR(41);				/* Msg41 Request terminated by statement */
@@ -928,7 +932,7 @@ static void execute_for( NOD node)
    send a message along with it. */
 
 	if (request = (REQ) node->nod_arg[e_for_request])
-		EXEC_start_request(request, node->nod_arg[e_for_send]);
+		EXEC_start_request(request, (MSG) node->nod_arg[e_for_send]);
 	else if (message = (MSG) node->nod_arg[e_for_send])
 		EXEC_send(message);
 
@@ -942,7 +946,7 @@ static void execute_for( NOD node)
    true. */
 
 	while (TRUE) {
-		desc = EXEC_receive(message, node->nod_arg[e_for_eof]);
+		desc = EXEC_receive(message, (PAR) node->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
 		EXEC_execute(node->nod_arg[e_for_statement]);
@@ -1041,11 +1045,11 @@ static void execute_print( NOD node)
  **************************************/
 
 	if (node->nod_arg[e_prt_header]) {
-		FMT_put(node->nod_arg[e_prt_header], node->nod_arg[e_prt_output]);
+		FMT_put((TEXT*) node->nod_arg[e_prt_header], (PRT) node->nod_arg[e_prt_output]);
 		node->nod_arg[e_prt_header] = NULL;
 	}
 
-	FMT_print(node->nod_arg[e_prt_list], node->nod_arg[e_prt_output]);
+	FMT_print(node->nod_arg[e_prt_list], (PRT) node->nod_arg[e_prt_output]);
 }
 
 
@@ -1099,7 +1103,7 @@ static void execute_store( NOD node)
    send a message along with it. */
 
 	if (request = (REQ) node->nod_arg[e_sto_request])
-		EXEC_start_request(request, node->nod_arg[e_sto_send]);
+		EXEC_start_request(request, (MSG) node->nod_arg[e_sto_send]);
 	else if (message)
 		EXEC_send(message);
 
@@ -1165,7 +1169,7 @@ static void print_counts( REQ request)
 	SCHAR count_buffer[COUNT_ITEMS * 7 + 1], *c;
 
 	if (gds__request_info(status_vector,
-						  GDS_REF(request->req_handle),
+						  (void**) GDS_REF(request->req_handle),
 						  0,
 						  sizeof(count_info),
 						  count_info,
@@ -1173,27 +1177,27 @@ static void print_counts( REQ request)
 
 /* print out the counts of any records affected */
 
-	for (c = count_buffer; *c != gds__info_end; c += length) {
+	for (c = count_buffer; *c != gds_info_end; c += length) {
 		item = *c++;
-		length = gds__vax_integer(c, 2);
+		length = gds__vax_integer((UCHAR*) c, 2);
 		c += 2;
-		number = gds__vax_integer(c, length);
+		number = gds__vax_integer((UCHAR*) c, length);
 
 		if (number)
 			switch (item) {
-			case gds__info_req_select_count:
+			case gds_info_req_select_count:
 				ib_printf("\nrecords selected: %ld\n", number);
 				break;
 
-			case gds__info_req_insert_count:
+			case gds_info_req_insert_count:
 				ib_printf("records inserted: %ld\n", number);
 				break;
 
-			case gds__info_req_update_count:
+			case gds_info_req_update_count:
 				ib_printf("records updated: %ld\n", number);
 				break;
 
-			case gds__info_req_delete_count:
+			case gds_info_req_delete_count:
 				ib_printf("records deleted: %ld\n", number);
 				break;
 

@@ -236,8 +236,8 @@ int MOVQ_compare( DSC * arg1, DSC * arg2)
 /* Handle mixed string comparisons */
 
 	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying) {
-		length = MOVQ_get_string(arg1, &p1, 0, 0);
-		length2 = MOVQ_get_string(arg2, &p2, 0, 0);
+		length = MOVQ_get_string(arg1, (TEXT**) &p1, 0, 0);
+		length2 = MOVQ_get_string(arg2, (TEXT**) &p2, 0, 0);
 		fill = length - length2;
 		if (length >= length2) {
 			if (length2)
@@ -830,7 +830,7 @@ int MOVQ_get_string( DSC * desc, TEXT ** address, VARY * temp, USHORT length)
 
 	if (desc->dsc_dtype == dtype_cstring) {
 		*address = (TEXT *) desc->dsc_address;
-		return MIN(strlen(desc->dsc_address), desc->dsc_length - 1);
+		return MIN(strlen((char*)desc->dsc_address), desc->dsc_length - 1);
 	}
 
 /* No luck -- convert value to varying string. */
@@ -900,8 +900,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-			length = MOVQ_get_string(from, &ptr, 0, 0);
-			string_to_date(ptr, length, to->dsc_address);
+			length = MOVQ_get_string(from, (TEXT**) &ptr, 0, 0);
+			string_to_date((TEXT*) ptr, length, (long int*)to->dsc_address);
 			return;
 		case dtype_sql_date:
 			((SLONG *) to->dsc_address)[0] = *(SLONG *) from->dsc_address;
@@ -921,8 +921,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		case dtype_text:
 			{
 				SLONG date[2];
-				length = MOVQ_get_string(from, &ptr, 0, 0);
-				string_to_date(ptr, length, date);
+				length = MOVQ_get_string(from, (TEXT**)&ptr, 0, 0);
+				string_to_date((TEXT*) ptr, length, (long int*)date);
 				((SLONG *) to->dsc_address)[0] = date[0];
 			}
 			return;
@@ -942,8 +942,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		case dtype_text:
 			{
 				SLONG date[2];
-				length = MOVQ_get_string(from, &ptr, 0, 0);
-				string_to_time(ptr, length, date);
+				length = MOVQ_get_string(from, (TEXT**)&ptr, 0, 0);
+				string_to_time((TEXT*) ptr, length, (long int*) date);
 				((SLONG *) to->dsc_address)[0] = date[1];
 			}
 			return;
@@ -963,7 +963,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-			length = MOVQ_get_string(from, &ptr, 0, 0);
+			length = MOVQ_get_string(from, (TEXT**)&ptr, 0, 0);
 			q = ptr;
 			switch (to->dsc_dtype) {
 			case dtype_text:
@@ -1028,13 +1028,13 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 			return;
 
 		case dtype_sql_date:
-			sql_date_to_text(from->dsc_address, to);
+			sql_date_to_text((long int*) from->dsc_address, to);
 			return;
 		case dtype_sql_time:
-			sql_time_to_text(from->dsc_address, to);
+			sql_time_to_text((ULONG*) from->dsc_address, to);
 			return;
 		case dtype_timestamp:
-			timestamp_to_text(from->dsc_address, to);
+			timestamp_to_text((long int*) from->dsc_address, to);
 			return;
 		}
 		break;
@@ -1173,9 +1173,9 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
 	struct tm times;
 	SLONG date2[2];
 
-	date2[0] = date;
+	date2[0] = (SLONG) date;
 	date2[1] = 0;
-	isc_decode_date(date2, &times);
+	isc_decode_date((GDS_QUAD*) date2, &times);
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
 			months[times.tm_mon], times.tm_year + 1900);
 
@@ -1209,9 +1209,9 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
 	SLONG date2[2];
 
 	date2[0] = 0;
-	date2[1] = date;
+	date2[1] = (SLONG) date;
 
-	isc_decode_date(date2, &times);
+	isc_decode_date((GDS_QUAD*) date2, &times);
 
 	sprintf(temp, " %2d:%.2d:%.2d.%.4d", times.tm_hour, times.tm_min,
 			times.tm_sec, date2[1] % PRECISION);
@@ -1244,7 +1244,7 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
 	TEXT *p, temp[35], time[15];
 	struct tm times;
 
-	isc_decode_date(date, &times);
+	isc_decode_date((GDS_QUAD*)date, &times);
 #if ((defined JPN_SJIS || defined JPN_EUC) && defined JPN_DATE)
 
 /* By default the Japanese date format is yyyy.mm.dd */
@@ -1327,29 +1327,7 @@ static void now_to_date( struct tm *time, SLONG date[2])
  *
  **************************************/
 
-	isc_encode_date(time, date);
-
-	time_$clock_t clock, clock1, clock2;
-	cal_$timedate_rec_t d_clock;
-
-	cal_$get_local_time(&clock1);
-	cal_$decode_time(clock1, &d_clock);
-	cal_$encode_time(d_clock, &clock2);
-	cal_$sub_clock(&clock1, clock2);
-
-	time->tm_year = d_clock.year - 1900;
-	time->tm_mon = d_clock.month - 1;
-	time->tm_mday = d_clock.day;
-	time->tm_hour = d_clock.hour;
-	time->tm_min = d_clock.minute;
-	time->tm_sec = d_clock.second;
-	time->tm_wday = 0;
-	time->tm_yday = 0;
-
-	isc_encode_date(time, date);
-	date[1] += (clock1.c2.low32 * 4) / 100;
-
-#endif
+	isc_encode_date(time, (GDS_QUAD*)date);
 }
 
 
@@ -1574,7 +1552,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 						return;
 					}
 					today->tm_hour = today->tm_min = today->tm_sec = 0;
-					isc_encode_date(today, date);
+					isc_encode_date(today, (GDS_QUAD*)date);
 					if (strcmp(temp, TODAY) == 0)
 						return;
 					if (strcmp(temp, TOMORROW) == 0) {
@@ -1669,8 +1647,8 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
 
 /* convert day/month/year to Julian and validate result */
 
-	isc_encode_date(&times, date);
-	isc_decode_date(date, &times2);
+	isc_encode_date(&times, (GDS_QUAD*)date);
+	isc_decode_date((GDS_QUAD*)date, &times2);
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
@@ -1779,7 +1757,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 
 /* convert day/month/year to Julian and validate result */
 
-	isc_encode_date(&times, date);
+	isc_encode_date(&times, (GDS_QUAD*)date);
 
 	while (precision++ < 4)
 		components[6] *= 10;

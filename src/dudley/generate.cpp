@@ -69,7 +69,7 @@ int GENERATE_acl( SCL class_, UCHAR * buffer)
 		for (i = 0, id = item->sce_idents; i < id_max; id++, i++)
 			if (q = *id) {
 				*p++ = i;
-				*p++ = strlen(q);
+				*p++ = strlen((char*) q);
 				while (c = *q++)
 					*p++ = UPPER(c);
 			}
@@ -126,7 +126,7 @@ static void generate( STR blr, NOD node)
 	CON constant;
 	NOD sub, *arg, *end;
 	CTX context;
-	SCHAR operator, *p;
+	SCHAR operatr, *p;
 	SLONG value;
 	USHORT l;
 
@@ -375,26 +375,26 @@ static void generate( STR blr, NOD node)
 	case nod_from:
 		switch (node->nod_type) {
 		case nod_count:
-			operator = blr_count;
+			operatr = blr_count;
 			break;
 		case nod_max:
-			operator = blr_maximum;
+			operatr = blr_maximum;
 			break;
 		case nod_min:
-			operator = blr_minimum;
+			operatr = blr_minimum;
 			break;
 		case nod_total:
-			operator = blr_total;
+			operatr = blr_total;
 			break;
 		case nod_average:
-			operator = blr_average;
+			operatr = blr_average;
 			break;
 		case nod_from:
-			operator = (node->nod_arg[s_stt_default]) ? blr_via : blr_from;
+			operatr = (node->nod_arg[s_stt_default]) ? blr_via : blr_from;
 			break;
 		}
 		CHECK_BLR(1);
-		STUFF(operator);
+		STUFF(operatr);
 		generate(blr, node->nod_arg[s_stt_rse]);
 		if (sub = node->nod_arg[s_stt_value])
 			generate(blr, sub);
@@ -460,84 +460,84 @@ static void generate( STR blr, NOD node)
 		return;
 
 	case nod_eql:
-		operator = blr_eql;
+		operatr = blr_eql;
 		break;
 	case nod_neq:
-		operator = blr_neq;
+		operatr = blr_neq;
 		break;
 	case nod_gtr:
-		operator = blr_gtr;
+		operatr = blr_gtr;
 		break;
 	case nod_geq:
-		operator = blr_geq;
+		operatr = blr_geq;
 		break;
 	case nod_leq:
-		operator = blr_leq;
+		operatr = blr_leq;
 		break;
 	case nod_lss:
-		operator = blr_lss;
+		operatr = blr_lss;
 		break;
 	case nod_between:
-		operator = blr_between;
+		operatr = blr_between;
 		break;
 	case nod_matches:
-		operator = blr_matching;
+		operatr = blr_matching;
 		break;
 	case nod_containing:
-		operator = blr_containing;
+		operatr = blr_containing;
 		break;
 	case nod_starts:
-		operator = blr_starting;
+		operatr = blr_starting;
 		break;
 	case nod_missing:
-		operator = blr_missing;
+		operatr = blr_missing;
 		break;
 	case nod_and:
-		operator = blr_and;
+		operatr = blr_and;
 		break;
 	case nod_or:
-		operator = blr_or;
+		operatr = blr_or;
 		break;
 	case nod_not:
-		operator = blr_not;
+		operatr = blr_not;
 		break;
 	case nod_add:
-		operator = blr_add;
+		operatr = blr_add;
 		break;
 	case nod_subtract:
-		operator = blr_subtract;
+		operatr = blr_subtract;
 		break;
 	case nod_multiply:
-		operator = blr_multiply;
+		operatr = blr_multiply;
 		break;
 	case nod_divide:
-		operator = blr_divide;
+		operatr = blr_divide;
 		break;
 	case nod_negate:
-		operator = blr_negate;
+		operatr = blr_negate;
 		break;
 	case nod_concatenate:
-		operator = blr_concatenate;
+		operatr = blr_concatenate;
 		break;
 	case nod_for:
-		operator = blr_for;
+		operatr = blr_for;
 		break;
 	case nod_assignment:
-		operator = blr_assignment;
+		operatr = blr_assignment;
 		break;
 	case nod_store:
-		operator = blr_store;
+		operatr = blr_store;
 		break;
 	case nod_post:
-		operator = blr_post;
+		operatr = blr_post;
 		break;
 	case nod_uppercase:
-		operator = blr_upcase;
+		operatr = blr_upcase;
 		break;
 	case nod_sleuth:
-		operator = blr_matching2;
+		operatr = blr_matching2;
 		break;
-		/*case nod_substr:      operator = blr_substring; break; */
+		/*case nod_substr:      operatr = blr_substring; break; */
 
 	default:
 		DDL_err(96, NULL, NULL, NULL, NULL, NULL);	/* msg 96: GENERATE_blr: node not supported */
@@ -553,13 +553,13 @@ static void generate( STR blr, NOD node)
 
        field [NOT] MISSING */
 
-	if ((operator == blr_eql || operator == blr_neq) &&
+	if ((operatr == blr_eql || operatr == blr_neq) &&
 		(arg[0]->nod_type == nod_null || arg[1]->nod_type == nod_null)) {
-		if (operator == blr_neq) {
+		if (operatr == blr_neq) {
 			CHECK_BLR(1);
 			STUFF(blr_not);
 		}
-		operator = blr_missing;
+		operatr = blr_missing;
 		if (arg[0]->nod_type == nod_null)
 			arg++;
 		end = arg + 1;
@@ -568,7 +568,7 @@ static void generate( STR blr, NOD node)
 /* Fall thru on reasonable stuff */
 
 	CHECK_BLR(1);
-	STUFF(operator);
+	STUFF(operatr);
 	for (; arg < end; arg++)
 		generate(blr, *arg);
 }

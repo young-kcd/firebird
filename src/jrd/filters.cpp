@@ -753,7 +753,7 @@ STATUS filter_transliterate_text(USHORT action, CTL control)
 
 			control->ctl_source_handle = aux->ctlaux_subfilter;
 			control->ctl_source =
-				reinterpret_cast < long (*) () > (filter_transliterate_text);
+				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			source = control->ctl_source_handle;
 
 			if (action == ACTION_open) {

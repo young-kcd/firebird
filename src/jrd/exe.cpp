@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.1.1.1 2001-05-23 13:26:17 tamlin Exp $
+$Id: exe.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include <time.h>
@@ -3208,8 +3208,9 @@ static void set_error(TDBB tdbb, XCP condition)
 		if (condition->xcp_rpt[0].xcp_code == gds__check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
-			s = (name[0]) ? name : "";
-			r = (relation_name[0]) ? relation_name : "";
+			// CONST CAST
+			s = (name[0]) ? name : (TEXT*)"";
+			r = (relation_name[0]) ? relation_name : (TEXT*)"";
 			ERR_post(condition->xcp_rpt[0].xcp_code,
 					 gds_arg_string, ERR_cstring(s),
 					 gds_arg_string, ERR_cstring(r), 0);

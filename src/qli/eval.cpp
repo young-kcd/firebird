@@ -425,7 +425,7 @@ DSC *EVAL_value(NOD node)
 		desc->dsc_missing = FALSE;
 		if (node->nod_flags & nod_date) {
 			d1 = MOVQ_date_to_double(values[0]) + MOVQ_get_double(values[1]);
-			MOVQ_double_to_date(d1, desc->dsc_address);
+			MOVQ_double_to_date(d1, (long*) desc->dsc_address);
 		}
 		else if (desc->dsc_dtype == dtype_long)
 			*((SLONG *) desc->dsc_address) =
@@ -553,7 +553,7 @@ DSC *EVAL_value(NOD node)
 
 	case nod_format:
 		p = desc->dsc_address;
-		PIC_edit(values[0], node->nod_arg[e_fmt_picture], &p,
+		PIC_edit(values[0], (pic*) node->nod_arg[e_fmt_picture], (TEXT**) &p,
 				 desc->dsc_length);
 		desc->dsc_length = p - desc->dsc_address;
 		return desc;
@@ -600,7 +600,7 @@ static SLONG execute_any( NOD node)
    send a message along with it. */
 
 	if (request = (REQ) node->nod_arg[e_any_request])
-		EXEC_start_request(request, node->nod_arg[e_any_send]);
+		EXEC_start_request(request, (MSG) node->nod_arg[e_any_send]);
 	else if (message = (MSG) node->nod_arg[e_any_send])
 		EXEC_send(message);
 
@@ -628,8 +628,8 @@ static DSC *execute_concatenate( NOD node, DSC * value1, DSC * value2)
 	TEXT *p, temp1[32], temp2[32], *address1, *address2;
 	USHORT length1, length2;
 
-	length1 = MOVQ_get_string(value1, &address1, temp1, sizeof(temp1));
-	length2 = MOVQ_get_string(value2, &address2, temp2, sizeof(temp2));
+	length1 = MOVQ_get_string(value1, &address1, (VARY*)temp1, sizeof(temp1));
+	length2 = MOVQ_get_string(value2, &address2, (VARY*)temp2, sizeof(temp2));
 	desc = &node->nod_desc;
 	vary = (VARY *) desc->dsc_address;
 	p = vary->vary_string;
@@ -689,10 +689,10 @@ static DSC *execute_edit( NOD node)
 
 	field_name = (TEXT *) node->nod_arg[e_edt_name];
 #if (defined JPN_EUC || defined JPN_SJIS)
-	BLOB_edit2(id, dbb->dbb_handle, dbb->dbb_transaction, field_name,
+	BLOB_edit2((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name,
 			   node->nod_desc.dsc_sub_type);
 #else
-	BLOB_edit(id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
+	BLOB_edit((GDS_QUAD_t*)id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	node->nod_desc.dsc_missing = (id[0] || id[1]) ? 0 : DSC_missing;
@@ -721,11 +721,11 @@ static DSC *execute_function( NOD node)
    send a message along with it. */
 
 	if (request = (REQ) node->nod_arg[e_fun_request])
-		EXEC_start_request(request, node->nod_arg[e_fun_send]);
+		EXEC_start_request(request, (MSG) node->nod_arg[e_fun_send]);
 	else if (message = (MSG) node->nod_arg[e_fun_send])
 		EXEC_send(message);
 
-	return EXEC_receive(node->nod_arg[e_fun_receive], node->nod_import);
+	return EXEC_receive((MSG) node->nod_arg[e_fun_receive], node->nod_import);
 }
 
 
@@ -833,11 +833,11 @@ static DSC *execute_statistical( NOD node)
    send a message along with it. */
 
 	if (request = (REQ) node->nod_arg[e_stt_request])
-		EXEC_start_request(request, node->nod_arg[e_stt_send]);
+		EXEC_start_request(request, (MSG) node->nod_arg[e_stt_send]);
 	else if (message = (MSG) node->nod_arg[e_stt_send])
 		EXEC_send(message);
 
-	return EXEC_receive(node->nod_arg[e_stt_receive], node->nod_import);
+	return EXEC_receive((MSG) node->nod_arg[e_stt_receive], node->nod_import);
 }
 
 
@@ -956,7 +956,7 @@ static TEXT *make_blob_buffer( SLONG * blob, USHORT * length)
  **************************************/
 	SLONG size, segment_count, max_segment;
 
-	gds__blob_size(&blob, &size, &segment_count, &max_segment);
+	gds__blob_size((SLONG*) &blob, &size, &segment_count, &max_segment);
 
 #ifdef JPN_EUC
 	max_segment = MIN(max_segment * 2, 32768);	/* prepare for SJIS->EUC expansion */
@@ -1085,24 +1085,24 @@ static int sleuth( NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 /* Get operator definition string (control string) */
 
-	l1 = MOVQ_get_string(desc3, &p1, temp1, TEMP_LENGTH);
+	l1 = MOVQ_get_string(desc3, &p1, (VARY*) temp1, TEMP_LENGTH);
 
 /* Get address and length of search string */
 
-	l2 = MOVQ_get_string(desc2, &p2, temp2, TEMP_LENGTH);
+	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
 /* Merge search and control strings */
 
-	l2 = sleuth_merge(p2, p2 + l2, p1, p1 + l1, control);
+	l2 = sleuth_merge((UCHAR*) p2, (UCHAR*) (p2 + l2), (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control);
 
 /* If source is not a blob, do a simple search */
 
 	if (desc1->dsc_dtype != dtype_blob) {
-		l1 = MOVQ_get_string(desc1, &p1, temp1, TEMP_LENGTH);
+		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
 #if (defined JPN_EUC || defined JPN_SJIS)
-		return sleuth_check2(0, p1, p1 + l1, control, control + l2);
+		return sleuth_check2(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
 #else
-		return sleuth_check(0, p1, p1 + l1, control, control + l2);
+		return sleuth_check(0, (UCHAR*) p1, (UCHAR*) (p1 + l1), (UCHAR*) control, (UCHAR*) (control + l2));
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 	}
 
@@ -1110,20 +1110,20 @@ static int sleuth( NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 
 	result = FALSE;
 
-	blob = EXEC_open_blob(node->nod_arg[0]);
+	blob = (int*) EXEC_open_blob(node->nod_arg[0]);
 
 	buffer_length = sizeof(fixed_buffer);
 
-	if (!(buffer = make_blob_buffer(blob, &buffer_length)))
+	if (!(buffer = make_blob_buffer((SLONG*) blob, &buffer_length)))
 		buffer = fixed_buffer;
 
 	while (!gds__get_segment(status_vector,
-							 GDS_REF(blob),
-							 GDS_REF(l1), buffer_length, GDS_VAL(buffer)))
+							 (void**) GDS_REF(blob),
+							 (USHORT*) GDS_REF(l1), buffer_length, GDS_VAL(buffer)))
 #if (defined JPN_EUC || defined JPN_SJIS)
-		if (sleuth_check2(0, buffer, buffer + l1, control, control + l2))
+		if (sleuth_check2(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
 #else
-		if (sleuth_check(0, buffer, buffer + l1, control, control + l2))
+		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 		{
 			result = TRUE;
@@ -1133,7 +1133,7 @@ static int sleuth( NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
 		context = (CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
@@ -1509,28 +1509,28 @@ static int string_boolean( NOD node)
 
 /* Get address and length of strings */
 
-	l2 = MOVQ_get_string(desc2, &p2, temp2, TEMP_LENGTH);
+	l2 = MOVQ_get_string(desc2, &p2, (VARY*) temp2, TEMP_LENGTH);
 
 /* If source is not a blob, do a simple search */
 
 	if (desc1->dsc_dtype != dtype_blob) {
-		l1 = MOVQ_get_string(desc1, &p1, temp1, TEMP_LENGTH);
+		l1 = MOVQ_get_string(desc1, &p1, (VARY*) temp1, TEMP_LENGTH);
 		return string_function(node, l1, p1, l2, p2);
 	}
 
 /* Source string is a blob, things get interesting */
 
 	result = FALSE;
-	blob = EXEC_open_blob(node->nod_arg[0]);
+	blob = (int*) EXEC_open_blob(node->nod_arg[0]);
 
 	buffer_length = sizeof(fixed_buffer);
 
-	if (!(buffer = make_blob_buffer(blob, &buffer_length)))
+	if (!(buffer = make_blob_buffer((SLONG*) blob, &buffer_length)))
 		buffer = fixed_buffer;
 
 	while (!gds__get_segment(status_vector,
-							 GDS_REF(blob),
-							 GDS_REF(l1),
+							 (void**) GDS_REF(blob),
+							 (USHORT*) GDS_REF(l1),
 							 buffer_length,
 							 GDS_VAL(buffer)))
 			if (string_function(node, l1, buffer, l2, p2)) {
@@ -1541,7 +1541,7 @@ static int string_boolean( NOD node)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, (void**) GDS_REF(blob))) {
 		context = (CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
@@ -1637,12 +1637,12 @@ static int string_function(
 	if (node->nod_type == nod_like) {
 		c1 = 0;
 		if (node->nod_count > 2 &&
-			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, temp,
+			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (VARY*) temp,
 							sizeof(temp))) c1 = *q1;
 #if (defined JPN_EUC || defined JPN_SJIS)
-		if (like2(p1, l1, p2, l2, c1))
+		if (like2((UCHAR*) p1, l1, (UCHAR*) p2, l2, c1))
 #else
-		if (like(p1, l1, p2, l2, c1))
+		if (like((UCHAR*) p1, l1, (UCHAR*) p2, l2, c1))
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 			return TRUE;
 		return FALSE;

@@ -40,6 +40,10 @@
 #include "../burp/spit.h"
 #include "../burp/burpswi.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef WIN_NT
 #include <io.h>					/* usage of non-ANSI open/read/write/close functions */
 #endif

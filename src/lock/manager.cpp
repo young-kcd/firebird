@@ -25,12 +25,20 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
+#include "../jrd/divorce.h"
 #ifdef LINKS_EXIST
 #include "../isc_lock/lock_proto.h"
 #else
 #include "../lock/lock_proto.h"
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 
 void main( int argc, char **argv)
@@ -57,7 +65,12 @@ void main( int argc, char **argv)
 	owner_handle = 0;
 	if (!LOCK_init
 		(status_vector, TRUE, getpid(), LCK_OWNER_process,
-		 &owner_handle)) LOCK_manager(owner_handle);
+		 &owner_handle))
+#ifdef MANAGER_PROCESS
+			LOCK_manager(owner_handle);
+#else
+			;
+#endif
 
 	LOCK_fini(status_vector, &owner_handle);
 }

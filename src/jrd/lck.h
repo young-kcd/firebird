@@ -71,7 +71,7 @@ typedef struct lck {
 	struct blk *lck_compatible2;	/* Sub-level for internal compatibility */
 	struct att *lck_attachment;	/* Attachment that owns lock */
 	struct btb *lck_blocked_threads;	/* Threads blocked by lock */
-	int (*lck_ast)();			/* Blocking AST routine */
+	int (*lck_ast)(void*);			/* Blocking AST routine */
 	SLONG lck_id;				/* Lock id from lock manager */
 	SLONG lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */
 	USHORT lck_count;			/* count of locks taken out by attachment */

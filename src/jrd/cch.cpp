@@ -71,7 +71,7 @@ extern "C" {
 
 
 static BDB alloc_bdb(TDBB, BCB, UCHAR **);
-static void blocking_ast_bdb(BDB);
+static int blocking_ast_bdb(BDB);
 static void btc_flush(TDBB, SLONG, BOOLEAN, STATUS *);
 static void btc_insert(DBB, BDB);
 static void btc_remove(BDB);
@@ -2575,7 +2575,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 
 #ifndef PAGE_LATCHING
 	if (!(bdb->bdb_lock = lock = CCH_page_lock(tdbb, ERR_val))) {
-		ALL_release(bdb);
+		ALL_release((FRB)bdb);
 		return 0;
 	}
 	lock->lck_ast = blocking_ast_bdb;
@@ -2595,7 +2595,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 
 
 #ifndef PAGE_LATCHING
-static void blocking_ast_bdb(BDB bdb)
+static int blocking_ast_bdb(BDB bdb)
 {
 /**************************************
  *
@@ -3482,7 +3482,7 @@ static BDB dealloc_bdb(BDB bdb)
 	if (bdb) {
 #ifndef PAGE_LATCHING
 		if (bdb->bdb_lock)
-			ALL_release(bdb->bdb_lock);
+			ALL_release((FRB)bdb->bdb_lock);
 #endif
 		QUE_DELETE(bdb->bdb_que);
 		ALL_release(reinterpret_cast < frb * >(bdb));

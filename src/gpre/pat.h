@@ -67,7 +67,7 @@ Substitution codes:
 
 */
 
-typedef struct pat {
+struct pat {
 	DBB pat_database;
 	REQ pat_request;
 	TRA pat_transaction;
@@ -93,6 +93,8 @@ typedef struct pat {
 	SLONG pat_long2;
 	BOOLEAN pat_condition;
 	REF pat_reference;
-} PAT;
+};
+
+typedef pat PAT;
 
 #endif /* _GPRE_PAT_H_ */

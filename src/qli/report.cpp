@@ -73,7 +73,7 @@ void RPT_report( NOD loop)
 	node = loop->nod_arg[e_for_statement];
 	report = (RPT) node->nod_arg[e_prt_list];
 	print = (PRT) node->nod_arg[e_prt_output];
-	print->prt_new_page = top_of_page;
+	print->prt_new_page = (int(*)()) top_of_page;
 	print->prt_page_number = 0;
 
 /* Get to actual report node */
@@ -82,7 +82,7 @@ void RPT_report( NOD loop)
    send a message slong with it. */
 
 	if (request = (REQ) loop->nod_arg[e_for_request])
-		EXEC_start_request(request, loop->nod_arg[e_for_send]);
+		EXEC_start_request(request, (MSG) loop->nod_arg[e_for_send]);
 	else if (message = (MSG) loop->nod_arg[e_for_send])
 		EXEC_send(message);
 
@@ -94,7 +94,7 @@ void RPT_report( NOD loop)
 /* Get the first record of the record.  If there isn't anything,
    don't worry about anything. */
 
-	desc = EXEC_receive(message, loop->nod_arg[e_for_eof]);
+	desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
 	if (*(USHORT *) desc->dsc_address)
 		return;
 
@@ -103,11 +103,11 @@ void RPT_report( NOD loop)
 		report->rpt_buffer = (UCHAR *) string->str_data;
 	}
 
-	MOVQ_fast(message->msg_buffer, report->rpt_buffer,
+	MOVQ_fast((SCHAR*) message->msg_buffer, (SCHAR*) report->rpt_buffer,
 			  (SLONG) message->msg_length);
 
 	if (control = report->rpt_top_rpt)
-		FMT_print(control->brk_line, print);
+		FMT_print((NOD) control->brk_line, print);
 
 	top_of_page(print, TRUE);
 
@@ -118,7 +118,7 @@ void RPT_report( NOD loop)
 /* Force TOP breaks for all fields */
 
 	for (control = report->rpt_top_breaks; control;
-		 control = control->brk_next) FMT_print(control->brk_line, print);
+		 control = control->brk_next) FMT_print((NOD) control->brk_line, print);
 
 	for (;;) {
 		/* Check for bottom breaks.  If we find one, force all lower breaks. */
@@ -157,7 +157,7 @@ void RPT_report( NOD loop)
 		/* Get the next record.  If we're at end, we're almost done. */
 
 		SWAP(message->msg_buffer, report->rpt_buffer);
-		desc = EXEC_receive(message, loop->nod_arg[e_for_eof]);
+		desc = EXEC_receive(message, (PAR) loop->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
 	}
@@ -169,7 +169,7 @@ void RPT_report( NOD loop)
 	bottom_break(report->rpt_bottom_rpt, print);
 
 	if (control = report->rpt_bottom_page)
-		FMT_print(control->brk_line, print);
+		FMT_print((NOD) control->brk_line, print);
 }
 
 
@@ -194,9 +194,9 @@ static void bottom_break( BRK control, PRT print)
 		bottom_break(control->brk_next, print);
 
 	for (stack = control->brk_statisticals; stack; stack = stack->lls_next)
-		EVAL_break_compute(stack->lls_object);
+		EVAL_break_compute((NOD) stack->lls_object);
 
-	FMT_print(control->brk_line, print);
+	FMT_print((NOD) control->brk_line, print);
 }
 
 
@@ -216,7 +216,7 @@ static void increment_break( BRK control)
 
 	for (; control; control = control->brk_next)
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_increment(stack->lls_object);
+			 stack = stack->lls_next) EVAL_break_increment((NOD) stack->lls_object);
 }
 
 
@@ -236,7 +236,7 @@ static void initialize_break( BRK control)
 
 	for (; control; control = control->brk_next)
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_init(stack->lls_object);
+			 stack = stack->lls_next) EVAL_break_init((NOD) stack->lls_object);
 }
 
 
@@ -258,13 +258,13 @@ static int test_break( BRK control, RPT report, MSG message)
 
 /* Evaluate the two versions of the expression */
 
-	if (ptr1 = EVAL_value(control->brk_field))
+	if (ptr1 = EVAL_value((NOD) control->brk_field))
 		desc1 = *ptr1;
 
 	p1 = message->msg_buffer;
 	message->msg_buffer = report->rpt_buffer;
 
-	if (ptr2 = EVAL_value(control->brk_field))
+	if (ptr2 = EVAL_value((NOD) control->brk_field))
 		desc2 = *ptr2;
 
 	message->msg_buffer = p1;
@@ -310,8 +310,8 @@ static void top_break( BRK control, PRT print)
 
 	for (; control; control = control->brk_next) {
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_compute(stack->lls_object);
-		FMT_print(control->brk_line, print);
+			 stack = stack->lls_next) EVAL_break_compute((NOD) stack->lls_object);
+		FMT_print((NOD) control->brk_line, print);
 	}
 }
 
@@ -336,14 +336,14 @@ static void top_of_page( PRT print, BOOLEAN first_flag)
 
 	if (!first_flag) {
 		if (control = report->rpt_bottom_page)
-			FMT_print(control->brk_line, print);
+			FMT_print((NOD) control->brk_line, print);
 		FMT_put("\f", print);
 	}
 
 	print->prt_lines_remaining = print->prt_lines_per_page;
 
 	if (control = report->rpt_top_page)
-		FMT_print(control->brk_line, print);
+		FMT_print((NOD) control->brk_line, print);
 	else if (report->rpt_column_header) {
 		if (report->rpt_header)
 			FMT_put(report->rpt_header, print);

@@ -924,7 +924,7 @@ static void define_filter(void)
 #endif
 
 	parse_end();
-	make_action(act_a_filter, filter);
+	make_action(act_a_filter, (DBB) filter);
 }
 
 
@@ -974,9 +974,9 @@ static void define_function(void)
 	while (TRUE) {
 		if (KEYWORD(KW_SEMI))
 			break;
-		function_arg = parse_function_arg(function, &position);
+		function_arg = parse_function_arg(function, (USHORT*) &position);
 		function_arg->funcarg_funcname = function->func_name;
-		make_action(act_a_function_arg, function_arg);
+		make_action(act_a_function_arg, (DBB) function_arg);
 		if (!MATCH(KW_COMMA))
 			break;
 	}
@@ -984,7 +984,7 @@ static void define_function(void)
 	if (!KEYWORD(KW_SEMI))
 		PARSE_error(132, DDL_token.tok_string, 0);	/* msg 132: expected comma or semi-colon, encountered \"%s\" */
 
-	make_action(act_a_function, function);
+	make_action(act_a_function, (DBB) function);
 }
 
 
@@ -1007,7 +1007,7 @@ static void define_generator(void)
 
 	symbol = PARSE_symbol(tok_ident);
 	parse_end();
-	make_action(act_a_generator, symbol);
+	make_action(act_a_generator, (DBB) symbol);
 }
 
 
@@ -1082,7 +1082,7 @@ static void define_index(void)
 	while (stack)
 		*--ptr = (SYM) LLS_POP(&stack);
 
-	make_action(act_a_index, index);
+	make_action(act_a_index, (DBB) index);
 }
 
 
@@ -1182,7 +1182,7 @@ static void define_old_trigger(void)
 		trigger->trg_statement = EXPR_statement();
 		end_text(trigger->trg_source);
 
-		make_action(act_a_trigger, trigger);
+		make_action(act_a_trigger, (DBB) trigger);
 	}
 
 	parse_end();
@@ -1226,7 +1226,7 @@ static void define_relation(void)
 			PARSE_error(298, 0, 0);	/* msg 298: A non-Decnet node name is not permitted in an external file name */
 	}
 
-	rel_actions = action = make_action(act_a_relation, relation);
+	rel_actions = action = make_action(act_a_relation, (DBB) relation);
 	action->act_flags |= ACT_ignore;
 	position = 1;
 
@@ -1270,7 +1270,7 @@ static void define_relation(void)
 		field->fld_flags |= fld_explicit_position;
 		field->fld_name->sym_type = SYM_field;
 		HSH_insert(field->fld_name);
-		action = make_action(act_a_field, field);
+		action = make_action(act_a_field, (DBB) field);
 		action->act_flags |= ACT_ignore;
 		if (!MATCH(KW_COMMA))
 			break;
@@ -1332,7 +1332,7 @@ static void define_security_class(void)
 
 	parse_end();
 
-	make_action(act_a_security, class_);
+	make_action(act_a_security, (DBB) class_);
 }
 
 
@@ -1400,7 +1400,7 @@ static void define_shadow(void)
 	for (file = shadow; file; file = file->fil_next)
 		file->fil_shadow_number = number;
 
-	make_action(act_a_shadow, shadow);
+	make_action(act_a_shadow, (DBB) shadow);
 }
 
 
@@ -1465,7 +1465,7 @@ static void define_trigger(void)
 				PARSE_error(142, (TEXT *) (trigmsg->trgmsg_number), 0);	/* msg 142: message number %d exceeds 255 */
 			MATCH(KW_COLON);
 			trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
-			make_action(act_a_trigger_msg, trigmsg);
+			make_action(act_a_trigger_msg, (DBB) trigmsg);
 			MATCH(KW_COMMA);
 		}
 		else {
@@ -1482,7 +1482,7 @@ static void define_trigger(void)
 
 	parse_end();
 
-	make_action(act_a_trigger, trigger);
+	make_action(act_a_trigger, (DBB) trigger);
 	trigger->trg_name->sym_type = SYM_trigger;
 	trigger->trg_name->sym_object = (CTX) trigger;
 	HSH_insert(trigger->trg_name);
@@ -1515,7 +1515,7 @@ static ACT define_type(void)
 		fldtype->typ_type = PARSE_number();
 		if (KEYWORD(KW_DESCRIPTION))
 			fldtype->typ_description = parse_description();
-		make_action(act_a_type, fldtype);
+		make_action(act_a_type, (DBB) fldtype);
 		if (!MATCH(KW_COMMA))
 			break;
 	}
@@ -1568,7 +1568,7 @@ static ACT define_view(void)
 	LLS_PUSH(my_context, &contexts);
 	relation->rel_rse->nod_arg[s_rse_contexts] = (NOD) contexts;
 
-	rel_actions = action = make_action(act_a_relation, relation);
+	rel_actions = action = make_action(act_a_relation, (DBB) relation);
 	action->act_flags |= ACT_ignore;
 
 /* Pick up various fields and clauses */
@@ -1690,7 +1690,7 @@ static void drop_filter(void)
 	filter->filter_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_filter, filter);
+	make_action(act_d_filter, (DBB) filter);
 }
 
 
@@ -1712,7 +1712,7 @@ static void drop_function(void)
 	function->func_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_function, function);
+	make_action(act_d_function, (DBB) function);
 }
 
 
@@ -1734,7 +1734,7 @@ static void drop_gfield(void)
 	field->fld_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_gfield, field);
+	make_action(act_d_gfield, (DBB) field);
 }
 
 
@@ -1757,7 +1757,7 @@ static void drop_index(void)
 	index->idx_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_index, index);
+	make_action(act_d_index, (DBB) index);
 }
 
 
@@ -1784,7 +1784,7 @@ static void drop_relation(void)
 
 	relation->rel_flags |= rel_marked_for_delete;
 
-	make_action(act_d_relation, relation);
+	make_action(act_d_relation, (DBB) relation);
 }
 
 
@@ -1806,7 +1806,7 @@ static void drop_security_class(void)
 	class_->scl_name = PARSE_symbol(tok_ident);
 	parse_end();
 
-	make_action(act_d_security, class_);
+	make_action(act_d_security, (DBB) class_);
 }
 
 
@@ -1873,13 +1873,13 @@ static void drop_trigger(void)
 			trigger->trg_name = name =
 				gen_trigger_name(trigger->trg_type, relation);
 			trigger->trg_relation = relation;
-			make_action(act_d_trigger, trigger);
+			make_action(act_d_trigger, (DBB) trigger);
 		}
 	}
 	else {
 		trigger = (TRG) DDL_alloc(TRG_LEN);
 		trigger->trg_name = name;
-		make_action(act_d_trigger, trigger);
+		make_action(act_d_trigger, (DBB) trigger);
 	}
 
 	parse_end();
@@ -1907,7 +1907,7 @@ static void drop_type(void)
 		fldtype->typ_field_name = PARSE_symbol(tok_ident);
 		fldtype->typ_name->sym_length = 3;
 		strncpy(fldtype->typ_name->sym_string, "ALL", 3);
-		make_action(act_d_type, fldtype);
+		make_action(act_d_type, (DBB) fldtype);
 	}
 	else {
 		fldname = PARSE_symbol(tok_ident);
@@ -1915,7 +1915,7 @@ static void drop_type(void)
 			fldtype = (TYP) DDL_alloc(sizeof(struct typ));
 			fldtype->typ_field_name = fldname;
 			fldtype->typ_name = PARSE_symbol(tok_ident);
-			make_action(act_d_type, fldtype);
+			make_action(act_d_type,(DBB)  fldtype);
 			if (!MATCH(KW_COMMA))
 				break;
 		}
@@ -2203,7 +2203,7 @@ static void grant_user_privilege(void)
 
 	parse_end();
 
-	make_action(act_grant, upriv);
+	make_action(act_grant, (DBB) upriv);
 }
 
 
@@ -2394,7 +2394,7 @@ static ACT make_global_field( FLD field)
 
 	HSH_insert(field->fld_name);
 
-	return make_action(act_a_gfield, field);
+	return make_action(act_a_gfield, (DBB) field);
 }
 
 
@@ -2436,7 +2436,7 @@ static void mod_old_trigger(void)
 							  SYM_trigger))) PARSE_error(166,
 														 name->sym_string, 0);	/* msg 166: Trigger %s does not exist */
 		modify_trigger_action(trigger, relation);
-		make_action(act_m_trigger, trigger);
+		make_action(act_m_trigger, (DBB) trigger);
 	}
 	parse_end();
 }
@@ -2485,7 +2485,7 @@ static void modify_field(void)
 
 	parse_end();
 
-	make_action(act_m_gfield, field);
+	make_action(act_m_gfield, (DBB) field);
 }
 
 
@@ -2550,7 +2550,7 @@ static void modify_index(void)
 			break;
 	}
 
-	make_action(act_m_index, index);
+	make_action(act_m_index, (DBB) index);
 }
 
 
@@ -2571,7 +2571,7 @@ static void modify_relation(void)
 	TEXT modify_relation;
 
 	relation = PARSE_relation();
-	make_action(act_m_relation, relation);
+	make_action(act_m_relation, (DBB) relation);
 
 	if (MATCH(KW_EXTERNAL_FILE)) {
 		relation->rel_filename = PARSE_symbol(tok_quoted);
@@ -2628,7 +2628,7 @@ static void modify_relation(void)
 						field->fld_position = ++relation->rel_field_position;
 					field->fld_name->sym_type = SYM_field;
 					HSH_insert(field->fld_name);
-					make_action(act_a_field, field);
+					make_action(act_a_field, (DBB) field);
 				}
 			}
 			else if (MATCH(KW_MODIFY)) {
@@ -2640,7 +2640,7 @@ static void modify_relation(void)
 				field->fld_database = database;
 				if (field->fld_computed)
 					PARSE_error(173, 0, 0);	/* msg 173: A computed expression can not be changed or added */
-				make_action(act_m_field, field);
+				make_action(act_m_field, (DBB) field);
 			}
 			else if (MATCH(KW_DROP)) {
 				if (MATCH(KW_SECURITY_CLASS)) {
@@ -2668,7 +2668,7 @@ static void modify_relation(void)
 					field->fld_relation = relation;
 					field->fld_database = database;
 					field->fld_name = PARSE_symbol(tok_ident);
-					make_action(act_d_field, field);
+					make_action(act_d_field, (DBB) field);
 				}
 			}
 			else
@@ -2726,7 +2726,7 @@ static void modify_security_class(void)
 	}
 
 	parse_end();
-	make_action(act_m_security, class_);
+	make_action(act_m_security, (DBB) class_);
 }
 
 
@@ -2779,7 +2779,7 @@ static void modify_trigger(void)
 		relation = trigger->trg_relation;
 
 	flags = type = sequence = NULL;
-	get_trigger_attributes(&flags, &type, &sequence);
+	get_trigger_attributes((int*) &flags, (int*) &type, (int*) &sequence);
 
 	while (!KEYWORD(KW_SEMI)) {
 		if ((MATCH(KW_MESSAGE)) || (MATCH(KW_MSGADD)) ||
@@ -2795,11 +2795,11 @@ static void modify_trigger(void)
 			if (trigmsg->trgmsg_number > 255)
 				PARSE_error(178, (TEXT *) trigmsg->trgmsg_number, 0);	/* msg 178: message number %d exceeds 255 */
 			if (msg_type == trgmsg_drop)
-				make_action(act_d_trigger_msg, trigmsg);
+				make_action(act_d_trigger_msg, (DBB) trigmsg);
 			else if (msg_type == trgmsg_modify) {
 				MATCH(KW_COLON);
 				trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
-				make_action(act_m_trigger_msg, trigmsg);
+				make_action(act_m_trigger_msg, (DBB) trigmsg);
 			}
 			MATCH(KW_COMMA);
 			msg_type = trgmsg_none;
@@ -2819,7 +2819,7 @@ static void modify_trigger(void)
 	if (flags || type || sequence)
 		sort_out_attributes(trigger, flags, type, sequence);
 
-	make_action(act_m_trigger, trigger);
+	make_action(act_m_trigger, (DBB) trigger);
 }
 
 
@@ -2868,7 +2868,7 @@ static void modify_type(void)
 		fldtype->typ_type = PARSE_number();
 		if (KEYWORD(KW_DESCRIPTION))
 			fldtype->typ_description = parse_description();
-		make_action(act_m_type, fldtype);
+		make_action(act_m_type, (DBB) fldtype);
 		if (!MATCH(KW_COMMA))
 			break;
 	}
@@ -2893,7 +2893,7 @@ static void modify_view(void)
 	USHORT view_modify;
 
 	relation = PARSE_relation();
-	make_action(act_m_relation, relation);
+	make_action(act_m_relation, (DBB) relation);
 	view_modify = FALSE;
 
 	while (TRUE) {
@@ -2927,7 +2927,7 @@ static void modify_view(void)
 				field->fld_database = database;
 				if (field->fld_computed)
 					PARSE_error(181, 0, 0);	/* msg 181: A computed expression can not be changed or added */
-				make_action(act_m_field, field);
+				make_action(act_m_field, (DBB) field);
 			}
 			else if (MATCH(KW_DROP)) {
 				if (MATCH(KW_DESCRIP)) {
@@ -2955,7 +2955,7 @@ static void modify_view(void)
 					field->fld_relation = relation;
 					field->fld_database = database;
 					field->fld_name = PARSE_symbol(tok_ident);
-					make_action(act_d_field, field);
+					make_action(act_d_field, (DBB) field);
 				}
 			}
 			else
@@ -4020,7 +4020,7 @@ static void revoke_user_privilege(void)
 	}
 
 	parse_end();
-	make_action(act_revoke, upriv);
+	make_action(act_revoke, (DBB) upriv);
 }
 
 
@@ -4080,7 +4080,7 @@ static NOD set_generator(void)
 	node->nod_arg[0] = EXPR_value(0, 0);
 
 	parse_end();
-	make_action(act_s_generator, node);
+	make_action(act_s_generator, (DBB) node);
 }
 
 

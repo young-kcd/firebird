@@ -601,7 +601,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 /* Initialize special error handling */
 
-	tdbb->tdbb_setjmp = (UCHAR *) env;
+	tdbb->tdbb_setjmp = env;
 	tdbb->tdbb_status_vector = status = user_status;
 	tdbb->tdbb_attachment = attachment = NULL;
 	tdbb->tdbb_request = NULL;
@@ -625,7 +625,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	if (SETJMP(env))
 	{
 #ifdef _PPC_
-		tdbb->tdbb_setjmp = (UCHAR *) env1;
+		tdbb->tdbb_setjmp = env1;
 		if (!SETJMP(env1))
 #else
 		if (!SETJMP(env))
@@ -820,6 +820,10 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 				sbm_recovery);
 		INI_update_database();
 	}
+
+    /* Attachments to a ReadOnly database need NOT do garbage collection */
+    if (dbb->dbb_flags & DBB_read_only)
+            attachment->att_flags |= ATT_no_cleanup;
 
     if (options.dpb_disable_wal)
 	{
@@ -1200,6 +1204,17 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	{
 		PAG_set_page_buffers(options.dpb_page_buffers);
 	}
+
+        if (options.dpb_set_db_readonly)
+        {
+                if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+                {
+                        ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
+                               gds_arg_string, ERR_string(file_name, fl), 0); 
+                }
+
+                PAG_set_db_readonly(dbb, options.dpb_db_readonly);
+        }
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 /* don't record the attach until now in case the log is added during the attach */
@@ -2670,7 +2685,7 @@ STATUS DLL_EXPORT GDS_QUE_EVENTS(STATUS * user_status,
 								 ATT * handle,
 								 SLONG * id,
 								 SSHORT length,
-								 UCHAR * items, void (*ast) (), void *arg)
+								 UCHAR * items, FPTR_VOID ast, void *arg)
 {
 /**************************************
  *
@@ -4640,7 +4655,7 @@ static STATUS error(STATUS * user_status)
 		dbb->dbb_use_count = 0;
 		p = user_status;
 		*p++ = gds_arg_gds;
-		*p++ = gds__random;
+		*p++ = gds_random;
 		*p++ = gds_arg_string;
 		*p++ = (STATUS) "database use count set on error return";
 		*p = gds_arg_end;
@@ -5058,6 +5073,11 @@ static void get_options(UCHAR*	dpb,
 		case isc_dpb_set_db_sql_dialect:
 			options->dpb_set_db_sql_dialect = (USHORT) get_parameter(&p);
 			break;
+
+                case isc_dpb_set_db_readonly:
+                        options->dpb_set_db_readonly = TRUE;
+                        options->dpb_db_readonly = (SSHORT) get_parameter(&p);
+                        break;
 
 		default:
 			l = *p++;
@@ -5572,7 +5592,7 @@ static STATUS return_success(TDBB tdbb)
 		dbb->dbb_use_count = 0;
 		p = user_status;
 		*p++ = gds_arg_gds;
-		*p++ = gds__random;
+		*p++ = gds_random;
 		*p++ = gds_arg_string;
 		*p++ = (STATUS) "database use count set on success return";
 		*p = gds_arg_end;

@@ -106,7 +106,7 @@ int FMT_expression( NOD node)
 	FLD field;
 
 	sub = node->nod_arg[e_fmt_value];
-	picture = PIC_analyze(node->nod_arg[e_fmt_edit], &sub->nod_desc);
+	picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
 	node->nod_arg[e_fmt_picture] = (NOD) picture;
 
 	if (node->nod_type == nod_reference)
@@ -155,7 +155,7 @@ TEXT *FMT_format(LLS stack)
 	stack = NULL;
 
 	if (fmt_buffer) {
-		ALL_release(fmt_buffer);
+		ALL_release((FRB) fmt_buffer);
 		fmt_buffer = NULL;
 	}
 
@@ -203,7 +203,7 @@ TEXT *FMT_format(LLS stack)
 			else {
 				n =
 					decompose_header(item->itm_query_header, segments,
-									 lengths);
+									 (SSHORT*) lengths);
 				number_segments = MAX(n, number_segments);
 #ifdef JPN_EUC
 				for (j = 0, ptr = lengths, p2 = segments; j < n;
@@ -326,7 +326,7 @@ TEXT *FMT_format(LLS stack)
 			item = (ITM) temp->lls_object;
 			if (item->itm_type != item_value)
 				continue;
-			n = decompose_header(item->itm_query_header, segments, lengths);
+			n = decompose_header(item->itm_query_header, segments, (SSHORT*) lengths);
 			segment = j - (number_segments - n);
 			if (segment < 0)
 				continue;
@@ -389,15 +389,15 @@ NOD FMT_list(NOD list)
 	SYM name;
 	FLD field;
 	CON constant;
-	NOD value, new;
+	NOD value, new_nod;
 	USHORT column, expression;
 	DSC *desc;
 	STR header;
 	TEXT *p, *q, c;
 
-	new = (NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
-	new->nod_type = nod_list;
-	new_ptr = (ITM *) new->nod_arg;
+	new_nod = (NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
+	new_nod->nod_type = nod_list;
+	new_ptr = (ITM *) new_nod->nod_arg;
 	column = 0;
 
 	for (item = (ITM *) list->nod_arg, end = item + list->nod_count;
@@ -445,7 +445,7 @@ NOD FMT_list(NOD list)
 					p[-1] = 0;
 				}
 				value->nod_desc.dsc_length =
-					strlen(value->nod_desc.dsc_address);
+					strlen((char*) value->nod_desc.dsc_address);
 			}
 			else {
 				value->nod_desc.dsc_length = name->sym_length;
@@ -480,9 +480,9 @@ NOD FMT_list(NOD list)
 		(*item)->itm_print_offset = column;
 	}
 
-	new->nod_count = new_ptr - (ITM *) new->nod_arg;
+	new_nod->nod_count = new_ptr - (ITM *) new_nod->nod_arg;
 
-	return new;
+	return new_nod;
 }
 
 
@@ -532,7 +532,7 @@ void FMT_print( NOD list, PRT print)
 		case item_new_page:
 			if (print->prt_new_page) {
 				put_line(print, &p, buffer, '\n');
-				(*print->prt_new_page) (print, FALSE);
+				(*(void(*)(PRT, int))print->prt_new_page) (print, FALSE);
 			}
 			else {
 				put_line(print, &p, buffer, '\f');
@@ -542,7 +542,7 @@ void FMT_print( NOD list, PRT print)
 
 		case item_skip:
 			put_line(print, &p, buffer, '\n');
-			print_blobs(print, list->nod_arg, ptr);
+			print_blobs(print, (ITM*) list->nod_arg, (ITM*) ptr);
 			for (l = item->itm_count - 1; l > 0; --l)
 				put_line(print, &p, buffer, '\n');
 			QLI_skip_line = FALSE;
@@ -577,7 +577,7 @@ void FMT_print( NOD list, PRT print)
 #endif /* JPN_EUC */
 		if (p > q) {
 			put_line(print, &p, buffer, '\n');
-			print_blobs(print, list->nod_arg, ptr);
+			print_blobs(print, (ITM*) list->nod_arg, (ITM*) ptr);
 #ifdef JPN_EUC
 			if (QLI_euc_justify) {
 				q -= n_half_kanas;	/* undo the previous addition of blanks */
@@ -618,7 +618,7 @@ void FMT_print( NOD list, PRT print)
 
 		/* Finally, handle blobs */
 
-		if (!(item->itm_stream = EXEC_open_blob(item->itm_value)))
+		if (!(item->itm_stream = (int*) EXEC_open_blob(item->itm_value)))
 			continue;
 
 #ifdef JPN_EUC
@@ -645,14 +645,14 @@ void FMT_print( NOD list, PRT print)
 
 /* Now go back until all blobs have been fetched */
 
-	print_blobs(print, list->nod_arg, end);
+	print_blobs(print, (ITM*) list->nod_arg, (ITM*) end);
 
 /* Finish by closing all blobs */
 
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		item = (ITM) * ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
-			gds__close_blob(status_vector, GDS_REF(item->itm_stream));
+			gds__close_blob(status_vector, (void**) GDS_REF(item->itm_stream));
 	}
 }
 
@@ -733,7 +733,7 @@ void FMT_report( RPT report)
 	VEC columns_vec;
 
 	if (fmt_buffer) {
-		ALL_release(fmt_buffer);
+		ALL_release((FRB) fmt_buffer);
 		fmt_buffer = NULL;
 	}
 
@@ -758,7 +758,7 @@ void FMT_report( RPT report)
 /* Handle report name, if any */
 
 	if (report->rpt_name) {
-		n = decompose_header(report->rpt_name, segments, lengths);
+		n = decompose_header(report->rpt_name, segments, (SSHORT*) lengths);
 		for (i = 0; i < n; i++)
 			width = MAX(width, lengths[i] + 15);
 		string = (STR) ALLOCDV(type_str, width * n);
@@ -895,7 +895,7 @@ static void format_index( ITM item, NOD field, USHORT print_flag)
 		default:
 			/* Punt on anything but constants, fields, and variables */
 
-			ALL_release(str);
+			ALL_release((FRB) str);
 			return;
 		}
 
@@ -987,7 +987,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 			if (item->itm_query_header) {
 				n =
 					decompose_header(item->itm_query_header, segments,
-									 lengths);
+									 (SSHORT*) lengths);
 				number_segments = MAX(n, number_segments);
 #ifdef JPN_EUC
 				for (j = 0, ptr = lengths, p2 = segments; j < n;
@@ -1091,7 +1091,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 					continue;
 				n =
 					decompose_header(item->itm_query_header, segments,
-									 lengths);
+									 (SSHORT*) lengths);
 				segment = j - (number_segments - n);
 				if (segment < 0)
 					continue;
@@ -1217,7 +1217,7 @@ static TEXT *get_buffer( STR * str, TEXT * ptr, USHORT length)
 			*p++ = *q++;
 		while (--l);
 
-	ALL_release(*str);
+	ALL_release((FRB) *str);
 	*str = temp_str;
 
 	return p;
@@ -1539,12 +1539,12 @@ static int print_line( ITM item, TEXT ** ptr)
 #else
 
 	if ((status = gds__get_segment(status_vector,
-								   GDS_REF(item->itm_stream),
+								   (void**) GDS_REF(item->itm_stream),
 								   GDS_REF(length),
-								   l, GDS_VAL(p))) && status != gds__segment) {
+								   l, GDS_VAL(p))) && status != gds_segment) {
 		long *null_status = 0;
-		gds__close_blob(null_status, GDS_REF(item->itm_stream));
-		if (status != gds__segstr_eof)
+		gds__close_blob(null_status, (void**) GDS_REF(item->itm_stream));
+		if (status != gds_segstr_eof)
 			ERRQ_database_error(0, status_vector);
 		return EOF;
 	}
@@ -1611,13 +1611,13 @@ static void report_break( BRK control, VEC * columns_vec, int bottom_flag)
 		if (control->brk_next)
 			report_break(control->brk_next, columns_vec, bottom_flag);
 		if (control->brk_line)
-			report_line(control->brk_line, columns_vec);
+			report_line((NOD) control->brk_line, columns_vec);
 		return;
 	}
 
 	for (; control; control = control->brk_next)
 		if (control->brk_line)
-			report_line(control->brk_line, columns_vec);
+			report_line((NOD) control->brk_line, columns_vec);
 }
 
 
@@ -1648,7 +1648,7 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 	columns = *columns_vec;
 	if (columns->vec_object[*col_ndx] &&
 		(node = item->itm_value) && node->nod_type == nod_constant) {
-		LLS_PUSH(item, columns->vec_object + *col_ndx);
+		LLS_PUSH(item, (LLS*) (columns->vec_object + *col_ndx));
 		return;
 	}
 
@@ -1672,11 +1672,11 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 
 	*col_ndx = new_index = col - (LLS *) columns->vec_object;
 	if (new_index >= columns->vec_count) {
-		ALLQ_extend(columns_vec, new_index + 16);
+		ALLQ_extend((BLK*) columns_vec, new_index + 16);
 		(*columns_vec)->vec_count = new_index + 16;
 	}
 
-	LLS_PUSH(item, (*columns_vec)->vec_object + new_index);
+	LLS_PUSH(item, (LLS*) ((*columns_vec)->vec_object + new_index));
 }
 
 

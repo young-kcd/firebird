@@ -822,6 +822,9 @@ static SLONG get_parameter( UCHAR ** ptr)
 }
 
 
+} // extern "C"
+
+
 // TMN: Beginning of C++ port - ugly but a start
 
 int port::accept(p_cnct* cnct)
@@ -859,5 +862,3 @@ port* port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
-
-} // extern "C"

@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: protocol.h,v 1.1.1.1 2001-05-23 13:26:37 tamlin Exp $
+$Id: protocol.h,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 */
 #ifndef _REMOTE_PROTOCOL_H_
 #define _REMOTE_PROTOCOL_H_
@@ -121,8 +121,9 @@ typedef enum
 	arch_linux		= 36,
 	arch_freebsd	= 37,
 	arch_netbsd		= 38,
+	arch_darwin_ppc		= 39,
 
-	arch_max		= 39	/* Keep this at the end */
+	arch_max		= 40	/* Keep this at the end */
 } P_ARCH;
 
 #ifdef DECOSF

@@ -23,7 +23,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet.cpp,v 1.1.1.1 2001-05-23 13:26:38 tamlin Exp $
+$Id: inet.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 */
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
@@ -34,6 +34,18 @@ $Id: inet.cpp,v 1.1.1.1 2001-05-23 13:26:38 tamlin Exp $
 #include <stdarg.h>
 
 #include "../jrd/time.h"
+
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef SUPERSERVER
 #ifdef	WIN_NT
@@ -51,6 +63,10 @@ $Id: inet.cpp,v 1.1.1.1 2001-05-23 13:26:38 tamlin Exp $
 #if !(defined PC_PLATFORM || defined NETWARE_386)
 #include <sys/param.h>
 #endif
+#endif
+
+#ifdef DARWIN
+extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #endif
 
 #ifdef NETWARE_386
@@ -1501,11 +1517,12 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 #else
 
 			SLONG gids[128];
+			int i;
 
 			initgroups(passwd->pw_name, passwd->pw_gid);
 			if (eff_gid != -1) {
-				const int gid_count = getgroups(sizeof(gids) / sizeof(SLONG), gids);
-				for (int i = 0; i < gid_count; ++i) {
+				const int gid_count = getgroups(sizeof(gids) / sizeof(SLONG), (gid_t*)gids);
+				for (i = 0; i < gid_count; ++i) {
 					if (gids[i] == eff_gid) {
 						break;
 					}
@@ -1775,7 +1792,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		}
 
 		new_port->port_ast = ast;
-		ISC_signal(SIGURG, inet_handler, new_port);
+		ISC_signal(SIGURG, (void(*)(void))inet_handler, new_port);
 	}
 #endif
 
@@ -1943,7 +1960,7 @@ static int check_host(
 
 	length = sizeof(address);
 
-	if (getpeername((int) port->port_handle, &address, &length) == -1)
+	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, &length) == -1)
 		return 0;
 
 
@@ -1967,7 +1984,7 @@ static int check_host(
 
 	if (result == -1) {
 		fp = ib_fopen(GDS_HOSTS_FILE, "r");
-		hosts_file = fp ? GDS_HOSTS_FILE : HOSTS_FILE;
+		hosts_file = fp ? (TEXT*)GDS_HOSTS_FILE : (TEXT*)HOSTS_FILE;
 		if (fp)
 			ib_fclose(fp);
 
@@ -2097,7 +2114,7 @@ static void disconnect( PORT port)
 #if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
 	defined WIN_NT)
 	if (port->port_ast) {
-		ISC_signal_cancel(SIGURG, inet_handler, port);
+		ISC_signal_cancel(SIGURG, (void(*)(void))inet_handler, port);
 	}
 #endif
 
@@ -3346,7 +3363,7 @@ static void inet_handler( PORT port)
 
 		return;
 	}
-	(*port->port_ast) (port);
+	(*((void(*)(PORT))port->port_ast)) (port);
 }
 #endif
 

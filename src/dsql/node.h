@@ -24,6 +24,8 @@
 #ifndef _DSQL_NODE_H_
 #define _DSQL_NODE_H_
 
+#include "../dsql/dsql.h"
+
 /* an enumeration of the possible node types in a syntax tree */
 
 typedef ENUM nod_t

@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc.cpp,v 1.1.1.1 2001-05-23 13:26:11 tamlin Exp $
+$Id: isc.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include "../jrd/ib_stdio.h"
@@ -1444,6 +1444,14 @@ void isc_internal_set_config_value(UCHAR key, ULONG * value1, ULONG * value2)
 
 
 #ifdef UNIX
+#ifdef AIX_PPC
+#define _UNIX95
+#endif
+#include <grp.h>
+#ifdef AIX_PPC
+#undef _UNIX95
+#endif
+
 SLONG ISC_get_user_group_id(TEXT * user_group_name)
 {
 /**************************************
@@ -1460,14 +1468,9 @@ SLONG ISC_get_user_group_id(TEXT * user_group_name)
  *                  ---  for UNIX platform  ---
  *
  **************************************/
-#ifdef AIX_PPC
-#define _UNIX95
-#endif
-#include <grp.h>
-#ifdef AIX_PPC
-#undef _UNIX95
-#endif
+#ifndef DARWIN
 	extern struct group *getgrnam();
+#endif
 	struct group *user_group;
 	SLONG n;
 

@@ -25,7 +25,7 @@
 #define GPRE_GPRE_META_H
 
 #ifdef __cplusplus
-extern "C" {
+//extern "C" {
 #endif
 
 extern FLD MET_context_field(CTX, char *);
@@ -53,7 +53,7 @@ extern BOOLEAN MET_type(FLD, TEXT *, SSHORT *);
 extern BOOLEAN MET_trigger_exists(DBB, TEXT *);
 
 #ifdef __cplusplus
-} /* extern "C" */
+//} /* extern "C" */
 #endif
 
 #endif /* GPRE_GPRE_META_H */

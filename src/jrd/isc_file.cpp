@@ -101,6 +101,12 @@ typedef struct itm {
 #define MTAB_CLOSE(stream)	ib_fclose (stream)
 #endif
 
+#ifdef DARWIN
+#define MTAB			"/etc/fstab.hd"
+#define MTAB_OPEN(path,type)	ib_fopen (path, type)
+#define MTAB_CLOSE(stream)	ib_fclose (stream)
+#endif
+
 #ifdef SCO_UNIX
 #define NON_MNTENT
 #define MTAB			"/etc/mount"
@@ -135,7 +141,7 @@ typedef struct itm {
 #include <sys/vmount.h>
 #endif
 
-#if (defined SOLARIS || defined UNIXWARE || defined NCR3000 || defined linux || defined M88K || defined FREEBSD || defined NETBSD)
+#if (defined SOLARIS || defined UNIXWARE || defined NCR3000 || defined linux || defined M88K || defined FREEBSD || defined NETBSD || defined DARWIN)
 #define GETWD(buf)		getcwd (buf, MAXPATHLEN)
 #endif
 
@@ -1474,7 +1480,7 @@ int ISC_strip_extension(TEXT * file_name)
 
 
 #if (defined NFS || defined FREEBSD || defined NETBSD)
-static expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
+static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 {
 /**************************************
  *

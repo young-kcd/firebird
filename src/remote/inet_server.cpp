@@ -23,13 +23,31 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: inet_server.cpp,v 1.1.1.1 2001-05-23 13:26:39 tamlin Exp $
+$Id: inet_server.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 */
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/divorce.h"
 #if !(defined VMS || defined sgi || defined PC_PLATFORM)
 #include <sys/param.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
 #endif
 
 #ifdef WINDOWS_ROUTER
@@ -91,7 +109,7 @@ $Id: inet_server.cpp,v 1.1.1.1 2001-05-23 13:26:39 tamlin Exp $
 #ifndef NFDBITS
 #define NFDBITS		(sizeof(SLONG) * NBBY)
 
-#if !(defined NETWARE_386 || defined DECOSF)
+#if !(defined NETWARE_386 || defined DECOSF || defined DARWIN)
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
@@ -115,7 +133,8 @@ extern "C" {
 
 static int assign(SCHAR *);
 #ifndef DECOSF
-static int bzero(SCHAR *, int);
+extern "C" void *memset(void* , int , size_t);
+static int bzero(void *, int);
 #endif
 static void name_process(UCHAR *);
 static void signal_handler(void);
@@ -294,7 +313,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 			gds__log("INET_SERVER/main: gds_inet_server restarted");
 		}
-		set_signal(SIGUSR1, SIG_DFL);
+		set_signal(SIGUSR1, (void(*)()) SIG_DFL);
 	}
 #endif
 
@@ -326,7 +345,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (!debug) {
 			FD_ZERO(&mask);
 			FD_SET(2, &mask);
-			divorce_terminal(&mask);
+			divorce_terminal((int) &mask);
 		}
 		{
 			STATUS status_vector[ISC_STATUS_LENGTH];
@@ -500,7 +519,7 @@ static int assign( SCHAR * string)
 
 
 #if !(defined DECOSF)
-static int bzero( SCHAR * address, int length)
+static int bzero( void * addr, int length)
 {
 /**************************************
  *
@@ -512,6 +531,7 @@ static int bzero( SCHAR * address, int length)
  *	Zero a block of memory.
  *
  **************************************/
+	SCHAR *address = (SCHAR*) addr;
 
 	if (length)
 		do
@@ -551,7 +571,7 @@ static int set_signal( int signal_number, void (*handler) (void))
 #else
 	struct sigaction vec, old_vec;
 
-	vec.sa_handler = handler;
+	vec.sa_handler = (void(*)(int)) handler;
 	memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 	vec.sa_flags = 0;
 	sigaction(signal_number, &vec, &old_vec);

@@ -45,6 +45,11 @@
 #include "../jrd/jrn_proto.h"
 #include "../jrd/llio_proto.h"
 #include "../jrd/misc_proto.h"
+#include "../jrd/divorce.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #include <setjmp.h>
 #if !(defined WIN_NT)
@@ -171,7 +176,11 @@ static WAL_TERMINATOR(log_terminator_block);
 int main_walw( char **argv)
 #else
 
-int CLIB_ROUTINE main( int argc, char **argv)
+/* JMB - I didn't like have a "main" symbol is the shared library, so
+ * I change the function name from main to walw_classic_main and
+ * added the walw_main.c file.
+ */
+int CLIB_ROUTINE walw_classic_main( int argc, char **argv)
 #endif
 {
 /**************************************

@@ -234,7 +234,7 @@ void IDX_create_index(
 							key_length + sizeof(struct isr),
 							1,
 							&key_desc,
-							reinterpret_cast < UCHAR(*)() > (duplicate_key),
+							reinterpret_cast < BOOLEAN(*)() > (duplicate_key),
 							&ifl_data, tdbb->tdbb_attachment);
 
 	if (!sort_handle)

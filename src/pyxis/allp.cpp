@@ -21,13 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: allp.cpp,v 1.1.1.1 2001-05-23 13:26:33 tamlin Exp $
+$Id: allp.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include "../pyxis/everything.h"
+#include "../jrd/gds_proto.h"
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 
 extern UCHAR *gds__alloc();
+static int extend_pool(PLB pool, int size);
 
 PLB PYXIS_pool();
 UCHAR *PYXIS_malloc();
@@ -47,10 +53,7 @@ static struct {
 #undef BLKDEF
 
 
-BLK PYXIS_alloc(pool, type, count)
-	 PLB pool;
-	 UCHAR type;
-	 int count;
+BLK PYXIS_alloc(PLB pool, UCHAR type, int count)
 {
 /**************************************
  *
@@ -135,9 +138,7 @@ BLK PYXIS_alloc(pool, type, count)
 }
 
 
-BLK PYXIS_extend(pointer, size)
-	 BLK *pointer;
-	 int size;
+BLK PYXIS_extend(BLK *pointer, int size)
 {
 /**************************************
  *
@@ -149,16 +150,16 @@ BLK PYXIS_extend(pointer, size)
  *	Extend a repeating block, copying the constant part.
  *
  **************************************/
-	BLK block, new;
+	BLK block, new_blk;
 	register int length, l;
 	register SLONG *p1, *p2;
 	register SCHAR *c1, *c2;
 
 	block = *pointer;
-	new = PYXIS_alloc(pools->vec_object[block->blk_pool_id],
+	new_blk = (BLK) PYXIS_alloc((PLB) pools->vec_object[block->blk_pool_id],
 					  block->blk_type, size);
-	length = MIN(block->blk_length, new->blk_length) - sizeof(struct blk);
-	p1 = (SLONG *) ((SCHAR *) new + sizeof(struct blk));
+	length = MIN(block->blk_length, new_blk->blk_length) - sizeof(struct blk);
+	p1 = (SLONG *) ((SCHAR *) new_blk + sizeof(struct blk));
 	p2 = (SLONG *) ((SCHAR *) block + sizeof(struct blk));
 
 	if (l = length >> SHIFTLONG)
@@ -174,17 +175,17 @@ BLK PYXIS_extend(pointer, size)
 		while (--length);
 	}
 
-	PYXIS_release(block);
+	PYXIS_release((FRB) block);
 
-	if (new->blk_type == (SCHAR) type_vec)
-		((VEC) new)->vec_count = size;
+	if (new_blk->blk_type == (SCHAR) type_vec)
+		((VEC) new_blk)->vec_count = size;
 
-	*pointer = new;
-	return new;
+	*pointer = new_blk;
+	return new_blk;
 }
 
 
-PYXIS_alloc_fini()
+int PYXIS_alloc_fini()
 {
 /**************************************
  *
@@ -210,8 +211,7 @@ PYXIS_alloc_fini()
 }
 
 
-PYXIS_free(memory)
-	 SCHAR *memory;
+int PYXIS_free(SCHAR *memory)
 {
 /**************************************
  *
@@ -228,7 +228,7 @@ PYXIS_free(memory)
 }
 
 
-PYXIS_alloc_init()
+int PYXIS_alloc_init()
 {
 /**************************************
  *
@@ -254,8 +254,7 @@ PYXIS_alloc_init()
 }
 
 
-UCHAR *PYXIS_malloc(size)
-	 SLONG size;
+UCHAR *PYXIS_malloc(SLONG size)
 {
 /**************************************
  *
@@ -301,7 +300,7 @@ PLB PYXIS_pool()
 			break;
 
 	if (pool_id >= pools->vec_count)
-		PYXIS_extend(&pools, pool_id + 10);
+		PYXIS_extend((BLK*) &pools, pool_id + 10);
 
 	pools->vec_object[pool_id] = (BLK) & temp_pool;
 	temp_pool.plb_free = NULL;
@@ -310,7 +309,7 @@ PLB PYXIS_pool()
 	if (pool_id == 0)
 		PYXIS_permanent_pool = &temp_pool;
 
-	pool = (PLB) PYXIS_alloc(&temp_pool, type_plb);
+	pool = (PLB) PYXIS_alloc(&temp_pool, type_plb, sizeof(struct plb));
 	pool->plb_pool_id = pool_id;
 	pool->plb_free = temp_pool.plb_free;
 	pool->plb_hunks = temp_pool.plb_hunks;
@@ -323,9 +322,7 @@ PLB PYXIS_pool()
 }
 
 
-PYXIS_push(object, stack)
-	 BLK object;
-	 register LLS *stack;
+int PYXIS_push(BLK object, register LLS *stack)
 {
 /**************************************
  *
@@ -345,7 +342,7 @@ PYXIS_push(object, stack)
 	if (node = pool->plb_lls)
 		pool->plb_lls = node->lls_next;
 	else
-		node = (LLS) PYXIS_alloc(pool, type_lls);
+		node = (LLS) PYXIS_alloc(pool, type_lls, sizeof(struct lls));
 
 	node->lls_object = object;
 	node->lls_next = *stack;
@@ -353,8 +350,7 @@ PYXIS_push(object, stack)
 }
 
 
-BLK PYXIS_pop(stack)
-	 register LLS *stack;
+BLK PYXIS_pop(register LLS *stack)
 {
 /**************************************
  *
@@ -380,8 +376,7 @@ BLK PYXIS_pop(stack)
 }
 
 
-PYXIS_release(block)
-	 register FRB block;
+int PYXIS_release(register FRB block)
 {
 /**************************************
  *
@@ -450,8 +445,7 @@ PYXIS_release(block)
 }
 
 
-PYXIS_rlpool(pool)
-	 PLB pool;
+int PYXIS_rlpool(PLB pool)
 {
 /**************************************
  *
@@ -475,9 +469,7 @@ PYXIS_rlpool(pool)
 }
 
 
-static extend_pool(pool, size)
-	 PLB pool;
-	 int size;
+static int extend_pool(PLB pool, int size)
 {
 /**************************************
  *
@@ -500,9 +492,9 @@ static extend_pool(pool, size)
 	block->blk_length = size;
 	block->blk_type = (SCHAR) type_frb;
 	block->blk_pool_id = pool->plb_pool_id;
-	PYXIS_release(block);
+	PYXIS_release((FRB) block);
 
-	hunk = (HNK) PYXIS_alloc(pool, type_hnk);
+	hunk = (HNK) PYXIS_alloc(pool, type_hnk, sizeof(hnk) );
 	hunk->hnk_address = (SCHAR *) block;
 	hunk->hnk_length = size;
 	hunk->hnk_next = pool->plb_hunks;

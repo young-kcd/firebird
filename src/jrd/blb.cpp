@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.2 2001-07-10 17:35:13 awharrison Exp $
+$Id: blb.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
 */
 
 #include <string.h>
@@ -198,8 +198,8 @@ BLB BLB_create2(TDBB tdbb,
 
 	type = gds__parse_bpb2(bpb_length,
 						   bpb,
-						   reinterpret_cast < USHORT * >(&from),
-						   reinterpret_cast < USHORT * >(&to),
+						   reinterpret_cast < SSHORT * >(&from),
+						   reinterpret_cast < SSHORT * >(&to),
 						   reinterpret_cast < USHORT * >(&from_charset),
 						   reinterpret_cast < USHORT * >(&to_charset));
 	blob = allocate_blob(tdbb, transaction);
@@ -224,7 +224,7 @@ BLB BLB_create2(TDBB tdbb,
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
 			filter = (BLF) ALLOCP(type_blf);
 			filter->blf_filter =
-				reinterpret_cast < long (*) () > (filter_transliterate_text);
+				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			filter_required = TRUE;
 		}
 	}
@@ -995,8 +995,8 @@ BLB BLB_open2(TDBB tdbb,
 
 	gds__parse_bpb2(bpb_length,
 					bpb,
-					reinterpret_cast < USHORT * >(&from),
-					reinterpret_cast < USHORT * >(&to),
+					reinterpret_cast < SSHORT * >(&from),
+					reinterpret_cast < SSHORT * >(&to),
 					reinterpret_cast < USHORT * >(&from_charset),
 					reinterpret_cast < USHORT * >(&to_charset));
 
@@ -1024,7 +1024,7 @@ BLB BLB_open2(TDBB tdbb,
 		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
 			filter = (BLF) ALLOCP(type_blf);
 			filter->blf_filter =
-				reinterpret_cast < long (*) () > (filter_transliterate_text);
+				reinterpret_cast < STATUS (*) (USHORT, CTL) > (filter_transliterate_text);
 			filter_required = TRUE;
 		}
 	}

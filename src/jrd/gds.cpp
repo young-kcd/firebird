@@ -49,6 +49,11 @@
 #include "../jrd/time.h"
 #include "../jrd/misc.h"
 
+#ifdef DARWIN
+#include <CoreFoundation/CFBundle.h>
+#include <CoreFoundation/CFURL.h>
+#endif
+
 #if (defined PC_PLATFORM && !defined NETWARE_386)
 #include <io.h>
 #endif
@@ -159,7 +164,7 @@ extern int ib_printf();
 #endif
 #endif
 
-#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD)
+#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN )
 extern int errno;
 extern SCHAR *sys_errlist[];
 extern int sys_nerr;
@@ -196,7 +201,7 @@ typedef int pid_t;
 #endif
 
 #ifndef GETTIMEOFDAY
-#define GETTIMEOFDAY(time,tz)	gettimeofday (time, tz)
+#define GETTIMEOFDAY(time,tz)	gettimeofday ((struct timeval*)time, (struct timezone*)tz)
 #define TIMEOFDAY_TZ
 #endif
 
@@ -389,7 +394,7 @@ void GDS_breakpoint(int);
 
 
 static void		blr_error(CTL, TEXT *, TEXT *);
-static void		blr_format(CTL, TEXT *, ...);
+static void		blr_format(CTL, const char *, ...);
 static void		blr_indent(CTL, SSHORT);
 static void		blr_print_blr(CTL, UCHAR);
 static SCHAR	blr_print_byte(CTL);
@@ -1773,7 +1778,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 		break;
 
 	case gds_arg_netware:
-		if (code > 0 && code < sys_nerr && (p = sys_errlist[code]))
+		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
 			strcpy(s, p);
 		else if (code == 60)
 			strcpy(s, "connection timed out");
@@ -1797,7 +1802,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 
 #ifndef NETWARE_386
 #ifndef PC_PLATFORM
-		if (code > 0 && code < sys_nerr && (p = sys_errlist[code]))
+		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
 			strcpy(s, p);
 		else if (code == 60)
 			strcpy(s, "connection timed out");
@@ -2178,7 +2183,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void *handle,
 	position = message->msg_top_tree;
 
 	for (n = 1, status = 0; !status; n++) {
-		if (lseek(message->msg_file, position, 0) < 0)
+		if (lseek(message->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
 			status = -6;
 		else if (read(message->msg_file, message->msg_bucket,
 					  message->msg_bucket_size) < 0)
@@ -2392,11 +2397,16 @@ void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
  *	the enviroment variable INTERBASE if it is set.
  *
  **************************************/
+	#ifdef DARWIN   /* Variables needed for Darwin specific code */
+	CFBundleRef     ibaseBundle;
+	CFURLRef        msgFileUrl;
+	CFStringRef     msgFilePath;
+	#endif      
 
 	string[0] = 0;
 
 	if (ib_prefix == NULL) {
-		if (!(ib_prefix = getenv(ISC_ENV)))
+		if ( !(ib_prefix = getenv(ISC_ENV)) || ib_prefix[0] == 0)
 		{
 #if defined(WIN_NT)
 			ib_prefix = ib_prefix_val;
@@ -2428,8 +2438,22 @@ void API_ROUTINE gds__prefix(TEXT * string, TEXT * root)
 				}
 			}
 #else	// WIN_NT
-			ib_prefix = ISC_PREFIX;
-			strcat(ib_prefix_val, ib_prefix);
+#ifdef DARWIN
+			if ( (ibaseBundle = CFBundleGetBundleWithIdentifier(
+				CFSTR(DARWIN_FRAMEWORK_ID)) ) &&
+			(msgFileUrl = CFBundleCopyResourceURL(ibaseBundle,
+				CFSTR(DARWIN_GEN_DIR), NULL, NULL)) &&
+			(msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
+					kCFURLPOSIXPathStyle)) &&
+			(CFStringGetCString(msgFilePath, ib_prefix_val,
+				MAXPATHLEN, kCFStringEncodingMacRoman ))
+			) { }
+			else
+#endif
+			{
+				ib_prefix = ISC_PREFIX;
+				strcat(ib_prefix_val, ib_prefix);
+			}
 #endif
 			ib_prefix = ib_prefix_val;
 		}
@@ -2731,14 +2755,16 @@ USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
  *
  **************************************/
 
-	return gds__parse_bpb2(bpb_length, bpb, source, target, NULL, NULL);
+  /* SIGN ERROR */
+
+	return gds__parse_bpb2(bpb_length, bpb, (SSHORT*)source, (SSHORT*)target, NULL, NULL);
 }
 
 
 USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 								   UCHAR * bpb,
-								   USHORT * source,
-								   USHORT * target,
+								   SSHORT * source,
+								   SSHORT * target,
 								   USHORT * source_interp,
 								   USHORT * target_interp)
 {
@@ -2847,7 +2873,7 @@ SLONG API_ROUTINE gds__ftof(register SCHAR * string,
 
 int API_ROUTINE gds__print_blr(
 							   UCHAR * blr,
-							   void (*routine) (),
+							   FPTR_VOID routine,
 							   SCHAR * user_arg, SSHORT language)
 {
 /**************************************
@@ -3131,9 +3157,13 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
 #ifdef UNIX
 #ifdef MAP_ANONYMOUS
 	  memory = mmap(NULL, size, (PROT_READ | PROT_WRITE),
+#ifdef MAP_ANONYMOUS
 					(MAP_ANONYMOUS |
-#ifndef LINUX
-/* In LINUX, there is no such thing as MAP_VARIABLE. Hence, it gives 
+#else
+					(MAP_ANON |
+#endif
+#if (!defined(LINUX) && !defined(DARWIN))
+/* In LINUX and Darwin there is no such thing as MAP_VARIABLE. Hence, it gives 
    compilation error. The equivalent functionality is default, 
    if you do not specify MAP_FIXED */
 					 MAP_VARIABLE |
@@ -3811,7 +3841,7 @@ static void blr_error(CTL control, TEXT * string, TEXT * arg1)
 }
 
 
-static void blr_format(CTL control, TEXT * string, ...)
+static void blr_format(CTL control, const char * string, ...)
 {
 /**************************************
  *
@@ -3897,7 +3927,7 @@ static SCHAR blr_print_byte(CTL control)
 }
 
 
-static blr_print_char(CTL control)
+static int blr_print_char(CTL control)
 {
 /**************************************
  *
@@ -3978,7 +4008,7 @@ static void blr_print_cond(CTL control)
 }
 
 
-static blr_print_dtype(CTL control)
+static int blr_print_dtype(CTL control)
 {
 /**************************************
  *

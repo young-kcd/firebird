@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//  $Id: form.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -35,7 +35,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: form.cpp,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+//	$Id: form.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include "../gpre/gpre.h"
@@ -48,7 +48,10 @@
 
 typedef int *HANDLE;
 
-extern HANDLE PYXIS_find_field(), PYXIS_get_attribute_value();
+extern "C" HANDLE PYXIS_find_field(HANDLE , TEXT *);
+extern "C" HANDLE PYXIS_get_attribute_value(HANDLE , ATT_N );
+extern int pyxis__load_form(STATUS *, SLONG *, SLONG *, SLONG *, SSHORT *,
+                                   SCHAR *);
 
 extern USHORT sw_cstring;
 
@@ -74,13 +77,13 @@ FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 
 	for (field = form->form_fields; field; field = field->fld_next) {
 		symbol = field->fld_symbol;
-		if (!strcmp(name, symbol->sym_string))
+		if (!strcmp((char*)name, symbol->sym_string))
 			return field;
 	}
 
 //  Haven't seen it before -- look it up on form 
 
-	if (!(handle = PYXIS_find_field(object, name)))
+	if (!(handle = PYXIS_find_field(object, (TEXT*) name)))
 		return NULL;
 //  Make field block and decrypt data type 
 
@@ -88,7 +91,7 @@ FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 	field->fld_next = form->form_fields;
 	form->form_fields = field;
 	field->fld_handle = handle;
-	field->fld_prototype = GET_VALUE(handle, att_prototype);
+	field->fld_prototype = (int*) GET_VALUE(handle, att_prototype);
 	field->fld_dtype = FORM_TRN_dtype((USHORT) GET_VALUE(handle, att_dtype));
 	field->fld_length = (int) GET_VALUE(handle, att_length);
 	field->fld_scale = (int) GET_VALUE(handle, att_scale);
@@ -109,7 +112,7 @@ FLD FORM_lookup_field( FORM form, HANDLE object, char *string)
 //  Make up symbol block 
 
 	l = p - name;
-	field->fld_symbol = symbol = MSC_symbol(SYM_form_field, name, l, 0);
+	field->fld_symbol = symbol = MSC_symbol(SYM_form_field, (TEXT*) name, l, 0);
 
 	return field;
 }
@@ -138,7 +141,7 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 
 	l = p - name;
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (symbol = HSH_lookup((SCHAR*) name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_form &&
 			(form = (FORM) symbol->sym_object) && form->form_dbb == dbb)
 			return form;
@@ -147,8 +150,8 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 
 	form = (FORM) ALLOC(sizeof(struct form));
 	pyxis__load_form(status,
-					 &dbb->dbb_handle, &dbb->dbb_transaction,
-					 &form->form_object, 0, name);
+					 (SLONG*)&dbb->dbb_handle, (SLONG*)&dbb->dbb_transaction,
+					 (SLONG*)&form->form_object, 0, (SCHAR*)name);
 
 	if (!form->form_object)
 		return NULL;
@@ -159,7 +162,7 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 
 //  Make up form block, etc 
 
-	form->form_name = symbol = MSC_symbol(SYM_form, name, l, (CTX) form);
+	form->form_name = symbol = MSC_symbol(SYM_form, (TEXT*) name, l, (CTX) form);
 	HSH_insert(symbol);
 
 	return form;

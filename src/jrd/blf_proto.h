@@ -25,7 +25,7 @@
 #define _JRD_BLF_PROTO_H_
 
 #ifdef __cplusplus
-extern "C" {
+//extern "C" {
 #endif
 
 extern STATUS DLL_EXPORT BLF_close_blob(TDBB, struct ctl **);
@@ -40,7 +40,7 @@ extern STATUS DLL_EXPORT BLF_put_segment(TDBB, struct ctl **, USHORT,
 										 UCHAR *);
 
 #ifdef __cplusplus
-} /* extern "C" */
+//} /* extern "C" */
 #endif
 
 #endif /* _JRD_BLF_PROTO_H_ */

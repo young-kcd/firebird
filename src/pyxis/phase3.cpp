@@ -21,46 +21,59 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: phase3.cpp,v 1.1.1.1 2001-05-23 13:26:34 tamlin Exp $
+$Id: phase3.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
+
+#include <stdio.h>
 
 #include <setjmp.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../include/jrd/gds.h"
+#include "../jrd/gds_proto.h"
+#include "../pyxis/everything.h"
 #include "../pyxis/pyxis.h"
 #include "../pyxis/phase2.h"
+#include "../pyxis/save.h"
 
-extern OBJ PYXIS_find_field(), PYXIS_get_attribute_value(),
-PYXIS_find_index(), PYXIS_update(), PYXIS_drive_menu(), PYXIS_menu(),
-PYXIS_clone(), PYXIS_create_object();
-extern WIN PYXIS_create_window();
-extern ATT PYXIS_replicate_prototype(), PYXIS_find_object(), PYXIS_navigate();
+BLK PYXIS_alloc(PLB , UCHAR , int );
+void MOVP_move( DSC *, DSC *);
+SLONG MOVP_get_long(DSC * , SSHORT );
+BLK PYXIS_pop(register LLS *);
+int PYXIS_push(BLK , register LLS *);
 
-extern PYXIS_init();
+static MENU par_menu(WIN , USHORT *, SCHAR *);
+static int get_field_value(WIN , OBJ , OBJ , DSC *);
+static OBJ find_field(MAP , OBJ , map::map_repeat *);
+static int get_blob(OBJ , DSC *, SLONG **, SLONG **);
+static MAP par_message(STATUS *, TEXT **);
+static int par_word(TEXT **);
+static int propogate_options(map::map_repeat *, SLONG );
+static int put_blob(OBJ , DSC *, SLONG **, SLONG **);
+static int put_value(MAP , USHORT , UCHAR *, SLONG );
+static int unwind(TEXT *);
+static int error(STATUS *, TEXT *, ...);
 
-static MAP par_message();
-static MENU par_menu();
-static OBJ find_field();
+int pyxis__insert(STATUS *, SLONG **, SLONG *, MAP *, UCHAR *);
+int pyxis__fetch(STATUS *, SLONG **, SLONG *, MAP *, UCHAR *);
+int pyxis__initialize_menu(MENU *);
+
+extern "C" int PYXIS_format_menu(OBJ , TEXT *, int );
+extern OBJ PYXIS_drive_menu(WIN , OBJ , USHORT *);
+extern "C" OBJ PYXIS_menu(WIN , OBJ );
+extern ATT PYXIS_create_entree(OBJ , TEXT *, int , BLK );
+
 
 #define BLR_BYTE	(*p++)
 #define BLR_WORD	par_word (&p)
 
-extern WIN PYXIS_create_window();
-
-static int error(STATUS *, TEXT *, ...);
 
 static jmp_buf unwind_env;
 static TEXT error_buffer[256];
-static unwind();
 
 
-pyxis__compile_map(status, form_handle, map_handle, length, source)
-	 STATUS *status;
-	 OBJ *form_handle;
-	 MAP *map_handle;
-	 USHORT *length;
-	 SCHAR *source;
+int pyxis__compile_map(STATUS *status, OBJ *form_handle, MAP *map_handle,
+     USHORT *length, SCHAR *source)
 {
 /**************************************
  *
@@ -78,25 +91,25 @@ pyxis__compile_map(status, form_handle, map_handle, length, source)
 	STR string;
 	SCHAR *p, c;
 	TEXT *q, name[32];
-	struct map_repeat *tail;
+	map::map_repeat *tail;
 
 	form = *form_handle;
 	p = source;
 	c = BLR_BYTE;
 
-	if (c != PYXIS__MAP_VERSION1)
+	if (c != PYXIS_MAP_VERSION1)
 		return error(status, "unsupported map version %d", c);
 
-	while ((c = BLR_BYTE) != PYXIS__MAP_END)
+	while ((c = BLR_BYTE) != PYXIS_MAP_END)
 		switch (c) {
-		case PYXIS__MAP_MESSAGE:
+		case PYXIS_MAP_MESSAGE:
 			if (!(map = par_message(status, &p)))
 				return FALSE;
 			map->map_form = form;
 			break;
 
-		case PYXIS__MAP_FIELD1:
-		case PYXIS__MAP_FIELD2:
+		case PYXIS_MAP_FIELD1:
+		case PYXIS_MAP_FIELD2:
 			q = name;
 			if (n = BLR_BYTE)
 				do
@@ -107,13 +120,13 @@ pyxis__compile_map(status, form_handle, map_handle, length, source)
 			tail = map->map_rpt + n;
 			if (!(tail->map_field = PYXIS_find_field(form, name)))
 				return error(status, "field %s not defined", name);
-			if (c == PYXIS__MAP_FIELD2) {
+			if (c == PYXIS_MAP_FIELD2) {
 				tail->map_field_flags |= MAP_options;
 				tail->map_option = BLR_WORD;
 			}
 			break;
 
-		case PYXIS__MAP_SUB_FIELD:
+		case PYXIS_MAP_SUB_FIELD:
 
 			/* Get repeating group field name */
 
@@ -151,23 +164,23 @@ pyxis__compile_map(status, form_handle, map_handle, length, source)
 			tail->map_option = BLR_WORD;
 			break;
 
-		case PYXIS__MAP_OPAQUE:
+		case PYXIS_MAP_OPAQUE:
 			map->map_flags &= ~MAP_transparent;
 			break;
 
-		case PYXIS__MAP_TRANSPARENT:
+		case PYXIS_MAP_TRANSPARENT:
 			map->map_flags |= MAP_transparent;
 			break;
 
-		case PYXIS__MAP_TAG:
+		case PYXIS_MAP_TAG:
 			map->map_flags |= MAP_tag;
 			break;
 
-		case PYXIS__MAP_TERMINATOR:
+		case PYXIS_MAP_TERMINATOR:
 			map->map_terminator = par_word(&p) + 1;
 			break;
 
-		case PYXIS__MAP_TERMINATING_FIELD:
+		case PYXIS_MAP_TERMINATING_FIELD:
 			map->map_terminating_field = par_word(&p) + 1;
 			break;
 
@@ -179,11 +192,8 @@ pyxis__compile_map(status, form_handle, map_handle, length, source)
 }
 
 
-pyxis__compile_menu(window_handle, menu_handle, length, source)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 USHORT *length;
-	 TEXT *source;
+int pyxis__compile_menu(WIN *window_handle, MENU *menu_handle, USHORT *length,
+             TEXT *source)
 {
 /**************************************
  *
@@ -200,12 +210,8 @@ pyxis__compile_menu(window_handle, menu_handle, length, source)
 }
 
 
-pyxis__compile_sub_map(status, parent_handle, map_handle, length, source)
-	 STATUS *status;
-	 MAP *parent_handle;
-	 MAP *map_handle;
-	 USHORT *length;
-	 SCHAR *source;
+int pyxis__compile_sub_map(STATUS *status, MAP *parent_handle, MAP *map_handle,
+          USHORT *length, SCHAR *source)
 {
 /**************************************
  *
@@ -222,23 +228,23 @@ pyxis__compile_sub_map(status, parent_handle, map_handle, length, source)
 	STR string;
 	SCHAR *p, c;
 	TEXT *q, name[32];
-	struct map_repeat *tail;
+	map::map_repeat *tail;
 
 	parent = *parent_handle;
 	p = source;
 	c = BLR_BYTE;
 
-	if (c != PYXIS__MAP_VERSION1)
+	if (c != PYXIS_MAP_VERSION1)
 		return error(status, "unsupported map version %d", c);
 
-	while ((c = BLR_BYTE) != PYXIS__MAP_END)
+	while ((c = BLR_BYTE) != PYXIS_MAP_END)
 		switch (c) {
-		case PYXIS__MAP_MESSAGE:
+		case PYXIS_MAP_MESSAGE:
 			if (!(map = par_message(status, &p)))
 				return FALSE;
 			break;
 
-		case PYXIS__MAP_SUB_FORM:
+		case PYXIS_MAP_SUB_FORM:
 			q = name;
 			if (n = BLR_BYTE)
 				do
@@ -255,8 +261,8 @@ pyxis__compile_sub_map(status, parent_handle, map_handle, length, source)
 														  name);
 			break;
 
-		case PYXIS__MAP_FIELD1:
-		case PYXIS__MAP_FIELD2:
+		case PYXIS_MAP_FIELD1:
+		case PYXIS_MAP_FIELD2:
 			n = BLR_BYTE;
 			string = (STR) ALLOCPV(type_str, n);
 			q = string->str_data;
@@ -272,13 +278,13 @@ pyxis__compile_sub_map(status, parent_handle, map_handle, length, source)
 									 tail->map_name)) return error(status,
 																   "field %s not defined",
 																   tail->map_name);
-			if (c == PYXIS__MAP_FIELD2) {
+			if (c == PYXIS_MAP_FIELD2) {
 				tail->map_field_flags |= MAP_options;
 				tail->map_option = BLR_WORD;
 			}
 			break;
 
-		case PYXIS__MAP_ITEM_INDEX:
+		case PYXIS_MAP_ITEM_INDEX:
 			map->map_item_index = par_word(&p) + 1;
 			break;
 
@@ -291,12 +297,8 @@ pyxis__compile_sub_map(status, parent_handle, map_handle, length, source)
 
 
 
-pyxis__create_window(window_handle, file_name_length, file_name, width,
-					 height)
-	 WIN *window_handle;
-	 USHORT *file_name_length;
-	 TEXT *file_name;
-	 SSHORT *width, *height;
+int pyxis__create_window(WIN *window_handle, USHORT *file_name_length,
+              TEXT *file_name, USHORT *width, USHORT *height)
 {
 /**************************************
  *
@@ -317,8 +319,7 @@ pyxis__create_window(window_handle, file_name_length, file_name, width,
 }
 
 
-pyxis__delete(object)
-	 OBJ *object;
+int pyxis__delete(OBJ *object)
 {
 /**************************************
  *
@@ -338,8 +339,7 @@ pyxis__delete(object)
 
 
 
-pyxis__delete_window(window_handle)
-	 SLONG *window_handle;
+int pyxis__delete_window(SLONG *window_handle)
 {
 /**************************************
  *
@@ -353,19 +353,15 @@ pyxis__delete_window(window_handle)
  **************************************/
 
 	if (*window_handle) {
-		PYXIS_delete_window(*window_handle);
+		PYXIS_delete_window((WIN) *window_handle);
 		*window_handle = NULL;
 	}
 }
 
 
-pyxis__drive_form(status, db_handle, tra_handle, window_handle, map_handle,
-				  input, output)
-	 STATUS *status;
-	 SLONG **db_handle, *tra_handle;
-	 WIN *window_handle;
-	 MAP *map_handle;
-	 UCHAR *input, *output;
+int pyxis__drive_form(STATUS *status, SLONG **db_handle, SLONG *tra_handle, 
+                      WIN *window_handle, MAP *map_handle,
+		      UCHAR *input, UCHAR *output)
 {
 /**************************************
  *
@@ -451,19 +447,9 @@ pyxis__drive_form(status, db_handle, tra_handle, window_handle, map_handle,
 }
 
 
-pyxis__drive_menu(window_handle, menu_handle, blr_length, blr_source,
-				  title_length, title, terminator, entree_length, entree_text,
-				  entree_value)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 USHORT *blr_length;
-	 SCHAR *blr_source;
-	 USHORT *title_length;
-	 TEXT *title;
-	 USHORT *terminator;
-	 USHORT *entree_length;
-	 TEXT *entree_text;
-	 SLONG *entree_value;
+int pyxis__drive_menu(WIN *window_handle, MENU *menu_handle, USHORT *blr_length,
+      SCHAR *blr_source, USHORT *title_length, TEXT *title, USHORT *terminator,
+      USHORT *entree_length, TEXT *entree_text, SLONG *entree_value)
 {
 /**************************************
  *
@@ -495,32 +481,32 @@ pyxis__drive_menu(window_handle, menu_handle, blr_length, blr_source,
 	p = blr_source;
 	c = BLR_BYTE;
 
-	if (c != PYXIS__MENU_VERSION1) {
+	if (c != PYXIS_MENU_VERSION1) {
 		error(0, "unsupported map version %d", c);
 		return NULL;
 	}
 
-	while ((c = BLR_BYTE) != PYXIS__MENU_END)
+	while ((c = BLR_BYTE) != PYXIS_MENU_END)
 		switch (c) {
-		case PYXIS__MENU_OPAQUE:
+		case PYXIS_MENU_OPAQUE:
 			menu->menu_flags &= ~MENU_transparent;
 			break;
 
-		case PYXIS__MENU_TRANSPARENT:
+		case PYXIS_MENU_TRANSPARENT:
 			menu->menu_flags |= MENU_transparent;
 			break;
 
-		case PYXIS__MENU_HORIZONTAL:
+		case PYXIS_MENU_HORIZONTAL:
 			object->obj_flags |= OBJ_menu_horizontal;
 			break;
 
-		case PYXIS__MENU_VERTICAL:
+		case PYXIS_MENU_VERTICAL:
 			object->obj_flags &= ~OBJ_menu_horizontal;
 			break;
 
 		default:
 			error(0, "invalid menu");
-			return;
+			return 0;
 		}
 
 	for (i = *title_length, fp = title, tp = title_buffer; i > 0;
@@ -559,11 +545,8 @@ pyxis__drive_menu(window_handle, menu_handle, blr_length, blr_source,
 }
 
 
-pyxis__fetch(status, db_handle, tra_handle, map_handle, output)
-	 STATUS *status;
-	 SLONG **db_handle, *tra_handle;
-	 MAP *map_handle;
-	 UCHAR *output;
+int pyxis__fetch(STATUS *status, SLONG **db_handle, SLONG *tra_handle,
+                  MAP *map_handle, UCHAR *output)
 {
 /**************************************
  *
@@ -580,7 +563,7 @@ pyxis__fetch(status, db_handle, tra_handle, map_handle, output)
 	OBJ form, field;
 	USHORT source;
 	SSHORT n;
-	struct map_repeat *tail, *end;
+	map::map_repeat *tail, *end;
 
 	map = *map_handle;
 
@@ -592,7 +575,7 @@ pyxis__fetch(status, db_handle, tra_handle, map_handle, output)
 		n = MOVP_get_long(&desc, 0);
 		if (!(form = PYXIS_find_index(map->map_parent, n))) {
 			put_value(map, map->map_item_index - 1, output, 0);
-			return;
+			return 0;
 		}
 	}
 	else
@@ -609,7 +592,7 @@ pyxis__fetch(status, db_handle, tra_handle, map_handle, output)
 			desc = tail->map_desc;
 			desc.dsc_address = output + (SLONG) desc.dsc_address;
 			if (desc.dsc_dtype == dtype_blob)
-				source = get_blob(field, &desc, db_handle, tra_handle);
+				source = get_blob(field, &desc, db_handle, (SLONG**) tra_handle);
 			else
 				source = get_field_value(map->map_window, form, field, &desc);
 			put_value(map, tail->map_option, output, source);
@@ -619,13 +602,8 @@ pyxis__fetch(status, db_handle, tra_handle, map_handle, output)
 }
 
 
-pyxis__get_entree(menu_handle, entree_length, entree_text, entree_value,
-				  entree_end)
-	 MENU *menu_handle;
-	 USHORT *entree_length;
-	 TEXT *entree_text;
-	 SLONG *entree_value;
-	 USHORT *entree_end;
+int pyxis__get_entree(MENU *menu_handle, USHORT *entree_length,
+           TEXT *entree_text, SLONG *entree_value, USHORT *entree_end)
 {
 /**************************************
  *
@@ -642,7 +620,7 @@ pyxis__get_entree(menu_handle, entree_length, entree_text, entree_value,
 
 	if (!(menu = *menu_handle)) {
 		*entree_end = TRUE;
-		return;
+		return 0;
 	}
 
 	menu->menu_current_entree =
@@ -665,8 +643,7 @@ pyxis__get_entree(menu_handle, entree_length, entree_text, entree_value,
 }
 
 
-pyxis__initialize_menu(menu_handle)
-	 MENU *menu_handle;
+int pyxis__initialize_menu(MENU *menu_handle)
 {
 /**************************************
  *
@@ -691,17 +668,14 @@ pyxis__initialize_menu(menu_handle)
 	else
 		menu = (MENU) ALLOCP(type_menu);
 
-	menu->menu_object = PYXIS_create_object(0, 0);
+	menu->menu_object = PYXIS_create_object(0, (enum att_n)0);
 	*menu_handle = menu;
 
 }
 
 
-pyxis__insert(status, db_handle, tra_handle, map_handle, input)
-	 STATUS *status;
-	 SLONG **db_handle, *tra_handle;
-	 MAP *map_handle;
-	 UCHAR *input;
+int pyxis__insert(STATUS *status, SLONG **db_handle, SLONG *tra_handle,
+                  MAP *map_handle, UCHAR *input)
 {
 /**************************************
  *
@@ -718,7 +692,7 @@ pyxis__insert(status, db_handle, tra_handle, map_handle, input)
 	OBJ form, field;
 	ATT attribute;
 	SSHORT n, max_index;
-	struct map_repeat *tail, *end;
+	map::map_repeat *tail, *end;
 
 	map = *map_handle;
 
@@ -755,41 +729,38 @@ pyxis__insert(status, db_handle, tra_handle, map_handle, input)
 			}
 			if (!(field = find_field(map, form, tail)))
 				continue;
-			if (n & PYXIS__OPT_DISPLAY) {
+			if (n & PYXIS_OPT_DISPLAY) {
 				desc = tail->map_desc;
 				desc.dsc_address = input + (SLONG) desc.dsc_address;
 				if (desc.dsc_dtype == dtype_blob)
-					put_blob(field, &desc, db_handle, tra_handle);
+					put_blob(field, &desc, db_handle, (SLONG**)tra_handle);
 				else
 					PYXIS_put_desc(field, &desc);
 				PYXIS_set_field_options(field, 0, PYXIS_update_present,
 										PYXIS_clear);
 			}
-			if (n & PYXIS__OPT_POSITION) {
+			if (n & PYXIS_OPT_POSITION) {
 				while (map->map_context)
 					LLS_POP(&map->map_context);
 				for (attribute = NULL;
 					 attribute =
 					 PYXIS_find_object(form, attribute, att_field, TRUE);)
 					if ((OBJ) attribute->att_value == field) {
-						LLS_PUSH(attribute, &map->map_context);
+						LLS_PUSH((BLK)attribute, &map->map_context);
 						break;
 					}
 			}
-			if (n & PYXIS__OPT_UPDATE)
+			if (n & PYXIS_OPT_UPDATE)
 				PYXIS_set_field_options(field, 0, PYXIS_updatable,
 										PYXIS_updatable);
-			if (n & PYXIS__OPT_WAKEUP)
+			if (n & PYXIS_OPT_WAKEUP)
 				PYXIS_set_field_options(field, 0, PYXIS_wakeup, PYXIS_wakeup);
 		}
 }
 
 
-pyxis__load_form(status, db, trans, form, length, name)
-	 STATUS *status;
-	 SLONG *db, *trans, *form;
-	 SSHORT *length;
-	 SCHAR *name;
+int pyxis__load_form(STATUS *status, SLONG *db, SLONG *trans, SLONG *form,
+                      SSHORT *length, SCHAR *name)
 {
 /**************************************
  *
@@ -803,15 +774,12 @@ pyxis__load_form(status, db, trans, form, length, name)
  *
  **************************************/
 
-	return PYXIS_load_form(status, db, trans, form, length, name);
+	return (int) PYXIS_load_form((int*)status, (SLONG**)db, (SLONG**)trans, (OBJ*)form, (USHORT*) length, name);
 }
 
 
-OBJ pyxis__menu(window_handle, menu_handle, length, source)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 USHORT *length;
-	 TEXT *source;
+OBJ pyxis__menu(WIN *window_handle, MENU *menu_handle, USHORT *length,
+                        TEXT *source)
 {
 /**************************************
  *
@@ -851,12 +819,8 @@ OBJ pyxis__menu(window_handle, menu_handle, length, source)
 }
 
 
-pyxis__menu_d(window_handle, menu_handle, length, source, object)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 USHORT *length;
-	 TEXT *source;
-	 OBJ *object;
+int pyxis__menu_d(WIN *window_handle, MENU *menu_handle, USHORT *length,
+                  TEXT *source, OBJ *object)
 {
 /**************************************
  *
@@ -873,9 +837,8 @@ pyxis__menu_d(window_handle, menu_handle, length, source, object)
 	*object = pyxis__menu(window_handle, menu_handle, length, source);
 }
 
-
-pyxis__pop_window(window_handle)
-	 WIN *window_handle;
+extern "C"
+int pyxis__pop_window(WIN *window_handle)
 {
 /**************************************
  *
@@ -894,11 +857,8 @@ pyxis__pop_window(window_handle)
 }
 
 
-pyxis__put_entree(menu_handle, entree_length, entree_text, entree_value)
-	 MENU *menu_handle;
-	 USHORT *entree_length;
-	 TEXT *entree_text;
-	 SLONG *entree_value;
+int pyxis__put_entree(MENU *menu_handle, USHORT *entree_length,
+                      TEXT *entree_text, SLONG *entree_value)
 {
 /**************************************
  *
@@ -927,14 +887,12 @@ pyxis__put_entree(menu_handle, entree_length, entree_text, entree_value)
 		*tp = *fp;
 	*tp = '\0';
 
-	PYXIS_create_entree(object, entree_buffer, attype_numeric, *entree_value);
+	PYXIS_create_entree(object, entree_buffer, attype_numeric, (BLK) *entree_value);
 
 }
 
 
-pyxis__reset_form(status, map_handle)
-	 STATUS *status;
-	 MAP *map_handle;
+int pyxis__reset_form(STATUS *status, MAP *map_handle)
 {
 /**************************************
  *
@@ -966,8 +924,7 @@ pyxis__reset_form(status, map_handle)
 }
 
 
-pyxis__suspend_window(window_handle)
-	 SLONG *window_handle;
+int pyxis__suspend_window(SLONG *window_handle)
 {
 /**************************************
  *
@@ -981,11 +938,11 @@ pyxis__suspend_window(window_handle)
  **************************************/
 
 	if (*window_handle)
-		PYXIS_disable_window(*window_handle);
+		PYXIS_disable_window((WIN) *window_handle);
 }
 
 
-static error(STATUS * status, TEXT * text, ...)
+static int error(STATUS * status, TEXT * text, ...)
 {
 /**************************************
  *
@@ -1006,10 +963,7 @@ static error(STATUS * status, TEXT * text, ...)
 }
 
 
-static OBJ find_field(map, form, tail)
-	 MAP map;
-	 OBJ form;
-	 struct map_repeat *tail;
+static OBJ find_field(MAP map, OBJ form, map::map_repeat *tail)
 {
 /**************************************
  *
@@ -1046,11 +1000,7 @@ static OBJ find_field(map, form, tail)
 }
 
 
-static get_blob(form, desc, db_handle, tra_handle)
-	 OBJ form;
-	 DSC *desc;
-	 SLONG **db_handle;
-	 SLONG **tra_handle;
+static int get_blob(OBJ form, DSC *desc, SLONG **db_handle, SLONG **tra_handle)
 {
 /**************************************
  *
@@ -1069,7 +1019,7 @@ static get_blob(form, desc, db_handle, tra_handle)
 	SLONG *blob_handle, *blob_id;
 	STATUS status_vector[20];
 
-	source = PYXIS__OPT_NULL;
+	source = PYXIS_OPT_NULL;
 
 	if (!*db_handle || !*tra_handle)
 		return source;
@@ -1080,7 +1030,7 @@ static get_blob(form, desc, db_handle, tra_handle)
 		 attribute = PYXIS_find_object(form, attribute, att_field, TRUE);) {
 		field = attribute->att_value;
 		if (GET_VALUE(field, att_data)) {
-			source = PYXIS__OPT_INITIAL;
+			source = PYXIS_OPT_INITIAL;
 			break;
 		}
 	}
@@ -1096,7 +1046,7 @@ static get_blob(form, desc, db_handle, tra_handle)
 		 attribute = PYXIS_find_object(form, attribute, att_field, TRUE);) {
 		field = attribute->att_value;
 		if (GET_VALUE(field, att_update_data)) {
-			source = PYXIS__OPT_USER_DATA;
+			source = PYXIS_OPT_USER_DATA;
 			break;
 		}
 	}
@@ -1109,11 +1059,11 @@ static get_blob(form, desc, db_handle, tra_handle)
 	blob_handle = NULL;
 
 	if (gds__create_blob(status_vector,
-						 GDS_VAL(db_handle),
-						 GDS_VAL(tra_handle),
-						 GDS_REF(blob_handle), GDS_VAL(desc->dsc_address))) {
+						 (void**)GDS_VAL(db_handle),
+						 (void**)GDS_VAL(tra_handle),
+						 (void**)GDS_REF(blob_handle), (GDS__QUAD*)GDS_VAL(desc->dsc_address))) {
 		gds__print_status(status_vector);
-		return PYXIS__OPT_NULL;
+		return PYXIS_OPT_NULL;
 	}
 
 	for (n = 1;; n++) {
@@ -1128,19 +1078,16 @@ static get_blob(form, desc, db_handle, tra_handle)
 		*p = 0;
 		length = p - buffer;
 		if (gds__put_segment(status_vector,
-							 GDS_REF(blob_handle), length, buffer)) break;
+							 (void**)GDS_REF(blob_handle), length, buffer)) break;
 	}
 
-	gds__close_blob(status_vector, GDS_REF(blob_handle));
+	gds__close_blob(status_vector, (void**)GDS_REF(blob_handle));
 
 	return source;
 }
 
 
-static get_field_value(window, form, field, desc)
-	 WIN window;
-	 OBJ form, field;
-	 DSC *desc;
+static int get_field_value(WIN window, OBJ form, OBJ field, DSC *desc)
 {
 /**************************************
  *
@@ -1162,24 +1109,24 @@ static get_field_value(window, form, field, desc)
 	desc2.dsc_length = 256;
 	desc2.dsc_scale = 0;
 
-	PYXIS_push_handler(unwind);
+	PYXIS_push_handler((int (*)()) unwind);
 
 	if (desc2.dsc_address = (UCHAR *) GET_STRING(field, att_update_data))
-		source = PYXIS__OPT_USER_DATA;
+		source = PYXIS_OPT_USER_DATA;
 	else if (desc2.dsc_address = (UCHAR *) GET_STRING(field, att_data))
-		source = PYXIS__OPT_INITIAL;
+		source = PYXIS_OPT_INITIAL;
 	else if (desc2.dsc_address =
 			 (UCHAR *) GET_STRING(field, att_default_data)) source =
-			PYXIS__OPT_DEFAULT;
+			PYXIS_OPT_DEFAULT;
 	else if (desc2.dsc_address = (UCHAR *) GET_STRING(field, att_enumeration))
-		source = PYXIS__OPT_DEFAULT;
+		source = PYXIS_OPT_DEFAULT;
 	else {
 /*    desc2.dsc_address = " ";  */
-		source = PYXIS__OPT_NULL;
+		source = PYXIS_OPT_NULL;
 		return source;
 	}
 
-/* if (source == PYXIS__OPT_INITIAL)
+/* if (source == PYXIS_OPT_INITIAL)
     return source;
 */
 
@@ -1189,7 +1136,7 @@ static get_field_value(window, form, field, desc)
 		PYXIS_set_field_options(form, "all", PYXIS_updatable | PYXIS_wakeup,
 								PYXIS_clear);
 		PYXIS_set_field_options(field, 0, PYXIS_updatable, PYXIS_updatable);
-		PYXIS_push_form(window, form);
+		PYXIS_push_form(window, form, 0);
 		if (!(field_name = GET_STRING(field, att_field_name)))
 			field_name = "(unnamed)";
 		sprintf(buffer, "*** %s for field %s ***", error_string, field_name);
@@ -1199,33 +1146,30 @@ static get_field_value(window, form, field, desc)
 		PYXIS_pop_form(window);
 		PYXIS_pop_form(window);
 		if (desc2.dsc_address = (UCHAR *) GET_STRING(field, att_update_data))
-			source = PYXIS__OPT_USER_DATA;
+			source = PYXIS_OPT_USER_DATA;
 		else if (desc2.dsc_address = (UCHAR *) GET_STRING(field, att_data))
-			source = PYXIS__OPT_INITIAL;
+			source = PYXIS_OPT_INITIAL;
 		else if (desc2.dsc_address =
 				 (UCHAR *) GET_STRING(field, att_default_data)) source =
-				PYXIS__OPT_DEFAULT;
+				PYXIS_OPT_DEFAULT;
 		else if (desc2.dsc_address =
 				 (UCHAR *) GET_STRING(field, att_enumeration)) source =
-				PYXIS__OPT_DEFAULT;
+				PYXIS_OPT_DEFAULT;
 		else {
-			source = PYXIS__OPT_NULL;
-			PYXIS_pop_handler();
+			source = PYXIS_OPT_NULL;
+			PYXIS_pop_handler(0);
 			return source;
 		}
 	}
 
 	MOVP_move(&desc2, desc);
-	PYXIS_pop_handler();
+	PYXIS_pop_handler(0);
 
 	return source;
 }
 
 
-static MENU par_menu(window, length, source)
-	 WIN window;
-	 USHORT *length;
-	 SCHAR *source;
+static MENU par_menu(WIN window, USHORT *length, SCHAR *source)
 {
 /**************************************
  *
@@ -1247,18 +1191,18 @@ static MENU par_menu(window, length, source)
 
 	p = source;
 	c = BLR_BYTE;
-	object = PYXIS_create_object(0, 0);
+	object = PYXIS_create_object(0, (enum att_n) 0);
 	label[0] = 0;
 	flags = horizontal = 0;
 
-	if (c != PYXIS__MENU_VERSION1) {
+	if (c != PYXIS_MENU_VERSION1) {
 		error(0, "unsupported map version %d", c);
 		return NULL;
 	}
 
-	while ((c = BLR_BYTE) != PYXIS__MENU_END)
+	while ((c = BLR_BYTE) != PYXIS_MENU_END)
 		switch (c) {
-		case PYXIS__MENU_LABEL:
+		case PYXIS_MENU_LABEL:
 			q = label;
 			if (n = BLR_BYTE)
 				do
@@ -1267,7 +1211,7 @@ static MENU par_menu(window, length, source)
 			*q = 0;
 			break;
 
-		case PYXIS__MENU_ENTREE:
+		case PYXIS_MENU_ENTREE:
 			value = BLR_BYTE;
 			q = string;
 			if (n = BLR_BYTE)
@@ -1275,21 +1219,21 @@ static MENU par_menu(window, length, source)
 					*q++ = BLR_BYTE;
 				while (--n);
 			*q = 0;
-			PYXIS_create_entree(object, string, attype_numeric, value);
+			PYXIS_create_entree(object, string, attype_numeric, (BLK) value);
 			break;
 
-		case PYXIS__MENU_OPAQUE:
+		case PYXIS_MENU_OPAQUE:
 			break;
 
-		case PYXIS__MENU_TRANSPARENT:
+		case PYXIS_MENU_TRANSPARENT:
 			flags |= MENU_transparent;
 			break;
 
-		case PYXIS__MENU_HORIZONTAL:
+		case PYXIS_MENU_HORIZONTAL:
 			horizontal = TRUE;
 			break;
 
-		case PYXIS__MENU_VERTICAL:
+		case PYXIS_MENU_VERTICAL:
 			break;
 
 		default:
@@ -1319,9 +1263,7 @@ static MENU par_menu(window, length, source)
 }
 
 
-static MAP par_message(status, ptr)
-	 STATUS *status;
-	 TEXT **ptr;
+static MAP par_message(STATUS *status, TEXT **ptr)
 {
 /**************************************
  *
@@ -1337,7 +1279,7 @@ static MAP par_message(status, ptr)
 	TEXT *p;
 	DSC *desc;
 	MAP map;
-	struct map_repeat *tail, *end;
+	map::map_repeat *tail, *end;
 
 /* Get message number, register it in the compile scratch block, and
    allocate a node to represent the message */
@@ -1443,8 +1385,7 @@ static MAP par_message(status, ptr)
 }
 
 
-static par_word(ptr)
-	 TEXT **ptr;
+static int par_word(TEXT **ptr)
 {
 /**************************************
  *
@@ -1475,9 +1416,7 @@ static par_word(ptr)
 }
 
 
-static propogate_options(tail, options)
-	 struct map_repeat *tail;
-	 SLONG options;
+static int propogate_options(map::map_repeat *tail, SLONG options)
 {
 /**************************************
  *
@@ -1503,10 +1442,10 @@ static propogate_options(tail, options)
 			|| attribute->att_name == att_field) {
 			item = attribute->att_value;
 			if (field = PYXIS_find_field(item, name)) {
-				if (options & PYXIS__OPT_UPDATE)
+				if (options & PYXIS_OPT_UPDATE)
 					PYXIS_set_field_options(field, 0, PYXIS_updatable,
 											PYXIS_updatable);
-				if (options & PYXIS__OPT_WAKEUP)
+				if (options & PYXIS_OPT_WAKEUP)
 					PYXIS_set_field_options(field, 0, PYXIS_wakeup,
 											PYXIS_wakeup);
 			}
@@ -1514,11 +1453,7 @@ static propogate_options(tail, options)
 }
 
 
-static put_blob(field, desc, db_handle, tra_handle)
-	 OBJ field;
-	 DSC *desc;
-	 SLONG **db_handle;
-	 SLONG **tra_handle;
+static int put_blob(OBJ field, DSC *desc, SLONG **db_handle, SLONG **tra_handle)
 {
 /**************************************
  *
@@ -1544,16 +1479,16 @@ static put_blob(field, desc, db_handle, tra_handle)
 		return FALSE;
 
 	if (gds__open_blob(status_vector,
-					   GDS_VAL(db_handle),
-					   GDS_VAL(tra_handle),
-					   GDS_REF(blob_handle), GDS_VAL(desc->dsc_address))) {
+					   (void**)GDS_VAL(db_handle),
+					   (void**)GDS_VAL(tra_handle),
+					   (void**)GDS_REF(blob_handle), (GDS__QUAD*) GDS_VAL(desc->dsc_address))) {
 		gds__print_status(status_vector);
 		return FALSE;
 	}
 
 	for (index = 1;; index++) {
 		if (gds__get_segment(status_vector,
-							 GDS_REF(blob_handle),
+							 (void**)GDS_REF(blob_handle),
 							 GDS_REF(length), sizeof(buffer), buffer))
 			break;
 		buffer[length] = 0;
@@ -1566,17 +1501,13 @@ static put_blob(field, desc, db_handle, tra_handle)
 		PUT_ATTRIBUTE(field, att_field, attype_object, segment);
 	}
 
-	gds__close_blob(status_vector, GDS_REF(blob_handle));
+	gds__close_blob(status_vector, (void**)GDS_REF(blob_handle));
 
 	return TRUE;
 }
 
 
-static put_value(map, slot, record, value)
-	 MAP map;
-	 USHORT slot;
-	 UCHAR *record;
-	 SLONG value;
+static int put_value(MAP map, USHORT slot, UCHAR *record, SLONG value)
 {
 /**************************************
  *
@@ -1602,8 +1533,7 @@ static put_value(map, slot, record, value)
 }
 
 
-static unwind(error_string)
-	 TEXT *error_string;
+static int unwind(TEXT *error_string)
 {
 /**************************************
  *

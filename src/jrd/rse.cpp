@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: rse.cpp,v 1.1.1.1 2001-05-23 13:26:16 tamlin Exp $
+$Id: rse.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include <errno.h>
@@ -65,6 +65,10 @@ $Id: rse.cpp,v 1.1.1.1 2001-05-23 13:26:16 tamlin Exp $
 #include "../jrd/sort_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #if defined(WIN_NT)
 #include <io.h>
@@ -3101,7 +3105,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure)
 					   map->smb_length,
 					   map->smb_keys,
 					   map->smb_key_desc,
-					   reinterpret_cast < UCHAR(*)() >
+					   reinterpret_cast < BOOLEAN(*)() >
 					   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
 					   tdbb->tdbb_attachment);
 

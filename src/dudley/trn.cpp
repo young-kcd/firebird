@@ -128,8 +128,8 @@ void TRN_translate(void)
 	}
 
 	CHECK_DYN(2);
-	STUFF(gds__dyn_version_1);
-	STUFF(gds__dyn_begin);
+	STUFF(gds_dyn_version_1);
+	STUFF(gds_dyn_begin);
 
 	for (action = DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore))
@@ -140,107 +140,107 @@ void TRN_translate(void)
 				break;
 
 			case act_a_relation:
-				add_relation(dyn, action->act_object);
+				add_relation(dyn, (REL) action->act_object);
 				break;
 
 			case act_m_relation:
-				modify_relation(dyn, action->act_object);
+				modify_relation(dyn, (REL) action->act_object);
 				break;
 
 			case act_d_relation:
-				drop_relation(dyn, action->act_object);
+				drop_relation(dyn, (REL) action->act_object);
 				break;
 
 			case act_a_field:
-				add_field(dyn, action->act_object, NULL);
+				add_field(dyn, (FLD) action->act_object, NULL);
 				break;
 
 			case act_m_field:
-				modify_field(dyn, action->act_object, NULL);
+				modify_field(dyn, (FLD) action->act_object, NULL);
 				break;
 
 			case act_d_field:
-				drop_field(dyn, action->act_object);
+				drop_field(dyn, (FLD) action->act_object);
 				break;
 
 			case act_a_filter:
-				add_filter(dyn, action->act_object);
+				add_filter(dyn, (FILTER) action->act_object);
 				break;
 
 			case act_d_filter:
-				drop_filter(dyn, action->act_object);
+				drop_filter(dyn, (FILTER) action->act_object);
 				break;
 
 			case act_a_function:
-				add_function(dyn, action->act_object);
+				add_function(dyn, (FUNC) action->act_object);
 				break;
 
 			case act_a_function_arg:
-				add_function_arg(dyn, action->act_object);
+				add_function_arg(dyn, (FUNCARG) action->act_object);
 				break;
 
 			case act_d_function:
-				drop_function(dyn, action->act_object);
+				drop_function(dyn, (FUNC) action->act_object);
 				break;
 
 			case act_a_generator:
-				add_generator(dyn, action->act_object);
+				add_generator(dyn, (SYM) action->act_object);
 				break;
 
 			case act_a_gfield:
-				add_global_field(dyn, action->act_object);
+				add_global_field(dyn, (FLD) action->act_object);
 				break;
 
 			case act_m_gfield:
-				modify_global_field(dyn, action->act_object);
+				modify_global_field(dyn, (FLD) action->act_object);
 				break;
 
 			case act_d_gfield:
-				drop_global_field(dyn, action->act_object);
+				drop_global_field(dyn, (FLD) action->act_object);
 				break;
 
 			case act_a_index:
-				add_index(dyn, action->act_object);
+				add_index(dyn, (DUDLEY_IDX)action->act_object);
 				break;
 
 			case act_m_index:
-				modify_index(dyn, action->act_object);
+				modify_index(dyn, (DUDLEY_IDX)action->act_object);
 				break;
 
 			case act_d_index:
-				drop_index(dyn, action->act_object);
+				drop_index(dyn, (DUDLEY_IDX)action->act_object);
 				break;
 
 			case act_a_security:
-				add_security_class(dyn, action->act_object);
+				add_security_class(dyn, (SCL) action->act_object);
 				break;
 
 			case act_d_security:
-				drop_security_class(dyn, action->act_object);
+				drop_security_class(dyn, (SCL) action->act_object);
 				break;
 
 			case act_a_trigger:
-				add_trigger(dyn, action->act_object);
+				add_trigger(dyn, (TRG) action->act_object);
 				break;
 
 			case act_d_trigger:
-				drop_trigger(dyn, action->act_object);
+				drop_trigger(dyn, (TRG) action->act_object);
 				break;
 
 			case act_m_trigger:
-				modify_trigger(dyn, action->act_object);
+				modify_trigger(dyn, (TRG) action->act_object);
 				break;
 
 			case act_a_trigger_msg:
-				add_trigger_msg(dyn, action->act_object);
+				add_trigger_msg(dyn, (TRGMSG) action->act_object);
 				break;
 
 			case act_d_trigger_msg:
-				drop_trigger_msg(dyn, action->act_object);
+				drop_trigger_msg(dyn, (TRGMSG) action->act_object);
 				break;
 
 			case act_a_shadow:
-				add_files(dyn, action->act_object, NULL);
+				add_files(dyn, (FIL) action->act_object, NULL);
 				break;
 
 			case act_d_shadow:
@@ -248,7 +248,7 @@ void TRN_translate(void)
 				break;
 
 			case act_m_trigger_msg:
-				modify_trigger_msg(dyn, action->act_object);
+				modify_trigger_msg(dyn, (TRGMSG) action->act_object);
 				break;
 
 			default:
@@ -256,29 +256,29 @@ void TRN_translate(void)
 			}
 
 	CHECK_DYN(2);
-	STUFF(gds__dyn_end);
-	STUFF(gds__dyn_eoc);
+	STUFF(gds_dyn_end);
+	STUFF(gds_dyn_eoc);
 
 	switch (language) {
 	case lan_undef:
 	case lan_c:
-		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_c, 0, 0))
+		if (PRETTY_print_dyn(dyn->str_start, (int(*)()) gen_dyn_c, 0, 0))
 			DDL_err(283, NULL, NULL, NULL, NULL, NULL);	/*msg 283: internal error during DYN pretty print */
 		break;
 
 	case lan_cxx:
-		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_cxx, 0, 0))
+		if (PRETTY_print_dyn(dyn->str_start, (int(*)()) gen_dyn_cxx, 0, 0))
 			DDL_err(283, NULL, NULL, NULL, NULL, NULL);	/*msg 283: internal error during DYN pretty print */
 		break;
 
 	case lan_pascal:
 		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file, "   gds__dyn_length	: gds__short := %d;\n",
+		ib_fprintf(output_file, "   gds_dyn_length	: gds__short := %d;\n",
 				   length);
 		ib_fprintf(output_file,
-				   "   gds__dyn	: packed array [1..%d] of char := (\n",
+				   "   gds_dyn	: packed array [1..%d] of char := (\n",
 				   length);
-		if (PRETTY_print_dyn(dyn->str_start, gen_dyn_pas, 0, 1))
+		if (PRETTY_print_dyn(dyn->str_start, (int(*)()) gen_dyn_pas, 0, 1))
 			DDL_err(285, NULL, NULL, NULL, NULL, NULL);	/*msg 285: internal error during DYN pretty print */
 		ib_fprintf(output_file, "   );	(* end of DYN string *)\n");
 		break;
@@ -298,10 +298,10 @@ void TRN_translate(void)
 	case lan_pli:
 		length = dyn->str_current - dyn->str_start;
 		ib_fprintf(output_file,
-				   "DECLARE gds__dyn_length FIXED BINARY (15) STATIC INITIAL (%d);\n",
+				   "DECLARE gds_dyn_length FIXED BINARY (15) STATIC INITIAL (%d);\n",
 				   length);
 		ib_fprintf(output_file,
-				   "DECLARE gds__dyn (%d) FIXED BINARY (7) STATIC INITIAL (\n",
+				   "DECLARE gds_dyn (%d) FIXED BINARY (7) STATIC INITIAL (\n",
 				   length);
 		raw_pli(dyn);
 		break;
@@ -309,10 +309,10 @@ void TRN_translate(void)
 	case lan_basic:
 		length = dyn->str_current - dyn->str_start;
 		ib_fprintf(output_file,
-				   "       DECLARE WORD CONSTANT gds__dyn_length = %d\n",
+				   "       DECLARE WORD CONSTANT gds_dyn_length = %d\n",
 				   length);
 		ib_fprintf(output_file,
-				   "       DECLARE STRING CONSTANT gds__dyn =&\n", length);
+				   "       DECLARE STRING CONSTANT gds_dyn =&\n", length);
 		raw_basic(dyn);
 		break;
 
@@ -366,18 +366,18 @@ static void add_dimensions( STR dyn, FLD field)
 	SLONG *range;
 	USHORT n;
 
-	put_symbol(dyn, gds__dyn_delete_dimensions, field->fld_name);
+	put_symbol(dyn, gds_dyn_delete_dimensions, field->fld_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 
 	for (range = field->fld_ranges, n = 0; n < field->fld_dimension;
 		 range += 2, ++n) {
-		put_number(dyn, gds__dyn_def_dimension, n);
-		put_symbol(dyn, gds__dyn_fld_name, field->fld_name);
-		put_number(dyn, gds__dyn_dim_lower, (SSHORT) range[0]);
-		put_number(dyn, gds__dyn_dim_upper, (SSHORT) range[1]);
+		put_number(dyn, gds_dyn_def_dimension, n);
+		put_symbol(dyn, gds_dyn_fld_name, field->fld_name);
+		put_number(dyn, gds_dyn_dim_lower, (SSHORT) range[0]);
+		put_number(dyn, gds_dyn_dim_upper, (SSHORT) range[1]);
 		CHECK_DYN(1);
-		STUFF(gds__dyn_end);
+		STUFF(gds_dyn_end);
 	}
 }
 
@@ -406,49 +406,49 @@ static void add_field( STR dyn, FLD field, REL view)
 	else
 		relation = field->fld_relation;
 
-	put_symbol(dyn, gds__dyn_def_local_fld, name);
-	put_symbol(dyn, gds__dyn_rel_name, relation->rel_name);
+	put_symbol(dyn, gds_dyn_def_local_fld, name);
+	put_symbol(dyn, gds_dyn_rel_name, relation->rel_name);
 
 	if ((symbol = field->fld_source) &&
 		strcmp(symbol->sym_string, name->sym_string) && !field->fld_computed)
-		put_symbol(dyn, gds__dyn_fld_source, symbol);
+		put_symbol(dyn, gds_dyn_fld_source, symbol);
 
-	put_symbol(dyn, gds__dyn_security_class, field->fld_security_class);
-	put_symbol(dyn, gds__dyn_fld_edit_string, field->fld_edit_string);
-	put_symbol(dyn, gds__dyn_fld_query_name, field->fld_query_name);
-	put_query_header(dyn, gds__dyn_fld_query_header, field->fld_query_header);
+	put_symbol(dyn, gds_dyn_security_class, field->fld_security_class);
+	put_symbol(dyn, gds_dyn_fld_edit_string, field->fld_edit_string);
+	put_symbol(dyn, gds_dyn_fld_query_name, field->fld_query_name);
+	put_query_header(dyn, gds_dyn_fld_query_header, field->fld_query_header);
 
 	if (field->fld_system)
-		put_number(dyn, gds__dyn_system_flag, field->fld_system);
+		put_number(dyn, gds_dyn_system_flag, field->fld_system);
 
-	put_symbol(dyn, gds__dyn_fld_base_fld, field->fld_base);
+	put_symbol(dyn, gds_dyn_fld_base_fld, field->fld_base);
 
 	if (field->fld_context)
-		put_number(dyn, gds__dyn_view_context,
+		put_number(dyn, gds_dyn_view_context,
 				   field->fld_context->ctx_context_id);
 
 	if (field->fld_computed) {
 		if (!field->fld_context && view)
-			put_number(dyn, gds__dyn_view_context, 0);
-		put_blr(dyn, gds__dyn_fld_computed_blr, NULL, field->fld_computed);
+			put_number(dyn, gds_dyn_view_context, 0);
+		put_blr(dyn, gds_dyn_fld_computed_blr, NULL, field->fld_computed);
 		source_field = field->fld_source_field;
-		put_number(dyn, gds__dyn_fld_type, source_field->fld_dtype);
-		put_number(dyn, gds__dyn_fld_length, source_field->fld_length);
-		put_number(dyn, gds__dyn_fld_scale, source_field->fld_scale);
-		put_number(dyn, gds__dyn_fld_sub_type, source_field->fld_sub_type);
+		put_number(dyn, gds_dyn_fld_type, source_field->fld_dtype);
+		put_number(dyn, gds_dyn_fld_length, source_field->fld_length);
+		put_number(dyn, gds_dyn_fld_scale, source_field->fld_scale);
+		put_number(dyn, gds_dyn_fld_sub_type, source_field->fld_sub_type);
 		if (n = source_field->fld_segment_length)
-			put_number(dyn, gds__dyn_fld_segment_length, n);
+			put_number(dyn, gds_dyn_fld_segment_length, n);
 	}
 
-	put_text(dyn, gds__dyn_fld_computed_source, field->fld_compute_src);
+	put_text(dyn, gds_dyn_fld_computed_source, field->fld_compute_src);
 
 	if (field->fld_flags & fld_explicit_position)
-		put_number(dyn, gds__dyn_fld_position, field->fld_position);
+		put_number(dyn, gds_dyn_fld_position, field->fld_position);
 
-	put_text(dyn, gds__dyn_description, field->fld_description);
+	put_text(dyn, gds_dyn_description, field->fld_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -476,20 +476,20 @@ static void add_files( STR dyn, FIL files, DBB database)
 	}
 
 	if (!database && files)
-		put_number(dyn, gds__dyn_def_shadow, files->fil_shadow_number);
+		put_number(dyn, gds_dyn_def_shadow, files->fil_shadow_number);
 
 	for (file = files; file; file = file->fil_next) {
-		put_symbol(dyn, gds__dyn_def_file, file->fil_name);
-		put_number(dyn, gds__dyn_file_start, (SSHORT) (file->fil_start));
-		put_number(dyn, gds__dyn_file_length, (SSHORT) (file->fil_length));
-		put_number(dyn, gds__dyn_shadow_man_auto, file->fil_manual);
-		put_number(dyn, gds__dyn_shadow_conditional, file->fil_conditional);
+		put_symbol(dyn, gds_dyn_def_file, file->fil_name);
+		put_number(dyn, gds_dyn_file_start, (SSHORT) (file->fil_start));
+		put_number(dyn, gds_dyn_file_length, (SSHORT) (file->fil_length));
+		put_number(dyn, gds_dyn_shadow_man_auto, file->fil_manual);
+		put_number(dyn, gds_dyn_shadow_conditional, file->fil_conditional);
 		CHECK_DYN(1);
-		STUFF(gds__dyn_end);
+		STUFF(gds_dyn_end);
 	}
 	if (!database && files) {
 		CHECK_DYN(1);
-		STUFF(gds__dyn_end);
+		STUFF(gds_dyn_end);
 	}
 }
 
@@ -508,16 +508,16 @@ static void add_filter( STR dyn, FILTER filter)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_def_filter, filter->filter_name);
-	put_number(dyn, gds__dyn_filter_in_subtype,
+	put_symbol(dyn, gds_dyn_def_filter, filter->filter_name);
+	put_number(dyn, gds_dyn_filter_in_subtype,
 			   filter->filter_input_sub_type);
-	put_number(dyn, gds__dyn_filter_out_subtype,
+	put_number(dyn, gds_dyn_filter_out_subtype,
 			   filter->filter_output_sub_type);
-	put_symbol(dyn, gds__dyn_func_entry_point, filter->filter_entry_point);
-	put_symbol(dyn, gds__dyn_func_module_name, filter->filter_module_name);
-	put_text(dyn, gds__dyn_description, filter->filter_description);
+	put_symbol(dyn, gds_dyn_func_entry_point, filter->filter_entry_point);
+	put_symbol(dyn, gds_dyn_func_module_name, filter->filter_module_name);
+	put_text(dyn, gds_dyn_description, filter->filter_description);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -535,14 +535,14 @@ static void add_function( STR dyn, FUNC function)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_def_function, function->func_name);
-	put_symbol(dyn, gds__dyn_fld_query_name, function->func_query_name);
-	put_symbol(dyn, gds__dyn_func_entry_point, function->func_entry_point);
-	put_number(dyn, gds__dyn_func_return_argument, function->func_return_arg);
-	put_symbol(dyn, gds__dyn_func_module_name, function->func_module_name);
-	put_text(dyn, gds__dyn_description, function->func_description);
+	put_symbol(dyn, gds_dyn_def_function, function->func_name);
+	put_symbol(dyn, gds_dyn_fld_query_name, function->func_query_name);
+	put_symbol(dyn, gds_dyn_func_entry_point, function->func_entry_point);
+	put_number(dyn, gds_dyn_func_return_argument, function->func_return_arg);
+	put_symbol(dyn, gds_dyn_func_module_name, function->func_module_name);
+	put_text(dyn, gds_dyn_description, function->func_description);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -560,16 +560,16 @@ static void add_function_arg( STR dyn, FUNCARG func_arg)
  *
  **************************************/
 
-	put_number(dyn, gds__dyn_def_function_arg, func_arg->funcarg_position);
-	put_symbol(dyn, gds__dyn_function_name, func_arg->funcarg_funcname);
-	put_number(dyn, gds__dyn_func_mechanism, func_arg->funcarg_mechanism);
-	put_number(dyn, gds__dyn_fld_type, func_arg->funcarg_dtype);
-	put_number(dyn, gds__dyn_fld_scale, func_arg->funcarg_scale);
+	put_number(dyn, gds_dyn_def_function_arg, func_arg->funcarg_position);
+	put_symbol(dyn, gds_dyn_function_name, func_arg->funcarg_funcname);
+	put_number(dyn, gds_dyn_func_mechanism, func_arg->funcarg_mechanism);
+	put_number(dyn, gds_dyn_fld_type, func_arg->funcarg_dtype);
+	put_number(dyn, gds_dyn_fld_scale, func_arg->funcarg_scale);
 	if (func_arg->funcarg_has_sub_type)
-		put_number(dyn, gds__dyn_fld_sub_type, func_arg->funcarg_sub_type);
-	put_number(dyn, gds__dyn_fld_length, func_arg->funcarg_length);
+		put_number(dyn, gds_dyn_fld_sub_type, func_arg->funcarg_sub_type);
+	put_number(dyn, gds_dyn_fld_length, func_arg->funcarg_length);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -587,9 +587,9 @@ static void add_generator( STR dyn, SYM symbol)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_def_generator, symbol);
+	put_symbol(dyn, gds_dyn_def_generator, symbol);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -615,35 +615,35 @@ static void add_global_field( STR dyn, FLD field)
 
 	name = field->fld_name;
 
-	put_symbol(dyn, gds__dyn_def_global_fld, name);
-	put_symbol(dyn, gds__dyn_fld_edit_string, field->fld_edit_string);
-	put_symbol(dyn, gds__dyn_fld_query_name, field->fld_query_name);
-	put_query_header(dyn, gds__dyn_fld_query_header, field->fld_query_header);
+	put_symbol(dyn, gds_dyn_def_global_fld, name);
+	put_symbol(dyn, gds_dyn_fld_edit_string, field->fld_edit_string);
+	put_symbol(dyn, gds_dyn_fld_query_name, field->fld_query_name);
+	put_query_header(dyn, gds_dyn_fld_query_header, field->fld_query_header);
 
 	if (field->fld_system)
-		put_number(dyn, gds__dyn_system_flag, field->fld_system);
+		put_number(dyn, gds_dyn_system_flag, field->fld_system);
 
-	put_number(dyn, gds__dyn_fld_type, field->fld_dtype);
-	put_number(dyn, gds__dyn_fld_length, field->fld_length);
-	put_number(dyn, gds__dyn_fld_scale, field->fld_scale);
-	put_number(dyn, gds__dyn_fld_sub_type, field->fld_sub_type);
+	put_number(dyn, gds_dyn_fld_type, field->fld_dtype);
+	put_number(dyn, gds_dyn_fld_length, field->fld_length);
+	put_number(dyn, gds_dyn_fld_scale, field->fld_scale);
+	put_number(dyn, gds_dyn_fld_sub_type, field->fld_sub_type);
 
 	if (n = field->fld_segment_length)
-		put_number(dyn, gds__dyn_fld_segment_length, n);
+		put_number(dyn, gds_dyn_fld_segment_length, n);
 
-	put_blr(dyn, gds__dyn_fld_missing_value, NULL, field->fld_missing);
+	put_blr(dyn, gds_dyn_fld_missing_value, NULL, field->fld_missing);
 
-	put_blr(dyn, gds__dyn_fld_validation_blr, NULL, field->fld_validation);
-	put_text(dyn, gds__dyn_fld_validation_source, field->fld_valid_src);
-	put_text(dyn, gds__dyn_description, field->fld_description);
+	put_blr(dyn, gds_dyn_fld_validation_blr, NULL, field->fld_validation);
+	put_text(dyn, gds_dyn_fld_validation_source, field->fld_valid_src);
+	put_text(dyn, gds_dyn_description, field->fld_description);
 
 	if (field->fld_dimension) {
-		put_number(dyn, gds__dyn_fld_dimensions, field->fld_dimension);
+		put_number(dyn, gds_dyn_fld_dimensions, field->fld_dimension);
 		add_dimensions(dyn, field);
 	}
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -661,23 +661,23 @@ static void add_index( STR dyn, DUDLEY_IDX index)
  **************************************/
 	TEXT i;
 
-	put_symbol(dyn, gds__dyn_def_idx, index->idx_name);
-	put_symbol(dyn, gds__dyn_rel_name, index->idx_relation);
-	put_number(dyn, gds__dyn_idx_unique, index->idx_unique);
+	put_symbol(dyn, gds_dyn_def_idx, index->idx_name);
+	put_symbol(dyn, gds_dyn_rel_name, index->idx_relation);
+	put_number(dyn, gds_dyn_idx_unique, index->idx_unique);
 	if (index->idx_inactive)
-		put_number(dyn, gds__dyn_idx_inactive, TRUE);
+		put_number(dyn, gds_dyn_idx_inactive, TRUE);
 	else
-		put_number(dyn, gds__dyn_idx_inactive, FALSE);
+		put_number(dyn, gds_dyn_idx_inactive, FALSE);
 	if (index->idx_type)
-		put_number(dyn, gds__dyn_idx_type, index->idx_type);
+		put_number(dyn, gds_dyn_idx_type, index->idx_type);
 
-	put_text(dyn, gds__dyn_description, index->idx_description);
+	put_text(dyn, gds_dyn_description, index->idx_description);
 
 	for (i = 0; i < index->idx_count; i++)
-		put_symbol(dyn, gds__dyn_fld_name, index->idx_field[i]);
+		put_symbol(dyn, gds_dyn_fld_name, index->idx_field[i]);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -699,15 +699,15 @@ static void add_relation( STR dyn, REL relation)
 		return;
 	}
 
-	put_symbol(dyn, gds__dyn_def_rel, relation->rel_name);
-	put_symbol(dyn, gds__dyn_security_class, relation->rel_security_class);
-	put_symbol(dyn, gds__dyn_rel_ext_file, relation->rel_filename);
+	put_symbol(dyn, gds_dyn_def_rel, relation->rel_name);
+	put_symbol(dyn, gds_dyn_security_class, relation->rel_security_class);
+	put_symbol(dyn, gds_dyn_rel_ext_file, relation->rel_filename);
 	if (relation->rel_system)
-		put_number(dyn, gds__dyn_system_flag, relation->rel_system);
-	put_text(dyn, gds__dyn_description, relation->rel_description);
+		put_number(dyn, gds_dyn_system_flag, relation->rel_system);
+	put_text(dyn, gds_dyn_description, relation->rel_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -724,14 +724,14 @@ static void add_security_class( STR dyn, SCL class_)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_def_security_class, class_->scl_name);
+	put_symbol(dyn, gds_dyn_def_security_class, class_->scl_name);
 
-	put_acl(dyn, gds__dyn_scl_acl, class_);
+	put_acl(dyn, gds_dyn_scl_acl, class_);
 
-	put_text(dyn, gds__dyn_description, class_->scl_description);
+	put_text(dyn, gds_dyn_description, class_->scl_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -753,17 +753,17 @@ static void add_trigger( STR dyn, TRG trigger)
 	relation = trigger->trg_relation;
 	name = trigger->trg_name;
 
-	put_symbol(dyn, gds__dyn_def_trigger, name);
-	put_symbol(dyn, gds__dyn_rel_name, relation->rel_name);
-	put_number(dyn, gds__dyn_trg_type, trigger->trg_type);
-	put_number(dyn, gds__dyn_trg_sequence, trigger->trg_sequence);
-	put_number(dyn, gds__dyn_trg_inactive, trigger->trg_inactive);
-	put_blr(dyn, gds__dyn_trg_blr, relation, trigger->trg_statement);
-	put_text(dyn, gds__dyn_trg_source, trigger->trg_source);
-	put_text(dyn, gds__dyn_description, trigger->trg_description);
+	put_symbol(dyn, gds_dyn_def_trigger, name);
+	put_symbol(dyn, gds_dyn_rel_name, relation->rel_name);
+	put_number(dyn, gds_dyn_trg_type, trigger->trg_type);
+	put_number(dyn, gds_dyn_trg_sequence, trigger->trg_sequence);
+	put_number(dyn, gds_dyn_trg_inactive, trigger->trg_inactive);
+	put_blr(dyn, gds_dyn_trg_blr, relation, trigger->trg_statement);
+	put_text(dyn, gds_dyn_trg_source, trigger->trg_source);
+	put_text(dyn, gds_dyn_description, trigger->trg_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -780,12 +780,12 @@ static void add_trigger_msg( STR dyn, TRGMSG trigmsg)
  *
  **************************************/
 
-	put_number(dyn, gds__dyn_def_trigger_msg, trigmsg->trgmsg_number);
-	put_symbol(dyn, gds__dyn_trg_name, trigmsg->trgmsg_trg_name);
-	put_symbol(dyn, gds__dyn_trg_msg, trigmsg->trgmsg_text);
+	put_number(dyn, gds_dyn_def_trigger_msg, trigmsg->trgmsg_number);
+	put_symbol(dyn, gds_dyn_trg_name, trigmsg->trgmsg_trg_name);
+	put_symbol(dyn, gds_dyn_trg_msg, trigmsg->trgmsg_text);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -806,30 +806,30 @@ static void add_view( STR dyn, REL relation)
 	NOD *arg, contexts;
 	SSHORT i;
 
-	put_symbol(dyn, gds__dyn_def_view, relation->rel_name);
-	put_symbol(dyn, gds__dyn_security_class, relation->rel_security_class);
+	put_symbol(dyn, gds_dyn_def_view, relation->rel_name);
+	put_symbol(dyn, gds_dyn_security_class, relation->rel_security_class);
 	if (relation->rel_system)
-		put_number(dyn, gds__dyn_system_flag, relation->rel_system);
-	put_text(dyn, gds__dyn_description, relation->rel_description);
-	put_blr(dyn, gds__dyn_view_blr, relation, relation->rel_rse);
-	put_text(dyn, gds__dyn_view_source, relation->rel_view_source);
+		put_number(dyn, gds_dyn_system_flag, relation->rel_system);
+	put_text(dyn, gds_dyn_description, relation->rel_description);
+	put_blr(dyn, gds_dyn_view_blr, relation, relation->rel_rse);
+	put_text(dyn, gds_dyn_view_source, relation->rel_view_source);
 
 	contexts = relation->rel_rse->nod_arg[s_rse_contexts];
 	for (i = 0, arg = contexts->nod_arg; i < contexts->nod_count; i++, arg++) {
 		context = (CTX) (*arg)->nod_arg[0];
-		put_symbol(dyn, gds__dyn_view_relation,
+		put_symbol(dyn, gds_dyn_view_relation,
 				   context->ctx_relation->rel_name);
-		put_number(dyn, gds__dyn_view_context, context->ctx_context_id);
-		put_symbol(dyn, gds__dyn_view_context_name, context->ctx_name);
+		put_number(dyn, gds_dyn_view_context, context->ctx_context_id);
+		put_symbol(dyn, gds_dyn_view_context_name, context->ctx_name);
 		CHECK_DYN(1);
-		STUFF(gds__dyn_end);
+		STUFF(gds_dyn_end);
 	}
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 		add_field(dyn, field, relation);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -899,11 +899,11 @@ static void drop_field( STR dyn, FLD field)
 	name = field->fld_name;
 	relation = field->fld_relation;
 
-	put_symbol(dyn, gds__dyn_delete_local_fld, name);
-	put_symbol(dyn, gds__dyn_rel_name, relation->rel_name);
+	put_symbol(dyn, gds_dyn_delete_local_fld, name);
+	put_symbol(dyn, gds_dyn_rel_name, relation->rel_name);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -923,9 +923,9 @@ static void drop_filter( STR dyn, FILTER filter)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_delete_filter, filter->filter_name);
+	put_symbol(dyn, gds_dyn_delete_filter, filter->filter_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -943,9 +943,9 @@ static void drop_function( STR dyn, FUNC function)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_delete_function, function->func_name);
+	put_symbol(dyn, gds_dyn_delete_function, function->func_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -966,10 +966,10 @@ static void drop_global_field( STR dyn, FLD field)
 
 	name = field->fld_name;
 
-	put_symbol(dyn, gds__dyn_delete_global_fld, name);
+	put_symbol(dyn, gds_dyn_delete_global_fld, name);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -986,9 +986,9 @@ static void drop_index( STR dyn, DUDLEY_IDX index)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_delete_idx, index->idx_name);
+	put_symbol(dyn, gds_dyn_delete_idx, index->idx_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1005,9 +1005,9 @@ static void drop_relation( STR dyn, REL relation)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_delete_rel, relation->rel_name);
+	put_symbol(dyn, gds_dyn_delete_rel, relation->rel_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1024,9 +1024,9 @@ static void drop_security_class( STR dyn, SCL class_)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_delete_security_class, class_->scl_name);
+	put_symbol(dyn, gds_dyn_delete_security_class, class_->scl_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1043,9 +1043,9 @@ static void drop_shadow( STR dyn, SLONG shadow_number)
  *
  **************************************/
 
-	put_number(dyn, gds__dyn_delete_shadow, (SSHORT) shadow_number);
+	put_number(dyn, gds_dyn_delete_shadow, (SSHORT) shadow_number);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1068,9 +1068,9 @@ static void drop_trigger( STR dyn, TRG trigger)
 
 	name = trigger->trg_name;
 
-	put_symbol(dyn, gds__dyn_delete_trigger, name);
+	put_symbol(dyn, gds_dyn_delete_trigger, name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1087,10 +1087,10 @@ static void drop_trigger_msg( STR dyn, TRGMSG trigmsg)
  *
  **************************************/
 
-	put_number(dyn, gds__dyn_delete_trigger_msg, trigmsg->trgmsg_number);
-	put_symbol(dyn, gds__dyn_trg_name, trigmsg->trgmsg_trg_name);
+	put_number(dyn, gds_dyn_delete_trigger_msg, trigmsg->trgmsg_number);
+	put_symbol(dyn, gds_dyn_trg_name, trigmsg->trgmsg_trg_name);
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1187,27 +1187,27 @@ static void modify_database( STR dyn, DBB database)
 			return;
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_mod_database);
+	STUFF(gds_dyn_mod_database);
 
 	add_files(dyn, database->dbb_files, database);
 	if (database->dbb_flags & DBB_null_security_class) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_security_class);
+		STUFF(gds_dyn_security_class);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_security_class,
+		put_symbol(dyn, gds_dyn_security_class,
 				   database->dbb_security_class);
 	if (database->dbb_flags & DBB_null_description) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_description);
+		STUFF(gds_dyn_description);
 		STUFF_WORD(0);
 	}
 	else if (database->dbb_description)
-		put_text(dyn, gds__dyn_description, database->dbb_description);
+		put_text(dyn, gds_dyn_description, database->dbb_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1235,59 +1235,59 @@ static void modify_field( STR dyn, FLD field, REL view)
 	else
 		relation = field->fld_relation;
 
-	put_symbol(dyn, gds__dyn_mod_local_fld, name);
-	put_symbol(dyn, gds__dyn_rel_name, relation->rel_name);
+	put_symbol(dyn, gds_dyn_mod_local_fld, name);
+	put_symbol(dyn, gds_dyn_rel_name, relation->rel_name);
 
 	if ((symbol = field->fld_source) &&
 		strcmp(symbol->sym_string, name->sym_string) && !field->fld_computed)
-		put_symbol(dyn, gds__dyn_fld_source, symbol);
+		put_symbol(dyn, gds_dyn_fld_source, symbol);
 
 	if (field->fld_flags & fld_null_security_class) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_security_class);
+		STUFF(gds_dyn_security_class);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_security_class, field->fld_security_class);
+		put_symbol(dyn, gds_dyn_security_class, field->fld_security_class);
 	if (field->fld_flags & fld_null_edit_string) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_edit_string);
+		STUFF(gds_dyn_fld_edit_string);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_fld_edit_string, field->fld_edit_string);
+		put_symbol(dyn, gds_dyn_fld_edit_string, field->fld_edit_string);
 	if (field->fld_flags & fld_null_query_name) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_query_name);
+		STUFF(gds_dyn_fld_query_name);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_fld_query_name, field->fld_query_name);
+		put_symbol(dyn, gds_dyn_fld_query_name, field->fld_query_name);
 	if (field->fld_flags & fld_null_query_header) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_query_header);
+		STUFF(gds_dyn_fld_query_header);
 		STUFF_WORD(0);
 	}
 	else
-		put_query_header(dyn, gds__dyn_fld_query_header,
+		put_query_header(dyn, gds_dyn_fld_query_header,
 						 field->fld_query_header);
 
 	if (field->fld_system)
-		put_number(dyn, gds__dyn_system_flag, field->fld_system);
+		put_number(dyn, gds_dyn_system_flag, field->fld_system);
 
 	if (field->fld_flags & fld_explicit_position)
-		put_number(dyn, gds__dyn_fld_position, field->fld_position);
+		put_number(dyn, gds_dyn_fld_position, field->fld_position);
 
 	if (field->fld_flags & fld_null_description) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_description);
+		STUFF(gds_dyn_description);
 		STUFF_WORD(0);
 	}
 	else if (field->fld_description)
-		put_text(dyn, gds__dyn_description, field->fld_description);
+		put_text(dyn, gds_dyn_description, field->fld_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1315,81 +1315,81 @@ static void modify_global_field( STR dyn, FLD field)
 
 	name = field->fld_name;
 
-	put_symbol(dyn, gds__dyn_mod_global_fld, name);
+	put_symbol(dyn, gds_dyn_mod_global_fld, name);
 	if (field->fld_flags & fld_null_edit_string) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_edit_string);
+		STUFF(gds_dyn_fld_edit_string);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_fld_edit_string, field->fld_edit_string);
+		put_symbol(dyn, gds_dyn_fld_edit_string, field->fld_edit_string);
 	if (field->fld_flags & fld_null_query_name) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_query_name);
+		STUFF(gds_dyn_fld_query_name);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_fld_query_name, field->fld_query_name);
+		put_symbol(dyn, gds_dyn_fld_query_name, field->fld_query_name);
 	if (field->fld_flags & fld_null_query_header) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_query_header);
+		STUFF(gds_dyn_fld_query_header);
 		STUFF_WORD(0);
 	}
 	else
-		put_query_header(dyn, gds__dyn_fld_query_header,
+		put_query_header(dyn, gds_dyn_fld_query_header,
 						 field->fld_query_header);
 
 	if (field->fld_system & fld_explicit_system)
-		put_number(dyn, gds__dyn_system_flag, field->fld_system);
+		put_number(dyn, gds_dyn_system_flag, field->fld_system);
 
 	if (field->fld_dtype) {
-		put_number(dyn, gds__dyn_fld_type, field->fld_dtype);
-		put_number(dyn, gds__dyn_fld_length, field->fld_length);
-		put_number(dyn, gds__dyn_fld_scale, field->fld_scale);
+		put_number(dyn, gds_dyn_fld_type, field->fld_dtype);
+		put_number(dyn, gds_dyn_fld_length, field->fld_length);
+		put_number(dyn, gds_dyn_fld_scale, field->fld_scale);
 	}
 
 	if (field->fld_has_sub_type)
-		put_number(dyn, gds__dyn_fld_sub_type, field->fld_sub_type);
+		put_number(dyn, gds_dyn_fld_sub_type, field->fld_sub_type);
 
 	if (n = field->fld_segment_length)
-		put_number(dyn, gds__dyn_fld_segment_length, n);
+		put_number(dyn, gds_dyn_fld_segment_length, n);
 
 	if (field->fld_flags & fld_null_missing_value) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_fld_missing_value);
+		STUFF(gds_dyn_fld_missing_value);
 		STUFF_WORD(0);
 	}
 	else if (field->fld_missing)
-		put_blr(dyn, gds__dyn_fld_missing_value, NULL, field->fld_missing);
+		put_blr(dyn, gds_dyn_fld_missing_value, NULL, field->fld_missing);
 
 	if (field->fld_flags & fld_null_validation) {
 		CHECK_DYN(6);
-		STUFF(gds__dyn_fld_validation_blr);
+		STUFF(gds_dyn_fld_validation_blr);
 		STUFF_WORD(0);
-		STUFF(gds__dyn_fld_validation_source);
+		STUFF(gds_dyn_fld_validation_source);
 		STUFF_WORD(0)
 	}
 	else if (field->fld_validation) {
-		put_blr(dyn, gds__dyn_fld_validation_blr, NULL,
+		put_blr(dyn, gds_dyn_fld_validation_blr, NULL,
 				field->fld_validation);
-		put_text(dyn, gds__dyn_fld_validation_source, field->fld_valid_src);
+		put_text(dyn, gds_dyn_fld_validation_source, field->fld_valid_src);
 	}
 
 	if (field->fld_flags & fld_null_description) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_description);
+		STUFF(gds_dyn_description);
 		STUFF_WORD(0);
 	}
 	else if (field->fld_description)
-		put_text(dyn, gds__dyn_description, field->fld_description);
+		put_text(dyn, gds_dyn_description, field->fld_description);
 
 	if (field->fld_dimension) {
-		put_number(dyn, gds__dyn_fld_dimensions, field->fld_dimension);
+		put_number(dyn, gds_dyn_fld_dimensions, field->fld_dimension);
 		add_dimensions(dyn, field);
 	}
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1407,28 +1407,28 @@ static void modify_index( STR dyn, DUDLEY_IDX index)
  **************************************/
 	TEXT i;
 
-	put_symbol(dyn, gds__dyn_mod_idx, index->idx_name);
+	put_symbol(dyn, gds_dyn_mod_idx, index->idx_name);
 
 	if (index->idx_flags & IDX_unique_flag)
-		put_number(dyn, gds__dyn_idx_unique, index->idx_unique);
+		put_number(dyn, gds_dyn_idx_unique, index->idx_unique);
 
 	if (index->idx_flags & IDX_active_flag)
-		put_number(dyn, gds__dyn_idx_inactive,
+		put_number(dyn, gds_dyn_idx_inactive,
 				   (index->idx_inactive) ? TRUE : FALSE);
 
 	if (index->idx_flags & IDX_type_flag)
-		put_number(dyn, gds__dyn_idx_type, index->idx_type);
+		put_number(dyn, gds_dyn_idx_type, index->idx_type);
 
 	if (index->idx_flags & IDX_null_description) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_description);
+		STUFF(gds_dyn_description);
 		STUFF_WORD(0);
 	}
 	else if (index->idx_description)
-		put_text(dyn, gds__dyn_description, index->idx_description);
+		put_text(dyn, gds_dyn_description, index->idx_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1445,35 +1445,35 @@ static void modify_relation( STR dyn, REL relation)
  *
  **************************************/
 
-	put_symbol(dyn, gds__dyn_mod_rel, relation->rel_name);
+	put_symbol(dyn, gds_dyn_mod_rel, relation->rel_name);
 	if (relation->rel_flags & rel_null_security_class) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_security_class);
+		STUFF(gds_dyn_security_class);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_security_class,
+		put_symbol(dyn, gds_dyn_security_class,
 				   relation->rel_security_class);
 	if (relation->rel_system)
-		put_number(dyn, gds__dyn_system_flag, relation->rel_system);
+		put_number(dyn, gds_dyn_system_flag, relation->rel_system);
 	if (relation->rel_flags & rel_null_description) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_description);
+		STUFF(gds_dyn_description);
 		STUFF_WORD(0);
 	}
 	else if (relation->rel_description)
-		put_text(dyn, gds__dyn_description, relation->rel_description);
+		put_text(dyn, gds_dyn_description, relation->rel_description);
 	if (relation->rel_flags & rel_null_ext_file) {
 		CHECK_DYN(3);
-		STUFF(gds__dyn_rel_ext_file);
+		STUFF(gds_dyn_rel_ext_file);
 		STUFF_WORD(0);
 	}
 	else
-		put_symbol(dyn, gds__dyn_rel_ext_file, relation->rel_filename);
+		put_symbol(dyn, gds_dyn_rel_ext_file, relation->rel_filename);
 
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1497,23 +1497,23 @@ static void modify_trigger( STR dyn, TRG trigger)
 	relation = trigger->trg_relation;
 	name = trigger->trg_name;
 
-	put_symbol(dyn, gds__dyn_mod_trigger, name);
-	put_symbol(dyn, gds__dyn_rel_name, relation->rel_name);
+	put_symbol(dyn, gds_dyn_mod_trigger, name);
+	put_symbol(dyn, gds_dyn_rel_name, relation->rel_name);
 	if (trigger->trg_mflag & trg_mflag_onoff)
-		put_number(dyn, gds__dyn_trg_inactive, trigger->trg_inactive);
+		put_number(dyn, gds_dyn_trg_inactive, trigger->trg_inactive);
 	if (trigger->trg_mflag & trg_mflag_type)
-		put_number(dyn, gds__dyn_trg_type, trigger->trg_type);
+		put_number(dyn, gds_dyn_trg_type, trigger->trg_type);
 	if (trigger->trg_mflag & trg_mflag_seqnum)
-		put_number(dyn, gds__dyn_trg_sequence, trigger->trg_sequence);
+		put_number(dyn, gds_dyn_trg_sequence, trigger->trg_sequence);
 	if (trigger->trg_statement)
-		put_blr(dyn, gds__dyn_trg_blr, relation, trigger->trg_statement);
+		put_blr(dyn, gds_dyn_trg_blr, relation, trigger->trg_statement);
 	if (trigger->trg_source)
-		put_text(dyn, gds__dyn_trg_source, trigger->trg_source);
+		put_text(dyn, gds_dyn_trg_source, trigger->trg_source);
 	if (trigger->trg_description)
-		put_text(dyn, gds__dyn_description, trigger->trg_description);
+		put_text(dyn, gds_dyn_description, trigger->trg_description);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1530,12 +1530,12 @@ static void modify_trigger_msg( STR dyn, TRGMSG trigmsg)
  *
  **************************************/
 
-	put_number(dyn, gds__dyn_mod_trigger_msg, trigmsg->trgmsg_number);
-	put_symbol(dyn, gds__dyn_trg_name, trigmsg->trgmsg_trg_name);
-	put_symbol(dyn, gds__dyn_trg_msg, trigmsg->trgmsg_text);
+	put_number(dyn, gds_dyn_mod_trigger_msg, trigmsg->trgmsg_number);
+	put_symbol(dyn, gds_dyn_trg_name, trigmsg->trgmsg_trg_name);
+	put_symbol(dyn, gds_dyn_trg_msg, trigmsg->trgmsg_text);
 
 	CHECK_DYN(1);
-	STUFF(gds__dyn_end);
+	STUFF(gds_dyn_end);
 }
 
 
@@ -1556,7 +1556,7 @@ static void put_acl( STR dyn, UCHAR attribute, SCL class_)
 	if (!class_)
 		return;
 
-	length = GENERATE_acl(class_, buffer);
+	length = GENERATE_acl(class_, (UCHAR*) buffer);
 	assert(length <= 4096);		/* to make sure buffer is big enough */
 
 	CHECK_DYN(3 + length);

@@ -27,11 +27,13 @@
  *                         readonly databases.
  */
 /*
-$Id: common.h,v 1.2 2001-07-10 17:35:13 awharrison Exp $
+$Id: common.h,v 1.3 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #ifndef JRD_COMMON_H
 #define JRD_COMMON_H
+
+#include "objs/jrd/autoconfig.h"
 
 #ifndef INCLUDE_FB_MACROS_H
 #include "../include/fb_macros.h"
@@ -53,6 +55,10 @@ $Id: common.h,v 1.2 2001-07-10 17:35:13 awharrison Exp $
 #ifdef SUPERSERVER
 #define GOVERNOR 1
 #define CANCEL_OPERATION
+#endif
+
+#ifndef GDS_FAR
+#define GDS_FAR
 #endif
 
 
@@ -89,6 +95,39 @@ $Id: common.h,v 1.2 2001-07-10 17:35:13 awharrison Exp $
 
 #define VOLATILE        volatile
 #endif /* LINUX */
+
+/* Darwin Platforms */
+#ifdef DARWIN  
+#define ALIGNMENT       4
+#define DOUBLE_ALIGN    4
+#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
+#define SETPGRP         setpgrp (0, 0)
+#define BSD_UNIX        1
+#define UNIX            1
+#define ATEXIT(c)       atexit (c)
+#define IMPLEMENTATION  63
+#define IEEE
+#define QUADCONST(n) (n##LL)
+#define QUADFORMAT "q"
+#define NON_MNTENT
+#define MMAP_SUPPORTED
+#define MAP_ANONYMOUS
+#define MAP_ANNON
+#define LSEEK_OFFSET_CAST (off_t)
+#define INTL
+#define SIGACTION_SUPPORTED
+
+#define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
+#define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from,to,length)	memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to,length)		memset (to, 0, (int) (length))
+
+#define _PPC_PARAM_H_
+#ifndef MAXPATHLEN
+#include <sys/param.h>
+#endif
+#endif /* Darwin Platforms */
+
 
 /* FreeBSD for Intel platforms */
 #ifdef FREEBSD
@@ -1098,8 +1137,12 @@ typedef unsigned long DWORD;
 #endif
 
 #define NULL_PTR        ((void*) 0)
+#ifndef TRUE
 #define TRUE            1
+#endif
+#ifndef FALSE
 #define FALSE           0
+#endif
 #define SUCCESS         0
 #define FAILURE         1
 
@@ -1179,10 +1222,10 @@ typedef char SBYTE;				/* Signed byte - rare usage */
 typedef long STATUS;
 typedef long IPTR;
 typedef unsigned long U_IPTR;
-typedef void (*FPTR_VOID) ();
-typedef void (*FPTR_VOID_PTR) (void *);
-typedef int (*FPTR_INT) ();
-typedef int (*FPTR_INT_VOID_PTR) (void *);
+typedef void (GDS_FAR *FPTR_VOID) ();
+typedef void (GDS_FAR *FPTR_VOID_PTR) (void *);
+typedef int (GDS_FAR *FPTR_INT) ();
+typedef int (GDS_FAR *FPTR_INT_VOID_PTR) (void *);
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
 
@@ -1401,6 +1444,10 @@ void GDS_breakpoint(int);
 #define BUFFER_MEDIUM   512
 #define BUFFER_SMALL    256
 #define BUFFER_TINY     128
+
+#ifndef LSEEK_OFFSET_CAST
+#define LSEEK_OFFSET_CAST
+#endif
 
 #ifndef DOUBLE_MULTIPLY
 #define DOUBLE_MULTIPLY(a,b)    (((double) (a)) * ((double) (b)))

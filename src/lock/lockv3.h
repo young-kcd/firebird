@@ -32,7 +32,7 @@
 #include "../jrd/common.h"
 #include "../lock/fparamv3.h"
 
-#if (defined linux || defined FREEBSD || defined NETBSD)
+#if (defined linux || defined FREEBSD || defined NETBSD || defined DARWIN )
 #define SEMUN
 #endif
 

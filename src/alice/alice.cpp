@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.2 2001-07-10 17:35:12 awharrison Exp $
+//	$Id: alice.cpp,v 1.3 2001-07-12 05:46:03 bellardo Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -53,6 +53,10 @@
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd_proto.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef SUPERSERVER
 #include "../utilities/cmd_util_proto.h"
@@ -707,7 +711,7 @@ static void alice_output(CONST SCHAR * format, ...)
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code =
 			tdgbl->output_proc(tdgbl->output_data,
-							   reinterpret_cast < UCHAR * >(""));
+							   (UCHAR *)(""));
 	}
 	else if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
@@ -715,7 +719,7 @@ static void alice_output(CONST SCHAR * format, ...)
 		va_end(arglist);
 		exit_code =
 			tdgbl->output_proc(tdgbl->output_data,
-							   reinterpret_cast < UCHAR * >(""));
+							   (UCHAR *)(""));
 	}
 	else {
 		VA_START(arglist, format);

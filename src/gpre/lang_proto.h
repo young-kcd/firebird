@@ -39,6 +39,7 @@ extern void FTN_action(ACT, int);
 extern void FTN_fini(void);
 extern void FTN_print_buffer(TEXT *);
 extern void INT_action(ACT, int);
+extern void INT_CXX_action(ACT, int);
 extern void PAS_action(ACT, int);
 extern int PLI_action(ACT, int);
 

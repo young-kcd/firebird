@@ -36,6 +36,18 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/thd_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
 #ifndef NETWARE_386
 #ifndef WIN_NT
 #include <errno.h>

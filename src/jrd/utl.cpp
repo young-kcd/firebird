@@ -43,6 +43,10 @@
 #include "../jrd/blb_proto.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef VMS
 #include <file.h>
 #include <ib_perror.h>
@@ -245,7 +249,8 @@ static const TEXT *const impl_class[] = {
 		"InterBase/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
 		"InterBase/linux Intel",	/* 60 */
 		"InterBase/FreeBSD/i386",	/* 61 */
-		"InterBase/NetBSD/i386"	/* 62 */
+		"InterBase/NetBSD/i386",	/* 62 */
+		"Firebird/Darwin/PowerPC"	/* 63 */
 };
 
 
@@ -1196,7 +1201,7 @@ void API_ROUTINE isc_set_single_user(
 
 int API_ROUTINE gds__version(
 							 void **handle,
-							 void (*routine) (), void *user_arg)
+							 FPTR_VOID routine, void *user_arg)
 {
 /**************************************
  *
@@ -1217,8 +1222,8 @@ int API_ROUTINE gds__version(
 	BOOLEAN redo;
 
 	if (!routine) {
-		routine = (void (*)()) ib_printf;
-		user_arg = "\t%s\n";
+		routine = (FPTR_VOID) ib_printf;
+		user_arg = (void*)"\t%s\n";
 	}
 
 	buf = buffer;

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+
 #ifndef _JRD_GDSOLD_H_
 #define _JRD_GDSOLD_H_
 
@@ -55,7 +56,9 @@
 /* define type, export and other stuff based on c/c++ and Windows */
 /******************************************************************/
 
+#ifndef GDS_FAR
 #define  GDS_FAR	ISC_FAR
+#endif
 #define  GDS_EXPORT     ISC_EXPORT
 
 typedef void GDS_FAR *gds_db_handle;
@@ -279,7 +282,7 @@ void GDS_EXPORT gds__vtov(CONST SCHAR GDS_FAR*,
 						  SSHORT);
 
 int GDS_EXPORT gds__version(void GDS_FAR * GDS_FAR *,
-							void (GDS_FAR *) (),
+							FPTR_VOID,
 							void GDS_FAR *);
 
 int GDS_EXPORT gds__disable_subsystem(char GDS_FAR *);
@@ -1301,6 +1304,7 @@ const char gds_info_sql_stmt_select_for_upd = 12;
 #define gds_arg_next_mach		   15
 #define gds_arg_netware		           16
 #define gds_arg_win32                      17
+#define gds_arg_warning			   18
 
 #else /* c++ definitions */
 
@@ -1322,6 +1326,7 @@ const GDS_LONG gds_arg_mpexl_ipc = 11;
 const GDS_LONG gds_arg_next_mach = 15;
 const GDS_LONG gds_arg_netware = 16;
 const GDS_LONG gds_arg_win32 = 17;
+const GDS_LONG gds_arg_warning = 18;
 
 #endif
 
@@ -2413,7 +2418,10 @@ const unsigned char gds_dyn_last_dyn_value = 210;
 #else /* c++ definitions */
 
 const unsigned char gds_sdl_version1 = 1;
-const unsigned char gds_sdl_eoc = -1;
+/* Opps, can't set an unsigned value to -1.  Used to be:
+ * const unsigned char gds_sdl_eoc = -1; 
+ */
+const unsigned char gds_sdl_eoc = 0xFF;
 const unsigned char gds_sdl_relation = 2;
 const unsigned char gds_sdl_rid = 3;
 const unsigned char gds_sdl_field = 4;
@@ -2628,7 +2636,10 @@ const unsigned char PYXIS_MENU_OPAQUE = 4;
 const unsigned char PYXIS_MENU_TRANSPARENT = 5;
 const unsigned char PYXIS_MENU_HORIZONTAL = 6;
 const unsigned char PYXIS_MENU_VERTICAL = 7;
-const unsigned char PYXIS_MENU_END = -1;
+/* Opps, can't set an unsigned value to -1.  Used to be:
+ * const unsigned char PYXIS_MENU_END = -1;
+ */
+const unsigned char PYXIS_MENU_END = 0xFF;
 
 #endif
 

@@ -95,6 +95,7 @@ typedef struct perf {
 	struct tms perf_times;
 } PERF;
 
+
 /* Letter codes controlling printing of statistics:
 
 	!f - fetches
@@ -112,10 +113,11 @@ typedef struct perf {
 
 */
 
-#include "../jrd/perf_proto.h"
-
-#ifdef __cplusplus
+#if defined(__cplusplus) && defined(NOTIME)
 } /* extern "C" */
 #endif
+
+
+#include "../jrd/perf_proto.h"
 
 #endif /* JRD_PERF_H */

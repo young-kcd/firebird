@@ -39,6 +39,10 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #if defined(WIN_NT)
 #include <io.h>
 #endif
@@ -483,7 +487,7 @@ UCHAR *DDL_alloc(register int size)
  **************************************/
 	register UCHAR *block, *p;
 
-	p = block = gds__alloc((SLONG) size);
+	p = block = (UCHAR*) gds__alloc((SLONG) size);
 
 #ifdef DEBUG_GDS_ALLOC
 /* For V4.0 we don't care about gdef specific memory leaks */

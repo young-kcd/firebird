@@ -59,4 +59,22 @@
 
 #define PYXIS_reset		(-1 &~ PYXIS_fill_displayed)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern OBJ PYXIS_find_field(OBJ , TEXT *);
+extern OBJ PYXIS_update(WIN , OBJ , LLS *, USHORT *);
+extern OBJ PYXIS_find_index(OBJ , USHORT );
+extern ATT PYXIS_replicate_prototype(OBJ , OBJ , USHORT );
+extern int PYXIS_put_desc(OBJ , DSC *);
+extern int PYXIS_set_field_options(OBJ , TEXT *, SLONG , SLONG );
+extern int PYXIS_purge_segments(OBJ , int );
+int PYXIS_get_updated(OBJ , TEXT *, TEXT **);
+int PYXIS_put_segment(OBJ , TEXT *, int );
+
+#ifdef __cplusplus
+};
+#endif
+
 #endif /* _PYXIS_PHASE2_H_ */

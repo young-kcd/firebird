@@ -46,6 +46,10 @@
 #include <sys/stat.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
@@ -442,7 +446,7 @@ SSHORT WALC_init(STATUS * status_vector,
 	wal->wal_shmem_data.sh_mem_semaphores = MAX_WALSEMS;
 #endif
 	if ((WAL_segment = (WALS) ISC_map_file(status_vector, wal_mapfile,
-										   wal_init_routine,
+										   (void(*)(void *, sh_mem *, int))wal_init_routine,
 										   (void *) &wal_args, length,
 										   &wal->wal_shmem_data)) == NULL) {
 		WAL_ERROR_APPEND(status_vector, gds__wal_illegal_attach, dbname);

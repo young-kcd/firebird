@@ -32,14 +32,14 @@
 
 typedef struct ctl
 {
-	STATUS	(*ctl_source)();			/* Source filter */
+	STATUS	(*ctl_source)(USHORT, struct ctl*);		/* Source filter */
 	struct ctl*	ctl_source_handle;		/* Argument to pass to source filter */
 	SSHORT		ctl_to_sub_type;		/* Target type */
 	SSHORT		ctl_from_sub_type;		/* Source type */
 	USHORT		ctl_buffer_length;		/* Length of buffer */
 	USHORT		ctl_segment_length;		/* Length of current segment */
 	USHORT		ctl_bpb_length;			/* Length of blob parameter block */
-	SCHAR*		ctl_bpb;				/* Address of blob parameter block */
+	UCHAR*		ctl_bpb;				/* Address of blob parameter block */
 	UCHAR*		ctl_buffer;				/* Address of segment buffer */
 	SLONG		ctl_max_segment;		/* Length of longest segment */
 	SLONG		ctl_number_segments;	/* Total number of segments */
@@ -50,7 +50,7 @@ typedef struct ctl
 	UCHAR*		ctl_exception_message;	/* Message to use in case of filter exception */
 } *CTL;
 
-typedef STATUS(*PTR) ();
+typedef STATUS(*PTR) (USHORT, CTL);
 
 /* Blob filter management */
 
@@ -60,7 +60,7 @@ typedef struct blf
 	struct blf*	blf_next;				/* Next known filter */
 	SSHORT		blf_from;				/* Source sub-type */
 	SSHORT		blf_to;					/* Target sub-type */
-	STATUS		(*blf_filter) ();		/* Entrypoint of filter */
+	PTR		blf_filter;		/* Entrypoint of filter */
 	STR			blf_exception_message;	/* message to be used in case of filter exception */
 } *BLF;
 

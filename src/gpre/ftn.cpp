@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.1.1.1 2001-05-23 13:25:32 tamlin Exp $
+//	$Id: ftn.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include "../jrd/ib_stdio.h"
@@ -40,6 +40,10 @@
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
 #include "../jrd/isc_proto.h"
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 extern UCHAR fortran_labels[];
 extern DBB isc_databases;
@@ -243,6 +247,25 @@ static ADL array_decl_list;
 #if defined FREEBSD || defined NETBSD
 #define INCLUDE_ISC_FTN  "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n"
 #define INCLUDE_FTN_FILE "include/gds.f"
+#define DOUBLE_DCL      "DOUBLE PRECISION"
+#define I2CONST_1       ""
+#define I2CONST_2       ""
+#define I2_1            ""
+#define I2_2            ""
+#define VAL_1           ""
+#define VAL_2           ""
+#define REF_1           ""
+#define REF_2           ""
+#define I4CONST_1       ""
+#define I4CONST_2       ""
+#define COMMENT         "*     "
+#define INLINE_COMMENT  "\n*                "
+#define COMMA           ","
+#endif
+
+#if defined DARWIN
+#define INCLUDE_ISC_FTN  "       INCLUDE  '/Library/Frameworks/Firebird.framework/Headers/gds.f\' \n\n"
+#define INCLUDE_FTN_FILE "Firebird/gds.f"
 #define DOUBLE_DCL      "DOUBLE PRECISION"
 #define I2CONST_1       ""
 #define I2CONST_2       ""
@@ -772,7 +795,7 @@ void FTN_print_buffer( TEXT * output_buffer)
 //		a port variable.
 //  
 
-static asgn_from( ACT action, REF reference)
+static int asgn_from( ACT action, REF reference)
 {
 	FLD field;
 	SCHAR *value, name[64], variable[20], temp[20];
@@ -828,7 +851,7 @@ static asgn_from( ACT action, REF reference)
 //		a port variable.
 //  
 
-static asgn_to( ACT action, REF reference)
+static int asgn_to( ACT action, REF reference)
 {
 	SCHAR s[128];
 	REF source;
@@ -839,7 +862,7 @@ static asgn_to( ACT action, REF reference)
 	if (field->fld_array_info) {
 		source->ref_value = reference->ref_value;
 		gen_get_or_put_slice(action, source, TRUE);
-		return;
+		return 0;
 	}
 
 	gen_name(s, source, TRUE);
@@ -869,7 +892,7 @@ static asgn_to( ACT action, REF reference)
 //		a port variable.
 //  
 
-static asgn_to_proc( REF reference)
+static int asgn_to_proc( REF reference)
 {
 	FLD field;
 	SCHAR s[64];
@@ -896,7 +919,7 @@ static asgn_to_proc( REF reference)
 //		Generate code for AT END clause of FETCH.
 //  
 
-static gen_at_end( ACT action)
+static int gen_at_end( ACT action)
 {
 	REQ request;
 	SCHAR s[20];
@@ -913,7 +936,7 @@ static gen_at_end( ACT action)
 //		Substitute for a BASED ON <field name> clause.
 //  
 
-static gen_based( ACT action)
+static int gen_based( ACT action)
 {
 	BAS based_on;
 	FLD field;
@@ -969,7 +992,7 @@ static gen_based( ACT action)
 	default:
 		sprintf(s, "datatype %d unknown\n", field->fld_dtype);
 		CPR_error(s);
-		return;
+		return 0;
 	}
 
 //  print the first variable, then precede the rest with commas 
@@ -1017,7 +1040,7 @@ static gen_based( ACT action)
 //		Make a blob FOR loop.
 //  
 
-static gen_blob_close( ACT action)
+static int gen_blob_close( ACT action)
 {
 	TEXT *command;
 	BLB blob;
@@ -1029,7 +1052,7 @@ static gen_blob_close( ACT action)
 	else
 		blob = (BLB) action->act_object;
 
-	command = (action->act_type == ACT_blob_cancel) ? "CANCEL" : "CLOSE";
+	command = (action->act_type == ACT_blob_cancel) ? (TEXT*) "CANCEL" : (TEXT*) "CLOSE";
 	printa(COLUMN, "CALL ISC_%s_BLOB (%s, isc_%d)",
 		   command, status_vector(action), blob->blb_ident);
 
@@ -1047,7 +1070,7 @@ static gen_blob_close( ACT action)
 //		End a blob FOR loop.
 //  
 
-static gen_blob_end( ACT action)
+static int gen_blob_end( ACT action)
 {
 	BLB blob;
 
@@ -1068,7 +1091,7 @@ static gen_blob_end( ACT action)
 //		Make a blob FOR loop.
 //  
 
-static gen_blob_for( ACT action)
+static int gen_blob_for( ACT action)
 {
 	BLB blob;
 
@@ -1093,7 +1116,7 @@ static gen_blob_for( ACT action)
 //		Generate the call to open (or create) a blob.
 //  
 
-static gen_blob_open( ACT action)
+static int gen_blob_open( ACT action)
 {
 	USHORT column = 6;
 	BLB blob;
@@ -1164,7 +1187,7 @@ static gen_blob_open( ACT action)
 //		Callback routine for BLR pretty printer.
 //  
 
-static gen_blr( int *user_arg, int offset, TEXT * string)
+static int gen_blr( int *user_arg, int offset, TEXT * string)
 {
 	int from, to, len, c_len;
 	TEXT c;
@@ -1195,7 +1218,7 @@ static gen_blr( int *user_arg, int offset, TEXT * string)
 //		Generate text to compile a request.
 //  
 
-static gen_compile( ACT action)
+static int gen_compile( ACT action)
 {
 	REQ request;
 	DBB db;
@@ -1253,7 +1276,7 @@ static gen_compile( ACT action)
 //		Generate a call to create a database.
 //  
 
-static gen_create_database( ACT action)
+static int gen_create_database( ACT action)
 {
 	REQ request;
 	DBB db;
@@ -1370,7 +1393,7 @@ static gen_create_database( ACT action)
 //		Generate substitution text for END_STREAM.
 //  
 
-static gen_cursor_close( ACT action, REQ request)
+static int gen_cursor_close( ACT action, REQ request)
 {
 
 	printa(COLUMN, "IF (isc_%ds .NE. 0) THEN", request->req_ident);
@@ -1387,7 +1410,7 @@ static gen_cursor_close( ACT action, REQ request)
 //		Generate text to initialize a cursor.
 //  
 
-static gen_cursor_init( ACT action)
+static int gen_cursor_init( ACT action)
 {
 
 //  If blobs are present, zero out all of the blob handles.  After this
@@ -1408,7 +1431,7 @@ static gen_cursor_init( ACT action)
 //		Generate text to open an embedded SQL cursor.
 //  
 
-static gen_cursor_open( ACT action, REQ request)
+static int gen_cursor_open( ACT action, REQ request)
 {
 	TEXT s[64];
 
@@ -1465,11 +1488,11 @@ static gen_cursor_open( ACT action, REQ request)
 //		Generate insertion text for the database statement.
 //  
 
-static gen_database( ACT action)
+static int gen_database( ACT action)
 {
 
 	if (first_flag++ != 0)
-		return;
+		return 0;
 
 	sprintf(output_buffer,
 			"\n%s      **** GDS Preprocessor Definitions ****\n\n", COMMENT);
@@ -1487,7 +1510,7 @@ static gen_database( ACT action)
 //		Generate insertion text for global DATA statements.
 //  
 
-static gen_database_data( ACT action)
+static int gen_database_data( ACT action)
 {
 	DBB db;
 	TPB tpb;
@@ -1549,7 +1572,7 @@ static gen_database_data( ACT action)
 //       data declarations.
 //  
 
-static gen_database_decls( ACT action)
+static int gen_database_decls( ACT action)
 {
 	DBB db;
 	REQ request;
@@ -1713,7 +1736,7 @@ static gen_database_decls( ACT action)
 
 	max_count = 0;
 	for (stack_ptr = events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
-		count = gen_event_block(stack_ptr->lls_object);
+		count = gen_event_block((ACT) stack_ptr->lls_object);
 		max_count = MAX(count, max_count);
 	}
 
@@ -1736,7 +1759,7 @@ static gen_database_decls( ACT action)
 //		Generate a call to update metadata.
 //  
 
-static gen_ddl( ACT action)
+static int gen_ddl( ACT action)
 {
 	REQ request;
 
@@ -1776,7 +1799,7 @@ static gen_ddl( ACT action)
 //		Generate a call to create a database.
 //  
 
-static gen_drop_database( ACT action)
+static int gen_drop_database( ACT action)
 {
 	DBB db;
 
@@ -1798,7 +1821,7 @@ static gen_drop_database( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_close( ACT action)
+static int gen_dyn_close( ACT action)
 {
 	DYN statement;
 	TEXT s[64];
@@ -1816,7 +1839,7 @@ static gen_dyn_close( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_declare( ACT action)
+static int gen_dyn_declare( ACT action)
 {
 	DYN statement;
 	TEXT s1[64], s2[64];
@@ -1836,7 +1859,7 @@ static gen_dyn_declare( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_describe( ACT action, BOOLEAN bind_flag)
+static int gen_dyn_describe( ACT action, BOOLEAN bind_flag)
 {
 	DYN statement;
 	TEXT s[64];
@@ -1858,7 +1881,7 @@ static gen_dyn_describe( ACT action, BOOLEAN bind_flag)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_execute( ACT action)
+static int gen_dyn_execute( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s1[64], s2[64], s3[64], *sqlda, *sqlda2;
@@ -1895,8 +1918,8 @@ static gen_dyn_execute( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
+		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
+		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_EXECUTE2 : ISC_EMBED_DSQL_EXECUTE,
 		   transaction,
 		   make_name(s1, statement->dyn_statement_name),
@@ -1915,7 +1938,7 @@ static gen_dyn_execute( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_fetch( ACT action)
+static int gen_dyn_fetch( ACT action)
 {
 	DYN statement;
 	TEXT s1[64], s2[64], *sqlda;
@@ -1947,7 +1970,7 @@ static gen_dyn_fetch( ACT action)
 //		Generate code for an EXECUTE IMMEDIATE dynamic SQL statement.
 //  
 
-static gen_dyn_immediate( ACT action)
+static int gen_dyn_immediate( ACT action)
 {
 	DYN statement;
 	DBB database;
@@ -1987,8 +2010,8 @@ static gen_dyn_immediate( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s, %s)"
-		   : "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s)",
+		   (SCHAR*) "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s, %s)"
+		   : (SCHAR*) "CALL %s (isc_status, %s, %s, %sLEN(%s)%s, %s%s%s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_EXECUTE_IMMEDIATE2 :
 		   ISC_EMBED_DSQL_EXECUTE_IMMEDIATE, transaction,
 		   database->dbb_name->sym_string, DSQL_I2CONST_1,
@@ -2009,7 +2032,7 @@ static gen_dyn_immediate( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_insert( ACT action)
+static int gen_dyn_insert( ACT action)
 {
 	DYN statement;
 	TEXT s1[64], s2[64], *sqlda;
@@ -2040,7 +2063,7 @@ static gen_dyn_insert( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_open( ACT action)
+static int gen_dyn_open( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s1[64], s2[64], s3[64], *sqlda, *sqlda2;
@@ -2077,8 +2100,8 @@ static gen_dyn_open( ACT action)
 
 	printa(COLUMN,
 		   (sqlda2) ?
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
-		   "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
+		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s, %s)" :
+		   (SCHAR*) "CALL %s (isc_status, %s, %s, %s%d%s, %s)",
 		   (sqlda2) ? ISC_EMBED_DSQL_OPEN2 : ISC_EMBED_DSQL_OPEN,
 		   transaction,
 		   make_name(s1, statement->dyn_cursor_name),
@@ -2097,7 +2120,7 @@ static gen_dyn_open( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static gen_dyn_prepare( ACT action)
+static int gen_dyn_prepare( ACT action)
 {
 	DYN statement;
 	DBB database;
@@ -2150,7 +2173,7 @@ static gen_dyn_prepare( ACT action)
 //		Generate substitution text for END_MODIFY.
 //  
 
-static gen_emodify( ACT action)
+static int gen_emodify( ACT action)
 {
 	UPD modify;
 	REF reference, source;
@@ -2186,7 +2209,7 @@ static gen_emodify( ACT action)
 //		Generate substitution text for END_STORE.
 //  
 
-static gen_estore( ACT action)
+static int gen_estore( ACT action)
 {
 	REQ request;
 
@@ -2196,7 +2219,7 @@ static gen_estore( ACT action)
 //  we already executed the store, so go home quietly 
 
 	if (request->req_type == REQ_store2)
-		return;
+		return 0;
 
 	gen_start(action, request->req_primary);
 	if (action->act_error || (action->act_flags & ACT_sql))
@@ -2210,7 +2233,7 @@ static gen_estore( ACT action)
 //		the AT_END clause.
 //  
 
-static gen_end_fetch(void)
+static int gen_end_fetch(void)
 {
 
 	printa(COLUMN, "END IF");
@@ -2222,7 +2245,7 @@ static gen_end_fetch(void)
 //		Generate definitions associated with a single request.
 //  
 
-static gen_endfor( ACT action)
+static int gen_endfor( ACT action)
 {
 	REQ request;
 
@@ -2241,7 +2264,7 @@ static gen_endfor( ACT action)
 //		Generate substitution text for ERASE.
 //  
 
-static gen_erase( ACT action)
+static int gen_erase( ACT action)
 {
 	UPD erase;
 
@@ -2281,7 +2304,7 @@ static SSHORT gen_event_block( ACT action)
 //		Generate substitution text for EVENT_INIT.
 //  
 
-static gen_event_init( ACT action)
+static int gen_event_init( ACT action)
 {
 	NOD init, event_list, *ptr, *end, node;
 	REF reference;
@@ -2356,7 +2379,7 @@ static gen_event_init( ACT action)
 //		Generate substitution text for EVENT_WAIT.
 //  
 
-static gen_event_wait( ACT action)
+static int gen_event_wait( ACT action)
 {
 	PAT args;
 	NOD event_init;
@@ -2414,7 +2437,7 @@ static gen_event_wait( ACT action)
 //		stream fetch).
 //  
 
-static gen_fetch( ACT action)
+static int gen_fetch( ACT action)
 {
 	REQ request;
 	NOD var_list;
@@ -2433,7 +2456,7 @@ static gen_fetch( ACT action)
 	printa(COLUMN, "SQLCODE = 0");
 	if (var_list = (NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
-			asgn_to(action, var_list->nod_arg[i]);
+			asgn_to(action, (REF) var_list->nod_arg[i]);
 		}
 	printa(COLUMN, "ELSE");
 	printa(COLUMN, "SQLCODE = 100");
@@ -2449,7 +2472,7 @@ static gen_fetch( ACT action)
 //		Generate substitution text for FINISH
 //  
 
-static gen_finish( ACT action)
+static int gen_finish( ACT action)
 {
 	DBB db;
 	RDY ready;
@@ -2499,7 +2522,7 @@ static gen_finish( ACT action)
 //		Generate substitution text for FOR statement.
 //  
 
-static gen_for( ACT action)
+static int gen_for( ACT action)
 {
 	POR port;
 	REQ request;
@@ -2537,7 +2560,7 @@ static gen_for( ACT action)
 //		Generate code for a form interaction.
 //  
 
-static gen_form_display( ACT action)
+static int gen_form_display( ACT action)
 {
 	FINT display;
 	REQ request;
@@ -2580,7 +2603,7 @@ static gen_form_display( ACT action)
 //		Generate code for a form block.
 //  
 
-static gen_form_end( ACT action)
+static int gen_form_end( ACT action)
 {
 
 	printa(COLUMN, "CALL PYXIS__POP_WINDOW (isc_window)");
@@ -2592,7 +2615,7 @@ static gen_form_end( ACT action)
 //		Generate code for a form block.
 //  
 
-static gen_form_for( ACT action)
+static int gen_form_for( ACT action)
 {
 	REQ request;
 	FORM form;
@@ -2647,12 +2670,12 @@ static gen_form_for( ACT action)
 //       or isc_put_slice for an array.
 //  
 
-static gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
+static int gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 {
 	TEXT s[25];
 
 	if (!(reference->ref_flags & REF_fetch_array))
-		return;
+		return 0;
 
 	if (get) {
 		if (action->act_flags & ACT_sql) {
@@ -2730,7 +2753,7 @@ static gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 //		Generate the code to do a get segment.
 //  
 
-static gen_get_segment( ACT action)
+static int gen_get_segment( ACT action)
 {
 	BLB blob;
 	REF into;
@@ -2778,7 +2801,7 @@ static gen_get_segment( ACT action)
 //		Generate end of block for PUT_ITEM and FOR_ITEM.
 //  
 
-static gen_item_end( ACT action)
+static int gen_item_end( ACT action)
 {
 	REQ request;
 	REF reference, master;
@@ -2791,7 +2814,7 @@ static gen_item_end( ACT action)
 
 	if (request->req_type == REQ_menu) {
 		gen_menu_item_end(action);
-		return;
+		return 0;
 	}
 
 	if (action->act_pair->act_type == ACT_item_for) {
@@ -2799,7 +2822,7 @@ static gen_item_end( ACT action)
 		printa(COLUMN_INDENT, "%s = %s + 1", index, index);
 		printa(COLUMN, "GOTO %d", request->req_top_label);
 		printa("", "%-6dCONTINUE", request->req_btm_label);
-		return;
+		return 0;
 	}
 
 	dbb = request->req_database;
@@ -2810,7 +2833,7 @@ static gen_item_end( ACT action)
 	for (reference = port->por_references; reference;
 		 reference = reference->ref_next) if (master = reference->ref_master)
 			printa(COLUMN_INDENT, "%s = %d", gen_name(s, reference, TRUE),
-				   PYXIS__OPT_DISPLAY);
+				   PYXIS_OPT_DISPLAY);
 
 	printa(COLUMN,
 		   "CALL PYXIS__INSERT (isc_status, %s, %s, %s, %sisc_%d%s)",
@@ -2828,7 +2851,7 @@ static gen_item_end( ACT action)
 //		Generate insert text for FOR_ITEM and PUT_ITEM.
 //  
 
-static gen_item_for( ACT action)
+static int gen_item_for( ACT action)
 {
 	REQ request, parent;
 	FORM form;
@@ -2838,7 +2861,7 @@ static gen_item_for( ACT action)
 
 	if (request->req_type == REQ_menu) {
 		gen_menu_item_for(action);
-		return;
+		return 0;
 	}
 
 	form = request->req_form;
@@ -2857,7 +2880,7 @@ static gen_item_for( ACT action)
 	printa(COLUMN, "END IF");
 
 	if (action->act_type != ACT_item_for)
-		return;
+		return 0;
 
 //  Build stuff for item loop 
 
@@ -2893,7 +2916,7 @@ static gen_item_for( ACT action)
 //		used both by START_STREAM and FOR
 //  
 
-static gen_loop( ACT action)
+static int gen_loop( ACT action)
 {
 	REQ request;
 	POR port;
@@ -2915,7 +2938,7 @@ static gen_loop( ACT action)
 //  
 //  
 
-static gen_menu( ACT action)
+static int gen_menu( ACT action)
 {
 	REQ request;
 
@@ -2932,7 +2955,7 @@ static gen_menu( ACT action)
 //		Generate code for a menu interaction.
 //  
 
-static gen_menu_display( ACT action)
+static int gen_menu_display( ACT action)
 {
 	MENU menu;
 	REQ request, display_request;
@@ -2970,14 +2993,14 @@ static gen_menu_display( ACT action)
 //  
 //  
 
-static gen_menu_end( ACT action)
+static int gen_menu_end( ACT action)
 {
 
 	REQ request;
 
 	request = action->act_request;
 	if (request->req_flags & REQ_menu_for)
-		return;
+		return 0;
 
 	printa(COLUMN, "END IF");
 }
@@ -2987,7 +3010,7 @@ static gen_menu_end( ACT action)
 //  
 //  
 
-static gen_menu_entree( ACT action)
+static int gen_menu_entree( ACT action)
 {
 	REQ request;
 
@@ -3007,7 +3030,7 @@ static gen_menu_entree( ACT action)
 //  
 //    Generate code for a reference to a menu or entree attribute.
 
-static gen_menu_entree_att( ACT action)
+static int gen_menu_entree_att( ACT action)
 {
 	MENU menu;
 	SSHORT ident;
@@ -3055,7 +3078,7 @@ static gen_menu_entree_att( ACT action)
 //		Generate code for a menu block.
 //  
 
-static gen_menu_for( ACT action)
+static int gen_menu_for( ACT action)
 {
 	REQ request;
 
@@ -3075,7 +3098,7 @@ static gen_menu_for( ACT action)
 //		for a dynamic menu.
 //  
 
-static gen_menu_item_end( ACT action)
+static int gen_menu_item_end( ACT action)
 {
 	REQ request;
 	ENTREE entree;
@@ -3086,7 +3109,7 @@ static gen_menu_item_end( ACT action)
 	if (action->act_pair->act_type == ACT_item_for) {
 		printa(COLUMN, "GOTO %d", request->req_top_label);
 		printa("", "%-6dCONTINUE", request->req_btm_label);
-		return;
+		return 0;
 	}
 
 	printa(COLUMN,
@@ -3103,13 +3126,13 @@ static gen_menu_item_end( ACT action)
 //		for a dynamic menu.
 //  
 
-static gen_menu_item_for( ACT action)
+static int gen_menu_item_for( ACT action)
 {
 	ENTREE entree;
 	REQ request;
 
 	if (action->act_type != ACT_item_for)
-		return;
+		return 0;
 
 //  Build stuff for item loop 
 
@@ -3137,7 +3160,7 @@ static gen_menu_item_for( ACT action)
 //		Generate definitions associated with a dynamic menu request.
 //  
 
-static gen_menu_request( REQ request)
+static int gen_menu_request( REQ request)
 {
 	ACT action;
 	MENU menu;
@@ -3217,7 +3240,7 @@ static TEXT *gen_name( SCHAR * string, REF reference, BOOLEAN as_blob)
 //		Generate a block to handle errors.
 //  
 
-static gen_on_error( ACT action)
+static int gen_on_error( ACT action)
 {
 	ACT err_action;
 
@@ -3237,7 +3260,7 @@ static gen_on_error( ACT action)
 //		Generate code for an EXECUTE PROCEDURE.
 //  
 
-static gen_procedure( ACT action)
+static int gen_procedure( ACT action)
 {
 	PAT args;
 	TEXT *pattern;
@@ -3293,7 +3316,7 @@ static gen_procedure( ACT action)
 //		Generate the code to do a put segment.
 //  
 
-static gen_put_segment( ACT action)
+static int gen_put_segment( ACT action)
 {
 	BLB blob;
 	REF from;
@@ -3326,7 +3349,7 @@ static gen_put_segment( ACT action)
 //		Generate BLR in raw, numeric form.  Ughly but dense.
 //  
 
-static gen_raw(
+static int gen_raw(
 			   UCHAR * blr,
 			   enum req_t request_type,
 			   int request_length, int begin_c, int end_c)
@@ -3384,7 +3407,7 @@ static gen_raw(
 //		Generate substitution text for READY
 //  
 
-static gen_ready( ACT action)
+static int gen_ready( ACT action)
 {
 	RDY ready;
 	DBB db;
@@ -3411,7 +3434,7 @@ static gen_ready( ACT action)
 //		Generate a send or receive call for a port.
 //  
 
-static gen_receive( ACT action, POR port)
+static int gen_receive( ACT action, POR port)
 {
 	REQ request;
 
@@ -3441,7 +3464,7 @@ static gen_receive( ACT action, POR port)
 //       a serious error, it will be caught on the next statement.
 //  
 
-static gen_release( ACT action)
+static int gen_release( ACT action)
 {
 	DBB db, exp_db;
 	REQ request;
@@ -3467,7 +3490,7 @@ static gen_release( ACT action)
 //		Generate definitions associated with a single request.
 //  
 
-static gen_request_data( REQ request)
+static int gen_request_data( REQ request)
 {
 	POR port;
 	REF reference;
@@ -3536,37 +3559,37 @@ static gen_request_data( REQ request)
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
-				if (PRETTY_print_cdb(request->req_blr, gen_blr, 0, 0))
+				if (PRETTY_print_cdb((SCHAR*) request->req_blr, ( int(*)() ) gen_blr, 0, 0))
 					IBERROR("internal error during parameter generation");
 				break;
 
 			case REQ_ddl:
 				string_type = "DYN";
-				if (PRETTY_print_dyn(request->req_blr, gen_blr, 0, 0))
+				if (PRETTY_print_dyn((SCHAR*) request->req_blr, (int(*)()) gen_blr, 0, 0))
 					IBERROR("internal error during dynamic DDL generation");
 				break;
 
 			case REQ_form:
 				string_type = "form map";
-				if (PRETTY_print_form_map(request->req_blr, gen_blr, 0, 0))
+				if (PRETTY_print_form_map((SCHAR*) request->req_blr, (int(*)())gen_blr, 0, 0))
 					IBERROR("internal error during form map generation");
 				break;
 
 			case REQ_menu:
 				string_type = "menu";
-				if (PRETTY_print_menu(request->req_blr, gen_blr, 0, 0))
+				if (PRETTY_print_menu((SCHAR*)request->req_blr, (int(*)())gen_blr, 0, 0))
 					IBERROR("internal error during menu generation");
 				break;
 
 			case REQ_slice:
 				string_type = "SDL";
-				if (PRETTY_print_sdl(request->req_blr, gen_blr, 0, 0))
+				if (PRETTY_print_sdl((SCHAR*)request->req_blr, (int(*)()) gen_blr, 0, 0))
 					IBERROR("internal error during SDL generation");
 				break;
 
 			default:
 				string_type = "BLR";
-				if (isc_print_blr(request->req_blr, gen_blr, 0, 0))
+				if (isc_print_blr((SCHAR*) request->req_blr, (void(*)()) gen_blr, 0, 0))
 					IBERROR("internal error during BLR generation");
 			}
 		}
@@ -3616,12 +3639,12 @@ static gen_request_data( REQ request)
 						   reference->ref_sdl_ident, COMMA,
 						   (begin_i / sizeof(SLONG)) + 1,
 						   (end_i / sizeof(SLONG)) + 1);
-					gen_raw(reference->ref_sdl, REQ_slice,
+					gen_raw((UCHAR*) reference->ref_sdl, REQ_slice,
 							reference->ref_sdl_length, begin_i, end_i);
 				}
 				if (!(sw_raw)) {
 					printa(COMMENT, " ");
-					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
+					if (PRETTY_print_sdl(reference->ref_sdl, (int(*)()) gen_blr, 0, 0))
 						IBERROR("internal error during SDL generation");
 					printa(COMMENT, " ");
 					printa(COMMENT, "END OF SDL STRING FOR REQUEST isc_%d\n",
@@ -3656,7 +3679,7 @@ static gen_request_data( REQ request)
 //		Generate definitions associated with a single request.
 //  
 
-static gen_request_decls( REQ request)
+static int gen_request_decls( REQ request)
 {
 	int length;
 	REF reference;
@@ -3744,7 +3767,7 @@ static gen_request_decls( REQ request)
 //		in a store2 statement.
 //  
 
-static gen_return_value( ACT action)
+static int gen_return_value( ACT action)
 {
 	UPD update;
 	REF reference;
@@ -3768,7 +3791,7 @@ static gen_return_value( ACT action)
 //		routine, insert local definitions.
 //  
 
-static gen_routine( ACT action)
+static int gen_routine( ACT action)
 {
 	BLB blob;
 	REQ request;
@@ -3800,7 +3823,7 @@ static gen_routine( ACT action)
 //		Generate substitution text for END_STREAM.
 //  
 
-static gen_s_end( ACT action)
+static int gen_s_end( ACT action)
 {
 	REQ request;
 
@@ -3827,7 +3850,7 @@ static gen_s_end( ACT action)
 //		Generate substitution text for FETCH.
 //  
 
-static gen_s_fetch( ACT action)
+static int gen_s_fetch( ACT action)
 {
 	REQ request;
 
@@ -3845,7 +3868,7 @@ static gen_s_fetch( ACT action)
 //		used both by START_STREAM and FOR
 //  
 
-static gen_s_start( ACT action)
+static int gen_s_start( ACT action)
 {
 	REQ request;
 	POR port;
@@ -3882,7 +3905,7 @@ static gen_s_start( ACT action)
 //		Substitute for a segment, segment length, or blob handle.
 //  
 
-static gen_segment( ACT action)
+static int gen_segment( ACT action)
 {
 	BLB blob;
 
@@ -3901,7 +3924,7 @@ static gen_segment( ACT action)
 //  
 //  
 
-static gen_select( ACT action)
+static int gen_select( ACT action)
 {
 	REQ request;
 	POR port;
@@ -3919,7 +3942,7 @@ static gen_select( ACT action)
 	printa(COLUMN, "IF (%s .NE. 0) THEN", name);
 	if (var_list = (NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++)
-			asgn_to(action, var_list->nod_arg[i]);
+			asgn_to(action, (REF) var_list->nod_arg[i]);
 
 	if (request->req_database->dbb_flags & DBB_v3) {
 		gen_receive(action, port);
@@ -3942,7 +3965,7 @@ static gen_select( ACT action)
 //		Generate a send call for a port.
 //  
 
-static gen_send( ACT action, POR port)
+static int gen_send( ACT action, POR port)
 {
 	REQ request;
 
@@ -3965,13 +3988,13 @@ static gen_send( ACT action, POR port)
 //		Generate support for get/put slice statement.
 //  
 
-static gen_slice( ACT action)
+static int gen_slice( ACT action)
 {
 	REQ request, parent_request;
 	REF reference, upper, lower;
 	SLC slice;
 	PAT args;
-	struct slc_repeat *tail, *end;
+	slc::slc_repeat *tail, *end;
 	TEXT buffer[256], temp[64];
 	TEXT *pattern1 =
 		"CALL ISC_GET_SLICE (%V1, %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
@@ -4037,7 +4060,7 @@ static gen_slice( ACT action)
 //		on whether or a not a port is present.
 //  
 
-static gen_start( ACT action, POR port)
+static int gen_start( ACT action, POR port)
 {
 	REQ request;
 	TEXT *vector;
@@ -4082,7 +4105,7 @@ static gen_start( ACT action, POR port)
 //		call and any variable initialization required.
 //  
 
-static gen_store( ACT action)
+static int gen_store( ACT action)
 {
 	REQ request;
 	REF reference;
@@ -4113,7 +4136,7 @@ static gen_store( ACT action)
 //		Generate substitution text for START_TRANSACTION.
 //  
 
-static gen_t_start( ACT action)
+static int gen_t_start( ACT action)
 {
 	DBB db;
 	TRA trans;
@@ -4125,7 +4148,7 @@ static gen_t_start( ACT action)
 
 	if (!action || !(trans = (TRA) action->act_object)) {
 		t_start_auto(0, status_vector(action), action, FALSE);
-		return;
+		return 0;
 	}
 
 //  build a complete statement, including tpb's.  Ready db's as req. 
@@ -4185,7 +4208,7 @@ static gen_t_start( ACT action)
 //		Initialize a TPB in the output file
 //  
 
-static gen_tpb_data( TPB tpb)
+static int gen_tpb_data( TPB tpb)
 {
 	TEXT *p;
 	UCHAR *text, *c;
@@ -4238,7 +4261,7 @@ static gen_tpb_data( TPB tpb)
 //       TPB in the output file
 //  
 
-static gen_tpb_decls( TPB tpb)
+static int gen_tpb_decls( TPB tpb)
 {
 	int length;
 
@@ -4254,7 +4277,7 @@ static gen_tpb_decls( TPB tpb)
 //		Generate substitution text for COMMIT, ROLLBACK, PREPARE, and SAVE
 //  
 
-static gen_trans( ACT action)
+static int gen_trans( ACT action)
 {
 
 	if (action->act_type == ACT_commit_retain_context)
@@ -4280,7 +4303,7 @@ static gen_trans( ACT action)
 //		Generate substitution text for UPDATE ... WHERE CURRENT OF ...
 //  
 
-static gen_update( ACT action)
+static int gen_update( ACT action)
 {
 	POR port;
 	UPD modify;
@@ -4297,7 +4320,7 @@ static gen_update( ACT action)
 //		Substitute for a variable reference.
 //  
 
-static gen_variable( ACT action)
+static int gen_variable( ACT action)
 {
 	SCHAR s[20];
 	REF reference;
@@ -4316,7 +4339,7 @@ static gen_variable( ACT action)
 //		Generate tests for any WHENEVER clauses that may have been declared.
 //  
 
-static gen_whenever( SWE label)
+static int gen_whenever( SWE label)
 {
 	TEXT *condition;
 
@@ -4345,7 +4368,7 @@ static gen_whenever( SWE label)
 //		Create a new window.
 //  
 
-static gen_window_create( ACT action)
+static int gen_window_create( ACT action)
 {
 
 	printa(COLUMN,
@@ -4358,7 +4381,7 @@ static gen_window_create( ACT action)
 //		Delete a window.
 //  
 
-static gen_window_delete( ACT action)
+static int gen_window_delete( ACT action)
 {
 
 	printa(COLUMN, "CALL PYXIS__DELETE_WINDOW (isc_window)");
@@ -4370,7 +4393,7 @@ static gen_window_delete( ACT action)
 //		Suspend a window.
 //  
 
-static gen_window_suspend( ACT action)
+static int gen_window_suspend( ACT action)
 {
 
 	printa(COLUMN, "CALL PYXIS__SUSPEND_WINDOW (isc_window)");
@@ -4383,7 +4406,7 @@ static gen_window_suspend( ACT action)
 //       output file.
 //  
 
-static make_array_declaration( REF reference)
+static int make_array_declaration( REF reference)
 {
 	FLD field;
 	SCHAR *name;
@@ -4400,7 +4423,7 @@ static make_array_declaration( REF reference)
 		for (this_array = array_decl_list; this_array;
 			 this_array =
 			 this_array->adl_next) if (field->fld_array_info->ary_ident ==
-									   this_array->adl_gds_ident) return;
+									   this_array->adl_gds_ident) return 0;
 
 //   If not, add it to the "declared" list and declare it  
 	this_array = (ADL) ALLOC(ADL_LEN);
@@ -4442,7 +4465,7 @@ static make_array_declaration( REF reference)
 	default:
 		sprintf(s, "datatype %d unknown\n", field->fld_dtype);
 		CPR_error(s);
-		return;
+		return 0;
 	}
 
 //   Print out the dimension part of the declaration  
@@ -4488,7 +4511,7 @@ static TEXT *make_name( TEXT * string, SYM symbol)
 //		active transaction
 //  
 
-static make_ok_test( ACT action, REQ request)
+static int make_ok_test( ACT action, REQ request)
 {
 
 	if (sw_auto)
@@ -4504,7 +4527,7 @@ static make_ok_test( ACT action, REQ request)
 //		Insert a port record description in output.
 //  
 
-static make_port( POR port)
+static int make_port( POR port)
 {
 	FLD field;
 	REF reference;
@@ -4565,7 +4588,7 @@ static make_port( POR port)
 			sprintf(s, "datatype %d unknown for field %s, msg %d",
 					field->fld_dtype, name, port->por_msg_number);
 			CPR_error(s);
-			return;
+			return 0;
 		}
 	}
 
@@ -4584,7 +4607,7 @@ static make_port( POR port)
 //		Generate the actual ready call.
 //  
 
-static make_ready( DBB db, TEXT * filename, TEXT * vector, REQ request)
+static int make_ready( DBB db, TEXT * filename, TEXT * vector, REQ request)
 {
 	TEXT s1[32], s2[32];
 
@@ -4719,7 +4742,7 @@ static make_ready( DBB db, TEXT * filename, TEXT * vector, REQ request)
 //       label as used.
 //  
 
-static next_label(void)
+static int next_label(void)
 {
 	USHORT label;
 	UCHAR *byte, target_byte;
@@ -4742,7 +4765,7 @@ static next_label(void)
 //		Print a fixed string at a particular COLUMN.
 //  
 
-static printa( SCHAR * column, SCHAR * string, ...)
+static int printa( SCHAR * column, SCHAR * string, ...)
 {
 	va_list ptr;
 	SCHAR s[256];
@@ -4771,7 +4794,7 @@ static TEXT *request_trans( ACT action, REQ request)
 		return trname;
 	}
 	else
-		return (request) ? request->req_trans : "GDS__TRANS";
+		return (request) ? request->req_trans : (TEXT*) "GDS__TRANS";
 }
 
 
@@ -4782,7 +4805,7 @@ static TEXT *request_trans( ACT action, REQ request)
 //       ISC_NULL from FORTRAN
 //  
 
-static status_and_stop( ACT action)
+static int status_and_stop( ACT action)
 {
 
 	if (action && (action->act_flags & ACT_sql))
@@ -4818,7 +4841,7 @@ static TEXT *status_vector( ACT action)
 //		continue after errors as that destroys evidence.
 //  
 
-static t_start_auto( REQ request, TEXT * vector, ACT action, SSHORT test)
+static int t_start_auto( REQ request, TEXT * vector, ACT action, SSHORT test)
 {
 	DBB db;
 	int count;
@@ -5013,7 +5036,7 @@ static int gen_function( ACT function)
 
 	if (action->act_type != ACT_any) {
 		IBERROR("can't generate function");
-		return;
+		return 0;
 	}
 
 	request = action->act_request;
@@ -5068,7 +5091,7 @@ static int gen_function( ACT function)
 
 			default:
 				IBERROR("gen_function: unsupported datatype");
-				return;
+				return 0;
 			}
 			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
 					   gen_name(s, reference->ref_source, TRUE));

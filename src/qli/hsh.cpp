@@ -67,7 +67,7 @@ void HSH_fini(void)
 		symbol = key_symbols;
 		key_symbols = (SYM) key_symbols->sym_object;
 		HSH_remove(symbol);
-		ALL_release(symbol);
+		ALL_release((FRB) symbol);
 	}
 }
 

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.2 2001-05-24 14:54:26 tamlin Exp $
+//  $Id: gpre.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.2 2001-05-24 14:54:26 tamlin Exp $
+//	$Id: gpre.cpp,v 1.3 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #define GPRE_MAIN
@@ -59,6 +59,10 @@
 #include "../gpre/par_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../gpre/gpreswi.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef VMS
 #include <descrip.h>
@@ -645,6 +649,32 @@ int main(int argc, char* argv[])
 			transaction_name	= "dbb->dbb_sys_trans";
 			sw_know_interp		= TRUE;
 			sw_interp			= ttype_metadata;
+			break;
+
+		case IN_SW_GPRE_GXX:
+			/* When we get executed here the IN_SW_GPRE_G case
+			 * has already been executed.  So we just set the
+			 * gen_routine to point to the C++ action, and be
+			 * done with it.
+			 */
+			gen_routine			= INT_CXX_action;
+			break;
+
+		case IN_SW_GPRE_LANG_INTERNAL:
+			/* We need to reset all the variables (except sw_language) to the
+ 			* default values because the IN_SW_GPRE_G case was already
+ 			* executed in the for the very first switch.
+ 			**/
+			sw_language = lang_internal;
+			gen_routine = C_CXX_action;
+			sw_cstring = TRUE;
+			transaction_name = "gds__trans";
+			sw_know_interp = FALSE;
+			sw_interp = 0;
+			ident_pattern = "isc_%d"; 
+			utility_name = "isc_utility";
+			count_name = "isc_count";
+			slack_name = "isc_slack";
 			break;
 
 		case IN_SW_GPRE_I:
@@ -1285,7 +1315,7 @@ static BOOLEAN all_digits(char *str1)
 //       If there is a problem, explain and return.
 //  
 
-static arg_is_string( SLONG argc, TEXT ** argvstring, TEXT * errstring)
+static int arg_is_string( SLONG argc, TEXT ** argvstring, TEXT * errstring)
 {
 	TEXT *str;
 
@@ -1609,7 +1639,7 @@ static void finish_based( ACT action)
 //		Return a character to the input stream.
 //  
 
-static get_char( IB_FILE * file)
+static int get_char( IB_FILE * file)
 {
 	if (input_char != input_buffer) {
 		return (int) *--input_char;
@@ -1745,6 +1775,17 @@ static BOOLEAN get_switches(int			argc,
 			sw_tab--;
 			break;
 
+		case IN_SW_GPRE_GXX:
+			/* If we decrement sw_tab the switch is removed
+			 * from the table and not processed in the main
+			 * switch statement.  Since IN_SW_GPRE_G will always
+			 * be processed for lang_internal, we leave our
+			 * switch in so we can clean up the mess left behind
+			 * by IN_SW_GPRE_G
+			 */
+			sw_language = lang_internal;
+			break;
+
 		case IN_SW_GPRE_G:
 			sw_language = lang_internal;
 			sw_tab--;
@@ -1778,6 +1819,11 @@ static BOOLEAN get_switches(int			argc,
 		case IN_SW_GPRE_COB:
 			sw_language = lang_cobol;
 			sw_tab--;
+			break;
+
+		case IN_SW_GPRE_LANG_INTERNAL : 
+			sw_language = lang_internal;
+			/*sw_tab--;*/
 			break;
 
 		case IN_SW_GPRE_D:
@@ -2299,7 +2345,7 @@ static TOK get_token()
 //       Also, for Fortran, mark the beginning of a statement
 //  
 
-static nextchar()
+static int nextchar()
 {
 	SSHORT c;
 

@@ -42,6 +42,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_UNISTD_
+#include <unistd.h>
+#endif
+
 #include "../jrd/jrd.h"
 #include "../jrd/pio.h"
 #include "../jrd/ods.h"
@@ -449,7 +453,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 #ifndef PREAD_PWRITE
 		THD_MUTEX_LOCK(file->fil_mutex);
 
-		if ((lseek(file->fil_desc, 0, 0)) == -1) {
+		if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST 0, 0)) == -1) {
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 			unix_error("lseek", file, isc_io_read_err, 0);
 		}
@@ -934,7 +938,7 @@ static FIL seek_file(
 #else
 	THD_MUTEX_LOCK(file->fil_mutex);
 
-	if ((lseek(file->fil_desc, (SLONG) (page * dbb->dbb_page_size), 0)) == -1) {
+	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST (page * dbb->dbb_page_size), 0)) == -1) {
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 		return (FIL) unix_error("lseek", file, isc_io_access_err,
 								status_vector);
@@ -1006,7 +1010,7 @@ static FIL setup_file(
 	lock->lck_object = (BLK) dbb;
 	lock->lck_length = l;
 	lock->lck_dbb = dbb;
-	lock->lck_ast = CCH_down_grade_dbb;
+	lock->lck_ast = (int (*)(void*)) CCH_down_grade_dbb;
 	MOVE_FAST(lock_string, lock->lck_key.lck_string, l);
 
 /* Try to get an exclusive lock on database.  If this fails, insist

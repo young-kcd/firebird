@@ -40,6 +40,7 @@
 #include "../jrd/que.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
+#include "../jrd/err_proto.h"
 
 #ifdef SUPERSERVER
 #include "../jrd/thd_proto.h"
@@ -882,7 +883,7 @@ int DBG_pretty(register NOD node, register int column)
 	return TRUE;
 }
 
-
+extern "C"
 int DBG_supervisor(int arg)
 {
 /**************************************

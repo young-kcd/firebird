@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: lock.cpp,v 1.1.1.1 2001-05-23 13:26:25 tamlin Exp $
+$Id: lock.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include "../jrd/time.h"
@@ -45,6 +45,18 @@ $Id: lock.cpp,v 1.1.1.1 2001-05-23 13:26:25 tamlin Exp $
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include <errno.h>
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #ifdef sparc
 #ifndef SOLARIS
@@ -165,7 +177,7 @@ SSHORT LOCK_debug_level = 0;
 #define DUMMY_OWNER_DELETE	((PTR) -2)
 #define DUMMY_OWNER_SHUTDOWN	((PTR) -3)
 
-#if !(defined linux || defined NETWARE_386 || defined WIN_NT || defined FREEBSD || defined NETBSD)
+#if !(defined linux || defined NETWARE_386 || defined WIN_NT || defined FREEBSD || defined NETBSD || defined DARWIN)
 extern SCHAR *sys_errlist[];
 #endif
 
@@ -718,7 +730,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 #else
 #ifdef MMAP_SUPPORTED
 	if (LOCK_owner) {
-		ISC_unmap_object(status_vector, &LOCK_data, &LOCK_owner,
+		ISC_unmap_object(status_vector, &LOCK_data,(UCHAR**)&LOCK_owner,
 						 sizeof(struct own));
 		LOCK_owner_offset = 0;
 	}
@@ -739,7 +751,8 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 	release_mutex();
 
 #if !(defined NETWARE_386 || defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
-	ISC_signal_cancel(LOCK_block_signal, blocking_action, (void *) offset);
+	ISC_signal_cancel(LOCK_block_signal, ( void (*)()) blocking_action,
+                  (void *) offset);
 #endif
 
 	*owner_offset = NULL;
@@ -811,10 +824,10 @@ If this happens on another classic platform add that platform too. - Shailesh
 #endif
 
 #if !(defined NETWARE_386 || defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC)
+#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN)
 	if (LOCK_owner_offset)		/* 5.5 SCO port: gds_drop */
 #endif
-		ISC_signal(LOCK_block_signal, blocking_action,
+		ISC_signal(LOCK_block_signal, (void(*)()) blocking_action,
 				   (void *) LOCK_owner_offset);
 #endif
 
@@ -873,7 +886,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 		return FAILURE;
 	}
 #else
-#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC)
+#if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN)
 	if (LOCK_owner_offset)		/* 5.5 SCO Port: gds_drop */
 #endif
 		if (!(LOCK_owner = (OWN) ISC_map_object(status_vector, &LOCK_data,
@@ -2674,8 +2687,8 @@ static void exit_handler( void *arg)
 #else
 #ifdef MMAP_SUPPORTED
 		if (LOCK_owner)
-			ISC_unmap_object(local_status, &LOCK_data, &LOCK_owner,
-							 sizeof(struct own));
+			ISC_unmap_object(local_status, &LOCK_data,
+				(UCHAR**)&LOCK_owner, sizeof(struct own));
 #endif
 #endif
 		if (owner_offset != LOCK_header->lhb_active_owner)
@@ -3062,7 +3075,7 @@ static STATUS init_lock_table( STATUS * status_vector)
 	LOCK_data.sh_mem_semaphores = 1;
 #endif
 	if (!(LOCK_header = (LHB) ISC_map_file(status_vector, lock_file,
-										   reinterpret_cast < void (*)() >
+										   reinterpret_cast < void (*)(void*, SH_MEM, int) >
 										   (lock_initialize), 0,
 										   LOCK_shm_size, &LOCK_data))) {
 
@@ -5004,7 +5017,7 @@ static USHORT wait_for_request(
 				AST_ENABLE;
 				ret = ISC_event_wait(1, &event_ptr, &value,
 									 (timeout - current_time) * 1000000,
-									 lock_alarm_handler, event_ptr);
+									 (void(*)())lock_alarm_handler, event_ptr);
 				AST_DISABLE;
 #ifdef SUPERSERVER
 				THREAD_ENTER;

@@ -303,7 +303,7 @@ NOD EXPR_value(USHORT * paren_count, USHORT * bool_flag)
  *
  **************************************/
 	NOD node, arg;
-	enum nod_t operator;
+	enum nod_t operatr;
 	USHORT local_count, local_flag;
 
 	if (!paren_count) {
@@ -431,19 +431,19 @@ static NOD parse_add( USHORT * paren_count, USHORT * bool_flag)
  *
  **************************************/
 	NOD node, arg;
-	enum nod_t operator;
+	enum nod_t operatr;
 
 	node = parse_multiply(paren_count, bool_flag);
 
 	while (TRUE) {
 		if (MATCH(KW_PLUS))
-			operator = nod_add;
+			operatr = nod_add;
 		else if (MATCH(KW_MINUS))
-			operator = nod_subtract;
+			operatr = nod_subtract;
 		else
 			return node;
 		arg = node;
-		node = SYNTAX_NODE(operator, 2);
+		node = SYNTAX_NODE(operatr, 2);
 		node->nod_arg[0] = arg;
 		node->nod_arg[1] = parse_multiply(paren_count, bool_flag);
 	}
@@ -688,7 +688,7 @@ static CON parse_literal(void)
 }
 
 
-static parse_matching_paren(void)
+static int parse_matching_paren(void)
 {
 /**************************************
  *
@@ -719,19 +719,19 @@ static NOD parse_multiply( USHORT * paren_count, USHORT * bool_flag)
  *
  **************************************/
 	NOD node, arg;
-	enum nod_t operator;
+	enum nod_t operatr;
 
 	node = parse_from(paren_count, bool_flag);
 
 	while (TRUE) {
 		if (MATCH(KW_ASTERISK))
-			operator = nod_multiply;
+			operatr = nod_multiply;
 		else if (MATCH(KW_SLASH))
-			operator = nod_divide;
+			operatr = nod_divide;
 		else
 			return node;
 		arg = node;
-		node = SYNTAX_NODE(operator, 2);
+		node = SYNTAX_NODE(operatr, 2);
 		node->nod_arg[0] = arg;
 		node->nod_arg[1] = parse_from(paren_count, bool_flag);
 	}
@@ -909,7 +909,7 @@ static NOD parse_relational( USHORT * paren_count)
 	NOD node, expr1, expr2, or_node;
 	LLS stack;
 	USHORT count, negation;
-	enum nod_t operator, *rel_ops;
+	enum nod_t operatr, *rel_ops;
 	USHORT local_flag;
 
 	local_flag = TRUE;
@@ -942,50 +942,50 @@ static NOD parse_relational( USHORT * paren_count)
 	switch (PARSE_keyword()) {
 	case KW_EQUALS:
 	case KW_EQ:
-		operator = (negation) ? nod_neq : nod_eql;
+		operatr = (negation) ? nod_neq : nod_eql;
 		negation = FALSE;
 		break;
 
 	case KW_NE:
-		operator = (negation) ? nod_eql : nod_neq;
+		operatr = (negation) ? nod_eql : nod_neq;
 		negation = FALSE;
 		break;
 
 	case KW_GT:
-		operator = (negation) ? nod_leq : nod_gtr;
+		operatr = (negation) ? nod_leq : nod_gtr;
 		negation = FALSE;
 		break;
 
 	case KW_GE:
-		operator = (negation) ? nod_lss : nod_geq;
+		operatr = (negation) ? nod_lss : nod_geq;
 		negation = FALSE;
 		break;
 
 	case KW_LE:
-		operator = (negation) ? nod_gtr : nod_leq;
+		operatr = (negation) ? nod_gtr : nod_leq;
 		negation = FALSE;
 		break;
 
 	case KW_LT:
-		operator = (negation) ? nod_geq : nod_lss;
+		operatr = (negation) ? nod_geq : nod_lss;
 		negation = FALSE;
 		break;
 
 	case KW_CONTAINING:
-		operator = nod_containing;
+		operatr = nod_containing;
 		break;
 
 	case KW_MATCHES:
 		LEX_token();
 		expr2 = EXPR_value(0, 0);
 		if (MATCH(KW_USING)) {
-			operator = nod_sleuth;
-			node = SYNTAX_NODE(operator, 3);
+			operatr = nod_sleuth;
+			node = SYNTAX_NODE(operatr, 3);
 			node->nod_arg[2] = EXPR_value(0, 0);
 		}
 		else {
-			operator = nod_matches;
-			node = SYNTAX_NODE(operator, 2);
+			operatr = nod_matches;
+			node = SYNTAX_NODE(operatr, 2);
 		}
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = expr2;
@@ -1026,7 +1026,7 @@ static NOD parse_relational( USHORT * paren_count)
 
 	if (!node) {
 		LEX_token();
-		node = SYNTAX_NODE(operator, 2);
+		node = SYNTAX_NODE(operatr, 2);
 		node->nod_arg[0] = expr1;
 		node->nod_arg[1] = EXPR_value(paren_count, &local_flag);
 	}
@@ -1042,7 +1042,7 @@ static NOD parse_relational( USHORT * paren_count)
 /*  If the node isn't an equality, we've done.  Since equalities can be structured
     as implicit ORs, build them here. */
 
-	if (operator != nod_eql)
+	if (operatr != nod_eql)
 		return node;
 
 /* We have an equality operation, which can take a number of values.  Generate

@@ -47,6 +47,10 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/thd_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 static int close_cur_file(OLD, USHORT);
 static int create_file(OLD, SLONG *);
 static void get_wal_offset(USHORT, ULONG *, ULONG *, USHORT);

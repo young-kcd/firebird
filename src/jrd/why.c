@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: why.c,v 1.1.1.1 2001-05-23 13:26:06 tamlin Exp $
+$Id: why.c,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include <stdlib.h>
@@ -484,7 +484,7 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 #if (defined UNIX) && \
-    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined NCR3000 || defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC /* platforms without a V3 bridge */)
+    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined NCR3000 || defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
 #ifndef PIPE_SERVER_YVALUE
 #define PIPE_BRIDGE_TO_V3
 #endif
@@ -5812,8 +5812,11 @@ static STATUS open_marker_file(STATUS * status,
 			}
 
 			/* Place an advisory lock on the marker file. */
-
+			#ifdef DARWIN
+			if (flock(fd, LOCK_EX ) != -1) {
+			#else
 			if (lockf(fd, F_TLOCK, 0) != -1) {
+			#endif
 				size = sizeof(marker_contents);
 				for (j = 0; j < IO_RETRY; j++) {
 					if ((bytes = read(fd, marker_contents, size)) != -1)
@@ -5835,7 +5838,7 @@ static STATUS open_marker_file(STATUS * status,
 					strcpy(single_user, "YES");
 					size = strlen(fildes_str);
 					for (j = 0; j < IO_RETRY; j++) {
-						if (lseek(fd, 0L, SEEK_END) == -1) {
+						if (lseek(fd, LSEEK_OFFSET_CAST 0L, SEEK_END) == -1) {
 							err_routine = "lseek";
 							close(fd);
 							fd = -1;

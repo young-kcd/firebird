@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.1.1.1 2001-05-23 13:26:34 tamlin Exp $
+$Id: all.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 /***************************************************
@@ -167,25 +167,25 @@ BLK ALLQ_extend(BLK * pointer, int size)
  *	Extend a repeating block, copying the constant part.
  *
  **************************************/
-	BLK block, new;
+	BLK block, new_blk;
 	register int length;
 
 	block = *pointer;
-	new = (BLK) ALLQ_alloc(pools->vec_object[block->blk_pool_id],
+	new_blk = (BLK) ALLQ_alloc((PLB) pools->vec_object[block->blk_pool_id],
 						   block->blk_type, size);
-	length = MIN(block->blk_length, new->blk_length) - sizeof(struct blk);
-	MOVQ_fast((UCHAR *) block + sizeof(struct blk),
-			  (UCHAR *) new + sizeof(struct blk), length);
-	ALLQ_release(block);
+	length = MIN(block->blk_length, new_blk->blk_length) - sizeof(struct blk);
+	MOVQ_fast((SCHAR *) block + sizeof(struct blk),
+			  (SCHAR *) new_blk + sizeof(struct blk), length);
+	ALLQ_release((FRB) block);
 
-	if (new->blk_type == (SCHAR) type_vec)
-		((VEC) new)->vec_count = size;
-	else if (new->blk_type == (SCHAR) type_vcl)
-		((VCL) new)->vcl_count = size;
+	if (new_blk->blk_type == (SCHAR) type_vec)
+		((VEC) new_blk)->vec_count = size;
+	else if (new_blk->blk_type == (SCHAR) type_vcl)
+		((VCL) new_blk)->vcl_count = size;
 
-	*pointer = new;
+	*pointer = new_blk;
 
-	return new;
+	return new_blk;
 }
 
 
@@ -307,7 +307,7 @@ PLB ALLQ_pool(void)
 			break;
 
 	if (pool_id >= pools->vec_count)
-		ALLQ_extend(&pools, pool_id + 10);
+		ALLQ_extend((BLK*) &pools, pool_id + 10);
 
 	pools->vec_object[pool_id] = (BLK) & temp_pool;
 	temp_pool.plb_free = NULL;
@@ -503,7 +503,7 @@ static void extend_pool( PLB pool, USHORT count)
 	block->blk_length = size;
 	block->blk_type = (SCHAR) type_frb;
 	block->blk_pool_id = pool->plb_pool_id;
-	ALLQ_release(block);
+	ALLQ_release((FRB) block);
 
 	hunk = (HNK) ALLQ_alloc(pool, type_hnk, 0);
 	hunk->hnk_address = (SCHAR *) block;

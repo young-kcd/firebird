@@ -55,6 +55,18 @@
 #include "../jrd/jrd_proto.h"
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef sparc
 #ifdef SOLARIS
 #include <fcntl.h>
@@ -302,7 +314,7 @@ typedef CONST void (*PFN_SERV_t) ();
 
 static const serv services[] =
 {
-#if !defined(LINUX) && !(defined FREEBSD || defined NETBSD)
+#if !(defined LINUX || defined FREEBSD || defined NETBSD)
 #ifndef NETWARE386
 #ifdef WIN_NT
 	isc_action_max, "print_cache", "-svc", "bin/ibcachpr", NULL, 0,
@@ -489,7 +501,7 @@ SVC SVC_attach(
 
 /* Find the service by looking for an exact match. */
 
-	for (serv = services; serv->serv_name; serv++)
+	for (serv = (struct serv*)services; serv->serv_name; serv++)
 		if (!strcmp(misc_buf, serv->serv_name))
 			break;
 
@@ -1851,7 +1863,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 /* The name of the service is the first element of the buffer */
 	svc_id = *spb;
 
-	for (serv = services; serv->serv_action; serv++)
+	for (serv = (struct serv*)services; serv->serv_action; serv++)
 		if (serv->serv_action == svc_id)
 			break;
 
@@ -3206,8 +3218,8 @@ static void service_get(
 	buf = buffer;
 
 	if (timeout) {
-		ISC_set_timer((SLONG) (timeout * 100000), timeout_handler, service,
-					  &sv_timr, &sv_hndlr);
+		ISC_set_timer((SLONG) (timeout * 100000), (void(*)())timeout_handler, service,
+					  (SLONG*)&sv_timr, (void**)&sv_hndlr);
 		iter = timeout * 10;
 	}
 
@@ -3231,15 +3243,15 @@ static void service_get(
 		else {
 			errno_save = errno;
 			if (timeout)
-				ISC_reset_timer(timeout_handler, service, &sv_timr,
-								&sv_hndlr);
+				ISC_reset_timer((void(*)())timeout_handler, service, (SLONG*)&sv_timr,
+								(void**)&sv_hndlr);
 			io_error("ib_getc", errno_save, "service pipe", isc_io_read_err,
 					 TRUE);
 		}
 	}
 
 	if (timeout) {
-		ISC_reset_timer(timeout_handler, service, &sv_timr, &sv_hndlr);
+		ISC_reset_timer((void(*)())timeout_handler, service, (SLONG*)&sv_timr, (void**)&sv_hndlr);
 		if (!iter)
 			service->svc_flags |= SVC_timeout;
 	}

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.1.1.1 2001-05-23 13:26:19 tamlin Exp $
+ * $Id: license.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -206,6 +206,11 @@
 #ifdef NETBSD
 #define FB_PLATFORM     "NB"	/* NetBSD */
 #endif
+
+#ifdef DARWIN
+#define FB_PLATFORM	"UP"	/* Darwin/PowerPC */
+#endif
+
 
 #ifndef GDS_VERSION
 #define GDS_VERSION	FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX

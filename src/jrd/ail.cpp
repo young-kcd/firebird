@@ -58,6 +58,10 @@
 #include "../wal/walc_proto.h"
 #include "../wal/walf_proto.h"
 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 extern "C" {
 

@@ -28,6 +28,12 @@
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 
+#include <stdlib.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifndef NOFILE
 #define NOFILE		20
 #endif

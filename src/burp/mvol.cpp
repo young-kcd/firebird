@@ -262,7 +262,7 @@ void MVOL_init_write(UCHAR*		database_name,
 			BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
 			/* msg 269 can't write a header record to file %s */
 		}
-		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, FALSE);
+		tdgbl->file_desc = (DESC) next_volume(tdgbl->file_desc, MODE_WRITE, FALSE);
 	}
 
 	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
@@ -298,7 +298,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (!tdgbl->mvol_io_cnt || errno == EIO)
 			{
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, FALSE);
+				tdgbl->file_desc = (DESC) next_volume(tdgbl->file_desc, MODE_READ, FALSE);
 				if (tdgbl->mvol_io_cnt > 0)
 				{
 					break;
@@ -678,7 +678,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				else
 					full_buffer = FALSE;
 				tdgbl->file_desc =
-					next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
+					(DESC) next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
 				if (full_buffer)
 				{
 					left -= tdgbl->mvol_io_buffer_size;
@@ -886,7 +886,7 @@ static void* next_volume( DESC handle, int mode, USHORT full_buffer)
 			(tdgbl->action->act_file = tdgbl->action->act_file->fil_next) &&
 			(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE))
 		{
-			return tdgbl->action->act_file->fil_fd;
+			return (void*) tdgbl->action->act_file->fil_fd;
 		}
 
 		BURP_error_redirect(0, 50, NULL, NULL);	/* msg 50 unexpected end of file on backup file */

@@ -68,7 +68,11 @@ typedef int (*CLIB_ROUTINE SIG_FPTR) ();
 #if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
 typedef void (CLIB_ROUTINE * SIG_FPTR) ();
 #else
+#if (defined(DARWIN))
+typedef void (*CLIB_ROUTINE SIG_FPTR) (int);
+#else
 typedef void (*CLIB_ROUTINE SIG_FPTR) ();
+#endif
 #endif
 #endif
 
@@ -128,18 +132,6 @@ static UCHAR *next_shared_memory;
 #include <fcntl.h>
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#define ISC_MUTEX	&isc_mutex
-#define ISC_EVENT	&isc_condition
-
-static struct mutex isc_mutex = MUTEX_INITIALIZER;
-static struct condition isc_condition = CONDITION_INITIALIZER;
-
-#endif	// UNIX
-
 #define FTOK_KEY	15
 #define PRIV		0666
 #define LOCAL_SEMAPHORES 4
@@ -179,6 +171,10 @@ typedef int pid_t;
 #endif
 
 #ifdef FREEBSD
+#define SEMUN
+#endif
+
+#ifdef DARWIN
 #define SEMUN
 #endif
 
@@ -272,7 +268,7 @@ static SLONG	init_semaphores(STATUS *, SLONG, int);
 static void		longjmp_sig_handler(int);
 #endif // UNIX && SUPERSERVER
 
-static BOOLEAN	semaphore_wait(int, int, int *);
+static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
 
 #ifdef NETWARE_386
 static void		cleanup_semaphores(ULONG);
@@ -895,7 +891,7 @@ int ISC_event_wait(
 #ifdef HP10
 		if (micro_seconds > 0 && (ret == -1) && (errno == EAGAIN))
 #else
-#ifdef linux
+#if (defined linux || defined DARWIN)
 		if (micro_seconds > 0 && (ret == ETIMEDOUT))
 #else
 		if (micro_seconds > 0 && (ret == ETIME))
@@ -1095,7 +1091,7 @@ int ISC_event_wait(
 				   EVENT * events,
 				   SLONG * values,
 				   SLONG micro_seconds,
-				   void (*timeout_handler) (), void *handler_arg)
+				   FPTR_VOID timeout_handler, void *handler_arg)
 {
 /**************************************
  *
@@ -1194,7 +1190,7 @@ int ISC_event_wait(
 			timeout_handler = alarm_handler;
 
 		ISC_set_timer(micro_seconds, timeout_handler, handler_arg,
-					  &user_timer, &user_handler);
+					  (SLONG*)&user_timer, (void**)&user_handler);
 	}
 
 /* Go into wait loop */
@@ -1206,9 +1202,9 @@ int ISC_event_wait(
 			ret = SUCCESS;
 			break;
 		}
-		(void) semaphore_wait(count, semid, semnums);
+		(void) semaphore_wait_isc_sync(count, semid, semnums);
 		if (micro_seconds > 0) {
-			/* semaphore_wait() routine may return SUCCESS if our timeout
+			/* semaphore_wait_isc_sync() routine may return SUCCESS if our timeout
 			   handler poked the semaphore.  So make sure that the event 
 			   actually happened.  If it didn't, indicate failure. */
 
@@ -1222,7 +1218,7 @@ int ISC_event_wait(
 
 /* Cancel the handler.  We only get here if a timeout was specified. */
 
-	ISC_reset_timer(timeout_handler, handler_arg, &user_timer, &user_handler);
+	ISC_reset_timer(timeout_handler, handler_arg, (SLONG*)&user_timer, (void**)&user_handler);
 
 	return ret;
 #endif /* PIPE_IS_SHRLIB */
@@ -2655,7 +2651,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 /* Get an exclusive lock on the file until the initialization process
    is complete.  That way potential race conditions are avoided. */
 
-#ifndef sun
+#if !(defined sun || defined DARWIN)
 	if (lockf(ib_fileno(fp), F_LOCK, 0)) {
 		error(status_vector, "lockf", errno);
 #else
@@ -4311,7 +4307,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 
 #if (defined UNIX)
 void ISC_reset_timer(
-					 void (*timeout_handler) (),
+					 FPTR_VOID timeout_handler,
 					 void *timeout_arg,
 					 SLONG * client_timer, void **client_handler)
 {
@@ -4345,9 +4341,9 @@ void ISC_reset_timer(
 #ifndef SIGACTION_SUPPORTED
 	sigvector(SIGALRM, client_handler, NULL);
 #else
-	sigaction(SIGALRM, client_handler, NULL);
+	sigaction(SIGALRM, (struct sigaction*)client_handler, NULL);
 #endif
-	setitimer(ITIMER_REAL, client_timer, NULL);
+	setitimer(ITIMER_REAL, (itimerval*)client_timer, NULL);
 #endif
 }
 #endif
@@ -4356,7 +4352,7 @@ void ISC_reset_timer(
 #if (defined UNIX)
 void ISC_set_timer(
 				   SLONG micro_seconds,
-				   void (*timeout_handler) (),
+				   FPTR_VOID timeout_handler,
 				   void *timeout_arg,
 				   SLONG * client_timer, void **client_handler)
 {
@@ -4936,11 +4932,13 @@ static void make_object_name(
 
 
 #ifdef UNIX
-static BOOLEAN semaphore_wait(int count, int semid, int *semnums)
+static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
 {
 /**************************************
  *
- *	s e m a p h o r e _ w a i t 
+ *	s e m a p h o r e _ w a i t  _ i s c _ s y n c
+ *
+ *  (formerly known as: s e m a p h o r e _ w a i t)
  *
  **************************************
  *

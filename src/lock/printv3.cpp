@@ -30,8 +30,13 @@
 
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_s_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../lock/lockv3.h"
 #include "../lock/prtv3_proto.h"
+
+#include <stdlib.h>
 
 #ifndef FOPEN_READ_TYPE
 #define FOPEN_READ_TYPE	"r"
@@ -41,7 +46,7 @@
 #define MAXPATHLEN	256
 #endif
 
-extern LHB ISC_map_file();
+//extern LHB ISC_map_file();
 
 static USHORT sw_requests, sw_processes, sw_locks, sw_series, sw_history,
 	sw_mutex;
@@ -57,7 +62,13 @@ static struct {
 } LOCK_hdrtbl[] = {
 "SHMSIZE", &LOCK_shm_size, NULL, NULL};
 
-static prt_lock_init();
+static int prt_lock_init();
+static int get_lock_header();
+static int prt_history(PTR, char *);
+static int prt_lock(LBL );
+static int prt_process(PRB );
+static int prt_request(LRQ );
+static int prt_que(UCHAR *, SRQ );
 
 static TEXT *history_names[] = {
 	"n/a", "ENQ", "DEQ", "CONVERT", "SIGNAL", "POST", "WAIT",
@@ -83,9 +94,7 @@ static UCHAR compatibility[] = {
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 
 
-V3_lock_print(argc, argv)
-	 USHORT argc;
-	 UCHAR *argv[];
+int V3_lock_print(USHORT argc, UCHAR **argv)
 {
 /**************************************
  *
@@ -116,7 +125,7 @@ V3_lock_print(argc, argv)
 	sw_processes = TRUE;
 
 	while (--argc) {
-		p = *argv++;
+		p = (UCHAR*) *argv++;
 		while (c = *p++)
 			switch (c) {
 			case 'o':			/* Owners: compatible with v4 */
@@ -144,7 +153,7 @@ V3_lock_print(argc, argv)
 				break;
 
 			case 's':
-				sw_series = atoi(*argv++);
+				sw_series = atoi((char*) *argv++);
 				--argc;
 				break;
 
@@ -176,7 +185,7 @@ V3_lock_print(argc, argv)
 #ifdef UNIX
 	shmem_data.sh_mem_semaphores = 0;
 #endif
-	LOCK_header = (LHB) ISC_map_file(status_vector, LOCK_FILE, prt_lock_init, 0, 0,	/* Map entire length of segment */
+	LOCK_header = (LHB) ISC_map_file(status_vector, LOCK_FILE, (void (*)(void *, sh_mem *, int)) prt_lock_init, 0, 0,	/* Map entire length of segment */
 									 &shmem_data);
 
 /* if there's nothing mapped, there's nothing to print */
@@ -236,17 +245,17 @@ V3_lock_print(argc, argv)
 				  shb->shb_insert_prior);
 	}
 
-	prt_que("\tProcesses", &LOCK_header->lhb_processes);
-	prt_que("\tFree processes", &LOCK_header->lhb_free_processes);
-	prt_que("\tFree locks", &LOCK_header->lhb_free_locks);
-	prt_que("\tFree requests", &LOCK_header->lhb_free_requests);
+	prt_que((UCHAR*) "\tProcesses", &LOCK_header->lhb_processes);
+	prt_que((UCHAR*) "\tFree processes", &LOCK_header->lhb_free_processes);
+	prt_que((UCHAR*) "\tFree locks", &LOCK_header->lhb_free_locks);
+	prt_que((UCHAR*) "\tFree requests", &LOCK_header->lhb_free_requests);
 	ib_printf("\n");
 
 /* Print known processes */
 
 	if (sw_processes)
 		QUE_LOOP(LOCK_header->lhb_processes, que)
-			prt_process((UCHAR *) que - OFFSET(PRB, prb_lhb_processes));
+			prt_process((PRB)(UCHAR *) que - OFFSET(PRB, prb_lhb_processes));
 
 /* Print known locks */
 
@@ -255,7 +264,7 @@ V3_lock_print(argc, argv)
 			 i < LOCK_header->lhb_hash_slots; slot++, i++)
 			for (que = (SRQ) ABS_PTR(slot->srq_forward); que != slot;
 				 que = (SRQ) ABS_PTR(que->srq_forward))
-				prt_lock((UCHAR *) que - OFFSET(LBL, lbl_lhb_hash));
+				prt_lock((LBL)(UCHAR *) que - OFFSET(LBL, lbl_lhb_hash));
 
 	if (sw_history)
 		prt_history(LOCK_header->lhb_history, "History");
@@ -267,7 +276,7 @@ V3_lock_print(argc, argv)
 }
 
 
-static get_lock_header()
+static int get_lock_header()
 {
 /*************************************
  *
@@ -282,7 +291,7 @@ static get_lock_header()
  ************************************/
 	IB_FILE *fd;
 	char *p, *q, buf[40];
-	int i, atoi();
+	int i;
 
 	if (fd = ib_fopen(LOCK_HEADER, FOPEN_READ_TYPE)) {
 		while (p = ib_fgets(buf, 40, fd))
@@ -299,7 +308,7 @@ static get_lock_header()
 }
 
 
-static prt_lock_init()
+static int prt_lock_init()
 {
 /**************************************
  *
@@ -315,9 +324,7 @@ static prt_lock_init()
 }
 
 
-static prt_history(history_header, title)
-	 PTR history_header;
-	 char *title;
+static int prt_history(PTR history_header, char *title)
 {
 /**************************************
  *
@@ -346,8 +353,7 @@ static prt_history(history_header, title)
 }
 
 
-static prt_lock(lock)
-	 LBL lock;
+static int prt_lock(LBL lock)
 {
 /**************************************
  *
@@ -365,7 +371,7 @@ static prt_lock(lock)
 	LRQ request;
 
 	if (sw_series && lock->lbl_series != sw_series)
-		return;
+		return 0;
 
 	if (LOCK_header->lhb_version >= LHB_VERSION7)
 		q = lock->lbl_key7;
@@ -376,7 +382,7 @@ static prt_lock(lock)
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '/')
 			*p++ = c;
 		else {
-			sprintf(p, "<%d>", c);
+			sprintf((char*) p, "<%d>", c);
 			while (*p)
 				p++;
 		}
@@ -403,9 +409,9 @@ static prt_lock(lock)
 	else
 		ib_printf("\tKey: %s\n", temp);
 
-	prt_que("\tHash que", &lock->lbl_lhb_hash);
+	prt_que((UCHAR*) "\tHash que", &lock->lbl_lhb_hash);
 
-	prt_que("\tRequests", &lock->lbl_requests);
+	prt_que((UCHAR*) "\tRequests", &lock->lbl_requests);
 	QUE_LOOP(lock->lbl_requests, que) {
 		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
 		ib_printf("\t\tRequest %d, Process: %d, State: %d (%d), Flags: %d\n",
@@ -417,8 +423,7 @@ static prt_lock(lock)
 }
 
 
-static prt_process(process)
-	 PRB process;
+static int prt_process(PRB process)
 {
 /**************************************
  *
@@ -440,18 +445,17 @@ static prt_process(process)
 		 (LOCK_header->lhb_version >=
 		  LHB_VERSION7) ? process->prb_semaphore7 : process->prb_semaphore5);
 
-	prt_que("\tRequests", &process->prb_requests);
-	prt_que("\tBlocks", &process->prb_blocks);
+	prt_que((UCHAR*) "\tRequests", &process->prb_requests);
+	prt_que((UCHAR*) "\tBlocks", &process->prb_blocks);
 	ib_printf("\n");
 
 	if (sw_requests)
 		QUE_LOOP(process->prb_requests, que)
-			prt_request((UCHAR *) que - OFFSET(LRQ, lrq_prb_requests));
+			prt_request((LRQ) (UCHAR *) que - OFFSET(LRQ, lrq_prb_requests));
 }
 
 
-static prt_request(request)
-	 LRQ request;
+static int prt_request(LRQ request)
 {
 /**************************************
  *
@@ -474,9 +478,7 @@ static prt_request(request)
 }
 
 
-static prt_que(string, que)
-	 UCHAR *string;
-	 SRQ que;
+static int prt_que(UCHAR *string, SRQ que)
 {
 /**************************************
  *
@@ -495,7 +497,7 @@ static prt_que(string, que)
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		ib_printf("%s: *empty*\n", string);
-		return;
+		return 0;
 	}
 
 	count = 0;

@@ -519,7 +519,7 @@ void DLL_EXPORT ERR_punt(void)
 		gds__log_status(dbname, tdbb->tdbb_status_vector);
 	}
 
-	LONGJMP(reinterpret_cast < jmp_buf & >(tdbb->tdbb_setjmp),
+	LONGJMP( (JMP_BUF) tdbb->tdbb_setjmp,
 			(int) tdbb->tdbb_status_vector[1]);
 }
 #endif

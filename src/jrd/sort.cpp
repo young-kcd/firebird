@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.1.1.1 2001-05-23 13:26:21 tamlin Exp $
+ * $Id: sort.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
  */
 
 #include <errno.h>
@@ -41,6 +41,18 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/sch_proto.h"
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef SOLARIS
 #include "../jrd/ib_stdio.h"
@@ -936,7 +948,7 @@ ULONG SORT_read_block(
 	while (length) {
 		len = MIN(length, 32768);
 		for (i = 0; i < IO_RETRY; i++) {
-			if (lseek(sfb->sfb_file, seek, SEEK_SET) == -1) {
+			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
 				THREAD_ENTER;
 				SORT_error(status_vector, sfb, "lseek", isc_io_read_err,
 						   errno);
@@ -1228,7 +1240,7 @@ ULONG SORT_write_block(STATUS * status_vector,
 	while (length) {
 		len = MIN(length, 32768);
 		for (i = 0; i < IO_RETRY; i++) {
-			if (lseek(sfb->sfb_file, seek, SEEK_SET) == -1) {
+			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
 				THREAD_ENTER;
 				SORT_error(status_vector, sfb, "lseek", isc_io_write_err,
 						   errno);
@@ -1370,7 +1382,7 @@ static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
 				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted)) {
 					*((USHORT *) (record + key->skd_vary_offset)) = l =
-						strlen(p);
+						strlen((char*)p);
 					fill_pos = p + l;
 					fill = n - l;
 					if (fill)
@@ -2717,7 +2729,7 @@ static ULONG order(SCB scb)
 		if (((SORTP *) output) + scb->scb_longs - 1 <= (SORTP *) lower_limit) {
 			/* null the bckptr for this record */
 			record->sr_bckptr =
-				reinterpret_cast < sort_record ** >((struct SR **) NULL);
+				reinterpret_cast < sort_record ** >((SR **) NULL);
 			MOVE_32(length, record->sr_sort_record.sort_record_key, output);
 			output =
 				reinterpret_cast < sort_record * >((SORTP *) output + length);

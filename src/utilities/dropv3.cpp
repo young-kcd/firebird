@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #endif
 #include <sys/stat.h>
+#include <stdlib.h>
 
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
@@ -45,7 +46,14 @@
 #define FTOK_KEY		15
 
 static long get_key();
-static dummy_init();
+static int dummy_init();
+static int get_lock_header();
+static int sem_exclusive(long , int );
+#ifndef MMAP_SUPPORTED   
+static int remove_resource(int , TEXT *, int, int , TEXT *);
+#else
+static int remove_resource(int, TEXT *,int ,int ,TEXT *);
+#endif
 
 static int LOCK_shm_size, LOCK_sem_key, LOCK_blk_signal, LOCK_sem_count;
 
@@ -61,9 +69,7 @@ static struct {
 "SEMCOUNT", &LOCK_sem_count, NULL, NULL};
 
 
-V3_drop(argc, argv)
-	 int argc;
-	 UCHAR *argv[];
+int V3_drop(int argc, UCHAR **argv)
 {
 /**************************************
  *
@@ -134,7 +140,7 @@ V3_drop(argc, argv)
 }
 
 
-static dummy_init()
+static int dummy_init()
 {
 /**************************************
  *
@@ -149,8 +155,7 @@ static dummy_init()
 }
 
 
-static long get_key(filename)
-	 TEXT *filename;
+static long get_key(TEXT *filename)
 {
 /*************************************
  *
@@ -177,7 +182,7 @@ static long get_key(filename)
 }
 
 
-static get_lock_header()
+static int get_lock_header()
 {
 /*************************************
  *
@@ -221,11 +226,8 @@ static get_lock_header()
 
 
 #ifndef MMAP_SUPPORTED
-static remove_resource(lock_flag, filename, shm_length, sem_count, label)
-	 int lock_flag;
-	 TEXT *filename;
-	 int shm_length, sem_count;
-	 TEXT *label;
+static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
+               int sem_count, TEXT *label)
 {
 /**************************************
  *
@@ -291,11 +293,8 @@ static remove_resource(lock_flag, filename, shm_length, sem_count, label)
 
 
 #ifdef MMAP_SUPPORTED
-static remove_resource(lock_flag, filename, shm_length, sem_count, label)
-	 int lock_flag;
-	 TEXT *filename;
-	 int shm_length, sem_count;
-	 TEXT *label;
+static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
+              int sem_count, TEXT *label)
 {
 /**************************************
  *
@@ -310,6 +309,9 @@ static remove_resource(lock_flag, filename, shm_length, sem_count, label)
 	long length, key, shmid, semid;
 	TEXT expanded_filename[512], hostname[64];
 	struct stat stat_buf;
+	#ifdef DARWIN
+	union semun	semctlArg;
+	#endif
 
 #ifdef NOHOSTNAME
 	strcpy(expanded_filename, filename);
@@ -319,7 +321,7 @@ static remove_resource(lock_flag, filename, shm_length, sem_count, label)
 #endif
 	if (stat(expanded_filename, &stat_buf) == -1) {
 		ib_printf("\n***No bridge %s file found.\n", label);
-		return;
+		return 0;
 	}
 
 #ifdef SUN_V3_LOCK_MANAGER
@@ -330,16 +332,21 @@ static remove_resource(lock_flag, filename, shm_length, sem_count, label)
 	if ((key = get_key(filename)) == -1) {
 		ib_printf("\n***Unable to get the key value of the bridge %s file.\n",
 				  label);
-		return;
+		return 0;
 	}
 
 	if ((semid = sem_exclusive(key, sem_count)) == -1) {
 		ib_printf("\n***Semaphores for bridge %s are currently in use.\n",
 				  label);
-		return;
+		return 0;
 	}
 
+	#ifdef DARWIN
+	semctlArg.val = 0;
+	if (semctl(semid, sem_count, IPC_RMID, semctlArg) == -1)
+	#else
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
+	#endif
 		ib_printf
 			("\n***Error trying to drop bridge %s semaphores.  ERRNO = %d.\n",
 			 label, errno);
@@ -349,9 +356,7 @@ static remove_resource(lock_flag, filename, shm_length, sem_count, label)
 #endif
 
 
-static sem_exclusive(key, count)
-	 long key;
-	 int count;
+static int sem_exclusive(long key, int count)
 {
 /**************************************
  *
@@ -379,9 +384,7 @@ static sem_exclusive(key, count)
 
 
 #ifndef MMAP_SUPPORTED
-static shm_exclusive(key, length)
-	 long key;
-	 int length;
+static int shm_exclusive(long key, int length)
 {
 /**************************************
  *

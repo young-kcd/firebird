@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.1.1.1 2001-05-23 13:25:29 tamlin Exp $
+//  $Id: par.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.1.1.1 2001-05-23 13:25:29 tamlin Exp $
+//	$Id: par.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include <setjmp.h>
@@ -2522,11 +2522,11 @@ static ACT par_form_for()
 		if (!MATCH(KW_DOT))
 			SYNTAX_ERROR(".");
 		dbb = (DBB) dbb_symbol->sym_object;
-		form = FORM_lookup_form(dbb, token.tok_string);
+		form = FORM_lookup_form(dbb, (UCHAR*)token.tok_string);
 	}
 	else
 		for (dbb = isc_databases; dbb; dbb = dbb->dbb_next)
-			if ((form = FORM_lookup_form(dbb, token.tok_string)))
+			if ((form = FORM_lookup_form(dbb, (UCHAR*)token.tok_string)))
 				break;
 
 //  Pick up form 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.h,v 1.1.1.1 2001-05-23 13:26:07 tamlin Exp $
+$Id: pwd.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #ifndef _JRD_PWD_H_
@@ -48,6 +48,10 @@ $Id: pwd.h,v 1.1.1.1 2001-05-23 13:26:07 tamlin Exp $
 #endif
 
 #if defined FREEBSD || defined NETBSD
+#define USER_INFO_NAME	"isc4.gdb"
+#endif
+
+#ifdef DARWIN
 #define USER_INFO_NAME	"isc4.gdb"
 #endif
 

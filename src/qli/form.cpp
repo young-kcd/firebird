@@ -26,7 +26,10 @@
 #include "../qli/form.h"
 #include "../include/jrd/gds.h"
 #include "../pyxis/phase1.h"
+#include "../pyxis/pyxis_proto.h"
 #include "../pyxis/phase2.h"
+#include "../pyxis/phase3.h"
+#include "../pyxis/save_proto.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
@@ -34,12 +37,11 @@
 #include "../qli/form_proto.h"
 #include "../qli/hsh_proto.h"
 #include "../qli/proc_proto.h"
+#include "../qli/mov_proto.h"
 
-extern int *PYXIS_relation_fields(), *PYXIS_relation_form(),
-	*PYXIS_create_object(), *PYXIS_find_index(), *PYXIS_find_object(),
-	*PYXIS_get_value();
-extern TEXT *PYXIS_get_attribute_value(), *PYXIS_get_string();
-extern SCHAR *PYXIS_get_keyname();
+#include <stdio.h>
+
+extern "C" int PYXIS_edit(WIN , OBJ , int *, int *);
 
 extern TEXT *QLI_error;
 extern USHORT QLI_prompt_count, QLI_reprompt;
@@ -47,7 +49,7 @@ extern USHORT sw_forms;
 
 static void clear_fields(FRM);
 static FRM register_form(DBB, int *, TEXT *);
-static void set_form(int *);
+static void set_form(OBJ);
 static void update_form(FRM, TEXT *);
 
 static int *pyxis_window;
@@ -69,15 +71,15 @@ FRM FORM_default_form( DBB database, TEXT * string)
 	int *handle, *fields, *transaction;
 	FRM form;
 
-	transaction = PRO_transaction(database, FALSE);
+	transaction = (int*) PRO_transaction(database, FALSE);
 
 	if (!
-		(fields =
-		 PYXIS_relation_fields(&database->dbb_handle, &transaction,
+		(fields = (int*)
+		 PYXIS_relation_fields((SLONG**) &database->dbb_handle, (SLONG**) &transaction,
 							   string))) return NULL;
 
-	handle = PYXIS_relation_form(pyxis_window, fields);
-	pyxis__delete(&fields);
+	handle = (int*) PYXIS_relation_form((WIN) pyxis_window, (OBJ) fields);
+	pyxis__delete((OBJ*) &fields);
 
 	if (!handle)
 		return NULL;
@@ -107,7 +109,7 @@ void FORM_display( NOD node)
 	form = (FRM) node->nod_arg[e_ffr_form];
 
 	for (field = form->frm_fields; field; field = field->ffl_next)
-		PYXIS_set_field_options(field->ffl_handle, 0, PYXIS_reset,
+		PYXIS_set_field_options((OBJ) field->ffl_handle, 0, PYXIS_reset,
 								PYXIS_clear);
 
 	EXEC_execute(node->nod_arg[e_ffr_statement]);
@@ -127,23 +129,23 @@ void FORM_edit( DBB database, TEXT * name)
  *
  **************************************/
 	FRM form;
-	int *transaction, *handle, *fields, *label;
+	OBJ transaction, handle, fields, label;
 
 	sw_forms = TRUE;
-	transaction = PRO_transaction(database, FALSE);
+	transaction = (OBJ) PRO_transaction(database, FALSE);
 
 /* Get an existing form, make a form out of a relation name, or
    build one from scratch */
 
 	if (form = FORM_lookup_form(database, name))
-		handle = form->frm_handle;
+		handle = (OBJ) form->frm_handle;
 	else if (fields =
-			 PYXIS_relation_fields(&database->dbb_handle, &transaction, name)) {
-		handle = PYXIS_relation_form(pyxis_window, fields);
-		pyxis__delete(&fields);
+			 PYXIS_relation_fields((SLONG**) &database->dbb_handle, (SLONG**) &transaction, name)) {
+		handle = PYXIS_relation_form((WIN) pyxis_window, (OBJ) fields);
+		pyxis__delete((OBJ*) &fields);
 	}
 	else {
-		handle = PYXIS_create_object(0, 0);
+		handle = PYXIS_create_object(0, (enum att_n)0);
 		label = PYXIS_create_object(name, att_literal_string);
 		PYXIS_put_attribute(handle, att_label, attype_object, label);
 	}
@@ -151,8 +153,8 @@ void FORM_edit( DBB database, TEXT * name)
 	PYXIS_set_field_options(handle, "all", PYXIS_reset, PYXIS_clear);
 	set_form(handle);
 
-	if (PYXIS_edit(pyxis_window, handle, &database->dbb_handle, &transaction)) {
-		PYXIS_store_form(&database->dbb_handle, &transaction, name, handle);
+	if (PYXIS_edit((WIN) pyxis_window, handle, (int*) &database->dbb_handle, (int*) &transaction)) {
+		PYXIS_store_form((SLONG**) &database->dbb_handle, (SLONG**) &transaction, name, handle);
 		PRO_commit(database);
 	}
 }
@@ -172,7 +174,7 @@ void FORM_fini(void)
  **************************************/
 
 	if (pyxis_window)
-		pyxis__delete_window(&pyxis_window);
+		pyxis__delete_window((SLONG*) &pyxis_window);
 }
 
 
@@ -194,18 +196,18 @@ void FORM_finish( DBB database)
 
 	while (form = database->dbb_forms) {
 		database->dbb_forms = form->frm_next;
-		pyxis__delete(&form->frm_handle);
+		pyxis__delete((OBJ*)&form->frm_handle);
 		if (symbol = form->frm_symbol) {
 			HSH_remove(symbol);
-			ALLQ_release(symbol);
+			ALLQ_release((FRB)symbol);
 		}
 		while (field = form->frm_fields) {
 			form->frm_fields = field->ffl_next;
 			if (symbol = field->ffl_symbol)
-				ALLQ_release(symbol);
-			ALLQ_release(field);
+				ALLQ_release((FRB)symbol);
+			ALLQ_release((FRB)field);
 		}
-		ALLQ_release(form);
+		ALLQ_release((FRB)form);
 	}
 }
 
@@ -227,7 +229,7 @@ int FORM_get_blob( NOD value, PAR parameter)
 	DBB dbb;
 	DSC *desc;
 	FFL field;
-	int *blob, *item;
+	OBJ blob, item;
 	TEXT bpb[20], buffer[4096], *p, *data;
 	STATUS status_vector[20];
 	USHORT length, n, bpb_length;
@@ -249,11 +251,11 @@ int FORM_get_blob( NOD value, PAR parameter)
 /* Format blob parameter block */
 
 	p = bpb;
-	*p++ = gds__bpb_version1;
-	*p++ = gds__bpb_source_type;
+	*p++ = gds_bpb_version1;
+	*p++ = gds_bpb_source_type;
 	*p++ = 1;
 	*p++ = 1;
-	*p++ = gds__bpb_target_type;
+	*p++ = gds_bpb_target_type;
 	*p++ = 2;
 	*p++ = desc->dsc_sub_type;
 	*p++ = desc->dsc_sub_type >> 8;
@@ -262,16 +264,16 @@ int FORM_get_blob( NOD value, PAR parameter)
 	if (gds__create_blob2(status_vector,
 						  GDS_REF(dbb->dbb_handle),
 						  GDS_REF(dbb->dbb_transaction),
-						  GDS_REF(blob),
-						  GDS_VAL(desc->dsc_address),
+						  (void**)GDS_REF(blob),
+						  (GDS__QUAD*)GDS_VAL(desc->dsc_address),
 						  bpb_length,
 						  bpb)) ERRQ_database_error(dbb, status_vector);
 
 	for (n = 1;; n++) {
-		if (!(item = PYXIS_find_index(field->ffl_handle, n)))
+		if (!(item = PYXIS_find_index((OBJ)field->ffl_handle, n)))
 			break;
-		if (!(data = PYXIS_get_attribute_value(item, att_update_data)) &&
-			!(data = PYXIS_get_attribute_value(item, att_data)))
+		if (!(data = (TEXT*)PYXIS_get_attribute_value(item, att_update_data)) &&
+			!(data = (TEXT*)PYXIS_get_attribute_value(item, att_data)))
 			data = "";
 		do {
 			for (p = buffer; *data && p < &buffer[sizeof(buffer) - 2];)
@@ -281,13 +283,13 @@ int FORM_get_blob( NOD value, PAR parameter)
 			*p = 0;
 			length = p - buffer;
 			if (gds__put_segment(status_vector,
-								 GDS_REF(blob), length, buffer)) break;
+								 (void**)GDS_REF(blob), length, buffer)) break;
 		} while (*data);
 		if (status_vector[1])
 			break;
 	}
 
-	if (gds__close_blob(status_vector, GDS_REF(blob)))
+	if (gds__close_blob(status_vector, (void**)GDS_REF(blob)))
 		ERRQ_database_error(dbb, status_vector);
 
 	return TRUE;
@@ -320,7 +322,7 @@ DSC *FORM_get_field(NOD node)
 	if (QLI_reprompt) {
 		clear_fields(form);
 		field = (FFL) node->nod_arg[e_ffl_field];
-		PYXIS_set_field_options(field->ffl_handle, 0, PYXIS_updatable,
+		PYXIS_set_field_options((OBJ)field->ffl_handle, 0, PYXIS_updatable,
 								PYXIS_updatable);
 		p = QLI_error;
 		QLI_error = NULL;
@@ -331,7 +333,7 @@ DSC *FORM_get_field(NOD node)
 
 /* Determine if there is data and where it came from */
 
-	switch (PYXIS_get_updated(field->ffl_handle, NULL, &p)) {
+	switch (PYXIS_get_updated((OBJ) field->ffl_handle, NULL, &p)) {
 	case PYXIS_user_data:
 		break;
 	case PYXIS_prog_data:
@@ -362,7 +364,7 @@ DSC *FORM_get_field(NOD node)
 
 	if ((string = (STR) node->nod_arg[e_ffl_string]) &&
 		l >= string->str_length) {
-		ALLQ_release(string);
+		ALLQ_release((FRB)string);
 		string = NULL;
 	}
 
@@ -417,7 +419,7 @@ FRM FORM_lookup_form(DBB database, TEXT * string)
 	if (!pyxis_window) {
 		width = 0;
 		height = 40;
-		pyxis__create_window(&pyxis_window, 0, 0, &width, &height);
+		pyxis__create_window((WIN*)&pyxis_window, 0, 0, &width, &height);
 		if (!pyxis_window) {
 			ERRQ_print_error(459, NULL, NULL, NULL, NULL, NULL);	/* Msg459 Unable to create form window */
 			return NULL;
@@ -428,13 +430,13 @@ FRM FORM_lookup_form(DBB database, TEXT * string)
 /* Make sure PYXIS$FORMS exists in the database */
 
 	if (!(database->dbb_flags & DBB_form_init)) {
-		PYXIS_define_forms_relation(&database->dbb_handle);
+		PYXIS_define_forms_relation((SLONG**) &database->dbb_handle);
 		database->dbb_flags |= DBB_form_init;
 	}
 
-	transaction = PRO_transaction(database, FALSE);
-	pyxis__load_form(status, &database->dbb_handle, &transaction,
-					 &handle, 0, string);
+	transaction = (int*) PRO_transaction(database, FALSE);
+	pyxis__load_form(status, (SLONG*) &database->dbb_handle, (SLONG*) &transaction,
+					 (SLONG*) &handle, 0, string);
 
 	if (!handle)
 		return NULL;
@@ -488,27 +490,27 @@ int FORM_put_field( NOD from, NOD node)
 	field = (FFL) node->nod_arg[e_ffl_field];
 
 	if (desc->dsc_missing & DSC_missing)
-		PYXIS_set_field_options(field->ffl_handle, 0,
+		PYXIS_set_field_options((OBJ) field->ffl_handle, 0,
 								PYXIS_data_present | PYXIS_update_present,
 								PYXIS_clear);
 	else if (desc->dsc_dtype != dtype_blob)
-		PYXIS_put_desc(field->ffl_handle, desc);
+		PYXIS_put_desc((OBJ) field->ffl_handle, desc);
 	else {
-		blob = EXEC_open_blob(from);
+		blob = (int*) EXEC_open_blob(from);
 		for (index = 1;; index++) {
 			if ((status = gds__get_segment(status_vector,
-										   GDS_REF(blob),
+										   (void**) GDS_REF(blob),
 										   GDS_REF(length),
 										   sizeof(buffer),
-										   buffer)) && status != gds__segment)
+										   buffer)) && status != gds_segment)
 				break;
 			p = buffer + length;
 			*p = 0;
 			if (length && *--p == '\n')
 				*p = 0;
-			PYXIS_put_segment(field->ffl_handle, buffer, index);
+			PYXIS_put_segment((OBJ) field->ffl_handle, buffer, index);
 		}
-		gds__close_blob(status_vector, GDS_REF(blob));
+		gds__close_blob(status_vector, (void**) GDS_REF(blob));
 	}
 
 	return TRUE;
@@ -529,7 +531,7 @@ void FORM_reset(void)
  **************************************/
 
 	sw_forms = FALSE;
-	pyxis__suspend_window(&pyxis_window);
+	pyxis__suspend_window((SLONG*) &pyxis_window);
 }
 
 
@@ -565,25 +567,25 @@ void FORM_update( NOD node)
 	if (list = node->nod_arg[e_fup_fields])
 		for (ptr = (FFL *) list->nod_arg, end = ptr + list->nod_count;
 			 ptr < end; ptr++) {
-			PYXIS_set_field_options((*ptr)->ffl_handle, 0, PYXIS_updatable,
+			PYXIS_set_field_options((OBJ) (*ptr)->ffl_handle, 0, PYXIS_updatable,
 									PYXIS_updatable);
 
 			/* Make sure that the current form field is reset (bug 3148) */
 
-			PYXIS_delete_named_attribute((*ptr)->ffl_handle,
+			PYXIS_delete_named_attribute((OBJ) (*ptr)->ffl_handle,
 										 att_current_index);
 		}
 
 	sprintf(temp, "%s to continue, %s to stop",
-			PYXIS_get_keyname(pyxis_window, PYXIS__KEY_ENTER),
-			PYXIS_get_keyname(pyxis_window, PYXIS__KEY_PF1));
+			PYXIS_get_keyname((WIN) pyxis_window, PYXIS_KEY_ENTER),
+			PYXIS_get_keyname((WIN) pyxis_window, PYXIS_KEY_PF1));
 	prompt = temp;
 
 	if (node->nod_arg[2]) {
 		desc = EVAL_value(node->nod_arg[e_fup_tag]);
 		if (!(desc->dsc_missing & DSC_missing)) {
 			p = temp;
-			if (l = MOVQ_get_string(desc, &q, temp, sizeof(temp)))
+			if (l = MOVQ_get_string(desc, &q, (vary*) temp, sizeof(temp)))
 				do
 					*p++ = *q++;
 				while (--l);
@@ -611,7 +613,7 @@ static void clear_fields( FRM form)
 	FFL field;
 
 	for (field = form->frm_fields; field; field = field->ffl_next)
-		PYXIS_set_field_options(field->ffl_handle, 0,
+		PYXIS_set_field_options((OBJ) field->ffl_handle, 0,
 								PYXIS_updatable, PYXIS_clear);
 }
 
@@ -658,10 +660,10 @@ static FRM register_form( DBB database, int *handle, TEXT * string)
 /* Pick up field names */
 
 	for (attribute = NULL;
-		 attribute =
-		 PYXIS_find_object(form->frm_handle, attribute, att_field, TRUE);) {
-		object = PYXIS_get_value(attribute);
-		if (p = PYXIS_get_attribute_value(object, att_field_name)) {
+		 attribute = (int*)
+		 PYXIS_find_object((OBJ) form->frm_handle, (ATT) attribute, att_field, TRUE);) {
+		object = (int*) PYXIS_get_value((ATT) attribute);
+		if (p = (TEXT*) PYXIS_get_attribute_value((OBJ) object, att_field_name)) {
 			l = strlen(p);
 			field = (FFL) ALLOCPV(type_ffl, l);
 			field->ffl_handle = object;
@@ -674,11 +676,11 @@ static FRM register_form( DBB database, int *handle, TEXT * string)
 			symbol->sym_length = l;
 			symbol->sym_object = (BLK) field;
 			field->ffl_dtype =
-				(int) PYXIS_get_attribute_value(field->ffl_handle, att_dtype);
+				(int) PYXIS_get_attribute_value((OBJ) field->ffl_handle, att_dtype);
 			field->ffl_scale =
-				(int) PYXIS_get_attribute_value(field->ffl_handle, att_scale);
+				(int) PYXIS_get_attribute_value((OBJ) field->ffl_handle, att_scale);
 			field->ffl_length =
-				(int) PYXIS_get_attribute_value(field->ffl_handle,
+				(int) PYXIS_get_attribute_value((OBJ) field->ffl_handle,
 												att_length);
 		}
 	}
@@ -687,7 +689,7 @@ static FRM register_form( DBB database, int *handle, TEXT * string)
 }
 
 
-static void set_form( int *form)
+static void set_form( OBJ form)
 {
 /**************************************
  *
@@ -700,14 +702,14 @@ static void set_form( int *form)
  *
  **************************************/
 
-	if (form == current_form)
+	if (form == (OBJ) current_form)
 		return;
 
-	pyxis__pop_window(&pyxis_window);
-	current_form = form;
+	pyxis__pop_window((WIN*) &pyxis_window);
+	current_form = (int*) form;
 
 	if (form)
-		PYXIS_push_form(pyxis_window, form, TRUE);
+		PYXIS_push_form((WIN) pyxis_window, form, TRUE);
 }
 
 
@@ -726,37 +728,37 @@ static void update_form( FRM form, TEXT * string)
 	USHORT c;
 	int *tag;
 
-	set_form(form->frm_handle);
+	set_form((OBJ) form->frm_handle);
 
 /* Set up tag, if given */
 
 	if (string) {
-		tag = PYXIS_create_object(string, att_literal_string);
-		PYXIS_push_tag(pyxis_window, tag);
+		tag = (int*) PYXIS_create_object(string, att_literal_string);
+		PYXIS_push_tag((WIN) pyxis_window, (OBJ) tag);
 	}
 
 /* Make sure that the current form field is reset (bug 3148) */
 
-	PYXIS_delete_named_attribute(form->frm_handle, att_current_index);
+	PYXIS_delete_named_attribute((OBJ) form->frm_handle, att_current_index);
 
 /* Drive form until abort */
 
 	for (;;) {
-		PYXIS_update(pyxis_window, form->frm_handle, 0, &c);
-		if (!c || c == PYXIS__KEY_ENTER || c == PYXIS__KEY_PF1)
+		PYXIS_update((WIN) pyxis_window, (OBJ) form->frm_handle, 0, &c);
+		if (!c || c == PYXIS_KEY_ENTER || c == PYXIS_KEY_PF1)
 			break;
 	}
 
 /* Cleanup tag, if appropriate */
 
 	if (string) {
-		pyxis__pop_window(&pyxis_window);
-		pyxis__delete(&tag);
+		pyxis__pop_window((WIN*) &pyxis_window);
+		pyxis__delete((OBJ*) &tag);
 	}
 
 /* Clean exit on ENTER, otherwise abort */
 
-	if (c == PYXIS__KEY_ENTER)
+	if (c == PYXIS_KEY_ENTER)
 		return;
 
 	FORM_reset();

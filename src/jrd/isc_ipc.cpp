@@ -22,7 +22,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 
- /* $Id: isc_ipc.cpp,v 1.1.1.1 2001-05-23 13:26:10 tamlin Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -45,6 +45,10 @@
 #else
 #include <vfork.h>
 #endif
+#endif
+
+#ifdef DARWIN
+#include <string.h>
 #endif
 
 #ifdef SOLX86
@@ -77,7 +81,11 @@ typedef int (*CLIB_ROUTINE SIG_FPTR) ();
 #if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
 typedef void (CLIB_ROUTINE * SIG_FPTR) ();
 #else
+#if (defined(DARWIN))
+typedef void (*CLIB_ROUTINE SIG_FPTR) (int);
+#else
 typedef void (*CLIB_ROUTINE SIG_FPTR) ();
+#endif
 #endif
 #endif
 
@@ -320,6 +328,7 @@ extern int ib_fprintf();
 extern int close();
 #endif
 
+extern "C" {
 
 void DLL_EXPORT ISC_enter(void)
 {
@@ -353,6 +362,8 @@ void DLL_EXPORT ISC_enter(void)
 		(void) kill(getpid(), SIGFPE);
 #endif
 }
+
+} // extern "C"
 
 
 #ifndef REQUESTER
@@ -412,6 +423,7 @@ void DLL_EXPORT ISC_enable(void)
 #endif
 
 
+extern "C" {
 void DLL_EXPORT ISC_exit(void)
 {
 /**************************************
@@ -435,6 +447,7 @@ void DLL_EXPORT ISC_exit(void)
 	ISC_signal_cancel(SIGFPE, (void (*)()) overflow_handler, 0);
 #endif
 }
+} // Extern "C"
 
 
 #ifndef REQUESTER

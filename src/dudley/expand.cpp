@@ -55,7 +55,7 @@ static GDS__QUAD null_blob;
 static LLS request_context;
 static jmp_buf exp_env;
 
-static TEXT alloc_info[] = { gds__info_allocation, gds__info_end };
+static TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
 
 #define CMP_SYMBOL(sym1, sym2) strcmp (sym1->sym_string, sym2->sym_string)
 #define MOVE_SYMBOL(symbol, field) move_symbol (symbol, field, sizeof (field))
@@ -109,12 +109,12 @@ static void expand_action( ACT action)
 
 	switch (action->act_type) {
 	case act_a_field:
-		expand_field(action->act_object);
+		expand_field((FLD) action->act_object);
 		break;
 
 	case act_m_field:
 	case act_d_field:
-		lookup_field(action->act_object);
+		lookup_field((FLD) action->act_object);
 		break;
 
 	case act_d_filter:
@@ -130,41 +130,41 @@ static void expand_action( ACT action)
 */ break;
 
 	case act_a_gfield:
-		expand_global_field(action->act_object);
+		expand_global_field((FLD) action->act_object);
 		break;
 
 	case act_m_gfield:
-		lookup_global_field(action->act_object);
-		expand_global_field(action->act_object);
+		lookup_global_field((FLD) action->act_object);
+		expand_global_field((FLD) action->act_object);
 		break;
 
 	case act_d_gfield:
-		lookup_global_field(action->act_object);
+		lookup_global_field((FLD) action->act_object);
 		break;
 
 	case act_a_index:
-		expand_index(action->act_object);
+		expand_index((ACT) action->act_object);
 		break;
 
 	case act_m_relation:
-		lookup_relation(action->act_object);
+		lookup_relation((REL) action->act_object);
 	case act_a_relation:
-		expand_relation(action->act_object);
+		expand_relation((REL) action->act_object);
 		break;
 
 	case act_d_relation:
-		lookup_relation(action->act_object);
+		lookup_relation((REL) action->act_object);
 		break;
 
 	case act_d_trigger:
-		lookup_trigger(action->act_object);
+		lookup_trigger((TRG) action->act_object);
 		break;
 
 	case act_m_trigger:
-		lookup_trigger(action->act_object);
+		lookup_trigger((TRG) action->act_object);
 
 	case act_a_trigger:
-		expand_trigger(action->act_object);
+		expand_trigger((TRG) action->act_object);
 		break;
 
 	case act_c_database:
@@ -359,12 +359,12 @@ static void expand_trigger( TRG trigger)
  *
  **************************************/
 	LLS contexts, update;
-	CTX old, new;
+	CTX old, new_ctx;
 	REL relation;
 	USHORT old_id;
 
 	context_id = 2;
-	old = new = NULL;
+	old = new_ctx = NULL;
 	request_context = contexts = update = NULL;
 
 	relation = trigger->trg_relation;
@@ -378,10 +378,10 @@ static void expand_trigger( TRG trigger)
 
 	if ((trigger->trg_type != trg_erase)
 		&& (trigger->trg_type != trg_pre_erase)) {
-		if (!new)
-			new = make_context("NEW", relation, 1);
-		LLS_PUSH(new, &contexts);
-		LLS_PUSH(new, &update);
+		if (!new_ctx)
+			new_ctx = make_context("NEW", relation, 1);
+		LLS_PUSH(new_ctx, &contexts);
+		LLS_PUSH(new_ctx, &update);
 	}
 
 	resolve(trigger->trg_statement, contexts, update);
@@ -418,7 +418,7 @@ static FLD field_context( NOD node, LLS contexts, CTX * output_context)
 		name = (SYM) node->nod_arg[0];
 	}
 	else if (node->nod_count == 2) {
-		context = lookup_context(node->nod_arg[0], contexts);
+		context = lookup_context((SYM) node->nod_arg[0], contexts);
 		name = (SYM) node->nod_arg[1];
 	}
 	else

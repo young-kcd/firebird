@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.1.1.1 2001-05-23 13:26:35 tamlin Exp $
+$Id: gener.cpp,v 1.2 2001-07-12 05:46:06 bellardo Exp $
 */
 
 #include "../jrd/ib_stdio.h"
@@ -69,7 +69,7 @@ static void gen_statistical(NOD, REQ);
 static void gen_store(NOD, REQ);
 
 #ifdef DEV_BUILD
-static SCHAR explain_info[] = { gds__info_access_path };
+static SCHAR explain_info[] = { gds_info_access_path };
 #endif
 
 
@@ -111,7 +111,7 @@ void GEN_release(void)
 	for (; QLI_requests; QLI_requests = QLI_requests->req_next) {
 		if (QLI_requests->req_handle)
 			gds__release_request(status_vector,
-								 GDS_REF(QLI_requests->req_handle));
+								 (void**) GDS_REF(QLI_requests->req_handle));
 
 		rlb = QLI_requests->req_blr;
 		RELEASE_RLB;
@@ -142,10 +142,10 @@ RLB GEN_rlb_extend(RLB rlb)
 	old_string = rlb->rlb_base;
 	l = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 	rlb->rlb_length += RLB_BUFFER_SIZE;
-	new_string = ALLQ_malloc((SLONG) rlb->rlb_length);
+	new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
 	if (old_string) {
-		MOVQ_fast(old_string, new_string, l);
-		ALLQ_free(old_string);
+		MOVQ_fast((SCHAR*) old_string, (SCHAR*) new_string, l);
+		ALLQ_free((SCHAR*) old_string);
 	}
 	rlb->rlb_base = new_string;
 	rlb->rlb_data = new_string + l;
@@ -175,7 +175,7 @@ void GEN_rlb_release( RLB rlb)
 		return;
 
 	if (rlb->rlb_base) {
-		ALLQ_free(rlb->rlb_base);
+		ALLQ_free((SCHAR*) rlb->rlb_base);
 		rlb->rlb_base = NULL;
 		rlb->rlb_length = 0;
 		rlb->rlb_data = NULL;
@@ -201,7 +201,7 @@ static void explain( UCHAR * explain_buffer)
 	SSHORT buffer_length, length, level = 0;
 	SCHAR relation_name[32], *r;
 
-	if (*explain_buffer++ != gds__info_access_path)
+	if (*explain_buffer++ != gds_info_access_path)
 		return;
 
 	buffer_length = *explain_buffer++;
@@ -210,18 +210,18 @@ static void explain( UCHAR * explain_buffer)
 	while (buffer_length > 0) {
 		buffer_length--;
 		switch (*explain_buffer++) {
-		case gds__info_rsb_begin:
-			explain_printf(level, "gds__info_rsb_begin,\n", 0);
+		case gds_info_rsb_begin:
+			explain_printf(level, "gds_info_rsb_begin,\n", 0);
 			level++;
 			break;
 
-		case gds__info_rsb_end:
-			explain_printf(level, "gds__info_rsb_end,\n", 0);
+		case gds_info_rsb_end:
+			explain_printf(level, "gds_info_rsb_end,\n", 0);
 			level--;
 			break;
 
-		case gds__info_rsb_relation:
-			explain_printf(level, "gds__info_rsb_relation, ", 0);
+		case gds_info_rsb_relation:
+			explain_printf(level, "gds_info_rsb_relation, ", 0);
 
 			buffer_length--;
 			buffer_length -= (length = *explain_buffer++);
@@ -235,18 +235,18 @@ static void explain( UCHAR * explain_buffer)
 			*r++ = 0;
 			break;
 
-		case gds__info_rsb_type:
+		case gds_info_rsb_type:
 			buffer_length--;
-			explain_printf(level, "gds__info_rsb_type, ", 0);
+			explain_printf(level, "gds_info_rsb_type, ", 0);
 			switch (*explain_buffer++) {
-			case gds__info_rsb_unknown:
+			case gds_info_rsb_unknown:
 				ib_printf("unknown type\n");
 				break;
 
-			case gds__info_rsb_indexed:
-				ib_printf("gds__info_rsb_indexed,\n");
+			case gds_info_rsb_indexed:
+				ib_printf("gds_info_rsb_indexed,\n");
 				level++;
-				explain_index_tree(level, relation_name, &explain_buffer,
+				explain_index_tree(level, relation_name, (SCHAR**) &explain_buffer,
 								   &buffer_length);
 				level--;
 				break;
@@ -254,86 +254,86 @@ static void explain( UCHAR * explain_buffer)
 				/* for join types, advance past the count byte
 				   of substreams; we don't need it */
 
-			case gds__info_rsb_merge:
+			case gds_info_rsb_merge:
 				buffer_length--;
-				ib_printf("gds__info_rsb_merge, %d,\n", *explain_buffer++);
+				ib_printf("gds_info_rsb_merge, %d,\n", *explain_buffer++);
 				break;
 
-			case gds__info_rsb_cross:
+			case gds_info_rsb_cross:
 				buffer_length--;
-				ib_printf("gds__info_rsb_cross, %d,\n", *explain_buffer++);
+				ib_printf("gds_info_rsb_cross, %d,\n", *explain_buffer++);
 				break;
 
-			case gds__info_rsb_navigate:
-				ib_printf("gds__info_rsb_navigate,\n");
+			case gds_info_rsb_navigate:
+				ib_printf("gds_info_rsb_navigate,\n");
 				level++;
-				explain_index_tree(level, relation_name, &explain_buffer,
+				explain_index_tree(level, relation_name, (SCHAR**) &explain_buffer,
 								   &buffer_length);
 				level--;
 				break;
 
-			case gds__info_rsb_sequential:
-				ib_printf("gds__info_rsb_sequential,\n");
+			case gds_info_rsb_sequential:
+				ib_printf("gds_info_rsb_sequential,\n");
 				break;
 
-			case gds__info_rsb_sort:
-				ib_printf("gds__info_rsb_sort,\n");
+			case gds_info_rsb_sort:
+				ib_printf("gds_info_rsb_sort,\n");
 				break;
 
-			case gds__info_rsb_first:
-				ib_printf("gds__info_rsb_first,\n");
+			case gds_info_rsb_first:
+				ib_printf("gds_info_rsb_first,\n");
 				break;
 
-			case gds__info_rsb_boolean:
-				ib_printf("gds__info_rsb_boolean,\n");
+			case gds_info_rsb_boolean:
+				ib_printf("gds_info_rsb_boolean,\n");
 				break;
 
-			case gds__info_rsb_union:
-				ib_printf("gds__info_rsb_union,\n");
+			case gds_info_rsb_union:
+				ib_printf("gds_info_rsb_union,\n");
 				break;
 
-			case gds__info_rsb_aggregate:
-				ib_printf("gds__info_rsb_aggregate,\n");
+			case gds_info_rsb_aggregate:
+				ib_printf("gds_info_rsb_aggregate,\n");
 				break;
 
-			case gds__info_rsb_ext_sequential:
-				ib_printf("gds__info_rsb_ext_sequential,\n");
+			case gds_info_rsb_ext_sequential:
+				ib_printf("gds_info_rsb_ext_sequential,\n");
 				break;
 
-			case gds__info_rsb_ext_indexed:
-				ib_printf("gds__info_rsb_ext_indexed,\n");
+			case gds_info_rsb_ext_indexed:
+				ib_printf("gds_info_rsb_ext_indexed,\n");
 				break;
 
-			case gds__info_rsb_ext_dbkey:
-				ib_printf("gds__info_rsb_ext_dbkey,\n");
+			case gds_info_rsb_ext_dbkey:
+				ib_printf("gds_info_rsb_ext_dbkey,\n");
 				break;
 
-			case gds__info_rsb_left_cross:
-				ib_printf("gds__info_rsb_left_cross,\n");
+			case gds_info_rsb_left_cross:
+				ib_printf("gds_info_rsb_left_cross,\n");
 				break;
 
-			case gds__info_rsb_select:
-				ib_printf("gds__info_rsb_select,\n");
+			case gds_info_rsb_select:
+				ib_printf("gds_info_rsb_select,\n");
 				break;
 
-			case gds__info_rsb_sql_join:
-				ib_printf("gds__info_rsb_sql_join,\n");
+			case gds_info_rsb_sql_join:
+				ib_printf("gds_info_rsb_sql_join,\n");
 				break;
 
-			case gds__info_rsb_simulate:
-				ib_printf("gds__info_rsb_simulate,\n");
+			case gds_info_rsb_simulate:
+				ib_printf("gds_info_rsb_simulate,\n");
 				break;
 
-			case gds__info_rsb_sim_cross:
-				ib_printf("gds__info_rsb_sim_cross,\n");
+			case gds_info_rsb_sim_cross:
+				ib_printf("gds_info_rsb_sim_cross,\n");
 				break;
 
-			case gds__info_rsb_once:
-				ib_printf("gds__info_rsb_once,\n");
+			case gds_info_rsb_once:
+				ib_printf("gds_info_rsb_once,\n");
 				break;
 
-			case gds__info_rsb_procedure:
-				ib_printf("gds__info_rsb_procedure,\n");
+			case gds_info_rsb_procedure:
+				ib_printf("gds_info_rsb_procedure,\n");
 				break;
 
 			}
@@ -376,8 +376,8 @@ static void explain_index_tree(
 	(*buffer_length)--;
 
 	switch (*explain_buffer++) {
-	case gds__info_rsb_and:
-		explain_printf(level, "gds__info_rsb_and,\n", 0);
+	case gds_info_rsb_and:
+		explain_printf(level, "gds_info_rsb_and,\n", 0);
 		level++;
 		explain_index_tree(level, relation_name, &explain_buffer,
 						   buffer_length);
@@ -386,8 +386,8 @@ static void explain_index_tree(
 		level--;
 		break;
 
-	case gds__info_rsb_or:
-		explain_printf(level, "gds__info_rsb_or,\n", 0);
+	case gds_info_rsb_or:
+		explain_printf(level, "gds_info_rsb_or,\n", 0);
 		level++;
 		explain_index_tree(level, relation_name, &explain_buffer,
 						   buffer_length);
@@ -396,12 +396,12 @@ static void explain_index_tree(
 		level--;
 		break;
 
-	case gds__info_rsb_dbkey:
-		explain_printf(level, "gds__info_rsb_dbkey,\n", 0);
+	case gds_info_rsb_dbkey:
+		explain_printf(level, "gds_info_rsb_dbkey,\n", 0);
 		break;
 
-	case gds__info_rsb_index:
-		explain_printf(level, "gds__info_rsb_index, ", 0);
+	case gds_info_rsb_index:
+		explain_printf(level, "gds_info_rsb_index, ", 0);
 		(*buffer_length)--;
 
 		length = (SSHORT) * explain_buffer++;
@@ -416,7 +416,7 @@ static void explain_index_tree(
 		break;
 	}
 
-	if (*explain_buffer == gds__info_rsb_end) {
+	if (*explain_buffer == gds_info_rsb_end) {
 		explain_buffer++;
 		(*buffer_length)--;
 	}
@@ -576,9 +576,9 @@ static void gen_control_break( BRK control, REQ request)
 
 	for (; control; control = control->brk_next) {
 		if (control->brk_field)
-			gen_expression(control->brk_field, request);
+			gen_expression((NOD) control->brk_field, request);
 		if (control->brk_line)
-			gen_print_list(control->brk_line, request);
+			gen_print_list((NOD) control->brk_line, request);
 	}
 }
 
@@ -616,8 +616,8 @@ static void gen_compile( REQ request)
 
 	if (gds__compile_request(status_vector,
 							 GDS_REF(dbb->dbb_handle),
-							 GDS_REF(request->req_handle),
-							 length, GDS_VAL(rlb->rlb_base))) {
+							 (void**) GDS_REF(request->req_handle),
+							 length, (char*) GDS_VAL(rlb->rlb_base))) {
 		RELEASE_RLB;
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -625,12 +625,12 @@ static void gen_compile( REQ request)
 #ifdef DEV_BUILD
 	if (QLI_explain &&
 		!gds__request_info(status_vector,
-						   GDS_REF(request->req_handle),
+						   (void**) GDS_REF(request->req_handle),
 						   0,
 						   sizeof(explain_info),
 						   explain_info,
 						   sizeof(explain_buffer),
-						   explain_buffer)) explain(explain_buffer);
+						   explain_buffer)) explain((UCHAR*) explain_buffer);
 #endif
 
 	RELEASE_RLB;
@@ -780,7 +780,7 @@ static void gen_expression( NOD node, REQ request)
 	FLD field;
 	CTX context;
 	MAP map;
-	USHORT operator;
+	USHORT operatr;
 	RLB rlb;
 
 	if (node->nod_flags & NOD_local)
@@ -828,95 +828,95 @@ static void gen_expression( NOD node, REQ request)
 		return;
 
 	case nod_eql:
-		operator = blr_eql;
+		operatr = blr_eql;
 		break;
 
 	case nod_neq:
-		operator = blr_neq;
+		operatr = blr_neq;
 		break;
 
 	case nod_gtr:
-		operator = blr_gtr;
+		operatr = blr_gtr;
 		break;
 
 	case nod_geq:
-		operator = blr_geq;
+		operatr = blr_geq;
 		break;
 
 	case nod_leq:
-		operator = blr_leq;
+		operatr = blr_leq;
 		break;
 
 	case nod_lss:
-		operator = blr_lss;
+		operatr = blr_lss;
 		break;
 
 	case nod_containing:
-		operator = blr_containing;
+		operatr = blr_containing;
 		break;
 
 	case nod_matches:
-		operator = blr_matching;
+		operatr = blr_matching;
 		break;
 
 	case nod_sleuth:
-		operator = blr_matching2;
+		operatr = blr_matching2;
 		break;
 
 	case nod_like:
-		operator = (node->nod_count == 2) ? blr_like : blr_ansi_like;
+		operatr = (node->nod_count == 2) ? blr_like : blr_ansi_like;
 		break;
 
 	case nod_starts:
-		operator = blr_starting;
+		operatr = blr_starting;
 		break;
 
 	case nod_missing:
-		operator = blr_missing;
+		operatr = blr_missing;
 		break;
 
 	case nod_between:
-		operator = blr_between;
+		operatr = blr_between;
 		break;
 
 	case nod_and:
-		operator = blr_and;
+		operatr = blr_and;
 		break;
 
 	case nod_or:
-		operator = blr_or;
+		operatr = blr_or;
 		break;
 
 	case nod_not:
-		operator = blr_not;
+		operatr = blr_not;
 		break;
 
 	case nod_add:
-		operator = blr_add;
+		operatr = blr_add;
 		break;
 
 	case nod_subtract:
-		operator = blr_subtract;
+		operatr = blr_subtract;
 		break;
 
 	case nod_multiply:
-		operator = blr_multiply;
+		operatr = blr_multiply;
 		break;
 
 	case nod_divide:
-		operator = blr_divide;
+		operatr = blr_divide;
 		break;
 
 	case nod_negate:
-		operator = blr_negate;
+		operatr = blr_negate;
 		break;
 
 	case nod_concatenate:
-		operator = blr_concatenate;
+		operatr = blr_concatenate;
 		break;
 
 	case nod_substr:
-		operator = blr_substring;
+		operatr = blr_substring;
 		break;
 
 	case nod_function:
@@ -965,15 +965,15 @@ static void gen_expression( NOD node, REQ request)
 		return;
 
 	case nod_null:
-		operator = blr_null;
+		operatr = blr_null;
 		break;
 
 	case nod_user_name:
-		operator = blr_user_name;
+		operatr = blr_user_name;
 		break;
 
 	case nod_upcase:
-		operator = blr_upcase;
+		operatr = blr_upcase;
 		break;
 
 	default:
@@ -986,7 +986,7 @@ static void gen_expression( NOD node, REQ request)
 
 	if (request) {
 		rlb = CHECK_RLB(request->req_blr);
-		STUFF(operator);
+		STUFF(operatr);
 	}
 
 	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
@@ -1091,7 +1091,7 @@ static void gen_for( NOD node, REQ request)
 /* If there is a message to be sent, build a receive for it */
 
 	if (node->nod_arg[e_for_send])
-		gen_send_receive(node->nod_arg[e_for_send], blr_receive);
+		gen_send_receive((MSG) node->nod_arg[e_for_send], blr_receive);
 
 /* Generate the FOR loop proper. */
 
@@ -1393,7 +1393,7 @@ static void gen_modify( NOD node, REQ org_request)
 	rlb = CHECK_RLB(request->req_blr);
 
 	if (node->nod_arg[e_mod_send])
-		gen_send_receive(node->nod_arg[e_mod_send], blr_receive);
+		gen_send_receive((MSG) node->nod_arg[e_mod_send], blr_receive);
 
 	for (ptr = &node->nod_arg[e_mod_count], end = ptr + node->nod_count;
 		 ptr < end; ptr++) {
@@ -1580,7 +1580,7 @@ static void gen_rse( NOD node, REQ request)
 
 	rlb = CHECK_RLB(request->req_blr);
 
-	if ((NOD_T) node->nod_arg[e_rse_join_type] == (NOD_T) 0)
+	if ((NOD_T) (int) node->nod_arg[e_rse_join_type] == (NOD_T) 0)
 		STUFF(blr_rse);
 	else
 		STUFF(blr_rs_stream);
@@ -1649,7 +1649,7 @@ static void gen_rse( NOD node, REQ request)
 	if (list = node->nod_arg[e_rse_reduced])
 		gen_sort(list, request, blr_project);
 
-	join_type = (NOD_T) node->nod_arg[e_rse_join_type];
+	join_type = (NOD_T) (int) node->nod_arg[e_rse_join_type];
 	if (join_type != (NOD_T) 0 && join_type != nod_join_inner) {
 		STUFF(blr_join_type);
 		if (join_type == nod_join_left)
@@ -1664,7 +1664,7 @@ static void gen_rse( NOD node, REQ request)
 }
 
 
-static void gen_send_receive( MSG message, USHORT operator)
+static void gen_send_receive( MSG message, USHORT operatr)
 {
 /**************************************
  *
@@ -1681,12 +1681,12 @@ static void gen_send_receive( MSG message, USHORT operator)
 
 	request = message->msg_request;
 	rlb = CHECK_RLB(request->req_blr);
-	STUFF(operator);
+	STUFF(operatr);
 	STUFF(message->msg_number);
 }
 
 
-static void gen_sort( NOD node, REQ request, UCHAR operator)
+static void gen_sort( NOD node, REQ request, UCHAR operatr)
 {
 /**************************************
  *
@@ -1703,13 +1703,13 @@ static void gen_sort( NOD node, REQ request, UCHAR operator)
 
 	rlb = CHECK_RLB(request->req_blr);
 
-	STUFF(operator);
+	STUFF(operatr);
 	STUFF(node->nod_count);
 
 	request->req_flags |= REQ_project;
 	for (ptr = node->nod_arg, end = ptr + node->nod_count * 2; ptr < end;
 		 ptr += 2) {
-		if (operator == blr_sort)
+		if (operatr == blr_sort)
 			STUFF((ptr[1]) ? blr_descending : blr_ascending);
 		gen_expression(ptr[0], request);
 	}
@@ -1822,58 +1822,58 @@ static void gen_statistical( NOD node, REQ request)
 	FLD field;
 	CTX context;
 	MSG send, receive;
-	USHORT operator, i;
+	USHORT operatr, i;
 	RLB rlb;
 
 	switch (node->nod_type) {
 	case nod_average:
-		operator = blr_average;
+		operatr = blr_average;
 		break;
 
 	case nod_count:
 /* count2
-	operator = node->nod_arg [e_stt_value] ? blr_count2 : blr_count;
+	operatr = node->nod_arg [e_stt_value] ? blr_count2 : blr_count;
 */
-		operator = blr_count;
+		operatr = blr_count;
 		break;
 
 	case nod_max:
-		operator = blr_maximum;
+		operatr = blr_maximum;
 		break;
 
 	case nod_min:
-		operator = blr_minimum;
+		operatr = blr_minimum;
 		break;
 
 	case nod_total:
-		operator = blr_total;
+		operatr = blr_total;
 		break;
 
 	case nod_agg_average:
-		operator = blr_agg_average;
+		operatr = blr_agg_average;
 		break;
 
 	case nod_agg_count:
 /* count2
-	operator = node->nod_arg [e_stt_value] ? blr_agg_count2 : blr_agg_count;
+	operatr = node->nod_arg [e_stt_value] ? blr_agg_count2 : blr_agg_count;
 */
-		operator = blr_agg_count;
+		operatr = blr_agg_count;
 		break;
 
 	case nod_agg_max:
-		operator = blr_agg_max;
+		operatr = blr_agg_max;
 		break;
 
 	case nod_agg_min:
-		operator = blr_agg_min;
+		operatr = blr_agg_min;
 		break;
 
 	case nod_agg_total:
-		operator = blr_agg_total;
+		operatr = blr_agg_total;
 		break;
 
 	case nod_from:
-		operator = (node->nod_arg[e_stt_default]) ? blr_via : blr_from;
+		operatr = (node->nod_arg[e_stt_default]) ? blr_via : blr_from;
 		break;
 
 	default:
@@ -1896,7 +1896,7 @@ static void gen_statistical( NOD node, REQ request)
 	else
 		rlb = CHECK_RLB(request->req_blr);
 
-	STUFF(operator);
+	STUFF(operatr);
 
 	if (node->nod_arg[e_stt_rse])
 		gen_rse(node->nod_arg[e_stt_rse], request);
@@ -1947,7 +1947,7 @@ static void gen_store( NOD node, REQ request)
 /* If there is a message to be sent, build a receive for it */
 
 	if (node->nod_arg[e_sto_send])
-		gen_send_receive(node->nod_arg[e_sto_send], blr_receive);
+		gen_send_receive((MSG) node->nod_arg[e_sto_send], blr_receive);
 
 /* Generate the STORE statement proper. */
 

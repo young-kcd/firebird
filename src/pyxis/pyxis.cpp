@@ -24,26 +24,38 @@
 #include "../jrd/ib_stdio.h"
 #include <ctype.h>
 #define PYXIS_SOURCE
+#include "../pyxis/everything.h"
 #include "../pyxis/pyxis.h"
+#include "../pyxis/scr.h"
+#include "../jrd/gds_proto.h"
+
+#include <string.h>
 
 #define BLKCHK(block, type)	if (((BLK) block)->blk_type != (SCHAR)type) PYXIS_bugcheck ("bad block");
 #define ABS(n)			((n >= 0) ? n : -n)
 
-OBJ PYXIS_get_attribute_value();
-
 static WIN PYXIS_window;
 static LLS PYXIS_handlers;
 
-ATT PYXIS_get_attribute(), PYXIS_put_attribute(),
-PYXIS_replace_attribute(), PYXIS_find_object(), PYXIS_navigate();
+static int cleanup();
+static int auto_scroll(OBJ , int , int );
+static int clear_change(OBJ );
+static int get_enumerated(WIN , OBJ , ATT_N , OBJ , USHORT *);
+static int related(OBJ , OBJ );
+static int reset_attribute(OBJ , ATT_N );
+static int scroll(OBJ , USHORT , SSHORT , SSHORT );
+static int set_attribute(OBJ , ATT_N , int *);
 
-OBJ PYXIS_create_object();
+extern BLK PYXIS_alloc(PLB , UCHAR , int );
+extern int PYXIS_release(register FRB );
+extern int PYXIS_alloc_fini();
+extern int PYXIS_alloc_init();
+extern BLK PYXIS_pop(register LLS *);
+extern int PYXIS_push(BLK , register LLS *);
+extern void MOVP_fast( register SCHAR * , register SCHAR * , register ULONG );
 
-static cleanup();
 
-
-PYXIS_bugcheck(string)
-	 TEXT *string;
+int PYXIS_bugcheck(TEXT *string)
 {
 /**************************************
  *
@@ -61,8 +73,7 @@ PYXIS_bugcheck(string)
 }
 
 
-OBJ PYXIS_clone(object)
-	 OBJ object;
+OBJ PYXIS_clone(OBJ object)
 {
 /**************************************
  *
@@ -75,21 +86,21 @@ OBJ PYXIS_clone(object)
  *
  **************************************/
 	OBJ clone;
-	ATT attribute, new;
+	ATT attribute, new_att;
 	BLK value;
 
-	clone = PYXIS_create_object(0, 0);
+	clone = PYXIS_create_object(0, (enum att_n)0);
 
 	for (attribute = object->obj_attributes; attribute;
 		 attribute = attribute->att_next) {
 		value = (BLK) attribute->att_value;
 		if (attribute->att_type == attype_object)
-			value = (BLK) PYXIS_clone(value);
-		new =
+			value = (BLK) PYXIS_clone((OBJ)value);
+		new_att =
 			PUT_ATTRIBUTE(clone, attribute->att_name, attribute->att_type,
-						  value);
+						  (OBJ) value);
 		if (attribute == object->obj_display_attribute)
-			PYXIS_set_display_attribute(clone, new);
+			PYXIS_set_display_attribute(clone, new_att);
 	}
 
 	clone->obj_rel_x = object->obj_rel_x;
@@ -106,9 +117,7 @@ OBJ PYXIS_clone(object)
 }
 
 
-PYXIS_compute_size(object, width_ptr, height_ptr)
-	 OBJ object;
-	 USHORT *width_ptr, *height_ptr;
+int PYXIS_compute_size(OBJ object, USHORT *width_ptr, USHORT *height_ptr)
 {
 /**************************************
  *
@@ -149,9 +158,7 @@ PYXIS_compute_size(object, width_ptr, height_ptr)
 }
 
 
-OBJ PYXIS_create_object(string, name)
-	 TEXT *string;
-	 ATT_N name;
+OBJ PYXIS_create_object(TEXT *string, ATT_N name)
 {
 /**************************************
  *
@@ -174,18 +181,17 @@ OBJ PYXIS_create_object(string, name)
 	object = (OBJ) ALLOCP(type_obj);
 
 	if (string) {
-		attribute = PUT_ATTRIBUTE(object, name, attype_string, string);
+		attribute = PUT_ATTRIBUTE(object, name, attype_string, (OBJ) string);
 		PYXIS_set_display_attribute(object, attribute);
 		PUT_ATTRIBUTE(object, att_width, attype_numeric,
-					  attribute->att_length);
+					  (OBJ) attribute->att_length);
 	}
 
 	return object;
 }
 
 
-WIN PYXIS_create_window(width, height)
-	 USHORT width, height;
+WIN PYXIS_create_window(USHORT width, USHORT height)
 {
 /**************************************
  *
@@ -206,23 +212,21 @@ WIN PYXIS_create_window(width, height)
 	window = (WIN) ALLOCP(type_win);
 	window->win_width = width;
 	window->win_height = height;
-	window->win_form = PYXIS_create_object(0, 0);
+	window->win_form = PYXIS_create_object(0, (enum att_n) 0);
 
 	if (SCR_create_window(window))
 		return NULL;
 
 	PUT_ATTRIBUTE(window->win_form, att_width, attype_numeric,
-				  window->win_width);
+				  (OBJ) window->win_width);
 	PUT_ATTRIBUTE(window->win_form, att_height, attype_numeric,
-				  window->win_height);
+				  (OBJ) window->win_height);
 
 	return window;
 }
 
 
-PYXIS_delete_attribute(object, attribute)
-	 OBJ object;
-	 ATT attribute;
+int PYXIS_delete_attribute(OBJ object, ATT attribute)
 {
 /**************************************
  *
@@ -258,13 +262,11 @@ PYXIS_delete_attribute(object, attribute)
 	if (attribute->att_type == attype_object)
 		PYXIS_delete_object(attribute->att_value);
 
-	PYXIS_release(attribute);
+	PYXIS_release((FRB) attribute);
 }
 
 
-PYXIS_delete_named_attribute(object, name)
-	 OBJ object;
-	 ATT_N name;
+int PYXIS_delete_named_attribute(OBJ object, ATT_N name)
 {
 /**************************************
  *
@@ -279,15 +281,14 @@ PYXIS_delete_named_attribute(object, name)
 	ATT attribute;
 
 	if (reset_attribute(object, name))
-		return;
+		return 0;
 
 	while (attribute = GET_ATTRIBUTE(object, name))
 		PYXIS_delete_attribute(object, attribute);
 }
 
 
-PYXIS_delete_object(object)
-	 OBJ object;
+int PYXIS_delete_object(OBJ object)
 {
 /**************************************
  *
@@ -305,17 +306,16 @@ PYXIS_delete_object(object)
 	BLKCHK(object, type_obj);
 
 	if (--object->obj_reference_count)
-		return;
+		return 0;
 
 	while (attribute = object->obj_attributes)
 		PYXIS_delete_attribute(object, attribute);
 
-	PYXIS_release(object);
+	PYXIS_release((FRB) object);
 }
 
 
-PYXIS_delete_window(window)
-	 WIN window;
+int PYXIS_delete_window(WIN window)
 {
 /**************************************
  *
@@ -339,8 +339,7 @@ PYXIS_delete_window(window)
 }
 
 
-PYXIS_disable_window(window)
-	 WIN window;
+int PYXIS_disable_window(WIN window)
 {
 /**************************************
  *
@@ -357,8 +356,7 @@ PYXIS_disable_window(window)
 }
 
 
-PYXIS_error(string)
-	 TEXT *string;
+int PYXIS_error(TEXT *string)
 {
 /**************************************
  *
@@ -370,10 +368,10 @@ PYXIS_error(string)
  *	We've got a user error.
  *
  **************************************/
-	int (*handler) ();
+	int (*handler) (TEXT*);
 
 	if (PYXIS_handlers) {
-		handler = (int (*)()) PYXIS_handlers->lls_object;
+		handler = (int (*)(TEXT*)) PYXIS_handlers->lls_object;
 		return (*handler) (string);
 	}
 
@@ -381,10 +379,7 @@ PYXIS_error(string)
 }
 
 
-ATT PYXIS_find_enumeration(parent, attribute, direction)
-	 OBJ parent;
-	 ATT attribute;
-	 USHORT direction;
+ATT PYXIS_find_enumeration(OBJ parent, ATT attribute, USHORT direction)
 {
 /**************************************
  *
@@ -418,11 +413,7 @@ ATT PYXIS_find_enumeration(parent, attribute, direction)
 
 
 
-ATT PYXIS_find_object(parent, attribute, name, direction)
-	 OBJ parent;
-	 ATT attribute;
-	 ATT_N name;
-	 USHORT direction;
+ATT PYXIS_find_object(OBJ parent, ATT attribute, ATT_N name, USHORT direction)
 {
 /**************************************
  *
@@ -456,7 +447,7 @@ ATT PYXIS_find_object(parent, attribute, name, direction)
 }
 
 
-PYXIS_fini()
+int PYXIS_fini()
 {
 /**************************************
  *
@@ -473,9 +464,7 @@ PYXIS_fini()
 }
 
 
-PYXIS_format_form(form, width, height)
-	 OBJ form;
-	 USHORT width, height;
+int PYXIS_format_form(OBJ form, USHORT width, USHORT height)
 {
 /**************************************
  *
@@ -555,9 +544,7 @@ PYXIS_format_form(form, width, height)
 
 
 
-ATT PYXIS_get_attribute(object, name)
-	 OBJ object;
-	 ATT_N name;
+ATT PYXIS_get_attribute(OBJ object, ATT_N name)
 {
 /**************************************
  *
@@ -580,9 +567,7 @@ ATT PYXIS_get_attribute(object, name)
 }
 
 
-OBJ PYXIS_get_attribute_value(object, name)
-	 OBJ object;
-	 ATT_N name;
+OBJ PYXIS_get_attribute_value(OBJ object, ATT_N name)
 {
 /**************************************
  *
@@ -660,10 +645,7 @@ OBJ PYXIS_get_attribute_value(object, name)
 }
 
 
-PYXIS_get_char(window, object, x_offset, y_offset)
-	 WIN window;
-	 OBJ object;
-	 int x_offset, y_offset;
+int PYXIS_get_char(WIN window, OBJ object, int x_offset, int y_offset)
 {
 /**************************************
  *
@@ -705,12 +687,7 @@ PYXIS_get_char(window, object, x_offset, y_offset)
 }
 
 
-PYXIS_get_data(window, object, name, form, term_char)
-	 WIN window;
-	 OBJ object;
-	 ATT_N name;
-	 OBJ form;
-	 USHORT *term_char;
+int PYXIS_get_data(WIN window, OBJ object, ATT_N name, OBJ form, USHORT *term_char)
 {
 /**************************************
  *
@@ -931,9 +908,8 @@ PYXIS_get_data(window, object, name, form, term_char)
 	return length;
 }
 
-
-OBJ PYXIS_get_value(attribute)
-	 ATT attribute;
+extern "C"
+OBJ PYXIS_get_value(ATT attribute)
 {
 /**************************************
  *
@@ -952,9 +928,7 @@ OBJ PYXIS_get_value(attribute)
 }
 
 
-SCHAR *PYXIS_get_keyname(window, key_code)
-	 WIN window;
-	 UCHAR key_code;
+SCHAR *PYXIS_get_keyname(WIN window, UCHAR key_code)
 {
 /**************************************
  *
@@ -978,7 +952,7 @@ SCHAR *PYXIS_get_keyname(window, key_code)
 }
 
 
-PYXIS_init()
+int PYXIS_init()
 {
 /**************************************
  *
@@ -992,14 +966,13 @@ PYXIS_init()
  **************************************/
 
 	if (!PYXIS_permanent_pool) {
-		gds__register_cleanup(cleanup, 0);
+		gds__register_cleanup((void (*)(void*)) cleanup, 0);
 		PYXIS_alloc_init();
 	}
 }
 
 
-PYXIS_move(form, object)
-	 OBJ form, object;
+int PYXIS_move(OBJ form, OBJ object)
 {
 /**************************************
  *
@@ -1023,7 +996,7 @@ PYXIS_move(form, object)
 			break;
 
 	if (!attribute)
-		return;
+		return 0;
 
 /* Indicate form needs refreshing */
 
@@ -1033,7 +1006,7 @@ PYXIS_move(form, object)
 
 	if (form->obj_attributes == form->obj_end_attributes &&
 		form->obj_attributes == attribute)
-		return;
+		return 0;
 
 /* Splice attribute out of list */
 
@@ -1062,7 +1035,7 @@ PYXIS_move(form, object)
 					prior->att_next = attribute;
 				else
 					form->obj_attributes = attribute;
-				return;
+				return 0;
 			}
 		}
 
@@ -1077,11 +1050,7 @@ PYXIS_move(form, object)
 }
 
 
-ATT PYXIS_navigate(form, attribute, name, c)
-	 OBJ form;
-	 ATT attribute;
-	 ATT_N name;
-	 USHORT c;
+ATT PYXIS_navigate(OBJ form, ATT attribute, ATT_N name, USHORT c)
 {
 /**************************************
  *
@@ -1213,8 +1182,7 @@ ATT PYXIS_navigate(form, attribute, name, c)
 }
 
 
-PYXIS_pop_form(window)
-	 WIN window;
+int PYXIS_pop_form(WIN window)
 {
 /**************************************
  *
@@ -1267,9 +1235,8 @@ if (!object)
 	return (int) form;
 }
 
-
-PYXIS_pop_handler(handler)
-	 int (*handler) ();
+extern "C"
+int PYXIS_pop_handler( int (*handler)() )
 {
 /**************************************
  *
@@ -1286,9 +1253,7 @@ PYXIS_pop_handler(handler)
 }
 
 
-PYXIS_position(object, x, y)
-	 OBJ object;
-	 USHORT x, y;
+int PYXIS_position(OBJ object, USHORT x, USHORT y)
 {
 /**************************************
  *
@@ -1306,10 +1271,7 @@ PYXIS_position(object, x, y)
 }
 
 
-PYXIS_push_form(window, form, occlude)
-	 WIN window;
-	 OBJ form;
-	 USHORT occlude;
+int PYXIS_push_form(WIN window, OBJ form, USHORT occlude)
 {
 /**************************************
  *
@@ -1329,7 +1291,7 @@ PYXIS_push_form(window, form, occlude)
 
 	if ((attribute = PYXIS_find_object(window->win_form, 0, att_form, FALSE))
 		&& attribute->att_value == form)
-		return;
+		return 0;
 
 	if (occlude) {
 		SCR_clear_window(window);
@@ -1358,9 +1320,8 @@ PYXIS_push_form(window, form, occlude)
 	PUT_ATTRIBUTE(window->win_form, att_form, attype_object, form);
 }
 
-
-PYXIS_push_handler(handler)
-	 int (*handler) ();
+extern "C"
+int PYXIS_push_handler( int (*handler)() )
 {
 /**************************************
  *
@@ -1373,13 +1334,11 @@ PYXIS_push_handler(handler)
  *
  **************************************/
 
-	LLS_PUSH(handler, &PYXIS_handlers);
+	LLS_PUSH((BLK) handler, &PYXIS_handlers);
 }
 
 
-PYXIS_push_tag(window, object)
-	 WIN window;
-	 OBJ object;
+int PYXIS_push_tag(WIN window, OBJ object)
 {
 /**************************************
  *
@@ -1401,11 +1360,7 @@ PYXIS_push_tag(window, object)
 
 
 
-ATT PYXIS_put_attribute(object, name, type, value)
-	 OBJ object;
-	 ATT_N name;
-	 ATT_T type;
-	 OBJ value;
+ATT PYXIS_put_attribute(OBJ object, ATT_N name, ATT_T type, OBJ value)
 {
 /**************************************
  *
@@ -1429,7 +1384,7 @@ ATT PYXIS_put_attribute(object, name, type, value)
 
 /* If the attribute is special cased, don't do anything else */
 
-	if (set_attribute(object, name, value))
+	if (set_attribute(object, name, (int*) value))
 		return NULL;
 
 /* If value is an object, bump reference count */
@@ -1442,7 +1397,7 @@ ATT PYXIS_put_attribute(object, name, type, value)
 
 /* Allocate new attribute block */
 
-	length = (type == attype_string) ? strlen(value) : 0;
+	length = (type == attype_string) ? strlen((char*) value) : 0;
 	attribute = (ATT) ALLOCPV(type_att, length);
 	attribute->att_type = type;
 	attribute->att_name = name;
@@ -1467,15 +1422,14 @@ ATT PYXIS_put_attribute(object, name, type, value)
 /* Attribute is a string, sigh, and strings must be copied */
 
 	attribute->att_value = (OBJ) attribute->att_data;
-	MOVP_fast(value, attribute->att_value, length);
+	MOVP_fast((SCHAR*) value, (SCHAR*) attribute->att_value, length);
 	attribute->att_length = length;
 
 	return attribute;
 }
 
 
-PYXIS_reference(object)
-	 OBJ object;
+int PYXIS_reference(OBJ object)
 {
 /**************************************
  *
@@ -1492,11 +1446,7 @@ PYXIS_reference(object)
 }
 
 
-ATT PYXIS_replace_attribute(object, name, type, value)
-	 OBJ object;
-	 ATT_N name;
-	 ATT_T type;
-	 OBJ value;
+ATT PYXIS_replace_attribute(OBJ object, ATT_N name, ATT_T type, OBJ value)
 {
 /**************************************
  *
@@ -1518,7 +1468,7 @@ ATT PYXIS_replace_attribute(object, name, type, value)
 
 /* Handle special cased attributes */
 
-	if (set_attribute(object, name, value))
+	if (set_attribute(object, name, (int*) value))
 		return NULL;
 
 	if (type == attype_object) {
@@ -1541,9 +1491,9 @@ ATT PYXIS_replace_attribute(object, name, type, value)
 			attribute->att_value = value;
 			return attribute;
 		}
-		length = strlen(value);
+		length = strlen((char*) value);
 		if (length <= attribute->att_length) {
-			strcpy(attribute->att_data, value);
+			strcpy((char*)attribute->att_data, (char*)value);
 			attribute->att_length = length;
 			return attribute;
 		}
@@ -1561,9 +1511,7 @@ ATT PYXIS_replace_attribute(object, name, type, value)
 }
 
 
-PYXIS_return_char(window, character)
-	 WIN window;
-	 USHORT character;
+int PYXIS_return_char(WIN window, USHORT character)
 {
 /**************************************
  *
@@ -1581,8 +1529,7 @@ PYXIS_return_char(window, character)
 }
 
 
-PYXIS_scroll_reset(object)
-	 OBJ object;
+int PYXIS_scroll_reset(OBJ object)
 {
 /**************************************
  *
@@ -1609,9 +1556,7 @@ PYXIS_scroll_reset(object)
 }
 
 
-PYXIS_set_display_attribute(object, attribute)
-	 OBJ object;
-	 ATT attribute;
+int PYXIS_set_display_attribute(OBJ object, ATT attribute)
 {
 /**************************************
  *
@@ -1634,8 +1579,7 @@ PYXIS_set_display_attribute(object, attribute)
 }
 
 
-PYXIS_top_form(window)
-	 WIN window;
+int PYXIS_top_form(WIN window)
 {
 /**************************************
  *
@@ -1656,9 +1600,7 @@ PYXIS_top_form(window)
 }
 
 
-PYXIS_trace_in(window, name)
-	 WIN window;
-	 SCHAR *name;
+int PYXIS_trace_in(WIN window, SCHAR *name)
 {
 /**************************************
  *
@@ -1687,9 +1629,7 @@ PYXIS_trace_in(window, name)
 }
 
 
-PYXIS_trace_out(window, name)
-	 WIN window;
-	 SCHAR *name;
+int PYXIS_trace_out(WIN window, SCHAR *name)
 {
 /**************************************
  *
@@ -1714,10 +1654,7 @@ PYXIS_trace_out(window, name)
 }
 
 
-PYXIS_update_window(window, object, x_offset, y_offset)
-	 WIN window;
-	 OBJ object;
-	 int x_offset, y_offset;
+int PYXIS_update_window(WIN window, OBJ object, int x_offset, int y_offset)
 {
 /**************************************
  *
@@ -1736,9 +1673,7 @@ PYXIS_update_window(window, object, x_offset, y_offset)
 }
 
 
-static auto_scroll(object, x_offset, y_offset)
-	 OBJ object;
-	 int x_offset, y_offset;
+static int auto_scroll(OBJ object, int x_offset, int y_offset)
 {
 /**************************************
  *
@@ -1810,7 +1745,7 @@ static auto_scroll(object, x_offset, y_offset)
 }
 
 
-static cleanup()
+static int cleanup()
 {
 /**************************************
  *
@@ -1828,9 +1763,7 @@ static cleanup()
 }
 
 
-
-static clear_change(object)
-	 OBJ object;
+static int clear_change(OBJ object)
 {
 /**************************************
  *
@@ -1846,18 +1779,14 @@ static clear_change(object)
 
 	if (!(object->obj_flags & OBJ_displayed) ||
 		!PYXIS_window || !related(PYXIS_window->win_form, object))
-		return;
+		return 0;
 
 	SCR_clear_object(PYXIS_window, object);
 }
 
 
-static get_enumerated(window, object, name, form, term_char)
-	 WIN window;
-	 OBJ object;
-	 ATT_N name;
-	 OBJ form;
-	 USHORT *term_char;
+static int get_enumerated(WIN window, OBJ object, ATT_N name, OBJ form,
+            USHORT *term_char)
 {
 /**************************************
  *
@@ -1947,14 +1876,14 @@ static get_enumerated(window, object, name, form, term_char)
 
 			for (temp = attribute; temp;
 				 temp = PYXIS_find_enumeration(object, temp, TRUE))
-				if (!strncmp(buffer, temp->att_value, length))
+				if (!strncmp(buffer, (char*)temp->att_value, length))
 					break;
 
 			/* Check preceding attributes */
 
 			if (!temp)
 				while (temp = PYXIS_find_enumeration(object, temp, TRUE))
-					if (!strncmp(buffer, temp->att_value, length))
+					if (!strncmp(buffer, (char*)temp->att_value, length))
 						break;
 
 			/* Still can't find it, start over with string */
@@ -1965,7 +1894,7 @@ static get_enumerated(window, object, name, form, term_char)
 				*p = 0;
 				for (temp = NULL;
 					 temp = PYXIS_find_enumeration(object, temp, TRUE);)
-					if (!(strncmp(buffer, temp->att_value, 1)))
+					if (!(strncmp(buffer, (char*)temp->att_value, 1)))
 						break;
 			}
 
@@ -1997,8 +1926,7 @@ static get_enumerated(window, object, name, form, term_char)
 }
 
 
-static related(parent, object)
-	 OBJ parent, object;
+static int related(OBJ parent, OBJ object)
 {
 /**************************************
  *
@@ -2028,9 +1956,7 @@ static related(parent, object)
 }
 
 
-static reset_attribute(object, name)
-	 OBJ object;
-	 ATT_N name;
+static int reset_attribute(OBJ object, ATT_N name)
 {
 /**************************************
  *
@@ -2124,10 +2050,7 @@ static reset_attribute(object, name)
 }
 
 
-static scroll(parent, relative, delta_x, delta_y)
-	 OBJ parent;
-	 USHORT relative;
-	 SSHORT delta_x, delta_y;
+static int scroll(OBJ parent, USHORT relative, SSHORT delta_x, SSHORT delta_y)
 {
 /**************************************
  *
@@ -2166,10 +2089,7 @@ static scroll(parent, relative, delta_x, delta_y)
 
 
 
-static set_attribute(object, name, value)
-	 OBJ object;
-	 ATT_N name;
-	 int *value;
+static int set_attribute(OBJ object, ATT_N name, int *value)
 {
 /**************************************
  *

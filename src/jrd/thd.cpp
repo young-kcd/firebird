@@ -1661,9 +1661,10 @@ void THD_yield(void)
    discovered it was redundant with sched_yield() and dropped it. 
    So, just use sched_yield() instead. POSIX systems on which  
    sched_yield() is available define _POSIX_PRIORITY_SCHEDULING 
-   in <unistd.h>.
+   in <unistd.h>.  Darwin defined _POSIX_THREAD_PRIORITY_SCHEDULING
+   instead of _POSIX_PRIORITY_SCHEDULING.
 */
-#ifdef _POSIX_PRIORITY_SCHEDULING
+#if (defined _POSIX_PRIORITY_SCHEDULING || defined _POSIX_THREAD_PRIORITY_SCHEDULING)
 	sched_yield();
 #else
 	pthread_yield();

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.1.1.1 2001-05-23 13:25:31 tamlin Exp $
+ * $Id: gpreswi.h,v 1.2 2001-07-12 05:46:04 bellardo Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -51,6 +51,7 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_E,		/* accept either case */
 	IN_SW_GPRE_F,		/* source is FORTRAN */
 	IN_SW_GPRE_G,		/* internal GDS module */
+	IN_SW_GPRE_GXX,		/* internal GDS C++ module */
 	IN_SW_GPRE_I,		/* use ID's rather than names */
 	IN_SW_GPRE_M,		/* don't generate READY/START_TRANS */
 	IN_SW_GPRE_N,		/* don't generate debug lines */
@@ -83,6 +84,12 @@ enum gpre_cmd_switch
 	   FSG 14.Nov.2000 
 	*/
 	IN_SW_GPRE_VERBOSE,
+
+	/* Added this to allow boot version of gpre to only resolve queries
+	 * against internal metadata
+	 */
+	IN_SW_GPRE_LANG_INTERNAL,
+
 
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
@@ -125,10 +132,12 @@ static struct in_sw_tab_t gpre_in_sw_table[] =
 	IN_SW_GPRE_F		, 0, "FORTRAN"		, 0, 0, 0, FALSE, 0, 0, "\t\textended FORTRAN program",
 #endif
 	IN_SW_GPRE_G		, 0, "GDS"			, 0, 0, 0, FALSE, 0, 0, NULL,
+	IN_SW_GPRE_GXX		, 0, "GDS_CXX"			, 0, 0, 0, FALSE, 0, 0, NULL,
 	IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, FALSE, 0, 0, NULL,
 	IN_SW_GPRE_I		, 0, "IDS"			, 0, 0, 0, FALSE, 0, 0, NULL,
 	IN_SW_GPRE_INTERP	, 0, "CHARSET"		, 0, 0, 0, FALSE, 0, 0, "\t\tDefault character set & format",
 	IN_SW_GPRE_INTERP	, 0, "INTERPRETATION",0, 0, 0, FALSE, 0, 0, NULL,
+	IN_SW_GPRE_LANG_INTERNAL , 0, "LANG_INTERNAL"	, 0, 0, 0, FALSE, 0, 0, "\tinternal language only",
 	IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tdo not automatically ATTACH to a database",
 	IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, FALSE, 0, 0, "\tdo not generate C debug lines",
 	IN_SW_GPRE_O		, 0, "OUTPUT"		, 0, 0, 0, FALSE, 0, 0, "\t\tsend output to standard out",

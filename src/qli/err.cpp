@@ -94,7 +94,7 @@ void ERRQ_database_error( DBB dbb, STATUS * status_vector)
 		ERRQ_msg_put(458, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg458 ** connection to database %s lost ** */
 
 	if (QLI_env)
-		longjmp(QLI_env, -1);
+		longjmp((jmp_buf) QLI_env, -1);
 }
 
 
@@ -120,7 +120,7 @@ void ERRQ_error(
 	ERRQ_error_format(number, arg1, arg2, arg3, arg4, arg5);
 
 	if (QLI_env)
-		longjmp(QLI_env, -1);
+		longjmp((jmp_buf) QLI_env, -1);
 	else {
 		ERRQ_pending();
 		ERRQ_exit(FINI_ERROR);
@@ -150,7 +150,7 @@ void ERRQ_error_format(
 					arg1, arg2, arg3, arg4, arg5);
 	gds__msg_format(0, QLI_MSG_FAC, 12, sizeof(ERRQ_message),
 					ERRQ_message, s, NULL, NULL, NULL, NULL);	/* Msg12 ** QLI error: %s ** */
-	QLI_error = ERRQ_message;
+	QLI_error = (UCHAR*) ERRQ_message;
 	QLI_skip_line = TRUE;
 }
 

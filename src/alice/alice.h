@@ -212,7 +212,7 @@ extern struct tgbl *gdgbl;
 #if defined(__cplusplus)
 #define EXIT(code)		{  tdgbl->exit_code = (code); \
 					if (tdgbl->alice_env != NULL) \
-					LONGJMP(reinterpret_cast<jmp_buf&>(const_cast<UCHAR*>(tdgbl->alice_env)), 1);  }
+					LONGJMP((jmp_buf)(tdgbl->alice_env), 1);  }
 #else
 #define EXIT(code)		{  tdgbl->exit_code = (code); \
 				   if (tdgbl->alice_env != NULL) \

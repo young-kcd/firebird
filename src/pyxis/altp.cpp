@@ -23,13 +23,15 @@
 
 #include "../jrd/common.h"
 #include "../include/jrd/gds.h"
+#include "../pyxis/pyxis.h"
+#include "../pyxis/phase3.h"
 
 STATUS isc_compile_map(STATUS * status_vector,
 					   void **form_handle,
 					   void **map_handle, SSHORT * length, SCHAR * map)
 {
 	return pyxis__compile_map(status_vector,
-							  form_handle, map_handle, length, map);
+				  (p_obj**)form_handle, (MAP*) map_handle, (USHORT*) length, map);
 }
 
 STATUS isc_compile_menu(STATUS * status_vector,
@@ -40,7 +42,7 @@ STATUS isc_compile_menu(STATUS * status_vector,
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__compile_menu(win_handle, menu_handle, length, menu);
+	return pyxis__compile_menu((WIN*) win_handle, (MENU*) menu_handle, (USHORT*) length, menu);
 }
 
 STATUS isc_compile_sub_map(STATUS * status_vector,
@@ -48,7 +50,7 @@ STATUS isc_compile_sub_map(STATUS * status_vector,
 						   void **submap_handle, SSHORT * length, SCHAR * map)
 {
 	return pyxis__compile_sub_map(status_vector,
-								  map_handle, submap_handle, length, map);
+				  (MAP*) map_handle, (MAP*) submap_handle, (USHORT*) length, map);
 }
 
 STATUS isc_create_window(STATUS * status_vector,
@@ -60,8 +62,9 @@ STATUS isc_create_window(STATUS * status_vector,
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__create_window(win_handle,
-								filename_length, filename, width, height);
+	return pyxis__create_window((WIN*) win_handle,
+			(USHORT*) filename_length, (TEXT*) filename,
+                        (USHORT*) width, (USHORT*) height);
 }
 
 STATUS isc_delete_window(STATUS * status_vector, void **win_handle)
@@ -70,7 +73,7 @@ STATUS isc_delete_window(STATUS * status_vector, void **win_handle)
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__delete_window(win_handle);
+	return pyxis__delete_window((SLONG*) win_handle);
 }
 
 STATUS isc_drive_form(STATUS * status_vector,
@@ -80,9 +83,10 @@ STATUS isc_drive_form(STATUS * status_vector,
 					  void **map_handle, UCHAR * input, UCHAR * output)
 {
 	return pyxis__drive_form(status_vector,
-							 db_handle,
-							 tra_handle,
-							 win_handle, map_handle, input, output);
+					 (SLONG**) db_handle,
+					 (SLONG*) tra_handle,
+					 (WIN*) win_handle, (MAP*)map_handle,
+ 					input, output);
 }
 
 STATUS isc_drive_menu(STATUS * status_vector,
@@ -100,13 +104,15 @@ STATUS isc_drive_menu(STATUS * status_vector,
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__drive_menu(win_handle,
-							 menu_handle,
-							 blr_length,
+	return pyxis__drive_menu((WIN*) win_handle,
+					 (MENU*) menu_handle,
+					 (USHORT*) blr_length,
 							 blr,
-							 title_length,
-							 title,
-							 terminator, entree_length, entree, entree_value);
+					 (USHORT*) title_length,
+					 (TEXT*) title,
+					 (USHORT*) terminator,
+					 (USHORT*) entree_length, (TEXT*)entree,
+					 entree_value);
 }
 
 STATUS isc_form_delete(STATUS * status_vector, void **map_handle)
@@ -115,7 +121,7 @@ STATUS isc_form_delete(STATUS * status_vector, void **map_handle)
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__delete(map_handle);
+	return pyxis__delete((p_obj**) map_handle);
 }
 
 STATUS isc_form_fetch(STATUS * status_vector,
@@ -123,7 +129,9 @@ STATUS isc_form_fetch(STATUS * status_vector,
 					  void **tra_handle, void **map_handle, UCHAR * output)
 {
 	return pyxis__fetch(status_vector,
-						db_handle, tra_handle, map_handle, output);
+						(SLONG**) db_handle,
+						(SLONG*) tra_handle,
+						(MAP*) map_handle, output);
 }
 
 STATUS isc_form_insert(STATUS * status_vector,
@@ -131,7 +139,8 @@ STATUS isc_form_insert(STATUS * status_vector,
 					   void **tra_handle, void **map_handle, UCHAR * input)
 {
 	return pyxis__insert(status_vector,
-						 db_handle, tra_handle, map_handle, input);
+			 (SLONG**) db_handle, (SLONG*) tra_handle,
+			 (MAP*) map_handle, input);
 }
 
 STATUS isc_get_entree(STATUS * status_vector,
@@ -144,8 +153,9 @@ STATUS isc_get_entree(STATUS * status_vector,
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__get_entree(menu_handle,
-							 entree_length, entree, entree_value, entree_end);
+	return pyxis__get_entree((MENU*) menu_handle,
+				 (USHORT*) entree_length, (TEXT*) entree,
+				 entree_value, (USHORT*) entree_end);
 }
 
 STATUS isc_initialize_menu(STATUS * status_vector, void **menu_handle)
@@ -154,7 +164,7 @@ STATUS isc_initialize_menu(STATUS * status_vector, void **menu_handle)
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__initialize_menu(menu_handle);
+	return pyxis__initialize_menu((MENU*) menu_handle);
 }
 
 STATUS isc_load_form(STATUS * status_vector,
@@ -163,7 +173,8 @@ STATUS isc_load_form(STATUS * status_vector,
 					 void **form_handle, SSHORT * length, SCHAR * name)
 {
 	return pyxis__load_form(status_vector,
-							db_handle, tra_handle, form_handle, length, name);
+				(SLONG*) db_handle, (SLONG*) tra_handle,
+				(SLONG*) form_handle, length, name);
 }
 
 STATUS isc_menu(STATUS * status_vector,
@@ -174,7 +185,8 @@ STATUS isc_menu(STATUS * status_vector,
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__menu(win_handle, menu_handle, length, source);
+	return (long int) pyxis__menu((WIN*) win_handle, (MENU*) menu_handle,
+				(USHORT*) length, (TEXT*) source);
 }
 
 STATUS isc_pop_window(STATUS * status_vector, void **win_handle)
@@ -183,7 +195,7 @@ STATUS isc_pop_window(STATUS * status_vector, void **win_handle)
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__pop_window(win_handle);
+	return pyxis__pop_window((WIN*) win_handle);
 }
 
 STATUS isc_put_entree(STATUS * status_vector,
@@ -195,13 +207,14 @@ STATUS isc_put_entree(STATUS * status_vector,
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__put_entree(menu_handle,
-							 entree_length, entree, entree_value);
+	return pyxis__put_entree((MENU*) menu_handle,
+				 (USHORT*) entree_length, (TEXT*) entree,
+				 entree_value);
 }
 
 STATUS isc_reset_form(STATUS * status_vector, void **map_handle)
 {
-	return pyxis__reset_form(status_vector, map_handle);
+	return pyxis__reset_form(status_vector, (MAP*) map_handle);
 }
 
 STATUS isc_suspend_window(STATUS * status_vector, void **win_handle)
@@ -210,5 +223,5 @@ STATUS isc_suspend_window(STATUS * status_vector, void **win_handle)
 		status_vector[0] = 1;
 		status_vector[1] = 0;
 	}
-	return pyxis__suspend_window(win_handle);
+	return pyxis__suspend_window((SLONG*) win_handle);
 }

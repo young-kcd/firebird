@@ -34,6 +34,10 @@
 #include "../dudley/lex_proto.h"
 #include "../jrd/gds_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef PC_PLATFORM
 #ifndef NETWARE_386
 #define SCRATCH		"I"

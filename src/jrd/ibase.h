@@ -22,7 +22,7 @@
  * FSG 16.03.2001 
  */
 /*
-$Id: ibase.h,v 1.1.1.1 2001-05-23 13:26:15 tamlin Exp $
+$Id: ibase.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -132,7 +132,8 @@ typedef GDS_QUAD GDS__QUAD;
 /* TMN: What *is* really the right definition of these structs?! */
 /* Is e.g a GDS_QUAD to be signed or unsigned?! */
 
-#ifndef ISC_QUAD
+#if !defined(ISC_QUAD) && !defined(DEFINED_GDS_QUAD)
+#define DEFINED_GDS_QUAD
 
 typedef struct {
     unsigned long uquad_high;

@@ -23,10 +23,12 @@
 
 #include "../pyxis/pyxis.h"
 #include "../pyxis/scr.h"
+#include "../pyxis/all.h"
+#include <stdlib.h>
 
-static SCR create_screen();
-
-static windows;
+extern int CDM_create_window(WIN );
+extern int VT100_create_window(WIN );
+extern BLK PYXIS_alloc(PLB , UCHAR , int );
 
 typedef struct {
 	SSHORT min_x;
@@ -35,14 +37,23 @@ typedef struct {
 	SSHORT max_y;
 } REGION;
 
+static SCR create_screen();
+static int clear_object(SCR, OBJ);
+static SCR create_screen(USHORT , USHORT );
+static int display(SCR , REGION , OBJ , OBJ , USHORT );
+static int update_line(WIN , USHORT , USHORT *, USHORT *);
+static int set_point(USHORT , USHORT , REGION , SCR , USHORT );
+static int display_box(SCR , REGION , OBJ );
+static int clear_screen(SCR );
+
+static int windows;
+
 #ifdef DEBUG
 static debug;
 #endif
 
 
-SCR_clear_object(window, object)
-	 WIN window;
-	 OBJ object;
+int SCR_clear_object(WIN window, OBJ object)
 {
 /**************************************
  *
@@ -59,8 +70,7 @@ SCR_clear_object(window, object)
 }
 
 
-SCR_clear_window(window)
-	 WIN window;
+int SCR_clear_window(WIN window)
 {
 /**************************************
  *
@@ -80,8 +90,7 @@ SCR_clear_window(window)
 }
 
 
-SCR_create_window(window)
-	 WIN window;
+int SCR_create_window(WIN window)
 {
 /**************************************
  *
@@ -124,14 +133,13 @@ SCR_create_window(window)
 		create_screen(window->win_width, window->win_height);
 	window->win_physical =
 		create_screen(window->win_width, window->win_height);
-	(*window->win_clear) (window);
+	(*(int (*)(WIN))window->win_clear) (window);
 
 	return SUCCESS;
 }
 
 
-SCR_disable(window)
-	 WIN window;
+int SCR_disable(WIN window)
 {
 /**************************************
  *
@@ -145,13 +153,12 @@ SCR_disable(window)
  *
  **************************************/
 
-	(*window->win_disable) (window);
+	(*(int (*)(WIN)) window->win_disable) (window);
 	clear_screen(window->win_physical);
 }
 
 
-SCR_fini(window)
-	 WIN window;
+int SCR_fini(WIN window)
 {
 /**************************************
  *
@@ -165,16 +172,13 @@ SCR_fini(window)
  **************************************/
 
 	--windows;
-	(*window->win_fini) (window);
-	PYXIS_release(window->win_logical);
-	PYXIS_release(window->win_physical);
+	(*(int (*)(WIN)) window->win_fini) (window);
+	PYXIS_release((FRB) window->win_logical);
+	PYXIS_release((FRB) window->win_physical);
 }
 
 
-SCR_getchar(window, object, x_offset, y_offset)
-	 WIN window;
-	 OBJ object;
-	 int x_offset, y_offset;
+int SCR_getchar(WIN window, OBJ object, int x_offset, int y_offset)
 {
 /**************************************
  *
@@ -194,19 +198,16 @@ SCR_getchar(window, object, x_offset, y_offset)
 	}
 
 	if (!object)
-		return (*window->win_getchar) (window, x_offset, y_offset);
+		return (*(int (*)(WIN, int, int)) window->win_getchar) (window, x_offset, y_offset);
 
 	x = object->obj_x + x_offset;
 	y = object->obj_y + y_offset;
 
-	return (*window->win_getchar) (window, x, y);
+	return (*(int (*)(WIN, int, int)) window->win_getchar) (window, x, y);
 }
 
 
-SCR_refresh_window(window, object, x_offset, y_offset)
-	 WIN window;
-	 OBJ object;
-	 int x_offset, y_offset;
+int SCR_refresh_window(WIN window, OBJ object, int x_offset, int y_offset)
 {
 /**************************************
  *
@@ -220,7 +221,7 @@ SCR_refresh_window(window, object, x_offset, y_offset)
  **************************************/
 	OBJ form;
 
-	(*window->win_clear) (window);
+	(*(int (*)(WIN)) window->win_clear) (window);
 	clear_screen(window->win_physical);
 	form = window->win_form;
 	form->obj_flags |= OBJ_changed;
@@ -228,10 +229,7 @@ SCR_refresh_window(window, object, x_offset, y_offset)
 }
 
 
-SCR_update_window(window, object, x_offset, y_offset)
-	 WIN window;
-	 OBJ object;
-	 int x_offset, y_offset;
+int SCR_update_window(WIN window, OBJ object, int x_offset, int y_offset)
 {
 /**************************************
  *
@@ -269,7 +267,7 @@ SCR_update_window(window, object, x_offset, y_offset)
    thing now. */
 
 	if (logical->scr_flags & SCR_clear) {
-		(*window->win_clear) (window);
+		(*(int (*)(WIN)) window->win_clear) (window);
 		clear_screen(physical);
 		logical->scr_flags &= ~SCR_clear;
 	}
@@ -296,13 +294,11 @@ SCR_update_window(window, object, x_offset, y_offset)
 		y = window->win_height;
 	}
 
-	(*window->win_update) (window, x, y);
+	(*(int(*)(WIN, int, int)) window->win_update) (window, x, y);
 }
 
 
-static clear_box(screen, object)
-	 SCR screen;
-	 OBJ object;
+static int clear_box(SCR screen, OBJ object)
 {
 /**************************************
  *
@@ -334,9 +330,7 @@ static clear_box(screen, object)
 
 
 
-static clear_object(screen, object)
-	 SCR screen;
-	 OBJ object;
+static int clear_object(SCR screen, OBJ object)
 {
 /**************************************
  *
@@ -353,7 +347,7 @@ static clear_object(screen, object)
 	SSHORT l;
 
 	if (object->obj_occluded || (object->obj_flags & OBJ_inactive))
-		return;
+		return 0;
 
 	object->obj_flags &= ~OBJ_displayed;
 
@@ -383,8 +377,7 @@ static clear_object(screen, object)
 }
 
 
-static clear_screen(screen)
-	 SCR screen;
+static int clear_screen(SCR screen)
 {
 /**************************************
  *
@@ -406,8 +399,7 @@ static clear_screen(screen)
 }
 
 
-static SCR create_screen(width, height)
-	 USHORT width, height;
+static SCR create_screen(USHORT width, USHORT height)
 {
 /**************************************
  *
@@ -436,11 +428,7 @@ static SCR create_screen(width, height)
 }
 
 
-static display(screen, clip, object, parent, force)
-	 SCR screen;
-	 REGION clip;
-	 OBJ object, parent;
-	 USHORT force;
+static int display(SCR screen, REGION clip, OBJ object, OBJ parent, USHORT force)
 {
 /**************************************
  *
@@ -458,7 +446,7 @@ static display(screen, clip, object, parent, force)
 	ATT attribute;
 
 	if (object->obj_occluded || (object->obj_flags & OBJ_inactive))
-		return;
+		return 0;
 
 	if (object->obj_flags & OBJ_changed)
 		force = TRUE;
@@ -563,10 +551,7 @@ static display(screen, clip, object, parent, force)
 }
 
 
-static display_box(screen, clip, object)
-	 SCR screen;
-	 REGION clip;
-	 OBJ object;
+static int display_box(SCR screen, REGION clip, OBJ object)
 {
 /**************************************
  *
@@ -590,7 +575,7 @@ static display_box(screen, clip, object)
 	max_y = MIN(bottom, clip.max_y);
 
 	if (min_x >= max_x || min_y >= max_y)
-		return;
+		return 0;
 
 	object->obj_display_length = max_x - min_x;
 	object->obj_display_height = max_y - min_y;
@@ -624,7 +609,7 @@ static display_box(screen, clip, object)
 /* Unless the object is explicitly outlined, we're done */
 
 	if (!(object->obj_flags & OBJ_box))
-		return;
+		return 0;
 
 /* Groan -- fill in the corners */
 
@@ -634,16 +619,12 @@ static display_box(screen, clip, object)
 	set_point(object->obj_x, object->obj_y + object->obj_height - 1,
 			  clip, screen, C_LL_CORNER | mode);
 	set_point(object->obj_x + object->obj_width - 1,
-			  object->obj_y + object->obj_height - 1, clip, screen,
-			  C_LR_CORNER | mode);
+			  object->obj_y + object->obj_height - 1, clip,
+			  screen, C_LR_CORNER | mode);
 }
 
 
-static set_point(x, y, clip, screen, value)
-	 USHORT x, y;
-	 REGION clip;
-	 SCR screen;
-	 USHORT value;
+static int set_point(USHORT x, USHORT y, REGION clip, SCR screen, USHORT value)
 {
 /**************************************
  *
@@ -667,9 +648,7 @@ static set_point(x, y, clip, screen, value)
 }
 
 
-static update_line(window, y, logical, physical)
-	 WIN window;
-	 USHORT y, *logical, *physical;
+static int update_line(WIN window, USHORT y, USHORT *logical, USHORT *physical)
 {
 /**************************************
  *

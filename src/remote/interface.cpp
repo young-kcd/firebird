@@ -56,6 +56,10 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef	WIN_NT
 #include "../jrd/isc_proto.h"
 #endif
@@ -2871,7 +2875,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 						  (event_thread), port->port_async, THREAD_high,
 						  THREAD_ast, 0);
 #else
-		if (!port->connect(packet, event_handler))
+		if (!port->connect(packet, (void(*)(void))event_handler))
 			return error(user_status);
 #endif
 		port->port_async->port_context = rdb;

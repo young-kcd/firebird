@@ -29,6 +29,7 @@
 #include <varargs.h>
 #include "../jrd/common.h"
 #include "../include/jrd/gds.h"
+#include "../pyxis/everything.h"
 #undef GDS_VAL
 #define GDS_VAL(val)	(*val)
 
@@ -58,12 +59,7 @@ typedef struct handle {
 #define PYXIS_SUSPEND_WINDOW	pyxis__suspend_window_
 
 
-PYXIS_COMPILE_MAP(status, form_handle, map_handle, length, source)
-	 STATUS *status;
-	 OBJ *form_handle;
-	 MAP *map_handle;
-	 ULONG *length;
-	 TEXT *source;
+int PYXIS_COMPILE_MAP(STATUS *status, OBJ *form_handle, MAP *map_handle, ULONG *length, TEXT *source)
 {
 /**************************************
  *
@@ -83,11 +79,7 @@ PYXIS_COMPILE_MAP(status, form_handle, map_handle, length, source)
 }
 
 
-PYXIS_COMPILE_MENU(window_handle, menu_handle, length, source)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 USHORT *length;
-	 TEXT *source;
+int PYXIS_COMPILE_MENU(WIN *window_handle, MENU *menu_handle, USHORT *length, TEXT *source)
 {
 /**************************************
  *
@@ -105,12 +97,7 @@ PYXIS_COMPILE_MENU(window_handle, menu_handle, length, source)
 
 
 
-PYXIS_COMPILE_SUB_MAP(status, parent_handle, map_handle, length, source)
-	 STATUS *status;
-	 MAP *parent_handle;
-	 MAP *map_handle;
-	 ULONG *length;
-	 TEXT *source;
+int PYXIS_COMPILE_SUB_MAP(STATUS *status, MAP *parent_handle, MAP *map_handle, ULONG *length, TEXT *source)
 {
 /**************************************
  *
@@ -131,12 +118,7 @@ PYXIS_COMPILE_SUB_MAP(status, parent_handle, map_handle, length, source)
 
 
 
-PYXIS_CREATE_WINDOW(window_handle, file_name_length, file_name, width, height)
-
-	 WIN *window_handle;
-	 ULONG *file_name_length;
-	 TEXT *file_name;
-	 USHORT *width, *height;
+int PYXIS_CREATE_WINDOW(WIN *window_handle, ULONG *file_name_length, TEXT *file_name, USHORT *width, USHORT *height)
 {
 /**************************************
  *
@@ -157,8 +139,7 @@ PYXIS_CREATE_WINDOW(window_handle, file_name_length, file_name, width, height)
 }
 
 
-PYXIS_DELETE(object)
-	 OBJ *object;
+int PYXIS_DELETE(OBJ *object)
 {
 /**************************************
  *
@@ -174,8 +155,7 @@ PYXIS_DELETE(object)
 }
 
 
-PYXIS_DELETE_WINDOW(window_handle)
-	 SLONG *window_handle;
+int PYXIS_DELETE_WINDOW(SLONG *window_handle)
 {
 /**************************************
  *
@@ -191,13 +171,8 @@ PYXIS_DELETE_WINDOW(window_handle)
 }
 
 
-PYXIS_DRIVE_FORM(status, db_handle, tra_handle, window_handle, map_handle,
-				 input, output)
-	 STATUS *status;
-	 SLONG **db_handle, *tra_handle;
-	 WIN *window_handle;
-	 MAP *map_handle;
-	 UCHAR *input, *output;
+int PYXIS_DRIVE_FORM(STATUS *status, SLONG **db_handle, SLONG **tra_handle, WIN *window_handle, MAP *map_handle,
+				 UCHAR *input, UCHAR *output)
 {
 /**************************************
  *
@@ -214,19 +189,9 @@ PYXIS_DRIVE_FORM(status, db_handle, tra_handle, window_handle, map_handle,
 }
 
 
-PYXIS_DRIVE_MENU(window_handle, menu_handle, blr_length,
-				 blr_source, title_length, title, terminator,
-				 entree_length, entree_text, entree_value)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 SLONG *blr_length;
-	 TEXT *blr_source;
-	 USHORT *title_length;
-	 TEXT *title;
-	 USHORT *terminator;
-	 USHORT *entree_length;
-	 TEXT *entree_text;
-	 SLONG *entree_value;
+int PYXIS_DRIVE_MENU(WIN *window_handle, MENU *menu_handle, SLONG *blr_length,
+				 TEXT *blr_source, USHORT *title_length, TEXT *title, USHORT *terminator,
+				 USHORT *entree_length, TEXT *entree_text, SLONG *entree_value)
 {
 /**************************************
  *
@@ -246,12 +211,8 @@ PYXIS_DRIVE_MENU(window_handle, menu_handle, blr_length,
 					  entree_length, entree_text, entree_value);
 }
 
-
-PYXIS_FETCH(status, db_handle, tra_handle, map_handle, output)
-	 STATUS *status;
-	 SLONG **db_handle, *tra_handle;
-	 MAP *map_handle;
-	 UCHAR *output;
+int
+PYXIS_FETCH(STATUS *status, SLONG **db_handle, SLONG *tra_handle, MAP *map_handle, UCHAR *output)
 {
 /**************************************
  *
@@ -267,13 +228,8 @@ PYXIS_FETCH(status, db_handle, tra_handle, map_handle, output)
 }
 
 
-PYXIS_GET_ENTREE(menu_handle, entree_length,
-				 entree_text, entree_value, entree_end)
-	 MENU *menu_handle;
-	 USHORT *entree_length;
-	 TEXT *entree_text;
-	 SLONG *entree_value;
-	 USHORT *entree_end;
+int PYXIS_GET_ENTREE(MENU *menu_handle, USHORT *entree_length,
+				 TEXT *entree_text, SLONG *entree_value, USHORT *entree_end)
 {
 /**************************************
  *
@@ -290,8 +246,7 @@ PYXIS_GET_ENTREE(menu_handle, entree_length,
 }
 
 
-PYXIS_INITIALIZE_MENU(menu_handle)
-	 MENU *menu_handle;
+int PYXIS_INITIALIZE_MENU(MENU *menu_handle)
 {
 /**************************************
  *
@@ -307,11 +262,7 @@ PYXIS_INITIALIZE_MENU(menu_handle)
 }
 
 
-PYXIS_INSERT(status, db_handle, tra_handle, map_handle, input)
-	 STATUS *status;
-	 SLONG **db_handle, *tra_handle;
-	 MAP *map_handle;
-	 UCHAR *input;
+int PYXIS_INSERT(STATUS *status, SLONG **db_handle, SLONG *tra_handle, MAP *map_handle, UCHAR *input)
 {
 /**************************************
  *
@@ -327,13 +278,8 @@ PYXIS_INSERT(status, db_handle, tra_handle, map_handle, input)
 }
 
 
-PYXIS_LOAD_FORM(status_vector, dbb, transaction,
-				form_handle, form_name_length, form_name)
-	 STATUS *status_vector;
-	 SLONG *dbb, *transaction;
-	 OBJ *form_handle;
-	 ULONG *form_name_length;
-	 TEXT *form_name;
+int PYXIS_LOAD_FORM(STATUS *status_vector, SLONG *dbb, SLONG *transaction,
+				OBJ *form_handle, ULONG *form_name_length, TEXT *form_name)
 {
 /**************************************
  *
@@ -354,11 +300,7 @@ PYXIS_LOAD_FORM(status_vector, dbb, transaction,
 }
 
 
-OBJ PYXIS_MENU(window_handle, menu_handle, length, source)
-	 WIN *window_handle;
-	 MENU *menu_handle;
-	 USHORT *length;
-	 TEXT *source;
+OBJ PYXIS_MENU(WIN *window_handle, MENU *menu_handle, USHORT *length, TEXT *source)
 {
 /**************************************
  *
@@ -374,8 +316,7 @@ OBJ PYXIS_MENU(window_handle, menu_handle, length, source)
 }
 
 
-PYXIS_POP_WINDOW(window_handle)
-	 WIN *window_handle;
+int PYXIS_POP_WINDOW(WIN *window_handle)
 {
 /**************************************
  *
@@ -391,11 +332,7 @@ PYXIS_POP_WINDOW(window_handle)
 }
 
 
-PYXIS_PUT_ENTREE(menu_handle, entree_length, entree_text, entree_value)
-	 MENU *menu_handle;
-	 USHORT *entree_length;
-	 TEXT *entree_text;
-	 SLONG *entree_value;
+int PYXIS_PUT_ENTREE(MENU *menu_handle, USHORT *entree_length, TEXT *entree_text, SLONG *entree_value)
 {
 /**************************************
  *
@@ -411,9 +348,7 @@ PYXIS_PUT_ENTREE(menu_handle, entree_length, entree_text, entree_value)
 }
 
 
-PYXIS_RESET_FORM(status, map_handle)
-	 STATUS *status;
-	 MAP *map_handle;
+int PYXIS_RESET_FORM(STATUS *status, MAP *map_handle)
 {
 /**************************************
  *
@@ -429,8 +364,7 @@ PYXIS_RESET_FORM(status, map_handle)
 }
 
 
-PYXIS_SUSPEND_WINDOW(window_handle)
-	 SLONG *window_handle;
+int PYXIS_SUSPEND_WINDOW(SLONG *window_handle)
 {
 /**************************************
  *

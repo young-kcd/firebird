@@ -389,13 +389,13 @@ static void compile_control_break( BRK control, REQ request)
 		{
 			temp = (NOD) control->brk_field;;
 			temp->nod_flags |= NOD_parameter2;
-			temp = compile_expression(control->brk_field, request, FALSE);
+			temp =  compile_expression((NOD) control->brk_field, request, FALSE);
 			if (temp->nod_type == nod_field)
 				temp = temp->nod_arg[e_fld_reference];
 			control->brk_field = (SYN) temp;
 		}
 		if (control->brk_line)
-			compile_print_list(control->brk_line, request, 0);
+			compile_print_list((NOD) control->brk_line, request, 0);
 		report_control_break = NULL;
 	}
 }
@@ -2086,7 +2086,7 @@ static void release_message( MSG message)
 		BUGCHECK(364);			/* Msg 364 lost message */
 
 	*ptr = message->msg_next;
-	ALL_release(message);
+	ALL_release((FRB) message);
 }
 
 

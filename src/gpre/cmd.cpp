@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.1.1.1 2001-05-23 13:25:29 tamlin Exp $
+//	$Id: cmd.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include <string.h>
@@ -110,6 +110,7 @@ static void set_statistics(REQ, ACT);
 //		numbers, and internal idents.  Compute length of request.
 //
 
+int
 CMD_compile_ddl(register REQ request)
 {
 	ACT action;

@@ -32,6 +32,7 @@
 #include "../qli/mov_proto.h"
 #else
 #include "../pyxis/pyxis.h"
+#include "../pyxis/all.h"
 #endif
 #include "../jrd/time.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
@@ -59,11 +60,13 @@ static void literal(PIC, TEXT, TEXT **);
 #define MOVQ_get_string		MOVP_get_string
 #define MOVQ_move		MOVP_move
 
-extern double PASCAL_ROUTINE MOVQ_get_double();
+#include "../qli/mov_proto.h"
+
+extern BLK PYXIS_alloc(PLB , UCHAR , int );
 #endif
 
 #ifdef PYXIS
-TEXT *PICSTR_default_edit_string();
+TEXT *PICSTR_default_edit_string(DSC *, TEXT*);
 #endif
 
 static TEXT *alpha_weekdays[] = {
@@ -344,16 +347,16 @@ int PIC_edit( DSC * desc, PIC picture, TEXT ** output, USHORT max_length)
 	switch (picture->pic_type) {
 	case pic_alpha:
 		edit_alpha(desc, picture, output, max_length);
-		return;
+		return 0;
 	case pic_numeric:
 		edit_numeric(desc, picture, output);
-		return;
+		return 0;
 	case pic_date:
 		edit_date(desc, picture, output);
-		return;
+		return 0;
 	case pic_float:
 		edit_float(desc, picture, output);
-		return;
+		return 0;
 	default:
 #ifndef PYXIS
 		BUGCHECK(68);			/* Msg 68 PIC_edit: class not yet implemented */
@@ -551,7 +554,7 @@ static void edit_alpha(
 	TEXT c, d, *p, *out, *end, temp[512], *q, date[32];
 	USHORT l, i;
 
-	l = MOVQ_get_string(desc, &p, temp, sizeof(temp));
+	l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
 	end = p + l;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
@@ -685,7 +688,7 @@ static void edit_date( DSC * desc, PIC picture, TEXT ** output)
 		return;
 #endif
 
-	isc_decode_date(date, &times);
+	isc_decode_date((GDS_QUAD*) date, &times);
 	p = temp;
 
 	nmonth = p;

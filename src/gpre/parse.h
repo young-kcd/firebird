@@ -30,6 +30,8 @@ typedef enum kwwords {
 	KW_max
 } KWWORDS;
 
+#include "../gpre/gpre.h"
+
 #define MATCH(keyword) 		MSC_match(keyword)
 #define KEYWORD(kw)		((int) token.tok_keyword == (int) kw)
 #define ADVANCE_TOKEN		PAR_get_token ()

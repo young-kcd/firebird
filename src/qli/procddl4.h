@@ -16,13 +16,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-    gds__dyn_version_1, 
-       gds__dyn_begin, 
-          gds__dyn_def_idx, 19,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','S','_','I','D','X','1',
-             gds__dyn_rel_name, 14,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','S',
-             gds__dyn_idx_unique, 2,0, 1,0,
-             gds__dyn_idx_inactive, 2,0, 0,0,
-             gds__dyn_fld_name, 18,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','_','N','A','M','E',
-             gds__dyn_end, 
-          gds__dyn_end, 
-    gds__dyn_eoc
+    gds_dyn_version_1, 
+       gds_dyn_begin, 
+          gds_dyn_def_idx, 19,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','S','_','I','D','X','1',
+             gds_dyn_rel_name, 14,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','S',
+             gds_dyn_idx_unique, 2,0, 1,0,
+             gds_dyn_idx_inactive, 2,0, 0,0,
+             gds_dyn_fld_name, 18,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','_','N','A','M','E',
+             gds_dyn_end, 
+          gds_dyn_end, 
+    gds_dyn_eoc

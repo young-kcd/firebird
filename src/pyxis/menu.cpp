@@ -26,17 +26,13 @@
 
 #include "../pyxis/pyxis.h"
 
-ATT PYXIS_get_attribute(), PYXIS_put_attribute(), REPLACE_ATTRIBUTE(),
-PYXIS_find_object(), PYXIS_navigate();
 
-OBJ PYXIS_create_object(), PYXIS_get_attribute_value();
-
-static ATT lookup_entree();
+static ATT lookup_entree(OBJ , ATT , TEXT *);
 
 
 
 
-PYXIS_box(object)
+int PYXIS_box(int object)
 {
 /**************************************
  *
@@ -50,11 +46,11 @@ PYXIS_box(object)
  **************************************/
 	USHORT width, height;
 
-	width = GET_VALUE(object, att_width);
-	height = GET_VALUE(object, att_height);
+	width = GET_VALUE((OBJ) object, att_width);
+	height = GET_VALUE((OBJ) object, att_height);
 
 	if (!width || !height) {
-		PYXIS_compute_size(object, &width, &height);
+		PYXIS_compute_size((OBJ) object, &width, &height);
 		width += 3;
 		height += 3;
 	}
@@ -67,10 +63,7 @@ PYXIS_box(object)
 }
 
 
-ATT PYXIS_create_entree(menu, string, type, value)
-	 OBJ menu;
-	 TEXT *string;
-	 BLK value;
+ATT PYXIS_create_entree(OBJ menu, TEXT *string, int type, BLK value)
 {
 /**************************************
  *
@@ -87,16 +80,13 @@ ATT PYXIS_create_entree(menu, string, type, value)
 	object = PYXIS_create_object(string, att_literal_string);
 
 	if (type)
-		PUT_ATTRIBUTE(object, att_entree_value, type, value);
+		PUT_ATTRIBUTE(object, att_entree_value,(enum att_t)type, (OBJ) value);
 
 	return PUT_ATTRIBUTE(menu, att_entree, attype_object, object);
 }
 
 
-OBJ PYXIS_drive_menu(window, menu, terminator)
-	 WIN window;
-	 OBJ menu;
-	 USHORT *terminator;
+OBJ PYXIS_drive_menu(WIN window, OBJ menu, USHORT *terminator)
 {
 /**************************************
  *
@@ -203,10 +193,8 @@ OBJ PYXIS_drive_menu(window, menu, terminator)
 	}
 }
 
-
-PYXIS_format_menu(menu, string, horizontal)
-	 OBJ menu;
-	 TEXT *string;
+extern "C"
+int PYXIS_format_menu(OBJ menu, TEXT *string, int horizontal)
 {
 /**************************************
  *
@@ -290,13 +278,11 @@ PYXIS_format_menu(menu, string, horizontal)
 	}
 
 	if (!horizontal)
-		PYXIS_box(menu);
+		PYXIS_box((int) menu);
 }
 
-
-OBJ PYXIS_menu(window, menu)
-	 WIN window;
-	 OBJ menu;
+extern "C"
+OBJ PYXIS_menu(WIN window, OBJ menu)
 {
 /**************************************
  *
@@ -314,12 +300,8 @@ OBJ PYXIS_menu(window, menu)
 
 }
 
-
-PYXIS_select(window, menu, attribute_name, start)
-	 WIN window;
-	 OBJ menu;
-	 ATT_N attribute_name;
-	 ATT start;
+extern "C"
+int PYXIS_select(WIN window, OBJ menu, ATT_N attribute_name, ATT start)
 {
 /**************************************
  *
@@ -385,10 +367,7 @@ PYXIS_select(window, menu, attribute_name, start)
 }
 
 
-static ATT lookup_entree(menu, attribute, string)
-	 OBJ menu;
-	 ATT attribute;
-	 TEXT *string;
+static ATT lookup_entree(OBJ menu, ATT attribute, TEXT *string)
 {
 /**************************************
  *

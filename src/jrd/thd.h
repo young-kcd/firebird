@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.1.1.1 2001-05-23 13:26:19 tamlin Exp $
+$Id: thd.h,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -54,6 +54,11 @@ $Id: thd.h,v 1.1.1.1 2001-05-23 13:26:19 tamlin Exp $
 #endif
 
 #if (defined(LINUX) && defined(SUPERSERVER))
+#define POSIX_THREADS           1
+#define MULTI_THREAD            1
+#endif
+
+#if (defined(DARWIN) && defined(SUPERSERVER))
 #define POSIX_THREADS           1
 #define MULTI_THREAD            1
 #endif

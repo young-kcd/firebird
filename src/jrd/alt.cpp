@@ -893,6 +893,9 @@ int API_ROUTINE isc_add_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
+#ifdef PHASE_1
+return 1;
+#else
 	USHORT retval = 0, l;
 	struct user_data userInfo;
 	void *db_handle;
@@ -1030,6 +1033,7 @@ int API_ROUTINE isc_add_user(STATUS * status, USER_SEC_DATA * user_data)
 		isc_detach_database(user_status, &db_handle);
 	}
 	return status[1];			/* security database not opened */
+#endif
 }
 
 int API_ROUTINE isc_blob_load(
@@ -1074,6 +1078,9 @@ int API_ROUTINE isc_delete_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
+#ifdef PHASE_1
+return 1;
+#else
 	USHORT retval = 0, l;
 	void *db_handle;
 	struct user_data userInfo;
@@ -1117,6 +1124,7 @@ int API_ROUTINE isc_delete_user(STATUS * status, USER_SEC_DATA * user_data)
 		isc_detach_database(user_status, &db_handle);
 	}
 	return status[1];			/* security database not opened */
+#endif
 }
 
 int API_ROUTINE isc_modify_user(STATUS * status, USER_SEC_DATA * user_data)
@@ -1135,6 +1143,9 @@ int API_ROUTINE isc_modify_user(STATUS * status, USER_SEC_DATA * user_data)
  *	    Return > 0 if any error occurs.
  *
  **************************************/
+#ifdef PHASE_1
+return 1;
+#else
 	USHORT retval = 0, l;
 	struct user_data userInfo;
 	void *db_handle;
@@ -1268,6 +1279,7 @@ int API_ROUTINE isc_modify_user(STATUS * status, USER_SEC_DATA * user_data)
 		isc_detach_database(user_status, &db_handle);
 	}
 	return status[1];			/* security database not opened */
+#endif
 }
 
 void *open_security_db(
@@ -1288,6 +1300,9 @@ void *open_security_db(
  * Returns NULL otherwise
  *
  **************************************/
+#ifdef PHASE_1
+return 0;
+#else
 	short dpb_length, l = 0;
 	char dpb_buffer[256], *dpb, *p;
 	TEXT default_security_db[512], connect_string[1024], *database;
@@ -1355,6 +1370,7 @@ void *open_security_db(
 			NULL;
 
 	return db_handle;
+#endif
 }
 
 void get_security_error(STATUS * status, int gsec_err)

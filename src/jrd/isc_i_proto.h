@@ -24,9 +24,18 @@
 #ifndef _JRD_ISC_I_PROTO_H_
 #define _JRD_ISC_I_PROTO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void DLL_EXPORT ISC_enter(void);
-void DLL_EXPORT ISC_enable(void);
 void DLL_EXPORT ISC_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+void DLL_EXPORT ISC_enable(void);
 void DLL_EXPORT ISC_inhibit(void);
 
 #ifdef WIN_NT

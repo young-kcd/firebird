@@ -55,7 +55,7 @@ extern void *ISC_make_signal(BOOLEAN, BOOLEAN, int, int);
 
 extern UCHAR *DLL_EXPORT ISC_map_file(STATUS *,
 									  TEXT *,
-									  FPTR_VOID,
+									  void (*)(void *, struct sh_mem *, int),
 									  void *, SLONG, struct sh_mem *);
 #ifndef NETWARE_386
 
@@ -77,6 +77,11 @@ int		ISC_mutex_lock(ULONG *);
 int		ISC_mutex_unlock(ULONG *);
 void	ISC_semaphore_close(ULONG);
 void	ISC_sync_init(void);
+#endif
+
+#ifdef MMAP_SUPPORTED
+extern UCHAR *ISC_map_object(STATUS *, SH_MEM, SLONG, SLONG);
+extern BOOLEAN ISC_unmap_object(STATUS *, SH_MEM, UCHAR **, SLONG);
 #endif
 
 #ifdef SUPERSERVER

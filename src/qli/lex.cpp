@@ -39,6 +39,14 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_CTYPES_H
+#include <ctypes.h>
+#endif
+
 #ifdef VMS
 #include <descrip.h>
 #define SCRATCH		"gds_query"
@@ -379,7 +387,7 @@ void LEX_fini(void)
 
 	if (trace_file && (trace_file != (IB_FILE *) - 1)) {
 		ib_fclose(trace_file);
-		unlink(trace_file_name);
+		unlink((char*) trace_file_name);
 	}
 }
 
@@ -572,7 +580,7 @@ void LEX_init(void)
 	TEXT *p;
 
 #ifndef __BORLANDC__
-	trace_file = gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, (TEXT*) trace_file_name);
 	if (trace_file == (IB_FILE *) - 1)
 		IBERROR(61);			/* Msg 61 couldn't open scratch file */
 #else
@@ -654,7 +662,7 @@ void LEX_pop_line(void)
 	else if (temp->line_type == line_file)
 		ib_fclose((IB_FILE *) temp->line_source);
 
-	ALL_release(temp);
+	ALL_release((FRB) temp);
 }
 
 
@@ -1148,7 +1156,7 @@ static void next_line( BOOLEAN eof_ok)
 				flag = LEX_get_line(QLI_prompt, p, (int) QLI_line->line_size);
 			else if (QLI_line->line_type == line_file) {
 				flag =
-					get_line(QLI_line->line_source, p, QLI_line->line_size);
+					get_line((FILE*) QLI_line->line_source, p, QLI_line->line_size);
 				if (QLI_echo)
 					ib_printf("%s", QLI_line->line_data);
 			}

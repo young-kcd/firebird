@@ -30,6 +30,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef UNIX
 #define UNIX_JOURNALLING
 #define BSD_SOCKETS
@@ -857,7 +861,7 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 			return ret_val;
 		}
 
-		if (!connect((int) journal->jrn_channel, &address, sizeof(address)))
+		if (!connect((int) journal->jrn_channel, (sockaddr*)&address, sizeof(address)))
 			break;
 
 		sleep(3);

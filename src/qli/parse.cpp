@@ -590,7 +590,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 		constant->con_desc.dsc_length = sizeof(SLONG);
 		constant->con_desc.dsc_address = constant->con_data;
 		constant->con_desc.dsc_scale =
-			MOVQ_decompose(string, length, constant->con_data);
+			MOVQ_decompose(string, length, (SLONG*) constant->con_data);
 	}
 	else {
 		++length;
@@ -755,23 +755,23 @@ static SYN parse_add( USHORT * paren_count, USHORT * bool_flag)
  **************************************
  *
  * Functional description
- *	Parse the lowest precedence operators, ADD and SUBTRACT.
+ *	Parse the lowest precedence operatrs, ADD and SUBTRACT.
  *
  **************************************/
 	SYN node, arg;
-	NOD_T operator;
+	NOD_T operatr;
 
 	node = parse_multiply(paren_count, bool_flag);
 
 	while (TRUE) {
 		if (MATCH(KW_PLUS))
-			operator = nod_add;
+			operatr = nod_add;
 		else if (MATCH(KW_MINUS))
-			operator = nod_subtract;
+			operatr = nod_subtract;
 		else
 			return node;
 		arg = node;
-		node = SYNTAX_NODE(operator, 2);
+		node = SYNTAX_NODE(operatr, 2);
 		node->syn_arg[0] = arg;
 		node->syn_arg[1] = parse_multiply(paren_count, bool_flag);
 	}
@@ -825,7 +825,7 @@ static SYN parse_assignment(void)
  *	Parse an assignment statement (or give an error).  The
  *	assignment statement can be either a simple assignment
  *	(field = value) or a restructure (relation = rse).  
- *	If the assignment operator is missing, 
+ *	If the assignment operatr is missing, 
  *	generate an "expected statement" error.
  *
  **************************************/
@@ -856,7 +856,7 @@ static SYN parse_assignment(void)
 		relation = NULL;
 
 	if (relation) {
-		ALL_release(field);
+		ALL_release((FRB) field);
 		node->syn_type = nod_restructure;
 		node->syn_arg[s_asn_to] = field =
 			SYNTAX_NODE(nod_relation, s_rel_count);
@@ -2087,7 +2087,7 @@ static SYN parse_if(void)
 }
 
 
-static SYN parse_in( SYN value, NOD_T operator, USHORT all_flag)
+static SYN parse_in( SYN value, NOD_T operatr, USHORT all_flag)
 {
 /**************************************
  *
@@ -2113,7 +2113,7 @@ static SYN parse_in( SYN value, NOD_T operator, USHORT all_flag)
 /* Time to chose between two forms of the expression */
 
 	if (!MATCH(KW_SELECT)) {
-		node = SYNTAX_NODE(operator, 2);
+		node = SYNTAX_NODE(operatr, 2);
 		node->syn_arg[0] = value;
 		node->syn_arg[1] = parse_primitive_value(0, 0);
 		while (MATCH(KW_COMMA)) {
@@ -2137,7 +2137,7 @@ static SYN parse_in( SYN value, NOD_T operator, USHORT all_flag)
 
 	rse->syn_arg[s_rse_outer] = value;
 	rse->syn_arg[s_rse_inner] = value2;
-	rse->syn_arg[s_rse_op] = INT_CAST operator;
+	rse->syn_arg[s_rse_op] = INT_CAST operatr;
 	rse->syn_arg[s_rse_all_flag] = INT_CAST all_flag;
 
 /* Finally, construct an ANY node */
@@ -2245,28 +2245,28 @@ static NOD_T parse_join_type(void)
  *	Parse a join type.
  *
  **************************************/
-	NOD_T operator;
+	NOD_T operatr;
 
 	if (MATCH(KW_INNER))
-		operator = nod_join_inner;
+		operatr = nod_join_inner;
 	else if (MATCH(KW_LEFT))
-		operator = nod_join_left;
+		operatr = nod_join_left;
 	else if (MATCH(KW_RIGHT))
-		operator = nod_join_right;
+		operatr = nod_join_right;
 	else if (MATCH(KW_FULL))
-		operator = nod_join_full;
+		operatr = nod_join_full;
 	else if (MATCH(KW_JOIN))
 		return nod_join_inner;
 	else
 		return (NOD_T) 0;
 
-	if (operator != nod_join_inner)
+	if (operatr != nod_join_inner)
 		MATCH(KW_OUTER);
 
 	if (!MATCH(KW_JOIN))
 		SYNTAX_ERROR(489);		/* Msg489 JOIN */
 
-	return operator;
+	return operatr;
 }
 
 
@@ -2659,23 +2659,23 @@ static SYN parse_multiply( USHORT * paren_count, USHORT * bool_flag)
  **************************************
  *
  * Functional description
- *	Parse the operators * and /.
+ *	Parse the operatrs * and /.
  *
  **************************************/
 	SYN node, arg;
-	NOD_T operator;
+	NOD_T operatr;
 
 	node = parse_from(paren_count, bool_flag);
 
 	while (TRUE) {
 		if (MATCH(KW_ASTERISK))
-			operator = nod_multiply;
+			operatr = nod_multiply;
 		else if (MATCH(KW_SLASH))
-			operator = nod_divide;
+			operatr = nod_divide;
 		else
 			return node;
 		arg = node;
-		node = SYNTAX_NODE(operator, 2);
+		node = SYNTAX_NODE(operatr, 2);
 		node->syn_arg[0] = arg;
 		node->syn_arg[1] = parse_from(paren_count, bool_flag);
 	}
@@ -3339,7 +3339,7 @@ static SYN parse_relational( USHORT * paren_count)
  **************************************/
 	SYN node, expr1, or_node;
 	USHORT negation;
-	NOD_T operator, *rel_ops;
+	NOD_T operatr, *rel_ops;
 	USHORT local_flag;
 
 	local_flag = TRUE;
@@ -3350,19 +3350,19 @@ static SYN parse_relational( USHORT * paren_count)
 		return node;
 	}
 
-	operator = (NOD_T) 0;
+	operatr = (NOD_T) 0;
 	if (MATCH(KW_EXISTS))
-		operator = nod_any;
+		operatr = nod_any;
 	else if (MATCH(KW_SINGULAR))
-		operator = nod_unique;
+		operatr = nod_unique;
 
-	if (operator != (NOD_T) 0) {
+	if (operatr != (NOD_T) 0) {
 		PAR_real();
 		if (MATCH(KW_LEFT_PAREN)) {
 			PAR_real();
 			if (MATCH(KW_SELECT)) {
 				PAR_real();
-				node = SYNTAX_NODE(operator, 2);
+				node = SYNTAX_NODE(operatr, 2);
 				if (!MATCH(KW_ASTERISK))
 					node->syn_arg[1] = parse_value(0, 0);
 				node->syn_arg[0] = parse_sql_rse();
@@ -3370,7 +3370,7 @@ static SYN parse_relational( USHORT * paren_count)
 				return node;
 			}
 		}
-		if (operator == nod_any)
+		if (operatr == nod_any)
 			SYNTAX_ERROR(205);	/* Msg205 EXISTS (SELECT * <sql rse>) */
 		else
 			SYNTAX_ERROR(488);	/* Msg488 SINGULAR (SELECT * <sql rse>) */
@@ -3408,43 +3408,43 @@ static SYN parse_relational( USHORT * paren_count)
 
 	case KW_EQUALS:
 	case KW_EQ:
-		operator = (negation) ? nod_neq : nod_eql;
+		operatr = (negation) ? nod_neq : nod_eql;
 		negation = FALSE;
 		break;
 
 	case KW_NE:
-		operator = (negation) ? nod_eql : nod_neq;
+		operatr = (negation) ? nod_eql : nod_neq;
 		negation = FALSE;
 		break;
 
 	case KW_GT:
-		operator = (negation) ? nod_leq : nod_gtr;
+		operatr = (negation) ? nod_leq : nod_gtr;
 		negation = FALSE;
 		break;
 
 	case KW_GE:
-		operator = (negation) ? nod_lss : nod_geq;
+		operatr = (negation) ? nod_lss : nod_geq;
 		negation = FALSE;
 		break;
 
 	case KW_LE:
-		operator = (negation) ? nod_gtr : nod_leq;
+		operatr = (negation) ? nod_gtr : nod_leq;
 		negation = FALSE;
 		break;
 
 	case KW_LT:
-		operator = (negation) ? nod_geq : nod_lss;
+		operatr = (negation) ? nod_geq : nod_lss;
 		negation = FALSE;
 		break;
 
 	case KW_CONTAINING:
-		operator = nod_containing;
+		operatr = nod_containing;
 		break;
 
 	case KW_MATCHES:
 		node = parse_matches();
 		node->syn_arg[0] = expr1;
-		operator = node->syn_type;
+		operatr = node->syn_type;
 		break;
 
 	case KW_LIKE:
@@ -3487,19 +3487,19 @@ static SYN parse_relational( USHORT * paren_count)
 		for (rel_ops = relationals; *rel_ops != (NOD_T) 0; rel_ops++)
 			if (expr1->syn_type == *rel_ops)
 				return expr1;
-		SYNTAX_ERROR(206);		/* Msg206 relational operator */
+		SYNTAX_ERROR(206);		/* Msg206 relational operatr */
 	}
 
-/* If we haven't already built a node, it must be an ordinary binary operator.
+/* If we haven't already built a node, it must be an ordinary binary operatr.
    Build it. */
 
 	if (!node) {
 		PAR_token();
 		if (MATCH(KW_ANY))
-			return parse_in(expr1, operator, FALSE);
+			return parse_in(expr1, operatr, FALSE);
 		if (MATCH(KW_ALL))
-			return parse_in(expr1, operator, TRUE);
-		node = SYNTAX_NODE(operator, 2);
+			return parse_in(expr1, operatr, TRUE);
+		node = SYNTAX_NODE(operatr, 2);
 		node->syn_arg[0] = expr1;
 		node->syn_arg[1] = parse_value(paren_count, &local_flag);
 	}
@@ -3512,7 +3512,7 @@ static SYN parse_relational( USHORT * paren_count)
 /*  If the node isn't an equality, we've done.  Since equalities can be
     structured as implicit ORs, build them here. */
 
-	if (operator != nod_eql)
+	if (operatr != nod_eql)
 		return node;
 
 /* We have an equality operation, which can take a number of values.  Generate
@@ -4722,7 +4722,7 @@ static SYN parse_sql_grant_revoke( USHORT type)
 	USHORT privileges;
 
 	PAR_real_token();
-	node = SYNTAX_NODE(type, s_grant_count);
+	node = SYNTAX_NODE((NOD_T) type, s_grant_count);
 	stack = NULL;
 	privileges = 0;
 
@@ -5507,7 +5507,7 @@ static SYM parse_symbol(void)
 }
 
 
-static parse_terminating_parens( USHORT * paren_count, USHORT * local_count)
+static int parse_terminating_parens( USHORT * paren_count, USHORT * local_count)
 {
 /**************************************
  *
@@ -5647,7 +5647,7 @@ static SYN parse_value( USHORT * paren_count, USHORT * bool_flag)
  *
  * Functional description
  *	Parse a general value expression.  In practice, this means parse the
- *	lowest precedence operator CONCATENATE.
+ *	lowest precedence operatr CONCATENATE.
  *
  **************************************/
 	SYN node, arg;

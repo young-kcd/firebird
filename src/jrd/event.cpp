@@ -36,6 +36,15 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../jrd/isc_i_proto.h"
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #pragma FB_COMPILER_MESSAGE("FIXFIXFIX!!! - DANGER!")
 // We currently can't include jrd/err_proto.h to get the function
@@ -62,7 +71,7 @@ extern void DLL_EXPORT ERR_bugcheck_msg(CONST TEXT *);
 #endif
 
 #ifndef AST_TYPE
-#define AST_TYPE
+#define AST_TYPE	void
 #endif
 
 #ifndef MUTEX
@@ -373,7 +382,7 @@ SLONG EVENT_que(STATUS * status_vector,
 				USHORT string_length,
 				TEXT * string,
 				USHORT events_length,
-				UCHAR * events, void (*ast_routine) (), void *ast_arg)
+				UCHAR * events, FPTR_VOID ast_routine, void *ast_arg)
 {
 /**************************************
  *
@@ -550,7 +559,7 @@ static EVH acquire(void)
 
 #if (!(defined SUPERSERVER) && (defined MMAP_SUPPORTED))
 		STATUS status_vector[20];
-		header = ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
+		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
 #endif
 		if (!header) {
 			RELEASE;

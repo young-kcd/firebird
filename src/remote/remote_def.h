@@ -134,6 +134,10 @@
 #define ARCHITECTURE		arch_netbsd
 #endif
 
+#ifdef DARWIN
+#define	ARCHITECTURE		arch_darwin_ppc
+#endif
+
 
 #define SRVR_server		1	/* 0x0001 server */
 #define SRVR_multi_client	2	/* 0x0002 multi-client server */

@@ -109,6 +109,7 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
        20             LINUX on sparc systems
 	   21             FreeBSD/i386
 	   22             NetBSD/i386
+	23		Darwin/PowerPC
 
 */
 
@@ -235,6 +236,9 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 #define CLASS           22
 #endif
 
+#ifdef DARWIN
+#define CLASS		23
+#endif
 
 
 int PAG_add_clump(

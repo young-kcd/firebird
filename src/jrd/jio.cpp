@@ -1288,7 +1288,7 @@ static position_and_read(journal, block, buffer, length)
 	SLONG position;
 
 	position = (SLONG) (block * BLOCK_SIZE);
-	n = lseek((int) journal->jrn_channel, position, 0);
+	n = lseek((int) journal->jrn_channel, LSEEK_OFFSET_CAST position, 0);
 
 	if (n == -1)
 		error(journal, errno, "lseek", isc_io_read_err);
@@ -1366,7 +1366,7 @@ static position_and_write(journal, block, buffer, length)
 	int position, n;
 
 	position = block * BLOCK_SIZE;
-	n = lseek((int) journal->jrn_channel, position, 0);
+	n = lseek((int) journal->jrn_channel, LSEEK_OFFSET_CAST position, 0);
 
 	if (n == -1)
 		error(journal, errno, "lseek", isc_io_write_err);

@@ -45,11 +45,18 @@ extern void DLL_EXPORT ERR_post(STATUS, ...);
 extern void DLL_EXPORT ERR_punt(void);
 extern void DLL_EXPORT ERR_warning(STATUS, ...);
 extern void DLL_EXPORT ERR_log(int, int, CONST TEXT *);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #endif /* REQUESTER */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern TEXT *DLL_EXPORT ERR_cstring(CONST TEXT*);
 extern TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

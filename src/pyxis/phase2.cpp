@@ -25,22 +25,25 @@
 #include "../pyxis/pyxis.h"
 #include "../pyxis/phase2.h"
 
-static OBJ walk_form(), walk_repeating();
-static ATT find_starting();
+#include "../jrd/val.h"
 
-extern PIC PICSTR_analyze();
-extern OBJ PYXIS_find_field(), PYXIS_get_attribute_value(),
-PYXIS_find_index(), PYXIS_update(), PYXIS_menu(),
-PYXIS_clone(), PYXIS_create_object();
-extern ATT PYXIS_replicate_prototype(), PYXIS_find_object(),
-PYXIS_put_attribute(), PYXIS_replace_attribute(),
-PYXIS_get_attribute(), PYXIS_navigate();
+static OBJ walk_repeating(WIN , OBJ , LLS *, USHORT *);
+static OBJ walk_form(WIN , OBJ , LLS *, USHORT *);
+static ATT find_starting(OBJ , USHORT , USHORT , LLS *);
+static int set_fld_options(OBJ , SLONG , SLONG );
+
+extern int MOVP_get_string( DSC *, TEXT **, VARY *, USHORT );
+extern BLK PYXIS_pop(register LLS *);
+extern int PYXIS_push(BLK , register LLS *);
+
+
+extern PIC PICSTR_analyze(TEXT*, DSC*);
+extern int PICSTR_edit ( DSC*, PIC, TEXT**,USHORT);
 
 
 
-OBJ PYXIS_find_field(form, field_name)
-	 OBJ form;
-	 TEXT *field_name;
+extern "C"
+OBJ PYXIS_find_field(OBJ form, TEXT *field_name)
 {
 /**************************************
  *
@@ -73,9 +76,8 @@ OBJ PYXIS_find_field(form, field_name)
 }
 
 
-OBJ PYXIS_find_index(form, index)
-	 OBJ form;
-	 USHORT index;
+extern "C"
+OBJ PYXIS_find_index(OBJ form, USHORT index)
 {
 /**************************************
  *
@@ -101,10 +103,7 @@ OBJ PYXIS_find_index(form, index)
 }
 
 
-TEXT *PYXIS_format_field(field, desc, buffer)
-	 OBJ field;
-	 DSC *desc;
-	 TEXT *buffer;
+TEXT *PYXIS_format_field(OBJ field, DSC *desc, TEXT *buffer)
 {
 /**************************************
  *
@@ -131,7 +130,7 @@ TEXT *PYXIS_format_field(field, desc, buffer)
 		if (!(edit_string = GET_STRING(field, att_edit_string)))
 			return NULL;
 		picture = PICSTR_analyze(edit_string, &desc2);
-		PUT_ATTRIBUTE(field, att_picture, attype_other, picture);
+		PUT_ATTRIBUTE(field, att_picture, attype_other, (OBJ)picture);
 	}
 
 	PICSTR_edit(desc, picture, &buffer, 32000);
@@ -141,10 +140,7 @@ TEXT *PYXIS_format_field(field, desc, buffer)
 }
 
 
-TEXT *PYXIS_get_string(form, field_name, type)
-	 OBJ form;
-	 TEXT *field_name;
-	 USHORT type;
+TEXT *PYXIS_get_string(OBJ form, TEXT *field_name, USHORT type)
 {
 /**************************************
  *
@@ -183,11 +179,8 @@ TEXT *PYXIS_get_string(form, field_name, type)
 return GET_STRING (field, att_data);*/
 }
 
-
-PYXIS_get_updated(form, field_name, p)
-	 OBJ form;
-	 TEXT *field_name;
-	 TEXT **p;
+extern "C"
+int PYXIS_get_updated(OBJ form, TEXT *field_name, TEXT **p)
 {
 /**************************************
  *
@@ -218,9 +211,8 @@ PYXIS_get_updated(form, field_name, p)
 }
 
 
-PYXIS_purge_segments(field, index)
-	 OBJ field;
-	 int index;
+extern "C"
+int PYXIS_purge_segments(OBJ field, int index)
 {
 /**************************************
  *
@@ -251,9 +243,7 @@ PYXIS_purge_segments(field, index)
 }
 
 
-PYXIS_put_desc(field, desc)
-	 OBJ field;
-	 DSC *desc;
+int PYXIS_put_desc(OBJ field, DSC *desc)
 {
 /**************************************
  *
@@ -272,7 +262,7 @@ PYXIS_put_desc(field, desc)
 	if (!PYXIS_format_field(field, desc, edit_buffer)) {
 		p = edit_buffer;
 		if (l =
-			MOVP_get_string(desc, &edit_string, edit_buffer,
+			MOVP_get_string(desc, &edit_string, (VARY*)edit_buffer,
 							sizeof(edit_buffer)))
 			do
 				*p++ = *edit_string++;
@@ -289,9 +279,8 @@ PYXIS_put_desc(field, desc)
 }
 
 
-PYXIS_put_segment(field, string, index)
-	 OBJ field;
-	 TEXT *string;
+extern "C"
+int PYXIS_put_segment(OBJ field, TEXT *string, int index)
 {
 /**************************************
  *
@@ -329,10 +318,7 @@ PYXIS_put_segment(field, string, index)
 }
 
 
-ATT PYXIS_replicate_prototype(form, prototype, index)
-	 OBJ form;
-	 OBJ prototype;
-	 USHORT index;
+ATT PYXIS_replicate_prototype(OBJ form, OBJ prototype, USHORT index)
 {
 /**************************************
  *
@@ -365,10 +351,7 @@ ATT PYXIS_replicate_prototype(form, prototype, index)
 }
 
 
-PYXIS_set_field_options(form, field_name, options, mask)
-	 OBJ form;
-	 TEXT *field_name;
-	 SLONG options, mask;
+int PYXIS_set_field_options(OBJ form, TEXT *field_name, SLONG options, SLONG mask)
 {
 /**************************************
  *
@@ -402,11 +385,7 @@ PYXIS_set_field_options(form, field_name, options, mask)
 }
 
 
-OBJ PYXIS_update(window, form, context_stack, terminator)
-	 WIN window;
-	 OBJ form;
-	 LLS *context_stack;
-	 USHORT *terminator;
+OBJ PYXIS_update(WIN window, OBJ form, LLS *context_stack, USHORT *terminator)
 {
 /**************************************
  *
@@ -449,11 +428,7 @@ OBJ PYXIS_update(window, form, context_stack, terminator)
 }
 
 
-static ATT find_starting(form, direction, any, out_stack)
-	 OBJ form;
-	 USHORT direction;
-	 USHORT any;
-	 LLS *out_stack;
+static ATT find_starting(OBJ form, USHORT direction, USHORT any, LLS *out_stack)
 {
 /**************************************
  *
@@ -497,7 +472,7 @@ static ATT find_starting(form, direction, any, out_stack)
 			}
 		}
 		if (attr)
-			LLS_PUSH(attr, out_stack);
+			LLS_PUSH((BLK)attr, out_stack);
 		return start;
 	}
 
@@ -511,14 +486,12 @@ static ATT find_starting(form, direction, any, out_stack)
 			break;
 	}
 	if (attr)
-		LLS_PUSH(attr, out_stack);
+		LLS_PUSH((BLK)attr, out_stack);
 	return start;
 }
 
 
-static set_fld_options(field, options, mask)
-	 OBJ field;
-	 SLONG options, mask;
+static int set_fld_options(OBJ field, SLONG options, SLONG mask)
 {
 /**************************************
  *
@@ -616,11 +589,7 @@ static set_fld_options(field, options, mask)
 }
 
 
-static OBJ walk_form(window, form, context, terminator)
-	 WIN window;
-	 OBJ form;
-	 LLS *context;
-	 USHORT *terminator;
+static OBJ walk_form(WIN window, OBJ form, LLS *context, USHORT *terminator)
 {
 /**************************************
  *
@@ -686,7 +655,7 @@ static OBJ walk_form(window, form, context, terminator)
 		}
 
 		if (!new_field) {
-			LLS_PUSH(field, context);
+			LLS_PUSH((BLK) field, context);
 			return NULL;
 		}
 		field = new_field;
@@ -710,11 +679,7 @@ static OBJ walk_form(window, form, context, terminator)
 
 
 
-static OBJ walk_repeating(window, form, context, terminator)
-	 WIN window;
-	 OBJ form;
-	 LLS *context;
-	 USHORT *terminator;
+static OBJ walk_repeating(WIN window, OBJ form, LLS *context, USHORT *terminator)
 {
 /**************************************
  *

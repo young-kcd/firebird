@@ -22,7 +22,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden 
  */
  
- /* $Id: head.cpp,v 1.1.1.1 2001-05-23 13:26:33 tamlin Exp $ */
+ /* $Id: head.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $ */
  
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
@@ -39,7 +39,12 @@
 #include "../pipe/head_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/isc_i_proto.h"
 #include "../remote/merge_proto.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef sparc
 #ifdef SOLARIS
@@ -181,7 +186,7 @@ static RDB	connection = NULL;
 #define GET_HANDLE_EVENT	getw (event_pipe)
 #define PUT_BYTE(byte)		PUTC_UNLOCKED (byte, write_pipe)
 #define PUT_WORD(word)		putw (word, write_pipe)
-#define PUT_HANDLE(word)	putw (word, write_pipe)
+#define PUT_HANDLE(word)	putw ((int)(word), write_pipe)
 #endif
 
 #define GET_STRING(length,ptr)	if (l = (length))\
@@ -415,7 +420,7 @@ RDB	rdb;
 NULL_CHECK (handle, gds__bad_db_handle);
 
 if (!(rdb = init (user_status, op_attach, 
-	file_name, GDS_VAL (file_length), dpb, GDS_VAL (dpb_length))))
+	(UCHAR*)file_name, GDS_VAL (file_length), (UCHAR*)dpb, GDS_VAL (dpb_length))))
     return user_status [1];
 
 *handle = rdb;
@@ -448,7 +453,7 @@ RDB	rdb;
 NULL_CHECK (handle, gds__bad_svc_handle);
 
 if (!(rdb = init (user_status, op_attach_service, 
-	service_name, service_length, spb, spb_length)))
+	(UCHAR*)service_name, service_length, (UCHAR*)spb, spb_length)))
     return user_status [1];
 
 *handle = rdb;
@@ -739,7 +744,7 @@ if (check_response (user_status))
 /* Allocate request block */
 
 *req_handle = request = (RRQ) ALLOC (type_rrq);
-request->rrq_handle = GET_HANDLE;
+request->rrq_handle = (int*) GET_HANDLE;
 request->rrq_rdb = rdb;
 request->rrq_next = rdb->rdb_requests;
 rdb->rdb_requests = request;
@@ -787,7 +792,7 @@ if (check_response (user_status))
     return user_status [1];
 
 *blob_handle = blob = (RBL) ALLOCV (type_rbl, BLOB_LENGTH);
-blob->rbl_handle = GET_HANDLE;
+blob->rbl_handle = (int*) GET_HANDLE;
 blob->rbl_buffer_length = BLOB_LENGTH;
 blob->rbl_rdb = rdb;
 blob->rbl_rtr = transaction;
@@ -850,7 +855,7 @@ if (check_response (user_status))
     return user_status [1];
 
 *blob_handle = blob = (RBL) ALLOCV (type_rbl, BLOB_LENGTH);
-blob->rbl_handle = GET_HANDLE;
+blob->rbl_handle = (int*) GET_HANDLE;
 blob->rbl_buffer_length = BLOB_LENGTH;
 blob->rbl_rdb = rdb;
 blob->rbl_rtr = transaction;
@@ -895,8 +900,8 @@ NULL_CHECK (handle, gds__bad_db_handle);
 if (!(l = GDS_VAL (file_length)))
     l = strlen (file_name);
 
-if (!(rdb = init (user_status, op_create, file_name, l, 
-	dpb, GDS_VAL (dpb_length))))
+if (!(rdb = init (user_status, op_create, (UCHAR*)file_name, l, 
+	(UCHAR*)dpb, GDS_VAL (dpb_length))))
     return user_status [1];
 
 *handle = rdb;
@@ -948,7 +953,7 @@ else
 
 GET_STRING (GET_WORD, temp_buffer);
 MERGE_database_info (temp_buffer, buffer, GDS_VAL (buffer_length),
-	IMPLEMENTATION, 7, 1, GDS_VERSION, "", 0);
+	IMPLEMENTATION, 7, 1, (UCHAR*) GDS_VERSION, (UCHAR*) "", 0);
 
 if (buffer_length > sizeof (temp))
     ALLP_free (temp_buffer);
@@ -1060,7 +1065,7 @@ fclose (rdb->rdb_pipes.cnct_write_pipe);
 ALLP_release (rdb);
 
 #else
-ALLP_release (rdb);
+ALLP_release ((BLK) rdb);
 #endif
 
 *handle = NULL;
@@ -1096,7 +1101,7 @@ ESTABLISH_PIPES;
 if (release_object (op_detach_service, rdb->rdb_handle, user_status))
     return user_status [1];
 
-ALLP_release (rdb);
+ALLP_release ((BLK) rdb);
 
 *handle = NULL;
 
@@ -1149,7 +1154,7 @@ while (rdb->rdb_sql_requests)
 while (rdb->rdb_transactions)
     release_transaction (rdb->rdb_transactions);
 
-ALLP_release (rdb);
+ALLP_release ((BLK) rdb);
 
 *handle = NULL;
 
@@ -1197,7 +1202,7 @@ if (check_response (user_status))
 /* Allocate SQL request block */
 
 *stmt_handle = statement = (RSR) ALLOC (type_rsr);
-statement->rsr_handle = GET_HANDLE;
+statement->rsr_handle = (int*) GET_HANDLE;
 statement->rsr_rdb = rdb;
 statement->rsr_next = rdb->rdb_sql_requests;
 rdb->rdb_sql_requests = statement;
@@ -1253,7 +1258,7 @@ PUT_WORD (msg_length);
 PUT_STRING (msg_length, msg);
 (void) check_response (user_status);
 
-handle = GET_HANDLE;
+handle = (int*) GET_HANDLE;
 if (transaction && !handle)
     {
     release_transaction (transaction);
@@ -1326,7 +1331,7 @@ PUT_WORD (out_msg_type);
 PUT_WORD (out_msg_length);
 (void) check_response (user_status);
 
-handle = GET_HANDLE;
+handle = (int*) GET_HANDLE;
 if (transaction && !handle)
     {
     release_transaction (transaction);
@@ -1383,7 +1388,7 @@ if (transaction = *rtr_handle)
 ESTABLISH_PIPES;
 
 if (!length)
-    length = strlen (string);
+    length = strlen ((char*)string);
 
 PUT_BYTE (op_exec_immediate);
 PUT_HANDLE (rdb->rdb_handle);
@@ -1398,7 +1403,7 @@ PUT_WORD (msg_length);
 PUT_STRING (msg_length, msg);
 (void) check_response (user_status);
 
-handle = GET_HANDLE;
+handle = (int*) GET_HANDLE;
 if (transaction && !handle)
     {
     release_transaction (transaction);
@@ -1458,7 +1463,7 @@ if (transaction = *rtr_handle)
 ESTABLISH_PIPES;
 
 if (!length)
-    length = strlen (string);
+    length = strlen ((char*) string);
 
 PUT_BYTE (op_exec_immediate2);
 PUT_HANDLE (rdb->rdb_handle);
@@ -1478,7 +1483,7 @@ PUT_WORD (out_msg_length);
 
 (void) check_response (user_status);
 
-handle = GET_HANDLE;
+handle = (int*) GET_HANDLE;
 if (transaction && !handle)
     {
     release_transaction (transaction);
@@ -1584,7 +1589,7 @@ PUT_WORD (option);
 if (check_response (user_status))
     return user_status [1];
 
-statement->rsr_handle = GET_HANDLE;
+statement->rsr_handle = (int*) GET_HANDLE;
 if (!statement->rsr_handle)
     {
     release_sql_request (statement);
@@ -1682,7 +1687,7 @@ if (transaction = *rtr_handle)
 ESTABLISH_PIPES;
 
 if (!length)
-    length = strlen (string);
+    length = strlen ((char*) string);
 
 PUT_BYTE (op_prepare_stmt);
 PUT_HANDLE ((transaction) ? transaction->rtr_handle : (HANDLE) NULL);
@@ -1733,7 +1738,7 @@ CHECK_HANDLE (rdb, type_rdb, gds__bad_db_handle);
 
 ESTABLISH_PIPES;
 
-cursor_length = name_length (cursor) + 1;
+cursor_length = name_length ((TEXT*) cursor) + 1;
 
 PUT_BYTE (op_set_cursor);
 PUT_HANDLE (statement->rsr_handle);
@@ -2070,7 +2075,7 @@ if (check_response (user_status))
     return user_status [1];
 
 *blob_handle = blob = (RBL) ALLOCV (type_rbl, BLOB_LENGTH);
-blob->rbl_handle = GET_HANDLE;
+blob->rbl_handle = (int*) GET_HANDLE;
 blob->rbl_buffer_length = BLOB_LENGTH;
 blob->rbl_rdb = rdb;
 blob->rbl_rtr = transaction;
@@ -2131,7 +2136,7 @@ if (check_response (user_status))
     return user_status [1];
 
 *blob_handle = blob = (RBL) ALLOCV (type_rbl, BLOB_LENGTH);
-blob->rbl_handle = GET_HANDLE;
+blob->rbl_handle = (int*) GET_HANDLE;
 blob->rbl_buffer_length = BLOB_LENGTH;
 blob->rbl_rdb = rdb;
 blob->rbl_rtr = transaction;
@@ -2434,14 +2439,14 @@ ESTABLISH_PIPES;
 PUT_BYTE (op_info_service);
 PUT_HANDLE (rdb->rdb_handle);
 PUT_WORD (send_item_length);
-PUT_STRING (send_item_length, send_items);
+PUT_STRING (send_item_length, (UCHAR*)send_items);
 PUT_WORD (recv_item_length);
-PUT_STRING (recv_item_length, recv_items);
+PUT_STRING (recv_item_length, (UCHAR*)recv_items);
 PUT_WORD (buffer_length);
 if (check_response (user_status))
     return user_status [1];
 
-GET_STRING (GET_WORD, buffer);
+GET_STRING (GET_WORD, (UCHAR*)buffer);
 
 RETURN_SUCCESS;
 }
@@ -2540,7 +2545,7 @@ PUT_STRING (l, id);
 if (check_response (user_status))
     return user_status [1];
 
-*rtr_handle = make_transaction (rdb, GET_HANDLE);
+*rtr_handle = make_transaction (rdb, (int*) GET_HANDLE);
 
 RETURN_SUCCESS;
 }
@@ -2887,7 +2892,7 @@ for (i = 0; i < GDS_VAL (count); i++)
 if (check_response (user_status))
     return user_status [1];
 
-*rtr_handle = make_transaction (rdb, GET_HANDLE);
+*rtr_handle = make_transaction (rdb, (int*) GET_HANDLE);
 
 RETURN_SUCCESS;
 }
@@ -2946,7 +2951,7 @@ for (i = 0; i < GDS_VAL (count); i++)
 if (check_response (user_status))
     return user_status [1];
 
-*rtr_handle = make_transaction (rdb, GET_HANDLE);
+*rtr_handle = make_transaction (rdb, (int*) GET_HANDLE);
 
 RETURN_SUCCESS;
 }
@@ -3215,7 +3220,7 @@ ast = (PTR) GET_HANDLE_EVENT;
 if ((long) ast == -1)
     return;
 
-arg = GET_HANDLE_EVENT;
+arg = (void*) GET_HANDLE_EVENT;
 length = GET_WORD_EVENT;
 
 if (l = length)
@@ -3224,7 +3229,7 @@ if (l = length)
     do *p++ = GET_BYTE_EVENT; while (--l);
     }
 
-(*ast) (arg, length, events);
+(*((void (*)(void*, SSHORT, UCHAR*))ast)) (arg, length, events);
 }
 #endif
 
@@ -3579,7 +3584,7 @@ if (!read_pipe || !write_pipe)
 /* Send the operation over */
 
 if (file_length == 0)
-    file_length = strlen (file_name);
+    file_length = strlen ((char*)file_name);
 
 PUT_BYTE ((SCHAR) op);
 PUT_WORD (file_length);
@@ -3622,7 +3627,7 @@ if (status)
 #endif
 
 rdb = (RDB) ALLOC (type_rdb);
-rdb->rdb_handle = GET_HANDLE;
+rdb->rdb_handle = (int*) GET_HANDLE;
 
 #ifdef GATEWAY
 rdb->rdb_next = PSI_databases;
@@ -3805,7 +3810,7 @@ for (p = &transaction->rtr_blobs; *p; p = &(*p)->rbl_next)
 	break;
 	}
 
-ALLP_release (blob);
+ALLP_release ((BLK) blob);
 }
 
 static STATUS release_object (
@@ -3859,7 +3864,7 @@ for (p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 	break;
 	}
 
-ALLP_release (request);
+ALLP_release ((BLK) request);
 }
 
 static void release_transaction (
@@ -3887,7 +3892,7 @@ for (p = &rdb->rdb_transactions; *p; p = &(*p)->rtr_next)
 	break;
 	}
 
-ALLP_release (transaction);
+ALLP_release ((BLK) transaction);
 }
 
 static void release_sql_request (
@@ -3915,7 +3920,7 @@ for (p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
 	break;
 	}
 
-ALLP_release (stmt);
+ALLP_release ((BLK) stmt);
 }
 
 static STATUS send_blob (

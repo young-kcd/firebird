@@ -70,16 +70,30 @@
 static FILE *log_file;
 #endif
 
+#ifdef DARWIN
+#define getmaxx(s) ((s)->maxx)
+#define getmaxy(s) ((s)->maxy)
+#else
 #ifndef NETBSD
 #define getmaxx(s) ((s)->_maxx)
 #define getmaxy(s) ((s)->_maxy)
+#endif
 #endif
 
 static USHORT disabled = 1;
 static USHORT debug_curses = 0;
 
-static int clear_window(), disable(), fini(), get_char(), text(),
-update_window();
+static int clear_window(WIN);
+static int enable(WIN);
+static int disable(WIN);
+static int fini(WIN);
+static int get_char(WIN, int, int);
+static int text(WIN , UCHAR *, SSHORT , SSHORT , SSHORT , USHORT);
+static int update_window(WIN, int, int);
+static int get_input(WIN, UCHAR *);
+static int read_char(WIN);
+
+
 
 typedef struct seq {
 	UCHAR seq_key;
@@ -217,8 +231,7 @@ static UCHAR key_pad[256], keypad_equiv[] = {
 };
 
 
-CDM_create_window(window)
-	 WIN window;
+int CDM_create_window(WIN window)
 {
 /**************************************
  *
@@ -236,12 +249,12 @@ CDM_create_window(window)
 
 /* Populate window with action routines */
 
-	window->win_clear = clear_window;
-	window->win_disable = disable;
-	window->win_fini = fini;
-	window->win_getchar = get_char;
+	window->win_clear = (int (*)()) clear_window;
+	window->win_disable = (int (*)()) disable;
+	window->win_fini = (int (*)()) fini;
+	window->win_getchar = (int (*)()) get_char;
 	window->win_text = text;
-	window->win_update = update_window;
+	window->win_update = (int (*)()) update_window;
 
 #ifdef DEBUG_CURSES
 	if (debug_curses)
@@ -283,8 +296,7 @@ CDM_create_window(window)
 }
 
 
-static clear_window(window)
-	 WIN window;
+static int clear_window(WIN window)
 {
 /**************************************
  *
@@ -297,7 +309,7 @@ static clear_window(window)
  *
  **************************************/
 
-	enable();
+	enable(window);
 	clear();
 	wrefresh(stdscr);
 #ifdef DEBUG_CURSES
@@ -309,8 +321,7 @@ static clear_window(window)
 }
 
 
-static disable(window)
-	 WIN window;
+static int disable(WIN window)
 {
 /**************************************
  *
@@ -327,7 +338,7 @@ static disable(window)
 #endif
 
 	if (disabled)
-		return;
+		return 0;
 
 	wmove(stdscr, getmaxy(stdscr) - 1, 0);
 	clear();
@@ -390,8 +401,7 @@ static disable(window)
 }
 
 
-static enable(window)
-	 WIN window;
+static int enable(WIN window)
 {
 /**************************************
  *
@@ -405,7 +415,7 @@ static enable(window)
  **************************************/
 
 	if (!disabled)
-		return;
+		return 0;
 
 #ifdef DISABLE_BUG
 /*
@@ -457,8 +467,7 @@ static enable(window)
 }
 
 
-static fini(window)
-	 WIN window;
+static int fini(WIN window)
 {
 /**************************************
  *
@@ -480,8 +489,7 @@ static fini(window)
 }
 
 
-static get_char(window, x, y)
-	 WIN window;
+static int get_char(WIN window, int x, int y)
 {
 /**************************************
  *
@@ -545,9 +553,7 @@ fflush (window->win_output);
 
 
 
-static get_input(window, buffer)
-	 WIN window;
-	 UCHAR *buffer;
+static int get_input(WIN window, UCHAR *buffer)
 {
 /**************************************
  *
@@ -622,8 +628,7 @@ static get_input(window, buffer)
 }
 
 
-static read_char(window)
-	 WIN window;
+static int read_char(WIN window)
 {
 /**************************************
  *
@@ -649,11 +654,8 @@ static read_char(window)
 }
 
 
-static text(window, string, length, x, y, mode)
-	 WIN window;
-	 UCHAR *string;
-	 USHORT length, x, y;
-	 USHORT mode;
+static int text(WIN window, UCHAR *string, SSHORT length, SSHORT x,
+                   SSHORT y, USHORT mode)
 {
 /**************************************
  *
@@ -698,7 +700,7 @@ static text(window, string, length, x, y, mode)
 		wstandout(stdscr);
 	}
 
-	mvwaddstr(stdscr, y, x, string);
+	mvwaddstr(stdscr, y, x, (char*)string);
 #ifdef DEBUG_CURSES
 	if (debug_curses)
 		fprintf(log_file, "mvwaddstr %d %d %s\n", y, x, string);
@@ -714,9 +716,7 @@ static text(window, string, length, x, y, mode)
 }
 
 
-static update_window(window, x, y)
-	 WIN window;
-	 int x, y;
+static int update_window(WIN window, int x, int y)
 {
 /**************************************
  *

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.1.1.1 2001-05-23 13:25:32 tamlin Exp $
+//	$Id: pretty.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 //
 
 #include "../jrd/ib_stdio.h"
@@ -237,6 +237,7 @@ int PRETTY_print_dyn(
 }
 
 
+int
 PRETTY_print_form_map(SCHAR * blr,
 //____________________________________________________________
 //  
@@ -346,6 +347,7 @@ int PRETTY_print_mblr(
 }
 
 
+int
 PRETTY_print_menu(SCHAR * blr,
 //____________________________________________________________
 //  
@@ -416,6 +418,7 @@ PRETTY_print_menu(SCHAR * blr,
 }
 
 
+int
 PRETTY_print_sdl(SCHAR * blr,
 //____________________________________________________________
 //  
@@ -520,7 +523,7 @@ static int indent( CTL control, SSHORT level)
 //		data described.
 //  
 
-static print_blr_dtype( CTL control, BOOLEAN print_object)
+static int print_blr_dtype( CTL control, BOOLEAN print_object)
 {
 	unsigned short dtype;
 	SCHAR *string;
@@ -993,7 +996,7 @@ static SLONG print_long( CTL control, SSHORT offset)
 //		Primary recursive routine to print slice description language.
 //  
 
-static print_sdl_verb( CTL control, SSHORT level)
+static int print_sdl_verb( CTL control, SSHORT level)
 {
 	int offset, n;
 	const char *p;
@@ -1119,7 +1122,7 @@ static int print_string( CTL control, SSHORT offset)
 //		Print a VAX word as a numeric value an return same.
 //  
 
-static print_word( CTL control, SSHORT offset)
+static int print_word( CTL control, SSHORT offset)
 {
 	UCHAR v1, v2;
 

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: cmp.cpp,v 1.1.1.1 2001-05-23 13:26:14 tamlin Exp $
+$Id: cmp.cpp,v 1.2 2001-07-12 05:46:04 bellardo Exp $
 */
 
 #include "../jrd/ibsetjmp.h"
@@ -3683,14 +3683,14 @@ static RSE pass1_rse(
 
 	if (boolean) {
 		if (rse->rse_boolean) {
-			NOD and;
+			NOD additional;
 
-			and = PAR_make_node(tdbb, 2);
-			and->nod_type = nod_and;
-			and->nod_arg[0] = boolean;
-			and->nod_arg[1] =
+			additional = PAR_make_node(tdbb, 2);
+			additional->nod_type = nod_and;
+			additional->nod_arg[0] = boolean;
+			additional->nod_arg[1] =
 				pass1(tdbb, csb, rse->rse_boolean, view, view_stream, FALSE);
-			rse->rse_boolean = and;
+			rse->rse_boolean = additional;
 		}
 		else
 			rse->rse_boolean = boolean;
@@ -3791,13 +3791,13 @@ static void pass1_source(
 					pass1(tdbb, csb, sub_rse->rse_boolean, parent_view,
 						  view_stream, FALSE);
 				if (*boolean) {
-					NOD and;
+					NOD additional;
 
-					and = PAR_make_node(tdbb, 2);
-					and->nod_type = nod_and;
-					and->nod_arg[0] = node;
-					and->nod_arg[1] = *boolean;
-					*boolean = and;
+					additional = PAR_make_node(tdbb, 2);
+					additional->nod_type = nod_and;
+					additional->nod_arg[0] = node;
+					additional->nod_arg[1] = *boolean;
+					*boolean = additional;
 				}
 				else
 					*boolean = node;
@@ -3948,17 +3948,17 @@ static void pass1_source(
 				  copy(tdbb, csb, view_rse->rse_boolean, map, 0, FALSE), view,
 				  stream, FALSE);
 		if (*boolean) {
-			NOD and;
+			NOD additional;
 
 			/* The order of the nodes here is important!  The
 			   boolean from the view must appear first so that
 			   it gets expanded first in pass1. */
 
-			and = PAR_make_node(tdbb, 2);
-			and->nod_type = nod_and;
-			and->nod_arg[0] = node;
-			and->nod_arg[1] = *boolean;
-			*boolean = and;
+			additional = PAR_make_node(tdbb, 2);
+			additional->nod_type = nod_and;
+			additional->nod_arg[0] = node;
+			additional->nod_arg[1] = *boolean;
+			*boolean = additional;
 		}
 		else
 			*boolean = node;

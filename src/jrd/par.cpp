@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: par.cpp,v 1.1.1.1 2001-05-23 13:26:13 tamlin Exp $
+$Id: par.cpp,v 1.2 2001-07-12 05:46:05 bellardo Exp $
 */
 
 #include "../jrd/ib_stdio.h"
@@ -2057,9 +2057,9 @@ static NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 					(rse->rse_count == 2 && rse->rse_boolean))
 						return (NOD) rse;
 			}
-			syntax_error(*csb, (rse_op == blr_rs_stream) ?
+			syntax_error(*csb, (TEXT*)((rse_op == blr_rs_stream) ?
 						 "rse stream clause" :
-						 "record selection expression clause");
+						 "record selection expression clause"));
 		}
 }
 

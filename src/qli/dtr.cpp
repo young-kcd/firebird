@@ -89,7 +89,7 @@ typedef struct answer_t {
 	BOOLEAN value;
 } *ANS;
 
-static yes_no_loaded = 0;
+static int yes_no_loaded = 0;
 static struct answer_t answer_table[] = {
 	"", FALSE,					/* NO   */
 	"", TRUE,					/* YES  */
@@ -342,10 +342,10 @@ static void enable_signals(void)
 	SLONG mask;
 	void (*prev_handler) ();
 
-	signal(SIGQUIT, signal_quit);
-	signal(SIGINT, signal_quit);
-	signal(SIGPIPE, signal_quit);
-	signal(SIGFPE, signal_arith_excp);
+	signal(SIGQUIT, (void(*)(int)) signal_quit);
+	signal(SIGINT, (void(*)(int)) signal_quit);
+	signal(SIGPIPE, (void(*)(int)) signal_quit);
+	signal(SIGFPE, (void(*)(int)) signal_arith_excp);
 }
 
 
@@ -463,17 +463,17 @@ static USHORT process_statement( USHORT flush_flag)
 /* Expand the statement.  It will return NULL is the statement was
    a command.  An error will be unwound */
 
-	if (!(expanded_tree = EXP_expand(syntax_tree)))
+	if (!(expanded_tree = (BLK) EXP_expand(syntax_tree)))
 		return FALSE;
 
 /* Compile the statement */
 
-	if (!(execution_tree = CMPQ_compile(expanded_tree)))
+	if (!(execution_tree = (BLK) CMPQ_compile((nod*) expanded_tree)))
 		return FALSE;
 
 /* Generate any BLR needed to support the request */
 
-	if (!GEN_generate(execution_tree))
+	if (!GEN_generate(( (nod*) execution_tree)))
 		return FALSE;
 
 	if (QLI_statistics)
@@ -488,13 +488,13 @@ static USHORT process_statement( USHORT flush_flag)
 #endif
 				}
 #ifndef PC_PLATFORM
-				perf_get_info(&dbb->dbb_handle, dbb->dbb_statistics);
+				perf_get_info((int**)&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
 #endif
 			}
 
 /* Execute the request, for better or worse */
 
-	EXEC_top(execution_tree);
+	EXEC_top((nod*) execution_tree);
 
 	if (QLI_statistics)
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
@@ -504,8 +504,8 @@ static USHORT process_statement( USHORT flush_flag)
 				/* Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" */
 				ERRQ_msg_get(506, report + strlen(report));
 				/* Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" */
-				perf_get_info(&dbb->dbb_handle, &statistics);
-				perf_format(dbb->dbb_statistics, &statistics,
+				perf_get_info((int**)&dbb->dbb_handle, &statistics);
+				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
 #endif
 				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	/* Msg26 Statistics for database %s %s  */
@@ -581,7 +581,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 		msg_number = 21;		/* Msg21 arithmetic exception */
 	}
 
-	signal(SIGFPE, signal_arith_excp);
+	signal(SIGFPE, (void(*)(int)) signal_arith_excp);
 
 	IBERROR(msg_number);
 }

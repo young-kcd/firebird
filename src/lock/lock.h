@@ -51,7 +51,9 @@
 #ifndef SOLARIS_MT
 #if !(defined(HP10) && defined(SUPERSERVER))
 #if !(defined(LINUX) && defined(SUPERSERVER))
+#ifndef DARWIN
 #define MANAGER_PROCESS
+#endif
 #endif
 #endif
 #endif

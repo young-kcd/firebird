@@ -25,7 +25,7 @@
 #define JRD_IBERR_H
 
 #include "../jrd/gdsassert.h"
-#include "../misc/status.h"
+#include "../jrd/status.h"
 
 /*
  * TMN: Leave INIT_STATUS as macro for now. At least "why.c" (what

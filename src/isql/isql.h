@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.1.1.1 2001-05-23 13:26:02 tamlin Exp $
+ * $Id: isql.h,v 1.2 2001-07-12 05:46:04 bellardo Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -352,7 +352,7 @@ typedef struct sqltypes {
 #endif
 #else
 #ifndef ISQL_FREE
-#define ISQL_FREE(x)     {isc_free (x); x = NULL;}
+#define ISQL_FREE(x)     {isc_free ((char*) x); x = NULL;}
 #endif
 #endif /* GUI_TOOLS */
 

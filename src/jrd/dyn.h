@@ -39,9 +39,9 @@
 #define CHECK_CNSTRT		"CHECK"
 #define NOT_NULL_CNSTRT		"NOT NULL"
 
-#define GET_STRING(from,to)	DYN_get_string (from, to, sizeof (to), TRUE)
+#define GET_STRING(from,to)	DYN_get_string ((TEXT**)from, (TEXT*)to, sizeof (to), TRUE)
 
-#define GET_STRING_2(from,to)	DYN_get_string (from, to, sizeof (to), FALSE)
+#define GET_STRING_2(from,to)	DYN_get_string ((TEXT**)from, (TEXT*)to, sizeof (to), FALSE)
 
 #define PROC_NAME_SIZE		32
 #define FLD_SRC_LEN		32

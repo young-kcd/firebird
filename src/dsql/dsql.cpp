@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: dsql.cpp,v 1.3 2001-07-10 17:35:13 awharrison Exp $
+$Id: dsql.cpp,v 1.4 2001-07-12 05:46:04 bellardo Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -3150,7 +3150,7 @@ static void map_in_out(	REQ		request,
 
 			flag = NULL;
 			if ((null = parameter->par_null) != NULL) {
-				null_offset = reinterpret_cast<USHORT>(null->par_user_desc.dsc_address);
+				null_offset = (USHORT)(null->par_user_desc.dsc_address);
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 					break;

@@ -28,7 +28,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#include "../jrd/iberror.h"
+#include "../include/iberror.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/sym.h"
@@ -45,6 +45,8 @@
 #ifndef WINDOWS_ONLY
 #include "../wal/wal.h"
 #endif
+
+extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
 
 ASSERT_FILENAME
 
@@ -1854,13 +1856,13 @@ non_charset_simple_type	: national_character_type
 		| TIME
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
 				    gds_arg_number, client_dialect,
 				    gds_arg_string, "TIME",
 				    0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "TIME",
@@ -2037,7 +2039,7 @@ prec_scale	:
 				   (db_dialect     >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
 				   (db_dialect     <= SQL_DIALECT_V5) ) )
-			        ERRD_post (gds__sqlerr,
+			        ERRD_post (gds_sqlerr,
 					   gds_arg_number, (SLONG) -817,
 					   gds_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
@@ -2094,7 +2096,7 @@ prec_scale	:
 				   (db_dialect     >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
 				   (db_dialect     <= SQL_DIALECT_V5) ) )
-			        ERRD_post (gds__sqlerr,
+			        ERRD_post (gds_sqlerr,
 					   gds_arg_number, (SLONG) -817,
 					   gds_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
@@ -2989,13 +2991,13 @@ value		: column_name
 datetime_value_expression : CURRENT_DATE
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
 				    gds_arg_number, client_dialect,
 				    gds_arg_string, "DATE",
 				    0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "DATE",
@@ -3005,13 +3007,13 @@ datetime_value_expression : CURRENT_DATE
 		| CURRENT_TIME
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
 				    gds_arg_number, client_dialect,
 				    gds_arg_string, "TIME",
 				    0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "TIME",
@@ -3054,13 +3056,13 @@ u_constant	: u_numeric_constant
 		| DATE STRING
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
 				    gds_arg_number, client_dialect,
 				    gds_arg_string, "DATE",
 				    0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "DATE",
@@ -3070,13 +3072,13 @@ u_constant	: u_numeric_constant
 		| TIME STRING
 			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
 				    gds_arg_number, client_dialect,
 				    gds_arg_string, "TIME",
 				    0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104, 
+			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
 				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 				    gds_arg_number, db_dialect,
 				    gds_arg_string, "TIME",
@@ -3400,7 +3402,7 @@ for (token = tokens; token->tok_string; ++token)
     symbol->sym_version = token->tok_version;
     str = (STR) ALLOCPV (type_str, symbol->sym_length);
     str->str_length = symbol->sym_length;
-    strncpy (str->str_data, symbol->sym_string, symbol->sym_length);
+    strncpy ((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
     symbol->sym_object = (void *) str;
     HSHD_insert (symbol);
     }
@@ -3838,7 +3840,7 @@ static int yylex (
  * Functional description
  *
  **************************************/
-UCHAR	*p, class, string [MAX_TOKEN_LEN], *buffer, *buffer_end, *new_buffer;
+UCHAR	*p, tok_class, string [MAX_TOKEN_LEN], *buffer, *buffer_end, *new_buffer;
 SYM	sym;
 SSHORT	c;
 USHORT	buffer_len;
@@ -3883,21 +3885,21 @@ for (;;)
 	}
 
 #if (! ( defined JPN_SJIS || defined JPN_EUC) )
-    class = classes [c];
+    tok_class = classes [c];
 #else
     c = c & 0xff;
-    class = (JPN1_CHAR(c) ? CHR_LETTER : classes[c]);
+    tok_class = (JPN1_CHAR(c) ? CHR_LETTER : classes[c]);
 #endif /*JPN_SJIS || JPN_EUC */
 
-    if (!(class & CHR_WHITE))
+    if (!(tok_class & CHR_WHITE))
 	break;
     }
 
-/* Depending on class of token, parse token */
+/* Depending on tok_class of token, parse token */
 
 last_token = ptr - 1;
 
-if (class & CHR_INTRODUCER)
+if (tok_class & CHR_INTRODUCER)
     {
     /* The Introducer (_) is skipped, all other idents are copied
      * to become the name of the character set
@@ -3923,7 +3925,7 @@ if (class & CHR_INTRODUCER)
 
 /* parse a quoted string, being sure to look for double quotes */
 
-if (class & CHR_QUOTE)
+if (tok_class & CHR_QUOTE)
     {
     buffer = string;
     buffer_len = sizeof (string);
@@ -4021,7 +4023,7 @@ if (class & CHR_QUOTE)
 
 assert(ptr <= end);
 
-if ((class & CHR_DIGIT) ||
+if ((tok_class & CHR_DIGIT) ||
     ((c == '.') && (ptr < end) && (classes [*ptr] & CHR_DIGIT)))
     {
     /* The following variables are used to recognize kinds of numbers. */
@@ -4168,12 +4170,12 @@ if ((class & CHR_DIGIT) ||
    attempt to recognize a number. */
 ptr = last_token;
 c   = *ptr++;
-/* We never touched class, so it doesn't need to be restored. */
+/* We never touched tok_class, so it doesn't need to be restored. */
 
 /* end of number-recognition code */
 
 
-if (class & CHR_LETTER)
+if (tok_class & CHR_LETTER)
     {
 #if (! ( defined JPN_SJIS || defined JPN_EUC) )
     p = string;
@@ -4269,17 +4271,17 @@ static void yyerror (
  **************************************/
 
 if (yychar < 1)
-    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104,
-	gds_arg_gds, gds__command_end_err,    /* Unexpected end of command */
+    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
+	gds_arg_gds, gds_command_end_err,    /* Unexpected end of command */
 	0);
 else
     {
-    ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -104,
- 	gds_arg_gds, gds__dsql_token_unk_err, 
+    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
+ 	gds_arg_gds, gds_dsql_token_unk_err, 
 	gds_arg_number, (SLONG) lines, 
 	gds_arg_number, (SLONG) (last_token - line_start), 
 	    /* Token unknown - line %d, char %d */
- 	gds_arg_gds, gds__random, 
+ 	gds_arg_gds, gds_random, 
 	gds_arg_cstring, (int) (ptr - last_token), last_token,
  	0);
     }
@@ -4301,6 +4303,6 @@ static void yyabandon (
  *
  **************************************/
 
-ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) sql_code, 
+ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code, 
 	gds_arg_gds, error_symbol, 0);
 }

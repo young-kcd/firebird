@@ -25,6 +25,7 @@
 #define _JRD_SBM_PROTO_H_
 
 #include "../jrd/sbm.h"
+#include "../jrd/rse.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/ib_stdio.h"

@@ -705,7 +705,7 @@ typedef struct tdbb
 	struct req*	tdbb_request;
 	struct plb*	tdbb_default;
 	STATUS*		tdbb_status_vector;
-	UCHAR*		tdbb_setjmp;
+	void*		tdbb_setjmp;
 	USHORT		tdbb_inhibit;		/* Inhibit context switch if non-zero */
 	SSHORT		tdbb_quantum;		/* Cycles remaining until voluntary schedule */
 	USHORT		tdbb_flags;
@@ -741,7 +741,7 @@ typedef struct ihndl
 #ifdef MULTI_THREAD
 #if (defined DECOSF || defined NETWARE_386 || \
 	defined SOLARIS_MT || defined WIN_NT || \
-	defined HP10 || defined LINUX)
+	defined HP10 || defined LINUX || defined DARWIN )
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif
 #endif

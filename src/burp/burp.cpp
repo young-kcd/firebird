@@ -66,6 +66,10 @@
 #include "../jrd/why_proto.h"
 #include "../jrd/gdsassert.h"
 
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
+
 #ifdef SUPERSERVER
 #include "../utilities/cmd_util_proto.h"
 #endif
@@ -686,7 +690,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 				for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw;
 					 in_sw_tab++)
 					if (in_sw_tab->in_sw_msg) {
-						BURP_msg_put(in_sw_tab->in_sw_msg, SWITCH_CHAR, 0, 0,
+						BURP_msg_put(in_sw_tab->in_sw_msg, (void*)SWITCH_CHAR, 0, 0,
 									 0, 0);
 					}
 
@@ -979,7 +983,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 				break;
 
 			case (IN_SW_BURP_Z):
-				BURP_print(91, GDS_VERSION, 0, 0, 0, 0);	/* msg 91 gbak version %s */
+				BURP_print(91, (void*) GDS_VERSION, 0, 0, 0, 0);	/* msg 91 gbak version %s */
 				tdgbl->gbl_sw_version = TRUE;
 				break;
 
@@ -1559,7 +1563,7 @@ static SSHORT open_files(TEXT * file1,
 				BURP_print(139, file1, 0, 0, 0, 0);
 				isc_version(&tdgbl->db_handle,
 							reinterpret_cast<void (*)()>(BURP_output_version),
-							"\t%s\n");
+							(void*) "\t%s\n");
 			}
 			if (sw_verbose)
 				BURP_print(166, file1, 0, 0, 0, 0);	/* msg 166: readied database %s for backup */
@@ -1627,7 +1631,7 @@ static SSHORT open_files(TEXT * file1,
 #ifndef WIN_NT
 				signal(SIGPIPE, SIG_IGN);
 #endif
-				fil->fil_fd = reinterpret_cast<void*>(GBAK_STDOUT_DESC);
+				fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDOUT_DESC);
 				break;
 			}
 			else
@@ -1745,7 +1749,7 @@ static SSHORT open_files(TEXT * file1,
 
 	tdgbl->action->act_action = ACT_restore;
 	if (!strcmp(fil->fil_name, "stdin")) {
-		fil->fil_fd = reinterpret_cast<void*>(GBAK_STDIN_DESC);
+		fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDIN_DESC);
 		tdgbl->file_desc = fil->fil_fd;
 		tdgbl->gbl_sw_files = fil->fil_next;
 	}
@@ -1936,7 +1940,7 @@ static void burp_output( CONST SCHAR * format, ...)
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code =
 			tdgbl->output_proc(tdgbl->output_data,
-							   reinterpret_cast<UCHAR*>(""));
+							   (UCHAR*)(""));
 	}
 	else if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
@@ -1944,7 +1948,7 @@ static void burp_output( CONST SCHAR * format, ...)
 		va_end(arglist);
 		exit_code =
 			tdgbl->output_proc(tdgbl->output_data,
-							   reinterpret_cast<UCHAR*>(""));
+							   (UCHAR*)(""));
 	}
 	else {
 		VA_START(arglist, format);
