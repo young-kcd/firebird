@@ -86,7 +86,7 @@ void DMP_active(void)
  *	Dump all buffers that are active.
  *
  **************************************/
-	const Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB();
 
 	const BufferControl* bcb = dbb->dbb_bcb;
 	for (USHORT i = 0; i < bcb->bcb_count; i++)
@@ -118,7 +118,7 @@ void DMP_btc(void)
  **************************************/
 	SCHAR buffer[250];
 
-	const Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB();
 
 	SLONG level = 0;
 	const BufferDesc* bdb = dbb->dbb_bcb->bcb_btree;
@@ -146,7 +146,7 @@ void DMP_btc_errors(void)
  **************************************/
 	SCHAR buffer[250];
 
-	const Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB();
 
 	SLONG level = 0;
 	const BufferDesc* bdb = dbb->dbb_bcb->bcb_btree;
@@ -167,7 +167,7 @@ void DMP_btc_ordered(void)
  *	Dump the dirty page b-tree.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 /* Pick starting place at leftmost node */
 
@@ -231,7 +231,7 @@ void DMP_dirty(void)
  *	Dump all buffers that are dirty.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	const BufferControl* bcb = dbb->dbb_bcb;
 	for (USHORT i = 0; i < bcb->bcb_count; i++)
@@ -882,7 +882,7 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
  *	Print a page inventory page.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	PageControl* control = dbb->dbb_pcontrol;
 	fprintf(dbg_file,
@@ -922,7 +922,7 @@ static void dmp_pointer(const pointer_page* page)
  * Functional description
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	fprintf(dbg_file,
 			   "POINTER PAGE\t checksum %d\t generation %ld\n\tRelation: %d, Flags: %x, Sequence: %ld, Next: %ld, Count: %d\n",

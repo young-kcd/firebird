@@ -49,7 +49,7 @@ void Symbol::insert()
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	const int h = hash_func(sym_string);
 
@@ -80,7 +80,7 @@ Symbol* Symbol::lookup(const Firebird::string& string)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	for (Symbol* symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
 		 symbol = symbol->sym_collision)
@@ -105,7 +105,7 @@ void Symbol::remove()
  *	Remove a symbol from the hash table.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	const int h = hash_func(sym_string);
 

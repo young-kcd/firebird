@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.78 2004-05-22 14:24:52 brodsom Exp $
+$Id: blb.cpp,v 1.79 2004-05-23 03:18:08 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -661,7 +661,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	ISC_STATUS status;
 
 	SET_TDBB(tdbb);
-    Database* database = GET_DBB;
+    Database* database = GET_DBB();
 	tdbb->tdbb_default = transaction->tra_pool;
 
 /* Checkout slice description language */
@@ -1590,7 +1590,7 @@ static ArrayField* alloc_array(jrd_tra* transaction, internal_array_desc* proto_
  *
  **************************************/
 
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	// Compute size and allocate block
 

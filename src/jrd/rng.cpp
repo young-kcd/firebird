@@ -645,7 +645,7 @@ void RNG_release_ranges(jrd_req* request)
  *	Release the locks for all ranges in a request.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	VEC refresh_ranges = request->req_refresh_ranges;
 	if (refresh_ranges) {
@@ -770,7 +770,7 @@ static void post_event(RefreshRange* refresh_range)
  *	refresh range.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 	Lock* dbb_lock = dbb->dbb_lock;
 
 /* detect duplicate posts and filter them out */
@@ -823,7 +823,7 @@ static int post_event_ast(void* refresh_range_void)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 	return 0;
 }
 #endif

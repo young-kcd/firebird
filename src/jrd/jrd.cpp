@@ -425,68 +425,13 @@ inline static void api_entry_point_init(ISC_STATUS* user_status)
 	user_status[2] = isc_arg_end;
 }
 
-inline static thread_db* set_thread_data(thread_db& thd_context)
+inline static thread_db* JRD_MAIN_set_thread_data(thread_db& thd_context)
 {
 	thread_db* tdbb = &thd_context;
 	MOVE_CLEAR(tdbb, sizeof(thread_db));
 	JRD_set_context(tdbb);
 	return tdbb;
 }
-
-
-#undef JRD_get_thread_data
-#undef CHECK_DBB
-#undef GET_DBB
-#undef SET_TDBB
-
-static thread_db* get_thread_data()
-{
-	THDD p1 = THD_get_specific();
-#ifdef DEV_BUILD
-	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
-	{
-		thread_db* p2 = (thread_db*)p1;
-		if (p2->tdbb_database &&
-			MemoryPool::blk_type(p2->tdbb_database) != type_dbb)
-		{
-			BUGCHECK(147);
-		}
-	}
-#endif	// DEV_BUILD
-
-	return (thread_db*) p1;
-}
-
-inline static void CHECK_DBB(Database* dbb)
-{
-#ifdef DEV_BUILD
-	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
-#endif	// DEV_BUILD
-}
-
-inline static void check_tdbb(thread_db* tdbb)
-{
-#ifdef DEV_BUILD
-	fb_assert(tdbb &&
-			(reinterpret_cast<THDD>(tdbb)->thdd_type == THDD_TYPE_TDBB) &&
-			(!tdbb->tdbb_database ||
-				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
-#endif	// DEV_BUILD
-}
-
-inline static Database* get_dbb()
-{
-	return get_thread_data()->tdbb_database;
-}
-
-static void SET_TDBB(thread_db*& tdbb)
-{
-	if (tdbb == NULL) {
-		tdbb = get_thread_data();
-	}
-	check_tdbb(tdbb);
-}
-
 
 #define CHECK_HANDLE(blk,type,error)					\
 	if (!blk || MemoryPool::blk_type(blk) != type)	\
@@ -624,7 +569,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		expanded_name = expanded_filename;
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 /* If database name is not alias, check it against conf file */
 	if (!is_alias && !verify_database_name(expanded_filename, user_status)) {
@@ -1349,7 +1294,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	const blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob) {
@@ -1389,7 +1334,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (*blob_handle) {
 		blb* blob = check_blob(tdbb, user_status, blob_handle);
@@ -1433,7 +1378,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (check_database(tdbb, *handle, user_status)) {
 		return user_status[1];
@@ -1536,7 +1481,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -1624,7 +1569,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	NULL_CHECK(req_handle, isc_bad_req_handle);
 	Attachment* attachment = *db_handle;
@@ -1682,7 +1627,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 
@@ -1754,7 +1699,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		expanded_name = expanded_filename;
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Database* dbb = init(tdbb, user_status, expanded_name, false);
 	if (!dbb) {
@@ -2095,7 +2040,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (check_database(tdbb, *handle, user_status))
 		return user_status[1];
@@ -2137,7 +2082,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Attachment* attachment = *db_handle;
 	if (check_database(tdbb, attachment, user_status))
@@ -2217,7 +2162,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Attachment* attachment = *handle;
 
@@ -2343,7 +2288,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Attachment* attachment = *handle;
 
@@ -2536,7 +2481,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -2600,7 +2545,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (check_database(tdbb, *db_handle, user_status))
 		return user_status[1];
@@ -2660,7 +2605,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
 
@@ -2713,7 +2658,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	CHECK_HANDLE((*tra_handle), type_tra, isc_bad_trans_handle);
 	jrd_tra* transaction = *tra_handle;
@@ -2750,7 +2695,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -2798,7 +2743,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (check_database(tdbb, *db_handle, user_status))
 		return user_status[1];
@@ -2850,7 +2795,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (check_database(tdbb, *handle, user_status))
 		return user_status[1];
@@ -2915,7 +2860,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -2975,7 +2920,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, isc_bad_trans_handle);
 	Attachment* attachment = *db_handle;
@@ -3021,7 +2966,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -3070,7 +3015,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
@@ -3115,7 +3060,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
@@ -3149,7 +3094,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
@@ -3188,7 +3133,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	blb* blob = check_blob(tdbb, user_status, blob_handle);
 	if (!blob)
@@ -3232,7 +3177,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -3291,7 +3236,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		return handle_error(user_status, isc_bad_svc_handle, 0);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	tdbb->tdbb_status_vector = user_status;
 	try
@@ -3324,7 +3269,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Service* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
@@ -3376,7 +3321,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Service* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
@@ -3446,7 +3391,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Service* service = *svc_handle;
 	CHECK_HANDLE(service, type_svc, isc_bad_svc_handle);
@@ -3502,7 +3447,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
@@ -3562,7 +3507,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	jrd_req* request = *req_handle;
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
@@ -3622,7 +3567,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, isc_bad_trans_handle);
 	const TEB* const end = vector + count;
@@ -3737,7 +3682,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	Attachment* attachment = *db_handle;
 	if (check_database(tdbb, attachment, user_status))
@@ -3888,7 +3833,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	jrd_tra* transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_tra, isc_bad_trans_handle);
@@ -3934,7 +3879,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 	api_entry_point_init(user_status);
 
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	CHECK_HANDLE((*req_handle), type_req, isc_bad_req_handle);
 	jrd_req* request = *req_handle;
@@ -4021,7 +3966,7 @@ void JRD_blocked(Attachment* blocking, BlockingThread** bt_que)
  *	wake us up.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 	Database*  dbb  = tdbb->tdbb_database;
 
 /* Check for deadlock.  If there is one, complain */
@@ -4095,7 +4040,7 @@ bool JRD_getdir(Firebird::PathName& buf)
 	}
 	else
 	{
-		thread_db* tdbb = get_thread_data();
+		thread_db* tdbb = JRD_get_thread_data();
 
    /** If the server has not done a JRD_set_thread_data prior to this call
        (which will be the case when connecting via IPC), thread_db will
@@ -4146,7 +4091,7 @@ void JRD_mutex_lock(MUTX mutex)
  *	in the thread context block.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 	INUSE_insert(&tdbb->tdbb_mutexes, (void *) mutex, true);
 	THD_MUTEX_LOCK(mutex);
 }
@@ -4165,7 +4110,7 @@ void JRD_mutex_unlock(MUTX mutex)
  *	in the thread context block.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 	INUSE_remove(&tdbb->tdbb_mutexes, (void *) mutex, false);
 	THD_MUTEX_UNLOCK(mutex);
 }
@@ -4360,7 +4305,7 @@ void JRD_restore_context(void)
  *	and cleanup and objects that remain in use.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	bool cleaned_up =
 		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID) THD_mutex_unlock);
@@ -4423,7 +4368,7 @@ void JRD_unblock(BlockingThread** bt_que)
  *	than worrying about which, let 'em all loose.
  *
  **************************************/
-	Database* dbb = get_dbb();
+	Database* dbb = GET_DBB();
 
 	BlockingThread* block;
 	while (block = *bt_que) {
@@ -4640,7 +4585,7 @@ static ISC_STATUS commit(
  *
  **************************************/
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	CHECK_HANDLE((*tra_handle), type_tra, isc_bad_trans_handle);
 	jrd_tra* transaction = *tra_handle;
@@ -4712,7 +4657,7 @@ static bool drop_files(const jrd_file* file)
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
 							   0);
-			Database* dbb = get_dbb();
+			Database* dbb = GET_DBB();
 			gds__log_status(dbb->dbb_file->fil_string, status);
 		}
 	}
@@ -4779,7 +4724,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
  *	An error returned has been trapped.  Return a status code.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* Decrement count of active threads in database */
 	Database* dbb = tdbb->tdbb_database;
@@ -4877,7 +4822,7 @@ static void get_options(const UCHAR*	dpb,
 	USHORT l;
 	SSHORT num_old_files = 0;
 
-	Database* dbb = get_dbb();
+	Database* dbb = GET_DBB();
 
 	MOVE_CLEAR(options, (SLONG) sizeof(struct dpb));
 
@@ -5598,7 +5543,7 @@ static void release_attachment(Attachment* attachment)
  *	responsibility of the caller to unlock it.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 	Database*  dbb  = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -5835,7 +5780,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
  *	mutex databases_mutex will be locked.
  *
  **************************************/
-	thread_db* tdbb = get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* Shutdown file and/or remote connection */
 
@@ -6225,7 +6170,7 @@ ULONG JRD_shutdown_all()
  *
  **************************************/
 	thread_db thd_context;
-	thread_db* tdbb = set_thread_data(thd_context);
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	if (initialized) {
 		JRD_SS_MUTEX_LOCK;

@@ -144,7 +144,7 @@ int DBG_all(void)
  *	Print all known blocks.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	if (!dbg_file) {
 		dbg_file = fopen("tt:", "w");
@@ -190,7 +190,7 @@ int DBG_analyze(int pool_id)
 		SLONG sum_length;
 	} blocks[type_MAX], nodes[nod_MAX], *p, *end;
 
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	VEC vector = dbb->dbb_pools;
 	if (!vector)
@@ -307,7 +307,7 @@ int DBG_bdbs(void)
  * Functional description
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	BufferControl* bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++)
@@ -333,7 +333,7 @@ int DBG_precedence(void)
 	BufferDesc* hi_bdb;
 	BufferDesc* lo_bdb;
 
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	BufferControl* bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++) {
@@ -536,7 +536,7 @@ int DBG_check(int pool_id)
  *	Check pool for integrity.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	int corrupt = 0;
 
@@ -960,7 +960,7 @@ int DBG_verify(void)
  *	Verify integrity of all pools.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	if (!dbg_file)
 		dbg_file = fopen("tt:", "w");
@@ -1006,7 +1006,7 @@ int DBG_memory(void)
  *	Print memory usage
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	fprintf(dbg_file, "MEMORY UTILIZATION for database\n\n");
 #ifdef V4_THREADING

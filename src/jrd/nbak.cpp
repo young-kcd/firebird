@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.35 2004-05-22 14:26:13 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.36 2004-05-23 03:18:09 brodsom Exp $
  *
  */
 
@@ -416,7 +416,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	ISC_ast_exit();
 	return 0;
@@ -466,7 +466,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	ISC_ast_exit();
 	return 0;
@@ -520,7 +520,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	ISC_ast_exit();
 	return 0;

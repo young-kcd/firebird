@@ -290,7 +290,7 @@ Lock* RLCK_record_locking(jrd_rel* relation)
 		return relation->rel_record_locking;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	lock->lck_parent = dbb->dbb_lock;

@@ -836,8 +836,8 @@ private:
 };
 typedef vcl* VCL;
 
-#define TEST_VECTOR(vector,number)      ((vector && number < vector->vec_count) ? \
-					  vector->vec_object [number] : NULL)
+//#define TEST_VECTOR(vector,number)      ((vector && number < vector->vec_count) ? 
+//					  vector->vec_object [number] : NULL)
 
 
 //
@@ -994,7 +994,7 @@ typedef str *STR;
 #ifdef DEV_BUILD
 #include "../jrd/err_proto.h"
 
-inline Jrd::thread_db* JRD_get_thread_data(){
+inline Jrd::thread_db* JRD_get_thread_data() {
 	THDD p1 = THD_get_specific();
 	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
 	{
@@ -1006,39 +1006,47 @@ inline Jrd::thread_db* JRD_get_thread_data(){
 	}
 	return (Jrd::thread_db*) p1;
 }
-
-//	(((THD_get_specific()) && 
-//		(((THDD)(THD_get_specific()))->thdd_type == THDD_TYPE_TDBB) && 
-//			 (((thread_db*)(THD_get_specific()))->tdbb_database)) 
-//			 ? ((MemoryPool::blk_type(((thread_db*)(THD_get_specific()))->tdbb_database) == type_dbb) 
-//			    ? (THD_get_specific()) 
-//			    : (BUGCHECK (147), (THD_get_specific()))) 
-//			 : ((thread_db*) THD_get_specific()))
-
-//#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
-#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb))
-#define CHECK_TDBB(tdbb) fb_assert ((tdbb) && \
-	(((THDD)(tdbb))->thdd_type == THDD_TYPE_TDBB) && \
-	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
-#else
-/* PROD_BUILD */
-inline Jrd::thread_db* JRD_get_thread_data(){
-	return (Jrd::thread_db*) THD_get_specific();
+inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
+	fb_assert(tdbb &&
+			(((THDD)tdbb)->thdd_type == THDD_TYPE_TDBB) &&
+			(!tdbb->tdbb_database ||
+				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
+}
+inline void CHECK_DBB(const Jrd::Database* dbb) {
+	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
 }
 
-//#define JRD_get_thread_data (((thread_db*) THD_get_specific())
-#define CHECK_TDBB(tdbb)		/* nothing */
-#define CHECK_DBB(dbb)			/* nothing */
+#else
+/* PROD_BUILD */
+inline Jrd::thread_db* JRD_get_thread_data() {
+	return (Jrd::thread_db*) THD_get_specific();
+}
+inline void CHECK_DBB(const Database* dbb) {
+}
+inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
+}
+
 #endif
 
-#define GET_DBB         (((thread_db*) (JRD_get_thread_data()))->tdbb_database)
+inline Jrd::Database* GET_DBB() {
+	return JRD_get_thread_data()->tdbb_database;
+}
 
 /*-------------------------------------------------------------------------*
  * macros used to set thread_db and Database pointers when there are not set already *
  *-------------------------------------------------------------------------*/
-
-#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = (thread_db*) JRD_get_thread_data(); }; CHECK_TDBB (tdbb)
-#define	SET_DBB(dbb)	if ((dbb)  == NULL)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
+inline void SET_TDBB(Jrd::thread_db* &tdbb) {
+	if (tdbb == NULL) {
+		tdbb = JRD_get_thread_data();
+	}
+	CHECK_TDBB(tdbb);
+}
+inline  void SET_DBB(Jrd::Database* &dbb) {
+	if (dbb == NULL) {
+		dbb = GET_DBB();
+	}
+	CHECK_DBB(dbb);
+}
 
 #ifdef V4_THREADING
 #define V4_JRD_MUTEX_LOCK(mutx)         JRD_mutex_lock (mutx)
@@ -1084,7 +1092,9 @@ extern int debug;
 				THD_put_specific (reinterpret_cast<struct thdd*>(tdbb));\
 				tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB
 
-#define JRD_restore_thread_data	THD_restore_specific()
+inline void JRD_restore_thread_data(){
+	THD_restore_specific();
+}
 
 
 

@@ -3804,7 +3804,7 @@ gc_exit:
 		ISC_event_post(dbb->dbb_gc_event_fini);	
 		ISC_event_fini(gc_event);
 
-		JRD_restore_thread_data;
+		JRD_restore_thread_data();
 		THREAD_EXIT();
 
 	}	// try

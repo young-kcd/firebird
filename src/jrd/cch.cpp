@@ -424,14 +424,14 @@ int CCH_down_grade_dbb(void* ast_object)
 
 	if (SHUT_blocking_ast(dbb)) {
 		dbb->dbb_ast_flags &= ~DBB_blocking;
-		JRD_restore_thread_data;
+		JRD_restore_thread_data();
 		return 0;
 	}
 
 /*
 if (dbb->dbb_use_count)
     {
-    JRD_restore_thread_data;
+	JRD_restore_thread_data();
     return;
     }
 */
@@ -441,21 +441,21 @@ if (dbb->dbb_use_count)
    and we can't give it anyway */
 
 	if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
-		JRD_restore_thread_data;
+		JRD_restore_thread_data();
 		return 0;
 	}
 
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
 		dbb->dbb_ast_flags &= ~DBB_blocking;
-		JRD_restore_thread_data;
+		JRD_restore_thread_data();
 		return 0;
 	}
 
 /* If we are supposed to be exclusive, stay exclusive */
 
 	if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
-		JRD_restore_thread_data;
+		JRD_restore_thread_data();
 		return 0;
 	}
 
@@ -492,7 +492,7 @@ if (dbb->dbb_use_count)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 	return 0;
 }
 
@@ -2741,7 +2741,7 @@ static int blocking_ast_bdb(void* ast_object)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	ISC_ast_exit();
 

@@ -344,7 +344,7 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, index_desc* idx, 
  *  Index id's must fit in a short - formerly a UCHAR.
  *
  **************************************/
-	const Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB();
 	
 	if (id >= root->irt_count) {
 		return false;
@@ -5931,7 +5931,7 @@ void update_selectivity(index_root_page* root, USHORT id,
  *	Update selectivity on the index root page.
  *
  **************************************/
-	const Database* dbb = GET_DBB;
+	const Database* dbb = GET_DBB();
 
 	index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 	const USHORT idx_count = irt_desc->irt_keys;

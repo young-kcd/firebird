@@ -80,7 +80,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!ISC_verify_database_access(file_name)) {
@@ -297,7 +297,7 @@ void SDW_check(void)
  *	be deleted or shut down.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 	thread_db* tdbb = JRD_get_thread_data();
 
 /* first get rid of any shadows that need to be 
@@ -428,7 +428,7 @@ void SDW_close(void)
  *	a database.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 		PIO_close(shadow->sdw_file);
@@ -635,7 +635,7 @@ bool SDW_lck_update(SLONG sdw_update_flags)
  *  	Update the data with sdw_update_flag passed to the function
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 	Lock* lock = dbb->dbb_shadow_lock;
 	if (!lock)
 		return false;
@@ -729,7 +729,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	if (file != dbb->dbb_file)
 		return true;
@@ -848,7 +848,7 @@ void SDW_shutdown_shadow(Shadow* shadow)
  *	Stop shadowing to a given shadow number.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 /* find the shadow block and delete it from linked list */
 
@@ -1110,7 +1110,7 @@ int SDW_start_shadowing(void* ast_object)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	ISC_ast_exit();
 	return 0;
@@ -1163,7 +1163,7 @@ static Shadow* allocate_shadow(
  *	the fields properly.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	Shadow* shadow = FB_NEW(*dbb->dbb_permanent) Shadow();
 	shadow->sdw_file = shadow_file;

@@ -441,7 +441,7 @@ void DFW_perform_system_work(void)
  *	system transaction.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	DFW_perform_work(dbb->dbb_sys_trans);
 }
@@ -575,7 +575,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 
 	bool pending_events = false;
 
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 	Lock* lock = dbb->dbb_lock;
 
 	DeferredWork* work;

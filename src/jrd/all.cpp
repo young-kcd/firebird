@@ -63,7 +63,7 @@ void ALL_check_memory()
  *	executed.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 #ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
@@ -97,7 +97,7 @@ JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
 }
 
 JrdMemoryPool *JrdMemoryPool::createPool() {
-    Database* dbb = GET_DBB;
+    Database* dbb = GET_DBB();
 	fb_assert(dbb);
 		
 #ifdef SUPERSERVER
@@ -114,7 +114,7 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 }
 
 void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 	Database::pool_vec_type::iterator itr =
 		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
 	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
@@ -178,7 +178,7 @@ void ALL_fini(void)
  *	released at the top of this routine.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	/* Don't know if we even need to do this, so it is commented out */
 	//delete dbb;

@@ -75,7 +75,7 @@ void ERR_bugcheck(int number)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 	dbb->dbb_flags |= DBB_bugcheck;
 
 	CCH_shutdown_database(dbb);
@@ -98,7 +98,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	Database* dbb = GET_DBB();
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;

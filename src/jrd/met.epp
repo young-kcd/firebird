@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.123 2004-05-21 06:15:41 robocop Exp $
+$Id: met.epp,v 1.124 2004-05-23 03:18:09 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3684,7 +3684,7 @@ static int blocking_ast_procedure(void* ast_object)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 	return 0;
 }
 
@@ -3732,7 +3732,7 @@ static int blocking_ast_relation(void* ast_object)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 	return 0; 
 }
 

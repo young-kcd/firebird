@@ -2255,7 +2255,7 @@ static int downgrade_lock(void* transaction_void)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	ISC_ast_exit();
 	return 0;

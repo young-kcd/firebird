@@ -1249,7 +1249,7 @@ static int index_block_flush(void* ast_object)
 
 /* Restore the prior thread context */
 
-	JRD_restore_thread_data;
+	JRD_restore_thread_data();
 
 	return 0;
 }
