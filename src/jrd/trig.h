@@ -45,7 +45,7 @@
 
 /* trigger definition structure */
 
-typedef struct jrd_trg
+struct jrd_trg
 {
 	const SCHAR*	trg_name;
 	UCHAR			trg_relation;
@@ -54,7 +54,7 @@ typedef struct jrd_trg
 	const UCHAR*	trg_blr;
 	USHORT			trg_flags;
 	UCHAR			trg_ods_version;
-} JRD_TRG;
+};
 
 /* trigger message structure */
 

@@ -31,7 +31,7 @@
 #endif
 
 PORT	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
-	const TEXT*, USHORT);
+	const TEXT*, bool);
 PORT	XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
 
 #ifndef SUPERCLIENT

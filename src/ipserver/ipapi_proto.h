@@ -59,9 +59,9 @@ ISC_STATUS IPI_detach_database(ISC_STATUS *, struct idb **);
 ISC_STATUS IPI_drop_database(ISC_STATUS *, struct idb **);
 ISC_STATUS IPI_get_segment(ISC_STATUS *, struct ibl **, USHORT *,
 										 USHORT, UCHAR *);
-ISC_STATUS IPI_get_slice(ISC_STATUS *, struct idb **, struct itr **,
-									   struct bid *, USHORT, UCHAR *, USHORT,
-									   UCHAR *, SLONG, UCHAR *, SLONG *);
+ISC_STATUS IPI_get_slice(ISC_STATUS*, struct idb**, struct itr**,
+									   struct bid*, USHORT, const UCHAR*, USHORT,
+									   const UCHAR*, SLONG, UCHAR*, SLONG*);
 ISC_STATUS IPI_open_blob(ISC_STATUS*, struct idb**, struct itr**,
 									   struct ibl**, struct bid*);
 ISC_STATUS IPI_open_blob2(ISC_STATUS*, struct idb**,
@@ -71,9 +71,9 @@ ISC_STATUS IPI_prepare_transaction(ISC_STATUS *, struct itr **,
 												 USHORT, UCHAR *);
 ISC_STATUS IPI_put_segment(ISC_STATUS*, struct ibl**, USHORT,
 										 const UCHAR*);
-ISC_STATUS IPI_put_slice(ISC_STATUS *, struct idb **, struct itr **,
-									   struct bid *, USHORT, UCHAR *, USHORT,
-									   UCHAR *, SLONG, UCHAR *);
+ISC_STATUS IPI_put_slice(ISC_STATUS*, struct idb**, struct itr**,
+									   struct bid*, USHORT, const UCHAR*, USHORT,
+									   const UCHAR*, SLONG, UCHAR*);
 ISC_STATUS IPI_que_events(ISC_STATUS*, struct idb**, SLONG*,
 										USHORT, const UCHAR*, FPTR_VOID, void*);
 ISC_STATUS IPI_receive(ISC_STATUS *, struct irq **, SSHORT, USHORT,
@@ -94,8 +94,8 @@ ISC_STATUS IPI_seek_blob(ISC_STATUS *, struct ibl **, SSHORT, SLONG,
 									   SLONG *);
 ISC_STATUS IPI_send(ISC_STATUS *, struct irq **, SSHORT, USHORT,
 								  UCHAR *, SSHORT);
-ISC_STATUS IPI_service_attach(ISC_STATUS *, USHORT, TEXT *,
-											struct idb **, USHORT, SCHAR *);
+ISC_STATUS IPI_service_attach(ISC_STATUS*, USHORT, const TEXT*,
+											struct idb**, USHORT, const SCHAR*);
 ISC_STATUS IPI_service_detach(ISC_STATUS *, struct idb **);
 ISC_STATUS IPI_service_query(ISC_STATUS*, struct idb**, ULONG*,
 										   USHORT, const SCHAR*,
@@ -114,10 +114,10 @@ ISC_STATUS IPI_start_transaction(ISC_STATUS *, struct itr **,
 											   SSHORT, ...);
 ISC_STATUS IPI_transaction_info(ISC_STATUS*, struct itr**, USHORT,
 											  const UCHAR*, USHORT, UCHAR*);
-ISC_STATUS IPI_transact_request(ISC_STATUS *, struct idb **,
-											  struct itr **, USHORT, UCHAR *,
-											  USHORT, UCHAR *, USHORT,
-											  UCHAR *);
+ISC_STATUS IPI_transact_request(ISC_STATUS*, struct idb**,
+											  struct itr**, USHORT, const UCHAR*,
+											  USHORT, UCHAR*, USHORT,
+											  UCHAR*);
 ISC_STATUS IPI_unwind_request(ISC_STATUS *, struct irq **, SSHORT);
 
 /* DSQL entrypoints */

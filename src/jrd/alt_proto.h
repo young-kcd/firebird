@@ -68,8 +68,8 @@ ISC_STATUS	API_ROUTINE gds__event_wait(ISC_STATUS*, FRBRD**, SSHORT,
 ISC_STATUS	API_ROUTINE gds__get_segment(ISC_STATUS*, FRBRD**, USHORT*, 
 										USHORT, SCHAR*);
 ISC_STATUS	API_ROUTINE gds__get_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
-										SSHORT, SCHAR*, SSHORT, SLONG*, SLONG,
-										void*, SLONG*);
+										SSHORT, const SCHAR*, SSHORT, const SLONG*,
+										SLONG, void*, SLONG*);
 ISC_STATUS	API_ROUTINE gds__open_blob(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
 										GDS_QUAD*);
 ISC_STATUS	API_ROUTINE gds__open_blob2(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
@@ -79,7 +79,8 @@ ISC_STATUS	API_ROUTINE gds__prepare_transaction2(ISC_STATUS*, FRBRD**, SSHORT,
 												SCHAR*);
 ISC_STATUS	API_ROUTINE gds__put_segment(ISC_STATUS*, FRBRD**, USHORT, const SCHAR*);
 ISC_STATUS	API_ROUTINE gds__put_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
-										SSHORT, SCHAR*, SSHORT, SLONG*, SLONG, void*);
+										SSHORT, const SCHAR*, SSHORT, const SLONG*,
+										SLONG, void*);
 ISC_STATUS	API_ROUTINE gds__que_events(ISC_STATUS*, FRBRD**, SLONG*, SSHORT, const SCHAR*,
 										void(*)(), void*);
 ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,

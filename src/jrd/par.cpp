@@ -2573,7 +2573,7 @@ static JRD_NOD parse(TDBB tdbb, CSB csb, USHORT expected, USHORT expected_option
 
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) par_context(csb, 0);
-		fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
 		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =

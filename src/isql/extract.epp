@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.21 2003-11-30 06:41:29 robocop Exp $
+ * $Id: extract.epp,v 1.22 2003-12-03 08:19:12 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -66,7 +66,7 @@ extern USHORT minor_ods;
 extern bool V33;
 
 static void list_all_grants();
-static int	list_all_grants2 (bool, const SCHAR*);
+static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_procs();
 static void list_all_tables(SSHORT, SSHORT);
 static void list_all_triggers();
@@ -112,7 +112,7 @@ static TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 
 
-SSHORT EXTRACT_ddl(int flag,
+int EXTRACT_ddl(int flag,
 				   SCHAR* tabname)
 {
 /**************************************
@@ -127,7 +127,7 @@ SSHORT EXTRACT_ddl(int flag,
  *
  **************************************/
 	SCHAR errbuf[MSG_LENGTH];
-	SSHORT ret_code = FINI_OK;
+	int ret_code = FINI_OK;
 	bool did_attach = false;
 	bool did_start = false;
 
@@ -136,7 +136,7 @@ SSHORT EXTRACT_ddl(int flag,
 		if (isc_attach_database(gds_status, 0, global_Db_name, &DB, 0, NULL))
 		{
 			ISQL_errmsg(gds_status);
-			return (SSHORT) FINI_ERROR;
+			return FINI_ERROR;
 		}
 		did_attach = true;
 	}
@@ -188,7 +188,7 @@ SSHORT EXTRACT_ddl(int flag,
 		if (isc_start_transaction(gds_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(gds_status);
-			return (SSHORT) FINI_ERROR;
+			return FINI_ERROR;
 		}
 		did_start = true;
 	}
@@ -203,7 +203,7 @@ SSHORT EXTRACT_ddl(int flag,
 			gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 							errbuf, tabname, NULL, NULL, NULL, NULL);
 			STDERROUT(errbuf, 1);
-			ret_code = (SSHORT) FINI_ERROR;
+			ret_code = FINI_ERROR;
 		}
 	}
 	else
@@ -228,7 +228,7 @@ SSHORT EXTRACT_ddl(int flag,
 		if (isc_commit_transaction(gds_status, &gds_trans))
 		{
 			ISQL_errmsg(gds_status);
-			return (SSHORT) FINI_ERROR;
+			return FINI_ERROR;
 		}
 
 	if (DB && did_attach)
@@ -236,16 +236,16 @@ SSHORT EXTRACT_ddl(int flag,
 		if (isc_detach_database(gds_status, &DB))
 		{
 			ISQL_errmsg(gds_status);
-			return (SSHORT) FINI_ERROR;
+			return FINI_ERROR;
 		}
 		DB = NULL;
 	}
 
-	return (SSHORT) ret_code;
+	return ret_code;
 }
 
 
-int EXTRACT_list_grants(const SCHAR* terminator)
+processing_state EXTRACT_list_grants(const SCHAR* terminator)
 {
 /**************************************
  *
@@ -264,7 +264,7 @@ int EXTRACT_list_grants(const SCHAR* terminator)
 }
 
 
-SSHORT EXTRACT_list_table(const SCHAR* relation_name,
+int EXTRACT_list_table(const SCHAR* relation_name,
 						  const SCHAR* new_name,
 						  bool domain_flag,
 						  SSHORT default_char_set_id)
@@ -936,7 +936,7 @@ static void list_all_grants()
 }
 
 
-static int list_all_grants2(bool show_role_list,
+static processing_state list_all_grants2(bool show_role_list,
 							const SCHAR* terminator)
 {
 /**************************************
@@ -953,7 +953,6 @@ static int list_all_grants2(bool show_role_list,
  **************************************/
 	bool first = true;
 	TEXT prev_owner[44];
-	int rc = 0;
 
 /******************************************************************
 **
@@ -1008,7 +1007,7 @@ static int list_all_grants2(bool show_role_list,
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(gds_status);
-		    return NOT_FOUND;
+		    return OBJECT_NOT_FOUND;
 		END_ERROR;
 	}
 
@@ -1036,7 +1035,8 @@ static int list_all_grants2(bool show_role_list,
 
 		ISQL_blankterm (REL.RDB$RELATION_NAME);
 
-		rc = SHOW_grants2 (REL.RDB$RELATION_NAME, terminator, obj_relation,
+		const processing_state rc =
+			SHOW_grants2 (REL.RDB$RELATION_NAME, terminator, obj_relation,
 						   first ? Print_buffer : 0);
 		if (rc == SKIP) {
 			first = false;
@@ -1045,7 +1045,7 @@ static int list_all_grants2(bool show_role_list,
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		return NOT_FOUND;
+		return OBJECT_NOT_FOUND;
 	END_ERROR;
 
 	if (first) {
@@ -1080,7 +1080,8 @@ static int list_all_grants2(bool show_role_list,
 
 		ISQL_blankterm (PRC.RDB$PROCEDURE_NAME);
 
-		rc = SHOW_grants2 (PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
+		const processing_state rc =
+			SHOW_grants2 (PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
 						   first ? Print_buffer: 0);
 		if (rc == SKIP)
 			first = false;
@@ -1088,10 +1089,10 @@ static int list_all_grants2(bool show_role_list,
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		return NOT_FOUND;
+		return OBJECT_NOT_FOUND;
 	END_ERROR;
 
-	return first ? NOT_FOUND : SKIP;
+	return first ? OBJECT_NOT_FOUND : SKIP;
 }
 
 

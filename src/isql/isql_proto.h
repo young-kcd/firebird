@@ -49,12 +49,12 @@ void	ISQL_get_character_sets(SSHORT, SSHORT, bool, TEXT*);
 SSHORT	ISQL_get_default_char_set_id();
 void	ISQL_get_default_source(const TEXT*, TEXT*, ISC_QUAD*);
 SSHORT	ISQL_get_field_length(const TEXT*);
-SSHORT	ISQL_get_index_segments(TEXT*, const TEXT*, bool);
+SLONG	ISQL_get_index_segments(TEXT*, const TEXT*, bool);
 bool	ISQL_get_null_flag(const TEXT*, TEXT*);
 void	ISQL_get_version(bool);
 SSHORT	ISQL_init(IB_FILE*, IB_FILE*);
 bool	ISQL_is_domain(TEXT*);
-SSHORT	ISQL_main(int, char**);
+int		ISQL_main(int, char**);
 void	ISQL_make_upper(TEXT*);
 void	ISQL_msg_get(USHORT, TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, const TEXT*);

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.77 2003-11-27 11:39:10 dimitr Exp $
+$Id: met.epp,v 1.78 2003-12-03 08:19:18 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -130,7 +130,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 static int blocking_ast_procedure(void* ast_object);
 static int blocking_ast_relation(void* ast_object);
-static void get_trigger(TDBB, JRD_REL, SLONG[2], TRIG_VEC *, TEXT *, BOOLEAN, USHORT);
+static void get_trigger(TDBB, JRD_REL, SLONG[2], TRIG_VEC*, const TEXT*, bool, USHORT);
 static BOOLEAN get_type(TDBB, SSHORT *, UCHAR *, UCHAR *);
 static void lookup_view_contexts(TDBB, JRD_REL);
 static void name_copy(TEXT *, TEXT *);
@@ -139,8 +139,9 @@ static JRD_NOD parse_procedure_blr(TDBB, JRD_PRC, SLONG[2], CSB);
 static BOOLEAN par_messages(TDBB, UCHAR *, USHORT, JRD_PRC, CSB);
 static BOOLEAN resolve_charset_and_collation(TDBB, SSHORT *, UCHAR *,
 											 UCHAR *);
-static STR save_name(TDBB, const TEXT*);
-static void save_trigger_data(TDBB, TRIG_VEC*, JRD_REL, JRD_REQ, STR, TEXT*, BOOLEAN, USHORT);
+static str* save_name(TDBB, const TEXT*);
+static void save_trigger_data(TDBB, TRIG_VEC*, JRD_REL, JRD_REQ, STR,
+	const TEXT*, bool, USHORT);
 static void store_dependencies(TDBB, CSB, const TEXT*, USHORT);
 static void terminate(TEXT*, USHORT);
 static BOOLEAN verify_TRG_ignore_perm(TDBB, TEXT*);
@@ -932,7 +933,7 @@ JRD_NOD MET_get_dependencies(TDBB			tdbb,
 	{
 		node = PAR_blr(	tdbb,
 						relation,
-						(UCHAR*)blob,
+						reinterpret_cast<const UCHAR*>(blob),
 						view_csb,
 						&csb_,
 						request,
@@ -1202,7 +1203,7 @@ void MET_load_trigger(
 							(SLONG*)&TRG.RDB$TRIGGER_BLR,
 							triggers + trigger_action,
 							TRG.RDB$TRIGGER_NAME,
-							(BOOLEAN)TRG.RDB$SYSTEM_FLAG,
+							(bool) TRG.RDB$SYSTEM_FLAG,
 							trig_flags);
 			}
 		}
@@ -1256,8 +1257,9 @@ void MET_lookup_cnstrt_for_index(TDBB tdbb,
 
 void MET_lookup_cnstrt_for_trigger(
 								   TDBB tdbb,
-								   TEXT * constraint_name,
-								   TEXT * relation_name, TEXT * trigger_name)
+								   TEXT* constraint_name,
+								   TEXT* relation_name,
+								   const TEXT* trigger_name)
 {
 /**************************************
  *
@@ -1785,7 +1787,7 @@ SLONG MET_lookup_index_name(TDBB tdbb,
 
 
 int MET_lookup_partner(
-					   TDBB tdbb, JRD_REL relation, IDX * idx, UCHAR * index_name)
+					   TDBB tdbb, JRD_REL relation, IDX* idx, const UCHAR* index_name)
 {
 /**************************************
  *
@@ -2453,14 +2455,9 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
  *
  **************************************/
 	DBB		dbb;
-	BLK*	trigger; /* should really be "TRG**" */
-	const UCHAR*	blr;
-	UCHAR	type;
-	const TEXT*	name;
 	TRIG_VEC*	ptr;
 	JRD_REQ		request;
 	JrdMemoryPool	*old_pool;
-	USHORT	trig_flags;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -2492,13 +2489,15 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
 
 	relation->rel_flags |= REL_sys_trigs_being_loaded;
 
-	trigger = NULL;
-	/* TMN: The cast "(struct jrd_trg*)" is a bad lie. Fix later
-	 * and remove this comment when it's done.
-	 */
+	const jrd_trg* trigger = NULL;
+	const UCHAR*	blr;
+	UCHAR	type;
+	const TEXT*	name;
+	USHORT	trig_flags;
+	
 	while ( (trigger =
-		   (BLK*)INI_lookup_sys_trigger(relation,
-										(struct jrd_trg*)trigger,
+		   INI_lookup_sys_trigger(relation,
+										trigger,
 										&blr,
 										&type,
 										&name,
@@ -2535,7 +2534,7 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
 
 			old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = JrdMemoryPool::createPool();
-			PAR_blr(tdbb, relation, const_cast<UCHAR*>(blr), NULL, NULL,
+			PAR_blr(tdbb, relation, blr, NULL, NULL,
 					&request, TRUE, par_flags);
 
 			tdbb->tdbb_default = old_pool;
@@ -2548,7 +2547,7 @@ void MET_parse_sys_trigger(TDBB tdbb, JRD_REL relation)
 				request->req_flags |= req_ignore_perm;
 			}
 
-			save_trigger_data(tdbb, ptr, relation, request, NULL, NULL, TRUE, 0);
+			save_trigger_data(tdbb, ptr, relation, request, NULL, NULL, true, 0);
 		}
 	}
 
@@ -2853,10 +2852,10 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		{
 			if ( (node = csb_->csb_rpt[i].csb_message) )
 			{
-				if ((int) (SLONG) node->nod_arg[e_msg_number] == 0)
+				if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
 				{
 					procedure->prc_input_msg = node;
-				} else if ((int) (SLONG) node->nod_arg[e_msg_number] == 1)
+				} else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
 				{
 					procedure->prc_output_msg = node;
 				}
@@ -3278,11 +3277,9 @@ TEXT* MET_save_name(TDBB tdbb, const TEXT* name)
  *      Oh, wow.
  *
  **************************************/
-	STR string;
-
 	SET_TDBB(tdbb);
 
-	string = save_name(tdbb, name);
+	str* string = save_name(tdbb, name);
 	return (TEXT*) string->str_data;
 }
 
@@ -3835,7 +3832,7 @@ static void get_trigger(
 						JRD_REL relation,
 						SLONG blob_id[2],
 						TRIG_VEC* ptr,
-						TEXT * name, BOOLEAN sys_trigger, USHORT flags)
+						const TEXT* name, bool sys_trigger, USHORT flags)
 {
 /**************************************
  *
@@ -3858,7 +3855,6 @@ static void get_trigger(
 	SLONG length = blob->blb_length + 10;
 	STR blr = FB_NEW_RPT(*dbb->dbb_permanent,length) str();
 	BLB_get_data(tdbb, blob, blr->str_data, length);
-	  
 	save_trigger_data(tdbb, ptr, relation, NULL, blr, name, sys_trigger, flags);
 }
 
@@ -4301,7 +4297,7 @@ static BOOLEAN resolve_charset_and_collation(
 }
 
 
-static STR save_name(TDBB tdbb, const TEXT* name)
+static str* save_name(TDBB tdbb, const TEXT* name)
 {
 /**************************************
  *
@@ -4313,18 +4309,13 @@ static STR save_name(TDBB tdbb, const TEXT* name)
  *      save a name in a string.
  *
  **************************************/
-	DBB		dbb;
-	STR		string;
-	TEXT*	p;
-	USHORT	l;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	l = name_length(name);
-	string = FB_NEW_RPT(*dbb->dbb_permanent, l) str();
+	USHORT l = name_length(name);
+	str* string = FB_NEW_RPT(*dbb->dbb_permanent, l) str();
 	string->str_length = l;
-	p = (TEXT *) string->str_data;
+	TEXT* p = (TEXT *) string->str_data;
 
 	if (l)
 	{
@@ -4338,7 +4329,7 @@ static STR save_name(TDBB tdbb, const TEXT* name)
 
 
 static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, JRD_REL relation, JRD_REQ request, STR blr, 
-							  TEXT* name, BOOLEAN sys_trigger, USHORT flags)
+							  const TEXT* name, bool sys_trigger, USHORT flags)
 {
 /**************************************
  *
@@ -4355,7 +4346,7 @@ static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, JRD_REL relation, JRD_RE
 
 	if (!vector) {
 		vector = FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
-		  trig_vec(n+1, *tdbb->tdbb_database->dbb_permanent);
+		  trig_vec(n + 1, *tdbb->tdbb_database->dbb_permanent);
 		*ptr = vector;
 	} else {
 		vector->resize(n + 1);
@@ -4363,13 +4354,15 @@ static void save_trigger_data(TDBB tdbb, TRIG_VEC* ptr, JRD_REL relation, JRD_RE
 
 	trig& t = (*vector)[n];
 	t.blr = blr;
-	if (name)
+	if (name) {
 		t.name = save_name(tdbb, name);
-	else
+	}
+	else {
 		t.name = NULL;
+	}
 	t.flags = flags;
 	t.compile_in_progress = FALSE;
-	t.sys_trigger = sys_trigger;
+	t.sys_trigger = sys_trigger ? TRUE : FALSE; // Remove later
 	t.request = request;
 	t.relation = relation;
 }

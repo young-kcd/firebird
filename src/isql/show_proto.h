@@ -25,12 +25,12 @@
 #define ISQL_SHOW_PROTO_H
 
 bool	SHOW_dbb_parameters (FRBRD*, SCHAR*, const SCHAR*, USHORT, bool);
-int		SHOW_grants (SCHAR*, const SCHAR*, USHORT);
-int		SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, const TEXT*);
+processing_state	SHOW_grants (SCHAR*, const SCHAR*, USHORT);
+processing_state	SHOW_grants2 (SCHAR*, const SCHAR*, USHORT, const TEXT*);
 void	SHOW_grant_roles (const SCHAR*, bool*);
 void	SHOW_grant_roles2 (const SCHAR*, bool*, const TEXT*);
 void	SHOW_print_metadata_text_blob(IB_FILE*, ISC_QUAD*);
-int		SHOW_metadata(const SCHAR* const*, SCHAR**);
+processing_state	SHOW_metadata(const SCHAR* const*, SCHAR**);
 
 #endif // ISQL_SHOW_PROTO_H
 

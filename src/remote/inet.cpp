@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.89 2003-11-20 08:13:25 eku Exp $
+$Id: inet.cpp,v 1.90 2003-12-03 08:19:20 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -360,8 +360,8 @@ static u_int	inet_getpostn(XDR *);
 static void		inet_handler(void* _port);
 #endif
 static caddr_t	inet_inline(XDR *, u_int);
-static int		inet_error(PORT, const TEXT *, ISC_STATUS, int);
-static bool_t	inet_putlong(XDR *, SLONG *);
+static int		inet_error(PORT, const TEXT*, ISC_STATUS, int);
+static bool_t	inet_putlong(XDR*, SLONG*);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
@@ -384,8 +384,8 @@ static int		parse_line(TEXT *, TEXT *, TEXT *, TEXT *);
 static void packet_print(const TEXT*, const UCHAR*, int, int);
 #endif
 
-static bool_t	packet_receive(PORT, UCHAR *, SSHORT, SSHORT *);
-static bool_t	packet_send(PORT, SCHAR *, SSHORT);
+static bool_t	packet_receive(PORT, UCHAR*, SSHORT, SSHORT*);
+static bool_t	packet_send(PORT, const SCHAR*, SSHORT);
 static PORT		receive(PORT, PACKET *);
 static PORT		select_accept(PORT);
 
@@ -505,7 +505,7 @@ PORT INET_analyze(	TEXT*	file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
-					USHORT	uv_flag,
+					bool	uv_flag,
 					const SCHAR*	dpb,
 					SSHORT	dpb_length)
 {
@@ -525,12 +525,6 @@ PORT INET_analyze(	TEXT*	file_name,
  *	If the "uv_flag" is non-zero, user verification also takes place.
  *
  **************************************/
-
-	int		eff_gid;
-	int		eff_uid;
-	UCHAR	user_id[200];
-	TEXT	buffer[64];
-
 	*file_length = strlen(file_name);
 
 /* We need to establish a connection to a remote server.  Allocate the necessary
@@ -540,10 +534,12 @@ PORT INET_analyze(	TEXT*	file_name,
 	PACKET*	packet	= &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-
+	UCHAR	user_id[200];
 	user_id[0] = CNCT_user;
 	UCHAR* p = user_id + 2;
-	ISC_get_user(reinterpret_cast < char *>(p), &eff_uid, &eff_gid, 0, 0, 0,
+	int		eff_gid;
+	int		eff_uid;
+	ISC_get_user(reinterpret_cast<char*>(p), &eff_uid, &eff_gid, 0, 0, 0,
 				 user_string);
 	user_id[1] = (UCHAR) strlen((SCHAR *) p);
 	p = p + user_id[1];
@@ -684,6 +680,7 @@ PORT INET_analyze(	TEXT*	file_name,
 /* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
 
+	TEXT	buffer[64];
 	sprintf(buffer, "%s/P%d", port->port_version->str_data, port->port_protocol);
 	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(buffer);
@@ -729,7 +726,6 @@ PORT INET_connect(const TEXT* name,
 	struct servent *service;
 	TEXT msg[64];
 #endif
-	int optval;
 
 #ifdef DEBUG
 	{
@@ -953,9 +949,9 @@ PORT INET_connect(const TEXT* name,
 		lingerInfo.l_onoff = 0;
 		lingerInfo.l_linger = 0;
 
-		optval = TRUE;
+		int optval = TRUE;
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_REUSEADDR,
-					   (SCHAR *) & optval, sizeof(optval));
+					   (SCHAR*) &optval, sizeof(optval));
 		if (n == -1) {
 			inet_error(port, "setsockopt REUSE", isc_net_connect_listen_err,
 					   ERRNO);
@@ -986,9 +982,9 @@ PORT INET_connect(const TEXT* name,
 
 		if (Config::getTcpNoNagle()) {
 
-			optval = TRUE;
+			int optval = TRUE;
 			n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
-						   TCP_NODELAY, (SCHAR *) & optval, sizeof(optval));
+						   TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
 
 			gds__log("inet log: disabled Nagle algorithm \n");
 
@@ -1114,12 +1110,10 @@ PORT INET_server(int sock)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
-	PORT port;
-
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
-	port = alloc_port(0);
+	PORT port = alloc_port(0);
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
 
@@ -1142,7 +1136,6 @@ void INET_set_clients( int count)
  *	starting new server
  *
  **************************************/
-
 	INET_max_clients = (count && count < MAXCLIENTS) ? count : MAXCLIENTS;
 }
 
@@ -1161,10 +1154,7 @@ static int accept_connection(PORT port,
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[64], password[64], *p;
-	STR string;
-	SLONG eff_gid, eff_uid;
-	int length, l;
+	TEXT name[64], password[64];
 
 /* Default account to "guest" (in theory all packets contain a name) */
 
@@ -1176,6 +1166,7 @@ static int accept_connection(PORT port,
 	const TEXT* id = (TEXT *) cnct->p_cnct_user_id.cstr_address;
 	const TEXT* const end = id + cnct->p_cnct_user_id.cstr_length;
 
+	SLONG eff_gid, eff_uid;
 	eff_uid = eff_gid = -1;
 	bool user_verification = false;
 	while (id < end)
@@ -1183,37 +1174,48 @@ static int accept_connection(PORT port,
 		switch (*id++)
 		{
 		case CNCT_user:
-			length = l = *id++;
-			port->port_user_name = string =
-				(STR) ALLOCV(type_str, (int) length);
-			string->str_length = length;
-			if (length) {
-				p = (TEXT *) string->str_data;
-				do {
-					*p++ = *id++;
-				} while (--l);
+			{
+				const int length = *id++;
+				str* string = (str*) ALLOCV(type_str, length);
+				port->port_user_name = string;
+				string->str_length = length;
+				if (length) {
+					TEXT* p = (TEXT *) string->str_data;
+					int l = length;
+					do {
+						*p++ = *id++;
+					} while (--l);
+				}
+				strncpy(name, string->str_data, length);
+				name[length] = (TEXT) 0;
+				break;
 			}
-			strncpy(name, string->str_data, length);
-			name[length] = (TEXT) 0;
-			break;
 
 		case CNCT_passwd:
-			p = password;
-			if ((length = *id++) != 0)
-				do {
-					*p++ = *id++;
-				} while (--length);
-			*p = 0;
-			break;
+			{
+				TEXT* p = password;
+				int length = *id++;
+				if (length != 0) {
+					do {
+						*p++ = *id++;
+					} while (--length);
+				}
+				*p = 0;
+				break;
+			}
 
 		case CNCT_group:
-			p = (TEXT *) & eff_gid;
-			if ((length = *id++) != 0)
-				do {
-					*p++ = *id++;
-				} while (--length);
-			eff_gid = ntohl(eff_gid);
-			break;
+			{
+				TEXT* p = (TEXT *) &eff_gid;
+				int length  = *id++;
+				if (length != 0) {
+					do {
+						*p++ = *id++;
+					} while (--length);
+				}
+				eff_gid = ntohl(eff_gid);
+				break;
+			}
 
 			/* this case indicates that the client has requested that
 			   we force the user name/password to be verified against
@@ -1291,11 +1293,11 @@ static int accept_connection(PORT port,
 #else
 
 			SLONG gids[128];
-			int i;
 
 			initgroups(passwd->pw_name, passwd->pw_gid);
 			if (eff_gid != -1) {
 				const int gid_count = getgroups(FB_NELEM(gids), (gid_t*)gids);
+				int i;
 				for (i = 0; i < gid_count; ++i) {
 					if (gids[i] == eff_gid) {
 						break;
@@ -1335,7 +1337,7 @@ static int accept_connection(PORT port,
  * is activiated for the production product.
  * 1995-February-27 David Schnepper
  */
-		char* home = getenv("ISC_INET_SERVER_HOME");
+		const char* home = getenv("ISC_INET_SERVER_HOME");
 		if (home) {
 			if (chdir(home)) {
 				gds__log("inet_server: unable to cd to %s errno %d\n", home,
@@ -1353,7 +1355,7 @@ static int accept_connection(PORT port,
 	{
 		strncpy(name, port->port_user_name->str_data,
 				port->port_user_name->str_length);
-		p = &name[port->port_user_name->str_length];
+		TEXT* p = &name[port->port_user_name->str_length];
 		sprintf(p, ".%ld.%ld", eff_gid, eff_uid);
 		ALLR_free((UCHAR *) port->port_user_name);
 		port->port_user_name = REMOTE_make_string(name);
@@ -1747,8 +1749,8 @@ static int check_host(
 	}
 	return result;
 }
-#endif
-#endif
+#endif // !non VMS
+#endif // !defined(WIN_NT)
 
 #if !(defined WIN_NT)
 static bool check_proxy(PORT port,
@@ -2028,8 +2030,6 @@ static int fork( SOCKET old_handle, USHORT flag)
  *
  **************************************/
 	HANDLE new_handle;
-	USHORT ret;
-	STARTUPINFO start_crud;
 	PROCESS_INFORMATION pi;
 
 	if (!INET_command_line[0]) {
@@ -2077,6 +2077,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 					DUPLICATE_SAME_ACCESS);
 
 	sprintf(INET_p, " -s -i -h %"SLONGFORMAT, (SLONG) new_handle);
+	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;
 	start_crud.lpReserved2 = NULL;
@@ -2084,11 +2085,12 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
 	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-	if (ret = CreateProcess(NULL, INET_command_line, NULL, NULL, TRUE,
+	if (CreateProcess(NULL, INET_command_line, NULL, NULL, TRUE,
 							(flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
-							NULL, NULL, &start_crud, &pi)) {
+							NULL, NULL, &start_crud, &pi))
+	{
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 	}
@@ -2197,13 +2199,14 @@ static void inet_copy(const SCHAR* from, SCHAR* to, int length)
  *
  **************************************/
 
-	if (length)
+	if (length) {
 		do {
 			*to++ = *from++;
 		} while ((--length) != 0);
+	}
 }
 
-static void inet_zero( SCHAR * address, int length)
+static void inet_zero( SCHAR* address, int length)
 {
 /**************************************
  *
@@ -2216,10 +2219,11 @@ static void inet_zero( SCHAR * address, int length)
  *
  **************************************/
 
-	if (length)
-		do
+	if (length) {
+		do {
 			*address++ = 0;
-		while ((--length) != 0);
+		} while ((--length) != 0);
+	}
 }
 
 #if !(defined WIN_NT)
@@ -2375,7 +2379,6 @@ static PORT receive( PORT main_port, PACKET * packet)
  *	block for the client.
  *
  **************************************/
-	PORT port;
 
 /* If this isn't a multi-client server, just do the operation and get it
    over with */
@@ -2411,7 +2414,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 /* Multi-client server multiplexes all known ports for incoming packets. */
 
 	for (;;) {
-		port = select_port(main_port, &INET_select);
+		PORT port = select_port(main_port, &INET_select);
 		if (port == main_port) {
 			if (port = select_accept(main_port))
 				return port;
@@ -2475,17 +2478,10 @@ static PORT select_accept( PORT main_port)
  *	to a fresh server.
  *
  **************************************/
-	PORT port;
-	socklen_t l;
 	struct sockaddr_in address;
-	int optval = 1;
-#if !(defined WIN_NT)
-	TEXT msg[64];
-	int n;
-#endif
 
-	port = alloc_port(main_port);
-	l = sizeof(address);
+	PORT port = alloc_port(main_port);
+	socklen_t l = sizeof(address);
 
 	port->port_handle = (HANDLE) accept((SOCKET) main_port->port_handle,
 										(struct sockaddr *) &address, &l);
@@ -2495,16 +2491,18 @@ static PORT select_accept( PORT main_port)
 		return 0;
 	}
 
+	int optval = 1;
 	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
-			   (SCHAR *) & optval, sizeof(optval));
+			   (SCHAR*) &optval, sizeof(optval));
 
 #if !(defined SUPERSERVER || defined VMS || defined WIN_NT)
+	int n;
 	for (n = 0, port = main_port->port_clients; port;
 		 n++, port = port->port_next);
 	if (n >= INET_max_clients) {
 		main_port->port_state = state_closed;
 		SOCLOSE((int) main_port->port_handle);
-
+		TEXT msg[64];
 		sprintf(msg,
 				"INET/select_accept: exec new server at client limit: %d", n);
 		gds__log(msg, 0);
@@ -2540,12 +2538,6 @@ static PORT select_port( PORT main_port, SLCT * selct)
  *	NULL if	none are active.
  *
  **************************************/
-	PORT port;
-
-#if !defined(WIN_NT)
-	int n;
-#endif
-
 #ifdef WIN_NT
 
 /* NT's socket handles are addresses */
@@ -2555,7 +2547,7 @@ static PORT select_port( PORT main_port, SLCT * selct)
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
-	for (port = main_port; port; port = port->port_next)
+	for (PORT port = main_port; port; port = port->port_next) {
 		if (FD_ISSET(port->port_handle, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 
@@ -2570,15 +2562,16 @@ static PORT select_port( PORT main_port, SLCT * selct)
 			STOP_PORT_CRITICAL;
 			return port;
 		}
+	}
 
 	STOP_PORT_CRITICAL;
-#else
+#else // !defined(WIN_NT)
 	START_PORT_CRITICAL;
 #ifdef  DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
-	for (port = main_port; port; port = port->port_next) {
-		n = (int) port->port_handle;
+	for (PORT port = main_port; port; port = port->port_next) {
+		const int n = (int) port->port_handle;
 		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
@@ -2611,21 +2604,19 @@ static int select_wait( PORT main_port, SLCT * selct)
  *	to read from them.
  *
  **************************************/
-	PORT port;
-	bool found;
 	TEXT msg[64];
-	SLONG delta_time;
 	struct timeval timeout;
 
 	for (;;)
 	{
 		selct->slct_count = selct->slct_width = 0;
 		FD_ZERO(&selct->slct_fdset);
-		found = false;
+		bool found = false;
 
 		/* Use the time interval between select() calls to expire
 		   keepalive timers on all ports. */
 
+		SLONG delta_time;
 		if (selct->slct_time)
 		{
 			delta_time = (SLONG) time(NULL) - selct->slct_time;
@@ -2641,7 +2632,7 @@ static int select_wait( PORT main_port, SLCT * selct)
 #ifdef  DEFER_PORT_CLEANUP
 		unhook_disconnected_ports(main_port);
 #endif
-		for (port = main_port; port; port = port->port_next)
+		for (PORT port = main_port; port; port = port->port_next)
 		{
 			if ((port->port_state == state_active) ||
 				(port->port_state == state_pending))
@@ -2698,7 +2689,7 @@ static int select_wait( PORT main_port, SLCT * selct)
 				   they can be used in select_port() */
 				if (selct->slct_count == 0)
 				{
-					for (port = main_port; port; port = port->port_next)
+					for (PORT port = main_port; port; port = port->port_next)
 					{
 #ifdef WIN_NT
 						FD_CLR((SOCKET)port->port_handle, &selct->slct_fdset);
@@ -2850,7 +2841,7 @@ static void alarm_handler( int x)
  **************************************/
 }
 #endif
-static XDR_INT inet_destroy( XDR * xdrs)
+static XDR_INT inet_destroy( XDR* xdrs)
 {
 /**************************************
  *
@@ -2971,7 +2962,7 @@ static bool_t inet_getlong( XDR * xdrs, SLONG * lp)
 
 	SLONG l;
 
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast < char *>(&l), 4))
+	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
 		return FALSE;
 
 	*lp = ntohl(l);
@@ -3013,20 +3004,19 @@ static void inet_handler(void *_port)
  *
  **************************************/
 	PORT port = reinterpret_cast<PORT>(_port);
-	int n;
-	SCHAR junk;
 
 /* If there isn't any out of band data, this signal isn't for us */
-
-	if ((n = recv((SOCKET) port->port_handle, &junk, 1, MSG_OOB)) < 0) {
-
+	SCHAR junk;
+	const int n = recv((SOCKET) port->port_handle, &junk, 1, MSG_OOB);
+	if ((n) < 0) {
 		return;
 	}
+	
 	(*((void(*)(PORT))port->port_ast)) (port);
 }
 #endif
 
-static caddr_t inet_inline( XDR * xdrs, u_int bytecount)
+static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -3047,7 +3037,7 @@ static caddr_t inet_inline( XDR * xdrs, u_int bytecount)
 
 static int inet_error(
 					  PORT port,
-					  const TEXT * function, ISC_STATUS operation, int status)
+					  const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -3156,7 +3146,8 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	return TRUE;
 }
 
-static bool_t inet_putlong( XDR * xdrs, SLONG * lp)
+// CVC: It could be const SLONG* lp, but it should fit into xdr_ops' signature.
+static bool_t inet_putlong( XDR* xdrs, SLONG* lp)
 {
 /**************************************
  *
@@ -3168,11 +3159,9 @@ static bool_t inet_putlong( XDR * xdrs, SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	SLONG l;
-
-	l = htonl(*lp);
+	const SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast < char *>(AOF32L(l)),
+									   reinterpret_cast<const char*>(AOF32L(l)),
 									   4);
 }
 
@@ -3191,13 +3180,9 @@ static bool_t inet_read( XDR * xdrs)
  *	message sent will handle this.
  *
  **************************************/
-	PORT port;
-	SSHORT length;
-	SCHAR *p, *end;
-
-	port = (PORT) xdrs->x_public;
-	p = xdrs->x_base;
-	end = p + INET_remote_buffer;
+	PORT port = (PORT) xdrs->x_public;
+	char* p = xdrs->x_base;
+	const char* const end = p + INET_remote_buffer;
 
 /* If buffer is not completely empty, slide down what's left */
 
@@ -3215,9 +3200,9 @@ if (port->port_flags & PORT_pend_ack)
 */
 
 	while (true) {
-		length = end - p;
+		SSHORT length = end - p;
 		if (!packet_receive
-			(port, reinterpret_cast < UCHAR * >(p), length, &length)) {
+			(port, reinterpret_cast<UCHAR*>(p), length, &length)) {
 			return FALSE;
 	/***
 	if (!packet_send (port, 0, 0))
@@ -3284,10 +3269,7 @@ static PORT inet_try_connect(
  *	return NULL.
  *
  **************************************/
-	PORT port;
-	P_CNCT *cnct;
-
-	cnct = &packet->p_cnct;
+	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
@@ -3298,7 +3280,7 @@ static PORT inet_try_connect(
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */
 
-	port =
+	PORT port =
 		INET_connect(node_name, packet, status_vector, FALSE, dpb,
 					 dpb_length);
 	if (!port) {
@@ -3335,28 +3317,20 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
  *	load.
  *
  **************************************/
-	SCHAR *p;
-	PORT port;
-	SSHORT l, length;
-#ifdef PIGGYBACK
-	SCHAR aux_buffer[BUFFER_SIZE];
-	SSHORT l2;
-#endif
-
 /* Encode the data portion of the packet */
 
-	port = (PORT) xdrs->x_public;
-	p = xdrs->x_base;
-	length = xdrs->x_private - p;
+	PORT port = (PORT) xdrs->x_public;
+	const char* p = xdrs->x_base;
+	SSHORT length = xdrs->x_private - p;
 
 /* Send data in manageable hunks.  If a packet is partial, indicate
    that with a negative length.  A positive length marks the end. */
 
-	p = xdrs->x_base;
+	//p = xdrs->x_base; redundant
 
 	while (length) {
 		port->port_misc1 = (port->port_misc1 + 1) % MAX_SEQUENCE;
-		l = (SSHORT) MIN(length, INET_max_data);
+		const SSHORT l = (SSHORT) MIN(length, INET_max_data);
 		length -= l;
 		if (!packet_send(port, p, (SSHORT) ((length) ? -l : l)))
 			return FALSE;
@@ -3369,6 +3343,10 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 	return TRUE;
 
 #ifdef PIGGYBACK
+// CVC: Screwed logic here: if I initialize l2 to zero, nothing useful executes.
+	SCHAR aux_buffer[BUFFER_SIZE];
+	SSHORT l2 = 0;
+#error Assign l2 some meaningful value before running this.
 /* If the other end has not piggy-backed the next packet, we're done. */
 
 	if (!l2)
@@ -3377,20 +3355,20 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 /* We've got a piggy-backed response.  If the packet is partial,
    send an ACK for part we did receive. */
 
-	p = aux_buffer;
+	char* p2 = aux_buffer;
 
 	while (l2 < 0) {
 		if (!packet_send(port, 0, 0))
 			return FALSE;
-		p -= l2;
-		length = aux_buffer + sizeof(aux_buffer) - p;
-		if (!packet_receive(port, p, length, &l2)) {
-			p += l2;
+		p2 -= l2;
+		length = aux_buffer + sizeof(aux_buffer) - p2;
+		if (!packet_receive(port, p2, length, &l2)) {
+			p2 += l2;
 			continue;
 		}
 	}
 
-	length = p - aux_buffer + l2;
+	length = p2 - aux_buffer + l2;
 
 /* Now we're got a encode glump ready to stuff into the read buffer.
    Unfortunately, if we just add it to the read buffer, we will shortly
@@ -3398,16 +3376,17 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
    in the read buffer, then add out stuff at the end. */
 
 	xdrs = &port->port_receive;
-	p = xdrs->x_base;
+	p2 = xdrs->x_base;
 
-	if (xdrs->x_handy && p != xdrs->x_private)
-		memmove(p, xdrs->x_private, xdrs->x_handy);
+	if (xdrs->x_handy && p2 != xdrs->x_private) {
+		memmove(p2, xdrs->x_private, xdrs->x_handy);
+	}
 
-	p += xdrs->x_handy;
+	p2 += xdrs->x_handy;
 
 	xdrs->x_private = xdrs->x_base;
 /*
-xdrs->x_handy += JAP_decode (aux_buffer, length, p);
+xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
 */
 	port->port_flags |= PORT_pend_ack;
 
@@ -3430,10 +3409,9 @@ static void packet_print(
  *	Print a summary of packet.
  *
  **************************************/
-	int l;
-
 	int sum = 0;
-	if (l = length)
+	int l = length;
+	if (l)
 		do {
 			sum += *packet++;
 		} while (--l);
@@ -3447,8 +3425,8 @@ static void packet_print(
 
 static int packet_receive(
 						  PORT port,
-						  UCHAR * buffer,
-						  SSHORT buffer_length, SSHORT * length)
+						  UCHAR* buffer,
+						  SSHORT buffer_length, SSHORT* length)
 {
 /**************************************
  *
@@ -3463,27 +3441,18 @@ static int packet_receive(
  *	a duplicate message, just ignore it.
  *
  **************************************/
-	int n;
 #ifndef REQUESTER
-	struct timeval savetime, timeout, *time_ptr;
-	int ph;
-	fd_set slct_fdset;
-	int slct_count;
-	PACKET packet;
-
 /* set the time interval for sending dummy packets to the client */
 
+	timeval timeout;
 	timeout.tv_sec = port->port_dummy_packet_interval;
 	timeout.tv_usec = 0;
 
+	timeval* time_ptr = NULL;
 	if (port->port_protocol >= PROTOCOL_VERSION8 &&
 		port->port_dummy_packet_interval > 0)
 	{
 		time_ptr = &timeout;
-	}
-	else
-	{
-		time_ptr = NULL;
 	}
 
 /* If the protocol is 0 we are still in the process of establishing
@@ -3497,9 +3466,12 @@ static int packet_receive(
 	// on Linux systems (and possibly others too) select will eventually
 	// change timout values so save it here for later reuse.
 	// Thanks to Brad Pepers who reported this bug  FSG 3 MAY 2001
-	savetime = timeout;
+	timeval savetime = timeout;
 
-	ph = (int) port->port_handle;
+	int ph = (int) port->port_handle;
+
+	// Unsed to send a dummy packet, but too big to be defined in the loop.
+	PACKET packet;
 #endif
 
 #ifdef VMS
@@ -3508,6 +3480,8 @@ static int packet_receive(
 		ph = ph / 16;
 	}
 #endif
+
+	int n = 0;
 
 	for (;;)
 	{
@@ -3535,10 +3509,12 @@ static int packet_receive(
 		if (ISC_tcp_gettype() == TCP_TYPE_MULTINET)
 #endif
 		{
+			fd_set slct_fdset;
 			FD_ZERO(&slct_fdset);
 			FD_SET(ph, &slct_fdset);
 
 			THREAD_EXIT;
+			int slct_count;
 			for (;;) {
 #if (defined WIN_NT)
 				slct_count = select(FD_SETSIZE, &slct_fdset,
@@ -3593,7 +3569,7 @@ static int packet_receive(
 		THREAD_EXIT;
 		n =
 			recv((SOCKET) port->port_handle,
-				 reinterpret_cast < char *>(buffer), buffer_length, 0);
+				 reinterpret_cast<char*>(buffer), buffer_length, 0);
 		THREAD_ENTER;
 		if (n != -1 || !INTERRUPT_ERROR(ERRNO))
 			break;
@@ -3630,7 +3606,7 @@ static int packet_receive(
 	return TRUE;
 }
 
-static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
+static bool_t packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
  *
@@ -3642,16 +3618,13 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
  *	Send some data on it's way.
  *
  **************************************/
-	SSHORT n, length, count;
-	SCHAR *data;
-
 #ifdef HAVE_SETITIMER
 	struct itimerval internal_timer, client_timer;
 	struct sigaction internal_handler, client_handler;
 #endif /* HAVE_SETITIMER */
 
-	data = buffer;
-	length = buffer_length;
+	const char* data = buffer;
+	SSHORT length = buffer_length;
 
 	while (length) {
 		THREAD_EXIT;
@@ -3661,7 +3634,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 			ib_fflush(ib_stdout);
 		}
 #endif
-		n = -1;
+		SSHORT n = -1;
 		n = send((SOCKET) port->port_handle, data, length, 0);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
@@ -3690,7 +3663,8 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 	if ((port->port_flags & PORT_async) && !(port->port_flags & PORT_no_oob))
 	{
 		THREAD_EXIT;
-		count = 0;
+		int count = 0;
+		SSHORT n;
 		while ((n = send((SOCKET) port->port_handle, buffer, 1, MSG_OOB)) == -1 &&
 				(ERRNO == ENOBUFS || INTERRUPT_ERROR(ERRNO)))
 		{
@@ -3810,13 +3784,13 @@ static void unhook_disconnected_ports(PORT main_port)
  *
  **************************************/
 
-	int n = 1;
+	bool more = true;
 
-	while (n) {
-		n = 0;
+	while (more) {
+		more = false;
 		for (PORT port = main_port; port; port = port->port_next) {
 			if (port->port_state == state_disconnected) {
-				n = 1;
+				more = true;
 				unhook_port(port, port->port_parent);
 				cleanup_port(port);
 				break;

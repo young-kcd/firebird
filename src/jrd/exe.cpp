@@ -401,7 +401,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 	if (to->nod_type == nod_field)
 	{
 		const SSHORT id = (USHORT)(ULONG) to->nod_arg[e_fld_id];
-		REC record = request->req_rpb[(int)(SLONG) to->nod_arg[e_fld_stream]].rpb_record;
+		REC record = request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
 		} else {
@@ -1154,7 +1154,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 	request = tdbb->tdbb_request;
 	transaction = request->req_transaction;
-	rpb = &request->req_rpb[(int)(SLONG) node->nod_arg[e_erase_stream]];
+	rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[e_erase_stream]];
 	relation = rpb->rpb_relation;
 
 #ifdef PC_ENGINE

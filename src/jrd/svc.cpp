@@ -383,9 +383,9 @@ static const serv services[] =
 
 
 SVC SVC_attach(USHORT	service_length,
-			   TEXT*	service_name,
+			   const TEXT*	service_name,
 			   USHORT	spb_length,
-			   SCHAR*	spb)
+			   const SCHAR*	spb)
 {
 /**************************************
  *
@@ -397,18 +397,15 @@ SVC SVC_attach(USHORT	service_length,
  *	Connect to a Firebird service.
  *
  **************************************/
-
-	const struct serv *serv;
 	TEXT misc_buf[512];
 #ifndef SUPERSERVER
 	TEXT service_path[MAXPATHLEN];
 #endif
 	SPB options;
-	TEXT name[129] /*, project[33] */ ;
+	TEXT name[129];
 	int id = 0;
 	int group;
 	int node_id;
-	USHORT user_flag;
 
 /* If the service name begins with a slash, ignore it. */
 
@@ -426,10 +423,11 @@ SVC SVC_attach(USHORT	service_length,
 	}
 
 /* Find the service by looking for an exact match. */
-
-	for (serv = (struct serv*)services; serv->serv_name; serv++)
+	const struct serv* serv;
+	for (serv = (struct serv*)services; serv->serv_name; serv++) {
 		if (!strcmp(misc_buf, serv->serv_name))
 			break;
+	}
 
 	if (!serv->serv_name)
 #ifdef NOT_USED_OR_REPLACED
@@ -446,16 +444,17 @@ SVC SVC_attach(USHORT	service_length,
 /* If anything goes wrong, we want to be able to free any memory
    that may have been allocated. */
 
-	SCHAR *spb_buf = 0;
-	TEXT *switches = 0;
-	TEXT *misc = 0;
+	SCHAR* spb_buf = 0;
+	TEXT* switches = 0;
+	TEXT* misc = 0;
 	SVC service = 0;
 
 	try {
 
 /* Insert internal switch SERVICE_THD_PARAM in the service parameter block. */
 
-	SCHAR *p = spb, *end = spb + spb_length;
+	const SCHAR* p = spb;
+	const SCHAR* const end = spb + spb_length;
 	bool cmd_line_found = false;
 	while (!cmd_line_found && p < end) {
 		switch (*p++) {
@@ -493,7 +492,7 @@ SVC SVC_attach(USHORT	service_length,
 			ignored_length = 9;
 		USHORT param_length = sizeof(SERVICE_THD_PARAM) - 1;
 		USHORT spb_buf_length = spb_length + param_length - ignored_length + 1;
-		SCHAR *q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
+		SCHAR* q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
 		memcpy(q, spb, p - spb);
 		q += p - spb - 1;
 		*q++ += param_length - ignored_length + 1;
@@ -520,7 +519,7 @@ SVC SVC_attach(USHORT	service_length,
 	get_options(reinterpret_cast<const UCHAR*>(spb), spb_length, misc, &options);
 
 /* Perhaps checkout the user in the security database. */
-
+	USHORT user_flag;
 	if (!strcmp(serv->serv_name, "anonymous")) {
 		user_flag = SVC_user_none;
 	} else {

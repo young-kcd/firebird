@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.42 2003-11-11 12:12:17 brodsom Exp $
+$Id: blb.cpp,v 1.43 2003-12-03 08:19:16 robocop Exp $
 */
 
 #include "firebird.h"
@@ -2444,14 +2444,14 @@ static BLB store_array(TDBB tdbb, JRD_TRA transaction, BID blob_id)
 					array->arr_desc.ads_length);
 
 /* Write out actual array */
-
-// CVC: Will fix this horrible loop later.
-	const BLOB_PTR* p;
-	SLONG length;
-	for (length = array->arr_effective_length, p =
-		 (BLOB_PTR *) array->arr_data; length > 32768;
-		 length -= 32768, p +=
-		 32768) BLB_put_segment(tdbb, blob, p, (USHORT) 32768);
+	const USHORT seg_limit = 32768;
+	const BLOB_PTR* p = (BLOB_PTR*) array->arr_data;
+	SLONG length = array->arr_effective_length;
+	while (length > seg_limit) {
+		BLB_put_segment(tdbb, blob, p, seg_limit);
+		length -= seg_limit;
+		p += seg_limit;
+	}
 
 	if (length)
 		BLB_put_segment(tdbb, blob, p, (USHORT) length);

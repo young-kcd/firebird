@@ -31,8 +31,8 @@
 
 void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
 							 struct jrd_fld *);
-void IDX_create_index(TDBB, struct jrd_rel *, struct idx *, UCHAR *,
-					  USHORT *, class jrd_tra *, SelectivityList&);
+void IDX_create_index(TDBB, struct jrd_rel*, struct idx*, const UCHAR*,
+					  USHORT*, class jrd_tra*, SelectivityList&);
 struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
 void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
 void IDX_delete_indices(TDBB, struct jrd_rel *);
@@ -51,3 +51,4 @@ enum idx_e IDX_store(struct tdbb *, struct rpb *, class jrd_tra *,
 
 
 #endif // JRD_IDX_PROTO_H
+

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.17 2003-11-30 06:41:29 robocop Exp $
+ * $Id: isql.h,v 1.18 2003-12-03 08:19:13 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -65,16 +65,20 @@
 
 /* Define the possible states of processing commands */
 
-#define CONT		0
-#define EXIT		1
-#define BACKOUT		2
-#define ERR		3
-#define END		4
-#define SKIP		5
-#define FAIL		6
-#define EXTRACT		7
-#define EXTRACTALL	8
-#define FETCH		9
+enum processing_state {
+	FOUND_EOF   =   EOF,
+	CONT		=	0,
+	EXIT		=	1,
+	BACKOUT		=	2,
+	ERR			=	3,
+	END			=	4,
+	SKIP		=	5,
+	FAIL		=	6,
+	EXTRACT		=	7,
+	EXTRACTALL	=	8,
+	FETCH		=	9,
+	OBJECT_NOT_FOUND = 53 // See NOT_FOUND below, solves compilation problem.
+};
 
 /* Which blob subtypes to print */
 

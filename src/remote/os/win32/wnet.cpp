@@ -126,7 +126,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
-					USHORT	uv_flag)
+					bool	uv_flag)
 {
 /**************************************
  *
@@ -142,25 +142,19 @@ PORT WNET_analyze(	TEXT*	file_name,
  *	return NULL.
  *
  **************************************/
-	RDB rdb;
-	PACKET *packet;
-	P_CNCT *cnct;
-	UCHAR *p, user_id[200];
-	TEXT buffer[64];
-
 	*file_length = strlen(file_name);
 
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	rdb = (RDB) ALLOC(type_rdb);
-	packet = &rdb->rdb_packet;
+	RDB rdb = (RDB) ALLOC(type_rdb);
+	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-
+	UCHAR user_id[200];
 	user_id[0] = CNCT_user;
-	p = user_id + 2;
-	ISC_get_user(reinterpret_cast < SCHAR * >(p), 0, 0, 0, 0, 0, user_string);
+	UCHAR* p = user_id + 2;
+	ISC_get_user(reinterpret_cast<SCHAR*>(p), 0, 0, 0, 0, 0, user_string);
 	user_id[1] = (UCHAR) strlen((SCHAR *) p);
 
 	for (; *p; p++)
@@ -169,8 +163,8 @@ PORT WNET_analyze(	TEXT*	file_name,
 
 	*p++ = CNCT_host;
 	p++;
-	ISC_get_host(reinterpret_cast < SCHAR * >(p), 64);
-	p[-1] = (UCHAR) strlen((SCHAR *) p);
+	ISC_get_host(reinterpret_cast<SCHAR*>(p), 64);
+	p[-1] = (UCHAR) strlen((const char*) p);
 
 	for (; *p; p++)
 		if (*p >= 'A' && *p <= 'Z')
@@ -185,7 +179,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 
 /* Establish connection to server */
 
-	cnct = &packet->p_cnct;
+	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
@@ -320,6 +314,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 /* once we've decided on a protocol, concatenate the version 
    string to reflect it...  */
 
+	TEXT buffer[64];
 	sprintf(buffer, "%s/P%d", port->port_version->str_data,
 			port->port_protocol);
 	ALLR_free(port->port_version);
@@ -355,10 +350,7 @@ PORT WNET_connect(const TEXT*		name,
  *	connect is for a server process.
  *
  **************************************/
-
-	ISC_STATUS status;
-	TEXT command_line[MAXPATHLEN + 32], *p;
-	USHORT ret;
+	TEXT command_line[MAXPATHLEN + 32];
 
 	PORT port = alloc_port(0);
 	port->port_status_vector = status_vector;
@@ -383,7 +375,8 @@ PORT WNET_connect(const TEXT*		name,
 			if (port->port_handle != INVALID_HANDLE_VALUE) {
 				break;
 			}
-			if ((status = GetLastError()) != ERROR_PIPE_BUSY) {
+			const ISC_STATUS status = GetLastError();
+			if (status != ERROR_PIPE_BUSY) {
 				THREAD_ENTER;
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
 				disconnect(port);
@@ -403,6 +396,7 @@ PORT WNET_connect(const TEXT*		name,
 	security_attr = ISC_get_security_desc();
 	THREAD_EXIT;
 	command_line[0] = 0;
+	TEXT* p = 0;
 
 	while (true)
 	{
@@ -506,7 +500,7 @@ PORT WNET_connect(const TEXT*		name,
 		start_crud.lpDesktop = NULL;
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-		ret = CreateProcess(NULL,
+		const USHORT ret = CreateProcess(NULL,
 							command_line,
 							NULL,
 							NULL,
@@ -591,15 +585,8 @@ static int accept_connection( PORT port, P_CNCT * cnct)
  *	response for protocol selection.
  *
  **************************************/
-	TEXT name[64], password[64], *p;
-	STR string;
-	int i, length, l;
-	BOOL revert_flag;
+	TEXT name[64], password[64];
 	TEXT uname[128];
-	SLONG name_len;
-#ifndef REQUESTER
-	int user_verification;
-#endif
 
 /* Default account to "guest" (in theory all packets contain a name) */
 
@@ -612,37 +599,44 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 	const TEXT* const end = id + cnct->p_cnct_user_id.cstr_length;
 
 #ifndef REQUESTER
-	user_verification = 0;
+	bool user_verification = false;
 #endif
 	while (id < end)
 		switch (*id++) {
 		case CNCT_user:
-			length = l = *id++;
-			port->port_user_name = string =
-				(STR) ALLOCV(type_str, (int) length);
-			string->str_length = length;
-			if (length) {
-				p = (TEXT *) string->str_data;
-				do {
-					*p++ = *id++;
-				} while (--l);
+			{
+				const int length = *id++;
+				str* string= (str*) ALLOCV(type_str, length);
+				port->port_user_name = string;
+				string->str_length = length;
+				if (length) {
+					TEXT* p = (TEXT *) string->str_data;
+					int l = length;
+					do {
+						*p++ = *id++;
+					} while (--l);
+				}
+				strncpy(name, string->str_data, length);
+				name[length] = (TEXT) 0;
+				break;
 			}
-			strncpy(name, string->str_data, length);
-			name[length] = (TEXT) 0;
-			break;
 
 		case CNCT_passwd:
-			p = password;
-			if ((length = *id++) != 0)
-				do {
-					*p++ = *id++;
-				} while (--length);
-			*p = 0;
-			break;
+			{
+				TEXT* p = password;
+				int length = *id++;
+				if (length != 0) {
+					do {
+						*p++ = *id++;
+					} while (--length);
+				}
+				*p = 0;
+				break;
+			}
 
 		case CNCT_user_verification:
 #ifndef REQUESTER
-			user_verification = 1;
+			user_verification = true;
 #endif
 			id++;
 			break;
@@ -654,14 +648,14 @@ static int accept_connection( PORT port, P_CNCT * cnct)
 #ifndef REQUESTER
 /* See if user exists.  If not, reject connection */
 
-	if (revert_flag = ImpersonateNamedPipeClient(port->port_handle)) {
+	const BOOL revert_flag = ImpersonateNamedPipeClient(port->port_handle);
+	if (revert_flag) {
 		port->port_flags |= PORT_impersonate;
-		name_len = 128;
-
-		if (GetUserName(uname, reinterpret_cast < DWORD * >(&name_len))) {
-			for (i = 0; i < name_len; i++)
+		DWORD name_len = 128;
+		if (GetUserName(uname, &name_len)) {
+			for (DWORD i = 0; i < name_len; i++) {
 				uname[i] = LOWWER7(uname[i]);
-
+			}
 			uname[name_len] = 0;
 
 			if ((!user_verification) && strcmp(name, uname)) {
@@ -748,9 +742,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-	PORT new_port;
-	ISC_STATUS status;
-	TEXT *p, str_pid[32];
+	TEXT str_pid[32];
 
 #ifndef REQUESTER
 /* If this is a server, we're got an auxiliary connection.  Accept it */
@@ -775,6 +767,7 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 
 	P_RESP* response = &packet->p_resp;
 
+	TEXT* p = 0;
 	if (response->p_resp_data.cstr_length) {
 		wnet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
 				  str_pid,
@@ -782,11 +775,9 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 		str_pid[response->p_resp_data.cstr_length] = 0;
 		p = str_pid;
 	}
-	else {
-		p = 0;
-	}
 
-	port->port_async = new_port = alloc_port(port->port_parent);
+	PORT new_port = alloc_port(port->port_parent);
+	port->port_async = new_port;
 	new_port->port_flags |= PORT_async;
 	new_port->port_connection =
 		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
@@ -798,7 +789,8 @@ static PORT aux_connect( PORT port, PACKET * packet, XDR_INT(*ast) (void))
 					   NULL, OPEN_EXISTING, 0, NULL);
 		if (new_port->port_handle != INVALID_HANDLE_VALUE)
 			break;
-		if ((status = GetLastError()) != ERROR_PIPE_BUSY) {
+		const ISC_STATUS status = GetLastError();
+		if (status != ERROR_PIPE_BUSY) {
 			THREAD_ENTER;
 			return (PORT) wnet_error(new_port, "CreateFile",
 									 isc_net_event_connect_err, status);
@@ -1336,7 +1328,7 @@ static bool_t wnet_getlong( XDR * xdrs, SLONG * lp)
  **************************************/
 	SLONG l;
 
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast < char *>(&l), 4))
+	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
 		return FALSE;
 
 	*lp = ntohl(l);
@@ -1477,8 +1469,6 @@ static bool_t wnet_read( XDR * xdrs)
  *	message sent will handle this.
  *
  **************************************/
-	SSHORT length;
-
 	PORT port = (PORT) xdrs->x_public;
 	SCHAR* p = xdrs->x_base;
 	const SCHAR* const end = p + BUFFER_SIZE;
@@ -1499,9 +1489,10 @@ if (port->port_flags & PORT_pend_ack)
 */
 
 	while (true) {
-		length = end - p;
+		SSHORT length = end - p;
 		if (!packet_receive
-			(port, reinterpret_cast < UCHAR * >(p), length, &length)) {
+			(port, reinterpret_cast<UCHAR*>(p), length, &length))
+		{
 			return FALSE;
 	/***
 	if (!packet_send (port, 0, 0))
@@ -1634,10 +1625,10 @@ static int packet_receive(
  *
  **************************************/
 	DWORD n = 0;
-	USHORT status;
 
 	THREAD_EXIT;
-	status = ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
+	const USHORT status =
+		ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
 	THREAD_ENTER;
 	if (!status && GetLastError() != ERROR_BROKEN_PIPE)
 		return wnet_error(port, "ReadFile", isc_net_read_err, ERRNO);
@@ -1668,12 +1659,11 @@ static int packet_send( PORT port, const SCHAR* buffer, SSHORT buffer_length)
  *	Send some data on it's way.  
  *
  **************************************/
-	DWORD n;
-
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
 
 	THREAD_EXIT;
+	DWORD n;
 	const USHORT status = WriteFile(port->port_handle, data, length, &n, NULL);
 	THREAD_ENTER;
 	if (!status)
@@ -1706,14 +1696,15 @@ static void wnet_copy(const SCHAR* from, SCHAR* to, int length)
  *
  **************************************/
 
-	if (length)
+	if (length) {
 		do {
 			*to++ = *from++;
 		} while ((--length) != 0);
+	}
 }
 
 
-static void wnet_make_file_name( TEXT * name, DWORD number)
+static void wnet_make_file_name( TEXT* name, DWORD number)
 {
 /**************************************
  *
@@ -1726,21 +1717,21 @@ static void wnet_make_file_name( TEXT * name, DWORD number)
  *	the Windows <8>.<3> limitations are handled.
  *
  **************************************/
-	TEXT *p, *q, temp[32];
-	USHORT len, length;
+	TEXT temp[32];
 
 	sprintf(temp, "%lu", number);
 
-	if ((length = strlen(temp)) < 8) {
+	USHORT length = strlen(temp);
+	if ((length) < 8) {
 		strcpy(name, temp);
 		return;
 	}
 
-	p = name;
-	q = temp;
+	TEXT* p = name;
+	const TEXT* q = temp;
 
 	while (length) {
-		len = (length > 8) ? 8 : length;
+		USHORT len = (length > 8) ? 8 : length;
 		length -= len;
 		do {
 			*p++ = *q++;

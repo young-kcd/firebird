@@ -104,7 +104,7 @@ static bool		scompare(const SCHAR*, USHORT, const SCHAR*, USHORT);
 #pragma FB_COMPILER_MESSAGE("Dragons ahead. Static data. Not thread safe!")
 
 static bool		init_flag		= false;	// whether we've been initialized 
-static ERR		UDSQL_error		= NULL;
+static dsql_err_stblock*	UDSQL_error		= NULL;
 static stmt*		statements		= NULL;
 static dsql_name*		statement_names	= NULL;
 static dsql_name*		cursor_names	= NULL;
@@ -1481,7 +1481,7 @@ static void init(FRBRD** db_handle)
 	// If we haven't been initialized yet, do it now
 	if (!init_flag)
 	{
-		UDSQL_error = (ERR) gds__alloc((SLONG) sizeof(err));
+		UDSQL_error = (dsql_err_stblock*) gds__alloc((SLONG) sizeof(dsql_err_stblock));
 		// FREE: by exit cleanup()
 		if (!UDSQL_error) {		// NOMEM:
 			return;				// Don't set the init_flag

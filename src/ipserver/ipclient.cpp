@@ -1967,16 +1967,16 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
-					 IDB * db_handle,
-					 ITR * tra_handle,
+ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
+					 IDB* db_handle,
+					 ITR* tra_handle,
 					 BID array_id,
 					 USHORT sdl_length,
-					 UCHAR * sdl,
+					 const UCHAR* sdl,
 					 USHORT param_length,
-					 UCHAR * param,
+					 const UCHAR* param,
 					 SLONG slice_length,
-					 UCHAR * slice, SLONG * return_length)
+					 UCHAR* slice, SLONG* return_length)
 {
 /**************************************
  *
@@ -2253,15 +2253,15 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
-					 IDB * db_handle,
-					 ITR * tra_handle,
+ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
+					 IDB* db_handle,
+					 ITR* tra_handle,
 					 BID array_id,
 					 USHORT sdl_length,
-					 UCHAR * sdl,
+					 const UCHAR* sdl,
 					 USHORT param_length,
-					 UCHAR * param,
-					 SLONG slice_length, UCHAR * slice)
+					 const UCHAR* param,
+					 SLONG slice_length, UCHAR* slice)
 {
 /**************************************
  *
@@ -2823,10 +2823,10 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
-ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 						  USHORT service_length,
-						  TEXT * service_name,
-						  IDB * handle, USHORT spb_length, SCHAR * spb)
+						  const TEXT* service_name,
+						  IDB* handle, USHORT spb_length, const SCHAR* spb)
 {
 /**************************************
  *
@@ -3351,14 +3351,14 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
-							IDB * db_handle,
-							ITR * tra_handle,
+ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
+							IDB* db_handle,
+							ITR* tra_handle,
 							USHORT blr_length,
-							UCHAR * blr,
+							const UCHAR* blr,
 							USHORT in_msg_length,
-							UCHAR * in_msg,
-							USHORT out_msg_length, UCHAR * out_msg)
+							UCHAR* in_msg,
+							USHORT out_msg_length, UCHAR* out_msg)
 {
 /**************************************
  *

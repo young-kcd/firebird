@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		nav.c
+ *	MODULE:		nav.cpp
  *	DESCRIPTION:	Navigational index walking
  *
  * The contents of this file are subject to the Interbase Public
@@ -1908,3 +1908,4 @@ static void setup_bitmaps(RSB rsb, IRSB_NAV impure)
 				reinterpret_cast<jrd_nod *>(rsb->rsb_arg[RSB_NAV_inversion]));
 	}
 }
+

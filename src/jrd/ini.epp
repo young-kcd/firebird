@@ -82,8 +82,8 @@ static void store_generator(TDBB, const GEN*, BLK*);
 static void store_global_field(TDBB, GFLD*, BLK*);
 static void store_intlnames(TDBB, DBB);
 static void store_message(TDBB, const TRIGMSG*, BLK*);
-static void store_relation_field(TDBB, const UCHAR*, const UCHAR*, int, BLK*, int);
-static void store_trigger(TDBB, const JRD_TRG*, BLK*);
+static void store_relation_field(TDBB, const UCHAR*, const UCHAR*, int, BLK*, bool);
+static void store_trigger(TDBB, const jrd_trg*, BLK*);
 
 
 /* This is the table used in defining triggers; note that
@@ -92,7 +92,7 @@ static void store_trigger(TDBB, const JRD_TRG*, BLK*);
    changed to RDB$TRIGGER_9 to handle SQL security on relations whose
    name is > 27 characters */
 
-static const JRD_TRG triggers[] =
+static const jrd_trg triggers[] =
 {
 	{ "RDB$TRIGGER_1", (UCHAR) nam_user_privileges,
 		RDB$TRIGGERS.RDB$TRIGGER_TYPE.PRE_MODIFY, sizeof(trigger3), trigger3,
@@ -243,7 +243,7 @@ static const TRIGMSG trigger_messages[] =
 
 
 
-void INI_format(const TEXT* owner, TEXT* charset)
+void INI_format(const TEXT* owner, const TEXT* charset)
 {
 /**************************************
  *
@@ -257,46 +257,40 @@ void INI_format(const TEXT* owner, TEXT* charset)
  *	stored here.
  *
  **************************************/
-	TDBB			tdbb;
-	DBB				dbb;
 	int				n;
 	const RTYP*		type;
 	const UCHAR*	relfld;
 	const UCHAR*	fld;
 	GFLD*			gfield;
-	const JRD_TRG*		trigger;
+	const jrd_trg*	trigger;
 	const TRIGMSG*	message;
 	const GEN*		generator;
-	TEXT			string[32];
-	TEXT*			p;
-	TEXT			string2[32];
-	TEXT*			p2;
 	BLK				handle1;
 	BLK				handle2;
 
 
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Uppercase owner name */
-
+	TEXT			string[32];
 	*string = 0;
 	if (owner && *owner)
 	{
-		p = string;
+		TEXT* p = string;
 		while ( (*p++ = UPPER7(*owner)) )
 		{
 			++owner;
 		}
 	}
 
-/* Uppercase owner name */
-
+/* Uppercase charset name */
+	TEXT			string2[32];
 	*string2 = 0;
 	if (charset && *charset)
 	{
-		p2 = string2;
-		while ( (*p++ = UPPER7(*charset)) )
+		TEXT* p2 = string2;
+		while ( (*p2++ = UPPER7(*charset)) )
 		{
 			++charset;
 		}
@@ -318,9 +312,9 @@ void INI_format(const TEXT* owner, TEXT* charset)
 		{
 			if (!fld[RFLD_F_MINOR])
 			{
-				UCHAR* pFld    = (UCHAR*) fld;		/* const_cast */
-				UCHAR* pRelFld = (UCHAR*) relfld;	/* const_cast */
-				store_relation_field(tdbb, pFld, pRelFld, n, &handle2, TRUE);
+				const UCHAR* pFld    = fld;
+				const UCHAR* pRelFld = relfld;
+				store_relation_field(tdbb, pFld, pRelFld, n, &handle2, true);
 				n++;
 			}
 		}
@@ -471,7 +465,7 @@ void INI_format(const TEXT* owner, TEXT* charset)
 }
 
 
-USHORT INI_get_trig_flags(TEXT* trig_name)
+USHORT INI_get_trig_flags(const TEXT* trig_name)
 {
 /*********************************************
  *
@@ -483,9 +477,7 @@ USHORT INI_get_trig_flags(TEXT* trig_name)
  *      Return the trigger flags for a system trigger.
  *
  **************************************/
-	const JRD_TRG* trig;
-
-	for (trig = triggers; trig->trg_length > 0; trig++)
+	for (const jrd_trg* trig = triggers; trig->trg_length > 0; trig++)
 	{
 		if (!strcmp(trig->trg_name, trig_name))
 		{
@@ -523,7 +515,7 @@ void INI_init(void)
 	const UCHAR*	fld_;
 	fmt::fmt_desc_iterator	desc;
 	const GFLD*		gfield;
-	const JRD_TRG*		trigger;
+	const jrd_trg*	trigger;
 	TDBB			tdbb;
 	vec::iterator	itr;
 
@@ -715,8 +707,8 @@ void INI_init2(void)
 }
 
 
-JRD_TRG* INI_lookup_sys_trigger(JRD_REL				relation,
-							JRD_TRG*			trigger,
+const jrd_trg* INI_lookup_sys_trigger(JRD_REL				relation,
+							const jrd_trg*			trigger,
 							const UCHAR**	blr,
 							UCHAR*			trigger_type,
 							const SCHAR**	trigger_name,
@@ -733,9 +725,7 @@ JRD_TRG* INI_lookup_sys_trigger(JRD_REL				relation,
  *
  **************************************/
 
-/* function should actually return (const TRIG*) */
-    const JRD_TRG* constTrigger =  (trigger) ? trigger + 1 : triggers;
-	trigger = const_cast<JRD_TRG*>(constTrigger);
+	trigger =  (trigger) ? trigger + 1 : triggers;
 
 	for (; trigger->trg_relation; trigger++)
 	{
@@ -753,7 +743,7 @@ JRD_TRG* INI_lookup_sys_trigger(JRD_REL				relation,
 }
 
 
-void INI_update_database(void)
+void INI_update_database()
 {
 /**************************************
  *
@@ -947,25 +937,21 @@ static void add_index_set(DBB		dbb,
  *	ODS (major_version,minor_version).
  *
  **************************************/
-	TDBB	tdbb;
 	JRD_REL		relation;
 	TEXT	string[32];
-	const struct ini_idx_t*	index;
-	const ini_idx_t::ini_idx_segment_t*segment;
+	const ini_idx_t::ini_idx_segment_t* segment;
 	IDX		idx;
 	idx::idx_repeat* tail;
 	USHORT	position;
 	JRD_FLD		field;
-	BLK		handle1;
-	BLK		handle2;
-	USHORT	n;
 
-	tdbb = GET_THREAD_DATA;
-	handle1 = handle2 = NULL;
+	TDBB tdbb = GET_THREAD_DATA;
+	BLK handle1 = NULL;
+	BLK handle2 = NULL;
 
-	for (n = 0; n < SYSTEM_INDEX_COUNT; n++)
+	for (int n = 0; n < SYSTEM_INDEX_COUNT; n++)
 	{
-		index = &indices[n];
+		const ini_idx_t* index = &indices[n];
 
 		/* For minor ODS updates, only add indices newer than on-disk ODS */
 		if (update_ods &&
@@ -1015,7 +1001,7 @@ static void add_index_set(DBB		dbb,
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(tdbb->tdbb_default);
-			IDX_create_index(tdbb, relation, &idx, (UCHAR*)string, NULL, NULL,
+			IDX_create_index(tdbb, relation, &idx, (const UCHAR*) string, NULL, NULL,
 							 selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;
@@ -1045,18 +1031,13 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
  *	This routine is used to upgrade ODS versions.
  *
  **************************************/
-	TDBB			tdbb;
-	const JRD_TRG*		trig;
-	const TRIGMSG*	message;
-	BLK				handle1;
-	BLK				handle2;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	tdbb = GET_THREAD_DATA;
-
-	handle1 = handle2 = NULL;
+	BLK handle1 = NULL;
+	BLK handle2 = NULL;
 
 /* add all new triggers, that were added since the database was created */
-	for (trig = triggers; trig->trg_length > 0; trig++)
+	for (const jrd_trg* trig = triggers; trig->trg_length > 0; trig++)
 	{
 		if ((trig->trg_ods_version > ENCODE_ODS(major_version, minor_version))
 			&& (DECODE_ODS_MAJOR(trig->trg_ods_version) == major_version))
@@ -1065,7 +1046,7 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 		}
 	}
 
-	for (message = trigger_messages; message->trigmsg_name; message++)
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; message++)
 	{
 		if ((message->trg_ods_version >
 				ENCODE_ODS(major_version, minor_version)) &&
@@ -1099,24 +1080,18 @@ static void add_relation_fields( USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	TDBB			tdbb;
-	DBB				dbb;
-	DSC				desc;
-	BLK				s_handle;
-	BLK				m_handle;
-	const UCHAR*	fld;
-	const UCHAR*	relfld;
-	int				n;
-
-	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
 
 /* add desired fields to system relations, forcing a new format version */
 
-	s_handle = m_handle = NULL;
-	for (relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	BLK s_handle = NULL;
+	BLK m_handle = NULL;
+	const UCHAR*	fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+		int n = 0;
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 			 n++, fld += RFLD_F_LENGTH)
 		{
 			if (minor_version < fld[RFLD_F_MINOR] ||
@@ -1125,12 +1100,13 @@ static void add_relation_fields( USHORT minor_version)
 				if (minor_version < fld[RFLD_F_MINOR])
 				{
 					store_relation_field(tdbb, fld, relfld, n, &s_handle,
-										 FALSE);
+										 false);
 				}
 				else
 				{
 					modify_relation_field(tdbb, fld, relfld, &m_handle);
 				}
+				dsc desc;
 				desc.dsc_dtype = dtype_text;
 				INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
 				desc.dsc_address = (UCHAR*) names[relfld[RFLD_R_NAME]];
@@ -1174,25 +1150,22 @@ static void add_security_to_sys_rel(TDBB	tdbb,
  *      privilege.
  *
  **************************************/
-
-	DBB dbb;
-	ISC_QUAD blob_id_1, blob_id_2;
-	BLB blob;
 	BLK handle1;
 	TEXT sec_class_name[100];
 	TEXT default_class[32];
-	SSHORT cnt;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	strcpy(sec_class_name, "SQL$");
 	strcat(sec_class_name, rel_name);
 
-	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_1);
+    ISC_QUAD blob_id_1;
+	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_1);
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
+    ISC_QUAD blob_id_2;
 	blob = BLB_create(tdbb, dbb->dbb_sys_trans, (BID)&blob_id_2);
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
@@ -1201,12 +1174,12 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
 					   0, (SINT64) 1));
 
-	for (cnt = 0; cnt < 6; cnt++)
+	for (int cnt = 0; cnt < 6; cnt++)
 	{
 		handle1 = NULL;
 
 		STORE(REQUEST_HANDLE handle1) PRIV IN RDB$USER_PRIVILEGES
-			switch (cnt)
+		switch (cnt)
 		{
 			case 0:
 				strcpy(PRIV.RDB$USER, user_name);
@@ -1304,15 +1277,11 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
  *	now, since it will be used when we go to 8.1.
  *
  **************************************/
-	TDBB			tdbb;
-	const JRD_TRG*		trigger;
-	const TRIGMSG*	message;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 /* Find the new trigger to be stored; assume it exists in the table */
 
-	trigger = triggers;
+	const jrd_trg* trigger = triggers;
 	while (strcmp(trigger->trg_name, trigger_name))
 	{
 		++trigger;
@@ -1322,7 +1291,7 @@ static void add_trigger(TEXT* trigger_name, BLK* handle1, BLK* handle2)
 
 /* Look for any related trigger messages */
 
-	for (message = trigger_messages; message->trigmsg_name; ++message)
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
 	{
 		if (!strcmp(message->trigmsg_name, trigger->trg_name))
 		{
@@ -1349,17 +1318,14 @@ static void modify_relation_field(TDBB			tdbb,
  *	field position do not change.
  *
  **************************************/
-	DBB			dbb;
-	const GFLD*	gfield;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	FOR(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS WITH
 		X.RDB$RELATION_NAME EQ names[relfld[RFLD_R_NAME]] AND
 			X.RDB$FIELD_NAME EQ names[fld[RFLD_F_NAME]]
 		MODIFY X USING
-			gfield = &gfields[fld[RFLD_F_UPD_ID]];
+			const gfld* gfield = &gfields[fld[RFLD_F_UPD_ID]];
 			PAD(names[gfield->gfld_name], X.RDB$FIELD_SOURCE);
 			X.RDB$UPDATE_FLAG = fld[RFLD_F_UPDATE];
 		END_MODIFY;
@@ -1380,10 +1346,8 @@ static void store_generator(TDBB tdbb, const GEN* generator, BLK* handle)
  *	the information in the generator block.
  *
  **************************************/
-	DBB dbb;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$GENERATORS
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
@@ -1406,14 +1370,10 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
  *	passed information.
  *
  **************************************/
-	DBB dbb;
-	JRD_TRA trans;
-	struct blb *blob;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	trans = dbb->dbb_sys_trans;
+	jrd_tra* trans = dbb->dbb_sys_trans;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$FIELDS
 		PAD(names[gfield->gfld_name], X.RDB$FIELD_NAME);
@@ -1426,10 +1386,10 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
 		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
 		if (gfield->gfld_dflt_blr)
 		{
-			blob = BLB_create(tdbb, trans, (BID)&X.RDB$DEFAULT_VALUE);
+			blb* blob = BLB_create(tdbb, trans, (BID)&X.RDB$DEFAULT_VALUE);
 			BLB_put_segment(tdbb,
 							blob,
-							(UCHAR*)gfield->gfld_dflt_blr,
+							gfield->gfld_dflt_blr,
 							gfield->gfld_dflt_len);
 			BLB_close(tdbb, blob);
 			X.RDB$DEFAULT_VALUE.NULL = FALSE;
@@ -1546,14 +1506,10 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
  *	character sets & collations.
  *
  **************************************/
-	const CS_TYPE*		csptr;
-	const COLL_TYPE*	collptr;
-	BLK					handle;
-
 	SET_TDBB(tdbb);
 
-	handle = NULL;
-	for (csptr = cs_types; csptr->init_charset_name; csptr++)
+	BLK handle = NULL;
+	for (const CS_TYPE* csptr = cs_types; csptr->init_charset_name; csptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$CHARACTER_SETS USING
 			PAD(csptr->init_charset_name, X.RDB$CHARACTER_SET_NAME);
@@ -1567,7 +1523,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 	CMP_release(tdbb, (JRD_REQ)handle);
 	handle = NULL;
 
-	for (collptr = coll_types; collptr->init_collation_name; collptr++)
+	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
 			PAD(collptr->init_collation_name, X.RDB$COLLATION_NAME);
@@ -1594,10 +1550,8 @@ static void store_message(TDBB tdbb, const TRIGMSG* message, BLK* handle)
  *	Store system trigger messages.
  *
  **************************************/
-	DBB dbb;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 /* store the trigger */
 
@@ -1614,7 +1568,7 @@ static void store_relation_field(TDBB			tdbb,
 								 const UCHAR*	relfld,
 								 int			field_id,
 								 BLK*			handle,
-								 int			fmt0_flag)
+								 bool			fmt0_flag)
 {
 /**************************************
  *
@@ -1627,14 +1581,11 @@ static void store_relation_field(TDBB			tdbb,
  *	passed information.
  *
  **************************************/
-	DBB			dbb;
-	const GFLD*	gfield;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS
-		gfield = (fld[RFLD_F_UPD_MINOR] && !fmt0_flag) ?
+		const gfld* gfield = (fld[RFLD_F_UPD_MINOR] && !fmt0_flag) ?
 			&gfields[fld[RFLD_F_UPD_ID]] : &gfields[fld[RFLD_F_ID]];
 		PAD(names[relfld[RFLD_R_NAME]], X.RDB$RELATION_NAME);
 		PAD(names[fld[RFLD_F_NAME]], X.RDB$FIELD_NAME);
@@ -1647,7 +1598,7 @@ static void store_relation_field(TDBB			tdbb,
 }
 
 
-static void store_trigger(TDBB tdbb, const JRD_TRG* trigger, BLK* handle)
+static void store_trigger(TDBB tdbb, const jrd_trg* trigger, BLK* handle)
 {
 /**************************************
  *
@@ -1660,18 +1611,13 @@ static void store_trigger(TDBB tdbb, const JRD_TRG* trigger, BLK* handle)
  *	information in the trigger block.
  *
  **************************************/
-	DBB dbb;
-	JRD_TRA trans;
-	DSC desc;
-	struct blb *blob;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	trans = dbb->dbb_sys_trans;
+	jrd_tra* trans = dbb->dbb_sys_trans;
 
 /* indicate that the relation format needs revising */
-
+	dsc desc;
 	desc.dsc_dtype = dtype_text;
 	INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
 	desc.dsc_address = (UCHAR*) names[trigger->trg_relation];
@@ -1687,11 +1633,12 @@ static void store_trigger(TDBB tdbb, const JRD_TRG* trigger, BLK* handle)
 		X.RDB$SYSTEM_FLAG = RDB_system;
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
-		blob = BLB_create(tdbb, trans, (BID)&X.RDB$TRIGGER_BLR);
+		blb* blob = BLB_create(tdbb, trans, (BID)&X.RDB$TRIGGER_BLR);
 		BLB_put_segment(tdbb,
 						blob,
-						(UCHAR*)trigger->trg_blr,
+						trigger->trg_blr,
 						trigger->trg_length);
 		BLB_close(tdbb, blob);
 	END_STORE;
 }
+

@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.45 2003-11-07 23:15:33 brodsom Exp $
+$Id: backup.epp,v 1.46 2003-12-03 08:19:00 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1088,7 +1088,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SLONG *returned_range, range_buffer[16];	// enough for 16 dimensions 
+	SLONG range_buffer[16];	// enough for 16 dimensions
 	UCHAR blr_buffer[200];		// enough for a sdl with 16 dimensions 
 
 	TGBL tdgbl = GET_THREAD_DATA;
@@ -1179,7 +1179,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		if (tdgbl->gbl_sw_transportable)
 			xdr_buffer.lstr_length *= (range[1] - range[0] + 1);
 	}
-	UCHAR *slice = BURP_alloc(slice_length);
+	UCHAR* slice = BURP_alloc(slice_length);
 
 // allocate space for the XDR representation 
 
@@ -1191,7 +1191,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 
 	ULONG return_length = 0;
 	if (isc_get_slice(status_vector, &DB, &gds_trans, blob_id,
-					  blr_length, (char*) blr_buffer,
+					  blr_length, (const char*) blr_buffer,
 					  0,	// param length for subset of an array handling
 					  NULL,	// param for subset of an array handling
 					  slice_length, slice, (SLONG*) &return_length))
@@ -1218,7 +1218,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 
 		SLONG returned_elements = (return_length / field_length) - 1;
 
-		returned_range = range_buffer;
+		SLONG* returned_range = range_buffer;
 		for (i1 = 0, i3 = 0, range = end_ranges - 2;
 			 range >= field->fld_ranges; range -= 2, returned_range++, i1++)
 		{
@@ -1239,7 +1239,7 @@ void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 	put_numeric(att_blob_field_number, field->fld_number);
 	put_numeric(att_array_dimensions, field->fld_dimensions);
 
-	returned_range = range_buffer;
+	SLONG* returned_range = range_buffer;
 	for (range = field->fld_ranges; range < end_ranges;
 		 range += 2, returned_range++)
 	{

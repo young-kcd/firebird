@@ -146,7 +146,7 @@ public:
 	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
 	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
 	struct jrd_prc*	req_procedure;		/* procedure, if any */
-	TEXT*		req_trg_name;		/* name of request (trigger), if any */
+	const TEXT*		req_trg_name;		/* name of request (trigger), if any */
 	USHORT req_length;			/* message length for send/receive */
 	USHORT req_nmsgs;			/* number of message types */
 	USHORT req_mmsg;			/* highest message type */

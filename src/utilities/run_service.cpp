@@ -45,20 +45,17 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	Initialize lock manager for process.
  *
  **************************************/
-	SCHAR *service_path;
-	SCHAR *spb, spb_buffer[2048], *p, send_buffer[2048],
-		buffer[2048], item;
-	SLONG *handle;
-	SSHORT len;
+	SCHAR send_buffer[2048];
 
 	if (argc < 2) {
 		ib_printf("usage: run_service service_path [args]\n");
 		exit(FINI_ERROR);
 	}
 
-	service_path = argv[1];
+	const char* service_path = argv[1];
 
-	spb = spb_buffer;
+	char spb_buffer[2048];
+	char* spb = spb_buffer;
 	if (argc > 2) {
 		*spb++ = isc_spb_version1;
 		*spb++ = isc_spb_command_line;
@@ -71,7 +68,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		spb_buffer[2] = strlen(spb_buffer + 3);
 	}
 
-	handle = NULL;
+	SLONG* handle = NULL;
 	isc_service_attach(NULL, 0, service_path, &handle,
 					   (SSHORT) (spb - spb_buffer), spb_buffer);
 
@@ -82,26 +79,32 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		send_item_length = sizeof(send_timeout);
 	}
 	else {
+	    // CVC: What's the idea of pointing to a random-filled buffer if its
+	    // length is set to zero. Doesn't isc_service_query check the lengths
+	    // first like other API functions?
 		send_items = send_buffer;
 		send_item_length = 0;
 	}
 
-	if (send_item_length)
+	if (send_item_length) {
 		ib_printf
 			("It will take about 30 seconds to confirm that the cache manager\nis running.  Please wait...\n");
+	}
 
-	item = isc_info_end;
+	char buffer[2048];
+	char item = isc_info_end;
 	do {
 		isc_service_query(NULL, &handle, send_item_length, send_items,
 						  sizeof(recv_items), recv_items, sizeof(buffer),
 						  buffer);
 		if (send_items == send_buffer)
 			send_item_length = 0;
-		p = buffer;
+		const char* p = buffer;
 		while (p < buffer + sizeof(buffer) &&
 			   (item = *p) != isc_info_end &&
-			   item != isc_info_truncated && item != isc_info_svc_timeout) {
-			len = gds__vax_integer(p + 1, 2);
+			   item != isc_info_truncated && item != isc_info_svc_timeout)
+		{
+			SSHORT len = gds__vax_integer(p + 1, 2);
 			p += 2;
 			while (len--) {
 				p++;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.29 2003-11-30 06:41:29 robocop Exp $
+ * $Id: show.epp,v 1.30 2003-12-03 08:19:13 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -71,22 +71,22 @@ extern bool V33;
 static void local_fprintf(const char*, const char*);
 static void remove_delimited_double_quotes(TEXT*);
 static void make_priv_string(USHORT, char*);
-static int show_all_tables(SSHORT);
+static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*);
-static int show_check(const SCHAR*);
+static processing_state show_check(const SCHAR*);
 static void show_db();
-static int show_dialect();
-static int show_domains(const SCHAR*);
-static int show_exceptions(const SCHAR*);
-static int show_filters(const SCHAR*);
-static int show_functions(const SCHAR*);
-static int show_generators(const SCHAR*);
+static processing_state show_dialect();
+static processing_state show_domains(const SCHAR*);
+static processing_state show_exceptions(const SCHAR*);
+static processing_state show_filters(const SCHAR*);
+static processing_state show_functions(const SCHAR*);
+static processing_state show_generators(const SCHAR*);
 static void show_index(SCHAR*, SCHAR*, const SSHORT, const SSHORT, const SSHORT);
-static int show_indices(const SCHAR* const*);
-static int show_proc(const SCHAR*);
-static int show_role(const SCHAR*);
-static int show_table(const SCHAR*);
-static int show_trigger(const SCHAR*, bool);
+static processing_state show_indices(const SCHAR* const*);
+static processing_state show_proc(const SCHAR*);
+static processing_state show_role(const SCHAR*);
+static processing_state show_table(const SCHAR*);
+static processing_state show_trigger(const SCHAR*, bool);
 
 static TEXT Print_buffer[512];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
@@ -486,7 +486,7 @@ bool SHOW_dbb_parameters(FRBRD* db_handle,
 }
 
 
-int SHOW_grants(SCHAR* object,
+processing_state SHOW_grants(SCHAR* object,
 				const SCHAR* terminator,
 				USHORT obj_type)
 {
@@ -504,7 +504,7 @@ int SHOW_grants(SCHAR* object,
 }
 
 
-int SHOW_grants2 (SCHAR* object,
+processing_state SHOW_grants2 (SCHAR* object,
 				  const SCHAR* terminator,
 				  USHORT obj_type,
 				  const TEXT* optional_msg)
@@ -893,7 +893,7 @@ int SHOW_grants2 (SCHAR* object,
 			return (SKIP);
 	}
 
-	return NOT_FOUND;
+	return OBJECT_NOT_FOUND;
 }
 
 
@@ -1031,7 +1031,7 @@ void SHOW_print_metadata_text_blob(IB_FILE* fp,
 }
 
 
-int SHOW_metadata(const SCHAR* const* cmd,
+processing_state SHOW_metadata(const SCHAR* const* cmd,
 				  SCHAR** lcmd)
 {
 /**************************************
@@ -1047,7 +1047,7 @@ int SHOW_metadata(const SCHAR* const* cmd,
  *	cmd -- Array of words for the command
  *
  **************************************/
-	int ret = SKIP;
+	processing_state ret = SKIP;
 	int key = 0;
 
 // Can't show nothing, return an error
@@ -1460,7 +1460,7 @@ static void make_priv_string(USHORT flags,
 }
 
 
-static int show_all_tables(SSHORT flag)
+static processing_state show_all_tables(SSHORT flag)
 {
 /**************************************
  *
@@ -1519,7 +1519,7 @@ static int show_all_tables(SSHORT flag)
 		return SKIP;
 	}
 	else
-		return NOT_FOUND;
+		return OBJECT_NOT_FOUND;
 }
 
 static void show_charsets(const SCHAR* relation_name,
@@ -1592,7 +1592,7 @@ static void show_charsets(const SCHAR* relation_name,
 }
 
 
-static int show_check(const SCHAR* object)
+static processing_state show_check(const SCHAR* object)
 {
 /**************************************
  *
@@ -1639,7 +1639,7 @@ static int show_check(const SCHAR* object)
 	    return (ERR);
 	END_ERROR;
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return (SKIP);
 }
 
@@ -1858,7 +1858,7 @@ static void show_db()
 }
 
 
-static int show_dialect()
+static processing_state show_dialect()
 {
 /**************************************
  *
@@ -1891,7 +1891,7 @@ static int show_dialect()
 }
 
 
-static int show_domains(const SCHAR* domain_name)
+static processing_state show_domains(const SCHAR* domain_name)
 {
 /*************************************
 *
@@ -2113,12 +2113,12 @@ static int show_domains(const SCHAR* domain_name)
 		END_ERROR;
 	}
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return (SKIP);
 }
 
 
-static int show_exceptions(const SCHAR* object)
+static processing_state show_exceptions(const SCHAR* object)
 {
 /**************************************
  *
@@ -2201,12 +2201,12 @@ static int show_exceptions(const SCHAR* object)
 		}
 	END_ERROR;
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return (SKIP);
 }
 
 
-static int show_filters(const SCHAR* object)
+static processing_state show_filters(const SCHAR* object)
 {
 /**************************************
  *
@@ -2241,7 +2241,7 @@ static int show_filters(const SCHAR* object)
 			return (SKIP);
 		}
 		else
-			return NOT_FOUND;
+			return OBJECT_NOT_FOUND;
 	}
 
 // We have a filter name, so expand on it
@@ -2271,12 +2271,12 @@ static int show_filters(const SCHAR* object)
 	END_ERROR;
 
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return (SKIP);
 }
 
 
-static int show_functions(const SCHAR* object)
+static processing_state show_functions(const SCHAR* object)
 {
 /**************************************
  *
@@ -2313,7 +2313,7 @@ static int show_functions(const SCHAR* object)
 			return (SKIP);
 		}
 		else
-			return NOT_FOUND;
+			return OBJECT_NOT_FOUND;
 	}
 	FOR FUN IN RDB$FUNCTIONS CROSS
 		FNA IN RDB$FUNCTION_ARGUMENTS WITH
@@ -2459,12 +2459,12 @@ static int show_functions(const SCHAR* object)
 	    return ERR;
 	END_ERROR;
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return (SKIP);
 }
 
 
-static int show_generators(const SCHAR* object)
+static processing_state show_generators(const SCHAR* object)
 {
 /**************************************
  *
@@ -2564,7 +2564,7 @@ static int show_generators(const SCHAR* object)
 	    return ERR;
 	END_ERROR;
 	if (!found)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return SKIP;
 }
 
@@ -2619,7 +2619,7 @@ static void show_index(SCHAR* relation_name,
 }
 
 
-static int show_indices(const SCHAR* const* cmd)
+static processing_state show_indices(const SCHAR* const* cmd)
 {
 /**************************************
  *
@@ -2669,7 +2669,7 @@ static int show_indices(const SCHAR* const* cmd)
 			return ERR;
 		END_ERROR;
 		if (first)
-			return (NOT_FOUND);
+			return (OBJECT_NOT_FOUND);
 		return (SKIP);
 
 	}
@@ -2702,14 +2702,14 @@ static int show_indices(const SCHAR* const* cmd)
 		    return (ERR);
 		END_ERROR;
 		if (first)
-			return (NOT_FOUND);
+			return (OBJECT_NOT_FOUND);
 		return (SKIP);
 	}
 
 }
 
 
-static int show_proc(const SCHAR* procname)
+static processing_state show_proc(const SCHAR* procname)
 {
 /**************************************
  *
@@ -2786,7 +2786,7 @@ static int show_proc(const SCHAR* procname)
 		    return (ERR);
 		END_ERROR;
 		if (first_proc)
-			return NOT_FOUND;
+			return OBJECT_NOT_FOUND;
 		return (SKIP);
 	}
 
@@ -2918,12 +2918,12 @@ static int show_proc(const SCHAR* procname)
 	    return ERR;
 	END_ERROR;
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return (SKIP);
 }
 
 
-static int show_role(const SCHAR* object)
+static processing_state show_role(const SCHAR* object)
 {
 	if (object == NULL) {		// show role with no parameters, show all roles
 /**************************************
@@ -2957,7 +2957,7 @@ static int show_role(const SCHAR* object)
 		}
 		else
 		{
-			return NOT_FOUND;
+			return OBJECT_NOT_FOUND;
 		}
 	}
 	else
@@ -3001,14 +3001,14 @@ static int show_role(const SCHAR* object)
 		END_ERROR;
 
 		if (first)
-			return (NOT_FOUND);
+			return (OBJECT_NOT_FOUND);
 
 		return (SKIP);
 	}
 }
 
 
-static int show_table(const SCHAR* relation_name)
+static processing_state show_table(const SCHAR* relation_name)
 {
 /**************************************
  *
@@ -3045,7 +3045,7 @@ static int show_table(const SCHAR* relation_name)
 	END_ERROR;
 
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 
 /*
 *FOR RFR IN RDB$RELATION_FIELDS CROSS
@@ -3390,12 +3390,12 @@ static int show_table(const SCHAR* relation_name)
 	show_trigger(relation_name, false);
 
 	if (first)
-		return (NOT_FOUND);
+		return (OBJECT_NOT_FOUND);
 	return SKIP;
 }
 
 
-static int show_trigger(const SCHAR* object,
+static processing_state show_trigger(const SCHAR* object,
 						bool show_source)
 {
 /**************************************
@@ -3479,7 +3479,7 @@ static int show_trigger(const SCHAR* object,
 			END_ERROR;
 		}
 		if (first)
-			return NOT_FOUND;
+			return OBJECT_NOT_FOUND;
 		else
 			return (SKIP);
 	}
@@ -3542,7 +3542,7 @@ static int show_trigger(const SCHAR* object,
 	    return ERR;
 	END_ERROR;
 	if (first)
-		return NOT_FOUND;
+		return OBJECT_NOT_FOUND;
 	return SKIP;
 }
 

@@ -1772,7 +1772,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 						msg_invariants = reinterpret_cast<MsgInvariantArray *>(
 							msg->nod_arg[e_msg_invariants]);
 					}
-					SLONG arg_number = (SLONG)(IPTR)(*ptr)->nod_arg[e_arg_number];
+					SLONG arg_number = (SLONG) (IPTR)(*ptr)->nod_arg[e_arg_number];
 					if (msg_invariants->getCount() <= arg_number)
 						msg_invariants->grow(arg_number + 1);
 					var_invariants = &(*msg_invariants)[arg_number];
@@ -3272,7 +3272,7 @@ static JRD_NOD pass1(TDBB tdbb,
 		break;
 
 	case nod_aggregate:
-		fb_assert((int)(SLONG) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		csb->csb_rpt[(USHORT)(ULONG) node->nod_arg[e_agg_stream]].csb_flags |=
 			csb_no_dbkey;
 		ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
@@ -3632,7 +3632,7 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 				alloc_map(tdbb, csb,
 						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
 			source = copy(tdbb, csb, source, map, 0, false);
-			fb_assert((int)(IPTR) source->nod_arg[e_rel_stream] <= MAX_STREAMS);
+			fb_assert((int) (IPTR) source->nod_arg[e_rel_stream] <= MAX_STREAMS);
 			map[new_stream] = (UCHAR)(ULONG) source->nod_arg[e_rel_stream];
 			view_node = copy(tdbb, csb, node, map, 0, true);
 			view_node->nod_arg[e_mod_org_stream] = (JRD_NOD) (SLONG) stream;
@@ -3923,7 +3923,7 @@ static void pass1_source(TDBB     tdbb,
 	// special case: group-by/global aggregates
 
 	if (source->nod_type == nod_aggregate) {
-		fb_assert((int)(SLONG) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		pass1(tdbb, csb, source, parent_view, view_stream, false);
 		return;
 	}

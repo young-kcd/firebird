@@ -164,7 +164,7 @@ static const RTYP types[] = {
 /* obtain international names */
 
 typedef struct initcharset {
-	const UCHAR *init_charset_name;
+	const UCHAR* init_charset_name;
 	SSHORT init_charset_id;
 	USHORT init_charset_bytes_per_char;
 } CS_TYPE;
@@ -206,3 +206,4 @@ static const COLL_TYPE coll_types[] = {
 #undef COLLATION
 #undef END_CHARSET
 #endif
+

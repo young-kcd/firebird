@@ -205,7 +205,7 @@ PORT XNET_analyze(
 				  USHORT* file_length,
 				  ISC_STATUS* status_vector,
 				  const TEXT* node_name, const TEXT* user_string,
-				  USHORT uv_flag)
+				  bool uv_flag)
 {
 /**************************************
  *
@@ -241,18 +241,20 @@ PORT XNET_analyze(
 	ISC_get_user(p, 0, 0, 0, 0, 0, 0);
 	user_id[1] = strlen(p);
 
-	for (; *p; p++)
+	for (; *p; p++) {
 		if (*p >= 'A' && *p <= 'Z')
 			*p = *p - 'A' + 'a';
+	}
 
 	*p++ = CNCT_host;
 	p++;
 	ISC_get_host(p, (USHORT) (user_id + sizeof(user_id) - p));
 	p[-1] = strlen(p);
 
-	for (; *p; p++)
+	for (; *p; p++) {
 		if (*p >= 'A' && *p <= 'Z')
 			*p = *p - 'A' + 'a';
+	}
 
 	if (uv_flag) {
 		*p++ = CNCT_user_verification;
@@ -425,27 +427,6 @@ PORT XNET_connect(const TEXT* name, PACKET* packet,
  *	Establish half of a communication link.
  *
  **************************************/
-
-#ifdef SUPERCLIENT
-
-	PORT port = NULL;
-	XCC xcc = NULL;
-	XPM xpm = NULL;
-	XPS xps = NULL;
-
-	XNET_RESPONSE response;
-	ULONG map_num, slot_num;
-	time_t timestamp;
-
-	TEXT name_buffer[128];
-	FILE_ID file_handle = 0;
-	CADDR_T mapped_address = 0;
-	UCHAR *start_ptr;
-
-	ULONG avail;
-
-#endif // SUPERCLIENT
-
 	if (xnet_shutdown)
 		return NULL;
 
@@ -475,6 +456,22 @@ PORT XNET_connect(const TEXT* name, PACKET* packet,
 			Sleep(10);
 	}
 */
+	PORT port = NULL;
+	XCC xcc = NULL;
+	XPM xpm = NULL;
+	XPS xps = NULL;
+
+	XNET_RESPONSE response;
+	ULONG map_num, slot_num;
+	time_t timestamp;
+
+	TEXT name_buffer[128];
+	FILE_ID file_handle = 0;
+	CADDR_T mapped_address = 0;
+	UCHAR *start_ptr;
+
+	ULONG avail;
+
 	if (!xnet_initialized) {
 		xnet_initialized = TRUE;
 		THD_mutex_init(&xnet_mutex);

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.50 2003-11-23 20:17:30 skidder Exp $ 
+  * $Id: evl.cpp,v 1.51 2003-12-03 08:19:16 robocop Exp $ 
  */
 
 /*
@@ -245,7 +245,7 @@ DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 	case nod_argument:
 		message = node->nod_arg[e_arg_message];
 		format = (FMT) message->nod_arg[e_msg_format];
-		arg_number = (int)(IPTR)node->nod_arg[e_arg_number];
+		arg_number = (int) (IPTR)node->nod_arg[e_arg_number];
 		desc = &format->fmt_desc[arg_number];
 		impure->vlu_desc.dsc_address =
 			(UCHAR *) request + message->nod_impure + (int) desc->dsc_address;
@@ -288,7 +288,7 @@ DSC* EVL_assign_to(TDBB tdbb, JRD_NOD node)
 		// may happen. I checked triggers and insert/update statements.
 		// All seem to work fine.
 		record =
-			request->req_rpb[(int)(SLONG) node->nod_arg[e_fld_stream]].rpb_record;
+			request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
 		EVL_field(0, record, (USHORT)(ULONG) node->nod_arg[e_fld_id],
 				  &impure->vlu_desc);
 		if (!impure->vlu_desc.dsc_address)
@@ -842,7 +842,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 	case nod_field:
 		{
 			REC record =
-				request->req_rpb[(int)(SLONG)node->nod_arg[e_fld_stream]].rpb_record;
+				request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
 			/* In order to "map a null to a default" value (in EVL_field()), 
 			 * the relation block is referenced. 
 			 * Reference: Bug 10116, 10424 
@@ -1711,7 +1711,7 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, JRD_NOD node, USHORT state)
 		field = (*ptr)->nod_arg[e_asgn_to];
 		id = (USHORT)(ULONG) field->nod_arg[e_fld_id];
 		record =
-			request->req_rpb[(int)(SLONG) field->nod_arg[e_fld_stream]].rpb_record;
+			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 		impure = (VLUX) ((SCHAR *) request + from->nod_impure);
 		switch (from->nod_type)
 		{
@@ -3390,7 +3390,7 @@ static DSC *dbkey(TDBB tdbb, JRD_NOD node, VLU impure)
 
 	request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
-	rpb = &request->req_rpb[(int)(SLONG) node->nod_arg[0]];
+	rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 	relation = rpb->rpb_relation;
 
 /* Format dbkey as vector of relation id, record number */
@@ -4454,7 +4454,7 @@ static DSC* record_version(TDBB tdbb, JRD_NOD node, VLU impure)
 
 	request = tdbb->tdbb_request;
 	impure = (VLU) ((SCHAR *) request + node->nod_impure);
-	rpb = &request->req_rpb[(int)(SLONG) node->nod_arg[0]];
+	rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
 /* If the current transaction has updated the record, the record version
  * coming in from DSQL will have the original transaction # (or current

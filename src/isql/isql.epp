@@ -161,41 +161,41 @@ struct ri_actions {
 	const SCHAR* ri_action_print_mixed;
 };
 
-static SSHORT add_row(const TEXT*);
-static SSHORT blobedit(const TEXT*, const TEXT* const*);
+static processing_state add_row(const TEXT*);
+static processing_state blobedit(const TEXT*, const TEXT* const*);
 static void col_check(const TEXT*, SSHORT*);
 static void copy_str(TEXT**, const TEXT**, bool*, const TEXT* const,
 	const TEXT* const, literal_string_type);
-static SSHORT copy_table(const TEXT*, const TEXT*, const TEXT*);
-static SSHORT create_db(const TEXT*, const TEXT*);
+static processing_state copy_table(const TEXT*, const TEXT*, const TEXT*);
+static processing_state create_db(const TEXT*, const TEXT*);
 static void do_isql();
-static SSHORT drop_db();
-static SSHORT edit(const TEXT* const*);
-static int end_trans();
-static SSHORT escape(const TEXT*);
-static SSHORT frontend(const TEXT*);
+static processing_state drop_db();
+static processing_state edit(const TEXT* const*);
+static processing_state end_trans();
+static processing_state escape(const TEXT*);
+static processing_state frontend(const TEXT*);
 static void frontend_free_parms(TEXT*[], TEXT*[]);
-static SSHORT get_statement(TEXT**, USHORT*, const TEXT*);
+static processing_state get_statement(TEXT**, USHORT*, const TEXT*);
 static bool get_numeric(const UCHAR*, USHORT, SSHORT*, SINT64*);
 static void get_str(const TEXT* const, const TEXT**, const TEXT**,
 	literal_string_type*);
-static SSHORT print_sets();
-static SSHORT help(const TEXT*);
-static SSHORT input(const TEXT*);
+static processing_state print_sets();
+static processing_state help(const TEXT*);
+static processing_state input(const TEXT*);
 static bool isyesno(const TEXT*);
-static SSHORT newdb(TEXT*, const TEXT*, const TEXT*, const TEXT*, const TEXT*, bool);
-static SSHORT newoutput(const TEXT*);
-static SSHORT newsize(const TEXT*, const TEXT*);
-static SSHORT newtrans(const TEXT*);
-static SSHORT parse_arg(int, SCHAR**, SCHAR*, IB_FILE**);
+static processing_state newdb(TEXT*, const TEXT*, const TEXT*, const TEXT*, const TEXT*, bool);
+static processing_state newoutput(const TEXT*);
+static processing_state newsize(const TEXT*, const TEXT*);
+static processing_state newtrans(const TEXT*);
+static processing_state parse_arg(int, SCHAR**, SCHAR*, IB_FILE**);
 static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
-static int print_item_blob(IB_FILE*, const XSQLVAR*, FRBRD*);
+static processing_state print_item_blob(IB_FILE*, const XSQLVAR*, FRBRD*);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
-static int print_line(XSQLDA*, const SLONG*, TEXT*);
+static processing_state print_line(XSQLDA*, const SLONG*, TEXT*);
 static int process_statement(const TEXT*, XSQLDA**);
 static void CLIB_ROUTINE query_abort();
 static void strip_quotes(const TEXT*, TEXT*);
-static SSHORT do_set_command(const TEXT*, bool*);
+static processing_state do_set_command(const TEXT*, bool*);
 #ifdef DEV_BUILD
 static const char* sqltype_to_string(USHORT);
 #endif
@@ -225,7 +225,7 @@ static int Abort_flag = 0;
 static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
-static SSHORT Exit_value;
+static int Exit_value;
 static bool Continuation = false;
 static bool Interactive = true;
 static bool Input_file = false;
@@ -386,7 +386,7 @@ int CLIB_ROUTINE main(int argc,
 }
 
 
-SSHORT ISQL_main(int argc,
+int ISQL_main(int argc,
 				 char* argv[])
 {
 /**************************************
@@ -439,7 +439,7 @@ SSHORT ISQL_main(int argc,
 	Out = ib_stdout;
 	Errfp = ib_stderr;
 
-	SSHORT ret = parse_arg(argc, argv, tabname, NULL);
+	processing_state ret = parse_arg(argc, argv, tabname, NULL);
 
 // Detect if stdin is redirected
 #ifdef WIN_NT
@@ -733,7 +733,7 @@ static void readNextInputLine(const char* prompt) {
 			int size = 0;
 			int pos = 0;
 			while (true) {
-				char c = ib_getc(Ifp);
+				int c = ib_getc(Ifp);
 				if (c == 0x0D)
 					c = ib_getc(Ifp);
 				if (c == EOF)
@@ -750,7 +750,7 @@ static void readNextInputLine(const char* prompt) {
 				if (c == '\n')
 					break;
 				else
-					lastInputLine[pos++] = c;
+					lastInputLine[pos++] = static_cast<char>(c);
 			}
 			if (lastInputLine != NULL)
 				lastInputLine[pos] = '\0';
@@ -1222,7 +1222,7 @@ void ISQL_get_default_source(const TEXT* rel_name,
 }
 
 
-SSHORT ISQL_get_index_segments(TEXT* segs,
+SLONG ISQL_get_index_segments(TEXT* segs,
 							   const TEXT* indexname,
 							   bool delimited_yes)
 {
@@ -1248,13 +1248,13 @@ SSHORT ISQL_get_index_segments(TEXT* segs,
 		};
 
 // Query to get column names 
-	int n = 0;
+	SLONG n = 0;
 
 	FOR SEG IN RDB$INDEX_SEGMENTS WITH
 		SEG.RDB$INDEX_NAME EQ indexname
 		SORTED BY SEG.RDB$FIELD_POSITION
 
-		n++;
+		++n;
 
 		// Place a comma and a blank between each segment column name 
 
@@ -1670,7 +1670,7 @@ void ISQL_printf(IB_FILE* fp,
 	ib_fflush(fp); // John's fix.
 }
 
-static SSHORT add_row(const TEXT* tabname)
+static processing_state add_row(const TEXT* tabname)
 {
 /**************************************
  *
@@ -1776,14 +1776,15 @@ static SSHORT add_row(const TEXT* tabname)
 	
 	SSHORT i_cols = 0;
 	i = 0;
-	const XSQLVAR* var;
-	for (var = sqlda->sqlvar; i < n_cols; var++, i++) {
+	{ // scope
+	for (const XSQLVAR* var = sqlda->sqlvar; i < n_cols; var++, i++) {
 		// Skip columns that are computed 
 		if (colnumber[i] != -1) {
 			sprintf(insertstring + strlen(insertstring), "%s,", var->sqlname);
 			i_cols++;
 		}
 	}
+	} // scope for MSVC6
 // Set i_cols to the number of insert columns  
 	insertstring[strlen(insertstring) - 1] = ')';
 	strcat(insertstring, " VALUES (");
@@ -1825,7 +1826,8 @@ static SSHORT add_row(const TEXT* tabname)
 	bool done = false;
 	while (!done) {
 		SSHORT* nullp = nullind;
-		for (i = 0, var = sqlda->sqlvar; i < n_cols && !done; var++, i++) {
+		i = 0;
+		for (const XSQLVAR* var = sqlda->sqlvar; i < n_cols && !done; var++, i++) {
 			if (colnumber[i] == -1)
 				continue;
 
@@ -2090,7 +2092,7 @@ static SSHORT add_row(const TEXT* tabname)
 }
 
 
-static SSHORT blobedit(const TEXT* action,
+static processing_state blobedit(const TEXT* action,
 					   const TEXT* const* cmd)
 {
 /**************************************
@@ -2297,7 +2299,7 @@ static void copy_str(TEXT** output_str,
 }
 
 
-static SSHORT copy_table(const TEXT* source_tbl,
+static processing_state copy_table(const TEXT* source_tbl,
 						 const TEXT* destination,
 						 const TEXT* otherdb)
 {
@@ -2376,7 +2378,7 @@ static SSHORT copy_table(const TEXT* source_tbl,
 	return (SKIP);
 }
 
-static SSHORT create_db(const TEXT* statement,
+static processing_state create_db(const TEXT* statement,
 						const TEXT* d_name)
 {
 /**************************************
@@ -2395,7 +2397,7 @@ static SSHORT create_db(const TEXT* statement,
  *	will not have any roles defined in it.
  *
  **************************************/
-	SSHORT ret = SKIP;
+	processing_state ret = SKIP;
 
 // Disconnect from the database and cleanup 
 	ISQL_disconnect_database(false);
@@ -2705,7 +2707,7 @@ static void do_isql()
 */
 
 	TEXT* statement = NULL;
-	SSHORT ret;
+	int ret;
 	
 	bool done = false;
 	while (!done) {
@@ -2845,7 +2847,7 @@ static void do_isql()
 }
 
 
-static SSHORT drop_db()
+static processing_state drop_db()
 {
 /**************************************
  *
@@ -2896,7 +2898,7 @@ static SSHORT drop_db()
 }
 
 
-static SSHORT edit(const TEXT* const* cmd)
+static processing_state edit(const TEXT* const* cmd)
 {
 /**************************************
  *
@@ -2979,7 +2981,7 @@ static SSHORT edit(const TEXT* const* cmd)
 }
 
 
-static int end_trans()
+static processing_state end_trans()
 {
 /**************************************
  *
@@ -2998,7 +3000,7 @@ static int end_trans()
 
 	TEXT infobuf[BUFFER_LENGTH60];
 
-	int ret = CONT;
+	processing_state ret = CONT;
 /* Give option of committing or rolling back before proceding unless
 **  the last command was a commit or rollback
 */
@@ -3070,7 +3072,7 @@ static int end_trans()
 }
 
 
-static SSHORT escape(const TEXT* cmd)
+static processing_state escape(const TEXT* cmd)
 {
 /**************************************
  *
@@ -3116,7 +3118,7 @@ static SSHORT escape(const TEXT* cmd)
 }
 
 
-static SSHORT frontend(const TEXT* statement)
+static processing_state frontend(const TEXT* statement)
 {
 /**************************************
  *
@@ -3246,7 +3248,7 @@ static SSHORT frontend(const TEXT* statement)
 	** Look to see if the words (parms) match any known verbs.  If nothing
 	**  matches then just hand the statement to process_statement
 	*/
-	SSHORT ret = SKIP;
+	processing_state ret = SKIP;
 	if (!*cmd) {
 		ret = SKIP; // redundant
 	}
@@ -3439,7 +3441,7 @@ static SSHORT frontend(const TEXT* statement)
 							{
 								if (SQL_dialect > SQL_DIALECT_V5)
 								{
-									if (dialect_spoken)
+									if (dialect_spoken) {
 										sprintf(bad_dialect_buf,
 												"%s%d%s%s%s%d%s",
 												"ERROR: Database SQL dialect ",
@@ -3448,7 +3450,8 @@ static SSHORT frontend(const TEXT* statement)
 												dialect_str,
 												" setting. Client SQL dialect still remains ",
 												old_SQL_dialect, NEWLINE);
-									else
+									}
+									else {
 										sprintf(bad_dialect_buf,
 												"%s%s%s%s%s%s",
 												"ERROR: Pre IB V6 database only speaks ",
@@ -3457,6 +3460,7 @@ static SSHORT frontend(const TEXT* statement)
 												dialect_str,
 												" setting. Client SQL dialect still remains 1.",
 												NEWLINE);
+									}
 									SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
 									ISQL_printf(Out, bad_dialect_buf);
 								}
@@ -3671,7 +3675,7 @@ static void frontend_free_parms(TEXT* parms[], TEXT* lparms[])
 	}
 }
 
-static SSHORT do_set_command(const TEXT* parm,
+static processing_state do_set_command(const TEXT* parm,
 							 bool* global_flag)
 {
 /**************************************
@@ -3688,7 +3692,7 @@ static SSHORT do_set_command(const TEXT* parm,
  *	if parm is "OFF", set it to false
  *
  **************************************/
-	SSHORT ret = SKIP;
+	processing_state ret = SKIP;
 
 	if (!*parm)
 		*global_flag = !*global_flag;
@@ -3702,7 +3706,7 @@ static SSHORT do_set_command(const TEXT* parm,
 }
 
 
-static SSHORT get_statement(TEXT** statement_ref,
+static processing_state get_statement(TEXT** statement_ref,
 							USHORT* statement_buffer,
 							const TEXT* statement_prompt)
 {
@@ -3719,7 +3723,7 @@ static SSHORT get_statement(TEXT** statement_ref,
  *
  **************************************/
 	TEXT* q;
-	SSHORT ret = CONT;
+	processing_state ret = CONT;
 	INDEV flist, oflist;
 
 // Lookup the continuation prompt once 
@@ -3787,7 +3791,7 @@ static SSHORT get_statement(TEXT** statement_ref,
 
 			flist = Filelist;
 			if (!flist->indev_next)
-				return EOF;
+				return FOUND_EOF;
 
 			// If this is not ib_tmpfile, close it 
 
@@ -4374,7 +4378,7 @@ void ISQL_remove_and_unescape_quotes(TEXT* string, const char quote)
 	const TEXT* p = q;
 	const TEXT* const end_of_str = p + cmd_len;
 
-	for (int cnt = 1; cnt < cmd_len && p < end_of_str; cnt++) {
+	for (size_t cnt = 1; cnt < cmd_len && p < end_of_str; cnt++) {
 		p++;
 		if (cnt < cmd_len - 1) {
 			*q = *p;
@@ -4527,7 +4531,7 @@ static bool get_numeric(const UCHAR* string,
 	return true;
 }
 
-static SSHORT print_sets()
+static processing_state print_sets()
 {
 /**************************************
  *
@@ -4605,7 +4609,7 @@ static SSHORT print_sets()
 }
 
 
-static SSHORT help(const TEXT* what)
+static processing_state help(const TEXT* what)
 {
 /**************************************
  *
@@ -4688,7 +4692,7 @@ static SSHORT help(const TEXT* what)
 }
 
 
-static SSHORT input(const TEXT* infile)
+static processing_state input(const TEXT* infile)
 {
 /**************************************
  *
@@ -4797,7 +4801,7 @@ static bool isyesno(const TEXT* buffer)
 }
 
 
-static SSHORT newdb(TEXT* dbname,
+static processing_state newdb(TEXT* dbname,
 					const TEXT* usr,
 					const TEXT* psw,
 					const TEXT* numbufs,
@@ -5153,7 +5157,7 @@ static SSHORT newdb(TEXT* dbname,
 }
 
 
-static SSHORT newoutput(const TEXT* outfile)
+static processing_state newoutput(const TEXT* outfile)
 {
 /**************************************
  *
@@ -5167,7 +5171,7 @@ static SSHORT newoutput(const TEXT* outfile)
  *	Parameters:  outfile : Name of file to receive query output
  *
  **************************************/
-	int ret = SKIP;
+	processing_state ret = SKIP;
 // If there is a file name, attempt to open it for append 
 
 	if (*outfile) {
@@ -5207,7 +5211,7 @@ static SSHORT newoutput(const TEXT* outfile)
 }
 
 
-static SSHORT newsize(const TEXT* colname,
+static processing_state newsize(const TEXT* colname,
 					  const TEXT* sizestr)
 {
 /**************************************
@@ -5273,7 +5277,7 @@ static SSHORT newsize(const TEXT* colname,
 }
 
 
-static SSHORT newtrans(const TEXT* statement)
+static processing_state newtrans(const TEXT* statement)
 {
 /**************************************
  *
@@ -5310,7 +5314,7 @@ static SSHORT newtrans(const TEXT* statement)
 }
 
 
-static SSHORT parse_arg(int argc,
+static processing_state parse_arg(int argc,
 						SCHAR** argv,
 						SCHAR* tabname,
 						IB_FILE** sess)
@@ -5327,7 +5331,7 @@ static SSHORT parse_arg(int argc,
  *	the - and make it so.
  *
  **************************************/
-	int ret = SKIP;
+	processing_state ret = SKIP;
 
 	TEXT* errbuf = (TEXT*) ISQL_ALLOC(MSG_LENGTH);
 	if (!errbuf) {
@@ -6019,7 +6023,7 @@ static SSHORT print_item(TEXT** s,
 }
 
 
-static int print_item_blob(IB_FILE* fp,
+static processing_state print_item_blob(IB_FILE* fp,
 						   const XSQLVAR* var,
 						   FRBRD* trans)
 {
@@ -6215,7 +6219,7 @@ static void print_item_numeric(SINT64 value,
 }
 
 
-static int print_line(XSQLDA* sqlda,
+static processing_state print_line(XSQLDA* sqlda,
 					  const SLONG* pad,
 					  TEXT* line)
 {
@@ -6234,7 +6238,6 @@ static int print_line(XSQLDA* sqlda,
  *
  **************************************/
 	XSQLVAR* varlist[20]; // No more than 20 blobs per line
-	SSHORT ret = CONT;
 
 	int varnum = -1;
 	{ // scope
@@ -6244,14 +6247,15 @@ static int print_line(XSQLDA* sqlda,
 		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
 			 var++, i++)
 		{
-			if (!Abort_flag)
+			if (!Abort_flag) {
 				// Save all the blob vars and print them at the end
 				// CVC: If varnum reaches 20, we must print an error instead of crashing.
-				ret = print_item(&p, var, pad[i]);
-				if (ret == SQL_BLOB) {
+				const int rc = print_item(&p, var, pad[i]);
+				if (rc == SQL_BLOB) {
 					varnum++;
 					varlist[varnum] = var;
 				}
+			}
 		}
 		*p = 0;
 	} // scope
@@ -6311,7 +6315,7 @@ static int process_statement(const TEXT* string,
  *	background work is on the default gds_trans.
  *	THis function now returns CONT (success) or ERR
  **************************************/
-	int ret = CONT;
+	processing_state ret = CONT;
 	static const SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
 	static const SCHAR plan_info[] = { isc_info_sql_get_plan };
 	static const SCHAR count_info[] = { isc_info_sql_records };

@@ -424,14 +424,14 @@ ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS * status_vector,
 						   buffer_length, buffer);
 }
 
-ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
+ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS* status_vector,
 								  FRBRD** db_handle,
 								  FRBRD** tra_handle,
 								  GDS_QUAD* array_id,
 								  SSHORT sdl_length,
-								  SCHAR* sdl,
+								  const SCHAR* sdl,
 								  SSHORT parameters_leng,
-								  SLONG* parameters,
+								  const SLONG* parameters,
 								  SLONG slice_length,
 								  void* slice, SLONG* return_length)
 {
@@ -487,14 +487,14 @@ ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS* status_vector,
 								  FRBRD** tra_handle,
 								  GDS_QUAD* array_id,
 								  SSHORT sdl_length,
-								  SCHAR* sdl,
+								  const SCHAR* sdl,
 								  SSHORT parameters_leng,
-								  SLONG* parameters,
+								  const SLONG* parameters,
 								  SLONG slice_length, void* slice)
 {
 	return isc_put_slice(status_vector, db_handle, tra_handle, array_id, 
 						 sdl_length, sdl, parameters_leng, parameters,
-						 slice_length, (SCHAR *) slice);
+						 slice_length, reinterpret_cast<SCHAR*>(slice));
 }
 
 ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS* status_vector,

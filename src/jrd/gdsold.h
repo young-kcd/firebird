@@ -310,28 +310,28 @@ ISC_STATUS GDS_EXPORT gds__event_block(char  **,
 									 char  **,
 									 unsigned short, ...);
 
-ISC_STATUS GDS_EXPORT gds__get_slice(ISC_STATUS  *,
-									 FRBRD  **,
-									 FRBRD  **,
-									 GDS__QUAD  *,
+ISC_STATUS GDS_EXPORT gds__get_slice(ISC_STATUS*,
+									 FRBRD**,
+									 FRBRD**,
+									 GDS__QUAD*,
 									 short,
-									 char  *,
+									 const char*,
 									 short,
-									 SLONG  *,
+									 const SLONG*,
 									 SLONG,
-									 void  *,
-									 SLONG  *);
+									 void*,
+									 SLONG*);
 
-ISC_STATUS GDS_EXPORT gds__put_slice(ISC_STATUS  *,
-									 FRBRD  **,
-									 FRBRD  **,
-									 GDS__QUAD  *,
+ISC_STATUS GDS_EXPORT gds__put_slice(ISC_STATUS*,
+									 FRBRD**,
+									 FRBRD**,
+									 GDS__QUAD*,
 									 short,
-									 char  *,
+									 const char*,
 									 short,
-									 SLONG  *,
+									 const SLONG*,
 									 SLONG,
-									 void  *);
+									 void*);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -167,9 +167,9 @@ void IDX_check_access(TDBB tdbb, CSB csb, JRD_REL view, JRD_REL relation, JRD_FL
 void IDX_create_index(
 					  TDBB tdbb,
 					  JRD_REL relation,
-					  IDX * idx,
-					  UCHAR * index_name,
-					  USHORT * index_id,
+					  IDX* idx,
+					  const UCHAR* index_name,
+					  USHORT* index_id,
 					  JRD_TRA transaction,
 					  SelectivityList& selectivity)
 {
@@ -228,7 +228,7 @@ void IDX_create_index(
 				 isc_arg_gds,
 				 isc_keytoobig,
 				 isc_arg_string,
-				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
+				 ERR_cstring(reinterpret_cast<const char*>(index_name)), 0);
 	}
 
 	stack = NULL;
@@ -389,21 +389,22 @@ void IDX_create_index(
 				if (primary.rpb_window.win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
 				ERR_post(isc_no_dup, isc_arg_string,
-						 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
+						 ERR_cstring(reinterpret_cast<const char*>(index_name)), 0);
 			}
 
 			l = key.key_length;
 			q = key.key_data;
 
 			if (l > 0) {
-				do
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 			}
-			if ( (l = key_length - key.key_length) )
-				do
+			if ( (l = key_length - key.key_length) ) {
+				do {
 					*p++ = pad;
-				while (--l);
+				} while (--l);
+			}
 			isr = (ISR) p;
 			isr->isr_key_length = key.key_length;
 			isr->isr_record_number = primary.rpb_number;
@@ -430,7 +431,7 @@ void IDX_create_index(
 	if (ifl_data.ifl_duplicates > 0) {
 		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
+				 ERR_cstring(reinterpret_cast<const char*>(index_name)), 0);
 	}
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
@@ -438,7 +439,7 @@ void IDX_create_index(
 	if (ifl_data.ifl_duplicates > 0) {
 		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(reinterpret_cast < char *>(index_name)), 0);
+				 ERR_cstring(reinterpret_cast<const char*>(index_name)), 0);
 	}
 }
 

@@ -2069,9 +2069,9 @@ static void get_slice( ICC icc)
 
 	GDS_GET_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
 				  (ISC_QUAD*) &array_id, sdl_length,
-				  reinterpret_cast < char *>(sdl), param_length,
-				  reinterpret_cast < long *>(params), slice_length,
-				  slice, reinterpret_cast < long *>(&return_length));
+				  reinterpret_cast<const char*>(sdl), param_length,
+				  reinterpret_cast<const long*>(params), slice_length,
+				  slice, reinterpret_cast<long*>(&return_length));
 	ips->ips_length = return_length;
 	send_response(icc, status_vector);
 	if (slice)
@@ -2729,8 +2729,8 @@ static void put_slice( ICC icc)
 
 	GDS_PUT_SLICE(status_vector, &idb->idb_handle, &transaction->itr_handle,
 				  (ISC_QUAD*) & array_id, sdl_length,
-				  reinterpret_cast<char*>(sdl), param_length,
-				  reinterpret_cast<long*>(params), slice_length, slice);
+				  reinterpret_cast<const char*>(sdl), param_length,
+				  reinterpret_cast<const long*>(params), slice_length, slice);
 	ips->ips_rel_id = array_id.bid_relation_id;
 	ips->ips_number = array_id.bid_number;
 	send_response(icc, status_vector);
@@ -3478,9 +3478,9 @@ static void service_attach( ICC icc)
 	handle = NULL;
 	result = GDS_SERVICE_ATTACH(status_vector,
 								service_length,
-								reinterpret_cast < char *>(service_name),
+								reinterpret_cast<const char*>(service_name),
 								&handle,
-								spb_length, reinterpret_cast < char *>(spb));
+								spb_length, reinterpret_cast<const char*>(spb));
 
 	// allocate structure and return handle 
 
@@ -3928,11 +3928,11 @@ static void transact_request( ICC icc)
 						 &idb->idb_handle,
 						 &transaction->itr_handle,
 						 blr_length,
-						 reinterpret_cast < char *>(blr),
+						 reinterpret_cast<const char*>(blr),
 						 in_msg_length,
-						 reinterpret_cast < char *>(in_buffer),
+						 reinterpret_cast<char*>(in_buffer),
 						 out_msg_length,
-						 reinterpret_cast < char *>(out_buffer));
+						 reinterpret_cast<char*>(out_buffer));
 	send_response(icc, status_vector);
 }
 

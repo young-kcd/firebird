@@ -408,8 +408,8 @@ RSB OPT_compile(TDBB tdbb,
 				(UCHAR)(ULONG) node->nod_arg[e_uni_stream];
 		}
 		else if (node->nod_type == nod_aggregate) {
-			fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-			fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+			fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 			rsb = gen_aggregate(tdbb, opt_, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
@@ -3455,9 +3455,9 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 
 	RSB rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
-	fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-	fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
-	rsb->rsb_stream = (UCHAR)(ULONG) node->nod_arg[e_agg_stream];
+	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+	rsb->rsb_stream = (UCHAR) (ULONG) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
 	rsb->rsb_next = OPT_compile(tdbb, csb, rse, NULL);
 	rsb->rsb_arg[0] = (RSB) node;

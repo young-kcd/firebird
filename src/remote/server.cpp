@@ -2448,9 +2448,9 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 	THREAD_EXIT;
 	isc_get_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
 				  (ISC_QUAD*) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
-				  reinterpret_cast<char*>(stuff->p_slc_sdl.cstr_address),
+				  reinterpret_cast<const char*>(stuff->p_slc_sdl.cstr_address),
 				  stuff->p_slc_parameters.cstr_length,
-				  (ISC_LONG *) stuff->p_slc_parameters.cstr_address,
+				  (const ISC_LONG*) stuff->p_slc_parameters.cstr_address,
 				  stuff->p_slc_length, slice,
 				  reinterpret_cast<long*>(&response->p_slr_length));
 	THREAD_ENTER;
@@ -4874,7 +4874,7 @@ ISC_STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
 						 &rdb->rdb_handle,
 						 &transaction->rtr_handle,
 						 blr_length,
-						 reinterpret_cast<char*>(blr),
+						 reinterpret_cast<const char*>(blr),
 						 in_msg_length,
 						 reinterpret_cast<char*>(in_msg),
 						 out_msg_length,

@@ -24,7 +24,7 @@
 #ifndef JRD_SVC_PROTO_H
 #define JRD_SVC_PROTO_H
 
-class svc* SVC_attach(USHORT, TEXT *, USHORT, SCHAR *);
+class svc* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
 void   SVC_cleanup(class svc *);
 void   SVC_detach(class svc *);
 void   SVC_fprintf(class svc*, const SCHAR*, ...);

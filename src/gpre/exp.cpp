@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.27 2003-12-02 02:44:41 brodsom Exp $
+//	$Id: exp.cpp,v 1.28 2003-12-03 08:19:09 robocop Exp $
 //
 
 #include "firebird.h"
@@ -132,11 +132,13 @@ GPRE_NOD EXP_array(GPRE_REQ request, GPRE_FLD field, bool subscript_flag, bool s
 GPRE_FLD EXP_cast(GPRE_FLD field)
 {
 	const dtypes* dtype = data_types;
-	for (;; dtype++)
-		if ((int) dtype->dtype_keyword == (int) KW_none)
+	while (true) {
+		if (dtype->dtype_keyword == KW_none)
 			return NULL;
 		else if (MSC_match(dtype->dtype_keyword))
 			break;
+		++dtype;
+	}
 
 	gpre_fld* cast = (GPRE_FLD) MSC_alloc(FLD_LEN);
 	cast->fld_symbol = field->fld_symbol;
@@ -144,9 +146,11 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 	switch (cast->fld_dtype = dtype->dtype_dtype) {
 	case dtype_varying:
 		cast->fld_length++;
+		// fall back
 
 	case dtype_cstring:
 		cast->fld_length++;
+		// fall back
 
 	case dtype_text:
 		if (sw_cstring && !(cast->fld_dtype == dtype_cstring)) {
@@ -255,9 +259,10 @@ GPRE_CTX EXP_context(GPRE_REQ request, SYM initial_symbol)
 GPRE_FLD EXP_field(GPRE_CTX* rcontext)
 {
 	sym* symbol;
-	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_context)
 			break;
+	}
 
 	if (!symbol)
 		CPR_s_error("context variable");
@@ -611,7 +616,6 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, bool null_flag)
 
 bool EXP_match_paren(void)
 {
-
 	if (MSC_match(KW_RIGHT_PAREN))
 		return true;
 

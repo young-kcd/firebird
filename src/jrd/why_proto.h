@@ -162,7 +162,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS*, FRBRD**, USHORT*, USHORT,
 										UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
-									 USHORT, UCHAR*, USHORT, UCHAR*,
+									 USHORT, const UCHAR*, USHORT, const UCHAR*,
 									 SLONG, UCHAR*, SLONG*);
 
 ISC_STATUS API_ROUTINE isc_open_blob(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
@@ -179,7 +179,7 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS*, FRBRD**, USHORT,
 ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS*, FRBRD**, USHORT, const UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
-									 USHORT, UCHAR*, USHORT, UCHAR*,
+									 USHORT, const UCHAR*, USHORT, const UCHAR*,
 									 SLONG, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FRBRD**, SLONG*, USHORT,
@@ -211,8 +211,8 @@ ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS*, FRBRD**, SSHORT, SLONG,
 ISC_STATUS API_ROUTINE isc_send(ISC_STATUS*, FRBRD**, USHORT, USHORT, const SCHAR*,
 								SSHORT);
 
-ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS*, USHORT, TEXT*, FRBRD**,
-										  USHORT, SCHAR*);
+ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS*, USHORT, const TEXT*, FRBRD**,
+										  USHORT, const SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_service_detach(ISC_STATUS*, FRBRD**);
 
@@ -234,7 +234,7 @@ ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS*, FRBRD**,
 													SSHORT, ...);
 
 ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS*, FRBRD**, FRBRD**,
-											USHORT, SCHAR*, USHORT,
+											USHORT, const SCHAR*, USHORT,
 											SCHAR*, USHORT, SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FRBRD**, SSHORT,

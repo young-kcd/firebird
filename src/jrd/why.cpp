@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.44 2003-11-28 06:48:22 robocop Exp $
+$Id: why.cpp,v 1.45 2003-12-03 08:19:18 robocop Exp $
 */
 
 #include "firebird.h"
@@ -3538,17 +3538,17 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS * user_status,
-									 WHY_ATT * db_handle,
-									 WHY_TRA * tra_handle,
-									 SLONG * array_id,
+ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
+									 WHY_ATT* db_handle,
+									 WHY_TRA* tra_handle,
+									 SLONG* array_id,
 									 USHORT sdl_length,
-									 UCHAR * sdl,
+									 const UCHAR* sdl,
 									 USHORT param_length,
-									 UCHAR * param,
+									 const UCHAR* param,
 									 SLONG slice_length,
-									 UCHAR * slice,
-									 SLONG * return_length)
+									 UCHAR* slice,
+									 SLONG* return_length)
 {
 /**************************************
  *
@@ -3783,16 +3783,16 @@ ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS * user_status,
-									 WHY_ATT * db_handle,
-									 WHY_TRA * tra_handle,
-									 SLONG * array_id,
+ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
+									 WHY_ATT* db_handle,
+									 WHY_TRA* tra_handle,
+									 SLONG* array_id,
 									 USHORT sdl_length,
-									 UCHAR * sdl,
+									 const UCHAR* sdl,
 									 USHORT param_length,
-									 UCHAR * param,
+									 const UCHAR* param,
 									 SLONG slice_length,
-									 UCHAR * slice)
+									 UCHAR* slice)
 {
 /**************************************
  *
@@ -4308,12 +4308,12 @@ ISC_STATUS API_ROUTINE GDS_SEND(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
+ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 										  USHORT service_length,
-										  TEXT * service_name,
-										  WHY_SVC * handle,
+										  const TEXT* service_name,
+										  WHY_SVC* handle,
 										  USHORT spb_length,
-										  SCHAR * spb)
+										  const SCHAR* spb)
 {
 /**************************************
  *
@@ -4326,11 +4326,8 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
  *	that recognizes it.
  *
  **************************************/
-	ISC_STATUS *status, *ptr;
+	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local, temp;
-	USHORT n, org_length;
-	WHY_SVC service;
-	TEXT *p;
 
 	GET_STATUS;
 	NULL_CHECK(handle, isc_bad_svc_handle, HANDLE_service);
@@ -4363,18 +4360,18 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
 
-	ptr = status;
+	ISC_STATUS* ptr = status;
 
-	org_length = service_length;
+	USHORT org_length = service_length;
 
 	if (org_length) {
-		p = service_name + org_length - 1;
+		const TEXT* p = service_name + org_length - 1;
 		while (*p == ' ')
 			p--;
 		org_length = p - service_name + 1;
 	}
 
-	for (n = 0; n < SUBSYSTEMS; n++) {
+	for (USHORT n = 0; n < SUBSYSTEMS; n++) {
 		if (why_enabled && !(why_enabled & (1 << n)))
 			continue;
 		if (!CALL(PROC_SERVICE_ATTACH, n) (ptr,
@@ -4382,7 +4379,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 										   service_name,
 										   handle, spb_length, spb))
 		{
-			service = allocate_handle(n, *handle, HANDLE_service);
+			WHY_SVC service = allocate_handle(n, *handle, HANDLE_service);
 			if (!service)
 			{
 				/* No memory. Make a half-hearted attempt to detach service. */
@@ -4787,15 +4784,15 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
-											WHY_ATT * db_handle,
-											WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
+											WHY_ATT* db_handle,
+											WHY_TRA* tra_handle,
 											USHORT blr_length,
-											SCHAR * blr,
+											const SCHAR* blr,
 											USHORT in_msg_length,
-											SCHAR * in_msg,
+											SCHAR* in_msg,
 											USHORT out_msg_length,
-											SCHAR * out_msg)
+											SCHAR* out_msg)
 {
 /**************************************
  *

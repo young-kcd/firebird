@@ -79,10 +79,10 @@ ISC_STATUS jrd8_detach_database(ISC_STATUS *, struct att **);
 ISC_STATUS jrd8_drop_database(ISC_STATUS *, struct att **);
 ISC_STATUS jrd8_get_segment(ISC_STATUS *, struct blb **, USHORT *,
 										  USHORT, UCHAR *);
-ISC_STATUS jrd8_get_slice(ISC_STATUS *, struct att **,
-										class jrd_tra **, SLONG *, USHORT,
-										UCHAR *, USHORT, UCHAR *, SLONG,
-										UCHAR *, SLONG *);
+ISC_STATUS jrd8_get_slice(ISC_STATUS*, struct att**,
+										class jrd_tra**, SLONG*, USHORT,
+										const UCHAR*, USHORT, const UCHAR*, SLONG,
+										UCHAR*, SLONG*);
 ISC_STATUS jrd8_open_blob2(ISC_STATUS*, struct att**,
 										 class jrd_tra**, struct blb**,
 										 struct bid*, USHORT, const UCHAR*);
@@ -90,10 +90,10 @@ ISC_STATUS jrd8_prepare_transaction(ISC_STATUS *, class jrd_tra **,
 												  USHORT, UCHAR *);
 ISC_STATUS jrd8_put_segment(ISC_STATUS*, struct blb**, USHORT,
 										  const UCHAR*);
-ISC_STATUS jrd8_put_slice(ISC_STATUS *, struct att **,
-										class jrd_tra **, SLONG *, USHORT,
-										UCHAR *, USHORT, UCHAR *, SLONG,
-										UCHAR *);
+ISC_STATUS jrd8_put_slice(ISC_STATUS*, struct att**,
+										class jrd_tra**, SLONG*, USHORT,
+										const UCHAR*, USHORT, const UCHAR*, SLONG,
+										UCHAR*);
 ISC_STATUS jrd8_que_events(ISC_STATUS*, struct att**, SLONG*,
 										 SSHORT, const UCHAR*, FPTR_VOID, void*);
 ISC_STATUS jrd8_receive(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
@@ -110,8 +110,8 @@ ISC_STATUS jrd8_seek_blob(ISC_STATUS *, struct blb **, SSHORT,
 										SLONG, SLONG *);
 ISC_STATUS jrd8_send(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 								   SCHAR *, SSHORT);
-ISC_STATUS jrd8_service_attach(ISC_STATUS *, USHORT, SCHAR *,
-											 struct svc **, USHORT, SCHAR *);
+ISC_STATUS jrd8_service_attach(ISC_STATUS*, USHORT, const SCHAR*,
+											 struct svc**, USHORT, const SCHAR*);
 ISC_STATUS jrd8_service_detach(ISC_STATUS *, struct svc **);
 ISC_STATUS jrd8_service_query(ISC_STATUS*, struct svc**, ULONG*,
 											USHORT, const SCHAR*,
@@ -132,7 +132,7 @@ ISC_STATUS jrd8_transaction_info(ISC_STATUS*, class jrd_tra**,
 											   SSHORT, const SCHAR*, SSHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_transact_request(ISC_STATUS*, struct att**,
-											   class jrd_tra**, USHORT, SCHAR*,
+											   class jrd_tra**, USHORT, const SCHAR*,
 											   USHORT, SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, struct jrd_req **, SSHORT);

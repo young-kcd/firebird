@@ -46,12 +46,11 @@ DEFINE_TRACE_ROUTINE(dsql_trace);
 #endif
 
 //! Dynamic SQL Error Status Block
-struct err
+struct dsql_err_stblock
 {
 	ISC_STATUS* dsql_status;
 	ISC_STATUS* dsql_user_status;
 };
-typedef err* ERR;
 
 
 // this table is used in data allocation to determine

@@ -25,7 +25,7 @@
 #define REMOTE_INET_PROTO_H
 
 PORT	INET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, const TEXT*,
-	USHORT, const SCHAR*, SSHORT);
+	bool, const SCHAR*, SSHORT);
 PORT	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
 	const SCHAR*, SSHORT);
 PORT	INET_reconnect(HANDLE, ISC_STATUS*);

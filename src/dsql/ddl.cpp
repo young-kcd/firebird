@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.81 2003-11-28 06:48:00 robocop Exp $
+ * $Id: ddl.cpp,v 1.82 2003-12-03 08:19:05 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -2910,7 +2910,7 @@ static void define_udf( dsql_req* request)
         // CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value 
 
-		if (((int)(SLONG) (ret_val_ptr[1]->nod_arg[0]) == FUN_value) &&
+		if (((int) (IPTR) (ret_val_ptr[1]->nod_arg[0]) == FUN_value) &&
 			(field->fld_dtype == dtype_text ||
 			 field->fld_dtype == dtype_varying ||
 			 field->fld_dtype == dtype_cstring ||

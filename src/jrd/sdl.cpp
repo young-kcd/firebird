@@ -93,10 +93,32 @@ static IPTR* stuff(IPTR, SDL_ARG);
 */
 
 
-SLONG SDL_compute_subscript(ISC_STATUS * status_vector,
-							ADS desc,
+// CVC: This is a routine that merely copies binary slice description buffer
+// to new place and if the new place's size it's not enough, allocates a buffer.
+// Typically, "target" is a static buffer with limited size for the small cases.
+// Was made for "remote/interface.cpp" to ensure input buffers aren't overwritten.
+UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size,
+	UCHAR* target, size_t target_size)
+{
+	UCHAR* temp_sdl = target;
+	if (origin_size > target_size) {
+		temp_sdl = (UCHAR*)gds__alloc((SLONG) origin_size);
+		// FREE: apparently never freed, the caller is responsible.
+		if (!temp_sdl)
+		{	// NOMEM: ignore operation
+			fb_assert_continue(FALSE);	// no real error handling
+			return 0;
+		}
+	}
+	memcpy(temp_sdl, origin, origin_size);
+	return temp_sdl;
+}
+
+
+SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
+							const ads* desc,
 							USHORT dimensions,
-							SLONG * subscripts)
+							const SLONG* subscripts)
 {
 /**************************************
  *
@@ -109,10 +131,6 @@ SLONG SDL_compute_subscript(ISC_STATUS * status_vector,
  *	reference. 
  *
  **************************************/
-	SLONG subscript, n;
-	ads::ads_repeat * range;
-	ads::ads_repeat * end;
-
 	if (dimensions != desc->ads_dimensions) {
 		error(status_vector, isc_invalid_dimension,
 			  isc_arg_number, (SLONG) desc->ads_dimensions,
@@ -120,11 +138,13 @@ SLONG SDL_compute_subscript(ISC_STATUS * status_vector,
 		return -1;
 	}
 
-	subscript = 0;
+	SLONG subscript = 0;
 
-	for (range = desc->ads_rpt, end = range + desc->ads_dimensions;
-		 range < end; ++range) {
-		n = *subscripts++;
+	const ads::ads_repeat* range = desc->ads_rpt;
+	for (const ads::ads_repeat* const end = range + desc->ads_dimensions;
+		 range < end; ++range)
+	{
+		const SLONG n = *subscripts++;
 		if (n < range->ads_lower || n > range->ads_upper) {
 			error(status_vector, isc_out_of_bounds, 0);
 			return -1;
@@ -216,7 +236,7 @@ ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS* status_vector,
 
 
 // CVC: May revisit this function's tricky constness later.
-UCHAR* SDL_prepare_slice(UCHAR* sdl, USHORT sdl_length)
+const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 {
 /**************************************
  *
@@ -232,8 +252,8 @@ UCHAR* SDL_prepare_slice(UCHAR* sdl, USHORT sdl_length)
 	DSC	junk;
 	USHORT	n;
 
-	UCHAR* const old_sdl = sdl;
-	UCHAR* new_sdl = sdl;
+	const UCHAR* const old_sdl = sdl;
+	const UCHAR* new_sdl = sdl;
 
 	if (*sdl++ != isc_sdl_version1)
 		return old_sdl;
@@ -249,22 +269,25 @@ UCHAR* SDL_prepare_slice(UCHAR* sdl, USHORT sdl_length)
 				{
 					if (new_sdl == old_sdl)
 					{
-						new_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
+						UCHAR* temp_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
 						/* FREE: apparently never freed */
-						if (!new_sdl)
+						if (!temp_sdl)
 						{	/* NOMEM: ignore operation */
 							fb_assert_continue(FALSE);	/* no real error handling */
 							return old_sdl;
 						}
-						memcpy(new_sdl, old_sdl, sdl_length);
+						memcpy(temp_sdl, old_sdl, sdl_length);
+						new_sdl = temp_sdl;
 						sdl = new_sdl + (sdl - old_sdl);
 					}
-					*sdl = blr_double;
+					// CVC: At this time, sdl points to new_sdl, so
+					// throwing the constness away is safe.
+					*const_cast<UCHAR*>(sdl) = blr_double;
 				}
 
 				// const_cast makes sense since we passed non-const object
 				// to sdl_desc, so we got just another position in the same string.
-				if (!(sdl = const_cast<UCHAR*>(sdl_desc(sdl, &junk))))
+				if (!(sdl = sdl_desc(sdl, &junk)))
 					return new_sdl;
 			}
 			break;
