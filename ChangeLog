@@ -1,3 +1,35 @@
+2004-11-12 15:48  paul_reeves
+
+	*
+	
+	file instalacija_precitajMe.txt was initially added on branch
+	B1_5_Release.
+	firebird2/src/install/arch-specific/win32/si/instalacija_precitajMe
+	.txt (1.1):
+
+2004-11-12 15:48  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/si/custom_messages_si.inc
+	(1.1):
+	
+	file custom_messages_si.inc was initially added on branch
+	B1_5_Release.
+
+2004-11-12 15:48  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.17), FirebirdInstall_15.iss
+	(1.5.2.20), Readme.txt (1.2.2.7), custom_messages.inc (1.1.2.3),
+	i18n_readme.txt (1.1.2.4), de/custom_messages_de.inc (1.1.2.2),
+	fr/custom_messages_fr.inc (1.1.2.4), hu/custom_messages_hu.inc
+	(1.1.2.3), pt/custom_messages_pt.inc (1.1.2.3),
+	pt/instalação_leia-me.txt (1.1.2.2), pt/leia-me.txt (1.1.2.2),
+	si/custom_messages_si.inc (1.1.2.1), si/instalacija_precitajMe.txt
+	(1.1.2.1):
+	
+	Update Win32 installation kits Improve i18n guidelines
+
 2004-11-11 12:19  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.31):
