@@ -3133,5 +3133,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('HLP_SETPLANONLY', 'help', 'isql.epp', NULL, 17, 109, NULL, '    SET HEADING            -- toggle display of query column titles', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('foreign_key_target_doesnt_exist', 'check_partner_index', 'IDX.C', NULL, 0, 518, NULL, 'Foreign key reference target does not exist', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('foreign_key_references_present', 'check_partner_index', 'IDX.C', NULL, 0, 519, NULL, 'Foreign key references are present for the record', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('no_update', 'several', 'dfw.epp', NULL, 0, 520, NULL, 'cannot update', NULL, NULL);
 
 COMMIT WORK;
+
