@@ -88,6 +88,7 @@ nested FOR loops are added.
 #include "../jrd/why_proto.h"
 #include "../jrd/y_handle.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -1514,7 +1515,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 			}
 			cursor[i] = '\0';
 		}
-		const USHORT length = fb_utils::name_length(cursor);
+		const USHORT length = (USHORT) fb_utils::name_length(cursor);
 	
 		if (length == 0) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
