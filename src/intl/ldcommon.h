@@ -24,13 +24,8 @@
 #ifndef _INTL_LDCOMMON_H_
 #define _INTL_LDCOMMON_H_
 
-#ifdef DEBUG_LD
-#include <stdio.h>
-#include <assert.h>
-#else
 /* #include "../jrd/gdsassert.h" */
 // Put the assert in here
-#endif
 
 #include "../jrd/intlobj.h"
 #include "../intl/langdrv.h"
