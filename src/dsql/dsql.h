@@ -639,10 +639,12 @@ typedef Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool>
 inline tsql* DSQL_get_thread_data() {
 	return (tsql*) ThreadData::getSpecific();
 }
+
 inline void DSQL_set_thread_data(tsql* &tdsql, tsql* thd_context) {
 	tdsql = thd_context;
 	tdsql->putSpecific();
 }
+
 inline void DSQL_restore_thread_data() {
 	ThreadData::restoreSpecific();
 }
