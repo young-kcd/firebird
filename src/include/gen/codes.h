@@ -597,6 +597,7 @@ const SLONG gds_dsql_warn_precision_ambiguous2   = 336003084L;
 const SLONG gds_dsql_ambiguous_field_name        = 336003085L;
 const SLONG gds_dsql_udf_return_pos_err          = 336003086L;
 const SLONG gds_dsql_invalid_label               = 336003087L;
+const SLONG gds_dsql_datatypes_not_comparable    = 336003088L;
 const SLONG gds_dyn_role_does_not_exist          = 336068796L;
 const SLONG gds_dyn_no_grant_admin_opt           = 336068797L;
 const SLONG gds_dyn_user_not_role_member         = 336068798L;
@@ -757,7 +758,7 @@ const SLONG gds_gstat_unexpected_eof             = 336920580L;
 const SLONG gds_gstat_open_err                   = 336920605L;
 const SLONG gds_gstat_read_err                   = 336920606L;
 const SLONG gds_gstat_sysmemex                   = 336920607L;
-const SLONG gds_err_max                          = 714L;
+const SLONG gds_err_max                          = 715L;
 
 #else /* c definitions */
 
@@ -1335,6 +1336,7 @@ const SLONG gds_err_max                          = 714L;
 #define gds__dsql_ambiguous_field_name        336003085L
 #define gds__dsql_udf_return_pos_err          336003086L
 #define gds__dsql_invalid_label               336003087L
+#define gds__dsql_datatypes_not_comparable    336003088L
 #define gds__dyn_role_does_not_exist          336068796L
 #define gds__dyn_no_grant_admin_opt           336068797L
 #define gds__dyn_user_not_role_member         336068798L
@@ -1495,7 +1497,7 @@ const SLONG gds_err_max                          = 714L;
 #define gds__gstat_open_err                   336920605L
 #define gds__gstat_read_err                   336920606L
 #define gds__gstat_sysmemex                   336920607L
-#define gds_err_max                          714
+#define gds_err_max                          715
 
 #endif
 
