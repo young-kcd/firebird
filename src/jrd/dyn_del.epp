@@ -771,8 +771,8 @@ void DYN_delete_local_field(
 		DYN_REQUEST(drq_e_lfield) = request;
 	}
 
-	request = CMP_find_request(tdbb, drq_e_usr_prvs, DYN_REQUESTS);
-	id = drq_e_usr_prvs;
+	request = CMP_find_request(tdbb, drq_e_fld_prvs, DYN_REQUESTS);
+	id = drq_e_fld_prvs;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PRIV IN RDB$USER_PRIVILEGES WITH
@@ -780,14 +780,14 @@ void DYN_delete_local_field(
 			PRIV.RDB$FIELD_NAME EQ col_nm AND
             PRIV.RDB$OBJECT_TYPE = obj_relation 
 
-        if (!DYN_REQUEST(drq_e_usr_prvs))
-			DYN_REQUEST(drq_e_usr_prvs) = request;
+        if (!DYN_REQUEST(drq_e_fld_prvs))
+			DYN_REQUEST(drq_e_fld_prvs) = request;
 
 		ERASE PRIV;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_e_usr_prvs)) {
-		DYN_REQUEST(drq_e_usr_prvs) = request;
+	if (!DYN_REQUEST(drq_e_fld_prvs)) {
+		DYN_REQUEST(drq_e_fld_prvs) = request;
 	}
 
 	}	// try
@@ -799,7 +799,7 @@ void DYN_delete_local_field(
 		case drq_l_dep_flds:
 			DYN_error_punt(true, 53, NULL, NULL, NULL, NULL, NULL);
 			// msg 53: "ERASE RDB$RELATION_FIELDS failed"
-		case drq_e_usr_prvs:
+		case drq_e_fld_prvs:
 			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
 			// msg 62: "ERASE RDB$USER_PRIVILEGES failed"
 		default:

@@ -181,6 +181,7 @@ const int drq_l_difference	= 130;	/* Look up a backup difference file */
 const int drq_s_difference	= 131;	/* Store backup difference file */
 const int drq_d_difference	= 132;	/* Delete backup difference file */
 const int drq_l_fld_src3	= 133;	/* lookup a field source */
-const int drq_MAX			= 134;
+const int drq_e_fld_prvs	= 134;	/* erase user privileges on relation field */
+const int drq_MAX			= 135;
 
 #endif /* JRD_DRQ_H */
