@@ -40,7 +40,7 @@ extern "C" {
 
 bool ResolveDatabaseAlias(const char* alias, char* database)
 {
-	static FirebirdConfigFile aliasConfig;
+	FirebirdConfigFile aliasConfig;
 //	aliasConfig.setConfigFile(FirebirdConfig::getSysString("RootDirectory") + "/aliases.conf");
 	TEXT alias_filename[MAXPATHLEN];
 	gds__prefix(alias_filename, ALIAS_FILE);
