@@ -367,7 +367,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 	if (ostype == OS_CHICAGO)
 	{
 		THD_MUTEX_LOCK(file->fil_mutex);
-		if (SetFilePointer(desc, 0, NULL, FILE_BEGIN) == -1)
+		if (SetFilePointer(desc, 0, NULL, FILE_BEGIN) == (DWORD) -1)
 		{
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 			nt_error("SetFilePointer", file, isc_io_read_err, 0);
@@ -890,7 +890,7 @@ static ULONG get_number_of_pages(FIL file, USHORT pagesize)
 
 	dwFileSizeLow = GetFileSize(hFile, &dwFileSizeHigh);
 
-	if (dwFileSizeLow == -1) {
+	if (dwFileSizeLow == (DWORD) -1) {
 		nt_error("GetFileSize", file, isc_io_access_err, 0);
 	}
 
@@ -981,7 +981,7 @@ static FIL seek_file(FIL			file,
 						   (LONG) liOffset.LowPart,
 						   &liOffset.HighPart, FILE_BEGIN) == 0xffffffff) {
 			THD_MUTEX_UNLOCK(file->fil_mutex);
-			return (FIL) nt_error("SetFilePointer", file, isc_io_access_err,
+			return (FIL)(ULONG) nt_error("SetFilePointer", file, isc_io_access_err,
 								  status_vector);
 		}
 		*overlapped_ptr = NULL;
@@ -1006,7 +1006,7 @@ static FIL seek_file(FIL			file,
 		THD_MUTEX_UNLOCK(file->fil_mutex);
 		if (!overlapped->hEvent &&
 			!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL))) {
-			return (FIL) nt_error("CreateEvent", file, isc_io_access_err,
+			return (FIL)(ULONG) nt_error("CreateEvent", file, isc_io_access_err,
 								  status_vector);
 		}
 		ResetEvent(overlapped->hEvent);
@@ -1045,7 +1045,7 @@ static FIL setup_file(DBB		dbb,
 	file->fil_force_write_desc =
 		reinterpret_cast<SLONG>(INVALID_HANDLE_VALUE);
 	file->fil_length = file_length;
-	file->fil_max_page = -1;
+	file->fil_max_page = (ULONG) -1;
 #ifdef SUPERSERVER_V2
 	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(SLONG));
 #endif

@@ -50,7 +50,7 @@ MemoryPool * ThreadPriorityScheduler::pool = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::news = 0;
 BOOLEAN ThreadPriorityScheduler::initialized = FALSE;
-DWORD ThreadPriorityScheduler::specific_key = -1;
+DWORD ThreadPriorityScheduler::specific_key = (DWORD) -1;
 BOOLEAN ThreadPriorityScheduler::shutdown = FALSE;
 
 //____________________________________________________________
