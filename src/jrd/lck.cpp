@@ -63,11 +63,15 @@ extern "C" {
 
 
 static void bug_lck(TEXT*);
+#ifdef MULTI_THREAD
 static void check_lock(LCK, USHORT);
+#endif
 static BOOLEAN compatible(LCK, LCK, USHORT);
 static void enqueue(TDBB, LCK, USHORT, SSHORT);
 static void external_ast(LCK);
+#ifdef MULTI_THREAD
 static LCK find_block(LCK, USHORT);
+#endif
 static USHORT hash_func(UCHAR *, USHORT);
 static void hash_allocate(LCK);
 static LCK hash_get_lock(LCK, USHORT *, LCK **);

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.19 2003-04-16 10:18:35 aafemt Exp $
+ * $Id: drop.cpp,v 1.20 2003-08-09 22:31:46 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -72,7 +72,9 @@ static void dummy_init(void);
 static SLONG get_key(TEXT *);
 static void remove_resource(TEXT *, SLONG, SLONG, TEXT *);
 static int sem_exclusive(SLONG, SLONG);
+#ifndef HAVE_MMAP
 static int shm_exclusive(SLONG, SLONG);
+#endif
 #ifdef MANAGER_PROCESS
 static void shut_manager(TEXT *);
 #endif

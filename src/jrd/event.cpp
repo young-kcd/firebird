@@ -117,7 +117,9 @@ static void release(void);
 static void remove_que(SRQ *);
 static BOOLEAN request_completed(EVT_REQ);
 static ISC_STATUS return_ok(ISC_STATUS *);
+#ifdef MULTI_THREAD
 static void THREAD_ROUTINE watcher_thread(void *);
+#endif
 
 static SSHORT acquire_count;
 static EVH EVENT_header = NULL;
