@@ -108,7 +108,7 @@ namespace Firebird {
 				return (value <= 0);
 			}
 
-		};
+		}; // class Entry
 
 		Entry* stk;
 
@@ -532,7 +532,7 @@ namespace Firebird {
 		{
 			return AutoStorage::getPool();
 		}
-	};
+	}; // class Stack
 
 } // namespace Firebird
 

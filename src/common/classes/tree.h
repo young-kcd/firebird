@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.43 2004-11-06 07:20:44 robocop Exp $
+ *  $Id: tree.h,v 1.44 2004-11-08 02:57:23 robocop Exp $
  *
  */
 
@@ -476,7 +476,7 @@ public:
 		BePlusTree* tree;
 		ItemList *curr;
   		size_t curPos;
-	};
+	}; // class Accessor
 
 private:
 	Allocator *pool;

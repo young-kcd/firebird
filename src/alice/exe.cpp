@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.39 2004-10-04 08:14:34 robocop Exp $
+//	$Id: exe.cpp,v 1.40 2004-11-08 02:57:15 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -98,7 +98,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 //  generate the database parameter block for the attach,
 //  based on the various switches
 
-		const USHORT dpb_length = build_dpb(dpb, switches);
+		const USHORT dpb_length = build_dpb(dpb, switches); // B.O.
 
 		FB_API_HANDLE handle = 0;
 		isc_attach_database(tdgbl->status, 0, database, &handle, dpb_length,
@@ -165,7 +165,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 //  generate the database parameter block for the attach,
 //  based on the various switches
 
-		const USHORT dpb_length = build_dpb(dpb, switches);
+		const USHORT dpb_length = build_dpb(dpb, switches); // B.O.
 
 		FB_API_HANDLE handle = 0;
 		isc_attach_database(tdgbl->status, 0, database, &handle,
