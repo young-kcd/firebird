@@ -1,3 +1,25 @@
+2002-10-25 18:28  alexpeshkoff
+
+	* firebird2/src/: remote/cntl.cpp, jrd/sch.cpp, jrd/thd_win32.cpp,
+	jrd/os/thd_priority.h, jrd/os/win32/thd_priority.cpp:
+	
+	Threads' priority scheduling in Win32 Inactive by default To bring
+	to active state uncomment      //#define THREAD_PSCHED in
+	thd_priority.h
+
+2002-10-25 16:08  dimitr
+
+	* firebird2/src/misc/: status.cpp, status.h:
+	
+	Removed duplicated files. Absolutely the same ones still exist in
+	/jrd.
+
+2002-10-25 10:29  dimitr
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Re-allowed plans in triggers.
+
 2002-10-24 17:41  dimitr
 
 	* firebird2/src/utilities/install_svc.cpp:
