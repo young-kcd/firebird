@@ -738,7 +738,6 @@
 				F616C4490200B0CF01EF0ADE,
 				F616C4670200B0CF01EF0ADE,
 				F616C4920200B0CF01EF0ADE,
-				F616C5230200B0CF01EF0ADE,
 				F616C53A0200B0CF01EF0ADE,
 				F616C55E0200B0CF01EF0ADE,
 				F616C6FC0200B0D001EF0ADE,
@@ -3141,85 +3140,6 @@
 		F616C5220200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = undef.h;
-			refType = 4;
-		};
-		F616C5230200B0CF01EF0ADE = {
-			children = (
-				F616C5240200B0CF01EF0ADE,
-				F616C5250200B0CF01EF0ADE,
-				F616C5260200B0CF01EF0ADE,
-				F616C5270200B0CF01EF0ADE,
-				F616C5280200B0CF01EF0ADE,
-				F616C5290200B0CF01EF0ADE,
-				F616C52A0200B0CF01EF0ADE,
-				F616C52B0200B0CF01EF0ADE,
-				F616C52C0200B0CF01EF0ADE,
-				F616C52D0200B0CF01EF0ADE,
-				F616C52E0200B0CF01EF0ADE,
-				F616C52F0200B0CF01EF0ADE,
-			);
-			isa = PBXGroup;
-			path = ipserver;
-			refType = 4;
-		};
-		F616C5240200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = alli.cpp;
-			refType = 4;
-		};
-		F616C5250200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = alli_proto.h;
-			refType = 4;
-		};
-		F616C5260200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = blk.h;
-			refType = 4;
-		};
-		F616C5270200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipapi_proto.h;
-			refType = 4;
-		};
-		F616C5280200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipc.h;
-			refType = 4;
-		};
-		F616C5290200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipcevent.cpp;
-			refType = 4;
-		};
-		F616C52A0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipcli_proto.h;
-			refType = 4;
-		};
-		F616C52B0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipclient.cpp;
-			refType = 4;
-		};
-		F616C52C0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipevt_proto.h;
-			refType = 4;
-		};
-		F616C52D0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ips.h;
-			refType = 4;
-		};
-		F616C52E0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipserver.cpp;
-			refType = 4;
-		};
-		F616C52F0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = ipsrv_proto.h;
 			refType = 4;
 		};
 		F616C53A0200B0CF01EF0ADE = {
@@ -6708,26 +6628,6 @@
 		F616C8800200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = interface.cpp;
-			refType = 4;
-		};
-		F616C8810200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = ipc.cpp;
-			refType = 4;
-		};
-		F616C8820200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = ipc.h;
-			refType = 4;
-		};
-		F616C8830200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = ipc_proto.h;
-			refType = 4;
-		};
-		F616C8840200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = ipc_server.cpp;
 			refType = 4;
 		};
 		F616C8850200B0D001EF0ADE = {

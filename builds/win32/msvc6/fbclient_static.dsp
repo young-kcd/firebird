@@ -216,22 +216,6 @@ SOURCE=..\..\..\src\remote\xdr.cpp
 SOURCE=..\..\..\src\remote\xnet.cpp
 # End Source File
 # End Group
-# Begin Group "IPSERVER files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\ipserver\alli.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\ipserver\ipcevent.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\ipserver\ipclient.cpp
-# End Source File
-# End Group
 # Begin Group "DSQL files"
 
 # PROP Default_Filter ""
