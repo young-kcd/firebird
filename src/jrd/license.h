@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.19 2002-10-28 05:19:47 seanleyne Exp $
+ * $Id: license.h,v 1.20 2002-10-28 05:39:48 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -47,6 +47,7 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "ALPHA_NT" port
  *
  */
 
@@ -76,18 +77,18 @@
 #define FB_PLATFORM	"SO"
 #else
 #define FB_PLATFORM	"S4"
-#endif
-#endif
+#endif /* Solaris */
+#endif /* Sparc */
 #ifdef i386
 #define FB_PLATFORM     "SI"
-#endif
+#endif /* i386 */
 #ifdef SUN3_3
 #define FB_PLATFORM	"SU"
-#endif
+#endif /* SUN3_3 */
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
 #endif
-#endif
+#endif /* sun */
 
 #ifdef VMS
 #ifdef __ALPHA
@@ -132,18 +133,10 @@
 #endif /* WIN95 */
 #else
 #define FB_PLATFORM	"NI"
-#endif
-#else
-#ifdef alpha
-#define FB_PLATFORM	"NA"
+#endif /* SUPERCLIENT or SUPERSERVER */
 #else
 #define FB_PLATFORM	"NP"
-#endif
-#endif
-#endif
-
-#ifdef ALPHA_NT
-#define	FB_PLATFORM	"AN"		/* Alpha NT */
+#endif /* i386 */
 #endif
 
 #ifdef DECOSF
