@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.14 2002-11-11 19:08:31 hippoman Exp $
+$Id: gen.cpp,v 1.15 2002-11-17 00:00:39 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -52,30 +52,30 @@ $Id: gen.cpp,v 1.14 2002-11-11 19:08:31 hippoman Exp $
 #include "../jrd/dsc_proto.h"
 #include "gen/iberror.h"
 
-ASSERT_FILENAME static void gen_aggregate(REQ, DSQL_NOD);
-static void gen_cast(REQ, DSQL_NOD);
-static void	gen_coalesce(REQ, DSQL_NOD);
-static void gen_constant(REQ, DSC *, BOOLEAN);
-static void gen_descriptor(REQ, DSC *, USHORT);
-static void gen_error_condition(REQ, DSQL_NOD);
-static void gen_field(REQ, CTX, FLD, DSQL_NOD);
-static void gen_for_select(REQ, DSQL_NOD);
-static void gen_gen_id(REQ, DSQL_NOD);
-static void gen_join_rse(REQ, DSQL_NOD);
-static void gen_map(REQ, MAP);
-static void gen_parameter(REQ, PAR);
-static void gen_plan(REQ, DSQL_NOD);
-static void gen_relation(REQ, CTX);
-static void gen_rse(REQ, DSQL_NOD);
-static void	gen_searched_case(REQ, DSQL_NOD);
-static void gen_select(REQ, DSQL_NOD);
-static void	gen_simple_case(REQ, DSQL_NOD);
-static void gen_sort(REQ, DSQL_NOD);
-static void gen_table_lock(REQ, DSQL_NOD, USHORT);
-static void gen_udf(REQ, DSQL_NOD);
-static void gen_union(REQ, DSQL_NOD);
-static void stuff_cstring(REQ, char *);
-static void stuff_word(REQ, USHORT);
+ASSERT_FILENAME static void gen_aggregate(DSQL_REQ, DSQL_NOD);
+static void gen_cast(DSQL_REQ, DSQL_NOD);
+static void	gen_coalesce(DSQL_REQ, DSQL_NOD);
+static void gen_constant(DSQL_REQ, DSC *, BOOLEAN);
+static void gen_descriptor(DSQL_REQ, DSC *, USHORT);
+static void gen_error_condition(DSQL_REQ, DSQL_NOD);
+static void gen_field(DSQL_REQ, DSQL_CTX, FLD, DSQL_NOD);
+static void gen_for_select(DSQL_REQ, DSQL_NOD);
+static void gen_gen_id(DSQL_REQ, DSQL_NOD);
+static void gen_join_rse(DSQL_REQ, DSQL_NOD);
+static void gen_map(DSQL_REQ, MAP);
+static void gen_parameter(DSQL_REQ, PAR);
+static void gen_plan(DSQL_REQ, DSQL_NOD);
+static void gen_relation(DSQL_REQ, DSQL_CTX);
+static void gen_rse(DSQL_REQ, DSQL_NOD);
+static void	gen_searched_case(DSQL_REQ, DSQL_NOD);
+static void gen_select(DSQL_REQ, DSQL_NOD);
+static void	gen_simple_case(DSQL_REQ, DSQL_NOD);
+static void gen_sort(DSQL_REQ, DSQL_NOD);
+static void gen_table_lock(DSQL_REQ, DSQL_NOD, USHORT);
+static void gen_udf(DSQL_REQ, DSQL_NOD);
+static void gen_union(DSQL_REQ, DSQL_NOD);
+static void stuff_cstring(DSQL_REQ, char *);
+static void stuff_word(DSQL_REQ, USHORT);
 
 static CONST SCHAR db_key_name[] = "DB_KEY";
 
@@ -88,7 +88,7 @@ static CONST SCHAR db_key_name[] = "DB_KEY";
 #define NEGATE_VALUE TRUE
 #define USE_VALUE    FALSE
 
-UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
+UCHAR GEN_expand_buffer( DSQL_REQ request, UCHAR byte)
 {
 /**************************************
  *
@@ -128,7 +128,7 @@ UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
 }
 
 
-void GEN_expr( REQ request, DSQL_NOD node)
+void GEN_expr( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -142,7 +142,7 @@ void GEN_expr( REQ request, DSQL_NOD node)
  **************************************/
 	UCHAR operator_;
 	DSQL_NOD *ptr, *end, ddl_node;
-	CTX context;
+	DSQL_CTX context;
 	MAP map;
 	VAR variable;
 
@@ -167,14 +167,14 @@ void GEN_expr( REQ request, DSQL_NOD node)
 
 	case nod_dbkey:
 		node = node->nod_arg[0];
-		context = (CTX) node->nod_arg[e_rel_context];
+		context = (DSQL_CTX) node->nod_arg[e_rel_context];
 		STUFF(blr_dbkey);
 		STUFF(context->ctx_context);
 		return;
 
 	case nod_rec_version:
 		node = node->nod_arg[0];
-		context = (CTX) node->nod_arg[e_rel_context];
+		context = (DSQL_CTX) node->nod_arg[e_rel_context];
 		STUFF(blr_record_version);
 		STUFF(context->ctx_context);
 		return;
@@ -193,7 +193,7 @@ void GEN_expr( REQ request, DSQL_NOD node)
 
 	case nod_field:
 		gen_field(request,
-				  (CTX) node->nod_arg[e_fld_context],
+				  (DSQL_CTX) node->nod_arg[e_fld_context],
 				  (FLD) node->nod_arg[e_fld_field],
 				  node->nod_arg[e_fld_indices]);
 		return;
@@ -247,7 +247,7 @@ void GEN_expr( REQ request, DSQL_NOD node)
 
 	case nod_map:
 		map = (MAP) node->nod_arg[e_map_map];
-		context = (CTX) node->nod_arg[e_map_context];
+		context = (DSQL_CTX) node->nod_arg[e_map_context];
 		STUFF(blr_fid);
 		STUFF(context->ctx_context);
 		STUFF_WORD(map->map_position);
@@ -258,7 +258,7 @@ void GEN_expr( REQ request, DSQL_NOD node)
 		return;
 
 	case nod_relation:
-		gen_relation(request, (CTX) node->nod_arg[e_rel_context]);
+		gen_relation(request, (DSQL_CTX) node->nod_arg[e_rel_context]);
 		return;
 
 	case nod_rse:
@@ -562,7 +562,7 @@ void GEN_expr( REQ request, DSQL_NOD node)
 }
 
 
-void GEN_port( REQ request, MSG message)
+void GEN_port( DSQL_REQ request, MSG message)
 {
 /**************************************
  *
@@ -679,7 +679,7 @@ void GEN_port( REQ request, MSG message)
 }
 
 
-void GEN_request( REQ request, DSQL_NOD node)
+void GEN_request( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -746,7 +746,7 @@ void GEN_request( REQ request, DSQL_NOD node)
 }
 
 
-void GEN_start_transaction( REQ request, DSQL_NOD tran_node)
+void GEN_start_transaction( DSQL_REQ request, DSQL_NOD tran_node)
 {
 /**************************************
  *
@@ -884,7 +884,7 @@ void GEN_start_transaction( REQ request, DSQL_NOD tran_node)
 }
 
 
-void GEN_statement( REQ request, DSQL_NOD node)
+void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -897,7 +897,7 @@ void GEN_statement( REQ request, DSQL_NOD node)
  *
  **************************************/
 	DSQL_NOD temp, *ptr, *end;
-	CTX context;
+	DSQL_CTX context;
 	MSG message;
 	STR name, string;
 	TEXT *p;
@@ -928,14 +928,14 @@ void GEN_statement( REQ request, DSQL_NOD node)
 			GEN_expr(request, temp);
 		}
 		temp = node->nod_arg[e_era_relation];
-		context = (CTX) temp->nod_arg[e_rel_context];
+		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
 		STUFF(blr_erase);
 		STUFF(context->ctx_context);
 		return;
 
 	case nod_erase_current:
 		STUFF(blr_erase);
-		context = (CTX) node->nod_arg[e_erc_context];
+		context = (DSQL_CTX) node->nod_arg[e_erc_context];
 		STUFF(context->ctx_context);
 		return;
 
@@ -1009,20 +1009,20 @@ void GEN_statement( REQ request, DSQL_NOD node)
 		}
 		STUFF(blr_modify);
 		temp = node->nod_arg[e_mod_source];
-		context = (CTX) temp->nod_arg[e_rel_context];
+		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
 		STUFF(context->ctx_context);
 		temp = node->nod_arg[e_mod_update];
-		context = (CTX) temp->nod_arg[e_rel_context];
+		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
 		STUFF(context->ctx_context);
 		GEN_statement(request, node->nod_arg[e_mod_statement]);
 		return;
 
 	case nod_modify_current:
 		STUFF(blr_modify);
-		context = (CTX) node->nod_arg[e_mdc_context];
+		context = (DSQL_CTX) node->nod_arg[e_mdc_context];
 		STUFF(context->ctx_context);
 		temp = node->nod_arg[e_mdc_update];
-		context = (CTX) temp->nod_arg[e_rel_context];
+		context = (DSQL_CTX) temp->nod_arg[e_rel_context];
 		STUFF(context->ctx_context);
 		GEN_statement(request, node->nod_arg[e_mdc_statement]);
 		return;
@@ -1165,7 +1165,7 @@ void GEN_statement( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_aggregate( REQ request, DSQL_NOD node)
+static void gen_aggregate( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1178,9 +1178,9 @@ static void gen_aggregate( REQ request, DSQL_NOD node)
  *
  **************************************/
 	DSQL_NOD list, *ptr, *end;
-	CTX context;
+	DSQL_CTX context;
 
-	context = (CTX) node->nod_arg[e_agg_context];
+	context = (DSQL_CTX) node->nod_arg[e_agg_context];
 	STUFF(blr_aggregate);
 	STUFF(context->ctx_context);
 	gen_rse(request, node->nod_arg[e_agg_rse]);
@@ -1204,7 +1204,7 @@ static void gen_aggregate( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_cast( REQ request, DSQL_NOD node)
+static void gen_cast( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1225,7 +1225,7 @@ static void gen_cast( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_coalesce( REQ request, DSQL_NOD node)
+static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1258,7 +1258,7 @@ static void gen_coalesce( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_constant( REQ request, DSC * desc, BOOLEAN negate_value)
+static void gen_constant( DSQL_REQ request, DSC * desc, BOOLEAN negate_value)
 {
 /**************************************
  *
@@ -1411,7 +1411,7 @@ static void gen_constant( REQ request, DSC * desc, BOOLEAN negate_value)
 }
 
 
-static void gen_descriptor( REQ request, DSC * desc, USHORT texttype)
+static void gen_descriptor( DSQL_REQ request, DSC * desc, USHORT texttype)
 {
 /**************************************
  *
@@ -1508,7 +1508,7 @@ static void gen_descriptor( REQ request, DSC * desc, USHORT texttype)
 }
 
 
-static void gen_error_condition( REQ request, DSQL_NOD node)
+static void gen_error_condition( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1551,7 +1551,7 @@ static void gen_error_condition( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_field( REQ request, CTX context, FLD field, DSQL_NOD indices)
+static void gen_field( DSQL_REQ request, DSQL_CTX context, FLD field, DSQL_NOD indices)
 {
 /**************************************
  *
@@ -1612,7 +1612,7 @@ static void gen_field( REQ request, CTX context, FLD field, DSQL_NOD indices)
 }
 
 
-static void gen_for_select( REQ request, DSQL_NOD for_select)
+static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
 {
 /**************************************
  *
@@ -1648,12 +1648,12 @@ static void gen_for_select( REQ request, DSQL_NOD for_select)
 
 	/* Handle write locks */
 	DSQL_NOD streams = rse->nod_arg[e_rse_streams];
-	CTX context = NULL;
+	DSQL_CTX context = NULL;
 
 	if (!rse->nod_arg[e_rse_reduced] && streams->nod_count==1) {
 		DSQL_NOD item = streams->nod_arg[0];
 		if (item && (item->nod_type == nod_relation))
-			context = (CTX) item->nod_arg[e_rel_context];
+			context = (DSQL_CTX) item->nod_arg[e_rel_context];
 	}
 	
 	if (rse->nod_arg[e_rse_lock] && context) {
@@ -1678,7 +1678,7 @@ static void gen_for_select( REQ request, DSQL_NOD for_select)
 }
 
 
-static void gen_gen_id( REQ request, DSQL_NOD node)
+static void gen_gen_id( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1699,7 +1699,7 @@ static void gen_gen_id( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_join_rse( REQ request, DSQL_NOD rse)
+static void gen_join_rse( DSQL_REQ request, DSQL_NOD rse)
 {
 /**************************************
  *
@@ -1738,7 +1738,7 @@ static void gen_join_rse( REQ request, DSQL_NOD rse)
 }
 
 
-static void gen_map( REQ request, MAP map)
+static void gen_map( DSQL_REQ request, MAP map)
 {
 /**************************************
  *
@@ -1767,7 +1767,7 @@ static void gen_map( REQ request, MAP map)
 }
 
 
-static void gen_parameter( REQ request, PAR parameter)
+static void gen_parameter( DSQL_REQ request, PAR parameter)
 {
 /**************************************
  *
@@ -1799,7 +1799,7 @@ static void gen_parameter( REQ request, PAR parameter)
 
 
 
-static void gen_plan( REQ request, DSQL_NOD plan_expression)
+static void gen_plan( DSQL_REQ request, DSQL_NOD plan_expression)
 {
 /**************************************
  *
@@ -1842,7 +1842,7 @@ static void gen_plan( REQ request, DSQL_NOD plan_expression)
 		   when there is a need to differentiate the base tables of views */
 
 		arg = node->nod_arg[0];
-		gen_relation(request, (CTX) arg->nod_arg[e_rel_context]);
+		gen_relation(request, (DSQL_CTX) arg->nod_arg[e_rel_context]);
 
 		/* now stuff the access method for this stream */
 
@@ -1879,7 +1879,7 @@ static void gen_plan( REQ request, DSQL_NOD plan_expression)
 
 
 
-static void gen_relation( REQ request, CTX context)
+static void gen_relation( DSQL_REQ request, DSQL_CTX context)
 {
 /**************************************
  *
@@ -1892,7 +1892,7 @@ static void gen_relation( REQ request, CTX context)
  *
  **************************************/
 	DSQL_REL relation;
-	PRC procedure;
+	DSQL_PRC procedure;
 	DSQL_NOD inputs, *ptr, *end;
 
 	relation = context->ctx_relation;
@@ -1938,7 +1938,7 @@ static void gen_relation( REQ request, CTX context)
 }
 
 
-void GEN_return( REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
+void GEN_return( DSQL_REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 {
 /**************************************
  *
@@ -1997,7 +1997,7 @@ void GEN_return( REQ request, DSQL_NOD procedure, BOOLEAN eos_flag)
 }
 
 
-static void gen_rse( REQ request, DSQL_NOD rse)
+static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 {
 /**************************************
  *
@@ -2094,7 +2094,7 @@ static void gen_rse( REQ request, DSQL_NOD rse)
 }
 
 
-static void gen_searched_case( REQ request, DSQL_NOD node)
+static void gen_searched_case( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -2127,7 +2127,7 @@ static void gen_searched_case( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_select( REQ request, DSQL_NOD rse)
+static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 {
 /**************************************
  *
@@ -2146,7 +2146,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 	DSC constant_desc;
 	DSQL_REL relation;
 	UDF udf;
-	CTX context;
+	DSQL_CTX context;
 	STR string;
 	SSHORT constant;
 	MAP map;
@@ -2169,7 +2169,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 		if (item->nod_type == nod_field) {
 			field = (FLD) item->nod_arg[e_fld_field];
 			parameter->par_name = parameter->par_alias = field->fld_name;
-			context = (CTX) item->nod_arg[e_fld_context];
+			context = (DSQL_CTX) item->nod_arg[e_fld_context];
 			if (context->ctx_relation) {
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
@@ -2182,7 +2182,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 		else if (item->nod_type == nod_dbkey) {
 			parameter->par_alias = const_cast < char *>(db_key_name);
 			parameter->par_name = const_cast < char *>(db_key_name);
-			context = (CTX) item->nod_arg[0]->nod_arg[0];
+			context = (DSQL_CTX) item->nod_arg[0]->nod_arg[0];
 			parameter->par_rel_name = context->ctx_relation->rel_name;
 			parameter->par_owner_name = context->ctx_relation->rel_owner;
 		}
@@ -2193,7 +2193,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 			if (alias->nod_type == nod_field) {
 				field = (FLD) alias->nod_arg[e_fld_field];
 				parameter->par_name = field->fld_name;
-				context = (CTX) alias->nod_arg[e_fld_context];
+				context = (DSQL_CTX) alias->nod_arg[e_fld_context];
 				if (context->ctx_relation) {
 					parameter->par_rel_name = context->ctx_relation->rel_name;
 					parameter->par_owner_name =
@@ -2208,7 +2208,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 			}
 			else if (alias->nod_type == nod_dbkey) {
 				parameter->par_name = const_cast < char *>(db_key_name);
-				context = (CTX) alias->nod_arg[0]->nod_arg[0];
+				context = (DSQL_CTX) alias->nod_arg[0]->nod_arg[0];
 				parameter->par_rel_name = context->ctx_relation->rel_name;
 				parameter->par_owner_name = context->ctx_relation->rel_owner;
 			}
@@ -2298,7 +2298,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
 			if ((item = *ptr) && (item->nod_type == nod_relation)) {
-				context = (CTX) item->nod_arg[e_rel_context];
+				context = (DSQL_CTX) item->nod_arg[e_rel_context];
 				if (relation = context->ctx_relation) {
 					/* Set up dbkey */
 					parameter =
@@ -2425,7 +2425,7 @@ static void gen_select( REQ request, DSQL_NOD rse)
 }
 
 
-static void gen_simple_case( REQ request, DSQL_NOD node)
+static void gen_simple_case( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -2460,7 +2460,7 @@ static void gen_simple_case( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_sort( REQ request, DSQL_NOD list)
+static void gen_sort( DSQL_REQ request, DSQL_NOD list)
 {
 /**************************************
  *
@@ -2489,7 +2489,7 @@ static void gen_sort( REQ request, DSQL_NOD list)
 }
 
 
-static void gen_table_lock( REQ request, DSQL_NOD tbl_lock, USHORT lock_level)
+static void gen_table_lock( DSQL_REQ request, DSQL_NOD tbl_lock, USHORT lock_level)
 {
 /**************************************
  *
@@ -2539,7 +2539,7 @@ static void gen_table_lock( REQ request, DSQL_NOD tbl_lock, USHORT lock_level)
 }
 
 
-static void gen_udf( REQ request, DSQL_NOD node)
+static void gen_udf( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -2569,7 +2569,7 @@ static void gen_udf( REQ request, DSQL_NOD node)
 }
 
 
-static void gen_union( REQ request, DSQL_NOD union_node)
+static void gen_union( DSQL_REQ request, DSQL_NOD union_node)
 {
 /**************************************
  *
@@ -2584,13 +2584,13 @@ static void gen_union( REQ request, DSQL_NOD union_node)
 	DSQL_NOD sub_rse, *ptr, *end, streams;
 	DSQL_NOD items, *iptr, *iend;
 	USHORT count;
-	CTX union_context;
+	DSQL_CTX union_context;
 
 	STUFF(blr_union);
 
 /* Obtain the context for UNION from the first MAP node   */
 	items = union_node->nod_arg[e_rse_items];
-	union_context = (CTX) items->nod_arg[0]->nod_arg[e_map_context];
+	union_context = (DSQL_CTX) items->nod_arg[0]->nod_arg[e_map_context];
 	STUFF(union_context->ctx_context);
 
 	streams = union_node->nod_arg[e_rse_streams];
@@ -2614,7 +2614,7 @@ static void gen_union( REQ request, DSQL_NOD union_node)
 }
 
 
-static void stuff_cstring( REQ request, char *string)
+static void stuff_cstring( DSQL_REQ request, char *string)
 {
 /**************************************
  *
@@ -2634,7 +2634,7 @@ static void stuff_cstring( REQ request, char *string)
 }
 
 
-static void stuff_word( REQ request, USHORT word)
+static void stuff_word( DSQL_REQ request, USHORT word)
 {
 /**************************************
  *

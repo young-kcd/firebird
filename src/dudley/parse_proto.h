@@ -34,7 +34,7 @@ extern DUDLEY_NOD PARSE_make_list(LLS);
 extern DUDLEY_NOD PARSE_make_node(enum nod_t, USHORT);
 extern int PARSE_match(enum kwwords);
 extern int PARSE_number(void);
-extern REL PARSE_relation(void);
+extern DUDLEY_REL PARSE_relation(void);
 extern SYM PARSE_symbol(enum tok_t);
 
 #endif /* _DUDLEY_PARSE_PROTO_H_ */

@@ -122,11 +122,11 @@ static void generate( STR blr, DUDLEY_NOD node)
  *
  **************************************/
 	FLD field;
-	REL relation;
+	DUDLEY_REL relation;
 	SYM symbol;
 	CON constant;
 	DUDLEY_NOD sub, *arg, *end;
-	CTX context;
+	DUDLEY_CTX context;
 	SCHAR operatr, *p;
 	SLONG value;
 	USHORT l;
@@ -148,7 +148,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 			STUFF(blr_index);
 		STUFF(blr_field);
 		field = (FLD) node->nod_arg[s_fld_field];
-		context = (CTX) node->nod_arg[s_fld_context];
+		context = (DUDLEY_CTX) node->nod_arg[s_fld_context];
 		STUFF(context->ctx_context_id);
 		symbol = field->fld_name;
 		STUFF(l = symbol->sym_length);
@@ -188,7 +188,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		return;
 
 	case nod_context:
-		context = (CTX) node->nod_arg[0];
+		context = (DUDLEY_CTX) node->nod_arg[0];
 		relation = context->ctx_relation;
 		CHECK_BLR(2);
 		STUFF(blr_relation);
@@ -446,16 +446,16 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_erase:
 		CHECK_BLR(2);
 		STUFF(blr_erase);
-		context = (CTX) node->nod_arg[0];
+		context = (DUDLEY_CTX) node->nod_arg[0];
 		STUFF(context->ctx_context_id);
 		return;
 
 	case nod_modify:
 		CHECK_BLR(3);
 		STUFF(blr_modify);
-		context = (CTX) node->nod_arg[s_mod_old_ctx];
+		context = (DUDLEY_CTX) node->nod_arg[s_mod_old_ctx];
 		STUFF(context->ctx_context_id);
-		context = (CTX) node->nod_arg[s_mod_new_ctx];
+		context = (DUDLEY_CTX) node->nod_arg[s_mod_new_ctx];
 		STUFF(context->ctx_context_id);
 		generate(blr, node->nod_arg[s_mod_action]);
 		return;

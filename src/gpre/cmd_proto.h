@@ -24,6 +24,6 @@
 #ifndef _GPRE_CMD_PROTO_H_
 #define _GPRE_CMD_PROTO_H_
 
-extern int CMD_compile_ddl(register REQ);
+extern int CMD_compile_ddl(register GPRE_REQ);
 
 #endif /* _GPRE_CMD_PROTO_H_ */

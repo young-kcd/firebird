@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.10 2002-10-29 16:31:01 tamlin Exp $
+$Id: restore.epp,v 1.11 2002-11-16 23:57:18 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -130,17 +130,17 @@ static USHORT	check_db_version (void);
 static void	create_database (UCHAR *);
 static void	decompress (UCHAR *, USHORT);
 static void	eat_blob (void);
-static REL	find_relation (TEXT *);
+static BURP_REL	find_relation (TEXT *);
 static int	get_acl (TEXT *, ISC_QUAD *, ISC_QUAD *);
-static void	get_array (REL, UCHAR *);
+static void	get_array (BURP_REL, UCHAR *);
 static void	get_blob (FLD, UCHAR *);
 static void	get_blr_blob (ISC_QUAD *, USHORT);
 static BOOLEAN	get_character_set (void);
 static BOOLEAN	get_chk_constraint (void);
 static BOOLEAN	get_collation (void);
-static REC_TYPE	get_data (REL);
+static REC_TYPE	get_data (BURP_REL);
 static BOOLEAN	get_exception (void);
-static FLD	get_field (REL);
+static FLD	get_field (BURP_REL);
 static BOOLEAN	get_field_dimensions (void);
 static BOOLEAN	get_files (void);
 static BOOLEAN	get_filter (void);
@@ -148,7 +148,7 @@ static BOOLEAN	get_function (void);
 static void	get_function_arg (GDS_NAME);
 static BOOLEAN	get_generator (void);
 static BOOLEAN	get_global_field (void);
-static BOOLEAN	get_index (REL);
+static BOOLEAN	get_index (BURP_REL);
 static void	get_misc_blob (ISC_QUAD *, USHORT, USHORT);
 static SLONG	get_numeric (void);
 static SINT64   get_int64 (void);
@@ -164,15 +164,15 @@ static void	get_source_blob (ISC_QUAD *, USHORT);
 static USHORT	get_text (TEXT *, ULONG);
 static BOOLEAN	get_trigger (void);
 static BOOLEAN	get_trigger_message (void);
-static BOOLEAN	get_trigger_old (REL);
+static BOOLEAN	get_trigger_old (BURP_REL);
 static BOOLEAN	get_type (void);
 static BOOLEAN	get_user_privilege (void);
-static BOOLEAN	get_view (REL);
-static void	ignore_array (REL);
+static BOOLEAN	get_view (BURP_REL);
+static void	ignore_array (BURP_REL);
 static void	ignore_blob (void);
-static REC_TYPE	ignore_data (REL);
-static void	realign (UCHAR *, REL);
-static USHORT	recompute_length (REL);
+static REC_TYPE	ignore_data (BURP_REL);
+static void	realign (UCHAR *, BURP_REL);
+static USHORT	recompute_length (BURP_REL);
 static BOOLEAN	restore (TEXT *, TEXT *);
 static void     restore_security_class (TEXT *, TEXT *);
 static void	store_blr_gen_id (GDS_NAME, SINT64);
@@ -240,8 +240,8 @@ int RESTORE_restore (
  *
  **************************************/
 UINT64	cumul_count;
-REL		relation;
-PRC		procedure;
+BURP_REL		relation;
+BURP_PRC		procedure;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle4 = NULL;
 STATUS		req_status[ISC_STATUS_LENGTH];
 TGBL		tdgbl;
@@ -257,8 +257,8 @@ tdgbl = GET_THREAD_DATA;
 tdgbl->io_ptr = (UCHAR	*) NULL;
 tdgbl->io_cnt = 0;
 
-tdgbl->relations = (REL) NULL;
-tdgbl->procedures = (PRC) 0;
+tdgbl->relations = (BURP_REL) NULL;
+tdgbl->procedures = (BURP_PRC) 0;
 tdgbl->RESTORE_format = 0;
 tdgbl->global_trans = 0;
 
@@ -1111,7 +1111,7 @@ length = get_numeric();
 GET_SKIP (length);
 }
 
-static REL find_relation (
+static BURP_REL find_relation (
     TEXT	*name)
 {
 /**************************************
@@ -1126,7 +1126,7 @@ static REL find_relation (
  *
  **************************************/
 TEXT	*p, *q;
-REL	    relation;
+BURP_REL	    relation;
 TGBL	tdgbl;
 
 tdgbl = GET_THREAD_DATA;
@@ -1374,7 +1374,7 @@ return TRUE;
 }
 
 static void get_array (
-    REL		relation,
+    BURP_REL		relation,
     UCHAR	*record_buffer)
 {
 /**************************************
@@ -2294,7 +2294,7 @@ return TRUE;
 }
 
 static REC_TYPE get_data (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -2873,7 +2873,7 @@ switch (dtype)
 }
 
 static FLD get_field (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -4236,7 +4236,7 @@ return TRUE;
 }
 
 static BOOLEAN get_index (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -4552,7 +4552,7 @@ ATT_TYPE	attribute;
 GDS_NAME	procedure_name;
 TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
-PRC		    procedure;
+BURP_PRC		    procedure;
 UCHAR	    scan_next_attr;
 isc_tr_handle	local_trans;
 TGBL	    tdgbl;
@@ -4561,7 +4561,7 @@ tdgbl = GET_THREAD_DATA;
 
 local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-procedure = (PRC) BURP_ALLOC_ZERO (sizeof (struct prc));
+procedure = (BURP_PRC) BURP_ALLOC_ZERO (sizeof (struct prc));
 procedure->prc_next = tdgbl->procedures;
 tdgbl->procedures = procedure;
 
@@ -4813,7 +4813,7 @@ static BOOLEAN get_relation (void)
  *	
  *
  **************************************/
-REL		relation;
+BURP_REL		relation;
 FLD		field, *ptr;
 TEXT		temp [GDS_NAME_LEN];
 SSHORT		l;
@@ -4838,7 +4838,7 @@ tdgbl = GET_THREAD_DATA;
 
 /* Pick up relation attributes */
 
-relation = (REL) BURP_ALLOC_ZERO (sizeof (struct rel));
+relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct rel));
 relation->rel_next = tdgbl->relations;
 tdgbl->relations = relation;
 
@@ -5133,7 +5133,7 @@ static BOOLEAN get_relation_data (void)
  *	find the relation named.  If we can't find it, give up.
  *
  **************************************/
-REL		relation;
+BURP_REL		relation;
 BASED_ON RDB$RELATIONS.RDB$RELATION_NAME name;
 SLONG		gen_id;
 ATT_TYPE	attribute;
@@ -5491,7 +5491,7 @@ return (USHORT) l;
 }
 
 static BOOLEAN get_trigger_old (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -6005,7 +6005,7 @@ switch (object_type)
     {
     case obj_procedure:
 	{
-	PRC proc;
+	BURP_PRC proc;
 
 	for (proc = tdgbl->procedures; proc; proc = proc->prc_next)
 	    if (!strcmp(proc->prc_name, relation_name))
@@ -6019,7 +6019,7 @@ switch (object_type)
 
    case obj_relation:
 	{
-	REL rel;
+	BURP_REL rel;
 
 	for (rel = tdgbl->relations; rel; rel = rel->rel_next)
 	    if (!strcmp(rel->rel_name, relation_name))
@@ -6121,7 +6121,7 @@ return TRUE;
 }
 
 static BOOLEAN get_view (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -6178,7 +6178,7 @@ return TRUE;
 }
 
 static void ignore_array (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -6334,7 +6334,7 @@ while (--segments >= 0)
 }
 
 static REC_TYPE ignore_data (
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -6401,7 +6401,7 @@ return record;
 
 static void realign (
     UCHAR	*buffer,
-    REL		relation)
+    BURP_REL		relation)
 {
 /**************************************
  *
@@ -6458,7 +6458,7 @@ if (tdgbl->RESTORE_format >= 2)
 }
 
 static USHORT recompute_length (
-    REL	relation)
+    BURP_REL	relation)
 {
 /**************************************
  *

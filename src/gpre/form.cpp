@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form.cpp,v 1.5 2002-10-24 09:01:26 eku Exp $
+//  $Id: form.cpp,v 1.6 2002-11-17 00:04:18 hippoman Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -35,7 +35,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: form.cpp,v 1.5 2002-10-24 09:01:26 eku Exp $
+//	$Id: form.cpp,v 1.6 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -163,7 +163,7 @@ FORM FORM_lookup_form(DBB dbb, UCHAR * string)
 
 //  Make up form block, etc 
 
-	form->form_name = symbol = MSC_symbol(SYM_form, (TEXT*) name, l, (CTX) form);
+	form->form_name = symbol = MSC_symbol(SYM_form, (TEXT*) name, l, (GPRE_CTX) form);
 	HSH_insert(symbol);
 
 	return form;

@@ -41,7 +41,7 @@ extern void PAR_init(void);
 extern TEXT *PAR_native_value(USHORT, USHORT);
 extern FLD PAR_null_field(void);
 extern void PAR_reserving(USHORT, SSHORT);
-extern REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
+extern GPRE_REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
 extern SYM PAR_symbol(enum sym_t);
 extern void PAR_unwind(void);
 extern void PAR_using_db(void);

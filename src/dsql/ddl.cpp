@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.24 2002-11-13 15:57:27 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.25 2002-11-17 00:00:39 hippoman Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -101,64 +101,64 @@ extern "C" {
 
 static void assign_field_length(FLD, USHORT);
 static USHORT check_array_or_blob(DSQL_NOD);
-static void check_constraint(REQ, DSQL_NOD, SSHORT);
+static void check_constraint(DSQL_REQ, DSQL_NOD, SSHORT);
 static void check_one_call(BOOLEAN *, SSHORT, TEXT *);
-static void create_view_triggers(REQ, DSQL_NOD, DSQL_NOD);
-static void define_computed(REQ, DSQL_NOD, FLD, DSQL_NOD);
-static void define_constraint_trigger(REQ, DSQL_NOD);
-static void define_database(REQ);
-static void define_del_cascade_trg(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
-//static void define_del_default_trg(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
-static void define_dimensions(REQ, FLD);
-static void define_domain(REQ);
-static void define_exception(REQ, NOD_TYPE);
-static void define_field(REQ, DSQL_NOD, SSHORT, STR);
-static void define_filter(REQ);
-static void define_generator(REQ);
-static void define_role(REQ);
-static void define_index(REQ);
-static DSQL_NOD define_insert_action(REQ);
-static void define_procedure(REQ, NOD_TYPE);
-static void define_rel_constraint(REQ, DSQL_NOD);
-static void define_relation(REQ);
-static void define_set_null_trg(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT*, TEXT*, bool);
-static void define_set_default_trg(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT*, TEXT*, bool);
-static void define_shadow(REQ);
-static void define_trigger(REQ, DSQL_NOD);
-static void define_udf(REQ);
-static void define_update_action(REQ, DSQL_NOD *, DSQL_NOD *);
-static void define_upd_cascade_trg(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
-static void define_view(REQ, NOD_TYPE);
-static void define_view_trigger(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
-static void delete_procedure(REQ, DSQL_NOD, BOOLEAN);
-static void delete_relation_view(REQ, DSQL_NOD, BOOLEAN);
-static void foreign_key(REQ, DSQL_NOD, SCHAR *);
-static void generate_dyn(REQ, DSQL_NOD);
-static void grant_revoke(REQ);
-static void make_index(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *, SCHAR *);
-static void make_index_trg_ref_int(REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *, SCHAR *);
-static void modify_database(REQ);
-static void modify_domain(REQ);
-static void modify_field(REQ, DSQL_NOD, SSHORT, STR);
-static void modify_index(REQ);
-static void modify_privilege(REQ, NOD_TYPE, SSHORT, UCHAR *, DSQL_NOD, DSQL_NOD, STR);
-static SCHAR modify_privileges(REQ, NOD_TYPE, SSHORT, DSQL_NOD, DSQL_NOD, DSQL_NOD);
-static void modify_relation(REQ);
-static void process_role_nm_list(REQ, SSHORT, DSQL_NOD, DSQL_NOD, NOD_TYPE);
-static void put_descriptor(REQ, DSC *);
-static void put_dtype(REQ, FLD, USHORT);
-static void put_field(REQ, FLD, BOOLEAN);
-static void put_local_variable(REQ, VAR, DSQL_NOD);
-static SSHORT put_local_variables(REQ, DSQL_NOD, SSHORT);
-static void put_msg_field(REQ, FLD);
+static void create_view_triggers(DSQL_REQ, DSQL_NOD, DSQL_NOD);
+static void define_computed(DSQL_REQ, DSQL_NOD, FLD, DSQL_NOD);
+static void define_constraint_trigger(DSQL_REQ, DSQL_NOD);
+static void define_database(DSQL_REQ);
+static void define_del_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
+//static void define_del_default_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
+static void define_dimensions(DSQL_REQ, FLD);
+static void define_domain(DSQL_REQ);
+static void define_exception(DSQL_REQ, NOD_TYPE);
+static void define_field(DSQL_REQ, DSQL_NOD, SSHORT, STR);
+static void define_filter(DSQL_REQ);
+static void define_generator(DSQL_REQ);
+static void define_role(DSQL_REQ);
+static void define_index(DSQL_REQ);
+static DSQL_NOD define_insert_action(DSQL_REQ);
+static void define_procedure(DSQL_REQ, NOD_TYPE);
+static void define_rel_constraint(DSQL_REQ, DSQL_NOD);
+static void define_relation(DSQL_REQ);
+static void define_set_null_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT*, TEXT*, bool);
+static void define_set_default_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT*, TEXT*, bool);
+static void define_shadow(DSQL_REQ);
+static void define_trigger(DSQL_REQ, DSQL_NOD);
+static void define_udf(DSQL_REQ);
+static void define_update_action(DSQL_REQ, DSQL_NOD *, DSQL_NOD *);
+static void define_upd_cascade_trg(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, TEXT *, TEXT *);
+static void define_view(DSQL_REQ, NOD_TYPE);
+static void define_view_trigger(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD);
+static void delete_procedure(DSQL_REQ, DSQL_NOD, BOOLEAN);
+static void delete_relation_view(DSQL_REQ, DSQL_NOD, BOOLEAN);
+static void foreign_key(DSQL_REQ, DSQL_NOD, SCHAR *);
+static void generate_dyn(DSQL_REQ, DSQL_NOD);
+static void grant_revoke(DSQL_REQ);
+static void make_index(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *, SCHAR *);
+static void make_index_trg_ref_int(DSQL_REQ, DSQL_NOD, DSQL_NOD, DSQL_NOD, SCHAR *, SCHAR *);
+static void modify_database(DSQL_REQ);
+static void modify_domain(DSQL_REQ);
+static void modify_field(DSQL_REQ, DSQL_NOD, SSHORT, STR);
+static void modify_index(DSQL_REQ);
+static void modify_privilege(DSQL_REQ, NOD_TYPE, SSHORT, UCHAR *, DSQL_NOD, DSQL_NOD, STR);
+static SCHAR modify_privileges(DSQL_REQ, NOD_TYPE, SSHORT, DSQL_NOD, DSQL_NOD, DSQL_NOD);
+static void modify_relation(DSQL_REQ);
+static void process_role_nm_list(DSQL_REQ, SSHORT, DSQL_NOD, DSQL_NOD, NOD_TYPE);
+static void put_descriptor(DSQL_REQ, DSC *);
+static void put_dtype(DSQL_REQ, FLD, USHORT);
+static void put_field(DSQL_REQ, FLD, BOOLEAN);
+static void put_local_variable(DSQL_REQ, VAR, DSQL_NOD);
+static SSHORT put_local_variables(DSQL_REQ, DSQL_NOD, SSHORT);
+static void put_msg_field(DSQL_REQ, FLD);
 static DSQL_NOD replace_field_names(DSQL_NOD, DSQL_NOD, DSQL_NOD, SSHORT);
-static void reset_context_stack(REQ);
-static void save_field(REQ, SCHAR *);
-static void save_relation(REQ, STR);
-static void set_statistics(REQ);
-static void stuff_default_blr(REQ, TEXT *, USHORT);
-static void stuff_matching_blr(REQ, DSQL_NOD, DSQL_NOD);
-static void stuff_trg_firing_cond(REQ, DSQL_NOD);
+static void reset_context_stack(DSQL_REQ);
+static void save_field(DSQL_REQ, SCHAR *);
+static void save_relation(DSQL_REQ, STR);
+static void set_statistics(DSQL_REQ);
+static void stuff_default_blr(DSQL_REQ, TEXT *, USHORT);
+static void stuff_matching_blr(DSQL_REQ, DSQL_NOD, DSQL_NOD);
+static void stuff_trg_firing_cond(DSQL_REQ, DSQL_NOD);
 static void set_nod_value_attributes(DSQL_NOD, FLD);
 
 #ifdef BLKCHK
@@ -235,7 +235,7 @@ static CONST UCHAR nonnull_validation_blr[] = {
 
 ASSERT_FILENAME
 
-void DDL_execute(REQ request)
+void DDL_execute(DSQL_REQ request)
 {
 /**************************************
  *
@@ -322,7 +322,7 @@ void DDL_execute(REQ request)
 }
 
 
-void DDL_generate(REQ request, DSQL_NOD node)
+void DDL_generate(DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -348,7 +348,7 @@ void DDL_generate(REQ request, DSQL_NOD node)
 }
 
 
-int DDL_ids(REQ request)
+int DDL_ids(DSQL_REQ request)
 {
 /**************************************
  *
@@ -388,7 +388,7 @@ int DDL_ids(REQ request)
 }
 
 
-void DDL_put_field_dtype(REQ request, FLD field, USHORT use_subtype)
+void DDL_put_field_dtype(DSQL_REQ request, FLD field, USHORT use_subtype)
 {
 /**************************************
  *
@@ -407,7 +407,7 @@ void DDL_put_field_dtype(REQ request, FLD field, USHORT use_subtype)
 }
 
 
-void DDL_resolve_intl_type(REQ request, FLD field, STR collation_name)
+void DDL_resolve_intl_type(DSQL_REQ request, FLD field, STR collation_name)
 {
 /**************************************
  *
@@ -426,7 +426,7 @@ void DDL_resolve_intl_type(REQ request, FLD field, STR collation_name)
 
 
 
-void DDL_resolve_intl_type2(REQ request, 
+void DDL_resolve_intl_type2(DSQL_REQ request, 
                             FLD field, 
                             STR collation_name, 
                             BOOLEAN modifying)
@@ -832,7 +832,7 @@ static USHORT check_array_or_blob(DSQL_NOD node)
 }
 
 
-static void check_constraint(	REQ		request,
+static void check_constraint(	DSQL_REQ		request,
 								DSQL_NOD		element,
 								SSHORT	delete_trigger_required)
 {
@@ -922,7 +922,7 @@ static void check_one_call (BOOLEAN *repetition_count,
 }
 
 
-static void create_view_triggers(REQ request, DSQL_NOD element, DSQL_NOD items)
+static void create_view_triggers(DSQL_REQ request, DSQL_NOD element, DSQL_NOD items)
 {								/* Fields in the VIEW actually  */
 /* *************************************
  *
@@ -982,7 +982,7 @@ static void create_view_triggers(REQ request, DSQL_NOD element, DSQL_NOD items)
 }
 
 
-static void define_computed(REQ request,
+static void define_computed(DSQL_REQ request,
 							DSQL_NOD relation_node,
 							FLD field,
 							DSQL_NOD node)
@@ -1077,7 +1077,7 @@ static void define_computed(REQ request,
 }
 
 
-static void define_constraint_trigger(REQ request, DSQL_NOD node)
+static void define_constraint_trigger(DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -1237,7 +1237,7 @@ static void define_constraint_trigger(REQ request, DSQL_NOD node)
 }
 
 
-static void define_database( REQ request)
+static void define_database( DSQL_REQ request)
 {
 /**************************************
  *
@@ -1382,7 +1382,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 }
 
 
-static void define_del_cascade_trg(	REQ		request,
+static void define_del_cascade_trg(	DSQL_REQ		request,
 									DSQL_NOD		element,
 									DSQL_NOD		for_columns,
 									DSQL_NOD		prim_columns,
@@ -1444,7 +1444,7 @@ static void define_del_cascade_trg(	REQ		request,
 }
 
 
-static void define_set_default_trg(	REQ		request,
+static void define_set_default_trg(	DSQL_REQ		request,
 									DSQL_NOD		element,
 									DSQL_NOD		for_columns,
 									DSQL_NOD		prim_columns,
@@ -1620,7 +1620,7 @@ static void define_set_default_trg(	REQ		request,
 }
 
 
-static void define_dimensions( REQ request, FLD field)
+static void define_dimensions( DSQL_REQ request, FLD field)
 {
 /*****************************************
  *
@@ -1668,7 +1668,7 @@ static void define_dimensions( REQ request, FLD field)
 }
 
 
-static void define_domain(REQ request)
+static void define_domain(DSQL_REQ request)
 {
 /**************************************
  *
@@ -1798,7 +1798,7 @@ static void define_domain(REQ request)
 }
 
 
-static void define_exception( REQ request, NOD_TYPE op)
+static void define_exception( DSQL_REQ request, NOD_TYPE op)
 {
 /**************************************
  *
@@ -1838,7 +1838,7 @@ static void define_exception( REQ request, NOD_TYPE op)
 
 
 static void define_field(
-						 REQ request,
+						 DSQL_REQ request,
 						 DSQL_NOD element, SSHORT position, STR relation_name)
 {
 /**************************************
@@ -2049,7 +2049,7 @@ static void define_field(
 }
 
 
-static void define_filter( REQ request)
+static void define_filter( DSQL_REQ request)
 {
 /**************************************
  *
@@ -2080,7 +2080,7 @@ static void define_filter( REQ request)
 }
 
 
-static void define_generator( REQ request)
+static void define_generator( DSQL_REQ request)
 {
 /**************************************
  *
@@ -2100,7 +2100,7 @@ static void define_generator( REQ request)
 }
 
 
-static void define_index(REQ request)
+static void define_index(DSQL_REQ request)
 {
 /**************************************
  *
@@ -2156,7 +2156,7 @@ static void define_index(REQ request)
 }
 
 
-static DSQL_NOD define_insert_action( REQ request)
+static DSQL_NOD define_insert_action( DSQL_REQ request)
 {
 /**************************************
  *
@@ -2268,7 +2268,7 @@ static DSQL_NOD define_insert_action( REQ request)
 }
 
 
-static void define_procedure( REQ request, NOD_TYPE op)
+static void define_procedure( DSQL_REQ request, NOD_TYPE op)
 {
 /**************************************
  *
@@ -2281,7 +2281,7 @@ static void define_procedure( REQ request, NOD_TYPE op)
  *
  **************************************/
 	DSQL_NOD parameters, parameter, *ptr, *end;
-	PRC procedure;
+	DSQL_PRC procedure;
 	FLD field, *field_ptr;
 	SSHORT position;
 	VAR variable;
@@ -2507,7 +2507,7 @@ static void define_procedure( REQ request, NOD_TYPE op)
 }
 
 
-static void define_rel_constraint( REQ request, DSQL_NOD element)
+static void define_rel_constraint( DSQL_REQ request, DSQL_NOD element)
 {
 /**************************************
  *
@@ -2537,7 +2537,7 @@ static void define_rel_constraint( REQ request, DSQL_NOD element)
 }
 
 
-static void define_relation( REQ request)
+static void define_relation( DSQL_REQ request)
 {
 /**************************************
  *
@@ -2596,7 +2596,7 @@ static void define_relation( REQ request)
 //
 //	Create a SQL role.
 //
-static void define_role(REQ request)
+static void define_role(DSQL_REQ request)
 {
 	STR gen_name = (STR) request->req_ddl_node->nod_arg[e_gen_name];
 	request->append_cstring(isc_dyn_def_sql_role,
@@ -2605,7 +2605,7 @@ static void define_role(REQ request)
 }
 
 
-static void define_set_null_trg(REQ		request,
+static void define_set_null_trg(DSQL_REQ		request,
 								DSQL_NOD		element,
 								DSQL_NOD		for_columns,
 								DSQL_NOD		prim_columns,
@@ -2679,7 +2679,7 @@ static void define_set_null_trg(REQ		request,
 //
 // create a shadow for the database
 //
-static void define_shadow(REQ request)
+static void define_shadow(DSQL_REQ request)
 {
 	DSQL_NOD  shadow_node = request->req_ddl_node;
 	DSQL_NOD* ptr         = shadow_node->nod_arg;
@@ -2741,7 +2741,7 @@ static void define_shadow(REQ request)
 //
 // Create the ddl to define or alter a trigger.
 //
-static void define_trigger( REQ request, DSQL_NOD node)
+static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 {
 	STR relation_name;
 	DSQL_NOD temp, constant, relation_node;
@@ -2937,7 +2937,7 @@ static void define_trigger( REQ request, DSQL_NOD node)
 }
 
 
-static void define_udf( REQ request)
+static void define_udf( DSQL_REQ request)
 {
 /**************************************
  *
@@ -3118,7 +3118,7 @@ static void define_udf( REQ request)
 
 
 static void define_update_action(
-								 REQ request,
+								 DSQL_REQ request,
 								 DSQL_NOD * base_and_node, DSQL_NOD * base_relation)
 {
 /* *************************************
@@ -3262,7 +3262,7 @@ static void define_update_action(
 }
 
 
-static void define_upd_cascade_trg(	REQ		request,
+static void define_upd_cascade_trg(	DSQL_REQ		request,
 									DSQL_NOD		element,
 									DSQL_NOD		for_columns,
 									DSQL_NOD		prim_columns,
@@ -3332,7 +3332,7 @@ static void define_upd_cascade_trg(	REQ		request,
 }
 
 
-static void define_view( REQ request, NOD_TYPE op)
+static void define_view( DSQL_REQ request, NOD_TYPE op)
 {
 /**************************************
  *
@@ -3351,7 +3351,7 @@ static void define_view( REQ request, NOD_TYPE op)
 	DSQL_NOD items, *i_ptr, *i_end;
 	DSQL_REL relation;
 	FLD field;
-	CTX context;
+	DSQL_CTX context;
 	STR view_name, field_name, source;
 	SSHORT position, updatable = TRUE;
 	TEXT *field_string;
@@ -3436,14 +3436,14 @@ static void define_view( REQ request, NOD_TYPE op)
 /* define the view source relations from the request contexts & union contexts*/
 
     while (request->req_union_context) {
-        context = reinterpret_cast<CTX>(LLS_POP(&request->req_union_context));
+        context = reinterpret_cast<DSQL_CTX>(LLS_POP(&request->req_union_context));
         LLS_PUSH(context, &request->req_context);
     }
 
 
 	for (temp = request->req_context; temp; temp = temp->lls_next)
 	{
-		context = (CTX) temp->lls_object;
+		context = (DSQL_CTX) temp->lls_object;
 		if (relation = context->ctx_relation)
 		{
 			request->append_cstring(gds_dyn_view_relation, relation->rel_name);
@@ -3482,7 +3482,7 @@ static void define_view( REQ request, NOD_TYPE op)
 		context = NULL;
 		if (field_node->nod_type == nod_field) {
 			field = (FLD) field_node->nod_arg[e_fld_field];
-			context = (CTX) field_node->nod_arg[e_fld_context];
+			context = (DSQL_CTX) field_node->nod_arg[e_fld_context];
 		}
 		else
 			updatable = FALSE;
@@ -3638,7 +3638,7 @@ static void define_view( REQ request, NOD_TYPE op)
 }
 
 
-static void define_view_trigger( REQ request, DSQL_NOD node, DSQL_NOD rse, DSQL_NOD items)
+static void define_view_trigger( DSQL_REQ request, DSQL_NOD node, DSQL_NOD rse, DSQL_NOD items)
 {								/* The fields in VIEW actually  */
 /**************************************
  *
@@ -3655,7 +3655,7 @@ static void define_view_trigger( REQ request, DSQL_NOD node, DSQL_NOD rse, DSQL_
 	DSQL_NOD relation_node;
 	USHORT trig_type;
 	DSQL_NOD action_node, condition, select, select_expr, view_fields;
-	CTX context, sav_context = 0;
+	DSQL_CTX context, sav_context = 0;
 	DLLS stack;
 	TSQL tdsql;
 
@@ -3747,7 +3747,7 @@ static void define_view_trigger( REQ request, DSQL_NOD node, DSQL_NOD rse, DSQL_
 			   save and then add the context                               */
 
 			stack = request->req_context;
-			context = (CTX) stack->lls_object;
+			context = (DSQL_CTX) stack->lls_object;
 			if (context->ctx_alias) {
 				sav_context = FB_NEW(*tdsql->tsql_default) ctx;
 				*sav_context = *context;
@@ -3846,7 +3846,7 @@ static void define_view_trigger( REQ request, DSQL_NOD node, DSQL_NOD rse, DSQL_
 }
 
 
-static void delete_procedure (REQ     request,
+static void delete_procedure (DSQL_REQ     request,
                               DSQL_NOD     node,
                               BOOLEAN silent_deletion)
 {
@@ -3865,7 +3865,7 @@ static void delete_procedure (REQ     request,
     STR string = (STR) node->nod_arg [e_prc_name];
     assert (string);
     if (node->nod_type == nod_redef_procedure || silent_deletion) {
-        PRC procedure = METD_get_procedure (request, string);
+        DSQL_PRC procedure = METD_get_procedure (request, string);
         if (!procedure) {
                 return;
         }
@@ -3878,7 +3878,7 @@ static void delete_procedure (REQ     request,
 
 
 static void delete_relation_view (
-    REQ     request,
+    DSQL_REQ     request,
     DSQL_NOD     node,
     BOOLEAN silent_deletion)
 {
@@ -3962,7 +3962,7 @@ void req::end_blr()
 }
 
 
-static void foreign_key( REQ request, DSQL_NOD element, TEXT* index_name)
+static void foreign_key( DSQL_REQ request, DSQL_NOD element, TEXT* index_name)
 {
 /* *************************************
  *
@@ -4024,7 +4024,7 @@ static void foreign_key( REQ request, DSQL_NOD element, TEXT* index_name)
 }
 
 
-static void generate_dyn( REQ request, DSQL_NOD node)
+static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -4224,7 +4224,7 @@ static void generate_dyn( REQ request, DSQL_NOD node)
 }
 
 
-static void grant_revoke( REQ request)
+static void grant_revoke( DSQL_REQ request)
 {
 /**************************************
  *
@@ -4302,7 +4302,7 @@ static void grant_revoke( REQ request)
 }
 
 
-static void make_index(	REQ		request,
+static void make_index(	DSQL_REQ		request,
 						DSQL_NOD		element,
 						DSQL_NOD		columns,
 						DSQL_NOD		referenced_columns,
@@ -4366,7 +4366,7 @@ static void make_index(	REQ		request,
 }
 
 
-static void make_index_trg_ref_int(	REQ		request,
+static void make_index_trg_ref_int(	DSQL_REQ		request,
 									DSQL_NOD		element,
 									DSQL_NOD		columns,
 									DSQL_NOD		referenced_columns,
@@ -4535,7 +4535,7 @@ static void make_index_trg_ref_int(	REQ		request,
 }
 
 
-static void modify_database( REQ request)
+static void modify_database( DSQL_REQ request)
 {
 /**************************************
  *
@@ -4678,7 +4678,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 }
 
 
-static void modify_domain( REQ request)
+static void modify_domain( DSQL_REQ request)
 {
 /**************************************
  *
@@ -4837,7 +4837,7 @@ static void modify_domain( REQ request)
 }
 
 
-static void modify_index( REQ request)
+static void modify_index( DSQL_REQ request)
 {
 /**************************************
  *
@@ -4870,7 +4870,7 @@ static void modify_index( REQ request)
 }
 
 
-static void modify_privilege(	REQ			request,
+static void modify_privilege(	DSQL_REQ			request,
 								NOD_TYPE	type,
 								SSHORT		option,
 								UCHAR*		privs,
@@ -4983,7 +4983,7 @@ static void modify_privilege(	REQ			request,
 
 
 
-static SCHAR modify_privileges(REQ		request,
+static SCHAR modify_privileges(DSQL_REQ		request,
 							   NOD_TYPE	type,
 							   SSHORT	option,
 							   DSQL_NOD		privs,
@@ -5062,7 +5062,7 @@ static SCHAR modify_privileges(REQ		request,
 }
 
 
-static void modify_relation( REQ request)
+static void modify_relation( DSQL_REQ request)
 {
 /**************************************
  *
@@ -5212,7 +5212,7 @@ static void modify_relation( REQ request)
 }
 
 
-static void process_role_nm_list(	REQ			request,
+static void process_role_nm_list(	DSQL_REQ			request,
 									SSHORT		option,
 									DSQL_NOD			user_ptr,
 									DSQL_NOD			role_ptr,
@@ -5255,7 +5255,7 @@ static void process_role_nm_list(	REQ			request,
 }
 
 
-static void put_descriptor(REQ request, DSC * desc)
+static void put_descriptor(DSQL_REQ request, DSC * desc)
 {
 /**************************************
  *
@@ -5281,7 +5281,7 @@ static void put_descriptor(REQ request, DSC * desc)
 }
 
 
-static void put_dtype(REQ request, FLD field, USHORT use_subtype)
+static void put_dtype(DSQL_REQ request, FLD field, USHORT use_subtype)
 {
 /**************************************
  *
@@ -5344,7 +5344,7 @@ static void put_dtype(REQ request, FLD field, USHORT use_subtype)
 }
 
 
-static void put_field( REQ request, FLD field, BOOLEAN udf_flag)
+static void put_field( DSQL_REQ request, FLD field, BOOLEAN udf_flag)
 {
 /**************************************
  *
@@ -5424,7 +5424,7 @@ static void put_field( REQ request, FLD field, BOOLEAN udf_flag)
 }
 
 
-static void put_local_variable( REQ request, VAR variable, DSQL_NOD host_param)
+static void put_local_variable( DSQL_REQ request, VAR variable, DSQL_NOD host_param)
 {
 /**************************************
  *
@@ -5471,7 +5471,7 @@ static void put_local_variable( REQ request, VAR variable, DSQL_NOD host_param)
 }
 
 
-static SSHORT put_local_variables(REQ request, DSQL_NOD parameters, SSHORT locals)
+static SSHORT put_local_variables(DSQL_REQ request, DSQL_NOD parameters, SSHORT locals)
 {
 /**************************************
  *
@@ -5517,7 +5517,7 @@ static SSHORT put_local_variables(REQ request, DSQL_NOD parameters, SSHORT local
 }
 
 
-static void put_msg_field( REQ request, FLD field)
+static void put_msg_field( DSQL_REQ request, FLD field)
 {
 /**************************************
  *
@@ -5691,7 +5691,7 @@ static DSQL_NOD replace_field_names(DSQL_NOD		input,
 }
 
 
-static void reset_context_stack( REQ request)
+static void reset_context_stack( DSQL_REQ request)
 {
 /**************************************
  *
@@ -5712,7 +5712,7 @@ static void reset_context_stack( REQ request)
 }
 
 
-static void save_field(REQ request, TEXT* field_name)
+static void save_field(DSQL_REQ request, TEXT* field_name)
 {
 /**************************************
  *
@@ -5742,7 +5742,7 @@ static void save_field(REQ request, TEXT* field_name)
 }
 
 
-static void save_relation( REQ request, STR relation_name)
+static void save_relation( DSQL_REQ request, STR relation_name)
 {
 /**************************************
  *
@@ -5786,7 +5786,7 @@ static void save_relation( REQ request, STR relation_name)
 }
 
 
-static void set_statistics( REQ request)
+static void set_statistics( DSQL_REQ request)
 {
 /**************************************
  *
@@ -5814,7 +5814,7 @@ static void set_statistics( REQ request)
 }
 
 
-static void stuff_default_blr(	REQ		request,
+static void stuff_default_blr(	DSQL_REQ		request,
 								TEXT*	default_buff,
 								USHORT	buff_size)
 {
@@ -5842,7 +5842,7 @@ static void stuff_default_blr(	REQ		request,
 }
 
 
-static void stuff_matching_blr(REQ request, DSQL_NOD for_columns, DSQL_NOD prim_columns)
+static void stuff_matching_blr(DSQL_REQ request, DSQL_NOD for_columns, DSQL_NOD prim_columns)
 {
 /********************************************
  *
@@ -5900,7 +5900,7 @@ static void stuff_matching_blr(REQ request, DSQL_NOD for_columns, DSQL_NOD prim_
 }
 
 
-static void stuff_trg_firing_cond(REQ request, DSQL_NOD prim_columns)
+static void stuff_trg_firing_cond(DSQL_REQ request, DSQL_NOD prim_columns)
 {
 /********************************************
  *
@@ -5949,7 +5949,7 @@ static void stuff_trg_firing_cond(REQ request, DSQL_NOD prim_columns)
 }
 
 
-static void modify_field(REQ	request,
+static void modify_field(DSQL_REQ	request,
 						 DSQL_NOD	element,
 						 SSHORT	position,
 						 STR	relation_name)

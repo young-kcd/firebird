@@ -48,7 +48,7 @@ static void parse_matching_paren(void);
 static DUDLEY_NOD parse_multiply(USHORT *, USHORT *);
 static DUDLEY_NOD parse_not(USHORT *);
 static DUDLEY_NOD parse_primitive_value(USHORT *, USHORT *);
-static CTX parse_relation(void);
+static DUDLEY_CTX parse_relation(void);
 static DUDLEY_NOD parse_relational(USHORT *);
 static DUDLEY_NOD parse_sort(void);
 static DUDLEY_NOD parse_statistical(void);
@@ -123,7 +123,7 @@ DUDLEY_NOD EXPR_rse(USHORT view_flag)
  **************************************/
 	DUDLEY_NOD node, boolean, field_name, a_boolean, temp;
 	LLS stack, field_stack;
-	CTX context;
+	DUDLEY_CTX context;
 	SYM field_sym;
 
 	node = SYNTAX_NODE(nod_rse, s_rse_count);
@@ -146,7 +146,7 @@ DUDLEY_NOD EXPR_rse(USHORT view_flag)
 				boolean = SYNTAX_NODE(nod_eql, 2);
 				field_sym = PARSE_symbol(tok_ident);
 				field_name = SYNTAX_NODE(nod_field_name, 2);
-				context = (CTX) stack->lls_object;
+				context = (DUDLEY_CTX) stack->lls_object;
 				field_name->nod_arg[0] = (DUDLEY_NOD) context->ctx_name;
 				field_name->nod_arg[1] = (DUDLEY_NOD) field_sym;
 				boolean->nod_arg[0] = field_name;
@@ -866,7 +866,7 @@ static DUDLEY_NOD parse_primitive_value( USHORT * paren_count, USHORT * bool_fla
 }
 
 
-static CTX parse_relation(void)
+static DUDLEY_CTX parse_relation(void)
 {
 /**************************************
  *
@@ -881,10 +881,10 @@ static CTX parse_relation(void)
  *
  **************************************/
 	SYM symbol;
-	CTX context;
+	DUDLEY_CTX context;
 	TEXT s[128];
 
-	context = (CTX) DDL_alloc(CTX_LEN);
+	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
 	context->ctx_name = symbol = PARSE_symbol(tok_ident);
 	symbol->sym_type = SYM_context;
 	symbol->sym_object = context;

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.8 2002-11-11 19:19:43 hippoman Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.9 2002-11-17 00:04:18 hippoman Exp $
  */
 
 #include "firebird.h"
@@ -75,10 +75,10 @@ static int upcase(TEXT *, TEXT *);
  *		If found, return field block.  If not, return NULL.
  */  
 
-FLD MET_context_field( CTX context, char *string)
+FLD MET_context_field( GPRE_CTX context, char *string)
 {
 	SYM symbol;
-	PRC procedure;
+	GPRE_PRC procedure;
 	FLD field;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
@@ -159,7 +159,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
  *		Initialize the size of the field.
  */  
 
-USHORT MET_domain_lookup(REQ request, FLD field, char *string)
+USHORT MET_domain_lookup(GPRE_REQ request, FLD field, char *string)
 {
 	SYM symbol;
 	DBB dbb;
@@ -237,7 +237,7 @@ BOOLEAN MET_get_domain_default(DBB dbb,
  *		Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  */  
 
-BOOLEAN MET_get_column_default(REL relation,
+BOOLEAN MET_get_column_default(GPRE_REL relation,
 							   TEXT * column_name,
 							   TEXT * buffer, USHORT buff_length)
 {
@@ -295,7 +295,7 @@ LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
  *		If found, return field block.  If not, return NULL.
  */  
 
-FLD MET_field(REL relation, char *string)
+FLD MET_field(GPRE_REL relation, char *string)
 {
 	SYM symbol;
 	FLD field;
@@ -329,15 +329,15 @@ FLD MET_field(REL relation, char *string)
  *     Return a list of the fields in a relation
  */  
 
-GPRE_NOD MET_fields(CTX context)
+GPRE_NOD MET_fields(GPRE_CTX context)
 {
 	DBB dbb;
 	FLD field;
 	LLS stack;
 	GPRE_NOD node, field_node;
 	REF reference;
-	PRC procedure;
-	REL relation;
+	GPRE_PRC procedure;
+	GPRE_REL relation;
 	TEXT *p;
 	int count;
 
@@ -511,11 +511,11 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT * length)
  *		This function has been cloned into MET_get_udf
  */  
 
-PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
+GPRE_PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
 {
 	SYM symbol;
 	FLD *fld_list, field;
-	PRC procedure;
+	GPRE_PRC procedure;
 	USHORT length, type, count;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
@@ -525,7 +525,7 @@ PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
 
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_procedure &&
-			(procedure = (PRC) symbol->sym_object) &&
+			(procedure = (GPRE_PRC) symbol->sym_object) &&
 			procedure->prc_database == dbb &&
 			(!owner[0] ||
 			 (procedure->prc_owner
@@ -548,10 +548,10 @@ PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
  *		Return a relation block (if name is found) or NULL.
  */  
 
-REL MET_get_relation(DBB dbb, TEXT * string, TEXT * owner_name)
+GPRE_REL MET_get_relation(DBB dbb, TEXT * string, TEXT * owner_name)
 {
 	SYM symbol;
-	REL relation;
+	GPRE_REL relation;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
 	strcpy(name, string);
@@ -559,7 +559,7 @@ REL MET_get_relation(DBB dbb, TEXT * string, TEXT * owner_name)
 
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_relation &&
-			(relation = (REL) symbol->sym_object) &&
+			(relation = (GPRE_REL) symbol->sym_object) &&
 			relation->rel_database == dbb &&
 			(!owner[0] ||
 			 (relation->rel_owner
@@ -623,13 +623,13 @@ UDF MET_get_udf(DBB dbb, TEXT * string)
  *		(the relation could be an alias).
  */  
 
-REL MET_get_view_relation(REQ request,
+GPRE_REL MET_get_view_relation(GPRE_REQ request,
 						  char *view_name,
 						  char *relation_or_alias, USHORT level)
 {
 	DBB dbb;
 	TEXT *p;
-	REL relation;
+	GPRE_REL relation;
 
 	assert(0);
 	return NULL;
@@ -674,8 +674,8 @@ IND MET_index(DBB dbb, TEXT * string)
 
 void MET_load_hash_table( DBB dbb)
 {
-	REL relation;
-	PRC procedure;
+	GPRE_REL relation;
+	GPRE_PRC procedure;
 	SYM symbol;
 	FLD dbkey;
 	UDF udf;
@@ -711,7 +711,7 @@ FLD MET_make_field(SCHAR * name,
 	field->fld_length = length;
 	field->fld_dtype = dtype;
 	field->fld_symbol = symbol =
-		MSC_symbol(SYM_field, name, strlen(name), (CTX)field);
+		MSC_symbol(SYM_field, name, strlen(name), (GPRE_CTX)field);
 	if (insert_flag)
 		HSH_insert(symbol);
 
@@ -729,7 +729,7 @@ IND MET_make_index(SCHAR * name)
 	IND index;
 
 	index = (IND) ALLOC(IND_LEN);
-	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (CTX)index);
+	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (GPRE_CTX)index);
 
 	return index;
 }
@@ -740,13 +740,13 @@ IND MET_make_index(SCHAR * name)
  *		Make an relation symbol.
  */  
 
-REL MET_make_relation(SCHAR * name)
+GPRE_REL MET_make_relation(SCHAR * name)
 {
-	REL relation;
+	GPRE_REL relation;
 
-	relation = (REL) ALLOC(REL_LEN);
+	relation = (GPRE_REL) ALLOC(REL_LEN);
 	relation->rel_symbol =
-		MSC_symbol(SYM_relation, name, strlen(name), (CTX)relation);
+		MSC_symbol(SYM_relation, name, strlen(name), (GPRE_CTX)relation);
 
 	return relation;
 }
@@ -759,7 +759,7 @@ REL MET_make_relation(SCHAR * name)
 
 BOOLEAN MET_type(FLD field, TEXT * string, SSHORT * ptr)
 {
-	REL relation;
+	GPRE_REL relation;
 	DBB dbb;
 	SYM symbol;
 	TYP type;

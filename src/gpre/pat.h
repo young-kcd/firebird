@@ -69,8 +69,8 @@ Substitution codes:
 
 struct pat {
 	DBB pat_database;
-	REQ pat_request;
-	TRA pat_transaction;
+	GPRE_REQ pat_request;
+	GPRE_TRA pat_transaction;
 	BLB pat_blob;
 	POR pat_port;
 	POR pat_port2;

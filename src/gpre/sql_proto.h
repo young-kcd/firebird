@@ -31,12 +31,12 @@ extern "C" {
 extern ACT SQL_action(void);
 extern void SQL_adjust_field_dtype(FLD);
 extern void SQL_init(void);
-extern void SQL_par_field_collate(REQ, FLD);
-extern void SQL_par_field_dtype(REQ, FLD, BOOLEAN);
-extern PRC SQL_procedure(REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
-extern REL SQL_relation(REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
+extern void SQL_par_field_collate(GPRE_REQ, FLD);
+extern void SQL_par_field_dtype(GPRE_REQ, FLD, BOOLEAN);
+extern GPRE_PRC SQL_procedure(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
+extern GPRE_REL SQL_relation(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
 extern void SQL_resolve_identifier(TEXT *, TEXT *);
-extern REL SQL_view(REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
+extern GPRE_REL SQL_view(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
 extern void SQL_relation_name(TEXT *, TEXT *, TEXT *);
 extern TEXT *SQL_var_or_string(BOOLEAN);
 

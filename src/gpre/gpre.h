@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.16 2002-11-11 19:19:43 hippoman Exp $
+ * $Id: gpre.h,v 1.17 2002-11-17 00:04:18 hippoman Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -521,7 +521,7 @@ typedef struct ctx {
 	struct prc *ctx_procedure;	/* procedure for context */
 	struct nod *ctx_prc_inputs;	/* procedure input parameters */
 	struct rse *ctx_stream;		/* stream for context */
-} *CTX;
+} *GPRE_CTX;
 
 #define CTX_LEN sizeof (struct ctx)
 
@@ -936,7 +936,7 @@ typedef struct prc {
 	SSHORT prc_in_count;		/* count of input parameters */
 	SSHORT prc_out_count;		/* count of output parameters */
 	SSHORT prc_flags;			/* procedure flags */
-} *PRC;
+} *GPRE_PRC;
 
 #define PRC_LEN sizeof (struct prc)
 #define PRC_scanned	1
@@ -1052,7 +1052,7 @@ typedef struct rel {
 									   during a meta operation */
 	TEXT *rel_ext_file;			/* external file name */
 	USHORT rel_flags;
-} *REL;
+} *GPRE_REL;
 
 #define REL_LEN sizeof (struct rel)
 
@@ -1080,7 +1080,7 @@ enum req_t {
 	REQ_procedure,
 	REQ_set_generator,
 
-	REQ_LASTREQUEST				/* Leave this debugging REQ last */
+	REQ_LASTREQUEST				/* Leave this debugging GPRE_REQ last */
 };
 
 typedef struct req {
@@ -1136,7 +1136,7 @@ typedef struct req {
 	USHORT req_in_order_by_clause;	/* processing order by clause */
 	USHORT req_in_subselect;	/* processing a subselect clause */
 	ULONG req_flags;
-} *REQ;
+} *GPRE_REQ;
 
 #define REQ_exp_hand		1
 #define REQ_local		2		/* defined in an included routine */
@@ -1240,7 +1240,7 @@ typedef struct sgen {
 /* Slice description block */
 
 typedef struct slc {
-	REQ slc_parent_request;		/* request for blob id */
+	GPRE_REQ slc_parent_request;		/* request for blob id */
 	FLD slc_field;				/* database array field */
 	GPRE_NOD slc_array;				/* user defined array */
 	REF slc_field_ref;			/* array field reference */
@@ -1345,7 +1345,7 @@ typedef struct tra {
 	USHORT tra_flags;			/* transaction options */
 	struct tpb *tra_tpb;		/* TPB's for this transaction */
 	int tra_db_count;			/* number of db's and TPB's */
-} *TRA;
+} *GPRE_TRA;
 
 #define TRA_LEN	sizeof (struct tra)
 
@@ -1401,7 +1401,7 @@ typedef struct trg {
 	struct str *trg_source;		/* source for trigger */
 	struct nod *trg_boolean;	/* boolean expression, for trigger */
 	struct str *trg_message;	/* Message the trigger prints */
-} *TRG;
+} *GPRE_TRG;
 
 #define TRG_LEN sizeof (struct trg)
 
@@ -1515,7 +1515,7 @@ EXTERN DBB isc_databases;
 EXTERN TEXT *default_user, *default_password;
 EXTERN TEXT *default_lc_ctype;
 EXTERN TEXT *default_lc_messages;
-EXTERN REQ requests;
+EXTERN GPRE_REQ requests;
 EXTERN LLS events;
 EXTERN IB_FILE *out_file;
 EXTERN LANG_T sw_language;

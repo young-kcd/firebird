@@ -107,15 +107,15 @@ static void drop_shadow(void);
 static void drop_trigger(void);
 static void drop_type(void);
 static void end_text(TXT);
-static SYM gen_trigger_name(TRG_T, REL);
+static SYM gen_trigger_name(TRG_T, DUDLEY_REL);
 static int get_system_flag(void);
 static void get_trigger_attributes(int *, int *, int *);
 static void grant_user_privilege(void);
-static CTX lookup_context(SYM, LLS);
+static DUDLEY_CTX lookup_context(SYM, LLS);
 static FLD lookup_global_field(FLD);
 static ACT make_action(enum act_t, DBB);
 static ACT make_computed_field(FLD);
-static CTX make_context(TEXT *, REL);
+static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL);
 static ACT make_global_field(FLD);
 static void mod_old_trigger(void);
 static void modify_field(void);
@@ -123,7 +123,7 @@ static void modify_index(void);
 static void modify_relation(void);
 static void modify_security_class(void);
 static void modify_trigger(void);
-static void modify_trigger_action(TRG, REL);
+static void modify_trigger_action(DUDLEY_TRG, DUDLEY_REL);
 static void modify_type(void);
 static void modify_view(void);
 static BOOLEAN parse_action(void);
@@ -142,7 +142,7 @@ static SLONG parse_privileges(void);
 static void revoke_user_privilege(void);
 static SLONG score_entry(SCE);
 static DUDLEY_NOD set_generator(void);
-static void sort_out_attributes(TRG, SLONG, SLONG, SLONG);
+static void sort_out_attributes(DUDLEY_TRG, SLONG, SLONG, SLONG);
 static TXT start_text(void);
 static void validate_field(FLD);
 
@@ -237,7 +237,7 @@ FUNC PARSE_function( int flag)
 		function = (FUNC) DDL_alloc(FUNC_LEN);
 		function->func_name = symbol = PARSE_symbol(tok_ident);
 		symbol->sym_type = SYM_function;
-		symbol->sym_object = (CTX) function;
+		symbol->sym_object = (DUDLEY_CTX) function;
 		HSH_insert(symbol);
 
 		if (!(function->func_database = database))
@@ -389,7 +389,7 @@ int PARSE_number(void)
 }
 
 
-REL PARSE_relation(void)
+DUDLEY_REL PARSE_relation(void)
 {
 /**************************************
  *
@@ -405,23 +405,23 @@ REL PARSE_relation(void)
  *
  **************************************/
 	SYM symbol;
-	REL relation;
+	DUDLEY_REL relation;
 
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(116, DDL_token.tok_string, 0);	/* msg 116: expected relation name, encountered \"%s\" */
 
 	symbol = HSH_typed_lookup(DDL_token.tok_string, DDL_token.tok_length,
 							  SYM_relation);
-	if (symbol && (relation = (REL) symbol->sym_object) &&
+	if (symbol && (relation = (DUDLEY_REL) symbol->sym_object) &&
 		relation->rel_database == database) {
 		LEX_token();
 		return relation;
 	}
 
-	relation = (REL) DDL_alloc(REL_LEN);
+	relation = (DUDLEY_REL) DDL_alloc(REL_LEN);
 	relation->rel_name = symbol = PARSE_symbol(tok_ident);
 	symbol->sym_type = SYM_relation;
-	symbol->sym_object = (CTX) relation;
+	symbol->sym_object = (DUDLEY_CTX) relation;
 
 	if (!(relation->rel_database = database))
 		PARSE_error(111, 0, 0);	/* msg 111: no database declared */
@@ -616,7 +616,7 @@ static FLD create_global_field( FLD local_field)
 		old_name = local_field->fld_name;
 		global_field->fld_name = new_name = copy_symbol(old_name);
 		new_name->sym_type = SYM_global;
-		new_name->sym_object = (CTX) global_field;
+		new_name->sym_object = (DUDLEY_CTX) global_field;
 		local_field->fld_source = new_name;
 	}
 
@@ -1158,15 +1158,15 @@ static void define_old_trigger(void)
  *	Parse old style trigger definition
  *
  **************************************/
-	REL relation;
-	TRG trigger;
+	DUDLEY_REL relation;
+	DUDLEY_TRG trigger;
 	SYM name;
 
 	trigger = NULL;
 	relation = PARSE_relation();
 
 	while (!MATCH(KW_END_TRIGGER)) {
-		trigger = (TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
 		trigger->trg_relation = relation;
 
 		if (MATCH(KW_STORE))
@@ -1193,7 +1193,7 @@ static void define_old_trigger(void)
 
 	if (trigger) {
 		name->sym_type = SYM_trigger;
-		name->sym_object = (CTX) trigger;
+		name->sym_object = (DUDLEY_CTX) trigger;
 		HSH_insert(name);
 	}
 }
@@ -1211,7 +1211,7 @@ static void define_relation(void)
  *	Parse a DEFINE RELATION statement.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	FLD field, global;
 	SYM symbol;
 	DSC desc;
@@ -1422,7 +1422,7 @@ static void define_trigger(void)
  *	what comes when.
  *
  **************************************/
-	TRG trigger;
+	DUDLEY_TRG trigger;
 	TRGMSG trigmsg;
 	int flags, trg_state, trg_sequence;
 	USHORT action, end;
@@ -1432,7 +1432,7 @@ static void define_trigger(void)
 		return;
 	}
 
-	trigger = (TRG) DDL_alloc(TRG_LEN);
+	trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
 	trigger->trg_name = PARSE_symbol(tok_ident);
 
 	MATCH(KW_FOR);
@@ -1488,7 +1488,7 @@ static void define_trigger(void)
 
 	make_action(act_a_trigger, (DBB) trigger);
 	trigger->trg_name->sym_type = SYM_trigger;
-	trigger->trg_name->sym_object = (CTX) trigger;
+	trigger->trg_name->sym_object = (DUDLEY_CTX) trigger;
 	HSH_insert(trigger->trg_name);
 }
 
@@ -1540,11 +1540,11 @@ static void define_view(void)
  *	Parse a DEFINE VIEW statement.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	FLD field, *ptr;
 	SYM symbol;
 	SSHORT position;
-	CTX context, my_context;
+	DUDLEY_CTX context, my_context;
 	LLS contexts;
 	ACT rel_actions, action;
 
@@ -1651,7 +1651,7 @@ static void define_view(void)
 			field->fld_position = position++;
 		field->fld_flags |= fld_explicit_position;
 		field->fld_name->sym_type = SYM_field;
-		field->fld_name->sym_object = (CTX) field;
+		field->fld_name->sym_object = (DUDLEY_CTX) field;
 		HSH_insert(field->fld_name);
 		if (!MATCH(KW_COMMA))
 			break;
@@ -1777,7 +1777,7 @@ static void drop_relation(void)
  *	Parse DROP RELATION statement.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	FLD field;
 
 	relation = PARSE_relation();
@@ -1850,8 +1850,8 @@ static void drop_trigger(void)
  **************************************/
 	SYM name;
 	SSHORT old_style;
-	REL relation;
-	TRG trigger;
+	DUDLEY_REL relation;
+	DUDLEY_TRG trigger;
 
 	if (MATCH(KW_FOR)) {
 		relation = PARSE_relation();
@@ -1864,7 +1864,7 @@ static void drop_trigger(void)
 
 	if (old_style) {
 		while (!MATCH(KW_END_TRIGGER)) {
-			trigger = (TRG) DDL_alloc(TRG_LEN);
+			trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
 			if (MATCH(KW_STORE))
 				trigger->trg_type = trg_store;
 			else if (MATCH(KW_MODIFY))
@@ -1881,7 +1881,7 @@ static void drop_trigger(void)
 		}
 	}
 	else {
-		trigger = (TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
 		trigger->trg_name = name;
 		make_action(act_d_trigger, (DBB) trigger);
 	}
@@ -1954,7 +1954,7 @@ static void end_text( TXT text)
 }
 
 
-static SYM gen_trigger_name( TRG_T type, REL relation)
+static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -2211,7 +2211,7 @@ static void grant_user_privilege(void)
 }
 
 
-static CTX lookup_context( SYM symbol, LLS contexts)
+static DUDLEY_CTX lookup_context( SYM symbol, LLS contexts)
 {
 /**************************************
  *
@@ -2225,14 +2225,14 @@ static CTX lookup_context( SYM symbol, LLS contexts)
  *	In either case, if nothing matches, return NULL.
  *
  **************************************/
-	CTX context;
+	DUDLEY_CTX context;
 	SYM name;
 
 /* If no name is given, look for a nameless one. */
 
 	if (!symbol) {
 		for (; contexts; contexts = contexts->lls_next) {
-			context = (CTX) contexts->lls_object;
+			context = (DUDLEY_CTX) contexts->lls_object;
 			if (!context->ctx_name && !context->ctx_view_rse)
 				return context;
 		}
@@ -2242,7 +2242,7 @@ static CTX lookup_context( SYM symbol, LLS contexts)
 /* Other search by name */
 
 	for (; contexts; contexts = contexts->lls_next) {
-		context = (CTX) contexts->lls_object;
+		context = (DUDLEY_CTX) contexts->lls_object;
 		if ((name = context->ctx_name) &&
 			!strcmp(name->sym_string, symbol->sym_string)) return context;
 	}
@@ -2337,12 +2337,12 @@ static ACT make_computed_field( FLD field)
 	strcpy(symbol->sym_name, s);
 
 	field->fld_source_field = computed = create_global_field(field);
-	symbol->sym_object = (CTX) computed;
+	symbol->sym_object = (DUDLEY_CTX) computed;
 	return make_global_field(computed);
 }
 
 
-static CTX make_context( TEXT * string, REL relation)
+static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -2354,10 +2354,10 @@ static CTX make_context( TEXT * string, REL relation)
  *	Make context for trigger.
  *
  **************************************/
-	CTX context;
+	DUDLEY_CTX context;
 	SYM symbol;
 
-	context = (CTX) DDL_alloc(CTX_LEN);
+	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
 	context->ctx_relation = relation;
 
 	if (string) {
@@ -2388,7 +2388,7 @@ static ACT make_global_field( FLD field)
 /* Make sure symbol is unique */
 
 	symbol = field->fld_name;
-	symbol->sym_object = (CTX) field;
+	symbol->sym_object = (DUDLEY_CTX) field;
 	symbol->sym_type = SYM_global;
 
 	if (symbol = HSH_typed_lookup(symbol->sym_string,
@@ -2415,8 +2415,8 @@ static void mod_old_trigger(void)
  *      (first part was done earlier)
  *
  **************************************/
-	REL relation;
-	TRG trigger;
+	DUDLEY_REL relation;
+	DUDLEY_TRG trigger;
 	int flags, type, sequence;
 	SYM name, symbol;
 
@@ -2427,7 +2427,7 @@ static void mod_old_trigger(void)
 		get_trigger_attributes(&flags, &type, &sequence);
 		if (!type)
 			PARSE_error(165, DDL_token.tok_string, 0);	/* msg 165: expected STORE, MODIFY, ERASE, END_TRIGGER, encountered \"%s\"  */
-		trigger = (TRG) DDL_alloc(TRG_LEN);
+		trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
 		trigger->trg_relation = relation;
 		trigger->trg_mflag = flags & ~trg_mflag_order;
 		if (trigger->trg_mflag & trg_mflag_type)
@@ -2570,7 +2570,7 @@ static void modify_relation(void)
  *	Parse a MODIFY RELATION statement.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	FLD field, global;
 	TEXT modify_relation;
 
@@ -2747,8 +2747,8 @@ static void modify_trigger(void)
  *      (go elsewhere if this is an old trigger).
  *
  **************************************/
-	REL relation;
-	TRG trigger;
+	DUDLEY_REL relation;
+	DUDLEY_TRG trigger;
 	TRGMSG trigmsg;
 	TRGMSG_T msg_type;
 	SLONG flags, type, sequence;
@@ -2769,7 +2769,7 @@ static void modify_trigger(void)
 		 name && (name->sym_type != SYM_trigger); name = name->sym_homonym);
 	if (!name)
 		PARSE_error(176, DDL_token.tok_string, 0);	/* msg 176: expected trigger name, encountered \"%s\" */
-	trigger = (TRG) name->sym_object;
+	trigger = (DUDLEY_TRG) name->sym_object;
 	LEX_token();
 
 /* in case somebody compulsive specifies the relation name */
@@ -2827,7 +2827,7 @@ static void modify_trigger(void)
 }
 
 
-static void modify_trigger_action( TRG trigger, REL relation)
+static void modify_trigger_action( DUDLEY_TRG trigger, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -2892,7 +2892,7 @@ static void modify_view(void)
  *	Parse a MODIFY VIEW  statement.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	FLD field, global;
 	USHORT view_modify;
 
@@ -3281,7 +3281,7 @@ static FLD parse_field( FLD field)
  **************************************/
 
 	field->fld_name = PARSE_symbol(tok_ident);
-	field->fld_name->sym_object = (CTX) field;
+	field->fld_name->sym_object = (DUDLEY_CTX) field;
 
 	if (MATCH(KW_BASED)) {
 		MATCH(KW_ON);
@@ -4093,7 +4093,7 @@ static DUDLEY_NOD set_generator(void)
 
 
 static void sort_out_attributes(
-								TRG trigger,
+								DUDLEY_TRG trigger,
 								SLONG flags, SLONG type, SLONG sequence)
 {
 /**************************************

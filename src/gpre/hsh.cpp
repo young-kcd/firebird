@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.6 2002-11-04 09:03:14 eku Exp $
+//	$Id: hsh.cpp,v 1.7 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -105,7 +105,7 @@ void HSH_init(void)
 		symbol->sym_string = word->keyword;
 		symbol->sym_keyword = (int) word->id;
 		HSH_insert(symbol);
-		symbol->sym_object = (CTX) key_symbols;
+		symbol->sym_object = (GPRE_CTX) key_symbols;
 		key_symbols = symbol;
 	}
 }

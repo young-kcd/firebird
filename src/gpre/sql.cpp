@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
+//	$Id: sql.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -117,26 +117,26 @@ static DBB dup_dbb(DBB);
 static void error(TEXT *, TEXT *);
 static TEXT *extract_string(BOOLEAN);
 static SWE gen_whenever(void);
-static void into(REQ, GPRE_NOD, GPRE_NOD);
-static FLD make_field(REL);
-static IND make_index(REQ, TEXT *);
-static REL make_relation(REQ, TEXT *);
+static void into(GPRE_REQ, GPRE_NOD, GPRE_NOD);
+static FLD make_field(GPRE_REL);
+static IND make_index(GPRE_REQ, TEXT *);
+static GPRE_REL make_relation(GPRE_REQ, TEXT *);
 static void pair(GPRE_NOD, GPRE_NOD);
 static void par_array(FLD);
 static SSHORT par_char_set(void);
-static void par_computed(REQ, FLD);
-static REQ par_cursor(SYM *);
+static void par_computed(GPRE_REQ, FLD);
+static GPRE_REQ par_cursor(SYM *);
 static DYN par_dynamic_cursor(void);
-static FLD par_field(REQ, REL);
-static CNSTRT par_field_constraint(REQ, FLD, REL);
+static FLD par_field(GPRE_REQ, GPRE_REL);
+static CNSTRT par_field_constraint(GPRE_REQ, FLD, GPRE_REL);
 static void par_fkey_extension(CNSTRT);
 static BOOLEAN par_into(DYN);
 static void par_options(TEXT **);
 static int par_page_size(void);
-static REL par_relation(REQ);
+static GPRE_REL par_relation(GPRE_REQ);
 static DYN par_statement(void);
-static CNSTRT par_table_constraint(REQ, REL);
-static BOOLEAN par_transaction_modes(TRA, BOOLEAN);
+static CNSTRT par_table_constraint(GPRE_REQ, GPRE_REL);
+static BOOLEAN par_transaction_modes(GPRE_TRA, BOOLEAN);
 static BOOLEAN par_using(DYN);
 static USHORT resolve_dtypes(KWWORDS, BOOLEAN);
 static BOOLEAN tail_database(enum act_t, DBB);
@@ -469,7 +469,7 @@ void SQL_init(void)
 //  
 //  
 
-void SQL_par_field_collate( REQ request, FLD field)
+void SQL_par_field_collate( GPRE_REQ request, FLD field)
 {
 	SYM symbol;
 
@@ -511,7 +511,7 @@ void SQL_par_field_collate( REQ request, FLD field)
 //		Also for CAST statement
 //  
 
-void SQL_par_field_dtype( REQ request, FLD field, BOOLEAN udf)
+void SQL_par_field_dtype( GPRE_REQ request, FLD field, BOOLEAN udf)
 {
 	int l, p, q;
 	enum kwwords keyword;
@@ -581,7 +581,7 @@ void SQL_par_field_dtype( REQ request, FLD field, BOOLEAN udf)
 		else {
 			SQL_resolve_identifier("<domain name>", s);
 			field->fld_global = symbol =
-				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (CTX) field);
+				MSC_symbol(SYM_field, s, (USHORT) strlen(s), (GPRE_CTX) field);
 			if (!MET_domain_lookup(request, field, s))
 				PAR_error("Specified DOMAIN or source column not found");
 			ADVANCE_TOKEN;
@@ -815,12 +815,12 @@ PAR_error("CHARACTER SET applies only to character columns");
 //		find the procedure in that database only.
 //  
 
-PRC SQL_procedure(REQ request,
+GPRE_PRC SQL_procedure(GPRE_REQ request,
 				  TEXT * prc_string,
 				  TEXT * db_string, TEXT * owner_string, BOOLEAN err_flag)
 {
 	DBB db;
-	PRC procedure, tmp_procedure;
+	GPRE_PRC procedure, tmp_procedure;
 	SYM symbol;
 	SCHAR s[ERROR_LENGTH];
 
@@ -885,12 +885,12 @@ PRC SQL_procedure(REQ request,
 //		find the relation in that database only.
 //  
 
-REL SQL_relation(REQ request,
+GPRE_REL SQL_relation(GPRE_REQ request,
 				 TEXT * rel_string,
 				 TEXT * db_string, TEXT * owner_string, BOOLEAN err_flag)
 {
 	DBB db;
-	REL relation, tmp_relation;
+	GPRE_REL relation, tmp_relation;
 	SYM symbol;
 	SCHAR s[ERROR_LENGTH];
 
@@ -1054,7 +1054,7 @@ static ACT act_alter(void)
 static ACT act_alter_database(void)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	DBB database;
 	FIL file;
 	SSHORT logdefined;
@@ -1175,7 +1175,7 @@ static ACT act_alter_database(void)
 static ACT act_alter_domain(void)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	FLD field;
 	CNSTRT *cnstrt_ptr, cnstrt;
 	GPRE_NOD literal_node;
@@ -1268,7 +1268,7 @@ static ACT act_alter_domain(void)
 static ACT act_alter_index(void)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	IND index;
 	SCHAR i_name[NAME_SIZE + 1];
 
@@ -1309,10 +1309,10 @@ static ACT act_alter_table(void)
 {
 	ACT action;
 	FLD field, *ptr;
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	CNSTRT cnstrt, *cnstrt_ptr;
-	CTX context;
+	GPRE_CTX context;
 
 //  create request block 
 
@@ -1434,7 +1434,7 @@ static ACT act_comment(void)
 static ACT act_connect(void)
 {
 	register ACT action;
-	register REQ request;
+	register GPRE_REQ request;
 	SYM symbol;
 	RDY ready;
 	DBB dbb;
@@ -1639,7 +1639,7 @@ static ACT act_create_database(void)
 	SYM symbol;
 	DBB db;
 	MDBB mdb;
-	REQ request;
+	GPRE_REQ request;
 	SCHAR *string;
 	BOOLEAN dummy, extend_dpb;
 
@@ -1660,7 +1660,7 @@ static ACT act_create_database(void)
 		/* make it the default database */
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (CTX) isc_databases;
+		symbol->sym_object = (GPRE_CTX) isc_databases;
 		symbol->sym_string = database_name;
 
 		/* database block points to the symbol block */
@@ -1735,7 +1735,7 @@ static ACT act_create_database(void)
 static ACT act_create_domain(void)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	FLD field;
 	CNSTRT *cnstrt;
 	int in_constraints;
@@ -1823,7 +1823,7 @@ static ACT act_create_generator(void)
 
 	ACT action;
 	TEXT *generator_name;
-	REQ request;
+	GPRE_REQ request;
 
 
 	generator_name = (TEXT *) ALLOC(NAME_SIZE + 1);
@@ -1859,8 +1859,8 @@ static ACT act_create_index( SSHORT dups, BOOLEAN descending)
 	ACT action;
 	FLD *ptr;
 	IND index;
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	SCHAR i_name[NAME_SIZE + 1];
 
 //  create request block 
@@ -1919,7 +1919,7 @@ static ACT act_create_shadow(void)
 {
 
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	FIL file_list, file;
 	SLONG shadow_number;
 	USHORT file_flags = 0;
@@ -1980,10 +1980,10 @@ static ACT act_create_table(void)
 {
 	ACT action;
 	FLD *ptr;
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	CNSTRT *cnstrt;
-	CTX context;
+	GPRE_CTX context;
 	TEXT *string;
 
 	request = MAKE_REQUEST(REQ_ddl);
@@ -2060,8 +2060,8 @@ static ACT act_create_view(void)
 {
 	ACT action;
 	FLD *ptr;
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	RSE select;
 
 	request = MAKE_REQUEST(REQ_ddl);
@@ -2156,7 +2156,7 @@ static ACT act_d_section( enum act_t type)
 		/* make it a database, specifically this one */
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (CTX) isc_databases;
+		symbol->sym_object = (GPRE_CTX) isc_databases;
 		symbol->sym_string = database_name;
 
 		/* database block points to the symbol block */
@@ -2202,7 +2202,7 @@ static ACT act_d_section( enum act_t type)
 static ACT act_declare(void)
 {
 	DBB db;
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 	SYM symbol;
 	DYN statement;
@@ -2279,7 +2279,7 @@ static ACT act_declare(void)
 			if (scroll)
 				request->req_flags |= REQ_scroll;
 #endif
-			symbol->sym_object = (CTX) request;
+			symbol->sym_object = (GPRE_CTX) request;
 			action = MAKE_ACTION(request, ACT_cursor);
 			action->act_object = (REF) symbol;
 			symbol->sym_type =
@@ -2309,7 +2309,7 @@ static ACT act_declare(void)
 		}
 		else {
 			statement = par_statement();
-			symbol->sym_object = (CTX) statement;
+			symbol->sym_object = (GPRE_CTX) statement;
 			if (MATCH(KW_FOR)) {
 				if (!MATCH(KW_UPDATE))
 					SYNTAX_ERROR("UPDATE");
@@ -2351,7 +2351,7 @@ static ACT act_declare(void)
 static ACT act_declare_filter(void)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	FLTR filter;
 	SLONG input_type, output_type;
 
@@ -2416,14 +2416,14 @@ static ACT act_declare_table( SYM symbol, DBB db)
 {
 	ACT action;
 	FLD field, dbkey, *ptr;
-	REL relation, tmp_relation;
+	GPRE_REL relation, tmp_relation;
 	SYM old_symbol, tmp_symbol;
 	USHORT count;
-	REQ request;
+	GPRE_REQ request;
 
 //  create a local request block 
 
-	request = (REQ) ALLOC(REQ_LEN);
+	request = (GPRE_REQ) ALLOC(REQ_LEN);
 	request->req_type = REQ_ddl;
 
 //  create relation block 
@@ -2448,7 +2448,7 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 	while (old_symbol)
 		if (old_symbol->sym_type == SYM_relation) {
-			tmp_relation = (REL) old_symbol->sym_object;
+			tmp_relation = (GPRE_REL) old_symbol->sym_object;
 			if (tmp_relation->rel_meta)
 				PAR_error("Multiple DECLARE TABLE statements for table");
 			tmp_symbol = old_symbol->sym_homonym;
@@ -2504,7 +2504,7 @@ static ACT act_declare_table( SYM symbol, DBB db)
 static ACT act_declare_udf(void)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	DECL_UDF udf;
 	FLD *ptr, field;
 	SLONG return_parameter;
@@ -2588,10 +2588,10 @@ static ACT act_declare_udf(void)
 static ACT act_delete(void)
 {
 	ACT action;
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	RSE rse;
-	CTX context;
+	GPRE_CTX context;
 	UPD update;
 	SYM alias;
 	TEXT *transaction, r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
@@ -2796,8 +2796,8 @@ static ACT act_drop(void)
 	ACT action;
 	DBB db;
 	IND index;
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	SYM symbol;
 	SCHAR *db_string;
 	TEXT *str;
@@ -2817,7 +2817,7 @@ static ACT act_drop(void)
 		symbol = PAR_symbol(SYM_dummy);
 		db->dbb_name = symbol;
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (CTX) db;
+		symbol->sym_object = (GPRE_CTX) db;
 		action = MAKE_ACTION(request, ACT_drop_database);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) db;
@@ -3033,7 +3033,7 @@ static ACT act_execute(void)
 
 static ACT act_fetch(void)
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 	RSE select;
 	DYN statement, cursor;
@@ -3200,12 +3200,12 @@ static ACT act_fetch(void)
 
 static ACT act_grant_revoke( enum act_t type)
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 	USN user, usernames;
 	PRV priv_block, last_priv_block;
-	REL relation;
-	PRC procedure;
+	GPRE_REL relation;
+	GPRE_PRC procedure;
 	USHORT user_dyn;
 	SCHAR col_name[NAME_SIZE + 1], r_name[NAME_SIZE + 1],
 		db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
@@ -3428,7 +3428,7 @@ static ACT act_include(void)
 		/* make it a database, specifically this one */
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (CTX) isc_databases;
+		symbol->sym_object = (GPRE_CTX) isc_databases;
 		symbol->sym_string = database_name;
 
 		/* database block points to the symbol block */
@@ -3457,9 +3457,9 @@ static ACT act_include(void)
 
 static ACT act_insert(void)
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
-	CTX context;
+	GPRE_CTX context;
 	LLS fields, values;
 	RSE select;
 	GPRE_NOD node, store, assignment, list, select_list, *ptr, *ptr2;
@@ -3613,7 +3613,7 @@ static ACT act_insert(void)
 
 static ACT act_insert_blob( TEXT * transaction)
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 	DYN statement, cursor;
 
@@ -3676,7 +3676,7 @@ static ACT act_lock(void)
 static ACT act_openclose( enum act_t type)
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	DYN statement, cursor;
 	SYM symbol;
 	OPN open;
@@ -3758,12 +3758,12 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	TOK f_token;
 	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
-	REQ request;
-	REL relation;
+	GPRE_REQ request;
+	GPRE_REL relation;
 	FLD field;
 	REF reference;
 	BLB blob;
-	CTX context;
+	GPRE_CTX context;
 	SCHAR s[128];
 	ACT action;
 
@@ -3818,7 +3818,7 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	blob->blb_symbol = symbol;
 	blob->blb_request = request;
 	blob->blb_next = request->req_blobs;
-	symbol->sym_object = (CTX) request;
+	symbol->sym_object = (GPRE_CTX) request;
 	symbol->sym_type = SYM_cursor;
 
 	request->req_references = reference;
@@ -3976,8 +3976,8 @@ static ACT act_prepare(void)
 
 static ACT act_procedure(void)
 {
-	PRC procedure;
-	REQ request;
+	GPRE_PRC procedure;
+	GPRE_REQ request;
 	ACT action;
 	REF reference, *ref_ptr;
 	FLD field;
@@ -4060,7 +4060,7 @@ static ACT act_procedure(void)
 
 static ACT act_select(void)
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 	RSE select;
 	TEXT s[ERROR_LENGTH];
@@ -4174,7 +4174,7 @@ static ACT act_set_generator(void)
 {
 	ACT action;
 	SGEN setgen;
-	REQ request;
+	GPRE_REQ request;
 	SCHAR s[128];
 
 	request = MAKE_REQUEST(REQ_set_generator);
@@ -4299,7 +4299,7 @@ static ACT act_set_statistics(void)
 {
 	ACT action;
 	STS stats;
-	REQ request;
+	GPRE_REQ request;
 
 	request = MAKE_REQUEST(REQ_ddl);
 	action = (ACT) MAKE_ACTION(request, ACT_statistics);
@@ -4334,12 +4334,12 @@ static ACT act_set_statistics(void)
 static ACT act_set_transaction(void)
 {
 	ACT action;
-	TRA trans;
+	GPRE_TRA trans;
 
 	action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_start;
 
-	trans = (TRA) ALLOC(TRA_LEN);
+	trans = (GPRE_TRA) ALLOC(TRA_LEN);
 
 	if (MATCH(KW_NAME))
 		trans->tra_handle = PAR_native_value(FALSE, TRUE);
@@ -4448,10 +4448,10 @@ static ACT act_transaction( enum act_t type)
 static ACT act_update(void)
 {
 	ACT action, slice_action;
-	REQ request, slice_request;
-	REL relation;
+	GPRE_REQ request, slice_request;
+	GPRE_REL relation;
 	RSE rse;
-	CTX input_context, update_context;
+	GPRE_CTX input_context, update_context;
 	GPRE_NOD set_list, *end_list, set_item, modify, *ptr;
 	UPD update;
 	LLS stack;
@@ -5109,12 +5109,12 @@ static SWE gen_whenever(void)
 //		to form full references (post same against request).
 //  
 
-static void into( REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
+static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 {
 	REF var_ref, field_ref, reference;
 	GPRE_NOD *var_ptr, *fld_ptr, *end;
 	FLD field;
-	REQ slice_req;
+	GPRE_REQ slice_req;
 	SSHORT found = FALSE;
 
 	if (!var_list)
@@ -5133,7 +5133,7 @@ static void into( REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 		if (((*fld_ptr)->nod_type == nod_field)
 			|| ((*fld_ptr)->nod_type == nod_array)) {
 			field_ref = (REF) (*fld_ptr)->nod_arg[0];
-			slice_req = (REQ) (*fld_ptr)->nod_arg[2];
+			slice_req = (GPRE_REQ) (*fld_ptr)->nod_arg[2];
 		}
 		else
 			field_ref = 0;
@@ -5170,7 +5170,7 @@ static void into( REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 //		Create field in a relation for a metadata request.
 //  
 
-static FLD make_field( REL relation)
+static FLD make_field( GPRE_REL relation)
 {
 	FLD field;
 	char s[ERROR_LENGTH];
@@ -5190,7 +5190,7 @@ static FLD make_field( REL relation)
 //		Create index for metadata request.
 //  
 
-static IND make_index( REQ request, TEXT * string)
+static IND make_index( GPRE_REQ request, TEXT * string)
 {
 	IND index;
 	TEXT s[ERROR_LENGTH];
@@ -5214,9 +5214,9 @@ static IND make_index( REQ request, TEXT * string)
 //		Create relation for a metadata request.
 //  
 
-static REL make_relation( REQ request, TEXT * relation_name)
+static GPRE_REL make_relation( GPRE_REQ request, TEXT * relation_name)
 {
-	REL relation;
+	GPRE_REL relation;
 	TEXT r[ERROR_LENGTH];
 
 	if (isc_databases && !isc_databases->dbb_next) {
@@ -5375,7 +5375,7 @@ static SSHORT par_char_set(void)
 //		Create a computed field
 //  
 
-static void par_computed( REQ request, FLD field)
+static void par_computed( GPRE_REQ request, FLD field)
 {
 	CMPF cmp;
 	struct fld save_fld;
@@ -5424,7 +5424,7 @@ static void par_computed( REQ request, FLD field)
 //		not, produce an error and return NULL.
 //  
 
-static REQ par_cursor( SYM * symbol_ptr)
+static GPRE_REQ par_cursor( SYM * symbol_ptr)
 {
 	SYM symbol;
 	TEXT t_cur[128];
@@ -5459,7 +5459,7 @@ static REQ par_cursor( SYM * symbol_ptr)
 		ADVANCE_TOKEN;
 		if (symbol_ptr)
 			*symbol_ptr = symbol;
-		return (REQ) symbol->sym_object;
+		return (GPRE_REQ) symbol->sym_object;
 	}
 	else if (symbol = MSC_find_symbol(token.tok_symbol, SYM_dyn_cursor))
 		PAR_error("DSQL cursors require DSQL update & delete statements");
@@ -5501,7 +5501,7 @@ static DYN par_dynamic_cursor(void)
 //		ALTER TABLE statement.
 //  
 
-static FLD par_field( REQ request, REL relation)
+static FLD par_field( GPRE_REQ request, GPRE_REL relation)
 {
 	FLD field;
 // *IND		index; 
@@ -5608,7 +5608,7 @@ static FLD par_field( REQ request, REL relation)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //  
 
-static CNSTRT par_field_constraint( REQ request, FLD for_field, REL relation)
+static CNSTRT par_field_constraint( GPRE_REQ request, FLD for_field, GPRE_REL relation)
 {
 	enum kwwords keyword;
 	CNSTRT cnstrt;
@@ -5776,7 +5776,7 @@ static int par_page_size(void)
 //		Parse the next thing as a relation.
 //  
 
-static REL par_relation( REQ request)
+static GPRE_REL par_relation( GPRE_REQ request)
 {
 	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
@@ -5901,7 +5901,7 @@ static void par_fkey_extension( CNSTRT cnstrt)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //  
 
-static CNSTRT par_table_constraint( REQ request, REL relation)
+static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 {
 	enum kwwords keyword;
 	CNSTRT cnstrt;
@@ -6031,7 +6031,7 @@ static CNSTRT par_table_constraint( REQ request, REL relation)
 //		Returns TRUE if found a match else FALSE.
 //  
 
-static BOOLEAN par_transaction_modes( TRA trans, BOOLEAN expect_iso)
+static BOOLEAN par_transaction_modes( GPRE_TRA trans, BOOLEAN expect_iso)
 {
 
 	if (MATCH(KW_READ)) {

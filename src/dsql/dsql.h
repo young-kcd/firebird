@@ -282,7 +282,7 @@ public:
 	USHORT		prc_flags;
 	TEXT		prc_data[3];
 };
-typedef prc* PRC;
+typedef prc* DSQL_PRC;
 
 // prc_flags bits
 
@@ -457,7 +457,7 @@ public:
 	USHORT	req_flags;			// generic flag
 	USHORT	req_client_dialect;	// dialect passed into the API call
 };
-typedef req* REQ;
+typedef req* DSQL_REQ;
 
 
 // values used in req_flags
@@ -529,7 +529,7 @@ public:
 	USHORT		ctx_scope_level;	// Subquery level within this request
 	USHORT		ctx_flags;			// Various flag values
 };
-typedef ctx* CTX;
+typedef ctx* DSQL_CTX;
 
 // Flag values for ctx_flags
 

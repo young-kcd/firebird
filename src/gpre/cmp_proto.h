@@ -30,14 +30,14 @@
 extern "C" {
 #endif
 
-extern void CMP_check(register REQ, SSHORT);
-extern void CMP_compile_request(register REQ);
+extern void CMP_check(register GPRE_REQ, SSHORT);
+extern void CMP_compile_request(register GPRE_REQ);
 extern int CMP_display_code(FINT, REF);
-extern void CMP_external_field(REQ, FLD);
+extern void CMP_external_field(GPRE_REQ, FLD);
 extern void CMP_init(void);
 extern USHORT CMP_next_ident(void);
-extern void CMP_stuff_symbol(REQ, SYM);
-extern void CMP_t_start(register TRA);
+extern void CMP_stuff_symbol(GPRE_REQ, SYM);
+extern void CMP_t_start(register GPRE_TRA);
 
 #ifdef __cplusplus
 } /* extern "C" */

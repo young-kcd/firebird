@@ -28,27 +28,27 @@
 //extern "C" {
 #endif
 
-extern FLD MET_context_field(CTX, char *);
+extern FLD MET_context_field(GPRE_CTX, char *);
 extern BOOLEAN MET_database(DBB, BOOLEAN);
-extern USHORT MET_domain_lookup(REQ, FLD, char *);
-extern FLD MET_field(REL, char *);
-extern GPRE_NOD MET_fields(CTX);
+extern USHORT MET_domain_lookup(GPRE_REQ, FLD, char *);
+extern FLD MET_field(GPRE_REL, char *);
+extern GPRE_NOD MET_fields(GPRE_CTX);
 extern void MET_fini(DBB);
 extern SCHAR *MET_generator(TEXT *, DBB);
-extern BOOLEAN MET_get_column_default(REL, TEXT *, TEXT *, USHORT);
+extern BOOLEAN MET_get_column_default(GPRE_REL, TEXT *, TEXT *, USHORT);
 extern BOOLEAN MET_get_domain_default(DBB, TEXT *, TEXT *, USHORT);
 extern USHORT MET_get_dtype(USHORT, USHORT, USHORT *);
 extern LLS MET_get_primary_key(DBB, TEXT *);
-extern PRC MET_get_procedure(DBB, TEXT *, TEXT *);
-extern REL MET_get_relation(DBB, TEXT *, TEXT *);
+extern GPRE_PRC MET_get_procedure(DBB, TEXT *, TEXT *);
+extern GPRE_REL MET_get_relation(DBB, TEXT *, TEXT *);
 extern INTLSYM MET_get_text_subtype(SSHORT);
 extern UDF MET_get_udf(DBB, TEXT *);
-extern REL MET_get_view_relation(REQ, char *, char *, USHORT);
+extern GPRE_REL MET_get_view_relation(GPRE_REQ, char *, char *, USHORT);
 extern IND MET_index(DBB, TEXT *);
 extern void MET_load_hash_table(DBB);
 extern FLD MET_make_field(SCHAR *, SSHORT, SSHORT, BOOLEAN);
 extern IND MET_make_index(SCHAR *);
-extern REL MET_make_relation(SCHAR *);
+extern GPRE_REL MET_make_relation(SCHAR *);
 extern BOOLEAN MET_type(FLD, TEXT *, SSHORT *);
 extern BOOLEAN MET_trigger_exists(DBB, TEXT *);
 

@@ -292,7 +292,7 @@ void HSH_init(void)
 		symbol->sym_string = keywords[i].keyword;
 		symbol->sym_keyword = (int) keywords[i].id;
 		HSH_insert(symbol);
-		symbol->sym_object = (CTX) key_symbols;
+		symbol->sym_object = (DUDLEY_CTX) key_symbols;
 		key_symbols = symbol;
 	}
 }

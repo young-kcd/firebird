@@ -580,7 +580,7 @@ typedef struct rel {
     GDS__QUAD		rel_modify_source;	/* trigger source blob id */
     GDS__QUAD		rel_erase_blr;		/* trigger blr blob id */
     GDS__QUAD		rel_erase_source;	/* trigger source blob id */
-} *REL;
+} *BURP_REL;
 
 #define REL_view	1
 #define REL_external	2
@@ -592,7 +592,7 @@ typedef struct prc {
     SSHORT	prc_name_length;
     GDS_NAME	prc_name;
     GDS_NAME	prc_owner;		/* relation owner, if not us */
-} *PRC;
+} *BURP_PRC;
 
 
 typedef struct gfld {
@@ -752,8 +752,8 @@ typedef struct tgbl
     UCHAR	*burp_env;
     UCHAR	*io_ptr;
     int	   	io_cnt;
-    REL	   	relations;
-    PRC	   	procedures;
+    BURP_REL	   	relations;
+    BURP_PRC	   	procedures;
     SLONG   	BCK_capabilities;
     USHORT	RESTORE_format;
     ULONG	mvol_io_buffer_size;

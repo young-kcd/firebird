@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.12 2002-10-31 05:05:54 seanleyne Exp $
+//  $Id: gpre.cpp,v 1.13 2002-11-17 00:04:18 hippoman Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.12 2002-10-31 05:05:54 seanleyne Exp $
+//	$Id: gpre.cpp,v 1.13 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #define GPRE_MAIN
@@ -500,7 +500,7 @@ int main(int argc, char* argv[])
 			/* make it a database, specifically this one */
 
 			symbol->sym_type	= SYM_database;
-			symbol->sym_object	= (CTX) db;
+			symbol->sym_object	= (GPRE_CTX) db;
 			symbol->sym_string	= database_name;
 
 			/* database block points to the symbol block */
@@ -1381,7 +1381,7 @@ static SSHORT compare_ASCII7z( char *str1, char *str2)
 static SLONG compile_module( SLONG start_position)
 {
 	SLONG end_position;
-	REQ request;
+	GPRE_REQ request;
 #ifdef __BORLANDC__
 	SCHAR *p;
 #endif
@@ -1544,7 +1544,7 @@ static BOOLEAN file_rename(
 static void finish_based( ACT action)
 {
 	DBB db;
-	REL relation;
+	GPRE_REL relation;
 	FLD field;
 	BAS based_on;
 	SYM symbol;

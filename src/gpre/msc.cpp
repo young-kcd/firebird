@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
+//	$Id: msc.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
 //
 //  
-//$Id: msc.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
+//$Id: msc.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
 //  
 
 // ***************************************************
@@ -77,7 +77,7 @@ static LLS free_lls;
 //		Make an action and link it to a request.
 //  
 
-ACT MSC_action( REQ request, enum act_t type)
+ACT MSC_action( GPRE_REQ request, enum act_t type)
 {
 	ACT action;
 
@@ -191,13 +191,13 @@ GPRE_NOD MSC_binary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2)
 //		Make a new context for a request and link it up to the request.
 //  
 
-CTX MSC_context(REQ request)
+GPRE_CTX MSC_context(GPRE_REQ request)
 {
-	CTX context;
+	GPRE_CTX context;
 
 //  allocate and initialize 
 
-	context = (CTX) ALLOC(CTX_LEN);
+	context = (GPRE_CTX) ALLOC(CTX_LEN);
 	context->ctx_request = request;
 	context->ctx_internal = request->req_internal++;
 	context->ctx_scope_level = request->req_scope_level;
@@ -260,7 +260,7 @@ void MSC_free( UCHAR * block)
 //		Get rid of an erroroneously allocated request block.
 //  
 
-void MSC_free_request( REQ request)
+void MSC_free_request( GPRE_REQ request)
 {
 
 	requests = request->req_next;
@@ -442,16 +442,16 @@ REF MSC_reference(REF * link)
 //		blocks, all linked up and ready to go.
 //  
 
-REQ MSC_request(enum req_t type)
+GPRE_REQ MSC_request(enum req_t type)
 {
-	REQ request;
+	GPRE_REQ request;
 
-	request = (REQ) ALLOC(REQ_LEN);
+	request = (GPRE_REQ) ALLOC(REQ_LEN);
 	request->req_type = type;
 	request->req_next = requests;
 	requests = request;
 
-	request->req_routine = (REQ) cur_routine->act_object;
+	request->req_routine = (GPRE_REQ) cur_routine->act_object;
 	cur_routine->act_object = (REF) request;
 
 	if (!(cur_routine->act_flags & ACT_main))
@@ -484,7 +484,7 @@ SCHAR *MSC_string(TEXT * input)
 //		Allocate and initialize a symbol block.
 //  
 
-SYM MSC_symbol(enum sym_t type, TEXT * string, USHORT length, CTX object)
+SYM MSC_symbol(enum sym_t type, TEXT * string, USHORT length, GPRE_CTX object)
 {
 	SYM symbol;
 	TEXT *p;

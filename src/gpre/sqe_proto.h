@@ -28,19 +28,19 @@
 extern "C" {
 #endif
 
-typedef GPRE_NOD(*pfn_SQE_list_cb) (REQ, BOOLEAN, USHORT *, USHORT *);
+typedef GPRE_NOD(*pfn_SQE_list_cb) (GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
 
-extern GPRE_NOD SQE_boolean(REQ, USHORT *);
-extern CTX SQE_context(REQ);
-extern GPRE_NOD SQE_field(REQ, BOOLEAN);
-extern GPRE_NOD SQE_list(pfn_SQE_list_cb, REQ, BOOLEAN);
-extern REF SQE_parameter(REQ, BOOLEAN);
+extern GPRE_NOD SQE_boolean(GPRE_REQ, USHORT *);
+extern GPRE_CTX SQE_context(GPRE_REQ);
+extern GPRE_NOD SQE_field(GPRE_REQ, BOOLEAN);
+extern GPRE_NOD SQE_list(pfn_SQE_list_cb, GPRE_REQ, BOOLEAN);
+extern REF SQE_parameter(GPRE_REQ, BOOLEAN);
 extern void SQE_post_field(GPRE_NOD, FLD);
-extern REF SQE_post_reference(REQ, FLD, CTX, GPRE_NOD);
-extern BOOLEAN SQE_resolve(GPRE_NOD, REQ, RSE);
-extern RSE SQE_select(REQ, USHORT);
-extern GPRE_NOD SQE_value(REQ, BOOLEAN, USHORT *, USHORT *);
-extern REF SQE_variable(REQ, BOOLEAN);
+extern REF SQE_post_reference(GPRE_REQ, FLD, GPRE_CTX, GPRE_NOD);
+extern BOOLEAN SQE_resolve(GPRE_NOD, GPRE_REQ, RSE);
+extern RSE SQE_select(GPRE_REQ, USHORT);
+extern GPRE_NOD SQE_value(GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
+extern REF SQE_variable(GPRE_REQ, BOOLEAN);
 
 #ifdef __cplusplus
 } /* extern "C" */

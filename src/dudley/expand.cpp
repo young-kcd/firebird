@@ -38,16 +38,16 @@ static void expand_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 static void expand_field(FLD);
 static void expand_global_field(FLD);
 static void expand_index(ACT);
-static void expand_relation(REL);
-static void expand_trigger(TRG);
-static FLD field_context(DUDLEY_NOD, LLS, CTX *);
-static FLD field_search(DUDLEY_NOD, LLS, CTX *);
-static CTX lookup_context(SYM, LLS);
+static void expand_relation(DUDLEY_REL);
+static void expand_trigger(DUDLEY_TRG);
+static FLD field_context(DUDLEY_NOD, LLS, DUDLEY_CTX *);
+static FLD field_search(DUDLEY_NOD, LLS, DUDLEY_CTX *);
+static DUDLEY_CTX lookup_context(SYM, LLS);
 static FLD lookup_field(FLD);
 static FLD lookup_global_field(FLD);
-static REL lookup_relation(REL);
-static TRG lookup_trigger(TRG);
-static CTX make_context(TEXT *, REL, USHORT);
+static DUDLEY_REL lookup_relation(DUDLEY_REL);
+static DUDLEY_TRG lookup_trigger(DUDLEY_TRG);
+static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL, USHORT);
 static DUDLEY_NOD resolve(DUDLEY_NOD, LLS, LLS);
 static void resolve_rse(DUDLEY_NOD, LLS *);
 
@@ -147,24 +147,24 @@ static void expand_action( ACT action)
 		break;
 
 	case act_m_relation:
-		lookup_relation((REL) action->act_object);
+		lookup_relation((DUDLEY_REL) action->act_object);
 	case act_a_relation:
-		expand_relation((REL) action->act_object);
+		expand_relation((DUDLEY_REL) action->act_object);
 		break;
 
 	case act_d_relation:
-		lookup_relation((REL) action->act_object);
+		lookup_relation((DUDLEY_REL) action->act_object);
 		break;
 
 	case act_d_trigger:
-		lookup_trigger((TRG) action->act_object);
+		lookup_trigger((DUDLEY_TRG) action->act_object);
 		break;
 
 	case act_m_trigger:
-		lookup_trigger((TRG) action->act_object);
+		lookup_trigger((DUDLEY_TRG) action->act_object);
 
 	case act_a_trigger:
-		expand_trigger((TRG) action->act_object);
+		expand_trigger((DUDLEY_TRG) action->act_object);
 		break;
 
 	case act_c_database:
@@ -264,10 +264,10 @@ static void expand_global_field( FLD field)
  *	find ourselves in a computation or validation.
  *
  **************************************/
-	CTX context;
+	DUDLEY_CTX context;
 
 	if (!request_context || !(context = lookup_context(0, request_context))) {
-		context = (CTX) DDL_alloc(CTX_LEN);
+		context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
 		LLS_PUSH(context, &request_context);
 	}
 
@@ -299,7 +299,7 @@ static void expand_index( ACT action)
 }
 
 
-static void expand_relation( REL relation)
+static void expand_relation( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -313,7 +313,7 @@ static void expand_relation( REL relation)
  *
  **************************************/
 	LLS contexts, stack;
-	CTX my_context, context;
+	DUDLEY_CTX my_context, context;
 	DUDLEY_NOD rse;
 
 	context_id = 0;
@@ -335,7 +335,7 @@ static void expand_relation( REL relation)
 			LLS_PUSH(contexts->lls_object, &stack);
 
 		while (stack) {
-			context = (CTX) LLS_POP(&stack);
+			context = (DUDLEY_CTX) LLS_POP(&stack);
 			if (!context->ctx_view_rse)
 				LLS_PUSH(context, &request_context);
 		}
@@ -350,7 +350,7 @@ static void expand_relation( REL relation)
 }
 
 
-static void expand_trigger( TRG trigger)
+static void expand_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -364,8 +364,8 @@ static void expand_trigger( TRG trigger)
  *
  **************************************/
 	LLS contexts, update;
-	CTX old, new_ctx;
-	REL relation;
+	DUDLEY_CTX old, new_ctx;
+	DUDLEY_REL relation;
 	USHORT old_id;
 
 	context_id = 2;
@@ -394,7 +394,7 @@ static void expand_trigger( TRG trigger)
 }
 
 
-static FLD field_context( DUDLEY_NOD node, LLS contexts, CTX * output_context)
+static FLD field_context( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
 {
 /**************************************
  *
@@ -413,7 +413,7 @@ static FLD field_context( DUDLEY_NOD node, LLS contexts, CTX * output_context)
  *
  **************************************/
 	FLD field;
-	CTX context;
+	DUDLEY_CTX context;
 	SYM name, symbol;
 
 /* If the field is unqualified, resolve it to the default context */
@@ -460,7 +460,7 @@ static FLD field_context( DUDLEY_NOD node, LLS contexts, CTX * output_context)
 }
 
 
-static FLD field_search( DUDLEY_NOD node, LLS contexts, CTX * output_context)
+static FLD field_search( DUDLEY_NOD node, LLS contexts, DUDLEY_CTX * output_context)
 {
 /**************************************
  *
@@ -477,7 +477,7 @@ static FLD field_search( DUDLEY_NOD node, LLS contexts, CTX * output_context)
  * 
  **************************************/
 	FLD field;
-	CTX context, old_context;
+	DUDLEY_CTX context, old_context;
 	SYM name, symbol, ctx_name;
 
 	name = (SYM) node->nod_arg[1];
@@ -487,7 +487,7 @@ static FLD field_search( DUDLEY_NOD node, LLS contexts, CTX * output_context)
 	if (symbol) {
 		/* wander down to the old context level */
 		for (; contexts; contexts = contexts->lls_next) {
-			old_context = (CTX) contexts->lls_object;
+			old_context = (DUDLEY_CTX) contexts->lls_object;
 			if ((name = old_context->ctx_name) &&
 				!strcmp(ctx_name->sym_string, name->sym_string))
 				break;
@@ -496,7 +496,7 @@ static FLD field_search( DUDLEY_NOD node, LLS contexts, CTX * output_context)
 		name = symbol;
 		for (contexts = contexts->lls_next; contexts;
 			 contexts = contexts->lls_next) {
-			context = (CTX) contexts->lls_object;
+			context = (DUDLEY_CTX) contexts->lls_object;
 			if (context->ctx_relation && !context->ctx_view_rse) {
 				*output_context = context;
 				for (symbol = name; symbol; symbol = symbol->sym_homonym) {
@@ -515,7 +515,7 @@ static FLD field_search( DUDLEY_NOD node, LLS contexts, CTX * output_context)
 }
 
 
-static CTX lookup_context( SYM symbol, LLS contexts)
+static DUDLEY_CTX lookup_context( SYM symbol, LLS contexts)
 {
 /**************************************
  *
@@ -529,14 +529,14 @@ static CTX lookup_context( SYM symbol, LLS contexts)
  *	In either case, if nothing matches, return NULL.
  *
  **************************************/
-	CTX context;
+	DUDLEY_CTX context;
 	SYM name;
 
 /* If no name is given, look for a nameless one. */
 
 	if (!symbol) {
 		for (; contexts; contexts = contexts->lls_next) {
-			context = (CTX) contexts->lls_object;
+			context = (DUDLEY_CTX) contexts->lls_object;
 			if (!context->ctx_name && !context->ctx_view_rse)
 				return context;
 		}
@@ -546,7 +546,7 @@ static CTX lookup_context( SYM symbol, LLS contexts)
 /* Other search by name */
 
 	for (; contexts; contexts = contexts->lls_next) {
-		context = (CTX) contexts->lls_object;
+		context = (DUDLEY_CTX) contexts->lls_object;
 		if ((name = context->ctx_name) &&
 			!strcmp(name->sym_string, symbol->sym_string)) return context;
 	}
@@ -572,7 +572,7 @@ static FLD lookup_field( FLD old_field)
  *	pretty easy.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	SYM symbol, name;
 	FLD field;
 
@@ -625,7 +625,7 @@ static FLD lookup_global_field( FLD field)
 }
 
 
-static REL lookup_relation( REL relation)
+static DUDLEY_REL lookup_relation( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -644,7 +644,7 @@ static REL lookup_relation( REL relation)
 	if (
 		(symbol =
 		 HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation))
-		&& symbol->sym_object) return (REL) symbol->sym_object;
+		&& symbol->sym_object) return (DUDLEY_REL) symbol->sym_object;
 
 	expand_error(104, name->sym_string, 0, 0, 0, 0);	/* msg 104: relation %s isn't defined */
 
@@ -652,7 +652,7 @@ static REL lookup_relation( REL relation)
 }
 
 
-static TRG lookup_trigger( TRG trigger)
+static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -670,7 +670,7 @@ static TRG lookup_trigger( TRG trigger)
 	name = (trigger->trg_name);
 	if (symbol =
 		HSH_typed_lookup(name->sym_string, name->sym_length,
-						 SYM_trigger)) return (TRG) symbol->sym_object;
+						 SYM_trigger)) return (DUDLEY_TRG) symbol->sym_object;
 
 	expand_error(105, name->sym_string, 0, 0, 0, 0);	/* msg 105: trigger %s isn't defined */
 
@@ -678,7 +678,7 @@ static TRG lookup_trigger( TRG trigger)
 }
 
 
-static CTX make_context( TEXT * string, REL relation, USHORT id)
+static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -690,10 +690,10 @@ static CTX make_context( TEXT * string, REL relation, USHORT id)
  *	Make context for trigger.
  *
  **************************************/
-	CTX context;
+	DUDLEY_CTX context;
 	SYM symbol;
 
-	context = (CTX) DDL_alloc(CTX_LEN);
+	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
 	context->ctx_context_id = id;
 	context->ctx_relation = relation;
 
@@ -728,7 +728,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 	DUDLEY_NOD *arg, *end, field, sub;
 	SYM symbol, name;
 	FLD fld;
-	CTX context, old_context;
+	DUDLEY_CTX context, old_context;
 	TEXT name_string[65], *p, *q;
 
 	if (!node)
@@ -774,7 +774,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 		return node;
 
 	case nod_store:
-		context = (CTX) node->nod_arg[s_store_rel];
+		context = (DUDLEY_CTX) node->nod_arg[s_store_rel];
 		context->ctx_context_id = ++context_id;
 		name = context->ctx_relation->rel_name;
 		if (!HSH_typed_lookup
@@ -798,7 +798,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 		if (!(old_context = lookup_context(symbol, right)))
 			expand_error(108, symbol->sym_string, 0, 0, 0, 0);	/* msg 108: context %s is not defined */
 		node->nod_arg[s_mod_old_ctx] = (DUDLEY_NOD) old_context;
-		context = (CTX) DDL_alloc(CTX_LEN);
+		context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
 		node->nod_arg[s_mod_new_ctx] = (DUDLEY_NOD) context;
 		context->ctx_name = symbol;
 		context->ctx_context_id = ++context_id;
@@ -894,7 +894,7 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
  **************************************/
 	DUDLEY_NOD sub, *arg, *end;
 	LLS contexts, temp;
-	CTX context;
+	DUDLEY_CTX context;
 	SYM name, symbol;
 
 /* Handle FIRST <n> clause in original context */
@@ -908,7 +908,7 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 		LLS_PUSH(LLS_POP(&contexts), &temp);
 
 	for (contexts = temp; contexts; contexts = contexts->lls_next) {
-		context = (CTX) contexts->lls_object;
+		context = (DUDLEY_CTX) contexts->lls_object;
 		name = context->ctx_relation->rel_name;
 		if (!
 			(symbol =
@@ -916,7 +916,7 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 							  SYM_relation))
 || !symbol->sym_object) expand_error(110, name->sym_string, 0, 0, 0, 0);	/* msg 110: relation %s is not defined */
 		else
-			context->ctx_relation = (REL) symbol->sym_object;
+			context->ctx_relation = (DUDLEY_REL) symbol->sym_object;
 		LLS_PUSH(context, stack);
 	}
 
@@ -932,7 +932,7 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 			 arg += 2) *arg = resolve(*arg, *stack, 0);
 
 	while (temp) {
-		context = (CTX) LLS_POP(&temp);
+		context = (DUDLEY_CTX) LLS_POP(&temp);
 		if (!context->ctx_view_rse) {
 			context->ctx_context_id = ++context_id;
 			sub = SYNTAX_NODE(nod_context, 1);

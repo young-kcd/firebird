@@ -113,7 +113,7 @@ typedef struct ctx {
 	struct fld *ctx_field;
 	USHORT ctx_view_rse;
 	USHORT ctx_context_id;
-} *CTX;
+} *DUDLEY_CTX;
 
 #define CTX_LEN sizeof (struct ctx)
 
@@ -371,7 +371,7 @@ typedef struct rel {
 	USHORT rel_field_position;	/* highest used field position */
 	SSHORT rel_system;			/* 0 if relation is user defined */
 	USHORT rel_flags;
-} *REL;
+} *DUDLEY_REL;
 
 #define rel_null_description	1
 #define rel_null_security_class	2
@@ -485,7 +485,7 @@ static TRG_T trig_table[] = {
 
 typedef struct trg {
 	TRG_T trg_type;
-	REL trg_relation;
+	DUDLEY_REL trg_relation;
 	DUDLEY_NOD trg_statement;			/* blr */
 	struct sym *trg_name;		/* symbol for trigger */
 	struct txt *trg_description;	/* description of relation */
@@ -493,7 +493,7 @@ typedef struct trg {
 	SSHORT trg_sequence;
 	SSHORT trg_inactive;		/* 0 = on, 1 = off */
 	USHORT trg_mflag;			/* modify attributes */
-} *TRG;
+} *DUDLEY_TRG;
 
 /* trg_modify_flag */
 

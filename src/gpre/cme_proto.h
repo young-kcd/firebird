@@ -24,9 +24,9 @@
 #ifndef _GPRE_CME_PROTO_H_
 #define _GPRE_CME_PROTO_H_
 
-extern void CME_expr(GPRE_NOD, REQ);
+extern void CME_expr(GPRE_NOD, GPRE_REQ);
 extern void CME_get_dtype(GPRE_NOD, FLD);
-extern void CME_relation(CTX, REQ);
-extern void CME_rse(RSE, REQ);
+extern void CME_relation(GPRE_CTX, GPRE_REQ);
+extern void CME_rse(RSE, GPRE_REQ);
 
 #endif /* _GPRE_CME_PROTO_H_ */

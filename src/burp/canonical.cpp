@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.10 2002-11-12 12:16:43 eku Exp $
+$Id: canonical.cpp,v 1.11 2002-11-16 23:57:18 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -92,7 +92,7 @@ static xdr_t::xdr_ops burp_ops =
 #define INCREMENT 1024
 
 
-ULONG CAN_encode_decode(REL relation,
+ULONG CAN_encode_decode(BURP_REL relation,
 						LSTRING * buffer,
 						UCHAR * data,
 						bool_t direction)

@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.8 2002-10-29 16:31:02 tamlin Exp $
+$Id: backup.epp,v 1.9 2002-11-16 23:57:18 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -87,18 +87,18 @@ DATABASE DB = STATIC FILENAME "yachts.lnk" RUNTIME * dbb_file;
 
 static void compress(UCHAR *, ULONG);
 static int copy(TEXT *, TEXT *, ULONG);
-static FLD get_fields(REL);
+static FLD get_fields(BURP_REL);
 static SINT64 get_gen_id(TEXT *, SSHORT);
 static void get_ranges(FLD);
-static void put_array(FLD, REL, ISC_QUAD *);
+static void put_array(FLD, BURP_REL, ISC_QUAD *);
 static void put_asciz(SCHAR, TEXT *);
 static void put_blob(FLD, ISC_QUAD *, ULONG);
 static int put_blr_blob(SCHAR, ISC_QUAD *);
-static void put_data(REL);
-static void put_index(REL);
+static void put_data(BURP_REL);
+static void put_index(BURP_REL);
 static int put_message(SCHAR, TEXT *, ULONG);
 static void put_numeric(SCHAR, SLONG);
-static void put_relation(REL);
+static void put_relation(BURP_REL);
 static int put_source_blob(SCHAR, SCHAR, ISC_QUAD *);
 static int put_text(SCHAR, TEXT *, SSHORT);
 static void put_trigger(enum trig_t, GDS__QUAD *, GDS__QUAD *, GDS_NAME);
@@ -249,7 +249,7 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
  *	Backup a database.
  *
  **************************************/
-	REL relation;
+	BURP_REL relation;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	ULONG l;
 	TEXT temp[GDS_NAME_LEN];
@@ -265,7 +265,7 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 
 	tdgbl->io_ptr = (UCHAR *) NULL;
 	tdgbl->io_cnt = 0;
-	tdgbl->relations = (REL) NULL;
+	tdgbl->relations = (BURP_REL) NULL;
 	tdgbl->BCK_capabilities = 0;
 
 	isc_trans = NULL;
@@ -630,7 +630,7 @@ static void general_on_error(void)
 }
 
 
-static FLD get_fields( REL relation)
+static FLD get_fields( BURP_REL relation)
 {
 /**************************************
  *
@@ -1095,7 +1095,7 @@ static void get_ranges( FLD field)
 }
 
 
-static void put_array( FLD field, REL relation, ISC_QUAD * blob_id)
+static void put_array( FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 {
 /**************************************
  *
@@ -1574,7 +1574,7 @@ static int put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 }
 
 
-static void put_data(REL relation)
+static void put_data(BURP_REL relation)
 {
 /**************************************
  *
@@ -1914,7 +1914,7 @@ static void put_data(REL relation)
 }
 
 
-static void put_index( REL relation)
+static void put_index( BURP_REL relation)
 {
 /**************************************
  *
@@ -2190,7 +2190,7 @@ static void put_int64( SCHAR attribute, SINT64 value)
 }
 
 
-static void put_relation( REL relation)
+static void put_relation( BURP_REL relation)
 {
 /**************************************
  *
@@ -3648,7 +3648,7 @@ static void write_relations(void)
  *
  **************************************/
     SSHORT l, flags;
-    REL relation;
+    BURP_REL relation;
     TEXT temp[32];
     isc_req_handle req_handle1 = NULL, req_handle2 = NULL, req_handle3 =
         NULL, req_handle4 = NULL;
@@ -3704,7 +3704,7 @@ static void write_relations(void)
                 }
 	
             PUT (att_end); 
-            relation = (REL) BURP_ALLOC_ZERO (sizeof (struct rel));
+            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
             relation->rel_id = X.RDB$RELATION_ID;
@@ -3781,7 +3781,7 @@ static void write_relations(void)
                 END_ERROR;
             }
             PUT (att_end); 
-            relation = (REL) BURP_ALLOC_ZERO (sizeof (struct rel));
+            relation = (BURP_REL) BURP_ALLOC_ZERO (sizeof (struct rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
             relation->rel_id = X.RDB$RELATION_ID;

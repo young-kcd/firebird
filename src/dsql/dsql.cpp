@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.31 2002-11-14 08:18:20 dimitr Exp $
+$Id: dsql.cpp,v 1.32 2002-11-17 00:00:39 hippoman Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -131,27 +131,27 @@ extern "C" {
 static void		cleanup(void*);
 static void		cleanup_database(SLONG**, SLONG);
 static void		cleanup_transaction(SLONG*, SLONG);
-static void		close_cursor(REQ);
+static void		close_cursor(DSQL_REQ);
 static USHORT	convert(SLONG, SCHAR*);
 static STATUS	error();
-static void		execute_blob(REQ, USHORT, UCHAR*, USHORT, UCHAR*,
+static void		execute_blob(DSQL_REQ, USHORT, UCHAR*, USHORT, UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
-static STATUS	execute_request(REQ, isc_tr_handle*, USHORT, UCHAR*, USHORT, UCHAR*,
+static STATUS	execute_request(DSQL_REQ, isc_tr_handle*, USHORT, UCHAR*, USHORT, UCHAR*,
 							  USHORT, UCHAR*, USHORT, UCHAR*, USHORT);
-static SSHORT	filter_sub_type(REQ, DSQL_NOD);
+static SSHORT	filter_sub_type(DSQL_REQ, DSQL_NOD);
 static BOOLEAN	get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
-static USHORT	get_plan_info(REQ, SSHORT, SCHAR**);
-static USHORT	get_request_info(REQ, SSHORT, SCHAR*);
+static USHORT	get_plan_info(DSQL_REQ, SSHORT, SCHAR**);
+static USHORT	get_request_info(DSQL_REQ, SSHORT, SCHAR*);
 static BOOLEAN	get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static DBB		init(SLONG**);
-static void		map_in_out(REQ, MSG, USHORT, UCHAR*, USHORT, UCHAR*);
+static void		map_in_out(DSQL_REQ, MSG, USHORT, UCHAR*, USHORT, UCHAR*);
 static USHORT	name_length(TEXT*);
 static USHORT	parse_blr(USHORT, UCHAR*, USHORT, PAR);
-static REQ		prepare(REQ, USHORT, TEXT*, USHORT, USHORT);
+static DSQL_REQ		prepare(DSQL_REQ, USHORT, TEXT*, USHORT, USHORT);
 static void		punt(void);
 static SCHAR*	put_item(SCHAR, USHORT, SCHAR*, SCHAR*, SCHAR*);
-static void		release_request(REQ, USHORT);
+static void		release_request(DSQL_REQ, USHORT);
 static STATUS	return_success(void);
 static SCHAR*	var_info(MSG, SCHAR*, SCHAR*, SCHAR*, SCHAR*, USHORT);
 
@@ -475,7 +475,7 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
  *
  **************************************/
 	DBB database;
-	REQ request;
+	DSQL_REQ request;
 	struct tsql thd_context, *tdsql;
 
 	SET_THREAD_DATA;
@@ -535,7 +535,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	REQ request;
+	DSQL_REQ request;
 	OPN open_cursor;
 	STATUS local_status[ISC_STATUS_LENGTH];
 	struct tsql thd_context, *tdsql;
@@ -670,7 +670,7 @@ static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
  *	Common part of prepare and execute a statement.
  *
  **************************************/
-	REQ request;
+	DSQL_REQ request;
 	DBB database;
 	USHORT parser_version;
 	STATUS status;
@@ -942,7 +942,7 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	REQ request;
+	DSQL_REQ request;
 	MSG message;
 	PAR eof, parameter, null;
 	STATUS s;
@@ -1157,7 +1157,7 @@ STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
  *	Release request for a dsql statement
  *
  **************************************/
-	REQ request;
+	DSQL_REQ request;
 	struct tsql thd_context, *tdsql;
 
 	SET_THREAD_DATA;
@@ -1216,7 +1216,7 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	REQ request;
+	DSQL_REQ request;
 	MSG message;
 	PAR parameter;
 	SCHAR *buffer;
@@ -1299,7 +1299,7 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	REQ old_request, request;
+	DSQL_REQ old_request, request;
 	USHORT parser_version;
 	DBB database;
 	STATUS status;
@@ -1451,7 +1451,7 @@ STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
  *	Set a cursor name for a dynamic request
  *
  *****************************************/
-	REQ request;
+	DSQL_REQ request;
 	SYM symbol;
 	USHORT length;
 	struct tsql thd_context, *tdsql;
@@ -1551,7 +1551,7 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
  *	Provide information on dsql statement
  *
  **************************************/
-	REQ request;
+	DSQL_REQ request;
 	MSG *message;
 	SCHAR item, *end_items, *end_info, *end_describe, buffer[256],
 		*buffer_ptr;
@@ -1762,8 +1762,8 @@ void DSQL_pretty(DSQL_NOD node, int column)
  **************************************/
 	MAP map;
 	DSQL_REL relation;
-	PRC procedure;
-	CTX context;
+	DSQL_PRC procedure;
+	DSQL_CTX context;
 	FLD field;
 	STR string;
 	VAR variable;
@@ -2252,7 +2252,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_aggregate:
 		verb = "aggregate";
 		PRINTF("%s%s\n", buffer, verb);
-		context = (CTX) node->nod_arg[e_agg_context];
+		context = (DSQL_CTX) node->nod_arg[e_agg_context];
 		PRINTF("%s   context %d\n", buffer, context->ctx_context);
 		if ((map = context->ctx_map) != NULL)
 			PRINTF("%s   map\n", buffer);
@@ -2278,7 +2278,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		break;
 
 	case nod_field:
-		context = (CTX) node->nod_arg[e_fld_context];
+		context = (DSQL_CTX) node->nod_arg[e_fld_context];
 		relation = context->ctx_relation;
  		procedure = context->ctx_procedure;
 		field = (FLD) node->nod_arg[e_fld_field];
@@ -2308,7 +2308,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 	case nod_map:
 		verb = "map";
 		PRINTF("%s%s\n", buffer, verb);
-		context = (CTX) node->nod_arg[e_map_context];
+		context = (DSQL_CTX) node->nod_arg[e_map_context];
 		PRINTF("%s   context %d\n", buffer, context->ctx_context);
 		for (map = (MAP) node->nod_arg[e_map_map]; map; map = map->map_next) {
 			PRINTF("%s   position %d\n", buffer, map->map_position);
@@ -2321,7 +2321,7 @@ void DSQL_pretty(DSQL_NOD node, int column)
 		FREE_MEM_RETURN;
 
 	case nod_relation:
-		context = (CTX) node->nod_arg[e_rel_context];
+		context = (DSQL_CTX) node->nod_arg[e_rel_context];
 		relation = context->ctx_relation;
 		procedure = context->ctx_procedure;
  		if( relation != NULL ){ 
@@ -2531,7 +2531,7 @@ static void cleanup_transaction( SLONG * tra_handle, SLONG arg)
 }
 
 
-static void close_cursor( REQ request)
+static void close_cursor( DSQL_REQ request)
 {
 /**************************************
  *
@@ -2640,7 +2640,7 @@ static STATUS error()
 }
 
 
-static void execute_blob(	REQ		request,
+static void execute_blob(	DSQL_REQ		request,
 							USHORT	in_blr_length,
 							UCHAR*	in_blr,
 							USHORT	in_msg_length,
@@ -2739,7 +2739,7 @@ static void execute_blob(	REQ		request,
 }
 
 
-static STATUS execute_request(REQ				request,
+static STATUS execute_request(DSQL_REQ				request,
 							  isc_tr_handle*	trans_handle,
 							  USHORT			in_blr_length,
 							  UCHAR*			in_blr,
@@ -3061,7 +3061,7 @@ static STATUS execute_request(REQ				request,
 }
 
 
-static SSHORT filter_sub_type( REQ request, DSQL_NOD node)
+static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
 {
 /**************************************
  *
@@ -3165,7 +3165,7 @@ static BOOLEAN get_indices(
 
 
 static USHORT get_plan_info(
-							REQ request,
+							DSQL_REQ request,
 							SSHORT buffer_length, SCHAR ** buffer)
 {
 /**************************************
@@ -3264,7 +3264,7 @@ static USHORT get_plan_info(
 
 
 static USHORT get_request_info(
-							   REQ request,
+							   DSQL_REQ request,
 							   SSHORT buffer_length, SCHAR * buffer)
 {
 /**************************************
@@ -3793,7 +3793,7 @@ static DBB init( SLONG ** db_handle)
 }
 
 
-static void map_in_out(	REQ		request,
+static void map_in_out(	DSQL_REQ		request,
 						MSG		message,
 						USHORT	blr_length,
 						UCHAR*	blr,
@@ -4091,8 +4091,8 @@ static USHORT parse_blr(
 }
 
 
-static REQ prepare(
-				   REQ request,
+static DSQL_REQ prepare(
+				   DSQL_REQ request,
 				   USHORT string_length,
 				   TEXT * string,
 				   USHORT client_dialect, USHORT parser_version)
@@ -4362,7 +4362,7 @@ static SCHAR* put_item(	SCHAR	item,
 }
 
 
-static void release_request(REQ request, USHORT top_level)
+static void release_request(DSQL_REQ request, USHORT top_level)
 {
 /**************************************
  *
@@ -4382,7 +4382,7 @@ static void release_request(REQ request, USHORT top_level)
 	// If request is parent, orphan the children and
 	// release a portion of their requests
 
-	for (REQ child = request->req_offspring; child; child = child->req_sibling) {
+	for (DSQL_REQ child = request->req_offspring; child; child = child->req_sibling) {
 		child->req_flags |= REQ_orphan;
 		child->req_parent = NULL;
 		DsqlMemoryPool *save_default = tdsql->tsql_default;
@@ -4395,8 +4395,8 @@ static void release_request(REQ request, USHORT top_level)
 
 	if (top_level && request->req_parent)
 	{
-		REQ parent = request->req_parent;
-		for (REQ* ptr = &parent->req_offspring;
+		DSQL_REQ parent = request->req_parent;
+		for (DSQL_REQ* ptr = &parent->req_offspring;
 			*ptr;
 			ptr = &(*ptr)->req_sibling)
 		{

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.7 2002-11-11 19:19:43 hippoman Exp $
+//  $Id: par.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.7 2002-11-11 19:19:43 hippoman Exp $
+//	$Id: par.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -95,10 +95,10 @@ static ACT		par_erase();
 static ACT		par_fetch();
 static ACT		par_finish();
 static ACT		par_for();
-static CTX		par_form_menu(enum sym_t);
+static GPRE_CTX		par_form_menu(enum sym_t);
 static ACT		par_form_display();
 static ACT		par_form_field();
-static void		par_form_fields(REQ, LLS *);
+static void		par_form_fields(GPRE_REQ, LLS *);
 static ACT		par_form_for();
 static ACT		par_function();
 static ACT		par_item_end();
@@ -106,15 +106,15 @@ static ACT		par_item_for(ACT_T);
 static ACT		par_left_brace();
 static ACT		par_menu_att();
 static ACT		par_menu_case();
-static ACT		par_menu_display(CTX);
+static ACT		par_menu_display(GPRE_CTX);
 static ACT		par_menu_entree_att();
 static ACT		par_menu_for();
-static ACT		par_menu_item_for(SYM, CTX, ACT_T);
+static ACT		par_menu_item_for(SYM, GPRE_CTX, ACT_T);
 static ACT		par_modify();
 static ACT		par_on();
 static ACT		par_on_error();
 static ACT		par_open_blob(ACT_T, SYM);
-static BOOLEAN	par_options(REQ, BOOLEAN);
+static BOOLEAN	par_options(GPRE_REQ, BOOLEAN);
 static ACT		par_procedure();
 static TEXT*	par_quoted_string();
 static ACT		par_ready();
@@ -464,7 +464,7 @@ ACT PAR_action()
 
 SSHORT PAR_blob_subtype(DBB dbb)
 {
-	REL relation;
+	GPRE_REL relation;
 	FLD field;
 	SSHORT const_subtype;
 
@@ -506,7 +506,7 @@ ACT PAR_database(USHORT sql)
 	symbol = PAR_symbol(SYM_dummy);
 	db->dbb_name = symbol;
 	symbol->sym_type = SYM_database;
-	symbol->sym_object = (CTX) db;
+	symbol->sym_object = (GPRE_CTX) db;
 
 	if (!MATCH(KW_EQUALS))
 		SYNTAX_ERROR("\"=\" in database declaration");
@@ -707,7 +707,7 @@ ACT PAR_event_init( USHORT sql)
 	LLS stack = NULL;
 	SYM symbol;
 	FLD field;
-	CTX context;
+	GPRE_CTX context;
 	REF reference;
 	int count = 0;
 	char req_name[128];
@@ -1042,7 +1042,7 @@ FLD PAR_null_field()
 void PAR_reserving( USHORT flags, SSHORT parse_sql)
 {
 	RRL lock_block;
-	REL relation;
+	GPRE_REL relation;
 	DBB database;
 	USHORT lock_level, lock_mode;
 
@@ -1111,9 +1111,9 @@ void PAR_reserving( USHORT flags, SSHORT parse_sql)
 //		Initialize the request and the ready.
 //  
 
-REQ PAR_set_up_dpb_info(RDY ready, ACT action, USHORT buffercount)
+GPRE_REQ PAR_set_up_dpb_info(RDY ready, ACT action, USHORT buffercount)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	ready->rdy_database->dbb_buffercount = buffercount;
 	request = MAKE_REQUEST(REQ_ready);
@@ -1264,10 +1264,10 @@ static ACT par_any()
 {
 	SYM symbol;
 	ACT action, function;
-	register REQ request;
+	register GPRE_REQ request;
 	register RSE rec_expr;
-	CTX context;
-	REL relation;
+	GPRE_CTX context;
+	GPRE_REL relation;
 
 //  For time being flag as an error 
 
@@ -1311,8 +1311,8 @@ static ACT par_array_element()
 	register FLD field, element;
 	register ACT action;
 	register REF reference;
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 	GPRE_NOD node;
 
 	if (!MSC_find_symbol(token.tok_symbol, SYM_context))
@@ -1368,7 +1368,7 @@ static ACT par_based()
 {
 	FLD field;
 	BAS based_on;
-	REL relation;
+	GPRE_REL relation;
 	ACT action;
 	TEXT s[64];
 	TEXT t_str[NAME_SIZE + 1];
@@ -1673,7 +1673,7 @@ static ACT par_derived_from()
 {
 	FLD field;
 	BAS based_on;
-	REL relation;
+	GPRE_REL relation;
 	ACT action;
 	TEXT s[64];
 
@@ -1792,7 +1792,7 @@ static ACT par_end_for()
 {
 	ACT begin_action, action;
 	BLB blob;
-	register REQ request;
+	register GPRE_REQ request;
 
 	if (!cur_for)
 		PAR_error("unmatched END_FOR");
@@ -1846,13 +1846,13 @@ static ACT par_end_form()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 #else
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 
 	if (!cur_form)
 		PAR_error("unmatched END_FORM");
 
-	request = (REQ) POP(&cur_form);
+	request = (GPRE_REQ) POP(&cur_form);
 	context = request->req_contexts;
 	HSH_remove(context->ctx_symbol);
 
@@ -1868,13 +1868,13 @@ static ACT par_end_form()
 
 static ACT par_end_menu()
 {
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 
 	if (!cur_menu)
 		PAR_error("END_MENU not in MENU context");
 
-	request = (REQ) POP(&cur_menu);
+	request = (GPRE_REQ) POP(&cur_menu);
 
 	if (request->req_flags & REQ_menu_for) {
 		context = request->req_contexts;
@@ -1894,7 +1894,7 @@ static ACT par_end_menu()
 static ACT par_end_modify()
 {
 	ACT begin_action, action;
-	REQ request;
+	GPRE_REQ request;
 	REF change, reference, flag;
 	UPD modify;
 	GPRE_NOD assignments, item, *ptr;
@@ -1980,12 +1980,12 @@ static ACT par_end_modify()
 static ACT par_end_stream()
 {
 	register SYM symbol;
-	register REQ request;
+	register GPRE_REQ request;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
 		SYNTAX_ERROR("stream cursor");
 
-	request = (REQ) symbol->sym_object;
+	request = (GPRE_REQ) symbol->sym_object;
 	HSH_remove(symbol);
 
 	EXP_rse_cleanup(request->req_rse);
@@ -2004,8 +2004,8 @@ static ACT par_end_stream()
 static ACT par_end_store()
 {
 	ACT begin_action, action2, action;
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 	UPD return_values;
 	register REF reference, change;
 	register GPRE_NOD assignments, item;
@@ -2103,14 +2103,14 @@ static ACT par_end_store()
 
 static ACT par_entree()
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 	USHORT first;
 
 	if (!cur_menu)
 		return NULL;
 
-	request = (REQ) cur_menu->lls_object;
+	request = (GPRE_REQ) cur_menu->lls_object;
 
 //  Check that this is a case menu, not a dynamic menu.  
 
@@ -2147,11 +2147,11 @@ static ACT par_entree()
 
 static ACT par_erase()
 {
-	CTX source;
+	GPRE_CTX source;
 	register ACT action;
 	register UPD erase;
 	register SYM symbol;
-	REQ request;
+	GPRE_REQ request;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_context)
 		SYNTAX_ERROR("context variable");
@@ -2185,13 +2185,13 @@ static ACT par_erase()
 static ACT par_fetch()
 {
 	register SYM symbol;
-	register REQ request;
+	register GPRE_REQ request;
 	ACT action;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
 		return NULL;
 
-	request = (REQ) symbol->sym_object;
+	request = (GPRE_REQ) symbol->sym_object;
 	ADVANCE_TOKEN;
 	PAR_end();
 
@@ -2251,10 +2251,10 @@ static ACT par_for()
 {
 	SYM symbol, temp;
 	ACT action;
-	register REQ request;
+	register GPRE_REQ request;
 	register RSE rec_expr;
-	CTX context, *ptr, *end;
-	REL relation;
+	GPRE_CTX context, *ptr, *end;
+	GPRE_REL relation;
 	TEXT s[128], dup_symbol;
 
 	if (MATCH(KW_FORM))
@@ -2319,7 +2319,7 @@ static ACT par_for()
 //		or menu context.
 //  
 
-static CTX par_form_menu( enum sym_t type)
+static GPRE_CTX par_form_menu( enum sym_t type)
 {
 #ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
@@ -2348,9 +2348,9 @@ static ACT par_form_display()
 	PAR_error("FORMs not supported");
 	return NULL;				/* silence compiler */
 #else
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
-	CTX context;
+	GPRE_CTX context;
 	FINT fint;
 
 	if (!(context = par_form_menu(SYM_form_map))) {
@@ -2416,7 +2416,7 @@ static ACT par_form_field()
 #else
 	FLD field;
 	ACT action;
-	CTX context;
+	GPRE_CTX context;
 	USHORT first;
 
 //  
@@ -2443,7 +2443,7 @@ static ACT par_form_field()
 //		Parse a parenthesed list of form field names.
 //  
 
-static void par_form_fields( REQ request, LLS * stack)
+static void par_form_fields( GPRE_REQ request, LLS * stack)
 {
 #ifdef NO_PYXIS
 	PAR_error("FORMs not supported");
@@ -2497,8 +2497,8 @@ static ACT par_form_for()
 	FORM form;
 	SYM symbol, dbb_symbol;
 	DBB dbb;
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 	USHORT request_flags;
 	TEXT *form_handle;
 
@@ -2618,8 +2618,8 @@ static ACT par_function()
 static ACT par_item_end()
 {
 	ACT action, prior;
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 
 	if (!cur_item) {
 		CPR_error("unmatched END_ITEM");
@@ -2647,8 +2647,8 @@ static ACT par_item_for( ACT_T type)
 	ACT action;
 	FORM form;
 	SYM symbol;
-	REQ request, parent;
-	CTX context;
+	GPRE_REQ request, parent;
+	GPRE_CTX context;
 	FLD field;
 	REF reference;
 	TEXT *form_handle;
@@ -2748,7 +2748,7 @@ static ACT par_menu_att()
 {
 	ACT_T type;
 	ACT action;
-	CTX context;
+	GPRE_CTX context;
 	SSHORT first;
 	MENU menu;
 
@@ -2801,7 +2801,7 @@ static ACT par_menu_att()
 
 static ACT par_menu_case()
 {
-	REQ request;
+	GPRE_REQ request;
 	ACT action;
 
 	sw_pyxis = TRUE;
@@ -2842,10 +2842,10 @@ static ACT par_menu_case()
 //		Parse a menu display/interaction statement.
 //  
 
-static ACT par_menu_display( CTX context)
+static ACT par_menu_display( GPRE_CTX context)
 {
 	ACT action;
-	REQ display_request;
+	GPRE_REQ display_request;
 
 	action = MAKE_ACTION(context->ctx_request, ACT_menu_display);
 	display_request = MAKE_REQUEST(REQ_menu);
@@ -2883,7 +2883,7 @@ static ACT par_menu_entree_att()
 {
 	ACT_T type;
 	ACT action;
-	CTX context;
+	GPRE_CTX context;
 	SSHORT first;
 	ENTREE entree;
 
@@ -2933,8 +2933,8 @@ static ACT par_menu_for()
 {
 	SYM symbol;
 	ACT action;
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 	MENU menu;
 
 	sw_pyxis = TRUE;
@@ -2977,10 +2977,10 @@ static ACT par_menu_for()
 //		Handle FOR_ITEM and/or PUT_ITEM for menus.
 //  
 
-static ACT par_menu_item_for( SYM symbol, CTX context, ACT_T type)
+static ACT par_menu_item_for( SYM symbol, GPRE_CTX context, ACT_T type)
 {
 	ACT action;
-	REQ request, parent;
+	GPRE_REQ request, parent;
 	ENTREE entree;
 
 	sw_pyxis = TRUE;
@@ -3014,11 +3014,11 @@ static ACT par_menu_item_for( SYM symbol, CTX context, ACT_T type)
 
 static ACT par_modify()
 {
-	register CTX source, update;
+	register GPRE_CTX source, update;
 	ACT action;
 	register UPD modify;
 	SYM symbol;
-	REQ request;
+	GPRE_REQ request;
 	SCHAR s[50];
 
 //  Set up modify and action blocks.  This is done here to leave the
@@ -3116,12 +3116,12 @@ static ACT par_on_error()
 
 static ACT par_open_blob( ACT_T act_op, SYM symbol)
 {
-	CTX context;
+	GPRE_CTX context;
 	FLD field;
 	REF reference;
 	ACT action;
 	BLB blob;
-	REQ request;
+	GPRE_REQ request;
 	TEXT s[128];
 	USHORT filter_is_defined = FALSE;
 
@@ -3202,7 +3202,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 	request->req_blobs = blob;
 
 	symbol->sym_type = SYM_blob;
-	symbol->sym_object = (CTX) blob;
+	symbol->sym_object = (GPRE_CTX) blob;
 	HSH_insert(symbol);
 // ** You just inserted the context variable into the hash table.
 //The current token however might be the same context variable. 
@@ -3234,7 +3234,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 //		FALSE.  If a flag is set, don't give an error on FALSE.
 //  
 
-static BOOLEAN par_options( REQ request, BOOLEAN flag)
+static BOOLEAN par_options( GPRE_REQ request, BOOLEAN flag)
 {
 
 	if (!MATCH(KW_LEFT_PAREN))
@@ -3331,7 +3331,7 @@ static TEXT *par_quoted_string()
 static ACT par_ready()
 {
 	register ACT action;
-	register REQ request;
+	register GPRE_REQ request;
 	SYM symbol;
 	RDY ready;
 	DBB dbb;
@@ -3508,7 +3508,7 @@ static ACT par_returning_values()
 		PAR_error("STORE must precede RETURNING_VALUES");
 
 	ACT begin_action = (ACT) POP(&cur_store);
-	REQ request = begin_action->act_request;
+	GPRE_REQ request = begin_action->act_request;
 
 //  First take care of the impending store:
 //  Make up an assignment list for all field references  and
@@ -3541,10 +3541,10 @@ static ACT par_returning_values()
 //  Next make an updated context for post_store actions 
 
 	UPD new_values = (UPD) ALLOC(UPD_LEN);
-	CTX source = request->req_contexts;
+	GPRE_CTX source = request->req_contexts;
 	request->req_type = REQ_store2;
 
-	CTX new_ = MAKE_CONTEXT(request);
+	GPRE_CTX new_ = MAKE_CONTEXT(request);
 	new_->ctx_symbol = source->ctx_symbol;
 	new_->ctx_relation = source->ctx_relation;
 	new_->ctx_symbol->sym_object = new_;
@@ -3618,10 +3618,10 @@ static ACT par_slice( ACT_T type)
 
 	ACT action;
 	FLD field;
-	CTX context;
+	GPRE_CTX context;
 	ARY info;
 	SLC slice;
-	REQ request;
+	GPRE_REQ request;
 	USHORT n;
 	slc::slc_repeat * tail;
 
@@ -3684,9 +3684,9 @@ static ACT par_slice( ACT_T type)
 static ACT par_store()
 {
 	register ACT action;
-	REQ request;
-	register CTX context;
-	REL relation;
+	GPRE_REQ request;
+	register GPRE_CTX context;
+	GPRE_REL relation;
 
 	request = MAKE_REQUEST(REQ_store);
 	par_options(request, FALSE);
@@ -3717,10 +3717,10 @@ static ACT par_store()
 static ACT par_start_stream()
 {
 	ACT action;
-	REQ request;
+	GPRE_REQ request;
 	register RSE rec_expr;
-	CTX context, *ptr, *end;
-	REL relation;
+	GPRE_CTX context, *ptr, *end;
+	GPRE_REL relation;
 	register SYM cursor;
 
 	request = MAKE_REQUEST(REQ_cursor);
@@ -3729,7 +3729,7 @@ static ACT par_start_stream()
 
 	cursor = PAR_symbol(SYM_dummy);
 	cursor->sym_type = SYM_stream;
-	cursor->sym_object = (CTX) request;
+	cursor->sym_object = (GPRE_CTX) request;
 
 	MATCH(KW_USING);
 	rec_expr = EXP_rse(request, 0);
@@ -3762,7 +3762,7 @@ static ACT par_start_stream()
 static ACT par_start_transaction()
 {
 	register ACT action;
-	TRA trans;
+	GPRE_TRA trans;
 
 	action = MAKE_ACTION(0, ACT_start);
 
@@ -3771,7 +3771,7 @@ static ACT par_start_transaction()
 		return action;
 	}
 
-	trans = (TRA) ALLOC(TRA_LEN);
+	trans = (GPRE_TRA) ALLOC(TRA_LEN);
 
 //  get the transaction handle  
 
@@ -3910,7 +3910,7 @@ static ACT par_trans( ACT_T act_op)
 
 static ACT par_type()
 {
-	REL relation;
+	GPRE_REL relation;
 	FLD field;
 	ACT action;
 	SSHORT type;
@@ -3921,7 +3921,7 @@ static ACT par_type()
 // ***
 //SYM	symbol;
 //symbol = token.tok_symbol;
-//relation = (REL) symbol->sym_object;
+//relation = (GPRE_REL) symbol->sym_object;
 //ADVANCE_TOKEN;
 //** 
 
@@ -4045,8 +4045,8 @@ static ACT par_variable()
 	register FLD field, cast;
 	register ACT action;
 	register REF reference, flag;
-	REQ request;
-	CTX context;
+	GPRE_REQ request;
+	GPRE_CTX context;
 	USHORT first, dot, is_null;
 
 //  

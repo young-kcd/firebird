@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
+//	$Id: cme.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -44,18 +44,18 @@
 #include "../gpre/prett_proto.h"
 #include "../jrd/dsc_proto.h"
 
-static GPRE_NOD cmp_array(GPRE_NOD, REQ);
-static GPRE_NOD cmp_array_element(GPRE_NOD, REQ);
-static void cmp_cast(GPRE_NOD, REQ);
-static GPRE_NOD cmp_field(GPRE_NOD, REQ);
-static GPRE_NOD cmp_literal(GPRE_NOD, REQ);
-static void cmp_map(MAP, REQ);
-static void cmp_plan(GPRE_NOD, REQ);
+static GPRE_NOD cmp_array(GPRE_NOD, GPRE_REQ);
+static GPRE_NOD cmp_array_element(GPRE_NOD, GPRE_REQ);
+static void cmp_cast(GPRE_NOD, GPRE_REQ);
+static GPRE_NOD cmp_field(GPRE_NOD, GPRE_REQ);
+static GPRE_NOD cmp_literal(GPRE_NOD, GPRE_REQ);
+static void cmp_map(MAP, GPRE_REQ);
+static void cmp_plan(GPRE_NOD, GPRE_REQ);
 static void cmp_sdl_dtype(FLD, REF);
-static GPRE_NOD cmp_udf(GPRE_NOD, REQ);
-static GPRE_NOD cmp_value(GPRE_NOD, REQ);
+static GPRE_NOD cmp_udf(GPRE_NOD, GPRE_REQ);
+static GPRE_NOD cmp_value(GPRE_NOD, GPRE_REQ);
 static USHORT get_string_len(FLD);
-static void stuff_cstring(REQ, const char *);
+static void stuff_cstring(GPRE_REQ, const char *);
 static void stuff_sdl_dimension(DIM, REF, SSHORT);
 static void stuff_sdl_element(REF, FLD);
 static void stuff_sdl_loops(REF, FLD);
@@ -157,11 +157,11 @@ const op_table operators[] =
 //		Compile a random expression.
 //  
 
-void CME_expr(GPRE_NOD node, REQ request)
+void CME_expr(GPRE_NOD node, GPRE_REQ request)
 {
 	GPRE_NOD *ptr, *end;
 	MEL element;
-	CTX context;
+	GPRE_CTX context;
 	REF reference;
 	TEXT *p, s[128];
 
@@ -986,11 +986,11 @@ void CME_get_dtype( GPRE_NOD node, FLD f)
 //		Generate a relation reference.
 //  
 
-void CME_relation(CTX context, REQ request)
+void CME_relation(GPRE_CTX context, GPRE_REQ request)
 {
 	RSE rs_stream;
-	REL relation;
-	PRC procedure;
+	GPRE_REL relation;
+	GPRE_PRC procedure;
 	GPRE_NOD inputs, *ptr, *end;
 
 	CMP_check(request, 0);
@@ -1058,7 +1058,7 @@ void CME_relation(CTX context, REQ request)
 //		Generate blr for an rse node.
 //  
 
-void CME_rse(RSE rse, REQ request)
+void CME_rse(RSE rse, GPRE_REQ request)
 {
 	GPRE_NOD temp, union_node, *ptr, *end, list;
 	RSE sub_rse;
@@ -1204,7 +1204,7 @@ void CME_rse(RSE rse, REQ request)
 //       out sdl (slice description language)
 //  
 
-static GPRE_NOD cmp_array( GPRE_NOD node, REQ request)
+static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 {
 	FLD field;
 	REF reference;
@@ -1288,7 +1288,7 @@ static GPRE_NOD cmp_array( GPRE_NOD node, REQ request)
 //       from an RSE and output blr for this reference
 //  
 
-static GPRE_NOD cmp_array_element( GPRE_NOD node, REQ request)
+static GPRE_NOD cmp_array_element( GPRE_NOD node, GPRE_REQ request)
 {
 	USHORT index_count;
 
@@ -1309,7 +1309,7 @@ static GPRE_NOD cmp_array_element( GPRE_NOD node, REQ request)
 //  
 //  
 
-static void cmp_cast( GPRE_NOD node, REQ request)
+static void cmp_cast( GPRE_NOD node, GPRE_REQ request)
 {
 
 	STUFF(blr_cast);
@@ -1323,11 +1323,11 @@ static void cmp_cast( GPRE_NOD node, REQ request)
 //		Compile up a field reference.
 //  
 
-static GPRE_NOD cmp_field( GPRE_NOD node, REQ request)
+static GPRE_NOD cmp_field( GPRE_NOD node, GPRE_REQ request)
 {
 	FLD field;
 	REF reference;
-	CTX context;
+	GPRE_CTX context;
 
 	CMP_check(request, 0);
 
@@ -1385,7 +1385,7 @@ static GPRE_NOD cmp_field( GPRE_NOD node, REQ request)
 //		Handle a literal expression.
 //  
 
-static GPRE_NOD cmp_literal( GPRE_NOD node, REQ request)
+static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 {
 	REF reference;
 	char *p;
@@ -1580,7 +1580,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, REQ request)
 //		Generate a map for a union or aggregate rse.
 //  
 
-static void cmp_map( MAP map, REQ request)
+static void cmp_map( MAP map, GPRE_REQ request)
 {
 	MEL element;
 
@@ -1600,7 +1600,7 @@ static void cmp_map( MAP map, REQ request)
 //		Generate an access plan for a query.
 //  
 
-static void cmp_plan( GPRE_NOD plan_expression, REQ request)
+static void cmp_plan( GPRE_NOD plan_expression, GPRE_REQ request)
 {
 	GPRE_NOD list, node, arg, *ptr, *end, *ptr2, *end2;
 
@@ -1634,7 +1634,7 @@ static void cmp_plan( GPRE_NOD plan_expression, REQ request)
 		/* stuff the relation--the relation id itself is redundant except 
 		   when there is a need to differentiate the base tables of views */
 
-		CME_relation((CTX) node->nod_arg[2], request);
+		CME_relation((GPRE_CTX) node->nod_arg[2], request);
 
 		/* now stuff the access method for this stream */
 
@@ -1778,7 +1778,7 @@ static void cmp_sdl_dtype( FLD field, REF reference)
 //		Compile a reference to a user defined function.
 //  
 
-static GPRE_NOD cmp_udf( GPRE_NOD node, REQ request)
+static GPRE_NOD cmp_udf( GPRE_NOD node, GPRE_REQ request)
 {
 	GPRE_NOD list, *ptr, *end;
 	UDF udf;
@@ -1813,7 +1813,7 @@ static GPRE_NOD cmp_udf( GPRE_NOD node, REQ request)
 //		Process a random value expression.
 //  
 
-static GPRE_NOD cmp_value( GPRE_NOD node, REQ request)
+static GPRE_NOD cmp_value( GPRE_NOD node, GPRE_REQ request)
 {
 	REF reference, flag;
 
@@ -1871,7 +1871,7 @@ static USHORT get_string_len( FLD field)
 //		string with one byte of length.
 //  
 
-static void stuff_cstring( REQ request, const char *string)
+static void stuff_cstring( GPRE_REQ request, const char *string)
 {
 	UCHAR c;
 

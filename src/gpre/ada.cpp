@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.7 2002-11-13 12:07:13 kkuznetsov Exp $
+//	$Id: ada.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -65,9 +65,9 @@ static void	gen_clear_handles (ACT, int);
 static void	gen_compatability_symbol (TEXT *, TEXT *, TEXT *);
 static void	gen_compile (ACT, int);
 static void	gen_create_database (ACT, int);
-static int	gen_cursor_close (ACT, REQ, int);
+static int	gen_cursor_close (ACT, GPRE_REQ, int);
 static void	gen_cursor_init (ACT, int);
-static int	gen_cursor_open (ACT, REQ, int);
+static int	gen_cursor_open (ACT, GPRE_REQ, int);
 static void	gen_database (ACT, int);
 static void	gen_ddl (ACT, int);
 static void	gen_drop_database (ACT, int);
@@ -107,7 +107,7 @@ static void	gen_menu_entree_att (ACT, int);
 static void	gen_menu_for (ACT, int);
 static void	gen_menu_item_end (ACT, int);
 static void	gen_menu_item_for (ACT, int);
-static void	gen_menu_request (REQ, int);
+static void	gen_menu_request (GPRE_REQ, int);
 static TEXT	*gen_name (TEXT *, REF, BOOLEAN);
 static void	gen_on_error (ACT, USHORT);
 static void	gen_procedure (ACT, int);
@@ -116,7 +116,7 @@ static void	gen_raw (UCHAR *, enum req_t, int, int);
 static void	gen_ready (ACT, int);
 static void	gen_receive (ACT, int, POR);
 static void	gen_release (ACT, int);
-static void	gen_request (REQ, int);
+static void	gen_request (GPRE_REQ, int);
 static void	gen_return_value (ACT, int);
 static void	gen_routine (ACT, int);
 static void	gen_s_end (ACT, int);
@@ -139,16 +139,16 @@ static void	gen_window_create (ACT, int);
 static void	gen_window_delete (ACT, int);
 static void	gen_window_suspend (ACT, int);
 static void	make_array_declaration (REF, int);
-static void	make_cursor_open_test (enum act_t, REQ, int);
+static void	make_cursor_open_test (enum act_t, GPRE_REQ, int);
 static TEXT	*make_name (TEXT *, SYM);
-static void	make_ok_test (ACT, REQ, int);
+static void	make_ok_test (ACT, GPRE_REQ, int);
 static void	make_port (POR, int);
-static void	make_ready (DBB, TEXT *, TEXT *, USHORT, REQ);
+static void	make_ready (DBB, TEXT *, TEXT *, USHORT, GPRE_REQ);
 static void	printa (int, TEXT *, ...);
 static void	printb (TEXT *, ...);
-static TEXT	*request_trans (ACT, REQ);
+static TEXT	*request_trans (ACT, GPRE_REQ);
 static TEXT	*status_vector (ACT);
-static void	t_start_auto (ACT, REQ, TEXT *, int, SSHORT);
+static void	t_start_auto (ACT, GPRE_REQ, TEXT *, int, SSHORT);
 
 static TEXT output_buffer[512];
 static int first_flag;
@@ -687,7 +687,7 @@ static void asgn_to_proc( REF reference, int column)
 
 static void gen_any( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 	REF reference;
 
@@ -713,7 +713,7 @@ static void gen_any( ACT action, int column)
 
 static void gen_at_end( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	SCHAR s[20];
 
 	request = action->act_request;
@@ -959,7 +959,7 @@ static void gen_blob_open( ACT action, USHORT column)
 {
 	TEXT *command;
 	BLB blob;
-	REQ request;
+	GPRE_REQ request;
 	TEXT s[20];
 	PAT args;
 	TEXT *pattern1 =
@@ -1022,7 +1022,7 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 
 static void gen_clear_handles( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	for (request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
@@ -1061,7 +1061,7 @@ static void gen_compatibility_symbol(
 
 static void gen_compile( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	DBB db;
 	SYM symbol;
 	TEXT *filename;
@@ -1118,7 +1118,7 @@ static void gen_compile( ACT action, int column)
 
 static void gen_create_database( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	DBB db;
 	USHORT save_sw_auto;
 	TEXT s1[32], s2[32];
@@ -1215,7 +1215,7 @@ static void gen_create_database( ACT action, int column)
 //		Generate substitution text for END_STREAM.
 //  
 
-static int gen_cursor_close( ACT action, REQ request, int column)
+static int gen_cursor_close( ACT action, GPRE_REQ request, int column)
 {
 
 	return column;
@@ -1247,7 +1247,7 @@ static void gen_cursor_init( ACT action, int column)
 //		Generate text to open an embedded SQL cursor.
 //  
 
-static int gen_cursor_open( ACT action, REQ request, int column)
+static int gen_cursor_open( ACT action, GPRE_REQ request, int column)
 {
 
 	return column;
@@ -1264,7 +1264,7 @@ static int gen_cursor_open( ACT action, REQ request, int column)
 static void gen_database( ACT action, int column)
 {
 	DBB db;
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 	BLB blob;
 	USHORT count;
@@ -1409,7 +1409,7 @@ static void gen_database( ACT action, int column)
 
 static void gen_ddl( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 //  Set up command type for call to RDB$DDL 
 
@@ -1453,7 +1453,7 @@ static void gen_ddl( ACT action, int column)
 
 static void gen_drop_database( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	DBB db;
 
 	db = (DBB) action->act_object;
@@ -1824,7 +1824,7 @@ static void gen_emodify( ACT action, int column)
 
 static void gen_estore( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 
@@ -1849,7 +1849,7 @@ static void gen_estore( ACT action, int column)
 
 static void gen_endfor( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 
@@ -2052,7 +2052,7 @@ static void gen_event_wait( ACT action, int column)
 
 static void gen_fetch( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	GPRE_NOD var_list;
 	POR port;
 	REF reference;
@@ -2155,7 +2155,7 @@ static void gen_fetch( ACT action, int column)
 static void gen_finish( ACT action, int column)
 {
 	DBB db;
-	REQ request;
+	GPRE_REQ request;
 	RDY ready;
 
 	db = NULL;
@@ -2225,7 +2225,7 @@ static void gen_finish( ACT action, int column)
 static void gen_for( ACT action, int column)
 {
 	POR port;
-	REQ request;
+	GPRE_REQ request;
 	TEXT s[20];
 	REF reference;
 
@@ -2263,7 +2263,7 @@ static void gen_for( ACT action, int column)
 static void gen_form_display( ACT action, int column)
 {
 	FINT display;
-	REQ request;
+	GPRE_REQ request;
 	REF reference, master;
 	POR port;
 	DBB dbb;
@@ -2304,7 +2304,7 @@ static void gen_form_display( ACT action, int column)
 
 static void gen_form_end( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	FORM form;
 	TEXT *status;
 	DBB dbb;
@@ -2321,7 +2321,7 @@ static void gen_form_end( ACT action, int column)
 
 static void gen_form_for( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	FORM form;
 	TEXT *status;
 	DBB dbb;
@@ -2372,7 +2372,7 @@ static void gen_form_for( ACT action, int column)
 
 static void gen_function( ACT function, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 	REF reference;
 	FLD field;
@@ -2573,7 +2573,7 @@ static void gen_item_end( ACT action, int column)
 {
 	ACT org_action;
 	FINT display;
-	REQ request;
+	GPRE_REQ request;
 	REF reference, master;
 	POR port;
 	DBB dbb;
@@ -2621,7 +2621,7 @@ static void gen_item_end( ACT action, int column)
 
 static void gen_item_for( ACT action, int column)
 {
-	REQ request, parent;
+	GPRE_REQ request, parent;
 	FORM form;
 	TEXT *status, index[30];
 
@@ -2673,7 +2673,7 @@ static void gen_item_for( ACT action, int column)
 
 static void gen_loop( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 	TEXT name[20];
 
@@ -2698,7 +2698,7 @@ static void gen_loop( ACT action, int column)
 
 static void gen_menu( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	printa(column, "case interbase.menu (%sisc_window, %s, %d, isc_%d) is",
@@ -2715,10 +2715,10 @@ static void gen_menu( ACT action, int column)
 static void gen_menu_display( ACT action, int column)
 {
 	MENU menu;
-	REQ request, display_request;
+	GPRE_REQ request, display_request;
 
 	request = action->act_request;
-	display_request = (REQ) action->act_object;
+	display_request = (GPRE_REQ) action->act_object;
 
 	menu = NULL;
 
@@ -2750,7 +2750,7 @@ static void gen_menu_display( ACT action, int column)
 static void gen_menu_end( ACT action, int column)
 {
 
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	if (request->req_flags & REQ_menu_for)
@@ -2768,7 +2768,7 @@ static void gen_menu_end( ACT action, int column)
 
 static void gen_menu_entree( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 
@@ -2829,7 +2829,7 @@ static void gen_menu_entree_att( ACT action, int column)
 
 static void gen_menu_for( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 
@@ -2849,7 +2849,7 @@ static void gen_menu_for( ACT action, int column)
 
 static void gen_menu_item_end( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	ENTREE entree;
 
 	if (action->act_pair->act_type == ACT_item_for) {
@@ -2880,7 +2880,7 @@ static void gen_menu_item_end( ACT action, int column)
 static void gen_menu_item_for( ACT action, int column)
 {
 	ENTREE entree;
-	REQ request;
+	GPRE_REQ request;
 
 	if (action->act_type != ACT_item_for)
 		return;
@@ -2909,7 +2909,7 @@ static void gen_menu_item_for( ACT action, int column)
 //		Generate definitions associated with a dynamic menu request.
 //  
 
-static void gen_menu_request( REQ request, int column)
+static void gen_menu_request( GPRE_REQ request, int column)
 {
 	ACT action;
 	MENU menu;
@@ -3015,7 +3015,7 @@ static void gen_procedure( ACT action, int column)
 {
 	PAT args;
 	TEXT *pattern;
-	REQ request;
+	GPRE_REQ request;
 	REF reference;
 	POR in_port, out_port;
 	TEXT *status;
@@ -3166,7 +3166,7 @@ static void gen_ready( ACT action, int column)
 
 static void gen_receive( ACT action, int column, POR port)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	printa(column, "interbase.RECEIVE (%s %s, %d, %d, isc_%d'address, %s);",
@@ -3193,7 +3193,7 @@ static void gen_receive( ACT action, int column, POR port)
 static void gen_release( ACT action, int column)
 {
 	DBB db, exp_db;
-	REQ request;
+	GPRE_REQ request;
 
 	exp_db = (DBB) action->act_object;
 
@@ -3219,7 +3219,7 @@ static void gen_release( ACT action, int column)
 //		Generate definitions associated with a single request.
 //  
 
-static void gen_request( REQ request, int column)
+static void gen_request( GPRE_REQ request, int column)
 {
 	ACT action;
 	UPD modify;
@@ -3437,7 +3437,7 @@ static void gen_return_value( ACT action, int column)
 {
 	UPD update;
 	REF reference;
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	if (action->act_pair->act_error)
@@ -3460,7 +3460,7 @@ static void gen_return_value( ACT action, int column)
 static void gen_routine( ACT action, int column)
 {
 	BLB blob;
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 	SSHORT blob_subtype;
 	REF reference;
@@ -3468,7 +3468,7 @@ static void gen_routine( ACT action, int column)
 
 	column += INDENT;
 
-	for (request = (REQ) action->act_object; request;
+	for (request = (GPRE_REQ) action->act_object; request;
 		 request = request->req_routine) {
 		for (port = request->req_ports; port; port = port->por_next)
 			make_port(port, column);
@@ -3507,7 +3507,7 @@ static void gen_routine( ACT action, int column)
 
 static void gen_s_end( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 
@@ -3539,7 +3539,7 @@ static void gen_s_end( ACT action, int column)
 
 static void gen_s_fetch( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	if (request->req_sync)
@@ -3557,7 +3557,7 @@ static void gen_s_fetch( ACT action, int column)
 
 static void gen_s_start( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 
 	request = action->act_request;
@@ -3615,7 +3615,7 @@ static void gen_segment( ACT action, int column)
 
 static void gen_select( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 	GPRE_NOD var_list;
 	int i;
@@ -3658,7 +3658,7 @@ static void gen_select( ACT action, int column)
 
 static void gen_send( ACT action, POR port, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	printa(column, "interbase.SEND (%s %s, %d, %d, isc_%d'address, %s);",
@@ -3678,7 +3678,7 @@ static void gen_send( ACT action, POR port, int column)
 
 static void gen_slice( ACT action, int column)
 {
-	REQ request, parent_request;
+	GPRE_REQ request, parent_request;
 	REF reference, upper, lower;
 	SLC slice;
 	PAT args;
@@ -3748,7 +3748,7 @@ static void gen_slice( ACT action, int column)
 
 static void gen_start( ACT action, POR port, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	TEXT *vector;
 	REF reference;
 
@@ -3789,7 +3789,7 @@ static void gen_start( ACT action, POR port, int column)
 
 static void gen_store( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	REF reference;
 	FLD field;
 	POR port;
@@ -3821,7 +3821,7 @@ static void gen_store( ACT action, int column)
 static void gen_t_start( ACT action, int column)
 {
 	DBB db;
-	TRA trans;
+	GPRE_TRA trans;
 	TPB tpb;
 	SYM symbol;
 	int count;
@@ -3831,7 +3831,7 @@ static void gen_t_start( ACT action, int column)
 //  explicitly started, but don't have any arguments so don't get a TPB,
 //  generate something plausible. 
 
-	if (!action || !(trans = (TRA) action->act_object)) {
+	if (!action || !(trans = (GPRE_TRA) action->act_object)) {
 		t_start_auto(action, 0, status_vector(action), column, FALSE);
 		return;
 	}
@@ -4170,7 +4170,7 @@ static void make_array_declaration( REF reference, int column)
 //     if type == ACT_close && !isc_nl, error
 //  
 
-static void make_cursor_open_test( enum act_t type, REQ request, int column)
+static void make_cursor_open_test( enum act_t type, GPRE_REQ request, int column)
 {
 
 	if (type == ACT_open) {
@@ -4206,7 +4206,7 @@ static TEXT *make_name( TEXT * string, SYM symbol)
 //		compiled request with active transaction.
 //  
 
-static void make_ok_test( ACT action, REQ request, int column)
+static void make_ok_test( ACT action, GPRE_REQ request, int column)
 {
 
 	if (sw_auto)
@@ -4330,7 +4330,7 @@ static void make_port( POR port, int column)
 
 static void make_ready(
 				  DBB db,
-				  TEXT * filename, TEXT * vector, USHORT column, REQ request)
+				  TEXT * filename, TEXT * vector, USHORT column, GPRE_REQ request)
 {
 	TEXT s1[32], s2[32];
 
@@ -4435,7 +4435,7 @@ static void printa( int column, TEXT * string, ...)
 //		Generate the appropriate transaction handle.
 //  
 
-static TEXT *request_trans( ACT action, REQ request)
+static TEXT *request_trans( ACT action, GPRE_REQ request)
 {
 	SCHAR *trname;
 
@@ -4472,7 +4472,7 @@ static TEXT *status_vector( ACT action)
 
 static void t_start_auto(
 					ACT action,
-					REQ request, TEXT * vector, int column, SSHORT test)
+					GPRE_REQ request, TEXT * vector, int column, SSHORT test)
 {
 	DBB db;
 	int count, stat;

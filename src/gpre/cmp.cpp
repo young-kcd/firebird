@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.7 2002-11-11 19:19:43 hippoman Exp $
+//	$Id: cmp.cpp,v 1.8 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -50,33 +50,33 @@ extern "C" {
 extern TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name;
 
-static void cmp_any(register REQ);
-static void cmp_assignment(register GPRE_NOD, register REQ);
+static void cmp_any(register GPRE_REQ);
+static void cmp_assignment(register GPRE_NOD, register GPRE_REQ);
 static void cmp_blob(BLB, BOOLEAN);
-static void cmp_blr(REQ);
-static void cmp_erase(ACT, REQ);
+static void cmp_blr(GPRE_REQ);
+static void cmp_erase(ACT, GPRE_REQ);
 static void cmp_fetch(ACT);
-static void cmp_field(REQ, FLD, REF);
-static void cmp_for(register REQ);
-static void cmp_form(REQ);
-static void cmp_loop(register REQ);
-static void cmp_menu(REQ);
-static void cmp_modify(ACT, register REQ);
-static void cmp_port(register POR, register REQ);
-static void cmp_procedure(REQ);
-static void cmp_ready(REQ);
-static void cmp_sdl_fudge(REQ, SLONG);
-static BOOLEAN cmp_sdl_loop(REQ, USHORT, SLC, ARY);
-static void cmp_sdl_number(REQ, SLONG);
-static void cmp_sdl_subscript(REQ, USHORT, SLC, ARY);
-static void cmp_sdl_value(REQ, GPRE_NOD);
-static void cmp_set_generator(REQ);
-static void cmp_slice(REQ);
-static void cmp_store(register REQ);
+static void cmp_field(GPRE_REQ, FLD, REF);
+static void cmp_for(register GPRE_REQ);
+static void cmp_form(GPRE_REQ);
+static void cmp_loop(register GPRE_REQ);
+static void cmp_menu(GPRE_REQ);
+static void cmp_modify(ACT, register GPRE_REQ);
+static void cmp_port(register POR, register GPRE_REQ);
+static void cmp_procedure(GPRE_REQ);
+static void cmp_ready(GPRE_REQ);
+static void cmp_sdl_fudge(GPRE_REQ, SLONG);
+static BOOLEAN cmp_sdl_loop(GPRE_REQ, USHORT, SLC, ARY);
+static void cmp_sdl_number(GPRE_REQ, SLONG);
+static void cmp_sdl_subscript(GPRE_REQ, USHORT, SLC, ARY);
+static void cmp_sdl_value(GPRE_REQ, GPRE_NOD);
+static void cmp_set_generator(GPRE_REQ);
+static void cmp_slice(GPRE_REQ);
+static void cmp_store(register GPRE_REQ);
 static void expand_references(register REF);
-static POR make_port(register REQ, register REF);
-static void make_receive(register POR, register REQ);
-static void make_send(register POR, register REQ);
+static POR make_port(register GPRE_REQ, register REF);
+static void make_receive(register POR, register GPRE_REQ);
+static void make_send(register POR, register GPRE_REQ);
 static void update_references(register REF);
 
 static GPRE_NOD lit0, lit1;
@@ -99,7 +99,7 @@ static USHORT next_ident;
 //		couple of hundred bytes to be safe.
 //  
 
-void CMP_check( register REQ request, SSHORT min_reqd)
+void CMP_check( register GPRE_REQ request, SSHORT min_reqd)
 {
 	UCHAR *p, *q, *old;
 	int length, n;
@@ -131,7 +131,7 @@ void CMP_check( register REQ request, SSHORT min_reqd)
 //		numbers, and internal idents.  Compute length of request.
 //  
 
-void CMP_compile_request( register REQ request)
+void CMP_compile_request( register GPRE_REQ request)
 {
 	POR port;
 	REF reference;
@@ -377,7 +377,7 @@ CMP_display_code(FINT display, REF reference)
 //		indicate cast datatypes.
 //  
 
-void CMP_external_field( REQ request, FLD field)
+void CMP_external_field( GPRE_REQ request, FLD field)
 {
 
 	switch (field->fld_dtype) {
@@ -438,7 +438,7 @@ USHORT CMP_next_ident(void)
 //		Stuff a symbol.
 //  
 
-void CMP_stuff_symbol( REQ request, SYM symbol)
+void CMP_stuff_symbol( GPRE_REQ request, SYM symbol)
 {
 	TEXT *p;
 
@@ -462,7 +462,7 @@ void CMP_stuff_symbol( REQ request, SYM symbol)
 //		TPB for each database referenced.
 //  
 
-void CMP_t_start( register TRA trans)
+void CMP_t_start( register GPRE_TRA trans)
 {
 	char rrl_buffer[MAX_TPB];
 	char tpb_buffer[MAX_TRA_OPTIONS + 1];
@@ -541,7 +541,7 @@ void CMP_t_start( register TRA trans)
 		else					/* this database isn't referenced */
 			continue;
 
-		/* link this into the TPB chains (TRA and DBB)   */
+		/* link this into the TPB chains (GPRE_TRA and DBB)   */
 
 		tpb->tpb_database = database;
 		tpb->tpb_dbb_next = database->dbb_tpbs;
@@ -568,7 +568,7 @@ void CMP_t_start( register TRA trans)
 //		Generate blr tree for free standing ANY expression.
 //  
 
-static void cmp_any( register REQ request)
+static void cmp_any( register GPRE_REQ request)
 {
 	GPRE_NOD value;
 	POR port;
@@ -609,7 +609,7 @@ static void cmp_any( register REQ request)
 //		Compile a build assignment statement.
 //  
 
-static void cmp_assignment( register GPRE_NOD node, register REQ request)
+static void cmp_assignment( register GPRE_NOD node, register GPRE_REQ request)
 {
 
 	CMP_check(request, 0);
@@ -693,7 +693,7 @@ static void cmp_blob( BLB blob, BOOLEAN sql_flag)
 //		Build a request tree for a request.
 //  
 
-static void cmp_blr( REQ request)
+static void cmp_blr( GPRE_REQ request)
 {
 	POR port;
 
@@ -753,10 +753,10 @@ static void cmp_blr( REQ request)
 //		Generate blr for ERASE action.
 //  
 
-static void cmp_erase( ACT action, REQ request)
+static void cmp_erase( ACT action, GPRE_REQ request)
 {
 	UPD update;
-	CTX source;
+	GPRE_CTX source;
 
 	update = (UPD) action->act_object;
 	source = update->upd_source;
@@ -802,7 +802,7 @@ static void cmp_fetch( ACT action)
 //		Stuff field datatype info into request.
 //  
 
-static void cmp_field( REQ request, FLD field, REF reference)
+static void cmp_field( GPRE_REQ request, FLD field, REF reference)
 {
 	TEXT s[50];
 
@@ -920,14 +920,14 @@ static void cmp_field( REQ request, FLD field, REF reference)
 //		Generate blr tree for for statement
 //  
 
-static void cmp_for( register REQ request)
+static void cmp_for( register GPRE_REQ request)
 {
 	GPRE_NOD field, value;
 	POR port;
 	register ACT action;
 	register REF reference;
 	BOOLEAN updates;
-	CTX context;
+	GPRE_CTX context;
 
 	STUFF(blr_begin);
 	if (request->req_type == REQ_cursor && request->req_sync)
@@ -937,7 +937,7 @@ static void cmp_for( register REQ request)
 
 	if (request->req_flags & REQ_sql_cursor) {
 		if (!request->req_rse->rse_sort && !request->req_rse->rse_reduced)
-			for (context = (CTX) request->req_contexts; context;
+			for (context = (GPRE_CTX) request->req_contexts; context;
 				 context = context->ctx_next) {
 				if ((context->ctx_scope_level == request->req_scope_level) &&
 					context->ctx_procedure) {
@@ -1041,7 +1041,7 @@ static void cmp_for( register REQ request)
 //		This has very little to do with a BLR request.
 //  
 
-static void cmp_form( REQ request)
+static void cmp_form( GPRE_REQ request)
 {
 	REF reference, option, parent;
 	POR port;
@@ -1134,11 +1134,11 @@ static void cmp_form( REQ request)
 //		Compile a mass looping update statement.
 //  
 
-static void cmp_loop( register REQ request)
+static void cmp_loop( register GPRE_REQ request)
 {
 	GPRE_NOD node, list, *ptr, *end, counter;
 	POR primary;
-	CTX for_context, update_context;
+	GPRE_CTX for_context, update_context;
 	register RSE rse;
 	REF reference;
 
@@ -1178,7 +1178,7 @@ static void cmp_loop( register REQ request)
 		STUFF(blr_end);
 	}
 	else if (node->nod_type == nod_store) {
-		update_context = (CTX) node->nod_arg[0];
+		update_context = (GPRE_CTX) node->nod_arg[0];
 		STUFF(blr_store);
 		CME_relation(update_context, request);
 		list = node->nod_arg1;
@@ -1210,7 +1210,7 @@ static void cmp_loop( register REQ request)
 //		with a BLR request.
 //  
 
-static void cmp_menu( REQ request)
+static void cmp_menu( GPRE_REQ request)
 {
 	ACT action, temp;
 	TEXT *p;
@@ -1278,7 +1278,7 @@ static void cmp_menu( REQ request)
 //		Generate a receive and modify tree for a modify action.
 //  
 
-static void cmp_modify( ACT action, register REQ request)
+static void cmp_modify( ACT action, register GPRE_REQ request)
 {
 	UPD update;
 	GPRE_NOD list, field_node, *ptr, *end;
@@ -1317,7 +1317,7 @@ static void cmp_modify( ACT action, register REQ request)
 //		Build a request tree for a request.
 //  
 
-static void cmp_port( register POR port, register REQ request)
+static void cmp_port( register POR port, register GPRE_REQ request)
 {
 	REF reference;
 
@@ -1340,17 +1340,17 @@ static void cmp_port( register POR port, register REQ request)
 //		Compile a EXECUTE PROCEDURE request.  
 //  
 
-static void cmp_procedure( REQ request)
+static void cmp_procedure( GPRE_REQ request)
 {
 	ACT action;
 	POR port;
-	PRC procedure;
+	GPRE_PRC procedure;
 	REF reference;
 	LLS outputs, *list;
 	GPRE_NOD *ptr, *end, node;
 
 	action = request->req_actions;
-	procedure = (PRC) action->act_object;
+	procedure = (GPRE_PRC) action->act_object;
 
 //  Remember the order of the references.  The exec_proc blr verb
 //  requires parameters to be in parameter order which may be changed
@@ -1439,7 +1439,7 @@ static void cmp_procedure( REQ request)
 //       buffercount.
 //  
 
-static void cmp_ready( REQ request)
+static void cmp_ready( GPRE_REQ request)
 {
 	DBB db;
 	ACT action;
@@ -1546,7 +1546,7 @@ static void cmp_ready( REQ request)
 //		declared array subscript [i.e. C subscripts are zero based].
 //  
 
-static void cmp_sdl_fudge( REQ request, SLONG lower_bound)
+static void cmp_sdl_fudge( GPRE_REQ request, SLONG lower_bound)
 {
 
 	switch (sw_language) {
@@ -1576,7 +1576,7 @@ static void cmp_sdl_fudge( REQ request, SLONG lower_bound)
 //		otherwise FALSE.
 //  
 
-static BOOLEAN cmp_sdl_loop( REQ request, USHORT index, SLC slice, ARY array)
+static BOOLEAN cmp_sdl_loop( GPRE_REQ request, USHORT index, SLC slice, ARY array)
 {
 
 	slc::slc_repeat * ranges = slice->slc_rpt + index;
@@ -1604,7 +1604,7 @@ static BOOLEAN cmp_sdl_loop( REQ request, USHORT index, SLC slice, ARY array)
 //       form possible to the SDL string.
 //  
 
-static void cmp_sdl_number( REQ request, SLONG number)
+static void cmp_sdl_number( GPRE_REQ request, SLONG number)
 {
 
 	if ((number > -16) && (number < 15)) {
@@ -1629,7 +1629,7 @@ static void cmp_sdl_number( REQ request, SLONG number)
 //  
 
 static void cmp_sdl_subscript(
-							  REQ request, USHORT index, SLC slice, ARY array)
+							  GPRE_REQ request, USHORT index, SLC slice, ARY array)
 {
 
 	slc::slc_repeat * ranges = slice->slc_rpt + index;
@@ -1649,7 +1649,7 @@ static void cmp_sdl_subscript(
 //		Stuff a slice description language value.
 //  
 
-static void cmp_sdl_value( REQ request, GPRE_NOD node)
+static void cmp_sdl_value( GPRE_REQ request, GPRE_NOD node)
 {
 	REF reference;
 
@@ -1676,7 +1676,7 @@ static void cmp_sdl_value( REQ request, GPRE_NOD node)
 //		generate blr for set generator
 //  
 
-static void cmp_set_generator( REQ request)
+static void cmp_set_generator( GPRE_REQ request)
 {
 	SGEN setgen;
 	TEXT *string;
@@ -1716,7 +1716,7 @@ static void cmp_set_generator( REQ request)
 //  
 //  
 
-static void cmp_slice( REQ request)
+static void cmp_slice( GPRE_REQ request)
 {
 	SLC slice;
 	FLD field, element;
@@ -1776,7 +1776,7 @@ static void cmp_slice( REQ request)
 //		Generate blr for a store request.
 //  
 
-static void cmp_store( register REQ request)
+static void cmp_store( register GPRE_REQ request)
 {
 	register POR port;
 	register GPRE_NOD list, *ptr, *end;
@@ -1857,7 +1857,7 @@ static void expand_references( register REF reference)
 //		of field references.
 //  
 
-static POR make_port( register REQ request, register REF reference)
+static POR make_port( register GPRE_REQ request, register REF reference)
 {
 	register POR port;
 	FLD field;
@@ -1933,7 +1933,7 @@ static POR make_port( register REQ request, register REF reference)
 //		Make a receive node for a given port.
 //  
 
-static void make_receive( register POR port, register REQ request)
+static void make_receive( register POR port, register GPRE_REQ request)
 {
 
 	STUFF(blr_receive);
@@ -1946,7 +1946,7 @@ static void make_receive( register POR port, register REQ request)
 //		Make a receive node for a given port.
 //  
 
-static void make_send( register POR port, register REQ request)
+static void make_send( register POR port, register GPRE_REQ request)
 {
 
 	STUFF(blr_send);

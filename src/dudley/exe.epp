@@ -65,13 +65,13 @@ static void add_generator(SYM);
 static void add_global_field(FLD);
 static void add_index(DUDLEY_IDX);
 static void add_log_files(DBB);
-static void add_relation(REL);
+static void add_relation(DUDLEY_REL);
 static void add_security_class(SCL);
-static void add_trigger(TRG);
+static void add_trigger(DUDLEY_TRG);
 static void add_trigger_msg(TRGMSG);
 static void add_type(TYP);
 static void add_user_privilege(USERPRIV);
-static void add_view(REL);
+static void add_view(DUDLEY_REL);
 static void alloc_file_name(FIL *, UCHAR *);
 static FLD check_field(SYM, SYM);
 static BOOLEAN check_function(SYM);
@@ -85,10 +85,10 @@ static void drop_filter(FILTER);
 static void drop_function(FUNC);
 static void drop_global_field(FLD);
 static void drop_index(DUDLEY_IDX);
-static void drop_relation(REL);
+static void drop_relation(DUDLEY_REL);
 static void drop_security_class(SCL);
 static void drop_shadow(SLONG);
-static void drop_trigger(TRG);
+static void drop_trigger(DUDLEY_TRG);
 static void drop_trigger_msg(TRGMSG);
 static void drop_type(TYP);
 static void drop_user_privilege(USERPRIV);
@@ -99,7 +99,7 @@ static void get_log_names(SCHAR *, FIL *, SCHAR *, SLONG, SSHORT, SSHORT);
 static void get_log_names_serial(FIL *);
 static void get_relations(DBB);
 static USHORT get_prot_mask(TEXT *, TEXT *);
-static SYM get_symbol(enum sym_t, TEXT *, CTX);
+static SYM get_symbol(enum sym_t, TEXT *, DUDLEY_CTX);
 static void get_triggers(DBB);
 static void get_udfs(DBB);
 static void make_desc(DUDLEY_NOD, DSC *);
@@ -107,14 +107,14 @@ static int make_dtype(USHORT);
 static void modify_field(FLD);
 static void modify_global_field(FLD);
 static void modify_index(DUDLEY_IDX);
-static void modify_relation(REL);
-static void modify_trigger(TRG);
+static void modify_relation(DUDLEY_REL);
+static void modify_trigger(DUDLEY_TRG);
 static void modify_trigger_msg(TRGMSG);
 static void modify_type(TYP);
 static void move_symbol(SYM, register SCHAR *, SSHORT);
 static void set_generator(DUDLEY_NOD);
 static void store_acl(SCL, SLONG *);
-static void store_blr(DUDLEY_NOD, SLONG *, REL);
+static void store_blr(DUDLEY_NOD, SLONG *, DUDLEY_REL);
 static void store_query_header(DUDLEY_NOD, SLONG *);
 static void store_range(FLD);
 static void store_text(TXT, SLONG *);
@@ -557,15 +557,15 @@ void EXE_execute(void)
 				break;
 
 			case act_a_relation:
-				add_relation((REL) action->act_object);
+				add_relation((DUDLEY_REL) action->act_object);
 				break;
 
 			case act_m_relation:
-				modify_relation((REL) action->act_object);
+				modify_relation((DUDLEY_REL) action->act_object);
 				break;
 
 			case act_d_relation:
-				drop_relation((REL) action->act_object);
+				drop_relation((DUDLEY_REL) action->act_object);
 				break;
 
 			case act_a_security:
@@ -577,15 +577,15 @@ void EXE_execute(void)
 				break;
 
 			case act_a_trigger:
-				add_trigger((TRG) action->act_object);
+				add_trigger((DUDLEY_TRG) action->act_object);
 				break;
 
 			case act_m_trigger:
-				modify_trigger((TRG) action->act_object);
+				modify_trigger((DUDLEY_TRG) action->act_object);
 				break;
 
 			case act_d_trigger:
-				drop_trigger((TRG) action->act_object);
+				drop_trigger((DUDLEY_TRG) action->act_object);
 				break;
 
 			case act_a_trigger_msg:
@@ -892,7 +892,7 @@ void EXE_modify_database( DBB dbb)
 }
 
 
-int EXE_relation( REL relation)
+int EXE_relation( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -982,7 +982,7 @@ static void add_field( FLD field)
  *	Add a field to a relation.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	SYM source;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG *blob;
@@ -1541,7 +1541,7 @@ static void add_log_files( DBB dbb)
 }
 
 
-static void add_relation( REL relation)
+static void add_relation( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -1629,7 +1629,7 @@ static void add_security_class( SCL sec_class)
 }
 
 
-static void add_trigger( TRG trigger)
+static void add_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -1641,7 +1641,7 @@ static void add_trigger( TRG trigger)
  *	add a trigger for a relation in rdb$triggers.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 
 	relation = trigger->trg_relation;
 
@@ -1813,7 +1813,7 @@ static void add_user_privilege( USERPRIV upriv)
 }
 
 
-static void add_view( REL relation)
+static void add_view( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -1826,9 +1826,9 @@ static void add_view( REL relation)
  *
  **************************************/
 	FLD field;
-	REL target;
+	DUDLEY_REL target;
 	DUDLEY_NOD rse, *arg, contexts;
-	CTX context;
+	DUDLEY_CTX context;
 	USHORT i;
 
 	if (check_relation(relation->rel_name)) {
@@ -1865,7 +1865,7 @@ static void add_view( REL relation)
 		contexts = rse->nod_arg[s_rse_contexts];
 	for (i = 0, arg = contexts->nod_arg; i < contexts->nod_count; i++, arg++) {
 		STORE X IN RDB$VIEW_RELATIONS 
-            context = (CTX) (*arg)->nod_arg[0];
+            context = (DUDLEY_CTX) (*arg)->nod_arg[0];
 	        target = context->ctx_relation;
             MOVE_SYMBOL(relation->rel_name, X.RDB$VIEW_NAME);
             MOVE_SYMBOL(target->rel_name, X.RDB$RELATION_NAME);
@@ -2218,7 +2218,7 @@ static void drop_field( FLD field)
  *	erase the artificially named source field.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	USHORT error, if_any;
 
 	relation = field->fld_relation;
@@ -2423,7 +2423,7 @@ static void drop_index( DUDLEY_IDX index)
 }
 
 
-static void drop_relation( REL relation)
+static void drop_relation( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -2569,7 +2569,7 @@ static void drop_shadow( SLONG shadow_number)
 }
 
 
-static void drop_trigger( TRG trigger)
+static void drop_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -2878,7 +2878,7 @@ static void get_global_fields(void)
 	FOR X IN RDB$FIELDS 
         field = (FLD) DDL_alloc(FLD_LEN);
 	    field->fld_name = symbol =
-            get_symbol(SYM_global, X.RDB$FIELD_NAME, (CTX) field);
+            get_symbol(SYM_global, X.RDB$FIELD_NAME, (DUDLEY_CTX) field);
         HSH_insert(symbol);
         field->fld_dtype = X.RDB$FIELD_TYPE;
         field->fld_length = X.RDB$FIELD_LENGTH;
@@ -3024,16 +3024,16 @@ static void get_relations( DBB database)
  *	and their fields.
  *
  **************************************/
-	REL relation;
+	DUDLEY_REL relation;
 	FLD field;
 	SYM symbol;
 	USHORT l;
 	TEXT *p, *q;
 
 	FOR R IN RDB$RELATIONS 
-        relation = (REL) DDL_alloc(REL_LEN);
+        relation = (DUDLEY_REL) DDL_alloc(REL_LEN);
 	    relation->rel_name = symbol =
-            get_symbol(SYM_relation, R.RDB$RELATION_NAME, (CTX) relation);
+            get_symbol(SYM_relation, R.RDB$RELATION_NAME, (DUDLEY_CTX) relation);
         HSH_insert(symbol);
         relation->rel_database = database;
         relation->rel_next = database->dbb_relations;
@@ -3043,7 +3043,7 @@ static void get_relations( DBB database)
             RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME 
 
             field = (FLD) DDL_alloc(FLD_LEN);
-            field->fld_name = get_symbol(SYM_field, RFR.RDB$FIELD_NAME, (CTX) field);
+            field->fld_name = get_symbol(SYM_field, RFR.RDB$FIELD_NAME, (DUDLEY_CTX) field);
             HSH_insert(field->fld_name);
             field->fld_relation = relation;
             field->fld_next = relation->rel_fields;
@@ -3120,7 +3120,7 @@ static USHORT get_prot_mask( TEXT * relation, TEXT * field)
 }
 
 
-static SYM get_symbol( enum sym_t type, TEXT * string, CTX object)
+static SYM get_symbol( enum sym_t type, TEXT * string, DUDLEY_CTX object)
 {
 /**************************************
  *
@@ -3166,7 +3166,7 @@ static void get_triggers( DBB database)
  *	and their fields.
  *
  **************************************/
-	TRG trigger;
+	DUDLEY_TRG trigger;
 	SYM symbol, rel_name;
 	USHORT l;
 	TEXT *p, *q;
@@ -3174,17 +3174,17 @@ static void get_triggers( DBB database)
 	FOR T IN RDB$TRIGGERS WITH T.RDB$SYSTEM_FLAG MISSING OR 
         T.RDB$SYSTEM_FLAG = 0 
 
-        trigger = (TRG) DDL_alloc(TRG_LEN);
+        trigger = (DUDLEY_TRG) DDL_alloc(TRG_LEN);
 	    trigger->trg_name = symbol =
-            get_symbol(SYM_trigger, T.RDB$TRIGGER_NAME, (CTX) trigger);
+            get_symbol(SYM_trigger, T.RDB$TRIGGER_NAME, (DUDLEY_CTX) trigger);
         HSH_insert(symbol);
         rel_name =
             HSH_typed_lookup(T.RDB$RELATION_NAME, (USHORT) 0, SYM_relation);
         if (rel_name && rel_name->sym_object)
-            trigger->trg_relation = (REL) rel_name->sym_object;
+            trigger->trg_relation = (DUDLEY_REL) rel_name->sym_object;
         else
             trigger->trg_relation =
-                (REL) get_symbol(SYM_relation, T.RDB$RELATION_NAME, NULL);
+                (DUDLEY_REL) get_symbol(SYM_relation, T.RDB$RELATION_NAME, NULL);
         trigger->trg_type = (TRG_T) T.RDB$TRIGGER_TYPE;
         trigger->trg_inactive = T.RDB$TRIGGER_INACTIVE;
         trigger->trg_sequence = T.RDB$TRIGGER_SEQUENCE;
@@ -3214,7 +3214,7 @@ static void get_udfs( DBB dbb)
 		function = (FUNC) DDL_alloc(FUNC_LEN);
 	    function->func_database = dbb;
         function->func_name = symbol =
-            get_symbol(SYM_function, FUN.RDB$FUNCTION_NAME, (CTX) function);
+            get_symbol(SYM_function, FUN.RDB$FUNCTION_NAME, (DUDLEY_CTX) function);
         HSH_insert(symbol);
         function->func_return = arg = (FUNCARG) DDL_alloc(FUNCARG_LEN);
         arg->funcarg_dtype = ARG.RDB$FIELD_TYPE;
@@ -3241,9 +3241,9 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
  *
  **************************************/
 	FLD field;
-	REL relation;
+	DUDLEY_REL relation;
 	DSC desc1, desc2;
-	CTX context;
+	DUDLEY_CTX context;
 	CON constant;
 	FUNC function;
 	USHORT dtype;
@@ -3545,7 +3545,7 @@ static void modify_field( FLD field)
 	SYM name;
 	TEXT *p;
 	USHORT if_any;
-	REL relation;
+	DUDLEY_REL relation;
 
 	relation = field->fld_relation;
 	name = field->fld_name;
@@ -3751,7 +3751,7 @@ static void modify_index( DUDLEY_IDX index)
 }
 
 
-static void modify_relation( REL relation)
+static void modify_relation( DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -3804,7 +3804,7 @@ static void modify_relation( REL relation)
 }
 
 
-static void modify_trigger( TRG trigger)
+static void modify_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -3817,7 +3817,7 @@ static void modify_trigger( TRG trigger)
  *
  **************************************/
 	USHORT if_any;
-	REL relation;
+	DUDLEY_REL relation;
 	TEXT buffer[32], *p, *q;
 
 	if_any = FALSE;
@@ -4099,7 +4099,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 }
 
 
-static void store_blr( DUDLEY_NOD node, SLONG * blob_id, REL relation)
+static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 {
 /**************************************
  *

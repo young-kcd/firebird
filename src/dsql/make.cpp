@@ -274,7 +274,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 	DSC desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
 	MAP map;
-	CTX context;
+	DSQL_CTX context;
 	DSQL_REL relation;
 	UDF udf;
 	FLD field;
@@ -856,7 +856,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 
 	case nod_dbkey:
 		/* Fix for bug 10072 check that the target is a relation */
-		context = (CTX) node->nod_arg[0]->nod_arg[0];
+		context = (DSQL_CTX) node->nod_arg[0]->nod_arg[0];
         relation = context->ctx_relation;
 		if (relation != 0) {
 			desc->dsc_dtype = dtype_text;
@@ -1256,7 +1256,7 @@ void MAKE_desc_from_list( DSC * desc, DSQL_NOD node)
 }
 
 
-DSQL_NOD MAKE_field(CTX context, FLD field, DSQL_NOD indices)
+DSQL_NOD MAKE_field(DSQL_CTX context, FLD field, DSQL_NOD indices)
 {
 /**************************************
  *
@@ -1433,7 +1433,7 @@ STR MAKE_string(CONST UCHAR * str, int length)
 
 
 SYM MAKE_symbol(DBB database,
-				CONST TEXT * name, USHORT length, SYM_TYPE type, REQ object)
+				CONST TEXT * name, USHORT length, SYM_TYPE type, DSQL_REQ object)
 {
 /**************************************
  *

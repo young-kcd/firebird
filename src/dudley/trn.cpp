@@ -35,7 +35,7 @@
 #include "../jrd/gdsassert.h"
 
 static void add_dimensions(STR, FLD);
-static void add_field(STR, FLD, REL);
+static void add_field(STR, FLD, DUDLEY_REL);
 static void add_files(STR, FIL, DBB);
 static void add_filter(STR, FILTER);
 static void add_function(STR, FUNC);
@@ -43,33 +43,33 @@ static void add_function_arg(STR, FUNCARG);
 static void add_generator(STR, SYM);
 static void add_global_field(STR, FLD);
 static void add_index(STR, DUDLEY_IDX);
-static void add_relation(STR, REL);
+static void add_relation(STR, DUDLEY_REL);
 static void add_security_class(STR, SCL);
-static void add_trigger(STR, TRG);
+static void add_trigger(STR, DUDLEY_TRG);
 static void add_trigger_msg(STR, TRGMSG);
-static void add_view(STR, REL);
+static void add_view(STR, DUDLEY_REL);
 static void drop_field(STR, FLD);
 static void drop_filter(STR, FILTER);
 static void drop_function(STR, FUNC);
 static void drop_global_field(STR, FLD);
 static void drop_index(STR, DUDLEY_IDX);
-static void drop_relation(STR, REL);
+static void drop_relation(STR, DUDLEY_REL);
 static void drop_security_class(STR, SCL);
 static void drop_shadow(STR, SLONG);
-static void drop_trigger(STR, TRG);
+static void drop_trigger(STR, DUDLEY_TRG);
 static void drop_trigger_msg(STR, TRGMSG);
 static int gen_dyn_c(int *, int, SCHAR *);
 static int gen_dyn_cxx(int *, int, SCHAR *);
 static int gen_dyn_pas(int *, int, SCHAR *);
 static void modify_database(STR, DBB);
-static void modify_field(STR, FLD, REL);
+static void modify_field(STR, FLD, DUDLEY_REL);
 static void modify_global_field(STR, FLD);
 static void modify_index(STR, DUDLEY_IDX);
-static void modify_relation(STR, REL);
-static void modify_trigger(STR, TRG);
+static void modify_relation(STR, DUDLEY_REL);
+static void modify_trigger(STR, DUDLEY_TRG);
 static void modify_trigger_msg(STR, TRGMSG);
 static void put_acl(STR, UCHAR, SCL);
-static void put_blr(STR, UCHAR, REL, DUDLEY_NOD);
+static void put_blr(STR, UCHAR, DUDLEY_REL, DUDLEY_NOD);
 static void put_number(STR, TEXT, SSHORT);
 static void put_query_header(STR, TEXT, DUDLEY_NOD);
 static void put_symbol(STR, TEXT, SYM);
@@ -141,15 +141,15 @@ void TRN_translate(void)
 				break;
 
 			case act_a_relation:
-				add_relation(dyn, (REL) action->act_object);
+				add_relation(dyn, (DUDLEY_REL) action->act_object);
 				break;
 
 			case act_m_relation:
-				modify_relation(dyn, (REL) action->act_object);
+				modify_relation(dyn, (DUDLEY_REL) action->act_object);
 				break;
 
 			case act_d_relation:
-				drop_relation(dyn, (REL) action->act_object);
+				drop_relation(dyn, (DUDLEY_REL) action->act_object);
 				break;
 
 			case act_a_field:
@@ -221,15 +221,15 @@ void TRN_translate(void)
 				break;
 
 			case act_a_trigger:
-				add_trigger(dyn, (TRG) action->act_object);
+				add_trigger(dyn, (DUDLEY_TRG) action->act_object);
 				break;
 
 			case act_d_trigger:
-				drop_trigger(dyn, (TRG) action->act_object);
+				drop_trigger(dyn, (DUDLEY_TRG) action->act_object);
 				break;
 
 			case act_m_trigger:
-				modify_trigger(dyn, (TRG) action->act_object);
+				modify_trigger(dyn, (DUDLEY_TRG) action->act_object);
 				break;
 
 			case act_a_trigger_msg:
@@ -383,7 +383,7 @@ static void add_dimensions( STR dyn, FLD field)
 }
 
 
-static void add_field( STR dyn, FLD field, REL view)
+static void add_field( STR dyn, FLD field, DUDLEY_REL view)
 {
 /**************************************
  *
@@ -397,7 +397,7 @@ static void add_field( STR dyn, FLD field, REL view)
  *
  **************************************/
 	SYM name, symbol;
-	REL relation;
+	DUDLEY_REL relation;
 	FLD source_field;
 	int n;
 
@@ -682,7 +682,7 @@ static void add_index( STR dyn, DUDLEY_IDX index)
 }
 
 
-static void add_relation( STR dyn, REL relation)
+static void add_relation( STR dyn, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -736,7 +736,7 @@ static void add_security_class( STR dyn, SCL class_)
 }
 
 
-static void add_trigger( STR dyn, TRG trigger)
+static void add_trigger( STR dyn, DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -749,7 +749,7 @@ static void add_trigger( STR dyn, TRG trigger)
  *
  **************************************/
 	SYM name;
-	REL relation;
+	DUDLEY_REL relation;
 
 	relation = trigger->trg_relation;
 	name = trigger->trg_name;
@@ -790,7 +790,7 @@ static void add_trigger_msg( STR dyn, TRGMSG trigmsg)
 }
 
 
-static void add_view( STR dyn, REL relation)
+static void add_view( STR dyn, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -803,7 +803,7 @@ static void add_view( STR dyn, REL relation)
  *
  **************************************/
 	FLD field;
-	CTX context;
+	DUDLEY_CTX context;
 	DUDLEY_NOD *arg, contexts;
 	SSHORT i;
 
@@ -817,7 +817,7 @@ static void add_view( STR dyn, REL relation)
 
 	contexts = relation->rel_rse->nod_arg[s_rse_contexts];
 	for (i = 0, arg = contexts->nod_arg; i < contexts->nod_count; i++, arg++) {
-		context = (CTX) (*arg)->nod_arg[0];
+		context = (DUDLEY_CTX) (*arg)->nod_arg[0];
 		put_symbol(dyn, gds_dyn_view_relation,
 				   context->ctx_relation->rel_name);
 		put_number(dyn, gds_dyn_view_context, context->ctx_context_id);
@@ -895,7 +895,7 @@ static void drop_field( STR dyn, FLD field)
  *
  **************************************/
 	SYM name, symbol;
-	REL relation;
+	DUDLEY_REL relation;
 
 	name = field->fld_name;
 	relation = field->fld_relation;
@@ -993,7 +993,7 @@ static void drop_index( STR dyn, DUDLEY_IDX index)
 }
 
 
-static void drop_relation( STR dyn, REL relation)
+static void drop_relation( STR dyn, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -1050,7 +1050,7 @@ static void drop_shadow( STR dyn, SLONG shadow_number)
 }
 
 
-static void drop_trigger( STR dyn, TRG trigger)
+static void drop_trigger( STR dyn, DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -1063,7 +1063,7 @@ static void drop_trigger( STR dyn, TRG trigger)
  *
  **************************************/
 	SYM name, symbol;
-	REL relation;
+	DUDLEY_REL relation;
 	USHORT dtype;
 	int n;
 
@@ -1212,7 +1212,7 @@ static void modify_database( STR dyn, DBB database)
 }
 
 
-static void modify_field( STR dyn, FLD field, REL view)
+static void modify_field( STR dyn, FLD field, DUDLEY_REL view)
 {
 /**************************************
  *
@@ -1226,7 +1226,7 @@ static void modify_field( STR dyn, FLD field, REL view)
  *
  **************************************/
 	SYM name, symbol;
-	REL relation;
+	DUDLEY_REL relation;
 	FLD source_field;
 	int n;
 
@@ -1433,7 +1433,7 @@ static void modify_index( STR dyn, DUDLEY_IDX index)
 }
 
 
-static void modify_relation( STR dyn, REL relation)
+static void modify_relation( STR dyn, DUDLEY_REL relation)
 {
 /**************************************
  *
@@ -1478,7 +1478,7 @@ static void modify_relation( STR dyn, REL relation)
 }
 
 
-static void modify_trigger( STR dyn, TRG trigger)
+static void modify_trigger( STR dyn, DUDLEY_TRG trigger)
 {
 /**************************************
  *
@@ -1491,7 +1491,7 @@ static void modify_trigger( STR dyn, TRG trigger)
  *
  **************************************/
 	SYM name, symbol;
-	REL relation;
+	DUDLEY_REL relation;
 	USHORT dtype;
 	int n;
 
@@ -1569,7 +1569,7 @@ static void put_acl( STR dyn, UCHAR attribute, SCL class_)
 }
 
 
-static void put_blr( STR dyn, UCHAR attribute, REL relation, DUDLEY_NOD node)
+static void put_blr( STR dyn, UCHAR attribute, DUDLEY_REL relation, DUDLEY_NOD node)
 {
 /**************************************
  *

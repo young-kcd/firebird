@@ -88,10 +88,10 @@ static CONST UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_target_type, 1, BLOB_blr
 };
 
-static void check_array(REQ, SCHAR *, FLD);
+static void check_array(DSQL_REQ, SCHAR *, FLD);
 static void convert_dtype(FLD, SSHORT);
 static void	free_function (UDF);
-static void free_procedure(PRC);
+static void free_procedure(DSQL_PRC);
 static void free_relation(DSQL_REL);
 static TEXT *metd_exact_name(TEXT *);
 
@@ -113,7 +113,7 @@ static USHORT rec_mutex_inited = 0;
 #define METD_REC_UNLOCK
 #endif
 
-void METD_drop_function (REQ request, STR name)
+void METD_drop_function (DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -164,7 +164,7 @@ void METD_drop_function (REQ request, STR name)
 }
 
 
-void METD_drop_procedure( REQ request, STR name)
+void METD_drop_procedure( DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -182,7 +182,7 @@ void METD_drop_procedure( REQ request, STR name)
  *	accessing it.
  *
  **************************************/
-	PRC procedure;
+	DSQL_PRC procedure;
 	SYM symbol;
 
 	METD_REC_LOCK;
@@ -193,12 +193,12 @@ void METD_drop_procedure( REQ request, STR name)
 						 name->str_length, SYM_procedure, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_procedure) &&
-			((procedure = (PRC) symbol->sym_object) &&
+			((procedure = (DSQL_PRC) symbol->sym_object) &&
 			 (!(procedure->prc_flags & PRC_dropped))))
 			break;
 
 	if (symbol) {
-		procedure = (PRC) symbol->sym_object;
+		procedure = (DSQL_PRC) symbol->sym_object;
 		procedure->prc_flags |= PRC_dropped;
 	}
 
@@ -211,7 +211,7 @@ void METD_drop_procedure( REQ request, STR name)
 }
 
 
-void METD_drop_relation( REQ request, STR name)
+void METD_drop_relation( DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -259,7 +259,7 @@ void METD_drop_relation( REQ request, STR name)
 }
 
 
-INTLSYM METD_get_collation(REQ request, STR name)
+INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -339,7 +339,7 @@ INTLSYM METD_get_collation(REQ request, STR name)
 }
 
 
-void METD_get_col_default(REQ request,
+void METD_get_col_default(DSQL_REQ request,
 						  TEXT * for_rel_name,
 						  TEXT * for_col_name,
 						  BOOLEAN * has_default,
@@ -459,7 +459,7 @@ TEXT * buffer, USHORT buff_length)
 }
 
 
-INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
+INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, UCHAR * name)
 {
 /**************************************
  *
@@ -544,7 +544,7 @@ INTLSYM METD_get_charset(REQ request, USHORT length, UCHAR * name)
 }
 
 
-USHORT METD_get_charset_bpc (REQ request,
+USHORT METD_get_charset_bpc (DSQL_REQ request,
                              SSHORT	charset_id)
 {
 /**************************************
@@ -602,7 +602,7 @@ USHORT METD_get_charset_bpc (REQ request,
     return bpc;
 }
 
-STR METD_get_default_charset(REQ request)
+STR METD_get_default_charset(DSQL_REQ request)
 {
 /**************************************
  *
@@ -678,7 +678,7 @@ THREAD_EXIT;
 }
 
 
-USHORT METD_get_domain(REQ request, FLD field, UCHAR * name)
+USHORT METD_get_domain(DSQL_REQ request, FLD field, UCHAR * name)
 {
 /**************************************
  *
@@ -741,7 +741,7 @@ USHORT METD_get_domain(REQ request, FLD field, UCHAR * name)
 }
 
 
-void METD_get_domain_default(REQ request,
+void METD_get_domain_default(DSQL_REQ request,
 							 TEXT * domain_name,
 							 BOOLEAN * has_default,
 							 TEXT * buffer, USHORT buff_length)
@@ -848,7 +848,7 @@ void METD_get_domain_default(REQ request,
 }
 
 
-UDF METD_get_function(REQ request, STR name)
+UDF METD_get_function(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -1106,7 +1106,7 @@ UDF METD_get_function(REQ request, STR name)
 }
 
 
-DSQL_NOD METD_get_primary_key(REQ request, STR relation_name)
+DSQL_NOD METD_get_primary_key(DSQL_REQ request, STR relation_name)
 {
 /**************************************
  *
@@ -1167,7 +1167,7 @@ DSQL_NOD METD_get_primary_key(REQ request, STR relation_name)
 }
 
 
-PRC METD_get_procedure(REQ request, STR name)
+DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -1184,7 +1184,7 @@ PRC METD_get_procedure(REQ request, STR name)
 	SLONG *DB, *gds_trans;
 	DBB dbb;
 	FLD parameter, *ptr;
-	PRC procedure, temp;
+	DSQL_PRC procedure, temp;
 	SYM symbol;
 	SSHORT type, count;
 
@@ -1197,10 +1197,10 @@ PRC METD_get_procedure(REQ request, STR name)
 						 name->str_length, SYM_procedure, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_procedure) &&
-			((procedure = (PRC) symbol->sym_object) &&
+			((procedure = (DSQL_PRC) symbol->sym_object) &&
 			 (!(procedure->prc_flags & PRC_dropped)))) {
 			METD_REC_UNLOCK;
-			return (PRC) symbol->sym_object;
+			return (DSQL_PRC) symbol->sym_object;
 		}
 
 /* see if the procedure is the one currently being defined in this request */
@@ -1327,13 +1327,13 @@ PRC METD_get_procedure(REQ request, STR name)
 						 name->str_length, SYM_procedure, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_procedure) &&
-			((temp = (PRC) symbol->sym_object) &&
+			((temp = (DSQL_PRC) symbol->sym_object) &&
 			 (!(temp->prc_flags & PRC_dropped)))) {
 			/* Get rid of all the stuff we just read in. Use existing one */
 
 			free_procedure(procedure);
 			METD_REC_UNLOCK;
-			return (PRC) symbol->sym_object;
+			return (DSQL_PRC) symbol->sym_object;
 		}
 
 
@@ -1360,7 +1360,7 @@ PRC METD_get_procedure(REQ request, STR name)
 }
 
 
-DSQL_REL METD_get_relation(REQ request, STR name)
+DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -1632,7 +1632,7 @@ DSQL_REL METD_get_relation(REQ request, STR name)
 }
 
 
-STR METD_get_trigger_relation(REQ request, STR name, USHORT * trig_type)
+STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT * trig_type)
 {
 /**************************************
  *
@@ -1677,7 +1677,7 @@ STR METD_get_trigger_relation(REQ request, STR name, USHORT * trig_type)
 }
 
 
-USHORT METD_get_type(REQ request, STR name, UCHAR * field, SSHORT * value)
+USHORT METD_get_type(DSQL_REQ request, STR name, UCHAR * field, SSHORT * value)
 {
 /**************************************
  *
@@ -1722,7 +1722,7 @@ USHORT METD_get_type(REQ request, STR name, UCHAR * field, SSHORT * value)
 }
 
 
-DSQL_REL METD_get_view_relation(REQ request,
+DSQL_REL METD_get_view_relation(DSQL_REQ request,
 								UCHAR * view_name,
 								UCHAR * relation_or_alias, USHORT level)
 {
@@ -1785,7 +1785,7 @@ DSQL_REL METD_get_view_relation(REQ request,
 }
 
 
-static void check_array( REQ request, TEXT * field_name, FLD field)
+static void check_array( DSQL_REQ request, TEXT * field_name, FLD field)
 {
 /**************************************
  *
@@ -1899,7 +1899,7 @@ static void free_function (UDF udf)
     delete udf;
 }
 
-static void free_procedure( PRC procedure)
+static void free_procedure( DSQL_PRC procedure)
 {
 /**************************************
  *

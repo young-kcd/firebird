@@ -357,7 +357,7 @@ void HSHD_set_flag(
 	SYM symbol, homonym;
 	SSHORT h;
 	DSQL_REL sym_rel;
-	PRC sym_prc;
+	DSQL_PRC sym_prc;
 
 
 /* as of now, there's no work to do if there is no database or if
@@ -397,7 +397,7 @@ void HSHD_set_flag(
 						break;
 
 					case SYM_procedure:
-						sym_prc = (PRC) homonym->sym_object;
+						sym_prc = (DSQL_PRC) homonym->sym_object;
 						sym_prc->prc_flags |= flag;
 						break;
 					}

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.5 2002-11-03 22:26:52 tamlin Exp $
+//	$Id: int.cpp,v 1.6 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -43,7 +43,7 @@ static void asgn_from(REF, int);
 static void asgn_to(REF);
 static void gen_at_end(ACT, int);
 static int gen_blr(int *, int, TEXT *);
-static void gen_compile(REQ, int);
+static void gen_compile(GPRE_REQ, int);
 static void gen_database(ACT, int);
 static void gen_emodify(ACT, int);
 static void gen_estore(ACT, int);
@@ -51,15 +51,15 @@ static void gen_endfor(ACT, int);
 static void gen_erase(ACT, int);
 static void gen_for(ACT, int);
 static TEXT* gen_name(TEXT*, const REF);
-static void gen_raw(REQ);
-static void gen_receive(REQ, POR);
-static void gen_request(REQ);
+static void gen_raw(GPRE_REQ);
+static void gen_receive(GPRE_REQ, POR);
+static void gen_request(GPRE_REQ);
 static void gen_routine(ACT, int);
 static void gen_s_end(ACT, int);
 static void gen_s_fetch(ACT, int);
 static void gen_s_start(ACT, int);
-static void gen_send(REQ, POR, int);
-static void gen_start(REQ, POR, int);
+static void gen_send(GPRE_REQ, POR, int);
+static void gen_start(GPRE_REQ, POR, int);
 static void gen_type(ACT, int);
 static void gen_variable(ACT, int);
 static void make_port(POR, int);
@@ -278,7 +278,7 @@ static void asgn_to( REF reference)
 
 static void gen_at_end( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	TEXT s[20];
 
 	request = action->act_request;
@@ -305,7 +305,7 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 //		Generate text to compile a request.
 //  
 
-static void gen_compile( REQ request, int column)
+static void gen_compile( GPRE_REQ request, int column)
 {
 	DBB db;
 	SYM symbol;
@@ -328,7 +328,7 @@ static void gen_compile( REQ request, int column)
 
 static void gen_database( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	if (first_flag++ != 0)
 		return;
@@ -408,7 +408,7 @@ static void gen_emodify( ACT action, int column)
 
 static void gen_estore( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	align(column);
@@ -424,7 +424,7 @@ static void gen_estore( ACT action, int column)
 
 static void gen_endfor( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	column += INDENT;
@@ -457,7 +457,7 @@ static void gen_erase( ACT action, int column)
 
 static void gen_for( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	TEXT s[20];
 
 	gen_s_start(action, column);
@@ -495,7 +495,7 @@ static TEXT* gen_name(TEXT* string, const REF reference)
 //		Generate BLR in raw, numeric form.  Ugly but dense.
 //  
 
-static void gen_raw( REQ request)
+static void gen_raw( GPRE_REQ request)
 {
 	UCHAR *blr, c;
 	TEXT buffer[80], *p;
@@ -530,11 +530,11 @@ static void gen_raw( REQ request)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_receive( REQ request, POR port)
+static void gen_receive( GPRE_REQ request, POR port)
 {
 
 	ib_fprintf(out_file,
-			   "EXE_receive (tdbb, (REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
+			   "EXE_receive (tdbb, (JRD_REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
@@ -545,7 +545,7 @@ static void gen_receive( REQ request, POR port)
 //		Generate definitions associated with a single request.
 //  
 
-static void gen_request( REQ request)
+static void gen_request( GPRE_REQ request)
 {
 
 	if (!(request->req_flags & REQ_exp_hand))
@@ -574,10 +574,10 @@ static void gen_request( REQ request)
 
 static void gen_routine( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 
-	for (request = (REQ) action->act_object; request;
+	for (request = (GPRE_REQ) action->act_object; request;
 		 request = request->req_routine) for (port = request->req_ports; port;
 											  port = port->por_next)
 			make_port(port, column + INDENT);
@@ -591,7 +591,7 @@ static void gen_routine( ACT action, int column)
 
 static void gen_s_end( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	printa(column, "EXE_unwind (tdbb, %s);", request->req_handle);
@@ -605,7 +605,7 @@ static void gen_s_end( ACT action, int column)
 
 static void gen_s_fetch( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 
 	request = action->act_request;
 	if (request->req_sync)
@@ -623,7 +623,7 @@ static void gen_s_fetch( ACT action, int column)
 
 static void gen_s_start( ACT action, int column)
 {
-	REQ request;
+	GPRE_REQ request;
 	POR port;
 
 	request = action->act_request;
@@ -641,10 +641,10 @@ static void gen_s_start( ACT action, int column)
 //		Generate a send or receive call for a port.
 //  
 
-static void gen_send( REQ request, POR port, int column)
+static void gen_send( GPRE_REQ request, POR port, int column)
 {
 	align(column);
-	ib_fprintf(out_file, "EXE_send (tdbb, (REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
+	ib_fprintf(out_file, "EXE_send (tdbb, (JRD_REQ)%s, %d, %d, (UCHAR*)&jrd_%d);",
 			   request->req_handle,
 			   port->por_msg_number, port->por_length, port->por_ident);
 }
@@ -655,11 +655,11 @@ static void gen_send( REQ request, POR port, int column)
 //		Generate a START.
 //  
 
-static void gen_start( REQ request, POR port, int column)
+static void gen_start( GPRE_REQ request, POR port, int column)
 {
 	align(column);
 
-	ib_fprintf(out_file, "EXE_start (tdbb, (REQ)%s, %s);",
+	ib_fprintf(out_file, "EXE_start (tdbb, (JRD_REQ)%s, %s);",
 			   request->req_handle, request->req_trans);
 
 	if (port)

@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.4 2002-11-11 19:19:43 hippoman Exp $
+//	$Id: jrdmet.cpp,v 1.5 2002-11-17 00:04:18 hippoman Exp $
 //
 
 #include "firebird.h"
@@ -61,7 +61,7 @@ extern "C" {
 
 void JRDMET_init( DBB db)
 {
-	REL relation;
+	GPRE_REL relation;
 	SYM symbol;
 	FLD field;
 	TYP type;
@@ -74,14 +74,14 @@ void JRDMET_init( DBB db)
 	relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
-		relation = (REL) ALLOC(REL_LEN);
+		relation = (GPRE_REL) ALLOC(REL_LEN);
 		relation->rel_database = db;
 		relation->rel_next = db->dbb_relations;
 		relation->rel_id = relfld[RFLD_R_ID];
 		db->dbb_relations = relation;
 		relation->rel_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_relation;
-		symbol->sym_object = (CTX) relation;
+		symbol->sym_object = (GPRE_CTX) relation;
 
 #pragma FB_COMPILER_MESSAGE("FIXFIX! const_cast")
 
@@ -128,14 +128,14 @@ void JRDMET_init( DBB db)
 
 			field->fld_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 			symbol->sym_type = SYM_field;
-			symbol->sym_object = (CTX) field;
+			symbol->sym_object = (GPRE_CTX) field;
 			symbol->sym_string =
 				const_cast < char *>(names[fld[RFLD_F_NAME]]);
 			HSH_insert(symbol);
 
 			field->fld_global = symbol = (SYM) ALLOC(SYM_LEN);
 			symbol->sym_type = SYM_field;
-			symbol->sym_object = (CTX) field;
+			symbol->sym_object = (GPRE_CTX) field;
 			symbol->sym_string =
 				const_cast < char *>(names[gfield->gfld_name]);
 		}
@@ -147,7 +147,7 @@ void JRDMET_init( DBB db)
 		type->typ_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 		type->typ_value = rtype->rtyp_value;
 		symbol->sym_type = SYM_type;
-		symbol->sym_object = (CTX) type;
+		symbol->sym_object = (GPRE_CTX) type;
 		symbol->sym_string = const_cast < char *>(rtype->rtyp_name);
 		HSH_insert(symbol);
 	}
