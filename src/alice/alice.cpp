@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.67 2004-07-02 10:02:46 brodsom Exp $
+//	$Id: alice.cpp,v 1.68 2004-07-03 02:32:32 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -200,7 +200,7 @@ int common_main(int			argc,
 	}
 
 	AliceGlobals::putSpecific(tdgbl);
-	SVC_PUTSPECIFIC_DATA;
+//	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdgbl, 0, sizeof(AliceGlobals));
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;

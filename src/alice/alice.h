@@ -195,7 +195,7 @@ public:
 		return (AliceGlobals*) thdd::getSpecific();
 	}
 	static inline void putSpecific(AliceGlobals* tdgbl) {
-		((thdd*)tdgbl)->thdd_type = THDD_TYPE_TALICE;
+		tdgbl->thdd_type = THDD_TYPE_TALICE;
 		((thdd*)tdgbl)->putSpecific();
 	}
 	static inline void restoreSpecific() {

@@ -57,90 +57,93 @@ const int NAME_LEN		= 33;
 #include "../jrd/svc_proto.h"
 
 struct internal_user_data {
-    int		operation;		/* what's to be done */
-    TEXT	user_name [USER_NAME_LEN];	/* the user's name */
-    bool	user_name_entered;	/* user name entered flag */
-    int		uid;			/* the user's id */
-    bool	uid_entered;		/* UID entered flag */
-    bool	uid_specified;		/* UID specified flag */
-    int		gid;			/* the user's group id */
-    bool	gid_entered;		/* GID entered flag */
-    bool	gid_specified;		/* GID specified flag */
-    TEXT	sys_user_name [ALT_NAME_LEN];	/* the sys_user's name */
-    bool	sys_user_entered;	/* sys_user entered flag */
-    bool	sys_user_specified;	/* sys_user specified flag */
-    TEXT	group_name [ALT_NAME_LEN];	/* the group name */
-    bool	group_name_entered;	/* group_name entered flag */
-    bool	group_name_specified;	/* group_name specified flag */
-    TEXT	password [NAME_LEN];		/* the user's password */
-    bool	password_entered;	/* password entered flag */
-    bool	password_specified;	/* password specified flag */
-    TEXT	first_name [NAME_LEN];	/* the user's first name */
-    bool	first_name_entered;	/* first name entered flag */
-    bool	first_name_specified;	/* first name specified flag */
-    TEXT	middle_name [NAME_LEN];	/* the user's middle name */
-    bool	middle_name_entered;	/* middle name entered flag */
-    bool	middle_name_specified;	/* middle name specified flag */
-    TEXT	last_name [NAME_LEN];		/* the user's last name */
-    bool	last_name_entered;	/* last name entered flag */
-    bool	last_name_specified;	/* last name specified flag */
-    TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
-    bool	dba_user_name_entered;	/* user name entered flag */
-    bool	dba_user_name_specified;/* database specified flag */
-    TEXT	dba_password [NAME_LEN];	/* the user's name */
-    bool	dba_password_entered;	/* user name entered flag */
-    bool	dba_password_specified;	/* database specified flag */
-    TEXT	sql_role_name [NAME_LEN];	/* the user's name */
-    bool	sql_role_name_entered;	/* user name entered flag */
-    bool	sql_role_name_specified;/* database specified flag */
-    TEXT	database_name [512];	/* database pathname */
-    bool	database_entered;	/* database entered flag */
-    bool	database_specified;	/* database specified flag */
+	int		operation;		/* what's to be done */
+	TEXT	user_name [USER_NAME_LEN];	/* the user's name */
+	bool	user_name_entered;	/* user name entered flag */
+	int		uid;			/* the user's id */
+	bool	uid_entered;		/* UID entered flag */
+	bool	uid_specified;		/* UID specified flag */
+	int		gid;			/* the user's group id */
+	bool	gid_entered;		/* GID entered flag */
+	bool	gid_specified;		/* GID specified flag */
+	TEXT	sys_user_name [ALT_NAME_LEN];	/* the sys_user's name */
+	bool	sys_user_entered;	/* sys_user entered flag */
+	bool	sys_user_specified;	/* sys_user specified flag */
+	TEXT	group_name [ALT_NAME_LEN];	/* the group name */
+	bool	group_name_entered;	/* group_name entered flag */
+	bool	group_name_specified;	/* group_name specified flag */
+	TEXT	password [NAME_LEN];		/* the user's password */
+	bool	password_entered;	/* password entered flag */
+	bool	password_specified;	/* password specified flag */
+	TEXT	first_name [NAME_LEN];	/* the user's first name */
+	bool	first_name_entered;	/* first name entered flag */
+	bool	first_name_specified;	/* first name specified flag */
+	TEXT	middle_name [NAME_LEN];	/* the user's middle name */
+	bool	middle_name_entered;	/* middle name entered flag */
+	bool	middle_name_specified;	/* middle name specified flag */
+	TEXT	last_name [NAME_LEN];		/* the user's last name */
+	bool	last_name_entered;	/* last name entered flag */
+	bool	last_name_specified;	/* last name specified flag */
+	TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
+	bool	dba_user_name_entered;	/* user name entered flag */
+	bool	dba_user_name_specified;/* database specified flag */
+	TEXT	dba_password [NAME_LEN];	/* the user's name */
+	bool	dba_password_entered;	/* user name entered flag */
+	bool	dba_password_specified;	/* database specified flag */
+	TEXT	sql_role_name [NAME_LEN];	/* the user's name */
+	bool	sql_role_name_entered;	/* user name entered flag */
+	bool	sql_role_name_specified;/* database specified flag */
+	TEXT	database_name [512];	/* database pathname */
+	bool	database_entered;	/* database entered flag */
+	bool	database_specified;	/* database specified flag */
 
 };
+
+#ifndef SUPERSERVER
+class tsec;
+extern tsec* gdsec;
+#endif
 
 class tsec : public thdd 
 {
 public:
-    internal_user_data*	tsec_user_data;
-    int					tsec_exit_code;
-    jmp_buf*			tsec_env;
-    ISC_STATUS*			tsec_status;
-    ISC_STATUS_ARRAY	tsec_status_vector;
-    bool				tsec_interactive;
-    bool				tsec_sw_version;
-    bool				tsec_service_gsec;
-    bool				tsec_service_thd;
+	internal_user_data*	tsec_user_data;
+	int					tsec_exit_code;
+	jmp_buf*			tsec_env;
+	ISC_STATUS*			tsec_status;
+	ISC_STATUS_ARRAY	tsec_status_vector;
+	bool				tsec_interactive;
+	bool				tsec_sw_version;
+	bool				tsec_service_gsec;
+	bool				tsec_service_thd;
 	Jrd::pfn_svc_output	tsec_output_proc;
-    Jrd::Service*		tsec_output_data;
-    FILE*				tsec_output_file;
-    Jrd::Service*		tsec_service_blk;
+	Jrd::Service*		tsec_output_data;
+	FILE*				tsec_output_file;
+	Jrd::Service*		tsec_service_blk;
+#ifdef SUPERSERVER
+	static inline tsec* getSpecific() {
+		return (tsec*) thdd::getSpecific();
+	}
+	static inline void putSpecific(tsec* tdsec) {
+		tdsec->thdd_type = THDD_TYPE_TSEC;
+		((thdd*)tdsec)->putSpecific();
+	}
+	static inline void restoreSpecific() {
+		thdd::restoreSpecific();
+	}
+#else
+	static inline tsec* getSpecific() {
+		return gdsec;
+	}
+	static inline void putSpecific(tsec* tdsec) {
+		tdsec->thdd_type = THDD_TYPE_TSEC;
+		gdsec = tdsec;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 };
 
-#ifdef SUPERSERVER
-inline tsec* GSEC_get_thread_data() {
-	return (tsec*) thdd::getSpecific();
-}
-inline void GSEC_set_thread_data(tsec* tdsec) {
-	tdsec->thdd_type = THDD_TYPE_TSEC;
-	tdsec->putSpecific();
-}
-inline void GSEC_restore_thread_data() {
-	thdd::restoreSpecific();
-}
-#else
-extern tsec* gdsec;
-
-inline tsec* GSEC_get_thread_data() {
-	return gdsec;
-}
-inline void GSEC_set_thread_data(tsec* tdsec) {
-	tdsec->thdd_type = THDD_TYPE_TSEC;
-	gdsec = tdsec;
-}
-inline void GSEC_restore_thread_data() {
-}
-#endif
 
 
 const USHORT GsecMsg0	= 0;	/* empty message */

@@ -896,9 +896,9 @@ public:
 	static inline BurpGlobals* getSpecific() {
 		return (BurpGlobals*) thdd::getSpecific();
 	}
-	static inline void setSpecific(BurpGlobals* tdgbl) {
+	static inline void putSpecific(BurpGlobals* tdgbl) {
 		tdgbl->thdd_type = THDD_TYPE_TGBL;
-		tdgbl->putSpecific();
+		((thdd*)tdgbl)->putSpecific();
 	}
 	static inline void restoreSpecific() {
 		thdd::restoreSpecific();
@@ -907,7 +907,7 @@ public:
 	static inline BurpGlobals* getSpecific() {
 		return gdgbl;
 	}
-	static inline void setSpecific(BurpGlobals* tdgbl) {
+	static inline void putSpecific(BurpGlobals* tdgbl) {
 		gdgbl = tdgbl;
 		tdgbl->thdd_type = THDD_TYPE_TGBL;
 	}

@@ -362,7 +362,7 @@ static int api_gbak(int argc,
  **********************************************/
 	BurpGlobals ldgbl;
 	BurpGlobals* tdgbl = &ldgbl;
-	BurpGlobals::setSpecific(tdgbl);
+	BurpGlobals::putSpecific(tdgbl);
 	memset((void *) tdgbl, 0, sizeof(BurpGlobals));
 	tdgbl->output_proc = output_main;
 
@@ -577,7 +577,7 @@ int common_main(int		argc,
   	JMP_BUF					env;
 
 // TMN: This variable should probably be removed, but I left it in 
-// in case some platform should redefine the BURP BurpGlobals::setSpecific. 
+// in case some platform should redefine the BURP BurpGlobals::putSpecific. 
 //BurpGlobals	thd_context;
 
 	gbak_action action = QUIT;
@@ -590,8 +590,8 @@ int common_main(int		argc,
 		return FINI_ERROR;
 	}
 
-	BurpGlobals::setSpecific(tdgbl);
-	SVC_PUTSPECIFIC_DATA;
+	BurpGlobals::putSpecific(tdgbl);
+//	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdgbl, 0, sizeof(BurpGlobals));
 	tdgbl->burp_env = reinterpret_cast<UCHAR*>(env);
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
