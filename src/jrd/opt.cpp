@@ -2728,6 +2728,8 @@ static bool estimate_cost(thread_db* tdbb,
 		selectivity = index_selectivity;
 	}
 
+	cardinality *= selectivity;
+
 	if (unique) {
 		*resulting_cardinality = cardinality;
 	}
