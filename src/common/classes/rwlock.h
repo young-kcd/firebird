@@ -29,6 +29,7 @@
 #ifdef WIN_NT
 
 #include <windows.h>
+#include <limits.h>
 
 #define LOCK_WRITER_OFFSET 50000
 
@@ -48,10 +49,10 @@ private:
 public:
 	RWLock() : lock(0) { 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
-			1<<(sizeof(LONG)*8-1)-1 /* maximum count = MAX_LONG */, NULL); 
+			INT_MAX, NULL); 
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
 	}
-	~RWLock() { CloseHandle(readers_event); CloseHandle(writers_event); }
+	~RWLock() { CloseHandle(readers_semaphore); CloseHandle(writers_event); }
 	void unblockWaiting() {
 		if (blockedWriters) 
 			SetEvent(writers_event);
