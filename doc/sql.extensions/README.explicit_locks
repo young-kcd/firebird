@@ -90,7 +90,13 @@ give you the rows contained in the last fetched packed where error happened.
 You may use FOR UPDATE clause to prevent usage of buffered fetches (and may
 use positioned updates feature) or set fetch buffer size to 1 in your access
 components in case you need to process locked row before next row is locked
-or if you want to handle some errors without rolling back your transaction.
+or if you want actually process all rows that can be locked before first row
+producing error.
+
+Commit and rollback retaining release explicit and implicit locks
+exactly as normal commit and rollback. Be careful when using buffered
+fetches and retaining operations. Records contained in the client-side 
+buffer may be unlocked even before returned to the application.
 
 Rolling back of implicit or explicit savepoint releases record locks that
 were taken under this savepoint, but doesn't notify waiting transactions. 
