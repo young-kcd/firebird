@@ -45,14 +45,6 @@ extern "C" {
 
 typedef ULONG SORTP;
 
-#define MAX_SORTP		((SORTP) MAX_ULONG)
-#define MIN_SORTP		((SORTP) MIN_ULONG)
-
-/* following defines are used to signify whether initial segment in sort key
- * is for NULL value */
-#define SORTP_VAL_IS_NULL	MAX_SORTP
-#define SORTP_VAL_IS_NOT_NULL	MIN_SORTP
-
 /* since the first part of the record contains a back_pointer, whose
    size depends on the platform (ie 16, 32 or 64 bits.).
    This pointer data_type is defined by platform specific SORT_PTR.
@@ -64,7 +56,6 @@ typedef IPTR SORT_PTR;
 #define LONGS_PER_POINTER       (sizeof (SLONG*) / sizeof (SLONG))
 /* the size of sr_bckptr in # of 32 bit longwords */
 #define SIZEOF_SR_BCKPTR_IN_LONGS  LONGS_PER_POINTER
-
 
 #define PREV_RUN_RECORD(record) (((SORTP *) record - scb->scb_longs))
 #define NEXT_RUN_RECORD(record) (((SORTP *) record + scb->scb_longs))
@@ -279,7 +270,7 @@ typedef struct scb
 	ULONG scb_run_start;		/* Record number of run */
 	ULONG scb_flags;			/* see flag bits below */
 	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
-	  BOOLEAN(*scb_dup_callback) ();	/* Duplicate handling callback */
+	BOOLEAN(*scb_dup_callback) ();	/* Duplicate handling callback */
 	void *scb_dup_callback_arg;	/* Duplicate handling callback arg */
 	struct dls *scb_dls;
 	struct mrg *scb_merge_pool;	/* ALLOC: pool of mrg blocks */
