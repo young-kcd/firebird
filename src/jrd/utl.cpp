@@ -1371,12 +1371,12 @@ void API_ROUTINE isc_format_implementation(
 		if (impl_class_nr >= FB_NELEM(impl_class) || !(impl_class[impl_class_nr]))
 		{
 			strncpy(cbuf, "**unknown**", cbuflen - 1);
-			ibuf[MIN(11, cbuflen - 1)] = '\0';
+			cbuf[MIN(11, cbuflen - 1)] = '\0';
 		}
 		else {
 			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
 			const int len = strlen(impl_class[impl_class_nr]);
-			ibuf[MIN(len, cbuflen - 1)] = '\0';
+			cbuf[MIN(len, cbuflen - 1)] = '\0';
 		}
 	}
 
