@@ -3154,6 +3154,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 						if (!DYN_UTIL_get_prot
 							(tdbb, gbl, PREL.RDB$RELATION_NAME, "", &priv))
 						{
+							// I think this should be the responsability of DFW
+							// or the user will find ways to circumvent DYN.
 							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
 										   NULL);
 							/* msg 115: "CREATE VIEW failed" */
@@ -3166,10 +3168,11 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 							*s++ = isc_arg_string;
 							*s++ = (ISC_STATUS) "SELECT";	/* Non-Translatable */
 							*s++ = isc_arg_string;
-							*s++ = (ISC_STATUS) "TABLE";	/* Non-Translatable */
+							// Remember, a view may be based on a view.
+							*s++ = (ISC_STATUS) "TABLE/VIEW";	/* Non-Translatable */
 							*s++ = isc_arg_string;
-							*s++ =
-								(ISC_STATUS) ERR_cstring(REL.RDB$RELATION_NAME);
+							// We want to print the name of the base table or view.
+							*s++ = (ISC_STATUS) ERR_cstring(PREL.RDB$RELATION_NAME);
 							*s = 0;
 							/* msg 32: no permission for %s access to %s %s */
 							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
