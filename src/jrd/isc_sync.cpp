@@ -72,23 +72,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/thd_proto.h"
 
-// Keep the following SIG_FPTR definitions in sync
-// with the same code in isc_ipc.cpp
-
-#ifdef SUN3_3
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
-#else
-#if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
-#else
-#if (defined(DARWIN))
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
-#else
-typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
-#endif
-#endif
-#endif
-
 #ifndef REQUESTER
 static USHORT inhibit_restart;
 static int process_id;
@@ -139,7 +122,7 @@ static UCHAR *next_shared_memory;
 #include <fcntl.h>
 #endif
 
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
 
@@ -2209,7 +2192,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 
 #ifdef UNIX
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #define ISC_MAP_FILE_DEFINED
 UCHAR *ISC_map_file(STATUS * status_vector,
 					TEXT * filename,
@@ -2566,7 +2549,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 
 #ifdef UNIX
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 #define ISC_MAP_FILE_DEFINED
 UCHAR *ISC_map_file(STATUS * status_vector,
 					TEXT * filename,
@@ -2869,7 +2852,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 
 	return address;
 }
-#endif // !MMAP_SUPPORTED
+#endif // !HAVE_MMAP
 
 #endif // UNIX
 
@@ -3284,7 +3267,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 #endif
 
 
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #define ISC_MAP_OBJECT_DEFINED
 UCHAR *ISC_map_object(STATUS * status_vector,
 					  SH_MEM shmem_data,
@@ -3342,7 +3325,7 @@ UCHAR *ISC_map_object(STATUS * status_vector,
 #endif
 
 
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #define ISC_UNMAP_OBJECT_DEFINED
 BOOLEAN ISC_unmap_object(STATUS * status_vector,
 						 SH_MEM shmem_data,
@@ -4127,7 +4110,7 @@ UCHAR *ISC_remap_file(STATUS * status_vector,
 
 
 #ifdef UNIX
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
 UCHAR *ISC_remap_file(STATUS * status_vector,
 					  SH_MEM shmem_data, SLONG new_length, USHORT flag)
@@ -4567,7 +4550,7 @@ void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 
 
 #ifdef UNIX
-#ifdef MMAP_SUPPORTED
+#ifdef HAVE_MMAP
 #define UNMAP_FILE
 void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 {
@@ -4598,7 +4581,7 @@ void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 
 
 #ifdef UNIX
-#ifndef MMAP_SUPPORTED
+#ifndef HAVE_MMAP
 #define UNMAP_FILE
 void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 {
