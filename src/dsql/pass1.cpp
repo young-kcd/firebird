@@ -2417,6 +2417,7 @@ static bool invalid_reference(DSQL_CTX context, DSQL_NOD node,
 		case nod_internal_info:
 		case nod_dbkey:
 		case nod_derived_table:
+		case nod_plan_expr:
 			return false;
 		}
 
