@@ -1174,8 +1174,7 @@ USHORT DLL_EXPORT INTL_string_to_key(
  *      Return the length of the resulting byte string.
  *
  **************************************/
-	USHORT len, outlen;
-	UCHAR *src, *dest;
+	USHORT outlen;
 	UCHAR buffer[MAX_KEY];
 	UCHAR pad_char;
 	TextType* obj;
@@ -1213,12 +1212,13 @@ USHORT DLL_EXPORT INTL_string_to_key(
 
 /* Make a string into the proper type of text */
 
-	len =
+	const char* src;
+	USHORT len =
 		CVT_make_string(pString, ttype, &src,
-						reinterpret_cast < vary * >(buffer), sizeof(buffer),
+						reinterpret_cast<vary*>(buffer), sizeof(buffer),
 						(FPTR_VOID) ERR_post);
 
-	dest = pByte->dsc_address;
+	char* dest = reinterpret_cast<char*>(pByte->dsc_address);
 	switch (ttype) {
 	case ttype_metadata:
 	case ttype_binary:
@@ -1227,17 +1227,20 @@ USHORT DLL_EXPORT INTL_string_to_key(
 		while (len--)
 			*dest++ = *src++;
 		/* strip off ending pad characters */
-		while (dest > pByte->dsc_address)
+		while (dest > (const char*)pByte->dsc_address)
 			if (*(dest - 1) == pad_char)
 				dest--;
 			else
 				break;
-		outlen = (dest - pByte->dsc_address);
+		outlen = (dest - (const char*)pByte->dsc_address);
 		break;
 	default:
 		obj = INTL_texttype_lookup(tdbb, ttype, (FPTR_VOID) ERR_post, NULL);
-		outlen = obj->string_to_key(len, src, pByte->dsc_length,
-										dest, partial);
+		outlen = obj->string_to_key(len,
+									reinterpret_cast<unsigned char*>(const_cast<char*>(src)),
+									pByte->dsc_length,
+									reinterpret_cast<unsigned char*>(dest),
+									partial);
 		break;
 	}
 

@@ -29,7 +29,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.17 2002-10-26 21:16:38 arnobrinkman Exp $
+$Id: opt.cpp,v 1.18 2002-10-29 16:27:45 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -5328,15 +5328,18 @@ static NOD optimize_like(TDBB tdbb, NOD like_node)
 		return NULL;
 /* Get the escape character, if any */
 	text_obj = NULL;
-	if (escape_node) {
+	if (escape_node)
+	{
 		/* Ensure escape string is same character set as search string 
 		 * Error report on Overflow is OK, as sql only allows a single
 		 * character escape string */
 
+		const char* p2;
 		p_count =
-			MOV_make_string(escape_desc, INTL_TTYPE(search_desc), &p,
+			MOV_make_string(escape_desc, INTL_TTYPE(search_desc), &p2,
 							reinterpret_cast < vary * >(tmp_buffer),
 							sizeof(tmp_buffer));
+		p = reinterpret_cast<UCHAR*>(const_cast<char*>(p2));
 		/* Now get first character from escape string */
 		escape_ch =
 			INTL_getch(tdbb, &text_obj,

@@ -48,18 +48,18 @@ typedef enum idx_e {
 extern "C" {
 #endif
 
-extern BOOLEAN DLL_EXPORT ERR_post_warning(STATUS, ...);
-extern void ERR_assert(CONST TEXT*, int);
-extern void DLL_EXPORT ERR_bugcheck(int);
-extern void DLL_EXPORT ERR_bugcheck_msg(CONST TEXT*);
-extern void DLL_EXPORT ERR_corrupt(int);
-extern void DLL_EXPORT ERR_duplicate_error(enum idx_e, struct rel*, USHORT);
-extern void DLL_EXPORT ERR_error(int);
-extern void DLL_EXPORT ERR_error_msg(CONST TEXT *);
-extern void DLL_EXPORT ERR_post(STATUS, ...);
-extern void DLL_EXPORT ERR_punt(void);
-extern void DLL_EXPORT ERR_warning(STATUS, ...);
-extern void DLL_EXPORT ERR_log(int, int, CONST TEXT *);
+BOOLEAN DLL_EXPORT ERR_post_warning(STATUS, ...);
+void ERR_assert(CONST TEXT*, int);
+void DLL_EXPORT ERR_bugcheck(int);
+void DLL_EXPORT ERR_bugcheck_msg(CONST TEXT*);
+void DLL_EXPORT ERR_corrupt(int);
+void DLL_EXPORT ERR_duplicate_error(enum idx_e, struct rel*, USHORT);
+void DLL_EXPORT ERR_error(int);
+void DLL_EXPORT ERR_error_msg(const TEXT *);
+void DLL_EXPORT ERR_post(STATUS, ...);
+void DLL_EXPORT ERR_punt(void);
+void DLL_EXPORT ERR_warning(STATUS, ...);
+void DLL_EXPORT ERR_log(int, int, CONST TEXT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -70,8 +70,10 @@ extern void DLL_EXPORT ERR_log(int, int, CONST TEXT *);
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern TEXT *DLL_EXPORT ERR_cstring(CONST TEXT*);
-extern TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
+
+const TEXT* DLL_EXPORT ERR_cstring(const TEXT*);
+const TEXT* DLL_EXPORT ERR_string(const TEXT*, int);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

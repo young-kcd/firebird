@@ -36,7 +36,7 @@ extern USHORT CVT_get_string_ptr(struct dsc *, USHORT *, UCHAR **,
 extern GDS_DATE CVT_get_sql_date(struct dsc *, FPTR_VOID);
 extern GDS_TIME CVT_get_sql_time(struct dsc *, FPTR_VOID);
 extern GDS_TIMESTAMP CVT_get_timestamp(struct dsc *, FPTR_VOID);
-extern USHORT CVT_make_string(struct dsc *, USHORT, UCHAR **, struct vary *,
+extern USHORT CVT_make_string(struct dsc*, USHORT, const char**, struct vary *,
 							  USHORT, FPTR_VOID);
 extern "C" void DLL_EXPORT CVT_move(struct dsc *, struct dsc *, FPTR_VOID);
 

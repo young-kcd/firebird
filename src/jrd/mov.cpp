@@ -499,11 +499,11 @@ GDS_TIMESTAMP MOV_get_timestamp(DSC * desc)
 }
 
 
-int MOV_make_string(DSC*	desc,
-					USHORT	ttype,
-					UCHAR**	address,
-					VARY*	temp,
-					USHORT	length)
+int MOV_make_string(DSC*	     desc,
+					USHORT	     ttype,
+					const char** address,
+					VARY*	     temp,
+					USHORT	     length)
 {
 /**************************************
  *

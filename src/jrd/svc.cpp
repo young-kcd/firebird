@@ -767,7 +767,7 @@ void SVC_detach(SVC service)
 #endif
 }
 
-TEXT *SVC_err_string(TEXT * data, USHORT length)
+const TEXT* SVC_err_string(const TEXT* data, USHORT length)
 {
 /********************************************
  *

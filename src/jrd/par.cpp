@@ -28,10 +28,11 @@
  *                            implemented ROWS_AFFECTED system variable
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ * 2002.10.29 Mike Nordell - Fixed breakage.
  *
  */
 /*
-$Id: par.cpp,v 1.14 2002-10-29 02:59:55 seanleyne Exp $
+$Id: par.cpp,v 1.15 2002-10-29 16:27:45 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -562,7 +563,7 @@ CSB PAR_parse(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 }
 
 
-SLONG PAR_symbol_to_gdscode(SCHAR * name)
+SLONG PAR_symbol_to_gdscode(const char* name)
 {
 /**************************************
  *
@@ -581,17 +582,18 @@ SLONG PAR_symbol_to_gdscode(SCHAR * name)
  *	Symbolic names may be null or space terminated.
  *
  **************************************/
-	int i;
-	int length;
-	SCHAR *p;
 
-	p = name;
-	while (*p && *p != ' ')
+	const char* p = name;
+
+	while (*p && *p != ' ') {
 		p++;
-	length = p - name;
-	for (i = 0; codes[i].code_number; i++)
-		if (!strncmp(name, codes[i].code_string, length))
+	}
+	const size_t length = p - name;
+	for (int i = 0; codes[i].code_number; ++i) {
+		if (!strncmp(name, codes[i].code_string, length)) {
 			return codes[i].code_number;
+		}
+	}
 
 	return 0;
 }
@@ -634,6 +636,7 @@ static void error(CSB csb, ...)
 /* Pick up remaining args */
 
 	while ( (*p++ = type = va_arg(args, int)) )
+	{
 		switch (type) {
 		case gds_arg_gds:
 			*p++ = (STATUS) va_arg(args, STATUS);
@@ -659,7 +662,10 @@ static void error(CSB csb, ...)
 		case gds_arg_unix:
 		case gds_arg_win32:
 		case gds_arg_netware:
+			*p++ = va_arg(args, int);   
+			break; 
 		}
+	}
 
 /* Give up whatever we were doing and return to the user. */
 
@@ -2935,6 +2941,7 @@ static void warning(CSB csb, ...)
 /* Pick up remaining args */
 
 	while ( (*p++ = type = va_arg(args, int)) )
+	{
 		switch (type) {
 		case gds_arg_gds:
 			*p++ = (STATUS) va_arg(args, STATUS);
@@ -2960,7 +2967,10 @@ static void warning(CSB csb, ...)
 		case gds_arg_unix:
 		case gds_arg_win32:
 		case gds_arg_netware:
+			*p++ = va_arg(args, int);   
+			break; 
 		}
+	}
 }
 
 

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.18 2002-09-28 14:04:35 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.19 2002-10-29 16:27:45 tamlin Exp $ 
  */
 
 /*
@@ -4775,7 +4775,7 @@ static SSHORT string_function(
 		escape = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */
 		if (node->nod_count == 3) {
-			UCHAR *q1;
+			const char* q1;
 			USHORT l3, consumed;
 #ifndef STACK_REDUCTION
 			UCHAR temp3[TEMP_LENGTH];
@@ -4795,7 +4795,7 @@ static SSHORT string_function(
 			if (!l3)
 				ERR_post(gds_like_escape_invalid, 0);
 			/* Grab the first character from the string */
-			consumed = obj->mbtowc(&escape, q1, l3);
+			consumed = obj->mbtowc(&escape, reinterpret_cast<unsigned char*>(const_cast<char*>(q1)), l3);
 
 			/* If characters left, or null byte character, return error */
 			if (consumed <= 0 || consumed != l3 || (escape == 0))

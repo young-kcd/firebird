@@ -86,9 +86,16 @@ void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, STATUS*, SSHORT*);
 void	API_ROUTINE gds__log(TEXT*, ...);
 void	API_ROUTINE gds__log_status(TEXT*, STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
-SSHORT	API_ROUTINE gds__msg_format(void*, USHORT, USHORT, USHORT,
-									  TEXT*, TEXT*, TEXT*, TEXT*,
-									  TEXT*, TEXT*);
+SSHORT	API_ROUTINE gds__msg_format(void*  handle,
+									USHORT facility,
+									USHORT msgNumber,
+									USHORT bufsize,
+									TEXT*  buffer,
+									const TEXT* arg1,
+									const TEXT* arg2,
+									const TEXT* arg3,
+									const TEXT* arg4,
+									const TEXT* arg5);
 SSHORT	API_ROUTINE gds__msg_lookup(void*, USHORT, USHORT, USHORT,
 									  TEXT*, USHORT*);
 int		API_ROUTINE gds__msg_open(void**, TEXT*);

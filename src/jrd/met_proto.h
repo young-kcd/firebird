@@ -50,7 +50,7 @@ void MET_get_shadow_files(TDBB, USHORT);
 int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
 						   struct logfiles **);
 void MET_load_trigger(TDBB, struct rel *, TEXT *, TRIG_VEC *);
-void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB, TEXT *, TEXT *);
+void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* index_name);
 void MET_lookup_cnstrt_for_trigger(TDBB, TEXT *, TEXT *, TEXT *);
 void MET_lookup_exception(TDBB, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
 SLONG MET_lookup_exception_number(TDBB, TEXT*);
@@ -81,7 +81,7 @@ void MET_remove_procedure(TDBB, int, PRC);
 void MET_revoke(TDBB, struct tra *, TEXT *, TEXT *, TEXT *);
 TEXT*MET_save_name(TDBB, CONST TEXT*);
 void MET_scan_relation(TDBB, struct rel *);
-TEXT *MET_trigger_msg(TDBB, TEXT *, USHORT);
+const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);
 void MET_update_shadow(TDBB, struct sdw *, USHORT);
 void MET_update_transaction(TDBB, struct tra *, USHORT);
 void MET_update_partners(TDBB);

@@ -50,7 +50,7 @@ extern int MOV_get_string(struct dsc *, UCHAR **, struct vary *, USHORT);
 extern GDS_DATE MOV_get_sql_date(struct dsc *);
 extern GDS_TIME MOV_get_sql_time(struct dsc *);
 extern GDS_TIMESTAMP MOV_get_timestamp(struct dsc *);
-extern int MOV_make_string(struct dsc *, USHORT, UCHAR **, struct vary *,
+extern int MOV_make_string(struct dsc *, USHORT, const char**, struct vary *,
 						   USHORT);
 extern int MOV_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
 							USHORT, struct str **);

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.12 2002-10-29 03:17:43 seanleyne Exp $
+$Id: blb.cpp,v 1.13 2002-10-29 16:27:46 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -2322,7 +2322,6 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 	DSC *array_desc, *slice_desc, temp_desc;
 	BLOB_PTR *next;
 	BLOB_PTR *end;
-	BLOB_PTR *p;
 	SLONG l;
 	USHORT len;
 
@@ -2358,10 +2357,12 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		if (array_desc->dsc_dtype == dtype_varying &&
 			(U_IPTR) array_desc->dsc_address !=
 			FB_ALIGN((U_IPTR) array_desc->dsc_address,
-					 (MIN(sizeof(USHORT), ALIGNMENT)))) {
+					 (MIN(sizeof(USHORT), ALIGNMENT))))
+		{
 			STR tmp_buffer;
 			USHORT tmp_len;
 			TDBB tdbb;
+			const char* p;
 
 			/* Note: cannot remove this GET_THREAD_DATA without api change
 			   to slice callback routines */
@@ -2372,14 +2373,16 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 			len = MOV_make_string(slice_desc,
 								  INTL_TEXT_TYPE(*array_desc),
 								  &p,
-								  reinterpret_cast <
-								  vary * >(tmp_buffer->str_data), tmp_len);
+								  reinterpret_cast<vary*>(tmp_buffer->str_data),
+								  tmp_len);
 			MOVE_FAST(&len, array_desc->dsc_address, sizeof(USHORT));
 			MOVE_FAST(p, array_desc->dsc_address + sizeof(USHORT), (int) len);
 			delete tmp_buffer;
 		}
 		else
+		{
 			MOV_move(slice_desc, array_desc);
+		}
 		end = (BLOB_PTR *) array_desc->dsc_address + array_desc->dsc_length;
 		if ((BLOB_PTR *) end > (BLOB_PTR *) arg->slice_high_water)
 			arg->slice_high_water = (BLOB_PTR *) end;

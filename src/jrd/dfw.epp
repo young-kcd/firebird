@@ -657,7 +657,7 @@ void DFW_post_work( TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
  *
  **************************************/
 	DFW work, *ptr;
-	UCHAR *p, *q, *string;
+	const char* string;
 	USHORT length;
 	TEXT temp[256];				/* Must hold largest metadata field */
 	SLONG sav_number;
@@ -678,8 +678,8 @@ void DFW_post_work( TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
 								(VARY*)temp,
 								sizeof(temp));
 
-		p = string;
-		q = string + length;
+		const char* p = string;
+		const char* q = string + length;
 		while (p < q && *p)
 		{
 			++p;

@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.26 2002-10-24 09:01:29 eku Exp $
+$Id: met.epp,v 1.27 2002-10-29 16:27:45 tamlin Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1128,8 +1128,8 @@ void MET_load_trigger(
 
 
 void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB tdbb,
-											TEXT * constraint_name,
-											TEXT * index_name)
+											TEXT* constraint_name,
+											const TEXT* index_name)
 {
 /**************************************
  *
@@ -3557,7 +3557,7 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 }
 
 
-TEXT* MET_trigger_msg(TDBB tdbb, TEXT* name, USHORT number)
+const TEXT* MET_trigger_msg(TDBB tdbb, const TEXT* name, USHORT number)
 {
 /**************************************
  *
@@ -3569,15 +3569,12 @@ TEXT* MET_trigger_msg(TDBB tdbb, TEXT* name, USHORT number)
  *      Look up trigger message using trigger and abort code.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	TEXT *msg;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
-	msg = NULL;
-	request = (BLK) CMP_find_request(tdbb, irq_s_msgs, IRQ_REQUESTS);
+	const TEXT* msg = 0;
+	BLK request = (BLK) CMP_find_request(tdbb, irq_s_msgs, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		MSG IN RDB$TRIGGER_MESSAGES WITH

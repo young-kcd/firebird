@@ -117,7 +117,7 @@ extern "C" {
 
 #ifdef __cplusplus
 
-inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, void* value)
+inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, const void* value)
 {
 	if (value)
 	{
@@ -125,13 +125,13 @@ inline void SVC_STATUS_ARG(STATUS*& status, USHORT type, void* value)
 		{
 		case isc_arg_number:
 			*status++ = type;
-			*status++ = reinterpret_cast < STATUS > (value);
+			*status++ = reinterpret_cast<STATUS>(value);
 			break;
 		case isc_arg_string:
 			*status++ = type;
 			*status++ = (STATUS)
-			SVC_err_string(reinterpret_cast<char*>(value),
-						   strlen(reinterpret_cast<const char*>(value)));
+			SVC_err_string(static_cast<const char*>(value),
+						   strlen(static_cast<const char*>(value)));
 			break;
 		default:
 			break;

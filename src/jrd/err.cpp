@@ -57,7 +57,8 @@
 extern "C" {
 
 
-static TEXT *jrd_failures = NULL, *jrd_failures_ptr = NULL;
+static TEXT* jrd_failures = NULL;
+static TEXT* jrd_failures_ptr = NULL;
 
 static void cleanup(void *);
 static void internal_error(STATUS, int);
@@ -134,7 +135,7 @@ void DLL_EXPORT ERR_corrupt(int number)
 #endif
 
 
-TEXT* DLL_EXPORT ERR_cstring(CONST TEXT* in_string)
+const TEXT* DLL_EXPORT ERR_cstring(const TEXT* in_string)
 {
 /**************************************
  *
@@ -171,10 +172,12 @@ void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
  *	Duplicate error during index update.
  *
  **************************************/
-	TEXT index[32], *index_name, constraint[32], *constraint_name;
-	TDBB tdbb;
+	TEXT  index[32];
+	TEXT  constraint[32];
+	const TEXT* index_name;
+	const TEXT* constraint_name;
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
 	if (index[0]) {
@@ -247,7 +250,7 @@ void DLL_EXPORT ERR_error(int number)
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void DLL_EXPORT ERR_error_msg(CONST TEXT* msg)
+void DLL_EXPORT ERR_error_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -519,7 +522,7 @@ void DLL_EXPORT ERR_punt(void)
 #endif
 
 
-TEXT* DLL_EXPORT ERR_string(CONST TEXT* in_string, int length)
+const TEXT* DLL_EXPORT ERR_string(const TEXT* in_string, int length)
 {
 /**************************************
  *
@@ -536,7 +539,6 @@ TEXT* DLL_EXPORT ERR_string(CONST TEXT* in_string, int length)
  *	is independent of the JRD allocator mechanism.
  *
  **************************************/
-	TEXT *new_string;
 
 	if (!jrd_failures)
 	{
@@ -564,7 +566,7 @@ TEXT* DLL_EXPORT ERR_string(CONST TEXT* in_string, int length)
 		jrd_failures_ptr = jrd_failures;
 	}
 
-	new_string = jrd_failures_ptr;
+	TEXT* new_string = jrd_failures_ptr;
 
 	while (length-- &&
 		(jrd_failures_ptr < jrd_failures + JRD_FAILURE_SPACE - 1))

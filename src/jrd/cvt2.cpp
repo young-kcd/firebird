@@ -824,7 +824,7 @@ void CVT2_get_name(DSC * desc, TEXT * string, FPTR_VOID err)
  **************************************/
 	USHORT length;
 	VARY_STR(32) temp;			/* 31 bytes + 1 NULL */
-	UTEXT *p;
+	const char* p;
 
 	length = CVT_make_string(desc, ttype_metadata, &p,
 							 (VARY *) & temp, sizeof(temp), err);

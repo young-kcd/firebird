@@ -28,17 +28,17 @@
 extern "C" {
 #endif
 
-extern class svc *SVC_attach(USHORT, TEXT *, USHORT, SCHAR *);
-extern void SVC_cleanup(class svc *);
-extern void SVC_detach(class svc *);
-extern void SVC_fprintf(class svc *, const SCHAR *, ...);
-extern void SVC_putc(class svc*, UCHAR);
-extern void SVC_query(class svc*, USHORT, SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*);
-extern STATUS SVC_query2(class svc*, struct tdbb*, USHORT, SCHAR *, USHORT, SCHAR*, USHORT, SCHAR*);
-extern void *SVC_start(class svc*, USHORT, SCHAR*);
-extern void SVC_finish(class svc*, USHORT);
-extern void SVC_read_ib_log(class svc*);
-extern TEXT *SVC_err_string(TEXT*, USHORT);
+class svc* SVC_attach(USHORT, TEXT *, USHORT, SCHAR *);
+void   SVC_cleanup(class svc *);
+void   SVC_detach(class svc *);
+void   SVC_fprintf(class svc *, const SCHAR *, ...);
+void   SVC_putc(class svc*, UCHAR);
+void   SVC_query(class svc*, USHORT, SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*);
+STATUS SVC_query2(class svc*, struct tdbb*, USHORT, SCHAR *, USHORT, SCHAR*, USHORT, SCHAR*);
+void*  SVC_start(class svc*, USHORT, SCHAR*);
+void   SVC_finish(class svc*, USHORT);
+void   SVC_read_ib_log(class svc*);
+const TEXT* SVC_err_string(const TEXT*, USHORT);
 
 #ifdef SERVER_SHUTDOWN
 #ifdef WIN_NT

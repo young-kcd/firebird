@@ -38,7 +38,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.22 2002-10-29 03:17:44 seanleyne Exp $
+$Id: exe.cpp,v 1.23 2002-10-29 16:27:45 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -3431,7 +3431,6 @@ static void set_error(TDBB tdbb, XCP condition, NOD node)
  **************************************/
 	register REQ request;
 	TEXT name[32], relation_name[32], message[82], temp[82], *s, *r;
-	UCHAR *string = 0;
 	USHORT length = 0;
 	
 	SET_TDBB(tdbb);
@@ -3446,6 +3445,7 @@ static void set_error(TDBB tdbb, XCP condition, NOD node)
 	}
 	else if (node)
 	{
+		const char* string = 0;
 		/* evaluate exception message and convert it to string */
 		length = MOV_make_string(EVL_expr(tdbb, node),
 								 ttype_none,
@@ -3946,7 +3946,7 @@ static void trigger_failure(TDBB tdbb, REQ trigger)
 	if (trigger->req_flags & req_leave)
 	{
 		trigger->req_flags &= ~req_leave;
-		TEXT* msg;
+		const TEXT* msg;
 		if (trigger->req_trg_name &&
 			(msg = MET_trigger_msg(tdbb,
 									trigger->req_trg_name,
@@ -4009,7 +4009,7 @@ static void validate(TDBB tdbb, NOD list)
 			REL			relation;
 			REQ			request;
 			FLD			field;
-			TEXT*		value;
+			const char*	value;
 			TEXT		temp[128];
 			CONST TEXT*	name;
 			USHORT length, stream, id;
@@ -4018,7 +4018,7 @@ static void validate(TDBB tdbb, NOD list)
 			request = tdbb->tdbb_request;
 			length = MOV_make_string(EVL_expr(tdbb, node),
 									 ttype_dynamic,
-									 reinterpret_cast<UCHAR**>(&value),
+									 &value,
 									 reinterpret_cast<VARY*>(temp),
 									 sizeof(temp));
 

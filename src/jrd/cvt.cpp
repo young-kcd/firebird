@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         cvt.c
+ *      MODULE:         cvt.cpp
  *      DESCRIPTION:    Data mover and converter and comparator, etc.
  *
  * The contents of this file are subject to the Interbase Public
@@ -172,12 +172,12 @@ typedef enum {
 #if (defined REQUESTER || defined SUPERCLIENT)
 static TEXT cvt_failures[CVT_FAILURE_SPACE];
 static TEXT *cvt_failures_ptr = NULL;
-static TEXT *error_string(TEXT *, SSHORT);
+static TEXT *error_string(const char*, SSHORT);
 #endif
 
 static void conversion_error(DSC *, FPTR_VOID);
 static void datetime_to_text(DSC *, DSC *, FPTR_VOID);
-static SSHORT decompose(UCHAR *, USHORT, SSHORT, SLONG *, FPTR_VOID);
+static SSHORT decompose(const char*, USHORT, SSHORT, SLONG *, FPTR_VOID);
 static void float_to_text(DSC *, DSC *, FPTR_VOID);
 static void integer_to_text(DSC *, DSC *, FPTR_VOID);
 static void string_to_datetime(DSC *, GDS_TIMESTAMP *, EXPECT_DATETIME,
@@ -365,11 +365,12 @@ double PASCAL_ROUTINE CVT_get_double(DSC * desc, FPTR_VOID err)
 		{
 			TEXT buffer[50];	/* must hold ascii of largest double */
 			SSHORT fraction, sign, exp, length, past_sign, digit_seen;
-			SCHAR *p, *end;
+			const char* p;
+			const char* end;
 
 			length =
 				CVT_make_string(desc, ttype_ascii,
-								reinterpret_cast < UCHAR ** >(&p),
+								&p,
 								(VARY *) buffer, sizeof(buffer), err);
 			value = 0.0;
 			digit_seen = past_sign = scale = fraction = sign = exp = 0;
@@ -520,7 +521,6 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 	double d;
 	SINT64 val64;
 	USHORT length;
-	UCHAR *p;
 	TEXT buffer[50];			/* long enough to represent largest long in ASCII */
 
 /* adjust exact numeric values to same scaling */
@@ -528,7 +528,7 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 	if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		scale -= desc->dsc_scale;
 
-	p = desc->dsc_address;
+	const char* p = reinterpret_cast<char*>(desc->dsc_address);
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -821,7 +821,6 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 #endif
 	double d;
 	USHORT length;
-	UCHAR *p;
 	TEXT buffer[50];			/* long enough to represent largest quad in ASCII */
 
 /* adjust exact numeric values to same scaling */
@@ -829,7 +828,7 @@ SQUAD CVT_get_quad(DSC * desc, SSHORT scale, FPTR_VOID err)
 	if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		scale -= desc->dsc_scale;
 
-	p = desc->dsc_address;
+	const char* p = reinterpret_cast<char*>(desc->dsc_address);
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -977,7 +976,6 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 	SLONG fraction;
 	double d;
 	USHORT length;
-	UCHAR *p;
 	TEXT buffer[50];			/* long enough to represent largest SINT64 in ASCII */
 
 	/* adjust exact numeric values to same scaling */
@@ -985,7 +983,7 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 	if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		scale -= desc->dsc_scale;
 
-	p = desc->dsc_address;
+	const char* p = reinterpret_cast<char*>(desc->dsc_address);
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -1260,10 +1258,12 @@ GDS_TIMESTAMP PASCAL_ROUTINE CVT_get_timestamp(DSC * desc, FPTR_VOID err)
 }
 
 
-USHORT CVT_make_string(DSC * desc,
-					   USHORT to_interp,
-					   UCHAR ** address,
-					   VARY * temp, USHORT length, FPTR_VOID err)
+USHORT CVT_make_string(DSC*          desc,
+					   USHORT        to_interp,
+					   const char**  address,
+					   VARY*         temp,
+					   USHORT        length,
+					   FPTR_VOID     err)
 {
 /**************************************
  *
@@ -1288,7 +1288,7 @@ USHORT CVT_make_string(DSC * desc,
 				&& (INTL_TTYPE(desc) == to_interp))));
 
 	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
-		*address = desc->dsc_address;
+		*address = reinterpret_cast<char*>(desc->dsc_address);
 		from_len = desc->dsc_length;
 		if (desc->dsc_dtype == dtype_text)
 			return from_len;
@@ -1297,7 +1297,7 @@ USHORT CVT_make_string(DSC * desc,
 					   from_len - 1);
 		if (desc->dsc_dtype == dtype_varying) {
 			varying = (VARY *) desc->dsc_address;
-			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
+			*address = varying->vary_string;
 			return MIN(varying->vary_length, from_len - sizeof(USHORT));
 		}
 	}
@@ -1310,7 +1310,7 @@ USHORT CVT_make_string(DSC * desc,
 	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
 	CVT_move(desc, &temp_desc, err);
-	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
+	*address = temp->vary_string;
 
 	return temp->vary_length;
 }
@@ -1776,11 +1776,11 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 	}
 
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
-		reinterpret_cast < pfn_cvt_private_cludge2 > (err) (gds_wish_list,
-															gds_arg_gds,
-															gds_blobnotsup,
-															gds_arg_string,
-															"move", 0);
+		reinterpret_cast<pfn_cvt_private_cludge2>(err) (gds_wish_list,
+														gds_arg_gds,
+														gds_blobnotsup,
+														gds_arg_string,
+														"move", 0);
 
 	reinterpret_cast < pfn_cvt_private_cludge > (err) (gds_badblk, 0);	/* internal error */
 }
@@ -1798,7 +1798,9 @@ static void conversion_error(DSC * desc, FPTR_VOID err)
  *      A data conversion error occurred.  Complain.
  *
  **************************************/
-	TEXT *p, s[40], *string;
+	const char* p;
+	const char* string;
+	TEXT s[40];
 	USHORT length;
 
 	if (desc->dsc_dtype == dtype_blob)
@@ -1807,7 +1809,7 @@ static void conversion_error(DSC * desc, FPTR_VOID err)
 		p = "ARRAY";
 	else {
 		length =
-			CVT_make_string(desc, ttype_ascii, (UCHAR **) & string,
+			CVT_make_string(desc, ttype_ascii, &string,
 							(VARY *) s, sizeof(s), err);
 #if (defined REQUESTER || defined SUPERCLIENT)
 		p = error_string(string, length);
@@ -1816,8 +1818,8 @@ static void conversion_error(DSC * desc, FPTR_VOID err)
 #endif
 	}
 
-	reinterpret_cast < pfn_cvt_private_cludge2 > (err) (gds_convert_error,
-														gds_arg_string, p, 0);
+	reinterpret_cast<pfn_cvt_private_cludge2>(err)(gds_convert_error,
+													gds_arg_string, p, 0);
 }
 
 
@@ -1943,10 +1945,11 @@ version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ? TRUE : FALSE;
 }
 
 
-static SSHORT decompose(
-						UCHAR * string,
-						USHORT length,
-						SSHORT dtype, SLONG * return_value, FPTR_VOID err)
+static SSHORT decompose(const char* string,
+						USHORT      length,
+						SSHORT      dtype,
+						SLONG*      return_value,
+						FPTR_VOID   err)
 {
 /**************************************
  *
@@ -1958,7 +1961,9 @@ static SSHORT decompose(
  *      Decompose a numeric string in mantissa and exponent.
  *
  **************************************/
-	UCHAR *p, *end;
+
+	const char* p;
+	const char* end;
 	SSHORT scale, exp, fraction, sign, digit_seen;
 	DSC errd;
 	SINT64 value, lower_limit, upper_limit, limit_by_10;
@@ -1975,7 +1980,7 @@ static SSHORT decompose(
 	errd.dsc_dtype = dtype_text;
 	errd.dsc_ttype = ttype_ascii;
 	errd.dsc_length = length;
-	errd.dsc_address = string;
+	errd.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(string));
 
 	value = 0;
 	digit_seen = scale = fraction = sign = 0;
@@ -1984,7 +1989,8 @@ static SSHORT decompose(
 
 	limit_by_10 = upper_limit / 10;	/* used to check for overflow */
 
-	for (p = string, end = p + length; p < end; p++) {
+	for (p = string, end = p + length; p < end; p++)
+	{
 		if (*p == ',')
 			continue;
 		else if (DIGIT(*p)) {
@@ -2078,7 +2084,7 @@ static SSHORT decompose(
 
 
 #if (defined REQUESTER || defined SUPERCLIENT)
-static TEXT *error_string(TEXT * in_string, SSHORT length)
+static TEXT *error_string(const char* in_string, SSHORT length)
 {
 /**************************************
  *
@@ -2433,7 +2439,10 @@ static void string_to_datetime(
  *            components.
  *
  **************************************/
-	TEXT *string, c, *p, *end;
+	const char* string;
+	const char* p;
+	const char* end;
+	TEXT c;
 	USHORT length, n, i, components[7];
 	USHORT start_component;
 	SSHORT description[7];
@@ -2454,7 +2463,7 @@ static void string_to_datetime(
 	TEXT buffer[100];			/* arbitrarily large */
 
 	length =
-		CVT_make_string(desc, ttype_ascii, (UCHAR **) & string,
+		CVT_make_string(desc, ttype_ascii, &string,
 						(VARY *) buffer, sizeof(buffer), err);
 	p = string;
 

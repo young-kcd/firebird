@@ -2043,14 +2043,16 @@ int API_ROUTINE gds__msg_close(void *handle)
 }
 
 
-SSHORT API_ROUTINE gds__msg_format(void *handle,
-								   USHORT facility,
-								   USHORT number,
-								   USHORT length,
-								   TEXT * buffer,
-								   TEXT * arg1,
-								   TEXT * arg2,
-								   TEXT * arg3, TEXT * arg4, TEXT * arg5)
+SSHORT API_ROUTINE gds__msg_format(void*       handle,
+								   USHORT      facility,
+								   USHORT      number,
+								   USHORT      length,
+								   TEXT*       buffer,
+								   const TEXT* arg1,
+								   const TEXT* arg2,
+								   const TEXT* arg3,
+								   const TEXT* arg4,
+								   const TEXT* arg5)
 {
 /**************************************
  *
@@ -2064,7 +2066,6 @@ SSHORT API_ROUTINE gds__msg_format(void *handle,
  *
  **************************************/
 	TEXT *p, *formatted, *end;
-	USHORT l;
 	SLONG size;
 	int n;
 
@@ -2088,8 +2089,11 @@ SSHORT API_ROUTINE gds__msg_format(void *handle,
 	n = gds__msg_lookup(handle, facility, number, length, buffer, NULL);
 
 	if (n > 0 && n < length)
+	{
 		sprintf(formatted, buffer, arg1, arg2, arg3, arg4, arg5);
-	else {
+	}
+	else
+	{
 		sprintf(formatted, "can't format message %d:%d -- ", facility,
 				number);
 		if (n == -1)
@@ -2108,11 +2112,12 @@ SSHORT API_ROUTINE gds__msg_format(void *handle,
 		}
 	}
 
-	l = strlen(formatted);
+	USHORT l = strlen(formatted);
 	end = buffer + length - 1;
 
-	for (p = formatted; *p && buffer < end;)
+	for (p = formatted; *p && buffer < end;) {
 		*buffer++ = *p++;
+	}
 	*buffer = 0;
 
 	gds__free((SLONG *) formatted);
