@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.80 2004-05-21 06:15:40 robocop Exp $
+$Id: ibase.h,v 1.81 2004-06-01 16:21:55 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1529,7 +1529,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_spb_sts_sys_relations	0x10
 #define isc_spb_sts_record_versions	0x20
 #define isc_spb_sts_table			0x40
-
+#define isc_spb_sts_nocreation		0x80
 
 /***********************************/
 /* Server configuration key values */

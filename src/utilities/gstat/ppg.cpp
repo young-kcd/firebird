@@ -55,7 +55,7 @@
 // gstat directly reads database files, therefore
 using namespace Ods;
 
-void PPG_print_header(const header_page* header, SLONG page,
+void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 #ifdef SUPERSERVER
 					  Jrd::Service* outfile)
 #else
@@ -131,12 +131,13 @@ void PPG_print_header(const header_page* header, SLONG page,
 		else
 			FPRINTF(outfile, "\tDatabase dialect\t1\n");
 
-
-		isc_decode_date(reinterpret_cast<const ISC_QUAD*>(header->hdr_creation_date), 
-						&time);
-		FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
-				FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
-				time.tm_hour, time.tm_min, time.tm_sec);
+		if (!nocreation) {
+			isc_decode_date(reinterpret_cast<const ISC_QUAD*>(header->hdr_creation_date), 
+							&time);
+			FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
+					FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+					time.tm_hour, time.tm_min, time.tm_sec);
+		}
 	}
 
 	USHORT flags;
@@ -283,7 +284,7 @@ void PPG_print_header(const header_page* header, SLONG page,
 }
 
 
-void PPG_print_log(const log_info_page* logp, SLONG page,
+void PPG_print_log(const log_info_page* logp, SLONG page, bool nocreation, 
 #ifdef SUPERSERVER
 				   Jrd::Service* outfile)
 #else
@@ -312,23 +313,25 @@ void PPG_print_log(const log_info_page* logp, SLONG page,
 		if (logp->log_mod_tip)
 			FPRINTF(outfile, "\tModified tip page\t%ld\n", logp->log_mod_tip);
 
-		if (!logp->log_creation_date[0] && !logp->log_creation_date[1])
-		{
-			FPRINTF(outfile, "\tCreation date\n");
-		}
-		else
-		{
-			struct tm time;
-			isc_decode_date(reinterpret_cast<const ISC_QUAD*>(logp->log_creation_date),
-								&time);
-			FPRINTF(outfile,
-					"\tCreation date\t%s %d, %d %d:%02d:%02d\n",
-					FB_SHORT_MONTHS[time.tm_mon],
-					time.tm_mday,
-					time.tm_year + 1900,
-					time.tm_hour,
-					time.tm_min,
-					time.tm_sec);
+		if (!nocreation) {
+			if (!logp->log_creation_date[0] && !logp->log_creation_date[1])
+			{
+				FPRINTF(outfile, "\tCreation date\n");
+			}
+			else
+			{
+				struct tm time;
+				isc_decode_date(reinterpret_cast<const ISC_QUAD*>(logp->log_creation_date),
+									&time);
+				FPRINTF(outfile,
+						"\tCreation date\t%s %d, %d %d:%02d:%02d\n",
+						FB_SHORT_MONTHS[time.tm_mon],
+						time.tm_mday,
+						time.tm_year + 1900,
+						time.tm_hour,
+						time.tm_min,
+						time.tm_sec);
+			}
 		}
 
 		// Legacy information, zero for FB 2.

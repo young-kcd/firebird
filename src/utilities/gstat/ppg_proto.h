@@ -25,11 +25,11 @@
 #define UTILITIES_PPG_PROTO_H
 
 #ifdef SUPERSERVER
-void	PPG_print_header (const Ods::header_page*, SLONG, Jrd::Service*);
-void	PPG_print_log (const Ods::log_info_page*, SLONG, Jrd::Service*);
+void	PPG_print_header (const Ods::header_page*, SLONG, bool, Jrd::Service*);
+void	PPG_print_log (const Ods::log_info_page*, SLONG, bool, Jrd::Service*);
 #else
-void	PPG_print_header (const Ods::header_page*, SLONG, FILE*);
-void	PPG_print_log (const Ods::log_info_page*, SLONG, FILE*);
+void	PPG_print_header (const Ods::header_page*, SLONG, bool, FILE*);
+void	PPG_print_log (const Ods::log_info_page*, SLONG, bool, FILE*);
 #endif
 
 #endif // UTILITIES_PPG_PROTO_H

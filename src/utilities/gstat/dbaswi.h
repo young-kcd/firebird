@@ -42,6 +42,7 @@ const int IN_SW_DBA_USERNAME	= 8;	/* username */
 const int IN_SW_DBA_PASSWORD	= 9;	/* password */
 const int IN_SW_DBA_RECORD		= 10;	/* analyze record versions */
 const int IN_SW_DBA_RELATION	= 11;	/* analyze specific relations */
+const int IN_SW_DBA_NOCREATION	= 12;	/* don't print creation date */
 
 static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_DATAIDX,		0,				"ALL",		0,0,0,	FALSE,	22,	0, NULL},	/* msg 22: -a      analyze data and index pages */
@@ -55,6 +56,8 @@ static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_RECORD,		isc_spb_sts_record_versions,	"RECORD",	0,0,0,	FALSE,	34,	0, NULL},	/* msg 34: -r      analyze average record and version length */
     {IN_SW_DBA_RELATION,	isc_spb_sts_table,	"TABLE",	0,0,0,	FALSE,	35,	0, NULL},	/* msg 35: -t      tablename */
     {IN_SW_DBA_VERSION,		0,				"Z",		0,0,0,	FALSE,	28,	0, NULL},	/* msg 28: -z      display version number */
+	// special switch to avoid including creation date, only for tests (no message)
+    {IN_SW_DBA_NOCREATION,	isc_spb_sts_nocreation,	"NOCREATION",	0,0,0,	FALSE,	0,	0, NULL},	/* msg 35: -n suppress creation date */
     {IN_SW_DBA_0,		0,				NULL,		0,0,0,	FALSE,	0,	0, NULL}		/* End of List */
 };
 #endif /* DBA_DBASWI_H */

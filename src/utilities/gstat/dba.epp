@@ -288,6 +288,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
+	bool sw_nocreation = false;
 	isc_db_handle db_handle = 0;
 	UCHAR buf[256];
 	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
@@ -375,8 +376,8 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
 
-    const TEXT* const* const end = argv + argc;
-    ++argv;
+	const TEXT* const* const end = argv + argc;
+	++argv;
 	while (argv < end) {
 		const TEXT* str = *argv++;
 		if (*str == '-') {
@@ -465,6 +466,9 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					}
 					*next = relation;
 				}
+				break;
+			case IN_SW_DBA_NOCREATION:
+				sw_nocreation = true;
 				break;
 			}
 		} // if (*str == '-')
@@ -592,7 +596,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	page = HEADER_PAGE;
 	do {
 		header = (const header_page*) db_read((SLONG) page);
-		PPG_print_header(header, page, sw_outfile);
+		PPG_print_header(header, page, sw_nocreation, sw_outfile);
 		page = header->hdr_next_page;
 	} while (page);
 
@@ -617,7 +621,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	page = LOG_PAGE;
 	do {
 		const log_info_page* logp = (const log_info_page*) db_read((SLONG) page);
-		PPG_print_log(logp, page, sw_outfile);
+		PPG_print_log(logp, page, sw_nocreation, sw_outfile);
 		page = logp->log_next_page;
 	} while (page);
 
