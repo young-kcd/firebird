@@ -340,6 +340,20 @@ TEXTTYPE_ENTRY(WIN1251_c1_init)
 #include "../intl/undef.h"
 
 
+TEXTTYPE_ENTRY(WIN1251_c2_init)
+{
+	static CONST ASCII POSIX[] = "WIN1251_UA.WIN1251";
+
+#include "../intl/win1251_ua.h"
+
+	FAMILY2(parm1, WIN1251_c2_init, CS_WIN1251, CC_RUSSIA);
+
+	TEXTTYPE_RETURN;
+}
+
+#include "../intl/undef.h"
+
+
 TEXTTYPE_ENTRY(WIN1252_c1_init)
 {
 	static CONST ASCII POSIX[] = "PXW_INTL.WIN1252";
