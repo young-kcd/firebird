@@ -22,6 +22,8 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -381,7 +383,6 @@ BOOLEAN DLL_EXPORT ERR_post_warning(STATUS status, ...)
 
 			case gds_arg_vms:
 			case gds_arg_unix:
-			case gds_arg_netware:
 			case gds_arg_win32:
 			default:
 				status_vector[indx++] = (STATUS) va_arg(args, int);

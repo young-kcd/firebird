@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _JRD_ISC_S_PROTO_H_
@@ -35,11 +38,8 @@ extern BOOLEAN ISC_check_restart(void);
 extern int ISC_event_blocked(USHORT, struct event **, SLONG *);
 extern SLONG DLL_EXPORT ISC_event_clear(struct event *);
 extern void ISC_event_fini(struct event *);
-#ifndef NETWARE_386
 extern int DLL_EXPORT ISC_event_init(struct event *, int, int);
-#else
-extern int DLL_EXPORT ISC_event_init(struct event *, ULONG *, int);
-#endif
+
 #if defined(WIN_NT)
 extern int ISC_event_init_shared(struct event *,
 								 int, TEXT *, struct event *, USHORT);
@@ -57,8 +57,6 @@ extern UCHAR *DLL_EXPORT ISC_map_file(STATUS *,
 									  TEXT *,
 									  void (*)(void *, struct sh_mem *, int),
 									  void *, SLONG, struct sh_mem *);
-#ifndef NETWARE_386
-
 #if defined(WIN_NT)
 int DLL_EXPORT ISC_mutex_init(struct mtx *, TEXT*);
 #else
@@ -68,16 +66,6 @@ int DLL_EXPORT ISC_mutex_init(struct mtx *, SLONG);
 int DLL_EXPORT ISC_mutex_lock(struct mtx *);
 int DLL_EXPORT ISC_mutex_lock_cond(struct mtx *);
 int DLL_EXPORT ISC_mutex_unlock(struct mtx *);
-
-#endif	// !NETWARE_386
-
-#ifdef NETWARE_386
-int		ISC_mutex_init(ULONG *, ULONG *);
-int		ISC_mutex_lock(ULONG *);
-int		ISC_mutex_unlock(ULONG *);
-void	ISC_semaphore_close(ULONG);
-void	ISC_sync_init(void);
-#endif
 
 #ifdef HAVE_MMAP
 extern UCHAR *ISC_map_object(STATUS *, SH_MEM, SLONG, SLONG);
@@ -97,7 +85,7 @@ extern ULONG ISC_exception_post(ULONG, TEXT *);
 
 #endif /* SUPERSERVER */
 
-#if (defined NETWARE_386 || defined PC_PLATFORM)
+#if (defined PC_PLATFORM)
 extern void ISC_semaphore_open(ULONG *, ULONG);
 #endif
 

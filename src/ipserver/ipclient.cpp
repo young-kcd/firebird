@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -3714,7 +3717,6 @@ static void extract_status( ICC icc, STATUS * user_status)
 			case isc_arg_number:
 			case isc_arg_vms:
 			case isc_arg_unix:
-			case isc_arg_netware:
 			case isc_arg_win32:
 				*v++ = *server_status++;
 				continue;

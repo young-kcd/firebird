@@ -31,6 +31,9 @@
  * 26-Sep-2001 Paul Beach - External File Directory Config. Parameter                                    
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  * 2002.08.10 Dmitry Yemanov: ALTER VIEW
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -2581,9 +2584,6 @@ void DYN_define_log_file(
 			memcpy(X.RDB$FILE_NAME, db_filename->str_data,
 				   (int) db_filename->str_length);
 			X.RDB$FILE_NAME[db_filename->str_length] = '\0';
-#ifdef NETWARE_386
-			ISC_strip_extension(X.RDB$FILE_NAME);
-#endif
 			X.RDB$FILE_FLAGS.NULL = FALSE;
 			X.RDB$FILE_FLAGS = LOG_default | LOG_serial;
 		}
@@ -2615,16 +2615,10 @@ void DYN_define_log_file(
 
 				case gds_dyn_log_file_serial:
 					X.RDB$FILE_FLAGS |= LOG_serial;
-#ifdef NETWARE_386
-					ISC_strip_extension(X.RDB$FILE_NAME);
-#endif
 					break;
 
 				case gds_dyn_log_file_overflow:
 					X.RDB$FILE_FLAGS |= LOG_overflow;
-#ifdef NETWARE_386
-					ISC_strip_extension(X.RDB$FILE_NAME);
-#endif
 					break;
 
 				default:

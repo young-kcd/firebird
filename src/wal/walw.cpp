@@ -23,6 +23,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -60,9 +62,7 @@
 #if !(defined WIN_NT)
 #ifndef VMS
 #include <sys/types.h>
-#ifndef NETWARE_386
 #include <sys/file.h>
-#endif
 #else
 #include <types.h>
 #include <file.h>
@@ -96,9 +96,6 @@ extern "C" {
 
 #ifdef SUPERSERVER
 #define exit(code)	return (code)
-#ifdef NETWARE_386
-#define getpid          GetThreadID
-#endif
 #ifdef WIN_NT
 #define getpid          GetCurrentThreadId
 #endif
@@ -1173,12 +1170,7 @@ SLONG * new_offset, SLONG * log_type)
 		unlink(new_logname);
 		MoveFile(last_logname, new_logname);
 #else
-#ifdef NETWARE_386
-		unlink(new_logname);
 		rename(last_logname, new_logname);
-#else
-		rename(last_logname, new_logname);
-#endif
 #endif
 	}
 
@@ -1378,10 +1370,6 @@ static SSHORT increase_buffers(
 
 	WAL_segment = WAL_handle->wal_segment;
 
-#ifdef NETWARE_386
-	WAL_segment->wals_flags2 |= WALS2_CANT_EXPAND;
-	return SUCCESS;
-#else
 	old_wal_length = WAL_segment->wals_length;
 	new_wal_length = old_wal_length + num_buffers * WAL_segment->wals_blksize;
 	if (PRINT_DEBUG_MSGS) {
@@ -1441,7 +1429,6 @@ static SSHORT increase_buffers(
 	}
 
 	return SUCCESS;
-#endif
 }
 
 

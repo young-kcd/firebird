@@ -34,6 +34,7 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -213,7 +214,6 @@ extern struct passwd *getpwnam(), *getpwuid();
 
 
 /* MS/DOS / OS2 / NLM Junk */
-
 #ifdef PC_PLATFORM
 #include <stdlib.h>
 
@@ -228,12 +228,7 @@ extern struct passwd *getpwnam(), *getpwuid();
 
 #endif /* PC_PLATFORM */
 
-#ifdef NETWARE_386
-#define PARSE_FILENAME
-#endif
-
 /* Windows NT stuff */
-
 #ifdef WIN_NT
 #include <windows.h>
 #ifndef TEXT
@@ -276,7 +271,7 @@ static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
 #endif
 static BOOLEAN get_server(TEXT *, TEXT *);
-#if ((defined PC_PLATFORM) && !(defined NETWARE_386))
+#if (defined PC_PLATFORM)
 static void string_parse(TEXT *, TEXT **, TEXT **, TEXT **, TEXT *);
 static void convert_slashes(char oldslash, char newslash, char *string);
 #endif
@@ -573,15 +568,6 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 	if (!(p = strchr(file_name, INET_FLAG)))
 		return FALSE;
 
-#ifdef NETWARE_386
-/* Filename for NetWare is of form node:[/][vol:][dir/../]filename.ext
-   so if only one ':' is found then path does not contain a node.
-   One has already been found, look for another. */
-
-	if (!strchr(p + 1, ':'))
-		return FALSE;
-
-#else
 #if (defined PC_PLATFORM)
 /* for DOS and OS/2, introduce a restriction against one-character
    machine names as a kludge to prevent the situation of
@@ -590,7 +576,6 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 
 	if (p - file_name == 1)
 		return FALSE;
-#endif
 #endif
 
 #ifdef WIN_NT
@@ -608,15 +593,6 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
 
 	*p = 0;
 	strcpy(node_name, file_name);
-
-#ifdef NETWARE_386
-/* for NetWare [node:] may be followed by a '\' or a '/' if so
-   do not include it in file name. */
-
-	if ((*(p + 1) == '/') || (*(p + 1) == '\\'))
-		p++;
-#endif
-
 	while (*file_name++ = *++p);
 
 	return TRUE;
@@ -745,7 +721,7 @@ int ISC_expand_filename(TEXT * from_buff, USHORT length, TEXT * to_buff)
 #endif
 
 
-#if (defined PC_PLATFORM) && !(defined NETWARE_386)
+#if (defined PC_PLATFORM)
 int ISC_expand_filename(
 						TEXT * file_name,
 						USHORT file_length, TEXT * expanded_name)
@@ -760,7 +736,6 @@ int ISC_expand_filename(
  *      This looks for patterns in the file name like:
  *
  *          host:[\|/]path[\|/]          - TCP/IP node
- *          host:vol:[\|/]path[\|/]      - Netware node
  *
  *      If no host is specified, it checks for an ISC_DATABASE
  *      environment variable and uses that.
@@ -878,93 +853,6 @@ int ISC_expand_filename(
 	return (int) (out - expanded_name);
 }
 #endif /* PC_PLATFORM */
-
-
-#ifdef NETWARE_386
-int ISC_expand_filename(
-						TEXT * file_name,
-						USHORT file_length, TEXT * expanded_name)
-{
-/**************************************
- *
- *	I S C _ e x p a n d _ f i l e n a m e	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Just copy a file name for the DOS Requester
- *
- **************************************/
-#ifdef STACK_REDUCTION
-	TEXT *path;
-	TEXT *volume;
-	TEXT *directory;
-	TEXT *directory1;
-	TEXT *fname;
-	TEXT *ext;
-#else /* STACK_REDUCTION */
-	TEXT path[BUFFER_SMALL];
-	TEXT volume[BUFFER_SMALL];
-	TEXT directory[BUFFER_SMALL];
-	TEXT directory1[BUFFER_SMALL];
-	TEXT fname[BUFFER_SMALL];
-	TEXT ext[BUFFER_SMALL];
-#endif /* STACK_REDUCTION */
-	TEXT *p;
-
-#ifdef STACK_REDUCTION
-	path = (TEXT *) gds__alloc((SLONG) (sizeof(TEXT) * 6 * BUFFER_SMALL));
-	volume = path + BUFFER_SMALL;
-	directory = volume + BUFFER_SMALL;
-	directory1 = directory + BUFFER_SMALL;
-	fname = directory1 + BUFFER_SMALL;
-	ext = fname + BUFFER_SMALL;
-#endif /* STACK_REDUCTION */
-
-	if (!file_length)
-		file_length = strlen(file_name);
-
-	strncpy(path, file_name, file_length);
-	path[file_length] = 0;
-
-/* use the NetWare routine splitpath to break down the
-   path into discrete parts */
-
-	_splitpath(path, volume, directory1, fname, ext);
-
-/* if no volume was specified, use SYS: as the default */
-
-	if (!volume[0])
-		strcpy(volume, "SYS:");
-
-/* if no backslash was used at the beginning,
-   add it for consistency */
-
-	if ((directory1[0] != '/') && (directory1[0] != '\\')) {
-		directory[0] = '\\';
-		strcpy(directory + 1, directory1);
-	}
-	else
-		strcpy(directory, directory1);
-
-	strcpy(expanded_name, volume);
-	strcat(expanded_name, directory);
-	strcat(expanded_name, fname);
-	strcat(expanded_name, ext);
-
-	for (p = expanded_name; *p; p++)
-		if (*p == '/')
-			*p = '\\';
-		else
-			*p = UPPER7(*p);
-
-#ifdef STACK_REDUCTION
-	gds__free((SLONG *) path);
-#endif /* STACK_REDUCTION */
-
-	return strlen(expanded_name);
-}
-#endif
 
 
 #ifdef VMS
@@ -2143,21 +2031,6 @@ static void share_name_from_resource(
 		*q = '\0';
 		strcat(expanded_name, filename + 2);
 	}
-/* from \\NODE\VOLUME & filename to NODE@VOLUME:filename */
-	else if (!strnicmp(resource->lpProvider, "NetWare", 7)) {
-		p += 2;					/* skip past \\ */
-		while (*p != '\\')
-			*q++ = *p++;
-		*p++;
-		*q++ = '@';
-		while (*p && *p != '\\')
-			*q++ = *p++;
-		*q++ = ':';
-		*q = '\0';
-		if (*p)
-			strcat(expanded_name, p);
-		strcat(expanded_name, filename + 2);
-	}
 	else {						/* we're guessing that it might be an NFS shared drive */
 
 		while (*q++ = *p++);
@@ -2228,7 +2101,7 @@ static void share_name_from_unc(
 #endif /* WIN_NT */
 
 
-#if ((defined PC_PLATFORM) && !(defined NETWARE_386))
+#if (defined PC_PLATFORM)
 static void string_parse(
 						 TEXT * string,
 						 TEXT ** colon,

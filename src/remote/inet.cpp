@@ -34,9 +34,11 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: inet.cpp,v 1.29 2002-10-29 13:24:37 dimitr Exp $
+$Id: inet.cpp,v 1.30 2002-10-30 06:40:50 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -97,7 +99,7 @@ $Id: inet.cpp,v 1.29 2002-10-29 13:24:37 dimitr Exp $
 
 #if !(defined VMS || defined WIN_NT)
 #include <netdb.h>
-#if !(defined PC_PLATFORM || defined NETWARE_386)
+#if !(defined PC_PLATFORM)
 #include <sys/param.h>
 #endif
 #endif
@@ -106,24 +108,10 @@ $Id: inet.cpp,v 1.29 2002-10-29 13:24:37 dimitr Exp $
 extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #endif
 
-#ifdef NETWARE_386
-NETDB_DEFINE_CONTEXT
-#include "../remote/faux.h"
-#define GETHOSTBYNAME FAUX_gethostbyname
-#define GETSERVBYNAME FAUX_getservbyname
-#define GETHOSTNAME FAUX_gethostname
-/* These need to be defined for NetWare.  They
- * See the comment in INET_CONNECT for details
- */
-#define INET_RETRY_ERRNO	0
-#define INET_RETRY_CALL		0
-#else
-
 #define GETHOSTBYNAME gethostbyname
 #define GETSERVBYNAME getservbyname
 #define GETHOSTNAME gethostname
 #define INET_RETRY_CALL		5
-#endif
 
 #include "../remote/remote.h"
 #include "../jrd/gds.h"
@@ -141,12 +129,6 @@ NETDB_DEFINE_CONTEXT
 
 #if (defined hpux || defined SCO_UNIX)
 extern int h_errno;
-#endif
-
-#ifdef NETWARE_386
-#define NO_ITIMER
-#define NO_FORK
-#include <direct.h>
 #endif
 
 #ifdef VMS
@@ -457,14 +439,8 @@ static bool_t	packet_send(PORT, SCHAR *, SSHORT);
 static PORT		receive(PORT, PACKET *);
 static PORT		select_accept(PORT);
 
-#ifdef NETWARE_386
-static PORT		select_port(PORT);
-static int		select_wait(PORT);
-#else
 static PORT		select_port(PORT, SLCT *);
 static int		select_wait(PORT, SLCT *);
-#endif
-
 static int		send_full(PORT, PACKET *);
 static int		send_partial(PORT, PACKET *);
 
@@ -513,21 +489,13 @@ static XDR::xdr_ops inet_ops =
 #if !defined(WIN_NT)
 #define NFDBITS		(sizeof(SLONG) * NBBY)
 
-#ifndef NETWARE_386
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
 #define FD_ZERO(p)	inet_zero((SCHAR *)(p), sizeof(*(p)))
 #endif
 #endif
-#endif
 
-
-#ifdef NETWARE_386
-#define MAX_FD_SETS 10
-static fd_set fd_sets[MAX_FD_SETS];
-static int select_count = 0;
-#endif
 
 static SLCT INET_select = { 0, 0, 0 };
 static int INET_max_clients;
@@ -767,7 +735,7 @@ PORT INET_analyze(	TEXT*	file_name,
 		*p++ = CNCT_user_verification;
 		*p++ = 0;
 	}
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM)
+#if !(defined VMS || defined PC_PLATFORM)
 	else
 	{
 		/* Communicate group id info to server, as user maybe running under group
@@ -1145,14 +1113,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 		/* if we have got a service-struct, get port number from there
 		   * (in case of hardwired gds_db to 3050 translation, address.sin_port was
 		   * already set above */
-#ifdef NETWARE_386
-		/* LATER, bug in NOVELL getservbyname() */
-
-		service->s_port = 3050;
-		address.sin_port = htons(service->s_port);
-#else
 		address.sin_port = service->s_port;
-#endif
 	}							/* else (service found) */
 
 /* end of modifications by luz */
@@ -1477,18 +1438,12 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 
 /* See if user exists.  If not, reject connection */
 
-#ifdef NETWARE_386
-/* force all clients of Novell to use the security database */
-
-	user_verification = TRUE;
-#endif
-
 	if (user_verification) {
 		eff_gid = eff_uid = -1;
 		port->port_flags |= PORT_not_trusted;
 	}
 
-#if !defined(NETWARE_386) && !defined(WIN_NT)
+#if !defined(WIN_NT)
 
 #ifdef VMS
 	else
@@ -1598,7 +1553,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 	}
 #endif /* VMS */
 
-#endif /* !NETWARE_386 && !WIN_NT */
+#endif /* !WIN_NT */
 
 /* store FULL user identity in port_user_name for security purposes */
 
@@ -1629,9 +1584,6 @@ static PORT alloc_port( PORT parent)
  **************************************/
 	PORT port;
 	TEXT buffer[64];
-#ifdef NETWARE_386
-	SSHORT rval;
-#endif
 
 #ifdef WIN_NT
 	if (!INET_initialized) {
@@ -1675,18 +1627,10 @@ static PORT alloc_port( PORT parent)
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0, 0);
 
-#if (defined PC_PLATFORM) && !(defined NETWARE_386)
+#if (defined PC_PLATFORM)
 	strcpy(buffer, "localhost");
 #else
-#ifdef NETWARE_386
-	rval = GETHOSTNAME(buffer, sizeof(buffer));
-	if (rval == -1) {
-		GetFileServerName(0, buffer);
-		strlwr(buffer);
-	}
-#else /* !NETWARE_386 */
 	GETHOSTNAME(buffer, sizeof(buffer));
-#endif /* !NETWARE_386 */
 #endif
 
 	port->port_host = REMOTE_make_string(buffer);
@@ -1747,8 +1691,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
     int status;
 	PORT new_port;
 	struct sockaddr_in address;
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
 	int arg;
 #endif
 
@@ -1797,8 +1740,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		return NULL;
 	}
 
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT || defined SINIXZ)
+#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT || defined SINIXZ)
 	if (ast)
 	{
 
@@ -1959,8 +1901,7 @@ static check_host( PORT port, TEXT * host_name, TEXT * user_name)
 }
 #endif
 
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
 static int check_host(
 					  PORT port,
 					  TEXT * host_name,
@@ -2023,8 +1964,7 @@ static int check_host(
 }
 #endif
 
-#if !(defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined PC_PLATFORM || defined WIN_NT)
 static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
 {
 /**************************************
@@ -2139,8 +2079,7 @@ static void disconnect( PORT port)
 
 #endif /* !VMS */
 
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined VMS || defined PC_PLATFORM || defined WIN_NT)
 	if (port->port_ast) {
 		ISC_signal_cancel(SIGURG, (FPTR_VOID) inet_handler, port);
 	}
@@ -2428,8 +2367,7 @@ static void inet_zero( SCHAR * address, int length)
 		while ((--length) != 0);
 }
 
-#if !(defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined PC_PLATFORM || defined WIN_NT)
 static int parse_hosts( TEXT * file_name, TEXT * host_name, TEXT * user_name)
 {
 /*****************************************************************
@@ -2470,8 +2408,7 @@ static int parse_hosts( TEXT * file_name, TEXT * host_name, TEXT * user_name)
 }
 #endif
 
-#if !(defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined PC_PLATFORM || defined WIN_NT)
 static int parse_line(
 					  TEXT * entry1,
 					  TEXT * entry2, TEXT * host_name, TEXT * user_name)
@@ -2614,11 +2551,7 @@ static PORT receive( PORT main_port, PACKET * packet)
 /* Multi-client server multiplexes all known ports for incoming packets. */
 
 	for (;;) {
-#ifdef NETWARE_386
-		port = select_port(main_port);
-#else
 		port = select_port(main_port, &INET_select);
-#endif
 		if (port == main_port) {
 			if (port = select_accept(main_port))
 				return port;
@@ -2653,25 +2586,16 @@ static PORT receive( PORT main_port, PACKET * packet)
     ourselves in select_wait. If there are more messages then set the flag
     corresponding to this port which was cleared in select_port routine.
 */
-#ifndef NETWARE_386
 			if (port->port_receive.x_handy) {
 				FD_SET((SLONG) port->port_handle, &INET_select.slct_fdset);
 				++INET_select.slct_count;
 			}
-#else
-			/* 5.5 SCO Port: Used #error to generate compiler error */
-#error	Generated a compiler error since we have not put in the NetWare specific code here.
-#endif
 			if (packet->p_operation == op_dummy)
 				continue;
 
 			return port;
 		}
-#ifdef NETWARE_386
-		if (!select_wait(main_port))
-#else
 		if (!select_wait(main_port, &INET_select))
-#endif
 			return NULL;
 	}
 }
@@ -2695,8 +2619,7 @@ static PORT select_accept( PORT main_port)
 	socklen_t l;
 	struct sockaddr_in address;
 	int optval = 1;
-#if !(defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined PC_PLATFORM || defined WIN_NT)
 	TEXT msg[64];
 	int n;
 #endif
@@ -2715,8 +2638,7 @@ static PORT select_accept( PORT main_port)
 	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR *) & optval, sizeof(optval));
 
-#if !(defined SUPERSERVER || defined VMS || defined NETWARE_386 || \
-      defined PC_PLATFORM || defined WIN_NT)
+#if !(defined SUPERSERVER || defined VMS || defined PC_PLATFORM || defined WIN_NT)
 	for (n = 0, port = main_port->port_clients; port;
 		 n++, port = port->port_next);
 	if (n >= INET_max_clients) {
@@ -2741,110 +2663,6 @@ static PORT select_accept( PORT main_port)
 	return 0;
 }
 
-#ifdef NETWARE_386
-static PORT select_port(PORT main_port)
-{
-/**************************************
- *
- *	s e l e c t _ p o r t  ( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Select a descriptor that is ready to read
- *	and return the port block. Return NULL if
- *	none are active.
- *
- **************************************/
-	PORT port;
-	int n;
-	int i;
-
-	if (!select_count)
-		return NULL;
-
-	for (port = main_port; port; port = port->port_next)
-		if ((port->port_fdset)
-			&& FD_ISSET(port->port_handle, port->port_fdset)) {
-			FD_CLR(port->port_handle, (fd_set *) port->port_fdset);
-			--select_count;
-			return port;
-		}
-
-/* if we cannot find any ports data in fd_set is bad reset it */
-	for (i = 0; i < MAX_FD_SETS; i++)
-		FD_ZERO(&(fd_sets[i]));
-	select_count = 0;
-	return NULL;
-}
-
-static int select_wait(PORT main_port)
-{
-/**************************************
- *
- *	s e l e c t _ w a i t    ( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Select interesting descriptors from
- *	port blocks and wait for something
- *	to read from them.
- *
- **************************************/
-	PORT port;
-	USHORT i;
-	USHORT found;
-	USHORT set_number;
-	int count = 0;
-
-	struct timeval timeout;
-
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 0;
-
-	THREAD_EXIT;
-
-	while (!select_count) {
-		for (i = 0; i < MAX_FD_SETS; i++)
-			FD_ZERO(&(fd_sets[i]));
-
-		found = 0;
-		set_number = 0;
-		for (port = main_port; port; port = port->port_next)
-			if ((port->port_state == state_active) ||
-				(port->port_state == state_pending)) {
-				if (((found % FD_SETSIZE) == 0) && (found != 0))
-					set_number++;
-
-				FD_SET((SLONG) port->port_handle, &(fd_sets[set_number]));
-				port->port_fdset = &(fd_sets[set_number]);
-				found++;
-			}
-
-		if (set_number == 0) {
-			count = select(FD_SETSIZE, &(fd_sets[0]), 0, 0, NULL);
-			if (count != -1)
-				select_count += count;
-		}
-		else {
-			for (i = 0; i <= set_number; i++) {
-				count = select(FD_SETSIZE, &(fd_sets[i]), 0, 0, &timeout);
-				if (count != -1)
-					select_count += count;
-			}
-		}
-
-		ThreadSwitch();
-	}
-
-	THREAD_ENTER;
-
-	return (TRUE);
-}
-#endif
-
-#ifndef NETWARE_386
 static PORT select_port( PORT main_port, SLCT * selct)
 {
 /**************************************
@@ -3074,7 +2892,6 @@ static int select_wait( PORT main_port, SLCT * selct)
 		THREAD_ENTER;
 	}
 }
-#endif
 
 static int send_full( PORT port, PACKET * packet)
 {
@@ -3341,8 +3158,7 @@ static u_int inet_getpostn( XDR * xdrs)
 	return (u_int) (xdrs->x_private - xdrs->x_base);
 }
 
-#if !(defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT)
+#if !(defined PC_PLATFORM || defined WIN_NT)
 static void inet_handler( PORT port)
 {
 /**************************************
@@ -3885,7 +3701,7 @@ static int packet_receive(
 
 			THREAD_EXIT;
 			for (;;) {
-#if (defined NETWARE_386 || defined WIN_NT)
+#if (defined WIN_NT)
 				slct_count = select(FD_SETSIZE, &slct_fdset,
 									(fd_set *) NULL, (fd_set *) NULL,
 									time_ptr);

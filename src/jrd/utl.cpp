@@ -33,6 +33,8 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -78,15 +80,11 @@
 #include <fcntl.h>
 #include <direct.h>
 #else
-#ifdef NETWARE_386
-#include <fcntl.h>
-#else
 #if defined(WIN_NT)
 #include <io.h>
 #include <process.h>
 #else
 #include <sys/file.h>
-#endif
 #endif
 #endif
 
@@ -110,10 +108,6 @@ extern int ib_printf();
 
 #if defined(WIN_NT)
 #define GDS_EDIT	gds__edit
-#endif
-
-#ifdef NETWARE_386
-#define GDS_EDIT        gds__edit
 #endif
 
 #ifdef VMS
@@ -237,7 +231,7 @@ static const TEXT *const impl_implementation[] = {
     "Firebird/sun",		/* 28 */
     NULL, // "Firebird/OS2",        /* 29 */
     "Firebird/sun4",		/* 30 */
-    "Firebird/hpux800",	/* 31 */
+    NULL, // "Firebird/hpux800",	/* 31 */
     "Firebird/sun386",		/* 32 */
     "Firebird:ORACLE/vms",	/* 33 */
     NULL, // "Firebird/mac/aux",    /* 34 */
@@ -246,8 +240,8 @@ static const TEXT *const impl_implementation[] = {
     NULL, // "Firebird/xenix",      /* 37 */
     NULL, // "Firebird/AViiON",		/* 38 */
     NULL, // "Firebird/hp/mpexl",	/* 39 */
-    "Firebird/hp/ux300",	/* 40 */
-    "Firebird/sgi",		/* 41 */
+    NULL, // "Firebird/hp/ux300",	/* 40 */
+    NULL, // "Firebird/sgi",		/* 41 */
     "Firebird/sco/unix",	/* 42 */
     NULL, // "Firebird/Cray",       /* 43 */
     NULL, // "Firebird/imp",        /* 44 */
@@ -258,9 +252,9 @@ static const TEXT *const impl_implementation[] = {
     NULL, // "Firebird/UNIXWARE",	/* 49 */
     "Firebird/x86/Windows NT",	/* 50 */
     NULL, // "Firebird/epson",      /* 51 */
-    "Firebird/DEC/OSF",	/* 52 */
+    NULL, // "Firebird/DEC/OSF",	/* 52 */
     "Firebird/Alpha/OpenVMS",	/* 53 */
-    "Firebird/NetWare",	/* 54 */
+    NULL, // "Firebird/NetWare",	/* 54 */
     "Firebird/Windows",	/* 55 */
     NULL, // "Firebird/NCR3000",    /* 56 */
     NULL, // "Firebird/PPC/Windows NT", /* 57 */
@@ -1035,7 +1029,7 @@ void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
 #endif
 
 
-#if !(defined REQUESTER || defined NETWARE_386)
+#if !(defined REQUESTER)
 void API_ROUTINE gds__set_debug(int GDS_VAL(value))
 {
 /**************************************
@@ -2129,7 +2123,7 @@ static int edit(
  *
  **************************************/
 	TEXT file_name[50], *p, *q;
-#if (defined PC_PLATFORM || defined NETWARE_386 || defined WIN_NT)
+#if (defined PC_PLATFORM || defined WIN_NT)
 	TEXT buffer[9];
 #else
 	TEXT buffer[25];

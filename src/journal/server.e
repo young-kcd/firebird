@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include <stdio.h>
@@ -81,12 +83,6 @@ typedef SLONG fd_mask;
 #endif
 #endif
 
-#ifdef NETWARE_386
-#define NETWARE_JOURNALLING
-#define BSD_SOCKETS
-#define EINTR			0
-#endif
-
 #ifndef MAX_PATH_LENGTH
 #define MAX_PATH_LENGTH		512
 #endif
@@ -120,14 +116,8 @@ typedef SLONG fd_mask;
 #endif
 
 #define BITS			(sizeof (fd_mask) * 8)
-#ifndef NETWARE_386
 #define SET_BIT(fd,mask)	((mask)->fds_bits[fd/BITS] |= (1 << (fd % BITS)))
 #define TEST_BIT(fd,mask)	((mask)->fds_bits[fd/BITS] & (1 << (fd % BITS)))
-#else
-#define SET_BIT(fd,mask)	FD_SET (fd, mask)
-#define TEST_BIT(fd,mask)	FD_ISSET (fd, mask)
-#endif
-
 
 DATABASE
 	DB =
@@ -211,10 +201,6 @@ typedef struct cnct {
 #define CNCT_console		1	/* Connection is to a console */
 #define CNCT_pending_io		2	/* I/O or connection is pending */
 
-#ifdef NETWARE_386
-extern void main_archive();
-#endif
-
 static void add_backup_entry(DJB, SLONG, SLONG);
 static CNCT alloc_connect(HANDLE, USHORT);
 static void backup_wal(DJB, SCHAR *, SLONG, SLONG, SLONG, SLONG);
@@ -230,7 +216,7 @@ static void delete_wal(void);
 static void disable(CNCT, LTJC *);
 static void disconnect(CNCT);
 
-#if !(defined VMS || defined WIN_NT || defined NETWARE_386)
+#if !(defined VMS || defined WIN_NT)
 static void divorce_terminal(fd_set *);
 #endif
 
@@ -467,18 +453,6 @@ static void backup_wal(
 
 	gds__prefix(name, ARCHIVE);
 
-#ifdef NETWARE_386
-	argv[1] = name;
-	argv[2] = db_id;
-	argv[3] = f_id;
-	argv[4] = cp_offset;
-	argv[5] = csize;
-	argv[6] = file_name;
-	argv[7] = dname;
-	argv[0] = 7;
-	gds__thread_start(main_archive, argv, 0, 0, NULL_PTR);
-#else
-
 #if (defined WIN_NT)
 	proc_id = spawnl(P_NOWAITO, name, ARCHIVE, db_id, f_id, cp_offset, csize,
 					 file_name, dname, journal_directory, NULL);
@@ -493,13 +467,10 @@ static void backup_wal(
 		_exit(FINI_OK);
 	}
 #endif
-
 	if (proc_id == -1 || !ISC_check_process_existence(proc_id, 0, FALSE)) {
 		put_line(NULL, 106, 0, 0, 0);
 		return;
 	}
-#endif
-
 	lts_tr = (SLONG *) 0;
 	START_TRANSACTION lts_tr;
 
@@ -1042,7 +1013,6 @@ static void disconnect(CNCT connection)
 
 #ifndef VMS
 #ifndef WIN_NT
-#ifndef NETWARE_386
 static void divorce_terminal(fd_set * mask)
 {
 /**************************************
@@ -1079,7 +1049,6 @@ static void divorce_terminal(fd_set * mask)
 
 	s = setpgrp(0, 0);
 }
-#endif
 #endif
 #endif
 
@@ -2784,11 +2753,7 @@ static void put_message(SSHORT msg_num, DJB database)
 	GJRN_get_msg(msg_num, message, NULL, NULL, NULL);
 
 	clock = time(NULL);
-#ifdef NETWARE_JOURNALLING
-	times = *localtime((time_t *) & clock);
-#else
 	times = *localtime(&clock);
-#endif
 
 	fprintf(log, "%.2d:%.2d:%.2d %.2d/%.2d/%.2d %s",
 			times.tm_hour, times.tm_min, times.tm_sec,
@@ -3300,7 +3265,6 @@ static int start_server(UCHAR * journal_dir,
 		log = stdout;
 	else {
 #ifndef VMS
-#ifndef NETWARE_386
 #ifndef WIN_NT
 		/* close message file before calling divorce terminal as we do not
 		   know the file id of the message file and will end up closing
@@ -3309,7 +3273,6 @@ static int start_server(UCHAR * journal_dir,
 
 		gds__msg_close(NULL_PTR);
 		divorce_terminal(NULL_PTR);
-#endif
 #endif
 #endif
 		strcpy(logfile, journal_directory);
@@ -3562,10 +3525,6 @@ static void time_stamp(GDS__QUAD * date)
 	struct tm times;
 
 	clock = time(NULL);
-#ifdef NETWARE_JOURNALLING
-	times = *localtime((time_t *) & clock);
-#else
 	times = *localtime(&clock);
-#endif
 	gds__encode_date(&times, date);
 }

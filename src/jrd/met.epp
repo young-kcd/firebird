@@ -33,9 +33,11 @@
  *   Modify MET_lookup_field() so it can verify the field's security class, too.
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: met.epp,v 1.27 2002-10-29 16:27:45 tamlin Exp $
+$Id: met.epp,v 1.28 2002-10-30 06:40:48 seanleyne Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3240,11 +3242,6 @@ void MET_scan_relation( TDBB tdbb, REL relation)
 	}
 
 	relation->rel_flags |= REL_being_scanned;
-#ifdef NETWARE_386
-	if ((unsigned) stackavail() < (unsigned) STACK_SAFE_LIMIT)
-		ERR_post(isc_err_stack_limit, 0);
-#endif
-
 	dependencies =
 		(relation->rel_flags & REL_get_dependencies) ? TRUE : FALSE;
 	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? TRUE : FALSE;

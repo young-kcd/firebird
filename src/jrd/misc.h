@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _JRD_MISC_H_
@@ -42,9 +45,4 @@ typedef struct stk {
 
 #endif /* _JRD_MISC_H_ */
 
-#ifdef NETWARE_386
-#define MKTEMP(fname, prefix)	MISC_mktemp (fname, prefix)
-extern SCHAR *MISC_mktemp();
-#else
 #define MKTEMP(fname, prefix)	mktemp(fname)
-#endif

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -137,46 +140,6 @@ ULONG MISC_checksum_log_rec(UCHAR * header,
 	return checksum;
 }
 #endif /* DEV_BUILD */
-
-
-#ifdef NETWARE_386
-SCHAR *MISC_mktemp(SCHAR * filename, SCHAR * prefix)
-{
-/**************************************
- *
- *      M I S C _ m k t e m p
- *
- **************************************
- *
- * Functional description
- *      mktemp for NLM.
- *      filename points to a directory name and a prefix.
- *
- **************************************/
-	SCHAR local_fname[256];
-	struct stat statblk;
-	SSHORT prefix_len;
-	SCHAR name[L_tmpnam];
-
-	prefix_len = strlen(prefix);
-	if (prefix_len > 4) {		/* Limit the prefix to 4 charaters to leave some space 
-								   for temp file subscript */
-		filename[strlen(filename) - (prefix_len - 4)] = '\0';
-		prefix_len = 4;
-	}
-
-	for (;;) {
-		ib_tmpnam(name);
-		/* Create a full directory path name for a temp file */
-		sprintf(local_fname, "%s%s", filename, &name[prefix_len]);
-		/* Make sure that the file does not already exist */
-		if ((stat(local_fname, &statblk) == -1) && (errno == ENOENT)) {
-			strcpy(filename, local_fname);
-			return filename;
-		}
-	}
-}
-#endif
 
 
 UCHAR *MISC_pop(STK * stack)

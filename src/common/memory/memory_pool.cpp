@@ -25,6 +25,9 @@
  *   generic memory allocations instead of typed-only allocations.
  * 2002.09.23 Nickolay Samofatov: Added file name/line number debug info
  * 	 to memory manager
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifdef _MSC_VER
@@ -1586,12 +1589,6 @@ void* FBMemoryPool::mmap_alloc(size_t size)
     size += ALLOC_ALIGNMENT;
 
     globalAllocLock.aquire();
-#ifdef NETWARE
-        REPLACE THIS ILLEGAL COMMENT WITH NETWARE IMPLEMENTATION
-                Malloc / free may be good enough as long as free() returns
-                the memory back to a system - wide heap.
-#define SYS_ALLOC_DEFINED
-#endif
 #ifdef UNIX
 #ifdef MAP_ANONYMOUS
 	memory = (UCHAR*)mmap(NULL, size, (PROT_READ | PROT_WRITE),
@@ -1676,13 +1673,6 @@ SLONG FBMemoryPool::mmap_free(void* mem)
 	ULONG length = *block;
 
 	globalAllocLock.aquire();
-#ifdef NETWARE
-#error NETWARE is unimplemented
-//      REPLACE THIS ILLEGAL COMMENT WITH NETWARE IMPLEMENTATION
-//              Malloc / free may be good enough as long as free() returns
-//              the memory back to a system - wide heap.
-#define SYS_FREE_DEFINED
-#endif  // NETWARE
 
 #ifdef UNIX
 #if (defined SOLARIS )

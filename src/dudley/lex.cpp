@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -40,9 +43,7 @@
 #endif
 
 #ifdef PC_PLATFORM
-#ifndef NETWARE_386
 #define SCRATCH		"I"
-#endif
 #endif
 
 #if defined(WIN_NT)

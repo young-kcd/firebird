@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifdef SUPERSERVER
@@ -44,12 +47,10 @@
 
 #ifndef NFDBITS
 #define NFDBITS		(sizeof(SLONG) * NBBY)
-#ifndef NETWARE_386
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
 #define FD_ZERO(p)	bzero((SCHAR *)(p), sizeof(*(p)))
-#endif
 #endif
 
 

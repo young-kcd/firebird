@@ -20,10 +20,12 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.12 2002-10-28 03:52:05 seanleyne Exp $
+ * $Id: drop.cpp,v 1.13 2002-10-30 06:40:51 seanleyne Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
 */
 
@@ -183,7 +185,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		shut_manager("lock manager");
 #endif
 
-#if !(defined WIN_NT || defined NETWARE_386 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN)
+#if !(defined WIN_NT || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN)
 	if (!sw_nobridge) {
 		ib_printf("\nBRIDGE RESOURCES\n\n");
 		V3_drop(orig_argc, (UCHAR **)orig_argv);

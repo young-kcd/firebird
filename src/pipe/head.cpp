@@ -28,9 +28,11 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
- /* $Id: head.cpp,v 1.13 2002-10-28 04:57:02 seanleyne Exp $ */
+ /* $Id: head.cpp,v 1.14 2002-10-30 06:40:50 seanleyne Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -3109,12 +3111,6 @@ else
 	    case gds_arg_number:
 	    case gds_arg_vms:
 	    case gds_arg_unix:
-	    case gds_arg_domain:
-	    case gds_arg_dos:
-	    case gds_arg_mpexl:
-	    case gds_arg_mpexl_ipc:
-	    case gds_arg_next_mach:
-	    case gds_arg_netware:
 	    case gds_arg_win32:
 		*v++ = GET_WORD;
 		continue;

@@ -25,6 +25,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" defines
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -116,11 +118,7 @@
 // MOD 23-July-2002
 
 #ifndef SUPERSERVER
-#ifdef NETWARE_386
-#define OPEN_MASK		    0
-#else
 struct tgbl *gdgbl;
-#endif
 #endif
 
 #ifndef FOPEN_WRITE_TYPE
@@ -548,7 +546,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 		argv++;
 		argc--;
 	}
-#ifndef NETWARE_386
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdgbl->gbl_sw_service_gbak = TRUE;
 		tdgbl->output_proc = output_svc;
@@ -575,7 +572,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 		argv += 4;
 		argc -= 4;
 	}
-#endif
 
 #if defined (WIN95) && !defined (GUI_TOOLS)
 	if (!fAnsiCP)

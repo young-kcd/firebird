@@ -21,6 +21,9 @@
  * Contributor(s): ______________________________________.
  *
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _JRD_FIL_H_
@@ -33,11 +36,7 @@
 #endif
 
 #ifdef PC_PLATFORM
-#ifdef NETWARE_386
-#define WORKDIR        "sys:\\tmp\\"
-#else
 #define WORKDIR        ""
-#endif
 #endif
 
 #ifdef WIN_NT

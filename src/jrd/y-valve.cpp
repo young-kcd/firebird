@@ -30,9 +30,11 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: y-valve.cpp,v 1.12 2002-10-29 03:31:18 seanleyne Exp $
+$Id: y-valve.cpp,v 1.13 2002-10-30 06:40:49 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -5250,7 +5252,6 @@ static void check_status_vector(STATUS * status, STATUS expected)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_netware:
 		case gds_arg_win32:
 			s++;
 			break;
@@ -6145,7 +6146,6 @@ static void save_error_string(STATUS * status)
 		case isc_arg_number:
 		case isc_arg_vms:
 		case isc_arg_unix:
-		case isc_arg_netware:
 		case isc_arg_win32:
 			status++;			/* Skip parameter */
 			break;

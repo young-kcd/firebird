@@ -26,6 +26,7 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -4839,10 +4840,7 @@ static PORT analyze(TEXT*	file_name,
 			if (!port)
 			{
 				/* retry in case multiclient inet server not forked yet */
-
-#ifndef NETWARE_386
 				sleep(2);
-#endif
 				port = INET_analyze(file_name, file_length, status_vector,
 									node_name, user_string, uv_flag, dpb,
 									dpb_length);

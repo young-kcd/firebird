@@ -26,6 +26,8 @@
  *
  * 2002.10.27 Sean Leyne - Completed removal of "DELTA" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -50,14 +52,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef NETWARE_386
-#include <fcntl.h>
-#include <share.h>
-#include <sys/stat.h>
-#include <fileengd.h>
-#endif
-
-#ifndef NETWARE_386
 #  ifndef WIN_NT
 #    ifndef VMS
 #      include <fcntl.h>
@@ -66,7 +60,6 @@
 #      include <file.h>
 #    endif
 #  endif
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -428,77 +421,6 @@ int LLIO_close(STATUS * status_vector, SLONG file_desc)
 }
 
 
-#ifdef NETWARE_386
-int LLIO_open(
-			  STATUS * status_vector,
-			  TEXT * filename,
-			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
-{
-/**************************************
- *
- *	L L I O _ o p e n		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Open a file.
- *
- **************************************/
-	int oldmask;
-	int access;
-	int share;
-	int permission;
-	int flagBits;
-
-	access = O_BINARY;
-	share = SH_DENYNO;
-	permission = 0;
-	flagBits = 0;
-
-	switch (open_mode) {
-	case LLIO_OPEN_R:
-		access |= O_RDONLY;
-		break;
-	case LLIO_OPEN_RW:
-		access |= O_RDWR | O_CREAT;
-		break;
-	case LLIO_OPEN_WITH_SYNC_RW:
-		access |= O_RDWR;
-		flagBits = FILE_WRITE_THROUGH_BIT;
-		break;
-	case LLIO_OPEN_WITH_TRUNC_RW:
-		access |= O_RDWR | O_CREAT | O_TRUNC;
-		break;
-	case LLIO_OPEN_EXISTING_RW:
-		access |= O_RDWR;
-		break;
-	case LLIO_OPEN_WITH_SYNC_W:
-		access |= O_WRONLY | O_CREAT;
-		flagBits = FILE_WRITE_THROUGH_BIT;
-		break;
-	case LLIO_OPEN_NEW_RW:
-		access |= O_CREAT | O_EXCL | O_RDWR;
-		break;
-	}
-
-	if (share_flag)
-		oldmask = umask(0);
-	*file_desc = FEsopen(filename, access, share, permission,
-						 flagBits, PrimaryDataStream);
-	if (share_flag)
-		umask(oldmask);
-	if (*file_desc == -1) {
-		if (status_vector)
-			io_error(status_vector, "FEsopen", filename, isc_io_open_err);
-		return FAILURE;
-	}
-
-	return SUCCESS;
-}
-#endif
-
-
-#ifndef NETWARE_386
 int LLIO_open(
 			  STATUS * status_vector,
 			  TEXT * filename,
@@ -553,8 +475,6 @@ int LLIO_open(
 
 	return SUCCESS;
 }
-#endif
-
 
 int LLIO_read(
 			  STATUS * status_vector,
@@ -659,11 +579,7 @@ int LLIO_sync(STATUS * status_vector, SLONG file_desc)
  *
  **************************************/
 
-#if defined NETWARE_386
-	return SUCCESS;
-#else
 	return (fsync((int) file_desc) != -1) ? SUCCESS : FAILURE;
-#endif
 }
 
 

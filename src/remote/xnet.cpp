@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifdef  XNET
@@ -1341,15 +1344,7 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 					   isc_arg_string, protocol, isc_arg_string, "tcp", 0);
 		return NULL;
 	}
-
-#ifdef NETWARE_386
-/* LATER, bug in NOVELL getservbyname() */
-
-	service->s_port = 3050;
-	address.sin_port = htons(service->s_port);
-#else
 	address.sin_port = service->s_port;
-#endif
 
 /* Allocate a port block and initialize a socket for communications */
 

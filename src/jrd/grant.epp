@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -35,9 +38,6 @@
 #include "../jrd/val.h"
 #include "../jrd/met.h"
 #include "../jrd/intl.h"
-#ifdef NETWARE_386
-#define V4_THREADING
-#endif
 #include "../jrd/nlm_thd.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"

@@ -19,17 +19,16 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _WAL_WSTAT_PROTO_H_
 #define _WAL_WSTAT_PROTO_H_
 
-#ifdef NETWARE_386
-extern void	WSTATUS_dump_wal_segment (WAL, int, struct svc *);
-#else
 #include "../jrd/ib_stdio.h"
 extern void	WSTATUS_dump_wal_segment (WAL, int, IB_FILE *);
-#endif
 
 #endif	/* _WAL_WSTAT_PROTO_H_ */
 

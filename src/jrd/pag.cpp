@@ -34,6 +34,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 /*
@@ -161,10 +163,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef WIN_NT
 #define CLASS		16
-#endif
-
-#ifdef NETWARE_386
-#define CLASS		8
 #endif
 
 #ifdef SINIXZ

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -40,10 +43,6 @@
 
 #if defined(WIN_NT)
 #include <io.h>
-#endif
-
-#ifdef NETWARE_386
-#define exit(code)	return
 #endif
 
 USHORT sw_service_gjrn;
@@ -79,11 +78,7 @@ static FUNC_TABLE option_table[] = {
 };
 
 
-#ifdef NETWARE_386
-int main_gjrn(
-#else
 int CLIB_ROUTINE main( int argc,
-#endif
 					  char *argv[])
 {
 /**************************************
@@ -105,16 +100,8 @@ int CLIB_ROUTINE main( int argc,
 	SLONG exit_code;
 	SLONG redir_in, redir_out, redir_err;
 	TEXT msg[128];
-#ifdef NETWARE_386
-	int argc;
-#endif
-
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
-#endif
-
-#ifdef NETWARE_386
-	argc = argv[0];
 #endif
 
 /* Perform some special handling when run as an Interbase service.  The

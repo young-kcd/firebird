@@ -22,6 +22,9 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -102,10 +105,6 @@ static BOOLEAN write_page(TDBB, register BDB, USHORT, STATUS *, BOOLEAN);
 static void unmark(TDBB, WIN *);
 
 #define MIN_BUFFER_SEGMENT	65536L
-
-#ifdef NETWARE_386
-#define DEBUG_PRINTF(msg)	ConsolePrintf (msg)
-#endif
 
 #ifndef DEBUG_PRINTF
 #define DEBUG_PRINTF(msg)	ib_fprintf (ib_stderr, (msg))

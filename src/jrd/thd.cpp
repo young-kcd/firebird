@@ -22,6 +22,8 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
@@ -47,12 +49,6 @@
 #undef TEXT
 #endif
 #define TEXT		SCHAR
-#endif
-
-#ifdef NETWARE_386
-extern int BeginThread(void (*__func) (void *), void *__stackP,
-					   unsigned __stackSize, void *__arg);
-#define STACK_SIZE	128000
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -135,9 +131,6 @@ long THD_get_thread_id(void)
 	long id = 1;
 #ifdef WIN_NT
 	id = GetCurrentThreadId();
-#endif
-#ifdef NETWARE_386
-	id = GetThreadID();
 #endif
 #ifdef SOLARIS_MT
 	id = thr_self();
@@ -237,26 +230,6 @@ THDD THD_get_specific(void)
  **************************************/
 
 	return (THDD) TlsGetValue(specific_key);
-}
-#endif
-#endif
-
-
-#ifdef ANY_THREADING
-#ifdef NETWARE_386
-#define GET_SPECIFIC_DEFINED
-THDD THD_get_specific(void)
-{
-/**************************************
- *
- *	T H D _ g e t _ s p e c i f i c		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	return ((THDD) GetThreadDataAreaPtr());
 }
 #endif
 #endif
@@ -777,79 +750,6 @@ int THD_mutex_unlock(MUTX_T * mutex)
 #endif // WIN_NT
 
 #endif // ANY_THREADING
-
-
-#ifdef ANY_THREADING
-#ifdef NETWARE_386
-#define THREAD_MUTEXES_DEFINED
-int THD_mutex_destroy(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	if (mutex->mutx_mutex != 0)
-		ISC_semaphore_close(mutex->mutx_mutex);
-
-	return 0;
-}
-
-
-int THD_mutex_init(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	ISC_semaphore_open(&mutex->mutx_mutex, 1);
-	return 0;
-}
-
-
-int THD_mutex_lock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ISC_mutex_lock(&mutex->mutx_mutex);
-}
-
-
-int THD_mutex_unlock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ISC_mutex_unlock(&mutex->mutx_mutex);
-}
-#endif
-#endif
 
 
 #ifndef THREAD_MUTEXES_DEFINED
@@ -1669,11 +1569,6 @@ void THD_yield(void)
 #ifdef WIN_NT
 	SleepEx(1, FALSE);
 #endif
-
-#ifdef NETWARE_386
-	ThreadSwitch();
-#endif
-
 #endif /* ANY_THREADING */
 }
 
@@ -1929,27 +1824,6 @@ static void put_specific(THDD new_context)
 #endif
 
 
-#ifdef ANY_THREADING
-#ifdef NETWARE_386
-#define PUT_SPECIFIC_DEFINED
-static void put_specific(THDD new_context)
-{
-/**************************************
- *
- *	p u t _ s p e c i f i c		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	SaveThreadDataAreaPtr(new_context);
-}
-#endif
-#endif
-
-
 #ifndef PUT_SPECIFIC_DEFINED
 static void put_specific(THDD new_context)
 {
@@ -1964,41 +1838,6 @@ static void put_specific(THDD new_context)
  **************************************/
 
 	gdbb = new_context;
-}
-#endif
-
-
-#ifdef NETWARE_386
-#define START_THREAD
-static int thread_start(
-						int (*routine) (void *),
-						void *arg, int priority, int flags, void *thd_id)
-{
-/**************************************
- *
- *      t h r e a d _ s t a r t         ( N E T W A R E )
- *
- **************************************
- *
- * Functional description
- *      Start a new thread.  Return 0 if successful,
- *      status if not.
- *
- **************************************/
-	int ret;
-
-	flags = flags;
-	priority = priority;
-
-	ret = BeginThread(routine, NULL, STACK_SIZE, arg);
-
-	if (thd_id)
-		*(int *) thd_id = ret;
-
-	if (ret)
-		return (0);
-	else
-		return (1);
 }
 #endif
 

@@ -28,9 +28,11 @@
  * 2001.6.9 Claudio Valderrama: Added nod_del_view, nod_current_role and nod_breakleave.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: dsql.cpp,v 1.25 2002-10-29 20:20:14 skidder Exp $
+$Id: dsql.cpp,v 1.26 2002-10-30 06:40:45 seanleyne Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -102,9 +104,6 @@ ASSERT_FILENAME
 
 extern "C" {
 
-#ifdef NETWARE_386
-#define PRINTF		ConsolePrintf
-#endif
 #ifndef PRINTF
 #define PRINTF		ib_printf
 #endif

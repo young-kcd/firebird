@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -63,9 +66,6 @@
 #endif
 
 #ifdef SUPERSERVER
-#ifdef NETWARE_386
-#define getpid		GetThreadID
-#endif
 #ifdef WIN_NT
 #define getpid		GetCurrentThreadId
 #endif
@@ -244,12 +244,7 @@ void WALC_build_dbg_filename( TEXT * dbname, TEXT * dbg_filename)
  **************************************/
 
 	strcpy(dbg_filename, dbname);
-#ifdef NETWARE_386
-	ISC_strip_extension(dbg_filename);
-	strcat(dbg_filename, ".wdb");
-#else
 	strcat(dbg_filename, ".ww.dbg");
-#endif
 }
 
 
@@ -443,7 +438,7 @@ SSHORT WALC_init(STATUS * status_vector,
 		return FAILURE;
 	}
 
-#if (defined UNIX || defined NETWARE_386)
+#if (defined UNIX)
 	wal->wal_shmem_data.sh_mem_semaphores = MAX_WALSEMS;
 #endif
 	if ((WAL_segment = (WALS) ISC_map_file(status_vector, wal_mapfile,
@@ -487,11 +482,7 @@ SSHORT WALC_init(STATUS * status_vector,
 
 	wal->wal_count = 1;
 	wal->wal_pid = getpid();
-#if (defined NETWARE_386)
-	wal->wal_id = (SLONG) wal->wal_shmem_data.sh_mem_address;
-#else
 	wal->wal_id = (SLONG) wal->wal_shmem_data.sh_mem_handle;
-#endif
 	wal->wal_grpc_wait_id = -1;
 	wal->wal_flags = 0;
 	wal->wal_local_info_ptr = NULL;

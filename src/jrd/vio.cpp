@@ -28,6 +28,8 @@
  *                            to be stored (DB$xxx, for example)
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -2201,11 +2203,6 @@ void VIO_start_save_point(TDBB tdbb, TRA transaction, TEXT* name)
  *
  **************************************/
 	SAV sav_point;
-
-#if defined(NETWARE_386)
-	if ((unsigned) stackavail() < (unsigned) STACK_SAFE_LIMIT)
-		ERR_post(isc_err_stack_limit, 0);
-#endif
 
 	SET_TDBB(tdbb);
 

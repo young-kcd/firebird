@@ -23,6 +23,9 @@
  * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 
@@ -162,11 +165,8 @@ static void dba_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 
 #ifdef SUPERSERVER
 #include <fcntl.h>
-#if (defined WIN_NT || defined NETWARE_386)
+#if (defined WIN_NT)
 #include <share.h>
-#endif
-#ifdef NETWARE_386
-#include <fileengd.h>
 #endif
 
 #include "../jrd/pwd.h"
@@ -346,7 +346,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		argc--;
 	}
 #endif
-#ifndef NETWARE_386
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
@@ -371,8 +370,6 @@ int CLIB_ROUTINE main(int argc, char **argv)
 		argv += 4;
 		argc -= 4;
 	}
-#endif
-
 	name = NULL;
 	sw_log = sw_system = sw_data = sw_index = sw_version = sw_header =
 		sw_record = sw_relation = FALSE;
@@ -1265,181 +1262,6 @@ static ULONG analyze_versions( REL relation, RHDF header)
 }
 
 
-#ifdef NETWARE_386
-static void db_close( int file_desc)
-{
-/**************************************
- *
- *	d b _ c l o s e		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *    Close an open file
- *
- **************************************/
-	close(file_desc);
-}
-
-static void db_error( int status)
-{
-/**************************************
- *
- *	d b _ e r r o r		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	SCHAR *p;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
-	tddba->page_number = -1;
-
-	FPRINTF(tddba->sw_outfile, "%s\n", sys_errlist[status]);
-	EXIT(FINI_ERROR);
-}
-
-
-static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
-{
-/**************************************
- *
- *	d b _ o p e n		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Open a database file.
- *
- **************************************/
-	DBA_FIL fil;
-	open_files *file_list;
-	TEXT expanded_filename[256];
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
-
-	ISC_expand_filename(file_name, file_length, expanded_filename);
-
-	if (tddba->files) {
-		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
-		fil->fil_next =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) +
-							strlen((char*) expanded_filename) + 1);
-		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
-		fil = fil->fil_next;
-	}
-	else {						/* empty list */
-
-		fil = tddba->files =
-			(DBA_FIL) ALLOC(sizeof(struct dba_fil) +
-							strlen((char*) expanded_filename) + 1);
-		MOVE_CLEAR(tddba_files, sizeof(struct dba_fil));
-		fil->fil_min_page = 0L;
-	}
-
-	fil->fil_next = NULL;
-	strcpy((char*) fil->fil_string, (char*) expanded_filename);
-	fil->fil_length = strlen((char*) expanded_filename);
-	fil->fil_fudge = 0;
-	fil->fil_max_page = 0L;
-
-	if (
-		(fil->fil_desc =
-		 FEsopen(expanded_filename, O_RDONLY | O_BINARY, SH_DENYNO, 0, 0,
-				 PrimaryDataStream)) == -1)
-	{
-#ifdef SUPERSERVER
-		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
-								GSTAT_MSG_FAC, 29,
-								isc_arg_string, expanded_filename,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 29: Can't open database file %s */
-#endif
-		db_error(errno);
-	}
-
-	file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
-	if (!file_list) {
-		/* NOMEM: return error */
-		dba_error(31, 0, 0, 0, 0, 0);
-	}
-	file_list->desc = fil->fil_desc;
-	file_list->open_files_next = 0;
-
-	if (tddba->head_of_files_list == 0)
-		tddba->head_of_files_list = file_list;
-	else {
-		file_list->open_files_next = tddba->head_of_files_list;
-		tddba->head_of_files_list = file_list;
-	}
-
-	return fil;
-}
-
-
-static PAG db_read( SLONG page_number)
-{
-/**************************************
- *
- *	d b _ r e a d		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Read a database page.
- *
- **************************************/
-	SCHAR *p;
-	SSHORT length, l;
-	DBA_FIL fil;
-	TDBA tddba;
-	UINT64 offset;
-
-	tddba = GET_THREAD_DATA;
-
-	if (tddba->page_number == page_number)
-		return tddba->global_buffer;
-
-	tddba->page_number = page_number;
-
-	for (fil = tddba->files;
-		 page_number > fil->fil_max_page
-		 && fil->fil_next;) fil = fil->fil_next;
-
-	page_number -= fil->fil_min_page - fil->fil_fudge;
-	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
-	if (lseek (fil->fil_desc, offset, 0) == -1) {
-#ifdef SUPERSERVER
-		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
-								GSTAT_MSG_FAC, 30,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 30: Can't read a database page */
-#endif
-		db_error(errno);
-	}
-
-	for (p = (SCHAR *) tddba->global_buffer, length = tddba->page_size;
-		 length > 0;) {
-		l = read(fil->fil_desc, p, length);
-		if (l <= 0) {
-#ifdef SUPERSERVER
-			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
-									GSTAT_MSG_FAC, 30,
-									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);	/* msg 30: Can't read a database page */
-#endif
-			db_error(errno);
-		}
-		p += l;
-		length -= l;
-	}
-
-	return tddba->global_buffer;
-}
-#endif
-
-
 #ifdef WIN_NT
 static void db_close( int file_desc)
 {
@@ -1634,7 +1456,6 @@ static PAG db_read( SLONG page_number)
 #endif
 
 
-#ifndef NETWARE_386
 #ifndef WIN_NT
 
 static void db_close( int file_desc)
@@ -1820,7 +1641,6 @@ static PAG db_read( SLONG page_number)
 
 	return tddba->global_buffer;
 }
-#endif
 #endif
 
 

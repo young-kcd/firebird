@@ -20,11 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.8 2002-09-25 17:12:11 skidder Exp $
+ * $Id: rse.cpp,v 1.9 2002-10-30 06:40:49 seanleyne Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
  * 2002.02.22 Claudio Valderrama: Fix SF Bugs #225283, #518279, #514186 & #221925.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -119,19 +121,15 @@ static void restore_record(RPB *);
 static void save_record(TDBB, RPB *);
 static void write_merge_block(TDBB, MFB, ULONG);
 
-#ifndef NETWARE_386
 #ifdef PC_PLATFORM
 #define SCRATCH         "m"
 #endif
-#endif
 
 #ifdef SMALL_FILE_NAMES
-#ifndef NETWARE_386
 #define SCRATCH         "gds_m"
 #endif
-#endif
 
-#if (defined WIN_NT || defined NETWARE_386)
+#if (defined WIN_NT)
 #define SCRATCH         "ib_merge_"
 #endif
 

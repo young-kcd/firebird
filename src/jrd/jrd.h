@@ -22,6 +22,8 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef JRD_JRD_H
@@ -323,15 +325,7 @@ typedef dbb* DBB;
 #define DBB_MUTX_cache          4	// Process-private cache management
 #define DBB_MUTX_clone          5	// Request cloning
 #define DBB_MUTX_cmp_clone      6	// Compiled request cloning
-#ifndef NETWARE_386
 #define DBB_MUTX_max            7
-#else
-#define DBB_MUTX_udf            7	// UDF lookup
-#define DBB_MUTX_grant_priv     8	// Generate user privileges
-#define DBB_MUTX_get_class      9	// Read a security class
-#define DBB_MUTX_max            10
-#endif
-
 #define DBB_WLCK_pools          0	// Pool manipulation
 #define DBB_WLCK_files          1	// DB and shadow file manipulation
 #define DBB_WLCK_max            2
@@ -939,7 +933,7 @@ typedef struct ihndl
 
 /* RITTER - changed HP10 to HPUX in the expression below */
 #ifdef MULTI_THREAD
-#if (defined NETWARE_386 || defined SOLARIS_MT || defined WIN_NT || \
+#if (defined SOLARIS_MT || defined WIN_NT || \
 	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif

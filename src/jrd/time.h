@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 
@@ -55,12 +58,6 @@
  */
 #define MIN_YEAR 0001
 #define MAX_YEAR 9999
-
-
-#ifdef NETWARE_386
-#define sleep(nsec)	delay((nsec) * 1000)
-#endif
-
 
 
 #endif /* _JRD_TIME_H_ */

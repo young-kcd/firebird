@@ -26,9 +26,11 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: inet_server.cpp,v 1.14 2002-10-29 03:31:19 seanleyne Exp $
+$Id: inet_server.cpp,v 1.15 2002-10-30 06:40:50 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -101,10 +103,6 @@ $Id: inet_server.cpp,v 1.14 2002-10-29 03:31:19 seanleyne Exp $
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 
-#ifdef NETWARE_386
-#include <signal.h>
-#endif
-
 #ifdef UNIX
 #ifdef NETBSD
 #include <signal.h>
@@ -136,7 +134,7 @@ $Id: inet_server.cpp,v 1.14 2002-10-29 03:31:19 seanleyne Exp $
 #ifndef NFDBITS
 #define NFDBITS		(sizeof(SLONG) * NBBY)
 
-#if !(defined NETWARE_386 || defined DARWIN)
+#if !(defined DARWIN)
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
@@ -583,7 +581,7 @@ static int assign( SCHAR * string)
 
 
 
-#if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM)
+#if !(defined VMS || defined PC_PLATFORM)
 static void set_signal( int signal_number, void (*handler) (void))
 {
 /**************************************

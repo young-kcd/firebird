@@ -22,9 +22,12 @@
  *
  * 2001.9.18 Claudio Valderrama: Allow return parameter by descriptor
  * to signal NULL by testing the flags of the parameter's descriptor.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: fun.epp,v 1.9 2002-09-25 17:12:09 skidder Exp $
+$Id: fun.epp,v 1.10 2002-10-30 06:40:47 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -59,9 +62,6 @@ $Id: fun.epp,v 1.9 2002-09-25 17:12:09 skidder Exp $
 #include "../jrd/sch_proto.h"
 #include "../jrd/isc_s_proto.h"
 
-#ifdef NETWARE_386
-#define V4_THREADING
-#endif
 #include "../jrd/nlm_thd.h"
 
 #ifdef VMS

@@ -28,6 +28,9 @@
  *
  * 2001.08.07 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, second attempt
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -69,11 +72,6 @@ extern "C" {
 #define FOPEN_TYPE	"a+"
 #define FOPEN_READ_ONLY	"rb"
 #endif
-
-#ifdef NETWARE_386
-#define SYS_ERR		gds_arg_netware
-#endif
-
 
 #ifndef SYS_ERR
 #define SYS_ERR		gds_arg_unix

@@ -26,6 +26,8 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 /* ------------NOTE NOTE NOTE -----------
@@ -184,10 +186,8 @@
 #define           BOOL int
 #endif
 
-#ifndef NETWARE_386
 #ifndef MS_DOS
 #define far
-#endif
 #endif
 
 typedef VOID far *pVOID;
@@ -1036,9 +1036,12 @@ pVOID CALLTYPE LdCalloc(UINT16 NumberItems, UINT16 SizeItem);
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.9 2002-10-28 05:19:47 seanleyne Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.10 2002-10-30 06:40:46 seanleyne Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.9  2002/10/28 05:19:47  seanleyne
+//	Code Cleanup, removed obsolete "Ultrix" and "Ultrix/MIPS" ports
+//	
 //	Revision 1.8  2002/10/02 09:40:21  eku
 //	Fixed compiler warning 'No newline at end of file'.
 //	

@@ -33,6 +33,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
@@ -222,26 +224,7 @@ static size_t getpagesize(void) {return PAGESIZE;}
 
 #endif
 
-
-/* NLM stuff */
-
-#ifdef NETWARE_386
-typedef struct shr_mem_hndl
-{
-	struct shr_mem_hndl*	next;
-	SH_MEM_T				shmem_data;
-	TEXT					file_name[MAXPATHLEN];
-} *SHR_MEM_HNDL;
-
-static SHR_MEM_HNDL shared_memory_handles = NULL;
-static MTX_T sync_mutex;
-#define SYNC_MUTEX	&sync_mutex
-
-#endif
-
-
 extern "C" {
-
 
 static void		alarm_handler(void);
 static void		error(STATUS *, TEXT *, STATUS);
@@ -253,10 +236,6 @@ static void		longjmp_sig_handler(int);
 #endif // UNIX && SUPERSERVER
 
 static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
-
-#ifdef NETWARE_386
-static void		cleanup_semaphores(ULONG);
-#endif
 
 #ifdef VMS
 static int event_test(WAIT *);
@@ -1525,175 +1504,6 @@ void (*timeout_handler) (), void *handler_arg)
 }
 
 #endif // WIN_NT
-
-
-#ifdef NETWARE_386
-#define EVENTS
-int ISC_event_blocked(USHORT count, EVENT * events, SLONG * values)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ b l o c k e d	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	If a wait would block, return TRUE.
- *
- **************************************/
-
-	for (; count > 0; --count, ++events, ++values)
-		if ((*events)->event_count >= *values)
-			return FALSE;
-
-	return TRUE;
-}
-
-
-SLONG ISC_event_clear(EVENT event)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ c l e a r	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Clear an event preparatory to waiting on it.  The order of
- *	battle for event synchronization is:
- *
- *	    1.  Clear event.
- *	    2.  Test data structure for event already completed
- *	    3.  Wait on event.
- *
- **************************************/
-	SLONG val;
-
-	EnterCritSec();
-	val = ExamineLocalSemaphore(event->event_semid);
-	while (val > 0) {
-		WaitOnLocalSemaphore(event->event_semid);
-		val--;
-	}
-
-	ExitCritSec();
-
-	return event->event_count + 1;
-}
-
-
-void ISC_event_fini(EVENT event)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ f i n i	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Discard an event object.
- *
- **************************************/
-
-	if (event->event_semid == 0)
-		return;
-
-	ISC_semaphore_close(event->event_semid);
-}
-
-
-int ISC_event_init(EVENT event, ULONG * semaphores, int semnum)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ i n i t	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Prepare an event object for use.
- *
- **************************************/
-
-	if (semaphores == 0)
-		ISC_semaphore_open(&event->event_semid, 0);
-	else
-		event->event_semid = semaphores[semnum];
-
-	event->event_count = 0;
-
-	return TRUE;
-}
-
-
-int ISC_event_post(EVENT event)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ p o s t	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Post an event to wake somebody else up.
- *
- **************************************/
-	SLONG val;
-
-	++event->event_count;
-	EnterCritSec();
-	val = ExamineLocalSemaphore(event->event_semid);
-	while (val < 0) {
-		SignalLocalSemaphore(event->event_semid);
-		val++;
-	}
-
-	ExitCritSec();
-
-	return 0;
-}
-
-
-int ISC_event_wait(
-				   SSHORT count,
-				   EVENT * events,
-				   SLONG * values,
-				   SLONG micro_seconds,
-				   void (*timeout_handler) (), void *handler_arg)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ w a i t	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Wait on an event.
- *
- **************************************/
-	ULONG timeout;
-	SLONG val;
-
-/* If we're not blocked, the rest is a gross waste of time */
-
-	if (!ISC_event_blocked(count, events, values))
-		return SUCCESS;
-
-	for (;;) {
-		if (!ISC_event_blocked(count, events, values))
-			return SUCCESS;
-		if (micro_seconds <= 0)
-			WaitOnLocalSemaphore((*events)->event_semid);
-		else {
-			timeout = micro_seconds / 1000;
-			val = TimedWaitOnLocalSemaphore((*events)->event_semid, timeout);
-			if (val != 0)
-				if (ISC_event_blocked(count, events, values))
-					return (FAILURE);
-		}
-	}
-}
-#endif
 
 
 #ifndef REQUESTER
@@ -3082,117 +2892,6 @@ UCHAR *DLL_EXPORT ISC_map_file(STATUS * status_vector, TEXT * filename,
 #endif
 
 
-#ifdef NETWARE_386
-#define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(STATUS * status_vector,
-					TEXT * filename,
-					void (*init_routine) (void *, struct sh_mem *, int),
-					void *init_arg, SLONG length, SH_MEM shmem_data)
-{
-/**************************************
- *
- *	I S C _ m a p _ f i l e		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Try to map a given file.  If we are the first (i.e. only)
- *	process to map the file, call a given initialization
- *	routine (if given) or punt (leaving the file unmapped).
- *
- **************************************/
-	void *address;
-	ULONG *semaphores;
-	ULONG i;
-	SHR_MEM_HNDL handle;
-	int init_flag;
-
-	if (length < 0)
-		length = -length;
-
-	ISC_mutex_lock(SYNC_MUTEX);
-
-	for (handle = shared_memory_handles; handle != NULL;
-		 handle = handle->next) if (strcmp(handle->file_name, filename) == 0)
-			break;
-
-	if (handle != NULL)
-		init_flag = FALSE;
-	else {
-		if (length == 0) {
-			ISC_mutex_unlock(SYNC_MUTEX);
-			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds_virmemexh;
-			status_vector[2] = gds_arg_end;
-			return (NULL);
-		}
-
-		init_flag = TRUE;
-
-		address = gds__alloc(length);
-		/* FREE: ?by ISC_remap_file? */
-		if (!address) {			/* NOMEM: */
-			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds_virmemexh;
-			status_vector[2] = gds_arg_end;
-			ISC_mutex_unlock(SYNC_MUTEX);
-			return (NULL);
-		}
-
-		if (shmem_data->sh_mem_semaphores > 0) {
-			semaphores =
-				gds__alloc(shmem_data->sh_mem_semaphores * sizeof(ULONG));
-			/* FREE: unknown */
-			if (!semaphores) {	/* NOMEM: */
-				gds__free(address);
-				status_vector[0] = gds_arg_gds;
-				status_vector[1] = gds_virmemexh;
-				status_vector[2] = gds_arg_end;
-				ISC_mutex_unlock(SYNC_MUTEX);
-				return (NULL);
-			}
-			for (i = 0; i < shmem_data->sh_mem_semaphores; i++)
-				ISC_semaphore_open(&semaphores[i], 1);
-		}
-		else
-			semaphores = NULL;
-
-		handle = gds__alloc(sizeof(struct shr_mem_hndl));
-		/* FREE: ?by ISC_remap_file? */
-		if (!handle) {			/* NOMEM: */
-			gds__free(address);
-			if (semaphores)
-				gds__free(semaphores);
-			status_vector[0] = gds_arg_gds;
-			status_vector[1] = gds_virmemexh;
-			status_vector[2] = gds_arg_end;
-			ISC_mutex_unlock(SYNC_MUTEX);
-			return (NULL);
-		}
-		handle->shmem_data.sh_mem_address = address;
-		handle->shmem_data.sh_mem_length_mapped = length;
-		handle->shmem_data.sh_mem_mutex_arg = semaphores;
-		strcpy(handle->file_name, filename);
-
-		handle->next = shared_memory_handles;
-		shared_memory_handles = handle;
-	}
-
-	shmem_data->sh_mem_address = handle->shmem_data.sh_mem_address;
-	shmem_data->sh_mem_length_mapped =
-		handle->shmem_data.sh_mem_length_mapped;
-	shmem_data->sh_mem_mutex_arg = handle->shmem_data.sh_mem_mutex_arg;
-
-	if (init_routine)
-		(*init_routine) (init_arg, shmem_data, init_flag);
-
-	ISC_mutex_unlock(SYNC_MUTEX);
-
-	return (shmem_data->sh_mem_address);
-}
-#endif
-
-
 #ifndef REQUESTER
 #ifndef ISC_MAP_FILE_DEFINED
 UCHAR *ISC_map_file(STATUS * status_vector,
@@ -3896,66 +3595,6 @@ int DLL_EXPORT ISC_mutex_unlock(MTX mutex)
 #endif
 
 
-#ifdef NETWARE_386
-#define MUTEX
-int ISC_mutex_init(MTX mutex, ULONG * semaphores)
-{
-/**************************************
- *
- *	I S C _ m u t e x _ i n i t	( N E T W A R E  _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Initialize a mutex.
- *
- **************************************/
-
-	(*mutex) = semaphores[0];
-
-	return 0;
-}
-
-
-int ISC_mutex_lock(MTX mutex)
-{
-/**************************************
- *
- *	I S C _ m u t e x _ l o c k	( N E T W A R E  _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Sieze a mutex.
- *
- **************************************/
-
-	WaitOnLocalSemaphore(*mutex);
-
-	return 0;
-}
-
-
-int ISC_mutex_unlock(MTX mutex)
-{
-/**************************************
- *
- *	I S C _ m u t e x _ u n l o c k		( N E T W A R E  _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Release a mutex.
- *
- **************************************/
-
-	SignalLocalSemaphore(*mutex);
-
-	return 0;
-}
-#endif
-
-
 #ifndef MUTEX
 int ISC_mutex_init(MTX mutex, SLONG dummy)
 {
@@ -4005,63 +3644,6 @@ int ISC_mutex_unlock(MTX mutex)
  **************************************/
 
 	return 0;
-}
-#endif
-
-
-#ifdef NETWARE_386
-#define ISC_REMAP_FILE_DEFINED
-UCHAR *ISC_remap_file(STATUS * status_vector,
-					  SH_MEM shmem_data, SLONG new_length, USHORT flag)
-{
-/**************************************
- *
- *	I S C _ r e m a p _ f i l e		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Try to re-map a given region.
- *
- **************************************/
-	void *address;
-	SHR_MEM_HNDL handle;
-
-	ISC_mutex_lock(SYNC_MUTEX);
-
-/* First find the global handle with the address of the passed region. */
-
-	for (handle = shared_memory_handles; handle != NULL;
-		 handle =
-		 handle->next) if (handle->shmem_data.sh_mem_address ==
-						   shmem_data->sh_mem_address) break;
-
-	if (handle == NULL) {
-		/* Some error message */
-
-		ISC_mutex_unlock(SYNC_MUTEX);
-		return NULL;
-	}
-
-	address = gds__alloc(new_length);
-	if (!address) {				/* NOMEM: */
-		status_vector[0] = gds_arg_gds;
-		status_vector[1] = gds_virmemexh;
-		status_vector[2] = gds_arg_end;
-		ISC_mutex_unlock(SYNC_MUTEX);
-		return (NULL);
-	}
-
-	memcpy(address, shmem_data->sh_mem_address,
-		   shmem_data->sh_mem_length_mapped);
-	gds__free(shmem_data->sh_mem_address);
-	handle->shmem_data.sh_mem_address = shmem_data->sh_mem_address = address;
-	handle->shmem_data.sh_mem_length_mapped =
-		shmem_data->sh_mem_length_mapped = new_length;
-
-	ISC_mutex_unlock(SYNC_MUTEX);
-
-	return address;
 }
 #endif
 
@@ -4397,115 +3979,6 @@ void ISC_sync_signals_reset()
 #endif /* UNIX */
 #endif /* SUPERSERVER */
 
-#ifdef NETWARE_386
-void ISC_semaphore_close(ULONG semid)
-{
-/**************************************
- *
- *	I S C _ s e m a p h o r e _ c l o s e	(N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Unregister and close the passed semaphore.
- *
- **************************************/
-
-	if (semid) {
-		gds__unregister_cleanup(cleanup_semaphores, semid);
-		CloseLocalSemaphore(semid);
-	}
-}
-
-
-void ISC_semaphore_open(ULONG * semid, ULONG init_value)
-{
-/**************************************
- *
- *	I S C _ s e m a p h o r e _ o p e n 	(N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Open and register a semaphore.
- *
- **************************************/
-
-	*semid = OpenLocalSemaphore(init_value);
-	gds__register_cleanup(cleanup_semaphores, *semid);
-}
-#endif
-
-
-
-#ifdef NETWARE_386
-void ISC_sync_init(void)
-{
-/**************************************
- *
- *	I S C _ s y n c _ i n i t		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Initialize a mutex for this module.
- *
- **************************************/
-
-	ISC_semaphore_open(SYNC_MUTEX, 1);
-}
-#endif
-
-
-#ifdef NETWARE_386
-#define UNMAP_FILE
-void ISC_unmap_file(STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
-{
-/**************************************
- *
- *	I S C _ u n m a p _ f i l e		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Detach from the shared memory.  Depending upon the flag,
- *	get rid of the semaphore and/or get rid of shared memory.
- *
- **************************************/
-	SHR_MEM_HNDL handle, *handle_ptr;
-	ULONG i;
-
-	ISC_mutex_lock(SYNC_MUTEX);
-
-	if (flag & ISC_SEM_REMOVE) {
-		for (i = 0; i < shmem_data->sh_mem_semaphores; i++) {
-			ISC_semaphore_close(shmem_data->sh_mem_mutex_arg[i]);
-			shmem_data->sh_mem_mutex_arg[i] = 0;
-		}
-		if (shmem_data->sh_mem_semaphores > 0)
-			gds__free(shmem_data->sh_mem_mutex_arg);
-		shmem_data->sh_mem_mutex_arg = NULL;
-	}
-
-	if (flag & ISC_MEM_REMOVE) {
-		handle_ptr = &shared_memory_handles;
-		for (; handle = *handle_ptr; handle_ptr = &handle->next)
-			if (handle->shmem_data.sh_mem_address ==
-				shmem_data->sh_mem_address) {
-				*handle_ptr = handle->next;
-				gds__free(handle);
-				break;
-			}
-
-		gds__free(shmem_data->sh_mem_address);
-	}
-
-	ISC_mutex_unlock(SYNC_MUTEX);
-
-}
-#endif
-
-
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define UNMAP_FILE
@@ -4634,26 +4107,6 @@ static void alarm_handler(void)
  *	Handle an alarm clock interrupt.
  *
  **************************************/
-}
-#endif
-
-
-#ifdef NETWARE_386
-static void cleanup_semaphores(ULONG semid)
-{
-/**************************************
- *
- *	c l e a n u p _ s e m a p h o r e s	( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Close an open semaphore.
- *
- **************************************/
-
-	if (semid != 0)
-		CloseLocalSemaphore(semid);
 }
 #endif
 

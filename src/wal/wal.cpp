@@ -25,6 +25,8 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -61,10 +63,8 @@
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
-#ifndef NETWARE_386
 #ifndef WIN_NT
 #include <errno.h>
-#endif
 #endif
 
 #ifdef VMS

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _BURP_BURP_H_
@@ -906,15 +909,9 @@ extern struct tgbl *gdgbl;
 /* Move the read and write mode declarations in here from burp.c
    so that other files can see them for multivolume opens */
 
-#ifdef NETWARE_386
-#define MODE_WRITE	O_RDWR | O_CREAT | O_TRUNC
-#endif
-
 #ifdef PC_PLATFORM
-#ifndef NETWARE_386
 #define MODE_READ	O_RDONLY | O_BINARY
 #define MODE_WRITE	O_WRONLY | O_BINARY | O_CREAT
-#endif
 #endif
 
 #ifdef WIN_NT

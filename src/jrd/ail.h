@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef JRD_AIL_H
@@ -49,7 +52,7 @@ extern void AIL_set_log_options(SLONG, SSHORT, USHORT, SLONG);
 extern void AIL_shutdown(SCHAR *, SLONG *, SLONG *, SLONG *, SSHORT);
 extern void AIL_upd_cntrl_pt(TEXT *, USHORT, ULONG, ULONG, ULONG);
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #define AIL_add_log()
 #define AIL_commit(a)
 #define AIL_disable()

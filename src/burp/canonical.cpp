@@ -22,9 +22,11 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: canonical.cpp,v 1.6 2002-10-28 05:19:46 seanleyne Exp $
+$Id: canonical.cpp,v 1.7 2002-10-30 06:40:45 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -49,9 +51,7 @@ typedef vary* VARY;
 
 
 #ifdef PC_PLATFORM
-#ifndef NETWARE_386
 extern SLONG ntohl(), htonl();
-#endif
 #endif
 
 

@@ -28,9 +28,11 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
- /* $Id: isc_ipc.cpp,v 1.25 2002-10-29 02:45:09 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.26 2002-10-30 06:40:48 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -200,16 +202,9 @@ static ULONG opn_event_clock;
 #endif
 
 
-/* NLM stuff */
-
-#ifdef NETWARE_386
-#define SIGVEC		SIG_FPTR
-#endif
-
-
 /* PC_PLATFORM stuff */
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #include <signal.h>
 
 #define SIGVEC		SIG_FPTR
@@ -255,12 +250,7 @@ static void sigwait_thread(int);
 /* Not thread-safe */
 extern "C" ULONG isc_enter_count = 0;
 
-#if defined(NETWARE_386)
-static SIG_FPTR client_sigfpe = NULL;
-#else
 static SIGVEC client_sigfpe;
-#endif
-
 
 #ifdef SHLIB_DEFS
 #define sprintf		(*_libgds_sprintf)
@@ -316,10 +306,6 @@ void DLL_EXPORT ISC_enter(void)
  *	Enter ISC world from caller.
  *
  **************************************/
-#ifdef NETWARE_386
-#define ISC_ENTER
-#endif
-
 #ifndef ISC_ENTER
 /* Cancel our handler for SIGFPE - in case it was already there */
 	ISC_signal_cancel(SIGFPE, (FPTR_VOID) overflow_handler, NULL);
@@ -409,10 +395,6 @@ void DLL_EXPORT ISC_exit(void)
  *
  **************************************/
 
-#ifdef NETWARE_386
-#define ISC_EXIT
-#endif
-
 #ifndef ISC_EXIT
 /* No longer attempt to handle overflow internally */
 	ISC_signal_cancel(SIGFPE, (FPTR_VOID) overflow_handler, 0);
@@ -457,25 +439,6 @@ int ISC_kill(SLONG pid, SLONG signal_number)
  **************************************/
 
 	return kill(pid, signal_number);
-}
-#endif
-
-
-#ifdef NETWARE_386
-int ISC_kill(SLONG pid, SLONG signal_number)
-{
-/**************************************
- *
- *	I S C _ k i l l		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Notify somebody else.
- *
- **************************************/
-
-	return 0;
 }
 #endif
 
@@ -684,8 +647,7 @@ static void isc_signal2(
 
 
 #ifndef BRIDGE
-#if (defined UNIX || defined WIN_NT || \
-	(defined PC_PLATFORM && !defined NETWARE_386))
+#if (defined UNIX || defined WIN_NT || (defined PC_PLATFORM))
 #ifndef SYSV_SIGNALS
 static void isc_signal2(
 						int signal_number,
@@ -869,7 +831,6 @@ void DLL_EXPORT ISC_signal_init(void)
 	gds__register_cleanup(cleanup, 0);
 
 #ifndef VMS
-#ifndef NETWARE_386
 #ifndef PC_PLATFORM
 	process_id = getpid();
 
@@ -878,7 +839,6 @@ void DLL_EXPORT ISC_signal_init(void)
 	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, 0, SIG_informs);
 
 #endif // !defined(PC_PLATFORM)
-#endif
 #endif
 
 #endif /* PIPE_CLIENT */

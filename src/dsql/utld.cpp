@@ -24,10 +24,13 @@
  *    decides that two statements are the same based on their message
  *    descriptions because it misleads some code in remote/interface.c
  *    and causes problems when two statements are prepared.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 /*
-$Id: utld.cpp,v 1.6 2002-06-29 06:56:51 skywalker Exp $
+$Id: utld.cpp,v 1.7 2002-10-30 06:40:45 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -55,10 +58,6 @@ static void print_xsqlda(XSQLDA *);
 #endif
 static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
 static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
-
-#ifdef NETWARE_386
-#define	PRINTF	ConsolePrintf
-#endif
 
 #ifndef PRINTF
 #define PRINTF	ib_printf

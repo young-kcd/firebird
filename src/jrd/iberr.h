@@ -22,6 +22,8 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef JRD_IBERR_H
@@ -102,7 +104,6 @@ while ((type = va_arg (args, int)) && ((p - status_vector) < 17))    \
                                                 \
     case gds_arg_vms:                           \
     case gds_arg_unix:                          \
-    case gds_arg_netware:                       \
     case gds_arg_win32:                         \
     default:                                    \
         *p++ = (STATUS) va_arg (args, int);     \

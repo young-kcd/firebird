@@ -20,7 +20,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.cpp,v 1.4 2002-07-29 15:37:55 skywalker Exp $
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
+ * $Id: ibmgr.cpp,v 1.5 2002-10-30 06:40:51 seanleyne Exp $
  */
 
 #include "firebird.h"
@@ -76,12 +79,7 @@ static void print_help(void);
 static IBMGR_DATA ibmgr_data;
 
 
-#ifdef NETWARE_386
-int main_ibmgr( char **argv)
-#else
-
 int CLIB_ROUTINE main( int argc, char **argv)
-#endif
 {
 /**************************************
  *
@@ -102,11 +100,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT *user = NULL, *password = NULL, *host = NULL;	/* pointers for getenv */
 	SSHORT ret;
 	struct passwd *pw;
-
-#ifdef NETWARE_386
-	int argc;
-	argc = argv[0];
-#endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);

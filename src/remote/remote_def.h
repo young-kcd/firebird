@@ -33,6 +33,7 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -57,10 +58,6 @@
 
 #ifdef hpux
 #define ARCHITECTURE		arch_hpux
-#endif
-
-#ifdef NETWARE_386
-#define ARCHITECTURE            arch_msdos
 #endif
 
 #if (defined AIX || defined AIX_PPC)

@@ -23,6 +23,9 @@
  * 2000.11.29 Patrick J. P. Griffin: fixed bug SF #116733
  *	Add typedef struct gpg to properly document the layout of the generator page
  * 2002.08.26 Dmitry Yemanov: minor ODS change (new indices on system tables)
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _JRD_ODS_H_
@@ -411,7 +414,7 @@ typedef struct rhdf {
 	USHORT rhdf_b_line;			/* back line */
 	USHORT rhdf_flags;			/* flags, etc */
 	UCHAR rhdf_format;			/* format version */
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 	SCHAR rhdf_fill[3];			/* IMPORTANT!  THE SOLE PURPOSE OF THIS FIELD
 								   IS TO INSURE THAT THE SUCCEEDING FIELD IS ALIGNED ON A
 								   4 BYTE BOUNDARY.  IT IS NECESSARY BECAUSE THE 16-BIT
@@ -434,7 +437,7 @@ typedef struct blh {
 	USHORT blh_max_segment;		/* Longest segment */
 	USHORT blh_flags;
 	UCHAR blh_level;			/* Number of address levels */
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 	SCHAR blh_fill[3];			/* IMPORTANT!  THE SOLE PURPOSE OF THIS FIELD
 								   IS TO INSURE THAT THE SUCCEEDING FIELD IS ALIGNED ON A
 								   4 BYTE BOUNDARY.  IT IS NECESSARY BECAUSE THE 16-BIT

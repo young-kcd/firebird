@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define*
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _JRD_FILE_PARAMS_H_
@@ -46,13 +48,6 @@
 #define INIT_FILE		"isci1.%s"
 #define GUARD_FILE		"iscg1.%s"
 #endif
-#endif
-
-
-#ifdef NETWARE_386
-
-#define LOCK_HEADER		"isc_conf"
-
 #endif
 
 
@@ -133,15 +128,9 @@
 /* keep MSG_FILE_LANG in sync with build_file.e */
 
 #ifdef PC_PLATFORM
-#ifdef NETWARE_386
-#define WORKFILE	"sys:\\tmp\\"
-#define ISC_PREFIX	"sys:\\firebird\\"
-#define TEMP_PATTERN	""
-#else
 #define WORKFILE	""
 #define ISC_PREFIX	"c:/firebird/"
 #define TEMP_PATTERN	"XXXXXX"
-#endif
 #define MSG_FILE	"firebird.msg"
 #define MSG_FILE_LANG	"%.8s.msg"
 #define LOCALE_MAX	5

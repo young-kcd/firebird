@@ -19,9 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.12 2002-09-25 17:12:11 skidder Exp $
+ * $Id: sort.cpp,v 1.13 2002-10-30 06:40:49 seanleyne Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -168,19 +170,15 @@ static void write_trace(UCHAR *, SFB, ULONG, BLOB_PTR *, ULONG);
 IB_FILE *trace_file = NULL;
 #endif
 
-#ifndef NETWARE_386
 #ifdef PC_PLATFORM
 #define SCRATCH         "s"
 #endif
-#endif
 
 #ifdef SMALL_FILE_NAMES
-#ifndef NETWARE_386
 #define SCRATCH         "gds_s"
 #endif
-#endif
 
-#if (defined WIN_NT || defined NETWARE_386)
+#if (defined WIN_NT)
 #define SCRATCH         "fb_sort_"
 #endif
 
@@ -190,10 +188,6 @@ IB_FILE *trace_file = NULL;
 
 #ifdef WIN_NT
 #define	SYS_ERR		gds_arg_win32
-#endif
-
-#ifdef NETWARE_386
-#define SYS_ERR		gds_arg_netware
 #endif
 
 #ifndef SYS_ERR

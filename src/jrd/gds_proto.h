@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef JRD_GDS_PROTO_H
@@ -101,14 +104,9 @@ SSHORT	API_ROUTINE gds__msg_lookup(void*, USHORT, USHORT, USHORT,
 int		API_ROUTINE gds__msg_open(void**, TEXT*);
 void	API_ROUTINE gds__msg_put(void*, USHORT, USHORT, TEXT*, TEXT*,
 									 TEXT*, TEXT*, TEXT*);
-#ifdef NETWARE_386
-void	API_ROUTINE gds__prefix(TEXT*, void*);
-void	API_ROUTINE gds__prefix_lock(TEXT*, void*);
-#else
 void	API_ROUTINE gds__prefix(TEXT*, TEXT*);
 void	API_ROUTINE gds__prefix_lock(TEXT*, TEXT*);
 void	API_ROUTINE gds__prefix_msg(TEXT*, TEXT*);
-#endif
 
 SLONG	API_ROUTINE gds__get_prefix(SSHORT, TEXT*);
 STATUS	API_ROUTINE gds__print_status(STATUS*);
@@ -137,10 +135,6 @@ void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 void*	gds__tmp_file2(BOOLEAN, TEXT*, TEXT*, TEXT*);
 SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
 void	gds__cleanup(void);
-
-#ifdef NETWARE_386
-SCHAR*	mktemp(SCHAR*);
-#endif
 
 #ifdef VMS
 int		unlink(SCHAR*);

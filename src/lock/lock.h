@@ -34,6 +34,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _ISC_LOCK_LOCK_H_
@@ -44,11 +46,9 @@
 
 #if !defined(WIN_NT)
 #include <signal.h>
-#if !(defined NETWARE_386)
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
-#endif
 #endif
 
 #ifdef WIN_NT
@@ -65,11 +65,6 @@
 #ifdef WIN_NT
 #define DEFAULT_SIZE    32768
 #include "../jrd/isc_signal.h"
-#endif
-
-#ifdef NETWARE_386
-#define DEFAULT_SIZE    131072
-#define BLOCKING_SIGNAL 101
 #endif
 
 #ifndef BLOCKING_SIGNAL

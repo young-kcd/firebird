@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef _JRD_ALL_H_
@@ -35,7 +38,7 @@
    for a length, 8 bytes for a free block, and 2 bytes to 
    allow rounding to a 4 byte boundary */
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #define MAX_BLOCK	65520
 #else
 #define MAX_BLOCK	(262144 - MIN_ALLOCATION - sizeof (struct hnk) - 8)

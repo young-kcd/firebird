@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -77,13 +80,7 @@ static THREAD ast_thread = NULL;
 static MUTX_T thread_mutex[1];
 static USHORT init_flag = FALSE, multi_threaded = FALSE, enabled = FALSE;
 
-#ifdef NETWARE_386
-static USHORT yield_count = 0;
-#define YIELD_LIMIT      10
-#define ABORT	exit (FINI_ERROR)
-#else
 #define ABORT	abort()
-#endif
 
 
 #ifdef VMS
@@ -853,12 +850,7 @@ static void mutex_bugcheck(TEXT * string, int mutex_state)
 
 	sprintf(msg, "SCH: %s error, status = %d", string, mutex_state);
 	gds__log(msg);
-
-#ifdef NETWARE_386
-	ConsolePrintf("%s\n", msg);
-#else
 	ib_fprintf(ib_stderr, "%s\n", msg);
-#endif
 
 	ABORT;
 }
@@ -879,15 +871,6 @@ static BOOLEAN schedule(void)
  *
  **************************************/
 	THREAD thread;
-
-#ifdef NETWARE_386
-/* Be a good citizen, yield CPU periodically */
-	yield_count++;
-	if (yield_count > YIELD_LIMIT) {
-		yield_count = 0;
-		ThreadSwitch();
-	}
-#endif
 
 	if (!active_thread)
 		return FALSE;

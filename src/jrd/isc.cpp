@@ -29,9 +29,11 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: isc.cpp,v 1.16 2002-10-29 02:45:09 seanleyne Exp $
+$Id: isc.cpp,v 1.17 2002-10-30 06:40:47 seanleyne Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -743,34 +745,6 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 #endif
 
 
-#ifdef NETWARE_386
-#define GET_HOST
-TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
-{
-/**************************************
- *
- *      I S C _ g e t _ h o s t         ( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *      Get host name.
- *
- **************************************/
-	SCHAR buffer[49];
-
-	GetFileServerName(0, buffer);
-
-	if (strlen(buffer) > (length - 1))
-		*string = 0;
-	else
-		strcpy((SCHAR *) string, buffer);
-
-	return string;
-}
-#endif
-
-
 #if !defined(WIN_NT)	// implemented in isc_win32.cpp
 #ifndef GET_HOST
 TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
@@ -796,7 +770,6 @@ TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT * string, USHORT length)
 
 #if !defined(WIN_NT)	// implemented in isc_win32.cpp
 #ifdef PC_PLATFORM
-#ifndef NETWARE_386
 
 int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 									  int*	id,
@@ -838,7 +811,6 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 
 	return TRUE;
 }
-#endif
 #endif
 #endif	// !WIN_NT
 
@@ -1013,46 +985,6 @@ TEXT * organization, int *node, TEXT * user_string)
 		*node = 0;
 
 	return (privileges[0] & (SLONG) PRV$M_BYPASS);
-}
-#endif
-
-
-#ifdef NETWARE_386
-int INTERNAL_API_ROUTINE ISC_get_user(
-									  TEXT * name,
-									  int *id,
-									  int *group,
-									  TEXT * project,
-TEXT * organization, int *node, TEXT * user_string)
-{
-/**************************************
- *
- *      I S C _ g e t _ u s e r   ( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *      Find out who the user is.
- *
- **************************************/
-	SLONG name_len;
-
-	if (id)
-		*id = -1;
-
-	if (group)
-		*group = -1;
-
-	if (project)
-		*project = 0;
-
-	if (organization)
-		*organization = 0;
-
-	if (node)
-		*node = 0;
-
-	return !strcmp(name, "administrator");
 }
 #endif
 

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "../jrd/common.h"
@@ -109,11 +112,7 @@ static int file;
 
 SCHAR global_buffer[MAX_PAGE_SIZE];
 
-#ifdef NETWARE_386
-static SVC sw_outfile;
-#else
 static IB_FILE *sw_outfile;
-#endif
 
 SCHAR *page_type[] = {
 	"pag_undefined    ",
@@ -183,11 +182,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argc -= 4;
 	}
 
-#ifdef NETWARE_386
-	sw_outfile = service;
-#else
 	sw_outfile = ib_stderr;
-#endif
 
 /* Handle switches, etc. */
 

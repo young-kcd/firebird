@@ -25,9 +25,11 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: lock.cpp,v 1.18 2002-10-28 03:52:05 seanleyne Exp $
+$Id: lock.cpp,v 1.19 2002-10-30 06:40:50 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -88,11 +90,6 @@ $Id: lock.cpp,v 1.18 2002-10-28 03:52:05 seanleyne Exp $
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
-#endif
-
-#ifdef NETWARE_386
-#define getpid		GetNLMID
-#define USE_EVENTS
 #endif
 
 #if defined UNIX
@@ -199,7 +196,7 @@ SSHORT LOCK_debug_level = 0;
 #define DUMMY_OWNER_DELETE	((PTR) -2)
 #define DUMMY_OWNER_SHUTDOWN	((PTR) -3)
 
-#if !(defined linux || defined NETWARE_386 || defined WIN_NT || defined FREEBSD || defined NETBSD || defined DARWIN )
+#if !(defined linux || defined WIN_NT || defined FREEBSD || defined NETBSD || defined DARWIN )
 extern SCHAR *sys_errlist[];
 #endif
 
@@ -765,7 +762,7 @@ void LOCK_fini( STATUS * status_vector, PTR * owner_offset)
 
 	release_mutex();
 
-#if !(defined NETWARE_386 || defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
+#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
 	ISC_signal_cancel(LOCK_block_signal, ( void (*)()) blocking_action,
                   (void *) offset);
 #endif
@@ -838,7 +835,7 @@ If this happens on another classic platform add that platform too. - Shailesh
 	LOCK_owner = (OWN) ABS_PTR(*owner_handle);
 #endif
 
-#if !(defined NETWARE_386 || defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
+#if !(defined WIN_NT || defined SOLARIS_MT || POSIX_THREADS)
 #if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
 	if (LOCK_owner_offset)		/* 5.5 SCO port: gds_drop */
 #endif
@@ -2081,7 +2078,7 @@ static void bug( STATUS * status_vector, CONST TEXT * string)
 	gds__log(s);
 	ib_fprintf(ib_stderr, "%s\n", s);
 
-#if !(defined NETWARE_386 || defined WIN_NT)
+#if !(defined WIN_NT)
 	if (errno > 0)
 		ib_fprintf(ib_stderr, "--%s\n", sys_errlist[errno]);
 #endif
@@ -3086,9 +3083,6 @@ static STATUS init_lock_table( STATUS * status_vector)
 #ifdef UNIX
 	LOCK_data.sh_mem_semaphores = LOCK_sem_count;
 #endif
-#ifdef NETWARE_386
-	LOCK_data.sh_mem_semaphores = 1;
-#endif
 	if (!(LOCK_header = (LHB) ISC_map_file(status_vector, lock_file,
 										   reinterpret_cast < void (*)(void*, SH_MEM, int) >
 										   (lock_initialize), 0,
@@ -3170,9 +3164,6 @@ static void init_owner_block(
 			ISC_make_signal(TRUE, TRUE, LOCK_pid, LOCK_wakeup_signal);
 #endif
 #ifdef USE_EVENTS
-#ifdef NETWARE_386
-		ISC_event_init(owner->own_wakeup, 0, 0);
-#endif
 #if (defined WIN_NT && defined SUPERSERVER)
 		ISC_event_init(owner->own_wakeup, 0, 0);
 #endif

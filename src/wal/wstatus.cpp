@@ -19,25 +19,15 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
 #include "../wal/wal.h"
 #include "../wal/walc_proto.h"
-#ifdef NETWARE_386
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
-#endif
-
-#include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
-#endif
 #include "../wal/wstat_proto.h"
-
-#ifdef NETWARE_386
-#define exit(code)	{service->svc_handle = 0; return (code);}
-#define FPRINTF		SVC_netware_fprintf
-#endif
 
 #ifndef FPRINTF
 #define FPRINTF		ib_fprintf
@@ -45,11 +35,7 @@
 
 
 void WSTATUS_dump_wal_segment( WAL WAL_handle, int acquire_flag,
-#ifdef NETWARE_386
-							  SVC outfile)
-#else
 							  IB_FILE * outfile)
-#endif
 {
 /**************************************
  *

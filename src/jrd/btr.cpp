@@ -19,9 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  */
 /*
-$Id: btr.cpp,v 1.7 2002-09-25 17:12:09 skidder Exp $
+$Id: btr.cpp,v 1.8 2002-10-30 06:40:47 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -81,7 +82,7 @@ __inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 	*x_to++ = *x_from++;
 }
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #define OVERSIZE	(dbb->dbb_page_size + BTN_SIZE + MAX_KEY + sizeof (SLONG) - 1)
 #else
 #define OVERSIZE	(MAX_PAGE_SIZE + BTN_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
@@ -3617,7 +3618,7 @@ static SLONG insert_node(TDBB tdbb,
 	UCHAR prefix, old_prefix, old_length;
 	USHORT delta, l, node_offset;
 	SLONG old_number, split_page, right_sibling;
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 	SLONG *overflow_page = NULL;
 #else
 	SLONG overflow_page[OVERSIZE];
@@ -3730,7 +3731,7 @@ static SLONG insert_node(TDBB tdbb,
    mark the buffer as dirty. */
 
 	if (bucket->btr_length + delta > dbb->dbb_page_size) {
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 		/* allocate an overflow buffer which is large enough,
 		   and set up to release it in case of error */
 
@@ -3832,7 +3833,7 @@ static SLONG insert_node(TDBB tdbb,
 
 		CCH_RELEASE(tdbb, window);
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 		if (overflow_page)
 			plb::ALL_free(overflow_page);
 
@@ -4011,7 +4012,7 @@ midpoint = (UCHAR *) new_node;
 	}
 	CCH_RELEASE(tdbb, window);
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 	if (overflow_page)
 		plb::ALL_free(overflow_page);
 #endif

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -57,7 +60,7 @@
 #include <types.h>
 #include <file.h>
 #endif
-#if (defined WIN_NT || (defined PC_PLATFORM && !defined NETWARE_386))
+#if (defined WIN_NT)
 #include <io.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -313,7 +316,6 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 				}
 			}
 
-#ifndef NETWARE_386
 			else if (!SYSCALL_INTERRUPTED(errno))
 			{
 				if (cnt)
@@ -327,8 +329,6 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 				/* msg 50 unexpected end of file on backup file */
 				}
 			}
-#endif
-
 		}
 	}
 
@@ -627,11 +627,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			if (!cnt ||
 #ifndef WIN_NT
 				errno == ENOSPC || errno == EIO || errno == ENXIO ||
-#ifndef NETWARE_386
 				errno == EFBIG)
-#else
-				FALSE)
-#endif /* !NETWARE_386 */
 #else
 				err == ERROR_DISK_FULL || err == ERROR_HANDLE_DISK_FULL)
 #endif /* !WIN_NT */
@@ -703,13 +699,11 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					tdgbl->mvol_io_buffer = tdgbl->mvol_io_header;
 				break;
 			}
-#ifndef NETWARE_386
 			else if (!SYSCALL_INTERRUPTED(errno))
 			{
 				BURP_error_redirect(0, 221, NULL, NULL);
 				/* msg 221 Unexpected I/O error while writing to backup file */
 			}
-#endif
 		}
         if (left < cnt) {    // this is impossible, but...
             cnt = left;

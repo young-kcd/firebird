@@ -22,6 +22,8 @@
  *
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -348,7 +350,7 @@ EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
 	init((SLONG) 0, &EVENT_data, TRUE);
 #else
 
-#if (defined UNIX || NETWARE_386)
+#if (defined UNIX)
 	EVENT_data.sh_mem_semaphores = SEMAPHORES;
 #endif
 
@@ -882,10 +884,6 @@ static SLONG create_process(void)
 
 #ifdef MULTI_THREAD
 
-#ifdef NETWARE_386
-	ISC_event_init(process->prb_event, 0, 0);
-#endif
-
 #ifdef SOLARIS_MT
 	STATUS local_status[ISC_STATUS_LENGTH];
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
@@ -894,16 +892,12 @@ static SLONG create_process(void)
 										 sizeof(struct prb));
 #endif
 
-#if !(defined NETWARE_386 || defined SOLARIS_MT)
+#if !(defined SOLARIS_MT)
 	ISC_event_init(process->prb_event, EVENT_SIGNAL, 0);
 #endif
 #endif
 
-#ifdef NETWARE_386
-	process->prb_process_id = GetThreadID();
-#else
 	process->prb_process_id = getpid();
-#endif
 
 	probe_processes();
 	RELEASE;
@@ -982,7 +976,6 @@ static void delete_process(SLONG process_offset)
 	if (EVENT_process_offset == process_offset) {
 #ifdef MULTI_THREAD
 		/* Terminate the event watcher thread */
-#ifndef NETWARE_386
 		/* When we come through the exit handler, the event semaphore might
 		   have already been released by another exit handler.  So we cannot
 		   use that semaphore to post the event.  Besides, the watcher thread 
@@ -1002,7 +995,6 @@ static void delete_process(SLONG process_offset)
 			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
 			ACQUIRE;
 		}
-#endif
 		EVENT_process_offset = NULL;
 #endif
 	}
@@ -1095,9 +1087,6 @@ static void delete_session(SLONG session_id)
 	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
 		RELEASE;
 		THREAD_EXIT;
-#ifdef NETWARE_386
-		delay(250);
-#endif
 #ifdef WIN_NT
 		Sleep(250);
 #endif
@@ -1316,7 +1305,6 @@ static void exit_handler(void *arg)
  **************************************/
 	STATUS local_status[ISC_STATUS_LENGTH];
 
-#ifndef NETWARE_386				/*  Otherwise things go away too quickly during unload */
 	if (EVENT_process_offset) {
 		if (EVENT_header->evh_current_process != EVENT_process_offset)
 			ACQUIRE;
@@ -1326,7 +1314,6 @@ static void exit_handler(void *arg)
 
 	while (acquire_count > 0)
 		RELEASE;
-#endif /*  !NETWARE  */
 
 #ifndef SERVER
 #ifdef SOLARIS_MT
@@ -1611,12 +1598,7 @@ static void mutex_bugcheck(TEXT * string, int mutex_state)
 	sprintf(msg, "EVENT: %s error, status = %d", string, mutex_state);
 	gds__log(msg);
 
-#ifdef NETWARE_386
-	ConsolePrintf("%s\n", msg);
-#else
 	ib_fprintf(ib_stderr, "%s\n", msg);
-#endif
-
 	exit(FINI_ERROR);
 }
 

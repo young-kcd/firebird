@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -37,10 +40,6 @@
 
 #ifdef WIN_NT
 #define		SWAP_DOUBLE
-#endif
-
-#ifdef NETWARE_386
-#define         SWAP_DOUBLE
 #endif
 
 #ifdef VMS
@@ -227,12 +226,7 @@ bool_t xdr_double(register XDR * xdrs, register double *ip)
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
 #ifdef VAX_FLOAT
-#ifdef NETWARE_386
-/* bug in WATCOM C */
-		if (temp.temp_long[0] || temp.temp_long[1])
-#else
 		if (temp.temp_double != 0)
-#endif
 			temp.temp_short[0] -= 0x20;
 		t1 = temp.temp_short[0];
 		temp.temp_short[0] = temp.temp_short[1];

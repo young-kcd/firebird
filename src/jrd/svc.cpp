@@ -26,6 +26,8 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -125,10 +127,6 @@
 #  define SYS_ERR		isc_arg_win32
 #endif
 
-
-#ifdef NETWARE_386
-#define SYS_ERR		isc_arg_netware
-#endif
 
 #ifndef SYS_ERR
 #define SYS_ERR		isc_arg_unix
@@ -327,7 +325,6 @@ typedef CONST void (*PFN_SERV_t) ();
 static const serv services[] =
 {
 #if !(defined LINUX || defined FREEBSD || defined NETBSD)
-#ifndef NETWARE386
 #ifdef WIN_NT
 	{ isc_action_max, "print_cache", "-svc", "bin/fb_cache_print", NULL, 0 },
 	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
@@ -351,16 +348,6 @@ static const serv services[] =
 	{ isc_action_max, "start_journal", "-svc -server", "bin/gjrn", NULL, 0 },
 	{ isc_action_max, "stop_cache", "-svc -shut -cache", "bin/gfix", NULL, 0 },
 	{ isc_action_max, "stop_journal", "-svc -console", "bin/gjrn", NULL, 0 },
-#else
-	{ isc_action_max, "analyze_database", "-svc", NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0 },
-	{ isc_action_max, "backup", "-svc -b", NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0 },
-	{ isc_action_max, "create", "-svc -c", NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
-	{ isc_action_max, "restore", "-svc -r", NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
-	{ isc_action_max, "gdef", "-svc", NULL, NULL, 0 },
-	{ isc_action_max, "gsec", "-svc", NULL, NULL, 0 },
-	{ isc_action_max, "print_wal", "-svc", NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_WAL_PRINT), 0 },
-	{ isc_action_max, "print_locks", "-svc", NULL,	reinterpret_cast<PFN_SERV_t>(MAIN_LOCK_PRINT), 0 },
-#endif							/* NETWARE */
 	{ isc_action_max, "anonymous", NULL, NULL, NULL, 0 },
 
 /* NEW VERSION 2 calls, the name field MUST be different from those names above
@@ -431,10 +418,6 @@ static const serv services[] =
 #  ifdef WIN_NT
 #    define SERVER_CAPABILITIES_FLAG    SERVER_CAPABILITIES | QUOTED_FILENAME_SUPPORT
 #  else
-
-#    ifdef NETWARE386
-#      define SERVER_CAPABILITIES_FLAG    SERVER_CAPABILITIES | WAL_SUPPORT | NO_SERVER_SHUTDOWN_SUPPORT
-#    endif /* NETWARE386 */
 
 #    define SERVER_CAPABILITIES_FLAG    SERVER_CAPABILITIES | NO_SERVER_SHUTDOWN_SUPPORT
 #  endif /* WIN_NT */
@@ -2992,22 +2975,12 @@ static void service_get(SVC		service,
  **************************************/
 	int ch = 'Z';
 	ULONG elapsed_time;
-#ifdef NETWARE_386
-	ULONG start_time;
-	ULONG end_time;
-	ULONG elapsed_seconds;
-	ULONG elapsed_tenths;
-#else
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval start_time, end_time;
 #else
 	time_t start_time, end_time;
 #endif
-#endif /* NETWARE */
 
-#ifdef NETWARE_386
-	start_time = GetCurrentTicks();
-#else
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
 	(void)gettimeofday(&start_time, (struct timezone *)0);
@@ -3017,18 +2990,12 @@ static void service_get(SVC		service,
 #else
 	time(&start_time);
 #endif
-#endif /* NETWARE */
 	*return_length = 0;
 	service->svc_flags &= ~SVC_timeout;
 
 	while (length) {
 		if (service_empty(service))
 			THREAD_YIELD;
-#ifdef NETWARE_386
-		end_time = GetCurrentTicks();
-		elapsed_time = end_time - start_time;
-		TicksToSeconds(elapsed_time, &elapsed_seconds, &elapsed_tenths);
-#else
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
 		(void)gettimeofday(&end_time, (struct timezone *)0);
@@ -3040,8 +3007,6 @@ static void service_get(SVC		service,
 		time(&end_time);
 		elapsed_time = end_time - start_time;
 #endif
-#endif /* NETWARE */
-
 		if ((timeout) && (elapsed_time >= timeout)) {
 			service->svc_flags &= SVC_timeout;
 			return;

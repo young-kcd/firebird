@@ -24,6 +24,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 /* NOTE that this module is used only on platforms that use
@@ -63,10 +65,6 @@
 #define FILE_OPEN(name,access,mask)	open (name, access)
 #else
 #include <sys/file.h>
-#endif
-
-#ifdef NETWARE_386
-#include <errno.h>
 #endif
 
 #define SYS_ERROR	gds_arg_unix

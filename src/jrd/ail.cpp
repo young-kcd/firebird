@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -1468,7 +1471,7 @@ USHORT activate_shadow, SBM * sbm_rec)
 
 	dbb->dbb_wal = 0;
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 
 /* On PC_PLATFORM, there's no log */
 
@@ -1489,146 +1492,6 @@ USHORT activate_shadow, SBM * sbm_rec)
 
 		return;
 	}
-
-#if (!defined PC_PLATFORM || defined NETWARE_386)
-
-/* Initialize WAL subsystem. */
-
-	logp->log_flags &= ~log_recovery_done;
-
-	CCH_MARK_MUST_WRITE(tdbb, window);
-
-/* if partial recovery is in progress, reset bit */
-
-	logp->log_flags &= ~log_partial_rebuild;
-
-	if (logp->log_flags & log_recover)
-		process_recovery(tdbb, dbname, window, &logp, release,
-						 activate_shadow, sbm_rec);
-
-/* 
- * If the transaction that added/deleted the log files did not
- * complete take appropriate action.
- */
-
-	if (logp->log_mod_tid)
-		process_log_updater(logp);
-
-/* If log has been dropped, return */
-
-	if (logp->log_flags & log_no_ail)
-		return;
-
-/* If activating shadow, mark that log has been deleted */
-/* The shutdown will happen during MET_activate_shadow */
-
-	if (activate_shadow) {
-		logp->log_flags |= log_delete;
-	}
-
-/* Read log file information from RDB$LOG_FILES */
-
-	for (i = 0; i < MAX_LOG_FILES; i++)
-		log_files[i] = (LGFILE *) 0;
-
-/* Save and restore attachment flags when reading log information */
-
-	save_flag = (USHORT) tdbb->tdbb_attachment->att_flags;
-	tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
-
-	MET_get_walinfo(tdbb, log_files, reinterpret_cast < ULONG * >(&number),
-					&log_ovflow);
-
-	tdbb->tdbb_attachment->att_flags = save_flag;
-
-	if (!number) {
-		logp->log_flags |= log_no_ail;
-		return;
-	}
-
-/* Do some initial actions for setting up page */
-
-	if ( (first_time = logp->log_flags & log_add) )
-		set_first_user(log_files, logp, walname);
-	else
-		get_walinfo(walname);
-
-	logp->log_flags |= log_recover;
-
-	dbb->dbb_wal = 0;
-
-/* build wal parameter block in clumplet form */
-
-	build_wal_param(wpb, log_files, number, log_ovflow, &wpb_len);
-
-	wal_p_offset = logp->log_cp_1.cp_p_offset;
-
-	if (WAL_init(tdbb->tdbb_status_vector,
-				 &dbb->dbb_wal,
-				 dbname,
-				 dbb->dbb_page_size,
-				 walname,
-				 wal_p_offset,
-				 (SSHORT) first_time,
-				 logp->log_file.cp_seqno,
-				 (SSHORT) wpb_len,
-				 reinterpret_cast < char *>(wpb)) != SUCCESS) {
-		/* If there is a failure, release the page */
-		if (first_time)
-			AIL_init_log_page(logp, logp->log_file.cp_seqno - 1);
-		CCH_RELEASE(tdbb, window);
-		ERR_punt();
-	}
-
-/* If first time, then get the current wal information and 
- * update the log page.
- */
-
-	if (first_time) {
-		if (WAL_status(tdbb->tdbb_status_vector, dbb->dbb_wal,
-					   NULL, NULL, NULL, NULL,
-					   &seqno, walname, &p_offset, &offset) != SUCCESS) {
-			AIL_init_log_page(logp, logp->log_file.cp_seqno - 1);
-			CCH_RELEASE(tdbb, window);
-			ERR_punt();
-		}
-		AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seqno, offset,
-						 p_offset);
-		AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seqno, offset,
-						 p_offset);
-	}
-
-/* Journal the header page to get the next tid on disk */
-
-	AIL_journal_tid();
-
-/* Make sure the pages are written to disk for the database 
- * and shadows
- */
-
-	logp->log_header.pag_checksum = CCH_checksum(window->win_bdb);
-
-	PIO_write(dbb->dbb_file, window->win_bdb, window->win_buffer,
-			  tdbb->tdbb_status_vector);
-
-	PIO_flush(dbb->dbb_file);
-
-	if (dbb->dbb_shadow) {
-		CCH_write_all_shadows(tdbb, 0, window->win_bdb,
-							  tdbb->tdbb_status_vector, 1, FALSE);
-		PIO_flush(dbb->dbb_shadow->sdw_file);
-	}
-
-/* 
- * Do not release the page before wal is initialized.
- * The LOG_PAGE acts as a lock to prevent 2 users from 
- * starting up together and one trying to attach before
- * wal is initialized.
- */
-
-	for (i = 0; i < number; i++)
-		delete log_files[i];
-#endif
 }
 
 
@@ -1779,13 +1642,6 @@ static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
 				   ISC_TIMESTAMP * >(logp->log_creation_date));
 
 	if (log_files[0]->lg_flags & LOG_serial) {
-#ifdef NETWARE
-		/* Strip out the trailing extension of the log name specification.  On
-		   Netware, we would be adding ".<n>" extension for a log file name and
-		   Netware file name space does not allow more than one '.' in the file
-		   name. */
-		ISC_strip_extension(log_files[0]->lg_name);
-#endif
 		WALC_build_logname(walname, log_files[0]->lg_name,
 						   logp->log_file.cp_seqno);
 	}

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include <stdio.h>
@@ -85,18 +88,6 @@ extern int errno;
 #include <descrip.h>
 #include <ssdef.h>
 #define SYS_ERROR	gds_arg_vms
-#endif
-
-/* NETWARE Stuff */
-
-#ifdef NETWARE_386
-#define NETWARE_JOURNALLING
-#define LIBRARY_IO
-#include <errno.h>
-#include <fcntl.h>
-#define SYS_ERROR	gds_arg_dos
-#define ERRNO		__get_errno_ptr()
-#undef PC_PLATFORM
 #endif
 
 /* Windows NT Stuff */

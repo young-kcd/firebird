@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "../jrd/common.h"
@@ -142,32 +145,6 @@ static TEXT help_text[] = "Available switches:\n\
     -s      analyze system relations\n\
     -z      display version number\n";
 
-#ifdef NETWARE_386
-#include <fcntl.h>
-#include <share.h>
-#include <fileengd.h>
-
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
-#endif
-
-#include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
-#include "../jrd/pwd.h"
-
-#define FPRINTF		SVC_netware_fprintf
-
-typedef struct open_files {
-	int desc;
-	struct open_files *open_files_next;
-} open_files;
-
-typedef struct mem {
-	void *memory;
-	struct mem *mem_next;
-} mem;
-#endif
-
 #ifndef FPRINTF
 #define FPRINTF 	ib_fprintf
 #endif
@@ -183,44 +160,25 @@ typedef struct tdba {
 	PAG buffer1;
 	PAG global_buffer;
 	int exit_code;
-#ifdef NETWARE_386
-	SVC sw_outfile;
-	mem *head_of_mem_list;
-	open_files *head_of_files_list;
-#else
 	IB_FILE *sw_outfile;
-#endif
 } *TDBA;
 
 #ifdef GET_THREAD_DATA
 #undef GET_THREAD_DATA
 #endif
 
-#ifdef NETWARE_386
-#define GET_THREAD_DATA	        ((TDBA) THD_get_specific())
-#define SET_THREAD_DATA         {  tddba = &thd_context;           \
-                		   THD_put_specific ((THDD) tddba);\
-				   tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA; }
-#define RESTORE_THREAD_DATA     THD_restore_specific()
-#else
 static struct tdba *gddba;
 
 #define GET_THREAD_DATA	        (gddba)
 #define SET_THREAD_DATA         gddba = tddba = &thd_context; \
 				tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA
 #define RESTORE_THREAD_DATA
-#endif
 
 #define EXIT(code)	            {  tddba->exit_code = code;        \
                                    Firebird::status_exception::raise(1);  }
 
 
-#ifdef NETWARE_386
-int main_gstat( SVC service)
-#else
-
 int CLIB_ROUTINE main( int argc, char **argv)
-#endif
 {
 /**************************************
  *
@@ -246,15 +204,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SLONG redir_in, redir_out, redir_err;
 	UCHAR *vp, *vend;
 	isc_db_handle db_handle = NULL;
-#ifdef NETWARE_386
-	SVC sw_outfile;
-	int argc;
-	char **argv;
-	open_files *open_file, *tmp1;
-	mem *alloced, *tmp2;
-#else
 	IB_FILE *sw_outfile;
-#endif
 	TEXT *q;
 	UCHAR *dpb;
 	SSHORT dpb_length;
@@ -274,12 +224,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	memset(&status_vector, 0, sizeof(status_vector));
 	tddba->dba_env = env;
 
-#ifdef NETWARE_386
-/* Reinitialize static variables for multi-threading */
-	argc = service->svc_argc;
-	argv = service->svc_argv;
-#endif
-
 	if (SETJMP(env)) {
 		int exit_code;
 		/* free mem */
@@ -297,61 +241,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 		}
 
-#ifdef NETWARE_386
-		alloced = tddba->head_of_mem_list;
-		while (alloced != 0) {
-			free(alloced->memory);
-			alloced = alloced->mem_next;
-		}
-
-		/* close files */
-		open_file = tddba->head_of_files_list;
-		while (open_file != 0) {
-			close(open_file->desc);
-			open_file = open_file->open_files_next;
-		}
-
-		/* free linked lists */
-		while (tddba->head_of_files_list != 0) {
-			tmp1 = tddba->head_of_files_list;
-			tddba->head_of_files_list =
-				tddba->head_of_files_list->open_files_next;
-			free(tmp1);
-		}
-
-		while (tddba->head_of_mem_list != 0) {
-			tmp2 = tddba->head_of_mem_list;
-			tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
-			free(tmp2);
-		}
-
-		service->svc_handle = 0;
-		if (service->svc_service->in_use != NULL)
-			*(service->svc_service->in_use) = FALSE;
-
-		/* Mark service thread as finished. */
-		service->svc_flags |= SVC_finished;
-
-		/* If service is detached, cleanup memory being used by service. */
-		if (service->svc_flags & SVC_detached)
-			SVC_cleanup(service);
-#endif
-
 		exit_code = tddba->exit_code;
 		RESTORE_THREAD_DATA;
-
-#ifdef NETWARE_386
-		return exit_code;
-#else
 		exit(exit_code);
-#endif
 	}
-
-#ifdef NETWARE_386
-	sw_outfile = tddba->sw_outfile = service;
-#else
 	sw_outfile = tddba->sw_outfile = ib_stderr;
-#endif
 
 #if defined (WIN95) && !defined (GUI_TOOLS)
 	fAnsiCP = FALSE;
@@ -365,7 +259,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		argv++;
 		argc--;
 	}
-#ifndef NETWARE_386
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
@@ -377,7 +270,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
 		redir_err = _open_osfhandle(redir_err, 0);
-#endif
 		if (redir_in != 0)
 			if (dup2((int) redir_in, 0))
 				close((int) redir_in);
@@ -555,7 +447,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (sw_log)
 		EXIT(FINI_OK);
 
-#if (defined NETWARE_386 || defined WIN_NT)
+#if (defined WIN_NT)
 	dpb = dpb_string;
 	*dpb++ = gds__dpb_version1;
 	*dpb++ = gds__dpb_user_name;
@@ -725,33 +617,10 @@ static SCHAR *alloc( SLONG size)
  *
  **************************************/
 	SCHAR *block, *p;
-#ifdef NETWARE_386
-	mem *mem_list;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
-
-	block = p = malloc(size);
-	do
-		*p++ = 0;
-	while (--size);
-
-	mem_list = malloc(sizeof(mem));
-	mem_list->memory = block;
-	mem_list->mem_next = 0;
-
-	if (tddba->head_of_mem_list == 0)
-		tddba->head_of_mem_list = mem_list;
-	else {
-		mem_list->mem_next = tddba->head_of_mem_list;
-		tddba->head_of_mem_list = mem_list;
-	}
-#else
 	block = p = gds__alloc(size);
 	do
 		*p++ = 0;
 	while (--size);
-#endif
 
 	return block;
 }
@@ -1108,133 +977,6 @@ static void analyze_index( REL relation, IDX index)
 }
 
 
-#ifdef NETWARE_386
-static void db_error( int status)
-{
-/**************************************
- *
- *	d b _ e r r o r		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	SCHAR *p;
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
-
-	FPRINTF(tddba->sw_outfile, "%s\n", sys_errlist[status]);
-	EXIT(FINI_ERROR);
-}
-
-
-static FIL db_open( UCHAR * file_name, USHORT file_length)
-{
-/**************************************
- *
- *	d b _ o p e n		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Open a database file.
- *
- **************************************/
-	FIL fil;
-	open_files *file_list;
-	TEXT expanded_filename[256];
-	TDBA tddba;
-
-	tddba = GET_THREAD_DATA;
-
-	ISC_expand_filename(file_name, file_length, expanded_filename);
-
-	if (tddba->files) {
-		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
-		fil->fil_next =
-			(FIL) ALLOC(sizeof(struct fil) + strlen(expanded_filename) + 1);
-		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
-		fil = fil->fil_next;
-	}
-	else {						/* empty list */
-
-		fil = tddba->files =
-			(FIL) ALLOC(sizeof(struct fil) + strlen(expanded_filename) + 1);
-		fil->fil_min_page = 0L;
-	}
-
-	fil->fil_next = NULL;
-	strcpy(fil->fil_string, expanded_filename);
-	fil->fil_length = strlen(expanded_filename);
-	fil->fil_fudge = 0;
-	fil->fil_max_page = 0L;
-
-	if (
-		(fil->fil_desc =
-		 FEsopen(expanded_filename, O_RDWR | O_BINARY, SH_DENYNO, 0, 0,
-				 PrimaryDataStream)) == -1)
-		db_error(errno);
-
-	file_list = malloc(sizeof(tddba->files));
-	file_list->desc = fil->fil_desc;
-	file_list->open_files_next = 0;
-
-	if (tddba->head_of_files_list == 0)
-		tddba->head_of_files_list = file_list;
-	else {
-		file_list->open_files_next = tddba->head_of_files_list;
-		tddba->head_of_files_list = file_list;
-	}
-
-	return fil;
-}
-
-
-static PAG db_read( SLONG page_number)
-{
-/**************************************
- *
- *	d b _ r e a d		( N E T W A R E _ 3 8 6 )
- *
- **************************************
- *
- * Functional description
- *	Read a database page.
- *
- **************************************/
-	SCHAR *p;
-	SSHORT length, l;
-	FIL fil;
-	TDBA tddba;
-	UINT64 offset;
-
-	tddba = GET_THREAD_DATA;
-
-	for (fil = tddba->files;
-		 page_number > fil->fil_max_page
-		 && fil->fil_next;) fil = fil->fil_next;
-
-	page_number -= fil->fil_min_page - fil->fil_fudge;
-	offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
-	if (lseek (fil->fil_desc, offset, 0) == -1)
-		db_error(errno);
-
-	for (p = (SCHAR *) tddba->global_buffer, length = tddba->page_size;
-		 length > 0;) {
-		l = read(fil->fil_desc, p, length);
-		if (l <= 0)
-			db_error(errno);
-		p += l;
-		length -= l;
-	}
-
-	return tddba->global_buffer;
-}
-#endif
-
-
 #ifdef WIN_NT
 static void db_error( SLONG status)
 {
@@ -1362,7 +1104,6 @@ static PAG db_read( SLONG page_number)
 
 
 
-#ifndef NETWARE_386
 #ifndef WIN_NT
 static void db_error( int status)
 {
@@ -1482,7 +1223,6 @@ static PAG db_read( SLONG page_number)
 	return tddba->global_buffer;
 }
 #endif
-#endif
 
 
 static BOOLEAN key_equality( SSHORT length, SCHAR * key, BTN node)
@@ -1578,11 +1318,7 @@ static void print_header( HDR header)
 	SLONG number;
 	struct tm time;
 	SSHORT flags;
-#ifdef NETWARE_386
-	SVC sw_outfile;
-#else
 	IB_FILE *sw_outfile;
-#endif
 	TDBA tddba;
 
 	tddba = GET_THREAD_DATA;

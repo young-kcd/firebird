@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef JRD_SBM_H
@@ -28,7 +31,7 @@
 #include "../include/fb_blk.h"
 #include "../include/fb_vector.h"
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #define BUNCH_BITS	4
 #define BUNCH		SSHORT
 #else

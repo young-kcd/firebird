@@ -22,6 +22,8 @@
  *
  * 2002.02.27 Claudio Valderrama: Fix SF Bug #509995.
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -246,7 +248,7 @@ void SRVR_multi_thread( PORT main_port, USHORT flags)
  *	Multi-threaded flavor of server.
  *
  **************************************/
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 
 /* for PC router, no multithreading is available */
 

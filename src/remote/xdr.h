@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef REMOTE_XDR_H
@@ -45,10 +47,7 @@ typedef	char *	caddr_t;
 #ifndef TYPES_DEFINED
 #include <sys/types.h>
 #include <netinet/in.h>
-#ifdef NETWARE_386
-#undef caddr_t
-typedef char *  caddr_t;
-#endif
+
 #ifdef _AIX
 #include <sys/select.h>
 #endif

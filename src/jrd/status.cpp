@@ -8,6 +8,9 @@
 //
 // 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
 //
+// 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+//
+//
 
 #include "firebird.h"
 #include <stdlib.h>
@@ -71,7 +74,6 @@ void STUFF_STATUS_function(STATUS* status_vector, STATUS status, va_list args)
 
 			case gds_arg_vms:
 			case gds_arg_unix:
-			case gds_arg_netware:
 			case gds_arg_win32:
 			default:
 				*p++ = (STATUS) va_arg(args, int);
@@ -107,7 +109,6 @@ void PARSE_STATUS(STATUS * status_vector, int &length, int &warning)
 		case gds_arg_number:
 		case gds_arg_vms:
 		case gds_arg_unix:
-		case gds_arg_netware:
 		case gds_arg_win32:
 			i++;
 			length++;

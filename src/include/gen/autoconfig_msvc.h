@@ -13,6 +13,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef AUTOCONFIG_H
@@ -140,7 +142,6 @@
 #undef SOLARIS
 #undef hpux
 #undef PC_PLATFORM
-#undef NETWARE_386
 #undef VMS
 #undef AIX
 #define WIN_NT

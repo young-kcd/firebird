@@ -30,9 +30,11 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.29 Mike Nordell - Fixed breakage.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: par.cpp,v 1.16 2002-10-29 20:20:38 skidder Exp $
+$Id: par.cpp,v 1.17 2002-10-30 06:40:49 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -661,9 +663,6 @@ static void error(CSB csb, ...)
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
-		case gds_arg_netware:
-			*p++ = va_arg(args, int);   
-			break; 
 		}
 	}
 
@@ -2981,9 +2980,6 @@ static void warning(CSB csb, ...)
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
-		case gds_arg_netware:
-			*p++ = va_arg(args, int);   
-			break; 
 		}
 	}
 }

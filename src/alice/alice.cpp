@@ -24,11 +24,14 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.16 2002-09-24 12:57:04 eku Exp $
+//	$Id: alice.cpp,v 1.17 2002-10-30 06:40:44 seanleyne Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
 //                         readonly databases.
+//
+// 2002.10.29 Sean Leyne - Removed support for obsolete "Netware" port
+//
 //
 
 #include "firebird.h"
@@ -89,9 +92,7 @@ static const USHORT val_err_table[] = {
 // defined in burp.cpp as well, and is not relevant for SUPERSERVER
 
 #ifndef SUPERSERVER
-#ifndef NETWARE_386
 struct tgbl *gdgbl;
-#endif
 #endif
 
 #define	ALICE_MSG_FAC	3
@@ -271,7 +272,6 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 		argv++;
 		argc--;
 	}
-#ifndef NETWARE_386
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		tdgbl->sw_service = TRUE;
 		tdgbl->output_proc = output_svc;
@@ -304,8 +304,6 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 		argv += 4;
 		argc -= 4;
 	}
-#endif
-
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
 

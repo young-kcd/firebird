@@ -22,6 +22,8 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -45,14 +47,6 @@
 #include <errno.h>
 #define UNIX_JOURNALLING
 #define BSD_SOCKETS
-#endif
-
-#ifdef NETWARE_386
-#include <errno.h>
-#define NETWARE_JOURNALLING
-#define BSD_SOCKETS
-#define EINTR           0
-#undef PC_PLATFORM
 #endif
 
 #ifdef BSD_SOCKETS

@@ -27,6 +27,9 @@
  *                         Windows NT platform, for new database files. This was changed
  *                         with IB 6.0 to OFF and has introduced many reported database
  *                         corruptions.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -170,9 +173,6 @@ void gds_print_delta_counters(IB_FILE *);
 
 #endif /* SUPERSERVER */
 
-#ifdef NETWARE_386
-# include "../jrd/nlm_thd.h"
-#else
 # ifdef V4_THREADING
 #  undef V4_INIT
 #  undef V4_GLOBAL_MUTEX_LOCK
@@ -195,7 +195,6 @@ void gds_print_delta_counters(IB_FILE *);
 #   define V4_JRD_MUTEX_UNLOCK(mutx) THD_JRD_MUTEX_UNLOCK (mutx)
 #  endif /* SUPERSERVER */
 # endif /* V4_THREADING */
-#endif /* !NETWARE_386 */
 
 #ifdef SUPERSERVER
 
@@ -292,11 +291,6 @@ extern "C" {
 
 #ifdef WIN_NT
 #define	SYS_ERR		gds_arg_win32
-#endif
-
-
-#ifdef NETWARE_386
-#define SYS_ERR		gds_arg_netware
 #endif
 
 
@@ -1825,16 +1819,6 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	length =
 		(file_length) ? file_length : strlen(reinterpret_cast <
 											 char *>(file_name));
-#if defined(NETWARE_386)
-	if (strncmp(file_name, expanded_filename, length)) {
-		/* If the beginning of the expanded_filename isn't the same
-		   as the user's input, use the expanded value. */
-
-		file_name = expanded_filename;
-		length = strlen(file_name);
-	}
-#endif
-
 	MOVE_FAST(file_name, expanded_name, length);
 	expanded_name[length] = 0;
 

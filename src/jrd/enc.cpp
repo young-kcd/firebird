@@ -1,5 +1,7 @@
-
-
+/*
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
+*/
 #include "firebird.h"
 
 
@@ -12,8 +14,7 @@
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
 
-#if (defined NETWARE_386 || defined PC_PLATFORM || \
-	defined WIN_NT || defined VMS)
+#if (defined PC_PLATFORM || defined WIN_NT || defined VMS)
 #define NO_CRYPT
 #define CRYPT_FUNC	local_crypt
 static TEXT *local_crypt(TEXT *, TEXT *);

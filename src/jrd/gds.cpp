@@ -23,6 +23,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #define IO_RETRY	20
@@ -64,7 +66,7 @@
 #include <CoreFoundation/CFURL.h>
 #endif
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #include <io.h>
 #endif
 
@@ -188,11 +190,6 @@ extern SCHAR *sys_errlist[];
 extern int sys_nerr;
 #endif
 
-#ifdef NETWARE_386
-#include <conio.h>
-#define	PRINTF			ConsolePrintf
-#endif
-
 #ifndef PRINTF
 #define PRINTF 			ib_printf
 #endif
@@ -207,14 +204,6 @@ static CONST SCHAR *FAR_VARIABLE CONST messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
-
-#ifdef NETWARE_386
-extern int regular_malloc;
-struct timezon {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
-#endif
 
 #if (ALIGNMENT == 8)
 #define GDS_ALLOC_ALIGNMENT	8
@@ -236,10 +225,6 @@ typedef struct free {
 #ifdef DEBUG_GDS_ALLOC
 
 #define DBG_MEM_FILE	"memory.dbg"
-
-#ifdef NETWARE_386
-#define	NEWLINE	"\r\n"
-#endif
 
 #ifndef NEWLINE
 #define NEWLINE "\n"
@@ -331,11 +316,7 @@ static void		validate_memory(void);
 #define ALLOC_OVERHEAD		(ALLOC_HEADER_SIZE + ALLOC_TAILER_SIZE)
 
 #ifdef PC_PLATFORM
-#ifdef NETWARE_386
-#define GDS_ALLOC_EXTEND_SIZE	102400L
-#else
 #define GDS_ALLOC_EXTEND_SIZE	2048L
-#endif
 #endif
 
 #ifndef GDS_ALLOC_EXTEND_SIZE
@@ -759,22 +740,6 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 
 #ifdef DEV_BUILD
 	gds_delta_alloc += size;
-#endif
-
-#ifdef NETWARE_386
-	if (regular_malloc)
-	{
-		block = (SLONG *) malloc(size);
-		if (!block)
-		{
-			ib_perror("gds__alloc()");
-			return NULL;
-		}
-
-		block[0] = size;
-		SAVE_DEBUG_INFO(block, filename, lineno);
-		return (UCHAR *) block + ALLOC_HEADER_SIZE;
-	}
 #endif
 
 	V4_MUTEX_LOCK(&alloc_mutex);
@@ -1252,10 +1217,6 @@ void GDS_breakpoint(int parameter)
  *	using the BREAKPOINT(x) macro.
  *
  **************************************/
-#ifdef NETWARE_386
-	Breakpoint(parameter);
-#endif
-
 /* Put a breakpoint here via the debugger */
 }
 #endif
@@ -1788,30 +1749,7 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 		while ((*p++ = *q++) /*!= NULL*/);
 		break;
 
-	case gds_arg_netware:
-		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
-			strcpy(s, p);
-		else if (code == 60)
-			strcpy(s, "connection timed out");
-		else if (code == 61)
-			strcpy(s, "connection refused");
-		else
-			sprintf(s, "unknown NetWare error %ld", code);
-		break;
-
 	case gds_arg_unix:
-#ifdef NETWARE_386
-		if (code > 0 && code < sys_nerr && (p = sys_errlist[code]))
-			strcpy(s, p);
-		else if (code == 60)
-			strcpy(s, "connection timed out");
-		else if (code == 61)
-			strcpy(s, "connection refused");
-		else
-			sprintf(s, "unknown NetWare error %ld", code);
-#endif
-
-#ifndef NETWARE_386
 #ifndef PC_PLATFORM
 		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
 			strcpy(s, p);
@@ -1822,16 +1760,11 @@ SLONG API_ROUTINE gds__interprete(char *s, STATUS ** vector)
 		else
 #endif
 			sprintf(s, "unknown unix error %ld", code);	/* TXNN */
-#endif
 		break;
 
 	case gds_arg_dos:
 
-#ifdef NETWARE_386
-		sprintf(s, "unknown Netware error %ld", code);	/* TXNN */
-#else
 		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
-#endif
 		break;
 
 #ifdef VMS
@@ -2495,10 +2428,8 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
 	}
 	strcat(resultString, ib_prefix);
 
-#ifndef NETWARE_386
 	if (resultString[strlen(resultString) - 1] != '/')
 		strcat(resultString, "/");
-#endif
 	strcat(resultString, root);
 }
 #endif /* !defined(VMS) */
@@ -2582,10 +2513,8 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
 		}
 	}
 	strcat(string, ib_prefix_lock);
-#ifndef NETWARE_386
 	if (string[strlen(string) - 1] != '/')
 		strcat(string, "/");
-#endif
 	strcat(string, root);
 }
 #endif
@@ -2671,10 +2600,8 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
 	}
 
 	strcat(string, ib_prefix_msg);
-#ifndef NETWARE_386
 	if (string[strlen(string) - 1] != '/')
 		strcat(string, "/");
-#endif
 	strcat(string, root);
 }
 #endif
@@ -2995,11 +2922,6 @@ void API_ROUTINE gds__put_error(TEXT * string)
 	lib$put_output(&desc);
 #endif
 
-#ifdef NETWARE_386
-#define PUT_ERROR
-	ConsolePrintf("%s\n", string);
-#endif
-
 #ifdef PUT_ERROR
 #undef PUT_ERROR
 #else
@@ -3189,12 +3111,6 @@ void* API_ROUTINE gds__sys_alloc(SLONG size)
 	size += ALLOC_OVERHEAD;
 	size = ALLOC_ROUNDUP(size);
 
-#ifdef NETWARE
-	REPLACE THIS ILLEGAL COMMENT WITH NETWARE IMPLEMENTATION
-		Malloc / free may be good enough as long as free() returns
-		the memory back to a system - wide heap.
-#define SYS_ALLOC_DEFINED
-#endif
 #ifdef UNIX
 #if (defined MAP_ANONYMOUS & !defined SOLARIS)
 /* Because in Solaris 8 MAP_ANONYMOUS is defined now
@@ -3296,14 +3212,6 @@ SLONG API_ROUTINE gds__sys_free(void* blk)
 	ULONG* block = (ULONG *) ((UCHAR *) blk - ALLOC_HEADER_SIZE);
 	blk = (void *) block;
 	ULONG length = *block;
-
-#ifdef NETWARE
-#error NETWARE is unimplemented
-//	REPLACE THIS ILLEGAL COMMENT WITH NETWARE IMPLEMENTATION
-//		Malloc / free may be good enough as long as free() returns
-//		the memory back to a system - wide heap.
-#define SYS_FREE_DEFINED
-#endif	// NETWARE
 
 #ifdef UNIX
 	if (munmap(blk, length) == -1) {
@@ -3449,10 +3357,8 @@ void *gds__tmp_file2(
 		for (i = 0; i < IO_RETRY; i++) {
 			if (file = ib_fopen(file_name, "w+"))
 				break;
-#ifndef NETWARE_386
 			if (!SYSCALL_INTERRUPTED(errno))
 				return (void *) -1;
-#endif
 		}
 		if (!file)
 			return (void *) -1;
@@ -3465,10 +3371,8 @@ void *gds__tmp_file2(
 									   0600);
 			if (file != (IB_FILE *) - 1)
 				break;
-#ifndef NETWARE_386
 			if (!SYSCALL_INTERRUPTED(errno))
 				return (void *) -1;
-#endif
 		}
 		if (file == (IB_FILE *) - 1)
 			return (void *) -1;
@@ -3801,38 +3705,6 @@ void API_ROUTINE isc_sql_interprete(
 		gds__msg_format(0, 14, sqlcode, length, buffer,
 						str, str, str, str, str);
 }
-
-
-#ifdef NETWARE_386
-int gettimeofday(struct timeval *tp, struct timezon *tzp)
-{
-/**************************************
- *
- *      g e t t i m e o f d a y		( N E T W A R E )
- *
- **************************************
- *
- * Functional description
- *      Compute time of day on NETWARE.
- *
- **************************************/
-	time_t buffer;
-
-	time(&buffer);
-
-	if (tp) {
-		tp->tv_sec = (SLONG) buffer;	/* since 1/1/1970 */
-		tp->tv_usec = 0L;
-	}
-	if (tzp) {
-		tzset();
-		tzp->tz_minuteswest = timezone / 60;	/* Netware in seconds */
-		tzp->tz_dsttime = daylight;
-	}
-
-	return 0;
-}
-#endif
 
 
 #ifdef VMS
@@ -4522,13 +4394,7 @@ static void cleanup_malloced_memory(void *arg)
  **************************************/
 	void *ptr;
 
-#ifdef NETWARE_386
-#ifdef DEBUG_GDS_ALLOC
-	gds_alloc_report(ALLOC_verbose, __FILE__, __LINE__);
-#endif
-#endif
-
-#if (defined (NETWARE_386) || defined (WIN_NT) || defined (UNIX))
+#if (defined (WIN_NT) || defined (UNIX))
 	while (ptr = malloced_memory) {
 		malloced_memory = reinterpret_cast < void **>(*malloced_memory);
 		free(ptr);
@@ -4595,13 +4461,6 @@ static ULONG free_memory(void *blk)
 		DEV_REPORT("gds__free: attempt to release bad block (too small)\n");	/* TXNN */
 		BREAKPOINT(__LINE__);
 		return 0;
-	}
-#endif
-
-#ifdef NETWARE_386
-	if (regular_malloc) {
-		free(blk);
-		return length - ALLOC_OVERHEAD;
 	}
 #endif
 

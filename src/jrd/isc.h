@@ -23,9 +23,10 @@
  * FSG 16.03.2001 
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001  Mike Nordell - CPU affinity
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  */
 /*
-$Id: isc.h,v 1.3 2002-06-29 13:00:56 dimitr Exp $
+$Id: isc.h,v 1.4 2002-10-30 06:40:48 seanleyne Exp $
 */
 #ifndef _JRD_ISC_H_
 #define _JRD_ISC_H_
@@ -249,34 +250,13 @@ typedef struct sh_mem
 #endif /* UNIX */
 
 
-#if (defined PC_PLATFORM) && !(defined NETWARE_386)
+#if (defined PC_PLATFORM)
 /* Temporary solution until PC supports events. */
 
 typedef struct event
 {
 	int event_count;
 } EVENT_T, *EVENT;
-#endif
-
-
-#ifdef NETWARE_386
-#define MTX_STRUCTURE_DEFINED
-typedef ULONG MTX_T, *MTX;
-
-typedef struct event {
-	ULONG event_semid;
-	MTX_T event_mutex[1];		/*  - added newly */
-	SLONG event_count;
-} EVENT_T, *EVENT;
-
-#define SH_MEM_STRUCTURE_DEFINED
-typedef struct sh_mem
-{
-	UCHAR*	sh_mem_address;
-	SLONG	sh_mem_length_mapped;
-	int		sh_mem_semaphores;
-	ULONG*	sh_mem_mutex_arg;
-} SH_MEM_T, *SH_MEM;
 #endif
 
 

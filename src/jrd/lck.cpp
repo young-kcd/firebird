@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -57,7 +60,7 @@
 extern "C" {
 
 
-#if (defined PC_PLATFORM && !defined NETWARE_386)
+#if (defined PC_PLATFORM)
 #define getpid()	0
 #endif
 
@@ -82,15 +85,6 @@ static BOOLEAN internal_enqueue(TDBB, LCK, USHORT, SSHORT, BOOLEAN);
 /* globals and macros */
 
 static SLONG process_lck_owner_handle = 0;
-
-/* For a multi-threaded Netware (e.g. NLM), the current database or attachment 
-   is the owner of a new lock.  For other platforms, so far, a process is 
-   the owner of all the locks.  The following defines help in simulating
-   these assumptions */
-
-#ifdef NETWARE_386
-#define getpid	 GetNLMID
-#endif
 
 #ifdef SUPERSERVER
 

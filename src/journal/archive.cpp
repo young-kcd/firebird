@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -37,20 +40,12 @@
 #include "../jrd/jrn_proto.h"
 #include "../jrd/llio_proto.h"
 
-#ifdef NETWARE_386
-#define exit(code)	return
-#endif
-
 static USHORT copy_file(SLONG, SLONG, SLONG);
 static void error_exit(STATUS *, JRN *, SLONG, SLONG, SLONG);
 static USHORT open_file(TEXT *, SLONG, USHORT, SLONG *);
 
 
-#ifdef NETWARE_386
-int main_archive(
-#else
 int CLIB_ROUTINE main( int argc,
-#endif
 					  char *argv[])
 {
 /**************************************
@@ -75,15 +70,8 @@ int CLIB_ROUTINE main( int argc,
 	SLONG db_id;
 	STATUS status[ISC_STATUS_LENGTH];
 	JRN journal;
-#ifdef NETWARE_386
-	int argc;
-#endif
-
 	journal = (JRN) 0;
 
-#ifdef NETWARE_386
-	argc = argv[0];
-#endif
 	argv++;
 
 	db_id = atoi(*argv++);

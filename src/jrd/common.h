@@ -43,9 +43,11 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: common.h,v 1.42 2002-10-29 03:31:18 seanleyne Exp $
+$Id: common.h,v 1.43 2002-10-30 06:40:47 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -466,7 +468,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifdef PC_PLATFORM
 
 #define SYS_ARG		isc_arg_dos
-#ifndef NETWARE_386
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define NO_PYXIS
 #define I386            1
@@ -494,8 +495,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif
 
 typedef RETSIGTYPE (API_ROUTINE * SIG_FPTR) ();
-#endif /* ifndef NETWARE_386 */
-
 
 
 /* DOS does not compare the high order word of far pointers,
@@ -746,55 +745,6 @@ typedef unsigned long UATOM;
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* DECOSF */
-
-
-#ifdef NETWARE_386
-/*
- * In ..\remote, there will a duplicate definition for DWORD
- * ocurring from <nwdstype.h>. Chech for this
- * and undefine it before defining DWORD.
- */
-
-#ifdef DWORD
-#undef DWORD
-#endif
-
-typedef char *caddr_t;
-/*
- * The DWORD declaration is needed for compiling the JRD lib.
- * (First compilation error will start from isc.c)
- */
-
-typedef unsigned long DWORD;
-
-#define SMALL_FILE_NAMES
-#define NOHOSTNAME
-
-#define SYS_ARG		isc_arg_dos
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#define I386            1
-#define IEEE            1
-#define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define OLD_ALIGNMENT
-#define NO_NFS
-#define IMPLEMENTATION isc_info_db_impl_netware_386,	/* 54 */
-#undef LINKS_EXIST
-#define VA_START(list,parmN)    va_start (list, parmN)
-
-#define INTL_BACKEND
-#define SYNC_WRITE_DEFAULT      1
-
-/* turn on stack reduction methods for only those routines
-   which are not commonly used; since this is a server, we
-   want to allocate buffers on the stack for oft-used routines */
-
-#define STACK_REDUCTION
-
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
-#endif /* NETWARE_386 */
 
 
 #ifdef UNIX
@@ -1082,12 +1032,6 @@ typedef struct
 
 /* Define any debugging symbols and macros here.  This
    ifdef will be executed during development builds. */
-
-#ifdef NETWARE_386
-#define DEV_REPORT(msg)         ConsolePrintf (msg)
-#define BREAKPOINT(x)           Breakpoint(x)
-#define TRACE(msg)              ConsolePrintf (msg)
-#endif
 
 #ifdef WIN_NT
 #define TRACE(msg)              gds__log (msg)

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.24 2002-10-29 03:37:49 seanleyne Exp $
+ * $Id: license.h,v 1.25 2002-10-30 06:40:48 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -53,6 +53,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -100,10 +102,6 @@
 #ifdef PC_PLATFORM
 #undef NODE_CHECK
 #define NODE_CHECK(val,resp)
-#endif
-
-#ifdef NETWARE_386
-#define FB_PLATFORM     "NW"
 #endif
 
 #ifdef AIX

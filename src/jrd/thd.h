@@ -22,19 +22,15 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: thd.h,v 1.9 2002-10-29 02:45:09 seanleyne Exp $
+$Id: thd.h,v 1.10 2002-10-30 06:40:49 seanleyne Exp $
 */
 
 #ifndef _JRD_THD_H_
 #define _JRD_THD_H_
-
-#ifdef NETWARE_386
-#define MULTI_THREAD		1
-#define THD_MUTEX_STRUCT	ULONG
-#define STACK_SAFE_LIMIT	10200
-#endif
 
 #ifdef SOLARIS
 #ifdef SOLARIS_MT

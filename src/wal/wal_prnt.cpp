@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -32,11 +35,6 @@
 
 #if (defined WIN_NT)
 #include <io.h>
-#endif
-
-#ifdef NETWARE_386
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
 #endif
 
 #include "../jrd/svc.h"
@@ -57,21 +55,9 @@
 #define FPRINTF 	ib_fprintf
 #endif
 
-#ifdef NETWARE_386
-static SVC outfile;
-#else
 static IB_FILE *outfile;
-#endif
-
-
-
-#ifdef NETWARE_386
-
-int main_wal_print( SVC service)
-#else /* Non-Netware declaration */
 
 int CLIB_ROUTINE main( int argc, SCHAR ** argv)
-#endif
 {
 /**************************************
  *
@@ -87,21 +73,7 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
 	SCHAR dbname[256];
 	int ret;
 	SLONG redir_in, redir_out, redir_err;
-#ifdef NETWARE_386
-	int argc;
-	char **argv;
-#endif
-
-#ifdef NETWARE_386
-	argc = service->svc_argc;
-	argv = service->svc_argv;
-#endif
-
-#ifdef NETWARE_386
-	outfile = service;
-#else
 	outfile = ib_stdout;
-#endif
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
@@ -111,7 +83,6 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
 		argv++;
 		argc--;
 	}
-#ifndef NETWARE_386
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
@@ -133,8 +104,6 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
 		argv += 4;
 		argc -= 4;
 	}
-#endif
-
 	if (argc < 2) {
 		FPRINTF(outfile, "\nUsage: gds_wal_print <database_name>\n");
 		/* this message was considered for translation but left for now   */
@@ -147,13 +116,7 @@ int CLIB_ROUTINE main( int argc, SCHAR ** argv)
 	WAL_handle = NULL;
 	ret = WAL_attach(status_vector, &WAL_handle, dbname);
 	if (ret != SUCCESS) {
-#ifdef NETWARE_386
-		FPRINTF(outfile,
-				"Either no current attachment or no WAL configured for %s\n",
-				dbname);
-#else
 		gds__print_status(status_vector);
-#endif
 		exit(FINI_ERROR);
 	}
 

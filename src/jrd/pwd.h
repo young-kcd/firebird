@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: pwd.h,v 1.5 2002-09-30 06:00:21 eku Exp $
+$Id: pwd.h,v 1.6 2002-10-30 06:40:49 seanleyne Exp $
 */
 
 #ifndef _JRD_PWD_H_
@@ -37,10 +40,6 @@ $Id: pwd.h,v 1.5 2002-09-30 06:00:21 eku Exp $
 
 #if defined(WIN_NT)
 #define USER_INFO_NAME	"isc4.gdb"
-#endif
-
-#ifdef NETWARE_386
-#define USER_INFO_NAME	"SYS:/INTERBAS/ISC4.GDB"
 #endif
 
 #ifdef SINIXZ

@@ -24,6 +24,7 @@
  *                           up to 32 characters length; changed to 31.
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  */
 
@@ -785,11 +786,9 @@ int API_ROUTINE isc_version(
 
 void API_ROUTINE isc_set_debug(int flag)
 {
-#ifndef NETWARE_386
 #ifndef SUPERCLIENT
 #ifndef REQUESTER
 	gds__set_debug(flag);
-#endif
 #endif
 #endif
 }

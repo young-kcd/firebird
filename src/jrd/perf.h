@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef JRD_PERF_H
@@ -33,7 +35,7 @@
 #if (defined (_MSC_VER) && defined (WIN32)) || (defined (__BORLANDC__) && defined (__WIN32__))
 #define NOTIME
 #endif
-#if defined (NETWARE_386) || defined (PC_PLATFORM)
+#if defined (PC_PLATFORM)
 #define NOTIME
 #endif
 
@@ -64,30 +66,6 @@ struct tms {
 	time_t tms_cutime;			/* user time, children */
 	time_t tms_cstime;			/* system time, children */
 };
-
-#ifdef NETWARE_386
-#undef NULL
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-#ifdef __cplusplus
-extern "C" {
-#endif
-struct timezon {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
-#endif
 
 #endif
 

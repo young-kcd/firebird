@@ -27,9 +27,12 @@
  *            returned to the free pool.
  * 2001.02.15: Claudio Valderrama: Don't obfuscate the plan output if a selectable
  *             stored procedure doesn't access tables, views or other procedures directly.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 /*
-$Id: opt.cpp,v 1.18 2002-10-29 16:27:45 tamlin Exp $
+$Id: opt.cpp,v 1.19 2002-10-30 06:40:48 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -296,11 +299,6 @@ RSB OPT_compile(TDBB tdbb,
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(parent_stack, type_lls);
-
-#if defined(NETWARE_386)
-	if ((unsigned) stackavail() < (unsigned) STACK_SAFE_LIMIT)
-		ERR_post(isc_err_stack_limit, 0);
-#endif
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;

@@ -22,6 +22,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -56,13 +58,6 @@
 
 #ifndef status_t
 #define status_t	int
-#endif
-
-#ifdef NETWARE_386
-#define NETWARE_JOURNALLING
-#define BSD_SOCKETS
-#define EINTR		0
-#define SYS_ERROR       gds_arg_dos
 #endif
 
 #ifdef VMS
@@ -805,15 +800,6 @@ USHORT control_length, UCHAR * data, USHORT d_length, USHORT retry)
 	strcpy(p, JOURNAL_ADDR);
 #endif
 
-#ifdef NETWARE_JOURNALLING
-	for (q = name; q < p; q++)
-		if (*q == '/')
-			*q = '\\';
-	if (p[-1] != '\\')
-		*p++ = '\\';
-	strcpy(p, JOURNAL_ADDR);
-#endif
-
 #ifdef VMS
 	if (j_length && p[-1] != ':' && p[-1] != ']')
 		*p++ = ':';
@@ -1176,9 +1162,6 @@ static int jrn_put(
 #ifdef BSD_SOCKETS
 /*  If the send call is interrupted, another process is in contention
     with us, so keep trying until successful.  */
-/*  In case of NETWARE, send call would not be interrupted because
-    of contention.  Since EINTR has been defined as 0, the code below
-    would work for NETWARE. */
 
 	do {
 		l = send((int) journal->jrn_channel, buffer, (int) length, 0);

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #ifndef REMOTE_REMOTE_H
@@ -31,7 +34,7 @@
 /* Include some apollo include files for tasking */
 
 #if !(defined VMS || defined WIN_NT)
-#if !(defined PC_PLATFORM || defined NETWARE_386)
+#if !(defined PC_PLATFORM)
 //#include <pwd.h>
 #include <signal.h>
 #endif
@@ -404,9 +407,6 @@ typedef struct port
 	USHORT			port_requests_queued;	/* requests currently queued */
 #ifdef VMS
 	USHORT			port_iosb[4];
-#endif
-#ifdef NETWARE_386
-	void*			port_fdset;
 #endif
 #ifdef XNET
 	void*			port_xcc;              /* interprocess structure */

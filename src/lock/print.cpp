@@ -25,6 +25,8 @@
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
@@ -63,24 +65,6 @@
 #include <process.h>
 #endif
 
-#ifdef NETWARE_386
-#ifndef INCLUDE_FB_BLK
-#include "../include/old_fb_blk.h"
-#endif
-#include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
-#define exit(code)      {service->svc_handle = 0;                           \
-									    \
-		    /* Mark service thread as finished. */                  \
-		    /* If service is detached, cleanup memory being used    \
-		       by service. */                                       \
-		    SVC_finish (service, SVC_finished);			    \
-									    \
-		    return (code);}
-
-#define FPRINTF         SVC_netware_fprintf
-#endif
-
 #ifndef FPRINTF
 #define FPRINTF         ib_fprintf
 #endif
@@ -89,11 +73,7 @@
 #define MAXPATHLEN      256
 #endif
 
-#ifdef NETWARE_386
-typedef SVC OUTFILE;
-#else
 typedef IB_FILE *OUTFILE;
-#endif
 
 #define SW_I_ACQUIRE	1
 #define SW_I_OPERATION	2
@@ -140,13 +120,7 @@ static CONST UCHAR compatibility[] = {
 
 
 
-#ifdef NETWARE_386
-
-int main_lock_print( SVC service)
-#else /* Non-Netware declaration */
-
 int CLIB_ROUTINE main( int argc, char *argv[])
-#endif
 {
 /**************************************
  *
@@ -181,26 +155,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SLONG redir_in, redir_out, redir_err;
 	SLONG hash_total_count, hash_lock_count, hash_min_count, hash_max_count;
 	float bottleneck;
-#ifdef NETWARE_386
-	int argc;
-	char **argv;
-#endif
 	OUTFILE outfile;
 #ifdef MANAGER_PROCESS
 	OWN manager;
 	int manager_pid;
 #endif
 
-#ifdef NETWARE_386
-	argc = service->svc_argc;
-	argv = service->svc_argv;
-#endif
-
-#ifdef NETWARE_386
-	outfile = service;
-#else
 	outfile = ib_stdout;
-#endif
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
@@ -209,11 +170,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		argv++;
 		argc--;
-#ifdef NETWARE_386
-		/* Get the output file name from the next argv[] etc. */
-#endif
 	}
-#ifndef NETWARE_386
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		redir_in = atol(argv[2]);
 		redir_out = atol(argv[3]);
@@ -235,8 +192,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv += 4;
 		argc -= 4;
 	}
-#endif
-
 	orig_argc = argc;
 	orig_argv = argv;
 
@@ -444,15 +399,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		exit(FINI_OK);
 	}
 
-#ifdef NETWARE_386
-/* For Netware SuperServer - we will have other threads munging the
- * lock table while we are trying to print it over the slow remote
- * link.  Therefore, ALWAYS insist on a consistent copy before doing
- * the dump.
- */
-	sw_consistency = TRUE;
-#endif
-
 	if (sw_consistency) {
 		/* To avoid changes in the lock file while we are dumping it - make
 		 * a local buffer, lock the lock file, copy it, then unlock the
@@ -463,9 +409,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (!header) {
 			FPRINTF(outfile,
 					"Insufficient memory for consistent lock statistics.\n");
-#ifndef NETWARE_386
 			FPRINTF(outfile, "Try omitting the -c switch.\n");
-#endif
 			exit(FINI_OK);
 		}
 
@@ -621,7 +565,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (LOCK_header->lhb_secondary != LHB_PATTERN)
 		prt_history(outfile, LOCK_header, shb->shb_history, "Event log");
 
-#if !(defined WIN_NT || defined NETWARE_386)
+#if !(defined WIN_NT)
 	if (!sw_nobridge) {
 		FPRINTF(outfile, "\nBRIDGE RESOURCES\n\n");
 		V3_lock_print(orig_argc, (UCHAR**) orig_argv);
@@ -688,11 +632,7 @@ static void prt_lock_activity(
 #ifdef WIN_NT
 		Sleep((DWORD) seconds * 1000);
 #else
-#ifdef NETWARE_386
-		delay(seconds * 1000);
-#else
 		sleep(seconds);
-#endif
 #endif
 		clock = time(NULL);
 		d = *localtime((time_t*)&clock);

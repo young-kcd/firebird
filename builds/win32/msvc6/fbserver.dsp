@@ -2045,8 +2045,6 @@ SOURCE=..\..\..\src\jrd\mpexl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\netware.cpp
-
 !IF  "$(CFG)" == "fbserver - Win32 Debug"
 
 # PROP Exclude_From_Build 1
