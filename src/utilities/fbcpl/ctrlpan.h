@@ -1,7 +1,7 @@
 // CtrlPan.h
 
-#if !defined(_CTRLPAN_H_)
-#define _CTRLPAN_H_
+#if !defined(UTILITIES_CTRLPAN_H)
+#define UTILITIES_CTRLPAN_H
 
 #include <cpl.h> // control panel definitions
 
@@ -28,4 +28,5 @@ public:
     static CControlPanel* m_pThis; // nasty hack to get object ptr
 };
 
-#endif // _CTRLPAN_H_
+#endif // UTILITIES_CTRLPAN_H
+

@@ -25,8 +25,8 @@
  */
 
 
-#if !defined(_FBPanel_)
-#define _FBPanel_
+#if !defined(UTILITIES_FBPANEL_H)
+#define UTILITIES_FBPANEL_H
 
 #include "ctrlpan.h"
 
@@ -38,4 +38,5 @@ public:
 
 };
 
-#endif
+#endif // UTILITIES_FBPANEL_H
+

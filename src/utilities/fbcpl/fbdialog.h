@@ -30,8 +30,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // CFBDialog dialog
 
-#if !defined(_FBDialog_)
-#define _FBDialog_
+#if !defined(UTILITIES_FBDIALOG_H)
+#define UTILITIES_FBDIALOG_H
 
 //#pragma once
 
@@ -172,19 +172,19 @@ public:
 
 //Get Stuff
 
-	HWND GetSuperServerHandle();
+	HWND GetSuperServerHandle() const;
 #ifdef MANAGE_CLASSIC
-	HWND GetClassicServerHandle();
+	HWND GetClassicServerHandle() const;
 #endif
-	HWND GetFirebirdHandle();
-	void GetFullAppPath( CFBDialog::STATUS status, char * app);
-	HWND GetGuardianHandle();
+	HWND GetFirebirdHandle() const;
+	void GetFullAppPath( CFBDialog::STATUS status, char* app);
+	HWND GetGuardianHandle() const;
 //	bool GetGuardianUseSpecified();
 	bool GetPreferredArchitecture();
-	void GetServerName( CFBDialog::STATUS status, CString& AppName);
+	void GetServerName( CFBDialog::STATUS status, CString& AppName) const;
 	int GetServerStatus();
 
-	bool ServiceSupportAvailable();
+	bool ServiceSupportAvailable() const;
 	void ViewRegistryEntries();
 
 //Set stuff
@@ -216,8 +216,8 @@ public:
 	bool ServerStart( CFBDialog::STATUS status );
 	bool ServiceInstall( CFBDialog::STATUS status );
 	bool ServiceRemove();
-	static void HandleSvcError(SLONG	status, const TEXT* string);
-	void HandleError(bool silent, TEXT *string );
+	static void HandleSvcError(SLONG status, const TEXT* string);
+	void HandleError(bool silent, const TEXT* string );
 	void ShowError( LPTSTR lpMsgBuf, CString error_title );
 	void UpdateServerStatus();
 	bool UserHasSufficientRights();
@@ -225,4 +225,5 @@ public:
 };
 
 
-#endif
+#endif // UTILITIES_FBDIALOG_H
+

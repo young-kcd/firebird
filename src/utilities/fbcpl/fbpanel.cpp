@@ -78,9 +78,9 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES, 0, KEY_QUERY_VALUE, &hkey) 
 			== ERROR_SUCCESS)
 		{
-			char rootpath[MAX_PATH-2];
+			char rootpath[MAX_PATH - 2];
 			DWORD buffer_size = sizeof(rootpath);
-			if (RegQueryValueEx(hkey, "DefaultInstance",NULL, NULL, (unsigned char *)rootpath, &buffer_size)
+			if (RegQueryValueEx(hkey, "DefaultInstance", NULL, NULL, LPBYTE(rootpath), &buffer_size)
 				== ERROR_SUCCESS)
 			{
 				PathAddBackslash(rootpath);
@@ -92,11 +92,11 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
 			dlg.m_FB_Version = "not known";
 			CString afilename = dlg.m_Root_Path + "bin\\gbak.exe";
 			buffer_size = GetFileVersionInfoSize( const_cast<char *> ((LPCTSTR) afilename), 0);
-			void * VersionInfo = new char [buffer_size];
-			void * ProductVersion = new char [32];
-			void * SpecialBuild = new char [127];
-			void * PrivateBuild = new char [127];
-			unsigned int ValueSize;
+			void* VersionInfo = new char [buffer_size];
+			void* ProductVersion = 0;
+			void* SpecialBuild = 0;
+			void* PrivateBuild = 0;
+			UINT ValueSize;
 			if ( GetFileVersionInfo( const_cast<char *> ((LPCTSTR) afilename), 0, buffer_size, VersionInfo) )
 			{
 				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\ProductVersion", &ProductVersion, &ValueSize);
@@ -119,15 +119,17 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
 				}
 /**/
 			}
+			delete[] VersionInfo;
 		
 			// Show the dialog box
-			if (dlg.DoModal() != IDOK) return 0;
+			if (dlg.DoModal() != IDOK) 
+				return 0;
 		}
 	}
 	catch ( ... )
 	{
 		//raise an error
-		dlg.MessageBox("Firebird does not appear to be installed correctly.","Installation Error",MB_OK);
+		dlg.MessageBox("Firebird does not appear to be installed correctly.", "Installation Error", MB_OK);
 	}
     return 0;
 }	
