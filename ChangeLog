@@ -1,3 +1,69 @@
+2004-04-10 21:46  skidder
+
+	* firebird2/src/jrd/: dfw.epp (1.99), jrd.h (1.88), met.epp
+	(1.108), met_proto.h (1.40):
+	
+	Small metadata cache cleanup
+
+2004-04-10 21:41  skidder
+
+	* firebird2/src/jrd/ntrace.h (1.2):
+	
+	Small fixes in Trace API header
+
+2004-04-10 21:03  skidder
+
+	* firebird2/src/jrd/: jrd.h (1.87), met.epp (1.107):
+	
+	Doing memset on a class with fields having destructors is generally
+	a bad idea
+
+2004-04-10 19:24  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.66):
+	
+	Undo my change for BLOBs in read_only transactions and add comment
+
+2004-04-10 15:59  dimitr
+
+	* firebird2/src/: common/config/config_file.cpp (1.18),
+	jrd/os/win32/fbsyslog.cpp (1.2):
+	
+	Corrections.
+
+2004-04-10 05:56  skidder
+
+	* firebird2/src/jrd/met.epp (1.106):
+	
+	Oops. Somebody renamed CMP_clone_active function.
+
+2004-04-10 05:30  skidder
+
+	* firebird2/src/jrd/met.epp (1.105):
+	
+	Small safety fix for new modify_procedure logic
+
+2004-04-10 02:25  robocop
+
+	* firebird2/: doc/README.performance_monitoring (1.3),
+	src/common/classes/fb_string.cpp (1.11), src/dsql/ddl.cpp (1.92),
+	src/dsql/dsql.cpp (1.99), src/dsql/metd.epp (1.50),
+	src/dsql/parse.cpp (1.111), src/dsql/parse.y (1.129),
+	src/gpre/gpre.cpp (1.55), src/include/fb_string.h (1.15),
+	src/isql/extract.epp (1.27), src/isql/isql.h (1.23),
+	src/isql/show.epp (1.36), src/jrd/cch.cpp (1.79), src/jrd/cch.h
+	(1.18), src/jrd/dyn.epp (1.55), src/jrd/err.cpp (1.40),
+	src/jrd/evl.cpp (1.78), src/jrd/opt.cpp (1.151), src/jrd/par.cpp
+	(1.87):
+	
+	Small corrections
+
+2004-04-10 02:07  robocop
+
+	* firebird2/src/misc/blrtable.cpp (1.9):
+	
+	Make MSVC6 happy again
+
 2004-04-09 18:32  skidder
 
 	* firebird2/src/jrd/evl.cpp (1.77):
