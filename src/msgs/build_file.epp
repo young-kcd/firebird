@@ -60,7 +60,7 @@ static int global_file;
 // in jrd/file_params.h, it seems we are already out of sync!
 
 #ifdef WIN_NT
-#include <io.h>
+#include <io.h> // open, lseek, write, close
 #define FILENAME	"firebird.msg"
 const char* const locale_pattern = "%.8s.msg";
 const char path_separator = '\\';

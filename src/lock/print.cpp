@@ -50,14 +50,9 @@
 #endif
 
 #include <sys/stat.h>
-#if !(defined WIN_NT)
-#include <sys/param.h>
-#endif
 
-#if (defined WIN_NT)
-#include <winbase.h>
-#include <io.h>
-#include <process.h>
+#ifdef HAVE_SYS_PARAM_H
+#  include <sys/param.h>
 #endif
 
 #ifndef FPRINTF

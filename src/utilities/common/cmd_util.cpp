@@ -31,13 +31,7 @@
 #include "../jrd/iberr.h"
 
 #ifdef WIN_NT
-#include <io.h>
-#include <windows.h>
 #include "../jrd/jrd_pwd.h"
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT		SCHAR
 #endif
 
 #ifndef INCLUDE_FB_BLK

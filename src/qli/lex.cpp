@@ -60,7 +60,7 @@
 #endif
 
 #if (defined WIN_NT)
-#include <io.h>
+#include <io.h> // isatty
 #define UNIX_LINE	1
 #define PC_FILE_SEEK
 #endif

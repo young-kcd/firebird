@@ -1,6 +1,6 @@
+
 #include "../jrd/os/path_utils.h"
-#include <windows.h>
-#include <io.h>
+#include <io.h> // _access
 
 /// The Win32 implementation of the path_utils abstraction.
 

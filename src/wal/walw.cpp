@@ -82,11 +82,6 @@
 #ifdef WIN_NT
 #include <process.h>
 #include <io.h> // lseek
-#include <windows.h>
-#ifdef TEXT
-#undef TEXT
-#endif
-#define TEXT	SCHAR
 #define ERRNO	GetLastError()
 #endif
 

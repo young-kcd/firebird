@@ -28,10 +28,6 @@
 #include "../jrd/thd.h"
 #include "../jrd/thd_proto.h"
 
-#if (defined WIN_NT)
-#include <io.h>
-#endif
-
 #define GSEC_MSG_FAC	18
 #define MSG_LENGTH	128
 #define QUERY_LENGTH	256

@@ -19,16 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.2 2003-08-26 06:54:45 brodsom Exp $
+ * $Id: ibmgr.h,v 1.3 2003-11-16 12:55:56 brodsom Exp $
  */
 
 #ifndef _UTILITIES_IBMGR_H_
 #define _UTILITIES_IBMGR_H_
-
-
-#if (defined WIN_NT)
-#include <io.h>
-#endif
 
 #define OUTFILE			ib_stderr
 

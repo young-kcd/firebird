@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.9 2003-10-02 10:17:40 aafemt Exp $
+ *  $Id: nbackup.cpp,v 1.10 2003-11-16 12:53:31 brodsom Exp $
  *
  */
  
@@ -63,10 +63,6 @@
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#endif
-
-#if defined(WIN_NT)
-#include <io.h>
 #endif
 
 #ifndef O_LARGEFILE

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.87 2003-11-15 20:16:29 skidder Exp $
+$Id: inet.cpp,v 1.88 2003-11-16 12:52:36 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -135,7 +135,6 @@ extern int h_errno;
 
 #ifdef WIN_NT
 #include <fcntl.h>
-#include <io.h>
 #include <process.h>
 #include <signal.h>
 #include "../utilities/install/install_nt.h"
