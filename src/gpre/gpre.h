@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.33 2003-07-02 18:58:41 brodsom Exp $
+ * $Id: gpre.h,v 1.33.2.1 2005-02-10 10:25:25 kkuznetsov Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -71,7 +71,9 @@ extern "C" {
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
+#ifndef BOOT_BUILD 
 #define FTN_BLK_DATA    1
+#endif
 #endif
 #endif
 
