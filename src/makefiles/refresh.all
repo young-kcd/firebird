@@ -1,0 +1,135 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+set -x
+SYSTEM=$(SYSTEM)
+export SYSTEM
+if [ $SYSTEM != 'WIN_NT' -a $SYSTEM != 'OS2' -a $SYSTEM != 'WIN_NTS' ]; then
+    PATH=$PATH:/usr/ucb:/usr/bsd
+else
+    PATH="$PATH;$Path"
+fi
+export PATH
+HOSTNAME=`hostname`
+#
+SYS_TYPE=GENERIC
+if [ $SYSTEM = 'SUN4' -o $SYSTEM = 'SUN3_4' -o $SYSTEM = 'SUN386I' ]; then
+    SYS_TYPE=SUNOS4
+fi
+if [ $SYSTEM = 'AX' -o $SYSTEM = 'AP' ]; then
+    SYS_TYPE=APOLLO
+    PATH=.:source/interbase/com:/gds/com:/usr/ucb:/bin:/usr/bin:/com:
+else
+    if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'OS2' -o $SYSTEM = 'WIN_NTS' ]; then
+        CURDIR=`pwd`
+        SYS_TYPE=NOLINK_OS
+        PATH=".;$CURDIR/interbase/bin;/gds.${HOSTNAME}/bin;/gds/bin;$PATH"
+    else
+        PATH=.:source/interbase/bin:/usr/gds.${HOSTNAME}/bin:/netapp/apps/isc/bin:/usr/ucb:/bin:/usr/bin:/u/gds/bin:
+    fi
+fi
+export PATH
+#
+cd alice 
+marion -z -v -a -c alice
+cd ../burp
+marion -v -a -c burp
+cd ../csv
+marion -v -a -c csv
+cd ../dsql
+marion -v -a -c dsql
+cd ../dudley
+marion -v -a -c dudley
+cd ../extlib
+marion -v -a -c extlib
+cd ../gpre
+marion -v -a -c gpre
+cd ../intl
+marion -v -a -c intl
+cd ../isql
+marion -v -a -c isql
+cd ../journal
+marion -v -a -c journal
+cd ../jrd
+marion -v -a -c jrd
+cd ../msgs
+marion -v -a -c msgs
+cd ../pipe
+marion -v -a -c pipe
+if [ $SYSTEM = 'DELTA' ]; then
+    ln -s source/pipe/allp.c jrd/allp.c
+    ln -s source/pipe/foot.c jrd/foot.c
+    ln -s source/pipe/head.c jrd/head.c
+fi
+cd ../pyxis
+marion -v -a -c pyxis
+cd ../qli
+marion -v -a -c qli
+cd ../remote
+marion -v -a -c remote
+cd ../lock
+if [ $SYS_TYPE = 'APOLLO' ]; then
+    marion -v -a -c lock
+    cd ../isc_lock
+fi
+marion -v -a -c isc_lock
+cd ../utilities
+marion -v -a -c utilities
+if [ $SYSTEM = 'DELTA' ]; then
+    ln -s source/utilities/scrty_unix.gdl utilities/security.gdl
+fi
+if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'OS2' -o $SYSTEM = 'WIN_NTS' ]; then
+    cp scrty_unix.gdl security.gdl
+fi
+cd ../wal
+marion -v -a -c wal
+cd ../examples
+marion -v -a -c examples -x
+cd ../example4
+marion -v -a -c example4 -x
+cd ../example5
+marion -v -a -c example5 -x
+cd ..
+if [ -d super ]; then
+    cd super/alice
+    marion -v -a -c alice
+    cd ../burp
+    marion -v -a -c burp
+    cd ../dsql
+    marion -v -a -c dsql
+    cd ../intl
+    marion -v -a -c intl
+    cd ../isc_lock
+    marion -v -a -c isc_lock
+    cd ../journal
+    marion -v -a -c journal
+    cd ../jrd
+    marion -v -a -c jrd
+    cd ../remote
+    marion -v -a -c remote
+    cd ../utilities
+    marion -v -a -c utilities
+    cd ../wal
+    marion -v -a -c wal
+    cd ../..
+fi
+    
+if [ $SYS_TYPE = 'APOLLO' -o $SYSTEM = 'NXT' ]; then
+    date | awk '{print $3 "-" $2 "-" $6}' >last_fetch
+else
+    date +"%d-%h-%Y" >last_fetch
+fi

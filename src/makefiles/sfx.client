@@ -1,0 +1,207 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+GPRE=		source/interbase/bin/gpre$(EXEC_EXT)
+GPRE_FLAGS=	-r -m -z -n
+ 
+DSQL_MISC=	source/dsql/array.o source/dsql/blob.o source/dsql/preparse.o \
+		source/dsql/user_dsql.o source/dsql/utld.o
+
+DSQL_P_MISC=	source/dsql/array.bin source/dsql/blob.bin source/dsql/preparse.bin \
+		source/dsql/user_dsql.bin source/dsql/utld.bin
+ 
+
+REMOTE_MISC=	source/remote/allr.o source/remote/inet.o \
+		source/remote/interface.o source/remote/merge.o \
+		source/remote/parser.o source/remote/protocol.o \
+		source/remote/remote.o $(NET_OBJECTS)
+
+REMOTE_P_MISC=	source/remote/allr.bin source/remote/inet.bin \
+		source/remote/interface.bin source/remote/merge.bin \
+		source/remote/parser.bin source/remote/protocol.bin \
+		source/remote/remote.bin $(NET_P_OBJECTS)
+
+JRD_GDS_H=	source/jrd/gds.h 
+
+JRD_MISC=	source/jrd/alt.o source/jrd/cvt.o \
+		source/jrd/dsc.o source/jrd/dls.o \
+		source/jrd/enc.o source/jrd/gds.o source/jrd/isc.o \
+		source/jrd/isc_file.o source/jrd/isc_ipc.o \
+		source/jrd/isc_sync.o \
+		source/jrd/perf.o source/jrd/sch.o source/jrd/sdl.o \
+		source/jrd/thd.o source/jrd/utl.o source/jrd/why.o \
+		$(JRD_MISC_OBJECTS)
+
+JRD_P_MISC=	source/jrd/alt.bin source/jrd/cvt.bin \
+		source/jrd/dsc.bin source/jrd/dls.bin \
+		source/jrd/enc.bin source/jrd/gds.bin source/jrd/isc.bin \
+		source/jrd/isc_file.bin source/jrd/isc_ipc.bin \
+		source/jrd/isc_sync.bin \
+		source/jrd/perf.bin source/jrd/sch.bin source/jrd/sdl.bin \
+		source/jrd/thd.bin source/jrd/utl.bin source/jrd/why.bin \
+		$(STDIO_P_OBJ) $(JRD_P_MISC_OBJECTS)
+
+SECURITY_MISC=	source/utilities/security.o
+
+SECURITY_P_MISC=	source/utilities/security.bin
+
+CLIENT_OBJECTS= $(JRD_MISC) $(DSQL_MISC) $(REMOTE_MISC) $(SECURITY_MISC)
+
+# If you add any more Objects to the CLIENT_P_OBJECTS definition,
+# please create an action rule for the object below. 
+# For eg: see the rule for $(JRD_P_MISC).
+# This is required for super_client to be built properly with the 
+# objects having -DSUPERCLIENT in them turned on from this dir.
+CLIENT_P_OBJECTS=	$(JRD_P_MISC) $(DSQL_P_MISC) $(REMOTE_P_MISC) \
+			$(SECURITY_P_MISC)
+
+all:		super_client	
+
+super_client:	$(SUPER_CLIENT_GDSSHR)
+
+gdsmt.so.1 $(SO_SUPER_GDSSHR): \
+		$(JRD_GDS_H) client_p_objects $(CLIENT_P_OBJECTS) 
+	-$(RM) gdsmt.so.1
+	ld $(LD_OPTS) libgdsmt.so.0 $(ZDEFS) $(CLIENT_P_OBJECTS) \
+		$(LD_LIBS) -o gdsmt.so.1
+	$(CHMOD_6) gdsmt.so.1
+	$(MV) gdsmt.so.1 $(SO_SUPER_GDSSHR)
+	$(TOUCH) gdsmt.so.1
+	$(CHMOD_6) gdsmt.so.1
+
+gds.sl.1 $(HP_SUPER_GDSSHR): \
+		$(JRD_GDS_H) client_p_objects $(CLIENT_P_OBJECTS) 
+	-$(RM) gds.sl.1
+	ld -b $(LD_OPTS) $(CLIENT_P_OBJECTS) $(LD_LIBS) \
+		-o gds.sl.1
+	$(CHMOD_7) gds.sl.1
+	$(MV) gds.sl.1 $(HP_SUPER_GDSSHR)
+	$(TOUCH) gds.sl.1
+	$(CHMOD_6) gds.sl.1
+
+gds.so.1 $(LX_SUPER_GDSSHR): \
+		$(JRD_GDS_H) client_p_objects $(CLIENT_P_OBJECTS) 
+	-$(RM) gds.so.1
+	ld $(LD_OPTS) $(CLIENT_P_OBJECTS) $(LD_LIBS) \
+		-o gds.so.1
+	$(CHMOD_7) gds.so.1
+	$(MV) gds.so.1 $(LX_SUPER_GDSSHR)
+	$(TOUCH) gds.so.1
+	$(CHMOD_6) gds.so.1
+
+gds.dylib.1 $(DARWIN_SUPER_GDSSHR): $(JRD_GDS_H) $(PYXIS_P_MISC) $(WAL_P_MISC) \
+		client_p_objects $(CLIENT_P_OBJECTS)
+	-$(RM) gds.dylib.1
+	libtool -dynamic -o gds.dylib.1 -install_name \
+		/Library/Frameworks/Firebird.framework/Versions/A/Firebird \
+		-current_version 1.0.0 -compatibility_version 1.0.0 \
+		$(CLIENT_P_OBJECTS) $(PYXIS_P_MISC) $(WAL_P_MISC) \
+		$(LD_LIBS) -framework System -framework Foundation
+	$(CHMOD_7) gds.dylib.1
+	$(MV) gds.dylib.1 $(DARWIN_SUPER_GDSSHR)
+	$(TOUCH) gds.dylib.1
+	$(CHMOD_6) gds.dylib.1
+	-$(RM) $(WAL_P_MISC) $(WAL_MISC)
+
+gdsshr.a.1 $(AIX_PPC_SUPER_GDSSHR): \
+		$(JRD_GDS_H) client_p_objects $(CLIENT_P_OBJECTS) 
+	-$(RM) gdsshr.a.1
+	ld $(CLIENT_P_OBJECTS) -bM:SRE -H1024 -bE:source/jrd/gds.bind -lc \
+		-o gdsshr.a.1
+	$(CHMOD_6) gdsshr.a.1
+	$(MV) gdsshr.a.1 $(AIX_PPC_SUPER_GDSSHR)
+	$(TOUCH) gdsshr.a.1
+	$(CHMOD_6) gdsshr.a.1
+
+gds.so.0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(SOL_GDSSHR) $(UNIXWARE_GDSSHR): \
+		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(WAL_P_MISC) \
+		$(FUNCTIONS) $(GDSFLIB)
+	-$(RM) gds.so.0
+	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
+		$(REMOTE_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
+		$(LD_LIBS) -o gds.so.0
+	$(CHMOD_6) gds.so.0
+	$(MV) gds.so.0 $(GDSSHR)
+	$(TOUCH) gds.so.0
+	$(CHMOD_6) gds.so.0
+
+gdsf.so $(DG_FUNCSHR) $(DG_X86_FUNCSHR):	functions.bin
+	-$(RM) gdsf.so
+	ld -G functions.bin -o gdsf.so
+	$(CHMOD_6) gdsf.so
+	$(MV) gdsf.so $(FUNCSHR)
+	$(TOUCH) gdsf.so
+	$(CHMOD_6) gdsf.so
+
+gdsshr.dll:	$(WIN_NT_GDSSHR)
+	$(TOUCH) gdsshr.dll
+
+gds32_nt_ms.dll: $(CLIENT_OBJECTS) $(JRD_MISC) $(REMOTE_MISC) ..\jrd\gdsalias.o
+	-$(RM) gds32.dll gds32.lib 
+	$(IMPLIB) -out:gds_temp.lib $(CLIENT_OBJECTS) $(JRD_MISC) $(REMOTE_MISC)
+	$(IMPLIB) -out:gds32.lib -def:..\jrd\gds.bind gds_temp.lib
+	$(LINK) $(LD_OPTS) -out:gds32.dll -dll -entry:_CRT_INIT$(DLLENTRY) gds_temp.lib gds32.exp $(CONLIBSDLL) $(WSOCKLIB) $(ADVAPILIB) $(MPRLIB)
+	$(RM) gds_temp.lib
+	$(RM) gds32.exp
+	$(MV) gds32.lib gds32_ms.lib
+	$(RM) gds32.lib
+	implib gds32.lib gds32.dll
+	tlib gds32.lib +- ..\jrd\gdsalias.o
+	$(MV) gds32.lib ..\interbase\lib
+	$(MV) gds32_ms.lib ..\interbase\lib
+	$(MV) gds32.dll ..\interbase\bin
+	$(RM) gds32.dll gds32.lib gds32_ms.lib
+	$(TOUCH) gds32_nt_ms.dll
+
+gds32_nt_bc4.dll: $(CLIENT_OBJECTS) $(JRD_MISC) $(REMOTE_MISC)
+	-$(RM) gds32.dll gds32.lib tmp.bind
+	sed -e 's/DATA READ WRITE/DATA MULTIPLE/' -e 's/LIBRARY gds32/LIBRARY gds32 INITINSTANCE/' gds.bind > tmp.bind
+	$(LINK) -Tpd -ap -c $(LD_OPTS) -w-inq -x /Lc:\bc4\lib c0d32 @gds.rsp,gds32.dll,,import32 cw32mt,tmp.bind
+	implib gds32.lib gds32.dll
+	$(MV) gds32.lib ..\interbase\lib
+	$(MV) gds32.dll ..\interbase\bin
+	$(RM) gds32.dll gds32.lib tmp.bind
+	$(TOUCH) gds32_nt_bc4.dll
+
+# This target just forces those who depend on it, to execute their actions
+force:
+	$(ECHO) force
+
+# CLIENT
+
+$(DSQL_P_MISC): force
+	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) $(@F);'
+
+$(REMOTE_P_MISC): force
+	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) $(@F);'
+
+$(JRD_P_MISC): force
+	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) $(@F);'
+
+$(SECURITY_P_MISC): force
+	$(SH) '$(CD) source/utilities; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) $(@F);'
+
+$(JRD_GDS_H):
+	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) $(@F)'
+
+client_p_objects:	force
+	$(SH) '$(CD) source/jrd; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) super_client_objects'
+	$(SH) '$(CD) source/dsql; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) super_client_objects'
+	$(SH) '$(CD) source/remote; $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM=$(SYSTEM) super_client_objects'

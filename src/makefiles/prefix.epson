@@ -1,0 +1,107 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+.SUFFIXES: .c .e
+.e.c:
+	$(GPRE) $(GPRE_FLAGS) $<
+.SUFFIXES: .bin .o .c
+.c.o:
+	$(CC) -c $(CFLAGS) $(VERSION_FLAG) $<
+.c.bin:
+	$(CC) -c $(PIC_FLAGS) $(VERSION_FLAG) -Wa,-o,$*.bin $<
+
+
+PROD_DEBUG_OBJECTS=	nodebug.o
+PROD_SHRLIB_DIR=
+PROD_VERSION_FLAG=	-DPROD_BUILD
+PROD_CFLAGS=		-O -DHADES
+
+DEV_DEBUG_OBJECTS=	grammar.o dbg.o dbt.o dmp.o
+DEV_SHRLIB_DIR=		-Lsource/jrd
+DEV_VERSION_FLAG=	-DDEV_BUILD
+DEV_CFLAGS=		-g
+
+DEBUG_OBJECTS=		$($(VERSION)_DEBUG_OBJECTS)
+SHRLIB_DIR=		$($(VERSION)_SHRLIB_DIR)
+VERSION_FLAG=		$($(VERSION)_VERSION_FLAG)
+CFLAGS=			$($(VERSION)_CFLAGS) -D$(SYSTEM) -K PIC
+
+ACCESS_METHOD=		gdslib.epson pipe
+BACKEND_BRIDGE_MISC=	head5.o allp.o
+BIN_PATH=		/usr/gds/bin
+BRIDGE_MISC=		head5.o allp.o
+CHMOD_VAL=		666
+FORM_OBJECTS=		noform.o
+GDS_LINK=		$(GDSSHR_LINK)
+GDSLIB_BACKEND=		source/jrd/gds_b.a
+GDSLIB_LINK=		-Lsource/jrd -lgds_b -lnsl -lsocket -ldl
+GDSSHR=			source/interbase/lib/gds.so.0
+EPSON_GDSSHR=		$(GDSSHR)
+GDSSHR_LINK=		-Lsource/jrd -lgds -lnsl -lsocket
+HLPDIR=			source/qli/
+INTL=			intl
+INTL_CFLAGS=		$(CFLAGS)
+INTL_LD_LINE=		ld -G -Bdynamic -z text -o gdsintl
+INTL_PIC_FLAGS=         $(CFLAGS)
+INTL_TARGET=		intl_shr_objs
+IO_OBJECTS=		unix.o
+JRD_MISC_OBJECTS=       stubs.o
+LANG_OBJECTS=		
+LANGUAGES=		cc cxx gdl1 make15
+LD_LIBS=		-ldl
+LD_OPTS=		-G -h
+LOCK_MANAGER=		manager
+MARION_DB=		-d source/marion.gdb
+NSL_LIB=		-lnsl
+PIPE=			gds.a gds_pipe
+REG_HELP=		isc_ins_hlp.dat
+REMOTE_GDSSHR=		$(GDSSHR)
+REMOTE_GDSSHR_LINK=	$(SERVER_LINK)
+SERVER_LINK=		$(GDSSHR_LINK)
+SETUP_ISC=		ISC_USER=sysdba; ISC_PASSWORD=masterkey; export ISC_USER ISC_PASSWORD;
+SOCKET_LIB=		-lnsl -lsocket
+SPECIAL_OPT=		sh source/special_opt
+UTILITIES=		drop
+
+INET_SERVER_DEST=	source/interbase/bin/gds_inet_srvr
+DNET_SERVER_DEST=	source/interbase/bin/gds_dnet_srvr
+AMBX_SERVER_DEST=	source/interbase/bin/gds_srvr
+INET_LIB_DEST=		source/interbase/lib/gds_inet_svr.a
+DNET_LIB_DEST=		source/interbase/lib/gds_dnet_svr.a
+
+SH=                     sh -c
+RM=                     rm -f
+CHMOD=                  chmod
+CHMOD_6=                chmod 666
+CHMOD_7=                chmod 777
+CHMOD_S7=               chmod 06777
+MV=                     mv -f
+TOUCH=                  touch
+CP=                     cp
+ECHO=                   echo
+QUIET_ECHO=             @echo
+CD=                     cd
+CAT=                    cat
+AR=                     ar r
+EXPAND_DBNAME=          @echo No need to expand...
+COMPRESS_DBNAME=        @echo No need to compress...
+
+ARCH_EXT=               .a
+EXEC_EXT=
+
+
+V3PRINTER=		source/lock/printv3.o
+

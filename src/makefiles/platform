@@ -1,0 +1,50 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+#   
+if [ $# != 1 ]; then
+    echo 'Usage: platform {AIX   | DELTA | HP700 | NXT     | SUN3_4 }'
+    echo '                {AP    | DG    | HP800 | SCO     | SUN4   }'
+    echo '                {AX    | HM300 | IMP   | SGI     | UL     }'
+    echo '                {CRAY  | HP300 | MU    | SOLARIS | SCO_EV }'
+    echo '                {LINUX                                    }'
+    exit 1
+fi
+#
+if [ $1 = 'NOLINK_MACHINE_NAME' -o $1 = 'WIN_NT' -o $1 = 'OS2' \
+  -o $1 = 'WIN_NTS' ]; then
+    SYS_TYPE=NOLINK_OS
+else
+    SYS_TYPE=GENERIC
+fi
+export SYS_TYPE
+#
+if [ $1 = 'SUN3_4' -o $1 = 'SUN4' -o $1 = 'AP' -o $1 = 'AX' ]; then
+    TR='tr "A-Z" "a-z"'
+elif [ $1 = 'HP300' -o $1 = 'HP700' -o $1 = 'HP800' -o $1 = 'HM300' -o $1 = 'LINUX' ]; then
+    TR='tr "[[:upper:]]" "[[:lower:]]"'
+else
+    TR='tr "[A-Z]" "[a-z]"'
+fi
+BASE=`echo $1 | $TR`
+if [ $1 = 'WIN_NT' -o $1 = 'OS2' -o $1 = 'WIN_NTS' ]; then
+    sed -e "s/\$(BASE)/$BASE/" -e "s/\$(PLATFORM)/builds/" run_edit > tmp1.ksh
+    tmp1
+    rm tmp1.ksh
+else
+    sed -e "s/\$(BASE)/$BASE/" -e "s/\$(PLATFORM)/builds/" run_edit | sh
+fi

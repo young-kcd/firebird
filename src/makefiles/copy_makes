@@ -1,0 +1,130 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+#  This procedure refreshes the support and makefiles for non-link systems
+#
+SYSTEM=$(SYSTEM)
+#
+# Alice
+cp $SYSTEM/make.alice alice/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.alice_ss $SYSTEM/super/alice/makefile
+fi
+# Burp
+cp $SYSTEM/make.burp burp/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.burp_ss $SYSTEM/super/burp/makefile
+fi
+# Client
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.client client/makefile
+fi
+# Csv
+cp $SYSTEM/make.csv csv/makefile
+# Dsql
+cp $SYSTEM/make.dsql dsql/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.dsql_ss $SYSTEM/super/dsql/makefile
+fi
+# Dudley
+cp $SYSTEM/make.dudley dudley/makefile
+# Examples
+cp $SYSTEM/make.examples examples/makefile
+# V4 Examples
+cp $SYSTEM/make.example4 example4/makefile
+# V5 Examples
+cp $SYSTEM/make.example5 example5/makefile
+# Gpre
+cp $SYSTEM/make.gpre gpre/makefile
+# Intl
+cp $SYSTEM/make.intl intl/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.intl_ss $SYSTEM/super/intl/makefile
+fi
+# Isql
+cp $SYSTEM/make.isql isql/makefile
+# Journal
+cp $SYSTEM/make.journal journal/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.journal_ss $SYSTEM/super/journal/makefile
+fi
+# Jrd
+cp $SYSTEM/make.jrd jrd/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.jrd_ss $SYSTEM/super/jrd/makefile
+fi
+# Lock
+cp $SYSTEM/make.lock lock/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.lock_ss $SYSTEM/super/lock/makefile
+fi
+# Msgs
+cp $SYSTEM/make.msgs msgs/makefile
+# Pipe
+cp $SYSTEM/make.pipe pipe/makefile
+# Pyxis
+cp $SYSTEM/make.pyxis pyxis/makefile
+# Qli
+cp $SYSTEM/make.qli qli/makefile
+# Remote
+cp $SYSTEM/make.remote remote/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.remote_ss $SYSTEM/super/remote/makefile
+fi
+# Utilities
+cp $SYSTEM/make.utilities utilities/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.utilities_ss $SYSTEM/super/utilities/makefile
+fi
+if [ $SYSTEM != 'WIN_NT' -a $SYSTEM != 'OS2' -a $SYSTEM != 'WIN_NTS' ]; then
+    SECURITY='utilities/scrty_unix.gdl'
+else
+    SECURITY='utilities/scrty_unix.gdl'
+fi
+if [ -f $SECURITY ]; then
+    cp $SECURITY utilities/security.gdl
+fi
+# Wal
+cp $SYSTEM/make.wal wal/makefile
+if [ -d $SYSTEM/super ]; then
+    cp $SYSTEM/make.wal_ss $SYSTEM/super/wal/makefile
+fi
+# Top level
+cp $SYSTEM/make.interbase make_kit
+#
+# miscellaneous
+cp $SYSTEM/original/v3meta testing/v3meta
+if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'OS2' -o $SYSTEM = 'WIN_NTS' ]; then
+    cp $SYSTEM/original/bind_gds.win_nt jrd/gds.bind
+    if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'WIN_NTS' ]; then
+        cp $SYSTEM/original/bind_gds_rsp.win_nt jrd/gds.rsp
+    else
+        cp $SYSTEM/original/bind_gds_rsp.\os2 jrd/gds.rsp
+    fi
+    cp $SYSTEM/original/bind_gdsintl.win_nt intl/gdsintl.bind
+else
+    cp $SYSTEM/original/install.nolink $SYSTEM/install
+#
+#    IMPORTANT!!!!!!!!!!
+#
+#    The following should be set for...
+#      inetd.conf.unx = gds_inet_server
+#      inetd.conf.psx = gds_inet_srvr (14 character limit)
+#
+#    cp $SYSTEM/original/inetd.conf.unx $SYSTEM/inetd.conf.isc
+    cp $SYSTEM/original/inetd.conf.psx $SYSTEM/inetd.conf.isc
+fi

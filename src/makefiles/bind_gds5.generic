@@ -1,0 +1,57 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+jrd5_attach_database
+jrd5_blob_info
+jrd5_cancel_blob
+jrd5_cancel_events
+jrd5_close_blob
+jrd5_commit_retaining
+jrd5_commit_transaction
+jrd5_compile_request
+jrd5_create_blob2
+jrd5_create_database
+jrd5_database_info
+jrd5_detach_database
+jrd5_get_segment
+jrd5_get_slice
+jrd5_open_blob2
+jrd5_prepare_transaction
+jrd5_put_segment
+jrd5_put_slice
+jrd5_que_events
+jrd5_receive
+jrd5_reconnect_transaction
+jrd5_release_request
+jrd5_request_info
+jrd5_rollback_transaction
+jrd5_seek_blob
+jrd5_send
+jrd5_start_and_send
+jrd5_start_multiple
+jrd5_start_request
+jrd5_start_transaction
+jrd5_transaction_info
+jrd5_unwind_request
+DYN_ddl
+LDSQL_allocate_statement
+LDSQL_execute
+LDSQL_execute_immediate
+LDSQL_fetch
+LDSQL_free_statement
+LDSQL_prepare
+LDSQL_set_cursor
+LDSQL_sql_info

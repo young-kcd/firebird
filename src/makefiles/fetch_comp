@@ -1,0 +1,59 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+if [ "$SYS_TYPE" != "NOLINK_OS" ]; then
+    DB="-d $1"
+    SINCE="$2"
+    COMP="$3"
+else
+    DB=""
+    SINCE="$1"
+    COMP="$2"
+fi
+if [ "$SYSTEM" = "DELTA" ]; then
+    DB=""
+    SINCE="$1"
+    COMP="$2"
+fi
+if [ "$COMP" = "examples" -o "$COMP" = "EXAMPLES" ]; then
+    HEADER="-x"
+fi
+if [ "$COMP" = "example4" -o "$COMP" = "EXAMPLE4" ]; then
+    HEADER="-x"
+fi
+if [ "$COMP" = "example5" -o "$COMP" = "EXAMPLE5" ]; then
+    HEADER="-x"
+fi
+if [ "$COMP" != "builds" -a "$COMP" != "isc_lock" -a "$COMP" != "BUILDS" -a "$COMP" != "ISC_LOCK" ]; then
+    cd $COMP
+fi
+if [ "$COMP" = "isc_lock" -o "$COMP" = "ISC_LOCK" ]; then
+    if [ "$SYS_TYPE" != "NOLINK_OS" ]; then
+        cd $COMP
+    else
+        cd lock
+    fi
+fi
+if [ "$COMP" = "builds" -o "$COMP" = "BUILDS" ]; then
+    if [ "$SYS_TYPE" != "NOLINK_OS" ]; then
+        cd $COMP
+    else
+        cd $SYSTEM/original
+    fi
+fi
+set -x
+marion $DB -a -s $SINCE -c $COMP -v -z $HEADER
+exit

@@ -1,0 +1,69 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+all.o blb.o blf.o btr.o cch.o cmp.o cvt.o dpm.o enc.o err.o event.o evl.o exe.o
+ext.o filters.o fun.o gds.o grant.o idx.o inf.o ini.o intl.o
+isc.o isc_file.o jio.o jrd.o jrn.o lck.o log.o met.o mov.o
+nav.o node.o opt.o pag.o par.o perf.o pwd.o rse.o sbm.o
+scl.o sdl.o sdw.o sort.o sqz.o sym.o tra.o apollo.o val.o vio.o
+dyn.o dyn_def.o dyn_del.o dyn_mod.o flu.o functions.o nodebug.o
+source/dsql/all.o source/dsql/ddl.o source/dsql/err.o source/dsql/gen.o
+source/dsql/hsh.o source/dsql/make.o source/dsql/met.o source/dsql/mov.o
+source/dsql/parse.o source/dsql/pass1.o
+-mergebss
+-binary bridge5 -exactcase
+-mark jrd5_attach_database
+-mark jrd5_blob_info
+-mark jrd5_cancel_blob
+-mark jrd5_cancel_events
+-mark jrd5_close_blob
+-mark jrd5_commit_retaining
+-mark jrd5_commit_transaction
+-mark jrd5_compile_request
+-mark jrd5_create_blob2
+-mark jrd5_create_database
+-mark jrd5_database_info
+-mark jrd5_detach_database
+-mark jrd5_get_segment
+-mark jrd5_get_slice
+-mark jrd5_open_blob2
+-mark jrd5_prepare_transaction
+-mark jrd5_put_segment
+-mark jrd5_put_slice
+-mark jrd5_que_events
+-mark jrd5_receive
+-mark jrd5_reconnect_transaction
+-mark jrd5_release_request
+-mark jrd5_request_info
+-mark jrd5_rollback_transaction
+-mark jrd5_seek_blob
+-mark jrd5_send
+-mark jrd5_start_and_send
+-mark jrd5_start_multiple
+-mark jrd5_start_request
+-mark jrd5_start_transaction
+-mark jrd5_transaction_info
+-mark jrd5_unwind_request
+-mark DYN_ddl
+-mark LDSQL_allocate_statement
+-mark LDSQL_execute
+-mark LDSQL_execute_immediate
+-mark LDSQL_fetch
+-mark LDSQL_free_statement
+-mark LDSQL_prepare
+-mark LDSQL_set_cursor
+-mark LDSQL_sql_info
+-end

@@ -1,0 +1,270 @@
+#!/bin/sh
+
+# $Id: buildRefDatabases,v 1.1 2001-07-12 06:32:03 bellardo Exp $
+
+# This file builds the reference databases for both the boot build
+# and the normal builds.
+
+printUsage() {
+   echo "usage is : 'buildRefDatabases [boot]'"
+   echo "      or : 'buildRefDatabases [boot] <destDir>'"
+   echo "      or : 'buildRefDatabases [boot] <srcDir> <destDir>'"
+   echo ""
+   echo "usually as:"
+   echo "sh builds/original/buildRefDatabases"
+   echo "from the main interbase source directory"
+   echo "where defaults are srcDir=. and destDir=./refDatabases"
+   echo ""
+}
+
+checkVariables() {
+
+     if [ "$INTERBASE" = "" ]
+       then
+         INTERBASE="/opt/interbase"
+         export INTERBASE
+
+     fi
+
+     if [ "$ISC_PASSWORD" = "" ]
+       then
+         ISC_USER="sysdba"
+         export ISC_USER
+         ISC_PASSWORD="masterkey"
+         export ISC_PASSWORD
+     fi
+
+     IBBin=$INTERBASE/bin
+     export IBBin
+     
+# This has become a more core activity of the build process and prompting
+# or confirmation is not required since it is always done.
+
+#     echo ""
+#     echo ""
+#     echo ""
+#     echo "- Firebird - Reference database build ------------------------"
+#     echo ""
+#     echo "Parameters :"
+#     echo ""
+#     echo "BootBuildFlg (build using boot kit   ) : $BootBuildFlg "
+#     echo "INTERBASE    (installed database root) : $INTERBASE "
+#     echo "Source code dir root                   : $IBSrc"
+#     echo "Dest root dir where to build ref db's  : $IBRefDir"
+#     echo ""
+#     echo "ISC_USER     (admin user)              : $ISC_USER"
+#     echo "ISC_PASSWORD (admin password)          : $ISC_PASSWORD"
+#     echo ""
+#     echo "If you wish to have different values please set them before running"
+#     echo "this script"
+#     echo "usage is : 'buildRefDatabases [boot]'"
+#     echo "      or : 'buildRefDatabases [boot] <destDir>'"
+#     echo "      or : 'buildRefDatabases [boot] <srcDir> <destDir>'"
+#     echo ""
+#     AskQuestion "Press return to continue"
+
+
+}
+
+
+
+
+
+#--------------------------------------------------------------------
+# Ask the user a question.
+
+Answer=""
+
+AskQuestion() {
+    Test=$1
+    DefaultAns=$2
+    echo -n "${1}"
+    Answer="$DefaultAns"
+    read Answer
+}
+
+
+#--------------------------------------------------------------------
+# Copy a database safely, using gbak
+copyDatabase() {
+	From=$1
+	To=$2
+	TmpGbk=`echo $To | sed -e 's/\.gdb$//'`".gbk"
+	$IBBin/gbak -b $From $TmpGbk
+	$IBBin/gbak -r $TmpGbk $To
+	rm $TmpGbk
+}
+
+#--------------------------------------------------------------------
+# Build the databases needed for a standard interbase build
+
+buildStdDatabases() {
+    echo "- building std databases"
+
+	copyDatabase $INTERBASE/isc4.gdb jrd/isc.gdb
+
+	copyDatabase $INTERBASE/help/help.gdb qli/help.gdb
+
+    (cd jrd; $IBBin/isql -i $IBSrc/builds_win32/original/metadata.sql)
+
+    (cd pyxis; $IBBin/gbak -r $IBSrc/pyxis/forms.gbk forms.gdb)
+
+    (cd msgs; $IBBin/gbak -R $IBSrc/msgs/msg.gbak msg.gdb)
+
+    (cd utilities; $IBBin/gdef $IBSrc/utilities/rebuild.gdl)
+
+}
+
+#--------------------------------------------------------------------
+# Build the databases needed for a Firebird boot build 
+
+buildBootStdDatabases() {
+    echo "- building boot std databases"
+
+# boot make will create this if it does not exist
+#   (cd jrd; touch metadata.gdb)
+
+# boot make will create this if it does not exist
+#   touch msgs/msg.gdb
+
+# boot make will create this if it does not exist
+#   touch qli/help.gdb
+
+    touch pyxis/forms.gdb
+
+    touch utilities/rebuild.gdb
+}
+
+
+#--------------------------------------------------------------------
+# Build the standard examples
+
+buildExampleDatabases() {
+   echo "- building examples"
+    (cd examples; $IBBin/gdef $IBSrc/examples/atlas.gdl)
+    (cd examples; $IBBin/gdef $IBSrc/examples/emp.gdl)
+    (cd examples; $IBBin/gdef $IBSrc/examples/slides.gdl)
+    (cd examples; $IBBin/gdef $IBSrc/examples/nc_guide.gdl)
+    (cd examples; $IBBin/gdef $IBSrc/examples/c_guide.gdl)
+
+    (cd examples; $IBBin/gdef $IBSrc/examples/stocks.gdl)
+
+    # The following were not used but the source files exist
+    #(cd examples; $IBBin/gdef $IBSrc/examples/cs_load.gdl)
+    #(cd examples; $IBBin/gdef $IBSrc/examples/sources.gdl)
+    #(cd examples; $IBBin/gdef $IBSrc/examples/udf_trig.gdl)
+}
+
+
+
+#--------------------------------------------------------------------
+# Build the standard (4) examples
+
+buildExample4Databases() {
+   echo "- building examples4"
+# Create examples4 db
+
+    cd example4
+
+    cp $IBSrc/example4/*.sql . 
+    ed empbld.sql <<e_o_f
+1,$s/employee.gdb/empbuild.gdb/g
+w
+q
+e_o_f
+
+
+    $IBBin/isql -i empbld.sql
+    $IBBin/isql -i intlbld.sql
+    rm -f *.sql
+
+    cd ..
+}
+
+
+#--------------------------------------------------------------------
+# Build the standard (5) examples
+
+buildExample5Databases() {
+# Create examples5 db
+
+    cd example5
+
+    cp $IBSrc/example5/*.sql . 
+    ed empbld.sql <<e_o_f
+1,$s/employee.gdb/empbuild.gdb/g
+w
+q
+e_o_f
+
+
+    $IBBin/isql -i empbld.sql
+    $IBBin/isql -i intlbld.sql
+    rm -f *.sql
+
+    cd ..
+}
+
+#------------------------------------------------------------------------
+
+createRefDir() {
+    if [ -d $IBRefDir ] 
+      then
+         rm -rf $IBRefDir
+    fi
+ 
+    mkdir -p $IBRefDir
+}
+
+
+#== Main Program ==================================================
+
+
+# Check parameters 
+
+
+# Check for boot build.
+
+BootBuildFlg="No"
+
+if [ $# > 0 ]
+  then 
+    if [ "$1" = "boot" ]
+      then
+        BootBuildFlg="Yes"
+        shift
+    fi
+    if [ "$1" = "noprompt" ]
+      then
+        doNotPromptUser="Yes"
+    fi
+fi
+
+
+# Now check the rest of the parameters
+
+IBSrc=`pwd`
+export IBSrc
+
+IBRefDir=refDatabases
+export IBRefDir
+
+checkVariables
+
+createRefDir
+
+cd $IBRefDir
+
+mkdir -p msgs qli jrd utilities example4 example5 examples pyxis
+
+if [ $BootBuildFlg = "Yes" ]
+  then
+    buildBootStdDatabases
+else
+    buildStdDatabases
+    buildExampleDatabases
+    #buildExample4Databases
+    buildExample5Databases
+fi
+
+cd $IBSrc

@@ -1,0 +1,274 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+@SET_MAKE@
+
+SOURCE=         source
+OBJS=           objs
+
+srcdir=         $(SOURCE)/utilities
+VPATH=          $(SOURCE)/utilities
+CXX=            @CXX@
+
+.SUFFIXES:      .cpp .epp
+.epp.cpp:
+	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+
+unexport ISC_USER
+unexport ISC_PASSWORD
+
+GPRE_STATIC=      $(OBJS)/firebird/bin/gpre_static$(EXEC_EXT)
+GBAK_STATIC=      $(OBJS)/firebird/bin/gbak_static$(EXEC_EXT)
+CXX_INCLUDE_DIRS=       -I. -Isource/jrd -I-
+
+GPRE_FLAGS=	-r -m -z -n
+
+DBA=		$(OBJS)/firebird/bin/gstat$(EXEC_EXT)
+DROP=		$(OBJS)/firebird/bin/gds_drop$(EXEC_EXT)
+GSEC=		$(OBJS)/firebird/bin/gsec$(EXEC_EXT)
+GUARD=          $(OBJS)/firebird/bin/ibguard$(EXEC_EXT)
+IBMGR=          $(OBJS)/firebird/bin/ibmgr.bin
+REBUILD=	$(OBJS)/firebird/bin/gds_rebuild$(EXEC_EXT)
+RELAY=		$(OBJS)/firebird/bin/gds_relay$(EXEC_EXT)
+INSTALL_REG=	$(OBJS)/firebird/bin/gds_install$(EXEC_EXT)
+INSTALL_SVC=	$(OBJS)/firebird/bin/gds_install_service$(EXEC_EXT)
+CREATE_DB=	$(OBJS)/firebird/bin/create_db$(EXEC_EXT)
+ISC_GDB=        $(OBJS)/firebird/isc4.gdb
+ISC_GBAK=       $(OBJS)/firebird/bin/isc4.gbak
+
+
+JRD_LINK=	$(OBJS)/jrd/isc.o $(OBJS)/jrd/isc_ipc.o $(OBJS)/jrd/isc_sync.o \
+		$(OBJS)/jrd/gds.o $(OBJS)/jrd/dls.o
+JRD_LINK2=	$(ISC_LINK) $(ISC_FILE_LINK) $(ISC_SYNC_LINK)
+ISC_LINK=	$(OBJS)/jrd/isc.o
+ISC_FILE_LINK=	$(OBJS)/jrd/isc_file.o
+ISC_SYNC_LINK=	$(OBJS)/jrd/isc_sync.o
+ENC_LINK=	$(OBJS)/jrd/enc.o
+LOCK_LINK=	$(OBJS)/lock/lock.o
+
+all:		dba$(EXEC_EXT) drop$(EXEC_EXT) \
+		gsec$(EXEC_EXT) relay$(EXEC_EXT)
+		
+super_server_targets:	ibguard$(EXEC_EXT) ibmgr$(EXEC_EXT)
+
+create_db:	create_db.o
+	-$(RM) create_db
+	$(CXX) $(LINK_OPTS) create_db.o \
+		$(OBJS)/jrd/jrd_static.a \
+		$(COREFOUNDATION_LINK) \
+		-o create_db $(DROP_LINK)
+	$(CHMOD_7) create_db
+	$(MV) create_db $(CREATE_DB)
+	$(TOUCH) create_db
+	$(CHMOD_6) create_db
+
+
+dba:		dba.o ppg.o $(GDSSHR)
+	-$(RM) dba
+	$(CXX) $(LINK_OPTS) dba.o ppg.o $(ENC_LINK) $(STDIO) -o dba $(GDSSHR_LINK)
+	$(CHMOD_7) dba
+	$(MV) dba $(DBA)
+	$(TOUCH) dba
+	$(CHMOD_6) dba
+
+dba.exe:	dba.o ppg.o
+	-$(RM) dba.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)dba dba.o ppg.o $(ENC_LINK) $(GDSSHR_LINK)
+	$(MV) dba.exe $(DBA)
+	$(RM) dba.exe
+	$(TOUCH) dba.exe
+
+drop:		drop.o dropv3.o $(JRD_LINK) $(LOCK_LINK)
+	-$(RM) drop
+	$(CXX) $(LINK_OPTS) drop.o dropv3.o $(JRD_LINK) $(LOCK_LINK) \
+		$(STDIO) -o drop $(SCO_SOCKET_LIB) $(SO_THREAD_LIB) $(NSL_LIB) \
+		$(COREFOUNDATION_LINK) $(DROP_LINK)
+	$(CHMOD_S7) drop
+	$(MV) drop $(DROP)
+	$(TOUCH) drop
+	$(CHMOD_6) drop
+
+ibguard:    guard.o util.o $(GDSSHR)
+	-$(RM) ibguard
+	$(CXX) $(LINK_OPTS) guard.o util.o $(STDIO) -o ibguard $(GDSSHR_LINK)
+	$(CHMOD_7) ibguard
+	$(MV) ibguard $(GUARD)
+	$(TOUCH) ibguard
+	$(CHMOD_6) ibguard
+
+ibmgr:	ibmgr.o srvrmgr.o $(GDSSHR)
+	-$(RM) ibmgr
+	$(CXX) $(LINK_OPTS) ibmgr.o srvrmgr.o $(STDIO) -o ibmgr $(GDSSHR_LINK)
+	$(CHMOD_7) ibmgr
+	$(MV) ibmgr $(IBMGR)
+	$(TOUCH) ibmgr
+	$(CHMOD_6) ibmgr
+
+# JMB $(ENC_LINK) already in shared library
+# JMB security.o already in shared library
+gsec:		gsec.o $(GDSSHR)
+	-$(RM) gsec
+	$(CXX) $(LINK_OPTS) gsec.o $(STDIO) -o gsec $(GDSSHR_LINK)
+	$(CHMOD_7) gsec
+	$(MV) gsec $(GSEC)
+	$(TOUCH) gsec
+	$(CHMOD_6) gsec
+
+gsec.exe:	gsec.o security.o $(ENC_LINK) $(ISC_LINK)
+	-$(RM) gsec.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)gsec gsec.o security.o $(ENC_LINK) $(ISC_LINK) $(GDSSHR_LINK) $(ADVAPILIB)
+	$(MV) gsec.exe $(GSEC)
+	$(RM) gsec.exe
+	$(TOUCH) gsec.exe
+
+rebuild:		rebuild.o rstore.o rmet.o $(OBJS)/jrd/dmp.o
+	-$(RM) rebuild
+	$(CXX) $(LINK_OPTS) rebuild.o $(OBJS)/jrd/dmp.o rstore.o rmet.o \
+		$(STDIO) -o rebuild $(GDSSHR_LINK)
+	$(CHMOD_7) rebuild
+	$(MV) rebuild $(REBUILD)
+	$(TOUCH) rebuild
+	$(CHMOD_6) rebuild
+
+rebuild.exe:		rebuild.o rstore.o rmet.o $(OBJS)/jrd/dmp.o
+	-$(RM) rebuild.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)rebuild \
+		rebuild.o $(OBJS)/jrd/dmp.o rstore.o rmet.o $(GDSSHR_LINK)
+	$(MV) rebuild.exe $(REBUILD)
+	$(RM) rebuild.exe
+	$(TOUCH) rebuild.exe
+
+relay:		relay.o
+	-$(RM) relay
+	$(CXX) $(LINK_OPTS) relay.o $(STDIO) -o relay $(SCO_SOCKET_LIB)
+	$(CHMOD_S7) relay
+	$(MV) relay $(RELAY)
+	$(TOUCH) relay
+	$(CHMOD_6) relay
+
+install_reg.exe:	install_reg.o registry.o
+	-$(RM) install_reg.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)install_reg install_reg.o registry.o $(CONLIBSDLL) $(ADVAPILIB)
+	$(MV) install_reg.exe $(INSTALL_REG)
+	$(RM) install_reg.exe
+	$(TOUCH) install_reg.exe
+
+install_svc.exe:	install_svc.o services.o
+	-$(RM) install_svc.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)install_svc install_svc.o services.o $(CONLIBSDLL) $(ADVAPILIB)
+	$(MV) install_svc.exe $(INSTALL_SVC)
+	$(RM) install_svc.exe
+	$(TOUCH) install_svc.exe
+
+isc4.gdb isc.gdb: $(SOURCE)/utilities/isc4.sql $(SOURCE)/utilities/isc4.gdl force
+	-$(RM) $(ISC_GDB) isc4.gdb  isc.gdb
+	$(OBJS)/firebird/bin/isql -z -i $(SOURCE)/utilities/isc4.sql
+	$(OBJS)/firebird/bin/gdef -z $(SOURCE)/utilities/isc4.gdl
+	$(CP) isc4.gdb $(ISC_GDB)
+	ln -sf $(ISC_GDB) isc.gdb
+
+sysdba_user: gsec
+	-$(OBJS)/firebird/bin/gsec -da isc4.gdb -delete $(ISC_USER)
+	$(OBJS)/firebird/bin/gsec -da isc4.gdb -add $(ISC_USER) -pw $(ISC_PASSWORD)
+	$(RM) $(ISC_GDB)
+	mv isc4.gdb $(ISC_GDB)
+	$(GBAK_STATIC) -z $(ISC_GDB) $(ISC_GBAK)
+	$(CHMOD_6) $(ISC_GBAK) $(ISC_GDB)
+	ln -sf $(ISC_GDB) isc4.gdb
+                
+$(GDSSHR):	force
+	$(CD) $(OBJS)/jrd && $(MAKE) $(GDSSHR)
+
+create_db.o:	create_db.cpp
+dba.cpp:	yachts.lnk dba.epp
+dba.o:		dba.cpp ppg_proto.h \
+		$(SOURCE)/jrd/ods.h $(SOURCE)/jrd/license.h \
+		$(SOURCE)/jrd/gds_proto.h
+
+ppg.o:		ppg.cpp ppg_proto.h \
+		$(SOURCE)/jrd/ods.h $(SOURCE)/jrd/gds_proto.h
+
+drop.o:		drop.cpp $(SOURCE)/jrd/license.h $(SOURCE)/jrd/file_params.h \
+		drpv3_proto.h $(SOURCE)/lock/lock.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_proto.h
+
+dropv3.o:	dropv3.cpp $(SOURCE)/jrd/common.h $(SOURCE)/jrd/isc.h \
+		drpv3_proto.h $(SOURCE)/jrd/license.h $(SOURCE)/jrd/isc_proto.h \
+		$(SOURCE)/jrd/isc_s_proto.h $(SOURCE)/lock/fparamv3.h
+
+gsec.o:		gsec.cpp gsec.h $(SOURCE)/jrd/license.h secur_proto.h
+security.cpp:	security.epp
+	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+security.o:	security.cpp gsec.h $(SOURCE)/jrd/pwd.h secur_proto.h \
+		$(SOURCE)/jrd/enc_proto.h $(SOURCE)/jrd/gds_proto.h
+
+install_reg.o:	install_reg.cpp $(SOURCE)/jrd/license.h $(SOURCE)/utilities/install_nt.h
+install_svc.o:	install_svc.cpp $(SOURCE)/jrd/license.h $(SOURCE)/utilities/install_nt.h
+services.o:	services.cpp $(SOURCE)/jrd/license.h $(SOURCE)/utilities/install_nt.h
+registry.o:	registry.cpp $(SOURCE)/jrd/license.h $(SOURCE)/utilities/install_nt.h
+
+rebuild.h:	$(SOURCE)/jrd/ods.h
+rebuild.o:	rebuild.cpp rebuild.h $(SOURCE)/jrd/jrd.h $(SOURCE)/jrd/pag.h \
+		$(SOURCE)/jrd/tra.h
+rmet.o:		rmet.cpp $(SOURCE)/jrd/jrd.h $(SOURCE)/jrd/tra.h $(SOURCE)/jrd/pag.h \
+		rebuild.h
+rmet.cpp:	rmet.epp
+rstore.o:	rstore.cpp rebuild.h
+rstore.cpp:	rstore.epp
+
+relay.o:	relay.cpp $(SOURCE)/jrd/license.h
+
+$(OBJS)/jrd/%:
+	$(CD) $(OBJS)/jrd && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+
+yachts.lnk:     $(OBJS)/dbs/empty.gdb.dummy 
+	ln -fs $(OBJS)/dbs/empty.gdb yachts.lnk
+ 
+$(OBJS)/dbs/empty.gdb.dummy:    force
+	$(CD) $(OBJS)/dbs && $(MAKE) empty.gdb.dummy
+
+
+# This entry is used to programatically update the include file dependencies 
+# for all *.c files in the current directory.
+#
+# Note that it is specific to Solaris by using the -xM1 compiler option.
+# This option has CC generate dependency lines for the makefile - but
+# does not generate object files.
+# It is likely that a similar option exists on other platforms.
+#
+# It is recommended that depends.mak be created on a platform
+# that supports such an option.  depends.mak is not platform dependent, it uses
+# the standard makefile output format, as can be copied to platforms
+# that don't have a -xM1 feature in the c compiler.
+#
+depends.mak:
+	-$(RM) depends.out
+	-$(CC) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
+	-$(RM) depends.mak
+	$(ECHO) "# depends.mak - utilities"                     > depends.mak
+	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
+	date "+# Created on %Y-%m-%d"                           >> depends.mak
+	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/utilities/::g"\
+		depends.out |sort|uniq >> depends.mak
+	-$(RM) depends.out
+
+# In the event that a platform does not support the make directive "include" - 
+# concatenate "depends.mak" with the makefile.
+#
+include depends.mak
+
+
+force:

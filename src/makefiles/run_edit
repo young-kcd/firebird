@@ -1,0 +1,132 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+# Shell script to modify the InterBase makefiles by
+# substituting a system name for the symbol $(SYSTEM)
+# and the build version for the symbol $(VERSION)
+#
+SYSTEM=$(PLATFORM)
+#
+if [ $SYS_TYPE != 'NOLINK_OS' ]; then
+    VERSION=`cat source/$SYSTEM/original/.version_flag`
+else
+    if [ $SYSTEM != 'OS2' ]; then
+        VERSION=`cat .version_flag`
+        DB_DIR=`cat .db_dir`
+	COMPILER=`cat .compiler_type`
+    else
+        VERSION=`cat version_flag`
+        DB_DIR=`cat db_dir`
+	COMPILER=`cat compiler_type`
+    fi
+    export COMPILER
+    export DB_DIR
+fi
+if [ $SYSTEM = 'DELTA' ]; then
+    DB_DIR=`cat source/$SYSTEM/original/.db_dir`
+    export DB_DIR
+fi
+#
+if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'OS2' -o $SYSTEM = 'WIN_NTS' ]; then
+    ls sfx.* | awk '{split( $1, f, "."); print "cat prefix.$(BASE) " $1 " >make." f [2]}' > tmp2.ksh
+    tmp2
+    rm tmp2.ksh
+    sed -e "s/\$(SYSTEM)/$SYSTEM/g" -e "s/\$(VERSION)/$VERSION/g" edit_makes > tmp3.ksh
+    tmp3
+    rm tmp3.ksh
+else
+    ls sfx.* | awk '{split( $1, f, "."); print "cat prefix.$(BASE) " $1 " >make." f [2]}' | sh
+    if [ -d source/super ]; then
+	cp make.alice make.alice_ss
+	cp make.burp make.burp_ss
+        cp make.dsql make.dsql_ss
+        cp make.intl make.intl_ss
+        cp make.journal make.journal_ss
+        cp make.jrd make.jrd_ss
+        cp make.lock make.lock_ss
+	cp make.remote make.remote_ss
+	cp make.utilities make.utilities_ss
+	cp make.wal make.wal_ss
+    fi
+    sed -e "s/\$(SYSTEM)/$SYSTEM/g" -e "s/\$(VERSION)/$VERSION/g" edit_makes | sh
+fi
+if [ $SYS_TYPE != 'NOLINK_OS' ]; then
+    ./edit_make $SYSTEM $VERSION refresh ../refresh
+    ./edit_make $SYSTEM $VERSION refresh.all ../refresh.all
+    chmod +x ../refresh*
+    ./edit_make $SYSTEM $VERSION special_opt ../special_opt
+    chmod +x ../special_opt
+    if [ $SYSTEM = 'DELTA' ]; then
+        ./edit_make $SYSTEM $VERSION expand_dbs ../expand_dbs
+        ./edit_make $SYSTEM $VERSION compress_dbs ../compress_dbs
+        ./edit_make $SYSTEM $VERSION expand.sed ../expand.sed
+        ./edit_make $SYSTEM $VERSION compress.sed ../compress.sed
+        chmod +x ../expand_dbs
+        chmod +x ../compress_dbs
+    fi
+else
+    if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'OS2' -o $SYSTEM = 'WIN_NTS' ]; then
+        if [ $SYSTEM = 'WIN_NT' -o $SYSTEM = 'WIN_NTS' ]; then
+            edit_make $SYSTEM $VERSION expand_dbs.bat ../../expand_dbs.bat
+            edit_make $SYSTEM $VERSION compress_dbs.bat ../../compress_dbs.bat
+            cp build_kit.bat ../../build_kit.bat
+	    cp gdsalias.asm ../../jrd/gdsalias.asm
+	else
+            edit_make $SYSTEM $VERSION expand_dbs.bat ../../expand_dbs.cmd
+            edit_make $SYSTEM $VERSION compress_dbs.bat ../../compress_dbs.cmd
+            cp build_kit.cmd ../../build_kit.cmd
+	fi
+        edit_make $SYSTEM $VERSION refresh ../../refresh.ksh
+        edit_make $SYSTEM $VERSION refresh.all ../../refresh.all.ksh
+        edit_make $SYSTEM $VERSION copy_makes ../../copy_makes.ksh
+        edit_make $SYSTEM $VERSION fetch_comp ../../fetch_comp.ksh
+        edit_make $SYSTEM $VERSION special_opt ../../special_opt.ksh
+    else
+        ./edit_make $SYSTEM $VERSION refresh ../../refresh
+        ./edit_make $SYSTEM $VERSION refresh.all ../../refresh.all
+        chmod +x ../../refresh*
+        ./edit_make $SYSTEM $VERSION expand_dbs ../../expand_dbs
+        ./edit_make $SYSTEM $VERSION compress_dbs ../../compress_dbs
+        chmod +x ../../expand_dbs
+        chmod +x ../../compress_dbs
+        ./edit_make $SYSTEM $VERSION copy_makes ../../copy_makes
+        chmod +x ../../copy_makes
+        ./edit_make $SYSTEM $VERSION fetch_comp ../../fetch_comp
+        chmod +x ../../fetch_comp
+        ./edit_make $SYSTEM $VERSION build_kit ../../build_kit
+        chmod +x ../../build_kit
+        ./edit_make $SYSTEM $VERSION special_opt ../../special_opt
+        chmod +x ../../special_opt
+        ./edit_make $SYSTEM $VERSION set_prot ../../set_prot
+        chmod +x ../../set_prot
+        ./edit_make $SYSTEM $VERSION unset_prot ../../unset_prot
+        chmod +x ../../unset_prot
+    fi
+    ./edit_make $SYSTEM $VERSION expand.sed ../expand.sed
+    ./edit_make $SYSTEM $VERSION compress.sed ../compress.sed
+    ./edit_make $SYSTEM $VERSION add_template ../../add_template
+    ./edit_make $SYSTEM $VERSION mpm_template ../../mpm_template
+    ./edit_make $SYSTEM $VERSION mpp_template ../../mpp_template
+    ./edit_make $SYSTEM $VERSION put_template ../../put_template
+    chmod +x ../../add_template
+    chmod +x ../../mpm_template
+    chmod +x ../../mpp_template
+    chmod +x ../../put_template
+    cd ../..
+    copy_makes
+    rm copy_makes*
+    cd $SYSTEM/original
+fi

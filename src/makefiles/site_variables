@@ -1,0 +1,116 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+:
+#	@(#) site_vars 1.6 Dec 16, 1991
+#
+#       Copyright (C) 1989 The Santa Cruz Operation Inc. All Rights Reserved
+#       This Module contains Proprietary Information of
+#       The Santa Cruz Operation Inc, and should be treated as Confidential.
+#
+
+#
+# CHANGE THESE FOR EACH PRODUCT
+#
+# Full name of the product, for example, "SCO Xsight"
+PRODSET="InterBase"
+# PRD Value for product. The prd value is arbitrary. It should be
+# unique and 8 or less lowercase alpha/numeric characters. example: "xsight"
+PRODPRD=intrbase
+# Machine type which defines the products software/hardware requirements
+PRODTYP=u386
+# Product release: [major rev].[functionality rev].[bugfix rev][dev group rev]
+# standard convention is to start with 1.0.0a
+PRODREL=V.4.0A
+# Target Operating System for the product. Must be UNIX or XENIX
+TARGET_OS=UNIX
+# Variables used by mkperm (invoked by docut) to get package information
+# for a product with one major package, if it is not given by other 
+# means (eg. by docut -p <pkgdir> )
+# BASEPACKDIR is the directory under which the files are. (eg ./source)
+BASEPACKDIR=source
+# BASEPACKNAME is the package name (eg MAIN)
+BASEPACKNAME=INTRBASE
+# BASEPACKDESC is the description of this pkg. (eg. "SCO Mastering Tools")
+# This should be a quoted string.
+BASEPACKDESC="Interbase"
+
+#
+# CHANGE THESE FOR EACH MEDIA TYPE
+#
+# device name for archiving distribution
+# For 5 1/4 inch devices: 
+# DEVICE=/dev/rfd096ds15
+# or, for a 5 1/4 on the second floppy:
+DEVICE=/dev/rfd196ds15
+# 3 1/2 inch floppy on drive 0.
+# This is the first 3 1/2 inch 1.44 floppy drive
+#DEVICE=/dev/rfd0135ds18
+
+# size of each distribution volume - 1200k for 96dshd floppies,
+# 1440k for 135dshd floppies. 1200k will work for either floppy type
+
+VOLSIZE=1200k
+# blocking factor if required
+BLOCKING=10
+# complete command needed to format a volume
+FORMAT="format $DEVICE"
+# pathnames of any files not to be archived
+NOTAR=''
+
+#
+# SPECIAL PURPOSE VALUES. MODIFIED UNDER SPECIAL CIRCUMSTANCES
+#
+# NOCOMPRESS: used to indicate _packages_ in the product which are
+# not to be compressed when the -c option is used with docut or mkcuts
+# If NOCOMPRESS is not set, the only file not compressed is the permlist.
+NOCOMPRESS="PERM"
+#
+# Used for products designed to use custom update functionality.
+# To be used in conjunction with doupdate. Reference custom update definition
+# before using. Used ONLY for updates, example: "UA"
+PRODUPD=
+# For INTERNAL SCO use only. vols that require prefixes (B's,X's,D's)
+VOLPREFIX=
+# Only for products using SCO serialization.
+# Serialization key for serialization - optional, only if branding files
+SERIALKEY=
+# Only for products using SCO serialization.
+# Pathnames to any serialization files - optional, only if branding files
+SERIALIZE=''
+# For INTERNAL SCO use only. Special volumes that exist in non-default
+# locations. Default location is ./tmp/perms/$PRODPRD[.$PRODUPD]
+# If set this pathname must be relative to DISTDIR.
+PERMLIST=
+
+#
+# STANDARD VALUES. GENERALLY, NON-MODIFIED
+#
+# the "root" directory of the distribution hierarchy
+DISTDIR=`pwd`/dist
+# distribution misc directory, relative to DISTDIR
+# used to store list of files corresponding to volumes
+MISCDIR=../misc
+# the "root" directory of the compressed hierarchy
+CDISTDIR=`pwd`/cdist
+# string which unknown media types should be referred to as
+# (known media is 96ds15, 96ds9, 135ds18, 135ds9, 96ds8, 48ds9, rct0, rctmini)
+# suggested non standard setting is OTHER_MEDIA=`basename $DEVICE`
+OTHER_MEDIA="unknown"
+# Image directory where media images are stored
+IMAGEDIR=`pwd`/Images
+# Sums directory where individual file sums of media are stored
+SUMDIR=`pwd`/Sums

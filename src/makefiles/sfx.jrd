@@ -1,0 +1,1531 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+#
+# $Id: sfx.jrd,v 1.1 2001-07-12 06:32:04 bellardo Exp $
+# 
+@SET_MAKE@
+SOURCE=		source
+OBJS=		objs
+
+srcdir=		$(SOURCE)/jrd
+VPATH=		$(SOURCE)/jrd
+CXX=		@CXX@
+
+.SUFFIXES:	.cpp .epp
+.epp.cpp:
+	$(GPRE_BOOT) $(GPRE_FLAGS) $< $@
+
+
+GPRE=		$(OBJS)/firebird/bin/gpre$(EXEC_EXT)
+GPRE_BOOT=	$(OBJS)/firebird/bin/gpre_boot$(EXEC_EXT)
+GBAK_STATIC=	$(OBJS)/firebird/bin/gbak_static$(EXEC_EXT)
+GPRE_FLAGS=	-n -z -gds_cxx -raw -ids
+CXX_INCLUDE_DIRS=	-I. -Isource/jrd -I-
+FOOT=		$(OBJS)/firebird/bin/gds_pipe
+HEAD_LIB=	$(OBJS)/firebird/lib/gds.a
+FOOT_LIB=	$(OBJS)/firebird/lib/gds_pipe.a
+
+ALT_O=		alt.o
+ALT_BIN=	alt.bin
+
+ALICE_MISC=	$(OBJS)/alice/alice.o $(OBJS)/alice/all.o $(OBJS)/alice/exe.o \
+		$(OBJS)/alice/met.o $(OBJS)/alice/tdr.o
+
+BURP_MISC=	$(OBJS)/burp/burp.o $(OBJS)/burp/backup.o $(OBJS)/burp/restore.o \
+		$(OBJS)/burp/mvol.o $(OBJS)/burp/misc.o $(OBJS)/burp/canonical.o
+
+CSI_FILES=	$(OBJS)/csv/csi.o $(OBJS)/csv/css.o
+CSI_MISC=	$(CSI_CSERV)
+
+CSI_P_FILES=	$(OBJS)/csv/csi.bin $(OBJS)/csv/css.bin
+CSI_P_MISC=	$(CSI_P_CSERV)
+
+DIVORCE_MISC=	$(OBJS)/lock/divorce.o $(OBJS)/wal/divorce.o \
+		$(OBJS)/remote/divorce.o
+
+DSQL_HEAD_MISC=	$(OBJS)/dsql/array.o $(OBJS)/dsql/blob.o \
+		$(OBJS)/dsql/preparse.o \
+		$(OBJS)/dsql/user_dsql.o $(OBJS)/dsql/utld.o
+
+DSQL_J_HEAD_MISC=	source/dsql/array.j source/dsql/blob.j \
+		source/dsql/preparse.j \
+		source/dsql/user_dsql.j source/dsql/utld.j
+
+DSQL_MISC=	$(OBJS)/dsql/alld.o $(OBJS)/dsql/array.o \
+		$(OBJS)/dsql/blob.o \
+		$(OBJS)/dsql/ddl.o $(OBJS)/dsql/dsql.o \
+		$(OBJS)/dsql/errd.o $(OBJS)/dsql/gen.o \
+		$(OBJS)/dsql/hsh.o $(OBJS)/dsql/make.o \
+		$(OBJS)/dsql/metd.o $(OBJS)/dsql/movd.o \
+		$(OBJS)/dsql/parse.o $(OBJS)/dsql/pass1.o \
+		$(OBJS)/dsql/preparse.o $(OBJS)/dsql/user_dsql.o \
+		$(OBJS)/dsql/utld.o
+
+DSQL_P_MISC=	$(OBJS)/dsql/alld.bin $(OBJS)/dsql/array.bin \
+		$(OBJS)/dsql/blob.bin \
+		$(OBJS)/dsql/ddl.bin $(OBJS)/dsql/dsql.bin \
+		$(OBJS)/dsql/errd.bin $(OBJS)/dsql/gen.bin \
+		$(OBJS)/dsql/hsh.bin $(OBJS)/dsql/make.bin \
+		$(OBJS)/dsql/metd.bin $(OBJS)/dsql/movd.bin \
+		$(OBJS)/dsql/parse.bin $(OBJS)/dsql/pass1.bin \
+		$(OBJS)/dsql/preparse.bin $(OBJS)/dsql/user_dsql.bin \
+		$(OBJS)/dsql/utld.bin
+
+GSTAT_MISC=	$(OBJS)/utilities/dba.o $(OBJS)/utilities/ppg.o
+
+GSEC_MISC=	$(OBJS)/utilities/gsec.o
+
+UTIL_MISC=	$(OBJS)/utilities/cmd_util.o
+
+LOCK_MISC_DUM=	lck_dummy.o
+LOCK_MISC_REAL=	$(OBJS)/lock/lock.o
+LOCK_P_MISC_DUM=	lck_dummy.bin
+LOCK_P_MISC_REAL=	$(OBJS)/lock/lock.bin
+LOCK_MISC=	$(LOCK_MISC_DUM)
+LOCK_MISC=	$(LOCK_MISC_REAL)
+LOCK_P_MISC=	$(LOCK_P_MISC_DUM)
+LOCK_P_MISC=	$(LOCK_P_MISC_REAL)
+
+# This list of INTL_OBJECTS must match that in sfx.intl
+INTL_OBJECTS=	$(OBJS)/intl/ld.o $(OBJS)/intl/cv_narrow.o \
+		$(OBJS)/intl/cs_narrow.o $(OBJS)/intl/lc_ascii.o \
+		$(OBJS)/intl/lc_narrow.o \
+		$(OBJS)/intl/lc_latin1.o $(OBJS)/intl/lc_dos.o \
+		$(OBJS)/intl/cs_unicode.o $(OBJS)/intl/lc_unicode.o \
+		$(OBJS)/intl/cs_utffss.o \
+		$(OBJS)/intl/cs_jis.o $(OBJS)/intl/cv_jis.o \
+		$(OBJS)/intl/lc_jis.o \
+		$(OBJS)/intl/ld2.o
+
+INTL_P_OBJECTS=	$(OBJS)/intl/ld.bin $(OBJS)/intl/cv_narrow.bin \
+		$(OBJS)/intl/cs_narrow.bin $(OBJS)/intl/lc_ascii.bin \
+		$(OBJS)/intl/lc_narrow.bin \
+		$(OBJS)/intl/lc_latin1.bin $(OBJS)/intl/lc_dos.bin \
+		$(OBJS)/intl/cs_unicode.bin $(OBJS)/intl/lc_unicode.bin \
+		$(OBJS)/intl/cs_utffss.bin \
+		$(OBJS)/intl/cs_jis.bin $(OBJS)/intl/cv_jis.bin \
+		$(OBJS)/intl/lc_jis.bin \
+		$(OBJS)/intl/ld2.bin
+
+MERGE_MISC=	$(OBJS)/remote/merge.o
+MERGE_J_MISC=	source/remote/merge.j
+
+PYXDIR=		source/pyxis/
+PYXIS_MISC=	$(OBJS)/pyxis/allp.o $(OBJS)/pyxis/altp.o \
+		$(OBJS)/pyxis/scr.o $(OBJS)/pyxis/debug.o \
+		$(OBJS)/pyxis/edit.o $(OBJS)/pyxis/menu.o \
+		$(OBJS)/pyxis/movp.o $(OBJS)/pyxis/phase2.o \
+		$(OBJS)/pyxis/phase3.o $(OBJS)/pyxis/picstr.o \
+		$(OBJS)/pyxis/pyxis.o $(OBJS)/pyxis/save.o \
+		$(PYXIS_MISC_OBJECTS)
+
+PYXIS_P_MISC=	$(OBJS)/pyxis/allp.bin $(OBJS)/pyxis/altp.bin \
+		$(OBJS)/pyxis/cdm.bin $(OBJS)/pyxis/debug.bin \
+		$(OBJS)/pyxis/edit.bin $(OBJS)/pyxis/menu.bin \
+		$(OBJS)/pyxis/movp.bin $(OBJS)/pyxis/phase2.bin \
+		$(OBJS)/pyxis/phase3.bin $(OBJS)/pyxis/picstr.bin \
+		$(OBJS)/pyxis/pyxis.bin $(OBJS)/pyxis/save.bin \
+		$(OBJS)/pyxis/scr.bin $(OBJS)/pyxis/vt100.bin
+
+REGISTER_MISC=
+REGISTER_P_MISC=
+
+REMDIR=		source/remote/
+REMOTE_MISC=	$(OBJS)/remote/interface.o $(OBJS)/remote/allr.o \
+		$(OBJS)/remote/inet.o $(OBJS)/./remote/merge.o \
+		$(OBJS)/remote/parser.o $(OBJS)/remote/protocol.o \
+		$(OBJS)/remote/remote.o $(NET_OBJECTS)
+
+REMOTE_P_MISC=	$(OBJS)/remote/interface.bin $(OBJS)/remote/allr.bin \
+		$(OBJS)/remote/inet.bin $(OBJS)/remote/merge.bin \
+		$(OBJS)/remote/parser.bin $(OBJS)/remote/protocol.bin \
+		$(OBJS)/remote/remote.bin $(NET_P_OBJECTS)
+
+SECURITY_MISC=	$(OBJS)/utilities/security.o
+
+SECURITY_P_MISC=	$(OBJS)/utilities/security.bin
+
+WAL_MISC=	$(OBJS)/wal/wal.o $(OBJS)/wal/walc.o $(OBJS)/wal/walf.o \
+		$(OBJS)/wal/walr.o $(OBJS)/wal/walw.o
+
+WAL_P_MISC=	$(OBJS)/wal/wal.bin $(OBJS)/wal/walc.bin $(OBJS)/wal/walf.bin \
+		$(OBJS)/wal/walr.bin $(OBJS)/wal/walw.bin
+
+# The first three lines of JRD_HEADERS must be the includes in $(EVERYTHING_H_DEP) everything.h
+JRD_HEADERS=	$(JRD_H) cch.h all.h pio.h lck.h pag.h $(VAL_H) $(EXE_H) req.h \
+		lls.h $(RSE_H) sbm.h tra.h sqz.h blb.h btr.h jrn.h scl.h \
+		ext.h $(MET_H) sdw.h log.h $(INTL_H) intlobj.h fil.h tpc.h \
+		blk.h $(INI_H) trig.h idx.h svc.h
+
+# Note: cvt.o may not be needed - anything else?
+JRD_MISC=	$(ALT_O) gds.o isc.o isc_file.o isc_ipc.o isc_sync.o \
+		perf.o cvt.o $(JRD_MISC_OBJECTS)
+
+JRD_J_MISC=	alt.j gds.j isc.j isc_file.j isc_ipc.j isc_sync.j \
+		perf.j $(JRD_J_MISC_OBJECTS)
+
+WHY_O=		why.o
+WHYBK_O=	whybk.o
+
+# I removed qatest.o from the targets to close an ugly 
+# security hole.
+# FSG 18.Dez.2000
+
+DEBUG_P_OBJECTS=	$(DEBUG_OBJECTS:%.o=%.bin)
+
+JRD_OBJECTS=	ail.o $(ALT_O) all.o bookmark.o blb.o blob_filter.o btr.o builtin.o \
+		cch.o cmp.o cvt.o cvt2.o \
+		dfw.o divorce.o dls.o dpm.o dsc.o dyn.o dyn_def.o dyn_del.o \
+		dyn_mod.o dyn_util.o enc.o err.o iberr.o \
+		event.o evl.o exe.o ext.o filters.o flu.o fun.o functions.o \
+		gds.o grant.o idx.o inf.o ini.o intl.o inuse.o \
+		isc.o isc_file.o isc_ipc.o isc_sync.o \
+		jrd.o jrn.o lck.o llio.o log.o met.o \
+		misc.o mov.o nav.o old.o opt.o pag.o par.o pcmet.o \
+		perf.o pwd.o rec.o rlck.o \
+		rng.o rse.o sbm.o sch.o scl.o \
+		sdl.o sdw.o shut.o sort.o sqz.o status.o svc.o sym.o thd.o tpc.o \
+		tra.o utl.o val.o vio.o \
+		$(JRD_MISC_OBJECTS) $(IO_OBJECTS) $(DEBUG_OBJECTS)
+
+JRD_P_OBJECTS=	ail.bin $(ALT_BIN) all.bin bookmark.bin blb.bin blob_filter.bin btr.bin \
+		builtin.bin \
+		cch.bin cmp.bin cvt.bin cvt2.bin dfw.bin divorce.bin dls.bin \
+		dpm.bin dsc.bin dyn.bin dyn_def.bin dyn_del.bin \
+		dyn_mod.bin dyn_util.bin enc.bin err.bin iberr.bin event.bin evl.bin \
+		exe.bin ext.bin filters.bin fun.bin gds.bin \
+		grant.bin idx.bin inf.bin ini.bin intl.bin inuse.bin \
+		isc.bin isc_file.bin isc_ipc.bin isc_sync.bin \
+		jrd.bin jrn.bin lck.bin \
+		llio.bin log.bin met.bin misc.bin mov.bin nav.bin \
+		old.bin opt.bin pag.bin par.bin pcmet.bin perf.bin \
+		pwd.bin rec.bin rlck.bin \
+		rng.bin rse.bin sbm.bin sch.bin \
+		scl.bin sdl.bin sdw.bin shut.bin sort.bin sqz.bin status.bin svc.bin \
+		sym.bin thd.bin tpc.bin tra.bin utl.bin val.bin vio.bin \
+		why.bin $(JRD_P_MISC_OBJECTS) $(IO_P_OBJECTS) $(DEBUG_P_OBJECTS)
+
+JRD_CLIENT_P_OBJECTS=	$(ALT_BIN) cvt.bin dsc.bin dls.bin enc.bin gds.bin \
+			isc.bin isc_file.bin isc_ipc.bin isc_sync.bin \
+			perf.bin sch.bin sdl.bin thd.bin utl.bin \
+			why.bin $(JRD_P_MISC_OBJECTS)
+
+OTHER_OBJECTS=	$(DSQL_MISC) $(LOCK_MISC) $(PYXIS_MISC_OBJS) \
+		$(REMOTE_MISC) $(CSI_MISC) $(BACKEND_BRIDGE_MISC) \
+		$(INTL_MISC) $(WAL_MISC) $(SECURITY_MISC) \
+		$(REGISTER_MISC)
+
+# The infamous codes files
+CODES_FILES=	$(OBJS)/firebird/include/gds_codes.pas \
+		$(OBJS)/firebird/include/gds_codes.ftn \
+		$(OBJS)/firebird/include/codes.h \
+		$(OBJS)/firebird/include/iberror.h \
+		$(OBJS)/firebird/include/codetext.h \
+		$(OBJS)/firebird/include/msgs.h \
+		$(OBJS)/firebird/include/rdb_codes.h \
+		$(OBJS)/firebird/include/sql_code.h \
+		$(OBJS)/firebird/include/msg_facs.h
+
+# Temporarily removing $(BACKEND_BRIDGE_MISC) from SUPER_OBJECTS
+# Also, whatever SUPER_OBJECTS includes should be forced to build under
+# the 'super_server_objects' target. Currently DSQL, LOCK, REMOTE, 
+# WAL are included. INTL is not needed.
+SUPER_OBJECTS=	$(DSQL_MISC) $(LOCK_MISC) \
+		$(REMOTE_MISC) $(REGISTER_MISC) \
+		$(INTL_MISC) $(WAL_MISC) $(ALICE_MISC) $(BURP_MISC) \
+		$(SECURITY_MISC) $(GSTAT_MISC) $(GSEC_MISC) $(UTIL_MISC) \
+		$(STDIO)
+
+HEAD_OBJECTS=	$(OBJS)/pipe/head.o $(OBJS)/pipe/head5.o $(OBJS)/pipe/allp.o \
+		whyp.o utlp.o dls.o enc.o \
+		$(JRD_MISC) $(JRD_HEAD_MISC) $(DSQL_HEAD_MISC) \
+		$(PYXIS_MISC_OBJS) $(MERGE_MISC) $(SECURITY_MISC)
+
+HEAD_J_OBJECTS=	head.j head5.j allp.j whyp.j utlp.j \
+		$(JRD_J_MISC) $(JRD_J_HEAD_MISC) $(DSQL_J_HEAD_MISC) \
+		$(MERGE_J_MISC)
+
+BRIDGE_P_MISC=	$(OBJS)/pipe/head5.bin $(OBJS)/pipe/allp.bin
+
+FOOT_OBJECTS=	$(FOOT_OBJECT) $(ALLP_OBJECT)
+ALLP_OBJECT=	$(OBJS)/pipe/allp.o
+FOOT_OBJECT=	$(OBJS)/pipe/foot.o
+
+BOOT_OBJECTS=	$(OBJS)/pipe/head.o $(OBJS)/pipe/allp.o whyp.o utlp.o \
+		$(JRD_MISC) $(MERGE_MISC)
+
+#  All objects necessary to have a minimal (but functional) engine statically
+# linked an executable.  Used to create gbak_static and gpre_static, amoung
+# other things.
+ENGINE_STATIC_OBJS= \
+	$(JRD_OBJECTS) $(CSI_MISC) $(DSQL_MISC) \
+	$(LOCK_MISC) $(REMOTE_MISC) $(BRIDGE_MISC) \
+	$(INTL_MISC) $(REGISTER_MISC) $(WAL_MISC) \
+	$(GDSFLIB) $(WHY_O)
+
+
+all:		gds.h $(GDSSHR) $(PIPE)
+
+jrd/jrd_static.a jrd_static.a: $(ENGINE_STATIC_OBJS)
+	ar -r jrd_static.a $(ENGINE_STATIC_OBJS)
+	-ranlib jrd_static.a
+
+gds_b.a source/./interbase/lib/gds_b.a $(GDSLIB_BACKEND): \
+		$(WHYBK_O) $(JRD_OBJECTS) $(OTHER_OBJECTS)
+	-$(RM) gds_b.a
+	$(AR) gds_b.a $(WHYBK_O) $(JRD_OBJECTS) $(OTHER_OBJECTS)
+	-ranlib gds_b.a
+	$(CHMOD_6) gds_b.a
+
+gds_ss.a source/./interbase/lib/gds_ss.a $(SUPER_BACKEND): \
+		gds.h $(WHYBK_O) $(JRD_OBJECTS) super_server_objects $(SUPER_OBJECTS)
+	-$(RM) gds_ss.a
+	$(AR) gds_ss.a $(WHYBK_O) $(JRD_OBJECTS) $(SUPER_OBJECTS)
+	-ranlib gds_ss.a
+	$(CHMOD_6) gds_ss.a
+
+gds_b.lib:	$(WHYBK_O) $(JRD_OBJECTS)
+	-$(RM) gds_b.lib
+	$(IMPLIB) -out:gds_b.lib $(WHYBK_O) $(JRD_OBJECTS)
+	$(IMPLIB) -out:gds_b.lib gds_b.lib $(OTHER_OBJECTS)
+	$(TOUCH) gds_b.lib
+
+gdsshr.a $(AIX_GDSSHR) $(AIX_PPC_GDSSHR): gds_b.a gds.bind
+	ld -bE:gds.bind -bM:SRE -H1024 $(GDSLIB_LINK) $(SCREEN_LIB) -lc -o gdsshr.o
+	strip -t gdsshr.o
+	-$(RM) gdsshr.a
+	$(AR) gdsshr.a gdsshr.o
+	-ranlib gdsshr.a
+	$(CHMOD_6) gdsshr.a
+	$(MV) gdsshr.a $(GDSSHR)
+	-$(RM) gdsshr.o
+	$(TOUCH) gdsshr.a
+	$(CHMOD_6) gdsshr.a
+
+gdslib $(AP_GDSSHR) $(AX_GDSSHR): gds_b.a bind_gdslib nodebug.o
+	-$(RM) gdslib
+	/com/bind <bind_gdslib
+	$(CHMOD_7) gdslib
+	$(MV) gdslib $(GDSSHR)
+	$(TOUCH) gdslib
+	$(CHMOD_6) gdslib
+
+bridge.apollo:	gdslib
+	-$(RM) bridge5
+	/com/bind <bind_bridge
+	$(CHMOD_7) bridge5
+
+gds.sl $(HP_GDSSHR): $(JRD_P_OBJECTS) flu.bin $(DSQL_P_MISC) $(LOCK_P_MISC) \
+		$(PYXIS_P_MISC_OBJS) $(REGISTER_P_MISC) \
+		$(REMOTE_P_MISC) $(WAL_P_MISC) \
+		$(HM300_BRIDGE_P_MISC) $(SECURITY_P_MISC) functions.bin gds.bind
+	-$(RM) gds.sl
+	ld -b $(LD_OPTS) $(JRD_P_OBJECTS) flu.bin $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(PYXIS_P_MISC_OBJS) $(REMOTE_P_MISC) \
+		$(REGISTER_P_MISC) $(WAL_P_MISC) $(HM300_BRIDGE_P_MISC) \
+		$(SECURITY_P_MISC) functions.bin -o gds.sl
+	$(CHMOD_7) gds.sl
+	$(MV) gds.sl $(GDSSHR)
+	$(TOUCH) gds.sl
+	$(CHMOD_6) gds.sl
+
+# IMPORTANT!!!! - New v4 routines should NOT be added to the bridge targets
+#		  These targets are provided to create the v3 bridge
+#		  access method by making these targets on a V3 tree.
+
+bridge.shared_o:	$(GDSSHR)
+	-$(RM) bridge5
+	ld $(BLD_OPTS) all.o blb.o blob_filter.o btr.o cch.o cmp.o \
+		cvt.o dpm.o dyn.o dyn_def.o dyn_del.o \
+		dyn_mod.o dyn_util.o enc.o err.o event.o \
+		evl.o exe.o ext.o filters.o fun.o gds.o grant.o \
+		idx.o inf.o ini.o intl.o iscb.o isc_file.o \
+		jrd.o jrn.o lck.o log.o met.o mov.o nav.o \
+		opt.o pag.o par.o perf.o pwd.o rse.o \
+		sbm.o scl.o sdl.o sdw.o sort.o sqz.o sym.o \
+		tra.o unix.o val.o vio.o flu.o functions.o \
+		nodebug.o $(OBJS)/lock/lock.o $(OBJS)/dsql/all.o \
+		$(OBJS)/dsql/ddl.o $(OBJS)/dsql/dsql.o $(OBJS)/dsql/err.o \
+		$(OBJS)/dsql/gen.o $(OBJS)/dsql/hsh.o $(OBJS)/dsql/make.o \
+		$(OBJS)/dsql/met.o $(OBJS)/dsql/mov.o $(OBJS)/dsql/parse.o \
+		$(OBJS)/dsql/pass1.o $(BLD_LIBS) -o bridge5
+	$(CHMOD_7) bridge5
+
+bridge.shared_bin:	$(GDSSHR)
+	-$(RM) bridge5
+	ld $(BLD_OPTS) all.bin blb.bin blob_filter.bin btr.bin cch.bin cmp.bin \
+		cvt.bin dpm.bin dyn.bin dyn_def.bin dyn_del.bin \
+		dyn_mod.bin dyn_util.bin enc.bin err.bin event.bin \
+		evl.bin exe.bin ext.bin filters.bin fun.bin gds.bin grant.bin \
+		idx.bin inf.bin ini.bin intl.bin iscb.bin isc_file.bin \
+		jrd.bin jrn.bin lck.bin log.bin met.bin mov.bin nav.bin \
+		opt.bin pag.bin par.bin perf.bin pwd.bin rse.bin \
+		sbm.bin scl.bin sdl.bin sdw.bin sort.bin sqz.bin sym.bin \
+		tra.bin unix.bin val.bin vio.bin flu.bin functions.bin \
+		nodebug.bin $(OBJS)/lock/lock.bin $(OBJS)/dsql/all.bin \
+		$(OBJS)/dsql/ddl.bin $(OBJS)/dsql/dsql.bin $(OBJS)/dsql/err.bin \
+		$(OBJS)/dsql/gen.bin $(OBJS)/dsql/hsh.bin $(OBJS)/dsql/make.bin \
+		$(OBJS)/dsql/met.bin $(OBJS)/dsql/mov.bin $(OBJS)/dsql/parse.bin \
+		$(OBJS)/dsql/pass1.bin $(BLD_LIBS) -o bridge5
+	$(CHMOD_7) bridge5
+
+gds_s.a $(IMP_GDSSHR) $(SCO_GDSSHR): \
+		$(JRD_P_OBJECTS) flu.bin $(IMP_FUNCSHR) \
+		$(SCO_FUNCSHR) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(WAL_P_MISC) gds_s.bind
+	-$(RM) gds_s.a source/interbase/lib/gds_s
+	mkshlib -q -s gds_s.bind -h gds_s.a -t $(GDSSHR)
+	$(CHMOD_7) source/interbase/lib/gds_s
+	$(CHMOD_6) gds_s.a
+	$(MV) gds_s.a source/interbase/lib/gds_s.a
+	$(TOUCH) gds_s.a
+	$(CHMOD_6) gds_s.a
+
+gdsf_s.a $(IMP_FUNCSHR) $(SCO_FUNCSHR):	functions.bin \
+		shrfinit.bin gdsf_s.bind
+	-$(RM) gdsf_s.a source/interbase/lib/gdsf_s
+	mkshlib -s gdsf_s.bind -h gdsf_s.a -t $(FUNCSHR)
+	$(CHMOD_7) source/interbase/lib/gdsf_s
+	$(CHMOD_6) gdsf_s.a
+	$(MV) gdsf_s.a source/interbase/lib/gdsf_s.a
+	$(TOUCH) gdsf_s.a
+	$(CHMOD_6) gdsf_s.a
+
+gdslib.so.1.0 $(SUN_GDSSHR):	$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
+		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
+		$(REGISTER_P_MISC) \
+		$(BRIDGE_P_MISC) $(WAL_P_MISC) functions.bin gdslib.so.0.1
+	-$(RM) gdslib.so.1.0
+	ld -assert pure-text $(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) \
+		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
+		$(REGISTER_P_MISC) \
+		$(BRIDGE_P_MISC) $(WAL_P_MISC) functions.bin -o gdslib.so.1.0
+	$(CHMOD_6) gdslib.so.1.0
+	$(MV) gdslib.so.1.0 $(GDSSHR)
+	$(TOUCH) gdslib.so.1.0
+	$(CHMOD_6) gdslib.so.1.0
+
+gdslib.so.0.1:	$(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(BRIDGE_P_MISC) $(WAL_P_MISC) \
+		$(REGISTER_P_MISC) $(SECURITY_P_MISC) \
+		gdsflib.so.0.0
+	-$(RM) gdslib.so.0.1
+	ld -assert pure-text $(JRD_P_OBJECTS) flu_non_dl.bin $(CSI_P_MISC) \
+		$(DSQL_P_MISC) $(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) \
+		$(REGISTER_P_MISC) \
+		$(BRIDGE_P_MISC) $(WAL_P_MISC) -lgdsflib -o gdslib.so.0.1
+	$(CHMOD_6) gdslib.so.0.1
+	$(MV) gdslib.so.0.1 source/interbase/lib
+	$(TOUCH) gdslib.so.0.1
+	$(CHMOD_6) gdslib.so.0.1
+
+gdsflib.so.0.0 $(SUN_FUNCSHR):	functions.bin
+	-$(RM) gdsflib.so.0.0
+	ld -assert pure-text functions.bin -o gdsflib.so.0.0
+	$(CHMOD_6) gdsflib.so.0.0
+	$(MV) gdsflib.so.0.0 $(SUN_FUNCSHR)
+	$(TOUCH) gdsflib.so.0.0
+	$(CHMOD_6) gdsflib.so.0.0
+
+gds.so.o $(SGI_GDSSHR) $(DECOSF_GDSSHR) $(EPSON_GDSSHR) : \
+		$(WHY_O) $(JRD_OBJECTS) $(CSI_MISC) $(DSQL_MISC) $(LOCK_MISC) \
+		$(REMOTE_MISC) $(BRIDGE_MISC) $(REGISTER_MISC) \
+		$(INTL_MISC) $(WAL_MISC) $(FUNCTIONS) $(GDSFLIB) $(SECURITY_MISC)
+	-$(RM) gds.so.o
+	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) $(CSI_MISC) \
+		$(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(BRIDGE_MISC) \
+		$(REGISTER_MISC) \
+		$(INTL_MISC) $(WAL_MISC) $(FUNCTIONS) $(SECURITY_MISC) \
+		$(GDSF_LIB) $(LD_LIBS) -o gds.so.0
+	$(CHMOD_6) gds.so.0
+	$(MV) gds.so.0 $(GDSSHR)
+	$(TOUCH) gds.so.o
+	$(CHMOD_6) gds.so.o
+
+# For SCO_EV and LINUX the FUNCTIONS is part of JRD_OBJECTS.
+gds.so.O $(SCO_EV_GDSSHR): \
+	$(WHY_O) $(JRD_OBJECTS) $(CSI_MISC) $(DSQL_MISC) $(LOCK_MISC) \
+	$(REMOTE_MISC) $(BRIDGE_MISC) \
+	$(INTL_MISC) $(WAL_MISC) $(GDSFLIB) $(SECURITY_MISC) $(REGISTER_MISC)
+	-$(RM) gds.so.O
+	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(WHY_O) $(JRD_OBJECTS) $(CSI_MISC) \
+		$(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(BRIDGE_MISC) \
+		$(INTL_MISC) $(WAL_MISC) $(SECURITY_MISC) $(REGISTER_MISC) \
+		$(GDSF_LIB) $(LD_LIBS) -o gds.so.0
+	$(CHMOD_6) gds.so.0
+	$(MV) gds.so.0 $(GDSSHR)
+	$(TOUCH) gds.so.O
+	$(CHMOD_6) gds.so.O
+
+gds.so gds.so.linux: \
+		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(REGISTER_P_MISC) $(WAL_P_MISC) \
+		$(FUNCTIONS) $(GDSFLIB)
+	-$(RM) gds.so
+	ld $(LD_OPTS) $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) $(INTL_P_MISC) \
+		$(REGISTER_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
+		$(LD_LIBS) -o gds.so
+	$(CHMOD_6) gds.so
+	$(MV) gds.so $(GDSSHR)
+	$(TOUCH) gds.so
+	$(CHMOD_6) gds.so
+
+gds.so.0 $(DG_GDSSHR) $(DG_X86_GDSSHR) $(UNIXWARE_GDSSHR) $(NCR3000_GDSSHR): \
+		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(REGISTER_P_MISC) $(WAL_P_MISC) \
+		$(FUNCTIONS) $(GDSFLIB)
+	-$(RM) gds.so.0
+	ld $(LD_OPTS) libgds.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) $(INTL_P_MISC) \
+		$(REGISTER_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
+		$(LD_LIBS) -o gds.so.0
+	$(CHMOD_6) gds.so.0
+	$(MV) gds.so.0 $(GDSSHR)
+	$(TOUCH) gds.so.0
+	$(CHMOD_6) gds.so.0
+
+# For the Darwin port
+gds.dylib: $(DO_FORCE) \
+		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(REGISTER_P_MISC) $(WAL_P_MISC) \
+		$(FUNCTIONS) $(GDSFLIB) $(PYXIS_P_OBJECTS) $(PYXIS_P_MISC)
+	-$(RM) gds.dylib
+	libtool -dynamic -o gds.dylib -current_version $(FW_VERS) \
+		-compatibility_version $(FW_COMPAT_VERS) \
+		-install_name $(FW_NAME)/Versions/A/$(FBFW_PREFIX) \
+		$(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) $(INTL_P_MISC) \
+		$(REGISTER_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) $(GDSF_LIB) \
+		$(PYXIS_P_OBJECTS) $(PYXIS_P_MISC) \
+		$(LD_LIBS) -framework System -framework CoreFoundation
+	$(CHMOD_6) gds.dylib
+	$(MV) gds.dylib $(GDSSHR_DEST)
+	$(TOUCH) gds.dylib
+	$(CHMOD_6) gds.dylib
+
+
+# Solaris has two Shared libraries - the traditional style one
+# is called gdsmt.so.0, as it requires v3.3 -> v4.0 customers
+# to recompile and relink.
+# In v4.0 we add a "gds.so.0" library which is really a pipe
+# client library.  This is so existing 3.3 customers are
+# isolated from Solaris problems involving threads & signals.
+gds.so.solaris $(SOL_GDSSHR):  gdsmt.so.0 gdspipe.so.0
+
+gdsmt.so.0: \
+		$(JRD_P_OBJECTS) flu.bin $(CSI_P_MISC) $(DSQL_P_MISC) \
+		$(LOCK_P_MISC) $(REGISTER_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(WAL_P_MISC) \
+		$(FUNCTIONS) $(GDSFLIB)
+	-$(RM) gdsmt.so.0
+	ld $(LD_OPTS) libgdsmt.so.0 $(ZDEFS) $(JRD_P_OBJECTS) flu.bin \
+		$(CSI_P_MISC) $(DSQL_P_MISC) $(LOCK_P_MISC) \
+		$(REGISTER_P_MISC) \
+		$(REMOTE_P_MISC) $(SECURITY_P_MISC) $(BRIDGE_P_MISC) \
+		$(INTL_P_MISC) $(WAL_P_MISC) $(FUNCTIONS) \
+		$(GDSF_LIB) $(LD_LIBS) -o gdsmt.so.0
+	$(CHMOD_6) gdsmt.so.0
+	$(MV) gdsmt.so.0 $(GDSSHR)
+	$(TOUCH) gdsmt.so.0
+	$(CHMOD_6) gdsmt.so.0
+
+gdsf.so $(DG_FUNCSHR) $(DG_X86_FUNCSHR):	functions.bin
+	-$(RM) gdsf.so
+	ld -G functions.bin -o gdsf.so
+	$(CHMOD_6) gdsf.so
+	$(MV) gdsf.so $(FUNCSHR)
+	$(TOUCH) gdsf.so
+	$(CHMOD_6) gdsf.so
+
+gdsshr_ss.dll:	$(WIN_NT_SS_GDSSHR)
+	$(TOUCH) gdsshr_ss.dll
+
+gdsshr.dll:	$(WIN_NT_GDSSHR)
+	$(TOUCH) gdsshr.dll
+
+gds32_nt_ms.dll: $(WHY_O) $(JRD_OBJECTS) gdsalias.o
+	-$(RM) gds32.dll gds32.lib
+	$(IMPLIB) -out:gds_temp.lib $(WHY_O) $(JRD_OBJECTS)
+	$(IMPLIB) -out:gds_temp.lib gds_temp.lib $(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(WAL_MISC) \
+	$(SECURITY_MISC)
+	$(IMPLIB) -out:gds32.lib -def:gds.bind gds_temp.lib
+	$(LINK) $(LD_OPTS) -out:gds32.dll -dll -entry:_CRT_INIT$(DLLENTRY) gds_temp.lib gds32.exp $(CONLIBSDLL) $(WSOCKLIB) $(ADVAPILIB) $(MPRLIB)
+	$(RM) gds_temp.lib
+	$(RM) gds32.exp
+	$(MV) gds32.lib gds32_ms.lib
+	$(RM) gds32.lib
+	implib gds32.lib gds32.dll
+	tlib gds32.lib +- gdsalias.o
+	$(MV) gds32.lib source\interbase\lib
+	$(MV) gds32_ms.lib source\interbase\lib
+	$(MV) gds32.dll source/interbase/bin
+	$(RM) gds32.dll gds32.lib gds32_ms.lib
+	$(TOUCH) gds32_nt_ms.dll
+
+gds32_nt_ms_ss.dll: $(WHY_O) $(JRD_OBJECTS) gdsalias.o
+	-$(RM) gds32_ss.dll gds32_ss.lib gds32mss.lib
+	$(IMPLIB) -out:gds_temp_ss.lib $(WHY_O) $(JRD_OBJECTS)
+	$(IMPLIB) -out:gds_temp_ss.lib gds_temp_ss.lib $(DSQL_MISC) $(LOCK_MISC) $(REMOTE_MISC) $(WAL_MISC) \
+	$(SECURITY_MISC)
+	$(IMPLIB) -out:gds32_ss.lib -def:gds.bind gds_temp_ss.lib
+	$(LINK) $(LD_OPTS) -out:gds32_ss.dll -dll -entry:_CRT_INIT$(DLLENTRY) gds_temp_ss.lib gds32_ss.exp $(CONLIBSDLL) $(WSOCKLIB) $(ADVAPILIB) $(MPRLIB)
+	$(RM) gds_temp_ss.lib
+	$(RM) gds32_ss.exp
+	$(MV) gds32_ss.lib gds32mss.lib
+	$(RM) gds32_ss.lib
+	implib gds32_ss.lib gds32_ss.dll
+	tlib gds32_ss.lib +- gdsalias.o
+	$(MV) gds32_ss.dll source/interbase/bin
+	$(RM) gds32.dll
+	$(TOUCH) gds32_nt_ms_ss.dll
+
+gdsalias.o:	gdsalias.asm
+	tasm32 gdsalias.asm
+
+gds32_nt_bc4.dll: $(WHY_O) $(JRD_OBJECTS)
+	-$(RM) gds32.dll gds32.lib tmp.bind
+	sed -e 's/DATA READ WRITE/DATA MULTIPLE/' -e 's/LIBRARY gds32/LIBRARY gds32 INITINSTANCE/' gds.bind > tmp.bind
+	$(LINK) -Tpd -ap -c $(LD_OPTS) -w-inq -x /Lc:\bc4\lib c0d32 @gds.rsp,gds32.dll,,import32 cw32mt,tmp.bind
+	implib gds32.lib gds32.dll
+	$(MV) gds32.lib source\interbase\lib
+	$(MV) gds32.dll source/interbase/bin
+	$(RM) gds32.dll gds32.lib tmp.bind
+	$(TOUCH) gds32_nt_bc4.dll
+
+gds32_os2_bc4.dll: $(WHY_O) $(JRD_OBJECTS)
+	-$(RM) gds32.dll gds32.lib tmp.bind
+	sed -e 's/DATA READ WRITE/DATA MULTIPLE NONSHARED/' -e 's/LIBRARY gds32/LIBRARY gds32 INITINSTANCE/' -e 's/\ \ \ \ /\ \ \ \ _/' gds.bind > tmp.bind
+	$(LINK) -Tod -ap -c $(LD_OPTS) -x /Lc:\bcos2\lib;c:\tcpip\lib c02d @gds.rsp,gds32.dll,,os2 c2mt so32dll tcp32dll,tmp.bind
+	implib gds32.lib gds32.dll
+	$(MV) gds32.lib ..\interbase\lib
+	$(MV) gds32.dll ..\interbase\bin
+	$(RM) gds32.dll gds32.lib tmp.bind
+	$(TOUCH) gds32_os2_bc4.dll
+
+gds32_os2_ibm.dll: $(WHY_O) $(JRD_OBJECTS)
+	-$(RM) gds32.dll gds32.lib bind.tmp
+	sed -e 's/DATA READ WRITE/DATA MULTIPLE NONSHARED/' -e 's/LIBRARY gds32/LIBRARY gds32 INITINSTANCE/' gds.bind > bind.tmp
+	$(LINK) $(LD_OPTS) @gds.rsp,gds32.dll,,so32dll tcp32dll,bind.tmp
+	c:\toolkt21\os2bin\implib gds32.lib gds32.dll
+	$(MV) gds32.lib ..\interbase\lib
+	$(MV) gds32.dll ..\interbase\bin
+	$(RM) gds32.dll gds32.lib bind.tmp
+	$(TOUCH) gds32_os2_ibm.dll
+
+event_print:	print.o $(GDSLIB_BACKEND)
+	$(CC) $(LINK_OPTS) -g print.o -o event_print $(GDSLIB_LINK)
+
+event_print.exe:	print.o
+	$(CC) $(DEBUG_LINK_OPTS) $(O_EXE_SWITCH)event_print print.o $(GDSLIB_LINK)
+
+gds.a:		$(HEAD_OBJECTS) $(NOLINK_MACHINES)
+	-$(RM) gds.a
+	$(AR) gds.a $(HEAD_OBJECTS) 
+	-ranlib gds.a
+	$(CHMOD_6) gds.a
+	$(MV) gds.a $(HEAD_LIB)
+	$(TOUCH) gds.a
+	$(CHMOD_6) gds.a
+
+# Solaris specific shared library that invokes a pipe-server interface
+# to isolate clients that might use signals from threads.
+# Note that its internal library name is libgds.so for compatibility
+# with existing applications.
+gdspipe.so.0:	$(HEAD_J_OBJECTS) 
+	-$(RM) gdspipe.so.0
+	-$(RM) gds.so.0
+	ld $(LD_OPTS) libgds.so.0 $(HEAD_J_OBJECTS) $(LD_LIBS_J) \
+		-o gds.so.0
+	$(CHMOD_6) gds.so.0
+	$(MV) gds.so.0 $(PIPE_GDSSHR)
+	$(TOUCH) gdspipe.so.0
+	$(CHMOD_6) gdspipe.so.0
+
+# The Solaris version of gds.a uses the .j objects as they have
+# been compiled in non-Thread mode.  The .j objects are PIC code
+# which isn't optimal, but will function fine.
+gds.a.solaris:	$(HEAD_J_OBJECTS)
+	-$(RM) gds.a.solaris
+	$(AR) gds.a $(HEAD_J_OBJECTS) 
+	-ranlib gds.a
+	$(CHMOD_6) gds.a
+	$(MV) gds.a $(HEAD_LIB)
+	$(TOUCH) gds.a.solaris
+	$(CHMOD_6) gds.a.solaris
+
+# JMB MERGE_MISC (merge.o) is already in the shlib with REMOTE_P_OBJECTS.
+# allp.bin already in the shared library. ($(ALLP_OBJECT))
+# So don't link in with executable.
+gds_pipe:	$(FOOT_OBJECTS) $(WHYPS_O) $(GDSSHR) \
+		$(GDSLIB_BACKEND) $(NOLINK_MACHINES)
+	-$(RM) gds_pipe gdsshr_pipe
+	$(CC) $(LINK_OPTS) $(FOOT_OBJECT) \
+		$(T_SWITCH) $(T_SWITCH) \
+		$(WHYPS_O) -o gds_pipe $(SERVER_LINK)
+	$(CHMOD_7) gds_pipe
+	$(MV) gds_pipe $(FOOT)
+	$(TOUCH) gds_pipe
+	$(CHMOD_6) gds_pipe
+
+bridge.unix:	gds_pipe
+	-$(RM) gds_pipe5
+	$(CC) $(LINK_OPTS) $(FOOT_OBJECTS) -o gds_pipe5 $(GDSLIB_LINK)
+	$(CHMOD_7) gds_pipe5
+
+gds_pipe.a:	$(FOOT_OBJECTS) $(NOLINK_MACHINES)
+	-$(RM) gds_pipe.a
+	$(AR) gds_pipe.a $(FOOT_OBJECTS) 
+	-ranlib gds_pipe.a
+	$(CHMOD_6) gds_pipe.a
+	$(MV) gds_pipe.a $(FOOT_LIB)
+	$(TOUCH) gds_pipe.a
+	$(CHMOD_6) gds_pipe.a
+
+gds_boot.a:	$(BOOT_OBJECTS)
+	-$(RM) gds_boot.a
+	$(AR) gds_boot.a $(BOOT_OBJECTS)
+	-ranlib gds_boot.a
+	$(CHMOD_6) gds_boot.a
+
+includes.msg:	$(OBJS)/msgs/indicator.incl
+	-$(RM) includes.msg
+	$(TOUCH) includes.msg
+	$(CHMOD_6) includes.msg
+
+super_server_objects: force
+	$(CD) $(OBJS)/dsql && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" dsql_objects
+	$(CD) $(OBJS)/lock && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" lock
+	$(CD) $(OBJS)/remote && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" rem_objects
+	$(CD) $(OBJS)/wail && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" wal_objects
+
+super_client_objects:	$(JRD_CLIENT_P_OBJECTS)
+	-$(RM) super_client_objects
+	$(TOUCH) super_client_objects
+	$(CHMOD_6) super_client_objects
+
+debug_objects:	grammar.o dbg.o dbt.o dmp.o
+
+nolink_machines: source/pipe/allp.c source/pipe/foot.c source/pipe/head.c
+	$(CP) $? .
+	-$(RM) nolink_machines
+	$(TOUCH) nolink_machines
+	$(CHMOD_6) nolink_machines
+
+run_codes: $(CODES_FILES)
+#       We should be compiling and running codes here, but we will do that
+#	later!!!
+#        -$(SH) '$(CMP) $(OBJS)/jrd/iberror.h $(OBJS)/firebird/include/iberror.h; if [ $$? != 0 ]; then $(CP) $(SOURCE)/jrd/iberror.h $(OBJS)/firebird/include/iberror.h; fi'
+
+$(CODES_FILES):
+	touch $@
+	-$(CP) boot_codes/$(@F) $@
+
+
+# This target just forces those who depend on it, to execute their actions
+force:
+
+codes:		codes.o $(STDIO)
+	-$(RM) codes
+	$(CXX) $(LINK_OPTS) $(CXX_INCLUDE_DIRS) -o codes codes.o $(STDIO) $(GDSSHR_LINK)
+	$(CHMOD_7) codes
+codes.exe:	codes.o
+	-$(RM) codes.exe
+	$(CXX) $(LINK_OPTS) $(CXX_INCLUDE_DIRS) $(O_EXE_SWITCH)codes codes.o $(GDSSHR_LINK)
+	$(CHMOD_7) codes.exe
+blrtable.h:	blrtable.cpp $(STDIO)
+	$(CXX) $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(LINK_OPTS) blrtable.c $(STDIO) $(LD_LIBS) -o blrtable
+	-./blrtable > blrtable.h
+	-$(RM) blrtable
+ids.h:	ids.m relations.h
+	$(CP) $(VPATH)/relations.h .
+	m4 $< > ids.h
+
+# JRD
+
+ail.o:		ail.cpp $(JRD_H) ods.h jrn.h tra.h pag.h pio.h dsc.h \
+		flags.h sdw.h sbm.h lls.h \
+		all_proto.h cch_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		jrn_proto.h met_proto.h misc_proto.h mov_proto.h pag_proto.h \
+		pio_proto.h rec_proto.h sbm_proto.h $(THD_PROTO_H) tra_proto.h \
+		$(SOURCE)/wal/wal.h $(SOURCE)/wal/wal_proto.h \
+		$(SOURCE)/wal/walc_proto.h $(SOURCE)/wal/walf_proto.h
+all.o:		all.cpp $(JRD_HEADERS) blk.h all_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		gds_proto.h mov_proto.h $(THD_PROTO_H)
+alt.o:		alt.cpp \
+		gds_proto.h utl_proto.h why_proto.h
+alt.o.ps1:	alt.cpp \
+		gds_proto.h utl_proto.h why_proto.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DPHASE_1 $< -o $@
+alt.bin.ps1:	alt.cpp \
+		gds_proto.h utl_proto.h why_proto.h
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DPHASE_1 $< -o $@
+
+apollo.o:	apollo.cpp $(JRD_H) pio.h cch.h ods.h lck.h $(SOURCE)/lock/plserver.h
+bookmark.o:	bookmark.cpp $(JRD_H) $(EXE_H) $(RSE_H) \
+		all_proto.h bookmark.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h \
+		mov_proto.h $(THD_PROTO_H) 
+blb.o:		blb.cpp $(JRD_H) blb.h tra.h $(VAL_H) $(EXE_H) req.h ods.h lls.h \
+		blob_filter.h sdl.h ibsetjmp.h $(INTL_H) cch.h constants.h \
+		all_proto.h blb_proto.h blf_proto.h cch_proto.h \
+		dpm_proto.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h filte_proto.h \
+		gds_proto.h jrd_proto.h met_proto.h mov_proto.h \
+		pag_proto.h sdl_proto.h
+blob_filter.cpp:	$(VPATH)/blob_filter.epp
+	$(EXPAND_DBNAME) $(VPATH)/blob_filter.epp
+	$(GPRE_BOOT) -lang_internal -n -manual -raw -O $< > $@
+	$(COMPRESS_DBNAME) blob_filter.epp
+blob_filter.o:	blob_filter.cpp $(JRD_H) blob_filter.h constants.h gdsassert.h \
+		blf_proto.h filte_proto.h flu_proto.h \
+		gds_proto.h inf_proto.h intl_proto.h
+btr.o:		btr.cpp $(JRD_H) ods.h btr.h $(VAL_H) req.h tra.h $(INTL_H) jrn.h \
+		lck.h cch.h sbm.h ibsetjmp.h \
+		all_proto.h btr_proto.h $(BTR_PROTO_DEP)$ cch_proto.h dpm_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h evl_proto.h intl_proto.h met_proto.h \
+		mov_proto.h $(NAV_PROTO_H) pag_proto.h pcmet_proto.h \
+		sbm_proto.h sort_proto.h  $(THD_PROTO_H) tra_proto.h 
+builtin.o:	builtin.cpp \
+		flu_proto.h gds_proto.h
+cch.o:		cch.cpp $(JRD_H) cch.h que.h lck.h ods.h jrn.h lls.h \
+		req.h pio.h sdw.h tra.h isc.h $(THD_H) blk.h \
+		dsc.h sbm.h ibsetjmp.h \
+		all_proto.h cch_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h gds_proto.h isc_proto.h jrd_proto.h \
+		$(LCK_PROTO_H) mov_proto.h pag_proto.h pio_proto.h \
+		sdw_proto.h shut_proto.h $(THD_PROTO_H) source/wal/wal_proto.h \
+		iberr.h iberr_proto.h err_proto.h
+cmp.o:		cmp.cpp $(JRD_H) req.h $(VAL_H) align.h lls.h $(EXE_H) $(RSE_H) scl.h \
+		tra.h all.h lck.h license.h $(INTL_H) relations.h irq.h drq.h\
+		rng.h btr.h constants.h \
+		all_proto.h $(CMP_PROTO_DEP) cmp_proto.h dsc_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		exe_proto.h fun_proto.h gds_proto.h $(IDX_PROTO_H) \
+		$(LCK_PROTO_H) opt_proto.h par_proto.h rng_proto.h \
+		sbm_proto.h scl_proto.h $(THD_PROTO_H) met_proto.h \
+		dsc_proto.h
+codes.cpp:	codes.epp
+	$(EXPAND_DBNAME) codes.epp
+	$(GPRE_BOOT) -lang_internal -n -manual -raw -string codes.epp
+	$(COMPRESS_DBNAME) codes.epp
+	$(TOUCH) codes.cpp
+codes.o:	codes.cpp gds.h
+cvt.o:		cvt.cpp $(JRD_H) $(VAL_H) $(INTL_H) gdsassert.h $(QUAD_H) \
+		$(ERR_PROTO_DEP) err_proto.h cvt_proto.h gds_proto.h intl_proto.h intlobj.h
+	$(SPECIAL_OPT) $(COPT_JRD_CVT) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+cvt2.o:		cvt2.cpp $(JRD_H) $(VAL_H) $(INTL_H) gdsassert.h \
+		all_proto.h cvt_proto.h cvt2_proto.h intl_proto.h intlobj.h
+	$(SPECIAL_OPT) $(COPT_JRD_CVT2) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+dbg.o:		dbg.cpp $(JRD_H) cch.h dbg.h $(VAL_H) all.h $(EXE_H) req.h $(RSE_H)\
+		btr.h sort.h lck.h ods.h \
+		cch_proto.h dbg_proto.h
+dbt.o:		dbt.cpp $(JRD_HEADERS) dbg.h blk.h
+delta_stubs.o:	delta_stubs.cpp
+dfw.cpp:	dfw.epp
+dfw.o:		dfw.cpp $(JRD_H) $(VAL_H) irq.h tra.h btr.h req.h $(EXE_H) scl.h \
+		blb.h $(MET_H) lck.h sdw.h flags.h all.h $(INTL_H) align.h \
+		constants.h relations.h $(SOURCE)/intl/charsets.h ibsetjmp.h \
+		all_proto.h blb_proto.h cch_proto.h \
+		$(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h dpm_proto.h dsc_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		event_proto.h exe_proto.h gds_proto.h grant_proto.h \
+		$(IDX_PROTO_H) intl_proto.h isc_f_proto.h $(LCK_PROTO_H) \
+		met_proto.h mov_proto.h pag_proto.h pcmet_proto.h \
+		pio_proto.h scl_proto.h sdw_proto.h $(THD_PROTO_H) 
+divorce.o:	divorce.cpp
+dls.o:		dls.cpp sort.h dls_proto.h gds_proto.h
+dmp.o:		dmp.cpp $(JRD_H) cch.h pag.h ods.h $(VAL_H) btr.h tra.h lck.h \
+		ibsetjmp.h\
+		cch_proto.h dmp_proto.h gds_proto.h 
+dpm.cpp:	dpm.epp
+dpm.o:		dpm.cpp $(JRD_H) ods.h req.h sqz.h irq.h blb.h tra.h lls.h \
+		cch.h jrn.h pag.h sbm.h $(RSE_H) lck.h vio_debug.h ibsetjmp.h\
+		all_proto.h cch_proto.h $(CMP_PROTO_DEP) cmp_proto.h dpm_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h exe_proto.h met_proto.h mov_proto.h \
+		pag_proto.h sqz_proto.h $(THD_PROTO_H) 
+dsc.o:		dsc.cpp dsc.h constants.h $(INTL_H) \
+		dsc_proto.h 
+dyn.cpp:	dyn.epp
+dyn.o:		dyn.cpp $(JRD_H) tra.h scl.h drq.h flags.h lls.h all.h $(INTL_H) \
+		$(MET_H) btr.h ibsetjmp.h license.h\
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dyn_proto.h $(ERR_PROTO_DEP) err_proto.h exe_proto.h gds_proto.h \
+		inf_proto.h intl_proto.h isc_f_proto.h $(THD_PROTO_H) \
+		dyn_df_proto.h dyn_dl_proto.h dyn_md_proto.h dyn_ut_proto.h dyn.h \
+		vio_proto.h nlm_thd.h
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+dyn_def.cpp:	dyn_def.epp
+dyn_def.o:	dyn_def.cpp dyn_util.cpp $(JRD_H) tra.h scl.h drq.h flags.h lls.h all.h $(INTL_H) \
+		$(MET_H) btr.h ibsetjmp.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dyn_proto.h $(ERR_PROTO_DEP) err_proto.h exe_proto.h gds_proto.h \
+		inf_proto.h intl_proto.h isc_f_proto.h $(THD_PROTO_H) \
+		dyn_df_proto.h dyn_dl_proto.h dyn_md_proto.h dyn_ut_proto.h dyn.h \
+		vio_proto.h nlm_thd.h
+	sed -f $(VPATH)/dyn_def.sed $< > dyn_def.cpp.tmp
+	$(MV) dyn_def.cpp.tmp dyn_def.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+dyn_del.cpp:	dyn_del.epp
+dyn_del.o:	dyn_del.cpp $(JRD_H) tra.h scl.h drq.h flags.h lls.h all.h $(INTL_H) \
+		$(MET_H) btr.h ibsetjmp.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dyn_proto.h $(ERR_PROTO_DEP) err_proto.h exe_proto.h gds_proto.h \
+		inf_proto.h intl_proto.h isc_f_proto.h $(THD_PROTO_H) \
+		dyn_df_proto.h dyn_dl_proto.h dyn_md_proto.h dyn_ut_proto.h dyn.h \
+		vio_proto.h nlm_thd.h
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+dyn_mod.cpp:	dyn_mod.epp
+dyn_mod.o:	dyn_mod.cpp $(JRD_H) tra.h scl.h drq.h flags.h lls.h all.h $(INTL_H) \
+		$(MET_H) btr.h ibsetjmp.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dyn_proto.h $(ERR_PROTO_DEP) err_proto.h exe_proto.h gds_proto.h \
+		inf_proto.h intl_proto.h isc_f_proto.h $(THD_PROTO_H) \
+		dyn_df_proto.h dyn_dl_proto.h dyn_ut_proto.h dyn_md_proto.h dyn.h \
+		vio_proto.h nlm_thd.h
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+dyn_util.cpp:	dyn_util.epp
+dyn_util.o:	dyn_util.cpp $(JRD_H) tra.h scl.h drq.h flags.h lls.h all.h $(INTL_H) \
+		$(MET_H) btr.h ibsetjmp.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dyn_proto.h $(ERR_PROTO_DEP) err_proto.h exe_proto.h gds_proto.h \
+		inf_proto.h intl_proto.h isc_f_proto.h $(THD_PROTO_H) \
+		dyn_df_proto.h dyn_ut_proto.h dyn_dl_proto.h dyn_md_proto.h dyn.h \
+		vio_proto.h nlm_thd.h
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+enc.o:		enc.cpp enc_proto.h
+err.o:		err.cpp $(JRD_H) pio.h $(VAL_H) btr.h req.h tra.h iberr.h ibsetjmp.h \
+		all_proto.h cch_proto.h $(ERR_PROTO_DEP) err_proto.h met_proto.h gds_proto.h
+event.o:	event.cpp $(EVENT_H_DEP) event.h $(THD_H) \
+		event_proto.h gds_proto.h isc_proto.h
+	$(SPECIAL_OPT) $(COPT_JRD_EVENT) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+evl.o:		evl.cpp $(JRD_H) $(VAL_H) req.h $(EXE_H) sbm.h blb.h scl.h lck.h \
+		$(INTL_H) intlobj.h $(RSE_H) gdsassert.h evl_like.cpp $(QUAD_H) \
+		sort.h gdsassert.h constants.h \
+		all_proto.h bookmark.h blb_proto.h dpm_proto.h \
+		dsc_proto.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h exe_proto.h \
+		fun_proto.h intl_proto.h $(LCK_PROTO_H) mov_proto.h \
+		pag_proto.h rlck_proto.h rse_proto.h sbm_proto.h \
+		$(SCH_PROTO_H) scl_proto.h $(THD_PROTO_H) sort_proto.h 
+exe.o:		exe.cpp $(JRD_H) req.h $(VAL_H) $(EXE_H) tra.h btr.h $(RSE_H) \
+		lck.h $(INTL_H) blb.h ods.h rng.h sbm.h blr.h ibsetjmp.h \
+		all_proto.h bookmark.h blb_proto.h btr_proto.h $(BTR_PROTO_DEP) \
+		$(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h dpm_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		evl_proto.h exe_proto.h ext_proto.h gds_proto.h \
+		$(IDX_PROTO_H) jrd_proto.h $(LCK_PROTO_H) met_proto.h \
+		mov_proto.h opt_proto.h par_proto.h rlck_proto.h \
+		rse_proto.h rng_proto.h $(THD_PROTO_H) vio_proto.h
+ext.o:		ext.cpp $(JRD_H) req.h $(VAL_H) $(EXE_H) $(RSE_H) ext.h tra.h \
+		all_proto.h $(ERR_PROTO_DEP) err_proto.h ext_proto.h met_proto.h \
+		mov_proto.h $(THD_PROTO_H) vio_proto.h 
+extvms.o:	extvms.cpp $(JRD_H) req.h $(VAL_H) $(EXE_H) $(RSE_H) ext.h \
+		tra.h btr.h
+filters.o:	filters.cpp $(JRD_H) acl.h $(VAL_H) $(MET_H) blob_filter.h $(INTL_H) \
+		intlobj.h gdsassert.h \
+		filte_proto.h gds_proto.h intl_proto.h \
+		$(SOURCE)/intl/charsets.h
+flu.o:		flu.cpp
+fun.cpp:	fun.epp
+fun.o:		fun.cpp $(JRD_H) $(VAL_H) $(EXE_H) req.h lls.h blb.h irq.h nlm_thd.h \
+		ibsetjmp.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h dsc_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		evl_proto.h exe_proto.h flu_proto.h fun_proto.h \
+		gds_proto.h mov_proto.h sym_proto.h $(THD_PROTO_H) \
+		$(SCH_PROTO_H)
+functions.o:	functions.cpp
+gds.h:		ibase.h gdsold.h
+	$(CAT) $(SOURCE)/jrd/ibase.h $(SOURCE)/jrd/gdsold.h > gds.h
+gds.o:		gds.cpp sql_code.h blr.h msg.h fil.h msgs.h blp.h $(THD_H) \
+		ibsetjmp.h \
+		gds_proto.h isc_proto.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(CARBONCORE_DIR_FLAG) $(VERSION_FLAG) $<  
+
+gds.bin: gds.cpp  
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(CARBONCORE_DIR_FLAG) $(VERSION_FLAG) \
+		-o $*.bin $<  
+
+grammar.c:	grammar.y
+grammar.o:	grammar.c dbg.h jlx.c
+grammar.bin:	grammar.c dbg.h jlx.c
+	$(CC) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -o $*.bin $<
+grant.cpp:	grant.epp
+grant.o:	grant.cpp $(JRD_H) scl.h acl.h blb.h irq.h req.h tra.h \
+		$(VAL_H) $(INTL_H) $(MET_H) nlm_thd.h \
+		blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h dpm_proto.h \
+		exe_proto.h gds_proto.h grant_proto.h jrd_proto.h \
+		met_proto.h scl_proto.h
+iberr.o:	iberr.cpp iberr.h ibsetjmp.h \
+		gds_proto.h iberr_proto.h
+ib_stdio.o:	ib_stdio.cpp ib_stdio.h
+idx.o:		idx.cpp $(JRD_H) $(VAL_H) req.h ods.h btr.h sort.h lls.h tra.h \
+		sbm.h $(EXE_H) scl.h lck.h \
+		all_proto.h btr_proto.h $(BTR_PROTO_DEP) cch_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dpm_proto.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h $(IDX_PROTO_H) \
+		$(LCK_PROTO_H) met_proto.h mov_proto.h sbm_proto.h $(SCH_PROTO_H) \
+		sort_proto.h $(THD_PROTO_H) vio_proto.h 
+inf.o:		inf.cpp gds.h $(JRD_H) blb.h tra.h req.h $(VAL_H) $(EXE_H) pio.h ods.h \
+		lck.h cch.h license.h cch_proto.h pag_proto.h pio_proto.h \
+		tra_proto.h source/wal/wal.h 
+ini.cpp:	ini.epp
+ini.o:		ini.cpp $(JRD_H) $(VAL_H) btr.h ids.h tra.h trig.h dflt.h \
+		ods.h $(INI_H) idx.h $(INTL_H) constants.h \
+		all_proto.h blb_proto.h cch_proto.h $(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h \
+		dpm_proto.h exe_proto.h gds_proto.h $(IDX_PROTO_H) \
+		ini_proto.h jrd_proto.h met_proto.h $(THD_PROTO_H) 
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_JRD_INI) $<
+intl.o:		intl.cpp btr.h gdsassert.h $(INTL_H) intlobj.h $(JRD_H) req.h $(VAL_H) \
+		license.h \
+		all_proto.h cvt_proto.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h \
+		flu_proto.h fun_proto.h gds_proto.h iberr_proto.h \
+		intl_proto.h isc_proto.h \
+		source/intl/charsets.h source/intl/country_codes.h
+inuse.o:	inuse.cpp $(JRD_H) \
+		gds_proto.h inuse_proto.h $(THD_PROTO_H) 
+isc.o:		isc.cpp isc.h flu_proto.h gds_proto.h isc_proto.h
+isc_file.o:	isc_file.cpp flu_proto.h gds_proto.h isc_proto.h isc_f_proto.h
+isc_ipc.o:	isc_ipc.cpp isc.h gds_proto.h isc_proto.h isc_i_proto.h \
+		$(ISC_S_PROTO_H)
+isc_sync.o:	isc_sync.cpp isc.h gds_proto.h isc_proto.h isc_i_proto.h \
+		$(ISC_S_PROTO_H)
+	$(SPECIAL_OPT) $(COPT_JRD_ISC) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+jio.o:		jio.cpp $(JRD_H) jrn.h 
+jrd.o:		jrd.cpp $(JRD_H) drq.h irq.h req.h tra.h blb.h lck.h scl.h \
+		license.h pio.h ods.h $(EXE_H) $(VAL_H) $(RSE_H) jrn.h log.h \
+		fil.h svc.h all.h sbm.h sdw.h lls.h cch.h nlm_thd.h ibsetjmp.h \
+		all_proto.h blb_proto.h \
+		cch_proto.h $(CMP_PROTO_DEP) cmp_proto.h dyn_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		event_proto.h exe_proto.h ext_proto.h flu_proto.h fun_proto.h \
+		gds_proto.h inf_proto.h ini_proto.h intl_proto.h \
+		inuse_proto.h isc_f_proto.h jrd_proto.h jrn_proto.h \
+		$(LCK_PROTO_H) log_proto.h met_proto.h mov_proto.h \
+		old_proto.h pag_proto.h par_proto.h \
+		pio_proto.h sbm_proto.h $(SCH_PROTO_H) scl_proto.h sdw_proto.h \
+		shut_proto.h sort_proto.h svc_proto.h $(THD_PROTO_H) tra_proto.h \
+		val_proto.h 
+	$(SPECIAL_OPT) $(COPT_JRD_JRD) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+jrn.o:		jrn.cpp $(JRD_H) ods.h jrn.h \
+		iberr_proto.h gds_proto.h jrn_proto.h
+lck.o:		lck.cpp $(JRD_H) lck.h 
+lck_dummy.o:	lck_dummy.cpp
+llio.o:		llio.cpp llio.h \
+		iberr_proto.h llio_proto.h 
+log.o:		log.cpp $(JRD_H) log.h arg.h ods.h \
+		all_proto.h gds_proto.h log_proto.h pag_proto.h
+map.o:		map.cpp rdb_codes.h msgs.h
+mblr.o:		mblr.cpp mblr.h
+met.cpp:	met.epp
+met.o:		met.cpp $(JRD_H) irq.h all.h req.h $(EXE_H) scl.h blb.h \
+		$(VAL_H) tra.h $(INTL_H) sdw.h lck.h pio.h $(MET_H) flags.h jrn.h \
+		btr.h lls.h align.h gdsassert.h relations.h \
+		ibsetjmp.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h exe_proto.h ext_proto.h flu_proto.h \
+		gds_proto.h $(IDX_PROTO_H) ini_proto.h $(LCK_PROTO_H) \
+		met_proto.h par_proto.h pcmet_proto.h pio_proto.h \
+		scl_proto.h sdw_proto.h $(THD_PROTO_H) dsc_proto.h \
+		$(SOURCE)/intl/charsets.h $(SCH_PROTO_H)
+misc.o:		misc.cpp $(MISC_H) dsc.h \
+		gds_proto.h misc_proto.h
+mov.o:		mov.cpp $(JRD_H) $(VAL_H) $(INTL_H) \
+		cvt_proto.h cvt2_proto.h $(ERR_PROTO_DEP) err_proto.h gds_proto.h
+mpexl.o:	mpexl.cpp $(JRD_H) pio.h cch.h ods.h lck.h 
+nav.o:		nav.cpp $(JRD_H) ods.h btr.h $(VAL_H) req.h $(EXE_H) sbm.h $(RSE_H) rng.h \
+		lck.h cch.h blr.h ibsetjmp.h \
+		all_proto.h btr_proto.h $(BTR_PROTO_DEP) cch_proto.h mov_proto.h $(NAV_PROTO_H) \
+		rng_proto.h rse_proto.h sbm_proto.h $(THD_PROTO_H) vio_proto.h \
+		evl_proto.h
+nodebug.o nodebug.bin $(OBJS)/jrd/nodebug.bin:	nodebug.cpp dbg_proto.h 
+old.o:		old.cpp $(JRD_H) pio.h ods.h pag.h jrn.h old.h llio.h \
+		cch_proto.h $(ERR_PROTO_DEP) err_proto.h gds_proto.h \
+		isc_f_proto.h jrn_proto.h llio_proto.h misc_proto.h \
+		mov_proto.h old_proto.h pag_proto.h $(THD_PROTO_H) \
+		source/wal/wal.h
+opt.o:		opt.cpp $(JRD_H) align.h $(VAL_H) req.h $(EXE_H) lls.h btr.h \
+		sort.h $(RSE_H) $(INTL_H) ods.h \
+		all_proto.h btr_proto.h $(BTR_PROTO_DEP) cch_proto.h $(CMP_PROTO_DEP) cmp_proto.h \
+		dpm_proto.h $(ERR_PROTO_DEP) err_proto.h ext_proto.h intl_proto.h \
+		$(LCK_PROTO_H) met_proto.h mov_proto.h opt_proto.h \
+		par_proto.h sbm_proto.h $(THD_PROTO_H) 
+os2.o:		os2.cpp $(JRD_H) pio.h cch.h ods.h lck.h
+pag.o:		pag.cpp $(JRD_H) pag.h ods.h pio.h license.h jrn.h lck.h \
+		sdw.h cch.h tra.h llio.h all.h vio_debug.h ibsetjmp.h \
+		cch_proto.h dpm_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h $(LCK_PROTO_H) llio_proto.h met_proto.h \
+		mov_proto.h pag_proto.h pio_proto.h 
+par.o:		par.cpp $(JRD_H) $(VAL_H) align.h $(EXE_H) lls.h blb.h scl.h \
+		all.h req.h blrtable.h codetext.h $(INTL_H) $(MET_H) \
+		all_proto.h $(CMP_PROTO_DEP) cmp_proto.h $(ERR_PROTO_DEP) err_proto.h fun_proto.h \
+		gds_proto.h met_proto.h par_proto.h
+	$(SPECIAL_OPT) $(COPT_JRD_PAR) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+pcmet.cpp:	pcmet.epp
+pcmet.o:	pcmet.cpp $(JRD_H) irq.h tra.h $(VAL_H) btr.h all.h req.h $(EXE_H) $(MET_H) \
+		ods.h lck.h \
+		all_proto.h $(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h exe_proto.h gds_proto.h \
+		$(IDX_PROTO_H) $(LCK_PROTO_H) met_proto.h mov_proto.h pcmet_proto.h
+perf.o:		perf.cpp perf.h \
+		gds_proto.h perf_proto.h
+print.o:	print.cpp $(EVENT_H_DEP) event.h
+pwd.o:		pwd.cpp pwd.h $(JRD_H) \
+		enc_proto.h $(ERR_PROTO_DEP) err_proto.h gds_proto.h pwd_proto.h
+#qatest.o:	qatest.cpp $(JRD_H) sdw.h pio.h $(ERR_PROTO_DEP) err_proto.h flu_proto.h
+rdb.o:		rdb.cpp rdb.h mblr.h rdbcodes.h
+rdbg.o:		rdbg.cpp
+rdbgpas.o:	rdbgpas.cpp rdb.h rdbcodes.h
+rdbint.o:	rdbint.cpp
+rec.o:		rec.cpp $(JRD_H) ods.h btr.h jrn.h cch.h \
+		all_proto.h cch_proto.h dpm_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		gds_proto.h misc_proto.h mov_proto.h pag_proto.h \
+		rec_proto.h sbm_proto.h \
+		$(SOURCE)/wal/wal.h \
+		$(SOURCE)/wal/walr_proto.h
+rlck.o:		rlck.cpp $(JRD_H) tra.h lck.h req.h all.h \
+		all_proto.h $(ERR_PROTO_DEP) err_proto.h isc_proto.h \
+		$(LCK_PROTO_H) rlck_proto.h $(THD_PROTO_H) vio_proto.h
+rng.o:		rng.cpp $(JRD_H) req.h $(VAL_H) $(EXE_H) $(RSE_H) lck.h cch.h \
+		rng.h all.h $(INTL_H) ods.h sbm.h \
+		event_proto.h evl_proto.h $(LCK_PROTO_H) mov_proto.h \
+		rlck_proto.h rng_proto.h $(THD_PROTO_H) tra_proto.h
+rse.o:		rse.cpp $(JRD_H) req.h $(VAL_H) $(EXE_H) $(RSE_H) sbm.h sort.h \
+		lls.h $(INTL_H) btr.h ods.h lck.h \
+		all_proto.h bookmark.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h \
+		exe_proto.h ext_proto.h intl_proto.h jrd_proto.h \
+		met_proto.h mov_proto.h $(NAV_PROTO_H) rlck_proto.h \
+		rse_proto.h sbm_proto.h $(SCH_PROTO_H) sort_proto.h \
+		$(THD_PROTO_H) vio_proto.h
+sbm.o:		sbm.cpp $(JRD_H) req.h sbm.h all.h \
+		all_proto.h sbm_proto.h $(THD_PROTO_H) 
+sch.o:		sch.cpp $(THD_H) isc.h \
+		gds_proto.h isc_proto.h $(SCH_PROTO_H)  $(THD_PROTO_H) 
+scl.cpp:	scl.epp
+scl.o:		scl.cpp $(JRD_H) scl.h acl.h blb.h irq.h req.h tra.h pwd.h \
+		nlm_thd.h \
+		all_proto.h blb_proto.h $(CMP_PROTO_DEP) cmp_proto.h enc_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h exe_proto.h gds_proto.h isc_proto.h \
+		met_proto.h pwd_proto.h scl_proto.h  $(THD_PROTO_H) 
+sco_stubs.o:	sco_stubs.cpp
+sdl.o:		sdl.cpp $(JRD_H) $(VAL_H) sdl.h $(INTL_H) \
+		gds_proto.h sdl_proto.h
+	$(SPECIAL_OPT) $(COPT_JRD_SDL) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+sdw.o:		sdw.cpp $(JRD_H) cch.h que.h lck.h ods.h jrn.h lls.h \
+		req.h pio.h all.h sdw.h flags.h sbm.h ibsetjmp.h \
+		all_proto.h cch_proto.h $(ERR_PROTO_DEP) err_proto.h gds_proto.h \
+		isc_proto.h $(LCK_PROTO_H) met_proto.h pag_proto.h \
+		pio_proto.h sdw_proto.h $(THD_PROTO_H) 
+	$(SPECIAL_OPT) $(COPT_JRD_SDW) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+shut.o:		shut.cpp $(JRD_H) scl.h ods.h \
+		$(CMP_PROTO_DEP) cmp_proto.h $(ERR_PROTO_DEP) err_proto.h $(LCK_PROTO_H) \
+		rlck_proto.h rng_proto.h $(SCH_PROTO_H) shut_proto.h \
+		tra_proto.h cch_proto.h 
+sort.o:		sort.cpp sort.h fil.h \
+		$(ERR_PROTO_DEP) err_proto.h gds_proto.h sort_proto.h
+sqz.o:		sqz.cpp $(JRD_H) sqz.h req.h \
+		all_proto.h $(ERR_PROTO_DEP) err_proto.h sqz_proto.h $(THD_PROTO_H) 
+	$(SPECIAL_OPT) $(COPT_JRD_SQZ) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+stats.cpp:	stats.epp
+stats.o:	stats.cpp
+status.o status.bin: status.cpp status.h
+$(OBJS)/jrd/sun_ftn.o:	$(OBJS)/jrd/sun_ftn.cpp perf.h
+sun_ftn.o:	sun_ftn.cpp perf.h
+source/jrd/sun_ftn.j:	sun_ftn.o 
+sun_ftn.j:	sun_ftn.o 
+svc.o:		svc.cpp $(JRD_H) svc.h ibsetjmp.h license.h \
+		$(ERR_PROTO_DEP) err_proto.h gds_proto.h inf_proto.h isc_proto.h \
+		mov_proto.h pwd_proto.h $(SCH_PROTO_H) svc_proto.h
+sym.o:		sym.cpp $(JRD_H) $(VAL_H) \
+		sym_proto.h
+thd.o:		thd.cpp $(THD_H) isc.h
+tpc.o:		tpc.cpp $(JRD_H) tpc.h ods.h tra.h lck.h pag.h \
+		all_proto.h cch_proto.h $(LCK_PROTO_H) mov_proto.h \
+		$(THD_PROTO_H) tpc_proto.h tra_proto.h 
+tra.o:		tra.cpp $(JRD_H) tra.h ods.h pag.h lck.h jrn.h lls.h \
+		all.h req.h $(EXE_H) $(RSE_H) ibsetjmp.h \
+		all_proto.h blb_proto.h cch_proto.h \
+		$(CMP_PROTO_DEP) cmp_proto.h dfw_proto.h dpm_proto.h $(ERR_PROTO_DEP) err_proto.h \
+		exe_proto.h ext_proto.h gds_proto.h isc_proto.h \
+		$(LCK_PROTO_H) met_proto.h mov_proto.h rlck_proto.h \
+		$(THD_PROTO_H) tpc_proto.h tra_proto.h vio_proto.h \
+	$(LCK_PROTO_H)	
+	$(SPECIAL_OPT) $(COPT_JRD_TRA) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+unix.o:		unix.cpp $(JRD_H) pio.h cch.h ods.h lck.h \
+		all_proto.h cch_proto.h $(ERR_PROTO_DEP) err_proto.h isc_proto.h \
+		$(LCK_PROTO_H) mov_proto.h pio_proto.h $(THD_PROTO_H) 
+utl.o:		utl.cpp $(JRD_H) blr.h inf.h msg.h \
+		gds_proto.h utl_proto.h blb_proto.h 
+val.o:		val.cpp $(JRD_H) ods.h pag.h $(VAL_H) btr.h all.h cch.h \
+		lck.h ibsetjmp.h \
+		all_proto.h btr_proto.h $(BTR_PROTO_DEP) cch_proto.h dpm_proto.h \
+		$(ERR_PROTO_DEP) err_proto.h met_proto.h sbm_proto.h tra_proto.h \
+		val_proto.h
+vio.o:		vio.cpp $(JRD_H) $(VAL_H) req.h tra.h ids.h lls.h scl.h \
+		flags.h btr.h relations.h ods.h $(EXE_H) $(RSE_H) rng.h \
+		all.h \
+		all_proto.h blb_proto.h cch_proto.h dfw_proto.h \
+		dpm_proto.h $(ERR_PROTO_DEP) err_proto.h evl_proto.h $(IDX_PROTO_H) \
+		jrd_proto.h met_proto.h mov_proto.h rng_proto.h \
+		sbm_proto.h scl_proto.h sqz_proto.h tra_proto.h
+vms.o:		vms.cpp $(JRD_H) pio.h cch.h ods.h lck.h 
+vmsevent.o:	vmsevent.cpp$(THD_H) 
+why.o:		why.c acl.h inf.h blob_filter.h $(THD_H) isc.h entry.h \
+		flu_proto.h gds_proto.h isc_proto.h isc_f_proto.h \
+		$(THD_PROTO_H) blf_proto.h $(SOURCE)/dsql/sqlda.h \
+		$(SOURCE)/dsql/dsql_proto.h $(SOURCE)/dsql/prepa_proto.h
+winnt.o:	winnt.cpp $(JRD_H) pio.h cch.h ods.h lck.h 
+
+# BACKEND
+
+whybk.c:	why.c
+	-$(RM) whybk.c
+	$(CP) why.c whybk.c
+whybk.o:	whybk.c
+	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DBACKEND $<
+
+# Special compiles of modules to omit parts not needed for pipe access
+
+utlp.cpp:		utl.cpp
+	-$(RM) utlp.cpp
+	$(CP) utl.cpp utlp.cpp
+utlp.o:		utlp.cpp
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DPIPE_CLIENT $<
+utlp.j:		utlp.o
+	$(CXX) -c $(PIC_J_CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DPIPE_CLIENT utlp.cpp -o utlp_j.o
+	$(MV) utlp_j.o utlp.j
+whyp.c:		why.c
+	-$(RM) whyp.c
+	$(CP) why.c whyp.c
+whyp.o:		whyp.c
+	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DPIPE_CLIENT $<
+whyp.j:		whyp.o
+	$(CC) -c $(PIC_J_CFLAGS) $(VERSION_FLAG) -DPIPE_CLIENT whyp.c -o whyp_j.o
+	$(MV) whyp_j.o whyp.j
+
+# whyps.o is used for machines that have a gds_pipe executable with the
+# full backend linked in.  It omits an interface to the V3 bridge, which
+# is included with the pipe client and not needed in the pipe server.
+whyps.o:	why.o
+	-$(RM) whyps.c
+	$(CP) why.c whyps.c
+	$(CC) -c $(CFLAGS) $(VERSION_FLAG) -DPIPE_SERVER_YVALUE whyps.c
+
+# SHARED BRIDGE
+
+iscb.o:		isc.cpp isc.o
+	-$(RM) iscb.cpp
+	$(CP) $< iscb.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_ISC) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DBRIDGE iscb.cpp
+iscb.bin:	isc.cpp isc.bin
+	$(CP) $< iscbfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_ISC) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DBRIDGE iscbfoo.cpp
+	$(MV) iscbfoo.o iscb.bin
+	-$(RM) iscbfoo.cpp iscbfoo.o
+
+# External objects
+
+$(CSI_MISC) $(CSI_P_MISC) csi_dummy:
+	$(CD) $(OBJS)/csv && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(DSQL_MISC) $(DSQL_P_MISC):
+	$(CD) $(OBJS)/dsql && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(INTL_MISC) $(INTL_P_MISC) intl_dummy:
+	$(CD) $(OBJS)/intl && $(MAKE) CFLAGS="$(CFLAGS) -D$(SYSTEM)" SYSTEM="$(SYSTEM)" intl
+$(LOCK_MISC_REAL) $(LOCK_P_MISC_REAL):
+	$(CD) $(OBJS)/lock && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(PYXIS_MISC) $(PYXIS_P_MISC):
+	$(CD) $(OBJS)/pyxis && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(REGISTER_MISC):
+	$(CD) $(OBJS)/register && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(REMOTE_MISC) $(REMOTE_P_MISC) $(MERGE_MISC):
+	$(CD) $(OBJS)/remote && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(SECURITY_MISC) $(SECURITY_P_MISC) $(GSEC_MISC) $(GSTAT_MISC) $(UTIL_MISC):
+	$(CD) $(OBJS)/utilities && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(ALICE_MISC):
+	$(CD) $(OBJS)/alice && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(BURP_MISC):
+	$(CD) $(OBJS)/burp && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(WAL_MISC) $(WAL_P_MISC):
+	$(CD) $(OBJS)/wal && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+source/msgs/indicator.incl:
+	$(CD) $(OBJS)/msgs && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+$(OBJS)/pipe/%:
+	$(CD) $(OBJS)/pipe && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+
+alt.j:		alt.bin
+cvt.bin:	
+	$(CP) $(VPATH)/cvt.cpp cvtfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_CVT) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) cvtfoo.cpp
+	$(MV) cvtfoo.o cvt.bin
+	-$(RM) cvtfoo.cpp cvtfoo.o
+cvt2.bin:	
+	$(CP) $(VPATH)/cvt2.cpp cvt2foo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_CVT2) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) cvt2foo.cpp
+	$(MV) cvt2foo.o cvt2.bin
+	-$(RM) cvt2foo.cpp cvt2foo.o
+dyn.bin:	dyn.cpp
+	$(CP) dyn.cpp dynfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) dynfoo.cpp
+	$(MV) dynfoo.o dyn.bin
+	-$(RM) dynfoo.cpp dynfoo.o
+dyn_def.bin: dyn_def.cpp dyn_def.sed
+	sed -f $(VPATH)/dyn_def.sed $< > dyn_deffoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) dyn_deffoo.cpp
+	$(MV) dyn_deffoo.o dyn_def.bin
+	-$(RM) dyn_deffoo.cpp dyn_deffoo.o
+dyn_del.bin:	dyn_del.cpp
+	$(CP) $< dyn_delfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) dyn_delfoo.cpp
+	$(MV) dyn_delfoo.o dyn_del.bin
+	-$(RM) dyn_delfoo.cpp dyn_delfoo.o
+dyn_mod.bin:	dyn_mod.cpp
+	$(CP) $< dyn_modfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) dyn_modfoo.cpp
+	$(MV) dyn_modfoo.o dyn_mod.bin
+	-$(RM) dyn_modfoo.cpp dyn_modfoo.o
+dyn_util.bin:	dyn_util.cpp
+	$(CP) $< dyn_utilfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_DYN) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) dyn_utilfoo.cpp
+	$(MV) dyn_utilfoo.o dyn_util.bin
+	-$(RM) dyn_utilfoo.cpp dyn_utilfoo.o
+event.bin:	event.cpp
+	$(CP) $< eventfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_EVENT) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) eventfoo.cpp
+	$(MV) eventfoo.o event.bin
+	-$(RM) eventfoo.cpp eventfoo.o
+flu_non_dl.bin:	
+	$(CP) flu.cpp flu_non_dl.cpp
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DNON_DL_COMPATIBLE flu_non_dl.cpp
+	$(MV) flu_non_dl.o flu_non_dl.bin
+	-$(RM) flu_non_dl.cpp
+gds.j:		gds.bin
+head5.bin:	head.cpp
+	$(CP) $< headfoo.cpp
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) -DGDS_PIPE=\"bin/gds_pipe5\" headfoo.cpp
+	$(MV) headfoo.o head5.bin
+	-$(RM) headfoo.cpp headfoo.o
+ib_stdio.bin:
+	$(CP) ib_stdio.cpp ib_stdiofoo.cpp
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) ib_stdiofoo.cpp
+	$(MV) ib_stdiofoo.o ib_stdio.bin
+	-$(RM) ib_stdiofoo.cpp ib_stdiofoo.o
+ini.bin:	ini.cpp
+	$(CP) $< inifoo.cpp
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_JRD_INI) inifoo.cpp
+	$(MV) inifoo.o ini.bin
+	-$(RM) inifoo.cpp inifoo.o
+isc.j:		isc.bin
+isc_file.j:	isc_file.bin
+isc_ipc.j:	isc_ipc.bin
+isc_sync.bin:	isc_sync.cpp
+	$(CP) $< iscfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_ISC) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) iscfoo.cpp
+	$(MV) iscfoo.o isc_sync.bin
+	-$(RM) iscfoo.cpp iscfoo.o
+isc_sync.j:	isc_sync.bin
+	$(CP) isc_sync.cpp iscfoo_j.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_ISC) \
+	$(CXX) -c $(PIC_J_CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) iscfoo_j.cpp
+	$(MV) iscfoo_j.o isc_sync.j
+	-$(RM) iscfoo_j.cpp iscfoo_j.o
+isc_sync.j:	isc_sync.bin
+jrd.bin:	jrd.cpp
+	$(CP) $< jrdfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_JRD) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) jrdfoo.cpp
+	$(MV) jrdfoo.o jrd.bin
+	-$(RM) jrdfoo.cpp jrdfoo.o
+par.bin:	par.cpp
+	$(CP) $< parfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_PAR) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) parfoo.cpp
+	$(MV) parfoo.o par.bin
+	-$(RM) parfoo.cpp parfoo.o
+perf.j:		perf.bin
+sdl.bin:	sdl.cpp
+	$(CP) $< sdlfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_SDL) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) sdlfoo.cpp
+	$(MV) sdlfoo.o sdl.bin
+	-$(RM) sdlfoo.cpp sdlfoo.o
+sdw.bin:	sdw.cpp
+	$(CP) $< sdwfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_SDW) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) sdwfoo.cpp
+	$(MV) sdwfoo.o sdw.bin
+	-$(RM) sdwfoo.cpp sdwfoo.o
+shrfinit.bin:	shrfinit.cpp
+shrinit.bin:	shrinit.cpp
+sqz.bin:	sqz.cpp
+	$(CP) $< sqzfoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_SQZ) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) sqzfoo.cpp
+	$(MV) sqzfoo.o sqz.bin
+	-$(RM) sqzfoo.cpp sqzfoo.o
+tra.bin:	tra.cpp
+	$(CP) $< trafoo.cpp
+	$(SPECIAL_OPT) $(COPT_JRD_TRA) \
+	$(CXX) -c $(PIC_FLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) trafoo.cpp
+	$(MV) trafoo.o tra.bin
+	-$(RM) trafoo.cpp trafoo.o
+
+# Dependancy for jrd/divorce.cpp == lock/divorce.cpp == wal/divorce.cpp 
+#  == remote/divorce.cpp
+$(SOURCE)/lock/divorce.cpp:	divorce.cpp
+	$(CP) divorce.cpp $(SOURCE)/lock/divorce.cpp
+
+$(SOURCE)/remote/divorce.cpp:	divorce.cpp
+	$(CP) divorce.cpp $(SOURCE)/remote/divorce.cpp
+
+$(SOURCE)/wal/divorce.cpp:	divorce.cpp
+	$(CP) divorce.cpp $(SOURCE)/wal/divorce.cpp
+
+# Dependancies for include files.  Inserted as a group as it is
+# easy to update them together.
+BTR_PROTO_DEP=	btr.h
+# btr_proto.h:	$(BTR_PROTO_DEP)
+#	$(TOUCH) $@
+
+CMP_PROTO_DEP=	req.h
+# cmp_proto.h:	$(CMP_PROTO_DEP)
+#	$(TOUCH) $@
+
+ERR_PROTO_DEP=	$(JRD_H) btr.h
+#err_proto.h:	$(ERR_PROTO_DEP)
+#	# $(TOUCH) $@
+
+EVENT_H_DEP=	isc.h file_params.h
+#event.h:	$(EVENT_H_DEP)
+#	$(TOUCH) $@
+
+EVERYTHING_H_DEP= $(JRD_H) lck.h ods.h cch.h all.h pio.h pag.h \
+		$(VAL_H) $(EXE_H) req.h lls.h $(RSE_H) sbm.h tra.h \
+		sqz.h blb.h btr.h jrn.h scl.h ext.h $(MET_H) \
+		sdw.h log.h $(INTL_H) intlobj.h fil.h tpc.h \
+		rng.h svc.h
+#everything.h:	$(EVERYTHING_H_DEP)
+#	$(TOUCH) $@
+
+EXE_H=		exe.h nod.h dsc.h
+# exe.h:		nod.h dsc.h
+#	$(TOUCH) $@
+IDX_PROTO_H=	idx_proto.h btr.h
+#idx_proto.h:	btr.h
+#	$(TOUCH) $@
+
+INI_H=		ini.h $(INTL_H) names.h fields.h relations.h types.h \
+		intlnames.h \
+		$(SOURCE)/intl/country_codes.h $(SOURCE)/intl/charsets.h
+#ini.h:		intl.h names.h fields.h relations.h types.h \
+#	$(TOUCH) $@
+INTL_H=		intl.h $(SOURCE)/intl/charsets.h
+#intl.h:		$(SOURCE)/intl/charsets.h
+#	$(TOUCH) $@
+
+ISC_S_PROTO_H=	isc_s_proto.h isc.h
+#isc_s_proto.h:	isc.h
+#	$(TOUCH) $@
+JRD_H=		jrd.h dsc.h $(THD_H) isc.h blk.h
+#jrd.h:		dsc.h $(THD_H) isc.h blk.h
+#	$(TOUCH) $@
+LCK_PROTO_H=	lck_proto.h lck.h
+#lck_proto.h:	lck.h
+#	$(TOUCH) $@
+MET_H=		met.h obj.h
+#met.h:		obj.h
+#	$(TOUCH) $@
+MISC_H=		misc.h dsc.h
+#misc.h:		dsc.h
+#	$(TOUCH) $@
+NAV_PROTO_H=	nav_proto.h rse.h
+#nav_proto.h:	rse.h
+#	$(TOUCH) $@
+QUAD_H=		quad.h quad_proto.h
+#quad.h:		quad_proto.h
+#	$(TOUCH) $@
+RSE_H=		rse.h dsc.h
+#rse.h:		dsc.h
+#	$(TOUCH) $@
+SCH_PROTO_H=	sch_proto.h isc.h
+#sch_proto.h:	isc.h
+#	$(TOUCH) $@
+THD_H=		thd.h isc.h
+#thd.h:		isc.h
+#	$(TOUCH) $@
+THD_PROTO_H=	thd_proto.h isc.h
+#thd_proto.h:	isc.h
+#	$(TOUCH) $@
+VAL_H=		val.h dsc.h
+#val.h:		dsc.h
+#	$(TOUCH) $@
+
+# This entry is used to programatically update the include file dependencies 
+# for all *.c files in the current directory.
+#
+# Note that it is specific to Solaris by using the -xM1 compiler option.
+# This option has CC generate dependency lines for the makefile - but
+# does not generate object files.
+# It is likely that a similar option exists on other platforms.
+#
+# It is recommended that depends.mak be created on a platform
+# that supports such an option.  depends.mak is not platform dependent, it uses
+# the standard makefile output format, as can be copied to platforms
+# that don't have a -xM1 feature in the c compiler.
+#
+depends.mak:
+	-$(RM) depends.out
+	-$(CC) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
+	-$(RM) depends.mak
+	$(ECHO) "# depends.mak - jrd"                            > depends.mak
+	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
+	date "+# Created on %Y-%m-%d"                           >> depends.mak
+	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/jrd/::g"\
+		depends.out |sort|uniq > depends.out.1
+	-$(CAT) depends.out.1 >> depends.mak
+	sed -e "s:\.o\::\.bin\::g" depends.out.1 >> depends.mak
+	-$(RM) depends.out depends.out.1 
+
+# In the event that a platform does not support the make directive "include" - 
+# concatenate "depends.mak" with the makefile.
+#
+include depends.mak
+

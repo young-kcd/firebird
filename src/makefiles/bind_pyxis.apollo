@@ -1,0 +1,120 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+pyxis.o menu.o allp.o scr.o debug.o edit.o phase3.o
+phase2.o save.o picstr.o movp.o altp.o
+adm.o  vt100.o
+-mergebss
+-binary pyxislib -exactcase
+-mark PYXIS_box
+-mark PYXIS_bugcheck
+-mark PYXIS_clone
+-mark PYXIS_compute_size
+-mark PYXIS_create_entree
+-mark PYXIS_create_object
+-mark PYXIS_create_window
+-mark PYXIS_define_forms_relation
+-mark PYXIS_delete_attribute
+-mark PYXIS_delete_named_attribute
+-mark PYXIS_delete_window
+-mark PYXIS_dump
+-mark PYXIS_dump_length
+-mark PYXIS_edit
+-mark PYXIS_error
+-mark PYXIS_find_field
+-mark PYXIS_find_index
+-mark PYXIS_find_object
+-mark PYXIS_fini
+-mark PYXIS_format_form
+-mark PYXIS_format_menu
+-mark PYXIS_get_attribute
+-mark PYXIS_get_attribute_value
+-mark PYXIS_get_char
+-mark PYXIS_get_data
+-mark PYXIS_get_updated
+-mark PYXIS_get_value
+-mark PYXIS_init
+-mark PYXIS_load
+-mark PYXIS_load_form
+-mark PYXIS_menu
+-mark PYXIS_move
+-mark PYXIS_navigate
+-mark PYXIS_pop_form
+-mark PYXIS_position
+-mark PYXIS_push_form
+-mark PYXIS_push_tag
+-mark PYXIS_put_desc
+-mark PYXIS_put_attribute
+-mark PYXIS_put_segment
+-mark PYXIS_reference
+-mark PYXIS_relation_fields
+-mark PYXIS_relation_form
+-mark PYXIS_replace_attribute
+-mark PYXIS_select
+-mark PYXIS_set_display_attribute
+-mark PYXIS_set_field_options
+-mark PYXIS_store_form
+-mark PYXIS_trace_in
+-mark PYXIS_trace_out
+-mark PYXIS_update_window
+-mark PYXIS_update
+-mark pyxis__compile_map
+-mark pyxis__compile_menu
+-mark pyxis__compile_sub_map
+-mark pyxis__create_window
+-mark pyxis__delete
+-mark pyxis__delete_window
+-mark pyxis__drive_form
+-mark pyxis__insert
+-mark pyxis__fetch
+-mark pyxis__insert
+-mark pyxis__load_form
+-mark pyxis__menu
+-mark pyxis__pop_window
+-mark pyxis__reset_form
+-mark pyxis__suspend_window
+-mark pyxis__menu
+-mark pyxis__reset_form
+-mark pyxis__compile_menu
+-mark pyxis__delete
+-mark pyxis__insert
+-mark pyxis__fetch
+-mark pyxis__compile_sub_map
+-mark pyxis__drive_menu
+-mark pyxis__get_entree
+-mark pyxis__put_entree
+-mark pyxis__initialize_menu
+-mark PYXIS_get_keyname
+-mark isc_compile_map
+-mark isc_compile_menu
+-mark isc_compile_sub_map
+-mark isc_create_window
+-mark isc_delete_window
+-mark isc_drive_form
+-mark isc_drive_menu
+-mark isc_form_delete
+-mark isc_form_fetch
+-mark isc_form_insert
+-mark isc_get_entree
+-mark isc_initialize_menu
+-mark isc_load_form
+-mark isc_menu
+-mark isc_pop_window
+-mark isc_put_entree
+-mark isc_reset_form
+-mark isc_suspend_window
+-end
+

@@ -1,0 +1,66 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+if [ "$SYS_TYPE" != "NOLINK_OS" -a "$1" != "WIN_NT" -a "$1" != "OS2" -a $1 != 'WIN_NTS' ]; then
+    if [ "$3" = "make.client" ]; then
+    sed -e "s/\$(SUPER_FLAG)/-DSUPERCLIENT/g" \
+        -e "s/\$(SYSTEM)/$1/g" \
+        -e "s/\$(VERSION)/$2/g" \
+        -e "s?\$(DB_DIR)?$DB_DIR?g" $3 > $4
+    elif [ "$3" = "make.dsql_ss" -o "$3" = "make.intl_ss" -o "$3" = "make.journal_ss" -o "$3" = "make.jrd_ss" -o "$3" = "make.lock_ss" -o "$3" = "make.remote_ss" -o "$3" = "make.wal_ss" -o "$3" = "make.burp_ss" -o "$3" = "make.alice_ss" -o "$3" = "make.utilities_ss" ]; then
+    	if [ "$1" = "HP10" -o "$1" = "LINUX" ]; then
+            sed -e "s/\$(SUPER_FLAG)/-DSUPERSERVER -D_REENTRANT/g" \
+                -e "s/\$(SYSTEM)/$1/g" \
+                -e "s/\$(VERSION)/$2/g" \
+                -e "s?\$(DB_DIR)?$DB_DIR?g" $3 > $4
+    	else
+            sed -e "s/\$(SUPER_FLAG)/-DSUPERSERVER/g" \
+                -e "s/\$(SYSTEM)/$1/g" \
+                -e "s/\$(VERSION)/$2/g" \
+                -e "s?\$(DB_DIR)?$DB_DIR?g" $3 > $4
+    	fi
+    else
+        sed -e "s/\$(SUPER_FLAG)//g" \
+            -e "s/\$(SYSTEM)/$1/g" \
+            -e "s/\$(VERSION)/$2/g" \
+            -e "s?\$(DB_DIR)?$DB_DIR?g" $3 > $4
+    fi
+elif [ "$3" != "make.interbase" -a "$3" != "build_kit" -a "$3" != "set_prot" -a "$3" != unset_prot -a "$3" != "refresh" -a "$3" != "refresh.all" ]; then
+    if [ "$1" != "WIN_NT" -a "$1" != "OS2" -a $1 != 'WIN_NTS' ]; then
+        sed -e "s/\$(SYSTEM)/$1/g" \
+            -e "s/\$(VERSION)/$2/g" \
+            -e "s?source/?../?g" \
+            -e "s?source;?..;?g" \
+            -e "s?\$(DB_DIR)?$DB_DIR?g" $3 > $4
+    else
+        sed -e "s/\$(SYSTEM)/$1/g" -e "s/\$(VERSION)/$2/g" -e "s?source/?../?g" -e "s?source;?..;?g" -e "s?source\\\\?..\\\\?g" -e "s?\$(DB_DIR)?$DB_DIR?g" -e "s?\.o?.obj?g" -e "s?/interbase/bin/?\\\\interbase\\\\bin\\\\?g" -e "s?/interbase/bin?\\\\interbase\\\\bin?g" -e "s?/interbase/lib/?\\\\interbase\\\\lib\\\\?g" -e "s?/interbase/examples/v3/?\\\\interbase\\\\examples\\\\v3^\\\\?g" -e "s?/interbase/examples/v4/?\\\\interbase\\\\examples\\\\v4^\\\\?g" -e "s?/interbase/examples/v5/?\\\\interbase\\\\examples\\\\v5^\\\\?g" -e "s?/interbase/examples/?\\\\interbase\\\\examples^\\\\?g" -e "s?\.\./examples/?..\\\\examples^\\\\?g" -e "s?\.\./example4/?..\\\\example4^\\\\?g" -e "s?\.\./example5/?..\\\\example5^\\\\?g" -e "s?/interbase/intl/?\\\\interbase\\\\intl^\\\\?g" -e "s?/interbase/?\\\\interbase^\\\\?g" -e "s/\$(COMPILER)/$COMPILER/g" $3 > $4
+    fi
+else
+    if [ "$1" != "WIN_NT" -a "$1" != "OS2" -a $1 != 'WIN_NTS' ]; then
+	sed -e "s/\$(SYSTEM)/$1/g" \
+            -e "s/\$(VERSION)/$2/g" \
+            -e "s?source/?./?g" \
+            -e "s?source;?.;?g" \
+            -e "s?\$(DB_DIR)?$DB_DIR?g" $3 > $4
+    else
+	sed -e "s/\$(SYSTEM)/$1/g" \
+            -e "s/\$(VERSION)/$2/g" \
+            -e "s?source/?./?g" \
+            -e "s?source;?.;?g" \
+            -e "s?\$(DB_DIR)?$DB_DIR?g" \
+            -e "s/\$(COMPILER)/$COMPILER/g" $3 > $4
+    fi
+fi

@@ -1,0 +1,54 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+
+@SET_MAKE@
+SOURCE=         source
+OBJS=           objs
+
+srcdir=         $(SOURCE)/extlib
+VPATH=          $(SOURCE)/extlib
+CXX=            @CXX@
+
+
+GPRE=           $(OBJS)/firebird/bin/gpre$(EXEC_EXT)
+GPRE_FLAGS=     -z -e -n
+
+FUNCLIB_DEST=	$(OBJS)/firebird/UDF
+UTIL_DEST=	$(OBJS)/firebird/lib
+SCRIPT_DEST=	$(OBJS)/firebird/examples/v5
+
+ib_util:    ib_util.o 
+	$(UDF_LINK_CMD) $(UDF_LFLAGS) ib_util.o $(UDF_SHRLIBS) -o ib_util $(UDF_UTIL_RESOLV)
+	$(CP) ib_util libib_util$(SHRLIB_EXT)
+	$(MV) ib_util $(UTIL_DEST)/ib_util$(SHRLIB_EXT)
+	$(TOUCH) ib_util
+	$(CHMOD_6) ib_util
+
+ib_util.o:       ib_util.c
+	$(CC) $(UDF_CFLAGS) -c $<
+
+ib_udf:    ib_udf.o 
+	$(UDF_LINK_CMD) $(UDF_LFLAGS) ib_udf.o -L. -lib_util $(UDF_SHRLIBS) -o ib_udf
+	mkdir -p $(FUNCLIB_DEST)
+	$(MV) ib_udf $(FUNCLIB_DEST)/ib_udf
+	$(TOUCH) ib_udf
+	$(CHMOD_6) ib_udf
+	$(CP) $(VPATH)/ib_udf.sql $(SCRIPT_DEST)/ib_udf.sql
+
+ib_udf.o:       ib_udf.c
+	$(CC) $(UDF_CFLAGS) -c $<
+

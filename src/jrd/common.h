@@ -27,7 +27,7 @@
  *                         readonly databases.
  */
 /*
-$Id: common.h,v 1.3 2001-07-12 05:46:05 bellardo Exp $
+$Id: common.h,v 1.4 2001-07-12 06:32:03 bellardo Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1482,5 +1482,8 @@ typedef struct in_sw_tab_t {
 	TEXT *in_sw_text;
 
 } *IN_SW_TAB;
+
+/* Just to be safe we will still define READONLY_DATABASE as it gets phased out */
+#define READONLY_DATABASE 1
 
 #endif /* JRD_COMMON_H */

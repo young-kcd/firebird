@@ -1,0 +1,777 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+#install script for suns
+
+#set variables (Make sure VERSION and TOTFLOPS (total number of floppies) is correct)
+VERSION=I4.1A
+TOTFLOPS=4
+CD=`pwd`
+SERVER=`hostname`
+INTERBASE=interbase
+TAPE_PREFIX=""
+PATH=/bin:/usr/bin:/usr/ucb:/etc
+export PATH
+ARCH=`arch`
+DD="dd"
+MT="mt"
+TAR="tar"
+BAR="bar"
+MV="mv -f"
+TAPE_LOC=""
+REMOTE_HOST=""
+REMOTE=0
+DEFAULT=0
+DEV_SPEC=0
+NEED_MEDIA=TRUE
+
+#
+#===================Start of script============================
+#
+echo -n "
+
+
+                InterBase Installation of $VERSION
+
+Use this script to install InterBase on either the $ARCH server $SERVER 
+or one of its clients. You must have superuser privileges.
+
+Perform the installation from:
+
+    o the server node for all nodes
+    o the server node first and then for each client node
+
+If you install for a client node, you must:
+
+    o know the name of the client node
+    o be able to execute a remote shell on the client node when 
+         logged in on the server
+
+If you install InterBase on a client that differs in architecture from its 
+server, you must know the name of the partition on the server mounted as /usr.
+
+Answer each prompt with the appropriate information or press Return to use 
+the default values that appear in brackets [ ].
+
+Continue with the installation? [y]: "
+read ANSWER
+
+if [ "$ANSWER" = "" ]
+   then
+     ANSWER=y
+fi
+
+if [ $ANSWER != "y" -a $ANSWER != "Y" ]
+   then
+     echo
+     echo "Exiting..."
+     echo 
+     exit
+fi
+                         
+#make sure they are really root
+if [ `whoami` != "root" ]
+   then 
+     echo 
+     echo "You must be root to perform this installation."
+     echo "Exiting..."
+     echo 
+     exit
+fi
+
+# and that they are installing from a server machine
+# note that this does not catch diskful client installations
+grep -s '/dev' /etc/mtab
+if [ $? != 0 ]  # aha! They don't do any local mounts, so are client NOT server
+   then
+     echo 
+     echo "You must perform this installation from the server that boots $SERVER."
+     echo "Exiting..."
+     echo
+     exit
+fi
+
+# have now checked as best as possible that they are doing stuff right, so continue...
+
+#get client/server info, link directory info
+#exit on bad server partition directory, 
+#exit on bad rsh-to-client communication
+while :
+ do
+    echo
+    echo "Is this installation for the server $SERVER, or for one of its clients?"
+    echo -n "Enter S if for $SERVER, C if for a client [S]: "
+    read TYPE
+    case $TYPE in
+        C|c)
+	   SERVER_ARCH=`arch`
+           echo
+           echo -n "Enter the node name of the client: " 
+           read CLIENT
+           ARCH=`rsh $CLIENT arch`
+           if [ $? = 1 ]
+             then
+                echo
+                echo "Could not reach $CLIENT through a remote shell to verify machine type."
+	        echo "Exiting..."
+		echo 
+                exit
+           fi
+        
+	   # Make sure server has already been installed for homogenous client
+	   if [ $ARCH = $SERVER_ARCH ]
+	      then
+		if [ ! -h /usr/interbase ]  # server's /usr/interbase must be link
+		  then
+		   echo
+	 	   echo "$SERVER does not have InterBase installed."
+		   echo "Install $SERVER before rerunning installation for $CLIENT."
+		   echo "Exiting..."
+	    	   echo
+		   exit
+	        elif [ ! -f /usr/interbase/bin/gds_inet_server ]
+		# make sure that executables are visible
+	          then
+		   echo
+	 	   echo "InterBase improperly installed on $SERVER."
+		   echo "Please reinstall $SERVER."
+		   echo "Exiting..."
+		   echo
+		   exit
+	       else
+                 joe=0	
+	       fi   # end /usr/interbase is link
+           fi   # end if homogenous client
+
+
+	   #Let user know what we are doing
+	   echo 
+	   echo "Updating network files on $CLIENT..."
+	   echo 
+
+	   #put the network update routine on the client
+	   echo '
+            if [ -f /etc/services ] ; then
+              grep -s gds_db /etc/services  
+              if [ $? != 0 ] ; then
+                 cat /etc/services /usr/interbase/services.isc > /tmp/services
+                 mv /tmp/services /etc/services
+              fi
+            fi
+            if [ -f /etc/servers ] ; then
+               grep -s gds_db /etc/servers  
+               if [ $? != 0 ]; then
+                  cat /etc/servers /usr/interbase/servers.isc > /tmp/servers
+	          mv /tmp/servers /etc/servers
+               fi
+            fi
+            if [ -f /etc/inetd.conf ] ; then
+               grep -s gds_db /etc/inetd.conf  
+               if [ $? != 0 ] ; then
+                 cat /etc/inetd.conf /usr/interbase/inetd.conf.isc > /tmp/inetd.conf 
+                 mv /tmp/inetd.conf /etc/inetd.conf
+               fi
+            fi' > /tmp/rsh_srv
+  	    rcp /tmp/rsh_srv $CLIENT:/tmp/rsh_cl
+		
+	    #run the network update script on the client, clean up
+	    rsh $CLIENT chmod 777 /tmp/rsh_cl
+	    rsh $CLIENT /tmp/rsh_cl
+	    rm /tmp/rsh_srv
+	    rsh $CLIENT rm /tmp/rsh_cl
+
+	    #run ldconfig so the client is all set
+	    rsh $CLIENT ldconfig
+	
+           #if server/client are same architecture, touch the lockfiles, then 
+	   #exit since binaries already are on the server
+
+	   if [ $ARCH = $SERVER_ARCH ]
+	      then
+                rsh $CLIENT touch /usr/interbase/gds.lock.$CLIENT
+                rsh $CLIENT chmod 777 /usr/interbase/gds.lock.$CLIENT
+
+	      # Link the old lock file name to the new one, so that
+	      # the bridge to V2 works properly.  When the lock file
+	      # name was changed, the pipe4 was not rebuilt.
+	      # Once the file are linked, the old lockfile must also
+	      # be readable and writeable by everyone.
+	      # This change is temporary, and should be removed by
+	      # next release (when we drop V2 support)
+		echo "
+	  	   if [ -f /usr/interbase/gds.lockfile.$CLIENT ] ; then
+	    	     rm -f /usr/interbase/gds.lockfile.$CLIENT
+        	   fi
+		   ln -s /usr/interbase/gds.lock.$CLIENT /usr/interbase/gds.lockfile.$CLIENT
+		   chmod 777 /usr/interbase/gds.lockfile.$CLIENT" > /tmp/ln_srv
+		rcp /tmp/ln_srv $CLIENT:/tmp/ln_cl
+		rsh $CLIENT chmod 777 /tmp/ln_cl
+		rsh $CLIENT /tmp/ln_cl
+		rm /tmp/ln_srv
+		rsh $CLIENT rm /tmp/ln_cl
+
+                # rsh $CLIENT touch /usr/interbase/isc_csv.$CLIENT
+                # rsh $CLIENT chmod 777 /usr/interbase/isc_csv.$CLIENT
+                rsh $CLIENT touch /usr/interbase/isc_event.gbl.$CLIENT         
+                rsh $CLIENT chmod 777 /usr/interbase/isc_event.gbl.$CLIENT
+		echo
+		echo "Installation for $CLIENT complete.  Please reboot $CLIENT"
+		echo "before registering it with Borland International, Inc."
+		exit
+	   fi
+
+	   #non-homogenous network--get /usr partition for client
+	   echo
+   	   echo  -n "Enter the partition on $SERVER that is mounted as /usr 
+for $CLIENT [/export/exec/$ARCH]: "
+   	   read LINKDIR
+	   if [ "$LINKDIR" = "" ]
+	      then
+	         LINKDIR=/export/exec/$ARCH
+	   fi
+
+	   if [ ! -d $LINKDIR ]
+   	      then 
+		 echo
+   	         echo "$LINKDIR: No such directory found on $SERVER."
+   	         echo "Exiting..."
+		 echo
+   	         exit
+ 	   fi
+	   break
+	;;  # END of case C|c
+
+	S|s|"")
+	   #Server installation, LINKDIR set to /usr
+	   LINKDIR=/usr
+	   TYPE=S
+	   break
+	;;   # END of case S|s
+
+	*)
+	   echo
+	   echo "Enter C for client installation, S for server installation."
+	   echo
+	;;
+      esac
+   done
+
+
+# get directory of where user wants the interbase tree
+echo
+echo -n \
+"This installation will create the directory tree $INTERBASE/${ARCH}_$VERSION 
+under the root directory most appropriate for your installation.  Enter the 
+root directory you wish to use [/home/$SERVER]: "
+
+read ROOT
+
+if [ "$ROOT" = "/usr" ]
+then
+    echo ""
+    echo "Interbase cannot be installed as /usr/interbase, it can"
+    echo "however be installed into /usr/ibase/interbase with"
+    echo "/usr/interbase linked to it if it must be installed"
+    echo "in the /usr partition."
+    echo ""
+    echo -n "Do you wish to continue? [Y]: "
+    read answer
+    if [ "$answer" = "n" -o "$answer" = "N" ]
+    then
+        exit
+    fi
+    if [ ! -d /usr/ibase ]
+    then
+        mkdir /usr/ibase
+    fi
+    ROOT=/usr/ibase
+fi
+
+if [ "$ROOT" = "" ]
+then
+    ROOT=/home/$SERVER
+fi	
+
+# now know everything we need to about where to put executables
+IB_PATH=$ROOT/$INTERBASE/${ARCH}_$VERSION
+
+
+# Check to see if machine is already installed
+# If server machine, find out if they want to overwrite
+# Otherwise, for heterogenous client, silently use directory that is there, since
+#    it is probably there for another client of same type
+if [ -d $IB_PATH ]
+   then
+     if [ $TYPE = s -o $TYPE = S ]
+       then
+	echo
+	echo "$SERVER has already had $VERSION installed."
+	echo "Do you want to overwrite the directory?"
+	echo -n "Enter Y to overwrite, N to exit [N]: "
+
+	read ANSWER
+	if [ "$ANSWER" = "" ]
+	   then
+	     ANSWER=n
+	fi
+	if [ $ANSWER != "y" -a $ANSWER != "Y" ]
+	   then
+	     echo
+	     echo "Exiting..."
+	     echo 
+	     exit
+	fi
+     else
+	NEED_MEDIA=FALSE  # won't need to read in the tape
+     fi  # end if type server
+fi # end if IB_PATH exists as a directory
+
+if [ $NEED_MEDIA = TRUE ] ; then 
+  # Will need media, so set up name of tape, and then find out if local or remote
+  if [ $ARCH = "sun3" ] ; then
+    TAPE_PREFIX="S3-"
+  elif [ $ARCH = "sun4" ] ; then
+    TAPE_PREFIX="S4-"
+  else [ $ARCH = "sun386" ]
+    TAPE_PREFIX="SI-"
+  fi
+
+  while [ "$TAPE_LOC" =  "" ]
+  do
+    if [ $REMOTE -eq 0 ]
+    then
+	echo
+        echo "Is the media drive local or remote to $SERVER?  "
+        echo -n "Enter L for local or R for remote [L]: "
+        read TAPE_LOC
+    else
+        TAPE_LOC="remote"
+    fi
+    case "$TAPE_LOC" in 
+        R|r) if [ "$REMOTE_HOST" = "" ]
+                then
+                        echo -n "Enter the hostname of the remote drive: "
+                        read REMOTE_HOST
+                        echo 
+                        REMOTE=1
+             fi
+             rsh -n  $REMOTE_HOST "echo 0 > /dev/null"
+             if [ "$?" -ne 0 ]
+                then
+                     echo "$0: Problem with reaching remote host $REMOTE_HOST."
+		     echo "Exiting..."
+		     echo
+                     exit 1
+             fi
+	;;
+        L|l|"") TAPE_LOC="local"
+	;;
+        *) 
+	   echo
+	   echo "Enter L for local media drive, R for remote media drive."
+	   echo
+           TAPE_LOC="" 
+	;;
+    esac
+  done
+
+  #query about media, tar in the distribution
+  while :
+  do
+	echo
+  	echo "Are you installing via floppy or cartridge? "
+	echo -n "Enter F for Floppy, C for Cartridge [C]: "
+
+	read MEDIA
+
+	   case $MEDIA in
+	    C|c|"")
+		MEDIA=C
+		echo
+ 	        echo -n "Enter Cartridge device name [rst0]: "
+	        read DEVICE
+                if [ "$DEVICE" != "" -a ! -c /dev/$DEVICE ]
+                  then
+		  echo -n "/dev/$DEVICE not a device. Please try again [rst0]: "
+		  read DEVICE
+                fi
+	        if [ "$DEVICE" = "" -o ! -c /dev/$DEVICE ]
+		  then
+		  DEVICE=rst0
+                fi
+		echo
+	        echo "		Using /dev/$DEVICE."
+		break
+    	    ;;   # end of case media = cartridge
+	    F|f)
+		MEDIA=F
+	        if [ $REMOTE -eq 1 ]
+		   then
+		   echo "Before you continue, you must have created an on-disk bar"
+		   echo "file containing the InterBase files."
+		   echo ""
+		   echo "Do you wish to continue?"
+		   echo -n "Enter Y to continue, or N to exit [N]:"
+		   read ANSWER
+		   if [ "$ANSWER" = "" ]
+		      then
+		      ANSWER=n
+		   fi
+		   if [ $ANSWER != "y" -a $ANSWER != "Y" ]
+		   then
+		     echo
+		     echo "Exiting..."
+		     echo 
+		     exit
+		   fi
+
+    	   	   # user answered yes, so get the filename
+    	           while :
+                     do 
+		     echo -n "Enter the name of the bar file that contains the InterBase files: "
+	             read BARFILE
+		     if [ ! -f $BARFILE ]   # file given does not exist
+		      then
+		      echo
+	              echo "$BARFILE does not exist.  Do you wish to continue?"
+		      echo -n "Enter Y to continue, or N to exit [N]:"
+   		      read ANSWER
+		      if [ "$ANSWER" = "" ]
+		        then
+		         ANSWER=n
+		      fi
+		      if [ $ANSWER != "y" -a $ANSWER != "Y" ]
+		        then
+		         echo
+		         echo "Exiting..."
+			 echo
+		         exit
+		      fi
+                     else
+		       break  # file does exist, so go on
+		     fi  # end of file given does not exist
+                     done  # end of while
+		else #LOCAL floppy
+		  echo
+	          echo -n "Enter Floppy device name [rfd0c]: "
+	          read DEVICE
+                  if [ "$DEVICE" != "" -a ! -c /dev/$DEVICE ]
+                    then
+		    echo -n "/dev/$DEVICE not a device. Please try again [rfd0c]: "
+		    read DEVICE
+                  fi
+	          if [ "$DEVICE" = "" -o ! -c /dev/$DEVICE ]
+		    then
+		    DEVICE=rfd0c
+                 fi	
+		  echo
+  	          echo "	Using /dev/$DEVICE."
+	        fi  #end of REMOTE floppy
+		break
+	    ;;
+    	    *)   # user answered something other than F or C
+	        	echo
+                	echo -n "Enter F for Floppy, C for Cartridge [C]."
+			echo
+    	    ;;
+           esac  # end case of media type
+  done  # end do loop around getting media type
+fi # end if NEED_MEDIA = TRUE
+
+#check to see if $LINKDIR/interbase exists as a directory or file
+#exit unless it is a link; if it is a link, remake it
+
+if [ -h $LINKDIR/interbase ]
+   then
+      rm -f $LINKDIR/interbase
+   else             
+     if [ -f $LINKDIR/interbase -o -d $LINKDIR/interbase ]
+	then
+	echo
+        echo "$LINKDIR/interbase exists as a file or directory.  Please move or
+remove the file/directory, and then run the install script again."
+	echo "Exiting..."
+	echo
+   	exit
+      fi
+fi
+
+# go ahead and start setting up the disk structure
+# put some spaces around this to make it more visible
+echo
+if [ ! -d $IB_PATH ]
+   then
+     if [ ! -d $ROOT ]
+        then
+	echo
+       	echo "$ROOT does not exist...creating it."
+	mkdir $ROOT
+     fi
+     if [ ! -d $ROOT/$INTERBASE ]
+	then
+	echo "$ROOT/$INTERBASE does not exist...creating it."
+        mkdir $ROOT/$INTERBASE
+     fi
+     if [ ! -d $ROOT/$INTERBASE/${ARCH}_$VERSION ]
+	then
+	echo "$ROOT/$INTERBASE/${ARCH}_$VERSION does not exist...creating it."
+	mkdir $ROOT/$INTERBASE/${ARCH}_$VERSION
+     fi
+     cd $IB_PATH
+   else
+     cd $IB_PATH
+fi
+echo
+
+#explicitly set the permissions on the interbase directory and link it in
+chmod 777 $IB_PATH
+ln -s $IB_PATH $LINKDIR/interbase
+
+# now we are all set to go out and actually get stuff off the media (if needed)
+if [ $NEED_MEDIA = TRUE ] ; then 
+  case $MEDIA in
+    C)
+	DEVPATH=/dev/n$DEVICE
+	BS=126
+        echo
+        echo "Insert the tape labeled ${TAPE_PREFIX}${VERSION} into the drive."
+        echo "Press Return to continue"
+        read ANSWER  # doesn't matter what they said, as long as they typed something
+        echo "Reading files from media..."
+        echo
+
+	if [ $REMOTE -eq 1 ]
+	  then
+	   rsh -n  $REMOTE_HOST $MT -f $DEVPATH rew
+	   if [ "$?" -ne 0 ]
+		then
+	 	echo $0 : Error rewinding tape.
+		echo "Exiting..."
+		echo
+		exit 1
+	   fi
+	   rsh -n  $REMOTE_HOST $MT -f $DEVPATH fsf 1
+	   if [ "$?" -ne 0 ]
+		then
+		echo $0 : Error positioning the tape.
+		echo "Exiting..."
+		echo
+		exit 1
+	   fi
+	   rsh -n $REMOTE_HOST $DD if=$DEVPATH bs=${BS}b | $TAR xBvfb - ${BS}
+	   if [ "$?" -ne 0 ]
+		then
+		echo $0 : This tape is missing the Interbase files.
+		echo "Exiting..."
+		echo
+		exit 1
+	   fi
+	   rsh -n  $REMOTE_HOST $MT -f $DEVPATH rew
+	else  # media is local
+	   BS=
+	   $MT -f $DEVPATH rew
+	   $MT -f $DEVPATH fsf 1
+	   $TAR xvf $DEVPATH $BS
+	   if [ "$?" -ne 0 ]
+	        then
+	        echo
+	        echo $0 : This tape is missing the Interbase files.
+		echo "Exiting..."
+		echo
+	        exit 1
+	   fi
+	   $MT -f $DEVPATH rew
+	fi    #end if $REMOTE -eq 1
+	break   
+	;;   # end of case media = cartridge
+    F|f)
+        if [ $REMOTE -eq 1 ]
+	   then
+	   DEVPATH=$BARFILE
+	   BS=
+	   $BAR xvZf ${DEVPATH} ${BS}
+	   if [ "$?" -ne 0 ]
+	          then
+	          echo
+	          echo $0 : This file is missing the Interbase files.
+		  echo "Exiting..."
+		  echo
+	          exit 1
+	   fi
+	else  # media is local
+	   DEVPATH=/dev/$DEVICE
+	   BS=
+	   echo
+	   echo "Insert the floppy labeled:"
+	   echo "    \"${TAPE_PREFIX}${VERSION} disk 1 of $TOTFLOPS\""
+	   echo "into the drive."
+           echo "Press Return to continue"
+           read ANSWER  # doesn't matter what they said, they typed something
+           echo "Reading files from media..."
+           $BAR xvZf ${DEVPATH} ${BS}
+	   if [ "$?" -ne 0 ]
+		  then
+		  echo
+		  echo $0 : This tape is missing the Interbase files.
+		  echo "Exiting..."
+		  echo
+		  exit 1
+	   fi
+	   eject ${DEVPATH}
+	fi  # end if REMOTE -eq 1
+	break  
+	;;  # end case media = floppy
+  esac  # end case of media type
+fi # end of if NEED_MEDIA is TRUE
+
+# Link standard include file to $LINKDIR/include (/usr/include)
+rm -f $LINKDIR/include/gds.h
+rm -f $LINKDIR/include/ibase.h
+ln -s /usr/interbase/include/gds.h $LINKDIR/include/gds.h
+ln -s /usr/interbase/include/ibase.h $LINKDIR/include/ibase.h
+
+# Move pipe and full libraries to $LINKDIR/lib (/usr/lib)
+# and re-initialize table of contents
+rm -f $LINKDIR/lib/libgds.a $LINKDIR/lib/libgds_b.a
+rm -f $LINKDIR/lib/libgds_pyxis.a $LINKDIR/lib/libgdslib.so.0.0
+rm -f $LINKDIR/lib/libgdslib.so.0.1 $LINKDIR/lib/libgdsflib.so.0.0
+rm -f $LINKDIR/lib/libgdslib.so.1.0 $LINKDIR/lib/libgdsintl.so.0.0
+ln -s /usr/interbase/lib/gds.a $LINKDIR/lib/libgds.a
+if [ -f /usr/interbase/lib/gds_b.a ]; then
+    ln -s /usr/interbase/lib/gds_b.a $LINKDIR/lib/libgds_b.a
+fi
+ln -s /usr/interbase/lib/gds_pyxis.a $LINKDIR/lib/libgds_pyxis.a
+ln -s /usr/interbase/lib/gdslib.so.0.1 $LINKDIR/lib/libgdslib.so.0.1
+ln -s /usr/interbase/lib/gdslib.so.1.0 $LINKDIR/lib/libgdslib.so.1.0
+ln -s /usr/interbase/lib/gdsflib.so.0.0 $LINKDIR/lib/libgdsflib.so.0.0
+ln -s /usr/interbase/lib/gdsintl $LINKDIR/lib/libgdsintl.so.0.0
+
+# Create node-specific files for locking, the central server and events
+if [ $TYPE = s -o $TYPE = S ]
+   then
+        touch gds.lock.$SERVER
+        chmod 777 gds.lock.$SERVER
+
+      # Link the old lock file name to the new one, so that
+      # the bridge to V2 works properly.  When the lock file
+      # name was changed, the pipe4 was not rebuilt.
+      # Once the file are linked, the old lockfile must also
+      # be readable and writeable by everyone.
+      # This change is temporary, and should be removed by
+      # next release (when we drop V2 support)
+  	if [ -f gds.lockfile.$SERVER ] ; then
+    	  rm -f gds.lockfile.$SERVER
+       	fi
+        ln -s gds.lock.$SERVER gds.lockfile.$SERVER
+        chmod 777 gds.lockfile.$SERVER
+
+        # touch isc_csv.$SERVER
+        # chmod 777 isc_csv.$SERVER
+        touch isc_event.gbl.$SERVER
+        chmod 777 isc_event.gbl.$SERVER
+   else
+	rsh $CLIENT touch /usr/interbase/gds.lock.$CLIENT
+	rsh $CLIENT chmod 777 /usr/interbase/gds.lock.$CLIENT
+
+      # Link the old lock file name to the new one, so that
+      # the bridge to V2 works properly for this config, too.  
+	echo "
+  	   if [ -f /usr/interbase/gds.lockfile.$CLIENT ] ; then
+    	     rm -f /usr/interbase/gds.lockfile.$CLIENT
+       	   fi
+	   ln -s /usr/interbase/gds.lock.$CLIENT /usr/interbase/gds.lockfile.$CLIENT
+	   chmod 777 /usr/interbase/gds.lockfile.$CLIENT" > /tmp/ln_srv
+	rcp /tmp/ln_srv $CLIENT:/tmp/ln_cl
+	rsh $CLIENT chmod 777 /tmp/ln_cl
+	rsh $CLIENT /tmp/ln_cl
+	rm /tmp/ln_srv
+	rsh $CLIENT rm /tmp/ln_cl
+
+        # rsh $CLIENT touch /usr/interbase/isc_csv.$CLIENT               
+        # rsh $CLIENT chmod 777 /usr/interbase/isc_csv.$CLIENT
+        rsh $CLIENT touch /usr/interbase/isc_event.gbl.$CLIENT
+        rsh $CLIENT chmod 777 /usr/interbase/isc_event.gbl.$CLIENT
+fi
+
+echo
+echo -n "Building Interbase sample databases and checking system
+network files.  Depending on your machine configuration, this may take 
+from 2 to 10 minutes. "
+echo
+# protect examples and QLI help database
+#
+if [ $TYPE = s -o $TYPE = S ]
+   then
+	/usr/etc/ldconfig
+        chmod uog=rw $IB_PATH/isc4.gdb
+        chmod uog=rw $IB_PATH/help/help.gdb
+        chmod uog=rw $IB_PATH/examples/v3/atlas.gdb
+        chmod uog=rw $IB_PATH/examples/v3/emp.gdb
+        chmod uog=rw $IB_PATH/examples/v4/employee.gdb
+        chmod uog=rw $IB_PATH/examples/v4/intlemp.gdb
+   else
+	rsh $CLIENT /usr/etc/ldconfig
+        #if not installed from media dbs will already be there, so 
+	# only do if need_media is true
+        if [ $NEED_MEDIA = TRUE ] 
+          then 
+	   chmod uog=rw $IB_PATH/isc4.gdb
+	   chmod uog=rw $IB_PATH/help/help.gdb
+	   chmod uog=rw $IB_PATH/examples/v3/atlas.gdb
+	   chmod uog=rw $IB_PATH/examples/v3/emp.gdb
+	   chmod uog=rw $IB_PATH/examples/v4/employee.gdb
+	   chmod uog=rw $IB_PATH/examples/v4/intlemp.gdb
+	fi  #end if needed media
+fi  # end if type is server
+
+#On a server installation, run the network updates locally
+if [ $TYPE = s -o $TYPE = S ]
+   then
+	#
+	# If TCP is installed, update both services and servers databases
+	#
+	if [ -f /etc/services ] ; then
+	    grep -s gds_db /etc/services  
+	    if [ $? != 0 ] ; then
+	        cat /etc/services services.isc > services
+		mv services /etc/services
+	    fi
+	fi
+	if [ -f /etc/servers ] ; then
+	    grep -s gds_db /etc/servers  
+	    if [ $? != 0 ] ; then
+	        cat /etc/servers servers.isc > servers
+		mv servers /etc/servers
+	    fi
+	fi
+	if [ -f /etc/inetd.conf ] ; then
+	    grep -s gds_db /etc/inetd.conf  
+	    if [ $? != 0 ] ; then
+	        cat /etc/inetd.conf inetd.conf.isc > inetd.conf 
+		mv inetd.conf /etc/inetd.conf
+	    fi
+	fi
+fi  # end if type is server
+	
+echo
+echo
+echo "This completes the InterBase installation script.  To use InterBase,
+you must register each installed node with Borland International, Inc.
+See the "Installing InterBase on the SUN" installation guide for complete
+information on registering your installation.
+
+Also, please be sure to reboot the node that you have installed on."

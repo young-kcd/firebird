@@ -1,0 +1,63 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+@SET_MAKE@
+SOURCE=         source
+OBJS=           objs
+
+srcdir=         $(SOURCE)/dbs
+VPATH=          $(SOURCE)/dbs
+CXX=            @CXX@
+
+# If we export the username/password we get an error because we can't connect
+# to isc4.gdb!  So we won't export them while we make the databases...
+unexport ISC_USER
+unexport ISC_PASSWORD
+export DYLD_FRAMEWORK_PATH
+DYLD_FRAMEWORK_PATH=	$(OBJS)/firebird
+
+CXX_INCLUDE_DIRS=       -I. -Isource/jrd -I-
+
+GBAK_STATIC=	$(OBJS)/firebird/bin/gbak_static$(EXEC_EXT)
+CREATE_DB=	$(OBJS)/firebird/bin/create_db$(EXEC_EXT)
+
+empty.gdb.dummy:	$(CREATE_DB)
+	$(RM) -f empty.gdb empty.gdb.dummy
+	$(CREATE_DB) empty.gdb
+	touch $@
+	chmod 444 empty.gdb
+
+forms.gdb.dummy:	$(SOURCE)/pyxis/forms.gbk
+	$(GBAK_STATIC) -MODE read_only -R $< forms.gdb
+	chmod 444 forms.gdb
+	touch $@
+
+msg.gdb.dummy:	$(SOURCE)/msgs/msg.gbak
+	$(GBAK_STATIC) -MODE read_only -R $< msg.gdb
+	chmod 444 msg.gdb
+	touch $@
+
+help.gdb.dummy:	$(SOURCE)/misc/help.gbak
+	$(GBAK_STATIC) -MODE read_only -R $< help.gdb
+	chmod 444 help.gdb
+	touch $@
+
+metadata.gdb.dummy:	$(SOURCE)/misc/metadata.gbak
+	$(GBAK_STATIC) -MODE read_only -R $< metadata.gdb
+	chmod 444 metadata.gdb
+	touch $@
+
+force:

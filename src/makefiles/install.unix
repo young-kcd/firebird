@@ -1,0 +1,244 @@
+#!/bin/ksh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+#
+# 07-Nov-2000  nmcc@users.sourceforge.net - Firebird 0.9
+#              Remove creation of license file and Interclient install.
+#              Overwrite real services and inetd.conf files rather than
+#              break the links on Solaris.
+#                            
+# /usr/interbase/install	-- Install InterBase
+#
+# The install script looks for the server
+# executable and decides if the install is for superserver or classic.
+# 
+# Make changes for allowing the install directory to be dependent on 
+# $INTERBASE.
+#
+#
+
+OLD_INTERBASE=$INTERBASE
+
+if [ "$INTERBASE" = "" ]; then
+    INTERBASE="/usr/interbase"
+fi
+
+PATH=$PATH:/usr/ucb:/usr/bsd
+export PATH
+HOSTNAME=`hostname | cut -d. -f1`
+if [ -f $INTERBASE ]; then
+    echo $INTERBASE is not a directory 
+    echo InterBase installation failed 
+    exit 1
+fi
+if [ -d $INTERBASE ]; then
+    cd $INTERBASE
+    TARGET=`pwd`
+else
+     echo invalid interbase installation directory $INTERBASE
+     exit 1
+fi
+if [ -f $INTERBASE/bin/ibserver ]; then
+    SUPERSERVER="SUPERSERVER"
+    if [ "$OLD_INTERBASE" = "" ] ; then
+        ln -s $INTERBASE /usr/interbase
+    fi
+else
+    SUPERSERVER=""
+#   need the link in classic as isc4.gdb is not moved.
+	if [ $INTERBASE != "/usr/interbase" ]
+	then
+		ln -s  $INTERBASE /usr/interbase
+	fi
+fi
+#set -x
+#
+# Make sure the top level (/usr/interbase) is 777
+#
+chmod 777 .
+#
+# Move standard include file to /usr/include
+#
+rm -f /usr/include/gds.h
+rm -f /usr/include/ibase.h
+rm -f /usr/include/iberror.h
+rm -f /usr/include/ib_util.h
+ln -s $INTERBASE/include/gds.h /usr/include/gds.h
+ln -s $INTERBASE/include/ibase.h /usr/include/ibase.h
+ln -s $INTERBASE/include/iberror.h /usr/include/iberror.h
+ln -s $INTERBASE/include/ib_util.h /usr/include/ib_util.h
+# 
+# Move pipe and full libraries to /usr/lib and re-initialize table of contents
+#
+rm -f /usr/lib/libgds_b.a
+if [ -f lib/gds_b.a ]; then
+    ln -s $INTERBASE/lib/gds_b.a /usr/lib/libgds_b.a
+fi
+if [ -f lib/gds.a ]; then
+    rm -f /usr/lib/libgds.a
+    ln -s $INTERBASE/lib/gds.a /usr/lib/libgds.a
+fi
+if [ -f lib/gds.sl ]; then
+    rm -f /usr/lib/libgds.sl
+        ln -s $INTERBASE/lib/gds.sl /usr/lib/libgds.sl
+fi
+if [ -f lib/gdsshr.a ]; then
+    rm -f /usr/lib/libgdsshr.a
+    ln -s $INTERBASE/lib/gdsshr.a /usr/lib/libgdsshr.a
+fi
+if [ -f lib/gds_s.a ]; then
+    rm -f /usr/lib/libgds_s
+    rm -f /usr/lib/libgds_s.a
+    rm -f /usr/lib/libgdsf_s
+    rm -f /usr/lib/libgdsf_s.a
+    ln -s $INTERBASE/lib/gds_s /usr/lib/libgds_s
+    ln -s $INTERBASE/lib/gds_s.a /usr/lib/libgds_s.a
+    ln -s $INTERBASE/lib/gdsf_s /usr/lib/libgdsf_s
+    ln -s $INTERBASE/lib/gdsf_s.a /usr/lib/libgdsf_s.a
+fi
+if [ -f lib/gds.so.0 ]; then
+    if [ -d /usr/shlib ]; then
+        rm -f /usr/shlib/libgds.so
+        rm -f /usr/shlib/libgds.so.0
+        ln -s $INTERBASE/lib/gds.so.0 /usr/shlib/libgds.so.0
+        ln -s /usr/shlib/libgds.so.0 /usr/shlib/libgds.so
+    else
+        rm -f /usr/lib/libgds.so
+        rm -f /usr/lib/libgds.so.0
+        ln -s $INTERBASE/lib/gds.so.0 /usr/lib/libgds.so.0
+        ln -s /usr/lib/libgds.so.0 /usr/lib/libgds.so
+    fi
+fi
+# This is only for solaris
+if [ -f lib/gdsmt.so.0 ]; then
+    rm -f /usr/lib/libgdsmt.so
+    rm -f /usr/lib/libgdsmt.so.0
+    ln -s $INTERBASE/lib/gdsmt.so.0 /usr/lib/libgdsmt.so.0
+    ln -s /usr/lib/libgdsmt.so.0 /usr/lib/libgdsmt.so
+fi
+if [ -f lib/gdsf.so ]; then
+    rm -f /usr/lib/libgdsf.so
+    ln -s $INTERBASE/lib/gdsf.so /usr/lib/libgdsf.so
+fi
+if [ -f lib/gds_pyxis.a ]; then
+    rm -f /usr/lib/libgds_pyxis.a
+    ln -s $INTERBASE/lib/gds_pyxis.a /usr/lib/libgds_pyxis.a
+fi
+if [ -f lib/ib_util.sl ]; then
+    rm -f /usr/lib/libib_util.sl
+        ln -s $INTERBASE/lib/ib_util.sl /usr/lib/libib_util.sl
+fi
+if [ -f lib/ib_util.so ]; then
+    rm -f /usr/lib/libib_util.so
+        ln -s $INTERBASE/lib/ib_util.so /usr/lib/libib_util.so
+fi
+#
+# Protect security, examples and QLI help databases
+#
+chmod uog=rw isc4.gdb
+chmod uog=rw help/help.gdb
+#chmod uog=rw examples/employee.gdb
+#chmod uog=rw examples/intlemp.gdb
+if [ "$SUPERSERVER" = "SUPERSERVER" ]; then
+    chmod 4755 $INTERBASE/bin/gstat
+fi
+#
+# If TCP is installed, update both services and servers databases
+#
+HUPNEEDED='n'	# Relevant to Classic only
+if [ -f /etc/services ]; then
+    grep -s gds_db /etc/services  > /dev/null 2>&1
+    if test $? != 0 ; then
+		HUPNEEDED='y'
+        cat /etc/services services.isc > services
+		if [ -f /etc/inet/services ]; then
+			# /etc/services will be a link on Solaris
+			mv services /etc/inet/services
+		else 
+			mv services /etc/services
+    	fi
+	fi
+fi
+if [ -f /etc/inetd.conf ]; then
+    if [ "$SUPERSERVER" = "SUPERSERVER" ]; then
+		# Remove gds_db service. We do not want gds_inet_server to be invoked
+		cat /etc/inetd.conf | grep -v gds_db > inetd.conf
+		if [ -f /etc/inet/inetd.conf ]; then 
+			mv inetd.conf /etc/inet/inetd.conf
+		else	
+			mv inetd.conf /etc/inetd.conf
+		fi
+    else
+	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
+	if test $? != 0 ; then
+	    HUPNEEDED='y'
+	    cat /etc/inetd.conf inetd.conf.isc > inetd.conf
+		if [ -f /etc/inet/inetd.conf ]; then 
+			# /etc/inetd.conf a link
+	    	mv inetd.conf /etc/inet/inetd.conf
+		else	
+	    	mv inetd.conf /etc/inetd.conf
+		fi
+	fi
+    fi
+fi
+if [ -f /usr/etc/inetd.conf ]; then
+    if [ "$SUPERSERVER" = "SUPERSERVER" ]; then
+	# Remove gds_db service. We do not want gds_inet_server to be invoked
+	cat /usr/etc/inetd.conf | grep -v gds_db > inetd.conf
+	mv inetd.conf /usr/etc/inetd.conf
+    else
+	grep -s gds_db /usr/etc/inetd.conf  > /dev/null 2>&1
+	if test $? != 0 ; then
+	    HUPNEEDED='y'
+	    cat /usr/etc/inetd.conf inetd.conf.isc > inetd.conf
+	    mv inetd.conf /usr/etc/inetd.conf
+	fi
+    fi
+fi
+
+# Currently SCO is the only classic for 5.5, add other platforms 
+# later as required 
+# 07-Nov-2000 Solaris as well
+OSNAME=`uname -s`
+if [ "$OSNAME" = "SCO_SV" -o "$OSNAME" = "SunOS" ] 
+then
+	if [ "$HUPNEEDED" = 'y' ]
+	then
+		INETPID=`ps -e | grep inetd | awk '{print $1}'`
+		kill -HUP $INETPID
+	fi
+fi
+
+set +x
+
+if [ "$SUPERSERVER" = "SUPERSERVER" ]; then
+#
+# create the ibmgr shell script
+#
+cat > $INTERBASE/bin/ibmgr << EOF
+#!/bin/sh
+INTERBASE=$INTERBASE
+export INTERBASE
+exec $INTERBASE/bin/ibmgr.bin \$@
+EOF
+
+chmod +x $INTERBASE/bin/ibmgr
+fi
+
+echo "done."
+

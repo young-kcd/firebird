@@ -1,0 +1,76 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+interface.o
+allr.o
+inet.o
+merge.o
+protocol.o
+parse.o
+remote.o
+ambx.o
+xdr.o
+source/jrd/node.o
+source/jrd/isc.o
+source/jrd/sdl.o
+-loadhigh
+-mergebss
+-binary remotelib -exactcase
+-mark AMBX_set_debug
+-mark REM_attach_database
+-mark REM_blob_info
+-mark REM_cancel_blob
+-mark REM_close_blob
+-MARK REM_commit_transaction
+-MARK REM_compile_request
+-mark REM_create_blob2
+-MARK REM_create_database
+-MARK REM_database_info
+-MARK REM_detach_database
+-mark REM_get_segment
+-mark REM_open_blob2
+-mark REM_prepare_transaction
+-mark REM_put_segment
+-MARK REM_receive
+-MARK REM_release_request
+-MARK REM_request_info
+-MARK REM_reconnect_transaction
+-MARK REM_rollback_transaction
+-MARK REM_seek_blob
+-MARK REM_send
+-MARK REM_start_and_send
+-MARK REM_start_request
+-MARK REM_start_transaction
+-MARK REM_transaction_info
+-MARK REM_unwind_request
+-MARK REM_que_events
+-MARK REM_cancel_events
+-MARK REM_commit_retaining
+-MARK REM_ddl
+-mark REM_get_slice
+-mark REM_put_slice
+{DSQL entry points}
+-mark REM_declare
+-mark REM_execute
+-mark REM_execute_immediate
+-mark REM_fetch
+-mark REM_open
+-mark REM_prepare
+-mark REM_release
+-mark REM_close
+-mark REM_describe
+-mark REM_describe_bind
+-end

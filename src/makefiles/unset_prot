@@ -1,0 +1,254 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+# Shell script to unset the protections on files in
+# the installation directory
+PATH=$PATH:/etc:/bin:/usr/ucb
+export PATH
+if [ $# != 1 -a $# != 2 ]; then
+    echo 'Usage: unset_prot {user} [group]'
+    exit 1
+fi
+if [ $# = 1 ]; then
+    GROUP=gds
+else
+    GROUP=$2
+fi
+
+if [ ! -d SCO -a ! -d DELTA -a ! -d DG  -a ! -d SCO_EV ]; then
+    RUNNER=`whoami`
+    if [ ! -z "$RUNNER" ]; then
+        if [ "$RUNNER" != "root" -a "$RUNNER" != $1 ]; then
+            echo 'unset_prot must be run as "root" or super user'
+            exit 1
+        fi
+    else
+        echo 'unset_prot must be run as "root" or super user'
+        exit 1
+    fi
+fi
+set -x
+cd source/interbase
+chown $1		\
+	.		\
+	bin examples examples/v3 examples/v4 examples/v5 help include intl lib \
+	bin/*		\
+	examples/v3/*	\
+	examples/v4/*	\
+	examples/v5/*	\
+	help/*		\
+	include/*	\
+	intl/*		\
+	lib/*		\
+	inetd.conf.isc	\
+	install		\
+	interbase.msg	\
+	isc4.gdb	\
+	services.isc
+
+chgrp $GROUP		\
+	.		\
+	bin examples examples/v3 examples/v4 examples/v5 help include intl lib \
+	bin/*		\
+	examples/v3/*	\
+	examples/v4/*	\
+	examples/v5/*	\
+	help/*		\
+	include/*	\
+	intl/*		\
+	lib/*		\
+	inetd.conf.isc	\
+	install		\
+	interbase.msg	\
+	isc4.gdb	\
+	services.isc
+
+if [ -d Firebird.framework ]
+	chown -R $1 Firebird.framework
+	chgrp -R $GROUP Firebird.framework
+fi
+
+
+chmod ug=rwx install bin/* lib/* intl/*
+
+chmod ug=rw	\
+	examples/v3/*	\
+	examples/v4/*	\
+	examples/v5/*	\
+	help/*		\
+	include/*	\
+	inetd.conf.isc	\
+	interbase.msg	\
+	services.isc
+
+if [ -d Firebird.framework ]; then
+	chmod 775 	\
+		Firebird.framework \
+		Firebird.framework/Versions \
+		Firebird.framework/Versions/A \
+		Firebird.framework/Versions/A/Resources \
+		Firebird.framework/Versions/A/Resources/bin \
+		Firebird.framework/Versions/A/Resources/examples \
+		Firebird.framework/Versions/A/Resources/examples/v3 \
+		Firebird.framework/Versions/A/Resources/examples/v4 \
+		Firebird.framework/Versions/A/Resources/examples/v5 \
+		Firebird.framework/Versions/A/Resources/English.lproj \
+		Firebird.framework/Versions/A/Resources/English.lproj/var 
+fi
+
+chmod ug=rwx bin examples examples/v3 examples/v4 examples/v5 include intl lib
+
+chown root bin/gds_relay
+chmod u+s,g+s bin/gds_relay
+if [ -d Firebird.framework ]; then
+	chown root Firebird.framework/Resources/bin/gds_relay
+	chmod u+s,g+s Firebird.framework/Resources/bin/gds_relay
+fi
+
+
+chown root bin/gds_wal_writer
+chmod u+s,g+s bin/gds_wal_writer
+if [ -d Firebird.framework ]; then
+	chown root Firebird.dramework/Resources/bin/gds_wal_writer
+	chmod u+s,g+s Firebird.dramework/Resources/bin/gds_wal_writer
+fi
+
+
+if [ -f bin/gds_inet_srvr ]; then
+    chown root bin/gds_inet_srvr
+    chmod u+s,g+s bin/gds_inet_srvr
+    if [ -d Firebird.framework ]; then
+        chown root Firebird.framework/Resources/bin/gds_inet_srvr
+        chmod u+s,g+s Firebird.framework/Resources/bin/gds_inet_srvr
+    fi
+else
+    chown root bin/gds_inet_server
+    chmod u+s,g+s bin/gds_inet_server
+    if [ -d Firebird.framework ]; then
+        chown root Firebird.framework/Resources/bin/gds_inet_server
+        chmod u+s,g+s Firebird.framework/Resources/bin/gds_inet_server
+    fi
+fi
+
+if [ -f bin/inet_dbg ]; then
+    chown root bin/inet_dbg
+    chmod u+s,g+s bin/inet_dbg
+    if [ -d Firebird.framework ]; then
+        chown root Firebird.framework/Resources/bin/inet_dbg
+        chmod u+s,g+s Firebird.framework/Resources/bin/inet_dbg
+    fi
+fi
+
+if [ -f isc_ins.hlp ]; then
+    chown $1 isc_ins.hlp
+    chgrp $GROUP isc_ins.hlp
+    chmod ug=rw isc_ins.hlp
+else
+    chown $1 isc_ins_hlp.dat
+    chgrp $GROUP isc_ins_hlp.dat
+    chmod ug=rw isc_ins_hlp.dat
+fi
+
+if [ -f isc_config ]; then
+    chown $1 isc_config
+    chgrp $GROUP isc_config
+    chmod ug=rw isc_config
+fi
+if [ -d Firebird.framework -a -f isc_config ]; then
+    chown $1 Firebird.framework/Resources/English.lproj/var/isc_config
+    chgrp $GROUP Firebird.framework/Resources/English.lproj/var/isc_config
+    chmod ug=rw Firebird.framework/Resources/English.lproj/var/isc_config
+fi
+
+if [ -f lock_header_t ]; then
+    chown $1 lock_header_t
+    chgrp $GROUP lock_header_t
+    chmod ug=rw lock_header_t
+else
+    chown $1 lock_header_template
+    chgrp $GROUP lock_header_template
+    chmod ug=rw lock_header_template
+fi
+
+if [ -f servers.isc ]; then
+    chown $1 servers.isc
+    chgrp $GROUP servers.isc
+    chmod ug=rw servers.isc
+fi
+if [ -d Firebird.framework -a -f servers.isc ]; then
+    chown $1 Firebird.framework/Resources/English.lproj/var/servers.isc
+    chgrp $GROUP Firebird.framework/Resources/English.lproj/var/servers.isc
+    chmod ug=rw Firebird.framework/Resources/English.lproj/var/servers.isc
+fi
+
+if [ -f bin/gds_dnet_server ]; then
+    chown root bin/gds_dnet_server
+    chmod u+s,g+s bin/gds_dnet_server
+fi
+if [ -d Firebird.framework -a -f bin/gds_dnet_server ]; then
+    chown root Firebird.framework/Resources/bin/gds_dnet_server
+    chmod u+s,g+s Firebird.framework/Resources/bin/gds_dnet_server
+fi
+
+if [ -f bin/gds_lock_mgr ]; then
+    chown root bin/gds_lock_mgr
+    chmod u+s,g+s bin/gds_lock_mgr
+fi
+if [ -d Firebird.framework -a -f bin/gds_lock_mgr ]; then
+    chown root Firebird.framework/Resources/bin/gds_lock_mgr
+    chmod u+s,g+s Firebird.framework/Resources/bin/gds_lock_mgr
+fi
+
+
+if [ -f bin/gds_lock_manager ]; then
+    chown root bin/gds_lock_manager
+    chmod u+s,g+s bin/gds_lock_manager
+fi
+if [ -d Firebird.framework -a -f bin/gds_lock_manager ]; then
+    chown root Firebird.framework/Resources/bin/gds_lock_manager
+    chmod u+s,g+s Firebird.framework/Resources/bin/gds_lock_manager
+fi  
+
+if [ -f bin/gds_drop ]; then
+    chown root bin/gds_drop
+    chmod u+s,g+s bin/gds_drop
+fi
+if [ -d Firebird.framework -a -f bin/gds_drop ]; then
+    chown root Firebird.framework/Resources/bin/gds_drop
+    chmod u+s,g+s Firebird.framework/Resources/bin/gds_drop
+fi  
+
+
+if [ -f bin/gds_drop5 ]; then
+    chown root bin/gds_drop5
+    chmod u+s,g+s bin/gds_drop5
+fi
+if [ -d Firebird.framework -a -f bin/gds_drop5 ]; then
+    chown root Firebird.framework/Resources/bin/gds_drop5
+    chmod u+s,g+s Firebird.framework/Resources/bin/gds_drop5
+fi  
+
+
+if [ -f lib/gdslib ]; then
+    chmod +w		\
+	*		\
+	com/*		\
+	examples/*	\
+	include/*	\
+	intl/*		\
+	lib/*
+fi

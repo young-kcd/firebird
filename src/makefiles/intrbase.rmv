@@ -1,0 +1,49 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+# Library removal script 8/4/92 mtaht@cruzio.santa-cruz.ca.us
+# Someday we'll have to do shared libs
+ 
+cd /usr/include
+rm -f gds.h perf.h ibase.h
+
+cd /usr/lib
+rm -f libgds_s.a libgdsf_s.a libgds.a libgds_b.a gds_pipe.a gds_inet_svr.a
+
+cd /shlib
+rm -f libgds_s libgdsf_s
+
+cd /usr/interbase
+
+# Shut down the lock manager and clear out shared memory
+
+lockid=`ps -ae | grep gds_lock | awk '{print $1}'`
+
+if [ "$lockid" != "" ]
+then
+    kill $lockid
+fi
+
+bin/gds_drop -a
+
+# Remove any extra stuff we can find in examples (probably won't get it all)
+
+rm -f isc_lock1.gbl
+rm -f isc_event1 interbase.log lock_header
+rm -f examples/*/*.o examples/*/*.a
+mv -f isc4.gdb /usr/tmp/isc4.gdb
+mv -f isc_lic.dat /usr/tmp/isc_lic.dat
+exit 0

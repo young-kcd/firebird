@@ -1,0 +1,53 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+
+# makepkg: make a package for Solaris or similar systems.
+# 1997-10-31 by CJewell
+# Should be run as root (e.g. with rasu), so the files in the package
+# will wind up being owned by root.
+# Accepts one optional argument, the name of the package instance
+# to be created
+
+makemtar
+
+# Packages don't use the install script, since they have postinstall instead.
+rm mtar/interbase/install
+
+cat > prototype <<EOF
+i pkginfo
+i request
+i postinstall
+i preremove
+EOF
+
+pkgproto `pwd`/mtar/interbase=\$IBASEDIR/interbase >> prototype
+
+mkdir pkg
+
+# if the user did not specify a name for the package instance, we
+# assume that the PSTAMP field has already been edited into pkginfo
+
+if [ $# -eq 1 ] ; then
+    pkgmk -d `pwd`/pkg -p $1
+else
+    pkgmk -d `pwd`/pkg
+fi
+
+rm -rf mtar
+
+exit

@@ -1,0 +1,227 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+@SET_MAKE@
+SOURCE=         source
+OBJS=           objs
+
+srcdir=         $(SOURCE)/qli
+VPATH=          $(SOURCE)/qli
+CXX=            @CXX@
+
+.SUFFIXES:      .cpp .epp
+.epp.cpp:
+	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+
+
+GPRE_STATIC=    $(OBJS)/firebird/bin/gpre_static$(EXEC_EXT)
+GBAK_STATIC=    $(OBJS)/firebird/bin/gbak_static$(EXEC_EXT)
+CXX_INCLUDE_DIRS=       -I. -Isource/jrd -I-
+
+
+GPRE_FLAGS=	-r -m -z -n
+QLI=		$(OBJS)/firebird/bin/qli$(EXEC_EXT)
+
+GPRE_LINK=	$(OBJS)/gpre/pretty.o
+
+ISC_LINK=	$(OBJS)/jrd/isc.o
+ISC_FILE_LINK=	$(OBJS)/jrd/isc_file.o
+WALF_LINK=	$(OBJS)/wal/walf.o
+LLIO_LINK=	$(OBJS)/jrd/llio.o
+MISC_LINK=	$(OBJS)/jrd/misc.o
+IBERR_LINK=	$(OBJS)/jrd/iberr.o
+DSC_LINK=	$(OBJS)/jrd/dsc.o
+
+JRD_LINK_OBJECTS= $(ISC_LINK) $(ISC_FILE_LINK) $(WALF_LINK) $(LLIO_LINK) \
+			$(MISC_LINK) $(IBERR_LINK) $(DSC_LINK)
+
+QLI_HEADERS=	$(DTR_H) $(PARSE_H) compile.h exe.h report.h format.h form.h blk.h
+
+QLI_OBJECTS=	all.o command.o compile.o dtr.o err.o eval.o expand.o exe.o \
+		$(FORM_OBJECTS) format.o gener.o help.o hsh.o lex.o meta.o \
+		mov.o parse.o picstr.o proc.o report.o show.o
+
+all:	qli$(EXEC_EXT)
+
+# JMB $(JRD_LINK_OBJECTS) already in shared library
+qli:	qlilib.a $(GPRE_LINK) $(GDSSHR)
+	-$(RM) qli
+	$(CXX) $(LINK_OPTS) $(QLI_OBJECTS) \
+		$(GPRE_LINK) -o qli $(GDSSHR_LINK) $(CURSES_LIB)
+	$(CHMOD_7) qli
+	$(MV) qli $(QLI)
+	$(TOUCH) qli
+	$(CHMOD_6) qli
+
+qli.exe:	qlilib.lib $(JRD_LINK_OBJECTS) $(GPRE_LINK)
+	-$(RM) qli.exe qli.rsp
+	$(ECHO) $(QLI_OBJECTS) > qli.rsp
+	$(ECHO) $(ISC_FILE_LINK) $(GPRE_LINK) $(WALF_LINK) \
+		$(LLIO_LINK) $(MISC_LINK) $(IBERR_LINK) $(DSC_LINK) >> qli.rsp
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)qli \
+		@qli.rsp $(GDSSHR_LINK) $(ADVAPILIB) $(MPRLIB)
+	$(MV) qli.exe $(QLI)
+	$(RM) qli.exe qli.rsp
+	$(TOUCH) qli.exe
+
+qlilib.a:	$(QLI_OBJECTS) $(JRD_LINK_OBJECTS) $(GPRE_LINK)
+	-$(RM) qlilib.a
+	$(AR) qlilib.a $(QLI_OBJECTS) $(SCO_OBJS_QLILIB) $(GPRE_LINK)
+	-ranlib qlilib.a
+	$(CHMOD_6) qlilib.a
+
+libqlilib.a:	qlilib.a
+	-$(RM) libqlilib.a
+	$(CP) qlilib.a $(OBJS)/firebird/lib/qlilib.a
+	$(TOUCH) libqlilib.a
+	$(CHMOD_6) libqlilib.a
+
+qlilib.lib:	$(QLI_OBJECTS)
+	-$(RM) qlilib.lib
+	$(IMPLIB) -out:qlilib.lib $(QLI_OBJECTS)
+	$(TOUCH) qlilib.lib
+
+qli_help:	help.gdb
+	mkdir -p $(OBJS)/firebird/help
+	$(GBAK_STATIC) -b help.gdb $(OBJS)/firebird/help/help.gbak
+	-$(RM) help.gdb $(OBJS)/dbs/help.gdb $(OBJS)/dbs/help.gdb.dummy
+
+
+debug:		$(QLI_OBJECTS) $(GPRE_LINK) $(GDSLIB_BACKEND)
+	$(CXX) $(LINK_OPTS) -g $(QLI_OBJECTS) $(GPRE_LINK) -o qli_dbg $(GDSLIB_LINK)
+
+debug_nt:	qlilib.lib
+	$(CXX) $(DEBUG_LINK_OPTS) $(O_EXE_SWITCH)qli_dbg $(QLI_OBJECTS) $(GPRE_LINK) $(GDSLIB_LINK)
+
+all.o:		all.cpp $(QLI_HEADERS) all_proto.h $(SOURCE)/jrd/gds_proto.h
+command.o:	command.cpp $(DTR_H) $(PARSE_H) compile.h exe.h \
+		all_proto.h err_proto.h exe_proto.h proc_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/gds_proto.h
+compile.o:	compile.cpp $(DTR_H) compile.h exe.h report.h form.h \
+		all_proto.h compi_proto.h forma_proto.h $(SOURCE)/jrd/intl.h \
+		$(SOURCE)/jrd/dsc_proto.h
+DTR_H=		dtr.h blk.h all_proto.h $(SOURCE)/jrd/dsc.h
+#dtr.h:		blk.h all_proto.h $(SOURCE)/jrd/dsc.h
+#	$(TOUCH) dtr.h
+dtr.o:		dtr.cpp $(DTR_H) $(PARSE_H) compile.h \
+		all_proto.h compi_proto.h err_proto.h exe_proto.h \
+		expan_proto.h gener_proto.h lex_proto.h parse_proto.h \
+		$(SOURCE)/jrd/perf.h $(SOURCE)/jrd/license.h $(SOURCE)/jrd/gds_proto.h
+err.o:		err.cpp $(DTR_H) $(PARSE_H) err_proto.h $(SOURCE)/jrd/gds_proto.h
+eval.o:		eval.cpp $(DTR_H) exe.h err_proto.h eval_proto.h exe_proto.h \
+		form_proto.h mov_proto.h $(SOURCE)/jrd/gds_proto.h
+exe.o:		exe.cpp $(DTR_H) exe.h err_proto.h eval_proto.h exe_proto.h \
+		form_proto.h mov_proto.h repor_proto.h $(SOURCE)/jrd/gds_proto.h
+expand.o:	expand.cpp $(DTR_H) $(PARSE_H) compile.h exe.h report.h form.h \
+		all_proto.h compi_proto.h err_proto.h expan_proto.h \
+		form_proto.h show_proto.h
+form.o:		form.cpp $(DTR_H) exe.h form.h \
+		all_proto.h err_proto.h eval_proto.h exe_proto.h \
+		form_proto.h hsh_proto.h proc_proto.h \
+		$(SOURCE)/pyxis/phase1.h $(SOURCE)/pyxis/phase2.h
+format.o:	format.cpp $(DTR_H) exe.h compile.h report.h format.h \
+		all_proto.h eval_proto.h exe_proto.h forma_proto.h \
+		mov_proto.h err_proto.h picst_proto.h 
+gener.o:	gener.cpp $(DTR_H) exe.h compile.h report.h \
+		all_proto.h compi_proto.h err_proto.h gener_proto.h \
+		$(SOURCE)/jrd/align.h
+help.cpp:	help.gdb help.epp
+help.o:		help.cpp $(DTR_H) compile.h err_proto.h help_proto.h 
+	$(SPECIAL_OPT) $(COPT_QLI_HELP) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+hsh.o:		hsh.cpp $(DTR_H) $(PARSE_H) words.h \
+		all_proto.h err_proto.h hsh_proto.h 
+lex.o:		lex.cpp $(DTR_H) $(PARSE_H) $(DTR_H) $(PARSE_H) \
+		all_proto.h err_proto.h hsh_proto.h \
+		lex_proto.h proc_proto.h $(SOURCE)/jrd/gds_proto.h
+meta.cpp:	yachts.lnk meta.epp
+meta.o:		meta.cpp $(DTR_H) compile.h exe.h reqs.h \
+		all_proto.h err_proto.h gener_proto.h hsh_proto.h \
+		meta_proto.h $(SOURCE)/jrd/gds_proto.h \
+		$(SOURCE)/wal/walf_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/flags.h
+mov.o:		mov.cpp $(DTR_H) err_proto.h mov_proto.h $(SOURCE)/pyxis/pyxis.h \
+		$(SOURCE)/jrd/intl.h $(SOURCE)/jrd/gds_proto.h
+noform.o:	noform.cpp $(DTR_H) exe.h form.h
+PARSE_H=	parse.h symbols.h
+#parse.h:	symbols.h
+#	$(TOUCH) parse.h
+parse.o:	parse.cpp $(DTR_H) exe.h $(PARSE_H) compile.h report.h \
+		all_proto.h err_proto.h lex_proto.h parse_proto.h
+picstr.o:	picstr.cpp $(DTR_H) format.h all_proto.h err_proto.h \
+		picst_proto.h mov_proto.h $(SOURCE)/jrd/gds_proto.h \
+		$(SOURCE)/pyxis/pyxis.h
+proc.cpp:	yachts.lnk proc.epp
+proc.o:		proc.cpp $(DTR_H) $(PARSE_H) compile.h procddl1.h procddl2.h \
+		procddl3.h procddl4.h \
+		err_proto.h lex_proto.h meta_proto.h proc_proto.h 
+report.o:	report.cpp $(DTR_H) exe.h compile.h report.h \
+		all_proto.h eval_proto.h exe_proto.h repor_proto.h
+show.cpp:	yachts.lnk show.epp
+show.o:		show.cpp $(DTR_H) $(PARSE_H) compile.h reqs.h \
+		all_proto.h err_proto.h proc_proto.h show_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/flags.h $(SOURCE)/jrd/gds_proto.h
+
+$(GDSSHR) $(GDSLIB_BACKEND) $(JRD_LINK_OBJECTS):
+	$(CD) $(OBJS)/jrd && $(MAKE) $@
+
+$(GPRE_LINK):
+	$(CD) $(OBJS)/gpre && $(MAKE) $(@F)
+
+yachts.lnk:     $(OBJS)/dbs/metadata.gdb.dummy 
+	ln -fs $(OBJS)/dbs/metadata.gdb yachts.lnk
+ 
+$(OBJS)/dbs/metadata.gdb.dummy:    force
+	$(CD) $(OBJS)/dbs && $(MAKE) metadata.gdb.dummy
+
+help.gdb:     $(OBJS)/dbs/help.gdb.dummy 
+	ln -fs $(OBJS)/dbs/help.gdb help.gdb
+ 
+$(OBJS)/dbs/help.gdb.dummy:    force
+	$(CD) $(OBJS)/dbs && $(MAKE) help.gdb.dummy
+
+
+# This entry is used to programatically update the include file dependencies 
+# for all *.c files in the current directory.
+#
+# Note that it is specific to Solaris by using the -xM1 compiler option.
+# This option has CC generate dependency lines for the makefile - but
+# does not generate object files.
+# It is likely that a similar option exists on other platforms.
+#
+# It is recommended that depends.mak be created on a platform
+# that supports such an option.  depends.mak is not platform dependent, it uses
+# the standard makefile output format, as can be copied to platforms
+# that don't have a -xM1 feature in the c compiler.
+#
+depends.mak:
+	-$(RM) depends.out
+	-$(CC) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
+	-$(RM) depends.mak
+	$(ECHO) "# depends.mak - qli"                           > depends.mak
+	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
+	date "+# Created on %Y-%m-%d"                           >> depends.mak
+	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/qli/::g"\
+		depends.out |sort|uniq >> depends.mak
+	-$(RM) depends.out
+
+# In the event that a platform does not support the make directive "include" - 
+# concatenate "depends.mak" with the makefile.
+#
+include depends.mak
+
+
+force:

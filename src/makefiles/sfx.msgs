@@ -1,0 +1,199 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+@SET_MAKE@
+SOURCE=         source
+OBJS=           objs
+
+srcdir=         $(SOURCE)/msgs
+VPATH=          $(SOURCE)/msgs
+CXX=            @CXX@
+
+.SUFFIXES:      .cpp .epp
+.epp.cpp:
+	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+
+unexport ISC_USER
+unexport ISC_PASSWORD
+
+GPRE_STATIC=    $(OBJS)/firebird/bin/gpre_static$(EXEC_EXT)
+
+CXX_INCLUDE_DIRS=       -I. -Isource/jrd -I-
+GPRE_FLAGS=	-r -m -z -n
+LOCALES=	
+
+all:		build_file$(EXEC_EXT) check_messages$(EXEC_EXT) \
+	enter_messages$(EXEC_EXT) modify_messages$(EXEC_EXT) \
+	change_messages$(EXEC_EXT)
+
+interbase.msg:	build_file$(EXEC_EXT) check_messages$(EXEC_EXT) indicator.msg 
+	-$(RM) interbase.msg $(OBJS)/firebird/interbase.msg
+	./build_file -d $(MSGSDIR)master_msg_db -f $(OBJS)/firebird/interbase.msg
+	$(TOUCH) interbase.msg
+	$(CHMOD_6) interbase.msg $(OBJS)/firebird/interbase.msg
+
+locales.msg:	$(LOCALES)
+	-$(RM) locales.msg
+	$(TOUCH) locales.msg
+	$(CHMOD_6) locales.msg
+
+fr_FR.msg:	build_file$(EXEC_EXT) indicator.msg indicator.loc
+	-$(RM) fr_FR.msg $(OBJS)/ifirebird/intl/fr_FR.msg
+	./build_file -d $(MSGSDIR)master_msg_db \
+	-l fr_FR	\
+	-p $(OBJS)/firebird/intl
+	$(TOUCH) fr_FR.msg
+	$(CHMOD_6) fr_FR.msg $(OBJS)/firebird/intl/fr_FR.msg
+
+de_DE.msg:	build_file$(EXEC_EXT) indicator.msg indicator.loc
+	-$(RM) de_DE.msg source/interbase/intl/de_DE.msg
+	./build_file -d $(MSGSDIR)master_msg_db \
+	-l de_DE	\
+	-p source/interbase/intl
+	$(TOUCH) de_DE.msg
+	$(CHMOD_6) de_DE.msg source/interbase/intl/de_DE.msg
+
+ja_JP_EUC.msg:	build_file$(EXEC_EXT) indicator.msg indicator.loc
+	-$(RM) ja_JP_EUC.msg source/interbase/intl/ja_JP_EUC.msg
+	./build_file -d $(MSGSDIR)master_msg_db \
+	-l ja_JP.EUC	\
+	-p source/interbase/intl
+	$(TOUCH) ja_JP_EUC.msg
+	$(CHMOD_6) ja_JP_EUC.msg source/interbase/intl/ja_JP_EUC.msg
+
+indicator.msg indicator.incl:	force
+	./check_messages -d $(MSGSDIR)master_msg_db
+
+indicator.loc:	force
+	./check_messages -d $(MSGSDIR)master_msg_db -l
+
+build_file:	build_file.o
+	-$(RM) build_file
+	$(CXX) $(LINK_OPTS) build_file.o -o build_file $(GDSSHR_LINK)
+	$(CHMOD_7) build_file
+
+check_messages:	check_msgs.o
+	-$(RM) check_messages
+	$(CXX) $(LINK_OPTS) check_msgs.o -o check_messages $(GDSSHR_LINK)
+	$(CHMOD_7) check_messages
+
+enter_messages:	enter_msgs.o $(GDSSHR)
+	-$(RM) enter_messages
+	$(CXX) $(LINK_OPTS) enter_msgs.o -o enter_messages $(GDSSHR_LINK)
+	$(CHMOD_7) enter_messages
+
+modify_messages: modify_msgs.o $(GDSSHR)
+	-$(RM) modify_messages
+	$(CXX) $(LINK_OPTS) modify_msgs.o -o modify_messages $(GDSSHR_LINK)
+	$(CHMOD_7) modify_messages
+
+change_messages: change_msgs.o $(GDSSHR)
+	-$(RM) change_messages
+	$(CXX) $(LINK_OPTS) change_msgs.o -o change_messages $(GDSSHR_LINK)
+	$(CHMOD_7) change_messages
+
+build_file.exe:	build_file.o
+	-$(RM) build_file.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)build_file build_file.o $(GDSSHR_LINK)
+	$(CHMOD_7) build_file.exe
+ 
+check_messages.exe:	check_msgs.o
+	-$(RM) check_messages.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)check_messages check_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) check_messages.exe
+
+enter_messages.exe:	enter_msgs.o
+	-$(RM) enter_messages.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)enter_messages enter_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) enter_messages.exe
+
+modify_messages.exe:	modify_msgs.o
+	-$(RM) modify_messages.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)modify_messages modify_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) modify_messages.exe
+
+change_messages.exe:	change_msgs.o
+	-$(RM) change_messages.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)change_messages change_msgs.o $(GDSSHR_LINK)
+	$(CHMOD_7) change_messages.exe
+
+do_check: check_messages
+	./check_messages -d $(MSGSDIR)master_msg_db -l
+
+debug:		build_file.o check_msgs.o enter_msgs.o modify_msgs.o change_msgs.o $(GDSLIB)
+	$(CXX) $(LINK_OPTS) -g build_file.o -o build_file $(GDSLIB_LINK)
+	$(CXX) $(LINK_OPTS) -g check_msgs.o -o check_messages $(GDSLIB_LINK)
+	$(CXX) $(LINK_OPTS) -g enter_msgs.o -o enter_messages $(GDSLIB_LINK)
+	$(CXX) $(LINK_OPTS) -g modify_msgs.o -o modify_messages $(GDSLIB_LINK)
+	$(CXX) $(LINK_OPTS) -g change_msgs.o -o change_messages $(GDSLIB_LINK)
+
+force:
+	$(ECHO) force
+
+build_file.cpp:	msg.gdb build_file.epp
+build_file.o:	build_file.cpp source/jrd/msg.h \
+		source/jrd/gds_proto.h
+check_msgs.cpp:	msg.gdb check_msgs.epp
+check_msgs.o:	check_msgs.cpp source/jrd/gds_proto.h
+enter_msgs.cpp:	msg.gdb enter_msgs.epp
+enter_msgs.o:	enter_msgs.cpp
+load.c:		msg.gdb load.epp
+load.o:		load.cpp
+modify_msgs.cpp:	msg.gdb modify_msgs.epp
+modify_msgs.o:	modify_msgs.cpp
+change_msgs.cpp:	msg.gdb change_msgs.epp
+change_msgs.o:	change_msgs.cpp
+
+msg.gdb:	$(OBJS)/dbs/msg.gdb.dummy
+	ln -fs $(OBJS)/dbs/msg.gdb msg.gdb
+	ln -fs $(OBJS)/dbs/msg.gdb master_msg_db
+
+$(OBJS)/dbs/msg.gdb.dummy:	force
+	$(CD) $(OBJS)/dbs && $(MAKE) msg.gdb.dummy
+
+$(GDSSHR) $(GDSLIB_BACKEND):
+	$(CD) $(OBJS)/jrd && $(MAKE) $(@F)
+
+# This entry is used to programatically update the include file dependencies 
+# for all *.c files in the current directory.
+#
+# Note that it is specific to Solaris by using the -xM1 compiler option.
+# This option has CC generate dependency lines for the makefile - but
+# does not generate object files.
+# It is likely that a similar option exists on other platforms.
+#
+# It is recommended that depends.mak be created on a platform
+# that supports such an option.  depends.mak is not platform dependent, it uses
+# the standard makefile output format, as can be copied to platforms
+# that don't have a -xM1 feature in the c compiler.
+#
+depends.mak:
+	-$(RM) depends.out
+	-$(CC) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
+	-$(RM) depends.mak
+	$(ECHO) "# depends.mak - msgs"                           > depends.mak
+	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
+	date "+# Created on %Y-%m-%d"                           >> depends.mak
+	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/msgs/::g"\
+		depends.out |sort|uniq >> depends.mak
+	-$(RM) depends.out
+
+# In the event that a platform does not support the make directive "include" - 
+# concatenate "depends.mak" with the makefile.
+#
+include depends.mak
+
+force:

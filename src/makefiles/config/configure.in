@@ -1,0 +1,73 @@
+AC_INIT(src)
+AC_CONFIG_AUX_DIR(src/makefiles/config)
+AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
+
+AC_CONFIG_HEADER(generated/jrd/autoconfig.h:src/makefiles/config/config.h.in)
+
+AC_CANONICAL_SYSTEM
+
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_LEX
+AC_PROG_LN_S
+AC_PROG_RANLIB
+AC_PROG_YACC
+
+AC_CHECK_HEADERS(unistd.h)
+AC_CHECK_HEADERS(fcntl.h)
+AC_CHECK_HEADERS(sys/types.h)
+AC_CHECK_HEADERS(sys/stat.h)
+AC_CHECK_HEADERS(sys/uio.h)
+AC_CHECK_HEADERS(sys/wait.h)
+AC_CHECK_HEADERS(varargs.h)
+AC_CHECK_HEADERS(stdarg.h)
+AC_CHECK_HEADERS(ctype.h)
+AC_CHECK_HEADERS(time.h)
+AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(string.h)
+
+AC_C_BIGENDIAN
+
+case "$target_cpu" in
+powerpc) AC_DEFINE(PowerPC) ;;
+esac
+
+case "$target" in
+*-*-darwin*) MAKEFILE_PREFIX=prefix.darwin ; PLATFORM=DARWIN ; AC_DEFINE(DARWIN);;
+*-*-freebsd*) MAKEFILE_PREFIX=prefix.freebsd ; PLATFORM=FREEBSD ; AC_DEFINE(FREEBSD);;
+*-*-linux*) MAKEFILE_PREFIX=prefix.linux ; PLATFORM=LINUX ; AC_DEFINE(linux) ;;
+*-*-netbsd*) MAKEFILE_PREFIX=prefix.netbsd ; PLATFORM=NETBSD ; AC_DEFINE(NETBSD) ;;
+*-apollo-*) MAKEFILE_PREFIX=prefix.apollo ; PLATFORM=apollo ; AC_DEFINE(apollo) ;;
+*-*-hpux*) MAKEFILE_PREFIX=prefix.hpux ; PLATFORM=hpux ; AC_DEFINE(hpux) ;;
+esac
+
+AC_SUBST(PLATFORM)
+
+ln -fs ../src/makefiles/${MAKEFILE_PREFIX} generated/.prefix.platform
+
+AC_OUTPUT( \
+generated/alice/Makefile:generated/.prefix.platform:src/makefiles/sfx.alice \
+generated/burp/Makefile:generated/.prefix.platform:src/makefiles/sfx.burp \
+generated/csv/Makefile:generated/.prefix.platform:src/makefiles/sfx.csv \
+generated/dbs/Makefile:generated/.prefix.platform:src/makefiles/sfx.dbs \
+generated/dsql/Makefile:generated/.prefix.platform:src/makefiles/sfx.dsql \
+generated/dudley/Makefile:generated/.prefix.platform:src/makefiles/sfx.dudley \
+generated/example5/Makefile:generated/.prefix.platform:src/makefiles/sfx.example5 \
+generated/extlib/Makefile:generated/.prefix.platform:src/makefiles/sfx.extlib \
+generated/gpre/Makefile:generated/.prefix.platform:src/makefiles/sfx.gpre \
+generated/intl/Makefile:generated/.prefix.platform:src/makefiles/sfx.intl \
+generated/isql/Makefile:generated/.prefix.platform:src/makefiles/sfx.isql \
+generated/journal/Makefile:generated/.prefix.platform:src/makefiles/sfx.journal \
+generated/jrd/Makefile:generated/.prefix.platform:src/makefiles/sfx.jrd \
+generated/lock/Makefile:generated/.prefix.platform:src/makefiles/sfx.lock \
+generated/msgs/Makefile:generated/.prefix.platform:src/makefiles/sfx.msgs \
+generated/pipe/Makefile:generated/.prefix.platform:src/makefiles/sfx.pipe \
+generated/pyxis/Makefile:generated/.prefix.platform:src/makefiles/sfx.pyxis \
+generated/qli/Makefile:generated/.prefix.platform:src/makefiles/sfx.qli \
+generated/remote/Makefile:generated/.prefix.platform:src/makefiles/sfx.remote \
+generated/utilities/Makefile:generated/.prefix.platform:src/makefiles/sfx.utilities \
+generated/wal/Makefile:generated/.prefix.platform:src/makefiles/sfx.wal \
+generated/Makefile:generated/.prefix.platform:src/makefiles/sfx.firebird \
+Makefile:src/makefiles/config/Makefile.in \
+)

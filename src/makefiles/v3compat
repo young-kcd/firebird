@@ -1,0 +1,70 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+# Shell script to unset the protections on files in
+# the installation directory
+PATH=$PATH:/etc:/bin:/usr/ucb
+export PATH
+if [ $# != 1 ]; then
+    echo 'Usage: v3compat v3_sourcedir'
+    exit 1
+fi
+if [ -d SCO -o -d DELTA -o -d DG ]; then
+    RUNNER=`who am i | awk '{print $1}'`
+else
+    RUNNER=`whoami`
+fi
+if [ ! -z "$RUNNER" ]; then
+    if [ "$RUNNER" != "root" ]; then
+        echo 'set_prot must be run as "root" or super user'
+        exit 1
+    fi
+else
+    echo 'set_prot must be run as "root" or super user'
+    exit 1
+fi
+set -x
+cp $1/interbase/bin/gds_drop interbase/bin/gds_drop5
+chown root interbase/bin/gds_drop5
+chgrp bin  interbase/bin/gds_drop5
+chmod 06555 interbase/bin/gds_drop5
+
+cp $1/interbase/bin/gds_lock_print interbase/bin/gds_lock_prnt5
+chown root interbase/bin/gds_lock_prnt5
+chgrp bin  interbase/bin/gds_lock_prnt5
+chmod 555  interbase/bin/gds_lock_prnt5
+
+if [ -f $1/interbase/bin/gds_lock_manager ]; then
+    cp $1/interbase/bin/gds_lock_manager interbase/bin/gds_lock_manager
+    chown root interbase/bin/gds_lock_manager
+    chgrp bin  interbase/bin/gds_lock_manager
+    chmod 06555  interbase/bin/gds_lock_manager
+fi
+
+if [ -f $1/interbase/lock_header_template ]; then
+    cp $1/interbase/lock_header_template interbase/lock_header_template
+    chown root interbase/lock_header_template
+    chgrp bin  interbase/lock_header_template
+    chmod 444  interbase/lock_header_template
+fi
+
+if [ -f $1/interbase/lock_header_t ]; then
+    cp $1/interbase/lock_header_t interbase/lock_header_t
+    chown root interbase/lock_header_t
+    chgrp bin  interbase/lock_header_t
+    chmod 444  interbase/lock_header_t
+fi

@@ -1,0 +1,137 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+
+SOURCE=         source
+OBJS=           objs
+
+srcdir=         $(SOURCE)/lock
+VPATH=          $(SOURCE)/lock
+CXX=            @CXX@
+
+
+GPRE_BOOT=      $(OBJS)/firebird/bin/gpre_boot$(EXEC_EXT)
+CXX_INCLUDE_DIRS=       -I. -Isource/jrd -I-
+GPRE=		$(OBJS)/firebird/bin/gpre$(EXEC_EXT)
+LOCK_PRINT=	$(OBJS)/firebird/bin/gds_lock_print$(EXEC_EXT)
+MANAGER=	$(OBJS)/firebird/bin/gds_lock_mgr$(EXEC_EXT)
+DROP=		$(OBJS)/firebird/bin/gds_drop$(EXEC_EXT)
+DROP_FLAGS=	-s
+
+JRD_LINK2=	$(OBJS)/jrd/isc.o $(OBJS)/jrd/dls.o $(OBJS)/jrd/isc_ipc.o \
+		$(OBJS)/jrd/isc_sync.o $(OBJS)/jrd/gds.o
+JRD_LINK=	$(JRD_LINK2) $(LOCK_JRD_MISC)
+
+all:		lock lock_print$(EXEC_EXT) lock_driver$(EXEC_EXT)
+
+lock:		lock.o
+	-$(RM) lock_objects 
+	$(TOUCH) lock_objects 
+	$(CHMOD_6) lock_objects 
+
+lock_print:	print.o $(JRD_LINK) $(V3PRINTER)
+	-$(RM) lock_print
+	$(CXX) $(LINK_OPTS) print.o $(V3PRINTER) $(JRD_LINK) $(GDSSHR_LINK) \
+		-o lock_print $(SCO_SOCKET_LIB) $(SO_THREAD_LIB) $(NSL_LIB)
+	$(CHMOD_7) lock_print
+	$(MV) lock_print $(LOCK_PRINT)
+	$(TOUCH) lock_print
+	$(CHMOD_6) lock_print
+
+lock_print.exe:	print.o $(JRD_LINK) $(OBJS)/jrd/thd.o
+	-$(RM) lock_print.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)lock_print \
+		print.o $(JRD_LINK) $(OBJS)/jrd/thd.o $(CONLIBSDLL) $(ADVAPILIB)
+	$(MV) lock_print.exe $(LOCK_PRINT)
+	$(RM) lock_print.exe
+	$(TOUCH) lock_print.exe
+
+lock_driver:	driver.o $(JRD_LINK) lock.o
+	-$(RM) lock_driver
+	$(CXX) $(LINK_OPTS) driver.o $(JRD_LINK) lock.o $(B_ELF) -o lock_driver
+
+lock_driver.exe: driver.o
+	-$(RM) lock_driver.exe
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)lock_driver \
+		driver.o $(JRD_LINK) lock.o $(CONLIBSDLL) $(ADVAPILIB)
+
+manager:	manager.o lock.o divorce.o $(JRD_LINK2)
+	-$(RM) manager
+	$(CXX) $(LINK_OPTS) manager.o lock.o divorce.o $(JRD_LINK2) \
+		-o manager $(NSL_LIB) $(SCO_SOCKET_LIB) $(SO_THREAD_LIB) \
+		$(COREFOUNDATION_LINK)
+	$(CHMOD_S7) manager
+	$(DROP) $(DROP_FLAGS)
+	$(MV) manager $(MANAGER)
+	$(TOUCH) manager
+	$(CHMOD_6) manager
+
+divorce.cpp:	$(SOURCE)/jrd/divorce.cpp
+	$(CP) $< $@
+divorce.o:	divorce.cpp $(SOURCE)/jrd/divorce.h
+driver.o:	driver.cpp lock.h $(SOURCE)/jrd/isc.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_LOCK) $<
+lock.h:		$(SOURCE)/jrd/file_params.h
+lock.o:		lock.cpp lock.h \
+		lock_proto.h \
+		$(SOURCE)/jrd/thd.h $(SOURCE)/jrd/isc.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_proto.h \
+		$(SOURCE)/jrd/thd_proto.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_LOCK) $< -o $@
+manager.o:	manager.cpp  lock_proto.h $(SOURCE)/jrd/jrd.h $(SOURCE)/jrd/lck.h 
+print.o:	print.cpp lock.h $(SOURCE)/jrd/jrd.h $(SOURCE)/jrd/lck.h $(SOURCE)/jrd/isc.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_proto.h \
+		$(SOURCE)/jrd/time.h prtv3_proto.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_LOCK) $< -o $@
+printv3.o $(OBJS)/lock/printv3.o:	printv3.cpp lockv3.h prtv3_proto.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_LOCK) $< -o $@
+printv3s4.o:	printv3s4.cpp lockv3s4.h prtv3_proto.h
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $(CFLAGS_LOCK) $< -o $@
+
+lock.bin:	lock.o
+
+$(OBJS)/jrd/%:
+	$(CD) $(OBJS)/jrd && $(MAKE) CFLAGS="$(CFLAGS)" SYSTEM="$(SYSTEM)" $(@F)
+
+# This entry is used to programatically update the include file dependencies 
+# for all *.c files in the current directory.
+#
+# Note that it is specific to Solaris by using the -xM1 compiler option.
+# This option has CC generate dependency lines for the makefile - but
+# does not generate object files.
+# It is likely that a similar option exists on other platforms.
+#
+# It is recommended that depends.mak be created on a platform
+# that supports such an option.  depends.mak is not platform dependent, it uses
+# the standard makefile output format, as can be copied to platforms
+# that don't have a -xM1 feature in the c compiler.
+#
+depends.mak:
+	-$(RM) depends.out
+	-$(CXX) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
+	-$(RM) depends.mak
+	$(ECHO) "# depends.mak - lock"                           > depends.mak
+	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
+	date "+# Created on %Y-%m-%d"                           >> depends.mak
+	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/lock/::g"\
+		depends.out |sort|uniq >> depends.mak
+	-$(RM) depends.out
+
+# In the event that a platform does not support the make directive "include" - 
+# concatenate "depends.mak" with the makefile.
+#
+include depends.mak
+

@@ -1,0 +1,318 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+
+Note: This document comes from the original source distribution
+from Inprise. You should be aware that it refers to some
+Inprise specific things, mostly appears to be written pre-CVS
+and pre interbase 5.x. It is left here for the moment, in orginal
+form, because it still contains some useful information.
+
+Other, more current sources of information:
+The Doc Manager area of the Firebird project on sourceforge.net
+	http://sourceforge.net/projects/firebird/
+The build_docs directory off the interbase tree in this CVS repository
+The ib-build mailing list at mers.com, also available as
+	news://news.mers.com/mers.interbase.build
+
+Reed Mideke, 8/15/2000
+
+Original file follows:
+
+                 Instructions for Building a Kit
+
+ 1.  Create a top level directory
+ 2.  cd to the top level directory and copy shell script setup_dirs
+     into it.  setup_dirs can be found in marion under the builds
+     component.  A no more than day old copy should also be located
+     in /usr/gds/dev/HP700/original/setup_dirs on the HP's.
+ 3.  Run setup_dirs (you may need to "chmod +x setup_dirs" first)
+ 3.a Perform steps 3.a-3.d only if you received messages indicating
+     that setup_dirs failed.  cd to system_id/original and copy into
+     it, all files from the builds component in marion.  No more than
+     day old copies should be available in /usr/gds/dev/HP700/original/*
+     on the HP's.
+ 3.b Run setup_prots (you may need to "chmod +x setup_prots" first)
+ 3.c Run platform
+ 3.d cd ../..
+ 4.a Perform this step only if you are creating the master source
+     tree for a new kit on the Apollos.  Run HP700/original/setup_gdbs.
+     Then create the marion database for the kit.  Do not run
+     setup_gdbs if there is a marion.gdb present.  It will delete it!
+ 4.b Perfom this step only if your are creating a new source tree on SCO.
+     Copy the file 87ftol.o and _fltused.o from the current dev tree on
+     SCO (goofy:/usr/gds/dev/jrd) or other SCO source tree. 
+ 5.  Copy gpre to interbase/bin
+     Copy isc_license.dat to interbase
+     Copy interbase.msg to interbase
+     Copy gds_pipe to interbase/bin if the machine doesn't have shared
+     libraries.
+     Copy gds.sl, gds.so.0, or whatever the shared library is called to
+     interbase/lib if the machine does have shared libraries.
+ 6.  Run refresh.all
+ 7.  Run build_kit
+
+******************************************************************
+
+*** How to build an InterBase release kit on an UNIX platform ***
+
+Modified by: B.Sriram 07-Mar-1997
+Created by:  B.Sriram 15-May-1996
+
+Pre-requisites:
+##############
+	- An installed interbase kit in the build machine.
+	  ( this will allow us to use 'gpre', marion etc. )
+
+Assumptions:
+############
+	- You are logged into the 'build' machine for the respective
+	  platform. The build machines currently used are mentioned
+	  at the bottom.
+	- Create a /usr/gds.<hostname> directory structure with 100 MB
+	  free.
+          a. /usr/gds.<hostname>/bin, tools, tmp etc.
+	- Populate 'bin' directory, and make sure '/usr/gds/sbin
+	  points to /usr/gds.<hostname>/bin
+	- $BUILD_DIR_PARENT is the parent of the build directory.
+	- $BUILD_DIR is the build directory.
+	   For eg. p4.0c_hp for a preproduction kit on HP platform
+	- $MARION_DIR is the pathname inclusive of the host which 
+	  consists of the 'marion' database.
+	- platform for build is HP10
+	- kit is a pre-production kit
+
+Actions to be followed:
+######################
+	- cd $BUILD_DIR_PARENT
+	- mkdir $BUILD_DIR
+	- cd $BUILD_DIR
+	- marion -c builds -d $MARION_DIR/marion.gdb
+	  smm> sm setup_dirs
+	  smm> quit
+	- chmod +x setup_dirs
+	- setup_dirs HP10 PROD yoda:/usr/gds.yoda/dev [SUPER]
+	  /* The 1st argument to 'setup_dirs' should be one of the 
+	     valid platforms supported. Just run 'setup_dirs' with no
+	     args. to get a list of valid platforms. */
+          The 'SUPER' argument is to be supplied for a SUPERSERVER build
+	- refresh.all           /* This will get the latest version of 
+                                   all the source files from the 'marion' 
+                                   database. */
+	- touch dsql/parse.c    /* so as not to run YACC.cosmetic requirement */
+	- cp /usr/interbase/bin/gpre interbase/bin
+	- cp /usr/interbase/lib/gds.sl interbase/lib
+	                        /* Copy 'gpre' and the shared library for 
+                                   pre-processing Embedded SQL code. 'makefile'
+                                   access source/interbase/bin path */
+	- cp /usr/interbase/{isc_license.dat,interbase.msg,isc4.gdb} interbase
+	                        /* Required for 'gpre' to run */
+	- cp /usr/interbase/lib/bridge5 interbase/lib
+	                        /* Only on platforms that support BRIDGE */
+	- cp /usr/gds/v4.0c_sc/interbase/bin/gds_pipe5 interbase/bin
+	                        /* Only on SCO */
+	- cd jrd
+	- vi license.h          /* Edit and modify version string of product 
+                                   release. For eg: from V4.0B to P4.0C on 
+                                   all occurences of V4.0B */
+	- make codes
+	- codes                 /* This will create ibase.h and other needed 
+                                   include files. */
+	- cd ..
+	- build_kit HP10
+        - /* Remove un-neccessary files */
+	- rm interbase/bin/gds_wal*
+	  rm interbase/bin/gds_cache*
+	- copy gds_pipe5 (bridge executable) from one of the 
+          v4.0/interbase/bin directories. Also, copy lock_header_template 
+          from v4.0/interbase
+	- Copy the appropriate README file into the interbase/README file.
+	- rasu set_prot /* Set protection on all to 'root' owner only */
+
+    *** Various forms of delivery ***
+        The kit can be delivered to QA/mftg in a number of different media.
+        
+        * Pre-production kit to be send as 'tar' files through our
+          'FTP' site bekins.borland.com.
+	  - maketar /* Shell script to invoke 'tar' and create a IB kit 
+                       'tar' file. Before executing this script, edit it
+                       and put the appropriate 'tar' filename */
+	  - Inform QA about the location of the 'tar' file.
+         
+        * Kit for certification to QA/Mftg.
+
+	  - maketape  /* Put the files and directories under interbase/
+                         directory in 'tar' format in the tape. Before
+                         executing this script, edit it and specify the 
+                         proper device for the archive. */
+          
+                           --- OR ---
+          - On some platforms we use 'pkg' utility. Read information about 
+            this utility later on in this document OR view the document 
+            /usr/gds/builder/pkg.README
+
+-----------------------------------------------------------------------
+
+Useful Utilities :
+################
+	- rasu unset_prot builder
+	  /* Gives all permission to 'builder' for all files. */
+	- rasu set_prot 
+	  /* Gives all permission only to 'root' for all files. */
+	- maketar
+	  /* exists on one of the kit directories. Edit and change 'tar'
+	     filename. This command is to be executed to make a tar file
+	     of the InterBase kit. */
+
+-------------------------------------------------------------
+
+##################################################################
+         pkg.README
+##################################################################
+
+     pkgmk produces an installable package to be used as input to
+     the pkgadd command. The command uses the package prototype file  
+     as input and creates a pkgmap file. The contents for each entry 
+     in the prototype file is copied to the appropriate output location.
+
+
+     pkgproto scans the indicated paths and  generates  prototype
+     file entries that may be used as input to the pkgmk command.
+ 
+     pkgtrans translates an installable package from  one  format
+     to another.  It translates:
+          a file system format to a datastream
+          a datastream to a file system format
+          one file system format to another file system format
+ 
+
+     pkgparam displays the value associated with the parameter or
+     parameters  requested  on  the command line.  The values are
+     located in either the pkginfo file for pkginst or  from  the
+     specific file named with the -f option.
+
+     pkginfo displays information about software  packages  which
+     are  installed  on  the  system (with the first synopsis) or
+     which reside on a particular device or directory  (with  the
+     second synopsis). Here is a sample.
+
+$ pkginfo -d `pwd`/pkg
+application InterBase      Interbase RDBMS Software
+$ pkginfo -l -d `pwd`/pkg
+   PKGINST:  InterBase
+      NAME:  Interbase RDBMS Software
+  CATEGORY:  application
+      ARCH:  sparc
+   VERSION:  InterBase Version B4.0E
+   BASEDIR:  /usr
+    PSTAMP:  beta
+    STATUS:  spooled
+     FILES:    169 spooled pathnames
+                 9 directories
+                18 executables
+                 4 setuid/setgid executables
+                 5 package information files
+             20947 blocks used (approx)
+ 
+$ 
+
+How to build a package:
+----------------------
+
+1. vi pkginfo  /* change version */ 
+2. pkgproto `pwd`/interbase=\$IBASEDIR/interbase >> prototype 
+       /* The $IBASEDIR in the path looks bogus. We should decide
+          how that should be, and fix it up for the future. --cjewell */
+3. Edit 'prototype' file and add to the beginning of the file:
+i pkginfo
+i request
+i postinstall
+i preremove
+4. mkdir pkg 
+5. pkgmk -d `pwd`/pkg -p beta
+   --where beta is just any string label for the package instance?
+6. pkgtrans `pwd`/pkg /dev/rmt/0m 
+   --for tape reboot if necessary 
+
+# Platforms currently using the 'pkg' format are:
+# Solaris, DG/UX and NCR
+
+##################################################################
+
+*** Platform specific information (notes created during previous build) ***
+
+#AIX 3.2.4 watson        
+	  Added interbase/isc_config to 'maketar' to be included in the kit.
+#Solaris 2.4 sogood     
+	  Added interbase/isc_config to 'maketar' to be included in the kit.
+	  - make -f make_kit utilities        
+	     in order to make a new interbase/isc4.gdb
+#HP-UX 10.01 molokai   
+	.Edited build_kit locally to set CC_PATH to /opt/softbench/bin, 
+	  since 'cc' was being used from /usr/ccs/bin which is wrong.
+#SCO 3.0 goofy        
+	.In 'jrd' dir. executed the foll.  steps:
+	 - ar x /lib/libc.a _fltused.o
+	 - ar x /lib/libc.a 87ftol.o
+	
+	.cp /usr/gds/v4.0c_sc/interbase/bin/gds_pipe5 interbase/bin
+	.cp /usr/gds/v4.0c_sc/interbase/lock_header_t interbase
+	. Modify 'maketar' to use lock_header_t instead of
+	  lock_header_template
+	  Added interbase/isc_config to 'maketar' to be included in the kit.
+	. The instructions for building a package on SCO 3.2v4.2 is in
+	  'goofy:/usr/gds/v4.0c_sc/sco_ship'
+
+#SCO 5.0 scov1
+        . The instructions for building release media on SCO Open Server
+          Release 5 are in 'scov1:/usr/gds.scov1/V4.0M_SS/sco5_ship',
+          the shell script which makes the SCO-Custom-installable media
+          images.
+
+#SunOS 4.1.3 opus    
+	.Edited build_kit locally to set CC_PATH to /bin 
+#HP-UX 9.05 yoda    
+	.Edited build_kit locally to set CC_PATH to /opt/softbench/bin. 
+	- make -f make_kit utilities        
+	   in order to make a new interbase/isc4.gdb
+#AIX 4.1.2/PPC aix2     
+	  Added interbase/isc_config to 'maketar' to be included in the kit.
+	- make -f make_kit utilities        
+	   in order to make a new interbase/isc4.gdb
+##################################################################
+
+
+*** Build machines ***
+
+	Platform		Build machine name
+	--------------------------------------------
+	Solaris (IB Classic)    sogood
+	Solaris (IB SS)         sogood
+	SunOS			opus
+	HP-UX 9.0		yoda
+	HP-UX 10.01 (IB Classic)molokai
+	HP-UX 10.01 (IB SS)     superhp1
+	IBM AIX RS6000		watson
+	AIX/PPC			aix2
+	SGI			sgi1
+	Digital Unix		seaquest
+	IMP			mimp
+	SCO 3.0			goofy
+	SCO 5.0			scov1
+	DG/UX 88K		dg1
+	DG/UX Intel		dgintel1
+	NCR			????
+

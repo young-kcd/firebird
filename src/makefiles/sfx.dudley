@@ -1,0 +1,187 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+
+@SET_MAKE@
+OBJS=           objs
+SOURCE=         source
+
+srcdir=         $(SOURCE)/dudley
+VPATH=          $(SOURCE)/dudley
+CXX=            @CXX@
+
+unexport ISC_USER
+unexport ISC_PASSWORD
+
+.SUFFIXES:      .cpp .epp
+.epp.cpp:
+	$(GPRE_STATIC) $(GPRE_FLAGS) $< $@
+
+GPRE=		$(OBJS)/firebird/bin/gpre$(EXEC_EXT)
+GPRE_STATIC=	$(OBJS)/firebird/bin/gpre_static$(EXEC_EXT)
+DUDLEY=		$(OBJS)/firebird/bin/gdef$(EXEC_EXT)
+GPRE_FLAGS=	-r -m -z -n
+CXX_INCLUDE_DIRS=       -I. -Isource/jrd
+
+
+# If you add any more Objects from other components in this makefile,
+# please create an action rule for the object below. 
+# For eg: see the rule for $(JRD_LINK)
+ISC_LINK=	$(OBJS)/jrd/isc.o 
+JRD_LINK=	$(OBJS)/jrd/isc_file.o $(OBJS)/jrd/llio.o $(OBJS)/jrd/misc.o $(OBJS)/jrd/iberr.o
+GPRE_LINK=	$(OBJS)/gpre/pretty.o
+WALF_LINK=	$(OBJS)/wal/walf.o
+
+DUDLEY_OBJECTS=	ddl.o exe.o expand.o expr.o extract.o generate.o \
+	hsh.o lex.o parse.o trn.o
+
+DDL_LINK_OBJECTS= $(DUDLEY_OBJECTS) $(ISC_LINK) $(JRD_LINK) $(GPRE_LINK) \
+	$(WALF_LINK)
+
+all:		dudley$(EXEC_EXT)
+
+# JMB $(ISC_LINK) already in shared library
+# JMB $(JRD_LINK) already in shared library
+# JMB $(WALF_LINK) already in shared library
+dudley:		ddllib.a $(DDL_LINK_OBJECTS) $(GDSSHR)
+	-$(RM) dudley
+	$(CXX) $(LINK_OPTS) $(DUDLEY_OBJECTS) \
+		$(GPRE_LINK) -o dudley $(GDSSHR_LINK)
+	$(CHMOD_7) dudley
+	$(MV) dudley $(DUDLEY)
+	$(TOUCH) dudley
+	$(CHMOD_6) dudley
+
+dudley.exe:	ddllib.lib $(DDL_LINK_OBJECTS)
+	-$(RM) dudley.exe dudley.rsp
+	$(ECHO) $(DUDLEY_OBJECTS) > dudley.rsp
+	$(ECHO) $(JRD_LINK) $(GPRE_LINK) $(WALF_LINK) \
+		>> dudley.rsp
+	$(CXX) $(LINK_OPTS) $(O_EXE_SWITCH)dudley \
+		@dudley.rsp $(GDSSHR_LINK) $(ADVAPILIB) $(MPRLIB)
+	$(MV) dudley.exe $(DUDLEY)
+	$(RM) dudley.exe dudley.rsp
+	$(TOUCH) dudley.exe
+
+ddllib.a:	$(DUDLEY_OBJECTS)
+	-rm -f ddllib.a
+	$(AR) ddllib.a $(DUDLEY_OBJECTS)
+	-ranlib ddllib.a
+
+ddllib.lib:	$(DUDLEY_OBJECTS)
+	-$(RM) ddllib.lib
+	$(IMPLIB) -out:ddllib.lib $(DUDLEY_OBJECTS)
+	$(TOUCH) ddllib.lib
+
+debug:		$(DUDLEY_OBJECTS) $(GPRE_LINK) $(GDSLIB)
+	$(CXX) $(LINK_OPTS) -g $(DUDLEY_OBJECTS) $(GPRE_LINK) -o dudley_dbg $(GDSLIB_LINK)
+
+debug_nt:	$(DUDLEY_OBJECTS) $(GPRE_LINK)
+	$(CXX) $(DEBUG_LINK_OPTS) $(O_EXE_SWITCH)dudley_dbg $(DUDLEY_OBJECTS) $(GPRE_LINK) $(GDSLIB_LINK)
+
+ddl.h:		$(SOURCE)/jrd/dsc.h
+#	$(TOUCH) ddl.h
+ddl.o:		ddl.cpp ddl.h \
+		ddl_proto.h exe_proto.h expan_proto.h extra_proto.h \
+		hsh_proto.h lex_proto.h parse_proto.h trn_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/gds_proto.h
+exe.cpp:	yachts.lnk exe.epp
+exe.o:		exe.cpp ddl.h \
+		ddl_proto.h exe_proto.h gener_proto.h hsh_proto.h \
+		lex_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/flags.h \
+		$(SOURCE)/jrd/acl.h $(SOURCE)/jrd/intl.h $(SOURCE)/jrd/obj.h \
+		$(SOURCE)/jrd/gds_proto.h $(SOURCE)/jrd/isc_f_proto.h \
+		$(SOURCE)/wal/walf_proto.h
+	$(SPECIAL_OPT) $(COPT_DUDLEY_EXE) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+expand.o:	expand.cpp ddl.h parse.h \
+		expan_proto.h ddl_proto.h hsh_proto.h parse_proto.h \
+		$(SOURCE)/jrd/gds_proto.h 
+expr.o:		expr.cpp ddl.h parse.h $(SOURCE)/jrd/acl.h $(SOURCE)/jrd/intl.h \
+		ddl_proto.h expr_proto.h lex_proto.h parse_proto.h 
+extract.cpp:	yachts.lnk extract.epp
+extract.o:	extract.cpp ddl.h \
+		ddl_proto.h extra_proto.h \
+		$(SOURCE)/jrd/acl.h $(SOURCE)/jrd/flags.h \
+		$(SOURCE)/jrd/obj.h $(SOURCE)/jrd/gds_proto.h  $(SOURCE)/wal/wal.h
+generate.o:	generate.cpp ddl.h \
+		ddl_proto.h gener_proto.h trn_proto.h \
+		$(SOURCE)/jrd/acl.h $(SOURCE)/jrd/gds_proto.h
+hsh.o:		hsh.cpp ddl.h parse.h \
+		ddl_proto.h hsh_proto.h
+lex.o:		lex.cpp ddl.h parse.h \
+		ddl_proto.h hsh_proto.h lex_proto.h \
+		$(SOURCE)/jrd/gds_proto.h
+parse.o:	parse.cpp ddl.h parse.h \
+		exe_proto.h expr_proto.h hsh_proto.h lex_proto.h \
+		parse_proto.h \
+		$(SOURCE)/jrd/acl.h $(SOURCE)/jrd/flags.h \
+		$(SOURCE)/wal/wal.h $(SOURCE)/jrd/isc_f_proto.h
+	$(SPECIAL_OPT) $(COPT_DUDLEY_PARSE) \
+	$(CXX) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+trn.o:		trn.cpp ddl.h \
+		gener_proto.h lex_proto.h trn_proto.h \
+		$(SOURCE)/jrd/license.h $(SOURCE)/jrd/gds_proto.h \
+		$(SOURCE)/jrd/gdsassert.h \
+		$(SOURCE)/gpre/prett_proto.h
+
+yachts.lnk:	$(OBJS)/dbs/empty.gdb
+	ln -fs $(OBJS)/dbs/empty.gdb yachts.lnk
+
+$(OBJS)/dbs/empty.gdb:	force
+	$(CD) $(OBJS)/dbs && $(MAKE) empty.gdb
+
+$(GDSSHR) $(GDSLIB) $(JRD_LINK) $(ISC_LINK):
+	$(CD) $(OBJS)/jrd && $(MAKE) ALT_O="alt.o.ps1" ALT_BIN="alt.bin.ps1" SECURITY_MISC="" SECURITY_P_MISC="" $(@F)
+
+$(GPRE_LINK):
+	$(CD) $(OBJS)/gpre && $(MAKE) $(@F)
+
+$(WALF_LINK):
+	$(CD) $(OBJS)/wal && $(MAKE) $(@F)
+
+force:
+
+# This entry is used to programatically update the include file dependencies 
+# for all *.c files in the current directory.
+#
+# Note that it is specific to Solaris by using the -xM1 compiler option.
+# This option has CC generate dependency lines for the makefile - but
+# does not generate object files.
+# It is likely that a similar option exists on other platforms.
+#
+# It is recommended that depends.mak be created on a platform
+# that supports such an option.  depends.mak is not platform dependent, it uses
+# the standard makefile output format, as can be copied to platforms
+# that don't have a -xM1 feature in the c compiler.
+#
+depends.mak:
+	-$(RM) depends.out
+	-$(CC) $(CFLAGS) -xM1 *.c 1>&2 > depends.out
+	-$(RM) depends.mak
+	$(ECHO) "# depends.mak - dudley"                           > depends.mak
+	$(ECHO) "# Created by 'make depends.mak'"               >> depends.mak
+	date "+# Created on %Y-%m-%d"                           >> depends.mak
+	sed -e "s:source/[a-z/]*/source:source:g" -e "s:source/dudley/::g"\
+		depends.out |sort|uniq >> depends.mak
+	-$(RM) depends.out
+
+# In the event that a platform does not support the make directive "include" - 
+# concatenate "depends.mak" with the makefile.
+#
+include depends.mak
+

@@ -1,0 +1,6 @@
+@SET_MAKE@
+
+all: firebird
+
+firebird:
+	cd generated && $(MAKE) SYSTEM="builds" firebird

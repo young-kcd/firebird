@@ -1,0 +1,141 @@
+#!/bin/sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+
+# This script makes and populates the ibtar directory of a build tree.
+# It can be used as part of the process of making either a delivery
+# tar file or a package (as for use with Solaris pkgadd command).
+# It should normally be run as root, so that the ibtar/interbase directory
+# and its contents will owned by root.  Note that it does not actually create
+# a tar file, just a directory which is ready to be tarred, and that it is
+# only applicable to SuperServer kits, not Classic.
+
+IB=`ckpath -aoy -p "\nEnter the absolute path name of the interbase directory\'s parent"` || exit $?
+
+INCLUDE_DOC=1
+INCLUDE_SERVER=1
+DONE_PARSING=0
+
+while [ $# -gt 0 -a $DONE_PARSING -eq 0 ] ; do
+  case $1 in
+    -c|--clientonly)
+		     INCLUDE_SERVER=0;
+		     shift;;
+    -n|--nodocs    )
+		     INCLUDE_DOC=0;
+		     shift;;
+    -nc|-cn        )
+		     INCLUDE_SERVER=0;
+		     INCLUDE_DOC=0;
+		     shift;;
+    -*             )
+		     echo $0 unknown option $1, terminating.;
+		     exit 1;;
+    *              )
+		     DONE_PARSING=1;;
+  esac
+done
+
+if [ -f $IB/interbase/bin/ibserver ]; then
+    # creating superserver tar file
+    echo 'Creating super server archive'
+
+    # copy the required file to sstar directory
+    if [ -d sstar ]; then
+        # sstar exists delete and remove directory
+        rm -rf sstar
+    fi
+    #create sstar and copy new stuff
+    mkdir sstar
+    mkdir sstar/interbase
+    mkdir sstar/interbase/bin
+    mkdir sstar/interbase/doc
+    mkdir sstar/interbase/examples
+    mkdir sstar/interbase/include
+    mkdir sstar/interbase/lib
+
+    if [ $INCLUDE_SERVER -eq 1 ]; then
+      mkdir sstar/interbase/UDF
+      mkdir sstar/interbase/help
+      mkdir sstar/interbase/intl
+      cp $IB/interbase/bin/ibserver       sstar/interbase/bin/ibserver
+      cp $IB/interbase/bin/gds_lock_print sstar/interbase/bin/gds_lock_print
+      cp $IB/interbase/bin/ibguard        sstar/interbase/bin/ibguard
+      cp $IB/interbase/bin/gsec           sstar/interbase/bin/gsec
+      cp $IB/interbase/bin/gsplit         sstar/interbase/bin/gsplit
+      cp $IB/interbase/bin/gstat          sstar/interbase/bin/gstat
+      cp $IB/interbase/bin/ibmgr.bin      sstar/interbase/bin/ibmgr.bin
+      cp $IB/interbase/bin/isc4.gbak      sstar/interbase/bin/isc4.gbak
+    fi
+    
+    cp $IB/interbase/bin/gbak           sstar/interbase/bin/gbak
+    cp $IB/interbase/bin/gdef           sstar/interbase/bin/gdef
+    cp $IB/interbase/bin/gfix           sstar/interbase/bin/gfix
+    cp $IB/interbase/bin/gpre           sstar/interbase/bin/gpre
+    cp $IB/interbase/bin/isql           sstar/interbase/bin/isql
+    cp $IB/interbase/bin/qli            sstar/interbase/bin/qli
+
+    if [ $INCLUDE_DOC -eq 1 ] ; then
+      cp -r $IB/interbase/doc/*         sstar/interbase/doc
+    fi
+    
+    
+    cp $IB/interbase/examples/v5/[a-z]* sstar/interbase/examples
+    if [ $INCLUDE_SERVER -eq 1 ]; then
+      cp $IB/interbase/help/[a-z]*      sstar/interbase/help
+      cp $IB/interbase/isc4.gdb         sstar/interbase/isc4.gdb
+      cp $IB/interbase/isc_config       sstar/interbase/isc_config
+    fi
+    cp $IB/interbase/include/[a-z]*     sstar/interbase/include
+    cp $IB/interbase/intl/gdsintl*      sstar/interbase/intl
+    cp $IB/interbase/interbase.msg      sstar/interbase/interbase.msg
+
+    # for SOLARIS 
+    if [ -f $IB/interbase/lib/gdsmt.so.1 ]; then
+         cp $IB/interbase/lib/gdsmt.so.1 sstar/interbase/lib/gdsmt.so.0
+         ( cd sstar/interbase/lib; ln -s gdsmt.so.0 gds.so.0 )
+         TARFLAGS_CREATE="cvpf"
+         TARFLAGS_VIEW="tvf"
+    fi
+    if [ -f $IB/interbase/lib/ib_util.so ]; then
+    	 cp $IB/interbase/lib/ib_util.so sstar/interbase/lib/
+    fi
+    
+    # for HP-UX
+    if [ -f $IB/interbase/lib/gds.sl.1 ]; then
+         cp $IB/interbase/lib/gds.sl.1 sstar/interbase/lib/gds.sl
+         TARFLAGS_CREATE="cvpf"
+         TARFLAGS_VIEW="tvf"
+    fi
+    if [ -f $IB/interbase/lib/ib_util.sl ]; then
+    	 cp $IB/interbase/lib/ib_util.sl sstar/interbase/lib/
+    fi
+
+    cp $IB/interbase/lib/gds_pyxis.a     sstar/interbase/lib/
+    cp $IB/interbase/intl/gdsintl        sstar/interbase/intl/
+
+    cp $IB/interbase/UDF/ib_udf          sstar/interbase/UDF
+
+    cp $IB/interbase/services.isc         sstar/interbase/services.isc
+    cp $IB/interbase/license.txt          sstar/interbase/license.txt
+    cp $IB/interbase/ReleaseNotes.pdf \
+         sstar/interbase/ReleaseNotes.pdf
+
+else
+  echo "This is not a super server kit!!"
+  exit 2
+fi

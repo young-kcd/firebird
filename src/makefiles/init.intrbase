@@ -1,0 +1,163 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+:
+#! /bin/sh
+#BEGIN_CM_SCRIPTLIB
+#
+# Standard CM script function library
+# baselib v1.2
+#
+
+PATH=/bin:/usr/bin:/etc:.
+LANG=english_us.ascii	# Used when scripts are internationalized.
+export PATH LANG
+
+TMPFILE=/tmp/tmp$$    # Define a temporary file for use if necessary.
+TMPFILE1=/tmp/tmp1$$    # Define a temporary file for use if necessary.
+TMPFILE2=/tmp/tmp2$$    # Define a temporary file for use if necessary.
+
+# Define return values.
+: ${OK=0} ${FAIL=1} ${STOP=10}
+ 
+#
+#query the user for a responce.
+#a simpler system than prompt, use prompt for
+#more sophisticated uses.
+#q or Q returns fail, anything else return ok.
+#ARGS: <string>, string to print when asking for a responce
+#$OK means expression has been resolved or answer is given 
+#$FAIL means quit has been selected
+#
+respond() {
+	while	echo "\n${*}\nRespond or enter q to quit: \c" 
+	do	read answer
+		case $answer in
+		Q|q)	return $FAIL					;;
+		"")	# on a return key return $OK
+			answer="RETURNKEY"
+			return $OK			;;
+		*)	# on anything else return $OK
+			return $OK					;;
+		esac
+	done
+	return $OK
+}
+ 
+#
+# Standard CM script function library
+# configlib V1.0
+# Contains: baselib, specificlib
+#
+ 
+#
+# Standard CM script function library
+# specificlib v1.4
+# contains: baselib
+#
+ 
+#END_CM_SCRIPTLIB
+
+#MAIN
+
+echo "running $0 init script"
+
+# Save a support question or two
+
+if [ -f /usr/lib/libsocket.a ]
+then
+: # OK, we can do development with sockets
+else
+echo "Warning: Socket libraries are not installed. You cannot do development"
+echo "         with interbase without a TCP/IP development system installed."
+fi
+
+# 3.2v4 or better install
+#
+# Symlink standard include file to /usr/include
+#
+rm -f /usr/include/gds.h /usr/include/perf.h /usr/include/ibase.h
+rm -f /usr/lib/libgds.a /usr/lib/libgds_b.a /usr/lib/gds_pipe.a 
+rm -f /usr/lib/gds_inet_svr.a /usr/lib/libgds_s.a /usr/lib/libgdsf_s.a
+rm -f /shlib/libgds_s /shlib/libgdsf_s /usr/lib/libgds_pyxis.a
+rm -f /usr/lib/libgds_pipe.a
+
+echo "Creating symbolic links to Interbase include files in /usr/include..."
+
+ln -s /usr/interbase/include/gds.h /usr/include/gds.h
+ln -s /usr/interbase/include/ibase.h /usr/include/ibase.h
+ln -s /usr/interbase/include/perf.h /usr/include/perf.h
+# 
+# symlink pipe and full libraries to /lib/386 and re-initialize table of contents
+#
+echo "Creating symbolic links to Interbase libraries in /usr/lib..."
+
+ln -s /usr/interbase/lib/gds.a /usr/lib/libgds.a
+ln -s /usr/interbase/lib/gds_b.a /usr/lib/libgds_b.a
+ln -s /usr/interbase/lib/gds_pipe.a /usr/lib/libgds_pipe.a
+ln -s /usr/interbase/lib/gds_pyxis.a /usr/lib/libgds_pyxis.a
+ln -s /usr/interbase/lib/gds_inet_svr.a /usr/lib/gds_inet_svr.a
+ln -s /usr/interbase/lib/gds_s.a /usr/lib/libgds_s.a
+ln -s /usr/interbase/lib/gdsf_s.a /usr/lib/libgdsf_s.a
+#
+echo "Creating symbolic links to Interbase shared libraries in /shlib..."
+
+ln -s /usr/interbase/lib/gds_s /shlib/libgds_s
+ln -s /usr/interbase/lib/gdsf_s /shlib/libgdsf_s
+
+#
+# License interbase
+#
+# Currently, we don't use iscinstall, but that may change
+# /usr/interbase/bin/iscinstall
+
+#
+# Protect examples and QLI help database
+#
+
+cd /usr/interbase
+chmod 666 isc4.gdb help/help.gdb examples/*/*.gdb
+
+#
+# If TCP is installed, update both services and servers databases
+#
+
+if [ -f /etc/services ] ; then
+    grep -s gds_db /etc/services > /dev/null 2>&1 
+    if test $? != 0 ; then
+        cat /etc/services services.isc > services
+	mv services /etc/services
+	chmod u=rw,go=r /etc/services
+    fi
+fi
+if [ -f /etc/inetd.conf ] ; then
+    grep -s gds_db /etc/inetd.conf > /dev/null 2>&1 
+    if test $? != 0 ; then
+        cat /etc/inetd.conf inetd.conf.isc > inetd.conf
+	mv inetd.conf /etc/inetd.conf
+	chmod u=rw,go=r /etc/inetd.conf
+
+	# Kill -HUP inet daemon (to restart it for the new server)
+	# (if inetd is not running, kill -1 does nothing)
+
+	ps -ead | grep inetd | while read pid rest
+		do
+		kill -1 $pid
+		done
+    fi
+fi
+
+exit 0

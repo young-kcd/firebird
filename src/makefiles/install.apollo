@@ -1,0 +1,228 @@
+#!/etc/sys_sh
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+#
+# InterBase Installation Procedure (sr10)
+#
+# copyright (c) 1986, 1991 Interbase Software Corporation
+
+echo
+echo 'Installing InterBase  (Version AX-V4.0A)'
+echo
+
+if test $USER != 'root'
+then
+    echo '    ***You must be logged on as "root" to install InterBase. ***'
+    echo
+    exit 1
+fi
+
+echo 'Enter target node (e.g. //UPDATE_ME): \c' 
+read target
+
+if test $target
+then
+    echo 'Installation install_types available are:'
+    echo '     CTAPE         Install software from cartridge tape distribution kit'
+    echo '     NET           Install software from another network node'
+    echo
+    echo 'Enter installation install_type (e.g. CTAPE, NET): \c' 
+    read install_type
+
+    case $install_type in
+	ctape|CTAPE)   device=ct ;;
+	net|NET)       device=net ;;
+	*)             echo $install_type not supported
+		       exit 1 ;;
+    esac
+
+    case $device in
+	f0|m0|ct)
+
+	# create or recreate the interbase tree
+
+		cd $target
+		/com/rbak -dev $device -f 2 -all -ms  -l -force -du;;
+    
+	net)
+		echo 'Enter source node (e.g. //SOURCE_NODE) : \c'
+		read source
+
+		if test ! -d $target/interbase
+		then mkdir $target/interbase
+		fi
+		if test ! -d $target/interbase/examples
+		then mkdir $target/interbase/examples
+		fi
+		if test ! -d $target/interbase/com
+		then mkdir $target/interbase/com
+		fi
+		if test ! -d $target/interbase/lib
+		then mkdir $target/interbase/lib
+		fi
+		if test ! -d $target/interbase/include
+		then mkdir $target/interbase/include
+		fi
+		if test ! -d $target/interbase/intl
+		then mkdir $target/interbase/intl
+		fi
+		if test ! -d $target/interbase/help
+		then mkdir $target/interbase/help
+		fi
+
+		cp -f -o $source/interbase/install $target/interbase
+	        cp -f -o $source/interbase/services.isc  $target/interbase
+	        cp -f -o $source/interbase/sys.conf.isc  $target/interbase
+
+                cp -f -o $source/interbase/inetd.conf.isc $target/interbase
+                cp -f -o $source/interbase/interbase.msg $target/interbase
+	        cp -f -o $source/interbase/isc_ins_hlp.dat $target/interbase
+		
+	        cp -f -o $source/interbase/RELNOT* $target/interbase
+	        cp -f -o $source/interbase/READ_ME $target/interbase
+
+	        cp -f -o $source/interbase/examples/* $target/interbase/examples
+	        cp -f -o $source/interbase/help/* $target/interbase/help
+	        cp -f -o $source/interbase/include/* $target/interbase/include
+	        cp -f -o $source/interbase/intl/* $target/interbase/intl
+                cp -f -o $source/interbase/lib/* $target/interbase/lib
+
+	        for file in fred gbak gcsu gdef gds_archive gds_cserver \
+			    gds_inet_server gds_lock_print gds_relay \
+			    gds_server gfix gjrn gpre grst gstat qli \
+			    iscinstall gsec isc.gbak journal.gbak \
+			    gds_wal_writer
+		do cp -f -o $source/interbase/com/$file $target/interbase/com
+		done;;
+    esac
+
+    # Set File permissions
+
+    cd $target/interbase
+    chown root		\
+	.		\
+	com examples help include intl lib	\
+	com/*		\
+	examples/*	\
+	help/*		\
+	include/*	\
+	intl/*		\
+	lib/*		\
+	inetd.conf.isc	\
+	install		\
+	interbase.msg	\
+	services.isc	\
+	isc_ins_hlp.dat	\
+	sys.conf.isc
+
+    chgrp bin		\
+	.		\
+	com examples help include intl lib	\
+	com/*		\
+	examples/*	\
+	help/*		\
+	include/*	\
+	intl/*		\
+	lib/*		\
+	inetd.conf.isc	\
+	install		\
+	interbase.msg	\
+	services.isc	\
+	isc_ins_hlp.dat	\
+	sys.conf.isc
+
+    chmod uog=rx install com/*
+
+    chmod uog=r		\
+	examples/*	\
+	help/*		\
+	include/*	\
+	intl/*		\
+	lib/*		\
+	inetd.conf.isc	\
+	interbase.msg	\
+	services.isc	\
+	isc_ins_hlp.dat	\
+	sys.conf.isc
+
+    chmod uog=rwx . help
+
+    chmod u=rwx,go=rx com examples include intl lib
+
+    chmod u+s,g+s	\
+	com/gds_relay \
+	com/gds_inet_server
+
+    if [ -f lock_header_template ]; then
+	chown root	\
+	lock_header_template
+	chgrp bin		\
+	lock_header_template
+	chmod uog=r		\
+	lock_header_template
+    fi
+
+    chmod uog=rx	\
+	lib/gdslib	\
+	lib/pyxislib	\
+	lib/gdsintl	\
+	lib/bridge5
+
+    # Protect security database
+
+    inlib $target/interbase/lib/gdslib
+    cd $target/interbase/com
+    chmod uog=rw ../isc.gdb
+
+    # Protect help database
+
+    cd $target/interbase/help
+    chmod uog=rw help.gdb
+
+    # Protect sample databases
+
+    cd $target/interbase/examples/v3
+    chmod uog=rw atlas.gdb emp.gdb
+    cd $target/interbase/examples/v4
+    chmod uog=rw employee.gdb
+
+    if test -f $target/etc/services
+    then cd $target/interbase
+	 grep -s gds_db $target/etc/services
+	 if test $? != 0
+	 then cat services.isc >> $target/etc/services
+	 fi
+    fi
+
+    if test -f $target/sys/node_data/etc/sys.conf
+    then cd $target/interbase
+	 grep -s gdslib $target/sys/node_data/etc/sys.conf
+	 if test $? != 0
+	 then cat sys.conf.isc >> $target/sys/node_data/etc/sys.conf
+	 fi
+    fi
+
+    if test -f $target/sys/node_data/etc/inetd.conf
+    then cd $target/interbase
+	 grep -s gds_db $target/sys/node_data/etc/inetd.conf
+	 if test $? != 0
+	 then cat inetd.conf.isc >> $target/sys/node_data/etc/inetd.conf
+	 fi
+    fi
+    echo
+    echo Installation complete
+fi
