@@ -1,3 +1,10 @@
+2003-03-08 09:06  dimitr
+
+	* firebird2/src/jrd/: alt.cpp, dfw.epp, event.cpp, event.h,
+	event_proto.h:
+	
+	Cleanup and minor changes in the event manager.
+
 2003-03-07 22:30  tamlin
 
 	* firebird2/src/isql/isql.epp:
