@@ -14,9 +14,6 @@
 ;
 ; All Rights Reserved.
 ; Contributor(s): ______________________________________.
-LIBRARY ib_util
-
-DESCRIPTION 'InterBase Utilities Library'
 
 EXPORTS
-	ib_util_malloc		@1
+	ib_util_malloc

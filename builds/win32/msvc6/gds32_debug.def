@@ -15,10 +15,6 @@
 ; All Rights Reserved.
 ; Contributor(s): ______________________________________.
 
-LIBRARY gds32
-
-DESCRIPTION 'Firebird Client Library'
-
 EXPORTS
     gds__alloc=fbclient.gds__alloc
     gds__attach_database=fbclient.gds__attach_database
@@ -106,10 +102,6 @@ EXPORTS
     gds__version=fbclient.gds__version
     gds__vtof=fbclient.gds__vtof
     gds__vtov=fbclient.gds__vtov
-    blob__display=fbclient.blob__display
-    blob__dump=fbclient.blob__dump
-    blob__edit=fbclient.blob__edit
-    blob__load=fbclient.blob__load
     BLOB_close=fbclient.BLOB_close
     BLOB_display=fbclient.BLOB_display
     BLOB_dump=fbclient.BLOB_dump
@@ -123,12 +115,7 @@ EXPORTS
     perf_get_info=fbclient.perf_get_info
     perf_report=fbclient.perf_report
     isc_attach_database=fbclient.isc_attach_database
-    isc_baddress=fbclient.isc_baddress
-    isc_blob_display=fbclient.isc_blob_display
-    isc_blob_dump=fbclient.isc_blob_dump
-    isc_blob_edit=fbclient.isc_blob_edit
     isc_blob_info=fbclient.isc_blob_info
-    isc_blob_load=fbclient.isc_blob_load
     isc_cancel_blob=fbclient.isc_cancel_blob
     isc_cancel_events=fbclient.isc_cancel_events
     isc_close=fbclient.isc_close
@@ -140,7 +127,6 @@ EXPORTS
     isc_create_blob=fbclient.isc_create_blob
     isc_create_blob2=fbclient.isc_create_blob2
     isc_create_database=fbclient.isc_create_database
-    isc_database_cleanup=fbclient.isc_database_cleanup
     isc_database_info=fbclient.isc_database_info
     isc_ddl=fbclient.isc_ddl
     isc_declare=fbclient.isc_declare
@@ -251,9 +237,6 @@ EXPORTS
     isc_drop_database=fbclient.isc_drop_database
     isc_dsql_exec_immed3_m=fbclient.isc_dsql_exec_immed3_m
     gds__temp_file=fbclient.gds__temp_file
-    ISC_signal=fbclient.ISC_signal
-    ISC_signal_cancel=fbclient.ISC_signal_cancel
-    ISC_kill=fbclient.ISC_kill
     gds__transaction_cleanup=fbclient.gds__transaction_cleanup
     isc_blob_gen_bpb=fbclient.isc_blob_gen_bpb
     isc_blob_lookup_desc=fbclient.isc_blob_lookup_desc
@@ -264,16 +247,9 @@ EXPORTS
     BLOB_text_dump=fbclient.BLOB_text_dump
     BLOB_text_load=fbclient.BLOB_text_load
     isc_modify_dpb=fbclient.isc_modify_dpb
-    isc_format_implementation=fbclient.isc_format_implementation
-    SDL_info=fbclient.SDL_info
-    DLS_add_dir=fbclient.DLS_add_dir
     gds__get_prefix=fbclient.gds__get_prefix
     gds__prefix_lock=fbclient.gds__prefix_lock
     gds__prefix_msg=fbclient.gds__prefix_msg
-    ISC_prefix=fbclient.ISC_prefix
-    ISC_prefix_lock=fbclient.ISC_prefix_lock
-    ISC_prefix_msg=fbclient.ISC_prefix_msg
-    ISC_get_prefix=fbclient.ISC_get_prefix
     gds__validate_lib_path=fbclient.gds__validate_lib_path
     isc_add_user=fbclient.isc_add_user
     isc_delete_user=fbclient.isc_delete_user
