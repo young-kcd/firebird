@@ -288,7 +288,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		   with the index block in the "permanent" metadata cache */
 
 		{
-			Jrd::ContextPoolHolder(tdbb, JrdMemoryPool::createPool());
+			Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 			idx->idx_expression =
 				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 						   &idx->idx_expression_request, false, false);

@@ -3147,7 +3147,7 @@ static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 		tdbb->tdbb_request = idx->idx_expression_request;
 		bool result = false;
 		{
-			Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
 			result = expression_equal2(tdbb, opt, idx->idx_expression,
 										node, stream);

@@ -958,7 +958,7 @@ static IDX_E check_duplicates(
 				tdbb->tdbb_request->req_rpb[0].rpb_record = rpb.rpb_record;
 				tdbb->tdbb_request->req_flags &= ~req_null;
 				{
-					Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
+					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
 					if (!(desc_ptr1 = EVL_expr(tdbb, insertion_idx->idx_expression)))
 						desc_ptr1 = &insertion_idx->idx_expression_desc;
@@ -984,7 +984,7 @@ static IDX_E check_duplicates(
 				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
 				tdbb->tdbb_request->req_flags &= ~req_null;
 				{
-					Jrd::ContextPoolHolder(tdbb, tdbb->tdbb_request->req_pool);
+					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
 					if (!(desc_ptr2 = EVL_expr(tdbb, record_idx->idx_expression)))
 						desc_ptr2 = &record_idx->idx_expression_desc;
