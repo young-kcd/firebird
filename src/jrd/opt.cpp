@@ -4416,13 +4416,6 @@ static RSB gen_retrieval(TDBB     tdbb,
 		}
 	}
 
-	// If no index is used then leave other nodes alone, because they could be used for
-	// building a SORT/MERGE.
-	if (!index_used && !outer_flag) {
-		return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,
-					   NULL, csb_tail->csb_cardinality);
-	}
-
 	if (outer_flag) {
 		// Now make another pass thru the outer conjuncts only, finding unused,
 		// computable booleans.  When one is found, roll it into a final
@@ -4464,10 +4457,23 @@ static RSB gen_retrieval(TDBB     tdbb,
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
 			}
-			compose(&opt_boolean, node, nod_and);
-			tail->opt_flags |= opt_used;
-			if (!outer_flag && !(tail->opt_flags & opt_matched)) {
-				csb_tail->csb_flags |= csb_unmatched;
+		}
+	}
+
+	// If no index is used then leave other nodes alone, because they could be used for
+	// building a SORT/MERGE.
+	tail = opt->opt_rpt;
+	if (outer_flag || inversion) {
+		for (; tail < opt_end; tail++) {
+			node = tail->opt_conjunct;
+			if (!(tail->opt_flags & opt_used)
+				&& computable(csb, node, -1, false))
+			{
+				compose(&opt_boolean, node, nod_and);
+				tail->opt_flags |= opt_used;
+				if (!outer_flag && !(tail->opt_flags & opt_matched)) {
+					csb_tail->csb_flags |= csb_unmatched;
+				}
 			}
 		}
 	}
