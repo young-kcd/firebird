@@ -1,3 +1,33 @@
+2003-01-21 17:58  alexpeshkoff
+
+	* firebird2/src/ipserver/: ipc.h, ipclient.cpp, ipserver.cpp:
+	
+	Cleanup
+
+2003-01-21 13:22  dimitr
+
+	* firebird2/src/jrd/all.cpp:
+	
+	Fixed wrong iterator test. Thanks to Tomas Skoda.
+
+2003-01-21 13:19  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Cleanup.
+
+2003-01-21 12:10  dimitr
+
+	* firebird2/builds/win32/msvc6/: common.dsp, common_classic.dsp:
+	
+	Updated project files.
+
+2003-01-21 12:08  dimitr
+
+	* firebird2/src/common/classes/locks.cpp:
+	
+	Cosmetics.
+
 2003-01-20 19:38  alexpeshkoff
 
 	* firebird2/src/common/classes/: locks.cpp, locks.h:
