@@ -4072,8 +4072,11 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 	const bool descending = (idx_flags & idx_descending);
 	const bool allRecordNumber = (flags & btr_all_record_number);
 	const UCHAR* const endPointer = (UCHAR*)bucket + bucket->btr_length;
+	const bool validateDuplicates = 
+		((idx_flags & idx_unique) && !(key->key_flags & key_all_nulls)) || 
+		(idx_flags & idx_primary);
 
-	if (!allRecordNumber) {
+	if (!allRecordNumber || validateDuplicates) {
 		find_record_number = NO_VALUE;
 	}
 
@@ -5100,6 +5103,8 @@ static SLONG insert_node(thread_db* tdbb,
 	const bool primary = (insertion->iib_descriptor->idx_flags & idx_primary);
 	const bool leafPage = (bucket->btr_level == 0);
 	const bool allRecordNumber = (flags & btr_all_record_number);
+	const bool validateDuplicates = 
+		(unique && !(key->key_flags & key_all_nulls)) || primary;
 	USHORT prefix = 0;
 	RecordNumber newRecordNumber;
 	if (leafPage) {
@@ -5108,9 +5113,10 @@ static SLONG insert_node(thread_db* tdbb,
 	else {
 		newRecordNumber = *new_record_number;
 	}
+	// For checking on duplicate nodes we should find the first matching key.
 	UCHAR* pointer = find_node_start_point(bucket, key, 0, &prefix,
 		insertion->iib_descriptor->idx_flags & idx_descending, 
-		false, allRecordNumber, newRecordNumber);
+		false, allRecordNumber, validateDuplicates ? NO_VALUE : newRecordNumber);
 	if (!pointer) {
 		return NO_VALUE_PAGE;
 	}
@@ -5166,9 +5172,7 @@ static SLONG insert_node(thread_db* tdbb,
 			if (beforeInsertNode.isEndLevel) {
 				break;
 			}
-			if (leafPage && unique && 
-				(!(key->key_flags & key_all_nulls) || primary))
-			{
+			if (leafPage && validateDuplicates) {
 				// Save the duplicate so the main caller can validate them.
 				// hvlad: don't check unique index if key has only null values
 				RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
@@ -5184,7 +5188,7 @@ static SLONG insert_node(thread_db* tdbb,
 				return 0;
 			}*/ 
 			//else 
-			if (allRecordNumber) {
+			if (allRecordNumber && !validateDuplicates) {
 				// if recordnumber is higher we need to insert before it.
 				if (newRecordNumber <= beforeInsertNode.recordNumber) {
 					break;
