@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.19 2002-11-29 04:10:17 seanleyne Exp $
+$Id: flu.cpp,v 1.20 2002-12-02 09:48:09 eku Exp $
 */
 
 #include "firebird.h"
@@ -118,28 +118,34 @@ static int condition_handler(int *, int *, int *);
 const char*
 dirname(const char* fname)
 {
-	static char result[512];
-	int i = 0;
-	int last = 0;
+	static char result[MAXPATHLEN];
+	int i, last;
 
-	if (strlen(fname) == 0)
-		return ".";
-	strcpy(result, fname);
-	while (*fname)
+	/* Set default return value */
+	result[0] = '.';
+	result[1] = '\0';
+
+	if (fname != (const char *)0 && *fname != '\0')
 	{
-		i++;
-		if (*fname == '/')
+		i = last = 0;
+		while (*fname)
 		{
-			last = i;
+			i++;
+			if (*fname == '/')
+			{
+				last = i;
+			}
+			fname++;
 		}
-		fname++;
+		if (last != 0)
+		{
+			/* Found dir seperator */
+			assert(last < sizeof(result));
+			strncpy(result, fname, last);
+			result[last] = '\0';
+		}
 	}
-	if (last == 0)
-	{
-		last = 1;
-		result[0] = '.';
-	}
-	result[last] = '\0';
+
 	return result;
 }
 #endif /* HAVE_DIRNAME */
