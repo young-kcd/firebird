@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.32 2004-12-06 09:45:32 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.33 2004-12-09 14:43:18 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -212,6 +212,7 @@ case $FIREBIRD_ARCH_TYPE in
   super)   AC_SUBST(ARCH_TYPE_SUFFIX,SS);;
   classic) AC_SUBST(ARCH_TYPE_SUFFIX,CS);;
 esac
+
 
 PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(debug,
@@ -556,10 +557,10 @@ case "$PLATFORM" in
       SFIO_FLAGS=""
       SFIO_LDFLAGS=""
     else
-   	#AC_CHECK_LIB(sfio, main)		
-      AC_CHECK_LIB(sfio-mt, main,, 
-      AC_MSG_ERROR([sfio library not found]),-lvthread)
-      XE_PREPEND(-lvthread,LIBS)		
+   	AC_CHECK_LIB(sfio, main)		
+      #AC_CHECK_LIB(sfio-mt, main,, 
+      #AC_MSG_ERROR([sfio library not found]),-lvthread)
+      #XE_PREPEND(-lvthread,LIBS)		
 
       SFIO_DIR="$ac_cv_use_sfio"
       SFIO_FLAGS="-DSFIO -I$ac_cv_use_sfio/include"
@@ -673,6 +674,7 @@ mkdir -p temp/libfbclient/common/config
 mkdir -p temp/libfbclient/jrd/os/posix
 mkdir -p temp/libfbclient/jrd/os/win32
 mkdir -p temp/libfbclient/jrd/os/darwin
+mkdir -p temp/libfbclient/remote/os/sun
 mkdir -p temp/client.gbak/burp
 mkdir -p temp/client.gfix/alice
 mkdir -p temp/client.gpre/gpre
@@ -693,6 +695,7 @@ mkdir -p temp/boot.gpre/jrd/os/darwin
 mkdir -p temp/boot.gpre/jrd/os/win32
 mkdir -p temp/boot.gpre/gpre
 mkdir -p temp/static.gpre/gpre
+mkdir -p temp/static.gpre/jrd
 mkdir -p temp/static.gbak/burp
 mkdir -p temp/static.isql/isql
 
@@ -855,11 +858,11 @@ case "$PLATFORM" in
     ;;
 
   solx86)
-    AC_CONFIG_FILES([gen/install/Pkginfo:src/install/arch-specific/solx86gcc/CS/pkginfo.in
-                     gen/install/Prototype:src/install/arch-specific/solx86gcc/CS/prototype.in
-                     gen/install/Preinstall:src/install/arch-specific/solx86gcc/CS/preinstall.in
-                     gen/install/Postinstall:src/install/arch-specific/solx86gcc/CS/postinstall.in
-                     gen/install/Postremove:src/install/arch-specific/solx86gcc/CS/postremove.in
+    AC_CONFIG_FILES([gen/install/Pkginfo:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
+                     gen/install/Prototype:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
+                     gen/install/Preinstall:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
+                     gen/install/Postinstall:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postinstall.in
+                     gen/install/Postremove:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postremove.in
 		     gen/install/prototypelg:src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
 		     gen/install/pkginfolg:src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
