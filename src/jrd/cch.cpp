@@ -2518,7 +2518,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 		   and set up to release it in case of error */
 
 		spare_buffer =
-			(SLONG *) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size,0
+			(SLONG*) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size, 0
 #ifdef DEBUG_GDS_ALLOC
 			  ,__FILE__,__LINE__
 #endif

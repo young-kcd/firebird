@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.18 2004-06-03 07:31:10 robocop Exp $
+//	$Id: jrdmet.cpp,v 1.19 2004-08-21 09:21:08 robocop Exp $
 //
 
 #include "firebird.h"
@@ -81,7 +81,8 @@ void JRDMET_init( DBB db)
 			field->fld_dtype = gfield->gfld_dtype;
 			field->fld_sub_type = gfield->gfld_sub_type;
 			if (field->fld_dtype == dtype_varying ||
-				field->fld_dtype == dtype_text) {
+				field->fld_dtype == dtype_text)
+			{
 				field->fld_dtype = dtype_cstring;
 				field->fld_flags |= FLD_text;
 				++field->fld_length;

@@ -401,7 +401,7 @@ if (opt->opt_count)
 */
 
 
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(),0) RecordSource;
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
 	rsb->rsb_type = rsb_ext_sequential;
 	const SSHORT size = sizeof(irsb);
 

@@ -409,7 +409,8 @@ void ERR_post_nothrow(ISC_STATUS status, ...)
 	va_start(args, status);
 
 	internal_post(status, args);
-};
+}
+
 
 void ERR_post(ISC_STATUS status, ...)
 /**************************************
@@ -431,7 +432,8 @@ void ERR_post(ISC_STATUS status, ...)
 	
 	DEBUG;
 	ERR_punt();
-};
+}
+
 
 static void internal_post(ISC_STATUS status, va_list args)
 {

@@ -2749,7 +2749,7 @@ static void do_isql()
 
 		switch (ret) {
 		case CONT:
-			if(process_statement(statement, global_sqldap) == ERR)
+			if (process_statement(statement, global_sqldap) == ERR)
 			{
 				Exit_value = FINI_ERROR;
 			}

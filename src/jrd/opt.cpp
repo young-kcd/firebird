@@ -5282,7 +5282,7 @@ static RecordSource* gen_skip(thread_db* tdbb, OptimizerBlk* opt,
     rsb->rsb_count = 1;
     rsb->rsb_type = rsb_skip;
     rsb->rsb_next = prior_rsb;
-    rsb->rsb_arg [0] = (RecordSource*) node;
+    rsb->rsb_arg[0] = (RecordSource*) node;
     rsb->rsb_impure = CMP_impure (csb, sizeof (struct irsb_skip_n));
     
     return rsb;
@@ -6385,6 +6385,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
+		fb_assert(idx->idx_expression != NULL);
 		if (!expression_equal(tdbb, opt, idx, field, stream))
 		{
 			return NULL;
@@ -6470,6 +6471,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
+		fb_assert(idx->idx_expression != NULL);
 		if (!(expression_equal(tdbb, opt, idx, field, stream) && 
 			computable(opt->opt_csb, value, stream, true, false)))
 		{
@@ -6756,14 +6758,11 @@ static SSHORT match_index(thread_db* tdbb,
 	for (OptimizerBlk::opt_segment* ptr = opt->opt_segments; i < idx->idx_count;
 		i++, ptr++)
 	{
-		if
+		if (
 #ifdef EXPRESSION_INDICES
-			((idx->idx_flags & idx_expressn) ||
+			(idx->idx_flags & idx_expressn) ||
 #endif
-			 ((USHORT)(IPTR) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
-#ifdef EXPRESSION_INDICES
-			)
-#endif
+			 (USHORT)(IPTR) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
 		{
 			++count;
 			/* AB: If we have already an exact match don't 

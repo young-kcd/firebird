@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.102 2004-08-17 17:52:18 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.103 2004-08-21 09:29:45 robocop Exp $ 
  */
 
 /*
@@ -5084,7 +5084,7 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
  **************************************/
 	EVL_make_value(tdbb, value, impure);
 
-	internal_info_id id =
+	const internal_info_id id =
 		*reinterpret_cast<internal_info_id*>(impure->vlu_desc.dsc_address);
 
 	switch (id)
