@@ -2082,7 +2082,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 	address =
 		(UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
-	if ((U_IPTR) address == -1) {
+	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);
 		close(fd);
 #ifdef HAVE_FLOCK
@@ -2969,7 +2969,7 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 		(UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
 					   start);
 
-	if ((U_IPTR) address == -1) {
+	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);
 		return NULL;
 	}
@@ -3669,7 +3669,7 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 	address =
 		(UCHAR *) mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED,
 					   shmem_data->sh_mem_handle, 0);
-	if ((U_IPTR) address == -1)
+	if ((U_IPTR) address == (U_IPTR) -1)
 		return NULL;
 
 	munmap((char *) shmem_data->sh_mem_address,
@@ -4220,7 +4220,7 @@ static SLONG open_semaphores(
 			error(status_vector, "semctl", errno);
 			return -1;
 		}
-		if (semaphores > buf.sem_nsems) {
+		if (semaphores > (int) buf.sem_nsems) {
 			gds__log("Number of requested semaphores (%d) "
 				"is greater then size of the existing semaphore set (%d)", 
 				semaphores, buf.sem_nsems);
@@ -4263,7 +4263,7 @@ static SLONG create_semaphores(
 				error(status_vector, "semctl", errno);
 				return -1;
 			}
-			if (buf.sem_nsems >= semaphores)
+			if ((int) buf.sem_nsems >= semaphores)
 				return semid;
 			// Number of semaphores in existing set is too small. Discard it.
 			if (semctl(semid, 0, IPC_RMID) == -1) {

@@ -483,9 +483,10 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 
 #ifdef PREAD_PWRITE
 			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) ==
-				-1) {
+				(UINT64) -1) {
 #else
-			if ((bytes = read(file->fil_desc, spare_buffer, length)) == -1) {
+			if ((bytes = read(file->fil_desc, spare_buffer, length)) == 
+				(UINT64) -1) {
 				THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 				if (SYSCALL_INTERRUPTED(errno))
@@ -499,9 +500,9 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 		else
 #endif /* ISC_DATABASE_ENCRYPTION */
 #ifdef PREAD_PWRITE
-		if ((bytes = pread(file->fil_desc, address, length, 0)) == -1) {
+		if ((bytes = pread(file->fil_desc, address, length, 0)) == (UINT64) -1) {
 #else
-		if ((bytes = read(file->fil_desc, address, length)) == -1) {
+		if ((bytes = read(file->fil_desc, address, length)) == (UINT64) -1) {
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 			if (SYSCALL_INTERRUPTED(errno))
@@ -872,7 +873,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 				break;
 			THD_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
+			if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err,
 								  status_vector);
 		}
