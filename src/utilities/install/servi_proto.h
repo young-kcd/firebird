@@ -24,6 +24,9 @@
 #ifndef UTILITIES_SERVI_PROTO_H
 #define UTILITIES_SERVI_PROTO_H
 
+// OM Jan '04 : Huh ? Who decided to drop the parameters names from these proto ?
+// Is there a consensus that removing them makes the code more self-documenting ?
+
 USHORT	SERVICES_install(SC_HANDLE, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, USHORT,
 						TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
@@ -32,6 +35,8 @@ USHORT	SERVICES_remove(SC_HANDLE, TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HAN
 USHORT	SERVICES_start(SC_HANDLE, TEXT*, TEXT*, USHORT, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 
 USHORT	SERVICES_stop(SC_HANDLE, TEXT*, TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
+
+USHORT	SERVICES_status(TEXT*);
 
 USHORT	SERVICES_grant_logon_right(TEXT*, USHORT (*)(SLONG, TEXT *, SC_HANDLE));
 

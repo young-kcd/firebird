@@ -510,6 +510,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "instclient"=.\instclient.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "instreg"=.\instreg.dsp - Package Owner=<4>
 
 Package=<5>
