@@ -1,3 +1,107 @@
+2002-12-03 19:02  dimitr
+
+	* firebird2/src/: dsql/node.h, dsql/parse.cpp, dsql/parse.y,
+	dsql/pass1.cpp, jrd/rse.cpp:
+	
+	1. Implemented ORDER BY clause in subqueries.  2. Disallowed
+	FIRST/SKIP for views.  3. Allowed zero as valid argument for FIRST.
+
+2002-12-03 15:12  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Corrected default value for the config key.
+
+2002-12-03 14:58  eku
+
+	* firebird2/: configure.in, src/gpre/gpre.cpp, src/gpre/gpre.h,
+	src/gpre/gpreswi.h, src/include/gen/autoconfig_msvc.h,
+	src/make.new/config/config.h.in:
+	
+	Disabled gpre's BASIC and PL/1 support in configure. There's no
+	such implementation.
+
+2002-12-03 14:48  skidder
+
+	* firebird2/src/dsql/: make.cpp, parse.cpp:
+	
+	Oops. Forgot to enable parameter duplication in parameter bug
+	emulation mode
+
+2002-12-03 14:37  skidder
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	dsql/make.cpp, install/misc/firebird.conf, jrd/vio.cpp:
+	
+	Added configuration parameter to enable older parameter ordering
+	behavior
+
+2002-12-03 14:27  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	no message
+
+2002-12-03 12:53  eku
+
+	* firebird2/src/make.new/: Makefile.in.alice, Makefile.in.burp,
+	Makefile.in.client, Makefile.in.common.memory, Makefile.in.csv,
+	Makefile.in.dsql, Makefile.in.dudley, Makefile.in.example5,
+	Makefile.in.extlib, Makefile.in.fbudf, Makefile.in.fbutil,
+	Makefile.in.firebird, Makefile.in.gpre, Makefile.in.install,
+	Makefile.in.intl, Makefile.in.isql, Makefile.in.journal,
+	Makefile.in.jrd, Makefile.in.lock, Makefile.in.msgs,
+	Makefile.in.pipe, Makefile.in.qli, Makefile.in.refDatabases,
+	Makefile.in.remote, Makefile.in.utilities, Makefile.in.wal,
+	make.defaults, make.rules, make.shared.variables:
+	
+	Since the new build process is faily stable and tested, we can
+	remove the old, obsoleted files. If any error pops up, we still
+	have a reference to these file anywhere in the tree.
+
+2002-12-03 12:48  eku
+
+	* firebird2/src/utilities/create_db.cpp:
+	
+	Fixed compilation error.
+
+2002-12-03 12:47  eku
+
+	* firebird2/configure.in:
+	
+	Prepared for Alpha 5.
+
+2002-12-03 12:09  dimitr
+
+	* firebird2/builds/win32/msvc6/: gpre.dsp, gpre_boot.dsp:
+	
+	Cleanup.
+
+2002-12-03 11:52  eku
+
+	* firebird2/src/gpre/pas.cpp:
+	
+	Make file compile. It's still unknown if the PASCAL support in GPRE
+	will work. Anyway - it compiles :-)
+
+2002-12-03 11:14  dimitr
+
+	* firebird2/src/jrd/sort.cpp:
+	
+	Cleanup.
+
+2002-12-03 04:55  seanleyne
+
+	* firebird2/src/jrd/ibase.h:
+	
+	Adding some comments regarding deprecated SPX protocol.
+
+2002-12-03 04:47  seanleyne
+
+	* firebird2/src/jrd/sort.cpp:
+	
+	A small code cleanup.
+
 2002-12-02 14:06  eku
 
 	* firebird2/src/jrd/os/posix/config_root.cpp:
