@@ -34,6 +34,11 @@
 static SSHORT convert(ULONG, UCHAR *);
 static STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
 USHORT DLL_EXPORT MERGE_database_info(
 									  UCHAR * in,
@@ -113,6 +118,9 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 			break;
 		}
 }
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
 
 
 static SSHORT convert( ULONG number, UCHAR * buffer)

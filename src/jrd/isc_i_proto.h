@@ -49,8 +49,21 @@ int ISC_kill(SLONG, SLONG);
   SIG_FPTR is very platform dependent. C/C++ ignores redundant function
   parameters anyway
 */
+
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
+
 extern void API_ROUTINE ISC_signal(int, FPTR_VOID, void *);
 extern void API_ROUTINE ISC_signal_cancel(int, FPTR_VOID, void *);
 extern void DLL_EXPORT ISC_signal_init(void);
+
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+}
+#endif
 
 #endif /* _JRD_ISC_I_PROTO_H_ */

@@ -23,9 +23,18 @@
 
 #ifndef _REMOTE_MERGE_PROTO_H_
 #define _REMOTE_MERGE_PROTO_H_
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
 extern USHORT DLL_EXPORT MERGE_database_info (UCHAR *, UCHAR *, USHORT, USHORT,
 					      USHORT, USHORT, UCHAR *, UCHAR *,
 					      ULONG);
+
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
 
 #endif /* _REMOTE_MERGE_PROTO_H */ 

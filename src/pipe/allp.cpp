@@ -42,6 +42,13 @@ static struct {
 #include "../pipe/allp_proto.h"
 #include "../jrd/gds_proto.h"
 
+
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
+
 
 UCHAR *ALLP_alloc (
     ULONG	size)
@@ -132,3 +139,8 @@ void ALLP_release (
 
 ALLP_free ((UCHAR*) block);
 }
+
+
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif

@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.28 2002-11-04 11:19:04 eku Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.29 2002-11-20 13:37:22 kkuznetsov Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -202,6 +202,11 @@ static USHORT opn_event_count;
 static ULONG opn_event_clock;
 #endif
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
 static void cleanup(void *);
 static void error(STATUS *, TEXT *, STATUS);
@@ -240,6 +245,7 @@ static void sigwait_thread(int);
 #endif
 
 /* Not thread-safe */
+
 extern "C" ULONG isc_enter_count = 0;
 
 static SIGVEC client_sigfpe;
@@ -282,6 +288,11 @@ extern int execl();
 extern void (*sigset()) ();
 extern int ib_fprintf();
 extern int close();
+#endif
+
+
+#if (defined __cplusplus) && (defined SOLX86)
+}
 #endif
 
 extern "C" {
@@ -561,8 +572,14 @@ int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 }
 #endif
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
 #ifndef BRIDGE
+
 void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID handler, void *arg)
 {
 /**************************************
@@ -1138,3 +1155,8 @@ static void sigwait_thread(int signal_number)
 }
 #endif
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+}
+#endif

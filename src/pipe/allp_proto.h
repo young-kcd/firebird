@@ -24,9 +24,19 @@
 #ifndef _PIPE_ALLP_PROTO_H_
 #define _PIPE_ALLP_PROTO_H_
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
+
 extern UCHAR *ALLP_alloc(ULONG);
 extern BLK ALLP_block(UCHAR, int);
 extern void ALLP_free(UCHAR *);
 extern void ALLP_release(BLK);
+
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
 
 #endif /*  _PIPE_ALLP_PROTO_H_  */
