@@ -33,6 +33,7 @@ rm src/dsql/array.cpp 2>/dev/null
 rm src/dsql/blob.cpp 2>/dev/null
 rm src/dsql/metd.cpp 2>/dev/null
 rm src/dudley/exe.cpp 2>/dev/null
+rm src/dudley/extract.cpp 2>/dev/null
 rm src/gpre/gpre_meta.cpp 2>/dev/null
 rm src/isql/extract.cpp 2>/dev/null
 rm src/isql/isql.cpp 2>/dev/null
@@ -61,5 +62,5 @@ rm src/qli/help.cpp 2>/dev/null
 rm src/qli/meta.cpp 2>/dev/null
 rm src/qli/proc.cpp 2>/dev/null
 rm src/qli/show.cpp 2>/dev/null
-rm src/utilities/dba.cpp 2>/dev/null
-rm src/utilities/security.cpp 2>/dev/null
+rm src/utilities/gstat/dba.cpp 2>/dev/null
+rm src/utilities/gsec/security.cpp 2>/dev/null
