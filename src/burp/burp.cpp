@@ -134,7 +134,9 @@ static SLONG get_number(SCHAR *);
 static ULONG get_size(SCHAR *, FIL);
 static SSHORT open_files(SCHAR *, SCHAR **, USHORT, USHORT, USHORT);
 static int output_netware(SLONG, UCHAR *);
+#ifndef SUPERSERVER
 static int output_main(SLONG, UCHAR *);
+#endif
 static int output_svc(SLONG, UCHAR *);
 static void burp_output(const SCHAR *, ...) ATTRIBUTE_FORMAT(1,2);
 
