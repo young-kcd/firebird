@@ -260,12 +260,12 @@ public:
 
 private:
 	Database(MemoryPool& p)
-	:	dbb_pools(1, p, type_dbb),
-		dbb_text_objects(p),
-		dbb_charsets(p),
-		dbb_spare_string(p),
+	:	dbb_spare_string(p),
 		dbb_filename(p),
-		dbb_encrypt_key(p)
+		dbb_encrypt_key(p),
+		dbb_pools(1, p, type_dbb),
+		dbb_text_objects(p),
+		dbb_charsets(p)
 	{
 	}
 
