@@ -12,7 +12,16 @@ const char* PathUtils::up_dir_link = "..";
 class PosixDirItr : public PathUtils::dir_iterator
 {
 public:
-	PosixDirItr(const Firebird::PathName&);
+	PosixDirItr(MemoryPool& p, const Firebird::PathName& path)
+		: dir_iterator(p, path), file(p), dir(0), done(0)
+	{
+		init();
+	}
+	PosixDirItr(const Firebird::PathName& path)
+		: dir_iterator(path), dir(0), done(0)
+	{
+		init();
+	}
 	~PosixDirItr();
 	const PosixDirItr& operator++();
 	const Firebird::PathName& operator*() { return file; }
@@ -22,10 +31,10 @@ private:
 	DIR *dir;
 	Firebird::PathName file;
 	int done;
+	void init();
 };
 
-PosixDirItr::PosixDirItr(const Firebird::PathName& path)
-	: dir_iterator(path), dir(0), done(0)
+void PosixDirItr::init()
 {
 	dir = opendir(dirPrefix.c_str());
 	if (!dir)
@@ -129,11 +138,6 @@ bool PathUtils::isSymLink(const Firebird::PathName& path)
 	if (lstat(path.c_str(), &lst) != 0)
 		return false;
 	return st.st_ino != lst.st_ino;
-}
-
-bool PathUtils::comparePaths(const Firebird::PathName& path1, 
- 							 const Firebird::PathName& path2) {
- 	return path1 == path2;
 }
 
 bool PathUtils::canAccess(const Firebird::PathName& path, int mode) {

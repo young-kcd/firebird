@@ -1842,7 +1842,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		break;
 	default:
 		ERR_post(isc_database_create_failed, isc_arg_string,
-				 expanded_name, isc_arg_gds, isc_inv_dialect_specified,
+				 expanded_name.c_str(), isc_arg_gds, isc_inv_dialect_specified,
 				 isc_arg_number, options.dpb_sql_dialect, isc_arg_gds,
 				 isc_valid_db_dialects, isc_arg_string, "1 and 3", 0);
 		break;
@@ -4964,12 +4964,11 @@ static void get_options(const UCHAR*	dpb,
 						}
 					}
 					else {		/*No home dir for this users here. Default to server dir */
-
 					    **scratch = 0;
-				        if (fb_getcwd(*scratch, MIN(MAXPATHLEN, buf_size)))
-							l = strlen(*scratch) + 1;
-					    else
-							l = buf_size;	
+						Firebird::PathName buf;
+						fb_getcwd(buf);
+						l = buf.length() + 1 < buf_size ? buf.length() + 1 : buf_size;
+						memcpy(*scratch, buf.c_str(), l);
 					}
 					options->dpb_working_directory = *scratch;
 					*scratch += l;

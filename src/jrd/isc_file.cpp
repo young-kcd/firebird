@@ -184,7 +184,7 @@ typedef struct mnt {
 #endif
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-static int expand_filename2(const TEXT*, USHORT, TEXT*);
+static int expand_filename2(const Firebird::PathName&, Firebird::PathName&);
 #endif
 
 #if defined(WIN_NT)
@@ -512,7 +512,7 @@ bool ISC_check_if_remote(const Firebird::PathName& file_name,
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-int ISC_expand_filename(const TEXT* from_buff, USHORT length, TEXT* to_buff)
+int ISC_expand_filename(const Firebird::PathName& from_buff, Firebird::PathName& to_buff)
 {
 /**************************************
  *
@@ -526,7 +526,7 @@ int ISC_expand_filename(const TEXT* from_buff, USHORT length, TEXT* to_buff)
  *
  **************************************/
 
-	return expand_filename2(from_buff, length, to_buff);
+	return expand_filename2(from_buff, to_buff);
 }
 #endif
 
@@ -1054,7 +1054,7 @@ int ISC_strip_extension(TEXT* file_name)
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-static int expand_filename2(const TEXT* from_buff, USHORT length, TEXT* to_buff)
+static int expand_filename2(const Firebird::PathName& from_buff, Firebird::PathName& to_buff)
 {
 /**************************************
  *
@@ -1067,138 +1067,103 @@ static int expand_filename2(const TEXT* from_buff, USHORT length, TEXT* to_buff)
  *	shows up, stop translating.
  *
  **************************************/
-	TEXT temp[MAXPATHLEN], temp2[MAXPATHLEN];
-	SSHORT n;
-	struct passwd* passwd;
+	typedef Firebird::PathName string;
+	typedef string::size_type size;
+	const size npos = string::npos;
+	string src = from_buff;	
 
-	const TEXT* from;
-	if (length) {
-		strncpy(temp2, from_buff, length);
-		temp2[length] = 0;
-		from = temp2;
-	}
-	else {
-		strncpy(temp2, from_buff, MAXPATHLEN);
-		temp2[MAXPATHLEN - 1] = 0;
-		from = temp2;
+// If the filename contains a TCP node name, don't even try to expand it
+	if (src.find(INET_FLAG) != npos) {
+		to_buff = src;
+		return to_buff.length();
 	}
 
-	TEXT* to = to_buff;
+	const char* from = src.c_str();
+	to_buff = "";
 
-/* If the filename contains a TCP node name, don't even try to expand it */
-
-	if (strchr(from, INET_FLAG)) {
-		strcpy(to, from);
-		return strlen(to);
-	}
-
-/* Handle references to default directories (tilde refs) */
-
+// Handle references to default directories (tilde refs)
 	if (*from == '~') {
 		++from;
-		TEXT* q = temp;
+		string q;
 		while (*from && *from != '/')
-			*q++ = *from++;
-		*q = 0;
-		passwd = (temp[0]) ? getpwnam(temp) : getpwuid(geteuid());
-		if (passwd) {
-			expand_filename2(passwd->pw_dir, 0, temp);
-			const TEXT* p = temp;
-			while (*p)
-				*to++ = *p++;
-			*to = 0;
+			q += *from++;
+		struct passwd* password = q ? getpwnam(q.c_str()) : getpwuid(geteuid());
+		if (password) {
+			string temp;
+			expand_filename2(password->pw_dir, to_buff);
 		}
 	}
 
-/* If the file is local, expand partial pathnames with default directory */
-
-	if (*from && !strchr(from, INET_FLAG) && *from != '/' && GETWD(to)) {
-		while (*to)
-			++to;
-		*to++ = '/';
-		*to = 0;
+// If the file is local, expand partial pathnames with default directory
+	if (*from && *from != '/') {
+		if (! GETWD(to_buff)) {
+			to_buff = "";
+		}
+		to_buff += '/';
 	}
 
-/* Process file name segment by segment looking for symbolic
-   links. See ISC_analyze_nfs for how NFS mount points are
-   handled. */
-
+// Process file name segment by segment looking for symbolic links.
+// See ISC_analyze_nfs for how NFS mount points are  handled.
 	while (*from) {
-		TEXT* segment = to;
 
-		/* skip dual // (will collapse /// to / as well) */
+		// skip dual // (will collapse /// to / as well)
 		if (*from == '/' && from[1] == '/') {
 			++from;
 			continue;
 		}
 
-		/* Copy the leading slash, if any */
-
+		// Copy the leading slash, if any
 		if (*from == '/') {
-			if (to > to_buff + 1 && to[-1] == '/')
+			if (to_buff && (to_buff.end()[-1] == '/'))
 				++from;
 			else
-				*to++ = *from++;
+				to_buff += *from++;
 			continue;
 		}
 
-		/* Handle self references */
-
+		// Handle self references
 		if (*from == '.' && (from[1] == '.' || from[1] == '/')) {
-			++from;
-			if (*from == '.') {
+			if (*++from == '.') {
 				++from;
-				if (to > to_buff)
-					--to;
-				while (to > to_buff && to[-1] != '/')
-					--to;
+				if (to_buff.length() > 2) {
+					size slash = to_buff.rfind('/', to_buff.length() - 2);
+					to_buff = slash != npos ? to_buff.substr(0, slash + 1) : "/";
+				}
 			}
 			continue;
 		}
 
-		/* Copy the rest of the segment name */
+		// Copy the rest of the segment name
+		int segment = to_buff.length();
+		while (*from && *from != '/') {
+			to_buff += *from++;
+		}
 
-		while (*from && *from != '/')
-			*to++ = *from++;
-
-		/* If the file is local, check for a symbol link */
-
-		*to = 0;
-
-		n = readlink(to_buff, temp, MAXPATHLEN);
-
+		// If the file is local, check for a symbol link
+		TEXT temp[MAXPATHLEN];
+		int n = readlink(to_buff.c_str(), temp, MAXPATHLEN);
 		if (n < 0)
 			continue;
 
-		/* We've got a link.  If it contains a node name or it starts
-		   with a slash, it replaces the initial segment so far */
-
-		temp[n] = 0;
-		const TEXT* p = temp;
-
-		if (strchr(temp, INET_FLAG)) {
-			strcpy(to_buff, temp);
-			return n;
+		// We've got a link.  If it contains a node name or it starts
+		// with a slash, it replaces the initial segment so far.
+		string link(temp, n);
+		if (link.find(INET_FLAG) != npos) {
+			to_buff = link;
+			return to_buff.length();
+		}
+		if (link[0] == '/') {
+			to_buff = link;
+		}
+		else {
+			to_buff.replace(segment, to_buff.length() - segment, link);
 		}
 
-		to = (*p == '/') ? to_buff : segment;
-
-		while (*p)
-			*to++ = *p++;
-
 		/* Whole link needs translating -- recurse */
-
-		*to = 0;
-		expand_filename2(to_buff, 0, temp);
-		to = to_buff;
-		p = temp;
-		while (*p)
-			*to++ = *p++;
+		expand_filename2(to_buff, to_buff);
 	}
 
-	*to = 0;
-
-	return to - to_buff;
+	return to_buff.length();
 }
 #endif
 
