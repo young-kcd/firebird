@@ -1,3 +1,17 @@
+2003-06-02 18:11  skidder
+
+	* firebird2/src/dsql/parse.y:
+	
+	Fix server crash when SKIP syntax with braces used (SF 747567).
+	Really strange, but problem does not affect Linux version. This is
+	why it escaped my testing
+
+2003-06-02 15:55  alexpeshkoff
+
+	* firebird2/src/include/fb_string.h:
+	
+	Fixed bug with case-sensitive filesystem
+
 2003-06-01 21:17  skidder
 
 	* firebird2/doc/WhatsNew:
