@@ -1,5 +1,133 @@
 
   **************
+  * v1.5 Alpha 4
+  **************
+
+    * Fixed Alpha 3 bug.
+        Database cannot be restored properly in some situations.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed Alpha 3 bug.
+        Dynamic exception messages don't work properly.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Exceptions inside for/while loop in triggers are not handled correctly.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Fixed bug SF #623992.
+        Double forward slash in connection string.
+      Contributor(s):
+        Paul Reeves <preeves@ibphoenix.com>,
+        Mark O'Donohue <mark.odonohue@cytopia.com.au>
+
+    * Fixed unregistered bug.
+        Deadlock during some database operations.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Improved optimizer.
+        If a few indices with much different selectivity could be used for index retrieval, only better of them are used while others are ignored.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 3 bug.
+        Memory corruption that prevented restore of databases with procedures using plan expressions with long index names.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Fixed unregistered bug.
+        Quoted identifiers problem in plan expressions.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Win32 Classic Server.
+        CS architecture is now supported on Win32 as well, but it still cannot be considered stable, so any feedback is welcome.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed Alpha 3 bug.
+        API routines are not accessible if gds32.dll is explicitly loaded.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Fixed unregistered bug.
+        Stored procedures are no longer recompiled before deletion.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * New collation for WIN1251 charset.
+        WIN1251_UA for both Ukrainian and Russian languages.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Client library change.
+        API routines are no longer exported by ordinals.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * New configuration manager.
+        Enable the same plain file based configuration for all supported platforms. Default configuration file will be released in the first beta build.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Improved optimizer.
+        Added better support for using indices with "OR". Pick the best available compound index from all "AND" nodes.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Fixed Alpha 3 bug.
+        Database appears corrupted (damaged BLOB pages).
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Savepoints.
+        Added support for explicit savepoint management.
+      Syntax:
+        SAVEPOINT savepoint_name; (create savepoint)
+        ROLLBACK [WORK] TO [SAVEPOINT] savepoint_name; (rollback to previously created savepoint)
+      Notes:
+        Not available in PSQL.
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+    * Protocol cleanup.
+        IPX/SPX network protocol is no longer supported.
+      Contributor(s):
+        Sean Leyne <sleyne@atkin.com>
+
+    * Fixed Alpha 3 bug.
+        Memory corruption when working with long record verion chains.
+      Contributor(s):
+        Dmitry Yemanov <yemanov@yandex.ru>
+
+    * Obsolete platforms cleanup.
+        Some platform are no longer supported by the current source code.
+        DELTA, IMP, DG_X86, M88K, UNIXWARE, Ultrix, NeXT, ALPHA_NT, DGUX, MPE/XL, DecOSF, SGI, HP700, Netware, MSDOS, SUN3_3
+      Contributor(s):
+        Sean Leyne <sleyne@atkin.com>
+
+    * Improved optimizer.
+        Added support for detecting use of index with sub-selects in aggregate select.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Improved thread scheduler for Win32 SS.
+        Now the server should be more responsible under heavy load.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff@hotmail.ru>
+
+    * Explicit record locking.
+        Added support for explicit locking.
+      Syntax:
+        SELECT <...> [FOR UPDATE [OF col [, col ...]] [WITH LOCK]]      
+      Contributor(s):
+        Nickolay Samofatov <skidder@bssys.com>
+
+  **************
   * v1.5 Alpha 3
   **************
 
