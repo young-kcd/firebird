@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.52 2004-06-13 23:38:13 brodsom Exp $
+ *  $Id: alloc.cpp,v 1.53 2004-06-21 22:17:51 skidder Exp $
  *
  */
 
@@ -660,7 +660,7 @@ bool MemoryPool::verify_pool() {
 static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
 {
 	void *mem = (char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
-	if ((blk->mbk_flags & MBK_USED && blk->mbk_type > 0) || !used_only) {
+	if (((blk->mbk_flags & MBK_USED) && blk->mbk_type >= 0) || !used_only) {
 		char flags[100];
 		flags[0] = 0;
 		if (blk->mbk_flags & MBK_USED)
