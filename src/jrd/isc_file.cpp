@@ -969,7 +969,7 @@ void ISC_expand_share(tstring& file_name)
 
 	LPNETRESOURCE res = resources;
 	DWORD i = 0;
-	while (i < nument && (!res->lpLocalName || (*(device.begin()) != *(res->lpLocalName)))) {
+	while (i < nument && (!res->lpLocalName || (device[0] != *(res->lpLocalName)))) {
 		i++;
 		res++;
 	}
