@@ -896,7 +896,7 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 	THREAD_EXIT();
 	THD_MUTEX_LOCK (&databases_mutex);
 	dsql_dbb* database;
-	WHY_DBB db_handle;
+	WHY_DBB db_handle = 0;
 	for (database = databases; database; database = database->dbb_next)
 	{
 		db_handle = WHY_translate_handle(database->dbb_database_handle);
@@ -1412,8 +1412,10 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			if ((request->req_type == REQ_DDL) &&
 				(request->req_ddl_node->nod_type == nod_def_database))
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 530,
-					  	isc_arg_gds, isc_dsql_crdb_prepare_err, 0);
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 530,
+					isc_arg_gds, isc_dsql_crdb_prepare_err, 0);
+			}
 
 			request->req_flags |= REQ_prepared;
 
@@ -2939,7 +2941,9 @@ static void close_cursor( dsql_req* request)
 		THREAD_EXIT(); //ttt
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
-				isc_close_blob(status_vector, &request->req_handle);
+		{
+			isc_close_blob(status_vector, &request->req_handle);
+		}
 		else
 			isc_unwind_request(status_vector, &request->req_handle, 0);
 		THREAD_ENTER();
@@ -3932,7 +3936,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			// put out the join type 
 
 			if (rsb_type == isc_info_rsb_cross ||
-				rsb_type == isc_info_rsb_left_cross) {
+				rsb_type == isc_info_rsb_left_cross)
+			{
                 p = "JOIN (";
             }
 			else {
@@ -3999,7 +4004,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (rsb_type == isc_info_rsb_indexed ||
 				rsb_type == isc_info_rsb_navigate ||
-				rsb_type == isc_info_rsb_ext_indexed) {
+				rsb_type == isc_info_rsb_ext_indexed)
+			{
 				if (!get_indices(&explain_length, &explain, &plan_length, &plan))
 					return false;
 			}
@@ -4016,7 +4022,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			}
 
 			if (rsb_type == isc_info_rsb_indexed ||
-				rsb_type == isc_info_rsb_ext_indexed) {
+				rsb_type == isc_info_rsb_ext_indexed)
+			{
 				if (--plan_length < 0)
 					return false;
 				*plan++ = ')';
@@ -4076,7 +4083,9 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (explain_length > 0 && plan_length > 0) {
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
 								  &plan, parent_join_count, level_ptr))
+				{
 					return false;
+				}
 				if (*level_ptr == save_level)
 					break;
 			}
@@ -4240,7 +4249,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 
 		case frb_info_att_charset:
 			database->dbb_att_charset =
-				static_cast<short>(
+				static_cast<SSHORT>(
 					gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 			break;
 
