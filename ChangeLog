@@ -1,3 +1,73 @@
+2004-01-28 17:26  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Rolled back one of the previous bugfixes diue to unpredicted
+	behaviour.
+
+2004-01-28 16:32  hvlad
+
+	* firebird2/src/v5_examples/: empbld.sql, empbuild.e, empddl.sql,
+	intlbld.e:
+	
+	Restore examples build. Thanks to Helen Borrie and Paul Beach
+
+2004-01-28 12:23  aafemt
+
+	* firebird2/src/gpre/cmd.cpp:
+	
+	Fix for Claudio's cleanup
+
+2004-01-28 12:14  aafemt
+
+	* firebird2/src/jrd/common.h:
+	
+	Rollback my last change at the instance of Claudio
+
+2004-01-28 10:28  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp, jrd.cpp:
+	
+	Fixed possible crashes when this routine is called from
+	verify_database_name().  Confirmed for the embedded server in the
+	case of relative root path.
+
+2004-01-28 08:50  robocop
+
+	* firebird2/src/: alice/alice.cpp, common/classes/alloc.cpp,
+	common/classes/semaphore.h, common/classes/tree.h, dsql/alld.cpp,
+	dsql/ddl.cpp, dsql/dsql.cpp, dsql/gen.cpp, dsql/metd.epp,
+	dsql/pass1.cpp, dsql/user_dsql.cpp, extlib/ib_udf.c, gpre/ada.cpp,
+	gpre/c_cxx.cpp, gpre/cmd.cpp, gpre/cmd_proto.h, gpre/cme.cpp,
+	gpre/cme_proto.h, gpre/cmp.cpp, gpre/cmp_proto.h, gpre/cob.cpp,
+	gpre/exp.cpp, gpre/exp_proto.h, gpre/ftn.cpp, gpre/gpre.cpp,
+	gpre/gpre.h, gpre/gpre_meta.epp, gpre/gpre_meta.h,
+	gpre/gpre_meta_boot.cpp, gpre/hsh.cpp, gpre/hsh_proto.h,
+	gpre/int_cxx.cpp, gpre/jrdmet.cpp, gpre/msc.cpp, gpre/msc_proto.h,
+	gpre/par.cpp, gpre/par_proto.h, gpre/parse.h, gpre/pas.cpp,
+	gpre/pat.cpp, gpre/pat.h, gpre/sqe.cpp, gpre/sqe_proto.h,
+	gpre/sql.cpp, gpre/sql_proto.h, intl/cv_jis.cpp, intl/kanji.cpp,
+	ipserver/ipclient.cpp, ipserver/ipserver.cpp, jrd/blb.cpp,
+	jrd/blk.h, jrd/bookmark.cpp, jrd/btr.cpp, jrd/cch.cpp, jrd/cmp.cpp,
+	jrd/cvt2.cpp, jrd/dbg.cpp, jrd/dbg_proto.h, jrd/dbt.cpp,
+	jrd/dfw.epp, jrd/dyn.epp, jrd/dyn_def.epp, jrd/dyn_mod.epp,
+	jrd/evl.cpp, jrd/evl_string.h, jrd/exe.cpp, jrd/ext.cpp,
+	jrd/fun.epp, jrd/inf.cpp, jrd/ini.epp, jrd/ini.h, jrd/isc_sync.cpp,
+	jrd/jrd.cpp, jrd/met.epp, jrd/nav.cpp, jrd/nbak.cpp, jrd/opt.cpp,
+	jrd/par.cpp, jrd/rse.cpp, jrd/rse.h, jrd/sdw.cpp, jrd/svc.cpp,
+	jrd/trig.h, jrd/utl.cpp, jrd/val.cpp, jrd/val.h, jrd/vio.cpp,
+	jrd/why.cpp, jrd/os/posix/unix.cpp, jrd/os/vms/extvms.cpp,
+	jrd/os/win32/winnt.cpp, remote/allr.cpp, remote/inet.cpp,
+	remote/inet_proto.h, remote/inet_server.cpp, remote/interface.cpp,
+	remote/mgr.cpp, remote/parser.cpp, remote/protocol.cpp,
+	remote/remot_proto.h, remote/remote.cpp, remote/remote.h,
+	remote/serve_proto.h, remote/server.cpp, remote/xnet.cpp,
+	remote/xnet_proto.h, remote/os/win32/srvr_w32.cpp,
+	remote/os/win32/winmain.cpp, remote/os/win32/wnet.cpp,
+	remote/os/win32/wnet_proto.h, utilities/nbackup.cpp:
+	
+	General cleanup. Sorry if I missed some occurrence.
+
 2004-01-27 19:19  skidder
 
 	* firebird2/src/: jrd/common.h, jrd/ibase.h, include/fb_types.h:
