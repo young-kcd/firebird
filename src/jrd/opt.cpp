@@ -250,11 +250,31 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 	VEC vector;
 	RSB rsb;
 	SLONG i;
-	SCHAR *begin;
 
 	DEV_BLKCHK(request, type_req);
 
-	begin = buffer;
+	// dimitr:	dump_xxx routines may overrun the passed buffer before
+	//			returning FALSE. Yes, we live in the very cruel world.
+	//			Since INF_request_info uses quite small stack buffer
+	//			by default, any non-trivial access path may lead to
+	//			memory corruption. Below we allocate as much memory as
+	//			looks to be safe (I don't have a clue how much memory
+	//			we should have reserved in the tail of the buffer, but
+	//			think 256 bytes should be enough), work with it and
+	//			only if the final result is TRUE we write data to the
+	//			high level buffer.
+	//
+	// P.S.		I don't like it much to deal with pool allocations here
+	//			but our buffer is freed immediately and GDS_REQUEST_INFO
+	//			isn't a most commonly used routine, so probably my
+	//			worries shouldn't be taken seriously. Stack allocations
+	//			shouldn't be used here, because OPT_access_path can be
+	//			called recursively.
+
+	SCHAR * temp_buffer = (SCHAR*) gds__alloc(BUFFER_XLARGE + 256);
+	SCHAR * ptr = temp_buffer;
+
+	USHORT length = 0;
 
 /* loop through all RSEs in the request, 
    and describe the rsb tree for that rsb;
@@ -267,16 +287,20 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 
 	for (i = vector->count() - 1; i >= 0; i--) {
 		rsb = (RSB) (*vector)[i];
-		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
+		if (rsb && !dump_rsb(request, rsb, &ptr, &buffer_length))
 			break;
 	}
 
-	*return_length = buffer - begin;
+	if (i < 0) {
+		length = ptr - temp_buffer;
+		memcpy(buffer, temp_buffer, length);
+	}
 
-	if (i >= 0)
-		return FALSE;
-	else
-		return TRUE;
+	*return_length = length;
+
+	gds__free(temp_buffer);
+
+	return (length > 0);
 }
 
 
