@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.22 2003-11-07 14:10:15 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.23 2003-11-10 06:27:45 stryqx Exp $
  *
  */
 
@@ -39,6 +39,10 @@
 #include <string.h>
 #endif
 
+// cater for redefinition of PAGE_SIZE
+#ifdef PAGE_SIZE
+#undef PAGE_SIZE
+#endif
 #include "dsql.tab.h"
 #include "keywords.h"
 
