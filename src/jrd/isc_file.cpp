@@ -194,13 +194,13 @@ namespace {
 		
 		osMtab() : temp(0), context(0) { }
 		~osMtab() { delete[] temp; }
-		bool ok() { return true; }
+		bool ok() const { return true; }
 #else
 		FILE* mtab;
 		
 		osMtab() : mtab(MTAB_OPEN(MTAB, "r")) { }
 		~osMtab() { if (mtab) MTAB_CLOSE(mtab); }
-		bool ok() { return mtab; }
+		bool ok() const { return mtab; }
 #endif
 	};
 
@@ -210,7 +210,7 @@ namespace {
 	public:
 /*		Mnt() : AutoMemory(), mtab(), node(getPool()), 
 				mount(getPool()), path(getPool()) { } */
-		bool ok() { return mtab.ok(); }
+		bool ok() const { return mtab.ok(); }
 		bool get();
 		tstring node, mount, path;
 	};
