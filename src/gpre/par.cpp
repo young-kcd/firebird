@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.28 2003-09-10 19:48:52 brodsom Exp $
+//  $Id: par.cpp,v 1.29 2003-09-11 02:13:45 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -46,10 +46,8 @@
 #include "../jrd/gds.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
-#include "../gpre/form.h"
 #include "../gpre/cmp_proto.h"
 #include "../gpre/exp_proto.h"
-#include "../gpre/form_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_meta.h"
@@ -83,50 +81,21 @@ static ACT		par_end_block();
 static ACT		par_end_error();
 static ACT		par_end_fetch();
 static ACT		par_end_for();
-#ifdef PYXIS
-static ACT		par_end_form();
-static ACT		par_end_menu();
-#endif
 static ACT		par_end_modify();
 static ACT		par_end_stream();
 static ACT		par_end_store(bool);
-#ifdef PYXIS
-static ACT		par_entree();
-#endif
 static ACT		par_erase();
 static ACT		par_fetch();
 static ACT		par_finish();
 static ACT		par_for();
-#ifdef PYXIS
-static GPRE_CTX		par_form_menu(enum sym_t);
-static ACT		par_form_display();
-static ACT		par_form_field();
-static void		par_form_fields(GPRE_REQ, LLS *);
-static ACT		par_form_for();
-#endif
 static ACT		par_function();
-#ifdef PYXIS
-static ACT		par_item_end();
-static ACT		par_item_for(ACT_T);
-#endif
 static ACT		par_left_brace();
-#ifdef PYXIS
-static ACT		par_menu_att();
-static ACT		par_menu_case();
-static ACT		par_menu_display(GPRE_CTX);
-static ACT		par_menu_entree_att();
-static ACT		par_menu_for();
-static ACT		par_menu_item_for(SYM, GPRE_CTX, ACT_T);
-#endif
 static ACT		par_modify();
 static ACT		par_on();
 static ACT		par_on_error();
 static ACT		par_open_blob(ACT_T, SYM);
 static bool		par_options(GPRE_REQ, bool);
 static ACT		par_procedure();
-#ifdef PYXIS
-static TEXT*	par_quoted_string();
-#endif
 static ACT		par_ready();
 static ACT		par_returning_values();
 static ACT		par_right_brace();
@@ -139,12 +108,6 @@ static ACT		par_subroutine();
 static ACT		par_trans(ACT_T);
 static ACT		par_type();
 static ACT		par_variable();
-#ifdef PYXIS
-static ACT		par_window_create();
-static ACT		par_window_delete();
-static ACT		par_window_scope();
-static ACT		par_window_suspend();
-#endif
 static ACT		scan_routine_header();
 static void		set_external_flag();
 static bool		terminator();
@@ -158,9 +121,7 @@ static LLS		cur_for;
 static LLS		cur_store;
 static LLS		cur_fetch;
 static LLS		cur_modify;
-static LLS		cur_form;
 static LLS		cur_error;
-static LLS		cur_menu;
 static LLS		routine_stack;
 static GPRE_FLD		flag_field;
 
@@ -244,34 +205,14 @@ ACT PAR_action(TEXT* base_dir)
 			return par_based();
 		case KW_CLEAR_HANDLES:
 			return par_clear_handles();
-#ifdef PYXIS
-		case KW_CREATE_WINDOW:
-			return par_window_create();
-#endif
 		case KW_DATABASE:
 			return PAR_database(false, base_dir);
-#ifdef PYXIS
-		case KW_DELETE_WINDOW:
-			return par_window_delete();
-#endif
 		case KW_DERIVED_FROM:
 			return par_derived_from();
-#ifdef PYXIS
-		case KW_DISPLAY:
-			return par_form_display();
-#endif
 		case KW_END_ERROR:
 			return par_end_error();
 		case KW_END_FOR:
 			return cur_statement = par_end_for();
-#ifdef PYXIS
-		case KW_END_FORM:
-			return par_end_form();
-		case KW_END_ITEM:
-			return par_item_end();
-		case KW_END_MENU:
-			return par_end_menu();
-#endif
 		case KW_END_MODIFY:
 			return cur_statement = par_end_modify();
 		case KW_END_STREAM:
@@ -280,10 +221,6 @@ ACT PAR_action(TEXT* base_dir)
 			return cur_statement = par_end_store(false);
 		case KW_END_STORE_SPECIAL:
 			return cur_statement = par_end_store(true);
-#ifdef PYXIS
-		case KW_MENU_ENTREE:
-			return par_entree();
-#endif
 		case KW_ELEMENT:
 			return par_array_element();
 		case KW_ERASE:
@@ -298,30 +235,14 @@ ACT PAR_action(TEXT* base_dir)
 			return cur_statement = par_finish();
 		case KW_FOR:
 			return par_for();
-#ifdef PYXIS
-		case KW_FOR_FORM:
-			return par_form_for();
-		case KW_FOR_ITEM:
-			return par_item_for(ACT_item_for);
-		case KW_FOR_MENU:
-			return par_menu_for();
-#endif
 		case KW_END_FETCH:
 			return cur_statement = par_end_fetch();
-#ifdef PYXIS
-		case KW_CASE_MENU:
-			return par_menu_case();
-#endif
 		case KW_MODIFY:
 			return par_modify();
 		case KW_ON:
 			return par_on();
 		case KW_ON_ERROR:
 			return par_on_error();
-#ifdef PYXIS
-		case KW_PUT_ITEM:
-			return par_item_for(ACT_item_put);
-#endif
 		case KW_READY:
 			return cur_statement = par_ready();
 		case KW_RELEASE_REQUESTS:
@@ -334,16 +255,8 @@ ACT PAR_action(TEXT* base_dir)
 			return par_store();
 		case KW_START_TRANSACTION:
 			return cur_statement = par_start_transaction();
-#ifdef PYXIS
-		case KW_SUSPEND_WINDOW:
-			return par_window_suspend();
-#endif
 		case KW_FUNCTION:
 			return par_function();
-#ifdef PYXIS
-		case KW_GDS_WINDOWS:
-			return par_window_scope();
-#endif
 		case KW_PROCEDURE:
 			return par_procedure();
 
@@ -428,17 +341,6 @@ ACT PAR_action(TEXT* base_dir)
 			catch (const std::exception&) {
 				return 0;
 			}
-#ifdef PYXIS
-		case SYM_form_map:
-			try {
-				PAR_jmp_buf = &env;
-				cur_statement = NULL;
-				return par_form_field();
-			}
-			catch (const std::exception&) {
-				return 0;
-			}
-#endif
 		case SYM_blob:
 			try {
 				PAR_jmp_buf = &env;
@@ -457,26 +359,6 @@ ACT PAR_action(TEXT* base_dir)
 			catch (const std::exception&) {
 				return 0;
 			}
-#ifdef PYXIS
-		case SYM_menu:
-			try {
-				PAR_jmp_buf = &env;
-				cur_statement = NULL;
-				return par_menu_att();
-			}
-			catch (const std::exception&) {
-				return 0;
-			}
-		case SYM_menu_map:
-			try {
-				PAR_jmp_buf = &env;
-				cur_statement = NULL;
-				return par_menu_entree_att();
-			}
-			catch (const std::exception&) {
-				return 0;
-			}
-#endif
 		default:
 			break;
 		}
@@ -709,16 +591,16 @@ ACT PAR_database(bool sql, const TEXT* base_directory)
 //		FALSE.
 //  
 
-BOOLEAN PAR_end()
+bool PAR_end()
 {
 
-	if ((sw_language == lang_ada) ||
-		(sw_language == lang_c) ||
-		(isLangCpp(sw_language))) {
-        return MATCH(KW_SEMI_COLON);
-    }
+	if ((sw_language == lang_ada) || (sw_language == lang_c) ||
+		(isLangCpp(sw_language)))
+	{
+		return (MATCH(KW_SEMI_COLON));
+	}
 
-	return KEYWORD(KW_SEMI_COLON);
+	return (KEYWORD(KW_SEMI_COLON));
 }
 
 
@@ -863,12 +745,6 @@ void PAR_fini()
 	if (cur_error)
 		IBERROR("unterminated ON_ERROR clause");
 
-	if (cur_menu)
-		IBERROR("unterminated MENU statement");
-
-	if (cur_form)
-		IBERROR("unterminated FOR_FORM statement");
-
 	if (cur_item)
 		IBERROR("unterminated ITEM statement");
 }
@@ -911,8 +787,7 @@ void PAR_init()
 
 	SQL_init();
 
-	cur_error = cur_fetch = cur_for = cur_modify = cur_store = cur_form =
-		cur_menu = NULL;
+	cur_error = cur_fetch = cur_for = cur_modify = cur_store = NULL;
 	cur_statement = cur_item = NULL;
 	bas_extern_flag = false;
 
@@ -1871,42 +1746,6 @@ static ACT par_end_for()
 	return action;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse an END_FORM statement.
-//  
-
-static ACT par_end_form()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle a menu entree.
-//  
-
-static ACT par_end_menu()
-{
-	GPRE_REQ request;
-	GPRE_CTX context;
-
-	if (!cur_menu)
-		PAR_error("END_MENU not in MENU context");
-
-	request = (GPRE_REQ) POP(&cur_menu);
-
-	if (request->req_flags & REQ_menu_for) {
-		context = request->req_contexts;
-		HSH_remove(context->ctx_symbol);
-	}
-
-	return MAKE_ACTION(request, ACT_menu_end);
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -2121,50 +1960,6 @@ static ACT par_end_store(bool special)
 	return action;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle a menu entree.
-//  
-
-static ACT par_entree()
-{
-	GPRE_REQ request;
-	ACT action;
-	bool first;
-
-	if (!cur_menu)
-		return NULL;
-
-	request = (GPRE_REQ) cur_menu->lls_object;
-
-//  Check that this is a case menu, not a dynamic menu.  
-
-	if (request->req_flags & REQ_menu_for)
-		return NULL;
-
-	first = true;
-
-	for (action = request->req_actions; action; action = action->act_next)
-		if (action->act_type == ACT_menu_entree) {
-			first = false;
-			break;
-		}
-
-	action = MAKE_ACTION(request, ACT_menu_entree);
-	action->act_object = (REF) par_quoted_string();
-
-	if (first)
-		action->act_flags |= ACT_first_entree;
-
-	if (!MATCH(KW_COLON))
-		SYNTAX_ERROR("colon");
-
-	return action;
-}
-#endif
-
-
 
 //____________________________________________________________
 //  
@@ -2283,10 +2078,6 @@ static ACT par_for()
 	GPRE_REL relation;
 	TEXT s[128];
 	bool dup_symbol;
-#ifdef PYXIS
-	if (MATCH(KW_FORM))
-		return par_form_for();
-#endif
 	symbol = NULL;
 	dup_symbol = false;
 
@@ -2338,66 +2129,6 @@ static ACT par_for()
 	return action;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse a form or menu name, if one is present.  Return form
-//		or menu context.
-//  
-
-static GPRE_CTX par_form_menu( enum sym_t type)
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse a form display/interaction statement.
-//  
-
-static ACT par_form_display()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle a reference to a form field.
-//  
-
-static ACT par_form_field()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse a parenthesed list of form field names.
-//  
-
-static void par_form_fields( GPRE_REQ request, LLS * stack)
-{
-	PAR_error("FORMs not supported");
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-
-static ACT par_form_for()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-
 //____________________________________________________________
 //  
 //  	A function declaration is interesting in
@@ -2421,116 +2152,6 @@ static ACT par_function()
 	return NULL;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse/handle END_ITEM.
-//  
-
-static ACT par_item_end()
-{
-	ACT action, prior;
-	GPRE_REQ request;
-	GPRE_CTX context;
-
-	if (!cur_item) {
-		CPR_error("unmatched END_ITEM");
-		return NULL;
-	}
-
-	prior = (ACT) POP((LLS *) & cur_item);
-	request = prior->act_request;
-	context = request->req_contexts;
-	HSH_remove(context->ctx_symbol);
-	action = MAKE_ACTION(request, ACT_item_end);
-	action->act_pair = prior;
-
-	return action;
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle FOR_ITEM and/or PUT_ITEM.
-//  
-
-static ACT par_item_for( ACT_T type)
-{
-	ACT action;
-	FORM form;
-	SYM symbol;
-	GPRE_REQ request, parent;
-	GPRE_CTX context;
-	GPRE_FLD field;
-	REF reference;
-	TEXT *form_handle;
-
-	sw_pyxis = TRUE;
-	form_handle = NULL;
-	symbol = PAR_symbol(SYM_dummy);
-
-	if (!MATCH(KW_IN))
-		SYNTAX_ERROR("IN");
-
-//  Pick up parent form or menu context 
-
-	if (!(context = par_form_menu(SYM_form_map))) {
-		if (!(context = par_form_menu(SYM_menu)))
-			SYNTAX_ERROR("form context or menu context");
-		else
-			return par_menu_item_for(symbol, context, type);
-	}
-	symbol->sym_type = SYM_form_map;
-
-	parent = context->ctx_request;
-
-	if (!(MATCH(KW_DOT)))
-		SYNTAX_ERROR("period");
-
-//  Pick up form 
-
-	form = parent->req_form;
-
-	if (!(field = FORM_lookup_field(form, form->form_object,
-									token.tok_string)))
-	{
-		SYNTAX_ERROR("sub-form name");
-	}
-
-	ADVANCE_TOKEN;
-
-	if (!(form = FORM_lookup_subform(parent->req_form, field)))
-		SYNTAX_ERROR("sub-form name");
-
-	form->form_parent = parent;
-
-//  Set up various data structures 
-
-	request = MAKE_REQUEST(REQ_form);
-	request->req_form = form;
-	request->req_form_handle = form_handle;
-	request->req_database = parent->req_database;
-	request->req_trans = parent->req_trans;
-	context = MSC_context(request);
-	context->ctx_symbol = symbol;
-	symbol->sym_object = context;
-	HSH_insert(symbol);
-	action = MAKE_ACTION(request, type);
-	PUSH((GPRE_NOD) action, (LLS *) & cur_item);
-
-//  If this is a FOR_ITEM, generate an index variable 
-
-	if (type == ACT_item_for) {
-		field =
-			MET_make_field("ITEM_INDEX", dtype_short, sizeof(SSHORT), FALSE);
-		request->req_index = reference =
-			EXP_post_field(field, context, FALSE);
-		reference->ref_flags |= REF_pseudo;
-	}
-
-	return action;
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -2551,271 +2172,6 @@ static ACT par_left_brace()
 	return action;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle a reference to a menu attribute.
-//  
-
-static ACT par_menu_att()
-{
-	ACT_T type;
-	ACT action;
-	GPRE_CTX context;
-	SSHORT first;
-	MENU menu;
-
-	first = token.tok_first;
-	context = par_form_menu(SYM_menu);
-
-	if (MATCH(KW_DOT)) {
-		if (MATCH(KW_TITLE_TEXT))
-			type = ACT_title_text;
-		else if (MATCH(KW_TITLE_LENGTH))
-			type = ACT_title_length;
-		else if (MATCH(KW_TERMINATOR))
-			type = ACT_terminator;
-		else if (MATCH(KW_ENTREE_VALUE))
-			type = ACT_entree_value;
-		else if (MATCH(KW_ENTREE_TEXT))
-			type = ACT_entree_text;
-		else if (MATCH(KW_ENTREE_LENGTH))
-			type = ACT_entree_length;
-		else
-			SYNTAX_ERROR("menu attribute");
-	}
-	else
-		SYNTAX_ERROR("period");
-
-	menu = NULL;
-
-	for (action = context->ctx_request->req_actions; action;
-		 action = action->act_next) if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
-			break;
-		}
-
-	if (!menu)
-		return NULL;
-
-	action = MAKE_ACTION(context->ctx_request, type);
-	action->act_object = (REF) menu;
-
-	if (first)
-		action->act_flags |= ACT_first;
-
-	return action;
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-
-static ACT par_menu_case()
-{
-	GPRE_REQ request;
-	ACT action;
-
-	sw_pyxis = TRUE;
-	request = MAKE_REQUEST(REQ_menu);
-	PUSH((GPRE_NOD) request, &cur_menu);
-	action = MAKE_ACTION(request, ACT_menu);
-
-	if (MATCH(KW_LEFT_PAREN)) {
-		for (;;)
-			if (MATCH(KW_VERTICAL))
-				request->req_flags |= REQ_menu_pop_up;
-			else if (MATCH(KW_HORIZONTAL))
-				request->req_flags |= REQ_menu_tag;
-			else if (MATCH(KW_TRANSPARENT))
-				request->req_flags |= REQ_transparent;
-			else if (MATCH(KW_MENU_HANDLE)) {
-				request->req_handle = PAR_native_value(false, true);
-				request->req_flags |= REQ_exp_hand;
-			}
-			else
-				break;
-		EXP_match_paren();
-	}
-
-	action->act_object = (REF) par_quoted_string();
-
-//   We should eat semicolons at the end of case_menu statements.  
-//   mao 3/29/89
-//  
-	MATCH(KW_SEMI_COLON);
-
-	return action;
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse a menu display/interaction statement.
-//  
-
-static ACT par_menu_display( GPRE_CTX context)
-{
-	ACT action;
-	GPRE_REQ display_request;
-
-	action = MAKE_ACTION(context->ctx_request, ACT_menu_display);
-	display_request = MAKE_REQUEST(REQ_menu);
-	display_request->req_flags |= REQ_exp_hand;
-	action->act_object = (REF) display_request;
-
-	for (;;)
-		if (MATCH(KW_VERTICAL)) {
-			display_request->req_flags |= REQ_menu_pop_up;
-			display_request->req_flags &= ~REQ_menu_tag;
-		}
-		else if (MATCH(KW_HORIZONTAL)) {
-			display_request->req_flags |= REQ_menu_tag;
-			display_request->req_flags &= ~REQ_menu_pop_up;
-		}
-		else if (MATCH(KW_TRANSPARENT))
-			display_request->req_flags |= REQ_transparent;
-		else if (MATCH(KW_OPAQUE))
-			display_request->req_flags &= ~REQ_transparent;
-		else
-			break;
-
-	PAR_end();
-
-	return action;
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle a reference to a menu entree attribute.
-//  
-
-static ACT par_menu_entree_att()
-{
-	ACT_T type;
-	ACT action;
-	GPRE_CTX context;
-	SSHORT first;
-	ENTREE entree;
-
-	first = token.tok_first;
-	context = par_form_menu(SYM_menu_map);
-
-	if (MATCH(KW_DOT)) {
-		if (MATCH(KW_ENTREE_TEXT))
-			type = ACT_entree_text;
-		else if (MATCH(KW_ENTREE_LENGTH))
-			type = ACT_entree_length;
-		else if (MATCH(KW_ENTREE_VALUE))
-			type = ACT_entree_value;
-		else
-			SYNTAX_ERROR("entree attribute");
-	}
-	else
-		SYNTAX_ERROR("period");
-
-	entree = NULL;
-	for (action = context->ctx_request->req_actions; action;
-		 action = action->act_next) if (action->act_type == ACT_item_for
-										|| action->act_type == ACT_item_put) {
-			entree = (ENTREE) action->act_object;
-			break;
-		}
-
-	if (!entree)
-		return NULL;
-
-	action = MAKE_ACTION(context->ctx_request, type);
-
-	if (first)
-		action->act_flags |= ACT_first;
-
-	action->act_object = (REF) entree;
-
-	return action;
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-
-static ACT par_menu_for()
-{
-	SYM symbol;
-	GPRE_REQ request;
-	GPRE_CTX context;
-
-	sw_pyxis = TRUE;
-	request = MAKE_REQUEST(REQ_menu);
-	request->req_flags |= REQ_menu_for;
-
-	if (MATCH(KW_LEFT_PAREN)) {
-		for (;;)
-			if (MATCH(KW_MENU_HANDLE)) {
-				request->req_handle = PAR_native_value(false, true);
-				request->req_flags |= REQ_exp_hand;
-			}
-			else
-				break;
-		EXP_match_paren();
-	}
-
-	symbol = PAR_symbol(SYM_dummy);
-	symbol->sym_type = SYM_menu;
-
-//  Set up various data structures 
-
-	context = MSC_context(request);
-	context->ctx_symbol = symbol;
-	symbol->sym_object = context;
-	HSH_insert(symbol);
-	PUSH((GPRE_NOD) request, &cur_menu);
-
-	ACT action = MAKE_ACTION(request, ACT_menu_for);
-	MENU a_menu = (MENU) ALLOC(sizeof(menu));
-	action->act_object = (REF) a_menu;
-	a_menu->menu_request = request;
-
-	return action;
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Handle FOR_ITEM and/or PUT_ITEM for menus.
-//  
-
-static ACT par_menu_item_for( SYM symbol, GPRE_CTX context, ACT_T type)
-{
-	ACT action;
-	GPRE_REQ request, parent;
-
-	sw_pyxis = TRUE;
-	symbol->sym_type = SYM_menu_map;
-	parent = context->ctx_request;
-
-//  Set up various data structures 
-
-	request = MAKE_REQUEST(REQ_menu);
-	request->req_flags |= REQ_menu_for_item;
-
-	context = MSC_context(request);
-	context->ctx_symbol = symbol;
-	symbol->sym_object = context;
-	HSH_insert(symbol);
-	action = MAKE_ACTION(request, type);
-	PUSH((GPRE_NOD) action, (LLS *) & cur_item);
-
-	ENTREE a_entree = (ENTREE) ALLOC(sizeof(entree));
-	action->act_object = (REF) a_entree;
-	a_entree->entree_request = parent;
-
-	return action;
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -3082,29 +2438,6 @@ static ACT par_procedure()
 	return action;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse a quoted string.
-//  
-
-static TEXT *par_quoted_string()
-{
-	TEXT *string;
-
-	if (!SINGLE_QUOTED(token.tok_type))
-		SYNTAX_ERROR("quoted string");
-	string = (TEXT *) ALLOC(token.tok_length + 1);
-	COPY(token.tok_string, token.tok_length, string);
-
-//  Adjust size to include quotes 
-//  FSG 26.Nov.2000
-//  
-	token.tok_length = token.tok_length + 2;
-	ADVANCE_TOKEN;
-	return string;
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -3653,7 +2986,7 @@ static ACT par_subroutine()
 static ACT par_trans( ACT_T act_op)
 {
 	ACT action;
-	USHORT parens;
+	bool parens;
 
 	action = MAKE_ACTION(0, act_op);
 
@@ -3750,7 +3083,7 @@ static ACT par_variable()
 	GPRE_REQ request;
 	GPRE_CTX context;
 	USHORT first;
-	USHORT dot;
+	bool dot;
 	bool is_null = false;
 
 //  
@@ -3768,7 +3101,7 @@ static ACT par_variable()
 
 	if (dot && MATCH(KW_NULL)) {
 		is_null = true;
-		dot = FALSE;
+		dot = false;
 	}
 
 	request = context->ctx_request;
@@ -3813,56 +3146,6 @@ static ACT par_variable()
 	return action;
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Create a new window.
-//  
-
-static ACT par_window_create()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Create a new window.
-//  
-
-static ACT par_window_delete()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Establish the scope of window declarations,
-//		whether local, external, or global.   This
-//		is a purely declarative statement.
-//  
-
-static ACT par_window_scope()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Create a new window.
-//  
-
-static ACT par_window_suspend()
-{
-	PAR_error("FORMs not supported");
-	return NULL;				/* silence compiler */
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -3910,7 +3193,9 @@ static ACT scan_routine_header()
 			}
 			else if (MATCH(KW_INTERNAL) || MATCH(KW_ABNORMAL) ||
 					 MATCH(KW_VARIABLE) || MATCH(KW_VAL_PARAM))
+			{
 				MATCH(KW_SEMI_COLON);
+			}
 			else
 				break;
 		}

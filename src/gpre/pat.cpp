@@ -24,14 +24,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.12 2003-09-10 19:48:52 brodsom Exp $
+//	$Id: pat.cpp,v 1.13 2003-09-11 02:13:45 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../gpre/gpre.h"
-#include "../gpre/form.h"
 #include "../gpre/pat.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/pat_proto.h"
@@ -195,7 +194,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		pattern += 2;
 		switch (oper_iter->ops_type) {
 		case IF:
-			sw_gen = (args->pat_condition);
+			sw_gen = args->pat_condition;
 			continue;
 
 		case EL:

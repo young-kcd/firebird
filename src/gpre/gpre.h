@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.39 2003-09-10 19:48:53 brodsom Exp $
+ * $Id: gpre.h,v 1.40 2003-09-11 02:13:45 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -374,7 +374,7 @@ typedef struct ary {
 	dim* ary_dimension;			/* Linked list of range info for each dimension */
 	SLONG ary_size;				/* Size of the array */
 	USHORT ary_ident;			/* Array identifier */
-	BOOLEAN ary_declared;		/* True if a declaration already was generated */
+	bool ary_declared;		/* True if a declaration already was generated */
 	struct ary_repeat {
 		SLONG ary_lower;
 		SLONG ary_upper;
@@ -618,29 +618,6 @@ typedef enum act_t {
 	ACT_total,
 	ACT_update,
 	ACT_variable,
-#ifdef PYXIS
-	ACT_form_for,
-	ACT_form_display,
-	ACT_form_end,
-	ACT_form_field,
-	ACT_menu,
-	ACT_menu_display,
-	ACT_menu_entree,
-	ACT_menu_end,
-	ACT_menu_for,
-	ACT_title_text,
-	ACT_title_length,
-	ACT_terminator,
-	ACT_entree_text,
-	ACT_entree_length,
-	ACT_entree_value,
-	ACT_window_create,
-	ACT_window_delete,
-	ACT_window_suspend,
-	ACT_item_put,
-	ACT_item_for,
-	ACT_item_end,
-#endif
 	ACT_clear_handles,
 	ACT_type,
 	ACT_noop,
@@ -674,9 +651,6 @@ typedef struct act {
 #define ACT_sql		8			/* action is SQL statement */
 #define ACT_decl	16			/* action is a PASCAL forward or extern routine */
 #define ACT_main	32			/* action is the main routine in the program/module */
-#ifdef PYXIS
-#define ACT_first_entree 64		/* first entree in menu */
-#endif
 #define ACT_back_token	128		/* end of action marked by prior token */
 
 #define ACT_LEN sizeof(act)
@@ -749,9 +723,6 @@ typedef struct dbb {
 	dbb* dbb_next;				/* next database in program */
 	struct gpre_rel *dbb_relations;	/* relations in database */
 	struct gpre_rel *dbb_procedures;	/* procedures in database */
-#ifdef PYXIS
-	form* dbb_forms;			/* forms in database */
-#endif
 	USHORT dbb_id;				/* database id in program */
 	USHORT dbb_flags;			/* Misc flag bytes */
 	struct sym *dbb_name;		/* database name */
@@ -845,10 +816,6 @@ typedef struct gpre_fld {
 	struct gpre_prc *fld_procedure;	/* procedure */
 	struct sym *fld_symbol;		/* symbol for field */
 	struct sym *fld_global;		/* symbol for global field */
-#ifdef PYXIS
-	int *fld_handle;			/* form handle */
-	int *fld_prototype;			/* prototype object for sub-form */
-#endif
 	ary* fld_array_info;		/* Dimension and range information about an
 								   array field */
 	gpre_nod* fld_default_value;	/* field's default value */
@@ -873,9 +840,6 @@ typedef struct gpre_fld {
 #define FLD_text	 2
 #define FLD_stream_blob	 4
 #define FLD_dbkey	 8
-#ifdef PYXIS
-#define FLD_repeating	 16		/* Field is form repeating group */
-#endif
 #define FLD_not_null	 32		/* if CREATE TABLE specifies not null */
 #define FLD_delete	 64			/* if ALTER TABLE specifies delete of field */
 #define FLD_meta	 128		/* if true, created for a metadata operation */
@@ -1042,7 +1006,7 @@ typedef struct gpre_rel {
 	struct sym *rel_symbol;		/* symbol for relation */
 	struct dbb *rel_database;	/* parent database */
 	gpre_rel* rel_next;			/* next relation in database */
-	BOOLEAN rel_meta;			/* if true, created for a metadata operation */
+	bool rel_meta;			/* if true, created for a metadata operation */
 	struct rse *rel_view_rse;
 	txt* rel_view_text;			/* source for VIEW definition */
 	struct sym *rel_owner;		/* owner of relation, if any */
@@ -1070,13 +1034,7 @@ enum req_t {
 	REQ_any,
 	REQ_statistical,
 	REQ_ddl,
-#ifdef PYXIS
-	REQ_form,
-#endif
 	REQ_create_database,
-#ifdef PYXIS
-	REQ_menu,
-#endif
 	REQ_slice,
 	REQ_ready,
 	REQ_procedure,
@@ -1095,9 +1053,6 @@ typedef struct gpre_req {
 	SCHAR *req_handle;			/* request handle */
 	TEXT *req_trans;			/* transaction handle */
 	SCHAR *req_request_level;	/* request level expression */
-#ifdef PYXIS
-	SCHAR *req_form_handle;		/* optional handle for forms */
-#endif
 	USHORT req_level;			/* access level */
 	USHORT req_count;			/* number of ports in request */
 	USHORT req_internal;		/* next internal context number */
@@ -1117,9 +1072,6 @@ typedef struct gpre_req {
 	struct ref *req_eof;		/* eof reference for FOR */
 	struct ref *req_index;		/* index variable */
 	struct ref *req_references;	/* fields referenced in context */
-#ifdef PYXIS
-	struct ref *req_term_field;	/* terminating field for forms */
-#endif
 	struct map *req_map;		/* map for aggregates, etc */
 	struct rse *req_rse;		/* record selection expression */
 	struct por *req_ports;		/* linked list of ports */
@@ -1131,9 +1083,6 @@ typedef struct gpre_req {
 #endif
 	gpre_req* req_routine;		/* other requests in routine */
 	blb*		req_blobs;		/* blobs in request */
-#ifdef PYXIS
-	form* req_form;				/* form for request */
-#endif
 	struct slc *req_slice;		/* slice for request */
 	struct ref *req_array_references;	/* array fields referenced in context */
 	USHORT req_scope_level;		/* scope level for SQL subquery parsing */
@@ -1148,16 +1097,6 @@ typedef struct gpre_req {
 
 #define REQ_exp_hand		1
 #define REQ_local		2		/* defined in an included routine */
-#ifdef PYXIS
-#define REQ_menu_tag		4	/* tag line menu */
-#define REQ_menu_pop_up		8	/* pop-up style menu */
-#define REQ_exp_form_handle	16	/* Explicit handle for form */
-#define REQ_transparent		32	/* Form is transparent */
-#define REQ_form_tag		64	/* Put form on tag line */
-#define REQ_form_nowait		128
-#define REQ_menu_for		256	/* dynamic menu */
-#define REQ_menu_for_item	512	/* dynamic menu for item */
-#endif
 #define REQ_sql_cursor		1024	/* request is an SQL cursor */
 #define REQ_extend_dpb		2048	/* we need to extend dpb at runtime */
 #define REQ_sql_declare_cursor	4096	/* request is declare cursor */
@@ -1259,17 +1198,8 @@ enum sym_t {
 	SYM_blob,
 	SYM_statement,
 	SYM_dyn_cursor,
-#ifdef PYXIS
-	SYM_form,
-	SYM_form_map,
-	SYM_form_field,
-#endif
 	SYM_type,
 	SYM_udf,
-#ifdef PYXIS
-	SYM_menu,
-	SYM_menu_map,
-#endif
 	SYM_username,
 	SYM_procedure,
 	SYM_charset,
@@ -1503,9 +1433,6 @@ EXTERN bool sw_ids;
 EXTERN bool sw_trace;
 EXTERN bool sw_case;
 EXTERN bool sw_external;
-#ifdef PYXIS
-EXTERN bool sw_pyxis;
-#endif
 EXTERN bool sw_version;
 EXTERN USHORT sw_window_scope;
 EXTERN bool sw_alsys;

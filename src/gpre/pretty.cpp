@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.14 2003-09-10 19:48:52 brodsom Exp $
+//	$Id: pretty.cpp,v 1.15 2003-09-11 02:13:45 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -113,15 +113,6 @@ const char *map_strings[] = {
 	"SUB_FORM",
 	"ITEM_INDEX",
 	"SUB_FIELD"
-};
-
-const char *menu_strings[] = {
-	"LABEL",
-	"ENTREE",
-	"OPAQUE",
-	"TRANSPARENT",
-	"HORIZONTAL",
-	"VERTICAL"
 };
 
 //____________________________________________________________
@@ -235,101 +226,6 @@ int PRETTY_print_dyn(
 	return 0;
 }
 
-#ifdef PYXIS
-int
-PRETTY_print_form_map(SCHAR * blr,
-//____________________________________________________________
-//  
-//		Pretty print a form map.
-//  
-
-					  int (*routine) (), SCHAR * user_arg, SSHORT language)
-{
-	ctl ctl_buffer;
-	ctl* control = &ctl_buffer;
-	SCHAR c;
-	int offset, n;
-	SSHORT version, level;
-
-	offset = level = 0;
-
-	if (!routine) {
-		routine = (int (*)()) ib_printf;
-		user_arg = "%.4d %s\n";
-	}
-
-	control->ctl_routine = reinterpret_cast < pfn_ctl_routine > (routine);
-	control->ctl_user_arg = user_arg;
-	control->ctl_blr = control->ctl_blr_start = blr;
-	control->ctl_ptr = control->ctl_buffer;
-	control->ctl_language = language;
-
-	version = BLR_BYTE;
-
-	if (version != PYXIS_MAP_VERSION1)
-		return error(control, offset,
-					 "*** dyn version %d is not supported ***\n",
-					 version);
-
-	blr_format(control, "PYXIS_MAP_VERSION1,");
-	PRINT_LINE;
-	level++;
-
-	while ((c = BLR_BYTE) != PYXIS_MAP_END) {
-		indent(control, level);
-		if (c >= PYXIS_MAP_FIELD2 && c <= PYXIS_MAP_SUB_FIELD)
-			blr_format(control, "PYXIS_MAP_%s, ",
-					   map_strings[c - PYXIS_MAP_FIELD2]);
-		switch (c) {
-		case PYXIS_MAP_MESSAGE:
-			PRINT_BYTE;
-			for (n = PRINT_WORD; n; --n) {
-				PRINT_LINE;
-				indent(control, (SSHORT) (level + 1));
-				print_blr_dtype(control, true);
-			}
-			break;
-
-		case PYXIS_MAP_SUB_FORM:
-			PRINT_STRING;
-			break;
-
-		case PYXIS_MAP_SUB_FIELD:
-			PRINT_STRING;
-
-		case PYXIS_MAP_FIELD1:
-		case PYXIS_MAP_FIELD2:
-			PRINT_STRING;
-			PRINT_LINE;
-			indent(control, (SSHORT) (level + 1));
-			PRINT_WORD;
-			if (c != PYXIS_MAP_FIELD1)
-				PRINT_WORD;
-			break;
-
-		case PYXIS_MAP_TERMINATOR:
-		case PYXIS_MAP_TERMINATING_FIELD:
-		case PYXIS_MAP_ITEM_INDEX:
-			PRINT_WORD;
-			break;
-
-		case PYXIS_MAP_OPAQUE:
-		case PYXIS_MAP_TRANSPARENT:
-		case PYXIS_MAP_TAG:
-			break;
-
-		default:
-			return error(control, offset, "*** invalid form map ***\n", 0);
-		}
-		PRINT_LINE;
-	}
-
-	blr_format(control, "PYXIS_MAP_END");
-	PRINT_LINE;
-
-	return 0;
-}
-#endif
 
 int PRETTY_print_mblr(
 					  SCHAR * blr,
@@ -345,77 +241,6 @@ int PRETTY_print_mblr(
 	return PRETTY_print_dyn(blr, routine, user_arg, language);
 }
 
-#ifdef PYXIS
-int
-PRETTY_print_menu(SCHAR * blr,
-//____________________________________________________________
-//  
-//		Pretty print a menu definition.
-//  
-
-				  int (*routine) (), SCHAR * user_arg, SSHORT language)
-{
-	ctl ctl_buffer;
-	ctl* control = &ctl_buffer;
-	SCHAR c;
-	int offset;
-	SSHORT version, level;
-
-	offset = level = 0;
-
-	if (!routine) {
-		routine = (int (*)()) ib_printf;
-		user_arg = "%.4d %s\n";
-	}
-
-	control->ctl_routine = reinterpret_cast < pfn_ctl_routine > (routine);
-	control->ctl_user_arg = user_arg;
-	control->ctl_blr = control->ctl_blr_start = blr;
-	control->ctl_ptr = control->ctl_buffer;
-	control->ctl_language = language;
-
-	version = BLR_BYTE;
-
-	if (version != PYXIS_MENU_VERSION1)
-		return error(control, offset,
-					 "*** menu version %d is not supported ***\n",
-					 version);
-
-	blr_format(control, "PYXIS_MENU_VERSION1,");
-	PRINT_LINE;
-	level++;
-
-	while ((c = BLR_BYTE) != PYXIS_MENU_END) {
-		indent(control, level);
-		if (c >= PYXIS_MENU_LABEL && c <= PYXIS_MENU_VERTICAL)
-			blr_format(control, "PYXIS_MENU_%s, ",
-					   menu_strings[c - PYXIS_MENU_LABEL]);
-		switch (c) {
-		case PYXIS_MENU_ENTREE:
-			PRINT_BYTE;
-
-		case PYXIS_MENU_LABEL:
-			PRINT_STRING;
-			break;
-
-		case PYXIS_MENU_HORIZONTAL:
-		case PYXIS_MENU_VERTICAL:
-		case PYXIS_MENU_OPAQUE:
-		case PYXIS_MENU_TRANSPARENT:
-			break;
-
-		default:
-			return error(control, offset, "*** invalid MENU ***\n", 0);
-		}
-		PRINT_LINE;
-	}
-
-	blr_format(control, "PYXIS_MENU_END");
-	PRINT_LINE;
-
-	return 0;
-}
-#endif
 
 int
 PRETTY_print_sdl(SCHAR * blr,

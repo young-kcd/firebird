@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.24 2003-09-10 19:48:53 brodsom Exp $
+//	$Id: ftn.cpp,v 1.25 2003-09-11 02:13:45 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -37,7 +37,6 @@
 #include <stdarg.h>
 #include "../jrd/gds.h"
 #include "../gpre/gpre.h"
-#include "../gpre/form.h"
 #include "../gpre/pat.h"
 #include "../gpre/cmp_proto.h"
 #include "../gpre/gpre_proto.h"
@@ -106,30 +105,10 @@ static void	gen_event_wait (ACT);
 static void	gen_fetch (ACT);
 static void	gen_finish (ACT);
 static void	gen_for (ACT);
-#ifdef PYXIS
-static void	gen_form_display (ACT);
-static void	gen_form_end (ACT);
-static void	gen_form_for (ACT);
-#endif
 static void	gen_function( ACT);
 static void	gen_get_or_put_slice(ACT, REF, bool);
 static void	gen_get_segment (ACT);
-#ifdef PYXIS
-static void	gen_item_end (ACT);
-static void	gen_item_for (ACT);
-#endif
 static void	gen_loop (ACT);
-#ifdef PYXIS
-static void	gen_menu (ACT);
-static void	gen_menu_display (ACT);
-static void	gen_menu_end (ACT);
-static void	gen_menu_entree (ACT);
-static void	gen_menu_entree_att (ACT);
-static void	gen_menu_for (ACT);
-static void	gen_menu_item_end (ACT);
-static void	gen_menu_item_for (ACT);
-static void	gen_menu_request (GPRE_REQ);
-#endif
 static TEXT	*gen_name (SCHAR *, REF, bool);
 static void	gen_on_error (ACT);
 static void	gen_procedure (ACT);
@@ -166,11 +145,6 @@ static void	gen_type (ACT);
 static void	gen_update (ACT);
 static void	gen_variable (ACT);
 static void	gen_whenever (SWE);
-#ifdef PYXIS
-static void	gen_window_create (ACT);
-static void	gen_window_delete (ACT);
-static void	gen_window_suspend (ACT);
-#endif
 static void	make_array_declaration (REF);
 static TEXT	*make_name (TEXT *, SYM);
 static void	make_ok_test (ACT, GPRE_REQ);
@@ -555,17 +529,6 @@ void FTN_action( ACT action, int column)
 	case ACT_for:
 		gen_for(action);
 		return;
-#ifdef PYXIS
-	case ACT_form_display:
-		gen_form_display(action);
-		break;
-	case ACT_form_end:
-		gen_form_end(action);
-		break;
-	case ACT_form_for:
-		gen_form_for(action);
-		return;
-#endif
 	case ACT_function:
 		gen_function(action);
 		return;
@@ -581,45 +544,9 @@ void FTN_action( ACT action, int column)
 	case ACT_insert:
 		gen_s_start(action);
 		break;
-#ifdef PYXIS
-	case ACT_item_for:
-	case ACT_item_put:
-		gen_item_for(action);
-		return;
-	case ACT_item_end:
-		gen_item_end(action);
-		break;
-#endif
 	case ACT_loop:
 		gen_loop(action);
 		break;
-#ifdef PYXIS
-	case ACT_menu:
-		gen_menu(action);
-		return;
-	case ACT_menu_end:
-		gen_menu_end(action);
-		break;
-	case ACT_menu_display:
-		gen_menu_display(action);
-		return;
-	case ACT_menu_for:
-		gen_menu_for(action);
-		return;
-
-	case ACT_title_text:
-	case ACT_title_length:
-	case ACT_terminator:
-	case ACT_entree_text:
-	case ACT_entree_length:
-	case ACT_entree_value:
-		gen_menu_entree_att(action);
-		return;
-
-	case ACT_menu_entree:
-		gen_menu_entree(action);
-		return;
-#endif
 	case ACT_open:
 		gen_s_start(action);
 		break;
@@ -692,17 +619,6 @@ void FTN_action( ACT action, int column)
 	case ACT_variable:
 		gen_variable(action);
 		return;
-#ifdef PYXIS
-	case ACT_window_create:
-		gen_window_create(action);
-		return;
-	case ACT_window_delete:
-		gen_window_delete(action);
-		return;
-	case ACT_window_suspend:
-		gen_window_suspend(action);
-		return;
-#endif
 	default:
 		return;
 	}
@@ -741,31 +657,6 @@ void FTN_fini(void)
 				   "%sDATA %s /0/             %s{ init database handle }\n",
 				   COLUMN, name, INLINE_COMMENT);
 	}
-#ifdef PYXIS
-	if (sw_pyxis && (sw_window_scope != DBB_EXTERN)) {
-		ib_fprintf(out_file,
-				   "%sINTEGER*4  ISC_WINDOW        %s{ window handle }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sINTEGER*2  ISC_HEIGHT        %s{ window height }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sINTEGER*2  ISC_WIDTH         %s{ window width }\n",
-				   COLUMN, INLINE_COMMENT);
-		printa(COLUMN, "COMMON /ISC_WINDOW/ISC_WINDOW");
-		printa(COLUMN, "COMMON /ISC_HEIGHT/ISC_HEIGHT");
-		printa(COLUMN, "COMMON /ISC_WIDTH/ISC_WIDTH");
-		ib_fprintf(out_file,
-				   "%sDATA ISC_WINDOW /0/          %s{ init window handle }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sDATA ISC_HEIGHT /24/         %s{ init window height }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sDATA ISC_WIDTH /80/          %s{ init window width }\n",
-				   COLUMN, INLINE_COMMENT);
-	}
-#endif
 	printa(COLUMN, "END");
 }
 
@@ -1178,12 +1069,12 @@ static void gen_blob_open( ACT action)
 		reference = blob->blb_reference;
 	}
 
-	args.pat_condition = action->act_type == ACT_blob_create;	/*  open or create blob  */
-	args.pat_vector1 = status_vector(action);	/*  status vector        */
-	args.pat_database = blob->blb_request->req_database;	/*  database handle      */
-	args.pat_request = blob->blb_request;	/*  transaction handle   */
-	args.pat_blob = blob;		/*  blob handle          */
-	args.pat_reference = reference;	/*  blob identifier      */
+	args.pat_condition = (action->act_type == ACT_blob_create);	// open or create blob
+	args.pat_vector1 = status_vector(action);	// status vector
+	args.pat_database = blob->blb_request->req_database;	// database handle
+	args.pat_request = blob->blb_request;	// transaction handle
+	args.pat_blob = blob;		// blob handle
+	args.pat_reference = reference;	// blob identifier
 	args.pat_ident1 = blob->blb_bpb_ident;
 
 	if ((action->act_flags & ACT_sql) && action->act_type == ACT_blob_open) {
@@ -1583,19 +1474,6 @@ static void gen_database_data( ACT action)
 		ib_fprintf(out_file,
 				   "%sDATA GDS__TRANS /0/           %s{ init trans handle }\n",
 				   COLUMN, INLINE_COMMENT);
-#ifdef PYXIS
-	if (sw_pyxis && (sw_window_scope != DBB_EXTERN)) {
-		ib_fprintf(out_file,
-				   "%sDATA ISC_WINDOW /0/           %s{ init window handle }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sDATA ISC_HEIGHT /24/           %s{ init window height }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sDATA ISC_WIDTH /80/           %s{ init window width }\n",
-				   COLUMN, INLINE_COMMENT);
-	}
-#endif
 #endif
 
 	for (request = requests; request; request = request->req_next)
@@ -1630,19 +1508,6 @@ static void gen_database_decls( ACT action)
 	ib_fprintf(out_file,
 			   "%sINTEGER*4  GDS__TRANS         %s{ default transaction handle }\n",
 			   COLUMN, INLINE_COMMENT);
-#ifdef PYXIS
-	if (sw_pyxis) {
-		ib_fprintf(out_file,
-				   "%sINTEGER*4  ISC_WINDOW        %s{ window handle }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sINTEGER*2  ISC_HEIGHT        %s{ window height }\n",
-				   COLUMN, INLINE_COMMENT);
-		ib_fprintf(out_file,
-				   "%sINTEGER*2  ISC_WIDTH         %s{ window width }\n",
-				   COLUMN, INLINE_COMMENT);
-	}
-#endif
 	ib_fprintf(out_file,
 			   "%sINTEGER*4  ISC_STATUS(20)    %s{ status vector }\n", COLUMN,
 			   INLINE_COMMENT);
@@ -1739,13 +1604,6 @@ static void gen_database_decls( ACT action)
 		printa(COLUMN, "COMMON /ISC_STATUS2/ISC_STATUS2");
 		printa(COLUMN, "COMMON /SQLCODE/SQLCODE");
 	}
-#ifdef PYXIS
-	if (sw_pyxis && sw_window_scope != DBB_STATIC) {
-		printa(COLUMN, "COMMON /ISC_WINDOW/ISC_WINDOW");
-		printa(COLUMN, "COMMON /ISC_HEIGHT/ISC_HEIGHT");
-		printa(COLUMN, "COMMON /ISC_WIDTH/ISC_WIDTH");
-	}
-#endif
 	array_decl_list = NULL;
 	for (request = requests; request; request = request->req_next) {
 		gen_request_decls(request);
@@ -2626,115 +2484,6 @@ static void gen_for( ACT action)
 		}
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate code for a form interaction.
-//  
-
-static void gen_form_display( ACT action)
-{
-	FINT display;
-	GPRE_REQ request;
-	REF reference, master;
-	POR port;
-	dbb* database;
-	TEXT s[32], out[16];
-	int code;
-
-	display = (FINT) action->act_object;
-	request = display->fint_request;
-	database = request->req_database;
-	port = request->req_ports;
-
-//  Initialize field options 
-
-	for (reference = port->por_references; reference;
-		 reference = reference->ref_next)
-	{
-		if ((master = reference->ref_master) &&
-			(code = CMP_display_code(display, master)) >= 0)
-		{
-			printa(COLUMN, "%s = %d", gen_name(s, reference, true), code);
-		}
-	}
-
-	if (display->fint_flags & FINT_no_wait)
-		strcpy(out, "0");
-	else
-		sprintf(out, "isc_%d", port->por_ident);
-
-	printa(COLUMN,
-		   "CALL PYXIS__DRIVE_FORM (isc_status, %s, %s, isc_window, %s, %sisc_%d%s, %s%s%s)",
-		   database->dbb_name->sym_string, request->req_trans, request->req_handle,
-		   REF_1, port->por_ident, REF_2, REF_1, out, REF_2);
-//  
-//status_and_stop (action);
-//  
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate code for a form block.
-//  
-
-static void gen_form_end( ACT action)
-{
-
-	printa(COLUMN, "CALL PYXIS__POP_WINDOW (isc_window)");
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate code for a form block.
-//  
-
-static void gen_form_for( ACT action)
-{
-	GPRE_REQ request = action->act_request;
-	FORM a_form = request->req_form;
-	dbb* database = request->req_database;
-
-//  Get database attach and transaction started 
-
-	if (sw_auto)
-		t_start_auto(0, status_vector(action), action, true);
-
-//  Get form loaded first 
-
-	printa(COLUMN, "IF (%s .EQ. 0) THEN", request->req_form_handle);
-	printa(COLUMN_INDENT,
-		   "CALL PYXIS__LOAD_FORM (isc_status, %s, %s, %s, %s%d%s, %s'%s'%s)",
-		   database->dbb_name->sym_string, request->req_trans,
-		   request->req_form_handle, I2_1,
-		   strlen(a_form->form_name->sym_string), I2_2, REF_1,
-		   a_form->form_name->sym_string, REF_2);
-	status_and_stop(action);
-	printa(COLUMN, "END IF");
-
-//  Get map compiled 
-
-	printa(COLUMN, "IF (%s .EQ. 0) THEN", request->req_handle);
-	printa(COLUMN_INDENT,
-		   "CALL PYXIS__COMPILE_MAP (isc_status, %s, %s, %s%d%s, isc_%d)",
-		   request->req_form_handle, request->req_handle, I2_1,
-		   request->req_length, I2_2, request->req_ident);
-//  
-//status_and_stop (action);
-//  
-	printa(COLUMN, "END IF");
-
-//  Reset form to known state 
-
-	printa(COLUMN, "CALL PYXIS__RESET_FORM (isc_status, %s)",
-		   request->req_handle);
-//  
-//status_and_stop (action);
-//  
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -2873,117 +2622,6 @@ static void gen_get_segment( ACT action)
 	}
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate end of block for PUT_ITEM and FOR_ITEM.
-//  
-
-static void gen_item_end( ACT action)
-{
-	GPRE_REQ request;
-	REF reference, master;
-	POR port;
-	dbb* database;
-	TEXT s[32], index[16];
-
-	request = action->act_request;
-
-	if (request->req_type == REQ_menu) {
-		gen_menu_item_end(action);
-		return;
-	}
-
-	if (action->act_pair->act_type == ACT_item_for) {
-		gen_name(index, request->req_index, true);
-		printa(COLUMN_INDENT, "%s = %s + 1", index, index);
-		printa(COLUMN, "GOTO %d", request->req_top_label);
-		printa("", "%-6dCONTINUE", request->req_btm_label);
-		return;
-	}
-
-	database = request->req_database;
-	port = request->req_ports;
-
-//  Initialize field options 
-
-	for (reference = port->por_references; reference;
-		 reference = reference->ref_next) if (master = reference->ref_master)
-			printa(COLUMN_INDENT, "%s = %d", gen_name(s, reference, true),
-				   PYXIS_OPT_DISPLAY);
-
-	printa(COLUMN,
-		   "CALL PYXIS__INSERT (isc_status, %s, %s, %s, %sisc_%d%s)",
-		   database->dbb_name->sym_string,
-		   request->req_trans,
-		   request->req_handle, REF_1, port->por_ident, REF_2);
-//  
-//status_and_stop (action);
-//  
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate insert text for FOR_ITEM and PUT_ITEM.
-//  
-
-static void gen_item_for( ACT action)
-{
-	GPRE_REQ request, parent;
-	TEXT index[30];
-
-	request = action->act_request;
-
-	if (request->req_type == REQ_menu) {
-		gen_menu_item_for(action);
-		return;
-	}
-
-	parent = request->req_form->form_parent;
-
-//  Get map compiled 
-
-	printa(COLUMN, "IF (%s .EQ. 0) THEN", request->req_handle);
-	printa(COLUMN_INDENT,
-		   "CALL PYXIS__COMPILE_SUB_MAP (isc_status, %s, %s, %s%d%s, isc_%d)",
-		   parent->req_handle, request->req_handle, I2_1, request->req_length,
-		   I2_2, request->req_ident);
-//  
-//status_and_stop (action);
-//  
-	printa(COLUMN, "END IF");
-
-	if (action->act_type != ACT_item_for)
-		return;
-
-//  Build stuff for item loop 
-
-	gen_name(index, request->req_index, true);
-	printa(COLUMN, "%s = 1", index);
-	request->req_top_label = next_label();
-	request->req_btm_label = next_label();
-	if (action->act_error || (action->act_flags & ACT_sql))
-		printa(COLUMN, "IF (ISC_STATUS(2) .NE. 0) GOTO %d\n",
-			   request->req_btm_label);
-
-	printa("", "%-6dCONTINUE", request->req_top_label);
-	printa(COLUMN,
-		   "CALL PYXIS__FETCH (isc_status, %s, %s, %s, %sisc_%d%s)",
-		   request->req_database->dbb_name->sym_string,
-		   request->req_trans,
-		   request->req_handle, REF_1, request->req_ports->por_ident, REF_2);
-//  
-//status_and_stop (action);
-//  
-	if (action->act_error || (action->act_flags & ACT_sql))
-		printa(COLUMN, "IF (%s .EQ. 0 .OR. ISC_STATUS(2) .NE. 0) GOTO %d\n",
-			   index, request->req_btm_label);
-	else
-		printa(COLUMN, "IF (%s .EQ. 0) GOTO %d\n",
-			   index, request->req_btm_label);
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -3008,283 +2646,6 @@ static void gen_loop( ACT action)
 	printa(COLUMN, "END IF");
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-
-static void gen_menu( ACT action)
-{
-	GPRE_REQ request;
-
-	request = action->act_request;
-	printa(COLUMN, "%ss = pyxis__menu (isc_window, %s, %s%d%s, isc_%d)",
-		   request->req_handle,
-		   request->req_handle,
-		   I2_1, request->req_length, I2_2, request->req_ident);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate code for a menu interaction.
-//  
-
-static void gen_menu_display( ACT action)
-{
-	MENU a_menu = NULL;
-	GPRE_REQ request, display_request;
-
-	request = action->act_request;
-	display_request = (GPRE_REQ) action->act_object;
-
-	for (action = request->req_actions; action; action = action->act_next)
-		if (action->act_type == ACT_menu_for) {
-			a_menu = (MENU) action->act_object;
-			break;
-		}
-
-	printa(COLUMN,
-		   "CALL PYXIS__DRIVE_MENU (isc_window, %s, %s%d%s, isc_%d,",
-		   request->req_handle,
-		   I2_1, display_request->req_length, I2_2,
-		   display_request->req_ident);
-
-	printa(CONTINUE,
-		   "isc_%dl, %sisc_%d%s,",
-		   a_menu->menu_title, REF_1, a_menu->menu_title, REF_2);
-
-	printa(CONTINUE,
-		   "isc_%d, isc_%dl, %sisc_%d%s, isc_%d)",
-		   a_menu->menu_terminator,
-		   a_menu->menu_entree_entree,
-		   REF_1, a_menu->menu_entree_entree, REF_2, a_menu->menu_entree_value);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-
-static void gen_menu_end( ACT action)
-{
-
-	GPRE_REQ request;
-
-	request = action->act_request;
-	if (request->req_flags & REQ_menu_for)
-		return;
-
-	printa(COLUMN, "END IF");
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-
-static void gen_menu_entree( ACT action)
-{
-	GPRE_REQ request;
-
-	request = action->act_request;
-
-	if (action->act_flags & ACT_first_entree)
-		printa(COLUMN, "IF (%ss .EQ. %d) THEN", request->req_handle,
-			   action->act_count);
-	else
-		printa(COLUMN, "ELSE IF (%ss .EQ. %d) THEN", request->req_handle,
-			   action->act_count);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//  
-//    Generate code for a reference to a menu or entree attribute.
-
-static void gen_menu_entree_att( ACT action)
-{
-	MENU a_menu;
-	SSHORT ident;
-	TEXT *length;
-
-	a_menu = (MENU) action->act_object;
-
-	length = "";
-	switch (action->act_type) {
-	case ACT_entree_text:
-		ident = a_menu->menu_entree_entree;
-		break;
-	case ACT_entree_length:
-		ident = a_menu->menu_entree_entree;
-		length = "l";
-		break;
-	case ACT_entree_value:
-		ident = a_menu->menu_entree_value;
-		break;
-	case ACT_title_text:
-		ident = a_menu->menu_title;
-		break;
-	case ACT_title_length:
-		ident = a_menu->menu_title;
-		length = "l";
-		break;
-	case ACT_terminator:
-		ident = a_menu->menu_terminator;
-		break;
-	default:
-		ident = -1;
-		break;
-	}
-
-	printa("", "%sisc_%d%s",
-		   (action->act_flags & ACT_first) ? COLUMN : CONTINUE,
-		   ident, length);
-
-	ib_fputs(CONTINUE, out_file);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate code for a menu block.
-//  
-
-static void gen_menu_for( ACT action)
-{
-	GPRE_REQ request;
-
-	request = action->act_request;
-
-//  Get menu created 
-
-	if (!(request->req_flags & REQ_exp_hand))
-		printa(COLUMN, "CALL PYXIS__INITIALIZE_MENU (%s)",
-			   request->req_handle);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate end of block for PUT_ITEM and FOR_ITEM
-//		for a dynamic menu.
-//  
-
-static void gen_menu_item_end( ACT action)
-{
-	GPRE_REQ request;
-	ENTREE menu_entree;
-
-	menu_entree = (ENTREE) action->act_pair->act_object;
-	request = menu_entree->entree_request;
-
-	if (action->act_pair->act_type == ACT_item_for) {
-		printa(COLUMN, "GOTO %d", request->req_top_label);
-		printa("", "%-6dCONTINUE", request->req_btm_label);
-		return;
-	}
-
-	printa(COLUMN,
-		   "CALL PYXIS__PUT_ENTREE (%s, isc_%dl, %sisc_%d%s, isc_%d)",
-		   request->req_handle,
-		   menu_entree->entree_entree,
-		   REF_1, menu_entree->entree_entree, REF_2, menu_entree->entree_value);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate insert text for FOR_ITEM and PUT_ITEM
-//		for a dynamic menu.
-//  
-
-static void gen_menu_item_for( ACT action)
-{
-	ENTREE menu_entree;
-	GPRE_REQ request;
-
-	if (action->act_type != ACT_item_for)
-		return;
-
-//  Build stuff for item loop 
-
-	menu_entree = (ENTREE) action->act_object;
-	request = menu_entree->entree_request;
-
-	request->req_top_label = next_label();
-	request->req_btm_label = next_label();
-
-	printa("", "%-6dCONTINUE", request->req_top_label);
-	printa(COLUMN,
-		   "CALL PYXIS__GET_ENTREE (%s, isc_%dl, %sisc_%d%s, isc_%d, %sisc_%d%s)",
-		   request->req_handle,
-		   menu_entree->entree_entree,
-		   REF_1, menu_entree->entree_entree, REF_2,
-		   menu_entree->entree_value, REF_1, menu_entree->entree_end, REF_2);
-
-	printa(COLUMN, "IF (isc_%d .NE. 0) GOTO %d\n",
-		   menu_entree->entree_end, request->req_btm_label);
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Generate definitions associated with a dynamic menu request.
-//  
-
-static void gen_menu_request( GPRE_REQ request)
-{
-	ACT action;
-	MENU a_menu = NULL;
-	ENTREE menu_entree = NULL;
-
-	for (action = request->req_actions; action; action = action->act_next) {
-		if (action->act_type == ACT_menu_for) {
-			a_menu = (MENU) action->act_object;
-			break;
-		}
-		else if ((action->act_type == ACT_item_for)
-				 || (action->act_type == ACT_item_put)) {
-			menu_entree = (ENTREE) action->act_object;
-			break;
-		}
-	}
-
-	if (a_menu) {
-		a_menu->menu_title = CMP_next_ident();
-		a_menu->menu_terminator = CMP_next_ident();
-		a_menu->menu_entree_value = CMP_next_ident();
-		a_menu->menu_entree_entree = CMP_next_ident();
-		ib_fprintf(out_file, "%sINTEGER*2 isc_%dl    %s{ TITLE_LENGTH }\n",
-				   COLUMN, a_menu->menu_title, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sCHARACTER*81 isc_%d    %s{ TITLE_TEXT }\n",
-				   COLUMN, a_menu->menu_title, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sINTEGER*2 isc_%d    %s{ TERMINATOR }\n",
-				   COLUMN, a_menu->menu_terminator, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sINTEGER*2 isc_%dl    %s{ ENTREE_LENGTH }\n",
-				   COLUMN, a_menu->menu_entree_entree, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sCHARACTER*81 isc_%d    %s{ ENTREE_TEXT }\n",
-				   COLUMN, a_menu->menu_entree_entree, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sINTEGER*4 isc_%d    %s{ ENTREE_VALUE }\n\n",
-				   COLUMN, a_menu->menu_entree_value, INLINE_COMMENT);
-	}
-
-	if (menu_entree) {
-		menu_entree->entree_entree = CMP_next_ident();
-		menu_entree->entree_value = CMP_next_ident();
-		menu_entree->entree_end = CMP_next_ident();
-		ib_fprintf(out_file, "%sINTEGER*2 isc_%dl    %s{ ENTREE_LENGTH }\n",
-				   COLUMN, menu_entree->entree_entree, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sCHARACTER*81 isc_%d    %s{ ENTREE_TEXT }\n",
-				   COLUMN, menu_entree->entree_entree, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sINTEGER*4 isc_%d    %s{ ENTREE_VALUE }\n",
-				   COLUMN, menu_entree->entree_value, INLINE_COMMENT);
-		ib_fprintf(out_file, "%sINTEGER*2 isc_%d    %s{ }\n\n",
-				   COLUMN, menu_entree->entree_end, INLINE_COMMENT);
-	}
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -3448,12 +2809,10 @@ static void gen_raw(
 					*c = isc_sdl_eoc;
 				else if ((request_type == REQ_ddl) ||
 						 (request_type == REQ_create_database) ||
-#ifdef PYXIS
-						 (request_type == REQ_form) ||
-						 (request_type == REQ_menu) ||
-#endif
 						 (request_length != end_c + 1))
+				{
 					*c = *blr++;
+				}
 				else
 					*c = blr_eoc;
 				break;
@@ -3577,11 +2936,8 @@ static void gen_request_data( GPRE_REQ request)
 //  and doesn't allow byte value assignments to character
 //  fields. 
 
-	if (!(request->req_flags & (REQ_exp_hand | 
-#ifdef PYXIS
-								REQ_menu_for_item |
-#endif
-								REQ_sql_blob_open | REQ_sql_blob_create)) &&
+	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open 
+		| REQ_sql_blob_create)) &&
 		request->req_type != REQ_slice && request->req_type != REQ_procedure)
 	{
 		ib_fprintf(out_file,
@@ -3589,12 +2945,6 @@ static void gen_request_data( GPRE_REQ request)
 				   COLUMN, request->req_handle, INLINE_COMMENT);
 	}
 
-#ifdef PYXIS
-	if (request->req_type == REQ_form)
-		ib_fprintf(out_file,
-				   "%sDATA %s /0/               %s{ init form handle }\n\n",
-				   COLUMN, request->req_form_handle, INLINE_COMMENT);
-#endif
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
 		ib_fprintf(out_file,
 				   "%sDATA isc_%dS /0/             %s{ init SQL statement handle }\n\n",
@@ -3650,19 +3000,6 @@ static void gen_request_data( GPRE_REQ request)
 				if (PRETTY_print_dyn((SCHAR*) request->req_blr, (int(*)()) gen_blr, 0, 0))
 					IBERROR("internal error during dynamic DDL generation");
 				break;
-#ifdef PYXIS
-			case REQ_form:
-				string_type = "form map";
-				if (PRETTY_print_form_map((SCHAR*) request->req_blr, (int(*)())gen_blr, 0, 0))
-					IBERROR("internal error during form map generation");
-				break;
-
-			case REQ_menu:
-				string_type = "menu";
-				if (PRETTY_print_menu((SCHAR*)request->req_blr, (int(*)())gen_blr, 0, 0))
-					IBERROR("internal error during menu generation");
-				break;
-#endif
 			case REQ_slice:
 				string_type = "SDL";
 				if (PRETTY_print_sdl((SCHAR*)request->req_blr, (int(*)()) gen_blr, 0, 0))
@@ -3685,15 +3022,6 @@ static void gen_request_data( GPRE_REQ request)
 			case REQ_ddl:
 				string_type = "DYN";
 				break;
-#ifdef PYXIS
-			case REQ_form:
-				string_type = "form map";
-				break;
-
-			case REQ_menu:
-				string_type = "menu";
-				break;
-#endif
 			case REQ_slice:
 				string_type = "SDL";
 				break;
@@ -3770,31 +3098,14 @@ static void gen_request_decls( GPRE_REQ request)
 	BLB blob;
 	POR port;
 
-	if (!(request->req_flags & (REQ_exp_hand | 
-#ifdef PYXIS
-								REQ_menu_for_item |
-#endif
-								REQ_sql_blob_open | REQ_sql_blob_create)) &&
+	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open 
+		| REQ_sql_blob_create)) &&
 		request->req_type != REQ_slice && request->req_type != REQ_procedure)
 	{
 		ib_fprintf(out_file,
 				   "%sINTEGER*4  %s             %s{ request handle }\n\n",
 				   COLUMN, request->req_handle, INLINE_COMMENT);
 	}
-#ifdef PYXIS
-	if (request->req_type == REQ_menu && !(request->req_flags & REQ_menu_for))
-		ib_fprintf(out_file,
-				   "%sINTEGER*2  %ss             %s{ menu switch variable }\n\n",
-				   COLUMN, request->req_handle, INLINE_COMMENT);
-
-	if (request->req_type == REQ_menu)
-		gen_menu_request(request);
-
-	if (request->req_type == REQ_form)
-		ib_fprintf(out_file,
-				   "%sINTEGER*4  %s             %s{ form handle }\n\n",
-				   COLUMN, request->req_form_handle, INLINE_COMMENT);
-#endif
 //  generate the request as BLR long words 
 
 	length = (request->req_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
@@ -4466,44 +3777,6 @@ static void gen_whenever( SWE label)
 	}
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Create a new window.
-//  
-
-static void gen_window_create( ACT action)
-{
-
-	printa(COLUMN,
-		   "CALL PYXIS__CREATE_WINDOW (isc_window, 0, 0, isc_width, isc_height)");
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Delete a window.
-//  
-
-static void gen_window_delete( ACT action)
-{
-
-	printa(COLUMN, "CALL PYXIS__DELETE_WINDOW (isc_window)");
-}
-#endif
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Suspend a window.
-//  
-
-static void gen_window_suspend( ACT action)
-{
-
-	printa(COLUMN, "CALL PYXIS__SUSPEND_WINDOW (isc_window)");
-}
-#endif
-
 //____________________________________________________________
 //  
 //		Generate a declaration of an array in the
@@ -5075,13 +4348,6 @@ static void gen_clear_handles( ACT action)
 	for (request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
 			printa("%s%s = 0;", COLUMN, request->req_handle);
-#ifdef PYXIS
-		if (request->req_form_handle &&
-			!(request->req_flags & REQ_exp_form_handle))
-		{
-				printa("%s%s = 0;", COLUMN, request->req_form_handle);
-		}
-#endif
 	}
 }
 

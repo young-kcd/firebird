@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.16 2003-09-10 19:48:53 brodsom Exp $
+//	$Id: cmp.cpp,v 1.17 2003-09-11 02:13:46 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -33,7 +33,6 @@
 #include <string.h>
 #include "../jrd/gds.h"
 #include "gpre.h"
-#include "../gpre/form.h"
 #include "../jrd/align.h"
 #include "../gpre/cmd_proto.h"
 #include "../gpre/cme_proto.h"
@@ -56,13 +55,7 @@ static void cmp_erase(ACT, GPRE_REQ);
 static void cmp_fetch(ACT);
 static void cmp_field(GPRE_REQ, GPRE_FLD, REF);
 static void cmp_for(GPRE_REQ);
-#ifdef PYXIS
-static void cmp_form(GPRE_REQ);
-#endif
 static void cmp_loop(GPRE_REQ);
-#ifdef PYXIS
-static void cmp_menu(GPRE_REQ);
-#endif
 static void cmp_modify(ACT, GPRE_REQ);
 static void cmp_port(POR, GPRE_REQ);
 static void cmp_procedure(GPRE_REQ);
@@ -192,11 +185,6 @@ void CMP_compile_request( GPRE_REQ request)
 	case REQ_ddl:
 		CMD_compile_ddl(request);
 		return;
-#ifdef PYXIS
-	case REQ_menu:
-		cmp_menu(request);
-		return;
-#endif
 	case REQ_slice:
 		cmp_slice(request);
 		return;
@@ -204,11 +192,6 @@ void CMP_compile_request( GPRE_REQ request)
 	case REQ_ready:
 		cmp_ready(request);
 		return;
-#ifdef PYXIS
-	case REQ_form:
-		cmp_form(request);
-		return;
-#endif
 	case REQ_procedure:
 		cmp_procedure(request);
 		return;
@@ -322,54 +305,6 @@ void CMP_compile_request( GPRE_REQ request)
 		cmp_blob(blob, false);
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		CMP_display_code is called by the code generators to compute
-//		the option words code for the form DISPLAY statement on a
-//		field by field basis.  If the user has specificed explicit
-//		override of the field, -1 is returned.
-//  
-
-int
-CMP_display_code(FINT display, REF reference)
-{
-	int code;
-
-	if (MSC_member((GPRE_NOD) reference, display->fint_override_fields))
-		return -1;
-
-	code = 0;
-
-//  Handle display attribute 
-
-	if (display->fint_flags & FINT_display_all)
-		code |= PYXIS_OPT_DISPLAY;
-	else if (MSC_member((GPRE_NOD) reference, display->fint_display_fields))
-		code |= PYXIS_OPT_DISPLAY;
-
-//  Handle update attribute 
-
-	if (display->fint_flags & FINT_update_all)
-		code |= PYXIS_OPT_UPDATE;
-	else if (MSC_member((GPRE_NOD) reference, display->fint_update_fields))
-		code |= PYXIS_OPT_UPDATE;
-
-//  Handle wakeup attribute 
-
-	if (display->fint_flags & FINT_wakeup_all)
-		code |= PYXIS_OPT_WAKEUP;
-	else if (MSC_member((GPRE_NOD) reference, display->fint_wakeup_fields))
-		code |= PYXIS_OPT_WAKEUP;
-
-//  Handle cursor position attribute 
-
-	if (MSC_member((GPRE_NOD) reference, display->fint_position_fields))
-		code |= PYXIS_OPT_POSITION;
-
-	return code;
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -870,13 +805,6 @@ static void cmp_field( GPRE_REQ request, GPRE_FLD field, REF reference)
 		break;
 
 	case dtype_blob:
-#ifdef PYXIS
-		if (request->req_type == REQ_form) {
-			STUFF(blr_blob_id);
-			STUFF_WORD(field->fld_sub_type);
-			break;
-		}
-#endif
 	case dtype_quad:
 		STUFF(blr_quad);
 		STUFF(field->fld_scale);
@@ -1038,100 +966,6 @@ static void cmp_for( GPRE_REQ request)
 	STUFF(blr_end);
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Compile a FORM request.  
-//		This has very little to do with a BLR request.
-//  
-
-static void cmp_form( GPRE_REQ request)
-{
-	REF reference, option, parent;
-	POR port;
-	GPRE_FLD field;
-	FORM request_form;
-
-	request_form = request->req_form;
-
-	if (!request_form->form_handle) {
-		request_form->form_handle = (TEXT *) ALLOC(20);
-		sprintf(request_form->form_handle, ident_pattern, CMP_next_ident());
-	}
-
-	if (!request->req_form_handle)
-		request->req_form_handle = request_form->form_handle;
-
-	request->req_blr = request->req_base = (UCHAR *) ALLOC(500);
-	request->req_length = 500;
-	STUFF(PYXIS_MAP_VERSION1);
-
-	make_port(request, request->req_references);
-	port = request->req_ports;
-
-//   If the request had no references, we need to generate the 
-//   bogus, one-field reference structure within the routine
-//   but NOT generate the field into the blr message.  Gawd. 
-
-	reference = port->por_references;
-	if (reference->ref_field == eof_field) {
-		STUFF(blr_message);
-		STUFF(0);				/* port->por_msg_number */
-		STUFF_WORD(0);			/* port->por_count      */
-	}
-	else
-		cmp_port(port, request);
-
-	if (field = request_form->form_field) {
-		STUFF(PYXIS_MAP_SUB_FORM);
-		CMP_stuff_symbol(request, field->fld_symbol);
-	}
-
-	if (request->req_flags & REQ_transparent)
-		STUFF(PYXIS_MAP_TRANSPARENT);
-
-	if (request->req_flags & REQ_form_tag)
-		STUFF(PYXIS_MAP_TAG);
-
-	reference = port->por_references;
-	if (!(reference->ref_field == eof_field))
-		for (; reference; reference = reference->ref_next)
-			if (!(reference->ref_flags & REF_pseudo)) {
-				CMP_check(request, 0);
-				field = reference->ref_field;
-				option = reference->ref_null;
-				if (parent = reference->ref_friend) {
-					STUFF(PYXIS_MAP_SUB_FIELD);
-					CMP_stuff_symbol(request, parent->ref_field->fld_symbol);
-				}
-				else
-					STUFF((option) ? PYXIS_MAP_FIELD2 : PYXIS_MAP_FIELD1);
-				CMP_stuff_symbol(request, field->fld_symbol);
-				STUFF_WORD(reference->ref_parameter);
-				if (option)
-					STUFF_WORD(option->ref_parameter);
-			}
-
-	if (reference = request->req_eof) {
-		STUFF(PYXIS_MAP_TERMINATOR);
-		STUFF_WORD(reference->ref_parameter);
-	}
-
-	if (reference = request->req_term_field) {
-		STUFF(PYXIS_MAP_TERMINATING_FIELD);
-		STUFF_WORD(reference->ref_parameter);
-	}
-
-	if (reference = request->req_index) {
-		STUFF(PYXIS_MAP_ITEM_INDEX);
-		STUFF_WORD(reference->ref_parameter);
-	}
-
-	STUFF(PYXIS_MAP_END);
-	request->req_length = request->req_blr - request->req_base;
-	request->req_blr = request->req_base;
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -1154,10 +988,11 @@ static void cmp_loop( GPRE_REQ request)
 	STUFF(blr_begin);
 	counter = MAKE_NODE(nod_value, 1);
 	for (reference = primary->por_references; reference;
-		 reference =
-		 reference->ref_next) if (reference->ref_field ==
-								  count_field) counter->nod_arg[0] =
-				(GPRE_NOD) reference;
+		 reference = reference->ref_next)
+	{
+		if (reference->ref_field == count_field) 
+			counter->nod_arg[0] = (GPRE_NOD) reference;
+	}
 
 	STUFF(blr_assignment);
 	CME_expr(lit0, request);
@@ -1178,7 +1013,9 @@ static void cmp_loop( GPRE_REQ request)
 		STUFF(blr_begin);
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
+		{
 			cmp_assignment(*ptr, request);
+		}
 		STUFF(blr_end);
 	}
 	else if (node->nod_type == nod_store) {
@@ -1189,7 +1026,9 @@ static void cmp_loop( GPRE_REQ request)
 		STUFF(blr_begin);
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
 			 ptr++)
+		{
 			cmp_assignment(*ptr, request);
+		}
 		STUFF(blr_end);
 	}
 	else if (node->nod_type == nod_erase) {
@@ -1207,75 +1046,6 @@ static void cmp_loop( GPRE_REQ request)
 	STUFF(blr_end);
 }
 
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Compile a MENU request.  This has very little to do
-//		with a BLR request.
-//  
-
-static void cmp_menu( GPRE_REQ request)
-{
-	ACT action, temp;
-	TEXT *p;
-	USHORT l, count;
-
-//  Do not generate anything for for_menu and form_menu_item requests.  
-
-	if ((request->req_flags & REQ_menu_for) ||
-		(request->req_flags & REQ_menu_for_item)) return;
-
-	request->req_blr = request->req_base = (UCHAR *) ALLOC(500);
-	request->req_length = 500;
-	STUFF(PYXIS_MENU_VERSION1);
-	count = 0;
-
-//  Reverse actions so menu will come out in right order 
-
-	for (temp = NULL; action = request->req_actions;) {
-		request->req_actions = action->act_next;
-		action->act_next = temp;
-		temp = action;
-	}
-
-	request->req_actions = temp;
-
-	if (request->req_flags & REQ_menu_tag)
-		STUFF(PYXIS_MENU_HORIZONTAL);
-	else if (request->req_flags & REQ_menu_pop_up)
-		STUFF(PYXIS_MENU_VERTICAL);
-
-	if (request->req_flags & REQ_transparent)
-		STUFF(PYXIS_MENU_TRANSPARENT);
-
-	for (action = request->req_actions; action; action = action->act_next)
-		switch (action->act_type) {
-		case ACT_menu_entree:
-			STUFF(PYXIS_MENU_ENTREE);
-			action->act_count = ++count;
-			STUFF(action->act_count);
-			p = (TEXT *) action->act_object;
-			l = strlen(p);
-			STUFF(l);
-			while (*p)
-				STUFF(*p++);
-			break;
-
-		case ACT_menu:
-			STUFF(PYXIS_MENU_LABEL);
-			p = (TEXT *) action->act_object;
-			l = strlen(p);
-			STUFF(l);
-			while (*p)
-				STUFF(*p++);
-			break;
-		}
-
-	STUFF(PYXIS_MENU_END);
-	request->req_length = request->req_blr - request->req_base;
-	request->req_blr = request->req_base;
-}
-#endif
 
 //____________________________________________________________
 //  

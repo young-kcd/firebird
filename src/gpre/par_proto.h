@@ -27,7 +27,7 @@
 extern ACT PAR_action(TEXT*);
 extern SSHORT PAR_blob_subtype(DBB);
 extern ACT PAR_database(bool, const TEXT*);
-extern BOOLEAN PAR_end(void);
+extern bool PAR_end(void);
 extern void PAR_error(const TEXT *);
 extern ACT PAR_event_init(bool);
 extern ACT PAR_event_wait(bool);

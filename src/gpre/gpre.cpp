@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.32 2003-09-10 19:48:53 brodsom Exp $
+//  $Id: gpre.cpp,v 1.33 2003-09-11 02:13:45 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -266,9 +266,9 @@ int main(int argc, char* argv[])
 
     errors = warnings = fatals = 0;
 
-	BOOLEAN use_lang_internal_gxx_output;
+	bool use_lang_internal_gxx_output;
 
-	use_lang_internal_gxx_output = FALSE;
+	use_lang_internal_gxx_output = false;
 	strcpy(ada_package, "");
 	ada_flags = 0;
 	input_char = input_buffer;
@@ -639,7 +639,7 @@ int main(int argc, char* argv[])
 			 * done with it.
 			 */
 			gen_routine			= INT_CXX_action;
-			use_lang_internal_gxx_output = TRUE;
+			use_lang_internal_gxx_output = true;
 			break;
 
 		case IN_SW_GPRE_LANG_INTERNAL:
@@ -2549,16 +2549,7 @@ static void pass2( SLONG start_position)
 		const bool continue_flag =
 			(action->act_type == ACT_variable)			||
 			(action->act_type == ACT_segment)			||
-			(action->act_type == ACT_segment_length)
-#ifdef PYXIS
-			|| (action->act_type == ACT_title_text)		||
-			(action->act_type == ACT_title_length)		||
-			(action->act_type == ACT_terminator)		||
-			(action->act_type == ACT_entree_text)		||
-			(action->act_type == ACT_entree_length)		||
-			(action->act_type == ACT_entree_value)
-#endif
-			;
+			(action->act_type == ACT_segment_length) ;
 
 		// Unless the action is purely a marker, insert a comment initiator
 		// into the output stream.

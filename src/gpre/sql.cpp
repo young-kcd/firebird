@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.19 2003-09-10 19:48:52 brodsom Exp $
+//	$Id: sql.cpp,v 1.20 2003-09-11 02:13:45 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2553,7 +2553,7 @@ static ACT act_delete(void)
 	GPRE_REQ request = MAKE_REQUEST(REQ_mass_update);
 	UPD update = (UPD) ALLOC(UPD_LEN);
 
-	SSHORT where = MATCH(KW_WITH);
+	bool where = MATCH(KW_WITH);
 	if (where && MATCH(KW_CURRENT)) {
 		if (!MATCH(KW_OF))
 			SYNTAX_ERROR("OF <cursor>");
@@ -2688,7 +2688,7 @@ static ACT act_disconnect(void)
 {
 	ACT action = MAKE_ACTION(0, ACT_disconnect);
 	action->act_whenever = gen_whenever();
-	USHORT all = MATCH(KW_ALL) || MATCH(KW_DEFAULT);
+	bool all = MATCH(KW_ALL) || MATCH(KW_DEFAULT);
 
 	if (!all) {
 		if (MATCH(KW_CURRENT))
@@ -3894,7 +3894,7 @@ static ACT act_procedure(void)
 	if (!KEYWORD(KW_RETURNING) && !KEYWORD(KW_SEMI_COLON)) {
 		// parse input references
 
-		BOOLEAN paren = MATCH(KW_LEFT_PAREN);
+		bool paren = MATCH(KW_LEFT_PAREN);
 		GPRE_FLD field = procedure->prc_inputs;
 		REF *ref_ptr = &request->req_values;
 		do {
@@ -3919,7 +3919,7 @@ static ACT act_procedure(void)
 	if (MATCH(KW_RETURNING)) {
 		/* parse output references */
 
-		BOOLEAN paren = MATCH(KW_LEFT_PAREN);
+		bool paren = MATCH(KW_LEFT_PAREN);
 		GPRE_FLD field = procedure->prc_outputs;
 		REF *ref_ptr = &request->req_references;
 		do {
@@ -4386,7 +4386,7 @@ static ACT act_update(void)
 //  then this is a sub-action of an existing request.  If not, then it is
 //  a free standing request 
 
-	SSHORT where = MATCH(KW_WITH);
+	bool where = MATCH(KW_WITH);
 	if (where && MATCH(KW_CURRENT)) {
 		if (!MATCH(KW_OF))
 			SYNTAX_ERROR("OF cursor");
@@ -5095,7 +5095,7 @@ static GPRE_REL make_relation( GPRE_REQ request, const TEXT * relation_name)
 
 		relation = MET_make_relation(r);
 		relation->rel_database = isc_databases;
-		relation->rel_meta = TRUE;
+		relation->rel_meta = true;
 
 		if (request)
 			request->req_database = isc_databases;

@@ -91,7 +91,7 @@ struct pat {
 	int pat_value4;
 	SLONG pat_long1;
 	SLONG pat_long2;
-	BOOLEAN pat_condition;
+	bool pat_condition;
 	REF pat_reference;
 };
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.10 2003-09-08 11:27:51 robocop Exp $
+//	$Id: msc.cpp,v 1.11 2003-09-11 02:13:45 brodsom Exp $
 //
 //  
 //  
@@ -311,7 +311,7 @@ void MSC_init(void)
 //		false.
 //  
 
-BOOLEAN MSC_match(KWWORDS keyword)
+bool MSC_match(KWWORDS keyword)
 {
 
 	if (token.tok_keyword == KW_none && token.tok_symbol) {
@@ -329,21 +329,21 @@ BOOLEAN MSC_match(KWWORDS keyword)
 	}
 
 	if ((int) token.tok_keyword != (int) keyword)
-		return FALSE;
+		return false;
 
 	CPR_token();
 
-	return TRUE;
+	return true;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //		Determinate where a specific object is
 //		represented on a linked list stack.
 //  
 
-BOOLEAN MSC_member(GPRE_NOD object, LLS stack)
+bool MSC_member(GPRE_NOD object, LLS stack)
 {
 
 	for (; stack; stack = stack->lls_next)
@@ -352,7 +352,7 @@ BOOLEAN MSC_member(GPRE_NOD object, LLS stack)
 
 	return FALSE;
 }
-
+#endif
 
 //____________________________________________________________
 //  

@@ -37,10 +37,7 @@ extern SYM MSC_find_symbol(SYM, enum sym_t);
 extern void MSC_free(UCHAR *);
 extern void MSC_free_request(GPRE_REQ);
 extern void MSC_init(void);
-extern BOOLEAN MSC_match(KWWORDS);
-#ifdef PYXIS
-extern BOOLEAN MSC_member(GPRE_NOD, LLS);
-#endif
+extern bool MSC_match(KWWORDS);
 extern GPRE_NOD MSC_node(enum nod_t, SSHORT);
 extern GPRE_NOD MSC_pop(LLS *);
 extern PRV MSC_privilege_block(void);

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.17 2003-09-10 19:48:53 brodsom Exp $
+//	$Id: exp.cpp,v 1.18 2003-09-11 02:13:45 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -35,11 +35,9 @@
 #include "../jrd/common.h"
 #include "../gpre/gpre.h"
 #include "../gpre/parse.h"
-#include "../gpre/form.h"
 #include "../jrd/intl.h"
 #include "../gpre/cmp_proto.h"
 #include "../gpre/exp_proto.h"
-#include "../gpre/form_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_meta.h"
@@ -303,104 +301,6 @@ GPRE_FLD EXP_field(GPRE_CTX * rcontext)
 	return field;
 }
 
-
-#ifdef PYXIS
-//____________________________________________________________
-//  
-//		Parse a qualified form field clause.  If recognized,
-//		return both the field block (as value) and the
-//		context block (by reference).
-//  
-
-GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
-{
-	SYM symbol;
-	GPRE_CTX context;
-	GPRE_FLD field, child;
-	REF reference, parent;
-	GPRE_REQ request;
-	FORM a_form;
-	TEXT s[128];
-
-	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_form_map)
-		SYNTAX_ERROR("context variable");
-
-	*rcontext = context = symbol->sym_object;
-	request = context->ctx_request;
-	a_form = request->req_form;
-	ADVANCE_TOKEN;
-
-	if (!MATCH(KW_DOT))
-		SYNTAX_ERROR("dot after context variable");
-
-	if (MATCH(KW_TERMINATOR))
-		if (reference = request->req_eof)
-			return reference->ref_field;
-		else {
-			field =
-				MET_make_field("TERMINATOR", dtype_short, sizeof(SSHORT),
-							   FALSE);
-			reference = EXP_post_field(field, context, FALSE);
-			reference->ref_flags |= REF_pseudo;
-			request->req_eof = reference;
-			return field;
-		}
-
-	if (MATCH(KW_TERMINATING_FIELD))
-		if (reference = request->req_term_field)
-			return reference->ref_field;
-		else {
-			if (sw_cstring)
-				field = MET_make_field("TERMINATING_FIELD", dtype_cstring, 32,
-									   FALSE);
-			else
-				field = MET_make_field("TERMINATING_FIELD", dtype_text, 31,
-									   FALSE);
-			reference = EXP_post_field(field, context, FALSE);
-			reference->ref_flags |= REF_pseudo;
-			request->req_term_field = reference;
-			return field;
-		}
-
-	if (!(field = FORM_lookup_field(a_form, a_form->form_object, 
-								    token.tok_string))) 
-	{
-		sprintf(s, "field \"%s\" is not defined in form %s", token.tok_string,
-				a_form->form_name->sym_string);
-		PAR_error(s);
-	}
-
-	ADVANCE_TOKEN;
-
-//  Unless field is further qualified, we're done 
-
-	if (!MATCH(KW_DOT))
-		return field;
-
-//  Check for a sub-field reference 
-
-	parent = NULL;
-	if (field->fld_prototype &&
-		(child = FORM_lookup_field(request->req_form, field->fld_prototype,
-								   token.tok_string))) 
-	{
-		ADVANCE_TOKEN;
-		parent = MAKE_REFERENCE(0);
-		parent->ref_field = field;
-		field = child;
-	}
-
-	reference = EXP_post_field(field, context, FALSE);
-	if ((reference->ref_friend = parent) && !(MATCH(KW_DOT)))
-		return reference->ref_field;
-
-	if (!MATCH(KW_STATE))
-		SYNTAX_ERROR("STATE");
-
-	reference = reference->ref_null;
-	return reference->ref_field;
-}
-#endif
 
 //____________________________________________________________
 //  
@@ -698,9 +598,6 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 {
 	GPRE_REQ request;
 	REF reference;
-#ifdef PYXIS
-	REF control;
-#endif
 	GPRE_FLD ref_field;
 	TEXT s[128];
 
@@ -709,16 +606,19 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 //  If the reference is already posted, return the reference 
 
 	for (reference = request->req_references; reference;
-		 reference =
-		 reference->ref_next) if (reference->ref_context == context) {
+		 reference = reference->ref_next)
+	{
+		if (reference->ref_context == context) {
 			ref_field = reference->ref_field;
 			if (ref_field == field ||
 				(ref_field->fld_symbol == field->fld_symbol &&
-				 ref_field->fld_array == field->fld_array)) {
+				 ref_field->fld_array == field->fld_array))
+			{
 				if (!null_flag && (ref_field->fld_dtype != field->fld_dtype ||
 								   ref_field->fld_length != field->fld_length
 								   || ref_field->fld_scale !=
-								   field->fld_scale)) {
+								   field->fld_scale))
+				{
 					if (reference->ref_flags & REF_null)
 						reference->ref_field = field;
 					else {
@@ -735,6 +635,7 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 				return reference;
 			}
 		}
+	}
 
 //  This is first occurrence of field, make a new reference 
 
@@ -746,30 +647,6 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 	if (null_flag)
 		reference->ref_flags |= REF_null;
 
-#ifdef PYXIS
-//  If this is a form request, make up control field for form field 
-
-	if (request->req_type == REQ_form) {
-		if (field->fld_array_info) {
-			sprintf(s,
-					"Arrays are not supported in forms.  Field %s is an array.",
-					field->fld_symbol->sym_string);
-			PAR_error(s);
-			return NULL;
-		}
-		else {
-			reference->ref_null = control =
-				MAKE_REFERENCE(&request->req_references);
-			control->ref_flags |= REF_pseudo;
-			control->ref_field =
-				MET_make_field("gds__form_control", dtype_short,
-							   sizeof(SSHORT), FALSE);
-			control->ref_context = context;
-			control->ref_master = reference;
-		}
-	}
-#endif
-
 	return reference;
 }
 
@@ -780,14 +657,14 @@ REF EXP_post_field(GPRE_FLD field, GPRE_CTX context, USHORT null_flag)
 //		and return FALSE.
 //  
 
-BOOLEAN EXP_match_paren(void)
+bool EXP_match_paren(void)
 {
 
 	if (MATCH(KW_RIGHT_PAREN))
-		return TRUE;
+		return true;
 
 	SYNTAX_ERROR("right parenthesis");
-	return FALSE;				/* silence compiler warning */
+	return false;	// silence compiler warning
 }
 
 
@@ -1380,10 +1257,6 @@ static GPRE_NOD par_field( GPRE_REQ request)
 		if (MATCH(KW_DOT) && (cast = EXP_cast(field)))
 			field = cast;
 	}
-#ifdef PYXIS
-	else if (symbol->sym_type == SYM_form_map)
-		field = EXP_form_field(&context);
-#endif
 	else
 		SYNTAX_ERROR("qualified field reference");
 
@@ -1596,12 +1469,7 @@ static GPRE_NOD par_primitive_value( GPRE_REQ request, GPRE_FLD field)
 	if (node = par_udf(request, UDF_value, field))
 		return node;
 
-	if (!(symbol = token.tok_symbol) ||
-		(symbol->sym_type != SYM_context 
-#ifdef PYXIS
-		&& symbol->sym_type != SYM_form_map
-#endif
-		))
+	if (!(symbol = token.tok_symbol) || (symbol->sym_type != SYM_context))
 		return par_native_value(request, field);
 
 	return par_field(request);
@@ -1618,7 +1486,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 	GPRE_NOD expr, expr1, expr2;
 	REF reference;
 	GPRE_FLD field;
-	USHORT negation;
+	bool negation;
 	rel_ops* relop;
 
 	if (MATCH(KW_ANY)) {

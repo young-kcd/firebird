@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.17 2003-09-10 19:48:52 brodsom Exp $
+//	$Id: sqe.cpp,v 1.18 2003-09-11 02:13:45 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -1063,8 +1063,7 @@ RSE SQE_select(GPRE_REQ request,
 		bool union_all = false;
 
 		have_union = true;
-		if (MATCH(KW_ALL))
-			union_all = true;
+		union_all = MATCH(KW_ALL);
 		if (!MATCH(KW_SELECT))
 			SYNTAX_ERROR("SELECT");
 
@@ -2465,7 +2464,7 @@ static GPRE_NOD par_primitive_value(GPRE_REQ request,
 			node = MAKE_NODE(op->rel_op, 2);
 			node->nod_count = 1;
 			EXP_left_paren("left parenthesis in statistical function");
-			distinct = (MATCH(KW_DISTINCT));
+			distinct = MATCH(KW_DISTINCT);
 			if (request) {
 				tmp_map = request->req_map;
 				request->req_map = NULL;
