@@ -206,10 +206,10 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	connection_handle = parse_args(lpszArgs, &server_flag);
 
 	if ((server_flag & SRVR_multi_client) ||
-		!(server_flag & (SRVR_inet | SRVR_pipe | SRVR_ipc | SRVR_xnet))) {
+		!(server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet))) {
 
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
-			server_flag |= SRVR_pipe;
+			server_flag |= SRVR_wnet;
 		server_flag |= SRVR_inet;
 #ifdef SUPERSERVER
 		server_flag |= SRVR_ipc;
@@ -235,7 +235,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		THREAD_ENTER;
 		if (server_flag & SRVR_inet)
 			port = INET_reconnect(connection_handle, 0, status_vector);
-		else if (server_flag & SRVR_pipe)
+		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, 0, status_vector);
 		THREAD_EXIT;
 		service_connection(port);
@@ -255,7 +255,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 							  (inet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
-		if (server_flag & SRVR_pipe) {
+		if (server_flag & SRVR_wnet) {
 			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 							  (wnet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
@@ -476,7 +476,7 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						  (inet_connect_wait_thread), 0, THREAD_medium, 0, 0);
 	}
-	if (server_flag & SRVR_pipe) {
+	if (server_flag & SRVR_wnet) {
 		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
 	}
@@ -571,14 +571,8 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					break;
 
 				case 'N':
-					*pserver_flag |= SRVR_pipe;
+					*pserver_flag |= SRVR_no_icon;
 					break;
-
-#ifdef  XNET
-				case 'X':
-					*pserver_flag |= SRVR_xnet;
-					break;
-#endif /* XNET */
 
 				case 'P':		/* Specify a port or named pipe other than the default */
 					while (*p && *p == ' ')
@@ -604,9 +598,19 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					*pserver_flag &= ~SRVR_high_priority;
 					break;
 
+#ifdef XNET
+				case 'X':
+					*pserver_flag |= SRVR_xnet;
+					break;
+#endif
+
+				case 'W':
+					*pserver_flag |= SRVR_wnet;
+					break;
+
 				case 'Z':
 					ib_printf("Firebird remote server version %s\n",
-							  GDS_VERSION);
+							  FB_VERSION);
 					exit(FINI_OK);
 
 				default:

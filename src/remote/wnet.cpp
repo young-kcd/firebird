@@ -586,7 +586,7 @@ PORT WNET_connect(TEXT*		name,
 			p = command_line + strlen(command_line);
 		}
 
-		sprintf(p, " -s -n -h %d", (SLONG) port->port_handle);
+		sprintf(p, " -s -w -h %d", (SLONG) port->port_handle);
 		start_crud.cb = sizeof(STARTUPINFO);
 		start_crud.lpReserved = NULL;
 		start_crud.lpReserved2 = NULL;

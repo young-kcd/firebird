@@ -96,12 +96,12 @@
 #define SRVR_multi_client	2	/* 0x0002 multi-client server */
 #define SRVR_debug		4	/* 0x0004 */
 #define SRVR_inet		8	/* 0x0008 Inet protocol */
-#define SRVR_pipe		16	/* 0x0010 Named pipe protocol (NT) */
-#define SRVR_ipc		64	/* 0x0040 IPC protocol for Win95 */
+#define SRVR_wnet		16	/* 0x0010 Wnet (named pipe) protocol (WinNT) */
+#define SRVR_ipc		64	/* 0x0040 IPC protocol (Win32) */
 #define SRVR_non_service	128	/* 0x0080 Not running as an NT service */
 #define SRVR_high_priority	256	/* 0x0100 fork off server at high priority */
 #define SRVR_auto_unload	512	/* 0x0200 Unload server after last disconnect */
-#define SRVR_xnet               1024    /* 0x0400 ipc protocol via server */
+#define SRVR_xnet			1024 /* 0x0400 IPC protocol via server */
 #define SRVR_thread_per_port	2048	/* 0x0800 Bind thread to a port */
 #define SRVR_no_icon		4096	/* 0x1000 Tell the server not to show the icon */
 #endif /* _REMOTE_REMOTE_DEF_H_ */

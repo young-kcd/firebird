@@ -199,7 +199,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			SetDlgItemText(hDlg, IDC_LICENSE, szText);
 
-			if (usServerFlags & (SRVR_inet | SRVR_pipe))
+			if (usServerFlags & (SRVR_inet | SRVR_wnet))
 				LoadString(hInstance,
 						   IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
 			else
@@ -307,7 +307,7 @@ static char *MakeVersionString(char *pchBuf, int nLen,
 		if (p < end)
 			*p++ = '\n';
 	}
-	if (usServerFlagMask & SRVR_pipe) {
+	if (usServerFlagMask & SRVR_wnet) {
 		p += LoadString(hInstance, IDS_NP, p, end - p);
 		if (p < end)
 			*p++ = '\r';

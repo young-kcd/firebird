@@ -149,10 +149,8 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 
 /* Get the default client mode from the registry. */
 
-	if (ISC_get_registry_var("DefaultClientMode",
-							 default_mode, sizeof(default_mode), 0) != -1)
-		if (default_mode[0] == '-')
-			parse_switch(&default_mode[1], &flag);
+	if (default_mode[0] == '-')
+		parse_switch(&default_mode[1], &flag);
 
 /* Parse the command line looking for any additional arguments. */
 
@@ -416,12 +414,12 @@ static void parse_switch( TEXT * switches, int *flag)
 			*flag |= SRVR_inet;
 			break;
 
-		case 'N':
-			*flag |= SRVR_pipe;
-			break;
-
 		case 'R':
 			*flag &= ~SRVR_high_priority;
+			break;
+
+		case 'W':
+			*flag |= SRVR_wnet;
 			break;
 		}
 
