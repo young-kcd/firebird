@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: config_root.cpp,v 1.4 2002-12-06 12:04:38 dimitr Exp $
+ *  $Id: config_root.cpp,v 1.5 2003-05-25 00:12:34 skidder Exp $
  */
 
 #include "firebird.h"
@@ -62,11 +62,11 @@ static string getExePathViaProcEntry()
 {
     char buffer[MAXPATHLEN];
     int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
-    buffer[len]=0;
-    
-    string pathName = buffer;
-
-    return pathName;
+	if (len >= 0) {
+		buffer[len]=0;
+		return buffer;
+	}
+	return "";
 }
 
 #endif
@@ -78,12 +78,13 @@ static string getExePathViaProcEntry()
 
 static string getRootPathFromExePath()
 {
+#ifdef HAVE__PROC_SELF_EXE
 	// get the pathname of the running executable
 	string bin_dir;
 
-#ifdef HAVE__PROC_SELF_EXE
     bin_dir = getExePathViaProcEntry();
-#endif
+	if (bin_dir.length() == 0) 
+		return "";
 	
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);
@@ -91,11 +92,19 @@ static string getRootPathFromExePath()
 
 	// how should we decide to use bin_dir instead of root_dir? any ideas?
 	// ???
+#ifdef EMBEDDED
+	// Placed here in case we introduce embedded POSIX build
+	root_dir = bin_dir + PathUtils::dir_sep;
+	return;
+#endif
 
 	// go to the parent directory
 	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
 	string root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
     return root_dir;
+#else
+	return "";
+#endif
 }
 
 static string getRootPathFromEnvVar()
@@ -104,31 +113,25 @@ static string getRootPathFromEnvVar()
 
     string rootpath;
 
-    if (varPtr == NULL) {
+    if (varPtr != NULL) {
         rootpath = varPtr;
+		if (rootpath[rootpath.length()-1] != PathUtils::dir_sep)
+			rootpath += PathUtils::dir_sep;
     }
 
     return rootpath;
 }
 
 
-static string getRootPathFromInstallDir()
-{
-    // Need to speak to Erik about this one, as the variable
-    // needs to come from the autoconf file.
-
-    string rootpath;
-
-    return rootpath;
-}
-
 ConfigRoot::ConfigRoot()
 {
+#if defined SUPERSERVER || defined EMBEDDED
 	// Try getting the root path from the executable
 	root_dir = getRootPathFromExePath();
     if (root_dir.length() != 0) {
         return;
     }
+#endif
 
     // Try getting the root path from environment variable
     root_dir = getRootPathFromEnvVar();
@@ -137,7 +140,7 @@ ConfigRoot::ConfigRoot()
     }
 
     // As a last resort get it from the default install directory
-    root_dir = FB_PREFIX;    
+    root_dir = string(FB_PREFIX) + PathUtils::dir_sep;    
 }
 
 const char *ConfigRoot::getRootDirectory() const
