@@ -1,3 +1,60 @@
+2004-12-04 00:56  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.208):
+	
+	Improve cross join and merge/sort handeling
+
+2004-12-03 08:56  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.165):
+	
+	Fixed SF #1077595.
+
+2004-12-03 08:55  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.125), btr.h (1.37):
+	
+	Don't check uniqueness for null keys - this leads to big waste of
+	time
+
+2004-12-03 08:23  robocop
+
+	* firebird2/src/isql/show.epp (1.62):
+	
+	Close the blob before returning an error.
+
+2004-12-03 08:22  robocop
+
+	* firebird2/src/isql/extract.epp (1.50):
+	
+	Misc.
+
+2004-12-03 08:06  dimitr
+
+	* firebird2/src/dsql/: parse.cpp (1.139), parse.y (1.164):
+	
+	Fixed issues spotted by Claudio.
+
+2004-12-03 07:49  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.121):
+	
+	Restored datatype.
+
+2004-12-03 07:23  robocop
+
+	* firebird2/src/: common/classes/GenericMap.h (1.6),
+	dsql/keywords.cpp (1.40), dsql/pass1.cpp (1.182),
+	jrd/os/win32/guid.cpp (1.11):
+	
+	Misc.
+
+2004-12-03 06:36  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.72):
+	
+	Implemented REVOKE ADMIN OPTION FROM
+
 2004-12-02 23:51  dimitr
 
 	* firebird2/src/dsql/: ddl.cpp (1.120), keywords.cpp (1.39),
