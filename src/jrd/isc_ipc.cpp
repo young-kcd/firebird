@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.22 2002-09-24 19:53:25 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.23 2002-10-24 14:52:10 dimitr Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -261,7 +261,7 @@ static void sigwait_thread(int);
 #endif
 
 /* Not thread-safe */
-ULONG isc_enter_count = 0;
+extern "C" ULONG isc_enter_count = 0;
 
 #if defined(NETWARE_386)
 static SIG_FPTR client_sigfpe = NULL;

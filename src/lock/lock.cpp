@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.14 2002-10-24 09:01:30 eku Exp $
+$Id: lock.cpp,v 1.15 2002-10-24 14:53:49 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3245,10 +3245,12 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	HIS history;
 	PTR *prior;
 
-#if defined(WIN_NT)
+#ifdef WIN_NT
 	if (ISC_mutex_init(MUTEX, LOCK_FILE))
-		bug(NULL, "mutex init failed");
+#else
+	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
 #endif
+		bug(NULL, "mutex init failed");
 
 	LOCK_header = (LHB) shmem_data->sh_mem_address;
 
@@ -3268,12 +3270,6 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	QUE_INIT(LOCK_header->lhb_free_owners);
 	QUE_INIT(LOCK_header->lhb_free_locks);
 	QUE_INIT(LOCK_header->lhb_free_requests);
-
-#pragma FB_COMPILER_MESSAGE("TMN: Why not init the mutex on NT?")
-#if !defined(WIN_NT)
-	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
-		bug(NULL, "mutex init failed");
-#endif
 
 	LOCK_header->lhb_hash_slots = (USHORT) LOCK_hash_slots;
 	LOCK_header->lhb_scan_interval = LOCK_scan_interval;
