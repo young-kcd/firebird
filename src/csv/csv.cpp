@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.8 2002-11-14 08:17:23 dimitr Exp $
+$Id: csv.cpp,v 1.9 2002-11-19 12:31:52 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -80,7 +80,7 @@ static void multi_thread(void);
 static void open_blob(MSG_BLOB);
 static void ping(MSG_OP);
 static void prepare_statement(MSG_PSTMT);
-static void process_message(MSG);
+static void process_message(CSV_MSG);
 static void put_segment(MSG_SEG);
 static void put_slice(MSG_SLICE);
 static void que_events(MSG_EVENT);
@@ -94,7 +94,7 @@ static void release_sql_request(RSR);
 static void release_transaction(RTR);
 static void seek_blob(MSG_SEEK);
 static void send_msg(MSG_MSG);
-static int send_response(MSG, STATUS *, SLONG, USHORT, UCHAR *);
+static int send_response(CSV_MSG, STATUS *, SLONG, USHORT, UCHAR *);
 static void server_ast(EVNT, USHORT, UCHAR *);
 static void set_cursor(MSG_SETCUR);
 static void start(MSG_MSG);
@@ -132,7 +132,7 @@ typedef struct teb {
 
 typedef struct req {
 	struct req *req_next;
-	MSG req_message;
+	CSV_MSG req_message;
 } *REQ;
 
 static REQ request_que, free_requests;
@@ -212,7 +212,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Start up central server.
  *
  **************************************/
-	MSG message;
+	CSV_MSG message;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT sw_multi, sw_name, sw_buffers, sw_limit, length;
 	TEXT **end, *p, *q, c, expanded_name[256], dflt_name[16];
@@ -359,7 +359,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	PRB process;
 	PTR connection, server, client;
 	MSG_RESP response;
-	MSG message;
+	CSV_MSG message;
 	SSHORT parent_pin;
 
 	THREAD_ENTER;
@@ -1882,7 +1882,7 @@ static void prepare_statement( MSG_PSTMT message)
 }
 
 
-static void process_message( MSG message)
+static void process_message( CSV_MSG message)
 {
 /**************************************
  *
@@ -2595,7 +2595,7 @@ static void send_msg( MSG_MSG message)
 
 
 static int send_response(
-						 MSG source,
+						 CSV_MSG source,
 						 STATUS * status_vector,
 						 SLONG handle, USHORT length, UCHAR * data)
 {

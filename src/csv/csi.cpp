@@ -93,7 +93,7 @@ static void event_handler(PTR);
 static void event_thread(PTR);
 #endif
 
-static STATUS get_response(RDB, MSG, STATUS *, HANDLE *, USHORT, UCHAR *,
+static STATUS get_response(RDB, CSV_MSG, STATUS *, HANDLE *, USHORT, UCHAR *,
 						   USHORT *);
 static STATUS handle_error(STATUS *, STATUS);
 static STATUS info(RDB, STATUS *, HANDLE, MSG_T, USHORT, USHORT, UCHAR *,
@@ -2407,7 +2407,7 @@ static void event_thread( PTR connection)
 
 static STATUS get_response(
 						   RDB rdb,
-						   MSG message,
+						   CSV_MSG message,
 						   STATUS * user_status,
 						   HANDLE * handle,
 USHORT buffer_length, UCHAR * buffer, USHORT * return_length)

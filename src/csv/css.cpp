@@ -81,7 +81,7 @@ static void init(void *, SH_MEM, int);
 static void insert_tail(SRQ *, SRQ *);
 static void mutex_bugcheck(UCHAR *, int);
 static void punt(TEXT *);
-static int put_message(PTR, MSG, int);
+static int put_message(PTR, CSV_MSG, int);
 #ifdef UNIX
 static void release_semaphore(USHORT);
 #endif
@@ -398,7 +398,7 @@ PTR CSS_find_process( SLONG process_number)
 }
 
 
-MSG CSS_get_message(PTR partner, MSG old_message, SSHORT timeout)
+CSV_MSG CSS_get_message(PTR partner, CSV_MSG old_message, SSHORT timeout)
 {
 /**************************************
  *
@@ -414,7 +414,7 @@ MSG CSS_get_message(PTR partner, MSG old_message, SSHORT timeout)
  *
  **************************************/
 	PRB process;
-	MSG message;
+	CSV_MSG message;
 	CNCT connection;
 	SRQ *que;
 	SLONG count, status;
@@ -445,7 +445,7 @@ MSG CSS_get_message(PTR partner, MSG old_message, SSHORT timeout)
 	for (;;) {
 		process->prb_flags &= ~PRB_signal_me;
 		QUE_LOOP(process->prb_messages, que) {
-			message = (MSG) ((UCHAR *) que - OFFSET(MSG, msg_que));
+			message = (CSV_MSG) ((UCHAR *) que - OFFSET(CSV_MSG, msg_que));
 			connection = (CNCT) ABS_PTR(message->msg_connection);
 			if (!partner || connection->cnct_mirror == partner)
 				goto got_one;
@@ -659,7 +659,7 @@ void CSS_probe_processes(void)
 }
 
 
-int CSS_put_message( PTR connection_id, MSG message, MSG old_message)
+int CSS_put_message( PTR connection_id, CSV_MSG message, CSV_MSG old_message)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ static void delete_process( SLONG process_offset)
  *
  **************************************/
 	PRB process;
-	MSG message;
+	CSV_MSG message;
 
 	process = (PRB) ABS_PTR(process_offset);
 
@@ -961,8 +961,8 @@ static void delete_process( SLONG process_offset)
 
 	while (!QUE_EMPTY(process->prb_messages)) {
 		message =
-			(MSG) ABS_PTR(process->prb_messages.srq_forward -
-						  OFFSET(MSG, msg_que));
+			(CSV_MSG) ABS_PTR(process->prb_messages.srq_forward -
+						  OFFSET(CSV_MSG, msg_que));
 		remove_que(&message->msg_que);
 		free_global(message);
 	}
@@ -997,7 +997,7 @@ static void disconnect( SLONG process_offset, SLONG cnct_id)
  *
  **************************************/
 	CNCT connection, mirror;
-	MSG message;
+	CSV_MSG message;
 	PRB process, partner;
 	SRQ *que;
 
@@ -1008,7 +1008,7 @@ static void disconnect( SLONG process_offset, SLONG cnct_id)
 /* Purge message que of any traffic from connection */
 
 	QUE_LOOP(process->prb_messages, que) {
-		message = (MSG) ((UCHAR *) que - OFFSET(MSG, msg_que));
+		message = (CSV_MSG) ((UCHAR *) que - OFFSET(CSV_MSG, msg_que));
 		if (message->msg_connection == connection->cnct_mirror) {
 			que = (SRQ *) ABS_PTR(que->srq_backward);
 			remove_que(&message->msg_que);
@@ -1026,7 +1026,7 @@ static void disconnect( SLONG process_offset, SLONG cnct_id)
 	if (connection->cnct_partner) {
 		partner = (PRB) ABS_PTR(connection->cnct_partner);
 		partner->prb_flags |= PRB_signal_me;
-		message = (MSG) alloc_global(type_msg, sizeof(struct msg));
+		message = (CSV_MSG) alloc_global(type_msg, sizeof(struct msg));
 		message->msg_type = MSG_disconnect;
 		put_message(cnct_id, message, FALSE);
 		mirror->cnct_partner = 0;
@@ -1054,7 +1054,7 @@ static void dump(void)
 	SRQ *que;
 	HDR *block;
 	PRB process;
-	MSG message;
+	CSV_MSG message;
 	FRB free;
 	CNCT connection;
 	SLONG offset;
@@ -1092,8 +1092,8 @@ static void dump(void)
 			break;
 
 		case type_msg:
-			printf("MSG (%ld)\n", block->hdr_length);
-			message = (MSG) block;
+			printf("CSV_MSG (%ld)\n", block->hdr_length);
+			message = (CSV_MSG) block;
 			printf("\tType: %d, connection: %ld\n", message->msg_type,
 				   message->msg_connection);
 			dump_que("\tMsg que", &message->msg_que);
@@ -1386,7 +1386,7 @@ static void punt( TEXT * string)
 }
 
 
-static int put_message( PTR connection_id, MSG message, int release_flag)
+static int put_message( PTR connection_id, CSV_MSG message, int release_flag)
 {
 /**************************************
  *

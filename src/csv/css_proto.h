@@ -34,14 +34,14 @@ extern void CSS_disconnect(SLONG);
 extern void CSS_free_global(FRB);
 extern void CSS_free_local(BLK);
 extern PTR CSS_find_process(SLONG);
-extern MSG CSS_get_message(PTR, MSG, SSHORT);
+extern CSV_MSG CSS_get_message(PTR, CSV_MSG, SSHORT);
 #ifndef PIPE_SERVER
 extern CSH CSS_init(STATUS *, USHORT);
 #else
 extern CSH CSS_init(STATUS *, USHORT, SSHORT);
 #endif
 extern void CSS_probe_processes(void);
-extern int CSS_put_message(PTR, MSG, MSG);
+extern int CSS_put_message(PTR, CSV_MSG, CSV_MSG);
 extern void CSS_release(void);
 extern void CSS_validate(void);
 

@@ -226,12 +226,12 @@ typedef enum {
 	MSG_drop_database
 } MSG_T;
 
-typedef struct msg {
+typedef struct csv_msg {
 	HDR msg_header;
 	SRQ msg_que;
 	MSG_T msg_type;				/* Specific message type */
 	PTR msg_connection;			/* Process sending message */
-} *MSG;
+} *CSV_MSG;
 
 /* Miscellaneous message formats */
 

@@ -45,7 +45,7 @@ void main( int argc, char **argv)
 	SRQ *que;
 	HDR *block;
 	PRB process;
-	MSG message;
+	CSV_MSG message;
 	FRB free;
 	CNCT connection;
 	SLONG offset;
@@ -90,8 +90,8 @@ void main( int argc, char **argv)
 			break;
 
 		case type_msg:
-			printf("MSG (%ld)\n", block->hdr_length);
-			message = (MSG) block;
+			printf("CSV_MSG (%ld)\n", block->hdr_length);
+			message = (CSV_MSG) block;
 			printf("\tType: %d, connection: %ld\n", message->msg_type,
 				   message->msg_connection);
 			prt_que("\tMsg que", &message->msg_que);
