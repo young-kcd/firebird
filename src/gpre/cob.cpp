@@ -1403,8 +1403,8 @@ static void gen_create_database( const act* action)
 
 		if (request->req_flags & REQ_extend_dpb) {
 			if (request->req_length) {
-				sprintf(output_buffer, "%sMOVE isc_%d to %s\n",
-						names[COLUMN], request->req_ident, s2);
+				sprintf(output_buffer, "%sMOVE %s%d to %s\n",
+						names[COLUMN], names[isc_b_pos], request->req_ident, s2);
 			}
 			if (db->dbb_r_user) {
 				sprintf(output_buffer,
@@ -1485,14 +1485,14 @@ static void gen_create_database( const act* action)
 		}
 	}
 
-	TEXT db_name[128];
+	TEXT dbname[128]; // MAXPATHLEN if VMS code is enabled.
 #ifdef VMS
-	sprintf(db_name, "\"%s\"", db->dbb_filename);
+	sprintf(dbname, "\"%s\"", db->dbb_filename);
 #else
 	for (const dbb* dbisc = gpreGlob.isc_databases; dbisc; dbisc = dbisc->dbb_next)
 		if (strcmp(dbisc->dbb_filename, db->dbb_filename) == 0)
 			db->dbb_id = dbisc->dbb_id;
-	sprintf(db_name, "isc-%ddb", db->dbb_id);
+	sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
 #endif
 
 	sprintf(output_buffer,
@@ -1501,7 +1501,7 @@ static void gen_create_database( const act* action)
 			ISC_CREATE_DATABASE,
 			status_vector(action),
 			BY_VALUE, strlen(db->dbb_filename), END_VALUE,
-			BY_REF, db_name,
+			BY_REF, dbname,
 			BY_REF, db->dbb_name->sym_string,
 			(request->req_length) ? s1Tmp : OMITTED,
 			(request->req_length) ? s2Tmp : OMITTED, BY_VALUE, END_VALUE);
@@ -1512,7 +1512,7 @@ static void gen_create_database( const act* action)
 	if (request && request->req_flags & REQ_extend_dpb) {
 		if (request->req_length) {
 			sprintf(output_buffer,
-					"if (%s != isc_%d)", s2, request->req_ident);
+					"if (%s != %s%d)", s2, names[isc_b_pos], request->req_ident);
 			COB_print_buffer(output_buffer, true);
 		}
 
@@ -2497,7 +2497,8 @@ static void gen_event_wait( const act* action)
 
 	if (ident < 0) {
 		TEXT s[64];
-		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
+		fb_utils::snprintf(s, sizeof(s),
+			"event handle \"%s\" not found", event_name->sym_string);
 		CPR_error(s);
 		return; // silence non initialized warning
 	}
@@ -2570,7 +2571,7 @@ static void gen_fetch( const act* action)
 		asgn_from(action, port->por_references);
 		gen_send(action, port);
 		printa(names[COLUMN], false, "MOVE %s TO %s%dDI",
-			   names[isc_a_pos], direction, request->req_ident);
+			   direction, names[isc_a_pos], request->req_ident);
 		printa(names[COLUMN], false, "END-IF");
 
 		printa(names[COLUMN], false, "IF SQLCODE NOT = 0 THEN");
@@ -2851,7 +2852,7 @@ static void gen_get_segment( const act* action)
 	else
 		blob = (blb*) action->act_object;
 
-	strcpy(buffer, GET_SEG_CALL_TEMPLATE);
+	strcpy(buffer, GET_SEG_CALL_TEMPLATE); // Copy seems useless instead of using constant directly.
 	sprintf(output_buffer,
 			buffer,
 			names[COLUMN],
@@ -2868,11 +2869,11 @@ static void gen_get_segment( const act* action)
 		const ref* into = action->act_object;
 		set_sqlcode(action);
 		printa(names[COLUMN], false, "IF SQLCODE = 0 OR SQLCODE = 101 THEN ");
-		printa(names[COLUMN], false, "MOVE ISC-%d TO %s",
-			   blob->blb_buff_ident, into->ref_value);
+		printa(names[COLUMN], false, "MOVE %s%d TO %s",
+			   names[isc_a_pos], blob->blb_buff_ident, into->ref_value);
 		if (into->ref_null_value)
-			printa(names[COLUMN], false, "MOVE ISC-%d TO %s",
-				   blob->blb_len_ident, into->ref_null_value);
+			printa(names[COLUMN], false, "MOVE %s%d TO %s",
+				   names[isc_a_pos], blob->blb_len_ident, into->ref_null_value);
 		printa(names[COLUMN], false, "END-IF");
 	}
 }
@@ -3008,10 +3009,10 @@ static void gen_put_segment( const act* action)
 	if (action->act_flags & ACT_sql) {
 		blob = (blb*) action->act_request->req_blobs;
 		const ref* from = action->act_object;
-		printa(names[COLUMN], false, "MOVE %s TO ISC-%d",
-			   from->ref_value, blob->blb_buff_ident);
-		printa(names[COLUMN], false, "MOVE %s TO ISC-%d",
-			   from->ref_null_value, blob->blb_len_ident);
+		printa(names[COLUMN], false, "MOVE %s TO %s%d",
+			   from->ref_value, names[isc_a_pos], blob->blb_buff_ident);
+		printa(names[COLUMN], false, "MOVE %s TO %s%d",
+			   from->ref_null_value, names[isc_a_pos], blob->blb_len_ident);
 	}
 	else
 		blob = (blb*) action->act_object;
@@ -3113,7 +3114,7 @@ static void gen_ready( const act* action)
 			if (filename) {
 				namelength = strlen(filename);
 #ifndef VMS
-				sprintf(dbname, "isc-%ddb", dbisc->dbb_id);
+				sprintf(dbname, "%s%ddb", names[isc_b_pos], dbisc->dbb_id);
 				filename = dbname;
 #endif
 			}
@@ -3126,7 +3127,7 @@ static void gen_ready( const act* action)
 		/* string literal or user defined variable? */
 
 		if (ready->rdy_id) {
-			sprintf(dbname, "isc-%ddb", ready->rdy_id);
+			sprintf(dbname, "%s%ddb", names[isc_b_pos], ready->rdy_id);
 			filename = dbname;
 			namelength -= 2;
 		}
@@ -3229,8 +3230,8 @@ static void gen_request( gpre_req* request)
 
 	if (request->req_flags & REQ_extend_dpb) {
 		printa(names[COLUMN_0], false,
-			   "01  ISC-%dP PIC S9(9) USAGE COMP-5 VALUE IS 0.",
-			   request->req_ident);
+			   "01  %s%dP PIC S9(9) USAGE COMP-5 VALUE IS 0.",
+			   names[isc_a_pos], request->req_ident);
 	}
 
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
@@ -3707,7 +3708,7 @@ static void gen_t_start( const act* action)
 				const USHORT namelength = filename ? strlen(filename) : 0;
 #ifndef VMS
 				if (filename) {
-					sprintf(dbname, "isc-%ddb", db->dbb_id);
+					sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
 					filename = dbname;
 				}
 #endif
@@ -4165,8 +4166,8 @@ static void make_ready(
 
 		if (request->req_flags & REQ_extend_dpb) {
 			if (request->req_length) {
-				sprintf(output_buffer, "%sMOVE isc_%d to %s\n",
-						names[COLUMN], request->req_ident, s2);
+				sprintf(output_buffer, "%sMOVE %s%d to %s\n",
+						names[COLUMN], names[isc_b_pos], request->req_ident, s2);
 
 			}
 			if (db->dbb_r_user) {
@@ -4300,7 +4301,7 @@ static void make_ready(
 	if (request && request->req_flags & REQ_extend_dpb) {
 		if (request->req_length) {
 			sprintf(output_buffer,
-					"if (%s != isc_%d)", s2, request->req_ident);
+					"if (%s != %s%d)", s2, names[isc_b_pos], request->req_ident);
 			COB_print_buffer(output_buffer, true);
 		}
 
@@ -4445,7 +4446,7 @@ static void t_start_auto(const gpre_req* request,
 				const USHORT namelength = filename ? strlen(filename) : 0;
 #ifndef VMS
 				if (filename) {
-					sprintf(dbname, "isc-%ddb", db->dbb_id);
+					sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
 					filename = dbname;
 				}
 #endif
