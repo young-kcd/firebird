@@ -1,3 +1,76 @@
+2003-07-02 21:02  brodsom
+
+	* firebird2/: src/jrd/dyn_def.epp, src/jrd/dyn_def.sed,
+	builds/win32/preprocess.bat, builds/posix/make.shared.targets:
+	
+	Add special action to be used in dyn_def.cpp.  (remove dyn_def.sed)
+
+2003-07-02 20:58  brodsom
+
+	* firebird2/src/gpre/: gpre.h, hsh.h, int.cpp, int_cxx.cpp,
+	par.cpp, words.h:
+	
+	Add special action to be used in dyn_def.cpp.
+
+2003-07-02 16:40  brodsom
+
+	* firebird2/builds/win32/: build6_all.bat, build_msg.bat,
+	prepare.bat, preprocess.bat:
+	
+	Avoid using sed to edit epp files (excluding security.epp).
+
+2003-07-02 15:41  dimitr
+
+	* firebird2/src/jrd/map.cpp:
+	
+	Small correction.
+
+2003-07-02 14:57  brodsom
+
+	* firebird2/src/gpre/: gpre.cpp, gpre.h, gpreswi.h, msc.cpp,
+	msc_proto.h, par.cpp, par_proto.h:
+	
+	New gpre -b option to be used in the msvc build process. It enable
+	to set the base directory for compile time db without using sed.
+
+2003-07-02 13:40  brodsom
+
+	* firebird2/builds/win32/: msvc6/Firebird2Boot.dsw, build6_all.bat,
+	msvc6/Firebird2.dsw:
+	
+	New dsp's to replace nmake's (split boot workspace)
+
+2003-07-02 11:40  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Correct the parser a bit.
+
+2003-07-02 02:16  brodsom
+
+	* firebird2/src/dsql/: parse.cpp, parse.y, dsql.tab.h,
+	keywords.cpp:
+	
+	Solve macro conflicts on win 32 when using bison and msvc
+
+2003-07-02 01:19  brodsom
+
+	* firebird2/src/dsql/parse.sed:
+	
+	Enable use of bison 1.35 (tested with gnuwin32 version)
+
+2003-07-02 00:25  brodsom
+
+	* firebird2/builds/win32/build6_all.bat:
+	
+	New dsp's to replace nmake's (correction)
+
+2003-07-02 00:24  brodsom
+
+	* firebird2/builds/win32/: preprocess.bat, gpre.mak:
+	
+	New dsp's to replace nmake's (gpre with BOOT_BUILD = gpre_static)
+
 2003-07-01 21:20  brodsom
 
 	* firebird2/builds/win32/build6_all.bat:
