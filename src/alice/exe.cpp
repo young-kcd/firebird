@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.11 2003-02-27 13:59:47 brodsom Exp $
+//	$Id: exe.cpp,v 1.12 2003-03-13 16:54:03 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -338,7 +338,7 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 	}
 
 	if (tdgbl->ALICE_data.ua_password) {
-		if (!tdgbl->sw_service_thd)
+		if (!tdgbl->sw_service)
 			*d++ = gds_dpb_password;
 		else
 			*d++ = gds_dpb_password_enc;

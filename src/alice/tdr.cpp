@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.14 2003-02-18 02:36:47 brodsom Exp $
+//	$Id: tdr.cpp,v 1.15 2003-03-13 16:54:04 skidder Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -205,7 +205,7 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 	}
 
 	if (tdgbl->ALICE_data.ua_password) {
-		if (!tdgbl->sw_service_thd)
+		if (!tdgbl->sw_service)
 			*d++ = gds_dpb_password;
 		else
 			*d++ = gds_dpb_password_enc;
