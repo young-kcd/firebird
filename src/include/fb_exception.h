@@ -34,6 +34,7 @@ namespace Firebird {
 class StringsBuffer {
 public:
 	virtual char* alloc(const char* string, size_t length) = 0;
+	virtual ~StringsBuffer() {}
 };
 
 template <size_t BUFFER_SIZE>
@@ -44,7 +45,6 @@ public:
 		memset(buffer, 0, BUFFER_SIZE); 
 		buffer_ptr = buffer;
 	}
-	//virtual ~CircularStringsBuffer() {};
 	virtual char* alloc(const char* string, size_t length) {
 		// fb_assert(length+1 < BUFFER_SIZE);
 		// If there isn't any more room in the buffer, start at the beginning again

@@ -111,7 +111,8 @@ rel_MAX} RIDS;
   ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
    (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
-#define REQ_TAIL		sizeof (((jrd_req*) NULL)->req_rpb[0])
+// size of req_rpb[0]
+#define REQ_TAIL		sizeof (rpb)
 #define MAP_LENGTH		256
 
 /* RITTER - changed HP10 to HPUX */

@@ -142,7 +142,6 @@ SLONG status_xcp::as_sqlcode() const
 	return gds__sqlcode(status);
 }
 
-static void assign_xcp_message(thread_db*, STR*, const TEXT*);
 static void cleanup_rpb(thread_db*, RPB *);
 static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, enum jrd_req::req_s);
@@ -989,30 +988,6 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp = 0;
-}
-
-
-void assign_xcp_message(thread_db* tdbb, STR* xcp_msg, const TEXT* msg)
-{
-/**************************************
- *
- *	a s s i g n _ x c p _ m e s s a g e
- *
- **************************************
- *
- * Functional description
- *	Copy an exception message into XCP structure.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	if (msg)
-	{
-		const USHORT len = strlen(msg);
-		*xcp_msg = FB_NEW_RPT(*tdbb->tdbb_default, len + 1) str();
-		(*xcp_msg)->str_length = len;
-		memcpy((*xcp_msg)->str_data, msg, len + 1);
-	}
 }
 
 

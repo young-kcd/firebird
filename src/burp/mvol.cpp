@@ -1270,7 +1270,7 @@ static bool write_header(DESC   handle,
 		UCHAR* q = tdgbl->mvol_io_volume;
 		// CVC: Warning, do we want sizeof(int) or sizeof(some_abstract_FB_type)???
 		// It seems to me we want sizeof(ULONG) for safety. => Done.
-		for (int i = 0; i < sizeof(ULONG); i++)
+		for (size_t i = 0; i < sizeof(ULONG); i++)
 		{
 			*q++ = *p++;
 		}

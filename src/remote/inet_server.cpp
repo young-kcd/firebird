@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.33 2004-01-28 07:50:38 robocop Exp $
+$Id: inet_server.cpp,v 1.34 2004-03-12 07:00:52 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -118,23 +118,8 @@ $Id: inet_server.cpp,v 1.33 2004-01-28 07:50:38 robocop Exp $
 #define sigvector	sigvec
 #endif
 
-#ifndef NBBY
-#define	NBBY		8
-#endif
-
 #ifndef SV_INTERRUPT
 #define SV_INTERRUPT	0
-#endif
-
-#ifndef NFDBITS
-#define NFDBITS		(sizeof(SLONG) * NBBY)
-
-#if !(defined DARWIN)
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	memset((SCHAR *)(p), 0, sizeof(*(p)))
-#endif
 #endif
 
 #ifdef SUPERSERVER
@@ -189,7 +174,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	int child, channel;
 	TEXT *p, c;
 #if !(defined VMS)
-	fd_set mask;
+	int mask;
 #endif
 
 // 01 Sept 2003, Nickolay Samofatov
@@ -382,9 +367,9 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		}
 
 		if (!debug) {
-			FD_ZERO(&mask);
-			FD_SET(2, &mask);
-			divorce_terminal((int) &mask);
+			mask = 0; // FD_ZERO(&mask);
+			mask |= 1 << 2; // FD_SET(2, &mask);
+			divorce_terminal(mask);
 		}
 		{ // scope block
 			ISC_STATUS_ARRAY status_vector;

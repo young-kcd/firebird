@@ -134,7 +134,8 @@ typedef rse* RSE;
 #define rse_singular	2		/* flags rse-type node as from a singleton select */
 #define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_delta	(sizeof(class rse)-sizeof(jrd_nod))/sizeof(((jrd_nod*) NULL)->nod_arg[0])
+// Number of nodes may fit into nod_arg of normal node to get to rse_relation
+#define rse_delta	(sizeof(class rse)-sizeof(jrd_nod))/sizeof(jrd_nod*)
 
 // Types of nulls placement for each column in sort order
 #define rse_nulls_default 0

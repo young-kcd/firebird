@@ -933,7 +933,7 @@ static jrd_file* seek_file(jrd_file* file, Buffer_desc* bdb, UINT64* offset,
     lseek_offset = page;
     lseek_offset *= dbb->dbb_page_size;
 
-    if (lseek_offset != LSEEK_OFFSET_CAST lseek_offset)
+    if (lseek_offset != (UINT64) LSEEK_OFFSET_CAST lseek_offset)
 	{
 		unix_error("lseek", file, isc_io_32bit_exceeded_err, status_vector);
 		return 0;

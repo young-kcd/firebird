@@ -6561,7 +6561,7 @@ static int process_statement(const TEXT* string,
 					if (count_is == count_type)
 						break;
 				}
-				ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*) count, NULL, NULL,
+				ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*)(IPTR) count, NULL, NULL,
 							 NULL, NULL);
 				// Records affected: %ld 
 				sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
@@ -6999,7 +6999,7 @@ static int process_statement(const TEXT* string,
 		// Record count printed here upon request 
 
 		if (Docount) {
-			ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*) lines, NULL, NULL,
+			ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*)(IPTR) lines, NULL, NULL,
 						 NULL, NULL);
 			// Total returned: %ld 
 			sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);

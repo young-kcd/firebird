@@ -517,7 +517,7 @@ static SSHORT get_next_token(
 
 	if (char_class & CHR_LETTER) {
 		*p++ = UPPER(c);
-		for (; s < stmt_end && classes[*s] & CHR_IDENT && p < token_end; s++) {
+		for (; s < stmt_end && (classes[static_cast<UCHAR>(*s)] & CHR_IDENT) && p < token_end; s++) {
 			*p++ = UPPER(*s);
 		}
 

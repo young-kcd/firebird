@@ -43,7 +43,7 @@ static const struct
 	{type_MIN	, 0, 0},
 	{type_vec	, sizeof(rem_vec)		, sizeof(((rem_vec*) NULL)->vec_object[0])},
 	{type_rdb	, sizeof(rdb)		, 0},
-	{type_fmt	, sizeof(rem_fmt)		, sizeof(((rem_fmt*) NULL)->fmt_desc[0])},
+	{type_fmt	, sizeof(rem_fmt)		, sizeof(dsc/*((rem_fmt*) NULL)->fmt_desc[0]*/)},
 	{type_rrq	, sizeof(rrq)		, sizeof(((rrq*) NULL)->rrq_rpt [0])},
 	{type_rtr	, sizeof(rtr)		, 0},
 	{type_str	, sizeof(rem_str)		, 1},	// random string block

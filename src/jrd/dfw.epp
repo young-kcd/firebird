@@ -198,7 +198,7 @@ static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
 	const TEXT*, bool);
 //static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, VEC *, UCHAR *, UCHAR *, BOOLEAN);
-static bool shadow_defined(thread_db*);
+//static bool shadow_defined(thread_db*);
 static bool validate_text_type (thread_db*, ISC_STATUS *, TFB);
 
 static const UCHAR nonnull_validation_blr[] =
@@ -4224,7 +4224,7 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, Deferred_work* work,
 	return false;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static bool shadow_defined(thread_db* tdbb)
 {
 /**************************************
@@ -4254,6 +4254,7 @@ static bool shadow_defined(thread_db* tdbb)
 
 	return result;
 }
+#endif
 
 
 static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHORT n,

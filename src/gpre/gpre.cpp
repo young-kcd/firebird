@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.53 2004-03-01 04:57:37 skidder Exp $
+//  $Id: gpre.cpp,v 1.54 2004-03-12 07:00:22 skidder Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -284,15 +284,15 @@ int main(int argc, char* argv[])
 		classes[i] = CHR_DIGIT | CHR_IDENT;
 	}
 
-	classes['_']	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
-	classes['$']	= CHR_IDENT;
-	classes[' ']	= CHR_WHITE;
-	classes['\t']	= CHR_WHITE;
-	classes['\n']	= CHR_WHITE;
-	classes['\r']	= CHR_WHITE;
-	classes['\'']	= CHR_QUOTE;
-	classes['\"']	= CHR_DBLQUOTE;
-	classes['#']	= CHR_IDENT;
+	classes[static_cast<UCHAR>('_')]	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
+	classes[static_cast<UCHAR>('$')]	= CHR_IDENT;
+	classes[static_cast<UCHAR>(' ')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\t')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\n')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\r')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\'')]	= CHR_QUOTE;
+	classes[static_cast<UCHAR>('\"')]	= CHR_DBLQUOTE;
+	classes[static_cast<UCHAR>('#')]	= CHR_IDENT;
 
 //  zorch 0 through 7 in the fortran label vector 
 
@@ -1290,7 +1290,7 @@ TOK CPR_token()
 static bool all_digits(const char* str1)
 {
 	for (; *str1; str1++)
-		if (!(classes[*str1] & CHR_DIGIT))
+		if (!(classes[static_cast<UCHAR>(*str1)] & CHR_DIGIT))
 			return false;
 
 	return true;

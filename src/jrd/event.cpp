@@ -613,7 +613,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 ptr = &free->frb_next) 
 	{
-		const SLONG tail = free->hdr_length - length;
+		const SLONG tail = free->frb_header.hdr_length - length;
 		if (tail >= 0 && (!best || tail < best_tail)) {
 			best = ptr;
 			best_tail = tail;
@@ -659,11 +659,11 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 		if (header) {
 			free = (FRB) ((UCHAR *) header + old_length);
 /**
-	free->hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
+	free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
 **/
-			free->hdr_length =
+			free->frb_header.hdr_length =
 				EVENT_data.sh_mem_length_mapped - old_length;
-			free->hdr_type = type_frb;
+			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
 
 			EVENT_header = header;
@@ -691,14 +691,14 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	if (best_tail < (SLONG) sizeof(frb))
 		*best = free->frb_next;
 	else {
-		free->hdr_length -= length;
-		free = (FRB) ((UCHAR *) free + free->hdr_length);
-		free->hdr_length = length;
+		free->frb_header.hdr_length -= length;
+		free = (FRB) ((UCHAR *) free + free->frb_header.hdr_length);
+		free->frb_header.hdr_length = length;
 	}
 
 	memset((UCHAR*) free + sizeof(event_hdr), 0,
-		   free->hdr_length - sizeof(event_hdr));
-	free->hdr_type = type;
+		   free->frb_header.hdr_length - sizeof(event_hdr));
+	free->frb_header.hdr_type = type;
 
 	return free;
 }
@@ -1147,7 +1147,7 @@ static void free_global(FRB block)
 
 	FRB prior = NULL;
 	PTR offset = REL_PTR(block);
-	block->hdr_type = type_frb;
+	block->frb_header.hdr_type = type_frb;
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
@@ -1158,7 +1158,7 @@ static void free_global(FRB block)
 
 	if (offset <= 0 || offset > EVENT_header->evh_length ||
 		(prior
-		 && (UCHAR*) block < (UCHAR*) prior + prior->hdr_length))
+		 && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
 	{
 		punt("free_global: bad block");
 		return;
@@ -1171,17 +1171,17 @@ static void free_global(FRB block)
 
 /* Try to merge free block with next block */
 
-	if (free && (SCHAR *) block + block->hdr_length == (SCHAR *) free)
+	if (free && (SCHAR *) block + block->frb_header.hdr_length == (SCHAR *) free)
 	{
-		block->hdr_length += free->hdr_length;
+		block->frb_header.hdr_length += free->frb_header.hdr_length;
 		block->frb_next = free->frb_next;
 	}
 
 /* Next, try to merge the free block with the prior block */
 
-	if (prior && (SCHAR *) prior + prior->hdr_length ==	(SCHAR *) block)
+	if (prior && (SCHAR *) prior + prior->frb_header.hdr_length ==	(SCHAR *) block)
 	{
-		prior->hdr_length += block->hdr_length;
+		prior->frb_header.hdr_length += block->frb_header.hdr_length;
 		prior->frb_next = block->frb_next;
 	}
 }
@@ -1249,9 +1249,9 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 #endif
 
 	FRB free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
-	free->hdr_length =
+	free->frb_header.hdr_length =
 		EVENT_data.sh_mem_length_mapped - sizeof(evh);
-	free->hdr_type = type_frb;
+	free->frb_header.hdr_type = type_frb;
 	free->frb_next = 0;
 
 	EVENT_header->evh_free = (UCHAR *) free - (UCHAR *) EVENT_header;
@@ -1539,11 +1539,11 @@ static int validate(void)
 	SLONG offset;
 
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
-		offset += block->hdr_length)
+		offset += block->frb_header.hdr_length)
 	{
 		event_hdr* block = (event_hdr*) ABS_PTR(offset);
-		if (!block->hdr_length || !block->hdr_type
-			|| block->hdr_type >= type_max)
+		if (!block->frb_header.hdr_length || !block->frb_header.hdr_type
+			|| block->frb_header.hdr_type >= type_max)
 		{
 			punt("bad block length or type");
 			break;
@@ -1553,7 +1553,7 @@ static int validate(void)
 				next_free = 0;
 			else if (offset > next_free)
 				punt("bad free chain");
-		if (block->hdr_type == type_frb) {
+		if (block->frb_header.hdr_type == type_frb) {
 			next_free = ((FRB) block)->frb_next;
 			if (next_free >= EVENT_header->evh_length)
 				punt("bad frb_next");

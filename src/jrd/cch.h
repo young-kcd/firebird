@@ -104,7 +104,7 @@ class Buffer_desc : public pool_alloc<type_bdb>
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
 	USHORT		bdb_write_direction;    /* Where to write buffer */
 	ULONG       bdb_difference_page;    /* Number of page in difference file */
-	SLONG       bdb_diff_generation;    /* Number of backup/restore cycle for 
+	SLONG       bdb_diff_generation;    /* Number of backup lock/unlock (NBAK) cycle for 
 										   this database in current process.
 										   Used in CS only. */
 	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */

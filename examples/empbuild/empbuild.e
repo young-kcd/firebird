@@ -192,7 +192,7 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%ld\n", SQLCODE);
+printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
 return (1);
 }
@@ -268,7 +268,7 @@ return (0);
 	
 Error:
 
-printf ("SQLCODE=%ld\n", SQLCODE);
+printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
@@ -342,7 +342,7 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%ld\n", SQLCODE);
+printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
 
 return (1);
@@ -402,7 +402,7 @@ return (0);
 		
 Error:
 
-printf ("SQLCODE=%ld\n", SQLCODE);
+printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
 
 return (1);

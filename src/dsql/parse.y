@@ -4290,9 +4290,10 @@ static bool long_int(dsql_nod* string,
  *
  *************************************/
 
-	for (const char* p = ((dsql_str*) string)->str_data; classes[*p] & CHR_DIGIT; p++)
+	for (const char* p = ((dsql_str*) string)->str_data; 
+		 classes[static_cast<UCHAR>(*p)] & CHR_DIGIT; p++)
 	{
-		if (!(classes[*p] & CHR_DIGIT)) {
+		if (!(classes[static_cast<UCHAR>(*p)] & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -4526,9 +4527,9 @@ static bool short_int(dsql_nod* string,
 		return false;
 	}
 
-	for (char* p = ((dsql_str*) string)->str_data; classes[*p] & CHR_DIGIT; p++)
+	for (char* p = ((dsql_str*) string)->str_data; classes[static_cast<UCHAR>(*p)] & CHR_DIGIT; p++)
 	{
-		if (!(classes[*p] & CHR_DIGIT)) {
+		if (!(classes[static_cast<UCHAR>(*p)] & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -4745,7 +4746,7 @@ int LexerState::yylex (
 		 * to become the name of the character set
 		 */
 		char* p = string;
-		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
+		for (; ptr < end && classes[static_cast<UCHAR>(*ptr)] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
@@ -4865,7 +4866,7 @@ int LexerState::yylex (
 	fb_assert(ptr <= end);
 
 	if ((tok_class & CHR_DIGIT) ||
-		((c == '.') && (ptr < end) && (classes[*ptr] & CHR_DIGIT)))
+		((c == '.') && (ptr < end) && (classes[static_cast<UCHAR>(*ptr)] & CHR_DIGIT)))
 	{
 		/* The following variables are used to recognize kinds of numbers. */
 
@@ -5027,7 +5028,7 @@ int LexerState::yylex (
 	{
 		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
+		for (; ptr < end && classes[static_cast<UCHAR>(*ptr)] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;

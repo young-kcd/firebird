@@ -1524,7 +1524,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		}
 		else	// not quoted name
 		{
-			int i;
+			size_t i;
 			for (i = 0; i < sizeof(cursor) - 1	// PJPG 20001013 
 			 	&& input_cursor[i]	// PJPG 20001013 
 			 	&& input_cursor[i] != ' '; ++i)	// PJPG 20001013 
