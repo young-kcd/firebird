@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.32 2002-10-31 05:33:35 seanleyne Exp $
+$Id: inet.cpp,v 1.33 2002-11-04 11:19:16 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1966,7 +1966,7 @@ static BOOLEAN check_proxy( PORT port, TEXT * host_name, TEXT * user_name)
  *
  **************************************/
 	IB_FILE *proxy;
-	TEXT *p, proxy_file[64], source_user[64], source_host[MAXHOSTLEN],
+	TEXT *p, proxy_file[MAXPATHLEN], source_user[64], source_host[MAXHOSTLEN],
 		target_user[64], line[128];
 	int c;
 	BOOLEAN result;

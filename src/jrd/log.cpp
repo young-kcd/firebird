@@ -619,7 +619,7 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
 	DBB dbb;
 	LOG log;
 #ifndef STACK_REDUCTION
-	SCHAR *log_name, buffer[256];
+	SCHAR *log_name, buffer[MAXPATHLEN];
 #else
 	SCHAR *log_name, *buffer;
 #endif /* !STACK_REDUCTION */
@@ -627,6 +627,7 @@ static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
 	int mask;
 
 #ifdef STACK_REDUCTION
+	assert(MAXPATHLEN <= BUFFER_MEDIUM);
 	buffer = (SCHAR *) gds__alloc((SLONG) BUFFER_MEDIUM);
 	if (!buffer) {				/* NOMEM: */
 		error("can't open log file (out of memory)");

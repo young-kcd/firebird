@@ -111,7 +111,7 @@ main(argc, argv)
 #ifdef LIKE_JRD
 		{
 			char module[200];
-			char path[200];
+			char path[MAXPATHLEN];
 			char entry[200];
 			int t_type;
 			t_type = atoi(vector[i]);

@@ -629,7 +629,7 @@ ISC_kill(pid, signal_number)
  **************************************/
 	SLONG msg[3];
 	int status, pipes[2];
-	TEXT process[64], arg[10];
+	TEXT process[MAXPATHLEN], arg[10];
 
 	status = kill(pid, signal_number);
 

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.20 2002-11-02 11:03:44 dimitr Exp $
+$Id: isc.cpp,v 1.21 2002-11-04 11:19:03 eku Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -363,7 +363,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 	if (ISC_cfg_tbl == NULL) {
 		IB_FILE *fd;
 		TEXT *p, *q, buf[80];
-		TEXT buffer[256];
+		TEXT buffer[MAXPATHLEN];
 #ifdef SUPERSERVER
 		int n;
 		TEXT dir_name[MAXPATHLEN];
@@ -578,7 +578,7 @@ int DLL_EXPORT ISC_set_config(TEXT * config_file, IPCCFG config_table)
 	IB_FILE *fd = NULL;
 	IPCCFG h;
 	struct cfgtbl *t;
-	TEXT buffer[256];
+	TEXT buffer[MAXPATHLEN];
 	int ret = 1;
 
 	if (config_file)

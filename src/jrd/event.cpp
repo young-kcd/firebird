@@ -319,7 +319,7 @@ EVH EVENT_init(STATUS * status_vector, USHORT server_flag)
  *	exits, otherwise return NULL.
  *
  **************************************/
-	TEXT *event_file, buffer[256];
+	TEXT *event_file, buffer[MAXPATHLEN];
 
 /* If we're already initialized, there's nothing to do */
 

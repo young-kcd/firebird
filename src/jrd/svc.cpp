@@ -162,7 +162,7 @@
 				 *status++ = (STATUS) ERR_string(svc,strlen(svc)); \
 				 *status++ = isc_arg_end; }
 
-#define ERR_FILE_IN_USE		{ TEXT buffer[256]; \
+#define ERR_FILE_IN_USE		{ TEXT buffer[MAXPATHLEN]; \
 		                  gds__prefix (buffer, LOCK_HEADER); \
  		                  *status++ = isc_file_in_use; \
 		                  *status++ = isc_arg_string; \
@@ -852,7 +852,7 @@ void SVC_putc(SVC service, UCHAR ch)
  *
  **************************************/
 	SCHAR item, *items, *end_items, *end;
-	char buffer[256];
+	char buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
 	STATUS *status;
 	USHORT timeout;

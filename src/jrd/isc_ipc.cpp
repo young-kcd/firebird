@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.27 2002-10-31 05:05:57 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.28 2002-11-04 11:19:04 eku Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -118,7 +118,6 @@ static int process_id = 0;
 /* VMS Specific Stuff */
 
 #ifdef VMS
-
 #include <signal.h>
 #endif
 
@@ -451,7 +450,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
  **************************************/
 	SLONG msg[3];
 	int status, pipes[2];
-	TEXT process[64], arg[10];
+	TEXT process[MAXPATHLEN], arg[10];
 
 	for (;;) {
 		status = kill(pid, signal_number);

@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.19 2002-10-30 06:40:50 seanleyne Exp $
+$Id: lock.cpp,v 1.20 2002-11-04 11:19:08 eku Exp $
 */
 
 #include "firebird.h"
@@ -2040,8 +2040,8 @@ static void bug( STATUS * status_vector, CONST TEXT * string)
 		/* The lock file has some problem - copy it for later analysis */
 		{
 			TEXT *lock_file;
-			TEXT buffer[256];
-			TEXT buffer2[256];
+			TEXT buffer[2 * MAXPATHLEN];
+			TEXT buffer2[2 * MAXPATHLEN];
 			TEXT hostname[64];
 			gds__prefix_lock(buffer, LOCK_FILE);
 			lock_file = buffer;
@@ -2801,7 +2801,7 @@ static USHORT fork_lock_manager( STATUS * status_vector)
  *	Fork lock manager process.
  *
  **************************************/
-	TEXT string[256];
+	TEXT string[MAXPATHLEN];
 	struct stat stat_buf;
 	int pid;
 
@@ -3044,7 +3044,7 @@ static STATUS init_lock_table( STATUS * status_vector)
  *
  **************************************/
 	TEXT *lock_file;
-	TEXT buffer[256];
+	TEXT buffer[MAXPATHLEN];
 
 	LOCK_shm_size = DEFAULT_SIZE;
 	LOCK_sem_count = SEMAPHORES;

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.7 2002-10-07 01:29:12 skywalker Exp $
+ * $Id: srvrmgr.cpp,v 1.8 2002-11-04 11:19:19 eku Exp $
  */
 
 #include "firebird.h"
@@ -55,9 +55,8 @@
 
 #define STATUS_BUFLEN           20	/* status vector length */
 #define SPB_BUFLEN              128	/* service params buffer length */
-#define SEND_BUFLEN             32	/* length of send and resp     */
-#define RESP_BUFLEN             128	/*   used by isc_service_query */
-#define PATHLEN			1024	/* path length of guardian process */
+#define SEND_BUFLEN             32	/* length of send and resp */
+#define RESP_BUFLEN             128	/* used by isc_service_query */
 
 /* After we fork and exec a guardian process, to determine
    if the server have started we wait ATTACH_PAUSE seconds
@@ -447,7 +446,7 @@ static BOOLEAN start_server( IBMGR_DATA * data)
  *
  **************************************/
 	TEXT msg[MSG_LEN];
-	TEXT path[PATHLEN];
+	TEXT path[MAXPATHLEN];
 	TEXT *argv[4];
 	int retry;
 	pid_t pid, ret_value;
@@ -565,7 +564,7 @@ static BOOLEAN server_is_ok( IBMGR_DATA * data)
  *
  **************************************/
 	STATUS status[STATUS_BUFLEN];
-	TEXT path[PATHLEN];
+	TEXT path[MAXPATHLEN];
 	TEXT db_name[128];
 	isc_db_handle db_handle = 0L;
 	BOOLEAN ok;

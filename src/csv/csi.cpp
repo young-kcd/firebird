@@ -3313,7 +3313,7 @@ static int spawn( STATUS * user_status, UCHAR * gbl_file, PTR * connection)
  *
  **************************************/
 	UCHAR output[128], error[128], *p, *q, process_name[16],
-		pipe_temp[256], pipe_file[256];
+		pipe_temp[MAXPATHLEN], pipe_file[MAXPATHLEN];
 	USHORT i, len;
 	ULONG status, pid, flags, item;
 	SLONG *privileges, procpriv[2], priority;

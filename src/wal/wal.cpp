@@ -1122,7 +1122,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
  *
  **************************************/
 	WALS WAL_segment;
-	TEXT image_name[256];
+	TEXT image_name[MAXPATHLEN];
 	int pid;
 
 	gds__prefix(image_name, WAL_WRITER);

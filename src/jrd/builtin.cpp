@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.4 2002-01-04 11:34:15 skywalker Exp $
+ * $Id: builtin.cpp,v 1.5 2002-11-04 11:19:02 eku Exp $
  */
 
 #include "firebird.h"
@@ -74,7 +74,7 @@ FPTR_INT BUILTIN_entrypoint(TEXT * module, TEXT * entrypoint)
  *
  **************************************/
 	FN *function;
-	TEXT *p, temp[256], *ep;
+	TEXT *p, temp[MAXPATHLEN], *ep;
 	TEXT *modname;
 
 /* Strip off any preceeding $INTERBASE path location from the 
