@@ -58,4 +58,4 @@ public:
 	int PushRpb(struct rpb* value);
 	bool PopRpb(struct rpb* value, int Level);
 };
-#endif RPB_CHAIN_H
+#endif	//RPB_CHAIN_H
