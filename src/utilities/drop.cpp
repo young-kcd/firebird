@@ -20,9 +20,10 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.11 2002-10-28 03:47:46 seanleyne Exp $
+ * $Id: drop.cpp,v 1.12 2002-10-28 03:52:05 seanleyne Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
 */
 
@@ -30,9 +31,6 @@
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <sys/param.h>
-#if (defined IMP)
-#include <sys/types.h>
-#endif
 #include <sys/stat.h>
 
 #include "../jrd/common.h"

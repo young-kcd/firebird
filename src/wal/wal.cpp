@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
  */
 
@@ -66,7 +67,7 @@
 #endif
 #endif
 
-#if (defined VMS || defined IMP)
+#ifdef VMS
 #define waitpid(x,y,z)	wait (y)
 #endif
 

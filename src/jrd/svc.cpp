@@ -24,6 +24,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
  */
 
@@ -92,11 +93,6 @@
 #endif
 #endif
 
-#ifdef IMP
-#include <fcntl.h>
-#include <sys/types.h>
-#endif
-
 #ifdef SCO_UNIX
 #include <fcntl.h>
 #endif
@@ -142,7 +138,7 @@
 #define MAXPATHLEN	256
 #endif
 
-#if (defined VMS || defined IMP )
+#ifdef VMS
 #define waitpid(x,y,z)	wait (y)
 #endif
 

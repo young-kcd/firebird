@@ -23,10 +23,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
  */
 /*
-$Id: lock.cpp,v 1.17 2002-10-28 03:47:45 seanleyne Exp $
+$Id: lock.cpp,v 1.18 2002-10-28 03:52:05 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -87,10 +88,6 @@ $Id: lock.cpp,v 1.17 2002-10-28 03:47:45 seanleyne Exp $
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
-#endif
-
-#ifdef IMP
-#define waitpid(x,y,z)	wait (y)
 #endif
 
 #ifdef NETWARE_386
