@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.25 2003-02-10 13:28:22 eku Exp $
+$Id: flu.cpp,v 1.26 2003-02-13 23:11:58 bellardo Exp $
 */
 
 #include "firebird.h"
@@ -94,6 +94,7 @@ static int condition_handler(int *, int *, int *);
 #ifdef DARWIN
 #include <unistd.h>
 #include <mach-o/dyld.h>
+#include <libgen.h>
 #define IB_UDF_DIR              "UDF/"
 #endif
 
