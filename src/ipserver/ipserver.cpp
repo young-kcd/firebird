@@ -40,6 +40,7 @@
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/why_proto.h"
 #include "../common/config/config.h"
+#include "../jrd/gdsassert.h"
 
 static void allocate_statement(ICC);
 static void attach_database(ICC, P_OP);
@@ -294,6 +295,26 @@ static const char* op_strings[] =
 #endif
 
 
+#if defined(SUPERSERVER) && defined(WIN_NT)
+
+extern "C" static void atexit_close_handles()
+{
+	IPM pFirstIpm = ipserver_private_data.first_ipm;
+	for (IPM pIpm = pFirstIpm; pIpm; pIpm = pIpm->ipm_next)
+	{
+		if (pIpm->ipm_address) {
+			UnmapViewOfFile(pIpm->ipm_address);
+			pIpm->ipm_address = 0;
+		}
+		if (pIpm->ipm_handle) {
+			CloseHandle(pIpm->ipm_handle);
+			pIpm->ipm_handle = 0;
+		}
+	}
+}
+#endif	// SUPERSERVER && WIN_NT
+
+
 USHORT IPS_init(HWND	hwnd,
 				USHORT	usrs_pr_mp,
 				USHORT	pgs_pr_usr,
@@ -344,7 +365,14 @@ USHORT IPS_init(HWND	hwnd,
 
 	if (ipm && (ipm != (IPM) - 1))
 	{
+		fb_assert(!ipserver_private_data.first_ipm);
 		ipserver_private_data.first_ipm = ipm;
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		// TMN: 2003-03-11: Close the handles at server shutdown
+		// Possibly this is also needed for CS, but since I can't test that
+		// I decided to only do it for SS.
+		atexit(&atexit_close_handles);
+#endif
 		return (USHORT) 1;
 	}
 
@@ -535,12 +563,10 @@ static void ipi_end_thread( ICC icc)
  *      free its slot and whatnot.
  *
  **************************************/
-	IPM ipm, pipm;
-
 
 	/* free up this thread's slot */
 
-	ipm = icc->icc_ipm;
+	IPM ipm = icc->icc_ipm;
 	THD_mutex_lock(&ipserver_private_data.ipics);
 	ipm->ipm_ids[icc->icc_slot] = 0;
 	ipm->ipm_count--;
@@ -550,13 +576,19 @@ static void ipi_end_thread( ICC icc)
 
 	if (!ipm->ipm_count && ipm != ipserver_private_data.first_ipm)
 	{
-		UnmapViewOfFile(ipm->ipm_address);
-		CloseHandle(ipm->ipm_handle);
+		if (ipm->ipm_address) {
+			UnmapViewOfFile(ipm->ipm_address);
+			ipm->ipm_address = 0;
+		}
+		if (ipm->ipm_handle) {
+			CloseHandle(ipm->ipm_handle);
+			ipm->ipm_handle = 0;
+		}
 
 		if (ipserver_private_data.ipms == ipm){
 			ipserver_private_data.ipms = ipm->ipm_next;
 		} else {
-			for (pipm = ipserver_private_data.ipms;
+			for (IPM pipm = ipserver_private_data.ipms;
 				 pipm->ipm_next;
 				 pipm = pipm->ipm_next)
 			{
@@ -2281,7 +2313,7 @@ static void insert( ICC icc)
 }
 
 
-static IPM make_map( USHORT map_number)
+static IPM make_map(USHORT map_number)
 {
 /**************************************
  *
@@ -2297,10 +2329,10 @@ static IPM make_map( USHORT map_number)
  *      other - pointer to new structure
  *
  **************************************/
-	IPM ipm;
+
 	HANDLE map_handle;
 	LPVOID map_address;
-	USHORT i;
+	// Here we better be 100% SURE this won't overflow!
 	TEXT name_buffer[128];
 
 	/* create the mapped file name and try to open it */
@@ -2313,27 +2345,35 @@ static IPM make_map( USHORT map_number)
 								   IPS_MAPPED_SIZE(ipserver_private_data.users_per_map,
 												   ipserver_private_data.pages_per_user),
 								   name_buffer);
-	if (map_handle && GetLastError() == ERROR_ALREADY_EXISTS)
+	if (map_handle && GetLastError() == ERROR_ALREADY_EXISTS) {
 		return NULL;
-	else if (!map_handle)
-		return (IPM) - 1;
+	}
+	if (!map_handle) {
+		return (IPM) -1;
+	}
 	map_address = MapViewOfFile(map_handle, FILE_MAP_WRITE, 0L, 0L,
 								IPS_MAPPED_SIZE(ipserver_private_data.users_per_map,
 												ipserver_private_data.pages_per_user));
-	if (!map_address)
-		return (IPM) - 1;
+	if (!map_address) {
+		CloseHandle(map_handle);
+		return (IPM) -1;
+	}
 
 	/* allocate a structure and initialize it */
 
-	ipm = (IPM) ALLI_alloc(sizeof(struct ipm));
-	if (!ipm)
-		return (IPM) - 1;
+	IPM ipm = (IPM) ALLI_alloc(sizeof(struct ipm));
+	if (!ipm) {
+		UnmapViewOfFile(map_address);
+		CloseHandle(map_handle);
+		return (IPM) -1;
+	}
 	ipm->ipm_handle = map_handle;
 	ipm->ipm_address = map_address;
 	ipm->ipm_number = map_number;
 	ipm->ipm_count = 0;
-	for (i = 0; i < ipserver_private_data.users_per_map; i++)
+	for (USHORT i = 0; i < ipserver_private_data.users_per_map; i++) {
 		ipm->ipm_ids[i] = 0;
+	}
 	ipm->ipm_next = ipserver_private_data.ipms;
 	ipserver_private_data.ipms = ipm;
 	return ipm;

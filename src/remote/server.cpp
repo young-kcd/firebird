@@ -197,7 +197,7 @@ static const UCHAR sql_info[] =
 #define GDS_DSQL_SQL_INFO	isc_dsql_sql_info
 
 
-void SRVR_main( PORT main_port, USHORT flags)
+void SRVR_main(PORT main_port, USHORT flags)
 {
 /**************************************
  *
@@ -230,8 +230,9 @@ void SRVR_main( PORT main_port, USHORT flags)
 		if (!port) {
 			break;
 		}
-		if (!process_packet(port, &send, &receive, 0))
+		if (!process_packet(port, &send, &receive, 0)) {
 			break;
+		}
 	}
 
 	THREAD_EXIT;
@@ -966,16 +967,22 @@ static void cancel_operation( PORT port)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if ((port->port_flags & (PORT_async | PORT_disconnect)) ||
-		!(rdb = port->port_context)) return;
+		!(rdb = port->port_context))
+	{
+		return;
+	}
 
 	if (rdb->rdb_handle)
-		if (!(rdb->rdb_flags & RDB_service)) {
+	{
+		if (!(rdb->rdb_flags & RDB_service))
+		{
 			THREAD_EXIT;
 			gds__cancel_operation(status_vector,
 								  (FRBRD **) GDS_REF(rdb->rdb_handle),
 								  CANCEL_raise);
 			THREAD_ENTER;
 		}
+	}
 }
 #endif
 

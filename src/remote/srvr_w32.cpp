@@ -256,12 +256,12 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	else {
 		if (server_flag & SRVR_inet) {
-			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 							  (inet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
 		if (server_flag & SRVR_wnet) {
-			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 							  (wnet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
@@ -320,7 +320,7 @@ ULONG SRVR_xnet_start_thread(ULONG client_pid)
 	}
 
 /* start the thread for this client */
-	gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+	gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 					  (process_connection_thread), port,
 					  THREAD_medium, 0, 0);
 
@@ -396,14 +396,15 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
  **************************************/
 	void *thread;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	PORT port;
 
-	if (!(server_flag & SRVR_non_service))
+	if (!(server_flag & SRVR_non_service)) {
 		thread = CNTL_insert_thread();
+	}
 
-	while (TRUE) {
+	while (TRUE)
+	{
 		THREAD_ENTER;
-		port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
+		PORT port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
 		THREAD_EXIT;
 		if (!port) {
 			if (status_vector[1] != gds_io_error ||
@@ -413,7 +414,7 @@ static void THREAD_ROUTINE wnet_connect_wait_thread( void *dummy)
 			}
 			break;
 		}
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 						  (process_connection_thread), port, THREAD_medium, 0,
 						  0);
 	}
@@ -479,16 +480,16 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 	HANDLE ipc_thread_handle = 0;
 
 	if (server_flag & SRVR_inet) {
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 						  (inet_connect_wait_thread), 0, THREAD_medium, 0, 0);
 	}
 	if (server_flag & SRVR_wnet) {
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+		gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
 	}
 	if (server_flag & SRVR_ipc) {
 		const int bFailed =
-			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
 							  (ipc_connect_wait_thread),
 							  0,
 							  THREAD_medium,

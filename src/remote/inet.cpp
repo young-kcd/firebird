@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.57 2003-03-03 08:37:54 brodsom Exp $
+$Id: inet.cpp,v 1.58 2003-03-11 05:50:26 tamlin Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1477,6 +1477,15 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 	return TRUE;
 }
 
+
+#if defined(SUPERSERVER) && defined(WIN_NT)
+extern "C" static void atexit_shutdown_winsock()
+{
+	WSACleanup();
+}
+#endif	// SUPERSERVER && WIN_NT
+
+
 static PORT alloc_port( PORT parent)
 {
 /**************************************
@@ -1490,7 +1499,7 @@ static PORT alloc_port( PORT parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	PORT port;
+
 	TEXT buffer[64];
 
 #ifdef WIN_NT
@@ -1510,15 +1519,24 @@ static PORT alloc_port( PORT parent)
 			return NULL;
 		}
 		gds__register_cleanup(exit_handler, 0);
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		// TMN: 2003-03-11: Shutdown Winsock at program exit
+		// Possibly this is also needed for CS, but since I can't test that
+		// I decided to only do it for SS.
+		atexit(&atexit_shutdown_winsock);
+#endif
 		INET_initialized = TRUE;
 	}
 #endif
 
-	if (first_time == TRUE) {
+	if (first_time == TRUE)
+	{
 		INET_remote_buffer = Config::getTcpRemoteBufferSize();
-		if (INET_remote_buffer < MAX_DATA_LW
-			|| INET_remote_buffer > MAX_DATA_HW) INET_remote_buffer =
-				DEF_MAX_DATA;
+		if (INET_remote_buffer < MAX_DATA_LW ||
+		    INET_remote_buffer > MAX_DATA_HW)
+		{
+			INET_remote_buffer = DEF_MAX_DATA;
+		}
 		INET_max_data = INET_remote_buffer;
 #ifdef DEBUG
 		{
@@ -1530,7 +1548,7 @@ static PORT alloc_port( PORT parent)
 #endif
 		first_time = FALSE;
 	}
-	port = (PORT) ALLOCV(type_port, INET_remote_buffer * 2);
+	PORT port = (PORT) ALLOCV(type_port, INET_remote_buffer * 2);
 	port->port_type = port_inet;
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0, 0);
@@ -2090,9 +2108,8 @@ static void exit_handler( void *arg)
  *	to allow restart.
  *
  **************************************/
-	PORT port, main_port;
 
-	main_port = (PORT) arg;
+	PORT main_port = (PORT) arg;
 
 #ifdef WIN_NT
 	if (!main_port) {
@@ -2102,7 +2119,7 @@ static void exit_handler( void *arg)
 #endif
 
 #ifndef VMS
-	for (port = main_port; port; port = port->port_next) {
+	for (PORT port = main_port; port; port = port->port_next) {
 		shutdown((int) port->port_handle, 2);
 		SOCLOSE((SOCKET) port->port_handle);
 	}

@@ -734,6 +734,23 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 }
 
 
+#if defined(SUPERSERVER) && defined(WIN_NT)
+extern "C" static void atexit_close_handles()
+{
+	for (XPM pXpm = first_xpm; pXpm; pXpm = pXpm->xpm_next) {
+		if (pXpm->xpm_address) {
+			UnmapViewOfFile(pXpm->xpm_address);
+			pXpm->xpm_address = 0;
+		}
+		if (pXpm->xpm_handle) {
+			CloseHandle(pXpm->xpm_handle);
+			pXpm->xpm_handle = 0;
+		}
+	}
+}
+#endif	// SUPERSERVER && WIN_NT
+
+
 USHORT XNET_init(HWND hwnd,
 				 USHORT usrs_pr_mp, USHORT pgs_pr_usr, USHORT mx_mps)
 {
@@ -760,14 +777,21 @@ USHORT XNET_init(HWND hwnd,
 
 	if (usrs_pr_mp &&
 		usrs_pr_mp >= XPS_MIN_NUM_CLI &&
-		usrs_pr_mp <= XPS_MIN_NUM_CLI) users_per_map = usrs_pr_mp;
+		usrs_pr_mp <= XPS_MIN_NUM_CLI)
+	{
+		users_per_map = usrs_pr_mp;
+	}
 
 	if (pgs_pr_usr &&
 		pgs_pr_usr >= XPS_MIN_PAGES_PER_CLI &&
-		pgs_pr_usr <= XPS_MAX_PAGES_PER_CLI) pages_per_user = pgs_pr_usr;
+		pgs_pr_usr <= XPS_MAX_PAGES_PER_CLI)
+	{
+		pages_per_user = pgs_pr_usr;
+	}
 
-	if (mx_mps && mx_mps >= XPS_MIN_NUM_MAPS && mx_mps <= XPS_MAX_NUM_MAPS)
+	if (mx_mps && mx_mps >= XPS_MIN_NUM_MAPS && mx_mps <= XPS_MAX_NUM_MAPS) {
 		num_maps = mx_mps;
+	}
 
 /* init mapped chain and critical regions */
 
@@ -776,12 +800,18 @@ USHORT XNET_init(HWND hwnd,
 /* create the first map (failure means it's already there )*/
 
 	xpm = make_map(0);
-	if (xpm && (xpm != (XPM) - 1)) {
+	if (xpm && (xpm != (XPM) -1)) {
 		first_xpm = xpm;
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		// TMN: 2003-03-11: Close the handles at server shutdown
+		// Possibly this is also needed for CS, but since I can't test that
+		// I decided to only do it for SS.
+		atexit(&atexit_close_handles);
+#endif
 		return (USHORT) 1;
 	}
-	else
-		return (USHORT) xpm;
+
+	return (USHORT) xpm;
 }
 
 
@@ -1625,41 +1655,51 @@ static XPM make_map( USHORT map_number)
 	USHORT i;
 	TEXT name_buffer[128];
 
-/* create the mapped file name and try to open it */
-
+	// create the mapped file name and try to open it
 	sprintf(name_buffer, XPI_MAPPED_FILE_NAME, XPI_PREFIX, map_number);
+
 #ifdef WIN_NT
 	map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF, NULL,
 								   PAGE_READWRITE, 0L,
 								   XPS_MAPPED_SIZE(users_per_map,
 												   pages_per_user),
 								   name_buffer);
-	if (map_handle && ERRNO == ERROR_ALREADY_EXISTS)
+	if (map_handle && ERRNO == ERROR_ALREADY_EXISTS) {
 		return NULL;
-	else if (!map_handle)
+	}
+	if (!map_handle) {
 		return (XPM) - 1;
+	}
 
 	map_address = MapViewOfFile(map_handle, FILE_MAP_WRITE, 0L, 0L,
 								XPS_MAPPED_SIZE(users_per_map,
 												pages_per_user));
+	if (!map_address) {
+		CloseHandle(map_handle);
+	}
+
 #else
 /* STUB : need to do same thing for solaris */
+	map_address = 0;
 #endif
 
-	if (!map_address)
+	if (!map_address) {
 		return (XPM) - 1;
+	}
 
 /* allocate a structure and initialize it */
 
 	xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
-	if (!xpm)
+	if (!xpm) {
 		return (XPM) - 1;
+	}
 	xpm->xpm_handle = map_handle;
 	xpm->xpm_address = map_address;
 	xpm->xpm_number = map_number;
 	xpm->xpm_count = 0;
-	for (i = 0; i < users_per_map; i++)
+	for (i = 0; i < users_per_map; i++) {
 		xpm->xpm_ids[i] = 0;
+	}
 	xpm->xpm_next = xpms;
 	xpm->xpm_flags = 0;
 	xpms = xpm;
@@ -1860,12 +1900,15 @@ static void server_shutdown(void)
 		/* free up semaphores */
 
 #ifdef WIN_NT
-		if (xcc->xcc_send_sem)
+		if (xcc->xcc_send_sem) {
 			CloseHandle(xcc->xcc_send_sem);
-		if (xcc->xcc_recv_sem)
+		}
+		if (xcc->xcc_recv_sem) {
 			CloseHandle(xcc->xcc_recv_sem);
-		if (xcc->xcc_server_proc)
+		}
+		if (xcc->xcc_server_proc) {
 			CloseHandle(xcc->xcc_server_proc);
+		}
 		xcc->xcc_send_sem = 0;
 		xcc->xcc_recv_sem = 0;
 		xcc->xcc_server_proc = 0;
@@ -1887,8 +1930,8 @@ static void server_shutdown(void)
 		xpm->xpm_handle = 0;
 	}
 }
-#endif
-#endif
+#endif	// WIN_NT
+#endif	// SUPERCLIENT
 
 #ifdef SUPERCLIENT
 #ifdef WIN_NT
@@ -1910,8 +1953,9 @@ static void server_watcher(void)
 	DWORD result;
 
 	for (;;) {
-		if (exit_flag)
+		if (exit_flag) {
 			break;
+		}
 		result = WaitForSingleObject(server_process_handle, INFINITE);
 		if (result == WAIT_OBJECT_0) {
 			/* unmap and close all maps */
@@ -2351,8 +2395,9 @@ void XNET_release_all(void)
 /* get stuff to release and clear list heads */
 
 	exit_flag++;
-	if (exit_flag > 1)
+	if (exit_flag > 1) {
 		return;
+	}
 	xcc = client_threads;
 	nxcc = xcc;
 	client_threads = NULL;
@@ -2368,9 +2413,11 @@ void XNET_release_all(void)
 
 /* disconnect each thread */
 
-	for (; xcc; xcc = xcc->xcc_next)
-		if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+	for (; xcc; xcc = xcc->xcc_next) {
+		if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 			xps = (XPS) xcc->xcc_mapped_addr;
+		}
+	}
 
 	xcc = nxcc;
 
@@ -2382,12 +2429,15 @@ void XNET_release_all(void)
 #ifdef WIN_NT
 		/* free up semaphores */
 
-		if (xcc->xcc_send_sem)
+		if (xcc->xcc_send_sem) {
 			CloseHandle(xcc->xcc_send_sem);
-		if (xcc->xcc_send_sem)
+		}
+		if (xcc->xcc_send_sem) {
 			CloseHandle(xcc->xcc_send_sem);
-		if (xcc->xcc_server_proc)
+		}
+		if (xcc->xcc_server_proc) {
 			CloseHandle(xcc->xcc_server_proc);
+		}
 #else
 		/* SEAN : Similar event_fini() for Solaris */
 #endif

@@ -148,7 +148,6 @@ PORT WNET_analyze(	TEXT*	file_name,
  *
  **************************************/
 	RDB rdb;
-	PORT port;
 	PACKET *packet;
 	P_CNCT *cnct;
 	SSHORT user_length;
@@ -285,7 +284,8 @@ PORT WNET_analyze(	TEXT*	file_name,
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error. */
 
-	if (!(port = WNET_connect(node_name, packet, status_vector, FALSE))) {
+	PORT port = WNET_connect(node_name, packet, status_vector, FALSE);
+	if (!port) {
 		ALLR_release(rdb);
 		return NULL;
 	}
@@ -343,7 +343,8 @@ PORT WNET_analyze(	TEXT*	file_name,
 		protocol->p_cnct_max_type = ptype_batch_send;
 		protocol->p_cnct_weight = 5;
 
-		if (!(port = WNET_connect(node_name, packet, status_vector, FALSE))) {
+		port = WNET_connect(node_name, packet, status_vector, FALSE);
+		if (!port) {
 			ALLR_release(rdb);
 			return NULL;
 		}
@@ -386,7 +387,8 @@ PORT WNET_analyze(	TEXT*	file_name,
 		protocol->p_cnct_max_type = ptype_batch_send;
 		protocol->p_cnct_weight = 3;
 
-		if (!(port = WNET_connect(node_name, packet, status_vector, FALSE))) {
+		port = WNET_connect(node_name, packet, status_vector, FALSE);
+		if (!port) {
 			ALLR_release(rdb);
 			return NULL;
 		}
@@ -446,24 +448,20 @@ PORT WNET_connect(TEXT*		name,
  *	connect is for a server process.
  *
  **************************************/
-	PORT port;
+
 	STATUS status;
 	TEXT command_line[MAXPATHLEN + 32], *p;
 	USHORT ret;
-#ifndef REQUESTER
-	STARTUPINFO start_crud;
-	PROCESS_INFORMATION pi;
-	LPSECURITY_ATTRIBUTES security_attr;
-#endif /* REQUESTER */
 
-	port = alloc_port(0);
+	PORT port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = gds_arg_end;
 
-	if (port->port_connection)
+	if (port->port_connection) {
 		ALLR_free(port->port_connection);
+	}
 	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
 /* If we're a host, just make the connection */
@@ -475,8 +473,9 @@ PORT WNET_connect(TEXT*		name,
 			port->port_handle = CreateFile(port->port_connection->str_data,
 										   GENERIC_WRITE | GENERIC_READ,
 										   0, NULL, OPEN_EXISTING, 0, NULL);
-			if (port->port_handle != INVALID_HANDLE_VALUE)
+			if (port->port_handle != INVALID_HANDLE_VALUE) {
 				break;
+			}
 			if ((status = GetLastError()) != ERROR_PIPE_BUSY) {
 				THREAD_ENTER;
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
@@ -493,6 +492,7 @@ PORT WNET_connect(TEXT*		name,
 #ifndef REQUESTER
 /* We're a server, so wait for a host to show up */
 
+	LPSECURITY_ATTRIBUTES security_attr;
 	security_attr = ISC_get_security_desc();
 	THREAD_EXIT;
 	command_line[0] = 0;
@@ -590,6 +590,8 @@ PORT WNET_connect(TEXT*		name,
 		}
 
 		sprintf(p, " -s -w -h %d", (SLONG) port->port_handle);
+		STARTUPINFO           start_crud;
+		PROCESS_INFORMATION   pi;
 		start_crud.cb = sizeof(STARTUPINFO);
 		start_crud.lpReserved = NULL;
 		start_crud.lpReserved2 = NULL;
@@ -597,15 +599,16 @@ PORT WNET_connect(TEXT*		name,
 		start_crud.lpDesktop = NULL;
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = 0;
-		if (ret = CreateProcess(NULL,
-								command_line,
-								NULL,
-								NULL,
-								TRUE,
-								(flag & SRVR_high_priority ?
-								 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
-								 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
-								NULL, NULL, &start_crud, &pi)) {
+		ret = CreateProcess(NULL,
+							command_line,
+							NULL,
+							NULL,
+							TRUE,
+							(flag & SRVR_high_priority ?
+							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
+							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
+							NULL, NULL, &start_crud, &pi);
+		if (ret) {
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}
@@ -975,7 +978,7 @@ static PORT aux_request( PORT port, PACKET * packet)
 }
 
 
-static void disconnect( PORT port)
+static void disconnect(PORT port)
 {
 /**************************************
  *
@@ -987,24 +990,31 @@ static void disconnect( PORT port)
  *	Break a remote connection.
  *
  **************************************/
-	PORT parent, *ptr;
 
 /* If this is a sub-port, unlink it from it's parent */
 
-	if ((parent = port->port_parent) != NULL) {
-		if (port->port_async) {
+	PORT parent = port->port_parent;
+	if (parent)
+	{
+		if (port->port_async)
+		{
 			disconnect(port->port_async);
 			port->port_async = NULL;
 		}
-		for (ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
-			if (*ptr == port) {
+		for (PORT* ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+		{
+			if (*ptr == port)
+			{
 				*ptr = port->port_next;
-				if (ptr == &parent->port_clients)
+				if (ptr == &parent->port_clients) {
 					parent->port_next = *ptr;
+				}
 				break;
 			}
+		}
 	}
-	else if (port->port_async) {
+	else if (port->port_async)
+	{
 /* If we're MULTI_THREAD then we cannot free the port because another
  * thread might be using it.  If we're SUPERSERVER we must free the
  * port to avoid a memory leak.  What we really need to know is if we
@@ -1019,18 +1029,23 @@ static void disconnect( PORT port)
 	}
 
 #ifndef REQUESTER
-	if (port->port_server_flags & SRVR_server) {
+	if (port->port_server_flags & SRVR_server)
+	{
 		FlushFileBuffers(port->port_handle);
 		DisconnectNamedPipe(port->port_handle);
-		if (port->port_flags & PORT_impersonate) {
+		if (port->port_flags & PORT_impersonate)
+		{
 			RevertToSelf();
 			port->port_flags &= ~PORT_impersonate;
 		}
 	}
 #endif /* REQUESTER */
-	CloseHandle(port->port_handle);
-	gds__unregister_cleanup(reinterpret_cast <
-							void (*)(void *) >(exit_handler), port);
+	if (port->port_handle) {
+		CloseHandle(port->port_handle);
+		port->port_handle = 0;
+	}
+	gds__unregister_cleanup(reinterpret_cast<void (*)(void*)>(exit_handler),
+	                        port);
 	cleanup_port(port);
 }
 
