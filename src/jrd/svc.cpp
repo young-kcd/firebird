@@ -840,8 +840,8 @@ int SVC_output(Service* output_data, const UCHAR* output_buf)
 
 	return 0;
 }
-
 #endif /*SUPERSERVER*/
+
 ISC_STATUS SVC_query2(Service* service,
 					  thread_db* tdbb,
 					  USHORT send_item_length,
