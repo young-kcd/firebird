@@ -240,6 +240,7 @@ void ConfigFile::loadConfig()
     if (!configFileStream)
     {
         // config file does not exist
+#ifndef BOOT_BUILD
 		string Msg = "Missing configuration file: " + configFile;
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
@@ -252,6 +253,7 @@ void ConfigFile::loadConfig()
 		if (fExitOnError)
 			exit(1);
 #endif
+#endif //BOOT_BUILD
 		return;
     }
     string inputLine;
