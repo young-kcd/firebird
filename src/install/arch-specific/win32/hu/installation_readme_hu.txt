@@ -1,0 +1,286 @@
+Firebird Adatbázis Szerver 1.5.2
+==================================================
+
+Ez a dokumentum egy telepítési segédlet a Win32
+platformon mûködõ Firebird 1.5 telepítéséhez.
+Ez a leírás elsõsorban a telepítés menetét írja le, s
+nem a Firebird 1.5-rõl szól általánosságban.
+
+
+Tartalomjegyzék
+---------------
+
+o Mielõtt telepítené
+o Telepítés már meglévõ Firebird 2.0 mellé
+o A telepítõ új szolgáltatásai
+o A telepítõ megszüntetett szolgáltatásai
+o Eltávolítás
+o Megjegyzések
+o Telepítés kötegelt (batch) fájlból
+
+
+Mielõtt telepítené
+------------------
+
+Ajánlatos ELTÁVOLÍTANI a Firebird 1.0, Firebird 1.5
+vagy InterBase összes elõzõ verzióját, mielõtt telepíti
+ezt a változatot.
+
+
+Telepítés már meglévõ Firebird 2.0 mellé
+----------------------------------------
+
+A Firebird 1.5.2 telepítõje nem képes érzékelni a
+Firebird 2.0 (nem stabil) futó változatát. Amennyiben a
+célgépen a Firebird 2.0 (nem stabil) változata fut,
+ajánlatos a szervert leállítani, mielõtt megpróbálja
+telepíteni a Firebird 1.5.2-t.
+
+
+Újdonságok a Firebird 1.5.2 telepítõjében
+-----------------------------------------
+
+A telepítõ immáron számos nyelven használható. A 
+többnyelvû támogatást jelenleg csak a telepítési eljárás
+során érheti el.
+
+
+A Firebird 1.5 telepítõjének új szolgáltatásai
+----------------------------------------------
+
+o A telepítõ most már a Szuper Szerver és a Hagyományos 
+  Szerver futtatható állományait is tartalmazza, egy
+  telepítõ programban. Ön kiválaszthatja, hogy a kettõ
+  közül melyiket telepíti. A szerver típus
+  megváltoztatásához el kell távolítani és újra kell
+  telepíteni a Firebird Adatbázis Szervert.
+
+o A könyvtár telepítés szabályai jelentékeny mértékben 
+  megváltoztak. A részletekrõl a: .\docs\README.
+  Win32LibraryInstallation.txt dokumentumban  olvashat,
+  amely elérhetõ a telepítés után.
+
+  Az új szabályok miatt a telepítõ megkeresi a már
+  telepített Firebird vagy InterBase Adatbázis Szerver 
+  példányokat.
+  
+  - Amennyiben a Firebird 1.5 már telepítve van a
+    telepítõ megpróbálja frissíteni a meglévõ
+    telepítést. Ha a szerver éppen fut, az meghiúsítja  
+    a telepítést.
+
+  - Ha egyéb verziója van telepítve a Firebird vagy
+    InterBase Adatbázis Szervernek a felhasználó egy
+    figyelmeztetést kap. A telepítõ feltelepíti a
+    Firebirdöt, és beállítja a szükséges regisztrációs-
+    adatbázis bejegyzéseket, de nem konfigurálja a
+    rendszert a Firebird automatikus elindítására, se
+    szolgáltatás, se program módban. Ezt kézzel kell
+    majd  elvégeznie.
+
+  - A telepítõ új parancssori kapcsolója
+      /force
+    amely a "nemtörõdöm" felhasználónak felülbírálja az 
+    elõbb leírt mûködést.
+
+
+o Ha egy változatlan firebird.conf létezik a telepítés 
+  mappájában, akkor az mentésre kerül:
+  firebird.conf.saved.n néven, ahol az n egy egész szám.
+  A telepítõ mindig telepíti az alapértelmezett 
+  konfigurációs állományt. Ez garantálja a telepítési 
+  eljárás egységességét. Ellenkezõ esetben a telepítõnek 
+  értelmeznie kellene a már meglévõ (és esetleg hibás)
+  konfigurációs fájlt.
+
+
+A telepítõ megszüntetett szolgáltatásai
+---------------------------------------
+
+o A Firebird 1.0 fenntartott egy regisztrációs-adatbázis
+  bejegyzést saját használatra. Ez a következõ volt:
+  
+    HKLM\SOFTWARE\FirebirdSQL 
+  Ez mostantól megszûnt és a telepítõ automatikusan
+  törli ezt a bejegyzést. Ha olyan alkalmazásai vannak,
+  amelyek igénylik ezt a bejegyzést, akkor ezt Önnek
+  kézzel kell visszaírnia. Mindamellett ajánlott az Ön
+  programját az új feltételeknek megfelelõen
+  újrafordítani, hogy az az új bejegyzést használja.
+
+o A korábbi Firebird 1.5 kiadás elõtti változatai, az
+  fbclient.dll kliens könyvtárat a <system> mappában
+  helyezték el. Ez a gyakorlat mostanra megszûnt. A
+  telepítõben lévõ: "Az fbclient.dll másolása a <system>
+  mappába." opció segítségével a telepítés ideje alatt
+  helyezhet  el egy példányt a <system> mappában.
+  Mindamellett ajánlott az Ön programját az új
+  feltételeknek megfelelõen újrafordítani, hogy az új
+  gyakorlat szerint használja  az fbclient.dll fájlt.
+
+
+Eltávolítás
+-----------
+
+o Ajánlatos, hogy telepített alkalmazást szabályosan, a 
+  mellékelt eltávolító programmal távolítsa el. Ezt a
+  programot elindíthatja a Vezérlõpultról.
+  Alternatívaként elindíthatja a unins000.exe 
+  eltávolító alkalmazást közvetlenül a telepítés 
+  mappájából.
+
+o Ha a Firebird alkalmazásként fut (szolgáltatás
+  helyett), ajánlatos kézzel leállítani a szervert
+  mielõtt  futtatja az eltávolító programot. Ez azért
+  ajánlatos,  mert az eltávolító program nem képes
+  leállítani az alkalmazásként futó szervert. Ha a
+  szerver fut eltávolítás alatt, az eltávolítás nem lesz
+  tökéletes. A visszamaradó részeket Önnek kell majd
+  eltávolítania.
+
+
+Megjegyzések
+------------
+
+  A Firebird igényli a WinSock2 kiterjesztés meglétét.
+  Minden Win32 platform elvileg tartalmazza ezt a
+  kiegészítést a Windows 95-öt kivéve. A telepítõ
+  ellenõrzi a WinSock2 kiegészítés meglétét, s ha nem
+  találja, úgy a telepítés meghiúsul. A következõ
+  linken:
+  
+  http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  megtudhatja, hogyan juthat hozzá ehhez a
+  kiterjesztéshez.
+
+
+Telepítés kötegelt (batch) fájlból
+----------------------------------
+
+A telepítõ program futtatható kötegelt (batch) fájlból
+is. Ekkor a következõ parancssori kapcsolók megadása
+lehetséges:
+
+
+/SP- 
+  Kikapcsolja "A ... telepítésre fog kerülni.
+  Folytatja?" kérdést a telepítõ futásának legelején.
+
+/SILENT, /VERYSILENT
+  Arra utasítja a telepítõt, hogy az csendes illetve 
+  nagyon csendes üzemmódban fusson le.
+  Amikor a telepítõ csendes üzemmódban fut, akkor
+  varázsló és a háttérablak nem jelenik meg, de a
+  telepítés folyamatát jelzõ ablak megjelenik.
+  Amikor a telepítõ nagyon csendes üzemmódban fut, akkor 
+  a telepítés folyamatát jelzõ ablak sem jelenik meg. 
+  Minden egyéb a megszokott módon jelenik meg. Például
+  a hibaüzenetek a telepítés alatt megjelennek és az
+  indulási kérdés is (amennyiben a "/SP-" parancssori
+  kapcsolóval nem tiltotta le, ahogy azt az elõzõekben
+  olvashatta).
+
+  Ha a rendszer újraindítása szükséges és a "/NORESTART"
+  kapcsoló nincs megadva (lásd lejjebb) valamint a
+  telepítõ  csendes üzemmódban fut akkor a "...
+  Újraindítja most?"  kérdés fog megjelenni. Ha a
+  telepítõ nagyon csendes  üzemmódban fut, akkor a
+  rendszer kérdés nélkül fog  újraindulni.
+
+/NORESTART 
+  Arra utasítja a telepítõt, hogy akkor se indítsa újra 
+  a rendszert, amikor az szükséges.
+  
+/DIR="x:\mappanév"
+  Felülbírálja az alapértelmezett telepítési mappát, 
+  amely a telepítõ varázsló "Válasszon célhelyet"
+  oldalon jelenik  meg. Csak teljes elérési útvonal
+  adható meg.  Ha a telepítõ forrásában a [Setup]
+  szekcióban a DisableDirPage  paraméter yes értékkel
+  rendelkezik ez a parancssori  kapcsolót a telepítõ
+  figyelmen kívül hagyja.
+
+/GROUP="programcsoport név"
+  Felülbírálja az alapértelmezett programcsoport nevét,
+  amely a telepítõ varázsló "Válasszon mappát a Start
+  menüben" oldalon jelenik meg. Ha a telepítõ
+  forrásában a [Setup] szekcióban a
+  DisableProgramGroupPage paraméter yes értékkel
+  rendelkezik ez a parancssori  kapcsolót a telepítõ
+  figyelmen kívül hagyja.
+
+/NOICONS 
+  Arra utasítja a telepítõt, hogy kapcsolja be a "Ne
+  hozzon létre ikonokat" jelölõnégyzetet a telepítõ
+  varázsló "Válasszon mappát a Start menüben" oldalán.
+
+/COMPONENTS="az összetevõk vesszõvel elválasztott
+             felsorolása"
+
+  Ezek közül  - SuperServerComponent,
+                ClassicServerComponent, 
+                ServerComponent, 
+                DevAdminComponent és
+                ClientComponent
+
+  Felülbírálja a telepítõ alapértelmezett összetevõk 
+  listáját. Ezen kapcsoló alkalmazásával a telepítõ 
+  automatikusan Egyedi telepítésû lesz. A teljes
+  telepítéshez több összetevõ megadása szükséges. 
+  Például:
+  
+  /COMPONENTS="SuperServerComponent, ServerComponent, 
+               DevAdminComponent, ClientComponent"
+
+  szükséges a teljes telepítéshez.
+
+
+/FORCE
+
+  Elõírja a telepítõnek, hogy ne elemezze ki a rendszer 
+  jelenlegi állapotát. A telepítõ úgy próbálja meg
+  telepíteni és beállítani a Firebird 1.5-öt, mintha
+  semmilyen elõzõ verziója nem lenne telepítve, se a
+  Firebirdnek, se az InterBase Adatbázis Szervereknek.
+  Ez akkor lehet hasznos, ha a rendszeren egy komolyan 
+  sérült telepítés van, amelyet nem lehet eltávolítani.
+  Esetleg ez egy igen jó módja lehet a felhasználók
+  idegesítésének, azzal, hogy egy tökéletesen jól
+  mûködõ InterBase telepítést is tönkretehet. Ez csak
+  Önön múlik.
+
+
+/NOCPL
+
+  Nem telepíti a Vezérlõpult appletet. Ez az alábbi két 
+  okból lehet hasznos:
+
+  o A Vezérlõpult applet (CPL) telepítése/eltávolítása 
+    igen gyakran igényli a rendszer újraindítását.
+
+  o Ön esetleg egy alternatív Vezérlõpult appletet kíván 
+    használni.
+
+  
+/NOGDS32
+
+  Nem telepíti a kliens könyvtárat a rendszer <system>
+  mappába, még akkor sem, ha az elemzés alapján a
+  telepítõ egyébként telepítené.
+
+
+/COPYFBCLIENT
+
+  Az fbclient.dll kliens könyvtárat telepíti a rendszer
+  <system> mappába. Ezt ajánlott megtenni, ha biztos 
+  benne, hogy csak egy szerver verzióval kell a
+  klienseknek kommunikálnia. Ha a klienseknek több
+  szerver verzióval kell kommunikálnia, akkor ez az
+  eljárás nem  ajánlott. További részleteket megtudhat
+  a:
+
+    doc/README.Win32LibraryInstallation.txt
+
+  dokumentumból.
+
