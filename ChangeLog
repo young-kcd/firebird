@@ -1,3 +1,196 @@
+2003-07-15 21:40  skidder
+
+	* firebird2/doc/fb2-todo.txt:
+	
+	[no log message]
+
+2003-07-15 15:35  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Let's fix the cause instead of the effect. No more buffer
+	overflows.
+
+2003-07-15 12:52  brodsom
+
+	* firebird2/configure.in:
+	
+	Split utilities dir
+
+2003-07-15 12:49  aafemt
+
+	* firebird2/Makefile.in:
+	
+	A bit better way to pass target over to sub-makefile
+
+2003-07-15 12:32  dimitr
+
+	* firebird2/doc/sql.extensions/: README.context_variables,
+	README.data_types:
+	
+	no message
+
+2003-07-15 12:11  skidder
+
+	* firebird2/doc/fb2-todo.txt:
+	
+	fix todo for FB2
+
+2003-07-15 11:09  dimitr
+
+	* firebird2/doc/sql.extensions/: README.context_variables,
+	README.data_types, README.exception_handling,
+	README.universal_triggers:
+	
+	Added some documentation for RelNotes. More will follow shortly.
+
+2003-07-15 04:42  brodsom
+
+	* firebird2/src/: jrd/alt.cpp, jrd/svc.cpp,
+	jrd/os/win32/config_root.cpp, remote/inet.cpp, remote/xnet.cpp,
+	remote/os/win32/wnet.cpp, remote/os/win32/cntl.cpp,
+	remote/os/win32/srvr_w32.cpp:
+	
+	Split utilities dir
+
+2003-07-15 04:38  brodsom
+
+	* firebird2/src/: utilities/common/cmd_util.cpp,
+	utilities/common/cmd_util_proto.h, utilities/gsec/gsec.cpp,
+	utilities/gsec/gsec.h, utilities/gsec/gsecswi.h,
+	utilities/gsec/secur_proto.h, utilities/gsec/security.epp,
+	utilities/gstat/dba.epp, utilities/gstat/dba_full.epp,
+	utilities/gstat/dbaswi.h, utilities/gstat/ppg.cpp,
+	utilities/gstat/ppg_proto.h, utilities/guard/guard.cpp,
+	utilities/guard/util.cpp, utilities/guard/util_proto.h,
+	utilities/ibmgr/ibmgr.cpp, utilities/ibmgr/ibmgr.h,
+	utilities/ibmgr/ibmgrswi.h, utilities/ibmgr/srvrmgr.cpp,
+	utilities/ibmgr/srvrmgr_proto.h, utilities/install/install_nt.h,
+	utilities/install/install_reg.cpp,
+	utilities/install/install_svc.cpp, utilities/install/regis_proto.h,
+	utilities/install/registry.cpp, utilities/install/registry.h,
+	utilities/install/servi_proto.h, utilities/install/services.cpp,
+	utilities/rebuild/rebui_proto.h, utilities/rebuild/rebuild.cpp,
+	utilities/rebuild/rebuild.gdl, utilities/rebuild/rebuild.h,
+	utilities/rebuild/rmet.epp, utilities/rebuild/rmet_proto.h,
+	utilities/rebuild/rstor_proto.h, utilities/rebuild/rstore.epp,
+	utilities/sbc_print.cpp, alice/alice.cpp, burp/burp.cpp,
+	iscguard/cntl_guard.cpp, iscguard/iscguard.cpp:
+	
+	Split utilities dir
+
+2003-07-15 04:35  brodsom
+
+	* firebird2/: builds/win32/make_boot.bat,
+	builds/win32/preprocess.bat, builds/win32/msvc6/fb_inet_server.dsp,
+	builds/win32/msvc6/fbclient.dsp, builds/win32/msvc6/fbembed.dsp,
+	builds/win32/msvc6/fbserver.dsp, builds/win32/msvc6/gsec.dsp,
+	builds/win32/msvc6/gstat.dsp, builds/win32/msvc6/instreg.dsp,
+	builds/win32/msvc6/instsvc.dsp, builds/win32/msvc6/utilities.dsp,
+	builds/win32/msvc6/utilities_classic.dsp,
+	builds/win32/msvc7/fb_inet_server.vcproj,
+	builds/win32/msvc7/fbembed.vcproj,
+	builds/win32/msvc7/fbserver.vcproj,
+	builds/win32/msvc7/gstat.vcproj,
+	builds/win32/msvc7/utilities.vcproj,
+	builds/win32/msvc7/utilities_classic.vcproj,
+	builds/posix/Makefile.in.client.util,
+	builds/posix/Makefile.in.embed.util,
+	builds/posix/Makefile.in.libfbclient,
+	builds/posix/make.shared.variables, src/utilities/cmd_util.cpp,
+	src/utilities/cmd_util_proto.h, src/utilities/dba.epp,
+	src/utilities/dba_full.epp, src/utilities/dbaswi.h,
+	src/utilities/gsec.cpp, src/utilities/gsec.h,
+	src/utilities/gsecswi.h, src/utilities/guard.cpp,
+	src/utilities/ibmgr.cpp, src/utilities/ibmgr.h,
+	src/utilities/ibmgrswi.h, src/utilities/install_nt.h,
+	src/utilities/install_reg.cpp, src/utilities/install_svc.cpp,
+	src/utilities/ppg.cpp, src/utilities/ppg_proto.h,
+	src/utilities/rebui_proto.h, src/utilities/rebuild.cpp,
+	src/utilities/rebuild.gdl, src/utilities/rebuild.h,
+	src/utilities/regis_proto.h, src/utilities/registry.cpp,
+	src/utilities/registry.h, src/utilities/rmet.epp,
+	src/utilities/rmet_proto.h, src/utilities/rstor_proto.h,
+	src/utilities/rstore.epp, src/utilities/secur_proto.h,
+	src/utilities/security.epp, src/utilities/servi_proto.h,
+	src/utilities/services.cpp, src/utilities/srvrmgr.cpp,
+	src/utilities/srvrmgr_proto.h, src/utilities/util.cpp,
+	src/utilities/util_proto.h:
+	
+	Split utilities dir
+
+2003-07-15 01:28  brodsom
+
+	* firebird2/src/: ipserver/ipclient.cpp, iscguard/iscguard.cpp:
+	
+	Move win32 specific sources in remote to remote/os/win32
+
+2003-07-15 01:24  brodsom
+
+	* firebird2/src/remote/: os/win32/caution.ico, os/win32/chop.cpp,
+	os/win32/chop_proto.h, os/win32/cntl.cpp, os/win32/cntl_proto.h,
+	os/win32/dllshell.cpp, os/win32/ibconfig.cpp, os/win32/ibconfig.h,
+	os/win32/ibconfig.rc, os/win32/ibsvrhlp.h, os/win32/property.cpp,
+	os/win32/property.rc, os/win32/property.rh,
+	os/win32/propty_proto.h, os/win32/server.ico,
+	os/win32/srvr_w32.cpp, os/win32/window.cpp, os/win32/window.h,
+	os/win32/window.rc, os/win32/window.rh, os/win32/window_proto.h,
+	os/win32/winmain.cpp, os/win32/wnet.cpp, os/win32/wnet_proto.h,
+	os/vms/chuser.cpp, interface.cpp, server.cpp, xnet.cpp:
+	
+	Move win32 specific sources in remote to remote/os/win32
+
+2003-07-15 01:20  brodsom
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.client.util,
+	builds/posix/make.shared.targets,
+	builds/posix/make.shared.variables, builds/posix/prefix.mingw,
+	builds/win32/msvc6/fb_inet_server.dsp,
+	builds/win32/msvc6/fbclient.dsp,
+	builds/win32/msvc6/fbclient_static.dsp,
+	builds/win32/msvc6/fbembed.dsp, builds/win32/msvc6/fbguard.dsp,
+	builds/win32/msvc6/fbserver.dsp, builds/win32/msvc6/remote.dsp,
+	builds/win32/msvc6/remote_classic.dsp,
+	builds/win32/msvc7/fb_inet_server.vcproj,
+	builds/win32/msvc7/fbclient.vcproj,
+	builds/win32/msvc7/fbclient_static.vcproj,
+	builds/win32/msvc7/fbembed.vcproj,
+	builds/win32/msvc7/fbserver.vcproj,
+	builds/win32/msvc7/remote.vcproj,
+	builds/win32/msvc7/remote_classic.vcproj, src/remote/caution.ico,
+	src/remote/chop.cpp, src/remote/chop_proto.h,
+	src/remote/chuser.cpp, src/remote/cntl.cpp,
+	src/remote/cntl_proto.h, src/remote/dllshell.cpp,
+	src/remote/ibconfig.cpp, src/remote/ibconfig.h,
+	src/remote/ibconfig.rc, src/remote/ibsvrhlp.h,
+	src/remote/property.cpp, src/remote/property.rc,
+	src/remote/property.rh, src/remote/propty_proto.h,
+	src/remote/server.ico, src/remote/srvr_w32.cpp,
+	src/remote/window.cpp, src/remote/window.h, src/remote/window.rc,
+	src/remote/window.rh, src/remote/window_proto.h,
+	src/remote/winmain.cpp, src/remote/wnet.cpp,
+	src/remote/wnet_proto.h:
+	
+	Move win32 specific sources in remote to remote/os/win32
+
+2003-07-15 01:16  brodsom
+
+	* firebird2/src/journal/: rebuild.e, server.e:
+	
+	Correction
+
+2003-07-15 01:14  brodsom
+
+	* firebird2/src/jrd/: divorce.cpp, ib_stdio.h:
+	
+	Remove unneeded ifdefs
+
+2003-07-15 01:13  brodsom
+
+	* firebird2/src/include/old_fb_blk.h:
+	
+	Remove unneeded ifdef
+
 2003-07-14 18:53  brodsom
 
 	* firebird2/src/: gpre/gpre.cpp, jrd/dfw.epp, misc/codes.epp,
