@@ -108,9 +108,9 @@ enum set_t {
     set_password,
     set_euc_justify,			// JPN specific option 
     set_count,
-    set_charset,
+    set_charset
 #ifdef DEV_BUILD
-    set_hex_output,
+    ,set_hex_output,
     set_explain
 #endif
 };
