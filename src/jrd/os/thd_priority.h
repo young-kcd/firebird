@@ -26,10 +26,12 @@
 
 
 #if defined(WIN32) || defined(_WIN32)
+#ifdef SUPERSERVER
 // Comment this definition to build without priority scheduler 
 //	OR:
 // Uncomment this definition to build with priority scheduler
 //#define THREAD_PSCHED 
+#endif
 #endif
 
 
