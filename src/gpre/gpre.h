@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.34 2003-08-22 10:56:51 aafemt Exp $
+ * $Id: gpre.h,v 1.35 2003-08-28 13:01:39 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1544,7 +1544,7 @@ extern "C" {
 
 #ifndef assert
 #ifdef DEV_BUILD
-#define _assert(ex)	{if (!(ex)){(void) CPR_assert (__FILE__, __LINE__);}}
+#define _assert(ex)	{if (!(ex)){CPR_assert (__FILE__, __LINE__);}}
 #define assert(ex)	_assert(ex)
 #else
 #define _assert(ex)

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.9 2003-03-03 08:36:03 brodsom Exp $
+//  $Id: sqe.cpp,v 1.10 2003-08-28 13:01:39 brodsom Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.9 2003-03-03 08:36:03 brodsom Exp $
+//	$Id: sqe.cpp,v 1.10 2003-08-28 13:01:39 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -1080,7 +1080,7 @@ RSE SQE_select(GPRE_REQ request, USHORT view_flag)
 
 		rse2->rse_map = map = (MAP) ALLOC(sizeof(struct map));
 		map->map_context = context;
-		(void) post_select_list(rse2->rse_fields, map);
+		post_select_list(rse2->rse_fields, map);
 
 		select->rse_into = rse1->rse_into;
 		if (!union_all)

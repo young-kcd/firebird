@@ -47,7 +47,7 @@ typedef USHORT UNICODE;
 #else
 #include <stdlib.h> /* prototype for abort() */
 #define ERR_assert	LD_assert
-#define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
+#define assert(ex)	{if (!(ex)){LD_assert (__FILE__, __LINE__); abort();}}
 
 // Although LD_assert is not exported in win32, it is defined with DLL_EXPORT
 // most probably it could use C++ convention (see also ld_proto.h)

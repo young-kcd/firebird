@@ -1400,7 +1400,7 @@ void port::drop_database(P_RLSE* release, PACKET* send)
 
 	if (status_vector[1]
 		&& (status_vector[1] != gds_drdb_completed_with_errs)) {
-		(void) this->send_response(send, 0, 0, status_vector);
+		this->send_response(send, 0, 0, status_vector);
 		return;
 	};
 
@@ -1693,7 +1693,7 @@ ISC_STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
  *
  *****************************************/
 	RDB rdb;
-	RTR transaction = (RTR) NULL;
+	RTR transaction = NULL;
 	USHORT in_blr_length, in_msg_type, in_msg_length, parser_version,
 		out_blr_length, out_msg_type, out_msg_length;
 	UCHAR *in_blr, *in_msg, *out_blr, *out_msg;
@@ -1837,7 +1837,7 @@ ISC_STATUS port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send)
  *	Execute a non-SELECT dynamic SQL statement.
  *
  *****************************************/
-	RTR transaction = (RTR) NULL;
+	RTR transaction = NULL;
 	RSR statement;
 	USHORT in_msg_length, out_msg_type, out_blr_length, out_msg_length;
 	UCHAR *in_msg, *out_blr, *out_msg;
@@ -2916,7 +2916,7 @@ ISC_STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
  *	Prepare a dynamic SQL statement for execution.
  *
  *****************************************/
-	RTR transaction = (RTR) NULL;
+	RTR transaction = NULL;
 	RSR statement;
 	UCHAR *buffer, local_buffer[1024];
 	ISC_STATUS status;

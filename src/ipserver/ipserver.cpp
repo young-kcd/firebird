@@ -1455,7 +1455,7 @@ static void end_statement( ICC icc)
 	}
 	else
 	{
-		ips->ips_handle = (UCHAR *) NULL;
+		ips->ips_handle = NULL;
 		send_response(icc, status_vector);
 		release_sql_request(statement);
 	}

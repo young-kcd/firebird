@@ -42,11 +42,11 @@ static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
 	cache->texttype_fn_key_length =		(FPTR_SHORT) famasc_key_length; \
 	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
 	cache->texttype_fn_compare =		(FPTR_short) famasc_compare; \
-	cache->texttype_collation_table =	(BYTE *) NULL; \
-	cache->texttype_toupper_table =		(BYTE *) NULL; \
-	cache->texttype_tolower_table =		(BYTE *) NULL; \
-	cache->texttype_compress_table =	(BYTE *) NULL; \
-	cache->texttype_expand_table =		(BYTE *) NULL; \
+	cache->texttype_collation_table =	NULL; \
+	cache->texttype_toupper_table =		NULL; \
+	cache->texttype_tolower_table =		NULL; \
+	cache->texttype_compress_table =	NULL; \
+	cache->texttype_expand_table =		NULL; \
 	cache->texttype_name =			POSIX;
 
 

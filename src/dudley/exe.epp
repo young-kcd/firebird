@@ -125,7 +125,7 @@ static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 #ifdef NOT_USED_OR_REPLACED
 static GDS__QUAD null_blob;
 #endif
-static LLS files_to_delete = (LLS) NULL;
+static LLS files_to_delete = NULL;
 static TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
 
 #define CMP_SYMBOL(sym1, sym2)		strcmp (sym1->sym_string, sym2->sym_string)
@@ -306,8 +306,8 @@ void EXE_create_database( DBB dbb)
 	ods_version = EXE_check_db_version(dbb);
 
 	if (ods_version < DB_VERSION_DDL6)
-		DDL_error_abort((ISC_STATUS*) NULL_PTR, 32, NULL, NULL, NULL, NULL, NULL);	/* msg 32: database version is too old to modify:
-																		   use GBAK first */
+		DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
+		// msg 32: database version is too old to modify: use GBAK first */
 
 	dbb->dbb_handle = (SLONG*) DB;
 	dbb->dbb_transaction = (SLONG*) gds_trans;
@@ -318,8 +318,8 @@ void EXE_create_database( DBB dbb)
 		if ((dbb->dbb_flags & DBB_log_default) ||
 			(dbb->dbb_logfiles) ||
 			(dbb->dbb_cache_file))
-DDL_error_abort((ISC_STATUS*) NULL_PTR, 32, NULL, NULL, NULL, NULL, NULL);
-		/* msg 32: database version is too old to modify: use GBAK first */
+			DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
+		// msg 32: database version is too old to modify: use GBAK first
 	}
 
 	if (dbb->dbb_files)
@@ -460,12 +460,14 @@ void EXE_drop_database( DBB dbb)
 
 	for (file = dbb->dbb_files; file; file = file->fil_next)
 		if (unlink(file->fil_name->sym_name))
-			DDL_error_abort((ISC_STATUS*) NULL_PTR, 28, file->fil_name->sym_name, NULL,
-							NULL, NULL, NULL);	/* msg 28: Could not delete file %s */
+			DDL_error_abort(NULL, 28, file->fil_name->sym_name, NULL,
+							NULL, NULL, NULL);
+			// msg 28: Could not delete file %s
 
 	if (unlink(dbb->dbb_name->sym_string))
-		DDL_error_abort((ISC_STATUS*) NULL_PTR, 28, dbb->dbb_name->sym_string, NULL, NULL,
-						NULL, NULL);	/* msg 28: Could not delete file %s */
+		DDL_error_abort(NULL, 28, dbb->dbb_name->sym_string, NULL, NULL,
+						NULL, NULL);
+		// msg 28: Could not delete file %s
 }
 
 
@@ -491,7 +493,8 @@ void EXE_execute(void)
 		return;
 
 	if (!DB)
-		DDL_error_abort((ISC_STATUS*) NULL_PTR, 33, NULL, NULL, NULL, NULL, NULL);	/* msg 33: no database specified */
+		DDL_error_abort(NULL, 33, NULL, NULL, NULL, NULL, NULL);
+		// msg 33: no database specified
 
 	for (action = DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore)) {
@@ -622,7 +625,7 @@ void EXE_execute(void)
 				break;
 
 			case act_a_shadow:
-				add_files((DBB) NULL_PTR, (FIL) action->act_object);
+				add_files(NULL, (FIL) action->act_object);
 				break;
 
 			case act_d_shadow:
@@ -783,8 +786,8 @@ void EXE_modify_database( DBB dbb)
 	ods_version = EXE_check_db_version(dbb);
 
 	if (ods_version < DB_VERSION_DDL6)
-		DDL_error_abort((ISC_STATUS*)NULL_PTR, 32, NULL, NULL, NULL, NULL, NULL);	/* msg 32: database version is too old to modify:
-																		   use GBAK first */
+		DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
+	// msg 32: database version is too old to modify: use GBAK first */
 
 /* Don't allow cache and WAL configurations for pre-ODS8 databases */
 
@@ -793,8 +796,8 @@ void EXE_modify_database( DBB dbb)
 			(dbb->dbb_logfiles) ||
 			(dbb->dbb_flags && DBB_drop_log) ||
 			(dbb->dbb_cache_file) || (dbb->dbb_flags & DBB_drop_cache))
-			DDL_error_abort((ISC_STATUS*)NULL_PTR, 32, NULL, NULL, NULL, NULL, NULL);
-		/* msg 32: database version is too old to modify: use GBAK first */
+			DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
+		// msg 32: database version is too old to modify: use GBAK first
 	}
 
 	dbb->dbb_handle = (SLONG*) DB;
@@ -811,7 +814,7 @@ void EXE_modify_database( DBB dbb)
 							   db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);	/* msg 327: error in getting write ahead log information */
 
-		log_files = (FIL) NULL;
+		log_files = NULL;
 		log = 0;
 
 		wal_info((UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
@@ -833,8 +836,9 @@ void EXE_modify_database( DBB dbb)
 
 		for (file = log_files; file; file = file->fil_next)
 			if (unlink(file->fil_name->sym_name))
-				DDL_error_abort((ISC_STATUS*) NULL_PTR, 28, file->fil_name->sym_name, NULL,
-								NULL, NULL, NULL);	/* msg 28: Could not delete file %s */
+				DDL_error_abort(NULL, 28, file->fil_name->sym_name, NULL,
+								NULL, NULL, NULL);
+				// msg 28: Could not delete file %s
 	}
 
 	if (dbb->dbb_flags & DBB_drop_cache)
@@ -852,7 +856,8 @@ void EXE_modify_database( DBB dbb)
 		/* check if log files exist */
 
 		FOR X IN RDB$LOG_FILES
-			DDL_error_abort((ISC_STATUS*) NULL_PTR, 333, NULL, NULL, NULL, NULL, NULL);	/* msg 333: Cannot modify log file specification.  Drop and redefine log files */
+			DDL_error_abort(NULL, 333, NULL, NULL, NULL, NULL, NULL);
+			// msg 333: Cannot modify log file specification.  Drop and redefine log files 
 		END_FOR;
 
 		/* add the new log files. */
@@ -2923,12 +2928,13 @@ static void get_log_names(SCHAR * db_name,
 			break;
 
 		if (not_archived && skip_delete) {
-			*start_file = (FIL) NULL;
+			*start_file = NULL;
 			return;
 		}
 
 		if (loop >= 10)
-			DDL_error_abort((ISC_STATUS*) NULL_PTR, 329, NULL, NULL, NULL, NULL, NULL);	/* msg 329: use CASCADE option to remove log files before archive is done */
+			DDL_error_abort(NULL, 329, NULL, NULL, NULL, NULL, NULL);
+			// msg 329: use CASCADE option to remove log files before archive is done
 	}
 
 	if (log_count)
@@ -4072,7 +4078,7 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 
 	length = GENERATE_acl(scl_class, (UCHAR*) buffer);
 
-	blob = create_blob(blob_id, 0, (UCHAR*) NULL_PTR);
+	blob = create_blob(blob_id, 0, NULL);
 
 	if (gds__put_segment(status_vector, GDS_REF(blob), length, buffer)) {
 		DDL_db_error(status_vector, 92, NULL, NULL, NULL, NULL, NULL);	/* msg 92: gds__put_segment failed */
@@ -4113,7 +4119,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 #ifdef DEBUG
 	gds__print_blr((UCHAR*)blr.str_start, 0, 0, 0);
 #endif
-	handle = create_blob(blob_id, 0,(UCHAR*)  NULL_PTR);
+	handle = create_blob(blob_id, 0, NULL);
 	length = blr.str_current - blr.str_start;
 
 	if (gds__put_segment(status_vector,

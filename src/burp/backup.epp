@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.34 2003-08-28 10:39:26 brodsom Exp $
+$Id: backup.epp,v 1.35 2003-08-28 12:54:23 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1268,7 +1268,7 @@ static void put_array( BURP_FLD field, BURP_REL relation, ISC_QUAD * blob_id)
 		}
 		else
 			p = slice;
-		(void) PUT_BLOCK(p, return_length);
+		PUT_BLOCK(p, return_length);
 	}
 
 	BURP_FREE(slice);
@@ -1299,7 +1299,7 @@ static void put_asciz( SCHAR attribute, TEXT * string)
 	PUT(attribute);
 	PUT(l);
 	if (l)
-		(void) PUT_BLOCK((UCHAR*) string, l);
+		PUT_BLOCK((UCHAR*) string, l);
 }
 
 
@@ -1414,9 +1414,7 @@ static void put_blob( BURP_FLD field, ISC_QUAD * blob_id, ULONG count)
 		PUT(l);
 		PUT(l >> 8);
 		if (l)
-		{
-			(void) PUT_BLOCK(buffer, l);
-		}
+			PUT_BLOCK(buffer, l);
 		--segments;
 	}
 
@@ -1536,9 +1534,7 @@ static int put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 							(USHORT) max_segment, (char*) GDS_VAL(buffer)))
 	{
 		if (l)
-		{
-			(void) PUT_BLOCK(buffer, l);
-		}
+			PUT_BLOCK(buffer, l);
 	}
 
 	if (isc_close_blob(status_vector, GDS_REF(blob)))
@@ -1853,7 +1849,7 @@ static void put_data(BURP_REL relation)
 		if (tdgbl->gbl_sw_compress)
 			compress(p, record_length);
 		else if (record_length)
-			(void) PUT_BLOCK(p, record_length);
+			PUT_BLOCK(p, record_length);
 
 		/* Look for any blobs to write */
 
@@ -2110,7 +2106,7 @@ static int put_message( SCHAR attribute, TEXT * text, ULONG length)
 	PUT(attribute);
 	PUT(l);
 	if (l)
-		(void) PUT_BLOCK((UCHAR*) text, l);
+		PUT_BLOCK((UCHAR*) text, l);
 
 	return length;
 }
@@ -2138,7 +2134,7 @@ static void put_numeric( SCHAR attribute, SLONG value)
 
 	PUT(attribute);
 	PUT(sizeof(value));
-	(void) PUT_BLOCK((UCHAR *) & vax_value, sizeof(vax_value));
+	PUT_BLOCK((UCHAR *) & vax_value, sizeof(vax_value));
 }
 
 
@@ -2167,7 +2163,7 @@ static void put_int64( SCHAR attribute, SINT64 value)
 
 	PUT(attribute);
 	PUT(sizeof(value));
-	(void) PUT_BLOCK((UCHAR *) & le_value, sizeof(le_value));
+	PUT_BLOCK((UCHAR *) & le_value, sizeof(le_value));
 }
 
 
@@ -2476,9 +2472,7 @@ static int put_source_blob(SCHAR		attribute,
 							(SCHAR*) GDS_VAL(buffer)))
 	{
 		if (l)
-		{
-			(void) PUT_BLOCK(buffer, l);
-		}
+			PUT_BLOCK(buffer, l);
 		PUT(NULL);
 	}
 
@@ -2519,7 +2513,7 @@ static int put_text( SCHAR attribute, TEXT * text, SSHORT size_len)
 	PUT(attribute);
 	PUT(l);
 	if (l)
-		(void) PUT_BLOCK((UCHAR*) text, l);
+		PUT_BLOCK((UCHAR*) text, l);
 
 	return l;
 }
@@ -2941,7 +2935,7 @@ static void write_database( TEXT * dbb_file)
 }
 
 
-static void write_exceptions(void) 
+static void write_exceptions(void)
 {
 /**************************************
  *                                                                   
@@ -2981,7 +2975,7 @@ static void write_exceptions(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_field_dimensions(void) 
+static void write_field_dimensions(void)
 {
 /**************************************
  *                                                                   
@@ -3018,7 +3012,7 @@ static void write_field_dimensions(void)
 } 
 
 
-static void write_filters(void) 
+static void write_filters(void)
 {
 /**************************************
  *                                                                   
@@ -3061,7 +3055,7 @@ static void write_filters(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_functions(void) 
+static void write_functions(void)
 {
 /**************************************
  *                                                                   
@@ -3207,7 +3201,7 @@ static void write_function_args( GDS_NAME funcptr)
 }
 
 
-static void write_generators(void) 
+static void write_generators(void)
 {
 /**************************************
  *
@@ -3252,7 +3246,7 @@ static void write_generators(void)
 } 
 
 
-static void write_global_fields(void) 
+static void write_global_fields(void)
 {
 /**************************************
  *
@@ -3447,7 +3441,7 @@ static void write_global_fields(void)
 }
 
 
-static void write_procedures(void) 
+static void write_procedures(void)
 {
 /**************************************
  *                                                                   
@@ -3537,7 +3531,7 @@ static void write_procedure_prms( GDS_NAME procptr)
 } 
 
 
-static void write_ref_constraints(void) 
+static void write_ref_constraints(void)
 {
 /**************************************
  *
@@ -3574,7 +3568,7 @@ static void write_ref_constraints(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_rel_constraints(void) 
+static void write_rel_constraints(void)
 {
 /**************************************
  *
@@ -3618,7 +3612,7 @@ static void write_rel_constraints(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_relations(void) 
+static void write_relations(void)
 {
 /**************************************
  *
@@ -3789,7 +3783,7 @@ static void write_relations(void)
 }
 
 
-static void write_shadow_files(void) 
+static void write_shadow_files(void)
 {
 /**************************************
  *
@@ -3833,7 +3827,7 @@ static void write_shadow_files(void)
         isc_release_request(req_status, &req_handle1);
 } 
 
-static void write_sql_roles(void) 
+static void write_sql_roles(void)
 {
 /**************************************
  *
@@ -3984,7 +3978,7 @@ static void write_triggers(void)
 }
 
 
-static void write_trigger_messages(void) 
+static void write_trigger_messages(void)
 {
 /**************************************
  *
@@ -4027,7 +4021,7 @@ static void write_trigger_messages(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_types(void) 
+static void write_types(void)
 {
 /**************************************
  *                                                                   
@@ -4069,7 +4063,7 @@ static void write_types(void)
 } 
 
 
-static void write_user_privileges(void) 
+static void write_user_privileges(void)
 {
 /**************************************
  *

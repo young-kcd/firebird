@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.18 2003-08-26 23:11:54 brodsom Exp $
+ * $Id: show.epp,v 1.19 2003-08-28 12:59:18 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -3406,11 +3406,11 @@ static int show_table( SCHAR * relation_name)
     
     /* Do check constraints */
 
-	(void) show_check(relation_name);
+	show_check(relation_name);
     
     /* Do triggers */
     
-	(void) show_trigger(relation_name, NO_SOURCE);
+	show_trigger(relation_name, NO_SOURCE);
     
 	if (first)
 		return (NOT_FOUND);

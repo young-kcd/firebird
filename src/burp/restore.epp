@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.37 2003-08-28 10:39:26 brodsom Exp $
+$Id: restore.epp,v 1.38 2003-08-28 12:54:22 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1724,7 +1724,7 @@ if (return_length != slice_length)
                 }
 
 	    if (lcount)
-	        (void) GET_BLOCK (p, lcount);
+	        GET_BLOCK (p, lcount);
 
 	    if (tdgbl->gbl_sw_transportable)
 	        CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
@@ -1847,7 +1847,7 @@ else
         }
 
     if (lcount)
-        (void) GET_BLOCK (p, lcount);
+        GET_BLOCK (p, lcount);
 
     if (tdgbl->gbl_sw_transportable)
         CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
@@ -1928,7 +1928,7 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_blob_data)
 	    break;
 
 	case att_blob_type:
-	    (void) get_numeric();
+	    get_numeric();
 	    break;
 
 	default:
@@ -1974,9 +1974,7 @@ for (; segments > 0; --segments )
     length = GET();
     length |= GET() << 8;
     if (length)
-	{
-	(void) GET_BLOCK (buffer, length);
-	}
+		GET_BLOCK (buffer, length);
     if (isc_put_segment (status_vector, 
 	     GDS_REF (blob), 
 	    length, 
@@ -2272,7 +2270,7 @@ STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 	    case att_coll_subtype:	/* No longer used: 93-11-15 DBS */
 					/* still present to handle V4 R&D
 					   gbak files */
-		(void) get_numeric();
+		get_numeric();
 		break;
 
 	    case att_coll_sysflag:
@@ -2567,24 +2565,22 @@ while (TRUE)
 		}
 	    p = (TEXT*) data.lstr_address;
 	    }
-    else
-	p = (TEXT*) buffer;
-    if (GET () != att_data_data)
-	BURP_error_redirect (NULL, 41, 0, 0);
+	else
+		p = (TEXT*) buffer;
+	if (GET () != att_data_data)
+		BURP_error_redirect (NULL, 41, 0, 0);
 /* msg 41 expected data attribute */
 
-    if (tdgbl->gbl_sw_compress)
-	decompress ((UCHAR*) p, l);
-    else
-	{
-	(void) GET_BLOCK ((UCHAR*) p, l);
-	}
+	if (tdgbl->gbl_sw_compress)
+		decompress ((UCHAR*) p, l);
+	else
+		GET_BLOCK ((UCHAR*) p, l);
 
-    if (old_length)
-	realign ((UCHAR *)buffer, relation);
+	if (old_length)
+		realign ((UCHAR *)buffer, relation);
 
-    if (tdgbl->gbl_sw_transportable)
-	CAN_encode_decode (relation, &data, (UCHAR *)buffer, FALSE);
+	if (tdgbl->gbl_sw_transportable)
+		CAN_encode_decode (relation, &data, (UCHAR *)buffer, FALSE);
 	
     records++;
     
@@ -4464,14 +4460,12 @@ if (isc_create_blob2 (status_vector,
 /* Allocate blob buffer is static buffer is too short */
 
 if (!length || length <= (USHORT)(sizeof (static_buffer)) )
-    buffer = static_buffer;
+	buffer = static_buffer;
 else
-    buffer = BURP_ALLOC (length);
+	buffer = BURP_ALLOC (length);
 
 if (length)
-    {
-    (void) GET_BLOCK (buffer, length);
-    }
+	GET_BLOCK (buffer, length);
 
 if (isc_put_segment (status_vector, 
 	 GDS_REF (blob), 
@@ -6302,11 +6296,11 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_blob_data)
     switch (attribute)
 	{
 	case att_blob_field_number:
-	    (void) get_numeric();
+	    get_numeric();
 	    break;
 
 	case att_blob_max_segment:
-	    (void) get_numeric();
+	    get_numeric();
 	    break;
 
 	case att_blob_number_segments:
@@ -6314,7 +6308,7 @@ while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_blob_data)
 	    break;
 
 	case att_blob_type:
-	    (void) get_numeric();
+	    get_numeric();
 	    break;
 
 	default:

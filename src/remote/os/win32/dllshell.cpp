@@ -109,7 +109,7 @@ HINSTANCE LoadDll(UCHAR * name)
 
 	hlib = LoadLibrary(name);
 
-	(void) SetErrorMode(fuErrorMode);
+	SetErrorMode(fuErrorMode);
 
 	if (!hlib) {
 		gds__log("Windows error %d while attempting to load %s",

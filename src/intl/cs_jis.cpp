@@ -40,7 +40,7 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
 	csptr->charset_space_character = (BYTE *) & space;	/* 0x20 */
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
+	csptr->charset_well_formed = NULL;
 
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_JIS_0208,
 					(FPTR_SHORT) CV_wc_to_wc, to_unicode_mapping_array, to_unicode_map);

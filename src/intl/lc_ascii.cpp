@@ -39,11 +39,11 @@
 	cache->texttype_fn_to_lower =		(FPTR_SHORT) famasc_to_lower; \
 	cache->texttype_fn_str_to_upper =	(FPTR_short) famasc_str_to_upper; \
 	cache->texttype_fn_mbtowc =		(FPTR_short) LC_DOS_nc_mbtowc; \
-	cache->texttype_collation_table =	(BYTE *) NULL; \
-	cache->texttype_toupper_table =		(BYTE *) NULL; \
-	cache->texttype_tolower_table =		(BYTE *) NULL; \
-	cache->texttype_compress_table =	(BYTE *) NULL; \
-	cache->texttype_expand_table =		(BYTE *) NULL; \
+	cache->texttype_collation_table =	NULL; \
+	cache->texttype_toupper_table =		NULL; \
+	cache->texttype_tolower_table =		NULL; \
+	cache->texttype_compress_table =	NULL; \
+	cache->texttype_expand_table =		NULL; \
 	cache->texttype_name =			(SCHAR *) POSIX;
 
 

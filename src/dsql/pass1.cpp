@@ -891,10 +891,10 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			/* null */ ;
 		else
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD = ? case */
-			(void) set_parameter_type(sub2, sub1, FALSE);
+			set_parameter_type(sub2, sub1, FALSE);
 		if (sub3)
 			/* X BETWEEN Y AND ? case */
-			(void) set_parameter_type(sub3, sub2, FALSE);
+			set_parameter_type(sub3, sub2, FALSE);
 		break;
 
 	case nod_like:
@@ -912,10 +912,10 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 			/* null */ ;
 		else
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD LIKE ? case */
-			(void) set_parameter_type(sub2, sub1, TRUE);
+			set_parameter_type(sub2, sub1, TRUE);
 		if (sub3)
 			/* X LIKE Y ESCAPE ? case */
-			(void) set_parameter_type(sub3, sub2, TRUE);
+			set_parameter_type(sub3, sub2, TRUE);
 		break;
 
 	default:
@@ -2739,7 +2739,7 @@ static void pass1_blob( DSQL_REQ request, DSQL_NOD input)
 	tdsql = GET_THREAD_DATA;
 
 
-	(void) PASS1_make_context(request, input->nod_arg[e_blb_relation]);
+	PASS1_make_context(request, input->nod_arg[e_blb_relation]);
 	field = pass1_field(request, input->nod_arg[e_blb_field], 0);
 	if (field->nod_desc.dsc_dtype != dtype_blob)
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 206,
@@ -4279,8 +4279,8 @@ static DSQL_NOD pass1_insert( DSQL_REQ request, DSQL_NOD input)
                 // At this time, "fields" has been replaced by the processed list in
                 // the same variable, so we refer again to input->nod_arg [e_ins_fields].
 
-                field_error (bad_rel ? (TEXT *) bad_rel->rel_name : (TEXT *) NULL_PTR,
-                             bad_fld ? (TEXT *) bad_fld->fld_name : (TEXT *) NULL_PTR,
+                field_error (bad_rel ? (TEXT *) bad_rel->rel_name : NULL,
+                             bad_fld ? (TEXT *) bad_fld->fld_name : NULL,
                              input->nod_arg [e_ins_fields]->nod_arg [ptr - fields->nod_arg]);
             }
         }

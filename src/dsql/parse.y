@@ -4989,7 +4989,7 @@ if (tok_class & CHR_LETTER)
 
     CHECK_BOUND(p);
     *p = 0;
-    sym = HSHD_lookup (NULL_PTR, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+    sym = HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
     if (sym)
 	{
 	/* 13 June 2003. Nickolay Samofatov
@@ -5064,7 +5064,7 @@ if (tok_class & CHR_LETTER)
 
 if (last_token + 1 < end)
     {
-    sym = HSHD_lookup (NULL_PTR, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
+    sym = HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
     if (sym)
 	{
 	++ptr;

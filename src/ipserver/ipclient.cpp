@@ -1222,7 +1222,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 
 	/* send request and wait for response */
 
-	(void) check_response(icc, user_status);
+	check_response(icc, user_status);
 
 	/* take care of transactions */
 
@@ -1306,7 +1306,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 
 	/* send request and wait for response */
 
-	(void) check_response(icc, user_status);
+	check_response(icc, user_status);
 
 	/* take care of transactions */
 
@@ -1383,7 +1383,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
 
 	/* send request and get response */
 
-	(void) check_response(icc, user_status);
+	check_response(icc, user_status);
 
 	/* take care of transacion handles */
 
@@ -1474,7 +1474,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 
 	/* send request and get answer */
 
-	(void) check_response(icc, user_status);
+	check_response(icc, user_status);
 
 	/* handle transactions */
 
@@ -1603,7 +1603,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 
 	/* send request and get response */
 
-	(void) check_response(icc, user_status);
+	check_response(icc, user_status);
 
 	/* for packed records, extract the first */
 

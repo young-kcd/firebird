@@ -36,7 +36,7 @@ static void common_8bit_init(CHARSET csptr, SSHORT id, const ASCII *name, const 
 	csptr->charset_max_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (BYTE *) " ";
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
+	csptr->charset_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
 					(FPTR_SHORT) CV_nc_to_unicode, to_unicode_tbl, NULL);
 	CV_convert_init(&csptr->charset_from_unicode, id, CS_UNICODE_UCS2,

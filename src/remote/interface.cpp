@@ -281,7 +281,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	struct trdb		thd_context;
 	struct trdb*	trdb;
 
-	(void) memset((void *) node_name, 0, (size_t) MAXPATHLEN);
+	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
 	ISC_STATUS* v = user_status;
 
@@ -736,7 +736,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 		compile->p_cmpl_blr.cstr_length = blr_length;
 		compile->p_cmpl_blr.cstr_address = new_blr;
 
-		(void) send_and_receive(rdb, packet, user_status);
+		send_and_receive(rdb, packet, user_status);
 		if (new_blr != blr) {
 			ALLR_free(new_blr);
 		}
@@ -844,7 +844,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 			p_blob->p_blob_bpb.cstr_address = bpb;
 		}
 
-		(void) send_and_receive(rdb, packet, user_status);
+		send_and_receive(rdb, packet, user_status);
 		p_blob->p_blob_bpb.cstr_length = 0;
 		p_blob->p_blob_bpb.cstr_address = NULL;
 
@@ -899,7 +899,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 	TEXT node_name[MAXPATHLEN];
 	struct trdb thd_context, *trdb;
 
-	(void) memset((void *) node_name, 0, (size_t) MAXPATHLEN);
+	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
 	v = user_status;
 	*v++ = gds_arg_gds;
@@ -1161,7 +1161,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 
 	try
 	{
-		(void) release_object(rdb, op_detach, rdb->rdb_id);
+		release_object(rdb, op_detach, rdb->rdb_id);
 
 		/* If something other than a network error occurred, just return.  Otherwise
 		   we need to free up the associated structures, close the socket and
@@ -1533,7 +1533,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			check_response(rdb, packet);
 		else {
 			port->port_statement->rsr_message->msg_address = NULL;
-			(void) receive_response(rdb, packet);
+			receive_response(rdb, packet);
 		}
 
 		if (user_status[1])
@@ -1756,7 +1756,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 			check_response(rdb, packet);
 		else {
 			message->msg_address = NULL;
-			(void) receive_response(rdb, packet);
+			receive_response(rdb, packet);
 		}
 
 		if (user_status[1])
@@ -1996,7 +1996,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 
 				/* Set up status vector and RESTORE_THREAD_DATA in common return_success */
 
-				(void) return_success(rdb);
+				return_success(rdb);
 				return 100;
 			}
 
@@ -2981,7 +2981,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 
 		if ((port->port_flags & PORT_rpc) || !(blob->rbl_flags & RBL_create))
 		{
-			(void) send_blob(user_status, blob, segment_length, segment);
+			send_blob(user_status, blob, segment_length, segment);
 			RESTORE_THREAD_DATA;
 			return user_status[1];
 		}
@@ -3001,7 +3001,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 				}
 			}
 			if ((ULONG) segment_length + 2 > blob->rbl_buffer_length) {
-				(void) send_blob(user_status, blob, segment_length, segment);
+				send_blob(user_status, blob, segment_length, segment);
 				RESTORE_THREAD_DATA;
 				return user_status[1];
 			}
@@ -3106,7 +3106,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 		response->p_slr_slice.lstr_address = slice;
 		response->p_slr_slice.lstr_length = slice_length;
 
-		(void) send_and_receive(rdb, packet, user_status);
+		send_and_receive(rdb, packet, user_status);
 		if (new_sdl != sdl) {
 			gds__free(new_sdl);
 		}
@@ -5502,7 +5502,7 @@ static void disconnect( PORT port)
 		packet = &rdb->rdb_packet;
 		if (port->port_type != port_pipe) {
 			packet->p_operation = op_disconnect;
-			(void) port->send(packet);
+			port->send(packet);
 		}
 		REMOTE_free_packet(port, packet);
 	}
@@ -5748,7 +5748,7 @@ static ISC_STATUS fetch_blob(
 	message->msg_address = NULL;
 
 	if (packet->p_operation == op_fetch_response)
-		(void) receive_response(rdb, packet);
+		receive_response(rdb, packet);
 	else {
 		check_response(rdb, packet);
 		return user_status[1];
@@ -7141,7 +7141,7 @@ static void send_cancel_event(RVNT event)
 
 	if (send_packet(rdb->rdb_port, packet, rdb->rdb_status_vector))
 	{
-		(void) receive_response(rdb, packet);
+		receive_response(rdb, packet);
 	}
 
 /*

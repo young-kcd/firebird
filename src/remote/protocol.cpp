@@ -43,7 +43,7 @@
 #ifdef DEBUG_XDR_MEMORY
 #define P_TRUE			xdr_debug_packet (xdrs, XDR_FREE, p)
 #define P_FALSE			!xdr_debug_packet (xdrs, XDR_FREE, p)
-#define DEBUG_XDR_PACKET	(void) xdr_debug_packet (xdrs, XDR_DECODE, p)
+#define DEBUG_XDR_PACKET	xdr_debug_packet (xdrs, XDR_DECODE, p)
 #define DEBUG_XDR_ALLOC(xdrvar, addr, len) \
 			xdr_debug_memory (xdrs, XDR_DECODE, xdrvar, addr, (ULONG) len)
 #define DEBUG_XDR_FREE(xdrvar, addr, len) \

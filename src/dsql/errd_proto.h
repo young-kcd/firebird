@@ -72,7 +72,7 @@ void ERRD_punt(void);
 	}
 
 
-#define _assert(ex)	{if (!(ex)){(void) ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__);}}
+#define _assert(ex)	{if (!(ex)){ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__);}}
 #undef assert
 #define assert(ex)	_assert(ex)
 #define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__)

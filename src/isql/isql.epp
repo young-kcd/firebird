@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.37 2003-08-26 23:11:54 brodsom Exp $
+  $Id: isql.epp,v 1.38 2003-08-28 12:59:18 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -449,7 +449,7 @@ SSHORT ISQL_main(int argc, char *argv[])
 		if (*Db_name) {
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
-			(void) newdb(Db_name, User, Password, Numbufs, Role, FALSE);
+			newdb(Db_name, User, Password, Numbufs, Role, FALSE);
 
 			Exit_value = EXTRACT_ddl(SQL_objects, tabname);
 
@@ -464,7 +464,7 @@ SSHORT ISQL_main(int argc, char *argv[])
             Interactive = FALSE;
 			/* Let's use user and password if provided.
 			   This should solve bug #112263 FSG 28.Jan.2001 */
-			(void) newdb(Db_name, User, Password, Numbufs, Role, FALSE);
+			newdb(Db_name, User, Password, Numbufs, Role, FALSE);
 
 			Exit_value = EXTRACT_ddl(ALL_objects, tabname);
 
@@ -2021,13 +2021,13 @@ static SSHORT blobedit( TEXT * action, TEXT ** cmd)
    user operation, put it on the M__trans handle */
 
 	if (!strcmp(action, "BLOBVIEW"))
-		(void) BLOB_edit(&blobid, DB, M__trans, "blob");
+		BLOB_edit(&blobid, DB, M__trans, "blob");
 	else if ((!strcmp(action, "BLOBDUMP")) && (*cmd[2])) {
 		/* If this is a blobdump, make sure there is a file name */
 		/* We can't be sure if the BLOB is TEXT or BINARY data,
 		 * as we're not sure, we'll dump it in BINARY mode
 		 */
-		(void) BLOB_dump(&blobid, DB, M__trans, cmd[2]);
+		BLOB_dump(&blobid, DB, M__trans, cmd[2]);
 	}
 	else
 		return ERR;
@@ -2235,10 +2235,10 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 		gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 						errbuf, source, NULL, NULL, NULL, NULL);
 		STDERROUT(errbuf, 1);
-		(void) ib_fclose(Out);
+		ib_fclose(Out);
 	}
 	else {
-		(void) ib_fclose(Out);
+		ib_fclose(Out);
 
 		/* easy to make a copy in another database */
 
@@ -2254,7 +2254,7 @@ static SSHORT copy_table( TEXT * source, TEXT * destination, TEXT * otherdb)
 		}
 	}
 
-	(void) unlink(ftmp);
+	unlink(ftmp);
 	Out = holdout;
 
 	return (SKIP);
@@ -2570,11 +2570,11 @@ static void do_isql(void)
 	// the file containing the script.
 	//
 	
-	(void) newdb(Db_name, User, Password, Numbufs, Role, TRUE);
+	newdb(Db_name, User, Password, Numbufs, Role, TRUE);
 
 	// If that failed or no Dbname was specified
 
-	(void) ISQL_dbcheck();
+	ISQL_dbcheck();
 
 	// Set up SQLDA for SELECTs, allow up to 20 fields to be selected.
 	//  If we subsequently encounter a query with more columns, we
@@ -2630,7 +2630,7 @@ static void do_isql(void)
 
 		switch (ret) {
 		case CONT:
-			(void) process_statement(statement, sqldap);
+			process_statement(statement, sqldap);
 			Continuation = FALSE;
 			break;
 
@@ -2902,7 +2902,7 @@ static int end_trans(void)
 							infobuf, NULL, NULL, NULL, NULL, NULL);
             readNextInputLine(infobuf);
             //			ISQL_prompt(infobuf);
-            //			(void) ib_fgets(buffer, BUFFER_LENGTH80, ib_stdin);
+            //			ib_fgets(buffer, BUFFER_LENGTH80, ib_stdin);
 			if (isyesno(lastInputLine)) {	/* check for Yes answer */
 				gds__msg_format(NULL, ISQL_MSG_FAC, COMMIT_MSG, sizeof(infobuf),
 								infobuf, NULL, NULL, NULL, NULL, NULL);

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.65 2003-08-25 07:26:36 eku Exp $
+$Id: lock.cpp,v 1.66 2003-08-28 12:58:07 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -149,12 +149,12 @@ static ULONG debug_acquire_count = 0;
 #endif
 
 #ifdef DEBUG_TRACE
-#define LOCK_TRACE(x)	{ time_t t; (void) time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ;}
+#define LOCK_TRACE(x)	{ time_t t; time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ;}
 #endif
 
 #ifdef DEBUG
 SSHORT LOCK_debug_level = 0;
-#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; (void) time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ; }
+#define DEBUG_MSG(l,x)	if ((l) <= LOCK_debug_level) { time_t t; time (&t); ib_printf ("%s", ctime(&t) ); ib_printf x ; ib_fflush (ib_stdout); gds__log x ; }
 #endif
 
 #ifndef DEBUG_MSG
@@ -2260,7 +2260,7 @@ static USHORT create_owner(ISC_STATUS*	status_vector,
 	insert_tail(&LOCK_header->lhb_owners, &owner->own_lhb_owners);
 
 #ifndef SUPERSERVER
-	(void) probe_owners(REL_PTR(owner));
+	probe_owners(REL_PTR(owner));
 #endif
 
 	*owner_handle = REL_PTR(owner);
@@ -2996,7 +2996,7 @@ static PTR grant_or_que( LRQ request, LBL lock, SSHORT lck_wait)
 
 	if (lck_wait)
 	{
-		(void) wait_for_request(request, lck_wait, NULL);
+		wait_for_request(request, lck_wait, NULL);
 
 		/* For performance reasons, we're going to look at the 
 		 * request's status without re-acquiring the lock table.

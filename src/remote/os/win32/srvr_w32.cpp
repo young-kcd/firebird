@@ -338,7 +338,7 @@ ULONG SRVR_xnet_start_thread(ULONG client_pid)
 		else
 			return FALSE;
 		xnet_server_set = TRUE;
-		(void) set_server(xnet_header_port, flags);
+		set_server(xnet_header_port, flags);
 	}
 
 /* start the thread for this client */

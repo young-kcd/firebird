@@ -121,8 +121,7 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS * status,
 // SD: I do not complain but in ibase.h sdl is a plain char in functions'
 //     declaration while it is UCHAR in the functions' implementations. Damned legacy!
 				  sdl_length, reinterpret_cast<char*>(sdl),
-				  0, (ISC_LONG*) NULL_PTR,
-				  *slice_length, array, slice_length);
+				  0, NULL, *slice_length, array, slice_length);
 
 	if (sdl != sdl_buffer)
 		gds__free((SLONG *) sdl);
@@ -187,7 +186,7 @@ ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS * status,
  **************************************/
 
 	return lookup_desc(status, db_handle, trans_handle,
-					   field_name, relation_name, desc, (SCHAR*) NULL_PTR);
+					   field_name, relation_name, desc, NULL);
 }
 
 
@@ -218,7 +217,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS * status,
 
 	isc_put_slice(status, db_handle, trans_handle, array_id,
 				  sdl_length, reinterpret_cast<char*>(sdl),
-				  0, (ISC_LONG*) NULL_PTR, *slice_length, array);
+				  0, NULL, *slice_length, array);
 
 	if (sdl != sdl_buffer)
 		gds__free((SLONG *) sdl);

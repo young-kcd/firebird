@@ -308,7 +308,7 @@ static void decompile_blr_literal(SCHAR * string)
 		break;
 
 	default:
-		gds__msg_format(NULL_PTR, DDL_MSG_FAC, 250, sizeof(buffer), buffer,
+		gds__msg_format(NULL, DDL_MSG_FAC, 250, sizeof(buffer), buffer,
 						NULL, NULL, NULL, NULL, NULL);
 		/* msg 250: **** unable to decompile missing value *** */
 	}
@@ -1903,7 +1903,7 @@ static void put_comment(USHORT number)
  **************************************/
 	TEXT message[256];
 
-	gds__msg_format(NULL_PTR, DDL_MSG_FAC, number, sizeof(message), message,
+	gds__msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
 					NULL, NULL, NULL, NULL, NULL);
 	ib_fprintf(output_file, "%s\n\n", message);
 }
@@ -1925,7 +1925,7 @@ static void put_error(USHORT number, TEXT * arg1)
  **************************************/
 	TEXT message[256];
 
-	gds__msg_format(NULL_PTR, DDL_MSG_FAC, number, sizeof(message), message,
+	gds__msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
 					arg1, NULL, NULL, NULL, NULL);
 	ib_fprintf(output_file, "%s\n\n", message);
 	ib_printf("%s\n", message);

@@ -152,7 +152,7 @@ UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 
 	tdgbl = GET_THREAD_DATA;
 
-	(void) MVOL_write(rec_end, io_cnt, io_ptr);
+	MVOL_write(rec_end, io_cnt, io_ptr);
 	FLUSH(tdgbl->file_desc);
 	if (strcmp(tdgbl->mvol_old_file, "stdout") != 0)
 	{
@@ -203,7 +203,7 @@ void MVOL_init_read(UCHAR*	database_name,
 	tdgbl->mvol_volume_count = 1;
 	tdgbl->mvol_empty_file = TRUE;
 
-	if (file_name != (UCHAR *) NULL)
+	if (file_name != NULL)
 	{
 		strncpy(tdgbl->mvol_old_file, (char*) file_name, MAX_FILE_NAME_LENGTH);
 		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
@@ -254,7 +254,7 @@ void MVOL_init_write(UCHAR*		database_name,
 	tdgbl->mvol_volume_count = 1;
 	tdgbl->mvol_empty_file = TRUE;
 
-	if (file_name != (UCHAR *) NULL)
+	if (file_name != NULL)
 	{
 		strncpy(tdgbl->mvol_old_file, (char*)file_name, MAX_FILE_NAME_LENGTH);
 		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
@@ -426,7 +426,7 @@ UCHAR* MVOL_read_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 
 		/* Copy data from the IO buffer */
 
-		(void) memcpy(ptr, tdgbl->io_ptr, n);
+		memcpy(ptr, tdgbl->io_ptr, n);
 		ptr += n;
 
 		/* Skip ahead in current buffer */
@@ -458,7 +458,7 @@ void MVOL_skip_block( TGBL tdgbl, ULONG count)
 		/* If buffer empty, reload it */
 		if (tdgbl->io_cnt <= 0)
 		{
-			(void) MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
+			MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 
 			/* One byte was "read" by MVOL_read */
 			count--;
@@ -757,7 +757,7 @@ UCHAR *MVOL_write_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 		/* If buffer full, dump it */
 		if (tdgbl->io_cnt <= 0)
 		{
-			(void) MVOL_write(*ptr++, &tdgbl->io_cnt, &tdgbl->io_ptr);
+			MVOL_write(*ptr++, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
 			/* One byte was written by MVOL_write */
 			count--;
@@ -767,7 +767,7 @@ UCHAR *MVOL_write_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 
 		/* Copy data to the IO buffer */
 
-		(void) memcpy(tdgbl->io_ptr, ptr, n);
+		memcpy(tdgbl->io_ptr, ptr, n);
 		ptr += n;
 
 		/* Skip ahead in current buffer */
@@ -1044,7 +1044,7 @@ static void prompt_for_name(SCHAR* name, int length)
 			ib_putc('\001', term_out);
 		}
 		ib_fflush(term_out);
-		if (ib_fgets(name, length, term_in) == (SCHAR*) NULL)
+		if (ib_fgets(name, length, term_in) == NULL)
 		{
 			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
 			/* \n\nERROR: Backup incomplete\n */
@@ -1393,7 +1393,7 @@ bool MVOL_split_hdr_write(void)
 		return false;
 	}
 
-	seconds = time((time_t *) NULL);
+	seconds = time(NULL);
 
 	sprintf(buffer, "%s%.24s      , file No. %4d of %4d, %-27.27s",
 			HDR_SPLIT_TAG,

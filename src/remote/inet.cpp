@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.71 2003-07-15 02:43:16 brodsom Exp $
+$Id: inet.cpp,v 1.72 2003-08-28 12:56:15 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -274,7 +274,7 @@ static ULONG inet_debug_timer(void)
 	return (tv.tv_sec*1000 + tv.tv_usec - INET_start_time);
 #else
 	struct timeb now;
-	(void) ftime(&now);
+	ftime(&now);
 	return (now.time * 1000 + now.millitm - INET_start_time);
 #endif /* HAVE_GETTIMEOFDAY */
 }
@@ -1409,7 +1409,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 					setregid(passwd->pw_gid, passwd->pw_gid);
 				}
 				if (!setreuid(passwd->pw_uid, passwd->pw_uid)) {
-					(void) chdir(passwd->pw_dir);
+					chdir(passwd->pw_dir);
 				}
 			}
 		}
@@ -2773,12 +2773,10 @@ static int select_wait( PORT main_port, SLCT * selct)
 
 #ifdef WIN_NT
 			selct->slct_count = select(FD_SETSIZE, &selct->slct_fdset,
-									   (fd_set *) NULL, (fd_set *) NULL,
-									   &timeout);
+									   NULL, NULL, &timeout);
 #else
 			selct->slct_count = select(selct->slct_width, &selct->slct_fdset,
-									   (fd_set *) NULL, (fd_set *) NULL,
-									   &timeout);
+									   NULL, NULL, &timeout);
 #endif
 			if (selct->slct_count != -1)
 			{
@@ -3633,12 +3631,11 @@ static int packet_receive(
 			for (;;) {
 #if (defined WIN_NT)
 				slct_count = select(FD_SETSIZE, &slct_fdset,
-									(fd_set *) NULL, (fd_set *) NULL,
-									time_ptr);
+									NULL, NULL, time_ptr);
 #else
 				slct_count =
 					select((SOCKET) port->port_handle + 1, &slct_fdset,
-						   (fd_set *) NULL, (fd_set *) NULL, time_ptr);
+						   NULL, NULL, time_ptr);
 #endif
 
 				// restore original timeout value FSG 3 MAY 2001
