@@ -37,6 +37,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
+#include "../jrd/btr.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
