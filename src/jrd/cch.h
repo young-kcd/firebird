@@ -99,7 +99,6 @@ class BufferDesc : public pool_alloc<type_bdb>
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	BlockingThread*	bdb_blocked;		/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
-	//ULONG		bdb_sequence;
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
