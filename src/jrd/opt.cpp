@@ -77,6 +77,7 @@
 
 
 static BOOLEAN augment_stack(JRD_NOD, LLS *);
+static SLONG calculate_priority_level(OPT, IDX *);
 static void check_indices(csb_repeat *);
 static BOOLEAN check_relationship(OPT, USHORT, USHORT);
 static void check_sorts(RSE);
@@ -192,6 +193,7 @@ static int opt_debug_flag = DEBUG_NONE;
 #define CACHE_PAGES_PER_STREAM	15
 #define SELECTIVITY_THRESHOLD_FACTOR	10
 #define OR_SELECTIVITY_THRESHOLD_FACTOR	2000
+#define LOWEST_PRIORITY_LEVEL 0
 
 #define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
 #define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
@@ -1085,6 +1087,62 @@ static BOOLEAN augment_stack(JRD_NOD node, LLS * stack)
 }
 
 
+static SLONG calculate_priority_level(OPT opt, IDX * idx)
+{
+/**************************************
+ *
+ *	c a l c u l a t e _ p r i o r i t y _ l e v e l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return an calculated value based on
+ *	how nodes where matched on the index.
+ *	Before calling this function the
+ *	match_index function must be called first!
+ *         
+ **************************************/
+	register Opt::opt_repeat *idx_tail, *idx_end;
+	USHORT idx_field_count, idx_eql_count;
+	JRD_NOD node;
+
+	if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+
+		/* Count how many fields matches */
+		idx_field_count = 0;
+		idx_tail = opt->opt_rpt;
+		idx_end = idx_tail + idx->idx_count;
+		for (;idx_tail < idx_end && 
+			 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
+			idx_field_count++;
+		}
+
+		/* Count the maximum equals that matches at the begin */
+		idx_eql_count = 0;
+		idx_tail = opt->opt_rpt;
+		idx_end = idx_tail + idx->idx_count;
+		for (;idx_tail < idx_end && 
+			 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
+			node = idx_tail->opt_match;
+			if (node->nod_type == nod_eql) {
+				idx_eql_count++;
+			}
+			else {
+				break;
+			}
+		}
+
+		/* Calculate our priority level */
+		return ((idx_eql_count * MAX_IDX * MAX_IDX) + 
+			(idx_field_count * MAX_IDX) + (idx->idx_count));
+
+	}
+	else {
+		return LOWEST_PRIORITY_LEVEL;
+	}
+}
+
+
 static void check_indices(csb_repeat * csb_tail)
 {
 /**************************************
@@ -1321,13 +1379,15 @@ static void class_mask(USHORT count, JRD_NOD * class_, ULONG * mask)
 	SLONG i;
 
 #ifdef DEV_BUILD
-	if (*class_)
+	if (*class_) {
 		DEV_BLKCHK(*class_, type_nod);
+	}
 #endif
 
-	if (count > MAX_CONJUNCTS)
+	if (count > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
-	/* Msg442: size of optimizer block exceeded */
+		/* Msg442: size of optimizer block exceeded */
+	}
 
 	for (i = 0; i < OPT_BITS; i++)
 		mask[i] = 0;
@@ -2786,11 +2846,13 @@ static void find_rsbs(RSB rsb, LLS * stream_list, LLS * rsb_list)
 #ifdef DEV_BUILD
 	DEV_BLKCHK(rsb, type_rsb);
 	DEV_BLKCHK(*stream_list, type_lls);
-	if (rsb_list)
+	if (rsb_list) {
 		DEV_BLKCHK(*rsb_list, type_lls);
+	}
 #endif
-	if (!rsb)
+	if (!rsb) {
 		return;
+	}
 	switch (rsb->rsb_type) {
 	case rsb_union:
 	case rsb_aggregate:
@@ -2854,10 +2916,12 @@ static void form_rivers(TDBB tdbb,
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*river_stack, type_lls);
-	if (sort_clause)
+	if (sort_clause) {
 		DEV_BLKCHK(*sort_clause, type_nod);
-	if (project_clause)
+	}
+	if (project_clause) {
 		DEV_BLKCHK(*project_clause, type_nod);
+	}
 	DEV_BLKCHK(plan_clause, type_nod);
 	temp[0] = 0;
 	count = plan_clause->nod_count;
@@ -2919,10 +2983,12 @@ static BOOLEAN form_river(TDBB tdbb,
 	Opt::opt_repeat * tail, *opt_end;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*river_stack, type_lls);
-	if (sort_clause)
+	if (sort_clause) {
 		DEV_BLKCHK(*sort_clause, type_nod);
-	if (project_clause)
+	}
+	if (project_clause) {
 		DEV_BLKCHK(*project_clause, type_nod);
+	}
 	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 	csb = opt->opt_csb;
@@ -3667,19 +3733,21 @@ static RSB gen_retrieval(TDBB tdbb,
 	JRD_NOD node, opt_boolean, inversion;
 	SSHORT i, j, count, last_idx, idx_walk_count;
 	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
-	USHORT idx_field_count, idx_eql_count;
 	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
 	csb_repeat *csb_tail;
 	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
 #ifdef DEV_BUILD
 	DEV_BLKCHK(opt, type_opt);
-	if (sort_ptr)
+	if (sort_ptr) {
 		DEV_BLKCHK(*sort_ptr, type_nod);
-	if (project_ptr)
+	}
+	if (project_ptr) {
 		DEV_BLKCHK(*project_ptr, type_nod);
-	if (return_boolean)
+	}
+	if (return_boolean) {
 		DEV_BLKCHK(*return_boolean, type_nod);
+	}
 #endif
 /* since a full outer join is a special case for us, as we have 2 outer
  * streams, recoginze this condition and set the full flag, also reset the
@@ -3748,7 +3816,7 @@ static RSB gen_retrieval(TDBB tdbb,
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count)) {
 
 			idx_csb[i] = idx;
-			idx_priority_level[i] = 0;
+			idx_priority_level[i] = LOWEST_PRIORITY_LEVEL;
 			/* skip this part if the index wasn't specified for indexed 
 			   retrieval (still need to look for navigational retrieval) */
 			if ((idx->idx_runtime_flags & idx_plan_dont_use) &&
@@ -3814,36 +3882,8 @@ static RSB gen_retrieval(TDBB tdbb,
 
 			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
 
-				/* Count how many fields matches */
-				idx_field_count = 0;
-				idx_tail = opt->opt_rpt;
-				idx_end = idx_tail + idx->idx_count;
-				for (;idx_tail < idx_end && (idx_tail->opt_lower || 
-					idx_tail->opt_upper); idx_tail++) {
-					idx_field_count++;
-					/*max_field_count = MAX(max_field_count, idx_field_count[i]);*/
-				}
-
-				/* Count the maximum equals that matches at the begin */
-				idx_eql_count = 0;
-				idx_tail = opt->opt_rpt;
-				idx_end = idx_tail + idx->idx_count;
-				for (;idx_tail < idx_end && (idx_tail->opt_lower || 
-					idx_tail->opt_upper); idx_tail++) {
-					node = idx_tail->opt_match;
-					if (node->nod_type == nod_eql) {
-						idx_eql_count++;
-					}
-					else {
-						break;
-					}
-				}
-
-				/* Calculate our priority level */
-				idx_priority_level[i] =
-					(idx_eql_count * MAX_IDX * MAX_IDX) + 
-					(idx_field_count * MAX_IDX) + (idx->idx_count);
-
+				/* Calculate the priority level for this index */
+				idx_priority_level[i] = calculate_priority_level(opt,idx);
 			}
 
 		}
@@ -4942,12 +4982,13 @@ static JRD_NOD make_inversion(TDBB tdbb,
  *
  **************************************/
 	JRD_REL relation;
-	IDX *idx;
+	IDX *idx, *idx_walk[MAX_INDICES], *idx_csb[MAX_INDICES];
+	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
 	JRD_NOD inversion, inversion2, node;
-	SSHORT i;
+	SSHORT i, j, last_idx, idx_walk_count;
 	csb_repeat *csb_tail;
-	float selectivity;
-	BOOLEAN accept, used_in_compound;
+	float compound_selectivity;
+	BOOLEAN accept, used_in_compound, accept_starts, accept_missing;
 
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
@@ -4982,52 +5023,110 @@ static JRD_NOD make_inversion(TDBB tdbb,
 
 	
 	/* AB: If the boolean is a part of an earlier created index 
-	   retrieval check with the selectivity if it's really interresting to use. */
-	accept = TRUE;
+	   retrieval check with the compound_selectivity if it's 
+	   really interresting to use. */
+	accept_starts = TRUE;
+	accept_missing = TRUE;
 	used_in_compound = FALSE;
-	selectivity = 1; /* Real maximum selectivity possible is 1 */
+	compound_selectivity = 1; /* Real maximum selectivity possible is 1 */
 	idx = csb_tail->csb_idx;
 	if (opt->opt_count) {
 		for (i = 0; i < csb_tail->csb_indices; i++) {
+
+			idx_csb[i] = idx;
+			idx_priority_level[i] = 0;
+
+			clear_bounds(opt, idx);
+			if (match_index(tdbb, opt, stream, boolean, idx) &&
+				!(idx->idx_runtime_flags & idx_plan_dont_use)) {
+				/* Calculate the priority level of this index */
+				idx_priority_level[i] = calculate_priority_level(opt, idx);
+			}
+
+			/* If the index was already used in an AND node check
+			   if this node is also present in this index */
 			if (idx->idx_runtime_flags & idx_used_with_and) {
-				clear_bounds(opt, idx);
 				if ((match_index(tdbb, opt, stream, boolean, idx)) &&
-					(idx->idx_selectivity < selectivity)) {
-					selectivity = idx->idx_selectivity;
+					(idx->idx_selectivity < compound_selectivity)) {
+					compound_selectivity = idx->idx_selectivity;
 					used_in_compound = TRUE;
 				}
 			}
+
+			/* Because indices are already sort based on their selectivity
+			   it's not needed to more then 1 index for a node */
+			if ((boolean->nod_type == nod_starts) && accept_starts) {
+				compose(&inversion,
+					node = make_starts(tdbb, opt, relation, boolean, stream, idx),
+					nod_bit_and);
+				if (node) {
+					accept_starts = FALSE;
+				}
+			}
+
+			if ((boolean->nod_type == nod_missing) && accept_missing) {
+				compose(&inversion,
+					node = make_missing(tdbb, opt, relation, boolean, stream, idx),
+					nod_bit_and);
+				if (node) {
+					accept_missing = FALSE;
+				}
+			}
+
 			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 		}
 	}
 
+	/* Sort indices based on the priority level into idx_walk */
+	idx_walk_count = 0;
+	float selectivity = 1; /* Real maximum selectivity possible is 1 */
+	for (i = 0; i < csb_tail->csb_indices; i++) {
+		last_idx = -1;
+		last_priority_level = 0;
+		for (j = csb_tail->csb_indices - 1; j >= 0; j--) {
+			if (!(idx_priority_level[j] == 0) && 
+				(idx_priority_level[j] >= last_priority_level)) {
+				last_priority_level = idx_priority_level[j];
+				last_idx = j;
+			}
+		}
+		if (last_idx >= 0) {
+			/* dimitr: Empirically, it's better to use less indices with very good selectivity
+					   than using all available ones. Here we're deciding how many indices we
+					   should use. Since all indices are already ordered by their selectivity,
+					   it becomes a trivial task. But note that indices with zero (unknown)
+					   selectivity are always used, because we don't have a clue how useful
+					   they are in fact, so we should be optimistic in this case. */
+			IDX *idx = idx_csb[last_idx];
+			bool should_be_used = true;
+			if (idx->idx_selectivity && !(csb_tail->csb_plan)) {
+				if (selectivity * SELECTIVITY_THRESHOLD_FACTOR < idx->idx_selectivity) {
+					should_be_used = false;
+				}
+				selectivity = idx->idx_selectivity;
+			}
+			idx_priority_level[last_idx] = 0; /* Mark as used by setting priority_level to 0 */
+			if (should_be_used) {
+				idx_walk[idx_walk_count] = idx_csb[last_idx];
+				idx_walk_count++;
+			}
+		}
+	}
+
+	accept = TRUE;
 	idx = csb_tail->csb_idx;
 	inversion = NULL;
 	if (opt->opt_count) {
-		for (i = 0; i < csb_tail->csb_indices; i++) {
+		for (i = 0; i < idx_walk_count; i++) {
 
-			/* AB: If we are not using a PLAN or could make an index don't 
-			   walk further through the indices */
-			if (!accept && !csb_tail->csb_plan) {
-				break;
-			}
-
-			clear_bounds(opt, idx);
-			/* skip this part if the index wasn't specified for indexed 
-			   retrieval (still need to look for navigational retrieval) */
+			idx = idx_walk[i];
 			if (idx->idx_runtime_flags & idx_plan_dont_use) {
-				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 				continue;
 			}
 
-			/* AB: We accept only 1 index for a boolean. This must be enough
-			   because the indices are sort based on selectivity.
-			   We based our factor 2000 on little experience, when our boolean 
-			   is used in a compound index (that is an AND boolean). It's only 
-			   interesting to use it if it's better as the compound index
-			   selectivity * factor */
+			clear_bounds(opt, idx);
 			if (((accept || used_in_compound) && 
-				 (idx->idx_selectivity < selectivity * OR_SELECTIVITY_THRESHOLD_FACTOR)) ||
+				 (idx->idx_selectivity < compound_selectivity * OR_SELECTIVITY_THRESHOLD_FACTOR)) ||
 				(csb_tail->csb_plan)) {
 				match_index(tdbb, opt, stream, boolean, idx);
 				if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
@@ -5036,26 +5135,6 @@ static JRD_NOD make_inversion(TDBB tdbb,
 					accept = FALSE;
 				}				
 			}
-
-			if (boolean->nod_type == nod_starts) {
-				compose(&inversion,
-					node = make_starts(tdbb, opt, relation, boolean, stream, idx),
-					nod_bit_and);
-				if (node) {
-					accept = FALSE;
-				}
-			}
-
-			if (boolean->nod_type == nod_missing) {
-				compose(&inversion,
-					node = make_missing(tdbb, opt, relation, boolean, stream, idx),
-					nod_bit_and);
-				if (node) {
-					accept = FALSE;
-				}
-			}
-
-			idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 		}
 	}
 
@@ -5677,8 +5756,9 @@ static USHORT river_count(USHORT count, JRD_NOD * class_)
  **************************************/
 	USHORT i, cnt;
 #ifdef DEV_BUILD
-	if (*class_)
+	if (*class_) {
 		DEV_BLKCHK(*class_, type_nod);
+	}
 #endif
 	cnt = 0;
 	for (i = 0; i < count; i++, class_++)
