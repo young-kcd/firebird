@@ -148,10 +148,6 @@ static void update_write_direction(thread_db*, BufferDesc*);
 
 const long MIN_BUFFER_SEGMENT	= 65536L;
 
-#ifndef DEBUG_PRINTF
-#define DEBUG_PRINTF(msg)	fprintf (stderr, (msg))
-#endif
-
 /* Given pointer a field in the block, find the block */
 
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
