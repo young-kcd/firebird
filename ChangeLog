@@ -1,3 +1,40 @@
+2005-03-18 12:25  paul_reeves
+
+	* firebird2/:
+	builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.7), builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.5), builds/win32/make_all.bat (1.33),
+	builds/win32/msvc7/Firebird2.sln (1.22),
+	builds/win32/msvc7/fb2control.vcproj (1.3), src/jrd/isc_version.h
+	(1.4):
+	
+	Final tweaks for Win32 Alpha1 builds.
+
+2005-03-18 10:22  paul_reeves
+
+	* firebird2/src/: utilities/fbcpl/FBControl.rc (1.3),
+	utilities/fbcpl/fbcontrol.def (1.3), utilities/fbcpl/fbdialog.cpp
+	(1.3), utilities/fbcpl/fbdialog.h (1.3),
+	utilities/fbcpl/fbpanel.cpp (1.3), utilities/fbcpl/fbpanel.h (1.3),
+	iscguard/iscguard.h (1.10):
+	
+	Minor fixes to make cpl applet compatible with fb2 codebase.
+
+2005-03-18 10:20  paul_reeves
+
+	* firebird2/src/utilities/install/: install_nt.h (1.10),
+	install_svc.cpp (1.18), servi_proto.h (1.10), services.cpp (1.16):
+	
+	forward port service descriptions from fb 1.5
+
+2005-03-18 06:13  aafemt
+
+	* firebird2/builds/install/arch-specific/mingw/super/:
+	FirebirdInstall_15.iss (1.2), Readme.txt (1.2),
+	installation_readme.txt (1.2), firebird_install_logo1.bmp (1.2):
+	
+	Drop outdated duplicates
+
 2005-03-16 15:46  paul_reeves
 
 	*
