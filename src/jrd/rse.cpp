@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.13 2002-11-17 00:10:49 hippoman Exp $
+ * $Id: rse.cpp,v 1.14 2002-11-17 15:55:39 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -113,7 +113,7 @@ static void join_to_nulls(TDBB, RSB, USHORT);
 static void map_sort_data(JRD_REQ, SMB, UCHAR *);
 static void open_merge(TDBB, RSB, IRSB_MRG);
 static void open_procedure(TDBB, RSB, IRSB_PROCEDURE);
-static void open_sort(TDBB, RSB, IRSB_SORT);
+static void open_sort(TDBB, RSB, IRSB_SORT, ULONG);
 static void proc_assignment(DSC *, DSC *, UCHAR *, DSC *, SSHORT, REC);
 static void pop_rpbs(JRD_REQ, RSB);
 static void push_rpbs(TDBB, JRD_REQ, RSB);
@@ -124,11 +124,11 @@ static void save_record(TDBB, RPB *);
 static void write_merge_block(TDBB, MFB, ULONG);
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH         "Fb_m"
+#define SCRATCH         "fb_m"
 #endif
 
 #ifndef SCRATCH
-#define SCRATCH         "Fb_merge_"
+#define SCRATCH         "fb_merge_"
 #endif
 
 
@@ -583,6 +583,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 	JRD_REQ request;
 	register IRSB_INDEX impure;
 	register RPB *rpb;
+	ULONG max_records = 0;
 
 	SET_TDBB(tdbb);
 
@@ -658,7 +659,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			impure->irsb_flags |= irsb_bof;
 			impure->irsb_flags &= ~irsb_eof;
 #endif
-			open_sort(tdbb, rsb, (IRSB_SORT) impure);
+			open_sort(tdbb, rsb, (IRSB_SORT) impure, max_records);
 			return;
 
 		case rsb_procedure:
@@ -666,7 +667,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			return;
 
         case rsb_first:
-            ((IRSB_FIRST)impure)->irsb_count =
+            max_records += ((IRSB_FIRST)impure)->irsb_count =
                 MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
             
             if (((IRSB_FIRST)impure)->irsb_count < 1)
@@ -676,7 +677,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
             break;
 
         case rsb_skip:
-            ((IRSB_SKIP)impure)->irsb_count =
+            max_records += ((IRSB_SKIP)impure)->irsb_count =
                 MOV_get_int64 (EVL_expr (tdbb, (JRD_NOD) rsb->rsb_arg [0]), 0);
             
             if (((IRSB_SKIP)impure)->irsb_count < 0)
@@ -2998,7 +2999,7 @@ static void open_procedure(TDBB tdbb, RSB rsb, IRSB_PROCEDURE impure)
 }
 
 
-static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure)
+static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
 {
 /**************************************
  *
@@ -3043,7 +3044,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure)
 					   map->smb_key_desc,
 					   reinterpret_cast < BOOLEAN(*)() >
 					   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
-					   tdbb->tdbb_attachment, 0);
+					   tdbb->tdbb_attachment, max_records);
 
 	if (!(impure->irsb_sort_handle = (SCB) handle))
 		ERR_punt();
