@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.48 2003-02-10 05:42:21 aafemt Exp $
+$Id: inet.cpp,v 1.49 2003-02-10 09:26:52 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -152,10 +152,6 @@ extern int h_errno;
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
 
-#ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
-#endif
-
 /*
 ** Winsock has a typedef for socket, so #define SOCKET to the typedef here
 ** so that it won't be redefined below.
@@ -168,6 +164,10 @@ typedef int socklen_t;
 #define H_ERRNO		WSAGetLastError()
 
 #endif /* WIN_NT */
+
+#ifndef HAVE_SOCKLEN_T
+typedef int socklen_t;
+#endif
 
 #ifdef SYSV_SIGNALS
 #define NO_ITIMER
