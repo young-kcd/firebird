@@ -2,8 +2,9 @@
   * v1.5.2
   **************
 
-    * Fixed unregistered bug.
-        Fix bug distribution of conjunctions to components of outer joins. The visible result of the bug were sub-optimal plans generated for some kinds of outer joins
+    * Fixed v1.5.0 regression.
+        Fix bugs in distribution of conjunctions to components of outer joins by optimizer.
+        Wrong outer join results could have been returned. The fix also makes engine use better plans for outer joins in a number of cases.
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
