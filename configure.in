@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.39 2002-08-28 08:02:12 eku Exp $
+dnl $Id: configure.in,v 1.40 2002-09-03 13:25:30 eku Exp $
 
-################################# INITIALISATION ###############################
+dnl ############################# INITIALISATION ###############################
 
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(src/make.new/config)
@@ -15,7 +15,7 @@ define([XE_APPEND],[[$2]="$[$2] [$1]"])
 dnl XE_PREPEND(value, varname)
 define([XE_PREPEND],[[$2]="[$1] $[$2]"])
 
-################################# ADD TESTS BELOW ##############################
+dnl ############################# ADD TESTS BELOW ##############################
 
 AC_CANONICAL_SYSTEM
 
@@ -23,7 +23,7 @@ case "$target_cpu" in
 powerpc) AC_DEFINE(PowerPC) ;;
 esac
 
-CPU_TYPE=$host_cpu # EKU: Should this be target_cpu ???
+CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
 AC_SUBST(CPU_TYPE)
 
 case "$target" in
@@ -39,12 +39,18 @@ esac
 AC_SUBST(PLATFORM)
 
 
-# possibly needed if we use install-sh program
-#AC_CONFIG_AUX_DIR(`pwd`)
+dnl possibly needed if we use install-sh program
+dnl AC_CONFIG_AUX_DIR(`pwd`)
+
+dnl EKU: need absolute path for packaging on SINIX-Z
+TOPSRCDIR=`pwd`
+AC_SUBST(TOPSRCDIR)
+
+dnl AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_PROG_AWK
-AC_PROG_CC  # EKU: C++ programs should not use CC, but at the moment all
-            # makefiles use $(CC) to link objects. This has to be changed!
+AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
+            dnl makefiles use $(CC) to link objects. This has to be changed!
 AC_PROG_CXX
 AC_PROG_LEX
 AC_PROG_LN_S
@@ -52,7 +58,7 @@ AC_PROG_RANLIB
 AC_PROG_YACC
 
 
-# Some controllable options
+dnl Some controllable options
 FIREBIRD_ARCH_TYPE=classic
 AC_ARG_ENABLE(superserver,
   [  --enable-superserver    build SuperServer architecture [default=no]],
@@ -75,8 +81,29 @@ AC_ARG_ENABLE(debug,
 
 AC_SUBST(PROD_BUILD_FLG)
 
+if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
+  dnl The lock manager process is only need on systems, that do not support
+  dnl sending signals to process groups (man 2 kill).
+  LOCK_MANAGER=N
+  AC_ARG_WITH(lock-manager,
+    [  --with-lock-manager     build lock manager [default=no]],
+    [case "$withval" in
+       yes) LOCK_MANAGER=Y;;
+       no)  LOCK_MANAGER=N;;
+       *)   AC_MSG_ERROR(bad value '${withval}' for --with-lock-manager);;
+     esac])
 
-# Check for system header files
+  if test "$LOCK_MANAGER" = "Y"; then
+    dnl EKU: we should determine the necessity by target system
+    dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
+    dnl      manager process
+    AC_DEFINE(MANAGER_PROCESS)
+    MANAGER_PROCESS_TARGET=lock_mgr
+    AC_SUBST(MANAGER_PROCESS_TARGET)
+  fi
+fi
+
+dnl Check for system header files
 AC_CHECK_HEADERS(assert.h)
 AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(errno.h)
@@ -107,7 +134,7 @@ AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
 
 
-# Check for libraries
+dnl  Check for libraries
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c,main)
 AC_CHECK_LIB(m, main)
@@ -116,17 +143,17 @@ if test "$FIREBIRD_ARCH_TYPE" = "super"; then
 fi
 AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)
-#AC_CHECK_LIB(termcap, main)
+dnl AC_CHECK_LIB(termcap, main)
 AC_CHECK_LIB(readline, main,,, $LIBS)
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
 
-# Check for functions
+dnl Check for functions
 AC_CHECK_FUNCS(strlcpy strlcat)
 AC_CHECK_FUNCS(gettimeofday)
 if test "$ac_cv_func_gettimeofday" = "yes"; then
-  # EKU: SINIX-Z has no prototype for gettimeofday() so the following test
-  #      will always succeed, which is wrong.
+  dnl EKU: SINIX-Z has no prototype for gettimeofday() so the following test
+  dnl      will always succeed, which is wrong.
   case $PLATFORM in
   SINIX-Z)
     ;;
@@ -149,7 +176,7 @@ if test "$ac_cv_func_connect" = "no"; then
 fi  
 AC_CHECK_FUNCS(strcasecmp stricmp)
 if test "$ac_cv_func_strcasecmp" = "no"; then
-  # EKU: On SINIX-Z strcasecmp is in libresolv.
+  dnl EKU: On SINIX-Z strcasecmp is in libresolv.
   AC_CHECK_LIB(resolv, strcasecmp,
     [XE_APPEND(-lresolv,LIBS)
      unset ac_cv_func_strcasecmp
@@ -157,7 +184,7 @@ if test "$ac_cv_func_strcasecmp" = "no"; then
 fi
 AC_CHECK_FUNCS(dirname)
 if test "$ac_cv_func_dirname" = "no"; then
-  # EKU: On SINIX-Z dirname is in libgen.
+  dnl EKU: On SINIX-Z dirname is in libgen.
   AC_CHECK_LIB(gen, dirname,
     [XE_APPEND(-lgen,LIBS)
      unset ac_cv_func_dirname
@@ -168,7 +195,7 @@ AC_CHECK_FUNCS(snprintf)
 AC_CHECK_FUNCS(mmap)
 
 
-# Check for other things
+dnl Check for other things
 AC_C_BIGENDIAN
 AC_TYPE_SIGNAL
 
@@ -187,9 +214,9 @@ AC_TRY_COMPILE([#include <sys/types.h>],
 [UNIX_64_BIT_IO=Y AC_DEFINE(UNIX_64_BIT_IO) AC_MSG_RESULT(yes)],
 [AC_MSG_RESULT(no)])
 
-######################### DO NOT ADD ANY TESTS BELOW ###########################
+dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
-# The following file defines the version number strings
+dnl The following file defines the version number strings
 . ./src/misc/writeBuildNum.sh
 FIREBIRD_PACKAGE_VERSION="0a.Dev1"
 
@@ -215,22 +242,21 @@ NEW_FIREBIRD_DIR=$GEN_ROOT/firebird
 AC_SUBST(BUILD_ROOT_DIR)
 AC_SUBST(NEW_FIREBIRD_DIR)
 
-#AC_DEFINE_UNQUOTED(FB_BUILD_TYPE, "$BuildType")
-#AC_DEFINE_UNQUOTED(FB_MAJOR_VER, "$MajorVer")
-#AC_DEFINE_UNQUOTED(FB_MINOR_VER, "$MinorVer")
-#AC_DEFINE_UNQUOTED(FB_REV_NO, "$RevNo")
-#AC_DEFINE_UNQUOTED(FB_BUILD_SUFFIX, "$BuildSuffix")
-#AC_DEFINE_UNQUOTED(PRODUCT_VER_STRING, "$PRODUCT_VER_STRING")
-#AC_DEFINE_UNQUOTED(FILE_VER_NUMBER, $FILE_VER_NUMBER)
-#AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
-#AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
+dnl AC_DEFINE_UNQUOTED(FB_BUILD_TYPE, "$BuildType")
+dnl AC_DEFINE_UNQUOTED(FB_MAJOR_VER, "$MajorVer")
+dnl AC_DEFINE_UNQUOTED(FB_MINOR_VER, "$MinorVer")
+dnl AC_DEFINE_UNQUOTED(FB_REV_NO, "$RevNo")
+dnl AC_DEFINE_UNQUOTED(FB_BUILD_SUFFIX, "$BuildSuffix")
+dnl AC_DEFINE_UNQUOTED(PRODUCT_VER_STRING, "$PRODUCT_VER_STRING")
+dnl AC_DEFINE_UNQUOTED(FILE_VER_NUMBER, $FILE_VER_NUMBER)
+dnl AC_DEFINE_UNQUOTED(FILE_VER_STRING, "$FILE_VER_STRING")
+dnl AC_DEFINE_UNQUOTED(LICENSE_VER_STRING, "$FILE_VER_STRING")
 
 
 
-# These AC_OUTPUT_COMMANDS should be replaced by AC_CONFIG_COMMANDS_PRE
-# by that version of autoconf is fresh off the shelf, and for now although
-# these cause an error it's acceptable.
-# 
+dnl These AC_OUTPUT_COMMANDS should be replaced by AC_CONFIG_COMMANDS_PRE
+dnl by that version of autoconf is fresh off the shelf, and for now although
+dnl these cause an error it's acceptable.
 AC_OUTPUT_COMMANDS([mkdir -p gen/csv])
 AC_OUTPUT_COMMANDS([mkdir -p gen/dudley])
 AC_OUTPUT_COMMANDS([mkdir -p gen/isql])
@@ -256,6 +282,7 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/fbutil])
 
 AC_OUTPUT_COMMANDS([mkdir -p gen/install])
 AC_OUTPUT_COMMANDS([mkdir -p gen/install/scripts])
+AC_OUTPUT_COMMANDS([mkdir -p gen/install/sinixz])
 
 AC_OUTPUT_COMMANDS([mkdir -p gen/common])
 AC_OUTPUT_COMMANDS([mkdir -p gen/common/memory])
@@ -281,7 +308,7 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/jrd/os/win32])
 
 AC_OUTPUT_COMMANDS([mkdir -p gen/libfbcommon])
 AC_OUTPUT_COMMANDS([mkdir -p gen/libfbcommon/memory])
-#AC_OUTPUT_COMMANDS([mkdir -p gen/libdsqlserver])
+dnl AC_OUTPUT_COMMANDS([mkdir -p gen/libdsqlserver])
 AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver])
 AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/jrd])
 AC_OUTPUT_COMMANDS([mkdir -p gen/libfbserver/dsql])
@@ -377,54 +404,62 @@ AC_OUTPUT_COMMANDS([mkdir -p gen/libfbembed/fbutil])
 
 MAKE_SRC_DIR=builds/posix
 
-AC_OUTPUT( \
-gen/make.rules:${MAKE_SRC_DIR}/make.rules \
-gen/make.defaults:${MAKE_SRC_DIR}/make.defaults \
-gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX} \
-gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables \
-src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird \
-gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon \
-gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre \
-gen/Makefile.libfbstatic:${MAKE_SRC_DIR}/Makefile.in.libfbstatic \
-gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre \
-gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak \
-gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql \
-gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases \
-gen/Makefile.libfbserver:${MAKE_SRC_DIR}/Makefile.in.libfbserver \
-gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver \
-gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient \
-gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak \
-gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix \
-gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql \
-gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre \
-gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util \
-gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl \
-gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs \
-gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib \
-gen/Makefile.v5_examples:${MAKE_SRC_DIR}/Makefile.in.v5_examples \
-gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed \
-gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server \
-gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr \
-gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util \
-gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix \
-gen/Makefile.embed.gbak:${MAKE_SRC_DIR}/Makefile.in.embed.gbak \
-gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql \
-gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef \
-gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli \
-gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre \
-src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5 \
-src/install/Makefile:${MAKE_SRC_DIR}/Makefile.in.install \
-Makefile:Makefile.in \
-gen/install/scripts/preinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preinstall.sh.in \
-gen/install/scripts/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/install.sh.in \
-gen/install/scripts/postinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postinstall.sh.in \
-gen/install/scripts/preuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preuninstall.sh.in \
-gen/install/scripts/postuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postuninstall.sh.in \
-gen/install/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/tarInstall.sh.in \
-src/install/misc/firebird.xinetd \
+AC_OUTPUT(
+gen/make.rules:${MAKE_SRC_DIR}/make.rules
+gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
+gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
+gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
+src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
+gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon
+gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre
+gen/Makefile.libfbstatic:${MAKE_SRC_DIR}/Makefile.in.libfbstatic
+gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre
+gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak
+gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql
+gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
+gen/Makefile.libfbserver:${MAKE_SRC_DIR}/Makefile.in.libfbserver
+gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
+gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
+gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
+gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
+gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
+gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
+gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
+gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
+gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
+gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
+gen/Makefile.v5_examples:${MAKE_SRC_DIR}/Makefile.in.v5_examples
+gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
+gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
+gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
+gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
+gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
+gen/Makefile.embed.gbak:${MAKE_SRC_DIR}/Makefile.in.embed.gbak
+gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
+gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
+gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
+gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
+src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
+src/install/Makefile:${MAKE_SRC_DIR}/Makefile.in.install
+Makefile:Makefile.in
+gen/install/scripts/preinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preinstall.sh.in
+gen/install/scripts/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/install.sh.in
+gen/install/scripts/postinstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postinstall.sh.in
+gen/install/scripts/preuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/preuninstall.sh.in
+gen/install/scripts/postuninstall.sh:src/install/${FIREBIRD_ARCH_TYPE}/postuninstall.sh.in
+gen/install/install.sh:src/install/${FIREBIRD_ARCH_TYPE}/tarInstall.sh.in
+src/install/misc/firebird.xinetd
+dnl SINIX-Z start
+gen/install/sinixz/Makefile:src/install/arch-specific/sinixz/Makefile.in
+gen/install/sinixz/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
+gen/install/sinixz/prototype:src/install/arch-specific/sinixz/prototype.in
+gen/install/sinixz/preinstall:src/install/arch-specific/sinixz/preinstall.in
+gen/install/sinixz/postinstall:src/install/arch-specific/sinixz/postinstall.in
+gen/install/sinixz/preremove:src/install/arch-specific/sinixz/preremove.in
+dnl SINIX-Z end
 )
 
-# Print out the build configuration (the most interesting thing)
+dnl Print out the build configuration (the most interesting thing)
 echo
 echo
 echo The Firebird2 package has been configured with the following options:
@@ -445,7 +480,14 @@ case $UNIX_64_BIT_IO in
  N)       echo "  64 bit I/O : disabled";;
 esac
 
+if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
+  case $LOCK_MANAGER in
+   Y)       echo "lock manager : enabled";;
+   N)       echo "lock manager : disabled";;
+  esac
+fi
+
 echo           " Install Dir : $prefix"
 echo
 
-# EOF
+dnl EOF
