@@ -1,3 +1,59 @@
+2004-08-03 18:21  kkuznetsov
+
+	* firebird2/: configure.in (1.141.2.24),
+	builds/posix/prefix.solx86gcc (1.1.2.5):
+	
+	
+	Add support for Sox86 packaging (experimental) and fix relative dll
+	path in linker opts
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/postinstall.in
+	(1.1):
+	
+	file postinstall.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/pkginfo.in
+	(1.1):
+	
+	file pkginfo.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/preinstall.in
+	(1.1):
+	
+	file preinstall.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.1):
+	
+	file prototype.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/CS/postremove.in
+	(1.1):
+	
+	file postremove.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/: Makefile.in
+	(1.1.2.2), CS/pkginfo.in (1.1.2.1), CS/postinstall.in (1.1.2.1),
+	CS/postremove.in (1.1.2.1), CS/preinstall.in (1.1.2.1),
+	CS/prototype.in (1.1.2.1):
+	
+	
+	
+	Adding Solaris packaging system based on sinix-z one very
+	experimental
+
 2004-08-02 12:07  stryqx
 
 	* firebird2/src/common/classes/: array.h (1.3.2.3), tree.h
