@@ -1405,9 +1405,14 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 	// on total blob length and maximum segment size. This way we tend to 
 	// preserve maximum internal segment size over backup/restore. I'm not sure
 	// this is beneficial, but let's do it for the moment instead of inventing
-	// our own chunk size.
-	if (blob_type == 1 && total_length != 0)
-		segments = (total_length + max_segment - 1) / max_segment;
+	// our own chunk size. Note, the number of segments returned by information
+	// call for stream blob is always unreliable, even for zero-length blobs
+	if (blob_type == 1) {
+		if (total_length != 0)
+			segments = (total_length + max_segment - 1) / max_segment;
+		else
+			segments = 0;
+	}
 
 	put_numeric(att_blob_max_segment, max_segment);
 	put_numeric(att_blob_number_segments, segments);
