@@ -3507,9 +3507,10 @@ static void find_best(thread_db* tdbb,
 		stream_flags(*tdbb->getDefaultPool()), conjunct_flags(*tdbb->getDefaultPool());
 	stream_flags.grow(csb->csb_n_stream);
 	conjunct_flags.grow(opt->opt_base_conjuncts);
-	for (size_t i = 0; i < stream_flags.getCount(); i++)
+	size_t i;
+	for (i = 0; i < stream_flags.getCount(); i++)
 		stream_flags[i] = opt->opt_streams[i].opt_stream_flags & opt_stream_used;
-	for (size_t i = 0; i < conjunct_flags.getCount(); i++)
+	for (i = 0; i < conjunct_flags.getCount(); i++)
 		conjunct_flags[i] = opt->opt_conjuncts[i].opt_conjunct_flags & opt_conjunct_used;
 
 	// Compute delta and total estimate cost to fetch this stream.
@@ -3638,9 +3639,9 @@ static void find_best(thread_db* tdbb,
 
 	// Clean up from any changes made for compute the cost for this stream
 	csb->csb_rpt[stream].csb_flags &= ~csb_active;
-	for (size_t i = 0; i < stream_flags.getCount(); i++)
+	for (i = 0; i < stream_flags.getCount(); i++)
 		opt->opt_streams[i].opt_stream_flags &= stream_flags[i];
-	for (size_t i = 0; i < conjunct_flags.getCount(); i++)
+	for (i = 0; i < conjunct_flags.getCount(); i++)
 		opt->opt_conjuncts[i].opt_conjunct_flags &= conjunct_flags[i];
 }
 

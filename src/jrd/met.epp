@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.135 2004-08-26 21:47:19 brodsom Exp $
+$Id: met.epp,v 1.136 2004-08-27 04:45:55 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -4056,8 +4056,9 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 	SET_TDBB(tdbb);
 
 	*vector_ptr = NULL;
+	size_t i;
 
-	for (size_t i = 0; i < vector->getCount(); i++) 
+	for (i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r && CMP_clone_is_active(r))
@@ -4066,7 +4067,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 		}
 	}
 
-	for (size_t i = 0; i < vector->getCount(); i++) 
+	for (i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r) 

@@ -74,12 +74,14 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 	if (pPath.getCount() < nFullElem) {
 		return false;
 	}
-	for (size_t i = 0; i < nFullElem; i++) {
+	
+	size_t i;
+	for (i = 0; i < nFullElem; i++) {
 		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
-	for (size_t i = nFullElem + 1; i <= pPath.getCount(); i++) {
+	for (i = nFullElem + 1; i <= pPath.getCount(); i++) {
 		PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;

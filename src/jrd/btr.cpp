@@ -5289,7 +5289,8 @@ static SLONG insert_node(thread_db* tdbb,
 			USHORT index = 1;
 			IndexJumpNode* jn = 0;
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
+			size_t i;
+			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				UCHAR* q = new_key->key_data + walkJumpNode[i].prefix;
 				memcpy(q, walkJumpNode[i].data, walkJumpNode[i].length);
 				if (index == splitJumpNodeIndex) {
@@ -5309,7 +5310,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Rebuild first jumpnode on splitpage
 			index = 1;
 			walkJumpNode = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (index > splitJumpNodeIndex) {
 					const USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
 					UCHAR* newData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[length];
@@ -5329,7 +5330,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Initalize new offsets for original page and split page.
 			index = 1;
 			walkJumpNode = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
 				// The jump node where the split is done isn't included anymore!
 				if (index < splitJumpNodeIndex) {
 					jumpersNewSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i], flags);
