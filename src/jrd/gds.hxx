@@ -192,7 +192,6 @@ extern "C" {
   GDS_STATUS GDS_EXPORT isc_dsql_release (long*, char*);
   GDS_STATUS GDS_EXPORT isc_execute (long*, gds_tr_handle*, char*, SQLDA*);
   GDS_STATUS GDS_EXPORT isc_execute_immediate (long*, gds_db_handle*, gds_tr_handle*, short*, char*);
-  GDS_STATUS GDS_EXPORT isc_array_gen_sdl (long*, ISC_ARRAY_DESC*, short*, char*, char*);
   GDS_STATUS GDS_EXPORT isc_array_get_slice (long*, long*, long*, GDS_QUAD*, ISC_ARRAY_DESC*, void*, long*);
   GDS_STATUS GDS_EXPORT isc_array_lookup_bounds (long*, long*, long*, char*, char*, ISC_ARRAY_DESC*);
   GDS_STATUS GDS_EXPORT isc_array_lookup_desc (long*, long*, long*, char*, char*, ISC_ARRAY_DESC*);

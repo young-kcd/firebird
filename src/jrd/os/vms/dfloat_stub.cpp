@@ -288,7 +288,6 @@ entry(gds__attach_database)
 	entry(isc_array_lookup_desc)
 	entry(isc_array_lookup_bounds)
 	entry(isc_array_set_desc)
-	entry(isc_array_gen_sdl)
 	entry(isc_array_get_slice)
 	entry(isc_array_put_slice)
 
