@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_perf.cpp,v 1.12 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: class_perf.cpp,v 1.13 2004-08-10 04:10:47 skidder Exp $
  *
  */
 
@@ -41,7 +41,7 @@ void start() {
 	t = clock();
 }
 
-const int TEST_ITEMS	= 10000000;
+const int TEST_ITEMS	= 100000;
 
 void report(int scale) {
 	clock_t d = clock();

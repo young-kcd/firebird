@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.46 2004-08-09 01:24:54 skidder Exp $
+ *  $Id: alloc.h,v 1.47 2004-08-10 04:10:47 skidder Exp $
  *
  */
 
@@ -92,10 +92,13 @@ const USHORT MBK_USED = 4; // Block is used
 const USHORT MBK_LAST = 8; // Block is last in the extent
 const USHORT MBK_DELAYED = 16; // Block is pending in the delayed free queue
 
+struct FreeMemoryBlock {
+	FreeMemoryBlock* fbk_next_fragment;
+};
+
 // Block header.
 // Has size of 12 bytes for 32-bit targets and 16 bytes on 64-bit ones
 struct MemoryBlock {
-	class MemoryPool* mbk_pool;
 	USHORT mbk_flags;
 	SSHORT mbk_type;
 	union {
@@ -112,10 +115,15 @@ struct MemoryBlock {
 	const char* mbk_file;
 	int mbk_line;
 #endif
+	union {
+		class MemoryPool* mbk_pool;
+		FreeMemoryBlock* mbk_prev_fragment;
+	};
 #if defined(USE_VALGRIND) && (VALGRIND_REDZONE != 0)
 	const char mbk_valgrind_redzone[VALGRIND_REDZONE];
 #endif
 };
+
 
 // This structure is appended to the end of block redirected to parent pool or operating system
 // It is a doubly-linked list which we are going to use when our pool is going to be deleted
@@ -132,11 +140,10 @@ const SSHORT TYPE_TREEPAGE = -4;
 // We store BlkInfo structures instead of BlkHeader pointers to get benefits from 
 // processor cache-hit optimizations
 struct BlockInfo {
-	MemoryBlock* block;
-	size_t length;
-	inline static bool greaterThan(const BlockInfo& i1, const BlockInfo& i2) {
-		return (i1.length > i2.length) || 
-			(i1.length == i2.length && i1.block > i2.block);
+	size_t bli_length;
+	FreeMemoryBlock* bli_fragments;
+	inline static const size_t& generate(const void* sender, const BlockInfo& i) {
+		return i.bli_length;
 	}
 };
 
@@ -196,14 +203,13 @@ private:
 			((MemoryPool*)this)->tree_free(block);
 		}
 	};
-	typedef BePlusTree<BlockInfo, BlockInfo, InternalAllocator, 
-		DefaultKeyValue<BlockInfo>, BlockInfo> FreeBlocksTree;
+	typedef BePlusTree<BlockInfo, size_t, InternalAllocator, BlockInfo> FreeBlocksTree;
 	
 	// We keep most of our structures uninitialized as long we redirect 
 	// our allocations to parent pool
 	bool parent_redirect;
 
-	// B+ tree ordered by (length,address). 
+	// B+ tree ordered by length 
 	FreeBlocksTree freeBlocks;
 
 	MemoryExtent *extents; // Linked list of all memory extents
