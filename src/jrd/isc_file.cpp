@@ -30,6 +30,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -99,10 +101,6 @@ typedef struct itm {
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif
-#endif
-
-#ifdef DGUX
-#define MTAB			"/etc/mnttab"
 #endif
 
 #ifdef SOLARIS

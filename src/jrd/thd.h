@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 /*
-$Id: thd.h,v 1.8 2002-10-12 04:16:31 stryqx Exp $
+$Id: thd.h,v 1.9 2002-10-29 02:45:09 seanleyne Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -45,11 +48,6 @@ $Id: thd.h,v 1.8 2002-10-12 04:16:31 stryqx Exp $
 
 /* RITTER - changed HP10 to HPUX in the line below */
 #if (defined(HPUX) && defined(SUPERSERVER))
-#define POSIX_THREADS		1
-#define MULTI_THREAD		1
-#endif
-
-#if (defined(DGUX) && defined(SUPERSERVER))
 #define POSIX_THREADS		1
 #define MULTI_THREAD		1
 #endif

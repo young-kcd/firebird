@@ -27,10 +27,12 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.8 2002-10-28 04:57:01 seanleyne Exp $
+//	$Id: cob.cpp,v 1.9 2002-10-29 02:45:07 seanleyne Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+//
+// 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 //
 //
 
@@ -143,9 +145,6 @@
 #if (defined sparc || defined SOLX86 )
 #define MICROFOCUS
 #endif
-#ifdef DGUX
-#define MICROFOCUS
-#endif
 /* RITTER - added HP11 to the line below */
 #if (defined HP700 || defined HP10 || defined HP11)
 #define MICROFOCUS
@@ -202,13 +201,8 @@
 #define ISC_DESCRIBE_BIND	"isc_embed_dsql_describe_bind"
 #define ISC_EXECUTE 		"isc_embed_dsql_execute"
 #define ISC_EXECUTE2 		"isc_embed_dsql_execute2"
-#ifdef DGUX
-#define ISC_EXECUTE_IMMEDIATE 	"isc_embed_dsql_exec_immed"
-#define ISC_EXECUTE_IMMEDIATE2 	"isc_embed_dsql_exec_immed2"
-#else
 #define ISC_EXECUTE_IMMEDIATE 	"isc_embed_dsql_execute_immed"
 #define ISC_EXECUTE_IMMEDIATE2 	"isc_embed_dsql_execute_immed2"
-#endif
 #define ISC_INSERT 		"isc_embed_dsql_insert"
 #define ISC_OPEN		"isc_embed_dsql_open"
 #define ISC_OPEN2		"isc_embed_dsql_open2"
@@ -279,10 +273,6 @@
 #endif
 
 #if (defined sparc || defined SOLX86 )
-#define USAGE_COMP		" USAGE IS COMP"
-#endif
-
-#ifdef DGUX
 #define USAGE_COMP		" USAGE IS COMP"
 #endif
 

@@ -9,6 +9,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #ifndef AUTOCONFIG_H
@@ -141,7 +143,6 @@
 #undef AIX
 #define WIN_NT
 #undef SCO_EV
-#undef DGUX
 #undef DECOSF
 #undef sgi
 #undef mpexl

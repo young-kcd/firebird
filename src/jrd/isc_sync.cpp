@@ -29,6 +29,8 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "M88K" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
@@ -126,10 +128,6 @@ static UCHAR *next_shared_memory;
 
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
-#endif
-
-#ifdef DGUX
-#include <fcntl.h>
 #endif
 
 #define FTOK_KEY	15
@@ -2446,32 +2444,11 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 			flock(fd, LOCK_UN);
 			flock(fd_init, LOCK_UN);
 #else
-#ifdef DGUX
-		/* Allow for DG bug which doesn't convert the write lock to a
-		   read lock.  Therefore, release the lock completely and then
-		   wait for a read lock. */
-
-		lock.l_type = F_UNLCK;
-		lock.l_whence = 0;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		if (fcntl(fd, F_SETLK, &lock) == -1) {
-			error(status_vector, "fcntl", errno);
-			munmap(address, length);
-			close(fd_init);
-			close(fd);
-			return NULL;
-		}
-#endif
 		lock.l_type = F_RDLCK;
 		lock.l_whence = 0;
 		lock.l_start = 0;
 		lock.l_len = 0;
-#ifdef DGUX
-		if (fcntl(fd, F_SETLKW, &lock) == -1)
-#else
 		if (fcntl(fd, F_SETLK, &lock) == -1)
-#endif
 		{
 			error(status_vector, "fcntl", errno);
 			/* unlock the file */

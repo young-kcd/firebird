@@ -26,9 +26,11 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
- /* $Id: isc_ipc.cpp,v 1.24 2002-10-28 04:57:01 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.25 2002-10-29 02:45:09 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -80,10 +82,6 @@ typedef struct sig {
 #define SIG_informs_continue	0	/* continue on signal processing */
 #define SIG_informs_stop	1	/* stop signal processing */
 
-
-#ifdef DGUX
-#define GT_32_SIGNALS
-#endif
 
 #if (defined AIX || defined AIX_PPC)
 #define GT_32_SIGNALS
@@ -142,10 +140,6 @@ static int process_id = 0;
 #endif
 
 #ifndef O_RDWR
-#include <fcntl.h>
-#endif
-
-#ifdef DGUX
 #include <fcntl.h>
 #endif
 

@@ -26,6 +26,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #include "firebird.h"
@@ -78,11 +80,7 @@ static SIG signals;
 static USHORT blocked;
 static USHORT inhibit_count, ast_count;
 static SLONG overflow_count;
-#ifdef DGUX
-static SLONG pending_signals[2];
-#else
 static SLONG pending_signals;
-#endif
 static int process_id;
 static SIGVEC client_sigfpe;
 
@@ -349,10 +347,6 @@ ISC_enable()
  **************************************/
 	USHORT n;
 	SSHORT signal_number;
-#ifdef DGUX
-	SLONG *p;
-	USHORT i;
-#endif
 
 	if (inhibit_count)
 		--inhibit_count;
@@ -361,22 +355,12 @@ ISC_enable()
 		return;
 
 #ifdef UNIX
-#ifdef DGUX
-	while (pending_signals[0] || pending_signals[1])
-		for (i = 0, p = pending_signals; i < 2; i++, p++)
-			for (n = 0; *p && n < 32; n++)
-				if (*p & (1 << n)) {
-					*p &= ~(1 << n);
-					ISC_kill(process_id, n + 1 + i * 32);
-				}
-#else
 	while (pending_signals)
 		for (n = 0; pending_signals && n < 32; n++)
 			if (pending_signals & (1 << n)) {
 				pending_signals &= ~(1 << n);
 				ISC_kill(process_id, n + 1);
 			}
-#endif
 #endif
 }
 
@@ -1362,13 +1346,6 @@ static void signal_handler(number, code, scp)
 
 /* If signals are inhibited, save the signal for later reposting.
    Otherwise, invoked everybody who may have express an interest. */
-
-#ifdef DGUX
-/* This code was missing as of 1995-March-20  
- * so introduce a compiler error to force a fix.
- */
-	deliberate_compiler_error++;
-#endif
 
 	if (inhibit_count)
 		pending_signals |= 1 << (number - 1);

@@ -26,9 +26,12 @@
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001 Mike Nordell: CPU affinity
  * 01-Feb-2002 Paul Reeves: Removed hard-coded registry path
+ *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 /*
-$Id: isc.cpp,v 1.15 2002-10-24 09:01:29 eku Exp $
+$Id: isc.cpp,v 1.16 2002-10-29 02:45:09 seanleyne Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -158,10 +161,6 @@ static LKSB wake_lock;
 #include <ctype.h>
 
 #ifndef O_RDWR
-#include <fcntl.h>
-#endif
-
-#ifdef DGUX
 #include <fcntl.h>
 #endif
 

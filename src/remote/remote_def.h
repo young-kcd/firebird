@@ -27,6 +27,8 @@
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #ifndef _REMOTE_REMOTE_DEF_H_
@@ -67,10 +69,6 @@
 #ifdef sgi
 #define ARCHITECTURE		arch_sgi
 #endif
-
-#ifdef DGUX
-#define ARCHITECTURE		arch_aviion
-#endif /* DGUX */
 
 #ifdef SCO_EV
 #define ARCHITECTURE		arch_sco_ev

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.20 2002-10-28 05:39:48 seanleyne Exp $
+ * $Id: license.h,v 1.21 2002-10-29 02:45:09 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -48,6 +48,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "ALPHA_NT" port
+ *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  *
  */
 
@@ -118,10 +120,6 @@
 #ifdef sgi
 #define FB_PLATFORM	"SG"
 #endif
-
-#ifdef DGUX
-#define FB_PLATFORM	"DA"		/* DG AViiON */
-#endif /* DGUX */
 
 #ifdef WIN_NT
 #ifdef i386

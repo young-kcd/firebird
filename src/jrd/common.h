@@ -39,9 +39,11 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 /*
-$Id: common.h,v 1.39 2002-10-28 05:19:47 seanleyne Exp $
+$Id: common.h,v 1.40 2002-10-29 02:45:09 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -713,25 +715,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* ifndef SCO_EV */
-
-
-
-#ifdef DGUX
-#define UNIX            1
-#define KILLER_SIGNALS
-#define CURSES_KEYPAD   1
-#define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
-#define IMPLEMENTATION  isc_info_db_impl_isc_dg /* 38 */
-#define                 IEEE
-#define INTL_BACKEND
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* DGUX */
-
 
 
 #if (defined(__osf__) && defined(__alpha))

@@ -28,6 +28,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #include <stdio.h>
@@ -73,10 +75,6 @@ union semun {
 #endif
 
 #ifdef sgi
-#define SEMAPHORES	25
-#endif
-
-#ifdef DGUX
 #define SEMAPHORES	25
 #endif
 

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(WIN_NT)
@@ -182,18 +185,9 @@ THDD THD_get_specific(void)
 	return current_context;
 
 #else
-#ifdef DGUX
-
-	THDD current_context;
-
-	pthread_getspecific(specific_key, (void **) &current_context);
-	return current_context;
-
-#else
 
 	return ((THDD) pthread_getspecific(specific_key));
 
-#endif /* DGUX */
 #endif /* HP10 */
 }
 #endif /* POSIX_THREADS */
@@ -310,11 +304,7 @@ void THD_getspecific_data(void **t_data)
 #ifdef HP10
 		pthread_getspecific(t_key, t_data);
 #else
-#ifdef DGUX
-		pthread_getspecific(t_key, t_data);
-#else
 		*t_data = (void *) pthread_getspecific(t_key);
-#endif /* DGUX */
 #endif /* HP10 */
 #endif /* POSIX_THREADS */
 
@@ -2035,13 +2025,6 @@ static int thread_start(
 	pthread_attr_t pattr;
 	int state;
 
-#ifdef DGUX
-/* DGUX POSIX threads implementation does not define PTHREAD_CREATE_DETACHED and
-   pthread_attr_setdetachstate requires pointer to int as the second argument,
-   which should contain new state.
-*/
-	int detach_state = PTHREAD_CREATE_DETACHED
-#endif
 #if ( !defined HP10 && !defined linux && !defined FREEBSD )
 		state = pthread_attr_init(&pattr);
 	if (state)
@@ -2053,12 +2036,7 @@ static int thread_start(
 	pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
 #endif
 
-#ifdef DGUX
-	pthread_attr_setdetachstate(&pattr, &detach_state);
-#else
 	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
-#endif
-
 	state = pthread_create(&thread, &pattr, (void*(*)(void*))routine, arg);
 	pthread_attr_destroy(&pattr);
 	return state;

@@ -32,9 +32,11 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix/MIPS" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 /*
-$Id: inet.cpp,v 1.27 2002-10-28 05:19:49 seanleyne Exp $
+$Id: inet.cpp,v 1.28 2002-10-29 02:45:09 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -947,12 +949,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	struct servent *service;
 	TEXT msg[64];
 #endif
-#ifdef DGUX
-	SCHAR optval;
-#else
 	int optval;
-#endif
-
 
 
 #ifdef DEBUG
@@ -2655,8 +2652,6 @@ static PORT receive( PORT main_port, PACKET * packet)
 				++INET_select.slct_count;
 			}
 #else
-			/* DGUX compiler does not treat correctly abbreviation in such a constructions so
-			   "we've" was changed to "we have" */
 			/* 5.5 SCO Port: Used #error to generate compiler error */
 #error	Generated a compiler error since we have not put in the NetWare specific code here.
 #endif

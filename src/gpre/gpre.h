@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.11 2002-10-28 05:19:46 seanleyne Exp $
+ * $Id: gpre.h,v 1.12 2002-10-29 02:45:07 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -48,6 +48,8 @@
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "Ultrix" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #ifndef _GPRE_GPRE_H_
@@ -66,12 +68,6 @@ extern "C" {
 #define FORTRAN		1
 #define FTN_BLK_DATA    1
 #define COBOL		1
-#endif
-
-#ifdef DGUX
-#define COBOL		1
-#define FORTRAN		1
-#define FTN_BLK_DATA    1
 #endif
 
 #ifdef LINUX
@@ -118,7 +114,7 @@ extern "C" {
    BLR string definitions */
 
 #if (defined (PC_PLATFORM) || defined (SOLARIS) || \
-	defined (AIX) || defined (DGUX) || defined (WIN_NT))
+	defined (AIX) || defined (WIN_NT))
 #define CONST_STR	"const "
 #endif
 

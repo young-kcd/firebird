@@ -27,6 +27,9 @@
  * cast(float_expr as char(n)) in dialect 1, reported in SF.
  * 2001.11.19 Claudio Valderrama: integer_to_text() should use the
  * source descriptor "from" to call conversion_error.
+ *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 
 #include "firebird.h"
@@ -191,11 +194,6 @@ static CONST SQUAD quad_max_int = { LONG_MAX, -1 };
 #endif
 #endif
 
-#ifdef DGUX
-#undef CONST
-#define CONST
-#endif
-
 static CONST TEXT *CONST months[] = {
 	"JANUARY",
 	"FEBRUARY",
@@ -211,11 +209,6 @@ static CONST TEXT *CONST months[] = {
 	"DECEMBER",
 	NULL
 };
-
-#ifdef DGUX
-#undef CONST
-#define CONST const
-#endif
 
 #if !defined (NATIVE_QUAD)
 #include "../jrd/quad.cpp"

@@ -26,9 +26,11 @@
  *
  * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+ *
  */
 /*
-$Id: flu.cpp,v 1.12 2002-10-28 04:57:01 seanleyne Exp $
+$Id: flu.cpp,v 1.13 2002-10-29 02:45:09 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -157,20 +159,6 @@ static void terminate_at_space(char* psz)
 		*psz = '\0';
 	}
 }
-
-
-/* DG specific stuff */
-
-#ifdef DGUX
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#define NON_DL_COMPATIBLE
-
-#ifndef NON_DL_COMPATIBLE
-#include <dlfcn.h>
-#endif
-#endif
 
 
 /* Windows NT stuff */
@@ -965,71 +953,6 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 		}
     }
 	return mod;
-}
-#endif
-
-
-#ifdef DGUX
-#define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
-							   TEXT* ib_path_env_var)
-{
-/**************************************
- *
- *	I S C _ l o o k u p _ e n t r y p o i n t  ( D G U X )
- *
- **************************************
- *
- * Functional description
- *	Lookup entrypoint of function.
- *
- **************************************/
-	FPTR_INT function;
-	TEXT *p;
-	void *handle;
-	struct stat stdbuf;
-	TEXT absolute_module[MAXPATHLEN];
-
-	if (function = FUNCTIONS_entrypoint(module, name))
-		return function;
-
-#ifdef NON_DL_COMPATIBLE
-	return NULL;
-#else
-	terminate_at_space(module);
-	terminate_at_space(name);
-
-	if (!*module || stat(module, &stdbuf))
-	{
-		return NULL;
-	}
-
-	if (ib_path_env_var == NULL)
-	{
-		strcpy(absolute_module, module);
-	}
-	else
-	{
-		if (!gds__validate_lib_path(module,
-									ib_path_env_var,
-									absolute_module,
-									sizeof(absolute_module)))
-		{
-			return NULL;
-		}
-	}
-
-	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
-		EITHER IN $INTERBASE / UDF, OR $INTERBASE / intl,
-		OR IN ONE OF THE DIRECTORIES NAMED IN EXTERNAL_FUNCTION_DIRECTORY
-		LINES IN
-		ISC_CONFIG.
-	if (!(handle = dlopen(absolute_module, RTLD_LAZY)))
-		return NULL;
-
-	return dlsym(handle, name);
-#endif
 }
 #endif
 

@@ -24,7 +24,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.6 2002-07-06 05:31:56 skywalker Exp $
+//	$Id: ftn.cpp,v 1.7 2002-10-29 02:45:07 seanleyne Exp $
+//
+// 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+//
 //
 
 #include "firebird.h"
@@ -324,26 +327,6 @@ static ADL array_decl_list;
 #define COMMENT		"C     "
 #define INLINE_COMMENT  "!"
 #define COMMA		","
-#endif
-
-#ifdef DGUX
-#define INCLUDE_ISC_FTN  "       INCLUDE  '%s\' \n"
-#define INCLUDE_FTN_FILE "include/gds.f"
-#define DOUBLE_DCL      "DOUBLE PRECISION"
-#define I2CONST_1	""
-#define I2CONST_2	""
-#define I2_1		""
-#define I2_2		""
-#define VAL_1		""
-#define VAL_2		""
-#define REF_1		""
-#define REF_2		""
-#define I4CONST_1	""
-#define I4CONST_2	""
-#define COMMENT		"*     "
-#define INLINE_COMMENT  "! "
-#define COMMA		","
-#define NULL_SQLDA	"%VAL(0)"
 #endif
 
 #ifdef hpux
