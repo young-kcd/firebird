@@ -3385,7 +3385,6 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 			// 
 			TEXT err_message[200], aliasname[100];
 			aliasname[0] = 0;
-			//STR alias = (STR) input->nod_arg[e_derived_table_alias];
 			if (alias) {
 				TEXT *src, *dest;
 				int length = alias->str_length;
@@ -3471,9 +3470,16 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 				// !!! THIS MESSAGE SHOULD BE CHANGED !!!
 				//
 				TEXT columnnumber[80];
-				sprintf (columnnumber, 
-					"The column %s was specified multiple times for derived table %s", 
-					name1->str_data, alias->str_data);
+				if (alias) {
+					sprintf (columnnumber, 
+						"The column %s was specified multiple times for derived table %s", 
+						name1->str_data, alias->str_data);
+				}
+				else {
+					sprintf (columnnumber, 
+						"The column %s was specified multiple times for derived table %s", 
+						name1->str_data, "unnamed");
+				}
 				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
 						  gds_arg_gds, gds_dsql_command_err,
 						  gds_arg_gds, gds_field_name,
