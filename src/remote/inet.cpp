@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.22 2002-09-27 00:20:09 bellardo Exp $
+$Id: inet.cpp,v 1.23 2002-10-02 09:41:04 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1542,7 +1542,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 				passwd = getpwnam(name);
 			if (!passwd)
 				return FALSE;
-#ifdef NOINITGROUPS
+#ifndef HAVE_INITGROUPS
 			eff_gid = passwd->pw_gid;
 #else
 
@@ -1565,7 +1565,7 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 			{
 				eff_gid = passwd->pw_gid;
 			}
-#endif /* NOINITGROUPS */
+#endif /* HAVE_INITGROUPS */
 			eff_uid = passwd->pw_uid;
 
 			/* if not multi-client: set uid, gid and home directory */
