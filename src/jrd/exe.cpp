@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.8 2002-04-04 13:52:27 dimitr Exp $
+$Id: exe.cpp,v 1.9 2002-04-06 08:50:37 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1264,7 +1264,8 @@ static void exec_sql(TDBB tdbb, REQ request, DSC* dsc)
 		int len);
 
 	UCHAR *p;
-	vary *v = reinterpret_cast <vary*> (new char[BUFFER_LARGE + sizeof(vary)]);
+	vary *v = reinterpret_cast <vary*> (
+		new(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
 	SSHORT l;
 	STATUS *status, local[ISC_STATUS_LENGTH];
@@ -1285,8 +1286,8 @@ static void exec_sql(TDBB tdbb, REQ request, DSC* dsc)
 		else {
 			tdbb->tdbb_transaction->tra_callback_count++;
 			callback_execute_immediate(status,
-									   reinterpret_cast <int *> (tdbb->tdbb_attachment),
-									   reinterpret_cast <int *> (tdbb->tdbb_transaction),
+									   reinterpret_cast <int*> (tdbb->tdbb_attachment),
+									   reinterpret_cast <int*> (tdbb->tdbb_transaction),
 									   p, l);
 			tdbb->tdbb_transaction->tra_callback_count--;
 		}
