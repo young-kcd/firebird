@@ -1,3 +1,77 @@
+2005-03-15 03:09  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.203):
+	
+	Fix role parsing bug. I warned the committer five months ago, but
+	it got lost among his duties, so I'm fixing it now with the same
+	suggestion I gave then.  Demonstration: SQL> connect isqltest.fdb
+	role "your bug""""is here"; and see what you get inside
+	options.dpb_role_name in jrd.cpp at line 946.
+
+2005-03-14 19:08  dimitr
+
+	* firebird2/doc/README.user.embedded (1.4):
+	
+	Minor corrections
+
+2005-03-14 15:55  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.5), FirebirdInstall_20.iss (1.3),
+	Readme.txt (1.3), installation_readme.txt (1.4):
+	
+	Update Win32 install scripts, and readme's.
+
+2005-03-14 15:50  kkuznetsov
+
+	* firebird2/builds/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.2):
+	
+	Solaris install system: classic
+
+2005-03-14 15:47  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.3), custom_messages.inc
+	(1.2), de/custom_messages_de.inc (1.2), fr/custom_messages_fr.inc
+	(1.2), hu/custom_messages_hu.inc (1.2), pt/custom_messages_pt.inc
+	(1.2), si/custom_messages_si.inc (1.2):
+	
+	make custom_messages.inc more version agnostic.
+
+2005-03-14 15:40  paul_reeves
+
+	* firebird2/builds/win32/msvc6/: fb2control.dsp (1.2),
+	Firebird2.dsw (1.35):
+	
+	Add fb2control.dsp
+
+2005-03-14 15:36  paul_reeves
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.21),
+	fb2control.vcproj (1.2), instclient.vcproj (1.5):
+	
+	Add fbcontrol.vcproj. Bring instclient.vcproj file into line with
+	7.1
+
+2005-03-14 15:29  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.2):
+	
+	Update isc_version.h to keep installers, o/s versioning and ibx
+	happy.
+
+2005-03-14 15:17  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/: FBControl.rc (1.2), ctrlpan.cpp
+	(1.2), ctrlpan.h (1.2), fbcontrol.clw (1.2), fbcontrol.cpp (1.2),
+	fbcontrol.def (1.2), fbcontrol.h (1.2), fbdialog.cpp (1.2),
+	fbdialog.h (1.2), fbpanel.cpp (1.2), fbpanel.h (1.2), resource.h
+	(1.2), stdafx.cpp (1.2), stdafx.h (1.2), res/fbcontrol.rc2 (1.2),
+	res/server.ico (1.2), res/server_stop.ico (1.2):
+	
+	forward port the source for the cpl applet.
+
 2005-03-13 17:12  alexpeshkoff
 
 	* firebird2/configure.in (1.217):
