@@ -1172,8 +1172,8 @@ static int show_filter_detail( DBB database, TEXT * filter_name)
 					 filter_name, database->dbb_filename,
 					 database->dbb_symbol->sym_string, NULL, NULL);
 		ERRQ_msg_put(445, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);	/* Msg445 Filter library is %s */
-		ERRQ_msg_put(446, (TEXT *) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg446 Input sub-type is %d */
-		ERRQ_msg_put(447, (TEXT *) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg447 Output sub-type is %d */
+		ERRQ_msg_put(446, (TEXT *)(SLONG) F.RDB$INPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg446 Input sub-type is %d */
+		ERRQ_msg_put(447, (TEXT *)(SLONG) F.RDB$OUTPUT_SUB_TYPE, NULL, NULL, NULL, NULL);	/* Msg447 Output sub-type is %d */
 		show_text_blob(database, "\t", 448, (SLONG*) &F.RDB$DESCRIPTION, 0, (SLONG*) NULL_PTR,
 					   FALSE);
 	END_FOR;
@@ -2454,7 +2454,7 @@ static void show_trigger_messages( DBB database, TEXT * name)
 			/* msg 456: Messages associated with %s:\n */
 			first = FALSE;
 		}
-			ERRQ_msg_put(457, (TEXT *) M.RDB$MESSAGE_NUMBER, M.RDB$MESSAGE,
+			ERRQ_msg_put(457, (TEXT *)(SLONG) M.RDB$MESSAGE_NUMBER, M.RDB$MESSAGE,
 						 NULL, NULL, NULL);
 		/* msg 457:     message %ld:  %s\n */
 	END_FOR;

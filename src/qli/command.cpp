@@ -311,32 +311,32 @@ void CMD_set( SYN node)
 	ptr = node->syn_arg;
 
 	for (i = 0; i < node->syn_count; i++) {
-		foo = (USHORT) * ptr++;
+		foo = (USHORT)(ULONG) * ptr++;
 		sw = (ENUM set_t) foo;
 		value = *ptr++;
 		switch (sw) {
 		case set_blr:
-			QLI_blr = (USHORT) value;
+			QLI_blr = (USHORT)(ULONG) value;
 			break;
 
 		case set_statistics:
-			QLI_statistics = (USHORT) value;
+			QLI_statistics = (USHORT)(ULONG) value;
 			break;
 
 		case set_columns:
-			QLI_name_columns = QLI_columns = (USHORT) value;
+			QLI_name_columns = QLI_columns = (USHORT)(ULONG) value;
 			break;
 
 		case set_lines:
-			QLI_lines = (USHORT) value;
+			QLI_lines = (USHORT)(ULONG) value;
 			break;
 
 		case set_semi:
-			QLI_semi = (USHORT) value;
+			QLI_semi = (USHORT)(ULONG) value;
 			break;
 
 		case set_echo:
-			QLI_echo = (USHORT) value;
+			QLI_echo = (USHORT)(ULONG) value;
 			break;
 
 		case set_form:
@@ -399,7 +399,7 @@ void CMD_set( SYN node)
 			break;
 
 		case set_count:
-			QLI_count = (USHORT) value;
+			QLI_count = (USHORT)(ULONG) value;
 			break;
 
 		case set_charset:
@@ -415,11 +415,11 @@ void CMD_set( SYN node)
 
 #ifdef DEV_BUILD
 		case set_explain:
-			QLI_explain = (USHORT) value;
+			QLI_explain = (USHORT)(ULONG) value;
 			break;
 
 		case set_hex_output:
-			QLI_hex_output = (USHORT) value;
+			QLI_hex_output = (USHORT)(ULONG) value;
 			break;
 #endif
 

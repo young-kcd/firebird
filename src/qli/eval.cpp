@@ -742,10 +742,10 @@ static DSC *execute_prompt( QLI_NOD node)
 		if (node->nod_arg[e_prm_prompt]) {
 			if (reprompt)
 				sprintf(string, "\07%s %s: ", prompt[0],
-						node->nod_arg[e_prm_prompt]);
+						(TEXT *) node->nod_arg[e_prm_prompt]);
 			else
 				sprintf(string, "%s %s: ", prompt[1],
-						node->nod_arg[e_prm_prompt]);
+						(TEXT *) node->nod_arg[e_prm_prompt]);
 		}
 		else {
 			if (reprompt)

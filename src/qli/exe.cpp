@@ -736,7 +736,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 
 	gds__blob_size(&from_blob, &size, &segment_count, &max_segment);
 
-	if (max_segment < sizeof(fixed_buffer)) {
+	if (max_segment < (SLONG) sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
 	}

@@ -4359,7 +4359,7 @@ static SYN parse_sort(void)
 				direction = 0;
 			else if (MATCH(KW_DESCENDING))
 				direction = 1;
-		LLS_PUSH(direction, &stack);
+		LLS_PUSH((ULONG) direction, &stack);
 		if (!MATCH(KW_COMMA))
 			break;
 	}
