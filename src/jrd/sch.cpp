@@ -39,6 +39,7 @@
 #include "../jrd/iberr_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/os/thd_priority.h"
+#include "../common/classes/locks.h"
 
 #ifdef	WIN_NT
 #include <windows.h>
@@ -78,7 +79,8 @@ static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
 static MUTX_T thread_mutex[1];
-static USHORT init_flag = FALSE, multi_threaded = FALSE, enabled = FALSE;
+volatile static USHORT init_flag = FALSE;
+static USHORT multi_threaded = FALSE, enabled = FALSE;
 
 #define ABORT	abort()
 
@@ -530,6 +532,9 @@ void SCH_hiber(void)
 	schedule_active(TRUE);
 }
 
+#ifdef MULTI_THREAD
+static Firebird::Spinlock scheduler_init_lock;
+#endif
 
 void SCH_init(void)
 {
@@ -543,16 +548,29 @@ void SCH_init(void)
  *	Initialize the thread scheduler.
  *
  **************************************/
-	int mutex_state;
-
 	if (init_flag)
 		return;
+		
+#ifdef MULTI_THREAD
+	scheduler_init_lock.enter();
+
+	try {
+		if (!init_flag) {
+#endif
+			gds__register_cleanup(cleanup, 0);
+			int mutex_state;
+			if (mutex_state = THD_mutex_init(thread_mutex))
+				mutex_bugcheck("mutex init", mutex_state);
+#ifdef MULTI_THREAD
+		}
+	} catch (const std::exception&) {
+		scheduler_init_lock.leave();
+		throw;
+	}
+	scheduler_init_lock.leave();
+#endif
 
 	init_flag = TRUE;
-	gds__register_cleanup(cleanup, 0);
-
-	if (mutex_state = THD_mutex_init(thread_mutex))
-		mutex_bugcheck("mutex init", mutex_state);
 }
 
 
