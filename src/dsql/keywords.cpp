@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.14 2003-03-16 12:04:13 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.15 2003-03-31 23:40:53 brodsom Exp $
  *
  */
 
@@ -246,7 +246,7 @@ static const TOK tokens [] = {
 	{SHADOW, "SHADOW", 1},
 	{SHARED, "SHARED", 1},
 	{SINGULAR, "SINGULAR", 1},
-	{SIZE, "SIZE", 1},
+	{KW_SIZE, "SIZE", 1},
 	{SKIP, "SKIP", 2},
 	{SMALLINT, "SMALLINT", 1},
 	{SNAPSHOT, "SNAPSHOT", 1},

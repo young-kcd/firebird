@@ -162,6 +162,39 @@ static void	yyerror (TEXT *);
 #define YYPARSE_PARAM_TYPE
 #define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous
 
+#include "../dsql/chars.h"
+
+#define MAX_TOKEN_LEN   256
+#define CHECK_BOUND(to)\
+    {\
+    if ((to - string) >= MAX_TOKEN_LEN)        \
+	yyabandon (-104, isc_token_too_long); \
+    }
+#define CHECK_COPY_INCR(to,ch){CHECK_BOUND(to); *to++=ch;}
+
+static int dsql_debug;
+
+static TEXT	*lex_position (void);
+static BOOLEAN	long_int (DSQL_NOD, SLONG *);
+static DSQL_FLD	make_field (DSQL_NOD);
+static FIL	make_file (void);
+static DSQL_NOD	make_list (DSQL_NOD);
+static DSQL_NOD	make_node (NOD_TYPE, int, ...);
+static DSQL_NOD	make_parameter (void);
+static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
+static void	prepare_console_debug (int, int  *);
+static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
+static void	stack_nodes (DSQL_NOD, DLLS *);
+static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
+static void	yyabandon (SSHORT, STATUS);
+static void	check_log_file_attrs (void);
+
+static TEXT	*ptr, *end, *last_token, *line_start;
+static TEXT	*last_token_bk, *line_start_bk;
+static SSHORT	lines, att_charset;
+static SSHORT	lines_bk;
+static USHORT   param_number;
+
 %}
 
 
@@ -338,7 +371,7 @@ static void	yyerror (TEXT *);
 %token SHADOW
 %token SHARED
 %token SINGULAR
-%token SIZE
+%token KW_SIZE
 %token SMALLINT
 %token SNAPSHOT
 %token SOME
@@ -374,7 +407,7 @@ static void	yyerror (TEXT *);
 %token WORK
 %token WRITE
 
-%token FLOAT NUMBER NUMERIC SYMBOL STRING INTRODUCER 
+%token FLOAT_NUMBER NUMBER NUMERIC SYMBOL STRING INTRODUCER 
 
 /* New tokens added v5.0 */
 
@@ -1098,7 +1131,7 @@ logfile_attrs	:
 		| logfile_attrs logfile_attr
 		;
 
-logfile_attr	: SIZE equals long_integer
+logfile_attr	: KW_SIZE equals long_integer
 			{ g_file->fil_length = (SLONG) $3; }
 /*
 		| RAW_PARTITIONS equals pos_short_integer
@@ -2260,7 +2293,7 @@ blob_type	: BLOB blob_subtype blob_segsize charset_clause
 			}
 		;
 
-blob_segsize	: SEGMENT SIZE unsigned_short_integer
+blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
 		  	{
 			g_field->fld_seg_length = (USHORT) $3;
 		  	}
@@ -3510,7 +3543,7 @@ u_numeric_constant : NUMERIC
 			{ $$ = MAKE_constant ((STR) $1, CONSTANT_STRING); }
 		| NUMBER
 			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SLONG); }
-		| FLOAT
+		| FLOAT_NUMBER
 			{ $$ = MAKE_constant ((STR) $1, CONSTANT_DOUBLE); }
 		| NUMBER64BIT
 			{ $$ = MAKE_constant ((STR) $1, CONSTANT_SINT64); }
@@ -3909,38 +3942,6 @@ valid_symbol_name	: SYMBOL
  *	DESCRIPTION:	Lexical routine
  *
  */
-
-#include "../dsql/chars.h"
-
-#define MAX_TOKEN_LEN   256
-#define CHECK_BOUND(to)\
-    {\
-    if ((to - string) >= MAX_TOKEN_LEN)        \
-	yyabandon (-104, isc_token_too_long); \
-    }
-#define CHECK_COPY_INCR(to,ch){CHECK_BOUND(to); *to++=ch;}
-
-
-static TEXT	*lex_position (void);
-static BOOLEAN	long_int (DSQL_NOD, SLONG *);
-static DSQL_FLD	make_field (DSQL_NOD);
-static FIL	make_file (void);
-static DSQL_NOD	make_list (DSQL_NOD);
-static DSQL_NOD	make_node (NOD_TYPE, int, ...);
-static DSQL_NOD	make_parameter (void);
-static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
-static void	prepare_console_debug (int, int  *);
-static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
-static void	stack_nodes (DSQL_NOD, DLLS *);
-static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
-static void	yyabandon (SSHORT, STATUS);
-static void	check_log_file_attrs (void);
-
-static TEXT	*ptr, *end, *last_token, *line_start;
-static TEXT	*last_token_bk, *line_start_bk;
-static SSHORT	lines, att_charset;
-static SSHORT	lines_bk;
-static USHORT   param_number;
 
 
 void LEX_dsql_init (void)
@@ -4775,7 +4776,7 @@ if ((tok_class & CHR_DIGIT) ||
 	    line_start_bk = line_start;
 	    lines_bk = lines;
 
-	    return FLOAT;
+	    return FLOAT_NUMBER;
 	    }
 	else if (!have_exp)
 	    {
@@ -4820,7 +4821,7 @@ if ((tok_class & CHR_DIGIT) ||
 		lines_bk = lines;
 
 		if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-		    return FLOAT;
+		    return FLOAT_NUMBER;
 		else if (have_decimal)
 		    return SCALEDINT;
 		else

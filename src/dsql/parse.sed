@@ -33,3 +33,8 @@ s/dsql_yyparse(void)/dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHO
 s/dsql_yyparse()/dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)/g
 s/YYLEX()/YYLEX(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g
 s/extern char \*getenv()//g
+s/void \*YYPARSE_PARAM/YYPARSE_PARAM/g
+s/((__unused__))/((__unused__));/g
+/static int yydebug/d
+s/yydebug/dsql_debug/g
+s/yylex ()/yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous)/g
