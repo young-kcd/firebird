@@ -44,7 +44,7 @@
 #include "../remote/ibconfig.h"
 #include "../remote/property.rh"
 
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 
 #include "../remote/ibsvrhlp.h"

@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.20 2002-12-16 16:44:13 alexpeshkoff Exp $ */
+ /* $Id: head.cpp,v 1.21 2003-01-03 12:52:35 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -47,7 +47,7 @@
 #include <string.h>
 #endif
 
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../pipe/pipe.h"
 #include "gen/codes.h"

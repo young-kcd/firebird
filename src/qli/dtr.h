@@ -26,7 +26,7 @@
 
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 
 #define QLI_MSG_FAC		1
 #define BUGCHECK(number)	ERRQ_bugcheck (number)

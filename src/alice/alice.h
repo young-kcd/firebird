@@ -26,7 +26,7 @@
 
 #include "../jrd/ib_stdio.h"
 
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"

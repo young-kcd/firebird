@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.25 2002-12-16 15:51:51 alexpeshkoff Exp $
+ * $Id: gpre.h,v 1.26 2003-01-03 12:52:35 alexpeshkoff Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -63,7 +63,7 @@
 
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
-#include "../jrd/y_handle.h"
+#include "../jrd/y_ref.h"
 
 #ifdef __cplusplus
 extern "C" {
