@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.8 2003-01-12 18:16:49 alexpeshkoff Exp $
+//	$Id: exe.cpp,v 1.9 2003-02-07 15:20:33 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -49,7 +49,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 
-#if (defined WIN_NT || defined PC_PLATFORM)
+#if (defined WIN_NT)
 #include <io.h>
 #endif
 
