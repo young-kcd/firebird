@@ -25,6 +25,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "lc_narrow.h"
+#include "ld_proto.h"
 
 /*
  * Generic base for InterBase 4.0 Language Driver

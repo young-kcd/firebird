@@ -26,6 +26,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "cv_unicode_fss.h"
+#include "ld_proto.h"
 
 typedef USHORT fss_wchar_t;
 typedef SLONG fss_size_t;

@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
+#include "ld_proto.h"
 #include "cv_narrow.h"
 
 void CV_convert_init(CSCONVERT csptr,

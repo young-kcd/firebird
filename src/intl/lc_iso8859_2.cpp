@@ -27,6 +27,7 @@ static	USHORT	fam2_to_lower (TEXTTYPE obj, BYTE ch);
 
 #include "lc_narrow.h"
 #include "lc_dos.h"
+#include "ld_proto.h"
 
 static inline void FAMILY2(TEXTTYPE cache,
 							TTYPE_ID id_number,

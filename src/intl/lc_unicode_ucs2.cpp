@@ -25,6 +25,7 @@
 #include "../intl/ldcommon.h"
 #include "lc_ascii.h"
 #include "cv_unicode_fss.h"
+#include "ld_proto.h"
 
 static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 

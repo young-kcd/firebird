@@ -26,6 +26,7 @@
 #include "lc_ascii.h"
 #include "cv_big5.h"
 #include "lc_big5.h"
+#include "ld_proto.h"
 
 static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
 									TTYPE_ID id_number,

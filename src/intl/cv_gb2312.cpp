@@ -24,6 +24,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/cv_gb2312.h"
+#include "ld_proto.h"
 
 USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
 							  UCS2_CHAR *dest_ptr,

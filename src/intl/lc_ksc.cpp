@@ -25,6 +25,7 @@
 #include "../intl/ldcommon.h"
 #include "lc_ascii.h"
 #include "cv_ksc.h"
+#include "ld_proto.h"
 
 static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
 static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);

@@ -25,6 +25,7 @@
 #include "../intl/ldcommon.h"
 #include "lc_dos.h"
 #include "lc_narrow.h"
+#include "ld_proto.h"
 
 static inline void FAMILY1(TEXTTYPE cache,
 							TTYPE_ID id_number,

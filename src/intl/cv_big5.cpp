@@ -24,6 +24,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/cv_big5.h"
+#include "ld_proto.h"
 
 USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
 							  UCS2_CHAR *dest_ptr,

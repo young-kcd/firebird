@@ -24,6 +24,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "cv_ksc.h"
+#include "ld_proto.h"
 
 /*
 *	KSC-5601 -> unicode

@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
+#include "ld_proto.h"
 #include "lc_ascii.h"
 
 static inline void FAMILY_ASCII(TEXTTYPE cache,

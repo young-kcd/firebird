@@ -27,6 +27,7 @@
 
 #include "lc_ascii.h"
 #include "cv_jis.h"
+#include "ld_proto.h"
 
 static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
 static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);

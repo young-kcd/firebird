@@ -24,6 +24,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
+#include "ld_proto.h"
 
 static USHORT fam2_to_upper(TEXTTYPE obj, BYTE ch);
 static SSHORT fam2_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
