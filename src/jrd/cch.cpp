@@ -4712,6 +4712,10 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				}
 			}
 
+			if (page == FREE_PAGE) {
+				bcb->bcb_flags &= ~BCB_free_pending;
+			}
+
 			THREAD_ENTER();
 //			BCB_MUTEX_RELEASE;
 			return NULL;
