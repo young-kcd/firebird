@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.209 2004-11-04 19:14:08 skidder Exp $
+dnl $Id: configure.in,v 1.210 2004-11-07 13:43:43 alexpeshkoff Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -382,7 +382,7 @@ dnl Check for libraries
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
-AC_CHECK_LIB(crypt, main)
+AC_CHECK_LIB(ssl, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
 if test "$EDITLINE_FLG" = "Y"; then
@@ -439,7 +439,6 @@ AC_FUNC_GETPGRP
 AC_CHECK_FUNCS(flock)
 AC_CHECK_FUNCS(initgroups)
 AC_CHECK_FUNCS(getpagesize)
-AC_CHECK_FUNCS(crypt)
 AC_CHECK_FUNCS(pread pwrite)
 AC_CHECK_FUNCS(getcwd getwd)
 AC_CHECK_FUNCS(setmntent getmntent)
@@ -917,6 +916,7 @@ gen/Makefile.client.qli:${MAKE_SRC_DIR}/Makefile.in.client.qli
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
 gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
+gen/Makefile.client.gsec:${MAKE_SRC_DIR}/Makefile.in.client.gsec
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
