@@ -21,8 +21,11 @@
 
     * Fixed Services API.
         Enabled Services API for posix CS builds.
-      Note:
-        Appropriate changes in Win32 CS are not ready yet.
+      Notes:
+        1. Appropriate changes in Win32 CS are not ready yet
+        2. Backup/restore service was fixed, tested and should work 
+        3. Database validation was partially fixed and may work 
+        4. Other services are probably non-functional in CS builds yet
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
