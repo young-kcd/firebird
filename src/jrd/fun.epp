@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.51 2004-05-02 23:05:00 skidder Exp $
+$Id: fun.epp,v 1.52 2004-05-06 08:41:18 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -72,9 +72,9 @@ using namespace Jrd;
 typedef void* UDF_ARG;
 
 #ifdef VMS
-#define CALL_UDF(ptr, udftype)     (*(udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
+#define CALL_UDF(ptr, udftype) (*(udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
 #else
-#define CALL_UDF(ptr, udftype)     ((udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
+#define CALL_UDF(ptr, udftype) ((udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
 #endif
 
 DATABASE DB = FILENAME "ODS.RDB";
@@ -102,6 +102,14 @@ static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
+static void invoke(UserFunction*, 
+				   fun_repeat*, 
+				   impure_value*,
+				   UDF_ARG*,
+				   bool&,
+				   UCHAR*,
+				   DSC
+);
 
 
 void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
@@ -473,207 +481,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		temp_ptr += length;
 	}
 
-	if (function->fun_return_arg)
-	{
-		THREAD_EXIT;
-		CALL_UDF(function->fun_entrypoint, void);
-		THREAD_ENTER;
-	}
-	else if ((SLONG) return_ptr->fun_mechanism == FUN_value)
-	{
-		switch (value->vlu_desc.dsc_dtype)
-		{
-		case dtype_sql_time:
-		case dtype_sql_date:
-		case dtype_long:
-			THREAD_EXIT;
-			value->vlu_misc.vlu_long =
-				CALL_UDF(function->fun_entrypoint, SLONG);
-			THREAD_ENTER;
-			break;
-
-		case dtype_short:
-			// For (apparent) portability reasons, SHORT by value
-			// must always be returned as a LONG.  See v3.2 release notes
-			// 1994-September-28 David Schnepper 
-
-			THREAD_EXIT;
-			value->vlu_misc.vlu_short = (SSHORT)
-				CALL_UDF(function->fun_entrypoint, SLONG);
-			THREAD_ENTER;
-			break;
-
-		case dtype_real:
-			// For (apparent) portability reasons, FLOAT by value
-			// must always be returned as a DOUBLE.  See v3.2 release notes
-			// 1994-September-28 David Schnepper 
-
-			THREAD_EXIT;
-			value->vlu_misc.vlu_float = (float)
-				CALL_UDF(function->fun_entrypoint, double);
-			THREAD_ENTER;
-			break;
-
-		case dtype_int64:
-			THREAD_EXIT;
-			value->vlu_misc.vlu_int64 =
-				CALL_UDF(function->fun_entrypoint, SINT64);
-			THREAD_ENTER;
-			break;
-
-		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
-			THREAD_EXIT;
-			value->vlu_misc.vlu_double =
-				CALL_UDF(function->fun_entrypoint, double);
-			THREAD_ENTER;
-			break;
-
-		case dtype_timestamp:
-		default:
-			unsup_datatype = true;
-			break;
-		}
-	}
-	else
-	{
-		THREAD_EXIT;
-		typedef UCHAR* pUCHAR;
-		temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
-		THREAD_ENTER;
-
-		if (temp_ptr != NULL)
-		{
-			// CVC: Allow processing of return by descriptor.
-			//		The assumption is that the user didn't modify the return type,
-			//		that has no sense after all, because it is carved in stone.
-			DSC* return_dsc = 0;
-			if (return_ptr->fun_mechanism == FUN_descriptor)
-			{
-			    // The formal param's type is contained in value->vlu_desc.dsc_dtype
-			    // but I want to know if the UDF changed it to a compatible type
-			    // from its returned descriptor, that will be return_dsc.
-                return_dsc = reinterpret_cast<DSC*>(temp_ptr);
-				temp_ptr = return_dsc->dsc_address;
-			}
-			if (temp_ptr)
-			{
-				switch (value->vlu_desc.dsc_dtype)
-				{
-				case dtype_sql_date:
-				case dtype_sql_time:
-				    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-				    break;
-				    
-				case dtype_long:
-				    if (return_dsc)
-				    {
-				    	switch (return_dsc->dsc_dtype)
-				    	{
-	                    case dtype_short:
-    		                value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
-            	            break;
-                	    case dtype_long:
-                    	    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-                        	break;
-	                    default:
-    	                    unsup_datatype = true;
-        	                break;
-					    }
-					}
-				    else
-				    {
-					    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
-					}
-					break;
-
-				case dtype_short:
-					value->vlu_misc.vlu_short = *(SSHORT *) temp_ptr;
-					break;
-
-				case dtype_real:
-					value->vlu_misc.vlu_float = *(float *) temp_ptr;
-					break;
-
-				case dtype_int64:
-				    if (return_dsc)
-				    {
-					    switch (return_dsc->dsc_dtype)
-					    {
-					    case dtype_short:
-					        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
-					        break;
-                	    case dtype_long:
-                    	    value->vlu_misc.vlu_int64 = *(SLONG *) temp_ptr;
-                        	break;
-					    case dtype_int64:
-					        value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
-					        break;
-					    default:
-                	        unsup_datatype = true;
-                    	    break;
-					    }
-					}
-				    else
-				    {
-					    value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
-					}
-					break;
-
-				case dtype_double:
-#ifdef VMS
-				case dtype_d_float:
-#endif
-					value->vlu_misc.vlu_double = *(double *) temp_ptr;
-					break;
-
-				case dtype_text:
-                    temp_desc = value->vlu_desc;
-                    temp_desc.dsc_address = temp_ptr;
-                    MOV_move(&temp_desc, &value->vlu_desc);
-                    break;
-                                       
-				case dtype_cstring:
-                    // For the ttype_binary char. set, this will truncate
-                    // the string after the first zero octet copied.
-                    temp_desc = value->vlu_desc;
-                    temp_desc.dsc_address = temp_ptr;
-                    temp_desc.dsc_length =
-                        strlen(reinterpret_cast<char *>(temp_ptr)) + 1;
-                    MOV_move(&temp_desc, &value->vlu_desc);
-                    break;
-                                       
-				case dtype_varying:
-					temp_desc = value->vlu_desc;
-					temp_desc.dsc_address = temp_ptr;
-                    temp_desc.dsc_length =
-                        reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
-					MOV_move(&temp_desc, &value->vlu_desc);
-					break;
-
-				case dtype_timestamp:
-					{
-						SLONG* ip = (SLONG *) temp_ptr;
-						value->vlu_misc.vlu_dbkey[0] = *ip++;
-						value->vlu_misc.vlu_dbkey[1] = *ip;
-					}
-					break;
-
-				default:
-					unsup_datatype = true;
-					break;
-				}
-				// check if this is function has the FREE_IT set, if set and
-				// return_value is not null, then free the return value
-				if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
-				{
-					free(temp_ptr);
-				}
-			}
-		}
-	}
+	invoke(function, return_ptr, value, args, unsup_datatype, temp_ptr, temp_desc);
 
 	if (unsup_datatype) {
 		IBERROR(169);			// msg 169 return data type not supported
@@ -1125,3 +933,227 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		(dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 
+static void invoke(UserFunction* function, 
+				   fun_repeat* return_ptr, 
+				   impure_value* value,
+				   UDF_ARG* args,
+				   bool& unsup_datatype,
+				   UCHAR* temp_ptr,
+				   DSC temp_desc
+)
+{
+/**************************************
+ *
+ *	i n v o k e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Real UDF call moved to separate function in order to
+ *	use CHECK_FOR_EXCEPTIONS macros without conflicts with destructors
+ *
+ **************************************/
+	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
+	if (function->fun_return_arg)
+	{
+		THREAD_EXIT;
+		CALL_UDF(function->fun_entrypoint, void);
+		THREAD_ENTER;
+	}
+	else if ((SLONG) return_ptr->fun_mechanism == FUN_value)
+	{
+		switch (value->vlu_desc.dsc_dtype)
+		{
+		case dtype_sql_time:
+		case dtype_sql_date:
+		case dtype_long:
+			THREAD_EXIT;
+			value->vlu_misc.vlu_long =
+				CALL_UDF(function->fun_entrypoint, SLONG);
+			THREAD_ENTER;
+			break;
+
+		case dtype_short:
+			// For (apparent) portability reasons, SHORT by value
+			// must always be returned as a LONG.  See v3.2 release notes
+			// 1994-September-28 David Schnepper 
+
+			THREAD_EXIT;
+			value->vlu_misc.vlu_short = (SSHORT)
+				CALL_UDF(function->fun_entrypoint, SLONG);
+			THREAD_ENTER;
+			break;
+
+		case dtype_real:
+			// For (apparent) portability reasons, FLOAT by value
+			// must always be returned as a DOUBLE.  See v3.2 release notes
+			// 1994-September-28 David Schnepper 
+
+			THREAD_EXIT;
+			value->vlu_misc.vlu_float = (float)
+				CALL_UDF(function->fun_entrypoint, double);
+			THREAD_ENTER;
+			break;
+
+		case dtype_int64:
+			THREAD_EXIT;
+			value->vlu_misc.vlu_int64 =
+				CALL_UDF(function->fun_entrypoint, SINT64);
+			THREAD_ENTER;
+			break;
+
+		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
+			THREAD_EXIT;
+			value->vlu_misc.vlu_double =
+				CALL_UDF(function->fun_entrypoint, double);
+			THREAD_ENTER;
+			break;
+
+		case dtype_timestamp:
+		default:
+			unsup_datatype = true;
+			break;
+		}
+	}
+	else
+	{
+		THREAD_EXIT;
+		typedef UCHAR* pUCHAR;
+		temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
+		THREAD_ENTER;
+
+		if (temp_ptr != NULL)
+		{
+			// CVC: Allow processing of return by descriptor.
+			//		The assumption is that the user didn't modify the return type,
+			//		that has no sense after all, because it is carved in stone.
+			DSC* return_dsc = 0;
+			if (return_ptr->fun_mechanism == FUN_descriptor)
+			{
+			    // The formal param's type is contained in value->vlu_desc.dsc_dtype
+			    // but I want to know if the UDF changed it to a compatible type
+			    // from its returned descriptor, that will be return_dsc.
+                return_dsc = reinterpret_cast<DSC*>(temp_ptr);
+				temp_ptr = return_dsc->dsc_address;
+			}
+			if (temp_ptr)
+			{
+				switch (value->vlu_desc.dsc_dtype)
+				{
+				case dtype_sql_date:
+				case dtype_sql_time:
+				    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+				    break;
+				    
+				case dtype_long:
+				    if (return_dsc)
+				    {
+				    	switch (return_dsc->dsc_dtype)
+				    	{
+	                    case dtype_short:
+    		                value->vlu_misc.vlu_long = *(SSHORT *) temp_ptr;
+            	            break;
+                	    case dtype_long:
+                    	    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+                        	break;
+	                    default:
+    	                    unsup_datatype = true;
+        	                break;
+					    }
+					}
+				    else
+				    {
+					    value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+					}
+					break;
+
+				case dtype_short:
+					value->vlu_misc.vlu_short = *(SSHORT *) temp_ptr;
+					break;
+
+				case dtype_real:
+					value->vlu_misc.vlu_float = *(float *) temp_ptr;
+					break;
+
+				case dtype_int64:
+				    if (return_dsc)
+				    {
+					    switch (return_dsc->dsc_dtype)
+					    {
+					    case dtype_short:
+					        value->vlu_misc.vlu_int64 = *(SSHORT *) temp_ptr;
+					        break;
+                	    case dtype_long:
+                    	    value->vlu_misc.vlu_int64 = *(SLONG *) temp_ptr;
+                        	break;
+					    case dtype_int64:
+					        value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+					        break;
+					    default:
+                	        unsup_datatype = true;
+                    	    break;
+					    }
+					}
+				    else
+				    {
+					    value->vlu_misc.vlu_int64 = *(SINT64 *) temp_ptr;
+					}
+					break;
+
+				case dtype_double:
+#ifdef VMS
+				case dtype_d_float:
+#endif
+					value->vlu_misc.vlu_double = *(double *) temp_ptr;
+					break;
+
+				case dtype_text:
+                    temp_desc = value->vlu_desc;
+                    temp_desc.dsc_address = temp_ptr;
+                    MOV_move(&temp_desc, &value->vlu_desc);
+                    break;
+                                       
+				case dtype_cstring:
+                    // For the ttype_binary char. set, this will truncate
+                    // the string after the first zero octet copied.
+                    temp_desc = value->vlu_desc;
+                    temp_desc.dsc_address = temp_ptr;
+                    temp_desc.dsc_length =
+                        strlen(reinterpret_cast<char *>(temp_ptr)) + 1;
+                    MOV_move(&temp_desc, &value->vlu_desc);
+                    break;
+                                       
+				case dtype_varying:
+					temp_desc = value->vlu_desc;
+					temp_desc.dsc_address = temp_ptr;
+                    temp_desc.dsc_length =
+                        reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
+					MOV_move(&temp_desc, &value->vlu_desc);
+					break;
+
+				case dtype_timestamp:
+					{
+						SLONG* ip = (SLONG *) temp_ptr;
+						value->vlu_misc.vlu_dbkey[0] = *ip++;
+						value->vlu_misc.vlu_dbkey[1] = *ip;
+					}
+					break;
+
+				default:
+					unsup_datatype = true;
+					break;
+				}
+				// check if this is function has the FREE_IT set, if set and
+				// return_value is not null, then free the return value
+				if (((SLONG) return_ptr->fun_mechanism < 0) && temp_ptr)
+				{
+					free(temp_ptr);
+				}
+			}
+		}
+	}
+	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
+}
