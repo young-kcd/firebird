@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string.h,v 1.16 2004-07-07 16:06:19 skidder Exp $
+ *  $Id: evl_string.h,v 1.17 2004-08-26 21:47:19 brodsom Exp $
  *
  */
 
@@ -110,7 +110,7 @@ public:
 	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {};
 
 	~StaticAllocator() {
-		for (int i = 0; i < chunksToFree.getCount(); i++)
+		for (size_t i = 0; i < chunksToFree.getCount(); i++)
 			pool.deallocate(chunksToFree[i]);
 	}
 
@@ -355,7 +355,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 	// Unescape strings, mark direct match items, pre-compile KMP tables and
 	// optimize out piSkipMore nodes
 	bool directMatch = true;
-	for (int i = 0; i < patternItems.getCount();) {
+	for (size_t i = 0; i < patternItems.getCount();) {
 		PatternItem *itemL = &patternItems[i];
 		switch (itemL->type) {
 		case piEscapedString: {
@@ -432,7 +432,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 	SSHORT finishCandidate = -1;
 	while (data_pos < data_len) {
 
-		int branch_number = 0;
+		size_t branch_number = 0;
 		while (branch_number < branches.getCount()) 
 		{
 			BranchItem *current_branch = &branches[branch_number];

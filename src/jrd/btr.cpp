@@ -2505,7 +2505,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		pointer = BTreeNode::writeJumpInfo(page, &jumpInfo);
 		// Write jump nodes.
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
-		for (int i = 0; i < jumpNodes->getCount(); i++) {
+		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
 			if (walkJumpNode[i].data) {
 				delete[] walkJumpNode[i].data;
@@ -2894,7 +2894,7 @@ static SLONG fast_load(thread_db* tdbb,
 					// Write jumpnodes on page.
 					pointer = (UCHAR*)bucket + headerSize;
 					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
-					for (int i = 0; i < leafJumpNodes->getCount(); i++) {
+					for (size_t i = 0; i < leafJumpNodes->getCount(); i++) {
 						// Update offset position first.
 						walkJumpNode[i].offset += totalJumpSize[0];
 						pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
@@ -2966,7 +2966,7 @@ static SLONG fast_load(thread_db* tdbb,
 				if (useJumpInfo) {
 					// Clear jumplist.
 					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
-					for (int i = 0; i < leafJumpNodes->getCount(); i++) {
+					for (size_t i = 0; i < leafJumpNodes->getCount(); i++) {
 						if (walkJumpNode[i].data) {
 							delete[] walkJumpNode[i].data;
 						}
@@ -3190,7 +3190,7 @@ static SLONG fast_load(thread_db* tdbb,
 						// Write jumpnodes on page.
 						levelPointer = (UCHAR*)bucket + headerSize;
 						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
-						for (int i = 0; i < pageJumpNodes->getCount(); i++) {
+						for (size_t i = 0; i < pageJumpNodes->getCount(); i++) {
 							// Update offset position first.
 							walkJumpNode[i].offset += totalJumpSize[level];
 							levelPointer = BTreeNode::writeJumpNode(&walkJumpNode[i], 
@@ -3261,7 +3261,7 @@ static SLONG fast_load(thread_db* tdbb,
 					if (useJumpInfo) {
 						// Clear jumplist.
 						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
-						for (int i = 0; i < pageJumpNodes->getCount(); i++) {
+						for (size_t i = 0; i < pageJumpNodes->getCount(); i++) {
 							if (walkJumpNode[i].data) {
 								delete[] walkJumpNode[i].data;
 							}
@@ -3352,7 +3352,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 				// Write jumpnodes on page.
 				IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
-				for (int i = 0; i < pageJumpNodes->getCount(); i++) {
+				for (size_t i = 0; i < pageJumpNodes->getCount(); i++) {
 					// Update offset position first.
 					walkJumpNode[i].offset += totalJumpSize[level];
 					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
@@ -3381,7 +3381,7 @@ static SLONG fast_load(thread_db* tdbb,
 		{
 			jumpNodeList* freeJumpNodes = *itr;
 			IndexJumpNode* walkJumpNode = freeJumpNodes->begin();
-			for (int i = 0; i < freeJumpNodes->getCount(); i++) {
+			for (size_t i = 0; i < freeJumpNodes->getCount(); i++) {
 				if (walkJumpNode[i].data) {
 					delete[] walkJumpNode[i].data;
 				}
@@ -4561,7 +4561,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 				CCH_RELEASE(tdbb, &right_window);
 			}
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (int i = 0; i < jumpNodes->getCount(); i++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++) {
 				if (walkJumpNode[i].data) {
 					delete[] walkJumpNode[i].data;
 				}
@@ -4616,7 +4616,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		pointer = BTreeNode::writeJumpInfo(left_page, &jumpInfo);
 		// Write jump nodes.
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
-		for (int i = 0; i < jumpNodes->getCount(); i++) {
+		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
 			// Update offset to real position with new jump nodes.
 			walkJumpNode[i].offset += jumpersNewSize;
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags2);
@@ -5218,7 +5218,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 			// Write jump nodes.
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (int i = 0; i < jumpNodes->getCount(); i++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++) {
 				// Update offset to real position with new jump nodes.
 				walkJumpNode[i].offset += jumpersNewSize - jumpersOriginalSize;
 				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
@@ -5289,8 +5289,7 @@ static SLONG insert_node(thread_db* tdbb,
 			USHORT index = 1;
 			IndexJumpNode* jn = 0;
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			int i;
-			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
 				UCHAR* q = new_key->key_data + walkJumpNode[i].prefix;
 				memcpy(q, walkJumpNode[i].data, walkJumpNode[i].length);
 				if (index == splitJumpNodeIndex) {
@@ -5310,7 +5309,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Rebuild first jumpnode on splitpage
 			index = 1;
 			walkJumpNode = jumpNodes->begin();
-			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (index > splitJumpNodeIndex) {
 					const USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
 					UCHAR* newData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[length];
@@ -5330,7 +5329,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Initalize new offsets for original page and split page.
 			index = 1;
 			walkJumpNode = jumpNodes->begin();
-			for (i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
 				// The jump node where the split is done isn't included anymore!
 				if (index < splitJumpNodeIndex) {
 					jumpersNewSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i], flags);
@@ -5416,7 +5415,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Calculate size that's between header and splitpoint.
 			const USHORT splitOffset = (splitpoint - (UCHAR*)newBucket);
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (index > splitJumpNodeIndex) {
 					// Update offset to correct position.
 					walkJumpNode[i].offset = walkJumpNode[i].offset - splitOffset + 
@@ -5473,7 +5472,7 @@ static SLONG insert_node(thread_db* tdbb,
 		// Write jump nodes.
 		USHORT index = 1;
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
-		for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+		for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
 			if (index <= jumpInfo.jumpers) {
 				// Update offset to correct position.
 				walkJumpNode[i].offset = walkJumpNode[i].offset + 
@@ -5489,7 +5488,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 		if (fragmentedOffset) {
 			IndexJumpNode* walkJumpNode2 = jumpNodes->begin();
-			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (walkJumpNode2[i].data) {
 					delete[] walkJumpNode2[i].data;
 				}

@@ -233,7 +233,7 @@ inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, 
  **************************************/
 {
 	if (vec) {
-		for (int i = 0; i < vec->getCount(); i++)
+		for (size_t i = 0; i < vec->getCount(); i++)
 		{
 			Trigger& t = (*vec)[i];
 			t.compile(tdbb);
@@ -316,7 +316,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 		return;
 	}
 
-	for (int i = 0; i < triggers->getCount(); i++)
+	for (size_t i = 0; i < triggers->getCount(); i++)
 	{
 		Trigger& t = (*triggers)[i];
 		t.compile(tdbb);

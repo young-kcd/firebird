@@ -288,7 +288,7 @@ bool OPT_access_path(const jrd_req* request,
 /* loop through all RSEs in the request, 
    and describe the rsb tree for that rsb */
 
-	SLONG i;
+	size_t i;
 	for (i = 0; i < request->req_fors.getCount(); i++) {
 		RecordSource* rsb = request->req_fors[i];
 		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
@@ -1199,7 +1199,7 @@ void OPT_set_index(thread_db* tdbb,
 /* go out to the vector which stores all rsbs for the 
    request, and replace the old with the new */
 
-	for (int i = 0; i < request->req_fors.getCount(); i++) {
+	for (size_t i = 0; i < request->req_fors.getCount(); i++) {
 		if (request->req_fors[i] == old_rsb) {
 			request->req_fors[i] = new_rsb;
 			break;
@@ -3507,10 +3507,9 @@ static void find_best(thread_db* tdbb,
 		stream_flags(*tdbb->getDefaultPool()), conjunct_flags(*tdbb->getDefaultPool());
 	stream_flags.grow(csb->csb_n_stream);
 	conjunct_flags.grow(opt->opt_base_conjuncts);
-	int i;
-	for (i = 0; i < stream_flags.getCount(); i++)
+	for (size_t i = 0; i < stream_flags.getCount(); i++)
 		stream_flags[i] = opt->opt_streams[i].opt_stream_flags & opt_stream_used;
-	for (i = 0; i < conjunct_flags.getCount(); i++)
+	for (size_t i = 0; i < conjunct_flags.getCount(); i++)
 		conjunct_flags[i] = opt->opt_conjuncts[i].opt_conjunct_flags & opt_conjunct_used;
 
 	// Compute delta and total estimate cost to fetch this stream.
@@ -3639,9 +3638,9 @@ static void find_best(thread_db* tdbb,
 
 	// Clean up from any changes made for compute the cost for this stream
 	csb->csb_rpt[stream].csb_flags &= ~csb_active;
-	for (i = 0; i < stream_flags.getCount(); i++)
+	for (size_t i = 0; i < stream_flags.getCount(); i++)
 		opt->opt_streams[i].opt_stream_flags &= stream_flags[i];
-	for (i = 0; i < conjunct_flags.getCount(); i++)
+	for (size_t i = 0; i < conjunct_flags.getCount(); i++)
 		opt->opt_conjuncts[i].opt_conjunct_flags &= conjunct_flags[i];
 }
 
@@ -5082,7 +5081,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 					     (idx_tail->opt_lower || idx_tail->opt_upper);
 					     idx_tail++, position++)
 					{
-						for (int j = 0; j < conjunct_position_vector.getCount(); j++) {
+						for (size_t j = 0; j < conjunct_position_vector.getCount(); j++) {
 							if (conjunct_position_vector[j] == position) {
 								matching_nodes_vector[j]->opt_conjunct_flags |= opt_conjunct_matched;
 							}

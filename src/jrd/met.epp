@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.134 2004-08-26 11:07:57 robocop Exp $
+$Id: met.epp,v 1.135 2004-08-26 21:47:19 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -146,7 +146,7 @@ static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 		return;
 	}
 			
-	for (int i = 0; i < vector->getCount(); i++) 
+	for (size_t i = 0; i < vector->getCount(); i++) 
 	{
 		(*vector)[i].release(tdbb);
 	}
@@ -178,7 +178,7 @@ static void post_used_procedures(trig_vec* vector)
 		return;
 	}
 			
-	for (int i = 0; i < vector->getCount(); i++) 
+	for (size_t i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r && !CMP_clone_is_active(r))
@@ -2525,7 +2525,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	jrd_nod* node;
 	Format* format;
 	Format::fmt_desc_iterator desc;
-	SSHORT i;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -2753,7 +2752,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
 				ERR_post(isc_random, isc_arg_string, "Error while parsing procedure's BLR.", 0);
 			procedure->prc_request->req_procedure = procedure;
-			for (i = 0; i < csb->csb_rpt.getCount(); i++)
+			for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 			{
 				if ( (node = csb->csb_rpt[i].csb_message) )
 				{
@@ -4057,9 +4056,8 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 	SET_TDBB(tdbb);
 
 	*vector_ptr = NULL;
-	int i;
 
-	for (i = 0; i < vector->getCount(); i++) 
+	for (size_t i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r && CMP_clone_is_active(r))
@@ -4068,7 +4066,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 		}
 	}
 
-	for (i = 0; i < vector->getCount(); i++) 
+	for (size_t i = 0; i < vector->getCount(); i++) 
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r) 
