@@ -600,7 +600,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "nbbackup"=.\nbbackup.dsp - Package Owner=<4>
+Project: "nbackup"=.\nbackup.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
