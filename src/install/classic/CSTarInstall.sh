@@ -91,17 +91,6 @@ if [ -e firebird ]
 
     ( $ScriptsSrcDir/classic/CSpreinstall.sh )
 
-    cp $ScriptsSrcDir/misc/README interbase
-
-    for i in CSchangeRunUser.sh CSrestoreRootRunUser.sh changeDBAPassword.sh
-      do
-        cp $ScriptsSrcDir/misc/$i interbase/bin/$i
-        chmod ugo=rx interbase/bin/$i
-      done
-
-    mkdir -p interbase/misc
-    cp $ScriptsSrcDir/misc/firebird.xinetd interbase/misc
-
     ($ScriptsSrcDir/classic/CSinstall.sh)
 
     ($ScriptsSrcDir/classic/CSpostinstall.sh)

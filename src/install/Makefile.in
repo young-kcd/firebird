@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in,v 1.1 2001-08-01 07:59:14 skywalker Exp $
+#   $Id: Makefile.in,v 1.2 2001-08-02 07:03:59 skywalker Exp $
 # 
 
 ROOT=../..
@@ -73,39 +73,25 @@ SuperSrcDir=$(InstallRoot)/super
 LastClassicInstallFlg=.classicinstallflg
 LastSuperInstallFlg=.superinstallflg
 
-install: 
-	@echo "you need to make a choice here "
-	@echo "make target"
-	@echo ""
-	@echo "Firebird classic targets:"
-	@echo "runclassicinstall - install classic from build tree"
-	@echo "classicpackages   - build tar and rpm install files"
-	@echo "classictarfile    - build tar install file"
-	@echo "classicrpmfile    - build redhat rpm install file"
-	@echo ""
-	@echo "Firebird super targets:"
-	@echo "runsuperinstall   - install super from build tree"
-	@echo "superpackages     - build tar and rpm install files"
-	@echo "supertarfile      - build tar install file"
-	@echo "superrpmfile      - build redhat rpm install file"
-	@echo ""
 
-all2: CSrpmscript SSrpmscript csinstall ssinstall
-
-
-classicpackages: classictarfile classicrpmfile
+install: runclassicinstall
 
 runclassicinstall: $(LastClassicInstallFlg)
-
-
-classictarfile: runclassicinstall $(ClassicTarFile)
-
-classicrpmfile: runclassicinstall $(ClassicRPMFile)
-
 
 $(LastClassicInstallFlg) : $(BIN)/gsec
 	sh $(InstallRoot)/classic/CSTarInstall.sh
 	touch $(LastClassicInstallFlg)
+
+
+
+runsuperinstall: $(LastSuperInstallFlg)
+
+$(LastSuperInstallFlg) : interbase/bin/gsec
+	sh $(InstallRoot)/super/SSTarInstall.sh
+	touch $(LastSuperInstallFlg)
+
+
+
 
 $(ClassicTarFile) : csinstall runclassicinstall
 	mv csinstall install
@@ -118,9 +104,20 @@ $(ClassicRPMFile): CSrpmscript
 	cp $(RedhatPackageDir)/$(ClassicRPMFile) .
 
 
+
+
+#__ for ron ________
+
+classicpackages: classictarfile classicrpmfile
+
+
+classictarfile: runclassicinstall $(ClassicTarFile)
+
+classicrpmfile: runclassicinstall $(ClassicRPMFile)
+
+
 superpackages: supertarfile superrpmfile
 
-runsuperinstall: $(LastSuperInstallFlg)
 
 
 supertarfile: runsuperinstall $(SuperTarFile)
@@ -128,9 +125,6 @@ supertarfile: runsuperinstall $(SuperTarFile)
 superrpmfile: runsuperinstall $(SuperRPMFile)
 
 
-$(LastSuperInstallFlg) : interbase/bin/gsec
-	sh $(InstallRoot)/super/SSTarInstall.sh
-	touch $(LastSuperInstallFlg)
 
 $(SuperTarFile) : ssinstall runsuperinstall
 	mv ssinstall install

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.2 2001-07-31 18:34:05 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.3 2001-08-02 07:03:59 skywalker Exp $
 # 
 
 ROOT=..
@@ -318,6 +318,70 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 rebuild_codes : 
 	$(MAKE) -C jrd $@
 
+
+
+
+#___________________________________________________________________________
+# Install generic files.
+
+CLASSIC_MiscFiles = firebird.xinetd
+SUPER_MiscFiles =  firebird.init.d.generic firebird.init.d.mandrake README
+
+INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
+#INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
+
+
+misc_files : $(INSTALL_MiscFiles)
+
+
+$(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
+	$(CP) $^ $@
+
+
+
+#___________________________________________________________________________
+# 
+
+CLASSIC_ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh changeDBAPassword.sh
+SUPER_ScriptFiles = SSchangeRunUser.sh SSrestoreRootRunUser.sh changeDBAPassword.sh
+
+
+INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(CLASSIC_ScriptFiles))
+#INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(SUPER_ScriptFiles))
+
+
+script_files : $(INSTALL_ScriptFiles)
+
+
+$(BIN)/% :: $(SRC_ROOT)/install/classic/%
+	$(CP) $^ $@
+	chmod ugo=rx $@
+
+$(BIN)/% :: $(SRC_ROOT)/install/super/%
+	$(CP) $^ $@
+	chmod ugo=rx $@
+
+$(BIN)/% :: $(SRC_ROOT)/install/misc/%
+	$(CP) $^ $@
+	chmod ugo=rx $@
+
+# Just a note that some of the script files (xinetd/firebird etc) need to h
+# have their paths changed in their shell scripts.
+#___________________________________________________________________________
+# 
+
+
+
+installx:
+	$(MAKE) -C install $@
+
+installclassic:
+	$(SRC_ROOT)/install/classic/CSpreinstall.sh
+#	$(SRC_ROOT)/install/classic/CSinstall.sh
+#	$(SRC_ROOT)/install/classic/CSpostinstall.sh
+
+builddist:
+	$(MAKE) -C install $@
 
 
 #___________________________________________________________________________
@@ -1114,8 +1178,8 @@ superMiscFiles:	force
 	mkdir -p source/interbase/misc
 	$(CP) firebird/skywalker/install/misc/firebird.init.d.* source/interbase/misc
 
-install: force
-	make -f firebird/skywalker/install/Makefile install
+#install: force
+#	make -f firebird/skywalker/install/Makefile install
 
 runclassicinstall: force
 	make -f firebird/skywalker/install/Makefile runclassicinstall

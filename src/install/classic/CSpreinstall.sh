@@ -215,7 +215,8 @@ checkForRPMInstall() {
 
 #= Main Pre ================================================================
 
-    IBRootDir=/opt/interbase
+    INSTALLDIR=%prefix%
+    IBRootDir=$INSTALLDIR/firebird
     IBBin=$IBRootDir/bin
     ArchiveDateTag=`date +"%Y%m%d_%H%M"`
     ArchiveMainFile="${IBRootDir}_${ArchiveDateTag}.tar.gz"
