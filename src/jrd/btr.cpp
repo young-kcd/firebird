@@ -5166,7 +5166,8 @@ static SLONG insert_node(thread_db* tdbb,
 				break;
 			}
 			if (leafPage && unique && 
-				(!(key->key_flags & key_all_nulls) || primary)) {
+				(!(key->key_flags & key_all_nulls) || primary))
+			{
 				// Save the duplicate so the main caller can validate them.
 				// hvlad: don't check unique index if key has only null values
 				RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
