@@ -873,11 +873,11 @@ SOURCE=..\..\..\src\jrd\msg_encode.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\msg_facs.h
+SOURCE=..\..\..\src\include\gen\msg_facs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\msgs.h
+SOURCE=..\..\..\src\include\gen\msgs.h
 # End Source File
 # Begin Source File
 
