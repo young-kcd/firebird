@@ -393,8 +393,9 @@ public:
 	dsql_req*	req_offspring;	//!< Cursor update requests
 	DsqlMemoryPool*	req_pool;
 	dsql_lls*	req_context;
-    dsql_lls*    req_union_context;	//!< Save contexts for views of unions
-    dsql_lls*    req_dt_context;		//!< Save contexts for views of derived tables
+    dsql_lls*	req_union_context;	//!< Save contexts for views of unions
+    dsql_lls*	req_dt_context;		//!< Save contexts for views of derived tables
+    dsql_lls*	req_dt_base_context;	//!< Save base context used for processing derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dsql_dbb*	req_dbb;			//!< Database handle
@@ -508,7 +509,7 @@ public:
 	USHORT				ctx_context;		//!< Context id
 	USHORT				ctx_scope_level;	//!< Subquery level within this request
 	USHORT				ctx_flags;			//!< Various flag values
-	dsql_lls*				ctx_childs_derived_table;	//!< Childs derived table context
+	dsql_lls*			ctx_childs_derived_table;	//!< Childs derived table context
 };
 
 // Flag values for ctx_flags
