@@ -1,3 +1,39 @@
+2004-04-09 18:32  skidder
+
+	* firebird2/src/jrd/evl.cpp (1.77):
+	
+	Fix spelling mistake in my comment
+
+2004-04-09 18:27  skidder
+
+	* firebird2/src/jrd/evl.cpp (1.76):
+	
+	Fix another place where we may loose a tick during timestamp
+	arithmetics.
+
+2004-04-09 10:03  hvlad
+
+	* firebird2/src/dsql/: ddl.cpp (1.91), dsql.h (1.58):
+	
+	Corrects an error at DDL generation when the total size of all
+	generated BLR exceeds 64K, but each slice does not exceed 64K. For
+	ex, procedure sources is 55K and generated BLR is 12K.	Note: this
+	fix is safe because jrd8_ddl (DYN_ddl\DYN_execute) do not use
+	parameter 'length', wrongly declared as USHORT
+
+2004-04-09 02:23  skidder
+
+	* firebird2/: configure.in (1.194),
+	src/include/gen/autoconfig_msvc.h (1.92):
+	
+	Use llrint() on platforms where it is available
+
+2004-04-09 00:29  skidder
+
+	* firebird2/src/jrd/evl.cpp (1.75):
+	
+	Fix rounding problem in date arithmetics
+
 2004-04-08 16:51  alexpeshkoff
 
 	* firebird2/src/jrd/opt.cpp (1.150):
