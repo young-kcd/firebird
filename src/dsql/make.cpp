@@ -221,7 +221,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 /**
   
- 	MAKE_str-constant
+ 	MAKE_str_constant
   
     @brief	Make a constant node when the 
        character set ID is already known.
@@ -294,14 +294,29 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
-// If we already know the datatype, don't worry about anything 
+	// If we already know the datatype, don't worry about anything.
+	//
+	// dimitr: But let's re-evaluate descriptors for expression arguments
+	//		   (when a NULL replacement node is provided) to always
+	//		   choose the correct resulting datatype. Example:
+	//		   NULLIF(NULL, 0) => CHAR(1), but
+	//		   1 + NULLIF(NULL, 0) => INT
+	//		   This is required because of MAKE_desc() being called
+	//		   from custom pass1 handlers for some node types and thus
+	//		   causing an incorrect datatype (determined without
+	//		   context) to be cached in nod_desc.
 
-	if (node->nod_desc.dsc_dtype) {
+	if (node->nod_desc.dsc_dtype && !null_replacement)
+	{
 		*desc = node->nod_desc;
 		return;
 	}
 
 	switch (node->nod_type) {
+	case nod_constant:
+		*desc = node->nod_desc;
+		return;
+
 	case nod_agg_count:
 /* count2
     case nod_agg_distinct:
@@ -463,22 +478,25 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
-		MAKE_desc(&desc1, node->nod_arg[e_cast_source], null_replacement);
+		MAKE_desc(&desc1, node->nod_arg[e_cast_source], NULL);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
 
 	case nod_simple_case:
-		MAKE_desc_from_list(&desc1, node->nod_arg[e_simple_case_results], "CASE");
+		MAKE_desc_from_list(&desc1, node->nod_arg[e_simple_case_results],
+							null_replacement, "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_searched_case:
-		MAKE_desc_from_list(&desc1, node->nod_arg[e_searched_case_results], "CASE");
+		MAKE_desc_from_list(&desc1, node->nod_arg[e_searched_case_results],
+							null_replacement, "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_coalesce:
-		MAKE_desc_from_list(&desc1, node->nod_arg[0], "COALESCE");
+		MAKE_desc_from_list(&desc1, node->nod_arg[0],
+							null_replacement, "COALESCE");
 		*desc = desc1;
 		return;
 
@@ -1240,7 +1258,9 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	@param expression_name
 
  **/
-void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
+void MAKE_desc_from_list(dsc* desc, dsql_nod* node,
+						 dsql_nod* null_replacement,
+						 const TEXT* expression_name)
 {
 	//-------------------------------------------------------------------------- 
 	//  [Arno Brinkman] 2003-08-23
@@ -1284,7 +1304,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0, max_significant_digits = 0;
 	SSHORT max_sub_type = 0, first_sub_type, ttype = ttype_ascii; // default type if all nodes are nod_null.
 	SSHORT max_numeric_sub_type = 0;
-	bool firstarg = true, all_same_sub_type = true, all_equal = true;
+	bool firstarg = true, all_same_sub_type = true, all_equal = true, all_nulls = true;
 	bool all_numeric = true, any_numeric = false, any_approx = false, any_float = false;
 	bool all_text = true, any_text = false, any_varying = false;
 	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
@@ -1294,8 +1314,12 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 	const dsql_nod* err_node = NULL;
 	dsql_nod** arg = node->nod_arg;
 	for (dsql_nod** end = arg + node->nod_count; arg < end; arg++) {
-		// ignore NULL and parameter value from walking
 		dsql_nod* tnod = *arg;
+		// do we have only literal NULLs?
+		if (tnod->nod_type != nod_null) {
+			all_nulls = false;
+		}
+		// ignore NULL and parameter value from walking
 		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter) {
 			continue;
 		}
@@ -1463,6 +1487,25 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 		else {
 			all_blob = false;
 		}
+	}
+
+	// If we have literal NULLs only, let the result be either
+	// CHAR(1) CHARACTER SET NONE or the context-provided datatype
+	if (all_nulls)
+	{
+		if (null_replacement)
+		{
+			MAKE_desc(desc, null_replacement, NULL);
+		}
+		else
+		{
+			desc->dsc_dtype = dtype_text;
+			desc->dsc_length = 1;
+			desc->dsc_scale = 0;
+			desc->dsc_ttype() = 0;
+			desc->dsc_flags = DSC_nullable;
+		}
+		return;
 	}
 
 	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
