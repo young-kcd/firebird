@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.16 2003-04-08 10:20:37 aafemt Exp $
+#   $Id: make.rules,v 1.17 2003-04-10 06:34:24 eku Exp $
 #
 
 #____________________________________________________________________________
@@ -158,7 +158,7 @@ STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
 #
 # testgpre = $(shell if [ -f $(GPRE) ]; then; echo $(GPRE); else; echo ""; fi)
 #test1:
-#	echo $(testgpre)
+#	$(ECHO) $(testgpre)
 
 
 GPRE_FLAGS=	-r -m -z -n
@@ -228,19 +228,19 @@ $(OBJ)/%.o: $(DEP)/%.d
 # .cpp files
 
 $(DEP)/%.d:: $(SRC)/%.c
-	@echo "need to rebuild $^"
-	echo $(OBJ)/$(*).o " : FORCE" > $@
-#	touch $^
+	@$(ECHO) "need to rebuild $^"
+	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
+#	$(TOUCH) $^
 
 $(DEP)/%.d:: $(SRC)/%.epp
-	@echo "need to rebuild $^"
-	echo $(OBJ)/$(*).o " : FORCE" > $@
-#	touch $^
+	@$(ECHO) "need to rebuild $^"
+	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
+#	$(TOUCH) $^
 
 $(DEP)/%.d:: $(SRC)/%.cpp
-	@echo "need to rebuild $^"
-	echo $(OBJ)/$(*).o " : FORCE" > $@
-#	touch $^
+	@$(ECHO) "need to rebuild $^"
+	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
+#	$(TOUCH) $^
 
 # Rules for making resource files
 
@@ -256,9 +256,9 @@ define move-dep
         if [ -f $(*F).d ]; \
         then \
                 sed -e '1 s#$(@F)#$(OBJ)\/$(@F)#' $(*F).d > tmp.d; \
-                mv tmp.d $(OBJ)/$(*F).d; \
-                rm $(*F).d; \
-                touch $@; \
+                $(MV) tmp.d $(OBJ)/$(*F).d; \
+                $(RM) $(*F).d; \
+                $(TOUCH) $@; \
         fi
 endef
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.example5,v 1.5 2003-03-27 11:21:44 aafemt Exp $
+#   $Id: Makefile.in.example5,v 1.6 2003-04-10 06:34:23 eku Exp $
 # 
 
 ROOT=../..
@@ -99,7 +99,7 @@ v5_examples: employee.fdb $(NT_EXAMPLES) makefile.example
 	$(CP) $(EXAMPLES_SRC)dyn4.e $(EXAMPLES_DEST)dyn4.e
 	$(CP) $(EXAMPLES_SRC)dyn5.e $(EXAMPLES_DEST)dyn5.e
 	$(CP) $(EXAMPLES_SRC)dynfull.e $(EXAMPLES_DEST)dynfull.e
-	echo $(LD_LIBRARY_PATH)
+	$(ECHO) $(LD_LIBRARY_PATH)
 	$(GBAK) employee.fdb $(EXAMPLES_DEST)employee.gbk
 #	-$(RM) $(EXAMPLES_DEST)employee.fdb
 	$(GBAK) -r $(EXAMPLES_DEST)employee.gbk $(EXAMPLES_DEST)employee.fdb

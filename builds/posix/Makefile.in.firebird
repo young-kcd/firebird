@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.35 2003-04-08 10:20:37 aafemt Exp $
+#  $Id: Makefile.in.firebird,v 1.36 2003-04-10 06:34:24 eku Exp $
 #
 
 ROOT=..
@@ -519,15 +519,15 @@ script_files : $(INSTALL_ScriptFiles)
 
 $(BIN)/% :: $(SRC_ROOT)/install/classic/%
 	$(CP) $^ $@
-	chmod ugo=rx $@
+	$(CHMOD) ugo=rx $@
 
 $(BIN)/% :: $(SRC_ROOT)/install/super/%
 	$(CP) $^ $@
-	chmod ugo=rx $@
+	$(CHMOD) ugo=rx $@
 
 $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 	$(CP) $^ $@
-	chmod ugo=rx $@
+	$(CHMOD) ugo=rx $@
 
 
 #___________________________________________________________________________
@@ -545,18 +545,18 @@ install package packages dist:
 clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen
 
 clean_config: clean clean_makefiles
-	rm -f $(ROOT)/configure
+	$(RM) $(ROOT)/configure
 
 # Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
-	-rm -f refDatabases/*\.fdb
+	-$(RM) refDatabases/*\.fdb
 
 
 clean_objects:
-	rm -f `find $(GEN_ROOT)/ -type f -name '*.o' -print`
+	$(RM) `find $(GEN_ROOT)/ -type f -name '*.o' -print`
 
 clean_extern_objects:
-	rm -f `find $(SRC_ROOT)/extern/ -type f -name '*.o' -print`
+	$(RM) `find $(SRC_ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant 
@@ -564,22 +564,22 @@ clean_extern_objects:
 # MOD 10-July-2002
 
 clean_dependancies:
-	rm -f `find $(GEN_ROOT)/ -type f -name '*.d' -print`
+	$(RM) -f `find $(GEN_ROOT)/ -type f -name '*.d' -print`
 
 # delete only all of the files of type regular file in $FIREBIRD
 # leave the directories to make dependacies work still
 # MOD 11-July-2002
 
 clean_build:
-	rm -f `find $(GEN_ROOT)/firebird -type f -print`
-#	rm -f $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
+	$(RM) `find $(GEN_ROOT)/firebird -type f -print`
+#	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
 # 
 clean_makefiles:
-	rm -f $(GEN_ROOT)/Makefile.*
+	$(RM) $(GEN_ROOT)/Makefile.*
 	
 clean_gpre_gen:
-	-rm -f `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
+	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
 	
 
 #___________________________________________________________________________

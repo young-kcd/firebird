@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.9 2003-04-03 07:35:20 eku Exp $
+#  $Id: make.shared.targets,v 1.10 2003-04-10 06:34:24 eku Exp $
 #
 
 
@@ -60,11 +60,11 @@ $(SRC)/jrd/dyn_def.cpp : $(SRC)/jrd/dyn_def.epp $(SRC)/jrd/dyn_def.sed
 
 $(SRC)/dsql/parse.cpp: $(SRC)/dsql/parse.y $(SRC)/dsql/parse.sed
 	$(YACC) -l -d $<
-	mv -f $(SRC)/y.tab.c $(SRC)/dsql/dsql.tab.c
-	mv -f $(SRC)/y.tab.h $(SRC)/dsql/dsql.tab.h
+	$(MV) $(SRC)/y.tab.c $(SRC)/dsql/dsql.tab.c
+	$(MV) $(SRC)/y.tab.h $(SRC)/dsql/dsql.tab.h
 	sed -e 's/\\r//g' $(SRC)/dsql/parse.sed > $(SRC)/dsql/parse2.sed
 	sed -f $(SRC)/dsql/parse2.sed <$(SRC)/dsql/dsql.tab.c > $@  
-	-rm $(SRC)/dsql/parse2.sed
+	-$(RM) $(SRC)/dsql/parse2.sed
 
 
 
@@ -80,13 +80,13 @@ $(SRC)/gpre/gpre_meta.cpp:  $(SRC)/gpre/gpre_meta.epp
 buildb: security.fdb yachts.lnk help.fdb
 
 security.fdb : $(ISC_GDB)
-	-ln -sf $(ISC_GDB) $@
+	-$(LN_S) -f $(ISC_GDB) $@
 
 yachts.lnk: 
-	-ln -fs $(SRC_ROOT)/refDatabases/empty.fdb yachts.lnk
+	-$(LN_S) -f $(SRC_ROOT)/refDatabases/empty.fdb yachts.lnk
 
 help.fdb:
-	-ln -fs $(SRC_ROOT)/refDatabases/help.fdb help.fdb
+	-$(LN_S) -f $(SRC_ROOT)/refDatabases/help.fdb help.fdb
 
 
 
@@ -119,8 +119,8 @@ $(GEN_ROOT)/remote/window.res: $(SRC_ROOT)/remote/window.rc $(SRC_ROOT)/remote/w
 .PHONY: clean FORCE
 
 clean:
-	-rm $(AllObjects)
-	-rm $(Dependancies)
+	-$(RM) $(AllObjects)
+	-$(RM) $(Dependancies)
 
 
 # This target is used in the generated dependancy xxx.d files which are

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.14 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.refDatabases,v 1.15 2003-04-10 06:34:24 eku Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -67,15 +67,15 @@ empty_db : empty.fdb yachts.lnk
 empty.fdb : $(BIN)/create_db
 	-$(RM) $@
 	$(BIN)/create_db $@
-	touch $@
-	chmod 444 $@
+	$(TOUCH) $@
+	$(CHMOD) 444 $@
 
 # Ok so Jim had/has a sailing theme, and the sample database that a lot
 # of .epp files require to compile is yachts.lnk. MOD 05-Aug-2002
 
 yachts.lnk: empty.fdb
 	$(RM) -f yachts.lnk
-	ln -fs $(SRC_ROOT)/empty.fdb yachts.lnk
+	$(LN_S) -f $(SRC_ROOT)/empty.fdb yachts.lnk
 
 
 
@@ -88,39 +88,39 @@ ref_databases : msg.fdb help.fdb metadata.fdb security.fdb
 
 msg.fdb:	$(SRC_ROOT)/msgs/msg.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
-	touch $@
-	chmod 444 $@
+	$(TOUCH) $@
+	$(CHMOD) 444 $@
 
 help.fdb:	$(FIREBIRD)/help/help.fdb
 	$(RM) -f $@
-	ln -fs $^ $@
+	$(LN_S) -f $^ $@
 
 $(FIREBIRD)/help/help.fdb:	$(SRC_ROOT)/misc/help.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
-	touch $@
-	chmod 444 $@
+	$(TOUCH) $@
+	$(CHMOD) 444 $@
 
 security.fdb:	$(FIREBIRD)/security.fdb
 	$(RM) -f $@
-	ln -fs $^ $@
+	$(LN_S) -f $^ $@
 
 $(FIREBIRD)/security.fdb:	$(SRC_ROOT)/misc/security.gbak
 	$(BIN)/gbak_static  -R $< $@
-	touch $@
-	chmod 666 $@
+	$(TOUCH) $@
+	$(CHMOD) 666 $@
 
 metadata.fdb:	$(SRC_ROOT)/misc/metadata.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
-	touch $@
-	chmod 444 $@
+	$(TOUCH) $@
+	$(CHMOD) 444 $@
 
 # An alternative metadata creation method, this one is actually preferred
 # since it ensures the data is valid.
 
 metadata.fdb.x:	$(SRC_ROOT)/misc/metadata.sql
 	$(BIN)/isql -i $<
-	touch $@
-	chmod 444 $@
+	$(TOUCH) $@
+	$(CHMOD) 444 $@
 
 
 FORCE:
