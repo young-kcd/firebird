@@ -115,7 +115,6 @@ static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static dsql_dbb*	init(FB_API_HANDLE*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static USHORT	name_length(const TEXT*);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(dsql_req*, USHORT, const TEXT*, USHORT, USHORT);
 static void		punt(void);
@@ -1515,7 +1514,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 			}
 			cursor[i] = '\0';
 		}
-		const USHORT length = name_length(cursor);
+		const USHORT length = fb_utils::name_length(cursor);
 	
 		if (length == 0) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
@@ -4358,30 +4357,6 @@ static void map_in_out(	dsql_req*		request,
 			*flag = 0;
 		}
 	}
-}
-
-
-/**
-  
- 	name_length
-  
-    @brief	Compute length of user supplied name.
- 
-
-    @param name
-
- **/
-static USHORT name_length( const TEXT* name)
-{
-	const char BLANK = '\040';
-
-	const TEXT* q = name - 1;
-	for (const TEXT* p = name; *p; p++) {
-		if (*p != BLANK)
-			q = p;
-	}
-
-	return (USHORT) ((q + 1) - name);
 }
 
 
