@@ -1,3 +1,124 @@
+2004-03-11 06:47  skidder
+
+	* firebird2/src/jrd/: dyn_util.epp, sdw.cpp:
+	
+	Kill unneeded volatiles
+
+2004-03-11 06:46  skidder
+
+	* firebird2/src/alice/alice.cpp:
+	
+	Fix comment
+
+2004-03-11 06:44  skidder
+
+	* firebird2/src/burp/burp.cpp:
+	
+	Kill unneeded volatile
+
+2004-03-11 06:43  skidder
+
+	* firebird2/src/alice/alice.cpp:
+	
+	Kill a couple unneeded volatiles
+
+2004-03-11 06:41  skidder
+
+	* firebird2/src/jrd/: opt.cpp, par.cpp:
+	
+	GCC doesn't consider double const a valid C++
+
+2004-03-11 06:30  skidder
+
+	* firebird2/src/common/classes/: rwlock.h, semaphore.h:
+	
+	Fix a couple errors I introduced in previous commit. Spotted by
+	Claudio
+
+2004-03-11 06:17  robocop
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, ExecuteStatement.h:
+	
+	Fourth step to rename
+
+2004-03-11 06:09  robocop
+
+	* firebird2/builds/: posix/make.shared.variables,
+	win32/msvc6/engine.dsp, win32/msvc6/engine_classic.dsp,
+	win32/msvc6/engine_embed.dsp, win32/msvc7/engine.vcproj,
+	win32/msvc7/engine_classic.vcproj, win32/msvc7/engine_embed.vcproj:
+	
+	Third step to rename
+
+2004-03-11 06:03  robocop
+
+	* firebird2/src/: common/classes/alloc.cpp, common/classes/auto.h,
+	dsql/dsql.cpp, dsql/hsh.cpp, dudley/ddl.h, intl/cs_gb2312.cpp,
+	intl/cs_ksc.cpp, intl/cs_narrow.cpp, intl/cv_big5.cpp,
+	intl/cv_big5.h, intl/cv_gb2312.cpp, intl/cv_gb2312.h,
+	intl/cv_jis.cpp, intl/cv_jis.h, intl/cv_ksc.cpp, intl/cv_ksc.h,
+	intl/cv_narrow.cpp, intl/cv_narrow.h, intl/cv_unicode_fss.cpp,
+	intl/cv_unicode_fss.h, intl/kanji.cpp, intl/lc_ascii.cpp,
+	intl/lc_big5.cpp, intl/lc_dos.cpp, intl/lc_gb2312.cpp,
+	intl/lc_iso8859_1.cpp, intl/lc_iso8859_2.cpp, intl/lc_jis.cpp,
+	intl/lc_ksc.cpp, intl/lc_narrow.cpp, intl/lc_unicode_ucs2.cpp,
+	intl/ld.cpp, intl/ld2.cpp, intl/ldcommon.h, intl/utils/dtest.c,
+	intl/utils/dtest2.c, intl/utils/maptest.cpp, intl/utils/maptest2.c,
+	jrd/all.cpp, jrd/blb.cpp, jrd/blb_proto.h, jrd/blf_proto.h,
+	jrd/blk.h, jrd/blob_filter.cpp, jrd/bookmark.cpp, jrd/btn.h,
+	jrd/btr.cpp, jrd/btr.h, jrd/btr_proto.h, jrd/cch.cpp, jrd/cch.h,
+	jrd/cch_proto.h, jrd/cmp.cpp, jrd/cmp_proto.h, jrd/cvt.cpp,
+	jrd/cvt2.cpp, jrd/dbg.cpp, jrd/dbt.cpp, jrd/dfw.epp, jrd/dmp.cpp,
+	jrd/dmp_proto.h, jrd/dpm.epp, jrd/dpm_proto.h, jrd/dyn.epp,
+	jrd/dyn.h, jrd/dyn_def.epp, jrd/dyn_del.epp, jrd/dyn_mod.epp,
+	jrd/dyn_ut_proto.h, jrd/dyn_util.epp, jrd/entry.h, jrd/err.cpp,
+	jrd/evl.cpp, jrd/evl_like.cpp, jrd/evl_proto.h, jrd/exe.cpp,
+	jrd/exe.h, jrd/exe_proto.h, jrd/ext.cpp, jrd/filters.cpp,
+	jrd/fun.epp, jrd/fun_proto.h, jrd/grant.epp, jrd/grant_proto.h,
+	jrd/idx.cpp, jrd/idx_proto.h, jrd/inf.cpp, jrd/ini.epp,
+	jrd/intl.cpp, jrd/intl_builtin.cpp, jrd/intl_classes.h,
+	jrd/intl_proto.h, jrd/intlobj.h, jrd/isc_sync.cpp, jrd/jrd.cpp,
+	jrd/jrd.h, jrd/jrd_proto.h, jrd/lck.cpp, jrd/lck_proto.h,
+	jrd/log.cpp, jrd/log_proto.h, jrd/met.epp, jrd/met_proto.h,
+	jrd/nav.cpp, jrd/nav_proto.h, jrd/nbak.cpp, jrd/opt.cpp,
+	jrd/opt_proto.h, jrd/pag.cpp, jrd/par.cpp, jrd/par_proto.h,
+	jrd/pcmet.epp, jrd/pcmet_proto.h, jrd/plugin_manager.h,
+	jrd/qatest.cpp, jrd/req.h, jrd/rlck.cpp, jrd/rlck_proto.h,
+	jrd/rng.cpp, jrd/rng_proto.h, jrd/rpb_chain.cpp, jrd/rpb_chain.h,
+	jrd/rse.cpp, jrd/rse.h, jrd/rse_proto.h, jrd/sbm.cpp,
+	jrd/sbm_proto.h, jrd/scl.epp, jrd/scl_proto.h, jrd/sdw.cpp,
+	jrd/shut.cpp, jrd/sort.cpp, jrd/sort.h, jrd/sort_proto.h,
+	jrd/sqz.cpp, jrd/sqz_proto.h, jrd/svc.cpp, jrd/svc_proto.h,
+	jrd/tpc.cpp, jrd/tpc_proto.h, jrd/tra.cpp, jrd/tra.h,
+	jrd/tra_proto.h, jrd/utl.cpp, jrd/val.cpp, jrd/val_proto.h,
+	jrd/vio.cpp, jrd/vio_proto.h, jrd/why.cpp, jrd/os/pio_proto.h,
+	jrd/os/posix/unix.cpp, jrd/os/vms/extvms.cpp, jrd/os/vms/vms.cpp,
+	jrd/os/vms/vmslo_proto.h, jrd/os/vms/vmslock.cpp,
+	jrd/os/win32/winnt.cpp, lock/driver.cpp, lock/lock.cpp,
+	utilities/rebuild/rebui_proto.h, utilities/rebuild/rebuild.cpp,
+	utilities/rebuild/rmet.epp, utilities/rebuild/rstore.epp:
+	
+	Cleanup Some minor corrections Second step to rename
+
+2004-03-11 05:31  robocop
+
+	* firebird2/src/jrd/: execute_statement.cpp, execute_statement.h:
+	
+	First step to rename
+
+2004-03-11 05:26  skidder
+
+	* firebird2/src/common/classes/fb_string.cpp:
+	
+	Fix a few warnings. Not very harmless ones
+
+2004-03-11 05:07  skidder
+
+	* firebird2/src/intl/: cv_big5.cpp, cv_jis.cpp, cv_ksc.cpp,
+	cv_narrow.cpp, cv_unicode_fss.cpp:
+	
+	Fix POSIX DEV_BUILD recently broken by Claudio cleanup
+
 2004-03-09 01:16  skidder
 
 	* firebird2/src/: alice/alice_meta.epp, common/fb_exception.cpp,
