@@ -218,6 +218,9 @@ void DirectoryList::Initialize(void) {
 }
 
 bool DirectoryList::IsPathInList(const Firebird::string& path) {
+#ifdef BOOT_BUILD
+	return true;
+#else  //BOOT_BUILD
 	if (Mode == NotInitialized)
 		Initialize();
 
@@ -235,7 +238,7 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 	// this is "wonderful" potential hole for hacks
 	// Example of IIS attack attempt:
 	// "GET /scripts/..%252f../winnt/system32/cmd.exe?/c+dir HTTP/1.0"
-	//								(live from apache access log :)
+	//								(live from apache access.log :)
 	if (path.find(PathUtils::up_dir_link) != Firebird::string::npos)
 		return false;
 
@@ -254,6 +257,7 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 		}
 	}
 	return rc;
+#endif //BOOT_BUILD
 }
 
 void DirectoryList::ExpandFileName (
@@ -261,7 +265,7 @@ void DirectoryList::ExpandFileName (
 					const Firebird::string & Name,
 					int Access
 ) {
-	if (!ConfigDirs)
+	if (Mode == NotInitialized)
 		Initialize();
     for (int i = 0; i < nDirs; i++) {
 		PathUtils::concatPath(Path, ConfigDirs[i], Name);
