@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.27 2003-02-21 00:27:16 hippoman Exp $
+$Id: gen.cpp,v 1.28 2003-02-26 23:41:00 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -105,6 +105,9 @@ UCHAR GEN_expand_buffer( DSQL_REQ request, UCHAR byte)
 	TSQL tdsql = GET_THREAD_DATA;
 
 	const ULONG length = request->req_blr_string->str_length + 2048;
+	// AB: We must define a maximum length and post an error when exceeded else 
+	// the server can crash with a huge SQL command.
+
 	const bool bIsPermanentPool = MemoryPool::blk_pool(request->req_blr_string) == DSQL_permanent_pool;
 	DsqlMemoryPool* pool = bIsPermanentPool ? DSQL_permanent_pool : tdsql->tsql_default;
 	STR new_buffer = FB_NEW_RPT(*pool, length) str;
@@ -112,6 +115,7 @@ UCHAR GEN_expand_buffer( DSQL_REQ request, UCHAR byte)
 
 	// one huge pointer per line for LIBS
 	// TMN: What does that mean???
+
 	char*       p   = new_buffer->str_data;
 	const char* q   = request->req_blr_string->str_data;
 	BLOB_PTR*   end = request->req_blr;
