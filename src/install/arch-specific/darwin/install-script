@@ -67,7 +67,7 @@ fi
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	echo -n
 else
-	$FB_FW/Resources/bin/fbmgr.bin -user sysdba -password masterkey shut
+	$FB_FW/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
 	rm -rf /Library/StartupItems/Firebird
 fi
 

@@ -9,20 +9,20 @@
 StartService ()
 {
     ConsoleMessage "Starting Firebird SQL Database server"
-    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin start
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -start
 }
 
 StopService ()
 {
     ConsoleMessage "Stopping Firebird SQL Database server"
-    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -user sysdba -password masterkey shut
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
 }
 
 RestartService ()
 {
     ConsoleMessage "Restarting Firebird SQL Database server"
-    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -user sysdba -password masterkey shut
-    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin start
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
+    /Library/Frameworks/Firebird.framework/Resources/bin/fbmgr.bin -start
 }
 
 RunService "$1"
