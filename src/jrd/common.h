@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.24 2002-08-28 06:50:33 eku Exp $
+$Id: common.h,v 1.25 2002-08-31 09:25:13 fsg Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1342,7 +1342,7 @@ typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) ();
 #if ((defined(WIN32) || defined(_WIN32)) && defined(_MSC_VER))
 typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #else
-#if (defined(DARWIN))
+#if (defined(DARWIN) || defined(LINUX))
 typedef RETSIGTYPE (*CLIB_ROUTINE SIG_FPTR) (int);
 #else
 typedef RETSIGTYPE (*SIG_FPTR) ();

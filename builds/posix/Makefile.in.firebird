@@ -28,7 +28,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.2 2002-08-05 07:14:53 skywalker Exp $
+#  $Id: Makefile.in.firebird,v 1.3 2002-08-31 09:25:13 fsg Exp $
 #
 
 ROOT=..
@@ -198,7 +198,7 @@ boot_phase1: $(GPRE_STATIC)
 $(GPRE_STATIC):
 	$(MAKE) boot_phase1_build
 
-boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static
+boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static lock_mgr
 
 libfbcommon:
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbcommon $@

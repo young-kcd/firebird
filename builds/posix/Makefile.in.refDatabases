@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.2 2002-08-05 07:14:53 skywalker Exp $
+#  $Id: Makefile.in.refDatabases,v 1.3 2002-08-31 09:25:13 fsg Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -97,7 +97,7 @@ help.gdb:	$(FIREBIRD)/help/help.gdb
 
 $(FIREBIRD)/help/help.gdb:	$(SRC_ROOT)/misc/help.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
-	chmod 444 help.gdb
+	chmod 444 $@
 	touch $@
 
 isc4.gdb:	$(FIREBIRD)/isc4.gdb
