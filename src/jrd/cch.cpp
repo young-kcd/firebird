@@ -69,7 +69,8 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/ail.h"
 #include "../wal/wal_proto.h"
-
+#include "../common/config/config.h"
+#include "../jrd/jrd_time.h"
 
 extern "C" {
 
@@ -1191,10 +1192,41 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 	}
 
-	PIO_flush (dbb->dbb_file, FALSE);
-	if (dbb->dbb_shadow)
-		PIO_flush (dbb->dbb_shadow->sdw_file, FALSE);
+	// 
+	// Check if flush needed
+	//
+	time_t now;
+	int max_unflushed_writes = Config::getMaxUnflushedWrites();
+	time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
+	now = time(0);
+	BOOLEAN doFlush = FALSE;
+	if (!(dbb->dbb_file->fil_flags & FIL_force_write) 
+	&& (max_unflushed_writes > 0 || max_unflushed_write_time>0))
+	{
+		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
+		if (((max_unflushed_writes >= 0) && (dbb->unflushed_writes == max_unflushed_writes))
+		|| ((max_unflushed_write_time>=0) && (dbb->oldest_unflushed_write)
+		&& (now - dbb->oldest_unflushed_write > max_unflushed_write_time))){
+			doFlush = TRUE;
+			dbb->unflushed_writes = 0;
+			dbb->oldest_unflushed_write = NULL;
+		}
+		else {
+			dbb->unflushed_writes++;
+			if (!dbb->oldest_unflushed_write)
+			{
+				dbb->oldest_unflushed_write = now;
+			}
+		}
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
+	}
 
+	if (doFlush)
+	{
+		PIO_flush (dbb->dbb_file);
+		if (dbb->dbb_shadow)
+			PIO_flush (dbb->dbb_shadow->sdw_file);
+	}
 /* take the opportunity when we know there are no pages
    in cache to check that the shadow(s) have not been
    scheduled for shutdown or deletion */

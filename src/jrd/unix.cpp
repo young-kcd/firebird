@@ -366,7 +366,7 @@ int PIO_expand(TEXT * file_name, USHORT file_length, TEXT * expanded_name)
 }
 
 
-void PIO_flush(FIL main_file, BOOLEAN forced)
+void PIO_flush(FIL main_file)
 {
 /**************************************
  *
@@ -378,39 +378,17 @@ void PIO_flush(FIL main_file, BOOLEAN forced)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
+	FIL file;
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
+
 #ifndef SUPERSERVER_V2
-	FIL file;
-	time_t now;
-	int max_unflushed_writes = Config::getMaxUnflushedWrites();
-	time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
-	now = time(0);
 	for (file = main_file; file; file = file->fil_next) {
-		if (!(file->fil_flags & FIL_force_write) )
-		{
-			if (file->fil_desc != -1) {	/* This really should be an error */
-				if (forced ||
-					((max_unflushed_writes >= 0) && (file->unflushed_writes == max_unflushed_writes))
-					|| ((max_unflushed_write_time>=0) && (file->oldest_unflushed_write)
-					&& (now - file->oldest_unflushed_write > max_unflushed_write_time)))
-				{
-					THD_MUTEX_LOCK(file->fil_mutex);
-					FlushFileBuffers((HANDLE) file->fil_desc);
-					file->unflushed_writes = 0;
-					file->oldest_unflushed_write = NULL;
-					THD_MUTEX_UNLOCK(file->fil_mutex);
-				} else if ((max_unflushed_writes >= 0) || (max_unflushed_write_time>=0)) {
-					THD_MUTEX_LOCK(file->fil_mutex);
-					file->unflushed_writes++;
-					if (!file->oldest_unflushed_write)
-					{
-						file->oldest_unflushed_write = now;
-					}
-					THD_MUTEX_UNLOCK(file->fil_mutex);
-				}
-			}
+		if (file->fil_desc != -1) {	/* This really should be an error */
+			THD_MUTEX_LOCK(file->fil_mutex);
+			fsync(file->fil_desc);
+			THD_MUTEX_UNLOCK(file->fil_mutex);
 		}
 	}
 #endif
@@ -429,29 +407,37 @@ void PIO_force_write(FIL file, USHORT flag)
  *	Set (or clear) force write, if possible, for the database.
  *
  **************************************/
+#ifdef hpux
+	union fcntlun control;
+#else
+	int control;
+#endif
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
-	#ifdef hpux
-	union fcntlun control;
+#ifdef hpux
 	control.val = (flag) ? SYNC : NULL;
-	#else
-	int control;
+#else
 	control = (flag) ? SYNC : 0;
-	#endif
+#endif
 
 	if (fcntl(file->fil_desc, F_SETFL, control) == -1)
+	{
 		ERR_post(isc_io_error,
 				 gds_arg_string, "fcntl SYNC",
 				 gds_arg_cstring, file->fil_length,
 				 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
 				 isc_io_access_err, gds_arg_unix, errno, 0);
-	if (flag) {
-		file->fil_flags |= (FIL_force_write | FIL_force_write_init);
-	} else {
-		file->fil_flags &= ~FIL_force_write;
+	}
+	else 
+	{
+		if (flag) {
+			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
+		} else {
+			file->fil_flags &= ~FIL_force_write;
+		}
 	}
 #endif
 }

@@ -158,9 +158,9 @@ void AIL_checkpoint_finish(
 
 	tdbb = GET_THREAD_DATA;
 
-	PIO_flush(dbb->dbb_file, TRUE);
+	PIO_flush(dbb->dbb_file);
 	if (dbb->dbb_shadow)
-		PIO_flush(dbb->dbb_shadow->sdw_file, TRUE);
+		PIO_flush(dbb->dbb_shadow->sdw_file);
 
 	AIL_upd_cntrl_pt(walname, (USHORT) strlen(walname), seq, off, p_off);
 
@@ -173,9 +173,9 @@ void AIL_checkpoint_finish(
 			  status_vector);
 
 	CCH_write_all_shadows(tdbb, 0, window.win_bdb, status_vector, 1, FALSE);
-	PIO_flush(dbb->dbb_file, TRUE);
+	PIO_flush(dbb->dbb_file);
 	if (dbb->dbb_shadow)
-		PIO_flush(dbb->dbb_shadow->sdw_file, TRUE);
+		PIO_flush(dbb->dbb_shadow->sdw_file);
 
 	CCH_RELEASE(tdbb, &window);
 

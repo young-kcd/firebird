@@ -61,8 +61,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pio_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../common/config/config.h"
-#include "../jrd/jrd_time.h"
 
 #include <windows.h>
 
@@ -273,7 +271,7 @@ int PIO_expand(TEXT* file_name, USHORT file_length, TEXT* expanded_name)
 }
 
 
-void PIO_flush(FIL main_file, BOOLEAN forced)
+void PIO_flush(FIL main_file)
 {
 /**************************************
  *
@@ -285,41 +283,20 @@ void PIO_flush(FIL main_file, BOOLEAN forced)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-
-/* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
-   is a no-op. */
-#ifndef SUPERSERVER_V2
 	FIL file;
-	time_t now;
-	int max_unflushed_writes = Config::getMaxUnflushedWrites();
-	time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
-	now = time(0);
+
 	for (file = main_file; file; file = file->fil_next)
 	{
-		if (!(file->fil_flags & FIL_force_write))
+		if (ostype == OS_CHICAGO)
 		{
-			if (forced ||
-				((max_unflushed_writes >= 0) && (file->unflushed_writes == max_unflushed_writes))
-				|| ((max_unflushed_write_time>=0) && (file->oldest_unflushed_write)
-				&& (now - file->oldest_unflushed_write > max_unflushed_write_time)))
-			{
-				THD_MUTEX_LOCK(file->fil_mutex);
-				FlushFileBuffers((HANDLE) file->fil_desc);
-				file->unflushed_writes = 0;
-				file->oldest_unflushed_write = NULL;
-				THD_MUTEX_UNLOCK(file->fil_mutex);
-			} else if ((max_unflushed_writes >= 0) || (max_unflushed_write_time>=0)) {
-				THD_MUTEX_LOCK(file->fil_mutex);
-				file->unflushed_writes++;
-				if (!file->oldest_unflushed_write)
-				{
-					file->oldest_unflushed_write = now;
-				}
-				THD_MUTEX_UNLOCK(file->fil_mutex);
-			}
+			THD_MUTEX_LOCK(file->fil_mutex);
+		}
+		FlushFileBuffers((HANDLE) file->fil_desc);
+		if (ostype == OS_CHICAGO)
+		{
+			THD_MUTEX_UNLOCK(file->fil_mutex);
 		}
 	}
-#endif
 }
 
 
@@ -336,10 +313,6 @@ void PIO_force_write(FIL file, USHORT flag)
  *
  **************************************/
 
-/* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
-   is a no-op. */
-
-#ifndef SUPERSERVER_V2
 	const bool bOldForce = (file->fil_flags & FIL_force_write_init) != 0;
 
 	if ((flag && !bOldForce) || (!flag && bOldForce)) {
@@ -369,13 +342,13 @@ void PIO_force_write(FIL file, USHORT flag)
 					 GetLastError(),
 					 0);
 		}
+		
+		if (flag) {
+			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
+		} else {
+			file->fil_flags &= ~FIL_force_write;
+		}
 	}
-	if (flag) {
-		file->fil_flags |= (FIL_force_write | FIL_force_write_init);
-	} else {
-		file->fil_flags &= ~FIL_force_write;
-	}
-#endif
 }
 
 

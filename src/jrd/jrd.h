@@ -214,6 +214,9 @@ public:
 	SLONG dbb_sweep_interval;	/* Transactions between sweep */
 	SLONG dbb_lock_owner_handle;	/* Handle for the lock manager */
 
+	USHORT unflushed_writes;	/* unflushed writes */
+	time_t oldest_unflushed_write; /* oldest unflushed time */
+
 #ifdef ISC_DATABASE_ENCRYPTION
 	int (*dbb_encrypt) ();		/* External encryption routine */
 	int (*dbb_decrypt) ();		/* External decryption routine */
@@ -328,7 +331,8 @@ typedef dbb* DBB;
 #define DBB_MUTX_cache          4	// Process-private cache management
 #define DBB_MUTX_clone          5	// Request cloning
 #define DBB_MUTX_cmp_clone      6	// Compiled request cloning
-#define DBB_MUTX_max            7
+#define DBB_MUTX_flush_count    7	// flush count/time
+#define DBB_MUTX_max            8
 #define DBB_WLCK_pools          0	// Pool manipulation
 #define DBB_WLCK_files          1	// DB and shadow file manipulation
 #define DBB_WLCK_max            2

@@ -48,8 +48,6 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 	MUTX_T fil_mutex[1];
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-	USHORT unflushed_writes;	
-	time_t oldest_unflushed_write;
 };
 typedef fil *FIL;
 
@@ -74,8 +72,6 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_fid[3];			/* File id */
 	USHORT fil_did[3];			/* Directory id */
 	SCHAR fil_string[1];		/* Expanded file name */
-	USHORT unflushed_writes;	
-	time_t oldest_unflushed_write;
 };
 tyepdef fil *FIL;
 
@@ -105,8 +101,6 @@ class fil : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_flags;
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
-	USHORT unflushed_writes;	
-	time_t oldest_unflushed_write;
 };
 typedef fil *FIL;
 
