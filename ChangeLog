@@ -1,3 +1,23 @@
+2004-10-05 23:09  arnobrinkman
+
+	* firebird2/src/jrd/: btr.h (1.36), idx.cpp (1.72):
+	
+	fix problem with duplicate keys and wrong second recordnumber order
+	in IDX_create_index
+
+2004-10-05 22:16  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.78):
+	
+	Fixed possible resource leaks for procedured subqueries.
+
+2004-10-05 09:03  hvlad
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.6):
+	
+	Correct on-stack constructor for SparseBitmap (discussed with
+	Nickolay)
+
 2004-10-04 10:47  robocop
 
 	* firebird2/src/extlib/fbudf/: fbudf.cpp (1.19), fbudf.h (1.6):
