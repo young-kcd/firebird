@@ -24,13 +24,13 @@
 #ifndef _UTILITIES_GDSCLIENT_PROTO_H_
 #define _UTILITIES_GDSCLIENT_PROTO_H_
 
-extern USHORT GDSCLIENT_install(const TEXT * rootdirectory, bool sw_force,
-	USHORT(*err_handler)(ULONG, const TEXT *));
+extern USHORT GDSCLIENT_install(const TEXT* rootdirectory, bool sw_force,
+	USHORT(*err_handler)(ULONG, const TEXT*));
 
-extern USHORT GDSCLIENT_remove(const TEXT * rootdirectory,
-	USHORT(*err_handler)(ULONG, const TEXT *));
+extern USHORT GDSCLIENT_remove(const TEXT* rootdirectory, bool sw_force,
+	USHORT(*err_handler)(ULONG, const TEXT*));
 
-extern USHORT GDSCLIENT_query(const TEXT * rootdirectory,
+extern USHORT GDSCLIENT_query(ULONG& verMS, ULONG& verLS, ULONG& sharedCount,
 	USHORT(*err_handler)(ULONG, const TEXT *));
 
 #endif /* _UTILITIES_GDSCLIENT_PROTO_H_ */

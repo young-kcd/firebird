@@ -30,8 +30,6 @@
 #include "../jrd/license.h"
 #include "../utilities/install_nt.h"
 #include "../utilities/gdsclient_proto.h"
-//#include "../utilities/registry.h"
-//#include "../common/config/config.h"
 
 static USHORT gds_error(ULONG, const TEXT *);
 static void usage(void);
@@ -45,6 +43,7 @@ static struct
 {
 	{"INSTALL", 1, COMMAND_INSTALL},
 	{"REMOVE", 1, COMMAND_REMOVE},
+	{"QUERY", 1, COMMAND_QUERY},
 	{NULL, 0, 0}
 };
 
@@ -140,26 +139,29 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status = GDSCLIENT_install(directory, sw_force, gds_error);
 			switch (status)
 			{
-				case FB_EXISTING_GDS32_FOUND :
-					ib_printf("Existing GDS32.DLL found.\n");
-					ib_printf("You can force replacing the DLL with -f[orce] "
-						"switch, though this could\n");
-					ib_printf("break an existing Firebird or InterBase(R) "
-						"other installation.\n");
+				case FB_SAME_GDS32_FOUND :
+					ib_printf("Existing GDS32.DLL (same version) found.\n");
+					ib_printf("No update needed.\n");
+					break;
+				case FB_NEWER_GDS32_FOUND :
+					ib_printf("Existing GDS32.DLL (newer version) found.\n");
+					ib_printf("You can force replacing the DLL with -f[orce] switch.\n");
+					ib_printf("Though this could break some other InterBase(R) "
+						"or Firebird installation.\n");
 					break;
 				case FB_GDS32_COPY_REQUIRES_REBOOT :
-					ib_printf("Firebird GDS32.DLL has been scheduled for "
-						"update at the next system reboot.\n");
+					ib_printf("GDS32.DLL has been scheduled for installation "
+						"at the next system reboot.\n");
 					break;
 				case FB_SUCCESS :
-					ib_printf("The compatibility layer GDS32.DLL has been copied "
-						"to the System directory.\n");
+					ib_printf("GDS32.DLL has been installed to the "
+						"System directory.\n");
 					break;
 			}
 			break;
 
 		case COMMAND_REMOVE:
-			status = GDSCLIENT_remove(directory, gds_error);
+			status = GDSCLIENT_remove(directory, sw_force, gds_error);
 			switch (status)
 			{
 				case FB_GDS32_NOT_FOUND :
@@ -181,9 +183,33 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 			}
 			break;
+
+		case COMMAND_QUERY:
+			ULONG verMS, verLS, sharedCount;
+			status = GDSCLIENT_query(verMS, verLS, sharedCount, gds_error);
+			switch (status)
+			{
+				case FB_GDS32_NOT_FOUND :
+					ib_printf("GDS32.DLL was not found in the System directory.\n");
+					break;
+				case FB_SUCCESS :
+					ib_printf("Installed GDS32.DLL version : %u.%u.%u.%u\n",
+						verMS >> 16, verMS & 0x0000ffff,
+						verLS >> 16, verLS & 0x0000ffff);
+					break;
+			}
+			break;
 	}
 
-	return (status == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
+	switch (status)
+	{
+		case FB_GDS32_COPY_REQUIRES_REBOOT :
+			return -FB_GDS32_COPY_REQUIRES_REBOOT;
+		case FB_SUCCESS :
+			return FINI_OK;
+		default :
+			return FINI_ERROR;
+	}
 }
 
 static USHORT gds_error(ULONG status, const TEXT * string)
