@@ -178,7 +178,6 @@ typedef contents CONTENTS;
 
 static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*, 
 					  SLONG*, SLONG*);
-static void complement_key(temporary_key*);
 static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, bool);
 static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
@@ -971,7 +970,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		}
 
 		if (idx->idx_flags & idx_descending) {
-			complement_key(key);
+			BTR_complement_key(key);
 		}
 
 		if (null_state) {
@@ -1313,7 +1312,7 @@ void BTR_make_key(thread_db* tdbb,
 	}
 
 	if (idx->idx_flags & idx_descending) {
-		complement_key(key);
+		BTR_complement_key(key);
 	}
 }
 
@@ -1953,7 +1952,7 @@ static SLONG add_node(thread_db* tdbb,
 }
 
 
-static void complement_key(temporary_key* key)
+void BTR_complement_key(temporary_key* key)
 {
 /**************************************
  *
