@@ -99,7 +99,7 @@ class BlobFilter : public pool_alloc<type_blf>
 // const int ACTION_seek			= 7;
 //
 
-const static char* EXCEPTION_MESSAGE = "The blob filter: \t\t%s\n"
+static const char* EXCEPTION_MESSAGE = "The blob filter: \t\t%s\n"
 										"\treferencing entrypoint: \t%s\n"
 										"\t             in module: \t%s\n"
 										"\tcaused the fatal exception:";
