@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.36 2004-03-14 13:05:02 alexpeshkoff Exp $
+ *  $Id: alloc.h,v 1.37 2004-03-20 14:29:05 alexpeshkoff Exp $
  *
  */
 
@@ -448,7 +448,24 @@ namespace Firebird
 	public:
 		static MemoryPool& getAutoMemoryPool() { return *getDefaultMemoryPool(); }
 	protected:
-		AutoStorage() : PermanentStorage(getAutoMemoryPool()) { }
+		AutoStorage() : PermanentStorage(getAutoMemoryPool()) {
+#ifdef DEV_BUILD
+			//
+			// AutoStorage can be used only for objects on the stack.
+			// What is this check based on:
+			//	1. One and only one stack is used for all kind of variables.
+			//	2. Objects don't grow > 64K.
+			//
+			char ProbeVar = '\0';
+			char *MyStack = &ProbeVar;
+			char *ThisLocation = (char *)this;
+			int distance = ThisLocation - MyStack;
+			if (distance < 0) {
+				distance = -distance;
+			}
+			fb_assert(distance < 64 * 1024);
+#endif
+		}
 		explicit AutoStorage(MemoryPool& p) : PermanentStorage(p) { }
 	};
 	
