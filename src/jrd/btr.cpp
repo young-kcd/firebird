@@ -109,7 +109,7 @@ struct INT64_KEY {
 // I assume this wasn't done sizeof(INT64_KEY) on purpose, since alignment might affect it.
 #define INT64_KEY_LENGTH	(sizeof (double) + sizeof (SSHORT))
 
-static const double pow10[] =
+static const double pow10_table[] =
 {
 	1.e00, 1.e01, 1.e02, 1.e03, 1.e04, 1.e05, 1.e06, 1.e07, 1.e08, 1.e09,
 	1.e10, 1.e11, 1.e12, 1.e13, 1.e14, 1.e15, 1.e16, 1.e17, 1.e18, 1.e19,
@@ -117,7 +117,7 @@ static const double pow10[] =
 	1.e30, 1.e31, 1.e32, 1.e33, 1.e34, 1.e35, 1.e36
 };
 
-#define powerof10(s) ((s) <= 0 ? pow10[-(s)] : 1./pow10[-(s)])
+#define powerof10(s) ((s) <= 0 ? pow10_table[-(s)] : 1./pow10_table[-(s)])
 
 static const struct {			/* Used in make_int64_key() */
 	UINT64 limit;
