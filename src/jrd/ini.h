@@ -86,7 +86,7 @@ struct gfld
 	UCHAR gfld_type;
 	UCHAR gfld_name;
 	UCHAR gfld_dtype;
-	UCHAR gfld_length;		// mismatch; dsc2.h uses USHORT.
+	USHORT gfld_length;
 	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
 	UCHAR gfld_minor;
 	const UCHAR *gfld_dflt_blr;

@@ -5,7 +5,7 @@
 #include "../jrd/common.h"		// ISC_STATUS
 
 const int MAX_ERRMSG_LEN	= 128;
-const int MAX_ERRSTR_LEN	= 255;
+const int MAX_ERRSTR_LEN	= 1024;
 
 void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list args);
 

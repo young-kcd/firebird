@@ -816,7 +816,7 @@ public:
 	SLONG as_sqlcode() const;
 };
 
-const int XCP_MESSAGE_LENGTH	= 78;	// must correspond to the size of
+const int XCP_MESSAGE_LENGTH	= 1023;	// must correspond to the size of
 								// RDB$EXCEPTIONS.RDB$MESSAGE
 } //namespace Jrd
 

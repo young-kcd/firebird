@@ -77,7 +77,7 @@
 	FIELD(fld_trans_state	, nam_trans_state	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_time			, nam_time			, dtype_timestamp, TIMESTAMP_SIZE,0						, 0, NULL)
 	FIELD(fld_trans_desc	, nam_trans_desc	, dtype_blob	, BLOB_SIZE		, isc_blob_tra			, 0, NULL)
-	FIELD(fld_msg			, nam_msg			, dtype_varying	, 80			, 0						, 0, NULL)
+	FIELD(fld_msg			, nam_msg			, dtype_varying	, 1023			, 0						, 0, NULL)
 	FIELD(fld_msg_num		, nam_msg_num		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_user			, nam_user			, dtype_text	, 31			, dsc_text_type_metadata, 0, NULL)
 	FIELD(fld_privilege		, nam_privilege		, dtype_text	, 6				, 0						, 0, NULL)
