@@ -29,7 +29,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/dsc.h"
+#include "../jrd/dsc2.h"
 #include "../jrd/misc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/misc_proto.h"
@@ -174,7 +174,7 @@ stk* MISC_push(UCHAR* object, stk** stack)
  *	Returns the address of the new top of the stack.
  *
  **************************************/
-	stk* node = (stk*) gds__alloc((SLONG) sizeof(struct stk));
+	stk* node = (stk*) gds__alloc((SLONG) sizeof(stk));
 /* FREE: in MISC_pop(), NOMEM: return a NULL top of stack */
 	if (!node)
 		return NULL;

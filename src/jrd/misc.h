@@ -27,12 +27,12 @@
 #ifndef JRD_MISC_H
 #define JRD_MISC_H
 
-#include "../jrd/dsc.h"
+#include "../jrd/dsc2.h"
 
-typedef struct stk {
-	UCHAR *stk_object;
-	struct stk *stk_next;
-} *STK;
+struct stk {
+	UCHAR*	stk_object;
+	stk*	stk_next;
+};
 
 /* Miscellaneous defines used for stuffing a parameters block buffer */
 

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.63 2004-03-30 04:10:48 robocop Exp $
+$Id: blb.cpp,v 1.64 2004-03-30 08:34:14 robocop Exp $
 */
 
 #include "firebird.h"
@@ -95,7 +95,7 @@ static void get_replay_blob(thread_db*, const bid*);
 #endif
 static void insert_page(thread_db*, blb*);
 static void release_blob(blb*, const bool);
-static void slice_callback(SLICE, ULONG, dsc*);
+static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
 
 
@@ -688,7 +688,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 	SLONG offset = 0;
 
-	slice arg;
+	array_slice arg;
 
 /* Trap any potential errors */
 	try {
@@ -1398,7 +1398,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	3.  Array exists and is being updated.
 */
 	ArrayField* array = 0;
-	slice arg;
+	array_slice arg;
 	if (blob_id->bid_relation_id)
 	{
 		for (array = transaction->tra_arrays; array; array = array->arr_next)
@@ -2289,7 +2289,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 }
 
 
-static void slice_callback(SLICE arg, ULONG count, DSC* descriptors)
+static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 {
 /**************************************
  *

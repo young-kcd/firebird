@@ -194,3 +194,4 @@ typedef struct alt_dsc {
 #define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
 
 #endif /* JRD_DSC_H */
+

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.70 2004-03-28 09:10:15 robocop Exp $
+$Id: ibase.h,v 1.71 2004-03-30 08:34:14 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -227,13 +227,13 @@ typedef struct blobcallback {
 
 
 /********************************************************************/
-/* CVC: Public descriptor interface held in dsc.h.                  */
+/* CVC: Public descriptor interface held in dsc2.h.                  */
 /* We need it documented to be able to recognize NULL in UDFs.      */
 /* Being its original name "dsc", I renamed it paramdsc here.       */
 /* Notice that I adjust to the original definition: contrary to     */
 /* other cases, the typedef is the same struct not the pointer.     */
 /* I included the enumeration of dsc_dtype possible values.         */
-/* Ultimately, dsc.h should be part of the public interface.        */
+/* Ultimately, dsc2.h should be part of the public interface.        */
 /********************************************************************/
 
 #if !defined(JRD_DSC_H)

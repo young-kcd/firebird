@@ -33,7 +33,7 @@
 #define IO_RETRY	20
 
 // 11 Sept 2002 Nickolay Samofatov
-// this defined in included dsc.h
+// this defined in included dsc2.h
 //#define ISC_TIME_SECONDS_PRECISION		10000L
 //#define ISC_TIME_SECONDS_PRECISION_SCALE	-4
 
@@ -48,7 +48,7 @@
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/os/path_utils.h"
-#include "../jrd/misc_proto.h"
+#include "../jrd/dsc.h"
 #include "../jrd/constants.h"
 
 #include "../common/classes/locks.h"
@@ -65,7 +65,6 @@
 
 #include <stdarg.h>
 #include "../jrd/jrd_time.h"
-#include "../jrd/misc.h"
 
 #if defined(WIN_NT)
 #include <io.h> // umask, close, lseek, read, open, _sopen

@@ -58,7 +58,6 @@
 #include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
-#include "../jrd/misc_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"

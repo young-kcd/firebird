@@ -24,9 +24,11 @@
 #ifndef JRD_MISC_PROTO_H
 #define JRD_MISC_PROTO_H
 
-SSHORT MISC_build_parameters_block(UCHAR*, ...);
-UCHAR *MISC_pop(struct stk **);
-struct stk *MISC_push(UCHAR *, struct stk **);
+struct stk;
+
+SSHORT	MISC_build_parameters_block(UCHAR*, ...);
+UCHAR*	MISC_pop(stk**);
+stk*	MISC_push(UCHAR*, stk**);
 
 #ifdef DEV_BUILD
 ULONG MISC_checksum_log_rec(const UCHAR*, SSHORT, const UCHAR*, SSHORT);

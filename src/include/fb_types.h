@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.41 2004-01-29 05:56:33 skidder Exp $
+ *  $Id: fb_types.h,v 1.42 2004-03-30 08:33:56 robocop Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -114,11 +114,8 @@ typedef unsigned short USHORT;
 struct vary
 {
 	USHORT vary_length;
-	char   vary_string[1];
+	char   vary_string[1]; // CVC: The original declaration used UCHAR.
 };
-// TMN: Currently we can't do this, since remote uses a different
-// definition of VARY than the rest of the code! :-<
-//typedef vary* VARY;
 
 struct lstring
 {

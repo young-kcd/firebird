@@ -1,7 +1,7 @@
 //____________________________________________________________
 //  
 //		PROGRAM:	C preprocess
-//		MODULE:		int.cpp
+//		MODULE:		int_cxx.cpp
 //		DESCRIPTION:	Code generate for internal JRD modules
 //  
 //  The contents of this file are subject to the Interbase Public
@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.30 2004-03-30 04:10:43 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.31 2004-03-30 08:33:54 robocop Exp $
 //
 
 #include "firebird.h"

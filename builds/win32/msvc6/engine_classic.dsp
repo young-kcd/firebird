@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\engine_cs"
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /GR /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /YX /FD /EHc- /c
+# ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\engine_cs"
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "DEV_BUILD" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "DEV_BUILD" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
@@ -84,6 +84,67 @@ LIB32=link.exe -lib
 # Begin Group "JRD files"
 
 # PROP Default_Filter ""
+# Begin Group "Generated files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dfw.cpp
+
+!IF  "$(CFG)" == "engine_classic - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine_classic - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dpm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_def.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_del.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_util.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\fun.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\ini.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\met.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\pcmet.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\scl.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\all.cpp
@@ -139,19 +200,6 @@ SOURCE=..\..\..\src\jrd\cvt2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\dfw.cpp
-
-!IF  "$(CFG)" == "engine_classic - Win32 Release"
-
-# SUBTRACT CPP /Og
-
-!ELSEIF  "$(CFG)" == "engine_classic - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
@@ -160,31 +208,7 @@ SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\dpm.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dsc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_def.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_del.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_util.cpp
 # End Source File
 # Begin Source File
 
@@ -224,10 +248,6 @@ SOURCE=..\..\..\src\jrd\flu.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\fun.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\functions.cpp
 # End Source File
 # Begin Source File
@@ -262,10 +282,6 @@ SOURCE=..\..\..\src\jrd\idx.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\inf.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\ini.cpp
 # End Source File
 # Begin Source File
 
@@ -322,14 +338,6 @@ SOURCE=..\..\..\src\jrd\log.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\met.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\misc.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\mov.cpp
 # End Source File
 # Begin Source File
@@ -376,10 +384,6 @@ SOURCE=..\..\..\src\jrd\par.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\pcmet.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # End Source File
 # Begin Source File
@@ -409,10 +413,6 @@ SOURCE=..\..\..\src\jrd\sbm.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sch.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\scl.cpp
 # End Source File
 # Begin Source File
 
