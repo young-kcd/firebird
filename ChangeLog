@@ -1,3 +1,42 @@
+2003-08-27 17:27  skidder
+
+	* firebird2/src/jrd/y-valve.cpp:
+	
+	Remove temporary version of why.cpp port to C++
+
+2003-08-27 14:13  robocop
+
+	* firebird2/doc/WhatsNew:
+	
+	Minimize email harvesting, as agreed with Dmitry
+
+2003-08-27 12:50  brodsom
+
+	* firebird2/doc/cleaning-todo.txt:
+	
+	Update
+
+2003-08-27 12:20  aafemt
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, burp.h, burpswi.h,
+	canon_proto.h, canonical.cpp, restore.epp, spit.cpp:
+	
+	removing word 'struct' from variable declarations as obsolete
+
+2003-08-27 12:15  aafemt
+
+	* firebird2/src/alice/: alice.cpp, alice.h, alice_meta.epp,
+	aliceswi.h:
+	
+	removing word 'struct' from variable declarations as obsolete
+
+2003-08-27 01:11  brodsom
+
+	* firebird2/src/: isql/extract.epp, isql/isql.epp, isql/isql.h,
+	isql/show.epp, journal/rebuild.e, journal/server.e:
+	
+	-Remove NULL_PTR macro -Remove unneeded casts
+
 2003-08-26 20:45  brodsom
 
 	* firebird2/src/utilities/: ibmgr/srvrmgr.cpp, ibmgr/ibmgr.cpp,
