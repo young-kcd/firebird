@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.13 2002-11-17 00:10:48 hippoman Exp $
+$Id: btr.cpp,v 1.14 2002-12-15 13:03:57 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -771,6 +771,8 @@ SLONG BTR_get_quad(SCHAR * data)
 
 	return value.n;
 }
+
+
 void BTR_insert(TDBB tdbb, WIN * root_window, register IIB * insertion)
 {
 /**************************************
@@ -909,8 +911,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, register IIB * insertion)
 }
 
 
-IDX_E BTR_key(TDBB tdbb,
-			  JRD_REL relation, REC record, register IDX * idx, KEY * key)
+IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, register IDX * idx, KEY * key)
 {
 /**************************************
  *
@@ -940,7 +941,8 @@ IDX_E BTR_key(TDBB tdbb,
 	try {
 
 #ifdef IGNORE_NULL_IDX_KEY
-/* Initialize KEY flags */ key->key_flags = 0;
+/* Initialize KEY flags */
+	key->key_flags = 0;
 #endif /* IGNORE_NULL_IDX_KEY */
 
 /* Special case single segment indices */
