@@ -43,7 +43,7 @@ checkInstallUser() {
 
 stopServerIfRunning() {
 
-    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -64,7 +64,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fserver|fbguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -73,7 +73,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -efww| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -86,7 +86,7 @@ checkIfServerRunning() {
 
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -efww | grep "gds_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
      do
         kill $i
      done
@@ -173,7 +173,7 @@ EOF
 }
 
 
-IBRootDir=/opt/interbase
+IBRootDir=/usr/local/firebird
 IBBin=$IBRootDir/bin
 
 
@@ -240,12 +240,12 @@ chmod o=rx qli
 
 cd $IBRootDir
 
-touch interbase.log
-chmod ug=rw,o= interbase.log
+touch firebird.log
+chmod ug=rw,o= firebird.log
 
 
 # make examples writable by group
-chmod ug=rw,o= examples/*.gdb
+chmod ug=rw,o= examples/*.fdb
 
 
 changeInitRunUser $RunUser

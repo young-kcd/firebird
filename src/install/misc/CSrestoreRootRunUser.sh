@@ -44,7 +44,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -53,7 +53,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -efww| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -66,7 +66,7 @@ checkIfServerRunning() {
 
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -efww | grep "gds_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
      do
         kill $i
      done
@@ -155,7 +155,7 @@ EOF
 updateInetdEntry() {
 
     FileName=/etc/inetd.conf
-    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
+    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/fb_inet_server fb_inet_server # InterBase Database Remote Server"
     oldLine=`grep "^gds_db" $FileName`
 
     replaceLineInFile "$FileName" "$newLine" "$oldLine"
@@ -211,7 +211,7 @@ resetInetdServer() {
 #== Main Start ==============================================================
 
 
-IBRootDir=/opt/interbase
+IBRootDir=/usr/local/firebird
 IBBin=$IBRootDir/bin
 
 
@@ -247,7 +247,7 @@ echo "Updating /etc/services file"
 
 
 FileName=/etc/inetd.conf
-newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
+newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/fb_inet_server fb_inet_server # InterBase Database Remote Server"
 oldLine=`grep "^gds_db" $FileName`
 
 replaceLineInFile "$FileName" "$newLine" "$oldLine"
@@ -284,7 +284,7 @@ chmod o=rx *
 
 # SUID is needed for running server programs.
 
-for i in gds_lock_mgr gds_drop gds_inet_server
+for i in fb_lock_mgr gds_drop fb_inet_server
   do
     chmod ug+s $i
   done
@@ -305,13 +305,13 @@ for i in isc_init1 isc_lock1 isc_event1
   done
 
 
-touch interbase.log
-chmod ugo=rw interbase.log
+touch firebird.log
+chmod ugo=rw firebird.log
 
 
 # make databases writable by all
-chmod ugo=rw examples/*.gdb
-chmod ugo=rw help/*.gdb
+chmod ugo=rw examples/*.fdb
+chmod ugo=rw help/*.fdb
 chmod ugo=rw security.fdb
 
 

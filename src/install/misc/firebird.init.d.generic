@@ -9,7 +9,7 @@
 
 
 
-: ${INTERBASE:=/opt/interbase}
+: ${INTERBASE:=/usr/local/firebird}
 : ${ISC_USER:=SYSDBA}
 : ${ISC_PASSWORD:=masterkey}
 : ${FBRunUser:=root}
@@ -26,7 +26,7 @@ export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
-[ -x $INTERBASE/bin/ibmgr ] || exit 0
+[ -x $INTERBASE/bin/fbmgr ] || exit 0
 
 
 
@@ -34,12 +34,12 @@ export ISC_PASSWORD
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-        echo '$INTERBASE/bin/ibmgr -start -forever' | su $FBRunUser
+        echo '$INTERBASE/bin/fbmgr -start -forever' | su $FBRunUser
 	RETVAL=$?
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-        $INTERBASE/bin/ibmgr -shut
+        $INTERBASE/bin/fbmgr -shut
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;

@@ -44,7 +44,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -53,7 +53,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -efww| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
+    checkString=`ps -efww| egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
       then
@@ -66,7 +66,7 @@ checkIfServerRunning() {
 
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -efww | grep "gds_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
      do
         kill $i
      done
@@ -165,7 +165,7 @@ EOF
 updateInetdEntry() {
 
     FileName=/etc/inetd.conf
-    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/gds_inet_server gds_inet_server # InterBase Database Remote Server"
+    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $IBBin/fb_inet_server fb_inet_server # InterBase Database Remote Server"
     oldLine=`grep "^gds_db" $FileName`
 
     replaceLineInFile "$FileName" "$newLine" "$oldLine"
@@ -243,7 +243,7 @@ fixFilePermissions() {
     
     # SUID is still needed for group direct access.  General users
     # cannot run though.
-    for i in gds_lock_mgr gds_drop gds_inet_server
+    for i in fb_lock_mgr gds_drop fb_inet_server
     do
         chmod ug=rx,o= $i
         chmod ug+s $i
@@ -260,9 +260,9 @@ fixFilePermissions() {
       done
 
 
-    chmod ug=rw,o= interbase.log
+    chmod ug=rw,o= firebird.log
 
-    chmod a=r interbase.msg
+    chmod a=r firebird.msg
     chmod ug=rw,o= help/help.fdb
     chmod ug=rw,o= security.fdb
 
@@ -277,7 +277,7 @@ fixFilePermissions() {
     done
 
     # make examples db's writable by group
-    chmod ug=rw,o= *.gdb
+    chmod ug=rw,o= *.fdb
 
 }
 
@@ -304,7 +304,7 @@ resetInetdServer() {
 
 #= Main Program ============================================================
 
-IBRootDir=/opt/interbase
+IBRootDir=/usr/local/firebird
 IBBin=$IBRootDir/bin
 
 
@@ -362,11 +362,11 @@ resetInetdServer
 
 cd $IBRootDir
 
-touch interbase.log
-chmod ug=rw,o= interbase.log
+touch firebird.log
+chmod ug=rw,o= firebird.log
 
 
 # make examples writable by group
-chmod ug=rw,o= examples/*.gdb
+chmod ug=rw,o= examples/*.fdb
 
 echo "Completed."
