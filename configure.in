@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.194 2004-04-09 00:23:55 skidder Exp $
+dnl $Id: configure.in,v 1.195 2004-04-13 10:41:14 aafemt Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -777,6 +777,7 @@ mkdir -p temp/embed.isql/common
 mkdir -p temp/embed.gdef/dudley
 mkdir -p temp/embed.gdef/jrd
 mkdir -p temp/embed.gdef/jrd/os/posix
+mkdir -p temp/embed.gdef/jrd/os/win32
 mkdir -p temp/embed.gdef/gpre
 mkdir -p temp/embed.gdef/common/classes
 mkdir -p temp/embed.gdef/common/config
