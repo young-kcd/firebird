@@ -574,6 +574,9 @@ RSB OPT_compile(TDBB tdbb,
 	if (rse->rse_jointype != blr_inner)
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	else {
+		BOOLEAN sort_present;
+		JRD_NOD saved_sort_node;
+		RSB test_rsb;
 
 		/* mark the previous used streams (sub-rse's) as active */
 
@@ -582,7 +585,8 @@ RSB OPT_compile(TDBB tdbb,
 		}
 
 		/* attempt to form joins in decreasing order of desirability */
-
+		saved_sort_node = sort;
+		sort_present = (sort) ? TRUE : FALSE;
 		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
@@ -592,6 +596,18 @@ RSB OPT_compile(TDBB tdbb,
 			   && gen_sort_merge(tdbb, opt_, &rivers_stack));
 
 		rsb = make_cross(tdbb, opt_, rivers_stack);
+
+		/* AB: When we have a merge then a previous made ordering with 
+		   an index doesn't guarantee that the result will be in that
+		   order. So we assigned the sort node back.
+		   SF BUG # [ 221921 ] ORDER BY has no effect */
+		test_rsb = rsb;
+		if ((rsb) && (rsb->rsb_type == rsb_boolean) && (rsb->rsb_next)) {
+			test_rsb = rsb->rsb_next;
+		}
+		if ((test_rsb) && (test_rsb->rsb_type == rsb_merge) && !sort && sort_present) {
+			sort = saved_sort_node;
+		}
 
 		/* Pick up any residual boolean that may have fallen thru the cracks */
 
