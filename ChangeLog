@@ -1,3 +1,11 @@
+2003-01-02 17:01  skidder
+
+	* firebird2/: builds/posix/Makefile.in.extlib,
+	src/extlib/ib_util.h, src/extlib/ib_util.pas:
+	
+	Make standard UDF libraries functions involving memory allocation
+	work on Linux
+
 2002-12-31 20:32  nmcc
 
 	* firebird2/src/jrd/common.h:
