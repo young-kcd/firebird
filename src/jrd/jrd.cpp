@@ -442,7 +442,7 @@ inline static thread_db* set_thread_data(thread_db& thd_context)
 
 static thread_db* get_thread_data()
 {
-	THDD p1 = (THDD)(PLATFORM_GET_THREAD_DATA);
+	THDD p1 = THD_get_specific();
 #ifdef DEV_BUILD
 	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
 	{

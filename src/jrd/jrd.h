@@ -974,25 +974,6 @@ typedef str *STR;
 
 /* Threading macros */
 
-#ifdef V4_THREADING
-#define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
-#endif
-
-/* RITTER - changed HP10 to HPUX in the expression below */
-#ifdef MULTI_THREAD
-#if (defined SOLARIS_MT || defined WIN_NT || \
-	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
-#define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
-#endif
-#endif
-
-#ifndef PLATFORM_GET_THREAD_DATA
-
-extern Jrd::thread_db* gdbb;
-
-#define PLATFORM_GET_THREAD_DATA (gdbb)
-#endif
-
 /* Define JRD_get_thread_data off the platform specific version.
  * If we're in DEV mode, also do consistancy checks on the
  * retrieved memory structure.  This was originally done to
@@ -1008,13 +989,13 @@ extern Jrd::thread_db* gdbb;
  * there is no tdbb_database set up.
  */
 #ifdef DEV_BUILD
-#define JRD_get_thread_data (((PLATFORM_GET_THREAD_DATA) && \
-                         (((THDD)(PLATFORM_GET_THREAD_DATA))->thdd_type == THDD_TYPE_TDBB) && \
-			 (((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
-			 ? ((MemoryPool::blk_type(((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
-			    ? (PLATFORM_GET_THREAD_DATA) \
-			    : (BUGCHECK (147), (PLATFORM_GET_THREAD_DATA))) \
-			 : (PLATFORM_GET_THREAD_DATA))
+#define JRD_get_thread_data ((((thread_db*) THD_get_specific()) && \
+                         (((THDD)((thread_db*) THD_get_specific()))->thdd_type == THDD_TYPE_TDBB) && \
+			 (((thread_db*)((thread_db*) THD_get_specific()))->tdbb_database)) \
+			 ? ((MemoryPool::blk_type(((thread_db*)((thread_db*) THD_get_specific()))->tdbb_database) == type_dbb) \
+			    ? ((thread_db*) THD_get_specific()) \
+			    : (BUGCHECK (147), ((thread_db*) THD_get_specific()))) \
+			 : ((thread_db*) THD_get_specific()))
 //#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
 #define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb))
 #define CHECK_TDBB(tdbb) fb_assert ((tdbb) && \
@@ -1022,7 +1003,7 @@ extern Jrd::thread_db* gdbb;
 	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
 #else
 /* PROD_BUILD */
-#define JRD_get_thread_data (PLATFORM_GET_THREAD_DATA)
+#define JRD_get_thread_data ((thread_db*) THD_get_specific())
 #define CHECK_TDBB(tdbb)		/* nothing */
 #define CHECK_DBB(dbb)			/* nothing */
 #endif

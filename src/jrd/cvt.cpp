@@ -1366,7 +1366,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				/** Cannot call JRD_get_thread_data because that macro calls
 				BUGCHECK i.e. ERR_bugcheck() which is not part of
 				client library **/
-				thread_db* tdbb = PLATFORM_GET_THREAD_DATA;
+				thread_db* tdbb = (thread_db*) THD_get_specific();
 
 				/* If we're in the engine, then the THDD type must
 				   be a THDD_TYPE_TDBB.  So, if we're in the engine
@@ -1824,7 +1824,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		/** Cannot call JRD_get_thread_data because that macro calls 
             BUGCHECK i.e. ERR_bugcheck() which is not part of 
 	    client library **/
-		tdbb = PLATFORM_GET_THREAD_DATA;
+		tdbb = (thread_db*) THD_get_specific();
 		if ((tdbb) &&
 			(((THDD) tdbb)->thdd_type == THDD_TYPE_TDBB) &&
 			tdbb->tdbb_request)

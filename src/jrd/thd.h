@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.27 2004-05-21 06:15:41 robocop Exp $
+$Id: thd.h,v 1.28 2004-05-22 02:11:34 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -41,23 +41,6 @@ $Id: thd.h,v 1.27 2004-05-21 06:15:41 robocop Exp $
 #endif
 #endif
  
-
-#ifdef HAVE_POSIX_THREADS
-#ifdef SUPERSERVER
-#define POSIX_THREADS
-#endif
-#ifdef SUPERCLIENT
-#if defined(LINUX) || defined(FREEBSD)
-/* The following ifdef was added to build thread safe gds shared
-   library on linux platform. It seems the gdslib works now (20020220)
-   with thread enabled applications. Anyway, more tests should be 
-   done as I don't have deep knowledge of the interbase/firebird 
-   engine and this change may imply side effect I haven't known 
-   about yet. Tomas Nejedlik (tomas@nejedlik.cz) */
-#define POSIX_THREADS
-#endif
-#endif
-#endif
 
 #ifdef VMS
 //
@@ -87,14 +70,7 @@ struct IB_RTL_CRITICAL_SECTION
 };
 #endif
 
-#ifdef MULTI_THREAD
-#define ANY_THREADING
-#endif
-#ifdef V4_THREADING
-#define ANY_THREADING
-#endif
-
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #include <pthread.h>
 #define THD_MUTEX_STRUCT	pthread_mutex_t
 #define THD_COND_STRUCT		pthread_cond_t

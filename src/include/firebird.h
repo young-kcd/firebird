@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.22 2004-05-20 23:04:36 skidder Exp $
+ *  $Id: firebird.h,v 1.23 2004-05-22 02:11:04 brodsom Exp $
  *
  */
 
@@ -71,8 +71,33 @@
 #if defined(HAVE_MULTI_THREAD)
 # if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
      defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
-# define MULTI_THREAD 1
+# define MULTI_THREAD
 # endif
+#endif
+
+#ifdef MULTI_THREAD
+#define ANY_THREADING
+#endif
+#ifdef V4_THREADING
+#define ANY_THREADING
+#endif
+
+// from thd.h
+#ifdef HAVE_POSIX_THREADS
+#ifdef SUPERSERVER
+#define USE_POSIX_THREADS
+#endif
+#ifdef SUPERCLIENT
+#if defined(LINUX) || defined(FREEBSD)
+/* The following ifdef was added to build thread safe gds shared
+   library on linux platform. It seems the gdslib works now (20020220)
+   with thread enabled applications. Anyway, more tests should be 
+   done as I don't have deep knowledge of the interbase/firebird 
+   engine and this change may imply side effect I haven't known 
+   about yet. Tomas Nejedlik (tomas@nejedlik.cz) */
+#define USE_POSIX_THREADS
+#endif
+#endif
 #endif
 
 #ifndef NULL

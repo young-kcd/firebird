@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.103 2004-05-21 06:15:49 robocop Exp $
+$Id: lock.cpp,v 1.104 2004-05-22 02:11:56 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -3084,12 +3084,12 @@ static void init_owner_block(
 		ISC_event_init(owner->own_blocking, 0, 1);
 		ISC_event_init(owner->own_stall, 0, 1);
 #endif
-#if (defined POSIX_THREADS && defined SUPERSERVER)
+#if (defined USE_POSIX_THREADS && defined SUPERSERVER)
 		ISC_event_init(owner->own_wakeup, 0, 0);
 #endif
 
 #ifdef UNIX
-#if !(defined SOLARIS || defined POSIX_THREADS)
+#if !(defined SOLARIS || defined USE_POSIX_THREADS)
 
 		owner->own_wakeup[0].event_semid = LOCK_data.sh_mem_mutex_arg;
 		owner->own_wakeup[0].event_semnum = 0;

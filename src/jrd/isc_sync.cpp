@@ -182,7 +182,7 @@ static void		error(ISC_STATUS*, TEXT*, ISC_STATUS);
 
 #ifdef UNIX
 static SLONG	find_key(ISC_STATUS *, TEXT *);
-#if !(defined(POSIX_THREADS) || defined(SOLARIS_MT))
+#if !(defined(USE_POSIX_THREADS) || defined(SOLARIS_MT))
 static void		alarm_handler(void* arg);
 static SLONG	open_semaphores(ISC_STATUS *, SLONG, int&);
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
@@ -442,7 +442,7 @@ int ISC_event_wait(SSHORT	count,
 #endif /* SOLARIS_MT */
 
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #define EVENTS
 int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 {
@@ -704,7 +704,7 @@ int ISC_event_wait(
 	pthread_mutex_unlock((*events)->event_mutex);
 	return ret;
 }
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 
 
 #ifdef UNIX
@@ -717,7 +717,7 @@ int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
  *	I S C _ e v e n t _ b l o c k e d	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  **************************************
  *
  * Functional description
@@ -749,7 +749,7 @@ SLONG ISC_event_clear(event_t* event)
  *	I S C _ e v e n t _ c l e a r	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  **************************************
  *
  * Functional description
@@ -780,7 +780,7 @@ void ISC_event_fini(event_t* event)
  *	I S C _ e v e n t _ f i n i	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  **************************************
  *
  * Functional description
@@ -797,7 +797,7 @@ int ISC_event_init(event_t* event, int semid, int semnum)
  *	I S C _ e v e n t _ i n i t	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  **************************************
  *
  * Functional description
@@ -831,7 +831,7 @@ int ISC_event_post(event_t* event)
  *	I S C _ e v e n t _ p o s t	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  **************************************
  *
  * Functional description
@@ -869,7 +869,7 @@ int ISC_event_wait(
  *	I S C _ e v e n t _ w a i t	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  **************************************
  *
  * Functional description
@@ -2050,7 +2050,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		}
 
 		// Create semaphores here
-#if !(defined SOLARIS_MT || defined POSIX_THREADS)
+#if !(defined SOLARIS_MT || defined USE_POSIX_THREADS)
 		SLONG semid;
 		if (shmem_data->sh_mem_semaphores &&
 			(semid =
@@ -2155,7 +2155,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			return NULL;
 		}
 		// Open semaphores here
-#if !(defined SOLARIS_MT || defined POSIX_THREADS)
+#if !(defined SOLARIS_MT || defined USE_POSIX_THREADS)
 		SLONG semid;
 		if (shmem_data->sh_mem_semaphores &&
 			(semid =
@@ -2491,7 +2491,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	shmem_data->sh_mem_handle = shmid;
 
-#ifndef POSIX_THREADS
+#ifndef USE_POSIX_THREADS
 	SLONG semid;
 	if (shmem_data->sh_mem_semaphores &&
 		(semid =
@@ -3105,7 +3105,7 @@ int ISC_mutex_unlock(MTX mutex)
 #endif /* SOLARIS_MT */
 
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #define MUTEX
 int ISC_mutex_init(MTX mutex, SLONG semaphore)
 {
@@ -3233,7 +3233,7 @@ int ISC_mutex_unlock(MTX mutex)
 
 #endif /* HP10 */
 }
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 
 
 #ifdef UNIX
@@ -3246,7 +3246,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
  *	I S C _ m u t e x _ i n i t	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  *
  **************************************
  *
@@ -3274,7 +3274,7 @@ int ISC_mutex_lock(MTX mutex)
  *	I S C _ m u t e x _ l o c k	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  *
  **************************************
  *
@@ -3306,7 +3306,7 @@ int ISC_mutex_lock_cond(MTX mutex)
  *	I S C _ m u t e x _ l o c k _ c o n d	( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  *
  **************************************
  *
@@ -3338,7 +3338,7 @@ int ISC_mutex_unlock(MTX mutex)
  *	I S C _ m u t e x _ u n l o c k		( U N I X )
  *                                             not NeXT
  *                                             not SOLARIS
- *                                             not POSIX_THREADS
+ *                                             not USE_POSIX_THREADS
  *
  **************************************
  *
@@ -3899,7 +3899,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector,
 #endif
 
 
-#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
+#if defined(UNIX) && !defined(USE_POSIX_THREADS) && !defined(SOLARIS_MT)
 static void alarm_handler(void* arg)
 {
 /**************************************
@@ -3995,7 +3995,7 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
 #endif
 
 
-#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
+#if defined(UNIX) && !defined(USE_POSIX_THREADS) && !defined(SOLARIS_MT)
 static SLONG open_semaphores(
 							 ISC_STATUS * status_vector,
 							 SLONG key, int& semaphores)
@@ -4175,7 +4175,7 @@ static void make_object_name(
 
 
 // Making this function bool reversed the returned value, but nobody reads it.
-#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
+#if defined(UNIX) && !defined(USE_POSIX_THREADS) && !defined(SOLARIS_MT)
 static bool semaphore_wait_isc_sync(int count, int semid, int *semnums)
 {
 /**************************************

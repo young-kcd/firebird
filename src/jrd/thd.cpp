@@ -75,7 +75,7 @@ static USHORT t_init = FALSE;
 #ifdef ANY_THREADING
 static MUTX_T ib_mutex;
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 static pthread_key_t specific_key;
 static pthread_key_t t_key;
 #endif
@@ -131,7 +131,7 @@ FB_THREAD_ID THD_get_thread_id(void)
 #ifdef SOLARIS_MT
 	id = thr_self();
 #endif
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 
 /* The following is just a temp. decision.
 */
@@ -144,14 +144,14 @@ FB_THREAD_ID THD_get_thread_id(void)
 	id = (FB_THREAD_ID) pthread_self();
 
 #endif /* HP10 */
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 
 	return id;
 }
 
 
 #ifdef ANY_THREADING
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #define GET_SPECIFIC_DEFINED
 THDD THD_get_specific(void)
 {
@@ -179,7 +179,7 @@ THDD THD_get_specific(void)
 
 #endif /* HP10 */
 }
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 #endif /* ANY_THREADING */
 
 
@@ -269,13 +269,13 @@ void THD_getspecific_data(void **t_data)
    does not get initialized. So don't use an fb_assert in here but rather do
    the work only if t_init is initialised */
 	if (t_init) {
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #ifdef HP10
 		pthread_getspecific(t_key, t_data);
 #else
 		*t_data = (void *) pthread_getspecific(t_key);
 #endif /* HP10 */
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 
 #ifdef SOLARIS_MT
 		thr_getspecific(t_key, t_data);
@@ -306,7 +306,7 @@ void THD_cleanup(void)
 
 	if (initialized) {
 		initialized = FALSE;
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #endif
 
 #ifdef SOLARIS_MT
@@ -337,7 +337,7 @@ void THD_init(void)
  * Functional description
  *
  **************************************/
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 
 /* In case of Posix threads we take advantage of using function
    pthread_once. This function makes sure that init() routine
@@ -355,7 +355,7 @@ void THD_init(void)
 
 	init();
 
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 }
 
 
@@ -372,7 +372,7 @@ void THD_init_data(void)
  *	to ensure that the key is created.
  *
  **************************************/
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 
 /* In case of Posix threads we take advantage of using function
    pthread_once. This function makes sure that init_tkey() routine
@@ -390,12 +390,12 @@ void THD_init_data(void)
 
 	init_tkey();
 
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 }
 
 
 #ifdef ANY_THREADING
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #define THREAD_MUTEXES_DEFINED
 int THD_mutex_destroy(MUTX_T * mutex)
 {
@@ -520,7 +520,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
 
 #endif /* HP10 */
 }
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 #endif /* ANY_THREADING */
 
 
@@ -1274,7 +1274,7 @@ void THD_putspecific_data(void *t_data)
 		THD_init_data();
 #ifdef ANY_THREADING
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 	pthread_setspecific(t_key, t_data);
 #endif
 
@@ -1540,7 +1540,7 @@ void THD_yield(void)
  **************************************/
 #ifdef ANY_THREADING
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 /* use sched_yield() instead of pthread_yield(). Because pthread_yield() 
    is not part of the (final) POSIX 1003.1c standard. Several drafts of 
    the standard contained pthread_yield(), but then the POSIX guys 
@@ -1664,7 +1664,7 @@ static void init(void)
 #ifdef ANY_THREADING
 	THD_mutex_init(&ib_mutex);
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 	pthread_key_create(&specific_key, NULL);
 #endif
 
@@ -1724,7 +1724,7 @@ static void init_tkey(void)
 
 #ifdef ANY_THREADING
 
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 	pthread_key_create(&t_key, NULL);
 #endif
 
@@ -1740,7 +1740,7 @@ static void init_tkey(void)
 
 
 #ifdef ANY_THREADING
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #define PUT_SPECIFIC_DEFINED
 static void put_specific(THDD new_context)
 {
@@ -1758,7 +1758,7 @@ static void put_specific(THDD new_context)
 	pthread_setspecific(specific_key, new_context);
 }
 #endif /* ANY_THREADING */
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 
 
 #ifdef ANY_THREADING
@@ -1824,7 +1824,7 @@ static void put_specific(THDD new_context)
 
 
 #ifdef ANY_THREADING
-#ifdef POSIX_THREADS
+#ifdef USE_POSIX_THREADS
 #define START_THREAD
 static int thread_start(
 						int (*routine) (void *),
@@ -1918,7 +1918,7 @@ static int thread_start(
 #endif /* linux */
 #endif /* HP10 */
 }
-#endif /* POSIX_THREADS */
+#endif /* USE_POSIX_THREADS */
 #endif /* ANY_THREADING */
 
 
@@ -2041,7 +2041,7 @@ static int thread_start(int (*routine) (void *),
 
 #ifdef ANY_THREADING
 #ifdef VMS
-#ifndef POSIX_THREADS
+#ifndef USE_POSIX_THREADS
 #define START_THREAD
 /**************************************
  *
