@@ -22,9 +22,11 @@
  *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
+ * 2003-08-15 Fred Polizo, Jr. - Fixed print_item() to correctly print
+ * string types as their hex represention for CHARACTER SET OCTETS. 
+ *
  */
 /*
-  $Id: isql.epp,v 1.42 2003-09-09 11:03:37 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -5898,9 +5900,37 @@ static SSHORT print_item(TEXT ** s,
 			vary = (VARY *) var->sqldata;
 
 			/* Note: we allocated the dataspace 1 byte larger already */
+			// Note: we allocated the dataspace 1 byte larger already 
 			vary->vary_string[vary->vary_length] = 0;
+ 
+			// If CHARACTER SET OCTETS, print two hex digits per octet
+			if (var->sqlsubtype == BLOB_text)
+			{
+				SLONG hex_len = 2 * vary->vary_length;
+				char *buff2 = static_cast<char*>(ISQL_ALLOC(hex_len + 1));
+				char *bp = buff2;
 
-			if (List) {
+				for (USHORT i = 0; i < vary->vary_length; i++, bp += 2)
+				{
+					sprintf(bp, "%02X",
+					static_cast<UCHAR>(vary->vary_string[i]));
+				}
+				buff2[hex_len] = '\0'; // there is an extra byte for terminator
+
+				if (List)
+				{
+					ISQL_printf(Out, buff2);
+					ISQL_printf(Out, (TEXT*) NEWLINE);
+				}
+				else
+				{
+					// Truncate if necessary
+					sprintf(p, "%-*.*s ", static_cast<int>(length),
+					static_cast<int>(MIN(length, hex_len)), buff2);
+				}
+				ISQL_FREE(buff2);
+			}
+			else if (List) {
 				ISQL_printf(Out, vary->vary_string);
 				ISQL_printf(Out, (TEXT*) NEWLINE);
 			}
