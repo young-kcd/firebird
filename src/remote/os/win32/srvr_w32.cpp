@@ -110,7 +110,6 @@
 #include "../common/config/config.h"
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE ipc_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -202,15 +201,12 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		return 0;
 	}
 
-	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet)) == 0) {
+	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
 
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
 			server_flag |= SRVR_wnet;
 		server_flag |= SRVR_inet;
 		server_flag |= SRVR_xnet;
-#ifdef SUPERSERVER
-		server_flag |= SRVR_ipc;
-#endif
 	}
 
 #ifdef SUPERSERVER
@@ -282,9 +278,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0,
 							  0);
 		}
-		/* No need to waste a thread if we are running as a window.  Just start
-		 * the IPC communication
-		 */
+		// No need to waste a thread if we are running as a window
 		if (Config::getCreateInternalWindow()) {
 			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 		}
@@ -415,35 +409,6 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static THREAD_ENTRY_DECLARE ipc_connect_wait_thread(THREAD_ENTRY_PARAM)
-{
-/**************************************
- *
- *      i p c _ c o n n e c t _ w a i t _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	void *thread = NULL; // silence non initialized warning
-
-	if (!(server_flag & SRVR_non_service))
-		thread = CNTL_insert_thread();
-
-	if (Config::getCreateInternalWindow()) {
-		WINDOW_main(hInst, SW_NORMAL, server_flag);
-	}
-	else {
-		Sleep(INFINITE);
-	}
-
-	if (!(server_flag & SRVR_non_service))
-		CNTL_remove_thread(thread);
-	return 0;
-}
-
-
 static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
@@ -498,7 +463,6 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	HANDLE ipc_thread_handle = 0;
 
 	if (server_flag & SRVR_inet) {
 		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
@@ -508,27 +472,6 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 	}
 	if (server_flag & SRVR_xnet) {
 		gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0, 0);
-	}
-	if (server_flag & SRVR_ipc) {
-		const int bFailed =
-			gds__thread_start(ipc_connect_wait_thread,
-							  0,
-							  THREAD_medium,
-							  0,
-							  &ipc_thread_handle);
-
-		if (bFailed ||
-			WaitForSingleObject(ipc_thread_handle, 2000) != WAIT_TIMEOUT) {
-			/* If the IPC thread did not time out, then it must have finished. *
-			 * the only way for it to have finished in 2 seconds is for it to  *
-			 * not have succeeded.  IE. It already exists.                     */
-
-			if (!bFailed && ipc_thread_handle) {
-				CloseHandle(ipc_thread_handle);
-			}
-			CNTL_shutdown_service("Could not start service");
-			return 0;
-		}
 	}
 	return 0;
 }
@@ -606,17 +549,11 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					}
 					break;
 
-#ifdef SUPERSERVER
-				case 'L':
-					*pserver_flag |= SRVR_ipc;
-					break;
-#endif
-
 				case 'N':
 					*pserver_flag |= SRVR_no_icon;
 					break;
 
-				case 'P':		/* Specify a port or named pipe other than the default */
+				case 'P':	// Specify a port or named pipe other than the default
 					while (*p && *p == ' ')
 						p++;
 					if (*p) {

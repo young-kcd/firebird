@@ -351,7 +351,7 @@ BOOL ReadIBSettings(HWND hDlg)
 	if (pdwStatus[1])
 		PrintCfgStatus(pdwStatus, IDS_CFGREAD_FAILED, hDlg);
 	else {
-		lMapSize = Config::getIpcMapSize();
+		lMapSize = 8192; // no longer configurable, taken from /remote/xnet.h
 		lCachePages = Config::getDefaultDbCachePages();
 		bSuccess = TRUE;
 	}

@@ -66,7 +66,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"OldParameterOrdering",		(ConfigValue) false},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
 	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) false},
-	{TYPE_INTEGER,		"IpcMapSize",				(ConfigValue) 4096},		// bytes
 #ifdef SUPERSERVER
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},		// pages
 #else
@@ -93,8 +92,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
 	{TYPE_BOOLEAN,		"TraceMemoryPools",			(ConfigValue) false},		// for internal use only
 	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
-	// deprecated
-	//{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
 	{TYPE_BOOLEAN,		"UsePriorityScheduler",		(ConfigValue) true},
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
@@ -310,11 +307,6 @@ int Config::getTcpRemoteBufferSize()
 bool Config::getTcpNoNagle()
 {
 	return (bool) sysConfig.values[KEY_TCP_NO_NAGLE];
-}
-
-int Config::getIpcMapSize()
-{
-	return (int) sysConfig.values[KEY_IPC_MAP_SIZE];
 }
 
 int Config::getDefaultDbCachePages()

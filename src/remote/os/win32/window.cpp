@@ -90,13 +90,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	hInstance = hThisInst;
 	usServerFlags = usServerFlagMask;
 
-/* initialize interprocess server */
-
-	if (!(usServerFlagMask & SRVR_ipc)) {
-		szClassName = "FB_Disabled";
-	}
-
 /* initialize main window */
+
 	WNDCLASS wcl;
 	wcl.hInstance = hInstance;
 	wcl.lpszClassName = szClassName;

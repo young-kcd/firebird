@@ -964,7 +964,7 @@ static rem_str* make_pipe_name(
 	while (*p && *p != '\\' && *p != '@')
 		*q++ = *p++;
 
-	const TEXT* protocol = 0;
+	const TEXT* protocol = NULL;
 	if (!*p)
 		protocol = Config::getRemoteServiceName();
 	else if (*p == '@')

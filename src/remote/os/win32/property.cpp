@@ -305,7 +305,7 @@ static char *MakeVersionString(char *pchBuf, int nLen,
 		if (p < end)
 			*p++ = '\n';
 	}
-	if (usServerFlagMask & (SRVR_xnet | SRVR_ipc)) {
+	if (usServerFlagMask & SRVR_xnet) {
 		p += LoadString(hInstance, IDS_IPC, p, end - p);
 	}
 	*p = '\0';
