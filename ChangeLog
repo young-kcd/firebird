@@ -1,3 +1,58 @@
+2004-04-29 00:05  brodsom
+
+	* firebird2/src/gpre/: pas.cpp (1.35), pat.cpp (1.23), pretty.cpp
+	(1.23), cob.cpp (1.40), dyntable.cpp (1.7), ftn.cpp (1.42),
+	gpre.cpp (1.56), gpre.h (1.60), gpre_meta.epp (1.38), int_cxx.cpp
+	(1.32), msc.cpp (1.20), ada.cpp (1.38), c_cxx.cpp (1.44), cme.cpp
+	(1.25):
+	
+	Removing ib_stdio.h
+
+2004-04-28 23:59  brodsom
+
+	* firebird2/src/dudley/: trn.cpp (1.28), ddl.cpp (1.33),
+	extract.epp (1.31), lex.cpp (1.25):
+	
+	Removing ib_stdio.h
+
+2004-04-28 23:56  brodsom
+
+	* firebird2/src/dsql/: utld.cpp (1.28), dsql.cpp (1.102), errd.cpp
+	(1.29), hsh.cpp (1.26), movd.cpp (1.13), pass1.cpp (1.139),
+	user_dsql.cpp (1.37), alld.cpp (1.22), ddl.cpp (1.95):
+	
+	Removing ib_stdio.h
+
+2004-04-28 23:52  brodsom
+
+	* firebird2/src/: alice/alice.cpp (1.59), alice/alice.h (1.33),
+	alice/all.cpp (1.20), alice/exe.cpp (1.31), alice/tdr.cpp (1.34),
+	burp/burp.cpp (1.72), burp/burp.h (1.45), burp/canonical.cpp
+	(1.34), burp/misc.cpp (1.9), burp/mvol.cpp (1.34), burp/restore.epp
+	(1.72), burp/spit.cpp (1.28), burp/backup.epp (1.55),
+	common/classes/alloc.cpp (1.49), common/classes/alloc.h (1.41),
+	common/config/config_file.cpp (1.21):
+	
+	Removing ib_stdio.h
+
+2004-04-28 20:36  skidder
+
+	* firebird2/src/dsql/metd.epp (1.53):
+	
+	Make CSTRING map to VARCHAR, not CHAR in DSQL layer
+
+2004-04-28 19:28  skidder
+
+	* firebird2/src/jrd/opt.cpp (1.159):
+	
+	Slightly better fix for the FBTCS problem spotted by Blas
+
+2004-04-28 07:18  skidder
+
+	* firebird2/src/jrd/opt.cpp (1.158):
+	
+	Fix for FBTCS Join 17 testcase
+
 2004-04-27 17:54  brodsom
 
 	* firebird2/: src/jrd/gdsold.h (1.43), src/jrd/gds.h (1.6),
