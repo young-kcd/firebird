@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.8 2003-02-27 16:04:48 brodsom Exp $
+//	$Id: pas.cpp,v 1.9 2003-05-24 13:44:10 fsg Exp $
 //
 
 #include "firebird.h"
@@ -883,7 +883,8 @@ static void gen_blob_close( ACT action, USHORT column)
 	else
 		blob = (BLB) action->act_object;
 
-	command = (action->act_type == ACT_blob_cancel) ? "CANCEL" : "CLOSE";
+	command = (action->act_type == ACT_blob_cancel) ? (TEXT*)"CANCEL" : 
+	                                                          (TEXT*)"CLOSE";
 	printa(column, "GDS__%s_BLOB (%s, gds__%d);",
 		   command, status_vector(action), blob->blb_ident);
 
@@ -1695,8 +1696,8 @@ static void gen_dyn_execute( ACT action, int column)
 
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		   "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
-		   : "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
+		  (TEXT*) "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
+		   : (TEXT*) "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
 		   transaction, make_name(s, statement->dyn_statement_name),
 		   sw_sql_dialect, REF_PAR,
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
@@ -1761,9 +1762,9 @@ static void gen_dyn_immediate( ACT action, int column)
 	database = statement->dyn_database;
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		   "isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);"
+		   (TEXT*) "isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);"
 		   :
-		   "isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
+		   (TEXT*) "isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
 		   database->dbb_name->sym_string, transaction, SIZEOF,
 		   statement->dyn_string, statement->dyn_string, sw_sql_dialect,
 		   REF_PAR,
@@ -1838,8 +1839,8 @@ static void gen_dyn_open( ACT action, int column)
 
 	printa(column,
 		   (statement->dyn_sqlda2) ?
-		   "isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
-		   "isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
+		   (TEXT*) "isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
+		   (TEXT*) "isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
 		   s,
 		   transaction,
 		   sw_sql_dialect,
@@ -4281,11 +4282,11 @@ static TEXT *request_trans( ACT action, GPRE_REQ request)
 
 	if (action->act_type == ACT_open) {
 		if (!(trname = ((OPN) action->act_object)->opn_trans))
-			trname = "gds__trans";
+			trname =(TEXT*) "gds__trans";
 		return trname;
 	}
 	else
-		return (request) ? request->req_trans : "gds__trans";
+		return (request) ? request->req_trans : (TEXT*) "gds__trans";
 }
 
 
