@@ -1,3 +1,9 @@
+2004-09-30 18:29  skidder
+
+	* firebird2/configure.in (1.141.2.28):
+	
+	Correctly build on non-x86 SuSE linux
+
 2004-09-29 12:03  paul_reeves
 
 	* firebird2/src/remote/inet_server.cpp (1.26.2.2):
