@@ -33,15 +33,40 @@
 
 namespace Firebird {
 
-// Dynamic array of simple types
-template <typename T>
-class Array {
+// Static part of the array
+template <typename T, int Capacity>
+class InlineStorage {
 public:
-	Array(MemoryPool*p) : 
-	  count(0), capacity(0), data(0), pool(p)  {}
-	Array(MemoryPool*p, int InitialSize) : 
-	  count(0), capacity(0), data(0), pool(p)  {grow(InitialSize);}
-	~Array() {pool->deallocate(data);}
+	T* getStorage() {
+		return buffer;
+	}
+	int getStorageSize() {
+		return Capacity;
+	}
+private:
+	T buffer[Capacity];
+};
+
+// Used when array doesn't have static part
+template <typename T>
+class EmptyStorage {
+public:
+	T* getStorage() { return NULL; }
+	int getStorageSize() { return 0; }
+};
+
+// Dynamic array of simple types
+template <typename T, typename Storage = EmptyStorage<T> >
+class Array : private Storage {
+public:
+	Array(MemoryPool* p) : 
+	  count(0), capacity(getStorageSize()), data(getStorage()), pool(p)  {}
+	Array(MemoryPool* p, int InitialCapacity) : count(0), 
+		capacity(getStorageSize()), data(getStorage()), pool(p)  
+	{
+		ensureCapacity(InitialCapacity);
+	}
+	~Array() { if (data != getStorage()) pool->deallocate(data); }
 	void clear() { count = 0; };
 	T& operator[](int index) {
   		assert(index >= 0 && index < count);
@@ -51,12 +76,12 @@ public:
 	T* end() { return data+count; }
 	void insert(int index, const T& item) {
 		assert(index >= 0 && index <= count);
-		grow(1);
+		ensureCapacity(count+1);
 		memmove(data+index+1, data+index, sizeof(T)*(count++-index));
 		data[index] = item;
 	}
 	int add(const T& item) {
-		grow(1);
+		ensureCapacity(count+1);
 		data[count++] = item;
   		return count;
 	};
@@ -68,8 +93,15 @@ public:
 		assert(newCount <= count);
 		count = newCount;
 	};
+	// Grow size of our array and zero-initialize new items
+	void grow(int newCount) {
+		assert(newCount >= count);
+		ensureCapacity(newCount);
+		memset(data+count, 0, sizeof(T)*(newCount-count));
+		count = newCount;
+	}
 	void join(Array<T>& L) {
-		grow(L.count);
+		ensureCapacity(count+L.count);
 		memcpy(data + count, L.data, sizeof(T)*L.count);
 		count += L.count;
 	}
@@ -77,10 +109,9 @@ public:
 	int getCapacity() const { return capacity; }
 protected:
 	int count, capacity;
-	T* data;
+	T *data;
 	MemoryPool* pool;
-	void grow(int incr) {
-		int newcapacity = incr + count;
+	void ensureCapacity(int newcapacity) {
 		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
@@ -92,7 +123,8 @@ protected:
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);
-			pool->deallocate(data);
+			if (data != getStorage())
+				pool->deallocate(data);
 			data = newdata;
 			capacity = newcapacity;
 		}
@@ -126,6 +158,15 @@ public:
 		insert(pos,item);
 		return pos;
 	}
+};
+
+// Nice shorthand for arrays with static part
+template <typename T, int InlineCapacity>
+class HalfStaticArray : public Array<T, InlineStorage<T,InlineCapacity> > {
+public:
+	HalfStaticArray(MemoryPool* p) : Array<T,InlineStorage<T,InlineCapacity> > (p) {}
+	HalfStaticArray(MemoryPool* p, int InitialCapacity) : 
+		Array<T,InlineStorage<T,InlineCapacity> > (p, InitialCapacity) {}
 };
 
 }	// Firebird

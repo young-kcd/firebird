@@ -94,4 +94,7 @@ enum frb_sysflag {
 // Maximum length of single line returned from pretty printer
 #define PRETTY_BUFFER_SIZE 1024
 
+#define MAX_INDEX_SEGMENTS 16
+
 #endif /* JRD_CONSTANTS_H */
+

@@ -28,6 +28,7 @@
 #define JRD_BTR_H
 
 #include "../jrd/jrd_blks.h"
+#include "../jrd/constants.h"
 #include "../include/fb_blk.h"
 
 #include <vector>
@@ -64,7 +65,7 @@ typedef struct idx {
 	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
-	} idx_rpt[16];
+	} idx_rpt[MAX_INDEX_SEGMENTS];
 } IDX;
 
 /* index types and flags */

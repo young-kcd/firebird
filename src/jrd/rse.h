@@ -29,7 +29,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
-#include <vector>
+#include "../common/classes/array.h"
+#include "../jrd/constants.h"
 
 #include "../jrd/dsc.h"
 
@@ -303,16 +304,8 @@ class srl : public pool_alloc<type_srl>
 typedef srl *SRL;
 
 
-/* the maximum number of opt items is the maximum
-   number of streams, conjuncts, or indices which
-   can be used in an rse, since this is the space
-   available in the opt block */
-
-#define MAX_OPT_ITEMS	1024
-
-#define MAX_CONJUNCTS	MAX_OPT_ITEMS
-#define MAX_INDICES	MAX_OPT_ITEMS
-#define	OPT_BITS	(MAX_OPT_ITEMS / 32)
+// Must be less then MAX_SSHORT. Not used for static arrays.
+#define MAX_CONJUNCTS	32000
 
 // Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
 // Here we should really have a compile-time assert, since this hard-coded
@@ -321,41 +314,64 @@ typedef srl *SRL;
 // identified by a UCHAR).
 #define MAX_STREAMS	255
 
+// This is number of ULONG's needed to store bit-mapped flags for all streams
+// OPT_STREAM_BITS = (MAX_STREAMS+1)/sizeof(ULONG)
+// This value cannot be increased simple way. Decrease is possible, but it is also
+// hardcoded in several places such as TEST_DEP_ARRAYS macro
+#define OPT_STREAM_BITS 8
+
+// Number of streams, conjuncts, indices that will be statically allocated 
+// in various arrays. Larger numbers will have to be allocated dynamically
+#define OPT_STATIC_ITEMS 16
+
 
 /* General optimizer block */
 class Opt : public pool_alloc<type_opt>
 {
-    public:
-	class Csb *opt_csb; /* Compiler scratch block */
-	SLONG opt_combinations; /* Number of partial orders considered */
-	double opt_best_cost; /* Cost of best join order */
-	SSHORT opt_count; /* Number of conjuncts */
-	SSHORT opt_parent_count; /* Number of conjuncts in parent rse */
-	USHORT opt_best_count; /* Longest length of indexable streams */
-	USHORT opt_g_flags; /* global flags */
-	struct opt_repeat {
-		struct jrd_nod *opt_conjunct; /* Conjunction */
-		struct jrd_nod *opt_lower; /* Lower bound on index value */
-		struct jrd_nod *opt_upper; /* Upper bound on index value */
-		struct jrd_nod *opt_match; /* Conjunct which matches index segment */
-		IRL opt_relationships; /* Streams directly reachable by index */
-		ULONG opt_dependencies[MAX_OPT_ITEMS / 32];
-		/* Stream dependencies to compute conjunct */
-		double opt_best_stream_cost; /* best cost of retrieving first n = streams */
-		USHORT opt_best_stream; /* stream in best join order seen so far */
-		USHORT opt_flags;
-		USHORT opt_stream; /* Stream in position of join order */
-		BOOLEAN opt_idx_full_match; 
-		/* Does the conjunct match all fields in index. */
+public:
+	class Csb *opt_csb; // Compiler scratch block
+	SLONG opt_combinations; // Number of partial orders considered
+	double opt_best_cost; // Cost of best join order
+	SSHORT opt_base_conjuncts; // Number of conjuncts in our rse, next conjuncts are from parent
+	USHORT opt_best_count; // Longest length of indexable streams
+	USHORT opt_g_flags; // global flags
+	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
+	// This is nothing compared to original Firebird 1.5 Opt structure size of ~180k
+	// All other arrays had been converted to dynamic to preserve memory 
+	// and improve performance
+	struct opt_segment {
+		// Index segments and their options
+		struct jrd_nod *opt_lower; // Lower bound on index value
+		struct jrd_nod *opt_upper; // Upper bound on index value
+		struct jrd_nod *opt_match; // Conjunct which matches index segment
+	} opt_segments[MAX_INDEX_SEGMENTS];
+	struct opt_conjunct {
+		// Conjunctions and their options
+		struct jrd_nod *opt_conjunct_node; // Conjunction
+		// Stream dependencies to compute conjunct
+		ULONG opt_dependencies[(MAX_STREAMS+1) / 32];
+		UCHAR opt_conjunct_flags;
 	};
-	struct opt_repeat opt_rpt[MAX_OPT_ITEMS];
+	struct opt_stream {
+		// Streams and their options
+		IRL opt_relationships; // Streams directly reachable by index
+		double opt_best_stream_cost; // best cost of retrieving first n = streams
+		USHORT opt_best_stream; // stream in best join order seen so far
+		USHORT opt_stream_number; // Stream in position of join order
+		UCHAR opt_stream_flags;
+	};
+	Firebird::HalfStaticArray<opt_conjunct,OPT_STATIC_ITEMS> opt_conjuncts;
+	Firebird::HalfStaticArray<opt_stream,OPT_STATIC_ITEMS> opt_streams;
+	Opt(JrdMemoryPool *pool) : opt_conjuncts(pool), opt_streams(pool) {}
 };
 typedef Opt *OPT;
-/* stream-dependent bits used in opt_flags */
 
-#define opt_used	1
-#define opt_stream_used	2
-#define opt_matched	4			/* conjunct matches an index segment */
+// Values for opt_stream_flags
+const opt_stream_used = 1; // Stream is used
+
+// Values for opt_conjunct_flags
+const opt_conjunct_used = 1; // conjunct is used
+const opt_conjunct_matched = 2;	// conjunct matches an index segment
 
 /* global optimizer bits used in opt_g_flags */
 

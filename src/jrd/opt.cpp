@@ -334,7 +334,8 @@ RSB OPT_compile(TDBB tdbb,
 	idx = NULL;
 	idx_size = 0;
 
-	opt_ = FB_NEW(*dbb->dbb_permanent) Opt();
+	opt_ = FB_NEW(*tdbb->tdbb_default) Opt(tdbb->tdbb_default);
+	opt_->opt_streams.grow(csb->csb_n_stream);
 
 	try {
 
@@ -530,17 +531,17 @@ RSB OPT_compile(TDBB tdbb,
 // around for the rest of the optimization process.
 
 // first fill out the conjuncts at the end of opt
-	opt_->opt_count = (SSHORT) conjunct_count;
+	opt_->opt_base_conjuncts = (SSHORT) conjunct_count;
 
 // Check if size of optimizer block exceeded.
-	if (opt_->opt_count > MAX_CONJUNCTS) {
+	if (conjunct_count > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
 		// Msg442: size of optimizer block exceeded
 	}
 
 // AB: Because know we're going to use both parent & conjunct_stack
 //   try to again to make additional conjuncts for an inner join,
-//   but be sure that opt_->opt_count contains the real "base"
+//   but be sure that opt_->opt_base_conjuncts contains the real "base"
 
 // find the end of the conjunct stack.
 	for (stack_end = &conjunct_stack; *stack_end;
@@ -560,28 +561,29 @@ RSB OPT_compile(TDBB tdbb,
 		// Msg442: size of optimizer block exceeded
 	}
 
+	opt_->opt_conjuncts.grow(conjunct_count);
 // AB: If equality nodes could be made get them first from the stack
 	for (i = saved_conjunct_count; i < conjunct_count; i++) {
-		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
-		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
+		opt_->opt_conjuncts[i].opt_conjunct_node = node = (JRD_NOD) LLS_POP(&conjunct_stack);
+		compute_dependencies(node, opt_->opt_conjuncts[i].opt_dependencies);
 	}
 
 	for (i = 0; i < saved_conjunct_count; i++) {
-		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
-		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
+		opt_->opt_conjuncts[i].opt_conjunct_node = node = (JRD_NOD) LLS_POP(&conjunct_stack);
+		compute_dependencies(node, opt_->opt_conjuncts[i].opt_dependencies);
 	}
 
 // Store the conjuncts from the parent rse.  But don't fiddle with
 // the parent's stack itself.
 	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
-		 parent_stack = parent_stack->lls_next, conjunct_count++) {
-		opt_->opt_rpt[conjunct_count].opt_conjunct = node =
+		 parent_stack = parent_stack->lls_next, conjunct_count++)
+	{
+		opt_->opt_conjuncts.grow(conjunct_count+1);
+		opt_->opt_conjuncts[conjunct_count].opt_conjunct_node = node =
 			(JRD_NOD) parent_stack->lls_object;
 		compute_dependencies(node,
-							 opt_->opt_rpt[conjunct_count].opt_dependencies);
+							 opt_->opt_conjuncts[conjunct_count].opt_dependencies);
 	}
-
-	opt_->opt_parent_count = (SSHORT) conjunct_count;
 
 // Check if size of optimizer block exceeded.
 	if (parent_stack) {
@@ -851,7 +853,7 @@ JRD_NOD OPT_make_index(TDBB tdbb, OPT opt_, JRD_REL relation, IDX * idx)
  **************************************/
 	IRB retrieval;
 	JRD_NOD node, *lower, *upper, *end_node;
-	Opt::opt_repeat * tail, *end;
+	Opt::opt_segment *tail, *end;
 
 	SET_TDBB(tdbb);
 
@@ -868,19 +870,19 @@ JRD_NOD OPT_make_index(TDBB tdbb, OPT opt_, JRD_REL relation, IDX * idx)
 
 	lower = retrieval->irb_value;
 	upper = retrieval->irb_value + idx->idx_count;
-	end = opt_->opt_rpt + idx->idx_count;
+	end = opt_->opt_segments + idx->idx_count;
 
 	if (idx->idx_flags & idx_descending) {
-		for (tail = opt_->opt_rpt; tail->opt_lower && tail < end; tail++)
+		for (tail = opt_->opt_segments; tail->opt_lower && tail < end; tail++)
 			*upper++ = tail->opt_lower;
-		for (tail = opt_->opt_rpt; tail->opt_upper && tail < end; tail++)
+		for (tail = opt_->opt_segments; tail->opt_upper && tail < end; tail++)
 			*lower++ = tail->opt_upper;
 		retrieval->irb_generic |= irb_descending;
 	}
 	else {
-		for (tail = opt_->opt_rpt; tail->opt_lower && tail < end; tail++)
+		for (tail = opt_->opt_segments; tail->opt_lower && tail < end; tail++)
 			*lower++ = tail->opt_lower;
-		for (tail = opt_->opt_rpt; tail->opt_upper && tail < end; tail++)
+		for (tail = opt_->opt_segments; tail->opt_upper && tail < end; tail++)
 			*upper++ = tail->opt_upper;
 	}
 
@@ -949,25 +951,25 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
 	CSB csb;
 	JRD_NOD node;
 	USHORT n;
-	Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_conjunct *tail, *opt_end;
 
 	tdbb = GET_THREAD_DATA;
 	DEV_BLKCHK(opt, type_opt);
 
 /* If there are not conjunctions, don't waste our time */
 
-	if (!opt->opt_count) {
+	if (!opt->opt_base_conjuncts) {
 		return 0;
 	}
 
 	csb = opt->opt_csb;
-	opt_end = opt->opt_rpt + opt->opt_count;
+	opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
 	n = 0;
 	clear_bounds(opt, idx);
 
-	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-		node = tail->opt_conjunct;
-		if (!(tail->opt_flags & opt_used) && computable(csb, node, -1, true)) {
+	for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
+		node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && computable(csb, node, -1, true)) {
 			n += match_index(tdbb, opt, stream, node, idx);
 		}
 	}
@@ -1032,7 +1034,7 @@ void OPT_set_index(TDBB tdbb,
 /* set up a dummy optimizer block just for the purposes 
    of the set index, to pass information to subroutines */
 
-	opt = FB_NEW(*dbb->dbb_permanent) Opt();
+	opt = FB_NEW(*tdbb->tdbb_default) Opt(tdbb->tdbb_default);
 	opt->opt_g_flags |= opt_g_stream;
 
 /* generate a new rsb for the retrieval, making sure to 
@@ -1180,17 +1182,17 @@ static UINT64 calculate_priority_level(OPT opt, IDX * idx)
  *	match_index function must be called first!
  *         
  **************************************/
-	Opt::opt_repeat *idx_tail, *idx_end;
+	Opt::opt_segment *idx_tail, *idx_end;
 	USHORT idx_field_count, idx_eql_count;
 	JRD_NOD node;
 
-	if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+	if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 
 		// Count how many fields can be used in this index and
 		// count the maximum equals that matches at the begin.
 		idx_eql_count = 0;
 		idx_field_count = 0;
-		idx_tail = opt->opt_rpt;
+		idx_tail = opt->opt_segments;
 		idx_end = idx_tail + idx->idx_count;
 		for (;idx_tail < idx_end && 
 			 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++) {
@@ -1307,14 +1309,14 @@ static bool check_relationship(OPT opt, USHORT position, USHORT stream)
  *
  **************************************/
 
-	Opt::opt_repeat * tail, *end;
+	Opt::opt_stream *tail, *end;
 
 	DEV_BLKCHK(opt, type_opt);
 
-	for (tail = opt->opt_rpt, end = tail + position; tail < end; tail++)
+	for (tail = opt->opt_streams.begin(), end = tail + position; tail < end; tail++)
 	{
-		const USHORT n = tail->opt_stream;
-		for (IRL relationship = opt->opt_rpt[n].opt_relationships;
+		const USHORT n = tail->opt_stream_number;
+		for (IRL relationship = opt->opt_streams[n].opt_relationships;
 		     relationship;
 		     relationship = relationship->irl_next)
 		{
@@ -1485,7 +1487,7 @@ static void class_mask(USHORT count, JRD_NOD * class_, ULONG * mask)
 		/* Msg442: size of optimizer block exceeded */
 	}
 
-	for (i = 0; i < OPT_BITS; i++) {
+	for (i = 0; i < OPT_STREAM_BITS; i++) {
 		mask[i] = 0;
 	}
 
@@ -1511,13 +1513,13 @@ static void clear_bounds(OPT opt, IDX * idx)
  *	indices.
  *
  **************************************/
-	Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_segment *tail, *opt_end;
 
 	DEV_BLKCHK(opt, type_opt);
 
-	opt_end = &opt->opt_rpt[idx->idx_count];
+	opt_end = &opt->opt_segments[idx->idx_count];
 
-	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+	for (tail = opt->opt_segments; tail < opt_end; tail++) {
 		tail->opt_lower = NULL;
 		tail->opt_upper = NULL;
 		tail->opt_match = NULL;
@@ -2000,7 +2002,8 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
  *		operation '$'.
  *
  **************************************/
-	LLS classes[MAX_OPT_ITEMS], *class_, *class2, *end, stack, temp;
+	Firebird::HalfStaticArray<LLS,OPT_STATIC_ITEMS> classes(GET_THREAD_DATA->tdbb_default);
+	LLS *class_, *class2, stack, temp;
 	JRD_NOD boolean, node1, node2, new_node, arg1, arg2;
 	USHORT count;
 	USHORT n;
@@ -2009,8 +2012,6 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 	DEV_BLKCHK(csb, type_csb);
 
 /* Zip thru stack of booleans looking for field equalities */
-
-	end = classes;
 
 	for (stack = *org_stack; stack; stack = stack->lls_next) {
 		boolean = (JRD_NOD) stack->lls_object;
@@ -2022,7 +2023,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 		node2 = boolean->nod_arg[1];
 		if (node2->nod_type != nod_field)
 			continue;
-		for (class_ = classes; class_ < end; class_++)
+		for (class_ = classes.begin(); class_ < classes.end(); class_++)
 			if (search_stack(node1, *class_)) {
 				augment_stack(node2, class_);
 				break;
@@ -2031,24 +2032,23 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 				LLS_PUSH(node1, class_);
 				break;
 			}
-		if (class_ == end) {
-			*class_ = NULL;
-			++end;
+		if (class_ == classes.end()) {
+			classes.grow(classes.getCount()+1);
 			LLS_PUSH(node1, class_);
 			LLS_PUSH(node2, class_);
 		}
 	}
 
-	if (end == classes)
+	if (classes.getCount()==0)
 		return 0;
 
 /* Make another pass looking for any equality relationships that may
    have crept in between classes (this could result from the
    sequence (A = B, C = D, B = C) */
 
-	for (class_ = classes; class_ < end; class_++)
+	for (class_ = classes.begin(); class_ < classes.end(); class_++)
 		for (stack = *class_; stack; stack = stack->lls_next)
-			for (class2 = class_ + 1; class2 < end; class2++)
+			for (class2 = class_ + 1; class2 < classes.end(); class2++)
 				if (search_stack((JRD_NOD) stack->lls_object, *class2)) {
 					DEBUG;
 					while (*class2)
@@ -2059,7 +2059,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 
 /* Start by making a pass distributing field equalities */
 
-	for (class_ = classes; class_ < end; class_++) {
+	for (class_ = classes.begin(); class_ < classes.end(); class_++) {
 		for (stack = *class_, n = 0; stack; stack = stack->lls_next)
 			n++;
 		if (n >= 3)
@@ -2107,7 +2107,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 		{
 			continue;
 		}
-		for (class_ = classes; class_ < end; class_++)
+		for (class_ = classes.begin(); class_ < classes.end(); class_++)
 			if (search_stack(node1, *class_)) {
 				for (temp = *class_; temp; temp = temp->lls_next)
 					if (!node_equality(node1, (JRD_NOD) temp->lls_object)) {
@@ -2532,9 +2532,9 @@ static bool estimate_cost(TDBB tdbb,
 	JRD_NOD node;
 	USHORT indexes, i, equalities, inequalities, index_hits, count;
 	SSHORT n;
-	ULONG inactivities[OPT_BITS];
+	ULONG inactivities[OPT_STREAM_BITS];
 	double s, selectivity, cardinality, index_selectivity;
-	Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_conjunct *tail, *opt_end;
 	csb_repeat *csb_tail;
 
 	DEV_BLKCHK(opt, type_opt);
@@ -2552,26 +2552,25 @@ static bool estimate_cost(TDBB tdbb,
 	// Compute index selectivity.  This involves finding the indices
 	// to be utilized and making a crude guess of selectivities.
 
-	if (opt->opt_count) {
+	if (opt->opt_base_conjuncts) {
 		idx = csb_tail->csb_idx;
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 			n = 0;
 			clear_bounds(opt, idx);
-			opt_end = &opt->opt_rpt[opt->opt_count];
-			for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-				node = tail->opt_conjunct;
-				if (!(tail->opt_flags & opt_used) &&
+			opt_end = opt->opt_conjuncts.begin()+opt->opt_base_conjuncts;
+			for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
+				node = tail->opt_conjunct_node;
+				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 					!(TEST_DEP_ARRAYS(tail->opt_dependencies, inactivities)))
 				{
 					n += match_index(tdbb, opt, stream, node, idx);
 				}
 			}
-			tail = opt->opt_rpt;
-			if (tail->opt_lower || tail->opt_upper) {
+			Opt::opt_segment *segment = opt->opt_segments;
+			if (segment->opt_lower || segment->opt_upper) {
 				indexes++;
-				opt_end = opt->opt_rpt + idx->idx_count;
-				for (count = 0; tail < opt_end; tail++, count++) {
-					if (!tail->opt_lower || tail->opt_lower != tail->opt_upper) {
+				for (count = 0; count < idx->idx_count; count++, segment++) {
+					if (!segment->opt_lower || segment->opt_lower != segment->opt_upper) {
 						break;
 					}
 				}
@@ -2611,11 +2610,11 @@ static bool estimate_cost(TDBB tdbb,
    record stream.  This is based on conjunctions without regard to whether
    or not they were the result of index operations. */
 
-	opt_end = opt->opt_rpt + opt->opt_count;
+	opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
 
-	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-		node = tail->opt_conjunct;
-		if (!(tail->opt_flags & opt_used) &&
+	for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
+		node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			!(TEST_DEP_ARRAYS(tail->opt_dependencies, inactivities))) 
 		{
 			if (node->nod_type == nod_eql) {
@@ -2624,7 +2623,7 @@ static bool estimate_cost(TDBB tdbb,
 			else {
 				++inequalities;
 			}
-			tail->opt_flags |= opt_used;
+			tail->opt_conjunct_flags |= opt_conjunct_used;
 		}
 	}
 
@@ -2836,7 +2835,6 @@ static void find_best(TDBB tdbb,
  **************************************/
 	CSB csb;
 	UCHAR *ptr, *stream_end;
-	Opt::opt_repeat *tail, *opt_end, *order_end, *stream_data;
 
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
@@ -2861,18 +2859,22 @@ static void find_best(TDBB tdbb,
 	csb = opt->opt_csb;
 	csb->csb_rpt[stream].csb_flags |= csb_active;
 	stream_end = &streams[1] + streams[0];
-	opt_end = opt->opt_rpt + MAX(opt->opt_count, csb->csb_n_stream);
-	opt->opt_rpt[position].opt_stream = stream;
+	opt->opt_streams[position].opt_stream_number = stream;
 	++position;
-	order_end = opt->opt_rpt + position;
-	stream_data = opt->opt_rpt + stream;
+	Opt::opt_stream *order_end = opt->opt_streams.begin() + position;
+	Opt::opt_stream *stream_data = opt->opt_streams.begin() + stream;
 
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test.
-	USHORT flag_vector[MAX_STREAMS+1], *fv;
-	for (tail = opt->opt_rpt, fv = flag_vector; tail < opt_end; tail++) {
-		*fv++ = tail->opt_flags & (opt_stream_used | opt_used);
-	}
+	Firebird::HalfStaticArray<UCHAR,OPT_STATIC_ITEMS> 
+		stream_flags(tdbb->tdbb_default), conjunct_flags(tdbb->tdbb_default);
+	stream_flags.grow(csb->csb_n_stream);
+	conjunct_flags.grow(opt->opt_base_conjuncts);
+	int i;
+	for (i=0; i < stream_flags.getCount(); i++)
+		stream_flags[i] = opt->opt_streams[i].opt_stream_flags & opt_stream_used;
+	for (i=0; i < conjunct_flags.getCount(); i++)
+		conjunct_flags[i] = opt->opt_conjuncts[i].opt_conjunct_flags & opt_conjunct_used;
 
 	// Compute delta and total estimate cost to fetch this stream.
 	double position_cost, position_cardinality, new_cost, new_cardinality;
@@ -2894,8 +2896,8 @@ static void find_best(TDBB tdbb,
 	{
 		opt->opt_best_count = position;
 		opt->opt_best_cost = new_cost;
-		for (tail = opt->opt_rpt; tail < order_end; tail++) {
-			tail->opt_best_stream = tail->opt_stream;
+		for (Opt::opt_stream *tail = opt->opt_streams.begin(); tail < order_end; tail++) {
+			tail->opt_best_stream = tail->opt_stream_number;
 		}
 #ifdef OPT_DEBUG
 		if (opt_debug_flag >= DEBUG_CANDIDATE) {
@@ -2910,16 +2912,21 @@ static void find_best(TDBB tdbb,
 	}
 	// mark this stream as "used" in the sense that it is already included 
 	// in this particular proposed stream ordering.
-	stream_data->opt_flags |= opt_stream_used;
+	stream_data->opt_stream_flags |= opt_stream_used;
 	bool done = false;
+
+	// if we've used up all the streams there's no reason to go any further.
+	if (position == streams[0]) {
+		done = true;
+	}
 
 	// We need to prune the combinations to avoid spending all of our time 
 	// recursing through find_best().  Based on experimentation, the cost of 
 	// recursion becomes significant at about a 7 table join.  Therefore, 
 	// make a simplifying assumption that if we have already seen a join 
 	// ordering that is lower cost than this one, give up.
-	if (position > 4) {
-		tail = opt->opt_rpt + position;
+	if (!done && position > 4) {
+		Opt::opt_stream *tail = &opt->opt_streams[position];
 		/* If we are the new low-cost join ordering, record that 
 		   fact.  Otherwise, give up. */
 		if (tail->opt_best_stream_cost == 0 ||
@@ -2933,11 +2940,6 @@ static void find_best(TDBB tdbb,
 		}
 	}
 
-	// if we've used up all the streams there's no reason to go any further.
-	if (position == streams[0]) {
-		done = true;
-	}
-
 	// First, handle any streams that have direct unique indexed 
 	// relationships to this stream.  If there are any, we 
 	// won't consider (now) indirect relationships.
@@ -2947,7 +2949,7 @@ static void find_best(TDBB tdbb,
 			 relationship = relationship->irl_next) 
 		{
 			if (relationship->irl_unique &&
-				(!(opt->opt_rpt[relationship->irl_stream].opt_flags & opt_stream_used))) 
+				(!(opt->opt_streams[relationship->irl_stream].opt_stream_flags & opt_stream_used))) 
 			{
 				for (ptr = streams + 1; ptr < stream_end; ptr++) {
 					if (*ptr == relationship->irl_stream) {
@@ -2969,9 +2971,8 @@ static void find_best(TDBB tdbb,
 		IRL relationship;
 		for (relationship = stream_data->opt_relationships; relationship;
 			 relationship = relationship->irl_next) {
-			if (!
-				(opt->opt_rpt[relationship->irl_stream].
-				 opt_flags & opt_stream_used)) {
+			if (!(opt->opt_streams[relationship->irl_stream].opt_stream_flags & opt_stream_used)) 
+			{
 				for (ptr = streams + 1; ptr < stream_end; ptr++) {
 					if (*ptr == relationship->irl_stream) {
 						if (!plan_node) {
@@ -2990,7 +2991,7 @@ static void find_best(TDBB tdbb,
 	// If there were no direct relationships, look for indirect relationships
 	if (!done) {
 		for (ptr = streams + 1; ptr < stream_end; ptr++) {
-			if (!(opt->opt_rpt[*ptr].opt_flags & opt_stream_used) &&
+			if (!(opt->opt_streams[*ptr].opt_stream_flags & opt_stream_used) &&
 				check_relationship(opt, position, *ptr))
 			{
 				find_best(tdbb, opt, *ptr, position,
@@ -3001,9 +3002,10 @@ static void find_best(TDBB tdbb,
 
 	// Clean up from any changes made for compute the cost for this stream
 	csb->csb_rpt[stream].csb_flags &= ~csb_active;
-	for (tail = opt->opt_rpt, fv = flag_vector; tail < opt_end; tail++, fv++) {
-		tail->opt_flags &= *fv;
-	}
+	for (i=0; i < stream_flags.getCount(); i++)
+		opt->opt_streams[i].opt_stream_flags &= stream_flags[i];
+	for (i=0; i < conjunct_flags.getCount(); i++)
+		opt->opt_conjuncts[i].opt_conjunct_flags &= conjunct_flags[i];
 }
 
 
@@ -3081,12 +3083,12 @@ static USHORT find_order(TDBB tdbb,
 	}
 #ifdef OPT_DEBUG
 	if (opt_debug_flag >= DEBUG_BEST) {
-		Opt::opt_repeat * order_end, *tail;
-		order_end = opt->opt_rpt + opt->opt_best_count;
+		Opt::opt_stream *order_end, *tail;
+		order_end = opt->opt_streams.begin() + opt->opt_best_count;
 		ib_fprintf(opt_debug_file,
 				   "find_order()  -- best_count: %2.2d, best_streams: ",
-				   opt->opt_best_count); for (tail = opt->opt_rpt;
-											  tail < order_end; tail++)
+				   opt->opt_best_count); 
+		for (tail = opt->opt_streams.begin(); tail < order_end; tail++)
 			ib_fprintf(opt_debug_file, "%2.2d ", tail->opt_best_stream);
 		ib_fprintf(opt_debug_file,
 				   "\n\t\t\tbest_cost: %g\tcombinations: %ld\n",
@@ -3364,15 +3366,15 @@ static bool form_river(TDBB tdbb,
 		ptr = rsb->rsb_arg;
 	}
 
-	UCHAR*           stream  = river->riv_streams;
-	Opt::opt_repeat* opt_end = opt->opt_rpt + count;
+	UCHAR* stream = river->riv_streams;
+	Opt::opt_stream *opt_end = opt->opt_streams.begin() + count;
 	if (count != streams[0]) {
 		sort_clause = project_clause = NULL;
 	}
 
-	Opt::opt_repeat* tail;
+	Opt::opt_stream *tail;
 
-	for (tail = opt->opt_rpt; tail < opt_end; tail++, stream++, ptr++) {
+	for (tail = opt->opt_streams.begin(); tail < opt_end; tail++, stream++, ptr++) {
 		*stream = (UCHAR) tail->opt_best_stream;
 		*ptr = gen_retrieval(tdbb, opt, *stream, sort_clause, project_clause,
 					false, false, NULL);
@@ -3396,7 +3398,7 @@ static bool form_river(TDBB tdbb,
 	}
 
 	for (UCHAR* t2 = stream; t2 < end_stream; t2++) {
-		for (tail = opt->opt_rpt; tail < opt_end; tail++) {
+		for (tail = opt->opt_streams.begin(); tail < opt_end; tail++) {
 			if (*t2 == tail->opt_best_stream) {
 				goto used;
 			}
@@ -3695,7 +3697,7 @@ static void gen_join(TDBB     tdbb,
 		}
 
 		// find indexed relationships from this stream to every other stream
-		Opt::opt_repeat* tail = opt->opt_rpt + *stream;
+		Opt::opt_stream* tail = opt->opt_streams.begin() + *stream;
 		csb_tail->csb_flags |= csb_active;
 		for (UCHAR* t2 = streams + 1; t2 < end_stream; t2++) {
 			if (*t2 != *stream) {
@@ -4093,18 +4095,18 @@ static RSB gen_residual_boolean(TDBB tdbb, OPT opt, RSB prior_rsb)
  *
  **************************************/
 	JRD_NOD node, boolean;
-	Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_conjunct *tail, *opt_end;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
 
 	boolean = NULL;
-	opt_end = opt->opt_rpt + opt->opt_count;
-	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-		node = tail->opt_conjunct;
-		if (!(tail->opt_flags & opt_used)) {
+	opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
+	for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
+		node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
 			compose(&boolean, node, nod_and);
-			tail->opt_flags |= opt_used;
+			tail->opt_conjunct_flags |= opt_conjunct_used;
 		}
 	}
 
@@ -4138,8 +4140,9 @@ static RSB gen_retrieval(TDBB     tdbb,
 
 	IDX *idx;
 	JRD_NOD node, opt_boolean;
-	SSHORT i, j, count, position;
-	Opt::opt_repeat *tail, *idx_tail, *idx_end;
+	SSHORT i, position;
+	Opt::opt_conjunct *tail;
+	Opt::opt_segment *idx_tail, *idx_end;
 	bool full = false;
 
 	SET_TDBB(tdbb);
@@ -4205,8 +4208,8 @@ static RSB gen_retrieval(TDBB     tdbb,
    inversion component of the boolean. */
 
 	JRD_NOD inversion = NULL;
-	Opt::opt_repeat* opt_end =
-		opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
+	Opt::opt_conjunct* opt_end =
+		opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_conjuncts : opt->opt_conjuncts.getCount());
 	RSB rsb = NULL;
 	bool index_used = false;
 
@@ -4214,7 +4217,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 	{
 		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
 	}
-	else if (opt->opt_parent_count || (sort_ptr && *sort_ptr)
+	else if (opt->opt_conjuncts.getCount() || (sort_ptr && *sort_ptr)
 	 /***|| (project_ptr && *project_ptr)***/
 		)
 	{
@@ -4227,10 +4230,12 @@ static RSB gen_retrieval(TDBB     tdbb,
 		   could be calculated via the index; currently we won't detect that case
 		 */
 
-		Firebird::vector<IDX*> idx_walk_vector(MAX_INDICES);
-		IDX** idx_walk = &idx_walk_vector[0];
-		Firebird::vector<UINT64> idx_priority_level_vector(MAX_INDICES);
-		UINT64* idx_priority_level = &idx_priority_level_vector[0];
+		Firebird::HalfStaticArray<IDX*,OPT_STATIC_ITEMS> idx_walk_vector(tdbb->tdbb_default);
+		idx_walk_vector.grow(csb_tail->csb_indices);
+		IDX** idx_walk = idx_walk_vector.begin();
+		Firebird::HalfStaticArray<UINT64,OPT_STATIC_ITEMS> idx_priority_level_vector(tdbb->tdbb_default);
+		idx_priority_level_vector.grow(csb_tail->csb_indices);
+		UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
 		for (i = 0, idx = csb_tail->csb_idx; i < csb_tail->csb_indices;
 			 i++, idx = NEXT_IDX(idx->idx_rpt, idx->idx_count))
@@ -4249,26 +4254,20 @@ static RSB gen_retrieval(TDBB     tdbb,
 			/* go through all the unused conjuncts and see if 
 			   any of them are computable using this index */
 			clear_bounds(opt, idx);
-			tail = opt->opt_rpt;
+			tail = opt->opt_conjuncts.begin();
 			if (outer_flag) {
-				tail += opt->opt_count;
+				tail += opt->opt_base_conjuncts;
 			}
 			for (; tail < opt_end; tail++)
 			{
-				if (tail->opt_flags & opt_matched) {
+				if (tail->opt_conjunct_flags & opt_conjunct_matched) {
 					continue;
 				}
-				node = tail->opt_conjunct;
-				if (!(tail->opt_flags & opt_used) &&
+				node = tail->opt_conjunct_node;
+				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 				    computable(csb, node, -1, (inner_flag || outer_flag)))
 				{
-					if (count = match_index(tdbb, opt, stream, node, idx)) {
-						// mark the index in the bitmap and if this conjunct
-						// has a own index mark this also
-						if (idx->idx_count == count) {
-							tail->opt_idx_full_match = TRUE;
-						}	
-					}
+					match_index(tdbb, opt, stream, node, idx);
 				}
 				if (node->nod_type == nod_starts)
 					compose(&inversion,
@@ -4310,7 +4309,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 	            }***/
 			}
 
-			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+			if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 
 				// Calculate the priority level for this index.
 				idx_priority_level[i] = calculate_priority_level(opt, idx);
@@ -4325,11 +4324,11 @@ static RSB gen_retrieval(TDBB     tdbb,
 		// Walk through the indicies based on earlier calculated count and
 		// when necessary build the index
 
-		// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
-		Firebird::vector<SSHORT> conjunct_position_vector(MAX_INDICES);
-		SSHORT* conjunct_position = &conjunct_position_vector[0];
-		Firebird::vector<Opt::opt_repeat*> matching_nodes_vector(MAX_INDICES);
-		Opt::opt_repeat** matching_nodes = &matching_nodes_vector[0];
+		Firebird::HalfStaticArray<SSHORT,OPT_STATIC_ITEMS>
+			conjunct_position_vector(tdbb->tdbb_default);
+
+		Firebird::HalfStaticArray<Opt::opt_conjunct*,OPT_STATIC_ITEMS> 
+			matching_nodes_vector(tdbb->tdbb_default);
 
 		for (i = 0; i < idx_walk_count; i++)
 		{
@@ -4339,18 +4338,19 @@ static RSB gen_retrieval(TDBB     tdbb,
 				continue;
 			}
 
-			j = 0;
+			conjunct_position_vector.shrink(0);
+			matching_nodes_vector.shrink(0);
 			clear_bounds(opt, idx);
-			tail = opt->opt_rpt;
+			tail = opt->opt_conjuncts.begin();
 			if (outer_flag) {
-				tail += opt->opt_count;
+				tail += opt->opt_base_conjuncts;
 			}
 			for (; tail < opt_end; tail++) {
 				// Test if this conjunction is available for this index.
-				if (!(tail->opt_flags & opt_matched)) {
+				if (!(tail->opt_conjunct_flags & opt_conjunct_matched)) {
 					// Setting opt_lower and/or opt_upper values
-					node = tail->opt_conjunct;
-					if (!(tail->opt_flags & opt_used) && 
+					node = tail->opt_conjunct_node;
+					if (!(tail->opt_conjunct_flags & opt_conjunct_used) && 
 						 computable(csb,
 						            node,
 									-1,
@@ -4358,16 +4358,13 @@ static RSB gen_retrieval(TDBB     tdbb,
 					{
 						if (match_index(tdbb, opt, stream, node, idx)) {
 							position = 0;
-							idx_tail = opt->opt_rpt;
+							idx_tail = opt->opt_segments;
 							idx_end = idx_tail + idx->idx_count;
-							conjunct_position[j] = -1;
 							for (; idx_tail < idx_end; idx_tail++, position++) {
-								if (idx_tail->opt_match == node) {
-									conjunct_position[j] = position;
+								if (idx_tail->opt_match == node)
 									break;
-								}
 							}
-							if (conjunct_position[j] == -1) {
+							if (idx_tail >= idx_end) {
 								// Nevertheless we have a resulting count
 								// from match_index, still a node could not
 								// be assigned, because equal nodes are
@@ -4375,30 +4372,30 @@ static RSB gen_retrieval(TDBB     tdbb,
 								// Flag this node as used, so that no other
 								// index is used with this bad one.
 								// example: WHERE (ID = 100) and (ID >= 1)
-								tail->opt_flags |= opt_matched;
+								tail->opt_conjunct_flags |= opt_conjunct_matched;
 							}
 							else {
-								matching_nodes[j++] = tail;
-								count = j;
+								matching_nodes_vector.add(tail);
+								conjunct_position_vector.add(position);
 							}
 						}
 					}
 				}
 			}
 
-			if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+			if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 				// Use a different marking if a PLAN was specified, this is
 				// for backwards compatibility.  Juck...
 				if (csb_tail->csb_plan) {
 					// Mark only used conjuncts in this index as used
-					idx_tail = opt->opt_rpt;
+					idx_tail = opt->opt_segments;
 					idx_end = idx_tail + idx->idx_count;
 					for (; idx_tail < idx_end && 
 						 (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++)
 					{
-						for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-							if (idx_tail->opt_match == tail->opt_conjunct) {
-								tail->opt_flags |= opt_matched;
+						for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
+							if (idx_tail->opt_match == tail->opt_conjunct_node) {
+								tail->opt_conjunct_flags |= opt_conjunct_matched;
 							}
 						}
 					}
@@ -4408,17 +4405,17 @@ static RSB gen_retrieval(TDBB     tdbb,
 					// Mark all conjuncts that could be calculated against the 
 					// index as used. For example if you have :
 					// (node1 >= constant) and (node1 <= constant) be sure both
-					// conjuncts will be marked as opt_matched
+					// conjuncts will be marked as opt_conjunct_matched
 					position = 0;
-					idx_tail = opt->opt_rpt;
+					idx_tail = opt->opt_segments;
 					idx_end = idx_tail + idx->idx_count;
 					for (; idx_tail < idx_end && 
 					     (idx_tail->opt_lower || idx_tail->opt_upper);
 					     idx_tail++, position++)
 					{
-						for (j = 0; j < count; j++) {
-							if (conjunct_position[j] == position) {
-								matching_nodes[j]->opt_flags |= opt_matched;
+						for (SSHORT j = 0; j < conjunct_position_vector.getCount(); j++) {
+							if (conjunct_position_vector[j] == position) {
+								matching_nodes_vector[j]->opt_conjunct_flags |= opt_conjunct_matched;
 							}
 						}
 					}
@@ -4446,14 +4443,14 @@ static RSB gen_retrieval(TDBB     tdbb,
 		// computable booleans.  When one is found, roll it into a final
 		// boolean and mark it used.
 		*return_boolean = NULL;
-		opt_end = opt->opt_rpt + opt->opt_count;
-		for (tail = opt->opt_rpt; tail < opt_end; tail++) {
-			node = tail->opt_conjunct;
-			if (!(tail->opt_flags & opt_used)
+		opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
+		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
+			node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
 				&& computable(csb, node, -1, false))
 			{
 				compose(return_boolean, node, nod_and);
-				tail->opt_flags |= opt_used;
+				tail->opt_conjunct_flags |= opt_conjunct_used;
 			}
 		}
 	}
@@ -4463,19 +4460,19 @@ static RSB gen_retrieval(TDBB     tdbb,
 	// it used. If a computable boolean didn't match against an index then
 	// mark the stream to denote unmatched booleans.
 	opt_boolean = NULL;
-	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
-	tail = opt->opt_rpt;
+	opt_end = opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_conjuncts : opt->opt_conjuncts.getCount());
+	tail = opt->opt_conjuncts.begin();
 	if (outer_flag) {
-		tail += opt->opt_count;
+		tail += opt->opt_base_conjuncts;
 	}
 
 	for (; tail < opt_end; tail++)
 	{
-		node = tail->opt_conjunct;
+		node = tail->opt_conjunct_node;
 		if (!relation->rel_file) {
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
-		if (!(tail->opt_flags & opt_used)
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
 			&& computable(csb, node, -1, false))
 		{
 			if (node->nod_type == nod_or) {
@@ -4487,16 +4484,16 @@ static RSB gen_retrieval(TDBB     tdbb,
 
 	// If no index is used then leave other nodes alone, because they could be used for
 	// building a SORT/MERGE.
-	tail = opt->opt_rpt;
+	tail = opt->opt_conjuncts.begin();
 	if (outer_flag || inversion) {
 		for (; tail < opt_end; tail++) {
-			node = tail->opt_conjunct;
-			if (!(tail->opt_flags & opt_used)
+			node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
 				&& computable(csb, node, -1, false))
 			{
 				compose(&opt_boolean, node, nod_and);
-				tail->opt_flags |= opt_used;
-				if (!outer_flag && !(tail->opt_flags & opt_matched)) {
+				tail->opt_conjunct_flags |= opt_conjunct_used;
+				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched)) {
 					csb_tail->csb_flags |= csb_unmatched;
 				}
 			}
@@ -4901,15 +4898,13 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	DBB dbb;
 	RIV river1, river2;
 	LLS stack1, stack2;
-	USHORT i, cnt, class_cnt, river_cnt, stream_cnt;
-	ULONG selected_rivers[OPT_BITS], selected_rivers2[OPT_BITS];
+	USHORT i, cnt, river_cnt, stream_cnt;
+	ULONG selected_rivers[OPT_STREAM_BITS], selected_rivers2[OPT_STREAM_BITS];
 	UCHAR *stream;
-	VEC scratch;
-	JRD_NOD *classes, *class_, *selected_classes[MAX_OPT_ITEMS],
-		**selected_class, *last_class, node, node1, node2, sort, *ptr;
+	JRD_NOD *classes, *class_, *last_class, node, node1, node2, sort, *ptr;
 	RSB rsb, merge_rsb;
 	RSB *rsb_tail;
-	Opt::opt_repeat * tail, *end;
+	Opt::opt_conjunct *tail, *end;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*org_rivers, type_lls);
 	SET_TDBB(tdbb);
@@ -4923,18 +4918,17 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		river1->riv_number = cnt++;
 	}
 
-	scratch = vec::newVector(*dbb->dbb_permanent, opt->opt_count * cnt);
-	classes = (JRD_NOD *) &*(scratch->begin());
-    //    classes = (JRD_NOD *) &(scratch->[0]);
+	Firebird::Array<JRD_NOD> scratch(tdbb->tdbb_default, opt->opt_base_conjuncts * cnt);
+	classes = scratch.begin();
 
 	// Compute equivalence classes among streams.  This involves finding groups
 	// of streams joined by field equalities.
 	last_class = classes;
-	for (tail = opt->opt_rpt, end = tail + opt->opt_count; tail < end; tail++) {
-		if (tail->opt_flags & opt_used) {
+	for (tail = opt->opt_conjuncts.begin(), end = tail + opt->opt_base_conjuncts; tail < end; tail++) {
+		if (tail->opt_conjunct_flags & opt_conjunct_used) {
 			continue;
 		}
-		node = tail->opt_conjunct;
+		node = tail->opt_conjunct_node;
 		if (node->nod_type != nod_eql) {
 			continue;
 		}
@@ -4977,34 +4971,30 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
    to indicate that nothing could be done. */
 
 	river_cnt = stream_cnt = 0;
+	Firebird::HalfStaticArray<JRD_NOD*,OPT_STATIC_ITEMS> selected_classes(tdbb->tdbb_default, cnt);
 	for (class_ = classes; class_ < last_class; class_ += cnt) {
 		i = river_count(cnt, class_);
 		if (i > river_cnt) {
 			river_cnt = i;
-			selected_class = selected_classes;
-			*selected_class++ = class_;
+			selected_classes.shrink(0);
+			selected_classes.add(class_);
 			class_mask(cnt, class_, selected_rivers);
 		}
 		else {
 			class_mask(cnt, class_, selected_rivers2);
-			for (i = 0; i < OPT_BITS; i++) {
+			for (i = 0; i < OPT_STREAM_BITS; i++) {
 				if ((selected_rivers[i] & selected_rivers2[i]) != selected_rivers[i]) {
 					break;
 				}
 			}
-			if (i == OPT_BITS) {
-				*selected_class++ = class_;
+			if (i == OPT_STREAM_BITS) {
+				selected_classes.add(class_);
 			}
 		}
 	}
 
-	if (!river_cnt) {
-		delete scratch;
+	if (!river_cnt)
 		return false;
-	}
-
-	*selected_class = NULL;
-	class_cnt = selected_class - selected_classes;
 
 	// Build a sort stream.
 	merge_rsb = FB_NEW_RPT(*tdbb->tdbb_default, river_cnt * 2) Rsb();
@@ -5022,11 +5012,12 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 			continue;
 		}
 		stream_cnt += river1->riv_count;
-		sort = FB_NEW_RPT(*tdbb->tdbb_default, class_cnt * 2) jrd_nod();
+		sort = FB_NEW_RPT(*tdbb->tdbb_default, selected_classes.getCount() * 2) jrd_nod();
 		sort->nod_type = nod_sort;
-		sort->nod_count = class_cnt;
-		for (selected_class = selected_classes, ptr = sort->nod_arg;
-			*selected_class; selected_class++) 
+		sort->nod_count = selected_classes.getCount();
+		JRD_NOD **selected_class;
+		for (selected_class = selected_classes.begin(), ptr = sort->nod_arg;
+			selected_class < selected_classes.end(); selected_class++) 
 		{
 			*ptr++ = (*selected_class)[river1->riv_number];
 		}
@@ -5078,14 +5069,14 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 
 		set_active(opt, river1);
 		node = NULL;
-		for (tail = opt->opt_rpt; tail < end; tail++)
+		for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
 		{
-			node1 = tail->opt_conjunct;
-			if (!(tail->opt_flags & opt_used)
+			node1 = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
 				&& computable(opt->opt_csb, node1, -1, false))
 			{
 				compose(&node, node1, nod_and);
-				tail->opt_flags |= opt_used;
+				tail->opt_conjunct_flags |= opt_conjunct_used;
 			}
 		}
 
@@ -5102,7 +5093,6 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		}
 	}
 
-	delete scratch;
 	return true;
 }
 
@@ -5167,7 +5157,7 @@ static void get_inactivities(CSB csb, ULONG * dependencies)
 	USHORT n;
 	Csb::rpt_itr tail, end;
 	DEV_BLKCHK(csb, type_csb);
-	for (n = 0; n < OPT_BITS; n++)
+	for (n = 0; n < OPT_STREAM_BITS; n++)
 		dependencies[n] = (ULONG) - 1;
 	for (tail = csb->csb_rpt.begin(), end = tail + csb->csb_n_stream, n = 0;
 		 tail < end; n++, tail++)
@@ -5197,13 +5187,13 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
 
-	if (!opt->opt_count) {
+	if (!opt->opt_base_conjuncts) {
 		return NULL;
 	}
 
-	CSB              csb      = opt->opt_csb;
-	csb_repeat*      csb_tail = &csb->csb_rpt[stream];
-	Opt::opt_repeat* opt_end  = &opt->opt_rpt[opt->opt_count];
+	CSB              csb       = opt->opt_csb;
+	csb_repeat*      csb_tail  = &csb->csb_rpt[stream];
+	Opt::opt_conjunct* opt_end = opt->opt_conjuncts.begin()+opt->opt_base_conjuncts;
 	IRL relationship = NULL;
 
 /* Loop thru indexes looking for a match */
@@ -5216,11 +5206,11 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 			continue;
 		}
 		clear_bounds(opt, idx);
-		Opt::opt_repeat* tail;
-		for (tail = opt->opt_rpt; tail < opt_end; tail++)
+		Opt::opt_conjunct* tail;
+		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++)
 		{
-			JRD_NOD node = tail->opt_conjunct;
-			if (!(tail->opt_flags & opt_used)
+			JRD_NOD node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
 				&& computable(csb, node, -1, false))
 			{
 				// AB: Why only check for AND structures ? 
@@ -5229,14 +5219,13 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 				// match_index(tdbb, opt, stream, node, idx);
 				match_indices(tdbb, opt, stream, node, idx);
 				// AB: Why should we look further?
-				if (opt->opt_rpt->opt_lower || opt->opt_rpt->opt_upper) {
+				if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 					break;
 				}
 			}
 		}
 
-		tail = opt->opt_rpt;
-		if (tail->opt_lower || tail->opt_upper) {
+		if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 			if (!relationship) {
 				relationship = FB_NEW(*tdbb->tdbb_default) irl();
 			}
@@ -5556,15 +5545,19 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 	float compound_selectivity = 1; // Real maximum selectivity possible is 1.
 
 	// TMN: Shouldn't this be allocated from the tdbb->tdbb_default pool?
-	Firebird::vector<IDX*> idx_walk_vector(MAX_INDICES);
-	IDX** idx_walk = &idx_walk_vector[0];
-	Firebird::vector<UINT64> idx_priority_level_vector(MAX_INDICES);
-	UINT64* idx_priority_level = &idx_priority_level_vector[0];
+	Firebird::HalfStaticArray<IDX*,OPT_STATIC_ITEMS> 
+		idx_walk_vector(tdbb->tdbb_default);
+	idx_walk_vector.grow(csb_tail->csb_indices);
+	IDX** idx_walk = idx_walk_vector.begin();
+	Firebird::HalfStaticArray<UINT64,OPT_STATIC_ITEMS> 
+		idx_priority_level_vector(tdbb->tdbb_default);
+	idx_priority_level_vector.grow(csb_tail->csb_indices);
+	UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
 	IDX *idx;
 	SSHORT i;
 	idx = csb_tail->csb_idx;
-	if (opt->opt_count) {
+	if (opt->opt_base_conjuncts) {
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 
 			idx_walk[i] = idx;
@@ -5618,7 +5611,7 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 
 	bool accept = true;
 	idx = csb_tail->csb_idx;
-	if (opt->opt_count) {
+	if (opt->opt_base_conjuncts) {
 		for (i = 0; i < idx_walk_count; i++) {
 			idx = idx_walk[i];
 			if (idx->idx_runtime_flags & idx_plan_dont_use) {
@@ -5631,7 +5624,7 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 				(csb_tail->csb_plan)) 
 			{
 				match_index(tdbb, opt, stream, boolean, idx);
-				if (opt->opt_rpt[0].opt_lower || opt->opt_rpt[0].opt_upper) {
+				if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper) {
 					compose(&inversion, OPT_make_index(tdbb, opt, relation, idx),
 							nod_bit_and);
 					accept = false;
@@ -5895,7 +5888,7 @@ static SSHORT match_index(TDBB tdbb,
  *	were not reliable and will not be used.
  *
  **************************************/
-	Opt::opt_repeat * ptr;
+	Opt::opt_segment *ptr;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 	SET_TDBB(tdbb);
@@ -5954,7 +5947,7 @@ static SSHORT match_index(TDBB tdbb,
 /* match the field to an index, if possible, and save the value to be matched 
    as either the lower or upper bound for retrieval, or both */
 
-	for (i = 0, ptr = opt->opt_rpt; i < idx->idx_count; i++, ptr++) {
+	for (i = 0, ptr = opt->opt_segments; i < idx->idx_count; i++, ptr++) {
 		if
 #ifdef EXPRESSION_INDICES
 			(idx->idx_expression ||
@@ -6048,19 +6041,19 @@ static bool match_indices(TDBB tdbb,
 		if (match_indices(tdbb, opt, stream, boolean->nod_arg[0], idx) &&
 			match_indices(tdbb, opt, stream, boolean->nod_arg[1], idx)) 
 		{
-			opt->opt_rpt->opt_match = NULL;
+			opt->opt_segments[0].opt_match = NULL;
 			return true;
 		}
 	}
 	else {
 		if (match_index(tdbb, opt, stream, boolean, idx)) {
-			opt->opt_rpt->opt_match = NULL;
+			opt->opt_segments[0].opt_match = NULL;
 			return true;
 		}
 	}
-	opt->opt_rpt->opt_match = NULL;
-	opt->opt_rpt->opt_upper = NULL;
-	opt->opt_rpt->opt_lower = NULL;
+	opt->opt_segments[0].opt_match = NULL;
+	opt->opt_segments[0].opt_upper = NULL;
+	opt->opt_segments[0].opt_lower = NULL;
 	return false;
 }
 
@@ -6289,12 +6282,12 @@ static void print_order(OPT opt,
  * Functional description
  *
  **************************************/
-	Opt::opt_repeat * tail, *order_end;
+	Opt::opt_stream *tail, *order_end;
 	DEV_BLKCHK(opt, type_opt);
-	order_end = opt->opt_rpt + position;
+	order_end = opt->opt_streams.begin() + position;
 	ib_fprintf(opt_debug_file, "print_order() -- position %2.2d: ", position);
-	for (tail = opt->opt_rpt; tail < order_end; tail++)
-		ib_fprintf(opt_debug_file, "stream %2.2d, ", tail->opt_stream);
+	for (tail = opt->opt_streams.begin(); tail < order_end; tail++)
+		ib_fprintf(opt_debug_file, "stream %2.2d, ", tail->opt_stream_number);
 	ib_fprintf(opt_debug_file, "\n\t\t\tcardinality: %g\tcost: %g\n",
 			   cardinality, cost);
 }
@@ -6708,8 +6701,9 @@ static SSHORT sort_indices_by_priority(csb_repeat * csb_tail,
  *    Sort indices based on the priority level.
  *
  ***************************************************/
-	IDX * idx_csb[MAX_INDICES];
-	memcpy(idx_csb, idx_walk, sizeof(idx_csb));
+	Firebird::HalfStaticArray<IDX*,OPT_STATIC_ITEMS> idx_csb(GET_THREAD_DATA->tdbb_default);
+	idx_csb.grow(csb_tail->csb_indices);
+	memcpy(idx_csb.begin(), idx_walk, csb_tail->csb_indices*sizeof(IDX*));
 
 	SSHORT idx_walk_count = 0;
 	float selectivity = 1; /* Real maximum selectivity possible is 1 */

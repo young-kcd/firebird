@@ -1625,7 +1625,7 @@ static bool create_index(	TDBB	tdbb,
 					return false;
 				}
 				idx.idx_count = IDX.RDB$SEGMENT_COUNT;
-				if (!idx.idx_count || idx.idx_count > 16)
+				if (!idx.idx_count || idx.idx_count > MAX_INDEX_SEGMENTS)
 				{
 					EXE_unwind(tdbb, (JRD_REQ)request);
 					if (!idx.idx_count)
