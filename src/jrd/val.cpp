@@ -733,7 +733,8 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	tdbb->tdbb_default = old_pool;
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		JrdMemoryPool::deletePool(val_pool);
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -2039,7 +2040,7 @@ static RTN walk_relation(TDBB tdbb, VDR control, jrd_rel* relation)
 		if (VAL_debug_level)
 			ib_fprintf(ib_stdout, "LOG:\t%s\n", s);
 #endif
-		ERR_punt();
+		throw;
 	}
 
 	return rtn_ok;

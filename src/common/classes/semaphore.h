@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.6 2004-01-28 07:50:18 robocop Exp $
+ *  $Id: semaphore.h,v 1.7 2004-03-01 03:35:01 skidder Exp $
  *
  */
 
@@ -60,13 +60,13 @@ public:
 		DWORD result = WaitForSingleObject(
 			hSemaphore, seconds >= 0 ? seconds * 1000 : INFINITE);
 		if (result == WAIT_FAILED)
-			system_call_failed::raise();
+			system_call_failed::raise("WaitForSingleObject");
 		return result != WAIT_TIMEOUT;
 	}
 
 	void release(SLONG count = 1) {
 		if (!ReleaseSemaphore(hSemaphore, count, NULL))
-			system_call_failed::raise();
+			system_call_failed::raise("ReleaseSemaphore");
 	}
 };
 
@@ -89,59 +89,65 @@ private:
 public:
 	Semaphore() : init(false) {
 		if (sem_init(&sem, 0, 0) == -1) {
-			gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise();
+			//gds__log("Error on semaphore.h: constructor");
+			system_call_failed::raise("sem_init");
 		}
 		init = true;
 	}
+	
 	~Semaphore() {
 		fb_assert(init == true);
 		if (sem_destroy(&sem) == -1) {
-			gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise();
+			//gds__log("Error on semaphore.h: destructor");
+			system_call_failed::raise("sem_destroy");
 		}
 		init = false;
 
 	}
+	
 	bool tryEnter(int seconds = 0) {
+		// Return true in case of success
 		fb_assert(init == true);
 		if (seconds == 0) {
+			// Instant try
 			if (sem_trywait(&sem) != -1) 
 				return true;
 			if (errno == EAGAIN) 
 				return false;
+			system_call_failed::raise("sem_trywait");
 		}
-		else if (seconds < 0) {
+		if (seconds < 0) {
+			// Unlimited wait, like enter()
 			if (sem_wait(&sem) != -1)
-				return false;
-		}
-		else {
-			struct timespec timeout;
-			timeout.tv_sec = time(NULL) + seconds;
-			timeout.tv_nsec = 0;
-			if (sem_timedwait(&sem, &timeout) == 0) 
 				return true;
-			if (errno == ETIMEDOUT) 
-				return false;
+			system_call_failed::raise("sem_wait");
 		}
-		char message[128];
-		sprintf(message, "Error on semaphore.h: tryEnter errno=%d\n", errno);
-		gds__log(message);
-		system_call_failed::raise();
+		// Wait with timeout
+		struct timespec timeout;
+		timeout.tv_sec = time(NULL) + seconds;
+		timeout.tv_nsec = 0;
+		if (sem_timedwait(&sem, &timeout) == 0) 
+			return true;
+		if (errno == ETIMEDOUT) {
+			return false;
+		}
+		system_call_failed::raise("sem_timedwait");
 	}
+	
 	void enter() {
 		fb_assert(init == true);
 		if (sem_wait(&sem) == -1) {
-			gds__log("Error on semaphore.h: enter");
-			system_call_failed::raise();
+			//gds__log("Error on semaphore.h: enter");
+			system_call_failed::raise("sem_wait");
 		}
 	}
+	
 	void release(SLONG count = 1) {
 		fb_assert(init == true);
-		for (int i = 0; i < count; i++)
+		for (int i = 0; i < count; i++) 
 			if (sem_post(&sem) == -1) {
-				gds__log("Error on semaphore.h: release");
-				system_call_failed::raise();
+				//gds__log("Error on semaphore.h: release");
+				system_call_failed::raise("sem_post");
 			}
 	}
 };

@@ -118,7 +118,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 
 static ConfigImpl *sys_config = NULL;
 #ifdef MULTI_THREAD
-static Firebird::Spinlock config_init_lock;
+static Firebird::Mutex config_init_lock;
 #endif
 
 const ConfigImpl& ConfigImpl::instance()

@@ -1131,7 +1131,7 @@ static bool find_dbkey(Rsb* rsb, ULONG record_number)
 	}	// try
 	catch (const std::exception&) {
 		CCH_RELEASE(tdbb, &window);
-		Firebird::status_exception::raise(-1);
+		throw;
 	}
 }
 #endif
@@ -1305,7 +1305,7 @@ static bool find_record(
 	}	// try
 	catch (const std::exception&) {
 		CCH_RELEASE(tdbb, &window);
-		Firebird::status_exception::raise(-1);
+		throw;
 	}
 }
 #endif
@@ -1653,7 +1653,7 @@ static bool get_record(
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
 		tdbb->tdbb_attachment->att_flags |=
 			(old_att_flags & ATT_no_cleanup);
-		Firebird::status_exception::raise(-1);
+		throw;
 	}
 
 	return result;

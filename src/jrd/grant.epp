@@ -278,7 +278,7 @@ bool GRANT_privileges( TDBB tdbb, SSHORT phase, Deferred_work* work,
 			catch (const std::exception&) {
 				delete str_buffer;
 				delete str_default_buffer;
-				ERR_punt();
+				throw;
 			}
 			
 			delete str_buffer;
@@ -1013,7 +1013,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 	catch (const std::exception&) {
 		delete str_field_buffer;
 		delete str_field_buffer_start;
-		ERR_punt();
+		throw;
 	}
 
 	delete str_field_buffer;

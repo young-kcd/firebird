@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.9 2003-11-11 23:58:49 stryqx Exp $
+ *  $Id: locks.h,v 1.10 2004-03-01 03:35:01 skidder Exp $
  *
  */
 
@@ -69,13 +69,13 @@ typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
 	DWORD dwSpinCount
 );
 
-class Spinlock {
+class Mutex {
 private:
 	CRITICAL_SECTION spinlock;
 	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
 public:
-	Spinlock();
-	~Spinlock() {
+	Mutex();
+	~Mutex() {
 		DeleteCriticalSection(&spinlock);
 	}
 	void enter() {
@@ -91,92 +91,93 @@ public:
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
 #if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD)
-class Spinlock {
+class Mutex {
 private:
 	pthread_spinlock_t spinlock;
 public:
-	Spinlock() {
+	Mutex() {
 		if (pthread_spin_init(&spinlock, false))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_spin_init");
 	}
-	~Spinlock() {
+	~Mutex() {
 		if (pthread_spin_destroy(&spinlock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_spin_destroy");
 	}
 	void enter() {
 		if (pthread_spin_lock(&spinlock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_spin_lock");
 	}
 	void leave() {
 		if (pthread_spin_unlock(&spinlock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_spin_unlock");
 	}
 };
 #else
 #ifdef SOLARIS
 // Who knows why Solaris 2.6 have not THIS funny spins?
 //The next code is not comlpeted but let me compile //Konstantin
-class Spinlock {
+class Mutex {
 private:
 	mutex_t spinlock;
 public:
-	Spinlock() {
+	Mutex() {
 		if (mutex_init(&spinlock, MUTEX_SPIN, NULL))
-			system_call_failed::raise();
+			system_call_failed::raise("mutex_init");
 	}
-	~Spinlock() {
+	~Mutex() {
 		if (mutex_destroy(&spinlock))
-			system_call_failed::raise();
+			system_call_failed::raise("mutex_destroy");
 	}
 	void enter() {
 		if (mutex_lock(&spinlock))
-			system_call_failed::raise();
+			system_call_failed::raise("mutex_lock");
 	}
 	void leave() {
 		if (mutex_unlock(&spinlock))
-			system_call_failed::raise();
+			system_call_failed::raise("mutex_unlock");
 	}
 };
 #else  // DARWIN and FREEBSD
-class Spinlock {
+class Mutex {
 private:
 	pthread_mutex_t mlock;
 public:
-	Spinlock() {
+	Mutex() {
 		if (pthread_mutex_init(&mlock, 0))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_mutex_init");
 	}
-	~Spinlock() {
+	~Mutex() {
 		if (pthread_mutex_destroy(&mlock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_mutex_destroy");
 	}
 	void enter() {
 		if (pthread_mutex_lock(&mlock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_mutex_lock");
 	}
 	void leave() {
 		if (pthread_mutex_unlock(&mlock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_mutex_unlock");
 	}
 };
 #endif
 
 #endif
 #endif
-#endif /* MULTI_THREAD */
-
-// Spinlock in shared memory. Not implemented yet !
-class SharedSpinlock {
+#else
+// Non-MT version
+class Mutex {
 public:
-	SharedSpinlock() {
+	Mutex() {
 	}
-	~SharedSpinlock() {
+	~Mutex() {
 	}
 	void enter() {
 	}
 	void leave() {
 	}
 };
+
+#endif /* MULTI_THREAD */
 
 }
 

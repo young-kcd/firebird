@@ -464,8 +464,9 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 
 		*req_handle = request;
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -612,8 +613,9 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			return return_success();
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -732,15 +734,17 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 			release_request(request, true);
 		}	// try
-		catch (const std::exception&) {
+		catch (const std::exception& ex) {
+			Firebird::stuff_exception(tdsql->tsql_status, ex);
 			status = error();
 			release_request(request, true);
 			RESTORE_THREAD_DATA;
 			return status;
 		}
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -1143,8 +1147,9 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 		map_in_out(NULL, message, 0, blr, msg_length, dsql_msg_buf);
 	}  // try
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -1201,8 +1206,9 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 			close_cursor(request);
 		}
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -1281,8 +1287,9 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 				punt();
 		}
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -1449,15 +1456,17 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 									buffer);
 
 		}	// try
-		catch(const std::exception&) {
+		catch(const std::exception& ex) {
+			Firebird::stuff_exception(tdsql->tsql_status, ex);
 			status = error();
 			release_request(request, true);
 			RESTORE_THREAD_DATA;
 			return status;
 		}
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -1557,8 +1566,9 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 				  isc_arg_gds, isc_dsql_decl_err, 0);
 		}
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -1786,8 +1796,9 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 
 		*info++ = isc_info_end;
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
+		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		RESTORE_THREAD_DATA;
 		return tdsql->tsql_status[1];
 	}
@@ -4829,7 +4840,7 @@ static void punt(void)
 {
 	tsql* tdsql = GET_THREAD_DATA;
 
-	Firebird::status_exception::raise(tdsql->tsql_status[1]);
+	Firebird::status_exception::raise(tdsql->tsql_status);
 }
 
 

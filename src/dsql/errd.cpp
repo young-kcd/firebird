@@ -371,6 +371,6 @@ void ERRD_punt(void)
 
 // Give up whatever we were doing and return to the user. 
 
-	Firebird::status_exception::raise(tdsql->tsql_status[1]);
+	Firebird::status_exception::raise(tdsql->tsql_status);
 }
 

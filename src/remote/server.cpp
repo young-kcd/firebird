@@ -259,7 +259,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *
  **************************************/
 	SERVER_REQ request = NULL, active;
-	rem_port* volatile port = NULL; // Was volatile PORT port = NULL;
+	rem_port* port = NULL; // Was volatile PORT port = NULL;
 	SLONG pending_requests;
 	P_OP operation;
 #ifdef DEV_BUILD
@@ -335,9 +335,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 #ifdef DEV_BUILD
 #ifdef DEBUG
-		if ((request_count++ % 4) == 0) {
-			Firebird::status_exception::raise(gds_virmemexh);
-		}
+		if ((request_count++ % 4) == 0)
+			throw std::bad_alloc();
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
 
@@ -359,9 +358,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 #ifdef DEV_BUILD
 #ifdef DEBUG
-			if ((request_count % 5) == 0) {
-				Firebird::status_exception::raise(gds_virmemexh);
-			}
+			if ((request_count % 5) == 0)
+				throw std::bad_alloc();
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
 

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: guid.cpp,v 1.4 2003-12-05 10:35:41 robocop Exp $
+ *  $Id: guid.cpp,v 1.5 2004-03-01 03:35:15 skidder Exp $
  *
  */
  
@@ -45,8 +45,9 @@
 #include "fb_exception.h"
 
 void GenerateGuid(FB_GUID* guid) {
-	if (!SUCCEEDED(CoCreateGuid((GUID*)guid)))
-		Firebird::system_call_failed::raise();
+	HRESULT error = CoCreateGuid((GUID*)guid);
+	if (!SUCCEEDED(error))
+		Firebird::system_call_failed::raise("CoCreateGuid", error);
 }
 
 void GuidToString(char* buffer, const FB_GUID* guid) {

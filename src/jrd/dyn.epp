@@ -160,7 +160,8 @@ void DYN_ddl(att* attachment, jrd_tra* transaction, USHORT length,
 #endif
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		const sav* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
 		{
@@ -693,7 +694,8 @@ USHORT DYN_put_blr_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -739,7 +741,8 @@ USHORT DYN_put_text_blob(GBL gbl, const UCHAR** ptr, bid* blob_id)
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -814,7 +817,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	volatile SSHORT id;
+	SSHORT id;
 	TEXT privileges[16];
 	SqlIdentifier object;
 	SqlIdentifier field;
@@ -1096,7 +1099,8 @@ static void grant( GBL gbl, const UCHAR** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
 		   unwound the request so passing that as null */
@@ -1155,7 +1159,7 @@ static bool grantor_can_grant(	GBL		gbl,
  *		FALSE otherwise.
  *
  **************************************/
-	volatile USHORT err_num;
+	USHORT err_num;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -1407,7 +1411,8 @@ static bool grantor_can_grant(	GBL		gbl,
 	// all done.
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num, NULL, NULL, NULL, NULL, NULL);
 		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
@@ -1671,7 +1676,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 			DYN_unsupported_verb();
 		}
 
-	volatile USHORT old_id, id;
+	USHORT old_id, id;
 
 	BLK request = CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
@@ -1760,7 +1765,8 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
 		   unwound the request so passing that as null */
@@ -1891,7 +1897,8 @@ static void store_privilege(GBL		gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79, NULL, NULL, NULL, NULL, NULL);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */

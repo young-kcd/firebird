@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.20 2004-02-20 06:43:00 robocop Exp $
+ *  $Id: nbak.cpp,v 1.21 2004-03-01 03:35:12 skidder Exp $
  *
  */
 
@@ -775,7 +775,7 @@ bool BackupManager::actualize_alloc() throw() {
 		&& !(ast_flags & NBAK_alloc_dirty)
 #endif
 	) return true;
-	ISC_STATUS *status = GET_THREAD_DATA->tdbb_status_vector;
+	ISC_STATUS *status_vector = GET_THREAD_DATA->tdbb_status_vector;
 	try {
 		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p", 
 			last_allocated_page, alloc_table));
@@ -794,19 +794,19 @@ bool BackupManager::actualize_alloc() throw() {
 			temp_bdb.bdb_dbb = database;
 			temp_bdb.bdb_buffer = reinterpret_cast<PAG>(alloc_buffer);
 		
-			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status))
+			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 				return false;
 			for (ULONG i = last_allocated_page - temp_bdb.bdb_page; i < alloc_buffer[0]; i++) {
 				NBAK_TRACE(("alloc item page=%d, diff=%d", alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1));
 				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1)))
 				{
 					database->dbb_flags |= DBB_bugcheck;
-					status[0] = isc_arg_gds;
-					status[1] = isc_bug_check;
-					status[2] = isc_arg_string;
-					status[3] =
+					status_vector[0] = isc_arg_gds;
+					status_vector[1] = isc_bug_check;
+					status_vector[2] = isc_arg_string;
+					status_vector[3] =
 						(ISC_STATUS)(U_IPTR) ERR_cstring("Duplicated item in allocation table detected");
-					status[4] = isc_arg_end;
+					status_vector[4] = isc_arg_end;
 					return false;
 				}
 			}
@@ -818,14 +818,12 @@ bool BackupManager::actualize_alloc() throw() {
 				// We finished reading allocation table
 				break;		
 		}
-	} catch (const std::bad_alloc&) {
-		// Handle out of memory error
+	} catch (const std::exception& ex) {
+		// Handle out of memory error, etc
 		delete alloc_table;
+		Firebird::stuff_exception(status_vector, ex);
 		alloc_table = NULL;
 		last_allocated_page = 0;
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
 		return false;				
 	}
 #ifndef SUPERSERVER
@@ -848,7 +846,7 @@ ULONG BackupManager::get_page_index(ULONG db_page) const throw() {
 ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	fb_assert(last_allocated_page % (database->dbb_page_size/sizeof(ULONG)) == alloc_buffer[0]);	
 
-	ISC_STATUS* status = GET_THREAD_DATA->tdbb_status_vector;
+	ISC_STATUS* status_vector = GET_THREAD_DATA->tdbb_status_vector;
 	// Grow file first. This is done in such order to keep difference
 	// file consistent in case of write error. We should always be able 
 	// to read next alloc page when previous one is full.
@@ -856,7 +854,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	temp_bdb.bdb_page = last_allocated_page+1;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(empty_buffer);
-	if (!PIO_write(diff_file, &temp_bdb, (PAG)empty_buffer, status))
+	if (!PIO_write(diff_file, &temp_bdb, (PAG)empty_buffer, status_vector))
 		return 0;
 	
 	bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size/sizeof(ULONG)-2;
@@ -865,7 +863,7 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 		temp_bdb.bdb_page = last_allocated_page+2;
 		temp_bdb.bdb_dbb = database;
 		temp_bdb.bdb_buffer = reinterpret_cast<PAG>(empty_buffer);
-		if (!PIO_write(diff_file, &temp_bdb, (PAG)empty_buffer, status))
+		if (!PIO_write(diff_file, &temp_bdb, (PAG)empty_buffer, status_vector))
 			return 0;
 	}
 
@@ -874,20 +872,18 @@ ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<PAG>(alloc_buffer);
 	alloc_buffer[++alloc_buffer[0]] = db_page;
-	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status))
+	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 		return 0;
 	last_allocated_page++;
 	// Register new page in the alloc table
 	try {
 		alloc_table->add(AllocItem(db_page, last_allocated_page));
-	} catch(const std::bad_alloc&) {
+	} catch(const std::exception& ex) {
 		// Handle out of memory error
 		delete alloc_table;
 		alloc_table = NULL;
 		last_allocated_page = 0;
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
+		Firebird::stuff_exception(status_vector, ex);
 		return 0;
 	}
 	// Adjust buffer and counters if we allocated new alloc page earlier
@@ -951,7 +947,7 @@ BackupManager::BackupManager(DBB _database, int ini_state) :
 	alloc_lock = FB_NEW(*_database->dbb_permanent) Firebird::RWLock();
 	state_lock = FB_NEW(*_database->dbb_permanent) Firebird::RWLock();	
 	database_lock = FB_NEW(*_database->dbb_permanent) Firebird::RWLock();	
-	adjust_state_lock = FB_NEW(*_database->dbb_permanent) Firebird::Spinlock();	
+	adjust_state_lock = FB_NEW(*_database->dbb_permanent) Firebird::Mutex();	
 #else
 	flags = 0;
 	ast_flags = 0;
@@ -1149,14 +1145,11 @@ bool BackupManager::actualize_state() throw() {
 			NBAK_TRACE(("Open difference file"));
 			diff_file = PIO_open(database, diff_name, strlen(diff_name), false,
 								 NULL, diff_name, strlen(diff_name));
-		} catch(const Firebird::status_exception&) {
+		} catch(const std::exception& ex) {
 #ifdef SUPERSERVER
 			adjust_state_lock->leave();
 #endif
-			// This routine should not throw exceptions. This is almost correct
-			// way to handle errors except that we do not fill status vector.
-			// Error is going to be in tdbb->tdbb_status_vector anyway.
-			// PIO_open should not throw any other exceptions.
+			Firebird::stuff_exception(status, ex);
 			gds__log_status(diff_name, status);
 			return false;
 		}

@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.4 2003-11-18 12:39:12 brodsom Exp $
+$Id: align.cpp,v 1.5 2004-03-01 03:35:16 skidder Exp $
 */
 
 #include "firebird.h"
@@ -135,5 +135,5 @@ static int check_double(void)
 
 static void handler()
 {
-	Firebird::status_exception::raise(1);
+	Firebird::status_exception::raise();
 }

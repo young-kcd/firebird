@@ -1117,7 +1117,7 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 		if (temp_buffer) {
 			gds__free(temp_buffer);
 		}
-		ERR_punt();
+		throw;
 	}
 }
 
@@ -1347,7 +1347,7 @@ void PAG_init2(USHORT shadow_number)
 		if (temp_buffer) {
 			gds__free(temp_buffer);
 		}
-		ERR_punt();
+		throw;
 	}
 }
 

@@ -1261,8 +1261,9 @@ void CCH_fini(TDBB tdbb)
 		}
 
 		}	// try
-		catch (const std::exception&)
+		catch (const std::exception& ex)
 		{
+			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 			if (!flush_error) {
 				flush_error = true;
 			}
@@ -1650,7 +1651,8 @@ void CCH_init(TDBB tdbb, ULONG number)
 	while (!bcb_) {
 		try {
 			bcb_ = FB_NEW_RPT(*dbb->dbb_bufferpool, number) bcb;
-		} catch(const std::exception&) {
+		} catch(const std::exception& ex) {
+			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 			/* If the buffer control block can't be allocated, memory is
 			very low. Recalculate the number of buffers to account for
 			page buffer overhead and reduce that number by a 25% fudge
@@ -2612,7 +2614,8 @@ bool CCH_write_all_shadows(TDBB tdbb,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (spare_buffer) {
 			dbb->dbb_bufferpool->deallocate(spare_buffer);
 		}
@@ -3089,7 +3092,8 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 		bcb->bcb_flags |= BCB_cache_reader;
 		ISC_event_post(reader_event);	/* Notify our creator that we have started  */
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		THREAD_EXIT;
 		return;
@@ -3197,7 +3201,8 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 	THREAD_EXIT;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
 		bcb = dbb->dbb_bcb;
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
@@ -3258,7 +3263,8 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 		/* Notify our creator that we have started */
 		ISC_event_post(dbb->dbb_writer_event_init);
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		ISC_event_fini(writer_event);
 		THREAD_EXIT;
@@ -3358,7 +3364,8 @@ static void THREAD_ROUTINE cache_writer(DBB dbb)
 		THREAD_EXIT;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
 		bcb = dbb->dbb_bcb;
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.51 2004-02-20 06:42:41 robocop Exp $
+//  $Id: gpre.cpp,v 1.52 2004-03-01 03:35:08 skidder Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -917,7 +917,7 @@ int main(int argc, char* argv[])
 void CPR_abort()
 {
 	++fatals;
-	Firebird::status_exception::raise(1);
+	Firebird::status_exception::raise();
 }
 
 

@@ -174,7 +174,7 @@ err_handler:
 	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(status[1]);
+		Firebird::status_exception::raise(status);
 	}
 }
 
@@ -203,7 +203,7 @@ bool ExecuteStatement::Fetch(TDBB tdbb, jrd_nod** JrdVar) {
 	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(status[1]);
+		Firebird::status_exception::raise(status);
 	}
 
 	XSQLVAR *var=Sqlda->sqlvar;
@@ -220,7 +220,7 @@ rec_err:
 			tdbb->tdbb_status_vector[5] = 
 				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
 			tdbb->tdbb_status_vector[6] = isc_arg_end;
-			Firebird::status_exception::raise(status[1]);
+			Firebird::status_exception::raise(status);
 		}
 		if (DscType2SqlType[d->dsc_dtype].SqlType < 0)
 			goto rec_err;
@@ -279,7 +279,7 @@ rec_err:
 			status[2] = isc_arg_end;
 		}
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(status[1]);
+		Firebird::status_exception::raise(status);
 	}
     return true;
 }

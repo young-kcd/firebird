@@ -234,7 +234,7 @@ void SCL_check_index(TDBB tdbb, const TEXT* index_name, UCHAR index_id, USHORT m
     const TEXT* idx_name_ptr = index_name;
 	const TEXT* relation_name_ptr = index_name;
 
-	volatile BLK request = NULL;
+	BLK request = NULL;
 
 	// No need to cache this request handle, it's only used when
 	// new constraints are created
@@ -321,7 +321,7 @@ void SCL_check_index(TDBB tdbb, const TEXT* index_name, UCHAR index_id, USHORT m
 		if (request) {
 			CMP_release(tdbb, (jrd_req*) request);
 		}
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+		throw;
 	}
 }
 
@@ -578,7 +578,7 @@ void SCL_init(bool create,
  *	in, encrypting if necessary.
  *
  **************************************/
-	volatile BLK request;
+	BLK request;
 	TEXT name[129], project[33], organization[33], *p;
 	TEXT role_name[33], login_name[129], *q;
     bool preODS9;
@@ -1013,7 +1013,7 @@ static bool check_user_group(const TEXT* acl,
 	}
 	catch (const std::exception&) {
 		delete buffer;
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+		throw;
 	}
 
 	return (n != number);
@@ -1084,7 +1084,7 @@ static SLONG compute_access(TDBB tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	volatile STR str_buffer = NULL;
+	STR str_buffer = NULL;
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
 	SET_TDBB(tdbb);
@@ -1126,8 +1126,7 @@ static SLONG compute_access(TDBB tdbb,
 			{
 				const ULONG old_offset = (ULONG) (acl - buffer);
 				length += BLOB_BUFFER_SIZE;
-				// TMN: Cast away volatile
-				str::extend(const_cast<str*&>(str_buffer), length);
+				str::extend(str_buffer, length);
 				buffer = (TEXT*) str_buffer->str_data;
 				acl = buffer + old_offset;
 			}
@@ -1136,14 +1135,12 @@ static SLONG compute_access(TDBB tdbb,
 		blob = NULL;
 		if (acl != buffer)
 		{
-			// TMN: The cast is really a const_cast to
-			// cast away volatile! Bad, bad, bad!
 			privileges |= walk_acl(	tdbb,
 									buffer,
 									view,
 									trg_name,
 									prc_name,
-									(STR*)&str_buffer,
+									&str_buffer,
 									(ULONG*)length_ptr);
 		}
 	END_FOR;
@@ -1157,7 +1154,7 @@ static SLONG compute_access(TDBB tdbb,
 	catch (const std::exception&) {
 		delete str_buffer;
 		// CVC: we may need to call BLB_close here
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+		throw;
 	}
 
 	return privileges;
@@ -1292,8 +1289,7 @@ static SLONG walk_acl(TDBB tdbb,
 							++q;
 						}
 						hit = false;
-						// Was volatile BLK request;
-						blk* volatile request =
+						blk* request =
 							(BLK)CMP_find_request(tdbb, irq_get_role_mem,
 												   IRQ_REQUESTS);
 

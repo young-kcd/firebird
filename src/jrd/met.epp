@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.93 2004-02-24 05:34:34 robocop Exp $
+$Id: met.epp,v 1.94 2004-03-01 03:35:12 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2828,7 +2828,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, bool noscan, USHORT flags)
 			LCK_release(tdbb, procedure->prc_existence_lock);
 			procedure->prc_existence_lock = NULL;
 		}
-		ERR_punt();
+		throw;
 	}
 
 	return procedure;
@@ -3267,10 +3267,9 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 	}
 
 	relation->rel_flags |= REL_being_scanned;
-	// Why volatile???
-	volatile bool dependencies =
+	bool dependencies =
 		(relation->rel_flags & REL_get_dependencies) ? true : false;
-	volatile bool sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
+	bool sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
 	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
 		triggers[itr] = NULL;
@@ -3562,7 +3561,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
 		tdbb->tdbb_default = old_pool;
-		ERR_punt();
+		throw;
 	}
 }
 

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.10 2004-02-20 06:42:35 robocop Exp $
+ *  $Id: rwlock.h,v 1.11 2004-03-01 03:35:01 skidder Exp $
  *
  */
 
@@ -98,12 +98,18 @@ public:
 	{ 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
 			INT_MAX, NULL); 
+		if (readers_semaphore == NULL)
+			system_call_failed::raise("CreateSemaphore");
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
+		if (writers_event == NULL)
+			system_call_failed::raise("CreateEvent");
 	}
 	~RWLock()
 	{
-		CloseHandle(readers_semaphore);
-		CloseHandle(writers_event);
+		if (!readers_semaphore && !CloseHandle(readers_semaphore))
+			system_call_failed::raise("CloseHandle");		
+		if (!writers_event && !CloseHandle(writers_event))
+			system_call_failed::raise("CloseHandle");
 	}
 	// Returns negative value if writer is active.
 	// Otherwise returns a number of readers
@@ -113,11 +119,15 @@ public:
 	}
 	void unblockWaiting()
 	{
-		if (blockedWriters) 
-			SetEvent(writers_event);
+		if (blockedWriters) {
+			if (!SetEvent(writers_event))
+				system_call_failed::raise("SetEvent");
+		}
 		else
-			if (blockedReaders)
-				ReleaseSemaphore(readers_semaphore, blockedReaders, NULL);
+			if (blockedReaders) {
+				if (!ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
+					system_call_failed::raise("ReleaseSemaphore");
+			}
 	}
 	bool tryBeginRead()
 	{
@@ -142,7 +152,8 @@ public:
 		if (!tryBeginRead()) {
 			InterlockedIncrement_uni(&blockedReaders);
 			while (!tryBeginRead())
-				WaitForSingleObject(readers_semaphore, INFINITE);
+				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
+					system_call_failed::raise("WaitForSingleObject");
 			InterlockedDecrement_uni(&blockedReaders); 
 		}
 	}
@@ -151,7 +162,8 @@ public:
 		if (!tryBeginWrite()) {
 			InterlockedIncrement_uni(&blockedWriters);
 			while (!tryBeginWrite())
-				WaitForSingleObject(writers_event, INFINITE);
+				if (WaitForSingleObject(writers_event, INFINITE) != WAIT_OBJECT_0)
+					system_call_failed::raise("WaitForSingleObject");
 			InterlockedDecrement_uni(&blockedWriters);
 		}
 	}
@@ -192,18 +204,18 @@ public:
 	{		
 		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
 		{
-			system_call_failed::raise();
+			system_call_failed::raise("rwlock_init");
 		}
 	}
 	~RWLock()
 	{
 		if (rwlock_destroy(&lock))
-			system_call_failed::raise();
+			system_call_failed::raise("rwlock_destroy");
 	}
 	void beginRead()
 	{
 		if (rw_rdlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("rw_rdlock");
 	}
 	bool tryBeginRead()
 	{
@@ -211,13 +223,13 @@ public:
 		if (code == EBUSY)
 			return false;
 		if (code)
-			system_call_failed::raise();
+			system_call_failed::raise("rw_tryrdlock");
 		return true;
 	}
 	void endRead()
 	{
 		if (rw_unlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("rw_unlock");
 	}
 	bool tryBeginWrite()
 	{
@@ -225,18 +237,18 @@ public:
 		if (code == EBUSY)
 			return false;
 		if (code)
-			system_call_failed::raise();
+			system_call_failed::raise("rw_trywrlock");
 		return true;
 	}
 	void beginWrite()
 	{
 		if (rw_wrlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("rw_wrlock");
 	}
 	void endWrite()
 	{
 		if (rw_unlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("rw_unlock");
 	}
 };
 
@@ -261,30 +273,28 @@ public:
 	RWLock() {		
 #ifdef LINUX
 		pthread_rwlockattr_t attr;
-		if (pthread_rwlockattr_init(&attr) ||
-			pthread_rwlockattr_setkind_np(&attr, 
-				PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP) ||
-			pthread_rwlock_init(&lock, NULL) ||
-			pthread_rwlockattr_destroy(&attr) )
-		{
-			system_call_failed::raise();
-		}
+		if (pthread_rwlockattr_init(&attr))
+			system_call_failed::raise("pthread_rwlockattr_init");
+		if (pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP))
+			system_call_failed::raise("pthread_rwlockattr_setkind_np");			
+		if (pthread_rwlock_init(&lock, NULL))
+			system_call_failed::raise("pthread_rwlock_init");
+		if (pthread_rwlockattr_destroy(&attr))
+			system_call_failed::raise("pthread_rwlockattr_destroy");
 #else
 		if (pthread_rwlock_init(&lock, NULL))
-		{
-			system_call_failed::raise();
-		}
+			system_call_failed::raise("pthread_rwlock_init");
 #endif
 	}
 	~RWLock()
 	{
 		if (pthread_rwlock_destroy(&lock))
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_destroy");
 	}
 	void beginRead()
 	{
 		if (pthread_rwlock_rdlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_rdlock");
 	}
 	bool tryBeginRead()
 	{
@@ -292,13 +302,13 @@ public:
 		if (code == EBUSY)
 			return false;
 		if (code)
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_tryrdlock");
 		return true;
 	}
 	void endRead()
 	{
 		if (pthread_rwlock_unlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 	bool tryBeginWrite()
 	{
@@ -306,18 +316,18 @@ public:
 		if (code == EBUSY)
 			return false;
 		if (code)
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_trywrlock");
 		return true;
 	}
 	void beginWrite()
 	{
 		if (pthread_rwlock_wrlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_wrlock");
 	}
 	void endWrite()
 	{
 		if (pthread_rwlock_unlock(&lock))	
-			system_call_failed::raise();
+			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 };
 

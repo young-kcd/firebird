@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.54 2004-02-20 06:42:59 robocop Exp $
+$Id: blb.cpp,v 1.55 2004-03-01 03:35:11 skidder Exp $
 */
 
 #include "firebird.h"
@@ -740,7 +740,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 	}	// try
 	catch (const std::exception&) {
 		database->dbb_permanent->deallocate(data);
-		ERR_punt();
+		throw;
 	}
 
 	return (SLONG) (arg.slice_count * arg.slice_element_length);

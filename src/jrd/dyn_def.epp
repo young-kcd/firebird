@@ -137,8 +137,8 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
  *
  **************************************/
 	UCHAR verb;
-	volatile BLK request;
-	volatile SSHORT id = -1;
+	BLK request;
+	SSHORT id = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -195,7 +195,8 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
 	}
 
 	} // try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_cache)
 		{
 			DYN_rundown_request(request, drq_s_cache);
@@ -235,8 +236,8 @@ void DYN_define_constraint(GBL		gbl,
  *	constraint, also an index for the constraint.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id, old_id;
+	BLK request;
+	SSHORT id, old_id;
 	UCHAR verb;
 	SqlIdentifier constraint_name, index_name, referred_index_name;
 	SqlIdentifier null_field_name, trigger_name;
@@ -327,7 +328,8 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
 		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
@@ -577,7 +579,8 @@ void DYN_define_constraint(GBL		gbl,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
 		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
@@ -638,7 +641,7 @@ void DYN_define_dimension(GBL		gbl,
 	DBB  dbb  = tdbb->tdbb_database;
 
 	UCHAR verb;
-	volatile BLK request;
+	BLK request;
 
 	request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
@@ -685,7 +688,8 @@ void DYN_define_dimension(GBL		gbl,
 	END_STORE;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
 			DYN_error_punt(true, 3, NULL, NULL, NULL, NULL, NULL);
@@ -713,7 +717,7 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	volatile BLK request;
+	BLK request;
 	UCHAR verb;
 	SqlIdentifier exception_name;
 
@@ -761,7 +765,8 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_xcp) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(true, 142, NULL, NULL, NULL, NULL, NULL);
@@ -789,11 +794,11 @@ void DYN_define_file(GBL		gbl,
  *
  **************************************/
 	UCHAR verb;
-	volatile BLK request;
+	BLK request;
 	SLONG temp;
 	USHORT man_auto;
 	TEXT temp_f1[MAXPATHLEN], temp_f[MAXPATHLEN];
-	volatile SSHORT id;
+	SSHORT id;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -867,7 +872,8 @@ void DYN_define_file(GBL		gbl,
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_l_files)
 		{
 			DYN_rundown_request(request, drq_l_files);
@@ -896,8 +902,8 @@ void DYN_define_difference(GBL		gbl,
  *	Define backup difference file.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id = -1;
+	BLK request;
+	SSHORT id = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -941,7 +947,8 @@ void DYN_define_difference(GBL		gbl,
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_difference)
 		{
 			DYN_rundown_request(request, drq_s_difference);
@@ -979,7 +986,7 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 
 	UCHAR verb;
 	SqlIdentifier filter_name;
-	volatile BLK request;
+	BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
@@ -1047,7 +1054,8 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_filters) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_filters);
 			DYN_error_punt(true, 7, NULL, NULL, NULL, NULL, NULL);
@@ -1073,7 +1081,7 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 
 	UCHAR verb;
 	SqlIdentifier function_name;
-	volatile BLK request;
+	BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
@@ -1147,7 +1155,8 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_funcs) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_funcs);
 			DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
@@ -1171,7 +1180,7 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
  *
  **************************************/
 	UCHAR verb;
-	volatile BLK request = NULL;
+	BLK request = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB dbb = tdbb->tdbb_database;
@@ -1274,7 +1283,8 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, drq_s_func_args);
 		}
@@ -1300,7 +1310,7 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	volatile BLK request;
+	BLK request;
 	SqlIdentifier generator_name;
 
 	generator_name[0] = 0;
@@ -1330,7 +1340,8 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_gens) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gens);
 			DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
@@ -1368,7 +1379,7 @@ void DYN_define_global_field(GBL		gbl,
 
 	UCHAR verb;
 	SqlIdentifier global_field_name;
-	volatile BLK request;
+	BLK request;
 	USHORT dtype;
 
 	global_field_name[0] = 0;
@@ -1584,7 +1595,8 @@ void DYN_define_global_field(GBL		gbl,
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gfields);
 			DYN_error_punt(true, 13, NULL, NULL, NULL, NULL, NULL);
@@ -1616,8 +1628,8 @@ void DYN_define_index(GBL		gbl,
  *
  **************************************/
 
-	volatile BLK request;
-	volatile SSHORT id, old_id;
+	BLK request;
+	SSHORT id, old_id;
 	SqlIdentifier index_name;
 	SqlIdentifier referenced_relation;
 	UCHAR verb;
@@ -2129,7 +2141,8 @@ void DYN_define_index(GBL		gbl,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 21, NULL, NULL, NULL, NULL, NULL);
@@ -2180,8 +2193,8 @@ void DYN_define_local_field(GBL		gbl,
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id, old_id;
+	BLK request;
+	SSHORT id, old_id;
 	UCHAR verb;
 	SqlIdentifier local_field_name;
 	USHORT dtype, length,
@@ -2468,7 +2481,8 @@ void DYN_define_local_field(GBL		gbl,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_lfields) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 23, NULL, NULL, NULL, NULL, NULL);
@@ -2499,8 +2513,8 @@ void DYN_define_log_file(
  *
  **************************************/
 	UCHAR verb;
-	volatile BLK request;
-	volatile SSHORT id;
+	BLK request;
+	SSHORT id;
 	STR db_filename;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -2594,7 +2608,8 @@ void DYN_define_log_file(
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_log_files) {
 			DYN_rundown_request(request, drq_s_log_files);
 			DYN_error_punt(true, 154, NULL, NULL, NULL, NULL, NULL);
@@ -2629,12 +2644,12 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
  **************************************/
 	UCHAR verb;
 	SqlIdentifier parameter_name;
-	volatile BLK request;
+	BLK request;
 	BLK request2;
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
 		f_charlength_null, f_precision_null, f_charset_null, f_collation_null;
-	volatile SSHORT id;
+	SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
 	const UCHAR* default_value_ptr = NULL;
@@ -2844,7 +2859,8 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prms) {
 			DYN_rundown_request(request, drq_s_prms);
 			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
@@ -2877,10 +2893,10 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	volatile BLK request;
+	BLK request;
 	UCHAR verb;
 	USHORT sql_prot;
-	volatile SSHORT id;
+	SSHORT id;
 	SqlIdentifier procedure_name;
 	SqlIdentifier owner_name;
 
@@ -2996,7 +3012,8 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
@@ -3034,10 +3051,10 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	volatile BLK request;
+	BLK request;
 	UCHAR verb;
 	USHORT sql_prot, is_a_view, priv;
-	volatile SSHORT id, old_id;
+	SSHORT id, old_id;
 	ISC_STATUS *s;
 	SqlIdentifier relation_name, owner_name, field_name;
 
@@ -3218,7 +3235,8 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 		}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
@@ -3260,7 +3278,7 @@ void DYN_define_role( GBL gbl, const UCHAR** ptr)
  *     ROLES cannot be named the same as any existing user name 
  *
  **************************************/
-	volatile BLK request = NULL;
+	BLK request = NULL;
 	SqlIdentifier dummy_name, owner_name, role_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -3345,7 +3363,8 @@ void DYN_define_role( GBL gbl, const UCHAR** ptr)
 			goto do_error_punt_9;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, drq_role_gens);
 		}
@@ -3381,7 +3400,7 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	volatile BLK request;
+	BLK request;
 	UCHAR verb;
 
 	request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
@@ -3422,7 +3441,8 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_classes) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_classes);
 			DYN_error_punt(true, 27, NULL, NULL, NULL, NULL, NULL);
@@ -3449,8 +3469,8 @@ void DYN_define_sql_field(GBL		gbl,
  *	an global field name.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id, old_id;
+	BLK request;
+	SSHORT id, old_id;
 	UCHAR verb;
 	SqlIdentifier sql_field_name;
 	USHORT dtype;
@@ -3706,7 +3726,8 @@ void DYN_define_sql_field(GBL		gbl,
 		DYN_REQUEST(drq_s_sql_lfld) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_sql_lfld) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 29, NULL, NULL, NULL, NULL, NULL);
@@ -3738,7 +3759,7 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 	DBB  dbb  = tdbb->tdbb_database;
 
 	UCHAR verb;
-	volatile BLK request;
+	BLK request;
 	bool found = false;
 
 	const SLONG shadow_number = DYN_get_number(ptr);
@@ -3759,7 +3780,8 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_l_shadow) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_shadow);
 		DYN_error_punt(true, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
@@ -3814,7 +3836,7 @@ void DYN_define_trigger(GBL		gbl,
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	volatile BLK request;
+	BLK request;
 	UCHAR	verb;
 	SqlIdentifier t;
 
@@ -3953,7 +3975,8 @@ void DYN_define_trigger(GBL		gbl,
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_triggers);
 			DYN_error_punt(true, 31, NULL, NULL, NULL, NULL, NULL);
@@ -3980,7 +4003,7 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	volatile BLK request;
+	BLK request;
 	UCHAR verb;
 
 	request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
@@ -4028,7 +4051,8 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
 			DYN_REQUEST(drq_s_trg_msgs) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(true, 33, NULL, NULL, NULL, NULL, NULL);
@@ -4055,9 +4079,9 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 	TDBB tdbb = GET_THREAD_DATA;
 	DBB  dbb  = tdbb->tdbb_database;
 
-	volatile BLK request;
+	BLK request;
 	UCHAR verb;
-	volatile SSHORT id;
+	SSHORT id;
 
 	SqlIdentifier view_name;
 	strncpy(view_name, view, sizeof(view_name));
@@ -4078,8 +4102,8 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
  * but implementation was definitely wrong,
  * so it's commented our till the better times
  *
-		volatile SSHORT old_id = id;
-		volatile BLK old_request = request;
+		SSHORT old_id = id;
+		BLK old_request = request;
 
 		request = CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
 		id = drq_e_view_rels;
@@ -4132,7 +4156,8 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 			DYN_REQUEST(drq_s_view_rels) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, id);
 			if (id == drq_s_view_rels)
@@ -4169,7 +4194,7 @@ static void check_unique_name(	TDBB	tdbb,
  *
  **************************************/
 
-	volatile BLK request;
+	BLK request;
 	bool found = false;
 
 	SET_TDBB(tdbb);
@@ -4210,7 +4235,8 @@ static void check_unique_name(	TDBB	tdbb,
 			DYN_REQUEST(drq_l_prc_name) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (!proc_flag)
 			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
@@ -4247,7 +4273,7 @@ static bool find_field_source(TDBB	tdbb,
  *
  **************************************/
 
-	volatile BLK request;
+	BLK request;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -4283,7 +4309,8 @@ that can be used against rdb$fields' rdb$field_name. */
 			DYN_REQUEST(drq_l_fld_src2) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 80, NULL, NULL, NULL, NULL, NULL);
 		/* msg 80: "Specified domain or source field does not exist" */
@@ -4305,7 +4332,7 @@ static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
  *	Get user name
  *
  **************************************/
-	volatile BLK request;
+	BLK request;
 
 	SET_TDBB(tdbb);
 
@@ -4322,7 +4349,8 @@ static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_user_name);
 		return false;
 	}
@@ -4345,8 +4373,8 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
  *
  **************************************/
 
-	volatile BLK request;
-	volatile USHORT request_id;
+	BLK request;
+	USHORT request_id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -4394,7 +4422,8 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
 			DYN_REQUEST(drq_get_rel_owner) = request;
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, request_id);
 		}

@@ -346,6 +346,7 @@ static void		cleanup(void*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static STR		copy_string(const TEXT*, const USHORT);
 static bool		drop_files(const jrd_file*);
+static ISC_STATUS	error(ISC_STATUS*, const std::exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(TDBB, ATT, const DPB*);
 static jrd_tra*		find_transaction(TDBB, jrd_tra*, ISC_STATUS);
@@ -1290,7 +1291,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
 		ISC_STATUS_ARRAY temp_status;
 		try
@@ -1325,7 +1326,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		catch (const std::exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
+		return error(user_status, ex);
 	}
 }
 
@@ -1367,9 +1368,9 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 
 		INF_blob_info(blob, items, item_length, buffer, buffer_length);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -1409,9 +1410,9 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 			BLB_cancel(tdbb, blob);
 			*blob_handle = NULL;
 		}
-		catch (const std::exception&)
+		catch (const std::exception& ex)
 		{
-			return error(user_status);
+			return error(user_status, ex);
 		}
 	}
 
@@ -1453,9 +1454,9 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 
 		EVENT_cancel(*id);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -1558,9 +1559,9 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 		BLB_close(tdbb, blob);
 		*blob_handle = NULL;
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 
@@ -1658,9 +1659,9 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *req_handle);
 	#endif
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -1716,9 +1717,9 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_temp_id);
 	#endif
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 
@@ -2065,7 +2066,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
 		ISC_STATUS_ARRAY temp_status;
 		try
@@ -2100,7 +2101,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		catch (const std::exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
+		return error(user_status, ex);
 	}
 }
 
@@ -2141,9 +2142,9 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 
 		INF_database_info(items, item_length, buffer, buffer_length);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2190,8 +2191,8 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 				reinterpret_cast<const UCHAR*>(ddl));
 
 	}	// try
-	catch (const std::exception&) {
-		return error(user_status);
+	catch (const std::exception& ex) {
+		return error(user_status, ex);
 	}
 
 /*
@@ -2213,7 +2214,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 		try {
 			TRA_commit(tdbb, transaction, true);
 		}
-		catch (const std::exception&) {
+		catch (const std::exception& ex) {
 			ISC_STATUS_ARRAY temp_status;
 			tdbb->tdbb_status_vector = temp_status;
 			try {
@@ -2226,7 +2227,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 			}
 			tdbb->tdbb_status_vector = user_status;
 
-			return error(user_status);
+			return error(user_status, ex);
 		}
 	};
 
@@ -2349,7 +2350,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(databases_mutex);
 #endif
@@ -2359,7 +2360,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 #endif
 
 		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
+		return error(user_status, ex);
 	}
 }
 
@@ -2447,9 +2448,9 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	}
-	catch(const std::exception&)
+	catch(const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 	
 	try {
@@ -2477,13 +2478,13 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 	CCH_RELEASE(tdbb, &window);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
     bool err = false; // so much for uninitialized vars... if something
@@ -2534,9 +2535,9 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status);
+		return error(user_status, ex);
 	}
 	JRD_SS_MUTEX_UNLOCK;
 
@@ -2604,9 +2605,9 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 			return (user_status[1] = isc_segment);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2669,9 +2670,9 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 									   reinterpret_cast<const SLONG*>(param),
 									   slice_length, slice);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2725,9 +2726,9 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *blob_handle);
 	#endif
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2807,9 +2808,9 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	{
 		BLB_put_segment(tdbb, blob, buffer, buffer_length);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2863,9 +2864,9 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 				  param_length,
 				  reinterpret_cast<const SLONG*>(param), slice_length, slice);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2925,9 +2926,9 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *id);
 	#endif
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -2992,9 +2993,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3043,9 +3044,9 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *tra_handle);
 	#endif
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3087,9 +3088,9 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
 		CMP_release(tdbb, request);
 		*req_handle = NULL;
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3138,9 +3139,9 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3254,9 +3255,9 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	{
 		*result = BLB_lseek(blob, mode, offset);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3311,9 +3312,9 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3353,9 +3354,9 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3392,9 +3393,9 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, svc** svc_handle)
 	
 		*svc_handle = NULL;
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3469,9 +3470,9 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 				return error(user_status);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 	return return_success(tdbb);
 }
@@ -3528,9 +3529,9 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3592,9 +3593,9 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3651,9 +3652,9 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -3696,8 +3697,8 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	if (check_database(tdbb, *vector->teb_database, user_status))
 		return user_status[1];
 
-	jrd_tra* volatile prior = NULL;
-	jrd_tra* volatile transaction = NULL;
+	jrd_tra* prior = NULL;
+	jrd_tra* transaction = NULL;
 
 	try {
 
@@ -3721,14 +3722,14 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		if (prior) {
 			ISC_STATUS_ARRAY temp_status;
 			rollback(tdbb, prior, temp_status, false);
 		}
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	*tra_handle = transaction;
@@ -3912,7 +3913,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
 		/* Set up to trap error in case release pool goes wrong. */
 
@@ -3930,7 +3931,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		catch (const std::exception&) {
 		}
 
-		return error(user_status);
+		return error(user_status, ex);
 	}	// catch
 }
 
@@ -3975,9 +3976,9 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		INF_transaction_info(transaction, items, item_length, buffer,
 						 buffer_length);
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
-		return error(user_status);
+		return error(user_status, ex);
 	}
 
 	return return_success(tdbb);
@@ -4067,7 +4068,8 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 		return (user_status[1] = FB_SUCCESS);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(user_status, ex);
 		JRD_restore_context();
 		return user_status[1];
 	}
@@ -4753,10 +4755,10 @@ static ISC_STATUS commit(
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 		dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
-		return error(user_status);
+		return error(user_status, ex);
 	}
 }
 
@@ -4848,6 +4850,22 @@ static jrd_tra* find_transaction(TDBB tdbb, jrd_tra* transaction, ISC_STATUS err
 	return NULL;		/* Added to remove compiler warnings */
 }
 
+
+static ISC_STATUS error(ISC_STATUS* user_status, const std::exception& ex)
+{
+/**************************************
+ *
+ *	e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	An error returned has been trapped.  Return a status code.
+ *
+ **************************************/
+	Firebird::stuff_exception(user_status, ex);
+	return error(user_status);
+}
 
 static ISC_STATUS error(ISC_STATUS* user_status)
 {
@@ -5618,7 +5636,8 @@ static DBB init(TDBB	tdbb,
 	return dbb_;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(user_status, ex);
 		return 0;
 	}
 }
@@ -5655,7 +5674,8 @@ static ISC_STATUS prepare(TDBB		tdbb,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
 		DBB dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		return status_vector[1];
@@ -5874,7 +5894,8 @@ static bool rollback(TDBB	tdbb,
 		--dbb->dbb_use_count;
 
 		}	// try
-		catch (const std::exception&) {
+		catch (const std::exception& ex) {
+			Firebird::stuff_exception(status_vector, ex);
 			status_vector = local_status;
 			DBB dbb = tdbb->tdbb_database;
 			--dbb->dbb_use_count;
@@ -6352,11 +6373,11 @@ ULONG JRD_shutdown_all()
 					V4_JRD_MUTEX_UNLOCK(databases_mutex);
 #endif
 				}	// try
-				catch (const std::exception&) {
+				catch (const std::exception& ex) {
 					if (initialized) {
 						JRD_SS_MUTEX_UNLOCK;
 					}
-					return error(user_status);
+					return error(user_status, ex);
 				}
 			}
 		}

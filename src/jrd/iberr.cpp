@@ -162,7 +162,7 @@ static void post_error(
 	}
 
 	if (longjmp_addr) {
-		Firebird::status_exception::raise(status_vector[1]);
+		Firebird::status_exception::raise(status_vector);
 	}
 }
 

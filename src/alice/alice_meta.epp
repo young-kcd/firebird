@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.30 2004-02-24 05:34:06 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.31 2004-03-01 03:34:57 skidder Exp $
  */
 
 #include "firebird.h"
@@ -83,7 +83,7 @@ static const rfr_tab_t rfr_table[] = {
 static inline void return_error(const ISC_STATUS* user_status)
 {
 	ALICE_print_status(gds_status);
-	Firebird::status_exception::raise(0);
+	Firebird::status_exception::raise();
 }
 
 /*____________________________________________________________

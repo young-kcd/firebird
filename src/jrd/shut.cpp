@@ -217,7 +217,8 @@ bool SHUT_online(DBB dbb, SSHORT flag)
 	SHUT_blocking_ast(dbb);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
 	
@@ -238,7 +239,6 @@ bool SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
  **************************************/
 	TDBB tdbb;
 	ATT attachment;
-	SSHORT timeout, exclusive;
 
 	tdbb = GET_THREAD_DATA;
 	attachment = tdbb->tdbb_attachment;
@@ -368,7 +368,8 @@ bool SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	CCH_release_exclusive(tdbb);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
 

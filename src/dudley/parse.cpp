@@ -215,7 +215,7 @@ void PARSE_error( USHORT number, TEXT * arg1, TEXT * arg2)
  **************************************/
 
 	DDL_err(number, arg1, arg2, NULL, NULL, NULL);
-	Firebird::status_exception::raise(TRUE);
+	Firebird::status_exception::raise();
 }
 
 

@@ -389,7 +389,8 @@ jrd_req* CMP_compile2(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
 		tdbb->tdbb_default = old_pool;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		tdbb->tdbb_default = old_pool;
 		if (request) {
 			CMP_release(tdbb, request);
@@ -1954,7 +1955,8 @@ jrd_req* CMP_make_request(TDBB tdbb, Csb* csb)
 	tdbb->tdbb_request = old_request;
 
 	} // try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		tdbb->tdbb_request = old_request;
 		ERR_punt();
 	}

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.51 2004-02-25 01:50:10 skidder Exp $
+//	$Id: alice.cpp,v 1.52 2004-03-01 03:34:44 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -92,10 +92,10 @@ struct tgbl *gdgbl;
 
 const int ALICE_MSG_FAC = 3;
 
-static inline void exit_local(int code, volatile tgbl* tdgbl)
+static inline void exit_local(int code, tgbl* tdgbl)
 {
 	tdgbl->exit_code = code;
-	Firebird::status_exception::raise(1);
+	Firebird::status_exception::raise();
 }
 
 #if defined (WIN95)
@@ -193,7 +193,7 @@ int common_main(int			argc,
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	volatile tgbl* tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
+	tgbl* tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
 	if (!tdgbl) {
 		//  NOMEM: return error, FREE: during function exit in the SETJMP
 		return FINI_ERROR;
@@ -220,9 +220,7 @@ int common_main(int			argc,
 	tdgbl->sw_service = false;
 	tdgbl->sw_service_thd = false;
 	tdgbl->service_blk = NULL;
-	tdgbl->status =
-		// TMN: cast away volatile 
-		(long *) tdgbl->status_vector;
+	tdgbl->status =	tdgbl->status_vector;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		tdgbl->sw_service = true;
@@ -371,8 +369,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(5);	// msg 5: replay log pathname required 
 			}
-			expand_filename(*argv++,	// TMN: cast away volatile 
-							(TEXT *) tdgbl->ALICE_data.ua_log_file);
+			expand_filename(*argv++, tdgbl->ALICE_data.ua_log_file);
 		}
 
 		if (table->in_sw_value & (sw_buffers)) {
@@ -486,8 +483,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(14);	// msg 14: password required 
 			}
-			tdgbl->ALICE_data.ua_password =
-				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
+			tdgbl->ALICE_data.ua_password = reinterpret_cast<UCHAR*>(*argv++);
 		}
 
 		if (table->in_sw_value & sw_disable) {
@@ -642,8 +638,7 @@ int common_main(int			argc,
 
 		RESTORE_THREAD_DATA;
 
-		// cast away volatile
-		gds__free((void*)tdgbl);
+		gds__free(tdgbl);
 
 #if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
 		gds_alloc_report(0, __FILE__, __LINE__);

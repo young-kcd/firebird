@@ -56,10 +56,6 @@
 #define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
-static TEXT* jrd_failures = NULL;
-static TEXT* jrd_failures_ptr = NULL;
-
-static void cleanup(void *);
 static void internal_error(ISC_STATUS, int);
 
 
@@ -151,8 +147,7 @@ const TEXT* ERR_cstring(const TEXT* in_string)
  *	is independent of the JRD allocator mechanism.
  *
  **************************************/
-
-	return ERR_string(in_string, strlen(in_string));
+	return Firebird::status_string(in_string);
 }
 
 
@@ -510,7 +505,7 @@ void ERR_punt(void)
 			tdbb->tdbb_status_vector);
 	}
 
-	Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 }
 #endif
 
@@ -532,41 +527,7 @@ const TEXT* ERR_string(const TEXT* in_string, int length)
  *	is independent of the JRD allocator mechanism.
  *
  **************************************/
-
-	if (!jrd_failures)
-	{
-		jrd_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) JRD_FAILURE_SPACE);
-		/* FREE: apparently never freed */
-		if (!jrd_failures)		/* NOMEM: return a literal */
-			return (TEXT *) JRD_FAILURE_UNKNOWN;
-#ifdef DEBUG_GDS_ALLOC
-		/* This structure does not always get freed before
-		 * process exit
-		 */
-		gds_alloc_flag_unfreed((void *) jrd_failures);
-#endif
-		jrd_failures_ptr = jrd_failures;
-
-		gds__register_cleanup(cleanup, 0);
-	}
-
-/* If there isn't any more room in the buffer, start at the beginning again */
-
-	if (jrd_failures_ptr + length + 1 > jrd_failures + JRD_FAILURE_SPACE)
-	{
-		jrd_failures_ptr = jrd_failures;
-	}
-
-	TEXT* new_string = jrd_failures_ptr;
-
-	while (length-- &&
-		(jrd_failures_ptr < jrd_failures + JRD_FAILURE_SPACE - 1))
-	{
-		*jrd_failures_ptr++ = *in_string++;
-	}
-	*jrd_failures_ptr++ = 0;
-
-	return new_string;
+	return Firebird::status_nstring(in_string, length);
 }
 
 
@@ -596,26 +557,6 @@ void ERR_warning(ISC_STATUS status, ...)
 	tdbb->tdbb_request->req_flags |= req_warning;
 }
 #endif
-
-
-static void cleanup(void *arg)
-{
-/**************************************
- *
- *	c l e a n u p
- *
- **************************************
- *
- * Functional description
- *	Exit handler for image exit.
- *
- **************************************/
-
-	if (jrd_failures)
-		FREE_LIB_MEMORY(jrd_failures);
-
-	jrd_failures = NULL;
-}
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))

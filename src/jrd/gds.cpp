@@ -1004,7 +1004,7 @@ void API_ROUTINE gds__interprete_a(
 #define	SECS_PER_DAY	(SECS_PER_HOUR * 24)
 
 #ifdef WIN_NT
-Firebird::Spinlock trace_mutex;
+Firebird::Mutex trace_mutex;
 HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 #endif
 
@@ -2771,7 +2771,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	blr_format(control, string, args);
 	offset = 0;
 	PRINT_LINE;
-	Firebird::status_exception::raise(-1);
+	Firebird::status_exception::raise();
 }
 
 

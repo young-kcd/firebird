@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.44 2004-02-20 06:42:41 robocop Exp $
+//  $Id: par.cpp,v 1.45 2004-03-01 03:35:08 skidder Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -1068,7 +1068,7 @@ gpre_sym* PAR_symbol(enum sym_t type)
 
 void PAR_unwind()
 {
-	Firebird::status_exception::raise(1);
+	Firebird::status_exception::raise();
 }
 
 

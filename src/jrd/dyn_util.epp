@@ -174,8 +174,8 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
  *	Generate a name unique to RDB$RELATION_CONSTRAINTS.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id;
+	BLK request;
+	SSHORT id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -194,7 +194,7 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 												gbl,
 												drq_g_nxt_con,
 												"RDB$CONSTRAINT_NAME",
-				/* cast away volatile - bad */	(BLK*)&request));
+												&request));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
@@ -215,7 +215,8 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 	} while (found);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 131, NULL, NULL, NULL, NULL, NULL);
 		/* msg 131: "Generation of constraint name failed" */
@@ -235,8 +236,8 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
  *	Generate a name unique to RDB$FIELDS.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id;
+	BLK request;
+	SSHORT id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -255,7 +256,7 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 												gbl,
 												drq_g_nxt_fld,
 												"RDB$FIELD_NAME",
-				/* cast away volatile - bad */	(BLK*)&request));
+												&request));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
@@ -275,7 +276,8 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 	} while (found);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 81, NULL, NULL, NULL, NULL, NULL);
 		/* msg 81: "Generation of field name failed" */
@@ -299,7 +301,7 @@ void DYN_UTIL_generate_field_position(
  *	Generate a field position if not specified
  *
  **************************************/
-	volatile BLK request;
+	BLK request;
 	SLONG field_position = -1;
 
 	if (!relation_name)
@@ -330,7 +332,8 @@ void DYN_UTIL_generate_field_position(
 	*field_pos = field_position;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 162, NULL, NULL, NULL, NULL, NULL);
 		/* msg 162: "Looking up field position failed" */
@@ -351,8 +354,8 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
  *	Generate a name unique to RDB$INDICES.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id;
+	BLK request;
+	SSHORT id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -378,7 +381,7 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 												gbl,
 												drq_g_nxt_idx,
 												"RDB$INDEX_NAME",
-				/* cast away volatile - bad */	(BLK*)&request));
+												&request));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
@@ -397,7 +400,8 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 82, NULL, NULL, NULL, NULL, NULL);
 		/* msg 82: "Generation of index name failed" */
@@ -417,8 +421,8 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
  *	Generate a name unique to RDB$TRIGGERS.
  *
  **************************************/
-	volatile BLK request;
-	volatile SSHORT id;
+	BLK request;
+	SSHORT id;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -437,7 +441,7 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 												gbl,
 												drq_g_nxt_trg,
 												"RDB$TRIGGER_NAME",
-				/* cast away volatile - bad */	(BLK*)&request));
+												&request));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;
@@ -456,7 +460,8 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 83, NULL, NULL, NULL, NULL, NULL);
 		/* msg 83: "Generation of trigger name failed" */
@@ -480,8 +485,7 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
  *	Get protection mask for relation or relation_field
  *
  **************************************/
-//	It was volatile JRD_REQ request; This maps to:
-	jrd_req* volatile request;
+	jrd_req* request;
 	struct
 	{
 		SqlIdentifier relation_name;
@@ -511,7 +515,8 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
 	DYN_rundown_request( (BLK) request, drq_l_prot_mask);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		// Note that the following cast to BLK not only changes
 		// the type, it also casts away volatile!
 		DYN_rundown_request((BLK)request, drq_l_prot_mask);
@@ -535,7 +540,7 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
  * Functional description
  *
  **************************************/
-	volatile BLK request;
+	BLK request;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -555,7 +560,8 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_chk_con);
 		DYN_error_punt(true, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */

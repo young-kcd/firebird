@@ -117,7 +117,7 @@ enum gbak_action
 	FDESC	=	3
 };
 
-static void close_out_transaction(volatile gbak_action, isc_tr_handle*);
+static void close_out_transaction(gbak_action, isc_tr_handle*);
 //static void enable_signals(void);
 //static void excp_handler(void);
 static SLONG get_number(const SCHAR*);
@@ -567,17 +567,7 @@ int common_main(int		argc,
  *	Routine called by command line utility, services API, and server manager.
  *
  **************************************/
-/* This function runs within thread for services API, so here should not be
-   *any* static variables. I did not change an existing definition
-   for AIX PowerPC because of the problem (see comments below). So
-   whoever will do a port on AIX, must reconsider a static definition */
-#ifdef AIX_PPC
-// SomeHow, making this volatile does'nt give the
-//desired value in case of AIX PowerPC */
-	static const TEXT* file2 = NULL;
-#else
 	const TEXT* file2 = NULL;
-#endif
 
   	JMP_BUF					env;
 
@@ -585,8 +575,8 @@ int common_main(int		argc,
 // in case some platform should redefine the BURP SET_THREAD_DATA. 
 //tgbl	thd_context;
 
-	volatile gbak_action action = QUIT;
-	volatile tgbl *tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
+	gbak_action action = QUIT;
+	tgbl *tdgbl = (tgbl*) gds__alloc(sizeof(tgbl));
 // NOMEM: return error, FREE: during function exit in the SETJMP 
 	if (tdgbl == NULL)
 	{
@@ -627,7 +617,7 @@ int common_main(int		argc,
 	tdgbl->gbl_sw_service_gbak = false;
 	tdgbl->gbl_sw_service_thd = false;
 	tdgbl->service_blk = NULL;
-	tdgbl->status = const_cast<long* volatile>(tdgbl->status_vector);
+	tdgbl->status = tdgbl->status_vector;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		tdgbl->gbl_sw_service_gbak = true;
@@ -818,8 +808,7 @@ int common_main(int		argc,
 				if (argv >= end)
 					BURP_error(182, true, 0, 0, 0, 0, 0);
 					// msg 182 blocking factor parameter missing 
-				tdgbl->gbl_sw_blk_factor =
-					(volatile USHORT) get_number(*argv);
+				tdgbl->gbl_sw_blk_factor = get_number(*argv);
 				if (!tdgbl->gbl_sw_blk_factor)
 					BURP_error(183, true, *argv, 0, 0, 0, 0);	
 					// msg 183 expected blocking factor, encountered "%s"  
@@ -908,7 +897,7 @@ int common_main(int		argc,
 	}
 
 	// Initialize 'dpb' and 'dpb_length' and cast away volatile
-	UCHAR* dpb = const_cast<UCHAR*>(tdgbl->dpb_string);
+	UCHAR* dpb = tdgbl->dpb_string;
 	*dpb++ = isc_dpb_version1;
 	*dpb++ = isc_dpb_gbak_attach;
 	*dpb++ = strlen(GDS_VERSION);
@@ -1336,7 +1325,7 @@ void BURP_exit_local(int code, TGBL tdgbl)
 {
 	tdgbl->exit_code = ((volatile int)code);
 	if (tdgbl->burp_env != NULL)
-		Firebird::status_exception::raise(1);
+		Firebird::status_exception::raise();
 }
 
 

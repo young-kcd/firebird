@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.7 2004-02-20 06:43:00 robocop Exp $
+ *  $Id: nbak.h,v 1.8 2004-03-01 03:35:12 skidder Exp $
  *
  */
  
@@ -167,7 +167,7 @@ private:
 	// Lock to protect initialization of alloc_table and diff_file 
 	// outside of exclusive status lock to prevent possible race condition
 	// in case of errors.
-	Firebird::Spinlock* adjust_state_lock; 
+	Firebird::Mutex* adjust_state_lock; 
 #else
 	lck* alloc_lock; // Lock to protect allocation table
 	lck* state_lock; // Lock to protect backup state

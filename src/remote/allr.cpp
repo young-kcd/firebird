@@ -93,16 +93,7 @@ UCHAR* ALLR_alloc(ULONG size)
 	// NOMEM: post a user level error, if we have a status vector,
 	//        otherwise just an error return
 
-	TRDB trdb = GET_THREAD_DATA;
-	ISC_STATUS* status_vector = trdb->trdb_status_vector;
-	if (status_vector) {
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_virmemexh;
-		*status_vector = isc_arg_end;
-	}
-
-	Firebird::status_exception::raise(isc_virmemexh);
-	return NULL;	/* compiler silencer */
+	throw std::bad_alloc();
 }
 
 
@@ -149,8 +140,8 @@ BLK ALLR_block(UCHAR type, ULONG count)
 #endif
 			}
 		}
+		Firebird::status_exception::raise();
 
-		Firebird::status_exception::raise(isc_bug_check);
 	}
 
 #pragma FB_COMPILER_MESSAGE("Warning: outdated assumption for 16-bit platforms")

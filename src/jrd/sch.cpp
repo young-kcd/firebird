@@ -525,7 +525,7 @@ void SCH_hiber(void)
 }
 
 #ifdef MULTI_THREAD
-static Firebird::Spinlock scheduler_init_lock;
+static Firebird::Mutex scheduler_init_lock;
 #endif
 
 void SCH_init(void)

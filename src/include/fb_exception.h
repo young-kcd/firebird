@@ -24,70 +24,106 @@
 #define FB_EXCEPTION_H
 
 #include <exception>
+#include <stddef.h>
+#include <stdarg.h>
 #include "fb_types.h"
 
 
 namespace Firebird {
 
+class StringsBuffer {
+public:
+	virtual char* alloc(const char* string, size_t length) = 0;
+};
+
+template <size_t BUFFER_SIZE>
+class CircularStringsBuffer : public StringsBuffer {
+public:
+	CircularStringsBuffer() throw() {
+		// This is to ensure we have zero at the end of buffer in case of buffer overflow
+		memset(buffer, 0, BUFFER_SIZE); 
+		buffer_ptr = buffer;
+	}
+	//virtual ~CircularStringsBuffer() {};
+	virtual char* alloc(const char* string, size_t length) {
+		// fb_assert(length+1 < BUFFER_SIZE);
+		// If there isn't any more room in the buffer, start at the beginning again
+		if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
+			buffer_ptr = buffer;
+		char* new_string = buffer_ptr;
+		memcpy(new_string, string, length);
+		new_string[length] = 0;
+		buffer_ptr += length + 1;	
+		return new_string;
+	}
+private:
+	char buffer[BUFFER_SIZE];
+	char *buffer_ptr;
+};
+
 class status_exception : public std::exception
 {
 public:
-	explicit status_exception(ISC_STATUS s)
-	:	m_s(s)
-	{}
-	virtual ~status_exception() throw() {}
+	// This version of constructor receives status vector pointing to permanent strings
+	// which may be returned to user in status vector directly without transfer of string ownership
+	explicit status_exception(const ISC_STATUS *status_vector) throw();
+	
+	// These versions of constructor clone passed transient strings
+	status_exception(ISC_STATUS status, va_list status_args);
+	status_exception(ISC_STATUS status, ...);
+	
+	// Create exception with undefined status vector, this constructor allows to use this
+	// class as jmpbuf replacement for transitional period
+	status_exception() throw();
+
+	virtual ~status_exception() throw();
 	virtual const char* what() const throw()
 		{ return "Firebird::status_exception"; }
-	ISC_STATUS value() const { return m_s; }
+	const ISC_STATUS* value() const { return m_status_vector; }
+	bool strings_permanent() const { return m_strings_permanent; }
+	bool status_known() const { return m_status_known; }
 
-	static void raise(const ISC_STATUS s);
-
+	// Takes permanent strings
+	static void raise(const ISC_STATUS *status_vector);
+	static void raise();
+	
+	// Take transient strings
+	static void raise(ISC_STATUS status, ...);
 private:
-	ISC_STATUS m_s;
+	ISC_STATUS_ARRAY m_status_vector;
+	bool m_strings_permanent;
+	bool m_status_known;
+	void fill_status(ISC_STATUS status, va_list status_args);
 };
 
-class red_zone_error : public std::exception
+class system_call_failed : public status_exception
 {
 public:
-	virtual const char* what() const throw()
-		{ return "Firebird::red_zone_error"; }
+	system_call_failed(const char* _syscall, int _error_code);
 
-	static void raise();
+	static void raise(const char* syscall, int error_code);
+	static void raise(const char* syscall);
 };
 
-class memory_corrupt : public std::exception
-{
-public:
-	virtual const char* what() const throw()
-		{ return "Firebird::memory_corrupt"; }
-
-	static void raise();
-};
-
-class system_call_failed : public std::exception
-{
-public:
-	virtual const char* what() const throw()
-		{ return "Firebird::system_call_failed"; }
-
-	static void raise();
-};
-
-class fatal_exception : public std::exception
+class fatal_exception : public status_exception
 {
 public:
 	explicit fatal_exception(const char* message);
-	virtual ~fatal_exception() throw() {}
-	virtual const char* what() const throw()
-		{ return txt; }
-
 	static void raise(const char* message);
-
-private:
-	char txt[256];
 };
 
+
+// Serialize exception into status_vector, put transient strings from exception into given StringsBuffer
+ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, StringsBuffer* sb = NULL) throw();
+
+// These routines put strings into process-level circular buffer
+// They are obsolete, use transient version of status_exception::raise in combination with
+// stuff_exception instead
+const char* status_string(const char* string);
+const char* status_nstring(const char* string, size_t length);
+
 }	// namespace Firebird
+
 
 #endif	// FB_EXCEPTION_H
 

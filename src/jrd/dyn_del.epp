@@ -185,7 +185,8 @@ void DYN_delete_exception( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_e_xcp) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 143, NULL, NULL, NULL, NULL, NULL);
 		/* msg 143: "ERASE EXCEPTION failed" */
@@ -236,7 +237,8 @@ void DYN_delete_filter( GBL gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_e_filters))
 		DYN_REQUEST(drq_e_filters) = request;
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 36, NULL, NULL, NULL, NULL, NULL);
 		/* msg 36: "ERASE BLOB FILTER failed" */
@@ -266,7 +268,7 @@ void DYN_delete_function( GBL gbl, const UCHAR** ptr)
  *	deletes a user defined function.
  *
  **************************************/
-	volatile USHORT id;
+	USHORT id;
 	SqlIdentifier f;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -305,7 +307,8 @@ void DYN_delete_function( GBL gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_e_funcs))
 		DYN_REQUEST(drq_e_funcs) = request;
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_func_args)
 		{
@@ -376,7 +379,8 @@ void DYN_delete_generator(GBL gbl, const UCHAR**ptr)
             DYN_REQUEST(drq_e_gens) = request;
 
     }
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 	    DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 213, NULL, NULL, NULL, NULL, NULL);
 		/* msg 213: "ERASE GENERATOR failed" */
@@ -402,7 +406,7 @@ void DYN_delete_global_field( GBL gbl, const UCHAR** ptr)
  *	deletes a global field.
  *
  **************************************/
-	volatile USHORT id;
+	USHORT id;
 	SqlIdentifier f;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -448,7 +452,8 @@ void DYN_delete_global_field( GBL gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_e_gfields))
 		DYN_REQUEST(drq_e_gfields) = request;
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_fld_src)
 		{
@@ -513,7 +518,8 @@ void DYN_delete_index( GBL gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_e_indices))
 		DYN_REQUEST(drq_e_indices) = request;
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 47, NULL, NULL, NULL, NULL, NULL);
 		/* msg 47: "ERASE RDB$INDICES failed" */
@@ -578,7 +584,7 @@ void DYN_delete_local_field(
  *  delete_f_key_constraint function for detail.
  *
  **************************************/
-	volatile USHORT id;
+	USHORT id;
 	SqlIdentifier tbl_nm, col_nm, constraint, index_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -759,7 +765,8 @@ void DYN_delete_local_field(
 		DYN_REQUEST(drq_e_lfield) = request;
 	}
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_dep_flds)
 		{
@@ -793,7 +800,7 @@ void DYN_delete_parameter( GBL gbl, const UCHAR** ptr, TEXT* proc_name)
  *	deletes a stored procedure parameter.
  *
  **************************************/
-	volatile USHORT old_id, id;
+	USHORT old_id, id;
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
@@ -851,7 +858,8 @@ void DYN_delete_parameter( GBL gbl, const UCHAR** ptr, TEXT* proc_name)
 		DYN_REQUEST(drq_e_prm) = request;
 	}
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_prms) {
 			DYN_error_punt(true, 138, NULL, NULL, NULL, NULL, NULL);
@@ -887,7 +895,7 @@ void DYN_delete_procedure( GBL gbl, const UCHAR** ptr)
  *	deletes a stored procedure.
  *
  **************************************/
-	volatile USHORT old_id, id;
+	USHORT old_id, id;
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
@@ -995,7 +1003,8 @@ void DYN_delete_procedure( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_e_prc_prvs) = request;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		
 		switch (id)
@@ -1045,7 +1054,7 @@ void DYN_delete_relation( GBL gbl, const UCHAR** ptr, const TEXT* relation)
  *	and fields.
  *
  **************************************/
-	volatile USHORT id;
+	USHORT id;
 	SqlIdentifier relation_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
@@ -1228,7 +1237,8 @@ void DYN_delete_relation( GBL gbl, const UCHAR** ptr, const TEXT* relation)
 		DYN_REQUEST(drq_e_usr_prvs) = request;
 	}
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 
 		// lookup error # from id
@@ -1285,7 +1295,7 @@ void DYN_delete_role( GBL gbl, const UCHAR** ptr)
  *      members of the role.
  *
  **************************************/
-	volatile USHORT id;
+	USHORT id;
 	SqlIdentifier role_name, role_owner, user;
 	TEXT *ptr1, *ptr2;
 
@@ -1384,7 +1394,8 @@ void DYN_delete_role( GBL gbl, const UCHAR** ptr)
 		}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		const USHORT number = (id == drq_drop_role ? 191 : 62);
 		// msg 191: "ERASE RDB$ROLES failed"
@@ -1478,7 +1489,8 @@ files = NULL;
 		DYN_REQUEST(drq_e_shadow) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: "ERASE RDB$FILES failed" */
@@ -1604,7 +1616,8 @@ void DYN_delete_trigger( GBL gbl, const UCHAR** ptr)
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_trg_msgs)
 		{
@@ -1685,7 +1698,8 @@ void DYN_delete_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 		DYN_REQUEST(drq_e_trg_msg) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 71, NULL, NULL, NULL, NULL, NULL);
 		/* msg 71: "ERASE TRIGGER MESSAGE failed" */
@@ -1744,7 +1758,8 @@ static bool delete_constraint_records(GBL	gbl,
 		DYN_REQUEST(drq_e_rel_con) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 129, NULL, NULL, NULL, NULL, NULL);
 		/* msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed" */
@@ -1791,7 +1806,8 @@ static bool delete_dimension_records(GBL gbl, const TEXT* field_name)
 			DYN_REQUEST(drq_e_dims) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 35, NULL, NULL, NULL, NULL, NULL);
 		/* msg 35: "ERASE RDB$FIELDS failed" */
@@ -1868,7 +1884,8 @@ static void delete_f_key_constraint(TDBB	tdbb,
 			/* msg 130: "CONSTRAINT %s does not exist." */
 		}
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 129, NULL, NULL, NULL, NULL, NULL);
 		/* msg 49: "ERASE RDB$RELATION_CONSTRAINTS failed" */
@@ -1953,7 +1970,8 @@ static bool delete_index_segment_records( GBL gbl, const TEXT* index_name)
 		if (!DYN_REQUEST(drq_e_idx_segs))
 			DYN_REQUEST(drq_e_idx_segs) = request;
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 49, NULL, NULL, NULL, NULL, NULL);
 		/* msg 49: "ERASE RDB$INDEX_SEGMENTS failed" */
@@ -2003,7 +2021,8 @@ static bool delete_security_class2( GBL gbl, const TEXT* security_class)
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 74, NULL, NULL, NULL, NULL, NULL);
 		/* msg 74: "ERASE RDB$SECURITY_CLASSES failed" */

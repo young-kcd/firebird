@@ -240,7 +240,8 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_database) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 84, NULL, NULL, NULL, NULL, NULL);
 		/* msg 84: "MODIFY DATABASE failed" */
@@ -305,7 +306,8 @@ void DYN_modify_exception( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_xcp) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 145, NULL, NULL, NULL, NULL, NULL);
 		/* msg 145: "MODIFY EXCEPTION failed" */
@@ -849,7 +851,8 @@ void DYN_modify_global_field(
 		gds__free(new_dom);
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (orig_dom) {
 			gds__free(orig_dom);
 		}
@@ -940,7 +943,8 @@ void DYN_modify_index( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_index) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 91, NULL, NULL, NULL, NULL, NULL);
 		/* msg 91: "MODIFY RDB$INDICES failed" */
@@ -1135,7 +1139,8 @@ void DYN_modify_local_field(
 
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
@@ -1243,7 +1248,8 @@ void DYN_modify_procedure( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_prcs) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 141, NULL, NULL, NULL, NULL, NULL);
 		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
@@ -1340,7 +1346,8 @@ void DYN_modify_relation( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
@@ -1473,7 +1480,8 @@ void DYN_modify_trigger( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_trigger) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 102, NULL, NULL, NULL, NULL, NULL);
 		/* msg 102: "MODIFY TRIGGER failed" */
@@ -1548,7 +1556,8 @@ void DYN_modify_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 105, NULL, NULL, NULL, NULL, NULL);
 		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
@@ -1640,7 +1649,8 @@ void DYN_modify_view( GBL gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
@@ -1686,7 +1696,8 @@ static void drop_cache( GBL gbl)
 	}
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_cache);
 		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
@@ -1767,7 +1778,8 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	}
 	
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_difference); 
 		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
@@ -1793,7 +1805,8 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 			DYN_REQUEST(drq_s_difference) = request;
 		}		
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_difference);
 		DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
 		/* msg 150: STORE RDB$FILES failed */
@@ -1847,7 +1860,8 @@ static void drop_log( GBL gbl)
 		DYN_REQUEST(drq_d_log) = request;
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_log);
 		DYN_error_punt(true, 153, NULL, NULL, NULL, NULL, NULL);
 		/* msg 153: ERASE RDB$LOG_FILE failed */
@@ -1894,7 +1908,7 @@ static void modify_lfield_position(TDBB tdbb,
  *	    if new_position == original_position -- no_op
  *
  ***********************************************************/
-	volatile BLK request = NULL;
+	BLK request = NULL;
 
 	try {
 
@@ -1966,7 +1980,8 @@ static void modify_lfield_position(TDBB tdbb,
 
 	CMP_release(tdbb, (jrd_req*)request);
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
@@ -2613,7 +2628,8 @@ void DYN_modify_sql_field(GBL		gbl,
 		gds__free(orig_fld);
 
 	}
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (new_fld) {
 			gds__free(new_fld);
 		}

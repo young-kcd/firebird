@@ -751,7 +751,7 @@ Rsb* OPT_compile(TDBB tdbb,
 			csb->csb_rpt[stream].csb_idx_allocation = 0;
 		}
 		delete opt_;
-		ERR_punt();
+		throw;
 	}
 	
 	if (rse->rse_writelock)

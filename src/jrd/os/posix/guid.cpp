@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: guid.cpp,v 1.4 2003-12-05 10:35:40 robocop Exp $
+ *  $Id: guid.cpp,v 1.5 2004-03-01 03:35:14 skidder Exp $
  *
  */
 
@@ -50,9 +50,9 @@ void GenerateGuid(FB_GUID* guid) {
 	// do not use /dev/random because it may return lesser data than we need.
 	int fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
-		Firebird::system_call_failed::raise();
+		Firebird::system_call_failed::raise("open");
 	if (read(fd, guid, sizeof(FB_GUID)) != sizeof(FB_GUID))
-		Firebird::system_call_failed::raise();
+		Firebird::system_call_failed::raise("read");
 	close(fd);
 }
 

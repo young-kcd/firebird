@@ -677,7 +677,6 @@ void EXE_receive(TDBB		tdbb,
 			transaction->tra_save_point = request->req_proc_sav_point;
 			request->req_proc_sav_point = save_sav_point;
 			release_proc_save_points(request);
-			Firebird::status_exception::raise(-1);
 		}
 		throw;
 	}
@@ -1216,8 +1215,6 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
    mode transaction, we already have an exclusive lock on
    the table, so don't bother */
 
-	try {
-
 	LCK_RAII_wrapper implicit_lock;
 
 	if (!(transaction->tra_flags & TRA_degree3))
@@ -1303,11 +1300,6 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 
 #ifdef PC_ENGINE
-
-	}	// try
-	catch (const std::exception&) {
-		Firebird::status_exception::raise(-1);
-	}
 
 /* if the stream is navigational, it is now positioned on a crack */
 
@@ -1526,7 +1518,7 @@ static void execute_procedure(TDBB tdbb, jrd_nod* node)
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 		proc_request->req_timestamp = 0;
 		delete temp_buffer;
-		Firebird::status_exception::raise(-1);
+		throw;
 	}
 
 	tdbb->tdbb_default = old_pool;
@@ -1568,8 +1560,7 @@ static jrd_req* execute_triggers(TDBB tdbb,
  *	if any blow up.
  *
  **************************************/
-// It was volatile JRD_REQ trigger = NULL;
-	jrd_req* volatile trigger = NULL;
+	jrd_req* trigger = NULL;
 
 	//DEV_BLKCHK(*triggers, type_vec);
 	DEV_BLKCHK(old_rec, type_rec);
@@ -1613,15 +1604,15 @@ static jrd_req* execute_triggers(TDBB tdbb,
 		return result;
 
 	}
-	catch (const std::exception&)
+	catch (const std::exception& ex)
 	{
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}
 		if (!trigger) {
 		  throw; // trigger probally fails to compile
-		  //Firebird::status_exception::raise(-1);
 		}
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return trigger;
 	}
 }
@@ -1810,8 +1801,8 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 	SSHORT which_erase_trig = 0;
 	SSHORT which_sto_trig   = 0;
 	SSHORT which_mod_trig   = 0;
-	jrd_nod* volatile top_node = 0;
-	jrd_nod* volatile prev_node;
+	jrd_nod* top_node = 0;
+	jrd_nod* prev_node;
 
 /* If an error happens during the backout of a savepoint, then the transaction
    must be marked 'dead' because that is the only way to clean up after a
@@ -1825,7 +1816,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
     }													\
 	catch (const std::exception&) {							\
 		if (dbb->dbb_flags & DBB_bugcheck) {				\
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);	\
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);	\
 		}																\
     	BUGCHECK (290); /* msg 290 error during savepoint backout */	\
 	}
@@ -1851,7 +1842,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 	const SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
 
-	jrd_nod* volatile node = in_node;
+	jrd_nod* node = in_node;
 
 	// Catch errors so we can unwind cleanly
 
@@ -1881,7 +1872,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 		switch (node->nod_type) {
 		case nod_asn_list:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				jrd_nod** volatile ptr = node->nod_arg;
+				jrd_nod** ptr = node->nod_arg;
 				for (const jrd_nod* const* const end = ptr + node->nod_count;
 					 ptr < end; ptr++)
 				{
@@ -2312,11 +2303,11 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 						}
 					}
 
-					jrd_nod* volatile handlers = node->nod_arg[e_blk_handlers];
+					jrd_nod* handlers = node->nod_arg[e_blk_handlers];
 					if (handlers)
 					{
 						node = node->nod_parent;
-						jrd_nod** volatile ptr = handlers->nod_arg;
+						jrd_nod** ptr = handlers->nod_arg;
 						for (const jrd_nod* const* const end = ptr + handlers->nod_count;
 							ptr < end; ptr++)
 						{
@@ -2782,16 +2773,17 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 //		}
 //#endif
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		// If we already have a handled error, and took another, simply
 		// pass the buck.
 		if (catch_disabled) {
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
 		/* If the database is already bug-checked, then get out. */
 		if (dbb->dbb_flags & DBB_bugcheck) {
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
 		/* Since an error happened, the current savepoint needs to be undone. */		
@@ -2969,9 +2961,6 @@ static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 		   will be able to read or write the record but not when an explicit
 		   lock has been taken out */
 
-		try
-		{
-
 		LCK_RAII_wrapper implicit_lock;
 
 		if (!(transaction->tra_flags & TRA_degree3))
@@ -3057,11 +3046,6 @@ static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 		}
 
 #ifdef PC_ENGINE
-
-		}	// try
-		catch (const std::exception&) {
-			Firebird::status_exception::raise(-1);
-		}
 
 		/* if the stream is navigational, we must position the stream on the new 
 		   record version, but first set the record number  */

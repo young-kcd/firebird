@@ -277,7 +277,7 @@ else
 		if (spare_buffer) {
 			gds__free(spare_buffer);
 		}
-		ERR_punt();
+		throw;
 	}
 
 	return sequence;
@@ -1046,7 +1046,8 @@ void SDW_start(
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (header_fetched) {
 			CCH_RELEASE(tdbb, &window);
 		}
@@ -1224,7 +1225,8 @@ static bool check_for_file(const SCHAR* name, USHORT length)
 		jrd_file* temp_file = PIO_open(dbb, name, length, false, 0, name, length);
 		PIO_close(temp_file);
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
 

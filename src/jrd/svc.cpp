@@ -392,6 +392,7 @@ svc* SVC_attach(USHORT	service_length,
  *
  **************************************/
 /* If the service name begins with a slash, ignore it. */
+	TDBB tdbb = GET_THREAD_DATA;
 
 	if (*service_name == '/' || *service_name == '\\') {
 		service_name++;
@@ -674,7 +675,7 @@ svc* SVC_attach(USHORT	service_length,
 //			gds__free((SLONG *) service);
 			delete service;
 		}
-		ERR_punt();
+		throw;
 	}
 
 	return service;
@@ -1731,6 +1732,7 @@ void* SVC_start(svc* service, USHORT spb_length, const SCHAR* spb)
  *      Start a Firebird service
  *
  **************************************/
+ 	
 #ifndef SUPERSERVER
 	TEXT service_path[MAXPATHLEN];
 #endif
@@ -1740,7 +1742,7 @@ void* SVC_start(svc* service, USHORT spb_length, const SCHAR* spb)
  *	involved (as with any handle that goes over the
  *	network).  This parameter will be implemented at
  *	a later date.
- */
+ */  
 
 	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
@@ -2043,7 +2045,7 @@ void* SVC_start(svc* service, USHORT spb_length, const SCHAR* spb)
 //			gds__free((SLONG *) service);
 			delete service;
 		}
-		ERR_punt();
+		throw;
 	}
 
 	return reinterpret_cast<void*>(reserved);
