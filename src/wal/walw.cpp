@@ -626,7 +626,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 	WALW_WRITER_RETURN(FB_SUCCESS);
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		if (acquired) {
 			WALC_release(WAL_handle);
 		}

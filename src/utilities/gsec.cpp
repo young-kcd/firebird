@@ -372,7 +372,7 @@ int UTIL_gsec(
 	return 0;					// silence compiler warning
 
 	}	// try
-	catch (...) {
+	catch (const std::exception&) {
 		/* All calls to EXIT(), normal and error exits, wind up here */
 		SVC_STARTED(tdsec->tsec_service_blk);
 		tdsec->tsec_env = NULL;

@@ -816,7 +816,7 @@ int CLIB_ROUTINE main(int argc, char **argv)
 	EXIT(FINI_OK);
 
 	}	// try
-	catch (...)
+	catch (const std::exception&)
 	{
 		/* free mem */
 
