@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.125 2004-10-01 21:29:16 skidder Exp $
+$Id: common.h,v 1.126 2004-10-07 09:42:03 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1050,7 +1050,7 @@ struct in_sw_tab_t {
 	USHORT in_sw_state;
 	USHORT in_sw_msg;
 	USHORT in_sw_min_length;
-	TEXT* in_sw_text;
+	const TEXT* in_sw_text;
 
 };
 

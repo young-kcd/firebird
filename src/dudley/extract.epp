@@ -107,8 +107,8 @@ enum EXT_flags {
    fields in system relations */
 
 struct rfr_tab_t {
-	TEXT *relation;
-	TEXT *field;
+	const TEXT* relation;
+	const TEXT* field;
 	int bit_mask;
 };
 
