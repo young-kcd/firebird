@@ -157,6 +157,13 @@ public:
 		if (toDelete == 0)
 			return;
 		JrdMemoryPool *perm = toDelete->dbb_permanent;
+#ifdef SUPERSERVER
+		// Memory pool destruction below decrements memory statistics for 
+		// SuperServer situated in database block we are about to deallocate
+		// right now.
+		Firebird::MemoryStats temp_stats;
+		perm->setStatsGroup(temp_stats);
+#endif
 		delete toDelete;
 		JrdMemoryPool::noDbbDeletePool(perm);
 	}
