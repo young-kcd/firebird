@@ -38,34 +38,34 @@
 
 #define PROMPT_LENGTH	80
 
-static NOD compile_any(NOD, REQ, int);
-static NOD compile_assignment(NOD, REQ, int);
-static void compile_context(NOD, REQ, int);
+static QLI_NOD compile_any(QLI_NOD, REQ, int);
+static QLI_NOD compile_assignment(QLI_NOD, REQ, int);
+static void compile_context(QLI_NOD, REQ, int);
 static void compile_control_break(BRK, REQ);
-static NOD compile_edit(NOD, REQ);
-static NOD compile_erase(NOD, REQ);
-static NOD compile_expression(NOD, REQ, int);
-static NOD compile_field(NOD, REQ, int);
-static NOD compile_for(NOD, REQ, int);
-static NOD compile_function(NOD, REQ, int);
-static NOD compile_if(NOD, REQ, int);
-static NOD compile_list_fields(NOD, REQ);
-static NOD compile_modify(NOD, REQ, int);
-static NOD compile_print(NOD, REQ);
-static NOD compile_print_list(NOD, REQ, LLS *);
-static NOD compile_prompt(NOD);
-static NOD compile_repeat(NOD, REQ, int);
-static NOD compile_report(NOD, REQ);
-static REQ compile_rse(NOD, REQ, int, MSG *, MSG *, DBB *);
-static NOD compile_statement(NOD, REQ, int);
-static NOD compile_statistical(NOD, REQ, int);
-static NOD compile_store(NOD, REQ, int);
-static int computable(NOD, REQ);
-static void make_descriptor(NOD, DSC *);
+static QLI_NOD compile_edit(QLI_NOD, REQ);
+static QLI_NOD compile_erase(QLI_NOD, REQ);
+static QLI_NOD compile_expression(QLI_NOD, REQ, int);
+static QLI_NOD compile_field(QLI_NOD, REQ, int);
+static QLI_NOD compile_for(QLI_NOD, REQ, int);
+static QLI_NOD compile_function(QLI_NOD, REQ, int);
+static QLI_NOD compile_if(QLI_NOD, REQ, int);
+static QLI_NOD compile_list_fields(QLI_NOD, REQ);
+static QLI_NOD compile_modify(QLI_NOD, REQ, int);
+static QLI_NOD compile_print(QLI_NOD, REQ);
+static QLI_NOD compile_print_list(QLI_NOD, REQ, LLS *);
+static QLI_NOD compile_prompt(QLI_NOD);
+static QLI_NOD compile_repeat(QLI_NOD, REQ, int);
+static QLI_NOD compile_report(QLI_NOD, REQ);
+static REQ compile_rse(QLI_NOD, REQ, int, MSG *, MSG *, DBB *);
+static QLI_NOD compile_statement(QLI_NOD, REQ, int);
+static QLI_NOD compile_statistical(QLI_NOD, REQ, int);
+static QLI_NOD compile_store(QLI_NOD, REQ, int);
+static int computable(QLI_NOD, REQ);
+static void make_descriptor(QLI_NOD, DSC *);
 static MSG make_message(REQ);
 static void make_missing_reference(PAR);
-static PAR make_parameter(MSG, NOD);
-static NOD make_reference(NOD, MSG);
+static PAR make_parameter(MSG, QLI_NOD);
+static QLI_NOD make_reference(QLI_NOD, MSG);
 static REQ make_request(DBB);
 static void release_message(MSG);
 static int string_length(DSC *);
@@ -75,7 +75,7 @@ static TEXT **print_header;
 static BRK report_control_break;
 
 
-NOD CMPQ_compile( NOD node)
+QLI_NOD CMPQ_compile( QLI_NOD node)
 {
 /**************************************
  *
@@ -100,7 +100,7 @@ NOD CMPQ_compile( NOD node)
 }
 
 
-void CMP_alloc_temp( NOD node)
+void CMP_alloc_temp( QLI_NOD node)
 {
 /**************************************
  *
@@ -122,7 +122,7 @@ void CMP_alloc_temp( NOD node)
 }
 
 
-int CMP_node_match( NOD node1, NOD node2)
+int CMP_node_match( QLI_NOD node1, QLI_NOD node2)
 {
 /**************************************
  *
@@ -134,7 +134,7 @@ int CMP_node_match( NOD node1, NOD node2)
  *	Compare two nodes for equality of value.
  *
  **************************************/
-	NOD *ptr1, *ptr2, *end;
+	QLI_NOD *ptr1, *ptr2, *end;
 	MAP map1, map2;
 	USHORT l;
 	UCHAR *p1, *p2;
@@ -201,7 +201,7 @@ int CMP_node_match( NOD node1, NOD node2)
 }
 
 
-static NOD compile_any( NOD node, REQ old_request, int internal_flag)
+static QLI_NOD compile_any( QLI_NOD node, REQ old_request, int internal_flag)
 {
 /**************************************
  *
@@ -224,7 +224,7 @@ static NOD compile_any( NOD node, REQ old_request, int internal_flag)
 
 	if (request = compile_rse(node->nod_arg[e_any_rse],
 							  old_request, FALSE, &send, &receive, 0))
-		node->nod_arg[e_any_request] = (NOD) request;
+		node->nod_arg[e_any_request] = (QLI_NOD) request;
 	else
 		request = old_request;
 
@@ -255,14 +255,14 @@ static NOD compile_any( NOD node, REQ old_request, int internal_flag)
 		parameter->par_desc.dsc_length = sizeof(SSHORT);
 	}
 
-	node->nod_arg[e_any_send] = (NOD) send;
-	node->nod_arg[e_any_receive] = (NOD) receive;
+	node->nod_arg[e_any_send] = (QLI_NOD) send;
+	node->nod_arg[e_any_receive] = (QLI_NOD) receive;
 
 	return node;
 }
 
 
-static NOD compile_assignment( NOD node, REQ request, int statement_internal)
+static QLI_NOD compile_assignment( QLI_NOD node, REQ request, int statement_internal)
 {
 /**************************************
  *
@@ -281,7 +281,7 @@ static NOD compile_assignment( NOD node, REQ request, int statement_internal)
  *	dbms). 
  *
  **************************************/
-	NOD to, target, from, initial;
+	QLI_NOD to, target, from, initial;
 	CTX context;
 	USHORT target_internal;
 
@@ -335,7 +335,7 @@ static NOD compile_assignment( NOD node, REQ request, int statement_internal)
 }
 
 
-static void compile_context( NOD node, REQ request, int internal_flag)
+static void compile_context( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -379,7 +379,7 @@ static void compile_control_break( BRK control, REQ request)
  *	Compile a control/page/report break.
  *
  **************************************/
-	NOD temp;
+	QLI_NOD temp;
 
 	for (; control; control = control->brk_next) {
 		report_control_break = control;
@@ -388,21 +388,21 @@ static void compile_control_break( BRK control, REQ request)
 	control->brk_field  = (SYN) compile_expression (control->brk_field, request, FALSE);
 */
 		{
-			temp = (NOD) control->brk_field;;
+			temp = (QLI_NOD) control->brk_field;;
 			temp->nod_flags |= NOD_parameter2;
-			temp =  compile_expression((NOD) control->brk_field, request, FALSE);
+			temp =  compile_expression((QLI_NOD) control->brk_field, request, FALSE);
 			if (temp->nod_type == nod_field)
 				temp = temp->nod_arg[e_fld_reference];
 			control->brk_field = (SYN) temp;
 		}
 		if (control->brk_line)
-			compile_print_list((NOD) control->brk_line, request, 0);
+			compile_print_list((QLI_NOD) control->brk_line, request, 0);
 		report_control_break = NULL;
 	}
 }
 
 
-static NOD compile_edit( NOD node, REQ request)
+static QLI_NOD compile_edit( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -414,7 +414,7 @@ static NOD compile_edit( NOD node, REQ request)
  *	Compile the "edit blob" expression.
  *
  **************************************/
-	NOD value;
+	QLI_NOD value;
 	FLD field;
 	PAR parm;
 
@@ -434,7 +434,7 @@ static NOD compile_edit( NOD node, REQ request)
 			compile_expression(value, request, FALSE);
 	}
 
-	node->nod_arg[e_edt_dbb] = (NOD) request->req_database;
+	node->nod_arg[e_edt_dbb] = (QLI_NOD) request->req_database;
 	node->nod_desc.dsc_dtype = dtype_blob;
 	node->nod_desc.dsc_length = 8;
 	node->nod_desc.dsc_address = (UCHAR *) & node->nod_arg[e_edt_id1];
@@ -443,7 +443,7 @@ static NOD compile_edit( NOD node, REQ request)
 }
 
 
-static NOD compile_erase( NOD node, REQ org_request)
+static QLI_NOD compile_erase( QLI_NOD node, REQ org_request)
 {
 /**************************************
  *
@@ -461,7 +461,7 @@ static NOD compile_erase( NOD node, REQ org_request)
 
 	context = (CTX) node->nod_arg[e_era_context];
 	request = context->ctx_request;
-	node->nod_arg[e_era_request] = (NOD) request;
+	node->nod_arg[e_era_request] = (QLI_NOD) request;
 
 	request->req_database->dbb_flags |= DBB_updates;
 
@@ -471,13 +471,13 @@ static NOD compile_erase( NOD node, REQ org_request)
 	if (!request->req_continue)
 		request->req_continue = make_message(request);
 
-	node->nod_arg[e_era_message] = (NOD) make_message(request);
+	node->nod_arg[e_era_message] = (QLI_NOD) make_message(request);
 
 	return node;
 }
 
 
-static NOD compile_expression( NOD node, REQ request, int internal_flag)
+static QLI_NOD compile_expression( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -491,7 +491,7 @@ static NOD compile_expression( NOD node, REQ request, int internal_flag)
  *	in the QLI context (internal_flag == FALSE).	
  *
  **************************************/
-	NOD *ptr, *end, value;
+	QLI_NOD *ptr, *end, value;
 	MAP map;
 	PAR parm;
 	FLD field;
@@ -692,7 +692,7 @@ static NOD compile_expression( NOD node, REQ request, int internal_flag)
 }
 
 
-static NOD compile_field( NOD node, REQ request, int internal_flag)
+static QLI_NOD compile_field( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -704,7 +704,7 @@ static NOD compile_field( NOD node, REQ request, int internal_flag)
  *	Compile a field reference.
  *
  **************************************/
-	NOD reference;
+	QLI_NOD reference;
 	CTX context;
 	PAR parm;
 	MSG message;
@@ -753,7 +753,7 @@ static NOD compile_field( NOD node, REQ request, int internal_flag)
 }
 
 
-static NOD compile_for( NOD node, REQ old_request, int internal_flag)
+static QLI_NOD compile_for( QLI_NOD node, REQ old_request, int internal_flag)
 {
 /**************************************
  *
@@ -780,7 +780,7 @@ static NOD compile_for( NOD node, REQ old_request, int internal_flag)
 
 	if (request = compile_rse(node->nod_arg[e_for_rse],
 							  old_request, FALSE, &send, &receive, 0))
-		node->nod_arg[e_for_request] = (NOD) request;
+		node->nod_arg[e_for_request] = (QLI_NOD) request;
 	else
 		request = old_request;
 
@@ -808,19 +808,19 @@ static NOD compile_for( NOD node, REQ old_request, int internal_flag)
 
 	if (receive) {
 		parameter = make_parameter(receive, 0);
-		node->nod_arg[e_for_eof] = (NOD) parameter;
+		node->nod_arg[e_for_eof] = (QLI_NOD) parameter;
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(SSHORT);
 	}
 
-	node->nod_arg[e_for_send] = (NOD) send;
-	node->nod_arg[e_for_receive] = (NOD) receive;
+	node->nod_arg[e_for_send] = (QLI_NOD) send;
+	node->nod_arg[e_for_receive] = (QLI_NOD) receive;
 
 	return node;
 }
 
 
-static NOD compile_function( NOD node, REQ old_request, int internal_flag)
+static QLI_NOD compile_function( QLI_NOD node, REQ old_request, int internal_flag)
 {
 /**************************************
  *
@@ -832,7 +832,7 @@ static NOD compile_function( NOD node, REQ old_request, int internal_flag)
  *	Compile a database function reference.
  *
  **************************************/
-	NOD value, *ptr, *end, list;
+	QLI_NOD value, *ptr, *end, list;
 	FUN function;
 	MSG send, receive, old_send = NULL, old_receive = NULL;
 	REQ request;
@@ -852,7 +852,7 @@ static NOD compile_function( NOD node, REQ old_request, int internal_flag)
 
 	if (!old_request || old_request->req_database != function->fun_database) {
 		request = make_request(function->fun_database);
-		node->nod_arg[e_fun_request] = (NOD) request;
+		node->nod_arg[e_fun_request] = (QLI_NOD) request;
 		request->req_send = send = make_message(request);
 		request->req_receive = receive = make_message(request);
 	}
@@ -887,14 +887,14 @@ static NOD compile_function( NOD node, REQ old_request, int internal_flag)
 		send = NULL;
 	}
 
-	node->nod_arg[e_fun_receive] = (NOD) receive;
-	node->nod_arg[e_fun_send] = (NOD) send;
+	node->nod_arg[e_fun_receive] = (QLI_NOD) receive;
+	node->nod_arg[e_fun_send] = (QLI_NOD) send;
 
 	return node;
 }
 
 
-static NOD compile_if( NOD node, REQ request, int internal_flag)
+static QLI_NOD compile_if( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -909,7 +909,7 @@ static NOD compile_if( NOD node, REQ request, int internal_flag)
  *	executed one place or the other.
  *
  **************************************/
-	NOD sub;
+	QLI_NOD sub;
 	REQ sub_req;
 
 /* If the statement can't be executed in database context,
@@ -935,7 +935,7 @@ static NOD compile_if( NOD node, REQ request, int internal_flag)
 }
 
 
-static NOD compile_list_fields( NOD node, REQ request)
+static QLI_NOD compile_list_fields( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -947,7 +947,7 @@ static NOD compile_list_fields( NOD node, REQ request)
  *	Compile a print node.
  *
  **************************************/
-	NOD list;
+	QLI_NOD list;
 
 	list = node->nod_arg[e_prt_list];
 	compile_print_list(list, request, 0);
@@ -958,7 +958,7 @@ static NOD compile_list_fields( NOD node, REQ request)
 }
 
 
-static NOD compile_modify( NOD node, REQ org_request, int internal_flag)
+static QLI_NOD compile_modify( QLI_NOD node, REQ org_request, int internal_flag)
 {
 /**************************************
  *
@@ -973,7 +973,7 @@ static NOD compile_modify( NOD node, REQ org_request, int internal_flag)
 	REQ request;
 	CTX context;
 	MSG send, old_send;
-	NOD *ptr;
+	QLI_NOD *ptr;
 	USHORT i;
 
 /* If this is a different request from the current one, this will require an
@@ -982,7 +982,7 @@ static NOD compile_modify( NOD node, REQ org_request, int internal_flag)
 	ptr = node->nod_arg + e_mod_count;
 	context = (CTX) * ptr;
 	request = context->ctx_source->ctx_request;
-	node->nod_arg[e_mod_request] = (NOD) request;
+	node->nod_arg[e_mod_request] = (QLI_NOD) request;
 
 	if ((request != org_request || !internal_flag) && !request->req_continue)
 		request->req_continue = make_message(request);
@@ -1011,7 +1011,7 @@ static NOD compile_modify( NOD node, REQ org_request, int internal_flag)
 		send = NULL;
 	}
 
-	node->nod_arg[e_mod_send] = (NOD) send;
+	node->nod_arg[e_mod_send] = (QLI_NOD) send;
 	request->req_send = old_send;
 	request->req_database->dbb_flags |= DBB_updates;
 
@@ -1022,7 +1022,7 @@ static NOD compile_modify( NOD node, REQ org_request, int internal_flag)
 }
 
 
-static NOD compile_print( NOD node, REQ request)
+static QLI_NOD compile_print( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1044,7 +1044,7 @@ static NOD compile_print( NOD node, REQ request)
 }
 
 
-static NOD compile_print_list( NOD list, REQ request, LLS * stack)
+static QLI_NOD compile_print_list( QLI_NOD list, REQ request, LLS * stack)
 {
 /**************************************
  *
@@ -1056,7 +1056,7 @@ static NOD compile_print_list( NOD list, REQ request, LLS * stack)
  *	Compile a print node.
  *
  **************************************/
-	NOD *ptr, *end, value;
+	QLI_NOD *ptr, *end, value;
 	ITM item;
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
@@ -1078,7 +1078,7 @@ static NOD compile_print_list( NOD list, REQ request, LLS * stack)
 }
 
 
-static NOD compile_prompt( NOD node)
+static QLI_NOD compile_prompt( QLI_NOD node)
 {
 /**************************************
  *
@@ -1128,7 +1128,7 @@ static NOD compile_prompt( NOD node)
 
 	prompt_length += 2 + sizeof(SSHORT);
 	string = (STR) ALLOCDV(type_str, prompt_length);
-	node->nod_arg[e_prm_string] = (NOD) string;
+	node->nod_arg[e_prm_string] = (QLI_NOD) string;
 	node->nod_desc.dsc_dtype = dtype_varying;
 	node->nod_desc.dsc_length = prompt_length;
 	node->nod_desc.dsc_address = (UCHAR *) string->str_data;
@@ -1137,7 +1137,7 @@ static NOD compile_prompt( NOD node)
 }
 
 
-static NOD compile_repeat( NOD node, REQ request, int internal_flag)
+static QLI_NOD compile_repeat( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -1157,7 +1157,7 @@ static NOD compile_repeat( NOD node, REQ request, int internal_flag)
 }
 
 
-static NOD compile_report( NOD node, REQ request)
+static QLI_NOD compile_report( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1171,7 +1171,7 @@ static NOD compile_report( NOD node, REQ request)
  **************************************/
 	RPT report;
 	BRK control, temp;
-	NOD list;
+	QLI_NOD list;
 
 	report = (RPT) node->nod_arg[e_prt_list];
 
@@ -1211,7 +1211,7 @@ static NOD compile_report( NOD node, REQ request)
 
 
 static REQ compile_rse(
-					   NOD node,
+					   QLI_NOD node,
 					   REQ old_request,
 					   int internal_flag,
 					   MSG * send, MSG * receive, DBB * database)
@@ -1229,7 +1229,7 @@ static REQ compile_rse(
  *	up for a receive message as well.
  *
  **************************************/
-	NOD list, *ptr, *end, *ptr2, rse;
+	QLI_NOD list, *ptr, *end, *ptr2, rse;
 	REQ request, original_request;
 	CTX context, parent, *ctx_ptr, *ctx_end;
 	REL relation;
@@ -1318,7 +1318,7 @@ static REQ compile_rse(
 }
 
 
-static NOD compile_statement( NOD node, REQ request, int internal_flag)
+static QLI_NOD compile_statement( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -1331,7 +1331,7 @@ static NOD compile_statement( NOD node, REQ request, int internal_flag)
  *	the parent request.
  *
  **************************************/
-	NOD result, *ptr, *end, sub;
+	QLI_NOD result, *ptr, *end, sub;
 
 	switch (node->nod_type) {
 	case nod_assign:
@@ -1401,7 +1401,7 @@ static NOD compile_statement( NOD node, REQ request, int internal_flag)
 }
 
 
-static NOD compile_statistical( NOD node, REQ old_request, int internal_flag)
+static QLI_NOD compile_statistical( QLI_NOD node, REQ old_request, int internal_flag)
 {
 /**************************************
  *
@@ -1414,7 +1414,7 @@ static NOD compile_statistical( NOD node, REQ old_request, int internal_flag)
  *	request a separate request.
  *
  **************************************/
-	NOD value;
+	QLI_NOD value;
 	MSG send, receive, old_send = NULL, old_receive = NULL;
 	REQ request;
 	PAR parameter;
@@ -1438,7 +1438,7 @@ static NOD compile_statistical( NOD node, REQ old_request, int internal_flag)
 
 	if (request = compile_rse(node->nod_arg[e_stt_rse],
 							  old_request, internal_flag, &send, &receive, 0))
-		node->nod_arg[e_stt_request] = (NOD) request;
+		node->nod_arg[e_stt_request] = (QLI_NOD) request;
 	else
 		request = old_request;
 
@@ -1468,14 +1468,14 @@ static NOD compile_statistical( NOD node, REQ old_request, int internal_flag)
 		send = NULL;
 	}
 
-	node->nod_arg[e_stt_receive] = (NOD) receive;
-	node->nod_arg[e_stt_send] = (NOD) send;
+	node->nod_arg[e_stt_receive] = (QLI_NOD) receive;
+	node->nod_arg[e_stt_send] = (QLI_NOD) send;
 
 	return node;
 }
 
 
-static NOD compile_store( NOD node, REQ request, int internal_flag)
+static QLI_NOD compile_store( QLI_NOD node, REQ request, int internal_flag)
 {
 /**************************************
  *
@@ -1500,7 +1500,7 @@ static NOD compile_store( NOD node, REQ request, int internal_flag)
 
 	if (!request || request->req_database != relation->rel_database) {
 		request = make_request(relation->rel_database);
-		node->nod_arg[e_sto_request] = (NOD) request;
+		node->nod_arg[e_sto_request] = (QLI_NOD) request;
 	}
 
 	request->req_database->dbb_flags |= DBB_updates;
@@ -1523,13 +1523,13 @@ static NOD compile_store( NOD node, REQ request, int internal_flag)
 		return NULL;
 	}
 
-	node->nod_arg[e_sto_send] = (NOD) send;
+	node->nod_arg[e_sto_send] = (QLI_NOD) send;
 
 	return node;
 }
 
 
-static int computable( NOD node, REQ request)
+static int computable( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1542,7 +1542,7 @@ static int computable( NOD node, REQ request)
  *	given request.
  *
  **************************************/
-	NOD *ptr, *end, sub;
+	QLI_NOD *ptr, *end, sub;
 	CTX context;
 	MAP map;
 
@@ -1647,7 +1647,7 @@ static int computable( NOD node, REQ request)
 
 	case nod_unique:
 	case nod_any:
-		if (node->nod_arg[e_any_request] != (NOD) request)
+		if (node->nod_arg[e_any_request] != (QLI_NOD) request)
 			return FALSE;
 		return (computable(node->nod_arg[e_any_rse], request));
 
@@ -1706,7 +1706,7 @@ static int computable( NOD node, REQ request)
 }
 
 
-static void make_descriptor( NOD node, DSC * desc)
+static void make_descriptor( QLI_NOD node, DSC * desc)
 {
 /**************************************
  *
@@ -1961,7 +1961,7 @@ static void make_missing_reference( PAR parameter)
 }
 
 
-static PAR make_parameter( MSG message, NOD node)
+static PAR make_parameter( MSG message, QLI_NOD node)
 {
 /**************************************
  *
@@ -1988,7 +1988,7 @@ static PAR make_parameter( MSG message, NOD node)
 }
 
 
-static NOD make_reference( NOD node, MSG message)
+static QLI_NOD make_reference( QLI_NOD node, MSG message)
 {
 /**************************************
  *
@@ -2006,7 +2006,7 @@ static NOD make_reference( NOD node, MSG message)
  *	parameter2 style if necessary.
  *
  **************************************/
-	NOD reference;
+	QLI_NOD reference;
 	PAR parm;
 
 	if (!message)
@@ -2026,7 +2026,7 @@ static NOD make_reference( NOD node, MSG message)
 		parm->par_desc = node->nod_desc;
 	}
 
-	reference = (NOD) ALLOCDV(type_nod, 1);
+	reference = (QLI_NOD) ALLOCDV(type_nod, 1);
 	reference->nod_type = nod_reference;
 	reference->nod_arg[0] = node;
 	reference->nod_desc = parm->par_desc;

@@ -47,12 +47,12 @@ typedef vary VARY;
 extern USHORT QLI_prompt_count, QLI_reprompt;
 extern USHORT sw_forms;
 
-static SLONG execute_any(NOD);
-static DSC *execute_concatenate(NOD, DSC *, DSC *);
-static DSC *execute_edit(NOD);
-static DSC *execute_function(NOD);
-static DSC *execute_prompt(NOD);
-static DSC *execute_statistical(NOD);
+static SLONG execute_any(QLI_NOD);
+static DSC *execute_concatenate(QLI_NOD, DSC *, DSC *);
+static DSC *execute_edit(QLI_NOD);
+static DSC *execute_function(QLI_NOD);
+static DSC *execute_prompt(QLI_NOD);
+static DSC *execute_statistical(QLI_NOD);
 #if (defined JPN_EUC || defined JPN_SJIS)
 static int like(USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
 static int like2(UCHAR *, SSHORT, UCHAR *, SSHORT, UCHAR);
@@ -66,7 +66,7 @@ static int matches2(UCHAR *, SSHORT, UCHAR *, SSHORT);
 #else
 static int matches(TEXT *, SSHORT, TEXT *, SSHORT);
 #endif
-static int sleuth(NOD, DSC *, DSC *, DSC *);
+static int sleuth(QLI_NOD, DSC *, DSC *, DSC *);
 #if (defined JPN_EUC || defined JPN_SJIS)
 static int sleuth_check(USHORT, USHORT *, USHORT *, USHORT *, USHORT *);
 static int sleuth_check2(USHORT, TEXT *, TEXT *, TEXT *, TEXT *);
@@ -76,8 +76,8 @@ static int sleuth_check(USHORT, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
 static int sleuth_class(USHORT, UCHAR *, UCHAR *, UCHAR);
 #endif
 static int sleuth_merge(UCHAR *, UCHAR *, UCHAR *, UCHAR *, UCHAR *);
-static int string_boolean(NOD);
-static int string_function(NOD, SSHORT, TEXT *, SSHORT, TEXT *);
+static int string_boolean(QLI_NOD);
+static int string_function(QLI_NOD, SSHORT, TEXT *, SSHORT, TEXT *);
 
 #define	TEMP_LENGTH		128
 #define SLEUTH_insensitive	1
@@ -96,7 +96,7 @@ static UCHAR special[127] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 static TEXT prompt[2][128] = { "", "" };
 
 
-int EVAL_boolean( NOD node)
+int EVAL_boolean( QLI_NOD node)
 {
 /**************************************
  *
@@ -202,7 +202,7 @@ int EVAL_boolean( NOD node)
 }
 
 
-void EVAL_break_compute( NOD node)
+void EVAL_break_compute( QLI_NOD node)
 {
 /**************************************
  *
@@ -227,7 +227,7 @@ void EVAL_break_compute( NOD node)
 }
 
 
-void EVAL_break_increment( NOD node)
+void EVAL_break_increment( QLI_NOD node)
 {
 /**************************************
  *
@@ -267,14 +267,14 @@ void EVAL_break_increment( NOD node)
 		else {
 			desc1->dsc_missing = FALSE;
 			MOVQ_move(desc2, desc1);
-			node->nod_arg[e_stt_default] = (NOD) (SLONG) count;
+			node->nod_arg[e_stt_default] = (QLI_NOD) (SLONG) count;
 		}
 		return;
 	}
 	else if (desc2->dsc_missing)
 		return;
 
-	node->nod_arg[e_stt_default] = (NOD) (SLONG) count;
+	node->nod_arg[e_stt_default] = (QLI_NOD) (SLONG) count;
 	desc1->dsc_missing = FALSE;
 
 /* Finish off as per operator */
@@ -301,7 +301,7 @@ void EVAL_break_increment( NOD node)
 }
 
 
-void EVAL_break_init( NOD node)
+void EVAL_break_init( QLI_NOD node)
 {
 /**************************************
  *
@@ -355,7 +355,7 @@ DSC *EVAL_parameter(PAR parameter)
 }
 
 
-DSC *EVAL_value(NOD node)
+DSC *EVAL_value(QLI_NOD node)
 {
 /**************************************
  *
@@ -367,7 +367,7 @@ DSC *EVAL_value(NOD node)
  *	Evaluate a value node.
  *
  **************************************/
-	NOD *ptr, *end_ptr;
+	QLI_NOD *ptr, *end_ptr;
 	FLD field;
 	DSC *values[4], **value, *desc, *desc2;
 	UCHAR *p;
@@ -576,7 +576,7 @@ DSC *EVAL_value(NOD node)
 }
 
 
-static SLONG execute_any( NOD node)
+static SLONG execute_any( QLI_NOD node)
 {
 /**************************************
  *
@@ -610,7 +610,7 @@ static SLONG execute_any( NOD node)
 }
 
 
-static DSC *execute_concatenate( NOD node, DSC * value1, DSC * value2)
+static DSC *execute_concatenate( QLI_NOD node, DSC * value1, DSC * value2)
 {
 /**************************************
  *
@@ -651,7 +651,7 @@ static DSC *execute_concatenate( NOD node, DSC * value1, DSC * value2)
 }
 
 
-static DSC *execute_edit( NOD node)
+static DSC *execute_edit( QLI_NOD node)
 {
 /**************************************
  *
@@ -700,7 +700,7 @@ static DSC *execute_edit( NOD node)
 }
 
 
-static DSC *execute_function( NOD node)
+static DSC *execute_function( QLI_NOD node)
 {
 /**************************************
  *
@@ -728,7 +728,7 @@ static DSC *execute_function( NOD node)
 }
 
 
-static DSC *execute_prompt( NOD node)
+static DSC *execute_prompt( QLI_NOD node)
 {
 /**************************************
  *
@@ -812,7 +812,7 @@ static DSC *execute_prompt( NOD node)
 }
 
 
-static DSC *execute_statistical( NOD node)
+static DSC *execute_statistical( QLI_NOD node)
 {
 /**************************************
  *
@@ -1059,7 +1059,7 @@ static int matches(
 }
 
 
-static int sleuth( NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
+static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 {
 /**************************************
  *
@@ -1471,7 +1471,7 @@ static int sleuth_merge(
 }
 
 
-static int string_boolean( NOD node)
+static int string_boolean( QLI_NOD node)
 {
 /**************************************
  *
@@ -1552,7 +1552,7 @@ static int string_boolean( NOD node)
 
 
 static int string_function(
-						   NOD node,
+						   QLI_NOD node,
 						   SSHORT l1, TEXT * p1, SSHORT l2, TEXT * p2)
 {
 /**************************************

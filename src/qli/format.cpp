@@ -53,11 +53,11 @@ extern USHORT QLI_hex_output;
 #endif
 
 static int decompose_header(SCHAR *, SCHAR **, SSHORT *);
-static void format_index(ITM, NOD, USHORT);
+static void format_index(ITM, QLI_NOD, USHORT);
 static TEXT *format_report(VEC, USHORT, USHORT *);
 static void format_value(ITM, int);
 static TEXT *get_buffer(STR *, TEXT *, USHORT);
-static int match_expr(NOD, NOD);
+static int match_expr(QLI_NOD, QLI_NOD);
 static void print_blobs(PRT, ITM *, ITM *);
 #ifdef JPN_EUC
 static int print_line(ITM, TEXT **, USHORT *);
@@ -67,7 +67,7 @@ static int print_line(ITM, TEXT **);
 static void put_line(PRT, TEXT **, TEXT *, TEXT);
 static void report_break(BRK, VEC *, int);
 static void report_item(ITM, VEC *, USHORT *);
-static void report_line(NOD, VEC *);
+static void report_line(QLI_NOD, VEC *);
 
 static STR fmt_buffer, blob_buffer;
 
@@ -89,7 +89,7 @@ ERRQ_exit(FINI_ERROR);
 #endif
 
 
-int FMT_expression( NOD node)
+int FMT_expression( QLI_NOD node)
 {
 /**************************************
  *
@@ -103,12 +103,12 @@ int FMT_expression( NOD node)
  *
  **************************************/
 	PIC picture;
-	NOD sub;
+	QLI_NOD sub;
 	FLD field;
 
 	sub = node->nod_arg[e_fmt_value];
 	picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
-	node->nod_arg[e_fmt_picture] = (NOD) picture;
+	node->nod_arg[e_fmt_picture] = (QLI_NOD) picture;
 
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
@@ -136,7 +136,7 @@ TEXT *FMT_format(LLS stack)
  **************************************/
 	ITM item, item2;
 	STR header;
-	NOD value;
+	QLI_NOD value;
 	FLD field;
 	PIC picture;
 	SSHORT segment;
@@ -374,7 +374,7 @@ TEXT *FMT_format(LLS stack)
 }
 
 
-NOD FMT_list(NOD list)
+QLI_NOD FMT_list(QLI_NOD list)
 {
 /**************************************
  *
@@ -390,13 +390,13 @@ NOD FMT_list(NOD list)
 	SYM name;
 	FLD field;
 	CON constant;
-	NOD value, new_nod;
+	QLI_NOD value, new_nod;
 	USHORT column, expression;
 	DSC *desc;
 	STR header;
 	TEXT *p, *q, c;
 
-	new_nod = (NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
+	new_nod = (QLI_NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
 	new_nod->nod_type = nod_list;
 	new_ptr = (ITM *) new_nod->nod_arg;
 	column = 0;
@@ -425,7 +425,7 @@ NOD FMT_list(NOD list)
 			expression = TRUE;
 		*new_ptr++ = new_item = (ITM) ALLOCD(type_itm);
 		new_item->itm_type = item_value;
-		new_item->itm_value = value = (NOD) ALLOCDV(type_nod, 0);
+		new_item->itm_value = value = (QLI_NOD) ALLOCDV(type_nod, 0);
 		value->nod_type = nod_constant;
 		value->nod_flags |= NOD_local;
 		value->nod_desc.dsc_dtype = dtype_text;
@@ -487,7 +487,7 @@ NOD FMT_list(NOD list)
 }
 
 
-void FMT_print( NOD list, PRT print)
+void FMT_print( QLI_NOD list, PRT print)
 {
 /**************************************
  *
@@ -503,7 +503,7 @@ void FMT_print( NOD list, PRT print)
 	USHORT l, do_line;
 	DSC *desc;
 	TEXT *p, *q, *buffer, *pp;
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 	RPT report;
 	BRK control;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -727,7 +727,7 @@ void FMT_report( RPT report)
  *
  **************************************/
 	BRK control;
-	NOD list;
+	QLI_NOD list;
 	USHORT lengths[16], n, i, max_segment, column, width, max_offset;
 	TEXT *segments[16], *p, *q, *end;
 	STR string;
@@ -828,7 +828,7 @@ static int decompose_header(
 }
 
 
-static void format_index( ITM item, NOD field, USHORT print_flag)
+static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
 {
 /**************************************
  *
@@ -840,7 +840,7 @@ static void format_index( ITM item, NOD field, USHORT print_flag)
  *	Format the label of a subscripted item.
  *
  **************************************/
-	NOD args, *ptr, *end, subscript;
+	QLI_NOD args, *ptr, *end, subscript;
 	USHORT l, length;
 	TEXT s[32], *p, *q, *r;
 	STR str;
@@ -931,7 +931,7 @@ static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
  **************************************/
 	ITM item, item2;
 	STR header;
-	NOD node;
+	QLI_NOD node;
 	FLD field;
 	PIC picture;
 	SSHORT segment;
@@ -1137,7 +1137,7 @@ static void format_value( ITM item, int flags)
  * Functional description
  *
  **************************************/
-	NOD node;
+	QLI_NOD node;
 	DSC *desc;
 	PIC picture;
 	FLD field;
@@ -1225,7 +1225,7 @@ static TEXT *get_buffer( STR * str, TEXT * ptr, USHORT length)
 }
 
 
-static int match_expr( NOD node1, NOD node2)
+static int match_expr( QLI_NOD node1, QLI_NOD node2)
 {
 /**************************************
  *
@@ -1237,7 +1237,7 @@ static int match_expr( NOD node1, NOD node2)
  *	Compare two nodes for equality of value.
  *
  **************************************/
-	NOD *ptr1, *ptr2, *end;
+	QLI_NOD *ptr1, *ptr2, *end;
 	USHORT l;
 	TEXT *p1, *p2;
 
@@ -1612,13 +1612,13 @@ static void report_break( BRK control, VEC * columns_vec, int bottom_flag)
 		if (control->brk_next)
 			report_break(control->brk_next, columns_vec, bottom_flag);
 		if (control->brk_line)
-			report_line((NOD) control->brk_line, columns_vec);
+			report_line((QLI_NOD) control->brk_line, columns_vec);
 		return;
 	}
 
 	for (; control; control = control->brk_next)
 		if (control->brk_line)
-			report_line((NOD) control->brk_line, columns_vec);
+			report_line((QLI_NOD) control->brk_line, columns_vec);
 }
 
 
@@ -1638,7 +1638,7 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 	ITM item2;
 	VEC columns;
 	LLS *col, *col_end, temp;
-	NOD node;
+	QLI_NOD node;
 	USHORT new_index;
 
 	if (item->itm_query_header && *item->itm_query_header == '-')
@@ -1681,7 +1681,7 @@ static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 }
 
 
-static void report_line( NOD list, VEC * columns_vec)
+static void report_line( QLI_NOD list, VEC * columns_vec)
 {
 /**************************************
  *

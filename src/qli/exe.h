@@ -193,7 +193,7 @@ typedef struct nod {
     SSHORT	nod_count;		/* Number of arguments */
     UCHAR	nod_flags;
     struct nod	*nod_arg[1];
-} *NOD;
+} *QLI_NOD;
 
 #define NOD_local	1		/* locally computed expression */
 #define NOD_remote	2

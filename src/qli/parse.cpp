@@ -3662,7 +3662,7 @@ static SYN parse_report(void)
 		switch (next_keyword()) {
 		case KW_PRINT:
 			PAR_token();
-			report->rpt_detail_line = (NOD) parse_print_list();
+			report->rpt_detail_line = (QLI_NOD) parse_print_list();
 			break;
 
 		case KW_AT:

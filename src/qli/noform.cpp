@@ -48,7 +48,7 @@ FRM FORM_default_form(DBB database, TEXT * string)
 }
 
 
-void FORM_display( NOD node)
+void FORM_display( QLI_NOD node)
 {
 /**************************************
  *
@@ -119,7 +119,7 @@ void FORM_finish( DBB database)
 }
 
 
-int FORM_get_blob( NOD value, PAR parameter)
+int FORM_get_blob( QLI_NOD value, PAR parameter)
 {
 /**************************************
  *
@@ -146,7 +146,7 @@ int FORM_get_blob( NOD value, PAR parameter)
 }
 
 
-DSC *FORM_get_field(NOD node)
+DSC *FORM_get_field(QLI_NOD node)
 {
 /**************************************
  *
@@ -208,7 +208,7 @@ FFL FORM_lookup_field(FRM form, TEXT * string)
 }
 
 
-int FORM_put_field( NOD from, NOD node)
+int FORM_put_field( QLI_NOD from, QLI_NOD node)
 {
 /**************************************
  *
@@ -247,7 +247,7 @@ void FORM_reset(void)
 }
 
 
-void FORM_update( NOD node)
+void FORM_update( QLI_NOD node)
 {
 /**************************************
  *
@@ -259,7 +259,7 @@ void FORM_update( NOD node)
  *	Execute "form update".
  *
  **************************************/
-	NOD list;
+	QLI_NOD list;
 	FRM form;
 	FFL *ptr, *end, field;
 	DSC *desc;

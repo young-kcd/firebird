@@ -30,7 +30,7 @@ BLKDEF (type_rel, rel, 0)
 BLKDEF (type_fld, fld, 1)
 BLKDEF (type_vcl, vcl, sizeof (((VCL) 0)->vcl_long[0]))
 BLKDEF (type_req, req, 0)				/* Request block */
-BLKDEF (type_nod, nod, sizeof (((NOD) 0)->nod_arg[0]))
+BLKDEF (type_nod, nod, sizeof (((QLI_NOD) 0)->nod_arg[0]))
 BLKDEF (type_syn, nod, sizeof (((SYN) 0)->syn_arg[0]))
 BLKDEF (type_lls, lls, 0)				/* linked list stack */
 BLKDEF (type_str, str, 1)				/* random string block */

@@ -63,22 +63,22 @@ extern jmp_buf QLI_env;
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
 
-static DSC *assignment(NOD, DSC *, NOD, NOD, PAR);
-static void commit_retaining(NOD);
-static int copy_blob(NOD, PAR);
+static DSC *assignment(QLI_NOD, DSC *, QLI_NOD, QLI_NOD, PAR);
+static void commit_retaining(QLI_NOD);
+static int copy_blob(QLI_NOD, PAR);
 static void db_error(REQ, STATUS *);
-static void execute_abort(NOD);
-static void execute_assignment(NOD);
-static void execute_for(NOD);
-static void execute_modify(NOD);
-static void execute_output(NOD);
-static void execute_print(NOD);
-static void execute_repeat(NOD);
-static void execute_store(NOD);
+static void execute_abort(QLI_NOD);
+static void execute_assignment(QLI_NOD);
+static void execute_for(QLI_NOD);
+static void execute_modify(QLI_NOD);
+static void execute_output(QLI_NOD);
+static void execute_print(QLI_NOD);
+static void execute_repeat(QLI_NOD);
+static void execute_store(QLI_NOD);
 static void map_data(MSG);
 static void print_counts(REQ);
 static void set_null(MSG);
-static void transaction_state(NOD, DBB);
+static void transaction_state(QLI_NOD, DBB);
 
 /* definitions for SET COUNT */
 
@@ -117,7 +117,7 @@ void EXEC_abort(void)
 }
 
 
-void EXEC_execute( NOD node)
+void EXEC_execute( QLI_NOD node)
 {
 /**************************************
  *
@@ -130,7 +130,7 @@ void EXEC_execute( NOD node)
  *
  **************************************/
 	MSG message;
-	NOD *ptr;
+	QLI_NOD *ptr;
 	USHORT i;
 
 	if (QLI_abort)
@@ -213,7 +213,7 @@ void EXEC_execute( NOD node)
 }
 
 
-void *EXEC_open_blob( NOD node)
+void *EXEC_open_blob( QLI_NOD node)
 {
 /**************************************
  *
@@ -287,7 +287,7 @@ void *EXEC_open_blob( NOD node)
 }
 
 
-struct file *EXEC_open_output(NOD node)
+struct file *EXEC_open_output(QLI_NOD node)
 {
 /**************************************
  *
@@ -487,7 +487,7 @@ void EXEC_start_request( REQ request, MSG message)
 }
 
 
-void EXEC_top( NOD node)
+void EXEC_top( QLI_NOD node)
 {
 /**************************************
  *
@@ -504,10 +504,10 @@ void EXEC_top( NOD node)
 }
 
 
-static DSC *assignment(	NOD		from_node,
+static DSC *assignment(	QLI_NOD		from_node,
 						DSC*	to_desc,
-						NOD		validation,
-						NOD		initial,
+						QLI_NOD		validation,
+						QLI_NOD		initial,
 						PAR		parameter)
 {
 /**************************************
@@ -592,7 +592,7 @@ static DSC *assignment(	NOD		from_node,
 }
 
 
-static void commit_retaining( NOD node)
+static void commit_retaining( QLI_NOD node)
 {
 /**************************************
  *
@@ -608,7 +608,7 @@ static void commit_retaining( NOD node)
  **************************************/
 	DBB database;
 	STATUS status[ISC_STATUS_LENGTH];
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 
 /* If there aren't any open databases then obviously
    there isn't anything to commit. */
@@ -661,7 +661,7 @@ static void commit_retaining( NOD node)
 
 
 
-static int copy_blob( NOD value, PAR parameter)
+static int copy_blob( QLI_NOD value, PAR parameter)
 {
 /**************************************
  *
@@ -680,7 +680,7 @@ static int copy_blob( NOD value, PAR parameter)
 	REQ from_request, to_request;
 	DBB to_dbb, from_dbb;
 	DSC *from_desc, *to_desc;
-	NOD field;
+	QLI_NOD field;
 	SLONG *from_blob, *to_blob, size, segment_count, max_segment;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length, length, buffer_length;
@@ -836,7 +836,7 @@ static void db_error( REQ request, STATUS * status_vector)
 }
 
 
-static void execute_abort( NOD node)
+static void execute_abort( QLI_NOD node)
 {
 /**************************************
  *
@@ -863,7 +863,7 @@ static void execute_abort( NOD node)
 }
 
 
-static void execute_assignment( NOD node)
+static void execute_assignment( QLI_NOD node)
 {
 /**************************************
  *
@@ -874,7 +874,7 @@ static void execute_assignment( NOD node)
  * Functional description
  *
  **************************************/
-	NOD to, from, reference, initial;
+	QLI_NOD to, from, reference, initial;
 	FLD field;
 	PAR parameter;
 
@@ -917,7 +917,7 @@ static void execute_assignment( NOD node)
 }
 
 
-static void execute_for( NOD node)
+static void execute_for( QLI_NOD node)
 {
 /**************************************
  *
@@ -968,7 +968,7 @@ static void execute_for( NOD node)
 }
 
 
-static void execute_modify( NOD node)
+static void execute_modify( QLI_NOD node)
 {
 /**************************************
  *
@@ -997,7 +997,7 @@ static void execute_modify( NOD node)
 }
 
 
-static void execute_output( NOD node)
+static void execute_output( QLI_NOD node)
 {
 /**************************************
  *
@@ -1040,7 +1040,7 @@ static void execute_output( NOD node)
 }
 
 
-static void execute_print( NOD node)
+static void execute_print( QLI_NOD node)
 {
 /**************************************
  *
@@ -1063,7 +1063,7 @@ static void execute_print( NOD node)
 }
 
 
-static void execute_repeat( NOD node)
+static void execute_repeat( QLI_NOD node)
 {
 /**************************************
  *
@@ -1084,7 +1084,7 @@ static void execute_repeat( NOD node)
 }
 
 
-static void execute_store( NOD node)
+static void execute_store( QLI_NOD node)
 {
 /**************************************
  *
@@ -1135,7 +1135,7 @@ static void map_data( MSG message)
  *
  **************************************/
 	PAR parameter, missing_parameter;
-	NOD from;
+	QLI_NOD from;
 	DSC *desc;
 	USHORT *missing_flag;
 
@@ -1234,7 +1234,7 @@ static void set_null( MSG message)
  *
  **************************************/
 	PAR parameter;
-	NOD from;
+	QLI_NOD from;
 	DSC *desc;
 	UCHAR *p;
 
@@ -1252,7 +1252,7 @@ static void set_null( MSG message)
 
 
 
-static void transaction_state( NOD node, DBB database)
+static void transaction_state( QLI_NOD node, DBB database)
 {
 /**************************************
  *

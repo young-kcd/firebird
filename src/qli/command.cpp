@@ -192,7 +192,7 @@ void CMD_extract( SYN node)
 	IB_FILE *file;
 	int *blob;
 
-	file = (IB_FILE*) EXEC_open_output((NOD) node->syn_arg[1]);
+	file = (IB_FILE*) EXEC_open_output((QLI_NOD) node->syn_arg[1]);
 
 	if (list = node->syn_arg[0])
 		for (ptr = list->syn_arg, end = ptr + list->syn_count; ptr < end;
@@ -219,7 +219,7 @@ void CMD_extract( SYN node)
 	}
 
 #ifdef WIN_NT
-	if (((NOD) node->syn_arg[1])->nod_arg[e_out_pipe])
+	if (((QLI_NOD) node->syn_arg[1])->nod_arg[e_out_pipe])
 		_pclose(file);
 	else
 #endif

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.5 2002-10-24 09:01:31 eku Exp $
+$Id: gener.cpp,v 1.6 2002-11-11 19:45:33 hippoman Exp $
 */
 
 #include "firebird.h"
@@ -44,37 +44,37 @@ $Id: gener.cpp,v 1.5 2002-10-24 09:01:31 eku Exp $
 static void explain(UCHAR *);
 static void explain_index_tree(SSHORT, TEXT *, SCHAR **, SSHORT *);
 static void explain_printf(SSHORT, TEXT *, TEXT *);
-static void gen_any(NOD, REQ);
-static void gen_assignment(NOD, REQ);
+static void gen_any(QLI_NOD, REQ);
+static void gen_assignment(QLI_NOD, REQ);
 static void gen_control_break(BRK, REQ);
 static void gen_compile(REQ);
 static void gen_descriptor(DSC *, REQ);
-static void gen_erase(NOD, REQ);
-static void gen_expression(NOD, REQ);
-static void gen_field(NOD, REQ);
-static void gen_for(NOD, REQ);
-static void gen_function(NOD, REQ);
-static void gen_if(NOD, REQ);
+static void gen_erase(QLI_NOD, REQ);
+static void gen_expression(QLI_NOD, REQ);
+static void gen_field(QLI_NOD, REQ);
+static void gen_for(QLI_NOD, REQ);
+static void gen_function(QLI_NOD, REQ);
+static void gen_if(QLI_NOD, REQ);
 static void gen_literal(DSC *, REQ);
 static void gen_map(MAP, REQ);
-static void gen_modify(NOD, REQ);
+static void gen_modify(QLI_NOD, REQ);
 static void gen_parameter(PAR, REQ);
-static void gen_print_list(NOD, REQ);
-static void gen_report(NOD, REQ);
+static void gen_print_list(QLI_NOD, REQ);
+static void gen_report(QLI_NOD, REQ);
 static void gen_request(REQ);
-static void gen_rse(NOD, REQ);
+static void gen_rse(QLI_NOD, REQ);
 static void gen_send_receive(MSG, USHORT);
-static void gen_sort(NOD, REQ, UCHAR);
-static void gen_statement(NOD, REQ);
-static void gen_statistical(NOD, REQ);
-static void gen_store(NOD, REQ);
+static void gen_sort(QLI_NOD, REQ, UCHAR);
+static void gen_statement(QLI_NOD, REQ);
+static void gen_statistical(QLI_NOD, REQ);
+static void gen_store(QLI_NOD, REQ);
 
 #ifdef DEV_BUILD
 static SCHAR explain_info[] = { gds_info_access_path };
 #endif
 
 
-NOD GEN_generate( NOD node)
+QLI_NOD GEN_generate( QLI_NOD node)
 {
 /**************************************
  *
@@ -453,7 +453,7 @@ static void explain_printf( SSHORT level, TEXT * control, TEXT * string)
 #endif
 
 
-static void gen_any( NOD node, REQ request)
+static void gen_any( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -513,7 +513,7 @@ static void gen_any( NOD node, REQ request)
 }
 
 
-static void gen_assignment( NOD node, REQ request)
+static void gen_assignment( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -525,7 +525,7 @@ static void gen_assignment( NOD node, REQ request)
  *	Generate an assignment statement.
  *
  **************************************/
-	NOD target, from, reference, validation;
+	QLI_NOD target, from, reference, validation;
 	RLB rlb;
 
 	from = node->nod_arg[e_asn_from];
@@ -577,9 +577,9 @@ static void gen_control_break( BRK control, REQ request)
 
 	for (; control; control = control->brk_next) {
 		if (control->brk_field)
-			gen_expression((NOD) control->brk_field, request);
+			gen_expression((QLI_NOD) control->brk_field, request);
 		if (control->brk_line)
-			gen_print_list((NOD) control->brk_line, request);
+			gen_print_list((QLI_NOD) control->brk_line, request);
 	}
 }
 
@@ -737,7 +737,7 @@ static void gen_descriptor( DSC * desc, REQ request)
 }
 
 
-static void gen_erase( NOD node, REQ request)
+static void gen_erase( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -765,7 +765,7 @@ static void gen_erase( NOD node, REQ request)
 }
 
 
-static void gen_expression( NOD node, REQ request)
+static void gen_expression( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -777,7 +777,7 @@ static void gen_expression( NOD node, REQ request)
  *	Generate the BLR for a boolean or value expression.
  *
  **************************************/
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 	FLD field;
 	CTX context;
 	MAP map;
@@ -998,7 +998,7 @@ static void gen_expression( NOD node, REQ request)
 }
 
 
-static void gen_field( NOD node, REQ request)
+static void gen_field( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1015,7 +1015,7 @@ static void gen_field( NOD node, REQ request)
 	FLD field;
 	CTX context;
 	RLB rlb;
-	NOD args, *ptr, *end;
+	QLI_NOD args, *ptr, *end;
 
 /* If there isn't a request specified, this is a reference. */
 
@@ -1052,7 +1052,7 @@ static void gen_field( NOD node, REQ request)
 }
 
 
-static void gen_for( NOD node, REQ request)
+static void gen_for( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1068,7 +1068,7 @@ static void gen_for( NOD node, REQ request)
 	PAR parameter, eof;
 	DSC desc;
 	STR string;
-	NOD sub, *ptr, *end;
+	QLI_NOD sub, *ptr, *end;
 	RPT report;
 	USHORT value, label;
 	RLB rlb;
@@ -1171,7 +1171,7 @@ static void gen_for( NOD node, REQ request)
 }
 
 
-static void gen_function( NOD node, REQ request)
+static void gen_function( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1184,7 +1184,7 @@ static void gen_function( NOD node, REQ request)
  *
  **************************************/
 	REQ new_request;
-	NOD args, *ptr, *end;
+	QLI_NOD args, *ptr, *end;
 	FUN function;
 	SYM symbol;
 	CTX context;
@@ -1237,7 +1237,7 @@ static void gen_function( NOD node, REQ request)
 }
 
 
-static void gen_if( NOD node, REQ request)
+static void gen_if( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1372,7 +1372,7 @@ static void gen_map( MAP map, REQ request)
 }
 
 
-static void gen_modify( NOD node, REQ org_request)
+static void gen_modify( QLI_NOD node, REQ org_request)
 {
 /**************************************
  *
@@ -1385,7 +1385,7 @@ static void gen_modify( NOD node, REQ org_request)
  *
  **************************************/
 	REQ request;
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 	CTX context;
 	RLB rlb;
 
@@ -1442,7 +1442,7 @@ static void gen_parameter( PAR parameter, REQ request)
 }
 
 
-static void gen_print_list( NOD list, REQ request)
+static void gen_print_list( QLI_NOD list, REQ request)
 {
 /**************************************
  *
@@ -1455,7 +1455,7 @@ static void gen_print_list( NOD list, REQ request)
  *
  **************************************/
 	ITM item;
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++) {
 		item = (ITM) * ptr;
@@ -1465,7 +1465,7 @@ static void gen_print_list( NOD list, REQ request)
 }
 
 
-static void gen_report( NOD node, REQ request)
+static void gen_report( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1479,7 +1479,7 @@ static void gen_report( NOD node, REQ request)
  **************************************/
 	RPT report;
 	BRK control;
-	NOD list;
+	QLI_NOD list;
 
 	report = (RPT) node->nod_arg[e_prt_list];
 
@@ -1560,7 +1560,7 @@ static void gen_request( REQ request)
 }
 
 
-static void gen_rse( NOD node, REQ request)
+static void gen_rse( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1572,7 +1572,7 @@ static void gen_rse( NOD node, REQ request)
  *	Generate a record selection expression.
  *
  **************************************/
-	NOD list, *ptr, *end;
+	QLI_NOD list, *ptr, *end;
 	CTX context;
 	REL relation;
 	USHORT i;
@@ -1687,7 +1687,7 @@ static void gen_send_receive( MSG message, USHORT operatr)
 }
 
 
-static void gen_sort( NOD node, REQ request, UCHAR operatr)
+static void gen_sort( QLI_NOD node, REQ request, UCHAR operatr)
 {
 /**************************************
  *
@@ -1699,7 +1699,7 @@ static void gen_sort( NOD node, REQ request, UCHAR operatr)
  *	Generate sort or reduced clause.
  *
  **************************************/
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 	RLB rlb;
 
 	rlb = CHECK_RLB(request->req_blr);
@@ -1718,7 +1718,7 @@ static void gen_sort( NOD node, REQ request, UCHAR operatr)
 }
 
 
-static void gen_statement( NOD node, REQ request)
+static void gen_statement( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1730,7 +1730,7 @@ static void gen_statement( NOD node, REQ request)
  *	Generate BLR for statement.
  *
  **************************************/
-	NOD *ptr, *end;
+	QLI_NOD *ptr, *end;
 	RLB rlb;
 
 	if (request)
@@ -1807,7 +1807,7 @@ static void gen_statement( NOD node, REQ request)
 }
 
 
-static void gen_statistical( NOD node, REQ request)
+static void gen_statistical( QLI_NOD node, REQ request)
 {
 /**************************************
  *
@@ -1918,7 +1918,7 @@ if (node->nod_arg [e_stt_value])
 }
 
 
-static void gen_store( NOD node, REQ request)
+static void gen_store( QLI_NOD node, REQ request)
 {
 /**************************************
  *

@@ -44,7 +44,7 @@ static void top_of_page(PRT, BOOLEAN);
 #define SWAP(a,b)	{temp = a; a = b; b = temp;}
 
 
-void RPT_report( NOD loop)
+void RPT_report( QLI_NOD loop)
 {
 /**************************************
  *
@@ -60,7 +60,7 @@ void RPT_report( NOD loop)
  *
  **************************************/
 	RPT report;
-	NOD node, output;
+	QLI_NOD node, output;
 	REQ request;
 	MSG message;
 	DSC *desc;
@@ -108,7 +108,7 @@ void RPT_report( NOD loop)
 			  (SLONG) message->msg_length);
 
 	if (control = report->rpt_top_rpt)
-		FMT_print((NOD) control->brk_line, print);
+		FMT_print((QLI_NOD) control->brk_line, print);
 
 	top_of_page(print, TRUE);
 
@@ -119,7 +119,7 @@ void RPT_report( NOD loop)
 /* Force TOP breaks for all fields */
 
 	for (control = report->rpt_top_breaks; control;
-		 control = control->brk_next) FMT_print((NOD) control->brk_line, print);
+		 control = control->brk_next) FMT_print((QLI_NOD) control->brk_line, print);
 
 	for (;;) {
 		/* Check for bottom breaks.  If we find one, force all lower breaks. */
@@ -170,7 +170,7 @@ void RPT_report( NOD loop)
 	bottom_break(report->rpt_bottom_rpt, print);
 
 	if (control = report->rpt_bottom_page)
-		FMT_print((NOD) control->brk_line, print);
+		FMT_print((QLI_NOD) control->brk_line, print);
 }
 
 
@@ -195,9 +195,9 @@ static void bottom_break( BRK control, PRT print)
 		bottom_break(control->brk_next, print);
 
 	for (stack = control->brk_statisticals; stack; stack = stack->lls_next)
-		EVAL_break_compute((NOD) stack->lls_object);
+		EVAL_break_compute((QLI_NOD) stack->lls_object);
 
-	FMT_print((NOD) control->brk_line, print);
+	FMT_print((QLI_NOD) control->brk_line, print);
 }
 
 
@@ -217,7 +217,7 @@ static void increment_break( BRK control)
 
 	for (; control; control = control->brk_next)
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_increment((NOD) stack->lls_object);
+			 stack = stack->lls_next) EVAL_break_increment((QLI_NOD) stack->lls_object);
 }
 
 
@@ -237,7 +237,7 @@ static void initialize_break( BRK control)
 
 	for (; control; control = control->brk_next)
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_init((NOD) stack->lls_object);
+			 stack = stack->lls_next) EVAL_break_init((QLI_NOD) stack->lls_object);
 }
 
 
@@ -259,13 +259,13 @@ static int test_break( BRK control, RPT report, MSG message)
 
 /* Evaluate the two versions of the expression */
 
-	if (ptr1 = EVAL_value((NOD) control->brk_field))
+	if (ptr1 = EVAL_value((QLI_NOD) control->brk_field))
 		desc1 = *ptr1;
 
 	p1 = message->msg_buffer;
 	message->msg_buffer = report->rpt_buffer;
 
-	if (ptr2 = EVAL_value((NOD) control->brk_field))
+	if (ptr2 = EVAL_value((QLI_NOD) control->brk_field))
 		desc2 = *ptr2;
 
 	message->msg_buffer = p1;
@@ -311,8 +311,8 @@ static void top_break( BRK control, PRT print)
 
 	for (; control; control = control->brk_next) {
 		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_compute((NOD) stack->lls_object);
-		FMT_print((NOD) control->brk_line, print);
+			 stack = stack->lls_next) EVAL_break_compute((QLI_NOD) stack->lls_object);
+		FMT_print((QLI_NOD) control->brk_line, print);
 	}
 }
 
@@ -337,14 +337,14 @@ static void top_of_page( PRT print, BOOLEAN first_flag)
 
 	if (!first_flag) {
 		if (control = report->rpt_bottom_page)
-			FMT_print((NOD) control->brk_line, print);
+			FMT_print((QLI_NOD) control->brk_line, print);
 		FMT_put("\f", print);
 	}
 
 	print->prt_lines_remaining = print->prt_lines_per_page;
 
 	if (control = report->rpt_top_page)
-		FMT_print((NOD) control->brk_line, print);
+		FMT_print((QLI_NOD) control->brk_line, print);
 	else if (report->rpt_column_header) {
 		if (report->rpt_header)
 			FMT_put(report->rpt_header, print);
