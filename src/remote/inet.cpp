@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.56 2003-03-01 19:11:32 brodsom Exp $
+$Id: inet.cpp,v 1.57 2003-03-03 08:37:54 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -322,7 +322,9 @@ typedef struct slct
 } SLCT;
 
 static int		accept_connection(PORT, P_CNCT *);
+#ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
+#endif
 static PORT		alloc_port(PORT);
 static PORT		aux_connect(PORT, PACKET *, XDR_INT(*)(void));
 static PORT		aux_request(PORT, PACKET *);
@@ -2875,7 +2877,7 @@ static bool_t xdrinet_endofrecord( XDR * xdrs, bool_t flushnow)
 
 	return inet_write(xdrs, flushnow);
 }
-
+#ifdef HAVE_SETITIMER
 static void alarm_handler( int x)
 {
 /**************************************
@@ -2890,7 +2892,7 @@ static void alarm_handler( int x)
  *
  **************************************/
 }
-
+#endif
 static XDR_INT inet_destroy( XDR * xdrs)
 {
 /**************************************
