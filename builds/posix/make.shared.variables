@@ -33,7 +33,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		cch.cpp cmp.cpp cvt2.cpp db_alias.cpp \
 		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
-		event.cpp evl.cpp exe.cpp ext.cpp rpb_chain.cpp \
+		event.cpp evl.cpp exe.cpp ext.cpp \
 		ExecuteStatement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
 		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp  \
