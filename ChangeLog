@@ -1,3 +1,42 @@
+2003-04-28 20:24  skidder
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj,
+	engine_classic.vcproj, engine_embed.vcproj:
+	
+	Update MSVC7 makefiles to reflect rpb_chain changes
+
+2003-04-28 18:44  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Rehabilitation day. Yet another bugfix for my old mistakes.
+	Arrrgh!!!
+
+2003-04-28 09:41  dimitr
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Damn, what I was thinking about that time?
+
+2003-04-26 12:09  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Use the same pool for array and it's elements
+
+2003-04-26 12:08  alexpeshkoff
+
+	* firebird2/src/common/classes/array.h:
+	
+	Don't execute any constructors / destructors for elements of class
+	T
+
+2003-04-26 11:36  alexpeshkoff
+
+	* firebird2/src/jrd/rpb_chain.h:
+	
+	Fixed g++ warning
+
 2003-04-25 19:15  alexpeshkoff
 
 	* firebird2/src/jrd/exe.cpp:
