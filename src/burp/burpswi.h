@@ -36,54 +36,54 @@
 
 /* Local variables */
 
-#define IN_SW_BURP_0         0       /* the unknowable switch */
-#define IN_SW_BURP_B         1       /* backup */
-#define IN_SW_BURP_C         2       /* create_database */
-#define IN_SW_BURP_F         3       /* file names and starting page */
-#define IN_SW_BURP_M         4       /* backup only metadata */
-#define IN_SW_BURP_N         5       /* do not restore validity conditions */
-#define IN_SW_BURP_P         6       /* specify output page size */
-#define IN_SW_BURP_R         7       /* replace existing database */
-#define IN_SW_BURP_U         9       /* don't back up security information */
-#define IN_SW_BURP_V         10      /* verify actions */
-#define IN_SW_BURP_Z         11      /* print version number */
-/*#define IN_SW_BURP_D         12      * backup file on tape - APOLLO only */
-#define IN_SW_BURP_E         13      /* expand (no compress) */
-#define IN_SW_BURP_Y         14      /* redirect/suppress status and error output */
-#define IN_SW_BURP_L         15      /* ignore limbo transactions */
-#define IN_SW_BURP_T         16      /* build a 'transportable' backup (V4 default) */
-#define IN_SW_BURP_O         17      /* commit after each relation */
-#define IN_SW_BURP_I         18      /* deactivate indexes */
-#define IN_SW_BURP_K         19      /* kill any shadows defined on database*/
-#define IN_SW_BURP_G         20      /* inhibit garbage collection */
-#define IN_SW_BURP_IG        21      /* database is largely trash try anyway */
-#define IN_SW_BURP_FA        22      /* blocking factor */
-#define IN_SW_BURP_US        23      /* use all space on data page */
-#define IN_SW_BURP_OL        24      /* write RDB$DESCRIPTIONS & SOURCE in old manner */
-/*#define IN_SW_BURP_7         25      * force creation of an ODS 7 database */
-#define IN_SW_BURP_USER      26      /* default user name to use on attach */
-#define IN_SW_BURP_PASS      27      /* default password to use on attach */
-#define IN_SW_BURP_S         28      /* skip some number of bytes if find a bad attribute */
-#define IN_SW_BURP_NT        29      /* build a "non-transportable" backup (V3 default) */
-/*#define IN_SW_BURP_BUG8183   30      * use workaround to allow restore database
+const int IN_SW_BURP_0        = 0;       /* the unknowable switch */
+const int IN_SW_BURP_B        = 1;       /* backup */
+const int IN_SW_BURP_C        = 2;       /* create_database */
+const int IN_SW_BURP_F        = 3;       /* file names and starting page */
+const int IN_SW_BURP_M        = 4;       /* backup only metadata */
+const int IN_SW_BURP_N        = 5;       /* do not restore validity conditions */
+const int IN_SW_BURP_P        = 6;       /* specify output page size */
+const int IN_SW_BURP_R        = 7;       /* replace existing database */
+const int IN_SW_BURP_U        = 9;       /* don't back up security information */
+const int IN_SW_BURP_V        = 10;      /* verify actions */
+const int IN_SW_BURP_Z        = 11;      /* print version number */
+/*const int IN_SW_BURP_D        = 12;      * backup file on tape - APOLLO only */
+const int IN_SW_BURP_E        = 13;      /* expand (no compress) */
+const int IN_SW_BURP_Y        = 14;      /* redirect/suppress status and error output */
+const int IN_SW_BURP_L        = 15;      /* ignore limbo transactions */
+const int IN_SW_BURP_T        = 16;      /* build a 'transportable' backup (V4 default) */
+const int IN_SW_BURP_O        = 17;      /* commit after each relation */
+const int IN_SW_BURP_I        = 18;      /* deactivate indexes */
+const int IN_SW_BURP_K        = 19;      /* kill any shadows defined on database*/
+const int IN_SW_BURP_G        = 20;      /* inhibit garbage collection */
+const int IN_SW_BURP_IG       = 21;      /* database is largely trash try anyway */
+const int IN_SW_BURP_FA       = 22;      /* blocking factor */
+const int IN_SW_BURP_US       = 23;      /* use all space on data page */
+const int IN_SW_BURP_OL       = 24;      /* write RDB$DESCRIPTIONS & SOURCE in old manner */
+/*const int IN_SW_BURP_7        = 25;      * force creation of an ODS 7 database */
+const int IN_SW_BURP_USER     = 26;      /* default user name to use on attach */
+const int IN_SW_BURP_PASS     = 27;      /* default password to use on attach */
+const int IN_SW_BURP_S        = 28;      /* skip some number of bytes if find a bad attribute */
+const int IN_SW_BURP_NT       = 29;      /* build a "non-transportable" backup (V3 default) */
+/*const int IN_SW_BURP_BUG8183  = 30;      * use workaround to allow restore database
                                    v3.3 with comment field inside of index
                                    definition */
-#define IN_SW_BURP_ROLE      31      /* default SQL role to use on attach */
-#define IN_SW_BURP_CO        32      /* convert external tables to internal tables during backup */
-#define IN_SW_BURP_BU        33      /* specify page buffers for cache */
-#define IN_SW_BURP_SE        34      /* use services manager */
-#define IN_SW_BURP_MODE      35      /* database could be restored ReadOnly */
+const int IN_SW_BURP_ROLE     = 31;      /* default SQL role to use on attach */
+const int IN_SW_BURP_CO       = 32;      /* convert external tables to internal tables during backup */
+const int IN_SW_BURP_BU       = 33;      /* specify page buffers for cache */
+const int IN_SW_BURP_SE       = 34;      /* use services manager */
+const int IN_SW_BURP_MODE     = 35;      /* database could be restored ReadOnly */
 /**************************************************************************/
 /* The next two 'virtual' switches are hidden from user and are needed    */
 /* for services API                                                       */
 /**************************************************************************/
-#define IN_SW_BURP_HIDDEN_RDONLY	36
-#define	IN_SW_BURP_HIDDEN_RDWRITE	37
+const int IN_SW_BURP_HIDDEN_RDONLY	= 36;
+const int IN_SW_BURP_HIDDEN_RDWRITE	= 37;
 /**************************************************************************/
     /* used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX */
 
-#define BURP_SW_MODE_RO	"read_only"
-#define BURP_SW_MODE_RW	"read_write"
+static const char* BURP_SW_MODE_RO = "read_only";
+static const char* BURP_SW_MODE_RW = "read_write";
 
 
 static in_sw_tab_t burp_in_sw_table [] =

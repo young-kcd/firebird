@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.25 2003-09-12 09:04:38 robocop Exp $
+$Id: canonical.cpp,v 1.26 2003-09-18 21:56:26 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -78,7 +78,7 @@ static xdr_t::xdr_ops burp_ops =
 	burp_destroy
 };
 
-#define INCREMENT 1024
+const int INCREMENT = 1024;
 
 
 ULONG CAN_encode_decode(BURP_REL relation,
@@ -467,12 +467,12 @@ static bool_t expand_buffer( XDR * xdrs)
 	length = (xdrs->x_private - xdrs->x_base) + xdrs->x_handy + INCREMENT;
 	buffer->lstr_allocated = buffer->lstr_length = length;
 
-	caddr_t new_ = (caddr_t) BURP_ALLOC(length);
+	caddr_t new_ = (caddr_t) BURP_alloc(length);
 
 	for (p = new_, q = xdrs->x_base; q < xdrs->x_private; *p++ = *q++)
 		;
 
-	BURP_FREE(xdrs->x_base);
+	BURP_free(xdrs->x_base);
 
 	xdrs->x_base = new_;
 	xdrs->x_private = p;
@@ -687,12 +687,12 @@ static bool_t xdr_slice(XDR* xdrs,
 		if (slice->lstr_length > slice->lstr_allocated &&
 			slice->lstr_allocated)
 		{
-			BURP_FREE(slice->lstr_address);
+			BURP_free(slice->lstr_address);
 			slice->lstr_address = NULL;
 		}
 		if (!slice->lstr_address)
 		{
-			slice->lstr_address = BURP_ALLOC((SLONG) slice->lstr_length);
+			slice->lstr_address = BURP_alloc((SLONG) slice->lstr_length);
 			if (!slice->lstr_address) {
 				return FALSE;
 			}
@@ -702,7 +702,7 @@ static bool_t xdr_slice(XDR* xdrs,
 
 	case XDR_FREE:
 		if (slice->lstr_allocated)
-			BURP_FREE(slice->lstr_address);
+			BURP_free(slice->lstr_address);
 		slice->lstr_address = NULL;
 		slice->lstr_allocated = 0;
 		return TRUE;

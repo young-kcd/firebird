@@ -72,26 +72,24 @@
 #define	OPEN_MASK	((int) 0666)
 
 #ifdef VMS
-#define TERM_INPUT	"sys$input"
-#define TERM_OUTPUT	"sys$error"
-#endif
-
+const char* TERM_INPUT	= "sys$input";
+const char* TERM_OUTPUT	= "sys$error";
+#else
 #ifdef WIN_NT
-#define TERM_INPUT	"CONIN$"
-#define TERM_OUTPUT	"CONOUT$"
+const char* TERM_INPUT	= "CONIN$";
+const char* TERM_OUTPUT	= "CONOUT$";
+#else
+const char* TERM_INPUT	= "/dev/tty";
+const char* TERM_OUTPUT	= "/dev/tty";
+#endif
 #endif
 
-#ifndef TERM_INPUT
-#define TERM_INPUT	"/dev/tty"
-#define TERM_OUTPUT	"/dev/tty"
-#endif
-
-#define MAX_HEADER_SIZE		512
+const int MAX_HEADER_SIZE	= 512;
 
 #define BITS_ON(word,bits)	((bits) == ((word)&(bits)))
 
 #define GET()				(--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255)
-#define GET_ATTRIBUTE(att)		((att) = (ATT_TYPE) GET())
+#define GET_ATTRIBUTE(att)		((att) = (att_type) GET())
 
 #define PUT(c)				--(tdgbl->mvol_io_cnt); *(tdgbl->mvol_io_ptr)++ = (UCHAR) (c)
 #define PUT_NUMERIC(attribute, value)	put_numeric ((attribute), (value))
@@ -134,7 +132,7 @@ UINT64 MVOL_fini_read()
 	}
 
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
-	BURP_FREE(tdgbl->mvol_io_buffer);
+	BURP_free(tdgbl->mvol_io_buffer);
 	tdgbl->mvol_io_buffer = NULL;
 	tdgbl->io_cnt = 0;
 	tdgbl->io_ptr = NULL;
@@ -161,7 +159,7 @@ UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 		}
 	}
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
-	BURP_FREE(tdgbl->mvol_io_header);
+	BURP_free(tdgbl->mvol_io_header);
 	tdgbl->mvol_io_header = NULL;
 	tdgbl->mvol_io_buffer = NULL;
 	tdgbl->io_cnt = 0;
@@ -211,16 +209,16 @@ void MVOL_init_read(const UCHAR*	database_name, // unused?
 
 	tdgbl->mvol_actual_buffer_size = temp_buffer_size =
 		tdgbl->mvol_io_buffer_size;
-	tdgbl->mvol_io_buffer = BURP_ALLOC(temp_buffer_size);
+	tdgbl->mvol_io_buffer = BURP_alloc(temp_buffer_size);
 	tdgbl->gbl_backup_start_time[0] = 0;
 
 	read_header(tdgbl->file_desc, &temp_buffer_size, format, true);
 
 	if (temp_buffer_size > tdgbl->mvol_actual_buffer_size)
 	{
-		new_buffer = BURP_ALLOC(temp_buffer_size);
+		new_buffer = BURP_alloc(temp_buffer_size);
 		memcpy(new_buffer, tdgbl->mvol_io_buffer, tdgbl->mvol_io_buffer_size);
-		BURP_FREE(tdgbl->mvol_io_buffer);
+		BURP_free(tdgbl->mvol_io_buffer);
 		tdgbl->mvol_io_ptr =
 			new_buffer + (tdgbl->mvol_io_ptr - tdgbl->mvol_io_buffer);
 		tdgbl->mvol_io_buffer = new_buffer;
@@ -260,7 +258,7 @@ void MVOL_init_write(const UCHAR*		database_name, // unused?
 	tdgbl->mvol_actual_buffer_size = tdgbl->mvol_io_buffer_size;
 	ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size * tdgbl->gbl_sw_blk_factor;
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer =
-		BURP_ALLOC(temp_buffer_size + MAX_HEADER_SIZE);
+		BURP_alloc(temp_buffer_size + MAX_HEADER_SIZE);
 	tdgbl->mvol_io_cnt = tdgbl->mvol_actual_buffer_size;
 
 	while (!write_header(tdgbl->file_desc, temp_buffer_size, false))

@@ -97,8 +97,8 @@ struct header_rec {
 	TEXT fl_name[MAX_FILE_NM_LEN];
 };
 
-#define	HEADER_REC_LEN			sizeof(header_rec)
-#define	HEADER_REC_NAME			"InterBase/gsplit, "
+const int header_rec_len = sizeof(header_rec);
+static const char *header_rec_name	= "InterBase/gsplit, ";
 
 /*************************************
 ** backup files structure
@@ -112,7 +112,7 @@ struct b_fil {
 	double b_fil_size;
 };
 
-#define	B_FIL_LEN	sizeof(b_fil)
+const int b_fil_len = sizeof(b_fil);
 
 
 	/*****************************************************
@@ -432,7 +432,7 @@ static int get_file_name( const SCHAR * string, double file_size, b_fil** file_p
 *********************************************************************
 */
 
-	b_fil* const temp_ptr = (b_fil*) malloc(B_FIL_LEN);
+	b_fil* const temp_ptr = (b_fil*) malloc(b_fil_len);
 
 	*file_ptr = temp_ptr;
 	temp_ptr->b_fil_name = (TEXT*) malloc(strlen(string) + 1);
@@ -559,7 +559,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 */
 
 	SLONG byte_write, indx, ret_cd;
-	TEXT header_str[HEADER_REC_LEN], num_arr[5];
+	TEXT header_str[header_rec_len], num_arr[5];
 	header_rec hdr_rec;
 
 // CVC: there's a can of worms here. First, this function assumes it can free
@@ -578,11 +578,11 @@ static int gen_multy_bakup_files(b_fil* file_list,
 	}
 
 	SLONG pos;
-	for (pos = 0; pos < HEADER_REC_LEN; pos++)
+	for (pos = 0; pos < header_rec_len; pos++)
 		header_str[pos] = BLANK;
 
 	pos = 0;
-	ret_cd = set_hdr_str(header_str, HEADER_REC_NAME,
+	ret_cd = set_hdr_str(header_str, header_rec_name,
 						 pos, sizeof(hdr_rec.name));
 	for (indx = 0; indx < sizeof(hdr_rec.name); indx++)
 		hdr_rec.name[indx] = BLANK;
@@ -648,7 +648,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 				fl_ptr->b_fil_size = MIN_FILE_SIZE;
 			}
 
-			file_size = fl_ptr->b_fil_size - HEADER_REC_LEN;
+			file_size = fl_ptr->b_fil_size - header_rec_len;
 			file_name = fl_ptr->b_fil_name;
 
 			output_fl_desc = open(file_name, MODE_WRITE, MASK);
@@ -718,7 +718,7 @@ static int gen_multy_bakup_files(b_fil* file_list,
 							if (!fl_ptr->b_fil_next && fl_ptr->b_fil_size == 0)
 								fl_ptr->b_fil_size = MIN_FILE_SIZE;
 
-							file_size = fl_ptr->b_fil_size - HEADER_REC_LEN;
+							file_size = fl_ptr->b_fil_size - header_rec_len;
 							file_name = fl_ptr->b_fil_name;
 
 							output_fl_desc =
@@ -1033,8 +1033,8 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		return FB_FAILURE;
 	}
 
-	SLONG read_cnt = read(input_fl_desc, *io_buffer, HEADER_REC_LEN);
-	if (read_cnt != HEADER_REC_LEN) {
+	SLONG read_cnt = read(input_fl_desc, *io_buffer, header_rec_len);
+	if (read_cnt != header_rec_len) {
 		close(input_fl_desc);
 		ib_fprintf(ib_stderr,
 				   "progam fails to read gsplit header record in back-up file%s\n",
@@ -1043,7 +1043,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	}
 
 	const TEXT* char_ptr1 = reinterpret_cast<char*>(*io_buffer);
-	SLONG ret_cd = strncmp(char_ptr1, HEADER_REC_NAME, sizeof(hdr_rec.name) - 1);
+	SLONG ret_cd = strncmp(char_ptr1, header_rec_name, sizeof(hdr_rec.name) - 1);
 	if (ret_cd != 0) {
 		close(input_fl_desc);
 		ib_fprintf(ib_stderr, "gsplit: expected GSPLIT description record\n");
@@ -1239,7 +1239,7 @@ static int write_header(b_fil*		fl_ptr,
 		sizeof(hdr_rec.text2) + sizeof(hdr_rec.total) + sizeof(hdr_rec.text3);
 	ret_cd = set_hdr_str(header_str, file_name, pos, strlen(file_name));
 
-	SLONG write_cnt = write(output_fl_desc, header_str, HEADER_REC_LEN);
+	SLONG write_cnt = write(output_fl_desc, header_str, header_rec_len);
 	switch (write_cnt)
 	{
 	case (-1):					/* write failed */

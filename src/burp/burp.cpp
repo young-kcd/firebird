@@ -82,7 +82,6 @@
 #include <iodef.h>
 #include <types.h>
 #include <file.h>
-#define SWITCH_CHAR	"/"
 #endif
 
 #ifndef VMS
@@ -119,13 +118,15 @@ tgbl *gdgbl;
 #define OPEN_MASK		0666
 #endif
 
-#ifndef SWITCH_CHAR
-#define SWITCH_CHAR	"-"
+#ifdef VMS
+const char* SWITCH_CHAR	= "/";
+#else
+const char* SWITCH_CHAR	= "-";
 #endif
 
 
-#define OUTPUT_SUPPRESS	"SUPPRESS"
-#define BURP_MSG_FAC    12
+const char* OUTPUT_SUPPRESS	= "SUPPRESS";
+const int BURP_MSG_FAC		= 12;
 
 enum gbak_action
 {
@@ -151,8 +152,6 @@ static void burp_output(const SCHAR *, ...) ATTRIBUTE_FORMAT(1,2);
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif
 
-#define	DB		tdgbl->db_handle
-
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
 const ULONG MBYTE	= KBYTE * KBYTE;
@@ -160,11 +159,21 @@ const ULONG GBYTE	= MBYTE * KBYTE;
 
 #if defined (WIN95)
 static bool fAnsiCP = false;
-#define TRANSLATE_CP(a) if (!fAnsiCP) AnsiToOem(a, a)
+static inline void translate_cp(SCHAR *a){
+	if (!fAnsiCP) 
+		AnsiToOem(a, a)
+}
 #else
-#define TRANSLATE_CP(a)
+static inline void translate_cp(SCHAR *a){
+}
 #endif
 
+static inline void exit_local(int code, TGBL tdgbl)
+{
+	tdgbl->exit_code = ((volatile int)code);
+	if (tdgbl->burp_env != NULL)
+		Firebird::status_exception::raise(1);
+}
 
 #ifdef SUPERSERVER
 int BURP_main(SVC service)
@@ -543,7 +552,7 @@ int common_main(int		argc,
 				/*  Miserable thing must be a filename
 				   (dummy in a length for the backup file */
 
-				file = (FIL) BURP_ALLOC_ZERO(FIL_LEN);
+				file = (FIL) BURP_alloc_zero(FIL_LEN);
 				file->fil_name = string;
 				file->fil_fd = INVALID_HANDLE_VALUE;
 				if (!file_list)
@@ -683,15 +692,15 @@ int common_main(int		argc,
 
 				const TEXT *p = redirect;
 				TEXT c;
-				string = OUTPUT_SUPPRESS;
+				string = const_cast<TEXT*>(OUTPUT_SUPPRESS);
 				tdgbl->sw_redirect = NOOUTPUT;
 				while (c = *p++) {
 					if (UPPER(c) != *string++) {
-						tdgbl->sw_redirect = TRUE;
+						tdgbl->sw_redirect = REDIRECT;
 						break;
 					}
 				}
-				if (tdgbl->sw_redirect == TRUE) { // not FALSE, and not NOOUTPUT 
+				if (tdgbl->sw_redirect == REDIRECT) { // not NOREDIRECT, and not NOOUTPUT 
 
 					// Make sure the status file doesn't already exist 
 					IB_FILE* tmp_outfile = ib_fopen(redirect, FOPEN_READ_TYPE);
@@ -699,14 +708,14 @@ int common_main(int		argc,
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
 						ib_fclose(tmp_outfile);
-						EXIT(FINI_ERROR);
+						exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
 					}
 					if (!
 						(tdgbl->output_file =
 						 ib_fopen(redirect, FOPEN_WRITE_TYPE))) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
-						EXIT(FINI_ERROR);
+						exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
 					}
 				}
 			}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
@@ -963,7 +972,7 @@ int common_main(int		argc,
 	if (*nlp == '\n')
 		*nlp = 0;
 
-	tdgbl->action = (ACT) BURP_ALLOC_ZERO(ACT_LEN);
+	tdgbl->action = (ACT) BURP_alloc_zero(ACT_LEN);
 	tdgbl->action->act_total = 0;
 	tdgbl->action->act_file = NULL;
 	tdgbl->action->act_action = ACT_unknown;
@@ -994,13 +1003,13 @@ int common_main(int		argc,
 	if (result != FINI_OK && result != FINI_DB_NOT_ONLINE)
 		BURP_abort();
 
-	EXIT(result);
+	exit_local(result, const_cast<tgbl*>(tdgbl));
 	return result;
 	}	// try
 
 	catch (const std::exception&)
 	{
-		// All calls to EXIT(), normal and error exits, wind up here 
+		// All calls to exit_local(), normal and error exits, wind up here 
 
 		tdgbl->burp_env = NULL;
 		int exit_code = tdgbl->exit_code;
@@ -1032,7 +1041,7 @@ int common_main(int		argc,
 		}
 
 		// Close the status output file 
-		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
+		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 			ib_fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
@@ -1081,7 +1090,7 @@ void BURP_abort(void)
 	SVC_STARTED(tdgbl->service_blk);
 #endif
 
-	EXIT(FINI_ERROR);
+	exit_local(FINI_ERROR, tdgbl);
 }
 
 
@@ -1197,7 +1206,7 @@ void BURP_msg_put(	USHORT number,
 					static_cast<const char*>(arg3),
 					static_cast<const char*>(arg4),
 					static_cast<const char*>(arg5));
-	TRANSLATE_CP(buffer);
+	translate_cp(buffer);
 	burp_output("%s\n", buffer);
 }
 
@@ -1309,11 +1318,11 @@ void BURP_print_status( ISC_STATUS * status_vector)
 
         SCHAR s[1024];
 		if (isc_interprete(s, &vector)) {
-			TRANSLATE_CP(s);
+			translate_cp(s);
 			BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR: 
 			burp_output("%s\n", s);
 			while (isc_interprete(s, &vector)) {
-				TRANSLATE_CP(s);
+				translate_cp(s);
 				BURP_msg_partial(256, 0, 0, 0, 0, 0); // msg 256: gbak: ERROR:
 				burp_output("    %s\n", s);
 			}
@@ -1343,11 +1352,11 @@ void BURP_print_warning( ISC_STATUS * status_vector)
 		ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
 		if (isc_interprete(s, &vector)) {
-			TRANSLATE_CP(s);
+			translate_cp(s);
 			BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 			burp_output("%s\n", s);
 			while (isc_interprete(s, &vector)) {
-				TRANSLATE_CP(s);
+				translate_cp(s);
 				BURP_msg_partial(255, 0, 0, 0, 0, 0); // msg 255: gbak: WARNING: 
 				burp_output("    %s\n", s);
 			}
@@ -1886,7 +1895,7 @@ static void burp_output( const SCHAR * format, ...)
 			tdgbl->output_proc(tdgbl->output_data,
 							   (UCHAR*)(""));
 	}
-	else if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
+	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
 		ib_vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
@@ -1903,7 +1912,7 @@ static void burp_output( const SCHAR * format, ...)
 	}
 
 	if (exit_code != 0)
-		EXIT(exit_code);
+		exit_local(exit_code, tdgbl);
 }
 
 
