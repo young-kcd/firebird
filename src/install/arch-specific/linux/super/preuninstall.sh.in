@@ -73,14 +73,14 @@ stopServerIfRunning() {
 
     rm -f $FBBin/fbmgr
 
-	testStr=`grep firebird /etc/passwd`
-	if [ ! -z "$testStr" ]
-	  then
-		userdel firebird
-	fi
-
-	testStr=`grep firebird /etc/group`
-	if [ ! -z "$testStr" ]
-	  then
-		groupdel firebird
-	fi
+#	testStr=`grep firebird /etc/passwd`
+#	if [ ! -z "$testStr" ]
+#	  then
+#		userdel firebird
+#	fi
+#
+#	testStr=`grep firebird /etc/group`
+#	if [ ! -z "$testStr" ]
+#	  then
+#		groupdel firebird
+#	fi
