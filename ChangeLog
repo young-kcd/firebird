@@ -1,3 +1,39 @@
+2003-06-06 16:13  alexpeshkoff
+
+	* firebird2/src/jrd/dyn.epp:
+	
+	fixing linux SS - removed V4_THREADING left from netware port
+
+2003-06-06 16:04  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	makeInstallImage.sh.in, postinstall.sh.in, rpmfiles.txt.in,
+	rpmheader.txt.in, tarInstall.sh.in, tarMainInstall.sh.in,
+	tarMainUninstall.sh.in, taruninstall.sh.in:
+	
+	fixing linux SS - install files -- SORRY -- this files are not
+	checked, but are required to start SS build
+
+2003-06-06 11:31  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.fbserver, prefix.linux:
+	
+	fixing linux SS - trivial mistypes
+
+2003-06-06 11:16  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp:
+	
+	fixing linux SS - removed variable free_map_debug, as not present
+	in any other part of firebird code
+
+2003-06-06 08:39  alexpeshkoff
+
+	* firebird2/src/jrd/ibsetjmp.h:
+	
+	fixing linux SS - avoid compiler error ISO C++ forbids arrays
+	assignment
+
 2003-06-05 21:38  dimitr
 
 	* firebird2/: builds/win32/msvc6/fbembed.dsp, src/jrd/why.cpp,
