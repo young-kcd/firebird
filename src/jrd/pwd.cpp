@@ -33,6 +33,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thd_proto.h"
 
 #ifdef SUPERSERVER
 const bool SecurityDatabase::is_cached = true;
@@ -110,11 +111,39 @@ SecurityDatabase& SecurityDatabase::instance()
 
 /******************************************************************************
  *
+ *	Constructor & destructor
+ */
+
+SecurityDatabase::SecurityDatabase()
+	: lookup_db(0), lookup_req(0), counter(0) 
+{
+	THD_MUTEX_INIT(&mutex);
+}
+
+SecurityDatabase::~SecurityDatabase()
+{
+	fini(true);
+	THD_MUTEX_DESTROY(&mutex);
+}
+
+/******************************************************************************
+ *
  *	Private interface
  */
 
+void SecurityDatabase::lock()
+{
+	THD_MUTEX_LOCK(&mutex);
+}
+
+void SecurityDatabase::unlock()
+{
+	THD_MUTEX_UNLOCK(&mutex);
+}
+
 void SecurityDatabase::fini(bool force)
 {
+#ifndef EMBEDDED
 	if (is_cached && (force || counter > 0))
 	{
 		if (force || --counter == 1)
@@ -125,6 +154,7 @@ void SecurityDatabase::fini(bool force)
 			THREAD_ENTER;
 		}
 	}
+#endif
 }
 
 void SecurityDatabase::init()
@@ -342,7 +372,11 @@ void SecurityDatabase::verifyUser(TEXT* name,
 #ifdef EMBEDDED
 	return;
 #else
+	THREAD_EXIT;
+	instance().lock();
+	THREAD_ENTER;
 	notfound = instance().lookup_user(name, uid, gid, pw1);
+	instance().unlock();
 #endif
 
 	/* Punt if the user has specified neither a raw nor an encrypted password,

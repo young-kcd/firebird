@@ -28,6 +28,7 @@
 #define _JRD_PWD_H_
 
 #include "../jrd/ibase.h"
+#include "../jrd/thd.h"
 
 #define MAX_PASSWORD_ENC_LENGTH 12
 #define PASSWORD_SALT  "9z"
@@ -48,14 +49,14 @@ public:
 	static void shutdown();
 	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
 
-#ifndef EMBEDDED
-	~SecurityDatabase() { fini(true); }
-#endif
+	~SecurityDatabase();
 
 private:
 
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
+
+	MUTX_T mutex;
 
 	ISC_STATUS_ARRAY status;
 
@@ -66,6 +67,9 @@ private:
 
 	int counter;
 
+	void lock();
+	void unlock();
+
 	void fini(bool);
 	void init();
 	bool lookup_user(TEXT*, int*, int*, TEXT*);
@@ -73,7 +77,7 @@ private:
 
 	static SecurityDatabase& instance();
 
-	SecurityDatabase() : lookup_db(0), lookup_req(0), counter(0) {}
+	SecurityDatabase();
 };
 
 #ifdef VMS
