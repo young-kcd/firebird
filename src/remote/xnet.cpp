@@ -69,7 +69,6 @@ static void xnet_cleanup_comm(XCC);
 static void xnet_cleanup_port(PORT);
 static void disconnect(PORT);
 static void exit_handler(PORT);
-static XPM xnet_make_xpm(ULONG, time_t);
 
 static PORT receive(PORT, PACKET *);
 static int send_full(PORT, PACKET *);
@@ -80,6 +79,8 @@ static HANDLE server_process_handle = 0;
 static void xnet_on_server_shutdown(PORT port);
 #else
 static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
+static XPM xnet_make_xpm(ULONG, time_t);
+PORT XNET_reconnect(ULONG, TEXT*, ISC_STATUS*);
 #endif // SUPERCLIENT
 
 static int xdrxnet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
