@@ -77,7 +77,7 @@
     cp $BuildDir/help/help.gbak $DestDir/help 
     cp $BuildDir/help/help.gdb $DestDir/help 
     #cp -r $BuildDir/doc $DestDir 
-    cp $BuildDir/interbase.msg $DestDir/firebird.msg 
+    cp $BuildDir/firebird.msg $DestDir/firebird.msg 
     cp $BuildDir/isc4.gdb $DestDir/isc4.gdb 
     cp $BuildDir/isc_config $DestDir/isc_config
 
