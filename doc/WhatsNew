@@ -61,8 +61,8 @@
       Contributor(s):
         Alexander Peshkoff <peshkoff@hotmail.ru>
 
-    * Fixed RC1 bug.
-        Broken lock table resizing in CS. No more "lock manager out of room" errors.
+    * Fixed unregistered bug.
+        Broken lock table resizing in CS. No more "lock manager out of room" (Win32 CS 1.5 RC1) or crashes (possible in all other CS builds of Interbase/Firebird).
       Contributor(s):
         Nickolay Samofatov <skidder@bssys.com>
 
@@ -88,7 +88,8 @@
         Alexander Peshkoff <peshkoff@hotmail.ru>
 
     * Fixed unregistered bug.
-        Wrong rpb contents after pre-triggers execution that may cause database corruption.
+        Possible database corruption when you modify/delete the same record in pre-trigger for which this trigger was called.
+        This issue also was known as BUGCHECK(291) before.
       Contributor(s):
         Alexander Peshkoff <peshkoff@hotmail.ru>
 
