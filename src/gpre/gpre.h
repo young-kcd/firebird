@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.67 2004-05-24 17:13:37 brodsom Exp $
+ * $Id: gpre.h,v 1.68 2004-05-29 04:48:42 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -505,8 +505,8 @@ const size_t CMPF_LEN = sizeof(cmpf);
 struct gpre_ctx;
 struct gpre_fld;
 struct gpre_rel;
-struct gpre_req;
-struct ref;
+class gpre_req;
+class ref;
 
 typedef enum act_t {
 	ACT_any,
