@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.35 2003-03-24 14:41:41 skidder Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.36 2003-04-02 11:21:25 brodsom Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -250,7 +250,9 @@ static void sigwait_thread(int);
 
 // Not thread-safe 
 
-extern "C" ULONG isc_enter_count = 0;
+extern "C" {
+	ULONG isc_enter_count = 0;
+}
 
 //static SIGVEC client_sigfpe;
 
