@@ -578,7 +578,17 @@ namespace Firebird
 #endif
 	public:
 		static MemoryPool& getAutoMemoryPool() { 
+#ifndef SUPERCLIENT
 			MemoryPool* p = MemoryPool::getContextPool();
+#ifdef EMBEDDED
+			if (! p)
+			{
+				p = getDefaultMemoryPool();
+			}
+#endif //EMBEDDED
+#else //SUPERCLIENT
+			MemoryPool* p = getDefaultMemoryPool();
+#endif //SUPERCLIENT
 			fb_assert(p);
 			return *p; 
 		}
