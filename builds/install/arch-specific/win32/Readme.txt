@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 1.5.0       (Win32 Build)
+Firebird 2.0.0       (Win32 Build)
 ==================================
 
 ****** NOTE ******
@@ -8,7 +8,7 @@ Firebird 1.5.0       (Win32 Build)
 Please ignore this document for the time being.
 
 This document is just a placeholder. NONE of the 
-information refers to Firebird 1.5. An up-to-date 
+information refers to Firebird 2.0. An up-to-date 
 readme file will be provided with a future version.
 
 **** END NOTE ****
