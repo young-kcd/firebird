@@ -56,9 +56,9 @@
 #define UINT16	USHORT
 
 #ifdef WIN_NT
-#define DLL_EXPORT	__declspec(dllexport)
+#define FB_DLL_EXPORT	__declspec(dllexport)
 #else
-#define DLL_EXPORT
+#define FB_DLL_EXPORT
 #endif
 
 
@@ -481,9 +481,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.21 2003-09-16 10:33:30 aafemt Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.22 2003-11-23 16:44:26 skidder Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.21  2003/09/16 10:33:30  aafemt
+//	'struct' removal
+//	
 //	Revision 1.20  2003/08/21 16:22:11  brodsom
 //	-Replace STATIC with static
 //	-Remove a few unused macros

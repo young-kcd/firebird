@@ -89,7 +89,7 @@ void LD2_assert(filename, lineno)
 
 
 
-USHORT DLL_EXPORT LD2_lookup(USHORT objtype,
+USHORT FB_DLL_EXPORT LD2_lookup(USHORT objtype,
                             FPTR_SHORT * fun, SSHORT parm1, SSHORT parm2)
 {
 

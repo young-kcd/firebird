@@ -286,7 +286,7 @@ void LD_assert(const SCHAR* filename, int lineno)
 	    return (0);\
 	    }
 
-USHORT DLL_EXPORT LD_lookup(USHORT objtype,
+USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
 							FPTR_SHORT * fun, SSHORT parm1, SSHORT parm2)
 {
 /**************************************

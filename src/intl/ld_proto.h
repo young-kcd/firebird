@@ -29,11 +29,11 @@ extern "C" {
 #endif
 
 #ifdef DEV_BUILD
-void DLL_EXPORT LD_assert(const SCHAR*, int);
+void FB_DLL_EXPORT LD_assert(const SCHAR*, int);
 #endif
 
-USHORT DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
-USHORT DLL_EXPORT LD2_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
+USHORT FB_DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
+USHORT FB_DLL_EXPORT LD2_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */
