@@ -21,8 +21,11 @@ impossible to upgrade system dll's. To resolve this Microsoft now
 recommend that each application installs local copies of any system 
 libraries that are required. 
 
-Firebird 1.5 follows this practice and places the required libraries
-in the \bin directory along with the server.
+Firebird 1.5 follows this practice for all Microsoft platforms from 
+Windows 2000 onwards and places the required libraries in the \bin directory 
+along with the server. When installed on older systems (Win 9x, NT) it follows 
+the standard practice and attempts to upgrade older versions of the system 
+libraries.
 
 
 2/ Installation of fbclient.dll.
@@ -37,7 +40,7 @@ for the client library. So, from Firebird 1.5 on, the client library resides
 in the \bin directory along with all the other binaries.
 
 A new registry key has been added and all Firebird compliant applications
-must now use this to locate the correct version of Firebird that they wish 
+should now use this to locate the correct version of Firebird that they wish 
 to use. The new key is:
 
   HKEY_LOCAL_MACHINE\SOFTWARE\Firebird Project\Firebird Server\Instances
@@ -63,7 +66,7 @@ load the gds32.dll client library from the <system> directory. Firebird 1.5
 ships a tool named 'instclient.exe' that can install a clone of fbclient.dll
 to the Windows System directory. This clone gets patched on the fly so that
 its file version information starts in "6.3". This is done so because some
-old applications do weird checks on the GDS32.DLL file version. Based on a
+old applications do extra checks on the GDS32.DLL file version. Based on a
 lot of experiments, it has been determined that 6.3 is a safe "compatible"
 version number to use, much better than "1.5".
 
@@ -111,9 +114,4 @@ Purpose:
   break some other Firebird or InterBase(R) version on the system.
 
 
-4/ Cleaning up release candidate installs.
-
-It should be noted that the installer removes fbclient.dll from the 
-<system> directory if the file is found there. The installer also 
-removes the deprecated HKLM\Software\FirebirdSQL registry key.
 

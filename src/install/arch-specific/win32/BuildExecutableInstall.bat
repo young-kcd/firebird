@@ -110,7 +110,8 @@ for %%v in (fbclient gds32 ib_util) do @(
 @copy %ROOT_PATH%\src\extlib\fbudf\fbudf.txt %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY fbudf doc failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
+::Commented out as it is now hopelessly out of date. It has been unmaintained since we branched.
+::@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
 
 @copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
 @del %ROOT_PATH%\output\doc\install_win32.txt 

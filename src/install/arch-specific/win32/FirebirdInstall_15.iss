@@ -112,8 +112,8 @@ Name: UseServiceTask; Description: Run as a &Service?; GroupDescription: Run Fir
 Name: AutoStartTask; Description: Start &Firebird automatically everytime you boot up?; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
 ;Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
 ;Copying of client libs to <sys>
-Name: CopyFbClientToSysTask; Description: Copy client library to <system> directory?; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;  
-Name: CopyFbClientAsGds32Task; Description: Generate client library as GDS32.DLL for legacy app. support?; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
+Name: CopyFbClientToSysTask; Description: Copy &Firebird client library to <system> directory?; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
+Name: CopyFbClientAsGds32Task; Description: Generate client library as GDS32.DLL for &legacy app. support?; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
 ;Allow user to not install cpl applet
 Name: InstallCPLAppletTask; Description: "Install Control &Panel Applet?"; Components: SuperServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
 
