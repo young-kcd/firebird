@@ -30,28 +30,29 @@
 
 #include <algorithm>
 
-#include "../fbutil/FirebirdConfig.h"
-#include "../fbutil/FirebirdConfigFile.h"
+#include "../common/config/config.h"
+#include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"
 
-#define ALIAS_FILE "aliases.conf"
+typedef Firebird::string string;
+
+const char* ALIAS_FILE = "aliases.conf";
 
 extern "C" {
 
 bool ResolveDatabaseAlias(const char* alias, char* database)
 {
-	FirebirdConfigFile aliasConfig;
-//	aliasConfig.setConfigFile(FirebirdConfig::getSysString("RootDirectory") + "/aliases.conf");
 	TEXT alias_filename[MAXPATHLEN];
-	gds__prefix(alias_filename, ALIAS_FILE);
+	gds__prefix(alias_filename, const_cast<char*>(ALIAS_FILE));
+	ConfigFile aliasConfig;
 	aliasConfig.setConfigFile(alias_filename);
 
 	const char correct_dir_sep = PathUtils::dir_sep;
 	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
-	Firebird::string corrected_alias = alias;
+	string corrected_alias = alias;
 	std::replace(corrected_alias.begin(), corrected_alias.end(), incorrect_dir_sep, correct_dir_sep);
 	
-	Firebird::string value = aliasConfig.getString(corrected_alias);
+	string value = aliasConfig.getString(corrected_alias);
 
 	if (!value.empty())
 	{
@@ -59,7 +60,7 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 		strcpy(database, value.c_str());
 		return true;
 	}
-	
+
 	return false;
 }
 

@@ -26,22 +26,21 @@
  *							   as the server configured for).
  */
 
-#include "../fbutil/FirebirdConfig.h"
+#include "../common/config/config.h"
 #include "../common/memory/allocators.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/sort_mem.h"
 
-#define BLOCK_SIZE_KEY "SORT_MEM_BLOCK_SIZE"
-#define UPPER_LIMIT_KEY "SORT_MEM_UPPER_LIMIT"
+const size_t DEFAULT_BLOCK_SIZE = 1048576;				// 1MB
+const size_t DEFAULT_UPPER_LIMIT = (size_t) -1;			// ~4GB
 
 bool SortMem::is_initialized = false;
 
-size_t SortMem::mem_block_size = 1048576;		// 1MB
-size_t SortMem::mem_upper_limit = (size_t) -1;	// ~4GB
+size_t SortMem::mem_block_size;
+size_t SortMem::mem_upper_limit;
 
 size_t SortMem::mem_total_size = 0;
-
 
 /******************************************************************************
  *
@@ -152,14 +151,8 @@ SortMem::SortMem(struct sfb *blk, size_t size)
 	// Override defaults with the configuration values, if they exist
 	if (!is_initialized)
 	{
-		if (FirebirdConfig::doesSysKeyExist(BLOCK_SIZE_KEY))
-		{
-			mem_block_size = FirebirdConfig::getSysInt(BLOCK_SIZE_KEY);
-		}
-		if (FirebirdConfig::doesSysKeyExist(UPPER_LIMIT_KEY))
-		{
-			mem_upper_limit = FirebirdConfig::getSysInt(UPPER_LIMIT_KEY);
-		}
+		mem_block_size = Config::getSortMemBlockSize(DEFAULT_BLOCK_SIZE);
+		mem_upper_limit = Config::getSortMemUpperLimit(DEFAULT_UPPER_LIMIT);
 		is_initialized = true;
 	}
 
@@ -201,7 +194,7 @@ void SortMem::allocate(size_t size)
 				// Allocate block in virtual memory
 				try
 				{
-					block = FB_NEW (*getDefaultMemoryPool())
+					block = FB_NEW(*getDefaultMemoryPool())
 						MemoryBlock(tail, smart_size);
 					mem_allocated = true;
 				}
