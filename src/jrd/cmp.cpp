@@ -3611,7 +3611,16 @@ static jrd_nod* pass1(thread_db* tdbb,
 		{
 			stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
 			tail = &csb->csb_rpt[stream];
-			if (tail->csb_flags & csb_trigger && stream == 0)	// OLD context
+			// assignments to the OLD context are prohibited
+			// for all trigger types
+			if ((tail->csb_flags & csb_trigger) && stream == 0)
+			{
+				ERR_post(isc_read_only_field, 0);
+			}
+			// assignments to the NEW context are prohibited
+			// for post-action triggers
+			if ((tail->csb_flags & csb_trigger) && stream == 1 &&
+				(csb->csb_g_flags & csb_post_trigger))
 			{
 				ERR_post(isc_read_only_field, 0);
 			}

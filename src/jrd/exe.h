@@ -766,10 +766,12 @@ public:
 	Firebird::HalfStaticArray<csb_repeat, 5> csb_rpt;
 };
 
-const int csb_internal			= 0x1;	/* "csb_g_flag" switch */
-const int csb_get_dependencies	= 0x2;
-const int csb_ignore_perm		= 0x4;	/* ignore permissions checks */
-const int csb_blr_version4		= 0x8;	/* The blr is of version 4 */
+const int csb_internal			= 1;	/* "csb_g_flag" switch */
+const int csb_get_dependencies	= 2;
+const int csb_ignore_perm		= 4;	/* ignore permissions checks */
+const int csb_blr_version4		= 8;	/* The blr is of version 4 */
+const int csb_pre_trigger		= 16;
+const int csb_post_trigger		= 32;
 
 const int csb_active		= 1;
 const int csb_used			= 2;		/* Context has already been defined (BLR parsing only) */

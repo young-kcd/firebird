@@ -3269,7 +3269,7 @@ static void get_procedure_dependencies(DeferredWork* work)
 
 			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id,
 								 gbak ? NULL : &request,
-								 NULL, work->dfw_name, obj_procedure);
+								 NULL, work->dfw_name, obj_procedure, 0);
 			if (request)
 			{
 				CMP_release(tdbb, request);
@@ -3310,6 +3310,8 @@ static void get_trigger_dependencies( DeferredWork* work)
 	bid blob_id;
 	blob_id.clear();
 
+	int type = 0;
+
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle)
@@ -3318,6 +3320,7 @@ static void get_trigger_dependencies( DeferredWork* work)
         if (!REQUEST(irq_c_trigger))
             REQUEST(irq_c_trigger) = handle;
 		blob_id = X.RDB$TRIGGER_BLR;
+		type = X.RDB$TRIGGER_TYPE;
 		relation = MET_lookup_relation(tdbb, X.RDB$RELATION_NAME);
 
 	END_FOR;
@@ -3332,12 +3335,14 @@ static void get_trigger_dependencies( DeferredWork* work)
 		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		const USHORT par_flags = (USHORT)
+			(type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
 							 gbak ? NULL : &request,
-							 NULL, work->dfw_name, obj_trigger);
+							 NULL, work->dfw_name, obj_trigger, par_flags);
 		if (request)
 		{
 			CMP_release(tdbb, request);

@@ -117,7 +117,7 @@ using namespace Jrd;
 
 static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
-static void get_trigger(thread_db*, jrd_rel*, bid*, trig_vec**, const TEXT*, bool, USHORT);
+static void get_trigger(thread_db*, jrd_rel*, bid*, trig_vec**, const TEXT*, UCHAR, bool, USHORT);
 static bool get_type(thread_db*, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void name_copy(TEXT*, const TEXT*);
@@ -128,7 +128,7 @@ static bool resolve_charset_and_collation(thread_db*, SSHORT*, const UCHAR*,
 											 const UCHAR*);
 static str* save_name(thread_db*, const TEXT*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*,
-	const TEXT*, bool, USHORT);
+	const TEXT*, UCHAR, bool, USHORT);
 static void store_dependencies(thread_db*, CompilerScratch*, const TEXT*, USHORT);
 static bool verify_TRG_ignore_perm(thread_db*, const TEXT*);
 
@@ -963,7 +963,8 @@ jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 						 jrd_req**			request,
 						 CompilerScratch**	csb_ptr,
 						 const TEXT*		object_name,
-						 USHORT				type)
+						 USHORT				type,
+						 USHORT				flags)
 {
 /**************************************
  *
@@ -980,7 +981,7 @@ jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 	Database* dbb = tdbb->tdbb_database;
 
 	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-	csb->csb_g_flags |= csb_get_dependencies;
+	csb->csb_g_flags |= (csb_get_dependencies | flags);
 
 	jrd_nod* node;
 	if (blob)
@@ -997,13 +998,9 @@ jrd_nod* MET_get_dependencies(thread_db*	tdbb,
 	else
 	{
 		node =
-			MET_parse_blob(	tdbb,
-							relation,
-							blob_id,
-							&csb,
-							request,
-							(type == obj_trigger),
-							false);
+			MET_parse_blob(tdbb, relation, blob_id,
+						   &csb, request,
+						   (type == obj_trigger));
 	}
 
 	if (type == (USHORT) obj_computed)
@@ -1198,6 +1195,7 @@ void MET_load_trigger(
 							&TRG.RDB$TRIGGER_BLR,
 							triggers + trigger_action,
 							TRG.RDB$TRIGGER_NAME,
+							(UCHAR) trigger_action,
 							(bool) TRG.RDB$SYSTEM_FLAG,
 							trig_flags);
 			}
@@ -2298,8 +2296,7 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 				   bid*			blob_id,
 				   CompilerScratch**		csb_ptr,
 				   jrd_req**	request_ptr,
-				   const bool	trigger,
-				   const bool	ignore_perm)
+				   const bool	trigger)
 {
 /**************************************
  *
@@ -2324,8 +2321,9 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 	str* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
 	BLB_get_data(tdbb, blob, temp->str_data, length);
 
-	jrd_nod* node = PAR_blr(tdbb, relation, temp->str_data, NULL, csb_ptr, request_ptr,
-					trigger, (USHORT)(ignore_perm ? csb_ignore_perm : 0));
+	jrd_nod* node =
+		PAR_blr(tdbb, relation, temp->str_data, NULL, csb_ptr, request_ptr,
+				trigger, 0);
 
 	delete temp;
 
@@ -2417,9 +2415,12 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 
 		if (ptr)
 		{
-			const USHORT par_flags = (USHORT)
+			USHORT par_flags = (USHORT)
 				((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
-
+			if (type & 1)
+				par_flags |= csb_pre_trigger;
+			else
+				par_flags |= csb_post_trigger;
 			{
 				Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 				PAR_blr(tdbb, relation, blr, NULL, NULL,
@@ -2434,7 +2435,8 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 				request->req_flags |= req_ignore_perm;
 			}
 
-			save_trigger_data(tdbb, ptr, relation, request, NULL, NULL, true, 0);
+			save_trigger_data(tdbb, ptr, relation, request, NULL,
+							  NULL, type, true, 0);
 		}
 	}
 
@@ -3282,14 +3284,14 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, NULL,
 											&REL.RDB$VIEW_BLR, NULL, 
 											&csb, REL.RDB$RELATION_NAME,
-											obj_view);
+											obj_view, 0);
 			}
 			else
 			{
 				relation->rel_view_rse =
 					(RecordSelExpr*) MET_parse_blob(tdbb, relation,
 										&REL.RDB$VIEW_BLR, &csb,
-										NULL, false, false);
+										NULL, false);
 			}
 
 			/* retrieve the view context names */
@@ -3390,7 +3392,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				field->fld_computation = (dependencies) ?
 					MET_get_dependencies(tdbb, relation, (const TEXT*) p, csb,
 										 NULL, NULL, NULL, field->fld_name,
-										 obj_computed) :
+										 obj_computed, 0) :
 					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
 				break;
 
@@ -3713,12 +3715,10 @@ static int blocking_ast_relation(void* ast_object)
 }
 
 
-static void get_trigger(
-						thread_db* tdbb,
-						jrd_rel* relation,
-						bid* blob_id,
-						trig_vec** ptr,
-						const TEXT* name, bool sys_trigger, USHORT flags)
+static void get_trigger(thread_db* tdbb, jrd_rel* relation,
+						bid* blob_id, trig_vec** ptr,
+						const TEXT* name, UCHAR type,
+						bool sys_trigger, USHORT flags)
 {
 /**************************************
  *
@@ -3737,7 +3737,8 @@ static void get_trigger(
 
 	Database* dbb = tdbb->tdbb_database;
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	save_trigger_data(tdbb, ptr, relation, NULL, blob, name, sys_trigger, flags);
+	save_trigger_data(tdbb, ptr, relation, NULL, blob,
+					  name, type, sys_trigger, flags);
 }
 
 
@@ -3887,7 +3888,8 @@ static jrd_nod* parse_param_blr(thread_db* tdbb,
 	BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
 	csb->csb_blr = temp.begin();
 
-	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb,
+	jrd_nod* node =
+		PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb,
 				&procedure->prc_request, false, 0);
 	csb->csb_blr = 0;
 
@@ -4188,8 +4190,9 @@ static str* save_name(thread_db* tdbb, const TEXT* name)
 
 
 static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation,
-							jrd_req* request, blb* blrBlob,
-							  const TEXT* name, bool sys_trigger, USHORT flags)
+							  jrd_req* request, blb* blrBlob,
+							  const TEXT* name, UCHAR type,
+							  bool sys_trigger, USHORT flags)
 {
 /**************************************
  *
@@ -4219,6 +4222,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	if (name) {
 		t.name = name;
 	}
+	t.type = type;
 	t.flags = flags;
 	t.compile_in_progress = false;
 	t.sys_trigger = sys_trigger;

@@ -634,6 +634,7 @@ public:
 	jrd_req*	request;		// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
+	UCHAR		type;			// Trigger type
 	USHORT		flags;			// Flags as they are in RDB$TRIGGERS table
 	jrd_rel*	relation;		// Trigger parent relation
 	Firebird::string	name;	// Trigger name

@@ -221,10 +221,17 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		// Allocate statement memory pool
 		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 		// Trigger request is not compiled yet. Lets do it now
+		USHORT par_flags = (USHORT)
+			(flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
+		if (type & 1)
+			par_flags |= csb_pre_trigger;
+		else
+			par_flags |= csb_post_trigger;
+
 		try {
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 			PAR_blr(tdbb, relation, blr.begin(),  NULL, NULL, &request, true,
-					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
+					par_flags);
 		}
 		catch (const std::exception&) {
 			compile_in_progress = false;

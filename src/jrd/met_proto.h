@@ -53,7 +53,7 @@ Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const TEXT*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
-								Jrd::CompilerScratch**, const TEXT*, USHORT);
+								Jrd::CompilerScratch**, const TEXT*, USHORT, USHORT);
 class Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const TEXT*, Jrd::trig_vec**);
@@ -73,7 +73,7 @@ Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, SSHORT, bool, bool, USHOR
 Jrd::jrd_rel*	MET_lookup_relation(Jrd::thread_db*, const char*);
 Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
 Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
-								  Jrd::jrd_req**, const bool, const bool);
+								  Jrd::jrd_req**, bool);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
 bool		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);

@@ -167,7 +167,8 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 															  &idx.idx_expression_request,
 															  &csb,
 															  IDX.RDB$INDEX_NAME,
-															  obj_expression_index);
+															  obj_expression_index,
+															  0);
 				}
 
 				/* fake a description of the index */
@@ -293,7 +294,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 			idx->idx_expression =
 				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-						   &idx->idx_expression_request, false, false);
+							   &idx->idx_expression_request, false);
 		}
 
 	END_FOR;
