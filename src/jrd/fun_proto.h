@@ -28,11 +28,11 @@
 extern "C" {
 #endif
 
-void		FUN_evaluate(struct fun *, struct jrd_nod *, struct vlu *);
-void		FUN_fini(struct tdbb *);
+void		FUN_evaluate(fun*, jrd_nod*, vlu*);
+void		FUN_fini(tdbb*);
 void		FUN_init(void);
-struct fun*	FUN_lookup_function(TEXT *, bool ShowAccessError);
-struct fun*	FUN_resolve(class Csb *, struct fun *, struct jrd_nod *);
+fun*		FUN_lookup_function(TEXT*, bool ShowAccessError);
+fun*		FUN_resolve(class Csb*, fun*, jrd_nod*);
 
 #ifdef __cplusplus
 } /* extern "C" */
