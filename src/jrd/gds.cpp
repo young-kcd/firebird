@@ -2268,7 +2268,9 @@ void * API_ROUTINE gds__temp_file(
 
 	_timeb t;
 	_ftime(&t);
-	int randomness = t.time*1000 + t.millitm; /* int is ok because 36^^6 ~= 2^31 */
+	__int64 randomness = t.time;
+	randomness *= 1000;
+	randomness += t.millitm;
 	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
 		char file_name[MAXPATHLEN];
 		strcpy(file_name, directory);
