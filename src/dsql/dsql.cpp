@@ -3770,7 +3770,7 @@ static USHORT get_request_info(
 
 		default:
 			break;
-		};
+		}
 
 		data += data_length;
 	}

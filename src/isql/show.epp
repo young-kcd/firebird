@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.58 2004-10-03 04:48:51 robocop Exp $
+ * $Id: show.epp,v 1.59 2004-11-07 10:30:46 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -2440,7 +2440,7 @@ static processing_state show_generators(const SCHAR* object)
 			{
 				ISQL_errmsg (isc_status);
 				continue;
-			};
+			}
 			if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
 				sqlda.sqlvar[0].sqldata = (SCHAR*) &genid64;
 			else

@@ -3944,7 +3944,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 									  DSC_dtype_tostring(static_cast < UCHAR >
 														 (field->fld_dtype)), 0);
 							return NULL;
-					};
+					}
 
 					// CVC: Stop here if this is our second or third iteration.
 					// Anyway, we can't report more than one ambiguity to the status vector.

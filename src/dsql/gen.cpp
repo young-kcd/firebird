@@ -583,7 +583,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 				default:
 					// No special action for other data types 
 					break;
-			};
+			}
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
 			message->msg_length = FB_ALIGN(message->msg_length, align);

@@ -1376,7 +1376,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 	{
 		this->send_response(sendL, 0, 0, status_vector);
 		return;
-	};
+	}
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);

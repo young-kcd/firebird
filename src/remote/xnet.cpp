@@ -1715,7 +1715,7 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 			if (!xnet_read(xdrs)) {
 				THREAD_ENTER();
 				return FALSE;
-			};
+			}
 			THREAD_ENTER();
 		}
 

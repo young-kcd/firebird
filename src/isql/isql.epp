@@ -599,7 +599,7 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
-		};
+		}
 
 	FOR FDIM IN RDB$FIELD_DIMENSIONS WITH
 	   FDIM.RDB$FIELD_NAME EQ fieldname
@@ -1052,7 +1052,7 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return 0;
-		};
+		}
 
 	SSHORT l = 0;
 	FOR FLD IN RDB$FIELDS WITH
@@ -1098,7 +1098,7 @@ void ISQL_get_character_sets(
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
-		};
+		}
 
 	if (collation) {
 		FOR FIRST 1 COL IN RDB$COLLATIONS CROSS
@@ -1192,7 +1192,7 @@ void ISQL_get_default_source(const TEXT* rel_name,
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return;
-		};
+		}
 
 	if (rel_name) {
 		// This is default for a column of a table 
@@ -1253,7 +1253,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return 0;
-		};
+		}
 
 // Query to get column names 
 	SLONG n = 0;
@@ -1318,7 +1318,7 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return false;
-		};
+		}
 
 /*
    Using view_name and view_context get the relation name from
@@ -1386,7 +1386,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return false;
-		};
+		}
 
 	if (rel_name) {
 		FOR FLD IN RDB$FIELDS CROSS
@@ -1517,7 +1517,7 @@ bool ISQL_is_domain(const TEXT* field_name)
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return false;
-		};
+		}
 
 	FOR FLD IN RDB$FIELDS WITH
 		FLD.RDB$FIELD_NAME EQ field_name
@@ -1733,14 +1733,14 @@ static processing_state add_row(const TEXT* tabname)
 		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FAIL;
-		};
+		}
 
 // Start default transaction for prepare 
 	if (!D__trans)
 		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 0, NULL)) {
 			ISQL_errmsg(isc_status);
 			return FAIL;
-		};
+		}
 
 // Query to obtain relation information 
 	SCHAR string[BUFFER_LENGTH120];
@@ -1773,7 +1773,7 @@ static processing_state add_row(const TEXT* tabname)
 			if (sqlda)
 				ISQL_FREE(sqlda);
 			return (FAIL);
-		};
+		}
 	}
 
 // Array for storing select/insert column mapping , colcheck sets it up
@@ -1973,7 +1973,7 @@ static processing_state add_row(const TEXT* tabname)
 						isc_encode_date(&times, (ISC_QUAD*) date);
 						ivar->sqldata = stringvalue;
 						*(ULONG*) stringvalue = date[1];
-					};
+					}
 					break;
 
 				case SQL_TIMESTAMP:

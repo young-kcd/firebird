@@ -3390,7 +3390,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 			REM_restore_thread_data();
 			return user_status[1];
-		};
+		}
 
 		/* Copy data from the message buffer to the client buffer */
 

@@ -2512,7 +2512,7 @@ numeric_type	: KW_NUMERIC prec_scale
 				{
 				lex.g_field->fld_dtype = dtype_long;
 				lex.g_field->fld_length = sizeof (SLONG);
-				};
+				}
 			}
 		;
 

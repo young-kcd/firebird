@@ -8014,7 +8014,7 @@ case 543:
 				{
 				lex.g_field->fld_dtype = dtype_long;
 				lex.g_field->fld_length = sizeof (SLONG);
-				};
+				}
 			}
 break;
 case 544:

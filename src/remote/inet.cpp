@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.124 2004-10-20 17:42:35 dimitr Exp $
+$Id: inet.cpp,v 1.125 2004-11-07 10:38:10 robocop Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -650,7 +650,7 @@ rem_port* INET_connect(const TEXT* name,
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "INET_connect\n");
 			fflush(stdout);
-		};
+		}
 		INET_start_time = inet_debug_timer();
 		const char* p = getenv("INET_force_error");
 		if (p != NULL) {
@@ -2368,7 +2368,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 							   op_rec_count, packet->p_operation);
 					fflush(stdout);
 				}
-			};
+			}
 #endif
 
 /*  Make sure that there are no more messages in this port before blocking
@@ -2675,8 +2675,8 @@ static int send_full( rem_port* port, PACKET * packet)
 					   inet_debug_timer(),
 					   op_sent_count, packet->p_operation);
 			fflush(stdout);
-		};
-	};
+		}
+	}
 #endif
 
 	return xdrinet_endofrecord(&port->port_send, TRUE);
@@ -2704,8 +2704,8 @@ static int send_partial( rem_port* port, PACKET * packet)
 					   inet_debug_timer(),
 					   op_sentp_count, packet->p_operation);
 			fflush(stdout);
-		};
-	};
+		}
+	}
 #endif
 
 	return xdr_protocol(&port->port_send, packet);

@@ -294,7 +294,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				else {
 					FPRINTF(outfile, "Usage: -f <filename>\n");
 					exit(FINI_OK);
-				};
+				}
 				break;
 
 			default:
@@ -1071,7 +1071,7 @@ static void prt_owner_wait_cycle(
 			FPRINTF(outfile, "%6"SLONGFORMAT" (potential deadlock).\n",
 					SRQ_REL_PTR(owner));
 			return;
-		};
+		}
 
 	FPRINTF(outfile, "%6"SLONGFORMAT" waits on ", SRQ_REL_PTR(owner));
 
@@ -1081,7 +1081,7 @@ static void prt_owner_wait_cycle(
 		if (waiters->waitque_depth > FB_NELEM(waiters->waitque_entry)) {
 			FPRINTF(outfile, "Dependency too deep\n");
 			return;
-		};
+		}
 
 		waiters->waitque_entry[waiters->waitque_depth++] = SRQ_REL_PTR(owner);
 
@@ -1130,7 +1130,7 @@ static void prt_owner_wait_cycle(
 
 				if (COMPATIBLE(owner_request->lrq_requested, lock_request->lrq_state)) 
 					continue;
-			};
+			}
 			const own* lock_owner = (OWN) SRQ_ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
 								 waiters);
