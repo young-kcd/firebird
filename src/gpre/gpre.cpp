@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.9 2002-04-12 01:55:52 bellardo Exp $
+//  $Id: gpre.cpp,v 1.10 2002-06-29 16:50:34 skywalker Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.9 2002-04-12 01:55:52 bellardo Exp $
+//	$Id: gpre.cpp,v 1.10 2002-06-29 16:50:34 skywalker Exp $
 //
 
 #define GPRE_MAIN
@@ -265,6 +265,9 @@ int main(int argc, char* argv[])
 	TEXT temp_name[256];
 	SSHORT c;
 #endif
+
+    errors = warnings = fatals = 0;
+
 	BOOLEAN use_lang_internal_gxx_output;
 
 	use_lang_internal_gxx_output = FALSE;
