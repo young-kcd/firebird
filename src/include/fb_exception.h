@@ -81,7 +81,15 @@ public:
 	virtual const char* what() const throw()
 		{ return "Firebird::status_exception"; }
 	const ISC_STATUS* value() const { return m_status_vector; }
+
+	// Returns true if strings contained in status vector are located in magical 
+	// permanent circular buffer. False means that exception object owns strings 
+	// and is about to deallocate them in its destructor
 	bool strings_permanent() const { return m_strings_permanent; }
+
+	// Returns true if exception class holds status vector for the error.
+	// Returns false when status vector is passed "by magic", probably 
+	// somewhere in tdbb_status_vector
 	bool status_known() const { return m_status_known; }
 
 	// Takes permanent strings
