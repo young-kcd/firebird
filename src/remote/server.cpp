@@ -2481,7 +2481,6 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
  **************************************/
 	RBL blob;
 	RTR transaction;
-	rrq* request;
 	RSR statement;
 	ISC_STATUS_ARRAY status_vector;
 
@@ -2543,13 +2542,14 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 		break;
 
 	case op_info_request:
-		CHECK_HANDLE_MEMBER(request,
+		rrq* requestL;
+		CHECK_HANDLE_MEMBER(requestL,
 							rrq*,
 							type_rrq,
 							stuff->p_info_object,
 							isc_bad_req_handle);
 		THREAD_EXIT;
-		isc_request_info(status_vector, &request->rrq_handle,
+		isc_request_info(status_vector, &requestL->rrq_handle,
 						 stuff->p_info_incarnation,
 						 stuff->p_info_items.cstr_length,
 						 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
@@ -2817,7 +2817,7 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 }
 
 
-ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* sendL)
+ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 {
 /*****************************************
  *
@@ -2834,24 +2834,24 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
-	if (prepare->p_sqlst_transaction)
+	if (prepareL->p_sqlst_transaction)
 	{
 		CHECK_HANDLE_MEMBER(transaction,
 							RTR,
 							type_rtr,
-							prepare->p_sqlst_transaction,
+							prepareL->p_sqlst_transaction,
 							isc_bad_trans_handle);
 	}
 	CHECK_HANDLE_MEMBER(statement,
 						RSR,
 						type_rsr,
-						prepare->p_sqlst_statement,
+						prepareL->p_sqlst_statement,
 						isc_bad_req_handle);
 
 	UCHAR local_buffer[1024];
 	UCHAR* buffer;
-	if (prepare->p_sqlst_buffer_length > sizeof(local_buffer))
-		buffer = ALLR_alloc((SLONG) prepare->p_sqlst_buffer_length);
+	if (prepareL->p_sqlst_buffer_length > sizeof(local_buffer))
+		buffer = ALLR_alloc((SLONG) prepareL->p_sqlst_buffer_length);
 	else
 		buffer = local_buffer;
 
@@ -2883,13 +2883,13 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* sendL)
 	GDS_DSQL_PREPARE(status_vector,
 					 &handle,
 					 &statement->rsr_handle,
-					 prepare->p_sqlst_SQL_str.cstr_length,
-					 reinterpret_cast<const char*>(prepare->p_sqlst_SQL_str.cstr_address),
-					 (USHORT) ((prepare->p_sqlst_SQL_dialect * 10) +
+					 prepareL->p_sqlst_SQL_str.cstr_length,
+					 reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
+					 (USHORT) ((prepareL->p_sqlst_SQL_dialect * 10) +
 							   parser_version),
-					 prepare->p_sqlst_items.cstr_length,
-					 reinterpret_cast<const char*>(prepare->p_sqlst_items.cstr_address),
-					 prepare->p_sqlst_buffer_length,
+					 prepareL->p_sqlst_items.cstr_length,
+					 reinterpret_cast<const char*>(prepareL->p_sqlst_items.cstr_address),
+					 prepareL->p_sqlst_buffer_length,
 					 reinterpret_cast<char*>(buffer));
 	THREAD_ENTER;
 
@@ -2916,7 +2916,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepare, PACKET* sendL)
 	const ISC_STATUS status =
 		this->send_response(sendL,
 							state,
-							prepare->p_sqlst_buffer_length,
+							prepareL->p_sqlst_buffer_length,
 							status_vector);
 
 	if (buffer != local_buffer) {
@@ -3394,21 +3394,21 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
  *	Receive a message.
  *
  **************************************/
-	rrq* request;
+	rrq* requestL;
 
-	CHECK_HANDLE_MEMBER(request,
+	CHECK_HANDLE_MEMBER(requestL,
 						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
 
 	const USHORT level = data->p_data_incarnation;
-	request = REMOTE_find_request(request, level);
+	requestL = REMOTE_find_request(requestL, level);
 
 /* Figure out the number of the message that we're stalled on. */
 
 	USHORT msg_number;
-	if (!get_next_msg_no(request, level, &msg_number)) {
+	if (!get_next_msg_no(requestL, level, &msg_number)) {
 		return this->send_response(sendL, 0, 0, status_vector);
 	}
 
@@ -3423,7 +3423,7 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
 /* Fill in packet to fool receive into thinking that it has been
    called directly by the client. */
 
-	const rrq::rrq_repeat* tail = request->rrq_rpt + msg_number;
+	const rrq::rrq_repeat* tail = requestL->rrq_rpt + msg_number;
 	const rem_fmt* format = tail->rrq_format;
 
 	data->p_data_message_number = msg_number;
@@ -3464,20 +3464,20 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
    message control block for the request and message type. */
    
 	ISC_STATUS_ARRAY status_vector;
-	rrq* request;
-	CHECK_HANDLE_MEMBER(request,
+	rrq* requestL;
+	CHECK_HANDLE_MEMBER(requestL,
 						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
 
 	const USHORT level = data->p_data_incarnation;
-	request = REMOTE_find_request(request, level);
+	requestL = REMOTE_find_request(requestL, level);
 	const USHORT msg_number = data->p_data_message_number;
 	USHORT count, count2;
 	count2 = count =
 		(this->port_flags & PORT_rpc) ? 1 : data->p_data_messages;
-	rrq::rrq_repeat* tail = request->rrq_rpt + msg_number;
+	rrq::rrq_repeat* tail = requestL->rrq_rpt + msg_number;
 	const rem_fmt* format = tail->rrq_format;
 
 /* Get ready to ship the data out */
@@ -3524,22 +3524,22 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		if (!message->msg_address) {
 			/* If we have an error queued for delivery, send it now */
 
-			if (request->rrq_status_vector[1]) {
+			if (requestL->rrq_status_vector[1]) {
 				const ISC_STATUS res =
 					this->send_response(sendL, 0, 0,
-								  request->rrq_status_vector);
-				memset(request->rrq_status_vector, 0,
-					   sizeof(request->rrq_status_vector));
+								  requestL->rrq_status_vector);
+				memset(requestL->rrq_status_vector, 0,
+					   sizeof(requestL->rrq_status_vector));
 				return res;
 			}
 
 			THREAD_EXIT;
 #ifdef SCROLLABLE_CURSORS
-			isc_receive2(status_vector, &request->rrq_handle, msg_number, 
+			isc_receive2(status_vector, &requestL->rrq_handle, msg_number, 
 						 format->fmt_length, message->msg_buffer, level, 
 						 direction, offset);
 #else
-			isc_receive(status_vector, &request->rrq_handle, msg_number,
+			isc_receive(status_vector, &requestL->rrq_handle, msg_number,
 						format->fmt_length, message->msg_buffer, level);
 #endif
 			THREAD_ENTER;
@@ -3602,7 +3602,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		REM_MSG next = message->msg_next;
 
 		if ((next == message || !next->msg_address) &&
-			!check_request(request, data->p_data_incarnation, msg_number))
+			!check_request(requestL, data->p_data_incarnation, msg_number))
 		{
 			/* We've reached the end of the RSE - don't prefetch and flush
 			   everything we've buffered so far */
@@ -3637,7 +3637,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 	for (;
 		 count2
-		 && check_request(request, data->p_data_incarnation, msg_number);
+		 && check_request(requestL, data->p_data_incarnation, msg_number);
 		 --count2)
 	{
 		if (message->msg_address) {
@@ -3671,7 +3671,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		   so there is no reason to do an isc_receive2() */
 
 		THREAD_EXIT;
-		isc_receive(status_vector, &request->rrq_handle, msg_number,
+		isc_receive(status_vector, &requestL->rrq_handle, msg_number,
 					format->fmt_length,
 					message->msg_buffer, data->p_data_incarnation);
 		THREAD_ENTER;
@@ -3681,9 +3681,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		if (status_vector[1]) {
 			/* If already have an error queued, don't overwrite it */
 
-			if (!request->rrq_status_vector[1]) {
-				memcpy(request->rrq_status_vector, status_vector,
-					   sizeof(request->rrq_status_vector));
+			if (!requestL->rrq_status_vector[1]) {
+				memcpy(requestL->rrq_status_vector, status_vector,
+					   sizeof(requestL->rrq_status_vector));
 			}
 			break;
 		}
@@ -4043,20 +4043,20 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	rrq* request;
-	CHECK_HANDLE_MEMBER(request,
+	rrq* requestL;
+	CHECK_HANDLE_MEMBER(requestL,
 						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
 
 	const USHORT number = data->p_data_message_number;
-	request = REMOTE_find_request(request, data->p_data_incarnation);
-	REM_MSG message = request->rrq_rpt[number].rrq_message;
-	const rem_fmt* format = request->rrq_rpt[number].rrq_format;
+	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
+	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
+	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 
 	THREAD_EXIT;
-	isc_send(status_vector, &request->rrq_handle, number, format->fmt_length,
+	isc_send(status_vector, &requestL->rrq_handle, number, format->fmt_length,
 			 message->msg_address, data->p_data_incarnation);
 	THREAD_ENTER;
 
@@ -4458,23 +4458,23 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 						data->p_data_transaction,
 						isc_bad_trans_handle);
 
-	rrq* request;
-	CHECK_HANDLE_MEMBER(request,
+	rrq* requestL;
+	CHECK_HANDLE_MEMBER(requestL,
 						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
 
-	request = REMOTE_find_request(request, data->p_data_incarnation);
-	REMOTE_reset_request(request, 0);
+	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
+	REMOTE_reset_request(requestL, 0);
 
 	THREAD_EXIT;
-	isc_start_request(status_vector, &request->rrq_handle,
+	isc_start_request(status_vector, &requestL->rrq_handle,
 					  &transaction->rtr_handle, data->p_data_incarnation);
 	THREAD_ENTER;
 
 	if (!status_vector[1]) {
-		request->rrq_rtr = transaction;
+		requestL->rrq_rtr = transaction;
 		if (operation == op_start_and_receive)
 			return this->receive_after_start(data, sendL, status_vector);
 	}
@@ -4504,29 +4504,29 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 						data->p_data_transaction,
 						isc_bad_trans_handle);
 
-	rrq* request;
-	CHECK_HANDLE_MEMBER(request,
+	rrq* requestL;
+	CHECK_HANDLE_MEMBER(requestL,
 						rrq*,
 						type_rrq,
 						data->p_data_request,
 						isc_bad_req_handle);
 
-	request = REMOTE_find_request(request, data->p_data_incarnation);
+	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	const USHORT number = data->p_data_message_number;
-	REM_MSG message = request->rrq_rpt[number].rrq_message;
-	const rem_fmt* format = request->rrq_rpt[number].rrq_format;
-	REMOTE_reset_request(request, message);
+	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
+	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
+	REMOTE_reset_request(requestL, message);
 
 
 	THREAD_EXIT;
-	isc_start_and_send(status_vector, &request->rrq_handle,
+	isc_start_and_send(status_vector, &requestL->rrq_handle,
 					   &transaction->rtr_handle, number,
 					   format->fmt_length, message->msg_address,
 					   data->p_data_incarnation);
 	THREAD_ENTER;
 
 	if (!status_vector[1]) {
-		request->rrq_rtr = transaction;
+		requestL->rrq_rtr = transaction;
 		if (operation == op_start_send_and_receive) {
 			return this->receive_after_start(data, sendL, status_vector);
 		}

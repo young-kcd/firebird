@@ -837,10 +837,10 @@ int common_main(int		argc,
 
 				const TEXT *p = redirect;
 				TEXT c;
-				const TEXT* q = output_suppress;
+				const TEXT* q2 = output_suppress;
 				tdgbl->sw_redirect = NOOUTPUT;
 				while (c = *p++) {
-					if (UPPER(c) != *q++) {
+					if (UPPER(c) != *q2++) {
 						tdgbl->sw_redirect = REDIRECT;
 						break;
 					}
