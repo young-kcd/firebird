@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.27 2003-09-12 23:37:05 brodsom Exp $
+$Id: why.cpp,v 1.28 2003-09-15 12:19:22 robocop Exp $
 */
 
 #include "firebird.h"
@@ -143,20 +143,24 @@ extern int access();
 #define CHECK_STATUS_SUCCESS(v)	/* nothing */
 #endif
 
-#define INIT_STATUS(vector)		vector [0] = gds_arg_gds;\
-					vector [1] = FB_SUCCESS;\
-					vector [2] = gds_arg_end
+inline void init_status(ISC_STATUS* vector)
+{
+	vector[0] = gds_arg_gds;
+	vector[1] = FB_SUCCESS;
+	vector[2] = gds_arg_end;
+}
 
-#define IS_NETWORK_ERROR(vector) \
-	(vector[1] == isc_network_error || \
-	 vector[1] == isc_net_write_err || \
-	 vector[1] == isc_net_read_err)
+inline bool is_network_error(const ISC_STATUS* vector)
+{
+	return vector[1] == isc_network_error || vector[1] == isc_net_write_err ||
+		vector[1] == isc_net_read_err;
+}
 
 #define CHECK_HANDLE(blk, blk_type, code) if (!(blk) || (blk)->type != blk_type) \
 	return bad_handle (user_status, code)
 
 #define NULL_CHECK(ptr, code, type)	if (*ptr) return bad_handle (user_status, code)
-#define GET_STATUS			{ if (!(status = user_status)) status = local; INIT_STATUS(status); }
+#define GET_STATUS			{ if (!(status = user_status)) status = local; init_status(status); }
 #define RETURN_SUCCESS			{ subsystem_exit(); CHECK_STATUS_SUCCESS (status); return FB_SUCCESS; }
 
 #ifdef REQUESTER
@@ -177,12 +181,12 @@ typedef ISC_STATUS(*PTR) (ISC_STATUS * user_status, ...);
 
 typedef struct clean
 {
-	struct clean*	clean_next;
+	struct clean* clean_next;
 	union {
 		DatabaseCleanupRoutine*	DatabaseRoutine;
 		TransactionCleanupRoutine *TransactionRoutine;
 	};
-	SLONG			clean_arg;
+	SLONG clean_arg;
 } *CLEAN;
 
 /* Transaction element block */
@@ -195,22 +199,29 @@ typedef struct teb
 } TEB;
 
 static WHY_HNDL allocate_handle(int, int);
+
 inline WHY_HNDL allocate_handle(int implementation, why_hndl *h, int handle_type) {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_why = h;
 	return handle;
 }
+
 inline WHY_HNDL allocate_handle(int implementation, dsql_req *h, int handle_type) {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_dsql = h;
 	return handle;
 }
+
 inline WHY_HNDL allocate_handle(int implementation, class jrd_tra *h, int handle_type) {
 	WHY_HNDL handle = allocate_handle(implementation, handle_type);
 	handle->handle.h_tra = h;
 	return handle;
 }
 
+
+// CVC: Just don't get the idea of private functions with C linkage.
+// Probably a finer grain would be better here.
+// There's an exported variable several lines below.
 extern "C" {
 static ISC_STATUS bad_handle(ISC_STATUS *, ISC_STATUS);
 static SCHAR *alloc(SLONG);
@@ -218,6 +229,7 @@ static SCHAR *alloc(SLONG);
 #ifdef DEV_BUILD
 static void check_status_vector(ISC_STATUS *, ISC_STATUS);
 #endif
+static void cleanup_transaction(WHY_TRA);
 static ISC_STATUS error(ISC_STATUS *, ISC_STATUS *);
 static ISC_STATUS error2(ISC_STATUS *, ISC_STATUS *);
 static void event_ast(UCHAR *, USHORT, UCHAR *);
@@ -968,8 +980,10 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 	if (CALL(PROC_CANCEL_OPERATION, database->implementation) (status,
 															   &database->
 															   handle,
-															   option)) return
-			error(status, local);
+															   option))
+	{
+		return error(status, local);
+	}
 
 	RETURN_SUCCESS;
 }
@@ -1037,7 +1051,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	WHY_TRA transaction, sub;
-	CLEAN clean;
+	//CLEAN clean;
 
 	GET_STATUS;
 	transaction = *tra_handle;
@@ -1049,8 +1063,10 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 	if (transaction->implementation != SUBSYSTEMS) {
 		if (CALL(PROC_COMMIT, transaction->implementation) (status,
 															&transaction->
-															handle)) return
-				error(status, local);
+															handle))
+		{
+			return error(status, local);
+		}
 	}
 	else {
 		/* Handle two phase commit.  Start by putting everybody into
@@ -1072,11 +1088,12 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 
 /* Call the associated cleanup handlers */
 
-	while (clean = transaction->cleanup) {
-		transaction->cleanup = clean->clean_next;
-		clean->TransactionRoutine(transaction, clean->clean_arg);
-		free_block(clean);
-	}
+	cleanup_transaction(transaction);
+	//while (clean = transaction->cleanup) {
+	//	transaction->cleanup = clean->clean_next;
+	//	clean->TransactionRoutine(transaction, clean->clean_arg);
+	//	free_block(clean);
+	//}
 
 	while (sub = transaction) {
 		transaction = sub->next;
@@ -1156,7 +1173,9 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS * user_status,
 	if (CALL(PROC_COMPILE, dbb->implementation) (status, &dbb->handle,
 												 req_handle, blr_length,
 												 blr))
-			return error(status, local);
+	{
+		return error(status, local);
+	}
 
 	request = allocate_handle(dbb->implementation, *req_handle, HANDLE_request);
 	if (!request) {
@@ -1526,9 +1545,11 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS * user_status,
 															item_length,
 															items,
 															buffer_length,
-															buffer)) 
+															buffer))
+	{
 		return error(status, local);
-
+	}
+	
 	RETURN_SUCCESS;
 }
 
@@ -1622,7 +1643,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 	WHY_REQ request;
 	WHY_STMT statement;
 	WHY_BLB blob;
-	CLEAN clean;
+	//CLEAN clean;
 
 	GET_STATUS;
 
@@ -1694,10 +1715,12 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 /* Call the associated cleanup handlers */
 
-	while (clean = dbb->cleanup) {
-		dbb->cleanup = clean->clean_next;
-		clean->DatabaseRoutine(handle, clean->clean_arg);
-		free_block(clean);
+	// Obviously, this code can't be replaced by cleanup_transaction!
+	for (clean* cln = dbb->cleanup; cln; cln = dbb->cleanup)
+	{
+		dbb->cleanup = cln->clean_next;
+		cln->DatabaseRoutine(handle, cln->clean_arg);
+		free_block(cln);
 	}
 
 	release_handle(dbb);
@@ -2152,11 +2175,17 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 
 	if (UTLD_parse_sqlda(status, dasup, &in_blr_length, &in_msg_type,
 						 &in_msg_length, dialect, in_sqlda,
-						 DASUP_CLAUSE_bind)) return error2(status, local);
+						 DASUP_CLAUSE_bind))
+	{
+		return error2(status, local);
+	}
+	
 	if (UTLD_parse_sqlda
 		(status, dasup, &out_blr_length, &out_msg_type, &out_msg_length,
 		 dialect, out_sqlda, DASUP_CLAUSE_select))
+	{
 		return error2(status, local);
+	}
 
 	if (GDS_DSQL_EXECUTE2_M(status, tra_handle, stmt_handle,
 							in_blr_length,
@@ -2167,11 +2196,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 							dasup->dasup_clauses[DASUP_CLAUSE_select].
 							dasup_blr, out_msg_type, out_msg_length,
 							dasup->dasup_clauses[DASUP_CLAUSE_select].
-							dasup_msg)) return error2(status, local);
+							dasup_msg))
+	{
+		return error2(status, local);
+	}
 
 	if (UTLD_parse_sqlda(status, dasup, NULL, NULL, NULL,
 						 dialect, out_sqlda, DASUP_CLAUSE_select))
-			return error2(status, local);
+	{
+		return error2(status, local);
+	}
 
 	CHECK_STATUS_SUCCESS(status);
 	return FB_SUCCESS;
@@ -2233,7 +2267,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS * user_status,
 	WHY_STMT statement;
 	WHY_TRA transaction, handle = NULL;
 	PTR entry;
-	CLEAN clean;
+	//CLEAN clean;
 
 	GET_STATUS;
 	statement = *stmt_handle;
@@ -2292,11 +2326,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS * user_status,
 			if (transaction && !handle) {
 				/* Call the associated cleanup handlers */
 
-				while (clean = transaction->cleanup) {
-					transaction->cleanup = clean->clean_next;
-					clean->TransactionRoutine(transaction, clean->clean_arg);
-					free_block(clean);
-				}
+				cleanup_transaction(transaction);
+				//while (clean = transaction->cleanup) {
+				//	transaction->cleanup = clean->clean_next;
+				//	clean->TransactionRoutine(transaction, clean->clean_arg);
+				//	free_block(clean);
+				//}
 
 				release_handle(transaction);
 				*tra_handle = NULL;
@@ -2409,25 +2444,33 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS * user_status,
 	memset(&dasup, 0, sizeof(struct dasup));
 	if (UTLD_parse_sqlda(status, &dasup, &in_blr_length, &in_msg_type,
 						 &in_msg_length, dialect, in_sqlda,
-						 DASUP_CLAUSE_bind)) return error2(status, local);
+						 DASUP_CLAUSE_bind))
+	{
+		return error2(status, local);
+	}
+	
 	if (UTLD_parse_sqlda
 		(status, &dasup, &out_blr_length, &out_msg_type, &out_msg_length,
 		 dialect, out_sqlda, DASUP_CLAUSE_select))
+	{
 		return error2(status, local);
+	}
 
-	if (!(s = GDS_DSQL_EXEC_IMM2_M(status, db_handle, tra_handle,
-								   length, string, dialect,
-								   in_blr_length,
-								   dasup.dasup_clauses[DASUP_CLAUSE_bind].
-								   dasup_blr, in_msg_type, in_msg_length,
-								   dasup.dasup_clauses[DASUP_CLAUSE_bind].
-								   dasup_msg, out_blr_length,
-								   dasup.dasup_clauses[DASUP_CLAUSE_select].
-								   dasup_blr, out_msg_type, out_msg_length,
-								   dasup.dasup_clauses[DASUP_CLAUSE_select].
-								   dasup_msg))) s =
-			UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect,
+	s = GDS_DSQL_EXEC_IMM2_M(status, db_handle, tra_handle,
+							 length, string, dialect,
+							 in_blr_length,
+							 dasup.dasup_clauses[DASUP_CLAUSE_bind].dasup_blr,
+							 in_msg_type, in_msg_length,
+							 dasup.dasup_clauses[DASUP_CLAUSE_bind].dasup_msg,
+							 out_blr_length,
+							 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
+							 out_msg_type, out_msg_length,
+							 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg);
+	if (!s)
+	{
+		s =	UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect,
 							 out_sqlda, DASUP_CLAUSE_select);
+	}
 
 	if (dasup.dasup_clauses[DASUP_CLAUSE_bind].dasup_blr)
 		gds__free((SLONG *)
@@ -2651,7 +2694,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS * user_status,
 	WHY_ATT dbb;
 	WHY_TRA transaction, handle = NULL;
 	PTR entry;
-	CLEAN clean;
+	//CLEAN clean;
 
 /* If we haven't been initialized yet, do it now */
 
@@ -2713,11 +2756,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS * user_status,
 		if (transaction && !handle) {
 			/* Call the associated cleanup handlers */
 
-			while (clean = transaction->cleanup) {
-				transaction->cleanup = clean->clean_next;
-				clean->TransactionRoutine(transaction, clean->clean_arg);
-				free_block(clean);
-			}
+			cleanup_transaction(transaction);
+			//while (clean = transaction->cleanup) {
+			//	transaction->cleanup = clean->clean_next;
+			//	clean->TransactionRoutine(transaction, clean->clean_arg);
+			//	free_block(clean);
+			//}
 
 			release_handle(transaction);
 			*tra_handle = NULL;
@@ -3451,8 +3495,10 @@ ISC_STATUS API_ROUTINE GDS_EVENT_WAIT(ISC_STATUS * user_status,
 	value = ISC_event_clear(why_event);
 
 	if (GDS_QUE_EVENTS
-		(status, handle, &id, length, events, event_ast,
-		 buffer)) return error2(status, local);
+		(status, handle, &id, length, events, event_ast, buffer))
+	{
+		 return error2(status, local);
+	}
 
 	event_ptr = why_event;
 	ISC_event_wait(1, &event_ptr, &value, -1, 0, NULL);
@@ -3575,7 +3621,7 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY local;
 	WHY_HNDL handle;
 	WHY_TRA transaction, sub;
-	CLEAN clean;
+	//CLEAN clean;
 
 	GET_STATUS;
 
@@ -3592,11 +3638,12 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS * user_status,
 		/* Call the associated cleanup handlers */
 
 		transaction = (WHY_TRA) handle;
-		while (clean = transaction->cleanup) {
-			transaction->cleanup = clean->clean_next;
-			clean->TransactionRoutine(transaction, clean->clean_arg);
-			free_block(clean);
-		}
+		cleanup_transaction(transaction);
+		//while (clean = transaction->cleanup) {
+		//	transaction->cleanup = clean->clean_next;
+		//	clean->TransactionRoutine(transaction, clean->clean_arg);
+		//	free_block(clean);
+		//}
 		while (sub = transaction) {
 			transaction = sub->next;
 			release_handle(sub);
@@ -3958,7 +4005,9 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS * user_status,
 														&database->handle,
 														tra_handle,
 														length, id))
+	{
 			return error(status, local);
+	}
 
 	*tra_handle = allocate_handle(	database->implementation,
 									*tra_handle,
@@ -4000,9 +4049,10 @@ ISC_STATUS API_ROUTINE GDS_RELEASE_REQUEST(ISC_STATUS * user_status,
 	subsystem_enter();
 
 	if (CALL(PROC_RELEASE_REQUEST, request->implementation) (status,
-															 &request->
-															 handle)) return
-			error(status, local);
+															 &request->handle))
+	{
+		return error(status, local);
+	}
 
 /* Get rid of connections to database */
 
@@ -4054,8 +4104,10 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS * user_status,
 														  item_length,
 														  items,
 														  buffer_length,
-														  buffer)) 
+														  buffer))
+	{
 		return error(status, local);
+	}
 
 	RETURN_SUCCESS;
 }
@@ -4151,7 +4203,7 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	WHY_TRA transaction, sub;
-	CLEAN clean;
+	//CLEAN clean;
 
 	GET_STATUS;
 	transaction = *tra_handle;
@@ -4160,23 +4212,25 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
 
 	for (sub = transaction; sub; sub = sub->next)
 		if (sub->implementation != SUBSYSTEMS &&
-			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle)) {
-			if (!IS_NETWORK_ERROR(status))
+			CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle))
+		{
+			if (!is_network_error(status))
 				return error(status, local);
 		}
 
-	if (IS_NETWORK_ERROR(status))
-		INIT_STATUS(status);
+	if (is_network_error(status))
+		init_status(status);
 
 	subsystem_exit();
 
 /* Call the associated cleanup handlers */
 
-	while (clean = transaction->cleanup) {
-		transaction->cleanup = clean->clean_next;
-		clean->TransactionRoutine(transaction, clean->clean_arg);
-		free_block(clean);
-	}
+	cleanup_transaction(transaction);
+	//while (clean = transaction->cleanup) {
+	//	transaction->cleanup = clean->clean_next;
+	//	clean->TransactionRoutine(transaction, clean->clean_arg);
+	//	free_block(clean);
+	//}
 
 	while (sub = transaction) {
 		transaction = sub->next;
@@ -4786,8 +4840,10 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS * user_status,
 														  blr, in_msg_length,
 														  in_msg,
 														  out_msg_length,
-														  out_msg)) return
-			error(status, local);
+														  out_msg))
+	{
+		return error(status, local);
+	}
 
 	RETURN_SUCCESS;
 }
@@ -5141,6 +5197,18 @@ static void check_status_vector(ISC_STATUS * status,
 }
 #endif
 
+
+// Make this repetitive block a function.
+// Call all cleanup routines registered with the transaction.
+static void cleanup_transaction(WHY_TRA transaction)
+{
+	for (clean* cln = transaction->cleanup; cln; cln = transaction->cleanup)
+	{
+		transaction->cleanup = cln->clean_next;
+		cln->TransactionRoutine(transaction, cln->clean_arg);
+		free_block(cln);
+	}
+}
 
 static ISC_STATUS error(ISC_STATUS * user_status,
 						ISC_STATUS * local)
