@@ -1,3 +1,25 @@
+2003-04-11 12:32  paul_reeves
+
+	* firebird2/builds/win32/: blrtable.bat, build_all.bat,
+	build_boot.bat, prepare.bat:
+	
+	Add a (very) little documentation to some of the Win32 .bat files.
+	Improve blrtable.bat's manners (and of course get it to compile
+	blrtable again.)
+
+2003-04-11 09:28  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	no message
+
+2003-04-11 07:17  dimitr
+
+	* firebird2/builds/win32/: common_boot.mak, fbclient_boot.mak,
+	gpre.mak, gpre_boot.mak:
+	
+	Fixed win32 build.
+
 2003-04-10 12:48  aafemt
 
 	* firebird2/src/include/fb_types.h:
