@@ -695,6 +695,7 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
    tail.  If there isn't a fit, extend the pool and try, try again. */
 	pool_locker lock_holder(lock);
 
+	bool pool_extended = false;
 	while (true)
 	{
 		best = NULL;
@@ -717,12 +718,12 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
 					best = ptr;
 					bestSeg = seg;
 					best_tail = tail;
-					if (tail == 0) {
+					if (tail == 0 || pool_extended) {
 						break;
 					}
 				}
 			}
-			if (best && tail == 0) {
+			if (best && (tail == 0 || pool_extended)) {
 				break;
 			}
 		}
@@ -732,6 +733,7 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
 
 		// We don't have enough free memory, lets extend the pool
 		extend_pool(units);
+		pool_extended = true;
 	}
 
 /* We've got our free block.  If there's enough left of the free block
