@@ -179,7 +179,8 @@ void DYN_define_cache( GBL gbl, UCHAR ** ptr)
 	request = (BLK) CMP_find_request(tdbb, drq_s_cache, DYN_REQUESTS);
 	id = drq_s_cache;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$FILES GET_STRING(ptr, X.RDB$FILE_NAME);
+		X IN RDB$FILES 
+		GET_STRING(ptr, X.RDB$FILE_NAME);
 		X.RDB$FILE_FLAGS = FILE_cache;
 		X.RDB$FILE_FLAGS.NULL = FALSE;
 		X.RDB$FILE_START = 0;
@@ -945,7 +946,8 @@ void DYN_define_difference(GBL		gbl,
 	request = (BLK) CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
 	id = drq_s_difference;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$FILES GET_STRING(ptr, X.RDB$FILE_NAME);
+		X IN RDB$FILES
+		GET_STRING(ptr, X.RDB$FILE_NAME);
 		X.RDB$FILE_FLAGS = FILE_difference;
 		X.RDB$FILE_FLAGS.NULL = FALSE;
 		X.RDB$FILE_START = 0;
