@@ -48,7 +48,9 @@ public:
 	static void shutdown();
 	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
 
+#ifndef EMBEDDED
 	~SecurityDatabase() { fini(true); }
+#endif
 
 private:
 
