@@ -15,12 +15,12 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.freebsd:	$(VERSION)	@PLATFORM@
-#$Id: prefix.freebsd,v 1.10 2003-10-07 06:43:55 stryqx Exp $
+#$Id: prefix.freebsd,v 1.11 2003-10-07 06:48:47 stryqx Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
 
-PROD_FLAGS=-O -fnobuiltin -DNDEBUG -DFREEBSD -pipe -MMD -fPIC
+PROD_FLAGS=-O -fno-builtin -DNDEBUG -DFREEBSD -pipe -MMD -fPIC
 DEV_FLAGS=-ggdb -DFREEBSD -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall
 LIB_LINK_OPTIONS:=-shared
 LIB_LINK_RPATH:=-Wl,-rpath,
