@@ -23,6 +23,9 @@
  *	Beware the SQL declaration for those functions has changed.
  * 2002.01.20 Claudio Valderrama: addMonth should work with negative values, too.
  * 2003.10.26: Made some values const and other minor changes.
+ * 2004.09.29 Claudio Valderrama: fix numeric overflow in addHour reported by
+ *	"jssahdra" <joga.singh at inventum.cc> Since all add<time> functions are
+ *	wrappers around addTenthMSec, only two lines needed to be fixed.
  */
 
 
@@ -483,9 +486,9 @@ FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, int& nyears)
 
 namespace internal
 {
-	ISC_TIMESTAMP* addTenthMSec(ISC_TIMESTAMP* v, int tenthmilliseconds, int multiplier)
+	ISC_TIMESTAMP* addTenthMSec(ISC_TIMESTAMP* v, SINT64 tenthmilliseconds, int multiplier)
 	{
-		const long full = tenthmilliseconds * multiplier;
+		const SINT64 full = tenthmilliseconds * multiplier;
 		const long days = full / tenthmsec_in_day, secs = full % tenthmsec_in_day;
 		v->timestamp_date += days;
 		 // Time portion is unsigned, so we avoid unsigned rolling over negative values
