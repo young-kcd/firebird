@@ -3,13 +3,13 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.6949 2004-04-01 02:43:26 skidder Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.6950 2004-04-01 03:03:48 skidder Exp $"
 
 BuildType=T
 MajorVer=2
 MinorVer=0
 RevNo=0
-BuildNum=6947
+BuildNum=6948
 BuildSuffix="Firebird 2.0 UNSTABLE"
 FIREBIRD_PACKAGE_VERSION=0.UNSTABLE
 
@@ -82,7 +82,7 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=6947
+BuildNum=6948
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 
