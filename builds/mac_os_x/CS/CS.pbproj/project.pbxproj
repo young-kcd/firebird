@@ -4161,6 +4161,11 @@
 			path = dsc.h;
 			refType = 4;
 		};
+		F616C5B60200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = dsc_pub.h;
+			refType = 4;
+		};
 		F616C5B70200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = dsc_proto.h;
@@ -4553,7 +4558,7 @@
 		};
 		F616C60A0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
-			path = inf.h;
+			path = inf_pub.h;
 			refType = 4;
 		};
 		F616C60B0200B0CF01EF0ADE = {

@@ -670,6 +670,10 @@ SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\dsc_pub.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dsc_proto.h
 # End Source File
 # Begin Source File
@@ -830,7 +834,7 @@ SOURCE=..\..\..\src\jrd\idx_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf.h
+SOURCE=..\..\..\src\jrd\inf_pub.h
 # End Source File
 # Begin Source File
 

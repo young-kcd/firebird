@@ -220,6 +220,9 @@
 				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\dsc_pub.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File

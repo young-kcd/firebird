@@ -109,6 +109,10 @@ SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\dsc_pub.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\enc_proto.h
 # End Source File
 # Begin Source File
