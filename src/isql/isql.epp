@@ -2367,6 +2367,7 @@ static processing_state copy_table(const TEXT* source_tbl,
 						errbuf, ftmp, NULL, NULL, NULL, NULL);
 		STDERROUT(errbuf, 1);
 		Exit_value = FINI_ERROR;
+		isqlGlob.Out = holdout;
 		return END;
 	}
 
