@@ -236,31 +236,14 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
  *	    db_itemsL -- list of db_info items to process
  *
  **************************************/
-	SCHAR* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
-	if (!buffer) {
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return false;
-	}
-	TEXT* msg = (SCHAR*) ISQL_ALLOC(MSG_LENGTH);
-	if (!msg) {
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		ISQL_FREE(buffer);
-		return false;
-	}
+	SCHAR buffer[BUFFER_LENGTH128];
+	TEXT msg[MSG_LENGTH];
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_database_info(status_vector, &db_handle, item_length,
 						  db_itemsL, BUFFER_LENGTH128, buffer))
 	{
 		ISQL_errmsg(status_vector);
-		ISQL_FREE (buffer);
-		ISQL_FREE (msg);
 		return false;
 	}
 
@@ -334,66 +317,6 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
 			break;
 
-// IGNORE WAL
-//		case isc_info_num_wal_buffers:
-//			value_out = isc_vax_integer(d, length);
-//			if (translate) {
-//				ISQL_msg_get(NUM_WAL_BUFF, msg, (TEXT*)(IPTR)value_out, NULL,
-//							 NULL, NULL, NULL);
-//				sprintf(info, msg);
-//			}
-//			else
-//				sprintf(info, "Number of wal buffers = %ld %s",
-//						value_out, NEWLINE);
-//			break;
-//
-//		case isc_info_wal_buffer_size:
-//			value_out = isc_vax_integer(d, length);
-//			if (translate) {
-//				ISQL_msg_get(WAL_BUFF_SIZE, msg, (TEXT*)(IPTR)value_out, NULL,
-//							 NULL, NULL, NULL);
-//				sprintf(info, msg);
-//			}
-//			else
-//				sprintf(info, "Wal buffer size = %ld %s", value_out, NEWLINE);
-//			break;
-//
-//		case isc_info_wal_ckpt_length:
-//			value_out = isc_vax_integer(d, length);
-//			if (translate) {
-//				ISQL_msg_get(CKPT_LENGTH, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
-//							 NULL, NULL);
-//				sprintf(info, msg);
-//			}
-//			else
-//				sprintf(info, "Check point length = %ld %s",
-//						value_out, NEWLINE);
-//			break;
-//
-//		case isc_info_wal_cur_ckpt_interval:
-//			value_out = isc_vax_integer(d, length);
-//			if (translate) {
-//				ISQL_msg_get(CKPT_INTERV, msg, (TEXT*)(IPTR)value_out, NULL, NULL,
-//							 NULL, NULL);
-//				sprintf(info, msg);
-//			}
-//			else
-//				sprintf(info, "Check point interval = %ld %s",
-//						value_out, NEWLINE);
-//			break;
-//
-//		case isc_info_wal_grpc_wait_usecs:
-//			value_out = isc_vax_integer(d, length);
-//			if (translate) {
-//				ISQL_msg_get(WAL_GRPC_WAIT, msg, (TEXT*)(IPTR)value_out, NULL,
-//							 NULL, NULL, NULL);
-//				sprintf(info, msg);
-//			}
-//			else
-//				sprintf(info, "Wal group commit wait = %ld %s",
-//						value_out, NEWLINE);
-//			break;
-
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
@@ -429,8 +352,6 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		d += length;
 		info += strlen(info);
 	}
-	ISQL_FREE(buffer);
-	ISQL_FREE(msg);
 
 	return true;
 }
@@ -952,15 +873,7 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 		return;
 	}
 
-	SCHAR* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512);
-	if (!buffer) {
-		isc_close_blob(isc_status, &blob_handle);
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return;
-	}
+	SCHAR buffer[BUFFER_LENGTH512];
 
 	USHORT length = 0;
 	while (!isc_get_segment(isc_status, &blob_handle, &length,
@@ -979,7 +892,6 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 		ISQL_errmsg(isc_status);
 
 	isc_close_blob(isc_status, &blob_handle);
-	ISQL_FREE(buffer);
 }
 
 
@@ -1348,7 +1260,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		else
 			gds__msg_format(NULL, ISQL_MSG_FAC, key, sizeof(key_string),
 							key_string, cmd[2], NULL, NULL, NULL, NULL);
-		STDERROUT(key_string, 1);
+		STDERROUT(key_string);
 	}
 
 	return (ret);
@@ -1723,14 +1635,7 @@ static void show_db()
 		return;
 	END_ERROR;
 
-	SCHAR* info_buf = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH400);
-	if (!info_buf) {
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return;
-	}
+	SCHAR info_buf[BUFFER_LENGTH400];
 
 // First general database parameters
 
@@ -1739,68 +1644,6 @@ static void show_db()
 	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
 		ISQL_printf(isqlGlob.Out, info_buf);
 	}
-	ISQL_FREE(info_buf);
-
-// IGNORE WAL
-//
-//	bool is_wal = false;
-//
-//	FOR LOG IN RDB$LOG_FILES SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
-//		SORTED BY LOG.RDB$FILE_FLAGS, LOG.RDB$FILE_SEQUENCE
-//
-//		// If there are log files, print Wal statistics
-//
-//		is_wal = true;
-//
-//		// reset nulls to zero
-//
-//		if (LOG.RDB$FILE_FLAGS.NULL)
-//			LOG.RDB$FILE_FLAGS = 0;
-//		if (LOG.RDB$FILE_LENGTH.NULL)
-//			LOG.RDB$FILE_LENGTH = 0;
-//		if (LOG.RDB$FILE_SEQUENCE.NULL)
-//			LOG.RDB$FILE_SEQUENCE = 0;
-//		fb_utils::exact_name(LOG.RDB$FILE_NAME);
-//
-//		if (LOG.RDB$FILE_FLAGS & LOG_overflow) {
-//			sprintf (Print_buffer, "overflow: %s, ", LOG.RDB$FILE_NAME);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//		else if (LOG.RDB$FILE_FLAGS & LOG_serial) {
-//			sprintf (Print_buffer, "Logfile serial: %s, ", LOG.RDB$FILE_NAME);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//		else if (LOG.RDB$FILE_FLAGS & LOG_default) {
-//			sprintf (Print_buffer, "Logfile default, ");
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//		else if (LOG.RDB$FILE_FLAGS & LOG_raw) {
-//			sprintf (Print_buffer, "Logfile raw: %s, %d partitions, ", LOG.RDB$FILE_NAME, LOG.RDB$FILE_PARTITIONS);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//		else {
-//			sprintf (Print_buffer, "Logfile #%d: %s, ", LOG.RDB$FILE_SEQUENCE, LOG.RDB$FILE_NAME);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//		sprintf (Print_buffer, "length %ld%s", LOG.RDB$FILE_LENGTH, NEWLINE);
-//		ISQL_printf (isqlGlob.Out, Print_buffer);
-//
-//	END_FOR
-//	ON_ERROR
-//		ISQL_errmsg(isc_status);
-//		if (info_buf)
-//			ISQL_FREE(info_buf);
-//		return;
-//	END_ERROR;
-//
-// And now for Rich's show db parameters
-//
-//	if (is_wal
-//		&& SHOW_dbb_parameters(DB, info_buf, wal_items,
-//							sizeof(wal_items), translate))
-//	{
-//		ISQL_printf(isqlGlob.Out, info_buf);
-//	}
 
 	FOR DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
@@ -1812,12 +1655,8 @@ static void show_db()
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-//		if (info_buf)
-//			ISQL_FREE(info_buf);
 		return;
 	END_ERROR;
-
-//	ISQL_FREE(info_buf);
 }
 
 
@@ -2529,22 +2368,13 @@ static void show_index(SCHAR* relation_name,
 
 // Get column names
 
-	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512);
-	if (!collist) {
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return;
-	}
+	SCHAR collist[BUFFER_LENGTH512];
 
-	if (ISQL_get_index_segments(collist, index_name, false)) {
+	if (ISQL_get_index_segments(collist, sizeof(collist), index_name, false)) {
 		sprintf(Print_buffer, "(%s) %s%s", collist,
 				(inactive ? "(inactive)" : ""), NEWLINE);
 		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
-
-	ISQL_FREE(collist);
 }
 
 
@@ -3224,14 +3054,7 @@ static processing_state show_table(
 
 // Handle any referential or primary constraint on this table
 
-	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512);
-	if (!collist) {
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return ERR;
-	}
+	SCHAR collist[BUFFER_LENGTH512];
 
 	// Static queries for obtaining referential constraints
 
@@ -3239,7 +3062,7 @@ static processing_state show_table(
 		RELC1.RDB$RELATION_NAME EQ relation_name
 		SORTED BY RELC1.RDB$CONSTRAINT_TYPE, RELC1.RDB$CONSTRAINT_NAME
 
-		ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
+		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
 		if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
 			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
 			sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
@@ -3258,7 +3081,7 @@ static processing_state show_table(
 			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
 			sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
-			ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, false);
+			ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
 			sprintf (Print_buffer, "  Foreign key (%s)", collist);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 
@@ -3267,7 +3090,7 @@ static processing_state show_table(
 				RELC2.RDB$CONSTRAINT_NAME EQ REFC.RDB$CONST_NAME_UQ AND
 				REFC.RDB$CONSTRAINT_NAME EQ RELC1.RDB$CONSTRAINT_NAME
 
-				ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, false);
+				ISQL_get_index_segments (collist, sizeof(collist), RELC2.RDB$INDEX_NAME, false);
 				fb_utils::exact_name(RELC2.RDB$RELATION_NAME);
 
 				sprintf (Print_buffer, "    References %s (%s)",
@@ -3294,7 +3117,6 @@ static processing_state show_table(
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				ISQL_FREE(collist);
 				return ERR;
 			END_ERROR;
 		}
@@ -3302,12 +3124,8 @@ static processing_state show_table(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		ISQL_FREE(collist);
 		return ERR;
 	END_ERROR;
-
-	if (collist)
-		ISQL_FREE(collist);
 
 	FOR R_C IN RDB$RELATION_CONSTRAINTS CROSS
 		C_C IN RDB$CHECK_CONSTRAINTS

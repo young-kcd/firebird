@@ -182,7 +182,7 @@ int EXTRACT_ddl(int flag,
 		{
 			gds__msg_format(NULL, ISQL_MSG_FAC, NOT_FOUND, sizeof(errbuf),
 							errbuf, tabname, NULL, NULL, NULL, NULL);
-			STDERROUT(errbuf, 1);
+			STDERROUT(errbuf);
 			ret_code = FINI_ERROR;
 		}
 	}
@@ -595,7 +595,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (gds_status);
-				return (SSHORT)FINI_ERROR;
+				return FINI_ERROR;
 			END_ERROR;
 
 			ISQL_printf (isqlGlob.Out, " NOT NULL");
@@ -613,20 +613,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		return (SSHORT) FINI_ERROR;
+		return FINI_ERROR;
 	END_ERROR;
 
 // Do primary and unique keys only. references come later 
 
-	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
-	if (!collist)
-	{
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return ((SSHORT) FINI_ERROR);
-	}
+	SCHAR collist[BUFFER_LENGTH512 * 2];
 
 	FOR RELC IN RDB$RELATION_CONSTRAINTS WITH
 		(RELC.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY" OR
@@ -653,14 +645,14 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 		if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7))
 		{
-			ISQL_get_index_segments (collist, RELC.RDB$INDEX_NAME, true);
+			ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
 			sprintf (Print_buffer, "PRIMARY KEY (%s)", collist);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
 		else if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6))
 		{
-			ISQL_get_index_segments (collist, RELC.RDB$INDEX_NAME, true);
+			ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
 			sprintf (Print_buffer, "UNIQUE (%s)", collist);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
@@ -668,20 +660,17 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		if (collist)
-			ISQL_FREE(collist);
-		return (SSHORT) FINI_ERROR;
+		return FINI_ERROR;
 	END_ERROR;
 
 // Check constaints are now deferred
 
+	if (first) // we extracted nothing
+		return FINI_ERROR;
+
 	sprintf(Print_buffer, ")%s%s", isqlGlob.global_Term, NEWLINE);
 	ISQL_printf(isqlGlob.Out, Print_buffer);
-
-	if (collist)
-		ISQL_FREE(collist);
-
-	return (SSHORT) FINI_OK;
+	return FINI_OK;
 }
 
 
@@ -1152,7 +1141,7 @@ static void list_all_procs()
 	ON_ERROR
 		ISQL_msg_get(GEN_ERR, msg, (TEXT*) (IPTR) isc_sqlcode(gds_status), NULL,
 					 NULL, NULL, NULL);
-		STDERROUT(msg, 1);			// Statement failed, SQLCODE = %d\n\n 
+		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
@@ -1577,157 +1566,6 @@ static void list_create_db()
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
-
-// IGNORE WAL FOR THE FORESEEABLE FUTURE.
-//	bool first_file = true;
-//	first = true; // CVC: I'm not sure if this line should be added here.
-//	bool has_wal = false;
-//
-//	FOR WAL IN RDB$LOG_FILES
-//		SORTED BY WAL.RDB$FILE_FLAGS, WAL.RDB$FILE_SEQUENCE
-//
-//		has_wal = true;
-//		if (first)
-//		{
-//			if (nodb)
-//			{
-//				sprintf (Print_buffer, "/*%s", NEWLINE);
-//				ISQL_printf (isqlGlob.Out, Print_buffer);
-//			}
-//			sprintf (Print_buffer, "%sALTER DATABASE ADD ", NEWLINE);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//		first = false;
-//
-//		if (first_file)
-//			ISQL_printf (isqlGlob.Out, "LOGFILE ");
-//
-//		if (WAL.RDB$FILE_FLAGS & LOG_default)
-//			;
-//
-//		// Overflow files also have the serial bit set 
-//		else if (WAL.RDB$FILE_FLAGS & LOG_overflow)
-//		{
-//			sprintf (Print_buffer, ")%s   OVERFLOW '%s'",
-//					 NEWLINE,
-//					 WAL.RDB$FILE_NAME);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//
-//		else if (WAL.RDB$FILE_FLAGS & LOG_serial)
-//		{
-//			sprintf (Print_buffer, "%s  BASE_NAME '%s'",
-//					 NEWLINE,
-//					 WAL.RDB$FILE_NAME);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//
-//		// Since we are fetching order by FILE_FLAGS, the LOG_0verflow will
-//		// be last.  It will only appear if there were named round robin,
-//		// so we must close the parens first
-//
-//		// We have round robin and overflow file specifications 
-//		else
-//		{
-//			if (first_file)
-//				ISQL_printf (isqlGlob.Out, "(");
-//			else
-//			{
-//				sprintf (Print_buffer, ",%s  ", NEWLINE);
-//				ISQL_printf (isqlGlob.Out, Print_buffer);
-//			}
-//			first_file = false;
-//
-//			sprintf (Print_buffer, "'%s'", WAL.RDB$FILE_NAME);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//
-//		// Any file can have a length 
-//		if (!WAL.RDB$FILE_LENGTH.NULL && WAL.RDB$FILE_LENGTH)
-//		{
-//			sprintf (Print_buffer, " SIZE %ld ", WAL.RDB$FILE_LENGTH);
-//			ISQL_printf (isqlGlob.Out, Print_buffer);
-//		}
-//
-//	END_FOR
-//	ON_ERROR
-//		ISQL_errmsg(gds_status);
-//		return;
-//	END_ERROR;
-//
-//	ISQL_printf(isqlGlob.Out, NEWLINE);
-// **************************************************************
-// ** isc_info_num_wal_buffers         for NUM_LOG_BUFFERS
-// ** isc_info_wal_buffer_size         for LOG_BUFFER_SIZE
-// ** isc_info_wal_grpc_wait_usecs     for GROUP_COMMIT_WAIT_TIME
-// ** isc_info_wal_ckpt_length         for CHECK_POINT_LENGTH
-// **
-// **************************************************************
-//
-//	bool set_used = false;
-//	if (has_wal)
-//	{
-//		char* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
-//		if (!buffer)
-//		{
-//			isc_status[0] = isc_arg_gds;
-//			isc_status[1] = isc_virmemexh;
-//			isc_status[2] = isc_arg_end;
-//			ISQL_errmsg(isc_status);
-//			return;
-//		}
-//
-//		if (!isc_database_info
-//			(gds_status, &DB, sizeof(wal_items), wal_items, BUFFER_LENGTH128,
-//			 buffer))
-//		{
-//			for (const char* d = buffer; *d != isc_info_end;)
-//			{
-//				const char item = *d++;
-//				const int length = isc_vax_integer(d, 2);
-//				d += 2;
-//				const SLONG value_out = isc_vax_integer(d, length);
-//				switch (item)
-//				{
-//				case isc_info_end:
-//					break;
-//
-//				case isc_info_num_wal_buffers:
-//					print_set(&set_used);
-//					sprintf(Print_buffer, "NUM_LOG_BUFFERS = %ld", value_out);
-//					ISQL_printf(isqlGlob.Out, Print_buffer);
-//					break;
-//
-//				case isc_info_wal_buffer_size:
-//					print_set(&set_used);
-//					sprintf(Print_buffer, "LOG_BUFFER_SIZE = %ld", value_out);
-//					ISQL_printf(isqlGlob.Out, Print_buffer);
-//					break;
-//
-//				case isc_info_wal_grpc_wait_usecs:
-//					print_set(&set_used);
-//					sprintf(Print_buffer, "GROUP_COMMIT_WAIT_TIME = %ld",
-//							value_out);
-//					ISQL_printf(isqlGlob.Out, Print_buffer);
-//					break;
-//
-//				case isc_info_wal_ckpt_length:
-//					print_set(&set_used);
-//					sprintf(Print_buffer, "CHECK_POINT_LENGTH = %ld",
-//							value_out);
-//					ISQL_printf(isqlGlob.Out, Print_buffer);
-//					break;
-//
-//				default:
-//					break;
-//				}
-//				d += length;
-//			}
-//		}
-//		if (buffer)
-//			ISQL_FREE(buffer);
-//	}
-// END OF WAL-RELATED CODE
 
 	if (!first)
 	{
@@ -2240,15 +2078,7 @@ static void list_foreign()
  *	List all foreign key constraints and alter the tables
  *
  **************************************/
-	SCHAR* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
-	if (!collist)
-	{
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return;
-	}
+	SCHAR collist[BUFFER_LENGTH512 * 2];
 
 /* Static queries for obtaining foreign constraints, where RELC1 is the
    foreign key constraints, RELC2 is the primary key lookup and REFC
@@ -2267,7 +2097,7 @@ static void list_foreign()
 		fb_utils::exact_name(RELC1.RDB$RELATION_NAME);
 		fb_utils::exact_name(RELC2.RDB$RELATION_NAME);
 
-		ISQL_get_index_segments (collist, RELC1.RDB$INDEX_NAME, true);
+		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, true);
 
 		sprintf (Print_buffer, " %s", NEWLINE);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
@@ -2317,7 +2147,7 @@ static void list_foreign()
 
 		// Get the column list for the primary key 
 
-		ISQL_get_index_segments (collist, RELC2.RDB$INDEX_NAME, true);
+		ISQL_get_index_segments (collist, sizeof(collist), RELC2.RDB$INDEX_NAME, true);
 
 		sprintf (Print_buffer, "(%s)", collist);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
@@ -2343,12 +2173,8 @@ static void list_foreign()
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		ISQL_FREE(collist);
 		return;
 	END_ERROR;
-
-	ISQL_FREE(collist);
-
 }
 
 
@@ -2370,38 +2196,8 @@ static void list_functions()
  *               RETURNS INTEGER BY VALUE
  *               ENTRY_POINT entrypoint MODULE_NAME module;
  **************************************/
-	char* buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH360);
-	if (!buffer)
-	{
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return;
-	}
-
-	char* type_buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
-	if (!type_buffer)
-	{
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		ISQL_FREE(buffer);
-		return;
-	}
-
-	char* return_buffer = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH128);
-	if (!return_buffer)
-	{
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		ISQL_FREE(type_buffer);
-		ISQL_FREE(buffer);
-		return;
-	}
+	char type_buffer[BUFFER_LENGTH128];
+	char return_buffer[BUFFER_LENGTH128];
 
 	bool first = true;
 
@@ -2569,9 +2365,6 @@ static void list_functions()
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg (gds_status);
-			ISQL_FREE (type_buffer);
-			ISQL_FREE (return_buffer);
-			ISQL_FREE (buffer);
 			return;
 		END_ERROR;
 
@@ -2594,15 +2387,8 @@ static void list_functions()
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		ISQL_FREE(type_buffer);
-		ISQL_FREE(return_buffer);
-		ISQL_FREE(buffer);
 		return;
 	END_ERROR;
-
-	ISQL_FREE(type_buffer);
-	ISQL_FREE(return_buffer);
-	ISQL_FREE(buffer);
 }
 
 
@@ -2666,15 +2452,7 @@ static void list_index()
  *	Uses get_index_segment to provide a key list for each index
  *
  **************************************/
-	char* collist = (SCHAR*) ISQL_ALLOC(BUFFER_LENGTH512 * 2);
-	if (!collist)
-	{
-		isc_status[0] = isc_arg_gds;
-		isc_status[1] = isc_virmemexh;
-		isc_status[2] = isc_arg_end;
-		ISQL_errmsg(isc_status);
-		return;
-	}
+	char collist[BUFFER_LENGTH512 * 2];
 
 	bool first = true;
 	
@@ -2720,7 +2498,7 @@ static void list_index()
 
 		// Get column names 
 
-		if (ISQL_get_index_segments (collist, IDX.RDB$INDEX_NAME, true))
+		if (ISQL_get_index_segments (collist, sizeof(collist), IDX.RDB$INDEX_NAME, true))
 		{
 			sprintf (Print_buffer, "%s)%s%s", collist, isqlGlob.global_Term, NEWLINE);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
@@ -2729,11 +2507,8 @@ static void list_index()
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
-		ISQL_FREE(collist);
 		return;
 	END_ERROR;
-
-	ISQL_FREE(collist);
 }
 
 

@@ -213,12 +213,15 @@ const int HLP_OBJTYPE3				= 102;		// Some more objects
 const int NO_ROLE					= 103;
 const int USAGE4 					= 104;		// Usage message 4
 const int INCOMPLETE_STR			= 105;		// Incomplete string in %s 
-const int HLP_SETSQLDIALECT			= 106;		//\tSET SQL DIALECT <n>    -- set sql dialect to <n>
+const int HLP_SETSQLDIALECT			= 106;		// \tSET SQL DIALECT <n>    -- set sql dialect to <n>
 const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
 const int HLP_SETPLANONLY			= 108;		// toggle display of query plan without executing
 const int HLP_SETHEADING			= 109;		// toggle display of query column titles
 const int HLP_SETBAIL				= 110;		// toggle bailing out on errors in non-interactive mode
 const int USAGE3 					= 111;		// Usage message 3
+const int TIME_PROMPT               = 112;		// Enter %s as H:M:S>
+const int TIMESTAMP_PROMPT          = 113;      // Enter %s as Y/MON/D H:MIN:S[.MSEC]>
+const int TIMESTAMP_ERR				= 114;		// Bad TIMESTAMP: %s\n
 
 // Initialize types
 
@@ -314,8 +317,8 @@ static const char* UDF_param_types[] = {
 struct IsqlGlobals {
 	FILE* Out;
 	FILE* Errfp;
-	SCHAR global_Db_name[128];
-	SCHAR global_Target_db[128];
+	SCHAR global_Db_name[MAXPATHLEN];
+	SCHAR global_Target_db[MAXPATHLEN];
 	SCHAR global_Term[MAXTERM_SIZE];
 	SCHAR User[128];
 	SCHAR Role[256];
@@ -337,7 +340,8 @@ static const char* SCRATCH		= "fb_q";
 static const char* SCRATCH		= "fb_query_";
 #endif
 
-inline void STDERROUT(const char* st, bool cr) {
+inline void STDERROUT(const char* st, bool cr = true)
+{
 	fprintf (isqlGlob.Errfp, "%s", st);
 	if (cr)
 		fprintf (isqlGlob.Errfp, "\n");
