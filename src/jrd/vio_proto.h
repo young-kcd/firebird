@@ -31,6 +31,7 @@ extern "C" {
 #endif
 
 extern void VIO_backout(TDBB, struct rpb *, struct jrd_tra *);
+extern void VIO_bump_count(TDBB, USHORT, struct jrd_rel *, bool);
 extern int VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
 									struct jrd_tra *, struct blk *, BOOLEAN);
 #ifdef PC_ENGINE

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.56 2003-04-26 10:09:38 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.57 2003-05-04 15:39:42 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -108,14 +108,6 @@ $Id: exe.cpp,v 1.56 2003-04-26 10:09:38 alexpeshkoff Exp $
 #include "../jrd/rpb_chain.h"
 
 extern "C" {
-
-
-// fwd. decl.
-IDX_E IDX_modify_check_constraints(TDBB tdbb,
-								   RPB * org_rpb,
-								   RPB * new_rpb,
-								   JRD_TRA transaction,
-								   JRD_REL * bad_relation, USHORT * bad_index);	// defined in idx.cpp
 
 
 #ifdef SHLIB_DEFS
@@ -1253,6 +1245,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									rpb->rpb_record, 0,
 									jrd_req::req_trigger_delete)))
 	{
+		VIO_bump_count(tdbb, DBB_delete_count, relation, true);
 		trigger_failure(tdbb, trigger);
 	}
 
@@ -1269,6 +1262,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 			IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
 
 		if (error_code) {
+			VIO_bump_count(tdbb, DBB_delete_count, relation, true);
 			ERR_duplicate_error(error_code, bad_relation, bad_index);
 		}
 	}
@@ -2884,19 +2878,19 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		}
 		else if (!relation->rel_view_rse)
 		{
-			SSHORT bad_index;
+			USHORT bad_index;
 			JRD_REL bad_relation;
-			IDX_E error_code;
 
 			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
 
-			error_code = IDX_modify(tdbb,
-									org_rpb,
-									new_rpb,
-									transaction,
-									&bad_relation,
-									reinterpret_cast<USHORT*>(&bad_index));
+			IDX_E error_code = IDX_modify(tdbb,
+										  org_rpb,
+										  new_rpb,
+										  transaction,
+										  &bad_relation,
+										  &bad_index);
 			if (error_code) {
+				VIO_bump_count(tdbb, DBB_update_count, bad_relation, true);
 				ERR_duplicate_error(error_code, bad_relation, bad_index);
 			}
 		}
@@ -2908,6 +2902,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 										new_rpb->rpb_record,
 										jrd_req::req_trigger_update)))
 		{
+			VIO_bump_count(tdbb, DBB_update_count, relation, true);
 			trigger_failure(tdbb, trigger);
 		}
 
@@ -2917,19 +2912,19 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 
 		if (!relation->rel_file && !relation->rel_view_rse)
 		{
-			SSHORT bad_index;
+			USHORT bad_index;
 			JRD_REL bad_relation;
-			IDX_E error_code;
 
-			if ( (error_code = IDX_modify_check_constraints(tdbb,
-														  org_rpb,
-														  new_rpb,
-														  transaction,
-														  &bad_relation,
-														  reinterpret_cast <
-														  USHORT *
-														  >(&bad_index))) )
-					ERR_duplicate_error(error_code, bad_relation, bad_index);
+			IDX_E error_code = IDX_modify_check_constraints(tdbb,
+															org_rpb,
+															new_rpb,
+															transaction,
+															&bad_relation,
+															&bad_index);
+			if (error_code) {
+				VIO_bump_count(tdbb, DBB_update_count, relation, true);
+				ERR_duplicate_error(error_code, bad_relation, bad_index);
+			}
 		}
 
 		if (transaction != dbb->dbb_sys_trans) {
@@ -3813,16 +3808,17 @@ static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		}
 		else if (!relation->rel_view_rse)
 		{
-			SSHORT bad_index;
+			USHORT bad_index;
 			JRD_REL bad_relation;
 
 			VIO_store(tdbb, rpb, transaction);
 			IDX_E error_code = IDX_store(tdbb,
-										rpb,
-										transaction,
-										&bad_relation,
-										reinterpret_cast<USHORT*>(&bad_index));
+										 rpb,
+										 transaction,
+										 &bad_relation,
+										 &bad_index);
 			if (error_code) {
+				VIO_bump_count(tdbb, DBB_insert_count, bad_relation, true);
 				ERR_duplicate_error(error_code, bad_relation, bad_index);
 			}
 		}
@@ -3832,6 +3828,7 @@ static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
 										0, record, jrd_req::req_trigger_insert)))
 		{
+			VIO_bump_count(tdbb, DBB_insert_count, relation, true);
 			trigger_failure(tdbb, trigger);
 		}
 

@@ -95,7 +95,6 @@
 extern "C" {
 
 
-static void bump_count(TDBB, USHORT, JRD_REL);
 static void check_class(TDBB, JRD_TRA, RPB *, RPB *, USHORT);
 static void check_control(TDBB);
 static BOOLEAN check_user(TDBB, DSC *);
@@ -224,7 +223,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 #endif
 
 	relation = rpb->rpb_relation;
-	bump_count(tdbb, DBB_backout_count, relation);
+	VIO_bump_count(tdbb, DBB_backout_count, relation, false);
 	going = staying = NULL;
 	old_data = data = NULL;
 	gc_rec1 = gc_rec2 = NULL;
@@ -407,6 +406,49 @@ void VIO_backout(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 		gc_rec1->rec_flags &= ~REC_gc_active;
 	if (gc_rec2)
 		gc_rec2->rec_flags &= ~REC_gc_active;
+}
+
+
+void VIO_bump_count(TDBB tdbb, USHORT count_id, JRD_REL relation, bool error)
+{
+/**************************************
+ *
+ *	V I O _ b u m p _ c o u n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Bump a usage count.
+ *
+ **************************************/
+	DBB dbb;
+	VCL vector, *ptr;
+	USHORT relation_id;
+
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+	CHECK_DBB(dbb);
+
+#ifdef VIO_DEBUG
+	if (debug_flag > DEBUG_TRACE_ALL)
+		ib_printf("bump_count (count_id %d, table %d)\n", count_id,
+				  relation ? relation->rel_id : 0);
+#endif
+
+#ifdef PROD_BUILD
+/* The sweeper threads run in the background without
+   any way to inspect these counters. For debugging
+   purposes, they are maintained in the DEV_BUILD. */
+
+	if (tdbb->tdbb_flags & TDBB_sweeper)
+		return;
+#endif
+
+	relation_id = relation->rel_id;
+	ptr = tdbb->tdbb_attachment->att_counts + count_id;
+
+	vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
+	((*vector)[relation_id]) += (error) ? -1 : 1;
 }
 
 
@@ -1381,7 +1423,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 		verb_post(tdbb, transaction, rpb, 0, 0, same_tx, FALSE);
 	}
 
-	bump_count(tdbb, DBB_delete_count, relation);
+	VIO_bump_count(tdbb, DBB_delete_count, relation, false);
 
 /* for an autocommit transaction, mark a commit as necessary */
 
@@ -1660,7 +1702,7 @@ int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, JRD_TRA transaction, BLK pool)
 	if (pool)
 		VIO_data(tdbb, rpb, pool);
 
-	bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation);
+	VIO_bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation, false);
 
 	return TRUE;
 }
@@ -2005,7 +2047,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
    endless grief on cleanup */
 
 	relation = org_rpb->rpb_relation;
-	bump_count(tdbb, DBB_update_count, relation);
+	VIO_bump_count(tdbb, DBB_update_count, relation, false);
 
 	if (transaction->tra_flags & TRA_system) {
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
@@ -2323,7 +2365,7 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
-	bump_count(tdbb, DBB_read_seq_count, rpb->rpb_relation);
+	VIO_bump_count(tdbb, DBB_read_seq_count, rpb->rpb_relation, false);
 
 	return TRUE;
 }
@@ -2551,7 +2593,7 @@ void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
-	bump_count(tdbb, DBB_insert_count, relation);
+	VIO_bump_count(tdbb, DBB_insert_count, relation, false);
 
 	if (!(transaction->tra_flags & TRA_system) &&
 		(transaction->tra_save_point) &&
@@ -2945,49 +2987,6 @@ void VIO_merge_proc_sav_points(
 }
 
 
-static void bump_count(TDBB tdbb, USHORT count_id, JRD_REL relation)
-{
-/**************************************
- *
- *	b u m p _ c o u n t
- *
- **************************************
- *
- * Functional description
- *	Bump a usage count.
- *
- **************************************/
-	DBB dbb;
-	VCL vector, *ptr;
-	USHORT relation_id;
-
-	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	CHECK_DBB(dbb);
-
-#ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_TRACE_ALL)
-		ib_printf("bump_count (count_id %d, table %d)\n", count_id,
-				  relation ? relation->rel_id : 0);
-#endif
-
-#ifdef PROD_BUILD
-/* The sweeper threads run in the background without
-   any way to inspect these counters. For debugging
-   purposes, they are maintained in the DEV_BUILD. */
-
-	if (tdbb->tdbb_flags & TDBB_sweeper)
-		return;
-#endif
-
-	relation_id = relation->rel_id;
-	ptr = tdbb->tdbb_attachment->att_counts + count_id;
-
-	vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
-	++((*vector)[relation_id]);
-}
-
-
 static void check_class(
 						TDBB tdbb,
 						JRD_TRA transaction,
@@ -3271,7 +3270,7 @@ static void expunge(TDBB tdbb, RPB * rpb, JRD_TRA transaction, SLONG prior_page)
 
 	temp = *rpb;
 	garbage_collect(tdbb, &temp, rpb->rpb_page, 0);
-	bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation);
+	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation, false);
 }
 
 
@@ -4323,7 +4322,7 @@ static BOOLEAN purge(TDBB tdbb, RPB* rpb)
 	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
 	LLS_POP(&staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
-	bump_count(tdbb, DBB_purge_count, relation);
+	VIO_bump_count(tdbb, DBB_purge_count, relation, false);
 
 	return TRUE;
 }
