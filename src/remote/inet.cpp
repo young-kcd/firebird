@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.59 2003-03-11 19:51:07 brodsom Exp $
+$Id: inet.cpp,v 1.60 2003-03-12 10:13:58 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -348,6 +348,8 @@ static int fork(void);
 static int fork(SOCKET, USHORT);
 #endif
 
+static ULONG get_bind_address();
+static hostent * get_host(const TEXT *);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -378,7 +380,6 @@ static PORT		inet_try_connect(	PACKET*,
 									SSHORT);
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(SCHAR *, int);
-//static int		initWSA(PORT);
 #if !(defined WIN_NT)
 static int		parse_hosts(TEXT *, TEXT *, TEXT *);
 static int		parse_line(TEXT *, TEXT *, TEXT *, TEXT *);
@@ -828,7 +829,6 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 #endif
 	int optval;
 
-
 #ifdef DEBUG
 	{
 		UCHAR *p;
@@ -902,7 +902,8 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 /* U N I X style sockets */
 	THREAD_EXIT;
-	host = gethostbyname(name);
+
+	host = get_host(name);
 
 /* On Windows NT/9x, gethostbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -913,11 +914,9 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
  * NOTE: This still does not guarantee success, but helps.
  */
 	if (!host) {
-		int retry;
 		if (H_ERRNO == INET_RETRY_ERRNO) {
-			for (retry = 0; retry < INET_RETRY_CALL; retry++) {
-				host = gethostbyname(name);
-				if (host)
+			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
+				if ( (host = get_host(name)) )
 					break;
 			}
 		}
@@ -944,11 +943,11 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 	address.sin_family = host->h_addrtype;
 	if (packet) {
-		inet_copy(host->h_addr, (SCHAR *) & address.sin_addr,
+		inet_copy(host->h_addr, (SCHAR *) &address.sin_addr,
 				  sizeof(address.sin_addr));
 	}
 	else {
-		address.sin_addr.s_addr = INADDR_ANY;
+		address.sin_addr.s_addr = get_bind_address();
 	}
 
 	THREAD_EXIT;
@@ -962,11 +961,9 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
  * NOTE: This still does not guarantee success, but helps.
  */
 	if (!service) {
-		int retry;
 		if (H_ERRNO == INET_RETRY_ERRNO) {
-			for (retry = 0; retry < INET_RETRY_CALL; retry++) {
-				service = getservbyname(protocol, "tcp");
-				if (service)
+			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
+				if ( (service = getservbyname(protocol, "tcp")) )
 					break;
 			}
 		}
@@ -977,7 +974,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
     translation of "gds_db" into "3050"
-    This way, a connection to a remote IB server
+    This way, a connection to a remote FB server
     works even from clients with missing "gds_db"
     entry in "services" file, which is important
     for zero-installation clients.
@@ -1104,8 +1101,6 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 
 			gds__log("inet log: disabled Nagle algorithm \n");
 
-
-
 			if (n == -1) {
 				inet_error(port, "setsockopt TCP_NODELAY",
 						   isc_net_connect_listen_err, ERRNO);
@@ -1114,9 +1109,6 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 			}
 		}
 #endif
-
-
-
 
 	}
 
@@ -1163,8 +1155,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 		return port;
 	}
 
-
-	while (TRUE) {
+	while (true) {
 		THREAD_EXIT;
 		l = sizeof(address);
 		s = accept((SOCKET) port->port_handle,
@@ -1707,22 +1698,22 @@ static PORT aux_request( PORT port, PACKET * packet)
 	P_RESP *response;
 	SOCKET n;
     socklen_t length;
-	struct sockaddr_in address;
-#ifndef VMS
-	struct hostent *host;
-	TEXT msg[64];
-#endif
+	struct sockaddr_in address, port_address;
+	int optval;
 
 /* Set up new socket */
+
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = get_bind_address();
+	address.sin_port = htons(Config::getRemoteAuxPort());
 
 	if ((n = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 		inet_error(port, "socket", isc_net_event_listen_err, ERRNO);
 		return NULL;
 	}
 
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = 0;
+	setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
+			   (SCHAR *) &optval, sizeof(optval));
 
 	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		inet_error(port, "bind", isc_net_event_listen_err, ERRNO);
@@ -1751,35 +1742,15 @@ static PORT aux_request( PORT port, PACKET * packet)
 
 	response = &packet->p_resp;
 
-#ifdef VMS
-	if (getaddr(port->port_host->str_data, &address) == -1) {
-		inet_error(port, "gethostbyname", isc_net_event_listen_err, 0);
+	if (getsockname((SOCKET) port->port_handle, (struct sockaddr *) &port_address, &length) < 0) {
+		inet_error(port, "getsockname", isc_net_event_listen_err, ERRNO);
 		return NULL;
 	}
-#else
-	THREAD_EXIT;
-	host = gethostbyname(port->port_host->str_data);
-	THREAD_ENTER;
-	if (!host) {
-		sprintf(msg,
-				"INET/aux_request: gethostbyname failed, error code = %d",
-				H_ERRNO);
-		gds__log(msg, 0);
-		inet_gen_error(port,
-					   isc_network_error,
-					   isc_arg_string,
-					   port->port_host->str_data,
-					   isc_arg_gds,
-					   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, 0);
-		return NULL;
-	}
-	inet_copy(host->h_addr, (SCHAR *) & address.sin_addr,
-			  sizeof(address.sin_addr));
-#endif
+	address.sin_addr = port_address.sin_addr;
 
 	response->p_resp_data.cstr_address = (UCHAR *) & response->p_resp_blob_id;
 	response->p_resp_data.cstr_length = sizeof(response->p_resp_blob_id);
-	inet_copy((SCHAR *) & address,
+	inet_copy((SCHAR *) &address,
 			  reinterpret_cast < char *>(response->p_resp_data.cstr_address),
 			  response->p_resp_data.cstr_length);
 
@@ -2233,6 +2204,40 @@ static int fork( SOCKET old_handle, USHORT flag)
 }
 #endif
 
+static ULONG get_bind_address()
+{
+/**************************************
+ *
+ *	g e t _ b i n d _ a d d r e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return local address to bind sockets to.
+ *
+ **************************************/
+	const char* config_option = Config::getRemoteBindAddress();
+	ULONG config_address = (config_option) ? inet_addr(config_option) : INADDR_NONE;
+	return (config_address == INADDR_NONE) ? INADDR_ANY : config_address;
+}
+
+static hostent * get_host(const TEXT * name)
+{
+/**************************************
+ *
+ *	g e t _ h o s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return host information.
+ *
+ **************************************/
+	ULONG address = inet_addr(name);
+	return (address == INADDR_NONE) ?
+		gethostbyname(name) :
+		gethostbyaddr((SCHAR *) &address, sizeof(ULONG), AF_INET);
+}
 
 //____________________________________________________________
 //
