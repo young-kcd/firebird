@@ -56,7 +56,7 @@ static int get_symbol( UCHAR *);
 #define UPPER_Z		'Z'
 
 
-void main( int argc, char **argv)
+int main( int argc, char **argv)
 {
 /**************************************
  *

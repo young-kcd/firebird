@@ -51,7 +51,7 @@ static SSHORT mustget(SCHAR *);
 static int translate(SCHAR *, SCHAR *, SSHORT);
 
 
-void main( int argc, char **argv)
+int main( int argc, char **argv)
 {
 /**************************************
  *

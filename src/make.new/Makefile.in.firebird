@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.5 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.6 2001-08-15 05:37:55 skywalker Exp $
 # 
 
 ROOT=..
@@ -379,7 +379,7 @@ builddist:
 #___________________________________________________________________________
 # This one needs some more work.
 
-clean: clean_objs clean_libs clean_exes clean_dbs
+clean: clean_objs clean_libs clean_exes clean_dbs clean_build
 
 clean_objs:
 	-echo $(GDSLIB_Objects) | xargs rm -f
@@ -401,6 +401,9 @@ clean_exes:
 clean_dbs:
 	-rm */*\.gdb
 	-rm */*\.lnk
+
+clean_build:
+	-rm -rf $(GEN_ROOT)/firebird
 
 #	rm -f $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 

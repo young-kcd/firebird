@@ -85,9 +85,9 @@ checkInstallUser
 
 # Ok, here we are installing from a CVS tree
 
-if [ -e firebird ]
+if [ -e gen ]
   then
-    ScriptsSrcDir=./src/install/linux
+    ScriptsSrcDir=./src/install/
 
     ( $ScriptsSrcDir/classic/CSpreinstall.sh )
 
@@ -101,13 +101,13 @@ fi
 if [ -e scripts ]
   then
     echo "Extracting install data"
-    runAndCheckExit "tar -xzf interbase.tar.gz"
+    runAndCheckExit "tar -xzf firebird.tar.gz"
 
     (./scripts/CSpreinstall.sh)
     (./scripts/CSinstall.sh)
     (./scripts/CSpostinstall.sh)
 
-    rm -rf interbase
+    rm -rf firebird
 fi
 
 echo "Install completed"
