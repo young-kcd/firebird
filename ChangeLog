@@ -1,3 +1,9 @@
+2004-07-09 07:22  robocop
+
+	* firebird2/src/: include/fb_string.h (1.27), jrd/cmp.cpp (1.136):
+	
+	Style
+
 2004-07-08 00:18  skidder
 
 	* firebird2/src/extern/regex/fake/: limits.h (1.1), memmove.c
