@@ -308,11 +308,11 @@ typedef srl *SRL;
    can be used in an rse, since this is the space
    available in the opt block */
 
-#define MAX_OPT_ITEMS	1024
+#define MAX_OPT_ITEMS	256
 
 #define MAX_CONJUNCTS	MAX_OPT_ITEMS
-#define MAX_INDICES	MAX_OPT_ITEMS
-#define	OPT_BITS	(MAX_OPT_ITEMS / 32)
+#define MAX_INDICES		MAX_OPT_ITEMS
+#define	OPT_BITS		(MAX_OPT_ITEMS / 32)
 
 // Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
 // Here we should really have a compile-time assert, since this hard-coded
