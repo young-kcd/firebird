@@ -1,3 +1,23 @@
+2004-09-04 22:09  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.119):
+	
+	Fixed possible SEGV errors in the op_connect handler.
+
+2004-09-04 20:43  dimitr
+
+	* firebird2/src/dsql/: make.cpp (1.73), pass1.cpp (1.158):
+	
+	Allowed EXTRACT(<part> FROM NULL) to return NULL of SMALLINT/INT
+	(depending on <part>) datatype.
+
+2004-09-04 20:24  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.112), gen.cpp (1.69), make.cpp
+	(1.72), make_proto.h (1.22), pass1.cpp (1.157):
+	
+	Let's describe literal NULLs correctly in expressions.
+
 2004-09-03 08:44  dimitr
 
 	* firebird2/src/jrd/idx.cpp (1.69):
