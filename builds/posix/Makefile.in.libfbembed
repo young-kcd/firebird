@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.7 2003-03-05 17:59:10 brodsom Exp $
+#  $Id: Makefile.in.libfbembed,v 1.8 2003-03-06 23:25:32 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
@@ -59,7 +59,7 @@ libfbembed : $(LIBFBEMBED_SO)
 
 $(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects)
 #	$(LIB_LINK) -Wl,-soname,libfbembed.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
-	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libfbembed.$(SHRLIB_EXT).1 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(WIN_LIBS)
+	$(LIB_LINK)  $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libfbembed.$(SHRLIB_EXT).1 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
 	-$(LN) $(@F) $(LIBFBEMBED_SOBASENAME) 
 	-$(LN) $(notdir $(LIBFBEMBED_SOBASENAME)) $(LIBFBEMBED_SONAME)
 

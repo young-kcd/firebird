@@ -33,7 +33,6 @@ LIB_LINK_SONAME:=-Wl,-soname,
 LIB_GUI:= -mwindows
 EMBED_UTIL_TARGETS:=gstat gsec 
 CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg 
-WIN_LIBS:=-lmpr -lcomctl32 -lversion -lws2_32 -lgdi32 -lstdc++
 WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
 Physical_IO_Module=winnt.cpp
