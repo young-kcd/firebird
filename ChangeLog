@@ -1,3 +1,11 @@
+2003-03-30 18:55  arnobrinkman
+
+	* firebird2/src/jrd/: inf.cpp, svc.cpp:
+	
+	bugfix: A good bugfix with the database statistics problem which
+	also exists in FB1.0. Thanks to Claudio Valderrama which pointed to
+	problems in the previous commited fix.
+
 2003-03-29 16:49  dimitr
 
 	* firebird2/src/jrd/svc.cpp:
