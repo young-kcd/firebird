@@ -130,6 +130,9 @@
 /* Support databases on Raw Devices (UNIX only) */
 #undef SUPPORT_RAW_DEVICES
 
+/* Maximum allowed pathname length */
+#define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
+
 /* CPU types */
 #undef PowerPC
 #undef sparc

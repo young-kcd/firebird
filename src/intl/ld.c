@@ -26,7 +26,9 @@
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
 
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h> /* for MAXPATHLEN */
+#endif
 
 /* Commented out to make Linux version work because it is inaccessiable on all 
   known platforms. Nickolay Samofatov, 10 Sept 2002
