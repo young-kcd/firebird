@@ -1279,7 +1279,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_flags = input->nod_flags;
 		dsql_nod* cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
-		fb_assert(cursor->nod_flags > 0);
 
 		const dsql_nod* select = input->nod_arg[e_flp_select];
 		node->nod_arg[e_flp_select] =
@@ -1287,6 +1286,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 					  select->nod_arg[e_select_lock]);
 
 		if (cursor) {
+			fb_assert(cursor->nod_flags > 0);
 			pass1_cursor_name(request, (dsql_str*) cursor->nod_arg[e_cur_name],
 							  -1U, false);
 			cursor->nod_arg[e_cur_rse] = node->nod_arg[e_flp_select];
