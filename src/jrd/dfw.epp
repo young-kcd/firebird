@@ -3511,8 +3511,7 @@ static FMT make_format(TDBB tdbb, JRD_REL relation, USHORT * version, TFB stack)
 		}
 		else
 			*desc = tfb->tfb_desc;
-		// dimitr: view fields shoudn't be marked as computed
-		if (!relation->rel_view_rse && (tfb->tfb_flags & TFB_computed))
+		if (tfb->tfb_flags & TFB_computed)
 			desc->dsc_dtype |= COMPUTED_FLAG;
 	}
 
@@ -3833,8 +3832,10 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 								 0);
 					}
 
-					if (!NULL_BLOB(FLD.RDB$COMPUTED_BLR))
+					// dimitr: view fields shoudn't be marked as computed
+					if (null_view && !NULL_BLOB(FLD.RDB$COMPUTED_BLR))
 						tfb_->tfb_flags |= TFB_computed;
+
 					tfb_->tfb_id = RFR.RDB$FIELD_ID;
 
 					if ((n = FLD.RDB$DIMENSIONS))
