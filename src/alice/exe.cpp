@@ -1,30 +1,34 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	Alice (All Else) Utility
 //		MODULE:		exe.cpp
 //		DESCRIPTION:	Does the database calls
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  
+//
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.1.1.1 2001-05-23 13:25:33 tamlin Exp $
+//	$Id: exe.cpp,v 1.2 2001-07-10 17:35:12 awharrison Exp $
+//
+// 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+//                         conditionals, as the engine now fully supports
+//                         readonly databases.
 //
 
 #include "../jrd/ib_stdio.h"
@@ -76,8 +80,8 @@ static TEXT val_errors[] =
 
 
 //____________________________________________________________
-//  
-//  
+//
+//
 
 int EXE_action(TEXT * database, ULONG switches)
 {
@@ -96,7 +100,7 @@ int EXE_action(TEXT * database, ULONG switches)
 		tdgbl->ALICE_data.ua_val_errors[i] = 0;
 
 //  generate the database parameter block for the attach,
-//  based on the various switches 
+//  based on the various switches
 
 	dpb_length = build_dpb(dpb, switches);
 
@@ -144,8 +148,8 @@ int EXE_action(TEXT * database, ULONG switches)
 
 #ifndef GUI_TOOLS
 //____________________________________________________________
-//  
-//  
+//
+//
 
 int EXE_two_phase(TEXT * database, ULONG switches)
 {
@@ -163,7 +167,7 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 		tdgbl->ALICE_data.ua_val_errors[i] = 0;
 
 //  generate the database parameter block for the attach,
-//  based on the various switches 
+//  based on the various switches
 
 	dpb_length = build_dpb(dpb, switches);
 
@@ -201,11 +205,11 @@ int EXE_two_phase(TEXT * database, ULONG switches)
 
 
 //____________________________________________________________
-//  
-//  
-//  generate the database parameter block for the attach, 
-//  based on the various switches 
-//  
+//
+//
+//  generate the database parameter block for the attach,
+//  based on the various switches
+//
 
 static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 {
@@ -289,13 +293,12 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 		*d++ = 1;
 		*d++ = tdgbl->ALICE_data.ua_use;
 	}
-#ifdef READONLY_DATABASE
+
 	else if (switches & sw_mode) {
 		*d++ = isc_dpb_set_db_readonly;
 		*d++ = 1;
 		*d++ = tdgbl->ALICE_data.ua_read_only;
 	}
-#endif /* READONLY_DATABASE */
 	else if (switches & sw_shut) {
 		*d++ = gds_dpb_shutdown;
 		*d++ = 1;
@@ -366,9 +369,9 @@ static USHORT build_dpb(UCHAR * dpb, ULONG switches)
 
 
 //____________________________________________________________
-//  
+//
 //		Extract database info from string
-//  
+//
 
 static void extract_db_info(UCHAR * db_info_buffer)
 {

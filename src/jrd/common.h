@@ -20,10 +20,14 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
+ * FSG 16.03.2001
+ *
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 /*
-$Id: common.h,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
+$Id: common.h,v 1.2 2001-07-10 17:35:13 awharrison Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -33,7 +37,7 @@ $Id: common.h,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
 #include "../include/fb_macros.h"
 #endif
 
-/* 
+/*
   do not use links in source code to maintain platform neutraility
 */
 
@@ -163,7 +167,7 @@ $Id: common.h,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
 
 /* Defined KILLER_SIGNALS for Sun - as we were getting lots of lockups
  * using pipe server.
- * 1995-February-24 David Schnepper 
+ * 1995-February-24 David Schnepper
  */
 #define KILLER_SIGNALS
 
@@ -218,7 +222,7 @@ $Id: common.h,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
 
      For maximum portability, memmove should be used when the memory areas
      indicated by s1 and s2 may overlap, and memcpy used for faster copying
-     between non-overlapping areas. 
+     between non-overlapping areas.
 
 **********/
 
@@ -407,7 +411,7 @@ $Id: common.h,v 1.1.1.1 2001-05-23 13:26:08 tamlin Exp $
 
 
 
-/* DOS does not compare the high order word of far pointers, 
+/* DOS does not compare the high order word of far pointers,
    so we must cast them to huge in comparions; also, for routines
    which return a double, they must be given a pascal type so that
    they will work in a multithreaded environment */
@@ -817,8 +821,8 @@ typedef unsigned long DWORD;
 #define INTL_BACKEND
 #define SYNC_WRITE_DEFAULT      1
 
-/* turn on stack reduction methods for only those routines 
-   which are not commonly used; since this is a server, we 
+/* turn on stack reduction methods for only those routines
+   which are not commonly used; since this is a server, we
    want to allocate buffers on the stack for oft-used routines */
 
 #define STACK_REDUCTION
@@ -1139,11 +1143,6 @@ typedef struct {
 } SQUAD;
 #endif
 
-/* Enable support for READONLY databases in InterBase, IB 6.0 (Kinobi) project */
-#ifndef READONLY_DATABASE
-#define READONLY_DATABASE
-#endif
-
 #ifndef ATOM_DEFINED			/* 32 or 64 bit */
 typedef long SATOM;
 typedef unsigned long UATOM;
@@ -1337,7 +1336,7 @@ typedef USHORT FLD_LENGTH;
 
 #ifdef DEV_BUILD
 
-/* Define any debugging symbols and macros here.  This 
+/* Define any debugging symbols and macros here.  This
    ifdef will be executed during development builds. */
 
 #ifdef NETWARE_386

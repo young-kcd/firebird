@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #ifdef _MSC_VER
@@ -529,7 +532,6 @@ FIL PIO_open(DBB dbb,
 					  FILE_FLAG_RANDOM_ACCESS | dwExtraFlags, 0);
 
 	if (desc == INVALID_HANDLE_VALUE) {
-#ifdef READONLY_DATABASE
 		/* Try opening the database file in ReadOnly mode.
 		 * The database file could be on a RO medium (CD-ROM etc.).
 		 * If this fileopen fails, return error.
@@ -543,7 +545,6 @@ FIL PIO_open(DBB dbb,
 						  FILE_FLAG_RANDOM_ACCESS | dwExtraFlags, 0);
 
 		if (desc == INVALID_HANDLE_VALUE) {
-#endif /* READONLY_DATABASE */
 			ERR_post(isc_io_error,
 					 gds_arg_string,
 					 "CreateFile (open)",
@@ -552,7 +553,6 @@ FIL PIO_open(DBB dbb,
 					 ERR_string(file_name, file_length),
 					 isc_arg_gds,
 					 isc_io_open_err, gds_arg_win32, GetLastError(), 0);
-#ifdef READONLY_DATABASE
 		}
 		else {
 			/* If this is the primary file, set DBB flag to indicate that it is
@@ -563,7 +563,6 @@ FIL PIO_open(DBB dbb,
 			if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
-#endif /* READONLY_DATABASE */
 	}
 
 	return setup_file(dbb, string, length, desc);

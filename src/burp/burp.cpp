@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/ib_stdio.h"
@@ -371,7 +374,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		 *
 		 * If -USER and -PASSWORD switches are used by the user within
 		 * the gbak command line then we have to eliminate them from there. The
-		 * password will be encrypted and added along with the user name 
+		 * password will be encrypted and added along with the user name
 		 * within SVC_start function later on. We shall also eliminate
 		 * the -SERVER switch because the switch has already been processed.
 		 */
@@ -449,7 +452,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	TEXT *file1, **end, *string, *p, *q, c, *device, *redirect;
 /* This function runs within thread for services API, so here should not be
    *any* static variables. I did not change an existing definition
-   for AIX PowerPC because of the problem (see comments below). So 
+   for AIX PowerPC because of the problem (see comments below). So
    whoever will do a port on AIX, must reconsider a static definition */
 #ifdef AIX_PPC
 	static TEXT *file2;			/* SomeHow, making this VOLATILE does'nt give the
@@ -629,9 +632,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	tdgbl->gbl_sw_ignore_limbo = FALSE;
 	tdgbl->gbl_sw_blk_factor = 0;
 	tdgbl->gbl_sw_no_reserve = FALSE;
-#ifdef READONLY_DATABASE
 	tdgbl->gbl_sw_mode = FALSE;
-#endif /* READONLY_DATABASE */
 	tdgbl->gbl_sw_skip_count = 0;
 	tdgbl->gbl_sw_bug8183 = FALSE;
 	tdgbl->action = NULL;
@@ -718,7 +719,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 					BURP_error(259, *argv, 0, 0, 0, 0);	/* msg 259 expected page buffers, encountered "%s" */
 				argv++;
 			}
-#ifdef READONLY_DATABASE
 			else if (in_sw_tab->in_sw == IN_SW_BURP_MODE) {
 				if (argv >= end)
 					BURP_error(279, 0, 0, 0, 0, 0);	/* msg 279: "read_only" or "read_write" required */
@@ -731,7 +731,6 @@ int DLL_EXPORT BURP_gbak(int		argc,
 					BURP_error(279, 0, 0, 0, 0, 0);	/* msg 279: "read_only" or "read_write" required */
 				tdgbl->gbl_sw_mode = TRUE;
 			}
-#endif /* READONLY_DATABASE */
 			else if (in_sw_tab->in_sw == IN_SW_BURP_PASS) {
 				if (argv >= end)
 					BURP_error(189, 0, 0, 0, 0, 0);	/* password parameter missing */
@@ -904,11 +903,9 @@ int DLL_EXPORT BURP_gbak(int		argc,
 				tdgbl->gbl_sw_meta = TRUE;
 				break;
 
-#ifdef READONLY_DATABASE
 			case (IN_SW_BURP_MODE):
 				tdgbl->gbl_sw_mode = TRUE;
 				break;
-#endif /* READONLY_DATABASE */
 
 			case (IN_SW_BURP_N):
 				tdgbl->gbl_sw_novalidity = TRUE;
@@ -1285,7 +1282,7 @@ void BURP_msg_partial(	USHORT number,
  **************************************
  *
  * Functional description
- *	Retrieve a message from the error file, 
+ *	Retrieve a message from the error file,
  *	format it, and print it without a newline.
  *
  **************************************/
@@ -1474,7 +1471,7 @@ static void close_out_transaction(VOLATILE  SSHORT action,
 			}
 		}
 		else
-			/* A backup shouldn't touch any data - we ensure that 
+			/* A backup shouldn't touch any data - we ensure that
 			 * by never writing data during a backup, but let's double
 			 * ensure it by doing a rollback
 			 */
@@ -1892,11 +1889,11 @@ static SSHORT open_files(TEXT * file1,
 	if (sw_replace == IN_SW_BURP_R && status_vector[1] == isc_adm_task_denied) {
 		/* if we got an error from attach database and we have replace switch set
 		 * then look for error from attach returned due to not owner, if we are
-		 * not owner then return the error status back up 
+		 * not owner then return the error status back up
 		 */
 		BURP_error(274, 0, 0, 0, 0, 0);
 		/* msg # 274 : Cannot restore over current database, must be sysdba
-		   * or owner of the existing database. 
+		   * or owner of the existing database.
 		 */
 	}
 /* if we got here, then all is well, remove any error condition from the

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/ib_stdio.h"
@@ -750,7 +753,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request2)
 			Y IN RDB$PAGES WITH Y.RDB$RELATION_ID EQ relation->rel_id AND
-				Y.RDB$PAGE_SEQUENCE EQ 0 
+				Y.RDB$PAGE_SEQUENCE EQ 0
 
             if (Y.RDB$PAGE_TYPE == pag_pointer)
 				relation->rel_pointer_page = Y.RDB$PAGE_NUMBER;
@@ -763,7 +766,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (sw_index)
 		FOR(TRANSACTION_HANDLE transact1 REQUEST_HANDLE request3)
 			Y IN RDB$INDICES WITH Y.RDB$RELATION_NAME EQ relation->rel_name
-				SORTED BY DESC Y.RDB$INDEX_NAME 
+				SORTED BY DESC Y.RDB$INDEX_NAME
             if (Y.RDB$INDEX_INACTIVE)
 				  continue;
 			index = (DBA_IDX) ALLOC(sizeof(struct dba_idx));
@@ -1307,17 +1310,10 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
-#ifdef READONLY_DATABASE
 	if (
 		(fil->fil_desc =
 		 FEsopen(expanded_filename, O_RDONLY | O_BINARY, SH_DENYNO, 0, 0,
 				 PrimaryDataStream)) == -1)
-#else
-	if (
-		(fil->fil_desc =
-		 FEsopen(expanded_filename, O_RDWR | O_BINARY, SH_DENYNO, 0, 0,
-				 PrimaryDataStream)) == -1)
-#endif /* READONLY_DATABASE */
 	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
@@ -1492,11 +1488,7 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	fil->fil_max_page = 0L;
 
 	if ((fil->fil_desc = CreateFile(file_name,
-#ifdef READONLY_DATABASE
 									GENERIC_READ,
-#else
-									GENERIC_READ | GENERIC_WRITE,
-#endif /* READONLY_DATABASE */
 									FILE_SHARE_READ | FILE_SHARE_WRITE,
 									NULL,
 									OPEN_EXISTING,
@@ -1686,11 +1678,7 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
-#ifdef READONLY_DATABASE
 	if ((fil->fil_desc = open(file_name, O_RDONLY)) == -1)
-#else
-	if ((fil->fil_desc = open(file_name, 2)) == -1)
-#endif /* READONLY_DATABASE */
 	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,

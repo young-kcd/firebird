@@ -20,9 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.1.1.1 2001-05-23 13:25:35 tamlin Exp $
+ * $Id: ddl.cpp,v 1.2 2001-07-10 17:35:13 awharrison Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
+ *
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/ib_stdio.h"
@@ -195,7 +199,7 @@ ASSERT_FILENAME void DDL_execute( REQ request)
  *
  * Functional description
  *	Call access method layered service DYN
- *	to interpret dyn string and perform 
+ *	to interpret dyn string and perform
  *	metadata updates.
  *
  **************************************/
@@ -271,12 +275,10 @@ void DDL_generate( REQ request, NOD node)
  *
  **************************************/
 
-#ifdef READONLY_DATABASE
 	if (request->req_dbb->dbb_flags & DBB_read_only) {
 		ERRD_post(isc_read_only_database, 0);
 		return;
 	}
-#endif /* READONLY_DATABASE */
 
 	STUFF(gds_dyn_version_1);
 	generate_dyn(request, node);
@@ -319,7 +321,7 @@ void DDL_put_field_dtype( REQ request, FLD field, USHORT use_subtype)
 {
 /**************************************
  *
- *	D D L _ p u t _ f i e l d _ d t y p e 
+ *	D D L _ p u t _ f i e l d _ d t y p e
  *
  **************************************
  *
@@ -575,7 +577,7 @@ static USHORT check_array_or_blob( NOD node)
  * Functional description
  *	return TRUE if there is an array or blob in expression, else FALSE.
  *	Array and blob expressions have limited usefullness in a computed
- *	expression - so we detect it here to report a syntax error at 
+ *	expression - so we detect it here to report a syntax error at
  *	definition time, rather than a runtime error at execution.
  *
  **************************************/
@@ -737,7 +739,7 @@ static void create_view_triggers( REQ request, NOD element, NOD items)
 {								/* Fields in the VIEW actually  */
 /* *************************************
  *
- *	c r e a t e _ v i e w _ t r i g g e r s 
+ *	c r e a t e _ v i e w _ t r i g g e r s
  *
  **************************************
  *
@@ -802,8 +804,8 @@ static void define_computed(
  **************************************
  *
  * Function
- *	Create the ddl to define a computed field 
- *	or an expression index. 
+ *	Create the ddl to define a computed field
+ *	or an expression index.
  *
  **************************************/
 	NOD input, ddl_node;
@@ -1040,9 +1042,9 @@ static void define_database( REQ request)
  **************************************
  *
  * Function
- *	Create a database. Assumes that 
- *	database is created elsewhere with 
- *	initial options. Modify the 
+ *	Create a database. Assumes that
+ *	database is created elsewhere with
+ *	initial options. Modify the
  *	database using DYN to add the remaining
  *	options.
  *
@@ -1261,7 +1263,7 @@ TEXT * prim_rel_name, TEXT * for_rel_name, BOOLEAN on_upd_trg)
  *****************************************************
  *
  * Function
- *	define "on delete|update set default" trigger (for 
+ *	define "on delete|update set default" trigger (for
  *      referential integrity) along with its blr
  *
  *****************************************************/
@@ -1349,7 +1351,7 @@ TEXT * prim_rel_name, TEXT * for_rel_name, BOOLEAN on_upd_trg)
 		   (2) The default-info for this column is not in memory (This is
 		   because this is an alter table ddl statement). The table
 		   already exists; therefore we get the column and/or domain
-		   default value from the system tables by calling: 
+		   default value from the system tables by calling:
 		   METD_get_col_default().  */
 
 		found_default = FALSE;
@@ -1385,7 +1387,7 @@ TEXT * prim_rel_name, TEXT * for_rel_name, BOOLEAN on_upd_trg)
 						 reinterpret_cast <
 						 char *>(domain_name_str->str_data))) break;
 
-				/* case: (1-b): domain name is available. Column level default 
+				/* case: (1-b): domain name is available. Column level default
 				   is not declared. so get the domain default */
 				METD_get_domain_default(request, domain_name, &found_default,
 										reinterpret_cast <
@@ -1457,7 +1459,7 @@ static void define_dimensions( REQ request, FLD field)
  *****************************************
  *
  * Function
- *	Define dimensions of an array 
+ *	Define dimensions of an array
  *
  **************************************/
 	NOD elements, element;
@@ -1510,7 +1512,7 @@ static void define_domain( REQ request)
  **************************************
  *
  * Function
- *	Define a domain (global field)  
+ *	Define a domain (global field)
  *
  **************************************/
 	NOD		node;
@@ -1927,7 +1929,7 @@ static void define_index( REQ request)
 	put_cstring(request, gds_dyn_rel_name,
 				reinterpret_cast<char*>(relation_name->str_data));
 
-/* go through the fields list, making an index segment for each field, 
+/* go through the fields list, making an index segment for each field,
    unless we have a computation, in which case generate an expression index */
 
 	if (field_list->nod_type == nod_list)
@@ -1963,9 +1965,9 @@ static NOD define_insert_action( REQ request)
  **************************************
  *
  * Function
- *	Define an action statement which, given a view 
+ *	Define an action statement which, given a view
  *	definition, will store a record from
- *	a view of a single relation into the 
+ *	a view of a single relation into the
  *	base relation.
  *
  **************************************/
@@ -1983,7 +1985,7 @@ static NOD define_insert_action( REQ request)
 
 	if (ddl_node->nod_type != nod_def_view ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		/* 
+		/*
 		   Handle VIEWS with UNION : nod_select now points to nod_list
 		   which in turn points to nod_select_expr
 		 */
@@ -2006,7 +2008,7 @@ static NOD define_insert_action( REQ request)
 		from_list->nod_arg[0]->nod_arg[e_rln_name];
 	relation_node->nod_arg[e_rln_alias] = (NOD) MAKE_cstring(TEMP_CONTEXT);
 
-/* get the list of values and fields to assign to -- if there is 
+/* get the list of values and fields to assign to -- if there is
    no list of fields, get all fields in the base relation that
    are not computed */
 
@@ -2277,7 +2279,7 @@ static void define_rel_constraint( REQ request, NOD element)
 {
 /**************************************
  *
- *	d e f i n e _ r e l _ c o n s t r a i n t 
+ *	d e f i n e _ r e l _ c o n s t r a i n t
  *
  **************************************
  *
@@ -2314,7 +2316,7 @@ static void define_relation( REQ request)
  *
  * Function
  *	Create an SQL table, relying on DYN to generate
- *	global fields for the local fields. 
+ *	global fields for the local fields.
  *
  **************************************/
 	NOD ddl_node, elements, element, *ptr, *end, relation_node;
@@ -2427,7 +2429,7 @@ TEXT * prim_rel_name, TEXT * for_rel_name, BOOLEAN on_upd_trg)
 /* the trigger blr */
 	begin_blr(request, gds_dyn_trg_blr);
 
-/* for ON UPDATE TRIGGER only: generate the trigger firing condition: 
+/* for ON UPDATE TRIGGER only: generate the trigger firing condition:
    if prim_key.old_value != prim_key.new value.
    Note that the key could consist of multiple columns */
 
@@ -2884,9 +2886,9 @@ static void define_update_action(
  **************************************
  *
  * Function
- *	Define an action statement which, given a view 
+ *	Define an action statement which, given a view
  *	definition, will map a update to a  record from
- *	a view of a single relation into the 
+ *	a view of a single relation into the
  *	base relation.
  *
  **************************************/
@@ -2906,7 +2908,7 @@ static void define_update_action(
 
 	if (ddl_node->nod_type != nod_def_view ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		/* 
+		/*
 		   Handle VIEWS with UNION : nod_select now points to nod_list
 		   which in turn points to nod_select_expr
 		 */
@@ -2923,7 +2925,7 @@ static void define_update_action(
 	relation_node->nod_arg[e_rln_alias] = (NOD) MAKE_cstring(TEMP_CONTEXT);
 	*base_relation = relation_node;
 
-/* get the list of values and fields to compare to -- if there is 
+/* get the list of values and fields to compare to -- if there is
    no list of fields, get all fields in the base relation that
    are not computed */
 
@@ -3296,7 +3298,7 @@ static void define_view( REQ request)
 					  gds_arg_gds, gds__table_view_err,
 					  /* Only one table allowed for VIEW WITH CHECK OPTION */
 					  0);
-		/* 
+		/*
 		   Handle VIEWS with UNION : nod_select now points to nod_list
 		   which in turn points to nod_select_expr
 		 */
@@ -3307,7 +3309,7 @@ static void define_view( REQ request)
 					  /* Only one table allowed for VIEW WITH CHECK OPTION */
 					  0);
 
-		/* 
+		/*
 		   Handle VIEWS with UNION : nod_select now points to nod_list
 		   which in turn points to nod_select_expr
 		 */
@@ -3335,8 +3337,8 @@ static void define_view( REQ request)
 
 		check->nod_arg[e_cnstr_source] = (NOD) source;
 
-		/* the condition for the trigger is the converse of the selection 
-		   criteria for the view, suitably fixed up so that the fields in 
+		/* the condition for the trigger is the converse of the selection
+		   criteria for the view, suitably fixed up so that the fields in
 		   the view are referenced */
 
 		check->nod_arg[e_cnstr_condition] = select_expr->nod_arg[e_sel_where];
@@ -3377,7 +3379,7 @@ static void define_view_trigger( REQ request, NOD node, NOD rse, NOD items)
 	ddl_node = request->req_ddl_node;
 
 	select = ddl_node->nod_arg[e_view_select];
-/* 
+/*
    Handle VIEWS with UNION : nod_select now points to nod_list
    which in turn points to nod_select_expr
 */
@@ -3884,8 +3886,8 @@ static void make_index(
  **************************************
  *
  * Function
- *	Generate ddl to create an index for a unique 
- *	or primary key constraint. 
+ *	Generate ddl to create an index for a unique
+ *	or primary key constraint.
  *      This is not called for a foreign key constraint.
  *      The func. make_index_trf_ref_int handles foreign key constraint
  *
@@ -3932,7 +3934,7 @@ static void make_index_trg_ref_int(
  *
  * Function
  *      This is called only when the element->nod_type == nod_foreign_key
- *      
+ *
  *     o Generate ddl to create an index for a unique
  *       or primary key constraint.
  *     o Also make an index for the foreign key constraint
@@ -4077,7 +4079,7 @@ static void modify_database( REQ request)
  **************************************
  *
  * Function
- *	Modify a database. 
+ *	Modify a database.
  *
  **************************************/
 	NOD ddl_node, elements, element, *ptr, *end;
@@ -4222,7 +4224,7 @@ static void modify_domain( REQ request)
 {
 /**************************************
  *
- *	m o d i f y _ d o m a i n 
+ *	m o d i f y _ d o m a i n
  *
  **************************************
  *
@@ -4565,7 +4567,7 @@ static void modify_relation( REQ request)
  *
  * Function
  *	Alter an SQL table, relying on DYN to generate
- *	global fields for the local fields. 
+ *	global fields for the local fields.
  *
  **************************************/
 	NOD ddl_node, ops, element, *ptr, *end, relation_node, field_node;
@@ -4660,7 +4662,7 @@ static void modify_relation( REQ request)
 			/* Fix for bug 8054:
 
 			   [CASCADE | RESTRICT] syntax is available in IB4.5, but not
-			   required until v5.0. 
+			   required until v5.0.
 
 			   Option CASCADE causes an error :
 			   unsupported DSQL construct
@@ -4774,7 +4776,7 @@ static void put_dtype( REQ request, FLD field, USHORT use_subtype)
 {
 /**************************************
  *
- *	p u t _ d t y p e 
+ *	p u t _ d t y p e
  *
  **************************************
  *
@@ -4833,7 +4835,7 @@ static void put_field( REQ request, FLD field, BOOLEAN udf_flag)
 {
 /**************************************
  *
- *	p u t _ f i e l d 
+ *	p u t _ f i e l d
  *
  **************************************
  *
@@ -5163,7 +5165,7 @@ static void reset_context_stack( REQ request)
  **************************************
  *
  * Function
- *	Get rid of any predefined contexts created 
+ *	Get rid of any predefined contexts created
  *	for a view or trigger definition.
  *
  **************************************/
@@ -5185,7 +5187,7 @@ static void save_field( REQ request, TEXT * field_name)
  * Function
  *	Save the name of a field in the relation or view currently
  *	being defined.  This is done to support definition
- *	of triggers which will depend on the metadata created 
+ *	of triggers which will depend on the metadata created
  *	in this request.
  *
  **************************************/
@@ -5216,7 +5218,7 @@ static void save_relation( REQ request, STR relation_name)
  * Function
  *	Save the name of the relation or view currently
  *	being defined.  This is done to support definition
- *	of triggers which will depend on the metadata created 
+ *	of triggers which will depend on the metadata created
  *	in this request.
  *
  **************************************/
@@ -5317,7 +5319,7 @@ static void stuff_matching_blr(
  * Function
  *   Generate blr to express: foreign_key == primary_key
  *   ie.,  for_key.column_1 = prim_key.column_1 and
- *         for_key.column_2 = prim_key.column_2 and ....  so on..  
+ *         for_key.column_2 = prim_key.column_2 and ....  so on..
  *
  **************************************/
 	NOD *for_key_flds, *prim_key_flds;

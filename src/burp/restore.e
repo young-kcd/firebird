@@ -21,9 +21,13 @@
  * Contributor(s): ______________________________________.
  * Toni Martir: Verbose records restored as RESTORE_VERBOSE_INTERVAL,
  * also verbose restoring indexes as DEFERRED when verbose
+ *
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 /*
-$Id: restore.e,v 1.1.1.1 2001-05-23 13:26:04 tamlin Exp $
+$Id: restore.e,v 1.2 2001-07-10 17:35:13 awharrison Exp $
 */
 
 #include "../jrd/ib_stdio.h"
@@ -70,13 +74,13 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 #define DB_VERSION_CURRENT	DB_VERSION_DDL8	/* v4.0 is ods8 */
 #define FOREIGN_KEY             "FOREIGN KEY"
 
-#define DEFERRED_ACTIVE         3	/* RDB$INDEX_INACTIVE setting for Foreign Keys 
+#define DEFERRED_ACTIVE         3	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 									 * This setting is used temporarily while
 									 * restoring a database. This was required
 									 * in order to differentiate a partial
 									 * "inactive" state of SOME indices from
 									 * "inactive" state of ALL indices (gbak -i)
-									 * -bsriram, 11-May-1999      BUG: 10016 
+									 * -bsriram, 11-May-1999      BUG: 10016
 									 */
 
 #define RESTORE_VERBOSE_INTERVAL	10000
@@ -265,7 +269,7 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 
 	COMMIT;
 	ON_ERROR
-	    /* Fix for bug_no 8055: 
+	    /* Fix for bug_no 8055:
 	       don't throw away the database just because an index
 	       could not be made */
 	    while (error_code = tdgbl->status_vector[1])
@@ -334,13 +338,13 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 	           ON_ERROR
 	               general_on_error();
 	           END_ERROR;
-	        
+
 	           SAVE
 	           /* existing ON_ERROR continues past error, beck */
 	           ON_ERROR
 	               BURP_print (173, IDS.RDB$INDEX_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	               BURP_print_status (tdgbl->status);
-	               MODIFY IDS USING 
+	               MODIFY IDS USING
 	                   IDS.RDB$INDEX_INACTIVE = TRUE;
 	               END_MODIFY;
 	               ON_ERROR
@@ -366,30 +370,30 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 			EXEC SQL SET TRANSACTION;
 
 		/* Only activate Foreign keys that have been marked for deferred
-		 * activation. 
-		 * -bsriram, 11-May-1999             BUG: 10016 
+		 * activation.
+		 * -bsriram, 11-May-1999             BUG: 10016
 		 */
 	    FOR (REQUEST_HANDLE req_handle1)
-	        CNST IN RDB$RELATION_CONSTRAINTS 
+	        CNST IN RDB$RELATION_CONSTRAINTS
 	        CROSS IDS IN RDB$INDICES WITH
 	        CNST.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY AND
 	        CNST.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME AND
 	        IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE
-	
-	
-	        MODIFY IDS USING 
+
+
+	        MODIFY IDS USING
 	                IDS.RDB$INDEX_INACTIVE = FALSE;
 	        END_MODIFY;
 	        ON_ERROR
 	            general_on_error ();
 	        END_ERROR;
-	
+
 	        SAVE
 	        /* existing ON_ERROR continues past error, beck */
 	        ON_ERROR
 	            BURP_print (173, IDS.RDB$INDEX_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	            BURP_print_status (tdgbl->status);
-	            MODIFY IDS USING 
+	            MODIFY IDS USING
 	                IDS.RDB$INDEX_INACTIVE = TRUE;
 	            END_MODIFY;
 	            ON_ERROR
@@ -427,7 +431,7 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 	if (gds__status[1])
 		EXEC SQL SET TRANSACTION;
 /*
-** Change ownership of any procedures necessary 
+** Change ownership of any procedures necessary
 */
 
 	for (procedure = tdgbl->procedures; procedure;
@@ -435,7 +439,7 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 		if (procedure->prc_owner[0])
 			FOR (REQUEST_HANDLE req_handle4)
 				X IN RDB$PROCEDURES WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name
-	
+
 				MODIFY X
 					strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
 				END_MODIFY;
@@ -444,9 +448,9 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 						isc_release_request (req_status, &req_handle4);
 					general_on_error ();
 				END_ERROR;
-	
+
 				restore_security_class (procedure->prc_owner, X.RDB$SECURITY_CLASS);
-	
+
 			END_FOR;
 		ON_ERROR
 			if (req_handle4)
@@ -473,10 +477,10 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 	                isc_release_request (req_status, &req_handle2);
 	            general_on_error ();
 	        END_ERROR;
-	
+
 	   restore_security_class (relation->rel_owner, X.RDB$SECURITY_CLASS);
 	   restore_security_class (relation->rel_owner, X.RDB$DEFAULT_CLASS);
-	
+
 	   END_FOR;
 	    ON_ERROR
 	   if (req_handle2)
@@ -581,7 +585,6 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 		return FINI_DB_NOT_ONLINE;
 	}
 
-#ifdef READONLY_DATABASE
 /* If the database is to be restored ReadOnly, set it to read_only now! */
 	if (tdgbl->gbl_sw_mode == TRUE && tdgbl->gbl_sw_mode_val == TRUE) {
 		BURP_verbose(280, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
@@ -620,7 +623,6 @@ int RESTORE_restore( TEXT * file_name, TEXT * database_name)
 			general_on_error();
 
 	}
-#endif /* READONLY_DATABASE */
 
 	return FINI_OK;
 }
@@ -660,7 +662,7 @@ static void add_files( UCHAR * file_name)
 	        X IN RDB$FILES
 	       strcpy (X.RDB$FILE_NAME, file->fil_name);
 	       X.RDB$FILE_START = start;
-	   END_STORE; 
+	   END_STORE;
 	    ON_ERROR
 	        general_on_error ();
 	    END_ERROR;
@@ -716,7 +718,7 @@ static void bad_attribute(
  * Functional description
  *	We ran into an unsupported attribute.
  *	but it isn't the end of the world.
- *	We will try to skip some bad data and 
+ *	We will try to skip some bad data and
  *	look for next valid attribute to continue the process.
  *
  **************************************/
@@ -863,11 +865,9 @@ static void create_database( UCHAR * file_name)
 				no_reserve = (USHORT) get_numeric();
 				break;
 
-#ifdef READONLY_DATABASE
 			case att_db_read_only:
 				db_read_only = (UCHAR) get_numeric();
 				break;
-#endif /* READONLY_DATABASE */
 
 			case att_page_buffers:
 				page_buffers = get_numeric();
@@ -900,7 +900,6 @@ static void create_database( UCHAR * file_name)
 	if (tdgbl->gbl_sw_no_reserve)
 		no_reserve = tdgbl->gbl_sw_no_reserve;
 
-#ifdef READONLY_DATABASE
 /* Override attribute setting with user requirement */
 	if (tdgbl->gbl_sw_mode == TRUE)
 		db_read_only = tdgbl->gbl_sw_mode_val;
@@ -911,7 +910,6 @@ static void create_database( UCHAR * file_name)
 		tdgbl->gbl_sw_mode = TRUE;
 		tdgbl->gbl_sw_mode_val = db_read_only;
 	}
-#endif /* READONLY_DATABASE */
 
 	if (tdgbl->gbl_sw_page_buffers)
 		page_buffers = tdgbl->gbl_sw_page_buffers;
@@ -935,12 +933,8 @@ static void create_database( UCHAR * file_name)
 		*d++ = (UCHAR) (sweep_interval >> 16);
 		*d++ = (UCHAR) (sweep_interval >> 24);
 	}
-#ifdef READONLY_DATABASE
 /* If the database is to be restored "read_only", fillup the data pages */
 	if (no_reserve || db_read_only)
-#else
-	if (no_reserve)
-#endif /* READONLY_DATABASE */
 	{
 		*d++ = (UCHAR) isc_dpb_no_reserve;
 		*d++ = 1;
@@ -975,9 +969,9 @@ static void create_database( UCHAR * file_name)
 	*d++ = 1;
 	*d++ = 0;
 
-/* 
-** 
-** which SQL dialect that this database speaks 
+/*
+**
+** which SQL dialect that this database speaks
 ** When we restore backup files that came from prior
 ** to V6, we force the SQL database dialect to 1
 **
@@ -1164,7 +1158,7 @@ static int get_acl(
  *
  *	open the blob that contains the ACL list
  *	get the ACL list of a relation
- *	replace the owner of the relation in the ACL list with 
+ *	replace the owner of the relation in the ACL list with
  *	  the creator of the relation
  *	create a new blob
  *	store the new ACL list in the new blob
@@ -1228,8 +1222,8 @@ static int get_acl(
 
 		case isc_info_blob_num_segments:
 			num_segments = (USHORT) n;
-			/* 
-			   ** we assume that the ACL list was written out as 
+			/*
+			   ** we assume that the ACL list was written out as
 			   ** in one big segment
 			   **
 			 */
@@ -1256,9 +1250,9 @@ static int get_acl(
 	if (length < max_segment)
 		length = max_segment;
 
-/* 
-** Allocate a buffer large enough for the largest segment and start 
-** grinding. 
+/*
+** Allocate a buffer large enough for the largest segment and start
+** grinding.
 */
 
 	if (!max_segment || max_segment <= sizeof(static_buffer))
@@ -1395,7 +1389,7 @@ static void get_array( REL relation, UCHAR * record_buffer)
 			if (field->fld_type == blr_varying)
 				field_length += sizeof(USHORT);
 			slice_length = field_length;
-		/** 
+		/**
 		Copy the ranges onto a buffer and let the program
 		mess with the copy rather than the original
 	    **/
@@ -1441,17 +1435,17 @@ static void get_array( REL relation, UCHAR * record_buffer)
 		   V3.2I don't explicitly signal this.  We must recompute the top
 		   element to restore.
 
-		   Double Ugh!  gbak (Versions prior to 5.0) while backing up calculates 
-		   the top dimensions incorrectly So whatever was written as top dimensions 
+		   Double Ugh!  gbak (Versions prior to 5.0) while backing up calculates
+		   the top dimensions incorrectly So whatever was written as top dimensions
 		   is useless. 5.0 gbak has written correct dimensions, but what the heck
 		   we'll calculate it again
 		 */
 
 		elements_remaining = return_length / field_length;
 	/**
-	   Backup (versions prior to 5.0) has surely written wrong dimensions. 
-	   Ignore whatever is read in fld_ranges and calculate the dimensions 
-	   of the last element. field->fld_ranges has the max dimensions. 
+	   Backup (versions prior to 5.0) has surely written wrong dimensions.
+	   Ignore whatever is read in fld_ranges and calculate the dimensions
+	   of the last element. field->fld_ranges has the max dimensions.
 	   last_element_dim holds only the upper bounds of each dimension.
     **/
 		for (i1 = 0, i3 = 0; i1 < field->fld_dimensions; i1++) {
@@ -1536,7 +1530,7 @@ static void get_array( REL relation, UCHAR * record_buffer)
 			end_ranges = field->fld_ranges + 2 * field->fld_dimensions;
 	/**
 	       Here is the important work. Calculate the the bounds to be written
-	       so that the resulting slice is a rectangular/square slice. 
+	       so that the resulting slice is a rectangular/square slice.
 	       For a 2 dimensional array of size 1..N, 1..M, which is partially
 	       filled, we have already calculated the dims of last element. Say
 	       if this was x,y (x is row, y is column) then we do
@@ -1548,7 +1542,7 @@ static void get_array( REL relation, UCHAR * record_buffer)
 			       isc_put_slice(x..x, y..y, 1..z);
 		This is applicable for any number of dimensions.
 		Special cases:
-		for example in case of a 2D array (10,10) and if the last element 
+		for example in case of a 2D array (10,10) and if the last element
 		dims were (1,2), we would just do a isc_put_slice(1..1, 1..2).
 		This is applied for any number of dimensions.
 	**/
@@ -1556,13 +1550,13 @@ static void get_array( REL relation, UCHAR * record_buffer)
 				 range += 2, count++) {
 				STUFF(gds__sdl_do2);
 				STUFF(count);
-		/** 
+		/**
 		   Normally we loop through all dimensions chopping off slices
 		   and writing them. This works fine but this also means that
 		   we blindly put slices without actually figuring out if we
 		   really need to do so. For eg: if we have a 2D array of
 		   size [10,4] and the last element dims are [6,4] then all
-		   we need to do is is to put one slice as 
+		   we need to do is is to put one slice as
 				isc_put_slice(1..6,1..4)
 		   rather than looping through the dimensions and putting
 		   		isc_put_slice(1..5,1..4)
@@ -1606,7 +1600,7 @@ static void get_array( REL relation, UCHAR * record_buffer)
 						last_element_dim[count] : (last_element_dim[count] -
 												   1);
 					if (upper < range[0]) {
-			/** 
+			/**
 		    see Special Case above
 		    **/
 						dont_write = 1;
@@ -2056,60 +2050,60 @@ static BOOLEAN get_character_set(void)
 	    X.RDB$DESCRIPTION.NULL = TRUE;
 	    X.RDB$FUNCTION_NAME.NULL = TRUE;
 	    X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
-	   
+
 	    SKIP_INIT;
 	    while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	        switch (attribute)
 	            {
-	
+
 	       case att_charset_name:
 	       X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 	       get_text (X.RDB$CHARACTER_SET_NAME, sizeof (X.RDB$CHARACTER_SET_NAME));
 	       BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       break;
-	
+
 	       case att_charset_form:
 	       X.RDB$FORM_OF_USE.NULL = FALSE;
 	           get_text (X.RDB$FORM_OF_USE, sizeof (X.RDB$FORM_OF_USE));
 	       break;
-	
+
 	       case att_charset_numchar:
 	       X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
 	       X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_charset_coll:
 	       X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
 	       get_text (X.RDB$DEFAULT_COLLATE_NAME, sizeof (X.RDB$DEFAULT_COLLATE_NAME));
 	       break;
-	
+
 	       case att_charset_id:
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_charset_sysflag:
 	           X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	           X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_charset_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	
+
 	       case att_charset_funct:
 	       X.RDB$FUNCTION_NAME.NULL = FALSE;
 	       get_text (X.RDB$FUNCTION_NAME, sizeof (X.RDB$FUNCTION_NAME));
 	       break;
-	
+
 	       case att_charset_bytes_char:
 	       X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
 	       X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric();
 	       break;
-	
+
 	            default:
-	                bad_attribute (scan_next_attr, attribute, msgErr_restore_charset); 
+	                bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
 	       /* RDB$CHARSETS */
 	       break;
 	            }
@@ -2126,7 +2120,7 @@ static BOOLEAN get_chk_constraint(void)
 {
 /**************************************
  *
- *	g e t _ c h k _ c o n s t r a i n t 
+ *	g e t _ c h k _ c o n s t r a i n t
  *
  **************************************
  *
@@ -2152,14 +2146,14 @@ static BOOLEAN get_chk_constraint(void)
 	                X.RDB$CONSTRAINT_NAME.NULL = FALSE;
 	                get_text (X.RDB$CONSTRAINT_NAME, sizeof (X.RDB$CONSTRAINT_NAME));
 	                break;
-	
+
 	            case att_chk_trigger_name:
 	                X.RDB$TRIGGER_NAME.NULL = FALSE;
 	                get_text (X.RDB$TRIGGER_NAME, sizeof (X.RDB$TRIGGER_NAME));
 	                break;
-	
+
 	            default:
-	                bad_attribute (scan_next_attr, attribute, 208); 
+	                bad_attribute (scan_next_attr, attribute, 208);
 	       /* msg 208 relation constraint */
 	       break;
 	            }
@@ -2199,54 +2193,54 @@ static BOOLEAN get_collation(void)
 	    X.RDB$SYSTEM_FLAG.NULL = TRUE;
 	    X.RDB$DESCRIPTION.NULL = TRUE;
 	    X.RDB$FUNCTION_NAME.NULL = TRUE;
-	
+
 	    SKIP_INIT;
 	    while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	        switch (attribute)
 	            {
-	
+
 	       case att_coll_name:
 	       X.RDB$COLLATION_NAME.NULL = FALSE;
 	       get_text (X.RDB$COLLATION_NAME, sizeof (X.RDB$COLLATION_NAME));
 	       BURP_verbose (msgVerbose_restore_collation, X.RDB$COLLATION_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       break;
-	
+
 	       case att_coll_id:
 	       X.RDB$COLLATION_ID.NULL = FALSE;
 	       X.RDB$COLLATION_ID = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_coll_cs_id:
 	       X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	       X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_coll_attr:
 	       X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
 	       X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_coll_subtype:  /* No longer used: 93-11-15 DBS */
 	                   /* still present to handle V4 R&D
 	                      gbak files */
 	       (void) get_numeric();
 	       break;
-	
+
 	       case att_coll_sysflag:
 	           X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	           X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_coll_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	
+
 	       case att_coll_funct:
 	       X.RDB$FUNCTION_NAME.NULL = FALSE;
 	       get_text (X.RDB$FUNCTION_NAME, sizeof (X.RDB$FUNCTION_NAME));
 	       break;
-	
+
 	            default:
 	                bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
 	       /* Bad RDB$COLLATION */
@@ -2599,7 +2593,7 @@ static REC_TYPE get_data( REL relation)
 		COMMIT
 			/* existing ON_ERROR continues past error, beck */
 	    ON_ERROR
-	
+
 	        /* Fix for bug_no 8055:
 	           don't throw away the database just because an index
 	           could not be made */
@@ -2697,27 +2691,27 @@ static BOOLEAN get_exception(void)
 	            case att_exception_name:
 	       l = get_text (X.RDB$EXCEPTION_NAME, sizeof (X.RDB$EXCEPTION_NAME));
 	       MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof (temp));
-	       BURP_verbose (199, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR); 
+	       BURP_verbose (199, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       /* msg 199 restoring exception %s */
 	       break;
-	                                                   
+
 	       case att_exception_description:
 	       get_misc_blob (&X.RDB$DESCRIPTION, 0, 0);
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       break;
-	                                                   
+
 	       case att_exception_description2:
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       break;
-	                                                   
+
 	       case att_exception_msg:
 	       get_text (X.RDB$MESSAGE, sizeof (X.RDB$MESSAGE));
 	       X.RDB$MESSAGE.NULL = FALSE;
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 89); 
+	       bad_attribute (scan_next_attr, attribute, 89);
 	       /* msg 89 function */
 	       break;
 	       }
@@ -2775,7 +2769,7 @@ SSHORT * collation_id)
 			*collation_id = 0;
 			BURP_verbose(237, (void *) *scale, (void *) *character_set_id,
 						 (void *) *collation_id, NULL_PTR, NULL_PTR);
-			/* msg 237: Converted V3 scale: %d to 
+			/* msg 237: Converted V3 scale: %d to
 			   character_set_id: %d and callate_id: %d. */
 			*scale = 0;
 			return TRUE;
@@ -2787,7 +2781,7 @@ SSHORT * collation_id)
 			*collation_id = 0;
 			BURP_verbose(237, (void *) *scale, (void *) *character_set_id,
 						 (void *) *collation_id, NULL_PTR, NULL_PTR);
-			/* msg 237: Converted V3 scale: %d to 
+			/* msg 237: Converted V3 scale: %d to
 			   character_set_id: %d and callate_id: %d. */
 			*scale = 0;
 			return TRUE;
@@ -2811,7 +2805,7 @@ SSHORT * collation_id)
 				BURP_verbose(236, (void *) *sub_type,
 							 (void *) *character_set_id,
 							 (void *) *collation_id, NULL_PTR, NULL_PTR);
-				/* msg 236: Converted V3 sub_type: %d to 
+				/* msg 236: Converted V3 sub_type: %d to
 				   character_set_id: %d and callate_id: %d. */
 
 				*sub_type = 0;
@@ -2886,157 +2880,157 @@ static FLD get_field( REL relation)
 	   switch (SKIP_SCAN, attribute)
 	       {
 	       case att_field_name:
-	       field->fld_name_length = 
+	       field->fld_name_length =
 	           get_text (field->fld_name, sizeof (field->fld_name));
-	       BURP_verbose (115, field->fld_name, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR); 
+	       BURP_verbose (115, field->fld_name, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       /* msg 115 restoring field %s */
 	       strcpy (X.RDB$FIELD_NAME, field->fld_name);
 	       break;
-	
+
 	       case att_field_source:
 	       get_text (X.RDB$FIELD_SOURCE, sizeof (X.RDB$FIELD_SOURCE));
 	       break;
-	
+
 	       case att_field_security_class:
 	       get_text (X.RDB$SECURITY_CLASS, sizeof (X.RDB$SECURITY_CLASS));
 	       X.RDB$SECURITY_CLASS.NULL = FALSE;
 	       break;
-	
+
 	       case att_field_query_name:
 	       get_text (X.RDB$QUERY_NAME, sizeof (X.RDB$QUERY_NAME));
 	       X.RDB$QUERY_NAME.NULL = FALSE;
 	       break;
-	
+
 	       case att_field_query_header:
 	       X.RDB$QUERY_HEADER.NULL = FALSE;
 	       get_source_blob (&X.RDB$QUERY_HEADER, global_tr);
 	       break;
-	
+
 	       case att_field_edit_string:
 	       get_text (X.RDB$EDIT_STRING, sizeof (X.RDB$EDIT_STRING));
 	       X.RDB$EDIT_STRING.NULL = FALSE;
 	       break;
-	
+
 	       case att_field_position:
 	       X.RDB$FIELD_POSITION.NULL = FALSE;
 	       X.RDB$FIELD_POSITION = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_number:
 	       field->fld_number = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_type:
 	       field->fld_type = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_length:
 	       field->fld_length = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_scale:
 	       field->fld_scale = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_sub_type:
 	       field->fld_sub_type = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_system_flag:
 	       X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	       X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	       break;
-	
+
 	       case att_view_context:
 	       X.RDB$VIEW_CONTEXT = (USHORT) get_numeric();
 	       X.RDB$VIEW_CONTEXT.NULL = FALSE;
 	       break;
-	
+
 	       case att_field_computed_flag:
 	       if (get_numeric())
 	           field->fld_flags |= FLD_computed;
 	       break;
-	
+
 	       case att_base_field:
 	       get_text (X.RDB$BASE_FIELD, sizeof (X.RDB$BASE_FIELD));
 	       X.RDB$BASE_FIELD.NULL = FALSE;
 	       break;
-	
+
 	       case att_field_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_misc_blob (&X.RDB$DESCRIPTION, 1, global_tr);
 	       break;
-	
+
 	       case att_field_description2:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, (UCHAR) global_tr);
 	       break;
-	
+
 	       case att_field_complex_name:
 	       get_text (X.RDB$COMPLEX_NAME, sizeof (X.RDB$COMPLEX_NAME));
 	       X.RDB$COMPLEX_NAME.NULL = FALSE;
 	       break;
-	
+
 	       case att_field_dimensions:
 	       field->fld_dimensions = (USHORT) get_numeric();
 	       field->fld_flags |= FLD_array;
 	       for (rp = field->fld_ranges, n = field->fld_dimensions; n; rp+=2, n--)
 	           {
 	           if (GET_ATTRIBUTE (attribute) != att_field_range_low)
-	           bad_attribute (scan_next_attr, attribute, 58); 
+	           bad_attribute (scan_next_attr, attribute, 58);
 	           /* msg 58 array */
 	           else
 	           *rp = get_numeric();
 	           if (GET_ATTRIBUTE (attribute) != att_field_range_high)
-	           bad_attribute (scan_next_attr, attribute, 58); 
+	           bad_attribute (scan_next_attr, attribute, 58);
 	           /* msg 58 array */
 	           else
 	           *(rp+1) = get_numeric();
 	           }
 	       break;
-	
+
 	       case att_field_update_flag:
 	       X.RDB$UPDATE_FLAG.NULL = FALSE;
 	       X.RDB$UPDATE_FLAG = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_character_length:
 	       field->fld_character_length = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_default_source:
 	       X.RDB$DEFAULT_SOURCE.NULL = FALSE;
 	       get_source_blob (&X.RDB$DEFAULT_SOURCE, global_tr);
 	       break;
-	
+
 	       case att_field_default_value:
 	       X.RDB$DEFAULT_VALUE.NULL = FALSE;
 	       get_blr_blob (&X.RDB$DEFAULT_VALUE, global_tr);
 	       break;
-	
+
 	       case att_field_null_flag:
 	       X.RDB$NULL_FLAG.NULL = FALSE;
 	       X.RDB$NULL_FLAG = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_character_set:
 	       field->fld_character_set_id = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_collation_id:
 	       field->fld_collation_id = (USHORT) get_numeric();
 	       X.RDB$COLLATION_ID.NULL = FALSE;
 	       X.RDB$COLLATION_ID = field->fld_collation_id;
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 84); 
+	       bad_attribute (scan_next_attr, attribute, 84);
 	       /* msg 84 field */
 	       break;
 	       }
-	
+
 	   /* For migration from V3.3 to V4.0 format of International text
-	    * information - search the list of global fields which were 
+	    * information - search the list of global fields which were
 	    * remapped from V3.3 format into V4.0 format.  If we find that
 	    * this local field's source is one of those global fields, then
 	    * remap the local field's information.  This is used to compose
@@ -3053,7 +3047,7 @@ static FLD get_field( REL relation)
 	       break;
 	       }
 	       }
-	
+
 	END_STORE;
 	ON_ERROR
 	    general_on_error ();
@@ -3091,21 +3085,21 @@ static BOOLEAN get_field_dimensions(void)
 	       case att_field_name:
 	       get_text (X.RDB$FIELD_NAME, sizeof (X.RDB$FIELD_NAME));
 	       break;
-	
+
 	       case att_field_dimensions:
 	       X.RDB$DIMENSION = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_field_range_low:
 	       X.RDB$LOWER_BOUND = get_numeric();
 	       break;
-	
+
 	       case att_field_range_high:
 	       X.RDB$UPPER_BOUND = get_numeric();
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 58); 
+	       bad_attribute (scan_next_attr, attribute, 58);
 	       /* msg 58 array */
 	       break;
 	       }
@@ -3151,31 +3145,31 @@ static BOOLEAN get_files(void)
 	                /* msg 116 restoring file %s */
 	           X.RDB$FILE_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       break;
-	                                                   
+
 	       case att_file_sequence:
 	       X.RDB$FILE_SEQUENCE = (USHORT) get_numeric();
 	       break;
-	                                                   
+
 	       case att_file_start:
 	       X.RDB$FILE_START = get_numeric();
 	       break;
-	                                                   
+
 	       case att_file_length:
 	       X.RDB$FILE_LENGTH = get_numeric();
 	       break;
-	                                                   
+
 	       case att_file_flags:
 	       X.RDB$FILE_FLAGS |= get_numeric();
 	       break;
-	                                                   
+
 	       case att_shadow_number:
 	       X.RDB$SHADOW_NUMBER = (USHORT) get_numeric();
 	       if (tdgbl->gbl_sw_kill && X.RDB$SHADOW_NUMBER)
 	           X.RDB$FILE_FLAGS |= FILE_inactive;
 	       break;
-	                                                   
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 85); 
+	       bad_attribute (scan_next_attr, attribute, 85);
 	       /* msg 85 file */
 	       break;
 	       }
@@ -3219,35 +3213,35 @@ static BOOLEAN get_filter(void)
 	                BURP_verbose (117, X.RDB$FUNCTION_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	                /* msg 117 restoring filter %s */
 	       break;
-	
+
 	       case att_filter_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_misc_blob (&X.RDB$DESCRIPTION, 1, 0);
 	       break;
-	
+
 	       case att_filter_description2:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	
+
 	       case att_filter_module_name:
 	       get_text (X.RDB$MODULE_NAME, sizeof (X.RDB$MODULE_NAME));
 	       break;
-	
+
 	       case att_filter_entrypoint:
 	       get_text (X.RDB$ENTRYPOINT, sizeof (X.RDB$ENTRYPOINT));
 	       break;
-	
+
 	       case att_filter_input_sub_type:
 	       X.RDB$INPUT_SUB_TYPE = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_filter_output_sub_type:
 	       X.RDB$OUTPUT_SUB_TYPE = (USHORT) get_numeric();
 	       break;
-	
+
 	            default:
-	           bad_attribute (scan_next_attr, attribute, 87); 
+	           bad_attribute (scan_next_attr, attribute, 87);
 	       /* msg 87  filter */
 	       break;
 	       }
@@ -3294,37 +3288,37 @@ static BOOLEAN get_function(void)
 	       BURP_verbose (118, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	           /* msg 118 restoring function %s */
 	       break;
-	                                                   
+
 	       case att_function_description:
 	       get_misc_blob (&X.RDB$DESCRIPTION, 0, 0);
 	       break;
-	                                                   
+
 	       case att_function_description2:
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	                                                   
+
 	            case att_function_module_name:
 	       get_text (X.RDB$MODULE_NAME, sizeof (X.RDB$MODULE_NAME));
 	       break;
-	
+
 	            case att_function_entrypoint:
 	       get_text (X.RDB$ENTRYPOINT, sizeof (X.RDB$ENTRYPOINT));
 	       break;
-	                                                   
+
 	       case att_function_return_arg:
 	       X.RDB$RETURN_ARGUMENT = (USHORT) get_numeric();
 	       break;
-	                                                   
+
 	            case att_function_query_name:
 	       get_text (X.RDB$QUERY_NAME, sizeof (X.RDB$QUERY_NAME));
 	       break;
-	
+
 	       case att_function_type:
 	       X.RDB$FUNCTION_TYPE = (USHORT) get_numeric();
 	       break;
-	                                                   
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 89); 
+	       bad_attribute (scan_next_attr, attribute, 89);
 	       /* msg 89 function */
 	       break;
 	       }
@@ -3369,7 +3363,7 @@ static void get_function_arg( GDS_NAME funcptr)
 	   X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 	   X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 	   X.RDB$FIELD_PRECISION.NULL  = TRUE;
-	
+
 	   SKIP_INIT;
 	   while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	       switch (attribute)
@@ -3380,44 +3374,44 @@ static void get_function_arg( GDS_NAME funcptr)
 	           BURP_verbose (119, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	               /* msg 119 restoring argument for function %s */
 	           break;
-	
+
 	       case att_functionarg_position:
 	           X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_mechanism:
 	           X.RDB$MECHANISM = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_type:
 	           X.RDB$FIELD_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_scale:
 	           X.RDB$FIELD_SCALE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_length:
 	           X.RDB$FIELD_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_sub_type:
 	           X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 	           X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_character_set:
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_precision:
 	           X.RDB$FIELD_PRECISION.NULL = FALSE;
 	           X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
 	           break;
-	
+
 	       default:
-	           bad_attribute (scan_next_attr, attribute, 90); 
+	           bad_attribute (scan_next_attr, attribute, 90);
 	           /* msg 90 function argument */
 	           break;
 	       }
@@ -3432,7 +3426,7 @@ static void get_function_arg( GDS_NAME funcptr)
 	   X IN RDB$FUNCTION_ARGUMENTS
 	   X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 	   X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-	
+
 	   SKIP_INIT;
 	   while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	       switch (attribute)
@@ -3443,39 +3437,39 @@ static void get_function_arg( GDS_NAME funcptr)
 	           BURP_verbose (119, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	               /* msg 119 restoring argument for function %s */
 	           break;
-	
+
 	       case att_functionarg_position:
 	           X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_mechanism:
 	           X.RDB$MECHANISM = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_type:
 	           X.RDB$FIELD_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_scale:
 	           X.RDB$FIELD_SCALE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_length:
 	           X.RDB$FIELD_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_field_sub_type:
 	           X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 	           X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_functionarg_character_set:
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 	           break;
-	
+
 	       default:
-	           bad_attribute (scan_next_attr, attribute, 90); 
+	           bad_attribute (scan_next_attr, attribute, 90);
 	           /* msg 90 function argument */
 	           break;
 	       }
@@ -3567,7 +3561,7 @@ static BOOLEAN get_global_field(void)
 		/* with rdb$field_precision */
 	    STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
 	   X IN RDB$FIELDS
-	
+
 	   X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
 	   X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
 	   X.RDB$FIELD_SUB_TYPE = 0;
@@ -3595,7 +3589,7 @@ static BOOLEAN get_global_field(void)
 	   X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 	   X.RDB$COLLATION_ID.NULL = TRUE;
 	   X.RDB$FIELD_PRECISION.NULL = TRUE;
-	
+
 	   memset (X.RDB$QUERY_NAME, ' ', sizeof (X.RDB$QUERY_NAME));
 	   SKIP_INIT;
 	   while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
@@ -3607,61 +3601,61 @@ static BOOLEAN get_global_field(void)
 	           BURP_verbose (121, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	               /* msg 121  restoring global field %s */
 	           break;
-	
+
 	       case att_field_query_name:
 	           get_text (X.RDB$QUERY_NAME, sizeof (X.RDB$QUERY_NAME));
 	           X.RDB$QUERY_NAME.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_edit_string:
 	           get_text (X.RDB$EDIT_STRING, sizeof (X.RDB$EDIT_STRING));
 	           X.RDB$EDIT_STRING.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_query_header:
 	           X.RDB$QUERY_HEADER.NULL = FALSE;
 	           get_source_blob (&X.RDB$QUERY_HEADER, 0);
 	           break;
-	
+
 	       case att_field_type:
 	           X.RDB$FIELD_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_length:
 	           X.RDB$FIELD_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_scale:
 	           X.RDB$FIELD_SCALE = (USHORT) get_numeric();
 	           X.RDB$FIELD_SCALE.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_sub_type:
 	           X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric();
 	           X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_segment_length:
 	           X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric();
 	           if (X.RDB$SEGMENT_LENGTH)
 	           X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_computed_blr:
 	           X.RDB$COMPUTED_BLR.NULL = FALSE;
 	           get_blr_blob (&X.RDB$COMPUTED_BLR, 0);
 	           break;
-	
+
 	       case att_field_computed_source:
 	           X.RDB$COMPUTED_SOURCE.NULL = FALSE;
 	           get_misc_blob (&X.RDB$COMPUTED_SOURCE, 1, 0);
 	           break;
-	
+
 	       case att_field_computed_source2:
 	           X.RDB$COMPUTED_SOURCE.NULL = FALSE;
 	           get_source_blob (&X.RDB$COMPUTED_SOURCE, 0);
 	           break;
-	
+
 	       case att_field_validation_blr:
 	           if (tdgbl->gbl_sw_novalidity)
 	           eat_blob();
@@ -3670,12 +3664,12 @@ static BOOLEAN get_global_field(void)
 	           /* if we are going against a V4.0 database,
 	            * restore the global fields in 2 phases.
 	            */
-	
+
 	           if (tdgbl->global_trans)
 	               {
 	               if (!gfld)
 	               gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
-	
+
 	               get_blr_blob (&gfld->gfld_vb, 1);
 	               gfld->gfld_flags |= GFLD_validation_blr;
 	               }
@@ -3686,7 +3680,7 @@ static BOOLEAN get_global_field(void)
 	               }
 	           }
 	           break;
-	
+
 	       case att_field_validation_source:
 	           if (tdgbl->gbl_sw_novalidity)
 	           eat_blob();
@@ -3695,12 +3689,12 @@ static BOOLEAN get_global_field(void)
 	           /* if we are going against a V4.0 database,
 	            * restore the global fields in 2 phases.
 	            */
-	
+
 	           if (tdgbl->global_trans)
 	               {
 	               if (!gfld)
 	               gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
-	
+
 	               get_misc_blob (&gfld->gfld_vs, 0, 1);
 	               gfld->gfld_flags |= GFLD_validation_source;
 	               }
@@ -3711,7 +3705,7 @@ static BOOLEAN get_global_field(void)
 	               }
 	           }
 	           break;
-	
+
 	       case att_field_validation_source2:
 	           if (tdgbl->gbl_sw_novalidity)
 	           eat_blob();
@@ -3720,12 +3714,12 @@ static BOOLEAN get_global_field(void)
 	           /* if we are going against a V4.0 database,
 	            * restore the global fields in 2 phases.
 	            */
-	
+
 	           if (tdgbl->global_trans)
 	               {
 	               if (!gfld)
 	               gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
-	
+
 	               get_source_blob (&gfld->gfld_vs2, 1);
 	               gfld->gfld_flags |= GFLD_validation_source2;
 	               }
@@ -3736,87 +3730,87 @@ static BOOLEAN get_global_field(void)
 	               }
 	           }
 	           break;
-	
+
 	       case att_field_missing_value:
 	           X.RDB$MISSING_VALUE.NULL = FALSE;
 	           get_blr_blob (&X.RDB$MISSING_VALUE, 0);
 	           break;
-	
+
 	       case att_field_default_value:
 	           X.RDB$DEFAULT_VALUE.NULL = FALSE;
 	           get_blr_blob (&X.RDB$DEFAULT_VALUE, 0);
 	           break;
-	
+
 	       case att_field_system_flag:
 	           X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	           X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_null_flag:
 	           X.RDB$NULL_FLAG = (USHORT) get_numeric();
 	           X.RDB$NULL_FLAG.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_description:
 	           X.RDB$DESCRIPTION.NULL = FALSE;
 	           get_misc_blob (&X.RDB$DESCRIPTION, 1, 0);
 	           break;
-	
+
 	       case att_field_description2:
 	           X.RDB$DESCRIPTION.NULL = FALSE;
 	           get_source_blob (&X.RDB$DESCRIPTION, 0);
 	           break;
-	
+
 	       case att_field_external_length:
 	           X.RDB$EXTERNAL_LENGTH.NULL = FALSE;
 	           X.RDB$EXTERNAL_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_external_scale:
 	           X.RDB$EXTERNAL_SCALE.NULL = FALSE;
 	           X.RDB$EXTERNAL_SCALE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_external_type:
 	           X.RDB$EXTERNAL_TYPE.NULL = FALSE;
 	           X.RDB$EXTERNAL_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_dimensions:
 	           X.RDB$DIMENSIONS.NULL = FALSE;
 	           X.RDB$DIMENSIONS = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_character_length:
 	           X.RDB$CHARACTER_LENGTH.NULL = FALSE;
 	           X.RDB$CHARACTER_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_default_source:
 	           X.RDB$DEFAULT_SOURCE.NULL = FALSE;
 	           get_source_blob (&X.RDB$DEFAULT_SOURCE, 0);
 	           break;
-	
+
 	       case att_field_missing_source:
 	           X.RDB$MISSING_SOURCE.NULL = FALSE;
 	           get_source_blob (&X.RDB$MISSING_SOURCE, 0);
 	           break;
-	
+
 	       case att_field_character_set:
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_collation_id:
 	           X.RDB$COLLATION_ID.NULL = FALSE;
 	           X.RDB$COLLATION_ID = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_precision:
 	           X.RDB$FIELD_PRECISION.NULL = FALSE;
 	           X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
 	           break;
-	
+
 	       default:
 	           bad_attribute (scan_next_attr, attribute, 92); /* msg 92  global field */
 	           break;
@@ -3827,10 +3821,10 @@ static BOOLEAN get_global_field(void)
 	       if (l = type_lengths [l])
 	           X.RDB$FIELD_LENGTH = l;
 	       }
-	
+
 	       if (gfld)
 	       strcpy (gfld->gfld_name, X.RDB$FIELD_NAME);
-	
+
 	       /* V3.3 used a different method from V4.0 for encoding International
 	        * text character set & collation information.  Here we are
 	        * looking at the metadata information, deciding if it is
@@ -3840,23 +3834,23 @@ static BOOLEAN get_global_field(void)
 	       save_subtype = X.RDB$FIELD_SUB_TYPE;
 	       if (X.RDB$CHARACTER_SET_ID.NULL &&
 	       X.RDB$COLLATION_ID.NULL &&
-	       cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE, 
-	             &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID, 
+	       cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE,
+	             &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID,
 	             &X.RDB$COLLATION_ID))
 	           {
 	           FLD f;
-	
+
 	           /* If some value was reset, set the NULL flag */
 	           if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
 	           X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$COLLATION_ID.NULL = FALSE;
-	
+
 	           /* Add an entry to the converted-field link list
 	            * so we can also convert local fields based on this
 	            * global field
 	            */
-	
+
 	           f = (FLD) BURP_ALLOC_ZERO (sizeof(struct fld));
 	           strcpy (f->fld_name, X.RDB$FIELD_NAME);
 	           f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
@@ -3866,7 +3860,7 @@ static BOOLEAN get_global_field(void)
 	           f->fld_next = tdgbl->v3_cvt_fld_list;
 	           tdgbl->v3_cvt_fld_list = f;
 	           }
-	
+
 	    END_STORE;
 	    ON_ERROR
 	   general_on_error ();
@@ -3879,7 +3873,7 @@ static BOOLEAN get_global_field(void)
 
 	    STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
 	   X IN RDB$FIELDS
-	
+
 	   X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
 	   X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
 	   X.RDB$FIELD_SUB_TYPE = 0;
@@ -3906,7 +3900,7 @@ static BOOLEAN get_global_field(void)
 	   X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 	   X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 	   X.RDB$COLLATION_ID.NULL = TRUE;
-	
+
 	   memset (X.RDB$QUERY_NAME, ' ', sizeof (X.RDB$QUERY_NAME));
 	   SKIP_INIT;
 	   while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
@@ -3918,61 +3912,61 @@ static BOOLEAN get_global_field(void)
 	           BURP_verbose (121, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	               /* msg 121  restoring global field %s */
 	           break;
-	
+
 	       case att_field_query_name:
 	           get_text (X.RDB$QUERY_NAME, sizeof (X.RDB$QUERY_NAME));
 	           X.RDB$QUERY_NAME.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_edit_string:
 	           get_text (X.RDB$EDIT_STRING, sizeof (X.RDB$EDIT_STRING));
 	           X.RDB$EDIT_STRING.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_query_header:
 	           X.RDB$QUERY_HEADER.NULL = FALSE;
 	           get_source_blob (&X.RDB$QUERY_HEADER, 0);
 	           break;
-	
+
 	       case att_field_type:
 	           X.RDB$FIELD_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_length:
 	           X.RDB$FIELD_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_scale:
 	           X.RDB$FIELD_SCALE = (USHORT) get_numeric();
 	           X.RDB$FIELD_SCALE.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_sub_type:
 	           X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric();
 	           X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_segment_length:
 	           X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric();
 	           if (X.RDB$SEGMENT_LENGTH)
 	           X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_computed_blr:
 	           X.RDB$COMPUTED_BLR.NULL = FALSE;
 	           get_blr_blob (&X.RDB$COMPUTED_BLR, 0);
 	           break;
-	
+
 	       case att_field_computed_source:
 	           X.RDB$COMPUTED_SOURCE.NULL = FALSE;
 	           get_misc_blob (&X.RDB$COMPUTED_SOURCE, 1, 0);
 	           break;
-	
+
 	       case att_field_computed_source2:
 	           X.RDB$COMPUTED_SOURCE.NULL = FALSE;
 	           get_source_blob (&X.RDB$COMPUTED_SOURCE, 0);
 	           break;
-	
+
 	       case att_field_validation_blr:
 	           if (tdgbl->gbl_sw_novalidity)
 	           eat_blob();
@@ -3981,12 +3975,12 @@ static BOOLEAN get_global_field(void)
 	           /* if we are going against a V4.0 database,
 	            * restore the global fields in 2 phases.
 	            */
-	
+
 	           if (tdgbl->global_trans)
 	               {
 	               if (!gfld)
 	               gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
-	
+
 	               get_blr_blob (&gfld->gfld_vb, 1);
 	               gfld->gfld_flags |= GFLD_validation_blr;
 	               }
@@ -3997,7 +3991,7 @@ static BOOLEAN get_global_field(void)
 	               }
 	           }
 	           break;
-	
+
 	       case att_field_validation_source:
 	           if (tdgbl->gbl_sw_novalidity)
 	           eat_blob();
@@ -4006,12 +4000,12 @@ static BOOLEAN get_global_field(void)
 	           /* if we are going against a V4.0 database,
 	            * restore the global fields in 2 phases.
 	            */
-	
+
 	           if (tdgbl->global_trans)
 	               {
 	               if (!gfld)
 	               gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
-	
+
 	               get_misc_blob (&gfld->gfld_vs, 0, 1);
 	               gfld->gfld_flags |= GFLD_validation_source;
 	               }
@@ -4022,7 +4016,7 @@ static BOOLEAN get_global_field(void)
 	               }
 	           }
 	           break;
-	
+
 	       case att_field_validation_source2:
 	           if (tdgbl->gbl_sw_novalidity)
 	           eat_blob();
@@ -4031,12 +4025,12 @@ static BOOLEAN get_global_field(void)
 	           /* if we are going against a V4.0 database,
 	            * restore the global fields in 2 phases.
 	            */
-	
+
 	           if (tdgbl->global_trans)
 	               {
 	               if (!gfld)
 	               gfld = (GFLD) BURP_ALLOC_ZERO (sizeof (struct gfld));
-	
+
 	               get_source_blob (&gfld->gfld_vs2, 1);
 	               gfld->gfld_flags |= GFLD_validation_source2;
 	               }
@@ -4047,82 +4041,82 @@ static BOOLEAN get_global_field(void)
 	               }
 	           }
 	           break;
-	
+
 	       case att_field_missing_value:
 	           X.RDB$MISSING_VALUE.NULL = FALSE;
 	           get_blr_blob (&X.RDB$MISSING_VALUE, 0);
 	           break;
-	
+
 	       case att_field_default_value:
 	           X.RDB$DEFAULT_VALUE.NULL = FALSE;
 	           get_blr_blob (&X.RDB$DEFAULT_VALUE, 0);
 	           break;
-	
+
 	       case att_field_system_flag:
 	           X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	           X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_null_flag:
 	           X.RDB$NULL_FLAG = (USHORT) get_numeric();
 	           X.RDB$NULL_FLAG.NULL = FALSE;
 	           break;
-	
+
 	       case att_field_description:
 	           X.RDB$DESCRIPTION.NULL = FALSE;
 	           get_misc_blob (&X.RDB$DESCRIPTION, 1, 0);
 	           break;
-	
+
 	       case att_field_description2:
 	           X.RDB$DESCRIPTION.NULL = FALSE;
 	           get_source_blob (&X.RDB$DESCRIPTION, 0);
 	           break;
-	
+
 	       case att_field_external_length:
 	           X.RDB$EXTERNAL_LENGTH.NULL = FALSE;
 	           X.RDB$EXTERNAL_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_external_scale:
 	           X.RDB$EXTERNAL_SCALE.NULL = FALSE;
 	           X.RDB$EXTERNAL_SCALE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_external_type:
 	           X.RDB$EXTERNAL_TYPE.NULL = FALSE;
 	           X.RDB$EXTERNAL_TYPE = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_dimensions:
 	           X.RDB$DIMENSIONS.NULL = FALSE;
 	           X.RDB$DIMENSIONS = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_character_length:
 	           X.RDB$CHARACTER_LENGTH.NULL = FALSE;
 	           X.RDB$CHARACTER_LENGTH = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_default_source:
 	           X.RDB$DEFAULT_SOURCE.NULL = FALSE;
 	           get_source_blob (&X.RDB$DEFAULT_SOURCE, 0);
 	           break;
-	
+
 	       case att_field_missing_source:
 	           X.RDB$MISSING_SOURCE.NULL = FALSE;
 	           get_source_blob (&X.RDB$MISSING_SOURCE, 0);
 	           break;
-	
+
 	       case att_field_character_set:
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 	           break;
-	
+
 	       case att_field_collation_id:
 	           X.RDB$COLLATION_ID.NULL = FALSE;
 	           X.RDB$COLLATION_ID = (USHORT) get_numeric();
 	           break;
-	
+
 	       default:
 	           bad_attribute (scan_next_attr, attribute, 92); /* msg 92  global field */
 	           break;
@@ -4133,10 +4127,10 @@ static BOOLEAN get_global_field(void)
 	       if (l = type_lengths [l])
 	           X.RDB$FIELD_LENGTH = l;
 	       }
-	
+
 	       if (gfld)
 	       strcpy (gfld->gfld_name, X.RDB$FIELD_NAME);
-	
+
 	       /* V3.3 used a different method from V4.0 for encoding International
 	        * text character set & collation information.  Here we are
 	        * looking at the metadata information, deciding if it is
@@ -4146,23 +4140,23 @@ static BOOLEAN get_global_field(void)
 	       save_subtype = X.RDB$FIELD_SUB_TYPE;
 	       if (X.RDB$CHARACTER_SET_ID.NULL &&
 	       X.RDB$COLLATION_ID.NULL &&
-	       cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE, 
-	             &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID, 
+	       cvt_v3_to_v4_intl (X.RDB$FIELD_TYPE, &X.RDB$FIELD_SCALE,
+	             &X.RDB$FIELD_SUB_TYPE, &X.RDB$CHARACTER_SET_ID,
 	             &X.RDB$COLLATION_ID))
 	           {
 	           FLD f;
-	
+
 	           /* If some value was reset, set the NULL flag */
 	           if (save_subtype && !X.RDB$FIELD_SUB_TYPE)
 	           X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 	           X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 	           X.RDB$COLLATION_ID.NULL = FALSE;
-	
+
 	           /* Add an entry to the converted-field link list
 	            * so we can also convert local fields based on this
 	            * global field
 	            */
-	
+
 	           f = (FLD) BURP_ALLOC_ZERO (sizeof(struct fld));
 	           strcpy (f->fld_name, X.RDB$FIELD_NAME);
 	           f->fld_sub_type = X.RDB$FIELD_SUB_TYPE;
@@ -4172,7 +4166,7 @@ static BOOLEAN get_global_field(void)
 	           f->fld_next = tdgbl->v3_cvt_fld_list;
 	           tdgbl->v3_cvt_fld_list = f;
 	           }
-	
+
 	    END_STORE;
 	    ON_ERROR
 	   general_on_error ();
@@ -4221,7 +4215,7 @@ static BOOLEAN get_index( REL relation)
 	    if (!tdgbl->gbl_sw_deactivate_indexes)
 	   X.RDB$INDEX_INACTIVE = FALSE;
 	    else
-	   X.RDB$INDEX_INACTIVE = TRUE;    
+	   X.RDB$INDEX_INACTIVE = TRUE;
 	    X.RDB$INDEX_TYPE.NULL = TRUE;
 	    X.RDB$DESCRIPTION.NULL = TRUE;
 	    X.RDB$FOREIGN_KEY.NULL = TRUE;
@@ -4236,38 +4230,38 @@ static BOOLEAN get_index( REL relation)
 	       strcpy (index_name, X.RDB$INDEX_NAME);
 	       BURP_verbose (122, X.RDB$INDEX_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       break;
-	
+
 	       case att_segment_count:
 	       X.RDB$SEGMENT_COUNT = segments = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_index_unique_flag:
 	       X.RDB$UNIQUE_FLAG = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_index_inactive:
 	       X.RDB$INDEX_INACTIVE = (USHORT) get_numeric();
 	       /* Defer foreign key index activation */
 	       /* Modified by Toni Martir, all index deferred when verbose */
 	       if (tdgbl->gbl_sw_verbose)
 	        {
-	           if (X.RDB$INDEX_INACTIVE == FALSE) 
+	           if (X.RDB$INDEX_INACTIVE == FALSE)
 	               X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
-	       } 
+	       }
 	       else
-	        { 
+	        {
 	       if (X.RDB$INDEX_INACTIVE == FALSE && foreign_index)
 	           X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
 	       }
 	       if (tdgbl->gbl_sw_deactivate_indexes)
 	           X.RDB$INDEX_INACTIVE = TRUE;
 	       break;
-	
+
 	       case att_index_type:
 	                X.RDB$INDEX_TYPE.NULL = FALSE;
 	       X.RDB$INDEX_TYPE = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_index_field_name:
 	       STORE (REQUEST_HANDLE tdgbl->handles_get_index_req_handle2)
 	            Y IN RDB$INDEX_SEGMENTS
@@ -4279,32 +4273,32 @@ static BOOLEAN get_index( REL relation)
 	            general_on_error ();
 	        END_ERROR;
 	       break;
-	
+
 	       case att_index_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_misc_blob (&X.RDB$DESCRIPTION, 0, 0);
 	       break;
-	
+
 	       case att_index_description2:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	
+
 	       case att_index_expression_source:
 	       X.RDB$EXPRESSION_SOURCE.NULL = FALSE;
 	       get_source_blob (&X.RDB$EXPRESSION_SOURCE, 0);
 	       break;
-	
+
 	       case att_index_expression_blr:
 	       X.RDB$EXPRESSION_BLR.NULL = FALSE;
 	       get_blr_blob (&X.RDB$EXPRESSION_BLR, 0);
 	       break;
-	
+
 	       case att_index_foreign_key:
 	       /* BUG 8183: For more information see description of */
 	       /*           "bug_8183" function below.              */
 	                /* Note:     ATT_BACKUP_FORMAT for IB3.3 is equal 4  */
-	       if ( (tdgbl->RESTORE_format <= 4) && 
+	       if ( (tdgbl->RESTORE_format <= 4) &&
 	                     (tdgbl->gbl_sw_bug8183 || bug_8183(tdgbl)) )
 	          {
 	          X.RDB$DESCRIPTION.NULL = FALSE;
@@ -4322,15 +4316,15 @@ static BOOLEAN get_index( REL relation)
 	          get_text (X.RDB$FOREIGN_KEY, sizeof (X.RDB$FOREIGN_KEY));
 	          }
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 93); 
+	       bad_attribute (scan_next_attr, attribute, 93);
 	       /* msg 93 index */
 	       break;
 	       }
 	    count = 0;
 	    FOR (REQUEST_HANDLE tdgbl->handles_get_index_req_handle3)
-	        RFR IN RDB$RELATION_FIELDS CROSS I_S IN RDB$INDEX_SEGMENTS 
+	        RFR IN RDB$RELATION_FIELDS CROSS I_S IN RDB$INDEX_SEGMENTS
 	       OVER RDB$FIELD_NAME WITH I_S.RDB$INDEX_NAME = index_name AND
 	       RFR.RDB$RELATION_NAME = relation->rel_name
 	       count++;
@@ -4338,8 +4332,8 @@ static BOOLEAN get_index( REL relation)
 	    ON_ERROR
 	        general_on_error ();
 	    END_ERROR;
-	
-	    if (count != segments) 
+
+	    if (count != segments)
 	       {
 	        FOR (REQUEST_HANDLE tdgbl->handles_get_index_req_handle4)
 	            I_S IN RDB$INDEX_SEGMENTS WITH I_S.RDB$INDEX_NAME = index_name
@@ -4528,43 +4522,43 @@ static BOOLEAN get_procedure(void)
 	                procedure->prc_name_length = l;
 	                strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
 	       MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof (temp));
-	       BURP_verbose (195, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR); 
+	       BURP_verbose (195, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	       /* msg 195 restoring stored procedure %s */
 	       break;
-	
+
 	       case att_procedure_description:
 	       get_misc_blob (&X.RDB$DESCRIPTION, 0, 1);
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedure_description2:
 	       get_source_blob (&X.RDB$DESCRIPTION, 1);
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedure_source:
 	       get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, 1);
 	       X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedure_source2:
 	       get_source_blob (&X.RDB$PROCEDURE_SOURCE, 1);
 	       X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedure_blr:
 	       get_blr_blob (&X.RDB$PROCEDURE_BLR, 1);
 	       break;
-	
+
 	       case att_procedure_security_class:
 	       get_text (X.RDB$SECURITY_CLASS, sizeof (X.RDB$SECURITY_CLASS));
 	       X.RDB$SECURITY_CLASS.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedure_owner_name:
 	       get_text (procedure->prc_owner, sizeof (procedure->prc_owner));
 	       break;
-	
+
 	       case att_procedure_inputs:
 	       X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
 	                if (X.RDB$PROCEDURE_INPUTS == 0)
@@ -4572,13 +4566,13 @@ static BOOLEAN get_procedure(void)
 	                else
 	                    X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedure_outputs:
 	       X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 89); 
+	       bad_attribute (scan_next_attr, attribute, 89);
 	       /* msg 89 function */
 	       break;
 	       }
@@ -4638,31 +4632,31 @@ static BOOLEAN get_procedure_prm( GDS_NAME procptr)
 	       BURP_verbose (196, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	           /* msg 196 restoring parameter %s for stored procedure */
 	       break;
-	
+
 	       case att_procedureprm_type:
 	       X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_procedureprm_number:
 	       X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_procedureprm_field_source:
 	       get_text (X.RDB$FIELD_SOURCE, sizeof (X.RDB$FIELD_SOURCE));
 	       break;
-	
+
 	       case att_procedureprm_description:
 	       get_misc_blob (&X.RDB$DESCRIPTION, 0, 1);
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       break;
-	
+
 	       case att_procedureprm_description2:
 	       get_source_blob (&X.RDB$DESCRIPTION, 1);
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 90); 
+	       bad_attribute (scan_next_attr, attribute, 90);
 	       /* msg 90 function argument */
 	       break;
 	       }
@@ -4679,7 +4673,7 @@ static BOOLEAN get_ref_constraint(void)
 {
 /**************************************
  *
- *	g e t _ r e f _ c o n s t r a i n t 
+ *	g e t _ r e f _ c o n s t r a i n t
  *
  **************************************
  *
@@ -4708,29 +4702,29 @@ static BOOLEAN get_ref_constraint(void)
 	                X.RDB$CONSTRAINT_NAME.NULL = FALSE;
 	                get_text (X.RDB$CONSTRAINT_NAME, sizeof (X.RDB$CONSTRAINT_NAME));
 	                break;
-	
+
 	            case att_ref_unique_const_name:
 	                X.RDB$CONST_NAME_UQ.NULL = FALSE;
 	                get_text (X.RDB$CONST_NAME_UQ, sizeof (X.RDB$CONST_NAME_UQ));
 	                break;
-	
+
 	            case att_ref_match_option:
 	                X.RDB$MATCH_OPTION.NULL = FALSE;
 	                get_text (X.RDB$MATCH_OPTION, sizeof (X.RDB$MATCH_OPTION));
 	                break;
-	
+
 	            case att_ref_update_rule:
 	                X.RDB$UPDATE_RULE.NULL = FALSE;
 	                get_text (X.RDB$UPDATE_RULE, sizeof (X.RDB$UPDATE_RULE));
 	                break;
-	
+
 	            case att_ref_delete_rule:
 	                X.RDB$DELETE_RULE.NULL = FALSE;
 	                get_text (X.RDB$DELETE_RULE, sizeof (X.RDB$DELETE_RULE));
 	                break;
-	
+
 	            default:
-	                bad_attribute (scan_next_attr, attribute, 208); 
+	                bad_attribute (scan_next_attr, attribute, 208);
 	       /* msg 208 relation constraint */
 	       break;
 	            }
@@ -4759,7 +4753,7 @@ static BOOLEAN get_relation(void)
  *	with plans.  Assume it is a view if it has
  *	RDB$VIEW_BLR, also assume RDB$VIEW_BLR is
  *	the first blob in the backup file.
- *	
+ *
  *
  **************************************/
 	REL relation;
@@ -4907,7 +4901,7 @@ static BOOLEAN get_relation(void)
 	STORE (TRANSACTION_HANDLE local_trans
 	       REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
 	   X IN RDB$RELATIONS
-	
+
 	   X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
 	   X.RDB$FLAGS.NULL = rel_flags_null;
 	   X.RDB$SECURITY_CLASS.NULL = sec_class_null;
@@ -4917,18 +4911,18 @@ static BOOLEAN get_relation(void)
 	   X.RDB$RUNTIME.NULL = TRUE;
 	   X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
 	   X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
-	
+
 	   X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
 	   X.RDB$FLAGS = (USHORT) rel_flags;
 	   X.RDB$VIEW_BLR = view_blr;
 	   X.RDB$VIEW_SOURCE = view_src;
 	   X.RDB$DESCRIPTION = rel_desc;
 	   X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
-	
+
 	   strcpy(X.RDB$SECURITY_CLASS, sec_class);
 	   strcpy(X.RDB$RELATION_NAME, relation->rel_name);
 	   strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
-	
+
 	END_STORE;
 	ON_ERROR
 	    general_on_error ();
@@ -4950,7 +4944,7 @@ static BOOLEAN get_relation(void)
 	               BURP_print (171, relation->rel_name, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	                    /* msg 171: error committing metadata for relation %s */
 	           BURP_print_status (tdgbl->status_vector);
-	           ROLLBACK; 
+	           ROLLBACK;
 	           ON_ERROR
 	               general_on_error ();
 	           END_ERROR;
@@ -5010,7 +5004,7 @@ static BOOLEAN get_rel_constraint(void)
 {
 /**************************************
  *
- *	g e t _ r e l _ c o n s t r a i n t 
+ *	g e t _ r e l _ c o n s t r a i n t
  *
  **************************************
  *
@@ -5040,34 +5034,34 @@ static BOOLEAN get_rel_constraint(void)
 	                X.RDB$CONSTRAINT_NAME.NULL = FALSE;
 	                get_text (X.RDB$CONSTRAINT_NAME, sizeof (X.RDB$CONSTRAINT_NAME));
 	                break;
-	
+
 	            case att_rel_constraint_type:
 	                X.RDB$CONSTRAINT_TYPE.NULL = FALSE;
 	                get_text (X.RDB$CONSTRAINT_TYPE, sizeof (X.RDB$CONSTRAINT_TYPE));
 	                break;
-	
+
 	            case att_rel_constraint_rel_name:
 	                X.RDB$RELATION_NAME.NULL = FALSE;
 	                get_text (X.RDB$RELATION_NAME, sizeof (X.RDB$RELATION_NAME));
 	                break;
-	
+
 	            case att_rel_constraint_defer:
 	                X.RDB$DEFERRABLE.NULL = FALSE;
 	                get_text (X.RDB$DEFERRABLE, sizeof (X.RDB$DEFERRABLE));
 	                break;
-	
+
 	            case att_rel_constraint_init:
 	                X.RDB$INITIALLY_DEFERRED.NULL = FALSE;
 	                get_text (X.RDB$INITIALLY_DEFERRED, sizeof (X.RDB$INITIALLY_DEFERRED));
 	                break;
-	
+
 	            case att_rel_constraint_index:
 	                X.RDB$INDEX_NAME.NULL = FALSE;
 	                get_text (X.RDB$INDEX_NAME, sizeof (X.RDB$INDEX_NAME));
 	                break;
-	
+
 	            default:
-	                bad_attribute (scan_next_attr, attribute, 208); 
+	                bad_attribute (scan_next_attr, attribute, 208);
 	       /* msg 208 relation constraint */
 	       break;
 	            }
@@ -5186,11 +5180,11 @@ static BOOLEAN get_sql_roles(void)
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
 	    X IN RDB$ROLES
-	
+
 	    X.RDB$ROLE_NAME.NULL = TRUE;
 	    X.RDB$OWNER_NAME.NULL = TRUE;
 	    SKIP_INIT;
-	
+
 	    while (SKIP_SCAN, GET_ATTRIBUTE (attribute) != att_end)
 	        switch (attribute)
 	            {
@@ -5206,12 +5200,12 @@ static BOOLEAN get_sql_roles(void)
 	                BURP_verbose (251, temp, NULL_PTR, NULL_PTR,
 	                              NULL_PTR, NULL_PTR);
 	                break;
-	
+
 	            case att_role_owner_name:
 	                X.RDB$OWNER_NAME.NULL = FALSE;
 	                get_text (X.RDB$OWNER_NAME, sizeof (X.RDB$OWNER_NAME));
 	                break;
-	
+
 	            default:
 	                /*************************************************
 	                **
@@ -5285,14 +5279,14 @@ static BOOLEAN get_security_class(void)
 	   switch (attribute)
 	       {
 	       case att_class_security_class:
-	       l = get_text (X.RDB$SECURITY_CLASS, 
+	       l = get_text (X.RDB$SECURITY_CLASS,
 	           sizeof (X.RDB$SECURITY_CLASS));
-	
+
 	       /* Bug fix for bug_no 7299: There was a V3 bug that inserted
 	          garbage security class entry when doing GBAK. In order to
 	          restore the V3 gbak file with this bad security entry to
-	          V4 database. We should check if the security class is a 
-	          valid ASCII name. If not, skip this entry by setting 
+	          V4 database. We should check if the security class is a
+	          valid ASCII name. If not, skip this entry by setting
 	          'is_valid_sec_class' to FALSE.
 	        */
 	       is_valid_sec_class = is_ascii_name(X.RDB$SECURITY_CLASS, l);
@@ -5303,28 +5297,28 @@ static BOOLEAN get_security_class(void)
 	           /* msg 234   Skipped bad security class entry: %s */
 	           break;
 	           }
-	
+
 	       MISC_terminate (X.RDB$SECURITY_CLASS, temp, l, sizeof (temp));
 	       BURP_verbose (125, temp, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	           /* msg 125   restoring security class %s */
 	       break;
-	
+
 	       case att_class_acl:
 	       get_misc_blob (&X.RDB$ACL, 0, 0);
 	       break;
-	       
+
 	       case att_class_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_misc_blob (&X.RDB$DESCRIPTION, 0, 0);
 	       break;
-	
+
 	       case att_class_description2:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 131); 
+	       bad_attribute (scan_next_attr, attribute, 131);
 	       /* msg 131 security class */
 	       break;
 	       }
@@ -5482,37 +5476,37 @@ static BOOLEAN get_trigger_old( REL relation)
 	       case att_trig_type:
 	       type = (enum trig_t) get_numeric();
 	       break;
-	
+
 	       case att_trig_blr:
 	       X.RDB$TRIGGER_BLR.NULL = FALSE;
 	       get_blr_blob (&X.RDB$TRIGGER_BLR, 0);
 	       break;
-	
+
 	       case att_trig_source:
 	       X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 	       get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, 0);
 	       break;
-	
+
 	       case att_trig_source2:
 	       X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 	       get_source_blob (&X.RDB$TRIGGER_SOURCE, 0);
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 134); 
+	       bad_attribute (scan_next_attr, attribute, 134);
 	       /* msg 134 trigger */
 	       break;
 	       }
 	   }
-	
+
 	    /* fill in rest of attributes unique to new trigger format */
-	
+
 	    p = X.RDB$TRIGGER_NAME;
 	    end = p + 31;
 	    q = relation->rel_name;
 	    while (*q)
 	   *p++ = *q++;
-	
+
 	    if (type == trig_pre_store)
 	   {
 	   X.RDB$TRIGGER_TYPE = TRIG_TYPE_PRE_STORE;
@@ -5530,21 +5524,21 @@ static BOOLEAN get_trigger_old( REL relation)
 	   }
 	    else
 	   {
-	   bad_attribute (scan_next_attr, attribute, 136); 
+	   bad_attribute (scan_next_attr, attribute, 136);
 	   /* msg 136 trigger type */
-	   return 0; 
+	   return 0;
 	   }
-	
+
 	    while (*q && p < end)
 	   *p++ = *q++;
 	    *p = 0;
-	    BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR); 
+	    BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	    /* msg 126 restoring trigger %s */
 	    strncpy (X.RDB$RELATION_NAME, relation->rel_name, GDS_NAME_LEN);
 	    strcpy (name, X.RDB$TRIGGER_NAME);
 	    X.RDB$TRIGGER_SEQUENCE = TRIGGER_SEQUENCE_DEFAULT;
 	    X.RDB$SYSTEM_FLAG = 0;   /* restore as vanilla user type */
-	
+
 	END_STORE;
 	ON_ERROR
 	    general_on_error ();
@@ -5609,63 +5603,63 @@ static BOOLEAN get_trigger(void)
 	       case att_trig_type:
 	       X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_trig_flags:
 	       X.RDB$FLAGS = (USHORT) get_numeric();
 	                X.RDB$FLAGS.NULL = FALSE;
 	       break;
-	
+
 	       case att_trig_blr:
 	       X.RDB$TRIGGER_BLR.NULL = FALSE;
 	       get_blr_blob (&X.RDB$TRIGGER_BLR, 1);
 	       break;
-	
+
 	       case att_trig_source:
 	       X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 	       get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, 1);
 	       break;
-	
+
 	       case att_trig_source2:
 	       X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 	       get_source_blob (&X.RDB$TRIGGER_SOURCE, 1);
 	       break;
-	
+
 	       case att_trig_name:
 	       get_text (X.RDB$TRIGGER_NAME, sizeof (X.RDB$TRIGGER_NAME));
 	       strcpy (name, X.RDB$TRIGGER_NAME);
 	       BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL_PTR, NULL_PTR, NULL_PTR, NULL_PTR);
 	                /* msg 126 restoring trigger %s */
 	       break;
-	
+
 	       case att_trig_relation_name:
 	       get_text (X.RDB$RELATION_NAME, sizeof (X.RDB$RELATION_NAME));
 	       break;
-	
+
 	       case att_trig_sequence:
 	       X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_trig_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_misc_blob (&X.RDB$DESCRIPTION, 1, 1);
 	       break;
-	
+
 	       case att_trig_description2:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 1);
 	       break;
-	
+
 	       case att_trig_system_flag:
 	       X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	       X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	       break;
-	
+
 	       case att_trig_inactive:
 	       X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 134); 
+	       bad_attribute (scan_next_attr, attribute, 134);
 	       /* msg 134 trigger */
 	       break;
 	       }
@@ -5700,7 +5694,7 @@ static BOOLEAN get_trigger_message(void)
 {
 /**************************************
  *
- *	g e t _ t r i g g e r _ m e s s a g e 
+ *	g e t _ t r i g g e r _ m e s s a g e
  *
  **************************************
  *
@@ -5823,41 +5817,41 @@ static BOOLEAN get_type(void)
 	       case att_type_name:
 	       l = get_text (X.RDB$TYPE_NAME, sizeof (X.RDB$TYPE_NAME));
 	       break;
-	
+
 	       case att_type_type:
 	       X.RDB$TYPE = (USHORT) get_numeric();
 	       break;
-	
+
 	       case att_type_field_name:
 	       get_text (X.RDB$FIELD_NAME, sizeof (X.RDB$FIELD_NAME));
 	       break;
-	
+
 	       case att_type_description:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_misc_blob (&X.RDB$DESCRIPTION, 1, 0);
 	       break;
-	
+
 	       case att_type_description2:
 	       X.RDB$DESCRIPTION.NULL = FALSE;
 	       get_source_blob (&X.RDB$DESCRIPTION, 0);
 	       break;
-	
+
 	       case att_type_system_flag:
 	       X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
 	       X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 136); 
+	       bad_attribute (scan_next_attr, attribute, 136);
 	       /* msg 136 trigger type */
 	       break;
 	       }
 	   }
-	
+
 	MISC_terminate (X.RDB$TYPE_NAME, temp, l, sizeof (temp));
 	BURP_verbose (128, temp, X.RDB$FIELD_NAME, NULL_PTR, NULL_PTR, NULL_PTR);
 	   /* msg 128  restoring type %s for field %s */
-	
+
 	END_STORE;
 	ON_ERROR
 	    general_on_error ();
@@ -6000,19 +5994,19 @@ static BOOLEAN get_user_privilege(void)
 	    STORE (TRANSACTION_HANDLE local_trans
 	      REQUEST_HANDLE tdgbl->handles_get_user_privilege_req_handle1) X
 	    IN RDB$USER_PRIVILEGES
-	   
+
 	   X.RDB$FIELD_NAME.NULL = TRUE;
 	   X.RDB$OBJECT_TYPE.NULL = TRUE;
-	
+
 	   if (flags & USER_PRIV_USER)
 	       strcpy (X.RDB$USER, user);
-	
+
 	   if (flags & USER_PRIV_GRANTOR)
 	       strcpy (X.RDB$GRANTOR, grantor);
-	
+
 	   if (flags & USER_PRIV_PRIVILEGE)
 	       strcpy (X.RDB$PRIVILEGE, privilege);
-	
+
 	   if (flags & USER_PRIV_GRANT_OPTION)
 	       {
 	       X.RDB$GRANT_OPTION = grant_option;
@@ -6021,39 +6015,39 @@ static BOOLEAN get_user_privilege(void)
 	            else
 	                X.RDB$GRANT_OPTION.NULL = FALSE;
 	       }
-	
+
 	   if (flags & USER_PRIV_OBJECT_NAME)
 	       strcpy (X.RDB$RELATION_NAME, relation_name);
-	
+
 	   if (flags & USER_PRIV_FIELD_NAME)
 	       {
 	       X.RDB$FIELD_NAME.NULL = FALSE;
 	       strcpy (X.RDB$FIELD_NAME, field_name);
 	       }
-	
+
 	       /*
-	        * USER_TYPE & OBJECT_TYPE are fields that did not exist before 
-	        * V4.0. So, we have to reconstruct them and initialize them to 
-	        * reasonable values. If they existed before then user_type and 
+	        * USER_TYPE & OBJECT_TYPE are fields that did not exist before
+	        * V4.0. So, we have to reconstruct them and initialize them to
+	        * reasonable values. If they existed before then user_type and
 	        * object_type contain the proper values. If they didn't exist
 	        * then user_type and object_type contain the reasonable default
 	        * values.
 	        */
-	
+
 	   X.RDB$USER_TYPE.NULL = FALSE;
 	   X.RDB$USER_TYPE = user_type;
-	
+
 	   X.RDB$OBJECT_TYPE.NULL = FALSE;
 	   X.RDB$OBJECT_TYPE = object_type;
-	
-	
-	       /* 
+
+
+	       /*
 	        * If OBJECT_TYPE didn't exist before and we have a field level
 	        * user privileges, then use obj_field instead.
 	        *
-	        * NOTE: Scanning the V4.0 code base, obj_field has never been 
-	        *       used at all. The following code should be uncommented 
-	        *       in case we ever introduce obj_field to the picture. 
+	        * NOTE: Scanning the V4.0 code base, obj_field has never been
+	        *       used at all. The following code should be uncommented
+	        *       in case we ever introduce obj_field to the picture.
 	        */
 	       /***********************************************************
 	   if ( !(flags & USER_PRIV_OBJECT_TYPE) )
@@ -6064,8 +6058,8 @@ static BOOLEAN get_user_privilege(void)
 	       }
 	       }
 	        ***********************************************************/
-	
-	
+
+
 	    END_STORE;
 	    ON_ERROR
 	   general_on_error ();
@@ -6110,17 +6104,17 @@ static BOOLEAN get_view( REL relation)
 	       case att_view_relation_name:
 	       get_text (X.RDB$RELATION_NAME, sizeof (X.RDB$RELATION_NAME));
 	       break;
-	
+
 	       case att_view_context_name:
 	       get_text (X.RDB$CONTEXT_NAME, sizeof (X.RDB$CONTEXT_NAME));
 	       break;
-	
+
 	       case att_view_context_id:
 	       X.RDB$VIEW_CONTEXT = (USHORT) get_numeric();
 	       break;
-	
+
 	       default:
-	       bad_attribute (scan_next_attr, attribute, 140); 
+	       bad_attribute (scan_next_attr, attribute, 140);
 	       /* msg 140 view */
 	       break;
 	       }
@@ -6762,7 +6756,7 @@ static BOOLEAN restore( TEXT * file_name, TEXT * database_name)
 			break;
 		}
 
-/* This piece of code is to fix bug 10098: restore of database with 
+/* This piece of code is to fix bug 10098: restore of database with
 only domains and no relations aborts with the message ERROR: deadlock
 This is because insertion of domains into RDB$FIELDS is happening in
 the default transaction, whereas updation of RDB$FIELDS to add
@@ -6831,11 +6825,11 @@ static void restore_security_class( TEXT * owner_nm, TEXT * sec_class_nm)
 
 	FOR (REQUEST_HANDLE req_handle2)
 	    X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ sec_class_nm
-	
+
 	    new_blob_id.gds_quad_high = 0;
 	    new_blob_id.gds_quad_low  = 0;
 	    get_acl (owner_nm, &X.RDB$ACL, &new_blob_id);
-	
+
 	    MODIFY X;
 	   MOVE_FAST (&new_blob_id, &X.RDB$ACL, sizeof (ISC_QUAD));
 	    END_MODIFY;
@@ -6844,7 +6838,7 @@ static void restore_security_class( TEXT * owner_nm, TEXT * sec_class_nm)
 	       isc_release_request (req_status, &req_handle2);
 	   general_on_error ();
 	    END_ERROR;
-	
+
 	    END_FOR;
 
 	ON_ERROR
@@ -7016,51 +7010,51 @@ static void update_global_field(void)
 	    FOR (TRANSACTION_HANDLE tdgbl->global_trans REQUEST_HANDLE req_handle1)
 	        X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ gfld->gfld_name
 	       MODIFY X
-	
+
 	       if (gfld->gfld_flags & GFLD_validation_blr)
 	       {
 	       X.RDB$VALIDATION_BLR.NULL = FALSE;
-	
+
 	       if (length = sizeof (ISC_QUAD))
 	           {
 	           p = (UCHAR *)&X.RDB$VALIDATION_BLR;
 	           q = (UCHAR *)&gfld->gfld_vb;
-	
+
 	           do *p++ = *q++; while (--length);
 	           }
 	       }
-	       
+
 	       if (gfld->gfld_flags & GFLD_validation_source)
 	       {
 	       X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-	
+
 	       if (length = sizeof (ISC_QUAD))
 	           {
 	           p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
 	           q = (UCHAR *)&gfld->gfld_vs;
-	
+
 	           do *p++ = *q++; while (--length);
 	           }
 	       }
-	       
+
 	       if (gfld->gfld_flags & GFLD_validation_source2)
 	       {
 	       X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-	
+
 	       if (length = sizeof (ISC_QUAD))
 	           {
 	           p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
 	           q = (UCHAR *)&gfld->gfld_vs2;
-	
+
 	           do *p++ = *q++; while (--length);
 	           }
 	       }
-	       
+
 	   END_MODIFY;
 	    ON_ERROR
 	        general_on_error ();
 	    END_ERROR;
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -7087,7 +7081,7 @@ static BOOLEAN bug_8183( TGBL tdgbl)
  * Name:	bug_8183
  *
  * Function:	Bug fix for bug_no 8183: It is a migration bug between IB3.3
- *		and IB4.0. Gbak v4.0 can't restore database v3.3 if 
+ *		and IB4.0. Gbak v4.0 can't restore database v3.3 if
  *		database has an index definition with comment field.
  *		It happens because of att_index_description2 attribute
  *		(which indicates that index contains a comment field
@@ -7101,7 +7095,7 @@ static BOOLEAN bug_8183( TGBL tdgbl)
  *
  *		This function is trying to recognize the next
  *		data in tdgbl->io_ptr buffer as either name of foreign
- *		key or comment field. Function returns TRUE in case of 
+ *		key or comment field. Function returns TRUE in case of
  *		comment field, otherwise FALSE.
  *
  * Usage:	result = bug_8183(tdgbl);

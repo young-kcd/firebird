@@ -15,6 +15,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 #include "../jrd/ib_stdio.h"
 #include <fcntl.h>
@@ -396,18 +399,15 @@ FIL PIO_open(dbb, string, length, trace_flag, connection, file_name,
 			break;
 
 	if (desc == -1) {
-#ifdef READONLY_DATABASE
 		/* Try opening the database file in ReadOnly mode. The database file could
 		 * be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
 		 */
 		if ((desc = NWDFS_open(ptr, O_RDONLY)) == -1) {
-#endif /* READONLY_DATABASE */
 			ERR_post(isc_io_error,
 					 gds_arg_string, "open",
 					 gds_arg_cstring, file_length, ERR_string(file_name,
 															  file_length),
 					 isc_arg_gds, isc_io_open_err, gds_arg_netware, errno, 0);
-#ifdef READONLY_DATABASE
 		}
 		else {
 			/* If this is the primary file, set DBB flag to indicate that it is
@@ -418,7 +418,6 @@ FIL PIO_open(dbb, string, length, trace_flag, connection, file_name,
 			if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
-#endif /* READONLY_DATABASE */
 	}
 
 	return dfs_setup_file(dbb, string, length, desc);
@@ -739,7 +738,7 @@ static netware_error(string, file, operation, status_vector)
 int NWDFS_open(SCHAR * file_name, int access)
 /**************************************
  *
- * N W D F S _ o p e n 
+ * N W D F S _ o p e n
  *
  **************************************
  *
@@ -825,9 +824,9 @@ int NWDFS_write(FIL fil, int length, SCHAR * buffer)
 	starting_sector = fil->dfs_position / BYTES_PER_SECTOR;
 	offset_in_sector = fil->dfs_position % BYTES_PER_SECTOR;
 
-	/* if we are not at sector boundary : 
+	/* if we are not at sector boundary :
 	   1) read entire sector into temporary buffer
-	   2) copy as many bytes as we can from original buffer to temporary buf 
+	   2) copy as many bytes as we can from original buffer to temporary buf
 	   3) re-write sector */
 
 	if (offset_in_sector != 0) {
@@ -883,7 +882,7 @@ int NWDFS_write(FIL fil, int length, SCHAR * buffer)
 		length -= bytes_written;
 	}
 
-	/* if last bit spills out of last sector 
+	/* if last bit spills out of last sector
 	   1) read sector into temp buffer
 	   2) copy last bit to temporary buffer
 	   2) re-write sector */
@@ -942,7 +941,7 @@ int NWDFS_read(FIL fil, int length, SCHAR * buffer)
 	starting_sector = fil->dfs_position / BYTES_PER_SECTOR;
 	offset_in_sector = fil->dfs_position % BYTES_PER_SECTOR;
 
-	/* if we are not at sector boundary : 
+	/* if we are not at sector boundary :
 	   1) read entire sector into temporary buffer
 	   2) copy bytes from current position to end of sector into buffer */
 
@@ -967,7 +966,7 @@ int NWDFS_read(FIL fil, int length, SCHAR * buffer)
 		starting_sector++;
 	}
 
-	/* if more than one sector left to read, read all sectors up to last 
+	/* if more than one sector left to read, read all sectors up to last
 	   sector */
 
 	number_of_sectors = length / BYTES_PER_SECTOR;
@@ -1038,7 +1037,7 @@ int dfs_write(FIL fil, int starting_sector, int number_of_sectors,
 			  SCHAR * buffer)
 /**************************************
  *
- * d f s _ w r i t e 
+ * d f s _ w r i t e
  *
  **************************************
  *
@@ -1065,7 +1064,7 @@ int dfs_write(FIL fil, int starting_sector, int number_of_sectors,
 		byte_offset_in_file = starting_sector * BYTES_PER_SECTOR;
 		starting_block = byte_offset_in_file / fil->dfs_block_size;
 
-		/* if it is on a block boundary and it is not block zero 
+		/* if it is on a block boundary and it is not block zero
 		   start at previous block */
 		if ((byte_offset_in_file % fil->dfs_block_size) == 0)
 			if (byte_offset_in_file > 0)
@@ -1157,7 +1156,7 @@ void read_back_and_check(PAG page, BDB bdb, FIL file)
 	written_checksum = page->pag_checksum;
 
 	if (read_checksum != written_checksum) {
-// ConsolePrintf("read = %d write = %d page = %d\n", 
+// ConsolePrintf("read = %d write = %d page = %d\n",
 //                read_checksum, written_checksum, page_no);
 		Breakpoint(1);
 	}

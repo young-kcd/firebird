@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 /*
-$Id: dsql.cpp,v 1.2 2001-05-24 14:54:25 tamlin Exp $
+$Id: dsql.cpp,v 1.3 2001-07-10 17:35:13 awharrison Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -37,7 +40,7 @@ V4 Multi-threading changes.
 the following protocol will be used.  Care should be taken if
 nested FOR loops are added.
 
-    THREAD_EXIT;                // last statment before FOR loop 
+    THREAD_EXIT;                // last statment before FOR loop
 
     FOR ...............
 
@@ -48,7 +51,7 @@ nested FOR loops are added.
 
     END_FOR;
 
-    THREAD_ENTER;               // First statment after FOR loop 
+    THREAD_ENTER;               // First statment after FOR loop
 ***************************************************************/
 
 #define DSQL_MAIN
@@ -157,7 +160,7 @@ static CONST SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
 	gds_info_ods_version,
 	gds_info_base_level,
-#ifdef READONLY_DATABASE
+#ifde_DATABASE
 	isc_info_db_read_only,
 #endif							/* READONLY_DATABASE */
 	frb_info_att_charset,
@@ -325,7 +328,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE(STATUS * user_status,
 
 /* If the output message length is zero on a REQ_SELECT then we must
  * be doing an OPEN cursor operation.
- * If we do have an output message length, then we're doing 
+ * If we do have an output message length, then we're doing
  * a singleton SELECT.  In that event, we don't add the cursor
  * to the list of open cursors (it's not really open).
  */
@@ -380,7 +383,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
 {
 /**************************************
  *
- *	d s q l _ e x e c u t e _ i m m e d i a t e 
+ *	d s q l _ e x e c u t e _ i m m e d i a t e
  *
  **************************************
  *
@@ -439,7 +442,7 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS * user_status,
  *  parser = (combined) %10 == 1
  *  dialect = (combined) / 19 == 1
  *
- * If the parser version is not part of the dialect, then assume that the 
+ * If the parser version is not part of the dialect, then assume that the
  * connection being made is a local classic connection.
  */
 
@@ -522,9 +525,9 @@ STATUS DLL_EXPORT GDS_DSQL_FETCH(STATUS * user_status,
 
 #ifdef SCROLLABLE_CURSORS
 
-/* check whether we need to send an asynchronous scrolling message 
-   to the engine; the engine will automatically advance one record 
-   in the same direction as before, so optimize out messages of that 
+/* check whether we need to send an asynchronous scrolling message
+   to the engine; the engine will automatically advance one record
+   in the same direction as before, so optimize out messages of that
    type */
 
 	if (request->req_type == REQ_SELECT &&
@@ -885,7 +888,7 @@ STATUS DLL_EXPORT GDS_DSQL_PREPARE(STATUS * user_status,
  *  parser = (combined) %10 == 1
  *  dialect = (combined) / 19 == 1
  *
- * If the parser version is not part of the dialect, then assume that the 
+ * If the parser version is not part of the dialect, then assume that the
  * connection being made is a local classic connection.
  */
 
@@ -958,7 +961,7 @@ STATUS DLL_EXPORT GDS_DSQL_SET_CURSOR(STATUS * user_status,
 	request = *req_handle;
 	tdsql->tsql_default = request->req_pool;
 	if (input_cursor[0] == '\"') {
-	/** Quoted cursor names eh? Strip'em. 
+	/** Quoted cursor names eh? Strip'em.
 	Note that "" will be replaced with ".
     **/
 		int ij;
@@ -993,7 +996,7 @@ STATUS DLL_EXPORT GDS_DSQL_SET_CURSOR(STATUS * user_status,
 					  gds_arg_gds, gds_dsql_decl_err, 0);
 	}
 
-/* If there already is a cursor and its name isn't the same, ditto. 
+/* If there already is a cursor and its name isn't the same, ditto.
    We already know there is no cursor by this name in the hash table */
 
 	if (!request->req_cursor)
@@ -1139,7 +1142,7 @@ STATUS DLL_EXPORT GDS_DSQL_SQL_INFO(STATUS * user_status,
 			}
 		}
 		else if (item == gds_info_sql_get_plan) {
-			/* be careful, get_plan_info() will reallocate the buffer to a 
+			/* be careful, get_plan_info() will reallocate the buffer to a
 			   larger size if it is not big enough */
 
 			buffer_ptr = buffer;
@@ -1751,7 +1754,7 @@ static void cleanup( void *arg)
 {
 /**************************************
  *
- *	c l e a n u p 
+ *	c l e a n u p
  *
  **************************************
  *
@@ -1779,7 +1782,7 @@ static void cleanup_database( SLONG ** db_handle, SLONG flag)
  **************************************
  *
  * Functional description
- *	Clean up DSQL globals.  
+ *	Clean up DSQL globals.
  *
  * N.B., the cleanup handlers (registered with gds__database_cleanup)
  * are called outside of the ISC thread mechanism...
@@ -1853,11 +1856,11 @@ static void cleanup_transaction( SLONG * tra_handle, SLONG arg)
 			   The close routine will have done that. */
 
 			THD_MUTEX_UNLOCK(&cursors_mutex);
-			/* 
+			/*
 			 * we are expected to be within the subsystem when we do this
-			 * cleanup, for now do a thread_enter/thread_exit here. 
+			 * cleanup, for now do a thread_enter/thread_exit here.
 			 * Note that the function GDS_DSQL_FREE() calls the local function.
-			 * Over the long run, it might be better to move the subsystem_exit() 
+			 * Over the long run, it might be better to move the subsystem_exit()
 			 * call in why.c below the cleanup handlers. smistry 9-27-98
 			 */
 			THREAD_ENTER;
@@ -2437,7 +2440,7 @@ static BOOLEAN get_indices(
  **************************************
  *
  * Functional description
- *	Retrieve the indices from the index tree in 
+ *	Retrieve the indices from the index tree in
  *	the request info buffer, and print them out
  *	in the plan buffer.
  *
@@ -2728,7 +2731,7 @@ SCHAR ** plan_ptr, USHORT * parent_join_count, USHORT * level_ptr)
 
 	case gds_info_rsb_relation:
 
-		/* for the single relation case, initiate 
+		/* for the single relation case, initiate
 		   the relation with a parenthesis */
 
 		if (!*parent_join_count) {
@@ -2802,7 +2805,7 @@ SCHAR ** plan_ptr, USHORT * parent_join_count, USHORT * level_ptr)
 		case gds_info_rsb_left_cross:
 		case gds_info_rsb_merge:
 
-			/* if this join is itself part of a join list, 
+			/* if this join is itself part of a join list,
 			   but not the first item, then put out a comma */
 
 			if (*parent_join_count && plan[-1] != '(') {
@@ -2895,9 +2898,9 @@ SCHAR ** plan_ptr, USHORT * parent_join_count, USHORT * level_ptr)
 
 		case gds_info_rsb_sort:
 
-			/* if this sort is on behalf of a union, don't bother to 
-			   print out the sort, because unions handle the sort on all 
-			   substreams at once, and a plan maps to each substream 
+			/* if this sort is on behalf of a union, don't bother to
+			   print out the sort, because unions handle the sort on all
+			   substreams at once, and a plan maps to each substream
 			   in the union, so the sort doesn't really apply to a particular plan */
 
 			if (explain_length > 2 &&
@@ -2920,7 +2923,7 @@ SCHAR ** plan_ptr, USHORT * parent_join_count, USHORT * level_ptr)
 			while (*p)
 				*plan++ = *p++;
 
-			/* the rsb_sort should always be followed by a begin...end block, 
+			/* the rsb_sort should always be followed by a begin...end block,
 			   allowing us to include everything inside the sort in parentheses */
 
 			save_level = *level_ptr;
@@ -3061,19 +3064,19 @@ static DBB init( SLONG ** db_handle)
 				database->dbb_flags &= ~DBB_v3;
 			break;
 
-			/* This flag indicates the version level of the engine  
-			   itself, so we can tell what capabilities the engine 
+			/* This flag indicates the version level of the engine
+			   itself, so we can tell what capabilities the engine
 			   code itself (as opposed to the on-disk structure).
-			   Apparently the base level up to now indicated the major 
-			   version number, but for 4.1 the base level is being 
-			   incremented, so the base level indicates an engine version 
+			   Apparently the base level up to now indicated the major
+			   version number, but for 4.1 the base level is being
+			   incremented, so the base level indicates an engine version
 			   as follows:
 			   1 == v1.x
 			   2 == v2.x
 			   3 == v3.x
 			   4 == v4.0 only
 			   5 == v4.1
-			   Note: this info item is so old it apparently uses an 
+			   Note: this info item is so old it apparently uses an
 			   archaic format, not a standard vax integer format.
 			 */
 
@@ -3081,14 +3084,12 @@ static DBB init( SLONG ** db_handle)
 			database->dbb_base_level = (USHORT) data[1];
 			break;
 
-#ifdef READONLY_DATABASE
 		case isc_info_db_read_only:
 			if ((USHORT) data[0])
 				database->dbb_flags |= DBB_read_only;
 			else
 				database->dbb_flags &= ~DBB_read_only;
 			break;
-#endif /* READONLY_DATABASE */
 
 		case frb_info_att_charset:
 			database->dbb_att_charset =
@@ -3473,7 +3474,7 @@ static REQ prepare(
 
 #ifdef SCROLLABLE_CURSORS
 	if (request->req_dbb->dbb_base_level >= 5) {
-		/* allocate a message in which to send scrolling information 
+		/* allocate a message in which to send scrolling information
 		   outside of the normal send/receive protocol */
 
 		request->req_async = message = (MSG) ALLOCD(type_msg);
@@ -3484,7 +3485,7 @@ static REQ prepare(
 	request->req_type = REQ_SELECT;
 	request->req_flags &= ~(REQ_cursor_open | REQ_embedded_sql_cursor);
 
-/* 
+/*
  * No work is done during pass1 for set transaction - like
  * checking for valid table names.  This is because that will
  * require a valid transaction handle.
@@ -3538,7 +3539,7 @@ static REQ prepare(
 	request->req_blr_yellow =
 		request->req_blr + request->req_blr_string->str_length;
 
-/* Start transactions takes parameters via a parameter block. 
+/* Start transactions takes parameters via a parameter block.
    The request blr string is used for that. */
 
 	if (request->req_type == REQ_START_TRANS) {

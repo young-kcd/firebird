@@ -20,9 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Toni Martir: Added verbose backup records as BACKUP_VERBOSE_INTERVAL
+ *
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 /*
-$Id: backup.e,v 1.1.1.1 2001-05-23 13:26:04 tamlin Exp $
+$Id: backup.e,v 1.2 2001-07-10 17:35:13 awharrison Exp $
 */
 
 #include "../jrd/ib_stdio.h"
@@ -131,9 +135,9 @@ static UCHAR debug_on = 0;		/* able to turn this on in debug mode */
 #endif
 
 
-/*  
-   table used to determine capabilities, checking for specific 
-   fields in system relations 
+/*
+   table used to determine capabilities, checking for specific
+   fields in system relations
 */
 
 typedef struct rfr_tab_t {
@@ -144,8 +148,8 @@ typedef struct rfr_tab_t {
 
 static CONST struct rfr_tab_t rfr_table[] = {
 	"RDB$INDICES", "RDB$INDEX_INACTIVE", BCK_idx_inactive,
-/* Backup of V2 triggers no longer supported 1996-Aug-05 David Schnepper  
-	"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	BCK_triggers, 
+/* Backup of V2 triggers no longer supported 1996-Aug-05 David Schnepper
+	"RDB$RELATIONS",	"RDB$STORE_TRIGGER",	BCK_triggers,
 */
 	"RDB$RELATIONS", "RDB$EXTERNAL_FILE", BCK_external,
 	"RDB$SECURITY_CLASSES", "RDB$SECURITY_CLASS", BCK_security,
@@ -612,10 +616,10 @@ static FLD get_fields( REL relation)
 	count = 1;
 	fields = NULL;
 
-/* if we have all capabilities, use the first request to get the 
-   most performance out of the latest engine; if we don't 
-   have one of the capabilities we must use the second set of 
-   requests--this requires more code but it is well worth it 
+/* if we have all capabilities, use the first request to get the
+   most performance out of the latest engine; if we don't
+   have one of the capabilities we must use the second set of
+   requests--this requires more code but it is well worth it
    for the performance benefits, especially remotely--deej */
 
 	if ((tdgbl->BCK_capabilities & BCK_attributes_v3) &&
@@ -624,11 +628,11 @@ static FLD get_fields( REL relation)
 		(tdgbl->BCK_capabilities & BCK_security))
 	{
 	    FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle1)
-	            X IN RDB$RELATION_FIELDS CROSS 
-	            Y IN RDB$FIELDS WITH 
-	            X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND 
+	            X IN RDB$RELATION_FIELDS CROSS
+	            Y IN RDB$FIELDS WITH
+	            X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND
 	       X.RDB$RELATION_NAME EQ relation->rel_name
-	
+
 	        field = (FLD) BURP_ALLOC_ZERO (sizeof (struct fld));
 	        field->fld_number = count++;
 	        field->fld_type = Y.RDB$FIELD_TYPE;
@@ -636,21 +640,21 @@ static FLD get_fields( REL relation)
 	        field->fld_length = Y.RDB$FIELD_LENGTH;
 	        field->fld_scale = Y.RDB$FIELD_SCALE;
 	        field->fld_id = X.RDB$FIELD_ID;
-	
+
 	        if (!X.RDB$DESCRIPTION.NULL)
 	       {
 	       blob_id = &X.RDB$DESCRIPTION;
 	       if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 	           field->fld_description = X.RDB$DESCRIPTION;
 	       }
-	
+
 	        if (!X.RDB$QUERY_HEADER.NULL)
 	       {
 	       blob_id = &X.RDB$QUERY_HEADER;
 	       if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 	           field->fld_query_header = X.RDB$QUERY_HEADER;
 	       }
-	
+
 	        if (X.RDB$FIELD_POSITION.NULL)
 	       field->fld_flags |= FLD_position_missing;
 	        else
@@ -660,7 +664,7 @@ static FLD get_fields( REL relation)
 	       field->fld_flags |= FLD_update_missing;
 	        else
 	       field->fld_update_flag = X.RDB$UPDATE_FLAG;
-	    
+
 	        copy (X.RDB$FIELD_NAME, field->fld_name, GDS_NAME_LEN - 1);
 	        copy (X.RDB$FIELD_SOURCE, field->fld_source, GDS_NAME_LEN - 1);
 	        copy (X.RDB$BASE_FIELD, field->fld_base, GDS_NAME_LEN - 1);
@@ -668,17 +672,17 @@ static FLD get_fields( REL relation)
 	        copy (X.RDB$EDIT_STRING, field->fld_edit_string,
 	         sizeof (field->fld_edit_string) - 1);
 	        copy (X.RDB$COMPLEX_NAME, field->fld_complex_name, GDS_NAME_LEN - 1);
-	
+
 	        blob_id = &Y.RDB$COMPUTED_BLR;
 	        if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 	       field->fld_flags |= FLD_computed;
 	        field->fld_system_flag = X.RDB$SYSTEM_FLAG;
-	
-	   copy (X.RDB$SECURITY_CLASS, field->fld_security_class, GDS_NAME_LEN - 1); 
-	
-	        /* use the fld_flags to mark the field as an array and 
+
+	   copy (X.RDB$SECURITY_CLASS, field->fld_security_class, GDS_NAME_LEN - 1);
+
+	        /* use the fld_flags to mark the field as an array and
 	           to differentiate it from other blobs */
-	        
+
 	        if (Y.RDB$DIMENSIONS)
 	            {
 	            field->fld_flags |= FLD_array;
@@ -688,42 +692,42 @@ static FLD get_fields( REL relation)
 	         /* msg 52 array dimension for field %s is invalid */
 	       get_ranges (field);
 	            }
-	
+
 	        if (!X.RDB$NULL_FLAG.NULL)
 	            {
 	       field->fld_null_flag = X.RDB$NULL_FLAG;
 	            field->fld_flags |= FLD_null_flag;
 	            }
-	
+
 	   if (!X.RDB$DEFAULT_VALUE.NULL)
 	       {
 	       blob_id = &X.RDB$DEFAULT_VALUE;
 	            if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 	           field->fld_default_value = X.RDB$DEFAULT_VALUE;
 	            }
-	   
+
 	   if (!X.RDB$DEFAULT_SOURCE.NULL)
 	       {
 	       blob_id = &X.RDB$DEFAULT_SOURCE;
 	            if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 	           field->fld_default_source = X.RDB$DEFAULT_SOURCE;
 	            }
-	            
+
 	        if (!(Y.RDB$CHARACTER_SET_ID.NULL))
 	       {
 	       field->fld_character_set_id = Y.RDB$CHARACTER_SET_ID;
 	            field->fld_flags |= FLD_charset_flag;
 	       }
-	       
+
 	   if (!X.RDB$COLLATION_ID.NULL)
 	            {
 	       field->fld_collation_id = X.RDB$COLLATION_ID;
 	            field->fld_flags |= FLD_collate_flag;
 	       }
-	
+
 	        field->fld_next = fields;
 	        fields = field;
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -732,8 +736,8 @@ static FLD get_fields( REL relation)
 	else
 	{
 	    FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle1)
-	        X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS 
-	        WITH X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND 
+	        X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
+	        WITH X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND
 	        X.RDB$RELATION_NAME EQ relation->rel_name
 	    field = (FLD) BURP_ALLOC_ZERO (sizeof (struct fld));
 	    field->fld_number = count++;
@@ -796,7 +800,7 @@ static FLD get_fields( REL relation)
 	        RFR IN RDB$RELATION_FIELDS WITH
 	       RFR.RDB$RELATION_NAME = relation->rel_name
 	       AND RFR.RDB$FIELD_NAME = X.RDB$FIELD_NAME
-	       copy (RFR.RDB$SECURITY_CLASS, field->fld_security_class, GDS_NAME_LEN - 1); 
+	       copy (RFR.RDB$SECURITY_CLASS, field->fld_security_class, GDS_NAME_LEN - 1);
 	   END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -804,7 +808,7 @@ static FLD get_fields( REL relation)
 	    if (tdgbl->BCK_capabilities & BCK_attributes_v3)
 	        FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle5)
 	            RF IN RDB$FIELDS WITH RF.RDB$FIELD_NAME = X.RDB$FIELD_SOURCE
-	            /* use the fld_flags to mark the field as an array and 
+	            /* use the fld_flags to mark the field as an array and
 	               to differentiate it from other blobs */
 	            if (RF.RDB$DIMENSIONS)
 	                {
@@ -822,10 +826,10 @@ static FLD get_fields( REL relation)
 	    if (tdgbl->BCK_capabilities & BCK_ods8)
 	        FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle6)
 	            X2 IN RDB$RELATION_FIELDS CROSS F2 IN RDB$FIELDS
-	            WITH X2.RDB$FIELD_NAME = X.RDB$FIELD_NAME 
+	            WITH X2.RDB$FIELD_NAME = X.RDB$FIELD_NAME
 	           AND X2.RDB$RELATION_NAME EQ relation->rel_name
 	           AND X2.RDB$FIELD_SOURCE EQ F2.RDB$FIELD_NAME
-	
+
 	           if (!X2.RDB$NULL_FLAG.NULL)
 	                        {
 	               field->fld_null_flag = X2.RDB$NULL_FLAG;
@@ -857,10 +861,10 @@ static FLD get_fields( REL relation)
 	        ON_ERROR
 	            general_on_error ();
 	        END_ERROR;
-	
+
 	    field->fld_next = fields;
 	    fields = field;
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -1021,7 +1025,7 @@ static void get_ranges( FLD field)
  **************************************
  *
  * Functional description
- *	Fill in the range low and high bounds by reading 
+ *	Fill in the range low and high bounds by reading
  *      the ranges in rdb$field_dimensions.
  *
  **************************************/
@@ -1037,17 +1041,17 @@ static void get_ranges( FLD field)
 /* Get the array dimensions in the rdb$field_dimensions */
 
 	FOR (REQUEST_HANDLE tdgbl->handles_get_ranges_req_handle1)
-	    X IN RDB$FIELD_DIMENSIONS 
-	    WITH X.RDB$FIELD_NAME EQ field->fld_source 
-	    SORTED BY X.RDB$DIMENSION 
-	
+	    X IN RDB$FIELD_DIMENSIONS
+	    WITH X.RDB$FIELD_NAME EQ field->fld_source
+	    SORTED BY X.RDB$DIMENSION
+
 	    if (count != X.RDB$DIMENSION)
 	        BURP_error_redirect (NULL_PTR, 52, field->fld_name, NULL);
 	   /* msg 52 array dimension for field %s is invalid */
 	    *rp++ = X.RDB$LOWER_BOUND;
 	    *rp++ = X.RDB$UPPER_BOUND;
 	    count++;
-	
+
 	END_FOR;
 	ON_ERROR
 	    general_on_error ();
@@ -1063,7 +1067,7 @@ static void put_array( FLD field, REL relation, ISC_QUAD * blob_id)
 {
 /**************************************
  *
- *	p u t _ a r r a y 
+ *	p u t _ a r r a y
  *
  **************************************
  *
@@ -1896,10 +1900,10 @@ static void put_index( REL relation)
 
 	tdgbl = GET_THREAD_DATA;
 
-/* if we have all capabilities, use the first request to get the 
-   most performance out of the latest engine; if we don't 
-   have one of the capabilities we must use the second set of 
-   requests--this requires more code but it is well worth it 
+/* if we have all capabilities, use the first request to get the
+   most performance out of the latest engine; if we don't
+   have one of the capabilities we must use the second set of
+   requests--this requires more code but it is well worth it
    for the performance benefits, especially remotely--deej */
 
 	if ((tdgbl->BCK_capabilities & BCK_idx_inactive) &&
@@ -1907,54 +1911,54 @@ static void put_index( REL relation)
 		(tdgbl->BCK_capabilities & BCK_ods8))
 	{
 	    FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle1)
-	        X IN RDB$INDICES WITH 
+	        X IN RDB$INDICES WITH
 	        X.RDB$RELATION_NAME EQ relation->rel_name
-	
+
 	        count = 0;
 	        FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle2)
-	            I_S IN RDB$INDEX_SEGMENTS CROSS 
-	            RFR IN RDB$RELATION_FIELDS WITH 
-	       I_S.RDB$FIELD_NAME = RFR.RDB$FIELD_NAME AND 
-	       I_S.RDB$INDEX_NAME = X.RDB$INDEX_NAME AND 
-	            RFR.RDB$RELATION_NAME = relation->rel_name 
-	
+	            I_S IN RDB$INDEX_SEGMENTS CROSS
+	            RFR IN RDB$RELATION_FIELDS WITH
+	       I_S.RDB$FIELD_NAME = RFR.RDB$FIELD_NAME AND
+	       I_S.RDB$INDEX_NAME = X.RDB$INDEX_NAME AND
+	            RFR.RDB$RELATION_NAME = relation->rel_name
+
 	            count++;
-	
+
 	        END_FOR;
 	        ON_ERROR
 	            general_on_error ();
 	        END_ERROR;
-	
-	        if (count != (ULONG) X.RDB$SEGMENT_COUNT) 
+
+	        if (count != (ULONG) X.RDB$SEGMENT_COUNT)
 	       {
 	       BURP_print (180, X.RDB$INDEX_NAME, (void*) count, (void*) X.RDB$SEGMENT_COUNT, NULL, NULL);
-	       continue; 
+	       continue;
 	       }
-	
+
 	        PUT (rec_index);
 	        l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
 	        MISC_terminate (X.RDB$INDEX_NAME, temp, l, sizeof (temp));
 	        BURP_verbose (151, temp, NULL, NULL, NULL, NULL);
 	        /* msg 151 writing index %s */
 	        PUT_NUMERIC (att_segment_count, X.RDB$SEGMENT_COUNT);
-	   PUT_NUMERIC (att_index_inactive, X.RDB$INDEX_INACTIVE); 
+	   PUT_NUMERIC (att_index_inactive, X.RDB$INDEX_INACTIVE);
 	        PUT_NUMERIC (att_index_unique_flag, X.RDB$UNIQUE_FLAG);
-	
+
 	        FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle5)
-	            Y IN RDB$INDEX_SEGMENTS WITH 
+	            Y IN RDB$INDEX_SEGMENTS WITH
 	            Y.RDB$INDEX_NAME EQ X.RDB$INDEX_NAME
 	           SORTED BY Y.RDB$FIELD_POSITION
-	
+
 	       PUT_TEXT (att_index_field_name, Y.RDB$FIELD_NAME);
-	
+
 	        END_FOR;
 	        ON_ERROR
 	            general_on_error ();
 	        END_ERROR;
-	
+
 	        put_source_blob (att_index_description2, att_index_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
 	        PUT_NUMERIC (att_index_type, X.RDB$INDEX_TYPE);
-	
+
 	   if (!X.RDB$EXPRESSION_SOURCE.NULL)
 	       put_source_blob (att_index_expression_source, att_index_expression_source, (ISC_QUAD *)&X.RDB$EXPRESSION_SOURCE);
 	   if (!X.RDB$EXPRESSION_BLR.NULL)
@@ -1962,7 +1966,7 @@ static void put_index( REL relation)
 	   if (!X.RDB$FOREIGN_KEY.NULL)
 	       PUT_TEXT (att_index_foreign_key, X.RDB$FOREIGN_KEY);
 	        PUT (att_end);
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -1971,39 +1975,39 @@ static void put_index( REL relation)
 	else
 	{
 	    FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle1)
-	        X IN RDB$INDICES WITH 
+	        X IN RDB$INDICES WITH
 	        X.RDB$RELATION_NAME EQ relation->rel_name
-	
+
 	        count = 0;
 	        FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle2)
-	            I_S IN RDB$INDEX_SEGMENTS WITH 
+	            I_S IN RDB$INDEX_SEGMENTS WITH
 	       I_S.RDB$INDEX_NAME = X.RDB$INDEX_NAME
 	       match = FALSE;
-	
+
 	       FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle3)
-	            RFR IN RDB$RELATION_FIELDS WITH 
+	            RFR IN RDB$RELATION_FIELDS WITH
 	           I_S.RDB$FIELD_NAME = RFR.RDB$FIELD_NAME AND
-	           RFR.RDB$RELATION_NAME = relation->rel_name 
+	           RFR.RDB$RELATION_NAME = relation->rel_name
 	           match = TRUE;
 	       END_FOR;
 	            ON_ERROR
 	                general_on_error ();
 	            END_ERROR;
 	       if (!match)
-	            BURP_print (179, I_S.RDB$FIELD_NAME, X.RDB$INDEX_NAME, NULL, NULL, NULL); 
+	            BURP_print (179, I_S.RDB$FIELD_NAME, X.RDB$INDEX_NAME, NULL, NULL, NULL);
 	       else
 	           count++;
 	        END_FOR;
 	        ON_ERROR
 	             general_on_error ();
 	        END_ERROR;
-	
-	        if (count != (ULONG) X.RDB$SEGMENT_COUNT) 
+
+	        if (count != (ULONG) X.RDB$SEGMENT_COUNT)
 	       {
 	       BURP_print (180, X.RDB$INDEX_NAME, (void*) count, (void*) X.RDB$SEGMENT_COUNT, NULL, NULL);
-	       continue; 
+	       continue;
 	       }
-	
+
 	        PUT (rec_index);
 	        l = PUT_TEXT (att_index_name, X.RDB$INDEX_NAME);
 	        MISC_terminate (X.RDB$INDEX_NAME, temp, l, sizeof (temp));
@@ -2013,7 +2017,7 @@ static void put_index( REL relation)
 	        if (tdgbl->BCK_capabilities & BCK_idx_inactive)
 	       FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle4)
 	                I IN RDB$INDICES WITH I.RDB$INDEX_NAME = X.RDB$INDEX_NAME
-	           PUT_NUMERIC (att_index_inactive, I.RDB$INDEX_INACTIVE); 
+	           PUT_NUMERIC (att_index_inactive, I.RDB$INDEX_INACTIVE);
 	       END_FOR;
 	            ON_ERROR
 	                general_on_error ();
@@ -2050,7 +2054,7 @@ static void put_index( REL relation)
 	                general_on_error ();
 	            END_ERROR;
 	        PUT (att_end);
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -2520,7 +2524,7 @@ static void put_trigger(enum trig_t type,
  *
  * Functional description
  *	Write a trigger to the output file.
- *	NOTE: This is used backup pre-V3 triggers only 
+ *	NOTE: This is used backup pre-V3 triggers only
  *
  **************************************/
 	TGBL tdgbl;
@@ -2548,7 +2552,7 @@ static void set_capabilities(void)
  **************************************
  *
  * Functional description
- *	
+ *
  *	set the capabilities bits for the
  *	database being extracted to avoid
  *	unpleasantness later.
@@ -2570,7 +2574,7 @@ static void set_capabilities(void)
 	{
 		field = (TEXT *) rel_field_table->field;
 		relation = (TEXT *) rel_field_table->relation;
-	    FOR (REQUEST_HANDLE req) x IN RDB$RELATION_FIELDS 
+	    FOR (REQUEST_HANDLE req) x IN RDB$RELATION_FIELDS
             WITH x.RDB$RELATION_NAME = relation
             AND x.RDB$FIELD_NAME = field
             tdgbl->BCK_capabilities |= rel_field_table->bit_mask;
@@ -2640,7 +2644,7 @@ static void write_character_sets(void)
 	    if (!X.RDB$FUNCTION_NAME.NULL)
 	        PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
 	    PUT_NUMERIC (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
-	
+
         PUT (att_end);
 	END_FOR;
 	ON_ERROR
@@ -2656,13 +2660,13 @@ static void write_check_constraints(void)
 {
 /**************************************
  *
- *	w r i t e _ c h e c k _ c o n s t r a i n t s 
+ *	w r i t e _ c h e c k _ c o n s t r a i n t s
  *
  **************************************
  *
  * Functional description
  * 	write a record in the burp file for
- *	each check constraint. 
+ *	each check constraint.
  *
  **************************************/
 	isc_req_handle req_handle1 = NULL;
@@ -2674,7 +2678,7 @@ static void write_check_constraints(void)
 	FOR (REQUEST_HANDLE req_handle1)
 	    X IN RDB$CHECK_CONSTRAINTS
 	    PUT (rec_chk_constraint);
-	
+
 	    PUT_TEXT (att_chk_constraint_name, X.RDB$CONSTRAINT_NAME);
 	    if (!(X.RDB$TRIGGER_NAME.NULL))
 	        PUT_TEXT (att_chk_trigger_name, X.RDB$TRIGGER_NAME);
@@ -2721,7 +2725,7 @@ static void write_collations(void)
 	        put_source_blob (att_coll_description, att_coll_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
 	    if (!X.RDB$FUNCTION_NAME.NULL)
 	        PUT_TEXT (att_coll_funct, X.RDB$FUNCTION_NAME);
-	
+
         PUT (att_end);
 	END_FOR;
 	ON_ERROR
@@ -2743,7 +2747,7 @@ static void write_database( TEXT * dbb_file)
  * Functional description
  * 	write a physical database record and a
  *	logical database record in the burp file for
- *	the database itself.  
+ *	the database itself.
  *
  **************************************/
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -2812,12 +2816,10 @@ static void write_database( TEXT * dbb_file)
 			PUT_NUMERIC(att_SQL_dialect, SQL_dialect);
 			break;
 
-#ifdef READONLY_DATABASE
 		case isc_info_db_read_only:
 			if (db_read_only = (USHORT) isc_vax_integer(d, length))
 				PUT_NUMERIC(att_db_read_only, db_read_only);
 			break;
-#endif /* READONLY_DATABASE */
 
 		default:
 			BURP_error_redirect(status_vector, 31, NULL, NULL);
@@ -2835,10 +2837,10 @@ static void write_database( TEXT * dbb_file)
 
 	PUT(rec_database);
 
-/* if we have all capabilities, use the first request to get the 
-   most performance out of the latest engine; if we don't 
-   have one of the capabilities we must use the second set of 
-   requests--this requires more code but it is well worth it 
+/* if we have all capabilities, use the first request to get the
+   most performance out of the latest engine; if we don't
+   have one of the capabilities we must use the second set of
+   requests--this requires more code but it is well worth it
    for the performance benefits, especially remotely--deej */
 
 	if ((tdgbl->BCK_capabilities & BCK_security) &&
@@ -2847,7 +2849,7 @@ static void write_database( TEXT * dbb_file)
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
 	        D IN RDB$DATABASE
-	
+
 	        if (!D.RDB$SECURITY_CLASS.NULL)
 	            PUT_TEXT (att_database_security_class, D.RDB$SECURITY_CLASS);
             put_source_blob (att_database_description2, att_database_description, (ISC_QUAD *)&D.RDB$DESCRIPTION);
@@ -2871,13 +2873,13 @@ static void write_database( TEXT * dbb_file)
                 general_on_error ();
             END_ERROR;
         }
-        
+
         if (tdgbl->BCK_capabilities & BCK_db_description)
 		{
 	        FOR (REQUEST_HANDLE req_handle2)
 	            D IN RDB$DATABASE
                 put_source_blob (att_database_description2, att_database_description, (ISC_QUAD *)&D.RDB$DESCRIPTION);
-            END_FOR; 
+            END_FOR;
             ON_ERROR
                 general_on_error ();
             END_ERROR;
@@ -2895,22 +2897,22 @@ static void write_database( TEXT * dbb_file)
             END_ERROR;
         }
     }
-    
+
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
     if (req_handle2)
         isc_release_request(req_status, &req_handle2);
     if (req_handle3)
         isc_release_request(req_status, &req_handle3);
-    
+
     PUT(att_end);
 }
 
 
-static void write_exceptions(void) 
+static void write_exceptions(void)
 {
 /**************************************
- *                                                                   
+ *
  *	w r i t e _ e x c e p t i o n s
  *
  **************************************
@@ -2947,10 +2949,10 @@ static void write_exceptions(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_field_dimensions(void) 
+static void write_field_dimensions(void)
 {
 /**************************************
- *                                                                   
+ *
  *	w r i t e _ f i e l d _ d i m e n s i o n s
  *
  **************************************
@@ -2981,13 +2983,13 @@ static void write_field_dimensions(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
 
-static void write_filters(void) 
+static void write_filters(void)
 {
 /**************************************
- *                                                                   
+ *
  *	w r i t e _ f i l t e r s
  *
  **************************************
@@ -3027,10 +3029,10 @@ static void write_filters(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_functions(void) 
+static void write_functions(void)
 {
 /**************************************
- *                                                                   
+ *
  *	w r i t e _ f u n c t i o n s
  *
  **************************************
@@ -3073,9 +3075,9 @@ static void write_functions(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
-static void write_function_args( GDS_NAME funcptr) 
+static void write_function_args( GDS_NAME funcptr)
 {
 /**************************************
  *
@@ -3086,25 +3088,25 @@ static void write_function_args( GDS_NAME funcptr)
  * Functional description
  * 	write all arguments for a function.
  *
- **************************************/ 
+ **************************************/
     SSHORT l;
     TEXT temp[32];
     TGBL tdgbl;
 
     tdgbl = GET_THREAD_DATA;
 
-    /* if we have all capabilities, use the first request to get the 
-       most performance out of the latest engine; if we don't 
-       have one of the capabilities we must use the second set of 
-       requests--this requires more code but it is well worth it 
+    /* if we have all capabilities, use the first request to get the
+       most performance out of the latest engine; if we don't
+       have one of the capabilities we must use the second set of
+       requests--this requires more code but it is well worth it
        for the performance benefits, especially remotely--deej */
 
     if (tdgbl->BCK_capabilities & BCK_ods10)
 	{
 	    FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle1)
-	        X IN RDB$FUNCTION_ARGUMENTS WITH 
+	        X IN RDB$FUNCTION_ARGUMENTS WITH
 	        X.RDB$FUNCTION_NAME EQ funcptr
-	
+
 	        PUT (rec_function_arg);
             l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
             MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof (temp));
@@ -3118,7 +3120,7 @@ static void write_function_args( GDS_NAME funcptr)
             PUT_NUMERIC (att_functionarg_field_sub_type, X.RDB$FIELD_SUB_TYPE);
             if (!(X.RDB$CHARACTER_SET_ID.NULL))
                 PUT_NUMERIC (att_functionarg_character_set, X.RDB$CHARACTER_SET_ID);
-            
+
             if (!(X.RDB$FIELD_PRECISION.NULL))
                 PUT_NUMERIC (att_functionarg_field_precision, X.RDB$FIELD_PRECISION);
             PUT (att_end);
@@ -3130,9 +3132,9 @@ static void write_function_args( GDS_NAME funcptr)
     else
 	{
 	    FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle1)
-	        X IN RDB$FUNCTION_ARGUMENTS WITH 
+	        X IN RDB$FUNCTION_ARGUMENTS WITH
 	        X.RDB$FUNCTION_NAME EQ funcptr
-	
+
 	        PUT (rec_function_arg);
             l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
             MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof (temp));
@@ -3144,27 +3146,27 @@ static void write_function_args( GDS_NAME funcptr)
             PUT_NUMERIC (att_functionarg_field_scale, X.RDB$FIELD_SCALE);
             PUT_NUMERIC (att_functionarg_field_length, X.RDB$FIELD_LENGTH);
             PUT_NUMERIC (att_functionarg_field_sub_type, X.RDB$FIELD_SUB_TYPE);
-	    
+
             if (tdgbl->BCK_capabilities & BCK_ods8)
 			{
                 FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle2)
-	                X2 IN RDB$FUNCTION_ARGUMENTS WITH 
-                    X2.RDB$FUNCTION_NAME EQ funcptr AND 
+	                X2 IN RDB$FUNCTION_ARGUMENTS WITH
+                    X2.RDB$FUNCTION_NAME EQ funcptr AND
                     X2.RDB$ARGUMENT_POSITION = X.RDB$ARGUMENT_POSITION;
-	
+
                     if (!(X2.RDB$CHARACTER_SET_ID.NULL))
                         PUT_NUMERIC (att_functionarg_character_set, X2.RDB$CHARACTER_SET_ID);
                 /* Note that BCK_ods10 canNOT be set if we're in this
                    ``else'' branch.  Hence there is no need to test that
                    bit and store the RDB$FIELD_PRECISION. */
-	       
+
                 END_FOR;
 	            ON_ERROR
 	                general_on_error ();
 	            END_ERROR;
             }
             PUT (att_end);
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -3173,7 +3175,7 @@ static void write_function_args( GDS_NAME funcptr)
 }
 
 
-static void write_generators(void) 
+static void write_generators(void)
 {
 /**************************************
  *
@@ -3208,10 +3210,10 @@ static void write_generators(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
 
-static void write_global_fields(void) 
+static void write_global_fields(void)
 {
 /**************************************
  *
@@ -3221,7 +3223,7 @@ static void write_global_fields(void)
  *
  * Functional description
  * 	write a record in the burp file for
- *	each global field. 
+ *	each global field.
  *
  **************************************/
     SSHORT l;
@@ -3233,10 +3235,10 @@ static void write_global_fields(void)
 
     tdgbl = GET_THREAD_DATA;
 
-    /* if we have all capabilities, use the first request to get the 
-       most performance out of the latest engine; if we don't 
-       have one of the capabilities we must use the second set of 
-       requests--this requires more code but it is well worth it 
+    /* if we have all capabilities, use the first request to get the
+       most performance out of the latest engine; if we don't
+       have one of the capabilities we must use the second set of
+       requests--this requires more code but it is well worth it
        for the performance benefits, especially remotely--deej */
 
     if ((tdgbl->BCK_capabilities & BCK_attributes_v3) &&
@@ -3244,10 +3246,10 @@ static void write_global_fields(void)
         (tdgbl->BCK_capabilities & BCK_ods10))
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
-	        X IN RDB$FIELDS WITH 
-	        X.RDB$SYSTEM_FLAG NE 1 OR 
+	        X IN RDB$FIELDS WITH
+	        X.RDB$SYSTEM_FLAG NE 1 OR
 	        X.RDB$SYSTEM_FLAG MISSING
-	
+
 	        PUT (rec_global_field);
             l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
             MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof (temp));
@@ -3273,10 +3275,10 @@ static void write_global_fields(void)
             if (X.RDB$SYSTEM_FLAG)
                 PUT_NUMERIC (att_field_system_flag, X.RDB$SYSTEM_FLAG);
             put_source_blob (att_field_description2, att_field_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
-            
+
             if (X.RDB$EXTERNAL_LENGTH)
                 PUT_NUMERIC (att_field_external_length, X.RDB$EXTERNAL_LENGTH);
-            if (X.RDB$EXTERNAL_TYPE) 
+            if (X.RDB$EXTERNAL_TYPE)
                 PUT_NUMERIC (att_field_external_type, X.RDB$EXTERNAL_TYPE);
             if (X.RDB$EXTERNAL_SCALE)
                 PUT_NUMERIC (att_field_external_scale, X.RDB$EXTERNAL_SCALE);
@@ -3294,12 +3296,12 @@ static void write_global_fields(void)
                 PUT_NUMERIC (att_field_character_set, X.RDB$CHARACTER_SET_ID);
             if (!(X.RDB$COLLATION_ID.NULL))
                 PUT_NUMERIC (att_field_collation_id, X.RDB$COLLATION_ID);
-            
+
             if (!(X.RDB$FIELD_PRECISION.NULL))
                 PUT_NUMERIC (att_field_precision, X.RDB$FIELD_PRECISION);
-            
+
             PUT (att_end);
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -3308,10 +3310,10 @@ static void write_global_fields(void)
     else
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
-	        X IN RDB$FIELDS WITH 
-	        X.RDB$SYSTEM_FLAG NE 1 OR 
+	        X IN RDB$FIELDS WITH
+	        X.RDB$SYSTEM_FLAG NE 1 OR
 	        X.RDB$SYSTEM_FLAG MISSING
-	
+
 	        PUT (rec_global_field);
             l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
             MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof (temp));
@@ -3341,10 +3343,10 @@ static void write_global_fields(void)
 			{
                 FOR (REQUEST_HANDLE req_handle2)
                     F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = X.RDB$FIELD_NAME
-                    
+
                     if (F.RDB$EXTERNAL_LENGTH)
                         PUT_NUMERIC (att_field_external_length, F.RDB$EXTERNAL_LENGTH);
-                    if (F.RDB$EXTERNAL_TYPE) 
+                    if (F.RDB$EXTERNAL_TYPE)
                         PUT_NUMERIC (att_field_external_type, F.RDB$EXTERNAL_TYPE);
                     if (F.RDB$EXTERNAL_SCALE)
                         PUT_NUMERIC (att_field_external_scale, F.RDB$EXTERNAL_SCALE);
@@ -3371,7 +3373,7 @@ static void write_global_fields(void)
                         PUT_NUMERIC (att_field_character_set, F.RDB$CHARACTER_SET_ID);
                     if (!(F.RDB$COLLATION_ID.NULL))
                     PUT_NUMERIC (att_field_collation_id, F.RDB$COLLATION_ID);
-	
+
                     if (tdgbl->BCK_capabilities & BCK_ods10)
 					{
                         FOR (REQUEST_HANDLE req_handle4)
@@ -3406,10 +3408,10 @@ static void write_global_fields(void)
 }
 
 
-static void write_procedures(void) 
+static void write_procedures(void)
 {
 /**************************************
- *                                                                   
+ *
  *	w r i t e _ p r o c e d u r e s
  *
  **************************************
@@ -3455,10 +3457,10 @@ static void write_procedures(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
 
-static void write_procedure_prms( GDS_NAME procptr) 
+static void write_procedure_prms( GDS_NAME procptr)
 {
 /**************************************
  *
@@ -3469,7 +3471,7 @@ static void write_procedure_prms( GDS_NAME procptr)
  * Functional description
  * 	write all parameters of a stored procedure.
  *
- **************************************/ 
+ **************************************/
 
     SSHORT l;
     TEXT temp[32];
@@ -3493,20 +3495,20 @@ static void write_procedure_prms( GDS_NAME procptr)
 	ON_ERROR
 	    general_on_error ();
 	END_ERROR;
-} 
+}
 
 
-static void write_ref_constraints(void) 
+static void write_ref_constraints(void)
 {
 /**************************************
  *
- *	w r i t e _ r e f _ c o n s t r a i n t s 
+ *	w r i t e _ r e f _ c o n s t r a i n t s
  *
  **************************************
  *
  * Functional description
  * 	write a record in the burp file for
- *	each referential constraint. 
+ *	each referential constraint.
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
@@ -3533,17 +3535,17 @@ static void write_ref_constraints(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_rel_constraints(void) 
+static void write_rel_constraints(void)
 {
 /**************************************
  *
- *	w r i t e _ r e l _ c o n s t r a i n t s 
+ *	w r i t e _ r e l _ c o n s t r a i n t s
  *
  **************************************
  *
  * Functional description
  * 	write a record in the burp file for
- *	each relation constraint. 
+ *	each relation constraint.
  *
  **************************************/
     SSHORT l;
@@ -3577,7 +3579,7 @@ static void write_rel_constraints(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_relations(void) 
+static void write_relations(void)
 {
 /**************************************
  *
@@ -3587,7 +3589,7 @@ static void write_relations(void)
  *
  * Functional description
  * 	write a record in the burp file for
- *	each relation. 
+ *	each relation.
  *
  **************************************/
     SSHORT l, flags;
@@ -3600,10 +3602,10 @@ static void write_relations(void)
 
     tdgbl = GET_THREAD_DATA;
 
-    /* if we have all capabilities, use the first request to get the 
-   most performance out of the latest engine; if we don't 
-   have one of the capabilities we must use the second set of 
-   requests--this requires more code but it is well worth it 
+    /* if we have all capabilities, use the first request to get the
+   most performance out of the latest engine; if we don't
+   have one of the capabilities we must use the second set of
+   requests--this requires more code but it is well worth it
    for the performance benefits, especially remotely--deej */
 
     if ((tdgbl->BCK_capabilities & BCK_ods8) &&
@@ -3611,20 +3613,20 @@ static void write_relations(void)
         (tdgbl->BCK_capabilities & BCK_attributes_v3))
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
-	        X IN RDB$RELATIONS WITH X.RDB$SYSTEM_FLAG NE 1 OR 
+	        X IN RDB$RELATIONS WITH X.RDB$SYSTEM_FLAG NE 1 OR
             X.RDB$SYSTEM_FLAG MISSING
-	
+
 	        flags = 0;
             PUT (rec_relation);
             l = put_text (att_relation_name, X.RDB$RELATION_NAME, 31);
             MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof (temp));
             BURP_verbose (153, temp, NULL, NULL, NULL, NULL);
         /* msg 153 writing relation %.*s */
-	
+
         /* RDB$VIEW_BLR must be the forst blob field in the backup file.
 	         * RESTORE.E makes this assumption in get_relation().
 	         */
-	
+
             if (put_blr_blob (att_relation_view_blr, (ISC_QUAD *)&X.RDB$VIEW_BLR))
                 flags |= REL_view;
             if (X.RDB$SYSTEM_FLAG)
@@ -3633,20 +3635,20 @@ static void write_relations(void)
                 PUT_NUMERIC (att_relation_flags, X.RDB$FLAGS);
             if (!X.RDB$SECURITY_CLASS.NULL)
                 PUT_TEXT (att_relation_security_class, X.RDB$SECURITY_CLASS);
-            
+
             put_source_blob (att_relation_description2, att_relation_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
             put_source_blob (att_relation_view_source2, att_relation_view_source, (ISC_QUAD *)&X.RDB$VIEW_SOURCE);
-            
+
             put_source_blob (att_relation_ext_description2, att_relation_ext_description, (ISC_QUAD *)&X.RDB$EXTERNAL_DESCRIPTION);
             put_text (att_relation_owner_name, X.RDB$OWNER_NAME, 31);
             if (!X.RDB$EXTERNAL_FILE.NULL)
                 if (!tdgbl->gbl_sw_convert_ext_tables)
 				{
-                    put_text (att_relation_ext_file_name, X.RDB$EXTERNAL_FILE, 253); 
+                    put_text (att_relation_ext_file_name, X.RDB$EXTERNAL_FILE, 253);
                     flags |= REL_external;
                 }
-	
-            PUT (att_end); 
+
+            PUT (att_end);
             relation = (REL) BURP_ALLOC_ZERO (sizeof (struct rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
@@ -3662,20 +3664,20 @@ static void write_relations(void)
     else
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
-	        X IN RDB$RELATIONS WITH X.RDB$SYSTEM_FLAG NE 1 OR 
+	        X IN RDB$RELATIONS WITH X.RDB$SYSTEM_FLAG NE 1 OR
             X.RDB$SYSTEM_FLAG MISSING
-	
+
 	        flags = 0;
             PUT (rec_relation);
             l = put_text (att_relation_name, X.RDB$RELATION_NAME, 31);
             MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof (temp));
             BURP_verbose (153, temp, NULL, NULL, NULL, NULL);
             /* msg 153 writing relation %.*s */
-            
+
             /* RDB$VIEW_BLR must be the first blob field in the backup file.
              * RESTORE.E makes this assumption in get_relation().
              */
-	
+
             if (put_blr_blob (att_relation_view_blr, (ISC_QUAD *)&X.RDB$VIEW_BLR))
                 flags |= REL_view;
             if (X.RDB$SYSTEM_FLAG)
@@ -3714,7 +3716,7 @@ static void write_relations(void)
 					{
                         if (!tdgbl->gbl_sw_convert_ext_tables)
 						{
-                            put_text (att_relation_ext_file_name, R.RDB$EXTERNAL_FILE, 253); 
+                            put_text (att_relation_ext_file_name, R.RDB$EXTERNAL_FILE, 253);
                             flags |= REL_external;
                         }
                     }
@@ -3723,7 +3725,7 @@ static void write_relations(void)
                     general_on_error ();
                 END_ERROR;
             }
-            PUT (att_end); 
+            PUT (att_end);
             relation = (REL) BURP_ALLOC_ZERO (sizeof (struct rel));
             relation->rel_next = tdgbl->relations;
             tdgbl->relations = relation;
@@ -3748,7 +3750,7 @@ static void write_relations(void)
 }
 
 
-static void write_shadow_files(void) 
+static void write_shadow_files(void)
 {
 /**************************************
  *
@@ -3769,7 +3771,7 @@ static void write_shadow_files(void)
     tdgbl = GET_THREAD_DATA;
 
 	FOR (REQUEST_HANDLE req_handle1)
-	    X IN RDB$FILES 
+	    X IN RDB$FILES
 	    WITH X.RDB$SHADOW_NUMBER NOT MISSING
 	    AND X.RDB$SHADOW_NUMBER NE 0
 	    PUT (rec_files);
@@ -3790,9 +3792,9 @@ static void write_shadow_files(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
-static void write_sql_roles(void) 
+static void write_sql_roles(void)
 {
 /**************************************
  *
@@ -3802,7 +3804,7 @@ static void write_sql_roles(void)
  *
  * Functional description
  * 	write a record in the burp file for
- *	each SQL roles. 
+ *	each SQL roles.
  *
  **************************************/
     isc_req_handle req_handle1 = NULL;
@@ -3815,7 +3817,7 @@ static void write_sql_roles(void)
 
 	FOR (REQUEST_HANDLE req_handle1)
 	    X IN RDB$ROLES
-	
+
 	    PUT (rec_sql_roles);
         l = put_text (att_role_name, X.RDB$ROLE_NAME, 31);
         PUT_TEXT (att_role_owner_name, X.RDB$OWNER_NAME);
@@ -3823,7 +3825,7 @@ static void write_sql_roles(void)
         MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof (temp));
         BURP_verbose (249, temp, NULL, NULL, NULL, NULL);
     /* msg 249 writing SQL role: %s */
-        
+
     END_FOR;
 	ON_ERROR
 	    general_on_error ();
@@ -3831,7 +3833,7 @@ static void write_sql_roles(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
 static void write_triggers(void)
 {
@@ -3853,25 +3855,25 @@ static void write_triggers(void)
 
     tdgbl = GET_THREAD_DATA;
 
-    /* if we have all capabilities, use the first request to get the 
-   most performance out of the latest engine; if we don't 
-   have one of the capabilities we must use the second set of 
-   requests--this requires more code but it is well worth it 
+    /* if we have all capabilities, use the first request to get the
+   most performance out of the latest engine; if we don't
+   have one of the capabilities we must use the second set of
+   requests--this requires more code but it is well worth it
    for the performance benefits, especially remotely--deej */
 
     if (tdgbl->BCK_capabilities & BCK_ods8)
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
-	        X IN RDB$TRIGGERS WITH 
-	        X.RDB$SYSTEM_FLAG NE 1 OR 
+	        X IN RDB$TRIGGERS WITH
+	        X.RDB$SYSTEM_FLAG NE 1 OR
 	        X.RDB$SYSTEM_FLAG MISSING
-	
+
 	        PUT (rec_trigger);
             l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
             MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof (temp));
             BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
             /* msg 156   writing trigger %s */
-	    
+
             PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
             PUT_NUMERIC (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
             PUT_NUMERIC (att_trig_type, X.RDB$TRIGGER_TYPE);
@@ -3880,12 +3882,12 @@ static void write_triggers(void)
             put_source_blob (att_trig_description2, att_trig_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
             PUT_NUMERIC (att_trig_system_flag, X.RDB$SYSTEM_FLAG);
             PUT_NUMERIC (att_trig_inactive, X.RDB$TRIGGER_INACTIVE);
-            
+
             if (!(X.RDB$FLAGS.NULL))
                 PUT_NUMERIC (att_trig_flags, X.RDB$FLAGS);
-            
+
             PUT (att_end);
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -3894,16 +3896,16 @@ static void write_triggers(void)
     else
 	{
 	    FOR (REQUEST_HANDLE req_handle1)
-	        X IN RDB$TRIGGERS WITH 
-	        X.RDB$SYSTEM_FLAG NE 1 OR 
+	        X IN RDB$TRIGGERS WITH
+	        X.RDB$SYSTEM_FLAG NE 1 OR
 	        X.RDB$SYSTEM_FLAG MISSING
-	
+
 	        PUT (rec_trigger);
             l = PUT_TEXT (att_trig_name, X.RDB$TRIGGER_NAME);
             MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof (temp));
             BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
             /* msg 156   writing trigger %s */
-            
+
             PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
             PUT_NUMERIC (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
             PUT_NUMERIC (att_trig_type, X.RDB$TRIGGER_TYPE);
@@ -3912,24 +3914,24 @@ static void write_triggers(void)
             put_source_blob (att_trig_description2, att_trig_description, (ISC_QUAD *)&X.RDB$DESCRIPTION);
             PUT_NUMERIC (att_trig_system_flag, X.RDB$SYSTEM_FLAG);
             PUT_NUMERIC (att_trig_inactive, X.RDB$TRIGGER_INACTIVE);
-	
+
             if (tdgbl->BCK_capabilities & BCK_ods8)
 			{
 	            FOR (REQUEST_HANDLE req_handle2)
-	                Y IN RDB$TRIGGERS WITH 
+	                Y IN RDB$TRIGGERS WITH
 	                X.RDB$TRIGGER_NAME = Y.RDB$TRIGGER_NAME
-	
+
 	                if (!(Y.RDB$FLAGS.NULL))
 	                    PUT_NUMERIC (att_trig_flags, Y.RDB$FLAGS);
-	
+
 	            END_FOR;
 	            ON_ERROR
 	                general_on_error ();
 	            END_ERROR;
             }
-	
+
             PUT (att_end);
-	
+
 	    END_FOR;
 	    ON_ERROR
 	        general_on_error ();
@@ -3943,7 +3945,7 @@ static void write_triggers(void)
 }
 
 
-static void write_trigger_messages(void) 
+static void write_trigger_messages(void)
 {
 /**************************************
  *
@@ -3968,7 +3970,7 @@ static void write_trigger_messages(void)
 	    T IN RDB$TRIGGERS CROSS X IN RDB$TRIGGER_MESSAGES
 	    OVER RDB$TRIGGER_NAME
 	    WITH T.RDB$SYSTEM_FLAG NE 1 OR T.RDB$SYSTEM_FLAG MISSING;
-	
+
         PUT (rec_trigger_message);
         l = PUT_TEXT (att_trigmsg_name, X.RDB$TRIGGER_NAME);
         MISC_terminate (X.RDB$TRIGGER_NAME, temp, l, sizeof (temp));
@@ -3986,10 +3988,10 @@ static void write_trigger_messages(void)
         isc_release_request(req_status, &req_handle1);
 }
 
-static void write_types(void) 
+static void write_types(void)
 {
 /**************************************
- *                                                                   
+ *
  *	w r i t e _ t y p e s
  *
  **************************************
@@ -4002,11 +4004,11 @@ static void write_types(void)
     isc_req_handle req_handle1 = NULL;
     long req_status[20];
     TGBL tdgbl;
-    
+
     tdgbl = GET_THREAD_DATA;
 
 	FOR (REQUEST_HANDLE req_handle1)
-	    X IN RDB$TYPES WITH X.RDB$SYSTEM_FLAG NE 1 OR 
+	    X IN RDB$TYPES WITH X.RDB$SYSTEM_FLAG NE 1 OR
 	   X.RDB$SYSTEM_FLAG MISSING
 	    PUT (rec_type);
 	    PUT_TEXT (att_type_name, X.RDB$TYPE_NAME);
@@ -4025,10 +4027,10 @@ static void write_types(void)
 
     if (req_handle1)
         isc_release_request(req_status, &req_handle1);
-} 
+}
 
 
-static void write_user_privileges(void) 
+static void write_user_privileges(void)
 {
 /**************************************
  *
@@ -4046,9 +4048,9 @@ static void write_user_privileges(void)
     isc_req_handle req_handle1 = NULL;
     long req_status[20];
     TGBL tdgbl;
-    
+
     tdgbl = GET_THREAD_DATA;
-    
+
     if (tdgbl->BCK_capabilities & BCK_ods8)
 	{
 	    FOR (REQUEST_HANDLE req_handle1)

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/ib_stdio.h"
@@ -333,7 +336,7 @@ RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
 	register CSB csb;
 	REL relation;
 	RSB rsb;
-/* all these are un refrenced due to the code commented below 
+/* all these are un refrenced due to the code commented below
 NOD		node, inversion;
 register opt::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
@@ -365,14 +368,14 @@ if (opt->opt_count)
 	for (tail = opt->opt_rpt; tail < opt_end; tail++)
 	    {
 	    node = tail->opt_conjunct;
-	    if (!(tail->opt_flags & opt_used) && 
+	    if (!(tail->opt_flags & opt_used) &&
 		computable (csb, node, -1))
 		match (opt, stream, node, idx);
 	    if (node->nod_type == nod_starts)
-		compose (&inversion, 
+		compose (&inversion,
 			 make_starts (opt, node, stream, idx), nod_bit_and);
 	    }
-	compose (&inversion, make_index (opt, relation, idx), 
+	compose (&inversion, make_index (opt, relation, idx),
 		nod_bit_and);
 	idx = idx->idx_rpt + idx->idx_count;
 	}
@@ -437,10 +440,9 @@ void EXT_store(RPB * rpb, int *transaction)
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
 
-/* check if file is read only if read only then 
+/* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-#ifdef READONLY_DATABASE
 		DBB dbb;
 
 		dbb = GET_DBB;
@@ -449,7 +451,6 @@ void EXT_store(RPB * rpb, int *transaction)
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(isc_read_only_database, 0);
 		else
-#endif /* READONLY_DATABASE */
 			ERR_post(isc_io_error,
 					 gds_arg_string, "insert",
 					 gds_arg_string, file->ext_filename,

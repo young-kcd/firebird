@@ -29,6 +29,11 @@
  * Change:    Corrected routine to use new variables from PAG_init.
  */
 
+/* 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
+ */
+
 #include "../jrd/ib_stdio.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
@@ -201,7 +206,7 @@ int DPM_chain( TDBB tdbb, RPB * org_rpb, RPB * new_rpb)
  **************************************
  *
  * Functional description
- *	Start here with a plausible, but non-active RPB. 
+ *	Start here with a plausible, but non-active RPB.
  *
  *	We need to create a new version of a record.  If the new version
  *	fits on the same page as the old record, things are simple and
@@ -209,9 +214,9 @@ int DPM_chain( TDBB tdbb, RPB * org_rpb, RPB * new_rpb)
  *
  *	Note that we also return FALSE if the record fetched doesn't
  *	match the state of the input rpb, or if there is no record for
- *	that record number.  The caller has to check the results to 
+ *	that record number.  The caller has to check the results to
  *	see what failed if FALSE is returned.  At the moment, there is
- *	only one caller, VIO_erase. 
+ *	only one caller, VIO_erase.
  *
  **************************************/
 	DBB dbb;
@@ -1101,8 +1106,8 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
  *
  * Functional description
  *	Generate relation specific value.
- *      If initialize is set then value of generator is made 
- *      equal to val else generator is incremented by val. 
+ *      If initialize is set then value of generator is made
+ *      equal to val else generator is incremented by val.
  *      The resulting value is the result of the function.
  **************************************/
 	DBB dbb;
@@ -1153,14 +1158,10 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 
 	window.win_page = vector->vcl_long[sequence];
 	window.win_flags = 0;
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only)
 		page = (GPG) CCH_FETCH(tdbb, &window, LCK_read, pag_ids);
 	else
 		page = (GPG) CCH_FETCH(tdbb, &window, LCK_write, pag_ids);
-#else
-	page = (GPG) CCH_FETCH(tdbb, &window, LCK_write, pag_ids);
-#endif /* READONLY_DATABASE */
 
 /*  If we are in ODS >= 10, then we have a pointer to an int64 value in the
  *  generator page: if earlier than 10, it's a pointer to a long value.
@@ -1175,11 +1176,10 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 		lptr = ((SLONG *) (((PPG) page)->ppg_page)) + offset;
 
 	if (val || initialize) {
-#ifdef READONLY_DATABASE
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(isc_read_only_database, 0);
-#endif /* READONLY_DATABASE */
-		CCH_MARK(tdbb, &window);
+
+                CCH_MARK(tdbb, &window);
 
 		/* Initialize or increment the quad value in an ODS 10 or later
 		 * generator page, or the long value in ODS <= 9.
@@ -1309,7 +1309,7 @@ ULONG DPM_get_blob(TDBB tdbb,
  *
  * Functional description
  *	Given a blob block, find the associated blob.  If blob is level 0,
- *	get the data clump, otherwise get the vector of pointers.  
+ *	get the data clump, otherwise get the vector of pointers.
  *
  *	If the delete flag is set, delete the blob header after access
  *	and return the page number.  This is a kludge, but less code
@@ -1507,7 +1507,7 @@ BOOLEAN DPM_next(TDBB tdbb,
 			rpb->rpb_number--;
 		else if (rpb->rpb_number < 0) {
 			/*  if the stream was just opened, assume we want to start
-			   at the end of the stream, so compute the last theoretically 
+			   at the end of the stream, so compute the last theoretically
 			   possible rpb_number and go down from there */
 	/** for now, we must force a scan to make sure that we get
 	    the last pointer page: this should be changed to use
@@ -2301,7 +2301,7 @@ static void fragment(
  *	messing with the head until we get back, and, if possible, we'd
  *	like to keep as much space on the original page as we can get.
  *	Making matters worse, we may be storing a new version of the
- *	record or we may be backing out an old one and replacing it 
+ *	record or we may be backing out an old one and replacing it
  *	with one older still (replacing a dead rolled back record with
  *	the preceding version).
  *
@@ -2319,7 +2319,7 @@ static void fragment(
  *	id.  Applying deltas to the expanded form of the same version of the
  *	record is a no-op -- but it doesn't cost much and the case is rare.
  *
- *	If we're backing out a rolled back version, we've got another 
+ *	If we're backing out a rolled back version, we've got another
  *	problem.  The rpb we've got is for record version n - 1, not version
  *	n + 1.  (e.g. I'm transaction 32 removing the rolled back record
  *	created by transaction 28 and reinstating the committed version
@@ -2501,7 +2501,7 @@ static void extend_relation( TDBB tdbb, REL relation, WIN * window)
  * Functional description
  *	Extend a relation with a given page.  The window points to an
  *	already allocated, fetched, and marked data page to be inserted
- *	into the pointer pages for a given relation. 
+ *	into the pointer pages for a given relation.
  *	This routine returns a window on the datapage locked for write
  *
  **************************************/
@@ -2671,7 +2671,7 @@ static UCHAR *find_space(TDBB	tdbb,
  *	data page, and return a pointer to the space.
  *
  *	To maintain page precedence when objects point to objects, a stack
- *	of pages of high precedence may be passed in.  
+ *	of pages of high precedence may be passed in.
  *
  **************************************/
 	DBB dbb;
@@ -2963,8 +2963,8 @@ static RHD locate_space(
 	}
 
 /* Sigh.  No space.  Extend relation. Try for a while
-   in case someone grabs the page before we can get it 
-   locked, then give up on the assumption that things 
+   in case someone grabs the page before we can get it
+   locked, then give up on the assumption that things
    are really screwed up. */
 
 	for (i = 0; i < 20; i++) {
@@ -3034,7 +3034,7 @@ static void mark_full( TDBB tdbb, register RPB * rpb)
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
 /* Fetch the pointer page, then the data page.  Since this is a case of
-   fetching a second page after having fetched the first page with an 
+   fetching a second page after having fetched the first page with an
    exclusive latch, care has to be taken to prevent a deadlock.  This
    is accomplished by timing out the second latch request and retrying
    the whole thing. */

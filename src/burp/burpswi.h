@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #ifndef _BURP_BURPSWI_H_
@@ -110,10 +113,8 @@ static struct in_sw_tab_t burp_in_sw_table [] =
     IN_SW_BURP_M,    isc_spb_bkp_metadata_only,	"METADATA",	    0, 0, 0, FALSE, 0, 0, NULL,
     IN_SW_BURP_M,    0,				"META_DATA",	    0, 0, 0, FALSE, 63, 0, NULL,
                 /* msg 63: %sMETA_DATA backup metadata only */
-#ifdef READONLY_DATABASE
     IN_SW_BURP_MODE, 0,				"MODE",		    0, 0, 0, FALSE, 278, 0, NULL,
                 /* msg 278: %sMODE read_only or read_write access */
-#endif  /* READONLY_DATABASE */
     IN_SW_BURP_N,    isc_spb_res_no_validity,	"NO_VALIDITY",	    0, 0, 0, FALSE, 187, 0, NULL,
                 /* msg 187: %sN(O_VALIDITY) do not restore database validity conditions */
     IN_SW_BURP_NT,   isc_spb_bkp_non_transportable,      "NT",	    0, 0, 0, FALSE, 239, 0, NULL,
@@ -156,7 +157,6 @@ static struct in_sw_tab_t burp_in_sw_table [] =
 #endif
 /* next switch is a hidden option in case of bug_no 8183 */
     IN_SW_BURP_BUG8183,  0,	"BUG_8183",	0, 0, 0, FALSE, 0, 0, NULL,
-#ifdef READONLY_DATABASE
 /**************************************************************************/
 /* The next two 'virtual' switches are hidden from user and are needed    */
 /* for services API                                                       */
@@ -164,7 +164,6 @@ static struct in_sw_tab_t burp_in_sw_table [] =
     IN_SW_BURP_HIDDEN_RDONLY,	isc_spb_res_am_readonly,	"mode read_only",   0, 0, 0, FALSE, 0, 0, NULL,
     IN_SW_BURP_HIDDEN_RDWRITE,	isc_spb_res_am_readwrite,	"mode read_write",  0, 0, 0, FALSE, 0, 0, NULL,
 /**************************************************************************/
-#endif
     IN_SW_BURP_0,    	 0,	NULL,           0, 0, 0, FALSE, 0, 0, NULL
 };
 

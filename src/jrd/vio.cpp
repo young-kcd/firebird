@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/ib_stdio.h"
@@ -137,9 +140,9 @@ void VIO_backout(TDBB tdbb, RPB * rpb, TRA transaction)
  *	Backout the current version of a record.  This may called
  *	either because of transaction death or because the record
  *	violated a unique index.  In either case, get rid of the
- *	current version and back an old version.  
+ *	current version and back an old version.
  *
- *	This routine is called with an inactive RPB, and has to 
+ *	This routine is called with an inactive RPB, and has to
  *	take great pains to avoid conflicting with another process
  *	which is also trying to backout the same record.  On exit
  *	there is no active RPB, and the record may or may not have
@@ -496,7 +499,7 @@ int VIO_chase_record_version(
 
 				/* refetch the record and try again.  The active transaction
 				 * could have updated the record a second time.
-				 * go back to outer loop 
+				 * go back to outer loop
 				 */
 
 				if (!DPM_get(tdbb, rpb, LCK_read))
@@ -792,7 +795,7 @@ int VIO_check_if_updated(TDBB tdbb, RPB * rpb)
  * Functional description
  *	Check to see if the record specified in the passed
  *	rpb has been updated by an uncommitted transaction.
- *	This involves looking at the latest and greatest 
+ *	This involves looking at the latest and greatest
  *	version of the record, checking its transaction id,
  *	then checking the TIP page to see if that transaction
  *	has been committed.
@@ -803,7 +806,7 @@ int VIO_check_if_updated(TDBB tdbb, RPB * rpb)
 
 	SET_TDBB(tdbb);
 
-/* loop through till we find a real version of the record; 
+/* loop through till we find a real version of the record;
    one that isn't going to be garbage collected */
 
 	transaction = tdbb->tdbb_request->req_transaction;
@@ -885,7 +888,7 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
  * Functional description
  *	Given an active record parameter block, fetch the full record.
  *
- *	This routine is called with an active RPB and exits with 
+ *	This routine is called with an active RPB and exits with
  *	an INactive RPB.  Yes, Virginia, getting the data for a
  *	record means losing control of the record.  This turns out
  *	to matter a lot.
@@ -959,7 +962,7 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
 		while (rpb->rpb_flags & rpb_incomplete)
 		{
 			DPM_fetch_fragment(tdbb, rpb, LCK_read);
-			
+
 			SCHAR* pIn		= reinterpret_cast<char*>(rpb->rpb_address);
 			SCHAR* pOut		= reinterpret_cast<char*>(tail);
 			SCHAR* pOutEnd	= reinterpret_cast<char*>(tail_end);
@@ -1594,7 +1597,7 @@ int VIO_get_current(
  *	FALSE.  If the record is committed, return TRUE.
  *	If foreign_key is true, we are checking for a foreign key,
  *	looking to see if a primary key/unique key exists.  For a
- *	no wait transaction, if state of transaction inserting primary key 
+ *	no wait transaction, if state of transaction inserting primary key
  *	record is tra_active, we should not see the uncommitted record
  *
  **************************************/
@@ -1638,7 +1641,7 @@ int VIO_get_current(
 		if (rpb->rpb_transaction == transaction->tra_number)
 			break;
 
-		/* check the state of transaction  - tra_us is taken care of above 
+		/* check the state of transaction  - tra_us is taken care of above
 		 * For now check the state in the tip_cache or tip bitmap. If
 		 * record is committed (most cases), this will be faster.
 		 */
@@ -1787,10 +1790,8 @@ void VIO_init(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	attachment = tdbb->tdbb_attachment;
 
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only)
 		return;
-#endif
 
 /* If there's no presence of a garbage collector running
    then start one up. */
@@ -2429,7 +2430,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
  *	relation.  A second bitmap per relation tracks records for which
  *	we have old data.  The actual data is kept in a linked list stack.
  *	Note that although a record may be changed several times, it will
- *	have only ONE old value -- the value it had before this verb 
+ *	have only ONE old value -- the value it had before this verb
  *	started.
  *
  **************************************/
@@ -2685,8 +2686,8 @@ void VIO_merge_proc_sav_points(
  *
  * Functional description
  *	Merge all the work done in all the save points in
- *	sav_point_list to the current save point in the 
- *	transaction block. 
+ *	sav_point_list to the current save point in the
+ *	transaction block.
  *
  **************************************/
 	SAV sav_point;
@@ -2819,7 +2820,7 @@ static void check_control(TDBB tdbb)
  **************************************
  *
  * Functional description
- *	Check to see if we have control 
+ *	Check to see if we have control
  *	privilege on the current database.
  *
  **************************************/
@@ -2854,7 +2855,7 @@ static BOOLEAN check_user(TDBB tdbb, DSC * desc)
 	end = p + desc->dsc_length;
 	q = tdbb->tdbb_attachment->att_user->usr_user_name;
 
-/* It is OK to not internationalize this function for v4.00 as 
+/* It is OK to not internationalize this function for v4.00 as
  * User names are limited to 7-bit ASCII for v4.00
  */
 
@@ -2972,7 +2973,7 @@ static UCHAR *delete_tail(
 		rpb->rpb_page = rpb->rpb_f_page;
 		rpb->rpb_line = rpb->rpb_f_line;
 
-		/* Since the callers are modifying this record, it should not be 
+		/* Since the callers are modifying this record, it should not be
 		   garbage collected. */
 
 		if (!DPM_fetch(tdbb, rpb, LCK_write))
@@ -3071,7 +3072,7 @@ static void garbage_collect(
  * Functional description
  *	Garbage collect a chain of back record.  This is called from
  *	"purge" and "expunge."  One enters this routine with an
- *	inactive RPB, describing a records which has either 
+ *	inactive RPB, describing a records which has either
  *	1) just been deleted or
  *	2) just had its back pointers set to zero
  *	Therefor we can do a fetch on the back pointers we've got
@@ -3137,7 +3138,7 @@ static void garbage_collect_idx(
  *
  * Functional description
  *	Garbage collect indices for which it is
- *	OK for other transactions to create indices with the same 
+ *	OK for other transactions to create indices with the same
  *	values.
  *
  **************************************/
@@ -3568,7 +3569,7 @@ static void list_staying(TDBB tdbb, RPB * rpb, LLS * staying)
 	}
 
 /* If the current number of back versions (depth) is smaller than the number
-   of back versions that we saw in a previous iteration (max_depth), then 
+   of back versions that we saw in a previous iteration (max_depth), then
    somebody else must have been garbage collecting also.  Remove the entries
    in 'staying' that have already been garbage collected. */
 	while (depth < max_depth--)
@@ -3682,7 +3683,7 @@ static void prepare_update(
    wait for it to finish.  If it commits, we can't procede and must
    return an update conflict.  If the transaction is dead, back out the
    old version of the record and try again.  If in limbo, punt.
-   
+
    The above is true only for concurrency & consistency mode transactions.
    For read committed transactions, check if the latest commited version
    is the same as the version that was read for the update.  If yes,
@@ -3799,9 +3800,9 @@ static void prepare_update(
 				IBERROR(188);	/* msg 188 cannot update erased record */
 			}
 
-			/* For read committed transactions, if the record version we read 
+			/* For read committed transactions, if the record version we read
 			 * and started the update
-			 * has been updated by another transaction which committed in the 
+			 * has been updated by another transaction which committed in the
 			 * meantime, we cannot proceed further - update conflict error.
 			 */
 
@@ -3820,8 +3821,8 @@ static void prepare_update(
 			 * errors and the "cannot update erased record" within the same
 			 * transaction. We were getting these erroe in case of triggers.
 			 * A pre-delete trigger could update or delete a record which we
-			 * are then tring to change. 
-			 * In order to remove these changes and restore original behaviour, 
+			 * are then tring to change.
+			 * In order to remove these changes and restore original behaviour,
 			 * move this case statement above the 2 "if" statements.
 			 * smistry 23-Aug-99
 			 */
@@ -3842,9 +3843,9 @@ static void prepare_update(
 				&& (rpb->rpb_f_page != org_rpb.rpb_f_page
 					|| rpb->rpb_f_line != org_rpb.rpb_f_line)) {
 
-				/* the primary copy of the record was dead and someone else 
-				   backed it out for us.  Our data is OK but our pointers 
-				   aren't, so get rid of the record we created and try again 
+				/* the primary copy of the record was dead and someone else
+				   backed it out for us.  Our data is OK but our pointers
+				   aren't, so get rid of the record we created and try again
 				 */
 
 				CCH_RELEASE(tdbb, &rpb->rpb_window);
@@ -3973,7 +3974,7 @@ static BOOLEAN purge(TDBB tdbb, RPB * rpb)
  *	Purge old versions of a fully mature record.  The record is
  *	guaranteed not to be deleted.  Return TRUE if the record
  *	didn't need to be purged or if the purge was done.  Return
- *	FALSE if the purge couldn't happen because somebody else 
+ *	FALSE if the purge couldn't happen because somebody else
  *	had the record.
  *
  **************************************/
@@ -4132,7 +4133,7 @@ static SLONG savepoint_size(TRA transaction)
  *
  * Functional description
  *	Return a measure of how big the current savepoint has gotten.
- *      The number returned is the number of 'sbm' and 'bms' structs 
+ *      The number returned is the number of 'sbm' and 'bms' structs
  *	that are allocated.  This number does not take into account
  *	the data allocated to 'vct_undo'.
  *
@@ -4329,7 +4330,7 @@ static void verb_post(
  **************************************
  *
  * Functional description
- *	Post a record update under verb control to a transaction. 
+ *	Post a record update under verb control to a transaction.
  *	If the previous version of the record was created by
  *	this transaction in a different verb, save the data as well.
  *
@@ -4337,7 +4338,7 @@ static void verb_post(
  *	old_data:	Only supplied if an in-place operation was performed
  *				(i.e. update_in_place).
  *	new_rpb:	Only used to pass to garbage_collect_idx.
- *	same_tx:	TRUE if this transaction inserted/updated this record 
+ *	same_tx:	TRUE if this transaction inserted/updated this record
  *				and then deleted it.
  *			FALSE in all other cases.
  *

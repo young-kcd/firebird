@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.1.1.1 2001-05-23 13:26:22 tamlin Exp $
+$Id: blb.cpp,v 1.2 2001-07-10 17:35:13 awharrison Exp $
 */
 
 #include <string.h>
@@ -118,7 +121,7 @@ void BLB_close(TDBB tdbb, BLB blob)
  **************************************
  *
  * Functional description
- *      Close a blob.  If the blob is open for retrieval, release the 
+ *      Close a blob.  If the blob is open for retrieval, release the
  *      blob block.  If it's a temporary blob, flush out the last page
  *      (if necessary) in preparation for materialization.
  *
@@ -188,10 +191,8 @@ BLB BLB_create2(TDBB tdbb,
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
-#endif /* READONLY_DATABASE */
 
 /* Create a blob large enough to hold a single data page */
 
@@ -350,7 +351,7 @@ BLB BLB_get_array(TDBB tdbb, TRA transaction, BID blob_id, ADS desc)
 {
 /**************************************
  *
- *      B L B _ g e t _ a r r a y 
+ *      B L B _ g e t _ a r r a y
  *
  **************************************
  *
@@ -403,7 +404,7 @@ SLONG BLB_get_data(TDBB tdbb, BLB blob, UCHAR* buffer, SLONG length)
 
 	while (length > 0) {
 		/* I have no idea why this limit is 32768 instead of 32767
-		 * 1994-August-12 David Schnepper 
+		 * 1994-August-12 David Schnepper
 		 */
 		n = (USHORT) MIN(length, (SLONG) 32768);
 		n = BLB_get_segment(tdbb, blob, p, n);
@@ -782,10 +783,10 @@ void DLL_EXPORT BLB_map_blobs(TDBB tdbb, BLB old_blob, BLB new_blob)
  *
  * Functional description
  *      Form a mapping between two blobs.
- *      Since the blobs have been newly created 
+ *      Since the blobs have been newly created
  *      in this session, only the second part of
- *      the blob id is significant.  At the moment 
- *      this is intended solely for REPLAY, when 
+ *      the blob id is significant.  At the moment
+ *      this is intended solely for REPLAY, when
  *      replaying a log.
  *
  **************************************/
@@ -890,7 +891,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, NOD field)
 	get_replay_blob(tdbb, source);
 #endif
 
-/* If the source is a permanent blob, then the blob must be copied. 
+/* If the source is a permanent blob, then the blob must be copied.
    Otherwise find the temporary blob referenced.  */
 
 	array = 0;
@@ -1098,7 +1099,7 @@ BLB BLB_open2(TDBB tdbb,
 		}
 
 /* Ordinarily, we would call MET_relation to get the relation id.
-   However, since the blob id must be consider suspect, this is 
+   However, since the blob id must be consider suspect, this is
    not a good idea.  On the other hand, if we don't already
    know about the relation, the blob id has got to be invalid
    anyway. */
@@ -1824,10 +1825,8 @@ static void delete_blob(TDBB tdbb, BLB blob, ULONG prior_page)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
-#endif /* READONLY_DATABASE */
 
 /* Level 0 blobs don't need cleanup */
 
@@ -2311,7 +2310,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 			USHORT tmp_len;
 			TDBB tdbb;
 
-			/* Note: cannot remove this GET_THREAD_DATA without api change 
+			/* Note: cannot remove this GET_THREAD_DATA without api change
 			   to slice callback routines */
 			tdbb = GET_THREAD_DATA;
 
@@ -2338,7 +2337,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		/* FROM array_desc TO slice_desc */
 
 		/* If the element is under the high-water mark, fetch it,
-		 * otherwise just zero it 
+		 * otherwise just zero it
 		 */
 		if ((BLOB_PTR *) array_desc->dsc_address <
 			(BLOB_PTR *) arg->slice_high_water) {

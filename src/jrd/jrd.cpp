@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #ifdef SHLIB_DEFS
@@ -786,7 +789,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		PAG_init2(0);
 		if (options.dpb_disable_wal)
 		{
-			/* Forcibly disable WAL before the next step.  
+			/* Forcibly disable WAL before the next step.
 			   We have an exclusive access to the database. */
 			AIL_drop_log_force();
 			options.dpb_disable_wal = FALSE;	/* To avoid further processing below */
@@ -818,13 +821,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		INI_update_database();
 	}
 
-#ifdef READONLY_DATABASE
-/* Attachments to a ReadOnly database need NOT do garbage collection */
-	if (dbb->dbb_flags & DBB_read_only)
-		attachment->att_flags |= ATT_no_cleanup;
-#endif /* READONLY_DATABASE */
-
-	if (options.dpb_disable_wal)
+    if (options.dpb_disable_wal)
 	{
 		ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 				 gds_arg_string, ERR_string(file_name, fl), 0);
@@ -920,9 +917,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 					BOOLEAN	delimited_done = FALSE;
 					TEXT	end_quote = *p1;
 					*p1++;
-					/* 
-					   ** remove the delimited quotes and escape quote 
-					   ** from ROLE name 
+					/*
+					   ** remove the delimited quotes and escape quote
+					   ** from ROLE name
 					 */
 					while (*p1 && !delimited_done
 						   && cnt < BUFFER_LENGTH128 - 1)
@@ -1003,7 +1000,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	if (options.dpb_shutdown || options.dpb_online) {
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
 		   other threads to proceed with their detachments, so that shutdown does
-		   not timeout for exclusive access and other threads don't have to wait 
+		   not timeout for exclusive access and other threads don't have to wait
 		   behind shutdown */
 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1025,9 +1022,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	}
 
 #ifdef SUPERSERVER
-/* Check if another attachment has or is requesting exclusive database access. 
+/* Check if another attachment has or is requesting exclusive database access.
    If this is an implicit attachment for the security (password) database, don't
-   try to get exclusive attachment to avoid a deadlock condition which happens 
+   try to get exclusive attachment to avoid a deadlock condition which happens
    when a client tries to connect to the security database itself. */
 
 	if (!options.dpb_sec_attach) {
@@ -1203,19 +1200,6 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	{
 		PAG_set_page_buffers(options.dpb_page_buffers);
 	}
-
-#ifdef READONLY_DATABASE
-	if (options.dpb_set_db_readonly)
-	{
-		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-		{
-			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
-					 gds_arg_string, ERR_string(file_name, fl), 0);
-		}
-
-		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
-	}
-#endif
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 /* don't record the attach until now in case the log is added during the attach */
@@ -1920,7 +1904,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	if (options.dpb_shutdown || options.dpb_online) {
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
 		   other threads to proceed with their detachments, so that shutdown does
-		   not timeout for exclusive access and other threads don't have to wait 
+		   not timeout for exclusive access and other threads don't have to wait
 		   behind shutdown */
 
 		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1959,7 +1943,16 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 	VIO_init(tdbb);
 #endif
 
-	CCH_release_exclusive(tdbb);
+    if (options.dpb_set_db_readonly)
+        {
+        if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
+            ERR_post (gds__lock_timeout, gds_arg_gds, gds__obj_in_use,
+                gds_arg_string, ERR_string (file_name, fl), 0);
+
+        PAG_set_db_readonly (dbb, options.dpb_db_readonly);
+        }
+
+    CCH_release_exclusive(tdbb);
 
 /* Figure out what character set & collation this attachment prefers */
 
@@ -2077,12 +2070,12 @@ STATUS DLL_EXPORT GDS_DDL(STATUS * user_status,
 	DYN_ddl(attachment, transaction, ddl_length,
 			reinterpret_cast < UCHAR * >(ddl));
 
-/* 
+/*
  * Perform an auto commit for autocommit transactions.
  * This is slightly tricky.  If the commit retain works,
  * all is well.  If TRA_commit () fails, we perform
  * a rollback_retain ().  This will backout the
- * effects of the transaction, mark it dead and 
+ * effects of the transaction, mark it dead and
  * start a new transaction.
 
  * For now only ExpressLink will use this feature.  Later
@@ -3189,7 +3182,7 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
  *	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *	involved (as with any handle that goes over the
- *	network).  This parameter will be implemented at 
+ *	network).  This parameter will be implemented at
  *	a later date.
  *
  **************************************/
@@ -3212,7 +3205,7 @@ STATUS DLL_EXPORT GDS_SERVICE_QUERY(STATUS*	user_status,
 		SVC_query(service, send_item_length, send_items, recv_item_length,
 				  recv_items, buffer_length, buffer);
 	else {
-		/* For SVC_query2, we are going to completly dismantle user_status (since at this point it is 
+		/* For SVC_query2, we are going to completly dismantle user_status (since at this point it is
 		 * meaningless anyway).  The status vector returned by this function can hold information about
 		 * the call to query the service manager and/or a service thread that may have been running.
 		 */
@@ -3256,7 +3249,7 @@ STATUS DLL_EXPORT GDS_SERVICE_START(STATUS*	user_status,
  *	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *  	involved (as with any handle that goes over the
- *   	network).  This parameter will be implemented at 
+ *   	network).  This parameter will be implemented at
  * 	a later date.
  **************************************/
 	SVC service;
@@ -3855,9 +3848,9 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
  *
  * Functional description
  *	Current working directory is cached in the attachment
- *	block.  get it out. This function could be called before 
+ *	block.  get it out. This function could be called before
  *	an attachment is created. In such a case thread specific
- *	data (t_data) will hold the user name which will be used 
+ *	data (t_data) will hold the user name which will be used
  *	to get the users home directory.
  *
  **************************************/
@@ -3903,9 +3896,9 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
 		else
 			return 0;
 
-   /** 
+   /**
     An older version of client will not be sending isc_dpb_working directory
-    so in all probabilities attachment->att_working_directory will be null. 
+    so in all probabilities attachment->att_working_directory will be null.
     return 0 so that ISC_expand_filename will create the file in ibserver's dir
    **/
 		if (!attachment->att_working_directory ||
@@ -4006,7 +3999,7 @@ void JRD_print_procedure_info(TDBB tdbb, char *mesg)
  *****************************************************
  *
  * Functional description
- *	print name , use_count of all procedures in  
+ *	print name , use_count of all procedures in
  *      cache
  *
  ******************************************************/
@@ -4756,7 +4749,7 @@ static void get_options(UCHAR*	dpb,
 
 				THD_getspecific_data((void **) &t_data);
 
-				/* 
+				/*
 				   Null value for working_directory implies remote database. So get
 				   the users HOME directory
 				 */
@@ -5066,13 +5059,6 @@ static void get_options(UCHAR*	dpb,
 			options->dpb_set_db_sql_dialect = (USHORT) get_parameter(&p);
 			break;
 
-#ifdef READONLY_DATABASE
-		case isc_dpb_set_db_readonly:
-			options->dpb_set_db_readonly = TRUE;
-			options->dpb_db_readonly = (SSHORT) get_parameter(&p);
-			break;
-#endif
-
 		default:
 			l = *p++;
 			p += l;
@@ -5279,7 +5265,7 @@ static DBB init(TDBB	tdbb,
 	THD_MUTEX_INIT_N(temp_mutx, DBB_MUTX_max);
 	V4_RW_LOCK_INIT_N(temp_wlck, DBB_WLCK_max);
 
-/* set up the temporary database block with fields that are 
+/* set up the temporary database block with fields that are
    required for doing the ALL_init() */
 
 	temp.dbb_header.blk_type = type_dbb;
@@ -5504,8 +5490,8 @@ static void release_attachment(ATT attachment)
 		LCK_release(tdbb, record_lock);
 	}
 
-/* bug #7781, need to null out the attachment pointer of all locks which 
-   were hung off this attachment block, to ensure that the attachment 
+/* bug #7781, need to null out the attachment pointer of all locks which
+   were hung off this attachment block, to ensure that the attachment
    block doesn't get dereferenced after it is released */
 
 	for (record_lock = attachment->att_long_locks; record_lock;
@@ -5561,8 +5547,8 @@ static STATUS return_success(TDBB tdbb)
 
 	p = user_status = tdbb->tdbb_status_vector;
 
-/* If the status vector has not been initialized, then 
-   initilalize the status vector to indicate success.  
+/* If the status vector has not been initialized, then
+   initilalize the status vector to indicate success.
    Else pass the status vector along at it stands.  */
 	if (p[0] != gds_arg_gds ||
 		p[1] != SUCCESS ||

@@ -1,30 +1,34 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	Alice (All Else) Utility
 //		MODULE:		alice.cpp
 //		DESCRIPTION:	Neo-Debe (does everything but eat)
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  
+//
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.1.1.1 2001-05-23 13:25:33 tamlin Exp $
+//	$Id: alice.cpp,v 1.2 2001-07-10 17:35:12 awharrison Exp $
+//
+// 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+//                         conditionals, as the engine now fully supports
+//                         readonly databases.
 //
 
 #include <stdlib.h>
@@ -105,9 +109,9 @@ static void alice_output(CONST SCHAR *, ...);
 #ifdef SUPERSERVER
 
 //____________________________________________________________
-//  
+//
 //       Entry point for GFIX in case of service manager.
-//  
+//
 
 int main_gfix(SVC service)
 {
@@ -120,8 +124,8 @@ int main_gfix(SVC service)
 	if (service->svc_service->in_use != NULL)
 		*(service->svc_service->in_use) = FALSE;
 
-//  Mark service thread as finished. 
-//  If service is detached, cleanup memory being used by service. 
+//  Mark service thread as finished.
+//  If service is detached, cleanup memory being used by service.
 	SVC_finish(service, SVC_finished);
 
 	return exit_code;
@@ -129,9 +133,9 @@ int main_gfix(SVC service)
 
 
 //____________________________________________________________
-//  
+//
 //		Routine which is passed to GFIX for calling back when there is output.
-//  
+//
 
 static int output_thread(SLONG output_data, UCHAR * output_buf)
 {
@@ -145,9 +149,9 @@ static int output_thread(SLONG output_data, UCHAR * output_buf)
 #ifndef GUI_TOOLS
 
 //____________________________________________________________
-//  
+//
 //      Call the 'real' main.
-//  
+//
 
 int CLIB_ROUTINE main(int argc, char *argv[])
 {
@@ -160,9 +164,9 @@ int CLIB_ROUTINE main(int argc, char *argv[])
 
 
 //____________________________________________________________
-//  
+//
 //		Routine which is passed to GFIX for calling back when there is output.
-//  
+//
 
 static int output_main(SLONG output_data, UCHAR * output_buf)
 {
@@ -173,10 +177,10 @@ static int output_main(SLONG output_data, UCHAR * output_buf)
 #endif
 
 //____________________________________________________________
-//  
+//
 //		Routine which is passed to GFIX for calling back when there is output
 //		if gfix is run as a service
-//  
+//
 
 static int output_svc(SLONG output_data, UCHAR * output_buf)
 {
@@ -186,10 +190,10 @@ static int output_svc(SLONG output_data, UCHAR * output_buf)
 
 
 //____________________________________________________________
-//  
+//
 //		Routine called by command line utility, and server manager
 //		Parse switches and do work
-//  
+//
 
 int DLL_EXPORT ALICE_gfix(
 						  int argc,
@@ -208,7 +212,7 @@ int DLL_EXPORT ALICE_gfix(
 #endif
 
 	VOLATILE tgbl *tdgbl = (struct tgbl *) gds__alloc(sizeof(*tdgbl));
-//  NOMEM: return error, FREE: during function exit in the SETJMP 
+//  NOMEM: return error, FREE: during function exit in the SETJMP
 	if (tdgbl == NULL)
 		return FINI_ERROR;
 // TMN
@@ -219,8 +223,8 @@ int DLL_EXPORT ALICE_gfix(
 #endif
 	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdgbl, 0, sizeof(*tdgbl));
-//  TMN: I can't for my life understand why the jmp_buf is defined 
-//  as a UCHAR* in ' struct tgbl', but it forces this cast.        
+//  TMN: I can't for my life understand why the jmp_buf is defined
+//  as a UCHAR* in ' struct tgbl', but it forces this cast.
 	tdgbl->alice_env = (UCHAR * volatile) env;
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
@@ -265,7 +269,7 @@ int DLL_EXPORT ALICE_gfix(
 
 //  Perform some special handling when run as an Interbase service.  The
 //  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-//  by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. 
+//  by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr.
 
 	tdgbl->sw_service = FALSE;
 	tdgbl->sw_service_thd = FALSE;
@@ -319,7 +323,7 @@ int DLL_EXPORT ALICE_gfix(
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
 
-//  Start by parsing switches 
+//  Start by parsing switches
 
 	error = 0;
 	switches = 0;
@@ -340,7 +344,7 @@ int DLL_EXPORT ALICE_gfix(
 //  name in the correct character set.
 // if (GetConsoleCP != GetACP())
 //    OemToAnsi(database, database);
-//  
+//
 #else
 #endif
 			continue;
@@ -414,7 +418,7 @@ int DLL_EXPORT ALICE_gfix(
 				ALICE_error(7, 0, 0, 0, 0, 0);	/* msg 7: numeric value required */
 
 			if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
-				ALICE_error(8, 0, 0, 0, 0, 0);	/* msg 8: positive numeric value 
+				ALICE_error(8, 0, 0, 0, 0, 0);	/* msg 8: positive numeric value
 												   required */
 		}
 
@@ -489,7 +493,6 @@ int DLL_EXPORT ALICE_gfix(
 				ALICE_error(18, 0, 0, 0, 0, 0);	/* msg 18: numeric value between 0 and 32767 inclusive required */
 		}
 
-#ifdef READONLY_DATABASE
 		if (table->in_sw_value & sw_mode) {
 			if (--argc <= 0)
 				ALICE_error(110, 0, 0, 0, 0, 0);	/* msg 110: "read_only" or "read_write" required */
@@ -501,18 +504,17 @@ int DLL_EXPORT ALICE_gfix(
 			else
 				ALICE_error(110, 0, 0, 0, 0, 0);	/* msg 110: "read_only" or "read_write" required */
 		}
-#endif
 
 	}
 
-//  put this here since to put it above overly complicates the parsing 
-//  can't use tbl_requires since it only looks backwards on command line 
+//  put this here since to put it above overly complicates the parsing
+//  can't use tbl_requires since it only looks backwards on command line
 	if ((switches & sw_shut)
 		&& !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
 		ALICE_error(19, 0, 0, 0, 0, 0);	/* msg 19: must specify type of shutdown */
 
-//  catch the case where -z is only command line option 
-//  switches is unset since sw_z == 0 
+//  catch the case where -z is only command line option
+//  switches is unset since sw_z == 0
 	if (!switches && !error && table->in_sw_value == sw_z)
 		EXIT(FINI_OK);
 
@@ -542,7 +544,7 @@ int DLL_EXPORT ALICE_gfix(
 		ALICE_error(23, 0, 0, 0, 0, 0);	/* msg 23: please retry, giving a database name */
 
 //  generate the database parameter block for the attach,
-//  based on the various switches 
+//  based on the various switches
 
 	if (switches & (sw_list | sw_commit | sw_rollback | sw_two_phase))
 		ret = EXE_two_phase(database, switches);
@@ -578,9 +580,9 @@ int DLL_EXPORT ALICE_gfix(
 
 
 //____________________________________________________________
-//  
+//
 //		Copy a string, down casing as we go.
-//  
+//
 
 void ALICE_down_case(TEXT * in, TEXT * out)
 {
@@ -594,9 +596,9 @@ void ALICE_down_case(TEXT * in, TEXT * out)
 
 
 //____________________________________________________________
-//  
+//
 //		Display a formatted error message
-//  
+//
 
 void ALICE_print(USHORT number,
 				 TEXT * arg1,
@@ -612,10 +614,10 @@ void ALICE_print(USHORT number,
 
 
 //____________________________________________________________
-//  
+//
 //		Print error message. Use isc_interprete
 //		to allow redirecting output.
-//  
+//
 
 void ALICE_print_status(STATUS * status_vector)
 {
@@ -654,9 +656,9 @@ void ALICE_print_status(STATUS * status_vector)
 
 
 //____________________________________________________________
-//  
+//
 //		Format and print an error message, then punt.
-//  
+//
 
 void ALICE_error(USHORT number,
 				 TEXT * arg1,
@@ -689,9 +691,9 @@ void ALICE_error(USHORT number,
 
 
 //____________________________________________________________
-//  
+//
 //		Platform independent output routine.
-//  
+//
 
 static void alice_output(CONST SCHAR * format, ...)
 {
@@ -729,10 +731,10 @@ static void alice_output(CONST SCHAR * format, ...)
 
 
 //____________________________________________________________
-//  
+//
 //		Fully expand a file name.  If the file doesn't exist, do something
 //		intelligent.
-//  
+//
 
 static void expand_filename(TEXT * filename, TEXT * expanded_name)
 {

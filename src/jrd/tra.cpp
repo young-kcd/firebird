@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/ibsetjmp.h"
@@ -153,7 +156,6 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 	oldest = dbb->dbb_oldest_transaction;
 	active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
 #else
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only) {
 		number = dbb->dbb_next_transaction;
 		oldest = dbb->dbb_oldest_transaction;
@@ -168,14 +170,6 @@ BOOLEAN TRA_active_transactions(TDBB tdbb, DBB dbb)
 			MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
 		CCH_RELEASE(tdbb, &window);
 	}
-#else
-	window.win_page = HEADER_PAGE;
-	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	number = header->hdr_next_transaction;
-	oldest = header->hdr_oldest_transaction;
-	active = MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
-	CCH_RELEASE(tdbb, &window);
-#endif /* READONLY_DATABASE */
 #endif /* SUPERSERVER_V2 */
 
 	base = oldest & ~TRA_MASK;
@@ -245,11 +239,9 @@ void TRA_cleanup(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef READONLY_DATABASE
 /* Return without cleaning up the TIP's for a ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
 		return;
-#endif /* READONLY_DATABASE */
 
 /* First, make damn sure there are no outstanding transactions */
 
@@ -536,9 +528,9 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
  **************************************
  *
  * Functional description
- *	Physically fetch the state of a given 
- *	transaction on the transaction inventory 
- *	page.  
+ *	Physically fetch the state of a given
+ *	transaction on the transaction inventory
+ *	page.
  *
  **************************************/
 	DBB dbb;
@@ -583,7 +575,7 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
  *	Get an inventory of the state of all transactions
  *	between the base and top transactions passed.
  *	To get a consistent view of the transaction
- *	inventory (in case we ever implement sub-transactions), 
+ *	inventory (in case we ever implement sub-transactions),
  *	do handoffs to read the pages in order.
  *
  **************************************/
@@ -650,7 +642,7 @@ int TRA_get_state(TDBB tdbb, SLONG number)
  **************************************
  *
  * Functional description
- *	Get the state of a given transaction on the 
+ *	Get the state of a given transaction on the
  *	transaction inventory page.
  *
  **************************************/
@@ -884,8 +876,8 @@ BOOLEAN TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
  **************************************
  *
  * Functional description
- *	Maintain a vector of active precommitted 
- *	transactions. If old_number <> new_number 
+ *	Maintain a vector of active precommitted
+ *	transactions. If old_number <> new_number
  *	then swap old_number with new_number in
  *	the vector. If old_number equals new_number
  *	then test for that number's presence in
@@ -952,7 +944,7 @@ void TRA_prepare(TDBB tdbb, TRA transaction, USHORT length, UCHAR * msg)
 	if (transaction->tra_flags & TRA_invalidated)
 		ERR_post(gds_trans_invalid, 0);
 
-/* If there's a transaction description message, log it to RDB$TRANSACTION 
+/* If there's a transaction description message, log it to RDB$TRANSACTION
    We should only log a message to RDB$TRANSACTION if there is a message
    to log (if the length = 0, we won't log the transaction in RDB$TRANSACTION)
    These messages are used to recover transactions in limbo.  The message indicates
@@ -962,7 +954,7 @@ void TRA_prepare(TDBB tdbb, TRA transaction, USHORT length, UCHAR * msg)
 
 /* Make sure that if msg is NULL there is no length.  The two
    should go hand in hand
-              msg == NULL || *msg == NULL 
+              msg == NULL || *msg == NULL
 */
 	assert(!(!msg && length) || (msg && (!*msg && length)));
 
@@ -1028,11 +1020,9 @@ TRA TRA_reconnect(TDBB tdbb, UCHAR * id, USHORT length)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef READONLY_DATABASE
 /* Cannot work on limbo transactions for ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
-#endif /* READONLY_DATABASE */
 
 
 	tdbb->tdbb_default = ALL_pool();
@@ -1185,7 +1175,7 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 #ifndef GATEWAY
 
 /* If there is a transaction-level savepoint, then use that to undo
-   this transaction's work and mark it committed in the TIP page 
+   this transaction's work and mark it committed in the TIP page
    instead (avoids a need for a database sweep). */
 
 	if (transaction->tra_save_point) {
@@ -1287,13 +1277,11 @@ void TRA_set_state(TDBB tdbb, TRA transaction, SLONG number, SSHORT state)
 		transaction->tra_number == number &&
 		transaction->tra_flags & TRA_precommitted) return;
 
-#ifdef READONLY_DATABASE
 /* If it is a ReadOnly DB, set the new state in the TIP cache and return */
 	if ((dbb->dbb_flags & DBB_read_only) && dbb->dbb_tip_cache) {
 		TPC_set_state(tdbb, number, state);
 		return;
 	}
-#endif /* READONLY_DATABASE */
 
 	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 	sequence = number / trans_per_tip;
@@ -1424,7 +1412,7 @@ int TRA_snapshot_state(TDBB tdbb, TRA trans, SLONG number)
 	if (number == trans->tra_number)
 		return tra_us;
 
-/* If the transaction is older than the oldest 
+/* If the transaction is older than the oldest
    interesting transaction, it must be committed. */
 
 	if (number < trans->tra_oldest)
@@ -1436,7 +1424,7 @@ int TRA_snapshot_state(TDBB tdbb, TRA trans, SLONG number)
 		return tra_committed;
 
 /* If the transaction is a commited sub-transction - do the easy lookup.
-   Since this is not the most common case, and looking up the 
+   Since this is not the most common case, and looking up the
    transaction cache for read committed transactions is equally
    fast, just to that instead. */
 
@@ -1522,7 +1510,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	oldest_snapshot = dbb->dbb_oldest_snapshot;
 
 #else /* SUPERSERVER_V2 */
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only) {
 		number = ++dbb->dbb_next_transaction;
 		oldest = dbb->dbb_oldest_transaction;
@@ -1539,14 +1526,6 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 		oldest_active = header->hdr_oldest_active;
 		oldest_snapshot = header->hdr_oldest_snapshot;
 	}
-#else
-	header = bump_transaction_id(tdbb, &window);
-	number = header->hdr_next_transaction;
-	oldest = header->hdr_oldest_transaction;
-	active = MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
-	oldest_active = header->hdr_oldest_active;
-	oldest_snapshot = header->hdr_oldest_snapshot;
-#endif /* READONLY_DATABASE */
 
 #endif /* SUPERSERVER_V2 */
 
@@ -1594,9 +1573,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 
 	if (!LCK_lock_non_blocking(tdbb, lock, LCK_write, TRUE)) {
 #ifndef SUPERSERVER_V2
-#ifdef READONLY_DATABASE
 		if (!(dbb->dbb_flags & DBB_read_only))
-#endif /* READONLY_DATABASE */
 			CCH_RELEASE(tdbb, &window);
 #endif
 		ALL_release(reinterpret_cast < frb * >(trans));
@@ -1609,9 +1586,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	TRA_link_transaction(tdbb, trans);
 
 #ifndef SUPERSERVER_V2
-#ifdef READONLY_DATABASE
 	if (!(dbb->dbb_flags & DBB_read_only))
-#endif /* READONLY_DATABASE */
 		CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -1619,12 +1594,10 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 	TRA_link_transaction(tdbb, trans);
 #endif
 
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only) {
 		/* Set transaction flags to TRA_precommitted, TRA_readonly */
 		trans->tra_flags |= (TRA_readonly | TRA_precommitted);
 	}
-#endif /* READONLY_DATABASE */
 
 #ifndef GATEWAY
 /* Next, take a snapshot of all transactions between the oldest interesting
@@ -1681,7 +1654,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 			oldest_active = MIN(oldest_active, active);
 
 			/* Find the oldest record version that cannot be garbage collected yet
-			   by taking the minimum of all all versions needed by all active 
+			   by taking the minimum of all all versions needed by all active
 			   transactions. */
 
 			if (data < trans->tra_oldest_active)
@@ -1874,11 +1847,9 @@ int TRA_sweep(TDBB tdbb, TRA trans)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef READONLY_DATABASE
 /* No point trying to sweep a ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
 		return FALSE;
-#endif /* READONLY_DATABASE */
 
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
 		return TRUE;
@@ -2195,11 +2166,9 @@ static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
 
 	number = ++dbb->dbb_next_transaction;
 
-#ifdef READONLY_DATABASE
 /* No need to write TID onto the TIP page, for a RO DB */
 	if (dbb->dbb_flags & DBB_read_only)
 		return number;
-#endif /* READONLY_DATABASE */
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
@@ -2447,7 +2416,7 @@ static void downgrade_lock(TRA transaction)
  *	Someone is trying to establish an interest
  *	lock in this transaction.  Downgrade to a
  *	shared write, to allow transactions to wait
- *	on this transaction or, alternatively, be 
+ *	on this transaction or, alternatively, be
  *	notified if and when the transaction commits.
  *
  **************************************/
@@ -2680,8 +2649,8 @@ static void restart_requests(TDBB tdbb, TRA trans)
  **************************************
  *
  * Functional description
- *	Restart all requests in the current 
- *	attachment to utilize the passed 
+ *	Restart all requests in the current
+ *	attachment to utilize the passed
  *	transaction.
  *
  **************************************/
@@ -2756,17 +2725,12 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 #ifdef SUPERSERVER_V2
 	new_number = bump_transaction_id(tdbb, &window);
 #else
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only)
 		new_number = ++dbb->dbb_next_transaction;
 	else {
 		header = bump_transaction_id(tdbb, &window);
 		new_number = header->hdr_next_transaction;
 	}
-#else
-	header = bump_transaction_id(tdbb, &window);
-	new_number = header->hdr_next_transaction;
-#endif /* READONLY_DATABASE */
 #endif
 
 	if (old_lock = transaction->tra_lock) {
@@ -2784,9 +2748,7 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 
 		if (!LCK_lock_non_blocking(tdbb, new_lock, LCK_write, TRUE)) {
 #ifndef SUPERSERVER_V2
-#ifdef READONLY_DATABASE
 			if (!(dbb->dbb_flags & DBB_read_only))
-#endif
 				CCH_RELEASE(tdbb, &window);
 #endif
 			ERR_post(gds_lock_conflict, 0);
@@ -2794,9 +2756,7 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 	}
 
 #ifndef SUPERSERVER_V2
-#ifdef READONLY_DATABASE
 	if (!(dbb->dbb_flags & DBB_read_only))
-#endif
 		CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -2812,17 +2772,13 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 	transaction->tra_number = old_number;
 #endif
 
-#ifdef READONLY_DATABASE
 	if (!(dbb->dbb_flags & DBB_read_only)) {
-#endif /* READONLY_DATABASE */
 		/* Set the state on the inventory page */
 		if (commit)
 			TRA_set_state(tdbb, transaction, old_number, tra_committed);
 		else
 			TRA_set_state(tdbb, transaction, old_number, tra_dead);
-#ifdef READONLY_DATABASE
 	}
-#endif /* READONLY_DATABASE */
 	transaction->tra_number = new_number;
 
 /* Release transaction lock since it isn't needed
@@ -2858,9 +2814,7 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
 	}
 
 	if (transaction->tra_flags & TRA_precommitted) {
-#ifdef READONLY_DATABASE
 		if (!(dbb->dbb_flags & DBB_read_only))
-#endif
 		{
 			transaction->tra_flags &= ~TRA_precommitted;
 			TRA_set_state(tdbb, transaction, new_number, tra_committed);
@@ -2978,7 +2932,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR * database)
 	*dpb++ = gds_dpb_sweep;
 	*dpb++ = 1;
 	*dpb++ = gds_dpb_records;
-	
+
 	const SSHORT dpb_length = dpb - sweep_dpb;
 
 	/* Register as internal database handle */
@@ -3178,7 +3132,7 @@ static void transaction_options(
 	if (!(vector = transaction->tra_relation_locks))
 		return;
 
-/* Try to seize all relation locks.  
+/* Try to seize all relation locks.
    If any can't be seized, release all and try again. */
 
 	id = 0;

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include "../jrd/jrd.h"
@@ -76,9 +79,9 @@ LCK RLCK_lock_record(RPB * rpb,
 
 	tdbb = GET_THREAD_DATA;
 
-/* 
+/*
    if the record is trying to be locked, check
-   whether the record has already been updated on page 
+   whether the record has already been updated on page
    by a transaction whose updates we cannot see yet--
    in which case we effectively cannot get the lock */
 
@@ -140,27 +143,27 @@ LCK RLCK_lock_record_implicit(TRA transaction,
 	lock->lck_ast = ast;
 	lock->lck_object = ast_arg;
 
-/* To ensure that relation and record locks respect each other, 
+/* To ensure that relation and record locks respect each other,
    utilize a multigranularity locking scheme, establishing
-   an interest lock level in the parent relation according to 
+   an interest lock level in the parent relation according to
    the following scheme:
        read lock on record := protected read
 	   (implies) interest read lock on relation := shared read
        write lock on record := exclusive
-	   (implies) interest write lock on relation := shared write 
-   Then as long as PR and EX locks are used to implement read 
-   and write locking on relations, the relation locks will 
+	   (implies) interest write lock on relation := shared write
+   Then as long as PR and EX locks are used to implement read
+   and write locking on relations, the relation locks will
    be respected.
 
-   This also guarantees that implicit record locks won't result 
-   in interest locks being taken out, since implicit record locks 
-   are SW.  Relations are already implicitly reserved in 
+   This also guarantees that implicit record locks won't result
+   in interest locks being taken out, since implicit record locks
+   are SW.  Relations are already implicitly reserved in
    RLCK_reserve_relation(), so there is no need for an additional
    interest lock.
        implicit read lock on record := NO LOCK
-	   (implies) NO interest read lock on relation 
+	   (implies) NO interest read lock on relation
        implicit write lock on record := shared write
-	   (implies) interest write lock on relation := shared write 
+	   (implies) interest write lock on relation := shared write
 */
 
 	relation = rpb->rpb_relation;
@@ -175,7 +178,7 @@ LCK RLCK_lock_record_implicit(TRA transaction,
 		relation->rel_lock_total++;
 	}
 
-/* first attempt to get the parent lock then get the record lock, 
+/* first attempt to get the parent lock then get the record lock,
    using two-phase locking to help prevent deadlocks */
 
 	if (interest_lock_level
@@ -207,7 +210,7 @@ LCK RLCK_lock_relation(REL relation,
 	LCK lock;
 
 /* allocate a relation lock hanging off the attachment
-   block, then keep a count of the number of times it 
+   block, then keep a count of the number of times it
    is used so that we know when to release it (bug #7478) */
 
 	lock = attachment_relation_lock(relation);
@@ -309,13 +312,13 @@ LCK RLCK_record_locking(REL relation)
 	lock->lck_key.lck_long = relation->rel_id;
 	relation->rel_record_locking = lock;
 
-/* set up an ast to start record locking if 
+/* set up an ast to start record locking if
    someone gets an incompatible lock */
 
 	lock->lck_ast = start_record_locking;
 	lock->lck_object = (BLK) relation;
 
-/* now attempt to get a PR on the lock to detect when 
+/* now attempt to get a PR on the lock to detect when
    anyone locks a record explicitly */
 
 	LCK_lock(tdbb, _non_blocking(lock, LCK_PR, FALSE));
@@ -346,7 +349,7 @@ void RLCK_release_lock(LCK lock)
 		ERR_post(gds__bad_lock_handle, 0);
 	if (((BLK) lock)->blk_type != (UCHAR) type_lck)
 		ERR_post(gds__bad_lock_handle, 0);
-/* now use the lock type to determine the type 
+/* now use the lock type to determine the type
    of lock to release */
 	if (lock->lck_type == LCK_relation)
 		RLCK_unlock_relation(0, (REL) lock->lck_object);
@@ -412,10 +415,8 @@ LCK RLCK_reserve_relation(TDBB tdbb,
 	USHORT result;
 	if (transaction->tra_flags & TRA_system)
 		return NULL;
-#ifdef READONLY_DATABASE
 	if (write_flag && (tdbb->tdbb_database->dbb_flags & DBB_read_only))
 		ERR_post(isc_read_only_database, 0);
-#endif /* READONLY_DATABASE */
 	if (write_flag && (transaction->tra_flags & TRA_readonly))
 		ERR_post(gds__read_only_trans, 0);
 	lock = RLCK_transaction_relation_lock(transaction, relation);
@@ -583,7 +584,7 @@ LCK RLCK_transaction_relation_lock(TRA transaction, REL relation)
  **************************************
  *
  * Functional description
- *	Take out a relation lock within the context of 
+ *	Take out a relation lock within the context of
  *	a transaction.
  *
  **************************************/
@@ -600,7 +601,7 @@ LCK RLCK_transaction_relation_lock(TRA transaction, REL relation)
 		return lock;
 	lock = allocate_relation_lock(transaction->tra_pool, relation);
 	lock->lck_owner = (BLK) transaction;
-/* for relations locked within a transaction, add a second level of 
+/* for relations locked within a transaction, add a second level of
    compatibility within the intra-process lock manager which specifies
    that relation locks are incompatible with locks taken out by other
    transactions, if a transaction is specified */
@@ -621,7 +622,7 @@ void RLCK_unlock_record(LCK lock, RPB * rpb)
  *
  * Functional description
  *	Unlock the specified record lock, or if
- *	it's not available use the current record 
+ *	it's not available use the current record
  *	in the specified record parameter block.
  *
  **************************************/
@@ -665,7 +666,7 @@ void RLCK_unlock_record_implicit(LCK lock, RPB * rpb)
  **************************************
  *
  * Functional description
- *	Unlock a record-level lock. 
+ *	Unlock a record-level lock.
  *
  **************************************/
 	REL relation;
@@ -686,7 +687,7 @@ void RLCK_unlock_record_implicit(LCK lock, RPB * rpb)
 
 /* handle the release half of the multigranularity locking scheme:
    if there are no more write locks, downgrade the interest
-   lock on the parent relation; if there are no more read or 
+   lock on the parent relation; if there are no more read or
    write locks, release the lock entirely
 
    For implicit locks, there are no relation intrest locks.
@@ -746,8 +747,8 @@ void RLCK_unlock_relation(LCK lock, REL relation)
 				break;
 	if (!lock)
 		return;
-/* decrement the use count; if it goes to zero, 
-   there are no further locks taken out in this 
+/* decrement the use count; if it goes to zero,
+   there are no further locks taken out in this
    attachment so we can release the lock (bug #7478) */
 	if (lock->lck_count > 1) {
 		lock->lck_count--;
@@ -806,12 +807,12 @@ static LCK allocate_record_lock(TRA transaction, RPB * rpb)
 	}
 
 /* indicate that this lock should be compatible at the attachment
-   level--meaning that two record locks taken out within the same 
+   level--meaning that two record locks taken out within the same
    attachment should always be compatible; ditto for the interest lock */
 
 	lock->lck_compatible = (BLK) attachment;
 	lock->lck_parent->lck_compatible = (BLK) attachment;
-/* link in the record lock with the other record locks  
+/* link in the record lock with the other record locks
    taken out by this attachment */
 	lock->lck_att_next = attachment->att_record_locks;
 	attachment->att_record_locks = lock;
@@ -848,7 +849,7 @@ static LCK allocate_relation_lock(PLB pool, REL relation)
 	lock->lck_type = LCK_relation;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;
-/* enter all relation locks into the intra-process lock manager and treat 
+/* enter all relation locks into the intra-process lock manager and treat
    them as compatible within the attachment according to IPLM rules */
 	lock->lck_compatible = (BLK) tdbb->tdbb_attachment;
 /* the lck_object is used here to find the relation
@@ -935,7 +936,7 @@ static LCK find_record_lock(RPB * rpb)
  **************************************
  *
  * Functional description
- *	Find the record lock previously 
+ *	Find the record lock previously
  *	defined for a record.
  *
  **************************************/
@@ -965,7 +966,7 @@ static BOOLEAN obtain_lock(TRA transaction, LCK lock, USHORT lock_level)
  **************************************
  *
  * Functional description
- *	Obtain the specified lock at the 
+ *	Obtain the specified lock at the
  *	necessary level.
  *
  **************************************/
@@ -1006,7 +1007,7 @@ static void start_record_locking(REL relation)
  **************************************/
 	LCK record_locking;
 	record_locking = relation->rel_record_locking;
-/* if we have shared write, it means we have records 
+/* if we have shared write, it means we have records
    locked; we won't give up this lock for anyone! */
 	if (record_locking->lck_physical == LCK_SW)
 		return;

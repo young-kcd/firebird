@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		cch.c
- *	DESCRIPTION:	Disk cache manager 
+ *	DESCRIPTION:	Disk cache manager
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/ib_stdio.h"
@@ -118,8 +121,8 @@ static void unmark(TDBB, WIN *);
 #endif
 
 /* In the superserver mode, no page locks are acquired through the lock manager.
-   Instead, a latching mechanism is used.  So the calls to lock subsystem for 
-   database pages in the original code should not be made, lest they should cause 
+   Instead, a latching mechanism is used.  So the calls to lock subsystem for
+   database pages in the original code should not be made, lest they should cause
    any undesirable side-effects.  The following defines help us achieve that.  */
 
 #ifdef SUPERSERVER
@@ -409,7 +412,7 @@ BOOLEAN CCH_exclusive(TDBB tdbb, USHORT level, SSHORT wait_flag)
  *
  * Functional description
  *	Get exclusive access to a database.  If we get it, return TRUE.
- *	If the wait flag is FALSE, and we can't get it, give up and 
+ *	If the wait flag is FALSE, and we can't get it, give up and
  *	return FALSE. There are two levels of database exclusivity: LCK_PW
  *	guarantees there are  no normal users in the database while LCK_EX
  *	additionally guarantes background database processes like the
@@ -470,7 +473,7 @@ BOOLEAN CCH_exclusive_attachment(TDBB tdbb, USHORT level, SSHORT wait_flag)
  *
  * Functional description
  *	Get exclusive access to a database. If we get it, return TRUE.
- *	If the wait flag is FALSE, and we can't get it, give up and 
+ *	If the wait flag is FALSE, and we can't get it, give up and
  *	return FALSE.
  *
  **************************************/
@@ -822,7 +825,7 @@ SSHORT CCH_fetch_lock(TDBB tdbb,
 	if (lock_type >= LCK_write)
 		bdb->bdb_flags |= BDB_writer;
 
-/* the expanded index buffer is only good when the page is 
+/* the expanded index buffer is only good when the page is
    fetched for read; if it is ever fetched for write, it must
    be discarded */
 
@@ -883,22 +886,22 @@ void CCH_fetch_page(
 	file = dbb->dbb_file;
 	retryCount = 0;
 
-/* We will read a page, and if there is an I/O error we will try to 
+/* We will read a page, and if there is an I/O error we will try to
    use the shadow file, and try reading again, for a maximum of
    3 tries, before it gives up.
 
    The read_shadow flag is set to false only in the call to
    FETCH_NO_SHADOW, which is only called from validate
-   code. 
-      
+   code.
+
    read_shadow = FALSE -> IF an I/O error occurs give up (exit
    the loop, clean up, and return). So the caller,
-   validate in most cases, can know about it and attempt 
-   to remedy the situation. 
-     
+   validate in most cases, can know about it and attempt
+   to remedy the situation.
+
    read_shadow = TRUE -> IF an I/O error occurs attempt
    to rollover to the shadow file.  If the I/O error is
-   persistant (more than 3 times) error out of the routine by 
+   persistant (more than 3 times) error out of the routine by
    calling CCH_unwind, and eventually punting out. */
 
 	while (!PIO_read(file, bdb, page, status)) {
@@ -1099,7 +1102,7 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
  **************************************
  *
  * Functional description
- *	Flush all buffers.  If the release flag is set, 
+ *	Flush all buffers.  If the release flag is set,
  *	release all locks.
  *
  **************************************/
@@ -1186,7 +1189,7 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
 /* PIO_flush (dbb->dbb_shadow->sdw_file); */
 
 /* take the opportunity when we know there are no pages
-   in cache to check that the shadow(s) have not been 
+   in cache to check that the shadow(s) have not been
    scheduled for shutdown or deletion */
 
 	SDW_check();
@@ -1216,10 +1219,8 @@ BOOLEAN CCH_free_page(TDBB tdbb)
 	dbb = tdbb->tdbb_database;
 	bcb = dbb->dbb_bcb;
 
-#ifdef READONLY_DATABASE
 	if (dbb->dbb_flags & DBB_read_only)
 		return FALSE;
-#endif
 
 	if (bcb->bcb_flags & BCB_free_pending &&
 		(bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1))) {
@@ -1451,9 +1452,7 @@ void CCH_init(TDBB tdbb, ULONG number)
 #endif
 
 #ifdef CACHE_WRITER
-#ifdef READONLY_DATABASE
 	if (!(dbb->dbb_flags & DBB_read_only))
-#endif
 	{
 		event = dbb->dbb_writer_event;
 		ISC_event_init(event, 0, 0);
@@ -1574,7 +1573,7 @@ void CCH_journal_record(TDBB	tdbb,
 		if (latch_bdb(tdbb, LATCH_mark, journal, journal->bdb_page, 1) == -1)
 			cache_bugcheck(302);	/* msg 302 unexpected page change */
 
-		/* Now we can safely release this bdb to clear its bdb_io, bdb_exclusive and 
+		/* Now we can safely release this bdb to clear its bdb_io, bdb_exclusive and
 		   bdb_use_count fields.  */
 		release_bdb(tdbb, journal, FALSE, FALSE, FALSE);
 
@@ -1891,7 +1890,7 @@ BOOLEAN CCH_prefetch_pages(TDBB tdbb)
  *
  * Functional description
  *	Check the prefetch bitmap for a set
- *	of pages and read them into the cache.  
+ *	of pages and read them into the cache.
  *
  **************************************/
 
@@ -1912,7 +1911,7 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
  **************************************
  *
  * Functional description
- *	Walk through the sparse bit map created during recovery and 
+ *	Walk through the sparse bit map created during recovery and
  *	write all changed pages to all the shadows.
  *
  **************************************/
@@ -1957,7 +1956,7 @@ void CCH_recover_shadow(TDBB tdbb, SBM sbm_rec)
 
 	if (result == FALSE)
 		ERR_punt();
-/* 
+/*
  * do 2 control points after a recovery to flush all the pages to the
  * database and shadow. Note that this has to be doen after the shadows
  * are updated.
@@ -2026,7 +2025,7 @@ void CCH_release(TDBB tdbb, WIN * window, BOOLEAN release_tail)
 	bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
 
-/* if an expanded buffer has been created, retain it 
+/* if an expanded buffer has been created, retain it
    for possible future use */
 
 	bdb->bdb_expanded_buffer = window->win_expanded_buffer;
@@ -2234,7 +2233,7 @@ BOOLEAN CCH_rollover_to_shadow(DBB dbb, FIL file, BOOLEAN inAst)
  **************************************
  *
  * Functional description
- *	An I/O error has been detected on the 
+ *	An I/O error has been detected on the
  *	main database file.  Roll over to use
  *	the shadow file.
  *
@@ -2469,12 +2468,12 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 
 		/* Fix for bug 7925. drop_gdb fails to remove secondary file if
 		   the shadow is conditional. Reason being the header page not
-		   being correctly initialized. 
+		   being correctly initialized.
 
 		   The following block was not being performed for a conditional
 		   shadow since SDW_INVALID expanded to include conditional shadow
 
-		   -Sudesh  07/10/95 
+		   -Sudesh  07/10/95
 		   old code --> if (sdw->sdw_flags & SDW_INVALID)
 		 */
 
@@ -2514,8 +2513,8 @@ BOOLEAN CCH_write_all_shadows(TDBB tdbb,
 		if ((sdw->sdw_flags & SDW_conditional) &&
 			(bdb->bdb_page != HEADER_PAGE)) continue;
 
-		/* if a write failure happens on an AUTO shadow, mark the 
-		   shadow to be deleted at the next available opportunity when we 
+		/* if a write failure happens on an AUTO shadow, mark the
+		   shadow to be deleted at the next available opportunity when we
 		   know we don't have a page fetched */
 
 		if (!PIO_write(sdw->sdw_file, bdb, page, status))
@@ -2675,9 +2674,9 @@ static void btc_flush(
  *
  * Functional description
  *	Walk the dirty page binary tree, flushing all buffers
- *	that could have been modified by this transaction.  
- *	The pages are flushed in page order to roughly 
- *	emulate an elevator-type disk controller. Iteration 
+ *	that could have been modified by this transaction.
+ *	The pages are flushed in page order to roughly
+ *	emulate an elevator-type disk controller. Iteration
  *	is used to minimize call overhead.
  *
  **************************************/
@@ -2792,7 +2791,7 @@ static void btc_insert(DBB dbb, BDB bdb)
  **************************************
  *
  * Functional description
- *	Insert a buffer into the dirty page 
+ *	Insert a buffer into the dirty page
  *	binary tree.
  *
  **************************************/
@@ -2801,7 +2800,7 @@ static void btc_insert(DBB dbb, BDB bdb)
 
 /* if the page is already in the tree (as in when it is
    written out as a dependency while walking the tree),
-   just leave well enough alone -- this won't check if 
+   just leave well enough alone -- this won't check if
    it's at the root but who cares then */
 
 	if (bdb->bdb_parent)
@@ -2861,10 +2860,10 @@ static void btc_remove(BDB bdb)
  *
  * Functional description
  * 	Remove a page from the dirty page binary tree.
- *	The idea is to place the left child of this 
- *	page in this page's place, then make the 
- *	right child of this page a child of the left 
- *	child -- this removal mechanism won't promote 
+ *	The idea is to place the left child of this
+ *	page in this page's place, then make the
+ *	right child of this page a child of the left
+ *	child -- this removal mechanism won't promote
  *	a balanced tree but that isn't of primary
  *	importance.
  *
@@ -2902,7 +2901,7 @@ static void btc_remove(BDB bdb)
 	else
 		new_child = bdb->bdb_right;
 
-/* link the parent with the child node -- 
+/* link the parent with the child node --
    if no parent place it at the root */
 
 	if (!(bdb_parent = bdb->bdb_parent))
@@ -3788,7 +3787,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
  *	bdb pointer if successful.
  *	NULL pointer if timeout occurred (only possible is latch_wait <> 1).
  *		     if cache manager doesn't have any pages to write anymore.
- *	
+ *
  **************************************/
 	DBB dbb;
 	QUE mod_que;
@@ -3896,7 +3895,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 						QUE_INSERT(bcb->bcb_in_use, bdb->bdb_in_use);
 				}
 
-				/* This correction for bdb_use_count below is needed to 
+				/* This correction for bdb_use_count below is needed to
 				   avoid a deadlock situation in latching code.  It's not
 				   clear though how the bdb_use_count can get < 0 for a bdb
 				   in bcb_empty queue */
@@ -4190,11 +4189,11 @@ static SSHORT latch_bdb(
    ahead of all other latch requests (to avoid deadlocks and
    this does not cause starvation).  Also, shared latches are granted
    immediately if a disk write is in progress.
-   Note that asking for a higher mode latch when already holding a 
+   Note that asking for a higher mode latch when already holding a
    share latch results in deadlock.  CCH_handoff routinely acquires a
    shared latch while owning already a shared latch on the page
    (the case of handing off to the same page).  If the BDB_must_write
-   flag is set, then an exclusive latch request will be followed by 
+   flag is set, then an exclusive latch request will be followed by
    an io latch request. */
 
 	switch (type) {
@@ -4250,7 +4249,7 @@ static SSHORT latch_bdb(
 	case LATCH_exclusive:
 		/* Exclusive latches wait for existing shared latches and
 		   (unfortunately) for existing io latches.  This is not as
-		   bad as it sounds because an exclusive latch is typically followed 
+		   bad as it sounds because an exclusive latch is typically followed
 		   by a mark latch, which then would wait behind the io latch. */
 		/* Note that the ail-code latches the same buffer multiple times
 		   in shared and exclusive */
@@ -4372,7 +4371,7 @@ static SSHORT latch_bdb(
  * Functional description
  *	Simple optimized latching for single-threaded
  *	non-SUPERSERVER platforms.
- * 
+ *
  **************************************/
 
 	++bdb->bdb_use_count;
@@ -4417,7 +4416,7 @@ static SSHORT lock_buffer(
  *	      LCK_NO_WAIT = FALSE = 0	=> If the lock can't be acquired immediately,
  *						give up and return -1.
  *	      <negative number>		=> Lock timeout interval in seconds.
- *		
+ *
  * return: 0  => buffer locked, page is already in memroy.
  *	   1  => buffer locked, page needs to be read from disk.
  *	   -1 => timeout on lock occurred, see input parameter 'wait'.
@@ -4440,8 +4439,8 @@ static SSHORT lock_buffer(
 
 	if (dbb->dbb_refresh_ranges && bdb->bdb_flags & BDB_writer &&
 		(page_type == pag_data || page_type == pag_index)) {
-		/* This gives refresh cache ranges the potential to work with page 
-		 * latching by taking out a temporary page lock for notification 
+		/* This gives refresh cache ranges the potential to work with page
+		 * latching by taking out a temporary page lock for notification
 		 * purposes.
 		 * Fix cache ranges on NetWare due to latching (bug 7199)
 		 * Marion change # 18270, 13-Oct-1994
@@ -4512,7 +4511,7 @@ static SSHORT lock_buffer(
 			lock->lck_object = (BLK) bdb;
 		}
 
-		/* Case: a timeout was specified, or the caller didn't want to wait, 
+		/* Case: a timeout was specified, or the caller didn't want to wait,
 		   return the error. */
 
 		if ((wait == LCK_NO_WAIT)
@@ -4521,7 +4520,7 @@ static SSHORT lock_buffer(
 			return -1;
 		}
 
-		/* Case: lock manager detected a deadlock, probably caused by locking the 
+		/* Case: lock manager detected a deadlock, probably caused by locking the
 		   bdb's in an unfortunate order.  Nothing we can do about it, return the
 		   error, and log it to interbase.log. */
 
@@ -4557,7 +4556,7 @@ static SSHORT lock_buffer(
 	if (PAGE_LOCK(lock, lock_type, wait))
 		return 1;
 
-/* Case: a timeout was specified, or the caller didn't want to wait, 
+/* Case: a timeout was specified, or the caller didn't want to wait,
    return the error. */
 
 	if ((wait < 0) && (status[1] == gds__lock_timeout)) {
@@ -4565,7 +4564,7 @@ static SSHORT lock_buffer(
 		return -1;
 	}
 
-/* Case: lock manager detected a deadlock, probably caused by locking the 
+/* Case: lock manager detected a deadlock, probably caused by locking the
    bdb's in an unfortunate order.  Nothing we can do about it, return the
    error, and log it to interbase.log. */
 
@@ -4719,7 +4718,7 @@ static void prefetch_epilogue(PRF prefetch, STATUS * status_vector)
  *
  * Functional description
  *	Stall on asynchronous I/O completion.
- *	Move data from prefetch buffer to database 
+ *	Move data from prefetch buffer to database
  *	buffers, compute the checksum, and release
  *	the latch.
  *
@@ -5247,21 +5246,21 @@ static int write_buffer(
  *	Write a dirty buffer.  This may recurse due to
  *	precedence problems.
  *
- * input:  write_this_page 
+ * input:  write_this_page
  *		= true if the input page needs to be written
  *			before returning.  (normal case)
- *		= false if the input page is being written 
+ *		= false if the input page is being written
  *			because of precedence.  Only write
  *			one page and return so that the caller
  *			can re-establish the need to write this
  *			page.
- *			
+ *
  * return: 0 = Write failed.
  *         1 = Page is written.  Page was written by this
  *     		call, or was written by someone else, or the
  *		cache buffer is already reassigned.
  *	   2 = Only possible if write_this_page is FALSE.
- *		This input page is not written.  One 
+ *		This input page is not written.  One
  *		page higher in precedence is written
  *		though.  Probable action: re-establich the
  * 		need to write this page and retry write.
@@ -5441,7 +5440,7 @@ static BOOLEAN write_page(
 		page->pag_offset = bdb->bdb_page;
 #endif
 
-		/* write out page to main database file, and to any 
+		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
 
 		if (bdb->bdb_page >= 0) {

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include <string.h>
@@ -61,7 +64,7 @@ extern "C" {
  * the change to Firebird this number could no longer be used.
  * The DBSERVER_BASE_LEVEL for firebird starts at 6 which is the base level
  * of InterBase(r) from which Firebird was derived.
- * It is expected that this value will increase as changes are added to 
+ * It is expected that this value will increase as changes are added to
  * Firebird
  */
 
@@ -468,7 +471,7 @@ int INF_database_info(
 		case gds_info_base_level:
 			/* info_base_level is used by the client to represent
 			 * what the server is capable of.  It is equivalent to the
-			 * ods version of a database.  For example, 
+			 * ods version of a database.  For example,
 			 * ods_version represents what the database 'knows'
 			 * base_level represents what the server 'knows'
 			 */
@@ -666,14 +669,14 @@ int INF_database_info(
 			   **
 			   ** there are 3 types of databases:
 			   **
-			   **   1. a DB that is created before V6.0. This DB only speak SQL 
+			   **   1. a DB that is created before V6.0. This DB only speak SQL
 			   **        dialect 1 and 2.
 			   **
 			   **   2. a non ODS 10 DB is backed up/restored in IB V6.0. Since
 			   **        this DB contained some old SQL dialect, therefore it
 			   **        speaks SQL dialect 1, 2, and 3
 			   **
-			   **   3. a DB that is created in V6.0. This DB speak SQL 
+			   **   3. a DB that is created in V6.0. This DB speak SQL
 			   **        dialect 1, 2 or 3 depending the DB was created
 			   **        under which SQL dialect.
 			   **
@@ -681,12 +684,12 @@ int INF_database_info(
 			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original)
 				>= ODS_10_0)
 				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-					/* 
-					   ** DB created in IB V6.0 by client SQL dialect 3 
+					/*
+					   ** DB created in IB V6.0 by client SQL dialect 3
 					 */
 					*p++ = SQL_DIALECT_V6;
 				else
-					/* 
+					/*
 					   ** old DB was gbaked in IB V6.0
 					 */
 					*p++ = SQL_DIALECT_V5;
@@ -696,13 +699,11 @@ int INF_database_info(
 			length = p - buffer;
 			break;
 
-#ifdef READONLY_DATABASE
 		case isc_info_db_read_only:
 			*p++ = (dbb->dbb_flags & DBB_read_only) ? 1 : 0;
 			length = p - buffer;
 
 			break;
-#endif /* READONLY_DATABASE */
 
 		case isc_info_db_size_in_pages:
 			CCH_flush(tdbb, (USHORT) FLUSH_ALL, 0L);
@@ -970,9 +971,9 @@ int INF_request_info(
 
 		case gds_info_access_path:
 
-			/* the access path has the potential to be large, so if the default 
-			   buffer is not big enough, allocate a really large one--don't 
-			   continue to allocate larger and larger, because of the potential 
+			/* the access path has the potential to be large, so if the default
+			   buffer is not big enough, allocate a really large one--don't
+			   continue to allocate larger and larger, because of the potential
 			   for a bug which would bring the server to its knees */
 
 			if (!OPT_access_path

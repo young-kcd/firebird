@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #ifdef SHLIB_DEFS
@@ -60,7 +63,7 @@
 
 /* SUPERSERVER uses a mutex to allow atomic seek/read(write) sequences.
    SUPERSERVER_V2 uses "positioned" read (write) calls to avoid a seek
-   and allow multiple threads to overlap database I/O. 
+   and allow multiple threads to overlap database I/O.
     17-Oct-1996  Enabled positioned I/O calls on SOLARIS Superserver. */
 
 #if (defined SUPERSERVER && (defined SOLARIS_MT || defined LINUX))
@@ -68,7 +71,7 @@
 #if !(defined SOLARIS_MT || defined LINUX)
 	/* pread() and pwrite() function calls are provided on SOLARIS.
 	   The aio_read(), aio_*() etc. calls are not implemented on
-	   the HP-UX systems. Once it is implemented, this #include could 
+	   the HP-UX systems. Once it is implemented, this #include could
 	   be enabled only for HP-UX systems (POSIX). */
 #include <aio.h>
 #endif /* SOLARIS_MT */
@@ -570,7 +573,7 @@ SLONG PIO_act_alloc(DBB dbb)
 	SLONG tot_pages = 0;
 
 /**
- **  Traverse the linked list of files and add up the number of pages 
+ **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
 	for (file = dbb->dbb_file; file != NULL; file = file->fil_next) {
@@ -646,20 +649,17 @@ FIL PIO_open(DBB dbb,
 	}
 
 	if (desc == -1) {
-#ifdef READONLY_DATABASE
 		/* Try opening the database file in ReadOnly mode. The database file could
 		 * be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
 		 */
 		flag &= ~O_RDWR;
 		flag |= O_RDONLY;
 		if ((desc = open(ptr, flag)) == -1) {
-#endif /* READONLY_DATABASE */
 			ERR_post(isc_io_error,
 					 gds_arg_string, "open",
 					 gds_arg_cstring, file_length, ERR_string(file_name,
 															  file_length),
 					 isc_arg_gds, isc_io_open_err, gds_arg_unix, errno, 0);
-#ifdef READONLY_DATABASE
 		}
 		else {
 			/* If this is the primary file, set DBB flag to indicate that it is
@@ -670,7 +670,6 @@ FIL PIO_open(DBB dbb,
 			if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
-#endif /* READONLY_DATABASE */
 	}
 
 	return setup_file(dbb, string, length, desc);
@@ -1090,7 +1089,7 @@ static SLONG pread(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
  *
  * Functional description
  *
- *   This function uses Asynchronous I/O calls to implement 
+ *   This function uses Asynchronous I/O calls to implement
  *   positioned read from a given offset
  **************************************/
 {
@@ -1123,7 +1122,7 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
  *
  * Functional description
  *
- *   This function uses Asynchronous I/O calls to implement 
+ *   This function uses Asynchronous I/O calls to implement
  *   positioned write from a given offset
  **************************************/
 {

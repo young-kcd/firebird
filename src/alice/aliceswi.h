@@ -15,6 +15,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 #ifndef	ALICE_ALICESWI_H
 #define	ALICE_ALICESWI_H
@@ -160,11 +163,9 @@ static struct in_sw_tab_t alice_in_sw_table[] =
 	IN_SW_ALICE_MEND, isc_spb_rpr_mend_db, "mend", SW_MEND,
 	0, ~sw_no_update, FALSE, 38, 0, NULL,
 	/* msg 38: \t-mend\t\tprepare corrupt database for backup */
-#ifdef READONLY_DATABASE
 	IN_SW_ALICE_MODE, 0, "mode", sw_mode,
 	0, ~sw_mode, FALSE, 109, 0, NULL,
 	/* msg 109: \t-mode\t\tread_only or read_write */
-#endif							/* READONLY_DATABASE */
 	IN_SW_ALICE_NO_UPDATE, isc_spb_rpr_check_db, "no_update", sw_no_update,
 	sw_validate, 0, FALSE, 39, 0, NULL,
 	/* msg 39: \t-no_update\tread-only validation (-v) */
@@ -250,12 +251,10 @@ static struct in_sw_tab_t alice_in_sw_table[] =
 	0, 0, 0, FALSE, 0, 0, NULL,
 	IN_SW_ALICE_HIDDEN_ATTACH, isc_spb_prp_deny_new_attachments,
 	"shut -attach", 0, 0, 0, FALSE, 0, 0, NULL,
-#ifdef READONLY_DATABASE
 	IN_SW_ALICE_HIDDEN_RDONLY, isc_spb_prp_am_readonly, "mode read_only", 0,
 	0, 0, FALSE, 0, 0, NULL,
 	IN_SW_ALICE_HIDDEN_RDWRITE, isc_spb_prp_am_readwrite, "mode read_write",
 	0, 0, 0, FALSE, 0, 0, NULL,
-#endif							/* READONLY_DATABASE */
 /************************************************************************/
 	IN_SW_ALICE_0, 0, NULL, 0,
 	0, 0, FALSE, 0, 0, NULL

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
+ *                         conditionals, as the engine now fully supports
+ *                         readonly databases.
  */
 
 #include <stdio.h>
@@ -715,10 +718,10 @@ void INI_update_database(void)
  **************************************
  *
  * Functional description
- *	Perform changes to ODS that were required 
+ *	Perform changes to ODS that were required
  *	since ODS 8 and are dynamically updatable.
  *
- * %% Note %% Update the switch() statement to reflect new major ODS 
+ * %% Note %% Update the switch() statement to reflect new major ODS
  *            addition
  **************************************/
 	DBB dbb;
@@ -731,11 +734,9 @@ void INI_update_database(void)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef READONLY_DATABASE
 /* If database is ReadOnly, return without upgrading ODS */
 	if (dbb->dbb_flags & DBB_read_only)
 		return;
-#endif
 
 /* check out the update version to see if we have work to do */
 
@@ -753,7 +754,7 @@ void INI_update_database(void)
 	}
 
 /*******************************************************************
-** when new engine is attaching an older ODS database 
+** when new engine is attaching an older ODS database
 **   perform the necessary modifications
 ********************************************************************/
 
@@ -786,7 +787,7 @@ void INI_update_database(void)
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK(tdbb, &window);
 
-/* Only minor upgrades can occur within a major ODS, define which one   
+/* Only minor upgrades can occur within a major ODS, define which one
    occured here. */
 	switch (major_version)
 	{
@@ -931,7 +932,7 @@ static void add_index_set(DBB		dbb,
 			 (((USHORT) DECODE_ODS_MAJOR(index->ini_idx_version_flag)) !=
 			  major_version)))
 		{
-			/* The DECODE_ODS_MAJOR() is used (in this case) to instruct the server 
+			/* The DECODE_ODS_MAJOR() is used (in this case) to instruct the server
 			   to perform updates for minor ODS versions only within a major ODS */
 			continue;
 		}
@@ -990,9 +991,9 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
  **************************************
  *
  * Functional description
- *	Store all new ODS 8.x (x > 0) triggers. 
+ *	Store all new ODS 8.x (x > 0) triggers.
  *      The major and minor_version passed in are the ODS versions
- *      before the ODS is upgraded. 
+ *      before the ODS is upgraded.
  *	This routine is used to upgrade ODS versions.
  *
  **************************************/
@@ -1116,7 +1117,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
  *
  * Functional description
  *
- *      Add security to system relations. Only the owner of the 
+ *      Add security to system relations. Only the owner of the
  *      database has SELECT/INSERT/UPDATE/DELETE privileges on
  *      any system relations. Any other users only has SELECT
  *      privilege.
@@ -1292,7 +1293,7 @@ static void modify_relation_field(TDBB			tdbb,
  **************************************
  *
  * Functional description
- *	Modify a local field according to the 
+ *	Modify a local field according to the
  *	passed information.  Note that the field id and
  *	field position do not change.
  *
@@ -1324,7 +1325,7 @@ static void store_generator(TDBB tdbb, CONST GEN* generator, BLK* handle)
  **************************************
  *
  * Functional description
- *	Store the passed generator according to 
+ *	Store the passed generator according to
  *	the information in the generator block.
  *
  **************************************/
@@ -1350,7 +1351,7 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
  **************************************
  *
  * Functional description
- *	Store a global field according to the 
+ *	Store a global field according to the
  *	passed information.
  *
  **************************************/
@@ -1476,7 +1477,7 @@ static void store_intlnames(TDBB tdbb, DBB dbb)
 {
 /**************************************
  *
- *	s t o r e _ i n t l n a m e s 
+ *	s t o r e _ i n t l n a m e s
  *
  **************************************
  *
@@ -1562,7 +1563,7 @@ static void store_relation_field(TDBB			tdbb,
  **************************************
  *
  * Functional description
- *	Store a local field according to the 
+ *	Store a local field according to the
  *	passed information.
  *
  **************************************/
@@ -1595,7 +1596,7 @@ static void store_trigger(TDBB tdbb, CONST TRG* trigger, BLK* handle)
  **************************************
  *
  * Functional description
- *	Store the trigger according to the 
+ *	Store the trigger according to the
  *	information in the trigger block.
  *
  **************************************/
