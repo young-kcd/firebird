@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.95 2004-05-12 19:20:43 brodsom Exp $
+$Id: lock.cpp,v 1.96 2004-05-13 19:47:30 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -65,7 +65,7 @@ $Id: lock.cpp,v 1.95 2004-05-12 19:20:43 brodsom Exp $
 #include <sys/types.h>
 #endif
 
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifndef WEXITSTATUS
