@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pwd.h
+ *	MODULE:		jrd_pwd.h
  *	DESCRIPTION:	User information database name
  *
  * The contents of this file are subject to the Interbase Public

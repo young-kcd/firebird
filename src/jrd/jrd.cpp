@@ -46,12 +46,8 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifndef	WIN_NT
-#ifdef DARWIN
-#include </usr/include/pwd.h>
-#else
+#ifdef HAVE_PWD_H
 #include <pwd.h>
-#endif
 #endif
 #include <errno.h>
 

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.26 2003-01-03 12:49:59 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.27 2003-02-19 06:14:37 eku Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -172,20 +172,15 @@ static LKSB wake_lock;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
 #ifndef O_RDWR
 #include <fcntl.h>
-#endif
-
-#ifdef DARWIN
-#include </usr/include/pwd.h>
-#else
-extern struct passwd *getpwnam(), *getpwuid();
-#endif
 #endif
 
 void isc_internal_set_config_value(UCHAR, ULONG*, ULONG*);

@@ -37,12 +37,13 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
+#ifdef HAVE_PDW_H
 #include <pwd.h>
+#endif
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

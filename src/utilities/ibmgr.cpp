@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.7 2002-11-14 08:32:08 dimitr Exp $
+ * $Id: ibmgr.cpp,v 1.8 2003-02-19 06:14:39 eku Exp $
  */
 
 #include "firebird.h"
@@ -40,7 +40,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../utilities/ibmgr.h"
