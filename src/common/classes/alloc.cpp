@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.61 2004-08-22 21:28:19 skidder Exp $
+ *  $Id: alloc.cpp,v 1.62 2004-08-24 05:16:01 robocop Exp $
  *
  */
 
@@ -91,14 +91,14 @@ inline MemoryRedirectList* block_list_large(MemoryBlock* block)
 }
 
 // Returns block header from user block pointer
-inline MemoryBlock* ptr_block(void *ptr)
+inline MemoryBlock* ptrToBlock(void *ptr)
 {
     return (MemoryBlock*)((char*)ptr - MEM_ALIGN(sizeof(MemoryBlock)));
 }
 
 // Returns user memory pointer for block header pointer
 template <typename T>
-inline T block_ptr(MemoryBlock *block)
+inline T blockToPtr(MemoryBlock *block)
 {
     return reinterpret_cast<T>((char*)block + MEM_ALIGN(sizeof(MemoryBlock)));
 }
@@ -495,8 +495,8 @@ void* MemoryPool::tree_alloc(size_t size) {
 void MemoryPool::tree_free(void* block) {
 	// This method doesn't merge nearby pages
 	((PendingFreeBlock*)block)->next = pendingFree;
-	ptr_block(block)->mbk_flags &= ~MBK_USED;
-	ptr_block(block)->mbk_prev_fragment = NULL;
+	ptrToBlock(block)->mbk_flags &= ~MBK_USED;
+	ptrToBlock(block)->mbk_prev_fragment = NULL;
 	pendingFree = (PendingFreeBlock*)block;
 	needSpare = true;
 }
@@ -529,7 +529,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 				parent->lock.leave();
 				return NULL;
 			}
-			MemoryBlock* blk = ptr_block(result);
+			MemoryBlock* blk = ptrToBlock(result);
 			blk->mbk_pool = this;
 			blk->mbk_flags |= MBK_PARENT;
 			// Add block to the list of redirected blocks
@@ -602,7 +602,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 				blk->small.mbk_length = blockLength;
 				blk->small.mbk_prev_length = hdr->small.mbk_length;
 				blk->mbk_prev_fragment = NULL;
-				FreeMemoryBlock *freeBlock = block_ptr<FreeMemoryBlock*>(blk);
+				FreeMemoryBlock *freeBlock = blockToPtr<FreeMemoryBlock*>(blk);
 				freeBlock->fbk_next_fragment = NULL;
 				BlockInfo temp = {blockLength, freeBlock};
 				freeBlocks.add(temp);
@@ -642,7 +642,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 		// Update usage statistics
 		increment_usage(size);
 		lock.leave();
-		void *result = block_ptr<void*>(blk);
+		void *result = blockToPtr<void*>(blk);
 #ifdef USE_VALGRIND
 		VALGRIND_MEMPOOL_ALLOC(this, result, requested_size);
 		//VALGRIND_MAKE_NOACCESS((char*)result - VALGRIND_REDZONE, VALGRIND_REDZONE);
@@ -659,7 +659,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 	);
 	// Update usage statistics
 	if (result)
-		increment_usage(ptr_block(result)->small.mbk_length);
+		increment_usage(ptrToBlock(result)->small.mbk_length);
 	// Update spare after we increment usage statistics - to allow verify_pool in updateSpare
 	if (needSpare)
 		updateSpare();
@@ -701,7 +701,7 @@ bool MemoryPool::verify_pool() {
 
 		// Verify that head of free blocks list set correctly
 		mem_assert(current->bli_fragments);
-		mem_assert(ptr_block(current->bli_fragments)->mbk_prev_fragment == NULL);
+		mem_assert(ptrToBlock(current->bli_fragments)->mbk_prev_fragment == NULL);
 	
 		// Look over all blocks in list checking that things look kosher
 		for (FreeMemoryBlock *fragment = current->bli_fragments; 
@@ -709,9 +709,9 @@ bool MemoryPool::verify_pool() {
 		{
 			// Make sure that list is actually doubly linked
 			if (fragment->fbk_next_fragment)
-				mem_assert(ptr_block(fragment->fbk_next_fragment)->mbk_prev_fragment == fragment);
+				mem_assert(ptrToBlock(fragment->fbk_next_fragment)->mbk_prev_fragment == fragment);
 
-			MemoryBlock *blk = ptr_block(fragment);
+			MemoryBlock *blk = ptrToBlock(fragment);
 
 			// Check block flags for correctness
 			mem_assert(!(blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)));
@@ -763,7 +763,7 @@ bool MemoryPool::verify_pool() {
 			bool foundTree = false;
 			if (freeBlocks.locate(blk->small.mbk_length)) {
 				for (FreeMemoryBlock* freeBlk = freeBlocks.current().bli_fragments; freeBlk; freeBlk = freeBlk->fbk_next_fragment)
-					if (ptr_block(freeBlk) == blk) {
+					if (ptrToBlock(freeBlk) == blk) {
 						mem_assert(!foundTree); // Block may be present in free blocks tree only once
 						foundTree = true;
 					}
@@ -816,7 +816,7 @@ bool MemoryPool::verify_pool() {
 
 	// Verify memory fragments in pending free list
 	for (PendingFreeBlock* pBlock = pendingFree; pBlock; pBlock = pBlock->next) {
-		MemoryBlock *blk = ptr_block(pBlock);
+		MemoryBlock *blk = ptrToBlock(pBlock);
 		mem_assert(blk->mbk_prev_fragment == NULL);
 
 		// Check block flags for correctness
@@ -867,7 +867,7 @@ bool MemoryPool::verify_pool() {
 
 static void print_block(FILE *file, MemoryBlock *blk, bool used_only)
 {
-	void *mem = block_ptr<void*>(blk);
+	void *mem = blockToPtr<void*>(blk);
 	if (((blk->mbk_flags & MBK_USED) && 
 		!(blk->mbk_flags & MBK_DELAYED) && blk->mbk_type >= 0) || !used_only) 
 	{
@@ -962,7 +962,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		}
 		pool = new(mem) MemoryPool(parent, stats, NULL, NULL);
 		
-		MemoryBlock* blk = ptr_block(mem);
+		MemoryBlock* blk = ptrToBlock(mem);
 		blk->mbk_pool = pool;
 		blk->mbk_flags |= MBK_PARENT;
 		// Add block to the list of redirected blocks
@@ -1042,7 +1042,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		blk->small.mbk_length = blockLength;
 		blk->small.mbk_prev_length = hdr->small.mbk_length;
 		blk->mbk_prev_fragment = NULL;
-		FreeMemoryBlock *freeBlock = block_ptr<FreeMemoryBlock*>(blk);
+		FreeMemoryBlock *freeBlock = blockToPtr<FreeMemoryBlock*>(blk);
 		freeBlock->fbk_next_fragment = NULL;
 		BlockInfo temp = {blockLength, freeBlock};
 		pool->freeBlocks.add(temp);
@@ -1151,7 +1151,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		BlockInfo* current = &freeBlocks.current();
 		if (current->bli_length - size < MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
 		{
-			blk = ptr_block(current->bli_fragments);
+			blk = ptrToBlock(current->bli_fragments);
 			// Block is small enough to be returned AS IS
 			blk->mbk_pool = this;
 			blk->mbk_flags |= MBK_USED;
@@ -1162,7 +1162,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 #endif
 			FreeMemoryBlock *next_free = current->bli_fragments->fbk_next_fragment;
 			if (next_free) {
-				ptr_block(next_free)->mbk_prev_fragment = NULL;
+				ptrToBlock(next_free)->mbk_prev_fragment = NULL;
 				current->bli_fragments = next_free;
 			}
 			else
@@ -1171,7 +1171,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		else {
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
-			MemoryBlock *current_block = ptr_block(current->bli_fragments);
+			MemoryBlock *current_block = ptrToBlock(current->bli_fragments);
 			current_block->small.mbk_length -= MEM_ALIGN(sizeof(MemoryBlock)) + size;
 			blk = next_block(current_block);
 			blk->mbk_pool = this;
@@ -1192,7 +1192,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			if (next_free) {
 				// Moderately cheap case. Quite possibly we only need to tweak doubly 
 				// linked lists a little
-				ptr_block(next_free)->mbk_prev_fragment = NULL;
+				ptrToBlock(next_free)->mbk_prev_fragment = NULL;
 				current->bli_fragments = next_free;
 				addFreeBlock(current_block);
 			} else {
@@ -1225,7 +1225,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		// of pending free blocks. We do not do "best fit" in this case
 		PendingFreeBlock *itr = pendingFree, *prev = NULL;
 		while (itr) {
-			MemoryBlock *temp = ptr_block(itr);
+			MemoryBlock *temp = ptrToBlock(itr);
 			if (temp->small.mbk_length >= size) {
 				if (temp->small.mbk_length - size < MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
 				{
@@ -1262,7 +1262,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					blk->small.mbk_prev_length = temp->small.mbk_length;
 					if (!(blk->mbk_flags & MBK_LAST))
 						next_block(blk)->small.mbk_prev_length = blk->small.mbk_length;
-					void *result = block_ptr<void*>(blk);
+					void *result = blockToPtr<void*>(blk);
 					PATTERN_FILL(result, size, ALLOC_PATTERN);
 					return result;
 				}
@@ -1314,14 +1314,14 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			addFreeBlock(rest);
 		}
 	}
-	void *result = block_ptr<void*>(blk);
+	void *result = blockToPtr<void*>(blk);
 	PATTERN_FILL(result, size, ALLOC_PATTERN);
 	return result;
 }
 
 inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 {
-	FreeMemoryBlock* fragmentToAdd = block_ptr<FreeMemoryBlock*>(blk);
+	FreeMemoryBlock* fragmentToAdd = blockToPtr<FreeMemoryBlock*>(blk);
 	blk->mbk_prev_fragment = NULL;
 
 	// Cheap case. No modification of tree required
@@ -1330,7 +1330,7 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 
 		// Make new block a head of free blocks doubly linked list
 		fragmentToAdd->fbk_next_fragment = current->bli_fragments;
-		ptr_block(current->bli_fragments)->mbk_prev_fragment = fragmentToAdd;
+		ptrToBlock(current->bli_fragments)->mbk_prev_fragment = fragmentToAdd;
 		current->bli_fragments = fragmentToAdd;
 		return;
 	}
@@ -1342,7 +1342,7 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 		freeBlocks.add(info);
 	} catch(const std::exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
-		PendingFreeBlock* temp = block_ptr<PendingFreeBlock*>(blk);
+		PendingFreeBlock* temp = blockToPtr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;
 		pendingFree = temp;
 		// NOTE! Items placed into pendingFree queue have mbk_prev_fragment equal to ZERO.
@@ -1354,14 +1354,14 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 	// NOTE! We signal items placed into pendingFree queue via setting their 
 	// mbk_prev_fragment to ZERO.
 
-	FreeMemoryBlock *fragmentToRemove = block_ptr<FreeMemoryBlock*>(blk);
+	FreeMemoryBlock *fragmentToRemove = blockToPtr<FreeMemoryBlock*>(blk);
 	FreeMemoryBlock *prev = blk->mbk_prev_fragment, *next = fragmentToRemove->fbk_next_fragment;
 	if (prev) {
 		// Cheapest case. There is no need to touch B+ tree at all.
 		// Simply remove item from a middle or end of doubly linked list		
 		prev->fbk_next_fragment = next;
 		if (next)
-			ptr_block(next)->mbk_prev_fragment = prev;
+			ptrToBlock(next)->mbk_prev_fragment = prev;
 		return;
 	}
 
@@ -1372,7 +1372,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 	{
 		if (next) {
 			// Still moderately fast case. All we need is to replace the head of fragments list
-			ptr_block(next)->mbk_prev_fragment = NULL;
+			ptrToBlock(next)->mbk_prev_fragment = NULL;
 			current->bli_fragments = next;
 		}
 		else {
@@ -1385,7 +1385,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 		// critically-low memory condition or if tree_free placed it there. 
 		// Find and remove it from there.
 		PendingFreeBlock *itr = pendingFree, 
-			*temp = block_ptr<PendingFreeBlock*>(blk);
+			*temp = blockToPtr<PendingFreeBlock*>(blk);
 		if (itr == temp)
 			pendingFree = itr->next;
 		else
@@ -1428,7 +1428,7 @@ void MemoryPool::internal_deallocate(void *block)
 {
 	// Note that this method is also used to add blocks from pending free list
 	// These blocks are marked as unused already
-	MemoryBlock *blk = ptr_block(block);
+	MemoryBlock *blk = ptrToBlock(block);
 	
 	// Don't check flags for MBK_USED because this method may be called for blocks in
 	// pendingFree list (marked as not used already).
@@ -1497,7 +1497,7 @@ void MemoryPool::deallocate(void *block)
 	if (!block)
 		return;
 
-	MemoryBlock* blk = ptr_block(block);
+	MemoryBlock* blk = ptrToBlock(block);
 	
 	fb_assert(blk->mbk_flags & MBK_USED);
 	fb_assert(blk->mbk_pool == this);
@@ -1544,7 +1544,7 @@ void MemoryPool::deallocate(void *block)
 	void* requested_block = block;
 
 	block = delayedFree[delayedFreePos];
-	blk = ptr_block(block);
+	blk = ptrToBlock(block);
 
 	// Unmark block as delayed free in its header
 	blk->mbk_flags &= ~MBK_DELAYED;
