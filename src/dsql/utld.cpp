@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.26 2004-02-02 11:01:05 robocop Exp $
+$Id: utld.cpp,v 1.27 2004-03-07 07:58:28 robocop Exp $
 */
 
 #include "firebird.h"
@@ -642,7 +642,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 			else
 				*null_ind = 0;
 
-			/* Make sure user has specified a data location (unless NULL) */
+			// Make sure user has specified a data location (unless NULL) 
 			if (!xvar->sqldata && !*null_ind)
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
@@ -685,7 +685,7 @@ void	UTLD_save_status_strings(
 	if (!DSQL_failures)
 	{
 		DSQL_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) DSQL_FAILURE_SPACE);
-		/* FREE: by exit handler cleanup() */
+		// FREE: by exit handler cleanup() 
 		if (!DSQL_failures)		// NOMEM: don't try to copy the strings 
 			return;
 		DSQL_failures_ptr = DSQL_failures;

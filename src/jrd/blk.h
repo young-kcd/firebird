@@ -30,7 +30,7 @@
 // BLKDEF(type_plb, plb, 0)
 
 BLKDEF(type_vec, vec, sizeof(((VEC) NULL)->vec_object[0]))
-BLKDEF(type_dbb, dbb, 0)
+BLKDEF(type_dbb, Database, 0)
 BLKDEF(type_bcb, bcb, sizeof(((BCB) NULL)->bcb_rpt[0]))   /* Done 2 */
 BLKDEF(type_bdb, bdb, 0)
 BLKDEF(type_pre, Precedence, 0)

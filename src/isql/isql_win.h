@@ -24,7 +24,7 @@
 #ifndef ISQL_WIN_H
 #define ISQL_WIN_H
 
-/* prototypes */
+// prototypes 
 
 static void close_isql();
 static int cmdline_isql(HINSTANCE, LPSTR);
@@ -41,5 +41,5 @@ static void test_overwrite();
 static int windows_isql(HINSTANCE, HINSTANCE, int);
 static void xfer_file(SCHAR *, SCHAR *, SSHORT);
 
-#endif /* ISQL_WIN_H */
+#endif // ISQL_WIN_H 
 

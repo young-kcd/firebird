@@ -23,15 +23,21 @@
 
  /* Note: all routines have cousins in jrd/intl.cpp */
 
-USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
-								, USHORT src_len, SSHORT *err_code, USHORT *err_position);
+USHORT CS_UTFFSS_fss_to_unicode_cc(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len,
+								const NCHAR* src_ptr,
+								USHORT src_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
+USHORT CS_UTFFSS_fss_to_unicode_tt(TEXTTYPE obj, UNICODE *dest_ptr, USHORT dest_len,
+								const NCHAR* src_ptr,
+								USHORT src_len, SSHORT *err_code, USHORT *err_position);
+
+USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len,
+								const UNICODE* unicode_str,
 								USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE* obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n);
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n);
 
-struct Tab {
+struct Fss_table {
 	int cmask;
 	int cval;
 	int shift;
@@ -39,7 +45,8 @@ struct Tab {
 	long lval;
 };
 
-static const Tab tab[] = {
+static const Fss_table fss_sequence_table[] =
+{
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
 	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
 	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */

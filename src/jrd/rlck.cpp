@@ -291,7 +291,7 @@ lck* RLCK_record_locking(jrd_rel* relation)
 		return relation->rel_record_locking;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_parent = dbb->dbb_lock;
@@ -487,7 +487,7 @@ void RLCK_shutdown_attachment(ATT attachment)
 }
 
 
-void RLCK_shutdown_database(DBB dbb)
+void RLCK_shutdown_database(Database* dbb)
 {
 /**************************************
  *
@@ -541,7 +541,7 @@ void RLCK_signal_refresh(jrd_tra* transaction)
 	USHORT i;
 	jrd_rel* relation;
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 /* for each relation, take out a range relation lock and then release it */
 	vec* vector = transaction->tra_relation_locks;
 	if (vector) {
@@ -773,7 +773,7 @@ static lck* allocate_record_lock(jrd_tra* transaction, RPB * rpb)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 	if (!rpb->rpb_record)
 		ERR_post(isc_no_cur_rec, 0);
@@ -827,7 +827,7 @@ static lck* allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	lck* lock = FB_NEW_RPT(*pool, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
 	lock->lck_attachment = tdbb->tdbb_attachment;
@@ -862,7 +862,7 @@ static lck* attachment_relation_lock(jrd_rel* relation)
 	lck* lock;
 	VEC vector;
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 
 	if ((vector = attachment->att_relation_locks) &&

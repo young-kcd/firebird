@@ -881,7 +881,7 @@ USHORT CVT2_make_string2(const dsc* desc,
 			}
 			length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
 										cs2, from_buf, from_len, err);
-			*address = (UCHAR *) tempptr;
+			*address = tempptr;
 			return length;
 		}
 	}

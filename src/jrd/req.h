@@ -141,7 +141,7 @@ public:
 	JrdMemoryPool* req_pool;
 	struct vec*	req_sub_requests;	// vector of sub-requests
 	class jrd_tra* req_transaction;
-	jrd_req*		req_request;	/* next request in dbb */
+	jrd_req*		req_request;	/* next request in Database */
 	struct acc*	req_access;		/* Access items to be checked */
 	struct vec*	req_variables;	/* Vector of variables, if any */
 	class Resource*	req_resources;	/* Resources (relations and indices) */

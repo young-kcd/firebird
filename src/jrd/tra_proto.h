@@ -29,9 +29,9 @@
 class att;
 class jrd_tra;
 class Resource;
-class dbb;
+class Database;
 
-bool	TRA_active_transactions(TDBB, dbb*);
+bool	TRA_active_transactions(TDBB, Database*);
 void	TRA_cleanup(TDBB);
 void	TRA_commit(TDBB, jrd_tra*, const bool);
 void	TRA_extend_tip(TDBB, ULONG, struct win *);
@@ -40,10 +40,10 @@ void	TRA_get_inventory(TDBB, UCHAR *, ULONG, ULONG);
 int		TRA_get_state(TDBB, SLONG);
 
 #ifdef SUPERSERVER_V2
-void	TRA_header_write(TDBB, dbb*, SLONG);
+void	TRA_header_write(TDBB, Database*, SLONG);
 #endif
 void	TRA_init(TDBB);
-void	TRA_invalidate(dbb *, ULONG);
+void	TRA_invalidate(Database*, ULONG);
 void	TRA_link_transaction(TDBB, jrd_tra *);
 void	TRA_post_resources(TDBB, jrd_tra *, Resource*);
 bool	TRA_precommited(TDBB, SLONG, SLONG);

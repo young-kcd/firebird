@@ -28,7 +28,7 @@
 
 #define MATCH(kw) 	PAR_match (kw)
 
-/* Keywords */
+// Keywords 
 
 typedef enum kwwords {
     KW_none = 0,
@@ -36,7 +36,7 @@ typedef enum kwwords {
     KW_continuation
 } KWWORDS;
 
-/* Token block, used to hold a lexical token. */
+// Token block, used to hold a lexical token. 
 
 typedef enum tok_t {
     tok_ident, 
@@ -49,17 +49,17 @@ typedef enum tok_t {
 
 struct qli_tok {
     blk			tok_header;
-    TOK_T 		tok_type;		/* type of token */
-    qli_symbol*	tok_symbol;		/* hash block if recognized */
-    KWWORDS		tok_keyword;	/* keyword number, if recognized */
-    SLONG		tok_position;	/* byte number in input stream */
+    TOK_T 		tok_type;		// type of token 
+    qli_symbol*	tok_symbol;		// hash block if recognized 
+    KWWORDS		tok_keyword;	// keyword number, if recognized 
+    SLONG		tok_position;	// byte number in input stream 
     USHORT		tok_length;
     qli_tok*	tok_next;
     qli_tok*	tok_prior;
     TEXT		tok_string [2];
 };
 
-/* Input line control */
+// Input line control 
 
 enum line_t {
     line_stdin,
@@ -77,7 +77,7 @@ struct qli_line {
     USHORT		line_length;
     TEXT*		line_ptr;
     SLONG		line_position;
-    FRBRD*		line_source;			/* File or blob handle */
+    FRBRD*		line_source;			// File or blob handle 
     enum line_t	line_type;
     TEXT		line_data[256];
     TEXT		line_source_name[2];

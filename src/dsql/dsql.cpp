@@ -4798,7 +4798,7 @@ static dsql_req* prepare(
 								 request->req_blr_string->str_data);
 	THREAD_ENTER;
 
-/* restore warnings (if there are any) */
+// restore warnings (if there are any) 
 	if (local_status[2] == isc_arg_warning)
 	{
 		int indx, len, warning;

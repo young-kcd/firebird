@@ -21,16 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-USHORT CVJIS_sjis_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UCHAR *sjis_str
-							, USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
+USHORT CVJIS_sjis_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+							const UCHAR* sjis_str,
+							USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVJIS_unicode_to_sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, USHORT *unicode_str,
+USHORT CVJIS_unicode_to_sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len,
+							const USHORT* unicode_str,
 							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UCHAR *src_ptr
-							, USHORT src_len, SSHORT *err_code, USHORT *err_position);
+USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+							const UCHAR* src_ptr,
+							USHORT src_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, USHORT *unicode_str,
+USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
+							const USHORT* unicode_str,
 							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
 /*
@@ -42,15 +46,17 @@ static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UC
 							, USHORT euc_len, SSHORT *err_code, USHORT *err_position);
 static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str
 							, USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
-
 */
-USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
-							, SSHORT *err_code,	USHORT *err_position);
 
-SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
+USHORT CVJIS_euc_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
+							const UCHAR* src, USHORT src_len,
+							SSHORT *err_code,	USHORT *err_position);
 
-USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
-							, SSHORT *err_code, USHORT *err_position);
+SSHORT CVJIS_euc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
 
-SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
+USHORT CVJIS_sjis_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
+							const UCHAR* src, USHORT src_len,
+							SSHORT *err_code, USHORT *err_position);
+
+SSHORT CVJIS_sjis_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
 

@@ -126,7 +126,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 	SINT64 value;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
@@ -175,13 +175,12 @@ void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT* buffer)
  *
  **************************************/
 	BLK request;
-	SSHORT id;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
-	id = -1;
+	SSHORT id = -1;
 
 	try {
 
@@ -237,13 +236,12 @@ void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT* buffer)
  *
  **************************************/
 	BLK request;
-	SSHORT id;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
-	id = -1;
+	SSHORT id = -1;
 	
 	try {
 	
@@ -308,7 +306,7 @@ void DYN_UTIL_generate_field_position(
 		return;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
 
@@ -355,13 +353,12 @@ void DYN_UTIL_generate_index_name(TDBB tdbb,
  *
  **************************************/
 	BLK request;
-	SSHORT id;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
-	id = -1;
+	SSHORT id = -1;
 
 	try {
 
@@ -422,13 +419,12 @@ void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT* buffer)
  *
  **************************************/
 	BLK request;
-	SSHORT id;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
-	id = -1;
+	SSHORT id = -1;
 
 	try {
 	
@@ -508,11 +504,7 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
 	EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*)&in_msg);
 	EXE_receive(tdbb, request, 1, sizeof(USHORT), (UCHAR*)prot_mask);
 
-	/*
-	 * The "(BLK)" cast, casts away volatile AND changes
-	 * type at the same time - bad
-	 */
-	DYN_rundown_request( (BLK) request, drq_l_prot_mask);
+	DYN_rundown_request(request, drq_l_prot_mask);
 
 	}	// try
 	catch (const std::exception& ex) {
@@ -543,7 +535,7 @@ void DYN_UTIL_store_check_constraints(TDBB	tdbb,
 	BLK request;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 

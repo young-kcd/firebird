@@ -51,7 +51,7 @@ bool getRootFromRegistry(string& root)
 
 	DWORD bufsize = MAXPATHLEN;
 	char buffer[MAXPATHLEN];
-	long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, 
+	const long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, 
 		NULL, &type, reinterpret_cast<UCHAR*>(buffer), &bufsize);
 	RegCloseKey(hkey);
 	if (RegRC == ERROR_SUCCESS) {
@@ -77,6 +77,8 @@ void ConfigRoot::osConfigRoot()
 	// get the pathname of the running executable
 	string bin_dir;
 	{
+		// Given the current semantics of PathName, when "buffer" goes
+		// out of scope, it's already bitwise copied into bin_dir.
 		char buffer[MAXPATHLEN];
 		GetModuleFileName(NULL, buffer, sizeof(buffer));
 		bin_dir = buffer;

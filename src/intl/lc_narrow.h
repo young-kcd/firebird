@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		lc_narrow.c
+ *	MODULE:		lc_narrow.h
  *	DESCRIPTION:	Common base for Narrow language drivers
  *			(full International collation)
  *
@@ -23,7 +23,7 @@
  */
 
 USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen);
-USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar,
-							   USHORT partial);
-SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
+USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
+	USHORT iOutLen, BYTE *pOutChar, USHORT partial);
+SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2);
 

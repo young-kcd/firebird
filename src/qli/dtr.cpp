@@ -423,7 +423,7 @@ static bool process_statement(bool flush_flag)
 
 	QLI_prompt = QLI_cont_string;
 
-	SYN syntax_tree = PARQ_parse();
+	qli_syntax* syntax_tree = PARQ_parse();
 	if (!syntax_tree)
 		return false;
 
@@ -493,9 +493,9 @@ static bool process_statement(bool flush_flag)
 			if (dbb->dbb_flags & DBB_active)
 			{
 				ERRQ_msg_get(505, report);
-				/* Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" */
+				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" 
 				ERRQ_msg_get(506, report + strlen(report));
-				/* Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" */
+				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" 
 				perf_get_info(&dbb->dbb_handle, &statistics);
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);

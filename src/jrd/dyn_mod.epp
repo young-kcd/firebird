@@ -95,15 +95,15 @@ static void drop_log(GBL);
 // Function not defined in this file MOD 04-July-2002
 // static void modify_lfield_type(GBL, const UCHAR**, TEXT*, TEXT*);
 
-static void modify_lfield_position(TDBB, DBB, GBL, const TEXT*, const TEXT*,
+static void modify_lfield_position(TDBB, Database*, GBL, const TEXT*, const TEXT*,
 	USHORT, USHORT);
-static bool check_view_dependency(TDBB, DBB, GBL, const TEXT*, const TEXT*);
-static bool check_sptrig_dependency(TDBB, DBB, GBL, const TEXT*, const TEXT*);
-static void modify_lfield_index(TDBB, DBB, GBL, const TEXT*, const TEXT*,
+static bool check_view_dependency(TDBB, Database*, GBL, const TEXT*, const TEXT*);
+static bool check_sptrig_dependency(TDBB, Database*, GBL, const TEXT*, const TEXT*);
+static void modify_lfield_index(TDBB, Database*, GBL, const TEXT*, const TEXT*,
 	const TEXT*);
-static bool field_exists(TDBB, DBB, GBL, const TEXT*, const TEXT*);
-static bool domain_exists(TDBB, DBB, GBL, const TEXT*);
-static void get_domain_type(TDBB, DBB, GBL, DYN_FLD);
+static bool field_exists(TDBB, Database*, GBL, const TEXT*, const TEXT*);
+static bool domain_exists(TDBB, Database*, GBL, const TEXT*);
+static void get_domain_type(TDBB, Database*, GBL, DYN_FLD);
 static ULONG check_update_fld_type(const dyn_fld*, const dyn_fld*);
 static void modify_err_punt(TDBB, ULONG, const dyn_fld*, const dyn_fld*);
 
@@ -123,7 +123,7 @@ void DYN_modify_database( GBL gbl, const UCHAR** ptr)
 	UCHAR verb, s[128];
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = NULL;
 
@@ -271,7 +271,7 @@ void DYN_modify_exception( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier t;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 	bool found = false;
@@ -345,7 +345,7 @@ void DYN_modify_global_field(
 		"Only one data type change to the domain allowed at a time";
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 	bool found = false;
@@ -890,7 +890,7 @@ void DYN_modify_index( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 	bool found = false;
@@ -982,7 +982,7 @@ void DYN_modify_local_field(
 	const UCHAR *query_header, *description;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, f);
 	r[0] = 0;
@@ -1172,7 +1172,7 @@ void DYN_modify_procedure( GBL gbl, const UCHAR** ptr)
 	GET_STRING(ptr, procedure_name);
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = NULL;
 	bool found = false;
@@ -1278,7 +1278,7 @@ void DYN_modify_relation( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier name, field_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	field_name[0] = 0;
 	GET_STRING(ptr, name);
@@ -1377,7 +1377,7 @@ void DYN_modify_trigger( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier trigger_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 	bool found = false;
@@ -1511,7 +1511,7 @@ void DYN_modify_trigger_msg( GBL gbl, const UCHAR** ptr, TEXT* trigger_name)
 	SqlIdentifier t;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
@@ -1581,7 +1581,7 @@ void DYN_modify_view( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier view_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	view_name[0] = 0;
 	GET_STRING(ptr, view_name);
@@ -1676,7 +1676,7 @@ static void drop_cache( GBL gbl)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
 	bool found = false;
@@ -1727,7 +1727,7 @@ static void change_backup_mode( GBL gbl, UCHAR verb)
 	bool invalid_state = false;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
 	bool found = false;
@@ -1842,7 +1842,7 @@ static void drop_log( GBL gbl)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
 	bool found = false;
@@ -1875,7 +1875,7 @@ static void drop_log( GBL gbl)
 }
 
 static void modify_lfield_position(TDBB tdbb,
-								   DBB dbb,
+								   Database* dbb,
 								   GBL gbl,
 								   const TEXT* relation_name,
 								   const TEXT* field_name,
@@ -1988,7 +1988,7 @@ static void modify_lfield_position(TDBB tdbb,
 }
 
 static bool check_view_dependency(TDBB tdbb,
-									 DBB dbb,
+									 Database* dbb,
 									 GBL gbl,
 									 const TEXT* relation_name,
 									 const TEXT* field_name)
@@ -2035,7 +2035,7 @@ static bool check_view_dependency(TDBB tdbb,
 }
 
 static bool check_sptrig_dependency(TDBB tdbb,
-									   DBB dbb,
+									   Database* dbb,
 									   GBL gbl,
 									   const TEXT* relation_name,
 									   const TEXT* field_name)
@@ -2074,7 +2074,7 @@ static bool check_sptrig_dependency(TDBB tdbb,
 }
 
 static void modify_lfield_index(TDBB	tdbb,
-								DBB		dbb,
+								Database* dbb,
 								GBL		gbl,
 								const TEXT*	relation_name,
 								const TEXT*	field_name,
@@ -2114,7 +2114,7 @@ static void modify_lfield_index(TDBB	tdbb,
 }
 
 static bool field_exists(TDBB tdbb,
-							DBB dbb,
+							Database* dbb,
 							GBL gbl,
 							const TEXT* relation_name,
 							const TEXT* field_name)
@@ -2141,7 +2141,7 @@ static bool field_exists(TDBB tdbb,
 	return retval;
 }
 
-static bool domain_exists(TDBB tdbb, DBB dbb, GBL gbl, const TEXT* field_name)
+static bool domain_exists(TDBB tdbb, Database* dbb, GBL gbl, const TEXT* field_name)
 {
 /***********************************************************
  *
@@ -2217,7 +2217,7 @@ void DYN_modify_sql_field(GBL		gbl,
 		"Only one data type change to the field allowed at a time";
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	
 	dyn_fld* orig_fld = 0;
 	dyn_fld* new_fld = 0;
@@ -2647,7 +2647,7 @@ void DYN_modify_sql_field(GBL		gbl,
 	}
 }
 
-void get_domain_type(TDBB tdbb, DBB dbb, GBL gbl, DYN_FLD dom_fld)
+void get_domain_type(TDBB tdbb, Database* dbb, GBL gbl, DYN_FLD dom_fld)
 {
 /**************************************
  *

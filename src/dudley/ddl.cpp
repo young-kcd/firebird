@@ -121,10 +121,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	command line.
  *
  **************************************/
-	IB_FILE *input_file;
-	TEXT *string, file_name_1[256], file_name_2[256],
-		buffer[256];
-	USHORT in_sw;
+	//TEXT buffer[256];
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -170,10 +167,12 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		DDL_version = false;
 	DDL_default_user = DDL_default_password = NULL;
 
+	TEXT file_name_1[256], file_name_2[256];
 	file_name_1[0] = file_name_2[0] = 0;
+	USHORT in_sw;
 
 	for (--argc; argc; argc--) {
-		string = *++argv;
+		const TEXT* string = *++argv;
 		if ((*string != '-') && (*string != '?')) {
 			if (!*file_name_1)
 				strcpy(file_name_1, string);
@@ -300,6 +299,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		}
 	}
 
+	IB_FILE* input_file;
+	
 	if (DDL_extract) {
 		strcpy(DB_file_string, file_name_1);
 		strcpy(DDL_file_string, file_name_2);
@@ -380,7 +381,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (DDL_actions && ((DDL_errors && DDL_interactive) || DDL_quit)) {
 		ib_rewind(ib_stdin);
-		*buffer = 0;
+		//*buffer = 0;
 		if (DDL_errors > 1)
 			DDL_msg_partial(7, (TEXT *) (ULONG) DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
 		else if (DDL_errors)
@@ -450,9 +451,8 @@ UCHAR *DDL_alloc(int size)
  * Functional description
  *
  **************************************/
-	UCHAR *block, *p;
-
-	p = block = (UCHAR*) gds__alloc((SLONG) size);
+	UCHAR* const block = (UCHAR*) gds__alloc((SLONG) size);
+	UCHAR* p = block;
 
 #ifdef DEBUG_GDS_ALLOC
 /* For V4.0 we don't care about gdef specific memory leaks */
@@ -462,9 +462,9 @@ UCHAR *DDL_alloc(int size)
 	if (!p)
 		DDL_err(14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
 	else
-		do
+		do {
 			*p++ = 0;
-		while (--size);
+		} while (--size);
 
 	return block;
 }
@@ -628,11 +628,8 @@ DUDLEY_NOD DDL_pop(dudley_lls** pointer)
  *	Pop an item off a linked list stack.  Free the stack node.
  *
  **************************************/
-	dudley_lls* stack;
-	DUDLEY_NOD node;
-
-	stack = *pointer;
-	node = stack->lls_object;
+	dudley_lls* stack = *pointer;
+	DUDLEY_NOD node = stack->lls_object;
 	*pointer = stack->lls_next;
 	stack->lls_next = free_stack;
 	free_stack = stack;
@@ -680,37 +677,43 @@ bool DDL_yes_no( USHORT number)
  *	Ask a yes/no question.
  *
  **************************************/
-	int c, d;
-	USHORT count, yes_num, no_num, re_num;
 	TEXT prompt[128], reprompt[128], yes_ans[128], no_ans[128];
 
 	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, NULL,
 					NULL, NULL, NULL, NULL);
 
-	yes_num = 342;				/* Msg342 YES   */
-	no_num = 343;				/* Msg343 NO    */
-	re_num = 344;				/* Msg344 Please respond with YES or NO. */
+	USHORT yes_num = 342;				/* Msg342 YES   */
+	USHORT no_num = 343;				/* Msg343 NO    */
+	USHORT re_num = 344;				/* Msg344 Please respond with YES or NO. */
 	reprompt[0] = '\0';
 
 	if (gds__msg_format
 		(0, DDL_MSG_FAC, no_num, sizeof(no_ans), no_ans, NULL, NULL, NULL,
 		 NULL, NULL) <= 0)
+	{
 		strcpy(no_ans, "NO");	/* default if msg_format fails */
+	}
 	if (gds__msg_format
 		(0, DDL_MSG_FAC, yes_num, sizeof(yes_ans), yes_ans, NULL, NULL, NULL,
 		 NULL, NULL) <= 0)
+	{
 		strcpy(yes_ans, "YES");
+	}
 
 	for (;;) {
 		ib_printf(prompt);
 		if (DDL_service)
 			ib_putc('\001', ib_stdout);
 		ib_fflush(ib_stdout);
-		count = 0;
+		int count = 0;
+		int c;
 		while ((c = ib_getc(ib_stdin)) == ' ')
 			count++;
 		if (c != '\n' && c != EOF)
+		{
+			int d;
 			while ((d = ib_getc(ib_stdin)) != '\n' && d != EOF);
+		}
 		if (!count && c == EOF)
 			return false;
 		if (UPPER(c) == UPPER(yes_ans[0]))
@@ -720,7 +723,9 @@ bool DDL_yes_no( USHORT number)
 		if (!reprompt
 			&& gds__msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
 							   reprompt, NULL, NULL, NULL, NULL, NULL) <= 0)
+		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
+		}
 		ib_printf("%s\n", reprompt);
 	}
 }

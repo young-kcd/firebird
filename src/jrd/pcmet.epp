@@ -75,7 +75,7 @@ int PCMET_expression_index(
 	jrd_req* current_request;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase) {
 	case 1:
@@ -213,7 +213,7 @@ void PCMET_lookup_index( jrd_rel* relation, IDX * idx)
 	Csb* csb = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* check the index blocks for the relation to see if we 
    have a cached block */

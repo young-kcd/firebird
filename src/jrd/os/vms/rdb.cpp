@@ -286,7 +286,7 @@ int rdb$compile_request(
 	ISC_STATUS stat;
 	int *messages;
 	REQ request;
-	DBB database;
+	Database* database;
 	USHORT temp_length;
 	UCHAR *temp;
 	SLONG max_length;
@@ -331,7 +331,7 @@ int rdb$compile_request(
 int rdb$create_database(
 						int* user_status,
 						struct dsc$descriptor* file,
-						DBB* handle,
+						Database** handle,
 						USHORT dpb_length, const UCHAR* dpb, USHORT db_type)
 {
 /**************************************
@@ -409,7 +409,7 @@ int rdb$create_segmented_string(int *user_status,
 
 int rdb$database_info(
 					  int* user_status,
-					  DBB* handle,
+					  Database** handle,
 					  SSHORT item_length,
 					  const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
@@ -478,7 +478,7 @@ int rdb$database_info(
 
 int rdb$ddl(
 			int *user_status,
-			DBB * db_handle, UCHAR ddl_operation, int length, UCHAR * buffer)
+			Database** db_handle, UCHAR ddl_operation, int length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -528,7 +528,7 @@ int rdb$ddl(
 }
 
 
-int rdb$detach_database(int *user_status, DBB * handle)
+int rdb$detach_database(int *user_status, Database** handle)
 {
 /**************************************
  *
@@ -540,7 +540,7 @@ int rdb$detach_database(int *user_status, DBB * handle)
  *	Close down a database.
  *
  **************************************/
-	DBB database;
+	Database* database;
 	REQ request;
 	int stat;
 
@@ -792,7 +792,7 @@ int rdb$receive(
 
 int rdb$reconnect_transaction(
 							  int* user_status,
-							  DBB* db_handle,
+							  Database** db_handle,
 							  HND_TRA* tra_handle, SSHORT length,
 							  const UCHAR* id)
 {
@@ -876,7 +876,7 @@ int rdb$release_request(int *user_status, REQ * req_handle)
  *
  **************************************/
 	REQ *ptr, request;
-	DBB database;
+	Database* database;
 	int stat;
 
 	if (!(request = *req_handle))
@@ -1119,7 +1119,7 @@ int rdb$start_transaction(
 						  int* user_status,
 						  HND_TRA* tra_handle,
 						  SSHORT count,
-						  DBB* db_handle, SSHORT tpb_length, SCHAR * tpb)
+						  Database** db_handle, SSHORT tpb_length, SCHAR * tpb)
 {
 /**************************************
  *
@@ -1132,7 +1132,7 @@ int rdb$start_transaction(
  *
  **************************************/
 	TEB *teb;
-	DBB database;
+	Database* database;
 	int stat, gds_vector[32], rdb_vector[32], *gds, *rdb, c;
 
 	if (*tra_handle)

@@ -184,7 +184,7 @@ void IDX_create_index(
 	struct ifl ifl_data;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (relation->rel_file) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
@@ -452,7 +452,7 @@ IDB IDX_create_index_block(TDBB tdbb, jrd_rel* relation, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	IDB index_block = FB_NEW(*dbb->dbb_permanent) idb();

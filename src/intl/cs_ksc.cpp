@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:        InterBase International support
- *	MODULE: 	cs_ksc.c
+ *	MODULE: 	cs_ksc.cpp
  *	DESCRIPTION:	Character set definitions for KSC-5601.
  *
  * The contents of this file are subject to the Interbase Public
@@ -34,20 +34,23 @@ CHARSET_ENTRY(CS_ksc_5601)
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_KSC5601;
-	csptr->charset_name = (ASCII *) "KSC_5601";
+	csptr->charset_name = (const ASCII*) "KSC_5601";
 	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (BYTE *) & space;
-	csptr->charset_well_formed = (FPTR_SHORT) CVKSC_check_ksc;
+	csptr->charset_space_character = (const BYTE*) & space;
+	csptr->charset_well_formed = CVKSC_check_ksc;
 
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_KSC5601,
-					(FPTR_SHORT) CVKSC_ksc_to_unicode, to_unicode_mapping_array,
+					reinterpret_cast<pfn_INTL_convert>(CVKSC_ksc_to_unicode),
+					to_unicode_mapping_array,
 					to_unicode_map);
 	CV_convert_init(&csptr->charset_from_unicode, CS_KSC5601, CS_UNICODE_UCS2,
-					(FPTR_SHORT) CVKSC_unicode_to_ksc, from_unicode_mapping_array,
+					reinterpret_cast<pfn_INTL_convert>(CVKSC_unicode_to_ksc),
+					from_unicode_mapping_array,
 					from_unicode_map);
 
 	CHARSET_RETURN;
 }
+

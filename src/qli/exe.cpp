@@ -570,7 +570,6 @@ static void commit_retaining( qli_nod* node)
  *	If there's more than one, prepare it.
  *
  **************************************/
-	DBB database;
 
 /* If there aren't any open databases then obviously
    there isn't anything to commit. */
@@ -587,7 +586,7 @@ static void commit_retaining( qli_nod* node)
 		node->nod_type = nod_commit_retaining;
 	}
 	else if (node->nod_count == 1) {
-		database = (DBB) node->nod_arg[0];
+		DBB database = (DBB) node->nod_arg[0];
 		database->dbb_flags |= DBB_prepared;
 	}
 	else
@@ -595,8 +594,9 @@ static void commit_retaining( qli_nod* node)
 
 
 	if (node->nod_count == 0) {
-		for (database = QLI_databases; database;
-			 database = database->dbb_next) {
+		for (DBB database = QLI_databases; database;
+			 database = database->dbb_next)
+		{
 			if ((node->nod_type == nod_commit_retaining)
 				&& !(database->dbb_flags & DBB_prepared))
 			{
@@ -614,7 +614,7 @@ static void commit_retaining( qli_nod* node)
     qli_nod** ptr = node->nod_arg;
 	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 	{
-		database = (DBB) *ptr;
+		DBB database = (DBB) *ptr;
 		if ((node->nod_type == nod_commit_retaining) &&
 			!(database->dbb_flags & DBB_prepared))
 		{
@@ -640,7 +640,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
  *
  * Functional description
  *	Copy a blob from one database to another.  If the blob can be
- *	successfully assigned, return FALSE and let somebody else just
+ *	successfully assigned, return false and let somebody else just
  *	copy the blob ids.
  *
  **************************************/
@@ -790,7 +790,7 @@ static void execute_abort( qli_nod* node)
 	if (node->nod_count) {
 	    const TEXT* ptr = NULL;
 		UCHAR temp[80];
-		USHORT l =
+		const USHORT l =
 			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr,
 				(vary*) temp, sizeof(temp));
 

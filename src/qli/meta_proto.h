@@ -26,7 +26,7 @@
 
 bool	MET_declare(dbb*, qli_fld*, const nam*);
 void	MET_define_field(dbb*, qli_fld*);
-void	MET_define_index(syn*);
+void	MET_define_index(qli_syntax*);
 void	MET_define_relation(qli_rel*, qli_rel*);
 void	MET_define_sql_relation(qli_rel*);
 void	MET_delete_database(dbb*);
@@ -42,14 +42,14 @@ void	MET_meta_commit(dbb*);
 void	MET_meta_rollback(dbb*);
 FRBRD*	MET_meta_transaction(dbb*, bool);
 void	MET_modify_field(dbb*, qli_fld*);
-void	MET_modify_index(syn*);
+void	MET_modify_index(qli_syntax*);
 void	MET_modify_relation(qli_rel*, qli_fld*);
-void	MET_ready(syn*, USHORT);
+void	MET_ready(qli_syntax*, USHORT);
 void	MET_shutdown (void);
 void	MET_sql_alter_table(qli_rel*, qli_fld*);
-void	MET_sql_cr_view(syn*);
-void	MET_sql_grant(syn*);
-void	MET_sql_revoke(syn*);
+void	MET_sql_cr_view(qli_syntax*);
+void	MET_sql_grant(qli_syntax*);
+void	MET_sql_revoke(qli_syntax*);
 FRBRD*	MET_transaction(NOD_T, dbb*);
 
 #endif // QLI_META_PROTO_H

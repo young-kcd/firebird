@@ -45,7 +45,7 @@ typedef struct handle {
 } *HANDLE, *REQ, *DBB, *HND_TRA, *HND_BLB;
 
 typedef struct teb {
-	DBB *teb_database;
+	Database** teb_database;
 	int teb_tpb_length;
 	UCHAR *teb_tpb;
 } TEB;
@@ -98,7 +98,7 @@ int RDB_attach_database(
 						int* user_status,
 						SSHORT file_length,
 						const SCHAR* file_name,
-						DBB* handle,
+						Database** handle,
 						SSHORT dpb_length, const SCHAR* dpb, SSHORT db_type)
 {
 /**************************************
@@ -288,7 +288,7 @@ int RDB_commit_transaction(int *user_status, HND_TRA* tra_handle)
 
 int RDB_compile_request(
 						int* user_status,
-						DBB* db_handle,
+						Database** db_handle,
 						REQ* req_handle, SSHORT blr_length, const SCHAR* blr)
 {
 /**************************************
@@ -305,7 +305,7 @@ int RDB_compile_request(
 	int *messages;
 	UCHAR *temp;
 	USHORT temp_length;
-	DBB database;
+	Database* database;
 	REQ request;
 	SLONG max_length;
 
@@ -376,7 +376,7 @@ int RDB_create_database(
 						int* user_status,
 						USHORT file_length,
 						const UCHAR* file_name,
-						DBB* handle,
+						Database** handle,
 						USHORT dpb_length, const UCHAR* dpb, USHORT db_type)
 {
 /**************************************
@@ -417,7 +417,7 @@ int RDB_create_database(
 
 int RDB_database_info(
 					  int* user_status,
-					  DBB* handle,
+					  Database** handle,
 					  SSHORT item_length,
 					  const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
@@ -473,7 +473,7 @@ int RDB_database_info(
 }
 
 
-int RDB_detach_database(int *user_status, DBB * handle)
+int RDB_detach_database(int *user_status, Database** handle)
 {
 /**************************************
  *
@@ -487,7 +487,7 @@ int RDB_detach_database(int *user_status, DBB * handle)
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	DBB database;
+	Database* database;
 	REQ request;
 
 	CHECK_HANDLE(handle, gds_bad_db_handle);
@@ -656,7 +656,7 @@ int RDB_receive(
 
 int RDB_reconnect_transaction(
 							  int* user_status,
-							  DBB* db_handle,
+							  Database** db_handle,
 							  HND_TRA* tra_handle, SSHORT length,
 							  const UCHAR* id)
 {
@@ -694,7 +694,7 @@ int RDB_release_request(int *user_status, REQ * req_handle)
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	DBB database;
+	Database* database;
 	REQ request, *ptr;
 
 	CHECK_HANDLE(req_handle, gds_bad_req_handle);
@@ -892,7 +892,7 @@ int RDB_start_multiple(
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	DBB database;
+	Database* database;
 	int rdb_vector[32], *rdb, c;
 
 	if (*tra_handle)
@@ -929,7 +929,7 @@ int RDB_start_transaction(
 						  int* user_status,
 						  HND_TRA* tra_handle,
 						  SSHORT count,
-						  DBB* db_handle, SSHORT tpb_length, SCHAR * tpb)
+						  Database** db_handle, SSHORT tpb_length, SCHAR * tpb)
 {
 /**************************************
  *
@@ -944,7 +944,7 @@ int RDB_start_transaction(
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
 	TEB *teb;
-	DBB database;
+	Database* database;
 	int rdb_vector[32], *rdb, c;
 
 	if (*tra_handle)

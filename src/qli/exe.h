@@ -24,17 +24,17 @@
 #ifndef QLI_EXE_H
 #define QLI_EXE_H
 
-/* Request Language Block  -- used for BLR, DYN, SDL, etc. */
+// Request Language Block  -- used for BLR, DYN, SDL, etc. 
 
 struct qli_rlb {
     blk		rlb_header;
-    UCHAR	*rlb_data;		/* Pointer to end of BLR/DYN/SDL */
-    UCHAR	*rlb_base;		/* Pointer to start of buffer */
-    UCHAR	*rlb_limit;		/* Upper limit of string */
-    USHORT	rlb_length;		/* Length of string */
+    UCHAR	*rlb_data;		// Pointer to end of BLR/DYN/SDL 
+    UCHAR	*rlb_base;		// Pointer to start of buffer 
+    UCHAR	*rlb_limit;		// Upper limit of string 
+    USHORT	rlb_length;		// Length of string 
 };
 
-/* RLB manipulation macros */
+// RLB manipulation macros 
 
 #define RLB_BUFFER_SIZE	2048
 #define RLB_SAFETY_MARGIN	48
@@ -63,32 +63,32 @@ inline qli_rlb* CHECK_RLB(qli_rlb*& in)
 #define STUFF(blr)	*rlb->rlb_data++ = blr
 #define STUFF_WORD(blr)	{STUFF (blr); STUFF (blr >> 8);}
 
-/* Request block */
+// Request block 
 
 struct qli_req {
     blk				req_header;
-    qli_req*		req_next;		/* Next request in statement */
-    dbb*			req_database;	/* Database for request */
-    FRBRD*			req_handle;		/* Database request handle */
+    qli_req*		req_next;		// Next request in statement 
+    dbb*			req_database;	// Database for request 
+    FRBRD*			req_handle;		// Database request handle 
     qli_rlb*		req_blr;
-    struct qli_msg*	req_messages;	/* Messages associated with request */
-    struct qli_msg*	req_receive;	/* Current receive message, if any  */
-    struct qli_msg*	req_send;		/* Current send message, if any  */
-    struct qli_msg*	req_continue;	/* Message to continue FOR loop after optional actions */
-    USHORT			req_flags;		/* Flags for state of request compilation, etc. */
-    USHORT			req_context;	/* Next available context */
-    USHORT			req_msg_number;	/* Next available message number */
-    USHORT			req_label;		/* Next available label */
+    struct qli_msg*	req_messages;	// Messages associated with request 
+    struct qli_msg*	req_receive;	// Current receive message, if any  
+    struct qli_msg*	req_send;		// Current send message, if any  
+    struct qli_msg*	req_continue;	// Message to continue FOR loop after optional actions 
+    USHORT			req_flags;		// Flags for state of request compilation, etc. 
+    USHORT			req_context;	// Next available context 
+    USHORT			req_msg_number;	// Next available message number 
+    USHORT			req_label;		// Next available label 
 };
 
 #define REQ_rse_compiled	1
-#define REQ_project		2	/* Set during generation of project clause */
-#define REQ_group_by		4	/* Set during generation of group by clause */
+#define REQ_project		2	// Set during generation of project clause 
+#define REQ_group_by		4	// Set during generation of group by clause 
 
 
 struct qli_nod;
 
-/* Context node */
+// Context node 
 
 typedef enum {
     CTX_RELATION,
@@ -100,59 +100,59 @@ typedef enum {
 
 struct qli_ctx {
     blk				ctx_header;
-    CTX_T			ctx_type;		/* Type of context */
-    qli_ctx*		ctx_source;		/* Source context for MODIFY */
-    qli_ctx*		ctx_primary;	/* Primary context */
-    qli_symbol*		ctx_symbol;		/* Context symbol, if any */
-    struct qli_rel*	ctx_relation;	/* Relation of context */
-    qli_nod*		ctx_stream;		/* Stream of context */
-    struct qli_fld*	ctx_variable;	/* Variable reference */
-    qli_req*		ctx_request;	/* Request block */
-    struct qli_msg*	ctx_message;	/* Message for data */
-    qli_nod*		ctx_rse;		/* RSE node for root context */
-    qli_nod*		ctx_sub_rse;	/* RSE node aggregate */
-    qli_ctx*		ctx_parent;		/* Parent context for map */
-    struct qli_map*	ctx_map;		/* Map items, if any */
-    USHORT			ctx_context;	/* Context in request */
+    CTX_T			ctx_type;		// Type of context 
+    qli_ctx*		ctx_source;		// Source context for MODIFY 
+    qli_ctx*		ctx_primary;	// Primary context 
+    qli_symbol*		ctx_symbol;		// Context symbol, if any 
+    struct qli_rel*	ctx_relation;	// Relation of context 
+    qli_nod*		ctx_stream;		// Stream of context 
+    struct qli_fld*	ctx_variable;	// Variable reference 
+    qli_req*		ctx_request;	// Request block 
+    struct qli_msg*	ctx_message;	// Message for data 
+    qli_nod*		ctx_rse;		// RSE node for root context 
+    qli_nod*		ctx_sub_rse;	// RSE node aggregate 
+    qli_ctx*		ctx_parent;		// Parent context for map 
+    struct qli_map*	ctx_map;		// Map items, if any 
+    USHORT			ctx_context;	// Context in request 
 };
 
-/* Aggregate/union map block */
+// Aggregate/union map block 
 
 struct qli_map {
     blk			map_header;
-	qli_map*	map_next;			/* Next map in item */
-    qli_nod*	map_node;			/* Value for map item */
-    USHORT		map_position;		/* Position in map */
+	qli_map*	map_next;			// Next map in item 
+    qli_nod*	map_node;			// Value for map item 
+    USHORT		map_position;		// Position in map 
 };
 
-/* Message block */                                       
+// Message block                                        
 
 struct qli_msg {
     blk			msg_header;
-    qli_req*	msg_request;		/* Parent request */
-    qli_ctx*	msg_context;		/* Contexts in message */
-    struct qli_msg* msg_next;		/* Next message in request */
-    struct qli_par* msg_parameters;	/* Field instances */
-    USHORT		msg_number;			/* Message number */
-    USHORT		msg_length;			/* Message length */
-    USHORT		msg_parameter;		/* Next parameter number */
-    UCHAR*		msg_buffer;			/* Message buffer */
+    qli_req*	msg_request;		// Parent request 
+    qli_ctx*	msg_context;		// Contexts in message 
+    struct qli_msg* msg_next;		// Next message in request 
+    struct qli_par* msg_parameters;	// Field instances 
+    USHORT		msg_number;			// Message number 
+    USHORT		msg_length;			// Message length 
+    USHORT		msg_parameter;		// Next parameter number 
+    UCHAR*		msg_buffer;			// Message buffer 
 };
 
-/* Parameter block */
+// Parameter block 
 
 struct qli_par {
 	blk			par_header;
-	dsc			par_desc;			/* Value descriptor */
-	qli_par*	par_next;			/* Next par block in context */
-	qli_msg*	par_message;		/* Parent message */
-	qli_nod*	par_value;			/* Value */
-	USHORT		par_parameter;		/* Parameter number */
-	USHORT		par_offset;			/* Offset of parameter in message */
-	qli_par*	par_missing;		/* Parameter block for missing value */
+	dsc			par_desc;			// Value descriptor 
+	qli_par*	par_next;			// Next par block in context 
+	qli_msg*	par_message;		// Parent message 
+	qli_nod*	par_value;			// Value 
+	USHORT		par_parameter;		// Parameter number 
+	USHORT		par_offset;			// Offset of parameter in message 
+	qli_par*	par_missing;		// Parameter block for missing value 
 };
 
-/* Print item block */
+// Print item block 
 
 typedef enum itm_t
     {
@@ -170,10 +170,10 @@ struct qli_print_item {
     blk			itm_header;
     qli_nod*	itm_value;
     const TEXT*	itm_edit_string;
-    struct pics*	itm_picture;	/* picture string block */
+    struct pics*	itm_picture;	// picture string block 
     const TEXT*	itm_query_header;
     ITM_T		itm_type;
-    USHORT		itm_flags;			/* Misc flags and crud */
+    USHORT		itm_flags;			// Misc flags and crud 
     UCHAR		itm_dtype;
     UCHAR		itm_sub_type;
     USHORT		itm_print_offset;
@@ -181,73 +181,73 @@ struct qli_print_item {
     USHORT		itm_header_offset;
     USHORT		itm_header_length;
     USHORT		itm_header_segments;
-    USHORT		itm_count;			/* Number of lines to skip */
-    USHORT		itm_column;			/* Logical column number */
+    USHORT		itm_count;			// Number of lines to skip 
+    USHORT		itm_column;			// Logical column number 
     FRBRD*		itm_stream;
-    USHORT		itm_kanji_fragment;	/* JPN: last kanji on line border */
-    ISC_STATUS	itm_blob_status;	/* JPN: status of the last blob fetch */
+    USHORT		itm_kanji_fragment;	// JPN: last kanji on line border 
+    ISC_STATUS	itm_blob_status;	// JPN: status of the last blob fetch 
 };
 
-#define ITM_overlapped	1			/* Overlapped by another item */
+#define ITM_overlapped	1			// Overlapped by another item 
 
-/* Print Control Block */
+// Print Control Block 
 
 struct qli_prt {
     blk		prt_header;
-    struct file*	prt_file;		/* IB_FILE pointer */
-    struct qli_rpt*	prt_report;		/* Report block (if report) */
-    void	(*prt_new_page)(qli_prt*, bool);	/* New page routine, if any */
+    struct file*	prt_file;		// IB_FILE pointer 
+    struct qli_rpt*	prt_report;		// Report block (if report) 
+    void	(*prt_new_page)(qli_prt*, bool);	// New page routine, if any 
     USHORT	prt_lines_per_page;
     SSHORT	prt_lines_remaining;
     USHORT	prt_page_number;
 };
 
-/* General node blocks */
+// General node blocks 
 
 struct qli_nod {
     blk			nod_header;
-    NOD_T		nod_type;		/* Type of node */
-    dsc			nod_desc;		/* Descriptor */
-    qli_par*	nod_import;		/* To pass random value */
-    qli_par*	nod_export;		/* To pass random value */
-    SSHORT		nod_count;		/* Number of arguments */
+    NOD_T		nod_type;		// Type of node 
+    dsc			nod_desc;		// Descriptor 
+    qli_par*	nod_import;		// To pass random value 
+    qli_par*	nod_export;		// To pass random value 
+    SSHORT		nod_count;		// Number of arguments 
     UCHAR		nod_flags;
-    qli_nod* 	nod_arg[1];		/* If you change this change blk.h too */
+    qli_nod* 	nod_arg[1];		// If you change this change blk.h too 
 };
 
-#define NOD_local	1		/* locally computed expression */
+#define NOD_local	1		// locally computed expression 
 #define NOD_remote	2
-#define NOD_parameter2	4		/* generate a parameter2 if field */
+#define NOD_parameter2	4		// generate a parameter2 if field 
 #define nod_partial	8
 #define nod_comparison 	16
-#define nod_date	32		/* node is a date operation, regardless */
+#define nod_date	32		// node is a date operation, regardless 
 
-/* Execution node positions */
+// Execution node positions 
 
-#define e_fld_field	0		/* field block */
-#define e_fld_context	1		/* context for field */
-#define e_fld_reference	2		/* points to parameter */
-#define e_fld_subs	3		/* subscripts */
+#define e_fld_field	0		// field block 
+#define e_fld_context	1		// context for field 
+#define e_fld_reference	2		// points to parameter 
+#define e_fld_subs	3		// subscripts 
 #define e_fld_count	4
 
-#define e_for_request	0		/* Request to be started */
-#define e_for_send	1		/* Message to be sent */
-#define e_for_receive	2		/* Message to be received */
-#define e_for_eof	3		/* End of file parameter */
+#define e_for_request	0		// Request to be started 
+#define e_for_send	1		// Message to be sent 
+#define e_for_receive	2		// Message to be received 
+#define e_for_eof	3		// End of file parameter 
 #define e_for_rse	4
 #define e_for_statement	5
 #define e_for_count	6
 
-#define e_itm_value	0		/* Value of print item */
-#define e_itm_edit_string 1		/* Edit string, if any */
-#define e_itm_header	2		/* Query header, if any */
+#define e_itm_value	0		// Value of print item 
+#define e_itm_edit_string 1		// Edit string, if any 
+#define e_itm_header	2		// Query header, if any 
 #define e_itm_count	3
 
-#define e_rse_first	0		/* FIRST clause, if any */
-#define e_rse_boolean	1		/* Boolean clause, if any */
-#define e_rse_sort	2		/* Sort clause, if any */
-#define e_rse_reduced	3		/* Reduced clause, if any */
-#define e_rse_context	4		/* Context block */
+#define e_rse_first	0		// FIRST clause, if any 
+#define e_rse_boolean	1		// Boolean clause, if any 
+#define e_rse_sort	2		// Sort clause, if any 
+#define e_rse_reduced	3		// Reduced clause, if any 
+#define e_rse_context	4		// Context block 
 #define e_rse_group_by	5
 #define e_rse_having	6
 #define e_rse_join_type	7
@@ -256,16 +256,16 @@ struct qli_nod {
 #endif
 #define e_rse_count	9
 
-#define e_prt_list	0		/* List of print items */
-#define e_prt_file_name	1		/* Output file name */
-#define e_prt_output	2		/* Output file */
-#define e_prt_header	3		/* Header to be printed, if any */
+#define e_prt_list	0		// List of print items 
+#define e_prt_file_name	1		// Output file name 
+#define e_prt_output	2		// Output file 
+#define e_prt_header	3		// Header to be printed, if any 
 #define e_prt_count	4
 
-#define e_prm_prompt	0		/* Prompt string, if any */
-#define e_prm_string	1		/* String node for data */
-#define e_prm_next	2		/* Next prompt in statement */
-#define e_prm_field	3		/* Prototype field, if known */
+#define e_prm_prompt	0		// Prompt string, if any 
+#define e_prm_string	1		// String node for data 
+#define e_prm_next	2		// Next prompt in statement 
+#define e_prm_field	3		// Prototype field, if known 
 #define e_prm_count	4
 
 #define e_sto_context	0
@@ -277,22 +277,22 @@ struct qli_nod {
 #define e_asn_to	0
 #define e_asn_from	1
 #define e_asn_initial	2
-#define e_asn_valid	3		/* Always second-to-last */
+#define e_asn_valid	3		// Always second-to-last 
 #define e_asn_count	4
 
 #define e_mod_send	0
-#define e_mod_statement	1		/* Sub-statement */
-#define e_mod_request	2		/* Parent request for statement */
+#define e_mod_statement	1		// Sub-statement 
+#define e_mod_request	2		// Parent request for statement 
 #define e_mod_count	3
 
 #define e_era_context	0
-#define e_era_request	1		/* Parent request for erase */
-#define e_era_message	2		/* Message to be sent, if any */
+#define e_era_request	1		// Parent request for erase 
+#define e_era_message	2		// Message to be sent, if any 
 #define e_era_count	3
 
-#define e_any_request	0		/* Request to be started */
-#define e_any_send	1		/* Message to be sent */
-#define e_any_receive	2		/* Message to be received */
+#define e_any_request	0		// Request to be started 
+#define e_any_send	1		// Message to be sent 
+#define e_any_receive	2		// Message to be received 
 #define e_any_rse	3
 #define e_any_count	4
 
@@ -323,14 +323,14 @@ struct qli_nod {
 #define e_fmt_picture	2
 #define e_fmt_count	3
 
-/* Statistical expression */
+// Statistical expression 
 
 #define e_stt_rse	0
 #define e_stt_value	1
 #define e_stt_default	2
-#define e_stt_request	3			/* Request to be started */
-#define e_stt_send	4			/* Message to be sent */
-#define e_stt_receive	5			/* Message to be received */
+#define e_stt_request	3			// Request to be started 
+#define e_stt_send	4			// Message to be sent 
+#define e_stt_receive	5			// Message to be received 
 #define e_stt_count	6
 
 #define e_map_context	0
@@ -359,16 +359,16 @@ struct qli_nod {
 
 #define e_fun_args		0
 #define e_fun_function		1
-#define e_fun_request		2			/* Request to be started */
-#define e_fun_send		3			/* Message to be sent */
-#define e_fun_receive		4			/* Message to be received */
+#define e_fun_request		2			// Request to be started 
+#define e_fun_send		3			// Message to be sent 
+#define e_fun_receive		4			// Message to be received 
 #define e_fun_count		5
 
 #define e_syn_statement		0
 #define e_syn_send		1
 #define e_syn_count		2
 
-/* A Program global or two */
+// A Program global or two 
 
 #ifdef REQUESTS_MAIN
 #define EXTERN
@@ -376,7 +376,7 @@ struct qli_nod {
 #define EXTERN	extern
 #endif
 
-EXTERN qli_req*	QLI_requests;			/* Requests in statement */
+EXTERN qli_req*	QLI_requests;			// Requests in statement 
 
 #undef EXTERN
 

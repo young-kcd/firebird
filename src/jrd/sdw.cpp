@@ -60,7 +60,7 @@ static bool check_for_file(const SCHAR*, USHORT);
 static void check_if_got_ast(struct jrd_file*);
 #endif
 static void copy_header(void);
-static void update_dbb_to_sdw(struct dbb *);
+static void update_dbb_to_sdw(Database*);
 
 
 void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
@@ -76,7 +76,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!ISC_verify_database_access(file_name)) {
@@ -123,7 +123,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Find the file to be extended */
 
@@ -297,7 +297,7 @@ void SDW_check(void)
  *	be deleted or shut down.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	TDBB tdbb = GET_THREAD_DATA;
 
 /* first get rid of any shadows that need to be 
@@ -365,7 +365,7 @@ bool SDW_check_conditional(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* first get rid of any shadows that need to be 
@@ -429,7 +429,7 @@ void SDW_close(void)
  *	a database.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 		PIO_close(shadow->sdw_file);
@@ -451,7 +451,7 @@ void SDW_dump_pages(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	gds__log("conditional shadow dumped for database %s",
 			 dbb->dbb_file->fil_string);
 	const SLONG max = PAG_last_page();
@@ -532,7 +532,7 @@ void SDW_get_shadows(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* unless we have one, get a shared lock to ensure that we don't miss any
@@ -579,7 +579,7 @@ void SDW_init(bool activate, bool delete_)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* set up the lock block for synchronizing addition of new shadows */
@@ -636,7 +636,7 @@ bool SDW_lck_update(SLONG sdw_update_flags)
  *  	Update the data with sdw_update_flag passed to the function
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	lck* lock = dbb->dbb_shadow_lock;
 	if (!lock)
 		return false;
@@ -679,7 +679,7 @@ void SDW_notify(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* get current shadow lock count from database header page --
@@ -730,7 +730,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	if (file != dbb->dbb_file)
 		return true;
@@ -850,7 +850,7 @@ void SDW_shutdown_shadow(Shadow* shadow)
  *	Stop shadowing to a given shadow number.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 /* find the shadow block and delete it from linked list */
 
@@ -898,7 +898,7 @@ void SDW_start(
 	volatile USHORT header_fetched = 0;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* check that this shadow has not already been started,
    (unless it is marked as invalid, in which case it may
@@ -1088,7 +1088,7 @@ int SDW_start_shadowing(void* ast_object)
  *	new shadow files before doing the next physical write.
  *
  **************************************/
-	DBB new_dbb = reinterpret_cast<DBB>(ast_object);
+	Database* new_dbb = reinterpret_cast<Database*>(ast_object);
 
 	lck* lock = new_dbb->dbb_shadow_lock;
 	if (lock->lck_physical != LCK_SR)
@@ -1135,7 +1135,7 @@ static void activate_shadow(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	gds__log("activating shadow file %s", dbb->dbb_file->fil_string);
@@ -1168,7 +1168,7 @@ static Shadow* allocate_shadow(
  *	the fields properly.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	Shadow* shadow = FB_NEW(*dbb->dbb_permanent) Shadow();
 	shadow->sdw_file = shadow_file;
@@ -1216,7 +1216,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	try {
 //  This use of PIO_open is NOT checked against DatabaseAccess configuration
@@ -1248,7 +1248,7 @@ static void check_if_got_ast(jrd_file* file)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	lck* lock = dbb->dbb_shadow_lock;
@@ -1280,7 +1280,7 @@ static void copy_header(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* get the database header page and write it out --
@@ -1293,7 +1293,7 @@ static void copy_header(void)
 }
 
 
-static void update_dbb_to_sdw(DBB dbb)
+static void update_dbb_to_sdw(Database* dbb)
 {
 /**************************************
  *

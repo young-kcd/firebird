@@ -80,7 +80,7 @@ void HELP_fini(void)
 }
 
 
-void HELP_help( SYN node)
+void HELP_help( qli_syntax* node)
 {
 /**************************************
  *

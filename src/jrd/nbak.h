@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.h,v 1.8 2004-03-01 03:35:12 skidder Exp $
+ *  $Id: nbak.h,v 1.9 2004-03-07 07:58:41 robocop Exp $
  *
  */
  
@@ -79,7 +79,7 @@ typedef Firebird::BePlusTree<AllocItem, ULONG, MemoryPool, AllocItem> AllocItemT
 class BackupManager {
 public:
 	// Subsystem initialization
-	BackupManager(class dbb* _database, int ini_state);
+	BackupManager(class Database* _database, int ini_state);
 	// Release locks in response to shutdown AST
 	void shutdown_locks() throw();
 	// Subsystem finalization
@@ -147,7 +147,7 @@ public:
 	}
 #endif
 private:
-	class dbb* database;
+	class Database* database;
 	class jrd_file* diff_file;
 	AllocItemTree* alloc_table; // Cached allocation table of pages in difference file
 	volatile SATOM backup_state;

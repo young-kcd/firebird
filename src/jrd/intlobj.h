@@ -40,8 +40,7 @@ typedef int LONG;
 typedef signed int SLONG;
 #endif
 
-typedef SSHORT(*FPTR_short) ();
-typedef USHORT(*FPTR_SHORT) ();
+typedef USHORT (*FPTR_SHORT) ();
 
 typedef SSHORT CHARSET_ID;
 typedef SSHORT COLLATE_ID;
@@ -66,7 +65,19 @@ typedef struct intl_blk {
     USHORT blk_length;
 } intl_blk;
 
-typedef unsigned short(*pfn_INTL_init)(struct texttype*, short, short);
+struct texttype; // forward decl for the fc signatures before the struct itself.
+struct csconvert;
+
+typedef USHORT (*pfn_INTL_init)(texttype*, USHORT, USHORT);
+typedef USHORT (*pfn_INTL_keylength)(texttype*, USHORT);
+// Last param is bool, but since it's a C interface, I left it as USHORT.
+typedef USHORT (*pfn_INTL_str2key)(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
+typedef SSHORT (*pfn_INTL_compare)(texttype*, USHORT, const UCHAR*, USHORT, const UCHAR*);
+typedef USHORT (*pfn_INTL_ch_case)(texttype*, UCHAR ch);
+typedef SSHORT (*pfn_INTL_str2upper)(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*);
+typedef USHORT (*pfn_INTL_2wc)(texttype*, UCS2_CHAR*, USHORT, const UCHAR*, USHORT, SSHORT*, USHORT*);
+
+typedef SSHORT (*pfn_INTL_mb2wc)(texttype*, UCS2_CHAR*, const UCHAR*, USHORT);
 
 typedef struct texttype {
 	// DATA THAT IS USED BY BOTH ENGINE AND DRIVERS --------------------------------
@@ -74,7 +85,7 @@ typedef struct texttype {
 	USHORT texttype_version;	/* version ID of object */
 	USHORT texttype_flags;		/* miscellanous flags */
 	TTYPE_ID texttype_type;		/* Interpretation ID */
-	const ASCII *texttype_name;
+	const ASCII* texttype_name;
 	CHARSET_ID texttype_character_set;	/* ID of base character set */
 	SSHORT texttype_country;	/* ID of base country values */
 	BYTE texttype_bytes_per_char;	/* max bytes per character */
@@ -89,17 +100,14 @@ typedef struct texttype {
 	//\\ END OF INTL PUBLIC DATA ---------------------------------------------------
 
 	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------
-	FPTR_SHORT texttype_fn_init;
-	FPTR_SHORT texttype_fn_key_length;
-	// CVC: Consider giving it the correct signature and not one that demands
-	// lots of ugly casts. The signature appears to be:
-	// <USHORT(*)(TEXTTYPE, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
-	FPTR_SHORT texttype_fn_string_to_key;
-	FPTR_short texttype_fn_compare;
-	FPTR_SHORT texttype_fn_to_upper;	/* convert one ch to uppercase */
-	FPTR_SHORT texttype_fn_to_lower;	/* One ch to lowercase */
-	FPTR_short texttype_fn_str_to_upper;	/* Convert string to uppercase */
-	FPTR_SHORT texttype_fn_to_wc;	/* convert string to wc */
+	pfn_INTL_init		texttype_fn_init;
+	pfn_INTL_keylength	texttype_fn_key_length;
+	pfn_INTL_str2key	texttype_fn_string_to_key;
+	pfn_INTL_compare	texttype_fn_compare;
+	pfn_INTL_ch_case	texttype_fn_to_upper;	/* convert one ch to uppercase */
+	pfn_INTL_ch_case	texttype_fn_to_lower;	/* One ch to lowercase */
+	pfn_INTL_str2upper	texttype_fn_str_to_upper;	/* Convert string to uppercase */
+	pfn_INTL_2wc		texttype_fn_to_wc;	/* convert string to wc */
 	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
@@ -111,7 +119,7 @@ typedef struct texttype {
 	//\\ END OF INTERNAL FUNCTIONS -------------------------------------------------
 
 	// DRIVER API FUNCTIONS. Called by the engine ----------------------------------	
-	FPTR_short texttype_fn_mbtowc;	/* get next character */
+	pfn_INTL_mb2wc		texttype_fn_mbtowc;	/* get next character */
 	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
     // DATA USED BY COLLATION DRIVERS. Never used by engine directly ---------------
@@ -146,19 +154,21 @@ typedef struct texttype {
 
 
 
+typedef USHORT (*pfn_INTL_convert)(csconvert*, UCHAR*, USHORT,
+	const UCHAR*, USHORT, SSHORT*, USHORT*);
 
 typedef struct csconvert {
 	struct intl_blk csconvert_blk;
 	USHORT csconvert_version;
 	USHORT csconvert_flags;
 	SSHORT csconvert_id;
-	ASCII *csconvert_name;
+	const ASCII* csconvert_name;
 	CHARSET_ID csconvert_from;
 	CHARSET_ID csconvert_to;
-	FPTR_SHORT csconvert_convert;
-	BYTE *csconvert_datatable;
-	BYTE *csconvert_misc;
-	ULONG *csconvert_unused[2];
+	pfn_INTL_convert csconvert_convert;
+	const BYTE* csconvert_datatable;
+	const BYTE* csconvert_misc;
+	ULONG* csconvert_unused[2];
 } *CSCONVERT;
 
 /* values for csconvert_flags */
@@ -176,6 +186,7 @@ typedef struct csconvert {
 
 
 
+typedef USHORT (*pfn_well_formed)(const UCHAR*, USHORT);
 
 typedef struct charset
 {
@@ -183,16 +194,16 @@ typedef struct charset
 	USHORT charset_version;
 	USHORT charset_flags;
 	CHARSET_ID charset_id;
-	const ASCII *charset_name;
+	const ASCII* charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;
 	BYTE charset_space_length;
-	BYTE *charset_space_character;
+	const BYTE* charset_space_character;
 
 	/* Must be aligned */
-	FPTR_SHORT charset_well_formed;
-	struct csconvert charset_to_unicode;
-	struct csconvert charset_from_unicode;
+	pfn_well_formed	charset_well_formed;
+	csconvert		charset_to_unicode;
+	csconvert		charset_from_unicode;
 
 	VEC charset_converters;
 	VEC charset_collations;

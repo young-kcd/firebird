@@ -168,21 +168,17 @@ void EXE_create_database( DBB dbb)
  *	Create a new database.
  *
  **************************************/
-	TEXT dpb[128], *d, *p;
-	USHORT page_size, dpb_length;
-	USHORT len;
-	ULONG llen;
-	SLONG log, part_offset;
-	SCHAR db_info_buffer[512], cur_log[512];
-	SLONG ods_version;
 
 /* Generate a dpb for attempting to attach to, and
    later to create, the specified database. */
 
-	dpb_length = 0;
-	d = dpb;
+	USHORT dpb_length = 0;
+	TEXT dpb[128];
+	TEXT* d = dpb;
 	*d++ = isc_dpb_version1;
 
+	TEXT* p;
+	
 	if (p = DDL_default_user) {
 		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
@@ -235,13 +231,16 @@ void EXE_create_database( DBB dbb)
 /* add the specified page size to the already defined dpb */
 
 	if (dbb->dbb_page_size) {
-		page_size = MAX(dbb->dbb_page_size, 1024);
+		const USHORT page_size = MAX(dbb->dbb_page_size, 1024);
 		*d++ = isc_dpb_page_size;
 		*d++ = 2;
 		*d++ = page_size;
 		*d++ = page_size >> 8;
 		dpb_length = d - dpb;
 	}
+
+	USHORT len;
+	ULONG llen;
 
 	if (llen = dbb->dbb_chkptlen) {
 		*d++ = isc_dpb_wal_chkptlen;
@@ -287,7 +286,7 @@ void EXE_create_database( DBB dbb)
 
 	START_TRANSACTION;
 
-	ods_version = EXE_check_db_version(dbb);
+	const SLONG ods_version = EXE_check_db_version(dbb);
 
 	if (ods_version < DB_VERSION_DDL6)
 		DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
@@ -302,8 +301,10 @@ void EXE_create_database( DBB dbb)
 		if ((dbb->dbb_flags & DBB_log_default) ||
 			(dbb->dbb_logfiles) ||
 			(dbb->dbb_cache_file))
+		{
 			DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
 		// msg 32: database version is too old to modify: use GBAK first
+		}
 	}
 
 	if (dbb->dbb_files)
@@ -338,13 +339,14 @@ void EXE_create_database( DBB dbb)
 	if ((dbb->dbb_flags & DBB_log_default) || (dbb->dbb_logfiles)) {
 		/* setup enough information to drop log files created */
 
+		SCHAR db_info_buffer[512];
 		if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 							   sizeof(db_info_buffer), db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 				/* msg 327: error in getting write ahead log information */
 
-		log = 0;
-
+		SLONG log = 0, part_offset;
+		SCHAR cur_log[512];
 		wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 	}
 }
@@ -363,16 +365,12 @@ void EXE_drop_database( DBB dbb)
  *	its files.
  *
  **************************************/
-
-	FIL file;
-	TEXT dpb[128], *d, *p;
-	USHORT dpb_length;
-	SLONG log, part_offset;
-	SCHAR db_info_buffer[512], cur_log[512];
-
-	dpb_length = 0;
-	d = dpb;
+	USHORT dpb_length = 0;
+	TEXT dpb[128];
+	TEXT* d = dpb;
 	*d++ = isc_dpb_version1;
+
+	TEXT* p;
 
 	if (p = DDL_default_user) {
 		*d++ = isc_dpb_user_name;
@@ -408,22 +406,28 @@ void EXE_drop_database( DBB dbb)
 	ROLLBACK;
 	END_ERROR;
 
+	SCHAR db_info_buffer[512];
 	if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 						   sizeof(db_info_buffer), db_info_buffer))
 			DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 			/* msg 327: error in getting write ahead log information */
 
+	SLONG log, part_offset;
+	SCHAR cur_log[512];
 	wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
 	if (isc_detach_database(gds_status, &DB))
 		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);
 		/* msg 27: Couldn't release database */
 
-	for (file = dbb->dbb_files; file; file = file->fil_next)
-		if (unlink(file->fil_name->sym_name))
+	for (FIL file = dbb->dbb_files; file; file = file->fil_next)
+	{
+		if (unlink(file->fil_name->sym_name)) {
 			DDL_error_abort(NULL, 28, file->fil_name->sym_name, NULL,
 							NULL, NULL, NULL);
 			// msg 28: Could not delete file %s
+		}
+	}
 
 	if (unlink(dbb->dbb_name->sym_string))
 		DDL_error_abort(NULL, 28, dbb->dbb_name->sym_string, NULL, NULL,
@@ -448,8 +452,6 @@ void EXE_execute(void)
  *	give up quietly.
  *
  **************************************/
-	ACT action;
-
 	if (!DDL_actions)
 		return;
 
@@ -457,7 +459,7 @@ void EXE_execute(void)
 		DDL_error_abort(NULL, 33, NULL, NULL, NULL, NULL, NULL);
 		// msg 33: no database specified
 
-	for (action = DDL_actions; action; action = action->act_next)
+	for (ACT action = DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore)) {
 			DDL_line = action->act_line;
 			switch (action->act_type) {
@@ -622,8 +624,6 @@ void EXE_fini( DBB dbb)
  *	not errors have occurred.
  *
  **************************************/
-	SYM string;
-
 	if (DB) {
 		if (DDL_errors) {
 			if (dbb && (dbb->dbb_flags & DBB_create_database)) {
@@ -649,7 +649,7 @@ void EXE_fini( DBB dbb)
    Do the actual deletion here. */
 
 	while (files_to_delete) {
-		string = (SYM) DDL_pop(&files_to_delete);
+		SYM string = (SYM) DDL_pop(&files_to_delete);
 		unlink(string->sym_name);
 		gds__free(string);
 	}
@@ -668,17 +668,12 @@ void EXE_modify_database( DBB dbb)
  *	Modify an existing database.
  *
  **************************************/
-	TEXT dpb[128], *d, *p;
-	USHORT dpb_length, len;
-	ULONG llen;
-	FIL file, log_files;
-	SLONG log, part_offset;
-	SCHAR db_info_buffer[512], cur_log[512];
-	SLONG ods_version;
-
-	dpb_length = 0;
-	d = dpb;
+	USHORT dpb_length = 0;
+	TEXT dpb[128];
+	TEXT* d = dpb;
 	*d++ = isc_dpb_version1;
+
+	TEXT* p;
 
 	if (p = DDL_default_user) {
 		*d++ = isc_dpb_user_name;
@@ -699,6 +694,9 @@ void EXE_modify_database( DBB dbb)
 		*d++ = 1;
 		*d++ = 1;
 	}
+
+	USHORT len;
+	ULONG llen;
 
 	if (llen = dbb->dbb_chkptlen) {
 		*d++ = isc_dpb_wal_chkptlen;
@@ -745,7 +743,7 @@ void EXE_modify_database( DBB dbb)
 
 	START_TRANSACTION;
 
-	ods_version = EXE_check_db_version(dbb);
+	const SLONG ods_version = EXE_check_db_version(dbb);
 
 	if (ods_version < DB_VERSION_DDL6)
 		DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
@@ -758,8 +756,10 @@ void EXE_modify_database( DBB dbb)
 			(dbb->dbb_logfiles) ||
 			(dbb->dbb_flags && DBB_drop_log) ||
 			(dbb->dbb_cache_file) || (dbb->dbb_flags & DBB_drop_cache))
+		{
 			DDL_error_abort(NULL, 32, NULL, NULL, NULL, NULL, NULL);
 		// msg 32: database version is too old to modify: use GBAK first
+		}
 	}
 
 	dbb->dbb_handle = (SLONG*) DB;
@@ -768,16 +768,20 @@ void EXE_modify_database( DBB dbb)
 /* erase log files and commit transaction */
 
 	if (dbb->dbb_flags & DBB_drop_log) {
+		SCHAR db_info_buffer[512];
 		if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 							   sizeof(db_info_buffer), db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 				/* msg 327: error in getting write ahead log information */
 
-		log_files = NULL;
-		log = 0;
-
+		FIL log_files = NULL;
+		SLONG log = 0, part_offset;
+		SCHAR cur_log[512];
 		wal_info((const UCHAR*) db_info_buffer, &log, cur_log, &part_offset);
 
+		// There seems to be missing code here to chain files in "log_files"
+		// before they are deleted from the system table. Otherwise, the loop
+		// below doesn't make sense because "log_files" is always NULL.
 		FOR X IN RDB$LOG_FILES ERASE X;
 		END_FOR;
 		COMMIT ON_ERROR DDL_db_error(gds_status, 321, NULL, NULL, NULL, NULL, NULL);
@@ -786,7 +790,7 @@ void EXE_modify_database( DBB dbb)
 		END_ERROR;
 		START_TRANSACTION;
 
-		for (file = log_files; file; file = file->fil_next)
+		for (FIL file = log_files; file; file = file->fil_next)
 			if (unlink(file->fil_name->sym_name))
 				DDL_error_abort(NULL, 28, file->fil_name->sym_name, NULL,
 								NULL, NULL, NULL);
@@ -866,9 +870,8 @@ bool EXE_relation( DUDLEY_REL relation)
  *
  **************************************/
 	bool result = false;
-	SYM symbol;
 
-	symbol = relation->rel_name;
+	SYM symbol = relation->rel_name;
 
 	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ symbol->sym_string
 		result = true;
@@ -895,7 +898,6 @@ static void add_cache( DBB dbb)
  *	Add a shared cache file to database.  
  *
  **************************************/
-	FIL file;
 	bool result = false;
 
 	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
@@ -907,7 +909,7 @@ static void add_cache( DBB dbb)
 	if (result)
 		return;
 
-	file = dbb->dbb_cache_file;
+	FIL file = dbb->dbb_cache_file;
 
 	STORE FIL IN RDB$FILES 
 		MOVE_SYMBOL(file->fil_name, FIL.RDB$FILE_NAME);
@@ -940,11 +942,9 @@ static void add_field( DUDLEY_FLD field)
  *	Add a field to a relation.
  *
  **************************************/
-	DUDLEY_REL relation;
-	SYM source;
-
-	relation = field->fld_relation;
-	if (!(source = field->fld_source))
+	DUDLEY_REL relation = field->fld_relation;
+	SYM source = field->fld_source;
+	if (!source)
 		source = field->fld_name;
 
 	if (check_field(relation->rel_name, field->fld_name)) {
@@ -1215,10 +1215,9 @@ static void add_global_field( DUDLEY_FLD field)
  *	Add a field to a relation.
  *
  **************************************/
-	SYM name;
 	DSC desc;
 
-	name = field->fld_name;
+	SYM name = field->fld_name;
 
 	STORE X IN RDB$FIELDS X.RDB$SEGMENT_LENGTH.NULL = TRUE;
 	X.RDB$COMPUTED_BLR.NULL = TRUE;
@@ -1320,7 +1319,6 @@ static void add_index( DUDLEY_IDX index)
  *
  **************************************/
 	USHORT i;
-	USHORT size;
 	bool error = false;
 	bool if_any = false;
 
@@ -1343,7 +1341,7 @@ static void add_index( DUDLEY_IDX index)
 		return;
 	}
 
-	size = 0;
+	USHORT size = 0;
 	for (int pos = 0; pos < index->idx_count ; pos++)
 	{
 		SYM symbol = index->idx_field[pos];
@@ -1394,18 +1392,18 @@ static void add_index( DUDLEY_IDX index)
 	}
 	else
 		X.RDB$DESCRIPTION.NULL = TRUE;
-	END_STORE ON_ERROR if (gds_status[1] == isc_no_dup) {
-		DDL_err(47, index->idx_name->sym_string, NULL, NULL, NULL, NULL);
-		/* msg 47: index %s already exists */
-		return;
-	}
+	END_STORE
+	ON_ERROR
+		if (gds_status[1] == isc_no_dup) {
+			DDL_err(47, index->idx_name->sym_string, NULL, NULL, NULL, NULL);
+			/* msg 47: index %s already exists */
+			return;
+		}
 
-	{
 		DDL_db_error(gds_status, 48, index->idx_name->sym_string, NULL, NULL,
 					 NULL, NULL);
 		// msg 48: error creating index %s
 		return;
-	}
 	END_ERROR;
 
 /* if there wasn't an index record, clean up any orphan index segments */
@@ -1439,18 +1437,18 @@ static void add_log_files( DBB dbb)
  *
  **************************************/
 	FIL file, next;
-	SSHORT number;
 
 /* Reverse the order of files (parser left them backwards) */
 
 	for (file = dbb->dbb_logfiles, dbb->dbb_logfiles = NULL; file;
-		 file = next) {
+		 file = next)
+	{
 		next = file->fil_next;
 		file->fil_next = dbb->dbb_logfiles;
 		dbb->dbb_logfiles = file;
 	}
 
-	number = 0;
+	SSHORT number = 0;
 
 /* Add default values for file size */
 
@@ -1558,10 +1556,9 @@ static void add_security_class( SCL sec_class)
  *	Add a new security class.
  *
  **************************************/
-	SYM name;
 	bool if_any = false;
 
-	name = sec_class->scl_name;
+	SYM name = sec_class->scl_name;
 
 	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string 
 		if_any = true;
@@ -1597,9 +1594,7 @@ static void add_trigger( DUDLEY_TRG trigger)
  *	add a trigger for a relation in rdb$triggers.
  *
  **************************************/
-	DUDLEY_REL relation;
-
-	relation = trigger->trg_relation;
+	DUDLEY_REL relation = trigger->trg_relation;
 
 	FOR F IN RDB$RELATION_FIELDS CROSS V IN RDB$VIEW_RELATIONS WITH
 		F.RDB$RELATION_NAME = V.RDB$VIEW_NAME AND
@@ -1782,7 +1777,7 @@ static void add_view( DUDLEY_REL relation)
  **************************************/
 	DUDLEY_FLD field;
 	DUDLEY_REL target;
-	DUDLEY_NOD rse, contexts;
+	DUDLEY_NOD contexts;
 	DUDLEY_CTX context;
 	USHORT i;
 
@@ -1792,7 +1787,7 @@ static void add_view( DUDLEY_REL relation)
 		return;
 	}
 
-	rse = relation->rel_rse;
+	DUDLEY_NOD rse = relation->rel_rse;
 
 // Store the relation record proper
 
@@ -1922,18 +1917,14 @@ static void alloc_file_name( FIL * start_file, UCHAR * file_name)
  *	Add a file name only once. No duplicates.
  *
  **************************************/
-	SYM string;
-	FIL file;
-	FIL temp;
-
-	for (temp = *start_file; temp; temp = temp->fil_next)
+	for (FIL temp = *start_file; temp; temp = temp->fil_next)
 		if (!strcmp(temp->fil_name->sym_name, (char*) file_name))
 			return;
 
-	file = (FIL) DDL_alloc(sizeof(fil));
+	FIL file = (FIL) DDL_alloc(sizeof(fil));
 	file->fil_next = *start_file;
 	*start_file = file;
-	string = (SYM) DDL_alloc(SYM_LEN + strlen((char*) file_name));
+	SYM string = (SYM) DDL_alloc(SYM_LEN + strlen((char*) file_name));
 	strcpy(string->sym_name, (char*) file_name);
 	file->fil_name = string;
 }
@@ -1951,13 +1942,12 @@ static DUDLEY_FLD check_field( SYM relation, SYM field)
  *	Check to see if a field already exists in RFR.
  *
  **************************************/
-	SYM symbol;
-
 	FOR X IN RDB$RELATION_FIELDS WITH
 		X.RDB$RELATION_NAME EQ relation->sym_string AND
 		X.RDB$FIELD_NAME EQ field->sym_string
 		{
-			if (symbol = HSH_typed_lookup(X.RDB$FIELD_SOURCE, (USHORT) 0, SYM_global)) 
+			SYM symbol = HSH_typed_lookup(X.RDB$FIELD_SOURCE, (USHORT) 0, SYM_global);
+			if (symbol)
 				return (DUDLEY_FLD) symbol->sym_object;
 		} 
 	END_FOR;
@@ -2004,14 +1994,12 @@ static bool check_range(DUDLEY_FLD field)
  *	to be an illconsidered modification.
  *
  **************************************/
-	SLONG *range;
-	USHORT dims;
 	BASED ON RDB$FIELD_DIMENSIONS.RDB$FIELD_NAME name;
 	bool if_any = false;
 	bool match = false;
 
 	MOVE_SYMBOL(field->fld_name, name);
-	dims = field->fld_dimension;
+	const USHORT dims = field->fld_dimension;
 
 // existance: if neither is an array, life is good
 // else if there are dimensions they'd better match
@@ -2035,7 +2023,7 @@ static bool check_range(DUDLEY_FLD field)
 		return false;
 
 	if (if_any) {
-		range = field->fld_ranges;
+		const SLONG* range = field->fld_ranges;
 		FOR X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ name
 			SORTED BY ASCENDING X.RDB$DIMENSION
 			if ((*range++ != X.RDB$LOWER_BOUND) || (*range++ != X.RDB$UPPER_BOUND))
@@ -2172,11 +2160,10 @@ static void drop_field( DUDLEY_FLD field)
  *	erase the artificially named source field.
  *
  **************************************/
-	DUDLEY_REL relation;
 	bool error = false;
 	bool if_any = false;
 
-	relation = field->fld_relation;
+	DUDLEY_REL relation = field->fld_relation;
 
 	FOR X IN RDB$RELATION_FIELDS CROSS Y IN RDB$RELATION_FIELDS CROSS
 		Z IN RDB$VIEW_RELATIONS WITH
@@ -2262,10 +2249,9 @@ static void drop_function( FUNC function)
  *	Get rid of a function and its arguments.
  *
  **************************************/
-	TEXT *name;
 	bool if_any = false;
 
-	name = function->func_name->sym_string;
+	TEXT* name = function->func_name->sym_string;
 
 /* Clean out function argument first.  */
 
@@ -2354,10 +2340,9 @@ static void drop_index( DUDLEY_IDX index)
  *	Get rid of an index.
  *
  **************************************/
-	TEXT *name;
 	bool if_any = false;
 
-	name = index->idx_name->sym_string;
+	TEXT* name = index->idx_name->sym_string;
 
 /* Clean out index segments first.  */
 
@@ -2388,10 +2373,9 @@ static void drop_relation( DUDLEY_REL relation)
  *	Drop a relation, friends, and relatives.
  *
  **************************************/
-	TEXT *name;
 	bool if_any = false;
 
-	name = relation->rel_name->sym_string;
+	TEXT* name = relation->rel_name->sym_string;
 
 	FOR X IN RDB$VIEW_RELATIONS WITH X.RDB$RELATION_NAME EQ name
 		DDL_err(67, name, X.RDB$VIEW_NAME, NULL, NULL, NULL);
@@ -2463,10 +2447,9 @@ static void drop_security_class( SCL scl_class)
  *	Drop an existing security class name.
  *
  **************************************/
-	SYM name;
 	bool if_any = false;
 
-	name = scl_class->scl_name;
+	SYM name = scl_class->scl_name;
 
 	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string 
 		ERASE X;
@@ -2492,15 +2475,13 @@ static void drop_shadow( SLONG shadow_number)
  *	with the given shadow number.
  *
  **************************************/
-	SYM string;
-
 	dudley_lls* files = NULL;
 	dudley_lls* first_file = NULL;
 
 	FOR FIL IN RDB$FILES WITH
 		FIL.RDB$SHADOW_NUMBER EQ shadow_number 
 		ERASE FIL;
-		string = (SYM) DDL_alloc(SYM_LEN + strlen(FIL.RDB$FILE_NAME));
+		SYM string = (SYM) DDL_alloc(SYM_LEN + strlen(FIL.RDB$FILE_NAME));
 		strcpy(string->sym_name, FIL.RDB$FILE_NAME);
 		DDL_push((DUDLEY_NOD) string, &files);
 		if (!first_file)
@@ -2538,12 +2519,11 @@ static void drop_trigger( DUDLEY_TRG trigger)
  *	drop a trigger in rdb$triggers.
  *
  **************************************/
-	TEXT *name;
 	bool if_any = false;
 	bool others = false;
 	BASED_ON RDB$TRIGGERS.RDB$RELATION_NAME relation_name;
 
-	name = trigger->trg_name->sym_string;
+	TEXT* name = trigger->trg_name->sym_string;
 
 /* Clean out possible trigger messages first. */
 
@@ -2819,13 +2799,10 @@ static void get_global_fields(void)
  *	Get global fields for database.
  *
  **************************************/
-	DUDLEY_FLD field;
-	SYM symbol;
-
-	FOR X IN RDB$FIELDS 
-		field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
-		field->fld_name = symbol =
-			get_symbol(SYM_global, X.RDB$FIELD_NAME, (DUDLEY_CTX) field);
+	FOR X IN RDB$FIELDS
+		DUDLEY_FLD field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
+		SYM symbol = get_symbol(SYM_global, X.RDB$FIELD_NAME, (DUDLEY_CTX) field);
+		field->fld_name = symbol;
 		HSH_insert(symbol);
 		field->fld_dtype = X.RDB$FIELD_TYPE;
 		field->fld_length = X.RDB$FIELD_LENGTH;
@@ -2967,9 +2944,9 @@ static SYM get_symbol( enum sym_t type, TEXT * string, DUDLEY_CTX object)
 	symbol->sym_string = p = symbol->sym_name;
 
 	if (symbol->sym_length = l)
-		do
+		do {
 			*p++ = *string++;
-		while (--l);
+		} while (--l);
 
 	return symbol;
 }
@@ -3024,19 +3001,17 @@ static void get_udfs( DBB dbb)
  *	Pickup any user defined functions.
  *
  **************************************/
-	FUNC function;
-	FUNCARG arg;
-	SYM symbol;
-
 	FOR FUN IN RDB$FUNCTIONS CROSS ARG IN RDB$FUNCTION_ARGUMENTS WITH
 		FUN.RDB$FUNCTION_NAME EQ ARG.RDB$FUNCTION_NAME AND
 		FUN.RDB$RETURN_ARGUMENT EQ ARG.RDB$ARGUMENT_POSITION
-		function = (FUNC) DDL_alloc(sizeof(func));
+		FUNC function = (FUNC) DDL_alloc(sizeof(func));
 		function->func_database = dbb;
-		function->func_name = symbol =
+		SYM symbol =
 			get_symbol(SYM_function, FUN.RDB$FUNCTION_NAME, (DUDLEY_CTX) function);
+		function->func_name = symbol;
 		HSH_insert(symbol);
-		function->func_return = arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
+		FUNCARG arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
+		function->func_return = arg;
 		arg->funcarg_dtype = ARG.RDB$FIELD_TYPE;
 		arg->funcarg_scale = ARG.RDB$FIELD_SCALE;
 		arg->funcarg_length = ARG.RDB$FIELD_LENGTH;
@@ -3365,12 +3340,11 @@ static void modify_field( DUDLEY_FLD field)
  *	they'll still be null
  *
  **************************************/
-	SYM name;
 	bool if_any = false;
 	DUDLEY_REL relation;
 
 	relation = field->fld_relation;
-	name = field->fld_name;
+	SYM name = field->fld_name;
 
 	FOR FIRST 1 X IN RDB$RELATION_FIELDS WITH 
 		X.RDB$FIELD_NAME EQ name->sym_string AND 
@@ -3439,10 +3413,9 @@ static void modify_global_field( DUDLEY_FLD field)
  *	Change attributes of a global field.
  *
  **************************************/
-	SYM name;
 	bool if_any = false;
 
-	name = field->fld_name;
+	SYM name = field->fld_name;
 
 	FOR FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name->sym_string
 		MODIFY X USING 
@@ -3585,13 +3558,12 @@ static void modify_relation( DUDLEY_REL relation)
  *	system flag.
  *
  **************************************/
-	SYM name;
 	bool if_any = false;
 
 	if (!(relation->rel_flags & rel_marked_for_modify)) {
 		return;
 	}
-	name = relation->rel_name;
+	SYM name = relation->rel_name;
 
 	FOR FIRST 1 X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->sym_string 
 		MODIFY X USING 
@@ -3897,15 +3869,13 @@ static void store_acl( SCL scl_class, ISC_QUAD* blob_id)
  *
  **************************************/
 	TEXT buffer[4096];
-	USHORT length;
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *blob;
 
 /* Generate access control list */
 
-	length = GENERATE_acl(scl_class, (UCHAR*) buffer);
+	const USHORT length = GENERATE_acl(scl_class, (UCHAR*) buffer);
 
-	blob = create_blob(blob_id, 0, NULL);
+	FRBRD* blob = create_blob(blob_id, 0, NULL);
 
 	if (isc_put_segment(status_vector, &blob, length, buffer)) {
 		DDL_db_error(status_vector, 92, NULL, NULL, NULL, NULL, NULL);
@@ -3976,13 +3946,12 @@ static void store_query_header( DUDLEY_NOD node, ISC_QUAD* blob_id)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *blob;
 	USHORT bpb_length;
 	UCHAR bpb[20];
 
 	bpb_length = 0;
 
-	blob = create_blob(blob_id, bpb_length, bpb);
+	FRBRD* blob = create_blob(blob_id, bpb_length, bpb);
 
 	for (int pos = 0; pos < node->nod_count; pos++) {
 		const sym* symbol = (SYM) node->nod_arg[pos];
@@ -4023,7 +3992,8 @@ static void store_range( DUDLEY_FLD field)
 	END_FOR;
 
 	for (range = field->fld_ranges, n = 0; n < field->fld_dimension;
-		 range += 2, ++n) {
+		 range += 2, ++n)
+	{
 		STORE X IN RDB$FIELD_DIMENSIONS 
 			strcpy(X.RDB$FIELD_NAME, name);
 			X.RDB$DIMENSION = n;

@@ -205,7 +205,8 @@ namespace Firebird
 			smallStorage[0] = 0;
 		}
 		AbstractString(MemoryPool* p, const AbstractString& v) 
-			: StringAllocator(p) {
+			: StringAllocator(p)
+		{
 			memcpy(createStorage(v.length()), v.c_str(), v.length());
 		}
 

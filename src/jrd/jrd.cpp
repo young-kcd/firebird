@@ -366,18 +366,18 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// SERVER_SHUTDOWN
 #endif	// WIN_NT
 
-static DBB		init(TDBB, ISC_STATUS*, const TEXT*, bool);
+static Database*	init(TDBB, ISC_STATUS*, const TEXT*, bool);
 static ISC_STATUS	prepare(TDBB, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
 static ISC_STATUS	return_success(TDBB);
 static bool		rollback(TDBB, jrd_tra*, ISC_STATUS*, const bool);
 
-static void		shutdown_database(DBB, const bool);
+static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(const TEXT*, TEXT*);
 static void		purge_attachment(TDBB, ISC_STATUS*, ATT, const bool);
 
 static bool		initialized = false;
-static DBB		databases = NULL;
+static Database*		databases = NULL;
 #if defined(V4_THREADING) && !defined(SUPERSERVER)
 static MUTX_T	databases_mutex[1];
 #endif
@@ -457,7 +457,7 @@ static TDBB get_thread_data()
 	return (TDBB)p1;
 }
 
-inline static void CHECK_DBB(DBB dbb)
+inline static void CHECK_DBB(Database* dbb)
 {
 #ifdef DEV_BUILD
 	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
@@ -474,7 +474,7 @@ inline static void check_tdbb(TDBB tdbb)
 #endif	// DEV_BUILD
 }
 
-inline static DBB get_dbb()
+inline static Database* get_dbb()
 {
 	return get_thread_data()->tdbb_database;
 }
@@ -617,7 +617,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* Unless we're already attached, do some initialization */
 
-	DBB dbb = init(tdbb, user_status, expanded_name, true);
+	Database* dbb = init(tdbb, user_status, expanded_name, true);
 	if (!dbb) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
@@ -1485,7 +1485,7 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 /* Check out the database handle.  This is mostly code from
    the routine "check_database" */
 
-	DBB dbb;
+	Database* dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
@@ -1770,7 +1770,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
-	DBB dbb = init(tdbb, user_status, expanded_name, false);
+	Database* dbb = init(tdbb, user_status, expanded_name, false);
 	if (!dbb) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
@@ -2261,7 +2261,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 /* Check out the database handle.  This is mostly code from
    the routine "check_database" */
 
-	DBB dbb;
+	Database* dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
@@ -2388,7 +2388,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 /* Check out the database handle.  This is mostly code from
    the routine "check_database" */
 
-	DBB dbb;
+	Database* dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
@@ -2541,7 +2541,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 	}
 	JRD_SS_MUTEX_UNLOCK;
 
-	dbb::deleteDbb(dbb);
+	Database::deleteDbb(dbb);
 	tdbb->tdbb_database = NULL;
 	if (err) {
 		user_status[0] = isc_arg_gds;
@@ -2592,7 +2592,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
 		tdbb->tdbb_status_vector[0] = isc_arg_gds;
 		tdbb->tdbb_status_vector[2] = isc_arg_end;
-		DBB dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 	
 		if (blob->blb_flags & BLB_eof) {
 			JRD_restore_context();
@@ -2907,7 +2907,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	tdbb->tdbb_status_vector = user_status;
 	try
 	{
-		DBB dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		lck* lock = dbb->dbb_lock;
 		att* attachment = tdbb->tdbb_attachment;
 	
@@ -3678,7 +3678,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
  **************************************/
 	TEB* v;
 	struct tdbb thd_context;
-	DBB dbb;
+	Database* dbb;
 
 	api_entry_point_init(user_status);
 
@@ -4011,7 +4011,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 /* Make sure blocks look and feel kosher */
 
-	DBB dbb;
+	Database* dbb;
 	att* attachment = request->req_attachment;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
@@ -4092,7 +4092,7 @@ void JRD_blocked(ATT blocking, BTB * que)
  *
  **************************************/
 	TDBB tdbb = get_thread_data();
-	DBB  dbb  = tdbb->tdbb_database;
+	Database*  dbb  = tdbb->tdbb_database;
 
 /* Check for deadlock.  If there is one, complain */
 
@@ -4359,7 +4359,7 @@ BOOLEAN JRD_reschedule(TDBB tdbb, SLONG quantum, bool punt)
 
 /* If database has been shutdown then get out */
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 	if (attachment) {
 		if (dbb->dbb_ast_flags & DBB_shutdown &&
@@ -4498,7 +4498,7 @@ void JRD_unblock(BTB * que)
  **************************************/
 	BTB block;
 
-	DBB dbb = get_dbb();
+	Database* dbb = get_dbb();
 
 	while (block = *que) {
 		*que = block->btb_next;
@@ -4598,7 +4598,7 @@ static ISC_STATUS check_database(TDBB tdbb, ATT attachment, ISC_STATUS * user_st
 	SET_TDBB(tdbb);
 
 /* Make sure blocks look and feel kosher */
-	DBB dbb;
+	Database* dbb;
 	if (!attachment ||
 		(MemoryPool::blk_type(attachment) != type_att) ||
 		!(dbb = attachment->att_database) ||
@@ -4739,7 +4739,7 @@ static ISC_STATUS commit(
 		return error(user_status);
 	}
 	
-	DBB dbb;
+	Database* dbb;
 	
 	try {
 
@@ -4775,7 +4775,7 @@ static STR copy_string(const TEXT* ptr, const USHORT length)
  *	Copy a string to a string block.
  *
  **************************************/
-	DBB dbb = get_dbb();
+	Database* dbb = get_dbb();
 	STR string = FB_NEW_RPT(*dbb->dbb_permanent, length) str();
 
 	string->str_length = length;
@@ -4812,7 +4812,7 @@ static bool drop_files(const jrd_file* file)
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
 							   0);
-			DBB dbb = get_dbb();
+			Database* dbb = get_dbb();
 			gds__log_status(dbb->dbb_file->fil_string, status);
 		}
 	}
@@ -4882,7 +4882,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 	TDBB tdbb = get_thread_data();
 
 /* Decrement count of active threads in database */
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	if (dbb) {
 		--dbb->dbb_use_count;
 	}
@@ -4978,7 +4978,7 @@ static void get_options(const UCHAR*	dpb,
 	USHORT l;
 	SSHORT num_old_files = 0;
 
-	DBB dbb = get_dbb();
+	Database* dbb = get_dbb();
 
 	MOVE_CLEAR(options, (SLONG) sizeof(struct dpb));
 
@@ -5482,7 +5482,7 @@ static BOOLEAN handler_NT(SSHORT controlAction)
 #endif
 
 
-static DBB init(TDBB	tdbb,
+static Database* init(TDBB	tdbb,
 				ISC_STATUS*	user_status,
 				const TEXT*	expanded_filename,
 				bool attach_flag)
@@ -5538,26 +5538,26 @@ static DBB init(TDBB	tdbb,
 
 /* Check to see if the database is already actively attached */
 
-	DBB dbb_;
-	for (dbb_ = databases; dbb_; dbb_ = dbb_->dbb_next)
+	Database* dbb;
+	for (dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
 		const str* string;
-		if (!(dbb_->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
+		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
 #ifndef SUPERSERVER
-			!(dbb_->dbb_ast_flags & DBB_shutdown &&
-			  dbb_->dbb_ast_flags & DBB_shutdown_locks) &&
+			!(dbb->dbb_ast_flags & DBB_shutdown &&
+			  dbb->dbb_ast_flags & DBB_shutdown_locks) &&
 #endif
-			(string = dbb_->dbb_filename) &&
+			(string = dbb->dbb_filename) &&
 			!strcmp(reinterpret_cast<const char*>(string->str_data),
 					expanded_filename))
 		{
-			return (attach_flag) ? dbb_ : NULL;
+			return (attach_flag) ? dbb : NULL;
 		}
 	}
 
-/* Clean up temporary DBB */
+/* Clean up temporary Database */
 
-	/* MOVE_CLEAR(&temp, (SLONG) sizeof(struct dbb)); */
+	/* MOVE_CLEAR(&temp, (SLONG) sizeof(Database)); */
 	THD_MUTEX_INIT_N(temp_mutx, DBB_MUTX_max);
 #ifdef V4_THREADING
 	V4_RW_LOCK_INIT_N(temp_wlck, DBB_WLCK_max);
@@ -5573,17 +5573,17 @@ static DBB init(TDBB	tdbb,
 #ifdef SUPERSERVER
 	int cur_perm = 0, max_perm = 0;
 	JrdMemoryPool* perm = JrdMemoryPool::createPool(&cur_perm, &max_perm);
-	dbb_ = dbb::newDbb(*perm);
-	perm->moveStats((int*)&dbb_->dbb_current_memory, (int*)&dbb_->dbb_max_memory);
+	dbb = Database::newDbb(*perm);
+	perm->moveStats((int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
 #else
 	JrdMemoryPool* perm = JrdMemoryPool::createPool();
-	dbb_ = dbb::newDbb(*perm);
+	dbb = Database::newDbb(*perm);
 #endif
 	//temp.blk_type = type_dbb;
-	dbb_->dbb_permanent = perm;
-	dbb_->dbb_mutexes = temp_mutx;
-	dbb_->dbb_rw_locks = temp_wlck;
-	tdbb->tdbb_database = dbb_;
+	dbb->dbb_permanent = perm;
+	dbb->dbb_mutexes = temp_mutx;
+	dbb->dbb_rw_locks = temp_wlck;
+	tdbb->tdbb_database = dbb;
 
 	ALL_init();
 
@@ -5592,25 +5592,25 @@ static DBB init(TDBB	tdbb,
 	V4_RW_LOCK_DESTROY_N(temp_wlck, DBB_WLCK_max);
 #endif
 
-	dbb_->dbb_next = databases;
-	databases = dbb_;
+	dbb->dbb_next = databases;
+	databases = dbb;
 
 	str* string =
-		FB_NEW_RPT(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max)) str();
+		FB_NEW_RPT(*dbb->dbb_permanent, THREAD_STRUCT_SIZE(MUTX_T, DBB_MUTX_max)) str();
 
-	dbb_->dbb_mutexes = (MUTX) THREAD_STRUCT_ALIGN(string->str_data);
-	THD_MUTEX_INIT_N(dbb_->dbb_mutexes, DBB_MUTX_max);
+	dbb->dbb_mutexes = (MUTX) THREAD_STRUCT_ALIGN(string->str_data);
+	THD_MUTEX_INIT_N(dbb->dbb_mutexes, DBB_MUTX_max);
 	string =
-		FB_NEW_RPT(*dbb_->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
-	dbb_->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
+		FB_NEW_RPT(*dbb->dbb_permanent, THREAD_STRUCT_SIZE(WLCK_T, DBB_WLCK_max)) str();
+	dbb->dbb_rw_locks = (WLCK) THREAD_STRUCT_ALIGN(string->str_data);
 #ifdef V4_THREADING
-	V4_RW_LOCK_INIT_N(dbb_->dbb_rw_locks, DBB_WLCK_max);
+	V4_RW_LOCK_INIT_N(dbb->dbb_rw_locks, DBB_WLCK_max);
 #endif
-	vec* vector = vec::newVector(*dbb_->dbb_permanent, irq_MAX);
-	dbb_->dbb_internal = vector;
-	dbb_->dbb_dyn_req = vector = vec::newVector(*dbb_->dbb_permanent, drq_MAX);
-	dbb_->dbb_flags |= DBB_exclusive;
-	dbb_->dbb_sweep_interval = SWEEP_INTERVAL;
+	vec* vector = vec::newVector(*dbb->dbb_permanent, irq_MAX);
+	dbb->dbb_internal = vector;
+	dbb->dbb_dyn_req = vector = vec::newVector(*dbb->dbb_permanent, drq_MAX);
+	dbb->dbb_flags |= DBB_exclusive;
+	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
 /* Initialize a number of subsystems */
 
@@ -5623,17 +5623,17 @@ static DBB init(TDBB	tdbb,
 	if (crypt_lib) {
 		Firebird::string encrypt_entrypoint(ENCRYPT);
 		Firebird::string decrypt_entrypoint(DECRYPT);
-		dbb_->dbb_encrypt =
-			(dbb::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
-		dbb_->dbb_decrypt =
-			(dbb::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
+		dbb->dbb_encrypt =
+			(Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
+		dbb->dbb_decrypt =
+			(Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
 
 	INTL_init(tdbb);
 
 	SecurityDatabase::initialize();
 
-	return dbb_;
+	return dbb;
 
 	}	// try
 	catch (const std::exception& ex) {
@@ -5669,14 +5669,14 @@ static ISC_STATUS prepare(TDBB		tdbb,
 		check_database(tdbb, transaction->tra_attachment, status_vector);
 		tdbb->tdbb_status_vector = status_vector;
 		TRA_prepare(tdbb, transaction, length, msg);
-		DBB dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 	}
 
 	}	// try
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		DBB dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		return status_vector[1];
 	}
@@ -5704,7 +5704,7 @@ static void release_attachment(ATT attachment)
  *
  **************************************/
 	TDBB tdbb = get_thread_data();
-	DBB  dbb  = tdbb->tdbb_database;
+	Database*  dbb  = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (!attachment) {
@@ -5819,7 +5819,7 @@ static ISC_STATUS return_success(TDBB tdbb)
 
 /* Decrement count of active threads in database */
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	if (dbb)
 		--dbb->dbb_use_count;
 
@@ -5890,14 +5890,14 @@ static bool rollback(TDBB	tdbb,
 		try {
 		tdbb->tdbb_status_vector = status_vector;
 		TRA_rollback(tdbb, transaction, retaining_flag);
-		DBB dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 
 		}	// try
 		catch (const std::exception& ex) {
 			Firebird::stuff_exception(status_vector, ex);
 			status_vector = local_status;
-			DBB dbb = tdbb->tdbb_database;
+			Database* dbb = tdbb->tdbb_database;
 			--dbb->dbb_use_count;
 			continue;
 		}
@@ -5929,7 +5929,7 @@ static void setup_NT_handlers()
 #endif
 
 
-static void shutdown_database(DBB dbb, const bool release_pools)
+static void shutdown_database(Database* dbb, const bool release_pools)
 {
 /**************************************
  *
@@ -5989,7 +5989,7 @@ static void shutdown_database(DBB dbb, const bool release_pools)
 		}
 	}
 
-	DBB* d_ptr;	// Intentionally left outside loop (HP/UX compiler)
+	Database** d_ptr;	// Intentionally left outside loop (HP/UX compiler)
 	for (d_ptr = &databases; *(d_ptr); d_ptr = &(*d_ptr)->dbb_next) {
 		if (*d_ptr == dbb) {
 			*d_ptr = dbb->dbb_next;
@@ -6022,7 +6022,7 @@ static void shutdown_database(DBB dbb, const bool release_pools)
 	}
 #endif
 	if (release_pools) {
-		dbb::deleteDbb(dbb);
+		Database::deleteDbb(dbb);
 		tdbb->tdbb_database = NULL;
 	}
 
@@ -6137,7 +6137,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
  * connections.  If buf is not NULL then copy all the database names
  * that will fit into it. */
 
-	for (DBB dbb = databases; dbb; dbb = dbb->dbb_next) {
+	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next) {
 #ifdef WIN_NT
 		/* Get drive letters for db files */
 
@@ -6338,8 +6338,8 @@ ULONG JRD_shutdown_all()
 		JRD_SS_MUTEX_LOCK;
 	}
 
-	DBB dbb_next;
-	for (DBB dbb = databases; dbb; dbb = dbb_next)
+	Database* dbb_next;
+	for (Database* dbb = databases; dbb; dbb = dbb_next)
 	{
 		dbb_next = dbb->dbb_next;
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
@@ -6413,7 +6413,7 @@ static void purge_attachment(TDBB		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = attachment->att_database;
+	Database* dbb = attachment->att_database;
 
 	if (!(dbb->dbb_flags & DBB_bugcheck)) {
 		/* Check for any pending transactions */

@@ -143,7 +143,7 @@ void PRO_copy_procedure(
 
 	if (!old_blob)
 		ERRQ_print_error(70, old_name, NULL, NULL, NULL, NULL);
-/* Msg 70 procedure \"%s\" is undefined */
+// Msg 70 procedure \"%s\" is undefined 
 
 	if (new_database != old_database)
 		PRO_setup(new_database);
@@ -412,7 +412,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 			ERRQ_print_error(71, name, database->dbb_symbol->sym_string, NULL,
 							 NULL, NULL);
 		}
-/* Msg 71 procedure \"%s\" is undefined in database %s */
+// Msg 71 procedure \"%s\" is undefined in database %s 
 	}
 	else
 		for (database = QLI_databases; database;
@@ -424,7 +424,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 
 	if (!blob)
 		ERRQ_print_error(72, name, NULL, NULL, NULL, NULL);
-/* Msg 72 procedure \"%s\" is undefined */
+// Msg 72 procedure \"%s\" is undefined 
 
 	LEX_procedure((dbb*)database, blob);
 	LEX_token();
@@ -575,14 +575,14 @@ void PRO_setup( DBB dbb)
 		IBERROR(77);
 // Msg 77 database handle required
 
-/* If we don't have a QLI$PROCEDURES relation, and can't get one, punt */
+// If we don't have a QLI$PROCEDURES relation, and can't get one, punt 
 
 	if (dbb->dbb_type == isc_info_db_impl_rdb_vms &&
 		!(dbb->dbb_flags & DBB_procedures))
 	{
 		IBERROR(78);
 	}
-/* Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases */
+// Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases 
 
 	DB = dbb->dbb_handle;
 
@@ -802,7 +802,7 @@ static void create_qli_procedures( DBB dbb)
 	{
 		PRO_rollback(dbb);
 		IBERROR(73);
-		/* Msg 73 Could not create QLI$PROCEDURE_NAME field */
+		// Msg 73 Could not create QLI$PROCEDURE_NAME field 
 	}
 
 	if (isc_ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl2),
@@ -810,7 +810,7 @@ static void create_qli_procedures( DBB dbb)
 	{
 		PRO_rollback(dbb);
 		IBERROR(74);
-		/* Msg 74 Could not create QLI$PROCEDURE field */
+		// Msg 74 Could not create QLI$PROCEDURE field 
 	}
 
 	if (isc_ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl3),
@@ -818,7 +818,7 @@ static void create_qli_procedures( DBB dbb)
 	{
 		PRO_rollback(dbb);
 		IBERROR(75);
-		/* Msg 75 Could not create QLI$PROCEDURES relation */
+		// Msg 75 Could not create QLI$PROCEDURES relation 
 	}
 
 	if (isc_ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl4),
@@ -826,7 +826,7 @@ static void create_qli_procedures( DBB dbb)
 	{
 		PRO_rollback(dbb);
 		IBERROR(409);
-		/* msg 409  Could not create QLI$PROCEDURES index */
+		// msg 409  Could not create QLI$PROCEDURES index 
 	}
 
 	dbb->dbb_flags |= DBB_procedures;

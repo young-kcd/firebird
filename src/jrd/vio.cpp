@@ -101,7 +101,7 @@ static void expunge(TDBB, RPB *, jrd_tra*, SLONG);
 static void garbage_collect(TDBB, RPB *, SLONG, LLS);
 static void garbage_collect_idx(TDBB, RPB *, RPB *, REC);
 #ifdef GARBAGE_THREAD
-static void THREAD_ROUTINE garbage_collector(DBB);
+static void THREAD_ROUTINE garbage_collector(Database*);
 #endif
 static void list_staying(TDBB, RPB *, LLS *);
 #ifdef GARBAGE_THREAD
@@ -199,7 +199,7 @@ void VIO_backout(TDBB tdbb, RPB * rpb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -425,7 +425,7 @@ void VIO_bump_count(TDBB tdbb, USHORT count_id, jrd_rel* relation, bool error)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1481,7 +1481,7 @@ void VIO_fini(TDBB tdbb)
  *	Shutdown the garbage collector thread.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_flags & DBB_garbage_collector)
 	{
@@ -1628,7 +1628,7 @@ REC VIO_gc_record(TDBB tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* This will require mutex synchronization for pre-emptive multithreading. */
@@ -1957,7 +1957,7 @@ void VIO_init(TDBB tdbb)
  *	Activate the garbage collector thread.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 
 	if (dbb->dbb_flags & DBB_read_only) {
@@ -2469,7 +2469,7 @@ REC VIO_record(TDBB tdbb, RPB * rpb, const fmt* format, JrdMemoryPool *pool)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2726,7 +2726,7 @@ BOOLEAN VIO_sweep(TDBB tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
@@ -3524,7 +3524,7 @@ static void garbage_collect_idx(
 
 
 #ifdef GARBAGE_THREAD
-static void THREAD_ROUTINE garbage_collector(DBB dbb)
+static void THREAD_ROUTINE garbage_collector(Database* dbb)
 {
 /**************************************
  *
@@ -3959,7 +3959,7 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
  *
  **************************************/
 
-	DBB dbb      = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	jrd_rel* relation = rpb->rpb_relation;
 
 /* If this is a large sequential scan then defer the release
@@ -4385,7 +4385,7 @@ static BOOLEAN purge(TDBB tdbb, RPB* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -4582,7 +4582,7 @@ static void update_in_place(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	rec* gc_rec = NULL;
 

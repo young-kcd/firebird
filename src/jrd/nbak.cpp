@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.21 2004-03-01 03:35:12 skidder Exp $
+ *  $Id: nbak.cpp,v 1.22 2004-03-07 07:58:41 robocop Exp $
  *
  */
 
@@ -360,7 +360,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
  *  will release the lock as soon it finishes
  *
  **************************************/
-	DBB new_dbb = static_cast<DBB>(ast_object);
+	Database* new_dbb = static_cast<Database*>(ast_object);
 	struct tdbb thd_context, *tdbb;
 
 	lck* lock = new_dbb->backup_manager->state_lock;
@@ -412,7 +412,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
  *  will release the lock as soon it finishes
  *
  **************************************/
-	DBB new_dbb = reinterpret_cast<DBB>(ast_object);
+	Database* new_dbb = static_cast<Database*>(ast_object);
 	struct tdbb thd_context, *tdbb;
 
 	lck* lock = new_dbb->backup_manager->alloc_lock;
@@ -463,7 +463,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
  *  will release the lock as soon it finishes
  *
  **************************************/
-	DBB new_dbb = static_cast<DBB>(ast_object);
+	Database* new_dbb = static_cast<Database*>(ast_object);
 	struct tdbb thd_context, *tdbb;
 	ISC_STATUS_ARRAY ast_status;
 
@@ -918,7 +918,7 @@ bool BackupManager::read_difference(ULONG diff_page, struct pag* page) throw()
 	return true;
 }
 	
-BackupManager::BackupManager(DBB _database, int ini_state) : 
+BackupManager::BackupManager(Database* _database, int ini_state) :
 	database(_database), diff_file(NULL), alloc_table(NULL), 
 	backup_state(ini_state), last_allocated_page(0),
 	current_scn(0), backup_pages(0), diff_pending_close(false)

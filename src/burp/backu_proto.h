@@ -26,5 +26,5 @@
 
 int	BACKUP_backup (const TEXT*, const TEXT*);
 
-#endif	/*  BURP_BACKU_PROTO_H  */
+#endif	//  BURP_BACKU_PROTO_H  
 

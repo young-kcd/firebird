@@ -29,14 +29,13 @@
 CHARSET_ID	INTL_charset(TDBB, USHORT, FPTR_ERROR);
 int			INTL_compare(TDBB, const struct dsc*, const struct dsc*, FPTR_ERROR);
 USHORT		INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR*, USHORT, CHARSET_ID,
-								BYTE*, USHORT, FPTR_ERROR);
+								const BYTE*, USHORT, FPTR_ERROR);
 CsConvert	INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
 int			INTL_convert_string(struct dsc*, const struct dsc*, FPTR_ERROR);
 int			INTL_data(const struct dsc*);
 int			INTL_data_or_binary(const struct dsc*);
 int			INTL_defined_type(TDBB, ISC_STATUS*, SSHORT);
-unsigned short	INTL_getch(TDBB, TextType*, SSHORT,
-											UCHAR**, USHORT*);
+UCS2_CHAR	INTL_getch(TDBB, TextType*, SSHORT, const UCHAR**, USHORT*);
 void		INTL_init(TDBB);
 USHORT		INTL_key_length(TDBB, USHORT, USHORT);
 CharSet		INTL_charset_lookup(TDBB tdbb, SSHORT parm1, ISC_STATUS* status);

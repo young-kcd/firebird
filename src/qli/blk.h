@@ -31,7 +31,7 @@ BLKDEF (type_fld, qli_fld, 1)
 BLKDEF (type_vcl, qli_vcl, sizeof (((qli_vcl*) NULL)->vcl_long[0]))
 BLKDEF (type_req, qli_req, 0)			// Request block
 BLKDEF (type_nod, qli_nod, sizeof(qli_nod*)) // sizeof (((qli_nod*) NULL)->nod_arg[0]))
-BLKDEF (type_syn, qli_nod, sizeof (((SYN) NULL)->syn_arg[0]))
+BLKDEF (type_syn, qli_nod, sizeof (((qli_syntax*) NULL)->syn_arg[0]))
 BLKDEF (type_lls, qli_lls, 0)			// linked list stack
 BLKDEF (type_str, qli_str, 1)			// random string block
 BLKDEF (type_tok, qli_tok, 1)			// token block

@@ -129,9 +129,9 @@ DATABASE DB = COMPILETIME "yachts.lnk";
 //  Print lengths of numeric values 
 
 #define MAXCHARSET_LENGTH  32	// CHARSET names 
-#define SHORT_LEN	7			/* NUMERIC (4,2) = -327.68 */
-#define LONG_LEN	12			/* NUMERIC (9,2) = -21474836.48 */
-#define INT64_LEN	21			/* NUMERIC(18,2) = -92233720368547758.08 */
+#define SHORT_LEN	7			// NUMERIC (4,2) = -327.68 
+#define LONG_LEN	12			// NUMERIC (9,2) = -21474836.48 
+#define INT64_LEN	21			// NUMERIC(18,2) = -92233720368547758.08 
 #define QUAD_LEN	19
 #define FLOAT_LEN	14			/* -1.2345678E+38 */
 #define DOUBLE_LEN	23			/* -1.234567890123456E+300 */
@@ -1377,7 +1377,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 				null_flag = false;
 			else {
 
-				/* If RDB$BASE_FIELD is not null then it is a view column */
+				// If RDB$BASE_FIELD is not null then it is a view column 
 
 				if (RFR.RDB$BASE_FIELD.NULL) {
 
@@ -1933,7 +1933,7 @@ static processing_state add_row(const TEXT* tabname)
 					{
 						ISQL_msg_get(TIME_ERR, msg, lastInputLine, NULL, NULL, NULL,
 									 NULL);
-						STDERROUT(msg, 1);	/* Bad date %s\n */
+						STDERROUT(msg, 1);	// Bad date %s\n 
 						done = true;
 					}
 					else {
@@ -1953,7 +1953,7 @@ static processing_state add_row(const TEXT* tabname)
 					{
 						ISQL_msg_get(DATE_ERR, msg, lastInputLine, NULL, NULL, NULL,
 									 NULL);
-						STDERROUT(msg, 1);	/* Bad date %s\n */
+						STDERROUT(msg, 1);	// Bad date %s\n 
 						done = true;
 					}
 					else {
@@ -4151,7 +4151,7 @@ static void get_str(const TEXT* const input_str,
 				*str_flag = INCOMPLETE_STRING;
 				done = true;
 			}
-		}						/* end of while (!done) */
+		}						// end of while (!done) 
 	}
 }
 
@@ -5291,7 +5291,7 @@ static processing_state newtrans(const TEXT* statement)
 
 	M__trans = NULL;
 
-/* M__trans = 0 after the commit or rollback. ready for a new transaction */
+// M__trans = 0 after the commit or rollback. ready for a new transaction 
 
 	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, statement,
 								   SQL_dialect, NULL))
@@ -6047,7 +6047,7 @@ static processing_state print_item_blob(IB_FILE* fp,
 	if ((var->sqlsubtype != Doblob) && (Doblob != ALL_BLOBS)) {
 		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT*) (IPTR) Doblob,
 					 (TEXT*) (IPTR) var->sqlsubtype, NULL, NULL, NULL);
-		/* Blob display set to subtype %d. This blob: subtype = %d\n */
+		// Blob display set to subtype %d. This blob: subtype = %d\n 
 		ISQL_printf(fp, msg);
 		if (buffer)
 			ISQL_FREE(buffer);
@@ -6162,7 +6162,7 @@ static void print_item_numeric(SINT64 value,
 	bool all_digits_used = false;
 	bool neg = (value < 0);
 
-/* Handle special case of no negative scale, no '.' required! */
+// Handle special case of no negative scale, no '.' required! 
 	if (scale >= 0) {
 		if (scale > 0)
 			value *= (SINT64) pow(10.0, (double) scale);
@@ -6183,7 +6183,7 @@ static void print_item_numeric(SINT64 value,
 	for (; from >= 0 && DIGIT(buf[from]) && scale; from--, to--, ++scale)
 		buf[to] = buf[from];
 
-/* Check whether we need a '0' (zero) in front of the '.' point */
+// Check whether we need a '0' (zero) in front of the '.' point 
 	if (!DIGIT(buf[from]))
 		all_digits_used = true;
 
@@ -6573,7 +6573,7 @@ static int process_statement(const TEXT* string,
 			perf_get_info(&DB, &perf_after);
 			if (!have_report) {
 				ISQL_msg_get(REPORT1, report_1, NULL, NULL, NULL, NULL, NULL);
-				/* Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n */
+				// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n 
 				ISQL_msg_get(REPORT2, &report_1[strlen(report_1)], NULL, NULL,
 							 NULL, NULL, NULL);
 				/* For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
@@ -7018,7 +7018,7 @@ static int process_statement(const TEXT* string,
 		perf_get_info(&DB, &perf_after);
 		if (!have_report) {
 			ISQL_msg_get(REPORT1, report_1, NULL, NULL, NULL, NULL, NULL);
-			/* Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n */
+			// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n 
 			ISQL_msg_get(REPORT2, &report_1[strlen(report_1)], NULL, NULL,
 						 NULL, NULL, NULL);
 			/* For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches

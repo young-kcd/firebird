@@ -33,20 +33,20 @@
 #include <windows.h> // HANDLE
 static inline HANDLE GBAK_STDIN_DESC(void)
 {
-	return GetStdHandle(STD_INPUT_HANDLE); /* standart input  file descriptor */
+	return GetStdHandle(STD_INPUT_HANDLE); // standart input  file descriptor 
 }
 static inline HANDLE GBAK_STDOUT_DESC(void)
 {
-	return GetStdHandle(STD_OUTPUT_HANDLE);	/* standart output file descriptor */
+	return GetStdHandle(STD_OUTPUT_HANDLE);	// standart output file descriptor 
 }
 #else //WIN_NT
 static inline int GBAK_STDIN_DESC(void)
 {
-	return 0;	/* standart input  file descriptor */
+	return 0;	// standart input  file descriptor 
 }
 static inline int GBAK_STDOUT_DESC(void)
 {
-	return 1;	/* standart output file descriptor */
+	return 1;	// standart output file descriptor 
 }
 #endif //WIN_NT
 

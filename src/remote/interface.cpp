@@ -3108,7 +3108,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>(event_thread),
 							port->port_async, THREAD_high, THREAD_ast, 0);
 #else
-			if (!port->connect(packet, reinterpret_cast<FPTR_INT>(event_handler))) {
+			if (!port->connect(packet, event_handler)) {
 				return error(user_status);
 			}
 #endif

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.70 2004-03-01 01:29:26 skidder Exp $
+$Id: restore.epp,v 1.71 2004-03-07 07:58:08 robocop Exp $
 */
 
 #include "firebird.h"
@@ -285,7 +285,7 @@ int RESTORE_restore (const TEXT* file_name,
 						MODIFY IDX USING IDX.RDB$INDEX_INACTIVE = TRUE;
 					 }
 						BURP_print(240, index_name, NULL, NULL, NULL, NULL);
-						/* msg 240 Index \"%s\" failed to activate because: */
+						// msg 240 Index \"%s\" failed to activate because: 
 						if ( error_code == isc_no_dup )
 						{
 							BURP_print(241, NULL, NULL, NULL, NULL, NULL);
@@ -600,7 +600,7 @@ int RESTORE_restore (const TEXT* file_name,
 		return FINI_DB_NOT_ONLINE;
 	}
 
-	/* If the database is to be restored ReadOnly, set it to read_only now! */
+	// If the database is to be restored ReadOnly, set it to read_only now! 
 	if (tdgbl->gbl_sw_mode && tdgbl->gbl_sw_mode_val)
 	{
 		BURP_verbose (280, NULL, NULL, NULL, NULL, NULL);
@@ -666,7 +666,7 @@ void add_files (const UCHAR* file_name)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* store the RDB$FILES records */
+	// store the RDB$FILES records 
 
 	SLONG start = 201; // Magic number, can be taken from some constant?
 	SLONG count = 0;
@@ -829,7 +829,7 @@ void create_database (const TEXT* file_name)
  **************************************/
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	/* Get (physical) database record */
+	// Get (physical) database record 
 
 	ULONG page_size = DEFAULT_PAGE_SIZE;
 	// sweep_interval = -1;
@@ -948,7 +948,7 @@ void create_database (const TEXT* file_name)
 		*d++ = (UCHAR) (sweep_interval >> 24);
 	}
 
-	/* If the database is to be restored "read_only", fillup the data pages */
+	// If the database is to be restored "read_only", fillup the data pages 
 	if (no_reserve || db_read_only)
 	{
 		*d++ = (UCHAR) isc_dpb_no_reserve;
@@ -1025,7 +1025,7 @@ void create_database (const TEXT* file_name)
 	if (tdgbl->gbl_sw_version)
 	{
 		BURP_print(139, file_name, NULL, NULL, NULL, NULL);
-		/* msg 139 Version(s) for database "%s" */
+		// msg 139 Version(s) for database "%s" 
 		isc_version(&DB, BURP_output_version, (void*)"\t%s\n");
 	}
 
@@ -2137,7 +2137,7 @@ bool get_character_set()
 
 			default:
 				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
-				/* RDB$CHARSETS */
+				// RDB$CHARSETS 
 				break;
 			}
 		}
@@ -2276,7 +2276,7 @@ bool get_collation()
 
 			default:
 				bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-				/* Bad RDB$COLLATION */
+				// Bad RDB$COLLATION 
 				break;
 			}
 		}
@@ -2651,7 +2651,7 @@ rec_type get_data (burp_rel*	relation)
 						 IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ index_name
 							MODIFY IDX USING IDX.RDB$INDEX_INACTIVE = TRUE;
 							BURP_print(240, index_name, NULL, NULL, NULL, NULL);
-							/* msg 240 Index \"%s\" failed to activate because: */
+							// msg 240 Index \"%s\" failed to activate because: 
 							if ( error_code == isc_no_dup )
 							{
 								BURP_print(241, NULL, NULL, NULL, NULL, NULL);
@@ -3284,7 +3284,7 @@ void get_function_arg()
 
 	if (tdgbl->RESTORE_format >= 6)
 	{
-		/* with RDB$FIELD_PRECISION */
+		// with RDB$FIELD_PRECISION 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
 		X IN RDB$FUNCTION_ARGUMENTS
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
@@ -3351,7 +3351,7 @@ void get_function_arg()
 	}
 	else
 	{
-		/* without RDB$FIELD_PRECISION */
+		// without RDB$FIELD_PRECISION 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
 		X IN RDB$FUNCTION_ARGUMENTS
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
@@ -3488,7 +3488,7 @@ bool get_global_field()
 
 	if (tdgbl->RESTORE_format >= 6)
 	{
-		/* with rdb$field_precision */
+		// with rdb$field_precision 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
 		X IN RDB$FIELDS
 
@@ -3769,7 +3769,7 @@ bool get_global_field()
 	}
 	else /* RESTORE_format < 6 */
 	{
-		/* without rdb$field_precision */
+		// without rdb$field_precision 
 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
 		X IN RDB$FIELDS
@@ -6499,13 +6499,13 @@ bool restore (const TEXT* file_name,
 			flag = true;
 			break;
 
-		case rec_system_type:  /* rdb$types */
+		case rec_system_type:  // rdb$types 
 			if (!get_type())
 				return false;
 			flag = true;
 			break;
 
-		case rec_filter:  /* rdb$filters */
+		case rec_filter:  // rdb$filters 
 			if (!get_filter())
 				return false;
 			flag = true;

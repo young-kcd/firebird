@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.31 2004-03-01 03:34:57 skidder Exp $
+ *	$Id: alice_meta.epp,v 1.32 2004-03-07 07:58:06 robocop Exp $
  */
 
 #include "firebird.h"
@@ -397,7 +397,7 @@ static void parse_fullpath(TDR trans)
 		p++;
 	const TEXT* const end = p;
 
-/*  Check for a named pipes name - \\node\path\db or //node/path/db */
+//  Check for a named pipes name - \\node\path\db or //node/path/db 
 	while (p > start &&
 		   !(*p == '/' && *(p - 1) == '/') &&
 		   !(*p == '\\' && *(p - 1) == '\\'))

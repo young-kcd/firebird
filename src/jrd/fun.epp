@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.37 2004-03-01 03:35:12 skidder Exp $
+$Id: fun.epp,v 1.38 2004-03-07 07:58:40 robocop Exp $
 */
 
 #include "firebird.h"
@@ -757,7 +757,7 @@ void FUN_fini( TDBB tdbb)
  *	Unregister interest in external function modules.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	while (dbb->dbb_modules)
 		FLU_unregister_module((MOD) LLS_POP(&dbb->dbb_modules));
@@ -792,7 +792,7 @@ FUN FUN_lookup_function(const TEXT* name, bool ShowAccessError)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
 #ifdef V4_THREADING

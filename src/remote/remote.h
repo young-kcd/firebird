@@ -363,7 +363,8 @@ public:
 	virtual int		accept_(rem_port* pPort, p_cnct* pConnection) = 0;
 };
 
-typedef XDR_INT (*t_event_ast)();
+//typedef XDR_INT (*t_event_ast)();
+typedef void (*t_event_ast)(rem_port*);
 typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
 
 struct rem_port

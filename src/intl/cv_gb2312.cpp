@@ -29,43 +29,39 @@
 USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
 							  UCS2_CHAR *dest_ptr,
 							  USHORT dest_len,
-							  UCHAR *src_ptr,
+							  const UCHAR* src_ptr,
 							  USHORT src_len,
 							  SSHORT *err_code,
 							  USHORT *err_position)
 {
-	UCS2_CHAR *start;
-	UCS2_CHAR ch;
-	UCS2_CHAR wide;
-	USHORT src_start = src_len;
-	USHORT this_len;
-	UCHAR c1, c2;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_gb2312_to_unicode);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVGB_gb2312_to_unicode));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len * sizeof(UCS2_CHAR));
 
-	start = dest_ptr;
+	UCS2_CHAR wide;
+	USHORT this_len;
+	const UCS2_CHAR* const start = dest_ptr;
 	while ((src_len) && (dest_len > 1)) {
 		if (*src_ptr & 0x80) {
-			c1 = *src_ptr++;
+			const UCHAR c1 = *src_ptr++;
 
 			if (GB1(c1)) {		/* first byte is GB2312 */
 				if (src_len == 1) {
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
-				c2 = *src_ptr++;
+				const UCHAR c2 = *src_ptr++;
 				if (!(GB2(c2))) {	/* Bad second byte */
 					*err_code = CS_BAD_INPUT;
 					break;
@@ -85,8 +81,8 @@ USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
 		}
 
 		/* Convert from GB2312 to UNICODE */
-		ch = ((USHORT *) obj->csconvert_datatable)
-			[((USHORT *) obj->csconvert_misc)[(USHORT) wide / 256]
+		const UCS2_CHAR ch = ((const USHORT*) obj->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_misc)[(USHORT) wide / 256]
 			 + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -109,38 +105,33 @@ USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
 USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 							  UCHAR *gb_str,
 							  USHORT gb_len,
-							  UCS2_CHAR *unicode_str,
+							  const UCS2_CHAR* unicode_str,
 							  USHORT unicode_len,
 							  SSHORT *err_code, 
 							  USHORT *err_position)
 {
-	UCHAR *start;
-	UCS2_CHAR gb_ch;
-	UCS2_CHAR wide;
-	int tmp1, tmp2;
-	USHORT src_start = unicode_len;
-
 	fb_assert(unicode_str != NULL || gb_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_unicode_to_gb2312);
+	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVGB_unicode_to_gb2312));
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (gb_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
 
-	start = gb_str;
+	const UCHAR* const start = gb_str;
 	while ((gb_len) && (unicode_len > 1)) {
 		/* Convert from UNICODE to GB2312 code */
-		wide = *unicode_str++;
+		const UCS2_CHAR wide = *unicode_str++;
 
-		gb_ch = ((USHORT *) obj->csconvert_datatable)
-				[((USHORT *) obj->csconvert_misc)
+		const UCS2_CHAR gb_ch = ((const USHORT*) obj->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_misc)
 					[(USHORT)wide / 256]
 				 + (wide % 256)];
 		if ((gb_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -148,8 +139,8 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 			break;
 		};
 
-		tmp1 = gb_ch / 256;
-		tmp2 = gb_ch % 256;
+		const int tmp1 = gb_ch / 256;
+		const int tmp2 = gb_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 			*gb_str++ = tmp2;
 			gb_len--;
@@ -177,7 +168,7 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 }
 
 
-USHORT CVGB_check_gb2312(UCHAR *gb_str,
+USHORT CVGB_check_gb2312(const UCHAR *gb_str,
 						 USHORT gb_len)
 {
 /**************************************
@@ -188,10 +179,8 @@ USHORT CVGB_check_gb2312(UCHAR *gb_str,
  *          return 1.  
  *          else return(0);
  **************************************/
-	UCHAR c1;
-
 	while (gb_len--) {
-		c1 = *gb_str;
+		const UCHAR c1 = *gb_str;
 		if (GB1(c1)) {			/* Is it  GB2312 */
 			if (gb_len == 0)	/* truncated GB2312 */
 				return (1);
@@ -209,10 +198,10 @@ USHORT CVGB_check_gb2312(UCHAR *gb_str,
 }
 
 
-USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
-							  UCHAR *dst,
+USHORT CVGB_gb2312_byte2short(TEXTTYPE obj,
+							  USHORT* dst,
 							  USHORT dst_len,
-							  UCHAR *src,
+							  const UCHAR* src,
 							  USHORT src_len,
 							  SSHORT *err_code,
 							  USHORT *err_position)
@@ -226,21 +215,19 @@ USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
  *		2-byte GB2312 character into 1 short.
  *
  **************************************/
-	USHORT x;
-	UCHAR *dst_start;
-	USHORT src_start = src_len;
-
 	fb_assert(src != NULL || dst == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 /* Length estimate needed? */
 	if (dst == NULL)
 		return (2 * src_len);	/* worst case */
 
-	dst_start = dst;
+	USHORT x;
+	const USHORT* const dst_start = dst;
 	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
 		if (GB1(*src)) {
 			if (src_len < 2) {
@@ -255,8 +242,8 @@ USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
 			x = *src++;
 			src_len--;
 		};
-		*(USHORT *) dst = x;	/* Assumes alignment */
-		dst += sizeof(USHORT);
+		*dst = x;	/* Assumes alignment */
+		++dst;
 		dst_len -= sizeof(USHORT);
 	}
 	if (src_len && !*err_code)
@@ -266,7 +253,7 @@ USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
 }
 
 
-SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj,
+SSHORT CVGB_gb2312_mbtowc(TEXTTYPE obj,
 						  UCS2_CHAR* wc,
 						  const UCHAR* src,
 						  USHORT src_len)

@@ -258,7 +258,7 @@ PluginManager::Module::~Module()
 	unload_module();
 }
 
-void *PluginManager::BuiltinModule::lookupSymbol(Firebird::string& symbol)
+void *PluginManager::BuiltinModule::lookupSymbol(const Firebird::string& symbol)
 {
 	int n;
 	if (! symbols.find(symbol, n))
@@ -266,7 +266,7 @@ void *PluginManager::BuiltinModule::lookupSymbol(Firebird::string& symbol)
 	return symbols[n].second;
 }
 
-void *PluginManager::PluginModule::lookupSymbol(Firebird::string& symbol)
+void *PluginManager::PluginModule::lookupSymbol(const Firebird::string& symbol)
 {
 	if (module != 0)
 		return module->findSymbol(symbol);
@@ -352,3 +352,4 @@ PluginManager& PluginManager::getEnginePluginManager()
 #endif
 	return *manager;
 }
+

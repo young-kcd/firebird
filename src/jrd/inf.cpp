@@ -207,7 +207,7 @@ int INF_database_info(const SCHAR* items,
 	bool header_refreshed = false;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	jrd_tra* transaction = NULL;

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		tpc.cpp
- *	DESCRIPTION:	TIP Cache for DBB
+ *	DESCRIPTION:	TIP Cache for Database
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -60,7 +60,7 @@ int TPC_cache_state(TDBB tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	tpc* tip_cache = dbb->dbb_tip_cache;
@@ -109,7 +109,7 @@ void TPC_initialize_tpc(TDBB tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	tpc* tip_cache = dbb->dbb_tip_cache;
@@ -155,7 +155,7 @@ void TPC_set_state(TDBB tdbb, SLONG number, SSHORT state)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
@@ -194,7 +194,7 @@ int TPC_snapshot_state(TDBB tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	tpc* tip_cache = dbb->dbb_tip_cache;
@@ -294,7 +294,7 @@ void TPC_update_cache(TDBB tdbb, tx_inv_page* tip_page, SLONG sequence)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt; // pgc_tpt is ULONG!!!
@@ -349,7 +349,7 @@ static TPC allocate_tpc(TDBB tdbb, ULONG base)
  *	of all transactions on one page.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
 /* allocate a TIP cache block with enough room for 
@@ -376,7 +376,7 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
  *	the oldest interesting transaction.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* check the header page for the oldest and 
@@ -429,7 +429,7 @@ static int extend_cache(TDBB tdbb, SLONG number)
  *	the state of the passed transaction.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
 /* find the end of the linked list, and cache

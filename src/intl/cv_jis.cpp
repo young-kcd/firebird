@@ -32,35 +32,32 @@
 USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 							 UCS2_CHAR *dest_ptr,
 							 USHORT dest_len,
-							 UCHAR *src_ptr,
+							 const UCHAR* src_ptr,
 							 USHORT src_len,
 							 SSHORT *err_code,
 							 USHORT *err_position)
 {
-	UCS2_CHAR *start;
-	UCS2_CHAR ch;
-	UCS2_CHAR wide;
-	UCHAR ch1;
-	USHORT src_start = src_len;
-	USHORT this_len;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_eucj_to_unicode);
+	fb_assert(obj->csconvert_convert == CVJIS_eucj_to_unicode);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len);
 
-	start = dest_ptr;
+	UCS2_CHAR ch;
+	UCS2_CHAR wide;
+	USHORT this_len;
+	const UCS2_CHAR* const start = dest_ptr;
 	while ((src_len) && (dest_len > 1)) {
-		ch1 = *src_ptr++;
+		const UCHAR ch1 = *src_ptr++;
 
 		/* Step 1: Convert from EUC to JIS */
 		if (!(ch1 & 0x80)) {	/* 1 byte SCHAR */
@@ -82,8 +79,8 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 			this_len = 2;
 
 			/* Step 2: Convert from JIS to UNICODE */
-			ch = ((USHORT *) obj->csconvert_datatable)
-				[((USHORT *) obj->csconvert_misc)
+			ch = ((const USHORT*) obj->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		};
@@ -105,70 +102,72 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 }
 
 
-#define S2E(s1, s2, j1, j2) \
-{ \
-  if (s2 >= 0x9f) { \
-    if (s1 >= 0xe0) j1 = (s1*2 - 0xe0); \
-    else j1 = (s1*2 - 0x60); \
-    j2 = (s2 + 2); \
-  } \
-  else { \
-    if (s1 >= 0xe0) j1 = (s1*2 - 0xe1); \
-    else j1 = (s1*2 - 0x61);\
-    if (s2 >= 0x7f) j2 = (s2 + 0x60); \
-    else j2 = (s2 +  0x61); \
-  } \
+static void S2E(const UCHAR s1, const UCHAR s2, UCHAR& j1, UCHAR& j2)
+{
+	if (s2 >= 0x9f) {
+		if (s1 >= 0xe0)
+			j1 = (s1 * 2 - 0xe0);
+		else
+			j1 = (s1 * 2 - 0x60);
+		j2 = (s2 + 2);
+	}
+	else {
+		if (s1 >= 0xe0)
+			j1 = (s1 * 2 - 0xe1);
+		else
+			j1 = (s1 * 2 - 0x61);
+		if (s2 >= 0x7f)
+			j2 = (s2 + 0x60);
+		else
+			j2 = (s2 +  0x61);
+	}
 }
 
 
 USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
 							 UCS2_CHAR *dest_ptr,
 							 USHORT dest_len,
-							 UCHAR *sjis_str,
+							 const UCHAR* sjis_str,
 							 USHORT sjis_len,
 							 SSHORT *err_code,
 							 USHORT *err_position)
 {
-	UCS2_CHAR *start;
-	UCS2_CHAR ch;
-	UCS2_CHAR wide;
-	UCHAR c1, c2;
-	UCHAR tmp1, tmp2;
-	USHORT src_start = sjis_len;
-	USHORT this_len;
-	USHORT table;
-
 	fb_assert(sjis_str != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_sjis_to_unicode);
+	fb_assert(obj->csconvert_convert == CVJIS_sjis_to_unicode);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = sjis_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (sjis_len * 2);	/* worst case - all ascii input */
 
-	start = dest_ptr;
+	USHORT table;
+	USHORT this_len;
+	UCS2_CHAR wide;
+	const UCS2_CHAR* const start = dest_ptr;
 	while ((sjis_len) && (dest_len > 1)) {
 		/* Step 1: Convert from SJIS to JIS code */
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
-			c1 = *sjis_str++;
+			const UCHAR c1 = *sjis_str++;
 
 			if (SJIS1(c1)) {	/* First byte is a KANJI */
 				if (sjis_len == 1) {	/* truncated KANJI */
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
-				c2 = *sjis_str++;
+				const UCHAR c2 = *sjis_str++;
 				if (!(SJIS2(c2))) {	/* Bad second byte */
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				/* Step 1b: Convert 2 byte SJIS to EUC-J */
+				UCHAR tmp1, tmp2;
 				S2E(c1, c2, tmp1, tmp2);
 
 				/* Step 2b: Convert 2 byte EUC-J to JIS */
@@ -195,9 +194,10 @@ USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
 		}
 
 		/* Step 2: Convert from JIS code (in wide) to UNICODE */
+		UCS2_CHAR ch;
 		if (table == 1)
-			ch = ((USHORT *) obj->csconvert_datatable)
-				[((USHORT *) obj->csconvert_misc)
+			ch = ((const USHORT*) obj->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		else {
@@ -380,42 +380,35 @@ I hope this helps in the discussion.
 
 
 USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
-							 UCHAR *sjis_str,
+							 UCHAR* sjis_str,
 							 USHORT sjis_len,
-							 UCS2_CHAR *unicode_str,
+							 const UCS2_CHAR* unicode_str,
 							 USHORT unicode_len,
 							 SSHORT *err_code,
 							 USHORT *err_position)
 {
-	UCHAR *start;
-	UCS2_CHAR jis_ch;
-	UCS2_CHAR wide;
-	USHORT tmp1, tmp2;
-	USHORT src_start = unicode_len;
-
 	fb_assert(unicode_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_sjis);
+	fb_assert(obj->csconvert_convert == CVJIS_unicode_to_sjis);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (sjis_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
 
-	start = sjis_str;
+	const UCHAR* const start = sjis_str;
 	while ((sjis_len) && (unicode_len > 1)) {
 		/* Step 1: Convert from UNICODE to JIS code */
-		wide = *unicode_str++;
+		const UCS2_CHAR wide = *unicode_str++;
 
-		jis_ch = ((USHORT *) obj->csconvert_datatable)
-				[((USHORT *) obj->csconvert_misc)
-					[(USHORT)wide /	256]
-				 + (wide % 256)];
+		UCS2_CHAR jis_ch = ((const USHORT*) obj->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 
@@ -429,8 +422,8 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 		};
 
 		/* Step 2: Convert from JIS code to SJIS */
-		tmp1 = jis_ch / 256;
-		tmp2 = jis_ch % 256;
+		USHORT tmp1 = jis_ch / 256;
+		USHORT tmp2 = jis_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 			*sjis_str++ = tmp2;
 			sjis_len--;
@@ -465,40 +458,37 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 }
 
 
-USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UCS2_CHAR *unicode_str,
+USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len,
+							 const UCS2_CHAR* unicode_str,
 							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
 {
-	UCHAR *start;
-	UCS2_CHAR jis_ch;
-	UCS2_CHAR wide;
-	USHORT tmp1, tmp2;
-	USHORT src_start = unicode_len;
-
 	fb_assert(unicode_str != NULL || eucj_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_eucj);
+	fb_assert(obj->csconvert_convert == CVJIS_unicode_to_eucj);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (eucj_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
 
-	start = eucj_str;
+	const UCHAR* const start = eucj_str;
 	while ((eucj_len) && (unicode_len > 1)) {
 		/* Step 1: Convert from UNICODE to JIS code */
-		wide = *unicode_str++;
+		const UCS2_CHAR wide = *unicode_str++;
 
 		/* ASCII range characters map directly -- others go to the table */
+		UCS2_CHAR jis_ch;
 		if (wide <= 0x007F)
 			jis_ch = wide;
 		else
-			jis_ch = ((USHORT *) obj->csconvert_datatable)
-					[((USHORT *) obj->csconvert_misc)
+			jis_ch = ((const USHORT*) obj->csconvert_datatable)
+					[((const USHORT*) obj->csconvert_misc)
 						[(USHORT)wide /	256]
 					 + (wide % 256)];
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -507,8 +497,8 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 		};
 
 		/* Step 2: Convert from JIS code to EUC-J */
-		tmp1 = jis_ch / 256;
-		tmp2 = jis_ch % 256;
+		const USHORT tmp1 = jis_ch / 256;
+		const USHORT tmp2 = jis_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 			fb_assert(!(tmp2 & 0x80));
 			*eucj_str++ = tmp2;
@@ -537,7 +527,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len)
+static USHORT CVJIS_check_euc(const UCHAR* euc_str, USHORT euc_len)
 {
 /**************************************
  *
@@ -572,7 +562,7 @@ static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len)
 
 
 
-static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len)
+static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 {
 /**************************************
  *
@@ -587,12 +577,9 @@ static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len)
  *	    return 1. 
  *	    else return(0);
  **************************************/
-
-	UCHAR c1;
-
 	while (sjis_len--) {
 		if (*sjis_str & 0x80) {	/* Is it  SJIS */
-			c1 = *sjis_str;
+			const UCHAR c1 = *sjis_str;
 			if (SJIS1(c1)) {	/* It is a KANJI */
 				if (sjis_len == 0) {	/* truncated KANJI */
 					return (1);
@@ -617,7 +604,8 @@ static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len)
 #endif
 
 
-static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str,
+static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len,
+							const UCHAR* euc_str,
 							 USHORT euc_len, SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
@@ -631,33 +619,30 @@ static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UC
  *	sjis_len is the maximum size of the sjis buffer.
  *
  **************************************/
-	UCHAR c1, c2;
-	UCHAR *sjis_start;
-	USHORT src_start = euc_len;
-
 	fb_assert(euc_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 
+	const USHORT src_start = euc_len;
 	*err_code = 0;
 
 /* Length estimate needed? */
 	if (sjis_str == NULL)
 		return (euc_len);		/* worst case */
 
-	sjis_start = sjis_str;
+	const UCHAR* const sjis_start = sjis_str;
 	while (euc_len && sjis_len) {
 		if (*euc_str & 0x80) {	/* Non-Ascii - High bit set */
 
-			c1 = *euc_str++;
+			UCHAR c1 = *euc_str++;
 
 			if (EUC1(c1)) {		/* It is a EUC */
 				if (euc_len == 1) {
 					*err_code = CS_BAD_INPUT;	/* truncated EUC */
 					break;
 				}
-				c2 = *euc_str++;
+				UCHAR c2 = *euc_str++;
 				if (!(EUC2(c2))) {
 					*err_code = CS_BAD_INPUT;	/* Bad EUC */
 					break;
@@ -707,7 +692,8 @@ static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UC
 
 
 
-USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len,
+USHORT CVJIS_euc_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // length in bytes
+							const UCHAR* src, USHORT src_len,
 							 SSHORT *err_code,	USHORT *err_position)
 {
 /**************************************
@@ -724,21 +710,19 @@ USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *sr
  *		2-byte EUC kanji into 1 short.
  *
  **************************************/
-	USHORT x;
-	UCHAR *dst_start;
-	USHORT src_start = src_len;
-
 	fb_assert(src != NULL || dst == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 /* Length estimate needed? */
 	if (dst == NULL)
 		return (2 * src_len);	/* worst case */
 
-	dst_start = dst;
+	USHORT x;
+	const USHORT* const dst_start = dst;
 	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
 		if (EUC1(*src)) {
 			if (src_len <= 1) {
@@ -753,8 +737,8 @@ USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *sr
 			x = *src++;
 			src_len--;
 		};
-		*(USHORT *) dst = x;	/* Assumes alignment */
-		dst += sizeof(USHORT);
+		*dst = x;	/* Assumes alignment */
+		++dst;
 		dst_len -= sizeof(USHORT);
 	}
 	if (src_len && !*err_code)
@@ -764,7 +748,7 @@ USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *sr
 }
 
 
-SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
+SSHORT CVJIS_euc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
 {
 /**************************************
  *
@@ -797,7 +781,8 @@ SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT s
 	};
 }
 
-static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str,
+static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len,
+							const UCHAR* sjis_str,
 							 USHORT sjis_len, SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
@@ -810,31 +795,27 @@ static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHA
  *      Convert sjis_len number of bytes in sjis_str to euc_str .
  *
  **************************************/
-
-	UCHAR c1, c2;
-	UCHAR *euc_start;
-	USHORT src_start = sjis_len;
-
 	fb_assert(sjis_str != NULL || euc_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 
+	const USHORT src_start = sjis_len;
 	*err_code = 0;
 	if (euc_str == NULL)
 		return (2 * sjis_len);	/* worst case */
 
-	euc_start = euc_str;
+	const UCHAR* const euc_start = euc_str;
 	while (sjis_len && euc_len) {
 
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
-			c1 = *sjis_str++;
+			const UCHAR c1 = *sjis_str++;
 			if (SJIS1(c1)) {	/* First byte is a KANJI */
 				if (sjis_len == 1) {	/* truncated KANJI */
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
-				c2 = *sjis_str++;
+				const UCHAR c2 = *sjis_str++;
 				if (!(SJIS2(c2))) {	/* Bad second byte */
 					*err_code = CS_BAD_INPUT;
 					break;
@@ -879,7 +860,8 @@ static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHA
 
 
 
-USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len,
+USHORT CVJIS_sjis_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // byte count
+							const UCHAR* src, USHORT src_len,
 							 SSHORT *err_code, USHORT *err_position)
 {
 /**************************************
@@ -898,20 +880,18 @@ USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *s
  *	Return the number of "bytes" in dst.
  *
  **************************************/
-	USHORT x;
-	UCHAR *dst_start;
-	USHORT src_start = src_len;
-
 	fb_assert(obj != NULL);
 	fb_assert(src != NULL || dst == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 	if (dst == NULL)
 		return (2 * src_len);	/* worst case */
 
-	dst_start = dst;
+	USHORT x;
+	const USHORT* const dst_start = dst;
 	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
 		if (SJIS1(*src)) {
 			if (src_len <= 1) {
@@ -926,8 +906,8 @@ USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *s
 			x = *src++;
 			src_len--;
 		}
-		*(USHORT *) dst = x;	/* assuming alignment OK */
-		dst += sizeof(USHORT);
+		*dst = x;	/* assuming alignment OK */
+		++dst;
 		dst_len -= sizeof(USHORT);
 	}
 	if (src_len && !*err_code)
@@ -938,7 +918,7 @@ USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *s
 }
 
 
-SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
+SSHORT CVJIS_sjis_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
 {
 /**************************************
  *
@@ -975,10 +955,12 @@ SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT 
 CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)
 {
 	if (dest_cs == CS_EUCJ)
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) CVJIS_sjis2euc,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(CVJIS_sjis2euc),
 						NULL, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) CVJIS_euc2sjis,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(CVJIS_euc2sjis),
 						NULL, NULL);
 
 	CONVERT_RETURN;

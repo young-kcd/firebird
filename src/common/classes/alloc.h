@@ -34,12 +34,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.33 2004-03-01 03:18:42 skidder Exp $
+ *  $Id: alloc.h,v 1.34 2004-03-07 07:58:25 robocop Exp $
  *
  */
 
-#ifndef ALLOC_H
-#define ALLOC_H
+#ifndef CLASSES_ALLOC_H
+#define CLASSES_ALLOC_H
 
 #include <cstddef>
 
@@ -434,5 +434,5 @@ namespace Firebird
 
 #endif /*TESTING_ONLY*/
 
-#endif
+#endif // CLASSES_ALLOC_H
 

@@ -27,16 +27,19 @@
 #define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
 
-USHORT CVGB_gb2312_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UCHAR *src_ptr
-							, USHORT src_len, SSHORT *err_code, USHORT *err_position);
+USHORT CVGB_gb2312_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+							const UCHAR* src_ptr,
+							USHORT src_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVGB_unicode_to_gb2312(CSCONVERT obj, UCHAR *gb_str, USHORT gb_len, USHORT *unicode_str
-							, USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
+USHORT CVGB_unicode_to_gb2312(CSCONVERT obj, UCHAR *gb_str, USHORT gb_len,
+							const USHORT* unicode_str,
+							USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVGB_check_gb2312(UCHAR *gb_str, USHORT gb_len);
+USHORT CVGB_check_gb2312(const UCHAR* gb_str, USHORT gb_len);
 
-USHORT CVGB_gb2312_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *src, USHORT src_len
-							, SSHORT *err_code, USHORT *err_position);
+USHORT CVGB_gb2312_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
+							const UCHAR* src, USHORT src_len,
+							SSHORT *err_code, USHORT *err_position);
 
-SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
+SSHORT CVGB_gb2312_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
 

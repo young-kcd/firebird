@@ -49,7 +49,7 @@ BKM BKM_allocate(Rsb* rsb, USHORT length)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = tdbb->tdbb_request;
 	irsb* impure = (irsb*) ((UCHAR *) request + rsb->rsb_impure);
 

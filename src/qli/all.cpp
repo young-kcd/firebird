@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.23 2004-02-20 06:43:15 robocop Exp $
+$Id: all.cpp,v 1.24 2004-03-07 07:58:51 robocop Exp $
 */
 
 /***************************************************
@@ -30,12 +30,12 @@ $Id: all.cpp,v 1.23 2004-02-20 06:43:15 robocop Exp $
    LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
    SIMILAR CHANGES:
 
-                  /dsql/all.c
-                  /jrd/all.c
-                  /pipe/allp.c
-                  /qli/all.c
-                  /remote/allr.c
-                  /gpre/msc.c
+                  /dsql/all.cpp
+                  /jrd/all.cpp
+                  /pipe/allp.cpp
+                  /qli/all.cpp
+                  /remote/allr.cpp
+                  /gpre/msc.cpp
 
    - THANK YOU
 ***************************************************/

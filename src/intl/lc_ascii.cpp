@@ -38,14 +38,14 @@ static inline void FAMILY_ASCII(TEXTTYPE cache,
 	cache->texttype_character_set	= charset;
 	cache->texttype_country			= country;
 	cache->texttype_bytes_per_char	= 1;
-	cache->texttype_fn_init			= (FPTR_SHORT) name;
-	cache->texttype_fn_key_length	= (FPTR_SHORT) famasc_key_length;
-	cache->texttype_fn_string_to_key= (FPTR_SHORT) famasc_string_to_key;
-	cache->texttype_fn_compare		= (FPTR_short) famasc_compare;
-	cache->texttype_fn_to_upper		= (FPTR_SHORT) famasc_to_upper;
-	cache->texttype_fn_to_lower		= (FPTR_SHORT) famasc_to_lower;
-	cache->texttype_fn_str_to_upper	= (FPTR_short) famasc_str_to_upper;
-	cache->texttype_fn_mbtowc		= (FPTR_short) LC_DOS_nc_mbtowc;
+	cache->texttype_fn_init			= name;
+	cache->texttype_fn_key_length	= famasc_key_length;
+	cache->texttype_fn_string_to_key= famasc_string_to_key;
+	cache->texttype_fn_compare		= famasc_compare;
+	cache->texttype_fn_to_upper		= famasc_to_upper;
+	cache->texttype_fn_to_lower		= famasc_to_lower;
+	cache->texttype_fn_str_to_upper	= famasc_str_to_upper;
+	cache->texttype_fn_mbtowc		= LC_DOS_nc_mbtowc;
 	cache->texttype_collation_table	= NULL;
 	cache->texttype_toupper_table	= NULL;
 	cache->texttype_tolower_table	= NULL;
@@ -331,9 +331,9 @@ TEXTTYPE_ENTRY(WIN1251_c0_init)
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
 	FAMILY_ASCII(cache, parm1, WIN1251_c0_init, CS_WIN1251, CC_C, POSIX);
-	cache->texttype_fn_to_upper =		(FPTR_SHORT) cp1251_to_upper;
-	cache->texttype_fn_to_lower =		(FPTR_SHORT) cp1251_to_lower;
-	cache->texttype_fn_str_to_upper =	(FPTR_short) cp1251_str_to_upper;
+	cache->texttype_fn_to_upper =		cp1251_to_upper;
+	cache->texttype_fn_to_lower =		cp1251_to_lower;
+	cache->texttype_fn_str_to_upper =	cp1251_str_to_upper;
 
 	TEXTTYPE_RETURN;
 }
@@ -416,11 +416,11 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 
 #define LANGASCII_MAX_KEY	(MAX_KEY)
 
-#define ASCII_SPACE	32			/* ASCII code for space */
-#define ASCII_UPPER_A	65		/* ASCII code for 'A' */
-#define ASCII_LOWER_A	(ASCII_UPPER_A + 32)	/* ASCII code for 'a' */
+#define ASCII_SPACE	32			// ASCII code for space
+#define ASCII_UPPER_A	65		// ASCII code for 'A'
+#define ASCII_LOWER_A	(ASCII_UPPER_A + 32)	// ASCII code for 'a'
 #define ASCII_UPPER_Z	90		/* ASCII code for 'Z' */
-#define ASCII_LOWER_Z	(ASCII_UPPER_Z + 32)	/* ASCII code for 'z' */
+#define ASCII_LOWER_Z	(ASCII_UPPER_Z + 32)	// ASCII code for 'z'
 
 #define	ASCII7_UPPER(ch) \
 	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
@@ -447,7 +447,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 #define CP1251_UPPER_EX4 0xB2	// ²
 #define CP1251_LOWER_EX4 0xB3	// ³
 
-static __inline UCHAR CP1251_UPPER(UCHAR ch)
+static inline UCHAR CP1251_UPPER(UCHAR ch)
 {
 	UCHAR res;
 
@@ -486,7 +486,7 @@ static __inline UCHAR CP1251_UPPER(UCHAR ch)
 	return res;
 }
 
-static __inline UCHAR CP1251_LOWER(UCHAR ch)
+static inline UCHAR CP1251_LOWER(UCHAR ch)
 {
 	UCHAR res;
 
@@ -552,12 +552,9 @@ USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar
-	, USHORT partial)
+USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
+	USHORT partial) // unused
 {
-	BYTE *outbuff;
-	const BYTE *inbuff;
-
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
 	fb_assert(iInLen <= LANGASCII_MAX_KEY);
@@ -565,14 +562,14 @@ USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, US
 	fb_assert(iOutLen >= famasc_key_length(obj, iInLen));
 
 /* point inbuff at last character */
-	inbuff = pInChar + iInLen - 1;
+	const BYTE* inbuff = pInChar + iInLen - 1;
 
 /* skip backwards over all spaces & reset input length */
 	while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
 		inbuff--;
 	iInLen = (inbuff - pInChar + 1);
 
-	outbuff = pOutChar;
+	BYTE* outbuff = pOutChar;
 	while (iInLen-- && iOutLen--) {
 		*outbuff++ = *pInChar++;
 	}
@@ -580,28 +577,25 @@ USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, US
 }
 
 
-static SSHORT all_spaces(BYTE *s, SSHORT len)
+static bool all_spaces(const BYTE* s, SSHORT len)
 {
 	fb_assert(s != NULL);
 
 	while (len-- > 0)
 		if (*s++ != ASCII_SPACE)
-			return FALSE;
-	return TRUE;
+			return false;
+	return true;
 }
 
 
-SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
 {
-	USHORT len;
-	USHORT i;
-
 	fb_assert(obj != NULL);
 	fb_assert(s1 != NULL);
 	fb_assert(s2 != NULL);
 
-	len = MIN(l1, l2);
-	for (i = 0; i < len; i++) {
+	const USHORT len = MIN(l1, l2);
+	for (USHORT i = 0; i < len; i++) {
 		if (s1[i] == s2[i])
 			continue;
 		else if (all_spaces(&s1[i], (SSHORT) (l1 - i)))

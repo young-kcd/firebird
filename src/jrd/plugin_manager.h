@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef PLUGIN_MANAGER_H
-#define PLUGIN_MANAGER_H
+#ifndef JRD_PLUGIN_MANAGER_H
+#define JRD_PLUGIN_MANAGER_H
 
 #include "../jrd/os/mod_loader.h"
 #include "fb_string.h"
@@ -88,7 +88,7 @@ private:
 		///  locate the given symbol name.  If successful it returns a pointer to
 		///  the symbol's location in the current address space.  If the symbol can't
 		///  be found it returns 0.
-		virtual void *lookupSymbol(Firebird::string&) = 0;
+		virtual void *lookupSymbol(const Firebird::string&) = 0;
 		
 	private:
 		friend class PluginManager;
@@ -136,7 +136,7 @@ public:
 		/// Looks in the Plugin's symbol table for a symbol with the given name.
 		///  If the symbol exists a pointer to that symbol's location in the
 		/// current address space is returned.  Otherwise NULL is returned.
-		void *lookupSymbol(Firebird::string &sym)
+		void *lookupSymbol(const Firebird::string &sym)
 			{ return module ? module->lookupSymbol(sym) : 0; }
 		operator bool() { return module != 0; }
 		
@@ -233,7 +233,7 @@ private:
 			SymbolKey> Symbols;
 		Symbols symbols;
 		
-		void *lookupSymbol(Firebird::string&);
+		void *lookupSymbol(const Firebird::string&);
 	};
 	
 	class PluginModule : public Module
@@ -246,8 +246,9 @@ private:
 		ModuleLoader::Module *module;
 		
 		void unload_module();
-		void *lookupSymbol(Firebird::string&);
+		void *lookupSymbol(const Firebird::string&);
 	};
 };
 
-#endif
+#endif // JRD_PLUGIN_MANAGER_H
+

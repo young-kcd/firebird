@@ -45,11 +45,12 @@
 // matches current. Logic of jrd8_create_database may need attention in this case too
 #define IGNORE_SAME_MODE false
 
-static bool notify_shutdown(DBB, SSHORT, SSHORT);
-static bool shutdown_locks(DBB, SSHORT);
+static bool bad_mode(bool ignore);
+static bool notify_shutdown(Database*, SSHORT, SSHORT);
+static bool shutdown_locks(Database*, SSHORT);
 
 
-bool SHUT_blocking_ast(DBB dbb)
+bool SHUT_blocking_ast(Database* dbb)
 {
 /**************************************
  *
@@ -111,121 +112,8 @@ bool SHUT_blocking_ast(DBB dbb)
 	}
 }
 
-bool bad_mode(bool ignore) {
-	if (!ignore) {
-		TDBB tdbb = GET_THREAD_DATA;
-		
-		ISC_STATUS* status = tdbb->tdbb_status_vector;
-		*status++ = isc_arg_gds;
-		*status++ = isc_bad_shutdown_mode;
-		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) ERR_cstring(reinterpret_cast<TEXT*>(tdbb->tdbb_database->dbb_filename->str_data));
-		*status++ = isc_arg_end;
-	}
-	return ignore;
-}
 
-
-bool SHUT_online(DBB dbb, SSHORT flag)
-{
-/**************************************
- *
- *	S H U T _ o n l i n e
- *
- **************************************
- *
- * Functional description
- *	Move database to "more online" state
- *
- **************************************/
-
-	TDBB tdbb = GET_THREAD_DATA;
-	att* attachment = tdbb->tdbb_attachment;
-
-/* Only platform's user locksmith can shutdown or bring online
-   a database. */
-
-	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
-		return false;
-	}
-	
-	// Check if requested shutdown mode is valid
-	int shut_mode = flag & isc_dpb_shut_mode_mask;
-	switch(shut_mode) {
-	case isc_dpb_shut_normal:
-		if (!(dbb->dbb_ast_flags & DBB_shutdown)) 
-			return bad_mode(IGNORE_SAME_MODE); // normal -> normal
-		break;
-	case isc_dpb_shut_multi:
-		if (!(dbb->dbb_ast_flags & DBB_shutdown))
-			return bad_mode(false); // normal -> multi
-		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) && 
-		    !(dbb->dbb_ast_flags & DBB_shutdown_single)) 
-		{
-			return bad_mode(IGNORE_SAME_MODE); // multi -> multi
-		}
-		break;
-	case isc_dpb_shut_single:		
-		if (dbb->dbb_ast_flags & DBB_shutdown_single)
-			return bad_mode(IGNORE_SAME_MODE); //single -> single
-		if (!(dbb->dbb_ast_flags & DBB_shutdown_full))
-			return bad_mode(false); // !full -> single
-		break;		
-	case isc_dpb_shut_full:
-		if (dbb->dbb_ast_flags & DBB_shutdown_full)
-		{
-			return bad_mode(IGNORE_SAME_MODE); // full -> full
-		}
-		return bad_mode(false);
-	default: // isc_dpb_shut_full
-		return bad_mode(false); // unexpected mode
-	}
-	
-
-	try {
-
-	/* Clear shutdown flag on database header page */
-
-	WIN window(HEADER_PAGE);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-	CCH_MARK_MUST_WRITE(tdbb, &window);
-	// Set appropriate shutdown mode in database header
-	header->hdr_flags &= ~hdr_shutdown_mask;
-	switch(shut_mode) {
-	case isc_dpb_shut_normal:
-		break;
-	case isc_dpb_shut_multi:
-		header->hdr_flags |= hdr_shutdown_multi;
-		break;
-	case isc_dpb_shut_single:
-		header->hdr_flags |= hdr_shutdown_single;
-		break;
-	case isc_dpb_shut_full:
-		header->hdr_flags |= hdr_shutdown_full;
-		break;
-	}
-	CCH_RELEASE(tdbb, &window);
-
-	/* Notify existing database clients that a currently
-	   scheduled shutdown is cancelled. */
-
-	if (notify_shutdown(dbb, shut_mode, -1))
-		CCH_release_exclusive(tdbb);
-
-	/* Notify local attachments */
-
-	SHUT_blocking_ast(dbb);
-
-	}	// try
-	catch (const std::exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		return false;
-	}
-	
-	return true;
-}
-
-bool SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
+bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -237,11 +125,8 @@ bool SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
  *	Schedule database for shutdown
  *
  **************************************/
-	TDBB tdbb;
-	ATT attachment;
-
-	tdbb = GET_THREAD_DATA;
-	attachment = tdbb->tdbb_attachment;
+	TDBB tdbb = GET_THREAD_DATA;
+	att* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -257,7 +142,8 @@ bool SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 	int shut_mode = flag & isc_dpb_shut_mode_mask;
 	switch(shut_mode) {
 	case isc_dpb_shut_full:
-		if (dbb->dbb_ast_flags & DBB_shutdown_full) return bad_mode(IGNORE_SAME_MODE);
+		if (dbb->dbb_ast_flags & DBB_shutdown_full) 
+			return bad_mode(IGNORE_SAME_MODE);
 		break;
 	case isc_dpb_shut_multi:
 		if ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
@@ -377,7 +263,7 @@ bool SHUT_database(DBB dbb, SSHORT flag, SSHORT delay)
 }
 
 
-bool SHUT_init(DBB dbb)
+bool SHUT_init(Database* dbb)
 {
 /**************************************
  *
@@ -395,7 +281,123 @@ bool SHUT_init(DBB dbb)
 }
 
 
-static bool notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
+bool SHUT_online(Database* dbb, SSHORT flag)
+{
+/**************************************
+ *
+ *	S H U T _ o n l i n e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move database to "more online" state
+ *
+ **************************************/
+
+	TDBB tdbb = GET_THREAD_DATA;
+	att* attachment = tdbb->tdbb_attachment;
+
+/* Only platform's user locksmith can shutdown or bring online
+   a database. */
+
+	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
+		return false;
+	}
+	
+	// Check if requested shutdown mode is valid
+	int shut_mode = flag & isc_dpb_shut_mode_mask;
+	switch(shut_mode) {
+	case isc_dpb_shut_normal:
+		if (!(dbb->dbb_ast_flags & DBB_shutdown)) 
+			return bad_mode(IGNORE_SAME_MODE); // normal -> normal
+		break;
+	case isc_dpb_shut_multi:
+		if (!(dbb->dbb_ast_flags & DBB_shutdown))
+			return bad_mode(false); // normal -> multi
+		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) && 
+		    !(dbb->dbb_ast_flags & DBB_shutdown_single)) 
+		{
+			return bad_mode(IGNORE_SAME_MODE); // multi -> multi
+		}
+		break;
+	case isc_dpb_shut_single:		
+		if (dbb->dbb_ast_flags & DBB_shutdown_single)
+			return bad_mode(IGNORE_SAME_MODE); //single -> single
+		if (!(dbb->dbb_ast_flags & DBB_shutdown_full))
+			return bad_mode(false); // !full -> single
+		break;		
+	case isc_dpb_shut_full:
+		if (dbb->dbb_ast_flags & DBB_shutdown_full)
+		{
+			return bad_mode(IGNORE_SAME_MODE); // full -> full
+		}
+		return bad_mode(false);
+	default: // isc_dpb_shut_full
+		return bad_mode(false); // unexpected mode
+	}
+	
+
+	try {
+
+	/* Clear shutdown flag on database header page */
+
+	WIN window(HEADER_PAGE);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	CCH_MARK_MUST_WRITE(tdbb, &window);
+	// Set appropriate shutdown mode in database header
+	header->hdr_flags &= ~hdr_shutdown_mask;
+	switch(shut_mode) {
+	case isc_dpb_shut_normal:
+		break;
+	case isc_dpb_shut_multi:
+		header->hdr_flags |= hdr_shutdown_multi;
+		break;
+	case isc_dpb_shut_single:
+		header->hdr_flags |= hdr_shutdown_single;
+		break;
+	case isc_dpb_shut_full:
+		header->hdr_flags |= hdr_shutdown_full;
+		break;
+	}
+	CCH_RELEASE(tdbb, &window);
+
+	/* Notify existing database clients that a currently
+	   scheduled shutdown is cancelled. */
+
+	if (notify_shutdown(dbb, shut_mode, -1))
+		CCH_release_exclusive(tdbb);
+
+	/* Notify local attachments */
+
+	SHUT_blocking_ast(dbb);
+
+	}	// try
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		return false;
+	}
+	
+	return true;
+}
+
+
+static bool bad_mode(bool ignore) {
+	if (!ignore) {
+		TDBB tdbb = GET_THREAD_DATA;
+		
+		ISC_STATUS* status = tdbb->tdbb_status_vector;
+		*status++ = isc_arg_gds;
+		*status++ = isc_bad_shutdown_mode;
+		*status++ = isc_arg_string;
+		*status++ = (ISC_STATUS) (IPTR) 
+			ERR_cstring(reinterpret_cast<const TEXT*>(tdbb->tdbb_database->dbb_filename->str_data));
+		*status++ = isc_arg_end;
+	}
+	return ignore;
+}
+
+
+static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -437,7 +439,7 @@ static bool notify_shutdown(DBB dbb, SSHORT flag, SSHORT delay)
 }
 
 
-static bool shutdown_locks(DBB dbb, SSHORT flag)
+static bool shutdown_locks(Database* dbb, SSHORT flag)
 {
 /**************************************
  *

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _INTL_LDCOMMON_H_
-#define _INTL_LDCOMMON_H_
+#ifndef INTL_LDCOMMON_H
+#define INTL_LDCOMMON_H
 
 /* #include "../jrd/gdsassert.h" */
 // Put the assert in here
@@ -60,7 +60,7 @@ typedef USHORT UNICODE;
 
 
 
-#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, SSHORT parm1, SSHORT dummy)
+#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, USHORT parm1, USHORT dummy)
 
 #define	TEXTTYPE_RETURN	return (0)
 
@@ -78,7 +78,7 @@ typedef USHORT UNICODE;
 
 #define CHARSET_RETURN	return (0)
 
-void CV_convert_init(CSCONVERT, SSHORT, SSHORT, FPTR_SHORT, const void*, const void*);
+void CV_convert_init(CSCONVERT, SSHORT, SSHORT, pfn_INTL_convert, const void*, const void*);
 
-#endif /* _INTL_LDCOMMON_H_ */
+#endif /* INTL_LDCOMMON_H */
 

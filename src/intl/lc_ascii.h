@@ -23,17 +23,17 @@
 
 
 USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen);
-USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar
-							, USHORT partial);
-SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
+USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
+	USHORT iOutLen, BYTE *pOutChar, USHORT partial);
+SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2);
 
 USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch);
 USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
+SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE* pOutStr);
 
 USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch);
 USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
+SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE* pOutStr);
 
 SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT count);
 
@@ -42,23 +42,24 @@ SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT co
  * 8 bit sorting)
  */
 
+/* CVC: Redefined in lc_ascii.cpp, the only place where this macro seems to be used.
 #define LANGASCII_MAX_KEY	(MAX_KEY)
 
-#define ASCII_SPACE	32			/* ASCII code for space */
-#define ASCII_UPPER_A	65		/* ASCII code for 'A' */
-#define ASCII_LOWER_A	(ASCII_UPPER_A + 32)	/* ASCII code for 'a' */
-#define ASCII_UPPER_Z	90		/* ASCII code for 'Z' */
-#define ASCII_LOWER_Z	(ASCII_UPPER_Z + 32)	/* ASCII code for 'z' */
+#define ASCII_SPACE	32			// ASCII code for space
+#define ASCII_UPPER_A	65		// ASCII code for 'A'
+#define ASCII_LOWER_A	(ASCII_UPPER_A + 32)	// ASCII code for 'a'
+#define ASCII_UPPER_Z	90		// ASCII code for 'Z'
+#define ASCII_LOWER_Z	(ASCII_UPPER_Z + 32)	// ASCII code for 'z'
 
 #define	ASCII7_UPPER(ch) \
 	((((UCHAR) (ch) >= (UCHAR) ASCII_LOWER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_LOWER_Z)) \
-		? (UCHAR) ((ch)-ASCII_LOWER_A+ASCII_UPPER_A) \
+		? (UCHAR) ((ch) - ASCII_LOWER_A + ASCII_UPPER_A) \
 		: (UCHAR) (ch))
 #define	ASCII7_LOWER(ch) \
 	((((UCHAR) (ch) >= (UCHAR) ASCII_UPPER_A) && ((UCHAR) (ch) <= (UCHAR) ASCII_UPPER_Z)) \
-		? (UCHAR) ((ch)-ASCII_UPPER_A+ASCII_LOWER_A) \
+		? (UCHAR) ((ch) - ASCII_UPPER_A + ASCII_LOWER_A) \
 		: (UCHAR) (ch))
-
+*/
 
 
 #undef ASCII_LOWER

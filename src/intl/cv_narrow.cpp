@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_narrow.c
+ *	MODULE:		cv_narrow.cpp
  *	DESCRIPTION:	Codeset conversion for narrow character sets.
  *
  * The contents of this file are subject to the Interbase Public
@@ -29,17 +29,17 @@
 void CV_convert_init(CSCONVERT csptr,
 					 SSHORT to_cs,
 					 SSHORT from_cs,
-					 FPTR_SHORT cvt_fn,
-					 const void *datatable,
-					 const void *datatable2)
+					 pfn_INTL_convert cvt_fn,
+					 const void* datatable,
+					 const void* datatable2)
 {
 	csptr->csconvert_version = 40;
-	csptr->csconvert_name = (ASCII *) "DIRECT";
+	csptr->csconvert_name = (const ASCII*) "DIRECT";
 	csptr->csconvert_from = from_cs;
 	csptr->csconvert_to = to_cs;
 	csptr->csconvert_convert = cvt_fn;
-	csptr->csconvert_datatable = (BYTE*) datatable;
-	csptr->csconvert_misc = (BYTE*) datatable2;
+	csptr->csconvert_datatable = (const BYTE*) datatable;
+	csptr->csconvert_misc = (const BYTE*) datatable2;
 }
 
 
@@ -47,35 +47,31 @@ void CV_convert_init(CSCONVERT csptr,
 USHORT CV_unicode_to_nc(CSCONVERT obj,
 						BYTE *dest_ptr,
 						USHORT dest_len,
-						BYTE *src_ptr,
+						const BYTE* src_ptr,
 						USHORT src_len,
 						SSHORT *err_code,
 						USHORT *err_position)
 {
-	BYTE *start;
-	USHORT src_start = src_len;
-	UCHAR ch;
-	UNICODE uni;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_unicode_to_nc);
+	fb_assert(obj->csconvert_convert == CV_unicode_to_nc);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return ((USHORT) (src_len + 1) / 2);
 
-	start = dest_ptr;
+	const BYTE* const start = dest_ptr;
 	while ((src_len > 1) && dest_len) {
-		uni = *((UNICODE *) src_ptr);
-		ch = obj->csconvert_datatable[
-									  ((USHORT *) obj->
+		const UNICODE uni = *((const UNICODE*) src_ptr);
+		const UCHAR ch = obj->csconvert_datatable[
+									  ((const USHORT*) obj->
 									   csconvert_misc)[(USHORT) uni / 256]
 									  + (uni % 256)];
 		if ((ch == CS_CANT_MAP) && !(uni == CS_CANT_MAP)) {
@@ -101,35 +97,31 @@ USHORT CV_unicode_to_nc(CSCONVERT obj,
 USHORT CV_wc_to_wc(CSCONVERT obj,
 				   USHORT *dest_ptr,
 				   USHORT dest_len,
-				   USHORT *src_ptr,
+				   const USHORT* src_ptr,
 				   USHORT src_len,
 				   SSHORT *err_code,
 				   USHORT *err_position)
 {
-	USHORT *start;
-	USHORT ch;
-	UNICODE uni;
-	USHORT src_start = src_len;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_to_wc);
+	fb_assert(obj->csconvert_convert == CV_wc_to_wc);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len);
 
-	start = dest_ptr;
+	const USHORT* const start = dest_ptr;
 	while ((src_len > 1) && (dest_len > 1)) {
-		uni = *((UNICODE *) src_ptr);
-		ch = ((USHORT *) obj->csconvert_datatable)[
-												   ((USHORT *) obj->
+		const UNICODE uni = *((const UNICODE*) src_ptr);
+		const USHORT ch = ((const USHORT*) obj->csconvert_datatable)[
+												   ((const USHORT*) obj->
 													csconvert_misc)[(USHORT)
 																	uni / 256]
 												   + (uni % 256)];
@@ -156,32 +148,29 @@ USHORT CV_wc_to_wc(CSCONVERT obj,
 USHORT CV_nc_to_unicode(CSCONVERT obj,
 						BYTE *dest_ptr,
 						USHORT dest_len,
-						BYTE *src_ptr,
+						const BYTE* src_ptr,
 						USHORT src_len,
 						SSHORT *err_code,
 						USHORT *err_position)
 {
-	BYTE *start;
-	UNICODE ch;
-	USHORT src_start = src_len;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_nc_to_unicode);
+	fb_assert(obj->csconvert_convert == CV_nc_to_unicode);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(sizeof(UNICODE) == 2);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len * 2);
 
-	start = dest_ptr;
+	const BYTE* const start = dest_ptr;
 	while (src_len && (dest_len > 1)) {
-		ch = ((UNICODE *) (obj->csconvert_datatable))[*src_ptr];
+		const UNICODE ch = ((const UNICODE*) (obj->csconvert_datatable))[*src_ptr];
 		/* No need to check for CS_CONVERT_ERROR, all charsets
 		 * must convert to unicode.
 		 */
@@ -203,27 +192,25 @@ USHORT CV_nc_to_unicode(CSCONVERT obj,
 USHORT CV_wc_copy(CSCONVERT obj,
 				  BYTE *dest_ptr,
 				  USHORT dest_len,
-				  BYTE *src_ptr,
+				  const BYTE* src_ptr,
 				  USHORT src_len,
 				  SSHORT *err_code,
 				  USHORT *err_position)
 {
-	BYTE *start;
-	USHORT src_start = src_len;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_copy);
+	fb_assert(obj->csconvert_convert == CV_wc_copy);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len);
 
-	start = dest_ptr;
+	const BYTE* const start = dest_ptr;
 	while ((src_len > 1) && (dest_len > 1)) {
 		*dest_ptr++ = *src_ptr++;	/* first byte of unicode */
 		*dest_ptr++ = *src_ptr++;	/* 2nd   byte of unicode */
@@ -244,31 +231,28 @@ USHORT CV_wc_copy(CSCONVERT obj,
 USHORT eight_bit_convert(CSCONVERT obj,
 						 BYTE *dest_ptr,
 						 USHORT dest_len,
-						 BYTE *src_ptr,
+						 const BYTE* src_ptr,
 						 USHORT src_len,
 						 SSHORT *err_code,
 						 USHORT *err_position)
 {
-	BYTE *start;
-	UCHAR ch;
-	USHORT src_start = src_len;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) eight_bit_convert);
+	fb_assert(obj->csconvert_convert == eight_bit_convert);
 	fb_assert(obj->csconvert_datatable != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len);
 
-	start = dest_ptr;
+	const BYTE* const start = dest_ptr;
 	while (src_len && dest_len) {
-		ch = obj->csconvert_datatable[*src_ptr];
+		const UCHAR ch = obj->csconvert_datatable[*src_ptr];
 		if ((ch == CS_CANT_MAP) && (*src_ptr != CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -291,10 +275,12 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_865, CV_dos_865_x_iso8859_1)
 {
 #include "../intl/conversions/tx865_lat1.h"
 	if (dest_cs == CS_ISO8859_1)
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_865_to_iso88591, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_iso88591_to_865, NULL);
 	CONVERT_RETURN;
 }
@@ -305,10 +291,12 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_dos_865)
 {
 #include "../intl/conversions/tx437_865.h"
 	if (dest_cs == CS_DOS_865)
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_437_to_865, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_865_to_437, NULL);
 
 	CONVERT_RETURN;
@@ -320,11 +308,14 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_iso8859_1)
 {
 #include "../intl/conversions/tx437_lat1.h"
 	if (dest_cs == CS_ISO8859_1)
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_437_to_iso88591, NULL);
 	else
-		CV_convert_init(csptr, dest_cs, source_cs, (FPTR_SHORT) eight_bit_convert,
+		CV_convert_init(csptr, dest_cs, source_cs,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_iso88591_to_437, NULL);
 
 	CONVERT_RETURN;
 }
+

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.52 2004-03-01 03:34:44 skidder Exp $
+//	$Id: alice.cpp,v 1.53 2004-03-07 07:58:06 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -559,10 +559,10 @@ int common_main(int			argc,
 
 		tdgbl->service_blk->svc_started();
 #else
-		ALICE_print(21, 0, 0, 0, 0, 0);	/* msg 21: plausible options are:\n */
+		ALICE_print(21, 0, 0, 0, 0, 0);	// msg 21: plausible options are:\n 
 		for (table = alice_in_sw_table; table->in_sw_msg; table++)
 			ALICE_print(table->in_sw_msg, 0, 0, 0, 0, 0);
-		ALICE_print(22, 0, 0, 0, 0, 0);	/* msg 22: \n    qualifiers show the major option in parenthesis */
+		ALICE_print(22, 0, 0, 0, 0, 0);	// msg 22: \n    qualifiers show the major option in parenthesis 
 #endif
 		exit_local(FINI_ERROR, tdgbl);
 	}
@@ -600,7 +600,7 @@ int common_main(int			argc,
 			}
 
 			if (any_error) {
-				ALICE_print(24, 0, 0, 0, 0, 0);	/* msg 24: Summary of validation errors\n */
+				ALICE_print(24, 0, 0, 0, 0, 0);	// msg 24: Summary of validation errors\n 
 
 				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
 					if (ua_val_errors[i]) {
@@ -621,7 +621,7 @@ int common_main(int			argc,
 	}	// try
 	catch (const std::exception&)
 	{
-		/* All "calls" to exit_local(), normal and error exits, wind up here */
+		// All "calls" to exit_local(), normal and error exits, wind up here 
 
 		tdgbl->service_blk->svc_started();
 

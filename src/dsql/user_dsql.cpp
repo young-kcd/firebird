@@ -744,7 +744,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 	if (!statement)
 	{
 		statement = (stmt*) gds__alloc((SLONG) sizeof(stmt));
-		/* FREE: by user calling isc_embed_dsql_release() */
+		// FREE: by user calling isc_embed_dsql_release() 
 		if (!statement)			// NOMEM: 
 			error_post(isc_virmemexh, 0);
 
@@ -1388,7 +1388,6 @@ static void cleanup_database(FRBRD** db_handle, void* dummy)
 	}
 }
 
-
 //____________________________________________________________
 //
 //	An error returned has been trapped.  If the user specified
@@ -1407,6 +1406,7 @@ static ISC_STATUS error(const std::exception& ex)
 
 	exit(UDSQL_error->dsql_status[1]);
 }
+
 
 static ISC_STATUS error()
 {
@@ -1467,12 +1467,12 @@ static void error_post(ISC_STATUS status, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS)(IPTR) va_arg(args, TEXT *);
 			break;
 
 		case isc_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
-			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS)(IPTR) va_arg(args, TEXT *);
 			break;
 		}
 	}
@@ -1542,11 +1542,9 @@ static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, stm
  * 	Add the name to the designated list.
  *
  **************************************/
-	dsql_name* name;
-
 	USHORT l = name_length(symbol_name);
-	name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
-/* FREE: by exit handler cleanup() or database_cleanup() */
+	dsql_name* name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
+// FREE: by exit handler cleanup() or database_cleanup() 
 	if (!name)					// NOMEM: 
 		error_post(isc_virmemexh, 0);
 	name->name_stmt = stmt;

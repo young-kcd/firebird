@@ -133,7 +133,7 @@ bool PREPARSE_execute(
 		USHORT dialect)
 {
 	char* const token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);
-/* FREE: by return(s) in this procedure */
+// FREE: by return(s) in this procedure 
 	if (!token) {				// NOMEM: 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
@@ -178,7 +178,7 @@ bool PREPARSE_execute(
 	*stmt_eaten = false;
 	char* const dpb_array = (SCHAR*) gds__alloc((SLONG) 2 * MAX_TOKEN_SIZE + 25);
 	char* dpb = dpb_array;
-/* FREE: by following return(s) in this procedure */
+// FREE: by following return(s) in this procedure 
 	if (!dpb_array) {			// NOMEM: 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
@@ -484,7 +484,7 @@ static SSHORT get_next_token(
 		}
 		*stmt = s;
 		if (p >= token_end) {
-			/* '=' used as then there is no place for null termination */
+			// '=' used as then there is no place for null termination 
 
 			*token_length = MAX_TOKEN_SIZE;
 			token[MAX_TOKEN_SIZE] = '\0';

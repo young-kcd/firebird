@@ -254,7 +254,7 @@ bool LCK_convert(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	SET_TDBB(tdbb);
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 	lock->lck_attachment = tdbb->tdbb_attachment;
@@ -296,7 +296,7 @@ int LCK_convert_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
 
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 	lock->lck_attachment = tdbb->tdbb_attachment;
 
 	if (!wait || !gds__thread_enable(FALSE))
@@ -386,7 +386,7 @@ int LCK_convert_opt(TDBB tdbb, lck* lock, USHORT level)
 	fb_assert(LCK_CHECK_LOCK(lock));
 	const USHORT old_level = lock->lck_logical;
 	lock->lck_logical = level;
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 
 	if (dbb->dbb_ast_flags & DBB_assert_locks) {
 		lock->lck_logical = old_level;
@@ -448,7 +448,7 @@ void LCK_fini(TDBB tdbb, enum lck_owner_t owner_type)
 	SLONG* owner_handle_ptr = 0;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 
 	switch (owner_type) {
@@ -488,7 +488,7 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
 
 	SET_TDBB(tdbb);
 #ifdef SUPERSERVER
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	ATT attachment = tdbb->tdbb_attachment;
 #endif
 	switch (lock_type) {
@@ -538,7 +538,7 @@ void LCK_init(TDBB tdbb, enum lck_owner_t owner_type)
 	SLONG* owner_handle_ptr = 0;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 
 	switch (owner_type) {
@@ -587,7 +587,7 @@ int LCK_lock(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
 
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	lock->lck_blocked_threads = NULL;
 	lock->lck_next = lock->lck_prior = NULL;
@@ -635,7 +635,7 @@ int LCK_lock_non_blocking(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
 
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 	att* attachment = tdbb->tdbb_attachment;
 	lock->lck_attachment = attachment;
 
@@ -739,7 +739,7 @@ int LCK_lock_opt(TDBB tdbb, lck* lock, USHORT level, SSHORT wait)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	lock->lck_logical = level;
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 
 	if (dbb->dbb_ast_flags & DBB_assert_locks) {
 		lock->lck_logical = LCK_none;
@@ -1080,7 +1080,7 @@ static lck* find_block(lck* lock, USHORT level)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 
 	att* attachment = lock->lck_attachment;
 	if (!attachment)
@@ -1154,7 +1154,7 @@ static void hash_allocate(lck* lock)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	DBB dbb = lock->lck_dbb;
+	Database* dbb = lock->lck_dbb;
 
 	att* attachment = lock->lck_attachment;
 	if (attachment) {

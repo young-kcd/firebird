@@ -212,7 +212,7 @@ USHORT BTR_all(TDBB    tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	WIN window(-1);
 
@@ -265,7 +265,7 @@ void BTR_create(TDBB tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// Now that the index id has been checked out, create the index.
@@ -299,7 +299,7 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// Get index descriptor.  If index doesn't exist, just leave.
@@ -338,7 +338,7 @@ bool BTR_description(jrd_rel* relation, index_root_page* root, IDX * idx, SSHORT
  *  Index id's must fit in a short - formerly a UCHAR.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	
 	if (id >= root->irt_count) {
 		return false;
@@ -625,7 +625,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	IDX* idx = insertion->iib_descriptor;
 	WIN window(idx->idx_root);
@@ -765,7 +765,7 @@ IDX_E BTR_key(TDBB tdbb, jrd_rel* relation, REC record, IDX * idx, KEY * key, id
 	int missing_unique_segments = 0;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	IDX_E result = idx_e_ok;
@@ -1027,7 +1027,7 @@ btree_page* BTR_left_handoff(TDBB tdbb, WIN * window, btree_page* page, SSHORT l
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	SLONG original_page = window->win_page;
@@ -1124,7 +1124,7 @@ void BTR_make_key(TDBB tdbb,
 	bool isNull;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	fb_assert(count > 0);
 	fb_assert(idx != NULL);
@@ -1308,7 +1308,7 @@ void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
  *
  **************************************/
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	IDX* idx = insertion->iib_descriptor;
 	WIN window(idx->idx_root);
 	btree_page* page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
@@ -1391,7 +1391,7 @@ void BTR_reserve_slot(TDBB tdbb, jrd_rel* relation, jrd_tra* transaction, IDX * 
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// Get root page, assign an index id, and store the index descriptor.
@@ -1550,7 +1550,7 @@ void BTR_selectivity(TDBB tdbb, jrd_rel* relation, USHORT id, SelectivityList& s
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	// go through all the leaf nodes and count them; 
 	// also count how many of them are duplicates
@@ -1853,7 +1853,7 @@ static void compress(TDBB tdbb,
 	bool int64_key_op = false;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	UCHAR* p = key->key_data;
@@ -2176,7 +2176,7 @@ static USHORT compress_root(TDBB tdbb, index_root_page* page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	UCHAR* const temp =
@@ -2245,7 +2245,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	btree_page* page = (btree_page*) window->win_buffer;
@@ -2293,7 +2293,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 	nextNode.length = newNextLength;
 	nextNode.data = tempData;
 	pointer = BTreeNode::writeNode(&nextNode, pointer, flags, leafPage);
-	delete tempData;
+	delete[] tempData;
 
 	// Compute length of rest of bucket and move it down.
 	length = page->btr_length - (localPointer - (UCHAR*) page);
@@ -2374,7 +2374,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN *window, UCHAR *pointer)
 		for (int i = 0; i < jumpNodes->getCount(); i++) {
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
 			if (walkJumpNode[i].data) {
-				delete walkJumpNode[i].data;
+				delete[] walkJumpNode[i].data;
 			}
 		}
 		jumpNodes->clear();
@@ -2550,7 +2550,7 @@ static SLONG fast_load(TDBB tdbb,
 
 	
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// leaf-page and pointer-page size limits, we always need to 
@@ -2830,7 +2830,7 @@ static SLONG fast_load(TDBB tdbb,
 					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
 					for (int i = 0; i < leafJumpNodes->getCount(); i++) {
 						if (walkJumpNode[i].data) {
-							delete walkJumpNode[i].data;
+							delete[] walkJumpNode[i].data;
 						}
 					}
 					leafJumpNodes->clear();
@@ -3124,7 +3124,7 @@ static SLONG fast_load(TDBB tdbb,
 						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
 						for (int i = 0; i < pageJumpNodes->getCount(); i++) {
 							if (walkJumpNode[i].data) {
-								delete walkJumpNode[i].data;
+								delete[] walkJumpNode[i].data;
 							}
 						}
 						pageJumpNodes->clear();
@@ -3244,7 +3244,7 @@ static SLONG fast_load(TDBB tdbb,
 			IndexJumpNode* walkJumpNode = freeJumpNodes->begin();
 			for (int i = 0; i < freeJumpNodes->getCount(); i++) {
 				if (walkJumpNode[i].data) {
-					delete walkJumpNode[i].data;
+					delete[] walkJumpNode[i].data;
 				}
 			}
 			freeJumpNodes->clear();
@@ -3254,7 +3254,7 @@ static SLONG fast_load(TDBB tdbb,
 		for (keyList::iterator itr3 = jumpKeys->begin(); 
 			itr3 < jumpKeys->end(); ++itr3) 
 		{
-			delete (*itr3)->keyData;
+			delete[] (*itr3)->keyData;
 			delete (*itr3);
 		}
 		delete jumpKeys;
@@ -4085,7 +4085,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	btree_page* gc_page = (btree_page*) window->win_buffer;
@@ -4431,7 +4431,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
 			for (int i = 0; i < jumpNodes->getCount(); i++) {
 				if (walkJumpNode[i].data) {
-					delete walkJumpNode[i].data;
+					delete[] walkJumpNode[i].data;
 				}
 			}
 			jumpNodes->clear();
@@ -4489,7 +4489,7 @@ static CONTENTS garbage_collect(TDBB tdbb, WIN * window, SLONG parent_number)
 			walkJumpNode[i].offset += jumpersNewSize;
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
 			if (walkJumpNode[i].data) {
-				delete walkJumpNode[i].data;
+				delete[] walkJumpNode[i].data;
 			}
 		}
 		// Copy data.
@@ -4658,7 +4658,7 @@ static void generate_jump_nodes(TDBB tdbb, btree_page* page, jumpNodeList* jumpN
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	fb_assert(page);
 	fb_assert(jumpNodes);
 	fb_assert(jumpersSize);
@@ -4820,7 +4820,7 @@ static SLONG insert_node(TDBB tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// find the insertion point for the specified key
@@ -4971,7 +4971,7 @@ static SLONG insert_node(TDBB tdbb,
 	beforeInsertNode.data = tempData;
 	pointer = BTreeNode::writeNode(&beforeInsertNode, pointer, flags, leafPage);
 	newBucket->btr_prefix_total += newPrefix;
-	delete tempData;
+	delete[] tempData;
 
 	// Copy remaining data to scratch page.
 	if ((nodeOffset + beforeInsertOriginalSize) < bucket->btr_length) {
@@ -5093,7 +5093,7 @@ static SLONG insert_node(TDBB tdbb,
 				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
 				if (fragmentedOffset) {
 					if (walkJumpNode[i].data) {
-						delete walkJumpNode[i].data;
+						delete[] walkJumpNode[i].data;
 					}
 				}
 			}		
@@ -5187,7 +5187,7 @@ static SLONG insert_node(TDBB tdbb,
 					memcpy(newData + walkJumpNode[i].prefix, walkJumpNode[i].data, 
 						walkJumpNode[i].length);
 					if (walkJumpNode[i].data) {
-						delete walkJumpNode[i].data;
+						delete[] walkJumpNode[i].data;
 					}
 					walkJumpNode[i].prefix = 0;
 					walkJumpNode[i].length = length;
@@ -5360,7 +5360,7 @@ static SLONG insert_node(TDBB tdbb,
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
 			for (int i = 0; i < jumpNodes->getCount(); i++, index++) {
 				if (walkJumpNode[i].data) {
-					delete walkJumpNode[i].data;
+					delete[] walkJumpNode[i].data;
 				}
 			}
 		}
@@ -5492,7 +5492,7 @@ static CONTENTS remove_node(TDBB tdbb, IIB * insertion, WIN * window)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	IDX* idx = insertion->iib_descriptor;
 	btree_page* page = (btree_page*) window->win_buffer;
 
@@ -5928,7 +5928,7 @@ void update_selectivity(index_root_page* root, USHORT id, const SelectivityList&
  *	Update selectivity on the index root page.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 	const USHORT idx_count = irt_desc->irt_keys;

@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.53 2004-03-01 01:29:25 skidder Exp $
+$Id: backup.epp,v 1.54 2004-03-07 07:58:08 robocop Exp $
 */
 
 #include "firebird.h"
@@ -410,7 +410,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		put(tdgbl, (UCHAR) (rec_relation_end));
 	}
 
-/* now for the new triggers in rdb$triggers */
+// now for the new triggers in rdb$triggers 
 	if (tdgbl->BCK_capabilities & BCK_ffmptt) {
 		BURP_verbose(159, NULL, NULL, NULL, NULL, NULL);
 		// msg 159  writing triggers 
@@ -1051,7 +1051,7 @@ void get_ranges( burp_fld* field)
 	SLONG* rp = field->fld_ranges;
 	USHORT count = 0;
 
-/* Get the array dimensions in the rdb$field_dimensions */
+// Get the array dimensions in the rdb$field_dimensions 
 
 	FOR (REQUEST_HANDLE tdgbl->handles_get_ranges_req_handle1)
 		X IN RDB$FIELD_DIMENSIONS 
@@ -1170,7 +1170,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	const USHORT blr_length = blr - blr_buffer;
 
-/* compute the range size for each dimension = high_range - low_range */
+// compute the range size for each dimension = high_range - low_range 
 
 	ULONG slice_length = field_length;
 	for (range = field->fld_ranges; range < end_ranges; range += 2)
@@ -2299,7 +2299,7 @@ void put_relation( burp_rel* relation)
 		put(tdgbl, (UCHAR) (att_end));
 	}
 
-/* Write out view relations (if a view, of course) */
+// Write out view relations (if a view, of course) 
 
 	if (relation->rel_flags & REL_view)
 	{

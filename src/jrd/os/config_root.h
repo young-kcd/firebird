@@ -99,7 +99,7 @@ private:
 	}
 	bool getRootFromEnvironment(const char* envName) {
 		const char* envValue = getenv(envName);
-		if(! envValue) {
+		if (! envValue) {
 			return false;
 		}
 		root_dir = envValue;

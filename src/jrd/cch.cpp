@@ -108,17 +108,17 @@ static BDB alloc_bdb(TDBB, BCB, UCHAR **);
 static int blocking_ast_bdb(void *);
 #endif
 static void btc_flush(TDBB, SLONG, const bool, ISC_STATUS*);
-static void btc_insert(DBB, BDB);
+static void btc_insert(Database*, BDB);
 static void btc_remove(BDB);
 static void cache_bugcheck(int);
 #ifdef CACHE_READER
-static void THREAD_ROUTINE cache_reader(DBB);
+static void THREAD_ROUTINE cache_reader(Database*);
 #endif
 #ifdef CACHE_WRITER
-static void THREAD_ROUTINE cache_writer(DBB);
+static void THREAD_ROUTINE cache_writer(Database*);
 #endif
 static void check_precedence(TDBB, WIN *, SLONG);
-static void clear_precedence(DBB, BDB);
+static void clear_precedence(Database*, BDB);
 static BDB dealloc_bdb(BDB);
 #ifndef PAGE_LATCHING
 static void down_grade(TDBB, BDB);
@@ -183,7 +183,7 @@ static void update_write_direction(TDBB, BDB);
 
 #define DUMMY_CHECKSUM        12345
 
-bool set_write_direction(DBB dbb, BDB bdb, SSHORT direction)
+bool set_write_direction(Database* dbb, BDB bdb, SSHORT direction)
 {
 #ifdef SUPERSERVER
 	NBAK_TRACE(("set_write_direction page=%d old=%d new=%d", bdb->bdb_page,
@@ -267,7 +267,7 @@ void CCH_flush_database(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BCB bcb = dbb->dbb_bcb;
 
@@ -326,7 +326,7 @@ USHORT CCH_checksum(BDB bdb)
 #ifdef NO_CHECKSUM
 	return DUMMY_CHECKSUM;
 #else
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 #ifdef WIN_NT
 /* ODS_VERSION8 for NT was shipped before page checksums
    were disabled on other platforms. Continue to compute
@@ -391,7 +391,7 @@ int CCH_down_grade_dbb(void* ast_object)
  *	AST.
  *
  **************************************/
-	DBB dbb = static_cast<DBB>(ast_object);
+	Database* dbb = static_cast<Database*>(ast_object);
 
 /* Ignore the request if the database or lock block does not appear
    to be valid . */
@@ -513,7 +513,7 @@ bool CCH_exclusive(TDBB tdbb, USHORT level, SSHORT wait_flag)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef SUPERSERVER
 	if (!CCH_exclusive_attachment(tdbb, level, wait_flag)) {
@@ -578,7 +578,7 @@ bool CCH_exclusive_attachment(TDBB tdbb, USHORT level, SSHORT wait_flag)
 #define CCH_EXCLUSIVE_RETRY_INTERVAL	1	/* retry interval in seconds */
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 	if (attachment->att_flags & ATT_exclusive) {
 		return true;
@@ -729,7 +729,7 @@ PAG CCH_fake(TDBB tdbb, WIN * window, SSHORT latch_wait)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* if there has been a shadow added recently, go out and
    find it before we grant any more write locks */
@@ -916,7 +916,7 @@ SSHORT CCH_fetch_lock(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* if there has been a shadow added recently, go out and
    find it before we grant any more write locks */
@@ -975,7 +975,7 @@ void CCH_fetch_page(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BDB bdb = window->win_bdb;
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -1168,7 +1168,7 @@ void CCH_fini(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	bool flush_error = false;
 	
 	// CVC: Patching a conversion error FB1->FB2 with crude logic
@@ -1295,7 +1295,7 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BCB bcb = dbb->dbb_bcb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -1453,7 +1453,7 @@ bool CCH_free_page(TDBB tdbb)
 /* Called by VIO/garbage_collector() when it is idle to
    help quench the thirst for free pages. */
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BCB bcb = dbb->dbb_bcb;
 
 	if (dbb->dbb_flags & DBB_read_only) {
@@ -1627,7 +1627,7 @@ void CCH_init(TDBB tdbb, ULONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Check for database-specific page buffers */
 
@@ -1745,7 +1745,7 @@ void CCH_mark(TDBB tdbb, WIN * window, USHORT mark_system)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	dbb->dbb_marks++;
 	BCB bcb = dbb->dbb_bcb;
@@ -1874,7 +1874,7 @@ lck* CCH_page_lock(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	lck* lock = FB_NEW_RPT(*dbb->dbb_bufferpool, sizeof(SLONG)) lck;
 	lock->lck_type = LCK_bdb;
@@ -1937,7 +1937,7 @@ void CCH_prefetch(TDBB tdbb, SLONG * pages, SSHORT count)
  **************************************/
 #ifdef CACHE_READER
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BCB bcb = dbb->dbb_bcb;
 
 	if (!count || !(bcb->bcb_flags & BCB_cache_reader))	{
@@ -2009,7 +2009,7 @@ void invalidate_and_release_buffer(TDBB tdbb, BDB bdb)
 {
 	// This function should be called before difference processing is done.
 	// So there should be no need to no need to release difference locks though
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	bdb->bdb_flags |= BDB_not_valid;
 	bdb->bdb_flags &= ~BDB_dirty;
 	set_write_direction(dbb, bdb, BDB_write_undefined);
@@ -2021,7 +2021,7 @@ void invalidate_and_release_buffer(TDBB tdbb, BDB bdb)
 
 void update_write_direction(TDBB tdbb, BDB bdb)
 {
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	// Determine location of the page in difference file and write destination
 	// so BDB AST handlers and write_page routine can safely use this information
 	if (!dbb->backup_manager->lock_state(true)) {
@@ -2127,7 +2127,7 @@ void CCH_release(TDBB tdbb, WIN * window, bool release_tail)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BDB bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -2266,7 +2266,7 @@ void CCH_release_exclusive(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);	
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	dbb->dbb_flags &= ~DBB_exclusive;
 
 	att* attachment = tdbb->tdbb_attachment;
@@ -2280,7 +2280,7 @@ void CCH_release_exclusive(TDBB tdbb)
 }
 
 
-bool CCH_rollover_to_shadow(DBB dbb, jrd_file* file, const bool inAst)
+bool CCH_rollover_to_shadow(Database* dbb, jrd_file* file, const bool inAst)
 {
 /**************************************
  *
@@ -2300,11 +2300,11 @@ bool CCH_rollover_to_shadow(DBB dbb, jrd_file* file, const bool inAst)
 	}
 /* notify other process immediately to ensure all read from sdw
    file instead of db file */
-	return (SDW_rollover_to_shadow(file, inAst));
+	return SDW_rollover_to_shadow(file, inAst);
 }
 
 
-void CCH_shutdown_database(DBB dbb)
+void CCH_shutdown_database(Database* dbb)
 {
 /**************************************
  *
@@ -2349,7 +2349,7 @@ void CCH_unwind(TDBB tdbb, bool punt)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* CCH_unwind is called when any of the following occurs:
 	- IO error
@@ -2483,7 +2483,7 @@ bool CCH_write_all_shadows(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	Shadow* sdw = shadow ? shadow : dbb->dbb_shadow;
 
@@ -2639,7 +2639,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR** memory)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BDB bdb_ = FB_NEW(*dbb->dbb_bufferpool) bdb;
 	bdb_->bdb_dbb = dbb;
@@ -2701,7 +2701,7 @@ static int blocking_ast_bdb(void* ast_object)
 	BLKCHK(bdb, type_bdb);
 	
 	ISC_STATUS_ARRAY ast_status;
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 
 	tdbb->tdbb_database = dbb;
 	tdbb->tdbb_attachment = NULL;
@@ -2759,7 +2759,7 @@ static void btc_flush(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* traverse the tree, flagging to prevent pages
    from being removed from the tree during write_page() --
@@ -2873,7 +2873,7 @@ static void btc_flush(
 }
 
 
-static void btc_insert(DBB dbb, BDB bdb)
+static void btc_insert(Database* dbb, BDB bdb)
 {
 /**************************************
  *
@@ -2961,7 +2961,7 @@ static void btc_remove(BDB bdb)
  *	importance.
  *
  **************************************/
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 
 /* engage in a little defensive programming to make
    sure the node is actually in the tree */
@@ -3043,7 +3043,7 @@ static void cache_bugcheck(int number)
 
 
 #ifdef CACHE_READER
-static void THREAD_ROUTINE cache_reader(DBB dbb)
+static void THREAD_ROUTINE cache_reader(Database* dbb)
 {
 /**************************************
  *
@@ -3211,7 +3211,7 @@ static void THREAD_ROUTINE cache_reader(DBB dbb)
 
 
 #ifdef CACHE_WRITER
-static void THREAD_ROUTINE cache_writer(DBB dbb)
+static void THREAD_ROUTINE cache_writer(Database* dbb)
 {
 /**************************************
  *
@@ -3396,7 +3396,7 @@ static void check_precedence(TDBB tdbb, WIN * window, SLONG page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* If this is really a transaction id, sort things out */
 
@@ -3509,7 +3509,7 @@ static void check_precedence(TDBB tdbb, WIN * window, SLONG page)
 
 
 
-static void clear_precedence(DBB dbb, BDB bdb)
+static void clear_precedence(Database* dbb, BDB bdb)
 {
 /**************************************
  *
@@ -3597,7 +3597,7 @@ static void down_grade(TDBB tdbb, BDB bdb)
 
 	bdb->bdb_ast_flags |= BDB_blocking;
 	lck* lock = bdb->bdb_lock;
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -3742,7 +3742,7 @@ static void expand_buffers(TDBB tdbb, ULONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BCB old = dbb->dbb_bcb;
 
 	if (number <= old->bcb_count || number > MAX_PAGE_BUFFERS) {
@@ -3885,7 +3885,7 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
 	BCB bcb;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	SSHORT walk = dbb->dbb_bcb->bcb_free_minimum;
 
 	BCB_MUTEX_ACQUIRE;
@@ -4336,7 +4336,7 @@ static SSHORT latch_bdb(
 /* Get or create a latch wait block and wait for someone to grant
    the latch. */
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BCB bcb = dbb->dbb_bcb;
 
 	Latch_wait* lwt;
@@ -4482,7 +4482,7 @@ static SSHORT lock_buffer(
  **************************************/
 	SET_TDBB(tdbb);
 #ifdef PAGE_LATCHING
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_refresh_ranges && bdb->bdb_flags & BDB_writer &&
 		(page_type == pag_data || page_type == pag_index))
@@ -4650,7 +4650,7 @@ static ULONG memory_init(TDBB tdbb, BCB bcb, ULONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR* memory = 0;
 	SLONG buffers = 0;
@@ -4799,7 +4799,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
    for the prefetch request. */
 
 	TDBB tdbb = prefetch->prf_tdbb;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (!async_status) {
 		BDB* next_bdb = prefetch->prf_bdbs;
@@ -4851,7 +4851,7 @@ static void prefetch_init(Prefetch* prefetch, TDBB tdbb)
  *	interfaces want the buffer address aligned.
  *
  **************************************/
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	prefetch->prf_tdbb = tdbb;
 	prefetch->prf_flags = 0;
@@ -4877,7 +4877,7 @@ static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
  *
  **************************************/
 	TDBB tdbb = prefetch->prf_tdbb;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (!prefetch->prf_page_count) {
 		prefetch->prf_flags &= ~PRF_active;
@@ -4923,7 +4923,7 @@ static void prefetch_prologue(Prefetch* prefetch, SLONG* start_page)
  *
  **************************************/
 	TDBB tdbb = prefetch->prf_tdbb;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BCB bcb = dbb->dbb_bcb;
 
 	prefetch->prf_start_page = *start_page;
@@ -5344,7 +5344,7 @@ static int write_buffer(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (latch_bdb(tdbb, LATCH_io, bdb, page, 1) == -1) {
 		return 1;
@@ -5474,7 +5474,7 @@ static bool write_page(
 	}
 
 	bool result = true;
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	pag* page = bdb->bdb_buffer;
 
 /* Before writing db header page, make sure that the next_transaction > oldest_active

@@ -24,40 +24,40 @@
 #ifndef QLI_COMPILE_H
 #define QLI_COMPILE_H
 
-/* Name nodes -- used to hold names between parse and compilation */
+// Name nodes -- used to hold names between parse and compilation 
 
 typedef struct nam {
     blk			nam_header;
-    qli_symbol*	nam_symbol;		/* Symbol pointer, if any */
-    USHORT		nam_length;		/* Length of name */
-    TEXT		nam_string[1];	/* Actual name string */
+    qli_symbol*	nam_symbol;		// Symbol pointer, if any 
+    USHORT		nam_length;		// Length of name 
+    TEXT		nam_string[1];	// Actual name string 
 } *NAM;
 
-/* Qualified procedure node -- used to hold qualified procedure names */
+// Qualified procedure node -- used to hold qualified procedure names 
 
 typedef struct qpr {
     blk  qpr_header;
-    dbb* qpr_database;		/* database block */
-    nam* qpr_name;			/* name block */	
+    dbb* qpr_database;		// database block 
+    nam* qpr_name;			// name block 	
 } *QPR;
 
-/* Qualified function node -- used to hold qualified function names */
+// Qualified function node -- used to hold qualified function names 
 
 typedef struct qfn {
     blk  qfn_header;
-    dbb* qfn_database;		/* database block */
-    nam* qfn_name;			/* name block */	
+    dbb* qfn_database;		// database block 
+    nam* qfn_name;			// name block 	
 } *QFN;
 
-/* Qualified filter node -- used to hold qualified filter names */
+// Qualified filter node -- used to hold qualified filter names 
 
 typedef struct qfl {
     blk  qfl_header;
-    dbb* qfl_database;		/* database block */
-    nam* qfl_name;			/* name block */	
+    dbb* qfl_database;		// database block 
+    nam* qfl_name;			// name block 	
 } *QFL;
 
-/* SHOW options */
+// SHOW options 
 
 enum show_t {
     show_all,
@@ -106,7 +106,7 @@ enum set_t {
     set_continuation,
     set_user,
     set_password,
-    set_euc_justify,			/* JPN specific option */
+    set_euc_justify,			// JPN specific option 
     set_count,
     set_charset,
 #ifdef DEV_BUILD
@@ -115,31 +115,31 @@ enum set_t {
 #endif
 };
 
-/* Position assignments for syntax tree nodes */
+// Position assignments for syntax tree nodes 
 
-#define s_rel_relation	0		/* Actual relation block */
-#define s_rel_context	1		/* Symbol block for context, if any */
+#define s_rel_relation	0		// Actual relation block 
+#define s_rel_context	1		// Symbol block for context, if any 
 #define s_rel_count	2
 
-#define s_prt_list	0		/* Print list */
-#define s_prt_rse	1		/* Rse, if any */
-#define s_prt_output	2		/* Output file, if any */
-#define s_prt_distinct	3		/* Simple flag indicating distinct */
-#define s_prt_order	4		/* SQL order clause */
+#define s_prt_list	0		// Print list 
+#define s_prt_rse	1		// Rse, if any 
+#define s_prt_output	2		// Output file, if any 
+#define s_prt_distinct	3		// Simple flag indicating distinct 
+#define s_prt_order	4		// SQL order clause 
 #define s_prt_form	5
 #define s_prt_count	6
 
-#define s_rse_first	0		/* FIRST clause, if any */
-#define s_rse_boolean	1		/* Boolean clause, if any */
-#define s_rse_sort	2		/* Sort clause, if any */
-#define s_rse_reduced	3		/* Reduced clause, if any */
+#define s_rse_first	0		// FIRST clause, if any 
+#define s_rse_boolean	1		// Boolean clause, if any 
+#define s_rse_sort	2		// Sort clause, if any 
+#define s_rse_reduced	3		// Reduced clause, if any 
 #define s_rse_group_by	4
 #define s_rse_having	5
-#define s_rse_outer	6		/* Outer context value (implicit ANY) */
-#define s_rse_inner	7		/* Inner context value */
-#define s_rse_op	8		/* Comparison operator */
-#define s_rse_join_type	9		/* Join type */
-#define s_rse_all_flag	10		/* Explicit "ALL" flag */
+#define s_rse_outer	6		// Outer context value (implicit ANY) 
+#define s_rse_inner	7		// Inner context value 
+#define s_rse_op	8		// Comparison operator 
+#define s_rse_join_type	9		// Join type 
+#define s_rse_all_flag	10		// Explicit "ALL" flag 
 #define s_rse_list	11
 #ifdef PC_ENGINE
 #define s_rse_index	12
@@ -152,9 +152,9 @@ enum set_t {
 #define s_for_statement	1
 #define s_for_count	2
 
-#define s_itm_value		0	/* Value of print item */
-#define s_itm_edit_string	1	/* Edit string, if any */
-#define s_itm_header		2	/* Query header, if any */
+#define s_itm_value		0	// Value of print item 
+#define s_itm_edit_string	1	// Edit string, if any 
+#define s_itm_header		2	// Query header, if any 
 #define s_itm_count		3
 
 #define s_sto_relation	0
@@ -169,9 +169,9 @@ enum set_t {
 #define s_asn_to	1
 #define s_asn_count	2
 
-#define s_mod_list	0		/* Field list */
-#define s_mod_statement	1		/* Sub-statement */
-#define s_mod_rse	2		/* Record selection expression */
+#define s_mod_list	0		// Field list 
+#define s_mod_statement	1		// Sub-statement 
+#define s_mod_rse	2		// Record selection expression 
 #define s_mod_form	3
 #define s_mod_count	4
 
@@ -202,11 +202,11 @@ enum set_t {
 #define s_fmt_count	2
 
 #define s_dfi_name	0
-#define s_dfi_relation	1		/* Define index */
+#define s_dfi_relation	1		// Define index 
 #define s_dfi_fields	2
 #define s_dfi_count	3
 
-#define s_mfi_name	0		/* Modify an index */
+#define s_mfi_name	0		// Modify an index 
 #define s_mfi_database	1
 #define s_mfi_count	2
 
@@ -228,7 +228,7 @@ enum set_t {
 #define s_fun_function	1
 #define s_fun_count	2
 
-#define s_idx_field	0		/* array subscript */
+#define s_idx_field	0		// array subscript 
 #define s_idx_subs	1
 #define s_idx_count	2
 
@@ -242,7 +242,7 @@ enum set_t {
 #define s_grant_privileges 3
 #define s_grant_count	4   
 
-/*  some flags for index definitions */
+//  some flags for index definitions 
 
 #define s_dfi_flag_unique	1
 #define s_dfi_flag_inactive	2	

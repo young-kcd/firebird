@@ -41,5 +41,5 @@ BOOL CALLBACK _export termDlgProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK _export transDlgProc(HWND, UINT, WPARAM, LPARAM);
 int PASCAL WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 
-#endif /* ISQL_WIN_PROTO_H */
+#endif // ISQL_WIN_PROTO_H 
 

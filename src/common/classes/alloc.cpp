@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.41 2004-03-02 20:23:32 skidder Exp $
+ *  $Id: alloc.cpp,v 1.42 2004-03-07 07:58:25 robocop Exp $
  *
  */
 
@@ -57,9 +57,9 @@ const int MAP_CACHE_SIZE = 64;
 #define ALLOC_PATTERN 0xFEEDABED
 //#define ALLOC_PATTERN 0x0
 #ifdef DEBUG_GDS_ALLOC
-# define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size/sizeof(unsigned int);_i++) ((unsigned int*)(ptr))[_i]=(pattern)
+# define PATTERN_FILL(ptr, size, pattern) for (size_t _i = 0; _i < size / sizeof(unsigned int); _i++) ((unsigned int*)(ptr))[_i] = (pattern)
 #else
-# define PATTERN_FILL(ptr,size,pattern) ((void)0)
+# define PATTERN_FILL(ptr, size, pattern) ((void)0)
 #endif
 
 // TODO (in order of importance):
@@ -151,11 +151,12 @@ void* MemoryPool::external_alloc(size_t size) {
 		void* result = NULL;
 		if (extents_cache.getCount()) {
 			// Use recently used object object to encourage caching
-			result = extents_cache[extents_cache.getCount()-1];
-			extents_cache.shrink(extents_cache.getCount()-1);
+			result = extents_cache[extents_cache.getCount() - 1];
+			extents_cache.shrink(extents_cache.getCount() - 1);
 		}
 		cache_mutex.leave();
-		if (result) return result;
+		if (result)
+			return result;
 	}
 #endif
 #if defined WIN_NT
@@ -167,7 +168,8 @@ void* MemoryPool::external_alloc(size_t size) {
 		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 # else	
 	// This code is needed for Solaris 2.6, AFAIK
-	if (dev_zero_fd < 0) dev_zero_fd = open("/dev/zero", O_RDWR);
+	if (dev_zero_fd < 0)
+		dev_zero_fd = open("/dev/zero", O_RDWR);
 	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
 		MAP_PRIVATE, dev_zero_fd, 0);
 # endif
@@ -205,16 +207,18 @@ void* MemoryPool::tree_alloc(size_t size) {
 		if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
 			spareLeafs.getCount()) 
 		{
-			if (!spareLeafs.getCount()) pool_out_of_memory();
-			void *temp = spareLeafs[spareLeafs.getCount()-1];
-			spareLeafs.shrink(spareLeafs.getCount()-1);
+			if (!spareLeafs.getCount())
+				pool_out_of_memory();
+			void *temp = spareLeafs[spareLeafs.getCount() - 1];
+			spareLeafs.shrink(spareLeafs.getCount() - 1);
 			needSpare = true;
 			return temp;
 		}
 	if (size == sizeof(FreeBlocksTree::NodeList)) {
-		if (!spareNodes.getCount()) pool_out_of_memory();
-		void *temp = spareNodes[spareNodes.getCount()-1];
-		spareNodes.shrink(spareNodes.getCount()-1);
+		if (!spareNodes.getCount())
+			pool_out_of_memory();
+		void *temp = spareNodes[spareNodes.getCount() - 1];
+		spareNodes.shrink(spareNodes.getCount() - 1);
 		needSpare = true;
 		return temp;
 	}
@@ -241,9 +245,11 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 		, file, line
 #endif
 	);
-	if (needSpare) updateSpare();
+	if (needSpare)
+		updateSpare();
 	lock.leave();
-	if (!result) pool_out_of_memory();
+	if (!result)
+		pool_out_of_memory();
 	// test with older behavior
 	// memset(result,0,size);
 	return result;
@@ -344,7 +350,8 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 		MIN_EXTENT_SIZE);
 
 	char* mem = (char *)external_alloc(alloc_size);
-	if (!mem) pool_out_of_memory();
+	if (!mem)
+		pool_out_of_memory();
 	((MemoryExtent *)mem)->next = NULL;
 	((MemoryExtent *)mem)->extent_size = alloc_size;
 	MemoryPool* pool = new(mem +
@@ -383,7 +390,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 		MEM_ALIGN(instance_size) +
 		MEM_ALIGN(sizeof(MemoryBlock)) +
 		MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
-	int blockLength = alloc_size -
+	const int blockLength = alloc_size -
 		MEM_ALIGN(sizeof(MemoryExtent)) -
 		MEM_ALIGN(sizeof(MemoryBlock)) -
 		MEM_ALIGN(instance_size) -
@@ -467,9 +474,9 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 #ifdef NDEBUG
 				freeBlocks.getNext();
 #else
-				bool res = freeBlocks.getNext();
+				const bool res = freeBlocks.getNext();
 				fb_assert(res);
-				fb_assert(&freeBlocks.current()==current);
+				fb_assert(&freeBlocks.current() == current);
 #endif
 				MemoryBlock *block = current->block;
 				freeBlocks.fastRemove();
@@ -654,7 +661,8 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk) {
 }
 
 void MemoryPool::deallocate(void *block) {
-	if (!block) return;
+	if (!block)
+		return;
 	lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
 	fb_assert(blk->used);
@@ -711,7 +719,8 @@ void MemoryPool::deallocate(void *block) {
 		else
 			addFreeBlock(blk);
 	}
-	if (needSpare) updateSpare();
+	if (needSpare)
+		updateSpare();
 	lock.leave();
 }
 

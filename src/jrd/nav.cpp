@@ -149,7 +149,7 @@ jrd_exp* NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_find_record(Rsb* rsb,
+bool NAV_find_record(Rsb* rsb,
 						USHORT blr_operator, USHORT direction, jrd_nod* find_key)
 {
 /**************************************
@@ -255,15 +255,20 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 			CCH_RELEASE(tdbb, &window);
 			if (!NAV_get_record
 				(rsb, impure, request->req_rpb + rsb->rsb_stream,
-				 RSE_get_forward)) return FALSE;
+				 RSE_get_forward))
+			{
+				return false;
+			}
 
 			if (compare_keys
 				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
 				 &key_value, search_flags) < 0)
-				return TRUE;
+			{
+				return true;
+			}
 			else {
 				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-				return FALSE;
+				return false;
 			}
 		}
 	//	break;  unreachable
@@ -276,7 +281,7 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 				(rsb, RSE_get_last, &key_value, find_key->nod_count,
 				 search_flags))
 			{
-				return TRUE;
+				return true;
 			}
 			return NAV_get_record(rsb, impure,
 								  request->req_rpb + rsb->rsb_stream,
@@ -290,15 +295,20 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 			CCH_RELEASE(tdbb, &window);
 			if (!NAV_get_record
 				(rsb, impure, request->req_rpb + rsb->rsb_stream,
-				 RSE_get_forward)) return FALSE;
+				 RSE_get_forward))
+			{
+				return false;
+			}
 
 			if (compare_keys
 				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
 				 &key_value, search_flags) <= 0)
-				return TRUE;
+			{
+				return true;
+			}
 			else {
 				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-				return FALSE;
+				return false;
 			}
 		}
 	//	break;  unreachable
@@ -307,7 +317,7 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 		if (find_record(rsb, backwards ? RSE_get_last : RSE_get_first,
 						&key_value, find_key->nod_count, search_flags))
 		{
-			return TRUE;
+			return true;
 		}
 		else {
 			// We need to override the crack semantics of find_record, because even 
@@ -319,7 +329,7 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 				RSE_MARK_CRACK(tdbb, rsb, irsb_crack | irsb_forced_crack);
 			else
 				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-			return FALSE;
+			return false;
 		}
 	//	break;  unreachable
 
@@ -332,15 +342,20 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 			CCH_RELEASE(tdbb, &window);
 			if (!NAV_get_record
 				(rsb, impure, request->req_rpb + rsb->rsb_stream,
-				 RSE_get_backward)) return FALSE;
+				 RSE_get_backward))
+			{
+				return false;
+			}
 
 			if (compare_keys
 				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
 				 &key_value, search_flags) > 0)
-				return TRUE;
+			{
+				return true;
+			}
 			else {
 				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-				return FALSE;
+				return false;
 			}
 		}
 		else
@@ -353,7 +368,7 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 			// stream is defined to be on EOF; see bug #6151
 
 			if (impure->irsb_flags & irsb_eof)
-				return FALSE;
+				return false;
 
 			return NAV_get_record(rsb, impure,
 								  request->req_rpb + rsb->rsb_stream,
@@ -370,15 +385,20 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 			CCH_RELEASE(tdbb, &window);
 			if (!NAV_get_record
 				(rsb, impure, request->req_rpb + rsb->rsb_stream,
-				 RSE_get_backward)) return FALSE;
+				 RSE_get_backward))
+			{
+				return false;
+			}
 
 			if (compare_keys
 				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
 				 &key_value, search_flags) >= 0)
-				return TRUE;
+			{
+				return true;
+			}
 			else {
 				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-				return FALSE;
+				return false;
 			}
 		}
 		else
@@ -388,14 +408,14 @@ BOOLEAN NAV_find_record(Rsb* rsb,
 				(rsb, RSE_get_first, &key_value, find_key->nod_count,
 				 search_flags))
 			{
-				return TRUE;
+				return true;
 			}
 
 			// special case when the key is greater than the last record in the file;
 			// stream is defined to be on EOF; see bug #6151
 
 			if (impure->irsb_flags & irsb_eof)
-				return FALSE;
+				return false;
 
 			return NAV_get_record(rsb, impure,
 								  request->req_rpb + rsb->rsb_stream,
@@ -440,7 +460,7 @@ void NAV_get_bookmark(Rsb* rsb, IRSB_NAV impure, BKM bookmark)
 #endif
 
 
-BOOLEAN NAV_get_record(TDBB tdbb,
+bool NAV_get_record(TDBB tdbb,
 					   Rsb* rsb,
 					   IRSB_NAV impure, RPB * rpb, RSE_GET_MODE direction)
 {
@@ -749,7 +769,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 			if (impure->irsb_flags & irsb_refresh)
 				RNG_add_record(rpb);
 #endif
-			return TRUE;
+			return true;
 		}
 
 #ifdef PC_ENGINE
@@ -757,7 +777,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 		// so it must have been deleted out from under us; by definition we
 		// are on a crack (already marked by get_record())
 		if (direction == RSE_get_current) {
-			return FALSE;
+			return false;
 		}
 #endif
 
@@ -767,7 +787,7 @@ BOOLEAN NAV_get_record(TDBB tdbb,
 	CCH_RELEASE(tdbb, &window);
 
 	// crack, bof, or eof must have been set at this point
-	return FALSE;
+	return false;
 }
 
 
@@ -826,7 +846,7 @@ bool NAV_reset_position(Rsb* rsb, RPB * new_rpb)
 
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
+bool NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
 {
 /**************************************
  *
@@ -863,7 +883,7 @@ BOOLEAN NAV_set_bookmark(Rsb* rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
 			  bookmark->bkm_key_desc.dsc_length);
 
 	if (impure->irsb_flags & (irsb_bof | irsb_eof | irsb_crack)) {
-		return FALSE;
+		return false;
 	}
 
 	// if we didn't find the record, it must have been deleted 

@@ -853,14 +853,14 @@ int common_main(int		argc,
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
 						ib_fclose(tmp_outfile);
-						BURP_exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
+						BURP_exit_local(FINI_ERROR, tdgbl);
 					}
 					if (!
 						(tdgbl->output_file =
 						 ib_fopen(redirect, fopen_write_type))) {
 						BURP_print(66, redirect, 0, 0, 0, 0);
 						// msg 66 can't open status and error output file %s 
-						BURP_exit_local(FINI_ERROR, const_cast<tgbl*>(tdgbl));
+						BURP_exit_local(FINI_ERROR, tdgbl);
 					}
 				}
 			}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
@@ -1081,7 +1081,7 @@ int common_main(int		argc,
 		if (temp > MAX_PAGE_SIZE)
 		{
 			BURP_error(3, true, isc_arg_number,
-							reinterpret_cast<void*>(tdgbl->gbl_sw_page_size),
+							(void*)(IPTR) tdgbl->gbl_sw_page_size,
 							0, NULL, 0, NULL,
 							0, NULL, 0, NULL);
 			// msg 3 Page size specified (%ld) greater than limit (MAX_PAGE_SIZE bytes) 
@@ -1112,9 +1112,9 @@ int common_main(int		argc,
 	// msg 11 input and output have the same name.  Disallowed. 
 
 	time_t clock = time(NULL);
-	strcpy(const_cast<char*>(tdgbl->gbl_backup_start_time), ctime(&clock));
-	TEXT *nlp =	const_cast<char*>(tdgbl->gbl_backup_start_time +
-				strlen(const_cast<const char*>(tdgbl->gbl_backup_start_time)) - 1);
+	strcpy(tdgbl->gbl_backup_start_time, ctime(&clock));
+	TEXT* nlp = tdgbl->gbl_backup_start_time +
+				strlen(tdgbl->gbl_backup_start_time) - 1;
 	if (*nlp == '\n')
 		*nlp = 0;
 
@@ -1149,7 +1149,7 @@ int common_main(int		argc,
 	if (result != FINI_OK && result != FINI_DB_NOT_ONLINE)
 		BURP_abort();
 
-	BURP_exit_local(result, const_cast<tgbl*>(tdgbl));
+	BURP_exit_local(result, tdgbl);
 	return result;
 	}	// try
 
@@ -1175,14 +1175,11 @@ int common_main(int		argc,
 
 		// Detach from database to release system resources 
 		if (tdgbl->db_handle != 0) {
-			close_out_transaction(action,
-								  const_cast<isc_tr_handle*>(&tdgbl->tr_handle));
-			close_out_transaction(action,
-								  const_cast<isc_tr_handle*>(&tdgbl->global_trans));
-			if (isc_detach_database(const_cast<ISC_STATUS*>(tdgbl->status_vector),
-									const_cast<isc_db_handle*>(&tdgbl->db_handle)))
+			close_out_transaction(action, &tdgbl->tr_handle);
+			close_out_transaction(action, &tdgbl->global_trans);
+			if (isc_detach_database(tdgbl->status_vector, &tdgbl->db_handle))
 			{
-				BURP_print_status(const_cast<const ISC_STATUS*>(tdgbl->status_vector));
+				BURP_print_status(tdgbl->status_vector);
 			}
 		}
 
@@ -1194,14 +1191,14 @@ int common_main(int		argc,
 
 		// Free all unfreed memory used by Gbak itself 
 		while (tdgbl->head_of_mem_list != NULL) {
-			UCHAR *mem = tdgbl->head_of_mem_list;
+			UCHAR* mem = tdgbl->head_of_mem_list;
 			tdgbl->head_of_mem_list = *((UCHAR **) tdgbl->head_of_mem_list);
 			gds__free(mem);
 		}
 
 		RESTORE_THREAD_DATA;
 		if (tdgbl != NULL) {
-			gds__free((SLONG *) tdgbl);
+			gds__free(tdgbl);
 		}
 
 #if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)

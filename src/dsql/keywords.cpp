@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.27 2004-01-26 07:06:37 stryqx Exp $
+ *  $Id: keywords.cpp,v 1.28 2004-03-07 07:58:27 robocop Exp $
  *
  */
 
@@ -51,7 +51,7 @@ static const TOK tokens[] = {
 	{COMMA, ",", 1}, 
 	{LSS, "<", 1}, 
 	{LEQ, "<=", 1}, 
-	{NEQ, "<>", 1},	/* Alias of != */
+	{NEQ, "<>", 1},	// Alias of != 
 	{EQL, "=", 1},
 	{GTR, ">", 1},
 	{GEQ, ">=", 1},
@@ -303,13 +303,13 @@ static const TOK tokens[] = {
 	{WRITE, "WRITE", 1}, 
 	{YEAR, "YEAR", 2}, 
 	{YEARDAY, "YEARDAY", 2}, 
-	{NOT_LSS, "^<", 1},	/* Alias of !< */
-	{NEQ, "^=", 1},				/* Alias of != */
-	{NOT_GTR, "^>", 1},			/* Alias of !> */
+	{NOT_LSS, "^<", 1},	// Alias of !<
+	{NEQ, "^=", 1},				// Alias of != 
+	{NOT_GTR, "^>", 1},			// Alias of !>
 	{CONCATENATE, "||", 1}, 
-	{NOT_LSS, "~<", 1},	/* Alias of !< */
-	{NEQ, "~=", 1},				/* Alias of != */
-	{NOT_GTR, "~>", 1},			/* Alias of !> */
+	{NOT_LSS, "~<", 1},	// Alias of !<
+	{NEQ, "~=", 1},				// Alias of != 
+	{NOT_GTR, "~>", 1},			// Alias of !>
 	{0, 0, 0}
 };
 

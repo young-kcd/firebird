@@ -219,7 +219,7 @@ void SCL_check_index(TDBB tdbb, const TEXT* index_name, UCHAR index_id, USHORT m
  *
  *******************************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	const scl* s_class = NULL;
 	const scl* default_s_class = NULL;
 
@@ -360,7 +360,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
 	} // end scope block
     fb_utils::fb_exact_name(name);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const scl* s_class = NULL;
 
@@ -417,7 +417,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
 	} // end scope block
 	fb_utils::fb_exact_name(name);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const scl* s_class = NULL;
 
@@ -455,7 +455,7 @@ SCL SCL_get_class(/* INOUT */ TEXT* string)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
@@ -584,7 +584,7 @@ void SCL_init(bool create,
     bool preODS9;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
@@ -975,7 +975,7 @@ static bool check_user_group(const TEXT* acl,
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	STR buffer = NULL;
 	SLONG n = 0;
@@ -1088,7 +1088,7 @@ static SLONG compute_access(TDBB tdbb,
 	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	SLONG privileges = SCL_scanned;
 
@@ -1209,7 +1209,7 @@ static SLONG walk_acl(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	// Munch ACL. If we find a hit, eat up privileges.
 

@@ -452,7 +452,7 @@ void DFW_perform_system_work(void)
  *	system transaction.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	DFW_perform_work(dbb->dbb_sys_trans);
 }
@@ -585,7 +585,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 
 	bool pending_events = false;
 
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	lck* lock = dbb->dbb_lock;
 
 	Deferred_work* work;
@@ -687,7 +687,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version >= ODS_VERSION11) {
 
@@ -746,7 +746,7 @@ static bool add_file(TDBB tdbb, SSHORT phase, Deferred_work* work,
 	TEXT temp[MAXPATHLEN];
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -882,7 +882,7 @@ static bool add_shadow( TDBB tdbb, SSHORT phase, Deferred_work* work,
 	TEXT expanded_fname[1024];
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1050,7 +1050,7 @@ static bool add_difference( TDBB tdbb, SSHORT phase, Deferred_work* work,
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1100,7 +1100,7 @@ static bool delete_difference(	TDBB	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1146,7 +1146,7 @@ static bool begin_backup(	TDBB	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1179,7 +1179,7 @@ static bool end_backup(	TDBB	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1215,7 +1215,7 @@ static void check_dependencies(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	USHORT i;
 	USHORT dep_counts[obj_count];
@@ -1424,7 +1424,7 @@ static bool compute_security(	TDBB	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1505,7 +1505,7 @@ static bool create_index(	TDBB	tdbb,
 	BLK handle;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1524,7 +1524,7 @@ static bool create_index(	TDBB	tdbb,
 				/* Fetch the root index page and mark MUST_WRITE, and then
 				   delete the index. It will also clean the index slot. Note
 				   that the previous fixed definition of MAX_IDX (64) has been
-				   dropped in favor of a computed value saved in the dbb */
+				   dropped in favor of a computed value saved in the Database */
 				if (relation->rel_index_root)
 				{
 					if (work->dfw_id != dbb->dbb_max_idx)
@@ -1858,7 +1858,7 @@ static bool create_relation(TDBB	tdbb,
 	lck* lock;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -2177,7 +2177,7 @@ static bool delete_field(	TDBB	tdbb,
 	BLK handle;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -2245,7 +2245,7 @@ static bool delete_global(TDBB tdbb, SSHORT phase, Deferred_work* work,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -2603,7 +2603,7 @@ static bool delete_relation(TDBB tdbb, SSHORT phase, Deferred_work* work,
 	USHORT wait, view_count, adjusted;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -2821,7 +2821,7 @@ static bool delete_rfr(TDBB tdbb, SSHORT phase, Deferred_work* work,
 	VEC vector;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -3025,7 +3025,7 @@ static bool find_depend_in_dfw(	TDBB	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	fb_utils::fb_exact_name(object_name);
 	enum dfw_t dfw_type;
@@ -3112,7 +3112,7 @@ static void get_array_desc(TDBB tdbb, const TEXT* field_name, ads* desc)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
 
@@ -3168,7 +3168,7 @@ static void get_procedure_dependencies(Deferred_work* work)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_prc* procedure = NULL;
 	bid blob_id = {0, 0};
@@ -3231,7 +3231,7 @@ static void get_trigger_dependencies( Deferred_work* work)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_rel* relation = NULL;
 
@@ -3327,7 +3327,7 @@ static fmt* make_format(TDBB tdbb, jrd_rel* relation, USHORT* version, TFB stack
 	TFB tfb;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Figure out the highest field id and allocate a format block */
 
@@ -3484,7 +3484,7 @@ static bool make_version(TDBB tdbb, SSHORT phase, Deferred_work* work,
 	trig_vec* triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	bool null_view;
 
 	switch (phase)
@@ -4119,7 +4119,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 	UCHAR temp[128];
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb  = tdbb->tdbb_database;
 
 	/* If blob is null, don't bother */
 
@@ -4250,7 +4250,7 @@ static bool shadow_defined(TDBB tdbb)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	bool result = false;
 	BLK  handle = NULL;
@@ -4321,7 +4321,7 @@ static blb* setup_triggers(TDBB tdbb, jrd_rel* relation, bool null_view,
 	if (!relation)
 		return blob;
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 
 	/* system triggers */

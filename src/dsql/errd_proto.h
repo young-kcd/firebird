@@ -34,5 +34,5 @@ void ERRD_post(ISC_STATUS, ...);
 bool ERRD_post_warning(ISC_STATUS, ...);
 void ERRD_punt(void);
 
-#endif /* DSQL_ERRD_PROTO_H */
+#endif // DSQL_ERRD_PROTO_H 
 

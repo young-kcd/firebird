@@ -142,7 +142,7 @@ external_file* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 	UCHAR index_buffer[MAX_KEYS * sizeof(IDX)];
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Allocate and fill out an external file block.  Get the
    external format and flesh it out using the internal

@@ -93,12 +93,12 @@ public:
 
 	int		lck_test_field;
 	lck*	lck_parent;
-	lck*	lck_next;		/* Next lock in chain owned by dbb */
+	lck*	lck_next;		/* Next lock in chain owned by Database */
 	lck*	lck_att_next;	/* Next in chain owned by attachment */
 	lck*	lck_prior;
 	lck*	lck_collision;	/* collisions in compatibility table */
 	lck*	lck_identical;	/* identical locks in compatibility table */
-	class dbb*	lck_dbb;		/* database object is contained in */
+	class Database*	lck_dbb;		/* database object is contained in */
 	class blk*	lck_object;		/* argument to be passed to ast */
 	class blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
 	class blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */

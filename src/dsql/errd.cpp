@@ -324,7 +324,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	ISC_STATUS_ARRAY warning_status;
 
 	if (warning_indx) {
-		/* copy current warning(s) to a temp buffer */
+		// copy current warning(s) to a temp buffer 
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		MOVE_FASTER(&status_vector[warning_indx], warning_status,
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
@@ -339,7 +339,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	{
 		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
 					sizeof(ISC_STATUS) * tmp_status_len);
-		/* copy current warning(s) to the status_vector */
+		// copy current warning(s) to the status_vector 
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{
 			MOVE_FASTER(warning_status, &status_vector[i - 1],

@@ -24,15 +24,15 @@
 #ifndef QLI_FORMAT_H
 #define QLI_FORMAT_H
 
-/* Logical column block */
+// Logical column block 
 
 typedef struct col {
     blk		col_header;
-    col*	col_next;		/* Next logical column */
-    qli_nod*	col_expression;	/* Definitive expression */
-    TEXT	*col_head;		/* Column header */
-    USHORT	col_column;		/* Starting column number */
-    USHORT	col_print_length;	/* Max print length */
+    col*	col_next;		// Next logical column 
+    qli_nod*	col_expression;	// Definitive expression 
+    TEXT	*col_head;		// Column header 
+    USHORT	col_column;		// Starting column number 
+    USHORT	col_print_length;	// Max print length 
 } *COL;
 
 /* Picture string elements:
@@ -77,44 +77,44 @@ typedef enum pic_t {
     pic_text
 } PIC_T;
 
-/* Picture string handling block */
+// Picture string handling block 
 
 struct pics {
     blk		pic_header;
-    USHORT	pic_print_length;	/* Print length of picture string */
-    const TEXT*	pic_string;		/* Address of string */
-    const TEXT*	pic_pointer;		/* Address of string */
-    USHORT	pic_flags;		/* Misc. trash */
-    USHORT	pic_count;		/* Count of repeat characters */
-    TEXT	pic_character;		/* Last significant character */
-    PIC_T	pic_type;		/* Type of edit */
+    USHORT	pic_print_length;	// Print length of picture string 
+    const TEXT*	pic_string;		// Address of string 
+    const TEXT*	pic_pointer;		// Address of string 
+    USHORT	pic_flags;		// Misc. trash 
+    USHORT	pic_count;		// Count of repeat characters 
+    TEXT	pic_character;		// Last significant character 
+    PIC_T	pic_type;		// Type of edit 
     USHORT	pic_length;		/* Printing columns (MAX of edit_string & missing) */
-    USHORT	pic_floats;		/* Character of floating things */
-    USHORT	pic_digits;		/* Digits of number */
-    USHORT	pic_hex_digits;		/* Hexidecimal digits */
-    USHORT	pic_fractions;		/* Digits after decimal point */
-    USHORT	pic_chars;		/* Insertion characters (alpha) */
-    USHORT	pic_literals;		/* Literal insertion characters */
-    USHORT	pic_days;		/* Digits of day of month */
-    USHORT	pic_weekdays;		/* Characters of weekday */
-    USHORT	pic_months;		/* Characters of alpha month */
-    USHORT	pic_nmonths;		/* Digits of numeric month */
-    USHORT	pic_years;		/* Digits of year */
-    USHORT	pic_julians;		/* Digits of julian days */
+    USHORT	pic_floats;		// Character of floating things 
+    USHORT	pic_digits;		// Digits of number 
+    USHORT	pic_hex_digits;		// Hexidecimal digits 
+    USHORT	pic_fractions;		// Digits after decimal point 
+    USHORT	pic_chars;		// Insertion characters (alpha) 
+    USHORT	pic_literals;		// Literal insertion characters 
+    USHORT	pic_days;		// Digits of day of month 
+    USHORT	pic_weekdays;		// Characters of weekday 
+    USHORT	pic_months;		// Characters of alpha month 
+    USHORT	pic_nmonths;		// Digits of numeric month 
+    USHORT	pic_years;		// Digits of year 
+    USHORT	pic_julians;		// Digits of julian days 
     USHORT	pic_decimals;		/* Number of decimal points (?!) */
-    USHORT	pic_brackets;		/* Pairs of deficit brackets */
-    USHORT	pic_exponents;		/* Exponential indicators */
-    USHORT	pic_float_digits;	/* Floating digits */
-    USHORT	pic_hours;		/* hours */
-    USHORT	pic_minutes;		/* minutes */
-    USHORT	pic_seconds;		/* seconds */
-    USHORT	pic_meridian;		/* AM/PM indicator */
-    pics*	pic_missing;		/* missing value edit string */
+    USHORT	pic_brackets;		// Pairs of deficit brackets 
+    USHORT	pic_exponents;		// Exponential indicators 
+    USHORT	pic_float_digits;	// Floating digits 
+    USHORT	pic_hours;		// hours 
+    USHORT	pic_minutes;		// minutes 
+    USHORT	pic_seconds;		// seconds 
+    USHORT	pic_meridian;		// AM/PM indicator 
+    pics*	pic_missing;		// missing value edit string 
 };
 
-#define PIC_suppress_blanks	1	/* Suppress leading blanks */
-#define PIC_literal		2	/* We're in a quoted string */
-#define PIC_signed		4	/* This numeric edit string has a sign indicator */
+#define PIC_suppress_blanks	1	// Suppress leading blanks 
+#define PIC_literal		2	// We're in a quoted string 
+#define PIC_signed		4	// This numeric edit string has a sign indicator 
 
 #endif // QLI_FORMAT_H
 

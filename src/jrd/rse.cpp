@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.54 2004-02-20 06:43:00 robocop Exp $
+ * $Id: rse.cpp,v 1.55 2004-03-07 07:58:42 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -228,7 +228,7 @@ void RSE_close(TDBB tdbb, Rsb* rsb)
 
 
 #ifdef PC_ENGINE
-BOOLEAN RSE_find_dbkey(TDBB tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* record_version)
+bool RSE_find_dbkey(TDBB tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* record_version)
 {
 /**************************************
  *
@@ -282,14 +282,14 @@ BOOLEAN RSE_find_dbkey(TDBB tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* record_v
 	switch (rsb->rsb_type) {
 	case rsb_boolean:
 		if (!RSE_find_dbkey(tdbb, rsb->rsb_next, find_key, record_version))
-			return FALSE;
+			return false;
 
 		if ((rsb->rsb_arg[0]) && (!EVL_boolean(tdbb, rsb->rsb_arg[0]))) {
 			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-			return FALSE;
+			return false;
 		}
 
-		return TRUE;
+		return true;
 
 	case rsb_navigate:
 		rpb = request->req_rpb + rsb->rsb_stream;
@@ -301,18 +301,18 @@ BOOLEAN RSE_find_dbkey(TDBB tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* record_v
 			(tdbb, rpb, rsb, request->req_transaction,
 			 request->req_pool))
 		{
-			return FALSE;
+			return false;
 		}
 		if (record_version && version_number != rpb->rpb_transaction)
-			return FALSE;
+			return false;
 
 		/* next, set the stream position to that of the fetched record */
 
 		RSE_MARK_CRACK(tdbb, rsb, 0);
 		if (NAV_reset_position(rsb, rpb))
-			return TRUE;
+			return true;
 		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-		return FALSE;
+		return false;
 
 	case rsb_sequential:
 		rpb = request->req_rpb + rsb->rsb_stream;
@@ -323,10 +323,10 @@ BOOLEAN RSE_find_dbkey(TDBB tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* record_v
 			(tdbb, rpb, rsb, request->req_transaction, request->req_pool)
 			&& (!record_version || version_number == rpb->rpb_transaction))
 		{
-			return TRUE;
+			return true;
 		}
 		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-		return FALSE;
+		return false;
 
 	case rsb_indexed:
 		rpb = request->req_rpb + rsb->rsb_stream;
@@ -337,27 +337,26 @@ BOOLEAN RSE_find_dbkey(TDBB tdbb, Rsb* rsb, jrd_nod* find_key, jrd_nod* record_v
 		if ((bitmap = impure->irsb_bitmap) &&
 			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
 			VIO_get(tdbb, rpb, rsb, request->req_transaction,
-					request->req_pool) && (!record_version
-										   || version_number ==
-										   rpb->rpb_transaction))
+					request->req_pool) &&
+			(!record_version || version_number == rpb->rpb_transaction))
 		{
-				return TRUE;
+				return true;
 		}
 		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-		return FALSE;
+		return false;
 
 	default:
 		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return FALSE;			/* Added to remove compiler warnings */
+		return false;			/* Added to remove compiler warnings */
 	}
 }
 #endif
 
 
 #ifdef PC_ENGINE
-BOOLEAN RSE_find_record(TDBB tdbb,
+bool RSE_find_record(TDBB tdbb,
 						Rsb* rsb,
-						USHORT operator, USHORT direction, jrd_nod* find_key)
+						USHORT blr_operator, USHORT direction, jrd_nod* find_key)
 {
 /**************************************
  *
@@ -377,27 +376,29 @@ BOOLEAN RSE_find_record(TDBB tdbb,
 
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
-		return RSE_find_record(tdbb, rsb->rsb_next, operator, direction,
+		return RSE_find_record(tdbb, rsb->rsb_next, blr_operator, direction,
 							   find_key);
 
 	case rsb_boolean:
 		if (!RSE_find_record
-			(tdbb, rsb->rsb_next, operator, direction,
-			 find_key)) return FALSE;
+			(tdbb, rsb->rsb_next, blr_operator, direction, find_key))
+		{
+			return false;
+		}
 
 		if ((rsb->rsb_arg[0]) && (!EVL_boolean(tdbb, rsb->rsb_arg[0]))) {
 			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-			return FALSE;
+			return false;
 		}
 
-		return TRUE;
+		return true;
 
 	case rsb_navigate:
-		return NAV_find_record(rsb, operator, direction, find_key);
+		return NAV_find_record(rsb, blr_operator, direction, find_key);
 
 	default:
 		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return FALSE;			/* Added to remove compiler warnings */
+		return false;			/* Added to remove compiler warnings */
 	}
 }
 #endif
@@ -634,7 +635,7 @@ void RSE_open(TDBB tdbb, Rsb* rsb)
 			}
 #endif
 			if (rsb->rsb_type == rsb_sequential) {
-				DBB dbb = tdbb->tdbb_database;
+				Database* dbb = tdbb->tdbb_database;
 				BCB bcb = dbb->dbb_bcb;
 
 				/* Unless this is the only attachment, limit the cache flushing
@@ -783,7 +784,7 @@ void RSE_open(TDBB tdbb, Rsb* rsb)
 
 
 #ifdef PC_ENGINE
-BOOLEAN RSE_reset_position(TDBB tdbb, Rsb* rsb, RPB * new_rpb)
+bool RSE_reset_position(TDBB tdbb, Rsb* rsb, RPB* new_rpb)
 {
 /**************************************
  *
@@ -804,7 +805,7 @@ BOOLEAN RSE_reset_position(TDBB tdbb, Rsb* rsb, RPB * new_rpb)
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
 	if (request->req_flags & req_abort)
-		return FALSE;
+		return false;
 
 	switch (rsb->rsb_type) {
 	case rsb_boolean:
@@ -814,9 +815,9 @@ BOOLEAN RSE_reset_position(TDBB tdbb, Rsb* rsb, RPB * new_rpb)
 		RSE_MARK_CRACK(rsb, 0);
 		if (!(NAV_reset_position(rsb, new_rpb))) {
 			RSE_MARK_CRACK(rsb, irsb_crack);
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 
 	case rsb_sequential:
 		RSE_MARK_CRACK(rsb, 0);
@@ -825,11 +826,12 @@ BOOLEAN RSE_reset_position(TDBB tdbb, Rsb* rsb, RPB * new_rpb)
 
 		if (!
 			(VIO_get
-			 (tdbb, rpb, rsb, request->req_transaction, request->req_pool))) {
+			 (tdbb, rpb, rsb, request->req_transaction, request->req_pool)))
+		{
 			RSE_MARK_CRACK(rsb, irsb_crack);
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 
 	case rsb_indexed:
 		RSE_MARK_CRACK(rsb, 0);
@@ -842,22 +844,22 @@ BOOLEAN RSE_reset_position(TDBB tdbb, Rsb* rsb, RPB * new_rpb)
 			VIO_get(tdbb, rpb, rsb, request->req_transaction,
 					request->req_pool)) 
 		{
-			return TRUE;
+			return true;
 		}
 
 		RSE_MARK_CRACK(rsb, irsb_crack);
-		return FALSE;
+		return false;
 
 	default:
 		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return FALSE;			/* Added to remove compiler warnings */
+		return false;			/* Added to remove compiler warnings */
 	}
 }
 #endif
 
 
 #ifdef PC_ENGINE
-BOOLEAN RSE_set_bookmark(TDBB tdbb, Rsb* rsb, RPB * rpb, BKM bookmark)
+bool RSE_set_bookmark(TDBB tdbb, Rsb* rsb, RPB* rpb, BKM bookmark)
 {
 /**************************************
  *
@@ -870,15 +872,12 @@ BOOLEAN RSE_set_bookmark(TDBB tdbb, Rsb* rsb, RPB * rpb, BKM bookmark)
  *	specified by the given bookmark.
  *
  **************************************/
-	jrd_req* request;
-	IRSB impure;
-
 	SET_TDBB(tdbb);
-	request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->tdbb_request;
 	if (request->req_flags & req_abort)
-		return FALSE;
+		return false;
 
-	impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
+	IRSB impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
 	switch (rsb->rsb_type) {
 	case rsb_boolean:
@@ -892,17 +891,17 @@ BOOLEAN RSE_set_bookmark(TDBB tdbb, Rsb* rsb, RPB * rpb, BKM bookmark)
 		rpb->rpb_number = bookmark->bkm_number;
 
 		if (impure->irsb_flags & (irsb_bof | irsb_eof | irsb_crack))
-			return FALSE;
+			return false;
 
 		if (!(get_record(tdbb, rsb, NULL, RSE_get_current))) {
 			RSE_MARK_CRACK(rsb, irsb_crack);
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 
 	default:
 		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return FALSE;			/* Added to remove compiler warnings */
+		return false;			/* Added to remove compiler warnings */
 	}
 }
 #endif

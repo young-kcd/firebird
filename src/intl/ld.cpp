@@ -35,7 +35,7 @@
 void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	USHORT name (TEXTTYPE, SSHORT, SSHORT)
+#define	EXTERN_texttype(name)	USHORT name (TEXTTYPE, USHORT, USHORT)
 #define EXTERN_convert(name)	USHORT name (CSCONVERT, SSHORT, SSHORT)
 #define EXTERN_charset(name)	USHORT name (CHARSET, SSHORT, SSHORT)
 
@@ -268,10 +268,12 @@ void LD_assert(const SCHAR* filename, int lineno)
  * shared libraries
  */
 
+/*
 #define DRIVER(num, name) \
 	case (num): \
 		*fun = (FPTR_SHORT) (name); \
 		return (0);
+*/
 
 #define CHARSET_INIT(num, name) \
 	case (num): \
@@ -287,7 +289,7 @@ void LD_assert(const SCHAR* filename, int lineno)
 	    }
 
 USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
-							FPTR_SHORT * fun, SSHORT parm1, SSHORT parm2)
+							FPTR_SHORT* fun, SSHORT parm1, SSHORT parm2)
 {
 /**************************************
  *
@@ -434,3 +436,4 @@ USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
 #undef DRIVER
 #undef CHARSET_INIT
 #undef CONVERT_INIT_BI
+

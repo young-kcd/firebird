@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.65 2004-03-06 11:56:09 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.66 2004-03-07 07:58:40 robocop Exp $ 
  */
 
 /*
@@ -1410,7 +1410,8 @@ USHORT EVL_group(TDBB tdbb, Rsb* rsb, jrd_nod* node, USHORT state)
 	jrd_nod* map = node->nod_arg[e_agg_map];
 	jrd_nod* group = node->nod_arg[e_agg_group];
 
-	jrd_nod **ptr, **end;
+	jrd_nod** ptr;
+	const jrd_nod* const* end;
 
 	try {
 
@@ -3735,7 +3736,7 @@ static dsc* lock_state(TDBB tdbb, jrd_nod* node, VLU impure)
  **************************************/
 	SET_TDBB(tdbb);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -4827,7 +4828,7 @@ static dsc* substring(
 				messages, so I will return empty.
 				Finally I decided to use arithmetic exception or numeric overflow. */
 		TextType text_obj = 0;
-		UCHAR* p = (UCHAR*) desc.dsc_address;
+		const UCHAR* p = desc.dsc_address;
 		USHORT pcount = desc.dsc_length;
 		bool failure = false;
 		while (offset && pcount)
@@ -4846,7 +4847,7 @@ static dsc* substring(
         }
 		else {
 			/* Keep our starting pos safe. */
-			desc.dsc_address = p;
+			desc.dsc_address = const_cast<UCHAR*>(p);
 			while (length && pcount) {
 				if (!INTL_getch(tdbb, &text_obj, INTL_TTYPE(&desc), &p, &pcount))
 				{
@@ -4862,7 +4863,7 @@ static dsc* substring(
 			else
 			{
 				/* I thought I would need more operations here, but... */
-				desc.dsc_length = p - (UCHAR*) desc.dsc_address;
+				desc.dsc_length = p - desc.dsc_address;
 			}
 		}
 		if (failure)

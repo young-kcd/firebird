@@ -162,7 +162,9 @@ void ThreadPriorityScheduler::Attach(HANDLE tHandle, DWORD thread_id, UCHAR flag
 	if (! DuplicateHandle(process, tHandle, 
 				process, &m->handle, 0, 
 				FALSE, DUPLICATE_SAME_ACCESS))
+	{
 		Firebird::system_call_failed::raise("DuplicateHandle");
+	}
 
 	THD_mutex_lock(&mutex);
 	m->next = news;
@@ -257,7 +259,9 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 				//			increase priority
 						if (! SetThreadPriority(t->handle, 
 									THREAD_PRIORITY_HIGHEST))
+						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
+						}
 
 #ifdef DEBUG_THREAD_PSCHED
 						gds__log("+ handle=%p priority=%d", t->handle, THREAD_PRIORITY_HIGHEST);
@@ -279,7 +283,9 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 				//		decrease priority
 						if (! SetThreadPriority(t->handle, 
 									THREAD_PRIORITY_NORMAL))
+						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
+						}
 #ifdef DEBUG_THREAD_PSCHED
 						gds__log("- handle=%p priority=%d", t->handle, THREAD_PRIORITY_NORMAL);
 #endif

@@ -206,7 +206,7 @@ void LOG_call(enum log_t call_type, ...)
 	SLONG *long_pointer;
 	va_list ptr;
 
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	if (!dbb || !dbb->dbb_log || !dbb->dbb_log->log_file)
 		return;
@@ -290,7 +290,7 @@ void LOG_disable(void)
  *	Disable logging.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 /* Get header page and look for logging entry */
 
@@ -315,7 +315,7 @@ void LOG_enable(TEXT * log_file_name, USHORT l_length)
  *	Enable replay logging for the database.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 /* if we are already enabled for another file, get rid of it */
 
@@ -352,7 +352,7 @@ void LOG_fini(void)
  *	Close down the log file for replay logging.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	fblog* log;
 	if (dbb && (log = dbb->dbb_log)) {
 		if (log->log_file) {
@@ -406,7 +406,7 @@ static void error(const TEXT* error_string)
  *	both to the terminal and to the log.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	ib_printf("ERROR in logging system: %s\n", error_string);
 
@@ -431,7 +431,7 @@ static void log_char(SCHAR c)
  *	for later flushing to the log.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	fblog* log = dbb->dbb_log;
 	*log->log_ptr++ = c;
@@ -461,7 +461,7 @@ static void log_flush(void)
  *	at it.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	fblog* log = dbb->dbb_log;
 	if (!(log->log_ptr - log->log_buffer))
@@ -582,7 +582,7 @@ static void open_log(const TEXT* file_name, SSHORT file_length,
  *	Open the log file.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	if (dbb->dbb_log)
 		LOG_fini();

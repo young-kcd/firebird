@@ -46,13 +46,13 @@ static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
 	cache->texttype_character_set	= charset;
 	cache->texttype_country			= country;
 	cache->texttype_bytes_per_char	= 2;
-	cache->texttype_fn_init			= (FPTR_SHORT) name;
-	cache->texttype_fn_key_length	= (FPTR_SHORT) famasc_key_length;
-	cache->texttype_fn_string_to_key= (FPTR_SHORT) famasc_string_to_key;
-	cache->texttype_fn_compare		= (FPTR_short) famasc_compare;
-	cache->texttype_fn_to_upper		= (FPTR_SHORT) famasc_to_upper;
-	cache->texttype_fn_to_lower		= (FPTR_SHORT) famasc_to_lower;
-	cache->texttype_fn_str_to_upper = (FPTR_short) famasc_str_to_upper;
+	cache->texttype_fn_init			= name;
+	cache->texttype_fn_key_length	= famasc_key_length;
+	cache->texttype_fn_string_to_key= famasc_string_to_key;
+	cache->texttype_fn_compare		= famasc_compare;
+	cache->texttype_fn_to_upper		= famasc_to_upper;
+	cache->texttype_fn_to_lower		= famasc_to_lower;
+	cache->texttype_fn_str_to_upper = famasc_str_to_upper;
 	cache->texttype_collation_table = NULL;
 	cache->texttype_toupper_table	= NULL;
 	cache->texttype_tolower_table	= NULL;
@@ -67,8 +67,8 @@ TEXTTYPE_ENTRY(GB_2312_init)
 	static const ASCII POSIX[] = "C.GB_2312";
 
 	FAMILY_MULTIBYTE(cache, 2312, GB_2312_init, CS_GB2312, CC_C, POSIX);
-	cache->texttype_fn_to_wc = (FPTR_SHORT) CVGB_gb2312_byte2short;
-	cache->texttype_fn_mbtowc = (FPTR_short) CVGB_gb2312_mbtowc;
+	cache->texttype_fn_to_wc = CVGB_gb2312_byte2short;
+	cache->texttype_fn_mbtowc = CVGB_gb2312_mbtowc;
 
 	TEXTTYPE_RETURN;
 }

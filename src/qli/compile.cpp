@@ -381,7 +381,7 @@ static void compile_control_break( qli_brk* control, qli_req* request)
 		report_control_break = control;
 		if (control->brk_field)
 /*
-	control->brk_field  = (SYN) compile_expression (control->brk_field, request, false);
+	control->brk_field  = (qli_syntax*) compile_expression (control->brk_field, request, false);
 */
 		{
 			qli_nod* temp = (qli_nod*) control->brk_field;;
@@ -389,7 +389,7 @@ static void compile_control_break( qli_brk* control, qli_req* request)
 			temp =  compile_expression((qli_nod*) control->brk_field, request, false);
 			if (temp->nod_type == nod_field)
 				temp = temp->nod_arg[e_fld_reference];
-			control->brk_field = (SYN) temp;
+			control->brk_field = (qli_syntax*) temp;
 		}
 		if (control->brk_line)
 			compile_print_list((qli_nod*) control->brk_line, request, 0);
@@ -1374,7 +1374,7 @@ static qli_nod* compile_statement( qli_nod* node, qli_req* request, bool interna
 		return node;
 
 	default:
-		BUGCHECK(360);			/* Msg360 not yet implemented (compile_statement) */
+		BUGCHECK(360);			// Msg360 not yet implemented (compile_statement) 
 		return NULL;
 	}
 }

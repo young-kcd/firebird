@@ -667,7 +667,7 @@ static RTN walk_tip(TDBB, VDR, SLONG);
 
 static const SLONG end_level = END_LEVEL, end_bucket = END_BUCKET;
 
-BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
+bool VAL_validate(TDBB tdbb, USHORT switches)
 {
 /**************************************
  *
@@ -685,7 +685,7 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 	USHORT i;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	ATT att = tdbb->tdbb_attachment;
 
 	try {
@@ -738,10 +738,10 @@ BOOLEAN VAL_validate(TDBB tdbb, USHORT switches)
 		JrdMemoryPool::deletePool(val_pool);
 		tdbb->tdbb_default = old_pool;
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 static RTN corrupt(TDBB tdbb, VDR control, USHORT err_code, jrd_rel* relation, ...)
@@ -814,7 +814,7 @@ static FETCH_CODE fetch_page(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef SUPERSERVER
@@ -881,7 +881,7 @@ static void garbage_collect(TDBB tdbb, VDR control)
 
 	SET_TDBB(tdbb);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	PGC pgc = dbb->dbb_pcontrol;
 	WIN window(-1);
 
@@ -1126,7 +1126,7 @@ static void walk_database(TDBB tdbb, VDR control)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
@@ -1180,7 +1180,7 @@ static RTN walk_data_page(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	WIN window(-1);
 	data_page* page;
@@ -1312,7 +1312,7 @@ static void walk_generators(TDBB tdbb, VDR control)
  **************************************/
 	pointer_page* page;
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	WIN window(-1);
 
@@ -1384,7 +1384,7 @@ static RTN walk_index(TDBB tdbb,
 	USHORT l; // temporary variable for length
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	SLONG next = page_number;
@@ -1696,7 +1696,7 @@ static void walk_pip(TDBB tdbb, VDR control)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	PGC pgc = dbb->dbb_pcontrol;
@@ -1736,7 +1736,7 @@ static RTN walk_pointer_page(	TDBB	tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	VCL vector = relation->rel_pages;
 
@@ -2098,7 +2098,7 @@ static RTN walk_tip(TDBB tdbb, VDR control, SLONG transaction)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	VCL vector = dbb->dbb_t_pages;

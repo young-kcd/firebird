@@ -24,17 +24,17 @@
 #ifndef QLI_COMMA_PROTO_H
 #define QLI_COMMA_PROTO_H
 
-int		CMD_check_ready(void);
-void	CMD_copy_procedure(syn*);
-void	CMD_define_procedure(syn*);
-void	CMD_delete_proc(syn*);
-void	CMD_edit_proc(syn*);
-void	CMD_extract(syn*);
-void	CMD_finish(syn*);
-void	CMD_rename_proc(syn*);
-void	CMD_set(syn*);
-void	CMD_shell(syn*);
-void	CMD_transaction(syn*);
+bool	CMD_check_ready(void);
+void	CMD_copy_procedure(qli_syntax*);
+void	CMD_define_procedure(qli_syntax*);
+void	CMD_delete_proc(qli_syntax*);
+void	CMD_edit_proc(qli_syntax*);
+void	CMD_extract(qli_syntax*);
+void	CMD_finish(qli_syntax*);
+void	CMD_rename_proc(qli_syntax*);
+void	CMD_set(qli_syntax*);
+void	CMD_shell(qli_syntax*);
+void	CMD_transaction(qli_syntax*);
 
 #endif // QLI_COMMA_PROTO_H
 

@@ -72,9 +72,7 @@ void ERR_bugcheck(int number)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	DBB dbb;
-
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	dbb->dbb_flags |= DBB_bugcheck;
 
 	CCH_shutdown_database(dbb);
@@ -97,9 +95,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	DBB dbb;
-
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
@@ -274,7 +270,6 @@ void ERR_log(int facility, int number, const TEXT* message)
  **************************************/
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 	TDBB tdbb = GET_THREAD_DATA;
-	UCHAR *dbname = 0;
 
 	DEBUG;
 	if (message)
@@ -286,13 +281,16 @@ void ERR_log(int facility, int number, const TEXT* message)
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
+	const UCHAR* dbname = 0;
 	if (tdbb && tdbb->tdbb_attachment)
 	{
 		dbname = ((tdbb->tdbb_attachment->att_filename) ?
 			tdbb->tdbb_attachment->att_filename->str_data : NULL);
 	}
 
-	gds__log("Database: %s\n\t%s", (dbname) ? reinterpret_cast<SCHAR*>(dbname) : "", errmsg, 0);
+	gds__log("Database: %s\n\t%s",
+		(dbname) ? reinterpret_cast<const SCHAR*>(dbname) : "",
+		errmsg, 0);
 }
 #endif
 
@@ -402,12 +400,11 @@ void ERR_post(ISC_STATUS status, ...)
  *	Create a status vector and return to the user.
  *
  **************************************/
-	ISC_STATUS *status_vector;
 	ISC_STATUS_ARRAY tmp_status, warning_status;
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
 
-	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
+	ISC_STATUS* status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -495,7 +492,7 @@ void ERR_punt(void)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
@@ -548,9 +545,7 @@ void ERR_warning(ISC_STATUS status, ...)
  *	that subsequent errors can supersede this one.
  *
  **************************************/
-	TDBB tdbb;
-
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	STUFF_STATUS(tdbb->tdbb_status_vector, status);
 	DEBUG;
@@ -583,3 +578,4 @@ static void internal_error(ISC_STATUS status, int number)
 	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif
+

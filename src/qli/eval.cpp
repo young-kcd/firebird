@@ -361,7 +361,7 @@ dsc* EVAL_value(qli_nod* node)
 	UCHAR *p;
 	double d1;
 
-/* Start by evaluating sub-expressions (where appropriate) */
+// Start by evaluating sub-expressions (where appropriate) 
 
 	dsc* desc = &node->nod_desc;
 	qli_nod** ptr = node->nod_arg;
@@ -942,7 +942,7 @@ static int sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc*
  *
  **************************************/
 
-/* Get operator definition string (control string) */
+// Get operator definition string (control string) 
 
 	TEXT temp1[TEMP_LENGTH];
 	const TEXT* p1;

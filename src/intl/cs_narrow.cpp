@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cs_narrow.c
+ *	MODULE:		cs_narrow.cpp
  *	DESCRIPTION:	Character set definitions for narrow character sets.
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,10 +27,10 @@
 
 static void common_8bit_init(CHARSET csptr,
 							 SSHORT id,
-							 const ASCII *name,
-							 const USHORT *to_unicode_tbl,
-							 const UCHAR *from_unicode_tbl1,
-							 const USHORT *from_unicode_tbl2)
+							 const ASCII* name,
+							 const USHORT* to_unicode_tbl,
+							 const UCHAR* from_unicode_tbl1,
+							 const USHORT* from_unicode_tbl2)
 {
 	csptr->charset_version = 40;
 	csptr->charset_id = id;
@@ -39,12 +39,14 @@ static void common_8bit_init(CHARSET csptr,
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (BYTE *) " ";
+	csptr->charset_space_character = (const BYTE*) " ";
 	csptr->charset_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
-					(FPTR_SHORT) CV_nc_to_unicode, to_unicode_tbl, NULL);
+					reinterpret_cast<pfn_INTL_convert>(CV_nc_to_unicode),
+					to_unicode_tbl, NULL);
 	CV_convert_init(&csptr->charset_from_unicode, id, CS_UNICODE_UCS2,
-					(FPTR_SHORT) CV_unicode_to_nc, from_unicode_tbl1, from_unicode_tbl2);
+					reinterpret_cast<pfn_INTL_convert>(CV_unicode_to_nc),
+					from_unicode_tbl1, from_unicode_tbl2);
 }
 
 
@@ -362,3 +364,4 @@ CHARSET_ENTRY(CS_next)
 					 from_unicode_mapping_array, from_unicode_map);
 	CHARSET_RETURN;
 }
+

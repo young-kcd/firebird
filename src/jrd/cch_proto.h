@@ -24,7 +24,7 @@
 #ifndef JRD_CCH_PROTO_H
 #define JRD_CCH_PROTO_H
 
-void		CCH_shutdown_database(dbb*);
+void		CCH_shutdown_database(Database*);
 
 USHORT		CCH_checksum(bdb*);
 int			CCH_down_grade_dbb(void* ast_argument);
@@ -51,7 +51,7 @@ bool		CCH_prefetch_pages(TDBB);
 void		CCH_release(TDBB, win*, bool);
 void		CCH_release_and_free(win*);
 void		CCH_release_exclusive(TDBB);
-bool		CCH_rollover_to_shadow(dbb*, jrd_file*, const bool);
+bool		CCH_rollover_to_shadow(Database*, jrd_file*, const bool);
 void		CCH_unwind(TDBB, bool);
 bool		CCH_validate(win*);
 void		CCH_flush_database(TDBB tdbb);

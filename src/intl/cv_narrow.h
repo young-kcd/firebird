@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cv_narrow.c
+ *	MODULE:		cv_narrow.h
  *	DESCRIPTION:	Codeset conversion for narrow character sets.
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,19 +22,25 @@
  */
 
 void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
-		FPTR_SHORT cvt_fn, const void *datatable, const void *datatable2);
+		pfn_INTL_convert cvt_fn, const void *datatable, const void *datatable2);
 
-USHORT CV_wc_to_wc(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, USHORT *src_ptr, USHORT src_len
-				, SSHORT *err_code, USHORT *err_position);
+USHORT CV_wc_to_wc(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+				const USHORT* src_ptr, USHORT src_len,
+				SSHORT *err_code, USHORT *err_position);
 
-USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len
-						, SSHORT *err_code,	USHORT *err_position);
+USHORT CV_unicode_to_nc(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+						const BYTE* src_ptr, USHORT src_len,
+						SSHORT *err_code,	USHORT *err_position);
 
-USHORT CV_nc_to_unicode(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len
-						, SSHORT *err_code,	USHORT *err_position);
+USHORT CV_nc_to_unicode(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+						const BYTE* src_ptr, USHORT src_len,
+						SSHORT *err_code,	USHORT *err_position);
 
-USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr, USHORT src_len
-				, SSHORT *err_code, USHORT *err_position);
+USHORT CV_wc_copy(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+				const BYTE* src_ptr, USHORT src_len,
+				SSHORT *err_code, USHORT *err_position);
 
-USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len, BYTE *src_ptr
-								, USHORT src_len, SSHORT *err_code, USHORT *err_position);
+USHORT eight_bit_convert(CSCONVERT obj, BYTE *dest_ptr, USHORT dest_len,
+						const BYTE* src_ptr,
+						USHORT src_len, SSHORT *err_code, USHORT *err_position);
+

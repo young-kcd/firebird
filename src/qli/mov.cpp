@@ -94,7 +94,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-/* Handle the simple (matched) ones first */
+// Handle the simple (matched) ones first 
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&
 		arg1->dsc_scale == arg2->dsc_scale)

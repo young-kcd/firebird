@@ -222,7 +222,7 @@ void PAG_add_clump(
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
@@ -343,7 +343,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
@@ -460,7 +460,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
@@ -529,7 +529,7 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
@@ -583,7 +583,7 @@ PAG PAG_allocate(WIN * window)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	pgc* control = dbb->dbb_pcontrol;
@@ -682,7 +682,7 @@ SLONG PAG_attachment_id(void)
  *
  ******************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	att* attachment = tdbb->tdbb_attachment;
 	WIN window(-1);
@@ -735,7 +735,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
@@ -800,7 +800,7 @@ void PAG_format_header(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Initialize header page */
@@ -876,7 +876,7 @@ void PAG_format_pip(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Initialize Page Inventory Page */
@@ -965,7 +965,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* allocate a spare buffer which is large enough,
    and set up to release it in case of error; note
@@ -1102,11 +1102,12 @@ if (header->hdr_implementation && header->hdr_implementation != CLASS)
 	if (header->hdr_flags & hdr_no_reserve)
 		dbb->dbb_flags |= DBB_no_reserve;
 
-	if (header->hdr_flags & hdr_shutdown_mask) {
+	const USHORT sd_flags = header->hdr_flags & hdr_shutdown_mask;
+	if (sd_flags) {
 		dbb->dbb_ast_flags |= DBB_shutdown;
-		if ((header->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_full)
+		if (sd_flags == hdr_shutdown_full)
 			dbb->dbb_ast_flags |= DBB_shutdown_full;
-		else if ((header->hdr_flags & hdr_shutdown_mask) == hdr_shutdown_single)
+		else if (sd_flags == hdr_shutdown_single)
 			dbb->dbb_ast_flags |= DBB_shutdown_single;
 	}
 
@@ -1135,7 +1136,7 @@ void PAG_init(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	pgc* control = FB_NEW(*dbb->dbb_permanent) pgc();
@@ -1205,7 +1206,7 @@ void PAG_init2(USHORT shadow_number)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* allocate a spare buffer which is large enough,
@@ -1366,7 +1367,7 @@ SLONG PAG_last_page(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const ULONG pages_per_pip = dbb->dbb_pcontrol->pgc_ppp;
@@ -1412,7 +1413,7 @@ void PAG_release_page(SLONG number, SLONG prior_page)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1440,7 +1441,7 @@ void PAG_release_page(SLONG number, SLONG prior_page)
 }
 
 
-void PAG_set_force_write(DBB dbb, SSHORT flag)
+void PAG_set_force_write(Database* dbb, SSHORT flag)
 {
 /**************************************
  *
@@ -1491,7 +1492,7 @@ void PAG_set_force_write(DBB dbb, SSHORT flag)
 }
 
 
-void PAG_set_no_reserve(DBB dbb, USHORT flag)
+void PAG_set_no_reserve(Database* dbb, USHORT flag)
 {
 /**************************************
  *
@@ -1524,7 +1525,7 @@ void PAG_set_no_reserve(DBB dbb, USHORT flag)
 }
 
 
-void PAG_set_db_readonly(DBB dbb, bool flag)
+void PAG_set_db_readonly(Database* dbb, bool flag)
 {
 /*********************************************
  *
@@ -1543,7 +1544,7 @@ void PAG_set_db_readonly(DBB dbb, bool flag)
 
 	if (!flag) {
 		/* If the database is transitioning from RO to RW, reset the
-		 * in-memory DBB flag which indicates that the database is RO.
+		 * in-memory Database flag which indicates that the database is RO.
 		 * This will allow the CCH subsystem to allow pages to be MARK'ed
 		 * for WRITE operations
 		 */
@@ -1562,7 +1563,7 @@ void PAG_set_db_readonly(DBB dbb, bool flag)
 }
 
 
-void PAG_set_db_SQL_dialect(DBB dbb, SSHORT flag)
+void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 {
 /*********************************************
  *
@@ -1630,7 +1631,7 @@ void PAG_set_page_buffers(ULONG buffers)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
@@ -1718,7 +1719,7 @@ static void find_clump_space(
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const UCHAR* ptr = entry;

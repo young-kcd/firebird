@@ -24,19 +24,19 @@
 #ifndef DSQL_SQLDA_H
 #define DSQL_SQLDA_H
 
-/* SQLDA dialects */
+// SQLDA dialects 
 
 #define DIALECT_sqlda	0
 #define DIALECT_xsqlda	1
 
-/* Definitions for DSQL free_statement routine */
+// Definitions for DSQL free_statement routine 
 
 #define DSQL_close	1
 #define DSQL_drop	2
 
 #ifndef JRD_IBASE_H
 
-/* Dynamic SQL definitions */
+// Dynamic SQL definitions 
 
 #ifndef INCLUDE_FB_TYPES_H
 #include "../include/fb_types.h"
@@ -63,38 +63,38 @@ typedef struct
 
 #define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n-1) * sizeof (SQLVAR))
 
-/* Declare the extended SQLDA */
+// Declare the extended SQLDA 
 
 #ifndef FB_SQLDA
 
 typedef struct
 {
-	SSHORT	sqltype;			/* datatype of field */
-	SSHORT	sqlscale;			/* scale factor */
-	SSHORT	sqlsubtype;			/* datatype subtype - currently BLOBs only */
-	SSHORT	sqllen;				/* length of data area */
-	SCHAR*	sqldata;			/* address of data */
-	SSHORT*	sqlind;				/* address of indicator variable */
-	SSHORT	sqlname_length;		/* length of sqlname field */
-	SCHAR	sqlname[32];		/* name of field, name length + space for NULL */
-	SSHORT	relname_length;		/* length of relation name */
-	SCHAR	relname[32];		/* field's relation name + space for NULL */
-	SSHORT	ownname_length;		/* length of owner name */
-	SCHAR	ownname[32];		/* relation's owner name + space for NULL */
-	SSHORT	aliasname_length;	/* length of alias name */
-	SCHAR	aliasname[32];		/* relation's alias name + space for NULL */
+	SSHORT	sqltype;			// datatype of field 
+	SSHORT	sqlscale;			// scale factor 
+	SSHORT	sqlsubtype;			// datatype subtype - currently BLOBs only 
+	SSHORT	sqllen;				// length of data area 
+	SCHAR*	sqldata;			// address of data 
+	SSHORT*	sqlind;				// address of indicator variable 
+	SSHORT	sqlname_length;		// length of sqlname field 
+	SCHAR	sqlname[32];		// name of field, name length + space for NULL
+	SSHORT	relname_length;		// length of relation name 
+	SCHAR	relname[32];		// field's relation name + space for NULL
+	SSHORT	ownname_length;		// length of owner name 
+	SCHAR	ownname[32];		// relation's owner name + space for NULL
+	SSHORT	aliasname_length;	// length of alias name 
+	SCHAR	aliasname[32];		// relation's alias name + space for NULL
 } XSQLVAR;
 
 #define SQLDA_VERSION1		1
 
 typedef struct
 {
-	SSHORT	version;				/* version of this XSQLDA */
-	SCHAR	sqldaid[8];			/* XSQLDA name field */
-	SLONG	sqldabc;				/* length in bytes of SQLDA */
-	SSHORT	sqln;				/* number of fields allocated */
-	SSHORT	sqld;				/* actual number of fields */
-	XSQLVAR	sqlvar[1];			/* first field address */
+	SSHORT	version;				// version of this XSQLDA 
+	SCHAR	sqldaid[8];			// XSQLDA name field 
+	SLONG	sqldabc;				// length in bytes of SQLDA 
+	SSHORT	sqln;				// number of fields allocated 
+	SSHORT	sqld;				// actual number of fields 
+	XSQLVAR	sqlvar[1];			// first field address 
 } XSQLDA;
 
 #define XSQLDA_LENGTH(n)	(sizeof (XSQLDA) + (n-1) * sizeof (XSQLVAR))
@@ -118,12 +118,12 @@ typedef struct
 #define SQL_TYPE_DATE                      570
 #define SQL_INT64                          580
 
-/* Historical alias for pre v6 code */
+// Historical alias for pre v6 code 
 #define SQL_DATE                           SQL_TIMESTAMP
 
-#endif /* JRD_IBASE_H */
+#endif // JRD_IBASE_H 
 
-/* Structure to support conversion of SQLDA's to messages */
+// Structure to support conversion of SQLDA's to messages 
 
 struct sqlda_sup
 {
@@ -136,8 +136,8 @@ struct sqlda_sup
 		USHORT	dasup_msg_buf_len;
 	} dasup_clauses[2];
 
-	USHORT	dasup_dialect;		/* Dialect associated with statement */
-	USHORT	dasup_stmt_type;	/* Type of statement */
+	USHORT	dasup_dialect;		// Dialect associated with statement 
+	USHORT	dasup_stmt_type;	// Type of statement 
 
 };
 

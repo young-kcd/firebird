@@ -57,21 +57,21 @@ static void show_datatype(DBB, USHORT, USHORT, SSHORT, SSHORT, USHORT,
 						  USHORT);
 static void show_dbb(DBB);
 static void show_dbb_parameters(DBB);
-static int show_field_detail(DBB, const TEXT*, const TEXT*, SYN);
+static int show_field_detail(DBB, const TEXT*, const TEXT*, qli_syntax*);
 static int show_field_instances(DBB, const TEXT*);
 static void show_fields(qli_rel*, qli_fld*);
 static void show_filt(QFL);
 static int show_filter_detail(DBB, TEXT*);
 static void show_filts(DBB);
 static int show_filters_detail(DBB);
-static void show_fld(SYN);
+static void show_fld(qli_syntax*);
 static void show_func(QFN);
 static int show_func_detail(DBB, TEXT*);
 static void show_funcs(DBB);
 static int show_funcs_detail(DBB);
 static int show_insecure_fields(DBB, const TEXT*, const TEXT*);
 static void show_forms_db(DBB);
-static void show_gbl_field(SYN);
+static void show_gbl_field(qli_syntax*);
 static int show_gbl_field_detail(DBB, const TEXT*);
 static void show_gbl_fields(DBB);
 static int show_gbl_fields_detail(DBB);
@@ -138,7 +138,7 @@ const int buf_len = 256;
 typedef TEXT buf_type[buf_len];
 
 
-void SHOW_stuff( SYN node)
+void SHOW_stuff( qli_syntax* node)
 {
 /**************************************
  *
@@ -157,11 +157,11 @@ void SHOW_stuff( SYN node)
 	SSHORT width;
 
 	QLI_skip_line = true;
-	SYN *ptr = node->syn_arg;
+	qli_syntax** ptr = node->syn_arg;
 
 	for (USHORT i = 0; i < node->syn_count; i++) {
 		const show_t sw = (enum show_t) (int) * ptr++;
-		syn* value = *ptr++;
+		qli_syntax* value = *ptr++;
 		if (sw != show_matching_language &&
 			sw != show_version &&
 			sw != show_variable && sw != show_variables && CMD_check_ready())
@@ -932,7 +932,7 @@ static int show_field_detail(
 							 DBB database,
 							 const TEXT * relation_name,
 							 const TEXT * field_name,
-							 SYN idx_node)
+							 qli_syntax* idx_node)
 {
 /**************************************
  *
@@ -1077,7 +1077,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 	DBB database;
 	qli_symbol* symbol;
 
-/* Find the long field name (including query name) */
+// Find the long field name (including query name) 
 
 	if (relation) {
 		if (!(relation->rel_flags & REL_fields))
@@ -1125,7 +1125,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 		if (database && field->fld_flags & FLD_array)
 			array_dimensions(database, field->fld_name->sym_string);
 		if (field->fld_flags & FLD_computed)
-			ERRQ_msg_put(119, NULL, NULL, NULL, NULL, NULL);	/* Msg119 (computed expression) */
+			ERRQ_msg_put(119, NULL, NULL, NULL, NULL, NULL);	// Msg119 (computed expression) 
 		else
 			ib_printf("\n");
 	}
@@ -1211,7 +1211,7 @@ static int show_filter_detail( DBB database, TEXT* filter_name)
 		count++;
 		fb_utils::fb_exact_name(filter_name);
 
-		ERRQ_msg_put(444,		/* Msg444 Filter %s in database \"%s\" (%s): */
+		ERRQ_msg_put(444,		// Msg444 Filter %s in database \"%s\" (%s): 
 					 filter_name, database->dbb_filename,
 					 database->dbb_symbol->sym_string, NULL, NULL);
 		ERRQ_msg_put(445, F.RDB$MODULE_NAME, NULL, NULL, NULL, NULL);
@@ -1275,7 +1275,7 @@ static int show_filters_detail( DBB database)
 			ERRQ_msg_put(449, database->dbb_filename,
 						   database->dbb_symbol->sym_string, NULL, NULL,
 						   NULL);
-			/* Msg449 Filters in database %s (%s): */
+			// Msg449 Filters in database %s (%s): 
 		}
 		show_names(F.RDB$FUNCTION_NAME, width, buffer);
 	END_FOR;
@@ -1287,7 +1287,7 @@ static int show_filters_detail( DBB database)
 }
 
 
-static void show_fld( SYN field_node)
+static void show_fld( qli_syntax* field_node)
 {
 /**************************************
  *
@@ -1304,7 +1304,7 @@ static void show_fld( SYN field_node)
  *	got and let somebody else  do all the work.
  *
  **************************************/
-	SYN idx_node = NULL;
+	qli_syntax* idx_node = NULL;
 
 	if (field_node->syn_type == nod_index) {
 		idx_node = field_node;
@@ -1314,7 +1314,7 @@ static void show_fld( SYN field_node)
 	DBB database = NULL;
 	NAM field_name = NULL;
 	NAM relation_name = NULL;
-	for (SYN *ptr = field_node->syn_arg + field_node->syn_count;
+	for (qli_syntax** ptr = field_node->syn_arg + field_node->syn_count;
 		--ptr >= field_node->syn_arg;)
 	{
 		if (!field_name)
@@ -1448,13 +1448,13 @@ static int show_func_detail( DBB database, TEXT* func_name)
 		strcpy(func_name, F.RDB$FUNCTION_NAME);
 
 		if (F.RDB$QUERY_NAME[0]) {
-			ERRQ_msg_put(424,	/* Msg424 Function %s (%s) in database \"%s\" (%s): */
+			ERRQ_msg_put(424,	// Msg424 Function %s (%s) in database \"%s\" (%s): 
 						 F.RDB$FUNCTION_NAME, F.RDB$QUERY_NAME,
 						 database->dbb_filename,
 						 database->dbb_symbol->sym_string, NULL);
 		}
 		else {
-			ERRQ_msg_put(425,	/* Msg425 Function %s in database \"%s\" (%s): */
+			ERRQ_msg_put(425,	// Msg425 Function %s in database \"%s\" (%s): 
 						 F.RDB$FUNCTION_NAME, database->dbb_filename,
 						 database->dbb_symbol->sym_string, NULL, NULL);
 		}
@@ -1540,7 +1540,7 @@ static int show_funcs_detail( DBB database)
 		F IN RDB$FUNCTIONS
 		SORTED BY F.RDB$FUNCTION_NAME
 		if (!count++) {
-			/* Msg416 Functions in database %s (%s): */
+			// Msg416 Functions in database %s (%s): 
 			ERRQ_msg_put(416, database->dbb_filename,
 						   database->dbb_symbol->sym_string, NULL, NULL,
 						   NULL);
@@ -1654,7 +1654,7 @@ static void show_forms_db( DBB database)
 	// Msg120 There are no forms defined for database %s
 }
 
-static void show_gbl_field( SYN field_node)
+static void show_gbl_field( qli_syntax* field_node)
 {
 /**************************************
  *
@@ -1674,7 +1674,7 @@ static void show_gbl_field( SYN field_node)
 	qli_symbol* symbol;
 	DBB database = NULL;
 
-	for (SYN *ptr = field_node->syn_arg + field_node->syn_count - 1;
+	for (qli_syntax** ptr = field_node->syn_arg + field_node->syn_count - 1;
 		ptr >= field_node->syn_arg; ptr--)
 	{
 		if (!field_name) {
@@ -2061,7 +2061,7 @@ static void show_procs( DBB database)
 	SSHORT width = get_window_size(sizeof(buffer) - 1);
 
 	PRO_setup(database);
-	ERRQ_msg_put(128, database->dbb_filename,	/* Msg128 Procedures in database %s (%s): */
+	ERRQ_msg_put(128, database->dbb_filename,	// Msg128 Procedures in database %s (%s): 
 				 database->dbb_symbol->sym_string, NULL, NULL, NULL);
 	buffer[0] = 0;
 	FOR(REQUEST_HANDLE database->dbb_scan_blobs) X IN DB.QLI$PROCEDURES
@@ -2130,7 +2130,7 @@ static void show_rel_detail( qli_rel* relation)
 				ERRQ_msg_put(293, E.RDB$EXTERNAL_FILE, NULL, NULL, NULL, NULL);	// Msg293 Stored in external file %s
 		END_FOR;
 
-/* OBSOLETE - Handling of DBB_cap_triggers (old V2 style triggers) */
+// OBSOLETE - Handling of DBB_cap_triggers (old V2 style triggers) 
 // OBSOLETE - Msg294 An erase trigger is defined for %s
 // OBSOLETE - Msg295 A modify trigger is defined for %s
 // OBSOLETE - Msg296 A store trigger is defined for %s
@@ -2755,7 +2755,8 @@ static void show_versions(void)
 	ERRQ_msg_put(133, GDS_VERSION, NULL, NULL, NULL, NULL);	// Msg133 QLI, version %s
 
 	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next) {
-		ERRQ_msg_put(134, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg134 Version(s) for database %s */
+		ERRQ_msg_put(134, dbb->dbb_filename, NULL, NULL, NULL, NULL);
+		// Msg134 Version(s) for database %s 
 		isc_version(&dbb->dbb_handle, NULL, NULL);
 	}
 }

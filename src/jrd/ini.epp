@@ -68,7 +68,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 static void add_generator(TEXT*, BLK*);
 #endif
 static void add_global_fields(USHORT);
-static void add_index_set(DBB, bool, USHORT, USHORT);
+static void add_index_set(Database*, bool, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(TDBB, const TEXT*, const TEXT*, const UCHAR*,
@@ -80,7 +80,7 @@ static void add_trigger(TEXT*, BLK*, BLK*);
 static void modify_relation_field(TDBB, const UCHAR*, const UCHAR*, BLK*);
 static void store_generator(TDBB, const gen*, BLK*);
 static void store_global_field(TDBB, const gfld*, BLK*);
-static void store_intlnames(TDBB, DBB);
+static void store_intlnames(TDBB, Database*);
 static void store_message(TDBB, const trigger_msg*, BLK*);
 static void store_relation_field(TDBB, const UCHAR*, const UCHAR*, int, BLK*, bool);
 static void store_trigger(TDBB, const jrd_trg*, BLK*);
@@ -258,7 +258,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Uppercase owner name */
 	TEXT			string[32];
@@ -498,7 +498,7 @@ void INI_init(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const UCHAR* fld_;
@@ -568,7 +568,7 @@ void INI_init2(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -731,7 +731,7 @@ void INI_update_database()
  *            addition
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* If database is ReadOnly, return without upgrading ODS */
@@ -881,7 +881,7 @@ static void add_global_fields( USHORT minor_version)
 }
 
 
-static void add_index_set(DBB		dbb,
+static void add_index_set(Database*	dbb,
 						  bool		update_ods,
 						  USHORT	major_version,
 						  USHORT	minor_version)
@@ -1040,7 +1040,7 @@ static void add_relation_fields( USHORT minor_version)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* add desired fields to system relations, forcing a new format version */
 
@@ -1113,7 +1113,7 @@ static void add_security_to_sys_rel(TDBB	tdbb,
 	TEXT default_class[32];
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	strcpy(sec_class_name, "SQL$");
 	strcat(sec_class_name, rel_name);
@@ -1280,7 +1280,7 @@ static void modify_relation_field(TDBB			tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	FOR(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS WITH
 		X.RDB$RELATION_NAME EQ names[relfld[RFLD_R_NAME]] AND
@@ -1308,7 +1308,7 @@ static void store_generator(TDBB tdbb, const gen* generator, BLK* handle)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$GENERATORS
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
@@ -1332,7 +1332,7 @@ static void store_global_field(TDBB tdbb, const gfld* gfield, BLK* handle)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_tra* trans = dbb->dbb_sys_trans;
 
@@ -1454,7 +1454,7 @@ static void store_global_field(TDBB tdbb, const gfld* gfield, BLK* handle)
 }
 
 
-static void store_intlnames(TDBB tdbb, DBB dbb)
+static void store_intlnames(TDBB tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -1512,7 +1512,7 @@ static void store_message(TDBB tdbb, const trigger_msg* message, BLK* handle)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* store the trigger */
 
@@ -1543,7 +1543,7 @@ static void store_relation_field(TDBB			tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS
 		const gfld* gfield = (fld[RFLD_F_UPD_MINOR] && !fmt0_flag) ?
@@ -1573,7 +1573,7 @@ static void store_trigger(TDBB tdbb, const jrd_trg* trigger, BLK* handle)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_tra* trans = dbb->dbb_sys_trans;
 

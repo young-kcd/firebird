@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.94 2004-03-01 03:35:12 skidder Exp $
+$Id: met.epp,v 1.95 2004-03-07 07:58:41 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -197,7 +197,7 @@ void MET_update_partners(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	vec* relations = dbb->dbb_relations;
 
@@ -246,7 +246,7 @@ void MET_verify_cache(TDBB tdbb) {
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	
 	vec* procedures = dbb->dbb_procedures;
 	if (procedures) {
@@ -349,7 +349,7 @@ bool MET_clear_cache(TDBB tdbb, jrd_prc* proc)
 #endif
 	vec::iterator	ptr, end;
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	vec* relations = dbb->dbb_relations;
 	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
@@ -469,7 +469,7 @@ bool MET_procedure_in_use(TDBB tdbb, jrd_prc* proc)
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	
 	// This should not really happen
 	vec* procedures = dbb->dbb_procedures;
@@ -560,7 +560,7 @@ void MET_activate_shadow( TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Erase any secondary files of the primary database of the
    shadow being activated. */
@@ -649,7 +649,7 @@ void MET_change_fields( TDBB tdbb, jrd_tra* transaction, DSC * field_source)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
     dsc relation_name;
 	blk* request = CMP_find_request(tdbb, irq_m_fields, IRQ_REQUESTS);
@@ -714,7 +714,7 @@ void MET_delete_dependencies(TDBB	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (!object_name)
 		return;
@@ -751,7 +751,7 @@ void MET_delete_shadow( TDBB tdbb, USHORT shadow_number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* handle = NULL;
 
@@ -811,7 +811,7 @@ fmt* MET_format(TDBB tdbb, jrd_rel* relation, USHORT number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	fmt* format;
 	vec* formats = relation->rel_formats;
@@ -960,7 +960,7 @@ jrd_nod* MET_get_dependencies(TDBB			tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	Csb* csb_ = Csb::newCsb(*tdbb->tdbb_default, 5);
 	csb_->csb_g_flags |= csb_get_dependencies;
@@ -1061,7 +1061,7 @@ void MET_get_shadow_files( TDBB tdbb, bool deleteVar)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* handle = NULL;
 	FOR(REQUEST_HANDLE handle) X IN RDB$FILES
@@ -1131,7 +1131,7 @@ void MET_load_trigger(
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (relation->rel_flags & REL_sys_trigs_being_loaded) {
@@ -1209,7 +1209,7 @@ void MET_lookup_cnstrt_for_index(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	constraint_name[0] = 0;
 	blk* request = CMP_find_request(tdbb, irq_l_cnstrt, IRQ_REQUESTS);
@@ -1248,7 +1248,7 @@ void MET_lookup_cnstrt_for_trigger(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	constraint_name[0] = 0;
 	relation_name[0] = 0;
@@ -1308,7 +1308,7 @@ void MET_lookup_exception(TDBB	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* We need to look up exception in RDB$EXCEPTIONS */
 
@@ -1358,7 +1358,7 @@ SLONG MET_lookup_exception_number(TDBB tdbb, const TEXT* name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* We need to look up exception in RDB$EXCEPTIONS */
 
@@ -1402,7 +1402,7 @@ int MET_lookup_field(TDBB tdbb, jrd_rel* relation, const TEXT* name,
  *
  *****************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Start by checking field names that we already know */
 	vec* vector = relation->rel_fields;
@@ -1495,7 +1495,7 @@ BLF MET_lookup_filter(TDBB tdbb, SSHORT from, SSHORT to)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	FPTR_BFILTER_CALLBACK filter = NULL;
 	BLF blf_ = NULL;
@@ -1583,7 +1583,7 @@ SLONG MET_lookup_generator(TDBB tdbb, const TEXT* name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (!strcmp(name, "RDB$GENERATORS"))
 		return 0;
@@ -1621,7 +1621,7 @@ void MET_lookup_generator_id (TDBB tdbb, SLONG gen_id, TEXT* name)
  *
  **************************************/
     SET_TDBB (tdbb);
-    DBB dbb  = tdbb->tdbb_database;
+    Database* dbb  = tdbb->tdbb_database;
     
     if (!gen_id) {
         strcpy (name, "RDB$GENERATORS");
@@ -1661,7 +1661,7 @@ void MET_lookup_index(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	index_name[0] = 0;
 
@@ -1701,7 +1701,7 @@ SLONG MET_lookup_index_name(TDBB tdbb,
 	SLONG id = -1;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* request = CMP_find_request(tdbb, irq_l_index_name, IRQ_REQUESTS);
 
@@ -1750,7 +1750,7 @@ bool MET_lookup_partner(
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (relation->rel_flags & REL_check_partners)
 	{
@@ -2002,7 +2002,7 @@ jrd_prc* MET_lookup_procedure(TDBB tdbb, SCHAR * name, bool noscan)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	jrd_prc* check_procedure = NULL;
 
 /* See if we already know the procedure by name */
@@ -2086,7 +2086,7 @@ jrd_prc* MET_lookup_procedure_id(TDBB tdbb, SSHORT id,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	jrd_prc* check_procedure = NULL;
 
 	jrd_prc* procedure;
@@ -2155,7 +2155,7 @@ jrd_rel* MET_lookup_relation(TDBB tdbb, const char* name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* See if we already know the relation by name */
 
@@ -2259,7 +2259,7 @@ jrd_rel* MET_lookup_relation_id(TDBB tdbb, SLONG id, bool return_deleted)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* System relations are above suspicion */
 
@@ -2349,7 +2349,7 @@ jrd_nod* MET_parse_blob(TDBB		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length + 10;
@@ -2378,7 +2378,7 @@ void MET_parse_sys_trigger(TDBB tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	relation->rel_flags &= ~REL_sys_triggers;
 
@@ -2513,7 +2513,7 @@ void MET_prepare( TDBB tdbb, jrd_tra* transaction, USHORT length,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* request = CMP_find_request(tdbb, irq_s_trans, IRQ_REQUESTS);
 
@@ -2555,7 +2555,7 @@ jrd_prc* MET_procedure(TDBB tdbb, int id, bool noscan, USHORT flags)
 	SSHORT i;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	vec* vector = dbb->dbb_procedures;
 	if (!vector)
@@ -2848,7 +2848,7 @@ jrd_rel* MET_relation(TDBB tdbb, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	VEC vector = dbb->dbb_relations;
@@ -2921,7 +2921,7 @@ bool MET_relation_owns_trigger (TDBB tdbb, const TEXT* relation_name,
  *
  **************************************/
     SET_TDBB (tdbb);
-    DBB dbb = tdbb->tdbb_database;
+    Database* dbb = tdbb->tdbb_database;
     CHECK_DBB (dbb);
 
     /* No need to load triggers for ReadOnly databases,
@@ -2978,7 +2978,7 @@ bool MET_relation_default_class (TDBB tdbb, const TEXT* relation_name,
  *
  **************************************/
     SET_TDBB (tdbb);
-    DBB dbb = tdbb->tdbb_database;
+    Database* dbb = tdbb->tdbb_database;
     CHECK_DBB (dbb);
     
 	bool found = false;
@@ -3048,7 +3048,7 @@ void MET_remove_procedure( TDBB tdbb, int id, jrd_prc* procedure)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	vec* vector = dbb->dbb_procedures;
 	if (!vector) {
@@ -3152,7 +3152,7 @@ void MET_revoke(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* See if the revokee still has the privilege.  If so, there's
    nothing to do */
@@ -3243,7 +3243,7 @@ void MET_scan_relation( TDBB tdbb, jrd_rel* relation)
 	STR name, string;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef SUPERSERVER
 	if (!(dbb->dbb_flags & DBB_sp_rec_mutex_init)) {
@@ -3579,7 +3579,7 @@ const TEXT* MET_trigger_msg(TDBB tdbb, const TEXT* name, USHORT number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const TEXT* msg = 0;
 	BLK request = CMP_find_request(tdbb, irq_s_msgs, IRQ_REQUESTS);
@@ -3614,7 +3614,7 @@ void MET_update_shadow( TDBB tdbb, Shadow* shadow, USHORT file_flags)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* handle = NULL;
 	FOR(REQUEST_HANDLE handle)
@@ -3641,7 +3641,7 @@ void MET_update_transaction( TDBB tdbb, jrd_tra* transaction, const bool do_comm
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blk* request = CMP_find_request(tdbb, irq_m_trans, IRQ_REQUESTS);
 
@@ -3783,7 +3783,7 @@ static void get_trigger(
 	if (blob_id->isEmpty())
 		return;
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	SLONG length = blob->blb_length + 10;
 	STR blr = FB_NEW_RPT(*dbb->dbb_permanent,length) str();
@@ -3811,7 +3811,7 @@ static bool get_type(TDBB tdbb, SSHORT* id, const UCHAR* name, const TEXT* field
 	UCHAR buffer[32];			/* BASED ON RDB$TYPE_NAME */
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	fb_assert(id != NULL);
 	fb_assert(name != NULL);
@@ -3858,7 +3858,7 @@ static void lookup_view_contexts( TDBB tdbb, jrd_rel* view)
  *                                       
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	blk* request = CMP_find_request(tdbb, irq_view_context, IRQ_REQUESTS);
 
 	vcx** vcx_ptr = &view->rel_view_contexts;
@@ -3954,7 +3954,7 @@ static jrd_nod* parse_param_blr(TDBB tdbb,
 		jrd_prc* procedure, bid* blob_id, Csb* csb)
 {
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blb*	blob   = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	SLONG	length = blob->blb_length + 10;
@@ -3985,7 +3985,7 @@ static jrd_nod* parse_procedure_blr(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length + 10;
@@ -4169,7 +4169,7 @@ static BOOLEAN resolve_charset_and_collation(
 	BOOLEAN found = FALSE;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	fb_assert(id != NULL);
 
@@ -4249,7 +4249,7 @@ static str* save_name(TDBB tdbb, const TEXT* name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	USHORT l = name_length(name);
 	str* string = FB_NEW_RPT(*dbb->dbb_permanent, l) str();
@@ -4329,7 +4329,7 @@ static void store_dependencies(TDBB			tdbb,
 	TEXT	name[32];
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	while (csb->csb_dependencies)
 	{
@@ -4495,7 +4495,7 @@ static bool verify_TRG_ignore_perm(TDBB tdbb, const TEXT* trig_name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* see if this is a system trigger, with the flag set as TRG_ignore_perm */
 	if (INI_get_trig_flags(trig_name) & (USHORT) TRG_ignore_perm)

@@ -115,22 +115,22 @@ class jrd_file;
 class fmt;
 
 
-class dbb : private pool_alloc<type_dbb>
+class Database : private pool_alloc<type_dbb>
 {
 public:
 	typedef int (*crypt_routine) (char*, void*, int, void*);
 
-	static dbb* newDbb(MemoryPool& p) {		
-		return FB_NEW(p) dbb(p);
+	static Database* newDbb(MemoryPool& p) {
+		return FB_NEW(p) Database(p);
 	}
 	
-	// The deleteDbb function MUST be used to delete a dbb object.
+	// The deleteDbb function MUST be used to delete a Database object.
 	// The function hides some tricky order of operations.  Since the
-	// memory for the vectors in the dbb is allocated out of the dbb's
+	// memory for the vectors in the Database is allocated out of the Database's
 	// permanent memory pool, the entire delete() operation needs
 	// to complete _before_ the permanent pool is deleted, or else
 	// risk an aborted engine.
-	static void deleteDbb(dbb* toDelete)
+	static void deleteDbb(Database* toDelete)
 	{
 		if (toDelete == 0)
 			return;
@@ -139,7 +139,7 @@ public:
 		JrdMemoryPool::noDbbDeletePool(perm);
 	}
 	
-	dbb*	dbb_next;		/* Next database block in system */
+	Database*	dbb_next;		/* Next database block in system */
 	att *dbb_attachments;	/* Active attachments */
 	struct bcb *dbb_bcb;		/* Buffer control block */
 	vec*		dbb_relations;	/* relation vector */
@@ -157,8 +157,8 @@ public:
 	class vcl *dbb_gen_id_pages;	/* known pages for gen_id */
 	struct blf *dbb_blob_filters;	/* known blob filters */
 	class lls *dbb_modules;	/* external function/filter modules */
-	MUTX_T *dbb_mutexes;		/* DBB block mutexes */
-	WLCK_T *dbb_rw_locks;		/* DBB block read/write locks */
+	MUTX_T *dbb_mutexes;		/* Database block mutexes */
+	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
 	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
 	SLONG dbb_sort_size;		/* Size of sort space per sort */
 
@@ -240,14 +240,14 @@ public:
 	class sym *dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 private:
-	dbb(MemoryPool& p)
+	Database(MemoryPool& p)
 	:	dbb_pools(1, p, type_dbb),
 		dbb_text_objects(p),
 		dbb_charsets(p)
 	{
 	}
 
-	~dbb()
+	~Database()
 	{
 		pool_vec_type::iterator itr = dbb_pools.begin();
 		while (itr != dbb_pools.end())
@@ -263,17 +263,16 @@ private:
 			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
 
-	// The delete operators are no-oped because the dbb memory is allocated from the
-	// dbb's own permanent pool.  That pool has already been released by the dbb
+	// The delete operators are no-oped because the Database memory is allocated from the
+	// Database's own permanent pool.  That pool has already been released by the Database
 	// destructor, so the memory has already been released.  Hence the operator
 	// delete no-op.
 	void operator delete(void *mem) {}
 	void operator delete[](void *mem) {}
 
-	dbb(const dbb&);	// no impl.
-	const dbb& operator =(const dbb&) { return *this; }
+	Database(const Database&);	// no impl.
+	const Database& operator =(const Database&) { return *this; }
 };
-typedef dbb* DBB;
 
 //
 // bit values for dbb_flags
@@ -295,7 +294,7 @@ typedef dbb* DBB;
 #define DBB_DB_SQL_dialect_3 	0x1000L	/* database SQL dialect 3 */
 #define DBB_read_only    		0x2000L	/* DB is ReadOnly (RO). If not set, DB is RW */
 #define DBB_being_opened_read_only 0x4000L	/* DB is being opened RO. If unset, opened as RW */
-#define DBB_not_in_use      	0x8000L	/* DBB to be ignored while attaching */
+#define DBB_not_in_use      	0x8000L	/* Database to be ignored while attaching */
 #define DBB_lck_init_done   	0x10000L	/* LCK_init() called for the database */
 #define DBB_sp_rec_mutex_init 	0x20000L	/* Stored procedure mutex initialized */
 #define DBB_sweep_in_progress 	0x40000L	/* A database sweep operation is in progress */
@@ -423,7 +422,7 @@ public:
 		att_counts[0] = 0;
 	}*/
 
-	dbb*		att_database;		// Parent databasea block
+	Database*	att_database;		// Parent databasea block
 	att*		att_next;			// Next attachment to database
 	att*		att_blocking;		// Blocking attachment, if any
 	class usr*	att_user;			// User identification
@@ -945,8 +944,8 @@ struct win_for_array: public win
 typedef struct tdbb
 {
 	struct thdd	tdbb_thd_data;
-	dbb*	tdbb_database;
-	att*	tdbb_attachment;
+	Database*	tdbb_database;
+	att*		tdbb_attachment;
 	jrd_tra*	tdbb_transaction;
 	jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;

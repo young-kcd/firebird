@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.89 2004-03-01 03:35:05 skidder Exp $
+ * $Id: ddl.cpp,v 1.90 2004-03-07 07:58:26 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1491,12 +1491,12 @@ static void define_set_default_trg(	dsql_req*    request,
 				continue;
 			}
 
-			/* Now, we have the right column in the parse tree. case (1) above */
+			// Now, we have the right column in the parse tree. case (1) above 
 
 			dsql_nod* default_node = elem->nod_arg[e_dfl_default];
 			if (default_node)
 			{
-				/* case (1-a) above: there is a col. level default */
+				// case (1-a) above: there is a col. level default 
 				GEN_expr(request, default_node);
 				found_default = true;
 				search_for_default = false;
@@ -5210,7 +5210,7 @@ static void modify_relation( dsql_req* request)
 				request->append_cstring(isc_dyn_mod_local_fld, field_name->str_data);
 				const dsql_nod* const_node = element->nod_arg[e_mod_fld_pos_new_position];
 
-                /* CVC: Since now the parser accepts pos=1..N, let's subtract one here. */
+                // CVC: Since now the parser accepts pos=1..N, let's subtract one here. 
                 const SSHORT constant = (SSHORT)(IPTR) const_node->nod_arg[0] - 1;
 
 				request->append_cstring(isc_dyn_rel_name,
@@ -6087,7 +6087,7 @@ static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
 				set_nod_value_attributes(child, field);
 			}
 		}						// if it's a node 
-	}							/* for (child_number ... */
+	}							// for (child_number ... 
 	return;
 }
 

@@ -74,7 +74,6 @@ void PPG_print_header(const header_page* header, SLONG page,
  **************************************/
 	SLONG number;
 	struct tm time;
-	SSHORT flags;
 	TEXT temp[257];
 	SSHORT flag_count = 0;
 
@@ -140,6 +139,8 @@ void PPG_print_header(const header_page* header, SLONG page,
 				time.tm_hour, time.tm_min, time.tm_sec);
 	}
 
+	USHORT flags;
+
 	if ((page == HEADER_PAGE) && (flags = header->hdr_flags)) {
 		FPRINTF(outfile, "\tAttributes\t\t");
 		if (flags & hdr_force_write) {
@@ -164,19 +165,20 @@ void PPG_print_header(const header_page* header, SLONG page,
 			FPRINTF(outfile, "active shadow");
 		}
 
-		if ((flags & hdr_shutdown_mask) == hdr_shutdown_multi) {
+		const USHORT sd_flags = flags & hdr_shutdown_mask;
+		if (sd_flags == hdr_shutdown_multi) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "multi-user maintenance");
 		}
 
-		if ((flags & hdr_shutdown_mask) == hdr_shutdown_single) {
+		if (sd_flags == hdr_shutdown_single) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "single-user maintenance");
 		}
 
-		if ((flags & hdr_shutdown_mask) == hdr_shutdown_full) {
+		if (sd_flags == hdr_shutdown_full) {
 			if (flag_count++)
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "full shutdown");

@@ -648,7 +648,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 			fb_assert(DTYPE_IS_DATE(dtype1) || DTYPE_IS_DATE(dtype2));
 
-			/* The MAX(dtype) rule doesn't apply with dtype_int64 */
+			// The MAX(dtype) rule doesn't apply with dtype_int64 
 
 			if (dtype_int64 == dtype1)
 				dtype1 = dtype_double;
@@ -1026,7 +1026,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		if (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address
 			== blr_extract_second)
 		{
-			/* QUADDATE - maybe this should be DECIMAL(6,4) */
+			// QUADDATE - maybe this should be DECIMAL(6,4) 
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 			desc->dsc_length = sizeof(ULONG);

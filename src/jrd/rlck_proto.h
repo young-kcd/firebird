@@ -48,7 +48,7 @@ lck *RLCK_reserve_relation(struct tdbb *, class jrd_tra *,
  */
 /* #ifdef PC_ENGINE */
 void RLCK_shutdown_attachment(class att*);
-void RLCK_shutdown_database(class dbb*);
+void RLCK_shutdown_database(class Database*);
 #ifdef PC_ENGINE
 void RLCK_signal_refresh(class jrd_tra*);
 #endif

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cs_utffss.c
+ *	MODULE:		cs_utffss.cpp
  *	DESCRIPTION:	Character set definition for Unicode FSS format
  *
  * The contents of this file are subject to the Interbase Public
@@ -32,16 +32,19 @@ CHARSET_ENTRY(CS_unicode_fss)
 {
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_UNICODE_FSS;
-	csptr->charset_name = (ASCII *) "UNICODE_FSS";
+	csptr->charset_name = (const ASCII*) "UNICODE_FSS";
 	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (BYTE *) " ";	/* 0x20 */
+	csptr->charset_space_character = (const BYTE*) " ";	/* 0x20 */
 	csptr->charset_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_UNICODE_FSS,
-					(FPTR_SHORT) CS_UTFFSS_fss_to_unicode, NULL, NULL);
+					reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_fss_to_unicode_cc),
+					NULL, NULL);
 	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS, CS_UNICODE_UCS2,
-					(FPTR_SHORT) CS_UTFFSS_unicode_to_fss, NULL, NULL);
+					reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss),
+					NULL, NULL);
 	CHARSET_RETURN;
 }
+

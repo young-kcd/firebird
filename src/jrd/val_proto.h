@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		val_proto.h
- *	DESCRIPTION:	Prototype header file for val.c
+ *	DESCRIPTION:	Prototype header file for val.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,6 +24,7 @@
 #ifndef JRD_VAL_PROTO_H
 #define JRD_VAL_PROTO_H
 
-BOOLEAN VAL_validate(TDBB, USHORT);
+bool VAL_validate(TDBB, USHORT);
 
 #endif // JRD_VAL_PROTO_H
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	InterBase International support
- *	MODULE:		cs_unicode.c
+ *	MODULE:		cs_unicode.cpp
  *	DESCRIPTION:	Character set definition for Unicode
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,16 +31,19 @@ CHARSET_ENTRY(CS_unicode_ucs2)
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_UNICODE_UCS2;
-	csptr->charset_name = (ASCII *) "UNICODE";
+	csptr->charset_name = (const ASCII*) "UNICODE";
 	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = sizeof(space);
-	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 */
+	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
 	csptr->charset_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_UNICODE_UCS2,
-					(FPTR_SHORT) CV_wc_copy, NULL, NULL);
+					reinterpret_cast<pfn_INTL_convert>(CV_wc_copy),
+					NULL, NULL);
 	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_UCS2, CS_UNICODE_UCS2,
-					(FPTR_SHORT) CV_wc_copy, NULL, NULL);
+					reinterpret_cast<pfn_INTL_convert>(CV_wc_copy),
+					NULL, NULL);
 	CHARSET_RETURN;
 }
+

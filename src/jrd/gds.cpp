@@ -1622,22 +1622,22 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 	resultString[0] = 0;
 
 	if (ib_prefix == NULL) {
-        // Try and get value from config file
-        const char *regPrefix = Config::getRootDirectory();
+		// Try and get value from config file
+		const char *regPrefix = Config::getRootDirectory();
 
-        size_t len = strlen(regPrefix);
-        if (len > 0) {
-            if (len > sizeof(ib_prefix_val)) {
-                ib_perror("ib_prefix path size too large - truncated");                      
-            }
-            strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
-            ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
-            ib_prefix = ib_prefix_val;
-        }
-        else {
+		const size_t len = strlen(regPrefix);
+		if (len > 0) {
+			if (len > sizeof(ib_prefix_val)) {
+				ib_perror("ib_prefix path size too large - truncated");                      
+			}
+			strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) -1);
+			ib_prefix_val[sizeof(ib_prefix_val) -1] = 0;
+			ib_prefix = ib_prefix_val;
+		}
+		else {
 			ib_prefix = FB_PREFIX;
 			strcat(ib_prefix_val, ib_prefix);
-        }
+		}
 		ib_prefix = ib_prefix_val;
 	}
 	strcat(resultString, ib_prefix);

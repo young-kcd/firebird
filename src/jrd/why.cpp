@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.55 2004-02-28 19:32:46 alexpeshkoff Exp $
+$Id: why.cpp,v 1.56 2004-03-07 07:58:42 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1701,7 +1701,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 /* Call the associated cleanup handlers */
 
 	// Obviously, this code can't be replaced by WHY_cleanup_transaction!
-	// But this requires chnages in database and transaction cleanup 
+	// But this requires changes in database and transaction cleanup 
 	// routines first parameter.
 	for (clean* cln = dbb->cleanup; cln; cln = dbb->cleanup)
 	{

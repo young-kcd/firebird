@@ -46,7 +46,7 @@ void SYM_insert(SYM symbol)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	const int h = hash_func(symbol->sym_string);
 
@@ -75,7 +75,7 @@ SYM SYM_lookup(const TEXT* string)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	for (sym* symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
 		 symbol = symbol->sym_collision)
@@ -100,7 +100,7 @@ void SYM_remove(SYM symbol)
  *	Remove a symbol from the hash table.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	const int h = hash_func(symbol->sym_string);
 

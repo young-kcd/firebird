@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.55 2004-03-01 03:35:11 skidder Exp $
+$Id: blb.cpp,v 1.56 2004-03-07 07:58:39 robocop Exp $
 */
 
 #include "firebird.h"
@@ -193,7 +193,7 @@ blb* BLB_create2(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_flags & DBB_read_only)
@@ -446,7 +446,7 @@ USHORT BLB_get_segment(TDBB tdbb,
 	USHORT l;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef SUPERSERVER
 
@@ -652,7 +652,7 @@ SLONG BLB_get_slice(TDBB tdbb,
 	ISC_STATUS status;
 
 	SET_TDBB(tdbb);
-    DBB database = GET_DBB;
+    Database* database = GET_DBB;
 	tdbb->tdbb_default = transaction->tra_pool;
 
 /* Checkout slice description language */
@@ -803,7 +803,7 @@ void BLB_map_blobs(TDBB tdbb, blb* old_blob, blb* new_blob)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	blb_map* new_map = FB_NEW(*dbb->dbb_permanent) blb_map();
@@ -1036,7 +1036,7 @@ blb* BLB_open2(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Handle filter case */
 	SSHORT from, to;
@@ -1193,7 +1193,7 @@ void BLB_put_segment(TDBB tdbb, blb* blob, const UCHAR* seg, USHORT segment_leng
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	// Anyway, BLOB_PTR is UCHAR, so this is redundant.
 	const BLOB_PTR* segment = reinterpret_cast<const BLOB_PTR*>(seg);
 
@@ -1597,7 +1597,7 @@ static ARR alloc_array(jrd_tra* transaction, ADS proto_desc)
  *
  **************************************/
 
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	// Compute size and allocate block
 
@@ -1642,7 +1642,7 @@ static blb* allocate_blob(TDBB tdbb, jrd_tra* transaction)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Create a blob large enough to hold a single data page */
 
@@ -1870,7 +1870,7 @@ static void delete_blob(TDBB tdbb, blb* blob, ULONG prior_page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_flags & DBB_read_only)
@@ -1938,7 +1938,7 @@ static void delete_blob_id(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* If the blob is null, don't bother to delete it.  Reasonable? */
@@ -2001,7 +2001,7 @@ static BLF find_filter(TDBB tdbb, SSHORT from, SSHORT to)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	blf* cache = dbb->dbb_blob_filters;
@@ -2043,7 +2043,7 @@ static blob_page* get_next_page(TDBB tdbb, blb* blob, WIN * window)
 	}
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	vcl* vector = blob->blb_pages;
 
 #ifdef SUPERSERVER_V2
@@ -2128,7 +2128,7 @@ static void get_replay_blob(TDBB tdbb, bid* blob_id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* we're only interested in newly created blobs */
@@ -2165,7 +2165,7 @@ static void insert_page(TDBB tdbb, blb* blob)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const USHORT length = dbb->dbb_page_size - blob->blb_space_remaining;

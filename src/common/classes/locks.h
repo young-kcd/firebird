@@ -32,12 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.10 2004-03-01 03:35:01 skidder Exp $
+ *  $Id: locks.h,v 1.11 2004-03-07 07:58:25 robocop Exp $
  *
  */
 
-#ifndef LOCKS_H
-#define LOCKS_H
+#ifndef CLASSES_LOCKS_H
+#define CLASSES_LOCKS_H
 
 #include "firebird.h"
 
@@ -181,4 +181,4 @@ public:
 
 }
 
-#endif
+#endif // CLASSES_LOCKS_H

@@ -52,7 +52,7 @@ static SCHAR db_items[] =
 	{ gds_info_page_size, gds_info_allocation, gds_info_end };
 #endif
 
-int CMD_check_ready(void)
+bool CMD_check_ready(void)
 {
 /**************************************
  *
@@ -67,15 +67,15 @@ int CMD_check_ready(void)
  **************************************/
 
 	if (QLI_databases)
-		return FALSE;
+		return false;
 
 	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready
 
-	return TRUE;
+	return true;
 }
 
 
-void CMD_copy_procedure( SYN node)
+void CMD_copy_procedure( qli_syntax* node)
 {
 /**************************************
  *
@@ -98,7 +98,7 @@ void CMD_copy_procedure( SYN node)
 }
 
 
-void CMD_define_procedure( SYN node)
+void CMD_define_procedure( qli_syntax* node)
 {
 /**************************************
  *
@@ -120,7 +120,7 @@ void CMD_define_procedure( SYN node)
 }
 
 
-void CMD_delete_proc( SYN node)
+void CMD_delete_proc( qli_syntax* node)
 {
 /**************************************
  *
@@ -147,7 +147,7 @@ void CMD_delete_proc( SYN node)
 }
 
 
-void CMD_edit_proc( SYN node)
+void CMD_edit_proc( qli_syntax* node)
 {
 /**************************************
  *
@@ -167,7 +167,7 @@ void CMD_edit_proc( SYN node)
 }
 
 
-void CMD_extract( SYN node)
+void CMD_extract( qli_syntax* node)
 {
 /**************************************
  *
@@ -183,10 +183,12 @@ void CMD_extract( SYN node)
 
 	IB_FILE* file = (IB_FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
 
-	SYN list = node->syn_arg[0];
+	qli_syntax* list = node->syn_arg[0];
 	if (list) {
-		SYN* ptr = list->syn_arg;
-		for (SYN* const end = ptr + list->syn_count; ptr < end; ptr++) {
+		qli_syntax** ptr = list->syn_arg;
+		for (const qli_syntax* const* const end = ptr + list->syn_count;
+			ptr < end; ptr++)
+		{
 			QPR proc = (QPR) *ptr;
 			if (!(database = proc->qpr_database))
 				database = QLI_databases;
@@ -222,7 +224,7 @@ void CMD_extract( SYN node)
 }
 
 
-void CMD_finish( SYN node)
+void CMD_finish( qli_syntax* node)
 {
 /**************************************
  *
@@ -245,7 +247,7 @@ void CMD_finish( SYN node)
 }
 
 
-void CMD_rename_proc( SYN node)
+void CMD_rename_proc( qli_syntax* node)
 {
 /**************************************
  *
@@ -282,7 +284,7 @@ void CMD_rename_proc( SYN node)
 }
 
 
-void CMD_set( SYN node)
+void CMD_set( qli_syntax* node)
 {
 /**************************************
  *
@@ -295,15 +297,14 @@ void CMD_set( SYN node)
  *
  **************************************/
 	USHORT length;
-	qli_const* string;
-	TEXT *name;
+	const qli_const* string;
 
-	SYN* ptr = node->syn_arg;
+	const qli_syntax* const* ptr = node->syn_arg;
 
 	for (USHORT i = 0; i < node->syn_count; i++) {
-		USHORT foo = (USHORT)(ULONG) *ptr++;
+		const USHORT foo = (USHORT)(ULONG) *ptr++;
 		const enum set_t sw = (enum set_t) foo;
-		SYN value = *ptr++;
+		const qli_syntax* value = *ptr++;
 		switch (sw) {
 		case set_blr:
 			QLI_blr = (bool)(ULONG) value;
@@ -393,15 +394,17 @@ void CMD_set( SYN node)
 			break;
 
 		case set_charset:
-			if (!value) {
-				QLI_charset[0] = 0;
+			{
+				if (!value) {
+					QLI_charset[0] = 0;
+					break;
+				}
+				const TEXT* name = ((NAM) value)->nam_string;
+				length = MIN(strlen(name), sizeof(QLI_charset));
+				strncpy(QLI_charset, name, length);
+				QLI_charset[length] = 0;
 				break;
 			}
-			name = ((NAM) value)->nam_string;
-			length = MIN(strlen(name), sizeof(QLI_charset));
-			strncpy(QLI_charset, name, length);
-			QLI_charset[length] = 0;
-			break;
 
 #ifdef DEV_BUILD
 		case set_explain:
@@ -420,7 +423,7 @@ void CMD_set( SYN node)
 }
 
 
-void CMD_shell( SYN node)
+void CMD_shell( qli_syntax* node)
 {
 /**************************************
  *
@@ -437,7 +440,7 @@ void CMD_shell( SYN node)
 // Copy command, inserting extra blank at end.
 
 	TEXT* p = buffer;
-	qli_const* constant = (qli_const*) node->syn_arg[0];
+	const qli_const* constant = (qli_const*) node->syn_arg[0];
 	if (constant) {
 		const TEXT* q = (TEXT*) constant->con_data;
 		USHORT l = constant->con_desc.dsc_length;
@@ -485,7 +488,7 @@ void CMD_shell( SYN node)
 }
 
 
-void CMD_transaction( SYN node)
+void CMD_transaction( qli_syntax* node)
 {
 /**************************************
  *
@@ -542,8 +545,10 @@ void CMD_transaction( SYN node)
 		return;
 	}
 
-	SYN* ptr = node->syn_arg;
-	for (SYN* const end = ptr + node->syn_count; ptr < end; ptr++) {
+	qli_syntax** ptr = node->syn_arg;
+	for (const qli_syntax* const* const end = ptr + node->syn_count;
+		ptr < end; ptr++)
+	{
 		DBB database = (DBB) *ptr;
 		if ((node->syn_type == nod_commit) &&
 			!(database->dbb_flags & DBB_prepared))

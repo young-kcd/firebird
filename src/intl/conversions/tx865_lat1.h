@@ -554,3 +554,4 @@ static const UCHAR cvt_iso88591_to_865[256] = {
 	CS_CANT_MAP /*     FE 00FE LATIN SMALL LETTER THORN                 */ ,
 	0x98						/*     FF 00FF LATIN SMALL LETTER Y DIAERESIS           */
 };
+

@@ -71,7 +71,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 static ULONG get_number_of_pages(const jrd_file*, const USHORT);
 static bool	MaybeCloseFile(SLONG*);
 static jrd_file* seek_file(jrd_file*, BDB, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
-static jrd_file* setup_file(DBB, const TEXT*, USHORT, HANDLE);
+static jrd_file* setup_file(Database*, const TEXT*, USHORT, HANDLE);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 
 static USHORT ostype;
@@ -93,7 +93,7 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 
 
 
-int PIO_add_file(DBB dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -181,7 +181,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 
 
 
-jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -338,7 +338,7 @@ void PIO_force_write(jrd_file* file, bool flag)
 }
 
 
-void PIO_header(DBB dbb, SCHAR * address, int length)
+void PIO_header(Database* dbb, SCHAR * address, int length)
 {
 /**************************************
  *
@@ -430,7 +430,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 }
 
 
-SLONG PIO_max_alloc(DBB dbb)
+SLONG PIO_max_alloc(Database* dbb)
 {
 /**************************************
  *
@@ -454,7 +454,7 @@ SLONG PIO_max_alloc(DBB dbb)
 }
 
 
-SLONG PIO_act_alloc(DBB dbb)
+SLONG PIO_act_alloc(Database* dbb)
 {
 /**************************************
  *
@@ -480,7 +480,7 @@ SLONG PIO_act_alloc(DBB dbb)
 }
 
 
-jrd_file* PIO_open(DBB dbb,
+jrd_file* PIO_open(Database* dbb,
 			 const TEXT* string,
 			 SSHORT length,
 			 bool trace_flag,
@@ -551,7 +551,7 @@ jrd_file* PIO_open(DBB dbb,
 					 isc_io_open_err, isc_arg_win32, GetLastError(), 0);
 		}
 		else {
-			/* If this is the primary file, set DBB flag to indicate that it is
+			/* If this is the primary file, set Database flag to indicate that it is
 			 * being opened ReadOnly. This flag will be used later to compare with
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
@@ -584,7 +584,7 @@ bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
  *	Read a data page.
  *
  **************************************/
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
 	OVERLAPPED overlapped, *overlapped_ptr;
@@ -647,7 +647,7 @@ bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 
 
 #ifdef SUPERSERVER_V2
-bool PIO_read_ahead(DBB		dbb,
+bool PIO_read_ahead(Database*		dbb,
 				   SLONG	start_page,
 				   SCHAR*	buffer,
 				   SLONG	pages,
@@ -806,7 +806,7 @@ bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	DWORD actual_length;
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	DBB   dbb  = bdb->bdb_dbb;
+	Database*   dbb  = bdb->bdb_dbb;
 	DWORD size = dbb->dbb_page_size;
 
 	file = seek_file(file, bdb, status_vector, &overlapped,
@@ -945,7 +945,7 @@ static jrd_file* seek_file(jrd_file*			file,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next) {
@@ -1010,7 +1010,7 @@ static jrd_file* seek_file(jrd_file*			file,
 }
 
 
-static jrd_file* setup_file(DBB		dbb,
+static jrd_file* setup_file(Database*		dbb,
 					  const TEXT*		file_name,
 					  USHORT	file_length,
 					  HANDLE	desc)

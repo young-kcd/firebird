@@ -32,5 +32,5 @@ DSQL_SYM HSHD_lookup(const void*, const TEXT*, SSHORT, SYM_TYPE, USHORT);
 void HSHD_remove(dsql_sym*);
 void HSHD_set_flag(const void *, const TEXT*, SSHORT, SYM_TYPE, SSHORT);
 
-#endif /*DSQL_HSH_PROTO_H*/
+#endif //DSQL_HSH_PROTO_H
 

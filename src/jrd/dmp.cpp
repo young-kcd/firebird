@@ -84,17 +84,12 @@ void DMP_active(void)
  *	Dump all buffers that are active.
  *
  **************************************/
-	DBB dbb;
-	BCB bcb;
-	BDB bdb;
-	USHORT i;
+	Database* dbb = GET_DBB;
 
-	dbb = GET_DBB;
-
-	bcb = dbb->dbb_bcb;
-	for (i = 0; i < bcb->bcb_count; i++)
+	BCB bcb = dbb->dbb_bcb;
+	for (USHORT i = 0; i < bcb->bcb_count; i++)
 	{
-		bdb = bcb->bcb_rpt[i].bcb_bdb;
+		BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_use_count)
 		{
 			if (*dbg_block != NULL)
@@ -119,15 +114,12 @@ void DMP_btc(void)
  *	Dump the dirty page b-tree.
  *
  **************************************/
-	DBB dbb;
-	BDB bdb;
-	SLONG level;
 	SCHAR buffer[250];
 
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
-	level = 0;
-	bdb = dbb->dbb_bcb->bcb_btree;
+	SLONG level = 0;
+	BDB bdb = dbb->dbb_bcb->bcb_btree;
 
 	memset(buffer, ' ', sizeof(buffer));
 	buffer[249] = 0;
@@ -150,15 +142,12 @@ void DMP_btc_errors(void)
  *	Dump the dirty page b-tree.
  *
  **************************************/
-	DBB dbb;
-	BDB bdb;
-	SLONG level;
 	SCHAR buffer[250];
 
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
-	level = 0;
-	bdb = dbb->dbb_bcb->bcb_btree;
+	SLONG level = 0;
+	BDB bdb = dbb->dbb_bcb->bcb_btree;
 	if (bdb)
 		btc_printer_errors(level, bdb, buffer);
 }
@@ -176,25 +165,21 @@ void DMP_btc_ordered(void)
  *	Dump the dirty page b-tree.
  *
  **************************************/
-	DBB dbb;
-	BDB bdb, next;
-	int i;
-	SLONG max_seen;
-
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 /* Pick starting place at leftmost node */
 
 	ib_fprintf(dbg_file,
 			   "\nDirty Page Binary Tree -- Page (Transaction) { Dirty | Clean }\n");
 
-	max_seen = -3;
-
+	SLONG max_seen = -3;
+	BDB next;
 	for (next = dbb->dbb_bcb->bcb_btree; next && next->bdb_left;
 		 next = next->bdb_left);
 
-	i = 0;
+	int i = 0;
 
+	BDB bdb;
 	while (bdb = next) {
 		if (!bdb->bdb_parent && bdb != dbb->dbb_bcb->bcb_btree) {
 			for (bdb = dbb->dbb_bcb->bcb_btree; bdb;)
@@ -244,17 +229,12 @@ void DMP_dirty(void)
  *	Dump all buffers that are dirty.
  *
  **************************************/
-	DBB dbb;
-	BCB bcb;
-	BDB bdb;
-	USHORT i;
+	Database* dbb = GET_DBB;
 
-	dbb = GET_DBB;
-
-	bcb = dbb->dbb_bcb;
-	for (i = 0; i < bcb->bcb_count; i++)
+	BCB bcb = dbb->dbb_bcb;
+	for (USHORT i = 0; i < bcb->bcb_count; i++)
 	{
-		bdb = bcb->bcb_rpt[i].bcb_bdb;
+		BDB bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags & BDB_dirty)
 		{
 			if (*dbg_block != NULL)
@@ -295,7 +275,7 @@ void DMP_fetched_page(PAG page,
 		break;
 
 	case pag_pages:
-		dmp_pip((PIP) page, sequence);
+		dmp_pip((page_inv_page*) page, sequence);
 		break;
 
 	case pag_transactions:
@@ -353,11 +333,9 @@ void DMP_page(SLONG number, USHORT page_size)
  *
  **************************************/
 	WIN window;
-	PAG page;
-
 	window.win_page = number;
 	window.win_flags = 0;
-	page = CCH_FETCH(NULL, &window, LCK_read, 0);
+	PAG page = CCH_FETCH(NULL, &window, LCK_read, 0);
 	DMP_fetched_page(page, number, 0, page_size);
 	CCH_RELEASE(NULL, &window);
 }
@@ -415,10 +393,12 @@ static void btc_printer_errors(SLONG level, BDB bdb, SCHAR * buffer)
 
 	if (((bdb->bdb_left) && (bdb->bdb_left->bdb_page > bdb->bdb_page)) ||
 		((bdb->bdb_right) && (bdb->bdb_right->bdb_page < bdb->bdb_page)))
+	{
 		ib_fprintf(dbg_file, "Whoops! Parent %ld, Left %ld, Right %ld\n",
 				   bdb->bdb_page,
 				   (bdb->bdb_left) ? bdb->bdb_left->bdb_page : 0,
 				   (bdb->bdb_right) ? bdb->bdb_right->bdb_page : 0);
+	}
 
 	if (bdb->bdb_left)
 		btc_printer_errors(level + 1, bdb->bdb_left, buffer);
@@ -428,7 +408,7 @@ static void btc_printer_errors(SLONG level, BDB bdb, SCHAR * buffer)
 }
 
 
-static void complement_key(UCHAR * p, int length)
+static void complement_key(UCHAR* p, int length)
 {
 /**************************************
  *
@@ -440,9 +420,7 @@ static void complement_key(UCHAR * p, int length)
  *	Negate a key for descending index.
  *
  **************************************/
-	UCHAR *end;
-
-	for (end = p + length; p < end; p++)
+	for (const UCHAR* end = p + length; p < end; p++)
 		*p ^= -1;
 }
 
@@ -462,23 +440,21 @@ static double decompress(SCHAR * value)
  *
  **************************************/
 	double dbl;
-	SSHORT l;
-	SCHAR *p;
 
-	p = (SCHAR *) & dbl;
+	char* p = (SCHAR *) & dbl;
 
 	if (*value & (1 << 7)) {
 		*p++ = static_cast<SCHAR>(*value++ ^ (1 << 7));
-		l = 7;
-		do
+		int l = 7;
+		do {
 			*p++ = *value++;
-		while (--l);
+		} while (--l);
 	}
 	else {
-		l = 8;
-		do
+		int l = 8;
+		do {
 			*p++ = -*value++ - 1;
-		while (--l);
+		} while (--l);
 	}
 
 	return dbl;
@@ -496,9 +472,6 @@ static void dmp_blob(blob_page* page)
  * Functional description
  *
  **************************************/
-	USHORT i, n;
-	ULONG *ptr;
-
 	ib_fprintf(dbg_file,
 			   "BLOB PAGE\t checksum %d\t generation %ld\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
@@ -506,8 +479,9 @@ static void dmp_blob(blob_page* page)
 			   page->blp_sequence, page->blp_length);
 
 	if (((PAG) page)->pag_flags & blp_pointers) {
-		n = page->blp_length >> SHIFTLONG;
-		for (i = 0, ptr = (ULONG *) page->blp_page; i < n; i++, ptr++)
+		const int n = page->blp_length >> SHIFTLONG;
+		ULONG* ptr = (ULONG *) page->blp_page;
+		for (int i = 0; i < n; i++, ptr++)
 			ib_fprintf(dbg_file, "%d,", *ptr);
 	}
 
@@ -917,13 +891,9 @@ static void dmp_pip(PIP page, ULONG sequence)
  *	Print a page inventory page.
  *
  **************************************/
-	DBB dbb;
-	PGC control;
-	int n;
+	Database* dbb = GET_DBB;
 
-	dbb = GET_DBB;
-
-	control = dbb->dbb_pcontrol;
+	PGC control = dbb->dbb_pcontrol;
 	ib_fprintf(dbg_file,
 			   "PAGE INVENTORY PAGE\t checksum %d\t generation %ld\n\tMin page: %ld\n\tFree pages:\n\t",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
@@ -931,7 +901,7 @@ static void dmp_pip(PIP page, ULONG sequence)
 
 #define BIT(n) (page->pip_bits [n >> 3] & (1 << (n & 7)))
 
-	for (n = 0; n < control->pgc_ppp;) {
+	for (int n = 0; n < control->pgc_ppp;) {
 		while (n < control->pgc_ppp)
 			if (BIT(n))
 				break;
@@ -961,11 +931,10 @@ static void dmp_pointer(pointer_page* page)
  * Functional description
  *
  **************************************/
-	DBB dbb;
 	USHORT i;
 	UCHAR *bytes;
 
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	ib_fprintf(dbg_file,
 			   "POINTER PAGE\t checksum %d\t generation %ld\n\tRelation: %d, Flags: %x, Sequence: %ld, Next: %ld, Count: %d\n",
@@ -1039,13 +1008,12 @@ static void dmp_transactions(tx_inv_page* page, ULONG sequence)
  *
  **************************************/
 	TDBB tdbb;
-	DBB dbb;
 	UCHAR *byte, s[101], *p, *end;
 	ULONG transactions_per_tip, number, trans_offset;
 	USHORT shift, state, hundreds;
 
 	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	transactions_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 

@@ -141,7 +141,7 @@ EXT EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
  *	Create a file block for external file access.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	CHECK_DBB(dbb);
 
 /* if we already have a external file associated with this relation just
@@ -450,7 +450,7 @@ void EXT_store(RPB * rpb, int *transaction)
 /* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-		DBB dbb = GET_DBB;
+		Database* dbb = GET_DBB;
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)

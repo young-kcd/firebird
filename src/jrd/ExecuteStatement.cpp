@@ -211,8 +211,8 @@ bool ExecuteStatement::Fetch(TDBB tdbb, jrd_nod** JrdVar) {
 	}
 
 	XSQLVAR *var=Sqlda->sqlvar;
-	for (int i=0; i < Sqlda->sqld; i++, var++, JrdVar++) {
-		DSC * d = EVL_assign_to(tdbb, *JrdVar);
+	for (int i = 0; i < Sqlda->sqld; i++, var++, JrdVar++) {
+		dsc* d = EVL_assign_to(tdbb, *JrdVar);
 		if (d->dsc_dtype >= 
 			  sizeof(DscType2SqlType) / sizeof(DscType2SqlType[0])) {
 rec_err:
@@ -230,7 +230,8 @@ rec_err:
 		if (DscType2SqlType[d->dsc_dtype].SqlType < 0)
 			goto rec_err;
 		if (!((d->dsc_dtype == dtype_quad || d->dsc_dtype == dtype_blob) &&
- 		     ((var->sqltype & ~1) == SQL_QUAD || (var->sqltype & ~1) == SQL_BLOB))) {
+			((var->sqltype & ~1) == SQL_QUAD || (var->sqltype & ~1) == SQL_BLOB)))
+		{
 			if ((var->sqltype & ~1) != DscType2SqlType[d->dsc_dtype].SqlType) {
 				goto rec_err;
 			}

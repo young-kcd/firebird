@@ -164,7 +164,7 @@ bool GRANT_privileges( TDBB tdbb, SSHORT phase, Deferred_work* work,
 
 			bool restrct = false;
 
-			DBB dbb = tdbb->tdbb_database;
+			Database* dbb = tdbb->tdbb_database;
 #ifdef V4_THREADING
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
 #endif
@@ -323,7 +323,7 @@ static void define_default_class(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (!*default_class) {
 		sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
@@ -377,7 +377,7 @@ static void delete_security_class( TDBB tdbb, TEXT * s_class)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK handle = NULL;
 
@@ -434,7 +434,7 @@ static USHORT get_public_privs(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	USHORT public_priv = 0;
 
@@ -479,7 +479,7 @@ static void get_object_info(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	owner[0] = '\0';
 	s_class[0] = '\0';
@@ -550,7 +550,7 @@ static void get_user_privs(TDBB		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR* acl = *acl_ptr;
 	TEXT user[32];
@@ -706,7 +706,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
 
@@ -780,7 +780,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	try {
 
@@ -1039,7 +1039,7 @@ static void save_security_class(TDBB	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);

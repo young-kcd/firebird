@@ -1289,7 +1289,7 @@ static void paint_isql( HWND hWnd)
 
 	if (numlines) {
 		// Open the file to display 
-		/* (files should not stay open over multiple windows messages) */
+		// (files should not stay open over multiple windows messages) 
 
 		hfile = ib_fopen(defOutputFile, "r");
 		if (hfile) {

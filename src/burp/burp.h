@@ -71,46 +71,46 @@ enum redirect_vals {
 	NOOUTPUT = 2
 };
 
-/* Record types in backup file */
+// Record types in backup file 
 
 enum rec_type {
-	rec_burp,			/* Restore program attributes */
-	rec_database,		/* Logical database parameters */
-	rec_global_field,		/* Global field description */
-	rec_relation,		/* Relation description */
-	rec_field,			/* Local field description */
-	rec_index,			/* Index description */
-	rec_data,			/* Data for relation */
-	rec_blob,			/* Blob */
-	rec_relation_data,		/* Standalone data header */
-	rec_relation_end,		/* End of data for relation */
-	rec_end,			/* End of file */
-	rec_view,			/* View attributes */
-	rec_security_class,		/* Security class acl */
-	rec_trigger,		/* Trigger definition */
-	rec_physical_db,		/* Physical database parameters */
-	rec_function,		/* Function description */
-	rec_function_arg,		/* Function arguement description */
-	rec_function_end,		   /* End of function and its args */
-	rec_gen_id,				 /* From blr_gen_id */
-	rec_system_type,			/* Type of field */
-	rec_filter,			/* Filter */
-	rec_trigger_message,	/* Trigger message texts */
-	rec_user_privilege,		/* User privilege */
-	rec_array,		/* 23*/	/* Array blob */
-	rec_field_dimensions,	/* Array field dimensions */
-	rec_files,			/* files for shadowing */
-	rec_generator,		/* another format for gen-ids */
-	rec_procedure,		/* Stored procedure */
-	rec_procedure_prm,		/* Stored procedure parameters */
-	rec_procedure_end,		  /* End of procedure and its args */
-	rec_exception,			  /* Exception */
-	rec_rel_constraint,		/* Relation constraints		  */
-	rec_ref_constraint,		/* Referential constraints	   */
-	rec_chk_constraint,		/* Check constraints		  */
-	rec_charset,		/* Character sets */
-	rec_collation,		/* Collations */
-	rec_sql_roles		/* SQL roles */
+	rec_burp,			// Restore program attributes 
+	rec_database,		// Logical database parameters 
+	rec_global_field,		// Global field description 
+	rec_relation,		// Relation description 
+	rec_field,			// Local field description 
+	rec_index,			// Index description 
+	rec_data,			// Data for relation 
+	rec_blob,			// Blob 
+	rec_relation_data,		// Standalone data header 
+	rec_relation_end,		// End of data for relation 
+	rec_end,			// End of file 
+	rec_view,			// View attributes 
+	rec_security_class,		// Security class acl 
+	rec_trigger,		// Trigger definition 
+	rec_physical_db,		// Physical database parameters 
+	rec_function,		// Function description 
+	rec_function_arg,		// Function arguement description 
+	rec_function_end,		   // End of function and its args 
+	rec_gen_id,				 // From blr_gen_id 
+	rec_system_type,			// Type of field 
+	rec_filter,			// Filter 
+	rec_trigger_message,	// Trigger message texts 
+	rec_user_privilege,		// User privilege 
+	rec_array,		// 23	// Array blob 
+	rec_field_dimensions,	// Array field dimensions 
+	rec_files,			// files for shadowing 
+	rec_generator,		// another format for gen-ids 
+	rec_procedure,		// Stored procedure 
+	rec_procedure_prm,		// Stored procedure parameters 
+	rec_procedure_end,		  // End of procedure and its args 
+	rec_exception,			  // Exception 
+	rec_rel_constraint,		// Relation constraints
+	rec_ref_constraint,		// Referential constraints
+	rec_chk_constraint,		// Check constraints
+	rec_charset,		// Character sets 
+	rec_collation,		// Collations 
+	rec_sql_roles		// SQL roles 
 };
 
 
@@ -161,7 +161,7 @@ and trigger-new is:
 
 */
 
-/* Attributes within major record */
+// Attributes within major record 
 
 /* CAREFUL not to pull the lastest version into maint version without
    modifying the att_backup_format to be one version back */
@@ -176,11 +176,11 @@ and trigger-new is:
  */
 const int ATT_BACKUP_FORMAT		= 6;
 
-/* format version number for ranges for arrays */
+// format version number for ranges for arrays 
 
 const int GDS_NDA_VERSION		= 1;
 
-/* max array dimension */
+// max array dimension 
 
 const int MAX_DIMENSION			= 16;
 
@@ -189,110 +189,110 @@ const int SERIES				= 1;
 const USHORT MAX_UPDATE_DBKEY_RECURSION_DEPTH = 16;
 
 enum att_type {
-	att_end = 0,		/* end of major record */
+	att_end = 0,		// end of major record 
 
-	/* Backup program attributes */
+	// Backup program attributes 
 
-	att_backup_date = SERIES,	/* date of backup */
-	att_backup_format,		/* backup format version */
-	att_backup_os,		/* backup operating system */
+	att_backup_date = SERIES,	// date of backup 
+	att_backup_format,		// backup format version 
+	att_backup_os,		// backup operating system 
 	att_backup_compress,
-	att_backup_transportable,	/* XDR datatypes for user data */
-	att_backup_blksize,		/* backup block size */
-	att_backup_file,		/* database file name */
-	att_backup_volume,		/* backup volume number */
+	att_backup_transportable,	// XDR datatypes for user data 
+	att_backup_blksize,		// backup block size 
+	att_backup_file,		// database file name 
+	att_backup_volume,		// backup volume number 
 
-	/* Database attributes  */
+	// Database attributes  
 
-	att_file_name = SERIES,	/* database file name (physical) */
-	att_file_size,		/* size of original database (physical) */
-	att_jrd_version,		/* jrd version (physical) */
-	att_creation_date,		/* database creation date (physical) */
-	att_page_size,		/* page size of original database (physical) */
-	att_database_description,	/* description from RDB$DATABASE (logical) */
-	att_database_security_class,	/* database level security (logical) */
-	att_sweep_interval,		/* sweep interval */
-	att_no_reserve,		/* don't reserve space for versions */
+	att_file_name = SERIES,	// database file name (physical) 
+	att_file_size,		// size of original database (physical) 
+	att_jrd_version,		// jrd version (physical) 
+	att_creation_date,		// database creation date (physical) 
+	att_page_size,		// page size of original database (physical) 
+	att_database_description,	// description from RDB$DATABASE (logical) 
+	att_database_security_class,	// database level security (logical) 
+	att_sweep_interval,		// sweep interval 
+	att_no_reserve,		// don't reserve space for versions 
 	att_database_description2,
-	att_database_dfl_charset,	/* default character set from RDB$DATABASE */
-	att_forced_writes,		/* syncronous writes flag */
-	att_page_buffers,		/* page buffers for buffer cache */
-	att_SQL_dialect,		/* SQL dialect that it speaks */
-	att_db_read_only,		/* Is the database ReadOnly? */
+	att_database_dfl_charset,	// default character set from RDB$DATABASE 
+	att_forced_writes,		// syncronous writes flag 
+	att_page_buffers,		// page buffers for buffer cache 
+	att_SQL_dialect,		// SQL dialect that it speaks 
+	att_db_read_only,		// Is the database ReadOnly?
 
-	/* Relation attributes */
+	// Relation attributes 
 
 	att_relation_name = SERIES,
 	att_relation_view_blr,
 	att_relation_description,
-	att_relation_record_length,	/* Record length in file */
+	att_relation_record_length,	// Record length in file 
 	att_relation_view_relation,
 	att_relation_view_context,
 	att_relation_system_flag,
 	att_relation_security_class,
 	att_relation_view_source,
-	att_relation_dummy,		 /* this space available */
+	att_relation_dummy,		 // this space available 
 	att_relation_ext_description,
 	att_relation_owner_name,
 	att_relation_description2,
 	att_relation_view_source2,
 	att_relation_ext_description2,
 	att_relation_flags,  
-	att_relation_ext_file_name, /* name of file for external tables */
+	att_relation_ext_file_name, // name of file for external tables 
 
-	/* Field attributes (used for both global and local fields) */
+	// Field attributes (used for both global and local fields) 
 
-	att_field_name = SERIES,	/* name of field */
-	att_field_source,		/* Global field name for local field */
+	att_field_name = SERIES,	// name of field 
+	att_field_source,		// Global field name for local field 
 
-	att_base_field,		/* Source field for view */
-	att_view_context,		/* Context variable for view definition */
+	att_base_field,		// Source field for view 
+	att_view_context,		// Context variable for view definition 
 
-	att_field_query_name,	/* Query attributes */
+	att_field_query_name,	// Query attributes 
 	att_field_query_header,
 	att_field_edit_string,
 
-	att_field_type,		/* Physical attributes */
+	att_field_type,		// Physical attributes 
 	att_field_sub_type,
-	att_field_length,		/* 10 */
+	att_field_length,		// 10 
 	att_field_scale,		
 	att_field_segment_length,
-	att_field_position,		/* Field position in relation (not in file) */
-	att_field_offset,		/* Offset in data record (local fields only) */
+	att_field_position,		// Field position in relation (not in file) 
+	att_field_offset,		// Offset in data record (local fields only) 
 
-	att_field_default_value,	/* Fluff */
+	att_field_default_value,	// Fluff 
 	att_field_description,	
 	att_field_missing_value,
 	att_field_computed_blr,
 	att_field_computed_source,
-	att_field_validation_blr,	/* 20 */
+	att_field_validation_blr,	// 20 
 	att_field_validation_source,
-	att_field_number,		/* Field number to match up blobs */
-	att_field_computed_flag,	/* Field is computed, not real */
-	att_field_system_flag,	/* Interesting system flag */
+	att_field_number,		// Field number to match up blobs 
+	att_field_computed_flag,	// Field is computed, not real 
+	att_field_system_flag,	// Interesting system flag 
 	att_field_security_class,
 	
 	att_field_external_length,
 	att_field_external_type,
 	att_field_external_scale,
-	att_field_dimensions,	   /* 29 */
-	att_field_ranges,		   /* this space for rent */
-	att_field_complex_name,	 /* relation field attribute */
-	att_field_range_low,		/* low range for array */
-	att_field_range_high,	   /* high range for array */
+	att_field_dimensions,	   // 29 
+	att_field_ranges,		   // this space for rent 
+	att_field_complex_name,	 // relation field attribute 
+	att_field_range_low,		// low range for array 
+	att_field_range_high,	   // high range for array 
 	att_field_update_flag,
 	att_field_description2,
 	att_field_validation_source2,
 	att_field_computed_source2,
-	att_field_null_flag,	/* If field can be null	*/
-	att_field_default_source,	/* default source for field (new fmt only) */
-	att_field_missing_source,	/* missing source for field (new fmt only) */
-	att_field_character_length,	/* length of field in characters */
-	att_field_character_set,	/* Charset id of field */
-	att_field_collation_id,	/* Collation id of field */
-	att_field_precision,	/* numeric field precision of RDB$FIELDS */
+	att_field_null_flag,	// If field can be null
+	att_field_default_source,	// default source for field (new fmt only) 
+	att_field_missing_source,	// missing source for field (new fmt only) 
+	att_field_character_length,	// length of field in characters 
+	att_field_character_set,	// Charset id of field 
+	att_field_collation_id,	// Collation id of field 
+	att_field_precision,	// numeric field precision of RDB$FIELDS 
 
-	/* Index attributes */
+	// Index attributes 
 
 	att_index_name = SERIES,
 	att_segment_count,
@@ -306,45 +306,45 @@ enum att_type {
 	att_index_expression_source,
 	att_index_expression_blr,
 
-	/* Data record */
+	// Data record 
 
 	att_data_length = SERIES,
 	att_data_data,
 
-	/* Blob record */
+	// Blob record 
 
-	att_blob_field_number = SERIES + 2,	/* Field number of blob field */
-	att_blob_type,			/* Segmented = 0, stream = 1 */
-	att_blob_number_segments,		/* Number of segments */
-	att_blob_max_segment,		/* Longest segment */
+	att_blob_field_number = SERIES + 2,	// Field number of blob field 
+	att_blob_type,			// Segmented = 0, stream = 1 
+	att_blob_number_segments,		// Number of segments 
+	att_blob_max_segment,		// Longest segment 
 	att_blob_data,
 
-	/* View attributes */
+	// View attributes 
 
 	att_view_relation_name = SERIES + 7,
 	att_view_context_id,
 	att_view_context_name,
 
-	/* Security class attributes */
+	// Security class attributes 
 
 	att_class_security_class = SERIES + 10,
 	att_class_acl,
 	att_class_description,		   
 
 
-	/* Array attributes */
+	// Array attributes 
 
 	att_array_dimensions = SERIES + 13,
 	att_array_range_low,
 	att_array_range_high,
 
-	/* XDR encoded data attributes */
+	// XDR encoded data attributes 
 
 	att_xdr_length = SERIES + 16,
 	att_xdr_array, 
 	att_class_description2,
 
-	/* Trigger attributes */
+	// Trigger attributes 
 
 	att_trig_type = SERIES,
 	att_trig_blr,
@@ -359,7 +359,7 @@ enum att_type {
 	att_trig_description2,
 	att_trig_flags,	 
 
-	/* Function attributes */
+	// Function attributes 
 
 	att_function_name = SERIES,
 	att_function_description,
@@ -371,7 +371,7 @@ enum att_type {
 	att_function_type,
 	att_function_description2,
 
-	/* Function argument attributes */
+	// Function argument attributes 
 
 	att_functionarg_name = SERIES,
 	att_functionarg_position,
@@ -383,15 +383,15 @@ enum att_type {
 	att_functionarg_character_set,
 	att_functionarg_field_precision,
  
-	/* TYPE relation attributes */
+	// TYPE relation attributes 
 	att_type_name = SERIES,
 	att_type_type,
 	att_type_field_name,
 	att_type_description,
 	att_type_system_flag,
-	/* Also see att_type_description2 below! */
+	// Also see att_type_description2 below! 
 
-	/* Filter attributes */
+	// Filter attributes 
 	att_filter_name,
 	att_filter_description,
 	att_filter_module_name,
@@ -401,12 +401,12 @@ enum att_type {
 	att_filter_description2,
 	att_type_description2,
 
-	/* Trigger message attributes */
+	// Trigger message attributes 
 	att_trigmsg_name = SERIES,
 	att_trigmsg_number,
 	att_trigmsg_text,
 
-	/* User privilege attributes */
+	// User privilege attributes 
 	att_priv_user = SERIES,
 	att_priv_grantor,
 	att_priv_privilege,
@@ -416,7 +416,7 @@ enum att_type {
 	att_priv_user_type,
 	att_priv_obj_type,
 
-	/* files for shadowing purposes */
+	// files for shadowing purposes 
 	att_file_filename = SERIES,
 	att_file_sequence,
 	att_file_start,
@@ -424,12 +424,12 @@ enum att_type {
 	att_file_flags,
 	att_shadow_number,
 
-	/* Attributes for gen_id */
+	// Attributes for gen_id 
 	att_gen_generator = SERIES,
 	att_gen_value,
 	att_gen_value_int64,
 
-	/* Stored procedure attributes */
+	// Stored procedure attributes 
 
 	att_procedure_name = SERIES,
 	att_procedure_inputs,
@@ -442,7 +442,7 @@ enum att_type {
 	att_procedure_security_class,
 	att_procedure_owner_name,
 
-	/* Stored procedure parameter attributes */
+	// Stored procedure parameter attributes 
 
 	att_procedureprm_name = SERIES,
 	att_procedureprm_number,
@@ -451,14 +451,14 @@ enum att_type {
 	att_procedureprm_description,
 	att_procedureprm_description2,
 
-	/* Exception attributes */
+	// Exception attributes 
 
 	att_exception_name = SERIES,
 	att_exception_msg,
 	att_exception_description,
 	att_exception_description2,
 
-	/* Relation constraints attributes */
+	// Relation constraints attributes 
 
 	att_rel_constraint_name = SERIES,
 	att_rel_constraint_type,
@@ -467,7 +467,7 @@ enum att_type {
 	att_rel_constraint_init,
 	att_rel_constraint_index,
 
-	/* Referential constraints attributes */
+	// Referential constraints attributes 
 
 	att_ref_constraint_name = SERIES,
 	att_ref_unique_const_name,
@@ -475,15 +475,15 @@ enum att_type {
 	att_ref_update_rule,
 	att_ref_delete_rule,
 
-	/* SQL roles attributes */
+	// SQL roles attributes 
 	att_role_name = SERIES,
 	att_role_owner_name,
 
-	/* Check constraints attributes */
+	// Check constraints attributes 
 	att_chk_constraint_name = SERIES,
 	att_chk_trigger_name,
 
-	/* Character Set attributes */
+	// Character Set attributes 
 	att_charset_name = SERIES,
 	att_charset_form,
 	att_charset_numchar,
@@ -498,7 +498,7 @@ enum att_type {
 	att_coll_id,
 	att_coll_cs_id,
 	att_coll_attr,
-	att_coll_subtype,		/* Unused: 93-11-12 Daves */
+	att_coll_subtype,		// Unused: 93-11-12 Daves 
 	att_coll_sysflag,
 	att_coll_description,
 	att_coll_funct
@@ -511,12 +511,12 @@ typedef enum att_type ATT_TYPE;
 //typedef SCHAR		att_type;
 
 
-/* Trigger types */
+// Trigger types 
 
 enum trig_t {
-	trig_pre_store = 1,   /* default */
-	trig_pre_modify,	  /* default */
-	trig_post_erase	   /* default */
+	trig_pre_store = 1,   // default 
+	trig_pre_modify,	  // default 
+	trig_post_erase	   // default 
 };
 
 /* these types to go away when recognized by gpre as
@@ -526,13 +526,13 @@ const int TRIG_TYPE_PRE_STORE = 1;
 const int TRIG_TYPE_PRE_MODIFY = 3;
 const int TRIG_TYPE_POST_ERASE = 6;
 
-/* default trigger name templates */
+// default trigger name templates 
 
 const int TRIGGER_SEQUENCE_DEFAULT	= 0;
 
-/* common structure definitions */
+// common structure definitions 
 
-/* field block, used to hold local field definitions */
+// field block, used to hold local field definitions 
 
 struct burp_fld {
 	burp_fld*	fld_next;
@@ -580,11 +580,11 @@ enum fld_flags_vals {
 	FLD_array				= 4,
 	FLD_update_missing		= 8,
 	FLD_null_flag			= 16,
-	FLD_charset_flag		= 32,	/* column has global charset */
-	FLD_collate_flag		= 64	/* local column has specific collation */
+	FLD_charset_flag		= 32,	// column has global charset 
+	FLD_collate_flag		= 64	// local column has specific collation 
 };
 
-/* relation definition - holds useful relation type stuff */
+// relation definition - holds useful relation type stuff 
 
 struct burp_rel {
 	burp_rel*	rel_next;
@@ -593,13 +593,13 @@ struct burp_rel {
 	SSHORT		rel_id;
 	SSHORT		rel_name_length;
 	GDS_NAME	rel_name;
-	GDS_NAME	rel_owner;		/* relation owner, if not us */
-	ISC_QUAD	rel_store_blr;		/* trigger blr blob id */
-	ISC_QUAD	rel_store_source;	/* trigger source blob id */
-	ISC_QUAD	rel_modify_blr;		/* trigger blr blob id */
-	ISC_QUAD	rel_modify_source;	/* trigger source blob id */
-	ISC_QUAD	rel_erase_blr;		/* trigger blr blob id */
-	ISC_QUAD	rel_erase_source;	/* trigger source blob id */
+	GDS_NAME	rel_owner;		// relation owner, if not us 
+	ISC_QUAD	rel_store_blr;		// trigger blr blob id 
+	ISC_QUAD	rel_store_source;	// trigger source blob id 
+	ISC_QUAD	rel_modify_blr;		// trigger blr blob id 
+	ISC_QUAD	rel_modify_source;	// trigger source blob id 
+	ISC_QUAD	rel_erase_blr;		// trigger blr blob id 
+	ISC_QUAD	rel_erase_source;	// trigger source blob id 
 };
 
 enum burp_rel_flags_vals {
@@ -607,13 +607,13 @@ enum burp_rel_flags_vals {
 	REL_external	= 2
 };
 
-/* procedure definition - holds useful procedure type stuff */
+// procedure definition - holds useful procedure type stuff 
 
 struct burp_prc {
 	burp_prc*	prc_next;
 	SSHORT		prc_name_length;
 	GDS_NAME	prc_name;
-	GDS_NAME	prc_owner;		/* relation owner, if not us */
+	GDS_NAME	prc_owner;		// relation owner, if not us 
 };
 
 
@@ -636,9 +636,9 @@ enum gfld_flags_vals {
 // I need to review if we tolerate different lengths for different OS's here.
 const int MAX_FILE_NAME_LENGTH		= 256;
 
-/* Note that this typedef is also defined in JRD.H and REMOTE.H */
-/* but for some reason we are avoiding including JRD.H		  */
-/* and this typedef is needed to include SVC.H				  */
+// Note that this typedef is also defined in JRD.H and REMOTE.H 
+// but for some reason we are avoiding including JRD.H
+// and this typedef is needed to include SVC.H
 #if !(defined REMOTE_REMOTE_H || defined JRD_JRD_H)
 #ifndef INCLUDE_FB_BLK
 #include "../include/fb_blk.h"
@@ -649,7 +649,7 @@ const int MAX_FILE_NAME_LENGTH		= 256;
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 
-/* typedef the file descriptor type to make things cleaner */
+// typedef the file descriptor type to make things cleaner 
 
 #ifdef WIN_NT
 typedef void* DESC;
@@ -688,16 +688,16 @@ inline static void flush_platf(DESC file)
 }
 
 const int INVALID_HANDLE_VALUE	= -1;
-#endif /* WIN_NT */
+#endif // WIN_NT 
 
-/* File block -- for multi-file databases */
+// File block -- for multi-file databases 
 
 typedef enum {
-	size_n = 0,	/* none */
-	size_k,		/* k = 1024 */
-	size_m,		/* m = k x 1024 */
-	size_g,		/* g = m x 1024 */
-	size_e		/* error */
+	size_n = 0,	// none 
+	size_k,		// k = 1024 
+	size_m,		// m = k x 1024 
+	size_g,		// g = m x 1024 
+	size_e		// error 
 } SIZE_CODE;
 
 struct burp_fil {
@@ -714,7 +714,7 @@ const size_t FIL_LEN	= sizeof(burp_fil);
 /* Split & Join stuff */
 
 typedef enum act_t {
-	ACT_unknown, /* action is unknown */
+	ACT_unknown, // action is unknown 
 	ACT_backup,
 	ACT_backup_split,
 	ACT_restore,
@@ -731,17 +731,17 @@ const size_t ACT_LEN = sizeof(act);
 
 const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
 
-/* This structure has been cloned from spit.c */
+// This structure has been cloned from spit.c 
 
 typedef struct hdr_split {
 	TEXT hdr_split_tag[18];
 	TEXT hdr_split_timestamp[30];
 	TEXT hdr_split_text1[11];
-	TEXT hdr_split_sequence[4];  /* File sequence number */
+	TEXT hdr_split_sequence[4];  // File sequence number 
 	TEXT hdr_split_text2[4];
-	TEXT hdr_split_total[4];	 /* Total number of files */
+	TEXT hdr_split_total[4];	 // Total number of files 
 	TEXT hdr_split_text3[2];
-	TEXT hdr_split_name[27];	 /* File name */
+	TEXT hdr_split_name[27];	 // File name 
 } *HDR_SPLIT;
 
 /* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
@@ -751,9 +751,9 @@ const size_t HDR_SPLIT_SIZE	= sizeof(hdr_split);
 static const char* HDR_SPLIT_TAG5	= "InterBase/gsplit, ";
 static const char* HDR_SPLIT_TAG6	= "InterBase/gbak,   ";
 static const char* HDR_SPLIT_TAG	= HDR_SPLIT_TAG6;
-const unsigned int MIN_SPLIT_SIZE	= 2048;	/* bytes */
+const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes 
 
-/* Global switches and data */
+// Global switches and data 
 
 typedef struct tgbl
 {
@@ -816,7 +816,7 @@ typedef struct tgbl
 	isc_tr_handle	tr_handle;
 	isc_tr_handle	global_trans;
 	DESC		file_desc;
-	ISC_STATUS*	status;		/* points to either the tdgbl status or service status */
+	ISC_STATUS*	status;		// points to either the tdgbl status or service status 
 	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;
@@ -880,7 +880,7 @@ typedef struct tgbl
 	isc_req_handle	handles_write_function_args_req_handle2;
 	isc_req_handle	handles_write_procedure_prms_req_handle1;
 	USHORT			hdr_forced_writes;
-	TEXT			database_security_class[GDS_NAME_LEN]; /* To save database security class for deferred update */
+	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update 
 } *TGBL;
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
@@ -910,7 +910,7 @@ const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
 											failure to activate one or more
 											indices */
 
-/* I/O definitions */
+// I/O definitions 
 
 #ifndef IO_BUFFER_SIZE
 #ifdef BUFSIZ
@@ -952,7 +952,7 @@ static const int MODE_WRITE	= O_WRONLY | O_CREAT;
 #endif
 
 
-/* Burp Messages */
+// Burp Messages 
 
 enum burp_messages_vals {
 	msgVerbose_write_charsets		= 211,
@@ -988,5 +988,5 @@ inline static void stuff_int64(UCHAR** blr, const SINT64 i64)
 	stuff_long(blr, (i64) >> 32);
 }
 
-#endif /* BURP_BURP_H */
+#endif // BURP_BURP_H 
 

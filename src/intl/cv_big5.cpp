@@ -29,43 +29,39 @@
 USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
 							  UCS2_CHAR *dest_ptr,
 							  USHORT dest_len,
-							  UCHAR *src_ptr,
+							  const UCHAR* src_ptr,
 							  USHORT src_len,
 							  SSHORT *err_code,
 							  USHORT *err_position)
 {
-	UCS2_CHAR *start;
-	UCS2_CHAR ch;
-	UCS2_CHAR wide;
-	USHORT src_start = src_len;
-	USHORT this_len;
-	UCHAR c1, c2;
-
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVBIG5_big5_to_unicode);
+	fb_assert(obj->csconvert_convert == CVBIG5_big5_to_unicode);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+    const USHORT src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len * sizeof(UCS2_CHAR));
 
-	start = dest_ptr;
+	UCS2_CHAR wide;
+	USHORT this_len;
+	const UCS2_CHAR* const start = dest_ptr;
 	while ((src_len) && (dest_len > 1)) {
 		if (*src_ptr & 0x80) {
-			c1 = *src_ptr++;
+			const UCHAR c1 = *src_ptr++;
 
 			if (BIG51(c1)) {	/* first byte is Big5 */
 				if (src_len == 1) {
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
-				c2 = *src_ptr++;
+				const UCHAR c2 = *src_ptr++;
 				if (!(BIG52(c2))) {	/* Bad second byte */
 					*err_code = CS_BAD_INPUT;
 					break;
@@ -85,9 +81,8 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
 		}
 
 		/* Convert from BIG5 to UNICODE */
-		ch = ((USHORT *) obj->csconvert_datatable)
-			[((USHORT *) obj->csconvert_misc)[(USHORT) wide / 256]
-			 + (wide % 256)];
+		const UCS2_CHAR ch = ((const USHORT*) obj->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
@@ -109,47 +104,41 @@ USHORT CVBIG5_big5_to_unicode(CSCONVERT obj,
 USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
 							  UCHAR *big5_str,
 							  USHORT big5_len,
-							  UCS2_CHAR *unicode_str,
+							  const UCS2_CHAR* unicode_str,
 							  USHORT unicode_len,
 							  SSHORT *err_code,
 							  USHORT *err_position)
 {
-	UCHAR *start;
-	UCS2_CHAR big5_ch;
-	UCS2_CHAR wide;
-	int tmp1, tmp2;
-	USHORT src_start = unicode_len;
-
 	fb_assert(unicode_str != NULL || big5_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVBIG5_unicode_to_big5);
+	fb_assert(obj->csconvert_convert == CVBIG5_unicode_to_big5);
 	fb_assert(obj->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_misc != NULL);
 
+	const USHORT src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (big5_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
 
-	start = big5_str;
+	const UCHAR* const start = big5_str;
 	while ((big5_len) && (unicode_len > 1)) {
 		/* Convert from UNICODE to BIG5 code */
-		wide = *unicode_str++;
+		const UCS2_CHAR wide = *unicode_str++;
 
-		big5_ch = ((USHORT *) obj->csconvert_datatable)
-				[((USHORT *) obj->csconvert_misc)
-					[(USHORT)wide/256]
-				 +(wide % 256)];
+		const UCS2_CHAR big5_ch = ((const USHORT*) obj->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 		if ((big5_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		};
 
-		tmp1 = big5_ch / 256;
-		tmp2 = big5_ch % 256;
+		// int ???
+		const int tmp1 = big5_ch / 256;
+		const int tmp2 = big5_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 			*big5_str++ = tmp2;
 			big5_len--;
@@ -177,7 +166,7 @@ USHORT CVBIG5_unicode_to_big5(CSCONVERT obj,
 }
 
 
-USHORT CVBIG5_check_big5(UCHAR *big5_str,
+USHORT CVBIG5_check_big5(const UCHAR* big5_str,
 						 USHORT big5_len)
 {
 /**************************************
@@ -188,10 +177,8 @@ USHORT CVBIG5_check_big5(UCHAR *big5_str,
  *          return 1.  
  *          else return(0);
  **************************************/
-	UCHAR c1;
-
 	while (big5_len--) {
-		c1 = *big5_str;
+		const UCHAR c1 = *big5_str;
 		if (BIG51(c1)) {		/* Is it  BIG-5 */
 			if (big5_len == 0)	/* truncated BIG-5 */
 				return (1);
@@ -209,10 +196,10 @@ USHORT CVBIG5_check_big5(UCHAR *big5_str,
 }
 
 
-USHORT CVBIG5_big5_byte2short(CSCONVERT obj,
-							  UCHAR *dst, 
+USHORT CVBIG5_big5_byte2short(TEXTTYPE obj,
+							  USHORT* dst,
 							  USHORT dst_len,
-							  UCHAR *src,
+							  const UCHAR *src,
 							  USHORT src_len,
 							  SSHORT *err_code,
 							  USHORT *err_position)
@@ -226,21 +213,19 @@ USHORT CVBIG5_big5_byte2short(CSCONVERT obj,
  *		2-byte BIG5 character into 1 short.
  *
  **************************************/
-	USHORT x;
-	UCHAR *dst_start;
-	USHORT src_start = src_len;
-
 	fb_assert(src != NULL || dst == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 
+	const USHORT src_start = src_len;
 	*err_code = 0;
 /* Length estimate needed? */
 	if (dst == NULL)
 		return (2 * src_len);	/* worst case */
 
-	dst_start = dst;
+	USHORT x;
+	const USHORT* const dst_start = dst;
 	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
 		if (BIG51(*src)) {
 			if (src_len < 2) {
@@ -255,8 +240,8 @@ USHORT CVBIG5_big5_byte2short(CSCONVERT obj,
 			x = *src++;
 			src_len--;
 		};
-		*(USHORT *) dst = x;	/* Assumes alignment */
-		dst += sizeof(USHORT);
+		*dst = x;	/* Assumes alignment */
+		++dst;
 		dst_len -= sizeof(USHORT);
 	}
 	if (src_len && !*err_code)
@@ -266,7 +251,7 @@ USHORT CVBIG5_big5_byte2short(CSCONVERT obj,
 }
 
 
-SSHORT CVBIG5_big5_mbtowc(CSCONVERT obj,
+SSHORT CVBIG5_big5_mbtowc(TEXTTYPE obj,
 						  UCS2_CHAR* wc,
 						  const UCHAR* src,
 						  USHORT src_len)

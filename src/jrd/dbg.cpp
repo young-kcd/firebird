@@ -144,7 +144,7 @@ int DBG_all(void)
  *
  **************************************/
 
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	if (!dbg_file) {
 		dbg_file = ib_fopen("tt:", "w");
@@ -154,8 +154,8 @@ int DBG_all(void)
 	{
 		return TRUE;
 	}
-	dbb::pool_vec_type::iterator itr;
-	dbb::pool_vec_type::iterator end = dbb->dbb_pools.end();
+	Database::pool_vec_type::iterator itr;
+	Database::pool_vec_type::iterator end = dbb->dbb_pools.end();
 	for (itr = dbb->dbb_pools.begin(); itr < end; ++itr) {
 		DBG_pool(*itr);
 	}
@@ -175,11 +175,8 @@ int DBG_analyze(int pool_id)
  *	Analyze pool by block type and sub-type.
  *
  **************************************/
-	DBB dbb;
 	HNK hunk;
 	BLK block;
-	VEC vector;
-	PLB pool;
 	SCHAR *hunk_end;
 	SSHORT type;
 	SLONG length;
@@ -194,9 +191,10 @@ int DBG_analyze(int pool_id)
 		SLONG sum_length;
 	} blocks[type_MAX], nodes[nod_MAX], *p, *end;
 
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
-	if (!(vector = dbb->dbb_pools))
+	VEC vector = dbb->dbb_pools;
+	if (!vector)
 		return TRUE;
 
 	for (p = blocks, end = p + (int) type_MAX; p < end; p++) {
@@ -209,11 +207,13 @@ int DBG_analyze(int pool_id)
 		p->sum_length = 0;
 	}
 
-	if (pool = (PLB) vector->vec_object[pool_id]) {
+	PLB pool = (PLB) vector->vec_object[pool_id];
+	if (pool) {
 		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
 			hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
 			for (block = (BLK) hunk->hnk_address; block != (BLK) hunk_end;
-				 block = (BLK) ((SCHAR *) block + length)) {
+				 block = (BLK) ((SCHAR *) block + length))
+			{
 				type = block->blk_type;
 				length = block->blk_length << SHIFT;
 				total_length += length;
@@ -241,7 +241,8 @@ int DBG_analyze(int pool_id)
 	}
 	else {
 		for (p = blocks, end = p + (int) type_MAX, type = 0; p < end;
-			 p++, type++) {
+			 p++, type++)
+		{
 			if (p->sum_count)
 				fields = reinterpret_cast<char**>(dbt_blocks[type]);
 			if (!strcmp(*fields, "TRANSACTION") && p->sum_count) {
@@ -307,7 +308,7 @@ int DBG_bdbs(void)
  * Functional description
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	BCB bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++)
@@ -334,7 +335,7 @@ int DBG_precedence(void)
 	BDB hi_bdb;
 	BDB lo_bdb;
 
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	BCB bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++) {
@@ -424,7 +425,8 @@ int DBG_block(BLK block)
 	}
 
 	if (block->blk_type <= (SCHAR) type_MIN
-		|| block->blk_type >= (SCHAR) type_MAX) {
+		|| block->blk_type >= (SCHAR) type_MAX)
+	{
 		ib_fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block,
 				   block->blk_type);
 		return FALSE;
@@ -533,25 +535,19 @@ int DBG_check(int pool_id)
  *	Check pool for integrity.
  *
  **************************************/
-	DBB dbb;
-	HNK hunk;
-	BLK block;
-	VEC vector;
-	PLB pool;
-	SCHAR *hunk_end;
-	USHORT corrupt;
+	Database* dbb = GET_DBB;
 
-	dbb = GET_DBB;
+	int corrupt = 0;
 
-	corrupt = 0;
-
-	if (!(vector = dbb->dbb_pools))
+	VEC vector = dbb->dbb_pools;
+	if (!vector)
 		return corrupt;
 
-	if ( (pool = (PLB) vector->vec_object[pool_id]) ) {
-		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
-			hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
-			for (block = (BLK) hunk->hnk_address; block != (BLK) hunk_end;
+	PLB pool = (PLB) vector->vec_object[pool_id];
+	if (pool) {
+		for (HNK hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
+			const char* hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
+			for (blk* block = (BLK) hunk->hnk_address; block != (const BLK) hunk_end;
 				 block =
 				 (BLK) ((SCHAR *) block + (block->blk_length << SHIFT))) {
 				if (block->blk_pool_id != (UCHAR) pool_id) {
@@ -922,8 +918,6 @@ int DBG_smb(SMB smb, int column)
  *	Pretty print an smb (Sort Memory Block)
  *
  **************************************/
-
-	smb::smb_repeat * ptr;
 	int i;
 
 	go_column(column);
@@ -945,7 +939,7 @@ int DBG_smb(SMB smb, int column)
 				   smb->smb_key_desc[i].skd_vary_offset);
 	}
 	for (i = 0; i < smb->smb_count; i++) {
-		ptr = &smb->smb_rpt[i];
+		smb::smb_repeat* ptr = &smb->smb_rpt[i];
 		go_column(column + 2);
 		ib_fprintf(dbg_file, "fld [%d] flag = %d stream = %d field = %d\n",
 				   i, ptr->smb_flag_offset, ptr->smb_stream,
@@ -969,19 +963,16 @@ int DBG_verify(void)
  *	Verify integrity of all pools.
  *
  **************************************/
-	DBB dbb;
-	VEC vector;
-	int i;
-
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	if (!dbg_file)
 		dbg_file = ib_fopen("tt:", "w");
 
+	VEC vector;
 	if (!dbb || !(vector = dbb->dbb_pools))
 		return TRUE;
 
-	for (i = 0; i < vector->vec_count; i++)
+	for (int i = 0; i < vector->vec_count; i++)
 		DBG_check(i);
 
 	return TRUE;
@@ -1018,17 +1009,7 @@ int DBG_memory(void)
  *	Print memory usage
  *
  **************************************/
-	DBB dbb;
-	VEC vector;
-	PLB pool;
-	int pool_id;
-	int trans_pools = 0;
-	int req_pools = 0;
-	int other_pools = 0;
-	int pool_type;
-
-
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	ib_fprintf(dbg_file, "MEMORY UTILIZATION for database\n\n");
 #ifdef V4_THREADING
@@ -1040,12 +1021,17 @@ int DBG_memory(void)
 	req_pool_mem = 0;
 	trans_pool_mem = 0;
 	other_pool_mem = 0;
-	vector = dbb->dbb_pools;
-	for (pool_id = 0; pool_id < vector->vec_count; pool_id++) {
-		pool = (PLB) vector->vec_object[pool_id];
+	int trans_pools = 0;
+	int req_pools = 0;
+	int other_pools = 0;
+
+	
+	VEC vector = dbb->dbb_pools;
+	for (int pool_id = 0; pool_id < vector->vec_count; pool_id++) {
+		PLB pool = (PLB) vector->vec_object[pool_id];
 		if (!pool)
 			continue;
-		pool_type = DBG_analyze(pool_id);
+		const int pool_type = DBG_analyze(pool_id);
 		switch (pool_type) {
 		case 1:
 			break;
@@ -1137,10 +1123,10 @@ static int prt_fields(SCHAR * block, int *fields)
  *	Print structured block.
  *
  **************************************/
-	int length, column, offset;
+	int length, offset;
 	TEXT *string, *ptr, *p, s[80];
 
-	column = 99;
+	int column = 99;
 
 	while ( (string = (TEXT *) * fields++) ) {
 		offset = *fields++;
@@ -1205,10 +1191,8 @@ static int rsb_pretty(const Rsb* rsb, int column)
  *	Pretty print an rsb tree.
  *
  **************************************/
-	USHORT i;
-
 	ib_fprintf(dbg_file, "%X\t", rsb);
-	for (i = 0; i < column; i++)
+	for (int i = 0; i < column; i++)
 		ib_putc(' ', dbg_file);
 
 	if (rsb == NULL)

@@ -291,7 +291,7 @@ Rsb* OPT_compile(TDBB tdbb,
 	DEV_BLKCHK(parent_stack, type_lls);
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
@@ -1001,7 +1001,7 @@ void OPT_set_index(TDBB tdbb,
 	DEV_BLKCHK(relation, type_rel);
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	Rsb* old_rsb = *rsb_ptr;
 
@@ -3622,7 +3622,7 @@ static void gen_join(TDBB     tdbb,
 	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	Csb* csb = opt->opt_csb;
 
 	if (!streams[0]) {
@@ -3774,7 +3774,7 @@ static Rsb* gen_navigation(TDBB tdbb,
 	DEV_BLKCHK(alias, type_str);
 	DEV_BLKCHK(*sort_ptr, type_nod);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	// Check sort order against index.  If they don't match, give up and
 	// go home.  Also don't bother if we have a non-unique index.
@@ -4921,7 +4921,7 @@ static bool gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*org_rivers, type_lls);
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	// Count the number of "rivers" involved in the operation, then allocate
 	// a scratch block large enough to hold values to compute equality
@@ -5670,7 +5670,7 @@ static jrd_nod* make_missing(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);
 	DEV_BLKCHK(boolean, type_nod);
@@ -6235,7 +6235,7 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
 			MOV_make_string(escape_desc, INTL_TTYPE(search_desc), &p2,
 							reinterpret_cast<vary*>(tmp_buffer),
 							sizeof(tmp_buffer));
-		UCHAR* p = reinterpret_cast<UCHAR*>(const_cast<char*>(p2));
+		const UCHAR* p = reinterpret_cast<const UCHAR*>(p2);
 		/* Now get first character from escape string */
 		escape_ch =
 			INTL_getch(tdbb, &text_obj,
@@ -6245,7 +6245,7 @@ static jrd_nod* optimize_like(TDBB tdbb, jrd_nod* like_node)
 	// If the first character is a wildcard char, forget it.
 	// CVC: Beware, if INTL doesn't understand the next character, p_count is zero.
 	// No check is done. We must handle this failure.
-	UCHAR* p = search_desc->dsc_address;
+	const UCHAR* p = search_desc->dsc_address;
 	USHORT p_count = search_desc->dsc_length;
 	USHORT ch =
 		INTL_getch(tdbb, &text_obj,

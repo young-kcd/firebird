@@ -47,7 +47,7 @@ ISC_STATUS dsql8_fetch(ISC_STATUS*, struct dsql_req**, USHORT, const SCHAR*,
 #else
 ISC_STATUS dsql8_fetch(ISC_STATUS*, struct dsql_req**, USHORT, const SCHAR*,
 									 USHORT, USHORT, SCHAR*);
-#endif /* SCROLLABLE_CURSORS */
+#endif // SCROLLABLE_CURSORS 
 ISC_STATUS dsql8_free_statement(ISC_STATUS*, struct dsql_req**,
 											  USHORT);
 ISC_STATUS dsql8_insert(ISC_STATUS*, struct dsql_req**, USHORT,
@@ -67,7 +67,7 @@ ISC_STATUS callback_execute_immediate(ISC_STATUS* status,
 
 
 #ifdef __cplusplus
-} /* extern "C" */
+} // extern "C" 
 #endif
 
 

@@ -98,8 +98,8 @@ ISC_STATUS API_ROUTINE isc_prepare(ISC_STATUS*, FRBRD**, FRBRD**, SCHAR*, SSHORT
 int    API_ROUTINE isc_to_sqlda(SQLDA*, int, SCHAR*, int, SCHAR*);
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}	// extern "C" 
 #endif
 
-#endif /*  DSQL_USER_PROTO_H */
+#endif //  DSQL_USER_PROTO_H 
 

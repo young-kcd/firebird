@@ -4159,7 +4159,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 			break;
 
 		case nod_rse:
-			/* Pass rse_boolean (where clause) and rse_items (select items) */
+			// Pass rse_boolean (where clause) and rse_items (select items) 
 			found |= pass1_found_aggregate(node->nod_arg[e_rse_boolean],
 				check_scope_level, match_type, false);
 			found |= pass1_found_aggregate(node->nod_arg[e_rse_items], 
@@ -4172,7 +4172,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 			break;
 
 		case nod_aggregate:
-			/* Pass only rse_group (group by clause) */
+			// Pass only rse_group (group by clause) 
 			found |= pass1_found_aggregate(node->nod_arg[e_agg_group],
 				check_scope_level, match_type, current_scope_level_equal);
 			break;
@@ -5633,7 +5633,7 @@ static dsql_nod* pass1_searched_case( dsql_req* request, dsql_nod* input, bool p
 	} // end scope block
 
 	// build when_result list including else_result at the end 
-	/* else_result is included for easy handling in MAKE_desc() */
+	// else_result is included for easy handling in MAKE_desc() 
 	{ // scope block
 	dsql_lls* stack = NULL;
 	dsql_nod** ptr = list->nod_arg;

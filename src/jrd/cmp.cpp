@@ -477,7 +477,7 @@ jrd_req* CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// if the request hasn't been compiled or isn't active,
@@ -1677,7 +1677,7 @@ IDL CMP_get_index_lock(TDBB tdbb, jrd_rel* relation, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	DEV_BLKCHK(relation, type_rel);
 
@@ -2283,7 +2283,7 @@ void CMP_shutdown_database(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
@@ -3973,7 +3973,7 @@ static void pass1_source(TDBB     tdbb,
 	DEV_BLKCHK(*stack, type_lls);
 	DEV_BLKCHK(parent_view, type_rel);
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// in the case of an rse, it is possible that a new rse will be generated, 

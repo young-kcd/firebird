@@ -497,7 +497,7 @@ jrd_req* EXE_find_request(TDBB tdbb, jrd_req* request, bool validate)
 
 	SET_TDBB(tdbb);
 #ifdef ANY_THREADING
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 #endif
 
 /* I found a core file from my test runs that came from a NULL request -
@@ -850,7 +850,7 @@ void EXE_start(TDBB tdbb, jrd_req* request, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLKCHK(request, type_req);
 	BLKCHK(transaction, type_tra);
@@ -1125,7 +1125,7 @@ static jrd_nod* erase(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
@@ -1331,7 +1331,7 @@ static void execute_looper(
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Start a save point */
 
@@ -1827,7 +1827,7 @@ static jrd_nod* looper(TDBB tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BLKCHK(in_node, type_nod);
 
 	// Save the old pool and request to restore on exit
@@ -2870,7 +2870,7 @@ static jrd_nod* modify(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
@@ -3829,7 +3829,7 @@ static jrd_nod* store(TDBB tdbb, jrd_nod* node, SSHORT which_trig)
 	REC record;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	BLKCHK(node, type_nod);
 
 	jrd_req*    request     = tdbb->tdbb_request;

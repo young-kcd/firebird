@@ -95,6 +95,7 @@ UCHAR* ALLR_alloc(ULONG size)
 	//        otherwise just an error return
 
 	throw std::bad_alloc();
+	return NULL;	/* compiler silencer */
 }
 
 

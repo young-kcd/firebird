@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.98 2004-02-24 05:34:40 robocop Exp $
+$Id: inet.cpp,v 1.99 2004-03-07 07:58:53 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -98,7 +98,7 @@ $Id: inet.cpp,v 1.98 2004-02-24 05:34:40 robocop Exp $
 #endif
 
 #ifdef DARWIN
-extern "C" int innetgr(const char *, const char *, const char *, const char *);
+extern "C" int innetgr(const char*, const char*, const char*, const char*);
 #endif
 
 #define INET_RETRY_CALL		5
@@ -325,9 +325,9 @@ static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 #if !defined(WIN_NT)
 #ifndef VMS
-static int		check_host(rem_port*, TEXT *, TEXT *, struct passwd *);
+static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
 #else
-static int		check_host(rem_port*, TEXT *, TEXT *);
+static int		check_host(rem_port*, TEXT*, const TEXT*);
 #endif // VMS
 static bool		check_proxy(rem_port*, TEXT *, TEXT *);
 #endif // WIN_NT
@@ -376,8 +376,8 @@ static rem_port*		inet_try_connect(	PACKET*,
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(SCHAR *, int);
 #if !(defined WIN_NT)
-static int		parse_hosts(const TEXT*, TEXT*, TEXT*);
-static int		parse_line(TEXT*, TEXT*, TEXT*, TEXT*);
+static int		parse_hosts(const TEXT*, const TEXT*, const TEXT*);
+static int		parse_line(const TEXT*, const TEXT*, const TEXT*, const TEXT*);
 #endif
 
 #ifdef DEBUG
@@ -1274,7 +1274,7 @@ static int accept_connection(rem_port* port,
 		   check_host first */
 
 		TEXT host[MAXHOSTLEN];
-		struct passwd* passwd = getpwnam(name);
+		const struct passwd* passwd = getpwnam(name);
 		const int trusted = check_host(port, host, name, passwd);
 		if (!trusted) {
 			return FALSE;
@@ -1653,8 +1653,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 #ifndef WIN_NT
 #ifdef VMS
 static int check_host(rem_port* port,
-					  TEXT * host_name,
-					  TEXT * user_name)
+					  TEXT* host_name,
+					  const TEXT* user_name)
 {
 /**************************************
  *
@@ -1689,8 +1689,8 @@ static int check_host(rem_port* port,
 
 static int check_host(
 					  rem_port* port,
-					  TEXT * host_name,
-					  TEXT * user_name, struct passwd *passwd)
+					  TEXT* host_name,
+					  const TEXT* user_name, const struct passwd *passwd)
 {
 /**************************************
  *
@@ -2223,7 +2223,8 @@ static void inet_zero( SCHAR* address, int length)
 }
 
 #if !(defined WIN_NT)
-static int parse_hosts( const TEXT* file_name, TEXT* host_name, TEXT* user_name)
+static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
+	const TEXT* user_name)
 {
 /*****************************************************************
  *
@@ -2265,8 +2266,9 @@ static int parse_hosts( const TEXT* file_name, TEXT* host_name, TEXT* user_name)
 
 #if !(defined WIN_NT)
 static int parse_line(
-					  TEXT * entry1,
-					  TEXT * entry2, TEXT * host_name, TEXT * user_name)
+					  const TEXT* entry1,
+					  const TEXT* entry2,
+					  const TEXT* host_name, const TEXT* user_name)
 {
 /*****************************************************************
  *
@@ -3008,7 +3010,7 @@ static void inet_handler(void* port_void)
 		return;
 	}
 	
-	(*((void(*)(rem_port*))port->port_ast)) (port);
+	(*port->port_ast) (port);
 }
 #endif
 

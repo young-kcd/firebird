@@ -53,12 +53,12 @@ extern USHORT sw_buffers;
 
 static void add_field(qli_rel*, qli_fld*, USHORT);
 static void add_sql_field(qli_rel*, qli_fld*, USHORT, qli_rlb*);
-static int blob_copy(qli_rlb*, qli_rel*, ISC_QUAD*);
+static void blob_copy(qli_rlb*, qli_rel*, ISC_QUAD*);
 static void change_field(qli_rel*, qli_fld*);
 static bool check_global_field(DBB, qli_fld*, const TEXT*);
 static bool check_relation(qli_rel*);
-static int clone_fields(qli_rel*, qli_rel*);
-static int clone_global_fields(qli_rel*, qli_rel*);
+static void clone_fields(qli_rel*, qli_rel*);
+static void clone_global_fields(qli_rel*, qli_rel*);
 static void define_global_field(DBB, qli_fld*, qli_symbol*);
 static void delete_fields(qli_rel*);
 static ISC_STATUS detach(ISC_STATUS *, DBB);
@@ -67,18 +67,18 @@ static int field_length(USHORT, USHORT);
 static void get_database_type(DBB);
 static TEXT *get_query_header(DBB, ISC_QUAD*);
 static void install(DBB);
-static SYN make_node(NOD_T, USHORT);
+static qli_syntax* make_node(NOD_T, USHORT);
 static TEXT *make_string(TEXT*, SSHORT);
 static qli_symbol* make_symbol(TEXT *, SSHORT);
 static qli_const* missing_value(ISC_QUAD*, qli_symbol*);
-static SYN parse_blr(UCHAR **, qli_symbol*);
-static SYN parse_blr_blob(ISC_QUAD*, qli_symbol*);
+static qli_syntax* parse_blr(UCHAR **, qli_symbol*);
+static qli_syntax* parse_blr_blob(ISC_QUAD*, qli_symbol*);
 static void purge_relation(qli_rel*);
 static void put_dyn_string(qli_rlb*, const TEXT*);
 static void rollback_update(DBB);
 static void set_capabilities(DBB);
 static DBB setup_update(DBB);
-static void sql_grant_revoke(SYN, USHORT);
+static void sql_grant_revoke(qli_syntax*, USHORT);
 static void stuff_priv(qli_rlb*, USHORT, const TEXT*, USHORT, const TEXT*, const TEXT*);
 static int truncate_string(TEXT*);
 static void wal_info(const UCHAR*, SLONG*, SCHAR*, SLONG*);
@@ -213,7 +213,7 @@ void MET_define_field( DBB database, qli_fld* field)
 }
 
 
-void MET_define_index( SYN node)
+void MET_define_index( qli_syntax* node)
 {
 /**************************************
  *
@@ -227,7 +227,7 @@ void MET_define_index( SYN node)
  **************************************/
 	qli_symbol* symbol = (qli_symbol*) node->syn_arg[s_dfi_name];
 	qli_rel* relation = (qli_rel*) node->syn_arg[s_dfi_relation];
-	SYN fields = node->syn_arg[s_dfi_fields];
+	qli_syntax* fields = node->syn_arg[s_dfi_fields];
 	DBB database = setup_update(relation->rel_database);
 
 	if (relation->rel_flags & REL_view)
@@ -1290,7 +1290,7 @@ void MET_modify_field( DBB database, qli_fld* field)
 }
 
 
-void MET_modify_index( SYN node)
+void MET_modify_index( qli_syntax* node)
 {
 /**************************************
  *
@@ -1397,7 +1397,7 @@ void MET_modify_relation( qli_rel* relation, qli_fld* fields)
 }
 
 
-void MET_ready( SYN node, USHORT create_flag)
+void MET_ready( qli_syntax* node, USHORT create_flag)
 {
 /**************************************
  *
@@ -1492,12 +1492,12 @@ void MET_ready( SYN node, USHORT create_flag)
 	else
 		dpb = global_parm_buffer;
 
-	SYN* const end = node->syn_arg + node->syn_count;
+	const qli_syntax* const* const end = node->syn_arg + node->syn_count;
 
 // Start by attaching all databases
 	ISC_STATUS_ARRAY status_vector;
-	SYN* ptr;
-	DBB dbb;
+	qli_syntax** ptr;
+	DBB dbb = 0;
 
 	for (ptr = node->syn_arg; ptr < end; ptr++) {
 		dbb = (DBB) *ptr;
@@ -1514,7 +1514,7 @@ void MET_ready( SYN node, USHORT create_flag)
 // If any attach failed, cleanup and give up
 
 	if (ptr < end) {
-		for (SYN* ptr2 = node->syn_arg; ptr2 < ptr; ptr2++)
+		for (qli_syntax** ptr2 = node->syn_arg; ptr2 < ptr; ptr2++)
 			detach(gds_status, (DBB) *ptr2);
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -1606,7 +1606,7 @@ void MET_sql_alter_table( qli_rel* relation, qli_fld* fields)
 }
 
 
-void MET_sql_cr_view( SYN node)
+void MET_sql_cr_view( qli_syntax* node)
 {
 /**************************************
  *
@@ -1641,7 +1641,7 @@ void MET_sql_cr_view( SYN node)
 }
 
 
-void MET_sql_grant( SYN node)
+void MET_sql_grant( qli_syntax* node)
 {
 /**************************************
  *
@@ -1658,7 +1658,7 @@ void MET_sql_grant( SYN node)
 }
 
 
-void MET_sql_revoke( SYN node)
+void MET_sql_revoke( qli_syntax* node)
 {
 /**************************************
  *
@@ -1876,7 +1876,7 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
 }
 
 
-static int blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
+static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 {
 /**************************************
  *
@@ -1946,7 +1946,7 @@ static int blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 		ERRQ_database_error(source_dbb, status_vector);
 	}
 
-	return TRUE;
+	//return TRUE;
 }
 
 
@@ -2121,7 +2121,7 @@ static bool check_relation( qli_rel* relation)
 }
 
 
-static int clone_fields( qli_rel* target, qli_rel* source)
+static void clone_fields( qli_rel* target, qli_rel* source)
 {
 /**************************************
  *
@@ -2305,11 +2305,11 @@ static int clone_fields( qli_rel* target, qli_rel* source)
 	if (req2)
 		if (isc_release_request(gds_status, &req2))
 			ERRQ_database_error(source->rel_database, gds_status);
-	return TRUE;
+	//return TRUE;
 }
 
 
-static int clone_global_fields( qli_rel* target, qli_rel* source)
+static void clone_global_fields( qli_rel* target, qli_rel* source)
 {
 /**************************************
  *
@@ -2534,7 +2534,7 @@ static int clone_global_fields( qli_rel* target, qli_rel* source)
 	if (req3)
 		if (isc_release_request(gds_status, &req3))
 			ERRQ_database_error(source->rel_database, gds_status);
-	return TRUE;
+	//return TRUE;
 }
 
 
@@ -2976,7 +2976,7 @@ static void install( DBB old_dbb)
 }
 
 
-static SYN make_node( NOD_T type, USHORT count)
+static qli_syntax* make_node( NOD_T type, USHORT count)
 {
 /**************************************
  *
@@ -2988,7 +2988,7 @@ static SYN make_node( NOD_T type, USHORT count)
  *	Generate a syntax node.
  *
  **************************************/
-	SYN node = (SYN) ALLOCPV(type_syn, count);
+	qli_syntax* node = (qli_syntax*) ALLOCPV(type_syn, count);
 	node->syn_count = count;
 	node->syn_type = type;
 
@@ -3067,7 +3067,7 @@ static qli_const* missing_value( ISC_QUAD* blob_id, qli_symbol* symbol)
  *	block for later reference.
  *
  **************************************/
-	SYN element = parse_blr_blob(blob_id, symbol);
+	qli_syntax* element = parse_blr_blob(blob_id, symbol);
 	if (element)
 		return ((qli_const*) element->syn_arg[0]);
 	else
@@ -3075,7 +3075,7 @@ static qli_const* missing_value( ISC_QUAD* blob_id, qli_symbol* symbol)
 }
 
 
-static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
+static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 {
 /**************************************
  *
@@ -3087,7 +3087,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
  *	Parse a BLR expression.
  *
  **************************************/
-	SYN *arg;
+	qli_syntax* *arg;
 	qli_const* constant;
 	NOD_T operatr;
 	NAM name;
@@ -3096,7 +3096,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 
 	UCHAR* blr = *ptr;
 	SSHORT args = 2;
-	SYN node = NULL;
+	qli_syntax* node = NULL;
 
 	switch (op = BLR_BYTE) {
 	case blr_any:
@@ -3187,7 +3187,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		blr += 2;
 		node = make_node(nod_field, 1);
 		name = (NAM) ALLOCPV(type_nam, symbol->sym_length);
-		node->syn_arg[0] = (SYN) name;
+		node->syn_arg[0] = (qli_syntax*) name;
 		name->nam_length = symbol->sym_length;
 		strcpy(name->nam_string, symbol->sym_string);
 		break;
@@ -3197,7 +3197,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		length = BLR_BYTE;
 		node = make_node(nod_field, 1);
 		name = (NAM) ALLOCPV(type_nam, length);
-		node->syn_arg[0] = (SYN) name;
+		node->syn_arg[0] = (qli_syntax*) name;
 		name->nam_length = length;
 		p = (UCHAR *) name->nam_string;
 		do {
@@ -3208,7 +3208,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 	case blr_function:
 		length = BLR_BYTE;
 		node = make_node(nod_function, s_fun_count);
-		node->syn_arg[s_fun_function] = (SYN) HSH_lookup((SCHAR*) blr, length);
+		node->syn_arg[s_fun_function] = (qli_syntax*) HSH_lookup((SCHAR*) blr, length);
 		blr += length;
 		args = BLR_BYTE;
 		node->syn_arg[s_fun_args] = make_node(nod_list, args);
@@ -3314,7 +3314,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		}
 		node = make_node(nod_constant, 1);
 		node->syn_count = 0;
-		node->syn_arg[0] = (SYN) constant;
+		node->syn_arg[0] = (qli_syntax*) constant;
 		break;
 
 	default:
@@ -3335,7 +3335,7 @@ static SYN parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 }
 
 
-static SYN parse_blr_blob(ISC_QUAD* blob_id, qli_symbol* symbol)
+static qli_syntax* parse_blr_blob(ISC_QUAD* blob_id, qli_symbol* symbol)
 {
 /**************************************
  *
@@ -3381,7 +3381,7 @@ static SYN parse_blr_blob(ISC_QUAD* blob_id, qli_symbol* symbol)
 	if (*ptr++ != blr_version4)
 		return NULL;
 
-	SYN node = parse_blr(&ptr, symbol);
+	qli_syntax* node = parse_blr(&ptr, symbol);
 
 	if (*ptr != blr_eoc)
 		return NULL;
@@ -3546,7 +3546,7 @@ static DBB setup_update( DBB database)
 }
 
 
-static void sql_grant_revoke( SYN node, USHORT type)
+static void sql_grant_revoke( qli_syntax* node, USHORT type)
 {
 /*****************************************************
  *
@@ -3572,11 +3572,11 @@ static void sql_grant_revoke( SYN node, USHORT type)
 // For each user create a separate grant string
 //      For each specified field create a separate grant string
 
-	SYN names = node->syn_arg[s_grant_users];
-	SYN fields = node->syn_arg[s_grant_fields];
+	qli_syntax* names = node->syn_arg[s_grant_users];
+	qli_syntax* fields = node->syn_arg[s_grant_fields];
 
-	NAM *name, *end;
-	for (name = (NAM *) names->syn_arg, end = name + names->syn_count;
+	NAM* name = (NAM*) names->syn_arg;
+	for (NAM* const end = name + names->syn_count;
 		 name < end; name++)
 	{
 		if (fields->syn_count) {

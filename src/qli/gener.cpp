@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.30 2004-02-20 06:43:16 robocop Exp $
+$Id: gener.cpp,v 1.31 2004-03-07 07:58:51 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1062,7 +1062,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 	gen_rse(node->nod_arg[e_for_rse], request);
 	STUFF(blr_begin);
 
-/* If data is to be received (included EOF), build a send */
+// If data is to be received (included EOF), build a send 
 
 	const qli_par* eof = 0;
 	dsc desc;

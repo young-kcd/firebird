@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		kanji.c
+ *	MODULE:		kanji.cpp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,23 +28,29 @@
 #include "kanji_proto.h"
 
 
-#define S2E(s1, s2, j1, j2) \
-{ \
-  if (s2 >= 0x9f) { \
-    if (s1 >= 0xe0) j1 = (s1*2 - 0xe0); \
-    else j1 = (s1*2 - 0x60); \
-    j2 = (s2 + 2); \
-  } \
-  else { \
-    if (s1 >= 0xe0) j1 = (s1*2 - 0xe1); \
-    else j1 = (s1*2 - 0x61);\
-    if (s2 >= 0x7f) j2 = (s2 + 0x60); \
-    else j2 = (s2 +  0x61); \
-  } \
+static void S2E(const UCHAR s1, const UCHAR s2, UCHAR& j1, UCHAR& j2)
+{
+	if (s2 >= 0x9f) {
+		if (s1 >= 0xe0)
+			j1 = (s1*2 - 0xe0);
+    	else
+			j1 = (s1*2 - 0x60);
+		j2 = (s2 + 2);
+	}
+	else {
+		if (s1 >= 0xe0)
+			j1 = (s1*2 - 0xe1);
+		else
+			j1 = (s1*2 - 0x61);
+		if (s2 >= 0x7f)
+			j2 = (s2 + 0x60);
+		else
+			j2 = (s2 +  0x61);
+	}
 }
 
 
-USHORT KANJI_check_euc(UCHAR * euc_str, USHORT euc_len)
+USHORT KANJI_check_euc(const UCHAR* euc_str, USHORT euc_len)
 {
 /**************************************
  *
@@ -59,9 +65,6 @@ USHORT KANJI_check_euc(UCHAR * euc_str, USHORT euc_len)
  *          return 1.  
  *          else return(0);
  **************************************/
-	UCHAR c1, c2;
-
-
 	while (euc_len--) {
 		if (*euc_str & 0x80) {	/* Is it  EUC */
 			if (euc_len == 0) {	/* truncated kanji */
@@ -81,7 +84,7 @@ USHORT KANJI_check_euc(UCHAR * euc_str, USHORT euc_len)
 }
 
 
-USHORT KANJI_check_sjis(UCHAR * sjis_str, USHORT sjis_len)
+USHORT KANJI_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 {
 /**************************************
  *
@@ -96,13 +99,9 @@ USHORT KANJI_check_sjis(UCHAR * sjis_str, USHORT sjis_len)
  *	    return 1. 
  *	    else return(0);
  **************************************/
-
-	UCHAR c1;
-
 	while (sjis_len--) {
 		if (*sjis_str & 0x80) {	/* Is it  SJIS */
-			if SJIS1
-				((c1 = *sjis_str)) {	/* It is a KANJI */
+			if SJIS1(*sjis_str) {	/* It is a KANJI */
 				if (sjis_len == 0) {	/* truncated KANJI */
 					return (1);
 				}
@@ -110,7 +109,7 @@ USHORT KANJI_check_sjis(UCHAR * sjis_str, USHORT sjis_len)
 					sjis_str += 2;
 					sjis_len -= 1;
 				}
-				}
+			}
 			else {				/*It is a KANA */
 
 				sjis_str++;
@@ -126,10 +125,10 @@ USHORT KANJI_check_sjis(UCHAR * sjis_str, USHORT sjis_len)
 
 
 
-USHORT KANJI_euc2sjis(UCHAR * euc_str,
+USHORT KANJI_euc2sjis(const UCHAR* euc_str,
 					  USHORT euc_len,
-					  UCHAR * sjis_str,
-					  USHORT sjis_buf_len, USHORT * sjis_len)
+					  UCHAR* sjis_str,
+					  USHORT sjis_buf_len, USHORT* sjis_len)
 {
 /**************************************
  *
@@ -144,21 +143,19 @@ USHORT KANJI_euc2sjis(UCHAR * euc_str,
  * 	If a kanji conversion error occurs a 1 is returned.
  *
  **************************************/
-	UCHAR c1, c2;
-
 	*sjis_len = 0;
 	while (euc_len) {
 		if (*euc_str & 0x80) {	/* Non-Ascii - High bit set */
 			if (*sjis_len >= sjis_buf_len)	/*buffer full */
 				return (1);
 
-			c1 = *euc_str++;
+			UCHAR c1 = *euc_str++;
 			euc_len--;
 
 			if (EUC1(c1)) {		/* It is a EUC */
 				if (euc_len == 0)
 					return (1);	/* truncated EUC */
-				c2 = *euc_str++;
+				UCHAR c2 = *euc_str++;
 				euc_len--;
 				if (!(EUC2(c2)))
 					return (1);	/* Bad EUC */
@@ -196,7 +193,7 @@ USHORT KANJI_euc2sjis(UCHAR * euc_str,
 
 
 
-USHORT KANJI_euc_byte2short(UCHAR * src, USHORT * dst, USHORT len)
+USHORT KANJI_euc_byte2short(const UCHAR* src, USHORT* dst, USHORT len)
 {
 /**************************************
  *
@@ -213,9 +210,9 @@ USHORT KANJI_euc_byte2short(UCHAR * src, USHORT * dst, USHORT len)
  *	Return the number of "characters" in dst.
  *
  **************************************/
-	USHORT l, x;
+	USHORT l;
 	for (l = 0; len-- > 0; l++) {
-		x = (EUC1(*src)) ? (len--, (*src++ << 8)) : 0;
+		USHORT x = (EUC1(*src)) ? (len--, (*src++ << 8)) : 0;
 		x |= *src++;
 		*dst++ = x;
 	}
@@ -224,7 +221,7 @@ USHORT KANJI_euc_byte2short(UCHAR * src, USHORT * dst, USHORT len)
 
 
 
-USHORT KANJI_euc_len(UCHAR * sjis_str, USHORT sjis_len, USHORT * euc_len)
+USHORT KANJI_euc_len(const UCHAR* sjis_str, USHORT sjis_len, USHORT* euc_len)
 {
 /**************************************
  *
@@ -237,19 +234,16 @@ USHORT KANJI_euc_len(UCHAR * sjis_str, USHORT sjis_len, USHORT * euc_len)
  *	Returns 1 if invalid kanji is encountered.
  *
  **************************************/
-
-	UCHAR c1, c2;
-
 	*euc_len = 0;
 	while (sjis_len) {
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
-			c1 = *sjis_str++;
+			const UCHAR c1 = *sjis_str++;
 			sjis_len--;
 
 			if (SJIS1(c1)) {	/* First byte is a KANJI */
 				if (sjis_len == 0)
 					return (1);	/* truncated KANJI */
-				c2 = *sjis_str++;
+				const UCHAR c2 = *sjis_str++;
 				sjis_len--;
 				if (!(SJIS2(c2)))
 					return (1);	/* Bad second byte */
@@ -272,9 +266,9 @@ USHORT KANJI_euc_len(UCHAR * sjis_str, USHORT sjis_len, USHORT * euc_len)
 
 
 
-USHORT KANJI_sjis2euc(UCHAR * sjis_str,
+USHORT KANJI_sjis2euc(const UCHAR* sjis_str,
 					  USHORT sjis_len,
-					  UCHAR * euc_str, USHORT euc_buf_len, USHORT * euc_len)
+					  UCHAR* euc_str, USHORT euc_buf_len, USHORT* euc_len)
 {
 /**************************************
  *
@@ -288,22 +282,19 @@ USHORT KANJI_sjis2euc(UCHAR * sjis_str,
  * 	If a kanji conversion error occurs a 1 is returned.
  *
  **************************************/
-
-	UCHAR c1, c2;
-
 	*euc_len = 0;
 	while (sjis_len) {
 		if (*euc_len >= euc_buf_len)	/*buffer full */
 			return (1);
 
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
-			c1 = *sjis_str++;
+			const UCHAR c1 = *sjis_str++;
 			sjis_len--;
 
 			if (SJIS1(c1)) {	/* First byte is a KANJI */
 				if (sjis_len == 0)
 					return (1);	/* truncated KANJI */
-				c2 = *sjis_str++;
+				const UCHAR c2 = *sjis_str++;
 				sjis_len--;
 				if (!(SJIS2(c2)))
 					return (1);	/* Bad second byte */
@@ -335,8 +326,9 @@ USHORT KANJI_sjis2euc(UCHAR * sjis_str,
 
 
 
-USHORT KANJI_sjis_byte2short(UCHAR * src;
-							 USHORT * dst, USHORT len) {
+USHORT KANJI_sjis_byte2short(const UCHAR* src,
+							 USHORT* dst, USHORT len)
+{
 /**************************************
  *
  *      K A N J I _ s j i s _ b y t e 2 s h o r t
@@ -353,9 +345,9 @@ USHORT KANJI_sjis_byte2short(UCHAR * src;
  *	Return the number of "characters" in dst.
  *
  **************************************/
-	USHORT l, x;
+	USHORT l;
 	for (l = 0; len-- > 0; l++) {
-		x = (SJIS1(*src)) ? (len--, (*src++ << 8)) : 0;
+		USHORT x = (SJIS1(*src)) ? (len--, (*src++ << 8)) : 0;
 		x |= *src++;
 		*dst++ = x;
 	}
@@ -364,11 +356,11 @@ USHORT KANJI_sjis_byte2short(UCHAR * src;
 
 
 
-USHORT KANJI_sjis2euc5(UCHAR * sjis_str,
+USHORT KANJI_sjis2euc5(const UCHAR* sjis_str,
 					   USHORT sjis_len,
-					   UCHAR * euc_str,
+					   UCHAR* euc_str,
 					   USHORT euc_buf_len,
-					   USHORT * euc_len, USHORT * ib_sjis, USHORT * ib_euc)
+					   USHORT* euc_len, USHORT* ib_sjis, USHORT* ib_euc)
 {
 /**************************************
  *
@@ -389,8 +381,6 @@ USHORT KANJI_sjis2euc5(UCHAR * sjis_str,
  * track of splitting fragments from segments.
  *
  **************************************/
-	UCHAR c1, c2;
-
 	*euc_len = 0;
 	*ib_sjis = *ib_euc = 0;
 	while (sjis_len) {
@@ -398,13 +388,13 @@ USHORT KANJI_sjis2euc5(UCHAR * sjis_str,
 			return (1);
 
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
-			c1 = *sjis_str++;
+			const UCHAR c1 = *sjis_str++;
 			sjis_len--;
 
 			if (SJIS1(c1)) {	/* First byte is a KANJI */
 				if (sjis_len == 0)
 					return (2);	/* truncated KANJI */
-				c2 = *sjis_str++;
+				const UCHAR c2 = *sjis_str++;
 				sjis_len--;
 				if (!(SJIS2(c2)))
 					return (2);	/* Bad second byte */
@@ -442,7 +432,7 @@ USHORT KANJI_sjis2euc5(UCHAR * sjis_str,
 
 
 
-USHORT KANJI_sjis_len(UCHAR * euc_str, USHORT euc_len, USHORT * sjis_len)
+USHORT KANJI_sjis_len(const UCHAR* euc_str, USHORT euc_len, USHORT* sjis_len)
 {
 /**************************************
  *
@@ -455,19 +445,16 @@ USHORT KANJI_sjis_len(UCHAR * euc_str, USHORT euc_len, USHORT * sjis_len)
  *	Returns 1 if invalid kanji is encountered.
  *
  **************************************/
-
-	UCHAR c1, c2;
-
 	*sjis_len = 0;
 	while (euc_len) {
 		if (*euc_str & 0x80) {	/* Non-Ascii - High bit set */
-			c1 = *euc_str++;
+			const UCHAR c1 = *euc_str++;
 			euc_len--;
 
 			if (EUC1(c1)) {		/* It is a EUC */
 				if (euc_len == 0)
 					return (1);	/* truncated EUC */
-				c2 = *euc_str++;
+				const UCHAR c2 = *euc_str++;
 				euc_len--;
 				if (!(EUC2(c2)))
 					return (1);	/* Bad EUC */
@@ -488,3 +475,4 @@ USHORT KANJI_sjis_len(UCHAR * euc_str, USHORT euc_len, USHORT * sjis_len)
 	}
 	return (0);
 }
+

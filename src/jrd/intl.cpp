@@ -149,10 +149,10 @@ static bool all_spaces(TDBB, CHARSET_ID, const BYTE*, USHORT, USHORT);
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
 static FPTR_SHORT lookup_init_function(USHORT, SSHORT, SSHORT);
 static void finish_texttype_init(TEXTTYPE);
-static USHORT nc_to_wc(CSCONVERT, UCS2_CHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
-					   USHORT *);
-static USHORT wc_to_wc(CSCONVERT, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-					   USHORT *);
+static USHORT nc_to_wc(TEXTTYPE, UCS2_CHAR*, USHORT, const UCHAR*, USHORT,
+					SSHORT*, USHORT*);
+static USHORT wc_to_wc(TEXTTYPE, UCS2_CHAR*, USHORT, const UCS2_CHAR*, USHORT,
+					SSHORT*, USHORT*);
 
 /* Name of module that implements text-type (n) */
 
@@ -248,14 +248,12 @@ CharSetContainer* CharSetContainer::lookupCharset(TDBB tdbb, SSHORT ttype, ISC_S
  *      NULL            - if error & err NULL
  *
  **************************************/
-	DBB dbb;
 	CharSetContainer *cs = NULL;
-	USHORT id;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
-	id = TTYPE_TO_CHARSET(ttype);
+	USHORT id = TTYPE_TO_CHARSET(ttype);
 	if (id == CS_dynamic)
 		id = tdbb->tdbb_attachment->att_charset;
 
@@ -341,7 +339,7 @@ CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
 
 TextType CharSetContainer::lookupCollation(TDBB tdbb, USHORT tt_id)
 {
-	USHORT id = TTYPE_TO_COLLATION(tt_id);
+	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 	
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
 		return charset_collations[id];
@@ -437,7 +435,8 @@ public:
 template <typename StrConverter, typename CharType>
 class ContainsFunctions : public StringFunctions<Firebird::ContainsEvaluator<CharType>, StrConverter, CharType> {
 public:
-	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length) {
+	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length)
+	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
 		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(tdbb->tdbb_default, 
@@ -467,14 +466,16 @@ public:
 template <typename StrConverter, typename CharType>
 class LikeFunctions : public StringFunctions<Firebird::LikeEvaluator<CharType>, StrConverter, CharType> {
 public:
-	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length, UCS2_CHAR escape) {
+	static void* create(TDBB tdbb, TextType ttype, const UCHAR* str, SSHORT length,
+		UCS2_CHAR escape)
+	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
 		return FB_NEW(*tdbb->tdbb_default) Firebird::LikeEvaluator<CharType>(tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
 	}
-	static bool evaluate(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT sl, 
+	static bool evaluate(TDBB tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
 		const UCHAR* p, SSHORT pl, UCS2_CHAR escape) 
 	{
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
@@ -527,29 +528,31 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 	typedef ContainsFunctions<UpcaseConverter<MBStrConverter>, UCS2_CHAR> mb_contains;
 		
 	if ((txtobj->texttype_fn_to_wc == NULL) &&
-		(txtobj->texttype_bytes_per_char == 1)) {
+		(txtobj->texttype_bytes_per_char == 1))
+	{
 		/* Finish initialization of a narrow character object */
 
-		txtobj->texttype_fn_to_wc = (FPTR_SHORT) nc_to_wc;
+		txtobj->texttype_fn_to_wc = nc_to_wc;
 		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_nc_matches;
 		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_nc_sleuth_merge;
 		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_nc_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
-			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_nc_mbtowc;
+			txtobj->texttype_fn_mbtowc = INTL_builtin_nc_mbtowc;
 
 		nc_like::ttype_init(txtobj);
 		nc_contains::ttype_init(txtobj);
 	}
 	else if ((txtobj->texttype_fn_to_wc == NULL) &&
-			 (txtobj->texttype_bytes_per_char == 2)) {
+			 (txtobj->texttype_bytes_per_char == 2))
+	{
 		/* Finish initialization of a wide character object */
 
-		txtobj->texttype_fn_to_wc = (FPTR_SHORT) wc_to_wc;
+		txtobj->texttype_fn_to_wc = reinterpret_cast<pfn_INTL_2wc>(wc_to_wc);
 		txtobj->texttype_fn_matches = (FPTR_SHORT) EVL_wc_matches;
 		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_wc_sleuth_merge;
 		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_wc_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
-			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_wc_mbtowc;
+			txtobj->texttype_fn_mbtowc = INTL_builtin_wc_mbtowc;
 
 		wc_like::ttype_init(txtobj);
 		wc_contains::ttype_init(txtobj);
@@ -561,7 +564,7 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 		txtobj->texttype_fn_sleuth_merge = (FPTR_SHORT) EVL_mb_sleuth_merge;
 		txtobj->texttype_fn_sleuth_check = (FPTR_SHORT) EVL_mb_sleuth_check;
 		if (!txtobj->texttype_fn_mbtowc)
-			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_mb_mbtowc;
+			txtobj->texttype_fn_mbtowc = INTL_builtin_mb_mbtowc;
 
 		mb_like::ttype_init(txtobj);
 		mb_contains::ttype_init(txtobj);
@@ -599,8 +602,6 @@ static FPTR_SHORT lookup_init_function(
  *
  *
  ***************************************/
-	FPTR_SHORT function;
-
 	if (!bcLoaded)
 	{
 		getIntlBCPlugins().addSearchPath(INTL_PLUGIN_DIR);
@@ -610,12 +611,14 @@ static FPTR_SHORT lookup_init_function(
 	PluginManager::Plugin intlMod1 = getIntlBCPlugins().findPlugin(INTL_MODULE1);
 	PluginManager::Plugin intlMod2 = getIntlBCPlugins().findPlugin(INTL_MODULE2);
 
-	USHORT(*lookup_fn) (USHORT, FPTR_SHORT *, SSHORT, SSHORT);
-
 	INTL_TRACE(("INTL: looking for obj %d ttype %d\n", objtype, parm1));
 
-	function = INTL_builtin_lookup(type, parm1, parm2); 
-	if (function) return function;
+	FPTR_SHORT function = INTL_builtin_lookup(type, parm1, parm2);
+	if (function)
+		return function;
+
+	typedef USHORT (*pfn_lookup) (USHORT, FPTR_SHORT*, SSHORT, SSHORT);
+	pfn_lookup lookup_fn;
 
 #ifdef INTL_BUILTIN
 	if (LD_lookup(type, &function, parm1, parm2) != 0)
@@ -624,11 +627,11 @@ static FPTR_SHORT lookup_init_function(
 		return function;
 #else
 	/* Look for an InterBase supplied object to implement the text type */
-	/* The flu.c uses searchpath which expects a file name not a path */
+	/* The flu.cpp uses searchpath which expects a file name not a path */
 	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE1, INTL_LOOKUP_ENTRY1));
 	Firebird::string tempStr(INTL_LOOKUP_ENTRY1);
-	if ( intlMod1 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
-		(intlMod1.lookupSymbol(tempStr))) ) {
+	if ( intlMod1 && (lookup_fn = (pfn_lookup) intlMod1.lookupSymbol(tempStr)) )
+	{
 		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE1,
 					INTL_LOOKUP_ENTRY1));
 		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
@@ -649,11 +652,11 @@ static FPTR_SHORT lookup_init_function(
 		return function;
 #else
 	/* Look for an InterBase supplied object to implement the text type */
-	/* The flu.c uses searchpath which expects a file name not a path */
+	/* The flu.cpp uses searchpath which expects a file name not a path */
 	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE2, INTL_LOOKUP_ENTRY2));
 	tempStr = INTL_LOOKUP_ENTRY2;
-	if ( intlMod2 && (lookup_fn = (USHORT(*)(USHORT, USHORT(**)(), short, short))
-		(intlMod2.lookupSymbol(tempStr))) ) {
+	if ( intlMod2 && (lookup_fn = (pfn_lookup) intlMod2.lookupSymbol(tempStr)) )
+	{
 		INTL_TRACE(("INTL: calling lookup %s %s\n", INTL_MODULE2,
 					INTL_LOOKUP_ENTRY2));
 		if ((*lookup_fn) (type, &function, parm1, parm2) != 0) {
@@ -761,10 +764,6 @@ int INTL_compare(TDBB tdbb,
  *      Compare two pieces of international text.
  *
  **************************************/
-	UCHAR *p1, *p2;
-	UCHAR buffer[MAX_KEY];
-	USHORT t1, t2;
-
 	SET_TDBB(tdbb);
 
 	fb_assert(pText1 != NULL);
@@ -776,13 +775,19 @@ int INTL_compare(TDBB tdbb,
 /* normal compare routine from CVT_compare */
 /* trailing spaces in strings are ignored for comparision */
 
+	UCHAR* p1;
+	USHORT t1;
 	USHORT length1 = CVT_get_string_ptr(pText1, &t1, &p1, NULL, 0, err);
+	
+	UCHAR* p2;
+	USHORT t2;
 	USHORT length2 = CVT_get_string_ptr(pText2, &t2, &p2, NULL, 0, err);
 
 /* YYY - by SQL II compare_type must be explicit in the
    SQL statement if there is any doubt */
 
 	SSHORT compare_type = MAX(t1, t2);	/* YYY */
+	UCHAR buffer[MAX_KEY];
 
 	if (t1 != t2) {
 		CHARSET_ID cs1 = INTL_charset(tdbb, t1, err);
@@ -826,7 +831,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 						BYTE* dest_ptr,
 						USHORT dest_len,
 						CHARSET_ID src_type,
-						BYTE* src_ptr,
+						const BYTE* src_ptr,
 						USHORT src_len,
 						FPTR_ERROR err)
 {
@@ -849,12 +854,10 @@ USHORT INTL_convert_bytes(TDBB tdbb,
  *      calls (err) if conversion error occurs.
  *
  **************************************/
-	UCHAR *start_dest_ptr;
 	USHORT len;
 	USHORT len2;
 	SSHORT err_code = 0;
 	USHORT err_position;
-	BYTE *tmp_buffer;
 
 	SET_TDBB(tdbb);
 
@@ -863,7 +866,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 	fb_assert(src_type != dest_type);
 	fb_assert(err != NULL);
 
-	start_dest_ptr = dest_ptr;
+	const UCHAR* const start_dest_ptr = dest_ptr;
 
 	if ((dest_type == CS_BINARY) || (dest_type == CS_NONE)) {
 
@@ -873,9 +876,9 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 
 		len = MIN(dest_len, src_len);
 		if (len)
-			do
+			do {
 				*dest_ptr++ = *src_ptr++;
-			while (--len);
+			} while (--len);
 
 		/* See if only space characters are remaining */
 		len = src_len - MIN(dest_len, src_len);
@@ -899,7 +902,10 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 									src_len, &err_code, &err_position);
 			if (!err_code || ((err_code == CS_TRUNCATION_ERROR)
 							  && all_spaces(tdbb, src_type, src_ptr, src_len,
-											err_position))) return (len);
+											err_position)))
+			{
+				return (len);
+			}
 			else if (err_code == CS_TRUNCATION_ERROR)
 				(*err) (isc_arith_except, 0);
 			else
@@ -916,7 +922,8 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 		/* 
 		   ** allocate a temporary buffer that is large enough.
 		 */
-		tmp_buffer = (BYTE *) FB_NEW(*tdbb->tdbb_default) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
+		BYTE* tmp_buffer =
+			(BYTE *) FB_NEW(*tdbb->tdbb_default) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
 
 		cs_obj = from_cs.getConvToUnicode();
 		fb_assert(cs_obj != NULL);
@@ -924,7 +931,8 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 								src_len, &err_code, &err_position);
 		if (err_code && !((err_code == CS_TRUNCATION_ERROR)
 						  && all_spaces(tdbb, src_type, src_ptr, src_len,
-										err_position))) {
+										err_position)))
+		{
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
 				(*err) (isc_arith_except, 0);
@@ -978,10 +986,9 @@ CsConvert INTL_convert_lookup(TDBB tdbb,
  **************************************/
 
 	CharSetContainer *charset;
-	DBB dbb;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (from_cs == CS_dynamic)
@@ -1204,7 +1211,7 @@ int INTL_defined_type(TDBB tdbb, ISC_STATUS * status, SSHORT t_type)
 
 UCS2_CHAR INTL_getch(TDBB tdbb,
 							TextType* obj,
-							SSHORT t_type, UCHAR ** ptr, USHORT * count)
+							SSHORT t_type, const UCHAR** ptr, USHORT* count)
 {
 /**************************************
  *
@@ -1216,9 +1223,6 @@ UCS2_CHAR INTL_getch(TDBB tdbb,
  *      Get next character from a buffer.
  *
  **************************************/
-	SSHORT used;
-	UCS2_CHAR wc;
-
 	SET_TDBB(tdbb);
 
 	fb_assert(obj);
@@ -1228,7 +1232,8 @@ UCS2_CHAR INTL_getch(TDBB tdbb,
 		*obj = INTL_texttype_lookup(tdbb, t_type, ERR_post, NULL);
 		fb_assert(*obj != NULL);
 	}
-	used = obj->mbtowc(&wc, *ptr, *count);
+	UCS2_CHAR wc;
+	const SSHORT used = obj->mbtowc(&wc, *ptr, *count);
 	if (used == -1)
 		return 0;
 	*ptr += used;
@@ -1265,16 +1270,13 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
  *      use when collating text of this type.
  *
  **************************************/
-	USHORT key_length;
-	SSHORT ttype;
-
 	SET_TDBB(tdbb);
-
 
 	fb_assert(idxType >= idx_first_intl_string);
 
-	ttype = INTL_INDEX_TO_TEXT(idxType);
+	const SSHORT ttype = INTL_INDEX_TO_TEXT(idxType);
 
+	USHORT key_length;
 	if (ttype >= 0 && ttype <= ttype_last_internal)
 		key_length = iLength;
 	else {
@@ -1348,16 +1350,13 @@ TextType INTL_texttype_lookup(TDBB tdbb,
  *      NULL            - if error & err NULL
  *
  **************************************/
-	DBB dbb;
-	CharSetContainer *csc;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (parm1 == ttype_dynamic)
 		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset);
 
-	csc = CharSetContainer::lookupCharset(tdbb, parm1, status);
+	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1, status);
 	if (!csc)
 		return NULL;
 	return csc->lookupCollation(tdbb, parm1);
@@ -1376,15 +1375,13 @@ void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
  *      set's defined space character.
  *
  **************************************/
-	USHORT charset;
-
 	SET_TDBB(tdbb);
 
 	fb_assert(type != NULL);
 	fb_assert(IS_TEXT(type));
 	fb_assert(string != NULL);
 
-	charset = INTL_charset(tdbb, type->dsc_ttype, NULL);
+	const USHORT charset = INTL_charset(tdbb, type->dsc_ttype, NULL);
 	pad_spaces(tdbb, charset, string, length);
 }
 
@@ -1408,13 +1405,10 @@ USHORT INTL_string_to_key(TDBB tdbb,
  *      Return the length of the resulting byte string.
  *
  **************************************/
-	USHORT outlen;
-	UCHAR buffer[MAX_KEY];
 	UCHAR pad_char;
 	SSHORT ttype;
 
 	SET_TDBB(tdbb);
-
 
 	fb_assert(idxType >= idx_first_intl_string || idxType == idx_string
 		   || idxType == idx_byte_array || idxType == idx_metadata);
@@ -1445,12 +1439,14 @@ USHORT INTL_string_to_key(TDBB tdbb,
 
 /* Make a string into the proper type of text */
 
+	UCHAR buffer[MAX_KEY];
 	const char* src;
 	USHORT len =
 		CVT_make_string(pString, ttype, &src,
 						reinterpret_cast<vary*>(buffer), sizeof(buffer),
 						ERR_post);
 
+	USHORT outlen;
 	char* dest = reinterpret_cast<char*>(pByte->dsc_address);
 	switch (ttype) {
 	case ttype_metadata:
@@ -1494,19 +1490,20 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
  *      Given an input string, convert it to uppercase 
  *
  **************************************/
-	UCHAR *src, *dest;
-	UCHAR buffer[MAX_KEY];
-	USHORT ttype;
-
 	SET_TDBB(tdbb);
 
 	fb_assert(pString != NULL);
 	fb_assert(pString->dsc_address != NULL);
 
+	UCHAR* src;
+	UCHAR buffer[MAX_KEY];
+	USHORT ttype;
 	USHORT len =
 		CVT_get_string_ptr(pString, &ttype, &src,
 						   reinterpret_cast<vary*>(buffer),
 						   sizeof(buffer), ERR_post);
+
+	UCHAR* dest;
 	switch (ttype) {
 	case ttype_binary:
 		/* cannot uppercase binary strings */
@@ -1627,9 +1624,9 @@ static bool all_spaces(
 	}
 }
 
-static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte count */
-					   UCHAR * pNarrow, USHORT nNarrow,	/* byte count */
-					   SSHORT * err_code, USHORT * err_position)
+static USHORT nc_to_wc(TEXTTYPE obj, UCS2_CHAR* pWide, USHORT nWide,	/* byte count */
+					   const UCHAR* pNarrow, USHORT nNarrow,	/* byte count */
+					   SSHORT* err_code, USHORT* err_position)
 {
 /**************************************
  *
@@ -1641,9 +1638,6 @@ static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte c
  *   Copies narrow chars buffer into wide chars buffer for charset NONE
  *
  **************************************/
-	UCS2_CHAR *pStart;
-	UCHAR *pNarrowStart;
-
 	fb_assert(obj != NULL);
 	fb_assert((pNarrow != NULL) || (pWide == NULL));
 	fb_assert(err_code != NULL);
@@ -1652,11 +1646,11 @@ static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte c
 	*err_code = 0;
 	if (pWide == NULL)
 		return (sizeof(UCS2_CHAR) * nNarrow);	/* all cases */
-	pStart = pWide;
-	pNarrowStart = pNarrow;
+	const UCS2_CHAR* const pStart = pWide;
+	const UCHAR* const pNarrowStart = pNarrow;
 	while (nWide-- > 1 && nNarrow) {
 		/* YYY - Byte order issues here */
-		*pWide++ = (UCS2_CHAR) * pNarrow++;
+		*pWide++ = (UCS2_CHAR) *pNarrow++;
 		nWide--;
 		nNarrow--;
 	}
@@ -1668,9 +1662,9 @@ static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte c
 	return ((pWide - pStart) * sizeof(*pWide));
 }
 
-static USHORT wc_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte count */
-					   UCS2_CHAR * pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT * err_code, USHORT * err_position)
+static USHORT wc_to_wc(TEXTTYPE obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
+					   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
+					   SSHORT* err_code, USHORT* err_position)
 {
 /**************************************
  *
@@ -1681,9 +1675,6 @@ static USHORT wc_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
  * Functional description
  *
  *************************************/
-	UCS2_CHAR *pStart;
-	UCS2_CHAR *pStart_src;
-
 	fb_assert(obj != NULL);
 	fb_assert((pSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
@@ -1693,8 +1684,8 @@ static USHORT wc_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
 
-	pStart = pDest;
-	pStart_src = pSrc;
+	const UCS2_CHAR* const pStart = pDest;
+	const UCS2_CHAR* const pStart_src = pSrc;
 	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc++;
 		nDest -= 2;
@@ -1708,7 +1699,7 @@ static USHORT wc_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
+static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE* ptr, USHORT len)
 {								/* byte count */
 /**************************************
  *
@@ -1720,9 +1711,6 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
  *      Pad a buffer with the character set defined space character.
  *      
  **************************************/
-	BYTE *end;
-	const unsigned char *space, *end_space;
-
 	SET_TDBB(tdbb);
 
 	fb_assert(ptr != NULL);
@@ -1733,14 +1721,14 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 
 /* Single-octet character sets are optimized here */
 	if (obj.getSpaceLength() == 1) {
-		end = &ptr[len];
+		const BYTE* const end = &ptr[len];
 		while (ptr < end)
 			*ptr++ = *obj.getSpace();
 	}
 	else {
-		end = &ptr[len];
-		space = obj.getSpace();
-		end_space = &space[obj.getSpaceLength()];
+		const BYTE* const end = &ptr[len];
+		const UCHAR* space = obj.getSpace();
+		const UCHAR* const end_space = &space[obj.getSpaceLength()];
 		while (ptr < end) {
 			space = obj.getSpace();
 			while (ptr < end && space < end_space) {

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		rse_proto.h
- *	DESCRIPTION:	Prototype header file for rse.c
+ *	DESCRIPTION:	Prototype header file for rse.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,22 +27,23 @@
 #include "../jrd/jrd.h"
 #include "../jrd/rse.h"
 
-void RSE_close(TDBB, class Rsb *);
+class Rsb;
+
+void RSE_close(TDBB, Rsb*);
 #ifdef PC_ENGINE
-BOOLEAN RSE_find_dbkey(TDBB, class Rsb *, struct jrd_nod *, struct jrd_nod *);
-BOOLEAN RSE_find_record(TDBB, class Rsb *, USHORT, USHORT,
+bool RSE_find_dbkey(TDBB, Rsb*, struct jrd_nod *, struct jrd_nod *);
+bool RSE_find_record(TDBB, Rsb*, USHORT, USHORT,
 							   struct jrd_nod *);
 #endif
-BOOLEAN RSE_get_record(TDBB, class Rsb *, enum rse_get_mode);
+BOOLEAN RSE_get_record(TDBB, Rsb*, enum rse_get_mode);
 #ifdef PC_ENGINE
-struct bkm *RSE_get_bookmark(TDBB, class Rsb *);
-void RSE_mark_crack(TDBB, class Rsb *, USHORT);
+struct bkm *RSE_get_bookmark(TDBB, Rsb*);
+void RSE_mark_crack(TDBB, Rsb*, USHORT);
 #endif
-void RSE_open(TDBB, class Rsb *);
+void RSE_open(TDBB, Rsb*);
 #ifdef PC_ENGINE
-BOOLEAN RSE_reset_position(TDBB, class Rsb *, struct rpb *);
-BOOLEAN RSE_set_bookmark(TDBB, class Rsb *, struct rpb *,
-								struct bkm *);
+bool RSE_reset_position(TDBB, Rsb*, struct rpb*);
+bool RSE_set_bookmark(TDBB, Rsb*, struct rpb*, struct bkm*);
 #endif
 
 #ifdef PC_ENGINE

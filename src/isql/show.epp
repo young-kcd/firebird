@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.34 2004-02-02 11:01:29 robocop Exp $
+ * $Id: show.epp,v 1.35 2004-03-07 07:58:37 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -538,7 +538,7 @@ processing_state SHOW_grants2 (SCHAR* object,
 	if (!*object)
 		return ERR;
 
-/* Query against user_privileges instead of looking at rdb$security_classes*/
+// Query against user_privileges instead of looking at rdb$security_classes
 
 	prev_option = -1;
 	prev_user[0] = '\0';
@@ -1540,7 +1540,7 @@ static void show_charsets(const SCHAR* relation_name,
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 
 // If there is a relation_name, this is a real column, look up collation
-/* in rdb$relation_fields */
+// in rdb$relation_fields 
 
 	if (!V33 && relation_name) {
 	    FOR RRF IN RDB$RELATION_FIELDS CROSS
@@ -3210,7 +3210,7 @@ static processing_state show_table(const SCHAR* relation_name)
 			continue;
 		}
 
-	    /* The null flag is either 1 or null (for nullable) */
+	    // The null flag is either 1 or null (for nullable) 
 
 	    if (V4)
 		{

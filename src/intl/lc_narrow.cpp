@@ -300,14 +300,13 @@ typedef struct coltab_status {
 
 
 
-static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+static SSHORT special_scan(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
 {
 	SortOrderTblEntry* col1;
 	SortOrderTblEntry* col2;
-	USHORT index1, index2;
 
-	index1 = 0;
-	index2 = 0;
+	USHORT index1 = 0;
+	USHORT index2 = 0;
 
 	while (1) {
 		/* Scan to find ignore char from l1 */
@@ -355,7 +354,7 @@ static SSHORT special_scan(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s
 }
 
 
-SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT stat)
+SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p, USHORT *l, COLSTAT stat)
 {
 	SortOrderTblEntry* col;
 
@@ -432,7 +431,7 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT 
 
 #define XOR	^					/* C bitwise XOR operator - defined for readability */
 
-SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
+SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
 {
 	SortOrderTblEntry* col1;
 	SortOrderTblEntry* col2;
@@ -441,14 +440,12 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 	SSHORT save_tertiary = 0;
 	SSHORT save_quandary = 0;
 	USHORT save_l1, save_l2;
-	BYTE *save_s1, *save_s2;
-	BYTE *p;
 
 	stat1.stat_flags = 0;
 	stat2.stat_flags = 0;
 
 /* Start at EOS, scan backwards to find non-space */
-	p = s1 + l1 - 1;
+	const BYTE* p = s1 + l1 - 1;
 	while ((p >= s1) && (*p == ASCII_SPACE))
 		p--;
 	l1 = (p - s1 + 1);
@@ -460,8 +457,8 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 
 	save_l1 = l1;
 	save_l2 = l2;
-	save_s1 = s1;
-	save_s2 = s2;
+	const BYTE* save_s1 = s1;
+	const BYTE* save_s2 = s2;
 
 	while (1) {
 		col1 = get_coltab_entry(obj, &s1, &l1, &stat1);
@@ -509,8 +506,10 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 			((stat1.stat_flags & HAVE_SPECIAL)
 			 || (stat2.stat_flags & HAVE_SPECIAL))
 			&& !(obj->
-				 texttype_flags & TEXTTYPE_ignore_specials)) return
-				special_scan(obj, save_l1, save_s1, save_l2, save_s2);
+				 texttype_flags & TEXTTYPE_ignore_specials))
+		{
+			return special_scan(obj, save_l1, save_s1, save_l2, save_s2);
+		}
 		return 0;
 	}
 
@@ -532,19 +531,15 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYT
 {
 	BYTE key1[LANGFAM2_MAX_KEY];
 	BYTE key2[LANGFAM2_MAX_KEY];
-	USHORT len1;
-	USHORT len2;
-	USHORT len;
-	USHORT i;
 
 	fb_assert(obj != NULL);
 	fb_assert(s1 != NULL);
 	fb_assert(s2 != NULL);
 
-	len1 = LC_NARROW_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
-	len2 = LC_NARROW_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
-	len = MIN(len1, len2);
-	for (i = 0; i < len; i++) {
+	const USHORT len1 = LC_NARROW_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
+	const USHORT len2 = LC_NARROW_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
+	const USHORT len = MIN(len1, len2);
+	for (USHORT i = 0; i < len; i++) {
 		if (key1[i] == key2[i])
 			continue;
 		else if (key1[i] < key2[i])

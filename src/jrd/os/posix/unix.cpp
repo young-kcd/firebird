@@ -123,7 +123,7 @@
 
 static void close_marker_file(TEXT *);
 static jrd_file* seek_file(jrd_file*, BDB, UINT64 *, ISC_STATUS *);
-static jrd_file* setup_file(DBB, const TEXT*, USHORT, int);
+static jrd_file* setup_file(Database*, const TEXT*, USHORT, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
@@ -143,7 +143,7 @@ union fcntlun {
 #endif
 
 
-int PIO_add_file(DBB dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -240,7 +240,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 }
 
 
-jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -397,7 +397,7 @@ void PIO_force_write(jrd_file* file, bool flag)
 }
 
 
-void PIO_header(DBB dbb, SCHAR * address, int length)
+void PIO_header(Database* dbb, SCHAR * address, int length)
 {
 /**************************************
  *
@@ -488,7 +488,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 }
 
 
-SLONG PIO_max_alloc(DBB dbb)
+SLONG PIO_max_alloc(Database* dbb)
 {
 /**************************************
  *
@@ -532,7 +532,7 @@ length = statistics.st_blocks * statistics.st_blksize;
 }
 
 
-SLONG PIO_act_alloc(DBB dbb)
+SLONG PIO_act_alloc(Database* dbb)
 {
 /**************************************
  *
@@ -574,7 +574,7 @@ SLONG PIO_act_alloc(DBB dbb)
 }
 
 
-jrd_file* PIO_open(DBB dbb,
+jrd_file* PIO_open(Database* dbb,
 			 const TEXT* string,
 			 SSHORT length,
 			 bool trace_flag,
@@ -640,7 +640,7 @@ jrd_file* PIO_open(DBB dbb,
 					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
 		else {
-			/* If this is the primary file, set DBB flag to indicate that it is
+			/* If this is the primary file, set Database flag to indicate that it is
 			 * being opened ReadOnly. This flag will be used later to compare with
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
@@ -698,7 +698,7 @@ bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	if (file->fil_desc == -1)
 		return unix_error("read", file, isc_io_read_err, status_vector);
 
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	const UINT64 size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
@@ -792,7 +792,7 @@ bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	const SLONG size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
@@ -909,7 +909,7 @@ static jrd_file* seek_file(jrd_file* file, BDB bdb, UINT64* offset,
  **************************************/
     UINT64 lseek_offset;
 
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next)
@@ -956,7 +956,7 @@ static jrd_file* seek_file(jrd_file* file, BDB bdb, UINT64* offset,
 }
 
 
-static jrd_file* setup_file(DBB dbb, const TEXT* file_name, USHORT file_length,
+static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_length,
 	int desc)
 {
 /**************************************
@@ -1030,7 +1030,7 @@ static jrd_file* setup_file(DBB dbb, const TEXT* file_name, USHORT file_length,
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
 			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[MIN_PAGE_SIZE*2];
+			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
 			try {

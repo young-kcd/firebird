@@ -141,7 +141,7 @@ void DYN_define_cache( GBL gbl, const UCHAR** ptr)
 	SSHORT id = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	request = NULL;
 
 	try {
@@ -237,7 +237,7 @@ void DYN_define_constraint(GBL		gbl,
  *
  **************************************/
 	BLK request;
-	SSHORT id, old_id;
+	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier constraint_name, index_name, referred_index_name;
 	SqlIdentifier null_field_name, trigger_name;
@@ -248,7 +248,7 @@ void DYN_define_constraint(GBL		gbl,
 	UCHAR ri_action = 0;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	constraint_name[0] = 0;
 	GET_STRING(ptr, constraint_name);
@@ -521,7 +521,7 @@ void DYN_define_constraint(GBL		gbl,
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REF IN RDB$REF_CONSTRAINTS
 				old_request = request;
-			old_id = id;
+			const SSHORT old_id = id;
 			request =
 				CMP_find_request(tdbb, drq_l_intg_con, DYN_REQUESTS);
 			id = drq_l_intg_con;
@@ -638,7 +638,7 @@ void DYN_define_dimension(GBL		gbl,
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
 	BLK request;
@@ -722,7 +722,7 @@ void DYN_define_exception( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier exception_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	exception_name[0] = 0;
 	GET_STRING(ptr, exception_name);
@@ -801,7 +801,7 @@ void DYN_define_file(GBL		gbl,
 	SSHORT id;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
 
@@ -906,7 +906,7 @@ void DYN_define_difference(GBL		gbl,
 	SSHORT id = -1;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	request = NULL;
 
 	try {
@@ -989,7 +989,7 @@ void DYN_define_filter( GBL gbl, const UCHAR** ptr)
 	BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	filter_name[0] = 0;
 	GET_STRING(ptr, filter_name);
@@ -1084,7 +1084,7 @@ void DYN_define_function( GBL gbl, const UCHAR** ptr)
 	BLK request;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	function_name[0] = 0;
 	GET_STRING(ptr, function_name);
@@ -1183,7 +1183,7 @@ void DYN_define_function_arg(GBL gbl, const UCHAR** ptr, TEXT* function_name)
 	BLK request = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1308,7 +1308,7 @@ void DYN_define_generator( GBL gbl, const UCHAR** ptr)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request;
 	SqlIdentifier generator_name;
@@ -1375,7 +1375,7 @@ void DYN_define_global_field(GBL		gbl,
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
 	SqlIdentifier global_field_name;
@@ -1647,7 +1647,7 @@ void DYN_define_index(GBL		gbl,
 	}
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	index_name[0] = 0;
 	GET_STRING(ptr, index_name);
@@ -2194,7 +2194,7 @@ void DYN_define_local_field(GBL		gbl,
  *
  **************************************/
 	BLK request;
-	SSHORT id, old_id;
+	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier local_field_name;
 	USHORT dtype, length,
@@ -2205,7 +2205,7 @@ void DYN_define_local_field(GBL		gbl,
 	SLONG fld_pos;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	local_field_name[0] = 0;
 	GET_STRING(ptr, local_field_name);
@@ -2408,7 +2408,7 @@ void DYN_define_local_field(GBL		gbl,
 
 		if (blr) {
 			BLK old_request = request;
-			old_id = id;
+			const SSHORT old_id = id;
 			request = CMP_find_request(tdbb, drq_s_gfields2, DYN_REQUESTS);
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2518,7 +2518,7 @@ void DYN_define_log_file(
 	STR db_filename;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
 	id = -1;
@@ -2656,7 +2656,7 @@ void DYN_define_parameter( GBL gbl, const UCHAR** ptr, TEXT* procedure_name)
 	const UCHAR* default_source_ptr = NULL;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	parameter_name[0] = 0;
 	GET_STRING(ptr, parameter_name);
@@ -2901,7 +2901,7 @@ void DYN_define_procedure( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier owner_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	procedure_name[0] = 0;
 	GET_STRING(ptr, procedure_name);
@@ -3054,12 +3054,12 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 	BLK request;
 	UCHAR verb;
 	USHORT sql_prot, is_a_view, priv;
-	SSHORT id, old_id;
+	SSHORT id;
 	ISC_STATUS *s;
 	SqlIdentifier relation_name, owner_name, field_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	sql_prot = is_a_view = FALSE;
 
@@ -3163,7 +3163,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 
 			if (is_a_view) {
 				BLK old_request = request;
-				old_id = id;
+				const SSHORT old_id = id;
 				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
 				id = drq_l_view_rels;
 
@@ -3282,7 +3282,7 @@ void DYN_define_role( GBL gbl, const UCHAR** ptr)
 	SqlIdentifier dummy_name, owner_name, role_name;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -3398,7 +3398,7 @@ void DYN_define_security_class( GBL gbl, const UCHAR** ptr)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request;
 	UCHAR verb;
@@ -3470,14 +3470,14 @@ void DYN_define_sql_field(GBL		gbl,
  *
  **************************************/
 	BLK request;
-	SSHORT id, old_id;
+	SSHORT id;
 	UCHAR verb;
 	SqlIdentifier sql_field_name;
 	USHORT dtype;
 	SLONG fld_pos;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	sql_field_name[0] = 0;
 	GET_STRING(ptr, sql_field_name);
@@ -3519,7 +3519,7 @@ void DYN_define_sql_field(GBL		gbl,
 		RFR.RDB$COLLATION_ID.NULL = TRUE;
 
 		old_request = request;
-		old_id = id;
+		const SSHORT old_id = id;
 		request = CMP_find_request(tdbb, drq_s_sql_gfld, DYN_REQUESTS);
 		id = drq_s_sql_gfld;
 
@@ -3756,7 +3756,7 @@ void DYN_define_shadow( GBL gbl, const UCHAR** ptr)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
 	BLK request;
@@ -3834,7 +3834,7 @@ void DYN_define_trigger(GBL		gbl,
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request;
 	UCHAR	verb;
@@ -4001,7 +4001,7 @@ void DYN_define_trigger_msg(GBL gbl, const UCHAR** ptr, const TEXT* trigger_name
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request;
 	UCHAR verb;
@@ -4077,7 +4077,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request;
 	UCHAR verb;
@@ -4102,7 +4102,7 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
  * but implementation was definitely wrong,
  * so it's commented our till the better times
  *
-		SSHORT old_id = id;
+		const SSHORT old_id = id;
 		BLK old_request = request;
 
 		request = CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
@@ -4120,7 +4120,8 @@ void DYN_define_view_relation( GBL gbl, const UCHAR** ptr, const TEXT* view)
 		if (!DYN_REQUEST(drq_e_view_rels))
 			DYN_REQUEST(drq_e_view_rels) = request;
 
-		request = old_request, id = old_id;	
+		request = old_request;
+		id = old_id;
 */
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS 
@@ -4198,7 +4199,7 @@ static void check_unique_name(	TDBB	tdbb,
 	bool found = false;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
 
@@ -4276,7 +4277,7 @@ static bool find_field_source(TDBB	tdbb,
 	BLK request;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
 
@@ -4377,7 +4378,7 @@ bool is_it_user_name(GBL gbl, const TEXT* role_name, TDBB tdbb)
 	USHORT request_id;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	bool found = false;
 
 	try {

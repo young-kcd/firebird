@@ -41,13 +41,13 @@ static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
 	cache->texttype_character_set	= charset;
 	cache->texttype_country			= country;
 	cache->texttype_bytes_per_char	= 2;
-	cache->texttype_fn_init			= (FPTR_SHORT) name;
-	cache->texttype_fn_key_length	= (FPTR_SHORT) famasc_key_length;
-	cache->texttype_fn_string_to_key= (FPTR_SHORT) famasc_string_to_key;
-	cache->texttype_fn_compare		= (FPTR_short) famasc_compare;
-	cache->texttype_fn_to_upper		= (FPTR_SHORT) big5_to_upper;
-	cache->texttype_fn_to_lower		= (FPTR_SHORT) big5_to_lower;
-	cache->texttype_fn_str_to_upper	= (FPTR_short) big5_str_to_upper;
+	cache->texttype_fn_init			= name;
+	cache->texttype_fn_key_length	= famasc_key_length;
+	cache->texttype_fn_string_to_key= famasc_string_to_key;
+	cache->texttype_fn_compare		= famasc_compare;
+	cache->texttype_fn_to_upper		= reinterpret_cast<pfn_INTL_ch_case>(big5_to_upper);
+	cache->texttype_fn_to_lower		= reinterpret_cast<pfn_INTL_ch_case>(big5_to_lower);
+	cache->texttype_fn_str_to_upper	= big5_str_to_upper;
 	cache->texttype_collation_table = NULL;
 	cache->texttype_toupper_table	= NULL;
 	cache->texttype_tolower_table	= NULL;
@@ -63,8 +63,8 @@ TEXTTYPE_ENTRY(BIG5_init)
 	static const ASCII POSIX[] = "C.BIG5";
 
 	FAMILY_MULTIBYTE(cache, 500, BIG5_init, CS_BIG5, CC_C, POSIX);
-	cache->texttype_fn_to_wc = (FPTR_SHORT) CVBIG5_big5_byte2short;
-	cache->texttype_fn_mbtowc = (FPTR_short) CVBIG5_big5_mbtowc;
+	cache->texttype_fn_to_wc = CVBIG5_big5_byte2short;
+	cache->texttype_fn_mbtowc = CVBIG5_big5_mbtowc;
 
 	TEXTTYPE_RETURN;
 }

@@ -141,3 +141,4 @@
 #define INTL_CS_COLL_TO_TTYPE(cs,coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
 
 #endif /* JRD_INTL_H */
+

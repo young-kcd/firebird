@@ -58,7 +58,7 @@ gds__completion_ast();
 
 static bool extend_file(jrd_file*, ISC_STATUS *);
 static jrd_file* seek_file(jrd_file*, BDB, int *);
-static jrd_file* setup_file(DBB, const TEXT*, USHORT, USHORT, struct NAM*);
+static jrd_file* setup_file(Database*, const TEXT*, USHORT, USHORT, struct NAM*);
 static void setup_trace(jrd_file*, SSHORT);
 static void trace_event(jrd_file*, SSHORT, SCHAR *, SSHORT);
 static bool vms_io_error(ISC_STATUS*, TEXT*, ISC_STATUS, int, jrd_file*);
@@ -113,7 +113,7 @@ typedef struct fab$ {
 } FAT$;
 
 
-int PIO_add_file(DBB dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
 {
 /**************************************
  *
@@ -201,7 +201,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 
 
 // Last param is ignored for now!
-jrd_file* PIO_create(DBB dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool overwrite)
 {
 /**************************************
  *
@@ -324,7 +324,7 @@ void PIO_force_write(jrd_file* file, bool flag)
 }
 
 
-void PIO_header(DBB dbb, SCHAR * address, int length)
+void PIO_header(Database* dbb, SCHAR * address, int length)
 {
 /**************************************
  *
@@ -398,7 +398,7 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 }
 
 
-SLONG PIO_max_alloc(DBB dbb)
+SLONG PIO_max_alloc(Database* dbb)
 {
 /**************************************
  *
@@ -465,7 +465,7 @@ SLONG PIO_max_alloc(DBB dbb)
 
 
 
-jrd_file* PIO_open(DBB dbb,
+jrd_file* PIO_open(Database* dbb,
 			 const TEXT* string,
 			 SSHORT length,
 			 bool trace_flag,
@@ -541,7 +541,7 @@ bool PIO_read(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	SSHORT iosb[4];
 	int status, block;
 
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	file = seek_file(file, bdb, &block);
 
 #ifdef ISC_DATABASE_ENCRYPTION
@@ -610,7 +610,7 @@ bool PIO_write(jrd_file* file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	SSHORT iosb[4];
 	int status, block;
 
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	file = seek_file(file, bdb, &block);
 
 	for (;;) {
@@ -773,7 +773,7 @@ static jrd_file* seek_file(jrd_file* file, BDB bdb, int *block)
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	DBB dbb = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next)
@@ -791,7 +791,7 @@ static jrd_file* seek_file(jrd_file* file, BDB bdb, int *block)
 }
 
 
-static jrd_file* setup_file(DBB dbb,
+static jrd_file* setup_file(Database* dbb,
 					  const TEXT* file_name,
 					  USHORT file_length, USHORT chan, struct NAM* nam)
 {

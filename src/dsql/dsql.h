@@ -294,7 +294,7 @@ enum FUN_T
 	FUN_scalar_array
 };
 
-/* udf_flags bits */
+// udf_flags bits 
 
 enum udf_flags_vals {
 	UDF_new_udf		= 1, //!< udf is newly declared, not committed yet

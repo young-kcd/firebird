@@ -372,7 +372,6 @@ DSC *RNG_begin(jrd_nod* node, VLU impure)
  *
  **************************************/
 	TDBB tdbb;
-	DBB dbb;
 	jrd_req* request;
 	jrd_tra* transaction;
 	DSC desc, *desc2;
@@ -383,7 +382,7 @@ DSC *RNG_begin(jrd_nod* node, VLU impure)
 
 	tdbb = GET_THREAD_DATA;
 	request = tdbb->tdbb_request;
-	dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	transaction = request->req_transaction;
 
 /* check to make sure the range number is not already in use */
@@ -677,9 +676,8 @@ void RNG_release_ranges(jrd_req* request)
 	VEC refresh_ranges;
 	RNG refresh_range;
 	USHORT range_number;
-	DBB dbb;
 
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	if (refresh_ranges = request->req_refresh_ranges)
 		for (range_number = 0; range_number < refresh_ranges->vec_count;
@@ -769,13 +767,12 @@ static void delete_range(RNG refresh_range)
  *
  **************************************/
 	TDBB tdbb;
-	DBB dbb;
 	jrd_req* request;
 	VEC refresh_ranges;
 	RNG *ptr;
 
 	tdbb = GET_THREAD_DATA;
-	dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	request = tdbb->tdbb_request;
 
 /* remove from the vector of refresh ranges for the request */
@@ -808,11 +805,10 @@ static void post_event(RNG refresh_range)
  *	refresh range.
  *
  **************************************/
-	DBB dbb;
 	lck* dbb_lock;
 	ISC_STATUS_ARRAY status;
 
-	dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	dbb_lock = dbb->dbb_lock;
 
 /* detect duplicate posts and filter them out */

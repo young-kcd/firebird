@@ -104,7 +104,7 @@ PAG DPM_allocate(TDBB tdbb, WIN* window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -134,7 +134,7 @@ void DPM_backout( TDBB tdbb, RPB * rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -211,7 +211,7 @@ int DPM_chain( TDBB tdbb, RPB * org_rpb, RPB * new_rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -410,7 +410,7 @@ int DPM_compress( TDBB tdbb, data_page* page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -462,7 +462,7 @@ void DPM_create_relation( TDBB tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -598,7 +598,7 @@ void DPM_delete( TDBB tdbb, RPB * rpb, SLONG prior_page)
 	jrd_rel* relation;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -780,7 +780,7 @@ void DPM_delete_relation( TDBB tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	WIN window(-1), data_window(-1);
 	window.win_flags = data_window.win_flags = WIN_large_scan;
 	window.win_scans = data_window.win_scans = 1;
@@ -1059,7 +1059,7 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
  *      The resulting value is the result of the function.
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1192,7 +1192,7 @@ int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1266,7 +1266,7 @@ ULONG DPM_get_blob(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	
 	RPB rpb;
@@ -1424,7 +1424,7 @@ bool DPM_next(TDBB tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1639,7 +1639,7 @@ void DPM_pages(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
@@ -1687,7 +1687,7 @@ SLONG DPM_prefetch_bitmap(TDBB tdbb, jrd_rel* relation, SBM bitmap, SLONG number
 		return number;
 	}
 
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	WIN window(-1);
 	SLONG pages[PREFETCH_MAX_PAGES];
 
@@ -1741,7 +1741,7 @@ void DPM_scan_pages( TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -1822,7 +1822,7 @@ void DPM_store( TDBB tdbb, RPB * rpb, LLS * stack, USHORT type)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1906,7 +1906,7 @@ SLONG DPM_store_blob(TDBB tdbb, blb* blob, REC record)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	RPB rpb;
@@ -2004,7 +2004,7 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2054,7 +2054,7 @@ void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2300,7 +2300,7 @@ static void fragment(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2465,7 +2465,7 @@ static void extend_relation( TDBB tdbb, jrd_rel* relation, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	WIN pp_window(-1), new_pp_window(-1);
 
@@ -2628,7 +2628,7 @@ static UCHAR* find_space(TDBB	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const SSHORT aligned_size = ROUNDUP(size, ODS_ALIGNMENT);
@@ -2836,7 +2836,7 @@ static RHD locate_space(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	jrd_rel* relation = rpb->rpb_relation;
@@ -2946,7 +2946,7 @@ static void mark_full( TDBB tdbb, RPB * rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	WIN pp_window(-1);
 
@@ -3072,7 +3072,7 @@ static void store_big_record(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG

@@ -24,7 +24,7 @@
 #ifndef JRD_PAG_PROTO_H
 #define JRD_PAG_PROTO_H
 
-class dbb;
+class Database;
 
 void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
 USHORT	PAG_add_file(const TEXT*, SLONG);
@@ -42,10 +42,10 @@ void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);
 void	PAG_release_page(SLONG, SLONG);
-void	PAG_set_force_write(dbb*, SSHORT);
-void	PAG_set_no_reserve(dbb*, USHORT);
-void	PAG_set_db_readonly(dbb*, bool);
-void	PAG_set_db_SQL_dialect(dbb*, SSHORT);
+void	PAG_set_force_write(Database*, SSHORT);
+void	PAG_set_no_reserve(Database*, USHORT);
+void	PAG_set_db_readonly(Database*, bool);
+void	PAG_set_db_SQL_dialect(Database*, SSHORT);
 void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
 int		PAG_unlicensed(void);

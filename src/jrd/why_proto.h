@@ -271,7 +271,7 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FRBRD**);
 typedef void TransactionCleanupRoutine(FRBRD*, void*);
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FRBRD**,
 												   TransactionCleanupRoutine*, void*);
-void WHY_cleanup_transaction(FRBRD * transaction);
+void WHY_cleanup_transaction(FRBRD* transaction);
 
 #ifdef SERVER_SHUTDOWN
 BOOLEAN WHY_set_shutdown(BOOLEAN);

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.24 2004-01-21 07:16:17 skidder Exp $
+ * $Id: extract.epp,v 1.25 2004-03-07 07:58:36 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -551,7 +551,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 				char_sets[0] = '\0';
 
-				/* Override rdb$fields id with relation_fields if present */
+				// Override rdb$fields id with relation_fields if present 
 
 				collation = 0;
 				if (!RFR.RDB$COLLATION_ID.NULL)
@@ -748,8 +748,8 @@ static void get_procedure_args(char* proc_name)
    FSG 18.Nov.2000
 */
 
-		/*  Parameter types 0 = input  */
-		/*  Parameter types 1 = return */
+		//  Parameter types 0 = input  
+		//  Parameter types 1 = return 
 
 		for (SSHORT ptype = 0; ptype < 2; ptype++)
 		{
@@ -1199,7 +1199,7 @@ static void list_all_procs()
 	ON_ERROR
 		ISQL_msg_get(GEN_ERR, msg, (TEXT*) (IPTR) isc_sqlcode(gds_status), NULL,
 					 NULL, NULL, NULL);
-		STDERROUT(msg, 1);			/* Statement failed, SQLCODE = %d\n\n */
+		STDERROUT(msg, 1);			// Statement failed, SQLCODE = %d\n\n 
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
@@ -2582,7 +2582,7 @@ static void list_functions()
 					else
 						sprintf (type_buffer, "%s",
 								 Column_types[i].type_name);
-				} /* if !precision_known */
+				} // if !precision_known 
 			} // if FCHAR or VARCHAR or CSTRING ... else 
 
 			// If a return argument, save it for the end, otherwise print 

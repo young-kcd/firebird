@@ -23,8 +23,8 @@
  * Contributor(s): ______________________________________.
  */
  
-#ifndef ARRAY_H
-#define ARRAY_H
+#ifndef CLASSES_ARRAY_H
+#define CLASSES_ARRAY_H
 
 #include "../jrd/gdsassert.h"
 #include <string.h>
@@ -218,5 +218,5 @@ public:
 
 }	// Firebird
 
-#endif
+#endif // CLASSES_ARRAY_H
 

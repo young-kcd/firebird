@@ -24,12 +24,12 @@
 #ifndef JRD_SHUT_PROTO_H
 #define JRD_SHUT_PROTO_H
 
-class dbb;
+class Database;
 
-bool		SHUT_blocking_ast(dbb*);
-bool        SHUT_online(dbb*, SSHORT);
-bool		SHUT_database(dbb*, SSHORT, SSHORT);
-bool		SHUT_init(dbb*);
+bool		SHUT_blocking_ast(Database*);
+bool		SHUT_database(Database*, SSHORT, SSHORT);
+bool		SHUT_init(Database*);
+bool        SHUT_online(Database*, SSHORT);
 
 #endif // JRD_SHUT_PROTO_H
 

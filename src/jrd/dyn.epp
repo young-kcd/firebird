@@ -109,7 +109,7 @@ void DYN_ddl(att* attachment, jrd_tra* transaction, USHORT length,
 	TDBB tdbb = GET_THREAD_DATA;
 
 #if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 #endif
 
 	const UCHAR* ptr = ddl;
@@ -302,7 +302,7 @@ bool DYN_is_it_sql_role(GBL		gbl,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -767,7 +767,7 @@ void DYN_rundown_request(BLK handle, SSHORT id)
  **************************************/
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database*  dbb  = tdbb->tdbb_database;
 
 #pragma FB_COMPILER_MESSAGE("TMN: FIXME! We do not have a jmp_buf anymore!")
 
@@ -829,7 +829,7 @@ static void grant( GBL gbl, const UCHAR** ptr)
 	TEXT* ptr2;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB  dbb  = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1162,7 +1162,7 @@ static bool grantor_can_grant(	GBL		gbl,
 	USHORT err_num;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 /* Verify that the input relation exists. */
 
@@ -1446,7 +1446,7 @@ static bool grantor_can_grant_role(	TDBB	tdbb,
 	SqlIdentifier owner;
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
 		return true;
@@ -1548,7 +1548,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
     TEXT* ptr1;
 
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1676,12 +1676,11 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 			DYN_unsupported_verb();
 		}
 
-	USHORT old_id, id;
 
 	BLK request = CMP_find_request(tdbb,
 						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
 						DYN_REQUESTS);
-	id = field[0] ? drq_e_grant1 : drq_e_grant2;
+	USHORT id = field[0] ? drq_e_grant1 : drq_e_grant2;
 
 	try {
 
@@ -1754,7 +1753,7 @@ static void revoke_permission(GBL gbl, const UCHAR** ptr)
 			 * field can be updated.
 			 */
 
-			old_id = id;
+			const USHORT old_id = id;
 			id = drq_s_grant;
 
 			store_privilege(gbl, object, user, field, pr, user_type, obj_type,
@@ -1805,7 +1804,7 @@ static void set_field_class_name(GBL gbl, const TEXT* relation, const TEXT* fiel
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 	BLK request2 = NULL;
@@ -1869,7 +1868,7 @@ static void store_privilege(GBL		gbl,
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	BLK request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 

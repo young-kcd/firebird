@@ -115,7 +115,7 @@ namespace Firebird
 		inline ObjectsArray(MemoryPool* p) : 
 			HalfStaticArray<T*, InlineCapacity>(p) {}
 		~ObjectsArray() {
-			for (int i=0; i<getCount(); i++) {
+			for (int i = 0; i < getCount(); i++) {
 				delete getPointer(i);
 			}
 		}

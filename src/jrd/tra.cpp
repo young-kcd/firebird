@@ -109,7 +109,7 @@ static SLONG inventory_page(TDBB, SLONG);
 static SSHORT limbo_transaction(TDBB, SLONG);
 static void restart_requests(TDBB, jrd_tra*);
 #ifdef SWEEP_THREAD
-static BOOLEAN start_sweeper(TDBB, DBB);
+static BOOLEAN start_sweeper(TDBB, Database*);
 static void THREAD_ROUTINE sweep_database(char*);
 #endif
 static void transaction_options(TDBB, jrd_tra*, const UCHAR*, USHORT);
@@ -124,7 +124,7 @@ static const UCHAR sweep_tpb[] =
 };
 
 
-bool TRA_active_transactions(TDBB tdbb, DBB dbb)
+bool TRA_active_transactions(TDBB tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -220,7 +220,7 @@ void TRA_cleanup(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Return without cleaning up the TIP's for a ReadOnly database */
@@ -432,7 +432,7 @@ void TRA_extend_tip(TDBB tdbb, ULONG sequence, WIN * precedence_window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Start by fetching prior transaction page, if any */
@@ -487,7 +487,7 @@ int TRA_fetch_state(TDBB tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* locate and fetch the proper TIP page */
@@ -527,7 +527,7 @@ void TRA_get_inventory(TDBB tdbb, UCHAR * bit_vector, ULONG base, ULONG top)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
@@ -588,7 +588,7 @@ int TRA_get_state(TDBB tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_tip_cache)
@@ -603,7 +603,7 @@ int TRA_get_state(TDBB tdbb, SLONG number)
 
 
 #ifdef SUPERSERVER_V2
-void TRA_header_write(TDBB tdbb, DBB dbb, SLONG number)
+void TRA_header_write(TDBB tdbb, Database* dbb, SLONG number)
 {
 /**************************************
  *
@@ -676,7 +676,7 @@ void TRA_init(TDBB tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra();
@@ -686,7 +686,7 @@ void TRA_init(TDBB tdbb)
 }
 
 
-void TRA_invalidate(DBB database, ULONG mask)
+void TRA_invalidate(Database* database, ULONG mask)
 {
 /**************************************
  *
@@ -820,7 +820,7 @@ bool TRA_precommited(TDBB tdbb, SLONG old_number, SLONG new_number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	vcl* vector = dbb->dbb_pc_transactions;
@@ -936,7 +936,7 @@ jrd_tra* TRA_reconnect(TDBB tdbb, const UCHAR* id, USHORT length)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Cannot work on limbo transactions for ReadOnly database */
@@ -1217,7 +1217,7 @@ void TRA_set_state(TDBB tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* If we're terminating ourselves and we've
@@ -1391,7 +1391,7 @@ jrd_tra* TRA_start(TDBB tdbb, int tpb_length, const SCHAR* tpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	att* attachment = tdbb->tdbb_attachment;
 	WIN window(-1);
 
@@ -1738,7 +1738,7 @@ int TRA_sweep(TDBB tdbb, jrd_tra* trans)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* No point trying to sweep a ReadOnly database */
@@ -1902,7 +1902,7 @@ lck* TRA_transaction_lock(TDBB tdbb, BLK object)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	lck* lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) lck();
 	lock->lck_type = LCK_tra;
@@ -1937,7 +1937,7 @@ int TRA_wait(TDBB tdbb, jrd_tra* trans, SLONG number, bool wait)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Create, wait on, and release lock on target transaction.  If
@@ -2013,7 +2013,7 @@ static SLONG bump_transaction_id(TDBB tdbb, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const ULONG number = ++dbb->dbb_next_transaction;
@@ -2050,7 +2050,7 @@ static header_page* bump_transaction_id(TDBB tdbb, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	window->win_page = HEADER_PAGE;
@@ -2118,7 +2118,7 @@ static void compute_oldest_retaining(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* Get a commit retaining lock, if not present. */
@@ -2345,7 +2345,7 @@ static SLONG inventory_page(TDBB tdbb, SLONG sequence)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	WIN window(-1);
@@ -2391,7 +2391,7 @@ static SSHORT limbo_transaction(TDBB tdbb, SLONG id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
@@ -2472,7 +2472,7 @@ static void retain_context(TDBB tdbb, jrd_tra* transaction, const bool commit)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 /* The new transaction needs to remember the 'commit-retained' transaction
@@ -2607,7 +2607,7 @@ static void retain_context(TDBB tdbb, jrd_tra* transaction, const bool commit)
 
 
 #ifdef SWEEP_THREAD
-static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
+static BOOLEAN start_sweeper(TDBB tdbb, Database* dbb)
 {
 /**************************************
  *

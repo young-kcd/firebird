@@ -24,8 +24,8 @@
 #ifndef QLI_PARSE_PROTO_H
 #define QLI_PARSE_PROTO_H
 
-syn*	PARQ_parse(void);
-int		PAR_match (KWWORDS);
+qli_syntax*	PARQ_parse(void);
+bool	PAR_match (KWWORDS);
 void	PAR_real (void);
 void	PAR_real_token (void);
 void	PAR_token (void);

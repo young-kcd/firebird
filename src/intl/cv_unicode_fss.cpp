@@ -34,7 +34,7 @@ typedef SLONG fss_size_t;
 static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n);
 static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc);
 
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE* obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n)
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n)
 {
 /**************************************
  *
@@ -192,7 +192,6 @@ static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 {
 	long l;
 	int c0, c, nc;
-	const Tab *t;
 
 	if (s == 0)
 		return 0;
@@ -202,7 +201,7 @@ static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 		return -1;
 	c0 = *s & 0xff;
 	l = c0;
-	for (t = tab; t->cmask; t++) {
+	for (const Fss_table* t = fss_sequence_table; t->cmask; t++) {
 		nc++;
 		if ((c0 & t->cmask) == t->cval) {
 			l &= t->lmask;
@@ -227,14 +226,13 @@ static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc)
 {
 	long l;
 	int c, nc;
-	const Tab *t;
 
 	if (s == 0)
 		return 0;
 
 	l = wc;
 	nc = 0;
-	for (t = tab; t->cmask; t++) {
+	for (const Fss_table* t = fss_sequence_table; t->cmask; t++) {
 		nc++;
 		if (l <= t->lmask) {
 			c = t->shift;
@@ -251,24 +249,13 @@ static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc)
 }
 
 
-USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj,
-								UNICODE *dest_ptr,
-								USHORT dest_len,
-								NCHAR *src_ptr,
-								USHORT src_len,
-								SSHORT *err_code,
-								USHORT *err_position)
+USHORT fss_to_unicode(UNICODE *dest_ptr,
+						USHORT dest_len,
+						const NCHAR* src_ptr,
+						USHORT src_len,
+						SSHORT *err_code,
+						USHORT *err_position)
 {
-	UNICODE *start;
-	USHORT src_start = src_len;
-	fss_size_t res;
-
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode ||
-		   ((TEXTTYPE) obj)->texttype_fn_to_wc == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode);
 
 	*err_code = 0;
 
@@ -276,10 +263,10 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj,
 	if (dest_ptr == NULL)
 		return (src_len * 2);	/* All single byte narrow characters */
 
-	start = dest_ptr;
-	src_start = src_len;
+	UNICODE* start = dest_ptr;
+	USHORT src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
-		res = fss_mbtowc(dest_ptr, src_ptr, src_len);
+		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
@@ -298,10 +285,47 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj,
 }
 
 
+USHORT CS_UTFFSS_fss_to_unicode_cc(CSCONVERT obj,
+								UNICODE *dest_ptr,
+								USHORT dest_len,
+								const NCHAR* src_ptr,
+								USHORT src_len,
+								SSHORT *err_code,
+								USHORT *err_position)
+{
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert ==
+		reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_fss_to_unicode_cc));
+
+	return fss_to_unicode(dest_ptr, dest_len, src_ptr, src_len, err_code, err_position);
+}
+
+
+USHORT CS_UTFFSS_fss_to_unicode_tt(TEXTTYPE obj,
+								UNICODE *dest_ptr,
+								USHORT dest_len,
+								const NCHAR* src_ptr,
+								USHORT src_len,
+								SSHORT *err_code,
+								USHORT *err_position)
+{
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->texttype_fn_to_wc == CS_UTFFSS_fss_to_unicode_tt);
+
+	return fss_to_unicode(dest_ptr, dest_len, src_ptr, src_len, err_code, err_position);
+}
+
+
 USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 								MBCHAR *fss_str,
 								USHORT fss_len,
-								UNICODE *unicode_str,
+								const UNICODE* unicode_str,
 								USHORT unicode_len,
 								SSHORT *err_code,
 								USHORT *err_position)
@@ -316,7 +340,7 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_unicode_to_fss);
+	fb_assert(obj->csconvert_convert == CS_UTFFSS_unicode_to_fss);
 
 	*err_code = 0;
 

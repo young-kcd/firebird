@@ -37,16 +37,19 @@
 
 #define	LANGKSC_MAX_KEY	4096
 
-USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len, UCHAR *ksc_str, USHORT ksc_len,
+USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, USHORT *dest_ptr, USHORT dest_len,
+							const UCHAR* ksc_str, USHORT ksc_len,
 							SSHORT *err_code, USHORT *err_position);
 
-USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len, USHORT *unicode_str
-							, USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
+USHORT CVKSC_unicode_to_ksc(CSCONVERT obj, UCHAR *ksc_str, USHORT ksc_len,
+							const USHORT* unicode_str,
+							USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-USHORT CVKSC_check_ksc(UCHAR *ksc_str, USHORT ksc_len);
+USHORT CVKSC_check_ksc(const UCHAR* ksc_str, USHORT ksc_len);
 
-USHORT CVKSC_ksc_byte2short(CSCONVERT obj, USHORT *dst, USHORT dst_len, UCHAR *src, USHORT src_len
-							, SSHORT *err_code,	USHORT *err_position);
+USHORT CVKSC_ksc_byte2short(TEXTTYPE obj, USHORT *dst, USHORT dst_len,
+							const UCHAR* src, USHORT src_len,
+							SSHORT *err_code, USHORT *err_position);
 
-short CVKSC_ksc_mbtowc(CSCONVERT obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
+SSHORT CVKSC_ksc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
 

@@ -294,7 +294,7 @@ int main( int argc, char *argv[])
 				ret_cd = free_file_list(file_list);
 				return FB_FAILURE;
 				break;
-			}					/* and of switch (sw_replace) */
+			}					// end of switch (sw_replace) 
 
 			argv++;
 		}						// processing function specific command line options 
@@ -490,7 +490,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, double* fi
 
 				default:
 					break;
-				}				/* end of switch( UPPER (c) ) */
+				}				// end of switch( UPPER (c) ) 
 
 				*file_size = *file_size * size_indicator;
 			}

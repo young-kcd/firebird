@@ -92,7 +92,7 @@ void ALL_check_memory()
  *	executed.
  *
  **************************************/
-	DBB Dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 #ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
@@ -100,7 +100,7 @@ void ALL_check_memory()
 
 	// walk through all the pools in the database
 	Firebird::vector<JrdMemoryPool*>::iterator itr;
-	for (itr = Dbb->dbb_pools.begin(); itr < Dbb->dbb_pools.end(); ++itr)
+	for (itr = dbb->dbb_pools.begin(); itr < dbb->dbb_pools.end(); ++itr)
 	{
 		JrdMemoryPool* pool = *itr;
 		if (pool) {
@@ -117,19 +117,20 @@ void ALL_check_memory()
 
 
 JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
 		cur_mem, max_mem);
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
 	new (&result->lls_cache) BlockCache<lls> (*result);
-	if (dbb) dbb->dbb_pools.push_back(result);
+	if (dbb)
+		dbb->dbb_pools.push_back(result);
 	return result;
 }
 
 JrdMemoryPool *JrdMemoryPool::createPool() {
-    DBB dbb = GET_DBB;
+    Database* dbb = GET_DBB;
 #ifdef SUPERSERVER
 	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
 		(int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
@@ -140,13 +141,14 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
 	new (&result->lls_cache) BlockCache<lls> (*result);
-	if (dbb) dbb->dbb_pools.push_back(result);
+	if (dbb)
+		dbb->dbb_pools.push_back(result);
 	return result;
 }
 
 void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
-	DBB dbb = GET_DBB;
-	dbb::pool_vec_type::iterator itr =
+	Database* dbb = GET_DBB;
+	Database::pool_vec_type::iterator itr =
 		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
 	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
 	pool->lls_cache.~BlockCache<lls>();
@@ -208,11 +210,11 @@ void ALL_fini(void)
  *	its own behalf.  It is assumed that mutexes will
  *	have been locked before entry.
  *	Call gds__free explicitly instead of ALL_free
- *	because it references the dbb block which gets
+ *	because it references the Database block which gets
  *	released at the top of this routine.
  *
  **************************************/
-	DBB dbb = GET_DBB;
+	Database* dbb = GET_DBB;
 
 	/* Don't know if we even need to do this, so it is commented out */
 	//delete dbb;
@@ -235,7 +237,7 @@ void ALL_init(void)
  *
  **************************************/
 	TDBB tdbb = GET_THREAD_DATA;
-	DBB dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->tdbb_database;
 
 	JrdMemoryPool* pool = tdbb->tdbb_default = dbb->dbb_permanent;
 //	dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
@@ -291,7 +293,7 @@ BLK JrdMemoryPool::ALL_pop(LLS* stack)
 
 
 #ifdef SUPERSERVER
-void ALL_print_memory_pool_info(IB_FILE* fptr, DBB databases)
+void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
 {
 #ifdef NOT_USED_OR_REPLACED
 /***********************************************************
@@ -302,10 +304,10 @@ void ALL_print_memory_pool_info(IB_FILE* fptr, DBB databases)
  *
  * Functional description
  *	Print the different block types allocated in the pool.
- *	Walk the dbb's to print out pool info of every database
+ *	Walk the Database's to print out pool info of every database
  *
  **************************************/
-	DBB dbb;
+	Database* dbb;
 	STR string;
 	VEC vector;
 	HNK hnk;
