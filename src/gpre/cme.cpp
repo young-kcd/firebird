@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.26 2004-05-02 23:04:15 skidder Exp $
+//	$Id: cme.cpp,v 1.27 2004-05-24 11:02:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -56,20 +56,19 @@ static void cmp_sdl_dtype(const gpre_fld*, REF);
 static void cmp_udf(GPRE_NOD, gpre_req*);
 static void cmp_value(const gpre_nod*, gpre_req*);
 static USHORT get_string_len(const gpre_fld*);
-static void stuff_cstring(gpre_req*, const char*);
 static void stuff_sdl_dimension(const dim*, REF, SSHORT);
 static void stuff_sdl_element(REF, const gpre_fld*);
 static void stuff_sdl_loops(REF, const gpre_fld*);
 static void stuff_sdl_number(const SLONG, REF);
 
 const int USER_LENGTH = 32;
-#define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
-#define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
-#define STUFF_CSTRING(blr)	stuff_cstring (request, blr)
+//#define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
+//#define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
+//#define STUFF_CSTRING(blr)	stuff_cstring (request, blr)
 
-#define STUFF_SDL(sdl)		*reference->ref_sdl++ = (UCHAR) (sdl)
-#define STUFF_SDL_WORD(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8);
-#define STUFF_SDL_LONG(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8); STUFF_SDL (sdl >>16); STUFF_SDL (sdl >> 24);
+//#define STUFF_SDL(sdl)		*reference->ref_sdl++ = (UCHAR) (sdl)
+//#define STUFF_SDL_WORD(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8);
+//#define STUFF_SDL_LONG(sdl)	STUFF_SDL (sdl); STUFF_SDL (sdl >> 8); STUFF_SDL (sdl >>16); STUFF_SDL (sdl >> 24);
 
 static bool debug_on;
 
@@ -203,7 +202,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 
 	case nod_like:
 		{
-			STUFF((node->nod_count == 2) ? blr_like : blr_ansi_like);
+			request->add_byte((node->nod_count == 2) ? blr_like : blr_ansi_like);
 			gpre_nod** ptr = node->nod_arg;
 			for (const gpre_nod* const* const end = ptr + node->nod_count;
 				ptr < end; ptr++)
@@ -219,7 +218,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 
 	case nod_gen_id:
 		{
-			STUFF(blr_gen_id);
+			request->add_byte(blr_gen_id);
 			const TEXT* p = (TEXT *) (node->nod_arg[1]);
 
 			// check if this generator really exists
@@ -229,9 +228,9 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 				sprintf(s, "generator %s not found", p);
 				CPR_error(s);
 			}
-			STUFF(strlen(p));
+			request->add_byte(strlen(p));
 			while (*p)
-				STUFF(*p++);
+				request->add_byte(*p++);
 			CME_expr(node->nod_arg[0], request);
 			return;
 		}
@@ -245,43 +244,43 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 			!(request->req_database->dbb_flags & DBB_v3))
 		{
 			if (node->nod_arg[1])
-				STUFF(blr_agg_count_distinct);
+				request->add_byte(blr_agg_count_distinct);
 			else
-				STUFF(blr_agg_count2);
+				request->add_byte(blr_agg_count2);
 			CME_expr(node->nod_arg[0], request);
 		}
 		else
-			STUFF(blr_agg_count);
+			request->add_byte(blr_agg_count);
 		return;
 
 // ** Begin date/time/timestamp support *
 	case nod_extract:
-		STUFF(blr_extract);
+		request->add_byte(blr_extract);
 		switch ((KWWORDS) (IPTR) node->nod_arg[0])
 		{
 		case KW_YEAR:
-			STUFF(blr_extract_year);
+			request->add_byte(blr_extract_year);
 			break;
 		case KW_MONTH:
-			STUFF(blr_extract_month);
+			request->add_byte(blr_extract_month);
 			break;
 		case KW_DAY:
-			STUFF(blr_extract_day);
+			request->add_byte(blr_extract_day);
 			break;
 		case KW_HOUR:
-			STUFF(blr_extract_hour);
+			request->add_byte(blr_extract_hour);
 			break;
 		case KW_MINUTE:
-			STUFF(blr_extract_minute);
+			request->add_byte(blr_extract_minute);
 			break;
 		case KW_SECOND:
-			STUFF(blr_extract_second);
+			request->add_byte(blr_extract_second);
 			break;
 		case KW_WEEKDAY:
-			STUFF(blr_extract_weekday);
+			request->add_byte(blr_extract_weekday);
 			break;
 		case KW_YEARDAY:
-			STUFF(blr_extract_yearday);
+			request->add_byte(blr_extract_yearday);
 			break;
 		default:
 			CPR_error("CME_expr:Invalid extract part");
@@ -303,10 +302,10 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 		if ((node->nod_arg[1]) &&
 			!(request->req_database->dbb_flags & DBB_v3))
 		{
-			STUFF(blr_agg_total_distinct);
+			request->add_byte(blr_agg_total_distinct);
 		}
 		else
-			STUFF(blr_agg_total);
+			request->add_byte(blr_agg_total);
 		CME_expr(node->nod_arg[0], request);
 		return;
 
@@ -314,26 +313,26 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 		if ((node->nod_arg[1]) &&
 			!(request->req_database->dbb_flags & DBB_v3))
 		{
-			STUFF(blr_agg_average_distinct);
+			request->add_byte(blr_agg_average_distinct);
 		}
 		else
-			STUFF(blr_agg_average);
+			request->add_byte(blr_agg_average);
 		CME_expr(node->nod_arg[0], request);
 		return;
 
 	case nod_dom_value:
-		STUFF(blr_fid);
-		STUFF(0);				// Context   
-		STUFF_WORD(0);			// Field id  
+		request->add_byte(blr_fid);
+		request->add_byte(0);				// Context   
+		request->add_word(0);			// Field id  
 		return;
 
 	case nod_map_ref:
 		{
 			const mel* element = (MEL) node->nod_arg[0];
 			context = element->mel_context;
-			STUFF(blr_fid);
-			STUFF(context->ctx_internal);
-			STUFF_WORD(element->mel_position);
+			request->add_byte(blr_fid);
+			request->add_byte(context->ctx_internal);
+			request->add_word(element->mel_position);
 			return;
 		}
 	}
@@ -350,7 +349,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 		}
 	}
 
-	STUFF(nod2blr_operator->op_blr);
+	request->add_byte(nod2blr_operator->op_blr);
 	gpre_nod** ptr = node->nod_arg;
 
 	for (const gpre_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
@@ -1018,43 +1017,43 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 			if ((context->ctx_alias) &&
 				!(request->req_database->dbb_flags & DBB_v3))
 			{
-				STUFF(blr_rid2);
+				request->add_byte(blr_rid2);
 			}
 			else
 			{
-				STUFF(blr_rid);
+				request->add_byte(blr_rid);
 			}
-			STUFF_WORD(relation->rel_id);
+			request->add_word(relation->rel_id);
 		}
 		else
 		{
 			if ((context->ctx_alias) &&
 				!(request->req_database->dbb_flags & DBB_v3))
-					STUFF(blr_relation2);
+					request->add_byte(blr_relation2);
 			else
-				STUFF(blr_relation);
+				request->add_byte(blr_relation);
 			CMP_stuff_symbol(request, relation->rel_symbol);
 		}
 
 		if ((context->ctx_alias) &&
 			!(request->req_database->dbb_flags & DBB_v3))
-				stuff_cstring(request, context->ctx_alias);
-		STUFF(context->ctx_internal);
+				request->add_cstring(context->ctx_alias);
+		request->add_byte(context->ctx_internal);
 	}
 	else if (procedure = context->ctx_procedure)
 	{
 		if (sw_ids)
 		{
-			STUFF(blr_pid);
-			STUFF_WORD(procedure->prc_id);
+			request->add_byte(blr_pid);
+			request->add_word(procedure->prc_id);
 		}
 		else
 		{
-			STUFF(blr_procedure);
+			request->add_byte(blr_procedure);
 			CMP_stuff_symbol(request, procedure->prc_symbol);
 		}
-		STUFF(context->ctx_internal);
-		STUFF_WORD(procedure->prc_in_count);
+		request->add_byte(context->ctx_internal);
+		request->add_word(procedure->prc_in_count);
 		gpre_nod* inputs = context->ctx_prc_inputs;
 		if (inputs) {
 			gpre_nod** ptr = inputs->nod_arg;
@@ -1083,22 +1082,22 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		if ((selection->rse_flags & RSE_singleton) &&
 			!(request->req_database->dbb_flags & DBB_v3))
 		{
-			STUFF(blr_singular);
+			request->add_byte(blr_singular);
 		}
-		STUFF(blr_rse);
+		request->add_byte(blr_rse);
 	}
 	else
-		STUFF(blr_rs_stream);
+		request->add_byte(blr_rs_stream);
 
 //  Process unions, if any, otherwise process relations 
 
 	gpre_nod* union_node = selection->rse_union;
 	if (union_node)
 	{
-		STUFF(1);
-		STUFF(blr_union);
-		STUFF(selection->rse_context[0]->ctx_internal);
-		STUFF(union_node->nod_count);
+		request->add_byte(1);
+		request->add_byte(blr_union);
+		request->add_byte(selection->rse_context[0]->ctx_internal);
+		request->add_byte(union_node->nod_count);
 		gpre_nod** ptr = union_node->nod_arg;
 		for (const gpre_nod* const* const end = ptr + union_node->nod_count;
 			ptr < end; ptr++)
@@ -1110,15 +1109,15 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	}
 	else if (sub_rse = selection->rse_aggregate)
 	{
-		STUFF(1);
-		STUFF(blr_aggregate);
-		STUFF(sub_rse->rse_map->map_context->ctx_internal);
+		request->add_byte(1);
+		request->add_byte(blr_aggregate);
+		request->add_byte(sub_rse->rse_map->map_context->ctx_internal);
 		CME_rse(sub_rse, request);
-		STUFF(blr_group_by);
+		request->add_byte(blr_group_by);
 		gpre_nod* list = sub_rse->rse_group_by;
 		if (list)
 		{
-			STUFF(list->nod_count);
+			request->add_byte(list->nod_count);
 			gpre_nod** ptr = list->nod_arg;
 			for (const gpre_nod* const* const end = ptr + list->nod_count;
 				ptr < end; ptr++)
@@ -1127,12 +1126,12 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 			}
 		}
 		else
-			STUFF(0);
+			request->add_byte(0);
 		cmp_map(sub_rse->rse_map, request);
 	}
 	else
 	{
-		STUFF(selection->rse_count);
+		request->add_byte(selection->rse_count);
 		for (i = 0; i < selection->rse_count; i++)
 			CME_relation(selection->rse_context[i], request);
 	}
@@ -1141,33 +1140,33 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 
 	if (selection->rse_first)
 	{
-		STUFF(blr_first);
+		request->add_byte(blr_first);
 		CME_expr(selection->rse_first, request);
 	}
 
 	if (selection->rse_boolean)
 	{
-		STUFF(blr_boolean);
+		request->add_byte(blr_boolean);
 		CME_expr(selection->rse_boolean, request);
 	}
 
 	gpre_nod* temp = selection->rse_sort;
 	if (temp)
 	{
-		STUFF(blr_sort);
-		STUFF(temp->nod_count);
+		request->add_byte(blr_sort);
+		request->add_byte(temp->nod_count);
 		gpre_nod** ptr = temp->nod_arg;
 		for (i = 0; i < temp->nod_count; i++)
 		{
-			STUFF((*ptr++) ? blr_descending : blr_ascending);
+			request->add_byte((*ptr++) ? blr_descending : blr_ascending);
 			CME_expr(*ptr++, request);
 		}
 	}
 
 	if (temp = selection->rse_reduced)
 	{
-		STUFF(blr_project);
-		STUFF(temp->nod_count);
+		request->add_byte(blr_project);
+		request->add_byte(temp->nod_count);
 		gpre_nod** ptr = temp->nod_arg;
 		for (i = 0; i < temp->nod_count; i++)
 			CME_expr(*ptr++, request);
@@ -1175,20 +1174,20 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 
 	if (temp = selection->rse_plan)
 	{
-		STUFF(blr_plan);
+		request->add_byte(blr_plan);
 		cmp_plan(temp, request);
 	}
 
 	if (selection->rse_join_type != (NOD_T) 0
 		&& selection->rse_join_type != nod_join_inner)
 	{
-		STUFF(blr_join_type);
+		request->add_byte(blr_join_type);
 		if (selection->rse_join_type == nod_join_left)
-			STUFF(blr_left);
+			request->add_byte(blr_left);
 		else if (selection->rse_join_type == nod_join_right)
-			STUFF(blr_right);
+			request->add_byte(blr_right);
 		else
-			STUFF(blr_full);
+			request->add_byte(blr_full);
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -1201,21 +1200,21 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	if (request->req_flags & REQ_sql_cursor &&
 		request->req_database->dbb_base_level >= 5)
 	{
-		STUFF(blr_receive);
-		STUFF(request->req_aport->por_msg_number);
-		STUFF(blr_seek);
-		STUFF(blr_parameter);
-		STUFF(request->req_aport->por_msg_number);
-		STUFF_WORD(1);
-		STUFF(blr_parameter);
-		STUFF(request->req_aport->por_msg_number);
-		STUFF_WORD(0);
+		request->add_byte(blr_receive);
+		request->add_byte(request->req_aport->por_msg_number);
+		request->add_byte(blr_seek);
+		request->add_byte(blr_parameter);
+		request->add_byte(request->req_aport->por_msg_number);
+		request->add_word(1);
+		request->add_byte(blr_parameter);
+		request->add_byte(request->req_aport->por_msg_number);
+		request->add_word(0);
 	}
 #endif
 
 //  Finish up by making a BLR_END 
 
-	STUFF(blr_end);
+	request->add_byte(blr_end);
 }
 
 
@@ -1251,9 +1250,9 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 			reinterpret_cast<UCHAR*>(MSC_alloc(500));
 		reference->ref_sdl_length = 500;
 		reference->ref_sdl_ident = CMP_next_ident();
-		STUFF_SDL(isc_sdl_version1);
-		STUFF_SDL(isc_sdl_struct);
-		STUFF_SDL(1);
+		reference->add_byte(isc_sdl_version1);
+		reference->add_byte(isc_sdl_struct);
+		reference->add_byte(1);
 
 		//  The datatype of the array elements  
 
@@ -1263,22 +1262,22 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 
 		if (sw_ids)
 		{
-			STUFF_SDL(isc_sdl_rid);
-			STUFF_SDL(reference->ref_id);
-			STUFF_SDL(isc_sdl_fid);
-			STUFF_SDL(field->fld_id);
+			reference->add_byte(isc_sdl_rid);
+			reference->add_byte(reference->ref_id);
+			reference->add_byte(isc_sdl_fid);
+			reference->add_byte(field->fld_id);
 		}
 		else
 		{
-			STUFF_SDL(isc_sdl_relation);
-			STUFF_SDL(strlen(field->fld_relation->rel_symbol->sym_string));
+			reference->add_byte(isc_sdl_relation);
+			reference->add_byte(strlen(field->fld_relation->rel_symbol->sym_string));
 			const TEXT* p;
 			for (p = field->fld_relation->rel_symbol->sym_string; *p; p++)
-				STUFF_SDL(*p);
-			STUFF_SDL(isc_sdl_field);
-			STUFF_SDL(strlen(field->fld_symbol->sym_string));
+				reference->add_byte(*p);
+			reference->add_byte(isc_sdl_field);
+			reference->add_byte(strlen(field->fld_symbol->sym_string));
 			for (p = field->fld_symbol->sym_string; *p; p++)
-				STUFF_SDL(*p);
+				reference->add_byte(*p);
 		}
 
 		//  The loops for the dimensions  
@@ -1289,7 +1288,7 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 
 		stuff_sdl_element(reference, field);
 
-		STUFF_SDL(isc_sdl_eoc);
+		reference->add_byte(isc_sdl_eoc);
 	}
 
 	reference->ref_sdl_length = reference->ref_sdl - reference->ref_sdl_base;
@@ -1310,11 +1309,11 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 
 static void cmp_array_element( GPRE_NOD node, gpre_req* request)
 {
-	STUFF(blr_index);
+	request->add_byte(blr_index);
 
 	cmp_field(node, request);
 
-	STUFF(node->nod_count - 1);
+	request->add_byte(node->nod_count - 1);
 
 	for (USHORT index_count = 1; index_count < node->nod_count; index_count++)
 		CME_expr(node->nod_arg[index_count], request);
@@ -1330,7 +1329,7 @@ static void cmp_array_element( GPRE_NOD node, gpre_req* request)
 static void cmp_cast( GPRE_NOD node, gpre_req* request)
 {
 
-	STUFF(blr_cast);
+	request->add_byte(blr_cast);
 	CMP_external_field(request, (const gpre_fld*) node->nod_arg[1]);
 	CME_expr(node->nod_arg[0], request);
 }
@@ -1371,25 +1370,25 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 
 	if (field->fld_flags & FLD_dbkey)
 	{
-		STUFF(blr_dbkey);
-		STUFF(context->ctx_internal);
+		request->add_byte(blr_dbkey);
+		request->add_byte(context->ctx_internal);
 	}
 	else if (reference->ref_flags & REF_union)
 	{
-		STUFF(blr_fid);
-		STUFF(context->ctx_internal);
-		STUFF_WORD(reference->ref_id);
+		request->add_byte(blr_fid);
+		request->add_byte(context->ctx_internal);
+		request->add_word(reference->ref_id);
 	}
 	else if (sw_ids)
 	{
-		STUFF(blr_fid);
-		STUFF(context->ctx_internal);
-		STUFF_WORD(field->fld_id);
+		request->add_byte(blr_fid);
+		request->add_byte(context->ctx_internal);
+		request->add_word(field->fld_id);
 	}
 	else
 	{
-		STUFF(blr_field);
-		STUFF(context->ctx_internal);
+		request->add_byte(blr_field);
+		request->add_byte(context->ctx_internal);
 		CMP_stuff_symbol(request, field->fld_symbol);
 	}
 
@@ -1412,7 +1411,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 		negate = true;
 	}
 
-	STUFF(blr_literal);
+	request->add_byte(blr_literal);
 	const ref* reference = (REF) node->nod_arg[0];
 	const char* string = (char *) reference->ref_value;
 
@@ -1426,18 +1425,18 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 			string = (char *) reference->ref_value;
 
 			if (!(request->req_database->dbb_flags & DBB_v3))
-				STUFF(blr_double);
+				request->add_byte(blr_double);
 			else if (sw_know_interp)
 			{	// then must be using blr_version5 
-				STUFF(blr_text2);
-				STUFF_WORD(ttype_ascii);
+				request->add_byte(blr_text2);
+				request->add_word(ttype_ascii);
 			}
 			else
-				STUFF(blr_text);
+				request->add_byte(blr_text);
 
-			STUFF_WORD(strlen(string));
+			request->add_word(strlen(string));
 			while (*string)
-				STUFF(*string++);
+				request->add_byte(*string++);
 		}
 		else
 		{
@@ -1478,10 +1477,10 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 					long_val = -((long) uint64_val);
 				else
 					long_val = (long) uint64_val;
-				STUFF(blr_long);
-				STUFF(scale);	// scale factor 
-				STUFF_WORD(long_val);
-				STUFF_WORD(long_val >> 16);
+				request->add_byte(blr_long);
+				request->add_byte(scale);	// scale factor 
+				request->add_word(long_val);
+				request->add_word(long_val >> 16);
 			}
 			else if ((uint64_val <= MAX_SINT64) ||
 					 ((uint64_val == ((UINT64) MAX_SINT64 + 1))
@@ -1492,12 +1491,12 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 					sint64_val = -((SINT64) uint64_val);
 				else
 					sint64_val = (SINT64) uint64_val;
-				STUFF(blr_int64);
-				STUFF(scale);	// scale factor 
-				STUFF_WORD(sint64_val);
-				STUFF_WORD(sint64_val >> 16);
-				STUFF_WORD(sint64_val >> 32);
-				STUFF_WORD(sint64_val >> 48);
+				request->add_byte(blr_int64);
+				request->add_byte(scale);	// scale factor 
+				request->add_word(sint64_val);
+				request->add_word(sint64_val >> 16);
+				request->add_word(sint64_val >> 32);
+				request->add_word(sint64_val >> 48);
 			}
 			else
 				CPR_error("cmp_literal : Numeric Value too big");
@@ -1533,52 +1532,52 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 		if (reference->ref_flags & REF_sql_date)
 		{
 			ISC_DATE dt;
-			STUFF(blr_sql_date);
+			request->add_byte(blr_sql_date);
 			to.dsc_dtype = dtype_sql_date;
 			to.dsc_length = sizeof(ISC_DATE);
 			to.dsc_address = (UCHAR*) & dt;
 			MOVG_move(&from, &to);
-			STUFF_WORD(dt);
-			STUFF_WORD(dt >> 16);
+			request->add_word(dt);
+			request->add_word(dt >> 16);
 			return; // node;
 		}
 		else if (reference->ref_flags & REF_timestamp)
 		{
 			ISC_TIMESTAMP ts;
-			STUFF(blr_timestamp);
+			request->add_byte(blr_timestamp);
 			to.dsc_dtype = dtype_timestamp;
 			to.dsc_length = sizeof(ISC_TIMESTAMP);
 			to.dsc_address = (UCHAR*) & ts;
 			MOVG_move(&from, &to);
-			STUFF_WORD(ts.timestamp_date);
-			STUFF_WORD(ts.timestamp_date >> 16);
-			STUFF_WORD(ts.timestamp_time);
-			STUFF_WORD(ts.timestamp_time >> 16);
+			request->add_word(ts.timestamp_date);
+			request->add_word(ts.timestamp_date >> 16);
+			request->add_word(ts.timestamp_time);
+			request->add_word(ts.timestamp_time >> 16);
 			return; // node;
 		}
 		else if (reference->ref_flags & REF_sql_time)
 		{
 			ISC_TIME itim;
-			STUFF(blr_sql_time);
+			request->add_byte(blr_sql_time);
 			to.dsc_dtype = dtype_sql_time;
 			to.dsc_length = sizeof(ISC_DATE);
 			to.dsc_address = (UCHAR*) & itim;
 			MOVG_move(&from, &to);
-			STUFF_WORD(itim);
-			STUFF_WORD(itim >> 16);
+			request->add_word(itim);
+			request->add_word(itim >> 16);
 			return; // node;
 		}
 		else if (!(reference->ref_flags & REF_ttype))
-			STUFF(blr_text);
+			request->add_byte(blr_text);
 		else
 		{
-			STUFF(blr_text2);
-			STUFF_WORD(reference->ref_ttype);
+			request->add_byte(blr_text2);
+			request->add_word(reference->ref_ttype);
 		}
 
-		STUFF_WORD(length);
+		request->add_word(length);
 		for (string = buffer; *string;)
-			STUFF(*string++);
+			request->add_byte(*string++);
 	}
 
 	// return node;
@@ -1592,12 +1591,12 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 
 static void cmp_map(map* a_map, gpre_req* request)
 {
-	STUFF(blr_map);
-	STUFF_WORD(a_map->map_count);
+	request->add_byte(blr_map);
+	request->add_word(a_map->map_count);
 
 	for (MEL element = a_map->map_elements; element; element = element->mel_next)
 	{
-		STUFF_WORD(element->mel_position);
+		request->add_word(element->mel_position);
 		CME_expr(element->mel_expr, request);
 	}
 }
@@ -1617,10 +1616,10 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 	{
 		const gpre_nod* node = plan_expression->nod_arg[0];
 		if (node)
-			STUFF(blr_merge);
+			request->add_byte(blr_merge);
 		else
-			STUFF(blr_join);
-		STUFF(list->nod_count);
+			request->add_byte(blr_join);
+		request->add_byte(list->nod_count);
 	}
 
 //  stuff one or more plan items 
@@ -1637,7 +1636,7 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 
 		// if we're here, it must be a nod_plan_item 
 
-		STUFF(blr_retrieve);
+		request->add_byte(blr_retrieve);
 
 		/* stuff the relation--the relation id itself is redundant except 
 		   when there is a need to differentiate the base tables of views */
@@ -1650,24 +1649,24 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 		switch (arg->nod_type)
 		{
 		case nod_natural:
-			STUFF(blr_sequential);
+			request->add_byte(blr_sequential);
 			break;
 
 		case nod_index_order:
-			STUFF(blr_navigational);
-			stuff_cstring(request, (TEXT*) arg->nod_arg[0]);
+			request->add_byte(blr_navigational);
+			request->add_cstring((TEXT*) arg->nod_arg[0]);
 			break;
 
 		case nod_index:
 			{
-				STUFF(blr_indices);
+				request->add_byte(blr_indices);
 				arg = arg->nod_arg[0];
-				STUFF(arg->nod_count);
+				request->add_byte(arg->nod_count);
 				const gpre_nod* const* ptr2 = arg->nod_arg;
 				for (const gpre_nod* const* const end2 = ptr2 + arg->nod_count;
 					 ptr2 < end2; ptr2++)
 				{
-					stuff_cstring(request, (TEXT*) *ptr2);
+					request->add_cstring((TEXT*) *ptr2);
 				}
 				break;
 			}
@@ -1693,14 +1692,14 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 
 		if (sw_know_interp)
 		{
-			STUFF_SDL(blr_cstring2);
-			STUFF_SDL_WORD(sw_interp);
-			STUFF_SDL_WORD(field->fld_length);
+			reference->add_byte(blr_cstring2);
+			reference->add_word(sw_interp);
+			reference->add_word(field->fld_length);
 		}
 		else
 		{
-			STUFF_SDL(blr_cstring);
-			STUFF_SDL_WORD(field->fld_length);
+			reference->add_byte(blr_cstring);
+			reference->add_word(field->fld_length);
 		}
 		break;
 
@@ -1709,14 +1708,14 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 
 		if (sw_know_interp)
 		{
-			STUFF_SDL(blr_text2);
-			STUFF_SDL_WORD(sw_interp);
-			STUFF_SDL_WORD(field->fld_length);
+			reference->add_byte(blr_text2);
+			reference->add_word(sw_interp);
+			reference->add_word(field->fld_length);
 		}
 		else
 		{
-			STUFF_SDL(blr_text);
-			STUFF_SDL_WORD(field->fld_length);
+			reference->add_byte(blr_text);
+			reference->add_word(field->fld_length);
 		}
 		break;
 
@@ -1725,58 +1724,58 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 
 		if (sw_know_interp)
 		{
-			STUFF_SDL(blr_varying2);
-			STUFF_SDL_WORD(sw_interp);
-			STUFF_SDL_WORD(field->fld_length);
+			reference->add_byte(blr_varying2);
+			reference->add_word(sw_interp);
+			reference->add_word(field->fld_length);
 		}
 		else
 		{
-			STUFF_SDL(blr_varying);
-			STUFF_SDL_WORD(field->fld_length);
+			reference->add_byte(blr_varying);
+			reference->add_word(field->fld_length);
 		}
 		break;
 
 	case dtype_short:
-		STUFF_SDL(blr_short);
-		STUFF_SDL(field->fld_scale);
+		reference->add_byte(blr_short);
+		reference->add_byte(field->fld_scale);
 		break;
 
 	case dtype_long:
-		STUFF_SDL(blr_long);
-		STUFF_SDL(field->fld_scale);
+		reference->add_byte(blr_long);
+		reference->add_byte(field->fld_scale);
 		break;
 
 	case dtype_quad:
-		STUFF_SDL(blr_quad);
-		STUFF_SDL(field->fld_scale);
+		reference->add_byte(blr_quad);
+		reference->add_byte(field->fld_scale);
 		break;
 
 // ** Begin date/time/timestamp support *
 	case dtype_sql_date:
-		STUFF_SDL(blr_sql_date);
+		reference->add_byte(blr_sql_date);
 		break;
 	case dtype_sql_time:
-		STUFF_SDL(blr_sql_time);
+		reference->add_byte(blr_sql_time);
 		break;
 
 	case dtype_timestamp:
-		STUFF_SDL(blr_timestamp);
+		reference->add_byte(blr_timestamp);
 		break;
 // ** End date/time/timestamp support *
 
 	case dtype_int64:
-		STUFF_SDL(blr_int64);
+		reference->add_byte(blr_int64);
 		break;
 
 	case dtype_real:
-		STUFF_SDL(blr_float);
+		reference->add_byte(blr_float);
 		break;
 
 	case dtype_double:
 		if (sw_d_float)
-			STUFF_SDL(blr_d_float);
+			reference->add_byte(blr_d_float);
 		else
-			STUFF_SDL(blr_double);
+			reference->add_byte(blr_double);
 		break;
 
 	default:
@@ -1794,17 +1793,17 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 static void cmp_udf( GPRE_NOD node, gpre_req* request)
 {
 	const udf* an_udf = (udf*) node->nod_arg[1];
-	STUFF(blr_function);
+	request->add_byte(blr_function);
 	const TEXT* p = an_udf->udf_function;
-	STUFF(strlen(p));
+	request->add_byte(strlen(p));
 
 	while (*p)
-		STUFF(*p++);
+		request->add_byte(*p++);
 
 	gpre_nod* list = node->nod_arg[0];
 	if (list)
 	{
-		STUFF(list->nod_count);
+		request->add_byte(list->nod_count);
 
 		gpre_nod** ptr = list->nod_arg;
 		for (gpre_nod** const end = ptr + list->nod_count;
@@ -1814,7 +1813,7 @@ static void cmp_udf( GPRE_NOD node, gpre_req* request)
 		}
 	}
 	else
-		STUFF(0);
+		request->add_byte(0);
 
 	// return node;
 }
@@ -1838,16 +1837,16 @@ static void cmp_value( const gpre_nod* node, gpre_req* request)
 	const ref* flag = reference->ref_null;
 	if (flag)
 	{
-		STUFF(blr_parameter2);
-		STUFF(reference->ref_port->por_msg_number);
-		STUFF_WORD(reference->ref_parameter);
-		STUFF_WORD(flag->ref_parameter);
+		request->add_byte(blr_parameter2);
+		request->add_byte(reference->ref_port->por_msg_number);
+		request->add_word(reference->ref_parameter);
+		request->add_word(flag->ref_parameter);
 	}
 	else
 	{
-		STUFF(blr_parameter);
-		STUFF(reference->ref_port->por_msg_number);
-		STUFF_WORD(reference->ref_parameter);
+		request->add_byte(blr_parameter);
+		request->add_byte(reference->ref_port->por_msg_number);
+		request->add_word(reference->ref_parameter);
 	}
 
 	// return node;
@@ -1874,24 +1873,6 @@ static USHORT get_string_len( const gpre_fld* field)
 	return DSC_string_length(&tmp_dsc);
 }
 
-
-//____________________________________________________________
-//  
-//		Write out a null-terminated 
-//		string with one byte of length.
-//  
-
-static void stuff_cstring( gpre_req* request, const char* string)
-{
-	STUFF(strlen(string));
-
-	UCHAR c;
-	while (c = *string++) {
-		STUFF(c);
-	}
-}
-
-
 //____________________________________________________________
 //  
 //		Write to the sdl string, the do
@@ -1907,14 +1888,14 @@ static void stuff_sdl_dimension(const dim* dimension,
 
 	if (dimension->dim_lower == 1)
 	{
-		STUFF_SDL(isc_sdl_do1);
-		STUFF_SDL(dimension_count);
+		reference->add_byte(isc_sdl_do1);
+		reference->add_byte(dimension_count);
 		stuff_sdl_number(dimension->dim_upper, reference);
 	}
 	else
 	{
-		STUFF_SDL(isc_sdl_do2);
-		STUFF_SDL(dimension_count);
+		reference->add_byte(isc_sdl_do2);
+		reference->add_byte(dimension_count);
 		stuff_sdl_number(dimension->dim_lower, reference);
 		stuff_sdl_number(dimension->dim_upper, reference);
 	}
@@ -1930,12 +1911,12 @@ static void stuff_sdl_dimension(const dim* dimension,
 
 static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 {
-	STUFF_SDL(isc_sdl_element);
-	STUFF_SDL(1);
-	STUFF_SDL(isc_sdl_scalar);
-	STUFF_SDL(0);
+	reference->add_byte(isc_sdl_element);
+	reference->add_byte(1);
+	reference->add_byte(isc_sdl_scalar);
+	reference->add_byte(0);
 
-	STUFF_SDL(field->fld_array_info->ary_dimension_count);
+	reference->add_byte(field->fld_array_info->ary_dimension_count);
 
 //  Fortran needs the array in column-major order 
 
@@ -1944,16 +1925,16 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 		for (SSHORT i = field->fld_array_info->ary_dimension_count - 1;
 			i >= 0; i--)
 		{
-			STUFF_SDL(isc_sdl_variable);
-			STUFF_SDL(i);
+			reference->add_byte(isc_sdl_variable);
+			reference->add_byte(i);
 		}
 	}
 	else
 	{
 		for (SSHORT i = 0; i < field->fld_array_info->ary_dimension_count; i++)
 		{
-			STUFF_SDL(isc_sdl_variable);
-			STUFF_SDL(i);
+			reference->add_byte(isc_sdl_variable);
+			reference->add_byte(i);
 		}
 	}
 }
@@ -2004,18 +1985,18 @@ static void stuff_sdl_number(const SLONG number, REF reference)
 
 	if ((number > -16) && (number < 15))
 	{
-		STUFF_SDL(isc_sdl_tiny_integer);
-		STUFF_SDL(number);
+		reference->add_byte(isc_sdl_tiny_integer);
+		reference->add_byte(number);
 	}
 	else if ((number > -32768) && (number < 32767))
 	{
-		STUFF_SDL(isc_sdl_short_integer);
-		STUFF_SDL_WORD(number);
+		reference->add_byte(isc_sdl_short_integer);
+		reference->add_word(number);
 	}
 	else
 	{
-		STUFF_SDL(isc_sdl_long_integer);
-		STUFF_SDL_LONG(number);
+		reference->add_byte(isc_sdl_long_integer);
+		reference->add_long(number);
 	}
 }
 

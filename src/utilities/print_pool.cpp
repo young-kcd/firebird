@@ -22,8 +22,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/svc_undoc.h"
-
-#define STUFF_WORD(p, value)    {*p++ = value; *p++ = value >> 8;}
+#include "../common/stuff.h"
 
 int CLIB_ROUTINE main( int argc, char **argv)
 {
@@ -72,7 +71,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	path_length = strlen(buffer);
 	*sptr = isc_info_svc_dump_pool_info;
 	++sptr;
-	STUFF_WORD(sptr, path_length);
+	add_word(sptr, path_length);
 	strcpy(sptr, buffer);
 	sptr += path_length;
 	if (isc_service_query

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.75 2004-05-20 00:56:59 brodsom Exp $
+$Id: restore.epp,v 1.76 2004-05-24 11:01:00 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -39,6 +39,7 @@ $Id: restore.epp,v 1.75 2004-05-20 00:56:59 brodsom Exp $
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../jrd/thd_proto.h"
+#include "../common/stuff.h"
 #include "../burp/burp_proto.h"
 #include "../burp/canon_proto.h"
 #include "../burp/misc_proto.h"
@@ -146,7 +147,6 @@ bool	restore (const TEXT*, const TEXT*);
 void	restore_security_class (const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(const TEXT*, USHORT);
 void	store_blr_gen_id (const TEXT*, SINT64);
-void	stuff_string(UCHAR**, const TEXT*);
 void	update_global_field();
 void	update_view_dbkey_lengths();
 void	general_on_error();
@@ -1519,34 +1519,34 @@ void get_array (burp_rel*	relation,
 
 			// build the sdl 
 
-			stuff(&blr, isc_sdl_version1);
+			add_byte(blr, isc_sdl_version1);
 
-			stuff(&blr, isc_sdl_struct);
-			stuff(&blr, 1);
+			add_byte(blr, isc_sdl_struct);
+			add_byte(blr, 1);
 
 			if (field->fld_type == blr_text || field->fld_type == blr_varying)
 			{
 				if (field->fld_type == blr_text)
-					stuff(&blr, blr_text2);
+					add_byte(blr, blr_text2);
 				else
-					stuff(&blr, blr_varying2);
-				stuff_word(&blr, field->fld_character_set_id);
-				stuff_word(&blr, field->fld_length);
+					add_byte(blr, blr_varying2);
+				add_word(blr, field->fld_character_set_id);
+				add_word(blr, field->fld_length);
 			}
 			else if (field->fld_type == blr_short || field->fld_type == blr_long ||
 					 field->fld_type == blr_quad || field->fld_type == blr_int64)
 			{
-				stuff(&blr, field->fld_type);
-				stuff(&blr, field->fld_scale);
+				add_byte(blr, field->fld_type);
+				add_byte(blr, field->fld_scale);
 			}
 			else
-				stuff(&blr, field->fld_type);
+				add_byte(blr, field->fld_type);
 
 
-			stuff(&blr, isc_sdl_relation);
-			stuff_string(&blr, relation->rel_name);
-			stuff(&blr, isc_sdl_field);
-			stuff_string(&blr, field->fld_name);
+			add_byte(blr, isc_sdl_relation);
+			add_string(blr, relation->rel_name);
+			add_byte(blr, isc_sdl_field);
+			add_string(blr, field->fld_name);
 
 			// each element spec starts here  
 
@@ -1576,8 +1576,8 @@ void get_array (burp_rel*	relation,
 			for (range = field->fld_ranges, count = 0; range < end_ranges;
 				range += 2, count++)
 			{
-				stuff(&blr, isc_sdl_do2);
-				stuff(&blr, count);
+				add_byte(blr, isc_sdl_do2);
+				add_byte(blr, count);
 				//
 				// Normally we loop through all dimensions chopping off slices
 				// and writing them. This works fine but this also means that
@@ -1598,22 +1598,22 @@ void get_array (burp_rel*	relation,
 				  field->fld_dimensions - count == 2 &&
 				   last_element_dim[count + 1]  == range[3])
 				{
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, range[0]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, range[0]);
 					lower = range[0];
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, last_element_dim[count]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, last_element_dim[count]);
 					upper = last_element_dim[count];
 					elements_written *= (upper - lower + 1);
 					range += 2;
 					count++;
-					stuff(&blr, isc_sdl_do2);
-					stuff(&blr, count);
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, range[0]);
+					add_byte(blr, isc_sdl_do2);
+					add_byte(blr, count);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, range[0]);
 					lower = range[0];
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, last_element_dim[count]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, last_element_dim[count]);
 					upper = last_element_dim[count];
 					elements_written *= (upper - lower + 1);
 					++current_dim;
@@ -1621,10 +1621,10 @@ void get_array (burp_rel*	relation,
 				}
 				if (current_dim == count)
 				{
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, range[0]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, range[0]);
 					lower = range[0];
-					stuff(&blr, isc_sdl_long_integer);
+					add_byte(blr, isc_sdl_long_integer);
 					upper = (current_dim == field->fld_dimensions - 1) ?
 					 last_element_dim[count] : (last_element_dim[count] - 1);
 					if (upper < range[0])
@@ -1635,23 +1635,23 @@ void get_array (burp_rel*	relation,
 						dont_write = true;
 						break;
 					}
-					stuff_long(&blr, upper);
+					add_long(blr, upper);
 				}
 				else if (current_dim < count)
 				{
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, range[0]);
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, range[1]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, range[0]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, range[1]);
 					upper = range[1];
 					lower = range[0];
 				}
 				else if (current_dim > count)
 				{
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, last_element_dim[count]);
-					stuff(&blr, isc_sdl_long_integer);
-					stuff_long(&blr, last_element_dim[count]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, last_element_dim[count]);
+					add_byte(blr, isc_sdl_long_integer);
+					add_long(blr, last_element_dim[count]);
 					upper = lower = last_element_dim[count];
 				}
 				elements_written *= (upper - lower + 1);
@@ -1666,19 +1666,19 @@ void get_array (burp_rel*	relation,
 			fprintf(stderr,"\n Elements Written=%d  ",elements_written);
 #endif
 
-			stuff(&blr, isc_sdl_element);
-			stuff(&blr, 1);
-			stuff(&blr, isc_sdl_scalar);
-			stuff(&blr, 0);
-			stuff(&blr, field->fld_dimensions);
+			add_byte(blr, isc_sdl_element);
+			add_byte(blr, 1);
+			add_byte(blr, isc_sdl_scalar);
+			add_byte(blr, 0);
+			add_byte(blr, field->fld_dimensions);
 
 			for (count = 0; count < field->fld_dimensions; count++)
 			{
-				stuff(&blr, isc_sdl_variable);
-				stuff(&blr, count);
+				add_byte(blr, isc_sdl_variable);
+				add_byte(blr, count);
 			}
 
-			stuff(&blr, isc_sdl_eoc);
+			add_byte(blr, isc_sdl_eoc);
 
 #ifdef DEBUG
 			if (debug_on)
@@ -1749,60 +1749,60 @@ void get_array (burp_rel*	relation,
 
 		// build the sdl 
 
-		stuff(&blr, isc_sdl_version1);
+		add_byte(blr, isc_sdl_version1);
 
-		stuff(&blr, isc_sdl_struct);
-		stuff(&blr, 1);
+		add_byte(blr, isc_sdl_struct);
+		add_byte(blr, 1);
 
 		if (field->fld_type == blr_text || field->fld_type == blr_varying)
 		{
 			if (field->fld_type == blr_text)
-				stuff(&blr, blr_text2);
+				add_byte(blr, blr_text2);
 			else
-				stuff(&blr, blr_varying2);
-			stuff_word(&blr, field->fld_character_set_id);
-			stuff_word(&blr, field->fld_length);
+				add_byte(blr, blr_varying2);
+			add_word(blr, field->fld_character_set_id);
+			add_word(blr, field->fld_length);
 		}
 		else if (field->fld_type == blr_short || field->fld_type == blr_long ||
 			field->fld_type == blr_quad || field->fld_type == blr_int64)
 		{
-			stuff(&blr, field->fld_type);
-			stuff(&blr, field->fld_scale);
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
 		}
 		else
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 
 
-		stuff(&blr, isc_sdl_relation);
-		stuff_string(&blr, relation->rel_name);
-		stuff(&blr, isc_sdl_field);
-		stuff_string(&blr, field->fld_name);
+		add_byte(blr, isc_sdl_relation);
+		add_string(blr, relation->rel_name);
+		add_byte(blr, isc_sdl_field);
+		add_string(blr, field->fld_name);
 
 		// each element spec starts here  
 
 		for (range = fld_ranges, count = 0; range < end_ranges; range += 2, count++)
 		{
-			stuff(&blr, isc_sdl_do2);
-			stuff(&blr, count);
-			stuff(&blr, isc_sdl_long_integer);
-			stuff_long(&blr, range[0]);
-			stuff(&blr, isc_sdl_long_integer);
-			stuff_long(&blr, range[1]);
+			add_byte(blr, isc_sdl_do2);
+			add_byte(blr, count);
+			add_byte(blr, isc_sdl_long_integer);
+			add_long(blr, range[0]);
+			add_byte(blr, isc_sdl_long_integer);
+			add_long(blr, range[1]);
 		}
 
-		stuff(&blr, isc_sdl_element);
-		stuff(&blr, 1);
-		stuff(&blr, isc_sdl_scalar);
-		stuff(&blr, 0);
-		stuff(&blr, field->fld_dimensions);
+		add_byte(blr, isc_sdl_element);
+		add_byte(blr, 1);
+		add_byte(blr, isc_sdl_scalar);
+		add_byte(blr, 0);
+		add_byte(blr, field->fld_dimensions);
 
 		for (count = 0; count < field->fld_dimensions; count++)
 		{
-			stuff(&blr, isc_sdl_variable);
-			stuff(&blr, count);
+			add_byte(blr, isc_sdl_variable);
+			add_byte(blr, count);
 		}
 
-		stuff(&blr, isc_sdl_eoc);
+		add_byte(blr, isc_sdl_eoc);
 
 #ifdef DEBUG
 		if (debug_on)
@@ -2333,11 +2333,11 @@ rec_type get_data (burp_rel*	relation)
 	UCHAR* const blr_buffer = (UCHAR*) BURP_alloc (200 + length + count * 18);
 	UCHAR* blr = blr_buffer;
 
-	stuff(&blr, blr_version4);
-	stuff(&blr, blr_begin);
-	stuff(&blr, blr_message);
-	stuff(&blr, 0);				// Message number 
-	stuff_word(&blr, count);	// Number of fields, counting eof 
+	add_byte(blr, blr_version4);
+	add_byte(blr, blr_begin);
+	add_byte(blr, blr_message);
+	add_byte(blr, 0);				// Message number 
+	add_word(blr, count);	// Number of fields, counting eof 
 
 	// Let's reset count.
 	count = 0;
@@ -2369,11 +2369,11 @@ rec_type get_data (burp_rel*	relation)
 		case blr_text:
 		case blr_varying:
 			if (dtype == blr_text)
-				stuff(&blr, blr_text2);
+				add_byte(blr, blr_text2);
 			else
-				stuff(&blr, blr_varying2);
-			stuff_word(&blr, field->fld_character_set_id);
-			stuff_word(&blr, field->fld_length);
+				add_byte(blr, blr_varying2);
+			add_word(blr, field->fld_character_set_id);
+			add_word(blr, field->fld_length);
 			if (dtype == blr_varying)
 				length += sizeof(USHORT);
 			break;
@@ -2382,8 +2382,8 @@ rec_type get_data (burp_rel*	relation)
 		case blr_long:
 		case blr_quad:
 		case blr_int64:
-			stuff(&blr, field->fld_type);
-			stuff(&blr, field->fld_scale);
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
 			break;
 
 		case blr_float:
@@ -2391,14 +2391,14 @@ rec_type get_data (burp_rel*	relation)
 		case blr_timestamp:
 		case blr_sql_time:
 		case blr_sql_date:
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 			break;
 
 		case blr_blob:
 			alignment = type_alignments[dtype_blob];
 			length = type_lengths[dtype_blob];
-			stuff(&blr, blr_quad);
-			stuff(&blr, 0);
+			add_byte(blr, blr_quad);
+			add_byte(blr, 0);
 			break;
 
 		default:
@@ -2421,8 +2421,8 @@ rec_type get_data (burp_rel*	relation)
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
-			stuff(&blr, blr_short);
-			stuff(&blr, 0);
+			add_byte(blr, blr_short);
+			add_byte(blr, 0);
 			offset = FB_ALIGN(offset, sizeof(SSHORT));
 			field->fld_missing_parameter = count++;
 			offset += sizeof(SSHORT);
@@ -2432,40 +2432,40 @@ rec_type get_data (burp_rel*	relation)
 
 	// Build STORE statement 
 
-	stuff(&blr, blr_receive);
-	stuff(&blr, 0);
-	stuff(&blr, blr_store);
-	stuff(&blr, blr_relation);
-	stuff_string(&blr, relation->rel_name);
-	stuff(&blr, 0);			// context variable 
-	stuff(&blr, blr_begin);
+	add_byte(blr, blr_receive);
+	add_byte(blr, 0);
+	add_byte(blr, blr_store);
+	add_byte(blr, blr_relation);
+	add_string(blr, relation->rel_name);
+	add_byte(blr, 0);			// context variable 
+	add_byte(blr, blr_begin);
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
-		stuff(&blr, blr_assignment);
+		add_byte(blr, blr_assignment);
 		if (tdgbl->RESTORE_format >= 2)
 		{
-			stuff(&blr, blr_parameter2);
-			stuff(&blr, 0);
-			stuff_word(&blr, field->fld_parameter);
-			stuff_word(&blr, field->fld_missing_parameter);
+			add_byte(blr, blr_parameter2);
+			add_byte(blr, 0);
+			add_word(blr, field->fld_parameter);
+			add_word(blr, field->fld_missing_parameter);
 		}
 		else
 		{
-			stuff(&blr, blr_parameter);
-			stuff(&blr, 0);
-			stuff_word(&blr, field->fld_parameter);
+			add_byte(blr, blr_parameter);
+			add_byte(blr, 0);
+			add_word(blr, field->fld_parameter);
 		}
-		stuff(&blr, blr_field);
-		stuff(&blr, 0);
-		stuff_string(&blr, field->fld_name);
+		add_byte(blr, blr_field);
+		add_byte(blr, 0);
+		add_string(blr, field->fld_name);
 	}
 
-	stuff(&blr, blr_end);
-	stuff(&blr, blr_end);
-	stuff(&blr, blr_eoc);
+	add_byte(blr, blr_end);
+	add_byte(blr, blr_end);
+	add_byte(blr, blr_eoc);
 
 	// Compile request 
 
@@ -6765,50 +6765,50 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 
 	if (tdgbl->RESTORE_format >= 6)
 	{
-		stuff(&blr, blr_version5);
+		add_byte(blr, blr_version5);
 	}
 	else
 	{
-		stuff(&blr, blr_version4);
+		add_byte(blr, blr_version4);
 	}
-	stuff(&blr, blr_begin);
+	add_byte(blr, blr_begin);
 	if (tdgbl->RESTORE_format >= 6)
 	{
-		stuff(&blr, blr_dcl_variable);
-		stuff_word(&blr, 0);
-		stuff(&blr, blr_int64);
-		stuff(&blr, 0);
+		add_byte(blr, blr_dcl_variable);
+		add_word(blr, 0);
+		add_byte(blr, blr_int64);
+		add_byte(blr, 0);
 	}
 	else
 	{
-		stuff(&blr, blr_dcl_variable);
-		stuff_word(&blr, 0);
-		stuff(&blr, blr_long);
-		stuff(&blr, 0);
+		add_byte(blr, blr_dcl_variable);
+		add_word(blr, 0);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
 	}
-	stuff(&blr, blr_begin);
-	stuff(&blr, blr_assignment);
-	stuff(&blr, blr_gen_id);
-	stuff_string(&blr, gen_name);
+	add_byte(blr, blr_begin);
+	add_byte(blr, blr_assignment);
+	add_byte(blr, blr_gen_id);
+	add_string(blr, gen_name);
 	if (tdgbl->RESTORE_format >= 6)
 	{
-		stuff(&blr, blr_literal);
-		stuff(&blr, blr_int64);
-		stuff(&blr, 0);
-		stuff_int64(&blr, value);
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_int64);
+		add_byte(blr, 0);
+		add_int64(blr, value);
 	}
 	else
 	{
-		stuff(&blr, blr_literal);
-		stuff(&blr, blr_long);
-		stuff(&blr, 0);
-		stuff_long(&blr, (SLONG)value);
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_long(blr, (SLONG)value);
 	}
-	stuff(&blr, blr_variable);
-	stuff_word(&blr, 0);
-	stuff(&blr, blr_end);
-	stuff(&blr, blr_end);
-	stuff(&blr, blr_eoc);
+	add_byte(blr, blr_variable);
+	add_word(blr, 0);
+	add_byte(blr, blr_end);
+	add_byte(blr, blr_end);
+	add_byte(blr, blr_eoc);
 
 	const SSHORT blr_length = blr - blr_buffer;
 	
@@ -6837,25 +6837,6 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	isc_release_request (status_vector, &gen_id_reqh);
 }
 
-void stuff_string(UCHAR	**ptr,
-				  const TEXT* string)
-{
-/**************************************
- *
- *	s t u f f _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Stuff a name input a BLR string -- byte count first.
- *
- **************************************/
-	stuff(ptr, strlen (string));
-
-	while (*string)
-		stuff(ptr, *string++);
-
-}
 
 void update_global_field()
 {

@@ -107,6 +107,7 @@ enum literal_string_type
 #include "../jrd/constants.h"
 #include "../jrd/ods.h"
 #include "../jrd/file_params.h"
+#include "../common/stuff.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
@@ -116,8 +117,8 @@ enum literal_string_type
 
 DATABASE DB = COMPILETIME "yachts.lnk";
 
-#define STUFF(x)	  *dpb++ = (x)
-#define STUFF_INT(x)  {STUFF (x); STUFF ((x) >> 8); STUFF ((x) >> 16); STUFF ((x) >> 24);}
+//#define STUFF(x)	  *dpb++ = (x)
+//#define STUFF_INT(x)  {STUFF (x); STUFF ((x) >> 8); STUFF ((x) >> 16); STUFF ((x) >> 24);}
 
 #define DIGIT(c)		((c) >= '0' && (c) <= '9')
 #define INT64_LIMIT	 ((((SINT64) 1) << 62) / 5)	// same as in cvt.cpp 
@@ -4959,9 +4960,9 @@ static processing_state newdb(TEXT* dbname,
 	}
 
 	if (l = strlen(local_sql_role)) {
-		STUFF(isc_dpb_sql_dialect);
-		STUFF(4);
-		STUFF_INT(SQL_dialect);
+		add_byte(dpb, isc_dpb_sql_dialect);
+		add_byte(dpb, 4);
+		add_long(dpb, SQL_dialect);
 		*dpb++ = isc_dpb_sql_role_name;
 		*dpb++ = l;
 		p = (UCHAR*) local_sql_role;
@@ -4971,9 +4972,9 @@ static processing_state newdb(TEXT* dbname,
 
 	if (l = strlen(local_numbufs)) {
 		const int i = atoi(local_numbufs);
-		STUFF(isc_dpb_num_buffers);
-		STUFF(4);
-		STUFF_INT(i);
+		add_byte(dpb, isc_dpb_num_buffers);
+		add_byte(dpb, 4);
+		add_long(dpb, i);
 	}
 
 	int dpb_len = (dpb - dpb_buffer);

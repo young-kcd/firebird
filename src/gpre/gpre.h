@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.65 2004-05-21 06:15:23 robocop Exp $
+ * $Id: gpre.h,v 1.66 2004-05-24 11:02:11 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -63,6 +63,7 @@
 
 #include <stdio.h>
 #include "../jrd/common.h"
+#include "../jrd/ibase.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -1107,7 +1108,9 @@ enum req_t {
 	REQ_LASTREQUEST				/* Leave this debugging gpre_req last */
 };
 
-struct gpre_req {
+class gpre_req {
+	public:
+
 	enum req_t req_type;		/* request type */
 	USHORT req_ident;			/* ident for request handle */
 	USHORT req_act_flag;		/* activity flag ident, if used */
@@ -1157,6 +1160,29 @@ struct gpre_req {
 	USHORT req_in_order_by_clause;	/* processing order by clause */
 	USHORT req_in_subselect;	/* processing a subselect clause */
 	ULONG req_flags;
+
+	inline void add_end() {
+		*req_blr++ = isc_dyn_end;
+	}
+	inline void add_byte(const int byte) {
+		*req_blr++ = (SCHAR) (byte);
+	}
+	inline void add_word(const int word) {
+		add_byte(word);
+		add_byte(word >> 8);
+	}
+	inline void add_long(const long lg) {
+		add_word(lg);
+		add_word(lg >> 16);
+	}
+	inline void add_cstring(const char* string) {
+		add_byte(strlen(string));
+		UCHAR c;
+		while (c = *string++) {
+			add_byte(c);
+		}
+	}
+
 };
 
 enum req_flags_vals {
@@ -1198,7 +1224,9 @@ const size_t CTX_LEN = sizeof(gpre_ctx);
 
 /* Field reference */
 
-typedef struct ref {
+class ref {
+	public:
+
 	USHORT ref_ident;			/* identifier */
 	USHORT ref_level;			/* highest level of access */
 	USHORT ref_parameter;		/* parameter in port */
@@ -1223,7 +1251,22 @@ typedef struct ref {
 	USHORT ref_offset;			/* offset of field in port */
 	USHORT ref_flags;
 	SSHORT ref_ttype;			/* Character set type for literals */
-} *REF;
+
+	inline void add_byte(const int byte) {
+		*ref_sdl++ = (SCHAR) (byte);
+	}
+	inline void add_word(const int word) {
+		add_byte(word);
+		add_byte(word >> 8);
+	}
+	inline void add_long(const long lg) {
+		add_word(lg);
+		add_word(lg >> 16);
+	}
+
+};
+
+typedef ref* REF;
 
 enum ref_flags_vals {
 	REF_union		= 1,	/* Pseudo field for union */

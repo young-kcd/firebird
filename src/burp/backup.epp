@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.59 2004-05-20 00:56:57 brodsom Exp $
+$Id: backup.epp,v 1.60 2004-05-24 11:01:00 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -49,6 +49,7 @@ $Id: backup.epp,v 1.59 2004-05-20 00:56:57 brodsom Exp $
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/thd_proto.h"
+#include "../common/stuff.h"
 #include "../burp/backu_proto.h"
 #include "../burp/burp_proto.h"
 #include "../burp/canon_proto.h"
@@ -922,64 +923,64 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	if (tdgbl->BCK_capabilities & BCK_ods10)
 	{
 		// build the blr with the right relation name and 64-bit results. 
-		stuff(&blr, blr_version5);
-		stuff(&blr, blr_begin);
-		stuff(&blr, blr_message);
-		stuff(&blr, 0);
-		stuff_word(&blr, 1);
-		stuff(&blr, blr_int64);
-		stuff(&blr, 0);
-		stuff(&blr, blr_send);
-		stuff(&blr, 0);
-		stuff(&blr, blr_assignment);
-		stuff(&blr, blr_gen_id);
-		stuff(&blr, name_len);
+		add_byte(blr, blr_version5);
+		add_byte(blr, blr_begin);
+		add_byte(blr, blr_message);
+		add_byte(blr, 0);
+		add_word(blr, 1);
+		add_byte(blr, blr_int64);
+		add_byte(blr, 0);
+		add_byte(blr, blr_send);
+		add_byte(blr, 0);
+		add_byte(blr, blr_assignment);
+		add_byte(blr, blr_gen_id);
+		add_byte(blr, name_len);
 		while (name_len--)
 		{
 			const UCHAR c = *name++;
-			stuff(&blr, c);
+			add_byte(blr, c);
 		}
-		stuff(&blr, blr_literal);
-		stuff(&blr, blr_long);
-		stuff(&blr, 0);
-		stuff_word(&blr, 0);
-		stuff_word(&blr, 0);
-		stuff(&blr, blr_parameter);
-		stuff(&blr, 0);
-		stuff_word(&blr, 0);
-		stuff(&blr, blr_end);
-		stuff(&blr, blr_eoc);
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_parameter);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_end);
+		add_byte(blr, blr_eoc);
 	}
 	else
 	{
 		// build the blr with the right relation name and 32-bit results 
-		stuff(&blr, blr_version4);
-		stuff(&blr, blr_begin);
-		stuff(&blr, blr_message);
-		stuff(&blr, 0);
-		stuff_word(&blr, 1);
-		stuff(&blr, blr_long);
-		stuff(&blr, 0);
-		stuff(&blr, blr_send);
-		stuff(&blr, 0);
-		stuff(&blr, blr_assignment);
-		stuff(&blr, blr_gen_id);
-		stuff(&blr, name_len);
+		add_byte(blr, blr_version4);
+		add_byte(blr, blr_begin);
+		add_byte(blr, blr_message);
+		add_byte(blr, 0);
+		add_word(blr, 1);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_byte(blr, blr_send);
+		add_byte(blr, 0);
+		add_byte(blr, blr_assignment);
+		add_byte(blr, blr_gen_id);
+		add_byte(blr, name_len);
 		while (name_len--)
 		{
 			const UCHAR c = *name++;
-			stuff(&blr, c);
+			add_byte(blr, c);
 		}
-		stuff(&blr, blr_literal);
-		stuff(&blr, blr_long);
-		stuff(&blr, 0);
-		stuff_word(&blr, 0);
-		stuff_word(&blr, 0);
-		stuff(&blr, blr_parameter);
-		stuff(&blr, 0);
-		stuff_word(&blr, 0);
-		stuff(&blr, blr_end);
-		stuff(&blr, blr_eoc);
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_parameter);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_end);
+		add_byte(blr, blr_eoc);
 	}
 
 #ifdef DEBUG
@@ -1110,58 +1111,58 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 // build the sdl 
 
-	stuff(&blr, isc_sdl_version1);
+	add_byte(blr, isc_sdl_version1);
 
-	stuff(&blr, isc_sdl_struct);
-	stuff(&blr, 1);
+	add_byte(blr, isc_sdl_struct);
+	add_byte(blr, 1);
 
-	stuff(&blr, field->fld_type);
+	add_byte(blr, field->fld_type);
 
 	if (field->fld_type == blr_short ||
 		field->fld_type == blr_long ||
 		field->fld_type == blr_quad ||
 		field->fld_type == blr_int64)
 	{
-		stuff(&blr, field->fld_scale);
+		add_byte(blr, field->fld_scale);
 	}
 
 	if (field->fld_type == blr_text || field->fld_type == blr_varying)
-		stuff_word(&blr, field->fld_length);
+		add_word(blr, field->fld_length);
 
 	if (field->fld_type == blr_varying)
 		field_length += sizeof(USHORT);
 
-	stuff(&blr, isc_sdl_rid);
-	stuff_word(&blr, relation->rel_id);
-	stuff(&blr, isc_sdl_fid);
-	stuff_word(&blr, field->fld_id);
+	add_byte(blr, isc_sdl_rid);
+	add_word(blr, relation->rel_id);
+	add_byte(blr, isc_sdl_fid);
+	add_word(blr, field->fld_id);
 
 	USHORT count;
 	const SLONG* range; // used in multiple loops.
 	for (range = field->fld_ranges, count = 0; range < end_ranges;
 		 range += 2, count++)
 	{
-		stuff(&blr, isc_sdl_do2);
-		stuff(&blr, count);
-		stuff(&blr, isc_sdl_long_integer);
-		stuff_long(&blr, range[0]);
-		stuff(&blr, isc_sdl_long_integer);
-		stuff_long(&blr, range[1]);
+		add_byte(blr, isc_sdl_do2);
+		add_byte(blr, count);
+		add_byte(blr, isc_sdl_long_integer);
+		add_long(blr, range[0]);
+		add_byte(blr, isc_sdl_long_integer);
+		add_long(blr, range[1]);
 	}
 
-	stuff(&blr, isc_sdl_element);
-	stuff(&blr, 1);
-	stuff(&blr, isc_sdl_scalar);
-	stuff(&blr, 0);
-	stuff(&blr, field->fld_dimensions);
+	add_byte(blr, isc_sdl_element);
+	add_byte(blr, 1);
+	add_byte(blr, isc_sdl_scalar);
+	add_byte(blr, 0);
+	add_byte(blr, field->fld_dimensions);
 
 	for (count = 0; count < field->fld_dimensions; count++)
 	{
-		stuff(&blr, isc_sdl_variable);
-		stuff(&blr, count);
+		add_byte(blr, isc_sdl_variable);
+		add_byte(blr, count);
 	}
 
-	stuff(&blr, isc_sdl_eoc);
+	add_byte(blr, isc_sdl_eoc);
 
 #ifdef DEBUG
 	if (debug_on)
@@ -1577,11 +1578,11 @@ void put_data(burp_rel* relation)
    large enough to handle the per field overhead */
 	UCHAR* const blr_buffer = BURP_alloc(200 + field_count * 9);
 	UCHAR* blr = blr_buffer;
-	stuff(&blr, blr_version4);
-	stuff(&blr, blr_begin);
-	stuff(&blr, blr_message);
-	stuff(&blr, 0);						// Message number
-	stuff_word(&blr, field_count);		// Number of fields, counting eof
+	add_byte(blr, blr_version4);
+	add_byte(blr, blr_begin);
+	add_byte(blr, blr_message);
+	add_byte(blr, 0);						// Message number
+	add_word(blr, field_count);		// Number of fields, counting eof
 
 	RCRD_OFFSET offset = 0;
 	SSHORT count = 0;   // This is param count.
@@ -1602,70 +1603,70 @@ void put_data(burp_rel* relation)
 		{
 		case blr_text:
 			alignment = type_alignments[dtype_text];
-			stuff(&blr, field->fld_type);
-			stuff_word(&blr, field->fld_length);
+			add_byte(blr, field->fld_type);
+			add_word(blr, field->fld_length);
 			break;
 
 		case blr_varying:
 			alignment = type_alignments[dtype_varying];
-			stuff(&blr, field->fld_type);
-			stuff_word(&blr, field->fld_length);
+			add_byte(blr, field->fld_type);
+			add_word(blr, field->fld_length);
 			length += sizeof(USHORT);
 			break;
 
 		case blr_short:
 			alignment = type_alignments[dtype_short];
-			stuff(&blr, field->fld_type);
-			stuff(&blr, field->fld_scale);
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
 			break;
 
 		case blr_long:
 			alignment = type_alignments[dtype_long];
-			stuff(&blr, field->fld_type);
-			stuff(&blr, field->fld_scale);
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
 			break;
 
 		case blr_quad:
 			alignment = type_alignments[dtype_quad];
-			stuff(&blr, field->fld_type);
-			stuff(&blr, field->fld_scale);
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
 			break;
 
 		case blr_int64:
 			alignment = type_alignments[dtype_int64];
-			stuff(&blr, field->fld_type);
-			stuff(&blr, field->fld_scale);
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
 			break;
 
 		case blr_double:
 			alignment = type_alignments[dtype_double];
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 			break;
 
 		case blr_timestamp:
 			alignment = type_alignments[dtype_timestamp];
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 			break;
 
 		case blr_sql_time:
 			alignment = type_alignments[dtype_sql_time];
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 			break;
 
 		case blr_sql_date:
 			alignment = type_alignments[dtype_sql_date];
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 			break;
 
 		case blr_float:
 			alignment = type_alignments[dtype_real];
-			stuff(&blr, field->fld_type);
+			add_byte(blr, field->fld_type);
 			break;
 
 		case blr_blob:
 			alignment = type_alignments[dtype_blob];
-			stuff(&blr, blr_quad);
-			stuff(&blr, 0);
+			add_byte(blr, blr_quad);
+			add_byte(blr, 0);
 			break;
 
 		default:
@@ -1686,8 +1687,8 @@ void put_data(burp_rel* relation)
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
-		stuff(&blr, blr_short);
-		stuff(&blr, 0);
+		add_byte(blr, blr_short);
+		add_byte(blr, 0);
 		offset = FB_ALIGN(offset, sizeof(SSHORT));
 		field->fld_missing_parameter = count++;
 		offset += sizeof(SSHORT);
@@ -1695,8 +1696,8 @@ void put_data(burp_rel* relation)
 
 // Finally, make up an EOF field 
 
-	stuff(&blr, blr_short);			// eof field 
-	stuff(&blr, 0);					// scale for eof field 
+	add_byte(blr, blr_short);			// eof field 
+	add_byte(blr, 0);					// scale for eof field 
 	SSHORT eof_parameter = count++;
 	RCRD_OFFSET record_length = offset;
 	RCRD_OFFSET eof_offset = FB_ALIGN(offset, sizeof(SSHORT));
@@ -1705,55 +1706,55 @@ void put_data(burp_rel* relation)
 
 // Build FOR loop, body, and eof handler 
 
-	stuff(&blr, blr_for);
-	stuff(&blr, blr_rse);
-	stuff(&blr, 1);					// count of relations 
-	stuff(&blr, blr_rid);
-	stuff_word(&blr, relation->rel_id);
-	stuff(&blr, 0);					// context variable 
-	stuff(&blr, blr_end);
+	add_byte(blr, blr_for);
+	add_byte(blr, blr_rse);
+	add_byte(blr, 1);					// count of relations 
+	add_byte(blr, blr_rid);
+	add_word(blr, relation->rel_id);
+	add_byte(blr, 0);					// context variable 
+	add_byte(blr, blr_end);
 
-	stuff(&blr, blr_send);
-	stuff(&blr, 0);
-	stuff(&blr, blr_begin);
-	stuff(&blr, blr_assignment);
-	stuff(&blr, blr_literal);
-	stuff(&blr, blr_short);
-	stuff(&blr, 0);
-	stuff_word(&blr, 1);
-	stuff(&blr, blr_parameter);
-	stuff(&blr, 0);
-	stuff_word(&blr, eof_parameter);
+	add_byte(blr, blr_send);
+	add_byte(blr, 0);
+	add_byte(blr, blr_begin);
+	add_byte(blr, blr_assignment);
+	add_byte(blr, blr_literal);
+	add_byte(blr, blr_short);
+	add_byte(blr, 0);
+	add_word(blr, 1);
+	add_byte(blr, blr_parameter);
+	add_byte(blr, 0);
+	add_word(blr, eof_parameter);
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
-		stuff(&blr, blr_assignment);
-		stuff(&blr, blr_fid);
-		stuff(&blr, 0);
-		stuff_word(&blr, field->fld_id);
-		stuff(&blr, blr_parameter2);
-		stuff(&blr, 0);
-		stuff_word(&blr, field->fld_parameter);
-		stuff_word(&blr, field->fld_missing_parameter);
+		add_byte(blr, blr_assignment);
+		add_byte(blr, blr_fid);
+		add_byte(blr, 0);
+		add_word(blr, field->fld_id);
+		add_byte(blr, blr_parameter2);
+		add_byte(blr, 0);
+		add_word(blr, field->fld_parameter);
+		add_word(blr, field->fld_missing_parameter);
 	}
 
-	stuff(&blr, blr_end);
+	add_byte(blr, blr_end);
 
-	stuff(&blr, blr_send);
-	stuff(&blr, 0);
-	stuff(&blr, blr_assignment);
-	stuff(&blr, blr_literal);
-	stuff(&blr, blr_short);
-	stuff(&blr, 0);
-	stuff_word(&blr, 0);
-	stuff(&blr, blr_parameter);
-	stuff(&blr, 0);
-	stuff_word(&blr, eof_parameter);
+	add_byte(blr, blr_send);
+	add_byte(blr, 0);
+	add_byte(blr, blr_assignment);
+	add_byte(blr, blr_literal);
+	add_byte(blr, blr_short);
+	add_byte(blr, 0);
+	add_word(blr, 0);
+	add_byte(blr, blr_parameter);
+	add_byte(blr, 0);
+	add_word(blr, eof_parameter);
 
-	stuff(&blr, blr_end);
-	stuff(&blr, blr_eoc);
+	add_byte(blr, blr_end);
+	add_byte(blr, blr_eoc);
 
 #ifdef DEBUG
 	if (debug_on)

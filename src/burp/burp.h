@@ -969,30 +969,5 @@ enum burp_messages_vals {
 	msgVerbose_restore_collation	= 216
 };
 
-inline static void stuff(UCHAR** blr, const int byte)
-{
-	UCHAR* ptr = *blr;
-	*ptr++ = (SCHAR) (byte);
-	*blr = ptr;
-}
-
-inline static void stuff_word(UCHAR** blr, const int word)
-{
-	stuff(blr, word);
-	stuff(blr, (word) >> 8);
-}
-
-inline static void stuff_long(UCHAR** blr, const long lg)
-{
-	stuff_word(blr, lg);
-	stuff_word(blr, (lg) >> 16);
-}
-
-inline static void stuff_int64(UCHAR** blr, const SINT64 i64)
-{
-	stuff_long(blr, i64);
-	stuff_long(blr, (i64) >> 32);
-}
-
 #endif // BURP_BURP_H 
 

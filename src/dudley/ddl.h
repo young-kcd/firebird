@@ -402,13 +402,21 @@ typedef struct sce {
 
 /* String block for build DYN & BLR strings */
 
-typedef struct str {
+class str {
+public:
 	UCHAR* str_start;			/* start of string buffer */
 	UCHAR* str_current;			/* current position in string being built */
 	USHORT str_length;			/* length of buffer */
-} *STR;
+	inline void add_byte(const int byte){
+		*str_current++ = byte;
+	}
+	inline void add_word(const int word){
+		add_byte(word);
+		add_byte(word >> 8);
+	}
+} ;
 
-
+typedef str* STR;
 /* Symbol block, also used for hash table */
 
 enum sym_t {

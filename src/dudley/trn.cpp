@@ -81,9 +81,6 @@ static void raw_ftn(STR);
 
 static FILE *output_file;
 
-#define STUFF(c)	*dyn->str_current++ = c
-#define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
-
 static inline void check_dyn(str* dyn, const int l)
 {
 	if (!(dyn->str_current - dyn->str_start + l <=  dyn->str_length)
@@ -133,8 +130,8 @@ void TRN_translate(void)
 	}
 
 	check_dyn(dyn, 2);
-	STUFF(isc_dyn_version_1);
-	STUFF(isc_dyn_begin);
+	dyn->add_byte(isc_dyn_version_1);
+	dyn->add_byte(isc_dyn_begin);
 
 	for (action = DDL_actions; action; action = action->act_next)
 		if (!(action->act_flags & ACT_ignore))
@@ -261,8 +258,8 @@ void TRN_translate(void)
 			}
 
 	check_dyn(dyn, 2);
-	STUFF(isc_dyn_end);
-	STUFF(isc_dyn_eoc);
+	dyn->add_byte(isc_dyn_end);
+	dyn->add_byte(isc_dyn_eoc);
 
 	switch (language) {
 	case lan_undef:
@@ -348,7 +345,7 @@ static void add_dimensions( STR dyn, DUDLEY_FLD field)
  **************************************/
 	put_symbol(dyn, isc_dyn_delete_dimensions, field->fld_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 
 	USHORT n = 0;
 	for (const SLONG* range = field->fld_ranges; n < field->fld_dimension;
@@ -359,7 +356,7 @@ static void add_dimensions( STR dyn, DUDLEY_FLD field)
 		put_number(dyn, isc_dyn_dim_lower, (SSHORT) range[0]);
 		put_number(dyn, isc_dyn_dim_upper, (SSHORT) range[1]);
 		check_dyn(dyn, 1);
-		STUFF(isc_dyn_end);
+		dyn->add_byte(isc_dyn_end);
 	}
 }
 
@@ -432,7 +429,7 @@ static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 	put_text(dyn, isc_dyn_description, field->fld_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -469,11 +466,11 @@ static void add_files( STR dyn, FIL files, DBB databaseL)
 		put_number(dyn, isc_dyn_shadow_man_auto, file->fil_manual);
 		put_number(dyn, isc_dyn_shadow_conditional, file->fil_conditional);
 		check_dyn(dyn, 1);
-		STUFF(isc_dyn_end);
+		dyn->add_byte(isc_dyn_end);
 	}
 	if (!databaseL && files) {
 		check_dyn(dyn, 1);
-		STUFF(isc_dyn_end);
+		dyn->add_byte(isc_dyn_end);
 	}
 }
 
@@ -501,7 +498,7 @@ static void add_filter( STR dyn, FILTER filter)
 	put_symbol(dyn, isc_dyn_func_module_name, filter->filter_module_name);
 	put_text(dyn, isc_dyn_description, filter->filter_description);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -526,7 +523,7 @@ static void add_function( STR dyn, FUNC function)
 	put_symbol(dyn, isc_dyn_func_module_name, function->func_module_name);
 	put_text(dyn, isc_dyn_description, function->func_description);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -553,7 +550,7 @@ static void add_function_arg( STR dyn, FUNCARG func_arg)
 		put_number(dyn, isc_dyn_fld_sub_type, func_arg->funcarg_sub_type);
 	put_number(dyn, isc_dyn_fld_length, func_arg->funcarg_length);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -573,7 +570,7 @@ static void add_generator( STR dyn, SYM symbol)
 
 	put_symbol(dyn, isc_dyn_def_generator, symbol);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -623,7 +620,7 @@ static void add_global_field( STR dyn, DUDLEY_FLD field)
 	}
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -652,7 +649,7 @@ static void add_index( STR dyn, DUDLEY_IDX index)
 		put_symbol(dyn, isc_dyn_fld_name, index->idx_field[i]);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -682,7 +679,7 @@ static void add_relation( STR dyn, DUDLEY_REL relation)
 	put_text(dyn, isc_dyn_description, relation->rel_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -706,7 +703,7 @@ static void add_security_class( STR dyn, SCL sec_class)
 	put_text(dyn, isc_dyn_description, sec_class->scl_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -735,7 +732,7 @@ static void add_trigger( STR dyn, DUDLEY_TRG trigger)
 	put_text(dyn, isc_dyn_description, trigger->trg_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -757,7 +754,7 @@ static void add_trigger_msg( STR dyn, TRGMSG trigmsg)
 	put_symbol(dyn, isc_dyn_trg_msg, trigmsg->trgmsg_text);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -789,14 +786,14 @@ static void add_view( STR dyn, DUDLEY_REL relation)
 		put_number(dyn, isc_dyn_view_context, context->ctx_context_id);
 		put_symbol(dyn, isc_dyn_view_context_name, context->ctx_name);
 		check_dyn(dyn, 1);
-		STUFF(isc_dyn_end);
+		dyn->add_byte(isc_dyn_end);
 	}
 
 	for (DUDLEY_FLD field = relation->rel_fields; field; field = field->fld_next)
 		add_field(dyn, field, relation);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -866,7 +863,7 @@ static void drop_field( STR dyn, DUDLEY_FLD field)
 	put_symbol(dyn, isc_dyn_rel_name, relation->rel_name);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -888,7 +885,7 @@ static void drop_filter( STR dyn, FILTER filter)
 
 	put_symbol(dyn, isc_dyn_delete_filter, filter->filter_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -908,7 +905,7 @@ static void drop_function( STR dyn, FUNC function)
 
 	put_symbol(dyn, isc_dyn_delete_function, function->func_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -930,7 +927,7 @@ static void drop_global_field( STR dyn, DUDLEY_FLD field)
 	put_symbol(dyn, isc_dyn_delete_global_fld, name);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -949,7 +946,7 @@ static void drop_index( STR dyn, DUDLEY_IDX index)
 
 	put_symbol(dyn, isc_dyn_delete_idx, index->idx_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -968,7 +965,7 @@ static void drop_relation( STR dyn, DUDLEY_REL relation)
 
 	put_symbol(dyn, isc_dyn_delete_rel, relation->rel_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -987,7 +984,7 @@ static void drop_security_class( STR dyn, SCL sec_class)
 
 	put_symbol(dyn, isc_dyn_delete_security_class, sec_class->scl_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1006,7 +1003,7 @@ static void drop_shadow( STR dyn, SLONG shadow_number)
 
 	put_number(dyn, isc_dyn_delete_shadow, (SSHORT) shadow_number);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1026,7 +1023,7 @@ static void drop_trigger( STR dyn, DUDLEY_TRG trigger)
 
 	put_symbol(dyn, isc_dyn_delete_trigger, name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1046,7 +1043,7 @@ static void drop_trigger_msg( STR dyn, TRGMSG trigmsg)
 	put_number(dyn, isc_dyn_delete_trigger_msg, trigmsg->trgmsg_number);
 	put_symbol(dyn, isc_dyn_trg_name, trigmsg->trgmsg_trg_name);
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1144,27 +1141,27 @@ static void modify_database( STR dyn, DBB databaseL)
 	}
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_mod_database);
+	dyn->add_byte(isc_dyn_mod_database);
 
 	add_files(dyn, databaseL->dbb_files, databaseL);
 	if (databaseL->dbb_flags & DBB_null_security_class) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_security_class);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_security_class);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_security_class,
 				   databaseL->dbb_security_class);
 	if (databaseL->dbb_flags & DBB_null_description) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_description);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_description);
+		dyn->add_word(0);
 	}
 	else if (databaseL->dbb_description)
 		put_text(dyn, isc_dyn_description, databaseL->dbb_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1201,29 +1198,29 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 
 	if (field->fld_flags & fld_null_security_class) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_security_class);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_security_class);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_security_class, field->fld_security_class);
 	if (field->fld_flags & fld_null_edit_string) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_edit_string);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_edit_string);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_edit_string, field->fld_edit_string);
 	if (field->fld_flags & fld_null_query_name) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_query_name);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_query_name);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_query_name, field->fld_query_name);
 	if (field->fld_flags & fld_null_query_header) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_query_header);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_query_header);
+		dyn->add_word(0);
 	}
 	else
 		put_query_header(dyn, isc_dyn_fld_query_header,
@@ -1237,14 +1234,14 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
 
 	if (field->fld_flags & fld_null_description) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_description);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_description);
+		dyn->add_word(0);
 	}
 	else if (field->fld_description)
 		put_text(dyn, isc_dyn_description, field->fld_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1270,23 +1267,23 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 	put_symbol(dyn, isc_dyn_mod_global_fld, name);
 	if (field->fld_flags & fld_null_edit_string) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_edit_string);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_edit_string);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_edit_string, field->fld_edit_string);
 	if (field->fld_flags & fld_null_query_name) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_query_name);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_query_name);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_query_name, field->fld_query_name);
 		
 	if (field->fld_flags & fld_null_query_header) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_query_header);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_query_header);
+		dyn->add_word(0);
 	}
 	else
 		put_query_header(dyn, isc_dyn_fld_query_header,
@@ -1310,18 +1307,18 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 
 	if (field->fld_flags & fld_null_missing_value) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_fld_missing_value);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_fld_missing_value);
+		dyn->add_word(0);
 	}
 	else if (field->fld_missing)
 		put_blr(dyn, isc_dyn_fld_missing_value, NULL, field->fld_missing);
 
 	if (field->fld_flags & fld_null_validation) {
 		check_dyn(dyn, 6);
-		STUFF(isc_dyn_fld_validation_blr);
-		STUFF_WORD(0);
-		STUFF(isc_dyn_fld_validation_source);
-		STUFF_WORD(0)
+		dyn->add_byte(isc_dyn_fld_validation_blr);
+		dyn->add_word(0);
+		dyn->add_byte(isc_dyn_fld_validation_source);
+		dyn->add_word(0);
 	}
 	else if (field->fld_validation) {
 		put_blr(dyn, isc_dyn_fld_validation_blr, NULL,
@@ -1331,8 +1328,8 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 
 	if (field->fld_flags & fld_null_description) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_description);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_description);
+		dyn->add_word(0);
 	}
 	else if (field->fld_description)
 		put_text(dyn, isc_dyn_description, field->fld_description);
@@ -1343,7 +1340,7 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 	}
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1374,14 +1371,14 @@ static void modify_index( STR dyn, DUDLEY_IDX index)
 
 	if (index->idx_flags & IDX_null_description) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_description);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_description);
+		dyn->add_word(0);
 	}
 	else if (index->idx_description)
 		put_text(dyn, isc_dyn_description, index->idx_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1401,8 +1398,8 @@ static void modify_relation( STR dyn, DUDLEY_REL relation)
 	put_symbol(dyn, isc_dyn_mod_rel, relation->rel_name);
 	if (relation->rel_flags & rel_null_security_class) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_security_class);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_security_class);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_security_class,
@@ -1411,22 +1408,22 @@ static void modify_relation( STR dyn, DUDLEY_REL relation)
 		put_number(dyn, isc_dyn_system_flag, relation->rel_system);
 	if (relation->rel_flags & rel_null_description) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_description);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_description);
+		dyn->add_word(0);
 	}
 	else if (relation->rel_description)
 		put_text(dyn, isc_dyn_description, relation->rel_description);
 	if (relation->rel_flags & rel_null_ext_file) {
 		check_dyn(dyn, 3);
-		STUFF(isc_dyn_rel_ext_file);
-		STUFF_WORD(0);
+		dyn->add_byte(isc_dyn_rel_ext_file);
+		dyn->add_word(0);
 	}
 	else
 		put_symbol(dyn, isc_dyn_rel_ext_file, relation->rel_filename);
 
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1461,7 +1458,7 @@ static void modify_trigger( STR dyn, DUDLEY_TRG trigger)
 		put_text(dyn, isc_dyn_description, trigger->trg_description);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1483,7 +1480,7 @@ static void modify_trigger_msg( STR dyn, TRGMSG trigmsg)
 	put_symbol(dyn, isc_dyn_trg_msg, trigmsg->trgmsg_text);
 
 	check_dyn(dyn, 1);
-	STUFF(isc_dyn_end);
+	dyn->add_byte(isc_dyn_end);
 }
 
 
@@ -1507,11 +1504,11 @@ static void put_acl( STR dyn, UCHAR attribute, SCL sec_class)
 	fb_assert(length <= 4096);		/* to make sure buffer is big enough */
 
 	check_dyn(dyn, 3 + length);
-	STUFF(attribute);
-	STUFF_WORD(length);
+	dyn->add_byte(attribute);
+	dyn->add_word(length);
 	const TEXT* p = buffer;
 	while (length--)
-		STUFF(*p++);
+		dyn->add_byte(*p++);
 }
 
 
@@ -1530,7 +1527,7 @@ static void put_blr( STR dyn, UCHAR attribute, DUDLEY_REL relation, DUDLEY_NOD n
 		return;
 
 	check_dyn(dyn, 3);
-	STUFF(attribute);
+	dyn->add_byte(attribute);
 
 /* Skip over space to put count later, generate blr, then
    go bad and fix up length */
@@ -1558,12 +1555,12 @@ static void put_number( STR dyn, TEXT attribute, SSHORT number)
  **************************************/
 
 	check_dyn(dyn, 5);
-	STUFF(attribute);
+	dyn->add_byte(attribute);
 
 /* Assume number can be expressed in two bytes */
 
-	STUFF_WORD(2);
-	STUFF_WORD(number);
+	dyn->add_word(2);
+	dyn->add_word(number);
 }
 
 
@@ -1582,7 +1579,7 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
 		return;
 
 	check_dyn(dyn, 3);
-	STUFF(attribute);
+	dyn->add_byte(attribute);
 
 	const USHORT offset = dyn->str_current - dyn->str_start;
 	dyn->str_current = dyn->str_current + 2;
@@ -1591,7 +1588,7 @@ static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
 		const UCHAR* s = (UCHAR *) symbol->sym_string;
 		check_dyn(dyn, symbol->sym_length);
 		while (*s)
-			STUFF(*s++);
+			dyn->add_byte(*s++);
 	}
 	UCHAR* s = dyn->str_start + offset;
 	const USHORT length = (dyn->str_current - s) - 2;
@@ -1617,11 +1614,11 @@ static void put_symbol( STR dyn, TEXT attribute, SYM symbol)
 	const USHORT l = symbol->sym_length;
 
 	check_dyn(dyn, l + 5);
-	STUFF(attribute);
-	STUFF_WORD(l);
+	dyn->add_byte(attribute);
+	dyn->add_word(l);
 
 	for (const TEXT* string = symbol->sym_string; *string;)
-		STUFF(*string++);
+		dyn->add_byte(*string++);
 }
 
 
@@ -1645,9 +1642,9 @@ static void put_text( STR dyn, UCHAR attribute, TXT text)
 		return;
 
 	check_dyn(dyn, length + 5);
-	STUFF(attribute);
+	dyn->add_byte(attribute);
 
-	STUFF_WORD(length);
+	dyn->add_word(length);
 	LEX_get_text(dyn->str_current, text);
 	dyn->str_current += length;
 }

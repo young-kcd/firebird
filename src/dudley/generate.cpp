@@ -33,9 +33,6 @@
 static void generate(STR, DUDLEY_NOD);
 static void get_set_generator(STR, DUDLEY_NOD);
 
-#define STUFF(c)	*blr->str_current++ = c
-#define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
-
 static inline void check_blr(str* blr, const int l)
 {
 	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
@@ -101,10 +98,10 @@ void GENERATE_blr( STR blr, DUDLEY_NOD node)
  **************************************/
 
 	check_blr(blr, 1);
-	STUFF(blr_version4);
+	blr->add_byte(blr_version4);
 	generate(blr, node);
 	check_blr(blr, 1);
-	STUFF(blr_eoc);
+	blr->add_byte(blr_eoc);
 }
 
 
@@ -136,31 +133,31 @@ static void generate( STR blr, DUDLEY_NOD node)
 	switch (node->nod_type) {
 	case nod_fid:
 		check_blr(blr, 4);
-		STUFF(blr_fid);
-		STUFF(0);
-		STUFF_WORD(0);
+		blr->add_byte(blr_fid);
+		blr->add_byte(0);
+		blr->add_word(0);
 		return;
 
 	case nod_field:
 		check_blr(blr, 4);
 		if (sub = node->nod_arg[s_fld_subs])
-			STUFF(blr_index);
-		STUFF(blr_field);
+			blr->add_byte(blr_index);
+		blr->add_byte(blr_field);
 		field = (DUDLEY_FLD) node->nod_arg[s_fld_field];
 		context = (DUDLEY_CTX) node->nod_arg[s_fld_context];
-		STUFF(context->ctx_context_id);
+		blr->add_byte(context->ctx_context_id);
 		symbol = field->fld_name;
-		STUFF(l = symbol->sym_length);
+		blr->add_byte(l = symbol->sym_length);
 		p = (SCHAR *) symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
-				STUFF(*p++);
+				blr->add_byte(*p++);
 			while (--l);
 		}
 		if (sub) {
 			check_blr(blr, 1);
-			STUFF(sub->nod_count);
+			blr->add_byte(sub->nod_count);
 			for (pos = 0; pos < sub->nod_count; pos++)
 				generate(blr, sub->nod_arg[pos]);
 		}
@@ -168,19 +165,19 @@ static void generate( STR blr, DUDLEY_NOD node)
 
 	case nod_function:
 		check_blr(blr, 2);
-		STUFF(blr_function);
+		blr->add_byte(blr_function);
 		symbol = (SYM) node->nod_arg[1];
-		STUFF(l = symbol->sym_length);
+		blr->add_byte(l = symbol->sym_length);
 		p = (SCHAR *) symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
-				STUFF(*p++);
+				blr->add_byte(*p++);
 			while (--l);
 		}
 		sub = node->nod_arg[0];
 		check_blr(blr, 1);
-		STUFF(sub->nod_count);
+		blr->add_byte(sub->nod_count);
 		for (pos = 0; pos < sub->nod_count ; pos++)
 			generate(blr, sub->nod_arg[pos]);
 		return;
@@ -189,30 +186,30 @@ static void generate( STR blr, DUDLEY_NOD node)
 		context = (DUDLEY_CTX) node->nod_arg[0];
 		relation = context->ctx_relation;
 		check_blr(blr, 2);
-		STUFF(blr_relation);
+		blr->add_byte(blr_relation);
 		symbol = relation->rel_name;
-		STUFF(l = symbol->sym_length);
+		blr->add_byte(l = symbol->sym_length);
 		p = (SCHAR *) symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
-				STUFF(*p++);
+				blr->add_byte(*p++);
 			while (--l);
 		}
 		check_blr(blr, 1);
-		STUFF(context->ctx_context_id);
+		blr->add_byte(context->ctx_context_id);
 		return;
 
 	case nod_gen_id:
 		check_blr(blr, 2);
-		STUFF(blr_gen_id);
+		blr->add_byte(blr_gen_id);
 		symbol = (SYM) node->nod_arg[1];
-		STUFF(l = symbol->sym_length);
+		blr->add_byte(l = symbol->sym_length);
 		p = (SCHAR *) symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
 			do
-				STUFF(*p++);
+				blr->add_byte(*p++);
 			while (--l);
 		}
 		generate(blr, node->nod_arg[0]);
@@ -224,56 +221,56 @@ static void generate( STR blr, DUDLEY_NOD node)
 
 	case nod_user_name:
 		check_blr(blr, 1);
-		STUFF(blr_user_name);
+		blr->add_byte(blr_user_name);
 		return;
 
 	case nod_null:
 		check_blr(blr, 1);
-		STUFF(blr_null);
+		blr->add_byte(blr_null);
 		return;
 
 	case nod_literal:
 		check_blr(blr, 6);
-		STUFF(blr_literal);
+		blr->add_byte(blr_literal);
 		constant = (CON) node->nod_arg[0];
 		l = constant->con_desc.dsc_length;
 		switch (constant->con_desc.dsc_dtype) {
 		case dtype_text:
-			STUFF(blr_text);
-			STUFF_WORD(l);
+			blr->add_byte(blr_text);
+			blr->add_word(l);
 			break;
 
 		case dtype_short:
 			check_blr(blr, 2);
-			STUFF(blr_short);
-			STUFF(constant->con_desc.dsc_scale);
+			blr->add_byte(blr_short);
+			blr->add_byte(constant->con_desc.dsc_scale);
 			break;
 
 		case dtype_long:
 			check_blr(blr, 2);
-			STUFF(blr_long);
-			STUFF(constant->con_desc.dsc_scale);
+			blr->add_byte(blr_long);
+			blr->add_byte(constant->con_desc.dsc_scale);
 			break;
 
 		case dtype_quad:
 			check_blr(blr, 2);
-			STUFF(blr_quad);
-			STUFF(constant->con_desc.dsc_scale);
+			blr->add_byte(blr_quad);
+			blr->add_byte(constant->con_desc.dsc_scale);
 			break;
 
 		case dtype_real:
 			check_blr(blr, 1);
-			STUFF(blr_float);
+			blr->add_byte(blr_float);
 			break;
 
 		case dtype_double:
 			check_blr(blr, 1);
-			STUFF(blr_double);
+			blr->add_byte(blr_double);
 			break;
 
 		case dtype_timestamp:
 			check_blr(blr, 1);
-			STUFF(blr_timestamp);
+			blr->add_byte(blr_timestamp);
 			break;
 
 		case dtype_int64:
@@ -288,32 +285,32 @@ static void generate( STR blr, DUDLEY_NOD node)
 		case dtype_short:
 			value = *(SSHORT *) p;
 			check_blr(blr, 2);
-			STUFF_WORD(value);
+			blr->add_word(value);
 			break;
 
 		case dtype_long:
 			value = *(SLONG *) p;
 			check_blr(blr, 4);
-			STUFF_WORD(value);
-			STUFF_WORD(value >> 16);
+			blr->add_word(value);
+			blr->add_word(value >> 16);
 			break;
 
 		case dtype_quad:
 		case dtype_timestamp:
 			value = *(SLONG *) p;
 			check_blr(blr, 8);
-			STUFF_WORD(value);
-			STUFF_WORD(value >> 16);
+			blr->add_word(value);
+			blr->add_word(value >> 16);
 			value = *(SLONG *) (p + 4);
-			STUFF_WORD(value);
-			STUFF_WORD(value >> 16);
+			blr->add_word(value);
+			blr->add_word(value >> 16);
 			break;
 
 		default:
 			if (l) {
 				check_blr(blr, l);
 				do
-					STUFF(*p++);
+					blr->add_byte(*p++);
 				while (--l);
 			}
 		}
@@ -321,40 +318,40 @@ static void generate( STR blr, DUDLEY_NOD node)
 
 	case nod_rse:
 		check_blr(blr, 2);
-		STUFF(blr_rse);
+		blr->add_byte(blr_rse);
 		sub = node->nod_arg[s_rse_contexts];
-		STUFF(sub->nod_count);
+		blr->add_byte(sub->nod_count);
 		for (pos = 0; pos < sub->nod_count ; pos++)
 			generate(blr, sub->nod_arg[pos]);
 		if (sub = node->nod_arg[s_rse_first]) {
 			check_blr(blr, 1);
-			STUFF(blr_first);
+			blr->add_byte(blr_first);
 			generate(blr, sub);
 		}
 		if (sub = node->nod_arg[s_rse_boolean]) {
 			check_blr(blr, 1);
-			STUFF(blr_boolean);
+			blr->add_byte(blr_boolean);
 			generate(blr, sub);
 		}
 		if (sub = node->nod_arg[s_rse_sort]) {
 			check_blr(blr, 2);
-			STUFF(blr_sort);
-			STUFF(sub->nod_count / 2);
+			blr->add_byte(blr_sort);
+			blr->add_byte(sub->nod_count / 2);
 			for (pos = 0; pos < sub->nod_count ; pos+=2) {
 				check_blr(blr, 1);
-				STUFF((sub->nod_arg[pos + 1]) ? blr_descending : blr_ascending);
+				blr->add_byte((sub->nod_arg[pos + 1]) ? blr_descending : blr_ascending);
 				generate(blr, sub->nod_arg[pos]);
 			}
 		}
 		if (sub = node->nod_arg[s_rse_reduced]) {
 			check_blr(blr, 2);
-			STUFF(blr_project);
-			STUFF(sub->nod_count / 2);
+			blr->add_byte(blr_project);
+			blr->add_byte(sub->nod_count / 2);
 			for (pos = 0; pos < sub->nod_count ; pos+=2)
 				generate(blr, sub->nod_arg[pos]);
 		}
 		check_blr(blr, 1);
-		STUFF(blr_end);
+		blr->add_byte(blr_end);
 		return;
 
 	case nod_count:
@@ -384,7 +381,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 			break;
 		}
 		check_blr(blr, 1);
-		STUFF(operatr);
+		blr->add_byte(operatr);
 		generate(blr, node->nod_arg[s_stt_rse]);
 		if (sub = node->nod_arg[s_stt_value])
 			generate(blr, sub);
@@ -394,58 +391,58 @@ static void generate( STR blr, DUDLEY_NOD node)
 
 	case nod_any:
 		check_blr(blr, 1);
-		STUFF(blr_any);
+		blr->add_byte(blr_any);
 		generate(blr, node->nod_arg[0]);
 		return;
 
 	case nod_unique:
 		check_blr(blr, 1);
-		STUFF(blr_unique);
+		blr->add_byte(blr_unique);
 		generate(blr, node->nod_arg[0]);
 		return;
 
 	case nod_if:
 		check_blr(blr, 1);
-		STUFF(blr_if);
+		blr->add_byte(blr_if);
 		generate(blr, node->nod_arg[posi++]);
 		generate(blr, node->nod_arg[posi++]);
 		if (node->nod_arg[posi])
 			generate(blr, node->nod_arg[posi]);
 		else {
 			check_blr(blr, 1);
-			STUFF(blr_end);
+			blr->add_byte(blr_end);
 		}
 		return;
 
 	case nod_list:
 		check_blr(blr, 1);
-		STUFF(blr_begin);
+		blr->add_byte(blr_begin);
 		for (; posi < endi; posi++)
 			generate(blr, node->nod_arg[posi]);
 		check_blr(blr, 1);
-		STUFF(blr_end);
+		blr->add_byte(blr_end);
 		return;
 
 	case nod_abort:
 		check_blr(blr, 2);
-		STUFF(blr_leave);
-		STUFF((IPTR) node->nod_arg[0]);
+		blr->add_byte(blr_leave);
+		blr->add_byte((IPTR) node->nod_arg[0]);
 		return;
 
 	case nod_erase:
 		check_blr(blr, 2);
-		STUFF(blr_erase);
+		blr->add_byte(blr_erase);
 		context = (DUDLEY_CTX) node->nod_arg[0];
-		STUFF(context->ctx_context_id);
+		blr->add_byte(context->ctx_context_id);
 		return;
 
 	case nod_modify:
 		check_blr(blr, 3);
-		STUFF(blr_modify);
+		blr->add_byte(blr_modify);
 		context = (DUDLEY_CTX) node->nod_arg[s_mod_old_ctx];
-		STUFF(context->ctx_context_id);
+		blr->add_byte(context->ctx_context_id);
 		context = (DUDLEY_CTX) node->nod_arg[s_mod_new_ctx];
-		STUFF(context->ctx_context_id);
+		blr->add_byte(context->ctx_context_id);
 		generate(blr, node->nod_arg[s_mod_action]);
 		return;
 
@@ -552,7 +549,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 	{
 		if (operatr == blr_neq) {
 			check_blr(blr, 1);
-			STUFF(blr_not);
+			blr->add_byte(blr_not);
 		}
 		operatr = blr_missing;
 		if (node->nod_arg[posi]->nod_type == nod_null)
@@ -563,7 +560,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 // Fall thru on reasonable stuff
 
 	check_blr(blr, 1);
-	STUFF(operatr);
+	blr->add_byte(operatr);
 	for (; posi < endi; posi++)
 		generate(blr, node->nod_arg[posi]);
 }
@@ -602,40 +599,40 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
 	p = gen_prologue;
 	check_blr(blr, l);
 	do
-		STUFF(*p++);
+		blr->add_byte(*p++);
 	while (--l);
 
 /* stuff in the name length and the name */
 
 	symbol = (SYM) node->nod_arg[1];
 	check_blr(blr, 1);
-	STUFF(l = symbol->sym_length);
+	blr->add_byte(l = symbol->sym_length);
 	p = (SCHAR *) symbol->sym_string;
 	if (l) {
 		check_blr(blr, l);
 		do
-			STUFF(*p++);
+			blr->add_byte(*p++);
 		while (--l);
 	}
 
 /* now for the increvent value */
 
 	check_blr(blr, 7);
-	STUFF(blr_literal);
+	blr->add_byte(blr_literal);
 	constant = (CON) node->nod_arg[0]->nod_arg[0];
-	STUFF(blr_long);
-	STUFF(constant->con_desc.dsc_scale);
+	blr->add_byte(blr_long);
+	blr->add_byte(constant->con_desc.dsc_scale);
 	p = (SCHAR *) constant->con_data;
 	value = *(SLONG *) p;
-	STUFF_WORD(value);
-	STUFF_WORD(value >> 16);
+	blr->add_word(value);
+	blr->add_word(value >> 16);
 
 /* complete the string */
 	l = sizeof(gen_epilogue);
 	p = (SCHAR *) gen_epilogue;
 	check_blr(blr, l);
 	do
-		STUFF(*p++);
+		blr->add_byte(*p++);
 	while (--l);
 }
 

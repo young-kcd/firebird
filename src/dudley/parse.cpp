@@ -53,10 +53,6 @@ const int MIN_CACHE_BUFFERS	= 250;
 const int DEF_CACHE_BUFFERS	= 1000;
 #endif
 
-#define STUFF(c)	*p++ = c
-#define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
-#define STUFF_LONG(c)	{STUFF (c); STUFF (c >> 8); STUFF (c >> 16); STUFF (c >> 24); }
-
 typedef enum {
 	obj_database,
 	obj_relation,
