@@ -2747,7 +2747,7 @@ static void get_database_type( DBB new_dbb)
 
 	while (*p != isc_info_end && p < buffer + sizeof(buffer)) {
 		UCHAR item = *p++;
-		USHORT l = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2);
+		USHORT l = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
 		case isc_info_implementation:
@@ -3355,31 +3355,29 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 		switch (BLR_BYTE) {
 		case blr_text:
 			dtype = dtype_text;
-			length = l = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), 2);
+			length = l = gds__vax_integer(blr, 2);
 			blr += 2;
 			break;
 
 		case blr_text2:
 			dtype = dtype_text;
-			scale = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), 2);
+			scale = gds__vax_integer(blr, 2);
 			blr += 2;
-			length = l = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), 2);
+			length = l = gds__vax_integer(blr, 2);
 			blr += 2;
 			break;
 
 		case blr_varying:
 			dtype = dtype_varying;
-			length = l = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), 2) 
-						+ sizeof(USHORT);
+			length = l = gds__vax_integer(blr, 2) + sizeof(USHORT);
 			blr += 2;
 			break;
 
 		case blr_varying2:
 			dtype = dtype_varying;
-			scale = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), 2);
+			scale = gds__vax_integer(blr, 2);
 			blr += 2;
-			length = l = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), 2) 
-							+ sizeof(USHORT);
+			length = l = gds__vax_integer(blr, 2) + sizeof(USHORT);
 			blr += 2;
 			break;
 
@@ -3438,11 +3436,11 @@ static SYN parse_blr( UCHAR ** ptr, SYM symbol)
 			while (l--)
 				*p++ = BLR_BYTE;
 		else if (dtype == dtype_short) {
-			*(SSHORT *) p = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), l);
+			*(SSHORT *) p = gds__vax_integer(blr, l);
 			blr += l;
 		}
 		else if (dtype == dtype_long) {
-			*(SLONG *) p = isc_vax_integer(reinterpret_cast<const SCHAR*>(blr), l);
+			*(SLONG *) p = gds__vax_integer(blr, l);
 			blr += l;
 		}
 		node = make_node(nod_constant, 1);
@@ -3854,11 +3852,11 @@ static void wal_info(
 	UCHAR item;
 	UCHAR* d;
 	while ((item = *p++) != isc_info_end) {
-		SLONG length = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), 2);
+		SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
 		case isc_info_logfile:
-			*log = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
+			*log = gds__vax_integer(p, length);
 			p += length;
 			break;
 
@@ -3871,7 +3869,7 @@ static void wal_info(
 			break;
 
 		case isc_info_cur_log_part_offset:
-			*part_offset = isc_vax_integer(reinterpret_cast<const SCHAR*>(p), length);
+			*part_offset = gds__vax_integer(p, length);
 			p += length;
 			break;
 

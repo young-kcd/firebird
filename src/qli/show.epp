@@ -820,15 +820,15 @@ static void show_dbb_parameters( DBB database)
 
 	for (UCHAR *d = buffer; *d != isc_info_end;) {
 		UCHAR item = *d++;
-		int length = isc_vax_integer(reinterpret_cast<const SCHAR*>(d), 2);
+		int length = gds__vax_integer(d, 2);
 		d += 2;
 		switch (item) {
 		case (isc_info_db_size_in_pages):
-			allocation = isc_vax_integer(reinterpret_cast<const SCHAR*>(d), length);
+			allocation = gds__vax_integer(d, length);
 			break;
 
 		case (isc_info_page_size):
-			page_size = isc_vax_integer(reinterpret_cast<const SCHAR*>(d), length);
+			page_size = gds__vax_integer(d, length);
 			break;
 
 		case (isc_info_error):

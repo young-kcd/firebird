@@ -1038,8 +1038,8 @@ static USHORT check_statement_type( RSR statement)
 	{
 		for (info = buffer; (*info != isc_info_end) && !done;)
 		{
-			l = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 1), 2);
-			type = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 3), l);
+			l = (USHORT) gds__vax_integer(info + 1, 2);
+			type = (USHORT) gds__vax_integer(info + 3, l);
 			switch (*info)
 			{
 			case isc_info_sql_stmt_type:
@@ -2251,8 +2251,8 @@ static bool get_next_msg_no(RRQ request,
 
 	bool result = false;
 	for (info = info_buffer; *info != isc_info_end;) {
-		l = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 1), 2);
-		n = (USHORT) isc_vax_integer(reinterpret_cast<const SCHAR*>(info + 3), l);
+		l = (USHORT) gds__vax_integer(info + 1, 2);
+		n = (USHORT) gds__vax_integer(info + 3, l);
 		switch (*info) {
 		case isc_info_state:
 			if (n != isc_info_req_send)

@@ -1104,9 +1104,9 @@ static void print_counts( QLI_REQ request)
 	int length = 0;
 	for (SCHAR* c = count_buffer; *c != isc_info_end; c += length) {
 		UCHAR item = *c++;
-		length = isc_vax_integer(c, 2);
+		length = gds__vax_integer((UCHAR*) c, 2);
 		c += 2;
-		const ULONG number = isc_vax_integer(c, length);
+		const ULONG number = gds__vax_integer((UCHAR*) c, length);
 
 		if (number)
 			switch (item) {
