@@ -375,12 +375,7 @@ void SECURITY_get_db_path( TEXT * server, TEXT * buffer)
 
 /* to get rid of these "security.fdb not found" messges add 
    the path to USER_INFO NAME FSG june 30 2001 */
-
-#if (defined VMS || defined WIN_NT || defined LINUX || defined SINIXZ || defined SUPERSERVER)
 	gds__prefix (buffer, USER_INFO_NAME);
-#else
-	strcpy (buffer, USER_INFO_NAME);
-#endif           
 
 	if (server)
 		sprintf(svc_name, "%sanonymous", server);

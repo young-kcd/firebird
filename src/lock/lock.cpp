@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.38 2003-03-04 00:38:31 brodsom Exp $
+$Id: lock.cpp,v 1.39 2003-03-10 07:02:17 eku Exp $
 */
 
 #include "firebird.h"
@@ -2795,7 +2795,7 @@ static USHORT fork_lock_manager( STATUS * status_vector)
 /* Probe the lock manager executable to see if it plausibly exists. */
 
 #ifdef DEBUG_MANAGER
-	strcpy(string, DEBUG_MANAGER);
+	gds__prefix(string, DEBUG_MANAGER);
 #else
 	gds__prefix(string, LOCK_MANAGER);
 #endif
