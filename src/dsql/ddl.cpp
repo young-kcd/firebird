@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.16 2002-09-06 07:51:29 dimitr Exp $
+ * $Id: ddl.cpp,v 1.17 2002-09-12 19:51:50 skidder Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -279,25 +279,23 @@ void DDL_execute(REQ request)
 
 	// for delete & modify, get rid of the cached relation metadata
 
-	if ((request->req_ddl_node->nod_type == nod_mod_relation) ||
-        (request->req_ddl_node->nod_type == nod_del_relation) ||
-        /* CVC: Handle nod_del_view here or we will keep obsolete metadata. */
-        (request->req_ddl_node->nod_type == nod_del_view) ||
-        (request->req_ddl_node->nod_type == nod_redef_relation) ||
-        (request->req_ddl_node->nod_type == nod_mod_view) ||
-        (request->req_ddl_node->nod_type == nod_redef_view)) {
-        if (request->req_ddl_node->nod_type == nod_mod_relation ||
-            request->req_ddl_node->nod_type == nod_redef_relation) {
-            if (request->req_ddl_node->nod_type == nod_mod_relation) {
-                NOD relation_node = request->req_ddl_node->nod_arg[e_alt_name];
-                string = (STR) relation_node->nod_arg[e_rln_name];
-            }
-            else {
-                string = (STR) request->req_ddl_node->nod_arg[e_alt_name];
-            }
-            METD_drop_relation(request, string);
-        }
+    string = NULL;
+	NOD relation_node;
+    switch (request->req_ddl_node->nod_type) {
+	  case nod_mod_relation:
+	  case nod_redef_relation:
+	  case nod_mod_view:
+	  case nod_redef_view:
+        relation_node = request->req_ddl_node->nod_arg[e_alt_name];
+        string = (STR) relation_node->nod_arg[e_rln_name];
+		break;
+	  case nod_del_relation:
+	  case nod_del_view:
+        string = (STR) request->req_ddl_node->nod_arg[e_alt_name];
+		break;
 	}
+	if (string)
+	  METD_drop_relation(request, string);
 
 	// for delete & modify, get rid of the cached procedure metadata
 
