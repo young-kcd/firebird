@@ -31,7 +31,11 @@ d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/check_messages=$SRCDIR/bin/check_messages  0755 root root
 #f none @prefix@/bin/create_db=$SRCDIR/bin/create_db  0755 root root
 #f none @prefix@/bin/enter_messages=$SRCDIR/bin/enter_messages  0755 root root
-f none @prefix@/bin/fb_inet_server=$SRCDIR/bin/fb_inet_server  0755 root root
+
+f none @prefix@/bin/fbserver=$SRCDIR/bin/fbserver  0755 root root
+f none @prefix@/bin/fbguarg=$SRCDIR/bin/fbguard  0755 root root
+f none @prefix@/bin/fbmgr.bin=$SRCDIR/bin/fbmgr.bin  0755 root root
+
 f none @prefix@/bin/gbak=$SRCDIR/bin/gbak  0755 root root
 #f none @prefix@/bin/gbak_static=$SRCDIR/bin/gbak_static  0755 root root
 f none @prefix@/bin/gdef=$SRCDIR/bin/gdef  0755 root root
@@ -121,24 +125,28 @@ f none @prefix@/intl/libfbintl.so=$SRCDIR/intl/libfbintl.so  0755 root root
 d none @prefix@/lib  0755 root root
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so  0755 root root
 #f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a  0644 root root
-f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@  0755 root root
-s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
-s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.1
+
+#f none @prefix@/lib/libfbembed.so.1.5.1=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@  0755 root root
+#s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
+#s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.1
 #f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a  0644 root root
-s none @prefix@/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
-s none @prefix@/lib/libgds.so=@prefix@/lib/libfbembed.so
+#s none @prefix@/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
+#s none @prefix@/lib/libgds.so=@prefix@/lib/libfbembed.so
+
 f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0755 root root
 s none @prefix@/lib/libfbclient.so.1=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 
 
 
+
 #/usr/lib synlinks for compability with external tools
 
-s none /usr/lib/libgds.so=@prefix@/lib/libfbembed.so
-s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
+#s none /usr/lib/libgds.so=@prefix@/lib/libfbembed.so
+#s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
 #s none /usr/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
 s none /usr/lib/libfbclient.so=@prefix@/lib/libfbclient.so
+s none /usr/lib/libgds.so=@prefix@/lib/libfbclient.so
 
 
 d none @prefix@/UDF  0755 root root
