@@ -153,6 +153,7 @@ static void dba_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 #include "../include/fb_blk.h"
 #endif
 
+#include "../jrd/db_alias.h"
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 
@@ -506,6 +507,10 @@ int CLIB_ROUTINE main(int argc, char **argv)
 #endif
 
 /* Open database and go to work */
+
+	TEXT temp_buf[MAXPATHLEN];
+	if (ResolveDatabaseAlias(name, temp_buf))
+		name = temp_buf;
 
 	current = db_open(name, strlen(name));
 	tddba->page_size = sizeof(temp);
