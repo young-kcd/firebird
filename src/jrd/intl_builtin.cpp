@@ -1399,7 +1399,7 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
 	cache->texttype_fn_to_upper = (FPTR_SHORT) internal_ch_copy;
 	cache->texttype_fn_to_lower = (FPTR_SHORT) internal_ch_copy;
 	cache->texttype_fn_str_to_upper = (FPTR_short) internal_str_copy;
-	cache->texttype_collation_table = (BYTE *) "\0";	/* pad character *
+	cache->texttype_collation_table = (BYTE *) "\0";	/* pad character */
 
 	TEXTTYPE_RETURN;
 }
@@ -1478,7 +1478,7 @@ static USHORT cs_none_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 /*
 common_convert_init (&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
 	nc_to_wc, to_unicode_tbl, NULL);
-*
+*/
 	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_NONE,
 						(FPTR_SHORT) cvt_none_to_unicode, NULL, NULL);
 	common_convert_init(&csptr->charset_from_unicode, CS_NONE, CS_UNICODE_UCS2,
@@ -1526,12 +1526,12 @@ static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 
 	csptr->charset_version = 40;
 	csptr->charset_id = CS_UNICODE;
-	csptr->charset_name = ( /*const* ASCII *) "UNICODE_UCS2";
+	csptr->charset_name = (*const* ASCII) "UNICODE_UCS2";
 	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 *
+	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 */
 	csptr->charset_well_formed = (FPTR_SHORT) NULL;
 	CHARSET_RETURN;
 }
@@ -1561,7 +1561,7 @@ static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 
 /*
  *      Start of Conversion entries
- *
+ */
 
 #define CONVERT_RETURN  return (0)
 
