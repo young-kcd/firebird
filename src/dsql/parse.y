@@ -546,7 +546,7 @@ top		: statement
 		;
 
 statement	: alter
-		| blob
+		| blob_io
 		| commit
 		| create
 		| declare
@@ -2881,8 +2881,7 @@ table_list	: simple_table_name
 
 
 set_statistics	: SET STATISTICS INDEX symbol_index_name
-			{$$ = make_node (nod_set_statistics, 
-				(int)e_stat_count, $4); }
+			{$$ = make_node (nod_set_statistics, (int) e_stat_count, $4); }
 		;
 
 
@@ -2893,7 +2892,7 @@ select		: select_expr for_update_clause lock_clause
 		;
 
 for_update_clause : FOR UPDATE for_update_list
-			{ $$ = make_node (nod_for_update, 1, $3); }
+			{ $$ = make_node (nod_for_update, (int) e_fpd_count, $3); }
 		|
 			{ $$ = NULL; }
 		;
@@ -3346,33 +3345,35 @@ exec_udf	: udf
 
 /* BLOB get and put */
 
-blob			: READ BLOB simple_column_name FROM simple_table_name filter_clause segment_clause
+blob_io			: READ BLOB simple_column_name FROM simple_table_name filter_clause_io segment_clause_io
 			{ $$ = make_node (nod_get_segment, (int) e_blb_count, $3, $5, $6, $7); }
-				| INSERT BLOB simple_column_name INTO simple_table_name filter_clause segment_clause
+				| INSERT BLOB simple_column_name INTO simple_table_name filter_clause_io segment_clause_io
 			{ $$ = make_node (nod_put_segment, (int) e_blb_count, $3, $5, $6, $7); }
 		;
 
-filter_clause	: FILTER FROM blob_subtype_value TO blob_subtype_value
+filter_clause_io	: FILTER FROM blob_subtype_value_io TO blob_subtype_value_io
 			{ $$ = make_node (nod_list, 2, $3, $5); }
-		| FILTER TO blob_subtype_value
+		| FILTER TO blob_subtype_value_io
 			{ $$ = make_node (nod_list, 2, NULL, $3); }
 		|
+			{ $$ = NULL; }
 		;
 
-blob_subtype_value : blob_subtype
+blob_subtype_value_io : blob_subtype_io
 		| parameter
 		;
 
-blob_subtype	: signed_short_integer
+blob_subtype_io	: signed_short_integer
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
 		;
 
-segment_clause	: MAX_SEGMENT segment_length
+segment_clause_io	: MAX_SEGMENT segment_length_io
 			{ $$ = $2; }
 		|
+			{ $$ = NULL; }
 		;
 
-segment_length	: unsigned_short_integer
+segment_length_io	: unsigned_short_integer
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
 		| parameter
 		;
