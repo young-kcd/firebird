@@ -150,7 +150,7 @@ typedef struct ads {
 		SLONG ads_lower;		/* Lower bound */
 		SLONG ads_upper;		/* Upper bound */
 	};
-        struct ads_repeat ads_rpt[1];
+	struct ads_repeat ads_rpt[1];
 } *ADS;
 
 #define ADS_VERSION_1	1

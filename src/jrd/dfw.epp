@@ -4269,7 +4269,7 @@ static void setup_array(TDBB tdbb, BLB blob, TEXT* field_name, USHORT n, TFB tfb
  *
  **************************************/
 
-	SLONG stuff[64];
+	SLONG stuff[256];
 	ADS array;
 
 	put_summary_record(blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
