@@ -54,9 +54,9 @@ SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
  * Note: This routine has a cousin in jrd/intl.c
  *
  **************************************/
-	assert(obj);
-	assert(wc);
-	assert(p);
+	fb_assert(obj);
+	fb_assert(wc);
+	fb_assert(p);
 
 	return fss_mbtowc(wc, p, n);
 }
@@ -263,11 +263,11 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj,
 	USHORT src_start = src_len;
 	fss_size_t res;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode ||
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode ||
 		   ((TEXTTYPE) obj)->texttype_fn_to_wc == (FPTR_SHORT) CS_UTFFSS_fss_to_unicode);
 
 	*err_code = 0;
@@ -284,7 +284,7 @@ USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj,
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		assert(res <= src_len);
+		fb_assert(res <= src_len);
 		dest_ptr++;
 		dest_len -= sizeof(*dest_ptr);
 		src_ptr += res;
@@ -312,11 +312,11 @@ USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj,
 	MBCHAR *p;
 	fss_size_t res;
 
-	assert(unicode_str != NULL || fss_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_unicode_to_fss);
+	fb_assert(unicode_str != NULL || fss_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CS_UTFFSS_unicode_to_fss);
 
 	*err_code = 0;
 

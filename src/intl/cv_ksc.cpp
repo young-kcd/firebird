@@ -47,13 +47,13 @@ USHORT CVKSC_ksc_to_unicode(CSCONVERT obj,
 	USHORT src_start = ksc_len;
 	USHORT this_len;
 
-	assert(ksc_str != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVKSC_ksc_to_unicode);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(ksc_str != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVKSC_ksc_to_unicode);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -123,13 +123,13 @@ USHORT CVKSC_unicode_to_ksc(CSCONVERT obj,
 	int tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
-	assert(unicode_str != NULL || ksc_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVKSC_unicode_to_ksc);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(unicode_str != NULL || ksc_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVKSC_unicode_to_ksc);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -160,8 +160,8 @@ USHORT CVKSC_unicode_to_ksc(CSCONVERT obj,
 			break;
 		}
 		else {
-			assert(KSC1(tmp1));
-			assert(KSC2(tmp2));
+			fb_assert(KSC1(tmp1));
+			fb_assert(KSC2(tmp2));
 			*ksc_str++ = tmp1;
 			*ksc_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
@@ -212,10 +212,10 @@ USHORT CVKSC_ksc_byte2short(CSCONVERT obj,
 	USHORT *dst_start;
 	USHORT src_start = src_len;
 
-	assert(obj != NULL);
-	assert(src != NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(src != NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 #ifdef DEBUG
 	ib_printf("dst_len = %d, src_len = %d\n src = %s\n", dst_len, src_len,
@@ -269,8 +269,8 @@ short CVKSC_ksc_mbtowc(CSCONVERT obj,
 					   UCHAR *src, 
 					   USHORT src_len)
 {
-	assert(src != NULL);
-	assert(obj != NULL);
+	fb_assert(src != NULL);
+	fb_assert(obj != NULL);
 
 	if (!src_len)
 		return -1;

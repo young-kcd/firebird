@@ -268,7 +268,7 @@ CharSetContainer* CharSetContainer::lookupCharset(TDBB tdbb, SSHORT ttype, ISC_S
 		dbb->dbb_charsets[id] = cs;
 	}
 
-	assert(cs != NULL);
+	fb_assert(cs != NULL);
 	return cs;
 }
 
@@ -327,8 +327,8 @@ CsConvert CharSetContainer::lookupConverter(TDBB tdbb, CHARSET_ID to_cs)
 		return NULL;
 	}
 	CsConvert converter = cvt;
-	assert(converter.getFromCS() == cs.getId());
-	assert(converter.getToCS() == to_cs);
+	fb_assert(converter.getFromCS() == cs.getId());
+	fb_assert(converter.getToCS() == to_cs);
 	charset_converters.add(converter);
 	return cvt;
 }
@@ -419,7 +419,7 @@ static void finish_texttype_init(TEXTTYPE txtobj)
 			txtobj->texttype_fn_mbtowc = (FPTR_short) INTL_builtin_mb_mbtowc;
 	}
 	else
-		assert(0);
+		fb_assert(0);
 
 	txtobj->texttype_flags |= TEXTTYPE_init;
 }
@@ -619,11 +619,11 @@ int INTL_compare(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	assert(pText1 != NULL);
-	assert(pText2 != NULL);
-	assert(IS_TEXT(pText1) && IS_TEXT(pText2));
-	assert(INTL_data_or_binary(pText1) || INTL_data_or_binary(pText2));
-	assert(err);
+	fb_assert(pText1 != NULL);
+	fb_assert(pText2 != NULL);
+	fb_assert(IS_TEXT(pText1) && IS_TEXT(pText2));
+	fb_assert(INTL_data_or_binary(pText1) || INTL_data_or_binary(pText2));
+	fb_assert(err);
 
 /* normal compare routine from CVT_compare */
 /* trailing spaces in strings are ignored for comparision */
@@ -711,9 +711,9 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 	SET_TDBB(tdbb);
 
 
-	assert(src_ptr != NULL);
-	assert(src_type != dest_type);
-	assert(err != NULL);
+	fb_assert(src_ptr != NULL);
+	fb_assert(src_type != dest_type);
+	fb_assert(err != NULL);
 
 	start_dest_ptr = dest_ptr;
 
@@ -771,7 +771,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 		tmp_buffer = (BYTE *) FB_NEW(*tdbb->tdbb_default) char[(SLONG) src_len * sizeof(UCS2_CHAR)];
 
 		cs_obj = from_cs.getConvToUnicode();
-		assert(cs_obj != NULL);
+		fb_assert(cs_obj != NULL);
 		len = cs_obj.convert(tmp_buffer, src_len * 2, src_ptr,
 								src_len, &err_code, &err_position);
 		if (err_code && !((err_code == CS_TRUNCATION_ERROR)
@@ -793,7 +793,7 @@ USHORT INTL_convert_bytes(TDBB tdbb,
 				   (ISC_STATUS) dest_type, 0);
 		}
 		cs_obj = to_cs.getConvFromUnicode();
-		assert(cs_obj != NULL);
+		fb_assert(cs_obj != NULL);
 		len2 = cs_obj.convert(dest_ptr, dest_len, tmp_buffer,
 							len, &err_code, &err_position);
 
@@ -844,8 +844,8 @@ CsConvert INTL_convert_lookup(TDBB tdbb,
 
 /* Should from_cs == to_cs? be handled better? YYY */
 
-	assert(from_cs != CS_dynamic);
-	assert(to_cs != CS_dynamic);
+	fb_assert(from_cs != CS_dynamic);
+	fb_assert(to_cs != CS_dynamic);
 
 	charset = CharSetContainer::lookupCharset(tdbb, from_cs, NULL);
 	if (charset == NULL)
@@ -880,9 +880,9 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_STATUS err)
 	if (tdbb == NULL)			/* are we in the Engine? */
 		return (1);				/* no, then can't access intl gah */
 
-	assert(to != NULL);
-	assert(from != NULL);
-	assert(IS_TEXT(to) && IS_TEXT(from));
+	fb_assert(to != NULL);
+	fb_assert(from != NULL);
+	fb_assert(IS_TEXT(to) && IS_TEXT(from));
 
 	CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from), err);
 	CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to), err);
@@ -996,7 +996,7 @@ int INTL_data(const dsc* pText)
  *
  **************************************/
 
-	assert(pText != NULL);
+	fb_assert(pText != NULL);
 
 	if (!IS_TEXT(pText))
 		return FALSE;
@@ -1073,12 +1073,12 @@ UCS2_CHAR INTL_getch(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	assert(obj);
-	assert(ptr);
+	fb_assert(obj);
+	fb_assert(ptr);
 
 	if (*obj == NULL) {
 		*obj = INTL_texttype_lookup(tdbb, t_type, ERR_post, NULL);
-		assert(*obj != NULL);
+		fb_assert(*obj != NULL);
 	}
 	used = obj->mbtowc(&wc, *ptr, *count);
 	if (used == -1)
@@ -1123,7 +1123,7 @@ USHORT INTL_key_length(TDBB tdbb, USHORT idxType, USHORT iLength)
 	SET_TDBB(tdbb);
 
 
-	assert(idxType >= idx_first_intl_string);
+	fb_assert(idxType >= idx_first_intl_string);
 
 	ttype = INTL_INDEX_TO_TEXT(idxType);
 
@@ -1232,9 +1232,9 @@ void INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
 
 	SET_TDBB(tdbb);
 
-	assert(type != NULL);
-	assert(IS_TEXT(type));
-	assert(string != NULL);
+	fb_assert(type != NULL);
+	fb_assert(IS_TEXT(type));
+	fb_assert(string != NULL);
 
 	charset = INTL_charset(tdbb, type->dsc_ttype, NULL);
 	pad_spaces(tdbb, charset, string, length);
@@ -1268,13 +1268,13 @@ USHORT INTL_string_to_key(TDBB tdbb,
 	SET_TDBB(tdbb);
 
 
-	assert(idxType >= idx_first_intl_string || idxType == idx_string
+	fb_assert(idxType >= idx_first_intl_string || idxType == idx_string
 		   || idxType == idx_byte_array || idxType == idx_metadata);
-	assert(pString != NULL);
-	assert(pByte != NULL);
-	assert(pString->dsc_address != NULL);
-	assert(pByte->dsc_address != NULL);
-	assert(pByte->dsc_dtype == dtype_text);
+	fb_assert(pString != NULL);
+	fb_assert(pByte != NULL);
+	fb_assert(pString->dsc_address != NULL);
+	fb_assert(pByte->dsc_address != NULL);
+	fb_assert(pByte->dsc_dtype == dtype_text);
 
 	switch (idxType) {
 	case idx_string:
@@ -1352,8 +1352,8 @@ int INTL_str_to_upper(TDBB tdbb, DSC * pString)
 
 	SET_TDBB(tdbb);
 
-	assert(pString != NULL);
-	assert(pString->dsc_address != NULL);
+	fb_assert(pString != NULL);
+	fb_assert(pString->dsc_address != NULL);
 
 	len =
 		CVT_get_string_ptr(pString, &ttype, &src,
@@ -1440,11 +1440,11 @@ static bool all_spaces(
  **************************************/
 	SET_TDBB(tdbb);
 
-	assert(ptr != NULL);
+	fb_assert(ptr != NULL);
 
 	CharSet obj = INTL_charset_lookup(tdbb, charset, NULL);
 
-	assert(obj != NULL);
+	fb_assert(obj != NULL);
 
 /*
  * We are assuming offset points to the first byte which was not
@@ -1496,10 +1496,10 @@ static USHORT nc_to_wc(CSCONVERT obj, UCS2_CHAR * pWide, USHORT nWide,	/* byte c
 	UCS2_CHAR *pStart;
 	UCHAR *pNarrowStart;
 
-	assert(obj != NULL);
-	assert((pNarrow != NULL) || (pWide == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pNarrow != NULL) || (pWide == NULL));
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pWide == NULL)
@@ -1536,10 +1536,10 @@ static USHORT wc_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
 	UCS2_CHAR *pStart;
 	UCS2_CHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -1577,11 +1577,11 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 
 	SET_TDBB(tdbb);
 
-	assert(ptr != NULL);
+	fb_assert(ptr != NULL);
 
 	CharSet obj = INTL_charset_lookup(tdbb, charset, NULL);
 
-	assert(obj != NULL);
+	fb_assert(obj != NULL);
 
 /* Single-octet character sets are optimized here */
 	if (obj.getSpaceLength() == 1) {
@@ -1598,10 +1598,10 @@ static void pad_spaces(TDBB tdbb, CHARSET_ID charset, BYTE * ptr, USHORT len)
 			while (ptr < end && space < end_space) {
 				*ptr++ = *space++;
 			}
-			/* This assert is checking that we didn't have a buffer-end
+			/* This fb_assert is checking that we didn't have a buffer-end
 			 * in the middle of a space character
 			 */
-			assert(!(ptr == end) || (space == end_space));
+			fb_assert(!(ptr == end) || (space == end_space));
 		}
 	}
 }

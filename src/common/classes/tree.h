@@ -32,14 +32,14 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.21 2003-11-03 02:05:13 brodsom Exp $
+ *  $Id: tree.h,v 1.22 2003-11-03 23:50:05 brodsom Exp $
  *
  */
 
 #ifndef TREE_H
 #define TREE_H
 
-#include <assert.h>
+#include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h> /* XPG: prototypes for malloc/free have to be in
@@ -417,7 +417,7 @@ public:
 			if ( curr->getCount() == 1 ) {
 				// Only one node left in the current page. We cannot remove it directly
 				// because is would invalidate our tree structure
-				assert(curPos == 0);
+				fb_assert(curPos == 0);
 				ItemList *temp;
 				if ( (temp = curr->prev) && NEED_MERGE(temp->getCount(), LeafCount) ) {
 					tree->_removePage(0, curr);
@@ -439,7 +439,7 @@ public:
 				else
 				{
 					// It means the tree is broken
-					assert(false);
+					fb_assert(false);
 				}
 			}
 			else {
@@ -609,7 +609,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 		else
 		{
 			// It means the tree is broken
-			assert(false);
+			fb_assert(false);
 		}
 	}
 	else
@@ -619,7 +619,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 		list->find(NodeList::generate(list,node),pos);
 #else
 		bool found = list->find(NodeList::generate(list,node),pos);
-		assert(found);
+		fb_assert(found);
 #endif
 		list->remove(pos);
 		

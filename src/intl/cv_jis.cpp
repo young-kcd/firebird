@@ -44,13 +44,13 @@ USHORT CVJIS_eucj_to_unicode(CSCONVERT obj,
 	USHORT src_start = src_len;
 	USHORT this_len;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_eucj_to_unicode);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_eucj_to_unicode);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -137,13 +137,13 @@ USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
 	USHORT this_len;
 	USHORT table;
 
-	assert(sjis_str != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_sjis_to_unicode);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(sjis_str != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_sjis_to_unicode);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -200,8 +200,8 @@ USHORT CVJIS_sjis_to_unicode(CSCONVERT obj,
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		else {
-			assert(table == 2);
-			assert(wide <= 255);
+			fb_assert(table == 2);
+			fb_assert(wide <= 255);
 			ch = sjis_to_unicode_mapping_array
 				[sjis_to_unicode_map[(USHORT) wide / 256] + (wide % 256)];
 		};
@@ -392,13 +392,13 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 	USHORT tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
-	assert(unicode_str != NULL || sjis_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_sjis);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(unicode_str != NULL || sjis_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_sjis);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -438,7 +438,7 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 		};
 		seven2eight(&tmp1, &tmp2);
 		if (tmp1 == 0) {		/* half-width kana ? */
-			assert(SJIS_SINGLE(tmp2));
+			fb_assert(SJIS_SINGLE(tmp2));
 			*sjis_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
 			sjis_len--;
@@ -448,8 +448,8 @@ USHORT CVJIS_unicode_to_sjis(CSCONVERT obj,
 			break;
 		}
 		else {
-			assert(SJIS1(tmp1));
-			assert(SJIS2(tmp2));
+			fb_assert(SJIS1(tmp1));
+			fb_assert(SJIS2(tmp2));
 			*sjis_str++ = tmp1;
 			*sjis_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
@@ -473,13 +473,13 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 	USHORT tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
-	assert(unicode_str != NULL || eucj_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_eucj);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(unicode_str != NULL || eucj_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVJIS_unicode_to_eucj);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -509,7 +509,7 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 		tmp1 = jis_ch / 256;
 		tmp2 = jis_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
-			assert(!(tmp2 & 0x80));
+			fb_assert(!(tmp2 & 0x80));
 			*eucj_str++ = tmp2;
 			eucj_len--;
 			unicode_len -= sizeof(*unicode_str);
@@ -520,8 +520,8 @@ USHORT CVJIS_unicode_to_eucj(CSCONVERT obj, UCHAR *eucj_str, USHORT eucj_len, UC
 			break;
 		}
 		else {
-			assert(!(tmp1 & 0x80));
-			assert(!(tmp2 & 0x80));
+			fb_assert(!(tmp1 & 0x80));
+			fb_assert(!(tmp2 & 0x80));
 			*eucj_str++ = tmp1 | 0x80;
 			*eucj_str++ = tmp2 | 0x80;
 			unicode_len -= sizeof(*unicode_str);
@@ -634,10 +634,10 @@ static USHORT CVJIS_euc2sjis(CSCONVERT obj, UCHAR *sjis_str, USHORT sjis_len, UC
 	UCHAR *sjis_start;
 	USHORT src_start = euc_len;
 
-	assert(euc_str != NULL || sjis_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
+	fb_assert(euc_str != NULL || sjis_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 
 	*err_code = 0;
 
@@ -727,10 +727,10 @@ USHORT CVJIS_euc_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *sr
 	UCHAR *dst_start;
 	USHORT src_start = src_len;
 
-	assert(src != NULL || dst == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
+	fb_assert(src != NULL || dst == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 
 	*err_code = 0;
 /* Length estimate needed? */
@@ -775,8 +775,8 @@ SSHORT CVJIS_euc_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_len
  *	Grab a single character from a mb stream.
  *
  **************************************/
-	assert(src != NULL);
-	assert(obj != NULL);
+	fb_assert(src != NULL);
+	fb_assert(obj != NULL);
 
 	if (!src_len)
 		return -1;
@@ -814,10 +814,10 @@ static USHORT CVJIS_sjis2euc(CSCONVERT obj, UCHAR *euc_str, USHORT euc_len, UCHA
 	UCHAR *euc_start;
 	USHORT src_start = sjis_len;
 
-	assert(sjis_str != NULL || euc_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
+	fb_assert(sjis_str != NULL || euc_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 
 	*err_code = 0;
 	if (euc_str == NULL)
@@ -901,10 +901,10 @@ USHORT CVJIS_sjis_byte2short(CSCONVERT obj, UCHAR *dst, USHORT dst_len, UCHAR *s
 	UCHAR *dst_start;
 	USHORT src_start = src_len;
 
-	assert(obj != NULL);
-	assert(src != NULL || dst == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(src != NULL || dst == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (dst == NULL)
@@ -950,8 +950,8 @@ SSHORT CVJIS_sjis_mbtowc(CSCONVERT obj, UCS2_CHAR *wc, UCHAR *src, USHORT src_le
  *
  **************************************/
 
-	assert(src != NULL);
-	assert(obj != NULL);
+	fb_assert(src != NULL);
+	fb_assert(obj != NULL);
 
 	if (!src_len)
 		return -1;

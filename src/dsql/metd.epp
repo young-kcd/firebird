@@ -451,8 +451,8 @@ void METD_get_col_default(DSQL_REQ    request,
 
 		/* the default string must be of the form:
 		   blr_version4 blr_literal ..... blr_eoc  */
-		assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
-		assert(buffer[1] == blr_literal);
+		fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
+		fb_assert(buffer[1] == blr_literal);
 
 	}
 	else {
@@ -831,8 +831,8 @@ void METD_get_domain_default(DSQL_REQ request,
 
             /* the default string must be of the form:
                blr_version4 blr_literal ..... blr_eoc  */
-            assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
-            assert(buffer[1] == blr_literal);
+            fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
+            fb_assert(buffer[1] == blr_literal);
 
         }
         else {
@@ -1878,7 +1878,7 @@ static void convert_dtype( DSQL_FLD field, SSHORT field_type)
 		field->fld_dtype = gds_cvt_blr_dtype[field_type];
 		field->fld_length = type_lengths[field->fld_dtype];
 
-		assert(field->fld_dtype != dtype_null);
+		fb_assert(field->fld_dtype != dtype_null);
 	}
 }
 

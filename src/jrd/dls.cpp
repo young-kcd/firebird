@@ -67,8 +67,8 @@ BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 	MDLS *ptr;
 	BOOLEAN result = FALSE;
 
-	assert(size > (ULONG) 0);
-	assert(sfb);
+	fb_assert(size > (ULONG) 0);
+	fb_assert(sfb);
 
 	ptr = DLS_get_access();
 
@@ -124,10 +124,10 @@ void DLS_put_temp_space(SFB sfb)
 	if (sfb && sfb->sfb_dls) {
 		ptr = DLS_get_access();
 #ifdef V4_THREADING
-		assert(ptr->mdls_mutex_init);
+		fb_assert(ptr->mdls_mutex_init);
 		V4_MUTEX_LOCK(ptr->mdls_mutex);
 #endif
-		assert(sfb->sfb_dls->dls_inuse >= sfb->sfb_file_size);
+		fb_assert(sfb->sfb_dls->dls_inuse >= sfb->sfb_file_size);
 		if (sfb->sfb_dls->dls_inuse > sfb->sfb_file_size)
 			sfb->sfb_dls->dls_inuse -= sfb->sfb_file_size;
 		else

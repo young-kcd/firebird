@@ -1640,7 +1640,7 @@ static void gen_error_condition( dsql_req* request, const dsql_nod* node)
 		return;
 
 	default:
-		assert(FALSE);
+		fb_assert(false);
 		return;
 	}
 }
@@ -1973,7 +1973,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 			}
 
 		default:
-			assert(FALSE);
+			fb_assert(false);
 			break;
 		}
 

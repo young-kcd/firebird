@@ -47,7 +47,7 @@ void LD2_assert(filename, lineno)
  *
  * Functional description
  *
- *	Utility function for assert() macro 
+ *	Utility function for fb_assert() macro 
  *	Defined locally (clone from jrd/err.c) as ERR_assert isn't
  *	a shared module entry point on all platforms, whereas gds__log is.
  *
@@ -113,7 +113,7 @@ USHORT DLL_EXPORT LD2_lookup(USHORT objtype,
        }
    default:
 #ifdef DEV_BUILD
-       assert(0);
+       fb_assert(0);
 #endif
        *fun = NULL;
        return 1;

@@ -278,7 +278,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 		default:
 			/* the two arguments have identical dtype and scale, but the
 			   dtype is not one of your defined types! */
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 
 		}						/* switch on dtype */
@@ -602,14 +602,14 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
 				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
 			}
-			assert(obj1 != NULL);
-			assert(obj2 != NULL);
+			fb_assert(obj1 != NULL);
+			fb_assert(obj2 != NULL);
 			if (obj1.getBytesPerChar() != 1 || obj2.getBytesPerChar() != 1)
 				(*err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
-	    }
+		}
 
 		while (!(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
-	    {
+		{
 			l1 = BLB_get_segment(tdbb, blob1, buffer1, BUFFER_LARGE);
 			l2 = BLB_get_segment(tdbb, blob2, buffer2, BUFFER_LARGE);
 			if (bin_cmp)
@@ -626,7 +626,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 				if (!ret_val)
 				{
 					UCHAR blank_char = both_are_text ? '\x20' : '\x0';
-					assert (safemin == common_top);
+					fb_assert (safemin == common_top);
 					if (l1 < l2)
 					{
 						for (safemin = l1; safemin < l2 && !ret_val; ++safemin)
@@ -639,7 +639,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 							if (buffer1[safemin] != blank_char)
 								ret_val = buffer1[safemin] > blank_char ? 1 : -1;
 					}
-					assert(ret_val || l1 == l2);
+					fb_assert(ret_val || l1 == l2);
 				}
 			}
 			else 
@@ -736,7 +736,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 			if (arg1->dsc_sub_type == BLOB_text)
 			{
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-				assert(obj1 != NULL);
+				fb_assert(obj1 != NULL);
 				ttype1 = obj1.getType();
 				if (ttype1 == ttype_none || ttype1 == ttype_ascii)
 					bin_cmp = true;
@@ -744,7 +744,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_STATUS err)
 			if (arg2->dsc_dtype <= dtype_varying)
 			{
 				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-				assert(obj2 != NULL);
+				fb_assert(obj2 != NULL);
 				ttype2 = obj2.getType();
 				if (ttype2 == ttype_none || ttype2 == ttype_ascii)
 					bin_cmp = true;
@@ -834,13 +834,13 @@ USHORT CVT2_make_string2(const dsc* desc,
 	USHORT from_len;
 	USHORT from_interp;
 
-	assert(desc != NULL);
-	assert(address != NULL);
-	assert(err != NULL);
-	assert((((temp != NULL) && (length > 0))
+	fb_assert(desc != NULL);
+	fb_assert(address != NULL);
+	fb_assert(err != NULL);
+	fb_assert((((temp != NULL) && (length > 0))
 			|| ((INTL_TTYPE(desc) <= dtype_any_text)
 				&& (INTL_TTYPE(desc) == to_interp))) || (ptr != NULL));
-	assert((ptr == NULL) || (*ptr == NULL));
+	fb_assert((ptr == NULL) || (*ptr == NULL));
 
 	if (desc->dsc_dtype == dtype_text) {
 		from_buf = desc->dsc_address;

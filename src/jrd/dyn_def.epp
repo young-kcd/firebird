@@ -1868,7 +1868,7 @@ void DYN_define_index(GBL		gbl,
 				break;
 
 			case gds_dyn_foreign_key_delete:
-				assert(ri_actionP != NULL);
+				fb_assert(ri_actionP != NULL);
 				switch (verb = *(*ptr)++)
 				{
 				case gds_dyn_foreign_key_cascade:
@@ -1911,13 +1911,13 @@ void DYN_define_index(GBL		gbl,
 					(*ri_actionP) |= FOR_KEY_DEL_NONE;
 					break;
 				default:
-					assert(0);	/* should not come here */
+					fb_assert(0);	/* should not come here */
 					DYN_unsupported_verb();
 				}
 				break;
 
 			case gds_dyn_foreign_key_update:
-				assert(ri_actionP != NULL);
+				fb_assert(ri_actionP != NULL);
 				switch (verb = *(*ptr)++)
 				{
 				case gds_dyn_foreign_key_cascade:
@@ -1960,7 +1960,7 @@ void DYN_define_index(GBL		gbl,
 					(*ri_actionP) |= FOR_KEY_UPD_NONE;
 					break;
 				default:
-					assert(0);	/* should not come here */
+					fb_assert(0);	/* should not come here */
 					DYN_unsupported_verb();
 				}
 				break;
@@ -2846,7 +2846,7 @@ void DYN_define_parameter( GBL gbl, UCHAR ** ptr, TEXT * procedure_name)
 
 		/* Control should never reach this point,
 		   because id should always have one of the values tested above.  */
-		assert(0);
+		fb_assert(0);
 		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
@@ -3004,7 +3004,7 @@ void DYN_define_procedure( GBL gbl, UCHAR ** ptr)
 
 		/* Control should never reach this point, because id should have
 		   one of the values tested-for above. */
-		assert(0);
+		fb_assert(0);
 		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
@@ -3231,7 +3231,7 @@ void DYN_define_relation( GBL gbl, UCHAR ** ptr)
 
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
-		assert(0);
+		fb_assert(0);
 		DYN_error_punt(TRUE, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
@@ -3907,7 +3907,7 @@ void DYN_define_trigger(GBL		gbl,
 		    case isc_dyn_system_flag:
 				X.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 				X.RDB$SYSTEM_FLAG.NULL = FALSE;
-				/* assert(!ignore_perm || ignore_perm 
+				/* fb_assert(!ignore_perm || ignore_perm 
 					&& X.RDB$SYSTEM_FLAG == frb_sysflag_referential_constraint); */
 				break;
 

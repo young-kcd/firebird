@@ -137,14 +137,14 @@ static SSHORT internal_fss_mbtowc(TEXTTYPE * obj,
  * Return:      (common to all mbtowc routines)
  *      -1      Error in parsing next character
  *      <n>     Count of characters consumed.
- *      *wc     Next character from byte steam (if wc <> NULL)
+ *      *wc     Next character from byte stream (if wc <> NULL)
  *
  * Note: This routine has a cousin in intl/cv_utffss.c
  *
  **************************************/
-	assert(obj);
-	assert(wc);
-	assert(p);
+	fb_assert(obj);
+	fb_assert(wc);
+	fb_assert(p);
 
 	return fss_mbtowc(wc, p, n);
 }
@@ -160,10 +160,10 @@ static USHORT internal_fss_to_unicode(CSCONVERT obj,
 	USHORT src_start = src_len;
 	fss_size_t res;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 
 	*err_code = 0;
 
@@ -179,7 +179,7 @@ static USHORT internal_fss_to_unicode(CSCONVERT obj,
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		assert(res <= src_len);
+		fb_assert(res <= src_len);
 		dest_ptr++;
 		dest_len -= sizeof(*dest_ptr);
 		src_ptr += res;
@@ -205,11 +205,11 @@ USHORT internal_unicode_to_fss(CSCONVERT obj,
 	UCHAR *p;
 	fss_size_t res;
 
-	assert(unicode_str != NULL || fss_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) internal_unicode_to_fss);
+	fb_assert(unicode_str != NULL || fss_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) internal_unicode_to_fss);
 
 	*err_code = 0;
 
@@ -425,8 +425,8 @@ SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
  *
  **************************************/
 
-	assert(obj);
-	assert(ptr);
+	fb_assert(obj);
+	fb_assert(ptr);
 
 	if (count >= 1) {
 		if (wc)
@@ -456,8 +456,8 @@ SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
  *
  **************************************/
 
-	assert(obj);
-	assert(ptr);
+	fb_assert(obj);
+	fb_assert(ptr);
 
 	if (count >= 2) {
 		if (wc)
@@ -488,8 +488,8 @@ SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
  *
  **************************************/
 
-	assert(obj);
-	assert(ptr);
+	fb_assert(obj);
+	fb_assert(ptr);
 
 	if (count >= 2) {
 		if (wc)
@@ -557,10 +557,10 @@ static USHORT wc_to_nc(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/* byte count
 	NCHAR *pStart;
 	UCS2_CHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -603,10 +603,10 @@ static USHORT mb_to_wc(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest,	/* byte c
 	UCS2_CHAR *pStart;
 	MBCHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -646,10 +646,10 @@ static USHORT wc_to_mb(CSCONVERT obj, MBCHAR * pDest, USHORT nDest,	/* byte coun
 	MBCHAR *pStart;
 	UCS2_CHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
-	assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -837,9 +837,9 @@ static USHORT cvt_ascii_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDes
 	UCS2_CHAR *pStart;
 	UCHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -882,9 +882,9 @@ static USHORT cvt_unicode_to_ascii(CSCONVERT obj, NCHAR * pDest, USHORT nDest,	/
 	NCHAR *pStart;
 	UCS2_CHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -927,9 +927,9 @@ static USHORT cvt_none_to_unicode(CSCONVERT obj, UCS2_CHAR * pDest, USHORT nDest
 	UCS2_CHAR *pStart;
 	UCHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -977,9 +977,9 @@ static USHORT cvt_utffss_to_ascii(CSCONVERT obj, UCHAR * pDest, USHORT nDest,	/*
 	UCHAR *pStart;
 	UCHAR *pStart_src;
 
-	assert(obj != NULL);
-	assert((pSrc != NULL) || (pDest == NULL));
-	assert(err_code != NULL);
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -1187,7 +1187,7 @@ FPTR_SHORT INTL_builtin_lookup(USHORT objtype, SSHORT parm1, SSHORT parm2) {
 		/* Converting TO character set NONE should have been handled at
 		 * a higher level
 		 */
-		assert(parm1 != CS_NONE);
+		fb_assert(parm1 != CS_NONE);
 #endif
 		break;
 	default:

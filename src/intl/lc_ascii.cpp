@@ -537,7 +537,7 @@ static __inline UCHAR CP1251_LOWER(UCHAR ch)
  */
 USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
 {
-/* assert (inLen <= LANGASCII_MAX_KEY); - possible upper logic error if true */
+/* fb_assert (inLen <= LANGASCII_MAX_KEY); - possible upper logic error if true */
 	return (MIN(inLen, LANGASCII_MAX_KEY));
 }
 
@@ -558,11 +558,11 @@ USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT i
 	BYTE *outbuff;
 	BYTE *inbuff;
 
-	assert(pOutChar != NULL);
-	assert(pInChar != NULL);
-	assert(iInLen <= LANGASCII_MAX_KEY);
-	assert(iOutLen <= LANGASCII_MAX_KEY);
-	assert(iOutLen >= famasc_key_length(obj, iInLen));
+	fb_assert(pOutChar != NULL);
+	fb_assert(pInChar != NULL);
+	fb_assert(iInLen <= LANGASCII_MAX_KEY);
+	fb_assert(iOutLen <= LANGASCII_MAX_KEY);
+	fb_assert(iOutLen >= famasc_key_length(obj, iInLen));
 
 /* point inbuff at last character */
 	inbuff = pInChar + iInLen - 1;
@@ -582,7 +582,7 @@ USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT i
 
 static SSHORT all_spaces(BYTE *s, SSHORT len)
 {
-	assert(s != NULL);
+	fb_assert(s != NULL);
 
 	while (len-- > 0)
 		if (*s++ != ASCII_SPACE)
@@ -596,9 +596,9 @@ SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 	USHORT len;
 	USHORT i;
 
-	assert(obj != NULL);
-	assert(s1 != NULL);
-	assert(s2 != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(s1 != NULL);
+	fb_assert(s2 != NULL);
 
 	len = MIN(l1, l2);
 	for (i = 0; i < len; i++) {
@@ -639,11 +639,11 @@ USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch)
 SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
-	assert(pStr != NULL);
-	assert(pOutStr != NULL);
-	assert(iLen <= 32000);		/* almost certainly an error */
-	assert(iOutLen <= 32000);	/* almost certainly an error */
-	assert(iOutLen >= iLen);
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
+	fb_assert(iLen <= 32000);		/* almost certainly an error */
+	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
+	fb_assert(iOutLen >= iLen);
 	p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = ASCII7_UPPER(*pStr);
@@ -675,11 +675,11 @@ USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch)
 SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
-	assert(pStr != NULL);
-	assert(pOutStr != NULL);
-	assert(iLen <= 32000);		/* almost certainly an error */
-	assert(iOutLen <= 32000);	/* almost certainly an error */
-	assert(iOutLen >= iLen);
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
+	fb_assert(iLen <= 32000);		/* almost certainly an error */
+	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
+	fb_assert(iOutLen >= iLen);
 	p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = CP1251_UPPER(*pStr);

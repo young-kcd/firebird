@@ -5014,7 +5014,7 @@ static SYN parse_statistical(void)
 		if (ntypes->nod_t_keyword == keyword)
 			break;
 
-	assert(ntypes < endtypes);
+	fb_assert(ntypes < endtypes);
 	if (ntypes >= endtypes)
 	    return NULL;
 

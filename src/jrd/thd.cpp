@@ -269,7 +269,7 @@ void THD_getspecific_data(void **t_data)
 
 /* There are some circumstances in which we do not call THD_putspecific_data(),
    such as services API, and local access on NT. As result of that, t_init
-   does not get initialized. So don't use an assert in here but rather do
+   does not get initialized. So don't use an fb_assert in here but rather do
    the work only if t_init is initialised */
 	if (t_init) {
 #ifdef POSIX_THREADS
@@ -420,7 +420,7 @@ int THD_mutex_destroy(MUTX_T * mutex)
 	state = pthread_mutex_destroy(mutex);
 	if (!state)
 		return 0;
-	assert(state == -1);		/* if state is not 0, it should be -1 */
+	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -452,7 +452,7 @@ int THD_mutex_init(MUTX_T * mutex)
 	state = pthread_mutex_init(mutex, pthread_mutexattr_default);
 	if (!state)
 		return 0;
-	assert(state == -1);		/* if state is not 0, it should be -1 */
+	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -483,7 +483,7 @@ int THD_mutex_lock(MUTX_T * mutex)
 	state = pthread_mutex_lock(mutex);
 	if (!state)
 		return 0;
-	assert(state == -1);		/* if state is not 0, it should be -1 */
+	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -514,7 +514,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
 	state = pthread_mutex_unlock(mutex);
 	if (!state)
 		return 0;
-	assert(state == -1);		/* if state is not 0, it should be -1 */
+	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -1876,7 +1876,7 @@ static int thread_start(
 
 	state = pthread_attr_create(&pattr);
 	if (state) {
-		assert(state == -1);
+		fb_assert(state == -1);
 		return errno;
 	}
 
@@ -1895,7 +1895,7 @@ static int thread_start(
 	if (stack_size < 0x40000L) {
 		state = pthread_attr_setstacksize(&pattr, 0x40000L);
 		if (state) {
-			assert(state == -1);
+			fb_assert(state == -1);
 			return errno;
 		}
 	}
@@ -1905,17 +1905,17 @@ static int thread_start(
 */
 	state = pthread_create(&thread, pattr, routine, arg);
 	if (state) {
-		assert(state == -1);
+		fb_assert(state == -1);
 		return errno;
 	}
 	state = pthread_detach(&thread);
 	if (state) {
-		assert(state == -1);
+		fb_assert(state == -1);
 		return errno;
 	}
 	state = pthread_attr_delete(&pattr);
 	if (state) {
-		assert(state == -1);
+		fb_assert(state == -1);
 		return errno;
 	}
 	return 0;

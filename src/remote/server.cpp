@@ -2001,7 +2001,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 		   access method. */
 
 		if (!message->msg_address) {
-			assert(statement->rsr_msgs_waiting == 0);
+			fb_assert(statement->rsr_msgs_waiting == 0);
 			THREAD_EXIT;
 			s = GDS_DSQL_FETCH(status_vector,
 							   &statement->rsr_handle,
@@ -2025,7 +2025,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 		}
 		else {
 			/* Take a message from the outqoing queue */
-			assert(statement->rsr_msgs_waiting >= 1);
+			fb_assert(statement->rsr_msgs_waiting >= 1);
 			statement->rsr_msgs_waiting--;
 		}
 

@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.35 2003-09-22 17:52:27 brodsom Exp $
+$Id: flu.cpp,v 1.36 2003-11-03 23:53:50 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -413,7 +413,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 			return NULL;
 		}
 
-		assert(mod->mod_handle);	/* assert that we found the module */
+		fb_assert(mod->mod_handle);	/* fb_assert that we found the module */
 		mod->mod_use_count = 0;
 		mod->mod_length = length;
 		strcpy(mod->mod_name, module);
@@ -501,7 +501,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 			return NULL;
 		}
 
-		assert(mod->mod_handle);	/* assert that we found the module */
+		fb_assert(mod->mod_handle);	/* fb_assert that we found the module */
 		mod->mod_use_count = 0;
 		mod->mod_length = length;
 		strcpy(mod->mod_name, module);
@@ -578,7 +578,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 			return NULL;
 		}
 
-		assert(mod->mod_handle);	/* assert that we found the module */
+		fb_assert(mod->mod_handle);	/* fb_assert that we found the module */
 		mod->mod_use_count = 0;
 		mod->mod_length = length;
 		strcpy(mod->mod_name, module);
@@ -700,7 +700,7 @@ if (!(mod = FLU_lookup_module (module)))
         return NULL;
     }
 
-    assert (mod->mod_handle);   /* assert that we found the module */
+    fb_assert (mod->mod_handle);   /* fb_assert that we found the module */
     mod->mod_use_count = 0;
     mod->mod_length = length;
     strcpy (mod->mod_name, module);

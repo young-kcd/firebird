@@ -2731,7 +2731,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 				USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
 
 				/* We can have this assertion since this case is for both string fields. */
-				assert(DSC_string_length(&new_fld->dyn_dsc) - maxflen
+				fb_assert(DSC_string_length(&new_fld->dyn_dsc) - maxflen
 					== new_fld->dyn_charbytelen - orig_fld->dyn_charbytelen);
 				/* if (new_fld->dyn_dsc.dsc_length < maxflen) */
 				if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
@@ -2741,7 +2741,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			return 87;			/* MODIFY RDB$FIELDS FAILED */
 		}
 		break;
@@ -2902,13 +2902,13 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			return 87;			/* MODIFY RDB$FIELDS FAILED */
 		}
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		return 87;				/* MODIFY RDB$FIELDS FAILED */
 	}
 	return FB_SUCCESS;

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.31 2003-10-29 10:53:07 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.32 2003-11-03 23:51:47 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -43,7 +43,6 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
 #include "../jrd/constants.h"
-#include "../jrd/gdsassert.h"
 
 
 const int MAX_USER_LENGTH	= 33;
@@ -469,7 +468,7 @@ bool MET_get_domain_default(dbb* database,
 	if ((database->dbb_handle == NULL) && !MET_database(database, false))
 		CPR_exit(FINI_ERROR);
 
-	assert(database->dbb_transaction == NULL);
+	fb_assert(database->dbb_transaction == NULL);
 	FRBRD* gds_trans = NULL;
 
 	FRBRD* DB = database->dbb_handle; // Overrides global DB
@@ -517,8 +516,8 @@ bool MET_get_domain_default(dbb* database,
 			   blr_version4 blr_literal ..... blr_eoc OR
 			   blr_version4 blr_null blr_eoc OR
 			   blr_version4 blr_user_name  blr_eoc */
-			assert(buffer[0] == blr_version4 || buffer[0] == blr_version5);
-			assert(buffer[1] == blr_literal ||
+			fb_assert(buffer[0] == blr_version4 || buffer[0] == blr_version5);
+			fb_assert(buffer[1] == blr_literal ||
 				   buffer[1] == blr_null || buffer[1] == blr_user_name);
 
 			has_default = true;
@@ -566,7 +565,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 	if ((database->dbb_handle == NULL) && !MET_database(database, false))
 		CPR_exit(FINI_ERROR);
 
-	assert(database->dbb_transaction == NULL);
+	fb_assert(database->dbb_transaction == NULL);
 	FRBRD* gds_trans = NULL;
 
 	FRBRD* DB = database->dbb_handle; // Overrides global DB
@@ -626,8 +625,8 @@ bool MET_get_column_default(const gpre_rel* relation,
 			   blr_version4 blr_null blr_eoc OR
 			   blr_version4 blr_user_name blr_eoc */
 
-			assert(buffer[0] == blr_version4 || buffer[0] == blr_version5);
-			assert(buffer[1] == blr_literal ||
+			fb_assert(buffer[0] == blr_version4 || buffer[0] == blr_version5);
+			fb_assert(buffer[1] == blr_literal ||
 				   buffer[1] == blr_null || buffer[1] == blr_user_name);
 		}
 		else {
@@ -663,7 +662,7 @@ LLS MET_get_primary_key(dbb* database, const TEXT* relation_name)
 	if ((database->dbb_handle == NULL) && !MET_database(database, false))
 		CPR_exit(FINI_ERROR);
 
-	assert(database->dbb_transaction == NULL);
+	fb_assert(database->dbb_transaction == NULL);
 	FRBRD* gds_trans = NULL;
 
 	FRBRD* DB = database->dbb_handle; // Overrides global DB
@@ -2047,9 +2046,9 @@ static bool get_intl_char_subtype(
 {
 	UCHAR buffer[32];			/* BASED ON RDB$COLLATION_NAME */
 
-	assert(id != NULL);
-	assert(name != NULL);
-	assert(database != NULL);
+	fb_assert(id != NULL);
+	fb_assert(name != NULL);
+	fb_assert(database != NULL);
 
 
 	DB = database->dbb_handle;
@@ -2123,7 +2122,7 @@ static bool resolve_charset_and_collation(
 										 const UCHAR* charset, 
 										 const UCHAR* collation)
 {
-	assert(id != NULL);
+	fb_assert(id != NULL);
 
 	if (!DB)
 		return false;

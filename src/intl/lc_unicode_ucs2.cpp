@@ -111,9 +111,9 @@ TEXTTYPE_ENTRY(UNI201_init)
 
 static SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n)
 {
-	assert(obj);
-	assert(wc);
-	assert(p);
+	fb_assert(obj);
+	fb_assert(wc);
+	fb_assert(p);
 
 	if (n < sizeof(UCS2_CHAR))
 		return -1;

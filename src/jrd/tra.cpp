@@ -945,7 +945,7 @@ void TRA_prepare(TDBB tdbb, JRD_TRA transaction, USHORT length,
    should go hand in hand
               msg == NULL || *msg == NULL
 */
-	assert(!(!msg && length) || (msg && (!*msg && length)));
+	fb_assert(!(!msg && length) || (msg && (!*msg && length)));
 
 	if (msg && length) {
 		MET_prepare(tdbb, transaction, length, msg);
@@ -2911,7 +2911,7 @@ static void THREAD_ROUTINE sweep_database(char* database)
 						 &db_handle, dpb_length,
 						 reinterpret_cast<char*>(sweep_dpb));
 
-	assert (ihandle->ihndl_object == &db_handle);
+	fb_assert (ihandle->ihndl_object == &db_handle);
 	ihandle->ihndl_object = NULL;
 
 	if (db_handle)

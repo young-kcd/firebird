@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.46 2003-10-03 01:47:54 brodsom Exp $
+ * $Id: sort.cpp,v 1.47 2003-11-03 23:53:49 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -266,7 +266,7 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 			break;
 
 		default:
-			assert(false);
+			fb_assert(false);
 			break;
 		}
 		if (complement && n)
@@ -486,7 +486,7 @@ void SORT_diddle_key(UCHAR* record, SCB scb, bool direction)
 #endif // IEEE
 
 		default:
-			assert(false);
+			fb_assert(false);
 			break;
 		}
 		if (complement && n)
@@ -527,7 +527,7 @@ void SORT_error(ISC_STATUS * status_vector,
  *
  **************************************/
 
-	assert(status_vector != NULL);
+	fb_assert(status_vector != NULL);
 
 	*status_vector++ = gds_arg_gds;
 	*status_vector++ = isc_io_error;
@@ -652,7 +652,7 @@ void SORT_get(ISC_STATUS * status_vector,
 #endif
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 
@@ -1076,7 +1076,7 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 	// leaves already, so we *know* we need (count-1) merge blocks.
 
 	if (count > 1) {
-		assert(!scb->scb_merge_pool);	// shouldn't have a pool
+		fb_assert(!scb->scb_merge_pool);	// shouldn't have a pool
 		try {
 			scb->scb_merge_pool =
 				(MRG) gds__alloc((SLONG) (count - 1)*sizeof(struct mrg));
@@ -1093,7 +1093,7 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 	}
 	else {
 		// Merge of 1 or 0 runs doesn't make sense
-		assert(false);				// We really shouldn't get here
+		fb_assert(false);				// We really shouldn't get here
 		merge = (MRG) * streams;	// But if we do...
 	}
 
@@ -1113,13 +1113,13 @@ bool SORT_sort(ISC_STATUS * status_vector, SCB scb)
 			merge = merge_pool++;
 			merge->mrg_header.rmh_type = TYPE_MRG;
 
-			assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
+			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
 				   ((*m1)->rmh_type == TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_a = *m1++;
 
-			assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
+			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
 				   ((*m1)->rmh_type == TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
@@ -1411,7 +1411,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
 			break;
 
 		default:
-			assert(false);
+			fb_assert(false);
 			break;
 		}
 		if (complement && n)
@@ -1637,7 +1637,7 @@ static void diddle_key(UCHAR * record, SCB scb, bool direction)
         // stop because of skd_type = 0
 		// FSG 22.Dez.2000
 		//
-        //	assert(false);
+        //	fb_assert(false);
 			break;
 		}
 		if (complement && n)
@@ -1680,7 +1680,7 @@ static void error_memory(SCB scb)
 
 	status_vector = scb->scb_status_vector;
 
-	assert(status_vector != NULL);
+	fb_assert(status_vector != NULL);
 
 	*status_vector++ = gds_arg_gds;
 	*status_vector++ = gds_sort_mem_err;
@@ -1834,10 +1834,10 @@ static void free_file_space(SCB scb, SFB sfb, ULONG position, ULONG size)
  **************************************/
 	WFS space, *ptr, next;
 
-	assert(size > 0);
-	assert(position < sfb->sfb_file_size);	// Block starts in file
+	fb_assert(size > 0);
+	fb_assert(position < sfb->sfb_file_size);	// Block starts in file
 	ULONG end = position + size;
-	assert(end <= sfb->sfb_file_size);		// Block ends in file
+	fb_assert(end <= sfb->sfb_file_size);		// Block ends in file
 
 	// Search through work file space blocks looking for an adjacent block
 
@@ -1873,7 +1873,7 @@ static void free_file_space(SCB scb, SFB sfb, ULONG position, ULONG size)
 		// Blocks weren't adjacent - just nearby
 
 		// Check that block to free doesn't overlap existing free block
-		assert(position >= space->wfs_position + space->wfs_size);
+		fb_assert(position >= space->wfs_position + space->wfs_size);
 	}
 
 /* Block didn't seem to append nicely to an existing block */
@@ -1987,7 +1987,7 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
 			// There are records remaining, but we have stepped over the 
 			// edge of the cache. Read the next buffer full of records.
 
-			assert((BLOB_PTR *) run->run_end_buffer >
+			fb_assert((BLOB_PTR *) run->run_end_buffer >
 				   (BLOB_PTR *) run->run_buffer);
 
 			space_available =
@@ -2303,7 +2303,7 @@ static void merge_runs(SCB scb, USHORT n)
 	RMH *m1, *m2, streams[32];
 	BLOB_PTR *buffer;
 
-	assert((n - 1) <= FB_NELEM(blks));	// stack var big enough?
+	fb_assert((n - 1) <= FB_NELEM(blks));	// stack var big enough?
 
 	scb->scb_longs -= SIZEOF_SR_BCKPTR_IN_LONGS;
 
@@ -2365,13 +2365,13 @@ static void merge_runs(SCB scb, USHORT n)
 		while (count >= 2) {
 			merge->mrg_header.rmh_type = TYPE_MRG;
 
-			assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
+			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
 				   ((*m1)->rmh_type == TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_a = *m1++;
 
-			assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
+			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
 				   ((*m1)->rmh_type == TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;

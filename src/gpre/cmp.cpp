@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.22 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: cmp.cpp,v 1.23 2003-11-03 23:51:47 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -742,9 +742,9 @@ static void cmp_field( GPRE_REQ request, GPRE_FLD field, REF reference)
 	if (reference && reference->ref_value
 		&& (reference->ref_flags & REF_array_elem)) field = field->fld_array;
 
-	assert(field != NULL);
-	assert(field->fld_dtype);
-	assert(field->fld_length);
+	fb_assert(field != NULL);
+	fb_assert(field->fld_dtype);
+	fb_assert(field->fld_length);
 
 	switch (field->fld_dtype) {
 	case dtype_cstring:

@@ -284,7 +284,7 @@ size_t SortMem::read(ISC_STATUS *status, size_t position, char *address, size_t 
 		// Search for the first needed block
 		size_t pos = position;
 		Block *block = seek(pos);
-		assert(block);
+		fb_assert(block);
 
 		// Read data from as many blocks as necessary
 		for (Block *itr = block; itr && length > 0; itr = itr->next, pos = 0)
@@ -294,7 +294,7 @@ size_t SortMem::read(ISC_STATUS *status, size_t position, char *address, size_t 
 			copied += n;
 			length -= n;
 		}
-		assert(!length);
+		fb_assert(!length);
 	}
 
 	// New seek value
@@ -324,7 +324,7 @@ size_t SortMem::write(ISC_STATUS *status, size_t position, char *address, size_t
 		// Search for the first needed block
 		size_t pos = position;
 		Block *block = seek(pos);
-		assert(block);
+		fb_assert(block);
 
 		// Write data to as many blocks as necessary
 		for (Block *itr = block; itr && length > 0; itr = itr->next, pos = 0)
@@ -334,7 +334,7 @@ size_t SortMem::write(ISC_STATUS *status, size_t position, char *address, size_t
 			copied += n;
 			length -= n;
 		}
-		assert(!length);
+		fb_assert(!length);
 	}
 
 	// New seek value

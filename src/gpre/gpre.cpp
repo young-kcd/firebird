@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.43 2003-10-29 10:53:07 robocop Exp $
+//  $Id: gpre.cpp,v 1.44 2003-11-03 23:51:47 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -2243,7 +2243,7 @@ static TOK get_token()
 
 //  for FORTRAN, make note of the first token in a statement 
 
-	assert(first_position <= MAX_USHORT);
+	fb_assert(first_position <= MAX_USHORT);
 	token.tok_first = (USHORT) first_position;
 	first_position = FALSE;
 

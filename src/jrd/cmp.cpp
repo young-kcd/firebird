@@ -648,7 +648,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 #endif
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			/* FALLINTO */
 		case dtype_sql_time:
 		case dtype_sql_date:
@@ -710,7 +710,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 #endif
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			/* FALLINTO */
 		case dtype_sql_time:
 		case dtype_sql_date:
@@ -930,7 +930,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			case dtype_timestamp:
 				node->nod_flags |= nod_date;
 
-				assert(DTYPE_IS_DATE(desc1.dsc_dtype) ||
+				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					   DTYPE_IS_DATE(desc2.dsc_dtype));
 
 				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2)) {
@@ -978,7 +978,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 							desc->dsc_flags = 0;
 						}
 						else {
-							assert(dtype == dtype_timestamp);
+							fb_assert(dtype == dtype_timestamp);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = 0;
@@ -1007,7 +1007,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					desc->dsc_dtype = desc1.dsc_dtype;
 					if (!DTYPE_IS_DATE(desc->dsc_dtype))
 						desc->dsc_dtype = desc2.dsc_dtype;
-					assert(DTYPE_IS_DATE(desc->dsc_dtype));
+					fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
 					desc->dsc_length = type_lengths[desc->dsc_dtype];
 					desc->dsc_scale = 0;
 					desc->dsc_sub_type = 0;
@@ -1058,7 +1058,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 #endif
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				/* FALLINTO */
 			case dtype_blob:
 			case dtype_array:
@@ -1099,7 +1099,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			else {
 				/* mixed numeric and non-numeric: */
 
-				assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));
+				fb_assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));
 
 				/* The MAX(dtype) rule doesn't apply with dtype_int64 */
 
@@ -1117,7 +1117,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			case dtype_sql_time:
 				node->nod_flags |= nod_date;
 
-				assert(DTYPE_IS_DATE(desc1.dsc_dtype) ||
+				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					   DTYPE_IS_DATE(desc2.dsc_dtype));
 
 				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_null)) &&
@@ -1163,7 +1163,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 							desc->dsc_flags = 0;
 						}
 						else {
-							assert(dtype == dtype_timestamp
+							fb_assert(dtype == dtype_timestamp
 								   || dtype == dtype_null);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
@@ -1193,7 +1193,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					desc->dsc_dtype = desc1.dsc_dtype;
 					if (!DTYPE_IS_DATE(desc->dsc_dtype))
 						desc->dsc_dtype = desc2.dsc_dtype;
-					assert(DTYPE_IS_DATE(desc->dsc_dtype));
+					fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
 					desc->dsc_length = type_lengths[desc->dsc_dtype];
 					desc->dsc_scale = 0;
 					desc->dsc_sub_type = 0;
@@ -1255,7 +1255,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 #endif
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				/* FALLINTO */
 			case dtype_blob:
 			case dtype_array:
@@ -1304,7 +1304,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				/* FALLINTO */
 			case DTYPE_CANNOT:
 				/* break to error reporting code */
@@ -1352,7 +1352,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				/* FALLINTO */
 			case DTYPE_CANNOT:
 				/* break to error reporting code */
@@ -1598,7 +1598,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 		return;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		break;
 	}
 
@@ -2040,7 +2040,7 @@ void CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 	   this routine can be called for the procedure which is being freed itself.
 	   Hence we should just silently ignore such a situation. */
 
-//	assert(procedure->prc_use_count > 0); -- commented out by dimitr, 2003.01.30
+//	fb_assert(procedure->prc_use_count > 0); -- commented out by dimitr, 2003.01.30
 	if (!procedure->prc_use_count)
 		return;
 
@@ -2253,8 +2253,8 @@ static UCHAR *alloc_map(TDBB tdbb, CSB csb, USHORT stream)
 	string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	csb->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
-/* TMN: Here we should really have the following assert */
-/* assert(stream <= MAX_UCHAR); */
+/* TMN: Here we should really have the following fb_assert */
+/* fb_assert(stream <= MAX_UCHAR); */
 	string->str_data[0] = (UCHAR) stream;
 
 	return (UCHAR *) string->str_data;
@@ -2561,8 +2561,8 @@ static JRD_NOD copy(
 			relative_stream = (stream) ? remap[stream - 1] : stream;
 			new_stream = csb->csb_n_stream++;
 			node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) new_stream;
-			/* TMN: Here we should really have the following assert */
-			/* assert(new_stream <= MAX_UCHAR); */
+			/* TMN: Here we should really have the following fb_assert */
+			/* fb_assert(new_stream <= MAX_UCHAR); */
 			remap[stream] = (UCHAR) new_stream;
 
 			node->nod_arg[e_rel_context] = input->nod_arg[e_rel_context];
@@ -2630,8 +2630,8 @@ static JRD_NOD copy(
 			stream = (USHORT)(ULONG) input->nod_arg[e_prc_stream];
 			new_stream = csb->csb_n_stream++;
 			node->nod_arg[e_prc_stream] = (JRD_NOD) (SLONG) new_stream;
-			/* TMN: Here we should really have the following assert */
-			/* assert(new_stream <= MAX_UCHAR); */
+			/* TMN: Here we should really have the following fb_assert */
+			/* fb_assert(new_stream <= MAX_UCHAR); */
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
 			element = CMP_csb_element(csb, new_stream);
@@ -2651,12 +2651,12 @@ static JRD_NOD copy(
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
 		stream = (USHORT)(ULONG) input->nod_arg[e_agg_stream];
-		assert(stream <= MAX_STREAMS);
+		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->csb_n_stream++;
-		assert(new_stream <= MAX_STREAMS);
+		fb_assert(new_stream <= MAX_STREAMS);
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) new_stream;
-		/* TMN: Here we should really have the following assert */
-		/* assert(new_stream <= MAX_UCHAR); */
+		/* TMN: Here we should really have the following fb_assert */
+		/* fb_assert(new_stream <= MAX_UCHAR); */
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
 
@@ -2682,8 +2682,8 @@ static JRD_NOD copy(
 		stream = (USHORT)(ULONG) input->nod_arg[e_uni_stream];
 		new_stream = csb->csb_n_stream++;
 		node->nod_arg[e_uni_stream] = (JRD_NOD) (SLONG) new_stream;
-		/* TMN: Here we should really have the following assert */
-		/* assert(new_stream <= MAX_UCHAR); */
+		/* TMN: Here we should really have the following fb_assert */
+		/* fb_assert(new_stream <= MAX_UCHAR); */
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
 
@@ -2861,8 +2861,8 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 
 	if (!(map = csb->csb_rpt[stream].csb_map)) {
 		map = local_map;
-		/* TMN: Here we should really have the following assert */
-		/* assert(stream <= MAX_UCHAR); */
+		/* TMN: Here we should really have the following fb_assert */
+		/* fb_assert(stream <= MAX_UCHAR); */
 		map[0] = (UCHAR) stream;
 		map[1] = 1;
 		map[2] = 2;
@@ -2925,8 +2925,8 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 
 	if (!(map = csb->csb_rpt[stream].csb_map)) {
 		map = local_map;
-		/* TMN: Here we should really have the following assert */
-		/* assert(stream <= MAX_UCHAR); */
+		/* TMN: Here we should really have the following fb_assert */
+		/* fb_assert(stream <= MAX_UCHAR); */
 		map[0] = (UCHAR) stream;
 	}
 
@@ -3129,8 +3129,8 @@ static JRD_NOD pass1(
 
 			if (!(map = tail->csb_map)) {
 				map = local_map;
-				/* TMN: Here we should really have the following assert */
-				/* assert(stream + 2 <= MAX_UCHAR); */
+				/* TMN: Here we should really have the following fb_assert */
+				/* fb_assert(stream + 2 <= MAX_UCHAR); */
 				local_map[0] = (UCHAR) stream;
 				map[1] = stream + 1;
 				map[2] = stream + 2;
@@ -3173,8 +3173,8 @@ static JRD_NOD pass1(
 		tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_modify;
 		pass1_modify(tdbb, csb, node);
-		/* TMN: Here we should really have the following assert */
-		/* assert(node->nod_arg [e_mod_new_stream] <= MAX_USHORT); */
+		/* TMN: Here we should really have the following fb_assert */
+		/* fb_assert(node->nod_arg [e_mod_new_stream] <= MAX_USHORT); */
 		if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb,
 							(USHORT)(ULONG) node->
 							nod_arg[e_mod_new_stream])) ) node->nod_count =
@@ -3228,7 +3228,7 @@ static JRD_NOD pass1(
 		break;
 
 	case nod_aggregate:
-		assert((int)(SLONG) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		fb_assert((int)(SLONG) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		csb->csb_rpt[(USHORT)(ULONG) node->nod_arg[e_agg_stream]].csb_flags |=
 			csb_no_dbkey;
 		ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
@@ -3588,8 +3588,8 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 				alloc_map(tdbb, csb,
 						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
 			source = copy(tdbb, csb, source, map, 0, FALSE);
-			/* TMN: Here we should really have the following assert */
-			/* assert(source->nod_arg [e_rel_stream] <= MAX_UCHAR); */
+			/* TMN: Here we should really have the following fb_assert */
+			/* fb_assert(source->nod_arg [e_rel_stream] <= MAX_UCHAR); */
 			map[new_stream] = (UCHAR)(ULONG) source->nod_arg[e_rel_stream];
 			view_node = copy(tdbb, csb, node, map, 0, TRUE);
 			view_node->nod_arg[e_mod_org_stream] = (JRD_NOD) (SLONG) stream;
@@ -3882,7 +3882,7 @@ static void pass1_source(TDBB     tdbb,
 /* Special case group-by/global aggregates */
 
 	if (source->nod_type == nod_aggregate) {
-		assert((int)(SLONG) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		fb_assert((int)(SLONG) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
 		return;
 	}
@@ -3899,8 +3899,8 @@ static void pass1_source(TDBB     tdbb,
 	stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
 	element = CMP_csb_element(csb, stream);
 	element->csb_view = parent_view;
-/* TMN: Here we should really have the following assert */
-/* assert(view_stream <= MAX_UCHAR); */
+/* TMN: Here we should really have the following fb_assert */
+/* fb_assert(view_stream <= MAX_UCHAR); */
 	element->csb_view_stream = (UCHAR) view_stream;
 
 /* in the case where there is a parent view, find the context name */
@@ -4166,12 +4166,12 @@ USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
    so that access to views can be checked at the field level */
 
 	CMP_csb_element(csb, stream)->csb_view = view;
-/* TMN: Here we should really have the following assert */
-/* assert(view_stream <= MAX_UCHAR); */
+/* TMN: Here we should really have the following fb_assert */
+/* fb_assert(view_stream <= MAX_UCHAR); */
 	CMP_csb_element(csb, stream)->csb_view_stream = (UCHAR) view_stream;
 	CMP_csb_element(csb, update_stream)->csb_view = view;
-/* TMN: Here we should really have the following assert */
-/* assert(view_stream <= MAX_UCHAR); */
+/* TMN: Here we should really have the following fb_assert */
+/* fb_assert(view_stream <= MAX_UCHAR); */
 	CMP_csb_element(csb, update_stream)->csb_view_stream =
 		(UCHAR) view_stream;
 
@@ -4692,7 +4692,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		pass2(tdbb, csb, node->nod_arg[e_agg_map], node);
 		pass2(tdbb, csb, node->nod_arg[e_agg_group], node);
 		stream = (USHORT)(ULONG) node->nod_arg[e_agg_stream];
-		assert(stream <= MAX_STREAMS);
+		fb_assert(stream <= MAX_STREAMS);
 		process_map(tdbb, csb, node->nod_arg[e_agg_map],
 					&csb->csb_rpt[stream].csb_format);
 		break;
@@ -4757,7 +4757,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	default:
-		/* Note: no assert (FALSE); here as too many nodes are missing */
+		/* Note: no fb_assert (FALSE); here as too many nodes are missing */
 		break;
 	}
 
@@ -4814,7 +4814,7 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 		}
 		else if (node->nod_type == nod_aggregate) {
 			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_agg_stream];
-			assert(stream <= MAX_STREAMS);
+			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (JRD_NOD) rse);
 		}
@@ -5221,7 +5221,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		}
 		else if (node->nod_type == nod_aggregate) {
 			USHORT stream = (USHORT)(ULONG) node->nod_arg[e_agg_stream];
-			assert(stream <= MAX_STREAMS);
+			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 	}
@@ -5476,8 +5476,8 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 
 /* Flesh out the format of the record */
 
-/* TMN: Here we should really have the following assert */
-/* assert(FLAG_BYTES (format->fmt_count) <= MAX_USHORT); */
+/* TMN: Here we should really have the following fb_assert */
+/* fb_assert(FLAG_BYTES (format->fmt_count) <= MAX_USHORT); */
 	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
 	fmt::fmt_desc_iterator desc3, end_desc;
 

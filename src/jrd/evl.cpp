@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.45 2003-11-03 17:14:44 skidder Exp $ 
+  * $Id: evl.cpp,v 1.46 2003-11-03 23:53:50 brodsom Exp $ 
  */
 
 /*
@@ -871,7 +871,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 			if (request->req_timestamp)
 				clock = request->req_timestamp;
 			else {
-				assert(FALSE);
+				fb_assert(FALSE);
 				clock = time(0);
 			}
 			times = *localtime(&clock);
@@ -903,7 +903,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 				*((GDS_TIMESTAMP *) impure->vlu_desc.dsc_address) = enc_times;
 				break;
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				break;
 			}
 		}
@@ -1039,7 +1039,7 @@ DSC* EVL_expr(TDBB tdbb, JRD_NOD node)
 				part = times.tm_wday;
 				break;
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				part = 0;
 			}
 			*(USHORT *) impure->vlu_desc.dsc_address = part;
@@ -1304,7 +1304,7 @@ BOOLEAN EVL_field(JRD_REL relation, REC record, USHORT id, DSC * desc)
 									 gds_arg_string, "*** null ***", 0);
 						}
 
-						assert(default_literal->nod_type == nod_literal);
+						fb_assert(default_literal->nod_type == nod_literal);
 
 						DSC* default_desc = &default_literal->lit_desc;
 						desc->dsc_dtype    = default_desc->dsc_dtype;
@@ -1833,7 +1833,7 @@ void EVL_make_value(TDBB tdbb, DSC * desc, VLU value)
 	case dtype_cstring:
 		break;
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		break;
 	}
 
@@ -2075,8 +2075,8 @@ USHORT EVL_mb_sleuth_check(TDBB tdbb,
 	SSHORT err_code;
 	USHORT err_pos;
 
-	assert(search != NULL);
-	assert(match != NULL);
+	fb_assert(search != NULL);
+	fb_assert(match != NULL);
 
 /* Note: search_merge has already converted the match
    string to wide character (see note in sleuth()) */
@@ -2131,9 +2131,9 @@ USHORT EVL_mb_sleuth_merge(TDBB tdbb,
 	SSHORT err_code;
 	USHORT err_pos;
 
-	assert(control != NULL);
-	assert(match != NULL);
-	assert(combined != NULL);
+	fb_assert(control != NULL);
+	fb_assert(match != NULL);
+	fb_assert(combined != NULL);
 
 	SET_TDBB(tdbb);
 
@@ -2344,7 +2344,7 @@ static DSC *add(DSC * desc, JRD_NOD node, VLU value)
 	SLONG l1, l2;
 
 	DEV_BLKCHK(node, type_nod);
-	assert(node->nod_type == nod_add ||
+	fb_assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_total ||
 		   node->nod_type == nod_average ||
@@ -2430,7 +2430,7 @@ static DSC *add2(DSC * desc, JRD_NOD node, VLU value)
 	SINT64 i1, i2;
 
 	DEV_BLKCHK(node, type_nod);
-	assert(node->nod_type == nod_add2 ||
+	fb_assert(node->nod_type == nod_add2 ||
 		   node->nod_type == nod_subtract2 ||
 		   node->nod_type == nod_average2 ||
 		   node->nod_type == nod_agg_total2 ||
@@ -2534,7 +2534,7 @@ static DSC *add_datetime(DSC * desc, JRD_NOD node, VLU value)
  **************************************/
 	BYTE dtype;					/* Which addition routine to use? */
 
-	assert(node->nod_flags & nod_date);
+	fb_assert(node->nod_flags & nod_date);
 
 /* Value is the LHS of the operand.  desc is the RHS */
 
@@ -2542,7 +2542,7 @@ static DSC *add_datetime(DSC * desc, JRD_NOD node, VLU value)
 		dtype = DSC_add_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 	}
 	else {
-		assert((node->nod_type == nod_subtract)
+		fb_assert((node->nod_type == nod_subtract)
 			   || (node->nod_type == nod_subtract2));
 		dtype = DSC_sub_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 
@@ -2606,13 +2606,13 @@ static DSC *add_sql_date(DSC * desc, JRD_NOD node, VLU value)
 	struct tm times;
 
 	DEV_BLKCHK(node, type_nod);
-	assert(node->nod_type == nod_add ||
+	fb_assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_add2 || node->nod_type == nod_subtract2);
 
 	result = &value->vlu_desc;
 
-	assert(value->vlu_desc.dsc_dtype == dtype_sql_date ||
+	fb_assert(value->vlu_desc.dsc_dtype == dtype_sql_date ||
 		   desc->dsc_dtype == dtype_sql_date);
 
 /* Coerce operand1 to a count of days */
@@ -2643,13 +2643,13 @@ static DSC *add_sql_date(DSC * desc, JRD_NOD node, VLU value)
 		return result;
 	}
 
-	assert(op1_is_date || op2_is_date);
-	assert(!(op1_is_date && op2_is_date));
+	fb_assert(op1_is_date || op2_is_date);
+	fb_assert(!(op1_is_date && op2_is_date));
 
 /* Perform the operation */
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		assert(op1_is_date);
+		fb_assert(op1_is_date);
 		d2 = d1 - d2;
 	}
 	else
@@ -2708,20 +2708,20 @@ static DSC *add_sql_time(DSC * desc, JRD_NOD node, VLU value)
 	BOOLEAN op2_is_time = FALSE;
 
 	DEV_BLKCHK(node, type_nod);
-	assert(node->nod_type == nod_add ||
+	fb_assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_add2 || node->nod_type == nod_subtract2);
 
 	result = &value->vlu_desc;
 
-	assert(value->vlu_desc.dsc_dtype == dtype_sql_time ||
+	fb_assert(value->vlu_desc.dsc_dtype == dtype_sql_time ||
 		   desc->dsc_dtype == dtype_sql_time);
 
 /* Coerce operand1 to a count of seconds */
 	if (value->vlu_desc.dsc_dtype == dtype_sql_time) {
 		d1 = *(GDS_TIME *) value->vlu_desc.dsc_address;
 		op1_is_time++;
-		assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
+		fb_assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
 	}
 	else
 		d1 =
@@ -2731,7 +2731,7 @@ static DSC *add_sql_time(DSC * desc, JRD_NOD node, VLU value)
 	if (desc->dsc_dtype == dtype_sql_time) {
 		d2 = *(GDS_TIME *) desc->dsc_address;
 		op2_is_time++;
-		assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
+		fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
 	}
 	else
 		d2 = MOV_get_int64(desc, ISC_TIME_SECONDS_PRECISION_SCALE);
@@ -2749,13 +2749,13 @@ static DSC *add_sql_time(DSC * desc, JRD_NOD node, VLU value)
 		return result;
 	}
 
-	assert(op1_is_time || op2_is_time);
-	assert(!(op1_is_time && op2_is_time));
+	fb_assert(op1_is_time || op2_is_time);
+	fb_assert(!(op1_is_time && op2_is_time));
 
 /* Perform the operation */
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		assert(op1_is_time);
+		fb_assert(op1_is_time);
 		d2 = d1 - d2;
 	}
 	else
@@ -2770,7 +2770,7 @@ static DSC *add_sql_time(DSC * desc, JRD_NOD node, VLU value)
 /* And make it in the range of values for a day */
 	d2 %= (ISC_TICKS_PER_DAY);
 
-	assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
+	fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
 
 	value->vlu_misc.vlu_sql_time = d2;
 
@@ -2809,7 +2809,7 @@ static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 	struct tm times;
 
 	DEV_BLKCHK(node, type_nod);
-	assert(node->nod_type == nod_add ||
+	fb_assert(node->nod_type == nod_add ||
 		   node->nod_type == nod_subtract ||
 		   node->nod_type == nod_add2 || node->nod_type == nod_subtract2);
 
@@ -2955,8 +2955,8 @@ static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 		d2 = get_day_fraction(desc);
 	}
 	else {
-		assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
-		assert(op2_is_timestamp);
+		fb_assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
+		fb_assert(op2_is_timestamp);
 		d1 = get_day_fraction(&value->vlu_desc);
 		d2 = get_timestamp_to_isc_ticks(desc);
 	};
@@ -2964,7 +2964,7 @@ static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 /* Perform the operation */
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		assert(op1_is_timestamp);
+		fb_assert(op1_is_timestamp);
 		d2 = d1 - d2;
 	}
 	else
@@ -3003,7 +3003,7 @@ static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
   return_result:
 /* Caution: target of GOTO */
 
-	assert(value->vlu_misc.vlu_timestamp.timestamp_time >= 0 &&
+	fb_assert(value->vlu_misc.vlu_timestamp.timestamp_time >= 0 &&
 		   value->vlu_misc.vlu_timestamp.timestamp_time < ISC_TICKS_PER_DAY);
 
 	result->dsc_dtype = dtype_timestamp;
@@ -4682,7 +4682,7 @@ static SSHORT string_boolean(TDBB tdbb, JRD_NOD node, DSC * desc1, DSC * desc2)
 							   reinterpret_cast < vary * >(temp1),
 							   TEMP_SIZE(temp1));
 
-		assert(xtype1 == type1);
+		fb_assert(xtype1 == type1);
 		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1);
 	}
 	else {
@@ -4874,9 +4874,9 @@ static DSC *substring(
 				USHORT l1 = BLB_get_segment(tdbb, blob, buffer, waste);
 				offset -= l1;
 			}
-			assert(!offset && !(blob->blb_flags & BLB_eof));
+			fb_assert(!offset && !(blob->blb_flags & BLB_eof));
 			datalen = BLB_get_data(tdbb, blob, buffer, length);
-			assert(datalen && datalen <= length);
+			fb_assert(datalen && datalen <= length);
 			desc.dsc_length = datalen;
 			desc.dsc_address = buffer;
 			INTL_ASSIGN_TTYPE(&desc, value->dsc_scale);

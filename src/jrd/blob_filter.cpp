@@ -416,8 +416,8 @@ static ISC_STATUS open_blob(
  */
 
 	if (filter->blf_filter == (PTR) filter_transliterate_text) {
-		assert(to == BLOB_text);
-		assert(from == BLOB_text);
+		fb_assert(to == BLOB_text);
+		fb_assert(from == BLOB_text);
 		control->ctl_to_sub_type = to_charset;
 		control->ctl_from_sub_type = from_charset;
 	}

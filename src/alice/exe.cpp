@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.22 2003-11-01 10:26:32 robocop Exp $
+//	$Id: exe.cpp,v 1.23 2003-11-03 23:49:24 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -220,7 +220,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		for (int i = 0; i < 4; i++, (tdgbl->ALICE_data.ua_sweep_interval >>= 8))
 		{
 			// TMN: Here we should really have the following assert 
-			// assert(tdgbl->ALICE_data.ua_sweep_interval <= MAX_UCHAR);
+			// fb_assert(tdgbl->ALICE_data.ua_sweep_interval <= MAX_UCHAR);
 			*dpb2++ = (UCHAR) tdgbl->ALICE_data.ua_sweep_interval;
 		}
 	}
@@ -236,7 +236,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		for (int i = 0; i < 4; i++, (tdgbl->ALICE_data.ua_page_buffers >>= 8))
 		{
 			// TMN: Here we should really have the following assert 
-			// assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_UCHAR);
+			// fb_assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_UCHAR);
 			*dpb2++ = (UCHAR) tdgbl->ALICE_data.ua_page_buffers;
 		}
 	}
@@ -280,7 +280,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 		*dpb2++ = gds_dpb_shutdown_delay;
 		*dpb2++ = 2;				// Build room for shutdown delay 
 		// TMN: Here we should really have the following assert 
-		// assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_USHORT);
+		// fb_assert(tdgbl->ALICE_data.ua_page_buffers <= MAX_USHORT);
 		// or maybe even compare with MAX_SSHORT 
 		*dpb2++ = (UCHAR) tdgbl->ALICE_data.ua_shutdown_delay;
 		*dpb2++ = (UCHAR) (tdgbl->ALICE_data.ua_shutdown_delay >> 8);
@@ -345,7 +345,7 @@ static void extract_db_info(const UCHAR* db_info_buffer)
 		p += 2;
 
 		// TMN: Here we should really have the following assert 
-		// assert(length <= MAX_SSHORT);
+		// fb_assert(length <= MAX_SSHORT);
 		// for all cases that use 'length' as input to 'gds__vax_integer' 
 		switch (item) {
 		case isc_info_page_errors:

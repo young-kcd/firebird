@@ -1128,11 +1128,11 @@ USHORT CVT_get_string_ptr(const dsc* desc,
  *      already a string, output pointers point to ttype_ascii.
  *
  **************************************/
-	assert(desc != NULL);
-	assert(ttype != NULL);
-	assert(address != NULL);
-	assert(err != NULL);
-	assert((((temp != NULL) && (length > 0))
+	fb_assert(desc != NULL);
+	fb_assert(ttype != NULL);
+	fb_assert(address != NULL);
+	fb_assert(err != NULL);
+	fb_assert((((temp != NULL) && (length > 0))
 			|| (desc->dsc_dtype == dtype_text)
 			|| (desc->dsc_dtype == dtype_cstring)
 			|| (desc->dsc_dtype == dtype_varying)));
@@ -1268,10 +1268,10 @@ USHORT CVT_make_string(const dsc*          desc,
  *     The pointer to this string is returned in address.
  *
  **************************************/
-	assert(desc != NULL);
-	assert(address != NULL);
-	assert(err != NULL);
-	assert((((temp != NULL) && (length > 0))
+	fb_assert(desc != NULL);
+	fb_assert(address != NULL);
+	fb_assert(err != NULL);
+	fb_assert((((temp != NULL) && (length > 0))
 			|| ((INTL_TTYPE(desc) <= dtype_any_text)
 				&& (INTL_TTYPE(desc) == to_interp))));
 
@@ -1405,7 +1405,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 						clock = tdbb->tdbb_request->req_timestamp;
 					else {
 						/* All requests should have a timestamp */
-						assert(FALSE);
+						fb_assert(FALSE);
 						clock = time(0);
 					}
 				}
@@ -1420,7 +1420,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 			return;
 
 		default:
-			assert(FALSE);		/* Fall into ... */
+			fb_assert(FALSE);		/* Fall into ... */
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
@@ -1478,7 +1478,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 			return;
 
 		default:
-			assert(FALSE);		/* Fall into ... */
+			fb_assert(FALSE);		/* Fall into ... */
 		case dtype_sql_time:
 		case dtype_short:
 		case dtype_long:
@@ -1512,7 +1512,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 			return;
 
 		default:
-			assert(FALSE);		/* Fall into ... */
+			fb_assert(FALSE);		/* Fall into ... */
 		case dtype_sql_date:
 		case dtype_short:
 		case dtype_long:
@@ -1601,8 +1601,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
 				l -= length;
-				/* TMN: Here we should really have the following assert */
-				/* assert((to->dsc_length - length) <= MAX_SSHORT); */
+				/* TMN: Here we should really have the following fb_assert */
+				/* fb_assert((to->dsc_length - length) <= MAX_SSHORT); */
 				fill = (SSHORT) (to->dsc_length - length);
 
 				CVT_COPY_BUFF(q, p, length);
@@ -1639,8 +1639,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 				length =
 					MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
 				l -= length;
-				/* TMN: Here we should really have the following assert */
-				/* assert(length <= MAX_USHORT); */
+				/* TMN: Here we should really have the following fb_assert */
+				/* fb_assert(length <= MAX_USHORT); */
 				((VARY *) p)->vary_length = (USHORT) length;
 				p = reinterpret_cast<UCHAR*>(((VARY *) p)->vary_string);
 				CVT_COPY_BUFF(q, p, length);
@@ -1682,7 +1682,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 			return;
 
 		default:
-			assert(FALSE);		/* Fall into ... */
+			fb_assert(FALSE);		/* Fall into ... */
 		case dtype_blob:
 			conversion_error(from, err);
 			return;
@@ -1711,8 +1711,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_STATUS err)
 
 	case dtype_short:
 		l = CVT_get_long(from, (SSHORT) to->dsc_scale, err);
-		/* TMN: Here we should really have the following assert */
-		/* assert(l <= MAX_SSHORT); */
+		/* TMN: Here we should really have the following fb_assert */
+		/* fb_assert(l <= MAX_SSHORT); */
 		*(SSHORT *) p = (SSHORT) l;
 		if (*(SSHORT *) p != l)
 			(*err) (gds_arith_except, 0);
@@ -1815,7 +1815,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 	TDBB tdbb = NULL;
 	bool version4 = true;
 
-	assert(DTYPE_IS_TEXT(to->dsc_dtype));
+	fb_assert(DTYPE_IS_TEXT(to->dsc_dtype));
 
 /* Convert a date or time value into a timestamp for manipulation */
 
@@ -1845,7 +1845,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 		date = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
 	default:
-		assert(FALSE);
+		fb_assert(false);
 		(*err) (gds_badblk, 0);	/* internal error */
 		break;
 	}
@@ -1915,7 +1915,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 		/* Prior to BLR Version5, when a timestamp is converted to a string it
 		   is silently truncated if the destination string is not large enough */
 
-		assert(to->dsc_dtype <= dtype_any_text);
+		fb_assert(to->dsc_dtype <= dtype_any_text);
 
 		l = (to->dsc_dtype == dtype_cstring) ? 1 :
 			(to->dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
@@ -2126,7 +2126,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 		d = *(double*) from->dsc_address;
 	}
 	else {
-		assert(dtype_real == from->dsc_dtype);
+		fb_assert(dtype_real == from->dsc_dtype);
 		precision = 8;			/* minimum significant digits in a float */
 		d = (double) *(float*) from->dsc_address;
 	}
@@ -2184,7 +2184,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_STATUS err)
 			}
 		}
 	}
-	assert(chars_printed <= width);
+	fb_assert(chars_printed <= width);
 
 /* Now move the result to the destination array. */
 
@@ -2748,11 +2748,11 @@ double power_of_ten(const int scale)
 	};
 
 	/* The sole caller of this function checks for scale <= 308 before calling,
-	 * but we just assert the weakest precondition which lets the code work.
+	 * but we just fb_assert the weakest precondition which lets the code work.
 	 * If the size of the exponent field, and thus the scaling, of doubles
 	 * gets bigger, increase the size of the upper_part array.
 	 */
-	assert((scale >= 0) && (scale < 320));
+	fb_assert((scale >= 0) && (scale < 320));
 
 	/* Note that "scale >> 5" is another way of writing "scale / 32",
 	 * while "scale & 0x1f" is another way of writing "scale % 32".

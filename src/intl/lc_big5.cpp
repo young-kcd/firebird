@@ -99,11 +99,11 @@ static SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iO
 	USHORT waiting_for_big52 = FALSE;
 	BYTE c;
 
-	assert(pStr != NULL);
-	assert(pOutStr != NULL);
-	assert(iLen <= 32000);		/* almost certainly an error */
-	assert(iOutLen <= 32000);	/* almost certainly an error */
-	assert(iOutLen >= iLen);
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
+	fb_assert(iLen <= 32000);		/* almost certainly an error */
+	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
+	fb_assert(iOutLen >= iLen);
 	p = pOutStr;
 	while (iLen && iOutLen) {
 		c = *pStr++;

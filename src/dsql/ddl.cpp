@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.74 2003-11-02 12:28:20 dimitr Exp $
+ * $Id: ddl.cpp,v 1.75 2003-11-03 23:51:11 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -531,7 +531,7 @@ void DDL_resolve_intl_type2(dsql_req* request,
             if (afield != field && afield->fld_relation
                 && !strcmp (afield->fld_name, field->fld_name))
 			{
-                assert (afield->fld_relation == relation || !relation);
+                fb_assert(afield->fld_relation == relation || !relation);
                 break;
             }
             afield = afield->fld_next;
@@ -818,7 +818,7 @@ static bool check_array_or_blob(const dsql_nod* node)
 		return false;
 
 	default:
-		assert(FALSE);
+		fb_assert(false);
 		return false;
 	}
 }
@@ -1009,10 +1009,10 @@ static void define_computed(dsql_req* request,
 
 	if (field && field->fld_dtype)
 	{
-		assert(field->fld_dtype <= MAX_UCHAR);
+		fb_assert(field->fld_dtype <= MAX_UCHAR);
 		save_desc.dsc_dtype = (UCHAR) field->fld_dtype;
 		save_desc.dsc_length = field->fld_length;
-		assert(field->fld_scale <= MAX_SCHAR);
+		fb_assert(field->fld_scale <= MAX_SCHAR);
 		save_desc.dsc_scale = (SCHAR) field->fld_scale;
 
 		field->fld_dtype = 0;
@@ -1064,7 +1064,7 @@ static void define_computed(dsql_req* request,
 
 	// generate the source text
 	const str* source = (str*) node->nod_arg[e_cmp_text];
-	assert(source->str_length <= MAX_USHORT);
+	fb_assert(source->str_length <= MAX_USHORT);
 	request->append_string(	gds_dyn_fld_computed_source,
 							source->str_data,
 							(USHORT) source->str_length);
@@ -1099,7 +1099,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 
 	const str* trigger_name = (str*) node->nod_arg[e_cnstr_name];
 
-	assert(trigger_name->str_length <= MAX_USHORT);
+	fb_assert(trigger_name->str_length <= MAX_USHORT);
 
 	request->append_string(	gds_dyn_def_trigger,
 							trigger_name->str_data,
@@ -1108,7 +1108,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	dsql_nod* relation_node = node->nod_arg[e_cnstr_table];
 	const str* relation_name = (str*) relation_node->nod_arg[e_rln_name];
 
-	assert(trigger_name->str_length <= MAX_USHORT);
+	fb_assert(trigger_name->str_length <= MAX_USHORT);
 
 	request->append_string(	gds_dyn_rel_name,
 							relation_name->str_data,
@@ -1117,7 +1117,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	const str* source = (str*) node->nod_arg[e_cnstr_source];
 	if (source)
 	{
-		assert(source->str_length <= MAX_USHORT);
+		fb_assert(source->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_trg_source,
 								source->str_data,
 								(USHORT) source->str_length);
@@ -1142,7 +1142,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	if (message)
 	{
 		request->append_number(gds_dyn_def_trigger_msg, 0);
-		assert(message->str_length <= MAX_USHORT);
+		fb_assert(message->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_trg_msg,
 								message->str_data,
 								(USHORT) message->str_length);
@@ -1700,7 +1700,7 @@ static void define_domain(dsql_req* request)
 		const str* string = (str*) element->nod_arg[e_dom_default_source];
 		if (string)
 		{
-			assert(string->str_length <= MAX_USHORT);
+			fb_assert(string->str_length <= MAX_USHORT);
 			request->append_string(	gds_dyn_fld_default_source,
 									string->str_data,
 									string->str_length);
@@ -1751,7 +1751,7 @@ static void define_domain(dsql_req* request)
 					const str* string = (str*) node1->nod_arg[e_cnstr_source];
 					if (string)
 					{
-						assert(string->str_length <= MAX_USHORT);
+						fb_assert(string->str_length <= MAX_USHORT);
 						request->append_string(	gds_dyn_fld_validation_source,
 												string->str_data,
 												string->str_length);
@@ -1816,7 +1816,7 @@ static void define_exception( dsql_req* request, NOD_TYPE op)
 		request->append_cstring(gds_dyn_del_exception, name->str_data);
 
 	if (op != nod_del_exception) {
-		assert(text->str_length <= MAX_USHORT);
+		fb_assert(text->str_length <= MAX_USHORT);
 		request->append_string(gds_dyn_xcp_msg, text->str_data, text->str_length);
 		request->append_uchar(gds_dyn_end);
 	}
@@ -1917,7 +1917,7 @@ static void define_field(
 		string = (str*) element->nod_arg[e_dfl_default_source];
 		if (string)
 		{
-			assert(string->str_length <= MAX_USHORT);
+			fb_assert(string->str_length <= MAX_USHORT);
 			request->append_string(	gds_dyn_fld_default_source,
 									string->str_data,
 									string->str_length);
@@ -1972,7 +1972,7 @@ static void define_field(
 					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
 
 					dsql_nod* index = node1->nod_arg[e_pri_index];
-					assert(index);
+					fb_assert(index);
 
 					const char* index_name = constraint_name;
 					string = (str*) index->nod_arg[e_idx_name];
@@ -2313,7 +2313,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	const str* source = (str*) procedure_node->nod_arg[e_prc_source];
 	if (source)
 	{
-		assert(source->str_length <= MAX_USHORT);
+		fb_assert(source->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_prc_source,
 								source->str_data,
 								source->str_length);
@@ -2608,8 +2608,8 @@ static void define_set_null_trg(dsql_req*    request,
 	}
 
 	// count of foreign key columns
-	assert(prim_columns->nod_count == for_columns->nod_count);
-	assert(prim_columns->nod_count != 0);
+	fb_assert(prim_columns->nod_count == for_columns->nod_count);
+	fb_assert(prim_columns->nod_count != 0);
 
 	request->generate_unnamed_trigger_beginning(on_upd_trg,
 												prim_rel_name,
@@ -2746,13 +2746,13 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 	}
 	else if (node->nod_type == nod_def_trigger)
 	{
-		assert(trigger_name->str_length <= MAX_USHORT);
+		fb_assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_def_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
 		relation_node = node->nod_arg[e_trg_table];
 		relation_name = (str*) relation_node->nod_arg[e_rln_name];
-		assert(relation_name->str_length <= MAX_USHORT);
+		fb_assert(relation_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_rel_name,
 								relation_name->str_data,
 								relation_name->str_length);
@@ -2760,8 +2760,8 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 	}
 	else // nod_mod_trigger
 	{						
-		assert(node->nod_type == nod_mod_trigger);
-		assert(trigger_name->str_length <= MAX_USHORT);
+		fb_assert(node->nod_type == nod_mod_trigger);
+		fb_assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_mod_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
@@ -2794,7 +2794,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_body] : NULL;
 
 	if (source && actions) {
-		assert(source->str_length <= MAX_USHORT);
+		fb_assert(source->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_trg_source,
 								source->str_data,
 								source->str_length);
@@ -2813,7 +2813,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
 	}
 	else {
-		assert(node->nod_type == nod_mod_trigger);
+		fb_assert(node->nod_type == nod_mod_trigger);
 	}
 
 	if (actions)
@@ -2904,7 +2904,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 				} else {
 					request->append_number(gds_dyn_mod_trigger_msg, number);
 				}
-				assert(message_text->str_length <= MAX_USHORT);
+				fb_assert(message_text->str_length <= MAX_USHORT);
 				request->append_string(	gds_dyn_trg_msg,
 										message_text->str_data,
 										message_text->str_length);
@@ -3041,7 +3041,7 @@ static void define_udf( dsql_req* request)
 		position = 1;
 	}
 
-	assert(position == 1);
+	fb_assert(position == 1);
 
     /* CVC: This for all params, including the case of "returns parameter <N>" */
 
@@ -3257,8 +3257,8 @@ static void define_upd_cascade_trg(	dsql_req*    request,
 	}
 
 	// count of foreign key columns
-	assert(prim_columns->nod_count == for_columns->nod_count);
-	assert(prim_columns->nod_count != 0);
+	fb_assert(prim_columns->nod_count == for_columns->nod_count);
+	fb_assert(prim_columns->nod_count != 0);
 
 	request->generate_unnamed_trigger_beginning(true,
 												prim_rel_name,
@@ -3385,7 +3385,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
    Source will be for documentation purposes. */
 
 	const str* source = (str*) node->nod_arg[e_view_source];
-	assert(source->str_length <= MAX_USHORT);
+	fb_assert(source->str_length <= MAX_USHORT);
 	request->append_string(	gds_dyn_view_source,
 							source->str_data,
 							source->str_length);
@@ -3643,13 +3643,13 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 
 	if (node->nod_type == nod_def_constraint)
 	{
-		assert(trigger_name->str_length <= MAX_USHORT);
+		fb_assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_def_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
 		relation_node = node->nod_arg[e_cnstr_table];
 		relation_name = (str*) relation_node->nod_arg[e_rln_name];
-		assert(relation_name->str_length <= MAX_USHORT);
+		fb_assert(relation_name->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_rel_name,
 								relation_name->str_data,
 								relation_name->str_length);
@@ -3687,7 +3687,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	if (message)
 	{
 		request->append_number(gds_dyn_def_trigger_msg, 0);
-		assert(message->str_length <= MAX_USHORT);
+		fb_assert(message->str_length <= MAX_USHORT);
 		request->append_string(	gds_dyn_trg_msg,
 								message->str_data,
 								message->str_length);
@@ -3828,7 +3828,7 @@ static void delete_procedure (dsql_req*     request,
  *
  **************************************/
     const str* string = (str*) node->nod_arg[e_prc_name];
-    assert (string);
+    fb_assert (string);
     if (node->nod_type == nod_redef_procedure || silent_deletion) {
         dsql_prc* procedure = METD_get_procedure (request, string);
         if (!procedure) {
@@ -3864,14 +3864,14 @@ static void delete_relation_view (
 
     if (node->nod_type == nod_redef_relation) {
         dsql_nod* relation_node = node->nod_arg[e_alt_name];
-        assert (relation_node);
+        fb_assert (relation_node);
         string = (str*) relation_node->nod_arg[e_rln_name];
     }
     else {
         string = (str*) node->nod_arg[e_alt_name];
     }
 
-    assert (string);
+    fb_assert (string);
 
     dsql_rel* relation = METD_get_relation (request, string);
 
@@ -4278,10 +4278,10 @@ static void make_index(	dsql_req*    request,
 	   zero-length name, indicating that an index name
 	   should be generated */
 
-	assert(element->nod_type != nod_foreign);
+	fb_assert(element->nod_type != nod_foreign);
 
 	dsql_nod* index = element->nod_arg[e_pri_index];
-	assert(index);
+	fb_assert(index);
 
 	const str* string = (str*) index->nod_arg[e_idx_name];
 	if (string)
@@ -4342,7 +4342,7 @@ static void make_index_trg_ref_int(	dsql_req*    request,
  *
  *****************************************************/
 
-	assert(element->nod_type == nod_foreign)
+	fb_assert(element->nod_type == nod_foreign)
 
 	/* for_rel_name_str is the name of the relation
 	   on which the ddl operation is being done,
@@ -4357,7 +4357,7 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 	   should be generated */
 
 	dsql_nod* index = element->nod_arg[e_for_index];
-	assert(index);
+	fb_assert(index);
 
 	const str* string = (str*) index->nod_arg[e_idx_name];
 	if (string)
@@ -4375,12 +4375,12 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 	if (element->nod_arg[e_for_action])
 	{
 		dsql_nod* nod_for_action = element->nod_arg[e_for_action];
-		assert(nod_for_action->nod_type == nod_ref_upd_del);
+		fb_assert(nod_for_action->nod_type == nod_ref_upd_del);
 
 		dsql_nod* nod_ref_upd_action = nod_for_action->nod_arg[e_ref_upd];
 		if (nod_ref_upd_action)
 		{
-			assert(nod_ref_upd_action->nod_type == nod_ref_trig_action);
+			fb_assert(nod_ref_upd_action->nod_type == nod_ref_trig_action);
 
 			request->append_uchar(gds_dyn_foreign_key_update);
 			switch (nod_ref_upd_action->nod_flags)
@@ -4409,7 +4409,7 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 				request->append_uchar(gds_dyn_foreign_key_none);
 				break;
 			default:
-				assert(0);
+				fb_assert(0);
 				request->append_uchar(gds_dyn_foreign_key_none);	/* just in case */
 				break;
 			}
@@ -4418,7 +4418,7 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 		dsql_nod* nod_ref_del_action = nod_for_action->nod_arg[e_ref_del];
 		if (nod_ref_del_action)
 		{
-			assert(nod_ref_del_action->nod_type == nod_ref_trig_action);
+			fb_assert(nod_ref_del_action->nod_type == nod_ref_trig_action);
 
 			request->append_uchar(gds_dyn_foreign_key_delete);
 			switch (nod_ref_del_action->nod_flags) {
@@ -4446,7 +4446,7 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 				request->append_uchar(gds_dyn_foreign_key_none);
 				break;
 			default:
-				assert(0);
+				fb_assert(0);
 				request->append_uchar(gds_dyn_foreign_key_none);	/* just in case */
 				break;
 				/* Error */
@@ -4705,7 +4705,7 @@ static void modify_domain( dsql_req* request)
 			string = (str*) element->nod_arg[e_dft_default_source];
 			if (string)
 			{
-				assert(string->str_length <= MAX_USHORT);
+				fb_assert(string->str_length <= MAX_USHORT);
 				request->append_string(	gds_dyn_fld_default_source,
 										string->str_data,
 										(USHORT) string->str_length);
@@ -4752,7 +4752,7 @@ static void modify_domain( dsql_req* request)
 
 			request->end_blr();
 			if ((string = (str*) element->nod_arg[e_cnstr_source]) != NULL) {
-				assert(string->str_length <= MAX_USHORT);
+				fb_assert(string->str_length <= MAX_USHORT);
 				request->append_string(	gds_dyn_fld_validation_source,
 										string->str_data,
 										string->str_length);
@@ -5122,7 +5122,7 @@ static void modify_relation( dsql_req* request)
 						  gds_arg_gds, gds_dsql_construct_err, 0);
 			}
 
-			assert((element->nod_arg[1])->nod_type == nod_restrict);
+			fb_assert((element->nod_arg[1])->nod_type == nod_restrict);
 			request->append_cstring(gds_dyn_delete_local_fld, field_name->str_data);
 			request->append_uchar(gds_dyn_end);
 			break;
@@ -5319,7 +5319,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		if (field->fld_dtype == dtype_varying)
 		{
             /* CVC: Fix the assertion */
-            assert((field->fld_length) <= MAX_SSHORT);
+            fb_assert((field->fld_length) <= MAX_SSHORT);
 			request->append_number(gds_dyn_fld_length,
 					   (SSHORT) (field->fld_length - sizeof(USHORT)));
 		}
@@ -5766,7 +5766,7 @@ static void stuff_default_blr(	dsql_req*		request,
  *   blr in the blr stream in the request.
  *
  *********************************************/
-	assert((*default_buff == blr_version4) || (*default_buff == blr_version5));
+	fb_assert((*default_buff == blr_version4) || (*default_buff == blr_version5));
 
 	unsigned int i;
 
@@ -5775,7 +5775,7 @@ static void stuff_default_blr(	dsql_req*		request,
 		request->append_uchar(default_buff[i]);
 	}
 
-	assert(default_buff[i] == blr_eoc);
+	fb_assert(default_buff[i] == blr_eoc);
 }
 
 
@@ -5796,8 +5796,8 @@ static void stuff_matching_blr(dsql_req* request, const dsql_nod* for_columns,
  **************************************/
 
 /* count of foreign key columns */
-	assert(prim_columns->nod_count == for_columns->nod_count);
-	assert(prim_columns->nod_count != 0);
+	fb_assert(prim_columns->nod_count == for_columns->nod_count);
+	fb_assert(prim_columns->nod_count != 0);
 
 	request->append_uchar(blr_boolean);
 	if (prim_columns->nod_count > 1) {
@@ -5963,10 +5963,10 @@ static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
 		{
 			if (nod_dom_value == child->nod_type)
 			{
-				assert(field->fld_dtype <= MAX_UCHAR);
+				fb_assert(field->fld_dtype <= MAX_UCHAR);
 				child->nod_desc.dsc_dtype = (UCHAR) field->fld_dtype;
 				child->nod_desc.dsc_length = field->fld_length;
-				assert(field->fld_scale <= MAX_SCHAR);
+				fb_assert(field->fld_scale <= MAX_SCHAR);
 				child->nod_desc.dsc_scale = (SCHAR) field->fld_scale;
 			}
 			else if ((nod_constant != child->nod_type) &&

@@ -306,7 +306,7 @@ void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 				perf->perf_max_memory = 0;
 			{
 				SLONG temp = isc_vax_integer(p, 2);
-				assert(temp <= MAX_SSHORT);
+				fb_assert(temp <= MAX_SSHORT);
 				l = (SSHORT) temp;
 			}
 			p += l + 2;

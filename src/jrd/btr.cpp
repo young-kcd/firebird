@@ -360,7 +360,7 @@ bool BTR_description(JRD_REL relation,
 		return false;
 	}
 
-	//assert(id <= MAX_USHORT);
+	//fb_assert(id <= MAX_USHORT);
 	idx->idx_id = (USHORT)id;
 	idx->idx_root = irt_desc->irt_root;
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
@@ -773,7 +773,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 	USHORT l;
 	quad_put(split_page, node->btn_number);
 	node->btn_prefix = 0;
-	assert(key.key_length <= MAX_UCHAR);
+	fb_assert(key.key_length <= MAX_UCHAR);
 	l = node->btn_length = (UCHAR) key.key_length;
 	q = node->btn_data;
 	p = key.key_data;
@@ -1217,10 +1217,10 @@ void BTR_make_key(TDBB tdbb,
 	idx::idx_repeat * tail;
 
 	SET_TDBB(tdbb);
-	assert(count > 0);
-	assert(idx != NULL);
-	assert(exprs != NULL);
-	assert(key != NULL);
+	fb_assert(count > 0);
+	fb_assert(idx != NULL);
+	fb_assert(exprs != NULL);
+	fb_assert(key != NULL);
 
 	tail = idx->idx_rpt;
 
@@ -1556,7 +1556,7 @@ retry:
 
 	idx->idx_id = slot - root->irt_rpt;
 	slot->irt_desc = space;
-	assert(idx->idx_count <= MAX_UCHAR);
+	fb_assert(idx->idx_count <= MAX_UCHAR);
 	slot->irt_keys = (UCHAR) idx->idx_count;
 	slot->irt_flags = idx->idx_flags | irt_in_progress;
 
@@ -2281,7 +2281,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 	}
 	else {
 		page->btr_prefix_total -= node->btn_prefix;
-		assert(l <= MAX_UCHAR);
+		fb_assert(l <= MAX_UCHAR);
 		node->btn_length = (UCHAR) l;
 		node->btn_prefix = next->btn_prefix;
 	}
@@ -2312,7 +2312,7 @@ static CONTENTS delete_node(TDBB tdbb, WIN * window, BTN node)
 	// Journal b-tree page - logical log of delete
 	if (dbb->dbb_wal) {
 		JRNB journal;
-		assert(node_offset <= MAX_USHORT);
+		fb_assert(node_offset <= MAX_USHORT);
 		journal.jrnb_type = JRNP_BTREE_DELETE;
 		journal.jrnb_prefix_total = page->btr_prefix_total;
 		journal.jrnb_offset = (USHORT) node_offset;
@@ -2564,7 +2564,7 @@ static SLONG fast_load(TDBB tdbb,
 				split_node->btn_prefix = 0;
 				p = split_node->btn_data;
 				q = key->key_data;
-				assert(key->key_length <= MAX_UCHAR);
+				fb_assert(key->key_length <= MAX_UCHAR);
 				if ( (l = split_node->btn_length = (UCHAR) key->key_length) ) {
 					do {
 						*p++ = *q++;
@@ -2596,7 +2596,7 @@ static SLONG fast_load(TDBB tdbb,
 
 			// Insert the new node in the now current bucket
 
-			assert(prefix <= MAX_UCHAR);
+			fb_assert(prefix <= MAX_UCHAR);
 			node->btn_prefix = (UCHAR) prefix;
 			bucket->btr_prefix_total += prefix;
 			quad_put(isr->isr_record_number, node->btn_number);
@@ -2650,7 +2650,7 @@ static SLONG fast_load(TDBB tdbb,
 					bucket->btr_header.pag_type = pag_index;
 					bucket->btr_relation = relation->rel_id;
 					bucket->btr_id = (UCHAR)(idx->idx_id % 256);
-					assert(level <= MAX_UCHAR);
+					fb_assert(level <= MAX_UCHAR);
 					bucket->btr_level = (UCHAR) level;
 					if (idx->idx_flags & idx_descending)
 						bucket->btr_header.pag_flags |= btr_descending;
@@ -2694,7 +2694,7 @@ static SLONG fast_load(TDBB tdbb,
 					split_node->btn_prefix = 0;
 					p = split_node->btn_data;
 					q = key->key_data;
-					assert(key->key_length <= MAX_UCHAR);
+					fb_assert(key->key_length <= MAX_UCHAR);
 					if ( (l = split_node->btn_length = (UCHAR) key->key_length) ) {
 						do {
 							MOVE_BYTE(q, p);
@@ -2720,7 +2720,7 @@ static SLONG fast_load(TDBB tdbb,
 
 				// Now propogate up the lower-level bucket by storing a "pointer" to it.
 				node = NEXT_NODE(node);
-				assert(prefix <= MAX_UCHAR);
+				fb_assert(prefix <= MAX_UCHAR);
 				node->btn_prefix = (UCHAR) prefix;
 				bucket->btr_prefix_total += prefix;
 				quad_put(windows[level - 1].win_page, node->btn_number);
@@ -3627,7 +3627,7 @@ static SLONG insert_node(TDBB tdbb,
 	QUAD_MOVE(node->btn_number, new_node->btn_number);
 	p = new_node->btn_data;
 	q = new_key->key_data;
-	assert(new_key->key_length <= MAX_UCHAR);
+	fb_assert(new_key->key_length <= MAX_UCHAR);
 	if ( (l = new_node->btn_length = (UCHAR) new_key->key_length) ) {
 		do {
 			MOVE_BYTE(q, p);

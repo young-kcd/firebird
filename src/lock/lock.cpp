@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.76 2003-10-30 11:01:30 brodsom Exp $
+$Id: lock.cpp,v 1.77 2003-11-03 23:55:40 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -654,7 +654,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 	}
 	lock->lbl_state = type;
 	lock->lbl_parent = parent;
-	assert(series <= MAX_UCHAR);
+	fb_assert(series <= MAX_UCHAR);
 	lock->lbl_series = (UCHAR)series;
 
 /* Maintain lock series data queue */
@@ -3261,7 +3261,7 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	LOCK_header->lhb_type = type_lhb;
 	LOCK_header->lhb_version = LHB_VERSION;
 
-/* Mark ourselves as active owner to prevent assert() checks */
+/* Mark ourselves as active owner to prevent fb_assert() checks */
 	LOCK_header->lhb_active_owner = DUMMY_OWNER_CREATE;	/* In init of lock system */
 
 	QUE_INIT(LOCK_header->lhb_owners);

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.37 2003-10-29 10:53:07 robocop Exp $
+//  $Id: par.cpp,v 1.38 2003-11-03 23:51:47 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -1012,8 +1012,8 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 			{
 				if (!lock_block->rrl_lock_level)
 				{
-					assert(lock_level <= MAX_UCHAR);
-					assert(lock_mode <= MAX_UCHAR);
+					fb_assert(lock_level <= MAX_UCHAR);
+					fb_assert(lock_mode <= MAX_UCHAR);
 					lock_block->rrl_lock_level = (UCHAR) lock_level;
 					lock_block->rrl_lock_mode = (UCHAR) lock_mode;
 				}

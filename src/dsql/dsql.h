@@ -625,19 +625,14 @@ typedef tsql* TSQL;
 		}												\
 	}
 
-
-#define _assert(ex)	{if (!(ex)) {ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
-#undef assert
-#define assert(ex)	_assert(ex)
-#define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__)
+#undef fb_assert
+#define fb_assert(ex)	{if (!(ex)) {ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
 
 #else // PROD_BUILD
 
 #define DEV_BLKCHK(blk, typ)
-#define _assert(ex)
-#undef assert
-#define assert(ex)
-#define ASSERT_FAIL
+#undef fb_assert
+#define fb_assert(ex)
 
 #endif // DEV_BUILD
 

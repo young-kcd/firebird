@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.31 2003-11-01 10:26:39 robocop Exp $
+$Id: why.cpp,v 1.32 2003-11-03 23:53:49 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -53,7 +53,7 @@ $Id: why.cpp,v 1.31 2003-11-01 10:26:39 robocop Exp $
 #include <stdarg.h>
 
 #include "../jrd/ib_stdio.h"
-#include <assert.h>
+#include "../jrd/gdsassert.h"
 
 #include "../jrd/y_handle.h"
 #include "gen/codes.h"
@@ -1414,8 +1414,8 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				break;
 			}
 
-			assert(database);
-			assert(database->db_path);
+			fb_assert(database);
+			fb_assert(database->db_path);
 
 			*handle = database;
 			TEXT* p = database->db_path;
@@ -5992,7 +5992,7 @@ static void save_error_string(ISC_STATUS * status)
 	TEXT *p;
 	ULONG l, len;
 
-	assert(status != NULL);
+	fb_assert(status != NULL);
 
 	p = glbstr1;
 	len = sizeof(glbstr1) - 1;
@@ -6037,7 +6037,7 @@ static void save_error_string(ISC_STATUS * status)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 		case isc_arg_gds:
 		case isc_arg_number:
 		case isc_arg_vms:

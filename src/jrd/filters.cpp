@@ -779,7 +779,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 			else
 				aux->ctlaux_expansion_factor = (EXP_SCALE * 1);
 
-			assert(aux->ctlaux_expansion_factor != 0);
+			fb_assert(aux->ctlaux_expansion_factor != 0);
 
 			control->ctl_total_length =
 				source->ctl_total_length * aux->ctlaux_expansion_factor /
@@ -804,7 +804,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 							128, &err_code, &err_position);
 			aux->ctlaux_expansion_factor = (EXP_SCALE * tmp) / 128;
 
-			assert(aux->ctlaux_expansion_factor != 0);
+			fb_assert(aux->ctlaux_expansion_factor != 0);
 
 			aux->ctlaux_buffer1_len =
 				80 * aux->ctlaux_expansion_factor / EXP_SCALE;
@@ -815,7 +815,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, CTL control)
 		 */
 
 		aux->ctlaux_buffer1_len = MAX(aux->ctlaux_buffer1_len, 80);
-		assert(aux->ctlaux_buffer1_len != 0);
+		fb_assert(aux->ctlaux_buffer1_len != 0);
 
 		aux->ctlaux_buffer1 =
 			(BYTE *) gds__alloc((SLONG) aux->ctlaux_buffer1_len);
@@ -1254,7 +1254,7 @@ static void string_put(CTL control, const char* line)
 	string = (TMP) gds__alloc((SLONG) (sizeof(struct tmp) + l));
 /* FREE: on ACTION_close in string_filter() */
 	if (!string) {				/* NOMEM: */
-		assert(FALSE);			/* out of memory */
+		fb_assert(FALSE);			/* out of memory */
 		return;					/* & No error handling at this level */
 	}
 	string->tmp_next = NULL;

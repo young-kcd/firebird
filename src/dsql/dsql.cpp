@@ -1542,7 +1542,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 			request->req_cursor = MAKE_symbol(request->req_dbb, cursor,
 										  length, SYM_cursor, request);
 		} else {
-			assert(request->req_cursor != symbol);
+			fb_assert(request->req_cursor != symbol);
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
 		}
@@ -3271,7 +3271,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 	default:
 		/* Catch invalid request types */
-		assert(false);
+		fb_assert(false);
 		/* Fall into ... */
 
 	case REQ_SELECT:

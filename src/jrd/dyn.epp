@@ -1142,7 +1142,7 @@ static void grant( GBL gbl, UCHAR ** ptr)
 		} else if (id == drq_get_role_nm) {
 			ERR_punt();
 		} else {
-			assert(id == drq_gcg1);
+			fb_assert(id == drq_gcg1);
 			DYN_error_punt(TRUE, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
 		}

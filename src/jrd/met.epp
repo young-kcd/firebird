@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.74 2003-11-03 21:33:10 skidder Exp $
+$Id: met.epp,v 1.75 2003-11-03 23:53:50 brodsom Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -239,7 +239,7 @@ void MET_verify_cache(TDBB tdbb) {
 			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ ) 
 			{
-				assert(procedure->prc_int_use_count == 0);
+				fb_assert(procedure->prc_int_use_count == 0);
 			}
 		}
 		
@@ -254,7 +254,7 @@ void MET_verify_cache(TDBB tdbb) {
 					 resource = resource->rsc_next)
 				{
 					if (resource->rsc_type == rsc_procedure) {
-				  	    assert(resource->rsc_prc->prc_int_use_count >= 0);
+				  	    fb_assert(resource->rsc_prc->prc_int_use_count >= 0);
 						resource->rsc_prc->prc_int_use_count++;				
 					}
 				}
@@ -290,7 +290,7 @@ void MET_verify_cache(TDBB tdbb) {
 					}
 				}
 				gds__log(buffer);
-				assert(false);
+				fb_assert(false);
 			}
 		}
 		
@@ -860,8 +860,8 @@ BOOLEAN MET_get_char_subtype(TDBB tdbb,
 
 	SET_TDBB(tdbb);
 
-	assert(id != NULL);
-	assert(name != NULL);
+	fb_assert(id != NULL);
+	fb_assert(name != NULL);
 
 	end_name = name + length;
 
@@ -2300,7 +2300,7 @@ JRD_REL MET_lookup_relation_id(TDBB tdbb, SLONG id, BOOLEAN return_deleted)
 
 	if (id < (int) rel_MAX)
 	{
-		assert((USHORT)id < MAX_USHORT);
+		fb_assert((USHORT)id < MAX_USHORT);
 		return MET_relation(tdbb, (USHORT) id);
 	}
 
@@ -2644,7 +2644,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		/* Make sure PRC_being_scanned and PRC_scanned
 		   are not set at the same time
 		 */
-		assert(!(procedure->prc_flags & PRC_being_scanned) ||
+		fb_assert(!(procedure->prc_flags & PRC_being_scanned) ||
 			   !(procedure->prc_flags & PRC_scanned));
 
 		/* To avoid scanning recursive procedure's blr recursively let's
@@ -2840,7 +2840,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 	} /* if !noscan */
 	
 /* Make sure that it is really being Scanned ! */
-	assert(procedure->prc_flags & PRC_being_scanned);
+	fb_assert(procedure->prc_flags & PRC_being_scanned);
 	
 	procedure->prc_flags &= ~PRC_being_scanned;
 
@@ -3852,9 +3852,9 @@ static BOOLEAN get_type( TDBB tdbb, SSHORT * id, UCHAR * name, UCHAR * field)
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	assert(id != NULL);
-	assert(name != NULL);
-	assert(field != NULL);
+	fb_assert(id != NULL);
+	fb_assert(name != NULL);
+	fb_assert(field != NULL);
 
 /* Force key to uppercase, following C locale rules for uppercase */
 
@@ -4199,7 +4199,7 @@ static BOOLEAN resolve_charset_and_collation(
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	assert(id != NULL);
+	fb_assert(id != NULL);
 
 	handle = NULL;
 
@@ -4516,7 +4516,7 @@ static void terminate(TEXT * str, USHORT len)
  *
  **************************************************************/
 	SSHORT i;
-	assert(len > 0);
+	fb_assert(len > 0);
 
 	for (i = len - 1; i >= 0 && ((isspace(str[i])) || (str[i] == 0)); i--)
 		/* do nothing */ ;

@@ -581,7 +581,7 @@ DSQL_NOD PASS1_node(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 						  gds_arg_gds, gds_extract_input_mismatch, 0);
 			break;
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 		node = MAKE_node(input->nod_type, e_extract_count);
@@ -2254,7 +2254,7 @@ static bool invalid_reference(DSQL_CTX context, DSQL_NOD node,
 
 	switch (node->nod_type) {
 		default:
-			ASSERT_FAIL;
+			fb_assert(false);
 			/* FALLINTO */
 
 		case nod_map: 
@@ -3047,7 +3047,7 @@ static DSQL_CTX pass1_cursor_context( DSQL_REQ request, DSQL_NOD cursor, DSQL_NO
 
 	// this function must throw an error if no cursor was found
 	DSQL_NOD node = pass1_cursor_name(request, string, true);
-	assert(node);
+	fb_assert(node);
 
 	temp = node->nod_arg[e_cur_rse];
 	if (temp->nod_type == nod_for_select)
@@ -3978,7 +3978,7 @@ static bool pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 							return false;
 
 						default:
-							ASSERT_FAIL;
+							fb_assert(false);
 					}
 				}
 				break;
@@ -4009,7 +4009,7 @@ static bool pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 			return false;
 
 		default:
-			ASSERT_FAIL;			
+			fb_assert(false);
 		}
 
 	return found;
@@ -4062,7 +4062,7 @@ static bool pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 						return (field_context->ctx_scope_level >= check_scope_level);
 
 					default:
-						ASSERT_FAIL;
+						fb_assert(false);
 				}
 				break;
 			}
@@ -4202,7 +4202,7 @@ static bool pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 			return false;
 
 		default:
-			ASSERT_FAIL;
+			fb_assert(false);
 		}
 
 	return found;
@@ -4438,7 +4438,7 @@ static DSQL_NOD pass1_join(DSQL_REQ request, DSQL_NOD input, bool proc_flag)
 		break;
 
 		default:
-			ASSERT_FAIL;	// join type expected.
+			fb_assert(false);	// join type expected.
 		break;
 	}
 	// Process boolean (ON clause).
@@ -4483,7 +4483,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 		label = input->nod_arg[e_while_label];
 		break;
 	default:
-		assert(false);
+		fb_assert(false);
 	}
 
 	// look for a label, if specified
@@ -4491,7 +4491,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 	STR string = NULL;
 
 	if (label) {
-		assert(label->nod_type == nod_label);
+		fb_assert(label->nod_type == nod_label);
 		string = (STR) label->nod_arg[e_label_name];
 		TEXT* label_string = (TEXT*) string->str_data;
 		int index = request->req_loop_level;
@@ -4542,7 +4542,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 		}
 	}
 
-	assert(number > 0 && number <= request->req_loop_level);
+	fb_assert(number > 0 && number <= request->req_loop_level);
 
 	if (!label) {
 		label = MAKE_node(nod_label, e_label_count);
@@ -6091,7 +6091,7 @@ static DSQL_NOD pass1_variable( DSQL_REQ request, DSQL_NOD input)
 
 	if (request->req_flags & REQ_procedure) {
 		procedure_node = request->req_ddl_node;
-		assert(procedure_node);
+		fb_assert(procedure_node);
 		if (!(request->req_flags & REQ_trigger)) {
 			// try to resolve variable name against input and output parameters
 			if (var_nodes = procedure_node->nod_arg[e_prc_inputs])
@@ -6490,7 +6490,7 @@ static void remap_streams_to_parent_context( DSQL_NOD input, DSQL_CTX parent_con
 		break;
 
 	default:
-		ASSERT_FAIL;
+		fb_assert(false);
 		break;
 	}
 }
@@ -6683,7 +6683,7 @@ static void set_parameters_name( DSQL_NOD list_node, DSQL_NOD rel_node)
 			set_parameter_name((*ptr)->nod_arg[0],
 							   (*ptr)->nod_arg[1], relation);
 		else
-			assert(FALSE);
+			fb_assert(FALSE);
 	}
 }
 
@@ -6720,7 +6720,7 @@ static void set_parameter_name( DSQL_NOD par_node, DSQL_NOD fld_node,
 	DEV_BLKCHK(relation, dsql_type_dsql_rel);
 
 /* Could it be something else ??? */
-	assert(fld_node->nod_type == nod_field);
+	fb_assert(fld_node->nod_type == nod_field);
 
 	if (fld_node->nod_desc.dsc_dtype != dtype_array)
 		return;

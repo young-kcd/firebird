@@ -457,7 +457,7 @@ void JRN_make_init_data(
 
 	if (len = b_length) {
 		*t++ = gds_dpb_wal_backup_dir;
-		assert(b_length <= MAX_UCHAR);
+		fb_assert(b_length <= MAX_UCHAR);
 		*t++ = (UCHAR) b_length;
 		q = backup_dir;
 		do
@@ -467,7 +467,7 @@ void JRN_make_init_data(
 
 	if (len = db_len) {
 		*t++ = JRNW_DB_NAME;
-		assert(db_len <= MAX_UCHAR);
+		fb_assert(db_len <= MAX_UCHAR);
 		*t++ = (UCHAR) db_len;
 		q = db_name;
 		do
@@ -645,7 +645,7 @@ SLONG p_offset, USHORT mode, USHORT file_count, USHORT * dump_id, USHORT type)
 	struct jrnr reply;
 	int ret_val;
 
-	assert(type <= MAX_UCHAR);
+	fb_assert(type <= MAX_UCHAR);
 
 	jrnwal.ltjw_header.jrnh_type = (UCHAR) type;
 	jrnwal.ltjw_mode = mode;

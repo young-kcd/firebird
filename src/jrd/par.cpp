@@ -660,7 +660,7 @@ static void error(CSB csb, ...)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:
@@ -839,7 +839,7 @@ static XCP par_condition(TDBB tdbb, CSB csb)
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		break;
 	}
 
@@ -914,7 +914,7 @@ static XCP par_conditions(TDBB tdbb, CSB csb)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 	}
@@ -946,7 +946,7 @@ static SSHORT par_context(CSB csb, SSHORT* context_ptr)
 		/// don't have such an error (yet).
 		error(csb, gds_too_many_contexts, 0);
 	}
-	assert(stream <= MAX_STREAMS);
+	fb_assert(stream <= MAX_STREAMS);
 	SSHORT context = (unsigned int) BLR_BYTE;
 	CMP_csb_element(csb, stream);
 	csb_repeat* tail = CMP_csb_element(csb, context);
@@ -1397,7 +1397,7 @@ static JRD_NOD par_literal(TDBB tdbb, CSB csb)
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 	case dtype_text:
 		if ( (count = l) )
 			do
@@ -2025,7 +2025,7 @@ static JRD_NOD par_relation(
 
 	if (parse_context) {
 		stream = par_context(csb, &context);
-		assert(stream <= MAX_STREAMS);
+		fb_assert(stream <= MAX_STREAMS);
 		node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) stream;
 		node->nod_arg[e_rel_context] = (JRD_NOD) (SLONG) context;
 
@@ -2573,7 +2573,7 @@ static JRD_NOD parse(TDBB tdbb, CSB csb, USHORT expected, USHORT expected_option
 
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) par_context(csb, 0);
-		assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
 		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =
@@ -3071,7 +3071,7 @@ static void warning(CSB csb, ...)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 		case gds_arg_vms:
 		case gds_arg_unix:
 		case gds_arg_win32:

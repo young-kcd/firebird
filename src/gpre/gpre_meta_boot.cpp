@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.31 2003-10-29 10:53:07 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.32 2003-11-03 23:51:47 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -134,7 +134,7 @@ bool MET_database(DBB db,
 		return true;
 	}
 #endif
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -179,7 +179,7 @@ bool MET_domain_lookup(GPRE_REQ request,
 	if (!request)
 		return false;
 
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -194,7 +194,7 @@ bool MET_get_domain_default(DBB db,
 							TEXT* buffer,
 							USHORT buff_length)
 {
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -216,7 +216,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 							TEXT* buffer,
 							USHORT buff_length)
 {
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -240,8 +240,8 @@ LLS MET_get_primary_key(DBB db, const TEXT* relation_name)
 	if ((db->dbb_handle == NULL) && !MET_database(db, FALSE))
 		CPR_exit(FINI_ERROR);
 
-	assert(db->dbb_transaction == NULL);
-	assert(0);
+	fb_assert(db->dbb_transaction == NULL);
+	fb_assert(0);
 	return 0;
 }
 
@@ -279,7 +279,7 @@ GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 
 	if (sw_language == lang_internal)
 		return NULL;
-	assert(0);
+	fb_assert(0);
 	return NULL;
 }
 
@@ -331,7 +331,7 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 
 	if (sw_language == lang_internal)
 		return NULL;
-	assert(0);
+	fb_assert(0);
 	return NULL;
 }
 
@@ -491,7 +491,7 @@ GPRE_PRC MET_get_procedure(DBB db, const TEXT* string, const TEXT* owner_name)
 	if (procedure->prc_flags & PRC_scanned)
 		return procedure;
 
-	assert(0);
+	fb_assert(0);
 	return NULL;
 }
 
@@ -564,7 +564,7 @@ UDF MET_get_udf(DBB db, const TEXT* string)
 	if (!udf_val)
 		return NULL;
 
-	assert(0);
+	fb_assert(0);
 	return NULL;
 }
 
@@ -580,7 +580,7 @@ GPRE_REL MET_get_view_relation(GPRE_REQ request,
 						  const char* view_name,
 						  const char* relation_or_alias, USHORT level)
 {
-	assert(0);
+	fb_assert(0);
 	return NULL;
 }
 
@@ -609,7 +609,7 @@ IND MET_index(DBB db, const TEXT* string)
 
 	if (sw_language == lang_internal)
 		return NULL;
-	assert(0);
+	fb_assert(0);
 	return NULL;
 }
 
@@ -629,7 +629,7 @@ void MET_load_hash_table( DBB db)
 
 	if (sw_language == lang_internal)
 		return;
-	assert(0);
+	fb_assert(0);
 	return;
 }
 
@@ -706,7 +706,7 @@ bool MET_type(GPRE_FLD field,
 			return true;
 		}
 
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -726,7 +726,7 @@ bool MET_trigger_exists(DBB db,
 
 	//strcpy(name, trigger_name);
 
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -758,7 +758,7 @@ static SLONG array_size( GPRE_FLD field)
 
 static void get_array( DBB db, const TEXT* field_name, GPRE_FLD field)
 {
-	assert(0);
+	fb_assert(0);
 	return;
 }
 
@@ -786,11 +786,11 @@ static bool get_intl_char_subtype(SSHORT* id,
 								 USHORT length,
 								 DBB db)
 {
-	assert(id != NULL);
-	assert(name != NULL);
-	assert(db != NULL);
+	fb_assert(id != NULL);
+	fb_assert(name != NULL);
+	fb_assert(db != NULL);
 
-	assert(0);
+	fb_assert(0);
 	return false;
 }
 
@@ -826,9 +826,9 @@ static bool resolve_charset_and_collation(
 										 SSHORT* id,
 										 const UCHAR* charset, const UCHAR* collation)
 {
-	assert(id != NULL);
+	fb_assert(id != NULL);
 
-	assert(0);
+	fb_assert(0);
 	return (false);
 }
 
@@ -887,7 +887,7 @@ extern "C" {
 
 void CVT_move (const dsc* a, dsc* b, FPTR_VOID c)
 {  
-    assert(0);
+    fb_assert(0);
     /* Not available in boot_gpre */
 }
 

@@ -36,12 +36,12 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.4 2003-10-16 08:51:03 robocop Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.5 2003-11-03 23:54:55 brodsom Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
-#include <assert.h>
+#include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "gen/codes.h"
 #include "../jrd/isc.h"
@@ -207,7 +207,7 @@ void ISC_enable() throw()
  *	Enable signal processing.  Re-post any pending signals.
  *
  **************************************/
-	assert(inhibit_counter > 0);
+	fb_assert(inhibit_counter > 0);
 	inhibit_counter--;
 	if (inhibit_counter == 0) {
 		// Return to the mask as it were before the first recursive 

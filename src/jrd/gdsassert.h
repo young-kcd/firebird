@@ -22,14 +22,14 @@
 
 #ifdef DEV_BUILD
 
-#include <stdlib.h>				// abort()
+#include <stdlib.h>		// abort()
 
 #include "../jrd/ib_stdio.h"
 #include "../jrd/gds_proto.h"
 
 
-/* assert() has been made into a generic version that works across
- * gds components.  Previously, the assert() defined here was only
+/* fb_assert() has been made into a generic version that works across
+ * gds components.  Previously, the fb_assert() defined here was only
  * usable within the engine.
  * 1996-Feb-09 David Schnepper 
  */
@@ -39,26 +39,20 @@
 #ifdef SUPERSERVER
 
 #define fb_assert(ex)	{if (!(ex)){gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)){gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
 
 #else	// !SUPERSERVER
 
 #define fb_assert(ex)	{if (!(ex)){ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)){ib_fprintf (ib_stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
 
 #endif	// SUPERSERVER
 
 #else	// DEV_BUILD
 
 #define fb_assert(ex)				// nothing 
+#define fb_assert_continue(ex)		// nothing 
 
 #endif // DEV_BUILD 
-
-// It's a bit poor, since assert is a standard macro but this was the way it
-// was done.  It is preferable to use the gds_assert(x) function, but I've left
-// the following for back compatibility since I don't want to wade through that
-// much code at the moment.
-
-#ifndef assert
-#define assert(ex)     fb_assert(ex)
-#endif // assert
 
 #endif // JRD_GDSASSERT_H 

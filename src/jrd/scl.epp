@@ -338,7 +338,7 @@ void SCL_check_procedure(DSC* dsc_name, USHORT mask)
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 
-	assert(dsc_name->dsc_dtype == dtype_text);
+	fb_assert(dsc_name->dsc_dtype == dtype_text);
 
 	{ // scope only block
 	TEXT* p = name;
@@ -394,7 +394,7 @@ void SCL_check_relation(DSC* dsc_name, USHORT mask)
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 
-	assert(dsc_name->dsc_dtype == dtype_text);
+	fb_assert(dsc_name->dsc_dtype == dtype_text);
 
 	{ // scope only block
 	TEXT* p = name;
@@ -800,7 +800,7 @@ void SCL_move_priv(UCHAR** acl_ptr, USHORT mask, STR* start_ptr, ULONG* length_p
 	{
 		if (mask & priv->p_names_priv)
 		{
-			assert(priv->p_names_acl <= MAX_UCHAR);
+			fb_assert(priv->p_names_acl <= MAX_UCHAR);
 			check_and_move(p, (UCHAR) priv->p_names_acl, *start_ptr, length_ptr);
 		}
 	}
@@ -1031,8 +1031,8 @@ static bool check_string(const TEXT* acl, const TEXT* string)
 	// the caller to this function must check to ensure that the arguments are not
 	// NULL  - Shaunak Mistry 03-May-99.
 
-	assert(string != NULL);
-	assert(acl != NULL);
+	fb_assert(string != NULL);
+	fb_assert(acl != NULL);
 
 	// JPN: Since Kanji User names are not allowed, no need to fix this UPPER loop
 

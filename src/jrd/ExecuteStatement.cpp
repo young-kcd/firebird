@@ -81,7 +81,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	StartOfSqlOperator = 0;
 	SingleMode = SingleTon;
 
-	assert(tdbb->tdbb_transaction->tra_pool);
+	fb_assert(tdbb->tdbb_transaction->tra_pool);
 	vary *v = reinterpret_cast <vary*> (
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
@@ -178,7 +178,7 @@ err_handler:
 
 bool ExecuteStatement::Fetch(TDBB tdbb, JRD_NOD * JrdVar) {
 	// If already bugged - we should never get here
-	assert(! (tdbb->tdbb_status_vector[0] == 1 && 
+	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 && 
 			  tdbb->tdbb_status_vector[1] != 0));
 	if (! Statement)
 		return false;

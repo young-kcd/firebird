@@ -1075,7 +1075,7 @@ static void deliver_request(EVT_REQ request)
 		if (end < p + event->evnt_length + 5)
 		{
 			/* Running out of space - allocate some more and copy it over */
-			assert(event_buffer == buffer);	/* we're in this block only once */
+			fb_assert(event_buffer == buffer);	/* we're in this block only once */
 			UCHAR* new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
 			/* FREE: at procedure exit */
 			if (!new_buffer)

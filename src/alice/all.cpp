@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.13 2003-09-25 11:48:57 robocop Exp $
+//	$Id: all.cpp,v 1.14 2003-11-03 23:49:24 brodsom Exp $
 //
 
 #include "../alice/all.h"
@@ -167,7 +167,7 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 		}
 	}
 
-	//assert(0);
+	//fb_assert(0);
 	//BUGCHECK ("ALLA_fini - finishing before starting");
     return 0;//pool;	// Never reached, but makes the compiler happy.
 }

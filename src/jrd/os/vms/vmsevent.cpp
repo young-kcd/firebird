@@ -155,7 +155,7 @@ SLONG EVENT_create_session(ISC_STATUS status_vector)
 
 	session = (SES) alloc(sizeof(struct ses));
 	if (!session) {
-		assert(false);			/* No error handling */
+		fb_assert(false);			/* No error handling */
 		return 0L;
 	}
 	session->ses_next = sessions;
@@ -676,7 +676,7 @@ static void deliver_request(VMS_REQ request)
 		if (end < p + event->evnt_length + 5) {
 			UCHAR *new_buffer;
 			/* Running out of space - allocate some more and copy it over */
-			assert(event_buffer == buffer);	/* we're in this block only once */
+			fb_assert(event_buffer == buffer);	/* we're in this block only once */
 			new_buffer = gds__alloc((SLONG) MAX_EVENT_BUFFER);
 			/* FREE: at procedure return */
 			if (!new_buffer) {	/* NOMEM: */

@@ -1526,8 +1526,8 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
  **************************************/
 	if (status_vector) {
 		// skip the error, assert that one does not exist 
-		assert(status_vector[0] == gds_arg_gds);
-		assert(status_vector[1] == 0);
+		fb_assert(status_vector[0] == gds_arg_gds);
+		fb_assert(status_vector[1] == 0);
 		// print the warning message 
 		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
@@ -1710,7 +1710,7 @@ static gbak_action open_files(const TEXT* file1,
 		// Now it is safe to skip a db file 
 		tdgbl->gbl_sw_backup_files = tdgbl->gbl_sw_files->fil_next;
 		tdgbl->gbl_sw_files = tdgbl->gbl_sw_files->fil_next;
-		assert(strcmp(tdgbl->gbl_sw_files->fil_name, *file2) == 0);
+		fb_assert(strcmp(tdgbl->gbl_sw_files->fil_name, *file2) == 0);
 
 		gbak_action flag = BACKUP;
 		tdgbl->action->act_action = ACT_backup;
@@ -1735,7 +1735,7 @@ static gbak_action open_files(const TEXT* file1,
 				// msg 262 size specification either missing or incorrect for file %s
 				break;
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				break;
 			}
 

@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.30 2003-10-29 10:53:03 robocop Exp $
+$Id: canonical.cpp,v 1.31 2003-11-03 23:49:47 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -199,7 +199,7 @@ ULONG CAN_encode_decode(BURP_REL relation,
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			return FALSE;
 		}
 	}
@@ -571,7 +571,7 @@ static bool_t xdr_datum( XDR * xdrs, DSC * desc, UCHAR * buffer)
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		return FALSE;
 	}
 
@@ -608,7 +608,7 @@ static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 		return TRUE;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		return FALSE;
 	}
 }
@@ -691,7 +691,7 @@ static bool_t xdr_slice(XDR* xdrs,
 		return TRUE;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		return FALSE;
 	}
 

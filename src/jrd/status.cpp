@@ -121,7 +121,7 @@ void PARSE_STATUS(ISC_STATUS * status_vector, int &length, int &warning)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 	}

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: class_test.cpp,v 1.10 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: class_test.cpp,v 1.11 2003-11-03 23:50:05 brodsom Exp $
  *
  */
 
@@ -110,7 +110,7 @@ void testBePlusTree() {
 			t.value = v[i];
 			t.count = 1;
 			if (!tree1.add(t))
-				assert(false);
+				fb_assert(false);
 			cnt1++;
 		}
 		if (tree2.locate(locEqual, v[i]))
@@ -120,7 +120,7 @@ void testBePlusTree() {
 			t.value = v[i];
 			t.count = 1;
 			if (!tree2.add(t))
-				assert(false);
+				fb_assert(false);
 			cnt2++;
 		}	
 	}
@@ -170,7 +170,7 @@ void testBePlusTree() {
 	printf("Remove half of data from the trees: ");
 	while (v.getCount() > TEST_ITEMS/2) {
 		if (!tree1.locate(locEqual, v[v.getCount()-1]))
-			assert(false);
+			fb_assert(false);
 		if (tree1.current().count > 1) 
 			tree1.current().count--;
 		else {
@@ -178,7 +178,7 @@ void testBePlusTree() {
 			cnt1--;
 		}
 		if (!tree2.locate(locEqual, v[v.getCount()-1]))
-			assert(false);
+			fb_assert(false);
 		if (tree2.current().count > 1) 
 			tree2.current().count--;
 		else {
@@ -234,7 +234,7 @@ void testBePlusTree() {
 	printf("Remove the rest of data from the trees: ");
 	for (i=0;i < v.getCount(); i++) {
 		if (!tree1.locate(locEqual, v[i]))
-			assert(false);
+			fb_assert(false);
 		if (tree1.current().count > 1) 
 			tree1.current().count--;
 		else {
@@ -242,7 +242,7 @@ void testBePlusTree() {
 			cnt1--;
 		}
 		if (!tree2.locate(locEqual, v[i]))
-			assert(false);
+			fb_assert(false);
 		if (tree2.current().count > 1)
 			tree2.current().count--;
 		else {

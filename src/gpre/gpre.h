@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.52 2003-10-29 10:53:07 robocop Exp $
+ * $Id: gpre.h,v 1.53 2003-11-03 23:51:47 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1489,20 +1489,20 @@ EXTERN USHORT ada_flags;
 
 #undef EXTERN
 
-#ifndef assert
+#ifndef fb_assert
 #ifdef DEV_BUILD
-#define _assert(ex)	{if (!(ex)){CPR_assert (__FILE__, __LINE__);}}
-#define assert(ex)	_assert(ex)
-#else
-#define _assert(ex)
-#define assert(ex)
-#endif
-#endif
+#undef fb_assert
+#define fb_assert(ex)	{if (!(ex)){CPR_assert (__FILE__, __LINE__);}}
+#else // DEV_BUILD
+#undef fb_assert
+#define fb_assert(ex)
+#endif // DEV_BUILD
+#endif // fb_assert
 
-#define assert_IS_REQ(x) assert(!(x) || ((x)->req_type >= 0 && (x)->req_type < REQ_LASTREQUEST))
-#define assert_IS_SYM(x) assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
-#define assert_IS_NOD(x) assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
-#define assert_IS_ACT(x) assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
+#define assert_IS_REQ(x) fb_assert(!(x) || ((x)->req_type >= 0 && (x)->req_type < REQ_LASTREQUEST))
+#define assert_IS_SYM(x) fb_assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
+#define assert_IS_NOD(x) fb_assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
+#define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
 #endif /* GPRE_GPRE_H */
 

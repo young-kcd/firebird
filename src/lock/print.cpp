@@ -1103,11 +1103,11 @@ static void prt_owner_wait_cycle(
 
 		FPRINTF(outfile, "\n");
 		owner_request = (LRQ) ABS_PTR(owner->own_pending_request);
-		assert(owner_request->lrq_type == type_lrq);
+		fb_assert(owner_request->lrq_type == type_lrq);
 		owner_conversion = (owner_request->lrq_state > LCK_null);
 
 		lock = (LBL) ABS_PTR(owner_request->lrq_lock);
-		assert(lock->lbl_type == type_lbl);
+		fb_assert(lock->lbl_type == type_lbl);
 
 		counter = 0;
 		QUE_LOOP(lock->lbl_requests, que) {
@@ -1124,7 +1124,7 @@ static void prt_owner_wait_cycle(
 
 			lock_request =
 				(LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
-			assert(lock_request->lrq_type == type_lrq);
+			fb_assert(lock_request->lrq_type == type_lrq);
 
 
 			if (LOCK_header->lhb_flags & LHB_lock_ordering && !owner_conversion) {

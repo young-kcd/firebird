@@ -828,7 +828,7 @@ void INI_update_database(void)
 		break;
 	default:
 		/* Make sure we add a new case per new major ODS. Look at code above */
-		assert(FALSE);
+		fb_assert(FALSE);
 		header->hdr_ods_minor = minor_version;
 		break;
 	}
@@ -1507,7 +1507,7 @@ static void store_global_field(TDBB tdbb, GFLD* gfield, BLK* handle)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 

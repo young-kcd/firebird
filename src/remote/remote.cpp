@@ -312,7 +312,7 @@ void REMOTE_free_packet( PORT port, PACKET * packet)
 		/* All packet memory allocations should now be voided. */
 
 		for (n = 0; n < P_MALLOC_SIZE; n++)
-			assert(packet->p_malloc[n].p_operation == op_void);
+			fb_assert(packet->p_malloc[n].p_operation == op_void);
 #endif
 		packet->p_operation = op_void;
 	}
@@ -340,8 +340,8 @@ void REMOTE_get_timeout_params(
 	bool got_dpb_connect_timeout = false;
 	bool got_dpb_dummy_packet_interval = false;
 
-	assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
-	assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
+	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
+	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
 
 	port->port_flags &= ~PORT_dummy_pckt_set;
 

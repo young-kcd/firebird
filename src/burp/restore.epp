@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.50 2003-11-03 01:12:14 brodsom Exp $
+$Id: restore.epp,v 1.51 2003-11-03 23:49:47 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1270,7 +1270,7 @@ bool get_acl (const TEXT	*owner_nm,
 			*/
 			if (num_segments > 1) {
 				// CVC: I can't see the effect of assert(true)
-				assert (num_segments > 1);
+				fb_assert (num_segments > 1);
 			}
 			break;
 
@@ -4504,7 +4504,7 @@ SLONG get_numeric (void)
 
 	// get_text needs additional space for the terminator,
 	// because it treats everything as strings.
-	assert(sizeof(value) > sizeof(SLONG));
+	fb_assert(sizeof(value) > sizeof(SLONG));
 
 	SSHORT length = get_text((TEXT*) value, sizeof(value));
 
@@ -4527,7 +4527,7 @@ SINT64 get_int64 (void)
 
 	// get_text needs additional space for the terminator,
 	// because it treats everything as strings.
-	assert (sizeof(value) > sizeof(SINT64));
+	fb_assert (sizeof(value) > sizeof(SINT64));
 
 	SSHORT length = get_text ((TEXT *) value, sizeof(value));
 

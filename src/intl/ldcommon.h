@@ -38,16 +38,16 @@
 typedef USHORT UNICODE;
 
 /* Redirect the assertion code defined by gdsassert.h to a local routine */
-#ifdef assert
-#undef assert
+#ifdef fb_assert
+#undef fb_assert
 #endif
 #ifndef DEV_BUILD
 #define ERR_assert				/* nothing */
-#define assert(ex)				/* nothing */
+#define fb_assert(ex)				/* nothing */
 #else
 #include <stdlib.h> /* prototype for abort() */
 #define ERR_assert	LD_assert
-#define assert(ex)	{if (!(ex)){LD_assert (__FILE__, __LINE__); abort();}}
+#define fb_assert(ex)	{if (!(ex)){LD_assert (__FILE__, __LINE__); abort();}}
 
 #endif
 

@@ -623,11 +623,11 @@ USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch)
 SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE *p;
-	assert(pStr != NULL);
-	assert(pOutStr != NULL);
-	assert(iLen <= 32000);		/* almost certainly an error */
-	assert(iOutLen <= 32000);	/* almost certainly an error */
-	assert(iOutLen >= iLen);
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
+	fb_assert(iLen <= 32000);		/* almost certainly an error */
+	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
+	fb_assert(iOutLen >= iLen);
 	p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = LOCALE_UPPER(*pStr);
@@ -665,8 +665,8 @@ SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count)
  *
  **************************************/
 
-	assert(obj);
-	assert(ptr);
+	fb_assert(obj);
+	fb_assert(ptr);
 
 	if (count >= 1) {
 		if (wc)

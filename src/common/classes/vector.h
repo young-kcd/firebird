@@ -32,14 +32,14 @@
  *  Contributor(s):
  * 
  *
- *  $Id: vector.h,v 1.3 2003-09-08 20:23:32 skidder Exp $
+ *  $Id: vector.h,v 1.4 2003-11-03 23:50:05 brodsom Exp $
  *
  */
  
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include <assert.h>
+#include "../jrd/gdsassert.h"
 #include <string.h>
 
 namespace Firebird {
@@ -51,33 +51,33 @@ public:
 	Vector() : count(0) {}
 	void clear() { count = 0; };
 	T& operator[](int index) {
-  		assert(index >= 0 && index < count);
+  		fb_assert(index >= 0 && index < count);
   		return data[index];
 	}
 	T* begin() { return data; }
 	T* end() { return data+count; }
 	void insert(int index, const T& item) {
-	  assert(index >= 0 && index <= count);
-	  assert(count < Capacity);
+	  fb_assert(index >= 0 && index <= count);
+	  fb_assert(count < Capacity);
 	  memmove(data+index+1, data+index, sizeof(T)*(count++-index));
 	  data[index] = item;
 	}
 
 	int add(const T& item) {
-		assert(count < Capacity);
+		fb_assert(count < Capacity);
 		data[count++] = item;
   		return count;
 	};
 	void remove(int index) {
-  		assert(index >= 0 && index < count);
+  		fb_assert(index >= 0 && index < count);
   		memmove(data+index, data+index+1, sizeof(T)*(--count-index));
 	}
 	void shrink(int newCount) {
-		assert(newCount <= count);
+		fb_assert(newCount <= count);
 		count = newCount;
 	};
 	void join(Vector<T,Capacity>& L) {
-		assert(count + L.count <= Capacity);
+		fb_assert(count + L.count <= Capacity);
 		memcpy(data + count, L.data, sizeof(T)*L.count);
 		count += L.count;
 	}

@@ -389,7 +389,7 @@ void IDX_create_index(
 			l = key.key_length;
 			q = key.key_data;
 
-			assert(l > 0);
+			fb_assert(l > 0);
 
 			do
 				*p++ = *q++;

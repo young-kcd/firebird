@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.39 2003-11-02 11:54:49 dimitr Exp $
+ * $Id: rse.cpp,v 1.40 2003-11-03 23:53:50 brodsom Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -1461,7 +1461,7 @@ static UCHAR *get_merge_data(TDBB tdbb, MFB mfb, SLONG record)
  **************************************/
 	ULONG merge_block, merge_offset;
 
-	assert(record >= 0 && record < (SLONG) mfb->mfb_equal_records);
+	fb_assert(record >= 0 && record < (SLONG) mfb->mfb_equal_records);
 
 	merge_block = record / mfb->mfb_blocking_factor;
 	if (merge_block != mfb->mfb_current_block) {
@@ -3582,7 +3582,7 @@ static ULONG read_merge_block(TDBB tdbb, MFB mfb, ULONG block)
  *
  **************************************/
 
-	assert(mfb->mfb_sfb && mfb->mfb_sfb->sfb_file_name);
+	fb_assert(mfb->mfb_sfb && mfb->mfb_sfb->sfb_file_name);
 
 	mfb->mfb_sfb->sfb_mem->read(tdbb->tdbb_status_vector,
 								mfb->mfb_block_size * block,

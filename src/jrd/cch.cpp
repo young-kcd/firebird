@@ -4908,13 +4908,13 @@ static SSHORT lock_buffer(
 		   to do so. */
 
 		if (page_type == pag_header || page_type == pag_transactions) {
-			assert(lock->lck_ast == blocking_ast_bdb);
-			assert(lock->lck_object == reinterpret_cast<blk*>(bdb));
+			fb_assert(lock->lck_ast == blocking_ast_bdb);
+			fb_assert(lock->lck_object == reinterpret_cast<blk*>(bdb));
 			lock->lck_ast = 0;
 			lock->lck_object = NULL;
 		}
 		else
-			assert(lock->lck_ast != NULL);
+			fb_assert(lock->lck_ast != NULL);
 
 		lock->lck_key.lck_long = bdb->bdb_page;
 		if (PAGE_LOCK_OPT(lock, lock_type, wait)) {
@@ -4923,7 +4923,7 @@ static SSHORT lock_buffer(
 				   out. Flag the bdb so that the lock is released when
 				   the buffer is released. */
 
-				assert(page_type == pag_header
+				fb_assert(page_type == pag_header
 					   || page_type == pag_transactions);
 				lock->lck_ast = blocking_ast_bdb;
 				lock->lck_object = reinterpret_cast<blk*>(bdb);
@@ -4933,7 +4933,7 @@ static SSHORT lock_buffer(
 		}
 
 		if (!lock->lck_ast) {
-			assert(page_type == pag_header || page_type == pag_transactions);
+			fb_assert(page_type == pag_header || page_type == pag_transactions);
 			lock->lck_ast = blocking_ast_bdb;
 			lock->lck_object = reinterpret_cast<blk*>(bdb);
 		}

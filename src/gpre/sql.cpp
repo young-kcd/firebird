@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.32 2003-10-28 13:39:32 brodsom Exp $
+//	$Id: sql.cpp,v 1.33 2003-11-03 23:51:47 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -2489,7 +2489,7 @@ static ACT act_declare_udf(void)
 				return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
 					PAR_error("return parameter not in range");
-				assert(return_parameter <= MAX_SSHORT);
+				fb_assert(return_parameter <= MAX_SSHORT);
 				udf_declaration->decl_udf_return_parameter = (SSHORT) return_parameter;
 			}
 			else {
@@ -5696,8 +5696,8 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 //   [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
 //  
 
-	assert(token.tok_keyword == KW_ON);
-	assert(cnstrt_val != NULL);
+	fb_assert(token.tok_keyword == KW_ON);
+	fb_assert(cnstrt_val != NULL);
 
 	PAR_get_token();
 

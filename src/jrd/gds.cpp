@@ -729,7 +729,7 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
 	SINT64 value;
 	SSHORT shift;
 
-	assert(length <= 8);
+	fb_assert(length <= 8);
 	value = shift = 0;
 
 	while (--length >= 0) {
@@ -1217,8 +1217,8 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 		
 #ifdef DEV_BUILD
 	const size_t db_len = strlen(database);
-	assert(db_len < BUFFER_XLARGE - 2);
-	assert(db_len < MAXPATHLEN);
+	fb_assert(db_len < BUFFER_XLARGE - 2);
+	fb_assert(db_len < MAXPATHLEN);
 #endif
 
 	const int interpreted_line_length = 80; // raw estimation
@@ -3353,7 +3353,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		}
 
 		default:
-			assert(FALSE);
+			fb_assert(FALSE);
 			break;
 		}
 }
@@ -3675,7 +3675,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 	int alen = strlen(appendString);
 	if (len + alen > MAXPATHLEN - 1)
 		alen = MAXPATHLEN - 1 - len;
-	assert(alen >= 0);
+	fb_assert(alen >= 0);
 	memcpy(&resultString[len], appendString, alen);
 	resultString[len + alen] = 0;
 }

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.34 2003-11-03 02:05:14 brodsom Exp $
+ *  $Id: alloc.cpp,v 1.35 2003-11-03 23:50:05 brodsom Exp $
  *
  */
 
@@ -149,7 +149,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 		needSpare = true;
 		return temp;
 	}
-	assert(false);
+	fb_assert(false);
 	return 0;
 }
 
@@ -183,7 +183,7 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 bool MemoryPool::verify_pool() {
 #ifdef TESTING_ONLY
 	lock.enter();
-	assert (!pendingFree || needSpare); // needSpare flag should be set if we are in 
+	fb_assert (!pendingFree || needSpare); // needSpare flag should be set if we are in 
 										// a critically low memory condition
 	// check each block in each segment for consistency with free blocks structure
 	for (MemoryExtent *extent = extents; extent; extent=extent->next) {
@@ -193,22 +193,22 @@ bool MemoryPool::verify_pool() {
 			blk = (MemoryBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length))
 		{
 #ifndef NDEBUG
-			assert(blk->pool == this); // Pool is correct ?
-			assert(blk->prev == prev); // Prev is correct ?
+			fb_assert(blk->pool == this); // Pool is correct ?
+			fb_assert(blk->prev == prev); // Prev is correct ?
 			BlockInfo temp = {blk, blk->length};
 			bool foundTree = freeBlocks.locate(temp), foundPending = false;
 			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
 				if (tmp == (PendingFreeBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock)))) {
-					assert(!foundPending); // Block may be in pending list only one time
+					fb_assert(!foundPending); // Block may be in pending list only one time
 					foundPending = true;
 				}
-			assert(! (foundTree && foundPending)); // Block shouldn't be present both in
+			fb_assert(! (foundTree && foundPending)); // Block shouldn't be present both in
 												   // pending list and in tree list
 			
 			if (!blk->used) {
-				assert(foundTree || foundPending); // Block is free. Should be somewhere
+				fb_assert(foundTree || foundPending); // Block is free. Should be somewhere
 			} else
-				assert(!foundTree && !foundPending); // Block is not free. Should not be in free lists
+				fb_assert(!foundTree && !foundPending); // Block is not free. Should not be in free lists
 #endif
 			prev = blk;
 			if (blk->last) break;
@@ -398,8 +398,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				freeBlocks.getNext();
 #else
 				bool res = freeBlocks.getNext();
-				assert(res);
-				assert(&freeBlocks.current()==current);
+				fb_assert(res);
+				fb_assert(&freeBlocks.current()==current);
 #endif
 				MemoryBlock *block = current->block;
 				freeBlocks.fastRemove();
@@ -552,7 +552,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 				}
 				itr = next;
 			}
-			assert(itr); // We had to find it somewhere
+			fb_assert(itr); // We had to find it somewhere
 		}
 	}
 }
@@ -572,7 +572,7 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk) {
 			}
 			itr = next;
 		}
-		assert(itr); // We had to find it somewhere
+		fb_assert(itr); // We had to find it somewhere
 	}
 	extents_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
 	external_free(extent);
@@ -582,8 +582,8 @@ void MemoryPool::deallocate(void *block) {
 	if (!block) return;
 	lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
-	assert(blk->used);
-	assert(blk->pool==this);
+	fb_assert(blk->used);
+	fb_assert(blk->pool==this);
 	used_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
 	if (cur_memory)	*cur_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
 	// Try to merge block with preceding free block

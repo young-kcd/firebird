@@ -132,7 +132,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 	{
 		/* 32 bytes allocated for size of of a metadata name */
 		SCHAR blr[sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + 32], *p;
-		assert(strlen(generator_name) < 32);
+		fb_assert(strlen(generator_name) < 32);
 
 		p = blr;
 		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));

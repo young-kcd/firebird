@@ -200,7 +200,7 @@ dsql_nod* MAKE_constant(str* constant, dsql_constant_type numeric_flag)
 		}
 
 	default:
-		assert(numeric_flag == CONSTANT_STRING);
+		fb_assert(numeric_flag == CONSTANT_STRING);
 		DEV_BLKCHK(constant, dsql_type_str);
 
 		node->nod_desc.dsc_dtype = dtype_text;
@@ -420,7 +420,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		instead	of VARCHAR for historical reasons. */
 		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
 			dsql_nod* for_node = node->nod_arg [e_substr_length];
-			assert (for_node->nod_desc.dsc_dtype == dtype_long);
+			fb_assert (for_node->nod_desc.dsc_dtype == dtype_long);
 			/* Migrate the charset from the blob to the string. */
 			desc->dsc_ttype = desc1.dsc_scale;
 			const SLONG len = *(SLONG *) for_node->nod_desc.dsc_address;
@@ -545,7 +545,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 					}
 					else {
-						assert(dtype == dtype_timestamp);
+						fb_assert(dtype == dtype_timestamp);
 						desc->dsc_dtype = dtype_double;
 						desc->dsc_length = sizeof(double);
 						desc->dsc_scale = 0;
@@ -570,13 +570,13 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 				desc->dsc_dtype = desc1.dsc_dtype;
 				if (!DTYPE_IS_DATE(desc->dsc_dtype))
 					desc->dsc_dtype = desc2.dsc_dtype;
-				assert(DTYPE_IS_DATE(desc->dsc_dtype));
+				fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
 				desc->dsc_length = type_lengths[desc->dsc_dtype];
 				desc->dsc_scale = 0;
 			}
 			else {
 				/* <non-date> - <date> */
-				assert(node->nod_type == nod_subtract);
+				fb_assert(node->nod_type == nod_subtract);
 				ERRD_post(gds_expression_eval_err, 0);
 			}
 			return;
@@ -629,14 +629,14 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			&& DTYPE_IS_EXACT(desc2.dsc_dtype)) dtype = dtype_int64;
 		else if (DTYPE_IS_NUMERIC(desc1.dsc_dtype)
 				 && DTYPE_IS_NUMERIC(desc2.dsc_dtype)) {
-			assert(DTYPE_IS_APPROX(desc1.dsc_dtype) ||
+			fb_assert(DTYPE_IS_APPROX(desc1.dsc_dtype) ||
 				   DTYPE_IS_APPROX(desc2.dsc_dtype));
 			dtype = dtype_double;
 		}
 		else {
 			/* mixed numeric and non-numeric: */
 
-			assert(DTYPE_IS_DATE(dtype1) || DTYPE_IS_DATE(dtype2));
+			fb_assert(DTYPE_IS_DATE(dtype1) || DTYPE_IS_DATE(dtype2));
 
 			/* The MAX(dtype) rule doesn't apply with dtype_int64 */
 
@@ -687,7 +687,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 					}
 					else {
-						assert(dtype == dtype_timestamp);
+						fb_assert(dtype == dtype_timestamp);
 						desc->dsc_dtype = dtype_int64;
 						desc->dsc_length = sizeof(SINT64);
 						desc->dsc_scale = -9;
@@ -712,13 +712,13 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 				desc->dsc_dtype = desc1.dsc_dtype;
 				if (!DTYPE_IS_DATE(desc->dsc_dtype))
 					desc->dsc_dtype = desc2.dsc_dtype;
-				assert(DTYPE_IS_DATE(desc->dsc_dtype));
+				fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
 				desc->dsc_length = type_lengths[desc->dsc_dtype];
 				desc->dsc_scale = 0;
 			}
 			else {
 				/* <non-date> - <date> */
-				assert(node->nod_type == nod_subtract2);
+				fb_assert(node->nod_type == nod_subtract2);
 				ERRD_post(gds_expression_eval_err, 0);
 			}
 			return;
@@ -744,8 +744,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			/* The result type is int64 because both operands are
 			   exact numeric: hence we don't need the NUMERIC_SCALE
 			   macro here. */
-			assert(DTYPE_IS_EXACT(desc1.dsc_dtype));
-			assert(DTYPE_IS_EXACT(desc2.dsc_dtype));
+			fb_assert(DTYPE_IS_EXACT(desc1.dsc_dtype));
+			fb_assert(DTYPE_IS_EXACT(desc2.dsc_dtype));
 
 			desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 			node->nod_flags |= NOD_COMP_DIALECT;
@@ -1056,7 +1056,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	default:
-		ASSERT_FAIL;			/* unexpected dsql_nod type */
+		fb_assert(false);			/* unexpected dsql_nod type */
 
 	case nod_dom_value:		/* computed value not used */
 		/* By the time we get here, any nod_dom_value node should have had
@@ -1064,7 +1064,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		   * to the type of the existing domain to which a CHECK constraint
 		   * is being added.
 		 */
-		assert(node->nod_desc.dsc_dtype != dtype_null);
+		fb_assert(node->nod_desc.dsc_dtype != dtype_null);
 		if (desc != &node->nod_desc)
 			*desc = node->nod_desc;
 		return;
@@ -1447,7 +1447,7 @@ dsql_nod* MAKE_field(DSQL_CTX context, dsql_fld* field, dsql_nod* indices)
 		}
 	}
 	else {
-		assert(!indices);
+		fb_assert(!indices);
 		MAKE_desc_from_field(&node->nod_desc, field);
 	}
 
@@ -1613,8 +1613,8 @@ dsql_sym* MAKE_symbol(DBB database,
 {
 	DEV_BLKCHK(database, dsql_type_dbb);
 	DEV_BLKCHK(object, dsql_type_req);
-	assert(name);
-	assert(length > 0);
+	fb_assert(name);
+	fb_assert(length > 0);
 
 	TSQL tdsql = GET_THREAD_DATA;
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.16 2003-10-29 10:53:07 robocop Exp $
+//	$Id: cme.cpp,v 1.17 2003-11-03 23:51:47 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1848,7 +1848,7 @@ static GPRE_NOD cmp_value( GPRE_NOD node, GPRE_REQ request)
 
 static USHORT get_string_len( GPRE_FLD field)
 {
-	assert(field->fld_dtype <= MAX_UCHAR);
+	fb_assert(field->fld_dtype <= MAX_UCHAR);
 
 	dsc tmp_dsc;
 	tmp_dsc.dsc_dtype = (UCHAR) field->fld_dtype;

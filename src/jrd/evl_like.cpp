@@ -80,10 +80,10 @@ USHORT LIKENAME(TDBB tdbb, TextType obj, LIKETYPE * p1, SSHORT l1_bytes,	/* byte
 	USHORT escape;
 	SSHORT l1, l2;
 
-	assert(p1 != NULL);
-	assert(p2 != NULL);
-	assert((l1_bytes % sizeof(LIKETYPE)) == 0);
-	assert((l2_bytes % sizeof(LIKETYPE)) == 0);
+	fb_assert(p1 != NULL);
+	fb_assert(p2 != NULL);
+	fb_assert((l1_bytes % sizeof(LIKETYPE)) == 0);
+	fb_assert((l2_bytes % sizeof(LIKETYPE)) == 0);
 
 	l1 = l1_bytes / sizeof(LIKETYPE);
 	l2 = l2_bytes / sizeof(LIKETYPE);
@@ -158,10 +158,10 @@ USHORT MATCHESNAME(TDBB tdbb,
 	MATCHESTYPE c;
 	SSHORT l1, l2;
 
-	assert(p1 != NULL);
-	assert(p2 != NULL);
-	assert((l1_bytes % sizeof(MATCHESTYPE)) == 0);
-	assert((l2_bytes % sizeof(MATCHESTYPE)) == 0);
+	fb_assert(p1 != NULL);
+	fb_assert(p2 != NULL);
+	fb_assert((l1_bytes % sizeof(MATCHESTYPE)) == 0);
+	fb_assert((l2_bytes % sizeof(MATCHESTYPE)) == 0);
 
 	l1 = l1_bytes / sizeof(MATCHESTYPE);
 	l2 = l2_bytes / sizeof(MATCHESTYPE);
@@ -213,8 +213,8 @@ USHORT SLEUTHNAME(TDBB tdbb_dummy,
  **************************************/
 	SLEUTHTYPE *end_match, *end_search;
 
-	assert((match_len % sizeof(SLEUTHTYPE)) == 0);
-	assert((search_len % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert((match_len % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert((search_len % sizeof(SLEUTHTYPE)) == 0);
 
 	end_match = match + (match_len / sizeof(SLEUTHTYPE));
 	end_search = search + (search_len / sizeof(SLEUTHTYPE));
@@ -257,12 +257,12 @@ USHORT SLEUTH_MERGE_NAME(TDBB tdbb_dummy,
 	SLEUTHTYPE c, *comb, **v, *vector[256], **end_vector, *p, max_op,
 		temp[256], *t, *end_match, *end_control;
 
-	assert(match != NULL);
-	assert(control != NULL);
-	assert(combined != NULL);
+	fb_assert(match != NULL);
+	fb_assert(control != NULL);
+	fb_assert(combined != NULL);
 
-	assert((match_bytes % sizeof(SLEUTHTYPE)) == 0);
-	assert((control_bytes % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert((match_bytes % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert((control_bytes % sizeof(SLEUTHTYPE)) == 0);
 
 	end_match = match + (match_bytes / sizeof(SLEUTHTYPE));
 	end_control = control + (control_bytes / sizeof(SLEUTHTYPE));
@@ -362,12 +362,12 @@ SLEUTHTYPE * match, SLEUTHTYPE * end_match)
  **************************************/
 	SLEUTHTYPE c, d, *class_, *end_class;
 
-	assert(search != NULL);
-	assert(end_search != NULL);
-	assert(match != NULL);
-	assert(end_match != NULL);
-	assert(search <= end_search);
-	assert(match <= end_match);
+	fb_assert(search != NULL);
+	fb_assert(end_search != NULL);
+	fb_assert(match != NULL);
+	fb_assert(end_match != NULL);
+	fb_assert(search <= end_search);
+	fb_assert(match <= end_match);
 
 	while (match < end_match) {
 		c = *match++;
@@ -478,9 +478,9 @@ static BOOLEAN SLEUTH_CLASS_NAME(
 	SLEUTHTYPE c;
 	USHORT result;
 
-	assert(class_ != NULL);
-	assert(end_class != NULL);
-	assert(class_ <= end_class);
+	fb_assert(class_ != NULL);
+	fb_assert(end_class != NULL);
+	fb_assert(class_ <= end_class);
 
 	result = TRUE;
 	character = COND_UPPER(obj, character);

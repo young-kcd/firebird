@@ -1225,7 +1225,7 @@ static bool read_header(DESC	handle,
 
 		default:
 			// TMN: Here we should really have the following assert 
-			// assert(attribute <= MAX_USHORT); 
+			// fb_assert(attribute <= MAX_USHORT); 
 			bad_attribute((USHORT) attribute, 59);	// msg 59 backup 
 		}
 	}
@@ -1325,8 +1325,8 @@ bool MVOL_split_hdr_write(void)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	assert(tdgbl->action->act_action == ACT_backup_split);
-	assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
+	fb_assert(tdgbl->action->act_action == ACT_backup_split);
+	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action->act_file->fil_length < HDR_SPLIT_SIZE) {
 		return false;
@@ -1364,7 +1364,7 @@ bool MVOL_split_hdr_read(void)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 
-	assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
+	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action && tdgbl->action->act_file &&
 		(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE))

@@ -523,3 +523,17 @@ static void usage(void)
 
 	exit(FINI_ERROR);
 }
+
+//
+// Until the fb_assert could be converted to a function/object linked with each module
+// we need this ugly workaround.
+//
+void API_ROUTINE gds__log(const TEXT* text, ...)
+{
+	va_list ptr;
+
+	VA_START(ptr, text);
+	ib_vprintf(text, ptr);
+	ib_printf("\n\n");
+}
+

@@ -24,7 +24,7 @@
 #include "../jrd/rpb_chain.h"
 
 #ifdef GDS_ALLOC_DEBUG
-#define ExecAssert(x) assert(x)
+#define ExecAssert(x) fb_assert(x)
 #else  //GDS_ALLOC_DEBUG
 #define ExecAssert(x) x
 #endif //GDS_ALLOC_DEBUG
@@ -42,8 +42,8 @@ int traRpbList::PushRpb(struct rpb *value) {
 			prev.lr_rpb->rpb_number == value->rpb_number) { 
 				// we got the same record once more - mark for refetch
 				level = prev.level;
-				assert(pos >= level);
-				assert((*this)[pos - level].level == 0);
+				fb_assert(pos >= level);
+				fb_assert((*this)[pos - level].level == 0);
 				prev.lr_rpb->rpb_stream_flags |= RPB_s_refetch;
 		}
 	}

@@ -91,7 +91,7 @@
 USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
 {
 	USHORT len;
-/* assert (inLen <= LANGFAM2_MAX_KEY); *//* almost certainly an error */
+/* fb_assert (inLen <= LANGFAM2_MAX_KEY); *//* almost certainly an error */
 	len = 3 * MAX(inLen, 2);
 	return (MIN(len, LANGFAM2_MAX_KEY));
 }
@@ -127,11 +127,11 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 	BYTE *inbuff;
 	SortOrderTblEntry* coll;
 
-	assert(pOutChar != NULL);
-	assert(pInChar != NULL);
-/* assert (iInLen   <= LANGFAM2_MAX_KEY); */
-	assert(iOutLen <= LANGFAM2_MAX_KEY);
-	assert(iOutLen >= LC_NARROW_key_length(obj, iInLen));
+	fb_assert(pOutChar != NULL);
+	fb_assert(pInChar != NULL);
+/* fb_assert (iInLen   <= LANGFAM2_MAX_KEY); */
+	fb_assert(iOutLen <= LANGFAM2_MAX_KEY);
+	fb_assert(iOutLen >= LC_NARROW_key_length(obj, iInLen));
 
 #ifdef DEBUG
 /* Dump out the input string */
@@ -156,10 +156,10 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 	iInLen = (inbuff - pInChar + 1);
 
 	for (i = 0; i < iInLen; i++, pInChar++) {
-		assert(lprimary < iOutLen);
-		assert(lsecondary < sizeof(secondary));
-		assert(ltertiary < sizeof(tertiary));
-		assert(lspecial < sizeof(special));
+		fb_assert(lprimary < iOutLen);
+		fb_assert(lsecondary < sizeof(secondary));
+		fb_assert(ltertiary < sizeof(tertiary));
+		fb_assert(lspecial < sizeof(special));
 
 		coll =
 			&((SortOrderTblEntry*) obj->
@@ -184,7 +184,7 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHOR
 			ExpandChar* exp = &((ExpandChar*) obj->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != *pInChar)
 				exp++;
-			assert(exp->Ch == *pInChar);
+			fb_assert(exp->Ch == *pInChar);
 			for (j = 0; j < 2; j++) {
 				if (j)
 					coll =
@@ -363,7 +363,7 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT 
 		(*l)--;
 		(*p)++;
 		stat->stat_flags &= ~HAVE_WAITING;
-		assert(stat->stat_waiting);
+		fb_assert(stat->stat_waiting);
 		return stat->stat_waiting;
 	}
 
@@ -390,7 +390,7 @@ SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, UCHAR **p, USHORT *l, COLSTAT 
 			ExpandChar* exp = &((ExpandChar*) obj->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != **p)
 				exp++;
-			assert(exp->Ch == **p);
+			fb_assert(exp->Ch == **p);
 			/* Have coll1 */
 			/* Have waiting */
 
@@ -489,8 +489,8 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2)
 	}
 
 /* One of the strings ended */
-	assert(l1 == 0 || l2 == 0);
-	assert(col1 == NULL || col2 == NULL);
+	fb_assert(l1 == 0 || l2 == 0);
+	fb_assert(col1 == NULL || col2 == NULL);
 
 	if (col1 && !col2)
 		return 500;
@@ -537,9 +537,9 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYT
 	USHORT len;
 	USHORT i;
 
-	assert(obj != NULL);
-	assert(s1 != NULL);
-	assert(s2 != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(s1 != NULL);
+	fb_assert(s2 != NULL);
 
 	len1 = LC_NARROW_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
 	len2 = LC_NARROW_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);

@@ -566,7 +566,7 @@ void SDW_get_shadows(void)
 	lock = dbb->dbb_shadow_lock;
 
 	if (lock->lck_physical != LCK_SR) {
-		/* assert (lock->lck_physical == LCK_none); */
+		/* fb_assert (lock->lck_physical == LCK_none); */
 
 		window.win_page = HEADER_PAGE;
 		window.win_flags = 0;
@@ -675,7 +675,7 @@ BOOLEAN SDW_lck_update(SLONG sdw_update_flags)
 		return FALSE;
 
 	if (lock->lck_physical != LCK_SR) {
-		/* assert (lock->lck_physical == LCK_none); */
+		/* fb_assert (lock->lck_physical == LCK_none); */
 		return FALSE;
 	}
 

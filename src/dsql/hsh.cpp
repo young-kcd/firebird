@@ -227,7 +227,7 @@ void HSHD_insert(DSQL_SYM symbol)
 	const SSHORT h = hash(symbol->sym_string, symbol->sym_length);
 	const void* database = symbol->sym_dbb;
 
-	assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
+	fb_assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
 
 	for (DSQL_SYM old = hash_table[h]; old; old = old->sym_collision)
 		if ((!database || (database == old->sym_dbb)) &&

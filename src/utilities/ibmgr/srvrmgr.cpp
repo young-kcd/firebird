@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.6 2003-10-29 10:53:46 robocop Exp $
+ * $Id: srvrmgr.cpp,v 1.7 2003-11-03 23:56:49 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -105,7 +105,7 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
  *      Executes command line
  *
  **************************************/
-	assert(data->attached || data->reattach);
+	fb_assert(data->attached || data->reattach);
 
 /* If reattach is true and we currently attached, then we
    will detach from service. This is potentially dangerous
@@ -116,7 +116,7 @@ USHORT SRVRMGR_exec_line(IBMGR_DATA * data)
 */
 	if (data->operation != OP_START)
 		if (data->reattach) {
-			assert(!data->shutdown);
+			fb_assert(!data->shutdown);
 			if (data->attached)
 
 				/* Attached flag should be NULL after detach_service
@@ -321,7 +321,7 @@ static bool attach_service( IBMGR_DATA * data)
 
 /* Obviously we should not be already attached to service
 */
-	assert(!data->attached);
+	fb_assert(!data->attached);
 
 	strcpy(svc_name, data->host);
 
@@ -355,7 +355,7 @@ static bool attach_service( IBMGR_DATA * data)
 #ifdef DEBUG
 		ib_fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
 #endif
-		assert(status[1] != isc_svcnotdef);
+		fb_assert(status[1] != isc_svcnotdef);
 		isc_print_status(status);
 		return false;
 	}
@@ -381,7 +381,7 @@ static bool detach_service( IBMGR_DATA * data)
 
 /* We should be attached if we want to detach
 */
-	assert(data->attached);
+	fb_assert(data->attached);
 
 	isc_service_detach(status, &(data->attached));
 	data->attached = NULL;
@@ -419,7 +419,7 @@ static bool start_shutdown( IBMGR_DATA * data)
 
 /* We should be attached to ask for any service
 */
-	assert(data->attached);
+	fb_assert(data->attached);
 
 	const char sendbuf[] = { isc_info_svc_svr_offline };
 	isc_service_query(status, &data->attached, 0, 0, NULL,
@@ -466,7 +466,7 @@ static bool start_server( IBMGR_DATA * data)
 		data->reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 	}
 
-	assert(data->reattach);
+	fb_assert(data->reattach);
 
 /* Let's see if server is already running, try to attach to it
 */
@@ -614,7 +614,7 @@ static bool server_is_up( IBMGR_DATA * data)
 
 /* Obviously we should not be already attached to service
 */
-	assert(!data->attached);
+	fb_assert(!data->attached);
 
 	up = true;
 
@@ -630,7 +630,7 @@ static bool server_is_up( IBMGR_DATA * data)
 #ifdef DEBUG
 		ib_fprintf(OUTFILE, "server_is_up ERROR: %lu\n", status[1]);
 #endif
-		assert(status[1] != isc_svcnotdef);
+		fb_assert(status[1] != isc_svcnotdef);
 
 		/* Server can be running but attach could fail for
 		   other reasons. For example, attach could return
@@ -665,7 +665,7 @@ static bool print_pool( IBMGR_DATA * data)
 
 /* We should be attached to ask for any service
 */
-	assert(data->attached);
+	fb_assert(data->attached);
 
 	sptr = sendbuf;
 	path_length = strlen(data->print_file);

@@ -483,7 +483,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 					dcc = dcc->dcc_next;
 					tdbb->tdbb_default->plb_dccs = dcc->dcc_next;
 					dcc->dcc_next = NULL;
-					assert(dcc->dcc_pool == tdbb->tdbb_default);
+					fb_assert(dcc->dcc_pool == tdbb->tdbb_default);
 				}
 				else
 				{
@@ -521,7 +521,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
 					dcc = dcc->dcc_next;
 					tdbb->tdbb_default->plb_dccs = dcc->dcc_next;
 					dcc->dcc_next = NULL;
-					assert(dcc->dcc_pool == tdbb->tdbb_default);
+					fb_assert(dcc->dcc_pool == tdbb->tdbb_default);
 				}
 				else
 				{

@@ -5879,7 +5879,7 @@ int LexerState::yylex (
  *   ptr points to the next character.
  */
 
-	assert(ptr <= end);
+	fb_assert(ptr <= end);
 
 	if ((tok_class & CHR_DIGIT) ||
 		((c == '.') && (ptr < end) && (classes [*ptr] & CHR_DIGIT)))
@@ -5962,7 +5962,7 @@ int LexerState::yylex (
 
 		if (!have_error)
 		{
-			assert(have_digit);
+			fb_assert(have_digit);
 
 			if (have_exp_digit)
 				{

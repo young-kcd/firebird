@@ -518,8 +518,8 @@ int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, UCHAR * entry)
 	free_space = dbb->dbb_page_size - header->hdr_end;
 
 	if (free_space > (2 + len)) {
-		assert(type <= MAX_UCHAR);
-		assert(len <= MAX_UCHAR);
+		fb_assert(type <= MAX_UCHAR);
+		fb_assert(len <= MAX_UCHAR);
 		*p++ = static_cast < UCHAR > (type);
 		*p++ = static_cast < UCHAR > (len);
 
@@ -1955,8 +1955,8 @@ SSHORT len, UCHAR * entry, USHORT must_write)
 			else
 				CCH_MARK(tdbb, window);
 
-			assert(type <= MAX_UCHAR);
-			assert(len <= MAX_UCHAR);
+			fb_assert(type <= MAX_UCHAR);
+			fb_assert(len <= MAX_UCHAR);
 			*p++ = static_cast < UCHAR > (type);
 			*p++ = static_cast < UCHAR > (len);
 
@@ -2011,8 +2011,8 @@ SSHORT len, UCHAR * entry, USHORT must_write)
 		p = new_logp->log_data;
 	}
 
-	assert(type <= MAX_UCHAR);
-	assert(len <= MAX_UCHAR);
+	fb_assert(type <= MAX_UCHAR);
+	fb_assert(len <= MAX_UCHAR);
 	*p++ = static_cast < UCHAR > (type);
 	*p++ = static_cast < UCHAR > (len);
 

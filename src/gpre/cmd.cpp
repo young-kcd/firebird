@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.22 2003-10-29 10:53:07 robocop Exp $
+//	$Id: cmd.cpp,v 1.23 2003-11-03 23:51:47 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -604,7 +604,7 @@ static void create_trg_firing_cond( GPRE_REQ request, const cnstrt* constraint)
 	const lls* prim_key_fld = constraint->cnstrt_referred_fields;
 	const lls* field = prim_key_fld;
 
-	assert(field != NULL);
+	fb_assert(field != NULL);
 
 	USHORT prim_key_num_flds = 0;
 	while (field) {
@@ -612,7 +612,7 @@ static void create_trg_firing_cond( GPRE_REQ request, const cnstrt* constraint)
 		field = field->lls_next;
 	}
 
-	assert(prim_key_num_flds > 0);
+	fb_assert(prim_key_num_flds > 0);
 
 //  generate blr 
 		STUFF(blr_if);
@@ -654,7 +654,7 @@ static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 	const lls*  prim_key_fld = constraint->cnstrt_referred_fields;
 	const lls* field = prim_key_fld;
 
-	assert(field != NULL);
+	fb_assert(field != NULL);
 
 	USHORT prim_key_num_flds = 0;
 	while (field) {
@@ -662,13 +662,13 @@ static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 		field = field->lls_next;
 	}
 
-	assert(prim_key_num_flds > 0);
+	fb_assert(prim_key_num_flds > 0);
 
 //  count of foreign key columns
 	const lls* for_key_fld = constraint->cnstrt_fields;
 	field = for_key_fld;
 
-	assert(field != NULL);
+	fb_assert(field != NULL);
 
 	USHORT for_key_num_flds = 0;
 	while (field) {
@@ -676,8 +676,8 @@ static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 		field = field->lls_next;
 	}
 
-	assert(for_key_num_flds > 0);
-		assert(prim_key_num_flds == for_key_num_flds);
+	fb_assert(for_key_num_flds > 0);
+		fb_assert(prim_key_num_flds == for_key_num_flds);
 
 	STUFF(blr_boolean);
 	if (prim_key_num_flds > 1)
@@ -726,12 +726,12 @@ static void create_default_blr(
 {
 	int i;
 
-	assert(*default_buff == blr_version4 || *default_buff == blr_version5);
+	fb_assert(*default_buff == blr_version4 || *default_buff == blr_version5);
 
 	for (i = 1; ((i < buff_size) && (default_buff[i] != blr_eoc)); i++)
 		STUFF(default_buff[i]);
 
-	assert(default_buff[i] == blr_eoc);
+	fb_assert(default_buff[i] == blr_eoc);
 
 }
 
@@ -906,7 +906,7 @@ static void create_set_default_trg(GPRE_REQ request,
 	TEXT s[512];
 	TEXT default_val[BLOB_BUFFER_SIZE];
 
-	assert(request->req_actions->act_type == ACT_create_table ||
+	fb_assert(request->req_actions->act_type == ACT_create_table ||
 		   request->req_actions->act_type == ACT_alter_table);
 
 	lls* for_key_fld = constraint->cnstrt_fields;
@@ -1072,7 +1072,7 @@ static void create_set_default_trg(GPRE_REQ request,
 
 		if (search_for_default && search_for_domain != NULL) {
 			/* search for domain level default */
-			assert(search_for_column == false);
+			fb_assert(search_for_column == false);
 			/* search for domain in memory */
 			for (req = requests; req; req = req->req_next) {
 				if ((req->req_type == REQ_ddl) &&
@@ -1115,7 +1115,7 @@ static void create_set_default_trg(GPRE_REQ request,
 
 		if (search_for_default && search_for_column) {
 			/* nothing is found in memory, try to check db system tables */
-			assert(search_for_domain == NULL);
+			fb_assert(search_for_domain == NULL);
 			if (MET_get_column_default(relation, for_key_fld_name->str_string,
 									   default_val,
 									   sizeof(default_val)) != FALSE)
@@ -1392,7 +1392,7 @@ static void create_constraint( GPRE_REQ request, const act* action,
 					break;
 				default:
 					/* just in case */
-					assert(0);
+					fb_assert(0);
 					STUFF(gds_dyn_foreign_key_none);
 					break;
 				}
@@ -1417,7 +1417,7 @@ static void create_constraint( GPRE_REQ request, const act* action,
 					break;
 				default:
 					/* just in case */
-					assert(0);
+					fb_assert(0);
 					STUFF(gds_dyn_foreign_key_none);
 					break;
 				}
@@ -2562,7 +2562,7 @@ static void put_dtype( GPRE_REQ request, const gpre_fld* field)
 		/* Fall into */
 
 	case dtype_varying:
-		assert(length);
+		fb_assert(length);
 		if (field->fld_dtype == dtype_varying)
 			dtype = blr_varying;
 

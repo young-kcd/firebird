@@ -38,8 +38,8 @@ public:
 	TextType(const TextType& obj) : tt(obj.tt) {}
 
 	USHORT key_length(USHORT a) {
-		assert(tt);
-		assert(tt->texttype_fn_key_length);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_key_length);
 		return (*(reinterpret_cast<USHORT (*)(TEXTTYPE,USHORT)>
 					(tt->texttype_fn_key_length)))(tt,a);
 	}
@@ -50,8 +50,8 @@ public:
 						 UCHAR *d,
 						 USHORT e)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_string_to_key);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_string_to_key);
 		return (*(reinterpret_cast
 			<USHORT(*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
 				(tt->texttype_fn_string_to_key)))
@@ -63,8 +63,8 @@ public:
 				   USHORT c,
 				   UCHAR *d)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_compare);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_compare);
 		return (*(reinterpret_cast
 			<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
 				(tt->texttype_fn_compare)))(tt,a,b,c,d);
@@ -72,8 +72,8 @@ public:
 	
 	USHORT to_upper(USHORT a)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_to_upper);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_to_upper);
 		return (*(reinterpret_cast
 			<short (*)(TEXTTYPE,USHORT)>
 				(tt->texttype_fn_to_upper)))(tt,a);
@@ -81,8 +81,8 @@ public:
 	
 	USHORT to_lower(USHORT a)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_to_lower);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_to_lower);
 		return (*(reinterpret_cast
 			<USHORT (*)(TEXTTYPE,USHORT)>
 				(tt->texttype_fn_to_lower)))(tt,a);
@@ -93,8 +93,8 @@ public:
 						USHORT c,
 						UCHAR *d)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_str_to_upper);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_str_to_upper);
 		return (*(reinterpret_cast
 					<short (*)(TEXTTYPE,USHORT,UCHAR*,USHORT,UCHAR*)>
 						(tt->texttype_fn_str_to_upper)))
@@ -108,8 +108,8 @@ public:
 				 SSHORT *e,
 				 USHORT *f)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_to_wc);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_to_wc);
 		return (*(reinterpret_cast
 					<USHORT (*)(TEXTTYPE,UCS2_CHAR*,USHORT,UCHAR*,USHORT,short*,USHORT*)>
 						(tt->texttype_fn_to_wc)))
@@ -118,8 +118,8 @@ public:
 									
 	USHORT mbtowc(UCS2_CHAR *a, UCHAR *b, USHORT c)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_mbtowc);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_mbtowc);
 		return (*(reinterpret_cast<
 					USHORT (*)(TEXTTYPE, UCS2_CHAR*, UCHAR*, USHORT)>
 						(tt->texttype_fn_mbtowc)))(tt,a,b,c);
@@ -130,8 +130,8 @@ public:
 					UCHAR *d,
 					USHORT e)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_contains);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_contains);
 		return (*(reinterpret_cast<
 					USHORT (*)(class tdbb *,TextType,UCHAR*,USHORT,UCHAR*,USHORT)>
 						(tt->texttype_fn_contains)))
@@ -144,8 +144,8 @@ public:
 							  SSHORT d,
 							  SSHORT e)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_like);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_like);
 		return (*(reinterpret_cast<
 					USHORT(*)(class tdbb *,TextType,UCHAR*,short,UCHAR*,short,short)>
 						(tt->texttype_fn_like)))(tdbb,tt,a,b,c,d,e);
@@ -153,8 +153,8 @@ public:
 	
 	USHORT matches(class tdbb *tdbb, UCHAR *a, SSHORT b, UCHAR *c, SSHORT d)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_matches);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_matches);
 		return (*(reinterpret_cast<
 					USHORT (*)(class tdbb *,TextType,UCHAR*,short,UCHAR*,short)>
 						(tt->texttype_fn_matches)))
@@ -167,8 +167,8 @@ public:
 								UCHAR *d,
 								USHORT e)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_sleuth_check);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_sleuth_check);
 		return (*(reinterpret_cast<
 					USHORT(*)(class tdbb *,TextType,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
 						(tt->texttype_fn_sleuth_check)))
@@ -182,8 +182,8 @@ public:
 								UCHAR *e,
 								USHORT f)
 	{
-		assert(tt);
-		assert(tt->texttype_fn_sleuth_merge);
+		fb_assert(tt);
+		fb_assert(tt->texttype_fn_sleuth_merge);
 		return (*(reinterpret_cast<
 					USHORT(*)(class tdbb *,TextType,UCHAR*,USHORT,UCHAR*,USHORT,UCHAR*,USHORT)>
 						(tt->texttype_fn_sleuth_merge)))
@@ -192,27 +192,27 @@ public:
 
 
 	USHORT getType() const {
-		assert(tt);
+		fb_assert(tt);
 		return tt->texttype_type; 
 	}
 
 	const char *getName() const { 
-		assert(tt);
+		fb_assert(tt);
 		return tt->texttype_name; 
 	}
 
 	CHARSET_ID getCharSet() const { 
-		assert(tt);
+		fb_assert(tt);
 		return tt->texttype_character_set; 
 	}
 
 	SSHORT getCountry() const { 
-		assert(tt);
+		fb_assert(tt);
 		return tt->texttype_country; 
 	}
 
 	UCHAR getBytesPerChar() const { 
-		assert(tt);
+		fb_assert(tt);
 		return tt->texttype_bytes_per_char; 
 	}
 
@@ -243,18 +243,19 @@ public:
 				   SSHORT *e,
 				   USHORT *f)
 	{
-		assert(cnvt != NULL);
+		fb_assert(cnvt != NULL);
 		return (*(reinterpret_cast<USHORT (*)(struct csconvert*, UCHAR*,USHORT,
 					UCHAR*,USHORT,short*,USHORT*)>(cnvt->csconvert_convert)))
 						(cnvt,a,b,c,d,e,f);
 	}
 
-	SSHORT getId() const { assert(cnvt); return cnvt->csconvert_id; }
-	const char *getName() const { assert(cnvt); return cnvt->csconvert_name; }
-	CHARSET_ID getFromCS() const { assert(cnvt); return cnvt->csconvert_from; }
-	CHARSET_ID getToCS() const { assert(cnvt); return cnvt->csconvert_to; }
+	SSHORT getId() const { fb_assert(cnvt); return cnvt->csconvert_id; }
+	const char *getName() const { fb_assert(cnvt); return cnvt->csconvert_name; }
+	CHARSET_ID getFromCS() const { fb_assert(cnvt); return cnvt->csconvert_from; }
+	CHARSET_ID getToCS() const { fb_assert(cnvt); return cnvt->csconvert_to; }
 
 	struct csconvert *getStruct() const { return cnvt; }
+
 private:
 	struct csconvert *cnvt;
 };
@@ -273,18 +274,19 @@ public:
 	CharSet(struct charset *_cs) : cs(_cs) {}
 	CharSet(const CharSet &obj) : cs(obj.cs) {};
 
-	CHARSET_ID getId() const { assert(cs); return cs->charset_id; }
-	const char *getName() const { assert(cs); return cs->charset_name; }
-	UCHAR minBytesPerChar() const { assert(cs); return cs->charset_min_bytes_per_char; }
-	UCHAR maxBytesPerChar() const { assert(cs); return cs->charset_max_bytes_per_char; }
-	UCHAR getSpaceLength() const { assert(cs); return cs->charset_space_length; }
-	const UCHAR *getSpace() const { assert(cs); return cs->charset_space_character; }
+	CHARSET_ID getId() const { fb_assert(cs); return cs->charset_id; }
+	const char *getName() const { fb_assert(cs); return cs->charset_name; }
+	UCHAR minBytesPerChar() const { fb_assert(cs); return cs->charset_min_bytes_per_char; }
+	UCHAR maxBytesPerChar() const { fb_assert(cs); return cs->charset_max_bytes_per_char; }
+	UCHAR getSpaceLength() const { fb_assert(cs); return cs->charset_space_length; }
+	const UCHAR *getSpace() const { fb_assert(cs); return cs->charset_space_character; }
 
-	CsConvert getConvToUnicode() { assert(cs); return &cs->charset_to_unicode; }
+	CsConvert getConvToUnicode() { fb_assert(cs); return &cs->charset_to_unicode; }
 
-	CsConvert getConvFromUnicode() { assert(cs); return &cs->charset_from_unicode; }
+	CsConvert getConvFromUnicode() { fb_assert(cs); return &cs->charset_from_unicode; }
 
 	struct charset *getStruct() const { return cs; }
+
 private:
 	struct charset *cs;
 };

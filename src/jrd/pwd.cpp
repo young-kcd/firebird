@@ -274,7 +274,7 @@ bool SecurityDatabase::prepare()
 		isc_attach_database(status, 0, user_info_name, &lookup_db, 0, 0);
 	}
 
-	assert(ihandle->ihndl_object == &lookup_db);
+	fb_assert(ihandle->ihndl_object == &lookup_db);
 	ihandle->ihndl_object = NULL;
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),

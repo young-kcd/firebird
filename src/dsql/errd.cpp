@@ -276,7 +276,7 @@ void ERRD_post(ISC_STATUS status, ...)
 
 /* calculate length of the status */
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
-	assert(warning_indx == 0);
+	fb_assert(warning_indx == 0);
 
 	if (status_vector[0] != gds_arg_gds ||
 		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&

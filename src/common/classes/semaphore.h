@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.4 2003-11-01 10:26:35 robocop Exp $
+ *  $Id: semaphore.h,v 1.5 2003-11-03 23:50:05 brodsom Exp $
  *
  */
 
@@ -89,22 +89,22 @@ private:
 public:
 	Semaphore() : init(false) {
 		if (sem_init(&sem, 0, 0) == -1) {
-			gds__log("Error on semaphore.h constructor error");
+			gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise();
 		}
 		init = true;
 	}
 	~Semaphore() {
-		assert(init == true);
+		fb_assert(init == true);
 		if (sem_destroy(&sem) == -1) {
-			gds__log("Error on semaphore.h destructor error");
+			gds__log("Error on semaphore.h: destructor");
 			system_call_failed::raise();
 		}
 		init = false;
 
 	}
 	bool tryEnter(int seconds = 0) {
-		assert(init == true);
+		fb_assert(init == true);
 		if (seconds == 0) {
 			if (sem_trywait(&sem) != -1) 
 				return true;
@@ -123,22 +123,22 @@ public:
 				return false;
 		}
 		char message[128];
-		sprintf(message, "Error on semaphore.h tryEnter errno=%d\n", errno);
+		sprintf(message, "Error on semaphore.h: tryEnter errno=%d\n", errno);
 		gds__log(message);
 		system_call_failed::raise();
 	}
 	void enter() {
-		assert(init == true);
+		fb_assert(init == true);
 		if (sem_wait(&sem) == -1) {
-			gds__log("Error on semaphore.h enter error");
+			gds__log("Error on semaphore.h: enter");
 			system_call_failed::raise();
 		}
 	}
 	void release(SLONG count = 1) {
-		assert(init == true);
+		fb_assert(init == true);
 		for (int i = 0; i < count; i++)
 			if (sem_post(&sem) == -1) {
-				gds__log("Error on semaphore.h release error");
+				gds__log("Error on semaphore.h: release");
 				system_call_failed::raise();
 			}
 	}

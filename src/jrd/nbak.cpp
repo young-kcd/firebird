@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.12 2003-10-29 00:30:57 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.13 2003-11-03 23:53:50 brodsom Exp $
  *
  */
 
@@ -114,7 +114,7 @@ void BackupManager::release_sw_database_lock() throw() {
 	database_lock->endRead();
 #else
 	NBAK_TRACE(("release_sw_database_lock %d", database_use_count));
-	assert(database_use_count > 0);
+	fb_assert(database_use_count > 0);
 	TDBB tdbb = GET_THREAD_DATA;
 	database_use_count--;
 	if (ast_flags & NBAK_database_blocking) {
@@ -130,7 +130,7 @@ void BackupManager::lock_state_write(bool thread_exit) {
 	state_lock->beginWrite();
 	if (thread_exit) THREAD_ENTER;
 #else
-	assert(!(flags & NBAK_state_in_use));
+	fb_assert(!(flags & NBAK_state_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
 	flags |= NBAK_state_in_use;
 	bool locked = false;
@@ -162,7 +162,7 @@ bool BackupManager::try_lock_state_write() {
 	if (!state_lock->tryBeginWrite())
 		return false;
 #else
-	assert(!(flags & NBAK_state_in_use));
+	fb_assert(!(flags & NBAK_state_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
 	flags |= NBAK_state_in_use;
 	bool result;
@@ -193,7 +193,7 @@ void BackupManager::unlock_state_write() throw() {
 #ifdef SUPERSERVER
 	state_lock->endWrite();
 #else
-	assert(flags & NBAK_state_in_use);
+	fb_assert(flags & NBAK_state_in_use);
 	TDBB tdbb = GET_THREAD_DATA;
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_state_blocking;
@@ -213,7 +213,7 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw() {
 	alloc_lock->beginWrite();
 	if (thread_exit) THREAD_ENTER;
 #else
-	assert(!(flags & NBAK_alloc_in_use));
+	fb_assert(!(flags & NBAK_alloc_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
 	flags |= NBAK_alloc_in_use;
 	// Release shared lock to prevent possible deadlocks
@@ -243,7 +243,7 @@ void BackupManager::unlock_alloc_write() throw() {
 #ifdef SUPERSERVER
 	alloc_lock->endWrite();
 #else
-	assert(flags & NBAK_alloc_in_use);
+	fb_assert(flags & NBAK_alloc_in_use);
 	TDBB tdbb = GET_THREAD_DATA;
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_alloc_blocking;
@@ -266,7 +266,7 @@ bool BackupManager::lock_state(bool thread_exit) throw() {
 	state_lock->beginRead();
 	if (thread_exit) THREAD_ENTER;
 #else
-	assert(!(flags & NBAK_state_in_use));
+	fb_assert(!(flags & NBAK_state_in_use));
 	flags |= NBAK_state_in_use;
 	if (state_lock->lck_physical < LCK_SR) {
 		if (!LCK_lock(tdbb, state_lock, LCK_SR, LCK_WAIT)) {
@@ -290,7 +290,7 @@ void BackupManager::unlock_state() throw() {
 #ifdef SUPERSERVER
 	state_lock->endRead();
 #else
-	assert(flags & NBAK_state_in_use);
+	fb_assert(flags & NBAK_state_in_use);
 	flags &= ~NBAK_state_in_use;
 	if (ast_flags & NBAK_state_blocking) {
 		LCK_release(tdbb, state_lock);
@@ -306,7 +306,7 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 	alloc_lock->beginRead();
 	if (thread_exit) THREAD_ENTER;
 #else
-	assert(!(flags & NBAK_alloc_in_use));
+	fb_assert(!(flags & NBAK_alloc_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
 	flags |= NBAK_alloc_in_use;
 	if (alloc_lock->lck_physical < LCK_SR) {
@@ -328,7 +328,7 @@ void BackupManager::unlock_alloc() throw() {
 #ifdef SUPERSERVER
 	alloc_lock->endRead();
 #else
-	assert(flags & NBAK_alloc_in_use);
+	fb_assert(flags & NBAK_alloc_in_use);
 	TDBB tdbb = GET_THREAD_DATA;
 	flags &= ~NBAK_alloc_in_use;
 	if (ast_flags & NBAK_alloc_blocking) {
@@ -851,7 +851,7 @@ ULONG BackupManager::get_page_index(ULONG db_page) const throw() {
 
 // Mark next difference page as used by some database page
 ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
-	assert(last_allocated_page % (database->dbb_page_size/sizeof(ULONG)) == alloc_buffer[0]);	
+	fb_assert(last_allocated_page % (database->dbb_page_size/sizeof(ULONG)) == alloc_buffer[0]);	
 
 	ISC_STATUS* status = GET_THREAD_DATA->tdbb_status_vector;
 	// Grow file first. This is done in such order to keep difference

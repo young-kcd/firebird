@@ -41,13 +41,13 @@ USHORT CVGB_gb2312_to_unicode(CSCONVERT obj,
 	USHORT this_len;
 	UCHAR c1, c2;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_gb2312_to_unicode);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_gb2312_to_unicode);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -120,13 +120,13 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 	int tmp1, tmp2;
 	USHORT src_start = unicode_len;
 
-	assert(unicode_str != NULL || gb_str == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_unicode_to_gb2312);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(unicode_str != NULL || gb_str == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CVGB_unicode_to_gb2312);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -161,8 +161,8 @@ USHORT CVGB_unicode_to_gb2312(CSCONVERT obj,
 			break;
 		}
 		else {
-			assert(GB1(tmp1));
-			assert(GB2(tmp2));
+			fb_assert(GB1(tmp1));
+			fb_assert(GB2(tmp2));
 			*gb_str++ = tmp1;
 			*gb_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
@@ -230,10 +230,10 @@ USHORT CVGB_gb2312_byte2short(CSCONVERT obj,
 	UCHAR *dst_start;
 	USHORT src_start = src_len;
 
-	assert(src != NULL || dst == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
+	fb_assert(src != NULL || dst == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 
 	*err_code = 0;
 /* Length estimate needed? */
@@ -276,8 +276,8 @@ SSHORT CVGB_gb2312_mbtowc(CSCONVERT obj,
  *	Grab a single character from a mb stream.
  *
  **************************************/
-	assert(src != NULL);
-	assert(obj != NULL);
+	fb_assert(src != NULL);
+	fb_assert(obj != NULL);
 
 	if (!src_len)
 		return -1;

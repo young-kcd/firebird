@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.10 2003-10-29 10:53:36 robocop Exp $
+$Id: parser.cpp,v 1.11 2003-11-03 23:56:25 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -213,7 +213,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				ALLR_release(format);
 				while (next = message) {
 					message = message->msg_next;

@@ -385,8 +385,8 @@ RSB OPT_compile(TDBB tdbb,
 		if (node->nod_type != nod_rse)
 		{
 			stream = (USHORT)(ULONG) node->nod_arg[STREAM_INDEX(node)];
-			assert(stream <= MAX_UCHAR);
-			assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR);
+			fb_assert(stream <= MAX_UCHAR);
+			fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR);
 			beds[++beds[0]] = (UCHAR) stream;
 		}
 
@@ -402,21 +402,21 @@ RSB OPT_compile(TDBB tdbb,
 			rsb =
 				gen_union(tdbb, opt_, node, key_streams + i + 1,
 						  (USHORT) (key_streams[0] - i));
-			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
+			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(ULONG) node->nod_arg[e_uni_stream];
 		}
 		else if (node->nod_type == nod_aggregate) {
-			assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-			assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+			fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+			fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 			rsb = gen_aggregate(tdbb, opt_, node);
-			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
+			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(ULONG) node->nod_arg[e_agg_stream];
 		}
 		else if (node->nod_type == nod_procedure) {
 			rsb = gen_procedure(tdbb, opt_, node);
-			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
+			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR)(ULONG) node->nod_arg[e_prc_stream];
 		}
@@ -481,14 +481,14 @@ RSB OPT_compile(TDBB tdbb,
 
 		// TMN: Is the intention really to allow streams[0] to overflow?
 		// I must assume that is indeed not the intention (not to mention
-		// it would make code later on fail), so I added the following assert.
-		assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+		// it would make code later on fail), so I added the following fb_assert.
+		fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 
 		++streams[0];
 		*p++ = (UCHAR) stream;
 
 		if (rse->rse_jointype == blr_left) {
-			assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
+			fb_assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
 			outer_streams[++outer_streams[0]] = stream;
 		}
 
@@ -631,7 +631,7 @@ RSB OPT_compile(TDBB tdbb,
 		}
 
 		// attempt to form joins in decreasing order of desirability 
-		assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
+		fb_assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
 		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
@@ -1853,7 +1853,7 @@ static void compute_dbkey_streams(CSB csb, JRD_NOD node, UCHAR * streams)
 	DEV_BLKCHK(node, type_nod);
 
 	if (node->nod_type == nod_relation) {
-		assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+		fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 		streams[++streams[0]] = (UCHAR)(ULONG) node->nod_arg[e_rel_stream];
 	}
 	else if (node->nod_type == nod_union) {
@@ -1893,7 +1893,7 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 		node = *ptr;
 		if (node->nod_type != nod_rse) {
-			assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+			fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 			streams[++streams[0]] = (UCHAR)(ULONG) node->nod_arg[STREAM_INDEX(node)];
 		}
 		else {
@@ -3443,8 +3443,8 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 
 	RSB rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
-	assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-	assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+	fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+	fb_assert((int)(SLONG)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 	rsb->rsb_stream = (UCHAR)(ULONG) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
 	rsb->rsb_next = OPT_compile(tdbb, csb, rse, NULL);
@@ -3499,15 +3499,15 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 			SKD* sort_key = asb->asb_key_desc = (SKD*) asb->asb_key_data;
 			sort_key->skd_offset = 0;
 // UCHAR desc->dsc_dtype is always >=0
-//			assert(desc->dsc_dtype >= 0)
-			assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
+//			fb_assert(desc->dsc_dtype >= 0)
+			fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 			sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
 			/* as it is legal to have skd_dtype = 0
 			   I have removed these asserts, to avoid
 			   server restarts in debug mode.
 			   FSG 18.Dec.2000
 			 */
-			/*assert (sort_key->skd_dtype != 0); */
+			/*fb_assert (sort_key->skd_dtype != 0); */
 			sort_key->skd_length = desc->dsc_length;
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(struct iasb));
@@ -3625,12 +3625,12 @@ static void gen_join(TDBB     tdbb,
 		// need it to optimize retrieval.
 
 		csb_repeat* csb_tail = &csb->csb_rpt[streams[1]];
-		assert(csb_tail);
+		fb_assert(csb_tail);
 		if (csb_tail->csb_flags & csb_compute) {
 			JRD_REL relation = csb_tail->csb_relation;
-			assert(relation);
+			fb_assert(relation);
 			FMT format = CMP_format(tdbb, csb, streams[1]);
-			assert(format);
+			fb_assert(format);
 			csb_tail->csb_cardinality =
 				(float) DPM_data_pages(tdbb, relation) *
 				        dbb->dbb_page_size / format->fmt_length;
@@ -3639,7 +3639,7 @@ static void gen_join(TDBB     tdbb,
 		RIV river = FB_NEW_RPT(*tdbb->tdbb_default, 1) riv();
 		river->riv_count = 1;
 
-		assert(csb->csb_rpt[streams[1]].csb_relation);
+		fb_assert(csb->csb_rpt[streams[1]].csb_relation);
 
 		river->riv_rsb =
 			gen_retrieval(tdbb, opt, streams[1], sort_clause, project_clause,
@@ -3653,9 +3653,9 @@ static void gen_join(TDBB     tdbb,
 	const UCHAR* end_stream = streams + 1 + streams[0];
 	for (UCHAR* stream = streams + 1; stream < end_stream; stream++) {
 		csb_repeat* csb_tail = &csb->csb_rpt[*stream];
-		assert(csb_tail);
+		fb_assert(csb_tail);
 		JRD_REL relation = csb_tail->csb_relation;
-		assert(relation);
+		fb_assert(relation);
 		FMT format = CMP_format(tdbb, csb, *stream);
 		// if this is an external file, set an arbitrary cardinality; 
 		// if a plan was specified, don't bother computing cardinality;
@@ -3670,7 +3670,7 @@ static void gen_join(TDBB     tdbb,
 			csb_tail->csb_cardinality = (float) 0;
 		}
 		else {
-			assert(format);
+			fb_assert(format);
 			csb_tail->csb_cardinality =
 				(float) DPM_data_pages(tdbb, relation) *
 				        dbb->dbb_page_size / format->fmt_length;
@@ -4155,7 +4155,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 	csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	JRD_REL     relation = csb_tail->csb_relation;
 
-	assert(relation);
+	fb_assert(relation);
 
 	STR alias = make_alias(tdbb, csb, csb_tail);
 	csb_tail->csb_flags |= csb_active;
@@ -4745,10 +4745,10 @@ static RSB gen_sort(TDBB tdbb,
 		if (*(node_ptr + sort->nod_count))
 			sort_key->skd_flags |= SKD_descending;
 // UCHAR desc->dsc_dtype is always >=0
-//			assert(desc->dsc_dtype >= 0);
-		assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
+//			fb_assert(desc->dsc_dtype >= 0);
+		fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 		sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
-		/*assert (sort_key->skd_dtype != 0); */
+		/*fb_assert (sort_key->skd_dtype != 0); */
 		if (sort_key->skd_dtype == SKD_varying ||
 			sort_key->skd_dtype == SKD_cstring) {
 			if (desc->dsc_ttype == ttype_binary)
@@ -4834,7 +4834,7 @@ static RSB gen_sort(TDBB tdbb,
 
 	end_key = sort_key;
 	for (sort_key = map->smb_key_desc; sort_key < end_key; sort_key++) {
-		/*   assert (sort_key->skd_dtype != 0); */
+		/*   fb_assert (sort_key->skd_dtype != 0); */
 		if (sort_key->skd_dtype == SKD_varying ||
 			sort_key->skd_dtype == SKD_cstring) {
 			sort_key->skd_vary_offset = (USHORT) map_length;
@@ -5452,7 +5452,7 @@ static JRD_NOD make_inference_node(CSB csb, JRD_NOD boolean, JRD_NOD arg1, JRD_N
 	DEV_BLKCHK(boolean, type_nod);
 	DEV_BLKCHK(arg1, type_nod);
 	DEV_BLKCHK(arg2, type_nod);
-	assert(boolean->nod_count >= 2);	/* must be a conjunction boolean */
+	fb_assert(boolean->nod_count >= 2);	/* must be a conjunction boolean */
 /* Clone the input predicate */
 	node = PAR_make_node(tdbb, boolean->nod_count);
 	node->nod_type = boolean->nod_type;

@@ -1523,7 +1523,7 @@ static void put_acl( STR dyn, UCHAR attribute, SCL class_)
 		return;
 
 	length = GENERATE_acl(class_, (UCHAR*) buffer);
-	assert(length <= 4096);		/* to make sure buffer is big enough */
+	fb_assert(length <= 4096);		/* to make sure buffer is big enough */
 
 	check_dyn(dyn, 3 + length);
 	STUFF(attribute);

@@ -35,31 +35,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
 
-#ifndef DEV_BUILD
-#ifdef _assert
-#undef _assert
-#endif
-#define _assert(ex)
-#ifdef assert
-#undef assert
-#endif
-#define assert(ex)
-
-#else	// DEV_BUILD
-
-#include "../jrd/ib_stdio.h"
-#ifdef _assert
-#undef _assert
-#endif
-#define _assert(ex)	{if (!(ex)){ib_fprintf (ib_stderr, "assert failure: %s %"LINEFORMAT"\n", __FILE__, __LINE__);}}
-#ifdef assert
-#undef assert
-#endif
-#define assert(ex)	_assert(ex)
-
-#endif	// DEV_BUILD
-
-
 #define COMPILE_SIZE	256
 
 typedef struct sdl_arg {
@@ -277,7 +252,7 @@ UCHAR* SDL_prepare_slice(UCHAR* sdl, USHORT sdl_length)
 						/* FREE: apparently never freed */
 						if (!new_sdl)
 						{	/* NOMEM: ignore operation */
-							assert(FALSE);	/* no real error handling */
+							fb_assert_continue(FALSE);	/* no real error handling */
 							return old_sdl;
 						}
 						memcpy(new_sdl, old_sdl, sdl_length);
@@ -370,8 +345,8 @@ int	SDL_walk(ISC_STATUS* status_vector,
 
 		default:
 			/* Check that element is in range of valid SDL */
-			assert(*(p - 1) >= gds_sdl_version1
-				   && *(p - 1) <= gds_sdl_element);
+			fb_assert_continue(*(p - 1) >= gds_sdl_version1
+								&& *(p - 1) <= gds_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
 			arg.sdl_arg_end = arg.sdl_arg_compiled + COMPILE_SIZE;
@@ -596,7 +571,7 @@ static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 			break;
 
 		default:
-			assert(FALSE);
+			fb_assert_continue(FALSE);
 		case gds_arg_vms:
 		case gds_arg_unix:
 			*p++ = va_arg(args, int);
@@ -709,12 +684,12 @@ static BOOLEAN execute(SDL_ARG arg)
 				(array_desc->ads_element_length * subscript);
 
 			/* Is this element within the array bounds? */
-			assert((BLOB_PTR *) element_desc.dsc_address >=
-				   (BLOB_PTR *) arg->sdl_arg_array);
-			assert((BLOB_PTR *) element_desc.dsc_address +
-				   element_desc.dsc_length <=
-				   (BLOB_PTR *) arg->sdl_arg_array +
-				   array_desc->ads_total_length);
+			fb_assert_continue((BLOB_PTR *) element_desc.dsc_address >=
+								(BLOB_PTR *) arg->sdl_arg_array);
+			fb_assert_continue((BLOB_PTR *) element_desc.dsc_address +
+								element_desc.dsc_length <=
+								(BLOB_PTR *) arg->sdl_arg_array +
+								array_desc->ads_total_length);
 			break;
 
 		case op_element:
@@ -748,7 +723,7 @@ static BOOLEAN execute(SDL_ARG arg)
 			return TRUE;
 
 		default:
-			assert(FALSE);
+			fb_assert_continue(FALSE);
 			return FALSE;
 		}
 	}
@@ -862,7 +837,7 @@ static const UCHAR* get_range(const UCHAR* sdl, RNG arg, SLONG* min, SLONG* max)
 		return p;
 
 	default:
-		assert(FALSE);
+		fb_assert_continue(FALSE);
 		return NULL;
 	}
 }
@@ -997,7 +972,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert_continue(FALSE);
 		return NULL;
 	}
 

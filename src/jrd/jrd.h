@@ -29,7 +29,7 @@
 #ifndef JRD_JRD_H
 #define JRD_JRD_H
 
-#include "../jrd/gdsassert.h"
+#include "../jrd./gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
@@ -1003,8 +1003,8 @@ extern TDBB gdbb;
 			    ? (PLATFORM_GET_THREAD_DATA) \
 			    : (BUGCHECK (147), (PLATFORM_GET_THREAD_DATA))) \
 			 : (PLATFORM_GET_THREAD_DATA))
-#define CHECK_DBB(dbb)   assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
-#define CHECK_TDBB(tdbb) assert ((tdbb) && \
+#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
+#define CHECK_TDBB(tdbb) fb_assert ((tdbb) && \
 	(((THDD)(tdbb))->thdd_type == THDD_TYPE_TDBB) && \
 	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
 #else

@@ -146,11 +146,11 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, US
 	BYTE *inbuff;
 	BYTE *outbuff;
 
-	assert(pOutChar != NULL);
-	assert(pInChar != NULL);
-	assert(iInLen <= LANGKSC_MAX_KEY);
-	assert(iOutLen <= LANGKSC_MAX_KEY);
-	assert(iOutLen >= LCKSC_key_length(obj, iInLen));
+	fb_assert(pOutChar != NULL);
+	fb_assert(pInChar != NULL);
+	fb_assert(iInLen <= LANGKSC_MAX_KEY);
+	fb_assert(iOutLen <= LANGKSC_MAX_KEY);
+	fb_assert(iOutLen >= LCKSC_key_length(obj, iInLen));
 
 	inbuff = pInChar + iInLen - 1;
 	while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
@@ -182,7 +182,7 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, US
 			if (!iOutLen)
 				break;
 			idx = GetSpeHanNdx(*pInChar, *(pInChar + 1));
-			assert(idx >= 0);
+			fb_assert(idx >= 0);
 			*outbuff++ = gen_han[idx][0];
 			*outbuff++ = gen_han[idx][1];
 			*outbuff++ = 2;
@@ -194,9 +194,9 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, US
 
 			*outbuff++ = *pInChar;
 			iOutLen--;
-			assert(KSC1(*pInChar) || (*pInChar < 0x80));
+			fb_assert(KSC1(*pInChar) || (*pInChar < 0x80));
 			if (KSC1(*pInChar)) {	/* the rest characters of KSC_5601 table */
-				assert(KSC2(*(pInChar + 1)));
+				fb_assert(KSC2(*(pInChar + 1)));
 				if (!iOutLen)
 					break;
 				*outbuff++ = *(pInChar + 1);

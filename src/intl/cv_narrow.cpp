@@ -57,13 +57,13 @@ USHORT CV_unicode_to_nc(CSCONVERT obj,
 	UCHAR ch;
 	UNICODE uni;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CV_unicode_to_nc);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_unicode_to_nc);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -111,13 +111,13 @@ USHORT CV_wc_to_wc(CSCONVERT obj,
 	UNICODE uni;
 	USHORT src_start = src_len;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_to_wc);
-	assert(obj->csconvert_datatable != NULL);
-	assert(obj->csconvert_misc != NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_to_wc);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_misc != NULL);
 
 	*err_code = 0;
 
@@ -165,13 +165,13 @@ USHORT CV_nc_to_unicode(CSCONVERT obj,
 	UNICODE ch;
 	USHORT src_start = src_len;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CV_nc_to_unicode);
-	assert(obj->csconvert_datatable != NULL);
-	assert(sizeof(UNICODE) == 2);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_nc_to_unicode);
+	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(sizeof(UNICODE) == 2);
 
 	*err_code = 0;
 
@@ -211,11 +211,11 @@ USHORT CV_wc_copy(CSCONVERT obj,
 	BYTE *start;
 	USHORT src_start = src_len;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_copy);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) CV_wc_copy);
 
 	*err_code = 0;
 
@@ -253,12 +253,12 @@ USHORT eight_bit_convert(CSCONVERT obj,
 	UCHAR ch;
 	USHORT src_start = src_len;
 
-	assert(src_ptr != NULL || dest_ptr == NULL);
-	assert(err_code != NULL);
-	assert(err_position != NULL);
-	assert(obj != NULL);
-	assert(obj->csconvert_convert == (FPTR_SHORT) eight_bit_convert);
-	assert(obj->csconvert_datatable != NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(err_code != NULL);
+	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_convert == (FPTR_SHORT) eight_bit_convert);
+	fb_assert(obj->csconvert_datatable != NULL);
 
 	*err_code = 0;
 

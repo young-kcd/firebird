@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.1 2003-07-15 02:39:38 brodsom Exp $
+$Id: util.cpp,v 1.2 2003-11-03 23:56:38 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -89,8 +89,8 @@ pid_t UTIL_start_process(char *process, char **argv)
 	TEXT string[MAXPATHLEN];
 	pid_t pid;
 
-	assert(process != NULL);
-	assert(argv != NULL);
+	fb_assert(process != NULL);
+	fb_assert(argv != NULL);
 
 /* prepend InterBase home directory to the program name */
 	gds__prefix(string, process);
@@ -127,7 +127,7 @@ int UTIL_wait_for_child( pid_t child_pid)
  **************************************/
 	int child_exit_status;
 
-	assert(child_pid != 0);
+	fb_assert(child_pid != 0);
 
 /* wait for the child process with child_pid to exit */
 
@@ -190,7 +190,7 @@ int UTIL_ex_lock( TEXT * file)
 		return (-1);
 	}
 
-	assert(fd_file != -2);
+	fb_assert(fd_file != -2);
 
 #ifndef HAVE_FLOCK
 /* get an exclusive lock on the GUARD file without blocking on the call */

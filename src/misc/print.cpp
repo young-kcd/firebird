@@ -26,7 +26,6 @@
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
-#include <assert.h>
 
 static void prt_que(UCHAR *, SRQ *);
 static void event_list(void);
@@ -135,7 +134,7 @@ static void event_list(void)
 		QUE_LOOP(EVENT_header->evh_events, que) {
 
 			event = (EVNT) ((UCHAR *) que - OFFSET(EVNT, evnt_events));
-			assert(event->evnt_header.hdr_type == type_evnt);
+			fb_assert(event->evnt_header.hdr_type == type_evnt);
 			if (event->evnt_parent != REL_PTR(database_event))
 				continue;
 			ib_printf("    \"%-15s\" count: %6ld Interest",

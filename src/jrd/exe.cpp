@@ -2039,7 +2039,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
 			USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
 			// get RSB and the impure area
-			assert(request->req_cursors && number < request->req_cursors->count());
+			fb_assert(request->req_cursors && number < request->req_cursors->count());
 			RSB rsb = (RSB) (*request->req_cursors)[number];
 			IRSB impure = (IRSB) ((UCHAR*) tdbb->tdbb_request + rsb->rsb_impure);
 			switch (op) {

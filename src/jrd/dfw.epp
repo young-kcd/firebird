@@ -292,7 +292,7 @@ USHORT DFW_assign_index_type(DFW work, SSHORT field_type, SSHORT ttype)
 		/* Dynamic text cannot occur here as this is for an on-disk
 		   index, which must be bound to a text type. */
 
-		assert(ttype != ttype_dynamic);
+		fb_assert(ttype != ttype_dynamic);
 
 		if (INTL_defined_type(tdbb, status, ttype))
 			return INTL_TEXT_TO_INDEX(ttype);
@@ -1309,7 +1309,7 @@ static void check_dependencies(TDBB tdbb,
 				obj_type = gds_udf_name;
 				break;
 			default:
-				assert(FALSE);
+				fb_assert(FALSE);
 				break;
 			}
 			if (field_name)
@@ -1780,7 +1780,7 @@ static bool create_index(	TDBB	tdbb,
 			}
 		}
 
-		assert(work->dfw_id == dbb->dbb_max_idx);
+		fb_assert(work->dfw_id == dbb->dbb_max_idx);
 		IDX_create_index(	tdbb,
 							relation,
 							&idx,
@@ -1788,7 +1788,7 @@ static bool create_index(	TDBB	tdbb,
 							&work->dfw_id,
 							transaction,
 							&selectivity);
-		assert(work->dfw_id == idx.idx_id);
+		fb_assert(work->dfw_id == idx.idx_id);
 		DFW_update_index(work, idx.idx_id, selectivity);
 
 		if (partner_relation)
@@ -2453,7 +2453,7 @@ static bool delete_index(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 			   * it for the exclusive lock it would have to be 1.
 			   * IF now it is NOT 1 then someone else got a lock to
 			   * the index and something is seriously wrong */
-			assert(index->idl_count == 1);
+			fb_assert(index->idl_count == 1);
 			if (!--index->idl_count)
 			{
 				/* Release index existence lock and memory. */
@@ -3184,7 +3184,7 @@ static bool find_depend_in_dfw(	TDBB	tdbb,
 		dfw_type = dfw_delete_index;
 		break;
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		break;
 	}
 
@@ -3545,7 +3545,7 @@ static FMT make_format(TDBB tdbb, JRD_REL relation, USHORT * version, TFB stack)
 		}
 	}
 
-	assert(offset <= MAX_USHORT);
+	fb_assert(offset <= MAX_USHORT);
 
 	format->fmt_length = (USHORT)offset;
 
@@ -3843,9 +3843,9 @@ static bool make_version(TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transaction)
 						tfb_ = FB_NEW(*tdbb->tdbb_default) tfb;
 						tfb_->tfb_next = external;
 						external = tfb_;
-						assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);
+						fb_assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);
 						tfb_->tfb_desc.dsc_dtype = (UCHAR)FLD.RDB$EXTERNAL_TYPE;
-						assert(FLD.RDB$EXTERNAL_SCALE >= MIN_SCHAR &&
+						fb_assert(FLD.RDB$EXTERNAL_SCALE >= MIN_SCHAR &&
 								FLD.RDB$EXTERNAL_SCALE <= MAX_SCHAR);
 						tfb_->tfb_desc.dsc_scale = (SCHAR)FLD.RDB$EXTERNAL_SCALE;
 						tfb_->tfb_desc.dsc_length = FLD.RDB$EXTERNAL_LENGTH;
@@ -4279,7 +4279,7 @@ static void put_summary_blob(BLB blob, RSR_T type, SLONG blob_id[2])
 	// Go ahead and open blob
 
 	BLB blr = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
-	assert(blr->blb_length <= MAX_USHORT);
+	fb_assert(blr->blb_length <= MAX_USHORT);
 	USHORT length = (USHORT)blr->blb_length;
 	UCHAR* buffer = (length > sizeof(temp)) ?
 		(UCHAR*) gds__alloc((SLONG) blr->blb_length) : temp;

@@ -104,7 +104,7 @@ void MOV_double_to_date2(double real, dsc* desc)
 		((SLONG *) desc->dsc_address)[0] = fixed[0];
 		break;
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 		break;
 	}
 }
@@ -188,8 +188,8 @@ void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
 	ULONG l;
 	UCHAR *p, *q;
 
-	assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
-	assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+	fb_assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+	fb_assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
 
 /* copy by chunks of 8 longwords == 32 bytes == 2**5 bytes */
 	if (l = (length >> 5)) {
@@ -250,7 +250,7 @@ void MOV_fill(SLONG* to, ULONG length)
 		while (l--)
 			*p++ = 0;
 		to = (SLONG *) p;
-		assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
+		fb_assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
 			   ||!length);		/* Or already completed */
 	}
 

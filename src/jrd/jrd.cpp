@@ -485,14 +485,14 @@ static TDBB get_thread_data()
 inline static void CHECK_DBB(DBB dbb)
 {
 #ifdef DEV_BUILD
-	assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
+	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
 #endif	// DEV_BUILD
 }
 
 inline static void check_tdbb(TDBB tdbb)
 {
 #ifdef DEV_BUILD
-	assert(tdbb &&
+	fb_assert(tdbb &&
 			(reinterpret_cast<THDD>(tdbb)->thdd_type == THDD_TYPE_TDBB) &&
 			(!tdbb->tdbb_database ||
 				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
@@ -1568,7 +1568,7 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 		break;
 
 	default:
-		assert(FALSE);
+		fb_assert(FALSE);
 	}
 
 	return FB_SUCCESS;
@@ -2381,7 +2381,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS * user_status, ATT * handle)
 #ifdef GOVERNOR
 	if (JRD_max_users) {
 		if (!(attachment_flags & ATT_security_db)) {
-			assert(num_attached > 0);
+			fb_assert(num_attached > 0);
 			num_attached--;
 		}
 	}
@@ -2561,7 +2561,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 
 #ifdef GOVERNOR
 	if (JRD_max_users) {
-		assert(num_attached > 0);
+		fb_assert(num_attached > 0);
 		num_attached--;
 	}
 #endif /* GOVERNOR */
@@ -4225,8 +4225,8 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
  **************************************/
 	char* t_data = NULL;
 
-	assert(buf != NULL);
-	assert(len > 0);
+	fb_assert(buf != NULL);
+	fb_assert(len > 0);
 
 	THD_getspecific_data((void**) &t_data);
 
@@ -6361,7 +6361,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 					lbufp += dbfp->dbf_length;
 					total++;
 				}
-				assert(total == num_dbs);
+				fb_assert(total == num_dbs);
 				lbufp = lbuf;
 				*lbufp++ = (TEXT) total;
 				*lbufp++ = total >> 8;

@@ -26,7 +26,7 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-#include <assert.h>
+#include "../jrd/gdsassert.h"
 #include <string.h>
 #include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
@@ -69,13 +69,13 @@ public:
 	~Array() { if (data != getStorage()) pool->deallocate(data); }
 	void clear() { count = 0; };
 	T& operator[](int index) {
-  		assert(index >= 0 && index < count);
+  		fb_assert(index >= 0 && index < count);
   		return data[index];
 	}
 	T* begin() { return data; }
 	T* end() { return data + count; }
 	void insert(int index, const T& item) {
-		assert(index >= 0 && index <= count);
+		fb_assert(index >= 0 && index <= count);
 		ensureCapacity(count + 1);
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
@@ -86,16 +86,16 @@ public:
   		return count;
 	};
 	void remove(int index) {
-  		assert(index >= 0 && index < count);
+  		fb_assert(index >= 0 && index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void shrink(int newCount) {
-		assert(newCount <= count);
+		fb_assert(newCount <= count);
 		count = newCount;
 	};
 	// Grow size of our array and zero-initialize new items
 	void grow(int newCount) {
-		assert(newCount >= count);
+		fb_assert(newCount >= count);
 		ensureCapacity(newCount);
 		memset(data + count, 0, sizeof(T) * (newCount - count));
 		count = newCount;

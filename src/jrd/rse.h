@@ -280,7 +280,7 @@ typedef irl *IRL;
 #define MAX_CONJUNCTS	32000
 
 // Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
-// Here we should really have a compile-time assert, since this hard-coded
+// Here we should really have a compile-time fb_assert, since this hard-coded
 // limit is NOT negotiable so long as we use an array of UCHAR, where index 0
 // tells how many streams are in the array (and the streams themselves are
 // identified by a UCHAR).

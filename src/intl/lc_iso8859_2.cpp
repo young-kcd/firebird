@@ -113,11 +113,11 @@ static USHORT fam2_to_upper (TEXTTYPE obj, BYTE ch)
 static	SSHORT	fam2_str_to_upper (TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr)
 {
 	BYTE	*p;
-	assert (pStr != NULL);
-	assert (pOutStr != NULL);
-	assert (iLen <= 32000);	/* almost certainly an error */
-	assert (iOutLen <= 32000);	/* almost certainly an error */
-	assert (iOutLen >= iLen);
+	fb_assert (pStr != NULL);
+	fb_assert (pOutStr != NULL);
+	fb_assert (iLen <= 32000);	/* almost certainly an error */
+	fb_assert (iOutLen <= 32000);	/* almost certainly an error */
+	fb_assert (iOutLen >= iLen);
 	p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = LOCALE_UPPER (*pStr);

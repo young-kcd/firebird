@@ -993,7 +993,7 @@ int SVC_output(svc* output_data, const UCHAR* output_buf)
 				/* Move db names into the info buffer */
 				if (ptr2 = ptr) {
 					num = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
-					assert(num == num_dbs);
+					fb_assert(num == num_dbs);
 					ptr2 += sizeof(USHORT);
 					for (; num; num--) {
 						length =
@@ -1867,7 +1867,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 						  &service->svc_switches);
 		}
 		else {
-			assert(service->svc_switches == NULL);
+			fb_assert(service->svc_switches == NULL);
 		}
 	}
 /* All services except for get_ib_log require switches */
@@ -1897,7 +1897,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 			else {
 				if (*p == SVC_TRMNTR) {
 					while (*p++ && *p != SVC_TRMNTR);
-					assert(*p == SVC_TRMNTR);
+					fb_assert(*p == SVC_TRMNTR);
 				}
 				p++;
 			}
@@ -2962,7 +2962,7 @@ static void service_fork(TEXT * service_path, SVC service)
 			if (*p == SVC_TRMNTR)
 			{
 				while (*p++ && *p != SVC_TRMNTR);
-				assert (*p == SVC_TRMNTR);
+				fb_assert (*p == SVC_TRMNTR);
 			}
 			p++;
 		}
@@ -3426,7 +3426,7 @@ static USHORT process_switches(
 					--p;
 					++len;
 				}
-				assert(spb == p);
+				fb_assert(spb == p);
 				if (!get_action_svc_parameter(&p, gsec_action_in_sw_table,
 											  &sw, &total, &len))
 					return 0;
@@ -3459,7 +3459,7 @@ static USHORT process_switches(
 					--p;
 					++len;
 				}
-				assert(spb == p);
+				fb_assert(spb == p);
 				if (!get_action_svc_parameter(&p, gsec_action_in_sw_table,
 											  &sw, &total, &len))
 					return 0;

@@ -40,7 +40,6 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include <assert.h>
 #include "../jrd/mov.c"
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
