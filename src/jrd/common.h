@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.95 2004-01-03 10:59:40 robocop Exp $
+$Id: common.h,v 1.96 2004-01-06 10:27:52 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1018,7 +1018,7 @@ struct in_sw_tab_t {
 #endif
 
 
-static const TEXT* FB_SHORT_MONTHS[][4] =
+static const TEXT FB_SHORT_MONTHS[][4] =
 {
 	"Jan", "Feb", "Mar",
 	"Apr", "May", "Jun",
