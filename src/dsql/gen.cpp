@@ -28,9 +28,6 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
-/*
-$Id: gen.cpp,v 1.40 2003-09-04 15:02:22 arnobrinkman Exp $
-*/
 
 #include "firebird.h"
 #include <string.h>
