@@ -350,7 +350,6 @@ static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
 static void		cleanup(void*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
-static STR		copy_string(const TEXT*, const USHORT);
 static bool		drop_files(const jrd_file*);
 static ISC_STATUS	error(ISC_STATUS*, const std::exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
@@ -4696,28 +4695,6 @@ static ISC_STATUS commit(
 		--dbb->dbb_use_count;
 		return error(user_status, ex);
 	}
-}
-
-
-static STR copy_string(const TEXT* ptr, const USHORT length)
-{
-/**************************************
- *
- *	c o p y _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Copy a string to a string block.
- *
- **************************************/
-	Database* dbb = get_dbb();
-	STR string = FB_NEW_RPT(*dbb->dbb_permanent, length) str();
-
-	string->str_length = length;
-	MOVE_FAST(ptr, string->str_data, length);
-
-	return string;
 }
 
 
