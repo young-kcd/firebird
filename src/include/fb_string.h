@@ -572,8 +572,8 @@ namespace Firebird
 		}
 		int compare(size_type p0, size_type n0, const_pointer s, size_type n) const {
 			AdjustRange(length(), p0, n0);
-			size_type ml = n0 < n ? n0 : n;
-			int rc = Comparator::compare(&c_str()[p0], s, ml);
+			const size_type ml = n0 < n ? n0 : n;
+			const int rc = Comparator::compare(&c_str()[p0], s, ml);
 			return rc ? rc : n - n0;
 		}
 

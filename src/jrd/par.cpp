@@ -115,7 +115,7 @@ static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 static jrd_nod* par_union(thread_db*, CompilerScratch*);
 static USHORT par_word(CompilerScratch*);
 static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
-static void syntax_error(CompilerScratch*, const TEXT *);
+static void syntax_error(CompilerScratch*, const TEXT*);
 static void warning(CompilerScratch*, ...);
 
 #define BLR_PEEK	*(csb->csb_running)
@@ -1525,7 +1525,7 @@ static USHORT par_name(CompilerScratch* csb, Firebird::string& string)
  *	Parse a counted string, returning count.
  *
  **************************************/
-	USHORT l = BLR_BYTE;
+	ULONG l = BLR_BYTE;
 	string = "";
 
 	if (l) {
@@ -1939,7 +1939,7 @@ static jrd_nod* par_relation(
 	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
 		const SSHORT id = BLR_WORD;
 		if (blr_operator == blr_rid2) {
-			const SSHORT length = BLR_PEEK;
+			BLR_PEEK; // Do not delete. It skips the length.
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			par_name(csb, *alias_string);
 		}
@@ -1951,7 +1951,7 @@ static jrd_nod* par_relation(
 	else if (blr_operator == blr_relation || blr_operator == blr_relation2) {
 		par_name(csb, name);
 		if (blr_operator == blr_relation2) {
-			const SSHORT length = BLR_PEEK;
+			BLR_PEEK; // Do not delete. It skips the length.
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			par_name(csb, *alias_string);
 		}
@@ -2283,8 +2283,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
  *	Parse a BLR expression.
  *
  **************************************/
-	Firebird::string name;
-
 	SET_TDBB(tdbb);
 
 	const SSHORT blr_operator = BLR_BYTE;

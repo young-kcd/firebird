@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.22 2004-03-07 07:58:37 robocop Exp $
+ * $Id: isql.h,v 1.23 2004-04-10 00:25:18 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -316,12 +316,13 @@ const char SINGLE_QUOTE	= '\'';
 
 
 
-const SCHAR wal_items[] = {
-	isc_info_num_wal_buffers,
-	isc_info_wal_buffer_size,
-	isc_info_wal_ckpt_length,
-	isc_info_wal_grpc_wait_usecs,
-	isc_info_end
-};
+//const SCHAR wal_items[] = {
+//	isc_info_num_wal_buffers,
+//	isc_info_wal_buffer_size,
+//	isc_info_wal_ckpt_length,
+//	isc_info_wal_grpc_wait_usecs,
+//	isc_info_end
+//};
+
 #endif // ISQL_ISQL_H 
 

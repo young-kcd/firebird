@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.54 2004-03-12 07:00:22 skidder Exp $
+//  $Id: gpre.cpp,v 1.55 2004-04-10 00:25:12 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -2462,9 +2462,22 @@ static void pass2( SLONG start_position)
 	if ((sw_language == lang_ada) && (ada_flags & ADA_create_database))
 		ib_fprintf(out_file, "with unchecked_conversion;\nwith system;\n");
 #endif
-//  
+
+	// Let's prepare for worst case: a lot of small dirs, many "\" to duplicate.
+	char backlash_fixed_file_name[MAXPATHLEN + MAXPATHLEN];
+	{ // scope
+	char* p = backlash_fixed_file_name;
+	for (const char* q = file_name; *q;)
+	{
+		if ((*p++ = *q++) == '\\')
+			*p++ = '\\';
+	}
+	*p = 0;
+	} // scope
+
+//
 //if (sw_lines)
-//   ib_fprintf (out_file, "#line 1 \"%s\"\n", file_name);
+//   ib_fprintf (out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
 //  
 
 	SLONG line = 0;
@@ -2494,10 +2507,10 @@ static void pass2( SLONG start_position)
 				if (line_pending) {
 					if (line == 1)
 						ib_fprintf(out_file, "#line %ld \"%s\"\n", line,
-								   file_name);
+								   backlash_fixed_file_name);
 					else
 						ib_fprintf(out_file, "\n#line %ld \"%s\"", line,
-								   file_name);
+								   backlash_fixed_file_name);
 
 					line_pending = false;
 				}
@@ -2620,14 +2633,14 @@ static void pass2( SLONG start_position)
 //  We're out of actions -- dump the remaining text to the output stream. 
 
 	if (!line && line_pending) {
-		ib_fprintf(out_file, "#line 1 \"%s\"\n", file_name);
+		ib_fprintf(out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
 		line_pending = false;
 	}
 
 
 	while ((c = get_char(input_file)) != EOF) {
 		if (c == '\n' && line_pending) {
-			ib_fprintf(out_file, "\n#line %ld \"%s\"", line + 1, file_name);
+			ib_fprintf(out_file, "\n#line %ld \"%s\"", line + 1, backlash_fixed_file_name);
 			line_pending = false;
 		}
 		if (c == EOF) {

@@ -393,7 +393,7 @@ const int DEF_CACHE_BUFFERS	= 1000;
 #define YYINITDEPTH 2048
 #define YYSTACK_USE_ALLOCA 1
 
-#define YYSTYPE		DSQL_NOD
+#define YYSTYPE  dsql_nod*
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
 #endif
@@ -424,7 +424,7 @@ static bool		long_int(dsql_nod*, SLONG*);
 #endif
 static dsql_fld*	make_field (dsql_nod*);
 static dsql_fil*	make_file();
-static DSQL_NOD	make_list (dsql_nod*);
+static dsql_nod*	make_list (dsql_nod*);
 static dsql_nod*	make_node (NOD_TYPE, int, ...);
 static dsql_nod*	make_parameter (void);
 static dsql_nod*	make_flag_node (NOD_TYPE, SSHORT, int, ...);
@@ -4775,7 +4775,7 @@ case 262:
 { yyval = yyvsp[0]; }
     break;
 case 263:
-{ yyval = (DSQL_NOD) NULL; }
+{ yyval = (dsql_nod*) NULL; }
     break;
 case 264:
 { yyval = make_list (yyvsp[0]); }
@@ -7635,6 +7635,11 @@ int LexerState::yylex (
 				if (buffer != string)
 					gds__free (buffer);
 				return -1;
+			}
+			// Care about multi-line constants and identifiers
+			if (*ptr == '\n') {
+				lines++;
+				line_start = ptr + 1;
 			}
 			/* *ptr is quote - if next != quote we're at the end */
 			if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))

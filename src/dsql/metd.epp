@@ -882,7 +882,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	FRBRD *DB, *gds_trans;
 	dsql_udf* userFunc;
 	dsql_udf* temp;
-    DSQL_NOD	udf_param_node, *ptr;
+    dsql_nod* udf_param_node;
+	dsql_nod** ptr;
 
 
     metd_rec_lock();
@@ -1082,7 +1083,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
     
     ptr = userFunc->udf_arguments->nod_arg + arg_count;
     while (stack) {
-        *--ptr = (DSQL_NOD) LLS_POP (&stack);
+        *--ptr = (dsql_nod*) LLS_POP (&stack);
 		// dimitr: adjust the UDF arguments for CSTRING
 		if ((*ptr)->nod_desc.dsc_dtype == dtype_cstring)
 			(*ptr)->nod_desc.dsc_dtype = dtype_text;
@@ -1172,7 +1173,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
             list = MAKE_node(nod_list, (int) X.RDB$SEGMENT_COUNT);
 		dsql_str* field_name = MAKE_cstring(Y.RDB$FIELD_NAME);
         dsql_nod* field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-        field_node->nod_arg[e_fln_name] = (DSQL_NOD) field_name;
+        field_node->nod_arg[e_fln_name] = (dsql_nod*) field_name;
         list->nod_arg[count] = field_node;
         count++;
 

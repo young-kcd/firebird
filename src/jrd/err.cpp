@@ -499,7 +499,8 @@ void ERR_punt(void)
 		gds__log_status(tdbb->tdbb_attachment->att_filename ?
 			tdbb->tdbb_attachment->att_filename.c_str() : NULL,
 			tdbb->tdbb_status_vector);
- 		if (Config::getBugcheckAbort()) abort();
+ 		if (Config::getBugcheckAbort())
+			abort();
 	}
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector);

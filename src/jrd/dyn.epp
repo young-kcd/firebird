@@ -124,7 +124,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	*status++ = 0;
 	*status = isc_arg_end;
 
-	struct Global gbl(transaction);
+	Global gbl(transaction);
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.

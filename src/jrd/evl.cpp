@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.77 2004-04-09 16:32:52 skidder Exp $ 
+  * $Id: evl.cpp,v 1.78 2004-04-10 00:25:21 robocop Exp $ 
  */
 
 /*
@@ -2745,9 +2745,9 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			 * 3E18, which fits into an INT64.  
 			 */
 			// 09-Apr-2004, Nickolay Samofatov. Adjust number before division to 
-			// make sure we don't loose a tick as a result of remainder truncation
+			// make sure we don't lose a tick as a result of remainder truncation
 			d2 = (d2 * 1000 + (SECONDS_PER_DAY / 200)) / (SINT64) (SECONDS_PER_DAY / 100);
-			value->vlu_misc.vlu_int64 = (SINT64) d2;
+			value->vlu_misc.vlu_int64 = d2;
 			result->dsc_dtype = dtype_int64;
 			result->dsc_length = sizeof(SINT64);
 			result->dsc_scale = DIALECT_3_TIMESTAMP_SCALE;

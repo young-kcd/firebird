@@ -121,7 +121,7 @@ const int DEF_CACHE_BUFFERS	= 1000;
 #define YYINITDEPTH 2048
 #define YYSTACK_USE_ALLOCA 1
 
-#define YYSTYPE		DSQL_NOD
+#define YYSTYPE  dsql_nod*
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
 #endif
@@ -152,7 +152,7 @@ static bool		long_int(dsql_nod*, SLONG*);
 #endif
 static dsql_fld*	make_field (dsql_nod*);
 static dsql_fil*	make_file();
-static DSQL_NOD	make_list (dsql_nod*);
+static dsql_nod*	make_list (dsql_nod*);
 static dsql_nod*	make_node (NOD_TYPE, int, ...);
 static dsql_nod*	make_parameter (void);
 static dsql_nod*	make_flag_node (NOD_TYPE, SSHORT, int, ...);
@@ -1521,7 +1521,7 @@ default_par_opt	: DEFAULT begin_string default_value
 		| '=' begin_string default_value
 			{ $$ = $3; }
 		| begin_string
-			{ $$ = (DSQL_NOD) NULL; }
+			{ $$ = (dsql_nod*) NULL; }
 		;
 
 local_declaration_list	: local_declarations
@@ -4789,7 +4789,7 @@ int LexerState::yylex (
 			// Care about multi-line constants and identifiers
 			if (*ptr == '\n') {
 				lines++;
-				line_start = ptr+1;
+				line_start = ptr + 1;
 			}
 			/* *ptr is quote - if next != quote we're at the end */
 			if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))

@@ -2223,7 +2223,7 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 				}
 				BufferControl* bcb = dbb->dbb_bcb;
 				QUE_LEAST_RECENTLY_USED(bdb->bdb_in_use);
-				bdb->bdb_sequence = 0;
+				//bdb->bdb_sequence = 0;
 #ifdef CACHE_WRITER
 				if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 				{
@@ -3926,7 +3926,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 					}
 					else {
 						bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
-						bdb->bdb_sequence = dbb->dbb_fetches++;
+						//bdb->bdb_sequence = dbb->dbb_fetches++;
 						return bdb;
 					}
 				}
@@ -4026,7 +4026,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
 #endif
-				bdb->bdb_sequence = dbb->dbb_fetches++;
+				//bdb->bdb_sequence = dbb->dbb_fetches++;
 				BCB_MUTEX_RELEASE;
 				return bdb;
 			}

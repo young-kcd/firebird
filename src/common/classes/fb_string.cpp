@@ -393,7 +393,7 @@ namespace Firebird {
 				n *= 2;
 				l = VSNPRINTF(baseAssign(n), n + 1, format, params);
 				if (l > 16 * 1024) {
-					char *errLine = "String size overflow in .printf()";
+					const char *errLine = "String size overflow in .printf()";
 					memcpy(baseAssign(strlen(errLine)), errLine, strlen(errLine));
 					return;
 				}

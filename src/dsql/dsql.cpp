@@ -887,7 +887,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
     THREAD_ENTER;
 
 	// 3. Call execute... function 
-	ISC_STATUS rc = dsql8_execute_immediate_common(status,
+	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
 						&why_db_handle, &why_trans_handle,
 						sql_operator.length(), sql_operator.c_str(), 
 						database->dbb_db_SQL_dialect,

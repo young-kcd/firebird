@@ -43,6 +43,7 @@ struct que;
 class BufferDesc;
 class SparseBitmap;
 class BlockingThread;
+class Database;
 
 /* Page buffer cache size constraints. */
 
@@ -54,7 +55,7 @@ class BlockingThread;
 struct bcb_repeat
 {
 	BufferDesc*	bcb_bdb;		/* Buffer descriptor block */
-	que				bcb_page_mod;	/* Que of buffers with page mod n */
+	que			bcb_page_mod;	/* Que of buffers with page mod n */
 };
 
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
@@ -70,7 +71,7 @@ class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	SparseBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
+	SparseBitmap*	bcb_prefetch;	/* Bitmap of pages to prefetch */
 	bcb_repeat	bcb_rpt[1];
 };
 
@@ -90,15 +91,15 @@ class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 class BufferDesc : public pool_alloc<type_bdb>
 {
     public:
-	class Database*	bdb_dbb;				/* Database block (for ASTs) */
+	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
 	que			bdb_in_use;				/* queue of buffers in use */
-	Ods::pag*	bdb_buffer;			/* Actual buffer */
+	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
-	BlockingThread*	bdb_blocked;			/* Blocked attachments block */
+	BlockingThread*	bdb_blocked;		/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
-	ULONG		bdb_sequence;
+	//ULONG		bdb_sequence;
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */

@@ -44,7 +44,7 @@ Default analysis module.
 performance snapshot. Snapshot detail may vary, but in any case it contains
 information on all activities performed by server for database during a given 
 period of time, possibly in aggregated form. All snapshots may be compared to 
-allow quanititive measurements of performance improvements due to various 
+allow quantitative measurements of performance improvements due to various 
 optimization activities or changes in user applications and infrastucture.
 
 Snapshot data is collected by trace module in raw form in a binary log file and 
