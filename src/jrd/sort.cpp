@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.22 2003-01-16 17:47:04 skidder Exp $
+ * $Id: sort.cpp,v 1.23 2003-01-18 15:03:45 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -574,7 +574,7 @@ void SORT_fini(SCB scb, ATT att)
 /* --  Morgan Schweers (mrs)  */
 
 	if (rval == TRUE)
-		gds__free(scb);
+		MemoryPool::external_free(scb);
 }
 
 
@@ -810,7 +810,7 @@ SCB SORT_init(STATUS * status_vector,
 		*status_vector++ = gds_sort_mem_err;
 		/* Msg356: sort error: not enough memory */
 		*status_vector = gds_arg_end;
-		gds__free(scb);
+		MemoryPool::external_free(scb);
 		return NULL;
 	}
 
@@ -1072,7 +1072,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 
 	for (run_count = 0, run = scb->scb_runs; run; run = run->run_next) {
 		if (run->run_buff_alloc) {
-			gds__free(run->run_buffer);
+			MemoryPool::external_free(run->run_buffer);
 			run->run_buff_alloc = 0;
 		}
 		++run_count;
@@ -1109,7 +1109,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 
 			merge_pool = scb->scb_merge_pool;
 		} catch(...) {
-			gds__free(streams);
+			MemoryPool::external_free(streams);
 			*status_vector++ = gds_arg_gds;
 			*status_vector++ = gds_sort_mem_err;
 			*status_vector = gds_arg_end;
@@ -1164,7 +1164,7 @@ int SORT_sort(STATUS * status_vector, SCB scb)
 	}
 
 	if (streams != streams_local)
-		gds__free(streams);
+		MemoryPool::external_free(streams);
 	buffer = (SORTP *) scb->scb_first_pointer;
 	merge->mrg_header.rmh_parent = NULL;
 	scb->scb_merge = merge;
@@ -1322,7 +1322,7 @@ static UCHAR *sort_alloc(SCB scb, ULONG size)
 
 	try {
 		block =
-			reinterpret_cast<UCHAR*>(gds__alloc((SLONG) size));
+			reinterpret_cast<UCHAR*>(MemoryPool::external_alloc(size));
 /* FREE: caller responsible for freeing */
 	} catch(...) {
 		if (!block)
@@ -2251,39 +2251,35 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 
 		if (sfb->sfb_file_name) {
 			unlink(sfb->sfb_file_name);
-			gds__free(sfb->sfb_file_name);
+			MemoryPool::external_free(sfb->sfb_file_name);
 			sfb->sfb_file_name = NULL;
 		}
 
 		while ( (space = sfb->sfb_free_wfs) ) {
 			sfb->sfb_free_wfs = space->wfs_next;
-			gds__free(space);
+			MemoryPool::external_free(space);
 		}
 
 		while ( (space = sfb->sfb_file_space) ) {
 			sfb->sfb_file_space = space->wfs_next;
-			gds__free(space);
+			MemoryPool::external_free(space);
 		}
 
-		gds__free(sfb);
+		MemoryPool::external_free(sfb);
 	}
 
 /* get rid of extra merge space */
 
 	while ( (merge_buf = (ULONG **) scb->scb_merge_space) ) {
 		scb->scb_merge_space = *merge_buf;
-		gds__free(merge_buf);
+		MemoryPool::external_free(merge_buf);
 	}
 
 /* If runs are allocated and not in the big block, release them.  Then release
    the big block. */
 
 	if (scb->scb_memory) {
-#ifdef DEBUG_MERGE
-		gds__free(scb->scb_memory);
-#else
-		gds__free(scb->scb_memory);
-#endif
+		MemoryPool::external_free(scb->scb_memory);
 		scb->scb_memory = NULL;
 	}
 
@@ -2291,20 +2287,20 @@ static BOOLEAN local_fini(SCB scb, ATT att)
 	while ( (run = scb->scb_runs) ) {
 		scb->scb_runs = run->run_next;
 		if (run->run_buff_alloc)
-			gds__free(run->run_buffer);
-		gds__free(run);
+			MemoryPool::external_free(run->run_buffer);
+		MemoryPool::external_free(run);
 	}
 
 /* Clean up the free runs also */
 	while ( (run = scb->scb_free_runs) ) {
 		scb->scb_free_runs = run->run_next;
 		if (run->run_buff_alloc)
-			gds__free(run->run_buffer);
-		gds__free(run);
+			MemoryPool::external_free(run->run_buffer);
+		MemoryPool::external_free(run);
 	}
 
 	if (scb->scb_merge_pool) {
-		gds__free(scb->scb_merge_pool);
+		MemoryPool::external_free(scb->scb_merge_pool);
 		scb->scb_merge_pool = NULL;
 	}
 
@@ -2494,7 +2490,7 @@ static void merge_runs(SCB scb, USHORT n)
 
 	scb->scb_free_runs = run->run_next;
 	if (run->run_buff_alloc) {
-		gds__free(run->run_buffer);
+		MemoryPool::external_free(run->run_buffer);
 		run->run_buff_alloc = 0;
 	}
 	temp_run.run_header.rmh_type = TYPE_RUN;
@@ -2796,7 +2792,7 @@ static ULONG order(SCB scb)
 	if (buffer != temp)
 #endif
 		if (buffer != NULL)
-			gds__free(buffer);
+			MemoryPool::external_free(buffer);
 
 	return (((SORTP *) output) -
 			((SORTP *) scb->scb_last_record)) / (scb->scb_longs -
