@@ -191,10 +191,8 @@ void ConfigFile::loadConfig()
 		{
 			Firebird::string Msg = "Missing configuration file: " + 
 				configFile.ToString() + ", exiting";
-			Firebird::Syslog::Record(fExitOnError ? 
-				Firebird::Syslog::Error :
-				Firebird::Syslog::Warning, Msg);
-			exit(1);
+			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
+			Firebird::fatal_exception::raise(Msg.c_str());
 		}
 #endif //EXIT_ON_NO_CONF
 		return;
@@ -236,8 +234,9 @@ void ConfigFile::loadConfig()
 		parameters.add(Parameter(getPool(), key, value));
     }
 #ifdef EXIT_ON_NO_CONF
-	if (BadLinesCount && fExitOnError) {
-		exit(1);
+	if (BadLinesCount && fExitOnError) 
+	{
+		Firebird::fatal_exception::raise("Bad lines in firebird.conf");
 	}
 #endif
 }
