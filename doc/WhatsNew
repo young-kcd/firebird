@@ -3,6 +3,11 @@
   **************
 
     * Fixed unregistered bug.
+        Problem with deadlock detection when pessimistic locking (WITH LOCK syntax) is used
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
         Server crashes when NULL is passed to EXECUTE STATEMENT ... INTO
       Contributor(s):
         Alexander Peshkoff <peshkoff at hotmail.ru>
