@@ -1,3 +1,69 @@
+2003-02-22 22:54  skidder
+
+	* firebird2/src/jrd/: ibase.h, inf.cpp:
+	
+	Add ability to get a list of currently active transactions via
+	isc_database_info call
+
+2003-02-22 22:48  skidder
+
+	* firebird2/configure.in:
+	
+	Get ready for Beta3
+
+2003-02-22 18:13  dimitr
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fixed problem with ISQL and character code 0xFF.
+
+2003-02-22 18:09  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Cleanup and some economy of the stack space (in favor of the heap).
+	Performance penalty isn't noticable.
+
+2003-02-22 16:45  skidder
+
+	* firebird2/builds/posix/Makefile.in.intl:
+	
+	Make intl support work on POSIX again
+
+2003-02-22 16:10  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Some cleanup of the optimizer.
+
+2003-02-22 15:23  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Added new config option.
+
+2003-02-22 13:20  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Made the optimizer a bit better in the case of old index
+	statistics.
+
+2003-02-22 11:10  tamlin
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	A little bit of code cleanup and addition of a few asserts, to get
+	early warning before it crashes.
+
+2003-02-22 01:48  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Let the optimizer build MERGE/SORT where possible.  This is :
+	Multiple STORED PROCEDURES and/or VIEWS with internally aggregate
+	or union
+
 2003-02-21 10:25  dimitr
 
 	* firebird2/src/jrd/evl.cpp:
