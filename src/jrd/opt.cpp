@@ -557,64 +557,102 @@ RSB OPT_compile(TDBB tdbb,
 // around for the rest of the optimization process.
 
 // first fill out the conjuncts at the end of opt
-	opt_->opt_count = (SSHORT) conjunct_count;
+	opt_->opt_base_conjuncts = (SSHORT) conjunct_count;
 
-// Check if size of optimizer block exceeded.
-	if (opt_->opt_count > MAX_CONJUNCTS) {
+	// Check if size of optimizer block exceeded.
+	if (opt_->opt_base_conjuncts > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
 		// Msg442: size of optimizer block exceeded
 	}
 
-// AB: Because know we're going to use both parent & conjunct_stack
-//   try to again to make additional conjuncts for an inner join,
-//   but be sure that opt_->opt_count contains the real "base"
-
-// find the end of the conjunct stack.
-	for (stack_end = &conjunct_stack; *stack_end;
-		 stack_end = &(*stack_end)->lls_next);
-	SLONG saved_conjunct_count = conjunct_count;
-	*stack_end = parent_stack;
-	conjunct_count += distribute_equalities(&conjunct_stack, csb, conjunct_count);
-	if (parent_stack) {
-		// Find parent_stack position and reset it to NULL
-		for (stack_end = &conjunct_stack; *stack_end && !(*stack_end == parent_stack);
-			stack_end = &(*stack_end)->lls_next) ;
-		*stack_end = NULL;
+	// AB: Add parent conjunctions to conjunct_stack, keep in mind
+	// the outer-streams! For outer streams put missing (IS NULL)
+	// conjunctions in the missingStack.
+	SLONG distributed_count = 0;
+	LLS missingStack = NULL;
+	if (parent_stack && parent_stack->lls_object)
+	{
+		for (;parent_stack && conjunct_count < MAX_CONJUNCTS;
+			 parent_stack = parent_stack->lls_next) 
+		{
+			node = (JRD_NOD) parent_stack->lls_object;
+			if ((rse->rse_jointype != blr_inner) &&
+				expression_contains(node, nod_missing))
+			{
+				// parent missing conjunctions shouldn't be 
+				// distributed to FULL OUTER JOIN streams at all
+				if (rse->rse_jointype != blr_full) 
+				{
+					LLS_PUSH(node, &missingStack);
+				}
+			}
+			else
+			{
+				LLS_PUSH(node, &conjunct_stack);
+				conjunct_count++;
+			}
+		}	
+		// We've now merged parent, try again to make more conjunctions. 
+		distributed_count = distribute_equalities(&conjunct_stack, csb, conjunct_count);
+		conjunct_count += distributed_count;
 	}
 
+	// The newly created conjunctions belong to the base conjunctions. 
+	// After them are starting the parent conjunctions.
+	opt_->opt_base_parent_conjuncts = opt_->opt_base_conjuncts + (SSHORT) distributed_count;
+
+	// Set base-point before the parent IS NULL nodes begin
+	opt_->opt_base_missing_conjuncts = (SSHORT) conjunct_count;
+
+	// Check if size of optimizer block exceeded.
 	if (conjunct_count > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
 		// Msg442: size of optimizer block exceeded
 	}
 
-// AB: If equality nodes could be made get them first from the stack
-	for (i = saved_conjunct_count; i < conjunct_count; i++) {
-		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
-		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
+	// Put conjunctions in opt structure. 
+	// Note that it's a stack and we get the nodes in reversed order from the stack.
+	SSHORT i, j, nodeBase;
+	for (i = conjunct_count; i > 0; i--) 
+	{
+		node = (JRD_NOD) LLS_POP(&conjunct_stack);
+
+		if (i == opt_->opt_base_conjuncts)
+		{
+			// The base conjunctions.
+			j = 0;
+			nodeBase = 0;
+		}
+		else if (i == conjunct_count)
+		{
+			// The new conjunctions created by "distribution" from the stack.
+			j = 0;
+			nodeBase = opt_->opt_base_conjuncts;
+		}
+		else if (i == (conjunct_count - distributed_count))
+		{
+			// The parent conjunctions.
+			j = 0;
+			nodeBase = opt_->opt_base_conjuncts + distributed_count;
+		}
+
+		opt_->opt_rpt[nodeBase + j].opt_conjunct = node;
+		compute_dependencies(node, opt_->opt_rpt[nodeBase + j].opt_dependencies);
+		j++;
 	}
 
-	for (i = 0; i < saved_conjunct_count; i++) {
-		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
-		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
+	// Put the parent missing nodes on the stack.
+	while (missingStack) {
+		node = (JRD_NOD) LLS_POP(&missingStack);
+		if (conjunct_count < MAX_CONJUNCTS) {
+			opt_->opt_rpt[conjunct_count].opt_conjunct = node;
+			compute_dependencies(node, 
+				opt_->opt_rpt[conjunct_count].opt_dependencies);
+			conjunct_count++;
+		}
 	}
 
-// Store the conjuncts from the parent rse.  But don't fiddle with
-// the parent's stack itself.
-	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
-		 parent_stack = parent_stack->lls_next, conjunct_count++) {
-		opt_->opt_rpt[conjunct_count].opt_conjunct = node =
-			(JRD_NOD) parent_stack->lls_object;
-		compute_dependencies(node,
-							 opt_->opt_rpt[conjunct_count].opt_dependencies);
-	}
-
-	opt_->opt_parent_count = (SSHORT) conjunct_count;
-
-// Check if size of optimizer block exceeded.
-	if (parent_stack) {
-		ERR_post(isc_optimizer_blk_exc, 0);
-		// Msg442: size of optimizer block exceeded
-	}
+	opt_->opt_conjuncts_count = (SSHORT) conjunct_count;
 
 // attempt to optimize aggregates via an index, if possible
 	if (aggregate && !sort && !project) {
@@ -978,12 +1016,12 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
 
 /* If there are not conjunctions, don't waste our time */
 
-	if (!opt->opt_count) {
+	if (!opt->opt_base_conjuncts) {
 		return 0;
 	}
 
 	csb = opt->opt_csb;
-	opt_end = opt->opt_rpt + opt->opt_count;
+	opt_end = opt->opt_rpt + opt->opt_base_conjuncts;
 	n = 0;
 	clear_bounds(opt, idx);
 
@@ -2559,12 +2597,12 @@ static BOOLEAN estimate_cost(TDBB tdbb,
 /* Compute index selectivity.  This involves finding the indices
    to be utilized and making a crude guess of selectivities.  */
 
-	if (opt->opt_count) {
+	if (opt->opt_base_conjuncts) {
 		idx = csb_tail->csb_idx;
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 			n = 0;
 			clear_bounds(opt, idx);
-			opt_end = &opt->opt_rpt[opt->opt_count];
+			opt_end = &opt->opt_rpt[opt->opt_base_conjuncts];
 			for (tail = opt->opt_rpt; tail < opt_end; tail++) {
 				node = tail->opt_conjunct;
 				if (!(tail->opt_flags & opt_used) &&
@@ -2610,7 +2648,7 @@ static BOOLEAN estimate_cost(TDBB tdbb,
    record stream.  This is based on conjunctions without regard to whether
    or not they were the result of index operations. */
 
-	opt_end = opt->opt_rpt + opt->opt_count;
+	opt_end = opt->opt_rpt + opt->opt_base_conjuncts;
 
 	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
 		node = tail->opt_conjunct;
@@ -3183,7 +3221,7 @@ static void find_best(TDBB tdbb,
 	csb = opt->opt_csb;
 	csb->csb_rpt[stream].csb_flags |= csb_active;
 	stream_end = &streams[1] + streams[0];
-	opt_end = opt->opt_rpt + MAX(opt->opt_count, csb->csb_n_stream);
+	opt_end = opt->opt_rpt + MAX(opt->opt_base_conjuncts, csb->csb_n_stream);
 	opt->opt_rpt[position].opt_stream = stream;
 	++position;
 	order_end = opt->opt_rpt + position;
@@ -4402,7 +4440,7 @@ static RSB gen_residual_boolean(TDBB tdbb, OPT opt, RSB prior_rsb)
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	boolean = NULL;
-	opt_end = opt->opt_rpt + opt->opt_count;
+	opt_end = opt->opt_rpt + opt->opt_base_conjuncts;
 	for (tail = opt->opt_rpt; tail < opt_end; tail++) {
 		node = tail->opt_conjunct;
 		if (!(tail->opt_flags & opt_used)) {
@@ -4508,14 +4546,14 @@ static RSB gen_retrieval(TDBB     tdbb,
 
 	JRD_NOD inversion = NULL;
 	Opt::opt_repeat* opt_end =
-		opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
+		opt->opt_rpt + (inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts_count);
 	RSB rsb = NULL;
 
 	if (relation->rel_file)
 	{
 		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
 	}
-	else if (opt->opt_parent_count || (sort_ptr && *sort_ptr)
+	else if (opt->opt_base_parent_conjuncts || (sort_ptr && *sort_ptr)
 	 /***|| (project_ptr && *project_ptr)***/
 		)
 	{
@@ -4552,7 +4590,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 			clear_bounds(opt, idx);
 			tail = opt->opt_rpt;
 			if (outer_flag) {
-				tail += opt->opt_count;
+				tail += opt->opt_base_parent_conjuncts;
 			}
 			for (; tail < opt_end; tail++)
 			{
@@ -4644,7 +4682,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 			clear_bounds(opt, idx);
 			tail = opt->opt_rpt;
 			if (outer_flag) {
-				tail += opt->opt_count;
+				tail += opt->opt_base_parent_conjuncts;
 			}
 			for (; tail < opt_end; tail++)
 			{
@@ -4755,7 +4793,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 		// boolean and mark it used.
 
 		*return_boolean = NULL;
-		opt_end = opt->opt_rpt + opt->opt_count;
+		opt_end = opt->opt_rpt + opt->opt_base_conjuncts;
 		for (tail = opt->opt_rpt; tail < opt_end; tail++)
 		{
 			node = tail->opt_conjunct;
@@ -4774,10 +4812,10 @@ static RSB gen_retrieval(TDBB     tdbb,
 	// mark the stream to denote unmatched booleans.
 
 	opt_boolean = NULL;
-	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_count : opt->opt_parent_count);
+	opt_end = opt->opt_rpt + (inner_flag ? opt->opt_base_parent_conjuncts : opt->opt_conjuncts_count);
 	tail = opt->opt_rpt;
 	if (outer_flag) {
-		tail += opt->opt_count;
+		tail += opt->opt_base_parent_conjuncts;
 	}
 
 	for (; tail < opt_end; tail++)
@@ -5227,13 +5265,13 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		river1->riv_number = cnt++;
 	}
 
-	scratch = vec::newVector(*dbb->dbb_permanent, opt->opt_count * cnt);
+	scratch = vec::newVector(*dbb->dbb_permanent, opt->opt_base_conjuncts * cnt);
 	classes = (JRD_NOD *) &*(scratch->begin());
     //    classes = (JRD_NOD *) &(scratch->[0]);
 /* Compute equivalence classes among streams.  This involves finding groups
    of streams joined by field equalities.  */
 	last_class = classes;
-	for (tail = opt->opt_rpt, end = tail + opt->opt_count; tail < end; tail++) {
+	for (tail = opt->opt_rpt, end = tail + opt->opt_base_conjuncts; tail < end; tail++) {
 		if (tail->opt_flags & opt_used)
 			continue;
 		node = tail->opt_conjunct;
@@ -5495,13 +5533,13 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
 
-	if (!opt->opt_count) {
+	if (!opt->opt_base_conjuncts) {
 		return NULL;
 	}
 
 	CSB              csb      = opt->opt_csb;
 	csb_repeat*      csb_tail = &csb->csb_rpt[stream];
-	Opt::opt_repeat* opt_end  = &opt->opt_rpt[opt->opt_count];
+	Opt::opt_repeat* opt_end  = &opt->opt_rpt[opt->opt_base_conjuncts];
 	IRL relationship = NULL;
 
 /* Loop thru indexes looking for a match */
@@ -5867,7 +5905,7 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 	UINT64* idx_priority_level = &idx_priority_level_vector[0];
 
 	idx = csb_tail->csb_idx;
-	if (opt->opt_count) {
+	if (opt->opt_base_conjuncts) {
 
 		for (i = 0; i < csb_tail->csb_indices; i++) {
 
@@ -5920,7 +5958,7 @@ static JRD_NOD make_inversion(TDBB tdbb, OPT opt, JRD_NOD boolean, USHORT stream
 
 	accept = TRUE;
 	idx = csb_tail->csb_idx;
-	if (opt->opt_count) {
+	if (opt->opt_base_conjuncts) {
 		for (i = 0; i < idx_walk_count; i++) {
 			idx = idx_walk[i];
 			if (idx->idx_runtime_flags & idx_plan_dont_use) {

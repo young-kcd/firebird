@@ -329,8 +329,10 @@ class Opt : public pool_alloc<type_opt>
 	class Csb *opt_csb; /* Compiler scratch block */
 	SLONG opt_combinations; /* Number of partial orders considered */
 	double opt_best_cost; /* Cost of best join order */
-	SSHORT opt_count; /* Number of conjuncts */
-	SSHORT opt_parent_count; /* Number of conjuncts in parent rse */
+	SSHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are distributed parent
+	SSHORT opt_base_parent_conjuncts;		// number of conjuncts in our rse + distributed with parent, next are parent
+	SSHORT opt_base_missing_conjuncts;		// number of conjuncts in our and parent rse, but without missing
+	SSHORT opt_conjuncts_count;				// total number of conjuncts in our and parent rse
 	USHORT opt_best_count; /* Longest length of indexable streams */
 	USHORT opt_g_flags; /* global flags */
 	struct opt_repeat {
