@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.53 2004-08-27 05:03:13 robocop Exp $
+ * $Id: show.epp,v 1.54 2004-08-30 10:10:14 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -2882,8 +2882,14 @@ static processing_state show_role(const SCHAR* object)
 		bool first = true;
 
 		FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
-			first = false;
 
+			if (!R.RDB$DESCRIPTION.NULL)
+			{
+				ISQL_printf(isqlGlob.Out, "Role description: ");
+				SHOW_print_metadata_text_blob(isqlGlob.Out, &R.RDB$DESCRIPTION);
+				ISQL_printf(isqlGlob.Out, "\n");
+			}
+			
 			FOR PRV IN RDB$USER_PRIVILEGES WITH
 				PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 				PRV.RDB$USER_TYPE     EQ obj_user     AND
@@ -2891,12 +2897,19 @@ static processing_state show_role(const SCHAR* object)
 				PRV.RDB$PRIVILEGE     EQ 'M'
 				SORTED BY  PRV.RDB$USER
 
-				fb_utils::fb_exact_name(PRV.RDB$RELATION_NAME);
-				strcpy (role_name, PRV.RDB$RELATION_NAME);
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
-				else
-					strcpy (SQL_identifier, role_name);
+				if (first)
+				{
+					first = false;
+					fb_utils::fb_exact_name(PRV.RDB$RELATION_NAME);
+					strcpy(role_name, PRV.RDB$RELATION_NAME);
+					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						ISQL_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, role_name);
+
+					sprintf(Print_buffer, "Role %s is granted to:\n", SQL_identifier);
+					ISQL_printf(isqlGlob.Out, Print_buffer);
+				}
 
 				fb_utils::fb_exact_name(PRV.RDB$USER);
 				sprintf(Print_buffer, "%s\n", PRV.RDB$USER);
@@ -2908,6 +2921,20 @@ static processing_state show_role(const SCHAR* object)
 				ISQL_errmsg (isc_status);
 				return (ERR);
 			END_ERROR;
+			
+			if (first)
+			{
+			    first = false;
+				fb_utils::fb_exact_name(R.RDB$ROLE_NAME);
+				strcpy(role_name, R.RDB$ROLE_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					ISQL_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
+				else
+					strcpy(SQL_identifier, role_name);
+
+			    sprintf(Print_buffer, "Role %s isn't granted to anyone.\n", SQL_identifier);
+				ISQL_printf(isqlGlob.Out, Print_buffer);
+			}
 
 		END_FOR
 		ON_ERROR
