@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.16 2003-08-09 18:00:14 brodsom Exp $
+//	$Id: ada.cpp,v 1.17 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -1530,7 +1530,8 @@ static void gen_dyn_execute( ACT action, int column)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1618,7 +1619,8 @@ static void gen_dyn_immediate( ACT action, int column)
 	DYN statement;
 	DBB database;
 	TEXT *transaction;
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1688,7 +1690,8 @@ static void gen_dyn_open( ACT action, int column)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -1738,7 +1741,8 @@ static void gen_dyn_prepare( ACT action, int column)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64];
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;
@@ -2313,13 +2317,13 @@ static void gen_form_for( ACT action, int column)
 	GPRE_REQ request;
 	FORM form;
 	TEXT *status;
-	DBB dbb;
+	dbb* database;
 	int indent;
 
 	indent = column + INDENT;
 	request = action->act_request;
 	form = request->req_form;
-	dbb = request->req_database;
+	database = request->req_database;
 	status = status_vector(action);
 
 //  Get database attach and transaction started 
@@ -2332,7 +2336,7 @@ static void gen_form_for( ACT action, int column)
 	printa(column, "if %s = 0 then", request->req_form_handle);
 	printa(column, "interbase.load_form (%s %s%s, %s%s, %s, %d, \"%s\");",
 		   status,
-		   ada_package, dbb->dbb_name->sym_string,
+		   ada_package, database->dbb_name->sym_string,
 		   ada_package, request->req_trans,
 		   request->req_form_handle,
 		   strlen(form->form_name->sym_string), form->form_name->sym_string);
@@ -2561,7 +2565,7 @@ static void gen_item_end( ACT action, int column)
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
-	DBB dbb;
+	dbb* database;
 	TEXT s[32], index[16];
 
 	request = action->act_request;
@@ -2578,7 +2582,7 @@ static void gen_item_end( ACT action, int column)
 		return;
 	}
 
-	dbb = request->req_database;
+	database = request->req_database;
 	port = request->req_ports;
 
 //  Initialize field options 
@@ -2591,7 +2595,7 @@ static void gen_item_end( ACT action, int column)
 	printa(column,
 		   "interbase.insert_sub_form (%s %s%s, %s%s, %s, isc_%d'address)",
 		   status_vector(action),
-		   ada_package, dbb->dbb_name->sym_string,
+		   ada_package, database->dbb_name->sym_string,
 		   ada_package, request->req_trans,
 		   request->req_handle, port->por_ident);
 }
@@ -2697,17 +2701,17 @@ static void gen_menu( ACT action, int column)
 
 static void gen_menu_display( ACT action, int column)
 {
-	MENU menu;
+	MENU a_menu;
 	GPRE_REQ request, display_request;
 
 	request = action->act_request;
 	display_request = (GPRE_REQ) action->act_object;
 
-	menu = NULL;
+	a_menu = NULL;
 
 	for (action = request->req_actions; action; action = action->act_next)
 		if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
+			a_menu = (MENU) action->act_object;
 			break;
 		}
 
@@ -2716,13 +2720,13 @@ static void gen_menu_display( ACT action, int column)
 		   ADA_WINDOW_PACKAGE,
 		   request->req_handle,
 		   display_request->req_length,
-		   display_request->req_ident, menu->menu_title, menu->menu_title);
+		   display_request->req_ident, a_menu->menu_title, a_menu->menu_title);
 
 	printa(column,
 		   "\n\t\t\tisc_%d, isc_%dl, isc_%d, isc_%d);",
-		   menu->menu_terminator,
-		   menu->menu_entree_entree,
-		   menu->menu_entree_entree, menu->menu_entree_value);
+		   a_menu->menu_terminator,
+		   a_menu->menu_entree_entree,
+		   a_menu->menu_entree_entree, a_menu->menu_entree_value);
 }
 
 #endif
@@ -2766,32 +2770,32 @@ static void gen_menu_entree( ACT action, int column)
 
 static void gen_menu_entree_att( ACT action, int column)
 {
-	MENU menu;
+	MENU a_menu;
 	SSHORT ident, length;
 
-	menu = (MENU) action->act_object;
+	a_menu = (MENU) action->act_object;
 
 	length = FALSE;
 	switch (action->act_type) {
 	case ACT_entree_text:
-		ident = menu->menu_entree_entree;
+		ident = a_menu->menu_entree_entree;
 		break;
 	case ACT_entree_length:
-		ident = menu->menu_entree_entree;
+		ident = a_menu->menu_entree_entree;
 		length = TRUE;
 		break;
 	case ACT_entree_value:
-		ident = menu->menu_entree_value;
+		ident = a_menu->menu_entree_value;
 		break;
 	case ACT_title_text:
-		ident = menu->menu_title;
+		ident = a_menu->menu_title;
 		break;
 	case ACT_title_length:
-		ident = menu->menu_title;
+		ident = a_menu->menu_title;
 		length = TRUE;
 		break;
 	case ACT_terminator:
-		ident = menu->menu_terminator;
+		ident = a_menu->menu_terminator;
 		break;
 	default:
 		ident = -1;
@@ -2833,7 +2837,7 @@ static void gen_menu_for( ACT action, int column)
 static void gen_menu_item_end( ACT action, int column)
 {
 	GPRE_REQ request;
-	ENTREE entree;
+	ENTREE menu_entree;
 
 	if (action->act_pair->act_type == ACT_item_for) {
 		column += INDENT;
@@ -2841,15 +2845,15 @@ static void gen_menu_item_end( ACT action, int column)
 		return;
 	}
 
-	entree = (ENTREE) action->act_pair->act_object;
+	menu_entree = (ENTREE) action->act_pair->act_object;
 	request = entree->entree_request;
 
 	align(column);
 	ib_fprintf(out_file,
 			   "interbase.put_entree (%s, isc_%dl, isc_%d, isc_%d);",
 			   request->req_handle,
-			   entree->entree_entree,
-			   entree->entree_entree, entree->entree_value);
+			   menu_entree->entree_entree,
+			   menu_entree->entree_entree, menu_entree->entree_value);
 
 }
 #endif
@@ -2862,7 +2866,7 @@ static void gen_menu_item_end( ACT action, int column)
 
 static void gen_menu_item_for( ACT action, int column)
 {
-	ENTREE entree;
+	ENTREE menu_entree;
 	GPRE_REQ request;
 
 	if (action->act_type != ACT_item_for)
@@ -2870,8 +2874,8 @@ static void gen_menu_item_for( ACT action, int column)
 
 //  Build stuff for item loop 
 
-	entree = (ENTREE) action->act_object;
-	request = entree->entree_request;
+	menu_entree = (ENTREE) action->act_object;
+	request = menu_entree->entree_request;
 
 	printa(column, "loop");
 	column += INDENT;
@@ -2879,10 +2883,11 @@ static void gen_menu_item_for( ACT action, int column)
 	printa(column,
 		   "interbase.get_entree (%s, isc_%dl, isc_%d, isc_%d, isc_%d);",
 		   request->req_handle,
-		   entree->entree_entree,
-		   entree->entree_entree, entree->entree_value, entree->entree_end);
+		   menu_entree->entree_entree,
+		   menu_entree->entree_entree, menu_entree->entree_value,
+		   menu_entree->entree_end);
 
-	printa(column, "exit when isc_%d /= 0;", entree->entree_end);
+	printa(column, "exit when isc_%d /= 0;", menu_entree->entree_end);
 
 }
 #endif
@@ -2895,55 +2900,52 @@ static void gen_menu_item_for( ACT action, int column)
 static void gen_menu_request( GPRE_REQ request, int column)
 {
 	ACT action;
-	MENU menu;
-	ENTREE entree;
-
-	menu = NULL;
-	entree = NULL;
+	MENU a_menu = NULL;
+	ENTREE menu_entree = NULL;
 
 	for (action = request->req_actions; action; action = action->act_next) {
 		if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
+			a_menu = (MENU) action->act_object;
 			break;
 		}
 		else if (action->act_type == ACT_item_for
 				 || action->act_type == ACT_item_put) {
-			entree = (ENTREE) action->act_object;
+			menu_entree = (ENTREE) action->act_object;
 			break;
 		}
 	}
 
-	if (menu) {
-		menu->menu_title = CMP_next_ident();
-		menu->menu_terminator = CMP_next_ident();
-		menu->menu_entree_value = CMP_next_ident();
-		menu->menu_entree_entree = CMP_next_ident();
+	if (a_menu) {
+		a_menu->menu_title = CMP_next_ident();
+		a_menu->menu_terminator = CMP_next_ident();
+		a_menu->menu_entree_value = CMP_next_ident();
+		a_menu->menu_entree_entree = CMP_next_ident();
 		printa(column, "isc_%dl\t: %s;\t\t-- TITLE_LENGTH --",
-			   menu->menu_title, USHORT_DCL);
+			   a_menu->menu_title, USHORT_DCL);
 		printa(column, "isc_%d\t: string (1..81);\t\t-- TITLE_TEXT --",
-			   menu->menu_title);
+			   a_menu->menu_title);
 		printa(column, "isc_%d\t: %s;\t\t-- TERMINATOR --",
-			   menu->menu_terminator, USHORT_DCL);
+			   a_menu->menu_terminator, USHORT_DCL);
 		printa(column, "isc_%dl\t: %s;\t\t-- ENTREE_LENGTH --",
-			   menu->menu_entree_entree, USHORT_DCL);
+			   a_menu->menu_entree_entree, USHORT_DCL);
 		printa(column, "isc_%d\t: string (1..81);\t\t-- ENTREE_TEXT --",
-			   menu->menu_entree_entree);
+			   a_menu->menu_entree_entree);
 		printa(column, "isc_%d\t: %s;\t\t-- ENTREE_VALUE --",
-			   menu->menu_entree_value, LONG_DCL);
+			   a_menu->menu_entree_value, LONG_DCL);
 	}
 
-	if (entree) {
-		entree->entree_entree = CMP_next_ident();
-		entree->entree_value = CMP_next_ident();
-		entree->entree_end = CMP_next_ident();
+	if (menu_entree) {
+		menu_entree->entree_entree = CMP_next_ident();
+		menu_entree->entree_value = CMP_next_ident();
+		menu_entree->entree_end = CMP_next_ident();
 		printa(column, "isc_%dl\t: %s;\t\t-- ENTREE_LENGTH --",
-			   entree->entree_entree, USHORT_DCL);
+			   menu_entree->entree_entree, USHORT_DCL);
 		printa(column, "isc_%d\t: string (1..81);\t\t-- ENTREE_TEXT --",
-			   entree->entree_entree);
+			   menu_entree->entree_entree);
 		printa(column, "isc_%d\t: %s;\t\t-- ENTREE_VALUE --",
-			   entree->entree_value, LONG_DCL);
+			   menu_entree->entree_value, LONG_DCL);
 		printa(column, "isc_%d\t: %s;\t\t-- --",
-			   entree->entree_end, USHORT_DCL);
+			   menu_entree->entree_end, USHORT_DCL);
 	}
 
 }
@@ -3000,14 +3002,14 @@ static void gen_procedure( ACT action, int column)
 	TEXT *pattern;
 	GPRE_REQ request;
 	POR in_port, out_port;
-	DBB dbb;
+	dbb* database;
 
 	request = action->act_request;
 	in_port = request->req_vport;
 	out_port = request->req_primary;
 
-	dbb = request->req_database;
-	args.pat_database = dbb;
+	database = request->req_database;
+	args.pat_database = database;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_string2 = ada_null_address;
@@ -3807,7 +3809,7 @@ static void gen_t_start( ACT action, int column)
 {
 	DBB db;
 	GPRE_TRA trans;
-	TPB tpb;
+	tpb* tpb_iterator;
 	int count;
 	TEXT *filename;
 
@@ -3825,9 +3827,12 @@ static void gen_t_start( ACT action, int column)
 //  and fill in the tpb vector (aka TEB). 
 
 	count = 0;
-	for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next) {
+	for (tpb_iterator = trans->tra_tpb;
+		 tpb_iterator;
+		 tpb_iterator = tpb_iterator->tpb_tra_next)
+	{
 		count++;
-		db = tpb->tpb_database;
+		db = tpb_iterator->tpb_database;
 		if (sw_auto)
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
 				printa(column, "if (%s%s = 0) then", ada_package,
@@ -3838,9 +3843,9 @@ static void gen_t_start( ACT action, int column)
 				printa(column, "end if;");
 			}
 
-		printa(column, "isc_teb(%d).tpb_len := %d;", count, tpb->tpb_length);
+		printa(column, "isc_teb(%d).tpb_len := %d;", count, tpb_iterator->tpb_length);
 		printa(column, "isc_teb(%d).tpb_ptr := isc_tpb_%d'address;",
-			   count, tpb->tpb_ident);
+			   count, tpb_iterator->tpb_ident);
 		printa(column, "isc_teb(%d).dbb_ptr := %s%s'address;",
 			   count, ada_package, db->dbb_name->sym_string);
 	}
@@ -3860,16 +3865,16 @@ static void gen_t_start( ACT action, int column)
 //		Generate a TPB in the output file
 //  
 
-static void gen_tpb( TPB tpb, int column)
+static void gen_tpb(tpb* tpb_buffer, int column)
 {
 	TEXT *text, buffer[80], c, *p;
 	int length;
 
 	printa(column, "isc_tpb_%d\t: CONSTANT interbase.tpb (1..%d) := (",
-		   tpb->tpb_ident, tpb->tpb_length);
+		   tpb_buffer->tpb_ident, tpb_buffer->tpb_length);
 
-	length = tpb->tpb_length;
-	text = (TEXT *) tpb->tpb_string;
+	length = tpb_buffer->tpb_length;
+	text = (TEXT *) tpb_buffer->tpb_string;
 	p = buffer;
 
 	while (--length) {

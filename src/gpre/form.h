@@ -28,12 +28,12 @@
 /* Form instance */
 
 typedef struct form {
-	struct dbb *form_dbb;		/* Parent database */
-	struct form *form_next;		/* Next form in database */
-	struct sym *form_name;		/* Form name */
-	struct gpre_fld *form_fields;	/* Form fields */
-	struct gpre_req *form_parent;	/* Parent form request */
-	struct gpre_fld *form_field;		/* Field in parent */
+	dbb* form_dbb;				/* Parent database */
+	form* form_next;			/* Next form in database */
+	sym* form_name;				/* Form name */
+	gpre_fld* form_fields;		/* Form fields */
+	gpre_req* form_parent;		/* Parent form request */
+	gpre_fld* form_field;		/* Field in parent */
 	int *form_object;			/* Form data structure */
 	TEXT *form_handle;			/* Runtime form handle */
 } *FORM;
@@ -41,13 +41,13 @@ typedef struct form {
 /* Form Interaction */
 
 typedef struct fint {
-	struct gpre_req *fint_request;	/* Parent request */
+	gpre_req* fint_request;		/* Parent request */
 	USHORT fint_flags;			/* Misc crud */
-	struct lls *fint_display_fields;	/* List of fields for display */
-	struct lls *fint_update_fields;	/* List of fields for update */
-	struct lls *fint_wakeup_fields;	/* List of fields for immediate wakeup */
-	struct lls *fint_position_fields;	/* Field for cursor position */
-	struct lls *fint_override_fields;	/* Fields to be left alone */
+	lls* fint_display_fields;	/* List of fields for display */
+	lls* fint_update_fields;	/* List of fields for update */
+	lls* fint_wakeup_fields;	/* List of fields for immediate wakeup */
+	lls* fint_position_fields;	/* Field for cursor position */
+	lls* fint_override_fields;	/* Fields to be left alone */
 } *FINT;
 
 #define FINT_display_all	1
@@ -61,14 +61,14 @@ typedef struct fint {
 
 
 typedef struct entree {
-	struct gpre_req *entree_request;	/* Parent request */
+	gpre_req* entree_request;	/* Parent request */
 	USHORT entree_entree;		/* ident for entree */
 	USHORT entree_value;		/* ident for entree value */
 	USHORT entree_end;			/* ident for end flag for get */
 } *ENTREE;
 
 typedef struct menu {
-	struct entree menu_entree;	/* current/terminating entree */
+	entree menu_entree;			/* current/terminating entree */
 	USHORT menu_title;			/* ident for menu title */
 	USHORT menu_terminator;		/* ident for menu terminator */
 } *MENU;

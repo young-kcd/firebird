@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.21 2003-08-09 18:00:13 brodsom Exp $
+//	$Id: ftn.cpp,v 1.22 2003-09-05 10:14:07 aafemt Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -56,7 +56,7 @@ extern "C" {
 extern DBB isc_databases;
 extern GPRE_REQ requests;
 extern IB_FILE *out_file;
-extern struct dbd global_db_list[];
+extern dbd global_db_list[];
 extern USHORT global_db_count;
 
 
@@ -161,9 +161,6 @@ static void	gen_slice (ACT);
 static void	gen_start (ACT, POR);
 static void	gen_store (ACT);
 static void	gen_t_start (ACT);
-#ifdef NOT_USED_OR_REPLACED
-static void 	gen_tpb(TPB);
-#endif
 static void	gen_tpb_data (TPB);
 static void	gen_tpb_decls (TPB);
 static void	gen_trans (ACT);
@@ -1547,7 +1544,7 @@ static void gen_database( ACT action)
 static void gen_database_data( ACT action)
 {
 	DBB db;
-	TPB tpb;
+	tpb* tpb_iterator;
 	GPRE_REQ request;
 	BOOLEAN any_extern;
 	TEXT include_buffer[MAXPATHLEN];
@@ -1567,8 +1564,12 @@ static void gen_database_data( ACT action)
 		else
 			any_extern = TRUE;
 #endif
-		for (tpb = db->dbb_tpbs; tpb; tpb = tpb->tpb_dbb_next)
-			gen_tpb_data(tpb);
+		for (tpb_iterator = db->dbb_tpbs;
+			 tpb_iterator;
+			 tpb_iterator = tpb_iterator->tpb_dbb_next)
+		{
+			gen_tpb_data(tpb_iterator);
+		}
 	}
 
 	ib_fprintf(out_file,
@@ -1611,7 +1612,7 @@ static void gen_database_decls( ACT action)
 	DBB db;
 	GPRE_REQ request;
 	POR port;
-	TPB tpb;
+	tpb* tpb_iterator;
 	BLB blob;
 	TEXT *name;
 	BOOLEAN all_static, dcl_ndx_var;
@@ -1684,8 +1685,11 @@ static void gen_database_decls( ACT action)
 				   "%sCHARACTER*256 ISC_%s        %s{ database file name }\n",
 				   COLUMN, name, INLINE_COMMENT);
 
-		for (tpb = db->dbb_tpbs; tpb; tpb = tpb->tpb_dbb_next) {
-			gen_tpb_decls(tpb);
+		for (tpb_iterator = db->dbb_tpbs;
+			 tpb_iterator;
+			 tpb_iterator = tpb_iterator->tpb_dbb_next)
+		{
+			gen_tpb_decls(tpb_iterator);
 			dcl_ndx_var = TRUE;
 		}
 
@@ -1925,7 +1929,8 @@ static void gen_dyn_execute( ACT action)
 #ifdef hpux
 	TEXT s2[64], s3[64];
 #endif
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2021,7 +2026,8 @@ static void gen_dyn_immediate( ACT action)
 #ifdef hpux
 	TEXT s2[64], s3[64];
 #endif
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2119,7 +2125,8 @@ static void gen_dyn_open( ACT action)
 #ifdef hpux
 	TEXT s2[64], s3[64];
 #endif
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2180,7 +2187,8 @@ static void gen_dyn_prepare( ACT action)
 #ifdef hpux
 	TEXT * s2[64];
 #endif
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;
@@ -2622,13 +2630,13 @@ static void gen_form_display( ACT action)
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
-	DBB dbb;
+	dbb* database;
 	TEXT s[32], out[16];
 	int code;
 
 	display = (FINT) action->act_object;
 	request = display->fint_request;
-	dbb = request->req_database;
+	database = request->req_database;
 	port = request->req_ports;
 
 //  Initialize field options 
@@ -2646,7 +2654,7 @@ static void gen_form_display( ACT action)
 
 	printa(COLUMN,
 		   "CALL PYXIS__DRIVE_FORM (isc_status, %s, %s, isc_window, %s, %sisc_%d%s, %s%s%s)",
-		   dbb->dbb_name->sym_string, request->req_trans, request->req_handle,
+		   database->dbb_name->sym_string, request->req_trans, request->req_handle,
 		   REF_1, port->por_ident, REF_2, REF_1, out, REF_2);
 //  
 //status_and_stop (action);
@@ -2673,13 +2681,9 @@ static void gen_form_end( ACT action)
 
 static void gen_form_for( ACT action)
 {
-	GPRE_REQ request;
-	FORM form;
-	DBB dbb;
-
-	request = action->act_request;
-	form = request->req_form;
-	dbb = request->req_database;
+	GPRE_REQ request = action->act_request;
+	FORM a_form = request->req_form;
+	dbb* database = request->req_database;
 
 //  Get database attach and transaction started 
 
@@ -2691,10 +2695,10 @@ static void gen_form_for( ACT action)
 	printa(COLUMN, "IF (%s .EQ. 0) THEN", request->req_form_handle);
 	printa(COLUMN_INDENT,
 		   "CALL PYXIS__LOAD_FORM (isc_status, %s, %s, %s, %s%d%s, %s'%s'%s)",
-		   dbb->dbb_name->sym_string, request->req_trans,
+		   database->dbb_name->sym_string, request->req_trans,
 		   request->req_form_handle, I2_1,
-		   strlen(form->form_name->sym_string), I2_2, REF_1,
-		   form->form_name->sym_string, REF_2);
+		   strlen(a_form->form_name->sym_string), I2_2, REF_1,
+		   a_form->form_name->sym_string, REF_2);
 	status_and_stop(action);
 	printa(COLUMN, "END IF");
 
@@ -2866,7 +2870,7 @@ static void gen_item_end( ACT action)
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
-	DBB dbb;
+	dbb* database;
 	TEXT s[32], index[16];
 
 	request = action->act_request;
@@ -2884,7 +2888,7 @@ static void gen_item_end( ACT action)
 		return;
 	}
 
-	dbb = request->req_database;
+	database = request->req_database;
 	port = request->req_ports;
 
 //  Initialize field options 
@@ -2896,7 +2900,7 @@ static void gen_item_end( ACT action)
 
 	printa(COLUMN,
 		   "CALL PYXIS__INSERT (isc_status, %s, %s, %s, %sisc_%d%s)",
-		   dbb->dbb_name->sym_string,
+		   database->dbb_name->sym_string,
 		   request->req_trans,
 		   request->req_handle, REF_1, port->por_ident, REF_2);
 //  
@@ -2913,7 +2917,6 @@ static void gen_item_end( ACT action)
 static void gen_item_for( ACT action)
 {
 	GPRE_REQ request, parent;
-	FORM form;
 	TEXT index[30];
 
 	request = action->act_request;
@@ -2923,8 +2926,7 @@ static void gen_item_for( ACT action)
 		return;
 	}
 
-	form = request->req_form;
-	parent = form->form_parent;
+	parent = request->req_form->form_parent;
 
 //  Get map compiled 
 
@@ -3016,17 +3018,15 @@ static void gen_menu( ACT action)
 
 static void gen_menu_display( ACT action)
 {
-	MENU menu;
+	MENU a_menu = NULL;
 	GPRE_REQ request, display_request;
 
 	request = action->act_request;
 	display_request = (GPRE_REQ) action->act_object;
 
-	menu = NULL;
-
 	for (action = request->req_actions; action; action = action->act_next)
 		if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
+			a_menu = (MENU) action->act_object;
 			break;
 		}
 
@@ -3038,13 +3038,13 @@ static void gen_menu_display( ACT action)
 
 	printa(CONTINUE,
 		   "isc_%dl, %sisc_%d%s,",
-		   menu->menu_title, REF_1, menu->menu_title, REF_2);
+		   a_menu->menu_title, REF_1, a_menu->menu_title, REF_2);
 
 	printa(CONTINUE,
 		   "isc_%d, isc_%dl, %sisc_%d%s, isc_%d)",
-		   menu->menu_terminator,
-		   menu->menu_entree_entree,
-		   REF_1, menu->menu_entree_entree, REF_2, menu->menu_entree_value);
+		   a_menu->menu_terminator,
+		   a_menu->menu_entree_entree,
+		   REF_1, a_menu->menu_entree_entree, REF_2, a_menu->menu_entree_value);
 }
 #endif
 #ifdef PYXIS
@@ -3091,33 +3091,33 @@ static void gen_menu_entree( ACT action)
 
 static void gen_menu_entree_att( ACT action)
 {
-	MENU menu;
+	MENU a_menu;
 	SSHORT ident;
 	TEXT *length;
 
-	menu = (MENU) action->act_object;
+	a_menu = (MENU) action->act_object;
 
 	length = "";
 	switch (action->act_type) {
 	case ACT_entree_text:
-		ident = menu->menu_entree_entree;
+		ident = a_menu->menu_entree_entree;
 		break;
 	case ACT_entree_length:
-		ident = menu->menu_entree_entree;
+		ident = a_menu->menu_entree_entree;
 		length = "l";
 		break;
 	case ACT_entree_value:
-		ident = menu->menu_entree_value;
+		ident = a_menu->menu_entree_value;
 		break;
 	case ACT_title_text:
-		ident = menu->menu_title;
+		ident = a_menu->menu_title;
 		break;
 	case ACT_title_length:
-		ident = menu->menu_title;
+		ident = a_menu->menu_title;
 		length = "l";
 		break;
 	case ACT_terminator:
-		ident = menu->menu_terminator;
+		ident = a_menu->menu_terminator;
 		break;
 	default:
 		ident = -1;
@@ -3160,10 +3160,10 @@ static void gen_menu_for( ACT action)
 static void gen_menu_item_end( ACT action)
 {
 	GPRE_REQ request;
-	ENTREE entree;
+	ENTREE menu_entree;
 
-	entree = (ENTREE) action->act_pair->act_object;
-	request = entree->entree_request;
+	menu_entree = (ENTREE) action->act_pair->act_object;
+	request = menu_entree->entree_request;
 
 	if (action->act_pair->act_type == ACT_item_for) {
 		printa(COLUMN, "GOTO %d", request->req_top_label);
@@ -3174,8 +3174,8 @@ static void gen_menu_item_end( ACT action)
 	printa(COLUMN,
 		   "CALL PYXIS__PUT_ENTREE (%s, isc_%dl, %sisc_%d%s, isc_%d)",
 		   request->req_handle,
-		   entree->entree_entree,
-		   REF_1, entree->entree_entree, REF_2, entree->entree_value);
+		   menu_entree->entree_entree,
+		   REF_1, menu_entree->entree_entree, REF_2, menu_entree->entree_value);
 }
 #endif
 #ifdef PYXIS
@@ -3187,7 +3187,7 @@ static void gen_menu_item_end( ACT action)
 
 static void gen_menu_item_for( ACT action)
 {
-	ENTREE entree;
+	ENTREE menu_entree;
 	GPRE_REQ request;
 
 	if (action->act_type != ACT_item_for)
@@ -3195,8 +3195,8 @@ static void gen_menu_item_for( ACT action)
 
 //  Build stuff for item loop 
 
-	entree = (ENTREE) action->act_object;
-	request = entree->entree_request;
+	menu_entree = (ENTREE) action->act_object;
+	request = menu_entree->entree_request;
 
 	request->req_top_label = next_label();
 	request->req_btm_label = next_label();
@@ -3205,12 +3205,12 @@ static void gen_menu_item_for( ACT action)
 	printa(COLUMN,
 		   "CALL PYXIS__GET_ENTREE (%s, isc_%dl, %sisc_%d%s, isc_%d, %sisc_%d%s)",
 		   request->req_handle,
-		   entree->entree_entree,
-		   REF_1, entree->entree_entree, REF_2,
-		   entree->entree_value, REF_1, entree->entree_end, REF_2);
+		   menu_entree->entree_entree,
+		   REF_1, menu_entree->entree_entree, REF_2,
+		   menu_entree->entree_value, REF_1, menu_entree->entree_end, REF_2);
 
 	printa(COLUMN, "IF (isc_%d .NE. 0) GOTO %d\n",
-		   entree->entree_end, request->req_btm_label);
+		   menu_entree->entree_end, request->req_btm_label);
 }
 #endif
 #ifdef PYXIS
@@ -3222,55 +3222,52 @@ static void gen_menu_item_for( ACT action)
 static void gen_menu_request( GPRE_REQ request)
 {
 	ACT action;
-	MENU menu;
-	ENTREE entree;
-
-	menu = NULL;
-	entree = NULL;
+	MENU a_menu = NULL;
+	ENTREE menu_entree = NULL;
 
 	for (action = request->req_actions; action; action = action->act_next) {
 		if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
+			a_menu = (MENU) action->act_object;
 			break;
 		}
 		else if ((action->act_type == ACT_item_for)
 				 || (action->act_type == ACT_item_put)) {
-			entree = (ENTREE) action->act_object;
+			menu_entree = (ENTREE) action->act_object;
 			break;
 		}
 	}
 
-	if (menu) {
-		menu->menu_title = CMP_next_ident();
-		menu->menu_terminator = CMP_next_ident();
-		menu->menu_entree_value = CMP_next_ident();
-		menu->menu_entree_entree = CMP_next_ident();
+	if (a_menu) {
+		a_menu->menu_title = CMP_next_ident();
+		a_menu->menu_terminator = CMP_next_ident();
+		a_menu->menu_entree_value = CMP_next_ident();
+		a_menu->menu_entree_entree = CMP_next_ident();
 		ib_fprintf(out_file, "%sINTEGER*2 isc_%dl    %s{ TITLE_LENGTH }\n",
-				   COLUMN, menu->menu_title, INLINE_COMMENT);
+				   COLUMN, a_menu->menu_title, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sCHARACTER*81 isc_%d    %s{ TITLE_TEXT }\n",
-				   COLUMN, menu->menu_title, INLINE_COMMENT);
+				   COLUMN, a_menu->menu_title, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sINTEGER*2 isc_%d    %s{ TERMINATOR }\n",
-				   COLUMN, menu->menu_terminator, INLINE_COMMENT);
+				   COLUMN, a_menu->menu_terminator, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sINTEGER*2 isc_%dl    %s{ ENTREE_LENGTH }\n",
-				   COLUMN, menu->menu_entree_entree, INLINE_COMMENT);
+				   COLUMN, a_menu->menu_entree_entree, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sCHARACTER*81 isc_%d    %s{ ENTREE_TEXT }\n",
-				   COLUMN, menu->menu_entree_entree, INLINE_COMMENT);
+				   COLUMN, a_menu->menu_entree_entree, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sINTEGER*4 isc_%d    %s{ ENTREE_VALUE }\n\n",
-				   COLUMN, menu->menu_entree_value, INLINE_COMMENT);
+				   COLUMN, a_menu->menu_entree_value, INLINE_COMMENT);
 	}
 
-	if (entree) {
-		entree->entree_entree = CMP_next_ident();
-		entree->entree_value = CMP_next_ident();
-		entree->entree_end = CMP_next_ident();
+	if (menu_entree) {
+		menu_entree->entree_entree = CMP_next_ident();
+		menu_entree->entree_value = CMP_next_ident();
+		menu_entree->entree_end = CMP_next_ident();
 		ib_fprintf(out_file, "%sINTEGER*2 isc_%dl    %s{ ENTREE_LENGTH }\n",
-				   COLUMN, entree->entree_entree, INLINE_COMMENT);
+				   COLUMN, menu_entree->entree_entree, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sCHARACTER*81 isc_%d    %s{ ENTREE_TEXT }\n",
-				   COLUMN, entree->entree_entree, INLINE_COMMENT);
+				   COLUMN, menu_entree->entree_entree, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sINTEGER*4 isc_%d    %s{ ENTREE_VALUE }\n",
-				   COLUMN, entree->entree_value, INLINE_COMMENT);
+				   COLUMN, menu_entree->entree_value, INLINE_COMMENT);
 		ib_fprintf(out_file, "%sINTEGER*2 isc_%d    %s{ }\n\n",
-				   COLUMN, entree->entree_end, INLINE_COMMENT);
+				   COLUMN, menu_entree->entree_end, INLINE_COMMENT);
 	}
 }
 #endif
@@ -3325,15 +3322,15 @@ static void gen_procedure( ACT action)
 	TEXT *pattern;
 	GPRE_REQ request;
 	POR in_port, out_port;
-	DBB dbb;
+	dbb* database;
 	USHORT column = 6;
 
 	request = action->act_request;
 	in_port = request->req_vport;
 	out_port = request->req_primary;
 
-	dbb = request->req_database;
-	args.pat_database = dbb;
+	database = request->req_database;
+	args.pat_database = database;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
@@ -4208,7 +4205,7 @@ static void gen_t_start( ACT action)
 {
 	DBB db;
 	GPRE_TRA trans;
-	TPB tpb;
+	tpb* tpb_iterator;
 #ifdef hpux
 	int count;
 #endif
@@ -4224,8 +4221,11 @@ static void gen_t_start( ACT action)
 //  build a complete statement, including tpb's.  Ready db's as req. 
 
 	if (sw_auto)
-		for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next) {
-			db = tpb->tpb_database;
+		for (tpb_iterator = trans->tra_tpb;
+			 tpb_iterator;
+			 tpb_iterator = tpb_iterator->tpb_tra_next)
+		{
+			db = tpb_iterator->tpb_database;
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
 				printa(COLUMN, "IF (%s .EQ. 0) THEN",
 					   db->dbb_name->sym_string);
@@ -4239,12 +4239,15 @@ static void gen_t_start( ACT action)
 //  If this is hpux we should be building a teb vector here 
 //  with the tpb address and length specified 
 
-	for (tpb = trans->tra_tpb, count = 0; tpb; tpb = tpb->tpb_tra_next) {
+	for (tpb_iterator = trans->tra_tpb, count = 0;
+		 tpb_iterator;
+		 tpb_iterator = tpb_iterator->tpb_tra_next)
+	{
 		count++;
-		db = tpb->tpb_database;
-		printa(COLUMN, "ISC_TEB%d_LEN = %d", count, tpb->tpb_length);
+		db = tpb_iterator->tpb_database;
+		printa(COLUMN, "ISC_TEB%d_LEN = %d", count, tpb_iterator->tpb_length);
 		printa(COLUMN, "ISC_TEB%d_TPB = ISC_BADDRESS (ISC_TPB_%d)",
-			   count, tpb->tpb_ident);
+			   count, tpb_iterator->tpb_ident);
 		printa(COLUMN, "ISC_TEB%d_DBB = ISC_BADDRESS (%s)",
 			   count, db->dbb_name->sym_string);
 	}
@@ -4261,10 +4264,15 @@ static void gen_t_start( ACT action)
 		   (trans->tra_handle) ? trans->tra_handle : "GDS__TRANS",
 		   I2CONST_1, trans->tra_db_count, I2CONST_2);
 
-	for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next)
+	for (tpb_iterator = trans->tra_tpb;
+		 tpb_iterator;
+		 tpb_iterator = tpb_iterator->tpb_tra_next)
+	{
 		printa(CONTINUE, ", %s, %s%d%s, isc_tpb_%d",
-			   tpb->tpb_database->dbb_name->sym_string,
-			   I2CONST_1, tpb->tpb_length, I2CONST_2, tpb->tpb_ident);
+			   tpb_iterator->tpb_database->dbb_name->sym_string,
+			   I2CONST_1, tpb_iterator->tpb_length, I2CONST_2,
+			   tpb_iterator->tpb_ident);
+	}
 
 	printa(CONTINUE, ")");
 #endif
@@ -4278,7 +4286,7 @@ static void gen_t_start( ACT action)
 //		Initialize a TPB in the output file
 //  
 
-static void gen_tpb_data( TPB tpb)
+static void gen_tpb_data(tpb* tpb_buffer)
 {
 	TEXT *p;
 	UCHAR *text, *c;
@@ -4295,12 +4303,12 @@ static void gen_tpb_data( TPB tpb)
 //  fields.
 //  
 
-	length = (tpb->tpb_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
+	length = (tpb_buffer->tpb_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
 
-	printa(COLUMN, "DATA ISC_TPB_%d  /", tpb->tpb_ident, COMMA, length);
+	printa(COLUMN, "DATA ISC_TPB_%d  /", tpb_buffer->tpb_ident, COMMA, length);
 
-	text = tpb->tpb_string;
-	length = tpb->tpb_length;
+	text = tpb_buffer->tpb_string;
+	length = tpb_buffer->tpb_length;
 	strcpy(output_buffer, CONTINUE);
 	for (p = output_buffer; *p; p++);
 
@@ -4320,7 +4328,7 @@ static void gen_tpb_data( TPB tpb)
 
 	FTN_print_buffer(output_buffer);
 	sprintf(output_buffer, "%sEnd of data for ISC_TPB_%d\n",
-			COMMENT, tpb->tpb_ident);
+			COMMENT, tpb_buffer->tpb_ident);
 	FTN_print_buffer(output_buffer);
 }
 
@@ -4331,14 +4339,14 @@ static void gen_tpb_data( TPB tpb)
 //       TPB in the output file
 //  
 
-static void gen_tpb_decls( TPB tpb)
+static void gen_tpb_decls(tpb* tpb_buffer)
 {
 	int length;
 
-	length = (tpb->tpb_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
+	length = (tpb_buffer->tpb_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
 	ib_fprintf(out_file,
 			   "%sINTEGER*4      ISC_TPB_%d(%d)    %s{ transaction parameters }\n",
-			   COLUMN, tpb->tpb_ident, length, INLINE_COMMENT);
+			   COLUMN, tpb_buffer->tpb_ident, length, INLINE_COMMENT);
 }
 
 
@@ -5167,54 +5175,6 @@ static void gen_function( ACT function)
 	ib_fprintf(out_file, "\nreturn %s;\n}\n",
 			   gen_name(s, port->por_references, TRUE));
 }
-
-#ifdef NOT_USED_OR_REPLACED
-//____________________________________________________________
-//  
-//		Generate a TPB in the output file
-//  
-
-static void gen_tpb( TPB tpb)
-{
-	TEXT *text, buffer[80], c, *p;
-	SSHORT length, tpb_length;
-
-	printa("%sstatic char\n", COLUMN);
-	p = buffer;
-
-	for (length = 0; length < 4; length++)
-		*p++ = ' ';
-
-	sprintf(p, "isc_tpb_%d [%d] = {", tpb->tpb_ident, tpb->tpb_length);
-	while (*p)
-		p++;
-
-	tpb_length = tpb->tpb_length;
-	text = (TEXT *) tpb->tpb_string;
-
-	while (--tpb_length >= 0) {
-		c = *text++;
-		if ((c >= 'A' && c <= 'Z') || c == '$' || c == '_')
-			sprintf(p, "'%c'", c);
-		else
-			sprintf(p, "%d", c);
-		while (*p)
-			p++;
-		if (tpb_length)
-			*p++ = ',';
-		if (p - buffer > 60) {
-			*p = 0;
-			ib_fprintf(out_file, " %s\n", buffer);
-			p = buffer;
-			for (length = 0; length < 8; length++)
-				*p++ = ' ';
-			*p = 0;
-		}
-	}
-
-	ib_fprintf(out_file, "%s};\n", buffer);
-}
-#endif
 
 //____________________________________________________________
 //  

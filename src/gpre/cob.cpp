@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.23 2003-08-09 18:00:13 brodsom Exp $
+//	$Id: cob.cpp,v 1.24 2003-09-05 10:14:07 aafemt Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -1820,9 +1820,9 @@ static void gen_database( ACT action)
 	TEXT *name, fname[80], *s, s1[40];
 	USHORT count, max_count;
 #ifdef PYXIS
-	FORM form;
+	FORM a_form;
 #endif
-	TPB tpb;
+	tpb* tpb_iterator;
 	POR port;
 	BLB blob;
 	BOOLEAN all_static, all_extern, dyn_immed;
@@ -1872,21 +1872,25 @@ static void gen_database( ACT action)
 		}
 #endif
 
-		for (tpb = db->dbb_tpbs; tpb; tpb = tpb->tpb_dbb_next)
-			gen_tpb(tpb);
+		for (tpb_iterator = db->dbb_tpbs;
+			 tpb_iterator;
+			 tpb_iterator = tpb_iterator->tpb_dbb_next)
+		{
+			gen_tpb(tpb_iterator);
+		}
 #ifdef PYXIS
-		for (form = db->dbb_forms; form; form = form->form_next) {
+		for (a_form = db->dbb_forms; a_form; a_form = a_form->form_next) {
 			printa(names[COLUMN_0], FALSE,
 				   "01  %s PIC S9(9) USAGE COMP VALUE IS 0.",
-				   form->form_handle);
+				   a_form->form_handle);
 			printa(names[COLUMN_0], FALSE,
 				   "01  %sFL PIC S9(4) USAGE COMP VALUE IS %d.",
-				   form->form_handle, strlen(form->form_name->sym_string));
+				   a_form->form_handle, strlen(a_form->form_name->sym_string));
 #ifndef VMS
 			printa(names[COLUMN_0], FALSE,
-				   "01  %sFN PIC X(%d) VALUE IS \"%s\".", form->form_handle,
-				   strlen(form->form_name->sym_string),
-				   form->form_name->sym_string);
+				   "01  %sFN PIC X(%d) VALUE IS \"%s\".", a_form->form_handle,
+				   strlen(a_form->form_name->sym_string),
+				   a_form->form_name->sym_string);
 #endif
 		}
 #endif
@@ -2197,7 +2201,8 @@ static void gen_dyn_execute( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2293,7 +2298,8 @@ static void gen_dyn_immediate( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64], *s2;
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 #ifdef GIVING_SUPPORTED
 #define GET_LEN_CALL_TEMPLATE	"CALL %s USING %s GIVING %s"
@@ -2388,7 +2394,8 @@ static void gen_dyn_open( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s[64];
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	if (statement->dyn_trans) {
@@ -2443,7 +2450,8 @@ static void gen_dyn_prepare( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s[64], s2[64], s3[64];
-	struct gpre_req *request, req_const;
+	gpre_req* request;
+	gpre_req req_const;
 
 	statement = (DYN) action->act_object;
 	database = statement->dyn_database;
@@ -2942,13 +2950,13 @@ static void gen_form_display( ACT action)
 	GPRE_REQ request;
 	REF reference, master;
 	POR port;
-	DBB dbb;
+	dbb* database;
 	TEXT s[32], out[16];
 	int code;
 
 	display = (FINT) action->act_object;
 	request = display->fint_request;
-	dbb = request->req_database;
+	database = request->req_database;
 	port = request->req_ports;
 
 //  Initialize field options 
@@ -2970,7 +2978,7 @@ static void gen_form_display( ACT action)
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s, %s%s%d, %s%s",
 		   PYXIS_DRIVE_FORM,
 		   status_vector(action),
-		   BY_REF, dbb->dbb_name->sym_string,
+		   BY_REF, database->dbb_name->sym_string,
 		   BY_REF, request->req_trans,
 		   BY_REF, names[ISC_WINDOW],
 		   BY_REF, request->req_handle,
@@ -3097,13 +3105,13 @@ static void gen_function( ACT function)
 static void gen_form_for( ACT action)
 {
 	GPRE_REQ request;
-	FORM form;
-	DBB dbb;
+	FORM a_form;
+	dbb* database;
 	TEXT s[64];
 
 	request = action->act_request;
-	form = request->req_form;
-	dbb = request->req_database;
+	a_form = request->req_form;
+	database = request->req_database;
 
 //  Get database attach and transaction started 
 
@@ -3117,14 +3125,14 @@ static void gen_form_for( ACT action)
 #ifndef VMS
 	sprintf(s, "%s%sFN", BY_REF, request->req_form_handle);
 #else
-	sprintf(s, "\'%s\'", form->form_name->sym_string);
+	sprintf(s, "\'%s\'", a_form->form_name->sym_string);
 #endif
 
 	printa(names[COLUMN], TRUE,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%sFL, %s",
 		   PYXIS_LOAD_FORM,
 		   status_vector(action),
-		   BY_REF, dbb->dbb_name->sym_string,
+		   BY_REF, database->dbb_name->sym_string,
 		   BY_REF, request->req_trans,
 		   BY_REF, request->req_form_handle,
 		   BY_REF, request->req_form_handle, s);
@@ -3267,10 +3275,12 @@ static void gen_item_end( ACT action)
 	GPRE_REQ request;
 	REF reference;
 	POR port;
-	DBB dbb;
+	dbb* database;
 	TEXT s[32], index[16];
 
 	request = action->act_request;
+	database = request->req_database;
+	port = request->req_ports;
 
 	if (request->req_type == REQ_menu) {
 		gen_menu_item_end(action);
@@ -3284,16 +3294,13 @@ static void gen_item_end( ACT action)
 			   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s%d",
 			   PYXIS_FETCH,
 			   status_vector(action),
-			   BY_REF, request->req_database->dbb_name->sym_string,
+			   BY_REF, database->dbb_name->sym_string,
 			   BY_REF, request->req_trans,
 			   BY_REF, request->req_handle,
-			   BY_REF, names[ISC_], request->req_ports->por_ident);
+			   BY_REF, names[ISC_], port->por_ident);
 		printa(names[COLUMN], FALSE, "END-PERFORM");
 		return;
 	}
-
-	dbb = request->req_database;
-	port = request->req_ports;
 
 //  Initialize field options 
 
@@ -3307,7 +3314,7 @@ static void gen_item_end( ACT action)
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s%d",
 		   PYXIS_INSERT,
 		   status_vector(action),
-		   BY_REF, dbb->dbb_name->sym_string,
+		   BY_REF, database->dbb_name->sym_string,
 		   BY_REF, request->req_trans,
 		   BY_REF, request->req_handle, BY_REF, names[ISC_], port->por_ident);
 }
@@ -3320,8 +3327,7 @@ static void gen_item_end( ACT action)
 
 static void gen_item_for( ACT action)
 {
-	GPRE_REQ request, parent;
-	FORM form;
+	GPRE_REQ request;
 	TEXT index[30];
 
 	request = action->act_request;
@@ -3331,9 +3337,6 @@ static void gen_item_for( ACT action)
 		return;
 	}
 
-	form = request->req_form;
-	parent = form->form_parent;
-
 //  Get map compiled 
 
 	printa(names[COLUMN], FALSE, "IF %s = 0 THEN", request->req_handle);
@@ -3341,7 +3344,7 @@ static void gen_item_for( ACT action)
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s%dL, %s%s%d",
 		   PYXIS_COMPILE_SUB_MAP,
 		   status_vector(action),
-		   BY_REF, parent->req_handle,
+		   BY_REF, request->req_form->form_parent->req_handle,
 		   BY_REF, request->req_handle,
 		   BY_REF, names[ISC_], request->req_ident,
 		   BY_REF, names[ISC_], request->req_ident);
@@ -3428,17 +3431,15 @@ static void gen_menu( ACT action)
 
 static void gen_menu_display( ACT action)
 {
-	MENU menu;
+	MENU a_menu = NULL;
 	GPRE_REQ request, display_request;
 
 	request = action->act_request;
 	display_request = (GPRE_REQ) action->act_object;
 
-	menu = NULL;
-
 	for (action = request->req_actions; action; action = action->act_next)
 		if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
+			a_menu = (MENU) action->act_object;
 			break;
 		}
 
@@ -3449,15 +3450,15 @@ static void gen_menu_display( ACT action)
 		   BY_REF, request->req_handle,
 		   BY_REF, names[ISC_], display_request->req_ident,
 		   BY_REF, names[ISC_], display_request->req_ident,
-		   BY_REF, names[ISC_], menu->menu_title,
-		   BY_REF, names[ISC_], menu->menu_title);
+		   BY_REF, names[ISC_], a_menu->menu_title,
+		   BY_REF, names[ISC_], a_menu->menu_title);
 
 	printa(names[CONTINUE], TRUE,
 		   "%s%s%d, %s%s%dL, %s%s%d, %s%s%d",
-		   BY_REF, names[ISC_], menu->menu_terminator,
-		   BY_REF, names[ISC_], menu->menu_entree_entree,
-		   BY_REF, names[ISC_], menu->menu_entree_entree,
-		   BY_REF, names[ISC_], menu->menu_entree_value);
+		   BY_REF, names[ISC_], a_menu->menu_terminator,
+		   BY_REF, names[ISC_], a_menu->menu_entree_entree,
+		   BY_REF, names[ISC_], a_menu->menu_entree_entree,
+		   BY_REF, names[ISC_], a_menu->menu_entree_value);
 
 }
 #endif
@@ -3503,32 +3504,30 @@ static void gen_menu_entree( ACT action)
 
 static void gen_menu_entree_att( ACT action)
 {
-	MENU menu;
+	MENU a_menu = (MENU) action->act_object;
 	SSHORT ident, length;
-
-	menu = (MENU) action->act_object;
 
 	length = FALSE;
 	switch (action->act_type) {
 	case ACT_entree_text:
-		ident = menu->menu_entree_entree;
+		ident = a_menu->menu_entree_entree;
 		break;
 	case ACT_entree_length:
-		ident = menu->menu_entree_entree;
+		ident = a_menu->menu_entree_entree;
 		length = TRUE;
 		break;
 	case ACT_entree_value:
-		ident = menu->menu_entree_value;
+		ident = a_menu->menu_entree_value;
 		break;
 	case ACT_title_text:
-		ident = menu->menu_title;
+		ident = a_menu->menu_title;
 		break;
 	case ACT_title_length:
-		ident = menu->menu_title;
+		ident = a_menu->menu_title;
 		length = TRUE;
 		break;
 	case ACT_terminator:
-		ident = menu->menu_terminator;
+		ident = a_menu->menu_terminator;
 		break;
 	default:
 		ident = -1;
@@ -3570,20 +3569,20 @@ static void gen_menu_for( ACT action)
 static void gen_menu_item_end( ACT action)
 {
 	GPRE_REQ request;
-	ENTREE entree;
+	ENTREE menu_entree;
 
-	entree = (ENTREE) action->act_pair->act_object;
-	request = entree->entree_request;
+	menu_entree = (ENTREE) action->act_pair->act_object;
+	request = menu_entree->entree_request;
 
 	if (action->act_pair->act_type == ACT_item_for) {
 		printa(names[COLUMN], TRUE,
 			   "CALL \"%s\" USING %s%s, %s%s%dL, %s%s%d, %s%s%d, %s%s%d",
 			   PYXIS_GET_ENTREE,
 			   BY_REF, request->req_handle,
-			   BY_REF, names[ISC_], entree->entree_entree,
-			   BY_REF, names[ISC_], entree->entree_entree,
-			   BY_REF, names[ISC_], entree->entree_value,
-			   BY_REF, names[ISC_], entree->entree_end);
+			   BY_REF, names[ISC_], menu_entree->entree_entree,
+			   BY_REF, names[ISC_], menu_entree->entree_entree,
+			   BY_REF, names[ISC_], menu_entree->entree_value,
+			   BY_REF, names[ISC_], menu_entree->entree_end);
 
 		printa(names[COLUMN], FALSE, "END-PERFORM");
 		return;
@@ -3594,9 +3593,9 @@ static void gen_menu_item_end( ACT action)
 		   "CALL \"%s\" USING %s%s, %s%s%dL, %s%s%d, %s%s%d",
 		   PYXIS_PUT_ENTREE,
 		   BY_REF, request->req_handle,
-		   BY_REF, names[ISC_], entree->entree_entree,
-		   BY_REF, names[ISC_], entree->entree_entree,
-		   BY_REF, names[ISC_], entree->entree_value);
+		   BY_REF, names[ISC_], menu_entree->entree_entree,
+		   BY_REF, names[ISC_], menu_entree->entree_entree,
+		   BY_REF, names[ISC_], menu_entree->entree_value);
 }
 #endif
 #ifdef PYXIS
@@ -3608,7 +3607,7 @@ static void gen_menu_item_end( ACT action)
 
 static void gen_menu_item_for( ACT action)
 {
-	ENTREE entree;
+	ENTREE menu_entree;
 	GPRE_REQ request;
 
 	if (action->act_type != ACT_item_for)
@@ -3616,21 +3615,21 @@ static void gen_menu_item_for( ACT action)
 
 //  Build stuff for item loop 
 
-	entree = (ENTREE) action->act_object;
-	request = entree->entree_request;
+	menu_entree = (ENTREE) action->act_object;
+	request = menu_entree->entree_request;
 
 	printa(names[COLUMN],
 		   TRUE,
 		   "CALL \"%s\" USING %s%s, %s%s%dL, %s%s%d, %s%s%d, %s%s%d",
 		   PYXIS_GET_ENTREE,
 		   BY_REF, request->req_handle,
-		   BY_REF, names[ISC_], entree->entree_entree,
-		   BY_REF, names[ISC_], entree->entree_entree,
-		   BY_REF, names[ISC_], entree->entree_value,
-		   BY_REF, names[ISC_], entree->entree_end);
+		   BY_REF, names[ISC_], menu_entree->entree_entree,
+		   BY_REF, names[ISC_], menu_entree->entree_entree,
+		   BY_REF, names[ISC_], menu_entree->entree_value,
+		   BY_REF, names[ISC_], menu_entree->entree_end);
 
 	printa(names[COLUMN], FALSE, "PERFORM UNTIL %s%d NOT = 0",
-		   names[ISC_], entree->entree_end);
+		   names[ISC_], menu_entree->entree_end);
 
 }
 #endif
@@ -3643,55 +3642,52 @@ static void gen_menu_item_for( ACT action)
 static void gen_menu_request( GPRE_REQ request)
 {
 	ACT action;
-	MENU menu;
-	ENTREE entree;
-
-	menu = NULL;
-	entree = NULL;
+	MENU a_menu = NULL;
+	ENTREE menu_entree = NULL;
 
 	for (action = request->req_actions; action; action = action->act_next) {
 		if (action->act_type == ACT_menu_for) {
-			menu = (MENU) action->act_object;
+			a_menu = (MENU) action->act_object;
 			break;
 		}
 		else if ((action->act_type == ACT_item_for)
 				 || (action->act_type == ACT_item_put)) {
-			entree = (ENTREE) action->act_object;
+			menu_entree = (ENTREE) action->act_object;
 			break;
 		}
 	}
 
-	if (menu) {
-		menu->menu_title = CMP_next_ident();
-		menu->menu_terminator = CMP_next_ident();
-		menu->menu_entree_value = CMP_next_ident();
-		menu->menu_entree_entree = CMP_next_ident();
+	if (a_menu) {
+		a_menu->menu_title = CMP_next_ident();
+		a_menu->menu_terminator = CMP_next_ident();
+		a_menu->menu_entree_value = CMP_next_ident();
+		a_menu->menu_entree_entree = CMP_next_ident();
 		printa(names[COLUMN_0], FALSE, "01  %%dL PIC S9(4) USAGE IS COMP.",
-			   names[ISC_], menu->menu_title);
+			   names[ISC_], a_menu->menu_title);
 		printa(names[COLUMN_0], FALSE, "01  %%d PIC X(81).",
-			   names[ISC_], menu->menu_title);
+			   names[ISC_], a_menu->menu_title);
 		printa(names[COLUMN_0], FALSE, "01  %%d PIC S9(4) USAGE IS COMP.",
-			   names[ISC_], menu->menu_terminator);
+			   names[ISC_], a_menu->menu_terminator);
 		printa(names[COLUMN_0], FALSE, "01  %%dL PIC S9(4) USAGE IS COMP.",
-			   names[ISC_], menu->menu_entree_entree);
+			   names[ISC_], a_menu->menu_entree_entree);
 		printa(names[COLUMN_0], FALSE, "01  %%d PIC X(81).",
-			   names[ISC_], menu->menu_entree_entree);
+			   names[ISC_], a_menu->menu_entree_entree);
 		printa(names[COLUMN_0], FALSE, "01  %%d PIC S9(9) USAGE IS COMP.",
-			   names[ISC_], menu->menu_entree_value);
+			   names[ISC_], a_menu->menu_entree_value);
 	}
 
-	if (entree) {
-		entree->entree_entree = CMP_next_ident();
-		entree->entree_value = CMP_next_ident();
-		entree->entree_end = CMP_next_ident();
+	if (menu_entree) {
+		menu_entree->entree_entree = CMP_next_ident();
+		menu_entree->entree_value = CMP_next_ident();
+		menu_entree->entree_end = CMP_next_ident();
 		printa(names[COLUMN_0], FALSE, "01  %s%dL PIC S9(4) USAGE IS COMP.",
-			   names[ISC_], entree->entree_entree);
+			   names[ISC_], menu_entree->entree_entree);
 		printa(names[COLUMN_0], FALSE, "01  %s%d PIC X(81).",
-			   names[ISC_], entree->entree_entree);
+			   names[ISC_], menu_entree->entree_entree);
 		printa(names[COLUMN_0], FALSE, "01  %s%d PIC S9(9) USAGE IS COMP.",
-			   names[ISC_], entree->entree_value);
+			   names[ISC_], menu_entree->entree_value);
 		printa(names[COLUMN_0], FALSE, "01  %s%d PIC S9(4) USAGE IS COMP.",
-			   names[ISC_], entree->entree_end);
+			   names[ISC_], menu_entree->entree_end);
 	}
 
 }
@@ -3740,15 +3736,13 @@ static void gen_procedure( ACT action)
 	TEXT *pattern;
 	GPRE_REQ request;
 	POR in_port, out_port;
-	DBB dbb;
 	USHORT column;
 
 	request = action->act_request;
 	in_port = request->req_vport;
 	out_port = request->req_primary;
 
-	dbb = request->req_database;
-	args.pat_database = dbb;
+	args.pat_database = request->req_database;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
@@ -4563,7 +4557,7 @@ static void gen_t_start( ACT action)
 {
 	DBB db;
 	GPRE_TRA trans;
-	TPB tpb;
+	tpb* tpb_iterator;
 	TEXT *filename, dbname[80];
 	USHORT namelength;
 
@@ -4577,8 +4571,11 @@ static void gen_t_start( ACT action)
 //  build a complete statement, including tpb's.  Ready db's as gpre_req. 
 
 	if (sw_auto)
-		for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next) {
-			db = tpb->tpb_database;
+		for (tpb_iterator = trans->tra_tpb;
+			 tpb_iterator;
+			 tpb_iterator = tpb_iterator->tpb_tra_next)
+		{
+			db = tpb_iterator->tpb_database;
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
 				printa(names[COLUMN], FALSE, "IF %s = 0 THEN",
 					   db->dbb_name->sym_string);
@@ -4603,11 +4600,15 @@ static void gen_t_start( ACT action)
 		   BY_REF, (trans->tra_handle) ? trans->tra_handle : names[ISC_TRANS],
 		   BY_VALUE, trans->tra_db_count, END_VALUE);
 
-	for (tpb = trans->tra_tpb; tpb; tpb = tpb->tpb_tra_next)
+	for (tpb_iterator = trans->tra_tpb;
+		 tpb_iterator;
+		 tpb_iterator = tpb_iterator->tpb_tra_next)
+	{
 		printa(names[CONTINUE], TRUE, ", %s%s, %s%d%s, %s%s%d",
-			   BY_REF, tpb->tpb_database->dbb_name->sym_string,
-			   BY_VALUE, tpb->tpb_length, END_VALUE,
-			   BY_REF, names[ISC_TPB_], tpb->tpb_ident);
+			   BY_REF, tpb_iterator->tpb_database->dbb_name->sym_string,
+			   BY_VALUE, tpb_iterator->tpb_length, END_VALUE,
+			   BY_REF, names[ISC_TPB_], tpb_iterator->tpb_ident);
+	}
 
 	set_sqlcode(action);
 
@@ -4619,7 +4620,7 @@ static void gen_t_start( ACT action)
 //		Initialize a TPB in the output file
 //  
 
-static void gen_tpb( TPB tpb)
+static void gen_tpb(tpb* tpb_buffer)
 {
 	UCHAR *text, *c;
 	int length, char_len;
@@ -4640,10 +4641,10 @@ static void gen_tpb( TPB tpb)
 //  
 
 	printa(names[COLUMN_0], FALSE, "01  %s%d.",
-		   names[ISC_TPB_], tpb->tpb_ident);
+		   names[ISC_TPB_], tpb_buffer->tpb_ident);
 
-	text = tpb->tpb_string;
-	char_len = tpb->tpb_length;
+	text = tpb_buffer->tpb_string;
+	char_len = tpb_buffer->tpb_length;
 	length = 1;
 
 	while (char_len) {
@@ -4655,12 +4656,12 @@ static void gen_tpb( TPB tpb)
 		}
 
 		printa(names[COLUMN], FALSE, RAW_TPB_TEMPLATE,
-			   names[ISC_TPB_], tpb->tpb_ident,
+			   names[ISC_TPB_], tpb_buffer->tpb_ident,
 			   names[UNDER], length++, tpb_hunk.longword_tpb);
 	}
 
 	sprintf(output_buffer, "%sEnd of data for %s%d\n",
-			names[COMMENT], names[ISC_TPB_], tpb->tpb_ident);
+			names[COMMENT], names[ISC_TPB_], tpb_buffer->tpb_ident);
 	COB_print_buffer(output_buffer, FALSE);
 }
 

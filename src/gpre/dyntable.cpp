@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: dyntable.cpp,v 1.4 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -123,7 +123,7 @@ int *table[256];
 
 main()
 {
-	struct dyn *item;
+	dyn* item;
 	int max, *stuff, dyn;
 	SCHAR *table[256];
 

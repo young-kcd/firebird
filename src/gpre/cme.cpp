@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.6 2002-11-30 17:40:24 hippoman Exp $
+//	$Id: cme.cpp,v 1.7 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -382,13 +382,13 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 
 void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 {
-	struct gpre_fld field1, field2;
+	gpre_fld field1, field2;
 	SSHORT dtype_max;
 	TEXT *string;
 	MEL element;
 	REF reference;
 	GPRE_FLD tmp_field;
-	UDF udf;
+	udf* a_udf;
 
 	f->fld_dtype = 0;
 	f->fld_length = 0;
@@ -944,13 +944,13 @@ void CME_get_dtype( GPRE_NOD node, GPRE_FLD f)
 		return;
 
 	case nod_udf:
-		udf = (UDF) node->nod_arg[1];
-		f->fld_dtype = udf->udf_dtype;
-		f->fld_length = udf->udf_length;
-		f->fld_scale = udf->udf_scale;
-		f->fld_sub_type = udf->udf_sub_type;
-		f->fld_ttype = udf->udf_ttype;
-		f->fld_charset_id = udf->udf_charset_id;
+		a_udf = (udf*) node->nod_arg[1];
+		f->fld_dtype = a_udf->udf_dtype;
+		f->fld_length = a_udf->udf_length;
+		f->fld_scale = a_udf->udf_scale;
+		f->fld_sub_type = a_udf->udf_sub_type;
+		f->fld_ttype = a_udf->udf_ttype;
+		f->fld_charset_id = a_udf->udf_charset_id;
 		return;
 
 	case nod_cast:
@@ -1058,15 +1058,15 @@ void CME_relation(GPRE_CTX context, GPRE_REQ request)
 //		Generate blr for an rse node.
 //  
 
-void CME_rse(RSE rse, GPRE_REQ request)
+void CME_rse(rse* selection, GPRE_REQ request)
 {
 	GPRE_NOD temp, union_node, *ptr, *end, list;
 	RSE sub_rse;
 	SSHORT i;
 
-	if (rse->rse_join_type == (NOD_T) 0)
+	if (selection->rse_join_type == (NOD_T) 0)
 	{
-		if ((rse->rse_flags & RSE_singleton) &&
+		if ((selection->rse_flags & RSE_singleton) &&
 			!(request->req_database->dbb_flags & DBB_v3))
 		{
 			STUFF(blr_singular);
@@ -1078,11 +1078,11 @@ void CME_rse(RSE rse, GPRE_REQ request)
 
 //  Process unions, if any, otherwise process relations 
 
-	if (union_node = rse->rse_union)
+	if (union_node = selection->rse_union)
 	{
 		STUFF(1);
 		STUFF(blr_union);
-		STUFF(rse->rse_context[0]->ctx_internal);
+		STUFF(selection->rse_context[0]->ctx_internal);
 		STUFF(union_node->nod_count);
 		ptr = union_node->nod_arg;
 		for (end = ptr + union_node->nod_count; ptr < end; ptr++)
@@ -1092,7 +1092,7 @@ void CME_rse(RSE rse, GPRE_REQ request)
 			cmp_map(sub_rse->rse_map, request);
 		}
 	}
-	else if (sub_rse = rse->rse_aggregate)
+	else if (sub_rse = selection->rse_aggregate)
 	{
 		STUFF(1);
 		STUFF(blr_aggregate);
@@ -1112,26 +1112,26 @@ void CME_rse(RSE rse, GPRE_REQ request)
 	}
 	else
 	{
-		STUFF(rse->rse_count);
-		for (i = 0; i < rse->rse_count; i++)
-			CME_relation(rse->rse_context[i], request);
+		STUFF(selection->rse_count);
+		for (i = 0; i < selection->rse_count; i++)
+			CME_relation(selection->rse_context[i], request);
 	}
 
 //  Process the clauses present 
 
-	if (rse->rse_first)
+	if (selection->rse_first)
 	{
 		STUFF(blr_first);
-		CME_expr(rse->rse_first, request);
+		CME_expr(selection->rse_first, request);
 	}
 
-	if (rse->rse_boolean)
+	if (selection->rse_boolean)
 	{
 		STUFF(blr_boolean);
-		CME_expr(rse->rse_boolean, request);
+		CME_expr(selection->rse_boolean, request);
 	}
 
-	if (temp = rse->rse_sort)
+	if (temp = selection->rse_sort)
 	{
 		STUFF(blr_sort);
 		STUFF(temp->nod_count);
@@ -1143,7 +1143,7 @@ void CME_rse(RSE rse, GPRE_REQ request)
 		}
 	}
 
-	if (temp = rse->rse_reduced)
+	if (temp = selection->rse_reduced)
 	{
 		STUFF(blr_project);
 		STUFF(temp->nod_count);
@@ -1152,19 +1152,19 @@ void CME_rse(RSE rse, GPRE_REQ request)
 			CME_expr(*ptr++, request);
 	}
 
-	if (temp = rse->rse_plan)
+	if (temp = selection->rse_plan)
 	{
 		STUFF(blr_plan);
 		cmp_plan(temp, request);
 	}
 
-	if (rse->rse_join_type != (NOD_T) 0
-		&& rse->rse_join_type != nod_join_inner)
+	if (selection->rse_join_type != (NOD_T) 0
+		&& selection->rse_join_type != nod_join_inner)
 	{
 		STUFF(blr_join_type);
-		if (rse->rse_join_type == nod_join_left)
+		if (selection->rse_join_type == nod_join_left)
 			STUFF(blr_left);
-		else if (rse->rse_join_type == nod_join_right)
+		else if (selection->rse_join_type == nod_join_right)
 			STUFF(blr_right);
 		else
 			STUFF(blr_full);
@@ -1580,14 +1580,14 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 //		Generate a map for a union or aggregate rse.
 //  
 
-static void cmp_map( MAP map, GPRE_REQ request)
+static void cmp_map(map* a_map, GPRE_REQ request)
 {
 	MEL element;
 
 	STUFF(blr_map);
-	STUFF_WORD(map->map_count);
+	STUFF_WORD(a_map->map_count);
 
-	for (element = map->map_elements; element; element = element->mel_next)
+	for (element = a_map->map_elements; element; element = element->mel_next)
 	{
 		STUFF_WORD(element->mel_position);
 		CME_expr(element->mel_expr, request);
@@ -1781,12 +1781,12 @@ static void cmp_sdl_dtype( GPRE_FLD field, REF reference)
 static GPRE_NOD cmp_udf( GPRE_NOD node, GPRE_REQ request)
 {
 	GPRE_NOD list, *ptr, *end;
-	UDF udf;
+	udf* an_udf;
 	TEXT *p;
 
-	udf = (UDF) node->nod_arg[1];
+	an_udf = (udf*) node->nod_arg[1];
 	STUFF(blr_function);
-	p = udf->udf_function;
+	p = an_udf->udf_function;
 	STUFF(strlen(p));
 
 	while (*p)

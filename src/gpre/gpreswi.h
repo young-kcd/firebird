@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.8 2003-07-02 12:57:41 brodsom Exp $
+ * $Id: gpreswi.h,v 1.9 2003-09-05 10:14:08 aafemt Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -114,7 +114,7 @@ typedef struct sw_tab_t
 } *SW_TAB;
 
 
-static struct in_sw_tab_t gpre_in_sw_table[] =
+static in_sw_tab_t gpre_in_sw_table[] =
 {
 #ifdef GPRE_ADA
 	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},

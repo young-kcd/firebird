@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.12 2003-02-27 16:05:13 brodsom Exp $
+//	$Id: cmp.cpp,v 1.13 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -476,7 +476,7 @@ void CMP_t_start( GPRE_TRA trans)
 	DBB database;
 	RRL lock_block;
 	USHORT buff_len, tpb_len;
-	TPB tpb;
+	tpb* new_tpb;
 
 //  fill out a standard tpb buffer ahead of time so we know
 //  how large it is 
@@ -514,16 +514,16 @@ void CMP_t_start( GPRE_TRA trans)
 
 		if (trans->tra_flags & TRA_inc) {
 			if (database->dbb_flags & DBB_in_trans) {
-				tpb = (TPB) ALLOC(TPB_LEN(tpb_len));
-				tpb->tpb_length = tpb_len;
+				new_tpb = (tpb*) ALLOC(TPB_LEN(tpb_len));
+				new_tpb->tpb_length = tpb_len;
 				database->dbb_flags &= ~DBB_in_trans;
 			}
 			else
 				continue;
 		}
 		else if (!(trans->tra_flags & TRA_rrl)) {
-			tpb = (TPB) ALLOC(TPB_LEN(tpb_len));
-			tpb->tpb_length = tpb_len;
+			new_tpb = (tpb*) ALLOC(TPB_LEN(tpb_len));
+			new_tpb->tpb_length = tpb_len;
 		}
 		else if (database->dbb_rrls) {
 			p = rrl_buffer;
@@ -538,8 +538,8 @@ void CMP_t_start( GPRE_TRA trans)
 			}
 			*p = 0;
 			buff_len = (p - rrl_buffer);
-			tpb = (TPB) ALLOC(TPB_LEN(buff_len + tpb_len));
-			tpb->tpb_length = buff_len + tpb_len;
+			new_tpb = (tpb*) ALLOC(TPB_LEN(buff_len + tpb_len));
+			new_tpb->tpb_length = buff_len + tpb_len;
 			database->dbb_rrls = NULL;
 		}
 		else					/* this database isn't referenced */
@@ -547,18 +547,18 @@ void CMP_t_start( GPRE_TRA trans)
 
 		/* link this into the TPB chains (GPRE_TRA and DBB)   */
 
-		tpb->tpb_database = database;
-		tpb->tpb_dbb_next = database->dbb_tpbs;
-		database->dbb_tpbs = tpb;
-		tpb->tpb_tra_next = trans->tra_tpb;
-		trans->tra_tpb = tpb;
+		new_tpb->tpb_database = database;
+		new_tpb->tpb_dbb_next = database->dbb_tpbs;
+		database->dbb_tpbs = new_tpb;
+		new_tpb->tpb_tra_next = trans->tra_tpb;
+		trans->tra_tpb = new_tpb;
 		trans->tra_db_count++;
 
 		/* fill in the standard TPB and concatenate the relation names */
 
-		tpb->tpb_ident = CMP_next_ident();
+		new_tpb->tpb_ident = CMP_next_ident();
 
-		text = reinterpret_cast < char *>(tpb->tpb_string);
+		text = reinterpret_cast<char*>(new_tpb->tpb_string);
 		for (p = tpb_buffer; *p;)
 			*text++ = *p++;
 		if (trans->tra_flags & TRA_rrl)
@@ -1051,17 +1051,17 @@ static void cmp_form( GPRE_REQ request)
 	REF reference, option, parent;
 	POR port;
 	GPRE_FLD field;
-	FORM form;
+	FORM request_form;
 
-	form = request->req_form;
+	request_form = request->req_form;
 
-	if (!form->form_handle) {
-		form->form_handle = (TEXT *) ALLOC(20);
-		sprintf(form->form_handle, ident_pattern, CMP_next_ident());
+	if (!request_form->form_handle) {
+		request_form->form_handle = (TEXT *) ALLOC(20);
+		sprintf(request_form->form_handle, ident_pattern, CMP_next_ident());
 	}
 
 	if (!request->req_form_handle)
-		request->req_form_handle = form->form_handle;
+		request->req_form_handle = request_form->form_handle;
 
 	request->req_blr = request->req_base = (UCHAR *) ALLOC(500);
 	request->req_length = 500;
@@ -1083,7 +1083,7 @@ static void cmp_form( GPRE_REQ request)
 	else
 		cmp_port(port, request);
 
-	if (field = form->form_field) {
+	if (field = request_form->form_field) {
 		STUFF(PYXIS_MAP_SUB_FORM);
 		CMP_stuff_symbol(request, field->fld_symbol);
 	}
@@ -1144,11 +1144,11 @@ static void cmp_loop( GPRE_REQ request)
 	GPRE_NOD node, list, *ptr, *end, counter;
 	POR primary;
 	GPRE_CTX for_context, update_context;
-	RSE rse;
+	rse* selection;
 	REF reference;
 
 	node = request->req_node;
-	rse = request->req_rse;
+	selection = request->req_rse;
 
 	primary = request->req_primary;
 	make_send(primary, request);
@@ -1164,11 +1164,11 @@ static void cmp_loop( GPRE_REQ request)
 	CME_expr(lit0, request);
 	CME_expr(counter, request);
 
-	for_context = rse->rse_context[0];
+	for_context = selection->rse_context[0];
 	update_context = request->req_update;
 
 	STUFF(blr_for);
-	CME_rse(rse, request);
+	CME_rse(selection, request);
 	STUFF(blr_begin);
 
 	if (node->nod_type == nod_modify) {

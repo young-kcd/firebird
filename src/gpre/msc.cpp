@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.6 2003-07-02 12:57:41 brodsom Exp $
+//	$Id: msc.cpp,v 1.7 2003-09-05 10:14:08 aafemt Exp $
 //
 //  
-//$Id: msc.cpp,v 1.6 2003-07-02 12:57:41 brodsom Exp $
+//$Id: msc.cpp,v 1.7 2003-09-05 10:14:08 aafemt Exp $
 //  
 
 // ***************************************************
@@ -64,7 +64,7 @@ extern "C" {
 extern ACT cur_routine;
 
 typedef struct spc {
-	struct spc *spc_next;
+	spc* spc_next;
 	SLONG spc_remaining;
 } *SPC;
 
@@ -108,7 +108,7 @@ UCHAR *MSC_alloc(int size)
 
 	if (!space || size > space->spc_remaining) {
 		n = MAX(size, 4096);
-		if (!(next = (SPC) gds__alloc((SLONG) (n + sizeof(struct spc)))))
+		if (!(next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)))))
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
 		/* For V4.0 we don't care about gpre specific memory leaks */
@@ -120,7 +120,7 @@ UCHAR *MSC_alloc(int size)
 	}
 
 	space->spc_remaining -= size;
-	p = blk = ((UCHAR *) space + sizeof(struct spc) + space->spc_remaining);
+	p = blk = ((UCHAR *) space + sizeof(spc) + space->spc_remaining);
 	end = p + size;
 
 	while (p < end)
@@ -145,7 +145,7 @@ UCHAR *MSC_alloc_permanent(int size)
 
 	if (!permanent_space || size > permanent_space->spc_remaining) {
 		n = MAX(size, 4096);
-		if (!(next = (SPC) gds__alloc((SLONG) (n + sizeof(struct spc)))))
+		if (!(next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)))))
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
 		/* For V4.0 we don't care about gpre specific memory leaks */
@@ -158,7 +158,7 @@ UCHAR *MSC_alloc_permanent(int size)
 
 	permanent_space->spc_remaining -= size;
 	p = blk =
-		((UCHAR *) permanent_space + sizeof(struct spc) +
+		((UCHAR *) permanent_space + sizeof(spc) +
 		 permanent_space->spc_remaining);
 	end = p + size;
 

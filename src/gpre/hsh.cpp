@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.10 2003-02-10 13:28:18 eku Exp $
+//	$Id: hsh.cpp,v 1.11 2003-09-05 10:14:08 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -85,18 +85,18 @@ void HSH_init(void)
 	SCHAR *string;
 	SYM symbol, *ptr;
 	int i;
-	struct word *word;
+	word* a_word;
 
 	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
 	fflush(stdout);
-	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
-		for (string = word->keyword; *string; string++);
+	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
+		for (string = a_word->keyword; *string; string++);
 		symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_string = word->keyword;
-		symbol->sym_keyword = (int) word->id;
+		symbol->sym_string = a_word->keyword;
+		symbol->sym_keyword = (int) a_word->id;
 		HSH_insert(symbol);
 		symbol->sym_object = (GPRE_CTX) key_symbols;
 		key_symbols = symbol;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.8 2003-04-01 11:49:30 brodsom Exp $
+//	$Id: pat.cpp,v 1.9 2003-09-05 10:14:08 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -120,7 +120,7 @@ static struct ops {
 
 void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 {
-	struct ops *operator_;
+	ops* operator_;
 	TEXT buffer[512], c, *p, temp1[16], temp2[16];
 	USHORT sw_ident, sw_gen, n;
 	SSHORT value;				/* value needs to be signed since some of the

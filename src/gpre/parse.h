@@ -50,17 +50,17 @@ enum tok_t {
 
 typedef struct tok {
 	enum tok_t tok_type;		/* type of token */
-	struct sym *tok_symbol;		/* hash block if recognized */
+	sym* tok_symbol;			/* hash block if recognized */
 	KWWORDS tok_keyword;		/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
 	USHORT tok_white_space;
 	SCHAR tok_string[MAXSYMLEN];
 	USHORT tok_first;			/* first token in a statement */
-	struct sym *tok_charset;	/* Character set of token */
+	sym* tok_charset;			/* Character set of token */
 } *TOK;
 
-#define TOK_LEN sizeof (struct tok)
+#define TOK_LEN sizeof(tok)
 
 #ifdef PARSER_MAIN
 #define EXTERN
@@ -68,7 +68,7 @@ typedef struct tok {
 #define EXTERN	extern
 #endif
 
-EXTERN struct tok token;
+EXTERN tok token;
 
 #undef EXTERN
 

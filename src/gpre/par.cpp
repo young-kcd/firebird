@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.23 2003-09-01 07:48:27 brodsom Exp $
+//  $Id: par.cpp,v 1.24 2003-09-05 10:14:08 aafemt Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.23 2003-09-01 07:48:27 brodsom Exp $
+//	$Id: par.cpp,v 1.24 2003-09-05 10:14:08 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -2778,7 +2778,7 @@ static ACT par_menu_for()
 	PUSH((GPRE_NOD) request, &cur_menu);
 
 	action = MAKE_ACTION(request, ACT_menu_for);
-	menu = (MENU) ALLOC(sizeof(struct menu));
+	menu = (MENU) ALLOC(sizeof(menu));
 	action->act_object = (REF) menu;
 	menu->menu_request = request;
 
@@ -2813,7 +2813,7 @@ static ACT par_menu_item_for( SYM symbol, GPRE_CTX context, ACT_T type)
 	action = MAKE_ACTION(request, type);
 	PUSH((GPRE_NOD) action, (LLS *) & cur_item);
 
-	entree = (ENTREE) ALLOC(sizeof(struct entree));
+	entree = (ENTREE) ALLOC(sizeof(entree));
 	action->act_object = (REF) entree;
 	entree->entree_request = parent;
 

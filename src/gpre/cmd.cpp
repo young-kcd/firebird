@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.10 2003-08-09 18:00:14 brodsom Exp $
+//	$Id: cmd.cpp,v 1.11 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -260,13 +260,13 @@ CMD_compile_ddl(GPRE_REQ request)
 //		Add cache file to a database.
 //  
 
-static void add_cache( GPRE_REQ request, ACT action, DBB dbb)
+static void add_cache( GPRE_REQ request, ACT action, dbb* database)
 {
 	FIL file;
 	TEXT file_name[254];
 	SSHORT l;
 
-	file = dbb->dbb_cache_file;
+	file = database->dbb_cache_file;
 	l = MIN((strlen(file->fil_name)), (sizeof(file_name) - 1));
 
 	strncpy(file_name, file->fil_name, l);
@@ -435,7 +435,7 @@ static void alter_domain( GPRE_REQ request, ACT action)
 	GPRE_FLD field;
 	TEXT *default_source;
 	GPRE_NOD default_node;
-	CNSTRT cnstrt;
+	cnstrt* constraint;
 
 	field = (GPRE_FLD) action->act_object;
 
@@ -460,11 +460,13 @@ static void alter_domain( GPRE_REQ request, ACT action)
 
 	if (field->fld_constraints) {
 		STUFF(gds_dyn_single_validation);
-		for (cnstrt = field->fld_constraints; cnstrt;
-			 cnstrt =
-			 cnstrt->cnstrt_next) if (cnstrt->
-									  cnstrt_flags & CNSTRT_delete)
+		for (constraint = field->fld_constraints;
+			 constraint;
+			 constraint = constraint->cnstrt_next)
+		{
+			if (constraint->cnstrt_flags & CNSTRT_delete)
 					STUFF(gds_dyn_del_validation);
+		}
 		create_domain_constraint(request, action, field->fld_constraints);
 	}
 
@@ -501,7 +503,7 @@ static void alter_table( GPRE_REQ request, ACT action)
 {
 	GPRE_FLD field;
 	GPRE_REL relation;
-	CNSTRT cnstrt;
+	cnstrt* constraint;
 	TEXT *default_source;
 
 //  add relation name 
@@ -549,12 +551,14 @@ static void alter_table( GPRE_REQ request, ACT action)
 //  Check for any relation level ADD/DROP of constraints 
 
 	if (relation->rel_constraints) {
-		for (cnstrt = relation->rel_constraints; cnstrt;
-			 cnstrt =
-			 cnstrt->cnstrt_next) if (cnstrt->
-									  cnstrt_flags & CNSTRT_delete)
-					put_cstring(request, gds_dyn_delete_rel_constraint,
-								(TEXT *) cnstrt->cnstrt_name);
+		for (constraint = relation->rel_constraints;
+			 constraint;
+			 constraint = constraint->cnstrt_next)
+		{
+			if (constraint->cnstrt_flags & CNSTRT_delete)
+				put_cstring(request, gds_dyn_delete_rel_constraint,
+							(TEXT *) constraint->cnstrt_name);
+		}
 		create_constraint(request, action, relation->rel_constraints);
 	}
 
@@ -567,7 +571,7 @@ static void alter_table( GPRE_REQ request, ACT action)
 //		Generate dyn for creating a CHECK constraint.
 //  
 
-static void create_check_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt)
+static void create_check_constraint( GPRE_REQ request, ACT action, cnstrt* constraint)
 {
 	GPRE_TRG trigger;
 
@@ -580,9 +584,9 @@ static void create_check_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt
 //  "insert violates CHECK constraint on table" 
 
 	trigger->trg_message = NULL;
-	trigger->trg_boolean = cnstrt->cnstrt_boolean;
-	trigger->trg_source = (STR) ALLOC(cnstrt->cnstrt_text->txt_length + 1);
-	CPR_get_text((TEXT *) trigger->trg_source, cnstrt->cnstrt_text);
+	trigger->trg_boolean = constraint->cnstrt_boolean;
+	trigger->trg_source = (STR) ALLOC(constraint->cnstrt_text->txt_length + 1);
+	CPR_get_text((TEXT *) trigger->trg_source, constraint->cnstrt_text);
 	create_trigger(request, action, trigger,
 				   reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
 
@@ -604,14 +608,14 @@ static void create_check_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt
 //		do a column by column comparison.
 //  
 
-static void create_trg_firing_cond( GPRE_REQ request, CNSTRT cnstrt)
+static void create_trg_firing_cond( GPRE_REQ request, cnstrt* constraint)
 {
 	LLS prim_key_fld, field;
 	USHORT num_flds = 0, prim_key_num_flds = 0;
 	STR prim_key_fld_name;
 
 //  count primary key columns 
-	field = prim_key_fld = cnstrt->cnstrt_referred_fields;
+	field = prim_key_fld = constraint->cnstrt_referred_fields;
 
 	assert(field != NULL);
 
@@ -655,14 +659,14 @@ static void create_trg_firing_cond( GPRE_REQ request, CNSTRT cnstrt)
 //		for_key.column_2 = prim_key.column_2 and ....  so on..
 //  
 
-static void create_matching_blr( GPRE_REQ request, CNSTRT cnstrt)
+static void create_matching_blr( GPRE_REQ request, cnstrt* constraint)
 {
 	LLS field, for_key_fld, prim_key_fld;
 	USHORT for_key_num_flds = 0, prim_key_num_flds = 0, num_flds = 0;
 	STR for_key_fld_name, prim_key_fld_name;
 
 //  count primary key columns 
-	field = prim_key_fld = cnstrt->cnstrt_referred_fields;
+	field = prim_key_fld = constraint->cnstrt_referred_fields;
 
 	assert(field != NULL);
 
@@ -674,7 +678,7 @@ static void create_matching_blr( GPRE_REQ request, CNSTRT cnstrt)
 	assert(prim_key_num_flds > 0)
 
 //  count of foreign key columns 
-		field = for_key_fld = cnstrt->cnstrt_fields;
+		field = for_key_fld = constraint->cnstrt_fields;
 
 	assert(field != NULL);
 
@@ -749,7 +753,7 @@ static void create_default_blr(
 //		integrity) along with the trigger blr.
 //  
 
-static void create_upd_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
+static void create_upd_cascade_trg( GPRE_REQ request, ACT action, cnstrt* constraint)
 {
 
 	LLS for_key_fld, prim_key_fld;
@@ -757,8 +761,8 @@ static void create_upd_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 	USHORT offset, length;
 	GPRE_REL relation;
 
-	for_key_fld = cnstrt->cnstrt_fields;
-	prim_key_fld = cnstrt->cnstrt_referred_fields;
+	for_key_fld = constraint->cnstrt_fields;
+	prim_key_fld = constraint->cnstrt_referred_fields;
 	relation = (GPRE_REL) action->act_object;
 
 //  no trigger name is generated here. Let the engine make one up 
@@ -770,7 +774,7 @@ static void create_upd_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 	put_numeric(request, gds_dyn_trg_sequence, (SSHORT) 1);
 	put_numeric(request, gds_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, gds_dyn_rel_name,
-				(TEXT *) cnstrt->cnstrt_referred_rel);
+				(TEXT *) constraint->cnstrt_referred_rel);
 
 //  the trigger blr 
 
@@ -783,7 +787,7 @@ static void create_upd_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 	else
 		STUFF(blr_version5);
 
-	create_trg_firing_cond(request, cnstrt);
+	create_trg_firing_cond(request, constraint);
 
 	STUFF(blr_begin);
 	STUFF(blr_begin);
@@ -800,7 +804,7 @@ static void create_upd_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 	STUFF(2);
 
 //  generate the blr for: foreign_key == primary_key 
-	create_matching_blr(request, cnstrt);
+	create_matching_blr(request, constraint);
 
 	STUFF(blr_modify);
 	STUFF((SSHORT) 2);
@@ -844,7 +848,7 @@ static void create_upd_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 //		integrity) along with the trigger blr.
 //  
 
-static void create_del_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
+static void create_del_cascade_trg( GPRE_REQ request, ACT action, cnstrt* constraint)
 {
 	GPRE_REL relation;
 	USHORT offset, length;
@@ -860,7 +864,7 @@ static void create_del_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 	put_numeric(request, gds_dyn_trg_sequence, (SSHORT) 1);
 	put_numeric(request, gds_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, gds_dyn_rel_name,
-				(TEXT *) cnstrt->cnstrt_referred_rel);
+				(TEXT *) constraint->cnstrt_referred_rel);
 
 //  the trigger blr 
 	STUFF(gds_dyn_trg_blr);
@@ -883,7 +887,7 @@ static void create_del_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 //  the context for the foreign key relation 
 	STUFF(2);
 
-	create_matching_blr(request, cnstrt);
+	create_matching_blr(request, constraint);
 
 	STUFF(blr_erase);
 	STUFF((SSHORT) 2);
@@ -909,7 +913,7 @@ static void create_del_cascade_trg( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 static void create_set_default_trg(
 								   GPRE_REQ request,
 								   ACT action,
-								   CNSTRT cnstrt, BOOLEAN on_upd_trg)
+								   cnstrt* constraint, BOOLEAN on_upd_trg)
 {
 
 	BOOLEAN search_for_default, search_for_column;
@@ -920,14 +924,14 @@ static void create_set_default_trg(
 	USHORT offset, length;
 	GPRE_REL relation, rel;
 	GPRE_REQ req;
-	ACT act;
+	ACT request_action;
 	TEXT s[512];
 	TEXT default_val[BLOB_BUFFER_SIZE];
 
 	assert(request->req_actions->act_type == ACT_create_table ||
 		   request->req_actions->act_type == ACT_alter_table);
 
-	for_key_fld = cnstrt->cnstrt_fields;
+	for_key_fld = constraint->cnstrt_fields;
 	relation = (GPRE_REL) action->act_object;
 
 //  no trigger name. It is generated by the engine 
@@ -941,7 +945,7 @@ static void create_set_default_trg(
 	put_numeric(request, gds_dyn_trg_sequence, (SSHORT) 1);
 	put_numeric(request, gds_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, gds_dyn_rel_name,
-				(TEXT *) cnstrt->cnstrt_referred_rel);
+				(TEXT *) constraint->cnstrt_referred_rel);
 
 //  the trigger blr 
 
@@ -959,7 +963,7 @@ static void create_set_default_trg(
 //  Note that the key could consist of multiple columns 
 
 	if (on_upd_trg) {
-		create_trg_firing_cond(request, cnstrt);
+		create_trg_firing_cond(request, constraint);
 		STUFF(blr_begin);
 		STUFF(blr_begin);
 	}
@@ -975,7 +979,7 @@ static void create_set_default_trg(
 //  the context for the foreign key relation 
 	STUFF(2);
 
-	create_matching_blr(request, cnstrt);
+	create_matching_blr(request, constraint);
 
 	STUFF(blr_modify);
 	STUFF((SSHORT) 2);
@@ -1050,10 +1054,10 @@ static void create_set_default_trg(
 			   within the same application ... */
 			for (req = requests; req; req = req->req_next) {
 				if ((req->req_type == REQ_ddl) &&
-					(act = req->req_actions) &&
-					(act->act_type == ACT_create_table ||
-					 act->act_type == ACT_alter_table) &&
-					(rel = (GPRE_REL) act->act_object) &&
+					(request_action = req->req_actions) &&
+					(request_action->act_type == ACT_create_table ||
+					 request_action->act_type == ACT_alter_table) &&
+					(rel = (GPRE_REL) request_action->act_object) &&
 					(strcmp(rel->rel_symbol->sym_string,
 							relation->rel_symbol->sym_string) == 0)) {
 					/* ... then try to check for the default in memory */
@@ -1094,10 +1098,10 @@ static void create_set_default_trg(
 			/* search for domain in memory */
 			for (req = requests; req; req = req->req_next) {
 				if ((req->req_type == REQ_ddl) &&
-					(act = req->req_actions) &&
-					((act->act_type == ACT_create_domain) ||
-					 (act->act_type == ACT_alter_domain)) &&
-					(domain = (GPRE_FLD) act->act_object) &&
+					(request_action = req->req_actions) &&
+					((request_action->act_type == ACT_create_domain) ||
+					 (request_action->act_type == ACT_alter_domain)) &&
+					(domain = (GPRE_FLD) request_action->act_object) &&
 					(strcmp(search_for_domain,
 							domain->fld_symbol->sym_string) == 0) &&
 					(domain->fld_default_value->nod_type != nod_erase)) {
@@ -1180,7 +1184,7 @@ static void create_set_default_trg(
 
 static void create_set_null_trg(
 								GPRE_REQ request,
-								ACT action, CNSTRT cnstrt, BOOLEAN on_upd_trg)
+								ACT action, cnstrt* constraint, BOOLEAN on_upd_trg)
 {
 
 	LLS for_key_fld;
@@ -1188,7 +1192,7 @@ static void create_set_null_trg(
 	USHORT offset, length;
 	GPRE_REL relation;
 
-	for_key_fld = cnstrt->cnstrt_fields;
+	for_key_fld = constraint->cnstrt_fields;
 	relation = (GPRE_REL) action->act_object;
 
 //  no trigger name. It is generated by the engine 
@@ -1202,7 +1206,7 @@ static void create_set_null_trg(
 	put_numeric(request, gds_dyn_trg_sequence, (SSHORT) 1);
 	put_numeric(request, gds_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, gds_dyn_rel_name,
-				(TEXT *) cnstrt->cnstrt_referred_rel);
+				(TEXT *) constraint->cnstrt_referred_rel);
 
 //  the trigger blr 
 
@@ -1220,7 +1224,7 @@ static void create_set_null_trg(
 //  Note that the key could consist of multiple columns 
 
 	if (on_upd_trg) {
-		create_trg_firing_cond(request, cnstrt);
+		create_trg_firing_cond(request, constraint);
 		STUFF(blr_begin);
 		STUFF(blr_begin);
 	}
@@ -1236,7 +1240,7 @@ static void create_set_null_trg(
 //  the context for the foreign key relation 
 	STUFF(2);
 
-	create_matching_blr(request, cnstrt);
+	create_matching_blr(request, constraint);
 
 	STUFF(blr_modify);
 	STUFF((SSHORT) 2);
@@ -1276,11 +1280,11 @@ static void create_set_null_trg(
 //		Get referred fields from memory/system tables
 //  
 
-static void get_referred_fields( ACT action, CNSTRT cnstrt)
+static void get_referred_fields( ACT action, cnstrt* constraint)
 {
 	GPRE_REQ req;
 	GPRE_REL rel, relation;
-	ACT act;
+	ACT request_action;
 	CNSTRT cns;
 	TEXT s[512];
 	LLS field;
@@ -1290,51 +1294,51 @@ static void get_referred_fields( ACT action, CNSTRT cnstrt)
 
 	for (req = requests; req; req = req->req_next) {
 		if ((req->req_type == REQ_ddl) &&
-			(act = req->req_actions) &&
-			(act->act_type == ACT_create_table ||
-			 act->act_type == ACT_alter_table) &&
-			(rel = (GPRE_REL) act->act_object) &&
+			(request_action = req->req_actions) &&
+			(request_action->act_type == ACT_create_table ||
+			 request_action->act_type == ACT_alter_table) &&
+			(rel = (GPRE_REL) request_action->act_object) &&
 			(strcmp(rel->rel_symbol->sym_string,
-					(const char *) cnstrt->cnstrt_referred_rel) == 0)) {
+					(const char *) constraint->cnstrt_referred_rel) == 0)) {
 			for (cns = rel->rel_constraints; cns; cns = cns->cnstrt_next)
 				if (cns->cnstrt_type == CNSTRT_PRIMARY_KEY) {
-					cnstrt->cnstrt_referred_fields = cns->cnstrt_fields;
+					constraint->cnstrt_referred_fields = cns->cnstrt_fields;
 					break;
 				}
-			if (!cnstrt->cnstrt_referred_fields && rel->rel_fields)
+			if (!constraint->cnstrt_referred_fields && rel->rel_fields)
 				for (cns = rel->rel_fields->fld_constraints; cns;
 					 cns =
 					 cns->cnstrt_next) if (cns->cnstrt_type ==
 										   CNSTRT_PRIMARY_KEY) {
-						cnstrt->cnstrt_referred_fields = cns->cnstrt_fields;
+						constraint->cnstrt_referred_fields = cns->cnstrt_fields;
 						break;
 					}
-			if (cnstrt->cnstrt_referred_fields)
+			if (constraint->cnstrt_referred_fields)
 				break;
 		}
 	}
 
-	if (cnstrt->cnstrt_referred_fields == NULL)
+	if (constraint->cnstrt_referred_fields == NULL)
 		/* Nothing is in memory. Try to find in system tables */
-		cnstrt->cnstrt_referred_fields =
+		constraint->cnstrt_referred_fields =
 			MET_get_primary_key(relation->rel_database,
-								(TEXT *) cnstrt->cnstrt_referred_rel);
+								(TEXT *) constraint->cnstrt_referred_rel);
 
-	if (cnstrt->cnstrt_referred_fields == NULL) {
+	if (constraint->cnstrt_referred_fields == NULL) {
 		/* Nothing is in system tables. */
 		sprintf(s,
 				"\"REFERENCES %s\" without \"(column list)\" requires PRIMARY KEY on referenced table",
-				cnstrt->cnstrt_referred_rel->str_string);
+				constraint->cnstrt_referred_rel->str_string);
 		CPR_error(s);
 	}
 	else {
 		/* count both primary key and foreign key columns */
-		field = cnstrt->cnstrt_referred_fields;
+		field = constraint->cnstrt_referred_fields;
 		while (field) {
 			prim_key_num_flds++;
 			field = field->lls_next;
 		}
-		field = cnstrt->cnstrt_fields;
+		field = constraint->cnstrt_fields;
 		while (field) {
 			for_key_num_flds++;
 			field = field->lls_next;
@@ -1342,7 +1346,7 @@ static void get_referred_fields( ACT action, CNSTRT cnstrt)
 		if (prim_key_num_flds != for_key_num_flds) {
 			sprintf(s,
 					"PRIMARY KEY column count in relation \"%s\" does not match FOREIGN KEY in relation \"%s\"",
-					cnstrt->cnstrt_referred_rel->str_string,
+					constraint->cnstrt_referred_rel->str_string,
 					relation->rel_symbol->sym_string);
 			CPR_error(s);
 		}
@@ -1355,30 +1359,30 @@ static void get_referred_fields( ACT action, CNSTRT cnstrt)
 //		Generate dyn for creating a constraint.
 //  
 
-static void create_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt)
+static void create_constraint( GPRE_REQ request, ACT action, cnstrt* constraint)
 {
 	LLS field;
 	STR string;
 
-	for (; cnstrt; cnstrt = cnstrt->cnstrt_next) {
-		if (cnstrt->cnstrt_flags & CNSTRT_delete)
+	for (; constraint; constraint = constraint->cnstrt_next) {
+		if (constraint->cnstrt_flags & CNSTRT_delete)
 			continue;
 		put_cstring(request, gds_dyn_rel_constraint,
-					(TEXT *) cnstrt->cnstrt_name);
+					(TEXT *) constraint->cnstrt_name);
 
-		if (cnstrt->cnstrt_type == CNSTRT_PRIMARY_KEY)
+		if (constraint->cnstrt_type == CNSTRT_PRIMARY_KEY)
 			STUFF(gds_dyn_def_primary_key);
-		else if (cnstrt->cnstrt_type == CNSTRT_UNIQUE)
+		else if (constraint->cnstrt_type == CNSTRT_UNIQUE)
 			STUFF(gds_dyn_def_unique);
-		else if (cnstrt->cnstrt_type == CNSTRT_FOREIGN_KEY)
+		else if (constraint->cnstrt_type == CNSTRT_FOREIGN_KEY)
 			STUFF(gds_dyn_def_foreign_key);
-		else if (cnstrt->cnstrt_type == CNSTRT_NOT_NULL) {
+		else if (constraint->cnstrt_type == CNSTRT_NOT_NULL) {
 			STUFF(gds_dyn_fld_not_null);
 			STUFF_END;
 			continue;
 		}
-		else if (cnstrt->cnstrt_type == CNSTRT_CHECK) {
-			create_check_constraint(request, action, cnstrt);
+		else if (constraint->cnstrt_type == CNSTRT_CHECK) {
+			create_check_constraint(request, action, constraint);
 			STUFF_END;
 			continue;
 		}
@@ -1388,29 +1392,29 @@ static void create_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 
 		STUFF_WORD(0);
 
-		if (cnstrt->cnstrt_type == CNSTRT_FOREIGN_KEY) {
+		if (constraint->cnstrt_type == CNSTRT_FOREIGN_KEY) {
 			/* If <referenced column list> is not specified try to catch
 			   them right here */
-			if (cnstrt->cnstrt_referred_fields == NULL)
-				get_referred_fields(action, cnstrt);
+			if (constraint->cnstrt_referred_fields == NULL)
+				get_referred_fields(action, constraint);
 
-			if (cnstrt->cnstrt_fkey_def_type & REF_UPDATE_ACTION) {
+			if (constraint->cnstrt_fkey_def_type & REF_UPDATE_ACTION) {
 				STUFF(gds_dyn_foreign_key_update);
-				switch (cnstrt->cnstrt_fkey_def_type & REF_UPDATE_MASK) {
+				switch (constraint->cnstrt_fkey_def_type & REF_UPDATE_MASK) {
 				case REF_UPD_NONE:
 					STUFF(gds_dyn_foreign_key_none);
 					break;
 				case REF_UPD_CASCADE:
 					STUFF(gds_dyn_foreign_key_cascade);
-					create_upd_cascade_trg(request, action, cnstrt);
+					create_upd_cascade_trg(request, action, constraint);
 					break;
 				case REF_UPD_SET_DEFAULT:
 					STUFF(gds_dyn_foreign_key_default);
-					create_set_default_trg(request, action, cnstrt, TRUE);
+					create_set_default_trg(request, action, constraint, TRUE);
 					break;
 				case REF_UPD_SET_NULL:
 					STUFF(gds_dyn_foreign_key_null);
-					create_set_null_trg(request, action, cnstrt, TRUE);
+					create_set_null_trg(request, action, constraint, TRUE);
 					break;
 				default:
 					/* just in case */
@@ -1419,23 +1423,23 @@ static void create_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 					break;
 				}
 			}
-			if (cnstrt->cnstrt_fkey_def_type & REF_DELETE_ACTION) {
+			if (constraint->cnstrt_fkey_def_type & REF_DELETE_ACTION) {
 				STUFF(gds_dyn_foreign_key_delete);
-				switch (cnstrt->cnstrt_fkey_def_type & REF_DELETE_MASK) {
+				switch (constraint->cnstrt_fkey_def_type & REF_DELETE_MASK) {
 				case REF_DEL_NONE:
 					STUFF(gds_dyn_foreign_key_none);
 					break;
 				case REF_DEL_CASCADE:
 					STUFF(gds_dyn_foreign_key_cascade);
-					create_del_cascade_trg(request, action, cnstrt);
+					create_del_cascade_trg(request, action, constraint);
 					break;
 				case REF_DEL_SET_DEFAULT:
 					STUFF(gds_dyn_foreign_key_default);
-					create_set_default_trg(request, action, cnstrt, FALSE);
+					create_set_default_trg(request, action, constraint, FALSE);
 					break;
 				case REF_DEL_SET_NULL:
 					STUFF(gds_dyn_foreign_key_null);
-					create_set_null_trg(request, action, cnstrt, FALSE);
+					create_set_null_trg(request, action, constraint, FALSE);
 					break;
 				default:
 					/* just in case */
@@ -1448,14 +1452,14 @@ static void create_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt)
 		else
 			put_numeric(request, gds_dyn_idx_unique, TRUE);
 
-		for (field = cnstrt->cnstrt_fields; field; field = field->lls_next) {
+		for (field = constraint->cnstrt_fields; field; field = field->lls_next) {
 			string = (STR) field->lls_object;
 			put_cstring(request, gds_dyn_fld_name, (TEXT *) string);
 		}
-		if (cnstrt->cnstrt_type == CNSTRT_FOREIGN_KEY) {
+		if (constraint->cnstrt_type == CNSTRT_FOREIGN_KEY) {
 			put_cstring(request, gds_dyn_idx_foreign_key,
-						(TEXT *) cnstrt->cnstrt_referred_rel);
-			for (field = cnstrt->cnstrt_referred_fields; field;
+						(TEXT *) constraint->cnstrt_referred_rel);
+			for (field = constraint->cnstrt_referred_fields; field;
 				 field = field->lls_next) {
 				string = (STR) field->lls_object;
 				put_cstring(request, gds_dyn_idx_ref_column, (TEXT *) string);
@@ -1664,25 +1668,25 @@ static void create_domain( GPRE_REQ request, ACT action)
 //		Generate dyn for creating a constraints for domains.
 //  
 
-static void create_domain_constraint( GPRE_REQ request, ACT action, CNSTRT cnstrt)
+static void create_domain_constraint(GPRE_REQ request, ACT action, cnstrt* constraint)
 {
 	TEXT *source;
 
-	for (; cnstrt; cnstrt = cnstrt->cnstrt_next) {
-		if (cnstrt->cnstrt_flags & CNSTRT_delete)
+	for (; constraint; constraint = constraint->cnstrt_next) {
+		if (constraint->cnstrt_flags & CNSTRT_delete)
 			continue;
 
 // ****    this will be used later 
-//   put_cstring (request, gds_dyn_rel_constraint, cnstrt->cnstrt_name);
+//   put_cstring (request, gds_dyn_rel_constraint, constraint->cnstrt_name);
 //***
 
-		if (cnstrt->cnstrt_type == CNSTRT_CHECK) {
-			source = (TEXT *) ALLOC(cnstrt->cnstrt_text->txt_length + 1);
-			CPR_get_text(source, cnstrt->cnstrt_text);
+		if (constraint->cnstrt_type == CNSTRT_CHECK) {
+			source = (TEXT *) ALLOC(constraint->cnstrt_text->txt_length + 1);
+			CPR_get_text(source, constraint->cnstrt_text);
 			if (source != NULL)
 				put_cstring(request, gds_dyn_fld_validation_source, source);
 			put_blr(request, gds_dyn_fld_validation_blr,
-					cnstrt->cnstrt_boolean,
+					constraint->cnstrt_boolean,
 					reinterpret_cast < pfn_local_trigger_cb > (CME_expr));
 		}
 	}
@@ -1914,7 +1918,7 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 	LLS stack;
 	SLC slice;
 	GPRE_REQ slice_req;
-	struct gpre_fld tmp_field;
+	gpre_fld tmp_field;
 
 //  add relation name 
 
@@ -2199,33 +2203,33 @@ static void declare_filter( GPRE_REQ request, ACT action)
 
 static void declare_udf( GPRE_REQ request, ACT action)
 {
-	DECL_UDF udf;
+	DECL_UDF udf_declaration;
 	GPRE_FLD field, next;
 	TEXT *udf_name;
 	SSHORT position, blob_position;
 
-	udf = (DECL_UDF) action->act_object;
-	udf_name = udf->decl_udf_name;
+	udf_declaration = (DECL_UDF) action->act_object;
+	udf_name = udf_declaration->decl_udf_name;
 	put_cstring(request, gds_dyn_def_function, udf_name);
-	put_cstring(request, gds_dyn_func_entry_point, udf->decl_udf_entry_point);
-	put_cstring(request, gds_dyn_func_module_name, udf->decl_udf_module_name);
+	put_cstring(request, gds_dyn_func_entry_point, udf_declaration->decl_udf_entry_point);
+	put_cstring(request, gds_dyn_func_module_name, udf_declaration->decl_udf_module_name);
 
 //  Reverse the order of arguments which parse left backwords. 
 
 //  
-//for (field = udf->decl_udf_arg_list, udf->decl_udf_arg_list = NULL; field; field = next)
+//for (field = udf_declaration->decl_udf_arg_list, udf_declaration->decl_udf_arg_list = NULL; field; field = next)
 //   {
 //   next = field->fld_next;
-//   field->fld_next = udf->decl_udf_arg_list; 
-//   udf->decl_udf_arg_list = field;
+//   field->fld_next = udf_declaration->decl_udf_arg_list; 
+//   udf_declaration->decl_udf_arg_list = field;
 //   }
 //  
 
-	if (field = udf->decl_udf_return_type) {
+	if (field = udf_declaration->decl_udf_return_type) {
 		/* Function returns a value */
 
 		/* Some data types can not be returned as value */
-		if ((udf->decl_udf_return_mode == FUN_value) &&
+		if ((udf_declaration->decl_udf_return_mode == FUN_value) &&
 			(field->fld_dtype == dtype_text ||
 			 field->fld_dtype == dtype_varying ||
 			 field->fld_dtype == dtype_cstring ||
@@ -2239,7 +2243,7 @@ static void declare_udf( GPRE_REQ request, ACT action)
 
 		if (field->fld_dtype == dtype_blob) {
 			blob_position = 1;
-			for (next = udf->decl_udf_arg_list; next; next = next->fld_next)
+			for (next = udf_declaration->decl_udf_arg_list; next; next = next->fld_next)
 				++blob_position;
 			put_numeric(request, gds_dyn_func_return_argument, blob_position);
 		}
@@ -2254,7 +2258,7 @@ static void declare_udf( GPRE_REQ request, ACT action)
 		/* Function modifies an argument whose value is the function return value */
 
 		put_numeric(request, gds_dyn_func_return_argument,
-					udf->decl_udf_return_parameter);
+					udf_declaration->decl_udf_return_parameter);
 	}
 
 //  Now define all the arguments 
@@ -2267,7 +2271,7 @@ static void declare_udf( GPRE_REQ request, ACT action)
 		else {
 			put_numeric(request, gds_dyn_def_function_arg, 0);
 			put_numeric(request, gds_dyn_func_mechanism,
-						udf->decl_udf_return_mode);
+						udf_declaration->decl_udf_return_mode);
 		}
 
 		put_cstring(request, gds_dyn_function_name, udf_name);
@@ -2276,7 +2280,7 @@ static void declare_udf( GPRE_REQ request, ACT action)
 		position = 1;
 	}
 
-	for (field = udf->decl_udf_arg_list; field; field = field->fld_next) {
+	for (field = udf_declaration->decl_udf_arg_list; field; field = field->fld_next) {
 		if (position > 10)
 			CPR_error
 				("External functions can not have more than 10 parameters");

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.12 2003-08-15 10:23:44 aafemt Exp $
+//	$Id: pretty.cpp,v 1.13 2003-09-05 10:14:08 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -133,7 +133,8 @@ int PRETTY_print_cdb( SCHAR * blr,
 					 int (*routine) (), SCHAR * user_arg, SSHORT language)
 {
 
-	struct ctl ctl_, *control;
+	ctl ctl_buffer;
+	ctl* control = &ctl_buffer;
 	SCHAR temp[32];
 	SSHORT parameter;
 	SSHORT level = 0;
@@ -141,8 +142,6 @@ int PRETTY_print_cdb( SCHAR * blr,
 	SSHORT i;
 	int offset = 0;
 
-
-	control = &ctl_;
 
 	if (!routine) {
 		routine = (int (*)()) ib_printf;
@@ -196,11 +195,11 @@ int PRETTY_print_dyn(
 
 					 int (*routine) (), SCHAR * user_arg, SSHORT language)
 {
-	struct ctl ctl, *control;
+	ctl ctl_buffer;
+	ctl* control = &ctl_buffer;
 	int offset;
 	SSHORT version, level;
 
-	control = &ctl;
 	offset = level = 0;
 
 	if (!routine) {
@@ -246,12 +245,12 @@ PRETTY_print_form_map(SCHAR * blr,
 
 					  int (*routine) (), SCHAR * user_arg, SSHORT language)
 {
-	struct ctl ctl, *control;
+	ctl ctl_buffer;
+	ctl* control = &ctl_buffer;
 	SCHAR c;
 	int offset, n;
 	SSHORT version, level;
 
-	control = &ctl;
 	offset = level = 0;
 
 	if (!routine) {
@@ -356,12 +355,12 @@ PRETTY_print_menu(SCHAR * blr,
 
 				  int (*routine) (), SCHAR * user_arg, SSHORT language)
 {
-	struct ctl ctl, *control;
+	ctl ctl_buffer;
+	ctl* control = &ctl_buffer;
 	SCHAR c;
 	int offset;
 	SSHORT version, level;
 
-	control = &ctl;
 	offset = level = 0;
 
 	if (!routine) {
@@ -427,11 +426,11 @@ PRETTY_print_sdl(SCHAR * blr,
 
 				 int (*routine) (), SCHAR * user_arg, SSHORT language)
 {
-	struct ctl ctl, *control;
+	ctl ctl_buffer;
+	ctl* control = &ctl_buffer;
 	int offset;
 	SSHORT version, level;
 
-	control = &ctl;
 	offset = level = 0;
 
 	if (!routine) {

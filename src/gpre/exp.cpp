@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.13 2003-08-09 18:00:13 brodsom Exp $
+//	$Id: exp.cpp,v 1.14 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -142,7 +142,7 @@ GPRE_NOD EXP_array(GPRE_REQ request, GPRE_FLD field, SSHORT subscript_flag, SSHO
 
 GPRE_FLD EXP_cast(GPRE_FLD field)
 {
-	struct dtypes *dtype;
+	dtypes* dtype;
 	GPRE_FLD cast;
 
 	for (dtype = data_types;; dtype++)
@@ -319,7 +319,7 @@ GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 	GPRE_FLD field, child;
 	REF reference, parent;
 	GPRE_REQ request;
-	FORM form;
+	FORM a_form;
 	TEXT s[128];
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_form_map)
@@ -327,7 +327,7 @@ GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 
 	*rcontext = context = symbol->sym_object;
 	request = context->ctx_request;
-	form = request->req_form;
+	a_form = request->req_form;
 	ADVANCE_TOKEN;
 
 	if (!MATCH(KW_DOT))
@@ -366,9 +366,9 @@ GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 
 	if (!
 		(field =
-		 FORM_lookup_field(form, form->form_object, token.tok_string))) {
+		 FORM_lookup_field(a_form, a_form->form_object, token.tok_string))) {
 		sprintf(s, "field \"%s\" is not defined in form %s", token.tok_string,
-				form->form_name->sym_string);
+				a_form->form_name->sym_string);
 		PAR_error(s);
 	}
 
@@ -1622,7 +1622,7 @@ static GPRE_NOD par_relational( GPRE_REQ request)
 	REF reference;
 	GPRE_FLD field;
 	USHORT negation;
-	struct rel_ops *relop;
+	rel_ops* relop;
 
 	if (MATCH(KW_ANY)) {
 		expr = MAKE_NODE(nod_any, 1);
@@ -1729,7 +1729,7 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 	GPRE_NOD node;
 	SYM symbol;
 	LLS stack;
-	UDF udf;
+	udf* new_udf;
 
 	if (!request)
 		return NULL;
@@ -1737,12 +1737,12 @@ static GPRE_NOD par_udf( GPRE_REQ request, USHORT type, GPRE_FLD field)
 //  Check for user defined functions 
 
 	for (symbol = token.tok_symbol; symbol; symbol = symbol->sym_homonym)
-		if (symbol->sym_type == SYM_udf && (udf = (UDF) symbol->sym_object) &&
-			/* request->req_database == udf->udf_database && */
-			udf->udf_type == type) {
+		if (symbol->sym_type == SYM_udf && (new_udf = (UDF) symbol->sym_object) &&
+			/* request->req_database == new_udf->udf_database && */
+			new_udf->udf_type == type) {
 			node = MAKE_NODE(nod_udf, 2);
 			node->nod_count = 1;
-			node->nod_arg[1] = (GPRE_NOD) udf;
+			node->nod_arg[1] = (GPRE_NOD) new_udf;
 			ADVANCE_TOKEN;
 			if (!MATCH(KW_LEFT_PAREN))
 				EXP_left_paren(0);

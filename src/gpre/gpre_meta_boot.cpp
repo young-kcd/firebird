@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.15 2003-04-10 06:21:49 aafemt Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.16 2003-09-05 10:14:08 aafemt Exp $
  */
 
 #include "firebird.h"
@@ -888,7 +888,7 @@ ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
                                                   (SCHAR *) callback_argument, language);
 }
 
-extern "C" void DLL_EXPORT          CVT_move (struct dsc * a, struct dsc * b, FPTR_VOID c)
+extern "C" void DLL_EXPORT          CVT_move(dsc* a, dsc* b, FPTR_VOID c)
 {  
     assert(0);
     /* Not available in boot_gpre */

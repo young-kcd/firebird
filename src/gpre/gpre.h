@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.35 2003-08-28 13:01:39 brodsom Exp $
+ * $Id: gpre.h,v 1.36 2003-09-05 10:14:07 aafemt Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -173,6 +173,354 @@ typedef enum lang_t
 
 bool isLangCpp(LANG_T lang);
 
+
+/* Structure used by Fortran and Basic to determine whether or not
+   an array has been declared in a subroutine. */
+
+typedef struct adl {
+	USHORT adl_gds_ident;		/* Identifier of array for which Gpre has
+								   generated a declaration in main or a
+								   subroutine */
+	adl* adl_next;				/* Next declared array identifier */
+} *ADL;
+
+#define ADL_LEN sizeof(adl)
+
+
+/* database block data, for generating block data section in fussy fortran */
+
+typedef struct dbd {
+	TEXT dbb_name[128];			/* database name */
+} *DBD;
+
+
+/* Dimension block, used for arrays
+ *
+ * Note: this structure is being phased out.  Please use the
+ * repeating tail on the ARY structure instead
+ *
+ */
+
+typedef struct dim {
+	int dim_number;				/* Dimension number i (i=1 to n) */
+	SLONG dim_lower;			/* Lower bound */
+	SLONG dim_upper;			/* Upper bound */
+	dim* dim_next;				/* Information for dimension i+1 */
+	dim* dim_previous;			/* Information for dimension i-1 */
+} *DIM;
+
+#define DIM_LEN sizeof(dim)
+
+
+typedef struct fil {
+	SLONG fil_length;			/* File length in pages */
+	SLONG fil_start;			/* Starting page */
+	TEXT *fil_name;				/* File name */
+	fil* fil_next;				/* next file */
+	USHORT fil_shadow_number;	/* shadow number if part of shadow */
+	USHORT fil_partitions;		/* number of log file partitions */
+	USHORT fil_flags;
+} *FIL;
+
+#define FIL_manual		1		/* Manual shadow */
+#define FIL_raw			2		/* On raw device */
+#define FIL_conditional		4	/* Conditional shadow */
+
+#define FIL_LEN sizeof(fil)
+
+
+/* filter block */
+
+typedef struct fltr {
+	TEXT *fltr_name;
+	TEXT *fltr_entry_point;
+	TEXT *fltr_module_name;
+	SSHORT fltr_input_type;
+	SSHORT fltr_output_type;
+} *FLTR;
+
+#define FLTR_LEN sizeof(fltr)
+
+
+/* General Syntax node, produced by parser */
+
+typedef enum nod_t {
+	nod_field = 1, nod_literal, nod_value,
+	nod_and, nod_or, nod_not,
+	nod_eq, nod_ne, nod_ge,
+	nod_le, nod_gt, nod_lt,
+	nod_containing, nod_matches, nod_any,
+	nod_unique, nod_plus, nod_times,
+	nod_divide, nod_minus, nod_negate,
+	nod_msg, nod_for, nod_send,
+	nod_receive, nod_block, nod_select,
+	nod_boolean, nod_projection, nod_sort,
+	nod_store, nod_modify, nod_erase,
+	nod_if, nod_assignment, nod_rse,
+	nod_first, nod_relation, nod_end,
+	nod_label, nod_leave, nod_loop,
+	nod_max, nod_min, nod_count,
+	nod_total, nod_average, nod_list,
+	nod_defered, nod_missing, nod_between,
+	nod_union, nod_map, nod_starting,
+	nod_like, nod_agg_count, nod_agg_max,
+	nod_agg_min, nod_agg_total, nod_agg_average,
+	nod_aggregate, nod_from, nod_null,
+	nod_asterisk, nod_map_ref, nod_user_name,
+	nod_upcase, nod_sleuth, nod_event_init,
+	nod_udf, nod_array, nod_index,
+	nod_via, nod_join_inner, nod_join_left,
+	nod_join_right, nod_join_full, nod_join,
+	nod_concatenate, nod_cast, nod_dom_value,
+	nod_ansi_any, nod_gen_id, nod_set_generator,
+	nod_merge, nod_plan_expr, nod_plan_item,
+	nod_natural, nod_index_order, nod_ansi_all,
+	nod_extract, nod_current_date,
+	nod_current_time, nod_current_timestamp,
+	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
+} NOD_T;
+
+typedef struct gpre_nod {
+	enum nod_t nod_type;		/* node type */
+	USHORT nod_count;			/* number of sub-items */
+	gpre_nod* nod_arg[1];		/* argument */
+} *GPRE_NOD;
+
+#define nod_arg0 nod_arg[0]
+#define nod_arg1 nod_arg[1]
+#define nod_arg2 nod_arg[2]
+
+#define NOD_LEN(cnt) (sizeof(gpre_nod) + (cnt - 1) * sizeof(gpre_nod*))
+
+
+typedef struct sdt {
+	USHORT sdt_dialect;			/* Dialect  value as specified by SET stmt */
+} *SDT;
+
+#define SDT_LEN sizeof(sdt)
+
+
+/* Set generator block */
+
+typedef struct sgen {
+	TEXT *sgen_name;
+	USHORT sgen_dialect;
+	SLONG sgen_value;
+	SINT64 sgen_int64value;
+} *SGEN;
+
+#define SGEN_LEN sizeof(sgen)
+
+
+/* STRing block - holds a null terminated string */
+
+typedef struct str {
+	TEXT str_string[1];			/* pretty simple, no? */
+} *STR;
+
+#define STR_LEN(size)	(sizeof(str) + size)
+
+
+/* SQL WHENEVER BLOCK */
+
+typedef struct swe {
+	swe* swe_next;				/* Next in chain */
+	USHORT swe_condition;		/* Condition */
+	USHORT swe_length;			/* Length of label */
+	TEXT swe_label[1];			/* Label */
+} *SWE;
+
+#define SWE_error	0
+#define SWE_warning	1
+#define SWE_not_found	2
+#define SWE_max		3
+
+
+/* Text block */
+
+typedef struct txt {
+	ULONG txt_position;
+	USHORT txt_length;
+} *TXT;
+
+#define TXT_LEN sizeof(txt)
+
+
+/* User name -- used for SQL GRANT/REVOKE */
+
+typedef struct usn {
+	usn* usn_next;
+	SCHAR *usn_name;
+	USHORT usn_dyn;				/* describes the type of user via a dyn-verb,
+								   i.e. gds__dyn_grant_user/view/proc/trig */
+} *USN;
+
+#define USN_LEN sizeof(usn)
+
+
+/* value block, used to store a set of values */
+
+typedef struct val {
+	val* val_next;				/* next value in list */
+	TEXT *val_value;			/* value */
+} *VAL;
+
+#define VAL_LEN sizeof(val)
+
+
+/* Array information block.  Used to hold info about an array field.
+   Note: the dimension (DIM) block used to hold dimension information.
+   The preferred mechanism is the repeating tail on the array block. */
+
+typedef struct ary {
+	USHORT ary_dtype;			/* data type of array */
+	int ary_dimension_count;	/* Number of dimensions in this array */
+	dim* ary_dimension;			/* Linked list of range info for each dimension */
+	SLONG ary_size;				/* Size of the array */
+	USHORT ary_ident;			/* Array identifier */
+	BOOLEAN ary_declared;		/* True if a declaration already was generated */
+	struct ary_repeat {
+		SLONG ary_lower;
+		SLONG ary_upper;
+	} ary_rpt[16];
+} *ARY;
+
+#define ARY_LEN(count) (sizeof(ary))
+#define MAX_ARRAY_DIMENSIONS 16
+
+
+/* Trigger block */
+/* Note: This structure will need expansion later.  Currently its
+   use is to create a trigger for CHECK constraints which always
+   abort on error                                                   */
+
+typedef struct gpre_trg {
+	str* trg_name;
+	USHORT trg_type;			/* Type of trigger */
+	str* trg_source;			/* source for trigger */
+	gpre_nod* trg_boolean;		/* boolean expression, for trigger */
+	str* trg_message;			/* Message the trigger prints */
+} *GPRE_TRG;
+
+#define TRG_LEN sizeof(gpre_trg)
+
+#define PRE_STORE_TRIGGER	1
+#define POST_STORE_TRIGGER	2
+#define PRE_MODIFY_TRIGGER	3
+#define POST_MODIFY_TRIGGER	4
+#define PRE_ERASE_TRIGGER	5
+#define POST_ERASE_TRIGGER	6
+
+
+/* Linked list stack stuff */
+
+typedef struct lls {
+	gpre_nod* lls_object;		/* object on stack */
+	lls* lls_next;				/* next item on stack */
+} *LLS;
+
+#define LLS_LEN sizeof(lls)
+
+
+/* Constraint block, used to hold information about integrity constraints */
+
+typedef struct cnstrt {
+	str* cnstrt_name;			/* Name of constraint */
+	USHORT cnstrt_type;			/* Type of constraint */
+	lls* cnstrt_fields;			/* list of fields */
+	USHORT cnstrt_fkey_def_type;	/* extended foreign key definition */
+	str* cnstrt_referred_rel;	/* referred relation, if foreign key */
+	lls* cnstrt_referred_fields;	/* optional list of fields from
+									   referred relation */
+	cnstrt* cnstrt_next;		/* next contraint for field or relation */
+	txt* cnstrt_text;			/* source for CHECK constraints */
+	gpre_nod* cnstrt_boolean;	/* boolean expression, for CHECK
+								   constraints */
+	USHORT cnstrt_flags;		/* see below */
+} *CNSTRT;
+
+#define CNSTRT_LEN sizeof(cnstrt)
+
+/* Values for cnstrt_fkey_def_type */
+
+#define REF_UPDATE_ACTION	0x0001
+#define REF_UPD_CASCADE		0x0002
+#define REF_UPD_SET_DEFAULT	0x0004
+#define REF_UPD_SET_NULL	0x0008
+#define REF_UPD_NONE		0x0010
+#define REF_UPDATE_MASK		0x001E
+
+#define REF_DELETE_ACTION	0x0020
+#define REF_DEL_CASCADE		0x0040
+#define REF_DEL_SET_DEFAULT	0x0080
+#define REF_DEL_SET_NULL	0x0100
+#define REF_DEL_NONE		0x0200
+#define REF_DELETE_MASK		0x03C0
+
+/* Values for cnstrt_type */
+
+#define CNSTRT_NOT_NULL		1
+#define CNSTRT_PRIMARY_KEY	2
+#define CNSTRT_UNIQUE		3
+#define CNSTRT_FOREIGN_KEY	4
+#define CNSTRT_CHECK		5
+
+/* Values for cnstrt_flags */
+
+#define CNSTRT_DEFERRABLE		1
+#define CNSTRT_INITIALLY_DEFERRED	2
+#define CNSTRT_delete			4
+
+
+/* Grant/revoke block */
+
+typedef struct prv {
+	USHORT prv_privileges;		/* holds privileges being granted or revoked */
+	SCHAR *prv_username;		/* user having privileges granted or revoked */
+	USHORT prv_user_dyn;		/* the dyn-verb to be used with prv_username
+								   i.e. gds__dyn_grant_user/proc/trig/view */
+	str* prv_relation;			/* relation on which we're doing grant/revoke */
+	USHORT prv_object_dyn;		/* the dyn-verb to be used with prv_relation
+								   i.e. gds__dyn_rel/proc_name */
+	lls* prv_fields;			/* fields on which we're doing grant/revoke */
+	prv* prv_next;				/* next grant/revoke block (with different user) */
+} *PRV;
+
+#define PRV_LEN (sizeof(prv))
+
+#define PRV_no_privs	0		/* no privileges being granted or revoked */
+#define PRV_select	1			/* select privilege being granted or revoked */
+#define PRV_insert	2			/* insert privilege being granted or revoked */
+#define PRV_delete	4			/* delete privilege being granted or revoked */
+#define PRV_update	8			/* update privilege being granted or revoked */
+#define PRV_execute	16			/* execute privilege being granted or revoked */
+#define PRV_references	32		/* reference privilege */
+#define PRV_grant_option 64		/* privilege to grant privileges being granted */
+#define PRV_all		128			/* all privileges being granted/revoked */
+
+
+/* statistic block. Used for all statistics commands */
+
+typedef struct sts {
+	str* sts_name;				/* object name */
+	USHORT sts_flags;			/* Miscellaneous flags */
+} *STS;
+
+#define STS_LEN		sizeof(sts)
+#define STS_index	1			/* Object is an index */
+
+
+/* Computed field block */
+
+typedef struct cmpf {
+	txt* cmpf_text;				/* source for computed field */
+	gpre_nod* cmpf_boolean;		/* expression, for computed field */
+} *CMPF;
+
+#define CMPF_LEN sizeof(cmpf)
+
+/***************** end of tree top **********************/
+
 typedef enum act_t {
 	ACT_any,
 	ACT_alter_database,
@@ -313,13 +661,13 @@ typedef struct act {
 	SLONG act_position;			/* position in input stream */
 	SLONG act_length;			/* length to be commented out */
 	enum act_t act_type;		/* type of action */
-	struct act *act_next;		/* next action in request */
-	struct act *act_rest;		/* remaining actions in module */
-	struct act *act_error;		/* on-error action (maybe) */
-	struct act *act_pair;		/* begin/end action (maybe) */
+	act* act_next;				/* next action in request */
+	act* act_rest;				/* remaining actions in module */
+	act* act_error;				/* on-error action (maybe) */
+	act* act_pair;				/* begin/end action (maybe) */
 	struct gpre_req *act_request;	/* parent request */
 	struct ref *act_object;		/* dependent on action type */
-	struct swe *act_whenever;	/* SQL whenever blocks */
+	swe* act_whenever;			/* SQL whenever blocks */
 	USHORT act_flags;			/* flags that affect the action */
 	USHORT act_count;			/* used to hold begin/end count for routines */
 } *ACT;
@@ -335,59 +683,7 @@ typedef struct act {
 #endif
 #define ACT_back_token	128		/* end of action marked by prior token */
 
-#define ACT_LEN sizeof (struct act)
-
-
-/* Structure used by Fortran and Basic to determine whether or not
-   an array has been declared in a subroutine. */
-
-typedef struct adl {
-	USHORT adl_gds_ident;		/* Identifier of array for which Gpre has
-								   generated a declaration in main or a
-								   subroutine */
-	struct adl *adl_next;		/* Next declared array identifier */
-} *ADL;
-
-#define ADL_LEN sizeof (struct adl)
-
-
-/* Array information block.  Used to hold info about an array field.
-   Note: the dimension (DIM) block used to hold dimension information.
-   The preferred mechanism is the repeating tail on the array block. */
-
-typedef struct ary {
-	USHORT ary_dtype;			/* data type of array */
-	int ary_dimension_count;	/* Number of dimensions in this array */
-	struct dim *ary_dimension;	/* Linked list of range info for each dimension */
-	SLONG ary_size;				/* Size of the array */
-	USHORT ary_ident;			/* Array identifier */
-	BOOLEAN ary_declared;		/* True if a declaration already was generated */
-	struct ary_repeat {
-		SLONG ary_lower;
-		SLONG ary_upper;
-	} ary_rpt[16];
-} *ARY;
-
-#define ARY_LEN(count) (sizeof (struct ary))
-#define MAX_ARRAY_DIMENSIONS 16
-
-
-/* Based on block.  Used for based on clause */
-
-typedef struct bas {
-	struct gpre_fld *bas_field;		/* database field referenced */
-	struct lls *bas_variables;	/* list of variables based on above */
-	struct str *bas_db_name;	/* database name if present and required */
-	struct str *bas_rel_name;	/* relation name if no db statement */
-	struct str *bas_fld_name;	/* field if no db statement */
-	USHORT bas_flags;
-	char bas_terminator[2];		/* terminating character */
-} *BAS;
-
-#define BAS_LEN		(sizeof (struct bas))
-
-#define BAS_segment	1			/* Based on a blob segment length */
-#define BAS_ambiguous	2		/* Ambiguous reference to segment */
+#define ACT_LEN sizeof(act)
 
 
 /* Blob block.  Used for blob calls */
@@ -396,7 +692,7 @@ class blb
 {
 public:
 	struct gpre_req *blb_request;	/* parent request */
-	blb*		blb_next;		/* next blob in request */
+	blb* blb_next;				/* next blob in request */
 	struct ref *blb_reference;	/* field reference for blob field */
 	struct sym *blb_symbol;		/* Blob context variable */
 	USHORT blb_ident;			/* Blob handle */
@@ -433,106 +729,32 @@ typedef blb* BLB;
 #define BLB_symbol_released	2
 
 
-/* Constraint block, used to hold information about integrity constraints */
-
-typedef struct cnstrt {
-	struct str *cnstrt_name;	/* Name of constraint */
-	USHORT cnstrt_type;			/* Type of constraint */
-	struct lls *cnstrt_fields;	/* list of fields */
-	USHORT cnstrt_fkey_def_type;	/* extended foreign key definition */
-	struct str *cnstrt_referred_rel;	/* referred relation, if foreign key */
-	struct lls *cnstrt_referred_fields;	/* optional list of fields from
-										   referred relation */
-	struct cnstrt *cnstrt_next;	/* next contraint for field or relation */
-	struct txt *cnstrt_text;	/* source for CHECK constraints */
-	struct gpre_nod *cnstrt_boolean;	/* boolean expression, for CHECK
-								   constraints */
-	USHORT cnstrt_flags;		/* see below */
-} *CNSTRT;
-
-#define CNSTRT_LEN sizeof (struct cnstrt)
-
-/* Values for cnstrt_fkey_def_type */
-
-#define REF_UPDATE_ACTION	0x0001
-#define REF_UPD_CASCADE		0x0002
-#define REF_UPD_SET_DEFAULT	0x0004
-#define REF_UPD_SET_NULL	0x0008
-#define REF_UPD_NONE		0x0010
-#define REF_UPDATE_MASK		0x001E
-
-#define REF_DELETE_ACTION	0x0020
-#define REF_DEL_CASCADE		0x0040
-#define REF_DEL_SET_DEFAULT	0x0080
-#define REF_DEL_SET_NULL	0x0100
-#define REF_DEL_NONE		0x0200
-#define REF_DELETE_MASK		0x03C0
-
-/* Values for cnstrt_type */
-
-#define CNSTRT_NOT_NULL		1
-#define CNSTRT_PRIMARY_KEY	2
-#define CNSTRT_UNIQUE		3
-#define CNSTRT_FOREIGN_KEY	4
-#define CNSTRT_CHECK		5
-
-/* Values for cnstrt_flags */
-
-#define CNSTRT_DEFERRABLE		1
-#define CNSTRT_INITIALLY_DEFERRED	2
-#define CNSTRT_delete			4
-
-
 /* Context block, used to define context symbols, etc. */
 
 typedef struct gpre_ctx {
 	USHORT ctx_internal;		/* internal context number */
 	USHORT ctx_scope_level;		/* scope level for SQL alias subquery scoping */
 	struct gpre_req *ctx_request;	/* parent request */
-	struct gpre_ctx *ctx_next;		/* next context in request */
+	gpre_ctx* ctx_next;			/* next context in request */
 	struct sym *ctx_symbol;		/* symbol for context */
 	struct gpre_rel *ctx_relation;	/* relation for context */
 	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
 	struct gpre_prc *ctx_procedure;	/* procedure for context */
-	struct gpre_nod *ctx_prc_inputs;	/* procedure input parameters */
+	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
 	struct rse *ctx_stream;		/* stream for context */
 } *GPRE_CTX;
 
-#define CTX_LEN sizeof (struct gpre_ctx)
-
-
-typedef struct sdt {
-	USHORT sdt_dialect;			/* Dialect  value as specified by SET stmt */
-} *SDT;
-
-#define SDT_LEN sizeof (struct sdt)
-
-
-typedef struct fil {
-	SLONG fil_length;			/* File length in pages */
-	SLONG fil_start;			/* Starting page */
-	TEXT *fil_name;				/* File name */
-	struct fil *fil_next;		/* next file */
-	USHORT fil_shadow_number;	/* shadow number if part of shadow */
-	USHORT fil_partitions;		/* number of log file partitions */
-	USHORT fil_flags;
-} *FIL;
-
-#define FIL_manual		1		/* Manual shadow */
-#define FIL_raw			2		/* On raw device */
-#define FIL_conditional		4	/* Conditional shadow */
-
-#define FIL_LEN sizeof (struct fil)
+#define CTX_LEN sizeof(gpre_ctx)
 
 
 /* Database block, more or less the granddaddy */
 
 typedef struct dbb {
-	struct dbb *dbb_next;		/* next database in program */
+	dbb* dbb_next;				/* next database in program */
 	struct gpre_rel *dbb_relations;	/* relations in database */
 	struct gpre_rel *dbb_procedures;	/* procedures in database */
 #ifdef PYXIS
-	struct form *dbb_forms;		/* forms in database */
+	form* dbb_forms;			/* forms in database */
 #endif
 	USHORT dbb_id;				/* database id in program */
 	USHORT dbb_flags;			/* Misc flag bytes */
@@ -579,8 +801,8 @@ typedef struct dbb {
 	int dbb_buffersize;
 	int dbb_users;
 	ULONG dbb_length;			/* Length of database in pages, if known */
-	struct fil *dbb_logfiles;
-	struct fil *dbb_overflow;	/* overflow log files */
+	fil* dbb_logfiles;
+	fil* dbb_overflow;			/* overflow log files */
 	SLONG dbb_chkptlen;
 	SSHORT dbb_numbufs;			/* log buffers */
 	SSHORT dbb_bufsize;			/* log buffer size */
@@ -588,11 +810,11 @@ typedef struct dbb {
 	SSHORT dbb_base_level;		/* code level of the engine we are talking to */
 #endif
 	SLONG dbb_grp_cmt_wait;
-	struct fil *dbb_cache_file;
-	struct fil *dbb_files;
+	fil* dbb_cache_file;
+	fil* dbb_files;
 } *DBB;
 
-#define DBB_LEN 	sizeof (struct dbb)
+#define DBB_LEN 	sizeof(dbb)
 
 #define DBB_no_arrays		1
 #define DBB_sqlca		2		/* Created as default for a sqlca */
@@ -609,57 +831,6 @@ typedef struct dbb {
 #define DBB_EXTERN 	1
 #define DBB_STATIC 	2
 
-/* database block data, for generating block data section in fussy fortran */
-
-typedef struct dbd {
-	TEXT dbb_name[128];			/* database name */
-} *DBD;
-
-
-/* Computed field block */
-
-typedef struct cmpf {
-	struct txt *cmpf_text;		/* source for computed field */
-	struct gpre_nod *cmpf_boolean;	/* expression, for computed field */
-} *CMPF;
-
-#define CMPF_LEN sizeof (struct cmpf)
-
-
-/* Dimension block, used for arrays
- *
- * Note: this structure is being phased out.  Please use the
- * repeating tail on the ARY structure instead
- *
- */
-
-typedef struct dim {
-	int dim_number;				/* Dimension number i (i=1 to n) */
-	SLONG dim_lower;			/* Lower bound */
-	SLONG dim_upper;			/* Upper bound */
-	struct dim *dim_next;		/* Information for dimension i+1 */
-	struct dim *dim_previous;	/* Information for dimension i-1 */
-} *DIM;
-
-#define DIM_LEN sizeof (struct dim)
-
-
-/* Dynamic statement block, used for dynamic SQL */
-
-typedef struct dyn {
-	struct dbb *dyn_database;	/* Database involved */
-	struct sym *dyn_statement_name;	/* Name of dynamic statement */
-	struct sym *dyn_cursor_name;	/* Cursor name */
-	TEXT *dyn_trans;			/* Transaction handle */
-	TEXT *dyn_string;			/* Dynamic string or variable name */
-	TEXT *dyn_sqlda;			/* Name of SQLDA structure, if any */
-	TEXT *dyn_sqlda2;			/* Name of second SQLDA structure, if any */
-	struct gpre_nod *dyn_using;		/* dependent on action type */
-} *DYN;
-
-#define DYN_LEN sizeof (struct dyn)
-
-
 /* Field block.  Fields are what farms and databases are all about */
 
 typedef struct gpre_fld {
@@ -672,8 +843,8 @@ typedef struct gpre_fld {
 	USHORT fld_position;		/* Field position in relation */
 	USHORT fld_precision;		/* Field precision */
 	SSHORT fld_sub_type;		/* Field sub-type */
-	struct gpre_fld *fld_next;		/* next field in relation */
-	struct gpre_fld *fld_array;		/* array element if field is array */
+	gpre_fld* fld_next;			/* next field in relation */
+	gpre_fld* fld_array;		/* array element if field is array */
 	struct gpre_rel *fld_relation;	/* relation */
 	struct gpre_prc *fld_procedure;	/* procedure */
 	struct sym *fld_symbol;		/* symbol for field */
@@ -682,25 +853,25 @@ typedef struct gpre_fld {
 	int *fld_handle;			/* form handle */
 	int *fld_prototype;			/* prototype object for sub-form */
 #endif
-	struct ary *fld_array_info;	/* Dimension and range information about an
+	ary* fld_array_info;		/* Dimension and range information about an
 								   array field */
-	struct gpre_nod *fld_default_value;	/* field's default value */
-	struct txt *fld_default_source;	/* source for field default value */
+	gpre_nod* fld_default_value;	/* field's default value */
+	txt* fld_default_source;	/* source for field default value */
 	struct ind *fld_index;		/* If CREATE TABLE, specifies field with
 								   the unique constraint */
-	struct cnstrt *fld_constraints;	/* linked list of constraints defined
-									   during a meta operation */
+	cnstrt* fld_constraints;	/* linked list of constraints defined
+								   during a meta operation */
 	struct intlsym *fld_character_set;
 	/* character set for SQL declared field */
 	struct intlsym *fld_collate;	/* collation clause for SQL declared field */
-	struct cmpf *fld_computed;	/* computed field definition */
+	cmpf* fld_computed;			/* computed field definition */
 	USHORT fld_char_length;		/* field length in CHARACTERS */
 	SSHORT fld_charset_id;		/* Field character set id for text */
 	SSHORT fld_collate_id;		/* Field collation id for text */
 	SSHORT fld_ttype;			/* ID of text type's implementation */
 } *GPRE_FLD;
 
-#define FLD_LEN		sizeof (struct gpre_fld)
+#define FLD_LEN		sizeof(gpre_fld)
 
 #define FLD_blob	 1
 #define FLD_text	 2
@@ -718,34 +889,6 @@ typedef struct gpre_fld {
 #define FLD_meta_cstring 2048	/* field is being defined as cstring by the user. */
 
 
-/* filter block */
-
-typedef struct fltr {
-	TEXT *fltr_name;
-	TEXT *fltr_entry_point;
-	TEXT *fltr_module_name;
-	SSHORT fltr_input_type;
-	SSHORT fltr_output_type;
-} *FLTR;
-
-#define FLTR_LEN sizeof (struct fltr)
-
-
-/* declare udf block */
-
-typedef struct decl_udf {
-	TEXT *decl_udf_name;
-	TEXT *decl_udf_entry_point;
-	TEXT *decl_udf_module_name;
-	struct gpre_fld *decl_udf_arg_list;
-	struct gpre_fld *decl_udf_return_type;
-	USHORT decl_udf_return_mode;	/* BY VALUE or BY REFERENCE */
-	SSHORT decl_udf_return_parameter;
-} *DECL_UDF;
-
-
-#define DECL_UDF_LEN sizeof (struct decl_udf)
-
 typedef enum {
 		FUN_value,
 		FUN_reference,
@@ -761,7 +904,7 @@ typedef struct ind {
 	USHORT ind_flags;			/* Miscellaneous flags */
 } *IND;
 
-#define IND_LEN		sizeof (struct ind)
+#define IND_LEN		sizeof(ind)
 #define IND_dup_flag	1		/* if false, duplicates not allowed */
 #define IND_meta	2			/* if true, created for a metadata operation */
 #define IND_descend	4			/* if true, a descending-order index */
@@ -776,7 +919,7 @@ typedef struct ind {
 typedef struct intlsym {		/* International symbol */
 	struct dbb *intlsym_database;
 	struct sym *intlsym_symbol;	/* Hash symbol for intlsym */
-	struct intlsym *intlsym_next;
+	intlsym* intlsym_next;
 	USHORT intlsym_type;		/* what type of name */
 	USHORT intlsym_flags;
 	SSHORT intlsym_ttype;		/* id of implementation */
@@ -786,7 +929,7 @@ typedef struct intlsym {		/* International symbol */
 	TEXT intlsym_name[2];
 } *INTLSYM;
 
-#define INTLSYM_LEN		sizeof (struct intlsym)
+#define INTLSYM_LEN		sizeof(intlsym)
 
 /* values used in intlsym_type */
 
@@ -801,93 +944,21 @@ typedef struct intlsym {		/* International symbol */
 #define FIELD_ALLOWS_NULLS(f)	(SUBTYPE_ALLOWS_NULLS((f)->fld_sub_type))
 
 
-/* Linked list stack stuff */
-
-typedef struct lls {
-	struct gpre_nod *lls_object;		/* object on stack */
-	struct lls *lls_next;		/* next item on stack */
-} *LLS;
-
-#define LLS_LEN sizeof (struct lls)
-
-
 /* Maps used by union and global aggregates */
 
-typedef struct map {
-	struct gpre_ctx *map_context;	/* Pseudo context for map */
-	struct mel *map_elements;	/* Map elements */
-	USHORT map_count;			/* Number of things in map */
-} *MAP;
-
 typedef struct mel {
-	struct mel *mel_next;		/* Next element in map */
-	struct gpre_nod *mel_expr;		/* Expression */
+	mel* mel_next;		/* Next element in map */
+	gpre_nod* mel_expr;			/* Expression */
 	struct ref *mel_reference;
 	struct gpre_ctx *mel_context;
 	USHORT mel_position;		/* Position in map */
 } *MEL;
 
-
-/* General Syntax node, produced by parser */
-
-typedef enum nod_t {
-	nod_field = 1, nod_literal, nod_value,
-	nod_and, nod_or, nod_not,
-	nod_eq, nod_ne, nod_ge,
-	nod_le, nod_gt, nod_lt,
-	nod_containing, nod_matches, nod_any,
-	nod_unique, nod_plus, nod_times,
-	nod_divide, nod_minus, nod_negate,
-	nod_msg, nod_for, nod_send,
-	nod_receive, nod_block, nod_select,
-	nod_boolean, nod_projection, nod_sort,
-	nod_store, nod_modify, nod_erase,
-	nod_if, nod_assignment, nod_rse,
-	nod_first, nod_relation, nod_end,
-	nod_label, nod_leave, nod_loop,
-	nod_max, nod_min, nod_count,
-	nod_total, nod_average, nod_list,
-	nod_defered, nod_missing, nod_between,
-	nod_union, nod_map, nod_starting,
-	nod_like, nod_agg_count, nod_agg_max,
-	nod_agg_min, nod_agg_total, nod_agg_average,
-	nod_aggregate, nod_from, nod_null,
-	nod_asterisk, nod_map_ref, nod_user_name,
-	nod_upcase, nod_sleuth, nod_event_init,
-	nod_udf, nod_array, nod_index,
-	nod_via, nod_join_inner, nod_join_left,
-	nod_join_right, nod_join_full, nod_join,
-	nod_concatenate, nod_cast, nod_dom_value,
-	nod_ansi_any, nod_gen_id, nod_set_generator,
-	nod_merge, nod_plan_expr, nod_plan_item,
-	nod_natural, nod_index_order, nod_ansi_all,
-	nod_extract, nod_current_date,
-	nod_current_time, nod_current_timestamp,
-	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
-} NOD_T;
-
-typedef struct gpre_nod {
-	enum nod_t nod_type;		/* node type */
-	USHORT nod_count;			/* number of sub-items */
-	struct gpre_nod *nod_arg[1];		/* argument */
-} *GPRE_NOD;
-
-#define nod_arg0 nod_arg[0]
-#define nod_arg1 nod_arg[1]
-#define nod_arg2 nod_arg[2]
-
-#define NOD_LEN(cnt) (sizeof (struct gpre_nod) + (cnt - 1) * sizeof (int *))
-
-
-/* Open cursor block */
-
-typedef struct opn {
-	struct sym *opn_cursor;		/* Symbol block of cursor */
-	TEXT *opn_trans;			/* Transaction handle */
-	struct ref *opn_using;		/* Using variables */
-} *OPN;
-
-#define OPN_LEN (sizeof (struct opn))
+typedef struct map {
+	struct gpre_ctx *map_context;	/* Pseudo context for map */
+	mel* map_elements;	/* Map elements */
+	USHORT map_count;			/* Number of things in map */
+} *MAP;
 
 
 /* Port block */
@@ -897,11 +968,11 @@ typedef struct por {
 	USHORT por_ident;			/* ident in source */
 	int por_length;				/* length of port in bytes */
 	struct ref *por_references;	/* linked list of field references */
-	struct por *por_next;		/* next port in request */
+	por* por_next;				/* next port in request */
 	USHORT por_count;			/* number of items in port */
 } *POR;
 
-#define POR_LEN (sizeof (struct por))
+#define POR_LEN (sizeof(por))
 
 
 /* Procedure structure */
@@ -911,7 +982,7 @@ typedef struct gpre_prc {
 	SSHORT prc_id;				/* procedure id */
 	struct sym *prc_owner;		/* owner of procedure, if any */
 	struct dbb *prc_database;	/* parent database */
-	struct gpre_prc *prc_next;		/* next procedure in database */
+	gpre_prc* prc_next;			/* next procedure in database */
 	struct gpre_fld *prc_inputs;		/* linked list of input parameters */
 	struct gpre_fld *prc_outputs;	/* linked list of output parameters */
 	SSHORT prc_in_count;		/* count of input parameters */
@@ -919,48 +990,8 @@ typedef struct gpre_prc {
 	SSHORT prc_flags;			/* procedure flags */
 } *GPRE_PRC;
 
-#define PRC_LEN sizeof (struct gpre_prc)
+#define PRC_LEN sizeof(gpre_prc)
 #define PRC_scanned	1
-
-
-/* Grant/revoke block */
-
-typedef struct prv {
-	USHORT prv_privileges;		/* holds privileges being granted or revoked */
-	SCHAR *prv_username;		/* user having privileges granted or revoked */
-	USHORT prv_user_dyn;		/* the dyn-verb to be used with prv_username
-								   i.e. gds__dyn_grant_user/proc/trig/view */
-	struct str *prv_relation;	/* relation on which we're doing grant/revoke */
-	USHORT prv_object_dyn;		/* the dyn-verb to be used with prv_relation
-								   i.e. gds__dyn_rel/proc_name */
-	struct lls *prv_fields;		/* fields on which we're doing grant/revoke */
-	struct prv *prv_next;		/* next grant/revoke block (with different user) */
-} *PRV;
-
-#define PRV_LEN (sizeof (struct prv))
-
-#define PRV_no_privs	0		/* no privileges being granted or revoked */
-#define PRV_select	1			/* select privilege being granted or revoked */
-#define PRV_insert	2			/* insert privilege being granted or revoked */
-#define PRV_delete	4			/* delete privilege being granted or revoked */
-#define PRV_update	8			/* update privilege being granted or revoked */
-#define PRV_execute	16			/* execute privilege being granted or revoked */
-#define PRV_references	32		/* reference privilege */
-#define PRV_grant_option 64		/* privilege to grant privileges being granted */
-#define PRV_all		128			/* all privileges being granted/revoked */
-
-
-/* Ready block */
-
-typedef struct rdy {
-	struct gpre_req *rdy_request;	/* dpb message & info */
-	struct rdy *rdy_next;
-	struct dbb *rdy_database;
-	USHORT rdy_id;				/* id for unique string variable- MPEXL COB */
-	TEXT *rdy_filename;
-} *RDY;
-
-#define RDY_LEN sizeof (struct rdy)
 
 
 /* Field reference */
@@ -972,15 +1003,15 @@ typedef struct ref {
 	USHORT ref_id;				/* id of reference in union */
 	struct gpre_fld *ref_field;		/* field in question */
 	struct gpre_ctx *ref_context;	/* context for reference */
-	struct ref *ref_next;		/* next reference in context */
+	ref* ref_next;				/* next reference in context */
 	struct por *ref_port;		/* associated port */
-	struct ref *ref_source;		/* source reference for modified field */
-	struct ref *ref_null;		/* reference for null value */
-	struct ref *ref_master;		/* master field for null value */
-	struct ref *ref_friend;		/* value for variable */
-	struct gpre_nod *ref_expr;		/* expression, if node is expression */
+	ref* ref_source;			/* source reference for modified field */
+	ref* ref_null;				/* reference for null value */
+	ref* ref_master;			/* master field for null value */
+	ref* ref_friend;			/* value for variable */
+	gpre_nod* ref_expr;			/* expression, if node is expression */
 	TEXT *ref_value;			/* value string if host language value */
-	struct val *ref_values;		/* linked list of values */
+	val* ref_values;			/* linked list of values */
 	TEXT *ref_null_value;		/* value string if host language value */
 	TEXT *ref_sdl;				/* Raw slice description language for an array */
 	TEXT *ref_sdl_base;			/* base of sdl string during generation */
@@ -1003,17 +1034,7 @@ typedef struct ref {
 #define REF_sql_time	256		/* Reference is to a time constant */
 #define REF_timestamp  	512		/* Reference is to a timestamp constant */
 
-#define REF_LEN sizeof (struct ref)
-
-
-/* value block, used to store a set of values */
-
-typedef struct val {
-	struct val *val_next;		/* next value in list */
-	TEXT *val_value;			/* value */
-} *VAL;
-
-#define VAL_LEN sizeof (struct val)
+#define REF_LEN sizeof(ref)
 
 
 /* Relation block, not to be confused with siblings or in-laws */
@@ -1024,18 +1045,18 @@ typedef struct gpre_rel {
 	struct gpre_fld *rel_dbkey;		/* linked list of known fields */
 	struct sym *rel_symbol;		/* symbol for relation */
 	struct dbb *rel_database;	/* parent database */
-	struct gpre_rel *rel_next;		/* next relation in database */
+	gpre_rel* rel_next;			/* next relation in database */
 	BOOLEAN rel_meta;			/* if true, created for a metadata operation */
 	struct rse *rel_view_rse;
-	struct txt *rel_view_text;	/* source for VIEW definition */
+	txt* rel_view_text;			/* source for VIEW definition */
 	struct sym *rel_owner;		/* owner of relation, if any */
-	struct cnstrt *rel_constraints;	/* linked list of constraints defined
-									   during a meta operation */
+	cnstrt* rel_constraints;	/* linked list of constraints defined
+								   during a meta operation */
 	TEXT *rel_ext_file;			/* external file name */
 	USHORT rel_flags;
 } *GPRE_REL;
 
-#define REL_LEN sizeof (struct gpre_rel)
+#define REL_LEN sizeof(gpre_rel)
 
 #define REL_view_check	1		/* View created with check option */
 
@@ -1087,12 +1108,12 @@ typedef struct gpre_req {
 	USHORT req_labels;			/* next available label */
 	USHORT req_top_label;		/* fortran label for top of request */
 	USHORT req_btm_label;		/* fortran label for request exit */
-	struct gpre_nod *req_node;		/* request definition tree */
+	gpre_nod* req_node;			/* request definition tree */
 	struct dbb *req_database;	/* database */
 	struct act *req_actions;	/* actions within request */
 	struct gpre_ctx *req_contexts;	/* contexts within request */
 	struct gpre_ctx *req_update;		/* update context for mass insert */
-	struct gpre_req *req_next;		/* next request in module or metadata action */
+	gpre_req* req_next;			/* next request in module or metadata action */
 	struct ref *req_values;		/* host values required */
 #ifdef SCROLLABLE_CURSORS
 	struct ref *req_avalues;	/* parameters to pass to asynchronous message */
@@ -1112,10 +1133,10 @@ typedef struct gpre_req {
 #ifdef SCROLLABLE_CURSORS
 	struct por *req_aport;		/* port for asynchronous message */
 #endif
-	struct gpre_req *req_routine;	/* other requests in routine */
+	gpre_req* req_routine;		/* other requests in routine */
 	blb*		req_blobs;		/* blobs in request */
 #ifdef PYXIS
-	struct form *req_form;		/* form for request */
+	form* req_form;				/* form for request */
 #endif
 	struct slc *req_slice;		/* slice for request */
 	struct ref *req_array_references;	/* array fields referenced in context */
@@ -1153,46 +1174,36 @@ typedef struct gpre_req {
 #endif
 #define REQ_blr_version4       262144	/* request must generate blr_version4 */
 
-#define REQ_LEN sizeof (struct gpre_req)
-
-
-/* act_object block for SQL database commands. */
-
-typedef struct mdbb {
-	struct dbb *mdbb_database;
-	struct gpre_req *mdbb_dpb_request;
-	struct gpre_req *mdbb_dpb_extend_request;
-} *MDBB;
-
+#define REQ_LEN sizeof(gpre_req)
 
 
 /* Reserved relation lock block */
 
 typedef struct rrl {
-	struct rrl *rrl_next;		/* next locked relation */
+	rrl* rrl_next;				/* next locked relation */
 	UCHAR rrl_lock_level;		/* lock level (SHARE, PROT, EXC */
 	UCHAR rrl_lock_mode;		/* lock mode (READ/WRITE) */
 	struct gpre_rel *rrl_relation;	/* relation block */
 } *RRL;
 
-#define RRL_LEN sizeof (struct rrl)
+#define RRL_LEN sizeof(rrl)
 
 
 /* Record selection expresion syntax node */
 
 typedef struct rse {
 	USHORT rse_type;			/* node type */
-	struct gpre_nod *rse_boolean;	/* boolean expression, if present */
-	struct gpre_nod *rse_first;		/* "first n" clause, if present */
-	struct gpre_nod *rse_reduced;	/* projection clause, if present */
-	struct gpre_nod *rse_sort;		/* sort clause, if present */
-	struct gpre_nod *rse_fields;		/* list of fields */
-	struct gpre_nod *rse_into;		/* list of output variables */
-	struct gpre_nod *rse_union;		/* if union, list of sub-rses */
-	struct gpre_nod *rse_group_by;	/* list of grouping fields */
-	struct gpre_nod *rse_plan;		/* user-specified access plan */
+	gpre_nod* rse_boolean;		/* boolean expression, if present */
+	gpre_nod* rse_first;		/* "first n" clause, if present */
+	gpre_nod* rse_reduced;		/* projection clause, if present */
+	gpre_nod* rse_sort;			/* sort clause, if present */
+	gpre_nod* rse_fields;		/* list of fields */
+	gpre_nod* rse_into;			/* list of output variables */
+	gpre_nod* rse_union;		/* if union, list of sub-rses */
+	gpre_nod* rse_group_by;		/* list of grouping fields */
+	gpre_nod* rse_plan;			/* user-specified access plan */
 	struct map *rse_map;		/* map for aggregates */
-	struct rse *rse_aggregate;	/* Aggregate rse */
+	rse* rse_aggregate;			/* Aggregate rse */
 	enum nod_t rse_join_type;	/* Join type */
 	USHORT rse_flags;			/* flags */
 	USHORT rse_count;			/* number of relations */
@@ -1204,84 +1215,36 @@ typedef struct rse {
 
 inline size_t RSE_LEN(size_t nItems)
 {
-	return offsetof(rse, rse_context) + nItems * sizeof(int *);
+	return offsetof(rse, rse_context) + nItems * sizeof(int*);
 }
 
 #else /* __cplusplus */
 
-#define RSE_LEN(nItems) (offsetof(struct rse, rse_context) + (nItems) * sizeof(int*))
+#define RSE_LEN(nItems) (offsetof(rse, rse_context) + (nItems) * sizeof(int*))
 
 #endif /* __cplusplus */
 
-//#define RSE_LEN(cnt) (sizeof (struct rse) + (cnt - 1) * sizeof (int *))
+//#define RSE_LEN(cnt) (sizeof(rse) + (cnt - 1) * sizeof (int *))
 
 #define RSE_singleton 1
-
-
-/* Set generator block */
-
-typedef struct sgen {
-	TEXT *sgen_name;
-	USHORT sgen_dialect;
-	SLONG sgen_value;
-	SINT64 sgen_int64value;
-} *SGEN;
-
-#define SGEN_LEN sizeof (struct sgen)
 
 
 /* Slice description block */
 
 typedef struct slc {
-	GPRE_REQ slc_parent_request;		/* request for blob id */
-	GPRE_FLD slc_field;				/* database array field */
-	GPRE_NOD slc_array;				/* user defined array */
-	REF slc_field_ref;			/* array field reference */
+	gpre_req* slc_parent_request;		/* request for blob id */
+	gpre_fld* slc_field;				/* database array field */
+	gpre_nod* slc_array;				/* user defined array */
+	ref* slc_field_ref;			/* array field reference */
 	USHORT slc_dimensions;		/* dimensions */
 	USHORT slc_parameters;		/* number of parameters */
 	struct slc_repeat {
-		GPRE_NOD slc_lower;
-		GPRE_NOD slc_upper;
+		gpre_nod* slc_lower;
+		gpre_nod* slc_upper;
 	} slc_rpt[1];
 } *SLC;
 
-#define SLC_LEN(count)	(sizeof (struct slc) + sizeof (slc::slc_repeat) * (count - 1))
-
-/* SQL WHENEVER BLOCK */
-
-typedef struct swe {
-	struct swe *swe_next;		/* Next in chain */
-	USHORT swe_condition;		/* Condition */
-	USHORT swe_length;			/* Length of label */
-	TEXT swe_label[1];			/* Label */
-} *SWE;
-
-#define SWE_error	0
-#define SWE_warning	1
-#define SWE_not_found	2
-#define SWE_max		3
-
-
-
-/* statistic block. Used for all statistics commands */
-
-typedef struct sts {
-	struct str *sts_name;		/* object name */
-	USHORT sts_flags;			/* Miscellaneous flags */
-} *STS;
-
-#define STS_LEN		sizeof (struct sts)
-#define STS_index	1			/* Object is an index */
-
-
-
-/* STRing block - holds a null terminated string */
-
-typedef struct str {
-	TEXT str_string[1];			/* pretty simple, no? */
-} *STR;
-
-#define STR_LEN(size)	(sizeof (struct str) + size)
+#define SLC_LEN(count)	(sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1))
 
 
 /* Symbol block, also used for hash table */
@@ -1326,25 +1289,13 @@ typedef struct sym {
 	enum sym_t sym_type;		/* symbol type */
 	USHORT sym_keyword;			/* keyword number, if keyword */
 	struct gpre_ctx *sym_object;		/* general pointer to object */
-	struct sym *sym_collision;	/* collision pointer */
-	struct sym *sym_homonym;	/* homonym pointer */
+	sym* sym_collision;			/* collision pointer */
+	sym* sym_homonym;			/* homonym pointer */
 	SCHAR sym_name[1];			/* space for name, if necessary */
 } *SYM;
 
-#define SYM_LEN sizeof (struct sym)
+#define SYM_LEN sizeof(sym)
 
-
-/* Start transaction block */
-
-typedef struct gpre_tra {
-	struct gpre_tra *tra_next;		/* next transaction */
-	TEXT *tra_handle;			/* this handle */
-	USHORT tra_flags;			/* transaction options */
-	struct tpb *tra_tpb;		/* TPB's for this transaction */
-	int tra_db_count;			/* number of db's and TPB's */
-} *GPRE_TRA;
-
-#define TRA_LEN	sizeof (struct gpre_tra)
 
 /* values for tra_flags */
 
@@ -1364,68 +1315,131 @@ typedef struct gpre_tra {
 /* TPB block */
 
 typedef struct tpb {
-	struct tpb *tpb_tra_next;	/* next TPB for this transaction */
-	struct tpb *tpb_dbb_next;	/* next TPB for this database */
+	tpb* tpb_tra_next;			/* next TPB for this transaction */
+	tpb* tpb_dbb_next;			/* next TPB for this database */
 	struct dbb *tpb_database;	/* DBB of this part of the transaction */
 	USHORT tpb_length;			/* length of actual TPB */
 	USHORT tpb_ident;			/* unique part of name for this TPB */
 	UCHAR tpb_string[1];		/* actual TPB */
 } *TPB;
 
-#define TPB_LEN(tpb_string) (sizeof (struct tpb) + tpb_string)
+#define TPB_LEN(tpb_string) (sizeof(tpb) + tpb_string)
+
+
+/**************** start of tree roots *****************/
+
+/* Based on block.  Used for based on clause */
+
+typedef struct bas {
+	gpre_fld* bas_field;		/* database field referenced */
+	lls* bas_variables;			/* list of variables based on above */
+	str* bas_db_name;			/* database name if present and required */
+	str* bas_rel_name;			/* relation name if no db statement */
+	str* bas_fld_name;			/* field if no db statement */
+	USHORT bas_flags;
+	char bas_terminator[2];		/* terminating character */
+} *BAS;
+
+#define BAS_LEN		(sizeof(bas))
+
+#define BAS_segment	1			/* Based on a blob segment length */
+#define BAS_ambiguous	2		/* Ambiguous reference to segment */
+
+
+/* declare udf block */
+
+typedef struct decl_udf {
+	TEXT *decl_udf_name;
+	TEXT *decl_udf_entry_point;
+	TEXT *decl_udf_module_name;
+	gpre_fld* decl_udf_arg_list;
+	gpre_fld* decl_udf_return_type;
+	USHORT decl_udf_return_mode;	/* BY VALUE or BY REFERENCE */
+	SSHORT decl_udf_return_parameter;
+} *DECL_UDF;
+
+
+#define DECL_UDF_LEN sizeof(decl_udf)
+
+
+/* Dynamic statement block, used for dynamic SQL */
+
+typedef struct dyn {
+	dbb* dyn_database;			/* Database involved */
+	sym* dyn_statement_name;	/* Name of dynamic statement */
+	sym* dyn_cursor_name;		/* Cursor name */
+	TEXT *dyn_trans;			/* Transaction handle */
+	TEXT *dyn_string;			/* Dynamic string or variable name */
+	TEXT *dyn_sqlda;			/* Name of SQLDA structure, if any */
+	TEXT *dyn_sqlda2;			/* Name of second SQLDA structure, if any */
+	gpre_nod* dyn_using;		/* dependent on action type */
+} *DYN;
+
+#define DYN_LEN sizeof(dyn)
+
+
+/* Start transaction block */
+
+typedef struct gpre_tra {
+	gpre_tra* tra_next;			/* next transaction */
+	TEXT *tra_handle;			/* this handle */
+	USHORT tra_flags;			/* transaction options */
+	tpb* tra_tpb;				/* TPB's for this transaction */
+	int tra_db_count;			/* number of db's and TPB's */
+} *GPRE_TRA;
+
+#define TRA_LEN	sizeof(gpre_tra)
+
+
+/* act_object block for SQL database commands. */
+
+typedef struct mdbb {
+	dbb* mdbb_database;
+	gpre_req* mdbb_dpb_request;
+	gpre_req* mdbb_dpb_extend_request;
+} *MDBB;
+
+
+/* Open cursor block */
+
+typedef struct opn {
+	sym* opn_cursor;			/* Symbol block of cursor */
+	TEXT *opn_trans;			/* Transaction handle */
+	ref* opn_using;				/* Using variables */
+} *OPN;
+
+#define OPN_LEN (sizeof(opn))
+
+
+/* Ready block */
+
+typedef struct rdy {
+	gpre_req* rdy_request;		/* dpb message & info */
+	rdy* rdy_next;
+	dbb* rdy_database;
+	USHORT rdy_id;				/* id for unique string variable- MPEXL COB */
+	TEXT *rdy_filename;
+} *RDY;
+
+#define RDY_LEN sizeof(rdy)
 
 
 /* Enumerated field type block */
 
 typedef struct typ {
-	SYM typ_symbol;				/* Actual symbol */
-	GPRE_FLD typ_field;				/* Owner */
+	sym* typ_symbol;			/* Actual symbol */
+	gpre_fld* typ_field;		/* Owner */
 	SSHORT typ_value;			/* Value of type */
 } *TYP;
 
-#define TYP_LEN sizeof (struct typ)
-
-
-
-/* Trigger block */
-/* Note: This structure will need expansion later.  Currently its
-   use is to create a trigger for CHECK constraints which always
-   abort on error                                                   */
-
-typedef struct gpre_trg {
-	struct str *trg_name;
-	USHORT trg_type;			/* Type of trigger */
-	struct str *trg_source;		/* source for trigger */
-	struct gpre_nod *trg_boolean;	/* boolean expression, for trigger */
-	struct str *trg_message;	/* Message the trigger prints */
-} *GPRE_TRG;
-
-#define TRG_LEN sizeof (struct gpre_trg)
-
-#define PRE_STORE_TRIGGER	1
-#define POST_STORE_TRIGGER	2
-#define PRE_MODIFY_TRIGGER	3
-#define POST_MODIFY_TRIGGER	4
-#define PRE_ERASE_TRIGGER	5
-#define POST_ERASE_TRIGGER	6
-
-
-/* Text block */
-
-typedef struct txt {
-	ULONG txt_position;
-	USHORT txt_length;
-} *TXT;
-
-#define TXT_LEN sizeof (struct txt)
-
+#define TYP_LEN sizeof(typ)
 
 
 /* User Defined Function */
 
 typedef struct udf {
-	struct dbb *udf_database;
-	SYM udf_symbol;				/* Function name or query name */
+	dbb* udf_database;
+	sym* udf_symbol;			/* Function name or query name */
 	USHORT udf_args;			/* Number of arguments */
 	USHORT udf_flags;			/* UDF flags */
 	USHORT udf_dtype;			/* Return data type */
@@ -1435,11 +1449,12 @@ typedef struct udf {
 	USHORT udf_charset_id;		/* Return character set */
 	USHORT udf_ttype;			/* Return text type */
 	USHORT udf_type;			/* Function type */
-	struct gpre_fld *udf_inputs;		/* List of udf input arguments */
+	gpre_fld* udf_inputs;		/* List of udf input arguments */
 	TEXT udf_function[1];		/* Function name */
 } *UDF;
 
-#define UDF_LEN (sizeof (struct udf))
+#define UDF_LEN (sizeof(udf))
+
 #define	UDF_value	0
 #define UDF_boolean	1
 
@@ -1450,29 +1465,18 @@ typedef struct udf {
 
 typedef struct upd {
 	USHORT upd_level;			/* reference level */
-	struct gpre_req *upd_request;	/* parent request */
-	struct ref *upd_references;	/* references under modify */
-	struct gpre_ctx *upd_source;		/* context being modified */
-	struct gpre_ctx *upd_update;		/* update context */
-	struct por *upd_port;		/* port for update */
-	struct upd *upd_outer;		/* outer modify, if any */
-	struct gpre_nod *upd_assignments;	/* assignments to port */
-	struct ref *upd_array_references;	/* array references under modify */
+	gpre_req* upd_request;		/* parent request */
+	ref* upd_references;		/* references under modify */
+	gpre_ctx* upd_source;		/* context being modified */
+	gpre_ctx* upd_update;		/* update context */
+	por* upd_port;				/* port for update */
+	upd* upd_outer;				/* outer modify, if any */
+	gpre_nod* upd_assignments;	/* assignments to port */
+	ref* upd_array_references;	/* array references under modify */
 } *UPD;
 
-#define UPD_LEN sizeof (struct upd)
+#define UPD_LEN sizeof(upd)
 
-
-/* User name -- used for SQL GRANT/REVOKE */
-
-typedef struct usn {
-	struct usn *usn_next;
-	SCHAR *usn_name;
-	USHORT usn_dyn;				/* describes the type of user via a dyn-verb,
-								   i.e. gds__dyn_grant_user/view/proc/trig */
-} *USN;
-
-#define USN_LEN sizeof (struct usn)
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -1518,7 +1522,7 @@ EXTERN IB_FILE *out_file;
 EXTERN LANG_T sw_language;
 EXTERN int line, errors, warnings, fatals;
 EXTERN ACT functions;
-EXTERN struct dbd global_db_list[32];
+EXTERN dbd global_db_list[32];
 EXTERN USHORT global_db_count;
 EXTERN INTLSYM text_subtypes;
 

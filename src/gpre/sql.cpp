@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.14 2003-07-04 16:45:22 brodsom Exp $
+//	$Id: sql.cpp,v 1.15 2003-09-05 10:14:08 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -752,7 +752,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 //   Check for array declaration 
 
 	if ((keyword != KW_BLOB) && !udf && (MATCH(KW_L_BRCKET))) {
-		field->fld_array_info = (struct ary *) ALLOC(sizeof(struct ary));
+		field->fld_array_info = (ary*) ALLOC(sizeof(ary));
 		par_array(field);
 	}
 
@@ -1699,7 +1699,7 @@ static ACT act_create_database(void)
 
 	action = MAKE_ACTION(request, ACT_create_database);
 
-	mdb = (MDBB) ALLOC(sizeof(struct mdbb));
+	mdb = (MDBB) ALLOC(sizeof(mdbb));
 	mdb->mdbb_database = db;
 	action->act_object = (REF) mdb;
 	action->act_whenever = gen_whenever();
@@ -1985,7 +1985,7 @@ static ACT act_create_table(void)
 	GPRE_FLD *ptr;
 	GPRE_REQ request;
 	GPRE_REL relation;
-	CNSTRT *cnstrt;
+	cnstrt** constraint_ptr;
 	GPRE_CTX context;
 	TEXT *string;
 
@@ -2026,7 +2026,7 @@ static ACT act_create_table(void)
 
 	EXP_left_paren(0);
 	ptr = &relation->rel_fields;
-	cnstrt = &relation->rel_constraints;
+	constraint_ptr = &relation->rel_constraints;
 
 	for (;;) {
 		switch (token.tok_keyword) {
@@ -2035,8 +2035,8 @@ static ACT act_create_table(void)
 		case KW_UNIQUE:
 		case KW_FOREIGN:
 		case KW_CHECK:
-			*cnstrt = par_table_constraint(request, relation);
-			cnstrt = &(*cnstrt)->cnstrt_next;
+			*constraint_ptr = par_table_constraint(request, relation);
+			constraint_ptr = &(*constraint_ptr)->cnstrt_next;
 			break;
 
 		default:
@@ -2507,7 +2507,7 @@ static ACT act_declare_udf(void)
 {
 	ACT action;
 	GPRE_REQ request;
-	DECL_UDF udf;
+	DECL_UDF udf_declaration;
 	GPRE_FLD *ptr, field;
 	SLONG return_parameter;
 
@@ -2519,9 +2519,9 @@ static ACT act_declare_udf(void)
 		PAR_error
 			("Can only DECLARE EXTERNAL FUNCTION in context of single database");
 
-	udf = (DECL_UDF) ALLOC(DECL_UDF_LEN);
-	udf->decl_udf_name = (TEXT *) ALLOC(NAME_SIZE + 1);
-	SQL_resolve_identifier("<identifier>", udf->decl_udf_name);
+	udf_declaration = (DECL_UDF) ALLOC(DECL_UDF_LEN);
+	udf_declaration->decl_udf_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+	SQL_resolve_identifier("<identifier>", udf_declaration->decl_udf_name);
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("external function name too long");
 	ADVANCE_TOKEN;
@@ -2529,9 +2529,9 @@ static ACT act_declare_udf(void)
 //  create action block 
 	action = MAKE_ACTION(request, ACT_declare_udf);
 	action->act_whenever = gen_whenever();
-	action->act_object = (REF) udf;
+	action->act_object = (REF) udf_declaration;
 
-	ptr = &udf->decl_udf_arg_list;
+	ptr = &udf_declaration->decl_udf_arg_list;
 	while (TRUE) {
 		if (MATCH(KW_RETURNS)) {
 			if (MATCH(KW_PARAMETER)) {
@@ -2539,19 +2539,19 @@ static ACT act_declare_udf(void)
 				if (return_parameter > 10)
 					PAR_error("return parameter not in range");
 				assert(return_parameter <= MAX_SSHORT);
-				udf->decl_udf_return_parameter = (SSHORT) return_parameter;
+				udf_declaration->decl_udf_return_parameter = (SSHORT) return_parameter;
 			}
 			else {
 				field = (GPRE_FLD) ALLOC(FLD_LEN);
 				field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 				SQL_par_field_dtype(request, field, TRUE);
 				SQL_adjust_field_dtype(field);
-				udf->decl_udf_return_type = field;
+				udf_declaration->decl_udf_return_type = field;
 				MATCH(KW_BY);
 				if (MATCH(KW_VALUE))
-					udf->decl_udf_return_mode = FUN_value;
+					udf_declaration->decl_udf_return_mode = FUN_value;
 				else
-					udf->decl_udf_return_mode = FUN_reference;
+					udf_declaration->decl_udf_return_mode = FUN_reference;
 			}
 			break;
 		}
@@ -2567,12 +2567,12 @@ static ACT act_declare_udf(void)
 	}
 
 	if (MATCH(KW_ENTRY_POINT))
-		udf->decl_udf_entry_point = extract_string(TRUE);
+		udf_declaration->decl_udf_entry_point = extract_string(TRUE);
 	else
 		SYNTAX_ERROR("ENTRY_POINT");
 
 	if (MATCH(KW_MODULE_NAME))
-		udf->decl_udf_module_name = extract_string(TRUE);
+		udf_declaration->decl_udf_module_name = extract_string(TRUE);
 	else
 		SYNTAX_ERROR("MODULE_NAME");
 
@@ -2592,7 +2592,7 @@ static ACT act_delete(void)
 	ACT action;
 	GPRE_REQ request;
 	GPRE_REL relation;
-	RSE rse;
+	rse* selection;
 	GPRE_CTX context;
 	UPD update;
 	SYM alias;
@@ -2646,13 +2646,13 @@ static ACT act_delete(void)
 		}
 		request->req_trans = transaction;
 		relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
-		rse = request->req_rse;
-		for (i = 0; i < rse->rse_count; i++) {
-			context = rse->rse_context[i];
+		selection = request->req_rse;
+		for (i = 0; i < selection->rse_count; i++) {
+			context = selection->rse_context[i];
 			if (context->ctx_relation == relation)
 				break;
 		}
-		if (i == rse->rse_count)
+		if (i == selection->rse_count)
 			PAR_error("table not in request");
 		update->upd_request = request;
 		update->upd_source = context;
@@ -2670,9 +2670,9 @@ static ACT act_delete(void)
 
 	relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
 
-	request->req_rse = rse = (RSE) ALLOC(RSE_LEN(1));
-	rse->rse_count = 1;
-	rse->rse_context[0] = context = MAKE_CONTEXT(request);
+	request->req_rse = selection = (rse*) ALLOC(RSE_LEN(1));
+	selection->rse_count = 1;
+	selection->rse_context[0] = context = MAKE_CONTEXT(request);
 	context->ctx_relation = relation;
 
 	if (alias && !token.tok_symbol) {
@@ -2685,7 +2685,7 @@ static ACT act_delete(void)
 	}
 
 	if (where)
-		rse->rse_boolean = SQE_boolean(request, 0);
+		selection->rse_boolean = SQE_boolean(request, 0);
 
 	request->req_node = MAKE_NODE(nod_erase, 0);
 	action = MAKE_ACTION(request, ACT_loop);
@@ -2802,7 +2802,7 @@ static ACT act_drop(void)
 	GPRE_REL relation;
 	SYM symbol;
 	SCHAR *db_string;
-	TEXT *str;
+	TEXT *identifier_name;
 	SLONG num;
 
 	switch (token.tok_keyword) {
@@ -2833,11 +2833,11 @@ static ACT act_drop(void)
 		else
 			PAR_error("Can only DROP DOMAIN in context of single database");
 		ADVANCE_TOKEN;
-		str = (TEXT *) ALLOC(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", str);
+		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		SQL_resolve_identifier("<identifier>", identifier_name);
 		action = MAKE_ACTION(request, ACT_drop_domain);
 		action->act_whenever = gen_whenever();
-		action->act_object = (REF) str;
+		action->act_object = (REF) identifier_name;
 		ADVANCE_TOKEN;
 		return action;
 
@@ -2848,11 +2848,11 @@ static ACT act_drop(void)
 		else
 			PAR_error("Can only DROP FILTER in context of single database");
 		ADVANCE_TOKEN;
-		str = (TEXT *) ALLOC(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", str);
+		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		SQL_resolve_identifier("<identifier>", identifier_name);
 		action = MAKE_ACTION(request, ACT_drop_filter);
 		action->act_whenever = gen_whenever();
-		action->act_object = (REF) str;
+		action->act_object = (REF) identifier_name;
 		ADVANCE_TOKEN;
 		return action;
 
@@ -2868,19 +2868,19 @@ static ACT act_drop(void)
 			PAR_error
 				("Can only DROP EXTERNAL FUNCTION in context of a single database");
 
-		str = (TEXT *) ALLOC(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", str);
+		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		SQL_resolve_identifier("<identifier>", identifier_name);
 		action = MAKE_ACTION(request, ACT_drop_udf);
 		action->act_whenever = gen_whenever();
-		action->act_object = (REF) str;
+		action->act_object = (REF) identifier_name;
 		ADVANCE_TOKEN;
 		return action;
 
 	case KW_INDEX:
 		request = MAKE_REQUEST(REQ_ddl);
 		ADVANCE_TOKEN;
-		str = (TEXT *) ALLOC(NAME_SIZE + 1);
-		SQL_resolve_identifier("<identifier>", str);
+		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		SQL_resolve_identifier("<identifier>", identifier_name);
 		index = make_index(request, token.tok_string);
 		action = MAKE_ACTION(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
@@ -4452,7 +4452,7 @@ static ACT act_update(void)
 	ACT action, slice_action;
 	GPRE_REQ request, slice_request;
 	GPRE_REL relation;
-	RSE rse;
+	rse* selection;
 	GPRE_CTX input_context, update_context;
 	GPRE_NOD set_list, *end_list, set_item, modify, *ptr;
 	UPD update;
@@ -4551,14 +4551,14 @@ static ACT act_update(void)
 
 		/* Given the target relation, find the input context for the modify */
 
-		rse = request->req_rse;
-		for (i = 0; i < rse->rse_count; i++) {
-			input_context = rse->rse_context[i];
+		selection = request->req_rse;
+		for (i = 0; i < selection->rse_count; i++) {
+			input_context = selection->rse_context[i];
 			if (input_context->ctx_relation == relation)
 				break;
 		}
 
-		if (i == rse->rse_count)
+		if (i == selection->rse_count)
 			PAR_error("table not in request");
 
 		/* Resolve input fields first */
@@ -4644,9 +4644,9 @@ static ACT act_update(void)
 
 //  Generate record select expression, then resolve input values 
 
-	request->req_rse = rse = (RSE) ALLOC(RSE_LEN(1));
-	rse->rse_count = 1;
-	rse->rse_context[0] = input_context;
+	request->req_rse = selection = (rse*) ALLOC(RSE_LEN(1));
+	selection->rse_count = 1;
+	selection->rse_context[0] = input_context;
 
 	if (!alias && !token.tok_symbol)
 		/* may have a relation name put parser didn't know it when it parsed it */
@@ -4654,13 +4654,13 @@ static ACT act_update(void)
 
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
 		set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[0], request, rse);
+		SQE_resolve(set_item->nod_arg[0], request, selection);
 	}
 
 //  Process boolean, if any 
 
 	if (where)
-		rse->rse_boolean = SQE_boolean(request, 0);
+		selection->rse_boolean = SQE_boolean(request, 0);
 
 //  Resolve update fields to update context 
 
@@ -4703,7 +4703,7 @@ static ACT act_update(void)
 		pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 	}
 
-	request->req_node = modify = MAKE_NODE(nod_modify, 1);;
+	request->req_node = modify = MAKE_NODE(nod_modify, 1);
 	modify->nod_arg[0] = set_list;
 
 	action = MAKE_ACTION(request, ACT_loop);
@@ -4749,7 +4749,7 @@ static ACT act_whenever(void)
 	else if ((MATCH(KW_GO) && MATCH(KW_TO)) || MATCH(KW_GOTO)) {
 		MATCH(KW_COLON);
 		l = token.tok_length;
-		label = (SWE) ALLOC(sizeof(struct swe) + l);
+		label = (SWE) ALLOC(sizeof(swe) + l);
 		label->swe_condition = condition;
 		if (label->swe_length = l) {
 			p = label->swe_label;
@@ -4858,7 +4858,7 @@ static FIL define_cache(void)
 	TEXT *string;
 	TEXT err_string[256];
 
-	file = (FIL) ALLOC(sizeof(struct fil));
+	file = (FIL) ALLOC(sizeof(fil));
 	if (QUOTED(token.tok_type)) {
 		file->fil_name = string = (TEXT *) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length, string);
@@ -4895,7 +4895,7 @@ static FIL define_file(void)
 	FIL file;
 	TEXT *string;
 
-	file = (FIL) ALLOC(sizeof(struct fil));
+	file = (FIL) ALLOC(sizeof(fil));
 	if (QUOTED(token.tok_type)) {
 		file->fil_name = string = (TEXT *) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length, string);
@@ -4939,7 +4939,7 @@ static FIL define_log_file( BOOLEAN log_serial)
 	TEXT *string;
 	TEXT err_string[256];
 
-	file = (FIL) ALLOC(sizeof(struct fil));
+	file = (FIL) ALLOC(sizeof(fil));
 	if (QUOTED(token.tok_type)) {
 		file->fil_name = string = (TEXT *) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length, string);
@@ -5089,7 +5089,7 @@ static SWE gen_whenever(void)
 		if (proto = whenever[i]) {
 			prior = label;
 			l = proto->swe_length;
-			label = (SWE) ALLOC(sizeof(struct swe) + l);
+			label = (SWE) ALLOC(sizeof(swe) + l);
 			label->swe_next = prior;
 			label->swe_condition = proto->swe_condition;
 			if (l) {
@@ -5380,7 +5380,7 @@ static SSHORT par_char_set(void)
 static void par_computed( GPRE_REQ request, GPRE_FLD field)
 {
 	CMPF cmp;
-	struct gpre_fld save_fld;
+	gpre_fld save_fld;
 
 	MATCH(KW_BY);
 
@@ -5507,7 +5507,7 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 {
 	GPRE_FLD field;
 // *IND		index; 
-	CNSTRT *cnstrt;
+	cnstrt** constraint_ref;
 	int in_constraints;
 	GPRE_NOD literal_node;
 
@@ -5560,7 +5560,7 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 
 //  Check for any column level constraints 
 
-	cnstrt = &field->fld_constraints;
+	constraint_ref = &field->fld_constraints;
 	in_constraints = TRUE;
 
 	while (in_constraints) {
@@ -5571,8 +5571,8 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 		case KW_REFERENCES:
 		case KW_CHECK:
 		case KW_NOT:
-			*cnstrt = par_field_constraint(request, field, relation);
-			cnstrt = &(*cnstrt)->cnstrt_next;
+			*constraint_ref = par_field_constraint(request, field, relation);
+			constraint_ref = &(*constraint_ref)->cnstrt_next;
 			break;
 
 		default:
@@ -5613,16 +5613,14 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_REL relation)
 {
 	enum kwwords keyword;
-	CNSTRT cnstrt;
+	cnstrt* new_constraint = (cnstrt*) ALLOC(CNSTRT_LEN);
 	STR field_name;
-
-	cnstrt = (CNSTRT) ALLOC(CNSTRT_LEN);
 
 	if (token.tok_keyword == KW_CONSTRAINT) {
 		ADVANCE_TOKEN;
-		cnstrt->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
+		new_constraint->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
-							   (TEXT *) cnstrt->cnstrt_name);
+							   (TEXT *) new_constraint->cnstrt_name);
 		if (token.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		ADVANCE_TOKEN;
@@ -5633,7 +5631,7 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 		ADVANCE_TOKEN;
 		if (!MATCH(KW_NULL))
 			SYNTAX_ERROR("NULL");
-		cnstrt->cnstrt_type = CNSTRT_NOT_NULL;
+		new_constraint->cnstrt_type = CNSTRT_NOT_NULL;
 		for_field->fld_flags |= FLD_not_null;
 		break;
 
@@ -5644,26 +5642,26 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 		if (keyword == KW_PRIMARY) {
 			if (!MATCH(KW_KEY))
 				SYNTAX_ERROR("KEY");
-			cnstrt->cnstrt_type = CNSTRT_PRIMARY_KEY;
+			new_constraint->cnstrt_type = CNSTRT_PRIMARY_KEY;
 		}
 		else if (keyword == KW_REFERENCES) {
-			cnstrt->cnstrt_type = CNSTRT_FOREIGN_KEY;
+			new_constraint->cnstrt_type = CNSTRT_FOREIGN_KEY;
 		}
 		else
-			cnstrt->cnstrt_type = CNSTRT_UNIQUE;
+			new_constraint->cnstrt_type = CNSTRT_UNIQUE;
 
 		/* Set field for PRIMARY KEY or FOREIGN KEY or UNIQUE constraint  */
 
 		field_name = (STR) ALLOC(NAME_SIZE + 1);
 		strcpy((char *) field_name, for_field->fld_symbol->sym_string);
-		PUSH((GPRE_NOD) field_name, &cnstrt->cnstrt_fields);
+		PUSH((GPRE_NOD) field_name, &new_constraint->cnstrt_fields);
 
 		if (keyword == KW_REFERENCES) {
 			/* Relation name for foreign key  */
 
-			cnstrt->cnstrt_referred_rel = (STR) ALLOC(NAME_SIZE + 1);
+			new_constraint->cnstrt_referred_rel = (STR) ALLOC(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
-								   (TEXT *) cnstrt->cnstrt_referred_rel);
+								   (TEXT *) new_constraint->cnstrt_referred_rel);
 			if (token.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			ADVANCE_TOKEN;
@@ -5673,16 +5671,16 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 
 				field_name = (STR) ALLOC(NAME_SIZE + 1);
 				SQL_resolve_identifier("<column name>", (TEXT *) field_name);
-				PUSH((GPRE_NOD) field_name, &cnstrt->cnstrt_referred_fields);
+				PUSH((GPRE_NOD) field_name, &new_constraint->cnstrt_referred_fields);
 				CPR_token();
 				EXP_match_paren();
 			}
 
 			if (token.tok_keyword == KW_ON) {
-				par_fkey_extension(cnstrt);
+				par_fkey_extension(new_constraint);
 				ADVANCE_TOKEN;
 				if (token.tok_keyword == KW_ON) {
-					par_fkey_extension(cnstrt);
+					par_fkey_extension(new_constraint);
 					ADVANCE_TOKEN;
 				}
 			}
@@ -5691,17 +5689,17 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 
 	case KW_CHECK:
 		ADVANCE_TOKEN;
-		cnstrt->cnstrt_type = CNSTRT_CHECK;
-		cnstrt->cnstrt_text = CPR_start_text();
-		cnstrt->cnstrt_boolean = SQE_boolean(request, 0);
-		CPR_end_text(cnstrt->cnstrt_text);
+		new_constraint->cnstrt_type = CNSTRT_CHECK;
+		new_constraint->cnstrt_text = CPR_start_text();
+		new_constraint->cnstrt_boolean = SQE_boolean(request, 0);
+		CPR_end_text(new_constraint->cnstrt_text);
 		break;
 
 	default:
 		PAR_error("Invalid constraint type");
 	}
 
-	return cnstrt;
+	return new_constraint;
 }
 
 
@@ -5906,18 +5904,16 @@ static void par_fkey_extension( CNSTRT cnstrt)
 static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 {
 	enum kwwords keyword;
-	CNSTRT cnstrt;
+	cnstrt* constraint = (cnstrt*) ALLOC(CNSTRT_LEN);
 	LLS *fields;
 	STR field_name;
 	USHORT num_for_key_flds = 0, num_prim_key_flds = 0;
 
-	cnstrt = (CNSTRT) ALLOC(CNSTRT_LEN);
-
 	if (token.tok_keyword == KW_CONSTRAINT) {
 		ADVANCE_TOKEN;
-		cnstrt->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
+		constraint->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
-							   (TEXT *) cnstrt->cnstrt_name);
+							   (TEXT *) constraint->cnstrt_name);
 		if (token.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		ADVANCE_TOKEN;
@@ -5931,22 +5927,22 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 		if (keyword == KW_PRIMARY) {
 			if (!MATCH(KW_KEY))
 				SYNTAX_ERROR("KEY");
-			cnstrt->cnstrt_type = CNSTRT_PRIMARY_KEY;
+			constraint->cnstrt_type = CNSTRT_PRIMARY_KEY;
 		}
 		else if (keyword == KW_FOREIGN) {
 			if (!MATCH(KW_KEY))
 				SYNTAX_ERROR("KEY");
-			cnstrt->cnstrt_type = CNSTRT_FOREIGN_KEY;
+			constraint->cnstrt_type = CNSTRT_FOREIGN_KEY;
 		}
 		else
-			cnstrt->cnstrt_type = CNSTRT_UNIQUE;
+			constraint->cnstrt_type = CNSTRT_UNIQUE;
 
 		EXP_left_paren(0);
 
 		/* Get list of fields for PRIMARY KEY or FOREIGN KEY or UNIQUE
 		   constraint */
 
-		fields = &cnstrt->cnstrt_fields;
+		fields = &constraint->cnstrt_fields;
 		do {
 			field_name = (STR) ALLOC(NAME_SIZE + 1);
 			SQL_resolve_identifier("<column name>", (TEXT *) field_name);
@@ -5966,19 +5962,19 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 
 			/* Relation name for foreign key  */
 
-			cnstrt->cnstrt_referred_rel = (STR) ALLOC(NAME_SIZE + 1);
+			constraint->cnstrt_referred_rel = (STR) ALLOC(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
-								   (TEXT *) cnstrt->cnstrt_referred_rel);
+								   (TEXT *) constraint->cnstrt_referred_rel);
 			if (token.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			ADVANCE_TOKEN;
 
-			cnstrt->cnstrt_referred_fields = NULL;
+			constraint->cnstrt_referred_fields = NULL;
 
 			if (MATCH(KW_LEFT_PAREN)) {
 				/* Fields specified for referred relation  */
 
-				fields = &cnstrt->cnstrt_referred_fields;
+				fields = &constraint->cnstrt_referred_fields;
 				do {
 					field_name = (STR) ALLOC(NAME_SIZE + 1);
 					SQL_resolve_identifier("<column name>",
@@ -5995,15 +5991,15 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 			/* Don't print error message in case if <referenced column list>
 			   is not specified. Try to catch them in cmd.c[create_constraint]
 			   later on */
-			if (cnstrt->cnstrt_referred_fields != NULL &&
+			if (constraint->cnstrt_referred_fields != NULL &&
 				num_prim_key_flds != num_for_key_flds)
 					PAR_error
 					("FOREIGN KEY column count does not match PRIMARY KEY");
 			if (token.tok_keyword == KW_ON) {
-				par_fkey_extension(cnstrt);
+				par_fkey_extension(constraint);
 				ADVANCE_TOKEN;
 				if (token.tok_keyword == KW_ON) {
-					par_fkey_extension(cnstrt);
+					par_fkey_extension(constraint);
 					ADVANCE_TOKEN;
 				}
 			}
@@ -6012,17 +6008,17 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 
 	case KW_CHECK:
 		ADVANCE_TOKEN;
-		cnstrt->cnstrt_type = CNSTRT_CHECK;
-		cnstrt->cnstrt_text = CPR_start_text();
-		cnstrt->cnstrt_boolean = SQE_boolean(request, 0);
-		CPR_end_text(cnstrt->cnstrt_text);
+		constraint->cnstrt_type = CNSTRT_CHECK;
+		constraint->cnstrt_text = CPR_start_text();
+		constraint->cnstrt_boolean = SQE_boolean(request, 0);
+		CPR_end_text(constraint->cnstrt_text);
 		break;
 
 	default:
 		PAR_error("Invalid constraint type");
 	}
 
-	return cnstrt;
+	return constraint;
 }
 
 

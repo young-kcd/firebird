@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.7 2003-02-13 09:58:19 dimitr Exp $
+//	$Id: jrdmet.cpp,v 1.8 2003-09-05 10:14:08 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -69,7 +69,7 @@ void JRDMET_init( DBB db)
 	const UCHAR *relfld;
 	const UCHAR *fld;
 	int n;
-	struct gfld *gfield;
+	gfld* gfield;
 
 	relfld = relfields;
 

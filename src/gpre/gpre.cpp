@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.28 2003-08-20 19:08:00 brodsom Exp $
+//  $Id: gpre.cpp,v 1.29 2003-09-05 10:14:07 aafemt Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.28 2003-08-20 19:08:00 brodsom Exp $
+//	$Id: gpre.cpp,v 1.29 2003-09-05 10:14:07 aafemt Exp $
 //
 
 #define GPRE_MAIN
@@ -131,7 +131,7 @@ static TEXT input_buffer[512], *input_char;
 static DBB sw_databases;
 static USHORT sw_first;
 //static jmp_buf fatal_env;
-struct tok prior_token;
+tok prior_token;
 static TEXT *comment_start, *comment_stop;
 
 typedef void (*pfn_gen_routine) (ACT, int);
@@ -161,10 +161,10 @@ typedef struct ext_table_t
 	gpre_cmd_switch	ext_in_sw;
 	TEXT*			in;
 	TEXT*			out;
-} *EXT_TAB;
+};
 
 
-static struct ext_table_t dml_ext_table[] =
+static ext_table_t dml_ext_table[] =
 {
 	{ lang_c, IN_SW_GPRE_C, ".e", ".c" },
 
@@ -258,8 +258,8 @@ int main(int argc, char* argv[])
 	TEXT	spare_file_name[256];
 	TEXT	spare_out_file_name[256];
 	BOOLEAN renamed, explicit_;
-	EXT_TAB ext_tab;
-	struct sw_tab_t sw_table[IN_SW_GPRE_COUNT];
+	ext_table_t* ext_tab;
+	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 #ifdef VMS
 	IB_FILE *temp;
 	TEXT temp_name[256];
@@ -454,7 +454,7 @@ int main(int argc, char* argv[])
 //  adding in the language switch in case we inferred it rather than parsing it.
 //  
 
-	EXT_TAB src_ext_tab = dml_ext_table;
+	ext_table_t* src_ext_tab = dml_ext_table;
 
 	while (src_ext_tab->ext_language != sw_language) {
 		++src_ext_tab;
@@ -814,7 +814,7 @@ int main(int argc, char* argv[])
 //  
 
 	if (!sw_standard_out) {
-		EXT_TAB out_src_ext_tab = src_ext_tab;
+		ext_table_t* out_src_ext_tab = src_ext_tab;
 		if (use_lang_internal_gxx_output) {
 			out_src_ext_tab = dml_ext_table;
     		while (out_src_ext_tab->ext_language != lang_internal_cxx) {
@@ -1245,36 +1245,36 @@ TXT CPR_start_text()
 
 TOK CPR_token()
 {
-	TOK tok;
+	TOK token;
 	SYM symbol;
 
-	tok = get_token();
-	if (!tok)
+	token = get_token();
+	if (!token)
 		return NULL;
 
-	if (tok->tok_type == tok_introducer) {
-		symbol = MSC_find_symbol(HSH_lookup(tok->tok_string + 1), SYM_charset);
+	if (token->tok_type == tok_introducer) {
+		symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
 		if (!symbol) {
 			TEXT err_buffer[100];
 
 			sprintf(err_buffer, "Character set not recognized: '%.50s'",
-					tok->tok_string);
+					token->tok_string);
 			CPR_error(err_buffer);
 		}
-		tok = get_token();
+		token = get_token();
 		switch (sw_sql_dialect) {
 		case 1:
-			if (!(QUOTED(tok->tok_type)))
+			if (!(QUOTED(token->tok_type)))
 				CPR_error("Can only tag quoted strings with character set");
 			else
-				tok->tok_charset = symbol;
+				token->tok_charset = symbol;
 			break;
 
 		default:
-			if (!(SINGLE_QUOTED(tok->tok_type)))
+			if (!(SINGLE_QUOTED(token->tok_type)))
 				CPR_error("Can only tag quoted strings with character set");
 			else
-				tok->tok_charset = symbol;
+				token->tok_charset = symbol;
 			break;
 
 		}
@@ -1284,20 +1284,20 @@ TOK CPR_token()
 	else if (default_lc_ctype && text_subtypes) {
 		switch (sw_sql_dialect) {
 		case 1:
-			if (QUOTED(tok->tok_type)){
-				tok->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
+			if (QUOTED(token->tok_type)){
+				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
 												   SYM_charset);
 			}
 			break;
 		default:
-			if (SINGLE_QUOTED(tok->tok_type)){
-				tok->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype),
+			if (SINGLE_QUOTED(token->tok_type)){
+				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype),
 												   SYM_charset);
 			}
 			break;
 		}
 	}
-	return tok;
+	return token;
 }
 
 
@@ -1554,7 +1554,7 @@ static void finish_based( ACT action)
 					MET_get_relation(db, (TEXT *) based_on->bas_rel_name, "");
 				if (!relation) {
 					sprintf(s, "relation %s is not defined in database %s",
-							based_on->bas_rel_name, based_on->bas_db_name);
+							based_on->bas_rel_name->str_string, based_on->bas_db_name->str_string);
 					CPR_error(s);
 					continue;
 				}
@@ -1573,7 +1573,7 @@ static void finish_based( ACT action)
 				}
 				else {
 					sprintf(s, "database %s is not defined",
-							based_on->bas_db_name);
+							based_on->bas_db_name->str_string);
 					CPR_error(s);
 					continue;
 				}
@@ -1590,8 +1590,8 @@ static void finish_based( ACT action)
 						   than one database. */
 
 						sprintf(s, "field %s in relation %s ambiguous",
-								based_on->bas_fld_name,
-								based_on->bas_rel_name);
+								based_on->bas_fld_name->str_string,
+								based_on->bas_rel_name->str_string);
 						CPR_error(s);
 						break;
 					}
@@ -1603,7 +1603,7 @@ static void finish_based( ACT action)
 				continue;
 			if (!relation && !field) {
 				sprintf(s, "relation %s is not defined",
-						based_on->bas_rel_name);
+						based_on->bas_rel_name->str_string);
 				CPR_error(s);
 				continue;
 			}
@@ -1611,7 +1611,8 @@ static void finish_based( ACT action)
 
 		if (!field) {
 			sprintf(s, "field %s is not defined in relation %s",
-					based_on->bas_fld_name, based_on->bas_rel_name);
+					based_on->bas_fld_name->str_string,
+					based_on->bas_rel_name->str_string);
 			CPR_error(s);
 			continue;
 		}
@@ -1675,8 +1676,8 @@ static BOOLEAN get_switches(int			argc,
 							TEXT**		file_array)
 {
 	TEXT *p, *q, *string;
-	IN_SW_TAB in_sw_tab;
-	SW_TAB sw_tab;
+	IN_SW_TAB in_sw_table_iterator;
+	SW_TAB sw_table_iterator;
 	USHORT in_sw;
 
 //  
@@ -1685,7 +1686,7 @@ static BOOLEAN get_switches(int			argc,
 //  we try to open the file. 
 //  
 
-	sw_tab = sw_table;
+	sw_table_iterator = sw_table;
 
 	for (--argc; argc; argc--)
 	{
@@ -1714,10 +1715,12 @@ static BOOLEAN get_switches(int			argc,
 			{
 				/* iterate through the switch table, looking for matches */
 
-				sw_tab++;
-				sw_tab->sw_in_sw = IN_SW_GPRE_0;
-				for (in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name;
-					 in_sw_tab++) {
+				sw_table_iterator++;
+				sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
+				for (in_sw_table_iterator = in_sw_table;
+					 q = in_sw_table_iterator->in_sw_name;
+					 in_sw_table_iterator++)
+				{
 					p = string + 1;
 
 					/* handle orphaned hyphen case */
@@ -1729,7 +1732,7 @@ static BOOLEAN get_switches(int			argc,
 
 					while (*p) {
 						if (!*++p) {
-							sw_tab->sw_in_sw = (gpre_cmd_switch)in_sw_tab->in_sw;
+							sw_table_iterator->sw_in_sw = (gpre_cmd_switch)in_sw_table_iterator->in_sw;
 						}
 						if (UPPER7(*p) != *q++) {
 							break;
@@ -1740,7 +1743,7 @@ static BOOLEAN get_switches(int			argc,
 					if (!*p)
 						break;
 				}
-				in_sw = sw_tab->sw_in_sw;
+				in_sw = sw_table_iterator->sw_in_sw;
 			}
 		}
 
@@ -1757,17 +1760,17 @@ static BOOLEAN get_switches(int			argc,
 		switch (in_sw) {
 		case IN_SW_GPRE_C:
 			sw_language = lang_c;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 
 		case IN_SW_GPRE_CXX:
 			sw_language = lang_cxx;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 
 		case IN_SW_GPRE_CPLUSPLUS:
 			sw_language = lang_cplusplus;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 
 		case IN_SW_GPRE_GXX:
@@ -1783,29 +1786,29 @@ static BOOLEAN get_switches(int			argc,
 
 		case IN_SW_GPRE_G:
 			sw_language = lang_internal;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 
 #ifdef GPRE_FORTRAN
 		case IN_SW_GPRE_F:
 			sw_language = lang_fortran;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 #endif
 #ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
 			sw_language = lang_pascal;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 #endif
 		case IN_SW_GPRE_X:
 			sw_external = TRUE;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_COB:
 			sw_language = lang_cobol;
-			sw_tab--;
+			sw_table_iterator--;
 			break;
 #endif
 		case IN_SW_GPRE_LANG_INTERNAL : 
@@ -1951,8 +1954,8 @@ static BOOLEAN get_switches(int			argc,
 		}
 	}
 
-	sw_tab++;
-	sw_tab->sw_in_sw = IN_SW_GPRE_0;
+	sw_table_iterator++;
+	sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
 
 	return TRUE;
 }
@@ -2661,20 +2664,26 @@ static void pass2( SLONG start_position)
 
 static void print_switches()
 {
-	IN_SW_TAB in_sw_tab;
+	IN_SW_TAB in_sw_table_iterator;
 
 	ib_fprintf(ib_stderr, "\tlegal switches are:\n");
-	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++) {
-		if (in_sw_tab->in_sw_text) {
-			ib_fprintf(ib_stderr, "%s%s\n", in_sw_tab->in_sw_name,
-					   in_sw_tab->in_sw_text);
+	for (in_sw_table_iterator = gpre_in_sw_table;
+		 in_sw_table_iterator->in_sw;
+		 in_sw_table_iterator++)
+	{
+		if (in_sw_table_iterator->in_sw_text) {
+			ib_fprintf(ib_stderr, "%s%s\n", in_sw_table_iterator->in_sw_name,
+					   in_sw_table_iterator->in_sw_text);
         }
     }
 
 	ib_fprintf(ib_stderr, "\n\tand the internal 'illegal' switches are:\n");
-	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++) {
-		if (!in_sw_tab->in_sw_text) {
-			ib_fprintf(ib_stderr, "%s\n", in_sw_tab->in_sw_name);
+	for (in_sw_table_iterator = gpre_in_sw_table;
+		 in_sw_table_iterator->in_sw;
+		 in_sw_table_iterator++)
+	{
+		if (!in_sw_table_iterator->in_sw_text) {
+			ib_fprintf(ib_stderr, "%s\n", in_sw_table_iterator->in_sw_name);
         }
     }
 
