@@ -5,6 +5,24 @@ A lot of what is explained below should be done automatically by the install
 process.  It is explanined here just in case it didn't do it correctly for
 your circumstance.
 
+0)  CHECK YOUR IN THE FIREBIRD GROUP
+
+    On unix if your going to work with databases you need to be a
+    member of the group 'firebird'.
+
+    To add a user to the firebird group root user needs to do the
+    following:
+
+    $usermod -G firebird skywalker
+
+    and next time 'skywalker' logs on, he can start working with 
+    firebird databases.
+
+    To list the groups that a user belongs to type the following at the 
+    command line:
+    
+    $groups 
+    
 
 1)  IS IT WORKING HOW DO I TELL?
  
@@ -42,6 +60,19 @@ your circumstance.
     the server name.  Remember you may need to specify the username/password
     in to get it to work.
 
+
+    NOTE: To access a database remotely that database needs to belong to the 
+    'firebird' group so the fb server has permission to read and write to
+    it on behalf of the client process.  The following will change the group 
+    ownership of the database to firebird.
+
+    $chgrp firebird mydb.fdb
+
+    The following, which is also common will set both the user and the group
+    ownership to firebird.
+
+    $chown firebird:firebird mydb.fdb
+     
 
 
 2)  HOW DO I CHECK THAT THE SERVER IS RUNNING
