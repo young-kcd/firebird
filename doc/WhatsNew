@@ -145,14 +145,19 @@
         1) Work around bugs in GCC 3.3.2 and 3.3.3
         2) Support GCC 3.4 build
         3) Limit exports of Firebird libraries using version script
+        4) Link client library and UDF libraries with POSIX threads. This cures problems with single-threaded hosts like PHP linking with libfbclient.so from CS packages
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
+    * Fixed bug SF #1027636
+        The problem with output of Linux SuperServer startup script
+      Contributor(s):
+        Dale Mullins <dale_mullins at users.sourceforge.net>
+
     * POSIX build and packaging change
-        Various build and packaging issues
+        Build system is extended to generate source bundles without autoconf dependency
       Contributor(s):
         Erik S. LaBianca <labiance at users.sourceforge.net>
-        Dale Mullins <dale_mullins at users.sourceforge.net>
 
   **************
   * v1.5.1
