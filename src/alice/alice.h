@@ -164,8 +164,9 @@ private:
 public:
 	AliceGlobals(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
 		: ThreadData(ThreadData::tddALICE), 
-		output_proc(outProc), output_data(outData), 
-		ALICE_default_pool(0)
+		ALICE_default_pool(0),
+		output_proc(outProc), 
+		output_data(outData)
 	{
 	}
 
