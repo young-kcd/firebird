@@ -1,3 +1,80 @@
+2003-09-24 17:36  skidder
+
+	* firebird2/src/burp/burp.h:
+	
+	Make engine compile on Linux after Blas' macro claning
+
+2003-09-24 16:52  dimitr
+
+	* firebird2/src/remote/: os/win32/wnet.cpp, inet.cpp, xnet.cpp,
+	inet.cpp, wnet.cpp:
+	
+	Don't change screen cursor during CS attach.
+
+2003-09-24 14:51  dimitr
+
+	* firebird2/src/jrd/scl.epp:
+	
+	Fixed my bug introduced recently.
+
+2003-09-24 12:39  aafemt
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.static.gpre, src/gpre/gpre.cpp,
+	src/gpre/pat.cpp:
+	
+	Gpre used during build doesn't need additional language modules
+
+2003-09-24 12:30  aafemt
+
+	* firebird2/src/qli/: format.h, parse.cpp, parse_proto.h,
+	picst_proto.h, picstr.cpp, proc.epp, proc_proto.h, repor_proto.h,
+	show_proto.h:
+	
+	'struct' removal
+
+2003-09-24 00:38  skidder
+
+	* firebird2/: configure.in,
+	builds/install/arch-specific/linux/classic/postinstall.sh.in,
+	builds/install/arch-specific/linux/misc/firebird.initd.in,
+	builds/install/arch-specific/linux/super/SSchangePasswd.sh,
+	builds/install/arch-specific/linux/super/SSchangePasswd.sh.in,
+	builds/install/arch-specific/linux/super/postinstall.sh.in,
+	builds/install/arch-specific/linux/super/preinstall.sh.in,
+	builds/install/arch-specific/linux/super/preuninstall.sh.in,
+	builds/install/arch-specific/linux/super/rpmfiles.txt.in,
+	builds/install/misc/CSchangeRunUser.sh,
+	builds/install/misc/CSchangeRunUser.sh.in,
+	builds/install/misc/CSrestoreRootRunUser.sh,
+	builds/install/misc/CSrestoreRootRunUser.sh.in,
+	builds/install/misc/SSchangeRunUser.sh,
+	builds/install/misc/SSchangeRunUser.sh.in,
+	builds/install/misc/SSrestoreRootRunUser.sh,
+	builds/install/misc/SSrestoreRootRunUser.sh.in,
+	builds/install/misc/changeDBAPassword.sh,
+	builds/install/misc/changeDBAPassword.sh.in,
+	builds/install/misc/firebird.init.d.generic,
+	builds/install/misc/firebird.init.d.generic.in,
+	builds/install/misc/firebird.init.d.mandrake,
+	builds/install/misc/firebird.init.d.mandrake.in,
+	builds/posix/Makefile.in.firebird:
+	
+	Make Firebird 2.0 Linux CS install prefix-aware and secure
+
+2003-09-24 00:36  skidder
+
+	* firebird2/builds/posix/Makefile.in.extlib:
+	
+	I don't know why Blas disabled building fbudf.so. Let's build it
+	again
+
+2003-09-24 00:34  skidder
+
+	* firebird2/src/remote/server.cpp:
+	
+	Update Linux CS build for my REMOTE changes
+
 2003-09-23 21:47  brodsom
 
 	* firebird2/src/burp/: backup.epp, burp.cpp, burp.h, mvol.cpp,
