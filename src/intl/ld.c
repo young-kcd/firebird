@@ -83,8 +83,10 @@ EXTERN_texttype(CYRL_c0_init);
 EXTERN_texttype(CYRL_c1_init);
 EXTERN_texttype(CYRL_c2_init);
 
+/* Latin 1 character set */
 EXTERN_texttype(LATIN1_cp_init);
 
+/* Latin 1 collations */
 EXTERN_texttype(LAT139_init);
 EXTERN_texttype(LAT140_init);
 EXTERN_texttype(LAT141_init);
@@ -100,11 +102,20 @@ EXTERN_texttype(LAT152_init);
 EXTERN_texttype(LAT153_init);
 EXTERN_texttype(LAT154_init);
 
+/* Latin 2 character set */
+EXTERN_texttype (LATIN2_cp_init);
+
+/* latin 2 collations */
+EXTERN_texttype (ISO88592_c1_init);
+
+
+
 EXTERN_texttype(WIN1250_c0_init);
 EXTERN_texttype(WIN1250_c1_init);
 EXTERN_texttype(WIN1250_c2_init);
 EXTERN_texttype(WIN1250_c3_init);
 EXTERN_texttype(WIN1250_c4_init);
+EXTERN_texttype(WIN1250_c5_init);
 
 EXTERN_texttype(WIN1251_c0_init);
 EXTERN_texttype(WIN1251_c1_init);
@@ -147,6 +158,7 @@ EXTERN_texttype(JIS220_init);
 EXTERN_texttype(JIS230_init);
 
 EXTERN_charset(CS_iso_latin1);
+EXTERN_charset(CS_iso_latin2);
 EXTERN_charset(CS_win1250);
 EXTERN_charset(CS_win1251);
 EXTERN_charset(CS_win1252);
@@ -291,6 +303,7 @@ USHORT DLL_EXPORT LD_lookup(USHORT objtype,
 	    DRIVER (CS_DOS_850, DOS160_init);
 	    DRIVER (CS_DOS_865, DOS107_init);
 	    DRIVER (CS_LATIN1,  LATIN1_cp_init);
+	    DRIVER (CS_LATIN2,  LATIN2_cp_init);
 	    DRIVER (CS_UNICODE_FSS, UNI201_init);
 	    DRIVER (CS_SJIS,    JIS220_init);
 	    DRIVER (CS_EUCJ,    JIS230_init);

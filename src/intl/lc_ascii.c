@@ -102,6 +102,16 @@ TEXTTYPE_ENTRY(LATIN1_cp_init)
 
 #include "../intl/undef.h"
 
+TEXTTYPE_ENTRY (LATIN2_cp_init)
+{
+    static CONST ASCII	POSIX[] = "C.ISO8859_2";
+
+    FAMILY_ASCII (parm1, LATIN2_cp_init, CS_LATIN2, CC_C); 
+    
+    TEXTTYPE_RETURN;
+}
+
+#include "../intl/undef.h"
 
 TEXTTYPE_ENTRY(DOS852_c0_init)
 {

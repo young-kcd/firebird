@@ -784,6 +784,7 @@ int is_printable(ch)
 {
 	switch (IB_CHARSET_ID) {
 	case CS_LATIN1:
+    case CS_LATIN2:
 	case CS_ANSI:
 		return (!(((ch % 128) < 32) || (ch == 127)));
 	case CS_DOS_437:

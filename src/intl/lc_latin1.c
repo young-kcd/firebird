@@ -313,6 +313,18 @@ TEXTTYPE_ENTRY(WIN1250_c4_init)
 
 #include "../intl/undef.h"
 
+TEXTTYPE_ENTRY (WIN1250_c5_init)
+{
+    static CONST ASCII      POSIX[] = "PXW_HUN.WIN1250";
+    
+#include "../intl/anhun.h"
+    
+    FAMILY2 (parm1, WIN1250_c5_init, CS_WIN1250, CC_HUNGARY);
+ 
+    TEXTTYPE_RETURN;
+}                           
+
+#include "../intl/undef.h"
 
 TEXTTYPE_ENTRY(WIN1251_c1_init)
 {

@@ -62,6 +62,15 @@ CHARSET_ENTRY(CS_iso_latin1)
 	CHARSET_RETURN;
 }
 
+CHARSET_ENTRY (CS_iso_latin2)
+{
+#include "../intl/cs_latin2.h"
+
+    common_8bit_init (csptr, CS_LATIN2, "LATIN2", to_unicode_map,
+                      from_unicode_mapping_array, from_unicode_map);
+    CHARSET_RETURN;
+}
+
 CHARSET_ENTRY(CS_dos_437)
 {
 #include "../intl/cs_437.h"
