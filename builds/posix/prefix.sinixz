@@ -17,15 +17,15 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.4 2002-09-19 15:25:38 skidder Exp $
+# $Id: prefix.sinixz,v 1.5 2002-09-20 10:23:14 eku Exp $
 #
 
 
 # use the following to define conditional DEV/PROD compile
 
 DEBUG_Sources = nodebug.cpp
-PROD_FLAGS=-DNDEBUG -w -DSINIXZ -DUNIX
-DEV_FLAGS=-ggdb -Wall -W -DSINIXZ -DUNIX
+PROD_FLAGS=-DNDEBUG -w -DSINIXZ -DUNIX -fwritable-strings
+DEV_FLAGS=-ggdb -Wall -W -DSINIXZ -DUNIX -fwritable-strings
 
 #CFLAGS:= $(CFLAGS) -DSINIXZ -DUNIX -fwritable-strings
 

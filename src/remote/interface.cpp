@@ -1192,7 +1192,7 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 			release_statement(&port->port_statement);
 
 	/* If there is a network error, don't try to send another packet, just
-	   free the packet and disconnect the port. Put something into interbase.log
+	   free the packet and disconnect the port. Put something into firebird.log
 	   informing the user of the following. */
 
 		if (user_status[1])

@@ -274,7 +274,7 @@ void DLL_EXPORT ERR_log(int facility, int number, CONST TEXT* message)
  **************************************
  *
  * Functional description
- *	Log a message to the interbase.log    
+ *	Log a message to the firebird.log    
  *
  **************************************/
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];

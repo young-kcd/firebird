@@ -28,7 +28,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.7 2002-09-19 15:25:38 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.8 2002-09-20 10:23:14 eku Exp $
 #
 
 ROOT=..
@@ -283,7 +283,7 @@ isc4.gdb: gdef isql 		# build the security database
 basic_targets: ref_databases msgs msgs_intl intl extlib includes examples \
 		otherfiles
 
-msgs:                  # messages file for user $(FIREBIRD)/interbase.msg
+msgs:                  # messages file for user $(FIREBIRD)/firebird.msg
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.msgs $@
 
 msgs_intl:             # international version of msgs file

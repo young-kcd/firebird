@@ -4548,7 +4548,7 @@ static SSHORT lock_buffer(
 
 		/* Case: lock manager detected a deadlock, probably caused by locking the
 		   bdb's in an unfortunate order.  Nothing we can do about it, return the
-		   error, and log it to interbase.log. */
+		   error, and log it to firebird.log. */
 
 		gds__msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 						(TEXT *) bdb->bdb_page, (TEXT *) page_type, 0, 0, 0);
@@ -4592,7 +4592,7 @@ static SSHORT lock_buffer(
 
 /* Case: lock manager detected a deadlock, probably caused by locking the
    bdb's in an unfortunate order.  Nothing we can do about it, return the
-   error, and log it to interbase.log. */
+   error, and log it to firebird.log. */
 
 	gds__msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 					(TEXT *) bdb->bdb_page, (TEXT *) page_type, 0, 0, 0);

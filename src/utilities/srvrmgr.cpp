@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.5 2002-09-18 12:50:05 eku Exp $
+ * $Id: srvrmgr.cpp,v 1.6 2002-09-20 10:23:15 eku Exp $
  */
 
 #include "firebird.h"
@@ -272,7 +272,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 		strcpy(msg, "can not quit now, use shut -ign");
 		break;
 	case MSG_STARTERR:
-		strcpy(msg, "check $INTERBASE/interbase.log file for errors");
+		strcpy(msg, "check $FIREBIRD/firebird.log file for errors");
 		break;
 	case MSG_STARTFAIL:
 		strcpy(msg, "can not start server");
