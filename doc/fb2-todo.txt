@@ -82,6 +82,11 @@ its usage is simular to local variables usage in terms of maintainability).
   Perform stress testing and add needed logging where required.
   We need to unify debug logging across the engine.
 
+Other tasks:
+
+1. NOMEM cleanup + EH cleanup. Use auto_ptr-like templates for resource management
+2. system_call_failed exception must have call name, parameters and error code
+
 Assignments
 
 Nickolay Samofatov:
