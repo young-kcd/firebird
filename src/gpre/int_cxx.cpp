@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.24 2003-11-11 12:08:12 brodsom Exp $
+//	$Id: int_cxx.cpp,v 1.25 2003-11-28 06:48:12 robocop Exp $
 //
 
 #include "firebird.h"
@@ -193,7 +193,6 @@ static void align(const int column)
 
 static void asgn_from( REF reference, int column)
 {
-	TEXT* value;
 	TEXT variable[20];
 	TEXT temp[20];
 
@@ -202,15 +201,17 @@ static void asgn_from( REF reference, int column)
 		const GPRE_FLD field = reference->ref_field;
 		align(column);
 		gen_name(variable, reference);
+		const TEXT* value;
 		if (reference->ref_source) {
 			value = gen_name(temp, reference->ref_source);
-		} else {
+		}
+		else {
 			value = reference->ref_value;
 		}
 
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to gds__ftof2 gds$_vtof2,
-		   gds$_vtov2 and jrd_vtof2 wherever necessary */
+		// To avoid chopping off a double byte kanji character in between
+		// the two bytes, generate calls to gds__ftof2 gds$_vtof2,
+		// gds$_vtov2 and jrd_vtof2 wherever necessary
 
 		if (!field || field->fld_dtype == dtype_text)
 			ib_fprintf(out_file, VTO_CALL,
@@ -225,7 +226,6 @@ static void asgn_from( REF reference, int column)
 		else
 			ib_fprintf(out_file, "%s = %s;", variable, value);
 	}
-
 }
 
 
@@ -497,20 +497,20 @@ static void gen_request( const gpre_req* request)
 {
 
 	if (!(request->req_flags & REQ_exp_hand))
-		ib_fprintf(out_file, "static void\t*%s;\t/* request handle */\n",
+		ib_fprintf(out_file, "static void\t*%s;\t// request handle \n",
 				   request->req_handle);
 
 	ib_fprintf(out_file, "static const UCHAR\tjrd_%d [%d] =",
 			   request->req_ident, request->req_length);
 	align(INDENT);
-	ib_fprintf(out_file, "{\t/* blr string */\n");
+	ib_fprintf(out_file, "{\t// blr string \n");
 
 	if (sw_raw)
 		gen_raw(request);
 	else
 		gds__print_blr(request->req_blr, gen_blr, 0, 0);
 
-	printa(INDENT, "};\t/* end of blr string */\n");
+	printa(INDENT, "};\t// end of blr string \n");
 }
 
 
@@ -661,56 +661,56 @@ static void make_port( POR port, int column)
 
 		switch (field->fld_dtype) {
 		case dtype_short:
-			ib_fprintf(out_file, "    SSHORT jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    SSHORT jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_long:
-			ib_fprintf(out_file, "    SLONG  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    SLONG  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 // ** Begin sql date/time/timestamp *
 		case dtype_sql_date:
-			ib_fprintf(out_file, "    ISC_DATE  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    ISC_DATE  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_sql_time:
-			ib_fprintf(out_file, "    ISC_TIME  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    ISC_TIME  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_timestamp:
-			ib_fprintf(out_file, "    ISC_TIMESTAMP  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    ISC_TIMESTAMP  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 // ** End sql date/time/timestamp *
 
 		case dtype_int64:
-			ib_fprintf(out_file, "    ISC_INT64  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    ISC_INT64  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_quad:
 		case dtype_blob:
-			ib_fprintf(out_file, "    ISC_QUAD  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_cstring:
 		case dtype_text:
-			ib_fprintf(out_file, "    TEXT  jrd_%d [%d];\t/* %s */",
+			ib_fprintf(out_file, "    TEXT  jrd_%d [%d];\t// %s ",
 					   reference->ref_ident, field->fld_length, name);
 			break;
 
 		case dtype_real:
-			ib_fprintf(out_file, "    float  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    float  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 
 		case dtype_double:
-			ib_fprintf(out_file, "    double  jrd_%d;\t/* %s */",
+			ib_fprintf(out_file, "    double  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Guardian CNTL function.
- *	MODULE:		cntl_guard.c
+ *	MODULE:		cntl_guard.cpp
  *	DESCRIPTION:	Windows NT service control panel interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -38,27 +38,27 @@
 #include <windows.h>
 #endif
 
-typedef struct thread {
+struct thread {
 	thread* thread_next;
 	HANDLE thread_handle;
-} *THREAD;
+};
 
-static void control_thread(DWORD);
-static void parse_switch(TEXT *, int *);
+static void WINAPI control_thread(DWORD);
+static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
 static DWORD current_state;
-static void (*main_handler) ();
+static FPTR_VOID main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
-static TEXT *service_name;
+static const TEXT* service_name;
 static HANDLE stop_event_handle;
 #ifdef NOT_USED_OR_REPLACED
 static MUTX_T thread_mutex[1];
-static THREAD threads;
+static thread* threads;
 #endif
 
 
-void CNTL_init( void (*handler) (), TEXT * name)
+void CNTL_init(FPTR_VOID handler, const TEXT* name)
 {
 /**************************************
  *
@@ -75,7 +75,7 @@ void CNTL_init( void (*handler) (), TEXT * name)
 }
 
 
-void CNTL_main_thread( SLONG argc, SCHAR * argv[])
+void CNTL_main_thread( SLONG argc, SCHAR* argv[])
 {
 /**************************************
  *
@@ -86,24 +86,18 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
  * Functional description
  *
  **************************************/
-	int flag;
-	TEXT *p;
 	DWORD last_error = 0;
-	DWORD temp;
-	int status;
 
-	service_handle = RegisterServiceCtrlHandler(service_name,
-												(LPHANDLER_FUNCTION)
-												control_thread);
+	service_handle = RegisterServiceCtrlHandler(service_name, control_thread);
 	if (!service_handle)
 		return;
 
 // THD_mutex_init (thread_mutex);
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-	flag = SRVR_multi_client;
+	int flag = SRVR_multi_client;
 #else
-	flag = 0;
+	int flag = 0;
 #endif
 
 /* Parse the command line looking for any additional arguments. */
@@ -111,8 +105,8 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 	argv++;
 
 	while (--argc) {
-		p = *argv++;
-		if (*p++ = '-')
+		const TEXT* p = *argv++;
+		if (*p++ == '-')
 			parse_switch(p, &flag);
 	}
 
@@ -120,18 +114,20 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
  * least until we get the stop event indicating that
  * the service is stoping. */
 
-	status = 1;
+	int status = 1;
+	DWORD temp = 0;
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
 		!gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						   (main_handler), (void *) flag, 0, 0, 0)
-		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0)) {
+		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
+	{
 		status = 0;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
 	}
 
-	if (temp == WAIT_FAILED || status)
+	if (status || temp == WAIT_FAILED)
 		last_error = GetLastError();
 
 	if (stop_event_handle)
@@ -158,7 +154,7 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 // THD_mutex_destroy (thread_mutex);
 }
 
-void CNTL_shutdown_service( TEXT * message)
+void CNTL_shutdown_service(const TEXT* message)
 {
 /**************************************
  *
@@ -169,13 +165,12 @@ void CNTL_shutdown_service( TEXT * message)
  * Functional description
  *
  **************************************/
-	char *strings[2];
+	const char* strings[2];
 	char buffer[256];
-	HANDLE event_source;
 
 	sprintf(buffer, "%s error: %lu", service_name, GetLastError());
 
-	event_source = RegisterEventSource(NULL, service_name);
+	HANDLE event_source = RegisterEventSource(NULL, service_name);
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
@@ -183,7 +178,7 @@ void CNTL_shutdown_service( TEXT * message)
 					EVENTLOG_ERROR_TYPE,
 					0,
 					0,
-					NULL, 2, 0, const_cast < const char **>(strings), NULL);
+					NULL, 2, 0, strings, NULL);
 		DeregisterEventSource(event_source);
 	}
 
@@ -192,7 +187,7 @@ void CNTL_shutdown_service( TEXT * message)
 }
 
 
-void CNTL_stop_service( TEXT * service)
+void CNTL_stop_service(const TEXT* service) // unused param
 {
 /**************************************
  *
@@ -206,11 +201,7 @@ void CNTL_stop_service( TEXT * service)
  *
  **************************************/
 
-	SERVICE_STATUS status_info;
-	SC_HANDLE servicemgr_handle;
-	SC_HANDLE service_handle;
-
-	servicemgr_handle = OpenSCManager(NULL, NULL, GENERIC_READ);
+	SC_HANDLE servicemgr_handle = OpenSCManager(NULL, NULL, GENERIC_READ);
 	if (servicemgr_handle == NULL) {
 		// return error
 		int error = GetLastError();
@@ -218,7 +209,7 @@ void CNTL_stop_service( TEXT * service)
 		return;
 	}
 
-	service_handle =
+	SC_HANDLE service_handle =
 		OpenService(servicemgr_handle, service_name,
 			GENERIC_READ | GENERIC_EXECUTE);
 
@@ -229,10 +220,12 @@ void CNTL_stop_service( TEXT * service)
 		return;
 	}
 	else {
+		SERVICE_STATUS status_info;
 		if (!ControlService
-			(service_handle, SERVICE_CONTROL_STOP, &status_info)) {
+			(service_handle, SERVICE_CONTROL_STOP, &status_info))
+		{
 			// return error
-			int error = GetLastError();
+			const int error = GetLastError();
 			gds__log("Control services error %d", error);
 			return;
 		}
@@ -241,7 +234,7 @@ void CNTL_stop_service( TEXT * service)
 
 
 
-static void control_thread( DWORD action)
+static void WINAPI control_thread( DWORD action)
 {
 /**************************************
  *
@@ -253,8 +246,7 @@ static void control_thread( DWORD action)
  *	Process a service control request.
  *
  **************************************/
-	DWORD state;
-	state = SERVICE_RUNNING;
+	const DWORD state = SERVICE_RUNNING;
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
@@ -273,7 +265,7 @@ static void control_thread( DWORD action)
 }
 
 
-static void parse_switch( TEXT * switches, int *flag)
+static void parse_switch(const TEXT* switches, int* flag)
 {
 /**************************************
  *
@@ -328,7 +320,6 @@ static USHORT report_status(
  *
  **************************************/
 	SERVICE_STATUS status;
-	USHORT ret;
 
 	status.dwServiceType =
 		(SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
@@ -344,8 +335,10 @@ static USHORT report_status(
 	status.dwCheckPoint = checkpoint;
 	status.dwWaitHint = hint;
 
-	if (!(ret = SetServiceStatus(service_handle, &status)))
+    const USHORT ret = SetServiceStatus(service_handle, &status);
+	if (!ret)
 		CNTL_shutdown_service("SetServiceStatus");
 
 	return ret;
 }
+

@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.24 2003-10-15 01:18:01 brodsom Exp $
+//	$Id: sqe.cpp,v 1.25 2003-11-28 06:48:12 robocop Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -60,13 +60,13 @@ const int ERROR_LENGTH	= 256;
 
 struct scope {
 	gpre_ctx* req_contexts;
-	USHORT req_scope_level;		/* scope level for SQL subquery parsing */
-	USHORT req_in_aggregate;	/* now processing value expr for aggr */
-	USHORT req_in_select_list;	/* processing select list */
-	USHORT req_in_where_clause;	/* processing where clause */
-	USHORT req_in_having_clause;	/* processing having clause */
-	USHORT req_in_order_by_clause;	/* processing order by clause */
-	USHORT req_in_subselect;	/* processing a subselect clause */
+	USHORT req_scope_level;		// scope level for SQL subquery parsing 
+	USHORT req_in_aggregate;	// now processing value expr for aggr 
+	USHORT req_in_select_list;	// processing select list 
+	USHORT req_in_where_clause;	// processing where clause 
+	USHORT req_in_having_clause;	// processing having clause 
+	USHORT req_in_order_by_clause;	// processing order by clause 
+	USHORT req_in_subselect;	// processing a subselect clause 
 };
 
 extern ACT cur_routine;
@@ -231,13 +231,13 @@ GPRE_CTX SQE_context(GPRE_REQ request)
 
 	if (!(context->ctx_relation =
 		  SQL_relation(request, r_name, db_name, owner_name, false))) {
-		/* check for a procedure */
+		// check for a procedure 
 		if (procedure = context->ctx_procedure =
 			SQL_procedure(request, r_name, db_name, owner_name, false)) {
 			if (procedure->prc_inputs) {
 				if (!MSC_match(KW_LEFT_PAREN))
 					CPR_s_error("( <procedure input parameters> )");
-				/* parse input references */
+				// parse input references 
 				context->ctx_prc_inputs = SQE_list(SQE_value, request, false);
 				local_count = 1;
 				par_terminating_parens(&local_count, &local_count);
@@ -412,7 +412,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 			CPR_token();
 		}
 		if (MSC_match(KW_L_BRCKET)) {
-			/* We have a complete array or an array slice here */
+			// We have a complete array or an array slice here 
 
 			if (!MSC_match(KW_R_BRCKET)) {
 				slice_req = MSC_request(REQ_slice);
@@ -560,7 +560,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 							if (reference->ref_field->fld_array_info) {
 								node =
 									EXP_array(request, reference->ref_field,
-											  TRUE, TRUE);
+										true, true);
 								node->nod_arg[0] = (GPRE_NOD) reference;
 							}
 							return node;
@@ -596,8 +596,8 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 						reference->ref_context = context;
 						if (reference->ref_field->fld_array_info) {
 							node =
-								EXP_array(request, reference->ref_field, TRUE,
-										  TRUE);
+								EXP_array(request, reference->ref_field, true,
+										  true);
 							node->nod_arg[0] = (GPRE_NOD) reference;
 						}
 						CPR_token();
@@ -641,7 +641,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 			else
 				CPR_token();
 			if (reference->ref_field->fld_array_info) {
-				node = EXP_array(request, reference->ref_field, TRUE, TRUE);
+				node = EXP_array(request, reference->ref_field, true, true);
 				node->nod_arg[0] = (GPRE_NOD) reference;
 			}
 			if (request->req_map)
@@ -651,7 +651,7 @@ GPRE_NOD SQE_field(GPRE_REQ request,
 	}
 
 	CPR_s_error("<column name>");
-	return NULL;				/* silence compiler */
+	return NULL;				// silence compiler 
 }
 
 
@@ -1093,7 +1093,7 @@ GPRE_RSE SQE_select(GPRE_REQ request,
 		if (!union_all)
 			select->rse_reduced = select->rse_fields;
 
-		/* Result of this UNION might be the left side of the NEXT UNION */
+		// Result of this UNION might be the left side of the NEXT UNION 
 		rse1 = select;
 	}
 
@@ -1317,7 +1317,7 @@ static GPRE_NOD explode_asterisk( GPRE_NOD fields, int n, gpre_rse* selection)
 
 	node = fields->nod_arg[n];
 	if (q_token = (TOK) node->nod_arg[0]) {
-		/* expand for single relation */
+		// expand for single relation 
 
 		if (context = resolve_asterisk(q_token, selection))
 			fields = merge_fields(fields, MET_fields(context), n, true);
@@ -1328,7 +1328,7 @@ static GPRE_NOD explode_asterisk( GPRE_NOD fields, int n, gpre_rse* selection)
 		}
 	}
 	else {
-		/* expand for all relations in context list */
+		// expand for all relations in context list 
 
 		fields = explode_asterisk_all(fields, n, selection, true);
 	}
@@ -1784,7 +1784,7 @@ static GPRE_CTX par_alias( GPRE_REQ request, TEXT * alias)
 		if (context->ctx_scope_level != request->req_scope_level)
 			continue;
 
-		/* check for matching alias */
+		// check for matching alias 
 
 		if (context->ctx_alias) {
 			for (p = context->ctx_alias, q = alias; *p && *q; p++, q++)
@@ -1869,12 +1869,12 @@ static GPRE_NOD par_collate( GPRE_REQ request, GPRE_NOD arg)
 	node->nod_arg[1] = (GPRE_NOD) field;
 	CME_get_dtype(arg, field);
 	if (field->fld_dtype > dtype_any_text) {
-		/* cast expression to VARYING with implementation-defined */
-		/* maximum length */
+		// cast expression to VARYING with implementation-defined 
+		// maximum length 
 
 		field->fld_dtype = dtype_varying;
 		field->fld_char_length = 30;
-		field->fld_length = 0;	/* calculated by SQL_adjust_field_dtype */
+		field->fld_length = 0;	// calculated by SQL_adjust_field_dtype 
 		field->fld_scale = 0;
 		field->fld_sub_type = 0;
 	}
@@ -2477,7 +2477,7 @@ static GPRE_NOD par_primitive_value(GPRE_REQ request,
 				node->nod_count = 0;
 			else {
 				node->nod_arg[0] = SQE_value(request, false, NULL, NULL);
-				/* Disallow arrays as arguments to aggregate functions  */
+				// Disallow arrays as arguments to aggregate functions  
 				node_arg = node->nod_arg[0];
 				if (node_arg && node_arg->nod_type == nod_array)
 					PAR_error
@@ -3003,7 +3003,7 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 		for (db = isc_databases; db; db = db->dbb_next)
 			if (tmp_udf = MET_get_udf(db, token.tok_string))
 				if (an_udf) {
-					/* udf was found in more than one database */
+					// udf was found in more than one database 
 					sprintf(s, "UDF %s is ambiguous", token.tok_string);
 					PAR_error(s);
 				}
@@ -3026,13 +3026,13 @@ static GPRE_NOD par_udf( GPRE_REQ request)
 		PAR_get_token();
 		EXP_left_paren(0);
 		if (!(token.tok_keyword == KW_RIGHT_PAREN)) {
-			/* parse udf parameter references */
+			// parse udf parameter references 
 			node->nod_arg[0] = SQE_list(SQE_value, request, false);
 
 			if (an_udf->udf_args != node->nod_arg[0]->nod_count)
 				PAR_error("count of UDF parameters doesn't match definition");
 
-			/* Match parameter types to the declared parameters */
+			// Match parameter types to the declared parameters 
 			for (input = node->nod_arg[0]->nod_arg,
 				 field = an_udf->udf_inputs;
 				 field;
@@ -3394,7 +3394,7 @@ static GPRE_FLD resolve(
 	if (!q_token)
 		field = MET_context_field(context, f_token->tok_string);
 	else {
-		/* Now search alternatives for the qualifier */
+		// Now search alternatives for the qualifier 
 
 		symbol = HSH_lookup(q_token->tok_string);
 

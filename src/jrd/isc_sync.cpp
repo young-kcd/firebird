@@ -192,7 +192,7 @@ static BOOLEAN mutex_test(MTX);
 #endif
 
 #if defined(WIN_NT)
-static void make_object_name(TEXT *, const TEXT *, const TEXT *);
+static void make_object_name(TEXT*, const TEXT*, const TEXT*);
 #endif
 
 #ifndef sigvector
@@ -1202,9 +1202,9 @@ int ISC_event_init(EVENT event, int type, int semnum)
 int ISC_event_init_shared(
 	EVENT lcl_event,
 	int type,
-	TEXT * name,
+	const TEXT* name,
 	EVENT shr_event,
-	USHORT init_flag)
+	bool init_flag)
 {
 /**************************************
  *
@@ -1712,10 +1712,10 @@ void *ISC_make_signal(
 
 #ifdef VMS
 #define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(ISC_STATUS * status_vector,
-					TEXT * filename,
-					void (*init_routine) (void *, struct sh_mem *, int),
-					void *init_arg, SLONG length, SH_MEM shmem_data)
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
+					const TEXT* filename,
+					FPTR_INIT_GLOBAL_REGION init_routine,
+					void* init_arg, SLONG length, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -1856,10 +1856,10 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(ISC_STATUS * status_vector,
-					TEXT * filename,
-					void (*init_routine) (void *, struct sh_mem *, int),
-					void *init_arg, SLONG length, SH_MEM shmem_data)
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
+					const TEXT* filename,
+					FPTR_INIT_GLOBAL_REGION init_routine,
+					void* init_arg, SLONG length, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2087,7 +2087,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 
 		if (trunc_flag)
 			ftruncate(fd, length);
-		(*init_routine) (init_arg, shmem_data, TRUE);
+		(*init_routine) (init_arg, shmem_data, true);
 #ifdef HAVE_FLOCK
 		if (flock(fd, LOCK_SH)) {
 			error(status_vector, "flock", errno);
@@ -2188,7 +2188,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 		shmem_data->sh_mem_mutex_arg = 0;
 #endif
 		if (init_routine)
-			(*init_routine) (init_arg, shmem_data, FALSE);
+			(*init_routine) (init_arg, shmem_data, false);
 	}
 
 #ifdef HAVE_FLOCK
@@ -2213,10 +2213,10 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 #ifdef UNIX
 #ifndef HAVE_MMAP
 #define ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(ISC_STATUS * status_vector,
-					TEXT * filename,
-					void (*init_routine) (void *, struct sh_mem *, int),
-					void *init_arg, SLONG length, SH_MEM shmem_data)
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
+					const TEXT* filename,
+					FPTR_INIT_GLOBAL_REGION init_routine,
+					void* init_arg, SLONG length, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2233,7 +2233,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 	TEXT expanded_filename[512], hostname[64];
 	UCHAR *address;
 	SSHORT count;
-	int init_flag, oldmask;
+	int oldmask;
 	SLONG key, shmid, semid;
 	struct shmid_ds buf;
 	IB_FILE *fp;
@@ -2245,7 +2245,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 			ISC_get_host(hostname, sizeof(hostname)));
 #endif
 	oldmask = umask(0);
-	init_flag = FALSE;
+	bool init_flag = false;
 	if (length < 0)
 		length = -length;
 
@@ -2479,7 +2479,7 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 		}
 		buf.shm_perm.mode = 0666;
 		shmctl(shmid, IPC_SET, &buf);
-		init_flag = TRUE;
+		init_flag = true;
 	}
 
 	shmem_data->sh_mem_address = address;
@@ -2525,16 +2525,10 @@ UCHAR *ISC_map_file(ISC_STATUS * status_vector,
 #ifdef WIN_NT
 #define ISC_MAP_FILE_DEFINED
 UCHAR* ISC_map_file(
-	   ISC_STATUS * status_vector,
-	   TEXT * filename,
-#ifdef NOT_USED_OR_REPLACED
-	   // MUST of course match header.
-	   FPTR_VOID init_routine,
-#else
-	   // TMN: Parameter is in errors!
-	   void (*init_routine) (void *, struct sh_mem *, int),
-#endif
-	   void *init_arg,
+	   ISC_STATUS* status_vector,
+	   const TEXT* filename,
+	   FPTR_INIT_GLOBAL_REGION init_routine,
+	   void* init_arg,
 	   SLONG length,
 	   SH_MEM shmem_data)
 {
@@ -2553,7 +2547,6 @@ UCHAR* ISC_map_file(
 	TEXT expanded_filename[MAXPATHLEN], hostname[64], *p;
 	TEXT map_file[MAXPATHLEN];
 	HANDLE file_handle, event_handle;
-	int  init_flag;
 	DWORD ret_event, fdw_create;
 	int retry_count = 0;
 
@@ -2610,7 +2603,7 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	init_flag = (GetLastError() == ERROR_ALREADY_EXISTS) ? FALSE : TRUE;
+	bool init_flag = (GetLastError() == ERROR_ALREADY_EXISTS) ? false: true;
 
 	if (init_flag && !init_routine) {
 		CloseHandle(event_handle);
@@ -2772,9 +2765,7 @@ UCHAR* ISC_map_file(
 	strcpy(shmem_data->sh_mem_name, expanded_filename);
 
 	if (init_routine)
-		// Lie a bit to make it compile...
-		reinterpret_cast < void (*) (void *, sh_mem *, int) >
-			(*init_routine) (init_arg, shmem_data, init_flag);
+		(*init_routine) (init_arg, shmem_data, init_flag);
 
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
@@ -2799,10 +2790,10 @@ UCHAR* ISC_map_file(
 
 #ifndef REQUESTER
 #ifndef ISC_MAP_FILE_DEFINED
-UCHAR *ISC_map_file(ISC_STATUS * status_vector,
-					TEXT * filename,
-					void (*init_routine) (void *, struct sh_mem *, int),
-					void *init_arg, SLONG length, SH_MEM shmem_data)
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
+					const TEXT* filename,
+					FPTR_INIT_GLOBAL_REGION init_routine,
+					void* init_arg, SLONG length, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3401,7 +3392,7 @@ int ISC_mutex_unlock(MTX mutex)
 
 #ifdef WIN_NT
 #define MUTEX
-int ISC_mutex_init(MTX mutex, TEXT * mutex_name)
+int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
 {
 /**************************************
  *
@@ -4180,9 +4171,9 @@ static BOOLEAN mutex_test(MTX mutex)
 
 #ifdef WIN_NT
 static void make_object_name(
-			     TEXT * buffer,
-			     const TEXT * object_name,
-			     const TEXT * object_type)
+			     TEXT* buffer,
+			     const TEXT* object_name,
+			     const TEXT* object_type)
 {
 /**************************************
  *

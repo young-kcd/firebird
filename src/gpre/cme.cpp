@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.19 2003-11-11 12:08:12 brodsom Exp $
+//	$Id: cme.cpp,v 1.20 2003-11-28 06:48:11 robocop Exp $
 //
 
 #include "firebird.h"
@@ -147,7 +147,7 @@ static inline void assign_dtype(gpre_fld* f, const gpre_fld* field)
 	f->fld_ttype = field->fld_ttype;
 }
 
-/* One of d1,d2 is time, the other is date */
+// One of d1,d2 is time, the other is date 
 static inline bool is_date_and_time(const USHORT d1, const USHORT d2)
 {
 	return (d1 == dtype_sql_time && d2 == dtype_sql_date) ||
@@ -219,7 +219,7 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 		STUFF(blr_gen_id);
 		p = (TEXT *) (node->nod_arg[1]);
 
-		/* check if this generator really exists */
+		// check if this generator really exists 
 
 		if (!MET_generator(p, request->req_database))
 		{
@@ -315,8 +315,8 @@ void CME_expr(GPRE_NOD node, GPRE_REQ request)
 
 	case nod_dom_value:
 		STUFF(blr_fid);
-		STUFF(0);				/* Context   */
-		STUFF_WORD(0);			/* Field id  */
+		STUFF(0);				// Context   
+		STUFF_WORD(0);			// Field id  
 		return;
 
 	case nod_map_ref:
@@ -927,7 +927,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				f->fld_length = strlen(string) - 2;
 				if (sw_cstring)
 				{
-					/* add 1 back for the NULL byte */
+					// add 1 back for the NULL byte 
 
 					f->fld_length += 1;
 					f->fld_dtype = dtype_cstring;
@@ -1233,7 +1233,7 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 	}
 	else
 	{
-		/*  Header stuff  */
+		//  Header stuff  
 
 		reference->ref_sdl = reference->ref_sdl_base = 
 			reinterpret_cast<UCHAR*>(MSC_alloc(500));
@@ -1243,11 +1243,11 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 		STUFF_SDL(isc_sdl_struct);
 		STUFF_SDL(1);
 
-		/*  The datatype of the array elements  */
+		//  The datatype of the array elements  
 
 		cmp_sdl_dtype(field->fld_array, reference);
 
-		/*  The relation and field identifiers or strings  */
+		//  The relation and field identifiers or strings  
 
 		if (sw_ids)
 		{
@@ -1269,11 +1269,11 @@ static GPRE_NOD cmp_array( GPRE_NOD node, GPRE_REQ request)
 				STUFF_SDL(*p);
 		}
 
-		/*  The loops for the dimensions  */
+		//  The loops for the dimensions  
 
 		stuff_sdl_loops(reference, field);
 
-		/*  The array element and its "subscripts" */
+		//  The array element and its "subscripts" 
 
 		stuff_sdl_element(reference, field);
 
@@ -1416,7 +1416,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 			if (!(request->req_database->dbb_flags & DBB_v3))
 				STUFF(blr_double);
 			else if (sw_know_interp)
-			{	/* then must be using blr_version5 */
+			{	// then must be using blr_version5 
 				STUFF(blr_text2);
 				STUFF_WORD(ttype_ascii);
 			}
@@ -1467,7 +1467,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 				else
 					long_val = (long) uint64_val;
 				STUFF(blr_long);
-				STUFF(scale);	/* scale factor */
+				STUFF(scale);	// scale factor 
 				STUFF_WORD(long_val);
 				STUFF_WORD(long_val >> 16);
 			}
@@ -1481,7 +1481,7 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 				else
 					sint64_val = (SINT64) uint64_val;
 				STUFF(blr_int64);
-				STUFF(scale);	/* scale factor */
+				STUFF(scale);	// scale factor 
 				STUFF_WORD(sint64_val);
 				STUFF_WORD(sint64_val >> 16);
 				STUFF_WORD(sint64_val >> 32);
@@ -1494,18 +1494,18 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 	}
 	else
 	{
-		/* Remove surrounding quotes from string, etc. */
+		// Remove surrounding quotes from string, etc. 
 		char buffer[MAXSYMLEN];
 		char* p = buffer;
 
-		/* Skip introducing quote mark */
+		// Skip introducing quote mark 
 		if (*string)
 			string++;
 
 		while (*string)
 			*p++ = *string++;
 
-		/* Zap out terminating quote mark */
+		// Zap out terminating quote mark 
 		*--p = 0;
 		const SSHORT length = p - buffer;
 
@@ -1623,7 +1623,7 @@ static void cmp_plan(const gpre_nod* plan_expression, GPRE_REQ request)
 			continue;
 		}
 
-		/* if we're here, it must be a nod_plan_item */
+		// if we're here, it must be a nod_plan_item 
 
 		STUFF(blr_retrieve);
 
@@ -1632,7 +1632,7 @@ static void cmp_plan(const gpre_nod* plan_expression, GPRE_REQ request)
 
 		CME_relation((GPRE_CTX) node->nod_arg[2], request);
 
-		/* now stuff the access method for this stream */
+		// now stuff the access method for this stream 
 
 		const gpre_nod* arg = node->nod_arg[1];
 		switch (arg->nod_type)
@@ -1677,7 +1677,7 @@ static void cmp_sdl_dtype( GPRE_FLD field, REF reference)
 	switch (field->fld_dtype)
 	{
 	case dtype_cstring:
-		/* 3.2j has new, tagged blr intruction for cstring */
+		// 3.2j has new, tagged blr intruction for cstring 
 
 		if (sw_know_interp)
 		{
@@ -1693,7 +1693,7 @@ static void cmp_sdl_dtype( GPRE_FLD field, REF reference)
 		break;
 
 	case dtype_text:
-		/* 3.2j has new, tagged blr intruction for text too */
+		// 3.2j has new, tagged blr intruction for text too 
 
 		if (sw_know_interp)
 		{
@@ -1709,7 +1709,7 @@ static void cmp_sdl_dtype( GPRE_FLD field, REF reference)
 		break;
 
 	case dtype_varying:
-		/* 3.2j has new, tagged blr intruction for varying also */
+		// 3.2j has new, tagged blr intruction for varying also 
 
 		if (sw_know_interp)
 		{

@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.23 2003-11-16 01:43:40 brodsom Exp $
+$Id: utld.cpp,v 1.24 2003-11-28 06:48:09 robocop Exp $
 */
 
 #include "firebird.h"
@@ -127,7 +127,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 			return error_dsql_804(status, isc_dsql_sqlda_err);
 		xsqlda->sqld = n;
 
-		/* If necessary, inform the application that more sqlda items are needed */
+		// If necessary, inform the application that more sqlda items are needed 
 		if (xsqlda->sqld > xsqlda->sqln)
 			return 0;
 	}
@@ -136,7 +136,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 		sqlda = (SQLDA *) xsqlda;
 		sqlda->sqld = n;
 
-		/* If necessary, inform the application that more sqlda items are needed */
+		// If necessary, inform the application that more sqlda items are needed 
 		if (sqlda->sqld > sqlda->sqln)
 			return 0;
 
@@ -263,7 +263,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 	XSQLVAR *xvar, xsqlvar;
 	SQLDA *sqlda;
 	SQLVAR *var;
-	//BLOB_PTR *p;				/* one huge pointer per line for LIBS */
+	//BLOB_PTR *p;				// one huge pointer per line for LIBS 
 
 	if (!xsqlda)
 		n = 0;
@@ -284,7 +284,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 
 	if (!n)
 	{
-		/* If there isn't an SQLDA, don't bother with anything else. */
+		// If there isn't an SQLDA, don't bother with anything else. 
 
 		if (blr_length)
 			*blr_length = dasup->dasup_clauses[clause].dasup_blr_length = 0;
@@ -608,16 +608,16 @@ ISC_STATUS	UTLD_parse_sqlda(
 		SSHORT *null_ind = (SSHORT *) (msg_buf + null_offset);
 		if (clause == DASUP_CLAUSE_select)
 		{
-			/* Move data from the message into the SQLDA. */
+			// Move data from the message into the SQLDA. 
 
-			/* Make sure user has specified a data location */
+			// Make sure user has specified a data location 
 			if (!xvar->sqldata)
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
 			memcpy(xvar->sqldata, msg_buf + offset, len);
 			if (xvar->sqltype & 1)
 			{
-				/* Make sure user has specified a location for null indicator */
+				// Make sure user has specified a location for null indicator 
 				if (!xvar->sqlind)
 					return error_dsql_804(status, isc_dsql_sqlda_value_err);
 				*xvar->sqlind = *null_ind;
@@ -631,7 +631,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 
 			if (xvar->sqltype & 1)
 			{
-				/* Make sure user has specified a location for null indicator */
+				// Make sure user has specified a location for null indicator 
 				if (!xvar->sqlind)
 					return error_dsql_804(status, isc_dsql_sqlda_value_err);
 				*null_ind = *xvar->sqlind;
@@ -643,7 +643,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 			if (!xvar->sqldata && !*null_ind)
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
-			/* Copy data - unless known to be NULL */
+			// Copy data - unless known to be NULL 
 			if ((offset + len) > dasup->dasup_clauses[clause].dasup_msg_buf_len)
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
@@ -677,13 +677,13 @@ void	UTLD_save_status_strings(
 	TEXT *p;
 	USHORT l;
 
-/* allocate space for failure strings if it hasn't already been allocated */
+// allocate space for failure strings if it hasn't already been allocated 
 
 	if (!DSQL_failures)
 	{
 		DSQL_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) DSQL_FAILURE_SPACE);
 		/* FREE: by exit handler cleanup() */
-		if (!DSQL_failures)		/* NOMEM: don't try to copy the strings */
+		if (!DSQL_failures)		// NOMEM: don't try to copy the strings 
 			return;
 		DSQL_failures_ptr = DSQL_failures;
 		gds__register_cleanup(cleanup, 0);
@@ -928,7 +928,7 @@ static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 	sqlvar->sqltype = xsqlvar->sqltype;
 	sqlvar->sqlname_length = xsqlvar->aliasname_length;
 
-/* N.B., this may not NULL-terminate the name... */
+// N.B., this may not NULL-terminate the name... 
 
 	memcpy(sqlvar->sqlname, xsqlvar->aliasname, sizeof(sqlvar->sqlname));
 

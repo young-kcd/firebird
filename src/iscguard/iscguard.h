@@ -52,3 +52,4 @@ struct log_info {
 	char log_time[25];
 	log_info* next;
 };
+

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.43 2003-11-26 11:15:32 aafemt Exp $
+$Id: why.cpp,v 1.44 2003-11-28 06:48:22 robocop Exp $
 */
 
 #include "firebird.h"
@@ -2099,11 +2099,11 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
-										WHY_TRA * tra_handle,
-										WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
+										WHY_TRA* tra_handle,
+										WHY_STMT* stmt_handle,
 										USHORT dialect,
-										XSQLDA * sqlda)
+										XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2121,12 +2121,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
-										 WHY_TRA * tra_handle,
-										 WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
+										 WHY_TRA* tra_handle,
+										 WHY_STMT* stmt_handle,
 										 USHORT dialect,
-										 XSQLDA * in_sqlda,
-										 XSQLDA * out_sqlda)
+										 XSQLDA* in_sqlda,
+										 XSQLDA* out_sqlda)
 {
 /**************************************
  *
@@ -2193,14 +2193,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(ISC_STATUS * user_status,
-										  WHY_TRA * tra_handle,
-										  WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(ISC_STATUS* user_status,
+										  WHY_TRA* tra_handle,
+										  WHY_STMT* stmt_handle,
 										  USHORT blr_length,
-										  SCHAR * blr,
+										  const SCHAR* blr,
 										  USHORT msg_type,
 										  USHORT msg_length,
-										  SCHAR * msg)
+										  SCHAR* msg)
 {
 /**************************************
  *
@@ -2219,19 +2219,19 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS * user_status,
-										   WHY_TRA * tra_handle,
-										   WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
+										   WHY_TRA* tra_handle,
+										   WHY_STMT* stmt_handle,
 										   USHORT in_blr_length,
-										   SCHAR * in_blr,
+										   const SCHAR* in_blr,
 										   USHORT in_msg_type,
 										   USHORT in_msg_length,
-										   SCHAR * in_msg,
+										   SCHAR* in_msg,
 										   USHORT out_blr_length,
-										   SCHAR * out_blr,
+										   SCHAR* out_blr,
 										   USHORT out_msg_type,
 										   USHORT out_msg_length, 
-										   SCHAR * out_msg)
+										   SCHAR* out_msg)
 {
 /**************************************
  *
@@ -2342,13 +2342,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(ISC_STATUS * user_status,
-										   WHY_ATT * db_handle,
-										   WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(ISC_STATUS* user_status,
+										   WHY_ATT* db_handle,
+										   WHY_TRA* tra_handle,
 										   USHORT length,
-										   SCHAR * string,
+										   const SCHAR* string,
 										   USHORT dialect,
-										   XSQLDA * sqlda)
+										   XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2366,12 +2366,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
-											  WHY_ATT * db_handle,
-											  WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
+											  WHY_ATT* db_handle,
+											  WHY_TRA* tra_handle,
 											  USHORT length,
-											  SCHAR * string,
-											  USHORT dialect, XSQLDA * sqlda)
+											  const SCHAR* string,
+											  USHORT dialect, XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2390,14 +2390,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS * user_status,
-											WHY_ATT * db_handle,
-											WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
+											WHY_ATT* db_handle,
+											WHY_TRA* tra_handle,
 											USHORT length,
-											SCHAR * string,
+											const SCHAR* string,
 											USHORT dialect,
-											XSQLDA * in_sqlda,
-											XSQLDA * out_sqlda)
+											XSQLDA* in_sqlda,
+											XSQLDA* out_sqlda)
 {
 /**************************************
  *
@@ -2471,17 +2471,17 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(ISC_STATUS * user_status,
-										   WHY_ATT * db_handle,
-										   WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(ISC_STATUS* user_status,
+										   WHY_ATT* db_handle,
+										   WHY_TRA* tra_handle,
 										   USHORT length,
-										   SCHAR * string,
+										   const SCHAR* string,
 										   USHORT dialect,
 										   USHORT blr_length,
 										   USHORT msg_type,
 										   USHORT msg_length,
-										   SCHAR * blr,
-										   SCHAR * msg)
+										   const SCHAR* blr,
+										   SCHAR* msg)
 {
 /**************************************
  *
@@ -2499,17 +2499,17 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(ISC_STATUS * user_status,
-											  WHY_ATT * db_handle,
-											  WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(ISC_STATUS* user_status,
+											  WHY_ATT* db_handle,
+											  WHY_TRA* tra_handle,
 											  USHORT length,
-											  SCHAR * string,
+											  const SCHAR* string,
 											  USHORT dialect,
 											  USHORT blr_length,
-											  SCHAR * blr,
+											  const SCHAR* blr,
 											  USHORT msg_type,
 											  USHORT msg_length,
-											  SCHAR * msg)
+											  SCHAR* msg)
 {
 /**************************************
  *
@@ -2529,22 +2529,22 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
-											WHY_ATT * db_handle,
-											WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
+											WHY_ATT* db_handle,
+											WHY_TRA* tra_handle,
 											USHORT length,
-											SCHAR * string,
+											const SCHAR* string,
 											USHORT dialect,
 											USHORT in_blr_length,
-											SCHAR * in_blr,
+											const SCHAR* in_blr,
 											USHORT in_msg_type,
 											USHORT in_msg_length,
-											SCHAR * in_msg,
+											SCHAR* in_msg,
 											USHORT out_blr_length,
-											SCHAR * out_blr,
+											SCHAR* out_blr,
 											USHORT out_msg_type,
 											USHORT out_msg_length,
-											SCHAR * out_msg)
+											SCHAR* out_msg)
 {
 /**************************************
  *
@@ -2643,22 +2643,22 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS * user_status,
-											WHY_ATT * db_handle,
-											WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
+											WHY_ATT* db_handle,
+											WHY_TRA* tra_handle,
 											USHORT length,
-											SCHAR * string,
+											const SCHAR* string,
 											USHORT dialect,
 											USHORT in_blr_length,
-											SCHAR * in_blr,
+											const SCHAR* in_blr,
 											USHORT in_msg_type,
 											USHORT in_msg_length,
-											SCHAR * in_msg,
+											SCHAR* in_msg,
 											USHORT out_blr_length,
-											SCHAR * out_blr,
+											SCHAR* out_blr,
 											USHORT out_msg_type,
 											USHORT out_msg_length,
-											SCHAR * out_msg)
+											SCHAR* out_msg)
 {
 /**************************************
  *
@@ -2784,10 +2784,10 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS * user_status,
-									  WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
+									  WHY_STMT* stmt_handle,
 									  USHORT dialect,
-									  XSQLDA * sqlda)
+									  XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2824,10 +2824,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS * user_status,
 		return error2(status, local);
 
 	if ((s = GDS_DSQL_FETCH_M(status, stmt_handle, blr_length,
-							  dasup->dasup_clauses[DASUP_CLAUSE_select].
-							  dasup_blr, 0, msg_length,
-							  dasup->dasup_clauses[DASUP_CLAUSE_select].
-							  dasup_msg)) && s != 101) {
+							  dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
+							  0, msg_length,
+							  dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_msg))
+							  && s != 101)
+	{
 		CHECK_STATUS(status);
 		return s;
 	}
@@ -2842,10 +2843,10 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS * user_status,
 
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS * user_status,
-									   WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
+									   WHY_STMT* stmt_handle,
 									   USHORT dialect,
-									   XSQLDA * sqlda,
+									   XSQLDA* sqlda,
 									   USHORT direction,
 									   SLONG offset)
 {
@@ -2877,10 +2878,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS * user_status,
 		return error2(status, local);
 
 	if ((s = GDS_DSQL_FETCH2_M(status, stmt_handle, blr_length,
-							   dasup->dasup_clauses[DASUP_CLAUSE_select].
-							   dasup_blr, 0, msg_length,
-							   dasup->dasup_clauses[DASUP_CLAUSE_select].
-							   dasup_msg, direction, offset)) && s != 101) {
+							   dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
+							   0, msg_length,
+							   dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
+							   direction, offset))
+							   && s != 101)
+	{
 		CHECK_STATUS(status);
 		return s;
 	}
@@ -2895,13 +2898,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS * user_status,
 #endif
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS * user_status,
-										WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
+										WHY_STMT* stmt_handle,
 										USHORT blr_length,
-										SCHAR * blr,
+										const SCHAR* blr,
 										USHORT msg_type,
 										USHORT msg_length,
-										SCHAR * msg)
+										SCHAR* msg)
 {
 /**************************************
  *
@@ -2962,13 +2965,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS * user_status,
 
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS * user_status,
-										 WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
+										 WHY_STMT* stmt_handle,
 										 USHORT blr_length,
-										 SCHAR * blr,
+										 const SCHAR* blr,
 										 USHORT msg_type,
 										 USHORT msg_length,
-										 SCHAR * msg,
+										 SCHAR* msg,
 										 USHORT direction,
 										 SLONG offset)
 {
@@ -3082,10 +3085,10 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_INSERT(ISC_STATUS * user_status,
-									   WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_INSERT(ISC_STATUS* user_status,
+									   WHY_STMT* stmt_handle,
 									   USHORT dialect,
-									   XSQLDA * sqlda)
+									   XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -3122,13 +3125,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS * user_status,
-										 WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
+										 WHY_STMT* stmt_handle,
 										 USHORT blr_length,
-										 SCHAR * blr,
+										 const SCHAR* blr,
 										 USHORT msg_type,
 										 USHORT msg_length,
-										 SCHAR * msg)
+										 const SCHAR* msg)
 {
 /**************************************
  *
@@ -3175,13 +3178,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS * user_status,
-										WHY_TRA * tra_handle,
-										WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
+										WHY_TRA* tra_handle,
+										WHY_STMT* stmt_handle,
 										USHORT length,
-										SCHAR * string,
+										const SCHAR* string,
 										USHORT dialect,
-										XSQLDA * sqlda)
+										XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -3205,7 +3208,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 		CHECK_HANDLE(*tra_handle, HANDLE_transaction, isc_bad_trans_handle);
 
 	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-									dialect, &buffer_len))) {
+									dialect, &buffer_len)))
+	{
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
@@ -3252,16 +3256,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS * user_status,
-										  WHY_TRA * tra_handle,
-										  WHY_STMT * stmt_handle,
+ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
+										  WHY_TRA* tra_handle,
+										  WHY_STMT* stmt_handle,
 										  USHORT length,
-										  SCHAR * string,
+										  const SCHAR* string,
 										  USHORT dialect,
 										  USHORT item_length,
-										  const SCHAR * items,
+										  const SCHAR* items,
 										  USHORT buffer_length,
-										  SCHAR * buffer)
+										  SCHAR* buffer)
 {
 /**************************************
  *
@@ -3320,9 +3324,9 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
-										   WHY_STMT * stmt_handle,
-										   SCHAR * cursor,
+ISC_STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
+										   WHY_STMT* stmt_handle,
+										   const SCHAR* cursor,
 										   USHORT type)
 {
 /**************************************
@@ -3447,8 +3451,8 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
 ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 									  WHY_ATT * handle,
 									  USHORT length,
-									  SCHAR * events,
-									  SCHAR * buffer)
+									  const SCHAR* events,
+									  SCHAR* buffer)
 {
 /**************************************
  *
@@ -3476,7 +3480,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 	value = ISC_event_clear(why_event);
 
 	if (GDS_QUE_EVENTS
-		(status, handle, &id, length, (UCHAR*) events, event_ast, (UCHAR*) buffer))
+		(status, handle, &id, length, (const UCHAR*) events, event_ast, (UCHAR*) buffer))
 	{
 		 return error2(status, local);
 	}
@@ -3690,8 +3694,8 @@ ISC_STATUS API_ROUTINE GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_PREPARE(ISC_STATUS * user_status,
-								   WHY_TRA * tra_handle)
+ISC_STATUS API_ROUTINE GDS_PREPARE(ISC_STATUS* user_status,
+								   WHY_TRA* tra_handle)
 {
 /**************************************
  *
@@ -3708,10 +3712,10 @@ ISC_STATUS API_ROUTINE GDS_PREPARE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_PREPARE2(ISC_STATUS * user_status,
-									WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_PREPARE2(ISC_STATUS* user_status,
+									WHY_TRA* tra_handle,
 									USHORT msg_length,
-									UCHAR * msg)
+									const UCHAR* msg)
 {
 /**************************************
  *
@@ -3828,13 +3832,13 @@ ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS * user_status,
-									  WHY_ATT * handle,
-									  SLONG * id,
+ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS* user_status,
+									  WHY_ATT* handle,
+									  SLONG* id,
 									  USHORT length,
-									  UCHAR * events,
-									  event_ast_routine * ast,
-									  void *arg)
+									  const UCHAR* events,
+									  event_ast_routine* ast,
+									  void* arg)
 {
 /**************************************
  *
@@ -3866,11 +3870,11 @@ ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS * user_status,
-								   WHY_REQ * req_handle,
+ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
+								   WHY_REQ* req_handle,
 								   USHORT msg_type,
 								   USHORT msg_length,
-								   SCHAR * msg,
+								   SCHAR* msg,
 								   SSHORT level)
 {
 /**************************************
@@ -3912,11 +3916,11 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS * user_status,
 
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS * user_status,
-									WHY_REQ * req_handle,
+ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
+									WHY_REQ* req_handle,
 									USHORT msg_type,
 									USHORT msg_length,
-									SCHAR * msg,
+									SCHAR* msg,
 									SSHORT level,
 									USHORT direction,
 									ULONG offset)
@@ -4269,11 +4273,11 @@ else
 }
 
 
-ISC_STATUS API_ROUTINE GDS_SEND(ISC_STATUS * user_status,
-								WHY_REQ * req_handle,
+ISC_STATUS API_ROUTINE GDS_SEND(ISC_STATUS* user_status,
+								WHY_REQ* req_handle,
 								USHORT msg_type,
 								USHORT msg_length,
-								SCHAR * msg,
+								const SCHAR* msg,
 								SSHORT level)
 {
 /**************************************
@@ -4505,11 +4509,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS * user_status,
-										 WHY_SVC * handle,
-										 ULONG * reserved,
+ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS* user_status,
+										 WHY_SVC* handle,
+										 ULONG* reserved,
 										 USHORT spb_length,
-										 SCHAR * spb)
+										 const SCHAR* spb)
 {
 /**************************************
  *
@@ -4546,12 +4550,12 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_START_AND_SEND(ISC_STATUS * user_status,
-										  WHY_REQ * req_handle,
-										  WHY_TRA * tra_handle,
+ISC_STATUS API_ROUTINE GDS_START_AND_SEND(ISC_STATUS* user_status,
+										  WHY_REQ* req_handle,
+										  WHY_TRA* tra_handle,
 										  USHORT msg_type,
 										  USHORT msg_length,
-										  SCHAR * msg,
+										  const SCHAR* msg,
 										  SSHORT level)
 {
 /**************************************

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.20 2003-10-29 10:53:08 robocop Exp $
+//	$Id: pat.cpp,v 1.21 2003-11-28 06:48:12 robocop Exp $
 //
 
 #include "firebird.h"
@@ -41,23 +41,23 @@ extern TEXT* ident_pattern;
 
 typedef enum {
 	NL,
-	RH, RL, RT, RI, RS,			/* Request handle, level, transaction, ident, length */
-	DH, DF,						/* Database handle, filename */
-	TH,							/* Transaction handle */
-	BH, BI,						/* Blob handle, blob_ident */
-	FH,							/* Form handle */
-	V1, V2,						/* Status vectors */
-	I1, I2,						/* Identifier numbers */
-	RF, RE,						/* OS- and language-dependent REF and REF-end character */
-	VF, VE,						/* OS- and language-dependent VAL and VAL-end character */
+	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length 
+	DH, DF,						// Database handle, filename 
+	TH,							// Transaction handle 
+	BH, BI,						// Blob handle, blob_ident 
+	FH,							// Form handle 
+	V1, V2,						// Status vectors 
+	I1, I2,						// Identifier numbers 
+	RF, RE,						// OS- and language-dependent REF and REF-end character 
+	VF, VE,						// OS- and language-dependent VAL and VAL-end character 
 	S1, S2, S3, S4, S5, S6, S7,
-	/* Arbitrary strings */
-	N1, N2, N3, N4,				/* Arbitrary number (SSHORT) */
-	L1, L2,						/* Arbitrary number (SLONG) */
-	PN, PL, PI,					/* Port number, port length, port ident */
-	QN, QL, QI,					/* Second port number, port length, port ident */
-	IF, EL, EN,					/* If, else, end */
-	FR							/* Field reference */
+	// Arbitrary strings 
+	N1, N2, N3, N4,				// Arbitrary number (SSHORT)
+	L1, L2,						// Arbitrary number (SLONG)
+	PN, PL, PI,					// Port number, port length, port ident 
+	QN, QL, QI,					// Second port number, port length, port ident 
+	IF, EL, EN,					// If, else, end 
+	FR							// Field reference 
 } PAT_T;
 
 static const struct ops {

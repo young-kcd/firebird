@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.54 2003-11-10 09:16:03 robocop Exp $
+ * $Id: gpre.h,v 1.55 2003-11-28 06:48:12 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -283,12 +283,12 @@ inline size_t STR_LEN(const size_t size)
 
 /* SQL WHENEVER BLOCK */
 
-typedef struct swe {
+struct swe {
 	swe* swe_next;				/* Next in chain */
 	USHORT swe_condition;		/* Condition */
 	USHORT swe_length;			/* Length of label */
 	TEXT swe_label[1];			/* Label */
-} *SWE;
+};
 
 enum swe_condition_vals {
 	SWE_error,
@@ -300,12 +300,12 @@ enum swe_condition_vals {
 
 /* Text block */
 
-typedef struct txt {
+struct gpre_txt {
 	ULONG txt_position;
 	USHORT txt_length;
-} *TXT;
+};
 
-const size_t TXT_LEN = sizeof(txt);
+const size_t TXT_LEN = sizeof(gpre_txt);
 
 
 /* User name -- used for SQL GRANT/REVOKE */
@@ -400,7 +400,7 @@ typedef struct cnstrt {
 	lls* cnstrt_referred_fields;	/* optional list of fields from
 									   referred relation */
 	cnstrt* cnstrt_next;		/* next contraint for field or relation */
-	txt* cnstrt_text;			/* source for CHECK constraints */
+	gpre_txt* cnstrt_text;			/* source for CHECK constraints */
 	gpre_nod* cnstrt_boolean;	/* boolean expression, for CHECK
 								   constraints */
 	USHORT cnstrt_flags;		/* see below */
@@ -490,7 +490,7 @@ enum sts_flags_vals {
 /* Computed field block */
 
 typedef struct cmpf {
-	txt* cmpf_text;				/* source for computed field */
+	gpre_txt* cmpf_text;				/* source for computed field */
 	gpre_nod* cmpf_boolean;		/* expression, for computed field */
 } *CMPF;
 
@@ -934,7 +934,7 @@ typedef struct gpre_rel {
 	gpre_rel* rel_next;			/* next relation in database */
 	bool rel_meta;				/* if true, created for a metadata operation */
 	gpre_rse* rel_view_rse;
-	txt* rel_view_text;			/* source for VIEW definition */
+	gpre_txt* rel_view_text;			/* source for VIEW definition */
 	sym* rel_owner;				/* owner of relation, if any */
 	cnstrt* rel_constraints;	/* linked list of constraints defined
 								   during a meta operation */
@@ -1016,7 +1016,7 @@ typedef struct gpre_fld {
 	ary* fld_array_info;		/* Dimension and range information about an
 								   array field */
 	gpre_nod* fld_default_value;/* field's default value */
-	txt* fld_default_source;	/* source for field default value */
+	gpre_txt* fld_default_source;	/* source for field default value */
 	ind* fld_index;				/* If CREATE TABLE, specifies field with
 								   the unique constraint */
 	cnstrt* fld_constraints;	/* linked list of constraints defined

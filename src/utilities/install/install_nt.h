@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_INSTALL_NT_H_
-#define _UTILITIES_INSTALL_NT_H_
+#ifndef UTILITIES_INSTALL_NT_H
+#define UTILITIES_INSTALL_NT_H
 
 #define REMOTE_SERVICE			"FirebirdServerDefaultInstance"
 #define REMOTE_DISPLAY_NAME		"Firebird Server - DefaultInstance"
@@ -66,4 +66,5 @@
 
 #define FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED	104
 
-#endif /* _UTILITIES_INSTALL_NT_H_ */
+#endif /* UTILITIES_INSTALL_NT_H */
+

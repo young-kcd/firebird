@@ -39,12 +39,12 @@ extern "C" {
 int		API_ROUTINE gds__blob_size(FRBRD **, SLONG *, SLONG *, SLONG *);
 void	API_ROUTINE_VARARG isc_expand_dpb(SCHAR**, SSHORT*, ...);
 int		API_ROUTINE isc_modify_dpb(SCHAR**, SSHORT*, USHORT, const SCHAR*, SSHORT);
-int		API_ROUTINE gds__edit(TEXT *, USHORT);
+int		API_ROUTINE gds__edit(const TEXT*, USHORT);
 SLONG	API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
 USHORT	API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);
 void	API_ROUTINE isc_event_block_s(SCHAR**, SCHAR**, USHORT, TEXT**, USHORT*);
 
-void	API_ROUTINE isc_event_counts(ULONG *, SSHORT, SCHAR *, SCHAR *);
+void	API_ROUTINE isc_event_counts(ULONG*, SSHORT, SCHAR*, const SCHAR*);
 void	API_ROUTINE isc_get_client_version(SCHAR *);
 int		API_ROUTINE isc_get_client_major_version();
 int		API_ROUTINE isc_get_client_minor_version();
@@ -56,24 +56,24 @@ void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
 int		API_ROUTINE isc_version(FRBRD **, FPTR_VOID, void *);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
-U_IPTR	API_ROUTINE isc_baddress(SCHAR *);
-void	API_ROUTINE isc_baddress_s(SCHAR *, U_IPTR *);
+U_IPTR	API_ROUTINE isc_baddress(SCHAR*);
+void	API_ROUTINE isc_baddress_s(const SCHAR*, U_IPTR*);
 int		API_ROUTINE BLOB_close(struct bstream *);
-int		API_ROUTINE blob__display(SLONG *, FRBRD **, FRBRD **, TEXT *,
-									 SSHORT *);
-int		API_ROUTINE BLOB_display(ISC_QUAD *, FRBRD*, FRBRD*, TEXT*);
-int		API_ROUTINE blob__dump(SLONG *, FRBRD **, FRBRD **, TEXT *,
-								  SSHORT *);
-int		API_ROUTINE BLOB_dump(ISC_QUAD *, FRBRD*, FRBRD*, SCHAR*);
-int		API_ROUTINE blob__edit(SLONG *, FRBRD **, FRBRD **, TEXT *,
-								  SSHORT *);
-int		API_ROUTINE BLOB_edit(ISC_QUAD *, FRBRD*, FRBRD*, SCHAR *);
-int		API_ROUTINE BLOB_get(struct bstream *);
-int		API_ROUTINE blob__load(SLONG *, FRBRD **, FRBRD **, TEXT *,
-								  SSHORT *);
-int		API_ROUTINE BLOB_load(ISC_QUAD *, FRBRD*, FRBRD*, TEXT *);
-int		API_ROUTINE BLOB_text_dump(ISC_QUAD *, FRBRD*, FRBRD*, SCHAR *);
-int		API_ROUTINE BLOB_text_load(ISC_QUAD *, FRBRD*, FRBRD*, TEXT *);
+int		API_ROUTINE blob__display(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+									 const SSHORT*);
+int		API_ROUTINE BLOB_display(ISC_QUAD*, FRBRD*, FRBRD*, const TEXT*);
+int		API_ROUTINE blob__dump(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+								  const SSHORT*);
+int		API_ROUTINE BLOB_dump(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
+int		API_ROUTINE blob__edit(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+								  const SSHORT*);
+int		API_ROUTINE BLOB_edit(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
+int		API_ROUTINE BLOB_get(struct bstream*);
+int		API_ROUTINE blob__load(SLONG*, FRBRD**, FRBRD**, const TEXT*,
+								  const SSHORT*);
+int		API_ROUTINE BLOB_load(ISC_QUAD*, FRBRD*, FRBRD*, const TEXT*);
+int		API_ROUTINE BLOB_text_dump(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
+int		API_ROUTINE BLOB_text_load(ISC_QUAD*, FRBRD*, FRBRD*, const TEXT*);
 struct	bstream* API_ROUTINE Bopen(ISC_QUAD*, FRBRD*, FRBRD*, const SCHAR*);
 struct  bstream* API_ROUTINE BLOB_open(FRBRD*, SCHAR*, int);
 int		API_ROUTINE BLOB_put(SCHAR, struct bstream*);

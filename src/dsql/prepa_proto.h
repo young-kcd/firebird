@@ -24,7 +24,8 @@
 #ifndef DSQL_PREPA_PROTO_H
 #define DSQL_PREPA_PROTO_H
 
-bool PREPARSE_execute(ISC_STATUS*, FRBRD**, FRBRD**, USHORT, SCHAR*, bool*, USHORT);
+bool PREPARSE_execute(ISC_STATUS*, FRBRD**, FRBRD**, USHORT, const SCHAR*,
+	bool*, USHORT);
 
 #endif //  DSQL_PREPA_PROTO_H
 

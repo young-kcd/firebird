@@ -57,7 +57,7 @@ ISC_STATUS	API_ROUTINE gds__database_cleanup(ISC_STATUS*, FRBRD**,
 ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FRBRD**, SSHORT, const SCHAR*,
 											SSHORT, SCHAR*);
 ISC_STATUS	API_ROUTINE gds__detach_database(ISC_STATUS*, FRBRD**);
-void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, SCHAR*);
+void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, const SCHAR*);
 void		API_ROUTINE gds__get_client_version(SCHAR*);
 int			API_ROUTINE gds__get_client_major_version();
 int			API_ROUTINE gds__get_client_minor_version();
@@ -80,7 +80,7 @@ ISC_STATUS	API_ROUTINE gds__prepare_transaction2(ISC_STATUS*, FRBRD**, SSHORT,
 ISC_STATUS	API_ROUTINE gds__put_segment(ISC_STATUS*, FRBRD**, USHORT, const SCHAR*);
 ISC_STATUS	API_ROUTINE gds__put_slice(ISC_STATUS*, FRBRD**, FRBRD**, GDS_QUAD*,
 										SSHORT, SCHAR*, SSHORT, SLONG*, SLONG, void*);
-ISC_STATUS	API_ROUTINE gds__que_events(ISC_STATUS*, FRBRD**, SLONG*, SSHORT, SCHAR*,
+ISC_STATUS	API_ROUTINE gds__que_events(ISC_STATUS*, FRBRD**, SLONG*, SSHORT, const SCHAR*,
 										void(*)(), void*);
 ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FRBRD**, SSHORT, SSHORT,
 										void*, SSHORT);

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.80 2003-11-18 07:58:27 robocop Exp $
+ * $Id: ddl.cpp,v 1.81 2003-11-28 06:48:00 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -204,25 +204,25 @@ const int DEFAULT_BLOB_SEGMENT_SIZE = 80; // bytes
 
 static const USHORT blr_dtypes[] = {
 	0,
-	blr_text,					/* dtype_text */
-	blr_cstring,				/* dtype_cstring */
-	blr_varying,				/* dtype_varying */
+	blr_text,					// dtype_text 
+	blr_cstring,				// dtype_cstring 
+	blr_varying,				// dtype_varying 
 	0,
 	0,
-	0,							/* dtype_packed */
-	0,							/* dtype_byte */
-	blr_short,					/* dtype_short */
-	blr_long,					/* dtype_long */
-	blr_quad,					/* dtype_quad */
-	blr_float,					/* dtype_real */
-	blr_double,					/* dtype_double */
-	blr_double,					/* dtype_d_float */
-	blr_sql_date,				/* dtype_sql_date */
-	blr_sql_time,				/* dtype_sql_time */
-	blr_timestamp,				/* dtype_timestamp */
-	blr_blob,					/* dtype_blob */
-	blr_short,					/* dtype_array */
-	blr_int64					/* dtype_int64 */
+	0,							// dtype_packed 
+	0,							// dtype_byte 
+	blr_short,					// dtype_short 
+	blr_long,					// dtype_long 
+	blr_quad,					// dtype_quad 
+	blr_float,					// dtype_real 
+	blr_double,					// dtype_double 
+	blr_double,					// dtype_d_float 
+	blr_sql_date,				// dtype_sql_date 
+	blr_sql_time,				// dtype_sql_time 
+	blr_timestamp,				// dtype_timestamp 
+	blr_blob,					// dtype_blob 
+	blr_short,					// dtype_array 
+	blr_int64					// dtype_int64 
 };
 
 static const UCHAR nonnull_validation_blr[] = {
@@ -320,7 +320,7 @@ void DDL_execute(dsql_req* request)
 		METD_drop_procedure(request, string);
 	}
 
-/* Signal UDF for obsolescence */
+// Signal UDF for obsolescence 
 
 	if (temp_type == nod_del_udf) {
 		string = (dsql_str*) request->req_ddl_node->nod_arg[e_udf_name];
@@ -511,7 +511,7 @@ void DDL_resolve_intl_type2(dsql_req* request,
 		const dsql_fld* afield = field->fld_next;
 		USHORT bpc = 0;
         while (afield) {
-            /* The first test is redundant. */
+            // The first test is redundant. 
             if (afield != field && afield->fld_relation
                 && !strcmp (afield->fld_name, field->fld_name))
 			{
@@ -539,7 +539,7 @@ void DDL_resolve_intl_type2(dsql_req* request,
     }
 
 
-	if (!(field->fld_character_set || field->fld_character_set_id ||	/* set if a domain */
+	if (!(field->fld_character_set || field->fld_character_set_id ||	// set if a domain 
 		  (field->fld_flags & FLD_national)))
 	{
 
@@ -882,7 +882,7 @@ static void check_one_call (USHORT* repetition_count,
 
 static void create_view_triggers(dsql_req* request, dsql_nod* element,
 	dsql_nod* items)
-{								/* Fields in the VIEW actually  */
+{								// Fields in the VIEW actually  
 /* *************************************
  *
  *	c r e a t e _ v i e w _ t r i g g e r s
@@ -1163,7 +1163,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 			GEN_statement(request, PASS1_statement(request, *ptr, false));
 		}
 
-		/* generate the action statements for the trigger */
+		// generate the action statements for the trigger 
 
 		if ((actions = node->nod_arg[e_cnstr_else]) != NULL)
 		{
@@ -1448,7 +1448,7 @@ static void define_set_default_trg(	dsql_req*    request,
 	const dsql_nod* ddl_node = request->req_ddl_node;
 
 	do {
-		/* for every column in the foreign key .... */
+		// for every column in the foreign key .... 
 		const dsql_str* for_key_fld_name_str = (dsql_str*) (*for_key_flds)->nod_arg[1];
 
 		request->append_uchar(blr_assignment);
@@ -1474,7 +1474,7 @@ static void define_set_default_trg(	dsql_req*    request,
 		bool found_default = false;
 		bool search_for_default = true;
 
-		/* search the parse tree to find the column */
+		// search the parse tree to find the column 
 
 		const dsql_nod* elem = ddl_node->nod_arg[e_drl_elements];
 		const dsql_nod* const* ptr = elem->nod_arg;
@@ -1539,7 +1539,7 @@ static void define_set_default_trg(	dsql_req*    request,
 
 		if (search_for_default)
 		{
-			/* case 2: see if the column/domain has already been created */
+			// case 2: see if the column/domain has already been created 
 
 			METD_get_col_default(request, for_rel_name,
 								 for_key_fld_name_str->str_data,
@@ -1725,7 +1725,7 @@ static void define_domain(dsql_req* request)
 					}
 					request->begin_blr(isc_dyn_fld_validation_blr);
 
-					/* Set any VALUE nodes to the type of the domain being defined. */
+					// Set any VALUE nodes to the type of the domain being defined. 
 					if (node1->nod_arg[e_cnstr_condition])
 					{
 						set_nod_value_attributes(node1->nod_arg[e_cnstr_condition],
@@ -1808,7 +1808,7 @@ static void define_field(
  **************************************/
 	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dfl_field];
 
-/* add the field to the relation being defined for parsing purposes */
+// add the field to the relation being defined for parsing purposes 
 
 	dsql_rel* relation = request->req_relation;
 	if (relation != NULL) {
@@ -1823,14 +1823,14 @@ static void define_field(
 		const dsql_str* domain_name = (dsql_str*) node1->nod_arg[e_fln_name];
 		request->append_cstring(isc_dyn_fld_source, domain_name->str_data);
 
-		/* Get the domain information */
+		// Get the domain information 
 
 		if (!(METD_get_domain(request, field, domain_name->str_data)))
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_domain_not_found,
                       isc_arg_string, domain_name->str_data,
-					  /* Specified domain or source field does not exist */
+					  // Specified domain or source field does not exist 
 					  0);
 
 		DDL_resolve_intl_type(	request,
@@ -1914,20 +1914,20 @@ static void define_field(
 					}
 					request->append_uchar(isc_dyn_fld_not_null);
 					if (!cnstrt_flag) {
-						request->append_uchar(isc_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	// For field definition  
 						cnstrt_flag = true;
 					}
 					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
 					request->append_uchar(isc_dyn_fld_not_null);
-					request->append_uchar(isc_dyn_end);	/* For NOT NULL Constraint definition  */
+					request->append_uchar(isc_dyn_end);	// For NOT NULL Constraint definition  
 				}
 				else if (node1->nod_type == nod_primary
 						 || node1->nod_type == nod_unique)
 				{
 					if (!cnstrt_flag)
 					{
-						request->append_uchar(isc_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	// For field definition  
 						cnstrt_flag = true;
 					}
 
@@ -1965,7 +1965,7 @@ static void define_field(
 				}
 				else if (node1->nod_type == nod_foreign) {
 					if (!cnstrt_flag) {
-						request->append_uchar(isc_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	// For field definition  
 						cnstrt_flag = true;
 					}
 					const char* constraint_name = string ? string->str_data : 0;
@@ -1974,13 +1974,13 @@ static void define_field(
 				}
 				else if (node1->nod_type == nod_def_constraint) {
 					if (!cnstrt_flag) {
-						request->append_uchar(isc_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	// For field definition  
 						cnstrt_flag = true;
 					}
 					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
 					check_constraint(request, node1,
-									 false /* No delete trigger */ );
+									 false); // No delete trigger
 				}
 			}
 		}
@@ -2079,7 +2079,7 @@ static void define_index(dsql_req* request)
 		define_computed(request, relation_node, NULL, field_list);
 #endif
 
-/* check for a unique index */
+// check for a unique index 
 
 	if (ddl_node->nod_arg[e_idx_unique]) {
 		request->append_number(isc_dyn_idx_unique, 1);
@@ -2089,8 +2089,8 @@ static void define_index(dsql_req* request)
 		request->append_number(isc_dyn_idx_type, 1);
 	}
 
-	request->append_uchar(isc_dyn_end);			/* of define index */
-	request->append_uchar(isc_dyn_end);			/* of begin */
+	request->append_uchar(isc_dyn_end);			// of define index 
+	request->append_uchar(isc_dyn_end);			// of begin 
 }
 
 #ifdef NOT_USED_OR_REPLACED
@@ -2119,7 +2119,7 @@ static dsql_nod* define_insert_action( dsql_req* request)
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
-/* check whether this is an updatable view definition */
+// check whether this is an updatable view definition 
 
 	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
@@ -2132,13 +2132,13 @@ static dsql_nod* define_insert_action( dsql_req* request)
 		from_list->nod_count != 1)
 		return NULL;
 
-/* make up an action node consisting of a list of 1 insert statement */
+// make up an action node consisting of a list of 1 insert statement 
 
 	dsql_nod* action_node = MAKE_node(nod_list, (int) 1);
 	dsql_nod* insert_node = MAKE_node(nod_insert, (int) e_ins_count);
 	action_node->nod_arg[0] = insert_node;
 
-/* use the relation referenced in the select statement to insert into */
+// use the relation referenced in the select statement to insert into 
 
 	dsql_nod* relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
 	insert_node->nod_arg[e_ins_relation] = relation_node;
@@ -2172,7 +2172,7 @@ static dsql_nod* define_insert_action( dsql_req* request)
 	if (!values_node)
 		values_node = fields_node;
 
-/* generate the list of assignments to fields in the base relation */
+// generate the list of assignments to fields in the base relation 
 
 	ptr = fields_node->nod_arg;
 	end = ptr + fields_node->nod_count;
@@ -2184,7 +2184,7 @@ static dsql_nod* define_insert_action( dsql_req* request)
 		if (field_node->nod_type == nod_alias)
 			field_node = field_node->nod_arg[e_alias_value];
 
-		/* generate the actual assignment, assigning from a field in the "NEW" context */
+		// generate the actual assignment, assigning from a field in the "NEW" context 
 
 		if (field_node->nod_type == nod_field_name) {
 			field_node->nod_arg[e_fln_context] =
@@ -2503,7 +2503,7 @@ static void define_relation( dsql_req* request)
 	save_relation(request, relation_name);
 	request->append_number(isc_dyn_rel_sql_protection, 1);
 
-/* now do the actual metadata definition */
+// now do the actual metadata definition 
 
 	dsql_nod* elements = ddl_node->nod_arg[e_drl_elements];
 	SSHORT position = 0;
@@ -2657,7 +2657,7 @@ static void define_shadow(dsql_req* request)
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_file_length_err,
 						  isc_arg_number, (SLONG) file->fil_name->str_data,
-						  /* Preceding file did not specify length, so %s must include starting page number */
+						  // Preceding file did not specify length, so %s must include starting page number 
 						  0);
 			}
 
@@ -2908,7 +2908,7 @@ static void define_udf( dsql_req* request)
 	if (field) {
 
         // CVC: This is case of "returns <type> [by value|reference]"
-		/* Some data types can not be returned as value */
+		// Some data types can not be returned as value 
 
 		if (((int)(SLONG) (ret_val_ptr[1]->nod_arg[0]) == FUN_value) &&
 			(field->fld_dtype == dtype_text ||
@@ -2920,7 +2920,7 @@ static void define_udf( dsql_req* request)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_return_mode_err,
-						  /* Return mode by value not allowed for this data type */
+						  // Return mode by value not allowed for this data type 
 						  0);
 		}
 
@@ -2935,8 +2935,8 @@ static void define_udf( dsql_req* request)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_extern_func_err,
-						  /* External functions can not have more than 10 parameters */
-						  /* Or 9 if the function returns a BLOB */
+						  // External functions can not have more than 10 parameters 
+						  // Or 9 if the function returns a BLOB 
 						  0);
 			}
 
@@ -2954,17 +2954,17 @@ static void define_udf( dsql_req* request)
         // CVC: This is case of "returns parameter <N>"
 
 		position = (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]);
-		/* Function modifies an argument whose value is the function return value */
+		// Function modifies an argument whose value is the function return value 
 
 		if (!arguments || position > arguments->nod_count || position < 1) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-                      isc_arg_gds, isc_dsql_udf_return_pos_err, /*gds__extern_func_err, */
+                      isc_arg_gds, isc_dsql_udf_return_pos_err, //gds__extern_func_err, 
                       isc_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
                       // CVC: We should devise new msg "position should be between 1 and #params";
                       // here it is: dsql_udf_return_pos_err
 
-					  /* External functions can not have more than 10 parameters */
-					  /* Not strictly correct -- return position error */
+					  // External functions can not have more than 10 parameters 
+					  // Not strictly correct -- return position error 
 					  0);
 		}
 
@@ -2972,7 +2972,7 @@ static void define_udf( dsql_req* request)
 		position = 1;
 	}
 
-/* Now define all the arguments */
+// Now define all the arguments 
 	if (!position)
 	{
     /* CVC: This is case of "returns <type> [by value|reference]" */
@@ -3016,7 +3016,7 @@ static void define_udf( dsql_req* request)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_extern_func_err,
-						  /* External functions can not have more than 10 parameters */
+						  // External functions can not have more than 10 parameters 
 						  0);
 			}
 
@@ -3070,7 +3070,7 @@ static void define_update_action(
  **************************************/
 	dsql_nod* ddl_node = request->req_ddl_node;
 
-/* check whether this is an updatable view definition */
+// check whether this is an updatable view definition 
 
 	dsql_nod* select_node = 0;
 	dsql_nod* select_expr = 0;
@@ -3088,7 +3088,7 @@ static void define_update_action(
 		return;
 	}
 
-/* use the relation referenced in the select statement for rse*/
+// use the relation referenced in the select statement for rse
 
 	dsql_nod* relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
 	relation_node->nod_arg[e_rln_name] =
@@ -3123,7 +3123,7 @@ static void define_update_action(
 	if (!values_node)
 		values_node = fields_node;
 
-/* generate the list of assignments to fields in the base relation */
+// generate the list of assignments to fields in the base relation 
 
 	dsql_nod** ptr = fields_node->nod_arg;
 	const dsql_nod* const* const end = ptr + fields_node->nod_count;
@@ -3136,7 +3136,7 @@ static void define_update_action(
 		if (field_node->nod_type == nod_alias)
 			field_node = field_node->nod_arg[e_alias_value];
 
-		/* generate the actual comparisons */
+		// generate the actual comparisons 
 
 		if (field_node->nod_type == nod_field_name) {
 			field_node->nod_arg[e_fln_context] =
@@ -3408,7 +3408,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	{
 		dsql_nod* field_node = *i_ptr;
 
-		/* check if this is a field or an expression */
+		// check if this is a field or an expression 
 
 		const dsql_fld* field = NULL;
 		const dsql_ctx* context = NULL;
@@ -3419,18 +3419,18 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		else
 			updatable = false;
 
-		/* if this is an expression, check to make sure there is a name specified */
+		// if this is an expression, check to make sure there is a name specified 
 
 		if (!ptr && !field)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_specify_field_err,
-					  /* must specify field name for view select expression */
+					  // must specify field name for view select expression 
 					  0);
 		}
 
-		/* determine the proper field name, replacing the default if necessary */
+		// determine the proper field name, replacing the default if necessary 
 
 		if (field) {
 			field_string = field->fld_name;
@@ -3482,7 +3482,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 				  isc_arg_gds, isc_dsql_command_err,
 				  isc_arg_gds, isc_num_field_err,
-				  /* number of fields does not match select list */
+				  // number of fields does not match select list 
 				  0);
 	}
 
@@ -3497,7 +3497,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_col_name_err,
-					  /* Only simple column names permitted for VIEW WITH CHECK OPTION */
+					  // Only simple column names permitted for VIEW WITH CHECK OPTION 
 					  0);
 		}
 
@@ -3506,7 +3506,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_table_view_err,
-					  /* Only one table allowed for VIEW WITH CHECK OPTION */
+					  // Only one table allowed for VIEW WITH CHECK OPTION 
 					  0);
 		}
 		/*
@@ -3518,7 +3518,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_table_view_err,
-					  /* Only one table allowed for VIEW WITH CHECK OPTION */
+					  // Only one table allowed for VIEW WITH CHECK OPTION 
 					  0);
 		}
 
@@ -3532,7 +3532,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_where_err,
-					  /* No where clause for VIEW WITH CHECK OPTION */
+					  // No where clause for VIEW WITH CHECK OPTION 
 					  0);
 		}
 
@@ -3543,7 +3543,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_distinct_err,
-						  /* DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION */
+						  // DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION 
 						  0);
 		}
 
@@ -3560,7 +3560,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 		check->nod_arg[e_cnstr_condition] = select_expr->nod_arg[e_sel_where];
 
-		/* Define the triggers   */
+		// Define the triggers   
 
 		create_view_triggers(request, check, rse->nod_arg[e_rse_items]);
 	}
@@ -3572,7 +3572,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rse,
 	dsql_nod* items)
-{								/* The fields in VIEW actually  */
+{								// The fields in VIEW actually  
 /**************************************
  *
  *	d e f i n e _ v i e w _ t r i g g e r
@@ -3725,7 +3725,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 			request->append_uchar(blr_end);
 		}
 
-		/* generate the action statements for the trigger */
+		// generate the action statements for the trigger 
 
 		dsql_nod* actions = node->nod_arg[e_cnstr_actions];
 		dsql_nod** ptr = actions->nod_arg;
@@ -3754,12 +3754,12 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 				}
 				GEN_statement(request, action_node);
 			}
-			request->append_uchar(blr_end);		/* of begin */
+			request->append_uchar(blr_end);		// of begin 
 		}
 
-		request->append_uchar(blr_end);			/* of if */
+		request->append_uchar(blr_end);			// of if 
 		if (trig_type == PRE_MODIFY_TRIGGER) {
-			request->append_uchar(blr_end);		/* of for  */
+			request->append_uchar(blr_end);		// of for  
 		}
 		request->end_blr();
 	}
@@ -3917,7 +3917,7 @@ static void foreign_key( dsql_req* request, dsql_nod* element, const char* index
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 				  isc_arg_gds, isc_dsql_command_err,
 				  isc_arg_gds, isc_key_field_count_err,
-				  /* foreign key field count does not match primary key */
+				  // foreign key field count does not match primary key 
 				  0);
 	}
 
@@ -4031,14 +4031,14 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		request->append_uchar(isc_dyn_end);
 		break;
 
-    /* CVC: Handling drop table and drop view properly. */
+    // CVC: Handling drop table and drop view properly. 
     case nod_del_relation:
     case nod_del_view:
-        delete_relation_view (request, node, false); /* no silent. */
+        delete_relation_view (request, node, false); // no silent. 
         break;
 
 	case nod_del_procedure:
-        delete_procedure(request, node, false); /* no silent. */        
+        delete_procedure(request, node, false); // no silent.         
 		break;
 
 	case nod_del_trigger:
@@ -4356,7 +4356,7 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 				break;
 			default:
 				fb_assert(0);
-				request->append_uchar(isc_dyn_foreign_key_none);	/* just in case */
+				request->append_uchar(isc_dyn_foreign_key_none);	// just in case 
 				break;
 			}
 		}
@@ -4393,9 +4393,9 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 				break;
 			default:
 				fb_assert(0);
-				request->append_uchar(isc_dyn_foreign_key_none);	/* just in case */
+				request->append_uchar(isc_dyn_foreign_key_none);	// just in case 
 				break;
-				/* Error */
+				// Error 
 			}
 		}
 	}
@@ -4637,10 +4637,10 @@ static void modify_domain( dsql_req* request)
 			if (!element->nod_arg[e_dft_default]) 
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-							isc_arg_gds, isc_command_end_err,    /* Unexpected end of command */
+							isc_arg_gds, isc_command_end_err,    // Unexpected end of command 
 							0);
 			}
-			/* CVC End modification. */
+			// CVC End modification. 
 			element->nod_arg[e_dft_default] =
 				PASS1_node(request, element->nod_arg[e_dft_default], false);
 
@@ -4672,7 +4672,7 @@ static void modify_domain( dsql_req* request)
 							  isc_arg_gds, isc_dsql_command_err,
 							  isc_arg_gds, isc_dsql_domain_not_found,
                               isc_arg_string, domain_name->str_data,
-							  /* Specified domain or source field does not exist */
+							  // Specified domain or source field does not exist 
 							  0);
 			}
 			if (element->nod_arg[e_cnstr_condition])
@@ -4794,7 +4794,7 @@ static void modify_privilege(	dsql_req*			request,
 		request->append_uchar(isc_dyn_revoke);
 	}
 
-/* stuff the privileges string */
+// stuff the privileges string 
 
 	SSHORT priv_count = 0;
 	request->append_ushort(0);
@@ -4820,7 +4820,7 @@ static void modify_privilege(	dsql_req*			request,
 	name = (dsql_str*) user->nod_arg[0];
 	
 	switch (user->nod_type) {
-	case nod_user_group:		/* GRANT priv ON tbl TO GROUP unix_group */
+	case nod_user_group:		// GRANT priv ON tbl TO GROUP unix_group 
 		request->append_cstring(isc_dyn_grant_user_group, name->str_data);
 		break;
 
@@ -5062,7 +5062,7 @@ static void modify_relation( dsql_req* request)
 
 			if ((element->nod_arg[1])->nod_type == nod_cascade)
 			{
-				/* Unsupported DSQL construct */
+				// Unsupported DSQL construct 
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -901,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_construct_err, 0);
@@ -5172,7 +5172,7 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 {
 
 #ifdef DEV_BUILD
-/* Check if the field describes a known datatype */
+// Check if the field describes a known datatype 
 
 	if (field->fld_dtype > FB_NELEM(blr_dtypes) ||
 		!blr_dtypes[field->fld_dtype]) {
@@ -5264,7 +5264,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		request->append_number(isc_dyn_fld_scale, 0);
 		if (field->fld_dtype == dtype_varying)
 		{
-            /* CVC: Fix the assertion */
+            // CVC: Fix the assertion 
             fb_assert((field->fld_length) <= MAX_SSHORT);
 			request->append_number(isc_dyn_fld_length,
 					   (SSHORT) (field->fld_length - sizeof(USHORT)));
@@ -5329,7 +5329,7 @@ static void put_local_variable( dsql_req* request, var* variable,
 	put_dtype(request, field, true);
 	field->fld_dtype = dtype;
 
-	/* Check for a default value, borrowed from define_domain */
+	// Check for a default value, borrowed from define_domain 
 
 	request->append_uchar(blr_assignment);
 	dsql_nod* node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
@@ -5467,7 +5467,7 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_subquery_err,
-					  /* No subqueries permitted for VIEW WITH CHECK OPTION */
+					  // No subqueries permitted for VIEW WITH CHECK OPTION 
 					  0);
 		}
 
@@ -5687,7 +5687,7 @@ static void stuff_matching_blr(dsql_req* request, const dsql_nod* for_columns,
  *
  **************************************/
 
-/* count of foreign key columns */
+// count of foreign key columns 
 	fb_assert(prim_columns->nod_count == for_columns->nod_count);
 	fb_assert(prim_columns->nod_count != 0);
 
@@ -5816,7 +5816,7 @@ static void modify_field(dsql_req*	request,
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_domain_not_found,
-					  /* Specified domain or source field does not exist */
+					  // Specified domain or source field does not exist 
 					  0);
 		}
 		DDL_resolve_intl_type(request, field, NULL);
@@ -5873,7 +5873,7 @@ static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
 
 				set_nod_value_attributes(child, field);
 			}
-		}						/* if it's a node */
+		}						// if it's a node 
 	}							/* for (child_number ... */
 	return;
 }

@@ -74,8 +74,8 @@ ISC_STATUS IPI_put_segment(ISC_STATUS*, struct ibl**, USHORT,
 ISC_STATUS IPI_put_slice(ISC_STATUS *, struct idb **, struct itr **,
 									   struct bid *, USHORT, UCHAR *, USHORT,
 									   UCHAR *, SLONG, UCHAR *);
-ISC_STATUS IPI_que_events(ISC_STATUS *, struct idb **, SLONG *,
-										USHORT, UCHAR *, FPTR_VOID, void *);
+ISC_STATUS IPI_que_events(ISC_STATUS*, struct idb**, SLONG*,
+										USHORT, const UCHAR*, FPTR_VOID, void*);
 ISC_STATUS IPI_receive(ISC_STATUS *, struct irq **, SSHORT, USHORT,
 									 UCHAR *, SSHORT
 #ifdef SCROLLABLE_CURSORS
@@ -101,8 +101,8 @@ ISC_STATUS IPI_service_query(ISC_STATUS*, struct idb**, ULONG*,
 										   USHORT, const SCHAR*,
 										   USHORT, const SCHAR*,
 										   USHORT, SCHAR*);
-ISC_STATUS IPI_service_start(ISC_STATUS *, struct idb **, ULONG *,
-										   USHORT, SCHAR *);
+ISC_STATUS IPI_service_start(ISC_STATUS*, struct idb**, ULONG*,
+										   USHORT, const SCHAR*);
 ISC_STATUS IPI_start_request(ISC_STATUS *, struct irq **,
 										   struct itr **, SSHORT);
 ISC_STATUS IPI_start_and_send(ISC_STATUS *, struct irq **,
@@ -131,18 +131,18 @@ ISC_STATUS IPI_execute2(ISC_STATUS *, struct itr **,
 									  struct ipserver_isr **, USHORT, UCHAR *,
 									  USHORT, USHORT, UCHAR *, USHORT,
 									  UCHAR *, USHORT, USHORT, UCHAR *);
-ISC_STATUS IPI_execute_immediate(ISC_STATUS *, struct idb **,
-											   struct itr **, USHORT, UCHAR *,
-											   USHORT, USHORT, UCHAR *,
-											   USHORT, USHORT, UCHAR *);
-ISC_STATUS IPI_execute_immediate2(ISC_STATUS *, struct idb **,
-												struct itr **, USHORT,
-												UCHAR *, USHORT, USHORT,
-												UCHAR *, USHORT, USHORT,
-												UCHAR *, USHORT, UCHAR *,
-												USHORT, USHORT, UCHAR *);
-ISC_STATUS IPI_fetch(ISC_STATUS *, struct ipserver_isr **, USHORT,
-								   UCHAR *, USHORT, USHORT, UCHAR *);
+ISC_STATUS IPI_execute_immediate(ISC_STATUS*, struct idb**,
+											   struct itr**, USHORT, const UCHAR*,
+											   USHORT, USHORT, const UCHAR*,
+											   USHORT, USHORT, UCHAR*);
+ISC_STATUS IPI_execute_immediate2(ISC_STATUS*, struct idb**,
+												struct itr**, USHORT,
+												const UCHAR*, USHORT, USHORT,
+												const UCHAR*, USHORT, USHORT,
+												UCHAR*, USHORT, UCHAR*,
+												USHORT, USHORT, UCHAR*);
+ISC_STATUS IPI_fetch(ISC_STATUS*, struct ipserver_isr**, USHORT,
+								   const UCHAR*, USHORT, USHORT, UCHAR*);
 ISC_STATUS IPI_free_statement(ISC_STATUS *, struct ipserver_isr **,
 											USHORT);
 ISC_STATUS IPI_insert(ISC_STATUS *, struct ipserver_isr **, USHORT,
@@ -151,8 +151,8 @@ ISC_STATUS IPI_prepare(ISC_STATUS *, struct itr **,
 									 struct ipserver_isr **, USHORT, UCHAR *,
 									 USHORT, USHORT, UCHAR *, USHORT,
 									 UCHAR *);
-ISC_STATUS IPI_set_cursor_name(ISC_STATUS *, struct ipserver_isr **,
-											 UCHAR *, USHORT);
+ISC_STATUS IPI_set_cursor_name(ISC_STATUS*, struct ipserver_isr**,
+											 const UCHAR*, USHORT);
 ISC_STATUS IPI_sql_info(ISC_STATUS*, struct ipserver_isr**,
 									  USHORT, const UCHAR*, USHORT, UCHAR*);
 

@@ -21,9 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _IPS_H_
-#define _IPS_H_
+#ifndef IPSERVER_IPS_H
+#define IPSERVER_IPS_H
 
 #define	IPI_CONNECT_MESSAGE	WM_USER + 1
 
-#endif /* _IPS_H_ */
+#endif /* IPSERVER_IPS_H */
+

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.25 2003-11-11 12:08:12 brodsom Exp $
+//	$Id: int.cpp,v 1.26 2003-11-28 06:48:12 robocop Exp $
 //
 
 #include "firebird.h"
@@ -206,9 +206,9 @@ static void asgn_from(const ref* reference, int column)
 		else
 			value = reference->ref_value;
 
-		/* To avoid chopping off a double byte kanji character in between
-		   the two bytes, generate calls to gds__ftof2 gds$_vtof2,
-		   gds$_vtov2 and jrd_vtof2 wherever necessary */
+		// To avoid chopping off a double byte kanji character in between
+		// the two bytes, generate calls to gds__ftof2 gds$_vtof2,
+		// gds$_vtov2 and jrd_vtof2 wherever necessary
 
 		if (!field || field->fld_dtype == dtype_text)
 			ib_fprintf(out_file, VTO_CALL,

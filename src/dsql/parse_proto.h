@@ -24,10 +24,10 @@
 #ifndef DSQL_PARSE_PROTO_H
 #define DSQL_PARSE_PROTO_H
 
-int dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN*);
+int dsql_yyparse(USHORT, USHORT, USHORT, bool*);
 
 void LEX_dsql_init(void);
-void LEX_string(TEXT*, USHORT, SSHORT);
+void LEX_string(const TEXT*, USHORT, SSHORT);
 
 #endif //  DSQL_PARSE_PROTO_H
 

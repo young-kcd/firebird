@@ -94,16 +94,16 @@ static void delete_session(SLONG);
 static AST_TYPE deliver(void* arg);
 static void deliver_request(EVT_REQ);
 static void exit_handler(void *);
-static EVNT find_event(USHORT, TEXT *, EVNT);
+static EVNT find_event(USHORT, const TEXT*, EVNT);
 static void free_global(FRB);
 static RINT historical_interest(SES, SLONG);
-static void init(void *, SH_MEM, int);
+static void init(void*, SH_MEM, bool);
 static void insert_tail(SRQ *, SRQ *);
-static EVNT make_event(USHORT, TEXT *, SLONG);
-static void mutex_bugcheck(TEXT *, int);
+static EVNT make_event(USHORT, const TEXT*, SLONG);
+static void mutex_bugcheck(const TEXT*, int);
 static void post_process(PRB);
 static void probe_processes(void);
-static void punt(TEXT *);
+static void punt(const TEXT*);
 static void release(void);
 static void remove_que(SRQ *);
 static BOOLEAN request_completed(EVT_REQ);
@@ -137,9 +137,6 @@ void EVENT_cancel(SLONG request_id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	PRB process;
-	EVT_REQ request;
-	SES session;
 	SRQ *que, *que2;
 
 	if (!EVENT_header)
@@ -147,12 +144,12 @@ void EVENT_cancel(SLONG request_id)
 
 	ACQUIRE;
 
-	process = (PRB) ABS_PTR(EVENT_process_offset);
+	PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 
 	QUE_LOOP(process->prb_sessions, que2) {
-		session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
+		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 		QUE_LOOP(session->ses_requests, que) {
-			request = (EVT_REQ) ((UCHAR *) que - OFFSET(EVT_REQ, req_requests));
+			EVT_REQ request = (EVT_REQ) ((UCHAR *) que - OFFSET(EVT_REQ, req_requests));
 			if (request->req_request_id == request_id) {
 				delete_request(request);
 				RELEASE;
@@ -177,11 +174,7 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
  *	Create session.
  *
  **************************************/
-	PRB process;
-	SES session;
-	SLONG id;
-
-/* If we're not initialized, do so now */
+// If we're not initialized, do so now.
 
 	if (!EVENT_header && !EVENT_init(status_vector, TRUE))
 		return 0;
@@ -190,8 +183,8 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
 		create_process();
 
 	ACQUIRE;
-	session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), FALSE);
-	process = (PRB) ABS_PTR(EVENT_process_offset);
+	SES session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), FALSE);
+	PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 	session->ses_process = EVENT_process_offset;
 
 #ifdef MULTI_THREAD
@@ -200,7 +193,7 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
 
 	insert_tail(&process->prb_sessions, &session->ses_sessions);
 	QUE_INIT(session->ses_requests);
-	id = REL_PTR(session);
+	const SLONG id = REL_PTR(session);
 	RELEASE;
 
 	return id;
@@ -290,7 +283,7 @@ EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
  *	exits, otherwise return NULL.
  *
  **************************************/
-	TEXT *event_file, buffer[MAXPATHLEN];
+	TEXT buffer[MAXPATHLEN];
 
 /* If we're already initialized, there's nothing to do */
 
@@ -325,12 +318,13 @@ EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 #endif
 
 	gds__prefix_lock(buffer, EVENT_FILE);
-	event_file = buffer;
+	const TEXT* event_file = buffer;
 
 	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
 											event_file,
 											init, 0, EVENT_default_size,
-											&EVENT_data))) {
+											&EVENT_data))) 
+	{
 #ifdef SERVER
 		gds__free(EVENT_data.sh_mem_address);
 #endif /* SERVER */
@@ -368,11 +362,7 @@ int EVENT_post(ISC_STATUS * status_vector,
  *	Post an event.
  *
  **************************************/
-	EVT_REQ request;
 	SRQ *que;
-	PRB process;
-	EVNT event, parent;
-	RINT interest;
 
 /* If we're not initialized, do so now */
 
@@ -381,16 +371,19 @@ int EVENT_post(ISC_STATUS * status_vector,
 
 	ACQUIRE;
 
-	if ((parent = find_event(major_length, major_code, 0)) &&
-		(event = find_event(minor_length, minor_code, parent))) {
+	EVNT event;
+	EVNT parent = find_event(major_length, major_code, 0);
+	if (parent &&
+		(event = find_event(minor_length, minor_code, parent)))
+	{
 		event->evnt_count += count;
 		QUE_LOOP(event->evnt_interests, que) {
-			interest = (RINT) ((UCHAR *) que - OFFSET(RINT, rint_interests));
+			RINT interest = (RINT) ((UCHAR *) que - OFFSET(RINT, rint_interests));
 			if (interest->rint_request) {
-				request = (EVT_REQ) ABS_PTR(interest->rint_request);
+				EVT_REQ request = (EVT_REQ) ABS_PTR(interest->rint_request);
 
 				if (interest->rint_count <= event->evnt_count) {
-					process = (PRB) ABS_PTR(request->req_process);
+					PRB process = (PRB) ABS_PTR(request->req_process);
 					process->prb_flags |= PRB_wakeup;
 				}
 			}
@@ -403,12 +396,12 @@ int EVENT_post(ISC_STATUS * status_vector,
 }
 
 
-SLONG EVENT_que(ISC_STATUS * status_vector,
+SLONG EVENT_que(ISC_STATUS* status_vector,
 				SLONG session_id,
 				USHORT string_length,
-				TEXT * string,
+				const TEXT* string,
 				USHORT events_length,
-				UCHAR * events, FPTR_VOID ast_routine, void *ast_arg)
+				const UCHAR* events, FPTR_VOID ast_routine, void* ast_arg)
 {
 /**************************************
  *
@@ -419,67 +412,63 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
  * Functional description
  *
  **************************************/
-	UCHAR *p, *end, *find_end;
-	USHORT count, flag, len;
-	SES session;
-	EVT_REQ request;
-	EVNT event, parent;
-	RINT interest, prior;
-	PTR *ptr, *ptr2;
-	SLONG id, request_offset, parent_offset, event_offset, ptr_offset;
-
-/* Allocate request block */
+// Allocate request block
 
 	ACQUIRE;
-	request = (EVT_REQ) alloc_global(type_req, sizeof(evt_req), FALSE);
-	session = (SES) ABS_PTR(session_id);
+	EVT_REQ request = (EVT_REQ) alloc_global(type_req, sizeof(evt_req), FALSE);
+	SES session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;
 	request->req_process = EVENT_process_offset;
 	request->req_ast = ast_routine;
 	request->req_ast_arg = ast_arg;
-	request->req_request_id = id = ++EVENT_header->evh_request_id;
+	const SLONG id = ++EVENT_header->evh_request_id;
+	request->req_request_id = id;
 
-	request_offset = REL_PTR(request);
+	const SLONG request_offset = REL_PTR(request);
 
 /* Find parent block */
-
-	if (!(parent = find_event(string_length, string, 0))) {
+	EVNT parent = find_event(string_length, string, 0);
+	if (!parent) {
 		parent = make_event(string_length, string, 0);
 		request = (EVT_REQ) ABS_PTR(request_offset);
 		session = (SES) ABS_PTR(session_id);
 	}
 
-	parent_offset = REL_PTR(parent);
+	const SLONG parent_offset = REL_PTR(parent);
 
 /* Process event block */
 
-	ptr = &request->req_interests;
-	ptr_offset = REL_PTR(ptr);
-	p = events + 1;
-	end = events + events_length;
-	flag = FALSE;
+	PTR* ptr = &request->req_interests;
+	SLONG ptr_offset = REL_PTR(ptr);
+	const UCHAR* p = events + 1;
+	const UCHAR* const end = events + events_length;
+	bool flag = false;
 
 	while (p < end) {
 
-		count = *p++;
+		const USHORT count = *p++;
 
 		/* The data in the event block may have trailing blanks.  Strip them off. */
 
-		for (find_end = p + count; --find_end >= p && *find_end == ' ';);
-		len = find_end - p + 1;
-		if (!(event = find_event(len, reinterpret_cast < char *>(p), parent))) {
+        const UCHAR* find_end = p + count;
+		while (--find_end >= p && *find_end == ' ')
+			; // nothing to do.
+		const USHORT len = find_end - p + 1;
+		EVNT event = find_event(len, reinterpret_cast<const char*>(p), parent);
+		if (!event) {
 			event =
-				make_event(len, reinterpret_cast < char *>(p), parent_offset);
+				make_event(len, reinterpret_cast<const char*>(p), parent_offset);
 			parent = (EVNT) ABS_PTR(parent_offset);
 			session = (SES) ABS_PTR(session_id);
 			request = (EVT_REQ) ABS_PTR(request_offset);
 			ptr = (PTR *) ABS_PTR(ptr_offset);
 		}
 		p += count;
-		event_offset = REL_PTR(event);
+		const SLONG event_offset = REL_PTR(event);
+		RINT interest, prior;
 		if (interest = historical_interest(session, event_offset)) {
-			for (ptr2 = &session->ses_interests;
+			for (PTR* ptr2 = &session->ses_interests;
 				 *ptr2 && (prior = (RINT) ABS_PTR(*ptr2));
 				 ptr2 = &prior->rint_next)
 			{
@@ -509,7 +498,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		interest->rint_count = gds__vax_integer(p, 4);
 		p += 4;
 		if (interest->rint_count <= event->evnt_count)
-			flag = TRUE;
+			flag = true;
 	}
 
 	if (flag)
@@ -536,13 +525,7 @@ static EVH acquire(void)
  **************************************/
 
 	int mutex_state;
-	SLONG length;
 	EVH header = NULL;
-#ifdef WIN_NT
-	PRB process;
-	EVENT event;
-#endif
-
 #ifdef MULTI_THREAD
 	if (mutex_state = ISC_mutex_lock(MUTEX))
 		mutex_bugcheck("mutex lock", mutex_state);
@@ -558,7 +541,7 @@ static EVH acquire(void)
 #endif
 
 	if (EVENT_header->evh_length > EVENT_data.sh_mem_length_mapped) {
-		length = EVENT_header->evh_length;
+		const SLONG length = EVENT_header->evh_length;
 
 #ifdef WIN_NT
 		/* Before remapping the memory, wakeup the watcher thread.
@@ -569,9 +552,9 @@ static EVH acquire(void)
 		 * platforms. Postponed for now. B.Sriram, 10-Jul-1997
 		 */
 
-		process = (PRB) ABS_PTR(EVENT_process_offset);
+		PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		event = process->prb_event;
+		EVENT event = process->prb_event;
 
 		post_process(process);
 
@@ -619,21 +602,17 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
  *	Allocate a block in shared global region.
  *
  **************************************/
-	PTR *ptr, *best;
+	PTR *ptr;
 	FRB free;
-	SLONG tail, best_tail, ev_length, old_length;
-	ISC_STATUS_ARRAY status_vector;
-#ifdef WIN_NT
-	PRB process;
-	EVENT event;
-#endif
+	SLONG best_tail = MAX_SLONG;
 
 	length = ROUNDUP(length, sizeof(IPTR));
-	best = NULL;
+	PTR* best = NULL;
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
-		 ptr = &free->frb_next) {
-		tail = free->frb_header.hdr_length - length;
+		 ptr = &free->frb_next) 
+	{
+		const SLONG tail = free->frb_header.hdr_length - length;
 		if (tail >= 0 && (!best || tail < best_tail)) {
 			best = ptr;
 			best_tail = tail;
@@ -641,8 +620,8 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 	}
 
 	if (!best && !recurse) {
-		old_length = EVENT_data.sh_mem_length_mapped;
-		ev_length = old_length + EVENT_EXTEND_SIZE;
+		const SLONG old_length = EVENT_data.sh_mem_length_mapped;
+		const SLONG ev_length = old_length + EVENT_EXTEND_SIZE;
 
 #ifdef WIN_NT
 
@@ -651,9 +630,9 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 		 * to remap.
 		 */
 
-		process = (PRB) ABS_PTR(EVENT_process_offset);
+		PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		event = process->prb_event;
+		EVENT event = process->prb_event;
 		post_process(process);
 
 		while (true) {
@@ -669,8 +648,9 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 		}
 #endif /* WIN_NT */
 
-	EVH header = 0;
+		EVH header = 0;
 #if !((defined SUPERSERVER) && (defined HAVE_MMAP))
+		ISC_STATUS_ARRAY status_vector;
 		header =
 			reinterpret_cast < EVH >
 			(ISC_remap_file(status_vector, &EVENT_data, ev_length, TRUE));
@@ -735,13 +715,11 @@ static SLONG create_process(void)
  *	Create process block unless it already exists.
  *
  **************************************/
-	PRB process;
-
 	if (EVENT_process_offset)
 		return EVENT_process_offset;
 
 	ACQUIRE;
-	process = (PRB) alloc_global(type_prb, (SLONG) sizeof(prb), FALSE);
+	PRB process = (PRB) alloc_global(type_prb, (SLONG) sizeof(prb), FALSE);
 	insert_tail(&EVENT_header->evh_processes, &process->prb_processes);
 	QUE_INIT(process->prb_sessions);
 	EVENT_process_offset = REL_PTR(process);
@@ -789,12 +767,10 @@ static void delete_event(EVNT event)
  *	Delete an unused and unloved event.
  *
  **************************************/
-	EVNT parent;
-
 	remove_que(&event->evnt_events);
 
 	if (event->evnt_parent) {
-		parent = (EVNT) ABS_PTR(event->evnt_parent);
+		EVNT parent = (EVNT) ABS_PTR(event->evnt_parent);
 		if (!--parent->evnt_count)
 			delete_event(parent);
 	}
@@ -815,15 +791,12 @@ static void delete_process(SLONG process_offset)
  *	Delete a process block including friends and relations.
  *
  **************************************/
-	PRB process;
-	SES session;
-
-	process = (PRB) ABS_PTR(process_offset);
+	PRB process = (PRB) ABS_PTR(process_offset);
 
 /* Delete any open sessions */
 
 	while (!QUE_EMPTY(process->prb_sessions)) {
-		session =
+		SES session =
 			(SES) ((UCHAR *) QUE_NEXT(process->prb_sessions) -
 				   OFFSET(SES, ses_sessions));
 		delete_session(REL_PTR(session));
@@ -836,26 +809,23 @@ static void delete_process(SLONG process_offset)
 
 	if (EVENT_process_offset == process_offset) {
 #ifdef MULTI_THREAD
-		EVENT events;
-		SLONG value;
-		BOOLEAN timeout;
-
 		/* Terminate the event watcher thread */
 		/* When we come through the exit handler, the event semaphore might
 		   have already been released by another exit handler.  So we cannot
 		   use that semaphore to post the event.  Besides, the watcher thread 
 		   would be terminated anyway because the whole NLM is being unloaded. */
+		// CVC: NLM??? is this Novell Netware specific code???
 
 		process->prb_flags |= PRB_exiting;
-		timeout = FALSE;
+		BOOLEAN timeout = FALSE;
 		while (process->prb_flags & PRB_exiting && !timeout) {
 			ISC_event_post(process->prb_event);
-			value = ISC_event_clear(process->prb_event);
+			SLONG value = ISC_event_clear(process->prb_event);
 			RELEASE;
 #ifdef SOLARIS_MT
-			events = EVENT_process->prb_event;
+			EVENT events = EVENT_process->prb_event;
 #else
-			events = process->prb_event;
+			EVENT events = process->prb_event;
 #endif
 			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
 			ACQUIRE;
@@ -878,13 +848,10 @@ static void delete_request(EVT_REQ request)
  *	Release an unwanted and unloved request.
  *
  **************************************/
-	SES session;
-	RINT interest;
-	
-	session = (SES) ABS_PTR(request->req_session);
+	SES session = (SES) ABS_PTR(request->req_session);
 
 	while (request->req_interests) {
-		interest = (RINT) ABS_PTR(request->req_interests);
+		RINT interest = (RINT) ABS_PTR(request->req_interests);
 
 		request->req_interests = interest->rint_next;
 		if (historical_interest(session, interest->rint_event)) {
@@ -915,11 +882,6 @@ static void delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
-	SES session;
-	SRQ requests;
-	EVT_REQ request;
-	EVNT event;
-	RINT interest;
 #ifdef MULTI_THREAD
 /*  This code is very Netware specific, so for now I've #ifdef'ed this
  *  variable out.  In the future, other platforms may find a need to
@@ -929,7 +891,7 @@ static void delete_session(SLONG session_id)
 	/*  (Generally means session's deliver is hung. */
 #endif
 
-	session = (SES) ABS_PTR(session_id);
+	SES session = (SES) ABS_PTR(session_id);
 
 #ifdef MULTI_THREAD
 /*  delay gives up control for 250ms, so a 40 iteration timeout is a
@@ -953,8 +915,8 @@ static void delete_session(SLONG session_id)
 /* Delete all requests */
 
 	while (!QUE_EMPTY(session->ses_requests)) {
-		requests = session->ses_requests;
-		request =
+		SRQ requests = session->ses_requests;
+		EVT_REQ request =
 			(EVT_REQ) ((UCHAR *) QUE_NEXT(requests) - OFFSET(EVT_REQ, req_requests));
 		delete_request(request);
 	}
@@ -962,8 +924,8 @@ static void delete_session(SLONG session_id)
 /* Delete any historical interests */
 
 	while (session->ses_interests) {
-		interest = (RINT) ABS_PTR(session->ses_interests);
-		event = (EVNT) ABS_PTR(interest->rint_event);
+		RINT interest = (RINT) ABS_PTR(session->ses_interests);
+		EVNT event = (EVNT) ABS_PTR(interest->rint_event);
 		session->ses_interests = interest->rint_next;
 		remove_que(&interest->rint_interests);
 		free_global((FRB) interest);
@@ -988,12 +950,7 @@ static AST_TYPE deliver(void* arg)
  *	We've been poked -- deliver any satisfying requests.
  *
  **************************************/
-	PRB process;
-	EVT_REQ request;
-	SES session;
 	SRQ *que, *que2;
-	USHORT flag;
-	SLONG session_offset, que2_offset;
 
 #ifdef UNIX
 	if (acquire_count)
@@ -1001,26 +958,26 @@ static AST_TYPE deliver(void* arg)
 #endif
 
 	ACQUIRE;
-	process = (PRB) ABS_PTR(EVENT_process_offset);
+	PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
 
 	QUE_LOOP(process->prb_sessions, que2) {
-		session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
+		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 #ifdef MULTI_THREAD
 		session->ses_flags |= SES_delivering;
 #endif
-		session_offset = REL_PTR(session);
-		que2_offset = REL_PTR(que2);
-		for (flag = TRUE; flag;) {
-			flag = FALSE;
+		const SLONG session_offset = REL_PTR(session);
+		const SLONG que2_offset = REL_PTR(que2);
+		for (bool flag = true; flag;) {
+			flag = false;
 			QUE_LOOP(session->ses_requests, que) {
-				request = (EVT_REQ) ((UCHAR *) que - OFFSET(EVT_REQ, req_requests));
+				EVT_REQ request = (EVT_REQ) ((UCHAR *) que - OFFSET(EVT_REQ, req_requests));
 				if (request_completed(request)) {
 					deliver_request(request);
 					process = (PRB) ABS_PTR(EVENT_process_offset);
 					session = (SES) ABS_PTR(session_offset);
 					que2 = (SRQ *) ABS_PTR(que2_offset);
-					flag = TRUE;
+					flag = true;
 					break;
 				}
 			}
@@ -1048,32 +1005,32 @@ static void deliver_request(EVT_REQ request)
  *
  **************************************/
 	void (*ast) ();
-	void *arg;
-	SLONG count;
-	RINT interest;
-	PTR next;
-	EVNT event;
-	UCHAR buffer[512], *p, *event_buffer, *end;
+	UCHAR buffer[512];
 
 	ast = request->req_ast;
-	arg = request->req_ast_arg;
-	p = event_buffer = buffer;
-	end = buffer + sizeof(buffer);
+	void* arg = request->req_ast_arg;
+	UCHAR* event_buffer = buffer;
+	UCHAR* p = buffer;
+	const UCHAR* end = buffer + sizeof(buffer);
 	*p++ = EPB_version1;
 
 /* Loop thru interest block picking up event name, counts, and unlinking
    stuff */
 
-	for (next = request->req_interests;
+	RINT interest;
+	for (PTR next = request->req_interests;
 		 next && (interest = (RINT) ABS_PTR(next));
 		 next = interest->rint_next)
 	{
 		interest = (RINT) ABS_PTR(next);
-		event = (EVNT) ABS_PTR(interest->rint_event);
+		EVNT event = (EVNT) ABS_PTR(interest->rint_event);
 		if (end < p + event->evnt_length + 5)
 		{
 			/* Running out of space - allocate some more and copy it over */
 			fb_assert(event_buffer == buffer);	/* we're in this block only once */
+			// CVC: We don't check at run-time in the release version, it's
+			// likely to produce a buffer overrun if we reach MAX_EVENT_BUFFER,
+			// since new_buffer will be again and again this number.
 			UCHAR* new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
 			/* FREE: at procedure exit */
 			if (!new_buffer)
@@ -1089,7 +1046,7 @@ static void deliver_request(EVT_REQ request)
 		*p++ = event->evnt_length;
 		memcpy(p, event->evnt_name, event->evnt_length);
 		p += event->evnt_length;
-		count = event->evnt_count + 1;
+		const SLONG count = event->evnt_count + 1;
 		*p++ = (UCHAR) (count);
 		*p++ = (UCHAR) (count >> 8);
 		*p++ = (UCHAR) (count >> 16);
@@ -1107,7 +1064,7 @@ static void deliver_request(EVT_REQ request)
 }
 
 
-static void exit_handler(void *arg)
+static void exit_handler(void* arg)
 {
 /**************************************
  *
@@ -1143,7 +1100,7 @@ static void exit_handler(void *arg)
 }
 
 
-static EVNT find_event(USHORT length, TEXT * string, EVNT parent)
+static EVNT find_event(USHORT length, const TEXT* string, EVNT parent)
 {
 /**************************************
  *
@@ -1155,17 +1112,18 @@ static EVNT find_event(USHORT length, TEXT * string, EVNT parent)
  *	Lookup an event.
  *
  **************************************/
-	EVNT event;
-	SRQ *que;
-	PTR parent_offset;
+	SRQ* que;
 
-	parent_offset = (parent) ? REL_PTR(parent) : 0;
+	PTR parent_offset = (parent) ? REL_PTR(parent) : 0;
 
 	QUE_LOOP(EVENT_header->evh_events, que) {
-		event = (EVNT) ((UCHAR *) que - OFFSET(EVNT, evnt_events));
+		EVNT event = (EVNT) ((UCHAR *) que - OFFSET(EVNT, evnt_events));
 		if (event->evnt_parent == parent_offset &&
 			event->evnt_length == length &&
-			!memcmp(string, event->evnt_name, length)) return event;
+			!memcmp(string, event->evnt_name, length))
+		{
+			return event;
+		}
 	}
 
 	return NULL;
@@ -1184,22 +1142,24 @@ static void free_global(FRB block)
  *	Free a previous allocated block.
  *
  **************************************/
-	PTR *ptr, offset;
-	FRB free, prior;
+	PTR *ptr;
+	FRB free;
 
-	prior = NULL;
-	offset = REL_PTR(block);
+	FRB prior = NULL;
+	PTR offset = REL_PTR(block);
 	block->frb_header.hdr_type = type_frb;
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
+	{
 		if ((SCHAR *) block < (SCHAR *) free)
 			break;
+	}
 
 	if (offset <= 0 || offset > EVENT_header->evh_length ||
 		(prior
-		 && (UCHAR *) block <
-		 (UCHAR *) prior + prior->frb_header.hdr_length)) {
+		 && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
+	{
 		punt("free_global: bad block");
 		return;
 	}
@@ -1213,7 +1173,8 @@ static void free_global(FRB block)
 
 	if (free
 		&& (SCHAR *) block + block->frb_header.hdr_length ==
-		(SCHAR *) free) {
+		(SCHAR *) free)
+	{
 		block->frb_header.hdr_length += free->frb_header.hdr_length;
 		block->frb_next = free->frb_next;
 	}
@@ -1222,7 +1183,8 @@ static void free_global(FRB block)
 
 	if (prior
 		&& (SCHAR *) prior + prior->frb_header.hdr_length ==
-		(SCHAR *) block) {
+		(SCHAR *) block)
+	{
 		prior->frb_header.hdr_length += block->frb_header.hdr_length;
 		prior->frb_next = block->frb_next;
 	}
@@ -1241,19 +1203,20 @@ static RINT historical_interest(SES session, PTR event)
  *	Find a historical interest, if any, of an event with a session.
  *
  **************************************/
-	PTR ptr;
 	RINT interest;
 
-	for (ptr = session->ses_interests;
+	for (PTR ptr = session->ses_interests;
 		 ptr && (interest = (RINT) ABS_PTR(ptr)); ptr = interest->rint_next)
+	{
 		if (interest->rint_event == event)
 			return interest;
+	}
 
 	return NULL;
 }
 
 
-static void init(void *arg, SH_MEM shmem_data, int initialize)
+static void init(void* arg, SH_MEM shmem_data, bool initialize)
 {
 /**************************************
  *
@@ -1265,7 +1228,6 @@ static void init(void *arg, SH_MEM shmem_data, int initialize)
  *	Initialize global region header.
  *
  **************************************/
-	FRB free;
 	int mutex_state;
 
 #if defined(WIN_NT)
@@ -1290,7 +1252,7 @@ static void init(void *arg, SH_MEM shmem_data, int initialize)
 #endif
 #endif
 
-	free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
+	FRB free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
 	free->frb_header.hdr_length =
 		EVENT_data.sh_mem_length_mapped - sizeof(evh);
 	free->frb_header.hdr_type = type_frb;
@@ -1312,18 +1274,16 @@ static void insert_tail(SRQ * que, SRQ * node)
  *	Insert a node at the tail of a que.
  *
  **************************************/
-	SRQ *prior;
-
 	node->srq_forward = REL_PTR(que);
 	node->srq_backward = que->srq_backward;
 
-	prior = (SRQ *) ABS_PTR(que->srq_backward);
+	SRQ* prior = (SRQ *) ABS_PTR(que->srq_backward);
 	prior->srq_forward = REL_PTR(node);
 	que->srq_backward = REL_PTR(node);
 }
 
 
-static EVNT make_event(USHORT length, TEXT * string, SLONG parent_offset)
+static EVNT make_event(USHORT length, const TEXT* string, SLONG parent_offset)
 {
 /**************************************
  *
@@ -1335,16 +1295,14 @@ static EVNT make_event(USHORT length, TEXT * string, SLONG parent_offset)
  *	Allocate an link in an event.
  *
  **************************************/
-	EVNT event, parent;
-
-	event =
+	EVNT event =
 		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(evnt) + length), FALSE);
 	insert_tail(&EVENT_header->evh_events, &event->evnt_events);
 	QUE_INIT(event->evnt_interests);
 
 	if (parent_offset) {
 		event->evnt_parent = parent_offset;
-		parent = (EVNT) ABS_PTR(parent_offset);
+		EVNT parent = (EVNT) ABS_PTR(parent_offset);
 		++parent->evnt_count;
 	}
 
@@ -1355,7 +1313,7 @@ static EVNT make_event(USHORT length, TEXT * string, SLONG parent_offset)
 }
 
 
-static void mutex_bugcheck(TEXT * string, int mutex_state)
+static void mutex_bugcheck(const TEXT* string, int mutex_state)
 {
 /**************************************
  *
@@ -1427,13 +1385,11 @@ static void probe_processes(void)
  *	rid of it.
  *
  **************************************/
-	SRQ *que;
-	PRB process;
-	SLONG process_offset;
+	SRQ* que;
 
 	QUE_LOOP(EVENT_header->evh_processes, que) {
-		process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
-		process_offset = REL_PTR(process);
+		PRB process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
+		const SLONG process_offset = REL_PTR(process);
 		if (process_offset != EVENT_process_offset &&
 			!ISC_check_process_existence(process->prb_process_id,
 										 process->prb_process_uid[0], FALSE)) {
@@ -1444,7 +1400,7 @@ static void probe_processes(void)
 }
 
 
-static void punt(TEXT * string)
+static void punt(const TEXT* string)
 {
 /**************************************
  *
@@ -1501,7 +1457,7 @@ static void release(void)
 }
 
 
-static void remove_que(SRQ * node)
+static void remove_que(SRQ* node)
 {
 /**************************************
  *
@@ -1513,9 +1469,7 @@ static void remove_que(SRQ * node)
  *	Remove a node from a self-relative que.
  *
  **************************************/
-	SRQ *que;
-
-	que = (SRQ *) ABS_PTR(node->srq_forward);
+	SRQ* que = (SRQ *) ABS_PTR(node->srq_forward);
 	que->srq_backward = node->srq_backward;
 
 	que = (SRQ *) ABS_PTR(node->srq_backward);
@@ -1536,13 +1490,10 @@ static BOOLEAN request_completed(EVT_REQ request)
  *	See if request is completed.
  *
  **************************************/
-	PTR next;
 	RINT interest;
-	EVNT event;
-
-	for (next = request->req_interests; next; next = interest->rint_next) {
+	for (PTR next = request->req_interests; next; next = interest->rint_next) {
 		interest = (RINT) ABS_PTR(next);
-		event = (EVNT) ABS_PTR(interest->rint_event);
+		EVNT event = (EVNT) ABS_PTR(interest->rint_event);
 		if (interest->rint_count <= event->evnt_count)
 			return TRUE;
 	}
@@ -1585,18 +1536,15 @@ static int validate(void)
  *	Make sure everything looks ok.
  *
  **************************************/
+// Check consistency of global region (debugging only)
+
+	PTR next_free = 0;
 	SLONG offset;
-	HDR *block;
-	PTR next_free;
-
-/* Check consistency of global region (debugging only) */
-
-	next_free = 0;
 
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
 		offset += block->hdr_length)
 	{
-		block = (HDR *) ABS_PTR(offset);
+		HDR* block = (HDR *) ABS_PTR(offset);
 		if (!block->hdr_length || !block->hdr_type
 			|| block->hdr_type >= type_max) {
 			punt("bad block length or type");
@@ -1633,13 +1581,9 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
  *	Wait for something to happen.
  *
  **************************************/
-	PRB process;
-	SLONG value;
-	EVENT events;
-
 	while (EVENT_process_offset) {
 		ACQUIRE;
-		process = (PRB) ABS_PTR(EVENT_process_offset);
+		PRB process = (PRB) ABS_PTR(EVENT_process_offset);
 		process->prb_flags &= ~PRB_wakeup;
 
 		if (process->prb_flags & PRB_exiting) {
@@ -1666,21 +1610,19 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 		}
 #endif
 
-		value = ISC_event_clear(process->prb_event);
+		SLONG value = ISC_event_clear(process->prb_event);
 		RELEASE;
 		deliver(NULL);
 		ACQUIRE;
 		process = (PRB) ABS_PTR(EVENT_process_offset);
 		RELEASE;
 #ifdef SOLARIS_MT
-		events = EVENT_process->prb_event;
+		EVENT events = EVENT_process->prb_event;
 #else
-		events = process->prb_event;
+		EVENT events = process->prb_event;
 #endif
 		ISC_event_wait(1, &events, &value, 0, 0, 0);
 	}
 
 }
 #endif
-
-

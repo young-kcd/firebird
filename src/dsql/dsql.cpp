@@ -45,18 +45,18 @@ V4 Multi-threading changes.
 the following protocol will be used.  Care should be taken if
 nested FOR loops are added.
 
-    THREAD_EXIT;                // last statment before FOR loop
+    THREAD_EXIT;                // last statement before FOR loop
 
     FOR ...............
 
-	THREAD_ENTER;           // First statment in FOR loop
+	THREAD_ENTER;           // First statement in FOR loop
 	.....some C code....
 	.....some C code....
-	THREAD_EXIT;            // last statment in FOR loop
+	THREAD_EXIT;            // last statement in FOR loop
 
     END_FOR;
 
-    THREAD_ENTER;               // First statment after FOR loop
+    THREAD_ENTER;               // First statement after FOR loop
 ***************************************************************/
 
 #include "firebird.h"
@@ -117,7 +117,7 @@ static DBB		init(FRBRD**);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static USHORT	name_length(const TEXT*);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, par*);
-static dsql_req*		prepare(dsql_req*, USHORT, TEXT*, USHORT, USHORT);
+static dsql_req*		prepare(dsql_req*, USHORT, const TEXT*, USHORT, USHORT);
 static void		punt(void);
 static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(dsql_req*, bool);
@@ -226,7 +226,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 							WHY_TRA*		trans_handle,
 							dsql_req**		req_handle,
 							USHORT			length,
-							TEXT*			string,
+							const TEXT*			string,
 							USHORT			dialect,
 							USHORT			item_length,
 							const UCHAR*			items,
@@ -243,7 +243,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 
 ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*		user_status,
 								dsql_req**		req_handle,
-								TEXT*		input_cursor,
+								const TEXT*		input_cursor,
 								USHORT		type);
 
 
@@ -270,7 +270,7 @@ ISC_STATUS	dsql8_execute(
 				WHY_TRA*   trans_handle,
 				dsql_req** req_handle,
 				USHORT     in_blr_length,
-				SCHAR*     in_blr,
+				const SCHAR*     in_blr,
 				USHORT     in_msg_type,
 				USHORT     in_msg_length,
 				SCHAR*     in_msg,
@@ -301,7 +301,7 @@ ISC_STATUS	dsql8_fetch(
 				ISC_STATUS*    user_status,
 				dsql_req** req_handle,
 				USHORT     blr_length,
-				SCHAR*     blr,
+				const SCHAR*     blr,
 				USHORT     msg_type,
 				USHORT     msg_length,
 				SCHAR*     dsql_msg_buf
@@ -339,10 +339,10 @@ ISC_STATUS	dsql8_insert(
 				ISC_STATUS*				user_status,
 				dsql_req**			req_handle,
 				USHORT				blr_length,
-				SCHAR*				blr,
+				const SCHAR*				blr,
 				USHORT				msg_type,
 				USHORT				msg_length,
-				SCHAR*				dsql_msg_buf)
+				const SCHAR*				dsql_msg_buf)
 {
 	return GDS_DSQL_INSERT_CPP(	user_status,
 								req_handle,
@@ -360,7 +360,7 @@ ISC_STATUS	dsql8_prepare(
 				WHY_TRA*			trans_handle,
 				dsql_req**	req_handle,
 				USHORT				length,
-				TEXT*				string,
+				const TEXT*				string,
 				USHORT				dialect,
 				USHORT				item_length,
 				const SCHAR*		items,
@@ -403,7 +403,7 @@ ISC_STATUS	dsql8_sql_info(
 ISC_STATUS	dsql8_set_cursor(
 				ISC_STATUS*		user_status,
 				dsql_req**	req_handle,
-				TEXT*		input_cursor,
+				const TEXT*		input_cursor,
 				USHORT		type)
 {
 	return GDS_DSQL_SET_CURSOR_CPP(user_status,
@@ -449,13 +449,13 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 
 		init(0);
 
-/* If we haven't been initialized yet, do it now */
+// If we haven't been initialized yet, do it now 
 
 		dbb* database = init(db_handle);
 
 		tdsql->tsql_default = DsqlMemoryPool::createPool();
 
-/* allocate the request block */
+// allocate the request block 
 
 		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req;
 		request->req_dbb = database;
@@ -531,7 +531,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			request->req_type = REQ_EMBED_SELECT;
 		}
 
-/* Only allow NULL trans_handle if we're starting a transaction */
+// Only allow NULL trans_handle if we're starting a transaction 
 
 		if (*trans_handle == NULL && request->req_type != REQ_START_TRANS)
 		{
@@ -555,7 +555,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			}
 		}
 
-/* A select with a non zero output length is a singleton select */
+// A select with a non zero output length is a singleton select 
 		bool singleton;
 		if (request->req_type == REQ_SELECT && out_msg_length != 0) {
 			singleton = true;
@@ -622,10 +622,10 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 											 WHY_DBB*	db_handle,
 											 WHY_TRA*	trans_handle,
 											 USHORT		length,
-											 TEXT*		string,
+											 const TEXT*		string,
 											 USHORT		dialect,
 											 USHORT		in_blr_length,
-											 UCHAR*		in_blr,
+											 const UCHAR*		in_blr,
 											 USHORT		in_msg_type,
 											 USHORT		in_msg_length,
 											 UCHAR*		in_msg,
@@ -646,8 +646,6 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  *	Common part of prepare and execute a statement.
  *
  **************************************/
-	dsql_req* request;
-	USHORT parser_version;
 	ISC_STATUS status;
 	tsql thd_context;
 	tsql* tdsql;
@@ -663,9 +661,9 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 		tdsql->tsql_default = DsqlMemoryPool::createPool();
 
-	/* allocate the request block, then prepare the request */
+	// allocate the request block, then prepare the request 
 
-		request = FB_NEW(*tdsql->tsql_default) dsql_req;
+		dsql_req* request = FB_NEW(*tdsql->tsql_default) dsql_req;
 		request->req_dbb = database;
 		request->req_pool = tdsql->tsql_default;
 		request->req_trans = *trans_handle;
@@ -676,7 +674,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 				length = strlen(string);
 			}
 
-/* Figure out which parser version to use */
+// Figure out which parser version to use 
 /* Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
@@ -700,6 +698,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  * connection being made is a local classic connection.
  */
 
+			USHORT parser_version;
 			if ((dialect / 10) == 0)
 				parser_version = 2;
 			else {
@@ -714,11 +713,12 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 			if (!((1 << request->req_type) & possible_requests))
 			{
 				const int max_diag_len = 50;
-				if (length > max_diag_len)
-					string[max_diag_len] = 0;
+				char err_str[max_diag_len + 1];
+				strncpy(err_str, string, max_diag_len);
+				err_str[max_diag_len] = 0;
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -902,
 					isc_arg_gds, isc_exec_sql_invalid_req, 
-					isc_arg_string, string, isc_arg_end);
+					isc_arg_string, err_str, isc_arg_end);
 			}
 
 			execute_request(request, trans_handle, in_blr_length, in_blr,
@@ -748,10 +748,10 @@ ISC_STATUS	dsql8_execute_immediate(
 				WHY_DBB*	db_handle,
 				WHY_TRA*	trans_handle,
 				USHORT		length,
-				TEXT*		string,
+				const TEXT*		string,
 				USHORT		dialect,
 				USHORT		in_blr_length,
-				SCHAR*		in_blr,
+				const SCHAR*		in_blr,
 				USHORT		in_msg_type,
 				USHORT		in_msg_length,
 				SCHAR*		in_msg,
@@ -773,7 +773,7 @@ ISC_STATUS	dsql8_execute_immediate(
  **************************************/
 	return dsql8_execute_immediate_common(user_status, db_handle, trans_handle, length,
 		string, dialect, in_blr_length, 
-		reinterpret_cast<UCHAR*>(in_blr), 
+		reinterpret_cast<const UCHAR*>(in_blr),
 		in_msg_type, in_msg_length,
 		reinterpret_cast<UCHAR*>(in_msg),
 		out_blr_length, 
@@ -835,10 +835,10 @@ static bool check_for_create_database(const TEXT* sql,
 ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 								   class att* jrd_attachment_handle,
 								   class jrd_tra* jrd_transaction_handle,
-    							   TEXT* sql_operator,
+    							   const TEXT* sql_operator,
     							   int len)
 {
-	/* Other requests appear to be incorrect in this context */
+	// Other requests appear to be incorrect in this context 
 	long requests = (1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE)
 			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE);
 
@@ -848,7 +848,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 		requests = 0;
 	}
 
-	/* 1. Locate why_db_handle, corresponding to jrd_database_handle */
+	// 1. Locate why_db_handle, corresponding to jrd_database_handle 
 	THREAD_EXIT;
 	THD_MUTEX_LOCK (&databases_mutex);
 	dbb* database;
@@ -881,7 +881,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	THD_MUTEX_UNLOCK (&databases_mutex);
     THREAD_ENTER;
 
-	/* 3. Call execute... function */
+	// 3. Call execute... function 
 	return dsql8_execute_immediate_common(status,
 										  &why_db_handle, &why_trans_handle,
 										  len, sql_operator, database->dbb_db_SQL_dialect,
@@ -961,7 +961,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 		dsql_req* request = *req_handle;
 		tdsql->tsql_default = request->req_pool;
 
-/* if the cursor isn't open, we've got a problem */
+// if the cursor isn't open, we've got a problem 
 
 		if (request->req_type == REQ_SELECT ||
 			request->req_type == REQ_SELECT_UPD ||
@@ -1180,13 +1180,13 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 		tdsql->tsql_default = request->req_pool;
 
 		if (option & DSQL_drop) {
-		/* Release everything associate with the request. */
+		// Release everything associate with the request. 
 
 			release_request(request, true);
 			*req_handle = NULL;
 		}
 		else if (option & DSQL_close) {
-		/* Just close the cursor associated with the request. */
+		// Just close the cursor associated with the request. 
 
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
@@ -1229,10 +1229,6 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 							USHORT	msg_length,
 							const UCHAR*	dsql_msg_buf)
 {
-	dsql_req* request;
-	dsql_msg* message;
-	par* parameter;
-	ISC_STATUS s;
 	tsql thd_context;
 	tsql* tdsql;
 
@@ -1245,17 +1241,17 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 
 		init(0);
 
-		request = *req_handle;
+		dsql_req* request = *req_handle;
 		tdsql->tsql_default = request->req_pool;
 
-/* if the cursor isn't open, we've got a problem */
+// if the cursor isn't open, we've got a problem 
 
 		if (request->req_type == REQ_PUT_SEGMENT)
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 					  isc_arg_gds, isc_dsql_cursor_err, 0);
 
-		message = (dsql_msg*) request->req_receive;
+		dsql_msg* message = (dsql_msg*) request->req_receive;
 
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
@@ -1264,14 +1260,15 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 			parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
 		if (request->req_type == REQ_PUT_SEGMENT) {
-		/* For put segment, use the user buffer and indicator directly. */
+		// For put segment, use the user buffer and indicator directly. 
 
-			parameter = request->req_blob->blb_segment;
+			par* parameter = request->req_blob->blb_segment;
 			const SCHAR* buffer =
 				reinterpret_cast<const SCHAR*>(
 					dsql_msg_buf + (SLONG) parameter->par_user_desc.dsc_address);
 			THREAD_EXIT;
-			s = isc_put_segment(tdsql->tsql_status, &request->req_handle,
+			const ISC_STATUS s =
+				isc_put_segment(tdsql->tsql_status, &request->req_handle,
 							parameter->par_user_desc.dsc_length, buffer);
 			THREAD_ENTER;
 			if (s)
@@ -1311,7 +1308,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 							WHY_TRA*		trans_handle,
 							dsql_req**		req_handle,
 							USHORT			length,
-							TEXT*			string,
+							const TEXT*			string,
 							USHORT			dialect,
 							USHORT			item_length,
 							const UCHAR*	items,
@@ -1348,7 +1345,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 	        }
 	    }
 
-/* check to see if old request has an open cursor */
+// check to see if old request has an open cursor 
 
 		if (old_request && (old_request->req_flags & REQ_cursor_open)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 519,
@@ -1374,7 +1371,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 			if (!length)
 				length = strlen(string);
 
-/* Figure out which parser version to use */
+// Figure out which parser version to use 
 /* Since the API to dsql8_prepare is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
@@ -1410,7 +1407,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			request = prepare(request, length, string, dialect, parser_version);
 
-/* Can not prepare a CREATE DATABASE/SCHEMA statement */
+// Can not prepare a CREATE DATABASE/SCHEMA statement 
 
 			if ((request->req_type == REQ_DDL) &&
 				(request->req_ddl_node->nod_type == nod_def_database))
@@ -1419,7 +1416,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			request->req_flags |= REQ_prepared;
 
-/* Now that we know that the new request exists, zap the old one. */
+// Now that we know that the new request exists, zap the old one. 
 
 			tdsql->tsql_default = old_request->req_pool;
 			release_request(old_request, true);
@@ -1470,7 +1467,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
  **/
 ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 								dsql_req**	req_handle,
-								TEXT*	input_cursor,
+								const TEXT*	input_cursor,
 								USHORT	type)
 {
 	tsql thd_context;
@@ -1507,9 +1504,9 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		else	// not quoted name
 		{
 			int i;
-			for (i = 0; i < sizeof(cursor) - 1	/* PJPG 20001013 */
-			 	&& input_cursor[i]	/* PJPG 20001013 */
-			 	&& input_cursor[i] != ' '; ++i)	/* PJPG 20001013 */
+			for (i = 0; i < sizeof(cursor) - 1	// PJPG 20001013 
+			 	&& input_cursor[i]	// PJPG 20001013 
+			 	&& input_cursor[i] != ' '; ++i)	// PJPG 20001013 
 			{
 				cursor[i] = UPPER7(input_cursor[i]);
 			}
@@ -1522,7 +1519,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 				  isc_arg_gds, isc_dsql_decl_err, 0);
 		}
 
-/* If there already is a different cursor by the same name, bitch */
+// If there already is a different cursor by the same name, bitch 
 
 		const dsql_sym* symbol = 
 			HSHD_lookup(request->req_dbb, cursor, length, SYM_cursor, 0);
@@ -1961,7 +1958,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_relation:
 		verb = "define relation";
 		break;
-   /* CVC: New node redef_relation. */
+   // CVC: New node redef_relation. 
     case nod_redef_relation:    
         verb = "redefine relation";    
         break;
@@ -1995,7 +1992,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_del_relation:
 		verb = "delete relation";
 		break;
-    /* CVC: New node del_view. */
+    // CVC: New node del_view. 
     case nod_del_view:     
         verb = "delete view";       
         break;
@@ -2008,7 +2005,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_replace_procedure:
 		verb = "replace procedure";
 		break;
-    /* CVC: New node redef_procedure. */
+    // CVC: New node redef_procedure. 
     case nod_redef_procedure:  
         verb = "redefine procedure"; 
         break;
@@ -2216,7 +2213,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_user_name:
 		verb = "user_name";
 		break;
-        /* CVC: New node current_role. */
+        // CVC: New node current_role. 
     case nod_current_role: 
         verb = "current_role";  
         break;
@@ -2288,7 +2285,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_join_inner:
 		verb = "join_inner";
 		break;
-	/* SKIDDER: some more missing node types */
+	// SKIDDER: some more missing node types 
 	case nod_commit:
 		verb = "commit";
 		break;
@@ -2883,7 +2880,7 @@ static void cleanup_transaction (FRBRD * tra_handle, SLONG arg)
 	ISC_STATUS_ARRAY local_status;
 	OPN *open_cursor_ptr, open_cursor;
 
-/* find this transaction/request pair in the list of pairs */
+// find this transaction/request pair in the list of pairs 
 
 	THD_MUTEX_LOCK(&cursors_mutex);
 	open_cursor_ptr = &open_cursors;
@@ -2942,7 +2939,7 @@ static void close_cursor( dsql_req* request)
 
 	request->req_flags &= ~(REQ_cursor_open | REQ_embedded_sql_cursor);
 
-/* Remove the open cursor from the list */
+// Remove the open cursor from the list 
 
 	THD_MUTEX_LOCK(&cursors_mutex);
 	open_cursor_ptr = &open_cursors;
@@ -3280,9 +3277,9 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		return FB_SUCCESS;
 
 	default:
-		/* Catch invalid request types */
+		// Catch invalid request types 
 		fb_assert(false);
-		/* Fall into ... */
+		// Fall into ... 
 
 	case REQ_SELECT:
 	case REQ_SELECT_UPD:
@@ -3297,7 +3294,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		break;
 	}
 
-/* If there is no data required, just start the request */
+// If there is no data required, just start the request 
 
 	message = (dsql_msg*) request->req_send;
 	if (!message)
@@ -3358,7 +3355,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 		map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
 
-		/* if this is a singleton select, make sure there's in fact one record */
+		// if this is a singleton select, make sure there's in fact one record 
 
 		if (singleton)
 		{
@@ -3522,7 +3519,7 @@ static bool get_indices(
 		explain_length--;
 		length = *explain++;
 
-		/* if this isn't the first index, put out a comma */
+		// if this isn't the first index, put out a comma 
 
 		if (plan[-1] != '(' && plan[-1] != ' ') {
 			plan_length -= 2;
@@ -3532,7 +3529,7 @@ static bool get_indices(
 			*plan++ = ' ';
 		}
 
-		/* now put out the index name */
+		// now put out the index name 
 
 		if ((plan_length -= length) < 0)
 			return false;
@@ -3581,7 +3578,7 @@ static USHORT get_plan_info(
 	SCHAR* explain_ptr = explain_buffer;
 	SCHAR* buffer_ptr = *out_buffer;
 
-/* get the access path info for the underlying request from the engine */
+// get the access path info for the underlying request from the engine 
 
 	THREAD_EXIT;
 	s = isc_request_info(tdsql->tsql_status,
@@ -3639,13 +3636,13 @@ static USHORT get_plan_info(
            at the begining of the function hence they had trash the second time. */
         USHORT join_count = 0, level = 0;
 
-		/* keep going until we reach the end of the explain info */
+		// keep going until we reach the end of the explain info 
 
 		while (explain_length > 0 && buffer_length > 0) {
 			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan,
 							  &join_count, &level)) 
 			{
-				/* assume we have run out of room in the buffer, try again with a larger one */
+				// assume we have run out of room in the buffer, try again with a larger one 
 
 				buffer_ptr =
 					reinterpret_cast<char*>(gds__alloc(BUFFER_XLARGE));
@@ -3688,7 +3685,7 @@ static USHORT get_request_info(
 
 	TSQL tdsql = GET_THREAD_DATA;
 
-/* get the info for the request from the engine */
+// get the info for the request from the engine 
 
 	THREAD_EXIT;
 	s = isc_request_info(tdsql->tsql_status,
@@ -3787,7 +3784,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 	switch (*explain++) {
 	case isc_info_rsb_begin:
 		if (!*level_ptr) {
-			/* put out the PLAN prefix */
+			// put out the PLAN prefix 
 
 			p = "\nPLAN ";
 			if ((plan_length -= strlen(p)) < 0)
@@ -3817,7 +3814,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			*plan++ = '(';
 		}
 
-		/* if this isn't the first relation, put out a comma */
+		// if this isn't the first relation, put out a comma 
 
 		if (plan[-1] != '(') {
 			plan_length -= 2;
@@ -3827,7 +3824,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			*plan++ = ' ';
 		}
 
-		/* put out the relation name */
+		// put out the relation name 
 
 		explain_length--;
 		explain_length -= (length = (UCHAR) * explain++);
@@ -3846,12 +3843,12 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 		case isc_info_rsb_union:
 
-			/* put out all the substreams of the join */
+			// put out all the substreams of the join 
 
 			explain_length--;
 			union_count = (USHORT) * explain++ - 1;
 
-			/* finish the first union member */
+			// finish the first union member 
 
 			union_level = *level_ptr;
 			union_join_count = 0;
@@ -3899,7 +3896,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				*plan++ = ' ';
 			}
 
-			/* put out the join type */
+			// put out the join type 
 
 			if (rsb_type == isc_info_rsb_cross ||
 				rsb_type == isc_info_rsb_left_cross) {
@@ -3914,7 +3911,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (*p)
 				*plan++ = *p++;
 
-			/* put out all the substreams of the join */
+			// put out all the substreams of the join 
 
 			explain_length--;
 			join_count = (USHORT) * explain++;
@@ -3924,21 +3921,21 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				{
 					return false;
 				}
-				/* CVC: Here's the additional stop condition. */
+				// CVC: Here's the additional stop condition. 
 				if (!*level_ptr) {
 					break;
 				}
 			}
 
 
-			/* put out the final parenthesis for the join */
+			// put out the final parenthesis for the join 
 
 			if (--plan_length < 0)
 				return false;
 			else
 				*plan++ = ')';
 
-			/* this qualifies as a stream, so decrement the join count */
+			// this qualifies as a stream, so decrement the join count 
 
 			if (*parent_join_count)
 				-- * parent_join_count;
@@ -3964,7 +3961,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (*p)
 				*plan++ = *p++;
 
-			/* print out additional index information */
+			// print out additional index information 
 
 			if (rsb_type == isc_info_rsb_indexed ||
 				rsb_type == isc_info_rsb_navigate ||
@@ -3990,7 +3987,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				*plan++ = ')';
 			}
 
-			/* detect the end of a single relation and put out a final parenthesis */
+			// detect the end of a single relation and put out a final parenthesis 
 
 			if (!*parent_join_count)
 				if (--plan_length < 0)
@@ -3998,7 +3995,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				else
 					*plan++ = ')';
 
-			/* this also qualifies as a stream, so decrement the join count */
+			// this also qualifies as a stream, so decrement the join count 
 
 			if (*parent_join_count)
 				-- * parent_join_count;
@@ -4019,7 +4016,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				break;
 			}
 
-			/* if this isn't the first item in the list, put out a comma */
+			// if this isn't the first item in the list, put out a comma 
 
 			if (*parent_join_count && plan[-1] != '(') {
 				plan_length -= 2;
@@ -4141,7 +4138,7 @@ static DBB init(FRBRD** db_handle)
 	isc_database_cleanup(user_status, db_handle, cleanup_database, NULL);
 	THREAD_ENTER;
 
-/* Determine if the database is V3 or V4 */
+// Determine if the database is V3 or V4 
 
 	SCHAR buffer[128];
 
@@ -4261,7 +4258,7 @@ static void map_in_out(	dsql_req*		request,
 	{
 		if (parameter->par_index)
 		{
-			 /* Make sure the message given to us is long enough */
+			 // Make sure the message given to us is long enough 
 
 			DSC    desc   = parameter->par_user_desc;
 			USHORT length = (SLONG) desc.dsc_address + desc.dsc_length;
@@ -4401,14 +4398,14 @@ static USHORT parse_blr(
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
-	blr++;						/* skip the blr_version */
+	blr++;						// skip the blr_version 
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
 
-	++blr;						/* skip the message number */
+	++blr;						// skip the message number 
 	USHORT count = *blr++;
 	count += (*blr++) << 8;
 	count /= 2;
@@ -4576,15 +4573,9 @@ static USHORT parse_blr(
 static dsql_req* prepare(
 				   dsql_req* request,
 				   USHORT string_length,
-				   TEXT * string,
+				   const TEXT* string,
 				   USHORT client_dialect, USHORT parser_version)
 {
-	ISC_STATUS status;
-	dsql_nod* node;
-	dsql_msg* message;
-	TEXT* p;
-	USHORT length;
-	BOOLEAN stmt_ambiguous = FALSE;
 	ISC_STATUS_ARRAY local_status;
 
 	TSQL tdsql = GET_THREAD_DATA;
@@ -4600,7 +4591,7 @@ static dsql_req* prepare(
 
 /* Get rid of the trailing ";" if there is one. */
 
-	for (p = string + string_length; p-- > string;)
+	for (const TEXT* p = string + string_length; p-- > string;)
 	{
 		if (*p != ' ') {
 			if (*p == ';')
@@ -4609,25 +4600,28 @@ static dsql_req* prepare(
 		}
 	}
 
-/* Allocate a storage pool and get ready to parse */
+// Allocate a storage pool and get ready to parse 
 
 	LEX_string(string, string_length, request->req_dbb->dbb_att_charset);
 
-/* Parse the SQL statement.  If it croaks, return */
+// Parse the SQL statement.  If it croaks, return 
 
+	bool stmt_ambiguous = false;
 	if (dsql_yyparse(client_dialect,
 	                 request->req_dbb->dbb_db_SQL_dialect,
 	                 parser_version,
 	                 &stmt_ambiguous))
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, isc_command_end_err,	/* Unexpected end of command */
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_command_end_err,	// Unexpected end of command
 				  0);
 	}
 
-/* allocate the send and receive messages */
+// allocate the send and receive messages 
 
 	request->req_send = FB_NEW(*tdsql->tsql_default) dsql_msg;
-	request->req_receive = message = FB_NEW(*tdsql->tsql_default) dsql_msg;
+	dsql_msg* message = FB_NEW(*tdsql->tsql_default) dsql_msg;
+	request->req_receive = message;
 	message->msg_number = 1;
 
 #ifdef SCROLLABLE_CURSORS
@@ -4650,11 +4644,11 @@ static dsql_req* prepare(
  * Error will be caught at execute time.
  */
 
-	node = PASS1_statement(request, DSQL_parse, false);
+	dsql_nod* node = PASS1_statement(request, DSQL_parse, false);
 	if (!node)
 		return request;
 
-/* stop here for requests not requiring code generation */
+// stop here for requests not requiring code generation 
 
 	if (request->req_type == REQ_DDL && stmt_ambiguous &&
 		request->req_dbb->dbb_db_SQL_dialect != client_dialect)
@@ -4672,7 +4666,7 @@ static dsql_req* prepare(
 		return request;
 	}
 
-/* Work on blob segment requests */
+// Work on blob segment requests 
 
 	if (request->req_type == REQ_GET_SEGMENT ||
 		request->req_type == REQ_PUT_SEGMENT)
@@ -4683,13 +4677,13 @@ static dsql_req* prepare(
 		return request;
 	}
 
-/* Generate BLR, DDL or TPB for request */
+// Generate BLR, DDL or TPB for request 
 
 	if (request->req_type == REQ_START_TRANS ||
 		request->req_type == REQ_DDL ||
 		request->req_type == REQ_EXEC_PROCEDURE)
 	{
-		/* Allocate persistent blr string from request's pool. */
+		// Allocate persistent blr string from request's pool. 
 
 		request->req_blr_string = FB_NEW_RPT(*tdsql->tsql_default, 980) dsql_str;
 	}
@@ -4717,14 +4711,15 @@ static dsql_req* prepare(
 	else
 		request->req_flags |= REQ_blr_version4;
 	GEN_request(request, node);
-	length = reinterpret_cast<char*>(request->req_blr) - request->req_blr_string->str_data;
+	const USHORT length =
+		reinterpret_cast<char*>(request->req_blr) - request->req_blr_string->str_data;
 
-/* stop here for ddl requests */
+// stop here for ddl requests 
 
 	if (request->req_type == REQ_DDL)
 		return request;
 
-/* have the access method compile the request */
+// have the access method compile the request 
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
@@ -4734,21 +4729,21 @@ static dsql_req* prepare(
 	}
 #endif
 
-/* stop here for execute procedure requests */
+// stop here for execute procedure requests 
 
 	if (request->req_type == REQ_EXEC_PROCEDURE) {
 		return request;
 	}
 
-/* check for warnings */
+// check for warnings 
 	if (tdsql->tsql_status[2] == isc_arg_warning) {
-		/* save a status vector */
+		// save a status vector 
 		MOVE_FASTER(tdsql->tsql_status, local_status,
 					sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 	}
 
 	THREAD_EXIT;
-	status = isc_compile_request(tdsql->tsql_status,
+	const ISC_STATUS status = isc_compile_request(tdsql->tsql_status,
 								 &request->req_dbb->dbb_database_handle,
 								 &request->req_handle, length,
 								 request->req_blr_string->str_data);
@@ -4759,12 +4754,12 @@ static dsql_req* prepare(
 	{
 		int indx, len, warning;
 
-		/* find end of a status vector */
+		// find end of a status vector 
 		PARSE_STATUS(tdsql->tsql_status, indx, warning);
 		if (indx)
 			--indx;
 
-		/* calculate length of saved warnings */
+		// calculate length of saved warnings 
 		PARSE_STATUS(local_status, len, warning);
 		len -= 2;
 
@@ -4920,7 +4915,7 @@ static void release_request(dsql_req* request, bool top_level)
 		THREAD_ENTER;
 	}
 
-/* Only release the entire request for top level requests */
+// Only release the entire request for top level requests 
 
 	if (top_level)
 		DsqlMemoryPool::deletePool(request->req_pool);

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.46 2003-11-18 12:34:55 brodsom Exp $
+//  $Id: gpre.cpp,v 1.47 2003-11-28 06:48:12 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -105,7 +105,7 @@ static void			remember_label(const TEXT*);
 static void			return_char(SSHORT);
 static SSHORT		skip_white();
 
-/* Program wide globals */
+// Program wide globals 
 
 IB_FILE *input_file, *trace_file;
 const TEXT*	file_name;
@@ -474,30 +474,30 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_D:
-			/* allocate database block and link to db chain */
+			// allocate database block and link to db chain 
 
 			db = (DBB) MSC_alloc_permanent(DBB_LEN);
 			db->dbb_next = isc_databases;
 
-			/* put this one in line to be next */
+			// put this one in line to be next 
 
 			isc_databases = db;
 
-			/* allocate symbol block */
+			// allocate symbol block 
 
 			symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
 
-			/* make it a database, specifically this one */
+			// make it a database, specifically this one 
 
 			symbol->sym_type	= SYM_database;
 			symbol->sym_object	= (GPRE_CTX) db;
 			symbol->sym_string	= database_name;
 
-			/* database block points to the symbol block */
+			// database block points to the symbol block 
 
 			db->dbb_name = symbol;
 
-			/* give it the file name and try to open it */
+			// give it the file name and try to open it 
 
 			db->dbb_filename = db_filename;
 			if (!MET_database(db, true))
@@ -576,7 +576,7 @@ int main(int argc, char* argv[])
 #endif
 			comment_stop = " ";
 
-			/* Change the patterns for v4.0 */
+			// Change the patterns for v4.0 
 
 			ident_pattern = "isc_%d";
 			utility_name = "isc_utility";
@@ -781,13 +781,13 @@ int main(int argc, char* argv[])
 			sw_know_interp = TRUE;
 		}
 		else if (compare_ASCII7z(default_lc_ctype, "DYNAMIC") == 0) {
-			/* Dynamic means use the interpretation declared at runtime */
+			// Dynamic means use the interpretation declared at runtime 
 
 			sw_interp = ttype_dynamic;
 			sw_know_interp = TRUE;
 		}
 		else if (isc_databases) {
-			/* Name resolution done by MET_load_hash_table */
+			// Name resolution done by MET_load_hash_table 
 
 			isc_databases->dbb_c_lc_ctype = default_lc_ctype;
 		}
@@ -940,7 +940,6 @@ void CPR_assert(const TEXT* file, int line)
 
 void CPR_bugcheck(const TEXT* string)
 {
-
 	ib_fprintf(ib_stderr, "*** INTERNAL BUGCHECK: %s ***\n", string);
 	MET_fini(0);
 	CPR_abort();
@@ -952,9 +951,8 @@ void CPR_bugcheck(const TEXT* string)
 //       Mark end of a text description.
 //  
 
-void CPR_end_text( TXT text)
+void CPR_end_text(gpre_txt* text)
 {
-
 	text->txt_length = (USHORT) (token.tok_position - text->txt_position - 1);
 }
 
@@ -966,7 +964,6 @@ void CPR_end_text( TXT text)
 
 int CPR_error(const TEXT* string)
 {
-
 	ib_fprintf(ib_stderr, "(E) %s:%d: %s\n", file_name, line + 1, string);
 	errors++;
 
@@ -1109,7 +1106,7 @@ TOK CPR_eol_token()
 //       Write text from the scratch trace file into a buffer.
 //  
 
-void CPR_get_text( TEXT* buffer, const txt* text)
+void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 {
 	SLONG start = text->txt_position;
 	int length = text->txt_length;
@@ -1208,9 +1205,9 @@ void CPR_s_error(const TEXT* string)
 //       Make the current position to save description text.
 //  
 
-TXT CPR_start_text()
+gpre_txt* CPR_start_text()
 {
-	TXT text = (TXT) MSC_alloc(TXT_LEN);
+	gpre_txt* text = (gpre_txt*) MSC_alloc(TXT_LEN);
 	text->txt_position = token.tok_position - 1;
 
 	return text;
@@ -1684,7 +1681,7 @@ static bool get_switches(int			argc,
 			}
 			else
 			{
-				/* iterate through the switch table, looking for matches */
+				// iterate through the switch table, looking for matches 
 
 				sw_table_iterator++;
 				sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
@@ -1695,12 +1692,12 @@ static bool get_switches(int			argc,
 				{
 					const TEXT* p = string + 1;
 
-					/* handle orphaned hyphen case */
+					// handle orphaned hyphen case 
 
 					if (!*p--)
 						break;
 
-					/* compare switch to switch name in table */
+					// compare switch to switch name in table 
 
 					while (*p) {
 						if (!*++p) {
@@ -1710,7 +1707,7 @@ static bool get_switches(int			argc,
 							break;
 						}
 					}
-					/* end of input means we got a match.  stop looking */
+					// end of input means we got a match.  stop looking 
 
 					if (!*p)
 						break;
@@ -2083,7 +2080,7 @@ static TOK get_token()
 			next = nextchar();
 			if (sw_language == lang_cobol && sw_ansi && next == '\n') {
 				if (prior_line_position == 73) {
-					/* should be a split literal */
+					// should be a split literal 
 					next = skip_white();
 					if (next != '-' || line_position != 7) {
 						CPR_error("unterminated quoted string");
@@ -2359,7 +2356,7 @@ static SLONG pass1(const TEXT* base_directory)
 					global_first_action = action;
 				}
 
-				/* Allow for more than one action to be generated by a token. */
+				// Allow for more than one action to be generated by a token. 
 
 				do
 				{
@@ -2543,7 +2540,7 @@ static void pass2( SLONG start_position)
 				ib_fputs(comment_start, out_file);
 		}
 
-		/* Next, dump the text of the action to the output stream. */
+		// Next, dump the text of the action to the output stream. 
 
 		for (i = 0; i <= action->act_length; ++i, ++current) {
 			if (c == EOF) {
@@ -2553,7 +2550,7 @@ static void pass2( SLONG start_position)
 			prior = c;
 			c = get_char(input_file);
 			if (!suppress_output) {
-				/* close current comment to avoid nesting comments */
+				// close current comment to avoid nesting comments 
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
 					c == comment_start[0]) {
 					return_char((d = get_char(input_file)));
@@ -2575,7 +2572,7 @@ static void pass2( SLONG start_position)
 					}
 				}
 
-				/* reopen our comment at end of user's comment */
+				// reopen our comment at end of user's comment 
 
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
 					prior == comment_stop[0] && c == comment_stop[1])
@@ -2583,7 +2580,7 @@ static void pass2( SLONG start_position)
 			}
 		}
 
-		/* Unless action was purely a marker, insert a comment terminator. */
+		// Unless action was purely a marker, insert a comment terminator. 
 
 		if (!(action->act_flags & ACT_mark) && !suppress_output) {
 			ib_fputs(comment_stop, out_file);
@@ -2721,7 +2718,7 @@ static SSHORT skip_white()
 
 		c = c & 0xff;
 
-		/* skip Fortran comments */
+		// skip Fortran comments 
 
 #ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran &&
@@ -2732,13 +2729,13 @@ static SSHORT skip_white()
 #endif
 
 #ifdef GPRE_COBOL
-		/* skip sequence numbers when ansi COBOL */
+		// skip sequence numbers when ansi COBOL 
 
 		if (sw_language == lang_cobol && sw_ansi) {
 			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF);
 		}
 
-		/* skip COBOL comments and conditional compilation */
+		// skip COBOL comments and conditional compilation 
 
 		if (sw_language == lang_cobol &&
 			(!sw_ansi && line_position == 1 &&
@@ -2755,7 +2752,7 @@ static SSHORT skip_white()
 		if (class_ & CHR_WHITE)
 			continue;
 
-		/* skip in-line SQL comments */
+		// skip in-line SQL comments 
 
 		if (sw_sql && (c == '-')) {
 			c2 = nextchar();
@@ -2789,7 +2786,7 @@ static SSHORT skip_white()
 		}
 
 #if !defined(sun) && defined(GPRE_FORTRAN)
-		/* skip fortran embedded comments on VMS or hpux or sgi */
+		// skip fortran embedded comments on VMS or hpux or sgi 
 
 		if (c == '!'
 			&& (sw_language == lang_fortran)) {
@@ -2818,7 +2815,7 @@ static SSHORT skip_white()
 			continue;
 		}
 
-		/* skip PASCAL comments - both types */
+		// skip PASCAL comments - both types 
 
 		if (c == '{' && sw_language == lang_pascal) {
 			while ((c = nextchar()) != EOF && c != '}');

@@ -395,7 +395,8 @@ int CLIB_ROUTINE main(int argc, char **argv)
 			if (!str[1])
 				str = "-*NONE*";
 			for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name;
-				 in_sw_tab++) {
+				 in_sw_tab++)
+			{
 				for (p = str + 1; c = *p++;)
 					if (UPPER(c) != *q++)
 						break;

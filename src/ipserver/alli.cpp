@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interprocess server interface
- *	MODULE:		alli.c
+ *	MODULE:		alli.cpp
  *	DESCRIPTION:	Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
@@ -66,7 +66,7 @@ if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
 
 */
 
-/* Compute block length */
+// Compute block length 
 
 	const USHORT tail = PIPE_block_sizes[type].typ_tail_length;
 	USHORT size = PIPE_block_sizes[type].typ_root_length + count * tail;

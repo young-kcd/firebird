@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.16 2003-10-28 13:39:32 brodsom Exp $
+//	$Id: msc.cpp,v 1.17 2003-11-28 06:48:12 robocop Exp $
 //
 //  
 //  
@@ -101,7 +101,7 @@ UCHAR* MSC_alloc(int size)
 		if (!next)
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
-		/* For V4.0 we don't care about gpre specific memory leaks */
+		// For V4.0 we don't care about gpre specific memory leaks 
 		gds_alloc_flag_unfreed(next);
 #endif
 		next->spc_next = space;
@@ -112,7 +112,7 @@ UCHAR* MSC_alloc(int size)
 	space->spc_remaining -= size;
 	UCHAR* const blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
 	UCHAR* p = blk;
-	UCHAR* const end = p + size;
+	const UCHAR* const end = p + size;
 
 	while (p < end)
 		*p++ = 0;
@@ -136,7 +136,7 @@ UCHAR* MSC_alloc_permanent(int size)
 		if (!next)
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
-		/* For V4.0 we don't care about gpre specific memory leaks */
+		// For V4.0 we don't care about gpre specific memory leaks 
 		gds_alloc_flag_unfreed(next);
 #endif
 		next->spc_next = permanent_space;
@@ -148,7 +148,7 @@ UCHAR* MSC_alloc_permanent(int size)
 	UCHAR* const blk = ((UCHAR*) permanent_space + sizeof(spc) +
 		 permanent_space->spc_remaining);
 	UCHAR* p = blk;
-	UCHAR* const end = p + size;
+	const UCHAR* const end = p + size;
 
 	while (p < end)
 		*p++ = 0;

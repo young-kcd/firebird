@@ -94,8 +94,8 @@ ISC_STATUS jrd8_put_slice(ISC_STATUS *, struct att **,
 										struct jrd_tra **, SLONG *, USHORT,
 										UCHAR *, USHORT, UCHAR *, SLONG,
 										UCHAR *);
-ISC_STATUS jrd8_que_events(ISC_STATUS *, struct att **, SLONG *,
-										 SSHORT, UCHAR *, FPTR_VOID, void *);
+ISC_STATUS jrd8_que_events(ISC_STATUS*, struct att**, SLONG*,
+										 SSHORT, const UCHAR*, FPTR_VOID, void*);
 ISC_STATUS jrd8_receive(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
 									  SCHAR *, SSHORT);
 ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS*, struct att**,
@@ -117,8 +117,8 @@ ISC_STATUS jrd8_service_query(ISC_STATUS*, struct svc**, ULONG*,
 											USHORT, const SCHAR*,
 											USHORT, const SCHAR*,
 											USHORT, SCHAR*);
-ISC_STATUS jrd8_service_start(ISC_STATUS *, struct svc **, ULONG *,
-											USHORT, SCHAR *);
+ISC_STATUS jrd8_service_start(ISC_STATUS*, struct svc**, ULONG*,
+											USHORT, const SCHAR*);
 ISC_STATUS jrd8_start_and_send(ISC_STATUS *, struct jrd_req **,
 											 struct jrd_tra **, USHORT, USHORT,
 											 SCHAR *, SSHORT);

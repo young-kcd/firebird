@@ -66,7 +66,7 @@ static inline bool could_be_date(const dsc& d)
 }
 
 
-/* One of d1, d2 is time, the other is date */
+// One of d1, d2 is time, the other is date 
 static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 {
 	return ((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
@@ -166,7 +166,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 	case CONSTANT_TIME:
 	case CONSTANT_TIMESTAMP:
 		{
-			/* Setup the constant's descriptor */
+			// Setup the constant's descriptor 
 
 			switch (numeric_flag) {
 			case CONSTANT_DATE:
@@ -184,7 +184,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			node->nod_desc.dsc_length = type_lengths[node->nod_desc.dsc_dtype];
 			node->nod_desc.dsc_address = (UCHAR *) node->nod_arg;
 
-			/* Set up a descriptor to point to the string */
+			// Set up a descriptor to point to the string 
 
 			dsc tmp;
 			tmp.dsc_dtype = dtype_text;
@@ -194,7 +194,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			tmp.dsc_length = static_cast<USHORT>(constant->str_length);
 			tmp.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 
-			/* Now invoke the string_to_date/time/timestamp routines */
+			// Now invoke the string_to_date/time/timestamp routines 
 
 			CVT_move(&tmp, &node->nod_desc, ERRD_post);
 			break;
@@ -211,7 +211,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			static_cast<USHORT>(constant->str_length);
 		node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 		node->nod_desc.dsc_ttype = ttype_dynamic;
-		/* carry a pointer to the constant to resolve character set in pass1 */
+		// carry a pointer to the constant to resolve character set in pass1 
 		node->nod_arg[0] = (dsql_nod*) constant;
 		break;
 	}
@@ -247,7 +247,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
 	node->nod_desc.dsc_address = reinterpret_cast<UCHAR*>(constant->str_data);
 	node->nod_desc.dsc_ttype = character_set;
-/* carry a pointer to the constant to resolve character set in pass1 */
+// carry a pointer to the constant to resolve character set in pass1 
 	node->nod_arg[0] = (dsql_nod*) constant;
 
 	return node;
@@ -294,7 +294,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
-/* If we already know the datatype, don't worry about anything */
+// If we already know the datatype, don't worry about anything 
 
 	if (node->nod_desc.dsc_dtype) {
 		*desc = node->nod_desc;
@@ -422,7 +422,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
 			dsql_nod* for_node = node->nod_arg[e_substr_length];
 			fb_assert (for_node->nod_desc.dsc_dtype == dtype_long);
-			/* Migrate the charset from the blob to the string. */
+			// Migrate the charset from the blob to the string. 
 			desc->dsc_ttype = desc1.dsc_scale;
 			const SLONG len = *(SLONG *) for_node->nod_desc.dsc_address;
 			/* For now, our substring() doesn't handle MBCS blobs,
@@ -609,7 +609,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		dtype1 = desc1.dsc_dtype;
 		dtype2 = desc2.dsc_dtype;
 
-		/* Arrays and blobs can never partipate in addition/subtraction */
+		// Arrays and blobs can never partipate in addition/subtraction 
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
@@ -635,7 +635,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			dtype = dtype_double;
 		}
 		else {
-			/* mixed numeric and non-numeric: */
+			// mixed numeric and non-numeric: 
 
 			fb_assert(DTYPE_IS_DATE(dtype1) || DTYPE_IS_DATE(dtype2));
 
@@ -753,7 +753,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			break;
 
 		default:
-			/* a type which cannot participate in an add or subtract */
+			// a type which cannot participate in an add or subtract 
 			ERRD_post(isc_expression_eval_err, 0);
 		}
 		return;
@@ -887,7 +887,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_dbkey:
-		/* Fix for bug 10072 check that the target is a relation */
+		// Fix for bug 10072 check that the target is a relation 
 		context = (dsql_ctx*) node->nod_arg[0]->nod_arg[0];
 		relation = context->ctx_relation;
 		if (relation != 0) {
@@ -1058,9 +1058,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	default:
-		fb_assert(false);			/* unexpected dsql_nod type */
+		fb_assert(false);			// unexpected dsql_nod type 
 
-	case nod_dom_value:		/* computed value not used */
+	case nod_dom_value:		// computed value not used 
 		/* By the time we get here, any nod_dom_value node should have had
 		   * its descriptor set to the type of the domain being created, or
 		   * to the type of the existing domain to which a CHECK constraint
@@ -1563,7 +1563,7 @@ par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	parameter->par_rel_name = NULL;
 	parameter->par_owner_name = NULL;
 
-/* If the parameter is used declared, set SQLDA index */
+// If the parameter is used declared, set SQLDA index 
 	if (sqlda_flag) {
 		if (sqlda_index && !Config::getOldParameterOrdering()) {
 			parameter->par_index = sqlda_index;
@@ -1573,7 +1573,7 @@ par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		}
 	}
 		
-/* If a null handing has been requested, set up a null flag */
+// If a null handing has been requested, set up a null flag 
 
 	if (null_flag) {
 		par* null = MAKE_parameter(message, false, false, 0);

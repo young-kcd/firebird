@@ -158,7 +158,7 @@ static void	release_transaction(RTR);
 static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
-static void	server_ast(RVNT, USHORT, UCHAR *);
+static void	server_ast(RVNT, USHORT, UCHAR*);
 static void		success(ISC_STATUS *);
 #ifdef MULTI_THREAD
 static int THREAD_ROUTINE thread(void *);
@@ -1033,7 +1033,7 @@ static USHORT check_statement_type( RSR statement)
 
 	THREAD_EXIT;
 	if (!GDS_DSQL_SQL_INFO(local_status, &statement->rsr_handle,
-						   sizeof(sql_info), (SCHAR *) sql_info, // const_cast
+						   sizeof(sql_info), (const SCHAR*) sql_info,
 						   sizeof(buffer), reinterpret_cast<char*>(buffer)))
 	{
 		for (info = buffer; (*info != isc_info_end) && !done;)
@@ -2004,7 +2004,7 @@ ISC_STATUS port::fetch(P_SQLDATA * sqldata, PACKET* send)
 			s = GDS_DSQL_FETCH(status_vector,
 							   &statement->rsr_handle,
 							   sqldata->p_sqldata_blr.cstr_length,
-							   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
+							   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 							   sqldata->p_sqldata_message_number,
 							   msg_length,
 							   reinterpret_cast<char*>(message->msg_buffer));
@@ -2600,7 +2600,7 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 						  reinterpret_cast<
 						  const char*>(stuff->p_info_recv_items.cstr_address),
 						  stuff->p_info_buffer_length,
-						  reinterpret_cast < char *>(buffer));
+						  reinterpret_cast<char*>(buffer));
 		THREAD_ENTER;
 		break;
 
@@ -2682,10 +2682,9 @@ ISC_STATUS port::insert(P_SQLDATA * sqldata, PACKET* send)
 	GDS_DSQL_INSERT(status_vector,
 					&statement->rsr_handle,
 					sqldata->p_sqldata_blr.cstr_length,
-					reinterpret_cast <
-					char *>(sqldata->p_sqldata_blr.cstr_address),
+					reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 					sqldata->p_sqldata_message_number, msg_length,
-					reinterpret_cast < char *>(msg));
+					reinterpret_cast<const char*>(msg));
 	THREAD_ENTER;
 
 	return this->send_response(send, 0, 0, status_vector);
@@ -2908,15 +2907,13 @@ ISC_STATUS port::prepare_statement(P_SQLST * prepare, PACKET* send)
 					 &handle,
 					 &statement->rsr_handle,
 					 prepare->p_sqlst_SQL_str.cstr_length,
-					 reinterpret_cast <
-					 char *>(prepare->p_sqlst_SQL_str.cstr_address),
+					 reinterpret_cast<const char*>(prepare->p_sqlst_SQL_str.cstr_address),
 					 (USHORT) ((prepare->p_sqlst_SQL_dialect * 10) +
 							   parser_version),
 					 prepare->p_sqlst_items.cstr_length,
-					 reinterpret_cast <
-					 char *>(prepare->p_sqlst_items.cstr_address),
+					 reinterpret_cast<const char*>(prepare->p_sqlst_items.cstr_address),
 					 prepare->p_sqlst_buffer_length,
-					 reinterpret_cast < char *>(buffer));
+					 reinterpret_cast<char*>(buffer));
 	THREAD_ENTER;
 
 	if (status_vector[1]) {
@@ -3385,7 +3382,7 @@ ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 	THREAD_EXIT;
 	isc_que_events(status_vector, &rdb->rdb_handle, &event->rvnt_id,
 				   stuff->p_event_items.cstr_length,
-				   reinterpret_cast<char *>(stuff->p_event_items.cstr_address),
+				   reinterpret_cast<const char*>(stuff->p_event_items.cstr_address),
 				   reinterpret_cast<void (*)()>(server_ast),
 				   event);
 	THREAD_ENTER;
@@ -4080,7 +4077,6 @@ ISC_STATUS port::send_msg(P_DATA * data, PACKET* send)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	RRQ request;
-	REM_MSG message;
 	FMT format;
 	USHORT number;
 
@@ -4092,7 +4088,7 @@ ISC_STATUS port::send_msg(P_DATA * data, PACKET* send)
 
 	number = data->p_data_message_number;
 	request = REMOTE_find_request(request, data->p_data_incarnation);
-	message = request->rrq_rpt[number].rrq_message;
+	REM_MSG message = request->rrq_rpt[number].rrq_message;
 	format = request->rrq_rpt[number].rrq_format;
 
 	THREAD_EXIT;
@@ -4429,7 +4425,7 @@ ISC_STATUS port::set_cursor(P_SQLCUR * sqlcur, PACKET* send)
 	THREAD_EXIT;
 	GDS_DSQL_SET_CURSOR(status_vector,
 						&statement->rsr_handle,
-						reinterpret_cast<char*>(sqlcur->p_sqlcur_cursor_name.cstr_address),
+						reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address),
 						sqlcur->p_sqlcur_type);
 	THREAD_ENTER;
 
@@ -4532,7 +4528,6 @@ ISC_STATUS port::start_and_send(P_OP	operation,
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	RRQ request;
-	REM_MSG message;
 	FMT format;
 	RTR transaction;
 	USHORT number;
@@ -4551,7 +4546,7 @@ ISC_STATUS port::start_and_send(P_OP	operation,
 
 	request = REMOTE_find_request(request, data->p_data_incarnation);
 	number = data->p_data_message_number;
-	message = request->rrq_rpt[number].rrq_message;
+	REM_MSG message = request->rrq_rpt[number].rrq_message;
 	format = request->rrq_rpt[number].rrq_format;
 	REMOTE_reset_request(request, message);
 

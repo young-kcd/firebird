@@ -19,11 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.3 2003-11-16 12:55:56 brodsom Exp $
+ * $Id: ibmgr.h,v 1.4 2003-11-28 06:48:31 robocop Exp $
  */
 
-#ifndef _UTILITIES_IBMGR_H_
-#define _UTILITIES_IBMGR_H_
+#ifndef UTILITIES_IBMGR_H
+#define UTILITIES_IBMGR_H
 
 #define OUTFILE			ib_stderr
 
@@ -135,4 +135,5 @@ typedef struct ibmgr_data_t {
 #define MSG_FLNMTOOLONG	36	/* FIle name too long */
  
 
-#endif /* _UTILITIES_IBMGR_H_ */
+#endif /* UTILITIES_IBMGR_H */
+

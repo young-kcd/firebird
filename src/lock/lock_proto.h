@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Lock Manager
  *	MODULE:		lock_proto.h
- *	DESCRIPTION:	Prototype header file for lock.c
+ *	DESCRIPTION:	Prototype header file for lock.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _LOCK_LOCK_PROTO_H_
-#define _LOCK_LOCK_PROTO_H_
+#ifndef LOCK_LOCK_PROTO_H
+#define LOCK_LOCK_PROTO_H
 
 int	LOCK_convert(SLONG, UCHAR, SSHORT, int (*)(void *), void *,
 						ISC_STATUS *);
@@ -43,4 +43,5 @@ SLONG	LOCK_write_data(SLONG, SLONG);
 void LOCK_ast_inhibit();
 void LOCK_ast_enable();
 
-#endif /* _LOCK_LOCK_PROTO_H_ */
+#endif /* LOCK_LOCK_PROTO_H */
+

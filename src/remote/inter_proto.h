@@ -54,13 +54,17 @@ ISC_STATUS	REM_drop_database(ISC_STATUS *, struct rdb **);
 ISC_STATUS	REM_allocate_statement(ISC_STATUS *, struct rdb **, struct rsr **);
 ISC_STATUS	REM_execute(ISC_STATUS *, struct rtr **, struct rsr **, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
 ISC_STATUS	REM_execute2(ISC_STATUS *, struct rtr **, struct rsr **, USHORT, UCHAR *, USHORT, USHORT, UCHAR *, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
-ISC_STATUS	REM_execute_immediate(ISC_STATUS *, struct rdb **, struct rtr **, USHORT, TEXT *, USHORT, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
-ISC_STATUS	REM_execute_immediate2(ISC_STATUS *, struct rdb **, struct rtr **, USHORT, TEXT *, USHORT, USHORT, UCHAR *, USHORT, USHORT, UCHAR *, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
-ISC_STATUS	REM_fetch(ISC_STATUS *, struct rsr **, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
+ISC_STATUS	REM_execute_immediate(ISC_STATUS*, struct rdb**, struct rtr**,
+	USHORT, const TEXT*, USHORT, USHORT, const UCHAR*, USHORT, USHORT, UCHAR*);
+ISC_STATUS	REM_execute_immediate2(ISC_STATUS*, struct rdb**, struct rtr**,
+	USHORT, const TEXT*, USHORT, USHORT, const UCHAR*, USHORT, USHORT, UCHAR*,
+	USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
+ISC_STATUS	REM_fetch(ISC_STATUS*, struct rsr**, USHORT, const UCHAR*, USHORT,
+	USHORT, UCHAR*);
 ISC_STATUS	REM_free_statement(ISC_STATUS *, struct rsr **, USHORT);
 ISC_STATUS	REM_insert(ISC_STATUS *, struct rsr **, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
 ISC_STATUS	REM_prepare(ISC_STATUS *, struct rtr **, struct rsr **, USHORT, TEXT *, USHORT, USHORT, SCHAR *, USHORT, SCHAR *);
-ISC_STATUS	REM_set_cursor_name(ISC_STATUS *, struct rsr **, TEXT *, USHORT);
+ISC_STATUS	REM_set_cursor_name(ISC_STATUS*, struct rsr**, const TEXT*, USHORT);
 ISC_STATUS	REM_sql_info(ISC_STATUS*, struct rsr**, SSHORT, const SCHAR*,
 	SSHORT, SCHAR*);
 ISC_STATUS	REM_get_segment(ISC_STATUS *, struct rbl **, USHORT *, USHORT, UCHAR *);
@@ -70,7 +74,7 @@ ISC_STATUS	REM_open_blob2(ISC_STATUS*, struct rdb**, struct rtr**,
 ISC_STATUS	REM_prepare_transaction(ISC_STATUS *, struct rtr **, USHORT, UCHAR *);
 ISC_STATUS	REM_put_segment(ISC_STATUS*, struct rbl**, USHORT, const UCHAR*);
 ISC_STATUS	REM_put_slice(ISC_STATUS *, struct rdb **, struct rtr **, BID, USHORT, UCHAR *, USHORT, UCHAR *, SLONG, UCHAR *);
-ISC_STATUS	REM_que_events(ISC_STATUS *, struct rdb **, SLONG *, SSHORT, UCHAR *, void (*)(void*, USHORT, UCHAR*), void *);
+ISC_STATUS	REM_que_events(ISC_STATUS*, struct rdb**, SLONG*, SSHORT, const UCHAR*, void (*)(void*, USHORT, UCHAR*), void*);
 ISC_STATUS	REM_query_service(ISC_STATUS *, struct rdb **, USHORT, SCHAR *, USHORT, SCHAR *, USHORT, SCHAR *);
 ISC_STATUS	REM_receive(ISC_STATUS *, struct rrq **, USHORT, USHORT, UCHAR *, SSHORT);
 ISC_STATUS	REM_reconnect_transaction(ISC_STATUS*, struct rdb**, struct rtr**,
@@ -92,9 +96,9 @@ ISC_STATUS	REM_unwind_request(ISC_STATUS *, struct rrq **, USHORT);
 ISC_STATUS	REM_rollback_retaining(ISC_STATUS *, RTR *);
 ISC_STATUS	REM_service_attach(ISC_STATUS *, USHORT, TEXT *, RDB *, USHORT, SCHAR *);
 ISC_STATUS	REM_service_detach(ISC_STATUS *, RDB *);
-ISC_STATUS	REM_service_query(ISC_STATUS *, RDB *, ULONG *, USHORT, const SCHAR *,
-									  USHORT, const SCHAR *, USHORT, SCHAR *);
-ISC_STATUS	REM_service_start(ISC_STATUS *, RDB *, ULONG *, USHORT, SCHAR *);
+ISC_STATUS	REM_service_query(ISC_STATUS*, RDB*, ULONG*, USHORT, const SCHAR*,
+									  USHORT, const SCHAR*, USHORT, SCHAR*);
+ISC_STATUS	REM_service_start(ISC_STATUS*, RDB*, ULONG*, USHORT, const SCHAR*);
 
 
 #ifdef __cplusplus

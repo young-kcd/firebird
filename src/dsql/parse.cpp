@@ -342,12 +342,6 @@
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
  */
 
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-#include <windows.h>
-#include <stdio.h>
-/*#include <wincon.h>*/
-#endif
-
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -412,28 +406,28 @@ dsql_nod* DSQL_parse;
 //static void	yyerror(const TEXT*); redeclaration.
 
 #define YYPARSE_PARAM_TYPE
-#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous
+#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous
 
 #include "../dsql/chars.h"
 
 const int MAX_TOKEN_LEN = 256;
 
-static TEXT	*lex_position (void);
+static const TEXT* lex_position();
 #ifdef NOT_USED_OR_REPLACED
-static bool		long_int(DSQL_NOD, SLONG *);
+static bool		long_int(dsql_nod*, SLONG*);
 #endif
-static dsql_fld*	make_field (DSQL_NOD);
-static dsql_fil*	make_file (void);
-static DSQL_NOD	make_list (DSQL_NOD);
-static DSQL_NOD	make_node (NOD_TYPE, int, ...);
-static DSQL_NOD	make_parameter (void);
-static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
+static dsql_fld*	make_field (dsql_nod*);
+static dsql_fil*	make_file();
+static DSQL_NOD	make_list (dsql_nod*);
+static dsql_nod*	make_node (NOD_TYPE, int, ...);
+static dsql_nod*	make_parameter (void);
+static dsql_nod*	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
-static bool	short_int(DSQL_NOD, SLONG *, SSHORT);
+static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
-static void	stack_nodes (DSQL_NOD, dsql_lls**);
-inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN*);
+static void	stack_nodes (dsql_nod*, dsql_lls**);
+inline static int	yylex (USHORT, USHORT, USHORT, bool*);
 static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
 
@@ -452,15 +446,19 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 struct LexerState {
 	/* This is, in fact, parser state. Not used in lexer itself */
 	dsql_fld* g_field;
-	dsql_fil*	g_file;
-	DSQL_NOD g_field_name;
+	dsql_fil* g_file;
+	dsql_nod* g_field_name;
 	SSHORT log_defined, cache_defined;
 	int dsql_debug;
 	
 	/* Actual lexer state begins from here */
-	TEXT *beginning;
-	TEXT	*ptr, *end, *last_token, *line_start;
-	TEXT	*last_token_bk, *line_start_bk;
+	const TEXT* beginning;
+	const TEXT* ptr;
+	const TEXT* end;
+	const TEXT* last_token;
+	const TEXT* line_start;
+	const TEXT* last_token_bk;
+	const TEXT* line_start_bk;
 	SSHORT	lines, att_charset;
 	SSHORT	lines_bk;
 	int  prev_keyword, prev_prev_keyword;
@@ -475,7 +473,7 @@ struct LexerState {
 		USHORT	client_dialect,
 		USHORT	db_dialect,
 		USHORT	parser_version,
-		BOOLEAN* stmt_ambiguous);
+		bool* stmt_ambiguous);
 };
 
 /* Get ready for thread-safety. Move this to BISON object pointer when we 
@@ -1000,109 +998,109 @@ static const short yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined. */
 static const short yyrline[] =
 {
-       0,   533,   535,   539,   540,   541,   542,   543,   544,   545,
-     546,   547,   548,   549,   550,   551,   552,   553,   554,   555,
-     556,   557,   565,   569,   573,   577,   581,   586,   587,   591,
-     593,   595,   599,   600,   604,   608,   610,   612,   614,   616,
-     620,   622,   626,   628,   632,   639,   644,   649,   654,   659,
-     664,   669,   675,   679,   680,   682,   684,   688,   690,   692,
-     694,   698,   699,   706,   708,   710,   714,   715,   719,   723,
-     724,   728,   730,   737,   741,   743,   748,   754,   755,   757,
-     763,   765,   766,   770,   771,   777,   780,   786,   787,   790,
-     793,   797,   801,   804,   809,   818,   822,   825,   828,   830,
-     832,   834,   836,   838,   840,   842,   844,   849,   853,   855,
-     857,   867,   871,   873,   884,   886,   890,   892,   893,   899,
-     905,   907,   909,   913,   915,   919,   921,   925,   927,   930,
-     931,   938,   956,   958,   962,   964,   968,   970,   973,   974,
-     977,   982,   983,   986,   990,   999,  1007,  1016,  1021,  1022,
-    1025,  1031,  1033,  1036,  1037,  1041,  1043,  1045,  1047,  1049,
-    1053,  1055,  1058,  1059,  1063,  1065,  1066,  1067,  1069,  1073,
-    1075,  1077,  1079,  1083,  1088,  1095,  1101,  1108,  1115,  1148,
-    1149,  1152,  1158,  1162,  1163,  1166,  1174,  1178,  1179,  1182,
-    1183,  1186,  1188,  1192,  1193,  1194,  1197,  1198,  1199,  1205,
-    1210,  1215,  1217,  1219,  1223,  1224,  1228,  1229,  1236,  1240,
-    1244,  1253,  1259,  1260,  1263,  1265,  1270,  1272,  1277,  1283,
-    1289,  1293,  1299,  1301,  1305,  1310,  1311,  1312,  1314,  1316,
-    1320,  1322,  1325,  1326,  1330,  1335,  1337,  1342,  1343,  1345,
-    1353,  1357,  1359,  1362,  1363,  1364,  1365,  1368,  1372,  1376,
-    1383,  1390,  1395,  1401,  1404,  1406,  1408,  1410,  1414,  1417,
-    1421,  1424,  1427,  1430,  1439,  1450,  1460,  1470,  1480,  1482,
-    1486,  1488,  1492,  1493,  1497,  1502,  1504,  1508,  1509,  1513,
-    1517,  1518,  1521,  1526,  1528,  1532,  1534,  1538,  1543,  1544,
-    1547,  1551,  1553,  1555,  1559,  1560,  1564,  1565,  1566,  1567,
-    1568,  1569,  1570,  1571,  1572,  1573,  1574,  1575,  1576,  1577,
-    1578,  1579,  1581,  1583,  1584,  1587,  1589,  1593,  1597,  1602,
-    1606,  1606,  1608,  1613,  1617,  1621,  1623,  1627,  1631,  1637,
-    1642,  1647,  1649,  1651,  1655,  1657,  1659,  1663,  1664,  1665,
-    1667,  1671,  1675,  1677,  1681,  1683,  1685,  1690,  1692,  1696,
-    1697,  1701,  1706,  1707,  1711,  1713,  1715,  1717,  1721,  1722,
-    1723,  1726,  1730,  1734,  1738,  1780,  1788,  1795,  1815,  1819,
-    1821,  1823,  1827,  1838,  1842,  1843,  1847,  1848,  1856,  1859,
-    1865,  1869,  1875,  1879,  1885,  1889,  1897,  1908,  1919,  1921,
-    1923,  1927,  1931,  1933,  1937,  1939,  1941,  1943,  1945,  1947,
-    1949,  1951,  1953,  1955,  1957,  1959,  1961,  1963,  1965,  1969,
-    1971,  1975,  1981,  1985,  1988,  1995,  1997,  1999,  2002,  2005,
-    2010,  2014,  2020,  2021,  2025,  2034,  2038,  2040,  2042,  2044,
-    2046,  2050,  2051,  2055,  2057,  2059,  2061,  2067,  2070,  2072,
-    2076,  2084,  2085,  2086,  2087,  2088,  2089,  2090,  2091,  2092,
-    2093,  2094,  2095,  2096,  2097,  2098,  2099,  2100,  2101,  2102,
-    2103,  2104,  2105,  2106,  2107,  2108,  2109,  2110,  2113,  2115,
-    2119,  2121,  2126,  2132,  2134,  2136,  2140,  2142,  2149,  2155,
-    2156,  2160,  2168,  2170,  2172,  2174,  2176,  2178,  2180,  2184,
-    2185,  2192,  2202,  2203,  2207,  2208,  2214,  2218,  2220,  2222,
-    2224,  2226,  2228,  2230,  2232,  2234,  2236,  2238,  2240,  2247,
-    2248,  2251,  2252,  2255,  2260,  2267,  2268,  2272,  2281,  2287,
-    2288,  2291,  2292,  2293,  2294,  2311,  2316,  2321,  2340,  2357,
-    2364,  2365,  2372,  2376,  2382,  2388,  2396,  2400,  2406,  2410,
-    2414,  2420,  2424,  2431,  2437,  2443,  2451,  2456,  2461,  2468,
-    2469,  2470,  2473,  2474,  2477,  2478,  2479,  2486,  2490,  2501,
-    2507,  2561,  2623,  2624,  2631,  2644,  2649,  2654,  2661,  2663,
-    2670,  2671,  2672,  2676,  2681,  2686,  2697,  2698,  2699,  2702,
-    2706,  2710,  2712,  2716,  2720,  2721,  2724,  2728,  2732,  2733,
-    2736,  2738,  2742,  2743,  2747,  2751,  2752,  2756,  2757,  2761,
-    2762,  2763,  2764,  2767,  2769,  2773,  2775,  2779,  2781,  2784,
-    2786,  2788,  2792,  2794,  2796,  2800,  2802,  2804,  2808,  2812,
-    2814,  2816,  2820,  2822,  2826,  2827,  2831,  2835,  2837,  2841,
-    2842,  2847,  2855,  2859,  2861,  2863,  2867,  2869,  2873,  2874,
-    2878,  2882,  2884,  2886,  2890,  2892,  2896,  2898,  2902,  2905,
-    2913,  2917,  2919,  2923,  2925,  2929,  2931,  2938,  2950,  2964,
-    2968,  2972,  2976,  2980,  2982,  2984,  2986,  2990,  2992,  2994,
-    2998,  3000,  3002,  3006,  3008,  3012,  3014,  3018,  3019,  3023,
-    3024,  3028,  3029,  3034,  3038,  3039,  3043,  3044,  3045,  3049,
-    3054,  3055,  3059,  3061,  3065,  3066,  3070,  3072,  3076,  3079,
-    3084,  3086,  3090,  3091,  3096,  3101,  3103,  3105,  3107,  3109,
-    3111,  3113,  3115,  3122,  3124,  3128,  3129,  3135,  3138,  3140,
-    3144,  3146,  3153,  3155,  3159,  3163,  3165,  3167,  3173,  3175,
-    3179,  3180,  3184,  3186,  3189,  3190,  3194,  3196,  3198,  3202,
-    3203,  3207,  3209,  3216,  3219,  3226,  3227,  3230,  3234,  3238,
-    3245,  3246,  3249,  3254,  3259,  3260,  3264,  3268,  3269,  3272,
-    3273,  3280,  3282,  3286,  3288,  3290,  3293,  3294,  3297,  3301,
-    3303,  3306,  3308,  3314,  3315,  3319,  3323,  3324,  3329,  3330,
-    3334,  3338,  3339,  3344,  3345,  3348,  3353,  3358,  3361,  3368,
-    3369,  3371,  3372,  3374,  3378,  3379,  3381,  3383,  3387,  3389,
-    3393,  3394,  3396,  3400,  3401,  3402,  3403,  3404,  3405,  3406,
-    3407,  3408,  3409,  3414,  3416,  3418,  3420,  3422,  3424,  3426,
-    3428,  3435,  3437,  3439,  3441,  3443,  3445,  3447,  3449,  3451,
-    3453,  3455,  3457,  3459,  3461,  3463,  3465,  3469,  3470,  3476,
-    3478,  3483,  3485,  3487,  3489,  3494,  3496,  3500,  3502,  3506,
-    3508,  3510,  3512,  3516,  3520,  3524,  3526,  3530,  3535,  3540,
-    3547,  3552,  3557,  3566,  3567,  3571,  3575,  3589,  3607,  3608,
-    3609,  3610,  3611,  3612,  3613,  3614,  3615,  3616,  3618,  3620,
-    3627,  3629,  3631,  3638,  3645,  3652,  3654,  3656,  3657,  3658,
-    3659,  3661,  3663,  3667,  3671,  3687,  3703,  3707,  3711,  3712,
-    3716,  3717,  3721,  3723,  3725,  3727,  3729,  3733,  3734,  3736,
-    3752,  3768,  3772,  3776,  3778,  3782,  3786,  3789,  3792,  3795,
-    3798,  3803,  3805,  3810,  3811,  3815,  3822,  3829,  3836,  3843,
-    3844,  3848,  3854,  3855,  3856,  3857,  3860,  3862,  3864,  3867,
-    3874,  3883,  3890,  3899,  3901,  3903,  3905,  3911,  3920,  3923,
-    3927,  3928,  3932,  3941,  3943,  3947,  3949,  3953,  3959,  3960,
-    3963,  3967,  3971,  3972,  3975,  3977,  3981,  3983,  3987,  3989,
-    3993,  3995,  3999,  4002,  4005,  4008,  4010,  4012,  4014,  4016,
-    4018,  4020,  4022,  4026,  4027,  4030,  4038,  4041,  4044,  4047,
-    4050,  4053,  4056,  4059,  4062,  4065,  4068,  4071,  4074,  4077,
-    4080,  4083,  4086,  4089,  4092,  4095,  4098,  4101,  4104,  4107,
-    4112,  4113,  4118,  4120,  4121,  4122,  4123,  4124,  4125,  4126,
-    4127,  4128,  4129,  4130,  4131,  4132,  4134,  4135
+       0,   531,   533,   537,   538,   539,   540,   541,   542,   543,
+     544,   545,   546,   547,   548,   549,   550,   551,   552,   553,
+     554,   555,   563,   567,   571,   575,   579,   584,   585,   589,
+     591,   593,   597,   598,   602,   606,   608,   610,   612,   614,
+     618,   620,   624,   626,   630,   637,   642,   647,   652,   657,
+     662,   667,   673,   677,   678,   680,   682,   686,   688,   690,
+     692,   696,   697,   704,   706,   708,   712,   713,   717,   721,
+     722,   726,   728,   735,   739,   741,   746,   752,   753,   755,
+     761,   763,   764,   768,   769,   775,   778,   784,   785,   788,
+     791,   795,   799,   802,   807,   816,   820,   823,   826,   828,
+     830,   832,   834,   836,   838,   840,   842,   847,   851,   853,
+     855,   865,   869,   871,   882,   884,   888,   890,   891,   897,
+     903,   905,   907,   911,   913,   917,   919,   923,   925,   928,
+     929,   936,   954,   956,   960,   962,   966,   968,   971,   972,
+     975,   980,   981,   984,   988,   997,  1005,  1014,  1019,  1020,
+    1023,  1029,  1031,  1034,  1035,  1039,  1041,  1043,  1045,  1047,
+    1051,  1053,  1056,  1057,  1061,  1063,  1064,  1065,  1067,  1071,
+    1073,  1075,  1077,  1081,  1086,  1093,  1099,  1106,  1113,  1146,
+    1147,  1150,  1156,  1160,  1161,  1164,  1172,  1176,  1177,  1180,
+    1181,  1184,  1186,  1190,  1191,  1192,  1195,  1196,  1197,  1203,
+    1208,  1213,  1215,  1217,  1221,  1222,  1226,  1227,  1234,  1238,
+    1242,  1251,  1257,  1258,  1261,  1263,  1268,  1270,  1275,  1281,
+    1287,  1291,  1297,  1299,  1303,  1308,  1309,  1310,  1312,  1314,
+    1318,  1320,  1323,  1324,  1328,  1333,  1335,  1340,  1341,  1343,
+    1351,  1355,  1357,  1360,  1361,  1362,  1363,  1366,  1370,  1374,
+    1381,  1388,  1393,  1399,  1402,  1404,  1406,  1408,  1412,  1415,
+    1419,  1422,  1425,  1428,  1437,  1448,  1458,  1468,  1478,  1480,
+    1484,  1486,  1490,  1491,  1495,  1500,  1502,  1506,  1507,  1511,
+    1515,  1516,  1519,  1524,  1526,  1530,  1532,  1536,  1541,  1542,
+    1545,  1549,  1551,  1553,  1557,  1558,  1562,  1563,  1564,  1565,
+    1566,  1567,  1568,  1569,  1570,  1571,  1572,  1573,  1574,  1575,
+    1576,  1577,  1579,  1581,  1582,  1585,  1587,  1591,  1595,  1600,
+    1604,  1604,  1606,  1611,  1615,  1619,  1621,  1625,  1629,  1635,
+    1640,  1645,  1647,  1649,  1653,  1655,  1657,  1661,  1662,  1663,
+    1665,  1669,  1673,  1675,  1679,  1681,  1683,  1688,  1690,  1694,
+    1695,  1699,  1704,  1705,  1709,  1711,  1713,  1715,  1719,  1720,
+    1721,  1724,  1728,  1732,  1736,  1778,  1786,  1793,  1813,  1817,
+    1819,  1821,  1825,  1836,  1840,  1841,  1845,  1846,  1854,  1857,
+    1863,  1867,  1873,  1877,  1883,  1887,  1895,  1906,  1917,  1919,
+    1921,  1925,  1929,  1931,  1935,  1937,  1939,  1941,  1943,  1945,
+    1947,  1949,  1951,  1953,  1955,  1957,  1959,  1961,  1963,  1967,
+    1969,  1973,  1979,  1983,  1986,  1993,  1995,  1997,  2000,  2003,
+    2008,  2012,  2018,  2019,  2023,  2032,  2036,  2038,  2040,  2042,
+    2044,  2048,  2049,  2053,  2055,  2057,  2059,  2065,  2068,  2070,
+    2074,  2082,  2083,  2084,  2085,  2086,  2087,  2088,  2089,  2090,
+    2091,  2092,  2093,  2094,  2095,  2096,  2097,  2098,  2099,  2100,
+    2101,  2102,  2103,  2104,  2105,  2106,  2107,  2108,  2111,  2113,
+    2117,  2119,  2124,  2130,  2132,  2134,  2138,  2140,  2147,  2153,
+    2154,  2158,  2166,  2168,  2170,  2172,  2174,  2176,  2178,  2182,
+    2183,  2190,  2200,  2201,  2205,  2206,  2212,  2216,  2218,  2220,
+    2222,  2224,  2226,  2228,  2230,  2232,  2234,  2236,  2238,  2245,
+    2246,  2249,  2250,  2253,  2258,  2265,  2266,  2270,  2279,  2285,
+    2286,  2289,  2290,  2291,  2292,  2309,  2314,  2319,  2338,  2355,
+    2362,  2363,  2370,  2374,  2380,  2386,  2394,  2398,  2404,  2408,
+    2412,  2418,  2422,  2429,  2435,  2441,  2449,  2454,  2459,  2466,
+    2467,  2468,  2471,  2472,  2475,  2476,  2477,  2484,  2488,  2499,
+    2505,  2559,  2621,  2622,  2629,  2642,  2647,  2652,  2659,  2661,
+    2668,  2669,  2670,  2674,  2679,  2684,  2695,  2696,  2697,  2700,
+    2704,  2708,  2710,  2714,  2718,  2719,  2722,  2726,  2730,  2731,
+    2734,  2736,  2740,  2741,  2745,  2749,  2750,  2754,  2755,  2759,
+    2760,  2761,  2762,  2765,  2767,  2771,  2773,  2777,  2779,  2782,
+    2784,  2786,  2790,  2792,  2794,  2798,  2800,  2802,  2806,  2810,
+    2812,  2814,  2818,  2820,  2824,  2825,  2829,  2833,  2835,  2839,
+    2840,  2845,  2853,  2857,  2859,  2861,  2865,  2867,  2871,  2872,
+    2876,  2880,  2882,  2884,  2888,  2890,  2894,  2896,  2900,  2903,
+    2911,  2915,  2917,  2921,  2923,  2927,  2929,  2936,  2948,  2962,
+    2966,  2970,  2974,  2978,  2980,  2982,  2984,  2988,  2990,  2992,
+    2996,  2998,  3000,  3004,  3006,  3010,  3012,  3016,  3017,  3021,
+    3022,  3026,  3027,  3032,  3036,  3037,  3041,  3042,  3043,  3047,
+    3052,  3053,  3057,  3059,  3063,  3064,  3068,  3070,  3074,  3077,
+    3082,  3084,  3088,  3089,  3094,  3099,  3101,  3103,  3105,  3107,
+    3109,  3111,  3113,  3120,  3122,  3126,  3127,  3133,  3136,  3138,
+    3142,  3144,  3151,  3153,  3157,  3161,  3163,  3165,  3171,  3173,
+    3177,  3178,  3182,  3184,  3187,  3188,  3192,  3194,  3196,  3200,
+    3201,  3205,  3207,  3214,  3217,  3224,  3225,  3228,  3232,  3236,
+    3243,  3244,  3247,  3252,  3257,  3258,  3262,  3266,  3267,  3270,
+    3271,  3278,  3280,  3284,  3286,  3288,  3291,  3292,  3295,  3299,
+    3301,  3304,  3306,  3312,  3313,  3317,  3321,  3322,  3327,  3328,
+    3332,  3336,  3337,  3342,  3343,  3346,  3351,  3356,  3359,  3366,
+    3367,  3369,  3370,  3372,  3376,  3377,  3379,  3381,  3385,  3387,
+    3391,  3392,  3394,  3398,  3399,  3400,  3401,  3402,  3403,  3404,
+    3405,  3406,  3407,  3412,  3414,  3416,  3418,  3420,  3422,  3424,
+    3426,  3433,  3435,  3437,  3439,  3441,  3443,  3445,  3447,  3449,
+    3451,  3453,  3455,  3457,  3459,  3461,  3463,  3467,  3468,  3474,
+    3476,  3481,  3483,  3485,  3487,  3492,  3494,  3498,  3500,  3504,
+    3506,  3508,  3510,  3514,  3518,  3522,  3524,  3528,  3533,  3538,
+    3545,  3550,  3555,  3564,  3565,  3569,  3573,  3587,  3605,  3606,
+    3607,  3608,  3609,  3610,  3611,  3612,  3613,  3614,  3616,  3618,
+    3625,  3627,  3629,  3636,  3643,  3650,  3652,  3654,  3655,  3656,
+    3657,  3659,  3661,  3665,  3669,  3685,  3701,  3705,  3709,  3710,
+    3714,  3715,  3719,  3721,  3723,  3725,  3727,  3731,  3732,  3734,
+    3750,  3766,  3770,  3774,  3776,  3780,  3784,  3787,  3790,  3793,
+    3796,  3801,  3803,  3808,  3809,  3813,  3820,  3827,  3834,  3841,
+    3842,  3846,  3852,  3853,  3854,  3855,  3858,  3860,  3862,  3865,
+    3872,  3881,  3888,  3897,  3899,  3901,  3903,  3909,  3918,  3921,
+    3925,  3926,  3930,  3939,  3941,  3945,  3947,  3951,  3957,  3958,
+    3961,  3965,  3969,  3970,  3973,  3975,  3979,  3981,  3985,  3987,
+    3991,  3993,  3997,  4000,  4003,  4006,  4008,  4010,  4012,  4014,
+    4016,  4018,  4020,  4024,  4025,  4028,  4036,  4039,  4042,  4045,
+    4048,  4051,  4054,  4057,  4060,  4063,  4066,  4069,  4072,  4075,
+    4078,  4081,  4084,  4087,  4090,  4093,  4096,  4099,  4102,  4105,
+    4110,  4111,  4116,  4118,  4119,  4120,  4121,  4122,  4123,  4124,
+    4125,  4126,  4127,  4128,  4129,  4130,  4132,  4133
 };
 #endif
 
@@ -4438,7 +4436,7 @@ case 124:
 { yyval = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
     break;
 case 125:
-{ yyval = (DSQL_NOD) 0;}
+{ yyval = (dsql_nod*) 0;}
     break;
 case 126:
 { yyval = yyvsp[-1]; }
@@ -4497,7 +4495,7 @@ case 147:
 case 150:
 { lex.log_defined = FALSE;
 			  lex.cache_defined = FALSE;
-			  yyval = (DSQL_NOD) yyvsp[0]; }
+			  yyval = (dsql_nod*) yyvsp[0]; }
     break;
 case 151:
 {yyval = NULL;}
@@ -4573,12 +4571,12 @@ case 177:
 { lex.g_file = make_file(); 
 			  lex.g_file->fil_flags = LOG_serial | LOG_default;
 			  yyval = make_node (nod_log_file_desc, (int) 1,
-						(DSQL_NOD) lex.g_file);}
+						(dsql_nod*) lex.g_file);}
     break;
 case 178:
 { lex.g_file->fil_name = (dsql_str*) yyvsp[-1];
-			  yyval = (DSQL_NOD) make_node (nod_file_desc, (int) 1,
-						(DSQL_NOD) lex.g_file); }
+			  yyval = (dsql_nod*) make_node (nod_file_desc, (int) 1,
+						(dsql_nod*) lex.g_file); }
     break;
 case 180:
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
@@ -4586,8 +4584,8 @@ case 180:
 case 181:
 { 
 				 check_log_file_attrs(); 
-			 yyval = (DSQL_NOD) make_node (nod_log_file_desc, (int) 1,
-												(DSQL_NOD) lex.g_file); }
+			 yyval = (dsql_nod*) make_node (nod_log_file_desc, (int) 1,
+												(dsql_nod*) lex.g_file); }
     break;
 case 182:
 { lex.g_file = make_file();
@@ -4658,18 +4656,18 @@ case 217:
 case 218:
 { lex.g_field_name = yyvsp[0];
 			  lex.g_field = make_field (yyvsp[0]);
-			  yyval = (DSQL_NOD) lex.g_field; }
+			  yyval = (dsql_nod*) lex.g_field; }
     break;
 case 219:
 { lex.g_field = make_field (yyvsp[0]);
-				  yyval = (DSQL_NOD) lex.g_field; }
+				  yyval = (dsql_nod*) lex.g_field; }
     break;
 case 220:
 { yyval = yyvsp[-1]; }
     break;
 case 221:
 { lex.g_field = make_field (NULL);
-			  yyval = (DSQL_NOD) lex.g_field; }
+			  yyval = (dsql_nod*) lex.g_field; }
     break;
 case 222:
 { yyval = yyvsp[0]; }
@@ -5039,16 +5037,16 @@ case 380:
 { lex.beginning = lex_position(); }
     break;
 case 381:
-{ yyval = (DSQL_NOD) MAKE_string(lex.beginning, 
+{ yyval = (dsql_nod*) MAKE_string(lex.beginning,
 				   (lex_position() == lex.end) ?
-				   lex_position()-lex.beginning : lex.last_token-lex.beginning);}
+				   lex_position() - lex.beginning : lex.last_token - lex.beginning);}
     break;
 case 382:
 { lex.beginning = lex.last_token; }
     break;
 case 383:
-{ yyval = (DSQL_NOD) MAKE_string(lex.beginning, 
-					lex_position()-lex.beginning); }
+{ yyval = (dsql_nod*) MAKE_string(lex.beginning,
+					lex_position() - lex.beginning); }
     break;
 case 384:
 { yyval = make_node (nod_def_constraint, (int) e_cnstr_count, 
@@ -5245,7 +5243,7 @@ case 471:
 case 472:
 { lex.g_field_name = yyvsp[0];
 			  lex.g_field = make_field (yyvsp[0]);
-			  yyval = (DSQL_NOD) lex.g_field; }
+			  yyval = (dsql_nod*) lex.g_field; }
     break;
 case 473:
 { yyval = make_node (nod_restrict, 0, NULL); }
@@ -5408,7 +5406,7 @@ case 526:
     break;
 case 527:
 { 
-			*stmt_ambiguous = TRUE;
+			*stmt_ambiguous = true;
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
@@ -5825,19 +5823,19 @@ case 618:
 { yyval = make_node (nod_reserve, 1, make_list (yyvsp[0])); }
     break;
 case 619:
-{ yyval = (DSQL_NOD) NOD_SHARED; }
+{ yyval = (dsql_nod*) NOD_SHARED; }
     break;
 case 620:
-{ yyval = (DSQL_NOD) NOD_PROTECTED ; }
+{ yyval = (dsql_nod*) NOD_PROTECTED ; }
     break;
 case 621:
-{ yyval = (DSQL_NOD) 0; }
+{ yyval = (dsql_nod*) 0; }
     break;
 case 622:
-{ yyval = (DSQL_NOD) NOD_READ; }
+{ yyval = (dsql_nod*) NOD_READ; }
     break;
 case 623:
-{ yyval = (DSQL_NOD) NOD_WRITE; }
+{ yyval = (dsql_nod*) NOD_WRITE; }
     break;
 case 625:
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
@@ -6463,7 +6461,7 @@ case 880:
 { yyval = make_node (nod_concatenate, 2, yyvsp[-2], yyvsp[0]); }
     break;
 case 881:
-{ yyval = make_node (nod_collate, (int) e_coll_count, (DSQL_NOD) yyvsp[0], yyvsp[-2]); }
+{ yyval = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) yyvsp[0], yyvsp[-2]); }
     break;
 case 882:
 { 
@@ -6650,7 +6648,7 @@ case 922:
 			  yyval = yyvsp[0]; }
     break;
 case 924:
-{ yyval = (DSQL_NOD) - (SLONG) yyvsp[0]; }
+{ yyval = (dsql_nod*) - (SLONG) yyvsp[0]; }
     break;
 case 925:
 { if ((SLONG) yyvsp[0] > SHRT_POS_MAX)
@@ -6677,7 +6675,7 @@ case 928:
 			  yyval = yyvsp[0];}
     break;
 case 930:
-{ yyval = (DSQL_NOD) - (SLONG) yyvsp[0]; }
+{ yyval = (dsql_nod*) - (SLONG) yyvsp[0]; }
     break;
 case 931:
 { yyval = yyvsp[0];}
@@ -7089,7 +7087,7 @@ void LEX_dsql_init (void)
  *	per session.
  *
  **************************************/
-	for (const TOK *token = KEYWORD_getTokens(); token->tok_string; ++token)
+	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
 		DSQL_SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) dsql_sym;
 		symbol->sym_string = (TEXT *) token->tok_string;
@@ -7107,7 +7105,7 @@ void LEX_dsql_init (void)
 
 
 void LEX_string (
-	TEXT* string,
+	const TEXT* string,
 	USHORT	length,
 	SSHORT	character_set)
 {
@@ -7161,7 +7159,8 @@ static void check_log_file_attrs (void)
 		}
 		
 		if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
-			(OneK*MIN_LOG_LENGTH)) {
+			(OneK*MIN_LOG_LENGTH))
+		{
 			yyabandon (-239, isc_partition_too_small);
 			/* Log partition size too small */
 		}
@@ -7174,7 +7173,7 @@ static void check_log_file_attrs (void)
 }
 
 
-static TEXT* lex_position (void)
+static const TEXT* lex_position (void)
 {
 /**************************************
  *
@@ -7193,7 +7192,7 @@ static TEXT* lex_position (void)
 
 
 #ifdef NOT_USED_OR_REPLACED
-static bool long_int(DSQL_NOD string,
+static bool long_int(dsql_nod* string,
 					 SLONG *long_value)
 {
 /*************************************
@@ -7221,7 +7220,7 @@ static bool long_int(DSQL_NOD string,
 }
 #endif
 
-static dsql_fld* make_field (DSQL_NOD field_name)
+static dsql_fld* make_field (dsql_nod* field_name)
 {
 /**************************************
  *
@@ -7251,7 +7250,7 @@ static dsql_fld* make_field (DSQL_NOD field_name)
 }
 
 
-static dsql_fil* make_file (void)
+static dsql_fil* make_file()
 {
 /**************************************
  *
@@ -7271,7 +7270,7 @@ static dsql_fil* make_file (void)
 }
 
 
-static DSQL_NOD make_list (DSQL_NOD node)
+static dsql_nod* make_list (dsql_nod* node)
 {
 /**************************************
  *
@@ -7303,13 +7302,13 @@ static DSQL_NOD make_list (DSQL_NOD node)
 	dsql_nod** ptr = node->nod_arg + node->nod_count;
 
 	while (stack)
-		*--ptr = (DSQL_NOD) LLS_POP (&stack);
+		*--ptr = (dsql_nod*) LLS_POP (&stack);
 
 	return node;
 }
 
 
-static DSQL_NOD make_parameter (void)
+static dsql_nod* make_parameter (void)
 {
 /**************************************
  *
@@ -7329,13 +7328,13 @@ static DSQL_NOD make_parameter (void)
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 	node->nod_count = 1;
-	node->nod_arg[0] = (DSQL_NOD)(ULONG) lex.param_number++;
+	node->nod_arg[0] = (dsql_nod*)(ULONG) lex.param_number++;
 
 	return node;
 }
 
 
-static DSQL_NOD make_node (NOD_TYPE	type,
+static dsql_nod* make_node (NOD_TYPE	type,
 						   int count,
 						   ...)
 {
@@ -7362,13 +7361,13 @@ static DSQL_NOD make_node (NOD_TYPE	type,
 	VA_START (ptr, count);
 
 	while (--count >= 0)
-		*p++ = va_arg (ptr, DSQL_NOD);
+		*p++ = va_arg (ptr, dsql_nod*);
 
 	return node;
 }
 
 
-static DSQL_NOD make_flag_node (NOD_TYPE	type,
+static dsql_nod* make_flag_node (NOD_TYPE	type,
 								SSHORT	flag,
 								int		count,
 								...)
@@ -7396,7 +7395,7 @@ static DSQL_NOD make_flag_node (NOD_TYPE	type,
 	VA_START (ptr, count);
 
 	while (--count >= 0)
-		*p++ = va_arg (ptr, DSQL_NOD);
+		*p++ = va_arg (ptr, dsql_nod*);
 
 	return node;
 }
@@ -7424,7 +7423,7 @@ static void prepare_console_debug (int level, int *yydeb)
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static bool short_int(DSQL_NOD string,
+static bool short_int(dsql_nod* string,
 					  SLONG *long_value,
 					  SSHORT range)
 {
@@ -7482,7 +7481,7 @@ static bool short_int(DSQL_NOD string,
 }
 #endif
 
-static void stack_nodes (DSQL_NOD	node,
+static void stack_nodes (dsql_nod*	node,
 						 dsql_lls** stack)
 {
 /**************************************
@@ -7564,7 +7563,7 @@ inline static int yylex (
 	USHORT	client_dialect,
 	USHORT	db_dialect,
 	USHORT	parser_version,
-	BOOLEAN* stmt_ambiguous)
+	bool* stmt_ambiguous)
 {
 	const int temp =
 		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
@@ -7577,7 +7576,7 @@ int LexerState::yylex (
 	USHORT	client_dialect,
 	USHORT	db_dialect,
 	USHORT	parser_version,
-	BOOLEAN* stmt_ambiguous)
+	bool* stmt_ambiguous)
 {
 /**************************************
  *
@@ -7590,13 +7589,7 @@ int LexerState::yylex (
  **************************************/
 	UCHAR	tok_class;
 	char  string[MAX_TOKEN_LEN];
-	char* p;
-	char* buffer;
-	char* buffer_end;
-	char* new_buffer;
-	DSQL_SYM	sym;
 	SSHORT	c;
-	USHORT	buffer_len;
 
 	/* Find end of white space and skip comments */
 
@@ -7668,7 +7661,7 @@ int LexerState::yylex (
 		/* The Introducer (_) is skipped, all other idents are copied
 		 * to become the name of the character set
 		 */
-		p = string;
+		char* p = string;
 		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
@@ -7682,7 +7675,7 @@ int LexerState::yylex (
 		/* make a string value to hold the name, the name 
 		 * is resolved in pass1_constant */
 
-		yylval = (DSQL_NOD) (MAKE_string(string, p - string))->str_data;
+		yylval = (dsql_nod*) (MAKE_string(string, p - string))->str_data;
 
 		return INTRODUCER;
 	}
@@ -7691,10 +7684,10 @@ int LexerState::yylex (
 
 	if (tok_class & CHR_QUOTE)
 	{
-		buffer = string;
-		buffer_len = sizeof (string);
-		buffer_end = buffer + buffer_len - 1;
-		for (p = buffer; ; p++)
+		char* buffer = string;
+		size_t buffer_len = sizeof (string);
+		const char* buffer_end = buffer + buffer_len - 1;
+		for (char* p = buffer; ; ++p)
 		{
 			if (ptr >= end)
 			{
@@ -7707,7 +7700,7 @@ int LexerState::yylex (
 				break;
 			if (p > buffer_end)
 			{
-				new_buffer = (char*)gds__alloc (2 * buffer_len);
+				char* const new_buffer = (char*) gds__alloc (2 * buffer_len);
 			/* FREE: at outer block */
 				if (!new_buffer)		/* NOMEM: */
 				{
@@ -7727,7 +7720,7 @@ int LexerState::yylex (
 		}
 		if (c == '"')
 		{
-			*stmt_ambiguous = TRUE; /* string delimited by double quotes could be
+			*stmt_ambiguous = true; /* string delimited by double quotes could be
 					**   either a string constant or a SQL delimited
 					**   identifier, therefore marks the SQL
 					**   statement as ambiguous  */
@@ -7745,7 +7738,7 @@ int LexerState::yylex (
 						gds__free (buffer);
 					yyabandon (-104, isc_token_too_long);
 				}
-				yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+				yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 				dsql_str* delimited_id_str = (dsql_str*) yylval;
 				delimited_id_str->str_flags |= STR_delimited_id;
 				if (buffer != string)
@@ -7753,7 +7746,7 @@ int LexerState::yylex (
 				return SYMBOL;
 			}
 		}
-		yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+		yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 		if (buffer != string)
 		gds__free (buffer);
 		return STRING;
@@ -7874,7 +7867,7 @@ int LexerState::yylex (
 
 			if (have_exp_digit)
 			{
-				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+				yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
 				last_token_bk = last_token;
 				line_start_bk = line_start;
 				lines_bk = lines;
@@ -7889,7 +7882,7 @@ int LexerState::yylex (
 
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
-					yylval = (DSQL_NOD) (ULONG) number;
+					yylval = (dsql_nod*) (ULONG) number;
 					return NUMBER;
 				}
 				else
@@ -7916,7 +7909,7 @@ int LexerState::yylex (
 							   isc_arg_end );
 					}
 
-					yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+					yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
 
 					last_token_bk = last_token;
 					line_start_bk = line_start;
@@ -7948,7 +7941,7 @@ int LexerState::yylex (
 
 	if (tok_class & CHR_LETTER)
 	{
-		p = string;
+		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
 		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
 		{
@@ -7959,7 +7952,8 @@ int LexerState::yylex (
 
 		check_bound(p, string);
 		*p = 0;
-		sym = HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+		dsql_sym* sym =
+			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
 		if (sym)
 		{
 		/* 13 June 2003. Nickolay Samofatov
@@ -7973,23 +7967,23 @@ int LexerState::yylex (
 				) &&
 				/* Produce special_trigger_action_predicate only where we can handle it -
 				  in search conditions */
-				(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
-				 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
-				 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
+				(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
+				 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
+				 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
 			{			
 				LexerState savedState = lex;
-				int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+				int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 				lex = savedState;
-				if (nextToken==OR || nextToken==AND) {
+				if (nextToken == OR || nextToken == AND) {
 					switch(sym->sym_keyword) {
 					case INSERTING:
-						yylval = (DSQL_NOD) sym->sym_object;
+						yylval = (dsql_nod*) sym->sym_object;
 						return KW_INSERTING;
 					case UPDATING:
-						yylval = (DSQL_NOD) sym->sym_object;
+						yylval = (dsql_nod*) sym->sym_object;
 						return KW_UPDATING;
 					case DELETING:
-						yylval = (DSQL_NOD) sym->sym_object;
+						yylval = (dsql_nod*) sym->sym_object;
 						return KW_DELETING;
 					}
 				}
@@ -8007,16 +8001,17 @@ int LexerState::yylex (
 			{
 				if (prev_keyword == SELECT || limit_clause) {
 					LexerState savedState = lex;
-					int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+					int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
 					if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
-						yylval = (DSQL_NOD) MAKE_string(string, p - string);
+						yylval = (dsql_nod*) MAKE_string(string, p - string);
 						last_token_bk = last_token;
 						line_start_bk = line_start;
 						lines_bk = lines;
 						return SYMBOL;
-					} else {
-						yylval = (DSQL_NOD) sym->sym_object;
+					}
+					else {
+						yylval = (dsql_nod*) sym->sym_object;
 						last_token_bk = last_token;
 						line_start_bk = line_start;
 						lines_bk = lines;
@@ -8025,14 +8020,14 @@ int LexerState::yylex (
 				} /* else fall down and return token as SYMBOL */
 			}
 			else {
-				yylval = (DSQL_NOD) sym->sym_object;
+				yylval = (dsql_nod*) sym->sym_object;
 				last_token_bk = last_token;
 				line_start_bk = line_start;
 				lines_bk = lines;
 				return sym->sym_keyword;
 			}
 		}
-		yylval = (DSQL_NOD) MAKE_string(string, p - string);
+		yylval = (dsql_nod*) MAKE_string(string, p - string);
 		last_token_bk = last_token;
 		line_start_bk = line_start;
 		lines_bk = lines;
@@ -8043,7 +8038,8 @@ int LexerState::yylex (
 
 	if (last_token + 1 < end)
 	{
-		sym = HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
+		dsql_sym* sym =
+			HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
 		if (sym)
 		{
 			++ptr;
@@ -8060,8 +8056,8 @@ int LexerState::yylex (
 		   3) We should not swallow braces after special tokens 
 			 like IF, FIRST, SKIP, VALUES and 30 more other	   
 		*/
-		(prev_keyword=='(' || prev_keyword==NOT || prev_keyword==AND || prev_keyword==OR ||
-		 prev_keyword==ON || prev_keyword==HAVING || prev_keyword==WHERE || prev_keyword==WHEN) ) 
+		(prev_keyword == '(' || prev_keyword == NOT || prev_keyword == AND || prev_keyword == OR ||
+		 prev_keyword == ON || prev_keyword == HAVING || prev_keyword == WHERE || prev_keyword == WHEN) )
 	{
 		LexerState savedState = lex;	
 		brace_analysis = true;
@@ -8069,15 +8065,15 @@ int LexerState::yylex (
 		int nextToken;
 		do {
 			openCount++;
-			nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+			nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 		} while (nextToken == '(');
-		DSQL_NOD temp_val = yylval;
+		dsql_nod* temp_val = yylval;
 		if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
 		{
 			/* Skip closing braces. */
 			while ( openCount &&
-					yylex(client_dialect,db_dialect,
-						  parser_version,stmt_ambiguous) == ')')
+					yylex(client_dialect, db_dialect,
+						  parser_version, stmt_ambiguous) == ')')
 			{
 				openCount--;
 			}
@@ -8093,14 +8089,14 @@ int LexerState::yylex (
 				if (prev_keyword == '(' &&
 					/* Produce special_trigger_action_predicate only where we can handle it -
 					  in search conditions */
-					(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
-					 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
-					 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
-				{			
+					(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
+					 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
+					 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
+				{
 					savedState = lex;
-					int token = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+					int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
-					if (token==OR || token==AND) {
+					if (token == OR || token == AND) {
 						switch(nextToken) {
 						case INSERTING:
 							return KW_INSERTING;

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Lock Manager
- *	MODULE:		lock.c
+ *	MODULE:		lock.cpp
  *	DESCRIPTION:	Generic ISC Lock Manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.80 2003-11-25 16:55:20 bellardo Exp $
+$Id: lock.cpp,v 1.81 2003-11-28 06:48:23 robocop Exp $
 */
 
 #include "firebird.h"
@@ -238,7 +238,7 @@ static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
 #ifdef USE_WAKEUP_EVENTS
 static void lock_alarm_handler(void *event);
 #endif
-static void lock_initialize(void *, SH_MEM, int);
+static void lock_initialize(void*, SH_MEM, bool);
 static void insert_data_que(LBL);
 static void insert_tail(SRQ, SRQ);
 static USHORT lock_state(LBL);
@@ -3081,8 +3081,7 @@ static ISC_STATUS init_lock_table( ISC_STATUS * status_vector)
 	LOCK_data.sh_mem_semaphores = LOCK_sem_count;
 #endif
 	if (!(LOCK_header = (LHB) ISC_map_file(status_vector, lock_file,
-										   reinterpret_cast < void (*)(void*, SH_MEM, int) >
-										   (lock_initialize), 0,
+										   lock_initialize, 0,
 										   LOCK_shm_size, &LOCK_data))) {
 
 /* In Superserver lock table init happens only once and 
@@ -3218,7 +3217,7 @@ static void lock_alarm_handler(void* event)
 #endif
 
 
-static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
+static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 {
 /**************************************
  *

@@ -79,11 +79,11 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 
 	char buffer[100];
 
-	sprintf(buffer, "Assertion failure: %s File: %s Line: %ld\n",	/* NTX: dev build */
+	sprintf(buffer, "Assertion failure: %s File: %s Line: %ld\n",	// NTX: dev build 
 			(msg ? msg : ""), (file ? file : ""), lineno);
 	ERRD_bugcheck(buffer);
 }
-#endif /* DEV_BUILD */
+#endif // DEV_BUILD 
 
 
 /**
@@ -100,7 +100,7 @@ void ERRD_bugcheck(const char* text)
 {
 	TEXT s[128];
 
-	sprintf(s, "INTERNAL: %s", text);	/* TXNN */
+	sprintf(s, "INTERNAL: %s", text);	// TXNN 
 	ERRD_error(-1, s);
 }
 
@@ -173,7 +173,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 		 status_vector[2] != isc_arg_warning))
 	{
-		/* this is a blank status vector */
+		// this is a blank status vector 
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = 0;
 		status_vector[2] = isc_arg_end;
@@ -181,7 +181,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 	}
 	else
 	{
-		/* find end of a status vector */
+		// find end of a status vector 
 		int warning_indx = 0;
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx) {
@@ -189,10 +189,10 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 		}
 	}
 
-/* stuff the warning */
+// stuff the warning 
 	if (indx + 3 >= ISC_STATUS_LENGTH)
 	{
-		/* not enough free space */
+		// not enough free space 
 		return false;
 	}
 
@@ -266,12 +266,12 @@ void ERRD_post(ISC_STATUS status, ...)
 
 	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 
-/* stuff the status into temp buffer */
+// stuff the status into temp buffer 
 	ISC_STATUS_ARRAY tmp_status;
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
 	STUFF_STATUS(tmp_status, status);
 
-/* calculate length of the status */
+// calculate length of the status 
 	int tmp_status_len = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
@@ -280,7 +280,7 @@ void ERRD_post(ISC_STATUS status, ...)
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 		 status_vector[2] != isc_arg_warning))
 	{
-		/* this is a blank status vector */
+		// this is a blank status vector 
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_dsql_error;
 		status_vector[2] = isc_arg_end;
@@ -296,11 +296,11 @@ void ERRD_post(ISC_STATUS status, ...)
 	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
 		if (status_vector[i] == isc_arg_end && i == status_len) {
-			break;				/* end of argument list */
+			break;				// end of argument list 
 		}
 
 		if (i && i == warning_indx) {
-			break;				/* vector has no more errors */
+			break;				// vector has no more errors 
 		}
 
 		if (status_vector[i] == tmp_status[1] && i &&
@@ -309,7 +309,7 @@ void ERRD_post(ISC_STATUS status, ...)
 			(memcmp(&status_vector[i], &tmp_status[1],
 					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
-			/* duplicate found */
+			// duplicate found 
 			ERRD_punt();
 		}
 	}
@@ -365,11 +365,11 @@ void ERRD_punt(void)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 
-/* Save any strings in a permanent location */
+// Save any strings in a permanent location 
 
 	UTLD_save_status_strings(tdsql->tsql_status);
 
-/* Give up whatever we were doing and return to the user. */
+// Give up whatever we were doing and return to the user. 
 
 	Firebird::status_exception::raise(tdsql->tsql_status[1]);
 }

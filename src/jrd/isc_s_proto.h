@@ -38,7 +38,7 @@ void	ISC_event_fini(struct event *);
 int		ISC_event_init(struct event *, int, int);
 
 #if defined(WIN_NT)
-int		ISC_event_init_shared(struct event *, int, TEXT *, struct event *, USHORT);
+int		ISC_event_init_shared(struct event*, int, const TEXT*, struct event*, bool);
 #endif
 int		ISC_event_post(struct event *);
 int		ISC_event_wait(SSHORT, struct event **, SLONG *, SLONG, FPTR_VOID_PTR, void *);
@@ -47,12 +47,13 @@ int		ISC_event_wait(SSHORT, struct event **, SLONG *, SLONG, FPTR_VOID_PTR, void
 void*	ISC_make_signal(BOOLEAN, BOOLEAN, int, int);
 #endif /* WIN_NT */
 
-UCHAR*	ISC_map_file(ISC_STATUS *, TEXT *, void (*)(void *, struct sh_mem *, int),
-					void *, SLONG, struct sh_mem *);
+typedef void (*FPTR_INIT_GLOBAL_REGION)(void*, struct sh_mem*, bool);
+UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
+					void*, SLONG, struct sh_mem*);
 #if defined(WIN_NT)
-int		ISC_mutex_init(struct mtx *, TEXT*);
+int		ISC_mutex_init(struct mtx*, const TEXT*);
 #else
-int		ISC_mutex_init(struct mtx *, SLONG);
+int		ISC_mutex_init(struct mtx*, SLONG);
 #endif
 
 int		ISC_mutex_lock(struct mtx *);

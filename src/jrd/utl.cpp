@@ -1,4 +1,4 @@
-/*
+	/*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		utl.cpp
  *	DESCRIPTION:	User callable routines
@@ -140,15 +140,15 @@
 #define BSTR_output	1
 #define BSTR_alloc	2
 
-static int dump(ISC_QUAD*, FRBRD *, FRBRD *, IB_FILE *);
-static int edit(ISC_QUAD*, FRBRD *, FRBRD *, SSHORT, SCHAR *);
-static int get_ods_version(FRBRD **, USHORT *, USHORT *);
+static int dump(ISC_QUAD*, FRBRD*, FRBRD*, IB_FILE*);
+static int edit(ISC_QUAD*, FRBRD*, FRBRD*, SSHORT, const SCHAR*);
+static int get_ods_version(FRBRD**, USHORT*, USHORT*);
 static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
-static int load(ISC_QUAD*, FRBRD *, FRBRD *, IB_FILE *);
+static int load(ISC_QUAD*, FRBRD*, FRBRD*, IB_FILE*);
 
 
 #ifdef VMS
-static int display(ISC_QUAD*, int *, int *);
+static int display(ISC_QUAD*, int*, int*);
 #endif
 
 /* Blob info stuff */
@@ -256,9 +256,9 @@ static const TEXT* const impl_implementation[] = {
 
 #ifdef VMS
 ISC_STATUS API_ROUTINE gds__attach_database_d(
-										  ISC_STATUS * user_status,
-										  struct dsc$descriptor_s *file_name,
-										  void **handle,
+										  ISC_STATUS* user_status,
+										  struct dsc$descriptor_s* file_name,
+										  void** handle,
 										  SSHORT dpb_length,
 	const SCHAR* dpb, SSHORT db_type)
 {
@@ -281,9 +281,9 @@ ISC_STATUS API_ROUTINE gds__attach_database_d(
 
 
 int API_ROUTINE gds__blob_size(
-							   FRBRD ** b,
-							   SLONG * size,
-							   SLONG * seg_count, SLONG * max_seg)
+							   FRBRD** b,
+							   SLONG* size,
+							   SLONG* seg_count, SLONG* max_seg)
 {
 /**************************************
  *
@@ -298,27 +298,23 @@ int API_ROUTINE gds__blob_size(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SLONG n;
-	SSHORT l;
-	SCHAR *p, item, buffer[64];
-
-#pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
+	SCHAR buffer[64];
 
 	if (isc_blob_info(status_vector, b, sizeof(blob_items),
 					   blob_items,
-					   sizeof(buffer), buffer)) {
+					   sizeof(buffer), buffer)) 
+	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
 
-	p = buffer;
-
+	const TEXT* p = buffer;
+	char item;
 	while ((item = *p++) != isc_info_end) {
-		l =
-			static_cast<SSHORT>
-			(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
+		const USHORT l =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2);
 		p += 2;
-		n = gds__vax_integer(reinterpret_cast<UCHAR*>(p), l);
+		const SLONG n = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), l);
 		p += l;
 		switch (item) {
 		case isc_info_blob_max_segment:
@@ -345,7 +341,7 @@ int API_ROUTINE gds__blob_size(
 }
 
 
-/* 17 May 2001 - isc_expand_dpb is DEPRECATED */
+// 17 May 2001 - isc_expand_dpb is DEPRECATED
 void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 {
 /**************************************
@@ -631,7 +627,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 
 
 #ifdef GDS_EDIT
-int API_ROUTINE GDS_EDIT(TEXT* file_name, USHORT type)
+int API_ROUTINE GDS_EDIT(const TEXT* file_name, USHORT type)
 {
 /**************************************
  *
@@ -643,8 +639,7 @@ int API_ROUTINE GDS_EDIT(TEXT* file_name, USHORT type)
  *	Edit a file.
  *
  **************************************/
-	TEXT *editor, buffer[256];
-	struct stat before, after;
+	const TEXT* editor;
 
 #ifndef WIN_NT
 	if (!(editor = getenv("VISUAL")) && !(editor = getenv("EDITOR")))
@@ -654,11 +649,14 @@ int API_ROUTINE GDS_EDIT(TEXT* file_name, USHORT type)
 		editor = "Notepad";
 #endif
 
+	struct stat before;
 	statistics(file_name, &before);
+	TEXT buffer[256];
 	sprintf(buffer, "%s %s", editor, file_name);
 
 	system(buffer);
 
+	struct stat after;
 	statistics(file_name, &after);
 
 	return (before.st_mtime != after.st_mtime ||
@@ -668,7 +666,7 @@ int API_ROUTINE GDS_EDIT(TEXT* file_name, USHORT type)
 
 
 #ifdef VMS
-int API_ROUTINE gds__edit(TEXT * file_name, USHORT type)
+int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 {
 /**************************************
  *
@@ -804,29 +802,25 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-	SCHAR *p, *q;
-	SCHAR *end, **nb;
-	SLONG length;
-	USHORT i;
 
 /* calculate length of event parameter block, 
    setting initial length to include version
    and counts for each argument */
 
-	i = count;
-	nb = name_buffer;
-	length = 0;
+	USHORT i = count;
+	SCHAR** nb = name_buffer;
+	SLONG length = 0;
 	while (i--) {
-		q = *nb++;
+		const SCHAR* q = *nb++;
 
 		/* Strip trailing blanks from string */
-
-		for (end = q + 31; --end >= q && *end == ' ';);
+		const SCHAR* end = q + 31;
+		while (--end >= q && *end == ' '); // null body
 		length += end - q + 1 + 5;
 	}
 
 	i = count;
-	p = *event_buffer =
+	SCHAR* p = *event_buffer =
 		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
 /* FREE: unknown */
 	if (!*event_buffer)			/* NOMEM: */
@@ -851,11 +845,11 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 	nb = name_buffer;
 
 	while (i--) {
-		q = *nb++;
+		const SCHAR* q = *nb++;
 
 		/* Strip trailing blanks from string */
-
-		for (end = q + 31; --end >= q && *end == ' ';);
+		const SCHAR* end = q + 31;
+		while (--end >= q && *end == ' '); // null body
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -894,10 +888,10 @@ void API_ROUTINE gds__event_block_s(
 
 
 void API_ROUTINE isc_event_counts(
-					ULONG * result_vector,
+					ULONG* result_vector,
 					SSHORT buffer_length,
-					SCHAR * event_buffer,
-					SCHAR * result_buffer)
+					SCHAR* event_buffer,
+					const SCHAR* result_buffer)
 {
 /**************************************
  *
@@ -911,16 +905,11 @@ void API_ROUTINE isc_event_counts(
  *	for GPRE support of events.
  *
  **************************************/
-	SCHAR *p, *q, *end;
-	USHORT i, length;
-	ULONG *vec;
-	ULONG initial_count, new_count;
-
-	vec = result_vector;
-	p = event_buffer;
-	q = result_buffer;
-	length = buffer_length;
-	end = p + length;
+	ULONG* vec = result_vector;
+	TEXT* p = event_buffer;
+	const TEXT* q = result_buffer;
+	USHORT length = buffer_length;
+	const TEXT* const end = p + length;
 
 /* analyze the event blocks, getting the delta for each event */
 
@@ -929,17 +918,17 @@ void API_ROUTINE isc_event_counts(
 	while (p < end) {
 		/* skip over the event name */
 
-		i = (USHORT) * p++;
+		const USHORT i = (USHORT)* p++;
 		p += i;
 		q += i + 1;
 
 		/* get the change in count */
 
-		initial_count =
-			gds__vax_integer(reinterpret_cast<UCHAR*>(p), sizeof(SLONG));
+		const ULONG initial_count =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), sizeof(SLONG));
 		p += sizeof(SLONG);
-		new_count =
-			gds__vax_integer(reinterpret_cast<UCHAR*>(q), sizeof(SLONG));
+		const ULONG new_count =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(q), sizeof(SLONG));
 		q += sizeof(SLONG);
 		*vec++ = new_count - initial_count;
 	}
@@ -949,9 +938,9 @@ void API_ROUTINE isc_event_counts(
 
 	p = event_buffer;
 	q = result_buffer;
-	do
+	do {
 		*p++ = *q++;
-	while (--length);
+	} while (--length);
 }
 
 
@@ -1004,7 +993,7 @@ int API_ROUTINE isc_get_client_minor_version()
 }
 
 
-void API_ROUTINE gds__map_blobs(int *handle1, int *handle2)
+void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
 {
 /**************************************
  *
@@ -1239,39 +1228,37 @@ int API_ROUTINE isc_version(FRBRD** handle,
  *	Obtain and print information about a database.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-	USHORT buf_len, len, implementation, class_, ods_version,
-		ods_minor_version;
-	UCHAR count, item, l, *buf, buffer[256], *p;
-	TEXT *versions, *implementations,
-		*class_string, *implementation_string, s[128];
-	BOOLEAN redo;
-
 	if (!routine) {
 		routine = (FPTR_VOID) ib_printf;
 		user_arg = (void*)"\t%s\n";
 	}
 
-	buf = buffer;
-	buf_len = sizeof(buffer);
+	UCHAR buffer[256];
+	UCHAR* buf = buffer;
+	USHORT buf_len = sizeof(buffer);
 
+	ISC_STATUS_ARRAY status_vector;
+	const TEXT* versions = 0;
+	const TEXT* implementations = 0;
+	bool redo;
 	do {
 		if (isc_database_info(status_vector,
 							  handle,
 							  sizeof(info),
 							  info,
-							  buf_len, reinterpret_cast<char*>(buf))) {
+							  buf_len, reinterpret_cast<char*>(buf))) 
+		{
 			if (buf != buffer)
 				gds__free((SLONG *) buf);
 			return FB_FAILURE;
 		}
 
-		p = buf;
-		redo = FALSE;
+		const UCHAR* p = buf;
+		redo = false;
 
 		while (!redo && *p != isc_info_end && p < buf + buf_len) {
-			item = *p++;
-			len = static_cast<USHORT>(gds__vax_integer(p, 2));
+			const UCHAR item = *p++;
+			const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
 			p += 2;
 			switch (item) {
 			case isc_info_firebird_version:
@@ -1283,7 +1270,7 @@ int API_ROUTINE isc_version(FRBRD** handle,
 				break;
 
 			case isc_info_truncated:
-				redo = TRUE;
+				redo = true;
 				break;
 
 			default:
@@ -1308,21 +1295,28 @@ int API_ROUTINE isc_version(FRBRD** handle,
 		}
 	} while (redo);
 
-	count = MIN(*versions, *implementations);
+	UCHAR count = MIN(*versions, *implementations);
 	++versions;
 	++implementations;
 
+	TEXT s[128];
+
 	while (count-- > 0) {
-		implementation = *implementations++;
-		class_ = *implementations++;
-		l = *versions++;
+		const USHORT implementation = *implementations++;
+		const USHORT class_ = *implementations++;
+		const int l = *versions++; // it was UCHAR
+		const TEXT* implementation_string;
 		if (implementation >= FB_NELEM(impl_implementation)
-			|| !(implementation_string =
-				 const_cast<char*>(impl_implementation[implementation])))
+			|| !(implementation_string = impl_implementation[implementation]))
+		{
 			implementation_string = "**unknown**";
+		}
+		const TEXT* class_string;
 		if (class_ >= FB_NELEM(impl_class) ||
-			!(class_string = const_cast<char*>(impl_class[class_])))
+			!(class_string = impl_class[class_]))
+		{
 			class_string = "**unknown**";
+		}
 		sprintf(s, "%s (%s), version \"%.*s\"",
 				implementation_string, class_string, l, versions);
 
@@ -1334,6 +1328,7 @@ int API_ROUTINE isc_version(FRBRD** handle,
 	if (buf != buffer)
 		gds__free((SLONG *) buf);
 
+	USHORT ods_version, ods_minor_version;
 	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FB_FAILURE)
 		return FB_FAILURE;
 
@@ -1348,8 +1343,8 @@ int API_ROUTINE isc_version(FRBRD** handle,
 void API_ROUTINE isc_format_implementation(
 										   USHORT implementation,
 										   USHORT ibuflen,
-										   TEXT * ibuf,
-USHORT class_, USHORT cbuflen, TEXT * cbuf)
+										   TEXT* ibuf,
+	USHORT class_, USHORT cbuflen, TEXT* cbuf)
 {
 /**************************************
  *
@@ -1362,17 +1357,16 @@ USHORT class_, USHORT cbuflen, TEXT * cbuf)
  * 	by looking up their values in the internal tables.
  *
  **************************************/
-	int len;
-
 	if (ibuflen > 0) {
 		if (implementation >= FB_NELEM(impl_implementation) ||
-			!(impl_implementation[implementation])) {
+			!(impl_implementation[implementation])) 
+		{
 			strncpy(ibuf, "**unknown**", ibuflen - 1);
 			ibuf[MIN(11, ibuflen - 1)] = '\0';
 		}
 		else {
 			strncpy(ibuf, impl_implementation[implementation], ibuflen - 1);
-			len = strlen(impl_implementation[implementation]);
+			const int len = strlen(impl_implementation[implementation]);
 			ibuf[MIN(len, ibuflen - 1)] = '\0';
 		}
 	}
@@ -1384,7 +1378,7 @@ USHORT class_, USHORT cbuflen, TEXT * cbuf)
 		}
 		else {
 			strncpy(cbuf, impl_class[class_], cbuflen - 1);
-			len = strlen(impl_class[class_]);
+			const int len = strlen(impl_class[class_]);
 			ibuf[MIN(len, cbuflen - 1)] = '\0';
 		}
 	}
@@ -1392,7 +1386,7 @@ USHORT class_, USHORT cbuflen, TEXT * cbuf)
 }
 
 
-U_IPTR API_ROUTINE isc_baddress(SCHAR * object)
+U_IPTR API_ROUTINE isc_baddress(SCHAR* object)
 {
 /**************************************
  *
@@ -1409,7 +1403,7 @@ U_IPTR API_ROUTINE isc_baddress(SCHAR * object)
 }
 
 
-void API_ROUTINE isc_baddress_s(SCHAR * object, U_IPTR * address)
+void API_ROUTINE isc_baddress_s(const SCHAR* object, U_IPTR* address)
 {
 /**************************************
  *
@@ -1418,7 +1412,7 @@ void API_ROUTINE isc_baddress_s(SCHAR * object, U_IPTR * address)
  **************************************
  *
  * Functional description
- *      Return the address of whatever is passed in
+ *      Copy the address of whatever is passed in to the 2nd param.
  *
  **************************************/
 
@@ -1445,7 +1439,7 @@ void API_ROUTINE gds__wake_init(void)
 #endif
 
 
-int API_ROUTINE BLOB_close(BSTREAM * bstream)
+int API_ROUTINE BLOB_close(BSTREAM* bstream)
 {
 /**************************************
  *
@@ -1458,13 +1452,12 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	USHORT l;
 
 	if (!bstream->bstr_blob)
 		return FALSE;
 
 	if (bstream->bstr_mode & BSTR_output) {
-		l = (bstream->bstr_ptr - bstream->bstr_buffer);
+		const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
 			if (isc_put_segment(status_vector, &bstream->bstr_blob, l,
 								 bstream->bstr_buffer)) 
@@ -1486,9 +1479,9 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
 
 int API_ROUTINE blob__display(
 							  SLONG blob_id[2],
-							  FRBRD **database,
-							  FRBRD **transaction,
-							  TEXT * field_name, SSHORT * name_length)
+							  FRBRD** database,
+							  FRBRD** transaction,
+							  const TEXT* field_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -1500,17 +1493,17 @@ int API_ROUTINE blob__display(
  *	PASCAL callable version of EDIT_blob.
  *
  **************************************/
-	TEXT *p, *q, temp[32];
-	USHORT l;
-
-	if ((l = *name_length) != 0) {
-		p = temp;
-		q = field_name;
-		do
+	// CVC: The old logic passed garbage to BLOB_display if !*name_lenth
+	TEXT temp[32];
+	TEXT* p = temp;
+	USHORT l = *name_length;
+	if (l != 0) {
+		const TEXT* q = field_name;
+		do {
 			*p++ = *q++;
-		while (--l);
-		*p = 0;
+		} while (--l);
 	}
+	*p = 0;
 
 	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 						*transaction, temp);
@@ -1518,9 +1511,9 @@ int API_ROUTINE blob__display(
 
 
 int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
-							 FRBRD *database,
-							 FRBRD *transaction, 
-							 TEXT * field_name)
+							 FRBRD* database,
+							 FRBRD* transaction, 
+							 const TEXT* field_name)
 {
 /**************************************
  *
@@ -1550,9 +1543,9 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 
 int API_ROUTINE blob__dump(
 						   SLONG blob_id[2],
-						   FRBRD **database,
-						   FRBRD **transaction,
-						   TEXT * file_name, SSHORT * name_length)
+						   FRBRD** database,
+						   FRBRD** transaction,
+						   const TEXT* file_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -1565,27 +1558,27 @@ int API_ROUTINE blob__dump(
  *	into an internal dump call.
  *
  **************************************/
-	TEXT *p, *q, temp[129];
-	USHORT l;
-
-	if ((l = *name_length) != 0) {
-		p = temp;
-		q = file_name;
-		do
+	// CVC: The old logic passed garbage to BLOB_dump if !*name_length
+	TEXT temp[129];
+	TEXT* p = temp;
+	USHORT l = *name_length;
+	if (l != 0) {
+		const TEXT* q = file_name;
+		do {
 			*p++ = *q++;
-		while (--l);
-		*p = 0;
+		} while (--l);
 	}
+	*p = 0;
 
 	return BLOB_dump(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp);
 }
 
 
-int API_ROUTINE BLOB_text_dump(ISC_QUAD * blob_id,
-							   FRBRD *database,
-							   FRBRD *transaction, 
-							   SCHAR * file_name)
+int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
+							   FRBRD* database,
+							   FRBRD* transaction, 
+							   const SCHAR* file_name)
 {
 /**************************************
  *
@@ -1598,23 +1591,21 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD * blob_id,
  *      This call does CR/LF translation on NT.
  *
  **************************************/
-	IB_FILE *file;
-	int ret;
-
-	if (!(file = ib_fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
+	IB_FILE* file = ib_fopen(file_name, FOPEN_WRITE_TYPE_TEXT);
+	if (!file)
 		return FALSE;
 
-	ret = dump(blob_id, database, transaction, file);
+	const int ret = dump(blob_id, database, transaction, file);
 	ib_fclose(file);
 
 	return ret;
 }
 
 
-int API_ROUTINE BLOB_dump(ISC_QUAD * blob_id,
-						  FRBRD *database,
-						  FRBRD *transaction, 
-						  SCHAR * file_name)
+int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
+						  FRBRD* database,
+						  FRBRD* transaction, 
+						  const SCHAR* file_name)
 {
 /**************************************
  *
@@ -1626,13 +1617,11 @@ int API_ROUTINE BLOB_dump(ISC_QUAD * blob_id,
  *	Dump a blob into a file.
  *
  **************************************/
-	IB_FILE *file;
-	int ret;
-
-	if (!(file = ib_fopen(file_name, FOPEN_WRITE_TYPE)))
+	IB_FILE* file = ib_fopen(file_name, FOPEN_WRITE_TYPE);
+	if (!file)
 		return FALSE;
 
-	ret = dump(blob_id, database, transaction, file);
+	const int ret = dump(blob_id, database, transaction, file);
 	ib_fclose(file);
 
 	return ret;
@@ -1641,9 +1630,9 @@ int API_ROUTINE BLOB_dump(ISC_QUAD * blob_id,
 
 int API_ROUTINE blob__edit(
 						   SLONG blob_id[2],
-						   FRBRD **database,
-						   FRBRD **transaction,
-						   TEXT * field_name, SSHORT * name_length)
+						   FRBRD** database,
+						   FRBRD** transaction,
+						   const TEXT* field_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -1656,17 +1645,17 @@ int API_ROUTINE blob__edit(
  *	into an internal edit call.
  *
  **************************************/
-	TEXT *p, *q, temp[32];
-	USHORT l;
-
-	if ((l = *name_length) != 0) {
-		p = temp;
-		q = field_name;
-		do
+	// CVC: The old logic passed garbage to BLOB_edit if !*name_length
+	TEXT temp[32];
+	TEXT* p = temp;
+	USHORT l = *name_length;
+	if (l != 0) {
+		const TEXT* q = field_name;
+		do {
 			*p++ = *q++;
-		while (--l);
-		*p = 0;
+		} while (--l);
 	}
+	*p = 0;
 
 	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp);
@@ -1674,9 +1663,9 @@ int API_ROUTINE blob__edit(
 
 
 int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
-						  FRBRD *database,
-						  FRBRD *transaction, 
-						  SCHAR * field_name)
+						  FRBRD* database,
+						  FRBRD* transaction, 
+						  const SCHAR* field_name)
 {
 /**************************************
  *
@@ -1695,7 +1684,7 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 }
 
 
-int API_ROUTINE BLOB_get(BSTREAM * bstream)
+int API_ROUTINE BLOB_get(BSTREAM* bstream)
 {
 /**************************************
  *
@@ -1734,9 +1723,9 @@ int API_ROUTINE BLOB_get(BSTREAM * bstream)
 
 int API_ROUTINE blob__load(
 						   SLONG blob_id[2],
-						   FRBRD **database,
-						   FRBRD **transaction,
-						   TEXT * file_name, SSHORT * name_length)
+						   FRBRD** database,
+						   FRBRD** transaction,
+						   const TEXT* file_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -1749,17 +1738,17 @@ int API_ROUTINE blob__load(
  *	into an internal load call.
  *
  **************************************/
-	TEXT *p, *q, temp[129];
-	USHORT l;
-
-	if ((l = *name_length) != 0) {
-		p = temp;
-		q = file_name;
-		do
+	// CVC: The old logic passed garbage to BLOB_load if !*name_length
+	TEXT temp[129];
+	TEXT* p = temp;
+	USHORT l = *name_length;
+	if (l != 0) {
+		const TEXT* q = file_name;
+		do {
 			*p++ = *q++;
-		while (--l);
-		*p = 0;
+		} while (--l);
 	}
+	*p = 0;
 
 	return BLOB_load(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp);
@@ -1767,9 +1756,9 @@ int API_ROUTINE blob__load(
 
 
 int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
-							   FRBRD *database,
-							   FRBRD *transaction, 
-							   TEXT * file_name)
+							   FRBRD* database,
+							   FRBRD* transaction, 
+							   const TEXT* file_name)
 {
 /**************************************
  *
@@ -1783,13 +1772,11 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
  *      Return TRUE is successful.
  *
  **************************************/
-	IB_FILE *file;
-	int ret;
-
-	if (!(file = ib_fopen(file_name, FOPEN_READ_TYPE_TEXT)))
+	IB_FILE* file = ib_fopen(file_name, FOPEN_READ_TYPE_TEXT);
+	if (!file)
 		return FALSE;
 
-	ret = load(blob_id, database, transaction, file);
+	const int ret = load(blob_id, database, transaction, file);
 
 	ib_fclose(file);
 
@@ -1798,9 +1785,9 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 
 
 int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
-						  FRBRD *database, 
-						  FRBRD *transaction, 
-						  TEXT * file_name)
+						  FRBRD* database, 
+						  FRBRD* transaction, 
+						  const TEXT* file_name)
 {
 /**************************************
  *
@@ -1812,13 +1799,11 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
  *	Load a blob with the contents of a file.  Return TRUE is successful.
  *
  **************************************/
-	IB_FILE *file;
-	int ret;
-
-	if (!(file = ib_fopen(file_name, FOPEN_READ_TYPE)))
+	IB_FILE* file = ib_fopen(file_name, FOPEN_READ_TYPE);
+	if (!file)
 		return FALSE;
 
-	ret = load(blob_id, database, transaction, file);
+	const int ret = load(blob_id, database, transaction, file);
 
 	ib_fclose(file);
 
@@ -1841,17 +1826,12 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
  *	Initialize a blob-stream block.
  *
  **************************************/
-	FRBRD *blob;
-	ISC_STATUS_ARRAY status_vector;
-	BSTREAM *bstream;
-	USHORT bpb_length;
-	UCHAR *bpb;
-
 	// bpb is irrelevant, not used.
-	bpb_length = 0;
-	bpb = NULL;
+	const USHORT bpb_length = 0;
+	const UCHAR* bpb = NULL;
 
-	blob = NULL;
+	FRBRD* blob = NULL;
+	ISC_STATUS_ARRAY status_vector;
 
 	if (*mode == 'w' || *mode == 'W') {
 		if (isc_create_blob2(status_vector, &database, &transaction, &blob,
@@ -1872,7 +1852,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 	else
 		return NULL;
 
-	bstream = BLOB_open(blob, NULL, 0);
+	BSTREAM* bstream = BLOB_open(blob, NULL, 0);
 
 	if (*mode == 'w' || *mode == 'W') {
 		bstream->bstr_mode |= BSTR_output;
@@ -1888,7 +1868,8 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 }
 
 
-BSTREAM* API_ROUTINE BLOB_open(FRBRD *blob, SCHAR * buffer, int length)
+// CVC: This routine doesn't open a blob really!
+BSTREAM* API_ROUTINE BLOB_open(FRBRD* blob, SCHAR* buffer, int length)
 {
 /**************************************
  *
@@ -1900,12 +1881,10 @@ BSTREAM* API_ROUTINE BLOB_open(FRBRD *blob, SCHAR * buffer, int length)
  *	Initialize a blob-stream block.
  *
  **************************************/
-	BSTREAM *bstream;
-
 	if (!blob)
 		return NULL;
 
-	bstream = (BSTREAM *) gds__alloc((SLONG) sizeof(BSTREAM));
+	BSTREAM* bstream = (BSTREAM *) gds__alloc((SLONG) sizeof(BSTREAM));
 /* FREE: This structure is freed by BLOB_close */
 	if (!bstream)				/* NOMEM: */
 		return NULL;
@@ -1945,7 +1924,7 @@ BSTREAM* API_ROUTINE BLOB_open(FRBRD *blob, SCHAR * buffer, int length)
 }
 
 
-int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
+int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 {
 /**************************************
  *
@@ -1962,13 +1941,12 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	USHORT l;
 
 	if (!bstream->bstr_buffer)
 		return FALSE;
 
 	*bstream->bstr_ptr++ = (x & 0377);
-	l = (bstream->bstr_ptr - bstream->bstr_buffer);
+	const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 	if (isc_put_segment(status_vector, &bstream->bstr_blob,
 						 l, bstream->bstr_buffer)) {
 		return FALSE;
@@ -1980,7 +1958,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM * bstream)
 
 
 #ifdef VMS
-static display(ISC_QUAD * blob_id, void *database, void *transaction)
+static display(ISC_QUAD* blob_id, void* database, void* transaction)
 {
 /**************************************
  *
@@ -1992,15 +1970,12 @@ static display(ISC_QUAD * blob_id, void *database, void *transaction)
  *	Display a file on VMS
  *
  **************************************/
-	SCHAR buffer[256], *p;
-	SSHORT short_length, l;
 	ISC_STATUS_ARRAY status_vector;
-	int *blob;
 	struct dsc$descriptor_s desc;
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
-	blob = NULL;
+	int* blob = NULL;
 	if (isc_open_blob(status_vector, &database, &transaction, &blob, blob_id)) {
 		isc_print_status(status_vector);
 		return FALSE;
@@ -2008,9 +1983,10 @@ static display(ISC_QUAD * blob_id, void *database, void *transaction)
 
 /* Copy data from blob to scratch file */
 
-	short_length = sizeof(buffer);
-
+	const SSHORT short_length = sizeof(buffer);
+	SCHAR buffer[256];
 	for (;;) {
+		USHORT l = 0;
 		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			if (status_vector[1] != isc_segstr_eof)
@@ -2031,10 +2007,10 @@ static display(ISC_QUAD * blob_id, void *database, void *transaction)
 #endif /* VMS */
 
 
-static int dump(ISC_QUAD * blob_id,
-				FRBRD *database, 
-				FRBRD *transaction, 
-				IB_FILE * file)
+static int dump(ISC_QUAD* blob_id,
+				FRBRD* database, 
+				FRBRD* transaction, 
+				IB_FILE* file)
 {
 /**************************************
  *
@@ -2046,20 +2022,16 @@ static int dump(ISC_QUAD * blob_id,
  *	Dump a blob into a file.
  *
  **************************************/
-	SCHAR buffer[256], *p;
-	SSHORT short_length, l;
-	ISC_STATUS_ARRAY status_vector;
-	FRBRD *blob;
-	USHORT bpb_length;
-	UCHAR *bpb;
+	SCHAR buffer[256];
 
 	// bpb is irrelevant, not used.
-	bpb_length = 0;
-	bpb = NULL;
+	const USHORT bpb_length = 0;
+	const UCHAR* bpb = NULL;
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
-	blob = NULL;
+	FRBRD* blob = NULL;
+	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
 						bpb_length, bpb)) {
 		isc_print_status(status_vector);
@@ -2068,22 +2040,22 @@ static int dump(ISC_QUAD * blob_id,
 
 /* Copy data from blob to scratch file */
 
-	short_length = sizeof(buffer);
+	const SSHORT short_length = sizeof(buffer);
 
 	for (;;) {
-		isc_get_segment(status_vector, &blob,
-						 reinterpret_cast<USHORT*>(&l),
+		USHORT l = 0;
+		isc_get_segment(status_vector, &blob, &l,
 						 short_length, buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			break;
 		}
-		p = buffer;
+		const TEXT* p = buffer;
 		if (l)
-			do
+			do {
 				ib_fputc(*p++, file);
-			while (--l);
+			} while (--l);
 	}
 
 /* Close the blob */
@@ -2094,11 +2066,11 @@ static int dump(ISC_QUAD * blob_id,
 }
 
 
-static int edit(ISC_QUAD * blob_id,
-				FRBRD *database,
-				FRBRD *transaction, 
+static int edit(ISC_QUAD* blob_id,
+				FRBRD* database,
+				FRBRD* transaction, 
 				SSHORT type, 
-				SCHAR * field_name)
+				const SCHAR* field_name)
 {
 /**************************************
  *
@@ -2114,20 +2086,18 @@ static int edit(ISC_QUAD * blob_id,
  *	If the field name coming in is too big, truncate it.
  *
  **************************************/
-	TEXT file_name[50], *p, *q;
+	TEXT file_name[50];
 #if (defined WIN_NT)
 	TEXT buffer[9];
 #else
 	TEXT buffer[25];
 #endif
-	IB_FILE *file;
-#ifdef HAVE_MKSTEMP
-	int fd;
-#endif
 
-	if (!(q = field_name))
+	const TEXT* q = field_name;
+	if (!q)
 		q = "gds_edit";
 
+	TEXT* p;
 	for (p = buffer; *q && p < buffer + sizeof(buffer) - 1; q++)
 		if (*q == '$')
 			*p++ = '_';
@@ -2142,8 +2112,10 @@ static int edit(ISC_QUAD * blob_id,
 */
 	sprintf(file_name, "%sXXXXXX", buffer);
 
+	IB_FILE* file;
+
 #ifdef HAVE_MKSTEMP
-	fd = mkstemp(file_name);
+	const int fd = mkstemp(file_name);
 	if (!(file = fdopen(fd, "w+"))) {
 		close(fd);
 		return FALSE;
@@ -2202,8 +2174,7 @@ static int get_ods_version(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	USHORT n, l;
-	UCHAR item, buffer[16], *p;
+	UCHAR buffer[16];
 
 	isc_database_info(status_vector,
 					  handle,
@@ -2214,12 +2185,13 @@ static int get_ods_version(
 	if (status_vector[1])
 		return FB_FAILURE;
 
-	p = buffer;
+	const UCHAR* p = buffer;
+	UCHAR item;
 
 	while ((item = *p++) != isc_info_end) {
-		l = static_cast<USHORT>(gds__vax_integer(p, 2));
+		const USHORT l = static_cast<USHORT>(gds__vax_integer(p, 2));
 		p += 2;
-		n = static_cast<USHORT>(gds__vax_integer(p, l));
+		const USHORT n = static_cast<USHORT>(gds__vax_integer(p, l));
 		p += l;
 		switch (item) {
 		case isc_info_ods_version:
@@ -2396,10 +2368,10 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 }
 
 
-static int load(ISC_QUAD * blob_id,
-				FRBRD *database, 
-				FRBRD *transaction, 
-				IB_FILE * file)
+static int load(ISC_QUAD* blob_id,
+				FRBRD* database, 
+				FRBRD* transaction, 
+				IB_FILE* file)
 {
 /**************************************
  *
@@ -2411,14 +2383,11 @@ static int load(ISC_QUAD * blob_id,
  *      Load a blob from a file.
  *
  **************************************/
-	TEXT buffer[512], *p, *buffer_end;
-	SSHORT l, c;
 	ISC_STATUS_ARRAY status_vector;
-	FRBRD *blob;
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
-	blob = NULL;
+	FRBRD* blob = NULL;
 	if (isc_create_blob(status_vector, &database, &transaction, &blob,
 						 blob_id)) {
 		isc_print_status(status_vector);
@@ -2426,18 +2395,18 @@ static int load(ISC_QUAD * blob_id,
 	}
 
 /* Copy data from file to blob.  Make up boundaries at end of of line. */
-
-	p = buffer;
-	buffer_end = buffer + sizeof(buffer);
+	TEXT buffer[512];
+	TEXT* p = buffer;
+	const TEXT* const buffer_end = buffer + sizeof(buffer);
 
 	for (;;) {
-		c = ib_fgetc(file);
+		const SSHORT c = ib_fgetc(file);
 		if (ib_feof(file))
 			break;
 		*p++ = static_cast<TEXT>(c);
 		if ((c != '\n') && p < buffer_end)
 			continue;
-		l = p - buffer;
+		const SSHORT l = p - buffer;
 		if (isc_put_segment(status_vector, &blob, l, buffer)) {
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
@@ -2446,7 +2415,8 @@ static int load(ISC_QUAD * blob_id,
 		p = buffer;
 	}
 
-	if ((l = p - buffer) != 0)
+	const SSHORT l = p - buffer;
+	if (l != 0)
 		if (isc_put_segment(status_vector, &blob, l, buffer)) {
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
@@ -2457,5 +2427,4 @@ static int load(ISC_QUAD * blob_id,
 
 	return TRUE;
 }
-
 

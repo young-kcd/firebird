@@ -266,8 +266,8 @@ typedef struct clean
 } *CLEAN;
 
 static CLEAN	cleanup_handlers = NULL;
-static GDS_MSG		default_msg = NULL;
-static SLONG	initialized = FALSE;
+static gds_msg* global_default_msg = NULL;
+static bool initialized = false;
 
 #ifdef DEBUG_GDS_ALLOC
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
@@ -1088,12 +1088,10 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	// 07 Sept 2003, Nickolay Samofatov.
 	// Since we cannot call ctime/localtime_r or anything else like this from 
 	// signal hanlders we need to decode time by hand. 
-	struct tm today;	
 
-	int days, rem;
-
-	days = now / SECS_PER_DAY;
-	rem = now % SECS_PER_DAY;
+	const int days = now / SECS_PER_DAY;
+	int rem = now % SECS_PER_DAY;
+	tm today;
     today.tm_hour = rem / SECS_PER_HOUR;
     rem %= SECS_PER_HOUR;
     today.tm_min = rem / 60;
@@ -1103,7 +1101,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 		  &today);
 
 	char buffer[1024]; // 1K should be enough for the trace message
-	char *p = buffer;
+	char* p = buffer;
 	gds__ulstr(p, today.tm_year+1900, 4, '0'); p+=4;
 	*p++ = '-';
 	gds__ulstr(p, today.tm_mon, 2, '0'); p+=2;
@@ -1146,8 +1144,6 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
  *
  **************************************/
 	va_list ptr;
-	IB_FILE *file;
-	int oldmask;
 	time_t now;
 	TEXT name[MAXPATHLEN];
 
@@ -1161,11 +1157,12 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 
 	gds__prefix(name, LOGFILE);
 
-	oldmask = umask(0111);
+	const int oldmask = umask(0111);
 #ifdef WIN_NT
 	trace_mutex.enter();
 #endif
-	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
+	IB_FILE* file = ib_fopen(name, FOPEN_APPEND_TYPE);
+	if (file != NULL)
 	{
 		ib_fprintf(file, "\n%s%s\t%.25s\t", 
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
@@ -1240,18 +1237,18 @@ int API_ROUTINE gds__msg_close(void *handle)
  *
  **************************************/
 
-	GDS_MSG message = reinterpret_cast < GDS_MSG > (handle);
+	gds_msg* message = reinterpret_cast<gds_msg*>(handle);
 
 	if (!message) {
-		if (!default_msg) {
+		if (!global_default_msg) {
 			return 0;
 		}
-		message = default_msg;
+		message = global_default_msg;
 	}
 
-	default_msg = NULL;
+	global_default_msg = NULL;
 
-	int fd = message->msg_file;
+	const int fd = message->msg_file;
 
 	FREE_LIB_MEMORY(message);
 
@@ -1284,19 +1281,15 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
  *	as fits in caller's buffer.
  *
  **************************************/
-	TEXT *p, *formatted, *end;
-	SLONG size;
-	int n;
-
-	size = (SLONG) (((arg1) ? MAX_ERRSTR_LEN : 0) +
-					((arg2) ? MAX_ERRSTR_LEN : 0) +
-					((arg3) ? MAX_ERRSTR_LEN : 0) +
-					((arg4) ? MAX_ERRSTR_LEN : 0) +
-					((arg5) ? MAX_ERRSTR_LEN : 0) + MAX_ERRMSG_LEN);
+	SLONG size = (SLONG) (((arg1) ? MAX_ERRSTR_LEN : 0) +
+						  ((arg2) ? MAX_ERRSTR_LEN : 0) +
+						  ((arg3) ? MAX_ERRSTR_LEN : 0) +
+						  ((arg4) ? MAX_ERRSTR_LEN : 0) +
+						  ((arg5) ? MAX_ERRSTR_LEN : 0) + MAX_ERRMSG_LEN);
 
 	size = (size < length) ? length : size;
 
-	formatted = (TEXT *) gds__alloc((SLONG) size);
+	TEXT* formatted = (TEXT *) gds__alloc((SLONG) size);
 
 	if (!formatted)				/* NOMEM: */
 		return -1;
@@ -1305,7 +1298,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
    than the raw text of the message to be formatted.  Then we can
    use the caller's buffer to temporarily hold the raw text. */
 
-	n = gds__msg_lookup(handle, facility, number, length, buffer, NULL);
+	const int n = gds__msg_lookup(handle, facility, number, length, buffer, NULL);
 
 	if (n > 0 && n < length)
 	{
@@ -1315,6 +1308,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 	{
 		sprintf(formatted, "can't format message %d:%d -- ", facility,
 				number);
+		TEXT* p;
 		if (n == -1)
 			strcat(formatted, "message text not found");
 		else if (n == -2) {
@@ -1331,10 +1325,10 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 		}
 	}
 
-	USHORT l = strlen(formatted);
-	end = buffer + length - 1;
+	const USHORT l = strlen(formatted);
+	const TEXT* const end = buffer + length - 1;
 
-	for (p = formatted; *p && buffer < end;) {
+	for (const TEXT* p = formatted; *p && buffer < end;) {
 		*buffer++ = *p++;
 	}
 	*buffer = 0;
@@ -1362,37 +1356,31 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
  *	number if we can't find the message.
  *
  **************************************/
-	GDS_MSG message;
-	int status;
-	USHORT n;
-	MSGREC leaf;
-	MSGNOD node, end;
-	ULONG position, code;
-	TEXT *p;
-
-/* Handle default message file */
-
-	if (!(message = (GDS_MSG) handle) && !(message = default_msg)) {
+// Handle default message file
+	int status = -1;
+	gds_msg* message;
+	if (!(message = (GDS_MSG) handle) && !(message = global_default_msg)) {
 		/* Try environment variable setting first */
 
-		if ((p = getenv("ISC_MSGS")) == NULL ||
+		TEXT* p = getenv("ISC_MSGS");
+		if (p == NULL ||
 			(status =
-			 gds__msg_open(reinterpret_cast < void **>(&message), p))) {
+			 gds__msg_open(reinterpret_cast < void **>(&message), p))) 
+		{
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
-			TEXT *msg_file;
 
 			/* Try declared language of this attachment */
 			/* This is not quite the same as the language declared on the
 			   READY statement */
 
-			msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
+			TEXT* msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
 			/* FREE: at block exit */
 			if (!msg_file)		/* NOMEM: */
 				return -2;
 
 			p = getenv("LC_MESSAGES");
 			if (p != NULL) {
-				sanitize(p);
+				sanitize(p); // CVC: Sanitizing environment variable???
 				sprintf(translated_msg_file, MSG_FILE_LANG, p);
 				gds__prefix_msg(msg_file, translated_msg_file);
 				status =
@@ -1415,16 +1403,18 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		if (status)
 			return status;
 
-		default_msg = message;
+		global_default_msg = message;
 	}
 
 /* Search down index levels to the leaf.  If we get lost, punt */
 
-	code = MSG_NUMBER(facility, number);
-	end = (MSGNOD) ((SCHAR *) message->msg_bucket + message->msg_bucket_size);
-	position = message->msg_top_tree;
+	const ULONG code = MSG_NUMBER(facility, number);
+	const msgnod* const end = 
+		(MSGNOD) ((SCHAR *) message->msg_bucket + message->msg_bucket_size);
+	ULONG position = message->msg_top_tree;
 
-	for (n = 1, status = 0; !status; n++) {
+	status = 0;
+	for (USHORT n = 1; !status; n++) {
 		if (lseek(message->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
 			status = -6;
 		else if (read(message->msg_file, message->msg_bucket,
@@ -1433,7 +1423,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		else if (n == message->msg_levels)
 			break;
 		else {
-			for (node = (MSGNOD) message->msg_bucket; !status; node++) {
+			for (const msgnod* node = (MSGNOD) message->msg_bucket; !status; node++) {
 				if (node >= end) {
 					status = -8;
 					break;
@@ -1448,15 +1438,16 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!status) {
 		/* Search the leaf */
-		for (leaf = (MSGREC) message->msg_bucket; !status;
-			 leaf = NEXT_LEAF(leaf)) {
+		for (const msgrec* leaf = (MSGREC) message->msg_bucket; !status;
+			 leaf = NEXT_LEAF(leaf)) 
+		{
 			if (leaf >= (MSGREC) end || leaf->msgrec_code > code) {
 				status = -1;
 				break;
 			}
 			else if (leaf->msgrec_code == code) {
 				/* We found the correct message, so return it to the user */
-				n = MIN(length - 1, leaf->msgrec_length);
+				const USHORT n = MIN(length - 1, leaf->msgrec_length);
 				memcpy(buffer, leaf->msgrec_text, n);
 				buffer[n] = 0;
 
@@ -1486,19 +1477,17 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
  *	and update a message handle.
  *
  **************************************/
-	int n;
-	GDS_MSG message;
-	ISC_MSGHDR header;
-
-	if ((n = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
+	const int n = open(filename, O_RDONLY | O_BINARY, 0);
+	if (n < 0)
 		return -2;
 
+	isc_msghdr header;
 	if (read(n, &header, sizeof(header)) < 0) {
 		close(n);
 		return -3;
 	}
 	// Trick to silence compiler when MSG_MINOR_VERSION == 0
-	USHORT minor = MSG_MINOR_VERSION;
+	const USHORT minor = MSG_MINOR_VERSION;
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
 		header.msghdr_minor_version < minor) {
@@ -1506,7 +1495,7 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 		return -4;
 	}
 
-	message =
+	gds_msg* message =
 		(GDS_MSG) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
@@ -1576,13 +1565,12 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  *
  *      Function returns 0 on success and -1 on failure
  **************************************/
-
-	char *prefix_ptr;
 	int count = 0;
 
 	if (arg_type < IB_PREFIX_TYPE || arg_type > IB_PREFIX_MSG_TYPE)
 		return ((SLONG) - 1);
 
+	char* prefix_ptr;
 	switch (arg_type) {
 	case IB_PREFIX_TYPE:
 		prefix_ptr = ib_prefix = ib_prefix_val;
@@ -1676,10 +1664,6 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
  *	the enviroment variable INTERBASE if it is set.
  *
  **************************************/
-	TEXT temp[256], *p, *q;
-	ISC_VMS_PREFIX prefix;
-	SSHORT len;
-
 	if (*root != '[') {
 		strcpy(string, root);
 		return;
@@ -1687,19 +1671,20 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 
 /* Check for the existence of an InterBase logical name.  If there is 
    one use it, otherwise use the system directories. */
-
+	TEXT temp[256];
 	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp)) {
 		strcpy(string, ISC_LOGICAL);
 		strcat(string, root);
 		return;
 	}
 
-	for (p = temp, q = root; *p = UPPER7(*q); q++)
+	TEXT* p = temp;
+	for (const TEXT* q = root; *p = UPPER7(*q); q++)
 		if (*p++ == ']')
 			break;
 
-	len = p - temp;
-	for (prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	const SSHORT len = p - temp;
+	for (ISC_VMS_PREFIX prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1769,10 +1754,6 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
  *      variable FIREBIRD_LOCK if it is set.
  *
  *************************************************/
-	TEXT temp[256], *p, *q;
-	ISC_VMS_PREFIX prefix;
-	SSHORT len;
-
 	if (*root != '[') {
 		strcpy(string, root);
 		return;
@@ -1780,7 +1761,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 
 /* Check for the existence of a Firebird logical name.  If there is 
    one use it, otherwise use the system directories. */
-
+	TEXT temp[256];
 	if (ISC_expand_logical_once
 		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp)) {
 		strcpy(string, ISC_LOGICAL_LOCK);
@@ -1788,12 +1769,13 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 		return;
 	}
 
-	for (p = temp, q = root; *p = UPPER7(*q); q++)
+	TEXT* p = temp;
+	for (const TEXT* q = root; *p = UPPER7(*q); q++)
 		if (*p++ == ']')
 			break;
 
-	len = p - temp;
-	for (prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	const SSHORT len = p - temp;
+	for (ISC_VMS_PREFIX prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1852,10 +1834,6 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
  *      variable FIREBIRD_MSG if it is set.
  *
  *************************************************/
-	TEXT temp[256], *p, *q;
-	ISC_VMS_PREFIX prefix;
-	SSHORT len;
-
 	if (*root != '[') {
 		strcpy(string, root);
 		return;
@@ -1867,19 +1845,21 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 
 /* ISC_LOGICAL_MSG macro needs to be defined, check non VMS version of routine
    for functionality. */
+	TEXT temp[256];
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, te mp)) {
+		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp)) {
 		strcpy(string, ISC_LOGICAL_MSG);
 		strcat(string, root);
 		return;
 	}
 
-	for (p = temp, q = root; *p = UPPER7(*q); q++)
+	TEXT* p = temp;
+	for (const TEXT* q = root; *p = UPPER7(*q); q++)
 		if (*p++ == ']')
 			break;
 
-	len = p - temp;
-	for (prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	const SSHORT len = p - temp;
+	for (ISC_VMS_PREFIX prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1924,7 +1904,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 	while (gds_interprete_cpp(s + 1, &vector))
 		gds__put_error(s);
 
-	gds__free((SLONG *) s);
+	gds__free((void*) s);
 
 	return vec[1];
 }
@@ -1973,9 +1953,8 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
  *	source_interp and target_interp.
  *
  **************************************/
-	USHORT type, length;
-
-	type = *source = *target = 0;
+	USHORT type = 0;
+	*source = *target = 0;
 
 	if (source_interp)
 		*source_interp = 0;
@@ -1993,7 +1972,7 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 
 	while (p < end) {
 		const UCHAR op = *p++;
-		length = *p++;
+		const USHORT length = *p++;
 		switch (op) {
 		case gds_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
@@ -2083,8 +2062,6 @@ int API_ROUTINE gds__print_blr(
 
 	gds_ctl ctl;
 	gds_ctl* control = &ctl;
-	SSHORT level = 0;
-	SLONG offset = 0;
 
 	if (!routine) {
 		routine = gds__default_printer;
@@ -2105,6 +2082,9 @@ int API_ROUTINE gds__print_blr(
 
 	blr_format(control,
 			   (version == blr_version4) ? "blr_version4," : "blr_version5,");
+
+	SSHORT level = 0;
+	SLONG offset = 0;
 	PRINT_LINE;
 	PRINT_VERB;
 
@@ -2195,12 +2175,10 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
  * determining when a task ends, therefore this never gets called.
 */
 
-	CLEAN clean;
-
 	if (!initialized)
 		init();
 
-	clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
+	CLEAN clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
 	clean->clean_next = cleanup_handlers;
 	cleanup_handlers = clean;
 	clean->clean_routine = routine;
@@ -2305,7 +2283,7 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
 }
 
 
-void API_ROUTINE gds__temp_dir(TEXT * buffer)
+void API_ROUTINE gds__temp_dir(TEXT* buffer)
 {
 /**************************************
  *
@@ -2317,14 +2295,13 @@ void API_ROUTINE gds__temp_dir(TEXT * buffer)
  *      Return temporary directory.
  *
  **************************************/
-	TEXT * directory = 0;
-	if (!(directory = getenv(FB_TMP_ENV))) {
+	const TEXT* directory = getenv(FB_TMP_ENV);
+	if (!directory) {
 #ifdef WIN_NT
 		TEXT temp_dir[MAXPATHLEN];
-		DWORD len;
+		const DWORD len = GetTempPath(sizeof(temp_dir), temp_dir);
 		// This checks "TEMP" and "TMP" environment variables
-		if ((len = GetTempPath(sizeof(temp_dir), temp_dir)) &&
-			len < sizeof(temp_dir))
+		if (len && len < sizeof(temp_dir))
 			directory = temp_dir;
 #else
 		directory = getenv("TMP");
@@ -2360,15 +2337,15 @@ void* API_ROUTINE gds__temp_file(
  **************************************/
 	TEXT temp_dir[MAXPATHLEN];
 
-	TEXT *directory = dir;
+	const TEXT* directory = dir;
 	if (!directory) {
 		gds__temp_dir(temp_dir);
 		directory = temp_dir;
 	}
-	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)
+	if (strlen(directory) >= MAXPATHLEN - strlen(string) - strlen(TEMP_PATTERN) - 2)
 		return (void *)-1;
 
-	void *result;
+	void* result;
 
 #ifdef WIN_NT
 	/* These are the characters used in temporary filenames.  */
@@ -2382,14 +2359,14 @@ void* API_ROUTINE gds__temp_file(
 	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
 		char file_name[MAXPATHLEN];
 		strcpy(file_name, directory);
-		if (file_name[strlen(file_name)-1] != '\\')
+		if (file_name[strlen(file_name) - 1] != '\\')
 			strcat(file_name, "\\");
 		strcat(file_name, string);
 		char suffix[] = TEMP_PATTERN;
 		__int64 temp = randomness;
-		for (size_t i=0; i< sizeof(suffix)-1; i++) {
-			suffix[i] = letters[temp % (sizeof(letters)-1)];
-			temp /= sizeof(letters)-1;
+		for (size_t i = 0; i < sizeof(suffix) - 1; i++) {
+			suffix[i] = letters[temp % (sizeof(letters) - 1)];
+			temp /= sizeof(letters) - 1;
 		}
 		strcat(file_name, suffix);
 		if (expanded_string)
@@ -2410,7 +2387,7 @@ void* API_ROUTINE gds__temp_file(
 #else
 	TEXT file_name[MAXPATHLEN];
 	strcpy(file_name, directory);
-	if (file_name[strlen(file_name)-1] != '/')
+	if (file_name[strlen(file_name) - 1] != '/')
 		strcat(file_name, "/");
 	strcat(file_name, string);
 	strcat(file_name, TEMP_PATTERN);
@@ -2455,12 +2432,14 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *	Unregister a cleanup handler.
  *
  **************************************/
-	CLEAN *clean_ptr, clean;
+	CLEAN clean;
 
-	for (clean_ptr = &cleanup_handlers; clean = *clean_ptr;
-		 clean_ptr = &clean->clean_next) {
+	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
+		 clean_ptr = &clean->clean_next) 
+	{
         if (clean->clean_routine == routine
-            && clean->clean_arg == arg) {
+            && clean->clean_arg == arg) 
+		{
 			*clean_ptr = clean->clean_next;
 			FREE_LIB_MEMORY(clean);
 			break;
@@ -2490,40 +2469,44 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
  * 	else, if the module is not in the path return FALSE.
  *
  **************************************/
-	TEXT *p, *q;
-	TEXT *token;
-	TEXT abs_module[MAXPATHLEN];
-	TEXT abs_module_path[MAXPATHLEN];
-	TEXT abs_path[MAXPATHLEN];
-	TEXT path[MAXPATHLEN];
-	TEXT *ib_ext_lib_path = 0;
-
-	if (!(ib_ext_lib_path = getenv(ib_env_var))) {
+	TEXT* ib_ext_lib_path = getenv(ib_env_var);
+	if (!ib_ext_lib_path) {
 		strncpy(resolved_module, module, length);
-		return TRUE;		/* The variable is not defined.  Retrun TRUE */
+		return TRUE;		/* The variable is not defined. Return TRUE */
 	}
 
+	TEXT abs_module[MAXPATHLEN];
 	if (EXPAND_PATH(module, abs_module)) {
 		/* Extract the path from the absolute module name */
-		for (p = abs_module, q = NULL; *p; p++)
-			if ((*p == '\\') || (*p == '/'))
-				q = p;
+		const TEXT* q = NULL;
+		for (const TEXT* mp = abs_module; *mp; mp++)
+			if ((*mp == '\\') || (*mp == '/'))
+				q = mp;
 
+		TEXT abs_module_path[MAXPATHLEN];
 		memset(abs_module_path, 0, MAXPATHLEN);
 		strncpy(abs_module_path, abs_module, q - abs_module);
 
 		/* Check to see if the module path is in the lib path
-		   if it is return TURE.  If it does not find it, then
+		   if it is return TRUE.  If it does not find it, then
 		   the module path is not valid so return FALSE */
-		token = strtok(ib_ext_lib_path, ";");
+
+		TEXT abs_path[MAXPATHLEN];
+		TEXT path[MAXPATHLEN];
+
+		// CVC: Warning, strtok is changing the environment variable!
+		// If this function is called again, only the first substring will be found.
+		// Multiple engines in the same machine => shudder.
+		const TEXT* token = strtok(ib_ext_lib_path, ";");
 		while (token != NULL) {
 			strcpy(path, token);
 			/* make sure that there is no traing slash on the path */
-			p = path + strlen(path);
+			TEXT* p = path + strlen(path);
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
 				p[-1] = 0;
 			if ((EXPAND_PATH(path, abs_path))
-				&& (!COMPARE_PATH(abs_path, abs_module_path))) {
+				&& (!COMPARE_PATH(abs_path, abs_module_path))) 
+			{
 				strncpy(resolved_module, abs_module, length);
 				return TRUE;
 			}
@@ -2604,10 +2587,8 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
  *	bytes.
  *
  **************************************/
-	SLONG value;
-	SSHORT shift;
-
-	value = shift = 0;
+	SLONG value = 0;
+	SSHORT shift = 0;
 
 	while (--length >= 0) {
 		value += ((SLONG) * ptr++) << shift;
@@ -2642,9 +2623,9 @@ void API_ROUTINE gds__vtof(
 	}
 
 	if (length > 0)
-		do
+		do {
 			*field++ = ' ';
-		while (--length);
+		} while (--length);
 }
 
 
@@ -2687,10 +2668,11 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
  *      Decide whether status is worth mentioning.
  *
  **************************************/
-	TEXT error_buffer[192], *p;
+	TEXT error_buffer[192];
 
 	sprintf(error_buffer, "SQLCODE: %d\nSQL ERROR:\n", sqlcode);
-	for (p = error_buffer; *p;)
+	TEXT* p = error_buffer;
+	while (*p)
 		p++;
 	isc_sql_interprete(sqlcode, p,
 					   (SSHORT) (sizeof(error_buffer) - (p - error_buffer) -
@@ -2728,7 +2710,7 @@ void API_ROUTINE isc_sql_interprete(
  *	      an empty string instead of NULLs.
  *	      
  **************************************/
-	TEXT *str = "";
+	const TEXT* str = "";
 
 	if (sqlcode < 0)
 		gds__msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer,
@@ -2740,7 +2722,7 @@ void API_ROUTINE isc_sql_interprete(
 
 
 #ifdef VMS
-int unlink(SCHAR * file)
+int unlink(SCHAR* file)
 {
 /**************************************
  *
@@ -2872,9 +2854,7 @@ static SCHAR blr_print_byte(gds_ctl* control)
  *	Print a byte as a numeric value and return same.
  *
  **************************************/
-	UCHAR v;
-
-	v = BLR_BYTE;
+	const UCHAR v = BLR_BYTE;
 	blr_format(control, (control->ctl_language) ? "chr(%d), " : "%d, ",
 			   (int) v);
 
@@ -2896,10 +2876,9 @@ static SCHAR blr_print_char(gds_ctl* control)
  **************************************/
 	SCHAR c;
 	UCHAR v;
-	SSHORT printable;
 
 	v = c = BLR_BYTE;
-	printable = (c >= 'a' && c <= 'z') ||
+	const bool printable = (c >= 'a' && c <= 'z') ||
 		(c >= 'A' && c <= 'Z') ||
 	    (c >= '0' && c <= '9') ||
 	     c == '$' ||
@@ -2928,10 +2907,9 @@ static void blr_print_cond(gds_ctl* control)
  *	Print an error condition.
  *
  **************************************/
-	USHORT ctype;
 	SSHORT n;
 
-	ctype = BLR_BYTE;
+	const USHORT ctype = BLR_BYTE;
 
 	switch (ctype) {
 	case blr_gds_code:
@@ -2978,15 +2956,13 @@ static int blr_print_dtype(gds_ctl* control)
  *	data described.
  *
  **************************************/
-	USHORT dtype;
-	SCHAR *string;
 	SSHORT length;
-	UCHAR v1, v2;
 
-	dtype = BLR_BYTE;
+	const USHORT dtype = BLR_BYTE;
 
 /* Special case blob (261) to keep down the size of the
    jump table */
+	const TEXT* string;
 
 	switch (dtype) {
 	case blr_short:
@@ -3030,14 +3006,15 @@ static int blr_print_dtype(gds_ctl* control)
 		break;
 
 	case blr_double:
-		string = "double";
+		{
+			string = "double";
 
-		/* for double literal, return the length of the numeric string */
-
-		v1 = *(control->ctl_blr);
-		v2 = *(control->ctl_blr + 1);
-		length = ((v2 << 8) | v1) + 2;
-		break;
+			/* for double literal, return the length of the numeric string */
+			const UCHAR v1 = *(control->ctl_blr);
+			const UCHAR v2 = *(control->ctl_blr + 1);
+			length = ((v2 << 8) | v1) + 2;
+			break;
+		}
 
 	case blr_d_float:
 		string = "d_float";
@@ -3128,10 +3105,9 @@ static void blr_print_join(gds_ctl* control)
  *	Print a join type.
  *
  **************************************/
-	USHORT join_type;
-	SCHAR *string;
+	const TEXT *string;
 
-	join_type = BLR_BYTE;
+	const USHORT join_type = BLR_BYTE;
 
 	switch (join_type) {
 	case blr_inner:
@@ -3193,10 +3169,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
  *	Primary recursive routine to print BLR.
  *
  **************************************/
-	SSHORT n, n2;
-	SLONG offset;
-
-	offset = control->ctl_blr - control->ctl_blr_start;
+	SLONG offset = control->ctl_blr - control->ctl_blr_start;
 	blr_indent(control, level);
 	UCHAR blr_operator = BLR_BYTE;
 
@@ -3209,6 +3182,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 	blr_print_blr(control, blr_operator);
 	level++;
 	const UCHAR *ops = blr_table[blr_operator].blr_operators;
+	SSHORT n;
 
 	while (*ops)
 		switch (*ops++) {
@@ -3298,7 +3272,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		case op_literals:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				n2 = PRINT_BYTE;
+				SSHORT n2 = PRINT_BYTE;
 				while (--n2 >= 0)
 					PRINT_CHAR;
 				offset = PRINT_LINE;
@@ -3357,10 +3331,8 @@ static int blr_print_word(gds_ctl* control)
  *	Print a VAX word as a numeric value an return same.
  *
  **************************************/
-	UCHAR v1, v2;
-
-	v1 = BLR_BYTE;
-	v2 = BLR_BYTE;
+	const UCHAR v1 = BLR_BYTE;
+	const UCHAR v2 = BLR_BYTE;
 	blr_format(control,
 			   (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ",
 			   (int) v1, (int) v2);
@@ -3381,10 +3353,6 @@ void gds__cleanup(void)
  *	Exit handler for image exit.
  *
  **************************************/
-	CLEAN clean;
-	FPTR_VOID_PTR routine;
-	void *arg;
-
 #ifdef UNIX
 	if (gds_pid != getpid())
 		return;
@@ -3392,10 +3360,10 @@ void gds__cleanup(void)
 
 	gds__msg_close(NULL);
 
-	while (clean = cleanup_handlers) {
+	while (CLEAN clean = cleanup_handlers) {
 		cleanup_handlers = clean->clean_next;
-		routine = clean->clean_routine;
-		arg = clean->clean_arg;
+		FPTR_VOID_PTR routine = clean->clean_routine;
+		void* arg = clean->clean_arg;
 
 		/* We must free the handler before calling it because there
 		   may be a handler (and is) that frees all memory that has
@@ -3409,7 +3377,7 @@ void gds__cleanup(void)
 #ifdef V4_THREADING
 /* V4_DESTROY; */
 #endif
-	initialized = 0;
+	initialized = false;
 }
 
 
@@ -3425,10 +3393,6 @@ static void init(void)
  *	Do anything necessary to initialize module/system.
  *
  **************************************/
-#if defined(VMS)
-	ISC_STATUS status;
-#endif
-
 	if (initialized)
 		return;
 
@@ -3443,7 +3407,7 @@ static void init(void)
 	exit_description.exit_handler = cleanup;
 	exit_description.args = 1;
 	exit_description.arg[0] = &exit_status;
-	status = sys$dclexh(&exit_description);
+	ISC_STATUS status = sys$dclexh(&exit_description);
 #endif
 
 #ifdef UNIX
@@ -3454,9 +3418,10 @@ static void init(void)
 		/* Increase max open files to hard limit for Unix
 		   platforms which are known to have low soft limits. */
 
-		struct rlimit old, new_;
+		struct rlimit old;
 
 		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
+			struct rlimit new_;
 			new_.rlim_cur = new_.rlim_max = old.rlim_max;
 			if (!setrlimit(RLIMIT_NOFILE, &new_))
 			{
@@ -3478,7 +3443,7 @@ static void init(void)
 
 	atexit(gds__cleanup);
 
-	initialized = 1;
+	initialized = true;
 
 #ifndef REQUESTER
 	ISC_signal_init();
@@ -3555,22 +3520,20 @@ static void ndate(SLONG nday, tm* times)
  * less than -678882 (Approx 2/1/0000).
  *
  **************************************/
-	SLONG year, month, day;
-
 	nday -= 1721119 - 2400001;
 	const SLONG century = (4 * nday - 1) / 146097;
 	nday = 4 * nday - 1 - 146097 * century;
-	day = nday / 4;
+	SLONG day = nday / 4;
 
 	nday = (4 * day + 3) / 1461;
 	day = 4 * day + 3 - 1461 * nday;
 	day = (day + 4) / 4;
 
-	month = (5 * day - 3) / 153;
+	SLONG month = (5 * day - 3) / 153;
 	day = 5 * day - 3 - 153 * month;
 	day = (day + 5) / 5;
 
-	year = 100 * century + nday;
+	SLONG year = 100 * century + nday;
 
 	if (month < 10)
 		month += 3;
@@ -3674,7 +3637,8 @@ void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
 void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 {
 	// Assume that line is not too long
-	char buffer[PRETTY_BUFFER_SIZE+10], *p = buffer;
+	char buffer[PRETTY_BUFFER_SIZE + 10];
+	char* p = buffer;
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.38 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: c_cxx.cpp,v 1.39 2003-11-28 06:48:11 robocop Exp $
 //
 
 #include "firebird.h"
@@ -657,7 +657,7 @@ static void asgn_to( const act* action, REF reference, int column)
 			else
 				gen_get_or_put_slice(action, source, true, column);
 
-			/* Pick up NULL value if one is there */
+			// Pick up NULL value if one is there
 
 			if (reference = reference->ref_null) {
 				align(column);
@@ -872,7 +872,7 @@ static void gen_based( const act* action, int column)
 				ib_fprintf(out_file, "[%ld]", length);
 		}
 		else if (field->fld_array_info) {
-			/*  Print out the dimension part of the declaration  */
+			//  Print out the dimension part of the declaration
 
 			for (dimension = field->fld_array_info->ary_dimension; dimension;
 				 dimension = dimension->dim_next)
@@ -1083,8 +1083,8 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 	int length = strlen(p);
 	do {
 		if (length + indent > 255) {
-			/* if we did not find somewhere to break between the 200th and 256th
-			   character just print out 256 characters */
+			// if we did not find somewhere to break between the 200th and 256th
+			// character just print out 256 characters
 
 			bool open_quote = false;
 			for (q = p; (q - p + indent) < 255; q++) {
@@ -1099,7 +1099,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 			q = p + strlen(p);
 		}
 
-		/* Replace all occurrences of gds__ (or gds__) with isc_ */
+		// Replace all occurrences of gds__ (or gds__) with isc_
 
 		for (q1 = line, p1 = p; p1 < q;)
 			if ((*q1++ = *p1++) == 'g')
@@ -1253,7 +1253,7 @@ static void gen_create_database( const act* action, int column)
 		printa(column + (request->req_length ? INDENT : 0), "isc_free ((char*) %s);",
 			   s2);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb
 
 		printa(column, "%s = %d;", s1, request->req_length);
 	}
@@ -1473,7 +1473,7 @@ static void gen_database( const act* action, int column)
 	for (GPRE_REQ request = requests; request; request = request->req_next) {
 		gen_request(request);
 
-		/*  Array declarations  */
+		//  Array declarations
 
 		if (POR port = request->req_primary)
 			for (REF reference = port->por_references; reference;
@@ -2123,9 +2123,9 @@ static void gen_fetch( const act* action, int column)
 #ifdef SCROLLABLE_CURSORS
 	POR port = request->req_aport;
 	if (port) {
-		/* set up the reference to point to the correct value 
-		   in the linked list of values, and prepare for the 
-		   next FETCH statement if applicable */
+		// set up the reference to point to the correct value
+		//   in the linked list of values, and prepare for the
+		//   next FETCH statement if applicable
 
 		REF reference;
 		for (reference = port->por_references; reference;
@@ -2136,7 +2136,7 @@ static void gen_fetch( const act* action, int column)
 			reference->ref_values = value->val_next;
 		}
 
-		/* find the direction and offset parameters */
+		// find the direction and offset parameters
 
 		reference = port->por_references;
 		SCHAR* offset = reference->ref_value;
@@ -2153,8 +2153,8 @@ static void gen_fetch( const act* action, int column)
 		column += INDENT;
 		begin(column);
 
-		/* assign the direction and offset parameters to the appropriate message, 
-		   then send the message to the engine */
+		// assign the direction and offset parameters to the appropriate message,
+		// then send the message to the engine
 
 		asgn_from(action, port->por_references, column);
 		gen_send(action, port, column);
@@ -2442,14 +2442,14 @@ static void gen_get_or_put_slice(const act* action,
 	args.pat_string3 = s2;
 
 	args.pat_long1 = reference->ref_field->fld_array_info->ary_size;
-	/* slice size */
+	// slice size
 
 	if (action->act_flags & ACT_sql)
 		args.pat_string5 = reference->ref_value;
 	else {
 		sprintf(s4, "isc_%d",
 				reference->ref_field->fld_array_info->ary_ident);
-		args.pat_string5 = s4;	/* array name */
+		args.pat_string5 = s4;	// array name
 	}
 
 	args.pat_string6 = DCL_LONG;
@@ -3216,17 +3216,17 @@ static void gen_slice( const act* action, REF var_reference, int column)
 
 	args.pat_reference =
 		(var_reference ? var_reference : slice->slc_field_ref);
-	args.pat_request = parent_request;	/* blob id request */
-	args.pat_vector1 = status_vector(action);	/* status vector */
-	args.pat_database = parent_request->req_database;	/* database handle */
-	args.pat_string1 = action->act_request->req_trans;	/* transaction handle */
-	args.pat_value1 = request->req_length;	/* slice descr. length */
-	args.pat_ident1 = request->req_ident;	/* request name */
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	/* parameter length */
+	args.pat_request = parent_request;	// blob id request
+	args.pat_vector1 = status_vector(action);	// status vector
+	args.pat_database = parent_request->req_database;	// database handle
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle
+	args.pat_value1 = request->req_length;	// slice descr. length
+	args.pat_ident1 = request->req_ident;	// request name
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length
 
 	if (!(reference = var_reference))
 		reference = (REF) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	/* array name */
+	args.pat_string5 = reference->ref_value;	// array name
 
 	PATTERN_expand((USHORT) column,
 				   (action->act_type == ACT_get_slice) ? pattern1 : pattern2,
@@ -3627,9 +3627,8 @@ static TEXT* make_name( TEXT* string, sym* symbol)
 {
 
 	if (symbol->sym_type == SYM_delimited_cursor) {
-	/** All This elaborate code is just to put double quotes around
-	the cursor names and to escape any embeded quotes.
-    **/
+		// All This elaborate code is just to put double quotes around
+		// the cursor names and to escape any embeded quotes.
 		int i = 0;
 		strcpy(string, "\"\\\"");
 		for (i = strlen(string); *symbol->sym_string; i++) {
@@ -3784,9 +3783,9 @@ static void make_ready(
 		else
 			sprintf(s2, "isc_%d", request->req_ident);
 
-		/* if the dpb needs to be extended at runtime to include items
-		   in host variables, do so here; this assumes that there is 
-		   always a request generated for runtime variables */
+		// if the dpb needs to be extended at runtime to include items
+		// in host variables, do so here; this assumes that there is
+		// always a request generated for runtime variables
 
 		if (request->req_flags & REQ_extend_dpb) {
 			if (request->req_length)
@@ -3807,8 +3806,8 @@ static void make_ready(
 
 //  generate the attach database itself 
 
-	TEXT* dpb_size_ptr = "0";
-	TEXT* dpb_ptr = "(char*) 0";
+	const TEXT* dpb_size_ptr = "0";
+	const TEXT* dpb_ptr = "(char*) 0";
 
 	align(column);
 	if (filename)
@@ -3834,7 +3833,7 @@ static void make_ready(
 		printa(column + (request->req_length ? INDENT : 0), "isc_free ((char*) %s);",
 			   s2);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb
 
 		printa(column, "%s = %d;", s1, request->req_length);
 	}

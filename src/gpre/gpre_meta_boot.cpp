@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.34 2003-11-11 12:08:12 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.35 2003-11-28 06:48:12 robocop Exp $
  */
 
 #include "firebird.h"
@@ -889,7 +889,7 @@ extern "C" {
 void CVT_move (const dsc* a, dsc* b, FPTR_VOID c)
 {  
     fb_assert(0);
-    /* Not available in boot_gpre */
+    // Not available in boot_gpre 
 }
 
 void ERR_bugcheck(int number)

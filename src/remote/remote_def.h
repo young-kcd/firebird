@@ -37,8 +37,8 @@
  *
  */
 
-#ifndef _REMOTE_REMOTE_DEF_H_
-#define _REMOTE_REMOTE_DEF_H_
+#ifndef REMOTE_REMOTE_DEF_H
+#define REMOTE_REMOTE_DEF_H
 
 #ifdef VMS
 #define ARCHITECTURE		arch_vms
@@ -104,5 +104,5 @@
 #define SRVR_xnet			1024 /* 0x0400 IPC protocol via server */
 #define SRVR_thread_per_port	2048	/* 0x0800 Bind thread to a port */
 #define SRVR_no_icon		4096	/* 0x1000 Tell the server not to show the icon */
-#endif /* _REMOTE_REMOTE_DEF_H_ */
+#endif /* REMOTE_REMOTE_DEF_H */
 

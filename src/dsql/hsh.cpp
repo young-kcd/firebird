@@ -113,14 +113,14 @@ void HSHD_init(void)
  **/
 void HSHD_debug(void)
 {
-/* dump each hash table entry */
+// dump each hash table entry 
 
 	lock_hash();
 	for (SSHORT h = 0; h < HASH_SIZE; h++) {
 		for (DSQL_SYM collision = hash_table[h]; collision;
 			 collision = collision->sym_collision)
 		{
-			/* check any homonyms first */
+			// check any homonyms first 
 
 			ib_fprintf(ib_stderr, "Symbol type %d: %s %p\n",
 					   collision->sym_type, collision->sym_string,
@@ -175,12 +175,12 @@ void HSHD_fini(void)
  **/
 void HSHD_finish( const void* database)
 {
-/* check each hash table entry */
+// check each hash table entry 
 
 	lock_hash();
 	for (SSHORT h = 0; h < HASH_SIZE; h++) {
 		for (DSQL_SYM* collision = &hash_table[h]; *collision;) {
-			/* check any homonyms first */
+			// check any homonyms first 
 
 			DSQL_SYM chain = *collision;
 			for (DSQL_SYM* homptr = &chain->sym_homonym; *homptr;) {
@@ -193,7 +193,7 @@ void HSHD_finish( const void* database)
 					homptr = &symbol->sym_homonym;
 			}
 
-			/* now, see if the root entry has to go */
+			// now, see if the root entry has to go 
 
 			if (chain->sym_dbb == database) {
 				if (chain->sym_homonym) {
@@ -276,7 +276,7 @@ DSQL_SYM HSHD_lookup(const void*    database,
 		if ((database == symbol->sym_dbb) &&
 			scompare(string, length, symbol->sym_string, symbol->sym_length))
 		{
-			/* Search for a symbol of the proper type */
+			// Search for a symbol of the proper type 
 			while (symbol && symbol->sym_type != type) {
 				symbol = symbol->sym_homonym;
 			}
@@ -380,14 +380,14 @@ void HSHD_set_flag(
 		if (symbol->sym_dbb && (database != symbol->sym_dbb) &&
 			scompare(string, length, symbol->sym_string, symbol->sym_length)) {
 
-			/* the symbol name matches and it's from a different database */
+			// the symbol name matches and it's from a different database 
 
 			for (DSQL_SYM homonym = symbol; homonym;
 				homonym = homonym->sym_homonym)
 			{
 				if (homonym->sym_type == type) {
 
-					/* the homonym is of the correct type */
+					// the homonym is of the correct type 
 
 					/* the next check is for the same relation or procedure ID,
 					   which indicates that it MAY be the same relation or

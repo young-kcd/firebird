@@ -576,7 +576,7 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 
 	if (gen->gen_sdl + count >= gen->gen_end) {
 
-		/* The sdl buffer is too small.  Allocate a larger one. */
+		// The sdl buffer is too small.  Allocate a larger one. 
 
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);

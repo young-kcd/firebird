@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        Interprocess Client
- *      MODULE:         ipcevent.c
+ *      MODULE:         ipcevent.cpp
  *      DESCRIPTION:    Interprocess interface event window initializer
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,11 +28,11 @@
 #include "../ipserver/ipevt_proto.h"
 #include "../ipserver/ips.h"
 
-/* instance handle */
+// instance handle 
 
 extern HINSTANCE hIBDLLInstance;
 
-/* callback for event handling */
+// callback for event handling 
 
 LRESULT CALLBACK IBEventWindowFunc(HWND, UINT, WPARAM, LPARAM);
 
@@ -87,7 +87,7 @@ int IPC_window_init(
 	ShowWindow(hWnd, SW_HIDE);
 	UpdateWindow(hWnd);
 
-	/* return handle and signal with semaphore */
+	// return handle and signal with semaphore 
 
 	*event_window = hWnd;
 	ReleaseSemaphore(event_sem, 1L, NULL);

@@ -59,7 +59,7 @@
 #define FPRINTF         ib_fprintf
 #endif
 
-typedef IB_FILE *OUTFILE;
+typedef IB_FILE* OUTFILE;
 
 #define SW_I_ACQUIRE	1
 #define SW_I_OPERATION	2
@@ -72,12 +72,12 @@ struct waitque {
 };
 
 static void prt_lock_activity(OUTFILE, const lhb*, USHORT, USHORT, USHORT);
-static void prt_lock_init(void);
+static void prt_lock_init(void*, sh_mem*, bool);
 static void prt_history(OUTFILE, const lhb*, PTR, const SCHAR*);
 static void prt_lock(OUTFILE, const lhb*, LBL, USHORT);
-static void prt_owner(OUTFILE, const lhb*, OWN, bool, bool);
-static void prt_owner_wait_cycle(OUTFILE, const lhb*, OWN, USHORT, waitque*);
-static void prt_request(OUTFILE, const lhb*, LRQ);
+static void prt_owner(OUTFILE, const lhb*, const own*, bool, bool);
+static void prt_owner_wait_cycle(OUTFILE, const lhb*, const own*, USHORT, waitque*);
+static void prt_request(OUTFILE, const lhb*, const lrq*);
 static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
 static void prt_que2(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
 
@@ -335,7 +335,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	
 	lhb* LOCK_header = (lhb*) ISC_map_file(status_vector,
 							lock_file,
-							(void (*)(void*, sh_mem*, int)) prt_lock_init,
+							prt_lock_init,
 							0,
 							-LOCK_size_mapped,	/* Negative to NOT truncate file */
 							&shmem_data);
@@ -469,9 +469,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SLONG hash_total_count = 0;
 	SLONG hash_max_count = 0;
 	SLONG hash_min_count = 10000000;
-	const srq* slot;
 	USHORT i = 0;
-	for (slot = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots;
+	for (const srq* slot = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots;
 		 slot++, i++)
 	{
 		SLONG hash_lock_count = 0;
@@ -494,7 +493,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			hash_min_count, (hash_total_count / LOCK_header->lhb_hash_slots),
 			hash_max_count);
 
-	shb* a_shb = NULL;
+	const shb* a_shb = NULL;
 	if (LOCK_header->lhb_secondary != LHB_PATTERN) {
 		a_shb = (shb*) ABS_PTR(LOCK_header->lhb_secondary);
 		FPRINTF(outfile,
@@ -559,8 +558,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 /* Print known locks */
 
-	if (sw_locks || sw_series)
-		for (slot = LOCK_header->lhb_hash, i = 0;
+	if (sw_locks || sw_series) {
+		USHORT i = 0;
+		for (const srq* slot = LOCK_header->lhb_hash;
 			 i < LOCK_header->lhb_hash_slots; slot++, i++)
 		{
 			for (const srq* que = (SRQ) ABS_PTR(slot->srq_forward); que != slot;
@@ -571,6 +571,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 						 sw_series);
 			}
 		}
+	}
 
 	if (sw_history)
 		prt_history(outfile, LOCK_header, LOCK_header->lhb_history,
@@ -640,7 +641,7 @@ static void prt_lock_activity(
 		sleep(seconds);
 #endif
 		clock = time(NULL);
-		d = *localtime((time_t*)&clock);
+		d = *localtime(&clock);
 
 		FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
@@ -836,7 +837,7 @@ static void prt_lock_activity(
 }
 
 
-static void prt_lock_init(void)
+static void prt_lock_init(void*, sh_mem*, bool)
 {
 /**************************************
  *
@@ -870,7 +871,7 @@ static void prt_history(
  **************************************/
 	FPRINTF(outfile, "%s:\n", title);
 
-	for (HIS history = (HIS) ABS_PTR(history_header); true;
+	for (const his* history = (HIS) ABS_PTR(history_header); true;
 		 history = (HIS) ABS_PTR(history->his_next))
 	{
 		if (history->his_operation)
@@ -912,10 +913,9 @@ static void prt_lock(
 
 	if (lock->lbl_length == 4) {
 		SLONG key;
-		UCHAR *p, *q, *end;
-		p = (UCHAR *) & key;
-		q = lock->lbl_key;
-		for (end = q + 4; q < end; q++)
+		UCHAR* p = (UCHAR *) &key;
+		const UCHAR* q = lock->lbl_key;
+		for (const UCHAR* const end = q + 4; q < end; q++)
 			*p++ = *q;
 		FPRINTF(outfile, "\tKey: %06"SLONGFORMAT",", key);
 	}
@@ -925,10 +925,12 @@ static void prt_lock(
   		const UCHAR* q = lock->lbl_key;
   		const UCHAR* const end = q + lock->lbl_length;
 		for (; q < end; q++) {
-			UCHAR c = *q;
+			const UCHAR c = *q;
 			if ((c >= 'a' && c <= 'z') ||
 				(c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
+			{
 				*p++ = c;
+			}
 			else {
 				sprintf((char*) p, "<%d>", c);
 				while (*p)
@@ -964,7 +966,7 @@ static void prt_lock(
 
 static void prt_owner(OUTFILE outfile,
 					  const lhb* LOCK_header,
-					  OWN owner,
+					  const own* owner,
 					  bool sw_requests,
 					  bool sw_waitlist)
 {
@@ -978,8 +980,6 @@ static void prt_owner(OUTFILE outfile,
  *      Print a formatted owner block.
  *
  **************************************/
-	SRQ que;
-
 	FPRINTF(outfile, "OWNER BLOCK %6"SLONGFORMAT"\n", REL_PTR(owner));
 	FPRINTF(outfile, "\tOwner id: %6"ULONGFORMAT
 			", type: %1d, flags: 0x%02X, pending: %6"SLONGFORMAT", semid: %6d ",
@@ -1009,8 +1009,7 @@ static void prt_owner(OUTFILE outfile,
 	FPRINTF(outfile, "\n");
 #endif /* SOLARIS_MT */
 	{
-		UCHAR tmp;
-		tmp = (owner->own_flags | (UCHAR) owner->own_ast_flags
+		const UCHAR tmp = (owner->own_flags | (UCHAR) owner->own_ast_flags
 			   | (UCHAR) owner->own_ast_hung_flags);
 		FPRINTF(outfile, "\tFlags: 0x%02X ", tmp);
 		FPRINTF(outfile, " %s", (tmp & OWN_hung) ? "hung" : "    ");
@@ -1035,18 +1034,20 @@ static void prt_owner(OUTFILE outfile,
 
 	FPRINTF(outfile, "\n");
 
-	if (sw_requests)
+	if (sw_requests) {
+		const srq* que;
 		QUE_LOOP(owner->own_requests, que)
 			prt_request(outfile, LOCK_header,
 						(LRQ) ((UCHAR *) que -
 							   OFFSET(LRQ, lrq_own_requests)));
+	}
 }
 
 
 static void prt_owner_wait_cycle(
 								 OUTFILE outfile,
 								 const lhb* LOCK_header,
-								 OWN owner,
+								 const own* owner,
 								 USHORT indent, waitque *waiters)
 {
 /**************************************
@@ -1083,12 +1084,6 @@ static void prt_owner_wait_cycle(
 	if (!owner->own_pending_request)
 		FPRINTF(outfile, "nothing.\n");
 	else {
-		SRQ que;
-		LRQ owner_request;
-		LBL lock;
-		USHORT counter;
-		bool owner_conversion;
-
 		if (waiters->waitque_depth > FB_NELEM(waiters->waitque_entry)) {
 			FPRINTF(outfile, "Dependency too deep\n");
 			return;
@@ -1097,17 +1092,16 @@ static void prt_owner_wait_cycle(
 		waiters->waitque_entry[waiters->waitque_depth++] = REL_PTR(owner);
 
 		FPRINTF(outfile, "\n");
-		owner_request = (LRQ) ABS_PTR(owner->own_pending_request);
+		const lrq* owner_request = (LRQ) ABS_PTR(owner->own_pending_request);
 		fb_assert(owner_request->lrq_type == type_lrq);
-		owner_conversion = (owner_request->lrq_state > LCK_null);
+		const bool owner_conversion = (owner_request->lrq_state > LCK_null);
 
-		lock = (LBL) ABS_PTR(owner_request->lrq_lock);
+		const lbl* lock = (LBL) ABS_PTR(owner_request->lrq_lock);
 		fb_assert(lock->lbl_type == type_lbl);
 
-		counter = 0;
+		int counter = 0;
+		const srq* que;
 		QUE_LOOP(lock->lbl_requests, que) {
-			OWN lock_owner;
-			LRQ lock_request;
 
 			if (counter++ > 50) {
 				for (i = indent + 6; i; i--)
@@ -1117,7 +1111,7 @@ static void prt_owner_wait_cycle(
 				break;
 			}
 
-			lock_request =
+			const lrq* lock_request =
 				(LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
 			fb_assert(lock_request->lrq_type == type_lrq);
 
@@ -1142,7 +1136,7 @@ static void prt_owner_wait_cycle(
 					(owner_request->lrq_requested,
 					 lock_request->lrq_state)) continue;
 			};
-			lock_owner = (OWN) ABS_PTR(lock_request->lrq_owner);
+			const own* lock_owner = (OWN) ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
 								 waiters);
 		}
@@ -1151,7 +1145,7 @@ static void prt_owner_wait_cycle(
 }
 
 
-static void prt_request(OUTFILE outfile, const lhb* LOCK_header, LRQ request)
+static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* request)
 {
 /**************************************
  *
@@ -1196,20 +1190,17 @@ static void prt_que(
  *      Print the contents of a self-relative que.
  *
  **************************************/
-	SLONG count, offset;
-	SRQ next;
-
-	offset = REL_PTR(que);
+	const SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		FPRINTF(outfile, "%s: *empty*\n", string);
 		return;
 	}
 
-	count = 0;
-
+	SLONG count = 0;
+	const srq* next;
 	QUE_LOOP((*que), next)
-		++ count;
+		++count;
 
 	FPRINTF(outfile, "%s (%ld):\tforward: %6"SLONGFORMAT
 			", backward: %6"SLONGFORMAT"\n", string, count,
@@ -1233,7 +1224,7 @@ static void prt_que2(
  *      But don't try to count the entries, as they might be invalid
  *
  **************************************/
-	SLONG offset = REL_PTR(que);
+	const SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		FPRINTF(outfile, "%s: *empty*\n", string);

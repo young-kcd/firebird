@@ -85,7 +85,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 	vary *v = reinterpret_cast <vary*> (
 		FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[BUFFER_LARGE + sizeof(vary)]);
 	v->vary_length = BUFFER_LARGE;
-	UCHAR *p = 0;
+	UCHAR* p = 0;
 	DSC* dsc = EVL_expr(tdbb, sql);
 	SLONG l = (dsc && !(tdbb->tdbb_request->req_flags & req_null)) ?
 		MOV_get_string(dsc, &p, v, BUFFER_LARGE) : 0;
@@ -129,7 +129,7 @@ void ExecuteStatement::Open(TDBB tdbb, JRD_NOD sql, SSHORT nVars, bool SingleTon
 		diag_len = max_diag_len;
 	StartOfSqlOperator = FB_NEW(*tdbb->tdbb_transaction->tra_pool) TEXT[diag_len + 1];
 	StartOfSqlOperator[0] = 0;
-	strncat(StartOfSqlOperator, (TEXT *)p, diag_len);
+	strncat(StartOfSqlOperator, (const TEXT*) p, diag_len);
 
 	// this check uses local error handler for local status vector
 	ISC_STATUS_ARRAY local;

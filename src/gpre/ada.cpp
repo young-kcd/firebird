@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.34 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: ada.cpp,v 1.35 2003-11-28 06:48:11 robocop Exp $
 //
 
 #include "firebird.h"
@@ -116,7 +116,7 @@ static void	gen_trans (const act*, int);
 static void	gen_type (const act*, int);
 static void	gen_update (const act*, int);
 static void	gen_variable (const act*, int);
-static void	gen_whenever (SWE, int);
+static void	gen_whenever (const swe*, int);
 static void	make_array_declaration (REF, int);
 static void	make_cursor_open_test (enum act_t, GPRE_REQ, int);
 static TEXT* make_name (TEXT*, SYM);
@@ -649,7 +649,7 @@ static void gen_based( const act* action, int column)
 		sprintf(s, "array (");
 		for (q = s; *q; q++);
 
-		/*  Print out the dimension part of the declaration  */
+		//  Print out the dimension part of the declaration  
 		const dim* dimension = field->fld_array_info->ary_dimension;
 		for (i = 1; i < field->fld_array_info->ary_dimension_count;
 			 dimension = dimension->dim_next, i++) 
@@ -1071,7 +1071,7 @@ static void gen_create_database( const act* action, int column)
 		printa(column + (request->req_length ? 4 : 0),
 			   "interbase.FREE (%s);", s2);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb 
 		if (request->req_length)
 			printa(column, "%s = %d;", s1, request->req_length);
 	}
@@ -1210,7 +1210,7 @@ static void gen_database( const act* action, int column)
 	for (request = requests; request; request = request->req_next) {
 		gen_request(request, column);
 
-		/*  Array declarations  */
+		//  Array declarations  
 		const por* port = request->req_primary;
 		if (port)
 			for (REF reference = port->por_references; reference;
@@ -1907,7 +1907,7 @@ static void gen_fetch( const act* action, int column)
 			reference->ref_values = value->val_next;
 		}
 
-		/* find the direction and offset parameters */
+		// find the direction and offset parameters 
 
 		reference = port->por_references;
 		const TEXT* offset = reference->ref_value;
@@ -2212,28 +2212,28 @@ static void gen_get_or_put_slice(const act* action,
 		return;
 
 	PAT args;
-	args.pat_vector1 = status_vector(action);	/* status vector */
-	args.pat_database = action->act_request->req_database;	/* database handle */
-	args.pat_string1 = action->act_request->req_trans;	/* transaction handle */
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = action->act_request->req_database;	// database handle 
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle 
 
 	TEXT s1[25];
 	gen_name(s1, reference, true);	// blob handle
 	args.pat_string2 = s1;
 
-	args.pat_value1 = reference->ref_sdl_length;	/* slice descr. length */
+	args.pat_value1 = reference->ref_sdl_length;	// slice descr. length 
 
 	TEXT s2[25];
-	sprintf(s2, "isc_%d", reference->ref_sdl_ident);	/* slice description */
+	sprintf(s2, "isc_%d", reference->ref_sdl_ident);	// slice description 
 	args.pat_string3 = s2;
 
-	args.pat_value2 = 0;		/* parameter length */
+	args.pat_value2 = 0;		// parameter length 
 
 	TEXT s3[25];
-	sprintf(s3, "isc_null_vector_l");	/* parameter block init */
+	sprintf(s3, "isc_null_vector_l");	// parameter block init 
 	args.pat_string4 = s3;
 
 	args.pat_long1 = reference->ref_field->fld_array_info->ary_size;
-	/*  slice size */
+	//  slice size 
 	TEXT s4[25];
 	if (action->act_flags & ACT_sql) {
 		sprintf(s4, "%s'address", reference->ref_value);
@@ -2243,9 +2243,9 @@ static void gen_get_or_put_slice(const act* action,
 				reference->ref_field->fld_array_info->ary_ident);
 
 	}
-	args.pat_string5 = s4;		/* array name */
+	args.pat_string5 = s4;		// array name 
 
-	args.pat_string6 = "isc_array_length";	/* return length */
+	args.pat_string6 = "isc_array_length";	// return length 
 
 	if (get)
 		PATTERN_expand(column, pattern1, &args);
@@ -2603,7 +2603,7 @@ static void gen_request( GPRE_REQ request, int column)
 					   "function isc_to_dpb_ptr is new unchecked_conversion (system.address, interbase.dpb_ptr);");
 				ada_flags &= ~ADA_create_database;
 			}
-			/* fall into ... */
+			// fall into ... 
 		case REQ_ready:
 			printa(column,
 				   "isc_%dl\t: interbase.isc_ushort := %d;\t-- db parameter block --",
@@ -3009,15 +3009,15 @@ static void gen_slice( const act* action, int column)
 
 	PAT args;
 	args.pat_reference = slice->slc_field_ref;
-	args.pat_request = parent_request;	/* blob id request */
-	args.pat_vector1 = status_vector(action);	/* status vector */
-	args.pat_database = parent_request->req_database;	/* database handle */
-	args.pat_value1 = request->req_length;	/* slice descr. length */
-	args.pat_ident1 = request->req_ident;	/* request name */
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	/* parameter length */
+	args.pat_request = parent_request;	// blob id request 
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = parent_request->req_database;	// database handle 
+	args.pat_value1 = request->req_length;	// slice descr. length 
+	args.pat_ident1 = request->req_ident;	// request name 
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length 
 
 	reference = (REF) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	/* array name */
+	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = "isc_array_length";
 
 	PATTERN_expand(column,
@@ -3258,7 +3258,7 @@ static void gen_variable( const act* action, int column)
 //		Generate tests for any WHENEVER clauses that may have been declared.
 //  
 
-static void gen_whenever( SWE label, int column)
+static void gen_whenever(const swe* label, int column)
 {
 	while (label) {
 		const TEXT* condition;
@@ -3636,7 +3636,7 @@ static void make_ready(const dbb* db,
 		printa(column + (request->req_length ? 4 : 0),
 			   "interbase.FREE (%s);", s2);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb 
 		if (request->req_length)
 			printa(column, "%s = %d;", s1, request->req_length);
 	}

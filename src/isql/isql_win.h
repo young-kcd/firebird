@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ISQL_WIN_H_
-#define _ISQL_WIN_H_
+#ifndef ISQL_WIN_H
+#define ISQL_WIN_H
 
 /* prototypes */
 
@@ -41,4 +41,5 @@ static void test_overwrite(void);
 static int windows_isql(HINSTANCE, HINSTANCE, int);
 static void xfer_file(SCHAR *, SCHAR *, SSHORT);
 
-#endif /* _ISQL_WIN_H_ */
+#endif /* ISQL_WIN_H */
+

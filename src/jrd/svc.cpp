@@ -187,21 +187,21 @@ typedef struct spb {
 	USHORT spb_version;
 } SPB;
 
-static void conv_switches(USHORT, USHORT, SCHAR *, TEXT **);
-static TEXT *find_switch(int, IN_SW_TAB);
-static USHORT process_switches(USHORT, SCHAR *, TEXT *);
-static void get_options(UCHAR *, USHORT, TEXT *, SPB *);
-static TEXT *get_string_parameter(UCHAR **, TEXT **);
+static void conv_switches(USHORT, USHORT, const SCHAR*, TEXT**);
+static TEXT* find_switch(int, IN_SW_TAB);
+static USHORT process_switches(USHORT, const SCHAR*, TEXT*);
+static void get_options(const UCHAR*, USHORT, TEXT*, SPB*);
+static TEXT* get_string_parameter(const UCHAR**, TEXT**);
 #ifndef SUPERSERVER
 static void io_error(TEXT *, SLONG, TEXT *, ISC_STATUS, BOOLEAN);
 static void service_close(SVC);
 #endif
-static BOOLEAN get_action_svc_bitmask(TEXT **, IN_SW_TAB, TEXT **, USHORT *,
-									  USHORT *);
-static void get_action_svc_string(TEXT **, TEXT **, USHORT *, USHORT *);
-static void get_action_svc_data(TEXT **, TEXT **, USHORT *, USHORT *);
-static BOOLEAN get_action_svc_parameter(TEXT **, IN_SW_TAB, TEXT **, USHORT *,
-										USHORT *);
+static BOOLEAN get_action_svc_bitmask(const TEXT**, IN_SW_TAB, TEXT**, USHORT*,
+									  USHORT*);
+static void get_action_svc_string(const TEXT**, TEXT**, USHORT*, USHORT*);
+static void get_action_svc_data(const TEXT**, TEXT**, USHORT*, USHORT*);
+static BOOLEAN get_action_svc_parameter(const TEXT**, IN_SW_TAB, TEXT**, USHORT*,
+										USHORT*);
 
 #ifdef SUPERSERVER
 static UCHAR service_dequeue_byte(SVC);
@@ -517,7 +517,7 @@ SVC SVC_attach(USHORT	service_length,
 		misc = misc_buf;
 	}
 
-	get_options(reinterpret_cast<UCHAR*>(spb), spb_length, misc, &options);
+	get_options(reinterpret_cast<const UCHAR*>(spb), spb_length, misc, &options);
 
 /* Perhaps checkout the user in the security database. */
 
@@ -1699,7 +1699,7 @@ void SVC_query(SVC		service,
 }
 
 
-void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
+void* SVC_start(SVC service, USHORT spb_length, const SCHAR* spb)
 {
 /**************************************
  *
@@ -1713,7 +1713,6 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
  **************************************/
 	TDBB tdbb;
 	const struct serv *serv;
-	USHORT svc_id;
 	TEXT* tmp_ptr = NULL;
 	USHORT opt_switch_len = 0;
 	BOOLEAN flag_spb_options = FALSE;
@@ -1731,7 +1730,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
 /* The name of the service is the first element of the buffer */
-	svc_id = *spb;
+	const USHORT svc_id = *spb;
 
 	for (serv = (struct serv*)services; serv->serv_action; serv++)
 		if (serv->serv_action == svc_id)
@@ -1786,7 +1785,8 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 		*spb == isc_action_svc_modify_user ||
 		*spb == isc_action_svc_display_user ||
 		*spb == isc_action_svc_db_stats ||
-		*spb == isc_action_svc_properties) {
+		*spb == isc_action_svc_properties)
+	{
 		/* the user issued a username when connecting to the service so
 		 * add the length of the username and switch to new_spb_length
 		 */
@@ -2107,7 +2107,7 @@ int SVC_read_ib_log(SVC service)
 }
 
 
-static void get_options(UCHAR*	spb,
+static void get_options(const UCHAR*	spb,
 						USHORT	spb_length,
 						TEXT*	scratch,
 						SPB*	options)
@@ -2122,12 +2122,9 @@ static void get_options(UCHAR*	spb,
  *	Parse service parameter block picking up options and things.
  *
  **************************************/
-	UCHAR *p, *end_spb;
-	USHORT l;
-
 	MOVE_CLEAR(options, (SLONG) sizeof(struct spb));
-	p = spb;
-	end_spb = p + spb_length;
+	const UCHAR* p = spb;
+	const UCHAR* const end_spb = p + spb_length;
 
 	if (p < end_spb && (*p != isc_spb_version1 && *p != isc_spb_version))
 		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
@@ -2163,13 +2160,15 @@ static void get_options(UCHAR*	spb,
 			break;
 
 		default:
-			l = *p++;
-			p += l;
+			{
+				const USHORT l = *p++;
+				p += l;
+			}
 		}
 }
 
 
-static TEXT* get_string_parameter(UCHAR ** spb_ptr, TEXT ** opt_ptr)
+static TEXT* get_string_parameter(const UCHAR** spb_ptr, TEXT** opt_ptr)
 {
 /**************************************
  *
@@ -2182,17 +2181,15 @@ static TEXT* get_string_parameter(UCHAR ** spb_ptr, TEXT ** opt_ptr)
  *	and return pointer to copied string.
  *
  **************************************/
-	UCHAR *spb;
-	TEXT *opt;
 	USHORT l;
 
-	opt = *opt_ptr;
-	spb = *spb_ptr;
+	TEXT* opt = *opt_ptr;
+	const UCHAR* spb = *spb_ptr;
 
 	if ( (l = *spb++) )
-		do
+		do {
 			*opt++ = *spb++;
-		while (--l);
+		} while (--l);
 
 	*opt++ = 0;
 	*spb_ptr = spb;
@@ -3309,7 +3306,7 @@ void SVC_finish(SVC service, USHORT flag)
 static void conv_switches(
 						  USHORT spb_length,
 						  USHORT opt_switch_len,
-						  SCHAR * spb, TEXT ** switches)
+						  const SCHAR* spb, TEXT** switches)
 {
 /**************************************
  *
@@ -3322,9 +3319,8 @@ static void conv_switches(
  *
  **************************************/
 	USHORT total;
-	TEXT *p;
 
-	p = spb;
+	const TEXT* p = spb;
 
 	if (*p < isc_action_min || *p > isc_action_max)
 		return;					/* error action not defined */
@@ -3348,7 +3344,7 @@ static void conv_switches(
 }
 
 
-static TEXT *find_switch(int in_spb_sw, IN_SW_TAB table)
+static TEXT* find_switch(int in_spb_sw, IN_SW_TAB table)
 {
 /**************************************
  *
@@ -3372,7 +3368,7 @@ static TEXT *find_switch(int in_spb_sw, IN_SW_TAB table)
 
 static USHORT process_switches(
 							   USHORT spb_length,
-							   SCHAR * spb, TEXT * switches)
+							   const SCHAR* spb, TEXT* switches)
 {
 /**************************************
  *
@@ -3390,18 +3386,17 @@ static USHORT process_switches(
  *
  **************************************/
 	USHORT len, total;
-	TEXT *p, *sw;
-	ISC_USHORT svc_action;
 	BOOLEAN found = FALSE;
 
 	if (spb_length == 0)
 		return 0;
 
-	p = spb;
+	const TEXT* p = spb;
 	len = spb_length;
-	sw = switches;
+	TEXT* sw = switches;
 
-	svc_action = *p;
+	// CVC: Isn't ISC_USHORT an external name?
+	const ISC_USHORT svc_action = *p;
 
 	if (len > 1) {
 		++p;
@@ -3512,7 +3507,8 @@ static USHORT process_switches(
 				++p;
 				--len;
 				if (!get_action_svc_bitmask(&p, dba_in_sw_table,
-											&sw, &total, &len)) return 0;
+											&sw, &total, &len))
+					return 0;
 				break;
 
 			case isc_spb_command_line: 
@@ -3541,7 +3537,8 @@ static USHORT process_switches(
 				++p;
 				--len;
 				if (!get_action_svc_bitmask(&p, burp_in_sw_table,
-											&sw, &total, &len)) return 0;
+											&sw, &total, &len))
+					return 0;
 				break;
 			case isc_spb_bkp_length:
 			case isc_spb_res_length:
@@ -3632,10 +3629,10 @@ static USHORT process_switches(
 
 
 static BOOLEAN get_action_svc_bitmask(
-									  TEXT ** spb,
+									  const TEXT** spb,
 									  IN_SW_TAB table,
-									  TEXT ** cmd,
-									  USHORT * total, USHORT * len)
+									  TEXT** cmd,
+									  USHORT* total, USHORT* len)
 {
 /**************************************
  *
@@ -3650,14 +3647,13 @@ static BOOLEAN get_action_svc_bitmask(
  *	adjust pointers.
  *
  **************************************/
-	ISC_ULONG opt, mask;
-	TEXT *s_ptr;
-	ISC_USHORT count;
+	const TEXT* s_ptr;
 
-	opt =
+	const ISC_ULONG opt =
 		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_ULONG));
-	for (mask = 1, count = (sizeof(ISC_ULONG) * 8) - 1; count; --count) {
+	ISC_ULONG mask = 1;
+	for (int count = (sizeof(ISC_ULONG) * 8) - 1; count; --count) {
 		if (opt & mask) {
 			if (!(s_ptr = find_switch((opt & mask), table)))
 				return FALSE;
@@ -3679,8 +3675,8 @@ static BOOLEAN get_action_svc_bitmask(
 
 
 static void get_action_svc_string(
-								  TEXT ** spb,
-								  TEXT ** cmd, USHORT * total, USHORT * len)
+								  const TEXT** spb,
+								  TEXT** cmd, USHORT* total, USHORT* len)
 {
 /**************************************
  *
@@ -3697,9 +3693,7 @@ static void get_action_svc_string(
  *      when creating the argc / argv paramters for the service.
  *
  **************************************/
-	ISC_USHORT l, l2;
-
-	l = gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
+	const ISC_USHORT l = gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_USHORT));
 
 	const char* local_server = "localhost:";
@@ -3707,10 +3701,10 @@ static void get_action_svc_string(
 	// dimitr: temporary hack to make Services API available
 	// for the engine without support of local protocol.
 	// Once XNET is implemented in win32 CS, remove this ugly code.
-	TEXT * spb_item = *spb - 1;
-	l2 = (*spb_item == isc_spb_dbname) ? strlen(local_server) : 0;
+	const TEXT* spb_item = *spb - 1;
+	const ISC_USHORT l2 = (*spb_item == isc_spb_dbname) ? strlen(local_server) : 0;
 #else
-	l2 = 0;
+	const ISC_USHORT l2 = 0;
 #endif
 
 /* Do not go beyond the bounds of the spb buffer */
@@ -3738,8 +3732,8 @@ static void get_action_svc_string(
 
 
 static void get_action_svc_data(
-								TEXT ** spb,
-								TEXT ** cmd, USHORT * total, USHORT * len)
+								const TEXT** spb,
+								TEXT** cmd, USHORT* total, USHORT* len)
 {
 /**************************************
  *
@@ -3752,12 +3746,12 @@ static void get_action_svc_data(
  *      add it to the command line, adjust pointers.
  *
  **************************************/
-	ISC_ULONG ll;
 	TEXT buf[64];
 
-	ll =
+	const ISC_ULONG ll =
 		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
 						 sizeof(ISC_ULONG));
+#pragma FB_COMPILER_MESSAGE("Using %lu for a neutral type ISC_ULONG")
 	sprintf(buf, "%lu ", ll);
 	if (*cmd) {
 		sprintf(*cmd, "%lu ", ll);
@@ -3770,10 +3764,10 @@ static void get_action_svc_data(
 
 
 static BOOLEAN get_action_svc_parameter(
-										TEXT ** spb,
+										const TEXT** spb,
 										IN_SW_TAB table,
-										TEXT ** cmd,
-										USHORT * total, USHORT * len)
+										TEXT** cmd,
+										USHORT* total, USHORT* len)
 {
 /**************************************
  *
@@ -3788,7 +3782,7 @@ static BOOLEAN get_action_svc_parameter(
  *	adjust pointers.
  *
  **************************************/
-	TEXT *s_ptr;
+	const TEXT* s_ptr;
 
 	if (!(s_ptr = find_switch(**spb, table)))
 		return FALSE;

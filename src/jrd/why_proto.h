@@ -38,39 +38,39 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS*, FRBRD**,
 ISC_STATUS API_ROUTINE isc_dsql_execute(ISC_STATUS*, FRBRD**, FRBRD**,
 										USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_m(ISC_STATUS*, FRBRD**, FRBRD**, USHORT,
-											SCHAR*, USHORT, USHORT, SCHAR*);
+											const SCHAR*, USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS*, FRBRD**, FRBRD**, USHORT,
 											XSQLDA*, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS*, FRBRD**,
-											  FRBRD**, USHORT, SCHAR*,
+											  FRBRD**, USHORT, const SCHAR*,
 											  USHORT, USHORT, SCHAR*, USHORT,
 											  SCHAR*, USHORT, USHORT,
 											  SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_immediate(ISC_STATUS*, FRBRD**,
 													 FRBRD**, USHORT,
-													 SCHAR*, USHORT,
+													 const SCHAR*, USHORT,
 													 XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS*, FRBRD**,
 											   FRBRD**, USHORT,
-											   SCHAR*, USHORT, XSQLDA*,
+											   const SCHAR*, USHORT, XSQLDA*,
 											   XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_immediate_m(ISC_STATUS*,
 													   FRBRD**,
 													   FRBRD**, USHORT,
-													   SCHAR*, USHORT,
-													   USHORT, SCHAR*,
+													   const SCHAR*, USHORT,
+													   USHORT, const SCHAR*,
 													   USHORT, USHORT,
 													   SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS*, FRBRD**,
 												 FRBRD**, USHORT,
-												 SCHAR*, USHORT, USHORT,
-												 SCHAR*, USHORT, USHORT,
+												 const SCHAR*, USHORT, USHORT,
+												 const SCHAR*, USHORT, USHORT,
 												 SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS*, FRBRD**,
 												 FRBRD**, USHORT,
-												 SCHAR*, USHORT, USHORT,
-												 SCHAR*, USHORT, USHORT,
+												 const SCHAR*, USHORT, USHORT,
+												 const SCHAR*, USHORT, USHORT,
 												 SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS*, FRBRD**, USHORT, XSQLDA*);
@@ -79,32 +79,33 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch2(ISC_STATUS*, FRBRD**, USHORT,
 										  XSQLDA*, USHORT, SLONG);
 #endif
 ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS*, FRBRD**, USHORT,
-										   SCHAR*, USHORT, USHORT, SCHAR*);
+										   const SCHAR*, USHORT, USHORT, SCHAR*);
 #ifdef SCROLLABLE_CURSORS
 ISC_STATUS API_ROUTINE isc_dsql_fetch2_m(ISC_STATUS*, FRBRD**, USHORT,
-											SCHAR*, USHORT, USHORT, SCHAR*,
+											const SCHAR*, USHORT, USHORT, SCHAR*,
 											USHORT, SLONG);
 #endif
 ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS*, FRBRD**, USHORT);
 ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS*, FRBRD**, USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS*, FRBRD**, USHORT,
-											SCHAR*, USHORT, USHORT, SCHAR*);
+											const SCHAR*, USHORT,
+											USHORT, const SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS*, FRBRD**,
-										   FRBRD**, USHORT, SCHAR*,
+										   FRBRD**, USHORT, const SCHAR*,
 										   USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS*, FRBRD**,
-											 FRBRD**, USHORT, SCHAR*,
+											 FRBRD**, USHORT, const SCHAR*,
 											 USHORT, USHORT, const SCHAR*, USHORT,
 											 SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS*, FRBRD**,
-												   SCHAR*, USHORT);
+												   const SCHAR*, USHORT);
 ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS*, FRBRD**, SSHORT,
 											const SCHAR*, SSHORT, SCHAR*);
 //ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS*, FRBRD**, USHORT,
 //												   UCHAR*);
 typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);
 //ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FRBRD**, SLONG*,
-//										 USHORT, UCHAR*, event_ast_routine*, void*);
+//										 USHORT, const UCHAR*, event_ast_routine*, void*);
 //#ifdef SCROLLABLE_CURSORS
 //ISC_STATUS API_ROUTINE isc_receive2(ISC_STATUS*, FRBRD**, USHORT,
 //									   USHORT, SCHAR*, SSHORT, USHORT,
@@ -173,7 +174,7 @@ ISC_STATUS API_ROUTINE isc_open_blob2(ISC_STATUS*, FRBRD**, FRBRD**, FRBRD**,
 ISC_STATUS API_ROUTINE isc_prepare_transaction(ISC_STATUS*, FRBRD**);
 
 ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS*, FRBRD**, USHORT,
-												UCHAR*);
+												const UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS*, FRBRD**, USHORT, const UCHAR*);
 
@@ -182,7 +183,7 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS*, FRBRD**, FRBRD**, SLONG*,
 									 SLONG, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FRBRD**, SLONG*, USHORT,
-									  UCHAR*, event_ast_routine*, void*);
+									  const UCHAR*, event_ast_routine*, void*);
 
 ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS*, FRBRD**, USHORT, USHORT,
 									SCHAR*, SSHORT);
@@ -207,7 +208,7 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS*, FRBRD**);
 ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS*, FRBRD**, SSHORT, SLONG,
 									 SLONG*);
 
-ISC_STATUS API_ROUTINE isc_send(ISC_STATUS*, FRBRD**, USHORT, USHORT, SCHAR*, 
+ISC_STATUS API_ROUTINE isc_send(ISC_STATUS*, FRBRD**, USHORT, USHORT, const SCHAR*,
 								SSHORT);
 
 ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS*, USHORT, TEXT*, FRBRD**,
@@ -220,10 +221,10 @@ ISC_STATUS API_ROUTINE isc_service_query(ISC_STATUS*, FRBRD**, ULONG*, USHORT,
 										USHORT, SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_service_start(ISC_STATUS*, FRBRD**, ULONG*, USHORT,
-										 SCHAR*);
+										 const SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_start_and_send(ISC_STATUS*, FRBRD**, FRBRD**,
-										  USHORT, USHORT, SCHAR*, SSHORT);
+										  USHORT, USHORT, const SCHAR*, SSHORT);
 
 ISC_STATUS API_ROUTINE isc_start_request(ISC_STATUS*, FRBRD**, FRBRD**, SSHORT);
 
@@ -241,8 +242,8 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FRBRD**, SSHORT,
 
 ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FRBRD**, SSHORT);
 #ifndef REQUESTER
-ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FRBRD**, USHORT, SCHAR*,
-										SCHAR*);
+ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FRBRD**, USHORT,
+										const SCHAR*, SCHAR*);
 #endif
 
 #endif

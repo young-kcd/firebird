@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Interprocess server
  *	MODULE:		ips_proto.h
- *	DESCRIPTION:	Prototpe header file for ipserver.c
+ *	DESCRIPTION:	Prototpe header file for ipserver.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _IPSRV_PROTO_H_
-#define _IPSRV_PROTO_H_
+#ifndef IPSRV_PROTO_H
+#define IPSRV_PROTO_H
 
 USHORT IPS_init(HWND, USHORT, USHORT, USHORT);
 ULONG IPS_start_thread(ULONG);
 
-#endif /* _IPSRV_PROTO_H */
+#endif /* IPSRV_PROTO_H */
+

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.19 2003-11-08 16:31:39 brodsom Exp $
+//	$Id: pretty.cpp,v 1.20 2003-11-28 06:48:12 robocop Exp $
 //
 
 #include "firebird.h"
@@ -56,10 +56,10 @@
 
 
 typedef struct ctl {
-	UCHAR *ctl_blr;				/* Running blr string */
-	UCHAR *ctl_blr_start;		/* Original start of blr string */
-	FPTR_PRINT_CALLBACK ctl_routine;	/* Call back */
-	void *ctl_user_arg;		/* User argument */
+	UCHAR *ctl_blr;				// Running blr string 
+	UCHAR *ctl_blr_start;		// Original start of blr string 
+	FPTR_PRINT_CALLBACK ctl_routine;	// Call back 
+	void *ctl_user_arg;		// User argument 
 	TEXT *ctl_ptr;
 	SSHORT ctl_language;
 	SSHORT ctl_level;

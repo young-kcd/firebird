@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Command line utilities
  *	MODULE:		cmd_util_proto.h
- *	DESCRIPTION:	Prototype header file for cmd_util.c
+ *	DESCRIPTION:	Prototype header file for cmd_util.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _UTILITIES_CMD_UTIL_PROTO_H_
-#define _UTILITIES_CMD_UTIL_PROTO_H_
+#ifndef UTILITIES_CMD_UTIL_PROTO_H
+#define UTILITIES_CMD_UTIL_PROTO_H
 
 
 void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
@@ -35,5 +35,5 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT arg5_t, const void* arg5);
 
 
-#endif /* _UTILITIES_CMD_UTIL_PROTO_H_ */
+#endif /* UTILITIES_CMD_UTIL_PROTO_H */
 

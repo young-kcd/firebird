@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.31 2003-11-11 12:08:12 brodsom Exp $
+//	$Id: pas.cpp,v 1.32 2003-11-28 06:48:12 robocop Exp $
 //
 
 #include "firebird.h"
@@ -1283,7 +1283,7 @@ static void gen_database( const act* action, int column)
 	bool array_flag = false;
 	for (request = requests; request; request = request->req_next) {
 		gen_request(request, indent);
-		/*  Array declarations  */
+		//  Array declarations  
 		if (request->req_type == REQ_slice)
 			array_flag = true;
 
@@ -2076,7 +2076,7 @@ static void gen_fetch( const act* action, int column)
 			reference->ref_values = value->val_next;
 		}
 
-		/* find the direction and offset parameters */
+		// find the direction and offset parameters 
 
 		reference = port->por_references;
 		offset = reference->ref_value;
@@ -2249,25 +2249,25 @@ static void gen_get_or_put_slice(const act* action,
 	if (!(reference->ref_flags & REF_fetch_array))
 		return;
 
-	args.pat_vector1 = status_vector(action);	/*  status vector        */
-	args.pat_database = action->act_request->req_database;	/*  database handle      */
-	args.pat_string1 = action->act_request->req_trans;	/*  transaction handle   */
+	args.pat_vector1 = status_vector(action);	//  status vector        
+	args.pat_database = action->act_request->req_database;	//  database handle      
+	args.pat_string1 = action->act_request->req_trans;	//  transaction handle   
 
 	gen_name(s1, reference, true);	//  blob handle
 	args.pat_string2 = s1;
 
-	args.pat_value1 = reference->ref_sdl_length;	/*  slice descr. length  */
+	args.pat_value1 = reference->ref_sdl_length;	//  slice descr. length  
 
-	sprintf(s2, "gds__%d", reference->ref_sdl_ident);	/*  slice description    */
+	sprintf(s2, "gds__%d", reference->ref_sdl_ident);	//  slice description    
 	args.pat_string3 = s2;
 
-	args.pat_value2 = 0;		/*  parameter length     */
+	args.pat_value2 = 0;		//  parameter length     
 
-	sprintf(s3, "0");			/*  parameter            */
+	sprintf(s3, "0");			//  parameter            
 	args.pat_string4 = s3;
 
 	args.pat_long1 = reference->ref_field->fld_array_info->ary_size;
-	/*  slice size           */
+	//  slice size           
 
 	if (action->act_flags & ACT_sql) {
 		args.pat_string5 = reference->ref_value;
@@ -2275,10 +2275,10 @@ static void gen_get_or_put_slice(const act* action,
 	else {
 		sprintf(s4, "gds__%d",
 				reference->ref_field->fld_array_info->ary_ident);
-		args.pat_string5 = s4;	/*  array name           */
+		args.pat_string5 = s4;	//  array name           
 	}
 
-	args.pat_string6 = "gds__array_length";	/*  return length        */
+	args.pat_string6 = "gds__array_length";	//  return length        
 
 	if (get)
 		PATTERN_expand(column, pattern1, &args);
@@ -3045,16 +3045,16 @@ static void gen_slice( const act* action, int column)
 	}
 
 	args.pat_reference = slice->slc_field_ref;
-	args.pat_request = parent_request;	/* blob id request */
-	args.pat_vector1 = status_vector(action);	/* status vector */
-	args.pat_database = parent_request->req_database;	/* database handle */
-	args.pat_string1 = action->act_request->req_trans;	/* transaction handle */
-	args.pat_value1 = request->req_length;	/* slice descr. length */
-	args.pat_ident1 = request->req_ident;	/* request name */
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	/* parameter length */
+	args.pat_request = parent_request;	// blob id request 
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = parent_request->req_database;	// database handle 
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle 
+	args.pat_value1 = request->req_length;	// slice descr. length 
+	args.pat_ident1 = request->req_ident;	// request name 
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length 
 
 	reference = (const ref*) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	/* array name */
+	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = "gds__array_length";
 
 	PATTERN_expand(column,

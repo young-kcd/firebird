@@ -461,18 +461,18 @@ ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS* status_vector,
 						  reinterpret_cast<const UCHAR*>(bpb));
 }
 
-ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS * status_vector,
-											FRBRD **tra_handle)
+ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS* status_vector,
+											FRBRD** tra_handle)
 {
 	return isc_prepare_transaction(status_vector, tra_handle);
 }
 
-ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS * status_vector,
-											 FRBRD **tra_handle,
-											 SSHORT msg_length, SCHAR * msg)
+ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS* status_vector,
+											 FRBRD** tra_handle,
+											 SSHORT msg_length, const SCHAR* msg)
 {
 	return isc_prepare_transaction2(status_vector, tra_handle, msg_length,
-									reinterpret_cast<UCHAR*>(msg));
+									reinterpret_cast<const UCHAR*>(msg));
 }
 
 ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS* status_vector,
@@ -497,12 +497,12 @@ ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS* status_vector,
 						 slice_length, (SCHAR *) slice);
 }
 
-ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS * status_vector,
-								   FRBRD **db_handle,
-								   SLONG * event_id,
+ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS* status_vector,
+								   FRBRD** db_handle,
+								   SLONG* event_id,
 								   SSHORT events_length,
-								   SCHAR * events,
-								   void (*ast_address) (), void *ast_argument)
+								   const SCHAR* events,
+								   void (*ast_address) (), void* ast_argument)
 {
 	return isc_que_events(status_vector, db_handle, event_id, events_length,
 						  events, ast_address, (int *) ast_argument);
@@ -558,24 +558,25 @@ ISC_STATUS API_ROUTINE gds__seek_blob(ISC_STATUS * status_vector,
 	return isc_seek_blob(status_vector, blob_handle, mode, offset, result);
 }
 
-ISC_STATUS API_ROUTINE gds__send(ISC_STATUS * status_vector,
-							 FRBRD **req_handle,
+ISC_STATUS API_ROUTINE gds__send(ISC_STATUS* status_vector,
+							 FRBRD** req_handle,
 							 SSHORT msg_type,
-							 SSHORT msg_length, void *msg, SSHORT req_level)
+							 SSHORT msg_length, const void* msg,
+							 SSHORT req_level)
 {
 	return isc_send(status_vector, req_handle, msg_type, msg_length, 
-					(SCHAR *) msg, req_level);
+					(const SCHAR*) msg, req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS * status_vector,
-									   FRBRD **req_handle,
-									   FRBRD **tra_handle,
+ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS* status_vector,
+									   FRBRD** req_handle,
+									   FRBRD** tra_handle,
 									   SSHORT msg_type,
 									   SSHORT msg_length,
-									   void *msg, SSHORT req_level)
+									   const void* msg, SSHORT req_level)
 {
 	return isc_start_and_send(status_vector, req_handle, tra_handle, msg_type,
-							  msg_length, (SCHAR *) msg, req_level);
+							  msg_length, (const SCHAR*) msg, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS * status_vector,
@@ -618,9 +619,9 @@ ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS* status_vector,
 }
 
 void API_ROUTINE gds__event_counts(
-								  ULONG * result_vector,
+								  ULONG* result_vector,
 								  SSHORT length,
-								  SCHAR * before, SCHAR * after)
+								  SCHAR* before, const SCHAR* after)
 {
 	isc_event_counts(result_vector, length, before, after);
 }
@@ -712,11 +713,11 @@ SLONG API_ROUTINE isc_vax_integer(const SCHAR* input, SSHORT length)
 ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 									  FRBRD **db_handle,
 									  SSHORT events_length,
-									  UCHAR * events,
-									  UCHAR * events_update)
+									  const UCHAR* events,
+									  UCHAR* events_update)
 {
 	return isc_wait_for_event(status_vector, db_handle, events_length,
-						   (SCHAR*) events, (SCHAR*) events_update);
+						   (const SCHAR*) events, (SCHAR*) events_update);
 }
 #endif
 
@@ -750,11 +751,11 @@ void API_ROUTINE gds__set_debug(int flag)
 }
 
 int API_ROUTINE isc_blob_display(
-								 ISC_STATUS * status_vector,
-								 ISC_QUAD * blob_id,
-								 FRBRD **database,
-								 FRBRD **transaction,
-								 SCHAR * field_name, SSHORT * name_length)
+								 ISC_STATUS* status_vector,
+								 ISC_QUAD* blob_id,
+								 FRBRD** database,
+								 FRBRD** transaction,
+								 const SCHAR* field_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -775,11 +776,11 @@ int API_ROUTINE isc_blob_display(
 }
 
 int API_ROUTINE isc_blob_dump(
-							  ISC_STATUS * status_vector,
-							  ISC_QUAD * blob_id,
-							  FRBRD **database,
-							  FRBRD **transaction,
-							  SCHAR * file_name, SSHORT * name_length)
+							  ISC_STATUS* status_vector,
+							  ISC_QUAD* blob_id,
+							  FRBRD** database,
+							  FRBRD** transaction,
+							  const SCHAR* file_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -801,11 +802,11 @@ int API_ROUTINE isc_blob_dump(
 }
 
 int API_ROUTINE isc_blob_edit(
-							  ISC_STATUS * status_vector,
-							  ISC_QUAD * blob_id,
-							  FRBRD **database,
-							  FRBRD **transaction,
-							  SCHAR * field_name, SSHORT * name_length)
+							  ISC_STATUS* status_vector,
+							  ISC_QUAD* blob_id,
+							  FRBRD** database,
+							  FRBRD** transaction,
+							  const SCHAR* field_name, const SSHORT* name_length)
 {
 /**************************************
  *
@@ -826,7 +827,7 @@ int API_ROUTINE isc_blob_edit(
 					  name_length);
 }
 
-int API_ROUTINE isc_add_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
+int API_ROUTINE isc_add_user(ISC_STATUS* status, USER_SEC_DATA* user_data)
 {
 /**************************************
  *
@@ -986,11 +987,11 @@ return 1;
 }
 
 int API_ROUTINE isc_blob_load(
-							  ISC_STATUS * status_vector,
-							  ISC_QUAD * blob_id,
-							  FRBRD **database,
-							  FRBRD **transaction,
-							  SCHAR * file_name, SSHORT * name_length)
+							  ISC_STATUS* status_vector,
+							  ISC_QUAD* blob_id,
+							  FRBRD** database,
+							  FRBRD** transaction,
+							  const SCHAR* file_name, const SSHORT* name_length)
 {
 /**************************************
  *

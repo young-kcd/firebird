@@ -23,8 +23,8 @@
  * 2003.05.01 Victor Seryodkin, Dmitry Yemanov: Completed XNET implementation
  */
 
-#ifndef _REMOTE_XNET_H_
-#define _REMOTE_XNET_H_
+#ifndef REMOTE_XNET_H
+#define REMOTE_XNET_H
 
 #ifndef WIN_NT
 #include <sys/types.h>
@@ -183,4 +183,5 @@ typedef struct{
 #define XNET_E_S2C_EVNT_CHAN_FILLED	"%s_E_S2C_EVNT_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT
 #define XNET_E_S2C_EVNT_CHAN_EMPTED	"%s_E_S2C_EVNT_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT
 
-#endif /* _REMOTE_XNET_H_ */
+#endif /* REMOTE_XNET_H */
+

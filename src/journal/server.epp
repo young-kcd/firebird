@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journal Server
- *	MODULE:		server.e
+ *	MODULE:		server.epp
  *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
@@ -1068,12 +1068,12 @@ static void divorce_terminal(fd_set * mask)
 	s = setpgrp();
 #else
 	s = setpgrp(0, 0);
-#endif /* SETPGRP_VOID */
+#endif // SETPGRP_VOID 
 #else
 #ifdef HAVE_SETPGID
 	s = setpgid(0, 0);
-#endif /* HAVE_SETPGID */
-#endif /* HAVE_SETPGRP */
+#endif // HAVE_SETPGID 
+#endif // HAVE_SETPGRP 
 }
 #endif
 #endif

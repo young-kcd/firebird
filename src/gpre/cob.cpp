@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.36 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: cob.cpp,v 1.37 2003-11-28 06:48:11 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -310,7 +310,7 @@ static void	gen_trans (const act*);
 static void	gen_type (const act*);
 static void	gen_update (const act*);
 static void	gen_variable (const act*);
-static void	gen_whenever (SWE);
+static void	gen_whenever (const swe*);
 static void	make_array_declaration (REF);
 static TEXT* make_name (TEXT*, const sym*);
 static TEXT* make_name_formatted (TEXT*, const TEXT*, const sym*);
@@ -346,13 +346,13 @@ static const TEXT* vnames[] = {
 	"ISC_HEIGHT",
 	"RDB$K_DB_TYPE_GDS",
 	"ISC_ARRAY_LENGTH",
-	"     ",					/* column */
-	"*    ",					/* comment */
-	"-    ",					/* continue */
-	"-      \"",				/* continue quote */
-	"-      \'",				/* continue single quote */
-	"",							/* column0 */
-	"        ",					/* column indent */
+	"     ",					// column 
+	"*    ",					// comment 
+	"-    ",					// continue 
+	"-      \"",				// continue quote 
+	"-      \'",				// continue single quote 
+	"",							// column0 
+	"        ",					// column indent 
 	"ISC_SQLCODE",
 	"ISC_EVENTS_VECTOR",
 	"ISC_EVENTS",
@@ -379,13 +379,13 @@ static const TEXT* anames[] = {
 	"ISC-HEIGHT",
 	"RDB-K-DB-TYPE-GDS",
 	"ISC-ARRAY-LENGTH",
-	"           ",				/* column */
-	"      *    ",				/* comment */
-	"            ",				/* continue */
-	"      -      \"",			/* continue quote */
-	"      -      \'",			/* continue single quote */
-	"           ",				/* column0 */
-	"                ",			/* column indent */
+	"           ",				// column 
+	"      *    ",				// comment 
+	"            ",				// continue 
+	"      -      \"",			// continue quote 
+	"      -      \'",			// continue single quote 
+	"           ",				// column0 
+	"                ",			// column indent 
 	"ISC-SQL-CODE",
 	"ISC-EVENTS-VECTOR",
 	"ISC-EVENTS",
@@ -743,7 +743,7 @@ void COB_print_buffer(TEXT* output_buffer,
 			save_open_quote = open_quote;
 			save_single_quote = single_quote;
 			if (function_call) {
-				/*  Back up until we reach a comma  */
+				//  Back up until we reach a comma  
 				for (p--; (p > s); p--, q--) {
 					if (*(p + 1) == '\"' || *(p + 1) == '\'') {
 						/*  If we have a single or double quote, toggle the
@@ -789,7 +789,7 @@ void COB_print_buffer(TEXT* output_buffer,
 					*++p = 0;
 			}
 			else {
-				/* back up to a blank */
+				// back up to a blank 
 				for (p--; p > s; p--, q--) {
 					if (*(p + 1) == '\"' || *(p + 1) == '\'') {
 						/* If we have a single or double quote, toggle the
@@ -1539,7 +1539,7 @@ static void gen_create_database( const act* action)
 				"%sCALL \"%s\" USING %s\n", names[COLUMN], ISC_FREE, s2Tmp);
 		COB_print_buffer(output_buffer, true);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb 
 		sprintf(output_buffer, "%sMOVE %d to %s",
 				names[COLUMN], request->req_length, s1);
 		COB_print_buffer(output_buffer, true);
@@ -1691,7 +1691,7 @@ static void gen_database( const act* action)
 			   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" :
 			   " IS GLOBAL", (all_extern) ? "" : " VALUE IS 0");
 
-		/* generate variables to hold database name strings for attach call */
+		// generate variables to hold database name strings for attach call 
 
 #ifndef VMS
 		db->dbb_id = ++count;
@@ -1754,7 +1754,7 @@ static void gen_database( const act* action)
 			else
 				cur_stmt = ((OPN) local_act->act_object)->opn_cursor;
 
-			/* Only generate one declaration per cursor or statement name */
+			// Only generate one declaration per cursor or statement name 
 
 			const act* chck_dups;
 			for (chck_dups = local_act->act_rest; chck_dups;
@@ -1840,7 +1840,7 @@ static void gen_database( const act* action)
 				   names[isc_a_pos], blob->blb_len_ident, COMP_VALUE);
 		}
 
-		/*  Array declarations  */
+		//  Array declarations  
 
 		if (port = request->req_primary)
 			for (REF reference = port->por_references; reference;
@@ -2592,7 +2592,7 @@ static void gen_fetch( const act* action)
 			reference->ref_values = value->val_next;
 		}
 
-		/* find the direction and offset parameters */
+		// find the direction and offset parameters 
 
 		reference = port->por_references;
 		offset = reference->ref_value;
@@ -2853,27 +2853,27 @@ static void gen_get_or_put_slice(const act* action,
 	gen_name(s1, reference, true);	//  blob handle
 	args.pat_string2 = s1;
 
-	args.pat_value1 = reference->ref_sdl_length;	/*  slice descr length */
+	args.pat_value1 = reference->ref_sdl_length;	//  slice descr length 
 
-	sprintf(s2, "%s%d", names[isc_a_pos], reference->ref_sdl_ident);	/*  slice description  */
+	sprintf(s2, "%s%d", names[isc_a_pos], reference->ref_sdl_ident);	//  slice description  
 	args.pat_string3 = s2;
 
-	args.pat_value2 = 0;		/*  parameter length  */
+	args.pat_value2 = 0;		//  parameter length  
 
-	args.pat_string4 = "0";		/*  parameter  */
+	args.pat_string4 = "0";		//  parameter  
 
 	args.pat_long1 = reference->ref_field->fld_array_info->ary_size;
-	/*  slice size  */
+	//  slice size  
 	if (action->act_flags & ACT_sql) {
 		args.pat_string5 = reference->ref_value;
 	}
 	else {
 		sprintf(s4, "%s%dL", names[isc_a_pos],
 				reference->ref_field->fld_array_info->ary_ident);
-		args.pat_string5 = s4;	/*  array name  */
+		args.pat_string5 = s4;	//  array name  
 	}
 
-	args.pat_string6 = names[ISC_ARRAY_LENGTH];	/*  return length */
+	args.pat_string6 = names[ISC_ARRAY_LENGTH];	//  return length 
 	args.pat_string7 = (get) ? (TEXT*) ISC_GET_SLICE : (TEXT*) ISC_PUT_SLICE;
 
 	PATTERN_expand(column, (get) ? pattern1 : pattern2, &args);
@@ -3589,16 +3589,16 @@ static void gen_slice( const act* action)
 	}
 
 	args.pat_reference = slice->slc_field_ref;
-	args.pat_request = parent_request;	/* blob id request */
-	args.pat_vector1 = status_vector(action);	/* status vector */
-	args.pat_database = parent_request->req_database;	/* database handle */
-	args.pat_string1 = action->act_request->req_trans;	/* transaction handle */
-	args.pat_value1 = request->req_length;	/* slice descr. length */
-	args.pat_ident1 = request->req_ident;	/* request name */
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	/* parameter length */
+	args.pat_request = parent_request;	// blob id request 
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = parent_request->req_database;	// database handle 
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle 
+	args.pat_value1 = request->req_length;	// slice descr. length 
+	args.pat_ident1 = request->req_ident;	// request name 
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length 
 
 	reference = (REF) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	/* array name */
+	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = names[ISC_ARRAY_LENGTH];
 	args.pat_string7 =
 		(action->act_type == ACT_get_slice) ? (TEXT*) ISC_GET_SLICE : (TEXT*) ISC_PUT_SLICE;
@@ -3944,7 +3944,7 @@ static void gen_variable( const act* action)
 //		Generate tests for any WHENEVER clauses that may have been declared.
 //  
 
-static void gen_whenever( SWE label)
+static void gen_whenever(const swe* label)
 {
 	const TEXT* condition;
 
@@ -4389,7 +4389,7 @@ static void make_ready(
 				"%sCALL \"%s\" USING %s\n", names[COLUMN], ISC_FREE, s2Tmp);
 		COB_print_buffer(output_buffer, true);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb 
 		sprintf(output_buffer, "%sMOVE %d to %s\n",
 				names[COLUMN], request->req_length, s1);
 		COB_print_buffer(output_buffer, true);

@@ -96,7 +96,7 @@ static void free_relation(dsql_rel*);
 static TEXT* metd_exact_name(TEXT*);
 
 #ifdef  SUPERSERVER
-static REC_MUTX_T rec_mutex;	/* Recursive metadata mutex */
+static REC_MUTX_T rec_mutex;	// Recursive metadata mutex 
 static USHORT rec_mutex_inited = 0;
 
 static inline void metd_rec_lock()
@@ -148,7 +148,7 @@ void METD_drop_function (dsql_req* request, const dsql_str* name)
 
     metd_rec_lock();
 
-    /* If the symbol wasn't defined, we've got nothing to do */
+    // If the symbol wasn't defined, we've got nothing to do 
     
     symbol = HSHD_lookup(request->req_dbb,
 						 reinterpret_cast<const TEXT*>(name->str_data),
@@ -167,7 +167,7 @@ void METD_drop_function (dsql_req* request, const dsql_str* name)
         userFunc->udf_flags |= UDF_dropped;
     }
 
-    /* mark other potential candidates as maybe dropped */
+    // mark other potential candidates as maybe dropped 
 
     HSHD_set_flag(request->req_dbb,
 				  reinterpret_cast<const TEXT*>(name->str_data),
@@ -200,7 +200,7 @@ void METD_drop_procedure( dsql_req* request, const dsql_str* name)
 
 	metd_rec_lock();
 
-/* If the symbol wasn't defined, we've got nothing to do */
+// If the symbol wasn't defined, we've got nothing to do 
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
 						 name->str_length, SYM_procedure, 0);
@@ -215,7 +215,7 @@ void METD_drop_procedure( dsql_req* request, const dsql_str* name)
 		procedure->prc_flags |= PRC_dropped;
 	}
 
-/* mark other potential candidates as maybe dropped */
+// mark other potential candidates as maybe dropped 
 
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_procedure, PRC_dropped);
@@ -248,7 +248,7 @@ void METD_drop_relation( dsql_req* request, const dsql_str* name)
 
 	metd_rec_lock();
 
-/* If the symbol wasn't defined, we've got nothing to do */
+// If the symbol wasn't defined, we've got nothing to do 
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
 						 name->str_length, SYM_relation, 0);
@@ -263,7 +263,7 @@ void METD_drop_relation( dsql_req* request, const dsql_str* name)
 		relation->rel_flags |= REL_dropped;
 	}
 
-/* mark other potential candidates as maybe dropped */
+// mark other potential candidates as maybe dropped 
 
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_relation, REL_dropped);
@@ -290,7 +290,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 	dsql_intlsym* iname;
 	dsql_sym* symbol;
 
-/* Start by seeing if symbol is already defined */
+// Start by seeing if symbol is already defined 
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
 						 name->str_length, SYM_intlsym, 0);
@@ -300,7 +300,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 			 DSQL_INTLSYM_collation)) return (dsql_intlsym*) symbol->sym_object;
 
 
-/* Now see if it is in the database */
+// Now see if it is in the database 
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -330,7 +330,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 	THREAD_EXIT;
 
 	END_FOR ON_ERROR
-		/* Assume V3 database */
+		// Assume V3 database 
 		END_ERROR;
 
 	THREAD_ENTER;
@@ -338,7 +338,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 	if (!iname)
 		return NULL;
 
-/* Store in the symbol table */
+// Store in the symbol table 
 
 	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) iname;
@@ -393,7 +393,7 @@ void METD_get_col_default(dsql_req*    request,
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
 
-/* V4.x multi threading requirements */
+// V4.x multi threading requirements 
 	THREAD_EXIT;
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_col_default])
@@ -417,7 +417,7 @@ void METD_get_col_default(dsql_req*    request,
 		*has_default = false;
 
 	if (*has_default) {
-		/* open the blob */
+		// open the blob 
 		THREAD_EXIT;
 		stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 							  &blob_handle, blob_id, sizeof(blr_bpb),
@@ -426,7 +426,7 @@ void METD_get_col_default(dsql_req*    request,
 		if (stat)
 			ERRD_punt();
 
-		/* fetch segments. Assuming here that the buffer is big enough. */
+		// fetch segments. Assuming here that the buffer is big enough. 
 		ptr_in_buffer = buffer;
 		while (true) {
 			THREAD_EXIT;
@@ -439,7 +439,7 @@ void METD_get_col_default(dsql_req*    request,
 			if (!stat)
 				continue;
 			else if (stat == isc_segstr_eof) {
-				/* null terminate the buffer */
+				// null terminate the buffer 
 				*ptr_in_buffer = 0;
 				break;
 			}
@@ -473,7 +473,7 @@ void METD_get_col_default(dsql_req*    request,
 }
 
 
-dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name /* UTF-8 */)
+dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -491,7 +491,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	dsql_intlsym* iname;
 	dsql_sym* symbol;
 
-/* Start by seeing if symbol is already defined */
+// Start by seeing if symbol is already defined 
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name, length, SYM_intlsym, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
@@ -500,7 +500,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 			 DSQL_INTLSYM_charset)) return (dsql_intlsym*) symbol->sym_object;
 
 
-/* Now see if it is in the database */
+// Now see if it is in the database 
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -536,7 +536,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 	END_FOR 
     ON_ERROR
-		/* Assume V3 database */
+		// Assume V3 database 
    	END_ERROR;
 
 	THREAD_ENTER;
@@ -544,7 +544,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	if (!iname)
 		return NULL;
 
-/* Store in the symbol table */
+// Store in the symbol table 
 
 	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) iname;
@@ -600,7 +600,7 @@ USHORT METD_get_charset_bpc (dsql_req* request,
         THREAD_EXIT;
     END_FOR
     ON_ERROR
-    /* Assume V3 database */
+    // Assume V3 database 
     END_ERROR;
     /*************
      THREAD_ENTER;
@@ -641,7 +641,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 	if (dbb->dbb_dfl_charset)
 		return request->req_dbb->dbb_dfl_charset;
 
-/* Now see if it is in the database */
+// Now see if it is in the database 
 
 	DB = dbb->dbb_database_handle;
 	gds_trans = request->req_trans;
@@ -656,7 +656,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
 	    THREAD_ENTER;
 
-        /* Terminate ASCIIZ string on first trailing blank */
+        // Terminate ASCIIZ string on first trailing blank 
         metd_exact_name(DBB.RDB$CHARACTER_SET_NAME);
         length = strlen(DBB.RDB$CHARACTER_SET_NAME);
         dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_str;
@@ -670,7 +670,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
         THREAD_EXIT;
 	END_FOR 
     ON_ERROR
-		/* Assume V3 database */
+		// Assume V3 database 
    	END_ERROR;
 
 /*************
@@ -692,7 +692,7 @@ THREAD_EXIT;
 }
 
 
-USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name /* UTF-8 */)
+USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -777,7 +777,7 @@ void METD_get_domain_default(dsql_req* request,
 	FRBRD* DB = dbb->dbb_database_handle;
 	FRBRD* gds_trans = request->req_trans;
 
-/* V4.x multi threading requirements */
+// V4.x multi threading requirements 
 	THREAD_EXIT;
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain_2])
@@ -794,7 +794,7 @@ void METD_get_domain_default(dsql_req* request,
             *has_default = false;
 
         if (*has_default) {
-            /* open the blob */
+            // open the blob 
             THREAD_EXIT;
             isc_blob_handle blob_handle = NULL;
             ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
@@ -804,7 +804,7 @@ void METD_get_domain_default(dsql_req* request,
             if (stat)
                 ERRD_punt();
 
-            /* fetch segments. Assume buffer is big enough.  */
+            // fetch segments. Assume buffer is big enough.  
             TEXT* ptr_in_buffer = buffer;
             while (true) {
                 THREAD_EXIT;
@@ -819,7 +819,7 @@ void METD_get_domain_default(dsql_req* request,
                 if (!stat)
                     continue;
                 else if (stat == isc_segstr_eof) {
-                    /* null terminate the buffer */
+                    // null terminate the buffer 
                     *ptr_in_buffer = 0;
                     break;
                 }
@@ -878,7 +878,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
     metd_rec_lock();
 
-/* Start by seeing if symbol is already defined */
+// Start by seeing if symbol is already defined 
 
 	dsql_sym* symbol = HSHD_lookup(request->req_dbb,
 						reinterpret_cast<const TEXT*>(name->str_data),
@@ -899,7 +899,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
     }
 */
 
-/* Now see if it is in the database */
+// Now see if it is in the database 
 
 	DBB dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -968,7 +968,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
         ON_ERROR
         END_ERROR;
 	}
-	else {						/* V4 or greater dbb */
+	else {						// V4 or greater dbb 
 
 		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return])
 		    X IN RDB$FUNCTION_ARGUMENTS WITH
@@ -1090,7 +1090,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
             ((temp = (dsql_udf*) symbol->sym_object) &&
              (!(temp->udf_flags & UDF_dropped))))
 		{
-            /* Get rid of all the stuff we just read in. Use existing one */
+            // Get rid of all the stuff we just read in. Use existing one 
             
             free_function (userFunc);
             metd_rec_unlock();
@@ -1098,13 +1098,13 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
         }
     }
     
-    /* Add udf in the front of the list. */
+    // Add udf in the front of the list. 
     userFunc->udf_next = dbb->dbb_functions;
     dbb->dbb_functions = userFunc;
     
 
-/* Store in the symbol table */
-/* The UDF_new_udf flag is not used, so nothing extra to check. */
+// Store in the symbol table 
+// The UDF_new_udf flag is not used, so nothing extra to check. 
 
 	symbol = userFunc->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) userFunc;
@@ -1201,7 +1201,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 	metd_rec_lock();
 
-/* Start by seeing if symbol is already defined */
+// Start by seeing if symbol is already defined 
 
 	dsql_sym* symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
 						 name->str_length, SYM_procedure, 0);
@@ -1214,7 +1214,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			return (dsql_prc*) symbol->sym_object;
 		}
 
-/* see if the procedure is the one currently being defined in this request */
+// see if the procedure is the one currently being defined in this request 
 
 	if (((temp = request->req_procedure) != NULL) &&
 		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
@@ -1222,7 +1222,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		return temp;
 	}
 
-/* now see if it is in the database */
+// now see if it is in the database 
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -1261,7 +1261,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		return NULL;
 	}
 
-/* Lookup parameter stuff */
+// Lookup parameter stuff 
 
 	for (type = 0; type < 2; type++) {
 		if (type)
@@ -1283,7 +1283,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
             THREAD_ENTER;
 
 		    count++;
-            /* allocate the field block */
+            // allocate the field block 
 
             metd_exact_name(PR.RDB$PARAMETER_NAME);
             parameter = FB_NEW_RPT(*dbb->dbb_pool,
@@ -1291,7 +1291,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
             parameter->fld_next = *ptr;
             *ptr = parameter;
             
-            /* get parameter information */
+            // get parameter information 
             
             strcpy(parameter->fld_name, (char*) PR.RDB$PARAMETER_NAME);
             parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
@@ -1340,7 +1340,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		if ((symbol->sym_type == SYM_procedure) &&
 			((temp = (dsql_prc*) symbol->sym_object) &&
 			 (!(temp->prc_flags & PRC_dropped)))) {
-			/* Get rid of all the stuff we just read in. Use existing one */
+			// Get rid of all the stuff we just read in. Use existing one 
 
 			free_procedure(procedure);
 			metd_rec_unlock();
@@ -1348,11 +1348,11 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		}
 
 
-/* store in the symbol table unless the procedure is not yet committed */
-/* CVC: This is strange, because PRC_new_procedure is never set. */
+// store in the symbol table unless the procedure is not yet committed 
+// CVC: This is strange, because PRC_new_procedure is never set. 
 
 	if (!(procedure->prc_flags & PRC_new_procedure)) {
-		/* add procedure in the front of the list */
+		// add procedure in the front of the list 
 
 		procedure->prc_next = dbb->dbb_procedures;
 		dbb->dbb_procedures = procedure;
@@ -1397,7 +1397,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	metd_rec_lock();
 
-/* Start by seeing if symbol is already defined */
+// Start by seeing if symbol is already defined 
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
 						 name->str_length, SYM_relation, 0);
@@ -1409,7 +1409,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			return (dsql_rel*) symbol->sym_object;
 		}
 
-/* see if the relation is the one currently being defined in this request */
+// see if the relation is the one currently being defined in this request 
 
 	if (((temp = request->req_relation) != NULL) &&
 		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
@@ -1417,7 +1417,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		return temp;
 	}
 
-/* now see if it is in the database */
+// now see if it is in the database 
 
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
@@ -1448,7 +1448,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             relation->rel_flags |= REL_new_relation;
         }
 
-        /* fill out the relation information */
+        // fill out the relation information 
         
         if (relation) {
             relation->rel_name = relation->rel_data;
@@ -1457,7 +1457,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             strcpy(relation->rel_owner, (TEXT *) X.RDB$OWNER_NAME);
             if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
                 relation->rel_dbkey_length = 8;
-            /* CVC: let's see if this is a table or a view. */
+            // CVC: let's see if this is a table or a view. 
             if (!X.RDB$VIEW_BLR.NULL) {
                 relation->rel_flags |= REL_view;
             }
@@ -1479,7 +1479,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		return NULL;
 	}
 
-/* Lookup field stuff */
+// Lookup field stuff 
 
 	ptr = &relation->rel_fields;
 
@@ -1495,11 +1495,11 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
             THREAD_ENTER;
 
-		    /* allocate the field block */
+		    // allocate the field block 
 
 	        metd_exact_name(RFR.RDB$FIELD_NAME);
 
-            /* Allocate from default or permanent pool as appropriate */
+            // Allocate from default or permanent pool as appropriate 
             
             if (relation->rel_flags & REL_new_relation)
                 *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
@@ -1509,7 +1509,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
             ptr = &field->fld_next;
             
-            /* get field information */
+            // get field information 
             
             strcpy(field->fld_name, (char*) RFR.RDB$FIELD_NAME);
             field->fld_id = RFR.RDB$FIELD_ID;
@@ -1538,7 +1538,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
         ON_ERROR 
         END_ERROR;
 	}
-	else {						/* V4 ODS8 dbb */
+	else {						// V4 ODS8 dbb 
 
 		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields])
 		    FLX IN RDB$FIELDS CROSS
@@ -1549,11 +1549,11 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 			THREAD_ENTER;
 
-		    /* allocate the field block */
+		    // allocate the field block 
 
 		    metd_exact_name(RFR.RDB$FIELD_NAME);
 
-            /* Allocate from default or permanent pool as appropriate */
+            // Allocate from default or permanent pool as appropriate 
             
             if (relation->rel_flags & REL_new_relation)
                 *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
@@ -1564,7 +1564,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
             
             ptr = &field->fld_next;
             
-            /* get field information */
+            // get field information 
             
             strcpy(field->fld_name, (char*) RFR.RDB$FIELD_NAME);
             field->fld_id = RFR.RDB$FIELD_ID;
@@ -1628,13 +1628,13 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		}
 
 
-/* Add relation to front of list */
+// Add relation to front of list 
 
 	if (!(relation->rel_flags & REL_new_relation)) {
 		relation->rel_next = dbb->dbb_relations;
 		dbb->dbb_relations = relation;
 
-		/* store in the symbol table unless the relation is not yet committed */
+		// store in the symbol table unless the relation is not yet committed 
 
 		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 		symbol->sym_object = (BLK) relation;
@@ -1741,8 +1741,8 @@ USHORT METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHOR
 
 
 dsql_rel* METD_get_view_relation(dsql_req*    request,
-								const char* view_name         /* UTF-8 */,
-								const char* relation_or_alias /* UTF-8 */,
+								const char* view_name,         // UTF-8
+								const char* relation_or_alias, // UTF-8
 								USHORT      level)
 {
 /**************************************
@@ -1865,7 +1865,7 @@ static void convert_dtype( dsql_fld* field, SSHORT field_type)
  *
  **************************************/
 
-/* fill out the type descriptor */
+// fill out the type descriptor 
 
 	if (field_type == blr_text) {
 		field->fld_dtype = dtype_text;
@@ -1900,7 +1900,7 @@ static void free_function (dsql_udf* userFunc)
  *
  **************************************/
 
-    /* release the arguments blocks */
+    // release the arguments blocks 
 
     if (userFunc->udf_arguments) {
         dsql_nod* args = userFunc->udf_arguments;
@@ -1965,7 +1965,7 @@ static void free_relation( dsql_rel* relation)
 	dsql_fld* field;
 	dsql_fld* temp;
 
-/* release the field blocks */
+// release the field blocks 
 
 	for (field = relation->rel_fields; field;) {
 		temp = field;

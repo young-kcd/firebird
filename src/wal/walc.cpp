@@ -108,7 +108,7 @@ static void cleanup(void *);
 static void init_group_commit_blocks(GRP_COMMIT *);
 static SSHORT setup_wal_params(ISC_STATUS *, TEXT *, USHORT, WALC, SSHORT,
 							   UCHAR *);
-static void wals_initialize(WALC, SH_MEM, int);
+static void wals_initialize(WALC, SH_MEM, bool);
 
 /* these statics define a round-robin data area for storing
    textual error messages returned to the user */
@@ -374,7 +374,7 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 	struct walc wal_args;
 	SLONG length;
 	WALS WAL_segment;
-	void (*wal_init_routine) ();
+	FPTR_INIT_GLOBAL_REGION wal_init_routine;
 
 	if (*WAL_handle != NULL) {
 		/* We are already initialized.  Just increment the use count. */
@@ -404,7 +404,7 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 			return FB_FAILURE;
 		}
 		length = wal_args.walc_segment_length;
-		wal_init_routine = reinterpret_cast < void (*) () > (wals_initialize);
+		wal_init_routine = reinterpret_cast<FPTR_INIT_GLOBAL_REGION>(wals_initialize);
 	}
 	else {
 		length = 0;
@@ -424,7 +424,7 @@ SSHORT WALC_init(ISC_STATUS * status_vector,
 	wal->wal_shmem_data.sh_mem_semaphores = MAX_WALSEMS;
 #endif
 	if ((WAL_segment = (WALS) ISC_map_file(status_vector, wal_mapfile,
-										   (void(*)(void *, sh_mem *, int))wal_init_routine,
+										   wal_init_routine,
 										   (void *) &wal_args, length,
 										   &wal->wal_shmem_data)) == NULL) {
 		WAL_ERROR_APPEND(status_vector, isc_wal_illegal_attach, dbname);
@@ -927,7 +927,7 @@ static SSHORT setup_wal_params(
 }
 
 
-static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
+static void wals_initialize(WALC wal_args, SH_MEM shmem_data, bool initialize)
 {
 /**************************************
  *
@@ -953,7 +953,7 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 	EVENT shared_event = WAL_segment->wals_events + 1;
 	for (i = 1; i < MAX_WALSEMS; event++, shared_event++, i++)
 		ISC_event_init_shared(event, WAL_SIGNALS + i, wal_args->walc_mapfile,
-							  shared_event, (initialize) ? TRUE : FALSE);
+							  shared_event, initialize);
 #endif
 
 	if (!initialize)

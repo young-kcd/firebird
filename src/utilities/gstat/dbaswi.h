@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DBA_DBASWI_H_
-#define _DBA_DBASWI_H_
+#ifndef DBA_DBASWI_H
+#define DBA_DBASWI_H
 
 #include "../jrd/common.h"
 
@@ -57,4 +57,5 @@ static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_VERSION,		0,				"Z",		0,0,0,	FALSE,	28,	0, NULL},	/* msg 28: -z      display version number */
     {IN_SW_DBA_0,		0,				NULL,		0,0,0,	FALSE,	0,	0, NULL}		/* End of List */
 };
-#endif /* _DBA_DBASWI_H_ */
+#endif /* DBA_DBASWI_H */
+

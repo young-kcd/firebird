@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GSEC_GSECSWI_H_
-#define _GSEC_GSECSWI_H_
+#ifndef GSEC_GSECSWI_H
+#define GSEC_GSECSWI_H
 
 #include "../jrd/common.h"
 
@@ -84,4 +84,5 @@ static struct in_sw_tab_t gsec_action_in_sw_table [] = {
     {IN_SW_GSEC_DIS,		isc_action_svc_display_user,	"DISPLAY",	0, 0, 0, FALSE,	0,	2, NULL},	/* display user(s) */
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		/* End of List */
 };
-#endif /* _GSEC_GSECSWI_H_ */
+#endif /* GSEC_GSECSWI_H */
+

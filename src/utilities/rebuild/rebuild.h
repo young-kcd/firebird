@@ -16,13 +16,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef _UTILITIES_REBUILD_H_
-#define _UTILITIES_REBUILD_H_
+#ifndef UTILITIES_REBUILD_H
+#define UTILITIES_REBUILD_H
 
 #include "../jrd/common.h"
 #include "../jrd/ods.h"
 
-#define BIG_NUMBER	(ULONG) -1
+const ULONG BIG_NUMBER = (ULONG) -1;
 
 typedef struct fil {
     int		fil_file;
@@ -51,4 +51,5 @@ typedef struct swc {
     TEXT    *swc_string;
 } *SWC;
 
-#endif /* _UTILITIES_REBUILD_H_ */
+#endif /* UTILITIES_REBUILD_H */
+

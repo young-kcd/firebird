@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.39 2003-11-08 16:31:39 brodsom Exp $
+//  $Id: par.cpp,v 1.40 2003-11-28 06:48:12 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -397,7 +397,7 @@ SSHORT PAR_blob_subtype(DBB db)
 		return const_subtype;
 	}
 
-	return EXP_SSHORT_ordinal(TRUE);
+	return EXP_SSHORT_ordinal(true);
 }
 
 
@@ -670,7 +670,7 @@ ACT PAR_event_init(bool sql)
 		if (!sql && (symbol = token.tok_symbol)
 			&& symbol->sym_type == SYM_context) {
 			field = EXP_field(&context);
-			reference = EXP_post_field(field, context, FALSE);
+			reference = EXP_post_field(field, context, false);
 			node = MSC_node(nod_field, 1);
 			node->nod_arg[0] = (GPRE_NOD) reference;
 		}
@@ -967,7 +967,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 	USHORT lock_level, lock_mode;
 
 	while (true) {
-		/* find a relation name, or maybe a list of them */
+		// find a relation name, or maybe a list of them 
 
 		if ((!parse_sql) && terminator())
 			break;
@@ -1240,7 +1240,7 @@ static ACT par_array_element()
 
 	field = EXP_field(&context);
 	request = context->ctx_request;
-	node = EXP_array(request, field, FALSE, FALSE);
+	node = EXP_array(request, field, false, false);
 	reference = MSC_reference(&request->req_references);
 	reference->ref_expr = node;
 	reference->ref_field = element = field->fld_array;
@@ -1294,8 +1294,8 @@ static ACT par_based()
 	TEXT t_str[NAME_SIZE + 1];
 	bool ambiguous_flag;
 	LLS t1, t2, hold;
-	int notSegment = 0;			/* a COBOL specific patch */
-	char tmpChar[2];			/* a COBOL specific patch */
+	int notSegment = 0;			// a COBOL specific patch 
+	char tmpChar[2];			// a COBOL specific patch 
 
 	MSC_match(KW_ON);
 	action = MSC_action(0, ACT_basedon);
@@ -1397,17 +1397,17 @@ static ACT par_based()
 		   ** file correctly.
 		 */
 		if (based_on->bas_variables->lls_next) {
-			t1 = based_on->bas_variables;	/* last one in the old list */
-			t2 = NULL;			/* last one in the new list */
-			hold = t2;			/* beginning of new list */
+			t1 = based_on->bas_variables;	// last one in the old list 
+			t2 = NULL;			// last one in the new list 
+			hold = t2;			// beginning of new list 
 
-			/* while we still have a next one, keep going thru */
+			// while we still have a next one, keep going thru 
 			while (t1->lls_next) {
-				/* now find the last one in the list */
+				// now find the last one in the list 
 				while (t1->lls_next->lls_next)
 					t1 = t1->lls_next;
 
-				/* if this is the first time thru, set hold */
+				// if this is the first time thru, set hold 
 				if (hold == NULL) {
 					hold = t1->lls_next;
 					t2 = hold;
@@ -1419,7 +1419,7 @@ static ACT par_based()
 					t2->lls_next = t1->lls_next;
 					t2 = t2->lls_next;
 				}
-				/* now null out the last one, and start again */
+				// now null out the last one, and start again 
 				t1->lls_next = NULL;
 				t1 = based_on->bas_variables;
 			}
@@ -1890,7 +1890,7 @@ static ACT par_end_store(bool special)
 		if (errors)
 			return NULL;
 
-		/* Make up an assignment list for all field references */
+		// Make up an assignment list for all field references 
 
 		count = 0;
 		for (reference = request->req_references; reference;
@@ -1922,7 +1922,7 @@ static ACT par_end_store(bool special)
 		action2 = (ACT) MSC_pop(&cur_store);
 		return_values = (UPD) action2->act_object;
 
-		/* Build assignments for all fields and null flags referenced */
+		// Build assignments for all fields and null flags referenced 
 
 		stack = NULL;
 		count = 0;
@@ -1945,7 +1945,7 @@ static ACT par_end_store(bool special)
 				count++;
 			}
 
-		/* Build a list node of the assignments */
+		// Build a list node of the assignments 
 
 		return_values->upd_assignments = assignments =
 			MSC_node(nod_list, (SSHORT) count);
@@ -2323,7 +2323,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 	}
 
 	request = context->ctx_request;
-	reference = EXP_post_field(field, context, FALSE);
+	reference = EXP_post_field(field, context, false);
 
 	blob = (BLB) MSC_alloc(BLB_LEN);
 	blob->blb_symbol = symbol;
@@ -2507,7 +2507,7 @@ static ACT par_ready()
 			break;
 		CPR_eol_token();
 
-		/* pick up the possible parameters, in any order */
+		// pick up the possible parameters, in any order 
 
 		buffers = 0;
 		db = ready->rdy_database;
@@ -2766,7 +2766,7 @@ static ACT par_slice( ACT_T type)
 		(SLC) MSC_alloc(SLC_LEN(info->ary_dimension_count));
 	slice->slc_dimensions = info->ary_dimension_count;
 	slice->slc_field = field;
-	slice->slc_field_ref = EXP_post_field(field, context, FALSE);
+	slice->slc_field_ref = EXP_post_field(field, context, false);
 	slice->slc_parent_request = context->ctx_request;
 
 	if (!MSC_match(KW_L_BRCKET))
@@ -3118,7 +3118,7 @@ static ACT par_variable()
 	}
 
 	request = context->ctx_request;
-	reference = EXP_post_field(field, context, (is_null)? TRUE : FALSE);
+	reference = EXP_post_field(field, context, is_null);
 
 	if (field->fld_array)
 		EXP_post_array(reference);

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.38 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: ftn.cpp,v 1.39 2003-11-28 06:48:11 robocop Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -912,7 +912,7 @@ static void gen_based(const act* action)
 		ib_fprintf(out_file, "%s", variable);
 		first = false;
 		if (field->fld_array_info && !(based_on->bas_flags & BAS_segment)) {
-			/*  Print out the dimension part of the declaration  */
+			//  Print out the dimension part of the declaration  
 			ib_fprintf(out_file, "(");
 
 			for (DIM dimension = field->fld_array_info->ary_dimension; dimension;
@@ -1269,7 +1269,7 @@ static void gen_create_database(const act* action)
 		sprintf(output_buffer, "%sCALL ISC_FREE (%s)\n", COLUMN, s2);
 		FTN_print_buffer(output_buffer);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb 
 
 		sprintf(output_buffer, "%s%s = %d\n", COLUMN, s1,
 				request->req_length);
@@ -1519,7 +1519,7 @@ static void gen_database_decls(const act* action)
 		}
 
 #ifdef hpux
-		/* build fields to handle start_multiple */
+		// build fields to handle start_multiple 
 
 		count++;
 		ib_fprintf(out_file,
@@ -1579,7 +1579,7 @@ static void gen_database_decls(const act* action)
 					   COLUMN, blob->blb_len_ident, INLINE_COMMENT);
 		}
 
-		/*  Array declarations  */
+		//  Array declarations  
 
 		if (port = request->req_primary)
 			for (const ref* reference = port->por_references; reference;
@@ -3322,16 +3322,16 @@ static void gen_slice(const act* action)
 
 	PAT args;
 	args.pat_reference = slice->slc_field_ref;
-	args.pat_request = parent_request;	/* blob id request */
-	args.pat_vector1 = status_vector(action);	/* status vector */
-	args.pat_database = parent_request->req_database;	/* database handle */
-	args.pat_string1 = action->act_request->req_trans;	/* transaction handle */
-	args.pat_value1 = request->req_length;	/* slice descr. length */
-	args.pat_ident1 = request->req_ident;	/* request name */
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	/* parameter length */
+	args.pat_request = parent_request;	// blob id request 
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = parent_request->req_database;	// database handle 
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle 
+	args.pat_value1 = request->req_length;	// slice descr. length 
+	args.pat_ident1 = request->req_ident;	// request name 
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length 
 
 	reference = (const ref*) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	/* array name */
+	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = "isc_array_length";
 
 	const SSHORT column = 6;
@@ -3959,7 +3959,7 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 		sprintf(output_buffer, "%sCALL ISC_FREE (%s)\n", COLUMN, s2);
 		FTN_print_buffer(output_buffer);
 
-		/* reset the length of the dpb */
+		// reset the length of the dpb 
 
 		sprintf(output_buffer, "%s%s = %d\n", COLUMN, s1,
 				request->req_length);

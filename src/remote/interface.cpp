@@ -126,8 +126,8 @@ static void event_handler(PORT);
 #else
 static void THREAD_ROUTINE event_thread(PORT);
 #endif
-static ISC_STATUS fetch_blob(ISC_STATUS *, RSR, USHORT, UCHAR *, USHORT, USHORT,
-						 UCHAR *);
+static ISC_STATUS fetch_blob(ISC_STATUS*, RSR, USHORT, const UCHAR*, USHORT,
+						USHORT, UCHAR*);
 static RVNT find_event(PORT, SLONG);
 static USHORT get_new_dpb(const UCHAR*, SSHORT, SSHORT, UCHAR*, USHORT*, TEXT*);
 #ifdef UNIX
@@ -167,9 +167,9 @@ static bool send_partial_packet(PORT, PACKET *, ISC_STATUS *);
 #ifdef MULTI_THREAD
 static void server_death(PORT);
 #endif
-static void stuff_vax_integer(UCHAR *, SLONG, USHORT);
-static ISC_STATUS svcstart(ISC_STATUS *, RDB, P_OP, USHORT, USHORT, USHORT, SCHAR *);
-static ISC_STATUS unsupported(ISC_STATUS *);
+static void stuff_vax_integer(UCHAR*, SLONG, USHORT);
+static ISC_STATUS svcstart(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT, const SCHAR*);
+static ISC_STATUS unsupported(ISC_STATUS*);
 static void zap_packet(PACKET *);
 
 static void mov_faster(const SLONG*, SLONG*, USHORT);
@@ -1544,15 +1544,15 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
-							  RDB * db_handle,
-							  RTR * rtr_handle,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
+							  RDB* db_handle,
+							  RTR* rtr_handle,
 							  USHORT length,
-							  TEXT * string,
+							  const TEXT* string,
 							  USHORT dialect,
 							  USHORT blr_length,
-							  UCHAR * blr,
-							  USHORT msg_type, USHORT msg_length, UCHAR * msg)
+							  const UCHAR* blr,
+							  USHORT msg_type, USHORT msg_length, UCHAR* msg)
 {
 /**************************************
  *
@@ -1572,21 +1572,21 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
-							   RDB * db_handle,
-							   RTR * rtr_handle,
+ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
+							   RDB* db_handle,
+							   RTR* rtr_handle,
 							   USHORT length,
-							   TEXT * string,
+							   const TEXT* string,
 							   USHORT dialect,
 							   USHORT in_blr_length,
-							   UCHAR * in_blr,
+							   const UCHAR* in_blr,
 							   USHORT in_msg_type,
 							   USHORT in_msg_length,
-							   UCHAR * in_msg,
+							   UCHAR* in_msg,
 							   USHORT out_blr_length,
-							   UCHAR * out_blr,
+							   UCHAR* out_blr,
 							   USHORT out_msg_type,
-							   USHORT out_msg_length, UCHAR * out_msg)
+							   USHORT out_msg_length, UCHAR* out_msg)
 {
 /**************************************
  *
@@ -1712,7 +1712,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 		ex_now->p_sqlst_items.cstr_length = 0;
 		ex_now->p_sqlst_buffer_length = 0;
 		ex_now->p_sqlst_blr.cstr_length = in_blr_length;
-		ex_now->p_sqlst_blr.cstr_address = in_blr;
+		ex_now->p_sqlst_blr.cstr_address = const_cast<UCHAR*>(in_blr);
 		ex_now->p_sqlst_message_number = in_msg_type;
 		ex_now->p_sqlst_messages = (in_msg_length
 									&& statement->rsr_bind_format) ? 1 : 0;
@@ -1765,11 +1765,11 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
-					  RSR * stmt_handle,
+ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
+					  RSR* stmt_handle,
 					  USHORT blr_length,
-					  UCHAR * blr,
-					  USHORT msg_type, USHORT msg_length, UCHAR * msg)
+					  const UCHAR* blr,
+					  USHORT msg_type, USHORT msg_length, UCHAR* msg)
 {
 /**************************************
  *
@@ -1911,7 +1911,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 			sqldata = &packet->p_sqldata;
 			sqldata->p_sqldata_statement = statement->rsr_id;
 			sqldata->p_sqldata_blr.cstr_length = blr_length;
-			sqldata->p_sqldata_blr.cstr_address = blr;
+			sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(blr);
 			sqldata->p_sqldata_message_number = msg_type;
 			if (sqldata->p_sqldata_messages =
 				(statement->rsr_select_format) ? 1 : 0)
@@ -2308,8 +2308,8 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 }
 
 
-ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
-						   RSR * stmt_handle, TEXT * cursor, USHORT type)
+ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
+						   RSR* stmt_handle, const TEXT* cursor, USHORT type)
 {
 /*****************************************
  *
@@ -2375,7 +2375,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS * user_status,
 
 		name_l = strlen(cursor);
 		sqlcur->p_sqlcur_cursor_name.cstr_length = name_l + 1;
-		sqlcur->p_sqlcur_cursor_name.cstr_address = (UCHAR *) cursor;
+		sqlcur->p_sqlcur_cursor_name.cstr_address = (UCHAR *) cursor; // const cast
 		sqlcur->p_sqlcur_type = type;
 
 		if (send_and_receive(rdb, packet, user_status)) {
@@ -3125,12 +3125,12 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
-					  RDB * handle,
-					  SLONG * id,
+ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
+					  RDB* handle,
+					  SLONG* id,
 					  SSHORT length,
-					  UCHAR * items,
-					  void (*ast) (void *, USHORT, UCHAR *), void *arg)
+					  const UCHAR* items,
+					  void (*ast) (void*, USHORT, UCHAR*), void* arg)
 {
 /**************************************
  *
@@ -3219,7 +3219,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 		event = &packet->p_event;
 		event->p_event_database = rdb->rdb_id;
 		event->p_event_items.cstr_length = length;
-		event->p_event_items.cstr_address = items;
+		event->p_event_items.cstr_address = const_cast<UCHAR*>(items);
 		event->p_event_ast = (SLONG) ast;
 		event->p_event_arg = (SLONG) arg;
 		event->p_event_rid = rem_event->rvnt_id;
@@ -4151,8 +4151,8 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
-						 RDB * svc_handle,
-						 ULONG * reserved, USHORT item_length, SCHAR * items)
+						 RDB* svc_handle,
+						 ULONG* reserved, USHORT item_length, const SCHAR* items)
 {
 /**************************************
  *
@@ -5691,13 +5691,13 @@ static void THREAD_ROUTINE event_thread( PORT port)
 
 
 static ISC_STATUS fetch_blob(
-						 ISC_STATUS * user_status,
+						 ISC_STATUS* user_status,
 						 RSR statement,
 						 USHORT blr_length,
-						 UCHAR * blr,
+						 const UCHAR* blr,
 						 USHORT msg_type,
 						 USHORT msg_length,
-						 UCHAR * msg)
+						 UCHAR* msg)
 {
 /**************************************
  *
@@ -5723,7 +5723,7 @@ static ISC_STATUS fetch_blob(
 	sqldata = &packet->p_sqldata;
 	sqldata->p_sqldata_statement = statement->rsr_id;
 	sqldata->p_sqldata_blr.cstr_length = blr_length;
-	sqldata->p_sqldata_blr.cstr_address = blr;
+	sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(blr);
 	sqldata->p_sqldata_message_number = msg_type;
 	sqldata->p_sqldata_messages = (statement->rsr_select_format) ? 1 : 0;
 
@@ -7294,7 +7294,7 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 					   USHORT	object,
 					   USHORT	incarnation,
 					   USHORT	item_length,
-					   SCHAR*	items)
+					   const SCHAR*	items)
  {
 /**************************************
  *
@@ -7319,7 +7319,7 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 	information->p_info_object = object;
 	information->p_info_incarnation = incarnation;
 	information->p_info_items.cstr_length = item_length;
-	information->p_info_items.cstr_address = (UCHAR *) items;
+	information->p_info_items.cstr_address = (UCHAR *) items; // const_cast
 	information->p_info_buffer_length = item_length;
 
 /* Assume the result will be successful */

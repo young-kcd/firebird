@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.34 2003-11-11 12:08:12 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.35 2003-11-28 06:48:12 robocop Exp $
  */
 
 #include "firebird.h"
@@ -282,7 +282,7 @@ bool MET_database(dbb* database, bool print_version)
 
 	SCHAR buffer[16];
 
-/*  get the base level of the engine  */
+//  get the base level of the engine  
 
 	if (isc_database_info(gds_status, &DB, sizeof(db_version_info),
 						   db_version_info, sizeof(buffer), buffer)) {
@@ -483,7 +483,7 @@ bool MET_get_domain_default(dbb* database,
 		if (!GPRE_FLD.RDB$DEFAULT_VALUE.NULL) {
 			ISC_QUAD* blob_id = &GPRE_FLD.RDB$DEFAULT_VALUE;
 
-			/* open the blob */
+			// open the blob 
 			isc_blob_handle blob_handle = NULL;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 									&blob_handle, blob_id, sizeof(blr_bpb),
@@ -492,7 +492,7 @@ bool MET_get_domain_default(dbb* database,
 				isc_print_status(status_vect);
 				CPR_exit(FINI_ERROR);
 			}
-			/* fetch segments. Assume buffer is big enough.  */
+			// fetch segments. Assume buffer is big enough.  
 			TEXT* ptr_in_buffer = buffer;
 			while (true) {
 				SSHORT length;
@@ -504,7 +504,7 @@ bool MET_get_domain_default(dbb* database,
 				if (!stat)
 					continue;
 				else if (stat == isc_segstr_eof) {
-					/* null terminate the buffer */
+					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
@@ -523,7 +523,7 @@ bool MET_get_domain_default(dbb* database,
 
 			has_default = true;
 		}
-		else {						/* default not found */
+		else {						// default not found 
 
 			if (sw_sql_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
@@ -591,7 +591,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 		}
 
 		if (has_default) {
-			/* open the blob */
+			// open the blob 
 			isc_blob_handle blob_handle = NULL;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 								  &blob_handle, blob_id, sizeof(blr_bpb),
@@ -601,7 +601,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 				CPR_exit(FINI_ERROR);
 			}
 
-			/* fetch segments. Assuming here that the buffer is big enough. */
+			// fetch segments. Assuming here that the buffer is big enough. 
 			TEXT* ptr_in_buffer = buffer;
 			while (true) {
 				SSHORT length;
@@ -612,7 +612,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 				if (!stat)
 					continue;
 				else if (stat == isc_segstr_eof) {
-					/* null terminate the buffer */
+					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
@@ -1270,7 +1270,7 @@ UDF MET_get_udf(dbb* database, const TEXT* string)
 		return the_udf;
 
 	if (database->dbb_flags & DBB_v3) {
-		/* Version of V4 request without new V4 metadata */
+		// Version of V4 request without new V4 metadata 
 		FOR(REQUEST_HANDLE database->dbb_udf_request)
 		UDF_DEF IN RDB$FUNCTIONS CROSS
 			UDF_ARG IN RDB$FUNCTION_ARGUMENTS
@@ -1304,7 +1304,7 @@ UDF MET_get_udf(dbb* database, const TEXT* string)
 		END_FOR;
 	}
 	else {
-		/* Same request as above, but with V4 metadata also fetched */
+		// Same request as above, but with V4 metadata also fetched 
 		FOR(REQUEST_HANDLE database->dbb_udf_request)
 		UDF_DEF IN RDB$FUNCTIONS CROSS
 			UDF_ARG IN RDB$FUNCTION_ARGUMENTS
@@ -1462,9 +1462,10 @@ void MET_load_hash_table(dbb* database)
 		if (!MET_database(database, false))
 			CPR_exit(FINI_ERROR);
 
-	if (database->dbb_transaction)
-		/* we must have already loaded this one */
+	if (database->dbb_transaction) {
+		// we must have already loaded this one 
 		return;
+	}
 
 	gds_trans = NULL;
 	DB = database->dbb_handle;
@@ -1473,7 +1474,7 @@ void MET_load_hash_table(dbb* database)
 
 	database->dbb_transaction = gds_trans;
 
-/*  Determine if the database is V3.  */
+//  Determine if the database is V3.  
 
 	bool post_v3_flag = false;
 	FRBRD* handle = NULL;
@@ -1564,7 +1565,7 @@ void MET_load_hash_table(dbb* database)
 				MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
 	END_FOR
 	ON_ERROR
-		/* assume pre V4 database, no procedures */
+		// assume pre V4 database, no procedures 
 	END_ERROR;
 
 	if (handle)
@@ -1679,7 +1680,7 @@ void MET_load_hash_table(dbb* database)
 
 	END_FOR
 	ON_ERROR
-		/* assume pre V4 database, no collations */
+		// assume pre V4 database, no collations 
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
@@ -1731,14 +1732,14 @@ void MET_load_hash_table(dbb* database)
 
 	END_FOR
 	ON_ERROR
-		/* assume pre V4 database, no character sets */
+		// assume pre V4 database, no character sets 
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
 	if (handle2)
 		isc_release_request(gds_status, &handle2);
 
-/*  Pick up name of database default character set for SQL  */
+//  Pick up name of database default character set for SQL  
 
 	FOR(REQUEST_HANDLE handle)
 		FIRST 1 DBB IN RDB$DATABASE
@@ -1752,12 +1753,12 @@ void MET_load_hash_table(dbb* database)
 			CPR_warn("Default character set for database is not known");
 	END_FOR
 	ON_ERROR
-		/* Assume V3 Db, no default charset */
+		// Assume V3 Db, no default charset 
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
 
-/*  Pick up all generators for the database  */
+//  Pick up all generators for the database  
 
 	FOR(REQUEST_HANDLE handle)
 	X IN RDB$GENERATORS
@@ -1874,7 +1875,7 @@ bool MET_type(GPRE_FLD field,
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
-/*  Force the name to uppercase, using C locale rules for uppercasing  */
+//  Force the name to uppercase, using C locale rules for uppercasing  
 	UCHAR* p;
 	for (p = buffer; *string && p < &buffer[sizeof(buffer) - 1];
 		 ++p, ++string)
@@ -2142,7 +2143,7 @@ static bool resolve_charset_and_collation(
 
 			END_FOR
 			ON_ERROR
-				/* Assume V3 DB, without default character set */
+				// Assume V3 DB, without default character set 
 			END_ERROR;
 
 			isc_release_request(gds_status, &request);

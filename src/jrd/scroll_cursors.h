@@ -41,21 +41,21 @@ ISC_STATUS ISC_EXPORT isc_dsql_fetch2(ISC_STATUS *,
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS ISC_EXPORT isc_dsql_fetch2_m(ISC_STATUS *,
-										isc_stmt_handle *,
+ISC_STATUS ISC_EXPORT isc_dsql_fetch2_m(ISC_STATUS*,
+										isc_stmt_handle*,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
 										unsigned short,
-										char *,
+										char*,
 										unsigned short, signed long);
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch2(ISC_STATUS *,
-											char *,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch2(ISC_STATUS*,
+											char*,
 											unsigned short,
-											XSQLDA *,
+											XSQLDA*,
 											unsigned short, signed long);
 #endif
 

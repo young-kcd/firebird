@@ -76,9 +76,9 @@ static void stuff_word(dsql_req*, USHORT);
 
 static const SCHAR db_key_name[] = "DB_KEY";
 
-/* STUFF is defined in dsql.h for use in common with ddl.c */
+// STUFF is defined in dsql.h for use in common with ddl.c 
 
-/* The following are passed as the third argument to gen_constant */
+// The following are passed as the third argument to gen_constant 
 const bool NEGATE_VALUE = true;
 const bool USE_VALUE    = false;
 
@@ -191,8 +191,8 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 						  isc_arg_gds, isc_dsql_domain_err, 0);
 		}
 		stuff(request, blr_fid);
-		stuff(request, 0);				/* Context   */
-		stuff_word(request, 0);			/* Field id  */
+		stuff(request, 0);				// Context   
+		stuff_word(request, 0);			// Field id  
 		return;
 
 	case nod_field:
@@ -506,7 +506,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_internal_err,
 				  isc_arg_gds, isc_expression_eval_err,
-				  /* expression evaluation not supported */
+				  // expression evaluation not supported 
 				  0);
 	}
 
@@ -620,7 +620,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 							  0);
 					break;
 				default:
-					/* No special action for other data types */
+					// No special action for other data types 
 					break;
 			};
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
@@ -634,14 +634,14 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 			gen_descriptor(request, &parameter->par_desc, false);
 	}
 
-/* Allocate buffer for message */
+// Allocate buffer for message 
 	// CVC: again, final possibility of having overflow! Should be < 64K
 	const USHORT new_len = message->msg_length + DOUBLE_ALIGN - 1;
 	dsql_str* buffer = FB_NEW_RPT(*tdsql->tsql_default, new_len) dsql_str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 
-/* Relocate parameter descriptors to point direction into message buffer */
+// Relocate parameter descriptors to point direction into message buffer 
 
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
@@ -1259,7 +1259,7 @@ static void gen_aggregate( dsql_req* request, const dsql_nod* node)
 	stuff(request, context->ctx_context);
 	gen_rse(request, node->nod_arg[e_agg_rse]);
 
-/* Handle GROUP BY clause */
+// Handle GROUP BY clause 
 
 	stuff(request, blr_group_by);
 
@@ -1276,7 +1276,7 @@ static void gen_aggregate( dsql_req* request, const dsql_nod* node)
 	else
 		stuff(request, 0);
 
-/* Generate value map */
+// Generate value map 
 
 	gen_map(request, context->ctx_map);
 }
@@ -1374,11 +1374,11 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 
 	if ((desc->dsc_dtype == dtype_double)
 		&& (request->req_dbb->dbb_flags & DBB_v3))
-		/* v3 doesn't understand blr_double literal, generate blr_text instead */
+		// v3 doesn't understand blr_double literal, generate blr_text instead 
 	{
 		tmp_desc = *desc;
 		tmp_desc.dsc_dtype = dtype_text;
-		tmp_desc.dsc_length = desc->dsc_scale;	/* length of string literal */
+		tmp_desc.dsc_length = desc->dsc_scale;	// length of string literal 
 		tmp_desc.dsc_scale = 0;
 		desc = &tmp_desc;
 	}
@@ -1417,7 +1417,7 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		   which is transmitted to the engine as a string.
 		 */
 		gen_descriptor(request, desc, true);
-		l = (USHORT) desc->dsc_scale;	/* length of string literal */
+		l = (USHORT) desc->dsc_scale;	// length of string literal 
 		if (negate_value) {
 			stuff_word(request, l + 1);
 			stuff(request, '-');
@@ -1498,7 +1498,7 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		break;
 
 	default:
-		/* gen_constant: datatype not understood */
+		// gen_constant: datatype not understood 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 103,
 				  isc_arg_gds, isc_dsql_constant_err, 0);
 	}
@@ -1528,7 +1528,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 			stuff_word(request, desc->dsc_ttype);
 		}
 		else {
-			stuff(request, blr_text2);	/* automatic transliteration */
+			stuff(request, blr_text2);	// automatic transliteration 
 			stuff_word(request, ttype_dynamic);
 		}
 
@@ -1543,7 +1543,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 			stuff_word(request, desc->dsc_ttype);
 		}
 		else {
-			stuff(request, blr_varying2);	/* automatic transliteration */
+			stuff(request, blr_varying2);	// automatic transliteration 
 			stuff_word(request, ttype_dynamic);
 		}
 		stuff_word(request, desc->dsc_length - sizeof(USHORT));
@@ -1596,7 +1596,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 		break;
 
 	default:
-		/* don't understand dtype */
+		// don't understand dtype 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				  isc_arg_gds, isc_dsql_datatype_err, 0);
 	}
@@ -1680,7 +1680,7 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 										 (field->fld_dtype)), 0);
 			break;
 		default:
-			/* No special action for other data types */
+			// No special action for other data types 
 			break;
 		}
 	}
@@ -1733,7 +1733,7 @@ static void gen_for_select( dsql_req* request, dsql_nod* for_select)
         stuff(request, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
     }
 
-/* Generate FOR loop */
+// Generate FOR loop 
 
 	stuff(request, blr_for);
 
@@ -1745,9 +1745,9 @@ static void gen_for_select( dsql_req* request, dsql_nod* for_select)
 	gen_rse(request, rse);
 	stuff(request, blr_begin);
 
-/* Build body of FOR loop */
+// Build body of FOR loop 
 
-	/* Handle write locks */
+	// Handle write locks 
 	dsql_nod* streams = rse->nod_arg[e_rse_streams];
 	dsql_ctx* context = NULL;
 
@@ -1907,7 +1907,7 @@ static void gen_parameter( dsql_req* request, const par* parameter)
  **/
 static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 {
-/* stuff the join type */
+// stuff the join type 
 
 	const dsql_nod* list = plan_expression->nod_arg[1];
 	if (list->nod_count > 1) {
@@ -1918,7 +1918,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 		stuff(request, list->nod_count);
 	}
 
-/* stuff one or more plan items */
+// stuff one or more plan items 
 
 	const dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; 
@@ -1930,7 +1930,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 			continue;
 		}
 
-		/* if we're here, it must be a nod_plan_item */
+		// if we're here, it must be a nod_plan_item 
 
 		stuff(request, blr_retrieve);
 
@@ -1940,7 +1940,7 @@ static void gen_plan( dsql_req* request, const dsql_nod* plan_expression)
 		const dsql_nod* arg = node->nod_arg[0];
 		gen_relation(request, (dsql_ctx*) arg->nod_arg[e_rel_context]);
 
-		/* now stuff the access method for this stream */
+		// now stuff the access method for this stream 
 		const dsql_str* index_string;
 
 		arg = node->nod_arg[1];
@@ -1999,7 +1999,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 	const dsql_rel* relation = context->ctx_relation;
 	const dsql_prc* procedure = context->ctx_procedure;
 
-/* if this is a trigger or procedure , don't want relation id used */
+// if this is a trigger or procedure , don't want relation id used 
 	if (relation) {
 		if (DDL_ids(request)) {
 			if (context->ctx_alias)
@@ -2190,7 +2190,7 @@ static void gen_rse( dsql_req* request, const dsql_nod* rse)
 		}
 	}
 
-/* if the user specified an access plan to use, add it here */
+// if the user specified an access plan to use, add it here 
 
 	if ((node = rse->nod_arg[e_rse_plan]) != NULL) {
 		stuff(request, blr_plan);
@@ -2281,7 +2281,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	constant_desc.dsc_length = sizeof(SSHORT);
 	constant_desc.dsc_address = (UCHAR *) & constant;
 
-/* Set up parameter for things in the select list */
+// Set up parameter for things in the select list 
 	dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
@@ -2650,7 +2650,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
  **/
 static void gen_simple_case( dsql_req* request, const dsql_nod* node)
 {
-	/* blr_value_if is used for building the case expression */
+	// blr_value_if is used for building the case expression 
 
 	stuff(request, blr_cast);
 	gen_descriptor(request, &node->nod_desc, true);
@@ -2669,7 +2669,7 @@ static void gen_simple_case( dsql_req* request, const dsql_nod* node)
 		GEN_expr(request, *wptr);
 		GEN_expr(request, *rptr);
 	}
-	/* else_result */
+	// else_result 
 	GEN_expr(request, node->nod_arg[e_simple_case_results]->nod_arg[count]); 
 }
 
@@ -2747,7 +2747,7 @@ static void gen_table_lock( dsql_req* request, const dsql_nod* tbl_lock,
 
 		stuff(request, lock_mode);
 
-		/* stuff table name */
+		// stuff table name 
 		const dsql_str* temp = (dsql_str*) ((*ptr)->nod_arg[e_rln_name]);
 		stuff_cstring(request, reinterpret_cast<const char*>(temp->str_data));
 
@@ -2814,7 +2814,7 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 	stuff(request, union_context->ctx_context);
 
 	dsql_nod* streams = union_node->nod_arg[e_rse_streams];
-	stuff(request, streams->nod_count);	/* number of substreams */
+	stuff(request, streams->nod_count);	// number of substreams 
 
     dsql_nod** ptr = streams->nod_arg;
 	for (const dsql_nod* const* const end = ptr + streams->nod_count; ptr < end;

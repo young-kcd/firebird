@@ -33,8 +33,8 @@ void EVENT_delete_session(SLONG);
 void EVENT_deliver();
 struct evh* EVENT_init(ISC_STATUS*, USHORT);
 int EVENT_post(ISC_STATUS*, USHORT, TEXT*, USHORT, TEXT*, USHORT);
-SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, TEXT*, USHORT, UCHAR*, FPTR_VOID,
-				void*);
+SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
+				FPTR_VOID, void*);
 
 #endif // JRD_EVENT_PROTO_H
 

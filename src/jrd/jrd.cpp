@@ -2909,13 +2909,13 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
-							ATT * handle,
-							SLONG * id,
+ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
+							ATT* handle,
+							SLONG* id,
 							SSHORT length,
-							UCHAR * items,
+							const UCHAR* items,
 							FPTR_VOID ast,
-							void *arg)
+							void* arg)
 {
 /**************************************
  *
@@ -2956,7 +2956,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS * user_status,
 		*id = EVENT_que(user_status,
 						attachment->att_event_session,
 						lock->lck_length,
-						(TEXT *) & lock->lck_key, length, items, ast, arg);
+						(const TEXT*) & lock->lck_key, length, items, ast, arg);
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *id);
@@ -3518,7 +3518,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 							SVC*	svc_handle,
 							ULONG*	reserved,
 							USHORT	spb_length,
-							SCHAR*	spb)
+							const SCHAR*	spb)
 {
 /**************************************
  *

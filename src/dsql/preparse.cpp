@@ -70,9 +70,9 @@ static inline void stuff_dpb_long(SCHAR*& dpb, const SLONG blr)
 }
 
 static void generate_error(ISC_STATUS*, const SCHAR*, SSHORT, SSHORT);
-static SSHORT get_next_token(SCHAR**, const SCHAR*, SCHAR*, USHORT*);
-static SSHORT get_token(ISC_STATUS*, SSHORT, bool, SCHAR**, const SCHAR* const,
-						SCHAR*, USHORT*);
+static SSHORT get_next_token(const SCHAR**, const SCHAR*, SCHAR*, USHORT*);
+static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
+	const SCHAR* const, SCHAR*, USHORT*);
 
 struct pp_table {
 	SCHAR symbol[10];
@@ -96,7 +96,7 @@ static const pp_table pp_symbols[] = {
 	{"", 0, 0}
 };
 
-/* define the tokens */
+// define the tokens 
 
 enum token_vals {
 	NO_MORE_TOKENS = -1,
@@ -128,13 +128,13 @@ bool PREPARSE_execute(
 		FRBRD** db_handle,
 		FRBRD** trans_handle,
 		USHORT stmt_length,
-		SCHAR* stmt,
+		const SCHAR* stmt,
 		bool* stmt_eaten,
 		USHORT dialect)
 {
 	char* const token = (SCHAR *) gds__alloc((SLONG) MAX_TOKEN_SIZE + 1);
 /* FREE: by return(s) in this procedure */
-	if (!token) {				/* NOMEM: */
+	if (!token) {				// NOMEM: 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
 		user_status[2] = isc_arg_end;
@@ -179,7 +179,7 @@ bool PREPARSE_execute(
 	char* const dpb_array = (SCHAR*) gds__alloc((SLONG) 2 * MAX_TOKEN_SIZE + 25);
 	char* dpb = dpb_array;
 /* FREE: by following return(s) in this procedure */
-	if (!dpb_array) {			/* NOMEM: */
+	if (!dpb_array) {			// NOMEM: 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_virmemexh;
 		user_status[2] = isc_arg_end;
@@ -291,7 +291,7 @@ bool PREPARSE_execute(
 					break;
 
 				case PP_LENGTH:
-					/* Skip a token for value */
+					// Skip a token for value 
 
 					if (get_token(user_status, '=', true, &stmt, stmt_end,
 								  token, &token_length) ||
@@ -323,7 +323,7 @@ bool PREPARSE_execute(
 
 	const USHORT dpb_len = dpb - dpb_array;
 
-/* This code is because 3.3 server does not recognize isc_dpb_overwrite. */
+// This code is because 3.3 server does not recognize isc_dpb_overwrite. 
 	FRBRD* temp_db_handle = NULL;
 	if (!isc_attach_database(user_status, 0, file_name, &temp_db_handle,
 							 dpb_len, dpb_array) ||
@@ -429,14 +429,14 @@ static void generate_error(
 
  **/
 static SSHORT get_next_token(
-							 SCHAR** stmt,
+							 const SCHAR** stmt,
 							 const SCHAR* stmt_end,
 							 SCHAR* token, USHORT* token_length)
 {
 	UCHAR c, char_class;
 
 	*token_length = 0;
-	SCHAR* s = *stmt;
+	const SCHAR* s = *stmt;
 
 	for (;;) {
 		if (s >= stmt_end) {
@@ -462,12 +462,12 @@ static SSHORT get_next_token(
 /* At this point c contains character and class contains character class.
    s is pointing to next character. */
 
-	SCHAR* start_of_token = s - 1;
+	const SCHAR* const start_of_token = s - 1;
 
 /* In here we handle only 4 cases, STRING, INTEGER, arbitrary
    SYMBOL and single character punctuation. */
 
-/* token can be up to MAX_TOKEN_SIZE and 1 is for null termination */
+// token can be up to MAX_TOKEN_SIZE and 1 is for null termination 
 
 	SCHAR* p = token;
 	const char* const token_end = token + MAX_TOKEN_SIZE + 1;
@@ -513,7 +513,7 @@ static SSHORT get_next_token(
 		return NUMERIC;
 	}
 
-/* Is is a symbol */
+// Is is a symbol 
 
 	if (char_class & CHR_LETTER) {
 		*p++ = UPPER(c);
@@ -521,7 +521,7 @@ static SSHORT get_next_token(
 			*p++ = UPPER(*s);
 		}
 
-		/* what happend to token size check. It went to hell */
+		// what happend to token size check. It went to hell 
 
 		*stmt = s;
 		if (p >= token_end) {
@@ -534,7 +534,7 @@ static SSHORT get_next_token(
 		return SYMBOL;
 	}
 
-/* What remains at this point for us is the single character punctuation.*/
+// What remains at this point for us is the single character punctuation.
 
 	*stmt = s;
 
@@ -560,12 +560,12 @@ static SSHORT get_next_token(
 static SSHORT get_token(ISC_STATUS* status,
 						SSHORT token_type,
 						bool optional,
-						SCHAR** stmt,
+						const SCHAR** stmt,
 						const SCHAR* const stmt_end,
 						SCHAR* token,
 						USHORT* token_length)
 {
-	SCHAR* temp_stmt = *stmt;
+	const SCHAR* temp_stmt = *stmt;
 	const SSHORT result = get_next_token(&temp_stmt, stmt_end, token, token_length);
 
 	switch (result) {
@@ -578,13 +578,13 @@ static SSHORT get_token(ISC_STATUS* status,
 	case TOKEN_TOO_LONG:
 		*stmt = temp_stmt;
 
-		/* generate error here */
+		// generate error here 
 
 		generate_error(status, token, result, 0);
 		return FB_FAILURE;
 	}
 
-/* Some token was found */
+// Some token was found 
 
 	if (result == token_type) {
 		*stmt = temp_stmt;

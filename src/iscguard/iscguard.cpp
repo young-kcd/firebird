@@ -69,15 +69,15 @@ static int WINDOW_main(int);
 #ifdef NOT_USED_OR_REPLACED
 static void StartGuardian(HWND);
 #endif
-static bool parse_args(LPSTR, bool *);
+static bool parse_args(LPCSTR, bool*);
 #ifdef NOT_USED_OR_REPLACED
 static void HelpCmd(HWND, HINSTANCE, WPARAM);
 #endif
 //char* ChopFileName (char*, char*, long);
 
-void start_and_watch_server(char *);
+void start_and_watch_server(const char*);
 void swap_icons(HWND);
-void write_log(int, char *);
+void write_log(int, const char*);
 
 HWND DisplayPropSheet(HWND, HINSTANCE);
 LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
@@ -92,7 +92,7 @@ bool service_flag = true;
 log_info* log_entry;
 
 /* contains the guardian service */
-static SERVICE_TABLE_ENTRY service_table[] = {
+static const SERVICE_TABLE_ENTRY service_table[] = {
 	{ISCGUARD_SERVICE, (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread},
 	{NULL, NULL}
 };
@@ -143,7 +143,6 @@ int WINAPI WinMain(
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
 		}
 	}
-
 	else {
 		return (WINDOW_main(TRUE));
 	}
@@ -152,7 +151,7 @@ int WINAPI WinMain(
 
 }
 
-static bool parse_args(LPSTR lpszArgs, bool *pserver_flag)
+static bool parse_args(LPCSTR lpszArgs, bool* pserver_flag)
 {
 /**************************************
 *
@@ -170,10 +169,10 @@ static bool parse_args(LPSTR lpszArgs, bool *pserver_flag)
 *      
 *
 **************************************/
-	char *p, c;
+	char c;
 	bool return_value = true;
 
-	for (p = lpszArgs; *p; p++) {
+	for (const char* p = lpszArgs; *p; p++) {
 		if (*p++ == '-')
 			while (c = *p++) {
 				switch (c) {
@@ -206,14 +205,9 @@ static int WINDOW_main(int option)
  * the server.
  *
  **************************************/
-
-	HWND hWnd = NULL;
-	MSG message;
-	WNDCLASS wcl;
-	unsigned long thread_id;
-
+ 
 /* Make sure that there is only 1 instance of the guardian running */
-	hWnd = FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_NAME);
+	HWND hWnd = FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_NAME);
 	if (hWnd) {
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_ALREADYSTARTED, szMsgString, 256);
@@ -223,6 +217,7 @@ static int WINDOW_main(int option)
 	}
 
 /* initialize main window */
+	WNDCLASS wcl;
 	wcl.hInstance = hInstance_gbl;
 	wcl.lpszClassName = GUARDIAN_CLASS_NAME;
 	wcl.lpfnWndProc = WindowFunc;
@@ -255,11 +250,12 @@ static int WINDOW_main(int option)
 	hWndGbl = hWnd;
 
 /* begin a new thread for calling the start_and_watch_server */
-	if (
-		(thread_id =
+	const unsigned long thread_id =
 		 _beginthread(reinterpret_cast <
 					  void (*)(void *) >(start_and_watch_server), 0,
-					  (char *)FBSERVER)) == (DWORD) -1) {
+					  (char *)FBSERVER);
+					  
+	if (thread_id == (DWORD) -1) {
 		/* error starting server thread */
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
@@ -274,6 +270,7 @@ static int WINDOW_main(int option)
 		UpdateWindow(hWnd);
 	}
 
+    MSG message;
 	while (GetMessage(&message, NULL, 0, 0)) {
 		if (hPSDlg) {			/* If property sheet dialog is open */
 			/* Check if the message is property sheet dialog specific */
@@ -340,10 +337,6 @@ static LRESULT CALLBACK WindowFunc(
 
 		case IDM_OPENPOPUP:
 			{
-				HMENU hPopup = NULL;
-				POINT curPos;
-				char szMsgString[256];
-
 				/* The SetForegroundWindow() has to be called because our window
 				   does not become the Foreground one (inspite of clicking on
 				   the icon).  This is so because the icon is painted on the task
@@ -351,7 +344,8 @@ static LRESULT CALLBACK WindowFunc(
 				 */
 				SetForegroundWindow(hWnd);
 
-				hPopup = CreatePopupMenu();
+				HMENU hPopup = CreatePopupMenu();
+				char szMsgString[256];
 				LoadString(hInstance, IDS_SVRPROPERTIES, szMsgString, 256);
 				AppendMenu(hPopup, MF_STRING, IDM_SVRPROPERTIES, szMsgString);
 				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, 256);
@@ -360,6 +354,7 @@ static LRESULT CALLBACK WindowFunc(
 				AppendMenu(hPopup, MF_STRING, IDM_PROPERTIES, szMsgString);
 				SetMenuDefaultItem(hPopup, IDM_PROPERTIES, FALSE);
 
+				POINT curPos;
 				GetCursorPos(&curPos);
 				TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 							   curPos.x, curPos.y, 0, hWnd, NULL);
@@ -369,8 +364,7 @@ static LRESULT CALLBACK WindowFunc(
 
 		case IDM_SHUTDOWN:
 			{
-				HWND hTmpWnd;
-				hTmpWnd = FindWindow(szClassName, szWindowName);
+				HWND hTmpWnd = FindWindow(szClassName, szWindowName);
 				PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN, 0);
 			}
 			return TRUE;
@@ -387,11 +381,11 @@ static LRESULT CALLBACK WindowFunc(
 
 		case IDM_SVRPROPERTIES:
 			{
-				HWND hTmpWnd;
-				hTmpWnd = FindWindow(szClassName, szWindowName);
+				HWND hTmpWnd = FindWindow(szClassName, szWindowName);
 				PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_PROPERTIES, 0);
 			}
 			return TRUE;
+
 		case IDM_SET_SERVER_PID:
 			ServerPid = (DWORD) lParam;
 			return TRUE;
@@ -426,11 +420,10 @@ static LRESULT CALLBACK WindowFunc(
 
 	case WM_CREATE:
 		if (service_flag == false) {
-			HICON hIcon;
-			NOTIFYICONDATA nid;
-
-			hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBGUARD),
+			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBGUARD),
 									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
+									  
+			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof(NOTIFYICONDATA);
 			nid.hWnd = hWnd;
 			nid.uID = IDI_IBGUARD;
@@ -476,8 +469,7 @@ static LRESULT CALLBACK WindowFunc(
 
 			case IDM_SHUTDOWN:
 				{
-					HWND hTmpWnd;
-					hTmpWnd = FindWindow(szClassName, szWindowName);
+					HWND hTmpWnd = FindWindow(szClassName, szWindowName);
 					PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN,
 								0);
 				}
@@ -492,8 +484,7 @@ static LRESULT CALLBACK WindowFunc(
 
 			case IDM_SVRPROPERTIES:
 				{
-					HWND hTmpWnd;
-					hTmpWnd = FindWindow(szClassName, szWindowName);
+					HWND hTmpWnd = FindWindow(szClassName, szWindowName);
 					PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_PROPERTIES,
 								0);
 				}
@@ -521,7 +512,7 @@ static LRESULT CALLBACK WindowFunc(
 }
 
 
-void start_and_watch_server(char *server_name)
+void start_and_watch_server(const char* server_name)
 {
 /**************************************
  *
@@ -537,38 +528,37 @@ void start_and_watch_server(char *server_name)
  **************************************/
 	char prog_name[MAXPATHLEN + 128];
 	char path[MAXPATHLEN];
-	short option;
 	HANDLE procHandle = NULL;
 	bool done = true;
-	UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
+	const UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 		SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
-	UINT old_error_mode;
 	SC_HANDLE hScManager = 0, hService = 0;
 
 /* get the guardian startup information */
-	option = Config::getGuardianOption();
+	const short option = Config::getGuardianOption();
 	gds__prefix(path, "");
 	sprintf(prog_name, "%s%s%s -a -n", path, "bin\\", server_name);
 	sprintf(path, "%s%s%s", path, "bin\\", FBSERVER);
 
 /* if the guardian is set to FOREVER then set the error mode */
+	UINT old_error_mode = 0;
 	if (option == START_FOREVER)
 		old_error_mode = SetErrorMode(error_mode);
 
 /* Spawn the new process */
 	do {
-		DWORD exit_status;
 		SERVICE_STATUS ServiceStatus;
 		char out_buf[1024];
 		BOOL success;
 		int error = 0;
-		int ret_val;			/* return value from the WaitForSingleObject call */
 
 		if (service_flag == true) {
 			if (hService) {
 				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE)
 					   && (ServiceStatus.dwCurrentState != SERVICE_STOPPED))
+				{
 					Sleep(500);
+				}
 			}
 
 			procHandle = CreateMutex(NULL, FALSE, GUARDIAN_MUTEX);
@@ -577,8 +567,7 @@ void start_and_watch_server(char *server_name)
 			   fails to start, close the handle to the mutex and set
 			   success = FALSE */
 			if (!hScManager)
-				hScManager =
-					OpenSCManager(NULL, NULL, GENERIC_READ);
+				hScManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 			if (!hService)
 				hService =
 					OpenService(hScManager, REMOTE_SERVICE,
@@ -669,14 +658,16 @@ void start_and_watch_server(char *server_name)
 		}
 
 		/* wait for process to terminate */
+		DWORD exit_status;
 		if (service_flag == true) {
 			while (WaitForSingleObject(procHandle, 500) == WAIT_OBJECT_0) {
 				ReleaseMutex(procHandle);
 				Sleep(100);
 			}
 
-			if ((ret_val = WaitForSingleObject(procHandle, INFINITE)) ==
-				WAIT_ABANDONED) exit_status = (DWORD) CRASHED;
+       		const int ret_val = WaitForSingleObject(procHandle, INFINITE);
+			if (ret_val == WAIT_ABANDONED)
+				exit_status = (DWORD) CRASHED;
 			else if (ret_val == WAIT_OBJECT_0)
 				exit_status = NORMAL_EXIT;
 
@@ -815,17 +806,10 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	switch (unMsg) {
 	case WM_INITDIALOG:
 		{
-			char *pszPtr;
 			char szText[256];
 			char szWindowText[256];
 			char szFullPath[256];
-			DWORD dwVerHnd;
-			DWORD dwVerInfoSize;
-			LV_COLUMN lvC;
-			LV_ITEM lvI;
-			HWND hWndLog;
 			int index = 0;
-			log_info* liTemp;
 			const int NCOLS = 3;
 
 			/* Display the number of times the server has been started by
@@ -836,7 +820,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			/* get the path to the exe.  
 			   Make sure that it is null terminated */
 			GetModuleFileName(hInstance, szWindowText, 256);
-			pszPtr = strrchr(szWindowText, '\\');
+			char* pszPtr = strrchr(szWindowText, '\\');
 			*(pszPtr + 1) = 0x00;
 
 			ChopFileName(szWindowText, szWindowText, 38);
@@ -844,16 +828,15 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			/* Get version information from the application */
 			GetModuleFileName(hInstance, szFullPath, sizeof(szFullPath));
-			dwVerInfoSize = GetFileVersionInfoSize(szFullPath, &dwVerHnd);
+			DWORD dwVerHnd;
+			const DWORD dwVerInfoSize = GetFileVersionInfoSize(szFullPath, &dwVerHnd);
 			if (dwVerInfoSize) {
 				/* If we were able to get the information, process it: */
-				HANDLE hMem;
-				LPVOID lpvMem;
 				UINT cchVer = 25;
 				LPSTR lszVer = NULL;
 
-				hMem = GlobalAlloc(GMEM_MOVEABLE, dwVerInfoSize);
-				lpvMem = GlobalLock(hMem);
+				HANDLE hMem = GlobalAlloc(GMEM_MOVEABLE, dwVerInfoSize);
+				LPVOID lpvMem = GlobalLock(hMem);
 				GetFileVersionInfo(szFullPath, dwVerHnd, dwVerInfoSize,
 								   lpvMem);
 				if (VerQueryValue
@@ -867,7 +850,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			}
 
 			/* Create the columns Action, Date, Time for the listbox */
-			hWndLog = GetDlgItem(hDlg, IDC_LOG);
+			HWND hWndLog = GetDlgItem(hDlg, IDC_LOG);
+			LV_COLUMN lvC;
 			lvC.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 			lvC.fmt = LVCFMT_LEFT;	// left-align column
 			lvC.pszText = szText;
@@ -884,11 +868,13 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				ListView_InsertColumn(hWndLog, index, &lvC);
 			}
 
-			liTemp = log_entry->next;
+            log_info* liTemp = log_entry->next;
+            LV_ITEM lvI;
 			lvI.cchTextMax = sizeof(liTemp->log_action);
 			lvI.mask = LVIF_TEXT;
 			for (index = 0; liTemp->log_action;
-				 index++, liTemp = liTemp->next) {
+				 index++, liTemp = liTemp->next)
+			{
 				lvI.iItem = index;
 				lvI.iSubItem = 0;
 				lvI.pszText = liTemp->log_action;
@@ -909,9 +895,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		break;
 	case WM_HELP:
 		{
-			LPHELPINFO lphi;
-
-			lphi = (LPHELPINFO) lParam;
+			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 				WinHelp((HWND) lphi->hItemHandle, GUARDIAN_HELP_FILE,
 						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs);
@@ -950,26 +934,23 @@ void swap_icons(HWND hWnd)
  *
  *  Description:  Animates the icon if the server restarted
  *****************************************************************************/
-
-	HICON hIconNormal, hIconAlert;
-	NOTIFYICONDATA nidNormal, nidAlert;
-	HINSTANCE hInstance;
-
-	hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
-	hIconNormal = (HICON) LoadImage(hInstance,
+	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
+	HICON hIconNormal = (HICON) LoadImage(hInstance,
 									MAKEINTRESOURCE(IDI_IBGUARD),
 									IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 
-	hIconAlert = (HICON) LoadImage(hInstance,
+	HICON hIconAlert = (HICON) LoadImage(hInstance,
 								   MAKEINTRESOURCE(IDI_IBGUARDALRT),
 								   IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 
+	NOTIFYICONDATA nidNormal;
 	nidNormal.cbSize = sizeof(NOTIFYICONDATA);
 	nidNormal.hWnd = hWnd;
 	nidNormal.uID = IDI_IBGUARD;
 	nidNormal.uFlags = NIF_ICON;
 	nidNormal.hIcon = hIconNormal;
 
+	NOTIFYICONDATA nidAlert;
 	nidAlert.cbSize = sizeof(NOTIFYICONDATA);
 	nidAlert.hWnd = hWnd;
 	nidAlert.uID = IDI_IBGUARD;
@@ -1000,7 +981,7 @@ displayed, stop animating the icon
 }
 
 
-void write_log(int log_action, char *buff)
+void write_log(int log_action, const char* buff)
 {
 /******************************************************************************
  *
@@ -1012,21 +993,18 @@ void write_log(int log_action, char *buff)
  *                property sheet structure (log_entry) or to the Windows NT
  *                Event Log
  *****************************************************************************/
-	char *act_buff[1];
 	char tmp_buff[128];
-	log_info* log_temp;
-	tm* today;
-	time_t ltime;
 
+	time_t ltime;
 	time(&ltime);
-	today = localtime(&ltime);
+	const tm* today = localtime(&ltime);
 
 /* Move to the end of the log_entry list */
-	log_temp = log_entry;
+	log_info* log_temp = log_entry;
 	while (log_temp->next)
 		log_temp = log_temp->next;
 
-	log_info *tmp =
+	log_info* tmp =
 		reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
 	memset(tmp, 0, sizeof(log_info));
 
@@ -1054,25 +1032,27 @@ void write_log(int log_action, char *buff)
 	}
 
 	if (service_flag == true) {	/* on NT */
-		HANDLE hLog;
-		hLog = RegisterEventSource(NULL, ISCGUARD_SERVICE);
+		HANDLE hLog = RegisterEventSource(NULL, ISCGUARD_SERVICE);
 		if (!hLog)
 			gds__log("Error opening Windows NT Event Log");
 		else {
-			LPVOID lpMsgBuf;
-			WORD wLogType;
-			act_buff[0] = (char *) malloc(sizeof(tmp_buff));
+			char* act_buff[1]; // CVC: Where is this deallocated?
+			act_buff[0] = (char*) malloc(sizeof(tmp_buff));
 			LoadString(hInstance_gbl, log_action + 1, tmp_buff,
 					   sizeof(tmp_buff));
 			sprintf(act_buff[0], "%s", buff);
+			
+			LPVOID lpMsgBuf;
 			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 						  FORMAT_MESSAGE_ARGUMENT_ARRAY |
 						  FORMAT_MESSAGE_FROM_STRING,
-						  tmp_buff, 0, 0, (LPTSTR) & lpMsgBuf, 0,
+						  tmp_buff, 0, 0, (LPTSTR) &lpMsgBuf, 0,
 						  reinterpret_cast<va_list*>(act_buff));
 			strncpy(act_buff[0], (LPTSTR) lpMsgBuf,
 					strlen(reinterpret_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
+			WORD wLogType;
+			
 			switch (log_action) {
 			case IDS_LOG_START:
 			case IDS_LOG_STOP:
@@ -1081,9 +1061,11 @@ void write_log(int log_action, char *buff)
 			default:
 				wLogType = EVENTLOG_ERROR_TYPE;
 			}
+			
 			if (!ReportEvent
 				(hLog, wLogType, 0, log_action + 1, NULL, 1, 0,
-				 const_cast<const char**>(act_buff), NULL)) {
+				 const_cast<const char**>(act_buff), NULL))
+			{
 				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 							  FORMAT_MESSAGE_FROM_SYSTEM |
 							  FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
@@ -1093,6 +1075,7 @@ void write_log(int log_action, char *buff)
 						 lpMsgBuf);
 				LocalFree(lpMsgBuf);
 			}
+			// CVC: free(act_buff[0]); ???
 			DeregisterEventSource(hLog);
 		}
 	}
@@ -1137,3 +1120,4 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 	return;
 }
 #endif
+

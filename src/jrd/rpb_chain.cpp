@@ -23,11 +23,11 @@
 #include "firebird.h"
 #include "../jrd/rpb_chain.h"
 
-#ifdef GDS_ALLOC_DEBUG
+#ifdef DEBUG_GDS_ALLOC
 #define ExecAssert(x) fb_assert(x)
-#else  //GDS_ALLOC_DEBUG
+#else  //DEBUG_GDS_ALLOC
 #define ExecAssert(x) x
-#endif //GDS_ALLOC_DEBUG
+#endif //DEBUG_GDS_ALLOC
 
 int traRpbList::PushRpb(struct rpb *value) {
 	if (value->rpb_relation->rel_view_rse ||	// this is view

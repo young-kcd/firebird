@@ -283,13 +283,13 @@ ISC_STATUS GDS_EXPORT gds__commit_retaining(ISC_STATUS  *,
 void GDS_EXPORT gds__encode_date(const void*,
 								 GDS__QUAD*);
 
-ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS  *,
-									  FRBRD  **,
-									  SLONG  *,
+ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS*,
+									  FRBRD**,
+									  SLONG*,
 									  short,
-									  char  *,
-									  void ( *) (),
-									  void  *);
+									  const char*,
+									  void (*) (),
+									  void*);
 
 ISC_STATUS GDS_EXPORT gds__cancel_events(ISC_STATUS  *,
 										 FRBRD  **,
@@ -301,10 +301,10 @@ ISC_STATUS GDS_EXPORT gds__event_wait(ISC_STATUS  *,
 									  char  *,
 									  char  *);
 
-void GDS_EXPORT gds__event_counts(ULONG  *,
+void GDS_EXPORT gds__event_counts(ULONG*,
 								  short,
-								  char  *,
-								  char  *);
+								  char*,
+								  const char*);
 
 ISC_STATUS GDS_EXPORT gds__event_block(char  **,
 									 char  **,

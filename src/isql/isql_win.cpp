@@ -72,7 +72,7 @@ scrollkeys key2scroll[] = {
 	{VK_RIGHT, WM_HSCROLL, SB_PAGEDOWN}
 };
 
-/* data initialized by first instance */
+// data initialized by first instance 
 
 typedef struct tagSETUPDATA {
 	SCHAR appName[20];
@@ -81,27 +81,27 @@ typedef struct tagSETUPDATA {
 	SCHAR errorString[20];
 } SETUPDATA;
 
-/* various temp file names */
+// various temp file names 
 
-static SCHAR defInputFile[MAXPATHLEN];	/* default input file name */
-static SCHAR defOutputFile[MAXPATHLEN];	/* default output file name */
-static SCHAR defHistFile[MAXPATHLEN];	/* command history file name */
-static SCHAR defSessionFile[MAXPATHLEN];	/* SQL session file */
-static IB_FILE *ipf;			/* input file */
-static IB_FILE *opf;			/* output file */
-static IB_FILE *chf;			/* command history */
-static IB_FILE *sss;			/* SQL session */
+static SCHAR defInputFile[MAXPATHLEN];	// default input file name 
+static SCHAR defOutputFile[MAXPATHLEN];	// default output file name 
+static SCHAR defHistFile[MAXPATHLEN];	// command history file name 
+static SCHAR defSessionFile[MAXPATHLEN];	// SQL session file 
+static IB_FILE *ipf;			// input file 
+static IB_FILE *opf;			// output file 
+static IB_FILE *chf;			// command history 
+static IB_FILE *sss;			// SQL session 
 
-/* global flags */
+// global flags 
 
 static SSHORT gflags;
 
-#define DBINITED	1			/* database initilized flag */
-#define DEFINPUT	2			/* default input file exists flag */
-#define DEFOUTPUT	4			/* default output file exists flag */
-#define COMHIST		8			/* command history file exists flag */
-#define OVERWRITE	16			/* overwrite/append to window */
-#define SESSFILE	32			/* SQL session file exists flag */
+#define DBINITED	1			// database initilized flag 
+#define DEFINPUT	2			// default input file exists flag 
+#define DEFOUTPUT	4			// default output file exists flag 
+#define COMHIST		8			// command history file exists flag 
+#define OVERWRITE	16			// overwrite/append to window 
+#define SESSFILE	32			// SQL session file exists flag 
 
 SETUPDATA SetUpData;
 
@@ -110,44 +110,44 @@ SETUPDATA SetUpData;
    program but not passed to other instances
 */
 
-HINSTANCE hInst;				/* hInstance of application */
-HWND hWndMain;					/* hWnd of main window */
+HINSTANCE hInst;				// hInstance of application 
+HWND hWndMain;					// hWnd of main window 
 
-int xChar, yChar, yCharnl;		/* character size */
-int xClient, yClient;			/* client window size */
+int xChar, yChar, yCharnl;		// character size 
+int xClient, yClient;			// client window size 
 
-LOGFONT cursfont;				/* font structure */
-HFONT holdsfont;				/* handle of original font */
-HFONT hnewsfont;				/* handle of new fixed font */
-SCHAR tmpDialogParam[1024];		/* used by dialog boxes */
+LOGFONT cursfont;				// font structure 
+HFONT holdsfont;				// handle of original font 
+HFONT hnewsfont;				// handle of new fixed font 
+SCHAR tmpDialogParam[1024];		// used by dialog boxes 
 
-/* window scroll/paint stuff */
+// window scroll/paint stuff 
 
-int nVscrollMax, nHscrollMax;	/* scroll ranges */
-int nVscrollPos, nHscrollPos;	/* current scroll positions */
-int numlines;					/* number of lines in file */
-int maxwidth;					/* width of display format */
-int nVscrollInc, nHscrollInc;	/* scroll increments */
-int nPageMaxLines;				/* max lines on screen */
+int nVscrollMax, nHscrollMax;	// scroll ranges 
+int nVscrollPos, nHscrollPos;	// current scroll positions 
+int numlines;					// number of lines in file 
+int maxwidth;					// width of display format 
+int nVscrollInc, nHscrollInc;	// scroll increments 
+int nPageMaxLines;				// max lines on screen 
 
-/* arguments passed to ISQL */
+// arguments passed to ISQL 
 
-int ISQL_argc;					/* argument count */
-char *ISQL_argv[20];			/* argument vector */
-char ISQL_args[1024];			/* space for arguments */
-char *ISQL_cursor;				/* cursor into arguments */
+int ISQL_argc;					// argument count 
+char *ISQL_argv[20];			// argument vector 
+char ISQL_args[1024];			// space for arguments 
+char *ISQL_cursor;				// cursor into arguments 
 
-/* database startup parameters */
+// database startup parameters 
 
 static SCHAR newDataBase[256];
 static SCHAR newUserName[32];
 static SCHAR newPassword[16];
 
-/* script parameters */
+// script parameters 
 static SCHAR scriptName[256];
 static SCHAR scriptOutput[256];
 
-/* extract parameters */
+// extract parameters 
 static SCHAR extractDbName[256];
 static SCHAR extractOutput[256];
 static SCHAR extractTarget[256];
@@ -218,8 +218,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
  *             depends on message.
  *
  ********************************************************************/
-	DLGPROC lpproc;				/* pointer to thunk for dialog box */
-	SCHAR buf[1024];			/* temp buffer */
+	DLGPROC lpproc;				// pointer to thunk for dialog box 
+	SCHAR buf[1024];			// temp buffer 
 	SCHAR pwbuf[50];
 	SCHAR unbuf[50];
 	SSHORT i;
@@ -234,18 +234,18 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 	case WM_COMMAND:
 		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
 		case IDM_QUIT:
-			/* User selected Quit on menu */
+			// User selected Quit on menu 
 			PostMessage(hWnd, WM_CLOSE, 0, 0L);
 			break;
 
 		case IDM_HOME:
-			/* Used to implement home to topleft from keyboard. */
+			// Used to implement home to topleft from keyboard. 
 			SendMessage(hWnd, WM_HSCROLL, GET_WM_HSCROLL_MPS(SB_TOP, 0, 0));
 			SendMessage(hWnd, WM_VSCROLL, GET_WM_VSCROLL_MPS(SB_TOP, 0, 0));
 			break;
 
 		case IDM_ABOUT:
-			/* Display about box. */
+			// Display about box. 
 			lpproc =
 				(DLGPROC) MakeProcInstance((FARPROC) aboutDlgProc, hInst);
 			DialogBox(hInst, MAKEINTRESOURCE(ABOUT), hWnd, lpproc);
@@ -358,7 +358,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				DialogBox(hInst, MAKEINTRESOURCE(EXEC_SCRIPT), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
-				/* generate an argc/argv */
+				// generate an argc/argv 
 
 				ISQL_cursor = ISQL_args;
 				ISQL_argc = 0;
@@ -367,7 +367,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				pusharg(scriptName);
 				pusharg("-output");
 
-				/* use specified output file, or default */
+				// use specified output file, or default 
 
 				if (scriptOutput[0])
 					pusharg(scriptOutput);
@@ -393,7 +393,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				}
 				ISQL_main(ISQL_argc, ISQL_argv);
 
-				/* reopen default files and database */
+				// reopen default files and database 
 
 				ipf = ib_fopen(defInputFile, "r");
 				opf = ib_fopen(defOutputFile, "a");
@@ -414,7 +414,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			ret = DialogBox(hInst, MAKEINTRESOURCE(EXTRACT_DB), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
-				/* create an argument vector for ISQL */
+				// create an argument vector for ISQL 
 
 				ISQL_cursor = ISQL_args;
 				ISQL_argc = 0;
@@ -436,7 +436,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				ISQL_main(ISQL_argc, ISQL_argv);
 				ISQL_exit_db();
 
-				/* reopen default files and database */
+				// reopen default files and database 
 
 				ipf = ib_fopen(defInputFile, "r");
 				opf = ib_fopen(defOutputFile, "a");
@@ -459,7 +459,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				gflags |= OVERWRITE;
 			break;
 
-			/* Send the proper frontend commands for these: */
+			// Send the proper frontend commands for these: 
 
 		case IDM_BLOB_TYPE:
 			tmpDialogParam[0] = '\0';
@@ -533,7 +533,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			}
 			break;
 
-			/* Send the proper show commands for these: */
+			// Send the proper show commands for these: 
 
 		case IDM_SHOW_VERSION:
 			test_overwrite();
@@ -650,15 +650,15 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		break;
 
 	case WM_SIZE:
-		/* Save size of window client area. */
+		// Save size of window client area. 
 		if (lParam) {
 			yClient = HIWORD(lParam);
 			xClient = LOWORD(lParam);
 			yClient = (yClient / yCharnl + 1) * yCharnl;
 			lParam = MAKELONG(xClient, yClient);
 
-			/* Go setup scroll ranges and file display area based upon */
-			/* client area size. */
+			// Go setup scroll ranges and file display area based upon 
+			// client area size. 
 
 			setup_scroll(hWnd);
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -666,7 +666,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		break;
 
 	case WM_VSCROLL:
-		/* React to the various vertical scroll related actions. */
+		// React to the various vertical scroll related actions. 
 
 		switch (GET_WM_VSCROLL_CODE(wParam, lParam)) {
 		case SB_TOP:
@@ -707,7 +707,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		break;
 
 	case WM_HSCROLL:
-		/* React to the various horizontal scroll related actions. */
+		// React to the various horizontal scroll related actions. 
 
 		switch (GET_WM_HSCROLL_CODE(wParam, lParam)) {
 		case SB_LINEUP:
@@ -742,8 +742,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		break;
 
 	case WM_KEYDOWN:
-		/* Translate various keydown messages to appropriate horizontal */
-		/* and vertical scroll actions. */
+		// Translate various keydown messages to appropriate horizontal 
+		// and vertical scroll actions. 
 
 		for (i = 0; i < FB_NELEM(key2scroll); i++) {
 			if (wParam == key2scroll[i].wVirtkey) {
@@ -755,31 +755,31 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		break;
 
 	case WM_PAINT:
-		/* Go paint the client area of the window with the appropriate */
-		/* part of the selected file. */
+		// Go paint the client area of the window with the appropriate 
+		// part of the selected file. 
 
 		paint_isql(hWnd);
 		break;
 
 	case WM_DESTROY:
-		/* This is the end if we were closed by a DestroyWindow call. */
-		close_isql();			/* take any necessary wrapup action. */
-		PostQuitMessage(0);		/* this is the end... */
+		// This is the end if we were closed by a DestroyWindow call. 
+		close_isql();			// take any necessary wrapup action. 
+		PostQuitMessage(0);		// this is the end... 
 		break;
 
 	case WM_QUERYENDSESSION:
-		/* If we return TRUE we are saying it's ok with us to end the */
-		/* windows session. */
-		close_isql();			/* take any necessary wrapup action. */
-		return (long) TRUE;		/* we agree to end session. */
+		// If we return TRUE we are saying it's ok with us to end the 
+		// windows session. 
+		close_isql();			// take any necessary wrapup action. 
+		return (long) TRUE;		// we agree to end session. 
 
 	case WM_CLOSE:
-		/* Tell windows to destroy our window. */
+		// Tell windows to destroy our window. 
 		DestroyWindow(hWnd);
 		break;
 
 	default:
-		/* Let windows handle all messages we choose to ignore. */
+		// Let windows handle all messages we choose to ignore. 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
@@ -859,28 +859,28 @@ static int cmdline_isql( HINSTANCE hInstance, LPSTR pCmdLine)
  *              return from ISQL
  *
  ********************************************************************/
-	IB_FILE *inputfile;			/* input file */
-	IB_FILE *outputfile;		/* output file */
-	SCHAR inputfilename[MAXPATHLEN];	/* input file name */
-	SCHAR outputfilename[MAXPATHLEN];	/* output file name */
-	SCHAR arg[MAXPATHLEN];		/* current argument */
-	SCHAR *cp;					/* command line cursor */
-	SCHAR *ap;					/* current argument cursor */
+	IB_FILE *inputfile;			// input file 
+	IB_FILE *outputfile;		// output file 
+	SCHAR inputfilename[MAXPATHLEN];	// input file name 
+	SCHAR outputfilename[MAXPATHLEN];	// output file name 
+	SCHAR arg[MAXPATHLEN];		// current argument 
+	SCHAR *cp;					// command line cursor 
+	SCHAR *ap;					// current argument cursor 
 
-/* create default input and output files */
+// create default input and output files 
 
 	if (!open_temp_file
 		(hInstance, &inputfile, inputfilename, IDS_TEMP_IN_FILE)) return 0;
 	if (!open_temp_file
 		(hInstance, &outputfile, outputfilename, IDS_TEMP_OUT_FILE)) return 0;
 
-/* create failsafe input file */
+// create failsafe input file 
 
 	ib_fprintf(inputfile, "QUIT;\n");
 	ib_fclose(inputfile);
 	ib_fclose(outputfile);
 
-/* create an argument vector, including the default files and command line args */
+// create an argument vector, including the default files and command line args 
 
 	ISQL_cursor = ISQL_args;
 	ISQL_argc = 0;
@@ -924,7 +924,7 @@ static void display_page( HWND hWnd)
  ***************************************************************/
 	IB_FILE *fh;
 
-/* Determine file size and some display paramaters. */
+// Determine file size and some display paramaters. 
 	nVscrollPos = numlines;
 	numlines = 0;
 	maxwidth = 0;
@@ -941,11 +941,11 @@ static void display_page( HWND hWnd)
 	}
 	opf = ib_fopen(defOutputFile, "a");
 
-/* Go setup scroll ranges for this file. */
+// Go setup scroll ranges for this file. 
 
 	setup_scroll(hWnd);
 
-/* Show first part of file. */
+// Show first part of file. 
 
 	InvalidateRect(hWnd, NULL, TRUE);
 	UpdateWindow(hWnd);
@@ -982,7 +982,7 @@ static SSHORT init_isql(
 	DLGPROC dlgProc;
 	int iReturn;
 
-/* perform instance dependant Windows initialization */
+// perform instance dependant Windows initialization 
 
 	if (!hPrevInstance)
 		init_isql_first(hInstance);
@@ -991,11 +991,11 @@ static SSHORT init_isql(
 		init_isql_added(hPrevInstance);
 #endif
 
-/* perform common instance Windows initialization */
+// perform common instance Windows initialization 
 
 	init_isql_every(hInstance, cmdShow);
 
-/* open all the files */
+// open all the files 
 
 	if (!open_temp_file(hInstance, &ipf, defInputFile, IDS_DEF_IN_FILE))
 		return FALSE;
@@ -1044,7 +1044,7 @@ static void init_isql_added( HINSTANCE hPrevInstance)
  *
  *********************************************************************/
 
-/* get the results of the initialization of first instance */
+// get the results of the initialization of first instance 
 
 	GetInstanceData(hPrevInstance, (BYTE *) & SetUpData, sizeof(SETUPDATA));
 }
@@ -1073,28 +1073,28 @@ static void init_isql_every( HINSTANCE hInstance, int cmdShow)
 	TEXTMETRIC tm;
 	HDC hDC;
 
-	hInst = hInstance;			/* save for use by window procs */
+	hInst = hInstance;			// save for use by window procs 
 
-/* Create applications main window. */
+// Create applications main window. 
 
-	hWndMain = CreateWindow(SetUpData.appName,	/* window class name */
-							SetUpData.appName,	/* window title */
-							WS_OVERLAPPEDWINDOW |	/* type of window */
-							WS_HSCROLL | WS_VSCROLL, CW_USEDEFAULT,	/* x  window location */
-							CW_USEDEFAULT,	/* y */
-							CW_USEDEFAULT,	/* cx and size */
-							CW_USEDEFAULT,	/* cy */
-							NULL,	/* no parent for this window */
-							NULL,	/* use the class menu */
-							hInstance,	/* who created this window */
-							NULL	/* no parms to pass on */
+	hWndMain = CreateWindow(SetUpData.appName,	// window class name 
+							SetUpData.appName,	// window title 
+							WS_OVERLAPPEDWINDOW |	// type of window 
+							WS_HSCROLL | WS_VSCROLL, CW_USEDEFAULT,	// x  window location 
+							CW_USEDEFAULT,	// y 
+							CW_USEDEFAULT,	// cx and size 
+							CW_USEDEFAULT,	// cy 
+							NULL,	// no parent for this window 
+							NULL,	// use the class menu 
+							hInstance,	// who created this window 
+							NULL	// no parms to pass on 
 		);
 
-/* Get the display context. */
+// Get the display context. 
 
 	hDC = GetDC(hWndMain);
 
-/* Build fixed screen font. */
+// Build fixed screen font. 
 
 	cursfont.lfHeight = 14;
 	cursfont.lfWidth = 9;
@@ -1113,11 +1113,11 @@ static void init_isql_every( HINSTANCE hInstance, int cmdShow)
 
 	hnewsfont = CreateFontIndirect((LPLOGFONT) & cursfont);
 
-/* Install the font in the current display context. */
+// Install the font in the current display context. 
 
 	holdsfont = SelectObject(hDC, hnewsfont);
 
-/* get text metrics for paint */
+// get text metrics for paint 
 
 	GetTextMetrics(hDC, &tm);
 	xChar = tm.tmAveCharWidth;
@@ -1125,11 +1125,11 @@ static void init_isql_every( HINSTANCE hInstance, int cmdShow)
 	yCharnl = tm.tmHeight;
 	numlines = 0;
 
-/* Release the display context. */
+// Release the display context. 
 
 	ReleaseDC(hWndMain, hDC);
 
-/* Update display of main window. */
+// Update display of main window. 
 
 	ShowWindow(hWndMain, cmdShow);
 	UpdateWindow(hWndMain);
@@ -1154,14 +1154,14 @@ static void init_isql_first( HINSTANCE hInstance)
  ********************************************************************/
 	WNDCLASS wcISQLClass;
 
-/* Get string from resource with application name. */
+// Get string from resource with application name. 
 
 	LoadString(hInstance, IDS_NAME, (LPSTR) SetUpData.appName, 20);
 	LoadString(hInstance, IDS_MENUNAME, (LPSTR) SetUpData.menuName, 20);
 	LoadString(hInstance, IDS_ICONNAME, (LPSTR) SetUpData.iconName, 20);
 	LoadString(hInstance, IDS_ERROR, (LPSTR) SetUpData.errorString, 20);
 
-/* Define the window class for this application. */
+// Define the window class for this application. 
 
 	wcISQLClass.lpszClassName = SetUpData.appName;
 	wcISQLClass.hInstance = hInstance;
@@ -1174,7 +1174,7 @@ static void init_isql_first( HINSTANCE hInstance)
 	wcISQLClass.cbClsExtra = 0;
 	wcISQLClass.cbWndExtra = 0;
 
-/* Register the class */
+// Register the class 
 
 	RegisterClass(&wcISQLClass);
 }
@@ -1240,12 +1240,12 @@ static int windows_isql(
  ********************************************************************/ \
 		MSG msg;
 
-/* Go init this application. */
+// Go init this application. 
 
 	if (!init_isql(hInstance, hPrevInstance, cmdShow))
 		return 0;
 
-/* Get and dispatch messages for this applicaton. */
+// Get and dispatch messages for this applicaton. 
 
 	while (GetMessage(&msg, NULL, NULL, NULL)) {
 		TranslateMessage(&msg);
@@ -1283,28 +1283,28 @@ static void paint_isql( HWND hWnd)
 	BeginPaint(hWnd, (LPPAINTSTRUCT) & ps);
 	hDC = ps.hdc;
 
-/* Establish fixed font in display context. */
+// Establish fixed font in display context. 
 
 	SelectObject(hDC, hnewsfont);
 
 	if (numlines) {
-		/* Open the file to display */
+		// Open the file to display 
 		/* (files should not stay open over multiple windows messages) */
 
 		hfile = ib_fopen(defOutputFile, "r");
 		if (hfile) {
-			/* Skip lines outside window limits */
+			// Skip lines outside window limits 
 
 			for (i = 0; i < nVscrollPos; i++)
 				ib_fgets(buf, sizeof(buf), hfile);
 
-			/* Read visible lines */
+			// Read visible lines 
 
 			for (i = 0; i < nPageMaxLines; i++) {
 				if (!ib_fgets(buf, sizeof(buf), hfile))
 					break;
 
-				/* figure out shortest text to put */
+				// figure out shortest text to put 
 
 				for (e = strlen(buf); e >= 0; e--)
 					if (buf[e] > ' ' && buf[e] <= '~')
@@ -1365,7 +1365,7 @@ static void setup_scroll( HWND hWnd)
  *
  *********************************************************************/
 
-/* numlines established during open */
+// numlines established during open 
 
 	nVscrollMax = max(0, numlines - yClient / yChar);
 	nVscrollPos = min(nVscrollPos, nVscrollMax);
@@ -1668,7 +1668,7 @@ BOOL CALLBACK _export createDbDlgProc(HWND hDlg,
 			break;
 
 		case IDCANCEL:
-			/* Terminate this dialog box. */
+			// Terminate this dialog box. 
 			EndDialog(hDlg, FALSE);
 			break;
 
@@ -1742,7 +1742,7 @@ BOOL CALLBACK _export dbNameDlgProc(HWND hDlg,
 			break;
 
 		case IDCANCEL:
-			/* Terminate this dialog box. */
+			// Terminate this dialog box. 
 			EndDialog(hDlg, FALSE);
 			break;
 
@@ -1798,7 +1798,7 @@ BOOL CALLBACK _export dropDbDlgProc(HWND hDlg,
 			break;
 
 		case IDCANCEL:
-			/* Terminate this dialog box. */
+			// Terminate this dialog box. 
 			EndDialog(hDlg, FALSE);
 			break;
 
@@ -1966,7 +1966,7 @@ BOOL CALLBACK _export extractDlgProc(HWND hDlg,
 			break;
 
 		case IDCANCEL:
-			/* Terminate this dialog box. */
+			// Terminate this dialog box. 
 			EndDialog(hDlg, FALSE);
 			break;
 
@@ -2176,7 +2176,7 @@ BOOL CALLBACK _export scriptDlgProc(HWND hDlg,
 			break;
 
 		case IDCANCEL:
-			/* Terminate this dialog box. */
+			// Terminate this dialog box. 
 			EndDialog(hDlg, FALSE);
 			break;
 

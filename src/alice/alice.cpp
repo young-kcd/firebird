@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.44 2003-11-18 12:33:43 brodsom Exp $
+//	$Id: alice.cpp,v 1.45 2003-11-28 06:47:58 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -408,12 +408,12 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase)) {
 			if (--argc <= 0) {
-				ALICE_error(10);	/* msg 10: transaction number or "all" required */
+				ALICE_error(10);	// msg 10: transaction number or "all" required 
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
 				if (strcmp(string, "all")) {
-					ALICE_error(10);	/* msg 10: transaction number or "all" required */
+					ALICE_error(10);	// msg 10: transaction number or "all" required 
 				} else {
 					switches |= sw_list;
 				}
@@ -422,7 +422,7 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_write) {
 			if (--argc <= 0) {
-				ALICE_error(11);	/* msg 11: "sync" or "async" required */
+				ALICE_error(11);	// msg 11: "sync" or "async" required 
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_SYNC)) {
@@ -430,13 +430,13 @@ int common_main(int			argc,
 			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
 				tdgbl->ALICE_data.ua_force = false;
 			} else {
-				ALICE_error(11);	/* msg 11: "sync" or "async" required */
+				ALICE_error(11);	// msg 11: "sync" or "async" required 
 			}
 		}
 
 		if (table->in_sw_value & sw_use) {
 			if (--argc <= 0) {
-				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
+				ALICE_error(12);	// msg 12: "full" or "reserve" required 
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, "full")) {
@@ -444,7 +444,7 @@ int common_main(int			argc,
 			} else if (!strcmp(string, "reserve")) {
 				tdgbl->ALICE_data.ua_use = false;
 			} else {
-				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
+				ALICE_error(12);	// msg 12: "full" or "reserve" required 
 			}
 		}
 
@@ -470,7 +470,7 @@ int common_main(int			argc,
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (strcmp(string, "wal")) {
-				ALICE_error(16);	/* msg 16: "wal" required */
+				ALICE_error(16);	// msg 16: "wal" required 
 			}
 		}
 
@@ -493,7 +493,7 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_mode) {
 			if (--argc <= 0) {
-				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
+				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
@@ -501,7 +501,7 @@ int common_main(int			argc,
 			} else if (!strcmp(string, ALICE_SW_MODE_RW)) {
 				tdgbl->ALICE_data.ua_read_only = false;
 			} else {
-				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
+				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
 			}
 		}
 

@@ -19,11 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgrswi.h,v 1.1 2003-07-15 02:39:53 brodsom Exp $
+ * $Id: ibmgrswi.h,v 1.2 2003-11-28 06:48:31 robocop Exp $
  */
 
-#ifndef _IBMGR_IBMGRSWI_H_
-#define _IBMGR_IBMGRSWI_H_
+#ifndef IBMGR_IBMGRSWI_H
+#define IBMGR_IBMGRSWI_H
 
 #include "../jrd/common.h"
 
@@ -93,4 +93,5 @@ static struct in_sw_tab_t ibmgr_in_sw_table [] = {
     {IN_SW_IBMGR_0,		0,      NULL,		0, 0, 0, FALSE,	0,	0,	NULL}	/* End of List */
 };
 
-#endif /* _IBMGR_IBMGRSWI_H_ */
+#endif /* IBMGR_IBMGRSWI_H */
+

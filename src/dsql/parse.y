@@ -135,28 +135,28 @@ dsql_nod* DSQL_parse;
 //static void	yyerror(const TEXT*); redeclaration.
 
 #define YYPARSE_PARAM_TYPE
-#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous
+#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous
 
 #include "../dsql/chars.h"
 
 const int MAX_TOKEN_LEN = 256;
 
-static TEXT	*lex_position (void);
+static const TEXT* lex_position();
 #ifdef NOT_USED_OR_REPLACED
-static bool		long_int(DSQL_NOD, SLONG *);
+static bool		long_int(dsql_nod*, SLONG*);
 #endif
-static dsql_fld*	make_field (DSQL_NOD);
-static dsql_fil*	make_file (void);
-static DSQL_NOD	make_list (DSQL_NOD);
-static DSQL_NOD	make_node (NOD_TYPE, int, ...);
-static DSQL_NOD	make_parameter (void);
-static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
+static dsql_fld*	make_field (dsql_nod*);
+static dsql_fil*	make_file();
+static DSQL_NOD	make_list (dsql_nod*);
+static dsql_nod*	make_node (NOD_TYPE, int, ...);
+static dsql_nod*	make_parameter (void);
+static dsql_nod*	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
-static bool	short_int(DSQL_NOD, SLONG *, SSHORT);
+static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
-static void	stack_nodes (DSQL_NOD, dsql_lls**);
-inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN*);
+static void	stack_nodes (dsql_nod*, dsql_lls**);
+inline static int	yylex (USHORT, USHORT, USHORT, bool*);
 static void	yyabandon (SSHORT, ISC_STATUS);
 static void	check_log_file_attrs (void);
 
@@ -175,15 +175,19 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 struct LexerState {
 	/* This is, in fact, parser state. Not used in lexer itself */
 	dsql_fld* g_field;
-	dsql_fil*	g_file;
-	DSQL_NOD g_field_name;
+	dsql_fil* g_file;
+	dsql_nod* g_field_name;
 	SSHORT log_defined, cache_defined;
 	int dsql_debug;
 	
 	/* Actual lexer state begins from here */
-	TEXT *beginning;
-	TEXT	*ptr, *end, *last_token, *line_start;
-	TEXT	*last_token_bk, *line_start_bk;
+	const TEXT* beginning;
+	const TEXT* ptr;
+	const TEXT* end;
+	const TEXT* last_token;
+	const TEXT* line_start;
+	const TEXT* last_token_bk;
+	const TEXT* line_start_bk;
 	SSHORT	lines, att_charset;
 	SSHORT	lines_bk;
 	int  prev_keyword, prev_prev_keyword;
@@ -198,7 +202,7 @@ struct LexerState {
 		USHORT	client_dialect,
 		USHORT	db_dialect,
 		USHORT	parser_version,
-		BOOLEAN* stmt_ambiguous);
+		bool* stmt_ambiguous);
 };
 
 /* Get ready for thread-safety. Move this to BISON object pointer when we 
@@ -911,7 +915,7 @@ conditional	:
 		;	
 
 first_file_length : 
-			{ $$ = (DSQL_NOD) 0;}
+			{ $$ = (dsql_nod*) 0;}
 		| LENGTH equals long_integer page_noise
 			{ $$ = $3; }
 		;
@@ -1019,7 +1023,7 @@ equals		:
 db_name		: sql_string
 			{ lex.log_defined = FALSE;
 			  lex.cache_defined = FALSE;
-			  $$ = (DSQL_NOD) $1; }
+			  $$ = (dsql_nod*) $1; }
 		;
 
 db_initial_desc1 :  
@@ -1103,13 +1107,13 @@ db_default_log_spec : LOGFILE
 			{ lex.g_file = make_file(); 
 			  lex.g_file->fil_flags = LOG_serial | LOG_default;
 			  $$ = make_node (nod_log_file_desc, (int) 1,
-						(DSQL_NOD) lex.g_file);}
+						(dsql_nod*) lex.g_file);}
 		;
 
 db_file		: file1 sql_string file_desc1
 			{ lex.g_file->fil_name = (dsql_str*) $2;
-			  $$ = (DSQL_NOD) make_node (nod_file_desc, (int) 1,
-						(DSQL_NOD) lex.g_file); }
+			  $$ = (dsql_nod*) make_node (nod_file_desc, (int) 1,
+						(dsql_nod*) lex.g_file); }
 		;
 
 /*
@@ -1122,20 +1126,20 @@ db_cache	: CACHE sql_string cache_length
 			  lex.g_file->fil_length = (SLONG) $3;
 			  lex.g_file->fil_name = (dsql_str*) $2;
 			  lex.cache_defined = TRUE;
-			  $$ = (DSQL_NOD) make_node (nod_cache_file_desc, (int) 1,
-					 (DSQL_NOD) lex.g_file); } 
+			  $$ = (dsql_nod*) make_node (nod_cache_file_desc, (int) 1,
+					 (dsql_nod*) lex.g_file); }
 		;
 */
 
 /*
 cache_length	: 
-			{ $$ = (DSQL_NOD) (SLONG) DEF_CACHE_BUFFERS; }
+			{ $$ = (dsql_nod*) (SLONG) DEF_CACHE_BUFFERS; }
 		| LENGTH equals long_integer page_noise
 			{ if ((SLONG) $3 < MIN_CACHE_BUFFERS)
 				  yyabandon (-239, isc_cache_too_small);
 				  */ /* Cache length too small */ /*
 			  else 
-				  $$ = (DSQL_NOD) $3; }
+				  $$ = (dsql_nod*) $3; }
 		;
 */
 
@@ -1146,8 +1150,8 @@ logfiles	: logfile_desc
 logfile_desc	: logfile_name logfile_attrs 
 			{ 
 				 check_log_file_attrs(); 
-			 $$ = (DSQL_NOD) make_node (nod_log_file_desc, (int) 1,
-												(DSQL_NOD) lex.g_file); }
+			 $$ = (dsql_nod*) make_node (nod_log_file_desc, (int) 1,
+												(dsql_nod*) lex.g_file); }
 		;
 logfile_name	: sql_string 
 			{ lex.g_file = make_file();
@@ -1271,12 +1275,12 @@ collate_clause	: COLLATE symbol_collation_name
 column_def_name	: simple_column_name
 			{ lex.g_field_name = $1;
 			  lex.g_field = make_field ($1);
-			  $$ = (DSQL_NOD) lex.g_field; }
+			  $$ = (dsql_nod*) lex.g_field; }
 		;
 
 simple_column_def_name  : simple_column_name
 				{ lex.g_field = make_field ($1);
-				  $$ = (DSQL_NOD) lex.g_field; }
+				  $$ = (dsql_nod*) lex.g_field; }
 			;
 
 
@@ -1286,7 +1290,7 @@ data_type_descriptor :	init_data_type data_type
 
 init_data_type :
 			{ lex.g_field = make_field (NULL);
-			  $$ = (DSQL_NOD) lex.g_field; }
+			  $$ = (dsql_nod*) lex.g_field; }
 		;
 
 
@@ -1861,9 +1865,9 @@ begin_string	:
 		;
 
 end_string	:
-			{ $$ = (DSQL_NOD) MAKE_string(lex.beginning, 
+			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
 				   (lex_position() == lex.end) ?
-				   lex_position()-lex.beginning : lex.last_token-lex.beginning);}
+				   lex_position() - lex.beginning : lex.last_token - lex.beginning);}
 		;
 
 begin_trigger	: 
@@ -1871,8 +1875,8 @@ begin_trigger	:
 		;
 
 end_trigger	:
-			{ $$ = (DSQL_NOD) MAKE_string(lex.beginning, 
-					lex_position()-lex.beginning); }
+			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
+					lex_position() - lex.beginning); }
 		;
 
 
@@ -2120,7 +2124,7 @@ alter_data_type_or_domain	: non_array_type begin_trigger
 alter_col_name	: simple_column_name
 			{ lex.g_field_name = $1;
 			  lex.g_field = make_field ($1);
-			  $$ = (DSQL_NOD) lex.g_field; }
+			  $$ = (dsql_nod*) lex.g_field; }
 		;
 
 drop_behaviour	: RESTRICT
@@ -2314,7 +2318,7 @@ non_charset_simple_type	: national_character_type
 			}
 		| DATE
 			{ 
-			*stmt_ambiguous = TRUE;
+			*stmt_ambiguous = true;
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
@@ -2804,17 +2808,17 @@ tbl_reserve_options: RESERVING restr_list
 		;
 
 lock_type	: KW_SHARED
-			{ $$ = (DSQL_NOD) NOD_SHARED; }
+			{ $$ = (dsql_nod*) NOD_SHARED; }
 		| PROTECTED
-			{ $$ = (DSQL_NOD) NOD_PROTECTED ; }
+			{ $$ = (dsql_nod*) NOD_PROTECTED ; }
 		|
-			{ $$ = (DSQL_NOD) 0; }
+			{ $$ = (dsql_nod*) 0; }
 		;
 
 lock_mode	: READ
-			{ $$ = (DSQL_NOD) NOD_READ; }
+			{ $$ = (dsql_nod*) NOD_READ; }
 		| WRITE
-			{ $$ = (DSQL_NOD) NOD_WRITE; }
+			{ $$ = (dsql_nod*) NOD_WRITE; }
 		;
 
 restr_list	: restr_option
@@ -3621,7 +3625,7 @@ value	: column_name
 		| value CONCATENATE value
 			{ $$ = make_node (nod_concatenate, 2, $1, $3); }
 		| value COLLATE symbol_collation_name
-			{ $$ = make_node (nod_collate, (int) e_coll_count, (DSQL_NOD) $3, $1); }
+			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
 		| value '-' value
 			{ 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
@@ -3803,7 +3807,7 @@ sql_string	: STRING			/* string in current charset */
 
 signed_short_integer	:	nonneg_short_integer
 		| '-' neg_short_integer
-			{ $$ = (DSQL_NOD) - (SLONG) $2; }
+			{ $$ = (dsql_nod*) - (SLONG) $2; }
 		;
 
 nonneg_short_integer	: NUMBER
@@ -3836,7 +3840,7 @@ unsigned_short_integer : NUMBER
 
 signed_long_integer	:	long_integer
 		| '-' long_integer
-			{ $$ = (DSQL_NOD) - (SLONG) $2; }
+			{ $$ = (dsql_nod*) - (SLONG) $2; }
 		;
 
 long_integer	: NUMBER
@@ -4153,7 +4157,7 @@ void LEX_dsql_init (void)
  *	per session.
  *
  **************************************/
-	for (const TOK *token = KEYWORD_getTokens(); token->tok_string; ++token)
+	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
 		DSQL_SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) dsql_sym;
 		symbol->sym_string = (TEXT *) token->tok_string;
@@ -4171,7 +4175,7 @@ void LEX_dsql_init (void)
 
 
 void LEX_string (
-	TEXT* string,
+	const TEXT* string,
 	USHORT	length,
 	SSHORT	character_set)
 {
@@ -4225,7 +4229,8 @@ static void check_log_file_attrs (void)
 		}
 		
 		if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
-			(OneK*MIN_LOG_LENGTH)) {
+			(OneK * MIN_LOG_LENGTH))
+		{
 			yyabandon (-239, isc_partition_too_small);
 			/* Log partition size too small */
 		}
@@ -4238,7 +4243,7 @@ static void check_log_file_attrs (void)
 }
 
 
-static TEXT* lex_position (void)
+static const TEXT* lex_position (void)
 {
 /**************************************
  *
@@ -4257,7 +4262,7 @@ static TEXT* lex_position (void)
 
 
 #ifdef NOT_USED_OR_REPLACED
-static bool long_int(DSQL_NOD string,
+static bool long_int(dsql_nod* string,
 					 SLONG *long_value)
 {
 /*************************************
@@ -4285,7 +4290,7 @@ static bool long_int(DSQL_NOD string,
 }
 #endif
 
-static dsql_fld* make_field (DSQL_NOD field_name)
+static dsql_fld* make_field (dsql_nod* field_name)
 {
 /**************************************
  *
@@ -4315,7 +4320,7 @@ static dsql_fld* make_field (DSQL_NOD field_name)
 }
 
 
-static dsql_fil* make_file (void)
+static dsql_fil* make_file()
 {
 /**************************************
  *
@@ -4335,7 +4340,7 @@ static dsql_fil* make_file (void)
 }
 
 
-static DSQL_NOD make_list (DSQL_NOD node)
+static dsql_nod* make_list (dsql_nod* node)
 {
 /**************************************
  *
@@ -4367,13 +4372,13 @@ static DSQL_NOD make_list (DSQL_NOD node)
 	dsql_nod** ptr = node->nod_arg + node->nod_count;
 
 	while (stack)
-		*--ptr = (DSQL_NOD) LLS_POP (&stack);
+		*--ptr = (dsql_nod*) LLS_POP (&stack);
 
 	return node;
 }
 
 
-static DSQL_NOD make_parameter (void)
+static dsql_nod* make_parameter (void)
 {
 /**************************************
  *
@@ -4393,13 +4398,13 @@ static DSQL_NOD make_parameter (void)
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 	node->nod_count = 1;
-	node->nod_arg[0] = (DSQL_NOD)(ULONG) lex.param_number++;
+	node->nod_arg[0] = (dsql_nod*)(ULONG) lex.param_number++;
 
 	return node;
 }
 
 
-static DSQL_NOD make_node (NOD_TYPE	type,
+static dsql_nod* make_node (NOD_TYPE	type,
 						   int count,
 						   ...)
 {
@@ -4426,13 +4431,13 @@ static DSQL_NOD make_node (NOD_TYPE	type,
 	VA_START (ptr, count);
 
 	while (--count >= 0)
-		*p++ = va_arg (ptr, DSQL_NOD);
+		*p++ = va_arg (ptr, dsql_nod*);
 
 	return node;
 }
 
 
-static DSQL_NOD make_flag_node (NOD_TYPE	type,
+static dsql_nod* make_flag_node (NOD_TYPE	type,
 								SSHORT	flag,
 								int		count,
 								...)
@@ -4460,7 +4465,7 @@ static DSQL_NOD make_flag_node (NOD_TYPE	type,
 	VA_START (ptr, count);
 
 	while (--count >= 0)
-		*p++ = va_arg (ptr, DSQL_NOD);
+		*p++ = va_arg (ptr, dsql_nod*);
 
 	return node;
 }
@@ -4488,7 +4493,7 @@ static void prepare_console_debug (int level, int *yydeb)
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static bool short_int(DSQL_NOD string,
+static bool short_int(dsql_nod* string,
 					  SLONG *long_value,
 					  SSHORT range)
 {
@@ -4546,7 +4551,7 @@ static bool short_int(DSQL_NOD string,
 }
 #endif
 
-static void stack_nodes (DSQL_NOD	node,
+static void stack_nodes (dsql_nod*	node,
 						 dsql_lls** stack)
 {
 /**************************************
@@ -4628,7 +4633,7 @@ inline static int yylex (
 	USHORT	client_dialect,
 	USHORT	db_dialect,
 	USHORT	parser_version,
-	BOOLEAN* stmt_ambiguous)
+	bool* stmt_ambiguous)
 {
 	const int temp =
 		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
@@ -4641,7 +4646,7 @@ int LexerState::yylex (
 	USHORT	client_dialect,
 	USHORT	db_dialect,
 	USHORT	parser_version,
-	BOOLEAN* stmt_ambiguous)
+	bool* stmt_ambiguous)
 {
 /**************************************
  *
@@ -4654,13 +4659,7 @@ int LexerState::yylex (
  **************************************/
 	UCHAR	tok_class;
 	char  string[MAX_TOKEN_LEN];
-	char* p;
-	char* buffer;
-	char* buffer_end;
-	char* new_buffer;
-	DSQL_SYM	sym;
 	SSHORT	c;
-	USHORT	buffer_len;
 
 	/* Find end of white space and skip comments */
 
@@ -4732,7 +4731,7 @@ int LexerState::yylex (
 		/* The Introducer (_) is skipped, all other idents are copied
 		 * to become the name of the character set
 		 */
-		p = string;
+		char* p = string;
 		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
@@ -4746,7 +4745,7 @@ int LexerState::yylex (
 		/* make a string value to hold the name, the name 
 		 * is resolved in pass1_constant */
 
-		yylval = (DSQL_NOD) (MAKE_string(string, p - string))->str_data;
+		yylval = (dsql_nod*) (MAKE_string(string, p - string))->str_data;
 
 		return INTRODUCER;
 	}
@@ -4755,10 +4754,10 @@ int LexerState::yylex (
 
 	if (tok_class & CHR_QUOTE)
 	{
-		buffer = string;
-		buffer_len = sizeof (string);
-		buffer_end = buffer + buffer_len - 1;
-		for (p = buffer; ; p++)
+		char* buffer = string;
+		size_t buffer_len = sizeof (string);
+		const char* buffer_end = buffer + buffer_len - 1;
+		for (char* p = buffer; ; ++p)
 		{
 			if (ptr >= end)
 			{
@@ -4771,7 +4770,7 @@ int LexerState::yylex (
 				break;
 			if (p > buffer_end)
 			{
-				new_buffer = (char*)gds__alloc (2 * buffer_len);
+				char* const new_buffer = (char*) gds__alloc (2 * buffer_len);
 			/* FREE: at outer block */
 				if (!new_buffer)		/* NOMEM: */
 				{
@@ -4791,7 +4790,7 @@ int LexerState::yylex (
 		}
 		if (c == '"')
 		{
-			*stmt_ambiguous = TRUE; /* string delimited by double quotes could be
+			*stmt_ambiguous = true; /* string delimited by double quotes could be
 					**   either a string constant or a SQL delimited
 					**   identifier, therefore marks the SQL
 					**   statement as ambiguous  */
@@ -4809,7 +4808,7 @@ int LexerState::yylex (
 						gds__free (buffer);
 					yyabandon (-104, isc_token_too_long);
 				}
-				yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+				yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 				dsql_str* delimited_id_str = (dsql_str*) yylval;
 				delimited_id_str->str_flags |= STR_delimited_id;
 				if (buffer != string)
@@ -4817,7 +4816,7 @@ int LexerState::yylex (
 				return SYMBOL;
 			}
 		}
-		yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+		yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 		if (buffer != string)
 		gds__free (buffer);
 		return STRING;
@@ -4938,7 +4937,7 @@ int LexerState::yylex (
 
 			if (have_exp_digit)
 			{
-				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+				yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
 				last_token_bk = last_token;
 				line_start_bk = line_start;
 				lines_bk = lines;
@@ -4953,7 +4952,7 @@ int LexerState::yylex (
 
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
-					yylval = (DSQL_NOD) (ULONG) number;
+					yylval = (dsql_nod*) (ULONG) number;
 					return NUMBER;
 				}
 				else
@@ -4980,7 +4979,7 @@ int LexerState::yylex (
 							   isc_arg_end );
 					}
 
-					yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+					yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
 
 					last_token_bk = last_token;
 					line_start_bk = line_start;
@@ -5012,7 +5011,7 @@ int LexerState::yylex (
 
 	if (tok_class & CHR_LETTER)
 	{
-		p = string;
+		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
 		for (; ptr < end && classes[*ptr] & CHR_IDENT; ptr++)
 		{
@@ -5023,7 +5022,8 @@ int LexerState::yylex (
 
 		check_bound(p, string);
 		*p = 0;
-		sym = HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+		dsql_sym* sym =
+			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
 		if (sym)
 		{
 		/* 13 June 2003. Nickolay Samofatov
@@ -5037,23 +5037,23 @@ int LexerState::yylex (
 				) &&
 				/* Produce special_trigger_action_predicate only where we can handle it -
 				  in search conditions */
-				(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
-				 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
-				 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
+				(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
+				 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
+				 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
 			{			
 				LexerState savedState = lex;
-				int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+				int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 				lex = savedState;
-				if (nextToken==OR || nextToken==AND) {
+				if (nextToken == OR || nextToken == AND) {
 					switch(sym->sym_keyword) {
 					case INSERTING:
-						yylval = (DSQL_NOD) sym->sym_object;
+						yylval = (dsql_nod*) sym->sym_object;
 						return KW_INSERTING;
 					case UPDATING:
-						yylval = (DSQL_NOD) sym->sym_object;
+						yylval = (dsql_nod*) sym->sym_object;
 						return KW_UPDATING;
 					case DELETING:
-						yylval = (DSQL_NOD) sym->sym_object;
+						yylval = (dsql_nod*) sym->sym_object;
 						return KW_DELETING;
 					}
 				}
@@ -5071,16 +5071,17 @@ int LexerState::yylex (
 			{
 				if (prev_keyword == SELECT || limit_clause) {
 					LexerState savedState = lex;
-					int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+					int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
 					if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
-						yylval = (DSQL_NOD) MAKE_string(string, p - string);
+						yylval = (dsql_nod*) MAKE_string(string, p - string);
 						last_token_bk = last_token;
 						line_start_bk = line_start;
 						lines_bk = lines;
 						return SYMBOL;
-					} else {
-						yylval = (DSQL_NOD) sym->sym_object;
+					}
+					else {
+						yylval = (dsql_nod*) sym->sym_object;
 						last_token_bk = last_token;
 						line_start_bk = line_start;
 						lines_bk = lines;
@@ -5089,14 +5090,14 @@ int LexerState::yylex (
 				} /* else fall down and return token as SYMBOL */
 			}
 			else {
-				yylval = (DSQL_NOD) sym->sym_object;
+				yylval = (dsql_nod*) sym->sym_object;
 				last_token_bk = last_token;
 				line_start_bk = line_start;
 				lines_bk = lines;
 				return sym->sym_keyword;
 			}
 		}
-		yylval = (DSQL_NOD) MAKE_string(string, p - string);
+		yylval = (dsql_nod*) MAKE_string(string, p - string);
 		last_token_bk = last_token;
 		line_start_bk = line_start;
 		lines_bk = lines;
@@ -5107,7 +5108,8 @@ int LexerState::yylex (
 
 	if (last_token + 1 < end)
 	{
-		sym = HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
+		dsql_sym* sym =
+			HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
 		if (sym)
 		{
 			++ptr;
@@ -5124,8 +5126,8 @@ int LexerState::yylex (
 		   3) We should not swallow braces after special tokens 
 			 like IF, FIRST, SKIP, VALUES and 30 more other	   
 		*/
-		(prev_keyword=='(' || prev_keyword==NOT || prev_keyword==AND || prev_keyword==OR ||
-		 prev_keyword==ON || prev_keyword==HAVING || prev_keyword==WHERE || prev_keyword==WHEN) ) 
+		(prev_keyword == '(' || prev_keyword == NOT || prev_keyword == AND || prev_keyword == OR ||
+		 prev_keyword == ON || prev_keyword == HAVING || prev_keyword == WHERE || prev_keyword == WHEN) )
 	{
 		LexerState savedState = lex;	
 		brace_analysis = true;
@@ -5133,15 +5135,15 @@ int LexerState::yylex (
 		int nextToken;
 		do {
 			openCount++;
-			nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+			nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 		} while (nextToken == '(');
-		DSQL_NOD temp_val = yylval;
+		dsql_nod* temp_val = yylval;
 		if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
 		{
 			/* Skip closing braces. */
 			while ( openCount &&
-					yylex(client_dialect,db_dialect,
-						  parser_version,stmt_ambiguous) == ')')
+					yylex(client_dialect, db_dialect,
+						  parser_version, stmt_ambiguous) == ')')
 			{
 				openCount--;
 			}
@@ -5157,14 +5159,14 @@ int LexerState::yylex (
 				if (prev_keyword == '(' &&
 					/* Produce special_trigger_action_predicate only where we can handle it -
 					  in search conditions */
-					(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
-					 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
-					 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
-				{			
+					(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
+					 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
+					 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
+				{
 					savedState = lex;
-					int token = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+					int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 					lex = savedState;
-					if (token==OR || token==AND) {
+					if (token == OR || token == AND) {
 						switch(nextToken) {
 						case INSERTING:
 							return KW_INSERTING;
