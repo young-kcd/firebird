@@ -1,3 +1,42 @@
+2004-11-17 22:57  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.72.2.9):
+	
+	Fix bug in aggregate-functions which burried EXISTS/SINGULAR
+	predicate.
+	
+	See bug #1063254
+
+2004-11-17 22:52  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.73.2.26):
+	
+	FB1.5.1-RC2 bugfix : SELECT * FROM   TableX a	LEFT JOIN ViewX b
+	ON (b.ID = a.ID) where the "VIEW b" relations didn't use a index,
+	but was possible
+
+2004-11-17 12:41  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.76.2.10):
+	
+	fixed server locking on attempt to restore database at location out
+	of subtree, restricted by DatabaseAccess
+
+2004-11-17 10:43  tsteinmaurer
+
+	* firebird2/src/install/arch-specific/win32/de/liesmich.txt
+	(1.1.2.3):
+	
+	Fixed some types and used wordings
+
+2004-11-17 10:35  tsteinmaurer
+
+	*
+	
+	Fixed some types and used wordings
+	firebird2/src/install/arch-specific/win32/de/installation_liesmich.
+	txt (1.1.2.3):
+
 2004-11-16 15:52  tsteinmaurer
 
 	* firebird2/src/install/arch-specific/win32/de/:
