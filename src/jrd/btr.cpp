@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.cpp,v 1.5 2002-09-17 05:58:35 eku Exp $
+$Id: btr.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
 */
 
 #include "firebird.h"
@@ -2990,6 +2990,8 @@ static SLONG fast_load(TDBB tdbb,
 			ERR_punt();
 		}
 	}
+
+	return -1L; /* lint */
 }
 
 
@@ -4467,7 +4469,7 @@ static BOOLEAN scan(TDBB tdbb,
 	USHORT l;
 	SLONG number;
 	UCHAR *end_key;
-	register UCHAR *p, *q;
+	register UCHAR *p = NULL, *q = NULL;
 	USHORT i, count;
 
 	SET_TDBB(tdbb);

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
+//	$Id: c_cxx.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
 //
 
 #include "firebird.h"
@@ -150,8 +150,13 @@ static TEXT *make_name(TEXT *, SYM);
 static void make_ok_test(ACT, REQ, int);
 static void make_port(POR, int);
 static void make_ready(DBB, TEXT *, TEXT *, USHORT, REQ);
+#ifdef __GNUC__
+static void printa(int, const char *, ...) __attribute__ ((format(printf,2,3)));
+static void printb(TEXT *, ...) __attribute__ ((format(printf,1,2)));
+#else
 static void printa(int, const char *, ...);
 static void printb(TEXT *, ...);
+#endif
 static TEXT *request_trans(ACT, REQ);
 static TEXT *status_vector(ACT);
 static void t_start_auto(ACT, REQ, TEXT *, int, SSHORT);
@@ -1045,19 +1050,19 @@ static void gen_based( ACT action, int column)
 		ib_fprintf(out_file, "%s", variable);
 		if (based_on->bas_flags & BAS_segment) {
 			if (*variable != '*')
-				ib_fprintf(out_file, "[%d]", length);
+				ib_fprintf(out_file, "[%ld]", length);
 		}
 		else if (field->fld_array_info) {
 			/*  Print out the dimension part of the declaration  */
 
 			for (dimension = field->fld_array_info->ary_dimension; dimension;
 				 dimension = dimension->dim_next)
-				ib_fprintf(out_file, " [%d]",
+				ib_fprintf(out_file, " [%ld]",
 						   dimension->dim_upper - dimension->dim_lower + 1);
 
 			if (field->fld_array_info->ary_dtype <= dtype_varying &&
 				field->fld_length > 1)
-				ib_fprintf(out_file, " [%d]", field->fld_array->fld_length);
+				ib_fprintf(out_file, " [%ld]", field->fld_array->fld_length);
 		}
 		else
 			if (*variable != '*' &&
@@ -2709,7 +2714,8 @@ static void gen_function( ACT function, int column)
 
 	request = action->act_request;
 
-	ib_fprintf(out_file, "static %s_r (request, transaction",
+#pragma FB_COMPILER WARNING fix format string
+	ib_fprintf(out_file, "static %s_r (request, transaction ",
 			   request->req_handle, request->req_handle, request->req_trans);
 
 	if (port = request->req_vport)
@@ -2718,6 +2724,7 @@ static void gen_function( ACT function, int column)
 				ib_fprintf(out_file, ", %s",
 						   gen_name(s, reference->ref_source, TRUE));
 
+#pragma FB_COMPILER WARNING fix format string
 	ib_fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n",
 			   request->req_handle, request->req_trans);

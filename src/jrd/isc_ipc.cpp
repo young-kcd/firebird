@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.20 2002-09-23 10:41:07 dimitr Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.21 2002-09-24 12:57:08 eku Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -330,12 +330,10 @@ void DLL_EXPORT ISC_enter(void)
 
 #ifndef ISC_ENTER
 /* Cancel our handler for SIGFPE - in case it was already there */
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
-	ISC_signal_cancel(SIGFPE, (void (*)()) overflow_handler, NULL);
+	ISC_signal_cancel(SIGFPE, (SIG_FPTR) overflow_handler, NULL);
 
 /* Setup overflow handler - with chaining to any user handler */
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
-	isc_signal2(SIGFPE, (void (*)()) overflow_handler, NULL, SIG_informs);
+	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, NULL, SIG_informs);
 #endif
 
 #ifdef DEBUG_FPE_HANDLING
@@ -425,8 +423,7 @@ void DLL_EXPORT ISC_exit(void)
 
 #ifndef ISC_EXIT
 /* No longer attempt to handle overflow internally */
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
-	ISC_signal_cancel(SIGFPE, (void (*)()) overflow_handler, 0);
+	ISC_signal_cancel(SIGFPE, (SIG_FPTR) overflow_handler, 0);
 #endif
 }
 } // Extern "C"
@@ -748,7 +745,6 @@ static void isc_signal2(
 
 	if (!sig) {
 #if (defined WIN_NT || defined PC_PLATFORM)
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
 		ptr = (SIG_FPTR) signal(signal_number, (SIG_FPTR) signal_handler);
 #else
 		SIGVEC vec, old_vec;
@@ -770,7 +766,6 @@ static void isc_signal2(
 			vec.sv_handler = SIG_DFL;
 		else
 #endif
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
 			vec.sa_handler = (SIG_FPTR) signal_handler;
 		memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 		vec.sa_flags = SA_RESTART;
@@ -778,7 +773,6 @@ static void isc_signal2(
 		ptr = (SIG_FPTR) old_vec.sa_handler;
 #endif
 #endif
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer casts!")
 		if (ptr != (SIG_FPTR) SIG_DFL &&
 			ptr != (SIG_FPTR) SIG_HOLD &&
 			ptr != (SIG_FPTR) SIG_IGN && ptr != (SIG_FPTR) signal_handler) {
@@ -801,7 +795,7 @@ static void isc_signal2(
 #ifndef REQUESTER
 void API_ROUTINE ISC_signal_cancel(
 								   int signal_number,
-								   void (*handler) (), void *arg)
+								   SIG_FPTR handler, void *arg)
 {
 /**************************************
  *
@@ -889,8 +883,7 @@ void DLL_EXPORT ISC_signal_init(void)
 
 	THD_MUTEX_INIT(&sig_mutex);
 
-#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
-	isc_signal2(SIGFPE, (void (*)()) overflow_handler, 0, SIG_informs);
+	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, 0, SIG_informs);
 
 #endif // !defined(PC_PLATFORM)
 #endif

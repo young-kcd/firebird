@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.5 2002-07-06 05:31:56 skywalker Exp $
+//	$Id: cob.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
 //
 
 #include "firebird.h"
@@ -409,8 +409,13 @@ static TEXT	*make_name (TEXT *, SYM);
 static TEXT	*make_name_formatted (TEXT *, TEXT *, SYM);
 static void	make_port (POR);
 static void	make_ready (DBB, TEXT *, TEXT *, REQ, USHORT);
+#ifdef __GNUC__
+static void	printa (TEXT *, BOOLEAN, TEXT *, ...) __attribute__ ((format(printf,3,4)));
+static void	printb (TEXT *, ... ) __attribute__ ((format(printf,1,2)));
+#else
 static void	printa (TEXT *, BOOLEAN, TEXT *, ...);
 static void	printb (TEXT *, ... );
+#endif
 static TEXT	*request_trans (ACT, REQ);
 static void	set_sqlcode (ACT);
 static TEXT	*status_vector (ACT);

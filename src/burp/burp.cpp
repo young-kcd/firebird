@@ -152,7 +152,11 @@ static SSHORT open_files(SCHAR *, SCHAR **, USHORT, USHORT, USHORT);
 static int output_netware(SLONG, UCHAR *);
 static int output_main(SLONG, UCHAR *);
 static int output_svc(SLONG, UCHAR *);
+#ifdef __GNUC__
+static void burp_output(CONST SCHAR *, ...) __attribute__ ((format(printf,1,2)));
+#else
 static void burp_output(CONST SCHAR *, ...);
+#endif
 
 #ifndef	SUPERSERVER
 #ifndef GUI_TOOLS

@@ -877,7 +877,7 @@ ISC_signal(signal_number, handler, arg)
 
 ISC_signal_cancel(signal_number, handler, arg)
 	 int signal_number;
-	 void (*handler) ();
+	 SIG_FPTR handler;
 	 SLONG arg;
 {
 /**************************************

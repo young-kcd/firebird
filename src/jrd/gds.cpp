@@ -404,8 +404,13 @@ void GDS_breakpoint(int);
 #endif
 
 
-static void		blr_error(CTL, TEXT *, TEXT *);
+#ifdef __GNUC__
+static void		blr_error(CTL, TEXT *, ...) __attribute__ ((format(printf,2,3)));
+static void		blr_format(CTL, const char *, ...) __attribute__ ((format(printf,2,3)));
+#else
+static void		blr_error(CTL, TEXT *, ...);
 static void		blr_format(CTL, const char *, ...);
+#endif
 static void		blr_indent(CTL, SSHORT);
 static void		blr_print_blr(CTL, UCHAR);
 static SCHAR	blr_print_byte(CTL);
@@ -2473,7 +2478,7 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
               // Try and get value from config file.
               const Firebird::string regPrefix = FirebirdConfig::getSysString("RootDirectory");
 
-              int len = regPrefix.length();
+              size_t len = regPrefix.length();
               if ( len > 0) {
                   if (len > sizeof(ib_prefix_val)) {
                       ib_perror("ib_prefix path size too large - truncated");                      
@@ -2946,7 +2951,7 @@ int API_ROUTINE gds__print_blr(
 
 	if ((version != blr_version4) && (version != blr_version5))
 		blr_error(control, "*** blr version %d is not supported ***",
-				  (TEXT *) version);
+				  (int) version);
 
 	blr_format(control,
 			   (version == blr_version4) ? "blr_version4," : "blr_version5,");
@@ -2958,7 +2963,7 @@ int API_ROUTINE gds__print_blr(
 
 	if (eoc != blr_eoc)
 		blr_error(control, "*** expected end of command, encounted %d ***",
-				  (TEXT *) eoc);
+				  (int) eoc);
 
 	blr_format(control, "blr_eoc");
 	PRINT_LINE;
@@ -3728,7 +3733,7 @@ void API_ROUTINE gds__vtov(CONST SCHAR* string, SCHAR* field, SSHORT length)
 
 	--length;
 
-	while ((*field++ = *string++) != NULL)
+	while ((*field++ = *string++) != (SCHAR)0)
 		if (--length <= 0) {
 			*field = 0;
 			return;
@@ -3867,7 +3872,7 @@ int unlink(SCHAR * file)
 #endif
 
 
-static void blr_error(CTL control, TEXT * string, TEXT * arg1)
+static void blr_error(CTL control, TEXT * string, ...)
 {
 /**************************************
  *
@@ -3880,8 +3885,10 @@ static void blr_error(CTL control, TEXT * string, TEXT * arg1)
  *
  **************************************/
 	USHORT offset;
+	va_list args;
 
-	blr_format(control, string, arg1);
+	VA_START(args, string);
+	blr_format(control, string, args);
 	offset = 0;
 	PRINT_LINE;
 	Firebird::status_exception::raise(-1);
@@ -3946,7 +3953,7 @@ static void blr_print_blr(CTL control, UCHAR operator_)
 	if (operator_ > (sizeof(blr_table) / sizeof(blr_table[0])) ||
 		!(p = (SCHAR *) /* const_cast */ blr_table[operator_].blr_string))
 		blr_error(control, "*** blr operator %d is undefined ***",
-				  (TEXT *) operator_);
+				  (int) operator_);
 
 	blr_format(control, "blr_%s, ", p);
 }
@@ -3968,7 +3975,7 @@ static SCHAR blr_print_byte(CTL control)
 
 	v = BLR_BYTE;
 	blr_format(control, (control->ctl_language) ? "chr(%d), " : "%d, ",
-			   (TEXT *) v);
+			   (int) v);
 
 	return v;
 }
@@ -3998,11 +4005,11 @@ static SCHAR blr_print_char(CTL control)
 	     c == '_';
 
 	if (printable)
-		blr_format(control, "'%c',", (TEXT *) c);
+		blr_format(control, "'%c',", (char) c);
 	else if (control->ctl_language)
-		blr_format(control, "chr(%d),", (TEXT *) v);
+		blr_format(control, "chr(%d),", (int) v);
 	else
-		blr_format(control, "%d,", (TEXT *) c);
+		blr_format(control, "%d,", (int) c);
 
 	return c;
 }
@@ -4050,7 +4057,7 @@ static void blr_print_cond(CTL control)
 		break;
 
 	default:
-		blr_error(control, "*** invalid condition type ***", NULL);
+		blr_error(control, "*** invalid condition type ***");
 		break;
 	}
 	return;
@@ -4161,7 +4168,7 @@ static int blr_print_dtype(CTL control)
 		break;
 
 	default:
-		blr_error(control, "*** invalid data type ***", NULL);
+		blr_error(control, "*** invalid data type ***");
 		break;
 	}
 
@@ -4243,7 +4250,7 @@ static void blr_print_join(CTL control)
 		break;
 
 	default:
-		blr_error(control, "*** invalid join type ***", NULL);
+		blr_error(control, "*** invalid join type ***");
 		break;
 	}
 
@@ -4412,7 +4419,7 @@ static void blr_print_verb(CTL control, SSHORT level)
 			if (operator_ != blr_relation && operator_ != blr_rid)
 				blr_error(control,
 						  "*** blr_relation or blr_rid must be object of blr_lock_relation, %d found ***",
-						  (TEXT *) operator_);
+						  (int) operator_);
 
 			if (operator_ == blr_relation) {
 				n = PRINT_BYTE;
@@ -4448,7 +4455,7 @@ static int blr_print_word(CTL control)
 	v2 = BLR_BYTE;
 	blr_format(control,
 			   (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ",
-			   (TEXT *) v1, (TEXT *) v2);
+			   (int) v1, (int) v2);
 
 	return (v2 << 8) | v1;
 }
@@ -4587,7 +4594,7 @@ static ULONG free_memory(void *blk)
 #endif
 
 #ifdef DEV_BUILD
-	if (length <= ALLOC_OVERHEAD) {
+	if (length <= (SLONG) ALLOC_OVERHEAD) {
 		DEV_REPORT("gds__free: attempt to release bad block (too small)\n");	/* TXNN */
 		BREAKPOINT(__LINE__);
 		return 0;

@@ -3345,7 +3345,7 @@ static void check_precedence(TDBB tdbb, WIN * window, SLONG page)
  *
  **************************************/
 	DBB dbb;
-	register BDB high, low;
+	register BDB high = (BDB)0, low = (BDB)0;
 	register PRE precedence;
 	QUE que, mod_que;
 	BCB bcb;

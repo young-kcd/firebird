@@ -44,8 +44,8 @@ int API_ROUTINE ISC_kill(SLONG, SLONG, void *);
 int ISC_kill(SLONG, SLONG);
 #endif
 
-extern void API_ROUTINE ISC_signal(int, FPTR_VOID, void *);
-extern void API_ROUTINE ISC_signal_cancel(int, FPTR_VOID, void *);
+extern void API_ROUTINE ISC_signal(int, SIG_FPTR, void *);
+extern void API_ROUTINE ISC_signal_cancel(int, SIG_FPTR, void *);
 extern void DLL_EXPORT ISC_signal_init(void);
 
 #endif /* _JRD_ISC_I_PROTO_H_ */

@@ -48,7 +48,7 @@
 #define WORKDIR        "SYS$SCRATCH:"
 #endif
 
-#define	ALLROOM		-1			/* use all available space */
+#define	ALLROOM		-1UL		/* use all available space */
 
 /* Defined the directory list structures. */
 

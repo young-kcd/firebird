@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.15 2002-09-11 11:30:43 eku Exp $
+//	$Id: alice.cpp,v 1.16 2002-09-24 12:57:04 eku Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -109,7 +109,11 @@ static void expand_filename(TEXT*, TEXT*);
 static int output_thread(SLONG, UCHAR*);
 static int output_main(SLONG, UCHAR*);
 static int output_svc(SLONG, UCHAR*);
+#ifdef __GNUC__
+static void alice_output(CONST SCHAR*, ...) __attribute__ ((format(printf,1,2)));
+#else
 static void alice_output(CONST SCHAR*, ...);
+#endif
 
 
 

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.5 2002-01-04 11:34:15 skywalker Exp $
+//	$Id: cmp.cpp,v 1.6 2002-09-24 12:57:07 eku Exp $
 //
 
 #include "firebird.h"
@@ -959,6 +959,7 @@ static void cmp_for( register REQ request)
 		case ACT_update:
 		case ACT_erase:
 			updates = TRUE;
+			break;
 		}
 	if (updates)
 		STUFF(blr_begin);

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: int.cpp,v 1.4 2002-09-24 12:57:07 eku Exp $
 //
 
 #include "firebird.h"
@@ -63,7 +63,11 @@ static void gen_start(REQ, POR, int);
 static void gen_type(ACT, int);
 static void gen_variable(ACT, int);
 static void make_port(POR, int);
+#ifdef __GNUC__
+static void printa(int, TEXT *, ...) __attribute__ ((format(printf,2,3)));
+#else
 static void printa(int, TEXT *, ...);
+#endif
 
 static int first_flag = 0;
 

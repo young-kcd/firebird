@@ -697,7 +697,7 @@ void* FBMemoryPool::allocate(size_t size, SSHORT type)
 					BUGCHECK(152);
 					/* msg 152 memory pool free list is invalid */
 				}
-				if ((tail = (*ptr)->length - units) >= 0 &&
+				if ((tail = (*ptr)->length - units) >= 0U &&
                                        tail < best_tail)
 				{
 					best = ptr;
@@ -1062,10 +1062,7 @@ int FBMemoryPool::determine_header_size(const void* mem, Segment *seg)
 		}
 		assert(0);
     }
-    else
-    {
-        return FULL_HEADER_ALLOC_UNITS + redSize;
-    }
+    return FULL_HEADER_ALLOC_UNITS + redSize;
 }
 
 /** Releases all the memory associated with a pool.  Doesn't release the

@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.19 2002-09-18 12:50:04 eku Exp $
+$Id: inet.cpp,v 1.20 2002-09-24 12:57:08 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -2146,7 +2146,7 @@ static void disconnect( PORT port)
 #if !(defined VMS || defined NETWARE_386 || defined PC_PLATFORM || \
 	defined WIN_NT)
 	if (port->port_ast) {
-		ISC_signal_cancel(SIGURG, (void(*)(void))inet_handler, port);
+		ISC_signal_cancel(SIGURG, (SIG_FPTR) inet_handler, port);
 	}
 #endif
 
