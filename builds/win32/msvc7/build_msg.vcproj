@@ -72,8 +72,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\..\..\..\temp\release\build_msg"
-			IntermediateDirectory=".\..\..\..\temp\release\build_msg"
+			OutputDirectory=".\..\..\..\temp\debug\build_msg"
+			IntermediateDirectory=".\..\..\..\temp\debug\build_msg"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
