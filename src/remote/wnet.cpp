@@ -54,8 +54,6 @@
 
 #define ERRNO		GetLastError()
 
-#define PROTOCOL_NAME	"gds_db"
-
 #ifndef SYS_ERR
 #define SYS_ERR		gds_arg_win32
 #endif
@@ -1125,7 +1123,7 @@ static STR make_pipe_name(
 		*q++ = *p++;
 
 	if (!*p)
-		protocol = PROTOCOL_NAME;
+		protocol = FB_SERVICE_NAME;
 	else if (*p == '@')
 		protocol = p + 1;
 	else {

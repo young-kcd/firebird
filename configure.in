@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.63 2002-11-05 16:48:59 skywalker Exp $
+dnl $Id: configure.in,v 1.64 2002-11-06 12:36:05 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -83,7 +83,6 @@ AC_ARG_ENABLE(raw-devices,
      no)  RAW_DEVICES_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-raw-devices);;
    esac])
-
 if test "$RAW_DEVICES_FLG" = "Y"; then
   AC_DEFINE(SUPPORT_RAW_DEVICES)
 fi
@@ -121,6 +120,20 @@ AC_ARG_WITH(readline,
    esac])
 AC_SUBST(READLINE_FLG)
 
+FB_SERVICE_NAME=gdb_db
+FB_SERVICE_PORT=3050
+AC_ARG_WITH(service-name,
+  [  --with-service-name     specify inet service name (default=gds_db)],
+  [FB_SERVICE_NAME=${withval}])
+AC_ARG_WITH(service-port,
+  [  --with-service-port     specify inet service port (default=3050)],
+  [FB_SERVICE_PORT=${withval}])
+AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME")
+AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT)
+AC_SUBST(FB_SERVICE_NAME)
+AC_SUBST(FB_SERVICE_PORT)
+
+
 dnl Check for system header files
 AC_CHECK_HEADERS(assert.h)
 AC_CHECK_HEADERS(ctype.h)
@@ -152,7 +165,6 @@ fi
 AC_CHECK_HEADERS(pwd.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(varargs.h)
-
 AC_CHECK_HEADERS(crypt.h)
 
 
@@ -172,6 +184,7 @@ if test "$READLINE_FLG" = "Y"; then
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 AC_CHECK_LIB(sfio, main,,, $LIBS) dnl Solaris only
+
 
 dnl Check for functions
 AC_CHECK_FUNCS(strlcpy strlcat)
@@ -237,14 +250,6 @@ AC_CHECK_TYPE(socklen_t,int)
 AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(void*)
 
-dnl MOD: Check for /proc/self/exe mainly used on linux systems
-dnl      this is used to determine path to executable file.
-
-AC_MSG_CHECKING(for file /proc/self/exe)
-AC_CHECK_FILES(/proc/self/exe)
-
-
-
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
 AC_MSG_CHECKING(alignment of long)
@@ -281,19 +286,24 @@ dnl
 dnl      volunters are welcome!
 
 
+dnl EKU: Add any platform specific tests below
 
-  case $PLATFORM in
+case $PLATFORM in
+  LINUX)
+    dnl MOD: Check for /proc/self/exe mainly used on linux systems
+    dnl      this is used to determine path to executable file.
+    AC_CHECK_FILES(/proc/self/exe)
+    ;;
+
   solx86)
-    # this still not worked. Why knows why?
+    # kkuznetsov: this still not worked. Why knows why?
     AC_DEFINE(GPRECOMMON_Files)
     AC_SUBST(GPRECOMMON_Files, " thd.cpp ")
-
     ;;
+
   *)
-
-
     ;;
-  esac
+esac
 
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
@@ -515,7 +525,11 @@ gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
 gen/Makefile.install:${MAKE_SRC_DIR}/Makefile.in.install
 Makefile:Makefile.in
-gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
+dnl Linux start
+dnl
+dnl EKU: These files should reside in src/install/arch-specific/linux
+dnl
+dnl gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
 gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
 gen/install/scripts/install.sh:${INSTALL_SRC_DIR}/install.sh.in
 gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
@@ -523,6 +537,7 @@ gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
 gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
 gen/install/install.sh:${INSTALL_SRC_DIR}/tarInstall.sh.in
 src/install/misc/firebird.xinetd
+dnl Linux end
 dnl SINIX-Z start
 gen/install/sinixz/Makefile:src/install/arch-specific/sinixz/Makefile.in
 gen/install/sinixz/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
@@ -559,6 +574,9 @@ case $FIREBIRD_ARCH_TYPE in
  super)   echo "Architecture : SuperServer";;
  classic) echo "Architecture : ClassicServer";;
 esac
+
+echo           "Service name : $FB_SERVICE_NAME"
+echo           "Service port : $FB_SERVICE_PORT"
 
 case $PROD_BUILD_FLG in
  Y)       echo "       Debug : disabled";;

@@ -40,7 +40,6 @@
 #define RPM_1SESSION	1		/* Accommodate multiple sessions, bit 30 */
 #define RPM_NOPRIV	19			/* Load program in non-priv mode, bit 12 */
 
-#define PROTOCOL_NAME	"gds_db"
 #define PROXY_FILE	"proxy.pub"
 #define SERVER_NAME	" gdsrserv.pub.starbase"
 
@@ -442,7 +441,7 @@ PORT IPC_connect(TEXT * name,
 	if (!ipcresult && flags == 1)
 		gds_socket = items[0];
 	else
-		gds_socket = GDS_SOCKET;
+		gds_socket = FB_SERVER_PORT;
 
 	port = alloc_port(0);
 	port->port_status_vector = status_vector;

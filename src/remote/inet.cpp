@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.34 2002-11-06 07:08:47 eku Exp $
+$Id: inet.cpp,v 1.35 2002-11-06 12:36:06 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -322,8 +322,6 @@ static ULONG inet_debug_timer(void)
 #define GDS_HOSTS_FILE	"/etc/gds_hosts.equiv"
 #endif
 #endif
-
-#define PROTOCOL_NAME   "gds_db"
 
 
 #define MAX_DATA_LW	1448		/* Low  Water mark */
@@ -930,7 +928,7 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = gds_arg_end;
-	protocol = PROTOCOL_NAME;
+	protocol = FB_SERVICE_NAME;
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
@@ -1063,9 +1061,9 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
     for zero-installation clients.
     */
 	if (!service) {
-		if (strcmp(protocol, PROTOCOL_NAME) == 0) {
+		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
 			/* apply hardwired translation */
-			address.sin_port = htons(3050);
+			address.sin_port = htons(FB_SERVICE_PORT);
 		}
 
 		/* modification by FSG 23.MAR.2001 */

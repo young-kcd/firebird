@@ -77,8 +77,6 @@ extern "C" {
 #define ERRNO		errno
 #endif
 
-#define PROTOCOL_NAME	"gds_db"
-
 #ifndef SYS_ERR
 #define SYS_ERR		gds_arg_win32
 #endif
@@ -1272,7 +1270,7 @@ ULONG connection_setup(TEXT * name, PACKET * packet, STATUS * status_vector)
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = gds_arg_end;
-	protocol = PROTOCOL_NAME;
+	protocol = FB_SERVICE_NAME;
 
 /* Set up Inter-Net socket address */
 

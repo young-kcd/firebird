@@ -30,8 +30,6 @@
 #pragma intrinsic	IPCLOOKUP, IPCCONNECT, IPCDEST, IPCSHUTDOWN
 #pragma intrinsic	INITOPT, ADDOPT, OPTOVERHEAD
 
-#define GDS_SOCKET	3050
-
 #define IPC_CALL_SOCKET	3
 #define IPC_TCP		4
 #define IPC_GIVELEN	8
