@@ -447,10 +447,6 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 	if (procedure) {
 		USHORT count = 0;
 
-		if (request->req_scope_level == 1) {
-			request->req_flags |= REQ_no_batch;
-		}
-
 		if (relation_node->nod_arg[e_rpn_inputs])
 		{
 			context->ctx_proc_inputs =
