@@ -30,7 +30,7 @@
  *
  */
 /*
-$Id: why.c,v 1.10 2002-07-01 15:07:18 skywalker Exp $
+$Id: why.c,v 1.11 2002-07-06 05:31:56 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -504,7 +504,7 @@ static CONST_IMAGE IMAGE images[] =
 #endif
 
 #if (defined UNIX) && \
-    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN /* platforms without a V3 bridge */)
+    !(defined SUPERCLIENT || defined SUPERSERVER || defined DECOSF || defined DG_X86 || defined linux || defined FREEBSD || defined NETBSD || defined AIX_PPC || defined DARWIN || defined SINIXZ /* platforms without a V3 bridge */)
 #ifndef PIPE_SERVER_YVALUE
 #define PIPE_BRIDGE_TO_V3
 #endif

@@ -221,8 +221,11 @@ extern SLONG ftok();
 #endif
 #endif
 
-#ifdef SINIXZ
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
+
+#ifdef SINIXZ
 static int getpagesize() {return PAGESIZE;}
 #endif /* SINIXZ*/
 

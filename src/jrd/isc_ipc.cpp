@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.13 2002-07-02 09:49:19 dimitr Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.14 2002-07-06 05:31:56 skywalker Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -144,11 +144,15 @@ static int process_id = 0;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#if defined(NETBSD) || defined(SINIXZ)
+
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#else
+#endif
+
+#ifdef HAVE_SYS_SIGNAL_H
 #include <sys/signal.h>
 #endif
+
 #include <errno.h>
 #include <unistd.h>
 

@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.17 2002-07-05 15:00:17 skywalker Exp $
+$Id: dsql.cpp,v 1.18 2002-07-06 05:31:55 skywalker Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2252,7 +2252,12 @@ void DSQL_pretty(NOD node, int column)
 		if (string)
 			PRINTF("%s.", string->str_data);
 		string = (STR) node->nod_arg[e_fln_name];
-		PRINTF("%s\"\n", string->str_data);
+        if (string != 0) {
+            PRINTF("%s\"\n", string);
+        }
+        else {
+            PRINTF("%s\"\n","*");
+        }
 		FREE_MEM_RETURN;
 
 	case nod_map:
@@ -2279,7 +2284,10 @@ void DSQL_pretty(NOD node, int column)
 
 	case nod_variable:
 		variable = (VAR) node->nod_arg[e_var_variable];
-		PRINTF("%svariable %s %d\n", buffer, variable->var_name);
+        // Adding variable->var_variable_number to display, obviously something
+        // is missing from the printf, and Im assuming this was it.
+        // (anyway can't be worse than it was MOD 05-July-2002.
+		PRINTF("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
 		FREE_MEM_RETURN;
 
 	case nod_var_name:

@@ -56,18 +56,24 @@
 #ifdef _AIX
 #include <sys/select.h>
 #endif
+
 #ifndef VMS
 #ifdef WIN_NT
 #include <io.h>
-#else
-#include <sys/ioctl.h>
-#include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
 #endif
 #endif	// !VMS
 
-#ifndef WIN_NT
+
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
+
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 

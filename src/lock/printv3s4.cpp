@@ -238,7 +238,7 @@ V3_lock_print(argc, argv)
 }
 
 
-static prt_history(history_header, title)
+static void prt_history(history_header, title)
 	 PTR history_header;
 	 char *title;
 {
@@ -269,7 +269,7 @@ static prt_history(history_header, title)
 }
 
 
-static prt_lock(lock)
+static void prt_lock(lock)
 	 LBL lock;
 {
 /**************************************
@@ -323,7 +323,7 @@ static prt_lock(lock)
 }
 
 
-static prt_process(process)
+static void prt_process(process)
 	 PRB process;
 {
 /**************************************
@@ -353,7 +353,7 @@ static prt_process(process)
 }
 
 
-static prt_request(request)
+static void prt_request(request)
 	 LRQ request;
 {
 /**************************************
@@ -377,7 +377,7 @@ static prt_request(request)
 }
 
 
-static prt_que(string, que)
+static void prt_que(string, que)
 	 UCHAR *string;
 	 SRQ que;
 {

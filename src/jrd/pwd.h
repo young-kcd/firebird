@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.h,v 1.3 2001-12-24 02:50:52 tamlin Exp $
+$Id: pwd.h,v 1.4 2002-07-06 05:31:56 skywalker Exp $
 */
 
 #ifndef _JRD_PWD_H_
@@ -41,6 +41,10 @@ $Id: pwd.h,v 1.3 2001-12-24 02:50:52 tamlin Exp $
 
 #ifdef NETWARE_386
 #define USER_INFO_NAME	"SYS:/INTERBAS/ISC4.GDB"
+#endif
+
+#ifdef SINIXZ
+#define USER_INFO_NAME	"isc4.gdb"
 #endif
 
 #ifdef LINUX

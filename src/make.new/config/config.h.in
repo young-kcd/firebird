@@ -31,6 +31,7 @@
 #undef HAVE_SYS_TYPES_H
 #undef HAVE_SYS_STAT_H
 #undef HAVE_SYS_UIO_H
+#undef HAVE_SYS_IOCTL_H
 #undef HAVE_SYS_WAIT_H
 #undef HAVE_SYS_TIME_H
 #undef HAVE_SYS_TIMEB_H

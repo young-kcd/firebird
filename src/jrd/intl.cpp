@@ -1121,9 +1121,7 @@ TextType *DLL_EXPORT INTL_texttype_lookup(
 	return (cs_object);
 }
 
-void DLL_EXPORT INTL_pad_spaces(
-								TDBB tdbb,
-								DSC * type, UCHAR * string, USHORT length)
+void DLL_EXPORT INTL_pad_spaces(TDBB tdbb, DSC * type, UCHAR * string, USHORT length)
 {
 /**************************************
  *

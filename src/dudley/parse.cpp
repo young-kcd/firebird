@@ -92,8 +92,8 @@ static void define_relation(void);
 static void define_security_class(void);
 static void define_shadow(void);
 static void define_trigger(void);
-static ACT define_type(void);
-static ACT define_view(void);
+static void define_type(void);
+static void define_view(void);
 static void drop_filter(void);
 static void drop_function(void);
 static void drop_gfield(void);
@@ -1490,7 +1490,7 @@ static void define_trigger(void)
 }
 
 
-static ACT define_type(void)
+static void define_type(void)
 {
 /**************************************
  *
@@ -1522,11 +1522,10 @@ static ACT define_type(void)
 	}
 
 	parse_end();
-	return 0;
 }
 
 
-static ACT define_view(void)
+static void define_view(void)
 {
 /**************************************
  *
@@ -1671,7 +1670,6 @@ static ACT define_view(void)
 	HSH_insert(relation->rel_name);
 	relation->rel_flags &= ~rel_marked_for_delete;
 	relation->rel_flags |= rel_marked_for_creation;
-	return 0;
 }
 
 

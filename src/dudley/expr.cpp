@@ -44,7 +44,7 @@ static NOD parse_from(USHORT *, USHORT *);
 static NOD parse_function(void);
 static NOD parse_gen_id(void);
 static CON parse_literal(void);
-static int parse_matching_paren(void);
+static void parse_matching_paren(void);
 static NOD parse_multiply(USHORT *, USHORT *);
 static NOD parse_not(USHORT *);
 static NOD parse_primitive_value(USHORT *, USHORT *);
@@ -52,7 +52,7 @@ static CTX parse_relation(void);
 static NOD parse_relational(USHORT *);
 static NOD parse_sort(void);
 static NOD parse_statistical(void);
-static int parse_terminating_parens(USHORT *, USHORT *);
+static void parse_terminating_parens(USHORT *, USHORT *);
 
 static struct nod_types {
 	enum kwwords nod_t_keyword;
@@ -692,7 +692,7 @@ static CON parse_literal(void)
 }
 
 
-static int parse_matching_paren(void)
+static void parse_matching_paren(void)
 {
 /**************************************
  *
@@ -707,7 +707,6 @@ static int parse_matching_paren(void)
 
 	if (!MATCH(KW_RIGHT_PAREN))
 		PARSE_error(243, DDL_token.tok_string, NULL);	/* msg 243: expected right parenthesis, encountered \"%s\" */
-	return 0;
 }
 
 
@@ -1139,9 +1138,8 @@ static NOD parse_statistical(void)
 }
 
 
-static int parse_terminating_parens(
-									USHORT * paren_count,
-									USHORT * local_count)
+static void parse_terminating_parens(USHORT * paren_count,
+                                     USHORT * local_count)
 {
 /**************************************
  *
@@ -1158,5 +1156,4 @@ static int parse_terminating_parens(
 		do
 			parse_matching_paren();
 		while (--(*paren_count));
-	return 0;
 }

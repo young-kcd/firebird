@@ -262,7 +262,8 @@ static const TEXT *const impl_implementation[] = {
     "Firebird/linux Intel",	/* 60 */
     "Firebird/FreeBSD/i386",	/* 61 */
     "Firebird/NetBSD/i386",	/* 62 */
-    "Firebird/Darwin/PowerPC"	/* 63 */
+    "Firebird/Darwin/PowerPC",	/* 63 */
+    "Firebird/SINIX-Z"	/* 64 */
 };
 
 

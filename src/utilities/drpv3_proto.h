@@ -24,6 +24,6 @@
 #ifndef _UTILITIES_DRPV3_PROTO_H_
 #define _UTILITIES_DRPV3_PROTO_H_
 
-extern int	V3_drop ( int, UCHAR**);
+extern void V3_drop( int, UCHAR**);
 
 #endif /* _UTILITIES_DRPV3_PROTO_H_ */

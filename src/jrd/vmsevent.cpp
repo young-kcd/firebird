@@ -165,7 +165,7 @@ SLONG EVENT_create_session(STATUS status_vector)
 }
 
 
-int EVENT_delete_session(SLONG session_id)
+void EVENT_delete_session(SLONG session_id)
 {
 /**************************************
  *

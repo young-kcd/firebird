@@ -136,7 +136,7 @@ NOD MAKE_constant(STR constant, int numeric_flag)
 
 		while (isdigit(*p))
 			value = 10 * value + (*(p++) - '0');
-		if (*p++ = '.') {
+		if (*p++ == '.') {
 			while (isdigit(*p)) {
 				value = 10 * value + (*p++ - '0');
 				node->nod_desc.dsc_scale--;
@@ -839,7 +839,8 @@ void MAKE_desc( DSC * desc, NOD node)
 	case nod_dbkey:
 		/* Fix for bug 10072 check that the target is a relation */
 		context = (CTX) node->nod_arg[0]->nod_arg[0];
-		if (relation = context->ctx_relation) {
+        relation = context->ctx_relation;
+		if (relation != 0) {
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_length = relation->rel_dbkey_length;
 			desc->dsc_flags = 0;
@@ -1176,7 +1177,8 @@ PAR MAKE_parameter(MSG message, USHORT sqlda_flag, USHORT null_flag)
 
 	parameter = new(*tdsql->tsql_default) par;
 	parameter->par_message = message;
-	if (parameter->par_next = message->msg_parameters)
+    parameter->par_next = message->msg_parameters;
+	if (parameter->par_next != 0)
 		parameter->par_next->par_ordered = parameter;
 	else
 		message->msg_par_ordered = parameter;

@@ -31,7 +31,9 @@ extern "C" {
 #endif
 
 extern void CPR_abort(void);
+#ifdef DEV_BUILD
 extern void CPR_assert(TEXT *, int);
+#endif
 extern void CPR_bugcheck(TEXT *);
 extern void CPR_end_text(TXT);
 extern int CPR_error(TEXT *);

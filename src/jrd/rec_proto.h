@@ -28,6 +28,6 @@ extern void REC_recover(TEXT *, TEXT *, struct ctrl_pt *, struct sbm **,
 						USHORT);
 extern void REC_recover_page(TEXT *, TEXT *, struct ctrl_pt *, SLONG,
 							 struct pag *);
-extern int REC_update_next_transid(void);
+extern void REC_update_next_transid(void);
 
 #endif /* _JRD_REC_PROTO_H_ */

@@ -1533,6 +1533,10 @@ static BOOLEAN aggregate_in_list (NOD sub, BOOLEAN *field, NOD list)
         else 
             return FALSE;
         
+    case nod_via:
+		/* Allow sub-selects - no validation in context of group by */
+		return TRUE;
+
     default:
         return FALSE;
     }
@@ -1917,7 +1921,7 @@ static void field_error( TEXT * qualifier_name, TEXT * field_name, NOD flawed_no
     TEXT field_string [64], linecol [64];
 
 	if (qualifier_name) {
-		sprintf(field_string, "%s.%s", qualifier_name,
+		sprintf(field_string, "%.31s.%.31s", qualifier_name,
 				field_name ? field_name : "*");
 		field_name = field_string;
 	}
@@ -3300,8 +3304,30 @@ static NOD pass1_insert( REQ request, NOD input)
 
 /* If there isn't a field list, generate one */
 
-	if (fields = input->nod_arg[e_ins_fields])
+	if (fields = input->nod_arg[e_ins_fields]) {
 		fields = PASS1_node(request, fields, 0);
+        /* begin IBO hack */
+        for (ptr = fields->nod_arg, end = ptr + fields->nod_count; ptr < end; ptr++) {
+            CTX tmp_ctx = 0;
+            DEV_BLKCHK (*ptr, dsql_type_nod);
+            temp = *ptr;
+            if (temp->nod_type == nod_field &&
+                (tmp_ctx = (CTX) temp->nod_arg [e_fld_context]) != 0 &&
+                tmp_ctx->ctx_relation &&
+                strcmp (tmp_ctx->ctx_relation->rel_name, relation->rel_name)) {
+
+                DSQL_REL bad_rel = tmp_ctx->ctx_relation;
+                FLD bad_fld = (FLD) temp->nod_arg [e_fld_field];
+                // At this time, "fields" has been replaced by the processed list in
+                // the same variable, so we refer again to input->nod_arg [e_ins_fields].
+
+                field_error (bad_rel ? (TEXT *) bad_rel->rel_name : (TEXT *) NULL_PTR,
+                             bad_fld ? (TEXT *) bad_fld->fld_name : (TEXT *) NULL_PTR,
+                             input->nod_arg [e_ins_fields]->nod_arg [ptr - fields->nod_arg]);
+            }
+        }
+        /* end IBO hack */
+    }
 	else {
         /* CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list. */
 		stack = NULL;

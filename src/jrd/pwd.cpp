@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.4 2001-12-24 02:50:52 tamlin Exp $
+$Id: pwd.cpp,v 1.5 2002-07-06 05:31:56 skywalker Exp $
 */
 
 #include "firebird.h"
@@ -125,7 +125,7 @@ void PWD_get_user_dbpath(TEXT* path_buffer)
  **************************************/
 
 #pragma FB_COMPILER_MESSAGE("TMN: What wierdness is this?")
-#if (defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined SUPERSERVER || defined AIX_PPC || defined DARWIN )
+#if (defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined SUPERSERVER || defined AIX_PPC || defined DARWIN || defined SINIXZ )
 	gds__prefix(path_buffer, USER_INFO_NAME);
 #else
 	strcpy(path_buffer, USER_INFO_NAME);

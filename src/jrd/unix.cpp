@@ -29,8 +29,8 @@
 #endif
 
 #include "firebird.h"
-#include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
+#include "../jrd/ib_stdio.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -38,10 +38,6 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <string.h>
-
-#if !(defined SEEK_END && defined F_OK)
-#include <unistd.h>
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1080,11 +1076,12 @@ static BOOLEAN unix_error(
 				 operation, gds_arg_unix, errno, 0);
 
 
-    // Added a TRUE for final return - which seems to be the answer, 
+    // Added a FALSE for final return - which seems to be the answer, 
     // but is better than what it was which was nothing ie random 
+    // Most usages within here want it to return a failure.
     // MOD 01-July-2002
 
-    return TRUE;
+    return FALSE;
 }
 
 #if ((defined PREAD_PWRITE) && !(defined SOLARIS_MT || defined LINUX))

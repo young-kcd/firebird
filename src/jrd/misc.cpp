@@ -64,7 +64,7 @@ SSHORT MISC_build_parameters_block(UCHAR * buffer, ...)
    pop the arguments off the call stack and put
    them into the passed buffer */
 
-	while (arg_type = va_arg(ptr, int))
+	while (arg_type = (SCHAR) va_arg(ptr, int)) {
 		switch (arg_type) {
 		case dtype_byte:		/* byte */
 			ch = (SCHAR) va_arg(ptr, int);
@@ -93,6 +93,7 @@ SSHORT MISC_build_parameters_block(UCHAR * buffer, ...)
 			STUFF_BYTES(p, q, sh);
 			break;
 		}
+    }
 
 	va_end(ptr);
 

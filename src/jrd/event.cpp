@@ -199,7 +199,7 @@ USHORT MATCHESNAME(TEXT	* p1, SSHORT l1_bytes, TEXT	* p2, SSHORT l2_bytes)
 #endif /* EVENTS_WILDCARDING */
 
 
-int EVENT_cancel(SLONG request_id)
+void EVENT_cancel(SLONG request_id)
 {
 /**************************************
  *
@@ -217,7 +217,7 @@ int EVENT_cancel(SLONG request_id)
 	SRQ *que, *que2;
 
 	if (!EVENT_header)
-		return 0;
+		return;
 
 	ACQUIRE;
 
@@ -230,13 +230,12 @@ int EVENT_cancel(SLONG request_id)
 			if (request->req_request_id == request_id) {
 				delete_request(request);
 				RELEASE;
-				return 0;
+				return;
 			}
 		}
 	}
 
 	RELEASE;
-	return 0;
 }
 
 
@@ -282,7 +281,7 @@ SLONG EVENT_create_session(STATUS * status_vector)
 }
 
 
-int EVENT_delete_session(SLONG session_id)
+void EVENT_delete_session(SLONG session_id)
 {
 /**************************************
  *
@@ -296,12 +295,11 @@ int EVENT_delete_session(SLONG session_id)
  **************************************/
 
 	if (!EVENT_header)
-		return 0;
+		return;
 
 	ACQUIRE;
 	delete_session(session_id);
 	RELEASE;
-	return 0;
 }
 
 

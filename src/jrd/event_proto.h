@@ -31,9 +31,9 @@
 extern "C" {
 #endif
 
-int EVENT_cancel(SLONG);
+void EVENT_cancel(SLONG);
 SLONG EVENT_create_session(STATUS *);
-int EVENT_delete_session(SLONG);
+void EVENT_delete_session(SLONG);
 struct evh *EVENT_init(STATUS *, USHORT);
 int EVENT_post(STATUS *, USHORT, TEXT *, USHORT, TEXT *, USHORT);
 #ifdef EVENTS_WILDCARDING

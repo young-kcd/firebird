@@ -1453,6 +1453,8 @@ static bool_t xdr_semi_opaque( XDR * xdrs, MSG message, FMT format)
 	case XDR_FREE:
 		return TRUE;
 	}
+
+    return FALSE;
 }
 #endif
 
@@ -1698,7 +1700,8 @@ static bool_t xdr_sql_blr(
 	if (!(statement->rsr_format = *fmt_ptr))
 		return TRUE;
 
-	if (!(message = statement->rsr_buffer) ||
+    message = statement->rsr_buffer;
+	if (!(message != 0) ||
 		statement->rsr_format->fmt_length > statement->rsr_fmt_length) {
 		REMOTE_release_messages(message);
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;

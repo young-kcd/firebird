@@ -96,7 +96,7 @@ static void		put_asciz(SCHAR, SCHAR*);
 static void		put_numeric(SCHAR, int);
 static BOOLEAN	read_header(DESC, ULONG*, USHORT*, USHORT);
 static BOOLEAN	write_header(DESC, ULONG, USHORT);
-static void*	next_volume(DESC, int, USHORT);
+static DESC	 next_volume(DESC, int, USHORT);
 
 
 //____________________________________________________________
@@ -263,7 +263,7 @@ void MVOL_init_write(UCHAR*		database_name,
 			BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
 			/* msg 269 can't write a header record to file %s */
 		}
-		tdgbl->file_desc = (DESC) next_volume(tdgbl->file_desc, MODE_WRITE, FALSE);
+		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, FALSE);
 	}
 
 	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
@@ -299,7 +299,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (!tdgbl->mvol_io_cnt || errno == EIO)
 			{
-				tdgbl->file_desc = (DESC) next_volume(tdgbl->file_desc, MODE_READ, FALSE);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, FALSE);
 				if (tdgbl->mvol_io_cnt > 0)
 				{
 					break;
@@ -679,7 +679,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				else
 					full_buffer = FALSE;
 				tdgbl->file_desc =
-					(DESC) next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
+					next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
 				if (full_buffer)
 				{
 					left -= tdgbl->mvol_io_buffer_size;
@@ -863,7 +863,7 @@ static int get_text(UCHAR* text, SSHORT length)
 // Get specification for the next volume (tape).
 // Try to open it. Return file descriptor.
 //
-static void* next_volume( DESC handle, int mode, USHORT full_buffer)
+static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
 {
 	SCHAR new_file[MAX_FILE_NAME_LENGTH];
 	DESC new_desc;
@@ -891,7 +891,7 @@ static void* next_volume( DESC handle, int mode, USHORT full_buffer)
 			(tdgbl->action->act_file = tdgbl->action->act_file->fil_next) &&
 			(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE))
 		{
-			return (void*) tdgbl->action->act_file->fil_fd;
+			return tdgbl->action->act_file->fil_fd;
 		}
 
 		BURP_error_redirect(0, 50, NULL, NULL);	/* msg 50 unexpected end of file on backup file */
@@ -972,7 +972,7 @@ static void* next_volume( DESC handle, int mode, USHORT full_buffer)
 		}
 
 		strcpy(tdgbl->mvol_old_file, new_file);
-		return reinterpret_cast<void*>(new_desc);
+		return new_desc;
 	}
 }
 

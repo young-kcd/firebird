@@ -82,7 +82,7 @@ typedef struct itm {
 
 /* Unix/NFS specific stuff */
 
-#if (defined NFS || defined FREEBSD || defined NETBSD)
+#if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 #include <pwd.h>
 #define MAXPATHLEN	1024
 #endif
@@ -759,7 +759,7 @@ BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT * file_name,
 }
 
 
-#if (defined NFS || defined FREEBSD || defined NETBSD)
+#if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 int ISC_expand_filename(TEXT * from_buff, USHORT length, TEXT * to_buff)
 {
 /**************************************
@@ -1488,7 +1488,7 @@ int ISC_strip_extension(TEXT * file_name)
 #endif
 
 
-#if (defined NFS || defined FREEBSD || defined NETBSD)
+#if (defined NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 {
 /**************************************

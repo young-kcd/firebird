@@ -47,13 +47,13 @@
 #define FTOK_KEY		15
 
 static long get_key();
-static int dummy_init();
-static int get_lock_header();
+static void dummy_init();
+static void get_lock_header();
 static int sem_exclusive(long , int );
 #ifndef MMAP_SUPPORTED
-static int remove_resource(int , TEXT *, int, int , TEXT *);
+static void remove_resource(int , TEXT *, int, int , TEXT *);
 #else
-static int remove_resource(int, TEXT *,int ,int ,TEXT *);
+static void remove_resource(int, TEXT *,int ,int ,TEXT *);
 #endif
 
 static int LOCK_shm_size, LOCK_sem_key, LOCK_blk_signal, LOCK_sem_count;
@@ -73,7 +73,7 @@ static struct {
 };
 
 
-int V3_drop(int argc, UCHAR **argv)
+void V3_drop(int argc, UCHAR **argv)
 {
 /**************************************
  *
@@ -144,7 +144,7 @@ int V3_drop(int argc, UCHAR **argv)
 }
 
 
-static int dummy_init()
+static void dummy_init()
 {
 /**************************************
  *
@@ -186,7 +186,7 @@ static long get_key(TEXT *filename)
 }
 
 
-static int get_lock_header()
+static void get_lock_header()
 {
 /*************************************
  *
@@ -230,7 +230,7 @@ static int get_lock_header()
 
 
 #ifndef MMAP_SUPPORTED
-static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
+static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
                int sem_count, TEXT *label)
 {
 /**************************************
@@ -297,7 +297,7 @@ static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
 
 
 #ifdef MMAP_SUPPORTED
-static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
+static void remove_resource(int lock_flag, TEXT *filename, int shm_length,
               int sem_count, TEXT *label)
 {
 /**************************************
@@ -325,7 +325,7 @@ static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
 #endif
 	if (stat(expanded_filename, &stat_buf) == -1) {
 		ib_printf("\n***No bridge %s file found.\n", label);
-		return 0;
+		return;
 	}
 
 #ifdef SUN_V3_LOCK_MANAGER
@@ -336,13 +336,13 @@ static int remove_resource(int lock_flag, TEXT *filename, int shm_length,
 	if ((key = get_key(filename)) == -1) {
 		ib_printf("\n***Unable to get the key value of the bridge %s file.\n",
 				  label);
-		return 0;
+		return;
 	}
 
 	if ((semid = sem_exclusive(key, sem_count)) == -1) {
 		ib_printf("\n***Semaphores for bridge %s are currently in use.\n",
 				  label);
-		return 0;
+		return;
 	}
 
 	#ifdef DARWIN

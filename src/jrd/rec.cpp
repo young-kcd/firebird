@@ -135,7 +135,7 @@ void REC_recover_page(
 }
 
 
-int REC_update_next_transid(void)
+void REC_update_next_transid(void)
 {
 /**************************************
  *
@@ -161,7 +161,6 @@ int REC_update_next_transid(void)
 	hdr->hdr_next_transaction = hdr->hdr_bumped_transaction;
 	CCH_RELEASE(tdbb, &window);
 
-	return SUCCESS;
 }
 
 

@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2002.04.16  Paul Beach - HP10 Define changed from -4 to (-4) to make it
+ *             compatible with the HP Compiler
  */
 
 #ifndef JRD_DSC_H

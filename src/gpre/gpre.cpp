@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.10 2002-06-29 16:50:34 skywalker Exp $
+//  $Id: gpre.cpp,v 1.11 2002-07-06 05:31:56 skywalker Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -35,10 +35,12 @@
 //  
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //  
+//  FSG (Frank Schlottmann-Gödde) 8.Mar.2002 - tiny cobol support
+//       fixed Bug No. 526204 
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.10 2002-06-29 16:50:34 skywalker Exp $
+//	$Id: gpre.cpp,v 1.11 2002-07-06 05:31:56 skywalker Exp $
 //
 
 #define GPRE_MAIN
@@ -792,8 +794,10 @@ int main(int argc, char* argv[])
 			count_name = "isc-count";
 			slack_name = "isc-slack";
 		}
-		else
-			comment_start = "*      ";
+        else { // just to be sure :-)
+            comment_start = "*      ";
+            transaction_name = "ISC_TRANS";
+        }
 
 	COB_name_init(sw_ansi);
 #endif

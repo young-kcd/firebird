@@ -966,9 +966,6 @@ UDF METD_get_function(REQ request, STR name)
             X.RDB$FUNCTION_NAME EQ name->str_data
             SORTED BY X.RDB$ARGUMENT_POSITION
 
-            /* AND
-               X.RDB$ARGUMENT_POSITION EQ return_arg */
-
             THREAD_ENTER;
 
             if (X.RDB$ARGUMENT_POSITION == return_arg) {
@@ -982,7 +979,12 @@ UDF METD_get_function(REQ request, STR name)
                 else {
                     udf_->udf_sub_type = 0;
                 }
-                udf_->udf_length = X.RDB$FIELD_LENGTH;
+                /* CVC: We are overcoming a bug in ddl.c:put_field()
+                   when any field is defined: the length is not given for blobs. */
+                if (X.RDB$FIELD_TYPE == blr_blob)
+                    udf_->udf_length = sizeof (ISC_QUAD);
+                else
+                    udf_->udf_length = X.RDB$FIELD_LENGTH;
                 
                 if (!X.RDB$CHARACTER_SET_ID.NULL) {
                     udf_->udf_character_set_id = X.RDB$CHARACTER_SET_ID;

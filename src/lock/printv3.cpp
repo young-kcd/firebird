@@ -63,13 +63,13 @@ static struct {
 } LOCK_hdrtbl[] = {
 "SHMSIZE", &LOCK_shm_size, NULL, NULL};
 
-static int prt_lock_init();
-static int get_lock_header();
-static int prt_history(PTR, char *);
-static int prt_lock(LBL );
-static int prt_process(PRB );
-static int prt_request(LRQ );
-static int prt_que(UCHAR *, SRQ );
+static void prt_lock_init();
+static void get_lock_header();
+static void prt_history(PTR, char *);
+static void prt_lock(LBL );
+static void prt_process(PRB );
+static void prt_request(LRQ );
+static void prt_que(UCHAR *, SRQ );
 
 static TEXT *history_names[] = {
 	"n/a", "ENQ", "DEQ", "CONVERT", "SIGNAL", "POST", "WAIT",
@@ -277,7 +277,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 }
 
 
-static int get_lock_header()
+static void get_lock_header()
 {
 /*************************************
  *
@@ -309,7 +309,7 @@ static int get_lock_header()
 }
 
 
-static int prt_lock_init()
+static void prt_lock_init()
 {
 /**************************************
  *
@@ -325,7 +325,7 @@ static int prt_lock_init()
 }
 
 
-static int prt_history(PTR history_header, char *title)
+static void prt_history(PTR history_header, char *title)
 {
 /**************************************
  *
@@ -354,7 +354,7 @@ static int prt_history(PTR history_header, char *title)
 }
 
 
-static int prt_lock(LBL lock)
+static void prt_lock(LBL lock)
 {
 /**************************************
  *
@@ -372,7 +372,7 @@ static int prt_lock(LBL lock)
 	LRQ request;
 
 	if (sw_series && lock->lbl_series != sw_series)
-		return 0;
+		return;
 
 	if (LOCK_header->lhb_version >= LHB_VERSION7)
 		q = lock->lbl_key7;
@@ -424,7 +424,7 @@ static int prt_lock(LBL lock)
 }
 
 
-static int prt_process(PRB process)
+static void prt_process(PRB process)
 {
 /**************************************
  *
@@ -456,7 +456,7 @@ static int prt_process(PRB process)
 }
 
 
-static int prt_request(LRQ request)
+static void prt_request(LRQ request)
 {
 /**************************************
  *
@@ -479,7 +479,7 @@ static int prt_request(LRQ request)
 }
 
 
-static int prt_que(UCHAR *string, SRQ que)
+static void prt_que(UCHAR *string, SRQ que)
 {
 /**************************************
  *
@@ -498,7 +498,7 @@ static int prt_que(UCHAR *string, SRQ que)
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		ib_printf("%s: *empty*\n", string);
-		return 0;
+		return;
 	}
 
 	count = 0;

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: thd.h,v 1.4 2002-07-01 15:07:18 skywalker Exp $
+$Id: thd.h,v 1.5 2002-07-06 05:31:56 skywalker Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -43,7 +43,8 @@ $Id: thd.h,v 1.4 2002-07-01 15:07:18 skywalker Exp $
 #endif
 #endif
 
-#if (defined(HP10) && defined(SUPERSERVER))
+/* RITTER - changed HP10 to HPUX in the line below */
+#if (defined(HPUX) && defined(SUPERSERVER))
 #define POSIX_THREADS		1
 #define MULTI_THREAD		1
 #endif
