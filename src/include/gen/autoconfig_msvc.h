@@ -225,6 +225,9 @@
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
 
+/* Windows platforms support threads */
+#define HAVE_MULTI_THREAD 1
+
 /* CPU types */
 #undef PowerPC
 #undef sparc

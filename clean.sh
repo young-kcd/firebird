@@ -6,29 +6,34 @@ rm -Rf temp 2>/dev/null
 
 echo Removing files in this directory
 
-rm aclocal.m4 2>/dev/null
+rm -f aclocal.m4 2>/dev/null
 rm config.log 2>/dev/null
 rm config.status 2>/dev/null
 rm configure 2>/dev/null
 rm libtool 2>/dev/null
-rm Makefile 2>/dev/null
+rm -f Makefile 2>/dev/null
 
 echo Removing files in builds directory
 
-rm builds/make.new/config/config.guess 2>/dev/null
-rm builds/make.new/config/config.sub 2>/dev/null
-rm builds/make.new/config/ltmain.sh 2>/dev/null
+rm -f builds/make.new/config/config.guess 2>/dev/null
+rm -f builds/make.new/config/config.sub 2>/dev/null
+rm -f builds/make.new/config/ltmain.sh 2>/dev/null
+rm -f builds/make.new/config/ltconfig 2>/dev/null
+rm -f builds/make.new/config/ltcf-c.sh 2>/dev/null
+rm -f builds/make.new/config/ltcf-cxx.sh 2>/dev/null
+rm -f builds/make.new/config/config.h.in 2>/dev/null
 
 echo Removing files in src directory
 
 rm src/include/gen/autoconfig.h 2>/dev/null
 rm src/include/gen/blrtable.h 2>/dev/null
-rm src/v5_examples/Makefile 2>/dev/null
+rm -f src/v5_examples/Makefile 2>/dev/null
 
 # Cpp from epp files
 rm src/alice/alice_meta.cpp 2>/dev/null
 rm src/burp/backup.cpp 2>/dev/null
 rm src/burp/restore.cpp 2>/dev/null
+rm src/dsql/dsql.tab.c 2>/dev/null
 rm src/dsql/array.cpp 2>/dev/null
 rm src/dsql/blob.cpp 2>/dev/null
 rm src/dsql/metd.cpp 2>/dev/null

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.116 2004-05-18 23:38:37 brodsom Exp $
+$Id: common.h,v 1.117 2004-05-20 23:04:44 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -341,10 +341,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
-#define MEMMOVE(from,to,length)     memmove ((void *)to, (void *)from, (size_t) length)
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from,to,length)     memmove ((void *)(to), (void *)(from), (size_t) length)
+#define MOVE_FAST(from,to,length)       memcpy ((to), (from), (int) (length))
+#define MOVE_FASTER(from,to,length)     memcpy ((to), (from), (int) (length))
+#define MOVE_CLEAR(to,length)           memset ((to), 0, (int) (length))
 
 #endif /* NETBSD */
 

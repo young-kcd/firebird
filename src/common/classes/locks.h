@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.13 2004-05-02 23:03:47 skidder Exp $
+ *  $Id: locks.h,v 1.14 2004-05-20 23:04:30 skidder Exp $
  *
  */
 
@@ -90,7 +90,7 @@ public:
 
 /* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
-#if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD)
+#if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD) && !defined(NETBSD)
 class Mutex {
 private:
 	pthread_spinlock_t spinlock;
@@ -137,7 +137,7 @@ public:
 			system_call_failed::raise("mutex_unlock");
 	}
 };
-#else  // DARWIN and FREEBSD
+#else  // DARWIN and FREEBSD and NETBSD
 class Mutex {
 private:
 	pthread_mutex_t mlock;

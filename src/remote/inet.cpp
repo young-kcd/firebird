@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.110 2004-05-18 22:01:52 brodsom Exp $
+$Id: inet.cpp,v 1.111 2004-05-20 23:05:02 skidder Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -2237,14 +2237,12 @@ static int parse_line(
 /* if we don't have a host_name match, don't bother */
 
 	if (strcmp(entry1, host_name))
-#ifdef UNIX
-#if !(defined SINIXZ)
+#if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
 		if (entry1[1] == '@') {
 			if (!innetgr(&entry1[2], host_name, 0, 0))
 				return -1;
 		}
 		else
-#endif
 #endif
 			return -1;
 
@@ -2266,8 +2264,7 @@ static int parse_line(
 
 /* if they're in the user group: + they're in, - they're out */
 
-#ifdef UNIX
-#if !(defined SINIXZ)
+#if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
 	if (entry2[1] == '@') {
 		if (innetgr(&entry2[2], 0, user_name, 0)) {
 			if (entry2[0] == '+')
@@ -2283,7 +2280,6 @@ static int parse_line(
 				return TRUE;
 		}
 	}
-#endif
 #endif
 
 /* if we get here - we matched machine but not user - maybe next line ... */

@@ -70,7 +70,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #else
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
 #endif
-#ifdef SINIXZ
+#if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 32},			// semaphores
