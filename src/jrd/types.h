@@ -40,7 +40,7 @@ TYPE("TEXT", blr_text, nam_f_type)
 	TYPE("TIME", blr_sql_time, nam_f_type)
     TYPE ("INT64", blr_int64, nam_f_type)
 
-
+	TYPE("BINARY", 0, nam_f_sub_type)
 	TYPE("TEXT", 1, nam_f_sub_type)
 	TYPE("BLR", 2, nam_f_sub_type)
 	TYPE("ACL", 3, nam_f_sub_type)
@@ -58,6 +58,7 @@ TYPE("TEXT", blr_text, nam_f_type)
 	TYPE("BY_VMS_DESCRIPTOR", 2, nam_mechanism)
 	TYPE("BY_ISC_DESCRIPTOR", 3, nam_mechanism)
 	TYPE("BY_SCALAR_ARRAY_DESCRIPTOR", 4, nam_mechanism)
+	TYPE("BY_REFERENCE_WITH_NULL", 5, nam_mechanism)
 
 	TYPE("PRE_STORE", 1, nam_trg_type)
 	TYPE("POST_STORE", 2, nam_trg_type)
