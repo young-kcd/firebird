@@ -409,6 +409,15 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			 || transaction->tra_deferred_work))
 	{
 		transaction->tra_flags &= ~TRA_prepared;
+		// Get rid of all user savepoints
+		while (transaction->tra_save_point && 
+			transaction->tra_save_point->sav_flags & SAV_user) 
+		{
+			Savepoint* const next = transaction->tra_save_point->sav_next;
+			transaction->tra_save_point->sav_next = NULL;
+			VIO_verb_cleanup(tdbb, transaction);
+			transaction->tra_save_point = next;				
+		}
 		return;
 	}
 
