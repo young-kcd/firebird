@@ -1,3 +1,57 @@
+2003-10-13 14:55  dimitr
+
+	* firebird2/src/dsql/: pass1.cpp, pass1.cpp:
+	
+	Fixed server crash with explicit plans used in subqueries, when
+	outer aggregation is performed.
+
+2003-10-12 16:21  skidder
+
+	* firebird2/src/jrd/: common.h, common.h:
+	
+	Fix comment, noted by Claudio
+
+2003-10-12 15:17  epocman
+
+	* firebird2/doc/: install_win32.txt, install_win32.txt:
+	
+	[no log message]
+
+2003-10-12 14:02  epocman
+
+	* firebird2/doc/: install_win32.txt, install_win32.txt:
+	
+	[no log message]
+
+2003-10-12 13:54  epocman
+
+	* firebird2/doc/: README.instsvc, README.instsvc:
+	
+	[no log message]
+
+2003-10-12 13:48  epocman
+
+	* firebird2/src/utilities/install/: install_nt.h, registry.cpp,
+	registry.h:
+	
+	Win32 HKLM and service name change as per recent discussion in
+	fbdevel. Added more complete cleanup of registry keys when 'instreg
+	remove'.
+
+2003-10-12 12:40  epocman
+
+	* firebird2/src/utilities/install_nt.h:
+	
+	Win32 HKLM name change as per recent discussion in fbdevel.
+
+2003-10-12 11:06  epocman
+
+	* firebird2/src/utilities/: registry.cpp, registry.h:
+	
+	Win32 HKLM name change as per recent discussion in fbdevel.  Nicer
+	cleanup of product and company level keys on instreg remove (when
+	they are empty).
+
 2003-10-11 10:12  paul_reeves
 
 	* firebird2/builds/win32/make_all.bat:
