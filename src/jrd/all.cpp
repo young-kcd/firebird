@@ -135,7 +135,7 @@ void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
 	DBB dbb = GET_DBB;
 	dbb::pool_vec_type::iterator itr =
 		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
-	if (itr) dbb->dbb_pools.erase(itr);
+	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
 	pool->lls_cache.~BlockCache<lls>();
 	MemoryPool::deletePool(pool);
 }
