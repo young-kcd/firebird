@@ -64,18 +64,21 @@ static ISC_STATUS stuff_args(gen_t*, SSHORT, ...);
 static ISC_STATUS stuff_literal(gen_t*, SLONG);
 static ISC_STATUS stuff_string(gen_t*, UCHAR, SCHAR *);
 
-/* stuff_sdl used in place of STUFF to avoid confusion with BLR STUFF
-   macro defined in dsql.h */
+// stuff_sdl used in place of STUFF to avoid confusion with BLR STUFF
+// macro defined in dsql.h
 
-static inline ISC_STATUS stuff_sdl(gen_t* gen, int byte){
+static inline ISC_STATUS stuff_sdl(gen_t* gen, int byte)
+{
 	return stuff_args(gen, 1, byte);
 }
 
-static inline ISC_STATUS stuff_sdl_word(gen_t* gen, int word){
+static inline ISC_STATUS stuff_sdl_word(gen_t* gen, int word)
+{
 	return stuff_args(gen, 2, word, word >> 8);
 }
 
-static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word){
+static inline ISC_STATUS stuff_sdl_long(gen_t* gen, int word)
+{
 	return stuff_args(gen, 4, word, word >> 8, word >> 16, word >> 24);
 }
 

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		ddl.c
+ *	MODULE:		ddl.cpp
  *	DESCRIPTION:	Utilities for generating ddl
  *
  * The contents of this file are subject to the Interbase Public
@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.67 2003-10-01 18:11:23 brodsom Exp $
+ * $Id: ddl.cpp,v 1.68 2003-10-05 06:33:54 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -393,7 +393,7 @@ bool DDL_ids(const dsql_req* request)
 //
 // Emit blr that describes a descriptor.
 // Note that this depends on the same stuff variant
-// as used in gen.c
+// as used in gen.cpp
 //
 void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, bool use_subtype)
 {
@@ -403,7 +403,7 @@ void DDL_put_field_dtype(DSQL_REQ request, const dsql_fld* field, bool use_subty
 
 //
 // See the next function for description. This is only a
-// wrapper that sets the last parameter to FALSE to indicate
+// wrapper that sets the last parameter to false to indicate
 // we are creating a field, not modifying one.
 //
 void DDL_resolve_intl_type(DSQL_REQ request, DSQL_FLD field, STR collation_name)
@@ -4017,7 +4017,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
     case nod_redef_relation:
 		stuff(request, gds_dyn_begin);
-		delete_relation_view(request, node, true); /* silent. */
+		delete_relation_view(request, node, true); // silent.
 		define_relation (request);
 		stuff(request, gds_dyn_end);
 		break;
@@ -4030,7 +4030,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
     case nod_redef_view:
 		stuff(request, gds_dyn_begin);
-		delete_relation_view(request, node, true); /* silent. */
+		delete_relation_view(request, node, true); // silent.
 		define_view(request, node->nod_type);
 		stuff(request, gds_dyn_end);
 		break;
@@ -4049,7 +4049,7 @@ static void generate_dyn( DSQL_REQ request, DSQL_NOD node)
 
     case nod_redef_procedure:
         stuff(request, gds_dyn_begin);
-        delete_procedure(request, node, true); /* silent. */
+        delete_procedure(request, node, true); // silent.
         define_procedure(request, node->nod_type);
         stuff(request, gds_dyn_end);
         break;

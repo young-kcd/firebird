@@ -87,10 +87,13 @@ public:
 };
 typedef dsql_lls* DLLS;
 
-inline void LLS_PUSH(blk* object, dsql_lls** stack){
+inline void LLS_PUSH(blk* object, dsql_lls** stack)
+{
 	DsqlMemoryPool::ALLD_push(object, stack);
 }
-inline blk* LLS_POP(dsql_lls** stack){
+
+inline blk* LLS_POP(dsql_lls** stack)
+{
 	return DsqlMemoryPool::ALLD_pop(stack);
 }
 
@@ -283,6 +286,7 @@ typedef udf* UDF;
 
 //! these values are multiplied by -1 to indicate that server frees them
 //! on return from the udf
+// CVC: this enum is an exact duplication of the enum found in jrd/val.h
 enum FUN_T
 {
 	FUN_value,
@@ -534,7 +538,7 @@ public:
 	USHORT	msg_parameter;		//!< Next parameter number
 	USHORT	msg_index;			//!< Next index into SQLDA
 };
-typedef dsql_msg *DSQL_MSG;
+typedef dsql_msg* DSQL_MSG;
 
 //! Parameter block used to describe a parameter of a message
 class par : public pool_alloc<dsql_type_par>

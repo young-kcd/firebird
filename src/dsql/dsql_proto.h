@@ -28,42 +28,42 @@
 extern "C" {
 #endif
 
-ISC_STATUS dsql8_allocate_statement(	ISC_STATUS*,
-													FRBRD **,
-													struct dsql_req **);
-ISC_STATUS dsql8_execute(ISC_STATUS *, FRBRD **, struct dsql_req**,
-									   USHORT, SCHAR *, USHORT, USHORT,
-									   SCHAR *, USHORT, SCHAR *, USHORT,
-									   USHORT, SCHAR *);
-ISC_STATUS dsql8_execute_immediate(ISC_STATUS *, FRBRD **, FRBRD **,
-												 USHORT, TEXT *, USHORT,
-												 USHORT, SCHAR *, USHORT,
-												 USHORT, SCHAR *, USHORT,
-												 SCHAR *, USHORT, USHORT,
-												 SCHAR *);
+ISC_STATUS dsql8_allocate_statement(ISC_STATUS*,
+													FRBRD**,
+													struct dsql_req**);
+ISC_STATUS dsql8_execute(ISC_STATUS*, FRBRD**, struct dsql_req**,
+									   USHORT, SCHAR*, USHORT, USHORT,
+									   SCHAR*, USHORT, SCHAR*, USHORT,
+									   USHORT, SCHAR*);
+ISC_STATUS dsql8_execute_immediate(ISC_STATUS*, FRBRD**, FRBRD**,
+												 USHORT, TEXT*, USHORT,
+												 USHORT, SCHAR*, USHORT,
+												 USHORT, SCHAR*, USHORT,
+												 SCHAR*, USHORT, USHORT,
+												 SCHAR*);
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
-									 USHORT, USHORT, SCHAR *, USHORT, SLONG);
+ISC_STATUS dsql8_fetch(ISC_STATUS*, struct dsql_req**, USHORT, SCHAR*,
+									 USHORT, USHORT, SCHAR*, USHORT, SLONG);
 #else
-ISC_STATUS dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
-									 USHORT, USHORT, SCHAR *);
+ISC_STATUS dsql8_fetch(ISC_STATUS*, struct dsql_req**, USHORT, SCHAR*,
+									 USHORT, USHORT, SCHAR*);
 #endif /* SCROLLABLE_CURSORS */
-ISC_STATUS dsql8_free_statement(ISC_STATUS *, struct dsql_req**,
+ISC_STATUS dsql8_free_statement(ISC_STATUS*, struct dsql_req**,
 											  USHORT);
-ISC_STATUS dsql8_insert(ISC_STATUS *, struct dsql_req**, USHORT,
-									  SCHAR *, USHORT, USHORT, SCHAR *);
-ISC_STATUS dsql8_prepare(ISC_STATUS *, FRBRD **, struct dsql_req**,
-									   USHORT, TEXT *, USHORT, USHORT,
-									   const SCHAR *, USHORT, SCHAR *);
-ISC_STATUS dsql8_set_cursor(ISC_STATUS *, struct dsql_req**, TEXT *,
+ISC_STATUS dsql8_insert(ISC_STATUS*, struct dsql_req**, USHORT,
+									  SCHAR*, USHORT, USHORT, SCHAR*);
+ISC_STATUS dsql8_prepare(ISC_STATUS*, FRBRD**, struct dsql_req**,
+									   USHORT, TEXT*, USHORT, USHORT,
+									   const SCHAR*, USHORT, SCHAR*);
+ISC_STATUS dsql8_set_cursor(ISC_STATUS*, struct dsql_req**, TEXT*,
 										  USHORT);
-ISC_STATUS dsql8_sql_info(ISC_STATUS *, struct dsql_req**, USHORT,
-										const SCHAR*, USHORT, SCHAR *);
+ISC_STATUS dsql8_sql_info(ISC_STATUS*, struct dsql_req**, USHORT,
+										const SCHAR*, USHORT, SCHAR*);
 
-ISC_STATUS callback_execute_immediate(ISC_STATUS *status,
+ISC_STATUS callback_execute_immediate(ISC_STATUS* status,
 									class att* jrd_attachment_handle,
 									class jrd_tra* jrd_transaction_handle,
-									TEXT *sql_operator, int len);
+									TEXT* sql_operator, int len);
 
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		dsql.c
+ *	MODULE:		dsql.cpp
  *	DESCRIPTION:	Local processing for External entry points.
  *
  * The contents of this file are subject to the Interbase Public

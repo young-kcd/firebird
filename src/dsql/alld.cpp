@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		all.c
+ *	MODULE:		all.cpp
  *	DESCRIPTION:	Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
