@@ -1,3 +1,54 @@
+2004-11-11 22:45  skidder
+
+	* firebird2/src/: common/fb_exception.cpp (1.15),
+	include/fb_exception.h (1.14):
+	
+	Commit change adding method used by ClumpletReader/ClumpletWriter
+
+2004-11-11 11:27  skidder
+
+	* firebird2/src/jrd/blp.h (1.14):
+	
+	Remove unneeded item as Claudio noted
+
+2004-11-11 11:21  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.123):
+	
+	Corrected typos pointed by Claudio
+
+2004-11-11 11:17  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.191):
+	
+	GC policy config entry don't need to be case-sensitive
+
+2004-11-11 06:37  skidder
+
+	* firebird2/src/: dsql/dsql.cpp (1.131), dsql/gen.cpp (1.76),
+	dsql/keywords.cpp (1.37), dsql/make.cpp (1.79), dsql/node.h (1.51),
+	dsql/parse.y (1.158), dsql/pass1.cpp (1.170), jrd/blp.h (1.13),
+	jrd/blr.h (1.17), jrd/cmp.cpp (1.159), jrd/constants.h (1.17),
+	jrd/evl.cpp (1.122), jrd/exe.h (1.59), jrd/jrd.cpp (1.190),
+	jrd/jrd.h (1.122), jrd/nod.h (1.13), jrd/opt.cpp (1.200),
+	jrd/par.cpp (1.107), misc/blrtable.cpp (1.16):
+	
+	CURRENT_DATABASE implementation. Established identity may also be
+	used for isc_info_db_id datum
+
+2004-11-11 05:57  skidder
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.4):
+	
+	long is 64-bit datatype, but here encoded as 32-bit value. correct
+	confusion
+
+2004-11-11 05:47  skidder
+
+	* firebird2/src/jrd/enc.cpp (1.22):
+	
+	Port ENC_crypt to 64 bits
+
 2004-11-11 02:34  skidder
 
 	* firebird2/src/utilities/gsec/call_service.cpp (1.3):
