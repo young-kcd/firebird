@@ -665,7 +665,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	file_length = strlen(file_name);
 	if (is_alias)
 	{
-		ISC_expand_filename(file_name_buffer, sizeof(file_name_buffer), temp_buffer);
+		ISC_expand_filename(file_name_buffer, 0, temp_buffer);
 		expanded_filename = temp_buffer;
 	}
 
