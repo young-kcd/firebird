@@ -4348,7 +4348,7 @@ static RSB gen_retrieval(TDBB     tdbb,
 								if (idx_tail->opt_match == node)
 									break;
 							}
-							if (idx_tail >= idx_end) {
+							if (idx_tail >= idx_end && !csb_tail->csb_plan) {
 								// Nevertheless we have a resulting count
 								// from match_index, still a node could not
 								// be assigned, because equal nodes are
