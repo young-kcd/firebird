@@ -299,7 +299,14 @@ int LCK_convert_non_blocking(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 	SCH_exit();
 #endif
 
-	result = CONVERT(lock, level, wait);
+	if (lock->lck_id == 0 && lock->lck_physical == LCK_none) {
+		INIT_STATUS(status);
+		ENQUEUE(lock, level, wait);
+		result = (status[0] == gds_arg_gds && status[1] == 0) && 
+				 (lock->lck_id != 0);
+	}
+	else
+		result = CONVERT(lock, level, wait);
 
 /* Check back in with the scheduler and restore context */
 
