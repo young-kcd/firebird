@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.83 2004-10-30 05:58:48 robocop Exp $
+$Id: restore.epp,v 1.84 2004-11-02 02:41:25 asfernandes Exp $
 */
 
 #include "firebird.h"
@@ -6403,7 +6403,7 @@ bool restore (const TEXT* file_name,
 	{
 		BURP_error(44, true, isc_arg_number, (void*)(IPTR)tdgbl->RESTORE_format,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
-		// msg 44 Expected backup version 1, 2, or 3.  Found %ld 
+		// msg 44 Expected backup version 1, 2, 3, 4, 5, 6, or 7.  Found %ld 
 	}
 
 	create_database (database_name);

@@ -176,7 +176,7 @@ and trigger-new is:
  */
  
 // Version 7: RDB$DESCRIPTION in roles and generators.
-const int ATT_BACKUP_FORMAT		= 7;
+const int ATT_BACKUP_FORMAT		= 7;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
 
 // format version number for ranges for arrays 
 
