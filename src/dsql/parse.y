@@ -1438,7 +1438,7 @@ delete_rule	: ON KW_DELETE referential_action
 referential_action: CASCADE
 		  { $$ = make_flag_node (nod_ref_trig_action, 
 			 REF_ACTION_CASCADE, (int) e_ref_trig_action_count, NULL);}
-				| SET DEFAULT
+		| SET DEFAULT
 		  { $$ = make_flag_node (nod_ref_trig_action, 
 			 REF_ACTION_SET_DEFAULT, (int) e_ref_trig_action_count, NULL);}
 		| SET KW_NULL
@@ -1876,10 +1876,10 @@ union_view	  : union_view_expr
 
 union_view_expr	: select_view_expr
 			{ $$ = make_node (nod_list, (int) 1, $1); }
-		| union_view_expr UNION select_view_expr
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-				| union_view_expr UNION ALL select_view_expr
-						{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
+		| union_view_expr UNION distinct_noise select_view_expr
+			{ $$ = make_node (nod_list, 2, $1, $4); }
+		| union_view_expr UNION ALL select_view_expr
+			{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
 		;
 
 select_view_expr: SELECT
@@ -2918,8 +2918,8 @@ select		: union_expr order_clause rows_clause for_update_clause lock_clause
 
 union_expr	: select_expr
 			{ $$ = make_node (nod_list, 1, $1); }
-		| union_expr UNION select_expr
-			{ $$ = make_node (nod_list, 2, $1, $3); }
+		| union_expr UNION distinct_noise select_expr
+			{ $$ = make_node (nod_list, 2, $1, $4); }
 		| union_expr UNION ALL select_expr
 			{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
 		;
@@ -4078,6 +4078,10 @@ timestamp_part	: YEAR
 		;
 
 all_noise	: ALL
+		|
+		;
+
+distinct_noise	: DISTINCT
 		|
 		;
 
