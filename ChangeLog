@@ -1,3 +1,111 @@
+2004-07-08 00:18  skidder
+
+	* firebird2/src/extern/regex/fake/: limits.h (1.1), memmove.c
+	(1.1), stdlib.h (1.1):
+	
+	Import POSIX regular expressions matcher: unmodified
+	rxspencer-alpha3.8.g3. It will be used for Win32 and maybe some old
+	unices, Linux and *BSD implement this part of POSIX spec natively
+
+2004-07-08 00:10  skidder
+
+	* firebird2/src/extern/regex/: COPYRIGHT (1.1), INSTALL (1.1),
+	Makefile.am (1.1), Makefile.in (1.1), Makefile.orig (1.1), README
+	(1.1), WHATSNEW (1.1), aclocal.m4 (1.1), autogen.sh (1.1), cclass.h
+	(1.1), cname.h (1.1), config.guess (1.1), config.sub (1.1),
+	configure (1.1), configure.in (1.1), debug.c (1.1), debug.ih (1.1),
+	engine.c (1.1), engine.ih (1.1), install-sh (1.1), ltmain.sh (1.1),
+	main.c (1.1), missing (1.1), mkh (1.1), mkinstalldirs (1.1),
+	regcomp.c (1.1), regcomp.ih (1.1), regerror.c (1.1), regerror.ih
+	(1.1), regex.h (1.1), regex2.h (1.1), regexec.c (1.1), regfree.c
+	(1.1), rxspencer.3 (1.1), rxspencer.7 (1.1), split.c (1.1),
+	test1.sh (1.1), test2.sh (1.1), test3.sh (1.1), tests (1.1),
+	utils.h (1.1):
+	
+	Import POSIX regular expressions matcher: unmodified
+	rxspencer-alpha3.8.g3. It will be used for Win32 and maybe some old
+	unices, Linux and *BSD implement this part of POSIX spec natively
+
+2004-07-07 18:06  skidder
+
+	* firebird2/src/jrd/: evl_string.h (1.16), evl_string_test.cpp
+	(1.7):
+	
+	Update pattern matching tests
+
+2004-07-07 17:48  skidder
+
+	* firebird2/src/jrd/: evl.cpp (1.96), evl_string.h (1.15),
+	evl_string_test.cpp (1.6):
+	
+	allow processNextChunk receive empty string in pattern matchers.
+	This fixes troubles in DEV_BUILD noticed by Claudio
+
+2004-07-07 12:12  aafemt
+
+	* firebird2/src/jrd/cmp.cpp (1.135):
+	
+	Variable's scope
+
+2004-07-07 12:08  aafemt
+
+	* firebird2/src/include/fb_string.h (1.26):
+	
+	Suppress warning
+
+2004-07-07 05:47  robocop
+
+	* firebird2/src/jrd/: dpm.epp (1.51), dpm_proto.h (1.16), dyn.epp
+	(1.65), evl.cpp (1.95), exe.cpp (1.116), grant.epp (1.46), ini.epp
+	(1.52):
+	
+	USHORT -> bool
+
+2004-07-07 05:45  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.119):
+	
+	Vars in context
+
+2004-07-07 05:43  robocop
+
+	* firebird2/src/jrd/: err.cpp (1.50), err_proto.h (1.19):
+	
+	Const correctness and style
+
+2004-07-07 05:42  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.143):
+	
+	Fix possible minor problem in debug version
+
+2004-07-07 05:41  robocop
+
+	* firebird2/src/jrd/scl.epp (1.60):
+	
+	Misc change
+
+2004-07-06 07:59  robocop
+
+	* firebird2/src/jrd/: acl.h (1.5), dfw.epp (1.118), dfw_proto.h
+	(1.13), dyn_def.epp (1.73), dyn_del.epp (1.34), dyn_mod.epp (1.50),
+	dyn_ut_proto.h (1.8), dyn_util.epp (1.35), grant.epp (1.45),
+	met.epp (1.131), met_proto.h (1.41), tra.h (1.33), vio.cpp (1.107):
+	
+	1.- Try to fix the mess caused by different data types used to
+	represent bifields of SCL_ constants defined in scl.h, second
+	round.	2.- Prevent users from deleting system generators and
+	modifying any entry in rdb$generators. VIO passes the task to DFW,
+	the only problem being that the user gets the error when a commit
+	is done, not before.
+
+2004-07-06 07:54  robocop
+
+	* firebird2/src/burp/: backup.epp (1.63), burp.cpp (1.84), misc.cpp
+	(1.14):
+	
+	Totally misc changes
+
 2004-07-04 02:00  skidder
 
 	* firebird2/src/include/fb_string.h (1.25):
