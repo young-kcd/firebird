@@ -17,11 +17,20 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.7 2002-10-04 21:57:20 skidder Exp $
+# $Id: prefix.sinixz,v 1.8 2002-10-08 09:42:58 eku Exp $
 #
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
-WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
+# Are we going to compile the SINIX-2000 version?
+ifneq ($(APC),)
+APC_FLAGS=-I$(APC)/Headers
+endif
+COMMON_FLAGS=-DSINIXZ -DUNIX -fwritable-strings $(APC_FLAGS)
 
-PROD_FLAGS=-DNDEBUG -w -DSINIXZ -DUNIX -fwritable-strings
-DEV_FLAGS=-ggdb $(WARNINGS) -DSINIXZ -DUNIX -DDEBUG_GDS_ALLOC -fwritable-strings
+PROD_WARNINGS=-w
+DEV_WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
+
+PROD_FLAGS=$(PROD_WARNINGS) -DNDEBUG $(COMMON_FLAGS)
+DEV_FLAGS=$(DEV_WARNINGS) -ggdb -DDEBUG_GDS_ALLOC $(COMMON_FLAGS)
+
+# EOF
