@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.13 2003-08-13 11:08:50 robocop Exp $
+$Id: utld.cpp,v 1.14 2003-08-19 10:25:21 robocop Exp $
 */
 
 #include "firebird.h"
@@ -66,7 +66,7 @@ static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
 #endif
 
 #define CH_STUFF(p,value)	{if ((SCHAR) *(p) == (SCHAR) (value)) (p)++; else\
-				{*(p)++ = (value); same_flag = FALSE;}}
+				{*(p)++ = (value); same_flag = false;}}
 #define CH_STUFF_WORD(p,value)	{CH_STUFF (p, (value) & 255);\
 				CH_STUFF (p, (value) >> 8);}
 
@@ -146,8 +146,8 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(
 	USHORT index = 0;
 	while (*info != gds_info_end)
 	{
-		SCHAR item = *info++;
-		while (item != gds_info_sql_describe_end)
+	   SCHAR item;
+	   while ((item = *info++) != gds_info_sql_describe_end)
 			switch (item)
 			{
 			case gds_info_sql_sqlda_seq:
@@ -384,7 +384,7 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
         }
         else {
             *(p)++ = (blr_version4); 
-            same_flag = FALSE;
+            same_flag = false;
         }
         
 		CH_STUFF(p, blr_begin);
