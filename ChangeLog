@@ -1,3 +1,15 @@
+2005-03-26 05:08  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.7.2.3):
+	
+	Solve bug with AddMonth when facing January.
+
+2005-03-26 05:07  robocop
+
+	* firebird2/src/jrd/pag.cpp (1.37.2.9):
+	
+	Misc.
+
 2005-03-23 13:59  alexpeshkoff
 
 	* firebird2/src/remote/inet_server.cpp (1.26.2.3):
