@@ -2538,22 +2538,12 @@ static bool delete_procedure(	thread_db*	tdbb,
 			return false;
 		}
 
-		// "OBJECT IN USE" error should be emitted in this case, but some more
-		// code needs to be reviewed for that. Now you can drop procedure
-		// used by other compiled requests
-		if (procedure->prc_use_count && !MET_clear_cache(tdbb, procedure))
-		{
-			gds__log("Deleting unfreed procedure %s. "
-					 "Engine is likely to get unstable after this point", 
-					 work->dfw_name);
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
-
-			if (procedure->prc_existence_lock) {
-				LCK_release(tdbb, procedure->prc_existence_lock);
-			}
-			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] = NULL;
-			return false;
-		}
+		// Do not allow to drop procedure used by user requests
+		if (procedure->prc_use_count && MET_procedure_in_use(tdbb,procedure))
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 0);
 
 		old_flags = procedure->prc_flags;
 		procedure->prc_flags |= PRC_obsolete;
@@ -3858,44 +3848,12 @@ static bool modify_procedure(	thread_db*	tdbb,
 		}
 		THREAD_ENTER;
 #endif /* SUPERSERVER */
+		// Do not allow to modify procedure used by user requests
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb,procedure))
-		{
-			gds__log("Modifying procedure %s used by user requests. "
-					 "Engine may get unstable after this point.", work->dfw_name);
-#ifdef DEV_BUILD
-			MET_procedure_in_use(tdbb,procedure);
-			MET_clear_cache(tdbb,procedure);
-#endif
-
-			USHORT prc_alter_count = procedure->prc_alter_count;
-			if (prc_alter_count > MAX_PROC_ALTER)
-			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_proc_name,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_gds, isc_version_err,
-						 0);
-				/* Msg357: too many versions */
-			}
-
-			if (procedure->prc_existence_lock) {
-				LCK_release(tdbb, procedure->prc_existence_lock);
-			}
-			(*tdbb->tdbb_database->dbb_procedures) [procedure->prc_id] = NULL;
-
-			if (!(procedure = MET_lookup_procedure_id(tdbb,
-														work->dfw_id,
-														false,
-														true,
-														PRC_being_altered)))
-			{
-#ifdef SUPERSERVER
-				THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
-#endif
-				return false;
-			}
-			procedure->prc_alter_count = ++prc_alter_count;
-		}
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 0);
 
 		procedure->prc_flags |= PRC_being_altered;
 		if (procedure->prc_request)
