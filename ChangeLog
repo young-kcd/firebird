@@ -1,3 +1,31 @@
+2005-03-04 02:01  robocop
+
+	* firebird2/builds/win32/msvc6/: engine.dsp (1.57),
+	engine_classic.dsp (1.53), engine_embed.dsp (1.32), fbclient.dsp
+	(1.50), fbclient_static.dsp (1.18):
+	
+	Make FB2 buildable with MSVC6 again after Konstantin's changes.
+
+2005-03-04 01:01  robocop
+
+	* firebird2/src/jrd/ThreadData.cpp (1.2):
+	
+	Totally misc.
+
+2005-03-04 01:00  robocop
+
+	* firebird2/src/jrd/isc_s_proto.h (1.16):
+	
+	Please be more careful with the nesting of macros v/s extern "C".
+
+2005-03-04 00:56  robocop
+
+	* firebird2/: builds/posix/firebird.vers (1.8), src/dsql/ddl.cpp
+	(1.129), src/jrd/btn.cpp (1.19), src/utilities/guard/util.cpp
+	(1.9):
+	
+	Totally misc.
+
 2005-03-01 18:53  dimitr
 
 	* firebird2/src/jrd/: svc.cpp (1.138), svc.h (1.34):
