@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.52 2002-12-29 15:23:46 nmcc Exp $
+$Id: common.h,v 1.53 2002-12-31 19:32:24 nmcc Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -327,7 +327,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 /* 	Need to use full sfio not just stdio emulation to fix
 	file descriptor number limit. nmcc Dec2002
 */
-#ifndef SFIO
+#if (!defined(SFIO) && defined(SUPERSERVER))
 #define NEED_IB_STDIO
 #endif
 
