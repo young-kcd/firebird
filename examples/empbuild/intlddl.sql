@@ -215,7 +215,7 @@ CREATE TABLE employee
     first_name      FIRSTNAME NOT NULL,
     last_name       LASTNAME NOT NULL,
     phone_ext       VARCHAR(4),
-    hire_date       DATE DEFAULT 'NOW' NOT NULL,
+    hire_date       TIMESTAMP DEFAULT 'NOW' NOT NULL,
     dept_no         DEPTNO NOT NULL,
     job_code        JOBCODE NOT NULL,
     job_grade       JOBGRADE NOT NULL,
@@ -332,7 +332,7 @@ CREATE TABLE proj_dept_budget
 CREATE TABLE salary_history
 (
     emp_no              EMPNO NOT NULL,
-    change_date         DATE DEFAULT 'NOW' NOT NULL,
+    change_date         TIMESTAMP DEFAULT 'NOW' NOT NULL,
     updater_id          VARCHAR(20) NOT NULL,
     old_salary          SALARY NOT NULL,
     percent_change      DOUBLE PRECISION
@@ -441,12 +441,12 @@ CREATE TABLE sales
                         NOT NULL
                         CHECK (order_status in
                             ('new', 'open', 'shipped', 'waiting')),
-    order_date      DATE 
+    order_date      TIMESTAMP 
 			DEFAULT 'NOW'
                         NOT NULL,
-    ship_date       DATE
+    ship_date       TIMESTAMP
                         CHECK (ship_date >= order_date OR ship_date IS NULL),
-    date_needed     DATE
+    date_needed     TIMESTAMP
                         CHECK (date_needed > order_date OR date_needed IS NULL),
     paid            CHAR
                         DEFAULT 'n'
@@ -785,7 +785,7 @@ BEGIN
 
 	IF (customer IS NOT NULL) THEN
 		line1 = customer;
-	IF (first IS NOT NULL) THEN
+	IF (first_name IS NOT NULL) THEN
 		line2 = first_name || ' ' || last_name;
 	ELSE
 		line2 = last_name;
@@ -867,7 +867,7 @@ BEGIN
 		WHERE cust_no = :cust_no
 		AND order_status = 'shipped'
 		AND paid = 'n'
-		AND ship_date < CAST('NOW' AS DATE) - 60
+		AND ship_date < CAST('NOW' AS TIMESTAMP) - 60
 		INTO :any_po
 	DO
 	BEGIN
