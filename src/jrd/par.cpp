@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.31 2003-01-15 12:08:59 dimitr Exp $
+$Id: par.cpp,v 1.32 2003-02-04 13:31:02 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -1853,7 +1853,27 @@ static void par_procedure_parms(
 		message->nod_arg[e_msg_number] = (JRD_NOD) (SLONG) n;
 		format =
 			input_flag ? procedure->prc_input_fmt : procedure->prc_output_fmt;
+		/* dimitr: procedure (with its parameter formats) is allocated out of
+				   its own pool (prc_request->req_pool) and can be freed during
+				   the cache cleanup (MET_clear_cache). Since the current
+				   tdbb_default pool is different from the procedure's one,
+				   it's dangerous to copy a pointer from one request to another.
+				   As an experiment, I've decided to copy format by value
+				   instead of copying the reference. Since fmt structure
+				   doesn't contain any pointers, it should be safe to use a
+				   default assignment operator which does a simple byte copy.
+				   This change fixes one serious bug in the current codebase.
+				   I think that this situation can (and probably should) be
+				   handled by the metadata cache (via incrementing prc_use_count)
+				   to avoid unexpected cache cleanups, but that area is out of my
+				   knowledge. So this fix should be considered a temporary solution.
+
 		message->nod_arg[e_msg_format] = (JRD_NOD) format;
+		*/
+		FMT fmt_copy = fmt::newFmt(*tdbb->tdbb_default, format->fmt_count);
+		*fmt_copy = *format;
+		message->nod_arg[e_msg_format] = (JRD_NOD) fmt_copy;
+		/* --- end of fix --- */
 		if (!mismatch)
 			n = format->fmt_count / 2;
 		else
