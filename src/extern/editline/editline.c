@@ -1,4 +1,4 @@
-/*  $Revision: 1.1 $
+/*  $Revision: 1.2 $
 **
 **  Main editing routines for editline library.
 */
@@ -104,8 +104,6 @@ int		rl_meta_chars = 1;
 **  Declarations.
 */
 STATIC CHAR	*editinput();
-extern int	read();
-extern int	write();
 #if	defined(USE_TERMCAP)
 extern char	*getenv();
 extern char	*tgetstr();
