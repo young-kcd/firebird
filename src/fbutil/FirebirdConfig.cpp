@@ -35,6 +35,14 @@ int    FirebirdConfig::getSysInt(const string& key) {
   return sysConfig.getInt(key);
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+
+bool    FirebirdConfig::getSysBoolean(const string& key) {
+  return sysConfig.getBoolean(key);
+}
 
 //-----------------------------------------------------------------------------
 //

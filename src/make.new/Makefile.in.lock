@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.lock,v 1.5 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: Makefile.in.lock,v 1.6 2001-08-21 09:41:00 skywalker Exp $
 # 
 
 ROOT=../..
@@ -80,7 +80,7 @@ jrdlib_dependencies: $(LOCK_Objects)
 gds_lock_manager : $(BIN)/gds_lock_mgr
 
 $(BIN)/gds_lock_mgr: $(LOCKMGR_Objects) $(BOOT_GDSLIB_Objects)
-	$(CXX) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(CXX) $(LINK_OPTS) $^ -o $@ $(STATICLINK_LIBS)
 	$(CHMOD_S7) $@
 
 
@@ -90,9 +90,9 @@ $(BIN)/gds_lock_mgr: $(LOCKMGR_Objects) $(BOOT_GDSLIB_Objects)
 # the "mgr" not "manager".
 
 
-lock_print : $(BIN)/lock_print
+lock_print : $(BIN)/gds_lock_print
 
-$(BIN)/lock_print: $(LOCKPRINT_Objects) $(LIBGDS_DEP)
+$(BIN)/gds_lock_print: $(LOCKPRINT_Objects) $(LIBGDS_DEP)
 	$(CXX) $(LINK_OPTS) $(LIBGDS_LINK) $^ -o $@  $(LINK_LIBS)
 	$(CHMOD_S7) $@
 

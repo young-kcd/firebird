@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.burp,v 1.4 2001-08-13 08:14:38 skywalker Exp $
+#   $Id: Makefile.in.burp,v 1.5 2001-08-21 09:41:00 skywalker Exp $
 # 
 
 ROOT=../..
@@ -63,7 +63,7 @@ all:	gbak_static gbak gsplit
 gbak_static : $(BIN)/gbak_static
 
 $(BIN)/gbak_static : $(BURP_Objects) $(BOOT_GDSLIB_Objects)
-	$(CXX) $(LINK_OPTS) $^ -o $@ $(COREFOUNDATION_LINK) $(LINK_LIBS)
+	$(CXX) $(LINK_OPTS) $^ -o $@ $(COREFOUNDATION_LINK) $(STATICLINK_LIBS)
 
 
 

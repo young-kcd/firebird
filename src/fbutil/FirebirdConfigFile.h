@@ -9,7 +9,7 @@
 
 #include "FirebirdConfig.h"
 
-class FirebirdConfigFile : FirebirdConfig {
+class FirebirdConfigFile : public FirebirdConfig {
 public:
 
     FirebirdConfigFile();
@@ -20,10 +20,11 @@ public:
     bool getIsLoadedFlg() { return isLoadedFlg; }
     void setIsLoadedFlg(bool newFlg) { isLoadedFlg = newFlg; }
 
-    void loadConfig();
-    void checkLoadConfig();
-    string getString(const string& key);
-    int    getInt(const string& key);
+    virtual void loadConfig();
+    virtual void checkLoadConfig();
+    virtual string getString(const string& key);
+    virtual int    getInt(const string& key);
+    virtual bool    getBoolean(const string& key);
 
 private:
     string configFile;

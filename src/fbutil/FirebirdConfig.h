@@ -12,6 +12,7 @@ public:
 
     static string getSysString(const string& key);
     static int    getSysInt(const string& key);
+    static bool    getSysBoolean(const string& key);
     static void   loadSysConfig();
     static const string getSysConfigFile();
     static void setSysConfigFile(const string& newFile);
@@ -28,6 +29,7 @@ public:
     virtual void checkLoadConfig()= 0;
     virtual string getString(const string& key) = 0;
     virtual int    getInt(const string& key) = 0;
+    virtual bool   getBoolean(const string& key) = 0;
 
     virtual ~FirebirdConfig() {}
 

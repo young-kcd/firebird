@@ -115,6 +115,9 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/old_proto.h"
 
+
+#include "fbutil/FirebirdConfig.h"
+
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
 #endif
@@ -696,8 +699,12 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	{
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
-
-		if (ISC_check_if_remote(expanded_filename, TRUE))
+      
+      int checkRemoteFiles = 0;
+        if (FirebirdConfig::getSysBoolean("DoRemoteOpenForNFSFiles")) {
+            checkRemoteFiles=1;
+        }
+		if (ISC_check_if_remote(expanded_filename, checkRemoteFiles))
 			ERR_post(gds_unavailable, 0);
 	}
 

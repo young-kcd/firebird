@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.firebird,v 1.8 2001-08-20 08:15:33 skywalker Exp $
+#   $Id: Makefile.in.firebird,v 1.9 2001-08-21 09:41:00 skywalker Exp $
 # 
 
 ROOT=..
@@ -40,7 +40,7 @@ include     $(ROOT)/src/make.shared.variables
 
 ISC_USER=	sysdba
 ISC_PASSWORD=	masterkey
-LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib
+LD_LIBRARY_PATH=/home/odonohue/src/firebird2/gen/firebird/lib:/usr/lib
 
 export ISC_USER
 export ISC_PASSWORD
@@ -83,7 +83,7 @@ phase1: $(GPRE_STATIC)
 $(GPRE_STATIC):
 	$(MAKE) phase1_build
 
-phase1_build: jrd_boot gpre_boot build_alt_use_boot jrdlib_dependencies gpre_static
+phase1_build: jrd_boot fbutil_boot gpre_boot build_alt_use_boot jrdlib_dependencies gpre_static
 
 gpre_static : jrdlib_dependencies
 	$(MAKE) -C gpre $@
@@ -98,6 +98,8 @@ gpre_boot : jrd_boot
 jrd_boot :
 	$(MAKE) -C jrd $@
 
+fbutil_boot :
+	$(MAKE) -C fbutil $@
 
 
 

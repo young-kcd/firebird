@@ -17,6 +17,7 @@ FirebirdConfigFile::FirebirdConfigFile()
 {
     isLoadedFlg = false;
     configFile = "/etc/firebird.conf";
+    cout << "Got ya" << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -114,6 +115,30 @@ int    FirebirdConfigFile::getInt(const string& key) {
 }
 
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+
+bool FirebirdConfigFile::getBoolean(const string& key) {
+
+    checkLoadConfig();
+
+    string data = getString(key);
+
+    if (data.empty()) {
+        return false;
+    }
+
+    int result =  atoi(data.data());
+
+    if (result != 0) {
+      return true;
+    }
+
+    return false;
+
+}
 
 //-----------------------------------------------------------------------------
 //
