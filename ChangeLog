@@ -1,3 +1,34 @@
+2004-12-13 20:43  dimitr
+
+	* firebird2/src/jrd/dyn_del.epp (1.40):
+	
+	Let's remove security class & privileges when a column is dropped.
+
+2004-12-13 16:49  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.9):
+	
+	fixed bug, noticed by Adriano dos Santos Fernandes
+
+2004-12-13 13:09  alexpeshkoff
+
+	* firebird2/src/jrd/utl.cpp (1.77):
+	
+	misc.
+
+2004-12-13 13:06  alexpeshkoff
+
+	* firebird2/src/burp/burp.cpp (1.94):
+	
+	fixed bug in my last commit, noticed by Claudio
+
+2004-12-13 13:05  alexpeshkoff
+
+	* firebird2/src/common/classes/: string_test.cmd (1.1),
+	string_test.cpp (1.1):
+	
+	test for Firebird::string
+
 2004-12-12 07:50  robocop
 
 	* firebird2/src/common/classes/: ClumpletReader.cpp (1.9),
