@@ -1216,6 +1216,12 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 	while (*from) {
 		segment = to;
 
+		/* skip dual // (will collapse /// to / as well) */
+		if (*from == '/' && from[1] == '/') {
+			++from;
+			continue;
+		}
+
 		/* Copy the leading slash, if any */
 
 		if (*from == '/') {
