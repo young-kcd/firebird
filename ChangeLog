@@ -1,3 +1,17 @@
+2003-08-23 11:26  dimitr
+
+	* firebird2/src/jrd/dpm.epp:
+	
+	Fixed BUGCHECK(178). Record fragment length calculation must be
+	consistent in VIO_erase.
+
+2003-08-23 00:52  arnobrinkman
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, fbclient.dsp,
+	fbclient_static.dsp:
+	
+	Fix MSVC6 build
+
 2003-08-22 15:09  robocop
 
 	* firebird2/src/msgs/build_file.epp:
