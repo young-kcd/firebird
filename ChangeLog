@@ -1,3 +1,10 @@
+2004-02-01 06:33  skidder
+
+	* firebird2/src/jrd/blb.cpp:
+	
+	Fix memory leak from transaction pool happening during conversion
+	from string to blob
+
 2004-01-31 20:33  dimitr
 
 	* firebird2/src/jrd/gds.cpp:
