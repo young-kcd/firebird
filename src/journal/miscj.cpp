@@ -94,7 +94,7 @@ UCHAR *MISC_alloc_jrnl(SLONG size)
 	UCHAR *p, *block;
 
 	if (!(block = (UCHAR *) gds__alloc((SLONG) size))) {
-		GJRN_printf(109, NULL, NULL, NULL, NULL);	/* msg 109: malloc failed??? */
+		GJRN_printf(109, NULL, NULL, NULL, NULL);	// msg 109: malloc failed???
 		return NULL;
 	}
 
@@ -317,39 +317,40 @@ void MISC_print_journal_syntax(void)
 
 	GJRN_print_syntax();
 
-	GJRN_printf(7, NULL, NULL, NULL, NULL);	/* msg 7: <utility> : -enable | -disable | -online_dump | -server | -console | -restore */
+	GJRN_printf(7, NULL, NULL, NULL, NULL);
+	// msg 7: <utility> : -enable | -disable | -online_dump | -server | -console | -restore
 
-/* server options */
-	GJRN_printf(75, NULL, NULL, NULL, NULL);	/* msg 75: <server options> */
-	GJRN_printf(8, NULL, NULL, NULL, NULL);	/* msg 8: -j <journal directory> */
+// server options
+	GJRN_printf(75, NULL, NULL, NULL, NULL); // msg 75: <server options>
+	GJRN_printf(8, NULL, NULL, NULL, NULL); // msg 8: -j <journal directory>
 
-/* console options */
-	GJRN_printf(76, NULL, NULL, NULL, NULL);	/* msg 76: <console options> */
-	GJRN_printf(8, NULL, NULL, NULL, NULL);	/* msg 8: -j <journal directory> */
-	GJRN_printf(77, NULL, NULL, NULL, NULL);	/* msg 77: -s <command> */
+// console options
+	GJRN_printf(76, NULL, NULL, NULL, NULL); // msg 76: <console options>
+	GJRN_printf(8, NULL, NULL, NULL, NULL); // msg 8: -j <journal directory>
+	GJRN_printf(77, NULL, NULL, NULL, NULL); // msg 77: -s <command>
 
-/* enable options */
-	GJRN_printf(78, NULL, NULL, NULL, NULL);	/* msg 78: <enable options> */
-	GJRN_printf(8, NULL, NULL, NULL, NULL);	/* msg 8: -j <journal directory> */
-	GJRN_printf(9, NULL, NULL, NULL, NULL);	/* msg 9: -a <archive base name> */
+// enable options
+	GJRN_printf(78, NULL, NULL, NULL, NULL); // msg 78: <enable options>
+	GJRN_printf(8, NULL, NULL, NULL, NULL); // msg 8: -j <journal directory>
+	GJRN_printf(9, NULL, NULL, NULL, NULL); // msg 9: -a <archive base name>
 
-/* disable options */
-	GJRN_printf(79, NULL, NULL, NULL, NULL);	/* msg 79: <disable options> */
+// disable options
+	GJRN_printf(79, NULL, NULL, NULL, NULL); // msg 79: <disable options>
 
-/* restore options */
-	GJRN_printf(80, NULL, NULL, NULL, NULL);	/* msg 80: <restore options> */
-	GJRN_printf(8, NULL, NULL, NULL, NULL);	/* msg 8: -j <journal directory> */
-	GJRN_printf(11, NULL, NULL, NULL, NULL);	/* msg 11: -u <until options> */
-	GJRN_printf(10, NULL, NULL, NULL, NULL);	/* msg 10: -i              -interactive mode */
-	GJRN_printf(142, NULL, NULL, NULL, NULL);	/* msg 142: -m <output message file> */
-	GJRN_printf(196, NULL, NULL, NULL, NULL);	/* msg 196: -a\t\t-activate partially recovered database */
-	GJRN_printf(197, NULL, NULL, NULL, NULL);	/* msg 197: \t\t-p <database name for partial recovery> */
+// restore options
+	GJRN_printf(80, NULL, NULL, NULL, NULL); // msg 80: <restore options>
+	GJRN_printf(8, NULL, NULL, NULL, NULL); // msg 8: -j <journal directory>
+	GJRN_printf(11, NULL, NULL, NULL, NULL); // msg 11: -u <until options>
+	GJRN_printf(10, NULL, NULL, NULL, NULL); // msg 10: -i              -interactive mode
+	GJRN_printf(142, NULL, NULL, NULL, NULL); // msg 142: -m <output message file>
+	GJRN_printf(196, NULL, NULL, NULL, NULL); // msg 196: -a\t\t-activate partially recovered database
+	GJRN_printf(197, NULL, NULL, NULL, NULL); // msg 197: \t\t-p <database name for partial recovery>
 
-/* online dump options */
-	GJRN_printf(81, NULL, NULL, NULL, NULL);	/* msg 81: <online dump options> */
-	GJRN_printf(10, NULL, NULL, NULL, NULL);	/* msg 10: -i              -interactive mode */
-	GJRN_printf(82, NULL, NULL, NULL, NULL);	/* msg 82: -f <file name> */
-	GJRN_printf(83, NULL, NULL, NULL, NULL);	/* msg 83: -s <file size> */
+// online dump options
+	GJRN_printf(81, NULL, NULL, NULL, NULL); // msg 81: <online dump options>
+	GJRN_printf(10, NULL, NULL, NULL, NULL); // msg 10: -i              -interactive mode
+	GJRN_printf(82, NULL, NULL, NULL, NULL); // msg 82: -f <file name>
+	GJRN_printf(83, NULL, NULL, NULL, NULL); // msg 83: -s <file size>
 
 	GJRN_abort(0);
 }
@@ -385,19 +386,19 @@ int MISC_time_convert(TEXT * string,
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-/* Parse components */
+// Parse components
 
 	for (i = 0; i < 7; i++) {
 
-		/* Skip leading blanks.  If we run out of characters, we're done
-		   with parse.  */
+		// Skip leading blanks.  If we run out of characters, we're done
+		// with parse.
 
 		while (p < end && (*p == ' ' || *p == '\t'))
 			p++;
 		if (p == end)
 			break;
 
-		/* Handle digit or character strings */
+		// Handle digit or character strings
 
 		c = UPPER(*p);
 		if (DIGIT(c)) {
@@ -419,8 +420,8 @@ int MISC_time_convert(TEXT * string,
 			while (true) {
 				if (!*month_ptr) {
 
-					/* it's not a month name, so it's either a magic word or
-					   a non-date string.  If there are more characters, it's bad */
+					// it's not a month name, so it's either a magic word or
+					// a non-date string.  If there are more characters, it's bad
 
 					while (++p < end)
 						if (*p != ' ' && *p != '\t' && *p != 0)
@@ -467,7 +468,7 @@ int MISC_time_convert(TEXT * string,
 		}
 	}
 
-/* Slide things into day, month, year form */
+// Slide things into day, month, year form
 
 	if (!components[0] && !components[1] && !components[2]) {
 		date[0] = date[1] = 0;
@@ -483,7 +484,7 @@ int MISC_time_convert(TEXT * string,
 		times.tm_mday = components[1];
 	}
 
-/* Handle defaulting of year */
+// Handle defaulting of year
 
 	if ((times.tm_year = components[2]) == 0)
 		times.tm_year = times2.tm_year + 1900;
@@ -500,7 +501,7 @@ int MISC_time_convert(TEXT * string,
 	times.tm_min = components[4];
 	times.tm_sec = components[5];
 
-/* convert day/month/year to Julian and validate result */
+// convert day/month/year to Julian and validate result
 
 	gds__encode_date(&times, (GDS_QUAD_t*) date);
 	gds__decode_date((GDS_QUAD_t*)date, &times2);

@@ -81,7 +81,7 @@
 #define MAX_PATH_LENGTH		512
 #endif
 
-/* UNIX and NETWARE JOURNALLING stuff */
+// UNIX and NETWARE JOURNALLING stuff
 
 #ifdef BSD_SOCKETS
 #define BSD_INCLUDES
@@ -91,11 +91,11 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#define MAXHOSTNAMELEN	64		/* should be in <sys/param.h> */
+#define MAXHOSTNAMELEN	64		// should be in <sys/param.h>
 #define HANDLE		int
 #endif
 
-/* Windows NT stuff */
+// Windows NT stuff
 
 #ifdef WIN_NT
 #include <process.h>
@@ -129,7 +129,7 @@ DATABASE
 #define ARCHIVE		"bin/gds_archive"
 #endif
 
-/* List of console commands */
+// List of console commands
 
 CMDS commands[] = {
 	"DISABLE <db name>	", cmd_disable, 163, "\tdisable database",
@@ -157,35 +157,35 @@ typedef struct backup_info {
 #define MAX_ARCHIVE	16
 #define MAX_RETRY	16
 
-/* Active database block */
+// Active database block
 
 typedef struct djb {
-	struct djb *djb_next;		/* Next block */
-	struct cnct *djb_connections;	/* List of connections */
-	USHORT djb_flags;			/* flags - see values below */
-	USHORT djb_id;				/* Id of database */
-	USHORT djb_use_count;		/* Number of connections */
-	SSHORT djb_retry;			/* number of retries */
+	struct djb *djb_next;			// Next block
+	struct cnct *djb_connections;	// List of connections
+	USHORT djb_flags;				// flags - see values below
+	USHORT djb_id;					// Id of database
+	USHORT djb_use_count;			// Number of connections
+	SSHORT djb_retry;				// number of retries
 	SSHORT djb_bfi_count;
-	BINFO djb_bfi[MAX_ARCHIVE + 1];	/* backup file info */
-	UCHAR *djb_dir_name;		/* backup directory name */
-	UCHAR djb_db_name[1];		/* Database filename */
+	BINFO djb_bfi[MAX_ARCHIVE + 1];	// backup file info
+	UCHAR *djb_dir_name;			// backup directory name
+	UCHAR djb_db_name[1];			// Database filename
 } *DJB;
 
 #define DJB_disabled		1
 #define DJB_archive		2
 #define DJB_set_delete		4
 
-/* Individual journal connections */
+// Individual journal connections
 
 typedef struct cnct {
-	struct cnct *cnct_next;		/* Next connection for system */
-	struct cnct *cnct_db_next;	/* Next connection for database */
-	struct djb *cnct_database;	/* Active database block */
-	HANDLE cnct_handle;			/* Parent mailbox */
-	SLONG cnct_channel;			/* Channel for communication */
+	struct cnct *cnct_next;		// Next connection for system
+	struct cnct *cnct_db_next;	// Next connection for database
+	struct djb *cnct_database;	// Active database block
+	HANDLE cnct_handle;			// Parent mailbox
+	SLONG cnct_channel;			// Channel for communication
 	USHORT cnct_flags;
-	USHORT cnct_version;		/* Protocol version */
+	USHORT cnct_version;		// Protocol version
 #ifdef WIN_NT
 	OVERLAPPED cnct_overlapped;
 	UCHAR cnct_data[sizeof(struct jrnh)];
@@ -193,8 +193,8 @@ typedef struct cnct {
 #endif
 } *CNCT;
 
-#define CNCT_console		1	/* Connection is to a console */
-#define CNCT_pending_io		2	/* I/O or connection is pending */
+#define CNCT_console		1	// Connection is to a console
+#define CNCT_pending_io		2	// I/O or connection is pending
 
 static void add_backup_entry(DJB, SLONG, SLONG);
 static CNCT alloc_connect(HANDLE, USHORT);
@@ -286,15 +286,15 @@ static SLONG max_retry = MAX_RETRY;
 #define slot_console		0
 #define slot_journal		1
 
-#define state_shut_pending	1	/* Shutdown has been requested */
-#define state_suspend		4	/* Suspend operation */
-#define state_initialize	8	/* Initializing operation */
-#define state_reset		16		/* Reset after improper close */
-#define state_status		32	/* Report status */
+#define state_shut_pending	1	// Shutdown has been requested
+#define state_suspend		4	// Suspend operation
+#define state_initialize	8	// Initializing operation
+#define state_reset		16		// Reset after improper close
+#define state_status		32	// Report status
 
 
-bool SERVER_start_server(int argc, 
-						 SCHAR ** argv)
+bool SERVER_start_server(int argc,
+						 char ** argv)
 {
 /**************************************
  *
@@ -307,7 +307,7 @@ bool SERVER_start_server(int argc,
  *
  **************************************/
 	UCHAR string[MAX_PATH_LENGTH];
-	UCHAR *journal;
+	UCHAR *journal = NULL;
 	bool sw_i = false;
 	bool sw_d = false;
 	bool sw_v = false;
@@ -315,9 +315,8 @@ bool SERVER_start_server(int argc,
 	if (argc <= 0)
 		sw_i = true;
 
-/* Start by parsing switches */
+// Start by parsing switches
 
-	journal = NULL;
 	argv++;
 	while (--argc > 0) {
 		if ((*argv)[0] != '-') {
@@ -359,8 +358,8 @@ bool SERVER_start_server(int argc,
 }
 
 
-static void add_backup_entry(DJB dbb, 
-							 SLONG pid, 
+static void add_backup_entry(DJB dbb,
+							 SLONG pid,
 							 SLONG fid)
 {
 /**************************************
@@ -388,7 +387,7 @@ static void add_backup_entry(DJB dbb,
 }
 
 
-static CNCT alloc_connect(HANDLE handle, 
+static CNCT alloc_connect(HANDLE handle,
 						  USHORT channel)
 {
 /**************************************
@@ -417,8 +416,8 @@ static CNCT alloc_connect(HANDLE handle,
 static void backup_wal(DJB database,
 					   SCHAR * file_name,
 					   SLONG file_id,
-					   SLONG file_seq, 
-					   SLONG file_size, 
+					   SLONG file_seq,
+					   SLONG file_size,
 					   SLONG p_offset)
 {
 /**************************************
@@ -429,7 +428,7 @@ static void backup_wal(DJB database,
  *
  * Functional description
  *	Fork process to backup log file.
- *	Enter record in the LOG_ARCHIVE_STATUS table which will be deleted 
+ *	Enter record in the LOG_ARCHIVE_STATUS table which will be deleted
  *	by the backup process.
  *	Add entry to in-memory array for restart purposes.
  *
@@ -460,7 +459,7 @@ static void backup_wal(DJB database,
 	if (stat(name, &stat_buf) == -1)
 		proc_id = -1;
 	else if (!(proc_id = vfork())) {
-		/* child process */
+		// child process
 
 		execl(name, name, db_id, f_id, cp_offset, csize, file_name, dname,
 			  journal_directory, NULL);
@@ -476,30 +475,30 @@ static void backup_wal(DJB database,
 
 	STORE(TRANSACTION_HANDLE lts_tr) X IN LOG_ARCHIVE_STATUS
 		X.FILE_ID = file_id;
-	    X.PROCESS_ID = proc_id;
-	END_STORE 
-    ON_ERROR 
-        ROLLBACK lts_tr;
-	    put_line(NULL, 105, 0, 0, 0);
-	    return;
+		X.PROCESS_ID = proc_id;
+	END_STORE
+	ON_ERROR
+		ROLLBACK lts_tr;
+		put_line(NULL, 105, 0, 0, 0);
+		return;
 	END_ERROR;
 
-	COMMIT lts_tr 
-    ON_ERROR 
-        ROLLBACK lts_tr 
-        ON_ERROR 
-        END_ERROR;
-	    put_line(NULL, 210, 0, 0, 0);
-        return;
+	COMMIT lts_tr
+	ON_ERROR
+		ROLLBACK lts_tr
+		ON_ERROR
+		END_ERROR;
+		put_line(NULL, 210, 0, 0, 0);
+		return;
 	END_ERROR;
 
-/* Keep track of total number of archives running at any time */
+// Keep track of total number of archives running at any time
 
 	archives_running++;
 
 	put_line(NULL, 107, (TEXT *) file_id, (TEXT *) file_name, 0);
 
-/* If there is space in the array, add it to the array.  Otherwise return */
+// If there is space in the array, add it to the array.  Otherwise return
 
 	if (database->djb_bfi_count >= MAX_ARCHIVE)
 		return;
@@ -519,27 +518,27 @@ static void build_backup_array(DJB dbb)
  *
  **************************************/
 
-    FOR X IN LOG_ARCHIVE_STATUS 
-        if (X.PROCESS_ID > 0) {
-            if (!ISC_check_process_existence((SLONG) X.PROCESS_ID, 0, TRUE)) {
-                /* Process has died and/or another process has reused the
-                   process id */
-	
-                if (!test_dup_entry(dbb, X.FILE_ID))
-                    add_backup_entry(dbb, X.PROCESS_ID, X.FILE_ID);
-                
-                ERASE X 
-                ON_ERROR 
-                    break;
-	            END_ERROR;
-            }
-        } 
-    END_FOR;
+	FOR X IN LOG_ARCHIVE_STATUS
+		if (X.PROCESS_ID > 0) {
+			if (!ISC_check_process_existence((SLONG) X.PROCESS_ID, 0, TRUE)) {
+				// Process has died and/or another process has reused the
+				// process id
+
+				if (!test_dup_entry(dbb, X.FILE_ID))
+					add_backup_entry(dbb, X.PROCESS_ID, X.FILE_ID);
+			
+				ERASE X
+				ON_ERROR
+					break;
+				END_ERROR;
+			}
+		}
+	END_FOR;
 }
 
 
 static void build_indexed_name(SCHAR * filename,
-							   SCHAR * basename, 
+							   SCHAR * basename,
 							   SLONG seqno)
 {
 /**************************************
@@ -609,7 +608,9 @@ static void close_mailbox(int slot)
 
 	if (!CloseHandle(pending_connections[slot].cnct_handle) ||
 		!CloseHandle(pending_connections[slot].cnct_overlapped.hEvent))
+	{
 		error(GetLastError(), "CloseHandle");
+	}
 }
 #endif
 
@@ -632,7 +633,7 @@ static void commit(void)
 }
 
 
-static void delete_backup_entry(DJB dbb, 
+static void delete_backup_entry(DJB dbb,
 								SLONG fid)
 {
 /**************************************
@@ -676,28 +677,28 @@ static void delete_connection(CNCT connection)
 	DJB database;
 	CNCT *ptr;
 
-/* If this is a console, log it */
+// If this is a console, log it
 
 	if (connection->cnct_flags & CNCT_console)
 		put_message(95, NULL);
 
-/* Disconnect from database */
+// Disconnect from database
 
 	if (database = connection->cnct_database) {
 		if (!--database->djb_use_count)
 			set_use_count(database);
-		for (ptr = &database->djb_connections; *ptr;
-			 ptr = &(*ptr)->cnct_db_next) if (*ptr == connection) {
+		for (ptr = &database->djb_connections; *ptr; ptr = &(*ptr)->cnct_db_next)
+			if (*ptr == connection) {
 				*ptr = connection->cnct_db_next;
 				break;
 			}
 	}
 
-/* Shutdown physical connection */
+// Shutdown physical connection
 
 	disconnect(connection);
 
-/* Unlink from system */
+// Unlink from system
 
 	for (ptr = &connections;; ptr = &(*ptr)->cnct_next)
 		if (!*ptr) {
@@ -711,9 +712,11 @@ static void delete_connection(CNCT connection)
 
 	MISC_free_jrnl((int*)connection);
 
-	if ((database) &&
-		(database->djb_flags & DJB_disabled) &&
-		(database->djb_use_count == 0)) delete_database(database);
+	if ((database) && (database->djb_flags & DJB_disabled) &&
+		(database->djb_use_count == 0))
+	{
+		delete_database(database);
+	}
 }
 
 
@@ -732,11 +735,11 @@ static void delete_database(DJB database)
  **************************************/
 	CNCT connection;
 
-/* mark the database for deletion */
+// mark the database for deletion
 
 	database->djb_flags |= DJB_disabled;
 
-/* Check if there is still work that needs to be done */
+// Check if there is still work that needs to be done
 
 	if ((database->djb_flags & DJB_archive) && (database->djb_bfi_count > 0))
 		return;
@@ -744,7 +747,7 @@ static void delete_database(DJB database)
 	if (database->djb_use_count > 1)
 		return;
 
-/* Start by getting rid all of all remaining connections */
+// Start by getting rid all of all remaining connections
 
 	while (connection = database->djb_connections) {
 		put_message(96, connection->cnct_database);
@@ -756,8 +759,8 @@ static void delete_database(DJB database)
 
 
 static void delete_history_files(CNCT connection,
-								 SCHAR * dbname, 
-								 SLONG db_id, 
+								 SCHAR * dbname,
+								 SLONG db_id,
 								 SLONG last_dump)
 {
 /**************************************
@@ -767,7 +770,7 @@ static void delete_history_files(CNCT connection,
  **************************************
  *
  * Functional description
- *	We are interested only in the last completed online dump for 
+ *	We are interested only in the last completed online dump for
  *	this database.  Get rid of older files.
  *
  **************************************/
@@ -785,96 +788,96 @@ static void delete_history_files(CNCT connection,
 	if (!start_seqno)
 		return;
 
-/* for all completed online dumps with id < dump_id, unlink all
-   archive files and online dump files. */
+// for all completed online dumps with id < dump_id, unlink all
+// archive files and online dump files.
 
-    FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ db_id AND
-        OD.DUMP_ID LT last_dump AND
-        OD.END_SEQNO NE 0
-        FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
-            put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
-            ret = unlink(ODF.DUMP_FILE_NAME);
-            if ((ret == -1) && (errno != ENOENT)) {
-                put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                return;
-            }
-            ERASE ODF 
-            ON_ERROR 
-                put_line(connection, 144, (TEXT *) dbname, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                return;
-            END_ERROR;
-        END_FOR;
-	
-        ERASE OD 
-        ON_ERROR 
-            put_line(connection, 144, (TEXT *) dbname, 0, 0);
-            ROLLBACK;
-            START_TRANSACTION;
-            return;
-        END_ERROR;
-	
-        FOR JF IN JOURNAL_FILES WITH JF.DB_ID EQ db_id AND
-            JF.FILE_SEQUENCE LT start_seqno AND
-            JF.ARCHIVE_NAME NOT MISSING
-            put_line(connection, 145, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
-            ret = unlink(JF.ARCHIVE_NAME);
-            if ((ret == -1) && (errno != ENOENT)) {
-                put_line(connection, 147, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                return;
-            }
-            ERASE JF 
-            ON_ERROR 
-                put_line(connection, 144, (TEXT *) dbname, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                return;
-            END_ERROR;
-	    END_FOR;
+	FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ db_id AND
+		OD.DUMP_ID LT last_dump AND
+		OD.END_SEQNO NE 0
+		FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
+			put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+			ret = unlink(ODF.DUMP_FILE_NAME);
+			if ((ret == -1) && (errno != ENOENT)) {
+				put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				return;
+			}
+			ERASE ODF
+			ON_ERROR
+				put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				return;
+			END_ERROR;
+		END_FOR;
+
+		ERASE OD
+		ON_ERROR
+			put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			return;
+		END_ERROR;
+
+		FOR JF IN JOURNAL_FILES WITH JF.DB_ID EQ db_id AND
+			JF.FILE_SEQUENCE LT start_seqno AND
+			JF.ARCHIVE_NAME NOT MISSING
+			put_line(connection, 145, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+			ret = unlink(JF.ARCHIVE_NAME);
+			if ((ret == -1) && (errno != ENOENT)) {
+				put_line(connection, 147, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				return;
+			}
+			ERASE JF
+			ON_ERROR
+				put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				return;
+			END_ERROR;
+		END_FOR;
 	END_FOR;
 
-/* For all completed online dumps with dump id > last dump, remove the 
-   entries from the database.  The online dump files are deleted
-   the journal files are not.
-
-   These online dumps started after before last_dump, but completed
-   before last_dump. */
+// For all completed online dumps with dump id > last dump, remove the
+// entries from the database.  The online dump files are deleted
+// the journal files are not.
+//
+// These online dumps started after before last_dump, but completed
+// before last_dump.
 
 	FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ db_id AND OD.DUMP_ID GT last_dump
-        AND OD.END_SEQNO NE 0
-        FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
-            put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
-	        ret = unlink(ODF.DUMP_FILE_NAME);
-            if ((ret == -1) && (errno != ENOENT)) {
-                put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                return;
-            }
-            ERASE ODF 
-            ON_ERROR 
-                put_line(connection, 144, (TEXT *) dbname, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                return;
-            END_ERROR;
-	    END_FOR;
-	
-	    ERASE OD 
-        ON_ERROR 
-            put_line(connection, 144, (TEXT *) dbname, 0, 0);
-            ROLLBACK;
-            START_TRANSACTION;
-            return;
-        END_ERROR;
-    END_FOR;
+		AND OD.END_SEQNO NE 0
+		FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
+			put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+			ret = unlink(ODF.DUMP_FILE_NAME);
+			if ((ret == -1) && (errno != ENOENT)) {
+				put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				return;
+			}
+			ERASE ODF
+			ON_ERROR
+				put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				return;
+			END_ERROR;
+		END_FOR;
 
-    commit();
+		ERASE OD
+		ON_ERROR
+			put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			return;
+		END_ERROR;
+	END_FOR;
+
+	commit();
 }
 
 
@@ -898,33 +901,33 @@ static void delete_wal(void)
 	for (database = databases; database; database = database->djb_next) {
 		if (!(database->djb_flags & DJB_archive))
 			continue;
-        
-		/* Mark the file for deletion */
-        
-        FOR J IN JOURNAL_FILES WITH J.DB_ID EQ database->djb_id
-            AND J.DELETE_STATUS EQ LOG_NOT_DELETED
-            AND J.ARCHIVE_STATUS EQ ARCHIVED
+	
+		// Mark the file for deletion
+	
+		FOR J IN JOURNAL_FILES WITH J.DB_ID EQ database->djb_id
+			AND J.DELETE_STATUS EQ LOG_NOT_DELETED
+			AND J.ARCHIVE_STATUS EQ ARCHIVED
 
-            WALF_set_log_header_flag(status, (char*) database->djb_db_name,
-                                     J.LOG_NAME, J.PARTITION_OFFSET,
-                                     WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
-            MODIFY J USING 
-                strcpy(J.DELETE_STATUS, LOG_DELETED);
-            END_MODIFY 
-            ON_ERROR 
-                put_line(NULL, 118, 0, 0, 0);
-                ROLLBACK;
-                START_TRANSACTION;
-                break;
-	        END_ERROR;
-	    END_FOR;
+			WALF_set_log_header_flag(status, (char*) database->djb_db_name,
+									 J.LOG_NAME, J.PARTITION_OFFSET,
+									 WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
+			MODIFY J USING
+				strcpy(J.DELETE_STATUS, LOG_DELETED);
+			END_MODIFY
+			ON_ERROR
+				put_line(NULL, 118, 0, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				break;
+			END_ERROR;
+		END_FOR;
 
 		commit();
 	}
 }
 
 
-static void disable(CNCT connection, 
+static void disable(CNCT connection,
 					LTJC * msg)
 {
 /**************************************
@@ -941,26 +944,26 @@ static void disable(CNCT connection,
 
 	database = connection->cnct_database;
 
-/* Journal the message */
+// Journal the message
 
 	msg->ltjc_header.jrnh_handle = (SLONG) connection;
 	put_message(97, database);
 
-/* Before disable, wal writer will rollover to a new file.
-   The open of the new file will be recorded before the previous
-   file is closed.  Get rid of the latest entry as it should not
-   contain any valid records. */
+// Before disable, wal writer will rollover to a new file.
+// The open of the new file will be recorded before the previous
+// file is closed.  Get rid of the latest entry as it should not
+// contain any valid records.
 
 	FOR D IN DATABASES WITH D.DB_ID EQ database->djb_id
-        MODIFY D USING 
-            strcpy(D.STATUS, DB_DISABLED);
-        END_MODIFY 
-        ON_ERROR 
-           put_line(NULL, 109, 0, 0, 0);
-           ROLLBACK;
-           START_TRANSACTION;
-           break;
-	   END_ERROR;
+		MODIFY D USING
+			strcpy(D.STATUS, DB_DISABLED);
+		END_MODIFY
+		ON_ERROR
+			put_line(NULL, 109, 0, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
 	END_FOR;
 
 	commit();
@@ -1010,7 +1013,9 @@ static void disconnect(CNCT connection)
 		error(GetLastError(), "DisconnectNamedPipe");
 	if (!CloseHandle(connection->cnct_handle) ||
 		!CloseHandle(connection->cnct_overlapped.hEvent))
+	{
 			error(GetLastError(), "CloseHandle");
+	}
 }
 #endif
 
@@ -1032,13 +1037,13 @@ static void divorce_terminal(fd_set * mask)
  **************************************/
 	int s, fid;
 
-/* Close all files other than those explicitly requested to stay open */
+// Close all files other than those explicitly requested to stay open
 
 	for (fid = 0; fid < BITS; fid++)
 		if (!mask || !(TEST_BIT(fid, mask)))
 			s = close(fid);
 
-/* Perform terminal divorce */
+// Perform terminal divorce
 
 	fid = open("/dev/tty", 2);
 
@@ -1049,7 +1054,7 @@ static void divorce_terminal(fd_set * mask)
 		s = close(fid);
 	}
 
-/* Finally, get out of the process group */
+// Finally, get out of the process group
 
 	s = setpgrp(0, 0);
 }
@@ -1057,7 +1062,7 @@ static void divorce_terminal(fd_set * mask)
 #endif
 
 
-static void enable(CNCT connection, 
+static void enable(CNCT connection,
 				   LTJC * msg)
 {
 /**************************************
@@ -1079,7 +1084,7 @@ static void enable(CNCT connection,
 	MISC_get_wal_info(msg, db_name, dir_name);
 	connection->cnct_version = msg->ltjc_header.jrnh_version;
 
-/* Check validity of archive directory */
+// Check validity of archive directory
 
 	if ((dir_name) && strlen(dir_name)) {
 		build_indexed_name(arch_name, dir_name, msg->ltjc_seqno);
@@ -1092,19 +1097,19 @@ static void enable(CNCT connection,
 
 		LLIO_close(NULL, fd);
 
-		/* get rid of file created */
+		// get rid of file created
 
 		unlink(arch_name);
 	}
 
-/* If database already exists, wipe out old connections and start again */
+// If database already exists, wipe out old connections and start again
 
 	if (database = lookup_database(db_name, 0, 0)) {
 		database->djb_use_count++;
 		delete_database(database);
 	}
 
-/* Make up database block */
+// Make up database block
 
 	start_database(connection, db_name, dir_name,
 				   msg->ltjc_page_size, msg->ltjc_seqno, msg->ltjc_offset);
@@ -1114,7 +1119,7 @@ static void enable(CNCT connection,
 
 
 #ifdef BSD_SOCKETS
-static void error(ISC_STATUS status, 
+static void error(ISC_STATUS status,
 				  TEXT * string)
 {
 /**************************************
@@ -1135,7 +1140,7 @@ static void error(ISC_STATUS status,
 
 
 #ifdef WIN_NT
-static void error(ISC_STATUS status, 
+static void error(ISC_STATUS status,
 				  TEXT * string)
 {
 /**************************************
@@ -1153,21 +1158,18 @@ static void error(ISC_STATUS status,
 
 	put_line(NULL, GEN_ERR, (TEXT *) string, 0, 0);
 
-	if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-							NULL,
-							status,
-							GetUserDefaultLangID(),
-							buffer,
-							sizeof(buffer),
-							NULL)))
-			put_line(NULL, 211, (TEXT *) status, 0, 0);
+	if(!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, status,
+						   GetUserDefaultLangID(), buffer, sizeof(buffer), NULL)))
+	{
+		put_line(NULL, 211, (TEXT *) status, 0, 0);
+	}
 	else
 		put_line(NULL, 212, (TEXT *) buffer, 0, 0);
 }
 #endif
 
 
-static void error_exit(ISC_STATUS status, 
+static void error_exit(ISC_STATUS status,
 					   TEXT * string)
 {
 /**************************************
@@ -1190,17 +1192,17 @@ static void free_database_entry(DJB database)
 {
 /**************************************
  *
- *      f r e e _ d a t a b a s e _ e n t r y
+ *	  f r e e _ d a t a b a s e _ e n t r y
  *
  **************************************
  *
  * Functional description
- *      Remove database block from list and free up memory
+ *	  Remove database block from list and free up memory
  *
  **************************************/
 	DJB *ptr;
 
-/* Disconnect block from data structures */
+// Disconnect block from data structures
 
 	for (ptr = &databases; *ptr; ptr = &(*ptr)->djb_next)
 		if (*ptr == database) {
@@ -1215,7 +1217,7 @@ static void free_database_entry(DJB database)
 
 
 #ifdef BSD_SOCKETS
-static void get_message(JRNH * buffer, 
+static void get_message(JRNH * buffer,
 						int length)
 {
 /**************************************
@@ -1225,10 +1227,10 @@ static void get_message(JRNH * buffer,
  **************************************
  *
  * Functional description
- *      Poll sockets and connections.  If we get a 'select', read one
- *      and return later for the rest.
- *      Connections has the linked list of all FDs created by 'accept', 
- *      but those of original sockets.
+ *	  Poll sockets and connections.  If we get a 'select', read one
+ *	  and return later for the rest.
+ *	  Connections has the linked list of all FDs created by 'accept',
+ *	  but those of original sockets.
  *
  **************************************/
 	SLONG len, nfd, ready_cnt;
@@ -1241,8 +1243,8 @@ static void get_message(JRNH * buffer,
 
 	init_handles(&ready);
 
-/* set timeout to NULL to wait until we get something */
-/* want more than 32 later */
+// set timeout to NULL to wait until we get something
+// want more than 32 later
 
 	for (;;) {
 #ifdef UNIX_JOURNALLING
@@ -1259,7 +1261,8 @@ static void get_message(JRNH * buffer,
 	if (ready_cnt) {
 		nfd = 0;
 		for (connection = connections; connection;
-			 connection = connection->cnct_next) {
+			 connection = connection->cnct_next)
+		{
 			handle = connection->cnct_handle;
 			if (TEST_BIT(handle, &ready)) {
 				nfd = handle;
@@ -1267,7 +1270,7 @@ static void get_message(JRNH * buffer,
 			}
 		}
 
-		/* if the select wasn't on a connection, check both sockets */
+		// if the select wasn't on a connection, check both sockets
 
 		if (!nfd) {
 			if (TEST_BIT(handles[slot_console], &ready))
@@ -1310,7 +1313,7 @@ static void get_message(JRNH * buffer,
 
 
 #ifdef WIN_NT
-static void get_message(JRNH * buffer, 
+static void get_message(JRNH * buffer,
 						int length)
 {
 /**************************************
@@ -1332,12 +1335,15 @@ static void get_message(JRNH * buffer,
 	*wait_events++ = pending_connections[slot_console].cnct_overlapped.hEvent;
 	*wait_events++ = pending_connections[slot_journal].cnct_overlapped.hEvent;
 	for (connection = connections; connection;
-		 connection = connection->cnct_next) *wait_events++ =
-			connection->cnct_overlapped.hEvent;
+		 connection = connection->cnct_next)
+	{
+		*wait_events++ = connection->cnct_overlapped.hEvent;
+	}
 
 	wait_count = wait_events - wait_vec;
-	if ((n = WaitForMultipleObjects(wait_count, wait_vec, FALSE, INFINITE)) <
-		0) error(GetLastError(), "WaitForMultipleObjects");
+	n = WaitForMultipleObjects(wait_count, wait_vec, FALSE, INFINITE);
+	if (n < 0)
+		error(GetLastError(), "WaitForMultipleObjects");
 
 	if (n < 2)
 		connection = (n == 0) ? &pending_connections[slot_console] :
@@ -1348,9 +1354,12 @@ static void get_message(JRNH * buffer,
 
 	if (connection->cnct_flags & CNCT_pending_io) {
 		if (!GetOverlappedResult(connection->cnct_handle,
-								 &connection->cnct_overlapped, (ULONG*) &len, TRUE) &&
+									   &connection->cnct_overlapped,
+									   (ULONG*) &len, TRUE) &&
 			GetLastError() != ERROR_BROKEN_PIPE)
+		{
 			error(GetLastError(), "GetOverlappedResult");
+		}
 		connection->cnct_read_length = len;
 		connection->cnct_flags &= ~CNCT_pending_io;
 	}
@@ -1381,13 +1390,16 @@ static void get_message(JRNH * buffer,
 	p = (UCHAR *) buffer + connection->cnct_read_length;
 	length = buffer->jrnh_length - connection->cnct_read_length;
 	if (!ReadFile(connection->cnct_handle, p, length, (ULONG*) &len,
-				  &connection->cnct_overlapped)) {
+				  &connection->cnct_overlapped))
+	{
 		if (GetLastError() != ERROR_IO_PENDING)
 			error(GetLastError(), "ReadFile");
 		else if (!GetOverlappedResult(connection->cnct_handle,
 									  &connection->cnct_overlapped, (ULONG*) &len,
-									  TRUE)) error(GetLastError(),
-												   "GetOverlappedResult");
+									  TRUE))
+		{
+			error(GetLastError(), "GetOverlappedResult");
+		}
 	}
 	if (length != len)
 		error(GetLastError(), "ReadFile");
@@ -1404,7 +1416,7 @@ static void init_handles(fd_set * mask_ptr)
 {
 /**************************************
  *
- *	i n i t _ h a n d l e s     ( U N I X  &  N E T W A R E )
+ *	i n i t _ h a n d l e s	 ( U N I X  &  N E T W A R E )
  *
  **************************************
  *
@@ -1416,13 +1428,12 @@ static void init_handles(fd_set * mask_ptr)
 
 	memset(mask_ptr, 0, sizeof(*mask_ptr));
 
-/* set mask for each accepted connections */
+// set mask for each accepted connections
 
-	for (connection = connections; connection;
-		 connection =
-		 connection->cnct_next) SET_BIT(connection->cnct_handle, mask_ptr);
+	for (connection = connections; connection; connection = connection->cnct_next)
+		SET_BIT(connection->cnct_handle, mask_ptr);
 
-/* now for the sockets */
+// now for the sockets
 
 	SET_BIT(handles[slot_console], mask_ptr);
 	SET_BIT(handles[slot_journal], mask_ptr);
@@ -1430,8 +1441,8 @@ static void init_handles(fd_set * mask_ptr)
 #endif
 
 
-static DJB lookup_database(SCHAR * string, 
-						   USHORT id, 
+static DJB lookup_database(SCHAR * string,
+						   USHORT id,
 						   SSHORT find_disabled)
 {
 /**************************************
@@ -1471,8 +1482,8 @@ static DJB lookup_database(SCHAR * string,
 }
 
 
-static DJB make_database(CNCT connection, 
-						 SCHAR * db_name, 
+static DJB make_database(CNCT connection,
+						 SCHAR * db_name,
 						 SCHAR * dir_name)
 {
 /**************************************
@@ -1521,7 +1532,7 @@ static DJB make_database(CNCT connection,
 
 
 #ifdef BSD_SOCKETS
-static void open_mailbox(SCHAR * filename, 
+static void open_mailbox(SCHAR * filename,
 						 USHORT slot)
 {
 /**************************************
@@ -1540,7 +1551,7 @@ static void open_mailbox(SCHAR * filename,
 	TEXT name[MAXHOSTNAMELEN];
 	int length, namelen;
 
-/* Set up Inter-Net socket address */
+// Set up Inter-Net socket address
 
 	namelen = MAXHOSTNAMELEN;
 
@@ -1550,7 +1561,7 @@ static void open_mailbox(SCHAR * filename,
 	if (!(host = gethostbyname(name)))
 		error_exit((ISC_STATUS) errno, "gethostbyname");
 
-/* Allocate a port block and initialize a socket for communications */
+// Allocate a port block and initialize a socket for communications
 
 	handle = (SLONG) socket(AF_INET, SOCK_STREAM, 0);
 
@@ -1566,7 +1577,7 @@ static void open_mailbox(SCHAR * filename,
 	address.sin_family = AF_INET;
 #endif
 
-	address.sin_port = 0;		/* let system choose an unused port no. */
+	address.sin_port = 0;		// let system choose an unused port no.
 	length = sizeof(address);
 
 	if (bind((int) handle, (struct sockaddr *) &address, length) < 0)
@@ -1575,11 +1586,11 @@ static void open_mailbox(SCHAR * filename,
 	if (getsockname((int) handle, (struct sockaddr *) &address, &length) < 0)
 		error_exit((ISC_STATUS) errno, "getsockname");
 
-/* now that we've settled on the socket, go advertize the address */
+// now that we've settled on the socket, go advertize the address
 
 	post_address(slot, address);
 
-/* current system limit for queue = 5 */
+// current system limit for queue = 5
 
 	if (listen(handle, 5) < 0)
 		error_exit((ISC_STATUS) errno, "listen");
@@ -1590,7 +1601,7 @@ static void open_mailbox(SCHAR * filename,
 
 
 #ifdef WIN_NT
-static void open_mailbox(SCHAR * filename, 
+static void open_mailbox(SCHAR * filename,
 						 USHORT slot)
 {
 /**************************************
@@ -1643,7 +1654,9 @@ static void open_mailbox(SCHAR * filename,
 
 	if (ConnectNamedPipe(phandle, &pending_connections[slot].cnct_overlapped)
 		|| GetLastError() == ERROR_PIPE_CONNECTED)
+	{
 		SetEvent(ehandle);
+	}
 	else if (GetLastError() == ERROR_IO_PENDING)
 		pending_connections[slot].cnct_flags |= CNCT_pending_io;
 	else
@@ -1664,7 +1677,7 @@ static void open_mailbox(SCHAR * filename,
 
 
 #ifdef BSD_SOCKETS
-static void post_address(USHORT slot, 
+static void post_address(USHORT slot,
 						 struct sockaddr_in address)
 {
 /**************************************
@@ -1675,7 +1688,7 @@ static void post_address(USHORT slot,
  *
  * Functional description
  *	Write out socket info. to a known file so that any
- *      client can find it.
+ *	  client can find it.
  *
  **************************************/
 	FILE *file;
@@ -1696,7 +1709,7 @@ static void post_address(USHORT slot,
 #endif
 
 
-static void process_command(CNCT connection, 
+static void process_command(CNCT connection,
 							TEXT * string)
 {
 /**************************************
@@ -1801,7 +1814,7 @@ static void process_command(CNCT connection,
 }
 
 
-static void process_archive_begin(CNCT connection, 
+static void process_archive_begin(CNCT connection,
 								  LTJA * msg)
 {
 /**************************************
@@ -1835,25 +1848,24 @@ static void process_archive_begin(CNCT connection,
 		return;
 	}
 
-/* Check if the database has been disabled already.  If so let the
- * archive run.
- */
+// Check if the database has been disabled already.  If so let the
+// archive run.
 
-    FOR D IN DATABASES WITH D.DB_ID EQ db_id AND D.STATUS EQ DB_DISABLED
-        reply.jrnr_response = jrnr_accepted;
-	    send_reply(connection, (JRNH *) & reply, sizeof(reply));
-        connection->cnct_database = (DJB) NULL;
-        return;
-    END_FOR;
+	FOR D IN DATABASES WITH D.DB_ID EQ db_id AND D.STATUS EQ DB_DISABLED
+		reply.jrnr_response = jrnr_accepted;
+		send_reply(connection, (JRNH *) & reply, sizeof(reply));
+		connection->cnct_database = NULL;
+		return;
+	END_FOR;
 
-/* Error situation */
+// Error situation
 
 	reply.jrnr_response = jrnr_rejected;
 	send_reply(connection, (JRNH *) & reply, sizeof(reply));
 }
 
 
-static void process_archive_end(CNCT connection, 
+static void process_archive_end(CNCT connection,
 								LTJA * msg)
 {
 /**************************************
@@ -1879,45 +1891,45 @@ static void process_archive_end(CNCT connection,
 
 	database = connection->cnct_database;
 
-/* Handle situation where the database is already disabled */
+// Handle situation where the database is already disabled
 
 	if (database) {
 		strcpy(db, (const char*) database->djb_db_name);
 		strcpy(arch, (const char*) database->djb_dir_name);
-		database->djb_retry = 0;	/* archive is working */
+		database->djb_retry = 0;	// archive is working
 	}
 	else {
-	    FOR D IN DATABASES WITH D.DB_ID EQ db_id strcpy(db, D.DB_NAME);
-	        strcpy(arch, D.ARCHIVE_BASE_NAME);
-	    END_FOR;
+		FOR D IN DATABASES WITH D.DB_ID EQ db_id strcpy(db, D.DB_NAME);
+			strcpy(arch, D.ARCHIVE_BASE_NAME);
+		END_FOR;
 	}
 
 	FOR J IN JOURNAL_FILES WITH J.FILE_ID EQ file_id
-        WALF_set_log_header_flag(status, db, J.LOG_NAME,
-                                 J.PARTITION_OFFSET,
-                                 WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
-        strcpy(file_name, J.LOG_NAME);
-        build_indexed_name(name, arch, J.FILE_SEQUENCE);
-        MODIFY J USING 
-            strcpy(J.DELETE_STATUS, LOG_DELETED);
-	        strcpy(J.ARCHIVE_STATUS, ARCHIVED);
-            strcpy(J.ARCHIVE_NAME, name);
-	    END_MODIFY 
-        ON_ERROR 
-            put_line(NULL, 126, 0, 0, 0);
-            ROLLBACK;
-            START_TRANSACTION;
-            break;
-	    END_ERROR;
+		WALF_set_log_header_flag(status, db, J.LOG_NAME,
+								 J.PARTITION_OFFSET,
+								 WALFH_KEEP_FOR_LONG_TERM_RECV, 0);
+		strcpy(file_name, J.LOG_NAME);
+		build_indexed_name(name, arch, J.FILE_SEQUENCE);
+		MODIFY J USING
+			strcpy(J.DELETE_STATUS, LOG_DELETED);
+			strcpy(J.ARCHIVE_STATUS, ARCHIVED);
+			strcpy(J.ARCHIVE_NAME, name);
+		END_MODIFY
+		ON_ERROR
+			put_line(NULL, 126, 0, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
 	END_FOR;
 
-    FOR T IN LOG_ARCHIVE_STATUS WITH T.FILE_ID = file_id
-        ERASE T 
-        ON_ERROR 
-            ROLLBACK;
-            START_TRANSACTION;
-            break;
-	    END_ERROR;
+	FOR T IN LOG_ARCHIVE_STATUS WITH T.FILE_ID = file_id
+		ERASE T
+		ON_ERROR
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
 	END_FOR;
 
 	if (database)
@@ -1934,7 +1946,7 @@ static void process_archive_end(CNCT connection,
 }
 
 
-static void process_archive_error(CNCT connection, 
+static void process_archive_error(CNCT connection,
 								  LTJA * msg)
 {
 /**************************************
@@ -1962,21 +1974,21 @@ static void process_archive_error(CNCT connection,
 	delete_connection(connection);
 
 	commit();
-    
+
 	FOR T IN LOG_ARCHIVE_STATUS WITH T.FILE_ID = file_id
-        ERASE T 
-        ON_ERROR 
-            ROLLBACK;
-            START_TRANSACTION;
-            break;
-	    END_ERROR;
+		ERASE T
+		ON_ERROR
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
 	END_FOR;
 
 	commit();
 
 	archives_running--;
 
-/* If database is already disabled */
+// If database is already disabled
 
 	if (!database)
 		return;
@@ -1987,16 +1999,16 @@ static void process_archive_error(CNCT connection,
 	if (database->djb_retry > max_retry)
 		return;
 
-/* Restart backup. */
+// Restart backup.
 
 	FOR J IN JOURNAL_FILES WITH J.FILE_ID EQ msg->ltja_file_id
-        backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
-                   J.FILE_SIZE, J.PARTITION_OFFSET);
+		backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
+				   J.FILE_SIZE, J.PARTITION_OFFSET);
 	END_FOR;
 }
 
 
-static void process_control_point(CNCT connection, 
+static void process_control_point(CNCT connection,
 								  LTJW * msg)
 {
 /**************************************
@@ -2022,15 +2034,15 @@ static void process_control_point(CNCT connection,
 	reply.jrnr_response = jrnr_ack;
 	send_reply(connection, (JRNH *) & reply, sizeof(reply));
 
-/* 
- * Restart backup.
- * Go through WAL file list for database and fire off backup process. 
- */
+//
+// Restart backup.
+// Go through WAL file list for database and fire off backup process.
+//
 
 	if (database->djb_flags & DJB_archive)
 		restart_backup(database, 1);
 
-/* Mark the file for deletion */
+// Mark the file for deletion
 
 	delete_wal();
 
@@ -2065,29 +2077,29 @@ static void process_disable_database(CNCT connection,
 		return;
 	}
 
-/* show our interest in the database */
+// show our interest in the database
 	database->djb_use_count++;
 
 	put_message(97, database);
 
-/* 
- * Before disable, wal writer will rollover to a new file.
- * The open of the new file will be recorded before the previous
- * file is closed.  Get rid of the latest entry as it should not
- * contain any valid records.
- */
+//
+// Before disable, wal writer will rollover to a new file.
+// The open of the new file will be recorded before the previous
+// file is closed.  Get rid of the latest entry as it should not
+// contain any valid records.
+//
 
 	FOR D IN DATABASES WITH D.DB_ID EQ database->djb_id
-        MODIFY D USING 
-            strcpy(D.STATUS, DB_DISABLED);
-	   END_MODIFY 
-       ON_ERROR 
-           put_line(NULL, 109, 0, 0, 0);
-	       ROLLBACK;
-           START_TRANSACTION;
-           break;
+		MODIFY D USING
+			strcpy(D.STATUS, DB_DISABLED);
+	   END_MODIFY
+	   ON_ERROR
+		   put_line(NULL, 109, 0, 0, 0);
+		   ROLLBACK;
+		   START_TRANSACTION;
+		   break;
 	   END_ERROR;
-    END_FOR;
+	END_FOR;
 
 	commit();
 
@@ -2095,7 +2107,7 @@ static void process_disable_database(CNCT connection,
 }
 
 
-static void process_drop_database(CNCT connection, 
+static void process_drop_database(CNCT connection,
 								  SCHAR * dbname)
 {
 /**************************************
@@ -2130,7 +2142,7 @@ static void process_drop_database(CNCT connection,
 }
 
 
-static void process_dump_file(CNCT connection, 
+static void process_dump_file(CNCT connection,
 							  LTJW * msg)
 {
 /**************************************
@@ -2149,17 +2161,17 @@ static void process_dump_file(CNCT connection,
 
 	msg->ltjw_data[msg->ltjw_length] = 0;
 
-	STORE X IN ONLINE_DUMP_FILES 
-        strcpy(X.DUMP_FILE_NAME, msg->ltjw_data);
-	    X.FILE_SEQNO = msg->ltjw_count;
-        X.DUMP_ID = msg->ltjw_mode;
-        X.FILE_SIZE = msg->ltjw_offset;
-        time_stamp((GDS_QUAD_t*) &X.CREATION_DATE);
-	END_STORE 
-    ON_ERROR 
-        put_line(NULL, 119, 0, 0, 0);
-	    ROLLBACK;
-        START_TRANSACTION;
+	STORE X IN ONLINE_DUMP_FILES
+		strcpy(X.DUMP_FILE_NAME, msg->ltjw_data);
+		X.FILE_SEQNO = msg->ltjw_count;
+		X.DUMP_ID = msg->ltjw_mode;
+		X.FILE_SIZE = msg->ltjw_offset;
+		time_stamp((GDS_QUAD_t*) &X.CREATION_DATE);
+	END_STORE
+	ON_ERROR
+		put_line(NULL, 119, 0, 0, 0);
+		ROLLBACK;
+		START_TRANSACTION;
 	END_ERROR;
 
 	commit();
@@ -2172,7 +2184,7 @@ static void process_dump_file(CNCT connection,
 }
 
 
-static void process_end_dump(CNCT connection, 
+static void process_end_dump(CNCT connection,
 							 LTJW * msg)
 {
 /**************************************
@@ -2189,22 +2201,22 @@ static void process_end_dump(CNCT connection,
  **************************************/
 	JRNR reply;
 
-/* Trigger will update DATABASE.LAST_DUMP_ID */
+// Trigger will update DATABASE.LAST_DUMP_ID
 
-    FOR X IN ONLINE_DUMP WITH X.DUMP_ID = msg->ltjw_mode
-        MODIFY X USING 
-            X.END_SEQNO = msg->ltjw_seqno;
-            X.END_OFFSET = msg->ltjw_offset;
-            X.END_PARTITION_OFFSET = msg->ltjw_p_offset;
-            time_stamp((GDS_QUAD_t*) &X.DUMP_DATE);
-	    END_MODIFY 
-        ON_ERROR 
-            put_line(NULL, 121, 0, 0, 0);
-	        ROLLBACK;
-            START_TRANSACTION;
-            break;
-	    END_ERROR;
-    END_FOR;
+	FOR X IN ONLINE_DUMP WITH X.DUMP_ID = msg->ltjw_mode
+		MODIFY X USING
+			X.END_SEQNO = msg->ltjw_seqno;
+			X.END_OFFSET = msg->ltjw_offset;
+			X.END_PARTITION_OFFSET = msg->ltjw_p_offset;
+			time_stamp((GDS_QUAD_t*) &X.DUMP_DATE);
+		END_MODIFY
+		ON_ERROR
+			put_line(NULL, 121, 0, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
+	END_FOR;
 
 	commit();
 
@@ -2237,11 +2249,11 @@ static void process_erase_database(CNCT connection,
 	commit();
 
 	if (!(database = lookup_database(NULL, db_id, 0))) {
-        FOR D IN DATABASES WITH D.DB_ID EQ db_id 
-            strcpy(dbname, D.DB_NAME);
-	        found = 1;
-	        break;
-	    END_FOR;
+		FOR D IN DATABASES WITH D.DB_ID EQ db_id
+			strcpy(dbname, D.DB_NAME);
+			found = 1;
+			break;
+		END_FOR;
 
 		if (!found) {
 			put_line(connection, 177, (TEXT *) db_id, 0, 0);
@@ -2256,73 +2268,73 @@ static void process_erase_database(CNCT connection,
 			return;
 		}
 
-		/* show our interest in the database */
+		// show our interest in the database
 
 		database->djb_use_count++;
 
 		delete_database(database);
 	}
 
-/* erase all online dump files and all archived log files */
+// erase all online dump files and all archived log files
 
-    FOR D IN DATABASES WITH D.DB_ID EQ db_id
-        FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ D.DB_ID
-            FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
-                put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
-                ret = unlink(ODF.DUMP_FILE_NAME);
-                if ((ret == -1) && (errno != ENOENT)) {
-                    put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
-                    ROLLBACK;
-                    START_TRANSACTION;
-                    return;
-                }
-                ERASE ODF 
-                ON_ERROR 
-                   put_line(connection, 144, (TEXT *) dbname, 0, 0);
-                   ROLLBACK;
-                   START_TRANSACTION;
-                   return;
-               END_ERROR;
-           END_FOR;
-	
-           ERASE OD 
-           ON_ERROR 
-               put_line(connection, 144, (TEXT *) dbname, 0, 0);
-               ROLLBACK;
-               START_TRANSACTION;
-               return;
-	       END_ERROR;
-	
+	FOR D IN DATABASES WITH D.DB_ID EQ db_id
+		FOR OD IN ONLINE_DUMP WITH OD.DB_ID EQ D.DB_ID
+			FOR ODF IN ONLINE_DUMP_FILES WITH ODF.DUMP_ID EQ OD.DUMP_ID
+				put_line(connection, 145, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+				ret = unlink(ODF.DUMP_FILE_NAME);
+				if ((ret == -1) && (errno != ENOENT)) {
+					put_line(connection, 147, (TEXT *) ODF.DUMP_FILE_NAME, 0, 0);
+					ROLLBACK;
+					START_TRANSACTION;
+					return;
+				}
+				ERASE ODF
+				ON_ERROR
+				   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+				   ROLLBACK;
+				   START_TRANSACTION;
+				   return;
+			   END_ERROR;
+		   END_FOR;
+
+		   ERASE OD
+		   ON_ERROR
+			   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			   ROLLBACK;
+			   START_TRANSACTION;
+			   return;
+		   END_ERROR;
+
 	   END_FOR;
-	
+
 	   FOR JF IN JOURNAL_FILES WITH JF.DB_ID = D.DB_ID
-	       if (strlen(JF.ARCHIVE_NAME)) {
-               put_line(connection, 145, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
-               ret = unlink(JF.ARCHIVE_NAME);
-               if ((ret == -1) && (errno != ENOENT)) {
-                   put_line(connection, 147, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
-                   ROLLBACK;
-                   START_TRANSACTION;
-                   return;
-               }
-           }
-           ERASE JF 
-           ON_ERROR 
-               put_line(connection, 144, (TEXT *) dbname, 0, 0);
-               ROLLBACK;
-               START_TRANSACTION;
-               return;
-	       END_ERROR;
+		   if (strlen(JF.ARCHIVE_NAME)) {
+			   put_line(connection, 145, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+			   ret = unlink(JF.ARCHIVE_NAME);
+			   if ((ret == -1) && (errno != ENOENT)) {
+				   put_line(connection, 147, (TEXT *) JF.ARCHIVE_NAME, 0, 0);
+				   ROLLBACK;
+				   START_TRANSACTION;
+				   return;
+			   }
+		   }
+		   ERASE JF
+		   ON_ERROR
+			   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+			   ROLLBACK;
+			   START_TRANSACTION;
+			   return;
+		   END_ERROR;
 	   END_FOR;
-	
-	   ERASE D 
-       ON_ERROR 
-           put_line(connection, 144, (TEXT *) dbname, 0, 0);
-	       ROLLBACK;
-           START_TRANSACTION;
-           return;
+
+	   ERASE D
+	   ON_ERROR
+		   put_line(connection, 144, (TEXT *) dbname, 0, 0);
+		   ROLLBACK;
+		   START_TRANSACTION;
+		   return;
 	   END_ERROR;
-    END_FOR;
+	END_FOR;
 
 	commit();
 }
@@ -2431,20 +2443,20 @@ static void process_reset_database(CNCT connection,
 		db_id = database->djb_id;
 	}
 
-/* reset delete flag */
+// reset delete flag
 
-    FOR D IN DATABASES WITH D.DB_ID EQ db_id
-        MODIFY D USING 
-            strcpy(D.DELETE_MODE, DB_RETAIN);
-	    END_MODIFY 
-        ON_ERROR 
-            ROLLBACK;
-	        START_TRANSACTION;
-            break;
-	    END_ERROR;
-	
-        database->djb_flags &= ~DJB_set_delete;
-    END_FOR;
+	FOR D IN DATABASES WITH D.DB_ID EQ db_id
+		MODIFY D USING
+			strcpy(D.DELETE_MODE, DB_RETAIN);
+		END_MODIFY
+		ON_ERROR
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
+
+		database->djb_flags &= ~DJB_set_delete;
+	END_FOR;
 
 	commit();
 }
@@ -2476,9 +2488,9 @@ static void process_restart_archive(CNCT connection,
 		db_id = database->djb_id;
 	}
 
-	database->djb_retry = 0;	/* set archive to be working */
+	database->djb_retry = 0;	// set archive to be working
 
-/* Restart backup. */
+// Restart backup.
 
 	restart_backup(database, MAX_ARCHIVE);
 
@@ -2513,20 +2525,20 @@ static void process_set_database(CNCT connection,
 		db_id = database->djb_id;
 	}
 
-/* set delete flag */
+// set delete flag
 
-    FOR D IN DATABASES WITH D.DB_ID EQ db_id
-        MODIFY D USING 
-            strcpy(D.DELETE_MODE, DB_DELETE);
-	    END_MODIFY 
-        ON_ERROR 
-            ROLLBACK;
-	        START_TRANSACTION;
-            break;
-        END_ERROR;
-	
-        last_dump = D.LAST_DUMP_ID;
-        database->djb_flags |= DJB_set_delete;
+	FOR D IN DATABASES WITH D.DB_ID EQ db_id
+		MODIFY D USING
+			strcpy(D.DELETE_MODE, DB_DELETE);
+		END_MODIFY
+		ON_ERROR
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
+
+		last_dump = D.LAST_DUMP_ID;
+		database->djb_flags |= DJB_set_delete;
 	END_FOR;
 
 	commit();
@@ -2553,33 +2565,33 @@ static void process_start_dump(CNCT connection,
 
 	msg->ltjw_data[msg->ltjw_length] = 0;
 
-    FOR D IN DATABASES WITH D.DB_ID EQ connection->cnct_database->djb_id
-        STORE X IN ONLINE_DUMP X.DB_ID = D.DB_ID;
-            X.START_SEQNO = msg->ltjw_seqno;
-            X.START_OFFSET = msg->ltjw_offset;
-            X.START_PARTITION_OFFSET = msg->ltjw_p_offset;
-            X.END_SEQNO = 0;
-            X.END_OFFSET = 0;
-            X.END_PARTITION_OFFSET = 0;
-        END_STORE 
-        ON_ERROR 
-            put_line(NULL, 124, 0, 0, 0);
-	        ROLLBACK;
-            START_TRANSACTION;
-            goto end_proc;
-        END_ERROR;
+	FOR D IN DATABASES WITH D.DB_ID EQ connection->cnct_database->djb_id
+		STORE X IN ONLINE_DUMP X.DB_ID = D.DB_ID;
+			X.START_SEQNO = msg->ltjw_seqno;
+			X.START_OFFSET = msg->ltjw_offset;
+			X.START_PARTITION_OFFSET = msg->ltjw_p_offset;
+			X.END_SEQNO = 0;
+			X.END_OFFSET = 0;
+			X.END_PARTITION_OFFSET = 0;
+		END_STORE
+		ON_ERROR
+			put_line(NULL, 124, 0, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			goto end_proc;
+		END_ERROR;
 	END_FOR;
 
 	commit();
 
-/* Get the newly generated dump_id */
+// Get the newly generated dump_id
 
-    FOR X IN ONLINE_DUMP WITH X.DB_ID EQ connection->cnct_database->djb_id
-        AND X.START_SEQNO EQ msg->ltjw_seqno
-        AND X.START_OFFSET EQ msg->ltjw_offset 
-        
-        dump_id = X.DUMP_ID;
+	FOR X IN ONLINE_DUMP WITH X.DB_ID EQ connection->cnct_database->djb_id
+		AND X.START_SEQNO EQ msg->ltjw_seqno
+		AND X.START_OFFSET EQ msg->ltjw_offset
 	
+		dump_id = X.DUMP_ID;
+
 	END_FOR;
 
 	put_line(NULL, 125, (TEXT *) dump_id, 0, 0);
@@ -2616,57 +2628,57 @@ static void process_wal_file(CNCT connection,
 	database = connection->cnct_database;
 
 	FOR D IN DATABASES WITH D.DB_ID EQ connection->cnct_database->djb_id
-        last_dump = D.LAST_DUMP_ID;
-        repeat = false;
-	
-        FOR X IN JOURNAL_FILES WITH X.DB_ID EQ D.DB_ID AND
-            X.FILE_SEQUENCE EQ msg->ltjw_seqno 
+		last_dump = D.LAST_DUMP_ID;
+		repeat = false;
 
-            repeat = true;
-	    END_FOR;
+		FOR X IN JOURNAL_FILES WITH X.DB_ID EQ D.DB_ID AND
+			X.FILE_SEQUENCE EQ msg->ltjw_seqno
 
-	
-	   /* Handle close file record for files without open */
-	
-        if (repeat == false) {
-            STORE X IN JOURNAL_FILES X.DB_ID = D.DB_ID;
-                X.PARTITION_OFFSET = msg->ltjw_p_offset;
-                strcpy(X.FILE_STATUS, LOG_OPENED);
-                strcpy(X.DELETE_STATUS, LOG_NOT_DELETED);
-                strcpy(X.ARCHIVE_STATUS, NOT_ARCHIVED);
-                X.FILE_SEQUENCE = msg->ltjw_seqno;
-                strcpy(X.LOG_NAME, msg->ltjw_data);
-                MOVE_CLEAR(X.ARCHIVE_NAME, sizeof(X.ARCHIVE_NAME));
-                time_stamp((GDS_QUAD_t*) &X.ARCHIVE_DATE);
-                X.PARTITION_OFFSET = msg->ltjw_p_offset;
-                X.FILE_SIZE = msg->ltjw_offset;
-	        END_STORE 
-            ON_ERROR 
-                put_line(NULL, 126, 0, 0, 0);
-	            ROLLBACK;
-                START_TRANSACTION;
-                break;
-	        END_ERROR;
-        }
-	
-        if (msg->ltjw_mode != JRNW_OPEN) {
-            FOR X IN JOURNAL_FILES WITH X.FILE_STATUS EQ LOG_OPENED AND
-                X.DB_ID EQ D.DB_ID AND
-                X.FILE_SEQUENCE EQ msg->ltjw_seqno 
+			repeat = true;
+		END_FOR;
 
-                file_id = X.FILE_ID;
-                MODIFY X USING 
-                    X.FILE_SIZE = msg->ltjw_offset;
-	                strcpy(X.FILE_STATUS, LOG_CLOSED);
-	            END_MODIFY 
-                ON_ERROR 
-                    put_line(NULL, 126, 0, 0, 0);
-	                ROLLBACK;
-                    START_TRANSACTION;
-                    break;
-	            END_ERROR 
-	        END_FOR;
-        }
+
+	   // Handle close file record for files without open
+
+		if (repeat == false) {
+			STORE X IN JOURNAL_FILES X.DB_ID = D.DB_ID;
+				X.PARTITION_OFFSET = msg->ltjw_p_offset;
+				strcpy(X.FILE_STATUS, LOG_OPENED);
+				strcpy(X.DELETE_STATUS, LOG_NOT_DELETED);
+				strcpy(X.ARCHIVE_STATUS, NOT_ARCHIVED);
+				X.FILE_SEQUENCE = msg->ltjw_seqno;
+				strcpy(X.LOG_NAME, msg->ltjw_data);
+				MOVE_CLEAR(X.ARCHIVE_NAME, sizeof(X.ARCHIVE_NAME));
+				time_stamp((GDS_QUAD_t*) &X.ARCHIVE_DATE);
+				X.PARTITION_OFFSET = msg->ltjw_p_offset;
+				X.FILE_SIZE = msg->ltjw_offset;
+			END_STORE
+			ON_ERROR
+				put_line(NULL, 126, 0, 0, 0);
+				ROLLBACK;
+				START_TRANSACTION;
+				break;
+			END_ERROR;
+		}
+
+		if (msg->ltjw_mode != JRNW_OPEN) {
+			FOR X IN JOURNAL_FILES WITH X.FILE_STATUS EQ LOG_OPENED AND
+				X.DB_ID EQ D.DB_ID AND
+				X.FILE_SEQUENCE EQ msg->ltjw_seqno
+
+				file_id = X.FILE_ID;
+				MODIFY X USING
+					X.FILE_SIZE = msg->ltjw_offset;
+					strcpy(X.FILE_STATUS, LOG_CLOSED);
+				END_MODIFY
+				ON_ERROR
+					put_line(NULL, 126, 0, 0, 0);
+					ROLLBACK;
+					START_TRANSACTION;
+					break;
+				END_ERROR
+			END_FOR;
+		}
 	END_FOR;
 
 	if (msg->ltjw_mode == JRNW_OPEN)
@@ -2679,7 +2691,7 @@ static void process_wal_file(CNCT connection,
 	reply.jrnr_response = jrnr_ack;
 	send_reply(connection, (JRNH *) & reply, sizeof(reply));
 
-/* restart failed backups */
+// restart failed backups
 
 	if (database->djb_flags & DJB_archive)
 		restart_backup(database, 1);
@@ -2688,20 +2700,20 @@ static void process_wal_file(CNCT connection,
 
 	if (database->djb_flags & DJB_archive) {
 		if (msg->ltjw_mode == JRNW_CLOSE) {
-	        FOR X IN JOURNAL_FILES WITH X.FILE_ID EQ file_id
-                file_size = X.FILE_SIZE;
-	            p_offset = X.PARTITION_OFFSET;
-                file_seq = X.FILE_SEQUENCE;
-                MODIFY X USING 
-                    strcpy(X.ARCHIVE_STATUS, ARCHIVE_PENDING);
-	            END_MODIFY 
-                ON_ERROR 
-                    ROLLBACK;
-	                START_TRANSACTION;
-                    break;
-	            END_ERROR;
-	
-	        END_FOR;
+			FOR X IN JOURNAL_FILES WITH X.FILE_ID EQ file_id
+				file_size = X.FILE_SIZE;
+				p_offset = X.PARTITION_OFFSET;
+				file_seq = X.FILE_SEQUENCE;
+				MODIFY X USING
+					strcpy(X.ARCHIVE_STATUS, ARCHIVE_PENDING);
+				END_MODIFY
+				ON_ERROR
+					ROLLBACK;
+					START_TRANSACTION;
+					break;
+				END_ERROR;
+
+			END_FOR;
 
 			commit();
 
@@ -2710,13 +2722,13 @@ static void process_wal_file(CNCT connection,
 		}
 	}
 
-/* Mark files for deletion */
+// Mark files for deletion
 
 	delete_wal();
 
 	commit();
 
-/* if database is configured for deletion of 'older' files, do so now */
+// if database is configured for deletion of 'older' files, do so now
 
 	if (database->djb_flags & DJB_set_delete)
 		delete_history_files(NULL, (char*) database->djb_db_name,
@@ -2856,7 +2868,7 @@ static void report_status(CNCT connection)
 	DJB database;
 	SSHORT count;
 
-/* Report on current state */
+// Report on current state
 
 	commit();
 
@@ -2904,20 +2916,20 @@ static void restart_all_backups(int count)
 	if (!count)
 		return;
 
-/* restart back up of files which were marked pending, but never started */
+// restart back up of files which were marked pending, but never started
 
-    FOR J IN JOURNAL_FILES WITH J.ARCHIVE_STATUS EQ ARCHIVE_PENDING
-        if (!(database = lookup_database(NULL, J.DB_ID, 1)))
-            continue;
+	FOR J IN JOURNAL_FILES WITH J.ARCHIVE_STATUS EQ ARCHIVE_PENDING
+		if (!(database = lookup_database(NULL, J.DB_ID, 1)))
+			continue;
+
+		if (database->djb_retry > max_retry)
+		   continue;
 	
-        if (database->djb_retry > max_retry)
-	       continue;
-        
-        backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
-                   J.FILE_SIZE, J.PARTITION_OFFSET);
-        if (!--count)
-            return;
-    END_FOR;
+		backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
+				   J.FILE_SIZE, J.PARTITION_OFFSET);
+		if (!--count)
+			return;
+	END_FOR;
 }
 
 
@@ -2951,8 +2963,8 @@ static void restart_backup(DJB database,
 
 		if (!ISC_check_process_existence
 			(database->djb_bfi[i].bi_pid, 0, TRUE)) {
-			/* Process is not running and/or another process has reused the
-			   process id */
+			// Process is not running and/or another process has reused the
+			// process id
 
 			fid = database->djb_bfi[i].bi_fid;
 
@@ -2960,17 +2972,17 @@ static void restart_backup(DJB database,
 			database->djb_bfi[i].bi_fid = -1;
 			database->djb_bfi_count--;
 
-	        FOR J IN JOURNAL_FILES WITH J.FILE_ID EQ fid AND
-	               J.ARCHIVE_STATUS EQ ARCHIVE_PENDING
-                backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
-                           J.FILE_SIZE, J.PARTITION_OFFSET);
-                count--;
-	        END_FOR;
+			FOR J IN JOURNAL_FILES WITH J.FILE_ID EQ fid AND
+				   J.ARCHIVE_STATUS EQ ARCHIVE_PENDING
+				backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
+						   J.FILE_SIZE, J.PARTITION_OFFSET);
+				count--;
+			END_FOR;
 
 		}
 	}
 
-/* restart back up of files which were marked pending, but never started */
+// restart back up of files which were marked pending, but never started
 
 	restart_all_backups(count);
 }
@@ -2995,8 +3007,8 @@ static void send_reply(CNCT connection,
 	msg->jrnh_handle = (SLONG) connection;
 	msg->jrnh_version = connection->cnct_version;
 
-/* length is used by the journal server for reading
-   one message at a time from the socket connections */
+// length is used by the journal server for reading
+// one message at a time from the socket connections
 
 	msg->jrnh_length = length;
 
@@ -3026,8 +3038,8 @@ static void send_reply(CNCT connection,
 	msg->jrnh_handle = (SLONG) connection;
 	msg->jrnh_version = connection->cnct_version;
 
-/* length is used by the journal server for reading
-   one message at a time from the socket connections */
+// length is used by the journal server for reading
+// one message at a time from the socket connections
 
 	msg->jrnh_length = length;
 
@@ -3053,10 +3065,10 @@ static void set_use_count(DJB database)
  **************************************/
 
 	FOR D IN DATABASES WITH
-        D.STATUS EQ DB_ACTIVE AND D.DB_NAME EQ database->djb_db_name
-	    MODIFY D USING 
-            D.USE_COUNT = database->djb_use_count;
-	    END_MODIFY;
+		D.STATUS EQ DB_ACTIVE AND D.DB_NAME EQ database->djb_db_name
+		MODIFY D USING
+			D.USE_COUNT = database->djb_use_count;
+		END_MODIFY;
 	END_FOR;
 
 	commit();
@@ -3106,7 +3118,7 @@ static void sign_on(CNCT connection,
 
 	connection->cnct_version = msg->ltjc_header.jrnh_version;
 
-/* If we already know about the database, this is easy */
+// If we already know about the database, this is easy
 
 	if (database = lookup_database(db_name, 0, 0)) {
 		put_message(100, database);
@@ -3120,7 +3132,7 @@ static void sign_on(CNCT connection,
 		return;
 	}
 
-/* Make up database block */
+// Make up database block
 
 	start_database(connection, db_name, dir_name,
 				   msg->ltjc_page_size, msg->ltjc_seqno, msg->ltjc_offset);
@@ -3134,13 +3146,13 @@ static void signal_child(void)
 {
 /**************************************
  *
- *      s i g n a l _ c h i l d
+ *	  s i g n a l _ c h i l d
  *
  **************************************
  *
  * Functional description
- *      Do not do anything.  SUN is leaving <defunct> processes
- *      with an ignore.
+ *	  Do not do anything.  SUN is leaving <defunct> processes
+ *	  with an ignore.
  *
  **************************************/
 	int location;
@@ -3194,58 +3206,58 @@ static DJB start_database(CNCT connection,
 
 	database = make_database(connection, db_name, dir_name);
 
-/* Start by marking any other databases of same name as inactive */
+// Start by marking any other databases of same name as inactive
 
 	FOR D IN DATABASES WITH D.DB_NAME EQ database->djb_db_name
-        MODIFY D USING 
-            strcpy(D.STATUS, DB_INACTIVE);
-	    END_MODIFY 
-        ON_ERROR 
-            put_line(NULL, 134, 0, 0, 0);
-            ROLLBACK;
-            START_TRANSACTION;
-            break;
-	    END_ERROR;
+		MODIFY D USING
+			strcpy(D.STATUS, DB_INACTIVE);
+		END_MODIFY
+		ON_ERROR
+			put_line(NULL, 134, 0, 0, 0);
+			ROLLBACK;
+			START_TRANSACTION;
+			break;
+		END_ERROR;
 	END_FOR;
 
-/* Store new database record */
+// Store new database record
 
-	STORE X IN DATABASES 
-        strcpy(X.DB_NAME, (const char*) database->djb_db_name);
-	    if (database->djb_dir_name)
-            strcpy(X.ARCHIVE_BASE_NAME, (const char*) database->djb_dir_name);
-        else
-            MOVE_CLEAR(X.ARCHIVE_BASE_NAME, sizeof(X.ARCHIVE_BASE_NAME));
-        time_stamp((GDS_QUAD_t*) &X.DATE_ENABLED);
-        strcpy(X.STATUS, DB_ACTIVE);
+	STORE X IN DATABASES
+		strcpy(X.DB_NAME, (const char*) database->djb_db_name);
+		if (database->djb_dir_name)
+			strcpy(X.ARCHIVE_BASE_NAME, (const char*) database->djb_dir_name);
+		else
+			MOVE_CLEAR(X.ARCHIVE_BASE_NAME, sizeof(X.ARCHIVE_BASE_NAME));
+		time_stamp((GDS_QUAD_t*) &X.DATE_ENABLED);
+		strcpy(X.STATUS, DB_ACTIVE);
 
-        strcpy(X.DEVICE_TYPE, MEDIA_DISK);
-        X.USE_COUNT = 1;
-        X.PAGE_SIZE = page_size;
-        X.ENABLE_SEQNO = seqno;
-        X.ENABLE_OFFSET = offset;
-        strcpy(X.DELETE_MODE, DB_RETAIN);
-        
-        if (database->djb_dir_name) {
-            database->djb_flags |= DJB_archive;
-            strcpy(X.ARCHIVE_MODE, NEED_ARCH);
-        }
-        else
-            strcpy(X.ARCHIVE_MODE, NO_ARCH);
-	END_STORE 
-    ON_ERROR 
-        put_line(NULL, 135, 0, 0, 0);
-	    ROLLBACK;
-        START_TRANSACTION;
-    END_ERROR;
+		strcpy(X.DEVICE_TYPE, MEDIA_DISK);
+		X.USE_COUNT = 1;
+		X.PAGE_SIZE = page_size;
+		X.ENABLE_SEQNO = seqno;
+		X.ENABLE_OFFSET = offset;
+		strcpy(X.DELETE_MODE, DB_RETAIN);
+	
+		if (database->djb_dir_name) {
+			database->djb_flags |= DJB_archive;
+			strcpy(X.ARCHIVE_MODE, NEED_ARCH);
+		}
+		else
+			strcpy(X.ARCHIVE_MODE, NO_ARCH);
+	END_STORE
+	ON_ERROR
+		put_line(NULL, 135, 0, 0, 0);
+		ROLLBACK;
+		START_TRANSACTION;
+	END_ERROR;
 
-/* Get the database id which the trigger put in */
+// Get the database id which the trigger put in
 
-    FOR X IN DATABASES WITH X.DB_NAME EQ database->djb_db_name AND
-        X.STATUS EQ DB_ACTIVE 
+	FOR X IN DATABASES WITH X.DB_NAME EQ database->djb_db_name AND
+		X.STATUS EQ DB_ACTIVE
 
-        database->djb_id = X.DB_ID;
-    END_FOR;
+		database->djb_id = X.DB_ID;
+	END_FOR;
 
 	put_message(101, database);
 
@@ -3288,7 +3300,7 @@ static bool start_server(UCHAR * journal_dir,
 	connections = NULL;
 	sw_debug = sw_d;
 
-/* Expand the journal directory name and insure that it ends with a slash. */
+// Expand the journal directory name and insure that it ends with a slash.
 
 	if (!journal_dir)
 		journal_dir = (UCHAR*) ".";
@@ -3312,10 +3324,10 @@ static bool start_server(UCHAR * journal_dir,
 	else {
 #ifndef VMS
 #ifndef WIN_NT
-		/* close message file before calling divorce terminal as we do not
-		   know the file id of the message file and will end up closing
-		   all files.  However the static variable which holds the file
-		   descriptor still has a value. */
+		// close message file before calling divorce terminal as we do not
+		// know the file id of the message file and will end up closing
+		// all files.  However the static variable which holds the file
+		// descriptor still has a value.
 
 		gds__msg_close(NULL);
 		divorce_terminal(NULL);
@@ -3332,99 +3344,99 @@ static bool start_server(UCHAR * journal_dir,
 	open_mailbox(JOURNAL_FILE, slot_journal);
 
 #if (defined UNIX_JOURNALLING)
-/* Ignore end of child process for UNIX only */
-/* SUN leaves behind <defunct> processes if SIG_IGN is used */
+// Ignore end of child process for UNIX only
+// SUN leaves behind <defunct> processes if SIG_IGN is used
 
 	ISC_signal(SIGCLD, signal_child, NULL);
 #endif
 
-/* Check in with database */
+// Check in with database
 
 	strcpy(journal_db, journal_directory);
 	strcpy(journal_db + len - 1, "/journal.fdb");
 
-	READY 
-    ON_ERROR 
-        put_line(NULL, 152, 0, 0, 0);
-	    GJRN_abort(152);
+	READY
+	ON_ERROR
+		put_line(NULL, 152, 0, 0, 0);
+		GJRN_abort(152);
 	END_ERROR;
 
 	START_TRANSACTION;
 	state |= state_initialize;
 
 	FOR X IN JOURNAL state &= ~state_initialize;
-        if (X.USE_COUNT) {
-            put_line(NULL, 136, 0, 0, 0);
-            FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE AND D.USE_COUNT NE 0
-                put_line(NULL, 137, (TEXT *) D.DB_NAME, (TEXT *) D.DB_ID, 0);
-                MODIFY D USING 
-                    D.USE_COUNT = 0;
-	            END_MODIFY;
-	        END_FOR;
-	        state |= state_reset;
-        }
-        if (X.MAX_RETRY)
-            max_retry = X.MAX_RETRY;
-	
-        MODIFY X USING 
-            X.USE_COUNT = 1;
-	        if (!X.MAX_RETRY)
-                X.MAX_RETRY = max_retry;
-	    END_MODIFY;
+		if (X.USE_COUNT) {
+			put_line(NULL, 136, 0, 0, 0);
+			FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE AND D.USE_COUNT NE 0
+				put_line(NULL, 137, (TEXT *) D.DB_NAME, (TEXT *) D.DB_ID, 0);
+				MODIFY D USING
+					D.USE_COUNT = 0;
+				END_MODIFY;
+			END_FOR;
+			state |= state_reset;
+		}
+		if (X.MAX_RETRY)
+			max_retry = X.MAX_RETRY;
+
+		MODIFY X USING
+			X.USE_COUNT = 1;
+			if (!X.MAX_RETRY)
+				X.MAX_RETRY = max_retry;
+		END_MODIFY;
 	END_FOR;
 
 	if (state & state_initialize)
-		STORE X IN JOURNAL 
-            strcpy(X.STATUS, DB_ACTIVE);
-	        X.USE_COUNT = 1;
-            time_stamp((GDS_QUAD_t*) &X.DATE_INIT);
-	    END_STORE;
+		STORE X IN JOURNAL
+			strcpy(X.STATUS, DB_ACTIVE);
+			X.USE_COUNT = 1;
+			time_stamp((GDS_QUAD_t*) &X.DATE_INIT);
+		END_STORE;
 
-/* Initialize list of valid databases */
+// Initialize list of valid databases
 
-    FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE
-        database = make_database(NULL, D.DB_NAME, D.ARCHIVE_BASE_NAME);
-	
-        database->djb_id = D.DB_ID;
-	
-        if (strcmp(D.DELETE_MODE, DB_RETAIN))
-            database->djb_flags |= DJB_set_delete;
-	
-        if (strcmp(D.ARCHIVE_MODE, NO_ARCH)) {
-            database->djb_flags |= DJB_archive;
-            build_backup_array(database);
-	
-            restart_backup(database, MAX_ARCHIVE);
-	
-            FOR J IN JOURNAL_FILES WITH J.DB_ID EQ D.DB_ID
-                AND J.FILE_STATUS EQ LOG_CLOSED
-                AND J.ARCHIVE_STATUS EQ NOT_ARCHIVED
-                AND J.DELETE_STATUS EQ LOG_NOT_DELETED
+	FOR D IN DATABASES WITH D.STATUS EQ DB_ACTIVE
+		database = make_database(NULL, D.DB_NAME, D.ARCHIVE_BASE_NAME);
 
-                MODIFY J USING 
-                    strcpy(J.ARCHIVE_STATUS, ARCHIVE_PENDING);
-	            END_MODIFY 
-                ON_ERROR 
-                    put_line(NULL, 138, 0, 0, 0);
-	                ROLLBACK;
-                    START_TRANSACTION;
-                    break;
-	            END_ERROR;
-                SAVE;
-                backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
-                           J.FILE_SIZE, J.PARTITION_OFFSET);
-	        END_FOR;
-        }
-	
+		database->djb_id = D.DB_ID;
+
+		if (strcmp(D.DELETE_MODE, DB_RETAIN))
+			database->djb_flags |= DJB_set_delete;
+
+		if (strcmp(D.ARCHIVE_MODE, NO_ARCH)) {
+			database->djb_flags |= DJB_archive;
+			build_backup_array(database);
+
+			restart_backup(database, MAX_ARCHIVE);
+
+			FOR J IN JOURNAL_FILES WITH J.DB_ID EQ D.DB_ID
+				AND J.FILE_STATUS EQ LOG_CLOSED
+				AND J.ARCHIVE_STATUS EQ NOT_ARCHIVED
+				AND J.DELETE_STATUS EQ LOG_NOT_DELETED
+
+				MODIFY J USING
+					strcpy(J.ARCHIVE_STATUS, ARCHIVE_PENDING);
+				END_MODIFY
+				ON_ERROR
+					put_line(NULL, 138, 0, 0, 0);
+					ROLLBACK;
+					START_TRANSACTION;
+					break;
+				END_ERROR;
+				SAVE;
+				backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
+						   J.FILE_SIZE, J.PARTITION_OFFSET);
+			END_FOR;
+		}
+
 	END_FOR;
 
-/* Mark the file for deletion */
+// Mark the file for deletion
 
 	delete_wal();
 
 	commit();
 
-/* Sit in loop waiting for either command input or message from client */
+// Sit in loop waiting for either command input or message from client
 
 	msg_count = 0;
 	for (;;) {
@@ -3439,7 +3451,7 @@ static bool start_server(UCHAR * journal_dir,
 		commit();
 		get_message((JRNH *) message_buffer, sizeof(message_buffer));
 
-		/* restart archives every max_retry messages */
+		// restart archives every max_retry messages
 
 		if (msg_count++ > max_retry) {
 			msg_count = 0;
@@ -3448,39 +3460,39 @@ static bool start_server(UCHAR * journal_dir,
 		commit();
 	}
 
-/* 
- * Fork off processes to back up WAL files which
- * have'nt been backed up yet.
- */
+//
+// Fork off processes to back up WAL files which
+// have'nt been backed up yet.
+//
 
 	for (database = databases; database; database = database->djb_next) {
 		if (database->djb_flags & DJB_archive) {
-			/* restart backups if required */
+			// restart backups if required
 
 			restart_backup(database, MAX_ARCHIVE);
 
-	        FOR J IN JOURNAL_FILES WITH J.DB_ID EQ database->djb_id
-                AND J.FILE_STATUS EQ LOG_CLOSED
-                AND J.ARCHIVE_STATUS EQ NOT_ARCHIVED
-                AND J.DELETE_STATUS EQ LOG_NOT_DELETED
+			FOR J IN JOURNAL_FILES WITH J.DB_ID EQ database->djb_id
+				AND J.FILE_STATUS EQ LOG_CLOSED
+				AND J.ARCHIVE_STATUS EQ NOT_ARCHIVED
+				AND J.DELETE_STATUS EQ LOG_NOT_DELETED
 
-                MODIFY J USING 
-                    strcpy(J.ARCHIVE_STATUS, ARCHIVE_PENDING);
-	            END_MODIFY 
-                ON_ERROR 
-                    put_line(NULL, 138, 0, 0, 0);
-                    ROLLBACK;
-                    START_TRANSACTION;
-                    break;
-	            END_ERROR;
-	            SAVE;
-                backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
-                           J.FILE_SIZE, J.PARTITION_OFFSET);
-	        END_FOR;
+				MODIFY J USING
+					strcpy(J.ARCHIVE_STATUS, ARCHIVE_PENDING);
+				END_MODIFY
+				ON_ERROR
+					put_line(NULL, 138, 0, 0, 0);
+					ROLLBACK;
+					START_TRANSACTION;
+					break;
+				END_ERROR;
+				SAVE;
+				backup_wal(database, J.LOG_NAME, J.FILE_ID, J.FILE_SEQUENCE,
+						   J.FILE_SIZE, J.PARTITION_OFFSET);
+			END_FOR;
 		}
 	}
 
-/* Sit in loop waiting for message from archives */
+// Sit in loop waiting for message from archives
 
 	for (;;) {
 		if (!(connections || archives_running))
@@ -3495,21 +3507,21 @@ static bool start_server(UCHAR * journal_dir,
 		commit();
 	}
 
-/* Mark the file for deletion */
+// Mark the file for deletion
 
 	delete_wal();
 
 	commit();
 
-/* Check out with database */
+// Check out with database
 
 	close_mailbox(slot_journal);
 	close_mailbox(slot_console);
 
-	FOR Y IN JOURNAL 
-        MODIFY Y USING 
-            Y.USE_COUNT = 0;
-	    END_MODIFY;
+	FOR Y IN JOURNAL
+		MODIFY Y USING
+			Y.USE_COUNT = 0;
+		END_MODIFY;
 	END_FOR;
 
 	for (database = databases; database; database = database->djb_next)
@@ -3519,10 +3531,10 @@ static bool start_server(UCHAR * journal_dir,
 		}
 
 	put_message(103, NULL);
-    
+
 	if (log)
 		fclose(log);
-    
+
 	COMMIT;
 	FINISH;
 
@@ -3541,7 +3553,7 @@ static bool test_dup_entry(DJB dbb,
  *
  * Functional description
  *	Check if file_id is already present in the back up array.
- *	Returns 
+ *	Returns
  *		TRUE if present
  *		FALSE if not.
  *

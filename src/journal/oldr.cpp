@@ -104,7 +104,7 @@ int OLDR_get( OLD OLD_handle, SCHAR * logrec, SSHORT * len)
 		return (OLD_ERR);
 
 	if (hdr->oh_type == OLD_EOD)
-		return OLD_EOD;			/* all done */
+		return OLD_EOD;			// all done
 
 	if ((hdr->oh_type != OLD_DATA) ||
 		(hdr->oh_seqno != OLD_handle->old_cur_seqno)) return OLD_EOF;
@@ -119,12 +119,12 @@ int OLDR_get( OLD OLD_handle, SCHAR * logrec, SSHORT * len)
 }
 
 
-void OLDR_get_info(
-				   OLD OLD_handle,
+void OLDR_get_info(OLD OLD_handle,
 				   SSHORT * db_page_size,
 				   SSHORT * dump_id,
 				   SLONG * log_seqno,
-SLONG * log_offset, SLONG * log_p_offset)
+				   SLONG * log_offset,
+				   SLONG * log_p_offset)
 {
 /**************************************
  *
@@ -179,7 +179,7 @@ int OLDR_open(
 		old = *OLD_handle;
 	}
 
-/* Open the first file */
+// Open the first file
 
 	if (open_next_file(old) == FB_FAILURE)
 		return FB_FAILURE;
@@ -310,7 +310,7 @@ static SLONG oldr_open_file( OLD old)
 	if (len != header.hp_length)
 		return FB_FAILURE;
 
-/* compare database name */
+// compare database name
 
 	memcpy(buf, hp->hp_db, len);
 	buf[len] = 0;

@@ -24,6 +24,6 @@
 #ifndef _JOURNAL_SERVE_PROTO_H_
 #define _JOURNAL_SERVE_PROTO_H_
 
-extern bool SERVER_start_server(int, SCHAR **);
+extern bool SERVER_start_server(int, char **);
 
 #endif /* _JOURNAL_SERVE_PROTO_H_ */

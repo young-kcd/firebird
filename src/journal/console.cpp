@@ -58,7 +58,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#define MAXHOSTNAMELEN  64		/* should be in <sys/param.h> */
+#define MAXHOSTNAMELEN  64		// should be in <sys/param.h>
 #define HANDLE          int
 #endif
 
@@ -85,7 +85,7 @@ static void put_command(SLONG, UCHAR *, USHORT, UCHAR *, USHORT);
 extern CMDS commands[];
 
 
-bool CONSOLE_start_console(int argc, 
+bool CONSOLE_start_console(int argc,
 						   char * argv[])
 {
 /**************************************
@@ -181,10 +181,10 @@ bool CONSOLE_start_console(int argc,
 		if (length > strlen(START_COMMAND))
 			length = strlen(START_COMMAND);
 
-		/* attaching puts out status already.  So don't do anything */
+		// attaching puts out status already.  So don't do anything
 
 		if (strncmp(START_COMMAND, buffer, (int) length)) {
-			/* Expand any filename present in the console command */
+			// Expand any filename present in the console command
 
 			expand_dbname(msg);
 
@@ -205,17 +205,17 @@ bool CONSOLE_start_console(int argc,
 		if (!gets(buffer))
 			break;
 
-		/* Expand any filename present in the console command */
+		// Expand any filename present in the console command
 
 		expand_dbname(buffer);
 
 		if (length = strlen(buffer)) {
 			put_command(channel, (UCHAR*) &header, sizeof(header), (UCHAR*) buffer, length);
 			switch (reply = get_reply(channel)) {
-			case jrnr_shutdown:
-			case jrnr_exit:
-				cycle = FALSE;
-				break;
+				case jrnr_shutdown:
+				case jrnr_exit:
+					cycle = FALSE;
+					break;
 			}
 		}
 	}
@@ -319,7 +319,7 @@ static void error(ISC_STATUS status,
 	TEXT msg[128];
 
 	GJRN_get_msg(GEN_ERR, msg, string, NULL, NULL);
-	// Msg 111 Error occurred during \"%s\" 
+	// Msg 111 Error occurred during \"%s\"
 	fprintf(stderr, "%s\n", msg);
 	perror(string);
 	exit(FINI_ERROR);
@@ -348,11 +348,9 @@ static void error(ISC_STATUS status,
 	// Msg 111 Error occurred during \"%s\"
 	fprintf(stderr, "%s\n", msg);
 
-	if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-							NULL,
-							status,
-							GetUserDefaultLangID(),
-							msg, sizeof(msg), NULL))) {
+	if (!(l = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, status,
+							GetUserDefaultLangID(), msg, sizeof(msg), NULL)))
+	{
 		GJRN_get_msg(NT_ERR, msg, (SCHAR*) string, NULL, NULL);
 		// Msg 211 Windows NT error %d
 		fprintf(stderr, msg, status);
@@ -442,7 +440,7 @@ static void expand_dbname(TEXT * in)
 
 #ifdef BSD_SOCKETS
 static SSHORT find_address(TEXT * filename,
-						   struct sockaddr_in *address, 
+						   struct sockaddr_in *address,
 						   bool test_only)
 {
 /**************************************
@@ -485,7 +483,7 @@ static SSHORT find_address(TEXT * filename,
 	address->sin_family = family;
 	address->sin_port = port;
 
-	return 0;
+	return 1;
 }
 #endif
 
@@ -513,14 +511,14 @@ static enum jrnr_t get_reply(SLONG channel)
 	for (;;) {
 		reply = (JRNR *) buffer;
 
-		/* first read enough to find out how much to read */
+		// first read enough to find out how much to read
 
 		length = sizeof(reply->jrnr_header);
 
 		if ((len = read(channel, buffer, length)) != length)
 			error(errno, (UCHAR*) "socket read");
 
-		/* read the rest of the response */
+		// read the rest of the response
 
 		length = reply->jrnr_header.jrnh_length - length;
 
@@ -559,20 +557,25 @@ static enum jrnr_t get_reply(SLONG channel)
 	for (;;) {
 		reply = (JRNR *) buffer;
 
-		/* first read enough to find out how much to read */
+		// first read enough to find out how much to read
 
 		length = sizeof(reply->jrnr_header);
 
 		if (!ReadFile((HANDLE) channel, buffer, length, &len, NULL) ||
-			len != length) error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
+			len != length)
+		{
+			error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
+		}
 
-		/* read the rest of the response */
+		// read the rest of the response
 
 		length = reply->jrnr_header.jrnh_length - length;
 
 		if (!ReadFile((HANDLE) channel, &buffer[len], length, &len, NULL) ||
 			len != length)
+		{
 			error(GetLastError(), (UCHAR*) "ReadFile (pipe)");
+		}
 
 		if (reply->jrnr_response != jrnr_msg)
 			return reply->jrnr_response;
@@ -607,14 +610,14 @@ static SLONG open_connection(SCHAR * filename,
 	strcpy(name, filename);
 	strcat(name, CONSOLE_ADDR);
 
-/* Allocate a port block and initialize a socket for communications */
+// Allocate a port block and initialize a socket for communications
 
 	if ((channel = (SLONG) socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		error(errno, (UCHAR*) "socket");
 
 	memset((SCHAR *) & address, 0, sizeof(address));
 
-/* Will return -1 only if test_only is set - otherwise fatal error */
+// Will return -1 only if test_only is set - otherwise fatal error
 
 	if (find_address(name, &address, test_only) < 0)
 		return -1;
@@ -663,8 +666,7 @@ static SLONG open_connection(SCHAR * filename,
 	strcpy(p, CONSOLE_FILE);
 
 	while (true) {
-		channel = CreateFile(name,
-							 GENERIC_READ | GENERIC_WRITE,
+		channel = CreateFile(name, GENERIC_READ | GENERIC_WRITE,
 							 0, NULL, OPEN_EXISTING, 0, NULL);
 		if (channel != INVALID_HANDLE_VALUE)
 			break;

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journalling Subsystem
  *	MODULE:		rebuild.e
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include "../jrd/jrd_time.h"
 
-/* MOVE_FAST & MOVE_CLEAR have to be defined before #include common.h */
+// MOVE_FAST & MOVE_CLEAR have to be defined before #include common.h
 
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)		memset (to, 0, (int) (length))
@@ -55,6 +55,7 @@
 #include "../wal/walr_proto.h"
 #include "../journal/conso_proto.h"
 #include "../journal/gjrn_proto.h"
+#include "../jrd/misc_proto.h"
 #include "../journal/miscj_proto.h"
 #include "../journal/oldr_proto.h"
 #include "../journal/rebui_proto.h"
@@ -62,7 +63,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/llio_proto.h"
 
-/* UNIX Stuff */
+// UNIX Stuff
 
 #ifdef UNIX
 #define UNIX_JOURNALLING
@@ -74,7 +75,7 @@
 extern int errno;
 #endif
 
-/* VMS Stuff */
+// VMS Stuff
 
 #ifdef VMS
 #include <rms.h>
@@ -84,7 +85,7 @@ extern int errno;
 #define SYS_ERROR	gds_arg_vms
 #endif
 
-/* Windows NT Stuff */
+// Windows NT Stuff
 
 #ifdef WIN_NT
 #include <sys/types.h>
@@ -105,7 +106,7 @@ DATABASE DB =
 DATABASE DB_NEW =
 	STATIC COMPILETIME FILENAME "journal.fdb" RUNTIME FILENAME db_name;
 
-/* Page cache */
+// Page cache
 
 typedef struct cache {
 	struct cache *cache_next;
@@ -116,7 +117,7 @@ typedef struct cache {
 	PAG cache_page;
 } *CACHE;
 
-/* cache_flags */
+// cache_flags
 
 #define	PAGE_CLEAN	0
 #define	PAGE_DIRTY	1
@@ -126,16 +127,16 @@ typedef struct cache {
 #define	MARK_PAGE(cch)		cch->cache_flags |= PAGE_DIRTY
 #define MARK_HEADER(cch)	cch->cache_flags |= PAGE_DIRTY | PAGE_HEADER
 
-/* Database recovery block */
+// Database recovery block
 
 #define CACHE_SIZE	100
 #define INITIAL_ALLOC	16
 
 typedef struct drb {
-	struct drb *drb_next;		/* Next database in chain */
-	USHORT drb_page_size;		/* Database page size */
-	struct fil *drb_file;		/* list of file pointers */
-	ULONG drb_max_page;			/* max page read */
+	struct drb *drb_next;		// Next database in chain
+	USHORT drb_page_size;		// Database page size
+	struct fil *drb_file;		// list of file pointers
+	ULONG drb_max_page;			// max page read
 	ULONG drb_age;
 	UCHAR *drb_buffers;
 	CACHE drb_cache;
@@ -218,7 +219,7 @@ static SSHORT max_seqno;
 static SSHORT dump_id = 0;
 static bool end_reached = false;
 
-/* Time, size statistics of log records processed */
+// Time, size statistics of log records processed
 
 static SLONG elapsed_time;
 static SLONG bytes_processed;
@@ -233,7 +234,7 @@ typedef struct counter {
 
 static COUNTER totals[JRNP_MAX + 1 - JRN_PAGE];
 
-/* WAL defines */
+// WAL defines
 
 static UCHAR wal_buff[MAX_WALBUFLEN];
 static WALRS WALR_handle;
@@ -244,34 +245,34 @@ static ISC_STATUS_ARRAY wal_status;
 #define FILE_OPEN_WRITE 	"w"
 #endif
 
-/* if new journal records are added in jrn.h, they should be added here */
+// if new journal records are added in jrn.h, they should be added here
 
 static char *table[] = {
-	"JRN_PAGE                ",	/* A full page WAL record */
-	"JRNP_DATA_SEGMENT       ",	/* Add segment to data page */
-	"JRNP_POINTER_SLOT       ",	/* Add pointer page to relation */
-	"JRNP_TRANSACTION        ",	/* Journal transaction state */
-	"JRNP_NULL               ",	/* Odd byte */
-	"JRNP_PIP                ",	/* Page allocation/deallocation */
-	"JRNP_BTREE_NODE         ",	/* Add/delete a node to BTREE */
-	"JRNP_BTREE_SEGMENT      ",	/* B Tree split - valid part */
-	"JRNP_BTREE_DELETE       ",	/* B Tree node delete - logical */
-	"JRNP_INDEX_ROOT         ",	/* Add/drop an index    */
-	"JRNP_DB_HEADER          ",	/* Modify db header page */
-	"JRNP_GENERATOR          ",	/* generator            */
-	"JRNP_ROOT_PAGE          ",	/* Index root page      */
-	"JRNP_DB_ATTACHMENT      ",	/* next attachment */
-	"JRNP_DB_HDR_PAGES       ",	/* Header pages         */
-	"JRNP_DB_HDR_FLAGS       ",	/* Header flags */
-	"JRNP_DB_HDR_SDW_COUNT   ",	/* Header shadow count */
-	"JRNP_LOG_PAGE           ",	/* log page information */
-	"JRNP_NEXT_TIP           ",	/* next tip page */
-	"JRNP_MAX                "
+	"JRN_PAGE				",	// A full page WAL record
+	"JRNP_DATA_SEGMENT	   ",	// Add segment to data page
+	"JRNP_POINTER_SLOT	   ",	// Add pointer page to relation
+	"JRNP_TRANSACTION		",	// Journal transaction state
+	"JRNP_NULL			   ",	// Odd byte
+	"JRNP_PIP				",	// Page allocation/deallocation
+	"JRNP_BTREE_NODE		 ",	// Add/delete a node to BTREE
+	"JRNP_BTREE_SEGMENT	  ",	// B Tree split - valid part
+	"JRNP_BTREE_DELETE	   ",	// B Tree node delete - logical
+	"JRNP_INDEX_ROOT		 ",	// Add/drop an index
+	"JRNP_DB_HEADER		  ",	// Modify db header page
+	"JRNP_GENERATOR		  ",	// generator		
+	"JRNP_ROOT_PAGE		  ",	// Index root page	 
+	"JRNP_DB_ATTACHMENT	  ",	// next attachment
+	"JRNP_DB_HDR_PAGES	   ",	// Header pages	
+	"JRNP_DB_HDR_FLAGS	   ",	// Header flags
+	"JRNP_DB_HDR_SDW_COUNT   ",	// Header shadow count
+	"JRNP_LOG_PAGE		   ",	// log page information
+	"JRNP_NEXT_TIP		   ",	// next tip page
+	"JRNP_MAX				"
 };
 
 
 bool REBUILD_start_restore(int argc,
-						   SCHAR ** argv)
+						   char ** argv)
 {
 /**************************************
  *
@@ -289,7 +290,7 @@ bool REBUILD_start_restore(int argc,
 	SCHAR *p;
 	SCHAR *msg;
 
-/* Start by parsing switches */
+// Start by parsing switches
 
 	sw_trace = sw_disable = sw_interact = false;
 	sw_debug = sw_verbose = sw_partial = sw_activate = false;
@@ -503,7 +504,7 @@ static void apply_data(DRB database,
 	if (sw_debug)
 		GJRN_printf(21, (TEXT *) record->jrnd_page, NULL, NULL, NULL);
 
-/* Process clumps */
+// Process clumps
 
 	for (clump = NULL; clump = next_clump(record, clump);) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNP_SIZE);
@@ -516,7 +517,7 @@ static void apply_data(DRB database,
 		if (sw_trace)
 			continue;
 
-		/* Handle segment deletion */
+		// Handle segment deletion
 
 		if (!temp.jrnp_length) {
 			index = page->dpg_rpt + temp.jrnp_index;
@@ -524,7 +525,7 @@ static void apply_data(DRB database,
 			index->dpg_length = 0;
 		}
 
-		/* Re-compute page high water mark */
+		// Re-compute page high water mark
 
 		index = page->dpg_rpt;
 		end = index + page->dpg_count;
@@ -541,7 +542,7 @@ static void apply_data(DRB database,
 		if (!temp.jrnp_length)
 			continue;
 
-		/* Handle segment addition */
+		// Handle segment addition
 
 		index = page->dpg_rpt + temp.jrnp_index;
 		q = clump->jrnp_data;
@@ -592,7 +593,7 @@ static void apply_header(HDR page,
  **************************************
  *
  * Functional description
- *	Apply changes to database header page 
+ *	Apply changes to database header page
  *
  **************************************/
 	JRNDH temp1, *clump;
@@ -720,8 +721,8 @@ static void apply_index(BTR page,
 				GJRN_printf(27, (TEXT *) page->btr_length, NULL, NULL, NULL);
 			}
 
-			/* slide down upper part by delta
-			   add node and increment btr_length */
+			// slide down upper part by delta
+			// add node and increment btr_length
 
 			delta = temp.jrnb_delta;
 			p = (SCHAR *) ((UCHAR *) page + page->btr_length);
@@ -731,7 +732,7 @@ static void apply_index(BTR page,
 					*--q = *--p;
 				while (--l);
 
-			/* move in node , next BTN */
+			// move in node , next BTN
 
 			p = (SCHAR *) ((UCHAR *) page + temp.jrnb_offset);
 			q = (SCHAR *) clump->jrnb_data;
@@ -756,7 +757,7 @@ static void apply_index(BTR page,
 				GJRN_printf(28, (TEXT *) page->btr_length, NULL, NULL, NULL);
 			}
 
-			/* apply change directly */
+			// apply change directly
 
 			p = (SCHAR *) page;
 			q = (SCHAR *) clump->jrnb_data;
@@ -773,7 +774,7 @@ static void apply_index(BTR page,
 
 		case JRNP_BTREE_DELETE:
 
-			/* delete a node entry */
+			// delete a node entry
 
 			node = (BTN) ((UCHAR *) page + temp.jrnb_offset);
 			next = (BTN) (BTN_DATA(node) + BTN_LENGTH(node));
@@ -796,7 +797,7 @@ static void apply_index(BTR page,
 					*p++ = *q++;
 				while (--l);
 
-			/* Compute length of rest of bucket and move it down. */
+			// Compute length of rest of bucket and move it down.
 
 			l = page->btr_length - ((UCHAR *) q - (UCHAR *) page);
 
@@ -808,7 +809,7 @@ static void apply_index(BTR page,
 			page->btr_length = (UCHAR *) p - (UCHAR *) page;
 			page->btr_prefix_total = temp.jrnb_prefix_total;
 
-			/* Error Check */
+			// Error Check
 
 			if (BTN_PREFIX(node) != temp.jrnb_delta) {
 				rebuild_abort(60);
@@ -836,12 +837,12 @@ static void apply_log(LIP page,
 {
 /**************************************
  *
- *      a p p l y _ l o g
+ *	  a p p l y _ l o g
  *
  **************************************
  *
  * Functional description
- *      Apply changes to database log page
+ *	  Apply changes to database log page
  *
  **************************************/
 	JRNL temp, *clump;
@@ -1018,7 +1019,7 @@ static void apply_transaction(TIP page,
 	clump = (JRNI *) record->jrnd_data;
 	clump_end = (JRNI *) (record->jrnd_data + rec.jrnd_length);
 
-/* Process clumps */
+// Process clumps
 
 	for (; clump < clump_end; clump++) {
 		memcpy((SCHAR *) & temp, (SCHAR *) clump, JRNI_SIZE);
@@ -1032,7 +1033,7 @@ static void apply_transaction(TIP page,
 							(TEXT *) temp.jrni_transaction, NULL, NULL, NULL);
 		}
 		if (sw_trace) {
-			/* transaction loop does not use next_clump!! */
+			// transaction loop does not use next_clump!!
 
 			totals[temp.jrni_type - JRN_PAGE].num_recs++;
 			totals[temp.jrni_type - JRN_PAGE].num_bytes += JRNI_SIZE;
@@ -1086,13 +1087,13 @@ static USHORT checksum(DRB database,
 	if (chksum)
 		return (USHORT) chksum;
 
-/* If the page is all zeros, return an artificial checksum */
+// If the page is all zeros, return an artificial checksum
 
 	for (p = (ULONG *) page; p < end;)
 		if (*p++)
 			return chksum;
 
-/* Page is all zeros -- invent a checksum */
+// Page is all zeros -- invent a checksum
 
 	return 12345;
 }
@@ -1110,7 +1111,8 @@ static void close_database(DRB database)
  *	We've reached end of processing this database
  *	Clean up database and close it.
  *
- **************************************/ DRB *ptr;
+ **************************************/
+	DRB *ptr;
 	CACHE buffer;
 	FIL fil;
 	SLONG *tr2 = 0;
@@ -1122,7 +1124,7 @@ static void close_database(DRB database)
 
 	fixup_header(database);
 
-/* Flush and release cache */
+// Flush and release cache
 
 	while (buffer = database->drb_cache) {
 		database->drb_cache = buffer->cache_next;
@@ -1143,7 +1145,7 @@ static void close_database(DRB database)
 
 	MISC_free_jrnl((int*) database->drb_buffers);
 
-/* Unlink from general data structures */
+// Unlink from general data structures
 
 	for (ptr = &databases; *ptr; ptr = &(*ptr)->drb_next)
 		if (*ptr == database) {
@@ -1155,30 +1157,30 @@ static void close_database(DRB database)
 	if ((sw_partial) && (!sw_activate))
 		return;
 
-/* 
- * Just attach to the database and detach.  This will update the
- * log page to have the correct checkpoint information
- */
+//
+// Just attach to the database and detach.  This will update the
+// log page to have the correct checkpoint information
+//
 
-	READY db_name AS DB_NEW 
-    ON_ERROR 
-        rebuild_abort(153);
+	READY db_name AS DB_NEW
+	ON_ERROR
+		rebuild_abort(153);
 	END_ERROR;
 
-/* cleanup rdb_$log_files for the recovered database */
+// cleanup rdb_$log_files for the recovered database
 
 	if (sw_interact || sw_until || sw_partial) {
 		START_TRANSACTION tr2 USING DB_NEW;
 
-	    FOR(TRANSACTION_HANDLE tr2) L IN DB_NEW.RDB$LOG_FILES 
-            ERASE L;
-	    END_FOR;
+		FOR(TRANSACTION_HANDLE tr2) L IN DB_NEW.RDB$LOG_FILES
+			ERASE L;
+		END_FOR;
 
-		COMMIT tr2 
+		COMMIT tr2
 
-        ON_ERROR 
-            gds__print_status(gds_status);
-		    rebuild_abort(0);
+		ON_ERROR
+			gds__print_status(gds_status);
+			rebuild_abort(0);
 		END_ERROR;
 
 	}
@@ -1200,9 +1202,9 @@ static bool commit(DRB database,
  *	A commit is about to happen.  If restore is to be terminated
  *	at a given time, this is a good time to check and stop.
  *
- **************************************/ 
+ **************************************/
 
-    TEXT c_time[32];
+	TEXT c_time[32];
 	SCHAR buf[MSG_LENGTH];
 	SLONG date[2];
 
@@ -1293,7 +1295,8 @@ static void disable(DRB database,
  *	We're encountered a database disable record.
  *	Clean up database and close it.
  *
- **************************************/ TEXT ctime[32];
+ **************************************/
+	TEXT ctime[32];
 	SCHAR dbname[300], dir_name[300];
 	SLONG date[2];
 
@@ -1386,7 +1389,8 @@ static void fixup_header(DRB database)
  * Functional description
  *	Fixup header page to not require recovery
  *
- **************************************/ LIP page;
+ **************************************/
+	LIP page;
 	CACHE cch;
 	SCHAR *p;
 	USHORT len;
@@ -1394,13 +1398,13 @@ static void fixup_header(DRB database)
 
 	if (sw_trace)
 		return;
-/* 
- * After a restore, the database should be as close to the original
- * database as possible.  The exceptions are when we do a recovery
- * to point on time or when database name or any other information
- * is changed.  In that case, the journal information and all WAL 
- * information must be deleted.
- */
+//
+// After a restore, the database should be as close to the original
+// database as possible.  The exceptions are when we do a recovery
+// to point on time or when database name or any other information
+// is changed.  In that case, the journal information and all WAL
+// information must be deleted.
+//
 
 	if (sw_interact || sw_until || sw_disable || sw_activate) {
 		rec_delete_hdr_entry(database, HDR_journal_server);
@@ -1412,14 +1416,14 @@ static void fixup_header(DRB database)
 						  sec_file, CLUMP_REPLACE);
 	}
 
-/* Update the next transaction id from the bumped transaction id */
+// Update the next transaction id from the bumped transaction id
 	cch = get_page(database, (SLONG) HEADER_PAGE, true);
 	MARK_HEADER(cch);
 	hdr = (HDR) cch->cache_page;
 	hdr->hdr_next_transaction = hdr->hdr_bumped_transaction;
 	release_page(database, cch);
 
-/* Now update the log page */
+// Now update the log page
 	cch = get_page(database, (SLONG) LOG_PAGE, true);
 	MARK_PAGE(cch);
 	page = (LIP) cch->cache_page;
@@ -1432,7 +1436,7 @@ static void fixup_header(DRB database)
 			*p++ = 0;
 		while (--len);
 
-		/* Set control point 2 file name */
+		// Set control point 2 file name
 
 		*p++ = LOG_ctrl_file2;
 		*p++ = len = CTRL_FILE_LEN;
@@ -1440,7 +1444,7 @@ static void fixup_header(DRB database)
 			*p++ = 0;
 		while (--len);
 
-		/* Set current log file */
+		// Set current log file
 
 		*p++ = LOG_logfile;
 		*p++ = len = CTRL_FILE_LEN;
@@ -1471,18 +1475,17 @@ static void fixup_header(DRB database)
 
 	page->log_flags &= ~log_recover;
 
-/* At the end of a partial recovery, we will turn off log and
- * set the next seqno.
- */
+// At the end of a partial recovery, we will turn off log and
+// set the next seqno.
 
 	if ((sw_partial) && (!sw_activate)) {
 		page->log_flags = (log_no_ail | log_partial_rebuild);
 		page->log_file.cp_seqno = max_seqno;
 	}
 
-/* Set the log_recovery_done flag, so that a subsequent attachment by 
-   the recovery process would not be denied because the shared cache 
-   manager is not running. */
+// Set the log_recovery_done flag, so that a subsequent attachment by
+// the recovery process would not be denied because the shared cache
+// manager is not running.
 	if (!(page->log_flags & log_no_ail))
 		page->log_flags |= log_recovery_done;
 
@@ -1502,7 +1505,7 @@ static void format_time(SLONG date[2],
  * Functional description
  *	Format a date/time string.
  *
- **************************************/ 
+ **************************************/
 	struct tm times;
 
 	gds__decode_date((GDS_QUAD_t*) date, &times);
@@ -1510,7 +1513,7 @@ static void format_time(SLONG date[2],
 	sprintf(string, "%.2d:%.2d:%.2d %.2d/%.2d/%.2d",
 			times.tm_hour, times.tm_min, times.tm_sec,
 			times.tm_mon + 1, times.tm_mday, times.tm_year);
-} 
+}
 
 
 static CACHE get_free_buffer(DRB database,
@@ -1523,7 +1526,7 @@ static CACHE get_free_buffer(DRB database,
  **************************************
  *
  * Functional description
- *	Find (or make) available buffer in cache. 
+ *	Find (or make) available buffer in cache.
  *
  **************************************/
 	CACHE best, buffer;
@@ -1546,7 +1549,7 @@ static CACHE get_free_buffer(DRB database,
 	if ((best->cache_page_number != PAGE_CORRUPT) &&
 		(best->cache_flags & PAGE_DIRTY)) write_page(database, best);
 
-	/* Unlink from old slot */
+	// Unlink from old slot
 
 	MOVE_CLEAR(best->cache_page, database->drb_page_size);
 	best->cache_page_number = page;
@@ -1571,7 +1574,7 @@ static void get_log_files(SLONG db_id,
  * Functional description
  *	gets a list of files for the recovery start from start_seqno
  *
- **************************************/ 
+ **************************************/
 	SSHORT num_files;
 	SSHORT num_alloc, num_alloc1;
 	SCHAR **files;
@@ -1583,59 +1586,59 @@ static void get_log_files(SLONG db_id,
 
 	start_p_offset = (SLONG *) MISC_alloc_jrnl(num_alloc1 * sizeof(SLONG));
 
-/* 
- * Note that we do not allow partition offset.  Partitions are
- * allowed only in raw files, and raw file have to be archived
- */
+//
+// Note that we do not allow partition offset.  Partitions are
+// allowed only in raw files, and raw file have to be archived
+//
 
-    FOR(TRANSACTION_HANDLE tr1) J IN DB.JOURNAL_FILES WITH
-	    J.FILE_SEQUENCE >= start_seqno AND
-	    J.DB_ID EQ db_id SORTED BY J.FILE_SEQUENCE 
+	FOR(TRANSACTION_HANDLE tr1) J IN DB.JOURNAL_FILES WITH
+		J.FILE_SEQUENCE >= start_seqno AND
+		J.DB_ID EQ db_id SORTED BY J.FILE_SEQUENCE
 
-        if (num_files >= num_alloc) {
-            expand_num_alloc(&files, &num_alloc);
-            expand_num_alloc((SCHAR***) &start_p_offset, &num_alloc1);
-        }
-        /* 
-         * Stop at the first open file, but make sure there is 
-         * atleast one file
-         */ 
-        if ((strcmp(J.FILE_STATUS, LOG_CLOSED)) &&
-            (((sw_partial) && (!sw_activate)) || (num_files)))
-            break;
-        
-        files[num_files] = (SCHAR *) MISC_alloc_jrnl(MAX_PATH_LENGTH);
-        
-        if (use_archive) {
-            if (strcmp(J.ARCHIVE_STATUS, ARCHIVED)) {
-                if (!num_files) {
-                    if ((sw_partial) && (!sw_activate))
-                        break;
-                    
-                    /* Get partition offset if single file is used */
-                    strcpy(files[num_files], J.LOG_NAME);
-                       start_p_offset[num_files] = J.PARTITION_OFFSET;
-                       num_files++;
-                }
-                break;
-            }
-            
-            strcpy(files[num_files], J.ARCHIVE_NAME);
-           }
-        else {
-            /* Get partition offset if original files are used */
-            strcpy(files[num_files], J.LOG_NAME);
-            start_p_offset[num_files] = J.PARTITION_OFFSET;
-        }
-        
-        max_seqno = J.FILE_SEQUENCE;
-        
-        num_files++;
-    END_FOR;
+		if (num_files >= num_alloc) {
+			expand_num_alloc(&files, &num_alloc);
+			expand_num_alloc((SCHAR***) &start_p_offset, &num_alloc1);
+		}
+		//
+		// Stop at the first open file, but make sure there is
+		// atleast one file
+		//
+		if ((strcmp(J.FILE_STATUS, LOG_CLOSED)) &&
+			(((sw_partial) && (!sw_activate)) || (num_files)))
+			break;
+	
+		files[num_files] = (SCHAR *) MISC_alloc_jrnl(MAX_PATH_LENGTH);
+	
+		if (use_archive) {
+			if (strcmp(J.ARCHIVE_STATUS, ARCHIVED)) {
+				if (!num_files) {
+					if ((sw_partial) && (!sw_activate))
+						break;
+				
+					// Get partition offset if single file is used
+					strcpy(files[num_files], J.LOG_NAME);
+					   start_p_offset[num_files] = J.PARTITION_OFFSET;
+					   num_files++;
+				}
+				break;
+			}
+		
+			strcpy(files[num_files], J.ARCHIVE_NAME);
+		   }
+		else {
+			// Get partition offset if original files are used
+			strcpy(files[num_files], J.LOG_NAME);
+			start_p_offset[num_files] = J.PARTITION_OFFSET;
+		}
+	
+		max_seqno = J.FILE_SEQUENCE;
+	
+		num_files++;
+	END_FOR;
 
-    *file_list = files;
-    *p_offset = start_p_offset;
-    *number = num_files;
+	*file_list = files;
+	*p_offset = start_p_offset;
+	*number = num_files;
 }
 
 
@@ -1655,7 +1658,8 @@ static void get_old_files(SLONG db_id,
  *	Get a list of old files for this recovery
  *	Returns number of files, start_seqno and offset.
  *
- **************************************/ SSHORT num_files;
+ **************************************/
+	SSHORT num_files;
 	SCHAR dump_num[10];
 	SCHAR buf[MSG_LENGTH];
 	SSHORT num_alloc;
@@ -1668,16 +1672,16 @@ static void get_old_files(SLONG db_id,
 		MISC_get_new_value(buf, dump_num, sizeof(dump_num));
 		dump_id = atoi(dump_num);
 
-		/* Check if this dump is for this database */
+		// Check if this dump is for this database
 
-	       FOR(TRANSACTION_HANDLE tr1) OD IN DB.ONLINE_DUMP
-	           WITH OD.DUMP_ID EQ dump_id 
+			FOR(TRANSACTION_HANDLE tr1) OD IN DB.ONLINE_DUMP
+				WITH OD.DUMP_ID EQ dump_id
 
-               if (OD.DB_ID != db_id) {
-                   rebuild_abort(187);
-               }
+				if (OD.DB_ID != db_id) {
+					rebuild_abort(187);
+				}
 
-	       END_FOR;
+			END_FOR;
 	}
 	end_seqno = 0;
 
@@ -1685,46 +1689,46 @@ static void get_old_files(SLONG db_id,
 	num_alloc = INITIAL_ALLOC;
 	files = (SCHAR **) MISC_alloc_jrnl(num_alloc * sizeof(SLONG));
 
-	FOR(TRANSACTION_HANDLE tr1) OD IN DB.ONLINE_DUMP_FILES 
-       WITH OD.DUMP_ID EQ dump_id 
-       SORTED BY OD.FILE_SEQNO 
+	FOR(TRANSACTION_HANDLE tr1) OD IN DB.ONLINE_DUMP_FILES
+	   WITH OD.DUMP_ID EQ dump_id
+	   SORTED BY OD.FILE_SEQNO
 
-        if (num_files >= num_alloc) {
-            expand_num_alloc(&files, &num_alloc);
-        }
-	
-	    files[num_files++] = (SCHAR *) MISC_alloc_jrnl(MAX_PATH_LENGTH);
-        strcpy(files[num_files - 1], OD.DUMP_FILE_NAME);
-	
-    END_FOR;
+		if (num_files >= num_alloc) {
+			expand_num_alloc(&files, &num_alloc);
+		}
 
-    FOR(TRANSACTION_HANDLE tr1) O IN DB.ONLINE_DUMP 
-        WITH O.DUMP_ID EQ dump_id 
+		files[num_files++] = (SCHAR *) MISC_alloc_jrnl(MAX_PATH_LENGTH);
+		strcpy(files[num_files - 1], OD.DUMP_FILE_NAME);
 
-        if ((O.START_SEQNO > O.END_SEQNO)
-            || ((O.START_SEQNO == O.END_SEQNO)
-                && (O.START_OFFSET > O.END_OFFSET))) {
-            rebuild_abort(51);
-        }
-	
-	    *start_offset = O.START_OFFSET;
-        *start_seqno = O.START_SEQNO;
-	
-        end_seqno = O.END_SEQNO;
-	
 	END_FOR;
 
-/* Check if online dump has been completed */
+	FOR(TRANSACTION_HANDLE tr1) O IN DB.ONLINE_DUMP
+		WITH O.DUMP_ID EQ dump_id
 
-    if ((sw_partial) && (!sw_activate)) {
-        FOR(TRANSACTION_HANDLE tr1) J IN DB.JOURNAL_FILES 
-            WITH J.DB_ID EQ db_id AND J.FILE_SEQUENCE EQ end_seqno 
+		if ((O.START_SEQNO > O.END_SEQNO)
+			|| ((O.START_SEQNO == O.END_SEQNO)
+				&& (O.START_OFFSET > O.END_OFFSET))) {
+			rebuild_abort(51);
+		}
 
-            if (strcmp(J.FILE_STATUS, LOG_CLOSED)) {
-                rebuild_abort(148);
-            }
+		*start_offset = O.START_OFFSET;
+		*start_seqno = O.START_SEQNO;
 
-        END_FOR;
+		end_seqno = O.END_SEQNO;
+
+	END_FOR;
+
+// Check if online dump has been completed
+
+	if ((sw_partial) && (!sw_activate)) {
+		FOR(TRANSACTION_HANDLE tr1) J IN DB.JOURNAL_FILES
+			WITH J.DB_ID EQ db_id AND J.FILE_SEQUENCE EQ end_seqno
+
+			if (strcmp(J.FILE_STATUS, LOG_CLOSED)) {
+				rebuild_abort(148);
+			}
+
+		END_FOR;
 	}
 
 	if (!num_files)
@@ -1749,9 +1753,9 @@ static CACHE get_page(DRB database,
  *	Get address of page in cache.  If read_flag is set,
  *	read the page if necessary.
  *
- **************************************/ 
+ **************************************/
 
-    CACHE buffer;
+	CACHE buffer;
 	PAG pg;
 
 	buffer = NULL;
@@ -1763,10 +1767,9 @@ static CACHE get_page(DRB database,
 	if (!buffer) {
 		buffer = get_free_buffer(database, page);
 		if (read_flag) {
-			/* stuff something in to make sure that when we read beyond
-			 * current end of file and not read any data, we will zero
-			 * things out.
-			 */
+			// stuff something in to make sure that when we read beyond
+			// current end of file and not read any data, we will zero
+			// things out.
 
 			pg = (PAG) buffer->cache_page;
 			pg->pag_checksum = 12345;
@@ -1810,7 +1813,7 @@ static JRNP *next_clump(JRND * record,
 	USHORT offset, l;
 	JRNP temp;
 
-/* Compute the offset and length of prior clump */
+// Compute the offset and length of prior clump
 
 	if (prior) {
 		offset = (SCHAR *) prior - (SCHAR *) record;
@@ -1838,10 +1841,10 @@ static JRNP *next_clump(JRND * record,
 		l = JRNB_SIZE + temp1.jrnb_length;
 		break;
 
-		/*
-		 * currently DELETE node contains some debug info in jrnb_length
-		 * but data field is not used.
-		 */
+		//
+		// currently DELETE node contains some debug info in jrnb_length
+		// but data field is not used.
+		//
 	case JRNP_BTREE_DELETE:
 		l = JRNB_SIZE;
 		break;
@@ -1882,7 +1885,7 @@ static JRNP *next_clump(JRND * record,
 		totals[temp.jrnp_type - JRN_PAGE].num_bytes += l;
 	}
 
-/* If the prior pointer is null, just return the data area */
+// If the prior pointer is null, just return the data area
 
 	if (!prior)
 		return (JRNP *) record->jrnd_data;
@@ -1928,17 +1931,17 @@ static void open_all_files(void)
 	database = databases;
 	file = database->drb_file;
 
-/* allocate a temp page */
+// allocate a temp page
 
 	cch.cache_page = (PAG) MISC_alloc_jrnl(MAX_PAGE_SIZE);
 
 	for (;;) {
 		file_name = NULL;
 		cch.cache_page_number = file->fil_min_page;
-		/*
-		 * Loop through all the header pages.  Only the primary database
-		 * page will have overflow header pages.
-		 */
+		//
+		// Loop through all the header pages.  Only the primary database
+		// page will have overflow header pages.
+		//
 
 		do {
 			read_page(database, &cch);
@@ -1993,7 +1996,8 @@ static DRB open_database(TEXT * name,
  * Functional description
  *	Open database and create blocks.
  *
- **************************************/ DRB database;
+ **************************************/
+	DRB database;
 	UCHAR *buffers;
 	CACHE buffer;
 	USHORT n;
@@ -2002,13 +2006,13 @@ static DRB open_database(TEXT * name,
 	if (sw_trace)
 		return 0;
 
-/* Allocate and partially populate database block */
+// Allocate and partially populate database block
 
 
 	database = (DRB) MISC_alloc_jrnl(sizeof(struct drb) + strlen(name));
 	strcpy(database->drb_filename, name);
 
-/* Try to open file */
+// Try to open file
 
 	if (!open_database_file(database, name, new_file, &file_handle))
 		rebuild_abort(199);
@@ -2016,14 +2020,14 @@ static DRB open_database(TEXT * name,
 
 	database->drb_file = setup_file((UCHAR*) name, strlen(name), (int) file_handle);
 
-/* Link database block into world */
+// Link database block into world
 
 	database->drb_next = databases;
 	databases = database;
 
 	database->drb_page_size = page_size;
 
-/* Allocate and initialize cache */
+// Allocate and initialize cache
 
 
 
@@ -2054,17 +2058,17 @@ static bool open_database_file(DRB database,
  * Functional description
  *	Open database and create blocks.
  *
- **************************************/ 
+ **************************************/
 	ISC_STATUS_ARRAY status;
 
 	if (new_file) {
 		if (LLIO_open(status, name, LLIO_OPEN_NEW_RW, TRUE,
-					  file_handle) == FB_FAILURE) 
+					  file_handle) == FB_FAILURE)
 		return false;
 	}
 	else {
-		if (LLIO_open(status, name, LLIO_OPEN_EXISTING_RW, TRUE, 
-			file_handle) == FB_FAILURE) 
+		if (LLIO_open(status, name, LLIO_OPEN_EXISTING_RW, TRUE,
+			file_handle) == FB_FAILURE)
 		return false;
 	}
 
@@ -2087,7 +2091,8 @@ static int open_journal(SCHAR * dbname,
  * Functional description
  *	Prompt the user for a journal file name, and open the file.
  *
- **************************************/ int i, n;
+ **************************************/
+	int i, n;
 	SCHAR buf[MAX_PATH_LENGTH];
 	SSHORT stop_flag;
 	SLONG *until_ptr;
@@ -2107,8 +2112,7 @@ static int open_journal(SCHAR * dbname,
 	stop_flag = (sw_partial && !sw_activate) ? TRUE : FALSE;
 	until_ptr = sw_until ? until : 0;
 
-	n =
-		WALR_open(wal_status, &WALR_handle, dbname, num_files,
+	n = WALR_open(wal_status, &WALR_handle, dbname, num_files,
 				  files, start_p_offset, start_offset, until_ptr, stop_flag);
 
 	if (n != FB_SUCCESS) {
@@ -2131,9 +2135,10 @@ static int process_online_dump(SCHAR * dbname,
  **************************************
  *
  * Functional description
- *	Process a journal file until end of file.  
+ *	Process a journal file until end of file. 
  *
- **************************************/ OLD OLD_handle;
+ **************************************/
+	OLD OLD_handle;
 	SLONG ret_val;
 	SSHORT len;
 	SSHORT count;
@@ -2145,13 +2150,13 @@ static int process_online_dump(SCHAR * dbname,
 
 	OLD_handle = 0;
 
-/*
- * OLD_get () returns
- *	 0  	- OK
- *	OLD_EOD	- end of dump
- *	OLD_EOF	- EOF
- *      OLD_ERR	- Error
- */
+//
+// OLD_get () returns
+//  0  	- OK
+// OLD_EOD	- end of dump
+//  OLD_EOF	- EOF
+//  OLD_ERR	- Error
+//
 	count = 0;
 
 	while (true) {
@@ -2164,11 +2169,10 @@ static int process_online_dump(SCHAR * dbname,
 
 		count++;
 
-		if (OLDR_open(&OLD_handle, dbname, num_files, files)
-			== FB_FAILURE)
+		if (OLDR_open(&OLD_handle, dbname, num_files, files) == FB_FAILURE)
 			return FB_FAILURE;
 
-		/* get start time */
+		// get start time
 
 		MISC_get_time(&first);
 
@@ -2180,7 +2184,7 @@ static int process_online_dump(SCHAR * dbname,
 
 			process_old_record((JRND *) wal_buff, len);
 		}
-		/* get finish time */
+		// get finish time
 
 		MISC_get_time(&next);
 
@@ -2220,9 +2224,9 @@ static int process_journal(SCHAR * dbname,
  **************************************
  *
  * Functional description
- *	Process a journal file until end of file.  
+ *	Process a journal file until end of file. 
  *
- **************************************/ 
+ **************************************/
 	USHORT len;
 	SLONG ret_val;
 	ULONG seqno;
@@ -2236,22 +2240,19 @@ static int process_journal(SCHAR * dbname,
 	if (sw_verbose)
 		GJRN_printf(39, NULL, NULL, NULL, NULL);
 
-	if (
-		(open_journal
-		 (dbname, files, num_files, start_offset,
-		  start_p_offset)) < 0) return FB_FAILURE;
+	if ((open_journal(dbname, files, num_files, start_offset, start_p_offset)) < 0)
+		return FB_FAILURE;
 
 	seqno = offset = 0;
 
-/* get start time */
+// get start time
 
 	MISC_get_time(&first);
 
 	max_seqno = start_seqno;
 
 	while (true) {
-		ret_val =
-			WALR_get(wal_status, WALR_handle, wal_buff, &len,
+		ret_val = WALR_get(wal_status, WALR_handle, wal_buff, &len,
 					 (SLONG*) &seqno, (SLONG*) &offset);
 
 		if (ret_val == -1) {
@@ -2263,12 +2264,12 @@ static int process_journal(SCHAR * dbname,
 			break;
 		}
 
-		/* This the maximum seqno which is processed */
+		// This the maximum seqno which is processed
 
 		max_seqno = seqno;
 
 #ifdef DEV_BUILD
-		/* take care of word alignment problems */
+		// take care of word alignment problems
 		MOVE_FAST((SCHAR *) wal_buff, (SCHAR *) & rec1, JRND_SIZE);
 		rec_checksum = rec1.jrnd_header.jrnh_series;
 		rec1.jrnd_header.jrnh_series = 0;
@@ -2280,7 +2281,7 @@ static int process_journal(SCHAR * dbname,
 		rec1.jrnd_header.jrnh_series = rec_checksum;
 		MOVE_FAST((SCHAR *) & rec1, (SCHAR *) wal_buff, JRND_SIZE);
 #endif
-		/* Will return FALSE when JRN_DISABLE is encountered */
+		// Will return FALSE when JRN_DISABLE is encountered
 
 		if (!process_record((JRNH*) wal_buff, len, seqno, offset, true)){
 			ret_val = 0;
@@ -2288,7 +2289,7 @@ static int process_journal(SCHAR * dbname,
 		}
 	}
 
-/* get end time  and increment stats */
+// get end time  and increment stats
 
 	MISC_get_time(&next);
 
@@ -2320,9 +2321,10 @@ static SLONG process_new_file(DRB database,
  **************************************
  *
  * Functional description
- *	Add a file to the current database.  
+ *	Add a file to the current database. 
  *
- **************************************/ FIL file, next;
+ **************************************/
+	FIL file, next;
 	HDR header;
 	SLONG sequence;
 	TEXT *file_name;
@@ -2354,22 +2356,23 @@ static SLONG process_new_file(DRB database,
 	if (sw_trace)
 		return 0;
 
-/* Find current last file */
+// Find current last file
 
 	for (file = database->drb_file; file->fil_next; file = file->fil_next);
 
-/* Create the file.  If the sequence number comes back zero, it didn't
-   work, so punt */
+// Create the file.  If the sequence number comes back zero, it didn't
+// work, so punt
 
-	if (!
-		(sequence =
-		 add_file(database, database->drb_file, (UCHAR*) file_name,
-				  file_len, start, true))) rebuild_abort(232);
+	if (!(sequence = add_file(database, database->drb_file, (UCHAR*) file_name,
+							  file_len, start, true)))
+	{
+		rebuild_abort(232);
+	}
 
 	if (record->jrnf_sequence != sequence)
 		rebuild_abort(71);
 
-/* Create header page for new file */
+// Create header page for new file
 
 	next = file->fil_next;
 
@@ -2385,23 +2388,23 @@ static SLONG process_new_file(DRB database,
 	release_page(database, cch);
 	next->fil_fudge = 1;
 
-/* Update the previous header page to point to new file */
-/* Header page can be updated only by setting fil_fudge to 0 */
+// Update the previous header page to point to new file
+// Header page can be updated only by setting fil_fudge to 0
 
 	file->fil_fudge = 0;
 
 	cch = get_page(database, file->fil_min_page, true);
 	header = (HDR) cch->cache_page;
 
-/* Add clumplets for file name, starting page number */
+// Add clumplets for file name, starting page number
 
 	if (!file->fil_min_page) {
-		/* 
-		 * This will happen when the second file is added.  The primary
-		 * file header page is journalled when the file is added and that
-		 * record will be encountered before this new_file record is
-		 * added.  This code is just an error check
-		 */
+		//
+		// This will happen when the second file is added.  The primary
+		// file header page is journalled when the file is added and that
+		// record will be encountered before this new_file record is
+		// added.  This code is just an error check
+		//
 		sec_added = true;
 		sec_len = file_len;
 		memcpy(sec_file, file_name, file_len);
@@ -2418,7 +2421,7 @@ static SLONG process_new_file(DRB database,
 	MARK_HEADER(cch);
 	release_page(database, cch);
 
-/* i.e if it is not the first file */
+// i.e if it is not the first file
 
 	if (file->fil_min_page)
 		file->fil_fudge = 1;
@@ -2437,10 +2440,11 @@ static bool process_old_record(JRND * record,
  **************************************
  *
  * Functional description
- *	Process a single online dump record record.  
+ *	Process a single online dump record record. 
  *	Generate a seqno/offset pair for data pages
  *
- **************************************/ PAG page;
+ **************************************/
+	PAG page;
 	ULONG seqno;
 	ULONG offset;
 
@@ -2459,8 +2463,8 @@ static bool process_old_record(JRND * record,
 
 static void process_page(DRB database,
 						 JRND * record,
-						 ULONG seqno, 
-						 ULONG offset, 
+						 ULONG seqno,
+						 ULONG offset,
 						 bool wal_flag)
 {
 /**************************************
@@ -2473,7 +2477,7 @@ static void process_page(DRB database,
  *	Update a database page.
  *	wal_flag indicates whether it is done for wal record or old record
  *
- **************************************/ 
+ **************************************/
 	PAG page;
 	JRNP *clump;
 	UCHAR *p, *q;
@@ -2483,24 +2487,22 @@ static void process_page(DRB database,
 	clump = (JRNP *) record->jrnd_data;
 	q = (UCHAR *) clump;
 
-/* wal_flag is always true for clumps */
+// wal_flag is always true for clumps
 
 	memcpy((SCHAR *) & rec, (SCHAR *) record, JRND_SIZE);
 
-/* Print out info */
+// Print out info
 
 	if (sw_debug)
-
-
 		GJRN_printf(182, (TEXT *) rec.jrnd_page,
 					(TEXT *) seqno, (TEXT *) offset, NULL);
 
-/* Handle zero length record.  This is an off shoot of PAG_release_page () */
+// Handle zero length record.  This is an off shoot of PAG_release_page ()
 
 	if (rec.jrnd_length == 0)
 		return;
 
-/* Collect statistics */
+// Collect statistics
 
 	bytes_processed += (rec.jrnd_length + JRND_SIZE);
 
@@ -2509,9 +2511,9 @@ static void process_page(DRB database,
 		page = cch->cache_page;
 	}
 	if ((wal_flag) && (!sw_trace)) {
-		/* handle freed page problem.  Ignore clumps for pages
-		 * which are empty.  This may have to be fixed later
-		 */
+		// handle freed page problem.  Ignore clumps for pages
+		// which are empty.  This may have to be fixed later
+
 
 		if (clump->jrnp_type > pag_max) {
 			if ((page->pag_generation == 0)
@@ -2533,11 +2535,11 @@ static void process_page(DRB database,
 			}
 			return;
 		}
-		/* 
-		 * Error check to see if records are being skipped
-		 * Do not check for error if it is a full page, or clump type
-		 * is JRNP_BTREE_SEGMENT and the previous seqno & offset are 0
-		 */
+		//
+		// Error check to see if records are being skipped
+		// Do not check for error if it is a full page, or clump type
+		// is JRNP_BTREE_SEGMENT and the previous seqno & offset are 0
+		//
 
 		if (!((rec.jrnd_header.jrnh_prev_seqno == 0) &&
 			  (rec.jrnd_header.jrnh_prev_offset == 0) &&
@@ -2551,14 +2553,14 @@ static void process_page(DRB database,
 		}
 	}
 
-/* Collect statistics */
+// Collect statistics
 
 	bytes_applied += (rec.jrnd_length + JRND_SIZE);
 
 	if (!sw_trace)
 		MARK_PAGE(cch);
 
-/* If record is a full replacement page, handle it */
+// If record is a full replacement page, handle it
 
 	if (clump->jrnp_type <= pag_max) {
 		if (sw_debug)
@@ -2578,10 +2580,10 @@ static void process_page(DRB database,
 		return;
 	}
 
-/* 
- * If we are doing a trace, there is no page, and we will just follow
- * the journal record type.  Else there is an error check.
- */
+//
+// If we are doing a trace, there is no page, and we will just follow
+// the journal record type.  Else there is an error check.
+//
 
 	if (sw_trace) {
 		switch (clump->jrnp_type) {
@@ -2631,7 +2633,7 @@ static void process_page(DRB database,
 		}
 	}
 	else {
-		/* This allows some more error checking */
+		// This allows some more error checking
 
 		switch (page->pag_type) {
 		case pag_pointer:
@@ -2704,58 +2706,59 @@ static bool process_partial(SLONG db_id,
 	if (!sw_partial)
 		return found;
 
-/* This is partial recovery - check if value exists in 
- * relation.  If not add one.
- */
+// This is partial recovery - check if value exists in
+// relation.  If not add one.
 
 	if (!partial_db)
 		rebuild_abort(195);
 
-/* Use the partial_db_name as the new db_name */
+// Use the partial_db_name as the new db_name
 
 	strcpy(db_name, partial_db);
 
 
-	FOR(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS 
-        WITH P.DB_ID EQ db_id AND P.NEW_DB_NAME EQ partial_db
-	
-        if (P.LAST_LOG_SEQ == 0) {
-            if (sw_interact) {
-                GJRN_get_msg(192, P.NEW_DB_NAME, NULL, NULL, NULL);
-                if ((!MISC_get_line(buf, buf, sizeof(buf)))
-                    || (UPPER(buf[0]) != 'Y'))
-                    rebuild_abort(193); /* Invalid entry */
-                ERASE P 
-                ON_ERROR 
-                    rebuild_abort(194);
-                END_ERROR;
-                SAVE tr1 
-                ON_ERROR 
-                    rebuild_abort(194);
-	            END_ERROR;
-                break;
-            }
-            else
-                rebuild_abort(193);
-        }
-        found = true;
-        sw_first_recover = false;
-        /* This will recovery the database fully */
-        if (sw_verbose)
-            GJRN_printf(201, partial_db, NULL, NULL, NULL);
-        rebuild_partial(P.DB_ID, P.LAST_LOG_SEQ, old_db_name);
-    END_FOR;
-    if (found)
+	FOR(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS
+		WITH P.DB_ID EQ db_id AND P.NEW_DB_NAME EQ partial_db
+
+		if (P.LAST_LOG_SEQ == 0) {
+			if (sw_interact) {
+				GJRN_get_msg(192, P.NEW_DB_NAME, NULL, NULL, NULL);
+				if ((!MISC_get_line(buf, buf, sizeof(buf)))
+					|| (UPPER(buf[0]) != 'Y'))
+				{
+					rebuild_abort(193); // Invalid entry
+				}
+				ERASE P
+				ON_ERROR
+					rebuild_abort(194);
+				END_ERROR;
+				SAVE tr1
+				ON_ERROR
+					rebuild_abort(194);
+				END_ERROR;
+				break;
+			}
+			else
+				rebuild_abort(193);
+		}
+		found = true;
+		sw_first_recover = false;
+		// This will recovery the database fully
+		if (sw_verbose)
+			GJRN_printf(201, partial_db, NULL, NULL, NULL);
+		rebuild_partial(P.DB_ID, P.LAST_LOG_SEQ, old_db_name);
+	END_FOR;
+	if (found)
 		return found;
 
-    /* Add entry to PARTIAL_REBUILDS */
-	STORE(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS 
-        P.DB_ID = db_id;
-	    strcpy(P.NEW_DB_NAME, partial_db);
-        P.LAST_LOG_SEQ = 0;
-	END_STORE 
-    ON_ERROR 
-        rebuild_abort(194);
+	// Add entry to PARTIAL_REBUILDS
+	STORE(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS
+		P.DB_ID = db_id;
+		strcpy(P.NEW_DB_NAME, partial_db);
+		P.LAST_LOG_SEQ = 0;
+	END_STORE
+	ON_ERROR
+		rebuild_abort(194);
 	END_ERROR;
 
 	if (sw_verbose)
@@ -2777,13 +2780,13 @@ static bool process_record(JRNH * record,
  **************************************
  *
  * Functional description
- *	Process a single journal record.  
+ *	Process a single journal record. 
  *	return FALSE when JRN_DISBALE is encountered.
  *
  **************************************/
 	DRB database;
 	LTJW *rec;
-/* Handle particular record type */
+// Handle particular record type
 	database = databases;
 	switch (record->jrnh_type) {
 	case JRN_PAGE:
@@ -2810,7 +2813,7 @@ static bool process_record(JRNH * record,
 		break;
 	case JRN_END_ONLINE_DMP:
 
-		/* Check if we reached the end of online dump */
+		// Check if we reached the end of online dump
 
 		rec = (LTJW *) record;
 		if (rec->ltjw_seqno == dump_id)
@@ -2832,12 +2835,12 @@ static void quad_move(register UCHAR * a,
 {
 /**************************************
  *
- *      q u a d _ m o v e
+ *	  q u a d _ m o v e
  *
  **************************************
  *
  * Functional description
- *      Move an unaligned longword ( 4 bytes).
+ *	  Move an unaligned longword ( 4 bytes).
  *
  **************************************/
 	MOVE_BYTE(a, b);
@@ -2867,14 +2870,14 @@ static void read_page(DRB database,
 	if (!fil)
 		rebuild_abort(48);
 	if (LLIO_read(status, fil->fil_desc, fil->fil_string, new_offset,
-		 LLIO_SEEK_NONE, (UCHAR*) buffer->cache_page, database->drb_page_size, 
-		 &len_read) == FB_FAILURE) {
+		 LLIO_SEEK_NONE, (UCHAR*) buffer->cache_page, database->drb_page_size,
+		 &len_read) == FB_FAILURE)
+	{
 		gds__print_status(status);
 		rebuild_abort(234);
 	}
 
-	if ((len_read != database->drb_page_size)
-		&& (len_read != 0))
+	if ((len_read != database->drb_page_size) && (len_read != 0))
 		rebuild_abort(234);
 }
 
@@ -2900,13 +2903,13 @@ static void rebuild_abort(SLONG err_num)
 		}
 
 	if (tr1)
-		ROLLBACK tr1 
-        ON_ERROR 
-        END_ERROR;
+		ROLLBACK tr1
+		ON_ERROR
+		END_ERROR;
 	if (DB)
-		FINISH DB 
-        ON_ERROR
-        END_ERROR;
+		FINISH DB
+		ON_ERROR
+		END_ERROR;
 	GJRN_abort(err_num);
 }
 
@@ -2929,45 +2932,46 @@ static void rebuild_partial(SLONG db_id,
 	SCHAR **files;
 	SSHORT num_files;
 	SSHORT use_archive;
-/* statistics */
+// statistics
 	bytes_processed = bytes_applied = 0;
 	elapsed_time = et_sec = et_msec = 0;
-	FOR(TRANSACTION_HANDLE tr1) Y IN DB.DATABASES 
-        WITH Y.DB_ID EQ db_id 
+	FOR(TRANSACTION_HANDLE tr1) Y IN DB.DATABASES
+		WITH Y.DB_ID EQ db_id
 
-        use_archive = (strcmp(Y.ARCHIVE_MODE, NEED_ARCH) == 0);
-        open_database(db_name, Y.PAGE_SIZE, false);
-        open_all_files();
-        if (!test_partial_db(last_log_seq))
-            rebuild_abort(198);
-        /* 
-         * Note that we do not allow partition offset.  Partitions are
-         * allowed only in raw files, and raw file have to be archived
-         */
-        get_log_files(Y.DB_ID, use_archive,
-                      &files, &start_p_offset, &num_files, last_log_seq + 1);
-        if (!num_files)
-            break;                  /* no work to be done */
-        if (process_journal
-            (Y.DB_NAME, files, num_files,
-             last_log_seq + 1, 0, start_p_offset)) rebuild_abort(54);
-        for (; num_files; num_files--)
-            MISC_free_jrnl((int*) files[num_files - 1]);
-        MISC_free_jrnl((int*) files);
-        MISC_free_jrnl((int*) start_p_offset);
-        break;                      /* recover one database at a time */
-    END_FOR;
+		use_archive = (strcmp(Y.ARCHIVE_MODE, NEED_ARCH) == 0);
+		open_database(db_name, Y.PAGE_SIZE, false);
+		open_all_files();
+		if (!test_partial_db(last_log_seq))
+			rebuild_abort(198);
+		//
+		// Note that we do not allow partition offset.  Partitions are
+		// allowed only in raw files, and raw file have to be archived
+		//
+		get_log_files(Y.DB_ID, use_archive,
+					  &files, &start_p_offset, &num_files, last_log_seq + 1);
+		if (!num_files)
+			break;				  // no work to be done
+		if (process_journal(Y.DB_NAME, files, num_files,
+			 last_log_seq + 1, 0, start_p_offset))
+		{
+			rebuild_abort(54);
+		}
+		for (; num_files; num_files--)
+			MISC_free_jrnl((int*) files[num_files - 1]);
+		MISC_free_jrnl((int*) files);
+		MISC_free_jrnl((int*) start_p_offset);
+		break;					  // recover one database at a time
+	END_FOR;
 
-	if ((max_seqno > last_log_seq)
-		|| (sw_activate))
+	if ((max_seqno > last_log_seq) || (sw_activate))
 		update_rebuild_seqno(db_id);
 }
 
 
 static void rec_add_clump_entry(DRB database,
 								HDR header,
-								USHORT type, 
-								USHORT len, 
+								USHORT type,
+								USHORT len,
 								UCHAR * entry)
 {
 /***********************************************
@@ -2985,7 +2989,7 @@ static void rec_add_clump_entry(DRB database,
 	q = entry;
 	for (p = header->hdr_data; ((*p != HDR_end)
 								&& (*p != type)); p += 2 + p[1]);
-/* We are at HDR_end, add the entry */
+// We are at HDR_end, add the entry
 	free_space = database->drb_page_size - header->hdr_end;
 	if (free_space > (2 + len)) {
 		*p++ = type;
@@ -3032,7 +3036,7 @@ static bool rec_add_hdr_entry(DRB database,
 	header = (HDR) cch->cache_page;
 	if (mode != CLUMP_ADD) {
 		found = rec_find_type(database, &cch, &header, type, &q, &p);
-		/* If we did'nt find it and it is REPLACE_ONLY, return */
+		// If we did'nt find it and it is REPLACE_ONLY, return
 		if (!found && mode == CLUMP_REPLACE_ONLY) {
 			release_page(database, cch);
 			return false;
@@ -3056,7 +3060,7 @@ static bool rec_add_hdr_entry(DRB database,
 			return rec_add_hdr_entry(database, type, len, entry, CLUMP_ADD);
 		}
 
-		/* !found && REPLACE will fall through */
+		// !found && REPLACE will fall through
 
 		if (cch->cache_page_number != HEADER_PAGE) {
 			release_page(database, cch);
@@ -3065,7 +3069,7 @@ static bool rec_add_hdr_entry(DRB database,
 		}
 	}
 
-/* Add the entry */
+// Add the entry
 
 	rec_find_space(database, &cch, &header, type, len, entry);
 	MARK_HEADER(cch);
@@ -3127,8 +3131,8 @@ static void rec_find_space(DRB database,
  * Functional description
  *		TRUE  - Found it
  *		FALSE - Not present
- *	Note: We cannot allocate space.  It should have been 
- *	      allocated before.
+ *	Note: We cannot allocate space.  It should have been
+ *		  allocated before.
  *
  **************************************/
 	UCHAR *p, *ptr;
@@ -3142,10 +3146,10 @@ static void rec_find_space(DRB database,
 	while (true) {
 
 		p = (UCHAR *) header + header->hdr_end;
-		/* We are at HDR_end, add the entry */
+		// We are at HDR_end, add the entry
 		free_space = database->drb_page_size - header->hdr_end;
 		if (free_space > (2 + len)) {
-			/* Space available, shuffle other entries down */
+			// Space available, shuffle other entries down
 
 			*p++ = type;
 			*p++ = len;
@@ -3211,7 +3215,7 @@ static bool rec_find_type(DRB database,
 			return true;
 		}
 
-		/* Follow chain of header pages */
+		// Follow chain of header pages
 
 		next_page = header->hdr_next_page;
 		if (next_page) {
@@ -3301,14 +3305,13 @@ static void rec_restore(SCHAR * journal_name,
 		dbn = db_name;
 	}
 
-/* statistics */
+// statistics
 
 	bytes_processed = bytes_applied = 0;
 	elapsed_time = et_sec = et_msec = 0;
 	max_seqno = 0;
-/* Scan journal looking for database to recover */
-	if ((sw_interact)
-		&& (!journal_name)) {
+// Scan journal looking for database to recover
+	if ((sw_interact) && (!journal_name)) {
 		GJRN_get_msg(91, buf, NULL, NULL, NULL);
 		if (!MISC_get_line(buf, journal_dir, sizeof(journal_dir))) {
 			rec_restore_manual(dbn);
@@ -3316,10 +3319,10 @@ static void rec_restore(SCHAR * journal_name,
 		}
 	}
 
-/* 
- * If running recovery journal server needs to be running if database
- * is fully recovered 
- */
+//
+// If running recovery journal server needs to be running if database
+// is fully recovered
+//
 
 	if (!(sw_interact || sw_until || sw_partial)) {
 		if (!(CONSOLE_test_server(journal_dir)))
@@ -3336,75 +3339,74 @@ static void rec_restore(SCHAR * journal_name,
 		size--;
 #endif
 	strcpy(journal_dir + size, "/journal.fdb");
-	READY journal_dir AS DB 
-    ON_ERROR 
-        rebuild_abort(152);
+	READY journal_dir AS DB
+	ON_ERROR
+		rebuild_abort(152);
 	END_ERROR;
 	START_TRANSACTION tr1 USING DB;
-	FOR(TRANSACTION_HANDLE tr1) X IN DB.DATABASES 
-        WITH X.STATUS EQ DB_ACTIVE 
+	FOR(TRANSACTION_HANDLE tr1) X IN DB.DATABASES
+		WITH X.STATUS EQ DB_ACTIVE
 
-        if ((sw_db) && (!sw_interact)) {
-            if (strcmp(db_name, X.DB_NAME))
-                continue;
-        }
-        else {
-            GJRN_get_msg(92, buf, X.DB_NAME, NULL, NULL);
-            if (!MISC_get_line(buf, db_name, sizeof(db_name)))
-                continue;
-            if ((UPPER(db_name[0])) != 'Y')
-                continue;
-            strcpy(db_name, X.DB_NAME);
-        }
+		if ((sw_db) && (!sw_interact)) {
+			if (strcmp(db_name, X.DB_NAME))
+				continue;
+		}
+		else {
+			GJRN_get_msg(92, buf, X.DB_NAME, NULL, NULL);
+			if (!MISC_get_line(buf, db_name, sizeof(db_name)))
+				continue;
+			if ((UPPER(db_name[0])) != 'Y')
+				continue;
+			strcpy(db_name, X.DB_NAME);
+		}
+
+		use_archive = (strcmp(X.ARCHIVE_MODE, NEED_ARCH) == 0);
+		if (sw_partial)
+			if (process_partial(X.DB_ID, X.DB_NAME))
+				break;
+		if ((sw_interact) && (!sw_partial)) {
+			GJRN_get_msg(93, buf, NULL, NULL, NULL);
+			MISC_get_new_value(buf, db_name, sizeof(db_name));
+		}
 	
-        use_archive = (strcmp(X.ARCHIVE_MODE, NEED_ARCH) == 0);
-        if (sw_partial)
-            if (process_partial(X.DB_ID, X.DB_NAME))
-                break;
-        if ((sw_interact) && (!sw_partial)) {
-            GJRN_get_msg(93, buf, NULL, NULL, NULL);
-            MISC_get_new_value(buf, db_name, sizeof(db_name));
-        }
-        
-        open_database(db_name, X.PAGE_SIZE, true);
-        dump_id = X.LAST_DUMP_ID;
-        get_old_files(X.DB_ID, &files, &num_files, &start_seqno, &start_offset);
-        if (process_online_dump(X.DB_NAME, files, num_files) < 0)
-            rebuild_abort(52);
-        for (; num_files; num_files--)
-            MISC_free_jrnl((int*) files[num_files - 1]);
-        MISC_free_jrnl((int*) files);
-        /* 
-         * Note that we do not allow partition offset.  Partitions are
-         * allowed only in raw files, and raw file have to be archived
-         */
-	   get_log_files(X.DB_ID, use_archive,
-	                 &files, &start_p_offset, &num_files, start_seqno);
-	   if (!num_files)
-	       rebuild_abort(17);
-	   if (process_journal
-	       (X.DB_NAME, files, num_files,
-	        start_seqno, start_offset, start_p_offset)) rebuild_abort(54);
-	   if ((!end_reached)
-	       && (sw_first_recover))
-	       if (!sw_trace)
-	           rebuild_abort(148);
-	   for (; num_files; num_files--)
-	       MISC_free_jrnl((int*) files[num_files - 1]);
-	   MISC_free_jrnl((int*) files);
-	   MISC_free_jrnl((int*) start_p_offset);
-	   update_rebuild_seqno(X.DB_ID);
-	   break;                      /* recover one database at a time */
-    END_FOR;
+		open_database(db_name, X.PAGE_SIZE, true);
+		dump_id = X.LAST_DUMP_ID;
+		get_old_files(X.DB_ID, &files, &num_files, &start_seqno, &start_offset);
+		if (process_online_dump(X.DB_NAME, files, num_files) < 0)
+			rebuild_abort(52);
+		for (; num_files; num_files--)
+			MISC_free_jrnl((int*) files[num_files - 1]);
+		MISC_free_jrnl((int*) files);
+		//
+		// Note that we do not allow partition offset.  Partitions are
+		// allowed only in raw files, and raw file have to be archived
+		//
+		get_log_files(X.DB_ID, use_archive,
+					 &files, &start_p_offset, &num_files, start_seqno);
+		if (!num_files)
+			rebuild_abort(17);
+		if (process_journal(X.DB_NAME, files, num_files,
+			start_seqno, start_offset, start_p_offset))
+		{
+			rebuild_abort(54);
+		}
+		if ((!end_reached) && (sw_first_recover))
+			if (!sw_trace)
+				rebuild_abort(148);
+		for (; num_files; num_files--)
+			MISC_free_jrnl((int*) files[num_files - 1]);
+		MISC_free_jrnl((int*) files);
+		MISC_free_jrnl((int*) start_p_offset);
+		update_rebuild_seqno(X.DB_ID);
+		break;					  // recover one database at a time
+	END_FOR;
 
-	if ((sw_db) && (!databases)
-		&& (!sw_trace)) {
-		if (!((sw_disable)
-			  || (sw_interact)))
+	if ((sw_db) && (!databases) && (!sw_trace)) {
+		if (!((sw_disable) || (sw_interact)))
 			rebuild_abort(185);
 	}
 
-/* Print out stats */
+// Print out stats
 
 	elapsed_time = et_sec + et_msec / 1000000;
 	if ((sw_verbose) || (sw_trace)) {
@@ -3457,7 +3459,7 @@ static void rec_restore_manual(SCHAR * dbn)
 		MISC_get_new_value(buf, db_name, sizeof(db_name));
 	}
 
-/* get online dump information */
+// get online dump information
 
 	GJRN_get_msg(4, buf, NULL, NULL, NULL);
 	GJRN_output("%s\n", buf);
@@ -3465,8 +3467,7 @@ static void rec_restore_manual(SCHAR * dbn)
 	num_alloc = INITIAL_ALLOC;
 	files = (SCHAR **) MISC_alloc_jrnl(num_alloc * sizeof(SLONG));
 	while (true) {
-		msg = (SCHAR *)
-			MISC_alloc_jrnl(MAX_PATH_LENGTH);
+		msg = (SCHAR *) MISC_alloc_jrnl(MAX_PATH_LENGTH);
 		GJRN_get_msg(6, msg, NULL, NULL, NULL);
 		MISC_get_line(msg, msg, MAX_PATH_LENGTH);
 		if (!strlen(msg)) {
@@ -3478,6 +3479,7 @@ static void rec_restore_manual(SCHAR * dbn)
 			expand_num_alloc(&files, &num_alloc);
 	}
 
+	start_p_offset = (SLONG *) MISC_alloc_jrnl(num_files * sizeof(SLONG));
 	if (!num_files) {
 		if (sw_trace) {
 			if (sw_debug)
@@ -3488,13 +3490,17 @@ static void rec_restore_manual(SCHAR * dbn)
 		page_size = MIN_PAGE_SIZE;
 	}
 	else {
-		start_p_offset = (SLONG *) MISC_alloc_jrnl(num_files * sizeof(SLONG));
-		/* Need to get page size before starting online dump */
+		// Need to get page size before starting online dump
 
 		if (OLDR_open(&OLD_handle, old_db_name, num_files, files) == FB_FAILURE)
 			rebuild_abort(187);
-		OLDR_get_info(OLD_handle,
-					  &page_size, &dump_id,
+// BRS 04/Sep/2003
+// When making the first build in FB 1.5 the &start_p_offset was changed to  
+// start_p_offset and the allocation moved to some lines above. 
+// Claudio points that perhaps OLDR_get_info is wrongly declared and the last parameter
+// should be long** instead of long*
+
+		OLDR_get_info(OLD_handle, &page_size, &dump_id,
 					  &start_seqno, &start_offset, start_p_offset);
 		OLDR_close(&OLD_handle);
 	}
@@ -3510,15 +3516,14 @@ static void rec_restore_manual(SCHAR * dbn)
 	for (; num_files; num_files--)
 		MISC_free_jrnl((int*) files[num_files - 1]);
 	MISC_free_jrnl((int*) files);
-/* Get log file information */
+// Get log file information
 	GJRN_get_msg(188, buf, NULL, NULL, NULL);
 	GJRN_output("%s\n", buf);
 	num_files = 0;
 	num_alloc = INITIAL_ALLOC;
 	files = (SCHAR **) MISC_alloc_jrnl(num_alloc * sizeof(SLONG));
 	while (true) {
-		msg = (SCHAR *)
-			MISC_alloc_jrnl(MAX_PATH_LENGTH);
+		msg = (SCHAR *) MISC_alloc_jrnl(MAX_PATH_LENGTH);
 		GJRN_get_msg(6, msg, NULL, NULL, NULL);
 		MISC_get_line(msg, msg, MAX_PATH_LENGTH);
 		if (!strlen(msg)) {
@@ -3532,8 +3537,8 @@ static void rec_restore_manual(SCHAR * dbn)
 
 	if (!num_files)
 		rebuild_abort(17);
-	if (process_journal(old_db_name, files, num_files, start_seqno, 
-						start_offset, start_p_offset)) 
+	if (process_journal(old_db_name, files, num_files, start_seqno,
+						start_offset, start_p_offset))
 		 rebuild_abort(54);
 	if (!end_reached)
 		if (!sw_trace)
@@ -3599,7 +3604,8 @@ static void release_page(DRB database,
 	if (buffer->cache_use_count)
 		rebuild_abort(68);
 	if ((buffer->cache_page_number != HEADER_PAGE)
-		&& (buffer->cache_flags & PAGE_HEADER)) {
+		&& (buffer->cache_flags & PAGE_HEADER))
+	{
 		write_page(database, buffer);
 		buffer->cache_page_number = PAGE_CORRUPT;
 		buffer->cache_flags = 0;
@@ -3633,9 +3639,9 @@ static FIL seek_file(DRB database,
 			break;
 	page -= (fil->fil_min_page - fil->fil_fudge);
 	*new_offset = page * database->drb_page_size;
-	if (LLIO_seek
-		(status, fil->fil_desc,
-		 fil->fil_string, *new_offset, LLIO_SEEK_BEGIN) == FB_FAILURE) {
+	if (LLIO_seek (status, fil->fil_desc,
+		 fil->fil_string, *new_offset, LLIO_SEEK_BEGIN) == FB_FAILURE)
+	{
 		gds__print_status(status);
 		return NULL;
 	}
@@ -3655,13 +3661,12 @@ static FIL setup_file(UCHAR * file_name,
  **************************************
  *
  * Functional description
- *	Set up file descriptor. 
+ *	Set up file descriptor.
  *
  **************************************/
 	FIL file;
-/* Allocate file block and copy file name string */
-	file = (FIL)
-		MISC_alloc_jrnl(sizeof(struct fil) + file_length + 1);
+// Allocate file block and copy file name string
+	file = (FIL) MISC_alloc_jrnl(sizeof(struct fil) + file_length + 1);
 	file->fil_desc = desc;
 	file->fil_length = file_length;
 	file->fil_max_page = -1;
@@ -3689,13 +3694,15 @@ static bool test_partial_db(SLONG expected_seqno)
 	database = databases;
 	cch = get_page(database, LOG_PAGE, true);
 	page = (LIP) cch->cache_page;
-/* At the end of a partial recovery, we will turn off log and
- * set the next seqno.
- */
+// At the end of a partial recovery, we will turn off log and
+// set the next seqno.
+
 	ret = false;
 	if ((page->log_flags == (log_no_ail | log_partial_rebuild))
 		&& (page->log_file.cp_seqno == expected_seqno))
+	{
 		ret = true;
+	}
 	release_page(database, cch);
 	return ret;
 }
@@ -3717,34 +3724,34 @@ static void update_rebuild_seqno(SLONG db_id)
 
 	if (sw_partial) {
 		if (sw_activate) {
-            FOR(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS
-                WITH P.DB_ID EQ db_id AND P.NEW_DB_NAME EQ partial_db 
-                
-                ERASE P 
-                
-                ON_ERROR 
-                    rebuild_abort(194);
-                END_ERROR;
-	        END_FOR;
+			FOR(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS
+				WITH P.DB_ID EQ db_id AND P.NEW_DB_NAME EQ partial_db
+			
+				ERASE P
+			
+				ON_ERROR
+					rebuild_abort(194);
+				END_ERROR;
+			END_FOR;
 		}
 		else {
-            FOR(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS
-                WITH P.DB_ID EQ db_id AND P.NEW_DB_NAME EQ partial_db 
-                MODIFY P 
-                    P.LAST_LOG_SEQ = max_seqno;
-	           END_MODIFY 
-               ON_ERROR 
-                   rebuild_abort(194);
-	           END_ERROR;
-	        END_FOR;
+			FOR(TRANSACTION_HANDLE tr1) P IN DB.PARTIAL_REBUILDS
+				WITH P.DB_ID EQ db_id AND P.NEW_DB_NAME EQ partial_db
+				MODIFY P
+					P.LAST_LOG_SEQ = max_seqno;
+				END_MODIFY
+				ON_ERROR
+					rebuild_abort(194);
+				END_ERROR;
+			END_FOR;
 		}
 	}
 
-/* Do a commit retain to save changes */
+// Do a commit retain to save changes
 
-	SAVE tr1 
-    ON_ERROR 
-        rebuild_abort(194);
+	SAVE tr1
+	ON_ERROR
+		rebuild_abort(194);
 	END_ERROR;
 }
 
@@ -3773,7 +3780,8 @@ static void write_page(DRB database,
 		rebuild_abort(49);
 	if (LLIO_write(status, fil->fil_desc, fil->fil_string, new_offset,
 				   LLIO_SEEK_NONE, (UCHAR*) buffer->cache_page,
-				   database->drb_page_size, &len_written) == FB_FAILURE) {
+				   database->drb_page_size, &len_written) == FB_FAILURE)
+	{
 		gds__print_status(status);
 		rebuild_abort(49);
 	}

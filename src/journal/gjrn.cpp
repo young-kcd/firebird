@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journal Server
  *	MODULE:		gjrn.c
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -51,9 +51,9 @@ FILE *msg_file;
 static void gjrn_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 static void gjrn_msg_put(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 static USHORT get_new_files(SCHAR **, SLONG *);
-static bool start_disable(int, SCHAR **);
-static bool start_dump(int, SCHAR **);
-static bool start_enable(int, SCHAR **);
+static bool start_disable(int, char **);
+static bool start_dump(int, char **);
+static bool start_enable(int, char **);
 
 static jmp_buf gjrn_env;
 
@@ -62,7 +62,7 @@ static UCHAR
 
 typedef struct func_tab {
 	SCHAR *name;
-	bool (*func_routine) (int, SCHAR **);
+	bool (*func_routine) (int, char **);
 } FUNC_TABLE;
 
 static FUNC_TABLE option_table[] = {
@@ -93,19 +93,21 @@ int CLIB_ROUTINE main(int argc,
  *
  **************************************/
 	SSHORT i, s_argc;
-	SCHAR *p, **s_argv, string[512];
+	char *p;
+	char **s_argv;
+	char string[512];
 	bool found;
 	bool sw_interactive = false;
-	SCHAR option_name[32];
+	char option_name[32];
 	SLONG redir_in, redir_out, redir_err;
 	TEXT msg[128];
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
 #endif
 
-/* Perform some special handling when run as an Interbase service.  The
-   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+// Perform some special handling when run as an Interbase service.  The
+// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	sw_service_gjrn = false;
 
@@ -163,7 +165,8 @@ int CLIB_ROUTINE main(int argc,
 
 	if (sw_interactive) {
 		p = option_name;
-		GJRN_get_msg(OPTION_PROMPT, msg, NULL, NULL, NULL);	/* Msg 218 enter journal option: */
+		GJRN_get_msg(OPTION_PROMPT, msg, NULL, NULL, NULL);
+		// Msg 218 enter journal option:
 		if (!MISC_get_line(msg, p, sizeof(option_name)))
 			MISC_print_journal_syntax();
 	}
@@ -177,7 +180,8 @@ int CLIB_ROUTINE main(int argc,
 
 	for (i = 0; option_table[i].name; i++) {
 		if ((!strcmp(option_table[i].name, p)) ||
-			((strlen(p) == 1) && (p[0] == option_table[i].name[0]))) {
+			((strlen(p) == 1) && (p[0] == option_table[i].name[0])))
+		{
 			found = true;
 			break;
 		}
@@ -214,12 +218,13 @@ void GJRN_abort(int number)
  **************************************/
 
 	if (number) {
-		gjrn_msg_partial(0, 0, 0, 0, 0, 0);	/* msg 0: gbak:: */
+		gjrn_msg_partial(0, 0, 0, 0, 0, 0); // msg 0: gbak::
 		GJRN_printf(number, NULL, NULL, NULL, NULL);
 	}
 
-	gjrn_msg_partial(0, 0, 0, 0, 0, 0);	/* msg 0: gbak:: */
-	GJRN_printf(1, NULL, NULL, NULL, NULL);	/* msg 1: exiting journal utility due to errors */
+	gjrn_msg_partial(0, 0, 0, 0, 0, 0); // msg 0: gbak::
+	GJRN_printf(1, NULL, NULL, NULL, NULL);
+	// msg 1: exiting journal utility due to errors
 
 	Firebird::status_exception::raise(FINI_ERROR);
 }
@@ -302,8 +307,9 @@ void GJRN_print_syntax(void)
  *
  **************************************/
 
-	gjrn_msg_partial(0, 0, 0, 0, 0, 0);	/* msg 0: gbak:: */
-	GJRN_printf(3, NULL, NULL, NULL, NULL);	/* msg 3: gjrn [-z] <utility> [-debug] [-verbose] [<options>] [<database name>] */
+	gjrn_msg_partial(0, 0, 0, 0, 0, 0); // msg 0: gbak::
+	GJRN_printf(3, NULL, NULL, NULL, NULL);
+	// msg 3: gjrn [-z] <utility> [-debug] [-verbose] [<options>] [<database name>]
 }
 
 
@@ -321,7 +327,7 @@ static void gjrn_msg_partial(USHORT number,
  **************************************
  *
  * Functional description
- *	Retrieve a message from the error file, 
+ *	Retrieve a message from the error file,
  *      format it, and print it
  *      without a newline.
  *
@@ -370,7 +376,7 @@ static USHORT get_new_files(SCHAR ** old_files,
  **************************************
  *
  * Functional description
- *	Get file names for online dump.  
+ *	Get file names for online dump. 
  *	Returns number of files.
  *		file size.
  *
@@ -380,15 +386,18 @@ static USHORT get_new_files(SCHAR ** old_files,
 	SLONG fs = 0;
 	SCHAR msg[MSG_LENGTH];
 
-	GJRN_printf(4, NULL, NULL, NULL, NULL);	/* msg 4: reading online dump parameters */
+	GJRN_printf(4, NULL, NULL, NULL, NULL);
+	// msg 4: reading online dump parameters
 
-	GJRN_get_msg(5, msg, 0, 0, 0);	/* msg 5: enter file size or <Ctrl-D> to end input */
+	GJRN_get_msg(5, msg, 0, 0, 0);
+	// msg 5: enter file size or <Ctrl-D> to end input
 	MISC_get_line(msg, buff, MAXPATHLEN);
 	if (fs = atoi(buff))
 		*old_fs = fs;
 
 	while (true) {
-		GJRN_get_msg(6, msg, 0, 0, 0);	/* msg 6: enter file name or <Ctrl-D> to end input */
+		GJRN_get_msg(6, msg, 0, 0, 0);
+		// msg 6: enter file name or <Ctrl-D> to end input
 		buff[0] = 0;
 		MISC_get_line(msg, buff, MAXPATHLEN);
 		if (!strlen(buff))
@@ -406,7 +415,7 @@ static USHORT get_new_files(SCHAR ** old_files,
 
 
 static bool start_disable(int argc,
-						  SCHAR ** argv)
+						  char ** argv)
 {
 /**************************************
  *
@@ -428,7 +437,7 @@ static bool start_disable(int argc,
 	bool sw_i;
 	TEXT msg[128];
 
-/* Start by parsing switches */
+// Start by parsing switches
 
 	sw_i = sw_v = false;
 
@@ -467,14 +476,16 @@ static bool start_disable(int argc,
 	}
 
 	if ((sw_i) && (!database)) {
-		GJRN_get_msg(219, msg, NULL, NULL, NULL);	/* enter database name: */
+		GJRN_get_msg(219, msg, NULL, NULL, NULL);
+		// enter database name:
 		if (MISC_get_line(msg, db_name, sizeof(db_name))) {
 			database = (UCHAR*) db_name;
 		}
 	}
 
 	if (!database) {
-		GJRN_printf(13, NULL, NULL, NULL, NULL);	/* msg 13: please retry, giving a database name */
+		GJRN_printf(13, NULL, NULL, NULL, NULL);
+		// msg 13: please retry, giving a database name
 		MISC_print_journal_syntax();
 	}
 
@@ -482,7 +493,7 @@ static bool start_disable(int argc,
 	dpb_length = sizeof(disable_dpb);
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle, 
+	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle,
 						 dpb_length, (SCHAR*) dpb);
 
 	if (status_vector[1]) {
@@ -498,7 +509,7 @@ static bool start_disable(int argc,
 
 
 static bool start_dump(int argc,
-					   SCHAR ** argv)
+					   char ** argv)
 {
 /**************************************
  *
@@ -529,7 +540,7 @@ static bool start_dump(int argc,
 	bool sw_i;
 	TEXT msg[128];
 
-/* Start by parsing switches */
+// Start by parsing switches
 
 	sw_i = sw_d = sw_v = false;
 
@@ -543,7 +554,7 @@ static bool start_dump(int argc,
 		if ((*argv)[0] != '-') {
 			if (database) {
 				GJRN_printf(12, (SCHAR*) database, NULL, NULL, NULL);
-				// msg 12: database file name (%s) already specified 
+				// msg 12: database file name (%s) already specified
 				Firebird::status_exception::raise(FINI_ERROR);
 			}
 			database = (UCHAR*) *argv++;
@@ -601,7 +612,8 @@ static bool start_dump(int argc,
 			old_file_size = fs;
 
 		if (!database) {
-			GJRN_get_msg(219, msg, NULL, NULL, NULL);	/* enter database name: */
+			GJRN_get_msg(219, msg, NULL, NULL, NULL);
+			// enter database name:
 			if (MISC_get_line(msg, db_name, sizeof(db_name))) {
 				database = (UCHAR*) db_name;
 			}
@@ -682,7 +694,7 @@ static bool start_dump(int argc,
 		dpb_length = p - dpb;
 
 		handle = NULL;
-		gds__attach_database(status_vector, 0, (SCHAR*) database, &handle, 
+		gds__attach_database(status_vector, 0, (SCHAR*) database, &handle,
 							 dpb_length, (SCHAR*) dpb);
 
 		dump_id = (USHORT) status_vector[3];
@@ -690,10 +702,10 @@ static bool start_dump(int argc,
 		start_seqno = status_vector[7];
 		start_file = status_vector[9];
 
-		/* 
-		 * Handle cases like online dump in progress etc. which are
-		 * fatal.  Can continue only in case of no_space on disk error
-		 */
+		//
+		// Handle cases like online dump in progress etc. which are
+		// fatal.  Can continue only in case of no_space on disk error
+		//
 
 		if (status_vector[1] && (status_vector[1] != gds_old_no_space)) {
 			error = true;
@@ -708,14 +720,14 @@ static bool start_dump(int argc,
 		if (handle)
 			gds__detach_database(status_vector, &handle);
 
-		/* Check if error && no space */
+		// Check if error && no space
 
 		if (sw_i && error) {
 			if (old_num_files = get_new_files((SCHAR**)old_files, &fs)) {
 				old_file_size = fs;
 				error = false;
 
-				/* read more file names and continue */
+				// read more file names and continue
 
 				continue;
 			}
@@ -727,7 +739,7 @@ static bool start_dump(int argc,
 
 
 static bool start_enable(int argc,
-						 SCHAR ** argv)
+						 char ** argv)
 {
 /**************************************
  *
@@ -754,7 +766,7 @@ static bool start_enable(int argc,
 	bool j_flag;
 	TEXT msg[128];
 
-/* Start by parsing switches */
+// Start by parsing switches
 
 	sw_i = sw_d = sw_v = a_flag = j_flag = false;
 
@@ -817,19 +829,22 @@ static bool start_enable(int argc,
 
 	if (sw_i) {
 		if (!database) {
-			GJRN_get_msg(DB_PROMPT, msg, NULL, NULL, NULL);	/* Msg 219 enter database name: */
+			GJRN_get_msg(DB_PROMPT, msg, NULL, NULL, NULL);
+			// Msg 219 enter database name:
 			if (MISC_get_line(msg, (SCHAR*) db_name, sizeof(db_name))) {
 				database = db_name;
 			}
 		}
 		if (!a_flag) {
-			GJRN_get_msg(BAK_DIR_PROMPT, msg, NULL, NULL, NULL);	/* Msg 220 enter backup directory name: */
+			GJRN_get_msg(BAK_DIR_PROMPT, msg, NULL, NULL, NULL);
+			// Msg 220 enter backup directory name:
 			if (MISC_get_line(msg, (SCHAR*) backup, sizeof(backup))) {
 				a_flag = true;
 			}
 		}
 		if (!j_flag) {
-			GJRN_get_msg(JRN_DIR_PROMPT, msg, NULL, NULL, NULL);	/* Msg 91 enter journal directory name: */
+			GJRN_get_msg(JRN_DIR_PROMPT, msg, NULL, NULL, NULL);
+			// Msg 91 enter journal directory name:
 			if (MISC_get_line(msg, (SCHAR*) journal, sizeof(journal))) {
 				j_flag = true;
 			}
@@ -861,7 +876,7 @@ static bool start_enable(int argc,
 	dpb_length = p - dpb;
 
 	handle = NULL;
-	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle, 
+	gds__attach_database(status_vector, 0, (SCHAR*) database, &handle,
 						 dpb_length, (SCHAR*) dpb);
 
 	if (status_vector[1]) {

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journal Server
  *	MODULE:		archive.c
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -78,20 +78,25 @@ int CLIB_ROUTINE main(int argc,
 	j_dir = *argv++;
 	j_length = strlen(j_dir);
 
-/* Attach with journal server */
+// Attach with journal server
 
 	if (JRN_archive_begin(status, &journal, db_id, file_id, j_dir, j_length)
 		!= FB_SUCCESS)
-		error_exit(status, &journal, db_id, file_id, 235);	/* msg 235: Archive process unable to attach to journal server. */
+	{
+		error_exit(status, &journal, db_id, file_id, 235);
+		// msg 235: Archive process unable to attach to journal server.
+	}
 
-/* Check in with database */
+// Check in with database
 
 	if (open_file(s_file, p_offset, LLIO_OPEN_R, &s_fd) == FB_FAILURE)
-		error_exit(status, &journal, db_id, file_id, 236);	/* msg 236: Archive process unable to open log file. */
+		error_exit(status, &journal, db_id, file_id, 236);
+		// msg 236: Archive process unable to open log file.
 
 	if (open_file(d_file, 0L, LLIO_OPEN_NEW_RW, &d_fd) == FB_FAILURE) {
 		LLIO_close(0, s_fd);
-		error_exit(status, &journal, db_id, file_id, 237);	/* msg 237: Archive process unable to create archive file. */
+		error_exit(status, &journal, db_id, file_id, 237);
+		// msg 237: Archive process unable to create archive file.
 	}
 
 	ret_val = copy_file(s_fd, d_fd, size);
@@ -100,9 +105,10 @@ int CLIB_ROUTINE main(int argc,
 	ret_val |= LLIO_close(0, d_fd);
 
 	if (ret_val)
-		error_exit(status, &journal, db_id, file_id, 238);	/* msg 238: Archive process unable to close log and/or archive files. */
+		error_exit(status, &journal, db_id, file_id, 238);
+		// msg 238: Archive process unable to close log and/or archive files.
 
-/* Now mark the file for deletion */
+// Now mark the file for deletion
 
 	JRN_archive_end(status, &journal, db_id, file_id);
 
@@ -123,7 +129,7 @@ static USHORT copy_file(SLONG s_fd,
  **************************************
  *
  * Functional description
- *	copy source file to destination file 
+ *	copy source file to destination file
  *
  **************************************/
 	UCHAR buff[1024];
@@ -140,10 +146,15 @@ static USHORT copy_file(SLONG s_fd,
 		len -= l;
 
 		if (LLIO_read(0, s_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &read) ||
-			l != read) return FB_FAILURE;
+			l != read)
+		{
+			return FB_FAILURE;
+		}
 		if (LLIO_write(0, d_fd, 0, 0L, LLIO_SEEK_NONE, buff, l, &written) ||
 			l != written)
+		{
 			return FB_FAILURE;
+		}
 	}
 
 	return FB_SUCCESS;
