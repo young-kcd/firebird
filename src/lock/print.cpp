@@ -451,9 +451,16 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_acquire_spins);
 
 	if (LOCK_header->lhb_acquire_blocks) {
-		float bottleneck =
+		// CVC: MSVC up to v6 couldn't convert UINT64 to double.
+#if defined(_MSC_VER) && _MSC_VER <= 1200
+		const float bottleneck =
+			(float) ((100. * (SINT64) LOCK_header->lhb_acquire_blocks) /
+					 (SINT64) LOCK_header->lhb_acquires);
+#else
+		const float bottleneck =
 			(float) ((100. * LOCK_header->lhb_acquire_blocks) /
 					 LOCK_header->lhb_acquires);
+#endif
 		FPRINTF(outfile, "\tMutex wait: %3.1f%%\n", bottleneck);
 	}
 	else
@@ -991,11 +998,11 @@ static void prt_owner(OUTFILE outfile,
 										owner->own_process_uid,
 										FALSE) ? "Alive" : "Dead");
 #ifdef SOLARIS_MT
-	FPRINTF(outfile, "\tLast Acquire: %6d (%6d ago)",
+	FPRINTF(outfile, "\tLast Acquire: %6"UQUADFORMAT" (%6"UQUADFORMAT" ago)",
 			owner->own_acquire_time,
 			LOCK_header->lhb_acquires - owner->own_acquire_time);
 #ifdef DEV_BUILD
-	FPRINTF(outfile, " sec %9ld (%3d sec ago)",
+	FPRINTF(outfile, " sec %9"ULONGFORMAT" (%3"ULONGFORMAT" sec ago)",
 			owner->own_acquire_realtime,
 			time(NULL) - owner->own_acquire_realtime);
 #endif /* DEV_BUILD */
