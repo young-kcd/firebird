@@ -142,7 +142,7 @@ void fatal_exception::raiseFmt(const char* format, ...) {
 	va_start(args, format);
 	char buffer[1024];
 	VSNPRINTF(buffer, sizeof(buffer), format, args);
-	buffer[sizeof(buffer)-1] = 0;
+	buffer[sizeof(buffer) - 1] = 0;
 	va_end(args);
 	throw fatal_exception(buffer);
 }
