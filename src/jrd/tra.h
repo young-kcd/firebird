@@ -136,8 +136,9 @@ const int tra_committed		= 3;
 const int tra_us			= 4;	/* Transaction is us */
 const int tra_precommitted	= 5;	/* Transaction is precommitted */
 
-/* The highest transaction number possible.  This is 0x7fffffff if SLONG is 32 bits. */
-#define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
+// The highest transaction number possible.  This is 0x7fffffff if SLONG is 32 bits.
+//#define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
+
 /* Savepoint block */
 
 class Savepoint : public pool_alloc<type_sav>

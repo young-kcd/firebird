@@ -28,8 +28,8 @@
 
 #define ASCII_SPACE     32		/* ASCII code for space */
 
-#define INTL_name_not_found		1
-#define INTL_subtype_not_implemented	2
+//#define INTL_name_not_found		1
+//#define INTL_subtype_not_implemented	2
 
 /*
  *  Default character set name for specification of COLLATE clause without
