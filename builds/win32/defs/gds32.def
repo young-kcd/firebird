@@ -262,9 +262,6 @@ EXPORTS
     isc_encode_sql_date=fbclient.isc_encode_sql_date @264
     isc_encode_sql_time=fbclient.isc_encode_sql_time @265
     isc_encode_timestamp=fbclient.isc_encode_timestamp @266
-	isc_get_client_version=fbclient.isc_get_client_version
-	isc_get_client_major_version=fbclient.isc_get_client_major_version
-	isc_get_client_minor_version=fbclient.isc_get_client_minor_version
     CVT_move=fbclient.CVT_move @267
     _isc_start_transaction=fbclient._isc_start_transaction
     _isc_expand_dpb=fbclient._isc_expand_dpb
