@@ -49,7 +49,7 @@ private:
 	Where* ptr;
 public:
 	AutoPtr<Where, Clear>(Where* v = NULL) {ptr = v;}
-	AutoPtr<Where, Clear>& operator= (Where* v) { ptr = v; return *this; }
+	AutoPtr<Where, Clear>& operator= (Where* v) { Clear::clear(ptr); ptr = v; return *this; }
 	operator Where*() {return ptr;}
 	bool operator !() {return ptr ? false : true;}
 	Where* operator->() {return ptr;}

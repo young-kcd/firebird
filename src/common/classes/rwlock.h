@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.18 2004-05-02 23:03:47 skidder Exp $
+ *  $Id: rwlock.h,v 1.19 2004-05-03 17:05:56 skidder Exp $
  *
  */
 
@@ -65,7 +65,7 @@ private:
 	HANDLE writers_event, readers_semaphore;
 
 	// Forbid copy constructor
-	RWLock(RWLock& source);
+	RWLock(const RWLock& source);
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 
