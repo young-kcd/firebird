@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.55 2003-04-25 17:15:43 alexpeshkoff Exp $
+$Id: exe.cpp,v 1.56 2003-04-26 10:09:38 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1227,7 +1227,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 		if (! tdbb->tdbb_transaction->tra_rpblist) {
 			assert(tdbb->tdbb_transaction->tra_pool);
 			tdbb->tdbb_transaction->tra_rpblist = 
-				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+				FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
 					traRpbList(tdbb->tdbb_database->dbb_permanent);
 		}
 		int rpblevel = tdbb->tdbb_transaction->
@@ -2858,7 +2858,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 			if (! tdbb->tdbb_transaction->tra_rpblist) {
 				assert(tdbb->tdbb_transaction->tra_pool);
 				tdbb->tdbb_transaction->tra_rpblist = 
-					FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+					FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
 						traRpbList(tdbb->tdbb_database->dbb_permanent);
 			}
 			int rpblevel = tdbb->tdbb_transaction->
