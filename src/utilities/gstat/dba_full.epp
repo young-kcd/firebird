@@ -165,7 +165,7 @@ static tdba* gddba;
 void inline dba_full_exit(int code, tdba* tddba)
 {
 	tddba->exit_code = code;
-	Firebird::status_exception::raise();
+	throw std::exception();
 }
 
 int CLIB_ROUTINE main( int argc, char** argv)

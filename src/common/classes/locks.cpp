@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Client/Server Common Code
  *	MODULE:			locks.cpp
- *	DESCRIPTION:	Win32 Spinlock support compatible with 
+ *	DESCRIPTION:	Win32 Mutex support compatible with 
  *					old OS versions (like Windows 95)
  *
  * The contents of this file are subject to the Interbase Public
@@ -35,9 +35,9 @@ namespace Firebird {
 #define INIT_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(0))
 
 tSetCriticalSectionSpinCount* 
-	Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
+	Mutex::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
 
-Spinlock::Spinlock() {
+Mutex::Mutex() {
 	InitializeCriticalSection(&spinlock);
 	if (SetCriticalSectionSpinCount == MISS_SPIN_COUNT)
 		return;

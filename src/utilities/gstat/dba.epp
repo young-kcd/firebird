@@ -234,7 +234,7 @@ static struct tdba* gddba;
 void inline dba_exit(int code, tdba* tddba)
 {
 	tddba->exit_code = code;
-	Firebird::status_exception::raise();
+	throw std::exception();
 }
 
 #define GSTAT_MSG_FAC	21

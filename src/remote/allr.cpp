@@ -30,6 +30,7 @@
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
+#include "../common/classes/alloc.h"
 
 
 static const struct

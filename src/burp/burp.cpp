@@ -1323,9 +1323,9 @@ void BURP_error_redirect(const ISC_STATUS* status_vector,
 // Raises an exception when the old SEH system would jump to another place.
 void BURP_exit_local(int code, TGBL tdgbl)
 {
-	tdgbl->exit_code = ((volatile int)code);
+	tdgbl->exit_code = code;
 	if (tdgbl->burp_env != NULL)
-		Firebird::status_exception::raise();
+		throw std::exception();
 }
 
 

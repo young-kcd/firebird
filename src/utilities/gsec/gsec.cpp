@@ -80,7 +80,7 @@ void inline gsec_exit(int code, TSEC tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_env != NULL)
-		Firebird::status_exception::raise();
+		throw std::exception();
 }
 
 #ifdef SUPERSERVER
