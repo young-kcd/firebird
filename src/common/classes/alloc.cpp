@@ -510,7 +510,7 @@ void MemoryPool::addFreeBlock(MemoryBlock *blk) {
 	BlockInfo info = {blk, blk->length};
 	try {
 		freeBlocks.add(info);
-	} catch(...) {
+	} catch(const std::exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = (PendingFreeBlock *)((char *)freeBlocks.getAddErrorValue().block+
 			MEM_ALIGN(sizeof(MemoryBlock)));

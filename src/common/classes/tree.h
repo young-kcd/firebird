@@ -505,7 +505,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		newLeaf = new(pool->allocate(sizeof(ItemList))) ItemList(leaf); // No re-enterance allowed !!!
 																	    // Exception here doesn't 
 																		// invalidate tree structure
-	} catch(...) {
+	} catch(const std::exception&) {
 		addErrorValue = item;
 		throw;
 	}
@@ -602,7 +602,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		nodeList->add(newNode);
 		root = nodeList;
 		level++;
-	} catch(...) {
+	} catch(const std::exception&) {
 		while (curLevel) {
 			void *lower = (*(NodeList *)newNode)[0];
 			((NodeList *)newNode)->~NodeList();
