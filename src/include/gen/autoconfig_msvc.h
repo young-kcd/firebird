@@ -134,7 +134,7 @@
 #define HAVE_SWAB
 #define HAVE__SWAB
 #undef HAVE_MMAP
-#undef HAVE_ATEXIT
+#define HAVE_ATEXIT
 #undef HAVE_ON_EXIT
 #undef HAVE_WORKING_VFORK
 #undef HAVE_SETPGRP 
