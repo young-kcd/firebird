@@ -1,3 +1,62 @@
+2004-08-17 02:04  skidder
+
+	* firebird2/src/jrd/intlobj_new.h (1.6):
+	
+	New INTL interface amendments
+
+2004-08-16 14:56  alexpeshkoff
+
+	* firebird2/builds/: win32/msvc6/gfix.dsp (1.20),
+	posix/Makefile.in.client.gfix (1.10), posix/Makefile.in.embed.gfix
+	(1.10):
+	
+	I've added thd.cpp to gfix in VC6 and posix builds. Other builds
+	should also be fixed.
+
+2004-08-16 14:28  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.69), alice/alice.h (1.42),
+	alice/alice_meta.epp (1.40), alice/all.cpp (1.27), alice/tdr.cpp
+	(1.40), jrd/all.cpp (1.37), jrd/blb.cpp (1.85), jrd/blob_filter.cpp
+	(1.30), jrd/blob_filter.h (1.14), jrd/btr.cpp (1.103), jrd/cch.cpp
+	(1.100), jrd/cmp.cpp (1.143), jrd/cvt2.cpp (1.41), jrd/dbt.cpp
+	(1.29), jrd/dfw.epp (1.121), jrd/dyn.epp (1.66), jrd/dyn_def.epp
+	(1.74), jrd/dyn_del.epp (1.35), jrd/evl.cpp (1.100), jrd/exe.cpp
+	(1.118), jrd/ext.cpp (1.56), jrd/fun.epp (1.63), jrd/idx.cpp
+	(1.63), jrd/ini.epp (1.54), jrd/intl.cpp (1.70), jrd/jrd.cpp
+	(1.176), jrd/jrd.h (1.110), jrd/met.epp (1.133), jrd/opt.cpp
+	(1.180), jrd/par.cpp (1.101), jrd/pcmet.epp (1.26), jrd/rng.cpp
+	(1.31), jrd/rse.cpp (1.74), jrd/sbm.cpp (1.18), jrd/sdw.cpp (1.52),
+	jrd/sqz.cpp (1.18), jrd/thd.h (1.35), jrd/tra.cpp (1.84),
+	jrd/val.cpp (1.55), jrd/vio.cpp (1.108), dsql/alld.cpp (1.28),
+	dsql/ddl.cpp (1.108), dsql/dsql.cpp (1.116), dsql/dsql.h (1.65),
+	dsql/gen.cpp (1.68), dsql/make.cpp (1.71), dsql/metd.epp (1.67),
+	dsql/parse.cpp (1.120), dsql/parse.y (1.140), dsql/pass1.cpp
+	(1.154), jrd/os/vms/extvms.cpp (1.23), include/firebird.h (1.29):
+	
+	next step preparing to allocate auto objects memory from
+	appropriate pool
+
+2004-08-16 14:25  alexpeshkoff
+
+	* firebird2/src/common/classes/stack.h (1.12):
+	
+	removed a lot of posix warnings after changing int to size_t in
+	vector.h
+
+2004-08-16 14:24  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp (1.24):
+	
+	replaced exit() with throw fatal_exception - thanks to Jim
+
+2004-08-16 14:21  alexpeshkoff
+
+	* firebird2/src/jrd/os/: win32/thd_priority.cpp (1.21),
+	thd_priority.h (1.19):
+	
+	fixed problems with thread priorities scheduler
+
 2004-08-13 21:27  skidder
 
 	* firebird2/src/jrd/intlobj_new.h (1.5):
