@@ -1022,7 +1022,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 	case nod_exec_into:
 		if (node->nod_arg[e_exec_into_block]) {
 			STUFF(blr_label);
-			STUFF((int)(SLONG) node->nod_arg[e_exec_into_label]);
+			STUFF((int) node->nod_arg[e_exec_into_label]->nod_arg[e_label_number]);
 		}
 		STUFF(blr_exec_into);
 		temp = node->nod_arg[e_exec_into_list];
@@ -1050,7 +1050,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
     case nod_breakleave:
         STUFF(blr_leave);
-        STUFF((int)(SLONG) node->nod_arg[e_breakleave_label]);
+        STUFF((int) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
         return;
 
 	case nod_store:
@@ -1065,7 +1065,7 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_abort:
 		STUFF(blr_leave);
-		STUFF((int)(SLONG) node->nod_arg[e_abrt_number]);
+		STUFF((int) node->nod_arg[e_abrt_number]);
 		return;
 
 	case nod_start_savepoint:
@@ -1145,14 +1145,14 @@ void GEN_statement( DSQL_REQ request, DSQL_NOD node)
 
 	case nod_while:
 		STUFF(blr_label);
-		STUFF((int)(SLONG) node->nod_arg[e_while_label]);
+		STUFF((int) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
 		STUFF(blr_loop);
 		STUFF(blr_begin);
 		STUFF(blr_if);
 		GEN_expr(request, node->nod_arg[e_while_cond]);
 		GEN_statement(request, node->nod_arg[e_while_action]);
 		STUFF(blr_leave);
-		STUFF((int)(SLONG) node->nod_arg[e_while_label]);
+		STUFF((int) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
 		STUFF(blr_end);
 		return;
 
@@ -1662,9 +1662,9 @@ static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
 
     /* CVC: Only put a label if this is not singular; otherwise,
        what loop is the user trying to abandon? */
-    if (for_select->nod_arg [e_flp_action]) {
-        STUFF (blr_label);
-        STUFF ((int) for_select->nod_arg [e_flp_label]);
+    if (for_select->nod_arg[e_flp_action]) {
+        STUFF(blr_label);
+        STUFF((int) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
     }
 
 /* Generate FOR loop */

@@ -4426,25 +4426,26 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	DSQL_NOD label = 0;
+	DSQL_NOD label = NULL;
 	USHORT number = 0, position = 0;
 
 	// retrieve a label
 
-	if (input->nod_type == nod_breakleave) {
+	switch (input->nod_type) {
+	case nod_breakleave:
 		label = input->nod_arg[e_breakleave_label];
-	}
-	else if (input->nod_type == nod_for_select) {
+		break;
+	case nod_for_select:
 		label = input->nod_arg[e_flp_label];
-	}
-	else if (input->nod_type == nod_exec_into) {
+		break;
+	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
-	}
-	else if (input->nod_type == nod_while) {
+		break;
+	case nod_while:
 		label = input->nod_arg[e_while_label];
-	}
-	else {
-		assert(0);
+		break;
+	default:
+		assert(false);
 	}
 
 	// look for a label, if specified
@@ -4453,7 +4454,7 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 
 	if (label) {
 		assert(label->nod_type == nod_label);
-		STR str = (STR) label->nod_arg[0];
+		STR str = (STR) label->nod_arg[e_label_name];
 		label_string = (TEXT*) str->str_data;
 		int index = request->req_loop_level;
 		for (DLLS stack = request->req_labels; stack; stack = stack->lls_next) {
@@ -4502,7 +4503,13 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 
 	assert(number > 0 && number <= request->req_loop_level);
 
-	return (DSQL_NOD)(ULONG) number;
+	if (!label) {
+		label = MAKE_node(nod_label, e_label_count);
+		// this label is unnamed, i.e. its nod_arg[e_label_name] is NULL
+	}
+	label->nod_arg[e_label_number] = (DSQL_NOD) number;
+
+	return label;
 }
 
 

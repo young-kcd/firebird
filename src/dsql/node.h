@@ -864,6 +864,10 @@ typedef dsql_nod* DSQL_NOD;
 #define e_searched_case_search_conditions	0	/* list boolean expressions */
 #define e_searched_case_results				1	/* list including else_result */
 
+#define e_label_name	0
+#define e_label_number	1
+#define e_label_count	2
+
 #define e_derived_table_rse				0  // Contains select_expr
 #define e_derived_table_alias			1  // Alias name for derived table
 #define e_derived_table_column_alias	2  // List with alias names from derived table columns

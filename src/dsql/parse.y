@@ -1656,7 +1656,7 @@ while		: label_opt WHILE '(' search_condition ')' DO proc_block
 		;
 
 label_opt	: symbol_label_name ':'
-			{ $$ = make_node (nod_label, 1, $1); }
+			{ $$ = make_node (nod_label, e_label_count, $1, NULL); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1667,7 +1667,7 @@ breakleave	: KW_BREAK ';'
 			{ $$ = make_node (nod_breakleave, e_breakleave_count, NULL); }
 		| LEAVE symbol_label_name ';'
 			{ $$ = make_node (nod_breakleave, e_breakleave_count,
-				make_node (nod_label, 1, $2)); }
+				make_node (nod_label, e_label_count, $2, NULL)); }
 		;
 
 cursor_def	: AS CURSOR symbol_cursor_name
