@@ -349,9 +349,9 @@ RSB OPT_compile(TDBB tdbb,
 	project = rse->rse_projection;
 	aggregate = rse->rse_aggregate;
 
-/* put any additional booleans on the conjunct stack, and see if we 
-   can generate additional booleans by associativity--this will help 
-   to utilize indices that we might not have noticed */
+// put any additional booleans on the conjunct stack, and see if we 
+// can generate additional booleans by associativity--this will help 
+// to utilize indices that we might not have noticed
 
 	if (rse->rse_boolean)
 		conjunct_count =
@@ -359,26 +359,25 @@ RSB OPT_compile(TDBB tdbb,
 
 	conjunct_count += distribute_equalities(&conjunct_stack, csb);
 
-/* find the end of the conjunct stack. */
-
+// find the end of the conjunct stack.
 	for (stack_end = &conjunct_stack; *stack_end;
 		 stack_end = &(*stack_end)->lls_next);
 
-/* clear the csb_active flag of all streams in the rse */
+// clear the csb_active flag of all streams in the rse
 	set_rse_inactive(csb, rse);
 
 	p = streams + 1;
 
-/* go through the record selection expression generating 
-   record source blocks for all streams */
+// go through the record selection expression generating 
+// record source blocks for all streams
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
 		 ptr++)
 	{
 		node = *ptr;
 
-		/* find the stream number and place it at the end of the beds array
-		   (if this is really a stream and not another rse) */
+		// find the stream number and place it at the end of the beds array
+		// (if this is really a stream and not another rse)
 
 		if (node->nod_type != nod_rse)
 		{
@@ -388,9 +387,9 @@ RSB OPT_compile(TDBB tdbb,
 			beds[++beds[0]] = (UCHAR) stream;
 		}
 
-		/* for nodes which are not relations, generate an rsb to
-		   represent that work has to be done to retrieve them;
-		   find all the substreams involved and compile them as well */
+		// for nodes which are not relations, generate an rsb to
+		// represent that work has to be done to retrieve them;
+		// find all the substreams involved and compile them as well
 
 		rsb = NULL;
 		local_streams[0] = 0;
@@ -422,16 +421,16 @@ RSB OPT_compile(TDBB tdbb,
 			compute_rse_streams(csb, (RSE) node, beds);
 			compute_rse_streams(csb, (RSE) node, local_streams);
 			compute_dbkey_streams(csb, node, key_streams);
-			/* pass rse boolean only to inner substreams because join condition 
-			  should never exclude records from outer substreams */
+			// pass rse boolean only to inner substreams because join condition 
+			// should never exclude records from outer substreams 
 			if (rse->rse_jointype == blr_inner || 
 			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==1) ||
 			   (rse->rse_jointype == blr_right && (ptr - rse->rse_relation)==0) )
 			{
-				/* AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as 
-				   active because the inner-streams (Y) are always "dependent" 
-				   on the outer-streams. So that index retrieval nodes could be made.
-				   For an INNER JOIN mark previous generated RSB's as active. */
+				// AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as 
+				// active because the inner-streams (Y) are always "dependent" 
+				// on the outer-streams. So that index retrieval nodes could be made.
+				// For an INNER JOIN mark previous generated RSB's as active.
 				if (rse->rse_jointype == blr_left) {
 					for (i = 1; i <= outer_streams[0]; i++) {
 						csb->csb_rpt[outer_streams[i]].csb_flags |= csb_active;
@@ -451,9 +450,9 @@ RSB OPT_compile(TDBB tdbb,
 			}
 		}
 
-		/* if an rsb has been generated, we have a non-relation;
-		   so it forms a river of its own since it is separately 
-		   optimized from the streams in this rsb */
+		// if an rsb has been generated, we have a non-relation;
+		// so it forms a river of its own since it is separately 
+		// optimized from the streams in this rsb
 
 		if (rsb) {
 			i = local_streams[0];
@@ -461,7 +460,7 @@ RSB OPT_compile(TDBB tdbb,
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
 			MOVE_FAST(local_streams + 1, river->riv_streams, i);
-			/* AB: Save all inner-part streams */
+			// AB: Save all inner-part streams
 			if (rse->rse_jointype == blr_inner || 
 			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation)==0) ||
 			   (rse->rse_jointype == blr_right && (ptr - rse->rse_relation)==1) )
@@ -474,9 +473,9 @@ RSB OPT_compile(TDBB tdbb,
 			continue;
 		}
 
-		/* we have found a base relation; record its stream 
-		   number in the streams array as a candidate for 
-		   merging into a river */
+		// we have found a base relation; record its stream 
+		// number in the streams array as a candidate for 
+		// merging into a river
 
 		// TMN: Is the intention really to allow streams[0] to overflow?
 		// I must assume that is indeed not the intention (not to mention
@@ -489,12 +488,12 @@ RSB OPT_compile(TDBB tdbb,
 		assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
 		outer_streams[++outer_streams[0]] = stream;
 
-		/* if we have seen any booleans or sort fields, we may be able to
-		   use an index to optimize them; retrieve the current format of 
-		   all indices at this time so we can determine if it's possible 
-		   AB: if a parent_stack was available and conjunct_count was 0
-		   then no indices where retrieved. Added also OR check on 
-		   parent_stack below. SF BUG # [ 508594 ] */
+		// if we have seen any booleans or sort fields, we may be able to
+		// use an index to optimize them; retrieve the current format of 
+		// all indices at this time so we can determine if it's possible 
+		// AB: if a parent_stack was available and conjunct_count was 0
+		// then no indices where retrieved. Added also OR check on 
+		// parent_stack below. SF BUG # [ 508594 ]
 
 		csb->csb_rpt[stream].csb_idx_allocation = 0;
 		if (conjunct_count || sort || project || aggregate || parent_stack)
@@ -515,31 +514,32 @@ RSB OPT_compile(TDBB tdbb,
 		}
 	}
 
-/* this is an attempt to make sure we have a large enough cache to 
-   efficiently retrieve this query; make sure the cache has a minimum
-   number of pages for each stream in the RSE (the number is just a guess) */
-
-	if (streams[0] > 5)
+// this is an attempt to make sure we have a large enough cache to 
+// efficiently retrieve this query; make sure the cache has a minimum
+// number of pages for each stream in the RSE (the number is just a guess)
+	if (streams[0] > 5) {
 		CCH_expand(tdbb, (ULONG) (streams[0] * CACHE_PAGES_PER_STREAM));
+	}
 
-/* At this point we are ready to start optimizing.  
-   We will use the opt block to hold information of
-   a global nature, meaning that it needs to stick 
-   around for the rest of the optimization process. */
+// At this point we are ready to start optimizing.  
+// We will use the opt block to hold information of
+// a global nature, meaning that it needs to stick 
+// around for the rest of the optimization process.
 
-/* first fill out the conjuncts at the end of opt */
-
+// first fill out the conjuncts at the end of opt
 	opt_->opt_count = (SSHORT) conjunct_count;
 
-/* Check if size of optimizer block exceeded. */
-
-	if (opt_->opt_count > MAX_CONJUNCTS)
+// Check if size of optimizer block exceeded.
+	if (opt_->opt_count > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
-	/* Msg442: size of optimizer block exceeded */
+		// Msg442: size of optimizer block exceeded
+	}
 
-/* AB: Because know we're going to use both parent & conjunct_stack
-   try to again to make additional conjuncts for an inner join,
-   but be sure that opt_->opt_count contains the real "base" */
+// AB: Because know we're going to use both parent & conjunct_stack
+//   try to again to make additional conjuncts for an inner join,
+//   but be sure that opt_->opt_count contains the real "base"
+
+// find the end of the conjunct stack.
 	for (stack_end = &conjunct_stack; *stack_end;
 		 stack_end = &(*stack_end)->lls_next);
 	SLONG saved_conjunct_count = conjunct_count;
@@ -552,11 +552,12 @@ RSB OPT_compile(TDBB tdbb,
 		*stack_end = NULL;
 	}
 
-	if (conjunct_count > MAX_CONJUNCTS)
+	if (conjunct_count > MAX_CONJUNCTS) {
 		ERR_post(isc_optimizer_blk_exc, 0);
-	/* Msg442: size of optimizer block exceeded */
+		// Msg442: size of optimizer block exceeded
+	}
 
-/* AB: If equality nodes could be made get them first from the stack */
+// AB: If equality nodes could be made get them first from the stack
 	for (i = saved_conjunct_count; i < conjunct_count; i++) {
 		opt_->opt_rpt[i].opt_conjunct = node = (JRD_NOD) LLS_POP(&conjunct_stack);
 		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
@@ -567,9 +568,8 @@ RSB OPT_compile(TDBB tdbb,
 		compute_dependencies(node, opt_->opt_rpt[i].opt_dependencies);
 	}
 
-/* Store the conjuncts from the parent rse.  But don't fiddle with
-   the parent's stack itself. */
-
+// Store the conjuncts from the parent rse.  But don't fiddle with
+// the parent's stack itself.
 	for (; parent_stack && conjunct_count < MAX_CONJUNCTS;
 		 parent_stack = parent_stack->lls_next, conjunct_count++) {
 		opt_->opt_rpt[conjunct_count].opt_conjunct = node =
@@ -580,26 +580,26 @@ RSB OPT_compile(TDBB tdbb,
 
 	opt_->opt_parent_count = (SSHORT) conjunct_count;
 
-/* Check if size of optimizer block exceeded. */
-
-	if (parent_stack)
+// Check if size of optimizer block exceeded.
+	if (parent_stack) {
 		ERR_post(isc_optimizer_blk_exc, 0);
-	/* Msg442: size of optimizer block exceeded */
+		// Msg442: size of optimizer block exceeded
+	}
 
-/* attempt to optimize aggregates via an index, if possible */
-
-	if (aggregate && !sort && !project)
+// attempt to optimize aggregates via an index, if possible
+	if (aggregate && !sort && !project) {
 		sort = aggregate;
-	else
+	}
+	else {
 		rse->rse_aggregate = aggregate = NULL;
+	}
 
-/* AB: Mark the previous used streams (sub-rse's) as active */
+// AB: Mark the previous used streams (sub-rse's) as active
 	for (i = 1; i <= sub_streams[0]; i++) {
 		csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;			
 	}
 
-/* outer joins require some extra processing */
-
+// outer joins require some extra processing
 	if (rse->rse_jointype != blr_inner) {
 		rsb = gen_outer(tdbb, opt_, rse, rivers_stack, &sort, &project);
 	}
@@ -608,39 +608,38 @@ RSB OPT_compile(TDBB tdbb,
 		BOOLEAN outer_rivers = FALSE;
 		JRD_NOD saved_sort_node = sort;
 
-		/* AB: If previous rsb's are already on the stack we can't use
-		   an navigational-retrieval for an ORDER BY cause the next
-		   streams are JOINed to the previous onces */
+		// AB: If previous rsb's are already on the stack we can't use
+		// an navigational-retrieval for an ORDER BY cause the next
+		// streams are JOINed to the previous onces
 		if (rivers_stack) {
 			sort = NULL;
 			outer_rivers = TRUE;
-			/* AB: We could already have multiple rivers at this
-			   point so try to do some sort/merging now. */
+			// AB: We could already have multiple rivers at this
+			// point so try to do some sort/merging now.
 			while (rivers_stack->lls_next
 			   && gen_sort_merge(tdbb, opt_, &rivers_stack));
-			/* AB: Mark the previous used streams (sub-rse's) again
-			   as active, because an SORT/MERGE could reset the flags */
+			// AB: Mark the previous used streams (sub-rse's) again
+			// as active, because an SORT/MERGE could reset the flags
 			for (i = 1; i <= sub_streams[0]; i++) {
 				csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;			
 			}
 		}
 
-		/* attempt to form joins in decreasing order of desirability */
+		// attempt to form joins in decreasing order of desirability 
 		assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
 		gen_join(tdbb, opt_, streams, &rivers_stack, &sort, &project,
 				 rse->rse_plan);
 
-		/* If there are multiple rivers, try some sort/merging */
-
+		// If there are multiple rivers, try some sort/merging
 		while (rivers_stack->lls_next
 			   && gen_sort_merge(tdbb, opt_, &rivers_stack));
 
 		rsb = make_cross(tdbb, opt_, rivers_stack);
 
-		/* AB: When we have a merge then a previous made ordering with 
-		   an index doesn't guarantee that the result will be in that
-		   order. So we assigned the sort node back.
-		   SF BUG # [ 221921 ] ORDER BY has no effect */
+		// AB: When we have a merge then a previous made ordering with 
+		// an index doesn't guarantee that the result will be in that
+		// order. So we assigned the sort node back.
+		// SF BUG # [ 221921 ] ORDER BY has no effect
 		RSB test_rsb = rsb;
 		if ((rsb) && (rsb->rsb_type == rsb_boolean) && (rsb->rsb_next)) {
 			test_rsb = rsb->rsb_next;
@@ -650,29 +649,26 @@ RSB OPT_compile(TDBB tdbb,
 			sort = saved_sort_node;
 		}
 
-		/* Pick up any residual boolean that may have fallen thru the cracks */
-
+		// Pick up any residual boolean that may have fallen thru the cracks
 		rsb = gen_residual_boolean(tdbb, opt_, rsb);
 	}
 
-/* if the aggregate was not optimized via an index, get rid of the 
-   sort and flag the fact to the calling routine */
-
+// if the aggregate was not optimized via an index, get rid of the 
+// sort and flag the fact to the calling routine
 	if (aggregate && sort) {
 		rse->rse_aggregate = NULL;
 		sort = NULL;
 	}
 
-/* check index usage in all the base streams to ensure
-   that any user-specified access plan is followed */
+// check index usage in all the base streams to ensure
+// that any user-specified access plan is followed
 
 	for (i = 1; i <= streams[0]; i++) {
 		check_indices(&csb->csb_rpt[streams[i]]);
 	}
 
 	if (project || sort) {
-		/* Eliminate any duplicate dbkey streams */
-
+		// Eliminate any duplicate dbkey streams
 		b_end = beds + beds[0];
 		k_end = key_streams + key_streams[0];
 		for (p = k = &key_streams[1]; p <= k_end; p++) {
@@ -682,24 +678,22 @@ RSB OPT_compile(TDBB tdbb,
 		}
 		key_streams[0] = k - &key_streams[1];
 
-		/* Handle project clause, if present. */
-
+		// Handle project clause, if present.
 		if (project) {
 			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, project, TRUE);
 		}
 
-		/* Handle sort clause if present */
-
+		// Handle sort clause if present
 		if (sort) {
 			rsb = gen_sort(tdbb, opt_, beds, key_streams, rsb, sort, FALSE);
 		}
 	}
 
-    /* Handle first and/or skip.  The skip MUST (if present)
-     * appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
-     * functions add their nodes at the beginning of the rsb list we MUST call
-     * gen_skip before gen_first.
-     **/
+    // Handle first and/or skip.  The skip MUST (if present)
+    // appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
+    // functions add their nodes at the beginning of the rsb list we MUST call
+    // gen_skip before gen_first.
+    //
 
     if (rse->rse_skip) {
         rsb = gen_skip(tdbb, opt_, rsb, rse->rse_skip);
@@ -709,8 +703,7 @@ RSB OPT_compile(TDBB tdbb,
 		rsb = gen_first(tdbb, opt_, rsb, rse->rse_first);
 	}
 
-/* release memory allocated for index descriptions */
-
+// release memory allocated for index descriptions
 	for (i = 0; i < streams[0]; i++) {
 		stream = streams[i + 1];
 		if (csb->csb_rpt[stream].csb_idx_allocation)
@@ -726,7 +719,7 @@ RSB OPT_compile(TDBB tdbb,
 	}
 
 	DEBUG
-/* free up memory for optimizer structures */
+// free up memory for optimizer structures
 	delete opt_;
 
 #ifdef OPT_DEBUG
