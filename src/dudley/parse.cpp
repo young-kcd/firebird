@@ -542,10 +542,7 @@ static bool check_filename( SYM name, USHORT decnet_flag)
 				return true;
 			}
 
-	if (!ISC_check_if_remote(file_name, FALSE))
-		return true;
-	else
-		return false;
+	return (!ISC_check_if_remote(file_name, FALSE))
 }
 
 
