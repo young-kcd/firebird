@@ -64,7 +64,7 @@ static USHORT CONST _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 	/*  -- in BLR_version4  DD-Mon-YYYY HH:MM:SS.MMMM */
 	9,							/* dtype_blob       FFFF:FFFF */
 	9,							/* dtype_array      FFFF:FFFF */
-	20							/* dtype_int64      -9223372036854775808 + decimal point */
+	21							/* dtype_int64      -9223372036854775808 + decimal point */
 };
 
 /* blr to dsc type conversions */

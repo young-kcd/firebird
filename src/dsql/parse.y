@@ -38,7 +38,13 @@
  * 2001.10.06 Claudio Valderrama: Honor explicit USER keyword in GRANTs and REVOKEs.
  * 2002.07.05 Mark O'Donohue: change keyword DEBUG to KW_DEBUG to avoid
  *            clashes with normal DEBUG macro.
- *
+ * 2002.07.30 Arno Brinkman:  
+ * 2002.07.30 	Let IN predicate handle value_expressions
+ * 2002.07.30 	tokens CASE, NULLIF, COALESCE added
+ * 2002.07.30 	See block < CASE expression > what is added to value as case_expression
+ * 2002.07.30 	function is split up into aggregate_function, numeric_value_function, string_value_function, generate_value_function
+ * 2002.07.30 	new group_by_function and added to grp_column_elem. (TODO: allow these functions in select_group_by_list inside the engine)
+ * 2002.07.30 	cast removed from function and added as cast_specification to value
  */
 
 
@@ -391,6 +397,9 @@ static void	yyerror (TEXT *);
 %token TRANSACTION_ID
 %token LARGEINT
 %token KW_INT64
+%token CASE
+%token NULLIF
+%token COALESCE
 
 /* precedence declarations for expression evaluation */
 
@@ -2728,8 +2737,14 @@ grp_column_list	: grp_column_elem
 
 grp_column_elem : column_name
 		| udf
+		| group_by_function
 		| column_name COLLATE symbol_collation_name
 			{ $$ = make_node (nod_collate, e_coll_count, (NOD) $3, $1); }
+		;
+
+group_by_function	: numeric_value_function
+		| string_value_function
+		| case_expression
 		;
 
 having_clause	: HAVING search_condition
@@ -3072,9 +3087,9 @@ like_predicate	: value LIKE value
 						3, $1, $4, $6)); }
 		;
 
-in_predicate	: value IN scalar_set
+in_predicate	: value IN in_predicate_value
 		{ $$ = make_node (nod_eql_any, 2, $1, $3); }
-	| value NOT IN scalar_set
+	| value NOT IN in_predicate_value
 		{ $$ = make_node (nod_not, 1, make_node (nod_eql_any, 2, $1, $4)); }
 		;
 
@@ -3111,10 +3126,13 @@ null_predicate	: value IS KW_NULL
 
 /* set values */
 
-scalar_set	: '(' constant_list ')'
+in_predicate_value	: table_subquery
+		| '(' value_list ')'
 			{ $$ = make_list ($2); }
-		| '(' column_select ')'
-			{ $$ = $2; }
+		;
+
+table_subquery	: '(' column_select ')'
+			{ $$ = $2; } 
 		;
 
 column_select	: SELECT limit_clause
@@ -3151,6 +3169,8 @@ value		: column_name
 		| u_constant
 		| parameter
 		| variable
+		| cast_specification
+		| case_expression
 		| udf
 		| '-' value
 			{ $$ = make_node (nod_negate, 1, $2); }
@@ -3403,7 +3423,15 @@ long_integer	: NUMBER
 			{ $$ = $1;}
 		;
 	
-function	: COUNT '(' '*' ')'
+/* functions */
+
+function	: aggregate_function
+	| generate_value_function
+	| numeric_value_function
+	| string_value_function
+	;
+	
+aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_node (nod_agg_count, 0, NULL); }
 		| COUNT '(' all_noise value ')'
 			{ $$ = make_node (nod_agg_count, 1, $4); }
@@ -3450,37 +3478,97 @@ function	: COUNT '(' '*' ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
 		| MAXIMUM '(' DISTINCT value ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
-		| CAST '(' rhs AS data_type_descriptor ')'
-			{ $$ = make_node (nod_cast, e_cast_count, $5, $3); }
-		| KW_UPPER '(' value ')'
-			{ $$ = make_node (nod_upcase, 1, $3); }
-		| GEN_ID '(' symbol_generator_name ',' value ')'
-			{ 
-			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      $$ = make_node (nod_gen_id2, 2, $3, $5);
-			  else
-			      $$ = make_node (nod_gen_id, 2, $3, $5);
-			}
-		| EXTRACT '(' timestamp_part FROM value ')'
-			{ $$ = make_node (nod_extract, e_extract_count, $3, $5); }
-		/* CVC: It was easier to provide a constant with maximum value if the
-		third parameter -length- is ommitted than to chase and fix the functions
-		that treat nod_substr as an aggregate and do not expect NULL arguments. */
-		| SUBSTRING '(' value FROM pos_short_integer ')'
-			{ $$ = make_node (nod_substr, e_substr_count, $3,
-				MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
-				MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG)); }
-		| SUBSTRING '(' value FROM pos_short_integer FOR nonneg_short_integer ')'
-			{ $$ = make_node (nod_substr, e_substr_count, $3,
-				MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
-				MAKE_constant ((STR) ($7), CONSTANT_SLONG)); }
 		;
 
+/* Firebird specific functions into 'generate_value_function' */
+
+generate_value_function	: GEN_ID '(' symbol_generator_name ',' value ')'	
+				{ 
+				  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
+				      $$ = make_node (nod_gen_id2, 2, $3, $5);
+				  else
+					  $$ = make_node (nod_gen_id, 2, $3, $5);
+				}
+			;
+
+numeric_value_function	:  EXTRACT '(' timestamp_part FROM value ')'
+				{ $$ = make_node (nod_extract, e_extract_count, $3, $5); }
+			/* CVC: It was easier to provide a constant with maximum value if the
+			third parameter -length- is ommitted than to chase and fix the functions
+			that treat nod_substr as an aggregate and do not expect NULL arguments. */
+			;
+
+string_value_function	:  SUBSTRING '(' value FROM pos_short_integer ')'
+				{ $$ = make_node (nod_substr, e_substr_count, $3,
+					MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
+					MAKE_constant ((STR) SHRT_POS_MAX, CONSTANT_SLONG)); }
+			| SUBSTRING '(' value FROM pos_short_integer FOR nonneg_short_integer ')'
+				{ $$ = make_node (nod_substr, e_substr_count, $3,
+					MAKE_constant ((STR) ((SLONG)($5) - 1), CONSTANT_SLONG),
+					MAKE_constant ((STR) ($7), CONSTANT_SLONG)); }
+			| KW_UPPER '(' value ')'
+				{ $$ = make_node (nod_upcase, 1, $3); }
+			;
 
 udf		: symbol_UDF_name '(' value_list ')'
 			{ $$ = make_node (nod_udf, 2, $1, $3); }
 		| symbol_UDF_name '(' ')'
 			{ $$ = make_node (nod_udf, 1, $1); }
+		;
+
+cast_specification	: CAST '(' rhs AS data_type_descriptor ')'
+			{ $$ = make_node (nod_cast, e_cast_count, $5, $3); }
+		;
+
+/* case expressions */
+
+case_expression	: case_abbreviation
+		| case_specification
+		;
+
+case_abbreviation	: NULLIF '(' value ',' value ')'
+			{ $$ = make_node (nod_searched_case, 2, 
+				make_node (nod_list, 2, make_node (nod_eql, 2, $3, $5), 
+				make_node (nod_null, 0, NULL)), $3); }
+		| COALESCE '(' null_or_value ',' null_or_value_list ')'
+			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
+		;
+
+case_specification	: simple_case
+		| searched_case
+		;
+
+simple_case	: CASE case_operand simple_when_clause END
+			{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), make_node (nod_null, 0, NULL)); }
+		| CASE case_operand simple_when_clause ELSE case_result END
+			{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), $5); }
+		;
+
+simple_when_clause	: WHEN when_operand THEN case_result
+				{ $$ = make_node (nod_list, 2, $2, $4); }
+			| simple_when_clause WHEN when_operand THEN case_result
+				{ $$ = make_node (nod_list, 2, $1, make_node (nod_list, 2, $3, $5)); }
+			;
+
+searched_case	: CASE searched_when_clause END
+			{ $$ = make_node (nod_searched_case, 2, make_list($2), make_node (nod_null, 0, NULL)); }
+		| CASE searched_when_clause ELSE case_result END
+			{ $$ = make_node (nod_searched_case, 2, make_list($2), $4); }
+		;
+
+searched_when_clause	: WHEN search_condition THEN case_result
+			{ $$ = make_node (nod_list, 2, $2, $4); }
+		| searched_when_clause WHEN search_condition THEN case_result
+			{ $$ = make_node (nod_list, 2, $1, make_node (nod_list, 2, $3, $5)); }
+		;
+
+when_operand	: value
+		;
+
+case_operand	: value
+		;
+
+case_result	: null_or_value
 		;
 
 timestamp_part	: YEAR

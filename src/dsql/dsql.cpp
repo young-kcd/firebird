@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.18 2002-07-06 05:31:55 skywalker Exp $
+$Id: dsql.cpp,v 1.19 2002-08-03 15:27:20 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2183,6 +2183,18 @@ void DSQL_pretty(NOD node, int column)
         break;
 	case nod_via:
 		verb = "via";
+		break;
+
+	case nod_coalesce:
+		verb = "coalesce";
+		break;
+
+	case nod_simple_case:
+		verb = "simple_case";
+		break;
+
+	case nod_searched_case:
+		verb = "searched_case";
 		break;
 
 	case nod_add2:

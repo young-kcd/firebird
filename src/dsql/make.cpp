@@ -24,6 +24,9 @@
  * See case nod_udf in MAKE_desc().
  * 2001.02.23 Claudio Valderrama: Fix SF bug #518350 with substring()
  * and text blobs containing charsets other than ASCII/NONE/BINARY.
+ * 2002.07.30 Arno Brinkman: 
+ *   COALESCE, CASE support added
+ *   procedure MAKE_desc_from_list added 
  */
  
 //This MUST be before any other includes
@@ -420,6 +423,21 @@ void MAKE_desc( DSC * desc, NOD node)
 		MAKE_desc_from_field(desc, field);
 		MAKE_desc(&desc1, node->nod_arg[e_cast_source]);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
+		return;
+
+	case nod_simple_case:
+		MAKE_desc_from_list(&desc1, node->nod_arg[e_simple_case_results]);
+		*desc = desc1;
+		return;
+
+	case nod_searched_case:
+		MAKE_desc_from_list(&desc1, node->nod_arg[e_searched_case_results]);
+		*desc = desc1;
+		return;
+
+    case nod_coalesce:
+		MAKE_desc_from_list(&desc1, node->nod_arg[0]);
+		*desc = desc1;
 		return;
 
 #ifdef DEV_BUILD
@@ -1042,6 +1060,232 @@ void MAKE_desc_from_field( DSC * desc, FLD field)
 	}
 	else if (desc->dsc_dtype == dtype_blob)
 		desc->dsc_scale = static_cast<SCHAR>(field->fld_character_set_id);
+}
+
+
+void MAKE_desc_from_list( DSC * desc, NOD node)
+/**************************************
+ *
+ *	M A K E _ d e s c _ f r o m _ l i s t 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make a descriptor from a list of values 
+ *  according the sql-standard.
+ *
+ **************************************/
+{
+	NOD	*arg, *end, tnod;
+	DSC	desc1, desc2;
+	UCHAR max_exact_dtype = 0;
+	SCHAR maxscale;
+	USHORT cnvlength, maxlength, maxtextlength = 0;
+	USHORT firstarg = 1, all_exact = 1, any_approx = 0, text_in_list = 0, varying_in_list = 0;
+	USHORT all_datetime = 1, max_datetime_dtype = 0;
+	SSHORT ttype;	
+
+	/*------------------------------------------------------- 
+	   TODO : BLOB with SubType Text 
+	   if an blob (with subtype text) is in the list then 
+	   the output should be always be an blob subtype text
+	-------------------------------------------------------*/
+
+	ttype = ttype_ascii; /* default type if all nodes are nod_null */
+    
+	/* Walk through arguments list */
+	arg = node->nod_arg;
+	for (end = arg + node->nod_count; arg < end; arg++)
+	{
+		/* ignore NULL value from walking */
+		tnod = *arg;
+		if (tnod->nod_type == nod_null)
+			continue;
+		MAKE_desc(&desc1, *arg);
+		if (firstarg)
+		{
+			desc2 = desc1;
+			maxscale = desc1.dsc_scale;
+			maxlength = desc1.dsc_length;
+			firstarg = 0;
+		}
+		if (!any_approx)
+		{
+			any_approx = DTYPE_IS_APPROX(desc1.dsc_dtype);
+		}
+		if (DTYPE_IS_EXACT(desc1.dsc_dtype))
+		{
+			if (desc1.dsc_dtype > max_exact_dtype)
+			{
+				max_exact_dtype = desc1.dsc_dtype;
+			}
+		} 
+		else	  
+		{
+			all_exact = 0;       
+		}
+		/* scale is negative so check less than < ! */
+		if (desc1.dsc_scale < maxscale)
+		{
+			maxscale = desc1.dsc_scale;
+		}
+		if (desc1.dsc_length > maxlength)
+		{
+			maxlength = desc1.dsc_length;
+		}
+		if (desc1.dsc_dtype <= dtype_any_text)
+		{ 
+			if (desc1.dsc_dtype == dtype_text)
+			{
+				cnvlength = desc1.dsc_length;
+			}
+			if (desc1.dsc_dtype == dtype_cstring)
+			{
+				cnvlength = desc1.dsc_length - 1;
+			}
+			if (desc1.dsc_dtype == dtype_varying) 
+			{
+				cnvlength = desc1.dsc_length - sizeof (USHORT);
+				varying_in_list = 1;
+			}
+			if (cnvlength > maxtextlength)
+			{
+				maxtextlength = cnvlength;
+			}
+
+			/* Pick first characterset-collate from args-list  
+			 * 
+			 * Is there an better way to determine the         
+			 * characterset / collate from the list ?          
+			 * Maybe first according SQL-standard which has an order UTF32,UTF16,UTF8
+			 * then by a Firebird specified order
+			 */
+			if (!text_in_list)
+			{
+				ttype = desc1.dsc_ttype;
+			}
+			text_in_list = 1;
+			if (desc1.dsc_dtype == dtype_varying)
+			{
+				varying_in_list = 1;
+			}
+		}
+		else
+		{
+			/* Get max needed-length for not text types suchs as int64,timestamp etc.. */
+			cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
+			if (cnvlength > maxtextlength)
+			{
+				maxtextlength = cnvlength;
+			}
+		}
+		if (DTYPE_IS_DATE(desc1.dsc_dtype))
+		{
+			if (desc1.dsc_dtype == dtype_timestamp && 
+				max_datetime_dtype != dtype_timestamp)
+			{
+				max_datetime_dtype = dtype_timestamp;
+			}
+			if (desc1.dsc_dtype == dtype_sql_date) 
+			{ 
+				if (max_datetime_dtype != dtype_timestamp &&
+					max_datetime_dtype != dtype_sql_time) 
+				{
+					max_datetime_dtype = dtype_sql_date;
+				}
+				else
+				{
+					if (max_datetime_dtype == dtype_sql_time)
+					{
+						/* Well raise exception or just cast everything to varchar ? */
+						text_in_list = 1;
+						varying_in_list = 1;		  
+					}
+				}
+			}
+			if (desc1.dsc_dtype == dtype_sql_time) 
+			{ 
+				if (max_datetime_dtype != dtype_timestamp &&
+					max_datetime_dtype != dtype_sql_date) 
+				{
+					max_datetime_dtype = dtype_sql_time;
+				}
+				else
+				{
+					if (max_datetime_dtype == dtype_sql_date)
+					{
+						/* Well raise exception or just cast everything to varchar ? */
+						text_in_list = 1;
+						varying_in_list = 1;		  
+					}
+				}
+			}
+		}
+		else
+		{
+			all_datetime = 0;
+		}
+	}
+
+	/* If we haven't had a type at all then all values are NULL nodes */
+	if (firstarg) 
+	{
+		maxtextlength = desc1.dsc_length;
+		text_in_list = 1;
+		firstarg = 0;
+	}
+
+	desc->dsc_flags = DSC_nullable;
+	/* If any of the arguments are from type text use a text type */
+	if (text_in_list)
+	{
+		if (varying_in_list) 
+		{
+			desc->dsc_dtype = dtype_varying;
+			maxtextlength += sizeof(USHORT);
+		}
+		else
+		{
+			desc->dsc_dtype = dtype_text;
+		}
+		desc->dsc_ttype = ttype;  /* same as dsc_subtype */
+		desc->dsc_length = maxtextlength;
+		desc->dsc_scale = 0;
+		return;
+	}
+	if (all_exact)
+	{
+		desc->dsc_dtype = max_exact_dtype;
+		desc->dsc_sub_type = dsc_num_type_numeric;
+		desc->dsc_scale = maxscale;
+		desc->dsc_length = maxlength;
+		return;
+	}
+	if (any_approx)
+	{
+		desc->dsc_dtype  = dtype_double;
+		desc->dsc_length = sizeof(double);
+		desc->dsc_scale = 0;
+		desc->dsc_sub_type = 0;
+		/*desc->dsc_flags = 0;*/
+		return;
+	}
+	if (all_datetime)
+	{
+		desc->dsc_dtype  = max_datetime_dtype;
+		desc->dsc_length = type_lengths[desc->dsc_dtype];
+		desc->dsc_scale = 0;
+		desc->dsc_sub_type = 0;
+		return;
+	}
+	/* Any other handeling use 1st argument as descriptor */		
+	/* According SQL standard handled by db-engine */		
+	desc->dsc_dtype = desc2.dsc_dtype;
+	desc->dsc_scale = desc2.dsc_scale;
+	desc->dsc_length = desc2.dsc_length;
+	desc->dsc_sub_type = desc2.dsc_sub_type;
+	/*desc->dsc_flags = desc2.dsc_flags;*/
+	return;
 }
 
 

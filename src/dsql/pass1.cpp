@@ -83,6 +83,9 @@
  *
  * 2001.12.21 Claudio Valderrama: Fix SF Bug #494832 - pass1_variable() should work
  *   with def_proc, mod_proc, redef_proc, def_trig and mod_trig node types.
+ *
+ * 2002.07.30 Arno Brinkman: Added pass1_coalesce, pass1_simple_case, pass1_searched_case
+ *   and pass1_put_args_on_stack
  */
 
 #include "firebird.h"
@@ -133,6 +136,7 @@ static CTX pass1_alias(REQ, STR);
 static NOD pass1_any(REQ, NOD, NOD_TYPE);
 static DSQL_REL pass1_base_table(REQ, DSQL_REL, STR);
 static void pass1_blob(REQ, NOD);
+static NOD pass1_coalesce(REQ, NOD, USHORT);
 static NOD pass1_collate(REQ, NOD, STR);
 static NOD pass1_constant(REQ, NOD);
 static NOD pass1_cursor(REQ, NOD, NOD);
@@ -141,9 +145,12 @@ static NOD pass1_dbkey(REQ, NOD);
 static NOD pass1_delete(REQ, NOD);
 static NOD pass1_field(REQ, NOD, USHORT);
 static NOD pass1_insert(REQ, NOD);
+static void	pass1_put_args_on_stack(REQ, NOD, DLLS *, USHORT);
 static NOD pass1_relation(REQ, NOD);
 static NOD pass1_rse(REQ, NOD, NOD);
+static NOD pass1_searched_case(REQ, NOD, USHORT);
 static NOD pass1_sel_list(REQ, NOD);
+static NOD pass1_simple_case(REQ, NOD, USHORT);
 static NOD pass1_sort(REQ, NOD, NOD);
 static NOD pass1_udf(REQ, NOD, USHORT);
 static void pass1_udf_args(REQ, NOD, UDF, USHORT, DLLS *, USHORT);
@@ -437,6 +444,15 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 		if (sub1->nod_desc.dsc_flags & DSC_nullable)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
+
+    case nod_coalesce:
+		return pass1_coalesce(request, input, proc_flag);
+
+    case nod_simple_case:
+		return pass1_simple_case(request, input, proc_flag);
+    
+	case nod_searched_case:
+		return pass1_searched_case(request, input, proc_flag);
 
 	case nod_gen_id:
 	case nod_gen_id2:
@@ -1436,6 +1452,9 @@ static BOOLEAN aggregate_found2(
 	case nod_subtract2:
 	case nod_upcase:
 	case nod_extract:
+	case nod_coalesce:
+	case nod_simple_case:
+	case nod_searched_case:
 	case nod_list:
 		aggregate = FALSE;
 		for (ptr = sub->nod_arg, end = ptr + sub->nod_count; ptr < end; ptr++) {
@@ -1515,6 +1534,9 @@ static BOOLEAN aggregate_in_list (NOD sub, BOOLEAN *field, NOD list)
     case nod_subtract2:
     case nod_upcase:
     case nod_extract:
+    case nod_coalesce:
+	case nod_simple_case:
+	case nod_searched_case:
     case nod_list:
         aggregate = FALSE;
         for (ptr = sub->nod_arg, end = ptr + sub->nod_count; ptr < end; ptr++)
@@ -1748,6 +1770,9 @@ static NOD copy_field( NOD field, CTX context)
 	case nod_upcase:
 	case nod_internal_info:
 	case nod_extract:
+	case nod_coalesce:
+	case nod_simple_case:
+	case nod_searched_case:
 	case nod_list:
 		temp = MAKE_node(field->nod_type, field->nod_count);
 		ptr2 = temp->nod_arg;
@@ -2238,6 +2263,9 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
 			case nod_subtract:
 			case nod_upcase:
 			case nod_extract:
+			case nod_coalesce:
+			case nod_simple_case:
+			case nod_searched_case:
 			case nod_add2:
 			case nod_divide2:
 			case nod_multiply2:
@@ -2654,6 +2682,40 @@ static void pass1_blob( REQ request, NOD input)
 			parameter->par_desc.dsc_scale = 0;
 			parameter->par_desc.dsc_length = sizeof(SSHORT);
 		}
+}
+
+
+static NOD pass1_coalesce( REQ request, NOD input, USHORT proc_flag)
+{
+/**************************************
+ *
+ *	p a s s 1 _ c o a l e s c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handle a reference to a coalesce function.
+ *
+ **************************************/
+	NOD	node;
+	DLLS stack;
+
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
+
+	node = MAKE_node(nod_coalesce, 1);
+
+	/* Pass list of arguments 2..n on stack and make a list from it */
+	stack = NULL;
+	pass1_put_args_on_stack(request, input->nod_arg [0], &stack, proc_flag);
+	pass1_put_args_on_stack(request, input->nod_arg [1], &stack, proc_flag);
+	node->nod_arg[0] = MAKE_list(stack);
+
+	/* Set describer for output node */
+	MAKE_desc(&node->nod_desc, node);
+
+	return node;
 }
 
 
@@ -3370,6 +3432,36 @@ static NOD pass1_insert( REQ request, NOD input)
 }
 
 
+static void pass1_put_args_on_stack( REQ request, NOD input, DLLS *stack, USHORT proc_flag)
+{
+/**************************************
+ *
+ *	p a s s 1 _ p u t _ a r g s _ o n _ s t a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Put recursivly non list nodes on stack
+ *
+ **************************************/
+	NOD	*ptr, *end;
+
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	if (input->nod_type != nod_list)
+	{
+		LLS_PUSH(PASS1_node(request, input, proc_flag), stack);
+		return;
+	}
+
+	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end; ptr++)
+	{
+		pass1_put_args_on_stack(request, *ptr, stack, proc_flag);
+	}
+}
+
+
 static NOD pass1_relation( REQ request, NOD input)
 {
 /**************************************
@@ -3811,6 +3903,54 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 }
 
 
+static NOD pass1_searched_case( REQ request, NOD input, USHORT proc_flag)
+{
+/**************************************
+ *
+ *	p a s s 1 _ s e a r c h e d _ c a s e 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handle a reference to a searched case expression.
+ *
+ **************************************/
+	NOD	node, list, *ptr, *end;
+	DLLS stack;
+
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
+
+	node = MAKE_node(nod_searched_case, 3);
+
+	list = input->nod_arg[0];
+
+	/* build boolean-expression list */
+	stack = NULL;
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++)
+	{
+		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
+	}
+	node->nod_arg[e_searched_case_search_conditions] = MAKE_list(stack);
+
+	/* build when_result list including else_result at the end */
+	/* else_result is included for easy handling in MAKE_desc() */
+	stack = NULL;
+	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++)
+	{
+		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
+	}
+	pass1_put_args_on_stack(request, input->nod_arg[1], &stack, proc_flag);
+	node->nod_arg[e_searched_case_results] = MAKE_list(stack);
+
+	/* Set describer for output node */
+	MAKE_desc(&node->nod_desc, node);
+
+	return node;
+}
+
+
 static NOD pass1_sel_list( REQ request, NOD input)
 {
 /**************************************
@@ -3853,6 +3993,58 @@ static NOD pass1_sel_list( REQ request, NOD input)
 			LLS_PUSH(PASS1_node(request, *ptr, 0), &stack);
 	}
 	node = MAKE_list(stack);
+
+	return node;
+}
+
+
+static NOD pass1_simple_case( REQ request, NOD input, USHORT proc_flag)
+{
+/**************************************
+ *
+ *	p a s s 1 _ s i m p l e _ c a s e 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handle a reference to a simple case expression.
+ *
+ **************************************/
+	NOD	node, list, *ptr, *end;
+	DLLS stack;
+
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+	DEV_BLKCHK(input->nod_arg [0], dsql_type_nod);
+
+	node = MAKE_node(nod_simple_case, 3);
+
+	/* build case_operand node */
+	node->nod_arg[e_simple_case_case_operand] = 
+		PASS1_node(request, input->nod_arg[0], proc_flag);
+
+	list = input->nod_arg[1];
+
+	/* build when_operand list */
+	stack = NULL;
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++,ptr++)
+	{
+		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
+	}
+	node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
+
+	/* build when_result list including else_result at the end */
+	/* else_result is included for easy handling in MAKE_desc() */
+	stack = NULL;
+	for (ptr = list->nod_arg, end = ptr + list->nod_count, ptr++; ptr < end; ptr++,ptr++)
+	{
+		pass1_put_args_on_stack(request, *ptr, &stack, proc_flag);
+	}
+	pass1_put_args_on_stack(request, input->nod_arg [2], &stack, proc_flag);
+	node->nod_arg[e_simple_case_results] = MAKE_list(stack);
+
+	/* Set describer for output node */
+	MAKE_desc(&node->nod_desc, node);
 
 	return node;
 }

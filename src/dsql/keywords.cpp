@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.3 2002-07-30 09:49:16 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.4 2002-08-03 15:27:20 dimitr Exp $
  *
  */
 
@@ -79,11 +79,13 @@ static CONST TOK tokens [] = {
 	{BY, "BY", 1},
 	{CACHE, "CACHE", 1},
 	{CASCADE, "CASCADE", 1},
+	{CASE, "CASE", 2},
 	{CAST, "CAST", 1},
 	{KW_CHAR, "CHAR", 1},
 	{CHARACTER, "CHARACTER", 1},
 	{CHECK, "CHECK", 1},
 	{CHECK_POINT_LEN, "CHECK_POINT_LENGTH", 1},
+	{COALESCE, "COALESCE", 2},
 	{COLLATE, "COLLATE", 1},
 	{COLUMN, "COLUMN", 2},
 	{COMMIT, "COMMIT", 1},
@@ -186,6 +188,7 @@ static CONST TOK tokens [] = {
 	{NCHAR, "NCHAR", 1},
 	{NO, "NO", 1},
 	{NOT, "NOT", 1},
+	{NULLIF, "NULLIF", 2},
 	{KW_NULL, "NULL", 1},
 	{KW_NUMERIC, "NUMERIC", 1},
 	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},

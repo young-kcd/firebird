@@ -21,10 +21,11 @@
  * Contributor(s): ______________________________________
  * 2001.6.21 Claudio Valderrama: BREAK and SUBSTRING.
  * 2001.07.28: John Bellardo:  Added code to generate blr_skip.
+ * 2002.07.30: Arno Brinkman:  Added code, procedures to generate COALESCE, CASE
  *
  */
 /*
-$Id: gen.cpp,v 1.8 2002-07-10 14:52:42 dimitr Exp $
+$Id: gen.cpp,v 1.9 2002-08-03 15:27:20 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -48,6 +49,7 @@ $Id: gen.cpp,v 1.8 2002-07-10 14:52:42 dimitr Exp $
 
 ASSERT_FILENAME static void gen_aggregate(REQ, NOD);
 static void gen_cast(REQ, NOD);
+static void	gen_coalesce(REQ, NOD);
 static void gen_constant(REQ, DSC *, BOOLEAN);
 static void gen_descriptor(REQ, DSC *, USHORT);
 static void gen_error_condition(REQ, NOD);
@@ -60,7 +62,9 @@ static void gen_parameter(REQ, PAR);
 static void gen_plan(REQ, NOD);
 static void gen_relation(REQ, CTX);
 static void gen_rse(REQ, NOD);
+static void	gen_searched_case(REQ, NOD);
 static void gen_select(REQ, NOD);
+static void	gen_simple_case(REQ, NOD);
 static void gen_sort(REQ, NOD);
 static void gen_table_lock(REQ, NOD, USHORT);
 static void gen_udf(REQ, NOD);
@@ -450,6 +454,15 @@ void GEN_expr( REQ request, NOD node)
 	case nod_gen_id:
 	case nod_gen_id2:
 		gen_gen_id(request, node);
+		return;
+    case nod_coalesce: 
+		gen_coalesce(request, node);
+		return;
+    case nod_simple_case: 
+		gen_simple_case(request, node);
+		return;
+    case nod_searched_case: 
+		gen_searched_case(request, node);
 		return;
 	case nod_average:
 	case nod_count:
@@ -1161,6 +1174,39 @@ static void gen_cast( REQ request, NOD node)
 	field = (FLD) node->nod_arg[e_cast_target];
 	DDL_put_field_dtype(request, field, TRUE);
 	GEN_expr(request, node->nod_arg[e_cast_source]);
+}
+
+
+static void gen_coalesce( REQ request, NOD node)
+{
+/**************************************
+ *
+ *      g e n _ c o a l e s c e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Generate BLR for coalesce function
+ *
+ **************************************/
+	NOD list, *ptr, *end;
+
+	/* blr_value_if is used for building the coalesce function */
+
+	list = node->nod_arg[0];
+	STUFF(blr_cast);
+	gen_descriptor(request, &node->nod_desc, TRUE);
+	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
+	{
+		STUFF(blr_value_if);
+		STUFF(blr_missing);
+		GEN_expr(request, *ptr);
+	}
+	STUFF(blr_null);
+	for (end = list->nod_arg, ptr = end + list->nod_count, ptr--; ptr >= end; ptr--)
+	{
+		GEN_expr(request, *ptr);
+	}
 }
 
 
@@ -1985,6 +2031,39 @@ static void gen_rse( REQ request, NOD rse)
 }
 
 
+static void gen_searched_case( REQ request, NOD node)
+{
+/**************************************
+ *
+ *      g e n _ s e a r c h e d _ c a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Generate BLR for CASE function (searched)
+ *
+ **************************************/
+	NOD boolean_list, results_list, *bptr, *rptr, *end;
+
+	/* blr_value_if is used for building the case expression */
+
+	STUFF(blr_cast);
+	gen_descriptor(request, &node->nod_desc, TRUE);
+	SSHORT count = node->nod_arg[e_searched_case_search_conditions]->nod_count;
+	boolean_list = node->nod_arg[e_searched_case_search_conditions];
+	results_list = node->nod_arg[e_searched_case_results];
+	for (bptr = boolean_list->nod_arg, end = bptr + count, rptr = results_list->nod_arg; 
+			bptr < end; bptr++, rptr++)
+	{
+		STUFF(blr_value_if);
+		GEN_expr(request, *bptr);
+		GEN_expr(request, *rptr);
+	}
+	/* else_result */
+	GEN_expr(request, node->nod_arg[e_searched_case_results]->nod_arg[count]);
+}
+
+
 static void gen_select( REQ request, NOD rse)
 {
 /**************************************
@@ -2280,6 +2359,41 @@ static void gen_select( REQ request, NOD rse)
 	constant = 0;
 	gen_constant(request, &constant_desc, USE_VALUE);
 	gen_parameter(request, request->req_eof);
+}
+
+
+static void gen_simple_case( REQ request, NOD node)
+{
+/**************************************
+ *
+ *      g e n _ s i m p l e _ c a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Generate BLR for CASE function (simple)
+ *
+ **************************************/
+	NOD when_list, results_list, *wptr, *rptr, *end;
+
+	/* blr_value_if is used for building the case expression */
+
+	STUFF(blr_cast);
+	gen_descriptor(request, &node->nod_desc, TRUE);
+	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
+	when_list = node->nod_arg[e_simple_case_when_operands];
+	results_list = node->nod_arg[e_simple_case_results];
+	for (wptr = when_list->nod_arg, end = wptr + count, rptr = results_list->nod_arg; 
+			wptr < end; wptr++, rptr++)
+	{
+		STUFF(blr_value_if);
+		STUFF(blr_eql);
+		GEN_expr(request, node->nod_arg[e_simple_case_case_operand]);
+		GEN_expr(request, *wptr);
+		GEN_expr(request, *rptr);
+	}
+	/* else_result */
+	GEN_expr(request, node->nod_arg[e_simple_case_results]->nod_arg[count]); 
 }
 
 

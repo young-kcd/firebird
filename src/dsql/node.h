@@ -24,6 +24,9 @@
  * about source line in each node that's created.
  * 2001.07.28 John Bellardo: Added e_rse_limit to nod_rse and nod_limit.
  * 2001.08.03 John Bellardo: Reordered args to no_sel for new LIMIT syntax
+ * 2002.07.30 Arno Brinkman:
+ * 2002.07.30	Added nod_searched_case, nod_simple_case, nod_coalesce
+ * 2002.07.30	and constants for arguments
  */
 
 #ifndef _DSQL_NODE_H_
@@ -310,7 +313,10 @@ typedef ENUM nod_t
     nod_limit, /* limit support */
     nod_redef_procedure, /* allows silent creation/overwriting of a procedure. */
 	nod_exec_sql, /* EXECUTE VARCHAR */
-	nod_internal_info /* Internal engine info */
+	nod_internal_info, /* internal engine info */
+	nod_searched_case, /* searched CASE function */
+	nod_simple_case, /* simple CASE function */
+	nod_coalesce /* COALESCE function */
 } NOD_TYPE;
 
 
@@ -799,5 +805,18 @@ typedef nod *NOD;
 #define e_udf_param_field	0
 #define e_udf_param_type	1 /* Basically, by_reference or by_descriptor */
 #define e_udf_param_count	2
+
+/* CASE <case_operand> {WHEN <when_operand> THEN <when_result>}.. [ELSE <else_result>] END 
+   Node-constants for after pass1 */
+
+#define e_simple_case_case_operand	0	/* 1 value */
+#define e_simple_case_when_operands	1	/* list */
+#define e_simple_case_results		2	/* list including else_result */
+
+/* CASE {WHEN <search_condition> THEN <when_result>}.. [ELSE <else_result>] END 
+   Node-constants for after pass1 */
+
+#define e_searched_case_search_conditions	0	/* list boolean expressions */
+#define e_searched_case_results				1	/* list including else_result */
 
 #endif /* _DSQL_NODE_H_ */

@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002-07-20 Arno Brinkman: Added MAKE_desc_from_list
  */
 
 #ifndef _DSQL_MAKE_PROTO_H_
@@ -31,6 +33,7 @@ struct nod* MAKE_str_constant(class str* , SSHORT);
 class str* MAKE_cstring(CONST SCHAR*);
 void MAKE_desc(struct dsc* , struct nod*);
 void MAKE_desc_from_field(struct dsc* , class fld*);
+void MAKE_desc_from_list(struct dsc* , struct nod*);
 struct nod* MAKE_field(class ctx* , class fld* , struct nod*);
 struct nod* MAKE_list(class dsql_lls*);
 struct nod* MAKE_node(ENUM nod_t, int);

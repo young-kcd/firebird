@@ -241,3 +241,6 @@
 #define TRANSACTION_ID 497
 #define LARGEINT 498
 #define KW_INT64 499
+#define CASE 500
+#define NULLIF 501
+#define COALESCE 502
