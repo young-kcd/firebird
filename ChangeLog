@@ -1,3 +1,16 @@
+2004-10-10 22:02  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.153):
+	
+	1) Fixed bug related to SKIP vs derived tables.  2) Prepared views
+	to handle FIRST/SKIP/PLAN properly
+
+2004-10-10 21:29  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.132):
+	
+	Fixed bug related to UDFs vs expression indices.
+
 2004-10-09 05:58  robocop
 
 	* firebird2/src/jrd/err.cpp (1.59):
