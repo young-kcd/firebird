@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.4 2001-12-24 02:50:49 tamlin Exp $
+//	$Id: pretty.cpp,v 1.5 2002-04-02 05:41:42 bellardo Exp $
 //
 
 #include "firebird.h"
@@ -158,9 +158,9 @@ int PRETTY_print_cdb( SCHAR * blr,
 	indent(control, level);
 	i = BLR_BYTE;
 	if (*control->ctl_blr)
-		sprintf((SCHAR *) temp, "gds_dpb_version%d, ", i);
+		sprintf((SCHAR *) temp, "gds__dpb_version%d, ", i);
 	else
-		sprintf((SCHAR *) temp, "gds_dpb_version%d", i);
+		sprintf((SCHAR *) temp, "gds__dpb_version%d", i);
 	blr_format(control, temp);
 	PRINT_LINE;
 
@@ -221,7 +221,7 @@ int PRETTY_print_dyn(
 					 "*** dyn version %d is not supported ***\n",
 					 (int *) version);
 
-	blr_format(control, "gds_dyn_version_1, ");
+	blr_format(control, "gds__dyn_version_1, ");
 	PRINT_LINE;
 	level++;
 	PRINT_DYN_VERB;
@@ -230,7 +230,7 @@ int PRETTY_print_dyn(
 		return error(control, offset,
 					 "*** expected dyn end-of-command  ***\n", 0);
 
-	blr_format(control, "gds_dyn_eoc");
+	blr_format(control, "gds__dyn_eoc");
 	PRINT_LINE;
 
 	return 0;
@@ -452,7 +452,7 @@ PRETTY_print_sdl(SCHAR * blr,
 					 "*** sdl version %d is not supported ***\n",
 					 (int *) version);
 
-	blr_format(control, "gds_sdl_version1, ");
+	blr_format(control, "gds__sdl_version1, ");
 	PRINT_LINE;
 	level++;
 
@@ -460,7 +460,7 @@ PRETTY_print_sdl(SCHAR * blr,
 		PRINT_SDL_VERB;
 
 	offset = control->ctl_blr - control->ctl_blr_start;
-	blr_format(control, "gds_sdl_eoc");
+	blr_format(control, "gds__sdl_eoc");
 	PRINT_LINE;
 
 	return 0;
