@@ -67,6 +67,7 @@
  * 2003.07.01 Blas Rodriguez Somoza: Change DEBUG and IN to avoid conflicts in win32 build/bison
  * 2003.08.11 Arno Brinkman: Changed GROUP BY to support all expressions and added "AS" support
  *                           with table alias. Also removed group_by_function and ordinal.
+ * 2003.08.14 Arno Brinkman: Added support for derived tables.
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -1786,7 +1787,7 @@ from_view_list	: view_table
 view_table : joined_view_table
         | table_name
 /* AB: derived table support */
-		| '(' select_expr ')' as_noise symbol_table_alias_name derived_column_list
+		| '(' union_expr ')' as_noise symbol_table_alias_name derived_column_list
 			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
 		;
 
