@@ -46,6 +46,8 @@ ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::news = 0;
 BOOLEAN ThreadPriorityScheduler::initialized = FALSE;
 DWORD ThreadPriorityScheduler::specific_key = -1;
+BOOLEAN ThreadPriorityScheduler::shutdown = FALSE;
+
 //____________________________________________________________
 //
 // Shutdown 
@@ -54,13 +56,7 @@ void ThreadPriorityScheduler::Cleanup(void) {
 	if (initialized)
 	{
 		initialized = FALSE;
-		TlsFree(specific_key);
-
-#pragma FB_COMPILER_MESSAGE("Fix! Adjust cleanup !!!")
-		// we must stop Scheduler, clear all intances
-		// and then 
-		// delete pool; 
-		THD_mutex_destroy(&mutex);
+		shutdown = TRUE;
 	}
 }
 
@@ -118,8 +114,7 @@ void ThreadPriorityScheduler::Init(void)
 	HANDLE real_handle = (HANDLE)_beginthreadex(NULL, 0,
 		Scheduler, 0, 0, &thread_id);
 	if (! real_handle)
-#pragma FB_COMPILER_MESSAGE("Fix! Replace with MORE appropriate handling.")
-		Firebird::memory_corrupt::raise();
+		Firebird::system_call_failed::raise();
 	SetThreadPriority(real_handle, THREAD_PRIORITY_TIME_CRITICAL);
 	CloseHandle(real_handle);
 }
@@ -132,7 +127,7 @@ void ThreadPriorityScheduler::Init(void)
 void ThreadPriorityScheduler::Attach(HANDLE tHandle, DWORD thread_id, int &p) {
 #ifdef DEV_BUILD
 	if (! pool)
-		Firebird::memory_corrupt::raise();
+		Firebird::fatal_exception::raise("Missing pool in ThreadPriorityScheduler");
 #endif
 
 	UCHAR flags = 0;
@@ -162,8 +157,7 @@ void ThreadPriorityScheduler::Attach(HANDLE tHandle, DWORD thread_id, UCHAR flag
 	if (! DuplicateHandle(process, tHandle, 
 				process, &m->handle, 0, 
 				FALSE, DUPLICATE_SAME_ACCESS))
-#pragma FB_COMPILER_MESSAGE("Fix! Replace with MORE appropriate handling.")
-		Firebird::memory_corrupt::raise();
+		Firebird::system_call_failed::raise();
 
 	THD_mutex_lock(&mutex);
 	m->next = news;
@@ -195,7 +189,7 @@ ThreadPriorityScheduler * ThreadPriorityScheduler::Attach(void) {
 			return m;
 		}
 	THD_mutex_unlock(&mutex);
-	Firebird::memory_corrupt::raise();
+	Firebird::fatal_exception::raise("Unknown thread tried to attach to ThreadPriorityScheduler");
 	// Never get - avoid warnings
 	return 0;
 }
@@ -223,6 +217,14 @@ void ThreadPriorityScheduler::Exit(void) {
 
 //____________________________________________________________
 //
+// Check whether current thread has high priority
+//
+BOOLEAN ThreadPriorityScheduler::Boosted(void) {
+	return InternalGet()->flags & THPS_BOOSTED ? TRUE : FALSE;
+}
+
+//____________________________________________________________
+//
 // Scheduler Thread
 //
 unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
@@ -243,41 +245,44 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 				t->goneout = 0;
 				t->flags &= ~(THPS_UP | THPS_LOW); // clean them
 #pragma FB_COMPILER_MESSAGE("Fix! May have problems with long running UDFs.")
-				// 1.	thread went out of single thread zone
-				//		and didn't return into it since last cycle:
-				//		increase priority
-				if ((p_flags & THPS_UP) && (! gonein) && 
-							(! (p_flags & THPS_BOOSTED))) {
-					SetThreadPriority(t->handle, THREAD_PRIORITY_HIGHEST);
+				if ((! gonein) && (! (p_flags & THPS_BOOSTED))) {
+					if (p_flags & THPS_UP) {
+				// 1.	thread exited single thread zone and didn't 
+				//		return into it since this &last cycle:
+				//			increase priority
+						if (! SetThreadPriority(t->handle, 
+									THREAD_PRIORITY_HIGHEST))
+							Firebird::system_call_failed::raise();
+
 #ifdef THREAD_PSCHED_DEBUG
-					gds__log("+ handle=%p priority=%d", t->handle, THREAD_PRIORITY_HIGHEST);
+						gds__log("+ handle=%p priority=%d", t->handle, THREAD_PRIORITY_HIGHEST);
 #endif
-					t->flags |= THPS_BOOSTED;
-					continue;
-				}
+						t->flags |= THPS_BOOSTED;
+						continue;
+					}
 				// 2.	thread exited single thread zone
 				//		and never returned there during this cycle:
-				//		candidate for priority increase
-				if ((! gonein) && (! (p_flags & THPS_BOOSTED))) {
+				//			candidate for priority increase
 					t->flags |= THPS_UP;
 					continue;
 				}
+				if ((gonein || t->inside) && (p_flags & THPS_BOOSTED)) {
+					if (p_flags & THPS_LOW) {
 				// 3.	thread entered single thread zone
 				//		last cycle and didn't leave it completely
 				//		this cycle:
 				//		decrease priority
-				if ((p_flags & THPS_LOW) && (gonein || t->inside)
-							&& (p_flags & THPS_BOOSTED)) {
-					SetThreadPriority(t->handle, THREAD_PRIORITY_NORMAL);
+						if (! SetThreadPriority(t->handle, 
+									THREAD_PRIORITY_NORMAL))
+							Firebird::system_call_failed::raise();
 #ifdef THREAD_PSCHED_DEBUG
-					gds__log("- handle=%p priority=%d", t->handle, THREAD_PRIORITY_NORMAL);
+						gds__log("- handle=%p priority=%d", t->handle, THREAD_PRIORITY_NORMAL);
 #endif
-					t->flags &= ~THPS_BOOSTED;
-					continue;
-				}
+						t->flags &= ~THPS_BOOSTED;
+						continue;
+					}
 				// 4.	thread entered single thread zone this cycle:
 				//		candidate for priority decrease
-				if (gonein && (p_flags & THPS_BOOSTED)) {
 					t->flags |= THPS_LOW;
 					continue;
 				}
@@ -294,46 +299,53 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 					t->ticks--;
 			}
 		}
-		if (GlobalTicks-- > 0)
-			continue;
-		GlobalTicks = THPS_TICKS;
-		if (StateCloseHandles == 0)
-			continue;
-		for (ThreadPriorityScheduler ** pt = &chain; *pt; pt = &(*pt)->next) {
-start_label:
-			if ((*pt)->inside)
+		if (! shutdown) {
+			if (GlobalTicks-- > 0)
 				continue;
-			if ((*pt)->ticks > 0)
-				continue;
-			DWORD ExitCode;
-			if (! GetExitCodeThread((*pt)->handle, &ExitCode)) 
-#pragma FB_COMPILER_MESSAGE("Fix! Replace with MORE appropriate handling.")
-				Firebird::memory_corrupt::raise();
-			if (ExitCode == STILL_ACTIVE) {
-				(*pt)->ticks = THPS_TICKS;
-				continue;
-			}
-			// thread exited - close handle and do cleanup
-			if (StateCloseHandles == 1) {
-				THD_mutex_lock(&mutex);
-				StateCloseHandles = 2;
-			}
-			ThreadPriorityScheduler *m = *pt;
-			*pt = m->next;
-#ifdef THREAD_PSCHED_DEBUG
-			gds__log("~ handle=%p", m->handle);
-#endif
-			CloseHandle(m->handle);
-			delete m;
-			if (*pt)
-				goto start_label;
-			else
-				break;
+			GlobalTicks = THPS_TICKS;
 		}
-		if (StateCloseHandles == 2)
-			THD_mutex_unlock(&mutex);
+
+		if (StateCloseHandles > 0) {
+			for (ThreadPriorityScheduler ** pt = &chain; *pt; pt = &(*pt)->next) {
+start_label:
+				if ((*pt)->inside)
+					continue;
+				if ((*pt)->ticks > 0)
+					continue;
+				DWORD ExitCode;
+				if (! GetExitCodeThread((*pt)->handle, &ExitCode)) 
+					Firebird::system_call_failed::raise();
+				if (ExitCode == STILL_ACTIVE) {
+					(*pt)->ticks = THPS_TICKS;
+					continue;
+				}
+				// thread exited - close handle and do cleanup
+				if (StateCloseHandles == 1) {
+					THD_mutex_lock(&mutex);
+					StateCloseHandles = 2;
+				}
+				ThreadPriorityScheduler *m = *pt;
+				*pt = m->next;
+#ifdef THREAD_PSCHED_DEBUG
+				gds__log("~ handle=%p", m->handle);
+#endif
+				CloseHandle(m->handle);
+				delete m;
+				if (*pt)
+					goto start_label;
+				else
+					break;
+			}
+			if (StateCloseHandles == 2)
+				THD_mutex_unlock(&mutex);
+		}
+		if (shutdown && (! chain) && (! news))
+			break;
 	}
-	// never get
+	// cleanup
+	delete pool;
+	THD_mutex_destroy(&mutex);
+	TlsFree(specific_key);
 	return 0;
 }
 

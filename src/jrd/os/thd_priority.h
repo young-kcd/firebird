@@ -53,6 +53,7 @@ private:
 	static ThreadPriorityScheduler * news;	// where starts new thps chain
 	static BOOLEAN initialized;
 	static DWORD specific_key;		// for thread LS access
+	static BOOLEAN shutdown;		// server shutting down
 
 	ThreadPriorityScheduler * next;			// next thread in list
 	union {
@@ -76,6 +77,7 @@ public:
 	static void Exit(void);
 	static thdd *Get(void);
 	static void Set(thdd *val);
+	static BOOLEAN Boosted(void);
 	static void Cleanup(void);
 	static void Init(void);
 	static void Attach(HANDLE tHandle, DWORD thread_id, int &p);
@@ -96,6 +98,7 @@ public:
 #define THPS_FINI() ThreadPriorityScheduler::Cleanup()
 #define THPS_ATTACH(handle, thread_id, priority) \
 		ThreadPriorityScheduler::Attach(handle, thread_id, priority)
+#define THPS_BOOSTDONE() ThreadPriorityScheduler::Boosted()
 
 #else // THREAD_PSCHED
 
@@ -106,6 +109,7 @@ public:
 #define THPS_INIT()
 #define THPS_FINI()
 #define THPS_ATTACH(handle, thread_id, priority)
+#define THPS_BOOSTDONE() FALSE
 
 #endif // THREAD_PSCHED
 
