@@ -47,14 +47,8 @@ protected:
 	JrdMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
 	~JrdMemoryPool() {}	
 public:
-	static JrdMemoryPool *createPool() {
-		JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool));
-		result->plb_buckets = NULL;
-		result->plb_segments = NULL;
-		result->plb_dccs = NULL;
-		new (&result->lls_cache) BlockCache<lls> (*result);
-		return result;
-	}
+	static JrdMemoryPool *createPool(int *cur_mem, int *max_mem);
+	static JrdMemoryPool *createPool();
 	static void deletePool(JrdMemoryPool* pool) {
 		pool->lls_cache.~BlockCache<lls>();
 		MemoryPool::deletePool(pool);

@@ -113,7 +113,7 @@ class tdbb;
 class dbb : private pool_alloc<type_dbb>
 {
 public:
-	static dbb* newDbb(MemoryPool& p) { 
+	static dbb* newDbb(MemoryPool& p) {		
 		return FB_NEW(p) dbb(p);
 	}
 	

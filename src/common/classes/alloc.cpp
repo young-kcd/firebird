@@ -54,6 +54,9 @@
 
 namespace Firebird {
 
+int process_max_memory = 0;
+int process_current_memory = 0;
+
 // Helper function to reduce code size, since many compilers
 // generate quite a bit of code at the point of the throw.
 static void pool_out_of_memory()
@@ -227,7 +230,7 @@ void MemoryPool::print_contents(IB_FILE *file, bool used_only) {
 	lock.leave();
 }
 
-MemoryPool* MemoryPool::internal_create(size_t instance_size) {
+MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int *max_mem) {
 	size_t alloc_size = FB_MAX(
 		// This is the exact initial layout of memory pool in the first extent //
 		MEM_ALIGN(sizeof(MemoryExtent)) +
@@ -250,8 +253,11 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size) {
 		MEM_ALIGN(sizeof(MemoryExtent)) + 
 		MEM_ALIGN(sizeof(MemoryBlock)) + 
 		MEM_ALIGN(instance_size) + 
-		MEM_ALIGN(sizeof(MemoryBlock)));
-	
+		MEM_ALIGN(sizeof(MemoryBlock)),
+		cur_mem, max_mem);
+		
+	pool->extents_memory = alloc_size - MEM_ALIGN(sizeof(MemoryExtent));
+		
 	MemoryBlock *poolBlk = (MemoryBlock*) (mem+MEM_ALIGN(sizeof(MemoryExtent)));
 	poolBlk->pool = pool;
 	poolBlk->used = true;
@@ -301,11 +307,14 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 			   2. The lock is copied before the extent that contains the pool
 				  itself is freed, because otherwise it contains garbage. The
 				  lock will be destroyed automatically at exit. */
+	/* skidder: Working with a copy of spinlock or critical section is not 
+	            a correct operation. We simply need to delete object earlier */
 #ifdef SUPERSERVER
-	Spinlock lock = pool->lock;
+	pool->lock.~Spinlock();
 #else
-	SharedSpinlock lock = pool->lock;
+	pool->lock.~SharedSpinlock();
 #endif
+	if (pool->cur_memory) *pool->cur_memory -= pool->used_memory;
 	// Delete all extents now
 	MemoryExtent *temp = pool->extents;
 	while (temp) {
@@ -323,25 +332,25 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 	// Lookup a block greater or equal than size in freeBlocks tree
 	size = MEM_ALIGN(size);
 	BlockInfo temp = {NULL, size};
-	void *result;
+	MemoryBlock* blk;
 	if (freeBlocks.locate(locGreatEqual,temp)) {
 		// Found large enough block
 		BlockInfo* current = &freeBlocks.current();
 		if (current->length-size < MEM_ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
+			blk = current->block;
 			// Block is small enough to be returned AS IS
-			current->block->used = true;
-			current->block->type = type;
+			blk->used = true;
+			blk->type = type;
 #ifdef DEBUG_GDS_ALLOC
-			current->block->file = file;
-			current->block->line = line;
+			blk->file = file;
+			blk->line = line;
 #endif
-			result = (char *)current->block + MEM_ALIGN(sizeof(MemoryBlock));
 			freeBlocks.fastRemove();
 		} else {
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
 			current->block->length -= MEM_ALIGN(sizeof(MemoryBlock))+size;
-			MemoryBlock *blk = (MemoryBlock *)((char*)current->block + 
+			blk = (MemoryBlock *)((char*)current->block + 
 				MEM_ALIGN(sizeof(MemoryBlock)) + current->block->length);
 			blk->pool = this;
 			blk->used = true;
@@ -372,7 +381,6 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				freeBlocks.fastRemove();
 				addFreeBlock(block);
 			}
-			result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 		}
 	} else {
 		// If we are in a critically low memory condition look up for a block in a list
@@ -394,6 +402,14 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 						prev->next = itr->next;
 					else
 						pendingFree = itr->next;						
+					// We can do this w/o any locking because 
+					// (1) -= integer operation is atomic on all current platforms 
+					// (2) nobody will die if max_memory will be a little inprecise
+					used_memory += temp->length + MEM_ALIGN(sizeof(MemoryBlock));
+					if (cur_memory) {
+						*cur_memory += temp->length + MEM_ALIGN(sizeof(MemoryBlock));
+						if (max_memory && *max_memory < *cur_memory) *max_memory = *cur_memory;
+					}
 					PATTERN_FILL(itr,size,ALLOC_PATTERN);
 					return itr;
 				} else {
@@ -401,7 +417,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					// We don't need to modify tree of free blocks or a list of
 					// pending free blocks in this case
 					temp->length -= MEM_ALIGN(sizeof(MemoryBlock))+size;
-					MemoryBlock *blk = (MemoryBlock *)((char*)temp + 
+					blk = (MemoryBlock *)((char*)temp + 
 						MEM_ALIGN(sizeof(MemoryBlock)) + temp->length);
 					blk->pool = this;
 					blk->used = true;
@@ -416,7 +432,12 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					blk->prev = temp;
 					if (!blk->last)
 						((MemoryBlock *)((char*)blk + MEM_ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
-					result = (char *)blk + MEM_ALIGN(sizeof(MemoryBlock));
+					used_memory += blk->length + MEM_ALIGN(sizeof(MemoryBlock));
+					if (cur_memory) {
+						*cur_memory += blk->length + MEM_ALIGN(sizeof(MemoryBlock));
+						if (max_memory && *max_memory < *cur_memory) *max_memory = *cur_memory;
+					}
+					void *result = (char *)blk + MEM_ALIGN(sizeof(MemoryBlock));
 					PATTERN_FILL(result,size,ALLOC_PATTERN);
 					return result;
 				}
@@ -430,10 +451,11 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		if (!extent) {
 			return NULL;
 		}
+		extents_memory += alloc_size - MEM_ALIGN(sizeof(MemoryExtent));
 		extent->next = extents;
 		extents = extent;
 			
-		MemoryBlock *blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent)));
+		blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent)));
 		blk->pool = this;
 		blk->used = true;
 		blk->type = type;
@@ -460,8 +482,13 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			rest->prev = blk;
 			addFreeBlock(rest);
 		}
-		result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 	}
+	used_memory += blk->length + MEM_ALIGN(sizeof(MemoryBlock));
+	if (cur_memory) {
+		*cur_memory += blk->length + MEM_ALIGN(sizeof(MemoryBlock));
+		if (max_memory && *max_memory < *cur_memory) *max_memory = *cur_memory;
+	}
+	void *result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 	// Grow spare blocks pool if necessary
 	PATTERN_FILL(result,size,ALLOC_PATTERN);
 	return result;
@@ -506,12 +533,35 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 	}
 }
 
+void MemoryPool::free_blk_extent(MemoryBlock *blk) {
+	MemoryExtent *extent = (MemoryExtent *)((char *)blk-MEM_ALIGN(sizeof(MemoryExtent)));
+	MemoryExtent *itr = extents;
+	if (extents == extent)
+		extents = extents->next;
+	else
+	{
+  		while ( itr ) {
+			MemoryExtent *next = itr->next;
+			if (next==extent) {
+				itr->next = extent->next;
+				break;
+			}
+			itr = next;
+		}
+		assert(itr); // We had to find it somewhere
+	}
+	extents_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
+	external_free(extent);
+}
+
 void MemoryPool::deallocate(void *block) {
 	if (!block) return;
 	lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
 	assert(blk->used);
 	assert(blk->pool==this);
+	used_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
+	if (cur_memory)	*cur_memory -= blk->length + MEM_ALIGN(sizeof(MemoryBlock));
 	// Try to merge block with preceding free block
 	if ((prev = blk->prev) && !prev->used) {
 		removeFreeBlock(prev);
@@ -535,7 +585,10 @@ void MemoryPool::deallocate(void *block) {
 			}
 		}
 		PATTERN_FILL((char*)prev+MEM_ALIGN(sizeof(MemoryBlock)),prev->length,FREE_PATTERN);
-		addFreeBlock(prev);
+		if (!prev->prev && prev->last)
+			free_blk_extent(prev);
+		else
+			addFreeBlock(prev);
 	} else {	
 		MemoryBlock *next;
 		// Mark block as free
@@ -550,8 +603,11 @@ void MemoryPool::deallocate(void *block) {
 			if (!next->last)
 				((MemoryBlock *)((char *)next+MEM_ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
 		}
-		PATTERN_FILL((char*)blk+MEM_ALIGN(sizeof(MemoryBlock)),blk->length,FREE_PATTERN);
-		addFreeBlock(blk);
+		PATTERN_FILL(block,blk->length,FREE_PATTERN);
+		if (!blk->prev && blk->last)
+			free_blk_extent(blk);
+		else
+			addFreeBlock(blk);
 	}
 	if (needSpare) updateSpare();
 	lock.leave();
@@ -559,12 +615,12 @@ void MemoryPool::deallocate(void *block) {
 
 } /* namespace Firebird */
 
+#ifndef TESTING_ONLY
+
 Firebird::MemoryPool* getDefaultMemoryPool() {
 	if (!Firebird::processMemoryPool) Firebird::processMemoryPool = MemoryPool::createPool();
 	return Firebird::processMemoryPool;
 }
-
-#ifndef TESTING_ONLY
 
 extern "C" {
 

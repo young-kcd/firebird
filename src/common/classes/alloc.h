@@ -81,11 +81,17 @@ struct PendingFreeBlock {
 	PendingFreeBlock *next;
 };
 
+extern int process_current_memory, process_max_memory;
+
 // Memory pool based on B+ tree of free memory blocks
 
 // We are going to have two target architectures:
 // 1. Multi-process server with customizable lock manager
 // 2. Multi-threaded server with single process (SUPERSERVER)
+//
+// MemoryPool inheritance looks weird because we cannot use
+// any pointers to functions in shared memory. VMT usage in
+// MemoryPool and its descendants is prohibited
 class MemoryPool {
 private:
 	class InternalAllocator {
@@ -111,6 +117,8 @@ private:
 #else
 	SharedSpinlock lock;
 #endif
+	int extents_memory; // Sum of memory in allocated extents minus size of extents headers
+	int used_memory; // Size of used memory blocks including block headers
 
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t size);
@@ -127,6 +135,8 @@ private:
 		
 	void removeFreeBlock(MemoryBlock *blk);
 	
+	void free_blk_extent(MemoryBlock *blk);
+	
 	// does all the stuff except locking and exceptions
 	void* internal_alloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
@@ -134,12 +144,18 @@ private:
 #endif
 	);
 protected:
+	int *cur_memory;
+	int *max_memory;
 	// Do not allow to create and destroy pool directly from outside
-	MemoryPool(void *first_extent, void *root_page) : 
+	MemoryPool(void *first_extent, void *root_page, int* cur_mem = NULL, int* max_mem = NULL) : 
 		freeBlocks((InternalAllocator*)this, root_page),
 		extents((MemoryExtent *)first_extent), 
 		needSpare(false),
-		pendingFree(NULL)
+		pendingFree(NULL),
+		/*extents_memory(0), - Initialized in internal_create() */
+		used_memory(0),
+		cur_memory(cur_mem),
+		max_memory(max_mem)
 	{
 	}
 
@@ -147,8 +163,16 @@ protected:
 	~MemoryPool() {
 	}
 	
-	static MemoryPool* internal_create(size_t instance_size);
+	static MemoryPool* internal_create(size_t instance_size, 
+		int *cur_mem = &process_current_memory, int *max_mem = &process_max_memory);
 public:
+	// Move usage stats to another location
+	void moveStats(int *cur_mem, int *max_mem) {
+		*cur_mem = *cur_memory;
+		*max_mem = *max_memory;
+		cur_memory = cur_mem;
+		max_memory = max_mem;
+	}
 	static MemoryPool* createPool() {
 		return internal_create(sizeof(MemoryPool));
 	}

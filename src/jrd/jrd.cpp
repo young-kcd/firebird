@@ -5621,9 +5621,15 @@ static DBB init(TDBB	tdbb,
 	tdbb->tdbb_database = 0;
 
 	try {
-
+#ifdef SUPERSERVER
+	int cur_perm = 0, max_perm = 0;
+	JrdMemoryPool* perm = JrdMemoryPool::createPool(&cur_perm, &max_perm);
+	dbb_ = dbb::newDbb(*perm);
+	perm->moveStats((int*)&dbb_->dbb_current_memory, (int*)&dbb_->dbb_max_memory);
+#else
 	JrdMemoryPool* perm = JrdMemoryPool::createPool();
 	dbb_ = dbb::newDbb(*perm);
+#endif
 	//temp.blk_type = type_dbb;
 	dbb_->dbb_permanent = perm;
 	dbb_->dbb_mutexes = temp_mutx;

@@ -383,6 +383,7 @@ int INF_database_info(
 				length = 0;
 			break;
 
+#ifdef SUPERSERVER
 		case isc_info_current_memory:
 			length = INF_convert(dbb->dbb_current_memory, buffer);
 			break;
@@ -390,6 +391,15 @@ int INF_database_info(
 		case isc_info_max_memory:
 			length = INF_convert(dbb->dbb_max_memory, buffer);
 			break;
+#else
+		case isc_info_current_memory:
+			length = INF_convert(process_current_memory, buffer);
+			break;
+
+		case isc_info_max_memory:
+			length = INF_convert(process_max_memory, buffer);
+			break;
+#endif
 
 		case isc_info_attachment_id:
 			length = INF_convert(PAG_attachment_id(), buffer);

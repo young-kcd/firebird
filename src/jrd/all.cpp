@@ -101,6 +101,31 @@ void ALL_check_memory()
 #endif /* DEV_BUILD */
 
 
+JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
+		cur_mem, max_mem);
+	result->plb_buckets = NULL;
+	result->plb_segments = NULL;
+	result->plb_dccs = NULL;
+	new (&result->lls_cache) BlockCache<lls> (*result);
+	return result;
+}
+
+JrdMemoryPool *JrdMemoryPool::createPool() {
+#ifdef SUPERSERVER
+    DBB dbb = GET_DBB;
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
+		(int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
+#else
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool));
+#endif
+	result->plb_buckets = NULL;
+	result->plb_segments = NULL;
+	result->plb_dccs = NULL;
+	new (&result->lls_cache) BlockCache<lls> (*result);
+	return result;
+}
+
 TEXT* ALL_cstring(TEXT* in_string)
 {
 /**************************************
