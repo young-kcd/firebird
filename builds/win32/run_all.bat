@@ -33,6 +33,6 @@ cd ..\..\..\win32
 @echo   Example:
 @echo     c:\program files\firebird
 @echo. 
-@goto :END
+@goto :END2
 
-:END
+:END2
