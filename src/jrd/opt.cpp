@@ -98,7 +98,6 @@ static void check_sorts(RecordSelExpr*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
 static void clear_bounds(OptimizerBlk*, const index_desc*);
 static jrd_nod* compose(jrd_nod**, jrd_nod*, NOD_T);
-//static bool computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
 static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
 static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
@@ -110,14 +109,6 @@ static bool dump_rsb(const jrd_req*, const RecordSource*, SCHAR**, SSHORT*);
 static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
 static bool expression_possible_unknown(const jrd_nod*);
 static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, bool*);
-/*
-#ifdef EXPRESSION_INDICES
-static bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
-							 jrd_nod*, USHORT);
-static bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
-							  jrd_nod*, USHORT);
-#endif
-*/
 static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, const UCHAR*,
 					const jrd_nod*, double, double);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*,
@@ -153,10 +144,7 @@ static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCH
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_inactivities(const CompilerScratch*, ULONG*);
-//static double getRelationCardinality(thread_db*, jrd_rel*,const Format*);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
-//static str* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
-//static jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
 static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, const index_desc*);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
@@ -167,7 +155,6 @@ static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
 static SSHORT match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool match_indices(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
-//static USHORT nav_rsb_size(RecordSource*, USHORT, USHORT);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, jrd_nod*);
 #ifdef OPT_DEBUG
@@ -221,23 +208,6 @@ inline bool TEST_DEP_ARRAYS(const ULONG* ar1, const ULONG* ar2)
 			(ar1[4] & ar2[4]) || (ar1[5] & ar2[5]) ||
 			(ar1[6] & ar2[6]) || (ar1[7] & ar2[7]);
 }
-
-/*
-inline int STREAM_INDEX(const jrd_nod* node)
-{
-	switch (node->nod_type)
-	{
-		case nod_relation:
-			return e_rel_stream;
-		case nod_procedure:
-			return e_prc_stream;
-		case nod_union:
-			return e_uni_stream;
-		default:
-			return e_agg_stream;
-	}
-}
-*/
 
 /* some arbitrary fudge factors for calculating costs, etc.--
    these could probably be better tuned someday */
@@ -1840,207 +1810,6 @@ static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, NOD_T node_type)
 	return *node1 = make_binary_node(node_type, *node1, node2, false);
 }
 
-/*
-static bool computable(CompilerScratch*     csb,
-                       jrd_nod* node,
-                       SSHORT  stream,
-                       bool    idx_use,
-					   bool    allowOnlyCurrentStream)
-{
-*/
-/**************************************
- *
- *	c o m p u t a b l e
- *
- **************************************
- *
- * Functional description
- *	See if node is presently computable.  
- *	Note that a field is not computable
- *	with respect to its own stream.
- *
- * There are two different uses of computable(). 
- * (a) idx_use == false: when an unused conjunct is to be picked for making
- *     into a boolean and in making a db_key. 
- *     In this case, a node is said to be computable, if all the streams 
- *     involved in that node are csb_active. The csb_active flag 
- *     defines all the streams available in the current scope of the
- *     query.
- * (b) idx_use == true: to determine if we can use an
- *     index on the conjunct we have already chosen.
- *     In order to use an index on a conjunct, it is required that the
- *     all the streams involved in the conjunct are currently active
- *     or have been already processed before and made into rivers.
- *     Because, here we want to differentiate between streams we have
- *     not yet worked on and those that we have worked on or are currently
- *     working on.
- *
- **************************************/
-/*	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
-	// Recurse thru interesting sub-nodes
-	jrd_nod** ptr = node->nod_arg;
-
-	if (node->nod_type == nod_procedure) {
-		return false;
-	}
-
-	if (node->nod_type == nod_union) {
-		jrd_nod* clauses = node->nod_arg[e_uni_clauses];
-		ptr = clauses->nod_arg;
-		for (const jrd_nod* const* const end = ptr + clauses->nod_count;
-			ptr < end; ptr += 2)
-		{
-			if (!computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
-				return false;
-			}
-		}
-	} 
-	else {
-		for (const jrd_nod* const* const end = ptr + node->nod_count;
-			ptr < end; ptr++) 
-		{
-			if (!computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
-				return false;
-			}
-		}
-	}
-
-	RecordSelExpr* rse;
-	jrd_nod* sub;
-	jrd_nod* value;
-	USHORT n;
-	
-	switch (node->nod_type) {
-	case nod_field:
-
-		n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-
-		if (allowOnlyCurrentStream) {
-			if (n != stream) {
-				return false;
-			}
-		}
-		else {
-			if (n == stream) {
-				return false;
-			}
-		}
-		// AB: cbs_made_river has been replaced by find_used_streams()
-		//if (idx_use &&
-		//	!(csb->csb_rpt[n].csb_flags & (csb_made_river | csb_active)))
-		return csb->csb_rpt[n].csb_flags & csb_active;
-
-	case nod_rec_version:
-	case nod_dbkey:
-
-		n = (USHORT)(IPTR) node->nod_arg[0];
-
-		if (allowOnlyCurrentStream) {
-			if (n != stream) {
-				return false;
-			}
-		}
-		else {
-			if (n == stream) {
-				return false;
-			}
-		}
-		// AB: cbs_made_river has been replaced by find_used_streams()
-		//if (idx_use &&
-		//	!(csb->csb_rpt[n].
-		//		 csb_flags & (csb_made_river | csb_active)))
-		return csb->csb_rpt[n].csb_flags & csb_active;
-
-	case nod_min:
-	case nod_max:
-	case nod_average:
-	case nod_total:
-	case nod_count:
-	case nod_from:
-		if ((sub = node->nod_arg[e_stat_default]) &&
-			!computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
-		{
-			return false;
-		}
-		rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
-		value = node->nod_arg[e_stat_value];
-		break;
-
-	case nod_rse:
-		rse = (RecordSelExpr*) node;
-		value = NULL;
-		break;
-
-	case nod_aggregate:
-		rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
-		rse->rse_sorted = node->nod_arg[e_agg_group];
-		value = NULL;
-		break;
-
-	default:
-		return true;
-	}
-
-	// Node is a record selection expression.
-	bool result = true;
-
-	if ((sub = rse->rse_first) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
-		return false;
-	}
-
-    if ((sub = rse->rse_skip) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
-        return false;
-	}
-    
-	// Set sub-streams of rse active
-	const jrd_nod* const* end;
-
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
-		if ((*ptr)->nod_type != nod_rse) {
-			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags |= csb_active;
-		}
-	}
-
-	// Check sub-stream
-	if (((sub = rse->rse_boolean)    && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_sorted)     && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_projection) && !computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
-	{
-		result = false;
-	}
-
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
-		((ptr < end) && (result)); ptr++)
-	{
-		if ((*ptr)->nod_type != nod_rse) {
-			if (!computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream)) {
-				result = false;
-			}
-		}
-	}
-
-	// Check value expression, if any
-	if (result && value && !computable(csb, value, stream, idx_use, allowOnlyCurrentStream)) {
-		result = false;
-	}
-
-	// Reset streams inactive
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++)
-	{
-		if ((*ptr)->nod_type != nod_rse)
-		{
-			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags &= ~csb_active;
-		}
-	}
-
-	return result;
-}
-*/
 
 static void compute_dependencies(const jrd_nod* node, ULONG* dependencies)
 {
@@ -3285,329 +3054,6 @@ static bool expression_contains_stream(CompilerScratch* csb,
 	return false;
 }
 
-/*
-#ifdef EXPRESSION_INDICES
-
-// Try to merge this function with node_equality() into 1 function.
-
-static bool expression_equal(thread_db* tdbb, OptimizerBlk* opt,
-							 const index_desc* idx, jrd_nod* node,
-							 USHORT stream)
-{*/
-/**************************************
- *
- *      e x p r e s s i o n _ e q u a l
- *
- **************************************
- *
- * Functional description
- *  Wrapper for expression_equal2().
- *
- **************************************/
-/*	DEV_BLKCHK(node, type_nod);
-
-	SET_TDBB(tdbb);
-
-	if (idx && idx->idx_expression_request && idx->idx_expression)
-	{
-		fb_assert(idx->idx_flags & idx_expressn);
-		fb_assert(idx->idx_expression_request->req_caller == NULL);
-		idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-		tdbb->tdbb_request = idx->idx_expression_request;
-		bool result = false;
-		{
-			Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
-
-			result = expression_equal2(tdbb, opt, idx->idx_expression,
-										node, stream);
-		}
-		tdbb->tdbb_request = idx->idx_expression_request->req_caller;
-		idx->idx_expression_request->req_caller = NULL;
-
-		return result;
-	}
-	else
-		return false;
-}
-
-
-static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
-							  jrd_nod* node1, jrd_nod* node2,
-							  USHORT stream)
-{*/
-/**************************************
- *
- *      e x p r e s s i o n _ e q u a l 2
- *
- **************************************
- *
- * Functional description
- *      Determine if two expression trees are the same for 
- *	the purposes of matching one half of a boolean expression 
- *	to an index.
- *
- **************************************/
-/*	DEV_BLKCHK(node1, type_nod);
-	DEV_BLKCHK(node2, type_nod);
-
-	SET_TDBB(tdbb);
-
-	if (!node1 || !node2)
-	{
-		BUGCHECK(303);	// msg 303 Invalid expression for evaluation.
-	}
-
-	if (node1->nod_type != node2->nod_type)
-	{
-		dsc dsc1, dsc2; 
-		dsc *desc1 = &dsc1, *desc2 = &dsc2; 
-
-		if (node1->nod_type == nod_cast && node2->nod_type == nod_field)
-		{
-			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-			if (DSC_EQUIV(desc1, desc2) && 
-				expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
-								  node2, stream))
-			{
-				return true;
-			}
-		}
-
-		if (node1->nod_type == nod_field && node2->nod_type == nod_cast)
-		{
-			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-			if (DSC_EQUIV(desc1, desc2) &&
-				expression_equal2(tdbb, opt, node1,
-								  node2->nod_arg[e_cast_source], stream))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	switch (node1->nod_type) {
-		case nod_add:
-		case nod_multiply:
-		case nod_add2:
-		case nod_multiply2:
-		case nod_equiv:
-	    case nod_eql:
-		case nod_neq:
-	    case nod_and:
-		case nod_or:
-			// A+B is equivalent to B+A, ditto A*B==B*A
-			// Note: If one expression is A+B+C, but the other is B+C+A we won't
-			// necessarily match them.
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
-								  node2->nod_arg[1], stream) &&
-				expression_equal2(tdbb, opt, node1->nod_arg[1],
-								  node2->nod_arg[0], stream))
-			{
-				return true;
-			}
-			// Fall into ...
-		case nod_subtract:
-		case nod_divide:
-		case nod_subtract2:
-		case nod_divide2:
-		case nod_concatenate:
-
-		// TODO match A > B to B <= A, etc
-	    case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
-								  node2->nod_arg[0], stream) &&
-				expression_equal2(tdbb, opt, node1->nod_arg[1],
-								  node2->nod_arg[1], stream))
-			{
-				return true;
-			}
-			break;
-
-		case nod_rec_version:
-		case nod_dbkey:
-			if (node1->nod_arg[0] == node2->nod_arg[0])
-			{
-				return true;
-			}
-			break;
-
-		case nod_field:
-			{
-				const USHORT fld_stream = (USHORT)(IPTR) node2->nod_arg[e_fld_stream];
-				if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) &&
-					(fld_stream == stream))
-				{
-					//
-					//dsc dsc1, dsc2; 
-					//dsc *desc1 = &dsc1, *desc2 = &dsc2; 
-
-					//CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-					//CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-					//if (DSC_GET_COLLATE(desc1) == DSC_GET_COLLATE(desc2))						
-					return true;
-				}
-			}
-			break;
-
-		case nod_function:
-			if (node1->nod_arg[e_fun_function] &&
-				(node1->nod_arg[e_fun_function] == node2->nod_arg[e_fun_function]) &&
-				expression_equal2(tdbb, opt, node1->nod_arg[e_fun_args],
-								  node2->nod_arg[e_fun_args], stream)) 
-			{
-				return true;
-			}
-			break;
-
-		case nod_literal:
-			{
-				const dsc* desc1 = EVL_expr(tdbb, node1);
-				const dsc* desc2 = EVL_expr(tdbb, node2);
-				if (desc1 && desc2 && !MOV_compare(desc1, desc2))
-				{
-					return true;
-				}
-			}
-			break;
-
-		case nod_null:
-		case nod_user_name:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_date:
-		case nod_current_timestamp:
-			return true;
-
-		case nod_between:
-		case nod_like:
-		case nod_missing:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_not:
-		case nod_unique:
-
-		case nod_value_if:
-		case nod_substr:
-			{
-				if (node1->nod_count != node2->nod_count)
-				{
-					return false;
-				}
-				for (int i = 0; i < node1->nod_count; ++i)
-				{
-					if (!expression_equal2(tdbb, opt, node1->nod_arg[i],
-										   node2->nod_arg[i], stream))
-					{
-						return false;
-					}
-				}
-				return true;
-			}
-			break;
-
-		case nod_gen_id:
-		case nod_gen_id2:
-			if (node1->nod_arg[e_gen_id] == node2->nod_arg[e_gen_id])
-			{
-				return true;
-			}
-			break;
-
-		case nod_negate:
-		case nod_internal_info:
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
-								  node2->nod_arg[0], stream))
-			{
-				return true;
-			}
-			break;
-
-		case nod_upcase:
-			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
-								  node2->nod_arg[0], stream))
-			{				
-				//dsc dsc1, dsc2; 
-				//dsc *desc1 = &dsc1, *desc2 = &dsc2; 
-
-				//CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-				//CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-				//if (DSC_GET_COLLATE(desc1) == DSC_GET_COLLATE(desc2))				
-				return true;
-			}
-			break;
-
-		case nod_cast:
-			{
-				dsc dsc1, dsc2; 
-				dsc *desc1 = &dsc1, *desc2 = &dsc2; 
-
-				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-				if (DSC_EQUIV(desc1, desc2) &&
-					expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
-									  node2->nod_arg[e_cast_source], stream)) 
-				{
-					return true;
-				}
-			}
-			break;
-
-		case nod_extract:
-			if (node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part] &&
-				expression_equal2(tdbb, opt, node1->nod_arg[e_extract_value],
-								  node2->nod_arg[e_extract_value], stream)) 
-			{
-				return true;
-			}
-			break;
-
-	    case nod_list:
-			{
-				jrd_nod** ptr1 = node1->nod_arg;
-				jrd_nod** ptr2 = node2->nod_arg;
-
-				if (node1->nod_count != node2->nod_count)
-				{
-					return false;
-				}
-
-				ULONG count = node1->nod_count;
-
-				while (count--)
-				{
-					if (!expression_equal2(tdbb, opt, *ptr1++, *ptr2++, stream))
-					{
-						return false;
-					}
-				}
-			
-				return true;
-		    }
-
-		// AB: New nodes has to be added
-
-		default:
-			break;
-	}
-
-	return false;
-}
-#endif
-*/
-
 
 static void find_best(thread_db* tdbb,
 					  OptimizerBlk* opt,
@@ -4727,8 +4173,6 @@ static void gen_join(thread_db*		tdbb,
 			const Format* format = CMP_format(tdbb, csb, streams[1]);
 			fb_assert(format);
 			csb_tail->csb_cardinality = getRelationCardinality(tdbb, relation, format);
-				//(float) DPM_data_pages(tdbb, relation) *
-				//        dbb->dbb_page_size / format->fmt_length;
 		}
 
 		River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) River();
@@ -4765,21 +4209,6 @@ static void gen_join(thread_db*		tdbb,
 		else {
 			csb_tail->csb_cardinality = getRelationCardinality(tdbb, relation, format);
 		}
-
-		/*
-		if (relation->rel_file) {
-			csb_tail->csb_cardinality = (float) 10000;
-		}
-		else if (plan_clause) {
-			csb_tail->csb_cardinality = (float) 0;
-		}
-		else {
-			fb_assert(format);
-			csb_tail->csb_cardinality =
-				(float) DPM_data_pages(tdbb, relation) *
-				        dbb->dbb_page_size / format->fmt_length;
-		}
-		*/
 
 		// find indexed relationships from this stream to every other stream
 		OptimizerBlk::opt_stream* tail = opt->opt_streams.begin() + *stream;
@@ -6328,43 +5757,6 @@ static void get_inactivities(const CompilerScratch* csb, ULONG* dependencies)
 }
 
 
-//static double getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
-//{
-/**************************************
- *
- *	g e t R e l a t i o n C a r d i n a l i t y
- *
- **************************************
- *
- * Functional description
- *	Return the estimated cardinality for
- *  the given relation.
- *
- **************************************/
-/*	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-
-	if (relation->rel_file) {
-		return (double) 10000;
-	}
-	else {
-		//csb_tail->csb_cardinality =
-		//	(float) DPM_data_pages(tdbb, relation) *
-		//	        dbb->dbb_page_size / format->fmt_length;
-
-		// Estimated number of total records for this relation, 
-		// we assume that the records are compressed to 60%
-		// Every record has also a header and a jump section (13 + 4)
-		USHORT minRecordSize = sizeof(Ods::data_page::dpg_repeat) + RHD_SIZE;
-		if (!(dbb->dbb_flags & DBB_no_reserve)) {
-			minRecordSize += RHDF_SIZE;
-		}
-		return (double) DPM_data_pages(tdbb, relation) *
-			(dbb->dbb_page_size - DPG_SIZE) / (minRecordSize + (format->fmt_length * 0.5));
-	}
-}*/
-
-
 static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* opt,
 												 USHORT stream)
 {
@@ -6439,108 +5831,6 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 
 	return relationship;
 }
-
-
-//static str* make_alias(thread_db* tdbb, CompilerScratch* csb, 
-//					  CompilerScratch::csb_repeat* base_tail)
-//{
-/**************************************
- *
- *	m a k e _ a l i a s
- *
- **************************************
- *
- * Functional description
- *	Make an alias string suitable for printing
- *	as part of the plan.  For views, this means
- *	multiple aliases to distinguish the base 
- *	table.
- *
- **************************************/
-/*	DEV_BLKCHK(csb, type_csb);
-	SET_TDBB(tdbb);
-	if (!base_tail->csb_view && !base_tail->csb_alias)
-		return NULL;
-		
-	const CompilerScratch::csb_repeat* csb_tail;
-	// calculate the length of the alias by going up through
-	// the view stack to find the lengths of all aliases;
-	// adjust for spaces and a null terminator
-	USHORT alias_length = 0;
-	for (csb_tail = base_tail;;
-		 csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
-	{
-		if (csb_tail->csb_alias)
-			alias_length += csb_tail->csb_alias->length();
-		else {
-			alias_length +=
-				(!(csb_tail->csb_relation) || !(csb_tail->csb_relation->rel_name))
-					? 0 : strlen(csb_tail->csb_relation->rel_name);
-		}
-		alias_length++;
-		if (!csb_tail->csb_view)
-			break;
-	}
-
-	// allocate a string block to hold the concatenated alias
-
-	str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) str();
-	alias->str_length = alias_length - 1;
-	// now concatenate the individual aliases into the string block, 
-	// beginning at the end and copying back to the beginning
-	TEXT* p = (TEXT *) alias->str_data + alias->str_length;
-	*p-- = 0;
-	for (csb_tail = base_tail;;
-		 csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
-	{
-		const TEXT* q;
-		if (csb_tail->csb_alias)
-			q = (TEXT *) csb_tail->csb_alias->c_str();
-		else {
-			q = (!(csb_tail->csb_relation) || !(csb_tail->csb_relation->rel_name))
-				? NULL : csb_tail->csb_relation->rel_name;
-		}
-		// go to the end of the alias and copy it backwards
-		if (q) {
-			for (alias_length = 0; *q; alias_length++)
-				q++;
-			while (alias_length--)
-				*p-- = *--q;
-		}
-
-		if (!csb_tail->csb_view)
-			break;
-		*p-- = ' ';
-	}
-
-	return alias;
-}
-*/
-
-//static jrd_nod* make_binary_node(NOD_T type, jrd_nod* arg1, jrd_nod* arg2, bool flag)
-//{
-/**************************************
- *
- *	m a k e _ b i n a r y _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Make a binary node.
- *
- **************************************/
-/*	thread_db* tdbb = JRD_get_thread_data();
-	DEV_BLKCHK(arg1, type_nod);
-	DEV_BLKCHK(arg2, type_nod);
-	jrd_nod* node = PAR_make_node(tdbb, 2);
-	node->nod_type = type;
-	node->nod_arg[0] = arg1;
-	node->nod_arg[1] = arg2;
-	if (flag) {
-		node->nod_flags |= nod_comparison;
-	}
-	return node;
-}*/
 
 
 static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& stack)
@@ -7376,37 +6666,6 @@ static bool match_indices(thread_db* tdbb,
 	return false;
 }
 
-
-//static USHORT nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
-//{
-/**************************************
- *
- *	n a v _ r s b _ s i z e
- *
- **************************************
- *
- * Functional description
- *	Calculate the size of a navigational rsb.  
- *
- **************************************/
-/*	DEV_BLKCHK(rsb, type_rsb);
-#ifdef SCROLLABLE_CURSORS
-	// allocate extra impure area to hold the current key, 
-	// plus an upper and lower bound key value, for a total 
-	// of three times the key length for the index
-	size += sizeof(struct irsb_nav) + 3 * key_length;
-#else
-	size += sizeof(struct irsb_nav) + 2 * key_length;
-#endif
-	size = FB_ALIGN(size, ALIGNMENT);
-	// make room for an idx structure to describe the index
-	// that was used to generate this rsb
-	if (rsb->rsb_type == rsb_navigate)
-		rsb->rsb_arg[RSB_NAV_idx_offset] = (RecordSource*) (IPTR) size;
-	size += sizeof(index_desc);
-	return size;
-}
-*/
 
 static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 {
