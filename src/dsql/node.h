@@ -397,7 +397,8 @@ enum nod_flags_vals {
 	NOD_SELECT_EXPR_VALUE		= 2,
 
 	NOD_CURSOR_EXPLICIT		= 1,
-	NOD_CURSOR_FOR			= 2
+	NOD_CURSOR_FOR			= 2,
+	NOD_CURSOR_ALL			= USHORT(-1U)
 };
 
 // Parameters to MAKE_constant 

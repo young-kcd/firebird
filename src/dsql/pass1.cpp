@@ -1286,7 +1286,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		if (cursor) {
 			fb_assert(cursor->nod_flags > 0);
 			pass1_cursor_name(request, (dsql_str*) cursor->nod_arg[e_cur_name],
-							  -1U, false);
+							  NOD_CURSOR_ALL, false);
 			cursor->nod_arg[e_cur_rse] = node->nod_arg[e_flp_select];
 			cursor->nod_arg[e_cur_number] = (dsql_nod*) (IPTR) request->req_cursor_number++;
 			request->req_cursors.push(cursor);
@@ -1571,7 +1571,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		fb_assert(input->nod_flags > 0);
 		// make sure the cursor doesn't exist
 		pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_name],
-						  -1U, false);
+						  NOD_CURSOR_ALL, false);
 		// temporarily hide unnecessary contexts and process our RSE
 		DsqlContextStack* const base_context = request->req_context;
 		DsqlContextStack temp;
@@ -3259,7 +3259,7 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 	DEV_BLKCHK(string, dsql_type_str);
 
 	// this function must throw an error if no cursor was found
-	const dsql_nod* node = pass1_cursor_name(request, string, -1U, true);
+	const dsql_nod* node = pass1_cursor_name(request, string, NOD_CURSOR_ALL, true);
 	fb_assert(node);
 
 	const dsql_nod* rse = node->nod_arg[e_cur_rse];
