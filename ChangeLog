@@ -1,3 +1,22 @@
+2005-04-03 07:00  robocop
+
+	* firebird2/builds/win32/parse.bat (1.4.2.1):
+	
+	We always used byacc and this file's inline help recommends byacc,
+	but it attempts to use yacc. Go figure.
+
+2005-04-03 06:59  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.14):
+	
+	Fix my previous commit for the -bail option.
+
+2005-04-03 06:58  robocop
+
+	* firebird2/src/dsql/: parse.cpp (1.72.2.6), parse.y (1.79.2.7):
+	
+	Fix crash in filter declaration.
+
 2005-04-01 12:19  dimitr
 
 	* firebird2/src/jrd/pwd.cpp (1.16.2.2):
