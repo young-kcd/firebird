@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.1 2003-12-22 17:43:39 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.34.2.2 2004-03-24 21:11:20 dimitr Exp $ 
  */
 
 /*
@@ -968,7 +968,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			impure->vlu_desc.dsc_address =
 				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
 			impure->vlu_desc.dsc_length = sizeof(SSHORT);
-			if (!value) {
+			if (!value || (request->req_flags & req_null)) {
 				request->req_flags |= req_null;
 				impure->vlu_misc.vlu_short = 0;
 				return &impure->vlu_desc;
