@@ -1,3 +1,29 @@
+2003-05-26 17:46  dimitr
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Small cleanup.
+
+2003-05-26 17:45  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed bug with incorrect handling of numeric NULLs as exception
+	messages.
+
+2003-05-26 17:44  dimitr
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fixed win32 build.
+
+2003-05-26 10:18  dimitr
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	Rolled back previous bugfix due to found side-effects. Still
+	looking for a correct solution.
+
 2003-05-25 21:24  skidder
 
 	* firebird2/src/jrd/isc_sync.cpp:
