@@ -1,3 +1,53 @@
+2005-03-01 18:53  dimitr
+
+	* firebird2/src/jrd/: svc.cpp (1.138), svc.h (1.34):
+	
+	Apply forgotten patch from v1.5.x which allows "gbak -se" to work
+	again.
+
+2005-03-01 16:47  kkuznetsov
+
+	* firebird2/: src/jrd/ThreadData.cpp (1.1), src/jrd/isc_s_proto.h
+	(1.15), src/jrd/sch_proto.h (1.7), src/jrd/thd.cpp (1.44),
+	builds/posix/Makefile.in.client.gfix (1.12),
+	builds/posix/Makefile.in.embed.gfix (1.14),
+	builds/posix/firebird.vers (1.7),
+	builds/posix/make.shared.variables (1.49),
+	builds/posix/prefix.mingw (1.35), builds/posix/prefix.solaris
+	(1.14), builds/posix/prefix.solx86 (1.25),
+	builds/posix/prefix.solx86gcc (1.15):
+	
+	Splitting thd.cpp into 2 files ThreadData.cpp - thread control
+	class to use in Client thd.cpp -  thread control class to use in
+	Server To avoid making global visibility of a lot of THD_*
+	ISC_event and so functions in libfbclient.so (Can be breakable but
+	needed)
+
+2005-03-01 16:24  kkuznetsov
+
+	* firebird2/src/utilities/: guard/util.cpp (1.8), ibmgr/srvrmgr.cpp
+	(1.27):
+	
+	Make util's compilable on Solaris_mt
+
+2005-03-01 16:10  kkuznetsov
+
+	* firebird2/builds/posix/Makefile.in.client.util (1.23):
+	
+	Fix error in makefile
+
+2005-03-01 15:53  paul_reeves
+
+	* firebird2/builds/win32/make_examples.bat (1.14):
+	
+	Append .txt to readme when generating Win32 examples kit.
+
+2005-03-01 15:42  paul_reeves
+
+	* firebird2/examples/readme (1.2):
+	
+	Bring the instructions up to date
+
 2005-02-27 23:29  arnobrinkman
 
 	* firebird2/src/jrd/btn.cpp (1.18):
