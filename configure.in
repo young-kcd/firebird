@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.84 2002-11-13 12:27:44 eku Exp $
+dnl $Id: configure.in,v 1.85 2002-11-14 06:53:17 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -21,22 +21,88 @@ dnl ############################# ADD TESTS BELOW ##############################
 AC_CANONICAL_SYSTEM
 
 case "$target_cpu" in
-powerpc) AC_DEFINE(PowerPC) ;;
+  powerpc) AC_DEFINE(PowerPC) ;;
 esac
 
 CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
 AC_SUBST(CPU_TYPE)
 
+dnl EKU: set appropiate defaults for each platform
+dnl      LOCK_MANAGER : build lock manager (CS only)
+dnl      EDITLINE_FLG : support fancy command line editing in isql
+
 case "$target" in
-*-*-darwin*)        MAKEFILE_PREFIX=darwin  ; PLATFORM=DARWIN    ; AC_DEFINE(DARWIN)  ;;
-*-*-freebsd*)       MAKEFILE_PREFIX=freebsd ; PLATFORM=FREEBSD   ; AC_DEFINE(FREEBSD) ;;
-*-*-linux*)         MAKEFILE_PREFIX=linux   ; PLATFORM=LINUX     ; AC_DEFINE(LINUX)   ;;
-*-*-netbsd*)        MAKEFILE_PREFIX=netbsd  ; PLATFORM=NETBSD    ; AC_DEFINE(NETBSD)  ;;
-*-*-hpux*)          MAKEFILE_PREFIX=hpux    ; PLATFORM=hpux      ; AC_DEFINE(hpux)    ;;
-i386-pc-solaris*)   MAKEFILE_PREFIX=solx86  ; PLATFORM=solx86    ; AC_DEFINE(solx86)  ;;
-sparc-sun-solaris*) MAKEFILE_PREFIX=solaris ; PLATFORM=SOLARIS   ; AC_DEFINE(SOLARIS) ;;
-i*-sni-sysv4)       MAKEFILE_PREFIX=sinixz  ; PLATFORM="SINIX-Z" ; AC_DEFINE(SINIXZ)  ;;
-*-*-mingw*)         MAKEFILE_PREFIX=mingw   ; PLATFORM=win32     ; AC_DEFINE(WIN_NT)  ;;
+  *-*-darwin*)
+    MAKEFILE_PREFIX=darwin
+    PLATFORM=DARWIN
+    AC_DEFINE(DARWIN)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
+
+  *-*-freebsd*)
+    MAKEFILE_PREFIX=freebsd 
+    LATFORM=FREEBSD
+    AC_DEFINE(FREEBSD)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
+
+  *-*-linux*)
+    MAKEFILE_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=Y
+    ;;
+
+  *-*-netbsd*)
+    MAKEFILE_PREFIX=netbsd
+    PLATFORM=NETBSD
+    AC_DEFINE(NETBSD)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
+
+  *-*-hpux*)
+    MAKEFILE_PREFIX=hpux
+    PLATFORM=hpux
+    AC_DEFINE(hpux)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
+
+  i386-pc-solaris*)
+    MAKEFILE_PREFIX=solx86
+    PLATFORM=solx86
+    AC_DEFINE(solx86)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
+
+  sparc-sun-solaris*)
+    MAKEFILE_PREFIX=solaris
+    PLATFORM=SOLARIS
+    AC_DEFINE(SOLARIS)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
+
+  i*-sni-sysv4)
+    MAKEFILE_PREFIX=sinixz
+    PLATFORM="SINIX-Z"
+    AC_DEFINE(SINIXZ)
+    LOCK_MANAGER=N
+    EDITLINE_FLG=N
+    ;;
+
+  *-*-mingw*)
+    MAKEFILE_PREFIX=mingw
+    PLATFORM=win32
+    AC_DEFINE(WIN_NT)
+    LOCK_MANAGER=Y
+    EDITLINE_FLG=N
+    ;;
 esac
 
 AC_SUBST(MAKEFILE_PREFIX)
@@ -65,16 +131,12 @@ AC_ARG_ENABLE(superserver,
      no)  FIREBIRD_ARCH_TYPE=classic;;
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-superserver);;
    esac])
-
+AC_SUBST(FIREBIRD_ARCH_TYPE)
 
 case $FIREBIRD_ARCH_TYPE in
- super)   ARCH_TYPE_SUFFIX="SS";;
- classic) ARCH_TYPE_SUFFIX="CS";;
+  super)   AC_SUBST(ARCH_TYPE_SUFFIX,SS);;
+  classic) AC_SUBST(ARCH_TYPE_SUFFIX,CS);;
 esac
-
-
-AC_SUBST(FIREBIRD_ARCH_TYPE)
-AC_SUBST(ARCH_TYPE_SUFFIX)
 
 PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(debug,
@@ -98,13 +160,12 @@ if test "$RAW_DEVICES_FLG" = "Y"; then
   AC_DEFINE(SUPPORT_RAW_DEVICES)
 fi
 
-LOCK_MANAGER=N
 MANAGER_PROCESS_TARGET=
 if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
   dnl The lock manager process is only need on systems, that do not support
   dnl sending signals to process groups (man 2 kill).
   AC_ARG_WITH(lock-manager,
-    [  --with-lock-manager     build lock manager (default=no)],
+    [  --with-lock-manager     build lock manager],
     [case "$withval" in
        yes) LOCK_MANAGER=Y;;
        no)  LOCK_MANAGER=N;;
@@ -115,15 +176,15 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
     dnl EKU: we should determine the necessity by target system
     dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
     dnl      manager process
+    dnl EKU: is this really true???
     AC_DEFINE(MANAGER_PROCESS)
     MANAGER_PROCESS_TARGET=lock_mgr
   fi
 fi
 AC_SUBST(MANAGER_PROCESS_TARGET)
 
-EDITLINE_FLG=N
 AC_ARG_WITH(editline,
-  [  --with-editline         support fancy command line editing (default=no)],
+  [  --with-editline         support fancy command line editing],
   [case "$withval" in
      yes) EDITLINE_FLG=Y;;
      no)  EDITLINE_FLG=N;;
@@ -301,7 +362,6 @@ dnl      volunters are welcome!
 
 
 dnl EKU: Add any platform specific tests below
-
 case $PLATFORM in
   LINUX)
     dnl MOD: Check for /proc/self/exe mainly used on linux systems
