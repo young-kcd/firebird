@@ -72,6 +72,9 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date));
 }
 
+static void make_null(dsc* const desc);
+static void make_placeholder_null(dsc* const desc);
+
 
 /**
   
@@ -115,7 +118,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		 */
 		node->nod_desc.dsc_dtype = dtype_double;
 		// Scale has no use for double
-		node->nod_desc.dsc_scale = static_cast < char >(constant->str_length);
+		node->nod_desc.dsc_scale = static_cast<signed char>(constant->str_length);
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_length = sizeof(double);
 		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
@@ -516,11 +519,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL + NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -664,11 +663,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL + NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -841,11 +836,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL * NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -885,11 +876,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL * NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -935,11 +922,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL / NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -971,11 +954,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 			node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL / NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -1009,11 +988,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		if (node->nod_arg[0]->nod_type == nod_null)
 		{
 			// -NULL = NULL of INT
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = 0;
-			desc->dsc_flags |= DSC_nullable;
+			make_null(desc);
 			return;
 		}
 
@@ -1198,11 +1173,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		}
 		else
 		{
-			desc->dsc_dtype = dtype_text;
-			desc->dsc_length = 1;
-			desc->dsc_scale = 0;
-			desc->dsc_ttype() = 0;
-			desc->dsc_flags = DSC_nullable;
+			make_placeholder_null(desc);
 		}
 		return;
 
@@ -1519,11 +1490,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node,
 		}
 		else
 		{
-			desc->dsc_dtype = dtype_text;
-			desc->dsc_length = 1;
-			desc->dsc_scale = 0;
-			desc->dsc_ttype() = 0;
-			desc->dsc_flags = DSC_nullable;
+			make_placeholder_null(desc);
 		}
 		return;
 	}
@@ -1952,5 +1919,43 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 	MAKE_desc_from_field(&node->nod_desc, field);
 
 	return node;
+}
+
+/**
+
+	make_null
+	
+	@brief  Prepare a descriptor to signal SQL NULL
+	
+	@param desc
+	
+**/
+static void make_null(dsc* const desc)
+{
+	desc->dsc_dtype = dtype_long;
+	desc->dsc_sub_type = 0;
+	desc->dsc_length = sizeof(SLONG);
+	desc->dsc_scale = 0;
+	desc->dsc_flags |= DSC_nullable;
+}
+
+
+/**
+
+	make_placeholder_null
+
+	@brief  Prepare a descriptor to signal SQL NULL with a char(1) when
+	    the type is unknown. The descriptor will be a placeholder only.
+
+	@param desc
+
+**/
+static void make_placeholder_null(dsc* const desc)
+{
+	desc->dsc_dtype = dtype_text;
+	desc->dsc_length = 1;
+	desc->dsc_scale = 0;
+	desc->dsc_ttype() = 0;
+	desc->dsc_flags = DSC_nullable;
 }
 
