@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.9 2003-03-11 13:36:09 brodsom Exp $
+//	$Id: pretty.cpp,v 1.10 2003-04-02 11:49:35 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -73,7 +73,7 @@ typedef struct ctl {
 } *CTL;
 
 static int blr_format(CTL, const char *, ...);
-static int error(CTL, int, TEXT *, int *);
+static int error(CTL, int, TEXT *, int);
 static int indent(CTL, SSHORT);
 static int print_blr_dtype(CTL, BOOLEAN);
 static int print_blr_line(CTL, USHORT, UCHAR *);
@@ -170,7 +170,7 @@ int PRETTY_print_cdb( SCHAR * blr,
 			!(p = cdb_table[parameter])) {
 			return error(control, 0,
 						 "*** cdb parameter %d is undefined ***\n",
-						 (int *) parameter);
+						 parameter);
 		}
 		indent(control, level);
 		blr_format(control, p);
@@ -219,7 +219,7 @@ int PRETTY_print_dyn(
 	if (version != gds_dyn_version_1)
 		return error(control, offset,
 					 "*** dyn version %d is not supported ***\n",
-					 (int *) version);
+					 version);
 
 	blr_format(control, "gds__dyn_version_1, ");
 	PRINT_LINE;
@@ -270,7 +270,7 @@ PRETTY_print_form_map(SCHAR * blr,
 	if (version != PYXIS_MAP_VERSION1)
 		return error(control, offset,
 					 "*** dyn version %d is not supported ***\n",
-					 (int *) version);
+					 version);
 
 	blr_format(control, "PYXIS_MAP_VERSION1,");
 	PRINT_LINE;
@@ -380,7 +380,7 @@ PRETTY_print_menu(SCHAR * blr,
 	if (version != PYXIS_MENU_VERSION1)
 		return error(control, offset,
 					 "*** menu version %d is not supported ***\n",
-					 (int *) version);
+					 version);
 
 	blr_format(control, "PYXIS_MENU_VERSION1,");
 	PRINT_LINE;
@@ -450,7 +450,7 @@ PRETTY_print_sdl(SCHAR * blr,
 	if (version != gds_sdl_version1)
 		return error(control, offset,
 					 "*** sdl version %d is not supported ***\n",
-					 (int *) version);
+					 version);
 
 	blr_format(control, "gds__sdl_version1, ");
 	PRINT_LINE;
@@ -489,7 +489,7 @@ static int blr_format(CTL control, const char *string, ...)
 //		Put out an error msg and punt.
 //  
 
-static int error( CTL control, int offset, TEXT * string, int *arg)
+static int error( CTL control, int offset, TEXT * string, int arg)
 {
 
 	PRINT_LINE;
@@ -765,7 +765,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	if (operator_ > size || operator_ <= 0 || !(p = dyn_table[operator_]))
 		return error(control, offset,
 					 "*** dyn operator %d is undefined ***\n",
-					 (int *) operator_);
+					 (int) operator_);
 
 	indent(control, level);
 	blr_format(control, p);
@@ -982,7 +982,7 @@ static int print_sdl_verb( CTL control, SSHORT level)
 		operator_ <= 0 || !(p = sdl_table[operator_]))
 		return error(control, offset,
 					 "*** SDL operator %d is undefined ***\n",
-					 (int *) operator_);
+					 (int) operator_);
 
 	indent(control, level);
 	blr_format(control, p);
