@@ -798,7 +798,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 USHORT CVT2_make_string2(const dsc* desc,
 						 USHORT to_interp,
 						 UCHAR** address,
-						 vary* temp, USHORT length, STR* ptr, FPTR_ERROR err)
+						 vary* temp, USHORT length, str** ptr, FPTR_ERROR err)
 {
 /**************************************
  *

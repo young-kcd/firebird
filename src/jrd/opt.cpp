@@ -123,25 +123,25 @@ static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_join(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
-static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, STR, index_desc*, jrd_nod**);
+static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*, jrd_nod**);
 #ifdef SCROLLABLE_CURSORS
-static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, STR, index_desc*, RSE_GET_MODE);
+static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*, RSE_GET_MODE);
 #else
-static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, STR, index_desc*);
+static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*);
 #endif
 static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**, jrd_nod**);
 static RecordSource* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, jrd_nod**, bool, bool,
 						 jrd_nod**);
-static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*, STR, jrd_nod*, float);
+static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*, str*, jrd_nod*, float);
 static RecordSource*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_sort(thread_db*, OptimizerBlk*, UCHAR *, UCHAR *, RecordSource*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT);
 static void get_inactivities(const CompilerScratch*, ULONG*);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
-static STR make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
+static str* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
 static jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
 static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, index_desc*);
@@ -4221,7 +4221,7 @@ static void gen_join(thread_db*		tdbb,
 static RecordSource* gen_navigation(thread_db* tdbb,
 						  OptimizerBlk* opt,
 						  USHORT stream,
-						  jrd_rel* relation, STR alias, index_desc* idx, jrd_nod** sort_ptr)
+						  jrd_rel* relation, str* alias, index_desc* idx, jrd_nod** sort_ptr)
 {
 /**************************************
  *
@@ -4346,7 +4346,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 
 static RecordSource* gen_nav_rsb(thread_db* tdbb,
 					   OptimizerBlk* opt,
-					   USHORT stream, jrd_rel* relation, STR alias, index_desc* idx
+					   USHORT stream, jrd_rel* relation, str* alias, index_desc* idx
 #ifdef SCROLLABLE_CURSORS
 					   , RSE_GET_MODE mode
 #endif
@@ -4652,7 +4652,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	fb_assert(relation);
 
-	STR alias = make_alias(tdbb, csb, csb_tail);
+	str* alias = make_alias(tdbb, csb, csb_tail);
 	csb_tail->csb_flags |= csb_active;
 /* bug #8180 reported by Bill Karwin: when a DISTINCT and an ORDER BY 
    are done on different fields, and the ORDER BY can be mapped to an 
@@ -5001,7 +5001,7 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 				   RecordSource* rsb,
 				   jrd_nod* inversion,
 				   SSHORT stream,
-				   jrd_rel* relation, STR alias, jrd_nod* boolean, float cardinality)
+				   jrd_rel* relation, str* alias, jrd_nod* boolean, float cardinality)
 {
 /**************************************
  *
@@ -5743,7 +5743,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 }
 
 
-static STR make_alias(thread_db* tdbb, CompilerScratch* csb, 
+static str* make_alias(thread_db* tdbb, CompilerScratch* csb, 
 					  CompilerScratch::csb_repeat* base_tail)
 {
 /**************************************

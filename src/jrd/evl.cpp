@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.90 2004-05-21 23:26:38 skidder Exp $ 
+  * $Id: evl.cpp,v 1.91 2004-05-26 16:12:05 alexpeshkoff Exp $ 
  */
 
 /*
@@ -1986,7 +1986,8 @@ bool EVL_mb_matches(thread_db* tdbb,
 	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
 	UCS2_CHAR *pp1 = buffer1;
 	UCS2_CHAR *pp2 = buffer2;
-	STR buf1, buf2;
+	str* buf1;
+	str* buf2;
 	SSHORT err_code;
 	USHORT err_pos;
 
@@ -2040,7 +2041,7 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
  **************************************/
 	UCS2_CHAR buffer1[100];		/* arbitrary size for optimization */
 	UCS2_CHAR *pp1 = buffer1;
-	STR buf1;
+	str* buf1;
 	SSHORT err_code;
 	USHORT err_pos;
 
@@ -2094,7 +2095,8 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
 	UCS2_CHAR *pp1 = buffer1;
 	UCS2_CHAR *pp2 = buffer2;
-	STR buf1, buf2;
+	str* buf1;
+	str* buf2;
 	SSHORT err_code;
 	USHORT err_pos;
 
@@ -4553,7 +4555,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		buffer[BUFFER_LARGE];
 	SSHORT l2 = 0;
 	USHORT type1;
-	STR match_str = NULL;
+	str* match_str = NULL;
 	bool ret_val;
 
 	SET_TDBB(tdbb);
@@ -4907,7 +4909,7 @@ static dsc* substring(
 		else
 		{
 			const USHORT bufflen = MAX(BUFFER_LARGE, length);
-			STR temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
+			str* temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * bufflen) str();
 			UCHAR *buffer = temp_str->str_data;
 		
 			USHORT datalen = 0;

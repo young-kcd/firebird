@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.126 2004-05-24 01:03:41 brodsom Exp $
+$Id: met.epp,v 1.127 2004-05-26 16:12:05 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3214,8 +3214,6 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	jrd_fld* field;
 	jrd_req* request;
 	blb* blob;
-	UCHAR temp[256];
-	STR name, string;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3323,17 +3321,9 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 		/* Pick up field specific stuff */
 
-		UCHAR* buffer;
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &REL.RDB$RUNTIME);
-		if (blob->blb_max_segment < sizeof(temp))
-		{
-			buffer = temp;
-		}
-		else
-		{
-			string = FB_NEW_RPT(*tdbb->tdbb_default, blob->blb_max_segment) str();
-			buffer = string->str_data;
-		}
+		Firebird::HalfStaticArray<UCHAR, 256> temp;
+		UCHAR *buffer = temp.getBuffer(blob->blb_max_segment);
 
 		field = NULL;
 		for (;;)
@@ -3375,19 +3365,18 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 					if (!strcmp((char*)p, (char*)field->fld_name))
 						break;
 
-					name = FB_NEW_RPT(*dbb->dbb_permanent, length) str();
-					field->fld_name = (TEXT *) name->str_data;
+					field->fld_name = stringDup(*(dbb->dbb_permanent), (char*)p);
 				}
 				else {
 					field = FB_NEW_RPT(*dbb->dbb_permanent, length) jrd_fld();
 					(*vector)[field_id] = field;
 					field->fld_name = (TEXT *) field->fld_string;
+					/*
+					 * TMN: This const_cast equivalent is safe since
+					 * we just allocated the struct.
+					 */
+					strcpy((char*)field->fld_name, (char*)p);
 				}
-				/*
-				 * TMN: This const_cast equivalent is safe since
-				 * we just allocated the struct.
-				 */
-				strcpy((char*)field->fld_name, (char*)p);
 				field->fld_length = strlen(field->fld_name);
 
 				// CVC: Be paranoid and allow the possible trigger(s) to have a
@@ -3464,10 +3453,6 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		{
 			field->fld_security_name =
 				MET_save_name(tdbb, REL.RDB$DEFAULT_CLASS);
-		}
-		if (buffer != temp)
-		{
-			delete string;
 		}
 	END_FOR;
 
@@ -3931,14 +3916,14 @@ static jrd_nod* parse_param_blr(thread_db* tdbb,
 
 	blb*	blob   = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	SLONG	length = blob->blb_length + 10;
-	STR		temp   = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+	Firebird::HalfStaticArray<UCHAR, 512>	temp;
 
-	BLB_get_data(tdbb, blob, temp->str_data, length);
-	csb->csb_blr = temp->str_data;
+	BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
+	csb->csb_blr = temp.begin();
 
-	jrd_nod* node = PAR_blr(tdbb, NULL, temp->str_data, NULL, &csb,
+	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb,
 				&procedure->prc_request, false, 0);
-	delete temp;
+	csb->csb_blr = 0;
 
 	return node;
 }

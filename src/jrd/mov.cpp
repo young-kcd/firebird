@@ -529,7 +529,7 @@ int MOV_make_string(const dsc*	     desc,
 int MOV_make_string2(
 					 const dsc* desc,
 					 USHORT ttype,
-					 UCHAR** address, vary* temp, USHORT length, STR* ptr)
+					 UCHAR** address, vary* temp, USHORT length, str** ptr)
 {
 /**************************************
  *

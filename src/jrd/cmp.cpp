@@ -159,15 +159,6 @@ static USHORT base_stream(CompilerScratch*, jrd_nod**, bool);
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP");
 #endif
 
-inline static char* clone_cstring(JrdMemoryPool* pool, const char* source) {
-	if (!source) {
-		return NULL;
-	}
-	char* result = FB_NEW(*pool) char[strlen(source) + 1];
-    strcpy(result, source);
-    return result;
-}
-
 bool CMP_clone_is_active(const jrd_req* request)
 {
 /**************************************
@@ -2200,9 +2191,9 @@ void CMP_post_access(thread_db* tdbb,
 	}
 
 	AccessItem access(
-		clone_cstring(tdbb->tdbb_default, security_name),
+		stringDup(*(tdbb->tdbb_default), security_name),
 		view_id,
-		clone_cstring(tdbb->tdbb_default, name),
+		stringDup(*(tdbb->tdbb_default), name),
 		type_name,
 		mask
 	);

@@ -964,6 +964,15 @@ inline char* stringDup(MemoryPool& p, const char* s, size_t l)
 	return rc;
 }
 
+inline char* stringDup(MemoryPool& p, const char* s)
+{
+	if (! s)
+	{
+		return 0;
+	}
+	return stringDup(p, s, strlen(s));
+}
+
 } //namespace Jrd
 
 /* Lock levels */
@@ -977,7 +986,6 @@ public:
 	USHORT str_length;
 	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
 };
-typedef str *STR;
 
 
 /* Threading macros */
