@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.80 2003-09-01 07:58:04 brodsom Exp $
+$Id: common.h,v 1.81 2003-09-08 20:23:35 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -72,8 +72,6 @@ $Id: common.h,v 1.80 2003-09-01 07:58:04 brodsom Exp $
 #ifndef INCLUDE_FB_TYPES_H
 #include "../include/fb_types.h"
 #endif
-
-
 
 /*
   do not use links in source code to maintain platform neutraility
@@ -129,7 +127,6 @@ $Id: common.h,v 1.80 2003-09-01 07:58:04 brodsom Exp $
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* LINUX */
 
 /*****************************************************
@@ -205,8 +202,6 @@ int syslog(int pri, char *fmt, ...);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
-
 //format for __LINE__
 #define LINEFORMAT "d"
 
@@ -250,7 +245,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FASTER(from,to,length)	memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)		memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* Darwin Platforms */
 
 
@@ -283,7 +277,6 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* FREEBSD */
 
 /*****************************************************
@@ -315,7 +308,6 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* NETBSD */
 
 
@@ -433,7 +425,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif /* sun */
 
 
@@ -474,7 +465,6 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* hpux */
 
 
@@ -503,7 +493,6 @@ typedef unsigned int64 UATOM;
 #define FINI_ERROR      44
 #define STARTUP_ERROR   46		/* this is also used in iscguard.h, make sure these match */
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* VMS */
 
 
@@ -546,7 +535,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #endif /* IBM PowerPC */
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* IBM AIX */
 
 
@@ -616,7 +604,6 @@ typedef unsigned __int64 UINT64;
 #endif
 #endif
 
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #endif /* WIN_NT */
 
 // 23 Sep 2002, skidder, ALLOC_LIB_MEMORY moved here,
@@ -653,7 +640,6 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #define setregid(rgid,egid)     setgid(egid)
 */
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* SCO_EV */
 
 /*****************************************************
@@ -719,10 +705,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define FINI_OK         0
 #define FINI_ERROR      1
 #define STARTUP_ERROR   2		/* this is also used in iscguard.h, make sure these match */
-#endif
-
-#ifndef NULL
-#define NULL            0L
 #endif
 
 #ifndef TRUE
@@ -904,28 +886,33 @@ typedef struct
 #define FREE_LIB_MEMORY(block)          gds__free (block)
 #endif
 
+// This macros are used to workaround shortage of standard conformance
+// in Microsoft compilers. They could be replaced with normal procedure
+// and generic macro if MSVC would support C99-style __VA_ARGS__
+#define DEFINE_TRACE_ROUTINE(routine) void routine(const char* message, ...)
 
+#define IMPLEMENT_TRACE_ROUTINE(routine, subsystem) \
+void routine(const char* message, ...) { \
+	static const char name_facility[] = subsystem ","; \
+	char buffer[1000]; \
+	strcpy(buffer, name_facility); \
+	char *ptr = buffer + sizeof(name_facility)-1; \
+	va_list params; \
+	va_start(params, message); \
+	vsnprintf(ptr, sizeof(buffer)-sizeof(name_facility), message, params); \
+	va_end(params); \
+	gds__trace(buffer); \
+}
 
 #ifdef DEV_BUILD
 
 /* Define any debugging symbols and macros here.  This
    ifdef will be executed during development builds. */
 
-//#ifdef WIN_NT
-#define TRACE(msg)         		gds__log (msg)
-#define TRACE1(msg,p1)     		gds__log (msg,p1)
-#define TRACE2(msg,p1,p2)  		gds__log (msg,p1,p2)
-#define TRACE3(msg,p1,p2,p3) 	gds__log (msg,p1,p2,p3)
-#define TRACE4(msg,p1,p2,p3,p4) gds__log (msg,p1,p2,p3,p4)
-#define DEV_REPORT(msg)         gds__log (msg)
-//#endif
+#define TRACE(msg)				gds__trace (msg)
 
-#ifndef TRACE
-#define TRACE(msg) 				ib_fprintf (ib_stderr,msg)
-#define TRACE1(msg,p1)			ib_fprintf (ib_stderr,msg,p1)
-#define TRACE2(msg,p1,p2)		ib_fprintf (ib_stderr,msg,p1,p2)
-#define TRACE3(msg,p1,p2,p3)	ib_fprintf (ib_stderr,msg,p1,p2,p3)
-#define TRACE4(msg,p1,p2,p3,p4) ib_fprintf (ib_stderr,msg,p1,p2,p3,p4)
+#ifdef WIN_NT
+#define DEV_REPORT(msg)         gds__log (msg)
 #endif
 
 #ifndef DEV_REPORT
@@ -947,13 +934,15 @@ void GDS_breakpoint(int);
 #endif /* DEV_BUILD */
 
 #ifndef DEV_BUILD
+#ifndef DEV_REPORT
 #define DEV_REPORT(msg)         gds__log (msg)
+#endif
+#ifndef BREAKPOINT
 #define BREAKPOINT(x)			/* nothing */
+#endif
+#ifndef TRACE
 #define TRACE(msg)				/* nothing */
-#define TRACE1(msg,p1)			/* nothing */
-#define TRACE2(msg,p1,p2)		/* nothing */
-#define TRACE3(msg,p1,p2,p3)	/* nothing */
-#define TRACE4(msg,p1,p2,p3,p4)	/* nothing */
+#endif
 #endif
 
 

@@ -56,7 +56,7 @@
 #include "gen/codes.h"
 #endif
 #ifdef SUPERSERVER
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #endif
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 

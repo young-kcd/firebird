@@ -52,6 +52,7 @@
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/os/path_utils.h"
+#include "../jrd/misc_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -165,7 +166,7 @@ static const char * FB_PID_FILE = "fb_%d";
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #ifndef REQUESTER
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #endif
 
 #ifdef WIN_NT
@@ -495,6 +496,27 @@ static const UCHAR
 #define COMPARE_PATH(a,b)			strcmp(a,b)
 #endif
 
+
+// This function is very crude, but signal-safe.
+void gds__ulstr(char* buffer, ULONG value, int maxlen, char filler) {
+	ULONG n = value;
+	int c = 0;
+	while (n) {
+		n = n/10;
+		c++;
+	}
+	if (maxlen > c)
+		c = maxlen;
+	char *p = buffer + c;
+	while (value) {
+		*--p = '0' + (value % 10);
+		value = value/10;
+	}
+	while (p != buffer) {
+		*--p = filler;
+	}
+	buffer[c] = 0;
+}
 
 ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 {
@@ -1036,6 +1058,95 @@ void API_ROUTINE gds__interprete_a(
 }
 
 
+#define	SECS_PER_HOUR	(60 * 60)
+#define	SECS_PER_DAY	(SECS_PER_HOUR * 24)
+
+void API_ROUTINE gds__trace(const TEXT * text)
+{
+/**************************************
+ *
+ *	g d s _ t r a c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post trace event to a log file.
+ *  This function tries to be async-signal safe
+ *
+ **************************************/
+	
+	TEXT name[MAXPATHLEN];
+
+	
+	// This function is not truly signal safe now.
+	// It calls string::c_str() and may call getenv(), not good.
+	// We can only hope that failure is unlikely in it...
+	gds__prefix(name, LOGFILE);
+	
+	time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
+	
+	// 07 Sept 2003, Nickolay Samofatov.
+	// Since we cannot call ctime/localtime_r or anything else like this from 
+	// signal hanlders we need to decode time by hand. 
+	struct tm today;	
+
+	int days, rem;
+
+	days = now / SECS_PER_DAY;
+	rem = now % SECS_PER_DAY;
+    today.tm_hour = rem / SECS_PER_HOUR;
+    rem %= SECS_PER_HOUR;
+    today.tm_min = rem / 60;
+    today.tm_sec = rem % 60;
+
+	ndate(days + 40617 /* Number of first day of the Epoch in GDS counting */,
+		  &today);
+
+	char buffer[1024]; // 1K should be enough for the trace message
+	char *p = buffer;
+	gds__ulstr(p, today.tm_year+1900, 4, '0'); p+=4;
+	*p++ = '-';
+	gds__ulstr(p, today.tm_mon, 2, '0'); p+=2;
+	*p++ = '-';
+	gds__ulstr(p, today.tm_mday, 2, '0'); p+=2;
+	*p++ = 'T';
+	gds__ulstr(p, today.tm_hour, 2, '0'); p+=2;
+	*p++ = ':';
+	gds__ulstr(p, today.tm_min, 2, '0'); p+=2;
+	*p++ = ':';
+	gds__ulstr(p, today.tm_sec, 2, '0'); p+=2;
+	*p++ = ' ';
+	gds__ulstr(p, 
+#ifdef WIN_NT
+#ifdef SUPERSERVER
+			     GetCurrentThreadId(),
+#else
+				 GetCurrentProcessId(),				   
+#endif
+#else
+				 getpid(),
+#endif
+				 5, ' '); p += 5;
+	*p++ = ' ';
+	strcpy(p, text); p += strlen(p);
+	strcat(p, "\n"); p += strlen(p);
+#ifdef WIN_NT
+	// Signal-unsafe code
+	IB_FILE *file;
+	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
+	{
+		ib_fwrite(buffer, 1, p - buffer, file);
+		ib_fclose(file);
+	}
+#else
+	// Note: signal-safe code
+	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
+	if (file == -1) return;
+	write(file, buffer, p-buffer);
+	close(file);
+#endif
+}
+
 void API_ROUTINE gds__log(const TEXT * text, ...)
 {
 /**************************************
@@ -1074,8 +1185,8 @@ void API_ROUTINE gds__log(const TEXT * text, ...)
 
 	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
 	{
-		ib_fprintf(file, "%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN),
- 				   gdslogid, ctime(&now));
+		ib_fprintf(file, "\n%s%s\t%.25s\t", 
+				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		VA_START(ptr, text);
 		ib_vfprintf(file, text, ptr);
 		ib_fprintf(file, "\n\n");

@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.27 2003-08-10 01:22:12 brodsom Exp $
+$Id: inet_server.cpp,v 1.28 2003-09-08 20:23:41 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -154,11 +154,11 @@ extern "C" {
 static int assign(SCHAR *);
 #endif
 //static void name_process(UCHAR *);
-static void signal_handler(void);
+static void signal_handler(int);
 #ifdef SUPERSERVER
-static void signal_sigpipe_handler(void);
+static void signal_sigpipe_handler(int);
 #endif
-static void set_signal(int, FPTR_VOID);
+static void set_signal(int, void (*)(int));
 
 #ifdef WINDOWS_ROUTER
 static int atov(UCHAR *, UCHAR **, SSHORT);
@@ -193,6 +193,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	int done = FALSE;
 #if !(defined VMS)
 	fd_set mask;
+#endif
+
+// 01 Sept 2003, Nickolay Samofatov
+// In GCC version 3.1-3.3 we need to install special error handler
+// in order to get meaningful terminate() error message on stderr. 
+// In GCC 3.4 or later this is the default.
+#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
+    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 #endif
 
 #ifdef WINDOWS_ROUTER
@@ -340,7 +348,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 			gds__log("INET_SERVER/main: gds_inet_server restarted");
 		}
-		set_signal(SIGUSR1, (void(*)()) SIG_DFL);
+		set_signal(SIGUSR1, SIG_DFL);
 	}
 #endif
 
@@ -559,7 +567,7 @@ static int assign( SCHAR * string)
 
 
 #if !(defined VMS)
-static void set_signal( int signal_number, void (*handler) (void))
+static void set_signal( int signal_number, void (*handler) (int))
 {
 /**************************************
  *
@@ -571,33 +579,17 @@ static void set_signal( int signal_number, void (*handler) (void))
  *	Establish signal handler.
  *
  **************************************/
-#ifdef SYSV_SIGNALS
-	sigset(signal_number, handler);
-#else
-
-#ifndef HAVE_SIGACTION
-	struct sigvec vec;
-	struct sigvec old_vec;
-
-	vec.sv_handler = handler;
-	vec.sv_mask = 0;
-	vec.sv_flags = SV_INTERRUPT;
-	sigvector(signal_number, &vec, &old_vec);
-#else
 	struct sigaction vec, old_vec;
 
-	vec.sa_handler = (SIG_FPTR) handler;
-	memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
+	vec.sa_handler = handler;
+	sigemptyset(&vec.sa_mask);
 	vec.sa_flags = 0;
 	sigaction(signal_number, &vec, &old_vec);
-#endif
-
-#endif
 }
 #endif
 
 
-static void signal_handler(void)
+static void signal_handler(int)
 {
 /**************************************
  *
@@ -614,7 +606,7 @@ static void signal_handler(void)
 }
 
 #if (defined SUPERSERVER && defined UNIX )
-static void signal_sigpipe_handler(void)
+static void signal_sigpipe_handler(int)
 {
 /****************************************************
  *

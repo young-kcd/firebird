@@ -43,10 +43,6 @@ typedef enum idx_e {
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS, ...);
 void ERR_assert(const TEXT*, int);
 void DLL_EXPORT ERR_bugcheck(int);
@@ -60,21 +56,9 @@ void DLL_EXPORT ERR_punt(void);
 void DLL_EXPORT ERR_warning(ISC_STATUS, ...);
 void DLL_EXPORT ERR_log(int, int, const TEXT *);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 #endif /* REQUESTER */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 const TEXT* DLL_EXPORT ERR_cstring(const TEXT*);
 const TEXT* DLL_EXPORT ERR_string(const TEXT*, int);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_ERR_PROTO_H */

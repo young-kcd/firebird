@@ -56,9 +56,6 @@
 #define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
-extern "C" {
-
-
 static TEXT* jrd_failures = NULL;
 static TEXT* jrd_failures_ptr = NULL;
 
@@ -645,5 +642,3 @@ static void internal_error(ISC_STATUS status, int number)
 	ERR_post(status, gds_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif
-
-} /* extern "C" */

@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.69 2003-09-07 00:53:59 brodsom Exp $
+$Id: lock.cpp,v 1.70 2003-09-08 20:23:39 skidder Exp $
 */
 
 #include "firebird.h"
@@ -54,7 +54,7 @@ $Id: lock.cpp,v 1.69 2003-09-07 00:53:59 brodsom Exp $
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
@@ -202,7 +202,7 @@ static USHORT alloc_semaphore(OWN, ISC_STATUS *);
 #ifndef SUPERSERVER
 // This is either signal handler of called from blocking_thread
 // only SuperServer does direct calls to blocking_action2
-static void blocking_action(PTR);
+static void blocking_action(void *_owner_offset);
 #endif
 static void blocking_action2(PTR, PTR);
 #ifdef USE_BLOCKING_THREAD
@@ -236,7 +236,7 @@ static PTR grant_or_que(LRQ, LBL, SSHORT);
 static ISC_STATUS init_lock_table(ISC_STATUS *);
 static void init_owner_block(OWN, UCHAR, ULONG, USHORT);
 #ifdef USE_WAKEUP_EVENTS
-static void lock_alarm_handler(EVENT);
+static void lock_alarm_handler(void *event);
 #endif
 static void lock_initialize(void *, SH_MEM, int);
 static void insert_data_que(LBL);
@@ -371,6 +371,21 @@ static const UCHAR compatibility[] = {
 
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 
+void LOCK_ast_inhibit() {
+#ifdef MULTI_THREAD
+	AST_DISABLE;
+#else
+	ISC_inhibit();
+#endif
+}
+
+void LOCK_ast_enable() {
+#ifdef MULTI_THREAD
+	AST_ENABLE;
+#else
+	ISC_enable();
+#endif
+}
 
 int LOCK_convert(PTR		request_offset,
 				 UCHAR		type,
@@ -752,8 +767,7 @@ void LOCK_fini( ISC_STATUS * status_vector, PTR * owner_offset)
 	release_mutex();
 
 #ifdef USE_BLOCKING_SIGNALS
-	ISC_signal_cancel(LOCK_block_signal, ( void (*)()) blocking_action,
-                  (void *) offset);
+	ISC_signal_cancel(LOCK_block_signal, blocking_action,  (void *)offset);
 #endif
 
 	*owner_offset = (PTR)0;
@@ -816,7 +830,7 @@ int LOCK_init(
 
 #ifdef USE_BLOCKING_SIGNALS
 	if (LOCK_owner_offset)
-		ISC_signal(LOCK_block_signal, (void(*)()) blocking_action,
+		ISC_signal(LOCK_block_signal, blocking_action,
 				   (void *) LOCK_owner_offset);
 #endif
 
@@ -1002,7 +1016,7 @@ void LOCK_manager( PTR manager_owner_offset)
 		   by setting an alarm clock. */
 
 		ret = ISC_event_wait(1, &event_ptr, &value,
-							 LOCKMANTIMEOUT * 1000000, (FPTR_VOID) lock_alarm_handler,
+							 LOCKMANTIMEOUT * 1000000, lock_alarm_handler,
 							 event_ptr);
 
 #ifdef DEBUG
@@ -1559,7 +1573,7 @@ static void acquire( PTR owner_offset)
 					release_mutex();
 					ret = ISC_event_wait(1, &event_ptr, &value,
 								LOCK_solaris_stall * 1000000,
-								(void(*)()) lock_alarm_handler, event_ptr);
+								lock_alarm_handler, event_ptr);
 #ifdef DEV_BUILD
 					if (ret != FB_SUCCESS)
 						gds__log
@@ -1747,7 +1761,7 @@ static USHORT alloc_semaphore( OWN owner, ISC_STATUS * status_vector)
 
 
 #ifndef SUPERSERVER
-static void blocking_action( PTR owner_offset)
+static void blocking_action( void* _owner_offset)
 {
 /**************************************
  *
@@ -1771,6 +1785,7 @@ static void blocking_action( PTR owner_offset)
  *		   been done.
  *
  **************************************/
+	PTR owner_offset = (PTR)(U_IPTR)_owner_offset;
 
 /* Ignore signals that occur when executing in lock manager
    or when there is no owner block set up */
@@ -3195,7 +3210,7 @@ static void init_owner_block(
 
 
 #ifdef USE_WAKEUP_EVENTS
-static void lock_alarm_handler( EVENT event)
+static void lock_alarm_handler(void* event)
 {
 /**************************************
  *
@@ -3213,7 +3228,7 @@ static void lock_alarm_handler( EVENT event)
  *
  **************************************/
 
-	ISC_event_post(event);
+	ISC_event_post(reinterpret_cast<EVENT>(event));
 }
 #endif
 
@@ -5034,7 +5049,7 @@ static USHORT wait_for_request(
 				AST_ENABLE;
 				ret = ISC_event_wait(1, &event_ptr, &value,
 									 (timeout - current_time) * 1000000,
-									 (void(*)())lock_alarm_handler, event_ptr);
+									 lock_alarm_handler, event_ptr);
 				AST_DISABLE;
 #ifdef SUPERSERVER
 				THREAD_ENTER;

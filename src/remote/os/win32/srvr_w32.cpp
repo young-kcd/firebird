@@ -104,7 +104,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"

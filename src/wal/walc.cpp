@@ -41,7 +41,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/llio_proto.h"
 
@@ -177,7 +177,7 @@ void WALC_acquire( WAL WAL_handle, WALS * address)
 }
 
 
-void WALC_alarm_handler( EVENT event)
+void WALC_alarm_handler(void* _event)
 {
 /**************************************
  *
@@ -195,7 +195,7 @@ void WALC_alarm_handler( EVENT event)
  *
  **************************************/
 
-	ISC_event_post(event);
+	ISC_event_post(reinterpret_cast<EVENT>(_event));
 }
 
 

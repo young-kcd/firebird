@@ -42,7 +42,8 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/err_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../common/config/config.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -52,14 +53,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
-#pragma FB_COMPILER_MESSAGE("FIXFIXFIX!!! - DANGER!")
-// We currently can't include jrd/err_proto.h to get the function
-// declaration. :-<
-extern "C" {
-extern void DLL_EXPORT ERR_bugcheck_msg(const TEXT *);
-}
-
 
 #ifdef UNIX
 #include <signal.h>
@@ -100,7 +93,7 @@ static void delete_event(EVNT);
 static void delete_process(SLONG);
 static void delete_request(EVT_REQ);
 static void delete_session(SLONG);
-static AST_TYPE deliver(void);
+static AST_TYPE deliver(void* arg);
 static void deliver_request(EVT_REQ);
 static void exit_handler(void *);
 static EVNT find_event(USHORT, TEXT *, EVNT);
@@ -984,7 +977,7 @@ static void delete_session(SLONG session_id)
 }
 
 
-static AST_TYPE deliver(void)
+static AST_TYPE deliver(void* arg)
 {
 /**************************************
  *
@@ -1676,7 +1669,7 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 
 		value = ISC_event_clear(process->prb_event);
 		RELEASE;
-		deliver();
+		deliver(NULL);
 		ACQUIRE;
 		process = (PRB) ABS_PTR(EVENT_process_offset);
 		RELEASE;

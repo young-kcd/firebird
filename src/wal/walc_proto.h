@@ -25,7 +25,7 @@
 #define _WAL_WALC_PROTO_H_
 
 extern void	WALC_acquire (struct wal *, struct wals **);
-extern void	WALC_alarm_handler (struct event *);
+extern void	WALC_alarm_handler (void *);
 extern SSHORT	WALC_bug (ISC_STATUS *, TEXT *, TEXT *);
 extern void	WALC_build_dbg_filename (TEXT *, TEXT *);
 extern void	WALC_build_logname (TEXT *, TEXT *, SLONG);

@@ -67,7 +67,7 @@
 #include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
@@ -187,7 +187,7 @@ static void		error(ISC_STATUS *, TEXT *, ISC_STATUS);
 static SLONG	find_key(ISC_STATUS *, TEXT *);
 #endif
 #if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
-static void		alarm_handler(void);
+static void		alarm_handler(void* arg);
 static SLONG	open_semaphores(ISC_STATUS *, SLONG, int&);
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
@@ -454,7 +454,7 @@ int ISC_event_wait(SSHORT	count,
 				   EVENT*	events,
 				   SLONG*	values,
 				   SLONG	micro_seconds,
-				   FPTR_VOID timeout_handler,
+				   FPTR_VOID_PTR timeout_handler,
 				   void*	handler_arg)
 {
 /**************************************
@@ -722,7 +722,7 @@ int ISC_event_wait(
 				   EVENT * events,
 				   SLONG * values,
 				   SLONG micro_seconds,
-				   FPTR_VOID timeout_handler, void *handler_arg)
+				   FPTR_VOID_PTR timeout_handler, void *handler_arg)
 {
 /**************************************
  *
@@ -964,7 +964,7 @@ int ISC_event_wait(
 				   EVENT * events,
 				   SLONG * values,
 				   SLONG micro_seconds,
-				   FPTR_VOID timeout_handler, void *handler_arg)
+				   FPTR_VOID_PTR timeout_handler, void *handler_arg)
 {
 /**************************************
  *
@@ -986,17 +986,8 @@ int ISC_event_wait(
 	EVENT *event;
 	int semid, i;
 	int semnums[16], *semnum;
-#ifdef SYSV_SIGNALS
-	SLONG user_timer;
-	void *user_handler;
-#else
 	struct itimerval user_timer;
-#ifndef HAVE_SIGACTION
-	struct sigvec user_handler;
-#else
 	struct sigaction user_handler;
-#endif
-#endif
 
 /* If we're not blocked, the rest is a gross waste of time */
 
@@ -1170,7 +1161,7 @@ int ISC_event_wait(
 				   EVENT * events,
 				   SLONG * values,
 				   SLONG micro_seconds,
-				   void (*timeout_handler) (), void *handler_arg)
+				   FPTR_VOID_PTR timeout_handler, void *handler_arg)
 {
 /**************************************
  *
@@ -1371,7 +1362,7 @@ int DLL_EXPORT ISC_event_wait(
 		      EVENT * events,
 		      SLONG * values,
 		      SLONG micro_seconds,
-		      void (*timeout_handler) (),
+		      FPTR_VOID_PTR timeout_handler,
 		      void *handler_arg)
 {
 /**************************************
@@ -1499,7 +1490,8 @@ int DLL_EXPORT ISC_event_wait(
 							  EVENT * events,
 							  SLONG * values,
 							  SLONG micro_seconds,
-void (*timeout_handler) (), void *handler_arg)
+							  FPTR_VOID_PTR timeout_handler, 
+							  void *handler_arg)
 {
 /**************************************
  *
@@ -3803,7 +3795,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS * status_vector,
 
 #if (defined UNIX)
 void ISC_reset_timer(
-					 FPTR_VOID timeout_handler,
+					 FPTR_VOID_PTR timeout_handler,
 					 void *timeout_arg,
 					 SLONG * client_timer, void **client_handler)
 {
@@ -3818,29 +3810,17 @@ void ISC_reset_timer(
  *	the previous context.
  *
  **************************************/
-#ifndef SYSV_SIGNALS
 	struct itimerval internal_timer;
-#endif
 
 	ISC_signal_cancel(SIGALRM, timeout_handler, timeout_arg);
 
 /* Cancel the timer, then restore the previous handler and alarm */
 
-#ifdef SYSV_SIGNALS
-	alarm(0);
-	sigset(SIGALRM, *client_handler);
-	alarm(*client_timer);
-#else
 	timerclear(&internal_timer.it_interval);
 	timerclear(&internal_timer.it_value);
 	setitimer(ITIMER_REAL, &internal_timer, NULL);
-#ifndef HAVE_SIGACTION
-	sigvector(SIGALRM, client_handler, NULL);
-#else
 	sigaction(SIGALRM, (struct sigaction*)client_handler, NULL);
-#endif
 	setitimer(ITIMER_REAL, (itimerval*)client_timer, NULL);
-#endif
 }
 #endif
 
@@ -3848,7 +3828,7 @@ void ISC_reset_timer(
 #if (defined UNIX)
 void ISC_set_timer(
 				   SLONG micro_seconds,
-				   FPTR_VOID timeout_handler,
+				   FPTR_VOID_PTR timeout_handler,
 				   void *timeout_arg,
 				   SLONG * client_timer, void **client_handler)
 {
@@ -3862,51 +3842,23 @@ void ISC_set_timer(
  *	Set a timer for the specified amount of time.
  *
  **************************************/
-#ifdef SYSV_SIGNALS
-	void *d2;
-	SLONG d1;
-#else
 	struct itimerval internal_timer;
-#ifndef HAVE_SIGACTION
-	struct sigvec internal_handler;
-#else
 	struct sigaction internal_handler;
-#endif
-#endif
 
 /* Start by cancelling any existing timer */
 
-#ifdef SYSV_SIGNALS
-	if (!client_timer)
-		client_timer = &d1;
-	*client_timer = alarm(0);
-#else
 	timerclear(&internal_timer.it_interval);
 	timerclear(&internal_timer.it_value);
 	setitimer(ITIMER_REAL, &internal_timer,
 			  (struct itimerval *) client_timer);
-#endif
 
 /* Now clear the signal handler while saving the existing one */
 
-#ifdef SYSV_SIGNALS
-	if (!client_handler)
-		client_handler = &d2;
-	*client_handler = (void *) sigset(SIGALRM, SIG_DFL);
-#else
-#ifndef HAVE_SIGACTION
-	internal_handler.sv_handler = SIG_DFL;
-	internal_handler.sv_mask = 0;
-	internal_handler.sv_flags = SV_INTERRUPT;
-	sigvector(SIGALRM, &internal_handler, (struct sigvec *) client_handler);
-#else
-	internal_handler.sa_handler = (SIG_FPTR) SIG_DFL;
-	memset(&internal_handler.sa_mask, 0, sizeof(internal_handler.sa_mask));
+	internal_handler.sa_handler = SIG_DFL;
+	sigemptyset(&internal_handler.sa_mask);
 	internal_handler.sa_flags = SA_RESTART;
 	sigaction(SIGALRM, &internal_handler,
 			  (struct sigaction *) client_handler);
-#endif
-#endif
 
 	if (!micro_seconds)
 		return;
@@ -3915,12 +3867,6 @@ void ISC_set_timer(
 
 	ISC_signal(SIGALRM, timeout_handler, timeout_arg);
 
-#ifdef SYSV_SIGNALS
-	if (micro_seconds < 1000000)
-		alarm(1);
-	else
-		alarm(micro_seconds / 1000000);
-#else
 	if (micro_seconds < 1000000)
 		internal_timer.it_value.tv_usec = micro_seconds;
 	else {
@@ -3928,7 +3874,6 @@ void ISC_set_timer(
 		internal_timer.it_value.tv_usec = micro_seconds % 1000000;
 	}
 	setitimer(ITIMER_REAL, &internal_timer, NULL);
-#endif
 }
 #endif
 
@@ -4098,7 +4043,7 @@ void DLL_EXPORT ISC_unmap_file(
 
 
 #if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
-static void alarm_handler(void)
+static void alarm_handler(void* arg)
 {
 /**************************************
  *

@@ -3,24 +3,37 @@
  *	MODULE:		nbackup.cpp
  *	DESCRIPTION:	Command line utility for physical backup/restore
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * You may obtain a copy of the Licence at
+ * http://www.gnu.org/licences/lgpl.html
+ * 
+ * As a special exception this file can also be included in modules
+ * with other source code as long as that source code has been 
+ * released under an Open Source Initiative certificed licence.  
+ * More information about OSI certification can be found at: 
+ * http://www.opensource.org 
+ * 
+ * This module is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public Licence for more details.
+ * 
+ * This module was created by members of the firebird development 
+ * team.  All individual contributions remain the Copyright (C) of 
+ * those individuals and all rights are reserved.  Contributors to 
+ * this file are either listed below or can be obtained from a CVS 
+ * history command.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Created by: Nickolay Samofatov <skidder@bssys.com>
  *
- * The Original Code was created by Inprise Corporation
- * and its predecessors. Portions created by Inprise Corporation are
- * Copyright (C) Inprise Corporation.
+ *  Contributor(s):
+ * 
  *
- * Created by: Nickolay Samofatov <skidder@bssys.com>
+ *  $Id: nbackup.cpp,v 1.6 2003-09-08 20:23:43 skidder Exp $
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
  */
  
 
@@ -38,6 +51,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/ibase.h"
+#include <typeinfo>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -100,6 +114,7 @@ public:
 #else
 		vsprintf(temp, message, params);
 #endif
+		fprintf(stderr, "Failure: %s\n", temp);
 		va_end(params);
 		throw b_error(temp);
 	}
@@ -390,6 +405,10 @@ void nbackup::attach_database() {
 }
 
 void nbackup::detach_database() {
+	if (trans) {
+		if (isc_rollback_transaction(status, &trans))
+			pr_error(status, "rollback transaction");
+	}
 	if (isc_detach_database(status, &newdb))
 		pr_error(status, "detach database");
 }
@@ -418,8 +437,11 @@ void nbackup::lock_database() {
 	attach_database();
 	try {
 		internal_lock_database();
-	} catch(const std::exception&) {
-		detach_database();
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
+		detach_database();		
 		throw;
 	}
 	detach_database();
@@ -429,8 +451,11 @@ void nbackup::unlock_database() {
 	attach_database();
 	try {
 		internal_unlock_database();
-	} catch(const std::exception&) {
-		detach_database();
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
+		detach_database();		
 		throw;
 	}
 	detach_database();
@@ -579,7 +604,8 @@ void nbackup::backup_database(int level, const char* fname) {
 		ULONG curPage = 0;
 		while (true) {
 			if (curPage && page_buff->pag_scn() > backup_scn)
-				b_error::raise("Internal error. Database had been changed during backup");
+				b_error::raise("Internal error. Database page %d had been changed during backup"
+							   " (page SCN=%d, backup SCN=%d)", curPage, page_buff->pag_scn(), backup_scn);
 			if (level) {
 				if (page_buff->pag_scn() > prev_scn) {
 					write_file(backup, &curPage, sizeof(curPage));
@@ -642,7 +668,10 @@ void nbackup::backup_database(int level, const char* fname) {
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
 		
-	} catch (const std::exception&) {	
+	} catch (const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		free(page_buff);
 		if (delete_backup)
 			unlink(bakname);
@@ -793,7 +822,10 @@ void nbackup::restore_database(int filecount, char* files[]) {
 			close_backup();
 			curLevel++;
 		}
-	} catch(const std::exception&) {
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		free(page);
 		if (delete_database)
 			unlink(dbname);
@@ -855,7 +887,7 @@ int main( int argc, char *argv[] )
 				}
 				
 	} catch (const std::exception& ex) {
-		fprintf(stderr, "Failure: %s\n", ex.what());
+		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}
 	

@@ -87,6 +87,7 @@ ULONG	API_ROUTINE gds__free(void*);
 SLONG	API_ROUTINE gds__interprete(char*, ISC_STATUS**);
 void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);
 void	API_ROUTINE gds__log(const TEXT*, ...);
+void	API_ROUTINE gds__trace(const TEXT*);
 void	API_ROUTINE gds__log_status(TEXT*, ISC_STATUS*);
 int		API_ROUTINE gds__msg_close(void*);
 SSHORT	API_ROUTINE gds__msg_format(void*  handle,
@@ -133,6 +134,7 @@ void	API_ROUTINE isc_print_sqlerror(SSHORT, ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 SINT64	API_ROUTINE isc_portable_integer(UCHAR*, SSHORT);
 void	gds__cleanup(void);
+extern void gds__ulstr(char* buffer, ULONG value, int maxlen, char filler);
 
 
 #if (defined SOLARIS && !defined(MAP_ANON))

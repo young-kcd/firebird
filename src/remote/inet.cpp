@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.72 2003-08-28 12:56:15 brodsom Exp $
+$Id: inet.cpp,v 1.73 2003-09-08 20:23:41 skidder Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -113,7 +113,7 @@ extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #ifndef REQUESTER
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/sch_proto.h"
 #endif /* REQUESTER */
 
@@ -367,7 +367,7 @@ static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
 #if !(defined WIN_NT)
-static void		inet_handler(PORT);
+static void		inet_handler(void* _port);
 #endif
 static caddr_t	inet_inline(XDR *, u_int);
 static int		inet_error(PORT, const TEXT *, ISC_STATUS, int);
@@ -1655,7 +1655,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 		}
 
 		new_port->port_ast = ast;
-		ISC_signal(SIGURG, (FPTR_VOID)inet_handler, new_port);
+		ISC_signal(SIGURG, inet_handler, new_port);
 	}
 #endif /* SIOCSPGRP */
 
@@ -1959,7 +1959,7 @@ static void disconnect( PORT port)
 
 #if !(defined VMS || defined WIN_NT)
 	if (port->port_ast) {
-		ISC_signal_cancel(SIGURG, (FPTR_VOID) inet_handler, port);
+		ISC_signal_cancel(SIGURG, inet_handler, port);
 	}
 #endif
 
@@ -3087,7 +3087,7 @@ static u_int inet_getpostn( XDR * xdrs)
 }
 
 #if !(defined WIN_NT)
-static void inet_handler( PORT port)
+static void inet_handler(void *_port)
 {
 /**************************************
  *
@@ -3103,6 +3103,7 @@ static void inet_handler( PORT port)
  *	handler to do something appropriate.
  *
  **************************************/
+	PORT port = reinterpret_cast<PORT>(_port);
 	int n;
 	SCHAR junk;
 
@@ -3736,11 +3737,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 
 #ifdef HAVE_SETITIMER
 	struct itimerval internal_timer, client_timer;
-#ifdef HAVE_SIGACTION
 	struct sigaction internal_handler, client_handler;
-#else
-	struct sigvec internal_handler, client_handler;
-#endif
 #endif /* HAVE_SETITIMER */
 
 	data = buffer;
@@ -3808,18 +3805,10 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 				internal_timer.it_value.tv_sec = 0;
 				internal_timer.it_value.tv_usec = 0;
 				setitimer(ITIMER_REAL, &internal_timer, &client_timer);
-#ifndef HAVE_SIGACTION
-				internal_handler.sv_handler = alarm_handler;
-				internal_handler.sv_mask = 0;
-				internal_handler.sv_flags = SV_INTERRUPT;
-				sigvector(SIGALRM, &internal_handler, &client_handler);
-#else
-				internal_handler.sa_handler = (SIG_FPTR)alarm_handler;
-				memset(&internal_handler.sa_mask, 0,
-					   sizeof(internal_handler.sa_mask));
+				internal_handler.sa_handler = alarm_handler;
+				sigemptyset(&internal_handler.sa_mask);
 				internal_handler.sa_flags = SA_RESTART;
 				sigaction(SIGALRM, &internal_handler, &client_handler);
-#endif
 			}
 
 			internal_timer.it_value.tv_sec = 0;
@@ -3835,11 +3824,7 @@ static bool_t packet_send( PORT port, SCHAR * buffer, SSHORT buffer_length)
 			internal_timer.it_value.tv_sec = 0;
 			internal_timer.it_value.tv_usec = 0;
 			setitimer(ITIMER_REAL, &internal_timer, NULL);
-#ifdef HAVE_SIGACTION
 			sigaction(SIGALRM, &client_handler, NULL);
-#else
-			sigvector(SIGALRM, &client_handler, NULL);
-#endif
 			setitimer(ITIMER_REAL, &client_timer, NULL);
 		}
 #endif /* HAVE_SETITIMER */

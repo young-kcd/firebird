@@ -40,5 +40,7 @@ SLONG	LOCK_read_data2(SLONG, USHORT, UCHAR *, USHORT, SLONG);
 void	LOCK_re_post(int (*)(void *), void *, SLONG);
 bool	LOCK_shut_manager(void);
 SLONG	LOCK_write_data(SLONG, SLONG);
+void LOCK_ast_inhibit();
+void LOCK_ast_enable();
 
 #endif /* _LOCK_LOCK_PROTO_H_ */

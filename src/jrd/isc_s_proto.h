@@ -49,7 +49,7 @@ extern int ISC_event_init_shared(struct event *,
 extern int DLL_EXPORT ISC_event_post(struct event *);
 extern int DLL_EXPORT ISC_event_wait(SSHORT,
 									 struct event **,
-									 SLONG *, SLONG, FPTR_VOID, void *);
+									 SLONG *, SLONG, FPTR_VOID_PTR, void *);
 
 #ifdef WIN_NT
 extern void *ISC_make_signal(BOOLEAN, BOOLEAN, int, int);
@@ -89,8 +89,8 @@ extern ULONG ISC_exception_post(ULONG, TEXT *);
 
 extern UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS *,
 										struct sh_mem *, SLONG, USHORT);
-extern void ISC_reset_timer(FPTR_VOID, void *, SLONG *, void **);
-extern void ISC_set_timer(SLONG, FPTR_VOID, void *, SLONG *, void **);
+extern void ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
+extern void ISC_set_timer(SLONG, FPTR_VOID_PTR, void *, SLONG *, void **);
 extern void DLL_EXPORT ISC_unmap_file(ISC_STATUS *, struct sh_mem *, USHORT);
 
 

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.154 2003-08-22 10:26:06 aafemt Exp $
+dnl $Id: configure.in,v 1.155 2003-09-08 20:23:29 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -610,6 +610,7 @@ mkdir -p temp/client.util/utilities/guard
 mkdir -p temp/client.util/utilities/gsec
 mkdir -p temp/client.util/utilities/gstat
 mkdir -p temp/client.util/utilities/install
+mkdir -p temp/client.util/lock
 mkdir -p temp/client.util/iscguard
 mkdir -p temp/client.util/remote/os/win32
 mkdir -p temp/client.util/jrd/os/win32
@@ -640,6 +641,7 @@ mkdir -p temp/libfbstatic/common/config
 mkdir -p temp/embed.lockmgr/lock
 mkdir -p temp/embed.util/utilities/gstat
 mkdir -p temp/embed.util/utilities/gsec
+mkdir -p temp/embed.util/lock
 mkdir -p temp/embed.gbak/burp
 mkdir -p temp/embed.gfix/alice
 mkdir -p temp/embed.isql/isql

@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.3 2003-08-06 16:30:36 skidder Exp $
+# $Id: prefix.solx86gcc,v 1.4 2003-09-08 20:23:31 skidder Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -62,7 +62,7 @@ LIB_LINK_OPTIONS:= -G
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 #LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup
-CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin nbackup
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp

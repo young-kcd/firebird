@@ -206,7 +206,7 @@ static void service_fork(TEXT *, SVC);
 static void service_get(SVC, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
 static void service_put(SVC, SCHAR *, USHORT);
 #if !defined(WIN_NT) && !defined(SUPERSERVER)
-static void timeout_handler(SVC);
+static void timeout_handler(void *service);
 #endif
 #if defined(WIN_NT) && !defined(SUPERSERVER)
 static USHORT service_read(SVC, SCHAR *, USHORT, USHORT);
@@ -3116,17 +3116,8 @@ static void service_get(
  *	that we have checked out of the scheduler.
  *
  **************************************/
-#ifdef SYSV_SIGNALS
-	SLONG sv_timr;
-	void *sv_hndlr;
-#else
 	struct itimerval sv_timr;
-#ifndef HAVE_SIGACTION
-	struct sigvec sv_hndlr;
-#else
 	struct sigaction sv_hndlr;
-#endif
-#endif
 	int c;
 	//USHORT timed_out;
 	SCHAR *buf;
@@ -3140,7 +3131,7 @@ static void service_get(
 	buf = buffer;
 
 	if (timeout) {
-		ISC_set_timer((SLONG) (timeout * 100000), (void(*)())timeout_handler, service,
+		ISC_set_timer((SLONG) (timeout * 100000), timeout_handler, service,
 					  (SLONG*)&sv_timr, (void**)&sv_hndlr);
 		iter = timeout * 10;
 	}
@@ -3165,7 +3156,7 @@ static void service_get(
 		else {
 			errno_save = errno;
 			if (timeout)
-				ISC_reset_timer((void(*)())timeout_handler, service, (SLONG*)&sv_timr,
+				ISC_reset_timer(timeout_handler, service, (SLONG*)&sv_timr,
 								(void**)&sv_hndlr);
 			io_error("ib_getc", errno_save, "service pipe", isc_io_read_err,
 					 TRUE);
@@ -3173,7 +3164,7 @@ static void service_get(
 	}
 
 	if (timeout) {
-		ISC_reset_timer((void(*)())timeout_handler, service, (SLONG*)&sv_timr, (void**)&sv_hndlr);
+		ISC_reset_timer(timeout_handler, service, (SLONG*)&sv_timr, (void**)&sv_hndlr);
 		if (!iter)
 			service->svc_flags |= SVC_timeout;
 	}
@@ -3215,7 +3206,7 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 }
 
 
-static void timeout_handler(SVC service)
+static void timeout_handler(void *service)
 {
 /**************************************
  *

@@ -47,7 +47,7 @@
 #include "../wal/walw_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/jrn_proto.h"
 #include "../jrd/llio_proto.h"
@@ -493,8 +493,7 @@ static SSHORT WALW_writer(ISC_STATUS * status_vector, WAL WAL_handle)
 			WALC_release(WAL_handle);
 			acquired = false;
 			ISC_event_wait(1, &ptr, &value, WALW_WRITER_TIMEOUT_USECS,
-						   reinterpret_cast < void (*)() >
-						   (WALC_alarm_handler), ptr);
+						   WALC_alarm_handler, ptr);
 			continue;
 		}
 

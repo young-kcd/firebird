@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.25 2003-09-08 14:09:34 dimitr Exp $
+$Id: why.cpp,v 1.26 2003-09-08 20:23:35 skidder Exp $
 */
 
 #include "firebird.h"
@@ -76,7 +76,7 @@ $Id: why.cpp,v 1.25 2003-09-08 14:09:34 dimitr Exp $
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #ifndef REQUESTER
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
 #endif

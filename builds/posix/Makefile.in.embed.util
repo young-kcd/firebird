@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.10 2003-08-06 16:30:34 skidder Exp $
+#  $Id: Makefile.in.embed.util,v 1.11 2003-09-08 20:23:31 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -39,6 +39,11 @@ include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
+
+
+LOCKPRINT_Files= print.cpp
+LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files))
+LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
 
 
 NBACKUP_Files= nbackup.cpp
@@ -95,7 +100,7 @@ AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin nbackup
+.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin nbackup fb_lock_print
 
 all: $(EMBED_UTIL_TARGETS)
 
@@ -113,6 +118,11 @@ $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
 
 $(NBACKUP):	$(NBACKUP_Objects) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+
+fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
+
+$(LOCKPRINT):	$(LOCKPRINT_Objects) 
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 

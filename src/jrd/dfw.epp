@@ -1090,10 +1090,8 @@ static bool add_difference( TDBB tdbb, SSHORT phase, DFW work, JRD_TRA transacti
 		return true;
 	case 3:
 		if (!dbb->backup_manager->lock_state(true))
-			ERR_post(gds_lock_conflict, 0);
+			ERR_punt();
 		try {
-			if (!dbb->backup_manager->actualize_state(tdbb->tdbb_status_vector))
-				ERR_punt();
 			if (dbb->backup_manager->get_state() != nbak_state_normal)
 			{
 				ERR_post(gds_no_meta_update,
@@ -1141,17 +1139,15 @@ static bool delete_difference(	TDBB	tdbb,
 		return true;
 	case 3:
 		if (!dbb->backup_manager->lock_state(true))
-			ERR_post(gds_lock_conflict, 0);
+			ERR_punt();
 		try {
-			if (!dbb->backup_manager->actualize_state(tdbb->tdbb_status_vector))
-				ERR_punt();
 			if (dbb->backup_manager->get_state() != nbak_state_normal)
 			{
 				ERR_post(gds_no_meta_update,
 						 gds_arg_gds, gds_wrong_backup_state, 0);
 			}
 			dbb->backup_manager->set_difference(NULL);
-		} catch(const std::exception&){
+		} catch(const std::exception&) {
 			dbb->backup_manager->unlock_state();
 			throw;
 		}

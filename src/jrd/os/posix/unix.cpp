@@ -65,7 +65,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
-#include "../jrd/isc_i_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"

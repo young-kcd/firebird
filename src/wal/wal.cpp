@@ -1279,7 +1279,7 @@ static SSHORT grpc_wait_for_grouping(
 				   &ptr,
 				   &value,
 				   WAL_handle->wal_grpc_wait_usecs,
-				   reinterpret_cast < void (*)() > (WALC_alarm_handler), ptr);
+				   WALC_alarm_handler, ptr);
 
 /* Now make sure that the other group-commit block is available */
 
@@ -1292,8 +1292,7 @@ static SSHORT grpc_wait_for_grouping(
 		ptr = &WAL_EVENTS[WAL_GCOMMIT_STALL_SEM];
 		ISC_event_wait(1, &ptr, &value,
 					   WAL_handle->wal_grpc_wait_other_coord_usecs,
-					   reinterpret_cast < void (*)() > (WALC_alarm_handler),
-					   ptr);
+					   WALC_alarm_handler, ptr);
 		WALC_acquire(WAL_handle, &WAL_segment);
 		WAL_CHECK_BUG(WAL_handle, WAL_segment);
 		if ((WAL_segment->wals_flags & WALS_GRP_COMMIT_IN_PROGRESS) &&
@@ -1359,10 +1358,10 @@ GRP_COMMIT * grpc)
 	ptr = &WAL_EVENTS[grpc->grp_commit_event_num];
 	value = ISC_event_clear(ptr);
 	WALC_release(WAL_handle);
-	while (ISC_event_wait
-		   (1, &ptr, &value, WAL_handle->wal_grpc_wait_coord_usecs,
-			reinterpret_cast < void (*)() > (WALC_alarm_handler),
-			ptr) != FB_SUCCESS) {
+	while (ISC_event_wait(1, &ptr, &value, 
+						  WAL_handle->wal_grpc_wait_coord_usecs, 
+						  WALC_alarm_handler, ptr) != FB_SUCCESS) 
+	{
 		/* Check to make sure that the coordinator is still alive. */
 
 		WALC_acquire(WAL_handle, &WAL_segment);
@@ -1576,8 +1575,7 @@ static SSHORT wait_for_writer( ISC_STATUS * status_vector, WAL WAL_handle)
 
 	ret =
 		ISC_event_wait(1, &ptr, &value, WAIT_TIME,
-					   reinterpret_cast < void (*)() > (WALC_alarm_handler),
-					   ptr);
+					   WALC_alarm_handler, ptr);
 	if (ret == FB_FAILURE) {
 		/* We got out because of timeout.  May be our condition is
 		   already met.  Let the caller decide that.  In any case, make

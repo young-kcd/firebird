@@ -95,9 +95,14 @@ class bdb : public pool_alloc<type_bdb>
 	struct tdbb*bdb_io;					/* thread holding io latch */
 	UATOM		bdb_ast_flags;			/* flags manipulated at AST level */
 	USHORT		bdb_flags;
-	USHORT		bdb_length;					/* Length of journal records */
-	SSHORT		bdb_use_count;				/* Number of active users */
-	SSHORT		bdb_scan_count;				/* concurrent sequential scans */
+	USHORT		bdb_length;				/* Length of journal records */
+	SSHORT		bdb_use_count;			/* Number of active users */
+	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
+	USHORT		bdb_write_direction;    /* Where to write buffer */
+	ULONG       bdb_difference_page;    /* Number of page in difference file */
+	SLONG       bdb_diff_generation;    /* Number of backup/restore cycle for 
+										   this database in current process.
+										   Used in CS only. */
 	struct tdbb*bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
 typedef bdb *BDB;
@@ -124,6 +129,13 @@ typedef bdb *BDB;
 /* bdb_ast_flags */
 
 #define BDB_blocking 		1	/* a blocking ast was sent while page locked */
+
+/* bdb_write_direction values */
+
+#define BDB_write_undefined 0
+#define BDB_write_normal	1
+#define BDB_write_diff		2
+#define BDB_write_both		3
 
 
 /* PRE -- Precedence block */

@@ -67,6 +67,7 @@ void		CCH_release_journal(TDBB, SLONG);
 BOOLEAN		CCH_rollover_to_shadow(struct dbb *, struct fil *, BOOLEAN);
 void		CCH_unwind(TDBB, BOOLEAN);
 BOOLEAN		CCH_validate(struct win *);
+void		CCH_flush_database(TDBB tdbb);
 BOOLEAN		CCH_write_all_shadows(TDBB, struct sdw *, struct bdb *,
 					 ISC_STATUS *, USHORT, BOOLEAN);
 

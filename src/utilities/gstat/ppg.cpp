@@ -31,6 +31,8 @@
 #include "../jrd/jrd_time.h"
 #include "../jrd/gds.h"
 #include "../jrd/ods.h"
+#include "../jrd/os/guid.h"
+#include "../jrd/nbak.h"
 #include "../jrd/gds_proto.h"
 
 static const TEXT months[][4] = {
@@ -181,6 +183,17 @@ void PPG_print_header( HDR header, SLONG page,
 				FPRINTF(outfile, ", ");
 			FPRINTF(outfile, "read only");
 		}
+		if (flags & hdr_backup_mask) {
+			if (flag_count++)
+				FPRINTF(outfile, ", ");
+			if ((flags & hdr_backup_mask) == nbak_state_stalled)
+				FPRINTF(outfile, "backup lock");
+			else
+				if ((flags & hdr_backup_mask) == nbak_state_merge)
+					FPRINTF(outfile, "backup merge");
+				else
+					FPRINTF(outfile, "wrong backup state %d", flags & hdr_backup_mask);
+		}
 		FPRINTF(outfile, "\n");
 	}
 
@@ -229,8 +242,23 @@ void PPG_print_header( HDR header, SLONG page,
 			break;
 
 		case HDR_cache_file:
-			FPRINTF(outfile, "\tShared Cache file:\t\t%s\n", p + 2);
+			memcpy(temp, p + 2, p[1]);
+			temp[p[1]] = '\0';
+			FPRINTF(outfile, "\tShared Cache file:\t\t%s\n", temp);
 			break;
+
+		case HDR_difference_file:
+			memcpy(temp, p + 2, p[1]);
+			temp[p[1]] = '\0';
+			FPRINTF(outfile, "\tBackup difference file:\t%s\n", temp);
+			break;
+
+		case HDR_backup_guid: {
+			char buff[GUID_BUFF_SIZE];
+			GuidToString(buff, reinterpret_cast<FB_GUID*>(p+2));
+			FPRINTF(outfile, "\tDatabase backup GUID:\t%s\n", buff);
+			break;
+		}
 
 		default:
 			if (*p > HDR_max)

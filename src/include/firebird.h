@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.13 2003-08-10 15:43:21 skidder Exp $
+ *  $Id: firebird.h,v 1.14 2003-09-08 20:23:34 skidder Exp $
  *
  */
 
@@ -69,6 +69,10 @@
 #if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
 	defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
 #define MULTI_THREAD 1
+#endif
+
+#ifndef NULL
+#define NULL            0L
 #endif
 
 #endif /* INCLUDE_Firebird */

@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.13 2003-08-10 15:43:22 skidder Exp $
+$Id: thd.h,v 1.14 2003-09-08 20:23:35 skidder Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -137,8 +137,6 @@ struct IB_RTL_CRITICAL_SECTION
 #endif
 
 #ifdef MULTI_THREAD
-#define SIGNAL_INHIBIT
-#define SIGNAL_ENABLE
 #ifdef SUPERSERVER
 #define THREAD_ENTER		SCH_enter()
 #define THREAD_EXIT		SCH_exit()
@@ -161,11 +159,6 @@ struct IB_RTL_CRITICAL_SECTION
 #define THREAD_VALIDATE
 #define THREAD_SLEEP(msecs)	THD_sleep (msecs)
 #define THREAD_YIELD
-#endif
-
-#ifndef SIGNAL_INHIBIT
-#define SIGNAL_INHIBIT		ISC_inhibit()
-#define SIGNAL_ENABLE		ISC_enable()
 #endif
 
 /* Thread priorities (may be ignored) */

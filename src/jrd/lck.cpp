@@ -191,6 +191,13 @@ JMB: As part of the c++ conversion I removed the check for lck block type.
 #define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
 
+void LCK_ast_inhibit() {
+	LOCK_ast_inhibit();
+}
+
+void LCK_ast_enable() {
+	LOCK_ast_enable();
+}
 
 void LCK_assert(TDBB tdbb, LCK lock)
 {
@@ -495,6 +502,7 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
 	case LCK_range_relation:
 	case LCK_backup_state:
 	case LCK_backup_alloc:
+	case LCK_backup_database:
 		return LCK_OWNER_HANDLE_DBB;
 	case LCK_attachment:
 	case LCK_relation:

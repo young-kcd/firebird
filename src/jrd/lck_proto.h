@@ -46,6 +46,8 @@ extern SLONG LCK_read_data(struct lck *);
 extern void LCK_release(TDBB, struct lck *);
 extern void LCK_re_post(struct lck *);
 extern void LCK_write_data(struct lck *, SLONG);
+extern void LCK_ast_inhibit();
+extern void LCK_ast_enable();
 
 #ifdef __cplusplus
 } /* extern "C" */
