@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.56 2004-05-10 07:19:16 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.57 2004-08-20 05:11:51 skidder Exp $
 #
 
 ROOT=..
@@ -497,10 +497,17 @@ $(FIREBIRD)/misc/% :: $(BLD_ROOT)/install/misc/%
 #___________________________________________________________________________
 #
 
-.PHONY: install package packages dist
+.PHONY: install package packages dist srctarfile
 
 install package packages dist:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.install $@
+
+SrcTarFile=Firebird$(ArchPrefix)-$(Version).tar.bz2
+
+srctarfile: $(SrcTarFile)
+
+$(SrcTarFile) :
+	$(GEN_ROOT)/../src/misc/src_bundle.sh
 
 
 #___________________________________________________________________________
