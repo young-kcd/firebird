@@ -1,3 +1,120 @@
+2003-10-07 13:02  stryqx
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Define clock correctly, rather than casting it.  Pointed out by
+	Claudio.
+
+2003-10-07 12:48  stryqx
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp:
+	
+	style
+
+2003-10-07 12:43  stryqx
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp:
+	
+	style
+
+2003-10-07 12:38  stryqx
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	style
+
+2003-10-07 12:32  stryqx
+
+	* firebird2/src/: extlib/fbudf/fbudf.cpp, qli/dtr.cpp:
+	
+	Fix build with gcc 3.3
+
+2003-10-07 12:17  stryqx
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp:
+	
+	Fix build with gcc 3.3
+
+2003-10-07 12:12  stryqx
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Fix build with gcc 3.3
+
+2003-10-07 11:59  robocop
+
+	* firebird2/src/gpre/: int.cpp, int_cxx.cpp:
+	
+	Generally speaking, it's problematic to dereference null pointers. 
+	:-)
+
+2003-10-07 11:58  robocop
+
+	* firebird2/src/gpre/: gpre.h, gpre_meta.epp, gpre_meta.h,
+	gpre_meta_boot.cpp, pas.cpp:
+	
+	const correctness and vars in scope
+
+2003-10-07 11:56  robocop
+
+	* firebird2/src/wal/walw.cpp:
+	
+	Renamed rogue variable
+
+2003-10-07 11:54  robocop
+
+	* firebird2/src/jrd/: log.h, common.h:
+	
+	Trivial style change
+
+2003-10-07 10:34  eku
+
+	* firebird2/src/wal/walw.cpp:
+	
+	Fixed compile error.
+
+2003-10-07 09:24  eku
+
+	* firebird2/src/jrd/common.h:
+	
+	Please use the results of configure.
+
+2003-10-07 08:59  stryqx
+
+	* firebird2/src/jrd/log.h:
+	
+	Fix build with gcc 3.3.  Let me know if there's a better fix.
+
+2003-10-07 08:48  stryqx
+
+	* firebird2/builds/posix/prefix.freebsd:
+	
+	Fix typo
+
+2003-10-07 08:43  stryqx
+
+	* firebird2/builds/posix/prefix.freebsd:
+	
+	Fix up build flags.
+
+2003-10-07 08:34  eku
+
+	* firebird2/src/jrd/pag.cpp:
+	
+	Fixed compile error.
+
+2003-10-07 08:20  eku
+
+	* firebird2/src/gpre/pat.cpp:
+	
+	Fixed "name lookup of `n' changed for new ISO `for' scoping"
+
+2003-10-07 08:02  stryqx
+
+	* firebird2/builds/posix/prefix.freebsd:
+	
+	Make builds work on both FreeBSD-stable and FreeBSD-current.
+
 2003-10-06 15:20  alexpeshkoff
 
 	* firebird2/doc/sql.extensions/: README.execute_statement,
