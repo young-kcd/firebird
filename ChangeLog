@@ -1,3 +1,52 @@
+2004-02-02 12:00  robocop
+
+	* firebird2/src/: alice/all.cpp, alice/all.h, alice/lls.h,
+	burp/restore.epp, common/classes/class_test.cpp, dsql/alld.cpp,
+	dsql/ddl.cpp, dsql/dsql.cpp, dsql/dsql.h, dsql/dsql.tab.h,
+	dsql/errd.cpp, dsql/gen.cpp, dsql/make.cpp, dsql/make_proto.h,
+	dsql/metd.epp, dsql/movd.cpp, dsql/parse.cpp, dsql/parse.y,
+	dsql/pass1.cpp, dsql/sqlda.h, dsql/user_dsql.cpp, dsql/utld.cpp,
+	dsql/utld_proto.h, dudley/ddl.cpp, dudley/ddl.h,
+	dudley/ddl_proto.h, dudley/exe.epp, dudley/expand.cpp,
+	dudley/expr.cpp, dudley/extract.epp, dudley/parse.cpp,
+	dudley/parse_proto.h, gpre/ada.cpp, gpre/c_cxx.cpp, gpre/cmd.cpp,
+	gpre/cme.cpp, gpre/cmp.cpp, gpre/cmp_proto.h, gpre/cob.cpp,
+	gpre/exp.cpp, gpre/ftn.cpp, gpre/gpre.h, gpre/gpre_meta.epp,
+	gpre/gpre_meta.h, gpre/gpre_meta_boot.cpp, gpre/msc.cpp,
+	gpre/msc_proto.h, gpre/par.cpp, gpre/pas.cpp, gpre/pretty.cpp,
+	gpre/sqe.cpp, gpre/sql.cpp, isql/show.epp, jrd/blb.cpp,
+	jrd/block_cache.h, jrd/blp.h, jrd/btn.cpp, jrd/btn.h, jrd/btr.cpp,
+	jrd/btr.h, jrd/btr_proto.h, jrd/cch.cpp, jrd/cmp.cpp,
+	jrd/divorce.cpp, jrd/dmp.cpp, jrd/dpm.epp, jrd/dpm_proto.h,
+	jrd/dyn.epp, jrd/dyn_def.epp, jrd/dyn_del.epp, jrd/event.cpp,
+	jrd/event.h, jrd/evl.cpp, jrd/evl_like.cpp, jrd/exe.cpp,
+	jrd/ext.cpp, jrd/ext.h, jrd/ext_proto.h, jrd/flu.cpp, jrd/gds.cpp,
+	jrd/ibase.h, jrd/idx.cpp, jrd/inf.cpp, jrd/isc.h, jrd/isc_sync.cpp,
+	jrd/jlx.c, jrd/jrd.h, jrd/nav.cpp, jrd/nbak.cpp, jrd/ods.h,
+	jrd/opt.cpp, jrd/pag.cpp, jrd/par.cpp, jrd/plugin_manager.cpp,
+	jrd/rse.cpp, jrd/sch.cpp, jrd/sdl.cpp, jrd/svc.cpp, jrd/svc.h,
+	jrd/utl.cpp, jrd/val.cpp, jrd/vio.cpp, jrd/vio_debug.h,
+	jrd/why.cpp, jrd/y_handle.h, jrd/os/darwin/mod_loader.cpp,
+	jrd/os/vms/extvms.cpp, jrd/os/vms/map.cpp, jrd/os/vms/rdbgpas.cpp,
+	lock/driver.cpp, lock/lock.cpp, qli/all.cpp, qli/all_proto.h,
+	qli/blk.h, qli/comma_proto.h, qli/command.cpp, qli/compi_proto.h,
+	qli/compile.cpp, qli/compile.h, qli/dtr.h, qli/err_proto.h,
+	qli/eval.cpp, qli/eval_proto.h, qli/exe.cpp, qli/exe.h,
+	qli/exe_proto.h, qli/expan_proto.h, qli/expand.cpp,
+	qli/forma_proto.h, qli/format.cpp, qli/format.h, qli/gener.cpp,
+	qli/gener_proto.h, qli/help_proto.h, qli/hsh.cpp, qli/hsh_proto.h,
+	qli/lex.cpp, qli/lex_proto.h, qli/meta.epp, qli/meta_proto.h,
+	qli/mov_proto.h, qli/parse.cpp, qli/parse.h, qli/parse_proto.h,
+	qli/picst_proto.h, qli/picstr.cpp, qli/proc_proto.h,
+	qli/repor_proto.h, qli/report.cpp, qli/report.h, qli/reqs.h,
+	qli/show.epp, qli/show_proto.h, remote/interface.cpp,
+	remote/xdr_proto.h, remote/xnet.cpp, utilities/nbackup.cpp,
+	utilities/sbc_print.cpp, utilities/gstat/dba.epp,
+	utilities/gstat/dba_full.epp, utilities/gstat/ppg.cpp,
+	utilities/ibmgr/ibmgr.cpp:
+	
+	Cleanup
+
 2004-02-01 06:33  skidder
 
 	* firebird2/src/jrd/blb.cpp:
