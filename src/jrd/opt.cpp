@@ -301,10 +301,10 @@ RSB OPT_compile(TDBB tdbb,
 	RSB rsb;
 	SLONG idx_size, conjunct_count;
 	SSHORT i, stream;
-	UCHAR *p, *q, streams[MAX_STREAMS], beds[MAX_STREAMS],
-		*k, *b_end, *k_end, key_streams[MAX_STREAMS],
-		local_streams[MAX_STREAMS], outer_streams[MAX_STREAMS],
-		sub_streams[MAX_STREAMS]
+	UCHAR *p, *q, streams[MAX_STREAMS+1], beds[MAX_STREAMS+1],
+		*k, *b_end, *k_end, key_streams[MAX_STREAMS+1],
+		local_streams[MAX_STREAMS+1], outer_streams[MAX_STREAMS+1],
+		sub_streams[MAX_STREAMS+1]
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(parent_stack, type_lls);
@@ -2701,7 +2701,7 @@ static void find_best(TDBB tdbb,
 	CSB csb;
 	UCHAR *ptr, *stream_end;
 	double position_cost, position_cardinality, new_cost, new_cardinality;
-	USHORT flag_vector[MAX_STREAMS], *fv;
+	USHORT flag_vector[MAX_STREAMS+1], *fv;
 	BOOLEAN done;
 	IRL relationship;
 	Opt::opt_repeat * tail, *opt_end, *order_end, *stream_data;
@@ -3104,7 +3104,7 @@ static void form_rivers(TDBB tdbb,
  **************************************/
 	JRD_NOD *ptr, *end, plan_node, relation_node;
 	USHORT count;
-	UCHAR temp[MAX_STREAMS];
+	UCHAR temp[MAX_STREAMS+1];
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(*river_stack, type_lls);
@@ -3246,29 +3246,25 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
  **************************************
  *
  * Functional description
- *	Generate an RSB for each aggregate operation.
- *      Generate an ASB for each DISTINCT aggregate.
+ *	Generate an RSB (Record Source Block) for each aggregate operation.
+ *	Generate an ASB (Aggregate Sort Block) for each DISTINCT aggregate.
  *      
  **************************************/
-	RSE rse;
-	RSB rsb;
-	CSB csb;
-	USHORT count;
-	JRD_NOD map, operator_, aggregate;
-	JRD_NOD *ptr, *end, from;
-	DSC descriptor, *desc;
-	ASB asb;
-	SKD *sort_key;
+
+	JRD_NOD  operator_;
+	JRD_NOD* ptr;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
-	csb = opt->opt_csb;
-	rse = (RSE) node->nod_arg[e_agg_rse];
+	CSB csb = opt->opt_csb;
+	RSE rse = (RSE) node->nod_arg[e_agg_rse];
 	rse->rse_sorted = node->nod_arg[e_agg_group];
-/* try to optimize MAX and MIN to use an index; for now, optimize 
-   only the simplest case, although it is probably possible 
-   to use an index in more complex situations */
-	map = node->nod_arg[e_agg_map];
+
+	// try to optimize MAX and MIN to use an index; for now, optimize
+	// only the simplest case, although it is probably possible
+	// to use an index in more complex situations */
+
+	JRD_NOD map = node->nod_arg[e_agg_map];
 	if ((map->nod_count == 1) &&
 		(ptr = map->nod_arg) &&
 		(operator_ = (*ptr)->nod_arg[e_asgn_from]) &&
@@ -3277,19 +3273,20 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 	{
 		/* generate a sort block which the optimizer will try to map to an index */
 
-		aggregate = PAR_make_node(tdbb, 2);
+		JRD_NOD aggregate = PAR_make_node(tdbb, 2);
 		aggregate->nod_type = nod_sort;
 		aggregate->nod_count = 1;
 		aggregate->nod_arg[0] = operator_->nod_arg[e_asgn_from];
 		/* in the max case, flag the sort as descending */
-		if (operator_->nod_type == nod_agg_max)
+		if (operator_->nod_type == nod_agg_max) {
 			aggregate->nod_arg[1] = (JRD_NOD) TRUE;
+		}
 		rse->rse_aggregate = aggregate;
 	}
 
-/* allocate and optimize the record source block */
+	// allocate and optimize the record source block
 
-	rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
+	RSB rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
 	assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 	assert((int)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
@@ -3298,31 +3295,38 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 	rsb->rsb_next = OPT_compile(tdbb, csb, rse, NULL);
 	rsb->rsb_arg[0] = (RSB) node;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
-/* if the rse_aggregate is still set, that means the optimizer  
-   was able to match the field to an index, so flag that fact 
-   so that it can be handled in EVL_group */
-	if (rse->rse_aggregate) {
-		if (operator_->nod_type == nod_agg_min)
+
+	if (rse->rse_aggregate)
+	{
+		// The rse_aggregate is still set. That means the optimizer
+		// was able to match the field to an index, so flag that fact
+		// so that it can be handled in EVL_group
+		if (operator_->nod_type == nod_agg_min) {
 			operator_->nod_type = nod_agg_min_indexed;
-		else if (operator_->nod_type == nod_agg_max)
+		} else if (operator_->nod_type == nod_agg_max) {
 			operator_->nod_type = nod_agg_max_indexed;
+		}
 	}
 
-/* Now generate a separate ASB for each distinct operation;
-   note that this should be optimized to use indices if possible */
+	// Now generate a separate ASB (Aggregate Sort Block) for each
+	// distinct operation;
+	// note that this should be optimized to use indices if possible
 
-	desc = &descriptor;
-	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
-		from = (*ptr)->nod_arg[e_asgn_from];
-		if ((from->nod_type == nod_agg_count_distinct)
-			|| (from->nod_type == nod_agg_total_distinct)
-			|| (from->nod_type == nod_agg_total_distinct2)
-			|| (from->nod_type == nod_agg_average_distinct2)
-			|| (from->nod_type == nod_agg_average_distinct)) {
-			count =
-				asb_delta + 1 + (sizeof(SKD) + sizeof(JRD_NOD *) -
-								 1) / sizeof(JRD_NOD *);
-			asb = (ASB) PAR_make_node(tdbb, count);
+	DSC      descriptor;
+	DSC*     desc = &descriptor;
+	JRD_NOD* end;
+	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	{
+		JRD_NOD from = (*ptr)->nod_arg[e_asgn_from];
+		if ((from->nod_type == nod_agg_count_distinct)    ||
+			(from->nod_type == nod_agg_total_distinct)    ||
+			(from->nod_type == nod_agg_total_distinct2)   ||
+			(from->nod_type == nod_agg_average_distinct2) ||
+			(from->nod_type == nod_agg_average_distinct))
+		{
+			const USHORT count = asb_delta + 1 +
+					(sizeof(SKD) + sizeof(JRD_NOD *) - 1) / sizeof(JRD_NOD*);
+			ASB asb = (ASB) PAR_make_node(tdbb, count);
 			asb->nod_type = nod_asb;
 			asb->nod_count = 0;
 			/* build the sort key definition. Turn varying text and
@@ -3337,7 +3341,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 				desc->dsc_length--;
 			}
 
-			sort_key = asb->asb_key_desc = (SKD *) asb->asb_key_data;
+			SKD* sort_key = asb->asb_key_desc = (SKD*) asb->asb_key_data;
 			sort_key->skd_offset = 0;
 			assert(desc->dsc_dtype >= 0 &&
 				   desc->dsc_dtype < FB_NELEM(sort_dtypes));
@@ -3345,7 +3349,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 			/* as it is legal to have skd_dtype = 0
 			   I have removed these asserts, to avoid
 			   server restarts in debug mode.
-			   FSG 18.Dez.2000
+			   FSG 18.Dec.2000
 			 */
 			/*assert (sort_key->skd_dtype != 0); */
 			sort_key->skd_length = desc->dsc_length;
@@ -3574,7 +3578,7 @@ static void gen_join(TDBB     tdbb,
 		/* copy the streams vector to a temporary space to be used
 		   to form rivers out of streams */
 		USHORT count;
-		UCHAR temp[MAX_STREAMS];
+		UCHAR temp[MAX_STREAMS+1];
 		MOVE_FAST(streams, temp, streams[0] + 1);
 
 		do
