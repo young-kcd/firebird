@@ -39,6 +39,7 @@ RSC=rc.exe
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "..\..\..\temp\release\build_msg"
 # PROP Intermediate_Dir "..\..\..\temp\release\build_msg"
+# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
 # ADD CPP /nologo /MD /W3 /GR /GX /O2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /YX /FD /c
@@ -55,13 +56,14 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "..\..\..\temp\release\build_msg"
-# PROP BASE Intermediate_Dir "..\..\..\temp\release\build_msg"
+# PROP BASE Output_Dir "..\..\..\temp\debug\build_msg"
+# PROP BASE Intermediate_Dir "..\..\..\temp\debug\build_msg"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "..\..\..\temp\release\build_msg"
-# PROP Intermediate_Dir "..\..\..\temp\release\build_msg"
+# PROP Output_Dir "..\..\..\temp\debug\build_msg"
+# PROP Intermediate_Dir "..\..\..\temp\debug\build_msg"
+# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /D "DEV_BUILD" /YX /FD /GZ /c
