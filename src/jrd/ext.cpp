@@ -162,7 +162,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	Firebird::PathName Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
 	if (Path.length() == 0)	{	// path component not present in file_name
-		iExternalFileDirectoryList().expandFileName(Path, Name, 4);
+		iExternalFileDirectoryList().expandFileName(Path, Name);
 		file_name = Path.c_str();
 	}
 
