@@ -118,14 +118,25 @@ typedef void (*pfn_INTL_tt_destroy) (
 	texttype* tt
 );
 
+/* texttype flag values */
+#define TEXTTYPE_DIRECT_MATCH 1 /* Pattern-matching may be performed directly on
+                                   string without going to canonical form */
+
 
 typedef struct texttype {
 	// Data which needs to be initialized by collation driver	
 	USHORT texttype_version;	/* version ID of object */
 	TextTypeImpl* texttype_impl;   /* collation object implemented in driver */
+
+    /* Used only for debugging purposes. Should contain string in form 
+      <charset>.<collation>. For example "WIN1251.PXW_CYRL"
+    */
 	const ASCII* texttype_name;
+
 	SSHORT texttype_country;	    /* ID of base country values */
 	BYTE texttype_canonical_width;  /* number bytes in canonical character representation */
+
+	USHORT texttype_flags; /* Misc texttype flags filled by driver */
 
 	/* do we logically pad string with spaces for comparison purposes.
        this is the job of string_to_key and compare routines to care or not to
@@ -239,6 +250,10 @@ typedef void (*pfn_INTL_cs_destroy) (
 	charset* cv
 );
 
+/* charset flag values */
+#define CHARSET_LEGACY_SEMANTICS 1 /* MBCS strings may overflow declared lengths
+                                      in characters (but not in bytes) */
+
 struct charset
 {
 	USHORT charset_version;
@@ -248,6 +263,7 @@ struct charset
 	BYTE charset_max_bytes_per_char;
 	BYTE charset_space_length;       /* Length of space character in bytes */
 	const BYTE* charset_space_character; /* Space character, may be used for string padding */
+	USHORT charset_flags; /* Misc charset flags filled by driver */
 
 	/* Conversions to and from UTF-16 intermediate encodings. BOM marker should not be used.
       Endianness of transient encoding is the native endianness for the platform */
