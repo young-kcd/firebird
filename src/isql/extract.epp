@@ -75,7 +75,7 @@ static void list_generators();
 static void list_index();
 static void list_views();
 
-static void get_procedure_args(char*);
+static void get_procedure_args(const char*);
 
 extern const char* trigger_action(int);
 
@@ -684,7 +684,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 }
 
 
-static void get_procedure_args(char* proc_name)
+static void get_procedure_args(const char* proc_name)
 {
 /**************************************
  *
@@ -697,183 +697,180 @@ static void get_procedure_args(char* proc_name)
  *	extract file
  *
  **************************************/
-	SSHORT i;
 	SCHAR char_sets[86];
 
 // query to retrieve the parameters. 
-	{
 
 
 /* placed the two identical code blocks into one
-   for loop as suggested by Ann H. and Claudio C.
+   for loop as suggested by Ann H. and Claudio V.
    FSG 18.Nov.2000
 */
 
-		//  Parameter types 0 = input  
-		//  Parameter types 1 = return 
+	//  Parameter types 0 = input  
+	//  Parameter types 1 = return 
 
-		for (SSHORT ptype = 0; ptype < 2; ptype++)
-		{
-			bool first_time = true;
+	for (SSHORT ptype = 0; ptype < 2; ptype++)
+	{
+		bool first_time = true;
 
-			FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
-				FLD IN RDB$FIELDS WITH
-				PRM.RDB$PROCEDURE_NAME = proc_name AND
-				PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
-				PRM.RDB$PARAMETER_TYPE = ptype
-				SORTED BY PRM.RDB$PARAMETER_NUMBER
+		FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
+			FLD IN RDB$FIELDS WITH
+			PRM.RDB$PROCEDURE_NAME = proc_name AND
+			PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
+			PRM.RDB$PARAMETER_TYPE = ptype
+			SORTED BY PRM.RDB$PARAMETER_NUMBER
 
-				if (first_time)
+			if (first_time)
+			{
+				first_time = false;
+				if (ptype == 0)
+				{ // this is the input part 
+					ISQL_printf (isqlGlob.Out, "(");
+				}
+				else
+				{ // we are in the output part 
+					ISQL_printf (isqlGlob.Out, "RETURNS (");
+				}
+			}
+			else
+			{
+				sprintf (Print_buffer, ",%s", NEWLINE);
+				ISQL_printf (isqlGlob.Out, Print_buffer);
+			}
+
+			fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
+
+			// CVC: Parameter names need check for dialect 3, too. 
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				ISQL_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
+			else
+				strcpy (SQL_identifier, PRM.RDB$PARAMETER_NAME);
+
+			sprintf (Print_buffer, "%s ", SQL_identifier);
+			ISQL_printf (isqlGlob.Out, Print_buffer);
+
+			// Get column type name to print 
+			for (int i = 0; Column_types[i].type; i++)
+				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 				{
-					first_time = false;
-					if (ptype == 0)
-					{ // this is the input part 
-						ISQL_printf (isqlGlob.Out, "(");
+					bool precision_known = false;
+
+					if (isqlGlob.major_ods >= ODS_VERSION10)
+					{
+						// Handle Integral subtypes NUMERIC and DECIMAL 
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
+							(FLD.RDB$FIELD_TYPE == INTEGER) ||
+							(FLD.RDB$FIELD_TYPE == BIGINT))
+						{
+							/* We are ODS >= 10 and could be any Dialect */
+
+							FOR FLD1 IN RDB$FIELDS WITH
+								FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
+
+								if (!FLD1.RDB$FIELD_PRECISION.NULL)
+								{
+									/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
+										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+									{
+										sprintf (Print_buffer, "%s(%d, %d)",
+												Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+												FLD1.RDB$FIELD_PRECISION,
+												-FLD1.RDB$FIELD_SCALE);
+										precision_known = true;
+									}
+								}
+							END_FOR
+							ON_ERROR
+								ISQL_errmsg (isc_status);
+								return;
+							END_ERROR;
+						}
 					}
-					else
-					{ // we are in the output part 
-						ISQL_printf (isqlGlob.Out, "RETURNS (");
+					if (!precision_known)
+					{
+						// Take a stab at numerics and decimals 
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
+							(FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer, "NUMERIC(4, %d)",
+									-FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer, "NUMERIC(9, %d)",
+									-FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer, "NUMERIC(15, %d)",
+									-FLD.RDB$FIELD_SCALE);
+						}
+						else
+						{
+							sprintf (Print_buffer, "%s",
+									 Column_types[i].type_name);
+						}
 					}
+					ISQL_printf (isqlGlob.Out, Print_buffer);
+					break;
+				}
+
+			/* Changed this to return RDB$CHARACTER_LENGTH if available
+			   Fix for Bug #122563
+			   FSG 18.Nov.2000
+			*/
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+				if (FLD.RDB$CHARACTER_LENGTH.NULL)
+				{
+
+					sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
+					ISQL_printf (isqlGlob.Out, Print_buffer);
 				}
 				else
 				{
-					sprintf (Print_buffer, ",%s", NEWLINE);
+					sprintf (Print_buffer, "(%d)", FLD.RDB$CHARACTER_LENGTH);
 					ISQL_printf (isqlGlob.Out, Print_buffer);
 				}
 
-				fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
-
-				// CVC: Parameter names need check for dialect 3, too. 
-
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					ISQL_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
-				else
-					strcpy (SQL_identifier, PRM.RDB$PARAMETER_NAME);
-
-				sprintf (Print_buffer, "%s ", SQL_identifier);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
-
-				// Get column type name to print 
-				for (i = 0; Column_types[i].type; i++)
-					if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
-					{
-						bool precision_known = false;
-
-						if (isqlGlob.major_ods >= ODS_VERSION10)
-						{
-							// Handle Integral subtypes NUMERIC and DECIMAL 
-							if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-								(FLD.RDB$FIELD_TYPE == INTEGER) ||
-								(FLD.RDB$FIELD_TYPE == BIGINT))
-							{
-								/* We are ODS >= 10 and could be any Dialect */
-
-								FOR FLD1 IN RDB$FIELDS WITH
-									FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-
-									if (!FLD1.RDB$FIELD_PRECISION.NULL)
-									{
-										/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
-										if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-											FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-										{
-											sprintf (Print_buffer, "%s(%d, %d)",
-													Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-													FLD1.RDB$FIELD_PRECISION,
-													-FLD1.RDB$FIELD_SCALE);
-											precision_known = true;
-										}
-									}
-								END_FOR
-								ON_ERROR
-									ISQL_errmsg (isc_status);
-									return;
-								END_ERROR;
-							}
-						}
-						if (!precision_known)
-						{
-							// Take a stab at numerics and decimals 
-							if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
-								(FLD.RDB$FIELD_SCALE < 0))
-							{
-								sprintf (Print_buffer, "NUMERIC(4, %d)",
-										-FLD.RDB$FIELD_SCALE);
-							}
-							else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
-									 (FLD.RDB$FIELD_SCALE < 0))
-							{
-								sprintf (Print_buffer, "NUMERIC(9, %d)",
-										-FLD.RDB$FIELD_SCALE);
-							}
-							else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-									 (FLD.RDB$FIELD_SCALE < 0))
-							{
-								sprintf (Print_buffer, "NUMERIC(15, %d)",
-										-FLD.RDB$FIELD_SCALE);
-							}
-							else
-							{
-								sprintf (Print_buffer, "%s",
-										 Column_types[i].type_name);
-							}
-						}
-						ISQL_printf (isqlGlob.Out, Print_buffer);
-						break;
-					}
-
-				/* Changed this to return RDB$CHARACTER_LENGTH if available
-				   Fix for Bug #122563
-				   FSG 18.Nov.2000
-				*/
-				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
-					if (FLD.RDB$CHARACTER_LENGTH.NULL)
-					{
-
-						sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
-						ISQL_printf (isqlGlob.Out, Print_buffer);
-					}
-					else
-					{
-						sprintf (Print_buffer, "(%d)", FLD.RDB$CHARACTER_LENGTH);
-						ISQL_printf (isqlGlob.Out, Print_buffer);
-					}
 
 
-
-				// Show international character sets and collations 
-				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
-				{
-					char_sets[0] = 0;
-					if (FLD.RDB$COLLATION_ID.NULL)
-						FLD.RDB$COLLATION_ID = 0;
-
-					if (FLD.RDB$CHARACTER_SET_ID.NULL)
-						FLD.RDB$CHARACTER_SET_ID = 0;
-
-					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
-											 FLD.RDB$COLLATION_ID, false, char_sets);
-					if (char_sets[0])
-						ISQL_printf (isqlGlob.Out, char_sets);
-				}
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(gds_status);
-				return;
-			END_ERROR;
-
-			// If there was at least one param, close parens 
-
-			if (!first_time)
+			// Show international character sets and collations 
+			if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
 			{
-				sprintf(Print_buffer, ")%s", NEWLINE);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
-			}
+				char_sets[0] = 0;
+				if (FLD.RDB$COLLATION_ID.NULL)
+					FLD.RDB$COLLATION_ID = 0;
 
-		}						// end for ptype 
-		sprintf(Print_buffer, "AS %s", NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
-	}
+				if (FLD.RDB$CHARACTER_SET_ID.NULL)
+					FLD.RDB$CHARACTER_SET_ID = 0;
+
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
+										 FLD.RDB$COLLATION_ID, false, char_sets);
+				if (char_sets[0])
+					ISQL_printf (isqlGlob.Out, char_sets);
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return;
+		END_ERROR;
+
+		// If there was at least one param, close parens 
+
+		if (!first_time)
+		{
+			sprintf(Print_buffer, ")%s", NEWLINE);
+			ISQL_printf(isqlGlob.Out, Print_buffer);
+		}
+
+	}						// end for ptype 
+	sprintf(Print_buffer, "AS %s", NEWLINE);
+	ISQL_printf(isqlGlob.Out, Print_buffer);
 }
 
 
