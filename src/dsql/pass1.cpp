@@ -2601,7 +2601,7 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_ca
  **/
 static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 {
-	DSQL_NOD node, temp, rse, select, aggregate;
+	DSQL_NOD node, temp, rse, select;
 	DLLS base;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -2612,15 +2612,15 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 
 	node = MAKE_node(ntype, 1);
 	temp = MAKE_node(input->nod_type, 2);
-/* Build first the node from our base-context so that the right context is
-   used while parsing the nodes */
+// Build first the node from our base-context so that the right context is
+// used while parsing the nodes
 	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 	node->nod_arg[0] = rse = 
 		PASS1_rse(request, select, select->nod_arg[e_sel_order], NULL);
 
 
-/* adjust the scope level back to the sub-rse, so that 
-   the fields in the select list will be properly recognized */
+// adjust the scope level back to the sub-rse, so that 
+// the fields in the select list will be properly recognized
 	request->req_scope_level++;
 	request->req_in_select_list++;
 	temp->nod_arg[1] =
@@ -2628,22 +2628,40 @@ static DSQL_NOD pass1_any( DSQL_REQ request, DSQL_NOD input, NOD_TYPE ntype)
 	request->req_in_select_list--;
 	request->req_scope_level--;
 
-/* AB: Check if this is an aggregate so we know where to add 
-   it to the where-clause. 
-   SF BUG # [ 213859 ] Subquery connected with 'IN' clause */
+// AB: Check if this is an aggregate so we know where to add 
+// it to the where-clause. 
+// SF BUG # [ 213859 ] Subquery connected with 'IN' clause
 	if (rse->nod_arg[e_rse_streams] && 
 		(rse->nod_arg[e_rse_streams]->nod_type == nod_list) &&
 		(rse->nod_arg[e_rse_streams]->nod_arg[0]) &&
-		(rse->nod_arg[e_rse_streams]->nod_arg[0]->nod_type == nod_aggregate)) {
-		aggregate = rse->nod_arg[e_rse_streams]->nod_arg[0];
-		rse = aggregate->nod_arg[e_agg_rse];
-	}
+		(rse->nod_arg[e_rse_streams]->nod_arg[0]->nod_type == nod_aggregate)) 
+	{
+		DSQL_NOD aggregate = rse->nod_arg[e_rse_streams]->nod_arg[0];
+		request->req_scope_level++;
+		if (!pass1_found_aggregate(rse->nod_arg[e_rse_items], 
+				request->req_scope_level, FIELD_MATCH_TYPE_EQUAL, TRUE)) {
+			// If the item in the select-list isn't a aggregate we can put
+			// the boolean inside the rse borrowed in the aggregate. This
+			// will speed-up aggregate queries which don't have an 
+			// aggregate in there select-list.
+			rse = aggregate->nod_arg[e_agg_rse];
+		}
+		else {
+			// If the item in the select-list is a aggregate then this value
+			// was not parsed completly.
+			DSQL_CTX parent_context = (DSQL_CTX) aggregate->nod_arg[e_agg_context];
+			temp->nod_arg[1] = 
+				remap_field(request, temp->nod_arg[1], parent_context , request->req_scope_level);
+		}
+		request->req_scope_level--;
+	} 
 
 	rse->nod_arg[e_rse_boolean] = 
-		compose(rse->nod_arg[e_rse_boolean], temp, nod_and);
+			compose(rse->nod_arg[e_rse_boolean], temp, nod_and);
 
-	while (request->req_context != base)
+	while (request->req_context != base) {
 		LLS_POP(&request->req_context);
+	}
 
 	return node;
 }
@@ -4424,10 +4442,10 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		/* AB: An aggregate pointing to another parent_context isn't
 		   allowed. fields in HAVING items can ONLY point to the same
 		   scope_level items */
-		if (pass1_found_field(parent_rse->nod_arg[e_rse_boolean], 
+		/*if (pass1_found_field(parent_rse->nod_arg[e_rse_boolean], 
 				request->req_scope_level, FIELD_MATCH_TYPE_LOWER, &field))
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-				gds_arg_gds, gds_field_ref_err, 0);/* invalid field reference */
+				gds_arg_gds, gds_field_ref_err, 0); */ /* invalid field reference */
 
 #ifdef	CHECK_HAVING
 		if (aggregate)
