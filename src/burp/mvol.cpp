@@ -102,7 +102,7 @@ static void  put_asciz(SCHAR, const SCHAR*);
 static void  put_numeric(SCHAR, int);
 static bool  read_header(DESC, ULONG*, USHORT*, bool);
 static bool  write_header(DESC, ULONG, bool);
-static DESC	 next_volume(DESC, int, bool);
+static DESC	 next_volume(DESC, ULONG, bool);
 
 
 //____________________________________________________________
@@ -827,7 +827,7 @@ static int get_text(UCHAR* text, SSHORT length)
 // Get specification for the next volume (tape).
 // Try to open it. Return file descriptor.
 //
-static DESC next_volume( DESC handle, int mode, bool full_buffer)
+static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 {
 	TGBL tdgbl = GET_THREAD_DATA;
 

@@ -940,14 +940,14 @@ inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
    so that other files can see them for multivolume opens */
 
 #ifdef WIN_NT
-static const int MODE_READ	= GENERIC_READ;
-static const int MODE_WRITE	= GENERIC_WRITE;
+static const ULONG MODE_READ	= GENERIC_READ;
+static const ULONG MODE_WRITE	= GENERIC_WRITE;
 #elif defined(VMS)
-static const int MODE_READ	= O_RDONLY;
-static const int MODE_WRITE	= O_WRONLY | O_CREAT | O_TRUNC;
+static const ULONG MODE_READ	= O_RDONLY;
+static const ULONG MODE_WRITE	= O_WRONLY | O_CREAT | O_TRUNC;
 #else
-static const int MODE_READ	= O_RDONLY;
-static const int MODE_WRITE	= O_WRONLY | O_CREAT;
+static const ULONG MODE_READ	= O_RDONLY;
+static const ULONG MODE_WRITE	= O_WRONLY | O_CREAT;
 #endif
 
 
