@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.4 2002-09-01 15:44:46 dimitr Exp $
+ *	$Id: gpre_meta.epp,v 1.5 2002-09-10 08:07:16 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -682,7 +682,8 @@ LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 
 	FOR(REQUEST_HANDLE dbb->dbb_primary_key_request)
 		X IN RDB$INDICES CROSS
-		Y IN RDB$INDEX_SEGMENTS CROSS
+		Y IN RDB$INDEX_SEGMENTS
+		OVER RDB$INDEX_NAME CROSS
 		Z IN RDB$RELATION_CONSTRAINTS
 		OVER RDB$INDEX_NAME
 		WITH X.RDB$RELATION_NAME EQ name
