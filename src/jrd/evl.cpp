@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.5 2001-12-24 02:50:51 tamlin Exp $ 
+  * $Id: evl.cpp,v 1.6 2002-04-13 06:04:27 dimitr Exp $ 
  */
 
 /*
@@ -898,6 +898,18 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 			impure = (VLU) ((SCHAR *) request + node->nod_impure);
 			extract_part = (ULONG) node->nod_arg[e_extract_part];
 			value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
+
+			impure->vlu_desc.dsc_dtype = dtype_short;
+			impure->vlu_desc.dsc_scale = 0;
+			impure->vlu_desc.dsc_address =
+				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
+			impure->vlu_desc.dsc_length = sizeof(SSHORT);
+			if (!value) {
+				request->req_flags |= req_null;
+				impure->vlu_misc.vlu_short = 0;
+				return &impure->vlu_desc;
+			}
+
 			switch (value->dsc_dtype) {
 			case dtype_sql_time:
 				timestamp.timestamp_time = *(GDS_TIME *) value->dsc_address;
@@ -925,11 +937,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register NOD node)
 				ERR_post(gds_expression_eval_err, 0);
 				break;
 			}
-			impure->vlu_desc.dsc_dtype = dtype_short;
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_address =
-				reinterpret_cast < UCHAR * >(&impure->vlu_misc.vlu_short);
-			impure->vlu_desc.dsc_length = sizeof(SSHORT);
+
 			switch (extract_part) {
 			case blr_extract_year:
 				part = times.tm_year + 1900;
