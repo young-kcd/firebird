@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.18 2002-12-10 11:53:48 eku Exp $
+  $Id: isql.epp,v 1.19 2002-12-16 16:05:24 alexpeshkoff Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -183,7 +183,7 @@ static SSHORT newsize(TEXT *, TEXT *);
 static SSHORT newtrans(TEXT *);
 static SSHORT parse_arg(int, SCHAR **, SCHAR *, IB_FILE **);
 static SSHORT print_item(TEXT **, XSQLVAR *, SLONG);
-static int print_item_blob(IB_FILE *, XSQLVAR *, void *);
+static int print_item_blob(IB_FILE *, XSQLVAR *, FRBRD *);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT *);
 static int print_line(XSQLDA *, SLONG *, TEXT *);
 static int process_statement(TEXT *, XSQLDA **);
@@ -2200,7 +2200,7 @@ void ISQL_msg_get(USHORT number,
 
 
 void ISQL_print_validation(IB_FILE * fp,
-						   ISC_QUAD * blobid, SSHORT flag, SLONG * trans)
+						   ISC_QUAD * blobid, SSHORT flag, FRBRD * trans)
 {
 /**************************************
  *
@@ -2217,7 +2217,7 @@ void ISQL_print_validation(IB_FILE * fp,
  *	if flag == 1, this is a computed field
  *
  **************************************/
-	SLONG *blob;
+	FRBRD *blob;
 	USHORT length;
 	TEXT *buffer, *p;
 	SSHORT issql = FALSE, firsttime = TRUE;
@@ -2230,14 +2230,14 @@ void ISQL_print_validation(IB_FILE * fp,
 	buffer = (TEXT *) ISQL_ALLOC(BUFFER_LENGTH512);
 
 	blob = NULL;
-	if (isc_open_blob(isc_status, &DB, (void**) &trans, (void**) &blob, blobid)) {
+	if (isc_open_blob(isc_status, &DB, &trans, &blob, blobid)) {
 		ISQL_errmsg(isc_status);
 		if (buffer)
 			ISQL_FREE(buffer);
 		return;
 	}
 
-	while (!isc_get_segment(isc_status, (void**) &blob, &length,
+	while (!isc_get_segment(isc_status, &blob, &length,
 							(USHORT) (BUFFER_LENGTH512 - 1),
 							buffer) || isc_status[1] == isc_segment) {
 		buffer[length] = 0;
@@ -2273,7 +2273,7 @@ void ISQL_print_validation(IB_FILE * fp,
 		ISQL_printf(fp, Print_buffer);
 	}
 
-	isc_close_blob(isc_status, (void**) &blob);
+	isc_close_blob(isc_status, &blob);
 
 	if (isc_status[1])
 		ISQL_errmsg(isc_status);
@@ -6831,7 +6831,7 @@ static SSHORT print_item( TEXT ** s, XSQLVAR * var, SLONG printlength)
 }
 
 
-static int print_item_blob( IB_FILE * fp, XSQLVAR * var, void *trans)
+static int print_item_blob( IB_FILE * fp, XSQLVAR * var, FRBRD *trans)
 {
 /**************************************
  *
@@ -6844,7 +6844,7 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, void *trans)
  *	any BLOB selected in a show or extract command)
  *
  **************************************/
-	void *blob;
+	FRBRD *blob;
 	USHORT length, bpb_length;
 	UCHAR *buffer, *b;
 	UCHAR bpb_buffer[64];
@@ -6911,7 +6911,7 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, void *trans)
 	}
 
 	blob = NULL;
-	if (isc_open_blob2(isc_status, &DB, (void**) &trans, (void**) &blob, blobid, bpb_length,
+	if (isc_open_blob2(isc_status, &DB, &trans, &blob, blobid, bpb_length,
 					   bpb)) {
 		ISQL_errmsg(isc_status);
 		if (buffer)
@@ -6921,7 +6921,7 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, void *trans)
 		return ERR;
 	}
 
-	while (!isc_get_segment(isc_status, (void**) &blob, &length,
+	while (!isc_get_segment(isc_status, &blob, &length,
 							(USHORT) (BUFFER_LENGTH512 - 1),
 							(SCHAR*) buffer) || isc_status[1] == isc_segment) {
 		/* Special displays for blr or acl subtypes */
@@ -6944,7 +6944,7 @@ static int print_item_blob( IB_FILE * fp, XSQLVAR * var, void *trans)
 	}
 
 	if (isc_status[1] == isc_segstr_eof)
-		isc_close_blob(isc_status, (void**) &blob);
+		isc_close_blob(isc_status, &blob);
 	else if (isc_status[1]) {
 		ISQL_errmsg(isc_status);
 		if (buffer)
@@ -7130,7 +7130,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 	SLONG count;
 	XSQLDA *sqlda;
 	XSQLVAR *var, *end;
-	void *prepare_trans;
+	FRBRD *prepare_trans;
 	int ret = CONT;
 	static SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
 	static SCHAR plan_info[] = { isc_info_sql_get_plan };
@@ -7156,7 +7156,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 /* If statistics are requested, then reserve them here */
 
 	if (Stats)
-		perf_get_info((int**) &DB, &perf_before);
+		perf_get_info(&DB, &perf_before);
 
 /* Prepare the dynamic query stored in string. 
     But put this on the DDL transaction to get maximum visibility of
@@ -7384,7 +7384,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 		}
 
 		if (Stats) {
-			perf_get_info((int**) &DB, &perf_after);
+			perf_get_info(&DB, &perf_after);
 			if (!have_report) {
 				ISQL_msg_get(REPORT1, report_1, NULL, NULL, NULL, NULL, NULL);
 				/* Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n */
@@ -7833,7 +7833,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
 /* Statistics printed here upon request */
 
 	if (Stats) {
-		perf_get_info((int**) &DB, &perf_after);
+		perf_get_info(&DB, &perf_after);
 		if (!have_report) {
 			ISQL_msg_get(REPORT1, report_1, NULL, NULL, NULL, NULL, NULL);
 			/* Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n */

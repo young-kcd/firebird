@@ -55,7 +55,7 @@ extern SSHORT ISQL_main(int, char **);
 extern void ISQL_make_upper(UCHAR *);
 extern void ISQL_msg_get(USHORT,
 						 TEXT *, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void ISQL_print_validation(IB_FILE *, GDS__QUAD *, SSHORT, SLONG *);
+extern void ISQL_print_validation(IB_FILE *, GDS__QUAD *, SSHORT, FRBRD *);
 extern void ISQL_printf(IB_FILE *, TEXT *);
 extern void ISQL_query_database(SSHORT *, IB_FILE *, IB_FILE *, IB_FILE *);
 extern void ISQL_reset_settings(void);

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.6 2002-07-09 14:41:37 dimitr Exp $
+ * $Id: extract.epp,v 1.7 2002-12-16 16:05:14 alexpeshkoff Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -417,7 +417,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 		{
             ISQL_printf (Out, "COMPUTED BY ");
             if (!FLD.RDB$COMPUTED_SOURCE.NULL)
-                ISQL_print_validation (Out, &FLD.RDB$COMPUTED_SOURCE, 1, (SLONG*) gds_trans);
+                ISQL_print_validation (Out, &FLD.RDB$COMPUTED_SOURCE, 1, gds_trans);
         }
 	    else if (!((strncmp(FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) && 
                    isdigit (FLD.RDB$FIELD_NAME[4]) &&
@@ -1594,7 +1594,7 @@ static void list_create_db(void)
 	ISQL_printf(Out, Print_buffer);
 
     /* Get the page size from db_info call */
-	if (!SHOW_dbb_parameters((SLONG*) DB, info_buf, const_cast<char*>(page_items), sizeof(page_items),
+	if (!SHOW_dbb_parameters(DB, info_buf, const_cast<char*>(page_items), sizeof(page_items),
 						translate)) {
         sprintf(Print_buffer, " %s", info_buf);
         ISQL_printf(Out, Print_buffer);
@@ -2051,7 +2051,7 @@ static void list_domain_table( SCHAR * table_name, SSHORT default_char_set_id)
 		{ 
             sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
-            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, (SLONG*) gds_trans);
+            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, gds_trans);
         }
         if (FLD.RDB$NULL_FLAG == 1)
             ISQL_printf (Out, " NOT NULL");
@@ -2242,7 +2242,7 @@ static void list_domains( SSHORT default_char_set_id)
 		{ 
             sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
-            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, (SLONG*) gds_trans);
+            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, gds_trans);
         }
 	    if (FLD.RDB$NULL_FLAG == 1)
             ISQL_printf (Out, " NOT NULL");
