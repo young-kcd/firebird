@@ -510,12 +510,18 @@ typedef struct trdb
 } *TRDB;
 
 
-#define REM_get_thread_data		((TRDB) THD_get_specific())
-#define REM_set_thread_data		trdb = &thd_context;\
-				trdb->trdb_status_vector = NULL;\
-				THD_put_specific ((THDD) trdb);\
-				trdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB
-#define REM_restore_thread_data	THD_restore_specific()
+inline trdb* REM_get_thread_data() {
+	return (trdb*) THD_get_specific();
+}
+inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
+	tdrdb = thd_context;
+	tdrdb->trdb_status_vector = NULL;
+	THD_put_specific ((THDD) tdrdb);
+	tdrdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
+}
+inline void REM_restore_thread_data() {
+	THD_restore_specific();
+}
 
 /* Queuing structure for Client batch fetches */
 

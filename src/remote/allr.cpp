@@ -112,8 +112,8 @@ BLK ALLR_block(UCHAR type, ULONG count)
 {
 	if (type <= (UCHAR) type_MIN || type >= (UCHAR) type_MAX)
 	{
-		TRDB	trdb			= REM_get_thread_data;
-		ISC_STATUS*	status_vector	= trdb->trdb_status_vector;
+		TRDB tdrdb = REM_get_thread_data();
+		ISC_STATUS* status_vector = tdrdb->trdb_status_vector;
 
 		if (status_vector)
 		{
@@ -138,7 +138,7 @@ BLK ALLR_block(UCHAR type, ULONG count)
 			{
 				status_vector[3] = (ISC_STATUS) errmsg;
 #ifndef EMBEDDED
-				REMOTE_save_status_strings(trdb->trdb_status_vector);
+				REMOTE_save_status_strings(tdrdb->trdb_status_vector);
 #endif
 			}
 		}

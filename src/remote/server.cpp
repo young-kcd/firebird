@@ -266,15 +266,15 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	SSHORT request_count = 0;
 #endif /* DEBUG */
 #endif /* DEV_BUILD */
-	struct trdb thd_context, *trdb;
+	trdb thd_context, *tdrdb;
 	ISC_STATUS_ARRAY status_vector;
 
 	gds__thread_enable(-1);
 
 	THREAD_ENTER();
 
-	REM_set_thread_data;
-	trdb->trdb_status_vector = status_vector;
+	REM_set_thread_data(tdrdb, &thd_context);
+	tdrdb->trdb_status_vector = status_vector;
 
 	try {
 
@@ -348,7 +348,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			{
 				gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 				THREAD_EXIT();
-				REM_restore_thread_data;
+				REM_restore_thread_data();
 				return;
 			}
 
@@ -529,14 +529,14 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		 */
 		gds__log("SRVR_multi_thread: error during startup, shutting down");
 
-		REM_restore_thread_data;
+		REM_restore_thread_data();
 		THREAD_EXIT();
 		return;
 	}
 
 
 /* Why isn't this inside the #endif above? */
-	REM_restore_thread_data;
+	REM_restore_thread_data();
 #endif
 }
 
@@ -2941,11 +2941,12 @@ bool process_packet(rem_port* port,
  *
  **************************************/
 	TEXT msg[128];
-	struct trdb thd_context;
-	struct trdb* trdb = &thd_context;
-	trdb->trdb_status_vector = port->port_status_vector;
-	THD_put_specific((THDD) trdb);
-	trdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
+	trdb thd_context;
+	// BRS: This is the same as REM_set_thread_data but it not set status vector to null
+	trdb* tdrdb = &thd_context;
+	tdrdb->trdb_status_vector = port->port_status_vector;
+	THD_put_specific((THDD) tdrdb);
+	tdrdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB;
 
 	try {
 		P_OP op = receive->p_operation;
@@ -3209,7 +3210,7 @@ bool process_packet(rem_port* port,
 		gds__log("SERVER/process_packet: out of memory", 0);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
-		port->send_response(sendL, 0, 0, trdb->trdb_status_vector);
+		port->send_response(sendL, 0, 0, tdrdb->trdb_status_vector);
 		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
 		THD_restore_specific();
