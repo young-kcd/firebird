@@ -1,4 +1,4 @@
-#ident "$Id: autoconfig_msvc.h,v 1.27 2002-09-11 11:30:44 eku Exp $"
+#ident "$Id: autoconfig_msvc.h,v 1.28 2002-09-17 05:58:34 eku Exp $"
 
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -83,11 +83,14 @@
 /* Are we doing 64bit IO on unix */
 #undef UNIX_64_BIT_IO 
 
+/* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
+#define SIZEOF_VOID_P 4
+
 /* Functions */
 #define snprintf _snprintf
 
 /* Is the platform big endian? */
-#define WORDS_BIGENDIAN 0
+#undef WORDS_BIGENDIAN
 
 /* Return type of signal handler */
 #define RETSIGTYPE void

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: btr.cpp,v 1.4 2002-04-04 07:10:40 bellardo Exp $
+$Id: btr.cpp,v 1.5 2002-09-17 05:58:35 eku Exp $
 */
 
 #include "firebird.h"
@@ -2137,7 +2137,7 @@ static void compress(TDBB tdbb,
 
 #ifdef IEEE
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 /* For little-endian machines, reverse the order of bytes for the key */
 /* Copy the first set of bytes into key_data */
 	for (q = temp.temp_char + temp_copy_length, length =
@@ -2160,7 +2160,7 @@ static void compress(TDBB tdbb,
 		for (q = temp.temp_char + sizeof(double),
 			 length = sizeof(SSHORT); length; --length)
 			*p++ = *q++;
-#endif /* VAX */
+#endif /* !WORDS_BIGENDIAN */
 
 
 #else /* IEEE */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.10 2002-07-06 05:31:56 skywalker Exp $
+ * $Id: sort.cpp,v 1.11 2002-09-17 05:58:36 eku Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -203,7 +203,7 @@ IB_FILE *trace_file = NULL;
 
 
 #ifdef SCROLLABLE_CURSORS
-#ifndef VAX
+#ifdef WORDS_BIGENDIAN
 void SORT_diddle_key(UCHAR * record, SCB scb, USHORT direction)
 {
 /**************************************
@@ -1358,7 +1358,7 @@ static UCHAR *sort_alloc(SCB scb, ULONG size)
 }
 
 #ifndef SCROLLABLE_CURSORS
-#ifndef VAX
+#ifdef WORDS_BIGENDIAN
 static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
 {
 /**************************************

@@ -23,13 +23,6 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#if VMS
-#if __ALPHA
-#ifdef VAX
-#undef VAX
-#endif
-#endif
-#endif
 
 #include <pthread.h>
 

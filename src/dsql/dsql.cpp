@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.21 2002-09-01 15:44:45 dimitr Exp $
+$Id: dsql.cpp,v 1.22 2002-09-17 05:58:34 eku Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -2572,7 +2572,7 @@ static USHORT convert( SLONG number, SCHAR * buffer)
 	SLONG n;
 	SCHAR *p;
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 	n = number;
 	p = (SCHAR *) & n;
 	*buffer++ = *p++;

@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.27 2002-09-11 19:37:29 skidder Exp $
+$Id: common.h,v 1.28 2002-09-17 05:58:35 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -99,7 +99,6 @@ $Id: common.h,v 1.27 2002-09-11 19:37:29 skidder Exp $
 
 #ifdef i386
 #define I386    1
-#define VAX     1
 #define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
@@ -171,7 +170,6 @@ int shutdown(int s, int how);
 
 #ifdef i386
 #define I386    1
-#define VAX     1
 /* Change version string into SINIXZ */
 #define INTL
 #define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
@@ -239,7 +237,6 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define UNIX  1
 #define IEEE  1
 #define I386  1
-#define VAX   1
 #define IMPLEMENTATION    isc_info_db_impl_freebsd   /* 61 */
 
 #define QUADFORMAT "ll"
@@ -265,7 +262,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #define IEEE  1
 #define I386  1
-#define VAX   1
 #define IMPLEMENTATION        isc_info_db_impl_netbsd /* 62 */
 
 #define QUADFORMAT "ll"
@@ -389,7 +385,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #ifdef i386
 #define I386            1
-#define VAX             1
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
 #else /* i386 */
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
@@ -455,7 +450,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define INTL
 #define INTL_BACKEND
 #define UNIX            1
-#define VAX             1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 
 #ifdef mips
@@ -483,7 +477,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define NO_PYXIS
 #define I386            1
-#define VAX						/* Use VAX style byte swapping */
 #define NO_NFS
 #undef LINKS_EXIST
 #define IEEE					/* IEEE floating point arith.  */
@@ -527,7 +520,6 @@ typedef RETSIGTYPE (API_ROUTINE * SIG_FPTR) ();
 /* DEC VAX/VMS and AlphaVMS */
 
 #ifdef VMS
-#define VAX             1
 #define VAX_FLOAT       1
 #define FB_ALIGN(n,b)      (n)
 #define ALIGNMENT       4
@@ -610,7 +602,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define NO_PYXIS
 #define NOINITGROUPS
 #define NO_NFS
-#define VAX
 #undef LINKS_EXIST
 
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
@@ -691,7 +682,6 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #endif
 
 #define I386            1
-#define VAX             1
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define NOINITGROUPS
@@ -717,7 +707,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 #define I386            1
-#define VAX             1
 #define UNIX            1
 #define SCO_UNIX        1
 #define                 IEEE
@@ -756,7 +745,6 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #else
 #define IMPLEMENTATION	isc_info_db_impl_dg_x86 /* 58 */
 #define I386          1
-#define VAX           1
 #endif /* DG_X86 */
 #define                 IEEE
 #define INTL
@@ -777,9 +765,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define INTL
 #define NO_PYXIS
 #define KILLER_SIGNALS
-#define HAS_64BIT_POINTERS		/* if a machine has 64 bit pointers you need this */
 #define UNIX            1
-#define VAX             1
 #define FB_ALIGN(n,b)      ((n + b - 1) & ~(b - 1))
 #define ALIGNMENT       8
 #define DOUBLE_ALIGN    8
@@ -853,7 +839,6 @@ typedef unsigned long DWORD;
 #endif
 
 #define I386            1
-#define VAX             1
 #define IEEE            1
 #define FB_ALIGN(n,b)      ((n+1) & ~1)
 #define OLD_ALIGNMENT
@@ -881,7 +866,6 @@ typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #define KILLER_SIGNALS
 #define NO_PYXIS
 #define I386            1
-#define VAX             1
 #define UNIX            1
 #define CURSES_KEYPAD   1
 #define IMPLEMENTATION  isc_info_db_impl_unixware,	/* 49 */
@@ -1144,7 +1128,7 @@ typedef struct
 /* data conversion macros */
 
 #ifndef CTO32L
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 #define CTO32L(p) ((((SCHAR*)(p))[3] << 24) | (((UCHAR*)(p))[2] << 16) | (((UCHAR*)(p))[1] << 8) | (((UCHAR*)(p)) [0]))
 #else
 #define CTO32L(p) ((((SCHAR*)(p))[0] << 24) | (((UCHAR*)(p))[1] << 16) | (((UCHAR*)(p))[2] << 8) | (((UCHAR*)(p)) [3]))

@@ -1,4 +1,4 @@
-# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/sinixz/prototype.in,v 1.1 2002-09-06 08:45:39 eku Exp $
+# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/sinixz/prototype.in,v 1.2 2002-09-17 05:58:35 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -18,9 +18,9 @@ d none @prefix@ 0755 root root
 
 f none @prefix@/isc4.gdb=$SRCDIR/isc4.gdb 0444 root root
 f none @prefix@/interbase.msg=$SRCDIR/interbase.msg 0644 root root
-f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0644 root root
-f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg 0644 root root
-f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg 0644 root root
+#f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0644 root root
+#f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg 0644 root root
+#f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg 0644 root root
 
 d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/CSchangeRunUser.sh=$SRCDIR/bin/CSchangeRunUser.sh  0555 root root
@@ -39,7 +39,7 @@ f none @prefix@/bin/gds_drop=$SRCDIR/bin/gds_drop  0755 root root
 #f none @prefix@/bin/gds_relay=$SRCDIR/bin/gds_relay  0755 root root
 f none @prefix@/bin/gfix=$SRCDIR/bin/gfix  0755 root root
 f none @prefix@/bin/gpre=$SRCDIR/bin/gpre  0755 root root
-f none @prefix@/bin/gpre_boot=$SRCDIR/bin/gpre_boot  0755 root root
+#f none @prefix@/bin/gpre_boot=$SRCDIR/bin/gpre_boot  0755 root root
 #s none @prefix@/bin/gpre_current=gpre_static
 #f none @prefix@/bin/gpre_static=$SRCDIR/bin/gpre_static  0755 root root
 f none @prefix@/bin/gsec=$SRCDIR/bin/gsec  0755 root root
@@ -67,11 +67,11 @@ f none @prefix@/intl/libfbintl.so=$SRCDIR/intl/libfbintl.so  0755 root root
 
 d none @prefix@/lib  0755 root root
 f none @prefix@/lib/ib_util.so=$SRCDIR/lib/ib_util.so  0755 root root
-f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a  0644 root root
+#f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a  0644 root root
 f none @prefix@/lib/libfbembed.so.1.5.0=$SRCDIR/lib/libfbembed.so.1.5.0  0755 root root
 s none @prefix@/lib/libfbembed.so.1=libfbembed.so.1.5.0
 s none @prefix@/lib/libfbembed.so=libfbembed.so.1
-f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a  0644 root root
+#f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a  0644 root root
 
 d none @prefix@/UDF  0755 root root
 f none @prefix@/UDF/fb_udf.so=$SRCDIR/UDF/fb_udf.so  0755 root root

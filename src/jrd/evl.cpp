@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.13 2002-08-22 08:20:26 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.14 2002-09-17 05:58:35 eku Exp $ 
  */
 
 /*
@@ -3782,7 +3782,7 @@ static DSC *lock_record(TDBB tdbb, NOD node, VLU impure)
 
 /* return the lock handle (actually the pointer to the lock block) */
 
-#if !defined(HAS_64BIT_POINTERS)
+#if SIZEOF_VOID_P != 8
 	impure->vlu_misc.vlu_long = (ULONG) lock;
 #else
 	{
@@ -3856,7 +3856,7 @@ static DSC *lock_relation(TDBB tdbb, NOD node, VLU impure)
 
 /* return the lock handle (actually the pointer to the lock block) */
 
-#if !defined(HAS_64BIT_POINTERS)
+#if SIZEOF_VOID_P != 8
 	impure->vlu_misc.vlu_long = (ULONG) lock;
 #else
 	{

@@ -27,7 +27,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.11 2002-09-10 18:33:59 skidder Exp $
+$Id: opt.cpp,v 1.12 2002-09-17 05:58:36 eku Exp $
 */
 
 #include "firebird.h"
@@ -4085,7 +4085,7 @@ static RSB gen_sort(TDBB tdbb,
 
 		/* Make key for null flag */
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
 #endif
 		sort_key->skd_offset = map_item->smb_flag_offset =
@@ -4096,7 +4096,7 @@ static RSB gen_sort(TDBB tdbb,
 		  sort_key->skd_flags |= SKD_descending;
 		++sort_key;
 		/* Make key for sort key proper */
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
 #else
 		if (desc->dsc_dtype >= dtype_aligned)

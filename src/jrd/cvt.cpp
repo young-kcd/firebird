@@ -119,7 +119,7 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 #define FLOAT_MAX       3.4e38	/* max float (32 bit) value  */
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 #define LOW_WORD        0
 #define HIGH_WORD       1
 #else
@@ -181,7 +181,7 @@ static void string_to_datetime(DSC *, GDS_TIMESTAMP *, EXPECT_DATETIME,
 static double power_of_ten(int);
 
 #ifndef NATIVE_QUAD
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 static CONST SQUAD quad_min_int = { 0, LONG_MIN };
 static CONST SQUAD quad_max_int = { -1, LONG_MAX };
 #else

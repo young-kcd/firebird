@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.4 2001-12-29 11:41:22 tamlin Exp $
+$Id: align.cpp,v 1.5 2002-09-17 05:58:35 eku Exp $
 */
 
 #include "firebird.h"
@@ -120,8 +120,8 @@ static void check_byte_order()
 	order_test.c[0] = 1;
 	order_test.c[1] = 2;
 
-	if (order_test.s != 0x0102)
-		ib_printf("#define VAX\t\t1\n");
+	if (order_test.s == 0x0102)
+		ib_printf("#define WORDS_BIGENDIAN\t\t1\n");
 }
 
 #ifdef __STDC__

@@ -87,7 +87,7 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.5 2002-07-01 15:07:18 skywalker Exp $
+$Id: ib_stdio.cpp,v 1.6 2002-09-17 05:58:36 eku Exp $
 */
 
 #include "firebird.h"
@@ -4278,9 +4278,9 @@ extern void *MALLOC(size_t);
 #ifdef SOLARIS
 #ifdef sparc
 #define IEEE_BIG_ENDIAN
+#undef WORDS_BIGENDIAN /* EKU: why do we undefine WORDS_BIGENDIAN here ??? */
 #else
 #define IEEE_LITTLE_ENDIAN
-#undef VAX
 #endif
 #define IEEE_ARITHMETIC
 #endif
@@ -4304,9 +4304,8 @@ extern void *MALLOC(size_t);
 #define word1(x) ((ULONG *)&x)[1]
 #endif
 
-#if defined(IEEE_LITTLE_ENDIAN) + defined(IEEE_BIG_ENDIAN) + defined(VAX) + \
-    defined(IBM) != 1
-Exactly one of IEEE_LITTLE_ENDIAN IEEE_BIG_ENDIAN, VAX, or IBM should be defined.
+#if defined(IEEE_LITTLE_ENDIAN) + defined(IEEE_BIG_ENDIAN) + !defined(WORDS_BIGENDIAN) + defined(IBM) != 1
+Exactly one of IEEE_LITTLE_ENDIAN IEEE_BIG_ENDIAN, WORDS_BIGENDIAN, or IBM should be defined.
 #endif
 #if defined(IEEE_LITTLE_ENDIAN) + defined(IEEE_BIG_ENDIAN)
 #define Exp_shift  20
@@ -4409,7 +4408,7 @@ static const double tens[] = {
 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
 	1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
 	1e20, 1e21, 1e22
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		, 1e23, 1e24
 #endif
 };
@@ -4636,7 +4635,7 @@ static Bigint *d2b(double d, int *e, int *bits)
 	Bigint *b;
 	int de, i, k;
 	ULONG *x, y, z;
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 	ULONG d0, d1;
 	d0 = word0(d) >> 16 | word0(d) << 16;
 	d1 = word1(d) >> 16 | word1(d) << 16;
@@ -5193,7 +5192,7 @@ char *ib__dtoa
 	else
 		*sign = 0;
 
-#if defined(IEEE_Arith) + defined(VAX)
+#if defined(IEEE_Arith) + !defined(WORDS_BIGENDIAN)
 #ifdef IEEE_Arith
 	if ((word0(d) & Exp_mask) == Exp_mask)
 #else

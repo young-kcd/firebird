@@ -77,7 +77,7 @@ BKM BKM_allocate(RSB rsb, USHORT length)
 	bookmark->bkm_desc.dsc_dtype = dtype_long;
 	bookmark->bkm_desc.dsc_length = sizeof(SLONG);
 	bookmark->bkm_desc.dsc_address = (UCHAR *) & bookmark->bkm_handle;
-#if !defined(HAS_64BIT_POINTERS)
+#if SIZEOF_VOID_P != 8
 	bookmark->bkm_handle = (ULONG) bookmark;
 #else
 	{
@@ -130,7 +130,7 @@ BKM BKM_lookup(NOD node)
  **************************************/
 	BKM bookmark;
 
-#if !defined(HAS_64BIT_POINTERS)
+#if SIZEOF_VOID_P != 8
 	bookmark = (BKM) MOV_get_long(EVL_expr(tdbb, node), 0);
 #else
 	{
@@ -189,7 +189,7 @@ void BKM_release(NOD node)
 			break;
 		}
 
-#if defined(HAS_64BIT_POINTERS)
+#if SIZEOF_VOID_P == 8
 	slot = MOV_get_long(EVL_expr(tdbb, node), 0);
 	attachment->att_bkm_quick_ref->vec_object[slot] = NULL;
 #endif

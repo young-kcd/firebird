@@ -131,7 +131,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 	ULONG n;
 	UCHAR *p;
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 	n = number;
 	p = (UCHAR *) & n;
 	*buffer++ = *p++;

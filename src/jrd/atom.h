@@ -29,7 +29,7 @@
 #define ATOM_LOCKS_PER_LEVEL	(1 << 6)	/* 64 - must be power of 2 */
 #define ATOM_LOCK_LEVELS	2
 
-#ifdef HAS_64BIT_POINTERS
+#if SIZEOF_VOID_P == 8
 #define ATOM_SHIFT		3		/* 64 bit */
 #define ATOM_MASK		(ATOM_LOCKS_PER_LEVEL - 1)
 #endif

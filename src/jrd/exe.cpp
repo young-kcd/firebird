@@ -31,7 +31,7 @@
  * to count virtual operations, not real I/O on the underlying tables.
  */
 /*
-$Id: exe.cpp,v 1.14 2002-09-11 11:30:44 eku Exp $
+$Id: exe.cpp,v 1.15 2002-09-17 05:58:35 eku Exp $
 */
 
 #include "firebird.h"
@@ -2378,7 +2378,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				DSC *desc;
 
 				desc = EVL_expr(tdbb, node->nod_arg[e_rellock_lock]);
-#if !defined(HAS_64BIT_POINTERS)
+#if SIZEOF_VOID_P != 8
 				RLCK_release_lock(*(LCK *) desc->dsc_address);
 #else
 				{

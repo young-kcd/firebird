@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: canonical.cpp,v 1.3 2001-12-24 02:50:48 tamlin Exp $
+$Id: canonical.cpp,v 1.4 2002-09-17 05:58:34 eku Exp $
 */
 
 #include "firebird.h"
@@ -727,7 +727,7 @@ static bool_t xdr_double(xdrs, ip)
 		temp.temp_short[2] = temp.temp_short[3];
 		temp.temp_short[3] = t1;
 #endif
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
 			return TRUE;
@@ -739,7 +739,7 @@ static bool_t xdr_double(xdrs, ip)
 		return FALSE;
 
 	case XDR_DECODE:
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
 			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
 			return FALSE;
@@ -977,7 +977,7 @@ static bool_t xdr_hyper(register XDR* xdrs, SINT64* pi64)
 	{
 	case XDR_ENCODE:
 		temp.temp_int64 = *pi64;
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
 			return TRUE;
@@ -989,7 +989,7 @@ static bool_t xdr_hyper(register XDR* xdrs, SINT64* pi64)
 		return FALSE;
 
 	case XDR_DECODE:
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
 			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
 			return FALSE;

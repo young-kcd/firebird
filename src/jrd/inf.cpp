@@ -158,7 +158,7 @@ USHORT DLL_EXPORT INF_convert(SLONG number, SCHAR * buffer)
 	SLONG n;
 	SCHAR *p;
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 	n = number;
 	p = (SCHAR *) & n;
 	*buffer++ = *p++;

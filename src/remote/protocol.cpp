@@ -1174,7 +1174,7 @@ static bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
 		temp.temp_int64 = *pi64;
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
 			return TRUE;
@@ -1186,7 +1186,7 @@ static bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
 		return FALSE;
 
 	case XDR_DECODE:
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
 			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
 			return FALSE;
@@ -1977,7 +1977,7 @@ static bool_t xdr_double( register XDR * xdrs, register double *ip)
 		temp.temp_short[2] = temp.temp_short[3];
 		temp.temp_short[3] = t1;
 #endif
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
 			return TRUE;
@@ -1989,7 +1989,7 @@ static bool_t xdr_double( register XDR * xdrs, register double *ip)
 		return FALSE;
 
 	case XDR_DECODE:
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
 			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
 			return FALSE;

@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 
-#ifdef VAX
+#ifndef WORDS_BIGENDIAN
 #define LOW_WORD        0
 #define HIGH_WORD       1
 #else
