@@ -61,8 +61,8 @@ typedef void (*PTR) ();
 static ISC_STATUS check_response(ICC, ISC_STATUS *);
 static void clear_statement_cache(IPSERVER_ISR);
 static void clear_transaction_statements(ITR);
-static void event_packer(ICC);
-static void event_thread(void);
+static THREAD_ENTRY_DECLARE event_packer(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
 static void extract_status(ICC, ISC_STATUS *);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static SSHORT init(ISC_STATUS *, ICC *);
@@ -77,7 +77,7 @@ static void release_sql_request(IPSERVER_ISR);
 static void release_transaction(ITR);
 static bool send_and_wait(ICC);
 static void server_shutdown(void);
-static void server_watcher(void);
+static THREAD_ENTRY_DECLARE server_watcher(THREAD_ENTRY_PARAM);
 static bool unpack_strings(ICC);
 
 
@@ -3565,7 +3565,7 @@ static void clear_transaction_statements( ITR transaction)
 }
 
 
-static void event_packer( ICC icc)
+static THREAD_ENTRY_DECLARE event_packer(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -3579,6 +3579,7 @@ static void event_packer( ICC icc)
  *	the server isn't kept waiting
  *
  **************************************/
+	ICC icc = (ICC)(arg);
 	TEXT name_buffer[128], class_buffer[32];
 
 
@@ -3590,10 +3591,11 @@ static void event_packer( ICC icc)
 					&event_window, event_semaphore);
 	CloseHandle(event_packer_handle);
 	event_packer_handle = 0;
+	return 0;
 }
 
 
-static void event_thread(void)
+static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -3626,7 +3628,7 @@ static void event_thread(void)
 
 		if (!event_icc)
 			if (!init(status, &event_icc))
-				return;
+				return 0;
 
 		// find next queued event 
 
@@ -3669,6 +3671,7 @@ static void event_thread(void)
 	}
 	CloseHandle(event_thread_handle);
 	event_thread_handle = 0;
+	return 0;
 }
 
 
@@ -3800,12 +3803,8 @@ static SSHORT init( ISC_STATUS * user_status, ICC * picc)
 	{
 		if (!InterlockedIncrement(&interlock))
 		{
-
 			// increment "succeeded", initialize 
 
-			THD_mutex_init(&clisect);
-			THD_mutex_init(&evtsect);
-			THD_mutex_init(&mapsect);
 			initialized = true;
 			gds__register_cleanup(reinterpret_cast<void(*)(void*)>(IPC_release_all),
 									NULL);
@@ -4444,7 +4443,7 @@ static void server_shutdown(void)
 }
 
 
-static void server_watcher(void)
+static THREAD_ENTRY_DECLARE server_watcher(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -4479,6 +4478,7 @@ static void server_watcher(void)
 			break;
 		}
 	}
+	return 0;
 }
 
 
@@ -4720,9 +4720,6 @@ void IPC_release_all(void)
 		ALLI_free((UCHAR *) ipm);
 	}
 	if (initialized) {
-		THD_mutex_destroy(&clisect);
-		THD_mutex_destroy(&evtsect);
-		THD_mutex_destroy(&mapsect);
 		initialized = false;
 	}
 }
