@@ -86,7 +86,7 @@ private:
 	}
 
 public:
-	ThreadPriorityScheduler(ThreadEntryPoint* r, void* a, UCHAR f)
+	ThreadPriorityScheduler(thdd::EntryPoint* r, void* a, UCHAR f)
 		: routine(r), arg(a), inside(0), gonein(0), flags(f) {}
 	// Unregister thread from priorities scheduler
 	void detach();
