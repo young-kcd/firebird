@@ -177,6 +177,7 @@ int GRANT_privileges( TDBB tdbb, SSHORT phase, DFW work)
 
 			str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
 			str_default_buffer = FB_NEW_RPT(*dbb->dbb_permanent, ACL_BUFFER_SIZE) str;
+			str_buffer->str_length = str_default_buffer->str_length = ACL_BUFFER_SIZE - 1;
 
 			acl = str_buffer->str_data;
 
@@ -800,6 +801,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
 	str_field_buffer_start = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
 	str_field_buffer       = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str;
+	str_field_buffer_start->str_length = str_field_buffer->str_length = *length_ptr - 1;
 
 	field_length = start_length = *length_ptr;
 
