@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.20 2002-10-02 13:24:03 dimitr Exp $
+ * $Id: ddl.cpp,v 1.21 2002-10-06 10:51:54 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -5273,6 +5273,7 @@ static void put_descriptor(REQ request, DSC * desc)
 		request->append_number(gds_dyn_fld_length, desc->dsc_length);
 	}
 	request->append_number(gds_dyn_fld_scale, desc->dsc_scale);
+	request->append_number(gds_dyn_fld_sub_type, desc->dsc_sub_type);
 }
 
 
