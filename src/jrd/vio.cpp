@@ -31,6 +31,12 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2002.12.22 Alex Peshkoff: Bugcheck(291) fix for update_in_place
  *							 of record, modified by pre_trigger
+ * 2002.01.03 Nickolay Samofatov: Fixed database corruption when backing out
+ *                           the savepoint after large number of DML operations 
+ *                           (so transaction-level savepoint is dropped) and 
+ *							 record was updated _not_ under the savepoint and 
+ *							 deleted under savepoint. Bug affected all kinds 
+ *							 of savepoints (explicit, statement, PSQL, ...)
  *
  */
 
@@ -2748,7 +2754,12 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 
 							if (same_tx) {
 								VIO_backout(tdbb, &rpb, transaction);
-								if (record->rec_length == 0) {
+								/* Nickolay Samofatov, 01 Mar 2002: 
+								  If we don't have data for the record and
+								  it was modified and deleted under our savepoint
+								  we need to back it out to the state as it were
+								  before our transaction started */
+								if (record->rec_length == 0 && record->rec_flags & REC_new_version) {
 									if (!DPM_get(tdbb, &rpb, LCK_write))
 										BUGCHECK(186);	/* msg 186 record disappeared */
 									if (rpb.rpb_flags & rpb_delta)
@@ -2758,24 +2769,7 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 									else
 										CCH_RELEASE(tdbb, &rpb.rpb_window);
 
-									/* In "rollback" operation, since all the SQL stmts
-									   were executed successfully, therefore the save points
-									   were merged into a single save point. That means
-									   transaction->tra_save_point is NULL at this point,
-									   VIO_backout should be invoked once more ( 1st time
-									   VIO_backout backs data out to the stmt savepoint
-									   and the 2nd time VIO_backout backs data out to
-									   transaction savepoint).
-
-									   But during trigger abort/UNDO operaion, the save
-									   points have not been merged into a single save
-									   point yet. That means transaction->tra_save_point
-									   is not NULL at this point, VIO_backout was only
-									   invoked once (backs data out to the stmt savepoint.  */
-
-									if ((!transaction->tra_save_point) ||
-										(record->rec_flags & REC_new_version))
-										VIO_backout(tdbb, &rpb, transaction);
+									VIO_backout(tdbb, &rpb, transaction);
 								}
 							}
 							if (record->rec_length != 0) {
