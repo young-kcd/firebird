@@ -1,3 +1,9 @@
+2002-10-18 06:55  stryqx
+
+	* firebird2/src/jrd/thd.cpp:
+	
+	Fix preprocessor statement.
+
 2002-10-16 10:40  eku
 
 	* firebird2/src/dsql/preparse.cpp:
