@@ -16,8 +16,8 @@
 # Contributor(s): ______________________________________.
 # Start of file prefix.win32:	$(VERSION)	$(PLATFORM)
 
-PROD_FLAGS=-O2  -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -mno-cygwin -fcheck-new -Wall -Wno-sign-compare -Wno-format -Wno-parentheses -Wno-switch -fmessage-length=0 -D__SEH_NOOP -DIPSERVER -DMAXPATHLEN=255 -DMINGW -DWIN32_LEAN_AND_MEAN -MMD
-DEV_FLAGS=-ggdb -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -mno-cygwin -fcheck-new -Wall -Wno-sign-compare -Wno-format -Wno-parentheses -Wno-switch -fmessage-length=0 -D__SEH_NOOP -DIPSERVER -DMAXPATHLEN=255 -DMINGW -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
+PROD_FLAGS=-O2  -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -mno-cygwin -fcheck-new -Wall -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -D__SEH_NOOP -DIPSERVER -DMAXPATHLEN=255 -DMINGW -DWIN32_LEAN_AND_MEAN -MMD
+DEV_FLAGS=-ggdb -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -mno-cygwin -fcheck-new -Wall -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -D__SEH_NOOP -DIPSERVER -DMAXPATHLEN=255 -DMINGW -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
 
 PLATFORM_PATH=jrd/os/win32
 
