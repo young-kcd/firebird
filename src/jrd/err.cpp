@@ -174,7 +174,7 @@ void ERR_duplicate_error(IDX_E	code,
 	const TEXT* index_name;
 	const TEXT* constraint_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
 	if (index[0]) {
@@ -276,7 +276,7 @@ void ERR_log(int facility, int number, const TEXT* message)
  *
  **************************************/
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	DEBUG;
 	if (message)
@@ -315,7 +315,7 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 	ISC_STATUS* status_vector;
 
 	VA_START(args, status);
-	status_vector = ((thread_db*) JRD_get_thread_data)->tdbb_status_vector;
+	status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -404,7 +404,7 @@ void ERR_post(ISC_STATUS status, ...)
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
 
-	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data)->tdbb_status_vector;
+	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -491,7 +491,7 @@ void ERR_punt(void)
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
@@ -546,7 +546,7 @@ void ERR_warning(ISC_STATUS status, ...)
  *	that subsequent errors can supersede this one.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	STUFF_STATUS(tdbb->tdbb_status_vector, status);
 	DEBUG;

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.77 2004-05-21 06:15:39 robocop Exp $
+$Id: blb.cpp,v 1.78 2004-05-22 14:24:52 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -1679,7 +1679,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 /* Note: Cannot remove this JRD_get_thread_data without API change to
    blob filter routines */
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_tra* transaction = (jrd_tra*) control->ctl_internal[1];
 	bid* blob_id = reinterpret_cast<bid*>(control->ctl_internal[2]);
@@ -2314,7 +2314,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		{
 			/* Note: cannot remove this JRD_get_thread_data without api change
 			   to slice callback routines */
-			thread_db* tdbb = JRD_get_thread_data;
+			thread_db* tdbb = JRD_get_thread_data();
 
 			Firebird::HalfStaticArray<char, 1024> tmp_buffer;
 			const USHORT tmp_len = array_desc->dsc_length;

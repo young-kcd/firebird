@@ -889,7 +889,7 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
  *	Compute the maximum key length for an index.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;

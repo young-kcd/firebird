@@ -1046,7 +1046,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 /* Note: This function is called from outside the engine as
    well as inside - we likely can't get rid of JRD_get_thread_data here */
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	if (tdbb == NULL)			/* are we in the Engine? */
 		return (1);				/* no, then can't access intl gah */
 

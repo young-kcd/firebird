@@ -157,7 +157,7 @@ void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier t;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, t);
@@ -211,7 +211,7 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier f;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
@@ -267,7 +267,7 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier f;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
@@ -346,7 +346,7 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
  **************************************/
 	SqlIdentifier t;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
@@ -404,7 +404,7 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier f;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
@@ -489,7 +489,7 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
  **************************************/
 	SqlIdentifier idx_name, rel_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
@@ -581,7 +581,7 @@ void DYN_delete_local_field(
  **************************************/
 	SqlIdentifier tbl_nm, col_nm, constraint, index_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, col_nm);
@@ -803,7 +803,7 @@ void DYN_delete_parameter( Global* gbl, const UCHAR** ptr, TEXT* proc_name)
 			MAX_SQL_IDENTIFIER_SIZE, true);
 	}
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
@@ -893,7 +893,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	SqlIdentifier name;
 
 	GET_STRING(ptr, name);
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	tdbb->tdbb_flags |= TDBB_prc_being_dropped;
@@ -1051,7 +1051,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	USHORT id;
 	SqlIdentifier relation_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	if (relation)
@@ -1293,7 +1293,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 	SqlIdentifier role_name, role_owner, user;
 	TEXT *ptr1, *ptr2;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
@@ -1446,7 +1446,7 @@ void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
  **************************************/
 	int shadow_number;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 /*****
@@ -1521,7 +1521,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	USHORT id;
 	SqlIdentifier r, t;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
@@ -1658,7 +1658,7 @@ void DYN_delete_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 	int number;
 	SqlIdentifier t;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	number = DYN_get_number(ptr);
@@ -1726,7 +1726,7 @@ static bool delete_constraint_records(Global*	gbl,
  *	based on a constraint name.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
@@ -1776,7 +1776,7 @@ static bool delete_dimension_records(Global* gbl, const TEXT* field_name)
  *	pertaining to a field.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
@@ -1900,7 +1900,7 @@ static void delete_gfield_for_lfield( Global* gbl, const TEXT* lfield_name)
  *	deletes a global field for a given local field.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = CMP_find_request(tdbb, drq_e_l_gfld, DYN_REQUESTS);
 
@@ -1941,7 +1941,7 @@ static bool delete_index_segment_records( Global* gbl, const TEXT* index_name)
  *	pertaining to an index.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
@@ -1989,7 +1989,7 @@ static bool delete_security_class2( Global* gbl, const TEXT* security_class)
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_class, DYN_REQUESTS);

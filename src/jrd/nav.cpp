@@ -179,7 +179,7 @@ bool NAV_find_record(RecordSource* rsb,
 		search_flags = 0;
 
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
 	WIN window(-1);
@@ -804,7 +804,7 @@ bool NAV_reset_position(RecordSource* rsb, record_param* new_rpb)
  *	rsb to the record indicated by the passed rpb.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
 	WIN window(-1);
@@ -1080,7 +1080,7 @@ static bool find_dbkey(RecordSource* rsb, ULONG record_number)
  *	record within a set of equivalent keys.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = request->req_rpb + rsb->rsb_stream;
@@ -1164,7 +1164,7 @@ static bool find_record(
  *	must handle CRACK semantics.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 	irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = request->req_rpb + rsb->rsb_stream;
@@ -1362,7 +1362,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
  *	the actual node, return TRUE.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
@@ -1573,7 +1573,7 @@ static bool get_record(
  *	This routine must set or clear the CRACK flag.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
@@ -1875,7 +1875,7 @@ static void setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
  *	with a stream.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	// Start a bitmap which tells us we have already visited
 	// this record; this is to handle the case where there is more

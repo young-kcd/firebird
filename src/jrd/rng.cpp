@@ -74,7 +74,7 @@ void RNG_add_page(ULONG page_number)
  *	currently being defined.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 	RefreshRange* next_refresh_range;
@@ -145,7 +145,7 @@ void RNG_add_record(record_param* rpb)
  *	currently being defined.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 	RefreshRange* next_refresh_range;
@@ -214,7 +214,7 @@ jrd_nod* RNG_add_relation(jrd_nod* node)
  *	currently being defined.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
@@ -284,7 +284,7 @@ void RNG_add_uncommitted_record(record_param* rpb)
  *	registering interest in the transaction that created it.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 	RefreshRange* next_refresh_range;
@@ -360,7 +360,7 @@ DSC *RNG_begin(jrd_nod* node, impure_value* impure)
  *	Initialize a refresh range.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 	Database* dbb = tdbb->tdbb_database;
 	jrd_tra* transaction = request->req_transaction;
@@ -460,7 +460,7 @@ jrd_nod* RNG_delete(jrd_nod* node)
  *	Delete a previously created refresh range.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
@@ -531,7 +531,7 @@ jrd_nod* RNG_end(jrd_nod* node)
  *	Stop adding records to refresh range.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_operation == req_evaluate) {
@@ -575,7 +575,7 @@ void RNG_release_locks(RefreshRange* refresh_range)
  *	Release all locks held by a refresh range.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* release all the relation locks */
 
@@ -678,7 +678,7 @@ void RNG_shutdown_attachment(Attachment* attachment)
  *	This may be called at AST level, don't release memory.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	for (jrd_req* request = attachment->att_requests; request;
 		 request = request->req_request)
@@ -736,7 +736,7 @@ static void delete_range(RefreshRange* refresh_range)
  *	a refresh range.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = tdbb->tdbb_request;
 
@@ -843,7 +843,7 @@ static void stop_creating(RefreshRange* refresh_range)
  *	those being created.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	jrd_req* request = tdbb->tdbb_request;
 
 /* delete from the list of ranges being created */

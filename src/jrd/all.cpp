@@ -139,7 +139,7 @@ TEXT* ALL_cstring(const Firebird::string& in_string)
  *	return to the user or where ever.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	JrdMemoryPool* pool = tdbb->tdbb_default;
 	if (!pool) {
@@ -200,7 +200,7 @@ void ALL_init(void)
  *	have been locked before entry.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	JrdMemoryPool* pool = tdbb->tdbb_default = dbb->dbb_permanent;

@@ -988,14 +988,33 @@ typedef str *STR;
  * We can't always validate the database field, as during initialization
  * there is no tdbb_database set up.
  */
+
+#include "../jrd/thd_proto.h"
+
 #ifdef DEV_BUILD
-#define JRD_get_thread_data ((((thread_db*) THD_get_specific()) && \
-                         (((THDD)((thread_db*) THD_get_specific()))->thdd_type == THDD_TYPE_TDBB) && \
-			 (((thread_db*)((thread_db*) THD_get_specific()))->tdbb_database)) \
-			 ? ((MemoryPool::blk_type(((thread_db*)((thread_db*) THD_get_specific()))->tdbb_database) == type_dbb) \
-			    ? ((thread_db*) THD_get_specific()) \
-			    : (BUGCHECK (147), ((thread_db*) THD_get_specific()))) \
-			 : ((thread_db*) THD_get_specific()))
+#include "../jrd/err_proto.h"
+
+inline Jrd::thread_db* JRD_get_thread_data(){
+	THDD p1 = THD_get_specific();
+	if (p1 && p1->thdd_type == THDD_TYPE_TDBB)
+	{
+		Jrd::thread_db* p2 = (Jrd::thread_db*)p1;
+		if (p2->tdbb_database && MemoryPool::blk_type(p2->tdbb_database) != type_dbb)
+		{
+			BUGCHECK(147);
+		}
+	}
+	return (Jrd::thread_db*) p1;
+}
+
+//	(((THD_get_specific()) && 
+//		(((THDD)(THD_get_specific()))->thdd_type == THDD_TYPE_TDBB) && 
+//			 (((thread_db*)(THD_get_specific()))->tdbb_database)) 
+//			 ? ((MemoryPool::blk_type(((thread_db*)(THD_get_specific()))->tdbb_database) == type_dbb) 
+//			    ? (THD_get_specific()) 
+//			    : (BUGCHECK (147), (THD_get_specific()))) 
+//			 : ((thread_db*) THD_get_specific()))
+
 //#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
 #define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb))
 #define CHECK_TDBB(tdbb) fb_assert ((tdbb) && \
@@ -1003,18 +1022,22 @@ typedef str *STR;
 	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
 #else
 /* PROD_BUILD */
-#define JRD_get_thread_data ((thread_db*) THD_get_specific())
+inline Jrd::thread_db* JRD_get_thread_data(){
+	return (Jrd::thread_db*) THD_get_specific();
+}
+
+//#define JRD_get_thread_data (((thread_db*) THD_get_specific())
 #define CHECK_TDBB(tdbb)		/* nothing */
 #define CHECK_DBB(dbb)			/* nothing */
 #endif
 
-#define GET_DBB         (((thread_db*) (JRD_get_thread_data))->tdbb_database)
+#define GET_DBB         (((thread_db*) (JRD_get_thread_data()))->tdbb_database)
 
 /*-------------------------------------------------------------------------*
  * macros used to set thread_db and Database pointers when there are not set already *
  *-------------------------------------------------------------------------*/
 
-#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = JRD_get_thread_data; }; CHECK_TDBB (tdbb)
+#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = (thread_db*) JRD_get_thread_data(); }; CHECK_TDBB (tdbb)
 #define	SET_DBB(dbb)	if ((dbb)  == NULL)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
 
 #ifdef V4_THREADING
@@ -1055,7 +1078,6 @@ extern int debug;
    Here we have a function which sets some flags, and then calls THD_put_specific
    so in this case we define the macro as calling that function. */
 // CVC: This may be obsolete now that different subsystems use different macro/function names.
-#ifndef JRD_MAIN
 
 #define JRD_set_thread_data		tdbb = &thd_context;\
 				MOVE_CLEAR (tdbb, sizeof (*tdbb));\
@@ -1063,8 +1085,6 @@ extern int debug;
 				tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB
 
 #define JRD_restore_thread_data	THD_restore_specific()
-
-#endif /* !JRD_MAIN */
 
 
 

@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.58 2004-05-21 06:15:40 robocop Exp $
+$Id: fun.epp,v 1.59 2004-05-22 14:24:54 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -129,7 +129,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	UCHAR temp[800];
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	// Start by constructing argument list
 	str* temp_string;
@@ -588,7 +588,7 @@ UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessE
  *	Lookup function by name.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
@@ -746,7 +746,7 @@ UserFunction* FUN_resolve(CompilerScratch* csb, UserFunction* function, jrd_nod*
  **************************************/
 	DSC arg;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	UserFunction* best = NULL;
 	int best_score = 0;
@@ -820,7 +820,7 @@ static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
    engine mutex */
 
 	THREAD_ENTER();
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	BLB_put_segment(tdbb, blob, buffer, length);
 	THREAD_EXIT();
 }
@@ -847,7 +847,7 @@ static SSHORT blob_get_segment(
  **************************************/
 /* add thread enter and thread_exit wrappers */
 	THREAD_ENTER();
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
 	THREAD_EXIT();
 
@@ -878,7 +878,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
  *	Return length of array desc.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* Get first the array descriptor, then the array */
 
@@ -955,7 +955,7 @@ static void invoke(UserFunction* function,
  *	use CHECK_FOR_EXCEPTIONS macros without conflicts with destructors
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)

@@ -1866,7 +1866,7 @@ void CCH_must_write(WIN * window)
 	}
 
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
-	update_write_direction(JRD_get_thread_data, bdb);
+	update_write_direction(JRD_get_thread_data(), bdb);
 }
 
 
@@ -2327,7 +2327,7 @@ void CCH_shutdown_database(Database* dbb)
  *	Shutdown database physical page locks.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	bcb_repeat* tail;
 	BufferControl* bcb = dbb->dbb_bcb;

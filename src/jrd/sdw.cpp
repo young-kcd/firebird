@@ -79,7 +79,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
  *	Add a brand new shadowing file to the database.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = GET_DBB;
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
@@ -126,7 +126,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
  *	Return the sequence number for the new file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 /* Find the file to be extended */
@@ -298,7 +298,7 @@ void SDW_check(void)
  *
  **************************************/
 	Database* dbb = GET_DBB;
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* first get rid of any shadows that need to be 
    deleted or shutdown; deleted shadows must also
@@ -363,7 +363,7 @@ bool SDW_check_conditional(void)
  *	if so update meta data and return true
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -449,7 +449,7 @@ void SDW_dump_pages(void)
  *	to all unwritten shadow files.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	gds__log("conditional shadow dumped for database %s",
 			 dbb->dbb_file->fil_string);
@@ -530,7 +530,7 @@ void SDW_get_shadows(void)
  *	defined.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -577,7 +577,7 @@ void SDW_init(bool activate, bool delete_)
  *	to use as a shadow.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -677,7 +677,7 @@ void SDW_notify(void)
  *	a shadow added.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -728,7 +728,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
  * Functional description
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = GET_DBB;
 
 	if (file != dbb->dbb_file)
@@ -895,7 +895,7 @@ void SDW_start(
 	SCHAR expanded_name[MAXPATHLEN];
 	USHORT header_fetched = 0;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 /* check that this shadow has not already been started,
@@ -1129,7 +1129,7 @@ static void activate_shadow(void)
  *	Change a shadow into a database.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1210,7 +1210,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	try {
@@ -1242,7 +1242,7 @@ static void check_if_got_ast(jrd_file* file)
  *	a shadow update
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -1274,7 +1274,7 @@ static void copy_header(void)
  *	the name of the extend file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 

@@ -105,7 +105,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 #if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
 	Database* dbb = tdbb->tdbb_database;
@@ -211,7 +211,7 @@ void DYN_error(bool	status_flag,
  *	DDL failed.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (tdbb->tdbb_status_vector[1] == isc_no_meta_update)
 		return;
@@ -713,7 +713,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
  *	Write out a blr blob.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	const UCHAR *p = *ptr;
 	USHORT length = *p++;
@@ -752,7 +752,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
  *	Write out a text blob.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	const UCHAR* p = *ptr;
 	USHORT length = *p++;
@@ -801,7 +801,7 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database*  dbb  = tdbb->tdbb_database;
 
 #pragma FB_COMPILER_MESSAGE("TMN: FIXME! We do not have a jmp_buf anymore!")
@@ -863,7 +863,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	TEXT* ptr1;
 	TEXT* ptr2;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
@@ -1196,7 +1196,7 @@ static bool grantor_can_grant(	Global*		gbl,
  **************************************/
 	USHORT err_num;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 /* Verify that the input relation exists. */
@@ -1582,7 +1582,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	SqlIdentifier revoking_user_name, dummy_name;
     TEXT* ptr1;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
@@ -1838,7 +1838,7 @@ static void set_field_class_name(Global* gbl, const TEXT* relation, const TEXT* 
  *      field has a unique class name.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
@@ -1902,7 +1902,7 @@ static void store_privilege(Global*		gbl,
  *	routine should not.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);

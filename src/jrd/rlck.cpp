@@ -82,7 +82,7 @@ Lock* RLCK_lock_record(record_param* rpb,
 	if (!lock)
 		return NULL;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /*
    if the record is trying to be locked, check
@@ -243,7 +243,7 @@ Lock* RLCK_range_relation(jrd_tra* transaction,
  *	Lock a relation for a refresh range.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	if (transaction->tra_flags & TRA_system)
@@ -289,7 +289,7 @@ Lock* RLCK_record_locking(jrd_rel* relation)
 	if (relation->rel_record_locking)
 		return relation->rel_record_locking;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = GET_DBB;
 
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
@@ -470,7 +470,7 @@ void RLCK_shutdown_attachment(Attachment* attachment)
  *	and relation locks. This runs at AST level.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 /* Release child record locks before parent relation locks */
 	for (Lock* record_lock = attachment->att_record_locks;
 		record_lock;
@@ -505,7 +505,7 @@ void RLCK_shutdown_database(Database* dbb)
  *	at AST level.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	vec* vector = dbb->dbb_relations;
 	if (!vector)
 		return;
@@ -542,7 +542,7 @@ void RLCK_signal_refresh(jrd_tra* transaction)
  *	lock to signal possible refresh range users.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 /* for each relation, take out a range relation lock and then release it */
 	vec* vector = transaction->tra_relation_locks;
@@ -640,7 +640,7 @@ void RLCK_unlock_record(Lock* lock, record_param* rpb)
 		relation = NULL;		/* theoretically impossible */
 
 	RLCK_unlock_record_implicit(lock, rpb);
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* attachment = tdbb->tdbb_attachment;
 	if (attachment->att_flags & ATT_shutdown)
 		return;
@@ -671,7 +671,7 @@ void RLCK_unlock_record_implicit(Lock* lock, record_param* rpb)
  *	Unlock a record-level lock.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	if (!lock)
 		lock = find_record_lock(rpb);
 	const USHORT lock_level = lock->lck_logical;
@@ -725,7 +725,7 @@ void RLCK_unlock_relation(Lock* lock, jrd_rel* relation)
  *	on the specified relation.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* attachment = tdbb->tdbb_attachment;
 	vec* vector = attachment->att_relation_locks;
 	if (!vector)
@@ -774,7 +774,7 @@ static Lock* allocate_record_lock(jrd_tra* transaction, record_param* rpb)
  *	transaction used only for implicit record locks.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
 	if (!rpb->rpb_record)
@@ -827,7 +827,7 @@ static Lock* allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
  *	Allocate a lock block for a relation lock.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	Lock* lock = FB_NEW_RPT(*pool, sizeof(SLONG)) Lock();
 	lock->lck_dbb = dbb;
@@ -859,7 +859,7 @@ static Lock* attachment_relation_lock(jrd_rel* relation)
  *	attachment level.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
@@ -901,7 +901,7 @@ static void drop_record_lock(Lock* record_lock)
  *	the attachment block, and drop it from the list.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 /* look through all the record locks taken out by this attachment
    looking for one with the same record number and relation id */
 	Attachment* attachment = tdbb->tdbb_attachment;
@@ -931,7 +931,7 @@ static Lock* find_record_lock(record_param* rpb)
  *	defined for a record.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 /* look through all the record locks taken out by this attachment
    looking for one with the same record number and relation */
 	Attachment* attachment = tdbb->tdbb_attachment;

@@ -79,7 +79,7 @@ void EXT_close(RecordSource* rsb)
  *	Close a record stream for an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
@@ -141,7 +141,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
  **************************************/
 	UCHAR index_buffer[MAX_KEYS * sizeof(index_desc)];
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 /* Allocate and fill out an external file block.  Get the
@@ -289,7 +289,7 @@ bool EXT_get(RecordSource* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (tdbb->tdbb_request->req_flags & req_abort)
 		return false;
@@ -360,7 +360,7 @@ EXT_open(RecordSource* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
 	jrd_req* request = tdbb->tdbb_request;
@@ -406,7 +406,7 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* Start by chasing around finding pointers to the various
    data structures */
@@ -838,7 +838,7 @@ static bool get_dbkey(RecordSource* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* Chase down misc pointers */
 
@@ -899,7 +899,7 @@ static bool get_indexed(RecordSource* rsb)
  **************************************/
 	UCHAR key_buffer[256];
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* Start by finding the signficant data structures for the stream.  These
    are mainly used to initialize the stream at some particular key value */
@@ -1016,7 +1016,7 @@ static bool get_sequential(RecordSource* rsb)
  *	Get a record from an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
@@ -1118,7 +1118,7 @@ static open_indexed(RecordSource* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
@@ -1148,7 +1148,7 @@ static open_sequential(RecordSource* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;

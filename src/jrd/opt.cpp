@@ -847,7 +847,7 @@ jrd_nod* OPT_make_dbkey(OptimizerBlk* opt, jrd_nod* boolean, USHORT stream)
  *	concatenations of primitive dbkeys.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
@@ -1019,7 +1019,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
  *	Return the number of matching items.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	DEV_BLKCHK(opt, type_opt);
 
 /* If there are not conjunctions, don't waste our time */
@@ -1268,7 +1268,7 @@ static UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_desc
 		
 		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
 		//						    62 for the smallest page of 1K
-		const UINT64 max_idx = JRD_get_thread_data->tdbb_database->dbb_max_idx + 1;
+		const UINT64 max_idx = JRD_get_thread_data()->tdbb_database->dbb_max_idx + 1;
 		UINT64 unique_prefix = 0;
 		if ((idx->idx_flags & idx_unique) && (idx_eql_count == idx->idx_count)) {
 			unique_prefix = (max_idx - idx->idx_count) * max_idx * max_idx * max_idx;
@@ -1297,7 +1297,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
  *	indices were actually utilized by the optimizer.
  *         
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	const jrd_nod* plan = csb_tail->csb_plan;
 	if (!plan) {
@@ -2262,7 +2262,7 @@ static bool dump_index(const jrd_nod* node,
  *	an info buffer.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -5831,7 +5831,7 @@ static jrd_nod* make_binary_node(NOD_T type, jrd_nod* arg1, jrd_nod* arg2, bool 
  *	Make a binary node.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	DEV_BLKCHK(arg1, type_nod);
 	DEV_BLKCHK(arg2, type_nod);
 	jrd_nod* node = PAR_make_node(tdbb, 2);
@@ -5957,7 +5957,7 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
  *
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(boolean, type_nod);
 	DEV_BLKCHK(arg1, type_nod);
@@ -7180,7 +7180,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 
 	index_desc* selected_idx = NULL;
 	USHORT i, j;
-	Firebird::Array<index_desc> idx_sort(*JRD_get_thread_data->tdbb_default, csb_tail->csb_indices);
+	Firebird::Array<index_desc> idx_sort(*JRD_get_thread_data()->tdbb_default, csb_tail->csb_indices);
 	bool same_selectivity = false;
 
 	// Walk through the indices and sort them into into idx_sort
@@ -7249,7 +7249,7 @@ static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat* csb_tail,
  *    Sort indices based on the priority level.
  *
  ***************************************************/
-	Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_csb(*JRD_get_thread_data->tdbb_default);
+	Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_csb(*JRD_get_thread_data()->tdbb_default);
 	idx_csb.grow(csb_tail->csb_indices);
 	memcpy(idx_csb.begin(), idx_walk, csb_tail->csb_indices * sizeof(index_desc*));
 

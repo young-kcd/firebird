@@ -119,7 +119,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
  **************************************/
 	UCHAR verb, s[128];
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
@@ -267,7 +267,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	SqlIdentifier t;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
@@ -341,7 +341,7 @@ void DYN_modify_global_field(
 	const TEXT* err_one_type_change_only =
 		"Only one data type change to the domain allowed at a time";
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
@@ -886,7 +886,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	SqlIdentifier name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
@@ -978,7 +978,7 @@ void DYN_modify_local_field(
 		
 	const UCHAR *query_header, *description;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, f);
@@ -1168,7 +1168,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 	GET_STRING(ptr, procedure_name);
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
@@ -1274,7 +1274,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	SqlIdentifier name, field_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	field_name[0] = 0;
@@ -1373,7 +1373,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	SqlIdentifier trigger_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
@@ -1507,7 +1507,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 	UCHAR verb;
 	SqlIdentifier t;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
@@ -1577,7 +1577,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	SqlIdentifier view_name;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	view_name[0] = 0;
@@ -1672,7 +1672,7 @@ static void drop_cache( Global* gbl)
  *	Drop the database cache
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
@@ -1723,7 +1723,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
  **************************************/
 	bool invalid_state = false;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
@@ -1838,7 +1838,7 @@ static void drop_log( Global* gbl)
  *	Delete all log files
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
@@ -2213,7 +2213,7 @@ void DYN_modify_sql_field(Global*		gbl,
 	const TEXT* err_one_type_change_only =
 		"Only one data type change to the field allowed at a time";
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	
 	dyn_fld* orig_fld = 0;

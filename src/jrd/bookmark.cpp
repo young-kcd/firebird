@@ -49,7 +49,7 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
  *	Allocate and initialize a bookmark structure.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = tdbb->tdbb_request;
 	irsb* impure = (irsb*) ((UCHAR *) request + rsb->rsb_impure);
@@ -125,7 +125,7 @@ Bookmark* BKM_lookup(jrd_nod* node)
 	bookmark = (Bookmark*) MOV_get_long(EVL_expr(tdbb, node), 0);
 #else
 	{
-		thread_db* tdbb = JRD_get_thread_data;
+		thread_db* tdbb = JRD_get_thread_data();
 		Attachment* attachment = tdbb->tdbb_attachment;
 
 		bookmark = NULL;
@@ -158,7 +158,7 @@ void BKM_release(jrd_nod* node)
  *	Release a bookmark using a user supplied value.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	Bookmark* bookmark = BKM_lookup(node);

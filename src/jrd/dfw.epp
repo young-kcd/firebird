@@ -256,7 +256,7 @@ USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype
  * 	on the field's type and subtype.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (field_type == dtype_varying || field_type == dtype_text)
 	{
@@ -460,7 +460,7 @@ void DFW_perform_work(jrd_tra* transaction)
  *	come.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* If no deferred work or it's all deferred event posting
    don't bother */
@@ -676,7 +676,7 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
  *	of the index.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version >= ODS_VERSION11) {
@@ -3148,7 +3148,7 @@ static void get_procedure_dependencies(DeferredWork* work)
  *	created or when it's modified.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_prc* procedure = NULL;
@@ -3211,7 +3211,7 @@ static void get_trigger_dependencies( DeferredWork* work)
  *	created or when it's modified.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_rel* relation = NULL;
@@ -4068,7 +4068,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 
 	UCHAR temp[128];
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb  = tdbb->tdbb_database;
 
 	/* If blob is null, don't bother */
@@ -4113,7 +4113,7 @@ static void put_summary_record(blb*		blob,
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	UCHAR temp[129];
 
 	UCHAR* buffer = ((size_t) (length + 1) > sizeof(temp)) ?

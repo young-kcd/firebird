@@ -715,7 +715,6 @@ int ISC_event_blocked(USHORT count, event_t** events, SLONG * values)
 /**************************************
  *
  *	I S C _ e v e n t _ b l o c k e d	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  **************************************
@@ -747,7 +746,6 @@ SLONG ISC_event_clear(event_t* event)
 /**************************************
  *
  *	I S C _ e v e n t _ c l e a r	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  **************************************
@@ -778,7 +776,6 @@ void ISC_event_fini(event_t* event)
 /**************************************
  *
  *	I S C _ e v e n t _ f i n i	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  **************************************
@@ -795,7 +792,6 @@ int ISC_event_init(event_t* event, int semid, int semnum)
 /**************************************
  *
  *	I S C _ e v e n t _ i n i t	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  **************************************
@@ -829,7 +825,6 @@ int ISC_event_post(event_t* event)
 /**************************************
  *
  *	I S C _ e v e n t _ p o s t	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  **************************************
@@ -867,7 +862,6 @@ int ISC_event_wait(
 /**************************************
  *
  *	I S C _ e v e n t _ w a i t	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  **************************************
@@ -1514,7 +1508,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		THREAD_ENTER();
 	}
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (!err_msg)
 	{
@@ -3244,7 +3238,6 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 /**************************************
  *
  *	I S C _ m u t e x _ i n i t	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  *
@@ -3272,7 +3265,6 @@ int ISC_mutex_lock(MTX mutex)
 /**************************************
  *
  *	I S C _ m u t e x _ l o c k	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  *
@@ -3304,7 +3296,6 @@ int ISC_mutex_lock_cond(MTX mutex)
 /**************************************
  *
  *	I S C _ m u t e x _ l o c k _ c o n d	( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  *
@@ -3336,7 +3327,6 @@ int ISC_mutex_unlock(MTX mutex)
 /**************************************
  *
  *	I S C _ m u t e x _ u n l o c k		( U N I X )
- *                                             not NeXT
  *                                             not SOLARIS
  *                                             not USE_POSIX_THREADS
  *
@@ -4116,7 +4106,7 @@ void longjmp_sig_handler(int sig_num)
    actually hang the sigsetjmp menber off of THDD, and
    make sure that it is set properly for all sub-systems. */
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 
 	siglongjmp(tdbb->tdbb_sigsetjmp, sig_num);
 }

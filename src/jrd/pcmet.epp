@@ -214,7 +214,7 @@ void PCMET_lookup_index( jrd_rel* relation, index_desc* idx)
  **************************************/
 	CompilerScratch* csb = NULL;
 
-	thread_db* tdbb = JRD_get_thread_data;
+	thread_db* tdbb = JRD_get_thread_data();
 	//const Database* dbb = tdbb->tdbb_database;
 
 /* check the index blocks for the relation to see if we 
