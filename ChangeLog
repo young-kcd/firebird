@@ -1,3 +1,37 @@
+2003-03-31 21:11  arnobrinkman
+
+	* firebird2/src/dsql/: gen.cpp, make.cpp, pass1.cpp:
+	
+	bugfix: 1) bug with sub-selects inside COALESCE function.  2) bug
+	with parameter ordering.
+
+2003-03-31 19:43  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Added DatabasesDirs parameter to firebird.conf.  Databases may be
+	accessed only in trees, listed there.  For compatibility reasons,
+	default = /
+	
+	Also filename type cleanup in gds_attach & gds_create
+
+2003-03-31 19:41  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	jrd/dfw.epp, jrd/isc_f_proto.h, jrd/isc_file.cpp, jrd/jrd_proto.h,
+	install/misc/firebird.conf:
+	
+	Added DatabasesDirs parameter to firebird.conf.  Databases may be
+	accessed only in trees, listed there.  For compatibility reasons,
+	default = /
+
+2003-03-31 12:29  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.client.util,
+	Makefile.in.fbserver, Makefile.in.libfbclient, prefix.mingw:
+	
+	Improve Win32 build. Add resources to superserver
+
 2003-03-30 18:55  arnobrinkman
 
 	* firebird2/src/jrd/: inf.cpp, svc.cpp:
