@@ -49,7 +49,7 @@ static void post_error(ISC_STATUS, ...);
     @param to
 
  **/
-void MOVD_move( DSC * from, DSC * to)
+void MOVD_move(const dsc* from, dsc* to)
 {
 
 	CVT_move(from, to, (FPTR_VOID) post_error);
@@ -69,11 +69,10 @@ void MOVD_move( DSC * from, DSC * to)
  **/
 static void post_error( ISC_STATUS status, ...)
 {
-	TSQL tdsql;
 	ISC_STATUS *v, *v_end, *temp;
 	ISC_STATUS_ARRAY temp_status;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 /* copy into a temporary array any other arguments which may 
  * have been handed to us, then post the error.
@@ -105,3 +104,4 @@ static void post_error( ISC_STATUS status, ...)
 
 	ERRD_punt();
 }
+

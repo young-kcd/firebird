@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		err.c
+ *	MODULE:		err.cpp
  *	DESCRIPTION:	Error handlers
  *
  * The contents of this file are subject to the Interbase Public
@@ -125,15 +125,14 @@ void ERRD_bugcheck(const char* text)
 void ERRD_error( int code, const char* text)
 {
 	TEXT s[256];
-	TSQL tdsql;
-    ISC_STATUS	*status_vector;
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 	sprintf(s, "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-    if (status_vector = tdsql->tsql_status) {
+	ISC_STATUS* status_vector = tdsql->tsql_status;
+    if (status_vector) {
         *status_vector++ = gds_arg_gds;
         *status_vector++ = gds_random;
         *status_vector++ = gds_arg_cstring;
@@ -270,7 +269,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	int status_len = 0;
 	int warning_indx = 0;
 
-	ISC_STATUS*status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
+	ISC_STATUS* status_vector = ((TSQL) GET_THREAD_DATA)->tsql_status;
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -365,9 +364,7 @@ void ERRD_post(ISC_STATUS status, ...)
  **/
 void ERRD_punt(void)
 {
-	TSQL tdsql;
-
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 /* Save any strings in a permanent location */
 

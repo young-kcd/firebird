@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		hsh.c
+ *	MODULE:		hsh.cpp
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -35,9 +35,9 @@
 
 ASSERT_FILENAME
 const int HASH_SIZE = 211;
-static SSHORT hash(SCHAR *, USHORT);
+static SSHORT hash(const SCHAR*, USHORT);
 static bool remove_symbol(dsql_sym**, dsql_sym*);
-static bool scompare(TEXT *, USHORT, TEXT *, USHORT);
+static bool scompare(const TEXT*, USHORT, const TEXT*, const USHORT);
 
 static DSQL_SYM* hash_table;
 
@@ -444,16 +444,13 @@ void HSHD_set_flag(
     @param 
 
  **/
-static SSHORT hash(SCHAR * string, USHORT length)
+static SSHORT hash(const SCHAR* string, USHORT length)
 {
-	SLONG value;
-	SCHAR c;
-
-	value = 0;
+	SLONG value = 0;
 
 	while (length--) {
-		c = *string++;
-		value = (value << 1) + (c);
+		const SCHAR c = *string++;
+		value = (value << 1) + c;
 	}
 
 	return ((value >= 0) ? value : -value) % HASH_SIZE;
@@ -516,9 +513,9 @@ static bool remove_symbol(DSQL_SYM* collision, DSQL_SYM symbol)
     @param length2
 
  **/
-static bool scompare(TEXT * string1,
+static bool scompare(const TEXT* string1,
 						USHORT length1,
-						TEXT * string2, USHORT length2)
+						const TEXT* string2, const USHORT length2)
 {
 
 	if (length1 != length2)

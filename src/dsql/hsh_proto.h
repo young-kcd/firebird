@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		hsh_proto.h
- *	DESCRIPTION:	Prototype Header file for hsh.c
+ *	DESCRIPTION:	Prototype Header file for hsh.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

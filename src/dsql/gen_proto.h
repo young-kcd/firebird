@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		gen_proto.h
- *	DESCRIPTION:	Prototype Header file for gen.c
+ *	DESCRIPTION:	Prototype Header file for gen.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -32,9 +32,11 @@ void	GEN_return(DSQL_REQ, DSQL_NOD, bool);
 void	GEN_start_transaction(dsql_req*, dsql_nod*);
 void	GEN_statement(dsql_req*, dsql_nod*);
 
-inline UCHAR stuff(dsql_req* request, UCHAR byte){
+inline UCHAR stuff(dsql_req* request, const UCHAR byte)
+{
 	return ((BLOB_PTR*)request->req_blr < (BLOB_PTR*)request->req_blr_yellow) ?
 		(*request->req_blr++ = byte) : GEN_expand_buffer(request, byte);
 }
 
 #endif //  DSQL_GEN_PROTO_H
+

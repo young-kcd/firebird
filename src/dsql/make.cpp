@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		make.c
+ *	MODULE:		make.cpp
  *	DESCRIPTION:	Routines to make various blocks.
  *
  * The contents of this file are subject to the Interbase Public
@@ -88,12 +88,9 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
  **/
 DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 {
-	DSQL_NOD node;
-	TSQL tdsql;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
-
-	node = FB_NEW_RPT(*tdsql->tsql_default,
+	DSQL_NOD node = FB_NEW_RPT(*tdsql->tsql_default,
 						(numeric_flag == CONSTANT_TIMESTAMP ||
 						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
 	node->nod_type = nod_constant;
@@ -161,9 +158,8 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 	}
 	else if (numeric_flag == CONSTANT_DATE ||
 			 numeric_flag == CONSTANT_TIME ||
-			 numeric_flag == CONSTANT_TIMESTAMP) {
-		DSC tmp;
-
+			 numeric_flag == CONSTANT_TIMESTAMP)
+	{
 		/* Setup the constant's descriptor */
 
 		switch (numeric_flag) {
@@ -184,6 +180,7 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 
 		/* Set up a descriptor to point to the string */
 
+		dsc tmp;
 		tmp.dsc_dtype = dtype_text;
 		tmp.dsc_scale = 0;
 		tmp.dsc_flags = 0;
@@ -229,12 +226,9 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
  **/
 DSQL_NOD MAKE_str_constant(STR constant, SSHORT character_set)
 {
-	DSQL_NOD node;
-	TSQL tdsql;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
-
-	node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+	DSQL_NOD node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -275,15 +269,15 @@ STR MAKE_cstring(const char* str)
  	MAKE_desc
   
     @brief	Make a descriptor from input node.
- 
+	This function can modify node->nod_flags to add NOD_COMP_DIALECT
 
     @param desc
     @param node
 
  **/
-void MAKE_desc( DSC * desc, DSQL_NOD node)
+void MAKE_desc(dsc* desc, dsql_nod* node)
 {
-	DSC desc1, desc2;
+	dsc desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
 	DSQL_MAP map;
 	DSQL_CTX context;
@@ -416,35 +410,34 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 
-        /* Beware that JRD treats substring() always as returning CHAR
-           instead	of VARCHAR for historical reasons. */
-        if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
-            SLONG len = 0;
-            DSQL_NOD for_node = node->nod_arg [e_substr_length];
-            assert (for_node->nod_desc.dsc_dtype == dtype_long);
-            /* Migrate the charset from the blob to the string. */
-            desc->dsc_ttype = desc1.dsc_scale;
-            len = *(SLONG *) for_node->nod_desc.dsc_address;
-            /* For now, our substring() doesn't handle MBCS blobs,
-               neither at the DSQL layer nor at the JRD layer. */
-            if (len <= MAX_COLUMN_SIZE - (SLONG) sizeof (USHORT) && len >= 0) {
-                desc->dsc_length = sizeof (USHORT) + len;
-            }
-            else {
-                ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -204,
-                           gds_arg_gds, gds_dsql_datatype_err,
-                           gds_arg_gds, gds_imp_exc, 
-                           gds_arg_gds, gds_field_name,
-                           gds_arg_string, "substring()", /* field->fld_name,*/
-                           0);
-            }
+		/* Beware that JRD treats substring() always as returning CHAR
+		instead	of VARCHAR for historical reasons. */
+		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob) {
+			DSQL_NOD for_node = node->nod_arg [e_substr_length];
+			assert (for_node->nod_desc.dsc_dtype == dtype_long);
+			/* Migrate the charset from the blob to the string. */
+			desc->dsc_ttype = desc1.dsc_scale;
+			const SLONG len = *(SLONG *) for_node->nod_desc.dsc_address;
+			/* For now, our substring() doesn't handle MBCS blobs,
+			neither at the DSQL layer nor at the JRD layer. */
+			if (len <= MAX_COLUMN_SIZE - (SLONG) sizeof (USHORT) && len >= 0) {
+				desc->dsc_length = sizeof (USHORT) + len;
+			}
+			else {
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -204,
+						gds_arg_gds, gds_dsql_datatype_err,
+						gds_arg_gds, gds_imp_exc,
+						gds_arg_gds, gds_field_name,
+						gds_arg_string, "substring()", /* field->fld_name,*/
+						0);
+			}
 		}
-        else {
-            desc->dsc_ttype = ttype_ascii;
-            desc->dsc_length = sizeof (USHORT) + DSC_string_length (&desc1);
+		else {
+			desc->dsc_ttype = ttype_ascii;
+			desc->dsc_length = sizeof (USHORT) + DSC_string_length (&desc1);
 		}
-        desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
-        return;
+		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
+		return;
 
 	case nod_cast:
 		field = (DSQL_FLD) node->nod_arg[e_cast_target];
@@ -463,7 +456,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		*desc = desc1;
 		return;
 
-    case nod_coalesce:
+	case nod_coalesce:
 		MAKE_desc_from_list(&desc1, node->nod_arg[0], "COALESCE");
 		*desc = desc1;
 		return;
@@ -885,7 +878,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 	case nod_dbkey:
 		/* Fix for bug 10072 check that the target is a relation */
 		context = (DSQL_CTX) node->nod_arg[0]->nod_arg[0];
-        relation = context->ctx_relation;
+		relation = context->ctx_relation;
 		if (relation != 0) {
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_length = relation->rel_dbkey_length;
@@ -903,10 +896,10 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		desc->dsc_dtype = static_cast<UCHAR>(udf->udf_dtype);
 		desc->dsc_length = udf->udf_length;
 		desc->dsc_scale = static_cast<SCHAR>(udf->udf_scale);
-        /* CVC: Setting flags to zero obviously impeded DSQL to acknowledge
-           the fact that any UDF can return NULL simply returning a NULL 
-           pointer. */
-        desc->dsc_flags = DSC_nullable;
+		/* CVC: Setting flags to zero obviously impeded DSQL to acknowledge
+		the fact that any UDF can return NULL simply returning a NULL
+		pointer. */
+		desc->dsc_flags = DSC_nullable;
 		
 		if (desc->dsc_dtype <= dtype_any_text) {		
 			desc->dsc_ttype = udf->udf_character_set_id;
@@ -933,19 +926,19 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		node->nod_flags |= NOD_COMP_DIALECT;
 		return;
 
-    case nod_limit:
-        if (node->nod_desc.dsc_scale <= SQL_DIALECT_V5) {
-            desc->dsc_dtype = dtype_long; 
-            desc->dsc_length = sizeof (SLONG);
-        }
-        else {
-            desc->dsc_dtype = dtype_int64; 
-            desc->dsc_length = sizeof (SINT64);
-        }
-        desc->dsc_sub_type = 0;
-        desc->dsc_scale = 0;
-        desc->dsc_flags = 0; /* Can first/skip accept NULL in the future? */
-        return;
+	case nod_limit:
+		if (node->nod_desc.dsc_scale <= SQL_DIALECT_V5) {
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_length = sizeof (SLONG);
+		}
+		else {
+			desc->dsc_dtype = dtype_int64;
+			desc->dsc_length = sizeof (SINT64);
+		}
+		desc->dsc_sub_type = 0;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0; /* Can first/skip accept NULL in the future? */
+		return;
 
 	case nod_field:
 		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 203,
@@ -953,7 +946,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
 		return;
 
 	case nod_user_name:
-    case nod_current_role:
+	case nod_current_role:
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -1078,7 +1071,7 @@ void MAKE_desc( DSC * desc, DSQL_NOD node)
     @param field
 
  **/
-void MAKE_desc_from_field( DSC * desc, DSQL_FLD field)
+void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 {
 
 	DEV_BLKCHK(field, dsql_type_fld);
@@ -1110,7 +1103,7 @@ void MAKE_desc_from_field( DSC * desc, DSQL_FLD field)
 	@param expression_name
 
  **/
-void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
+void MAKE_desc_from_list(dsc* desc, DSQL_NOD node, const TEXT* expression_name)
 {
 	//-------------------------------------------------------------------------- 
 	//  [Arno Brinkman] 2003-08-23
@@ -1148,7 +1141,7 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 	//  
 	//--------------------------------------------------------------------------
 
-    // Initialize values.
+	// Initialize values.
 	UCHAR max_dtype = 0;
 	SCHAR max_scale = 0;
 	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0;
@@ -1160,18 +1153,18 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 	bool all_blob = true, any_blob = false, any_text_blob = false;
 
 	// Walk through arguments list.
-	DSQL_NOD *arg, *end, tnod, err_node = NULL;
-	DSC	desc1;
-	arg = node->nod_arg;
-	for (end = arg + node->nod_count; arg < end; arg++) {
+	const dsql_nod* err_node = NULL;
+	DSQL_NOD* arg = node->nod_arg;
+	for (DSQL_NOD* end = arg + node->nod_count; arg < end; arg++) {
 		// ignore NULL and parameter value from walking
-		tnod = *arg;
+		DSQL_NOD tnod = *arg;
 		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter) {
 			continue;
 		}
 
 		// Get the descriptor from current node.
-		MAKE_desc(&desc1, *arg);
+		dsc desc1;
+		MAKE_desc(&desc1, tnod);
 
 		// Check if we support this datatype.
 		if (!(DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_NUMERIC(desc1.dsc_dtype) ||
@@ -1233,9 +1226,8 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 				// currently we can't
 				//
 		{ 
-			DSC *ptr;
-			ptr = &desc1;
-			USHORT cnvlength = TEXT_LEN(ptr);
+			dsc* ptr = &desc1;
+			const USHORT cnvlength = TEXT_LEN(ptr);
 			if (cnvlength > maxtextlength) {
 				maxtextlength = cnvlength;
 			}
@@ -1257,7 +1249,7 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		}
 		else {
 			// Get max needed-length for not text types suchs as int64,timestamp etc..
-			USHORT cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
+			const USHORT cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
 			if (cnvlength > maxtextlength) {
 				maxtextlength = cnvlength;
 			}
@@ -1415,13 +1407,11 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
  **/
 DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
 {
-	DSQL_NOD node;
-
 	DEV_BLKCHK(context, dsql_type_ctx);
 	DEV_BLKCHK(field, dsql_type_fld);
 	DEV_BLKCHK(indices, dsql_type_nod);
 
-	node = MAKE_node(nod_field, e_fld_count);
+	DSQL_NOD node = MAKE_node(nod_field, e_fld_count);
 	node->nod_arg[e_fld_context] = (DSQL_NOD) context;
 	node->nod_arg[e_fld_field] = (DSQL_NOD) field;
 	if (field->fld_dimensions) {
@@ -1470,17 +1460,14 @@ DSQL_NOD MAKE_field(DSQL_CTX context, DSQL_FLD field, DSQL_NOD indices)
  **/
 DSQL_NOD MAKE_list(DLLS stack)
 {
-	DLLS temp;
-	USHORT count;
-	DSQL_NOD node, *ptr;
-
 	DEV_BLKCHK(stack, dsql_type_lls);
 
-	for (temp = stack, count = 0; temp; temp = temp->lls_next)
+	USHORT count = 0;
+	for (DLLS temp = stack; temp; temp = temp->lls_next)
 		++count;
 
-	node = MAKE_node(nod_list, count);
-	ptr = node->nod_arg + count;
+	DSQL_NOD node = MAKE_node(nod_list, count);
+	DSQL_NOD* ptr = node->nod_arg + count;
 
 	while (stack)
 		*--ptr = (DSQL_NOD) LLS_POP(&stack);
@@ -1502,12 +1489,9 @@ DSQL_NOD MAKE_list(DLLS stack)
  **/
 DSQL_NOD MAKE_node(NOD_TYPE type, int count)
 {
-	DSQL_NOD node;
-	TSQL tdsql;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	tdsql = GET_THREAD_DATA;
-
-	node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	DSQL_NOD node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1529,11 +1513,9 @@ DSQL_NOD MAKE_node(NOD_TYPE type, int count)
     @param sqlda_index
 
  **/
-PAR MAKE_parameter(DSQL_MSG message, bool sqlda_flag, bool null_flag, USHORT sqlda_index)
+PAR MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
+	USHORT sqlda_index)
 {
-	PAR parameter, null;
-	TSQL tdsql;
-
 	DEV_BLKCHK(message, dsql_type_msg);
 	
 	if (sqlda_flag && sqlda_index && (sqlda_index <= message->msg_index) && 
@@ -1546,11 +1528,11 @@ PAR MAKE_parameter(DSQL_MSG message, bool sqlda_flag, bool null_flag, USHORT sql
 		}
 	}
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	parameter = FB_NEW(*tdsql->tsql_default) par;
+	PAR parameter = FB_NEW(*tdsql->tsql_default) par;
 	parameter->par_message = message;
-    parameter->par_next = message->msg_parameters;
+	parameter->par_next = message->msg_parameters;
 	if (parameter->par_next != 0)
 		parameter->par_next->par_ordered = parameter;
 	else
@@ -1573,7 +1555,8 @@ PAR MAKE_parameter(DSQL_MSG message, bool sqlda_flag, bool null_flag, USHORT sql
 /* If a null handing has been requested, set up a null flag */
 
 	if (null_flag) {
-		parameter->par_null = null = MAKE_parameter(message, false, false, 0);
+		PAR null = MAKE_parameter(message, false, false, 0);
+		parameter->par_null = null;
 		null->par_desc.dsc_dtype = dtype_short;
 		null->par_desc.dsc_scale = 0;
 		null->par_desc.dsc_length = sizeof(SSHORT);
@@ -1595,7 +1578,6 @@ PAR MAKE_parameter(DSQL_MSG message, bool sqlda_flag, bool null_flag, USHORT sql
  **/
 STR MAKE_string(const char* str, int length)
 {
-
 	return MAKE_tagged_string(str, length, NULL);
 }
 
@@ -1615,25 +1597,22 @@ STR MAKE_string(const char* str, int length)
 
  **/
 DSQL_SYM MAKE_symbol(DBB database,
-				const TEXT * name, USHORT length, SYM_TYPE type, DSQL_REQ object)
+				const TEXT* name, USHORT length, SYM_TYPE type, DSQL_REQ object)
 {
-	DSQL_SYM symbol;
-	TEXT *p;
-	TSQL tdsql;
-
 	DEV_BLKCHK(database, dsql_type_dbb);
 	DEV_BLKCHK(object, dsql_type_req);
 	assert(name);
 	assert(length > 0);
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
+	DSQL_SYM symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
 	symbol->sym_length = length;
-	symbol->sym_string = p = symbol->sym_name;
+	TEXT* p = symbol->sym_name;
+	symbol->sym_string = p;
 
 	if (length)
 		MOVE_FAST(name, p, length);
@@ -1659,8 +1638,6 @@ DSQL_SYM MAKE_symbol(DBB database,
  **/
 STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
-
-
 	TSQL tdsql = GET_THREAD_DATA;
 
 	STR string = FB_NEW_RPT(*tdsql->tsql_default, length) str;
@@ -1685,9 +1662,8 @@ STR MAKE_tagged_string(const char* str_, size_t length, const char* charset)
  **/
 DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 {
-
-	long prefix = (long) prefix_node->nod_arg[0];
-	long suffix = (long) suffix_node->nod_arg[0];
+	const long prefix = (long) prefix_node->nod_arg[0];
+	const long suffix = (long) suffix_node->nod_arg[0];
 	delete prefix_node;
 	delete suffix_node;
 	return MAKE_constant((STR) (prefix + suffix - 1), CONSTANT_SLONG);
@@ -1710,27 +1686,23 @@ DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 
  **/
 DSQL_NOD MAKE_variable(DSQL_FLD field,
-				  const TEXT * name,
+				  const TEXT* name,
 				  USHORT type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)
 {
-	DSQL_NOD node;
-	VAR var_;
-	TSQL tdsql;
-
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
-	var_ = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
-	node = MAKE_node(nod_variable, e_var_count);
-	node->nod_arg[e_var_variable] = (DSQL_NOD) var_;
-	var_->var_msg_number = msg_number;
-	var_->var_msg_item = item_number;
-	var_->var_variable_number = local_number;
-	var_->var_field = field;
-	strcpy(var_->var_name, name);
-	var_->var_flags = type;
+	VAR variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
+	DSQL_NOD node = MAKE_node(nod_variable, e_var_count);
+	node->nod_arg[e_var_variable] = (DSQL_NOD) variable;
+	variable->var_msg_number = msg_number;
+	variable->var_msg_item = item_number;
+	variable->var_variable_number = local_number;
+	variable->var_field = field;
+	strcpy(variable->var_name, name);
+	variable->var_flags = type;
 	MAKE_desc_from_field(&node->nod_desc, field);
 
 	return node;

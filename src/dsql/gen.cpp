@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		gen.c
+ *	MODULE:		gen.cpp
  *	DESCRIPTION:	Routines to generate BLR.
  *
  * The contents of this file are subject to the Interbase Public
@@ -2044,7 +2044,10 @@ void GEN_return( DSQL_REQ request, DSQL_NOD procedure, bool eos_flag)
 static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 {
 	if (rse->nod_arg[e_rse_singleton]
-		&& !(request->req_dbb->dbb_flags & DBB_v3)) stuff(request, blr_singular);
+		&& !(request->req_dbb->dbb_flags & DBB_v3))
+	{
+			stuff(request, blr_singular);
+	}
 
 	stuff(request, blr_rse);
 

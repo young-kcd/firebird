@@ -24,7 +24,7 @@
 #ifndef DSQL_MOVD_PROTO_H
 #define DSQL_MOVD_PROTO_H
 
-void MOVD_move(dsc*, dsc*);
+void MOVD_move(const dsc*, dsc*);
 
 #endif //  DSQL_MOVD_PROTO_H
 
