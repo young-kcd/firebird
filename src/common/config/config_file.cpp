@@ -225,18 +225,18 @@ void ConfigFile::loadConfig()
 
 	parameters.clear();
 
-    std::ifstream configFile(configFile.c_str());
+    std::ifstream configFileStream(configFile.c_str());
 
-    if (!configFile)
+    if (!configFileStream)
     {
         // config file does not exist, a warning message would be nice.
         return;
     }
     string inputLine;
 
-    while (!configFile.eof())
+    while (!configFileStream.eof())
     {
-		std::getline(configFile, inputLine);
+		std::getline(configFileStream, inputLine);
 
 		stripComments(inputLine);
 		stripLeadingWhiteSpace(inputLine);
