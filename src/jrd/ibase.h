@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.78 2004-05-14 16:23:41 brodsom Exp $
+$Id: ibase.h,v 1.79 2004-05-20 00:58:55 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -262,21 +262,6 @@ typedef struct paramvary {
 /***************************/
 
 #include "../dsql/sqlda_pub.h"
-
-/***************************/
-/* SQL Dialects            */
-/***************************/
-
-#define SQL_DIALECT_V5				1	/* meaning is same as DIALECT_xsqlda */
-#define SQL_DIALECT_V6_TRANSITION	2	/* flagging anything that is delimited
-										   by double quotes as an error and
-										   flagging keyword DATE as an error */
-#define SQL_DIALECT_V6				3	/* supports SQL delimited identifier,
-										   SQLDATE/DATE, TIME, TIMESTAMP,
-										   CURRENT_DATE, CURRENT_TIME,
-										   CURRENT_TIMESTAMP, and 64-bit exact
-										   numeric type */
-#define SQL_DIALECT_CURRENT		SQL_DIALECT_V6	/* latest IB DIALECT */
 
 
 /***************************/
