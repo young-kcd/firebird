@@ -1,3 +1,41 @@
+2004-04-11 16:47  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp (1.20):
+	
+	fixed problem with system log overflow in case of missing
+	aliases.conf ** front-ported fix **
+
+2004-04-11 09:14  robocop
+
+	* firebird2/src/jrd/dyn_mod.epp (1.42):
+	
+	Close SF Bug# 910423
+
+2004-04-11 09:12  robocop
+
+	* firebird2/src/common/classes/tree.h (1.26):
+	
+	Style
+
+2004-04-11 06:04  robocop
+
+	* firebird2/src/: dsql/node.h (1.44), isql/extract.epp (1.28),
+	isql/isql.epp (1.72), isql/isql_proto.h (1.17), isql/isql_win.cpp
+	(1.12), isql/isql_win.h (1.5), isql/show.epp (1.37), jrd/opt.cpp
+	(1.152):
+	
+	Three changes to isql: Fix isql bug #910430.  Add SET HEADING
+	ON/OFF option Add -M2 command-line option to send output of
+	statistics and plans to the same file than the rest of the output. 
+	Those items do not appear when using HELP SET inside isql or with
+	isql -? from the command line.
+
+2004-04-11 04:40  skidder
+
+	* firebird2/src/common/config/config_file.cpp (1.19):
+	
+	Make it build
+
 2004-04-10 21:46  skidder
 
 	* firebird2/src/jrd/: dfw.epp (1.99), jrd.h (1.88), met.epp
