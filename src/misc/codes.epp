@@ -154,7 +154,10 @@ static const SCHAR *cpp_boiler_plate[] = {
 	"",
 };
 
-#define isc_facility		20
+#undef isc_facility
+#undef isc_base
+#undef isc_factor
+#define isc_facility	20
 #define isc_base		(isc_facility << 24)
 #define isc_factor		1
 
