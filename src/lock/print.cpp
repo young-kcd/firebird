@@ -76,15 +76,15 @@ struct waitque {
 	PTR waitque_entry[30];
 };
 
-static void prt_lock_activity(OUTFILE, LHB, USHORT, USHORT, USHORT);
+static void prt_lock_activity(OUTFILE, const lhb*, USHORT, USHORT, USHORT);
 static void prt_lock_init(void);
-static void prt_history(OUTFILE, LHB, PTR, SCHAR *);
-static void prt_lock(OUTFILE, LHB, LBL, USHORT);
-static void prt_owner(OUTFILE, LHB, OWN, bool, bool);
-static void prt_owner_wait_cycle(OUTFILE, LHB, OWN, USHORT, struct waitque *);
-static void prt_request(OUTFILE, LHB, LRQ);
-static void prt_que(OUTFILE, LHB, SCHAR *, SRQ, USHORT);
-static void prt_que2(OUTFILE, LHB, SCHAR *, SRQ, USHORT);
+static void prt_history(OUTFILE, const lhb*, PTR, const SCHAR*);
+static void prt_lock(OUTFILE, const lhb*, LBL, USHORT);
+static void prt_owner(OUTFILE, const lhb*, OWN, bool, bool);
+static void prt_owner_wait_cycle(OUTFILE, const lhb*, OWN, USHORT, struct waitque*);
+static void prt_request(OUTFILE, const lhb*, LRQ);
+static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
+static void prt_que2(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
 
 static const TEXT history_names[][10] = {
 	"n/a", "ENQ", "DEQ", "CONVERT", "SIGNAL", "POST", "WAIT",
@@ -123,39 +123,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	to ib_stdout.
  *
  **************************************/
-	bool sw_requests;
-	bool sw_owners;
-	bool sw_locks;
-	bool sw_history;
-	bool sw_nobridge;
-	USHORT sw_series, sw_interactive, sw_intervals, sw_seconds;
-	bool sw_consistency;
-	bool sw_waitlist;
-	bool sw_file;
-	LHB LOCK_header, header = NULL;
-	SLONG LOCK_size_mapped = DEFAULT_SIZE;
-	int orig_argc;
-	SCHAR **orig_argv;
-	TEXT *lock_file, buffer[MAXPATHLEN];
-	TEXT expanded_lock_filename[MAXPATHLEN];
-	TEXT hostname[64];
-	USHORT i;
-	SLONG length;
-	SH_MEM_T shmem_data;
-	SHB shb;
-	SRQ que, slot;
-	SCHAR *p, c;
-	ISC_STATUS_ARRAY status_vector;
 	SLONG redir_in, redir_out, redir_err;
-	SLONG hash_total_count, hash_lock_count, hash_min_count, hash_max_count;
-	float bottleneck;
-	OUTFILE outfile;
-#ifdef MANAGER_PROCESS
-	OWN manager;
-	int manager_pid;
-#endif
 
-	outfile = ib_stdout;
+	OUTFILE outfile = ib_stdout;
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
@@ -186,26 +156,33 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv += 4;
 		argc -= 4;
 	}
-	orig_argc = argc;
-	orig_argv = argv;
+	//const int orig_argc = argc;
+	//SCHAR** orig_argv = argv;
 
 /* Handle switches, etc. */
 
 	argv++;
-	sw_consistency = false;
-	sw_waitlist = false;
-	sw_file = false;
-	sw_requests = sw_locks = sw_history = sw_nobridge = false;
-	sw_owners = true;
+	bool sw_consistency = false;
+	bool sw_waitlist = false;
+	bool sw_file = false;
+	bool sw_requests = false;
+	bool sw_locks = false;
+	bool sw_history = false;
+	bool sw_nobridge = false;
+	bool sw_owners = true;
+	
+	USHORT sw_series, sw_interactive, sw_intervals, sw_seconds;
 	sw_series = sw_interactive = sw_intervals = sw_seconds = 0;
+	TEXT* lock_file = NULL;
 
 	while (--argc) {
-		p = *argv++;
+		SCHAR* p = *argv++;
 		if (*p++ != '-') {
 			FPRINTF(outfile,
 					"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>\n");
 			exit(FINI_OK);
 		}
+		SCHAR c;
 		while (c = *p++)
 			switch (c) {
 			case 'o':
@@ -325,23 +302,36 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			}
 	}
 
+	TEXT buffer[MAXPATHLEN];
 	if (!sw_file) {
 		gds__prefix_lock(buffer, LOCK_FILE);
 		lock_file = buffer;
 	}
 
+	SH_MEM_T shmem_data;
 #ifdef UNIX
 	shmem_data.sh_mem_semaphores = 0;
 #endif
+
+	SLONG LOCK_size_mapped = DEFAULT_SIZE;
 
 #ifdef UNIX
 	LOCK_size_mapped = 0;		/* Use length of existing segment */
 #else
 	LOCK_size_mapped = DEFAULT_SIZE;	/* length == 0 not supported by all non-UNIX */
 #endif
-	LOCK_header = (LHB) ISC_map_file(status_vector, lock_file, (void (*)(void*, sh_mem*, int)) prt_lock_init, 0, -LOCK_size_mapped,	/* Negative to NOT truncate file */
-									 &shmem_data);
 
+	ISC_STATUS_ARRAY status_vector;
+	
+	lhb* LOCK_header = (lhb*) ISC_map_file(status_vector,
+							lock_file,
+							(void (*)(void*, sh_mem*, int)) prt_lock_init,
+							0,
+							-LOCK_size_mapped,	/* Negative to NOT truncate file */
+							&shmem_data);
+
+	TEXT expanded_lock_filename[MAXPATHLEN];
+	TEXT hostname[64];
 	sprintf(expanded_lock_filename, lock_file,
 			ISC_get_host(hostname, sizeof(hostname)));
 
@@ -359,10 +349,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	if (LOCK_header
-		&& LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped) {
-		length = LOCK_header->lhb_length;
+		&& LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
+	{
 #if (!(defined UNIX) || (defined HAVE_MMAP))
-		LOCK_header = (LHB) ISC_remap_file(status_vector, &shmem_data, length,
+		SLONG length = LOCK_header->lhb_length;
+		LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length,
 										   FALSE);
 #endif
 	}
@@ -379,7 +370,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* if we can't read this version - admit there's nothing to say and return. */
 
 	if ((LOCK_header->lhb_version != SS_LHB_VERSION) &&
-		(LOCK_header->lhb_version != CLASSIC_LHB_VERSION)) {
+		(LOCK_header->lhb_version != CLASSIC_LHB_VERSION))
+	{
 		FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
 				LOCK_header->lhb_version);
 		exit(FINI_OK);
@@ -393,13 +385,15 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		exit(FINI_OK);
 	}
 
+	lhb* header = NULL;
+	
 	if (sw_consistency) {
 		/* To avoid changes in the lock file while we are dumping it - make
 		 * a local buffer, lock the lock file, copy it, then unlock the
 		 * lock file to let processing continue.  Printing of the lock file
 		 * will continue from the in-memory copy.
 		 */
-		header = (LHB) gds__alloc(LOCK_header->lhb_length);
+		header = (lhb*) gds__alloc(LOCK_header->lhb_length);
 		if (!header) {
 			FPRINTF(outfile,
 					"Insufficient memory for consistent lock statistics.\n");
@@ -422,9 +416,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_length, LOCK_header->lhb_used);
 
 #ifdef MANAGER_PROCESS
-	manager_pid = 0;
+	int manager_pid = 0;
 	if (LOCK_header->lhb_manager) {
-		manager = (OWN) ABS_PTR(LOCK_header->lhb_manager);
+		OWN manager = (OWN) ABS_PTR(LOCK_header->lhb_manager);
 		manager_pid = manager->own_process_id;
 	}
 
@@ -450,7 +444,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_acquire_spins);
 
 	if (LOCK_header->lhb_acquire_blocks) {
-		bottleneck =
+		float bottleneck =
 			(float) ((100. * LOCK_header->lhb_acquire_blocks) /
 					 LOCK_header->lhb_acquires);
 		FPRINTF(outfile, "\tMutex wait: %3.1f%%\n", bottleneck);
@@ -458,13 +452,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	else
 		FPRINTF(outfile, "\tMutex wait: 0.0%%\n");
 
-	hash_total_count = hash_max_count = 0;
-	hash_min_count = 10000000;
-	for (slot = LOCK_header->lhb_hash, i = 0; i < LOCK_header->lhb_hash_slots;
-		 slot++, i++) {
-		hash_lock_count = 0;
-		for (que = (SRQ) ABS_PTR(slot->srq_forward); que != slot;
-			 que = (SRQ) ABS_PTR(que->srq_forward)) {
+	SLONG hash_total_count = 0;
+	SLONG hash_max_count = 0;
+	SLONG hash_min_count = 10000000;
+	const srq* slot;
+	USHORT i = 0;
+	for (slot = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots;
+		 slot++, i++)
+	{
+		SLONG hash_lock_count = 0;
+		for (const srq* que = (SRQ) ABS_PTR(slot->srq_forward); que != slot;
+			 que = (SRQ) ABS_PTR(que->srq_forward))
+		{
 			++hash_total_count;
 			++hash_lock_count;
 		}
@@ -480,12 +479,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			hash_min_count, (hash_total_count / LOCK_header->lhb_hash_slots),
 			hash_max_count);
 
+	shb* a_shb = NULL;
 	if (LOCK_header->lhb_secondary != LHB_PATTERN) {
-		shb = (SHB) ABS_PTR(LOCK_header->lhb_secondary);
+		a_shb = (shb*) ABS_PTR(LOCK_header->lhb_secondary);
 		FPRINTF(outfile,
 				"\tRemove node: %6d, Insert queue: %6d, Insert prior: %6d\n",
-				shb->shb_remove_node, shb->shb_insert_que,
-				shb->shb_insert_prior);
+				a_shb->shb_remove_node, a_shb->shb_insert_que,
+				a_shb->shb_insert_prior);
 	}
 
 	prt_que(outfile, LOCK_header, "\tOwners", &LOCK_header->lhb_owners,
@@ -507,6 +507,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* Print known owners */
 
 	if (sw_owners) {
+		const srq* que;
+		
 #ifdef SOLARIS_MT
 		/* The Lock Starvation recovery code on Solaris rotates the owner
 		   queue once per acquire.  This makes it difficult to read the
@@ -514,10 +516,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		   of owners once to find the lowest owner_id, and start the printout
 		   from there. */
 		PTR least_owner_id = 0x7FFFFFFF;
-		SRQ least_owner_ptr = &LOCK_header->lhb_owners;
+		const srq* least_owner_ptr = &LOCK_header->lhb_owners;
 		QUE_LOOP(LOCK_header->lhb_owners, que) {
-			OWN this_owner;
-			this_owner = (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners));
+			OWN this_owner = (OWN) ((UCHAR*) que - OFFSET(OWN, own_lhb_owners));
 			if (REL_PTR(this_owner) < least_owner_id) {
 				least_owner_id = REL_PTR(this_owner);
 				least_owner_ptr = que;
@@ -527,15 +528,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		do {
 			if (que != &LOCK_header->lhb_owners)
 				prt_owner(outfile, LOCK_header,
-						  (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners)),
+						  (OWN) ((UCHAR*) que - OFFSET(OWN, own_lhb_owners)),
 						  sw_requests, sw_waitlist);
 			que = QUE_NEXT((*que));
-		}
-		while (que != least_owner_ptr);
+		} while (que != least_owner_ptr);
 #else
 		QUE_LOOP(LOCK_header->lhb_owners, que) {
 			prt_owner(outfile, LOCK_header,
-					  (OWN) ((UCHAR *) que - OFFSET(OWN, own_lhb_owners)),
+					  (OWN) ((UCHAR*) que - OFFSET(OWN, own_lhb_owners)),
 					  sw_requests, sw_waitlist);
 		}
 #endif /* SOLARIS_MT */
@@ -546,28 +546,33 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (sw_locks || sw_series)
 		for (slot = LOCK_header->lhb_hash, i = 0;
 			 i < LOCK_header->lhb_hash_slots; slot++, i++)
-			for (que = (SRQ) ABS_PTR(slot->srq_forward); que != slot;
+		{
+			for (const srq* que = (SRQ) ABS_PTR(slot->srq_forward); que != slot;
 				 que = (SRQ) ABS_PTR(que->srq_forward))
+			{
 				prt_lock(outfile, LOCK_header,
 						 (LBL) ((UCHAR *) que - OFFSET(LBL, lbl_lhb_hash)),
 						 sw_series);
+			}
+		}
 
 	if (sw_history)
 		prt_history(outfile, LOCK_header, LOCK_header->lhb_history,
 					"History");
 
 	if (LOCK_header->lhb_secondary != LHB_PATTERN)
-		prt_history(outfile, LOCK_header, shb->shb_history, "Event log");
+		prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
 
 	if (header)
 		gds__free(header);
 	exit(FINI_OK);
+	return (FINI_OK); // make compiler happy
 }
 
 
 static void prt_lock_activity(
 							  OUTFILE outfile,
-							  LHB header,
+							  const lhb* header,
 							  USHORT flag, USHORT seconds, USHORT intervals)
 {
 /**************************************
@@ -581,12 +586,10 @@ static void prt_lock_activity(
  *
  **************************************/
 	struct tm d;
-	ULONG clock, i;
-	struct lhb base, prior;
-	ULONG factor;
+	ULONG i;
 
-	clock = time(NULL);
-	d = *localtime((time_t*)&clock);
+	time_t clock = time(NULL);
+	d = *localtime(&clock);
 
 	FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
@@ -610,8 +613,8 @@ static void prt_lock_activity(
 
 	FPRINTF(outfile, "\n");
 
-	base = *header;
-	prior = *header;
+	lhb base = *header;
+	lhb prior = *header;
 	if (intervals == 0)
 		memset(&base, 0, sizeof(base));
 
@@ -730,7 +733,7 @@ static void prt_lock_activity(
 		FPRINTF(outfile, "\n");
 	}
 
-	factor = seconds * intervals;
+	ULONG factor = seconds * intervals;
 	if (factor < 1)
 		factor = 1;
 
@@ -820,7 +823,9 @@ static void prt_lock_init(void)
 
 static void prt_history(
 						OUTFILE outfile,
-						LHB LOCK_header, PTR history_header, SCHAR * title)
+						const lhb* LOCK_header,
+						PTR history_header,
+						const SCHAR* title)
 {
 /**************************************
  *
@@ -832,12 +837,11 @@ static void prt_history(
  *      Print history list of lock table.
  *
  **************************************/
-	HIS history;
-
 	FPRINTF(outfile, "%s:\n", title);
 
-	for (history = (HIS) ABS_PTR(history_header); true;
-		 history = (HIS) ABS_PTR(history->his_next)) {
+	for (HIS history = (HIS) ABS_PTR(history_header); true;
+		 history = (HIS) ABS_PTR(history->his_next))
+	{
 		if (history->his_operation)
 			FPRINTF(outfile,
 					"    %s:\towner = %6d, lock = %6d, request = %6d\n",
@@ -852,7 +856,7 @@ static void prt_history(
 
 static void prt_lock(
 					 OUTFILE outfile,
-					 LHB LOCK_header, LBL lock, USHORT sw_series)
+					 const lhb* LOCK_header, LBL lock, USHORT sw_series)
 {
 /**************************************
  *
@@ -864,9 +868,6 @@ static void prt_lock(
  *      Print a formatted lock block 
  *
  **************************************/
-	SRQ que;
-	LRQ request;
-
 	if (sw_series && lock->lbl_series != sw_series)
 		return;
 
@@ -886,10 +887,12 @@ static void prt_lock(
 		FPRINTF(outfile, "\tKey: %06u,", key);
 	}
 	else {
-		UCHAR c, *p, *q, *end, temp[512];
-		q = lock->lbl_key;
-		for (p = temp, end = q + lock->lbl_length; q < end; q++) {
-			c = *q;
+		UCHAR temp[512];
+		UCHAR* p = temp;
+  		const UCHAR* q = lock->lbl_key;
+  		const UCHAR* const end = q + lock->lbl_length;
+		for (; q < end; q++) {
+			UCHAR c = *q;
 			if ((c >= 'a' && c <= 'z') ||
 				(c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
 				*p++ = c;
@@ -912,8 +915,9 @@ static void prt_lock(
 	prt_que(outfile, LOCK_header, "\tRequests", &lock->lbl_requests,
 			OFFSET(LRQ, lrq_lbl_requests));
 
+	const srq* que;
 	QUE_LOOP(lock->lbl_requests, que) {
-		request = (LRQ) ((UCHAR *) que - OFFSET(LRQ, lrq_lbl_requests));
+		const lrq* request = (lrq*) ((UCHAR*) que - OFFSET(LRQ, lrq_lbl_requests));
 		FPRINTF(outfile,
 				"\t\tRequest %6d, Owner: %6d, State: %d (%d), Flags: 0x%02X\n",
 				REL_PTR(request), request->lrq_owner, request->lrq_state,
@@ -925,7 +929,7 @@ static void prt_lock(
 
 
 static void prt_owner(OUTFILE outfile,
-					  LHB LOCK_header,
+					  const lhb* LOCK_header,
 					  OWN owner,
 					  bool sw_requests,
 					  bool sw_waitlist)
@@ -1007,7 +1011,7 @@ static void prt_owner(OUTFILE outfile,
 
 static void prt_owner_wait_cycle(
 								 OUTFILE outfile,
-								 LHB LOCK_header,
+								 const lhb* LOCK_header,
 								 OWN owner,
 								 USHORT indent, struct waitque *waiters)
 {
@@ -1112,7 +1116,7 @@ static void prt_owner_wait_cycle(
 }
 
 
-static void prt_request( OUTFILE outfile, LHB LOCK_header, LRQ request)
+static void prt_request(OUTFILE outfile, const lhb* LOCK_header, LRQ request)
 {
 /**************************************
  *
@@ -1144,8 +1148,8 @@ static void prt_request( OUTFILE outfile, LHB LOCK_header, LRQ request)
 
 static void prt_que(
 					OUTFILE outfile,
-					LHB LOCK_header,
-					SCHAR * string, SRQ que, USHORT que_offset)
+					const lhb* LOCK_header,
+					const SCHAR* string, const srq* que, USHORT que_offset)
 {
 /**************************************
  *
@@ -1180,8 +1184,8 @@ static void prt_que(
 
 static void prt_que2(
 					 OUTFILE outfile,
-					 LHB LOCK_header,
-					 SCHAR * string, SRQ que, USHORT que_offset)
+					 const lhb* LOCK_header,
+					 const SCHAR* string, const srq* que, USHORT que_offset)
 {
 /**************************************
  *
@@ -1194,9 +1198,7 @@ static void prt_que2(
  *      But don't try to count the entries, as they might be invalid
  *
  **************************************/
-	SLONG offset;
-
-	offset = REL_PTR(que);
+	SLONG offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		FPRINTF(outfile, "%s: *empty*\n", string);
@@ -1207,3 +1209,4 @@ static void prt_que2(
 			string,
 			que->srq_forward - que_offset, que->srq_backward - que_offset);
 }
+
