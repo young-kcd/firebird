@@ -337,7 +337,7 @@ installInitdScript() {
 	# One more way to register service - used in Knoppix (& Debian ?)
     elif [ -x /usr/sbin/update-rc.d ]
       then
-		/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 7 2 3 5 .
+		/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 20 0 1 6 .
     fi
 	
     # More SuSE - rc.config fillup
