@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.13 2005-04-01 07:48:23 robocop Exp $
+  $Id: isql.epp,v 1.32.2.14 2005-04-03 04:59:32 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -4645,9 +4645,9 @@ static SSHORT print_sets(void)
 	ISQL_printf(Out, (TEXT*) "Access Plan:             ");
 	ISQL_printf(Out, (TEXT*) (Plan ? "ON" : "OFF"));
 	ISQL_printf(Out, (TEXT*) NEWLINE);
-	ISQL_printf (Out, (TEXT*) "Access Plan only:        ");
-	ISQL_printf (Out, (TEXT*) (Planonly ? "ON" : "OFF"));
-	ISQL_printf (Out, (TEXT*) NEWLINE);
+	ISQL_printf(Out, (TEXT*) "Access Plan only:        ");
+	ISQL_printf(Out, (TEXT*) (Planonly ? "ON" : "OFF"));
+	ISQL_printf(Out, (TEXT*) NEWLINE);
 	ISQL_printf(Out, (TEXT*) "Display BLOB type:       ");
 	if (Doblob == ALL_BLOBS)
 		ISQL_printf(Out, (TEXT*) "ALL");
@@ -4682,9 +4682,9 @@ static SSHORT print_sets(void)
 	ISQL_printf(Out, Print_buffer);
 	sprintf(Print_buffer, "Warnings:                %s%s",
 			(Warnings) ? "ON" : "OFF", NEWLINE);
-	sprintf(Print_buffer, "Bail on error:                           %s%s",
-				(BailOnError) ? "ON" : "OFF", NEWLINE);
 	ISQL_printf(Out, Print_buffer);
+	sprintf(Print_buffer, "Bail on error:           %s%s",
+				(BailOnError) ? "ON" : "OFF", NEWLINE);
 	ISQL_printf(Out, Print_buffer);
 	return (SKIP);
 }
