@@ -6491,8 +6491,9 @@ ULONG JRD_shutdown_all()
 		}
 	}
 
-	if (initialized)
+	if (initialized) {
 		JRD_SS_MUTEX_UNLOCK;
+    }
 
 	JRD_restore_context();
 
