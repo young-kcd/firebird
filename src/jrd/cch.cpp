@@ -3955,6 +3955,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
 	delete tdbb->tdbb_attachment;
+	tdbb->tdbb_attachment = 0;
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	ISC_event_post(reader_event);
 	THREAD_EXIT();
@@ -4117,6 +4118,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 		delete tdbb->tdbb_attachment;
+		tdbb->tdbb_attachment = 0;
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		/* Notify the finalization caller that we're finishing. */
 		ISC_event_post(dbb->dbb_writer_event_fini);

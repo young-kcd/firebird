@@ -3959,6 +3959,7 @@ gc_exit:
 		if (tdbb->tdbb_attachment) {
 			LCK_fini(tdbb, LCK_OWNER_attachment);
 			delete tdbb->tdbb_attachment;
+			tdbb->tdbb_attachment = 0;
 		}
 		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
 		/* Notify the finalization caller that we're finishing. */

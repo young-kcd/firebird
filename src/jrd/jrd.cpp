@@ -5559,7 +5559,10 @@ static void release_attachment(Attachment* attachment)
 		 vector < attachment->att_counts + DBB_max_count; ++vector)
 	{
 		if (*vector)
+		{
 			delete *vector;
+			*vector = 0;
+		}
 	}
 
 /* Release any validation error vector allocated */

@@ -2062,6 +2062,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 		rpb->rpb_relation = tail->csb_relation;
 
 		delete tail->csb_fields;
+		tail->csb_fields = 0;
 	}
 
 	// make a vector of all used RSEs

@@ -1445,6 +1445,7 @@ static IDX_E insert_key(
 	if (insertion->iib_duplicates) {
 		result = check_duplicates(tdbb, record, idx, insertion, NULL);
 		delete insertion->iib_duplicates;
+		insertion->iib_duplicates = 0;
 	}
 
 	if (result != idx_e_ok) {

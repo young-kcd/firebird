@@ -5247,6 +5247,7 @@ static SLONG insert_node(thread_db* tdbb,
 	pointer = BTreeNode::writeNode(&beforeInsertNode, pointer, flags, leafPage);
 	newBucket->btr_prefix_total += newPrefix;
 	delete[] tempData;
+	beforeInsertNode.data = 0;
 
 	// Copy remaining data to scratch page.
 	if ((nodeOffset + beforeInsertOriginalSize) < bucket->btr_length) {
