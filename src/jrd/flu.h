@@ -29,26 +29,16 @@
 
 /* RITTER - changed HP10 to HPUX in the line below */
 #ifdef HPUX
-#define MODULE_HANDLE
-#include <dl.h>
-#include <shl.h>
+#  include <dl.h>
+#  include <shl.h>
 typedef shl_t HMOD;
-#endif
-
-#ifdef SOLARIS
-#define MODULE_HANDLE
-#include <dlfcn.h>
+#elif SOLARIS
+#  include <dlfcn.h>
 typedef void *HMOD;
-#endif
-
-#ifdef WIN_NT
-#define MODULE_HANDLE
-#include <windows.h>
+#elif WIN_NT
+#  include <windows.h>
 typedef HMODULE HMOD;
-#endif
-
-#ifndef MODULE_HANDLE
-#define MODULE_HANDLE
+#else
 typedef void *HMOD;
 #endif
 
