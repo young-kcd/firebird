@@ -661,7 +661,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 	}
 
 	TEXT* p;
-	USHORT l;
+	USHORT l = 0; // silence non initialized warning
 	while (*vector)
 	{
 		const ISC_STATUS status = *vector++;

@@ -327,7 +327,7 @@ THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
  * Functional description
  *
  **************************************/
-	void *thread;
+	void *thread = NULL; // silence non initialized warning
 
 	if (!(server_flag & SRVR_non_service)) {
 		thread = CNTL_insert_thread();
@@ -351,7 +351,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	void *thread;
+	void *thread = NULL; // silence non initialized warning
 	ISC_STATUS_ARRAY status_vector;
 	rem_port* port;
 
@@ -383,7 +383,7 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	void *thread;
+	void *thread = NULL; // silence non initialized warning
 	ISC_STATUS_ARRAY status_vector;
 
 	if (!(server_flag & SRVR_non_service)) {
@@ -425,7 +425,7 @@ static THREAD_ENTRY_DECLARE ipc_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	void *thread;
+	void *thread = NULL; // silence non initialized warning
 
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
@@ -455,7 +455,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *   Starts xnet server side interprocess thread
  *
  **************************************/
-	void *thread;
+	void *thread = NULL; // silence non initialized warning
 
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();

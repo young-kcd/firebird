@@ -554,9 +554,10 @@ static bool accept_connection(rem_port* port,
  *	Process a connect packet.
  *
  **************************************/
-	P_ARCH architecture;
-	USHORT version, type;
-
+	P_ARCH architecture = arch_generic;
+	USHORT version = 0;
+	USHORT type = 0;
+	bool accepted = false;
 /* Accept the physical connection */
 
 	send->p_operation = op_reject;
@@ -591,6 +592,7 @@ static bool accept_connection(rem_port* port,
 			 protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
 		{
+			accepted = true;
 			weight = protocol->p_cnct_weight;
 			version = protocol->p_cnct_version;
 			architecture = protocol->p_cnct_architecture;
@@ -600,7 +602,9 @@ static bool accept_connection(rem_port* port,
 	}
 
 /* Send off out gracious acceptance or flag rejection */
-
+	if (!accepted) {
+		return false;
+	}
 	accept->p_acpt_version = port->port_protocol = version;
 	accept->p_acpt_architecture = architecture;
 	accept->p_acpt_type = type;
@@ -4642,8 +4646,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 	ISC_enter();				/* Setup floating point exception handler once and for all. */
 #endif
 
-	SCHAR* thread;
 #ifdef WIN_NT
+	SCHAR* thread = NULL; // silence non initialized warning
 	if (!((SLONG) flags & SRVR_non_service))
 		thread = reinterpret_cast<SCHAR*>(CNTL_insert_thread());
 #endif

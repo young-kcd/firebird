@@ -2579,6 +2579,7 @@ void XNET_srv(USHORT flag)
 		}
 		else {
 			XNET_LOG_ERROR("xnet_get_free_slot() failed");
+			return;
 		}
 					
 		if (xpm && port) {
@@ -2588,6 +2589,7 @@ void XNET_srv(USHORT flag)
 		}
 		else {
 			XNET_LOG_ERROR("failed to allocate server port for communication");
+			return;
 		}
 
 		SetEvent(xnet_response_event);
