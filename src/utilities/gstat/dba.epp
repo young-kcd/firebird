@@ -232,7 +232,7 @@ static tdba* gddba;
 inline tdba* DBA_get_thread_data() {
 	return gddba;
 }
-inline void DBA_set_thread_data(tdba* tddba, tdba* thd_context) {
+inline void DBA_set_thread_data(tdba* &tddba, tdba* thd_context) {
 	tddba = thd_context;
 	gddba = tddba;
 	tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA;
