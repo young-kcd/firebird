@@ -1889,7 +1889,7 @@ static void exit_handler( void *arg)
 
 #ifdef WIN_NT
 	if (!main_port) {
-		THD_yield();	// let select in other thread(s) shutdown gracefully
+		SleepEx(0, FALSE);	// let select in other thread(s) shutdown gracefully
 		WSACleanup();
 		return;
 	}
