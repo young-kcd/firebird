@@ -42,63 +42,7 @@
 				status [2] = isc_arg_end
 
 
-#ifdef NOT_USED_OR_REPLACED
 
-#define STUFF_STATUS(status_vector,status)      \
-{						\
-va_list args;                                   \
-ISC_STATUS  *p, *q;                                 \
-int     type, len;                              \
-                                                \
-VA_START (args, status);                        \
-p = status_vector;                              \
-                                                \
-*p++ = (ISC_STATUS)isc_arg_gds;                     \
-*p++ = status;                                  \
-                                                \
-while ((type = va_arg (args, int)) && ((p - status_vector) < 17))    \
-    switch (*p++ = type)                        \
-    {                                           \
-    case isc_arg_gds:                           \
-        *p++ = (ISC_STATUS) va_arg (args, ISC_STATUS);  \
-        break;                                  \
-                                                \
-    case isc_arg_string:                        \
-        q = (ISC_STATUS*) va_arg (args, TEXT*);	\
-	if (strlen ((TEXT*)q) >= MAX_ERRSTR_LEN)\
-	    {					\
-	    *(p -1) = isc_arg_cstring;		\
-	    *p++ = (ISC_STATUS) MAX_ERRSTR_LEN;	\
-	    }					\
-	*p++ = (ISC_STATUS) q;			\
-        break;                                  \
-                                                \
-    case isc_arg_interpreted:                   \
-	*p++ = (ISC_STATUS) va_arg (args, TEXT*);   \
-	break;                                  \
-						\
-    case isc_arg_cstring:                       \
-	len = (int) va_arg (args, int);		\
-        *p++ = (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;\
-        *p++ = (ISC_STATUS) va_arg (args, TEXT*);   \
-        break;                                  \
-                                                \
-    case isc_arg_number:                        \
-        *p++ = (ISC_STATUS) va_arg (args, SLONG);   \
-        break;                                  \
-                                                \
-    case isc_arg_vms:                           \
-    case isc_arg_unix:                          \
-    case isc_arg_win32:                         \
-    default:                                    \
-        *p++ = (ISC_STATUS) va_arg (args, int);     \
-        break;                                  \
-    }						\
-*p = isc_arg_end;				\
-}
-/* end of STUFF_STATUS */			
-
-#else
 /* TMN: The hits just keep on coming. The macro STUFF_STATUS MUST be
  * defined so it can get instantiated in the "calling" place because of
  * the use of varargs. I trimmed this one a bit though by putting the
@@ -111,7 +55,5 @@ while ((type = va_arg (args, int)) && ((p - status_vector) < 17))    \
     VA_START (args, status);                            \
     STUFF_STATUS_function(status_vector, status, args); \
 }
-
-#endif	/* 0/1 */
 
 #endif /* JRD_IBERR_H */
