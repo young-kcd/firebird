@@ -812,7 +812,7 @@ static void move_if_not_identical( char* original, char* new_file, char *directo
 /* If the new file is identical to the original, then don't update
    the original */
 	if (system(buffer) == 0) {
-		ib_fprintf(ib_stderr, "No need to update %s\n", origName);
+		ib_fprintf(ib_stdout, "No need to update %s\n", origName);
 		unlink(new_file);
 	}
 	else {
@@ -828,7 +828,7 @@ static void move_if_not_identical( char* original, char* new_file, char *directo
 			exit(FINI_ERROR);
 		}
 		else
-			ib_fprintf(ib_stderr, "Updated %s\n", origName);
+			ib_fprintf(ib_stdout, "Updated %s\n", origName);
 	}
 }
 
