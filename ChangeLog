@@ -1,3 +1,47 @@
+2004-09-25 22:29  skidder
+
+	* firebird2/src/jrd/evl.cpp (1.105):
+	
+	Reading memory after the end of array is generally bad practice.
+	Avoid it.
+
+2004-09-25 21:19  asfernandes
+
+	* firebird2/src/intl/collations/pw1252ptbr.h (1.1):
+	
+	file pw1252ptbr.h was initially added on branch B2_0_intl.
+
+2004-09-25 12:27  robocop
+
+	* firebird2/src/: dsql/array.epp (1.31), dsql/blob.epp (1.16),
+	dsql/errd.cpp (1.35), dsql/parse.y (1.147), dsql/user_dsql.cpp
+	(1.42), gpre/ada.cpp (1.44), gpre/c_cxx.cpp (1.53), gpre/cob.cpp
+	(1.49), gpre/ftn.cpp (1.50), gpre/int_cxx.cpp (1.36), gpre/pas.cpp
+	(1.42), gpre/pretty.cpp (1.28), ipserver/ipclient.cpp (1.49),
+	jrd/alt.cpp (1.54), jrd/common.h (1.124), jrd/err.cpp (1.56),
+	jrd/jrd.cpp (1.179), jrd/met.epp (1.140), jrd/par.cpp (1.102),
+	jrd/sdl.cpp (1.40), jrd/utl.cpp (1.72), jrd/val.cpp (1.57),
+	jrd/why.cpp (1.79), remote/interface.cpp (1.90),
+	utilities/nbackup.cpp (1.33), utilities/gsec/gsec.cpp (1.37),
+	utilities/install/install_svc.cpp (1.15):
+	
+	When you call va_start, call va_end, don't assume it does nothing
+	because some platforms don't have code for it! Changed some sprintf
+	to SNPRINTF. Work in progress WRT wrapper for this function.
+
+2004-09-25 12:23  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.147):
+	
+	Close vulnerability #2 in gds__interprete's new version.  Work in
+	progress (regarding SNPRINTF wrapper, too).
+
+2004-09-25 12:19  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.118):
+	
+	Things that don't change are const
+
 2004-09-24 17:48  hvlad
 
 	* firebird2/src/jrd/why.cpp (1.78):
