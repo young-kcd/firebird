@@ -4188,8 +4188,12 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
 		pwd = getpwnam(buf);
 		if (pwd)
 			strcpy(buf, pwd->pw_dir);
-		else					/* No home dir for this users here. Default to server dir */
+		else	/* No home dir for this users here. Default to server dir */
+#ifdef HAVE_GETCWD
 			getcwd(buf, len);
+#else
+			getwd(buf);
+#endif
 #endif
 	}
 	else
@@ -5095,7 +5099,11 @@ static void get_options(UCHAR*	dpb,
 					else {		/*No home dir for this users here. Default to server dir */
 
 					    **scratch = 0;
+#ifdef HAVE_GETCWD
 				        if (getcwd(*scratch, MIN(MAXPATHLEN, buf_size)))
+#else
+				        if (getwd(*scratch))
+#endif
 							l = strlen(*scratch) + 1;
 					    else
 							l = buf_size;	

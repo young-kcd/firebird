@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.91 2002-11-18 02:57:39 skywalker Exp $
+dnl $Id: configure.in,v 1.92 2002-11-18 13:22:33 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -29,7 +29,7 @@ AC_SUBST(CPU_TYPE)
 
 dnl EKU: set appropiate defaults for each platform
 dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
-dnl      EDITLINE_FLG : support fancy command line editing in isql
+dnl      EDITLINE_FLG     : support fancy command line editing in isql
 
 case "$target" in
   *-*-darwin*)
@@ -193,7 +193,6 @@ AC_ARG_WITH(editline,
    esac])
 AC_SUBST(EDITLINE_FLG)
 
-
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
 AC_ARG_WITH(service-name,
@@ -242,7 +241,7 @@ AC_CHECK_HEADERS(crypt.h)
 AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h)
 AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
-AC_CHECK_HEADERS(mntent.h)
+AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
@@ -259,6 +258,10 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 AC_CHECK_LIB(stdc++, main,,, $LIBS)
 AC_CHECK_LIB(sfio, main,,, $LIBS) dnl Solaris only
+dnl kkuznetsov: Solaris always check for -lnsl
+if test "$PLATFORM" = "solx86" ; then
+  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
+fi
 
 
 dnl Check for functions
@@ -284,11 +287,6 @@ AC_CHECK_FUNCS(gethostname connect)
 if test "$ac_cv_func_gethostname" = "no"; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
 fi
-
-if test "$PLATFORM" = "solx86" ; then
-  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
-fi
-
 if test "$ac_cv_func_connect" = "no"; then
   AC_CHECK_LIB(socket, connect, XE_APPEND(-lsocket,LIBS),, $LIBS)
 fi  
@@ -321,6 +319,16 @@ AC_CHECK_FUNCS(getpagesize)
 AC_CHECK_FUNCS(crypt)
 AC_CHECK_FUNCS(xdr_hyper)
 AC_CHECK_FUNCS(pread pwrite)
+AC_CHECK_FUNCS(getcwd getwd)
+AC_CHECK_FUNCS(setmntent getmntent)
+if test "$ac_cv_func_getmntent" = "yes"; then
+  AC_MSG_CHECKING(if getmntent needs second argument)
+  AC_TRY_COMPILE([#include <stdio.h>
+#include <sys/mnttab.h>],
+  [FILE *f; struct mntent *m; getmntent(f, m);],
+  [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS) AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)])
+fi
 
 
 dnl Check for other things
@@ -336,6 +344,7 @@ AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h>
 #include <rpc/xdr.h>])
 AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h> 
 #include <rpc/xdr.h>])
+
 
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
@@ -429,7 +438,7 @@ NEW_FIREBIRD_DIR=$GEN_ROOT/firebird
 AC_SUBST(BUILD_ROOT_DIR)
 AC_SUBST(NEW_FIREBIRD_DIR)
 
-AC_DEFINE_UNQUOTED(ISC_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
+AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
 AC_CONFIG_COMMANDS_PRE([
 mkdir -p gen/csv
@@ -609,8 +618,6 @@ case $PLATFORM in
        chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null
       ])
     ;;
-
-
 
   SINIX-Z)
     AC_CONFIG_FILES([

@@ -74,6 +74,9 @@
 #undef HAVE_RPC_XDR_H
 #undef HAVE_AIO_H
 #undef HAVE_MNTENT_H
+#undef HAVE_MNTTAB_H
+#undef HAVE_SYS_MNTENT_H
+#undef HAVE_SYS_MNTTAB_H
 
 
 /* Functions */
@@ -103,6 +106,11 @@
 #undef HAVE_XDR_HYPER
 #undef HAVE_PREAD
 #undef HAVE_PWRITE
+#undef HAVE_GETCWD
+#undef HAVE_GETWD
+#undef HAVE_SETMNTENT
+#undef HAVE_GETMNTENT
+#undef GETMNTENT_TAKES_TWO_ARGUMENTS
 
 /* Types */
 #undef socklen_t

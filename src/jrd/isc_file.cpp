@@ -58,6 +58,17 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/jrd_proto.h"
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/file.h>
+#include <errno.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
+
 #include "../common/config/config.h"
 
 /* VMS Specific Stuff */
@@ -88,16 +99,51 @@ typedef struct itm {
 #endif /* of ifdef VMS */
 
 
-/* Unix/NFS specific stuff */
+#ifdef SUPERSERVER
+#define GETWD(buf)		JRD_getdir(buf, MAXPATHLEN)
+#else
+#ifdef HAVE_GETCWD
+#define GETWD(buf)		getcwd(buf, MAXPATHLEN)
+#else
+#define GETWD			getwd
+#endif
+#endif /* SUPERSERVER */
 
-#ifdef HAVE_PWD_H
-#include <pwd.h>
+
+/* Unix/NFS specific stuff */
+#ifndef NO_NFS
+#ifdef HAVE_MNTENT_H
+#include <mntent.h>	/* get setmntent/endmntent */
+#endif
+#ifdef HAVE_SYS_MNTTAB_H
+#include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
 #endif
 
+/* EKU: if you get a compiler warning/error about redefinition of MTAB,
+        please remove the define from the platform-specific section below
+        and not here! */
+#ifdef MNTTAB
+#define MTAB			MNTTAB
+#else
+#ifdef _PATH_MNTTAB
+#define MTAB			_PATH_MNTTAB
+#else
+#define MTAB			"/etc/mtab"
+#endif
+#endif
+
+#ifdef HAVE_SETMNTENT
+#define MTAB_OPEN(path,type)	setmntent(path, "r")
+#define MTAB_CLOSE(stream)	endmntent(stream)
+#else
+#define MTAB_OPEN(path,type)	ib_fopen(path, type)
+#define MTAB_CLOSE(stream)	ib_fclose(stream)
+#endif
+#endif /* NO_NFS */
+
+
 #ifdef hpux
-#define GETWD(buf)		getcwd (buf, MAXPATHLEN)
 #define MTAB			"/etc/mnttab"
-#include <sys/types.h>
 /* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
@@ -105,38 +151,22 @@ typedef struct itm {
 #endif
 
 #ifdef SOLARIS
-#define SV_MNTENT
-#include <sys/mnttab.h>
 #define MTAB			"/etc/mnttab"
-#define MTAB_OPEN(path,type)    ib_fopen (path, type)
-#define MTAB_CLOSE(stream)	ib_fclose (stream)
 #endif
 
 #ifdef FREEBSD
 #define MTAB			"/etc/fstab"
-#define MTAB_OPEN(path,type)	ib_fopen (path, type)
-#define MTAB_CLOSE(stream)	ib_fclose (stream)
 #endif
 
 #ifdef DARWIN
 #define MTAB			"/etc/fstab.hd"
-#define MTAB_OPEN(path,type)	ib_fopen (path, type)
-#define MTAB_CLOSE(stream)	ib_fclose (stream)
 #endif
 
 #ifdef SCO_UNIX
+/* EKU: popen/pclose to access a file??? */
 #define MTAB			"/etc/mount"
 #define MTAB_OPEN(path,type)	popen (path, type)
 #define MTAB_CLOSE(stream)	pclose (stream)
-#define GETWD(buf)		getcwd (buf, MAXPATHLEN)
-#endif
-
-#ifdef SINIXZ
-#include <sys/mnttab.h>
-#define SV_MNTENT
-#define MTAB			"/etc/mnttab"
-#define MTAB_OPEN(path,type)	fopen (path, type)
-#define MTAB_CLOSE(stream)	fclose (stream)
 #endif
 
 #ifdef ultrix
@@ -148,55 +178,12 @@ typedef struct itm {
 #include <sys/vmount.h>
 #endif
 
-#if (defined SOLARIS || defined linux || defined FREEBSD || defined NETBSD || defined DARWIN || defined SINIXZ)
-#define GETWD(buf)		getcwd (buf, MAXPATHLEN)
-#endif
-
-#ifdef SUPERSERVER
-#undef GETWD
-#define GETWD(buf)		JRD_getdir (buf, MAXPATHLEN)
-#endif
-
-#ifndef GETWD
-#define GETWD			getwd
-#endif
-
-#ifdef HAVE_MNTENT_H
-#ifndef NO_NFS
-#include <mntent.h>
-#define MTAB_OPEN(path,type)	setmntent (path, "r")
-#define MTAB_CLOSE(stream)	endmntent (stream)
-#endif
-#endif
-
-#ifndef MTAB
-#define MTAB			"/etc/mtab"
-#endif
 
 typedef struct mnt {
 	TEXT *mnt_node;
 	TEXT *mnt_mount;
 	TEXT *mnt_path;
 } MNT;
-
-
-/* Unix specific stuff */
-
-#ifdef UNIX
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/file.h>
-#include <errno.h>
-
-#ifdef DARWIN
-#include </usr/include/pwd.h>
-#else
-extern struct passwd *getpwnam(), *getpwuid();
-#endif
-#endif	// UNIX
 
 
 /* Windows NT stuff */
@@ -1500,9 +1487,9 @@ static BOOLEAN get_mounts(
 }
 #endif
 
-
-#if defined(SV_MNTENT) && !defined(SOLARIS)
+#if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
+#if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */
 static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
@@ -1547,14 +1534,12 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 	else
 		return FALSE;
 }
-#endif
-#ifdef SOLARIS
-#define GET_MOUNTS
+#else /* !GETMNTENT_TAKES_TWO_ARGUMENTS */
 static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
 /**************************************
  *
- *	g e t _ m o u n t s	( S O L A R I S )
+ *	g e t _ m o u n t s	( M N T E N T )
  *
  **************************************
  *
@@ -1562,40 +1547,24 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
  *	Get ALL mount points.
  *
  **************************************/
-
-	/* Since we had to substitute our alternative for the stdio supplied
-	   with Solaris, we cannot use the getmntent() library call which
-	   wants a Solaris stdio FILE* as an argument, so we parse the text-
-	   type /etc/mnttab file ourselves. */
-
-	TEXT device[128], mount_point[128], type[128], rw[128], foo1[128], *p, *q;
-	SSHORT n;
+	TEXT *p, *q;
+	struct mntent *mptr;
 
 /* Start by finding a mount point. */
 
 	p = buffer;
 
-	for (;;) {
-		/* device, mountpoint, type, options, a number */
-
-		n = ib_fscanf(file, "%s %s %s %s %s",
-					  device, mount_point, type, rw, foo1);
-
-		/* This should either be 5 (we got a line with 5 args, or EOF (we
-		   got nothing. If we're short of 5, assume EOF */
-		if (n != 5)
-			break;
-
+	while ((mptr = getmntent(file)) != (struct mntent *)0) {
 		/* Include non-NFS (local) mounts - some may be longer than
 		   NFS mount points */
 
 /****
-    if (strcmp (type, "nfs"))
+    if (strcmp (mptr->mnt_type, MNTTYPE_NFS))
 	continue;
 ****/
 
 		mount->mnt_node = p;
-		q = device;
+		q = mptr->mnt_fsname;
 		while (*q && *q != ':')
 			*p++ = *q++;
 		*p++ = 0;
@@ -1605,16 +1574,14 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 			q++;
 		mount->mnt_path = p;
 		while (*p++ = *q++);
-		mount->mnt_mount = p;
-		q = mount_point;
-		while (*p++ = *q++);
+		mount->mnt_mount = mptr->mnt_dir;
 		return TRUE;
 	}
 
 	return FALSE;
 }
-#endif
-
+#endif /* GETMNTENT_TAKES_TWO_ARGUMENTS */
+#endif /* HAVE_GETMNTENT && !SOLARIS */
 
 #ifdef SCO_UNIX
 #define GET_MOUNTS
@@ -1679,57 +1646,6 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 }
 #endif
 
-
-#ifdef HAVE_MNTENT_H
-#define GET_MOUNTS
-static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( M N T E N T )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	TEXT *p, *q;
-	struct mntent *mptr;
-
-/* Start by finding a mount point. */
-
-	p = buffer;
-
-	while (mptr = getmntent(file)) {
-		/* Include non-NFS (local) mounts - some may be longer than
-		   NFS mount points */
-
-/****
-    if (strcmp (mptr->mnt_type, MNTTYPE_NFS))
-	continue;
-****/
-
-		mount->mnt_node = p;
-		q = mptr->mnt_fsname;
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-		while (*p++ = *q++);
-		mount->mnt_mount = mptr->mnt_dir;
-		return TRUE;
-	}
-
-	return FALSE;
-}
-#endif /* HAVE_MNTENT_H */
-
-
 #ifndef GET_MOUNTS
 static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 {
@@ -1751,10 +1667,12 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 	p = buffer;
 
 	for (;;) {
-		n =
-			ib_fscanf(file, "%s %s %s %s %s %s", device, mount_point, type,
-					  rw, foo1, foo1);
+		n = ib_fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+#ifdef SOLARIS
+		if (n != 5)
+#else
 		if (n < 0)
+#endif
 			break;
 
 		/* Include non-NFS (local) mounts - some may be longer than
@@ -1786,7 +1704,6 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 }
 #endif
 
-
 #ifdef hpux
 /* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
@@ -1799,7 +1716,7 @@ static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
  **************************************
  *
  * Functional description
- *	If we're running on a cnode, the file system beSLONGs
+ *	If we're running on a cnode, the file system belongs
  *	to the server node - load node_name with the server
  *	name and return TRUE.
  *

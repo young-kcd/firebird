@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.18 2002-11-16 03:14:26 skywalker Exp $
+#  $Id: Makefile.in.firebird,v 1.19 2002-11-18 13:22:45 eku Exp $
 #
 
 ROOT=..
@@ -490,11 +490,14 @@ rebuild_codes :
 #___________________________________________________________________________
 # Install generic files.
 
-CLASSIC_MiscFiles = firebird.xinetd firebird.conf
-SUPER_MiscFiles =  firebird.init.d.generic firebird.init.d.mandrake README firebird.conf
+CLASSIC_MiscFiles = firebird.conf
+SUPER_MiscFiles =  firebird.conf
 
+ifeq ($(ArchType),super)
+INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
+else
 INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
-#INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
+endif
 
 
 misc_files : $(INSTALL_MiscFiles)
@@ -512,8 +515,11 @@ CLASSIC_ScriptFiles = CSchangeRunUser.sh CSrestoreRootRunUser.sh changeDBAPasswo
 SUPER_ScriptFiles = SSchangeRunUser.sh SSrestoreRootRunUser.sh changeDBAPassword.sh
 
 
+ifeq ($(ArchType),super)
+INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(SUPER_ScriptFiles))
+else
 INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(CLASSIC_ScriptFiles))
-#INSTALL_ScriptFiles = $(addprefix $(BIN)/, $(SUPER_ScriptFiles))
+endif
 
 
 script_files : $(INSTALL_ScriptFiles)
