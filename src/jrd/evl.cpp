@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.112 2004-10-09 01:40:32 robocop Exp $ 
+  * $Id: evl.cpp,v 1.113 2004-10-11 17:18:35 hvlad Exp $ 
  */
 
 /*
@@ -1411,7 +1411,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 }
 
 
-USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, const jrd_nod *const node, USHORT state)
+USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT state)
 {
 /**************************************
  *
