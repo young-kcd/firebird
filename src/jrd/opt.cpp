@@ -181,8 +181,7 @@ static SSHORT sort_indices_by_priority(Csb::csb_repeat*, IDX **, UINT64 *);
 #define DEBUG_NONE		0
 
 IB_FILE *opt_debug_file = 0;
-static int opt_debug_flag = DEBUG_RELATIONSHIPS;
-//static int opt_debug_flag = DEBUG_NONE;
+static int opt_debug_flag = DEBUG_NONE;
 #endif
 
 inline void SET_DEP_BIT(ULONG* array, const SLONG bit)
