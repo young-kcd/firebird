@@ -40,6 +40,10 @@
 # endif
 #endif
 
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+
 #ifdef HAVE_LIBIO_H  /* was linux only - I really wonder if it is actuall y needed*/
 #include <libio.h>
 #endif
