@@ -1,3 +1,39 @@
+2003-03-21 17:19  dimitr
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	Fixed (porting?) bugs related to GBAK and Services API.
+
+2003-03-21 14:21  brodsom
+
+	* firebird2/src/intlcpp/: lc_dos.cpp, cv_unicode_fss.cpp,
+	cv_unicode_fss.h, cv_ksc.cpp, cv_narrow.cpp, cv_gb2312.cpp,
+	cv_jis.cpp, cv_big5.cpp:
+	
+	Synchronize intlcpp with intl
+
+2003-03-21 14:16  brodsom
+
+	* firebird2/src/intl/: lc_dos.c, cv_unicode_fss.h,
+	cv_unicode_fss.c, cv_narrow.c, cv_jis.c, cv_ksc.c, cv_gb2312.c,
+	cv_big5.c:
+	
+	Remove remaining warnings in intl
+
+2003-03-21 14:11  brodsom
+
+	* firebird2/builds/win32/msvc6/: gbak.dsp, gsplit.dsp:
+	
+	Remove wsock32.lib (thanks to Claudio)
+
+2003-03-21 12:53  aafemt
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.client.util,
+	builds/posix/Makefile.in.libfbclient, builds/posix/make.defaults,
+	builds/posix/prefix.mingw, builds/posix/prefix.mingw.README.html:
+	
+	Few improvements for Win32 SS build procedure
+
 2003-03-20 23:43  arnobrinkman
 
 	* firebird2/src/jrd/: inf.cpp, svc.cpp:
