@@ -1,3 +1,469 @@
+2002-02-16  seanleyne
+	* src/include/gen/autoconfig_msvc.h:
+	* src/jrd/common.h:
+	* src/jrd/isc_ipc.cpp:
+	* src/jrd/license.h:
+	* src/jrd/pag.cpp:
+	* src/lock/lock.h:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/remote/inet.cpp:
+	* src/remote/remote_def.h:
+		Code cleanup of obsolete NCR3000 port
+
+	* src/gpre/gpre.h:
+	* src/jrd/common.h:
+	* src/jrd/license.h:
+	* src/jrd/pag.cpp:
+	* src/remote/remote_def.h:
+		Code cleanup of obsolete HP9000 s300 port
+
+	* src/include/gen/autoconfig_msvc.h:
+	* src/journal/misc.cpp:
+	* src/jrd/common.h:
+	* src/jrd/gds.cpp:
+	* src/jrd/isc_ipc.cpp:
+	* src/jrd/jio.cpp:
+	* src/jrd/license.h:
+	* src/jrd/pag.cpp:
+	* src/lock/lock.h:
+	* src/lock/lockv3.h:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/remote/remote_def.h:
+	* src/wal/driver.cpp:
+		Code cleanup of obsolete M88K and NT Power PC ports
+
+	* src/alice/info.h:
+	* src/alice/tdr.cpp:
+	* src/include/gen/autoconfig_msvc.h:
+	* src/include/gen/codes.h:
+	* src/intl/dtest.c:
+	* src/jrd/pag.cpp:
+	* src/jrd/termtype.h:
+	* src/jrd/utl.cpp:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+		Code cleanup of obsolete Apollo port(s)
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/gpre/gpre.h:
+	* src/include/gen/autoconfig_msvc.h:
+	* src/intl/langdrv.h:
+	* src/jrd/common.h:
+	* src/jrd/cvt.cpp:
+	* src/jrd/gds.cpp:
+	* src/jrd/isc.cpp:
+	* src/jrd/isc_ipc.cpp:
+	* src/jrd/isc_sync.cpp:
+	* src/jrd/jrn.cpp:
+	* src/jrd/license.h:
+	* src/jrd/llio.cpp:
+	* src/jrd/pag.cpp:
+	* src/jrd/perf.cpp:
+	* src/jrd/shdef.h:
+	* src/jrd/shrinit.cpp:
+	* src/jrd/svc.cpp:
+	* src/lock/lock.cpp:
+	* src/lock/lock.h:
+	* src/lock/lockv3.h:
+	* src/lock/printv3.cpp:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/remote/inet.cpp:
+	* src/remote/protocol.cpp:
+	* src/remote/remote_def.h:
+	* src/utilities/dropv3.cpp:
+	* src/wal/wal.cpp:
+	* src/wal/wal.h:
+	* src/wal/walw.cpp:
+		Code cleanup of obsolete IMP port
+
+	* src/include/gen/autoconfig_msvc.h:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/makefiles/special_opt.c:
+		Code cleanup of obsolete NeXT port
+
+	* src/include/gen/autoconfig_msvc.h:
+	* src/jrd/gdsold.h:
+	* src/jrd/ibase.h:
+	* src/jrd/isc_cray.cpp:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/remote/protocol.h:
+		Code cleanup of obsolete Cray port
+
+	* src/include/gen/autoconfig_msvc.h:
+	* src/intl/langdrv.h:
+	* src/journal/oldr.cpp:
+	* src/journal/server.e:
+	* src/jrd/common.h:
+	* src/jrd/cvt.cpp:
+	* src/jrd/dbt.cpp:
+	* src/jrd/isc.cpp:
+	* src/jrd/isc_file.cpp:
+	* src/jrd/isc_ipc.cpp:
+	* src/jrd/isc_sync.cpp:
+	* src/jrd/jio.cpp:
+	* src/jrd/license.h:
+	* src/jrd/llio.cpp:
+	* src/jrd/pag.cpp:
+	* src/jrd/perf.cpp:
+	* src/lock/lock.h:
+	* src/lock/lockv3.h:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/msgs/build_file.epp:
+	* src/remote/remote_def.h:
+	* src/remote/xdr.h:
+	* src/wal/wal.h:
+	* src/wal/walw.cpp:
+		Code cleanup of obsolete DELTA port
+
+	* src/include/fb_types.h:
+	* src/include/gen/autoconfig_msvc.h:
+	* src/intl/ld.h:
+	* src/jrd/gds.hxx:
+	* src/jrd/gdsold.h:
+	* src/jrd/ibase.h:
+	* src/jrd/os2.cpp:
+	* src/jrd/perf.h:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+		Code cleanup of obsolete OS/2 port
+
+	* src/intl/ld.h:
+	* src/jrd/common.h:
+	* src/jrd/gds.hxx:
+	* src/jrd/gdsold.h:
+	* src/jrd/ibase.h:
+	* src/jrd/isc_cray.cpp:
+	* src/jrd/isc_sync.cpp:
+	* src/jrd/license.h:
+	* src/jrd/pag.cpp:
+	* src/jrd/utl.cpp:
+	* src/lock/lockv3.h:
+	* src/make.new/config/config.sub:
+	* src/msgs/build_file.epp:
+	* src/msgs/load.epp:
+	* src/remote/inet.cpp:
+	* src/remote/protocol.h:
+	* src/remote/remote_def.h:
+		Code cleanup of obsolete XENIX port and missed MAC (MAC_AUX) 
+		port items
+
+	* src/include/gen/autoconfig_msvc.h:
+	* src/intl/ld.h:
+	* src/jrd/common.h:
+	* src/jrd/license.h:
+	* src/jrd/pag.cpp:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+		Code cleanup of obsolete MAC AUX port defines "MAC" and "MAC_CP"
+
+	* src/gpre/gpre.h:
+	* src/include/gen/autoconfig_msvc.h:
+	* src/intl/langdrv.h:
+	* src/intl/ld.h:
+	* src/jrd/common.h:
+	* src/jrd/cvt.cpp:
+	* src/jrd/gdsold.h:
+	* src/jrd/ibase.h:
+	* src/jrd/isc_ipc.cpp:
+	* src/jrd/pag.cpp:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/config/config.h.in:
+	* src/remote/remote_def.h:
+		Clean up of change notes in headers
+
+	* src/burp/burp.cpp:
+	* src/include/gen/autoconfig_msvc.h:
+	* src/journal/server.e:
+	* src/jrd/common.h:
+	* src/jrd/file_params.h:
+	* src/jrd/flu.cpp:
+	* src/jrd/gdsold.h:
+	* src/jrd/ibase.h:
+	* src/jrd/isc_file.cpp:
+	* src/jrd/isc_ipc.cpp:
+	* src/jrd/jio.cpp:
+	* src/jrd/license.h:
+	* src/jrd/llio.cpp:
+	* src/jrd/pag.cpp:
+	* src/jrd/svc.cpp:
+	* src/jrd/utl.cpp:
+	* src/lock/lock.h:
+	* src/make.new/Makefile.in.firebird:
+	* src/make.new/Makefile.in.jrd:
+	* src/make.new/config/config.h.in:
+	* src/makefiles/boot.sfx.interbase:
+	* src/makefiles/config/config.h.in:
+	* src/makefiles/prefix.epson:
+	* src/makefiles/sfx.firebird:
+	* src/makefiles/sfx.jrd:
+	* src/pipe/head.cpp:
+	* src/remote/inet.cpp:
+	* src/remote/protocol.h:
+	* src/remote/remote_def.h:
+		Code cleanup of obsolete EPSON port
+
+2002-01-28  skywalker
+	* src/misc/writeBuildNum.sh:
+		Changed string == to = for shell compatibility.
+
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+2002-01-21  kkuznetsov
+	* configure.in:
+		I forgot ";"
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/make.new/prefix.solx86:
+		first try to port IT to Solaris X86
+
+	* configure.in:
+		
+		fist try to port IT to Solaris X86
+
+2002-01-06  skywalker
+	* src/jrd/alt_use_sec.h:
+	* src/jrd/build_no.h:
+	* src/jrd/sdl.cpp:
+	* src/make.defaults:
+	* src/make.new/Makefile.in.firebird:
+	* src/make.new/README.makefiles:
+	* src/make.platform:
+	* src/make.rules:
+	* src/misc/writeBuildNum.sh:
+	* src/v5_examples/empbuild.c:
+		Changed to force write of update build #.
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+2002-01-05  tamlin
+	* src/jrd/sdl.cpp:
+		signed/unsigned mismatch bugfix
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/jrd/isc_sync_win32.cpp:
+		Silly (but potentially serious) bug fixed
+
+	* src/jrd/blb.cpp:
+		Cleaning up
+
+2002-01-04  skywalker
+	* src/alice/alice.cpp:
+	* src/burp/backup.epp:
+	* src/burp/restore.epp:
+	* src/common/memory/allocators.cpp:
+	* src/common/memory/allocators.h:
+	* src/dsql/pass1.cpp:
+	* src/dsql/preparse.cpp:
+	* src/gpre/ada.cpp:
+	* src/gpre/c_cxx.cpp:
+	* src/gpre/cmp.cpp:
+	* src/gpre/exp.cpp:
+	* src/gpre/ftn.cpp:
+	* src/gpre/gpre.cpp:
+	* src/gpre/gpre.h:
+	* src/gpre/gpre_meta_boot.cpp:
+	* src/gpre/par.cpp:
+	* src/gpre/pat.cpp:
+	* src/include/fb_exception.h:
+	* src/include/gen/codes.h:
+	* src/include/gen/codetext.h:
+	* src/include/gen/gds_codes.ftn:
+	* src/include/gen/gds_codes.pas:
+	* src/include/gen/iberror.h:
+	* src/include/gen/msg_facs.h:
+	* src/include/gen/msgs.h:
+	* src/include/gen/rdb_codes.h:
+	* src/include/gen/sql_code.h:
+	* src/jrd/alt_use_sec.h:
+	* src/jrd/builtin.cpp:
+	* src/jrd/cmp.cpp:
+	* src/jrd/codes.epp:
+	* src/jrd/dfw.epp:
+	* src/jrd/dpm.epp:
+	* src/jrd/event.cpp:
+	* src/jrd/functions.cpp:
+	* src/jrd/gds.cpp:
+	* src/jrd/ini.epp:
+	* src/jrd/isc.cpp:
+	* src/jrd/jrd.h:
+	* src/jrd/met.epp:
+	* src/jrd/opt.cpp:
+	* src/jrd/par.cpp:
+	* src/jrd/perf.cpp:
+	* src/jrd/sbm.cpp:
+	* src/jrd/scl.epp:
+	* src/jrd/svc.cpp:
+	* src/jrd/tra.cpp:
+	* src/jrd/vio.cpp:
+	* src/lock/lock.cpp:
+	* src/make.defaults:
+	* src/make.new/Makefile.in.common.memory:
+	* src/make.new/Makefile.in.firebird:
+	* src/make.new/Makefile.in.gpre:
+	* src/make.new/Makefile.in.jrd:
+	* src/make.new/config/config.h.in:
+	* src/make.new/make.rules:
+	* src/make.new/make.shared.variables:
+	* src/make.new/prefix.linux:
+	* src/make.platform:
+	* src/make.rules:
+	* src/make.shared.variables:
+	* src/qli/eval.cpp:
+	* src/qli/exe.cpp:
+	* src/qli/mov.cpp:
+	* src/remote/allr.cpp:
+	* src/remote/inet.cpp:
+	* src/remote/remote.cpp:
+	* src/utilities/drop.cpp:
+	* src/utilities/dropv3.cpp:
+	* src/v5_examples/empddl.sql:
+		Changes to make it compile on linux.
+		and work through a few issues.
+
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* configure:
+	* configure.in:
+		Changed one or two of the headers that are checked for.
+
+2002-01-04  tamlin
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
+	* src/jrd/tpc.cpp:
+		Objects are not allowed to live on the stack if you want to ask
+		a pool of their type.
+
+2001-12-30  pcisar
+	* src/misc/writeBuildNum.sh:
+		increment build number
+
 2001-12-29  tamlin
 	* src/alice/alice.cpp:
 	* src/alice/alice_meta.epp:
