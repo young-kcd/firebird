@@ -84,7 +84,6 @@ static void set_first_user(LGFILE **, LIP, TEXT *);
 #define MOVE_BYTE(x_from,x_to)	*x_to++ = *x_from++;
 
 
-#if (defined SUPERSERVER)
 void AIL_add_log(void)
 {
 /**************************************
@@ -311,6 +310,8 @@ void AIL_disable(void)
 			AIL_process_jrn_error(ret_val);
 	}
 }
+
+
 void AIL_drop_log(void)
 {
 /**************************************
@@ -701,7 +702,6 @@ void AIL_get_file_list(LLS * stack)
 	gds__free((SLONG *) log_name2);
 #endif
 }
-#endif
 
 
 void AIL_init(
@@ -867,7 +867,6 @@ void AIL_init_log_page(LIP logp, SLONG seqno)
 }
 
 
-#if (defined SUPERSERVER)
 void AIL_journal_tid(void)
 {
 /**************************************
@@ -1430,7 +1429,6 @@ static BOOLEAN get_walinfo(TEXT * walname)
 
 	return TRUE;
 }
-#endif
 
 
 static void initialize_wal(
@@ -1488,7 +1486,6 @@ USHORT activate_shadow, SBM * sbm_rec)
 }
 
 
-#if (defined SUPERSERVER)
 static void process_log_updater(LIP logp)
 {
 /**************************************
@@ -1670,7 +1667,6 @@ static void set_first_user(LGFILE ** log_files, LIP logp, TEXT * walname)
 	logp->log_cp_2.cp_offset = 0;
 	logp->log_cp_2.cp_p_offset = 0;
 }
-#endif
 
 
 } // extern "C"
