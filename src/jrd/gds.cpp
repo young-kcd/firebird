@@ -2350,7 +2350,7 @@ void * API_ROUTINE gds__temp_file(
 	strcat(file_name, TEMP_PATTERN);
 	
 #ifdef HAVE_MKSTEMP
-	void *result = (void *)mkstemp(file_name);
+	result = (void *)mkstemp(file_name);
 #else
 	if (mktemp(file_name) == (char *)0)
 		return (void *)-1;
