@@ -63,12 +63,17 @@ class TemporaryField : public pool_alloc<type_tfb>
 	DSC				tfb_desc;
 };
 
+// tfb_flags
+
 const int TFB_computed			= 1;
 const int TFB_array				= 2;
 
-const int MET_object_active		= 0;
-const int MET_object_inactive	= 1;
-const int MET_object_unknown	= 2;
+// index status
+
+const SSHORT MET_object_active		= 0;
+const SSHORT MET_object_inactive	= 1;
+const SSHORT MET_object_unknown	= 2;
+
 
 const int TRIGGER_PRE_STORE		= 1;
 const int TRIGGER_POST_STORE	= 2;

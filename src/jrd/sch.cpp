@@ -58,10 +58,12 @@ typedef struct thread {
 	USHORT thread_flags;		/* Flags */
 } *THREAD;
 
-const int THREAD_hiber			= 1;	/* Thread is hibernating */
-const int THREAD_ast_disabled	= 2;	/* Disable AST delivery */
-const int THREAD_ast_active		= 4;	/* Disable AST preemption while AST active */
-const int THREAD_ast_pending	= 8;	/* AST waiting to be delivered */
+//  thread_flags
+
+const USHORT THREAD_hiber			= 1;	/* Thread is hibernating */
+const USHORT THREAD_ast_disabled	= 2;	/* Disable AST delivery */
+const USHORT THREAD_ast_active		= 4;	/* Disable AST preemption while AST active */
+const USHORT THREAD_ast_pending		= 8;	/* AST waiting to be delivered */
 
 static THREAD alloc_thread(void);
 static bool ast_enable(void);

@@ -171,10 +171,10 @@ const int SKD_date	= SKD_timestamp1;
 
 /* skd_flags */
 
-const int SKD_ascending		= 0;	/* default initializer */
-const int SKD_descending	= 1;
-const int SKD_insensitive	= 2;
-const int SKD_binary		= 4;
+const UCHAR SKD_ascending		= 0;	/* default initializer */
+const UCHAR SKD_descending	= 1;
+const UCHAR SKD_insensitive	= 2;
+const UCHAR SKD_binary		= 4;
 
 const int TYPE_RUN	= 0;
 const int TYPE_MRG	= 1;

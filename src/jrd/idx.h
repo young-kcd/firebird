@@ -46,10 +46,13 @@ struct ini_idx_t {
 
 /* Encoded descriptions of system indices */
 
+using Jrd::idx_unique;
+using Jrd::idx_metadata;
+using Jrd::idx_numeric;
+using Jrd::idx_descending;
+
 #define INDEX(id,flag,rel,unique,count) {(id),(flag),(UCHAR) (rel),(unique),(count),{
 #define SEGMENT(fld,type) {(fld),(type)}
-
-using namespace Jrd;
 
 static const struct ini_idx_t indices[] = {
 

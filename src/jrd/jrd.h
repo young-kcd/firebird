@@ -329,16 +329,16 @@ const ULONG DBB_being_opened		= 0x400000L;	/* database is being attached to */
 //
 // dbb_ast_flags
 //
-const ULONG DBB_blocking			= 0x1L;		// Exclusive mode is blocking
-const ULONG DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
-const ULONG DBB_assert_locks		= 0x4L;		// Locks are to be asserted
-const ULONG DBB_shutdown			= 0x8L;		// Database is shutdown
-const ULONG DBB_shut_attach			= 0x10L;	// no new attachments accepted
-const ULONG DBB_shut_tran			= 0x20L;	// no new transactions accepted
-const ULONG DBB_shut_force			= 0x40L;	// forced shutdown in progress
-const ULONG DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
-const ULONG DBB_shutdown_full		= 0x100L;	// Database fully shut down
-const ULONG DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
+const UATOM DBB_blocking			= 0x1L;		// Exclusive mode is blocking
+const UATOM DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
+const UATOM DBB_assert_locks		= 0x4L;		// Locks are to be asserted
+const UATOM DBB_shutdown			= 0x8L;		// Database is shutdown
+const UATOM DBB_shut_attach			= 0x10L;	// no new attachments accepted
+const UATOM DBB_shut_tran			= 0x20L;	// no new transactions accepted
+const UATOM DBB_shut_force			= 0x40L;	// forced shutdown in progress
+const UATOM DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
+const UATOM DBB_shutdown_full		= 0x100L;	// Database fully shut down
+const UATOM DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
 
 //
 // Database attachments
@@ -484,33 +484,33 @@ public:
 
 /* Attachment flags */
 
-const int ATT_no_cleanup		= 1;	// Don't expunge, purge, or garbage collect
-const int ATT_shutdown			= 2;	// attachment has been shutdown
-const int ATT_shutdown_notify	= 4;	// attachment has notified client of shutdown
-const int ATT_shutdown_manager	= 8;	// attachment requesting shutdown
-const int ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
-const int ATT_exclusive			= 32;	// attachment wants exclusive database access
-const int ATT_attach_pending	= 64;	// Indicate attachment is only pending
-const int ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
-const int ATT_gbak_attachment	= 256;	// Indicate GBAK attachment
-const int ATT_security_db		= 512;	// Indicates an implicit attachment to the security db
+const ULONG ATT_no_cleanup			= 1;	// Don't expunge, purge, or garbage collect
+const ULONG ATT_shutdown			= 2;	// attachment has been shutdown
+const ULONG ATT_shutdown_notify		= 4;	// attachment has notified client of shutdown
+const ULONG ATT_shutdown_manager	= 8;	// attachment requesting shutdown
+const ULONG ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
+const ULONG ATT_exclusive			= 32;	// attachment wants exclusive database access
+const ULONG ATT_attach_pending		= 64;	// Indicate attachment is only pending
+const ULONG ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
+const ULONG ATT_gbak_attachment		= 256;	// Indicate GBAK attachment
+const ULONG ATT_security_db			= 512;	// Indicates an implicit attachment to the security db
 #ifdef GARBAGE_THREAD
-const int ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
-const int ATT_disable_notify_gc	= 2048;	// Temporarily perform own garbage collection
-const int ATT_garbage_collector	= 4096;	// I'm a garbage collector
+const ULONG ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_disable_notify_gc	= 2048;	// Temporarily perform own garbage collection
+const ULONG ATT_garbage_collector	= 4096;	// I'm a garbage collector
 
-const int ATT_NO_CLEANUP		= (ATT_no_cleanup | ATT_notify_gc);
+const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 #else
-const int ATT_NO_CLEANUP		= ATT_no_cleanup;
+const ULONG ATT_NO_CLEANUP			= ATT_no_cleanup;
 #endif
 
 #ifdef CANCEL_OPERATION
-const int ATT_cancel_raise		= 8192;		// Cancel currently running operation
-const int ATT_cancel_disable	= 16384;	// Disable cancel operations
+const ULONG ATT_cancel_raise		= 8192;		// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 16384;	// Disable cancel operations
 #endif
 
-const int ATT_gfix_attachment	= 32768;	// Indicate a GFIX attachment
-const int ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
+const ULONG ATT_gfix_attachment		= 32768;	// Indicate a GFIX attachment
+const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
 
 
 /* Procedure block */
@@ -546,21 +546,23 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	explicit jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
 };
 
-const int PRC_scanned			= 1;	/* Field expressions scanned */
-const int PRC_system			= 2;
-const int PRC_obsolete			= 4;	/* Procedure known gonzo */
-const int PRC_being_scanned		= 8;	/* New procedure needs dependencies during scan */
-const int PRC_blocking			= 16;	/* Blocking someone from dropping procedure */
-const int PRC_create			= 32;	/* Newly created */
-const int PRC_being_altered		= 64;	/* Procedure is getting altered */
+// prc_flags
+
+const USHORT PRC_scanned			= 1;	/* Field expressions scanned */
+const USHORT PRC_system				= 2;
+const USHORT PRC_obsolete			= 4;	/* Procedure known gonzo */
+const USHORT PRC_being_scanned		= 8;	/* New procedure needs dependencies during scan */
+const USHORT PRC_blocking			= 16;	/* Blocking someone from dropping procedure */
+const USHORT PRC_create				= 32;	/* Newly created */
+const USHORT PRC_being_altered		= 64;	/* Procedure is getting altered */
 									// This flag is used to make sure that MET_remove_procedure
 									// does not delete and remove procedure block from cache
 									// so dfw.epp:modify_procedure() can flip procedure body without 
 									// invalidating procedure pointers from other parts of metadata cache
 
-const int PRC_check_existence	= 128;	/* Existence lock released */
+const USHORT PRC_check_existence	= 128;	/* Existence lock released */
 
-const int MAX_PROC_ALTER		= 64;	/* No. of times an in-cache procedure can be altered */
+const USHORT MAX_PROC_ALTER			= 64;	/* No. of times an in-cache procedure can be altered */
 
 
 
@@ -674,19 +676,21 @@ public:
 	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
 
-const int REL_scanned					= 1;		/* Field expressions scanned (or being scanned) */
-const int REL_system					= 2;
-const int REL_deleted					= 4;		/* Relation known gonzo */
-const int REL_get_dependencies			= 8;			/* New relation needs dependencies during scan */
-const int REL_force_scan				= 16;		/* system relation has been updated since ODS change, force a scan */
-const int REL_check_existence			= 32;		/* Existence lock released pending drop of relation */
-const int REL_blocking					= 64;		/* Blocking someone from dropping relation */
-const int REL_sys_triggers				= 128;		/* The relation has system triggers to compile */
-const int REL_sql_relation				= 256;		/* Relation defined as sql table */
-const int REL_check_partners			= 512;		/* Rescan primary dependencies and foreign references */
-const int REL_being_scanned				= 1024;	/* relation scan in progress */
-const int REL_sys_trigs_being_loaded	= 2048;	/* System triggers being loaded */
-const int REL_deleting					= 4096;	/* relation delete in progress */
+// rel_flags
+
+const USHORT REL_scanned				= 1;		/* Field expressions scanned (or being scanned) */
+const USHORT REL_system					= 2;
+const USHORT REL_deleted				= 4;		/* Relation known gonzo */
+const USHORT REL_get_dependencies		= 8;			/* New relation needs dependencies during scan */
+const USHORT REL_force_scan				= 16;		/* system relation has been updated since ODS change, force a scan */
+const USHORT REL_check_existence		= 32;		/* Existence lock released pending drop of relation */
+const USHORT REL_blocking				= 64;		/* Blocking someone from dropping relation */
+const USHORT REL_sys_triggers			= 128;		/* The relation has system triggers to compile */
+const USHORT REL_sql_relation			= 256;		/* Relation defined as sql table */
+const USHORT REL_check_partners			= 512;		/* Rescan primary dependencies and foreign references */
+const USHORT REL_being_scanned			= 1024;		/* relation scan in progress */
+const USHORT REL_sys_trigs_being_loaded	= 2048;		/* System triggers being loaded */
+const USHORT REL_deleting				= 4096;		/* relation delete in progress */
 
 
 /* Field block, one for each field in a scanned relation */
@@ -881,11 +885,12 @@ struct win_for_array: public win
 	win_for_array() : win(-1) {}
 };
 
+// win_flags
 
-const int WIN_large_scan		= 1;	/* large sequential scan */
-const int WIN_secondary			= 2;	/* secondary stream */
-const int WIN_garbage_collector	= 4;	/* garbage collector's window */
-const int WIN_garbage_collect	= 8;	/* scan left a page for garbage collector */
+const USHORT WIN_large_scan		= 1;	/* large sequential scan */
+const USHORT WIN_secondary			= 2;	/* secondary stream */
+const USHORT WIN_garbage_collector	= 4;	/* garbage collector's window */
+const USHORT WIN_garbage_collect	= 8;	/* scan left a page for garbage collector */
 
 
 // Thread specific database block
@@ -911,11 +916,13 @@ struct thread_db
 #endif
 };
 
-const int TDBB_sweeper				= 1;	/* Thread sweeper or garbage collector */
-const int TDBB_no_cache_unwind		= 2;	/* Don't unwind page buffer cache */
-const int TDBB_prc_being_dropped	= 4;	/* Dropping a procedure  */
-const int TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
-const int TDBB_backup_merge			= 16;	/* Merging changes from difference file */
+// tdbb_flags
+
+const USHORT TDBB_sweeper				= 1;	/* Thread sweeper or garbage collector */
+const USHORT TDBB_no_cache_unwind		= 2;	/* Don't unwind page buffer cache */
+const USHORT TDBB_prc_being_dropped		= 4;	/* Dropping a procedure  */
+const USHORT TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
+const USHORT TDBB_backup_merge			= 16;	/* Merging changes from difference file */
 
 /* List of internal database handles */
 

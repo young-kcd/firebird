@@ -29,12 +29,12 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 
-const int CHR_LETTER	= 1;
-const int CHR_DIGIT		= 2;
-const int CHR_IDENT		= 4;
-const int CHR_QUOTE		= 8;
-const int CHR_WHITE		= 16;
-const int CHR_HEX		= 32;
+const UCHAR CHR_LETTER	= 1;
+const UCHAR CHR_DIGIT	= 2;
+const UCHAR CHR_IDENT	= 4;
+const UCHAR CHR_QUOTE	= 8;
+const UCHAR CHR_WHITE	= 16;
+const UCHAR CHR_HEX		= 32;
 
 extern struct symb dbt_symbols[];
 

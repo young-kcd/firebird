@@ -600,9 +600,11 @@ typedef struct vdr
 	SparseBitmap* vdr_idx_records;		/* 1 bit per index item */
 } *VDR;
 
-const int vdr_update		= 2;		/* fix simple things */
-const int vdr_repair		= 4;		/* fix non-simple things (-mend) */
-const int vdr_records		= 8;		/* Walk all records */
+// vdr_flags
+
+const USHORT vdr_update		= 2;		/* fix simple things */
+const USHORT vdr_repair		= 4;		/* fix non-simple things (-mend) */
+const USHORT vdr_records		= 8;		/* Walk all records */
 
 typedef enum {
 	fetch_ok,

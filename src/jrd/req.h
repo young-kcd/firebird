@@ -82,19 +82,19 @@ struct record_param {
 
 /* Record flags must be an exact replica of ODS record header flags */
 
-const int rpb_deleted	= 1;
-const int rpb_chained	= 2;
-const int rpb_fragment	= 4;
-const int rpb_incomplete= 8;
-const int rpb_blob		= 16;
-const int rpb_delta		= 32;		/* prior version is a differences record */
-const int rpb_damaged	= 128;		/* record is busted */
-const int rpb_gc_active	= 256;		/* garbage collecting dead record version */
+const USHORT rpb_deleted	= 1;
+const USHORT rpb_chained	= 2;
+const USHORT rpb_fragment	= 4;
+const USHORT rpb_incomplete	= 8;
+const USHORT rpb_blob		= 16;
+const USHORT rpb_delta		= 32;		/* prior version is a differences record */
+const USHORT rpb_damaged	= 128;		/* record is busted */
+const USHORT rpb_gc_active	= 256;		/* garbage collecting dead record version */
 
 /* Stream flags */
 
-const int RPB_s_refetch	= 0x1;		/* re-fetch required due to sort */
-const int RPB_s_update	= 0x2;		/* input stream fetched for update */
+const USHORT RPB_s_refetch	= 0x1;		/* re-fetch required due to sort */
+const USHORT RPB_s_update	= 0x2;		/* input stream fetched for update */
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
@@ -105,9 +105,9 @@ const int MAX_DIFFERENCES	= 1024;	/* Max length of generated Differences string
 
 /* Store allocation policy types.  Parameter to DPM_store() */
 
-const int DPM_primary	= 1;		/* New primary record */
-const int DPM_secondary	= 2;		/* Chained version of primary record */
-const int DPM_other		= 3;		/* Independent (or don't care) record */
+const USHORT DPM_primary	= 1;		/* New primary record */
+const USHORT DPM_secondary	= 2;		/* Chained version of primary record */
+const USHORT DPM_other		= 3;		/* Independent (or don't care) record */
 
 /* Record block (holds data, remember data?) */
 
@@ -126,9 +126,11 @@ public:
 	UCHAR rec_data[1];			/* THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY */
 };
 
-const int REC_same_tx		= 1;		/* record inserted/updated and deleted by same tx */
-const int REC_gc_active		= 2;		/* relation garbage collect record block in use */
-const int REC_new_version	= 4;		/* savepoint created new record version and deleted it */
+// rec_flags
+
+const UCHAR REC_same_tx		= 1;		/* record inserted/updated and deleted by same tx */
+const UCHAR REC_gc_active	= 2;		/* relation garbage collect record block in use */
+const UCHAR REC_new_version	= 4;		/* savepoint created new record version and deleted it */
 
 /* save record_param block */
 
