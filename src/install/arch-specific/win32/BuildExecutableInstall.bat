@@ -319,6 +319,7 @@ for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %ROOT_PATH%\o
 for %%v in ( doc intl udf ) do (@mkdir %ROOT_PATH%\emb_pack\%%v 2>nul)
 
 @copy /Y %ROOT_PATH%\temp\release\firebird\bin\fbembed.* %ROOT_PATH%\emb_pack > nul
+@copy /Y %ROOT_PATH%\temp\release\firebird\bin\ib_util.dll %ROOT_PATH%\emb_pack > nul
 @copy /Y %ROOT_PATH%\output\doc\Firebird*.pdf %ROOT_PATH%\emb_pack\doc\ > nul
 @copy /Y %ROOT_PATH%\output\intl\*.* %ROOT_PATH%\emb_pack\intl\ > nul
 @copy /Y %ROOT_PATH%\output\udf\*.* %ROOT_PATH%\emb_pack\udf\ > nul
