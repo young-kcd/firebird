@@ -59,7 +59,7 @@
 ;To Do
 ;  Check for other references to classic/super
 ;  Code to check registry for actual version we are installing
-;Make sure we update firebird.conf if not using guardian
+;
 
 #define msvc_version 6
 #define FirebirdURL "http://www.firebirdsql.org"
@@ -656,6 +656,7 @@ procedure CurPageChanged(CurPage: Integer);
 begin
   case CurPage of
     wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
+    wpInfoBefore:   WizardForm.INFOAFTERMEMO.font.name:='Courier New';
     wpSelectTasks:  WizardForm.TASKSLIST.height := WizardForm.TASKSLIST.height+20;
   end;
 end;

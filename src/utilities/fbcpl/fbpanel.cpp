@@ -69,42 +69,59 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
     // Create the dialog box using the parent window handle
     CFBDialog dlg(CWnd::FromHandle(hwndCPl));
 
-    // Check if Firebird is installed by reading the registry
-    HKEY hkey;
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_CUR_VER, 0, KEY_QUERY_VALUE, &hkey) 
-		== ERROR_SUCCESS)
-	{
-		DWORD   buffSize = sizeof(dlg.m_FB_Version);
-		char version[64];
-		buffSize = sizeof(version); /* reserve place for null and the \ */
-
-		if (RegQueryValueEx (hkey, "Version", NULL, NULL, (unsigned char *)version, 
-			&buffSize) == ERROR_SUCCESS)
-		{
-		//dlg.m_FB_Version = version;
-			dlg.m_FB_Version = "Version ";
-			dlg.m_FB_Version += version;
-		}
-		else
-		{
-		dlg.m_FB_Version = "not known";
-		}
-		
-		char rootpath[MAX_PATH-2];
-		buffSize = sizeof(rootpath);
-		if (RegQueryValueEx(hkey, "RootDirectory",NULL, NULL, (unsigned char *)rootpath, &buffSize)
+	try {
+		// Check if Firebird is installed by reading the registry
+		HKEY hkey;
+		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES, 0, KEY_QUERY_VALUE, &hkey) 
 			== ERROR_SUCCESS)
 		{
-			PathAddBackslash(rootpath);
-			dlg.m_Root_Path = rootpath;
+			char rootpath[MAX_PATH-2];
+			DWORD buffer_size = sizeof(rootpath);
+			if (RegQueryValueEx(hkey, "DefaultInstance",NULL, NULL, (unsigned char *)rootpath, &buffer_size)
+				== ERROR_SUCCESS)
+			{
+				PathAddBackslash(rootpath);
+				dlg.m_Root_Path = rootpath;
+			}
+			
+			RegCloseKey(hkey);
+			
+			dlg.m_FB_Version = "not known";
+			CString afilename = dlg.m_Root_Path + "bin\\gbak.exe";
+			buffer_size = GetFileVersionInfoSize( const_cast<char *> ((LPCTSTR) afilename), 0);
+			void * VersionInfo = new char [buffer_size];
+			void * ProductVersion = new char [32];
+			void * SpecialBuild = new char [127];
+			void * PrivateBuild = new char [127];
+			unsigned int ValueSize;
+			if ( GetFileVersionInfo( const_cast<char *> ((LPCTSTR) afilename), 0, buffer_size, VersionInfo) )
+			{
+				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\ProductVersion", &ProductVersion, &ValueSize);
+				if (ValueSize)
+				{
+					dlg.m_FB_Version = "Version ";
+					dlg.m_FB_Version += (char *)ProductVersion;
+				}
+				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\SpecialBuild", &SpecialBuild, &ValueSize);
+				if (ValueSize)
+				{
+					dlg.m_FB_Version += " ";
+					dlg.m_FB_Version += (char *)SpecialBuild;
+				}
+				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\PrivateBuild", &PrivateBuild, &ValueSize);
+				if (ValueSize)
+				{
+					dlg.m_FB_Version += " ";
+					dlg.m_FB_Version += (char *)PrivateBuild;
+				}
+/**/
+			}
+		
+			// Show the dialog box
+			if (dlg.DoModal() != IDOK) return 0;
 		}
-
-        RegCloseKey(hkey);
-
-	    // Show the dialog box
-		if (dlg.DoModal() != IDOK) return 0;
-    }
-	else
+	}
+	catch ( ... )
 	{
 		//raise an error
 		dlg.MessageBox("Firebird does not appear to be installed correctly.","Installation Error",MB_OK);

@@ -42,8 +42,9 @@ Bugs fixed in this release (all platforms)
 Installing the self-installing executable
 =========================================
 
-Please run the executable and read the accompanying installation 
-instructions that are contained within the setup wizard.
+Please run the executable and read the accompanying 
+installation instructions that are contained within 
+the setup wizard.
 
 
 Known Issues
@@ -57,8 +58,9 @@ Reporting Bugs
 
 o Are you sure you understand how Firebird works?
 
-  Perhaps you are seeing the correct behaviour and you really have a 
-  support question. In this case contact the ib-support list server.
+  Perhaps you are seeing the correct behaviour and you
+  really have a support question. In this case contact
+  the ib-support list server.
  
   You may subscribe here: 
 
@@ -67,17 +69,19 @@ o Are you sure you understand how Firebird works?
 
 o Still think it is a bug? 
 
-  Check the list of Open Bugs. This can be found at
+  Check the list of Open Bugs. This can be found at:
+  
+    http://sourceforge.net/tracker/?group_id=9028&atid=109028
 
-    http://prdownloads.sourceforge.net/firebird/Firebird_v1_OpenBugs.html
+Otherwise, if you are reasonably sure it is a bug then
+please try to develop a reproducible test case. You 
+can then submit it to the Firebird bug tracker via:
 
-  An older version is contained in the doc directory of this release.
-
-Otherwise, if you are reasonably sure it is a bug then please 
-try to develop a reproducible test case. You can then submit it
-to the Firebird bug tracker at:
-
-  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+  http://sourceforge.net/tracker/?func=add&group_id=9028&atid=109028
+  
+You do not need to be a member of the Firebird 
+project to log a bug, but you do need to have set up a
+Sourceforge account.
 
 
 Requesting New Features

@@ -15,10 +15,11 @@
 @set DBG=
 @set DBG_DIR=release
 @set CLEAN=/build
-@if "%1"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
-@if "%2"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
-@if "%1"=="CLEAN" (set CLEAN=/rebuild)
-@if "%2"=="CLEAN" (set CLEAN=/rebuild)
+for %%v in ( %1 %2 ) do (
+	@if /I "%%v"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+	@if /I "%%v"=="CLEAN" (set CLEAN=/rebuild)
+)
+
 
 ::==========
 :: MAIN
@@ -28,6 +29,7 @@
 	call :DEBUG
 )
 @call :MOVE
+@type make_all.log | findstr error
 @goto :END
 
 ::===========
