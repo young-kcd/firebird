@@ -411,6 +411,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "gsplit"=.\gsplit.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "gstat"=.\gstat.dsp - Package Owner=<4>
 
 Package=<5>
@@ -494,6 +506,18 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name common
     End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "intlcpp"=.\intlcpp.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
 }}}
 
 ###############################################################################
