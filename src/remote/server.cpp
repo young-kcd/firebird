@@ -761,7 +761,7 @@ static ISC_STATUS attach_database(
 
 	new_dpb = new_dpb_buffer;
 	if (string = port->port_user_name) {
-		if ((dl + 3 + string->str_length) > sizeof(new_dpb_buffer))
+		if ((size_t)(dl + 3 + string->str_length) > sizeof(new_dpb_buffer))
 			new_dpb = ALLR_alloc((SLONG) (dl + 3 + string->str_length));
 		p = new_dpb;
 		if (dl)
