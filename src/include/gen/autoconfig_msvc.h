@@ -1,4 +1,4 @@
-#ident "$Id: autoconfig_msvc.h,v 1.25 2002-09-03 13:24:21 eku Exp $"
+#ident "$Id: autoconfig_msvc.h,v 1.26 2002-09-03 17:29:53 dimitr Exp $"
 
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -32,8 +32,8 @@
 #undef HAVE_GRP_H
 #undef HAVE_PWD_H
 #undef HAVE_LIBIO_H
-#undef HAVE_LOCALE_H
-#undef HAVE_MATH_H
+#define HAVE_LOCALE_H
+#define HAVE_MATH_H
 #undef HAVE_PTHREAD_H
 #undef HAVE_SYS_TYPES_H
 #define HAVE_SYS_STAT_H
