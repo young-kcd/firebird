@@ -1,3 +1,9 @@
+2004-06-10 16:09  brodsom
+
+	* firebird2/src/remote/os/win32/cntl.cpp (1.13):
+	
+	-Rollback
+
 2004-06-09 21:03  brodsom
 
 	* firebird2/src/jrd/os/thd_priority.h (1.16):
