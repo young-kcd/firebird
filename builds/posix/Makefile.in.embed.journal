@@ -22,16 +22,16 @@
 # this file are either listed below or can be obtained from a CVS 
 # history command.
 #
-#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#  Created by:  Blas Rodriguez Somoza
 #
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.journal,v 1.1 2003-11-05 16:53:12 brodsom Exp $
+#  $Id: Makefile.in.embed.journal,v 1.2 2003-11-07 11:37:18 brodsom Exp $
 #
 
 ROOT=..
-ObjModuleName=client.journal
+ObjModuleName=embed.journal
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
