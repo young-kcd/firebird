@@ -145,17 +145,7 @@ protected:
 	int *cur_memory;
 	int *max_memory;
 	// Do not allow to create and destroy pool directly from outside
-	MemoryPool(void *first_extent, void *root_page, int* cur_mem = NULL, int* max_mem = NULL) : 
-		freeBlocks((InternalAllocator*)this, root_page),
-		extents((MemoryExtent *)first_extent), 
-		needSpare(false),
-		pendingFree(NULL),
-		/*extents_memory(0), - Initialized in internal_create() */
-		used_memory(0),
-		cur_memory(cur_mem),
-		max_memory(max_mem)
-	{
-	}
+	MemoryPool(void *first_extent, void *root_page, int* cur_mem = NULL, int* max_mem = NULL);
 
 	// This should never be called
 	~MemoryPool() {

@@ -67,6 +67,18 @@ static void pool_out_of_memory()
 
 static MemoryPool* processMemoryPool;
 
+MemoryPool::MemoryPool(void *first_extent, void *root_page, int* cur_mem, int* max_mem) : 
+	freeBlocks((InternalAllocator*)this, root_page),
+	extents((MemoryExtent *)first_extent), 
+	needSpare(false),
+	pendingFree(NULL),
+	/*extents_memory(0), - Initialized in internal_create() */
+	used_memory(0),
+	cur_memory(cur_mem),
+	max_memory(max_mem)
+{
+}
+
 void MemoryPool::updateSpare() {
 	do {
 		do {

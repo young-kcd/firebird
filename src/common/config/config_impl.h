@@ -66,7 +66,7 @@ public:
 	ConfigImpl();
     ~ConfigImpl();
 
-	static string getValue(ConfigFile, ConfigKey);
+	static string getValue(ConfigFile&, ConfigKey);
 
 	static int asInteger(const string&);
 	static bool asBoolean(const string&);

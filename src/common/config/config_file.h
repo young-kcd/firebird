@@ -29,6 +29,7 @@
 #include <functional>
 #include <map>
 
+#include "../../common/classes/alloc.h"
 #include "fb_string.h"
 
 /**
@@ -63,7 +64,8 @@ class ConfigFile
 		void uppercase(string&) const;
 	};
 
-    typedef std::map<string, string, key_compare> mymap_t;
+    typedef std::map <string, string, key_compare,
+		Firebird::allocator <std::pair <const string, string> > > mymap_t;
 
 public:
     ConfigFile() : isLoadedFlg(false) {}
