@@ -372,6 +372,10 @@ SOURCE=..\..\..\src\jrd\opt.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\Optimizer.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\pag.cpp
 # End Source File
 # Begin Source File

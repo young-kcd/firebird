@@ -321,6 +321,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Optimizer.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\pag.cpp">
 			</File>
 			<File
@@ -828,6 +831,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\opt_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Optimizer.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pag.h">
