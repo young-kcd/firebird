@@ -1,3 +1,83 @@
+2002-12-02 14:06  eku
+
+	* firebird2/src/jrd/os/posix/config_root.cpp:
+	
+	Synchronised POSIX build with recent changes in the configuration
+	manager.
+
+2002-12-02 12:17  eku
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.client.gpre,
+	builds/posix/Makefile.in.embed.gpre, builds/posix/Makefile.in.gpre,
+	builds/posix/Makefile.in.static.gpre, src/gpre/gpre.cpp,
+	src/gpre/gpre.h, src/gpre/gpreswi.h, src/gpre/pat.cpp,
+	src/include/gen/autoconfig_msvc.h, src/make.new/config/config.h.in:
+	
+	gpre's built-in lannguage support is now an autoconf option. C/C++
+	are mandatory, all others are optional. Default all=off.  Type
+	'configure --help' for details.
+
+2002-12-02 11:29  dimitr
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed renaming issue.
+
+2002-12-02 11:25  kkuznetsov
+
+	* firebird2/src/gpre/gpre.h:
+	
+	Fix boot-time refences to FTN_fini
+
+2002-12-02 11:15  kkuznetsov
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	Fix some errors in mmap_anon for Solaris
+
+2002-12-02 10:49  eku
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre, src/gpre/gpre.h:
+	
+	Removed support for ADA, BASIC, COBOL, FORTRAN and PASCAL from
+	gpre_boot.
+
+2002-12-02 10:48  eku
+
+	* firebird2/src/jrd/flu.cpp:
+	
+	Fixed a buffer overflow (MAXPATHLEN) and rewritten local function
+	dirname.
+
+2002-12-02 10:43  eku
+
+	* firebird2/src/: csv/csi.cpp, dsql/ddl.cpp, gpre/pretty.cpp,
+	intl/dtest.c, iscguard/iscguard.cpp, isql/isql.epp,
+	isql/isql_win.cpp, jrd/alt.cpp, jrd/blob_filter.epp,
+	jrd/blrtable.cpp, jrd/codes.epp, jrd/dsc.cpp, jrd/evl_like.cpp,
+	jrd/filters.cpp, jrd/gds.cpp, jrd/idx.h, jrd/inuse.cpp,
+	jrd/memtest.cpp, jrd/opt.cpp, jrd/par.cpp, jrd/sort.cpp,
+	jrd/svc.cpp, jrd/utl.cpp, jrd/why.c, jrd/y-valve.cpp,
+	lock/lock.cpp, lock/print.cpp, remote/inet.cpp,
+	remote/property.cpp, intl/dtest2.c:
+	
+	Use the new macro FB_NELEM to calculate the number of elements in
+	an array.
+
+2002-12-02 09:25  eku
+
+	* firebird2/: configure.in, src/common/config/config.cpp,
+	src/dudley/hsh.cpp, src/gpre/hsh.cpp, src/include/fb_types.h,
+	src/include/gen/autoconfig_msvc.h, src/include/gen/codes.h,
+	src/jrd/align.cpp, src/jrd/codes.epp, src/jrd/gdsold.h,
+	src/jrd/ibase.h, src/jrd/intl.cpp, src/jrd/sym.cpp,
+	src/lock/lock.cpp, src/make.new/config/config.h.in,
+	src/qli/hsh.cpp, src/utilities/create_db.cpp:
+	
+	Removed inconsistencies pointed out by Claudio Valderr.  Replaced
+	'defined(__osf__) && defined(__alpha)' with 'SIZEOF_LONG == 8'. 
+	New macro FB_NELEM calculates the number of elements in an array.
+
 2002-11-30 18:43  hippoman
 
 	* firebird2/src/: jrd/blb.cpp, jrd/cmp.cpp, jrd/evl.cpp,
