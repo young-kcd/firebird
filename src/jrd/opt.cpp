@@ -5573,7 +5573,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
 
 		if (accessor.getFirst()) do	{
-			ULONG id = accessor.current();
+			const ULONG id = accessor.current();
 			items++;
 			id_stack.push(id);
 			stream_stack.push(*ptr);

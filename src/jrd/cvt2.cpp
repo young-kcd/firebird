@@ -49,6 +49,7 @@
 #include "../jrd/blb_proto.h"
 #include "../jrd/tra.h"
 #include "../jrd/req.h"
+#include "../jrd/constants.h"
 
 using namespace Jrd;
 
@@ -781,7 +782,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
  *	Get a name (max length 31, NULL terminated) from a descriptor.
  *
  **************************************/
-	VARY_STR(32) temp;			/* 31 bytes + 1 NULL */
+	VARY_STR(MAX_SQL_IDENTIFIER_SIZE) temp;			/* 31 bytes + 1 NULL */
 	const char* p;
 
 	USHORT length = CVT_make_string(desc, ttype_metadata, &p,
