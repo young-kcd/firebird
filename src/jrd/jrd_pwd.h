@@ -48,6 +48,8 @@ public:
 	static void shutdown();
 	static void verifyUser(TEXT*, TEXT*, TEXT*, TEXT*, int*, int*, int*);
 
+	~SecurityDatabase() { fini(true); }
+
 private:
 
 	static const UCHAR PWD_REQUEST[256];
@@ -62,7 +64,7 @@ private:
 
 	int counter;
 
-	void fini();
+	void fini(bool);
 	void init();
 	bool lookup_user(TEXT*, int*, int*, TEXT*);
 	bool prepare();

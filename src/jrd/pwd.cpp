@@ -113,11 +113,11 @@ SecurityDatabase& SecurityDatabase::instance()
  *	Private interface
  */
 
-void SecurityDatabase::fini()
+void SecurityDatabase::fini(bool force)
 {
-	if (is_cached && counter > 0)
+	if (is_cached && (force || counter > 0))
 	{
-		if (--counter == 1)
+		if (force || --counter == 1)
 		{
 			counter = 0;
 			THREAD_EXIT;
@@ -312,7 +312,7 @@ void SecurityDatabase::initialize()
 
 void SecurityDatabase::shutdown()
 {
-	instance().fini();
+	instance().fini(false);
 }
 
 void SecurityDatabase::verifyUser(TEXT* name,
