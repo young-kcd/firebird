@@ -382,13 +382,27 @@ namespace Firebird {
 	}
 
 	void AbstractString::printf(const char* format,...) {
-#pragma FB_COMPILER_MESSAGE("Broken code! vsnprintf may return -1 on some platforms including Windows!")
-		char temp[256];
+		enum {tempsize = 256};
+		char temp[tempsize];
 		va_list params;
 		va_start(params, format);
-		int l = VSNPRINTF(temp, sizeof(temp), format, params);
-		temp[sizeof(temp) - 1] = 0;
-		if (l < sizeof(temp)) {
+		int l = VSNPRINTF(temp, tempsize, format, params);
+		if (l < 0) {
+			int n = sizeof(temp);
+			do {
+				n *= 2;
+				l = VSNPRINTF(baseAssign(n), n + 1, format, params);
+				if (l > 16 * 1024) {
+					char *errLine = "String size overflow in .printf()";
+					memcpy(baseAssign(strlen(errLine)), errLine, strlen(errLine));
+					return;
+				}
+			} while (l < 0);
+			resize(l);
+			return;	
+		}
+		temp[tempsize - 1] = 0;
+		if (l < tempsize) {
 			memcpy(baseAssign(l), temp, l);
 		}
 		else {
