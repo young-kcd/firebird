@@ -80,6 +80,11 @@
  * copyright (c) 1992, 1993 by Borland International
  */
 
+#if defined(_MSC_VER) && _MSC_VER < 1300
+// Any Microsoft compiler before MSVC7
+#pragma warning(disable: 4786)
+#endif
+
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
@@ -557,10 +562,9 @@ CsConvert* DLL_EXPORT INTL_convert_lookup(TDBB tdbb,
  * Functional description
  *
  **************************************/
-	VEC vector;
+
 	CharSetContainer *charset;
 	CsConvert* converter;
-	USHORT i;
 	DBB dbb;
 
 	SET_TDBB(tdbb);
@@ -1070,9 +1074,7 @@ TextType *DLL_EXPORT INTL_texttype_lookup(
  *
  **************************************/
 	DBB dbb;
-	VEC vector, *pVector;
 	TextType *cs_object;
-	CharSet* cs;
 	CharSetContainer *csc;
 	USHORT id;
 
@@ -2211,18 +2213,22 @@ static void* intl_back_compat_obj_init_lookup(
 	FUN function_block;
 	USHORT argcount;
 	char entry[48];
-	
+
+#if defined(_MSC_VER)
+#define snprintf _snprintf
+#endif
+
 	switch (type) {
 		case type_texttype:
-			snprintf((SCHAR *) entry, sizeof(entry), INTL_USER_ENTRY, parm1);
+			snprintf(entry, sizeof(entry), INTL_USER_ENTRY, parm1);
 			argcount = 2;
 			break;
 		case type_charset:
-			snprintf((SCHAR *) entry, sizeof(entry), "USER_CHARSET_%03d", parm1);
+			snprintf(entry, sizeof(entry), "USER_CHARSET_%03d", parm1);
 			argcount = 2;
 			break;
 		case type_csconvert:
-			snprintf((SCHAR *) entry, sizeof(entry), "USER_TRANSLATE_%03d_%03d", parm1,
+			snprintf(entry, sizeof(entry), "USER_TRANSLATE_%03d_%03d", parm1,
 					parm2);
 			argcount = 3;
 			break;
@@ -2276,7 +2282,7 @@ static CharSet *BC_CharSetAllocFunc(MemoryPool &p, SSHORT cs_id, SSHORT unused)
 	{
 		result = new(p) CharSet_BC(p, cs);
 	}
-	catch(std::exception &e)
+	catch(std::exception&)
 	{
 		delete cs;
 		throw;
@@ -2308,7 +2314,7 @@ static CsConvert *BC_CsConvertAllocFunc(MemoryPool &p, SSHORT from_id, SSHORT to
 	{
 		result = new(p) CsConvert_BC(cvt, true);
 	}
-	catch(std::exception &e)
+	catch(std::exception&)
 	{
 		delete cvt;
 		throw;
@@ -2345,7 +2351,7 @@ static TextType *BC_TextTypeAllocFunc(MemoryPool &p, SSHORT tt_id, SSHORT unused
 		else
 			BUGCHECK(1);
 	}
-	catch(std::exception &e)
+	catch(std::exception&)
 	{
 		delete tt;
 		throw;
