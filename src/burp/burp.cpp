@@ -546,7 +546,7 @@ int BURP_gbak(int		argc,
 	tdgbl->gbl_sw_ignore_limbo = FALSE;
 	tdgbl->gbl_sw_blk_factor = 0;
 	tdgbl->gbl_sw_no_reserve = FALSE;
-	tdgbl->gbl_sw_mode = FALSE;
+	tdgbl->gbl_sw_mode = false;
 	tdgbl->gbl_sw_skip_count = 0;
 	tdgbl->action = NULL;
 
@@ -639,12 +639,12 @@ int BURP_gbak(int		argc,
 					BURP_error(279, 0, 0, 0, 0, 0);	// msg 279: "read_only" or "read_write" required 
 				string = *argv++;
 				if (!strcmp(string, BURP_SW_MODE_RO))
-					tdgbl->gbl_sw_mode_val = TRUE;
+					tdgbl->gbl_sw_mode_val = true;
 				else if (!strcmp(string, BURP_SW_MODE_RW))
-					tdgbl->gbl_sw_mode_val = FALSE;
+					tdgbl->gbl_sw_mode_val = false;
 				else
 					BURP_error(279, 0, 0, 0, 0, 0);	// msg 279: "read_only" or "read_write" required 
-				tdgbl->gbl_sw_mode = TRUE;
+				tdgbl->gbl_sw_mode = true;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_PASS) {
 				if (argv >= end)
@@ -815,7 +815,7 @@ int BURP_gbak(int		argc,
 				break;
 
 			case (IN_SW_BURP_MODE):
-				tdgbl->gbl_sw_mode = TRUE;
+				tdgbl->gbl_sw_mode = true;
 				break;
 
 			case (IN_SW_BURP_N):

@@ -721,8 +721,8 @@ typedef struct tgbl
     USHORT	gbl_sw_service_gbak;
     USHORT	gbl_sw_service_thd;
     USHORT	gbl_sw_convert_ext_tables;
-    BOOLEAN	gbl_sw_mode;
-    BOOLEAN	gbl_sw_mode_val;
+    bool	gbl_sw_mode;
+    bool	gbl_sw_mode_val;
     SCHAR	*gbl_sw_sql_role;
     SCHAR	*gbl_sw_user;
     SCHAR	*gbl_sw_password;
