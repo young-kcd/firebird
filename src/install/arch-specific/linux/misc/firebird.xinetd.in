@@ -11,11 +11,10 @@ service gds_db
 	socket_type		= stream
 	wait			= no
 	user			= firebird
-#	user			= @FBRunUser@
-	log_on_success		+= USERID
-	log_on_failure 		+= USERID
+# These lines cause problems with Windows XP SP2 clients
+# using default firewall configuration (SF#1065511)
+#	log_on_success		+= USERID
+#	log_on_failure 		+= USERID
 	server			= @prefix@/bin/fb_inet_server
-#	server			= @sbindir@/gds_inet_server
-#	server			= @exec_bindir@/gds_inet_server
     disable         = no
 }
