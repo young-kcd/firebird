@@ -84,7 +84,7 @@ static IDX_E check_foreign_key(TDBB, REC, JRD_REL, JRD_TRA, IDX *, JRD_REL *, US
 static IDX_E check_partner_index(TDBB, JRD_REL, REC, JRD_TRA, IDX *, JRD_REL, SSHORT);
 static BOOLEAN duplicate_key(UCHAR *, UCHAR *, IFL);
 static SLONG get_root_page(TDBB, JRD_REL);
-static void index_block_flush(IDB);
+static int index_block_flush(void *ast_object);
 static IDX_E insert_key(TDBB, JRD_REL, REC, JRD_TRA, WIN *, IIB *, JRD_REL *, USHORT *);
 static BOOLEAN key_equal(KEY *, KEY *);
 static void signal_index_deletion(TDBB, JRD_REL, USHORT);
@@ -516,7 +516,7 @@ IDB IDX_create_index_block(TDBB tdbb, JRD_REL relation, UCHAR id)
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
 	lock->lck_type = LCK_expression;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_ast = reinterpret_cast<lck_ast_t>(index_block_flush);
+	lock->lck_ast = index_block_flush;
 	lock->lck_object = reinterpret_cast<blk*>(index_block);
 
 	return index_block;
@@ -1194,7 +1194,7 @@ static SLONG get_root_page(TDBB tdbb, JRD_REL relation)
 }
 
 
-static void index_block_flush(IDB index_block)
+static int index_block_flush(void *ast_object)
 {
 /**************************************
  *
@@ -1209,6 +1209,7 @@ static void index_block_flush(IDB index_block)
  *	out and release the lock.
  *
  **************************************/
+	IDB index_block = reinterpret_cast<IDB>(ast_object);
 	LCK lock;
 	struct tdbb thd_context, *tdbb;
 
@@ -1241,6 +1242,8 @@ static void index_block_flush(IDB index_block)
 /* Restore the prior thread context */
 
 	RESTORE_THREAD_DATA;
+
+	return 0;
 }
 
 

@@ -32,7 +32,7 @@ void DLL_EXPORT	CCH_do_log_shutdown(TDBB, SSHORT);
 void DLL_EXPORT CCH_shutdown_database(struct dbb *);
 
 USHORT		CCH_checksum(struct bdb *);
-void		CCH_down_grade_dbb(struct dbb *);
+int		CCH_down_grade_dbb(void *ast_argument);
 BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
 BOOLEAN		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
 void		CCH_expand(TDBB, ULONG);

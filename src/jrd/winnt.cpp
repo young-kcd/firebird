@@ -1094,7 +1094,7 @@ static FIL setup_file(DBB		dbb,
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
 	lock->lck_length = l;
 	lock->lck_dbb = dbb;
-	lock->lck_ast = reinterpret_cast<int (*)()>(CCH_down_grade_dbb);
+	lock->lck_ast = CCH_down_grade_dbb;
 	MOVE_FAST(lock_string, lock->lck_key.lck_string, l);
 
 /* Try to get an exclusive lock on database.  If this fails, insist

@@ -109,7 +109,7 @@ extern "C" {
 
 static BDB alloc_bdb(TDBB, BCB, UCHAR **);
 #ifndef PAGE_LATCHING
-static int blocking_ast_bdb(BDB);
+static int blocking_ast_bdb(void *);
 #endif
 static void btc_flush(TDBB, SLONG, BOOLEAN, ISC_STATUS *);
 static void btc_insert(DBB, BDB);
@@ -303,7 +303,7 @@ void DLL_EXPORT CCH_do_log_shutdown(TDBB tdbb, SSHORT force_archive)
 }
 
 
-void CCH_down_grade_dbb(DBB dbb)
+int CCH_down_grade_dbb(void *ast_object)
 {
 /**************************************
  *
@@ -316,6 +316,7 @@ void CCH_down_grade_dbb(DBB dbb)
  *	AST.
  *
  **************************************/
+	DBB dbb = reinterpret_cast<DBB>(ast_object);
 	BCB bcb;
 	LCK lock;
 	struct tdbb thd_context, *tdbb;
@@ -328,7 +329,7 @@ void CCH_down_grade_dbb(DBB dbb)
 	if ((MemoryPool::blk_type(dbb) != type_dbb) ||
 		!(lock = dbb->dbb_lock) ||
 		(MemoryPool::blk_type(lock) != type_lck) || !(lock->lck_id))
-		return;
+		return 0;
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
@@ -349,7 +350,7 @@ void CCH_down_grade_dbb(DBB dbb)
 	if (SHUT_blocking_ast(dbb)) {
 		dbb->dbb_ast_flags &= ~DBB_blocking;
 		RESTORE_THREAD_DATA;
-		return;
+		return 0;
 	}
 
 /*
@@ -366,21 +367,21 @@ if (dbb->dbb_use_count)
 
 	if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
 		RESTORE_THREAD_DATA;
-		return;
+		return 0;
 	}
 
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
 		dbb->dbb_ast_flags &= ~DBB_blocking;
 		RESTORE_THREAD_DATA;
-		return;
+		return 0;
 	}
 
 /* If we are supposed to be exclusive, stay exclusive */
 
 	if (dbb->dbb_flags & DBB_exclusive) {
 		RESTORE_THREAD_DATA;
-		return;
+		return 0;
 	}
 
 /* Assert any page locks that have been requested, but not asserted */
@@ -410,6 +411,7 @@ if (dbb->dbb_use_count)
 /* Restore the prior thread context */
 
 	RESTORE_THREAD_DATA;
+	return 0;
 }
 
 
@@ -2662,7 +2664,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 		delete bdb_;
 		throw;
 	}
-	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
+	lock->lck_ast = blocking_ast_bdb;
 	lock->lck_object = reinterpret_cast<blk*>(bdb_);
 #endif
 
@@ -2679,7 +2681,7 @@ static BDB alloc_bdb(TDBB tdbb, BCB bcb, UCHAR ** memory)
 
 
 #ifndef PAGE_LATCHING
-static int blocking_ast_bdb(BDB bdb)
+static int blocking_ast_bdb(void* ast_object)
 {
 /**************************************
  *
@@ -2698,6 +2700,7 @@ static int blocking_ast_bdb(BDB bdb)
  *	WHEW!
  *
  **************************************/
+	BDB bdb = reinterpret_cast<BDB>(ast_object);
 	DBB dbb;
 	BOOLEAN keep_pages;
 	ISC_STATUS_ARRAY ast_status;
@@ -2742,7 +2745,7 @@ static int blocking_ast_bdb(BDB bdb)
 
 	ISC_ast_exit();
 
-        return 0;
+    return 0;
 }
 #endif
 
@@ -4583,7 +4586,7 @@ static SSHORT lock_buffer(
 		   to do so. */
 
 		if (page_type == pag_header || page_type == pag_transactions) {
-			assert(lock->lck_ast == reinterpret_cast<lck_ast_t>(blocking_ast_bdb));
+			assert(lock->lck_ast == blocking_ast_bdb);
 			assert(lock->lck_object == reinterpret_cast<blk*>(bdb));
 			lock->lck_ast = 0;
 			lock->lck_object = NULL;
@@ -4600,7 +4603,7 @@ static SSHORT lock_buffer(
 
 				assert(page_type == pag_header
 					   || page_type == pag_transactions);
-				lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
+				lock->lck_ast = blocking_ast_bdb;
 				lock->lck_object = reinterpret_cast<blk*>(bdb);
 				bdb->bdb_flags |= BDB_no_blocking_ast;
 			}
@@ -4609,7 +4612,7 @@ static SSHORT lock_buffer(
 
 		if (!lock->lck_ast) {
 			assert(page_type == pag_header || page_type == pag_transactions);
-			lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_bdb);
+			lock->lck_ast = blocking_ast_bdb;
 			lock->lck_object = reinterpret_cast<blk*>(bdb);
 		}
 
@@ -4661,7 +4664,8 @@ static SSHORT lock_buffer(
 /* Case: a timeout was specified, or the caller didn't want to wait,
    return the error. */
 
-	if ((wait < 0) && (status[1] == gds_lock_timeout)) {
+	if ((wait < 0) && (status[1] == gds_lock_timeout)) 
+	{
 		release_bdb(tdbb, bdb, FALSE, FALSE, FALSE);
 		return -1;
 	}

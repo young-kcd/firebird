@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.50 2003-05-07 13:48:41 skidder Exp $
+$Id: lock.cpp,v 1.51 2003-05-16 20:35:18 skidder Exp $
 */
 
 #include "firebird.h"
@@ -213,7 +213,7 @@ static void bug(ISC_STATUS *, const TEXT *);
 #ifdef DEV_BUILD
 static void bug_assert(const TEXT *, ULONG);
 #endif
-static BOOLEAN convert(PTR, UCHAR, SSHORT, FPTR_INT, int *, ISC_STATUS *);
+static BOOLEAN convert(PTR, UCHAR, SSHORT, lock_ast_t, void *, ISC_STATUS *);
 static USHORT create_owner(ISC_STATUS *, SLONG, UCHAR, SLONG *);
 #ifdef DEV_BUILD
 static void current_is_active_owner(BOOLEAN, ULONG);
@@ -244,7 +244,7 @@ static void insert_data_que(LBL);
 static void insert_tail(SRQ, SRQ);
 static USHORT lock_state(LBL);
 //static void port_waker(PTR *);
-static int post_blockage(LRQ, LBL, BOOLEAN);
+static void post_blockage(LRQ, LBL, BOOLEAN);
 static void post_history(USHORT, PTR, PTR, PTR, BOOLEAN);
 static void post_pending(LBL);
 static void post_wakeup(OWN);
@@ -374,7 +374,7 @@ static const UCHAR compatibility[] = {
 int LOCK_convert(PTR		request_offset,
 				 UCHAR		type,
 				 SSHORT		lck_wait,
-				 int		(*ast_routine) (void *),
+				 lock_ast_t ast_routine,
 				 void*		ast_argument,
 				 ISC_STATUS*	status_vector)
 {
@@ -412,8 +412,8 @@ int LOCK_convert(PTR		request_offset,
 	return convert(request_offset,
 				   type,
 				   lck_wait,
-				   reinterpret_cast<int (*)()>(ast_routine),
-				   static_cast<int*>(ast_argument),
+				   ast_routine,
+				   ast_argument,
 				   status_vector);
 }
 
@@ -530,7 +530,7 @@ SLONG LOCK_enq(	PTR		prior_request,
 				UCHAR*	value,
 				USHORT	length,
 				UCHAR	type,
-				int		(*ast_routine) (void *),
+				lock_ast_t ast_routine,
 				void*	ast_argument,
 				SLONG	data,
 				SSHORT	lck_wait,
@@ -611,8 +611,8 @@ SLONG LOCK_enq(	PTR		prior_request,
 	request->lrq_state = LCK_none;
 	request->lrq_data = 0;
 	request->lrq_owner = owner_offset;
-	request->lrq_ast_routine = reinterpret_cast<int (*)()>(ast_routine);
-	request->lrq_ast_argument = static_cast<int*>(ast_argument);
+	request->lrq_ast_routine = ast_routine;
+	request->lrq_ast_argument = ast_argument;
 	insert_tail(&owner->own_requests, &request->lrq_own_requests);
 	QUE_INIT(request->lrq_own_blocks);
 
@@ -1228,7 +1228,7 @@ SLONG LOCK_read_data2(PTR parent_request,
 }
 
 
-void LOCK_re_post( int (*ast) (void *), void *arg, PTR owner_offset)
+void LOCK_re_post( lock_ast_t ast, void *arg, PTR owner_offset)
 {
 /**************************************
  *
@@ -1268,8 +1268,8 @@ void LOCK_re_post( int (*ast) (void *), void *arg, PTR owner_offset)
 	owner = (OWN) ABS_PTR(owner_offset);
 	request->lrq_type = type_lrq;
 	request->lrq_flags = LRQ_repost;
-	request->lrq_ast_routine = reinterpret_cast<int (*)()>(ast);
-	request->lrq_ast_argument = static_cast<int*>(arg);
+	request->lrq_ast_routine = ast;
+	request->lrq_ast_argument = arg;
 	request->lrq_requested = LCK_none;
 	request->lrq_state = LCK_none;
 	request->lrq_owner = owner_offset;
@@ -1838,7 +1838,8 @@ static void blocking_action2(
 	OWN owner;
 	SRQ que;
 	LRQ request;
-	int (*routine) (), *arg;
+	lock_ast_t routine; 
+	void *arg;
 
 	ASSERT_ACQUIRED;
 	owner = (OWN) ABS_PTR(blocking_owner_offset);
@@ -1875,17 +1876,9 @@ static void blocking_action2(
 
 		if (routine) {
 			release(blocked_owner_offset);
-			reinterpret_cast<void(*)(...)>(*routine)(arg);
+			(*routine)(arg);
 			acquire(blocked_owner_offset);
 			owner = (OWN) ABS_PTR(blocking_owner_offset);
-			OWN blocked_owner = (OWN) ABS_PTR(blocked_owner_offset);
-			if (blocked_owner->own_ast_prc_count > 0) {
-				blocked_owner->own_ast_prc_count--;
-				if (blocked_owner->own_ast_prc_count == 0) {
-					blocked_owner->own_flags |= OWN_asts_processed;
-					signal_owner(owner, blocked_owner_offset);
-				}
-			}
 		}
 	}
 }
@@ -2082,8 +2075,8 @@ static void bug( ISC_STATUS * status_vector, const TEXT * string)
 static BOOLEAN convert(PTR		request_offset,
 					   UCHAR	type,
 					   SSHORT	lck_wait,
-					   int		(*ast_routine)(),
-					   int*		ast_argument,
+					   lock_ast_t ast_routine,
+					   void*		ast_argument,
 					   ISC_STATUS*	status_vector)
 {
 /**************************************
@@ -3130,7 +3123,6 @@ static void init_owner_block(
 	owner->own_ast_hung_flags = 0;
 	owner->own_count = 1;
 	owner->own_owner_id = owner_id;
-	owner->own_ast_prc_count = 0;
 	QUE_INIT(owner->own_lhb_owners);
 	QUE_INIT(owner->own_requests);
 	QUE_INIT(owner->own_blocks);
@@ -3475,7 +3467,7 @@ static USHORT lock_state( LBL lock)
 }
 
 
-static int post_blockage( LRQ request, LBL lock, BOOLEAN force)
+static void post_blockage( LRQ request, LBL lock, BOOLEAN force)
 {
 /**************************************
  *
@@ -3492,7 +3484,6 @@ static int post_blockage( LRQ request, LBL lock, BOOLEAN force)
 	SRQ que, next_que;
 	PTR next_que_offset;
 	LRQ block;
-	int signaled_count = 0;
 
 	owner = (OWN) ABS_PTR(request->lrq_owner);
 
@@ -3513,7 +3504,6 @@ static int post_blockage( LRQ request, LBL lock, BOOLEAN force)
 		   If the owner has marked the request with "LRQ_blocking_seen 
 		   then the blocking AST has been delivered and the owner promises
 		   to release the lock as soon as possible (so don't bug the owner) */
-
 		if (block == request ||
 			COMPATIBLE(request->lrq_requested, block->lrq_state) ||
 			!block->lrq_ast_routine ||
@@ -3542,11 +3532,9 @@ static int post_blockage( LRQ request, LBL lock, BOOLEAN force)
 			que = (SRQ) ABS_PTR(que->srq_backward);
 			purge_owner(REL_PTR(owner), blocking_owner);
 		}
-		signaled_count++;
 		if (block->lrq_state == LCK_EX)
 			break;
 	}
-    return signaled_count;
 }
 
 
@@ -4603,7 +4591,7 @@ static void validate_owner( PTR own_ptr, USHORT freed)
 	CHECK(!
 		  (owner->
 		   own_flags & ~(OWN_blocking | OWN_scanned | OWN_manager | OWN_signal
-						 | OWN_wakeup | OWN_starved | OWN_asts_processed)));
+						 | OWN_wakeup | OWN_starved)));
 
 /* Check that no invalid flag bit is set */
 	CHECK(!(owner->own_ast_flags & ~(OWN_signaled)));
@@ -4932,12 +4920,7 @@ static USHORT wait_for_request(
 /* Post blockage.  If the blocking owner has disappeared, the blockage
    may clear spontaneously. */
 
-	owner->own_ast_prc_count = post_blockage(request, lock, FALSE);
-	// Do not waste time waiting before doing deadlock scan cycle if there are no AST handlers
-	if (owner->own_ast_prc_count == 0)
-		owner->own_flags |= OWN_asts_processed;
-	else
-		owner->own_flags &= ~OWN_asts_processed;
+	post_blockage(request, lock, FALSE);
 	post_history(his_wait, owner_offset, lock_offset, REL_PTR(request), TRUE);
 	release(owner_offset);
 
@@ -4977,9 +4960,6 @@ static USHORT wait_for_request(
 
 		/* Prepare to wait for a timeout or a wakeup from somebody else.  */
 
-		if (owner->own_flags & OWN_asts_processed) {
-			ret = FB_SUCCESS; // Do not wait if all ASTS are already delivered
-		} else {
 #ifdef USE_WAKEUP_EVENTS
 		SLONG value;
 		EVENT event_ptr;
@@ -5067,7 +5047,6 @@ static USHORT wait_for_request(
 #endif
 
 #endif
-		} /* if (!(owner->flags & OWN_asts_processed)) */
 
 		/* We've worken up from the wait - now look around and see
 		   why we wokeup */
@@ -5159,7 +5138,7 @@ static USHORT wait_for_request(
 
 
 		/* Handle lock event first */
-		if (ret == FB_SUCCESS && !(owner->own_flags & OWN_asts_processed))
+		if (ret == FB_SUCCESS)
 		{
 #ifdef WIN_NT
 #ifdef SUPERSERVER
@@ -5173,11 +5152,7 @@ static USHORT wait_for_request(
 			   This could happen if the lock was granted to a different request,
 			   we have to tell the new owner of the lock that they are blocking us. */
 
-			owner->own_ast_prc_count = post_blockage(request, lock, FALSE);
-			if (owner->own_ast_prc_count == 0)
-				owner->own_flags |= OWN_asts_processed;
-			else
-				owner->own_flags &= ~OWN_asts_processed;
+			post_blockage(request, lock, FALSE);
 			release(owner_offset);
 			continue;
 		}
@@ -5187,8 +5162,7 @@ static USHORT wait_for_request(
 		   purging one might resolve our lock request. */
 		/* Do not do rescan of owners if we received notification that
 		   blocking ASTs have completed - will do it next time if needed */
-		else if (!(owner->own_flags & OWN_asts_processed) &&
-			     probe_owners(owner_offset) &&
+		else if (probe_owners(owner_offset) &&
 				 !(request->lrq_flags & LRQ_pending))
 		{
 			release(owner_offset);
@@ -5226,7 +5200,7 @@ static USHORT wait_for_request(
 			   When we get back to the top of the master loop we
 			   fall out and start cleaning up */
 		}
-		else if (!(owner->own_flags & OWN_asts_processed))
+		else
 		{
 			/* Our request is not resolved, all the owners are alive, there's
 			   no deadlock -- there's nothing else to do.  Let's
@@ -5239,9 +5213,7 @@ static USHORT wait_for_request(
 			   We need to inform the new owner. */
 
 			DEBUG_MSG(0, ("wait_for_request: forcing a resignal of blockers\n"));
-			owner->own_ast_prc_count = post_blockage(request, lock, FALSE);
-			// Note: we do not set OWN_asts_processed flag here because we are 
-			// going to wait since now, not loop mindlessly
+			post_blockage(request, lock, FALSE);
 #ifdef DEV_BUILD
 			repost_counter++;
 			if (repost_counter % 50 == 0) {
@@ -5255,7 +5227,6 @@ static USHORT wait_for_request(
 			}
 #endif /* DEV_BUILD */
 		}
-		owner->own_flags &= ~OWN_asts_processed;
 		release(owner_offset);
 	}
 

@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.22 2003-05-07 13:46:28 skidder Exp $
+ *  $Id: fb_types.h,v 1.23 2003-05-16 20:34:58 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -161,6 +161,7 @@ typedef int (*FPTR_INT) ();
 typedef int (*FPTR_INT_VOID_PTR) (void *);
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
+typedef int (*lock_ast_t)(void *);
 
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];

@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.56 2003-04-10 06:49:14 aafemt Exp $
+$Id: met.epp,v 1.57 2003-05-16 20:35:06 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -131,8 +131,8 @@ typedef ENUM rids {
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-static void blocking_ast_procedure(JRD_PRC);
-static void blocking_ast_relation(JRD_REL);
+static int blocking_ast_procedure(void* ast_object);
+static int blocking_ast_relation(void* ast_object);
 static void get_trigger(TDBB, JRD_REL, SLONG[2], TRIG_VEC *, TEXT *, BOOLEAN, USHORT);
 static BOOLEAN get_type(TDBB, SSHORT *, UCHAR *, UCHAR *);
 static void lookup_view_contexts(TDBB, JRD_REL);
@@ -2630,7 +2630,7 @@ JRD_PRC MET_procedure(TDBB tdbb, int id, BOOLEAN noscan, USHORT flags)
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_object = (BLK) procedure;
 		/* TMN: Beware - this is a hairy AND UGLY cast */
-		lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_procedure);
+		lock->lck_ast = blocking_ast_procedure;
 
 		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, TRUE);
 	}
@@ -2859,7 +2859,7 @@ JRD_REL MET_relation(TDBB tdbb, USHORT id)
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_object = (BLK) relation;
 	/* TMN: Beware - this is a hairy AND UGLY cast */
-	lock->lck_ast = reinterpret_cast<lck_ast_t>(blocking_ast_relation);
+	lock->lck_ast = blocking_ast_relation;
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
 	return relation;
@@ -3654,7 +3654,7 @@ void MET_update_transaction( TDBB tdbb, JRD_TRA transaction, USHORT flag)
 }
 
 
-static void blocking_ast_procedure( JRD_PRC procedure)
+static int blocking_ast_procedure(void *ast_object)
 {
 /**************************************
  *
@@ -3670,6 +3670,7 @@ static void blocking_ast_procedure( JRD_PRC procedure)
  *      and release the procedure existence lock.
  *
  **************************************/
+	JRD_PRC procedure = reinterpret_cast<JRD_PRC>(ast_object);
 	struct tdbb thd_context, *tdbb;
 
 /* Since this routine will be called asynchronously, we must establish
@@ -3694,7 +3695,7 @@ static void blocking_ast_procedure( JRD_PRC procedure)
 }
 
 
-static void blocking_ast_relation( JRD_REL relation)
+static int blocking_ast_relation(void* ast_object)
 {
 /**************************************
  *
@@ -3710,6 +3711,7 @@ static void blocking_ast_relation( JRD_REL relation)
  *      and release the relation existence lock.
  *
  **************************************/
+	JRD_REL relation = reinterpret_cast<JRD_REL>(ast_object);
 	struct tdbb thd_context, *tdbb;
 
 /* Since this routine will be called asynchronously, we must establish
@@ -3736,6 +3738,7 @@ static void blocking_ast_relation( JRD_REL relation)
 /* Restore the prior thread context */
 
 	RESTORE_THREAD_DATA;
+	return 0; 
 }
 
 

@@ -41,7 +41,7 @@ extern void SDW_notify(void);
 extern BOOLEAN SDW_rollover_to_shadow(struct fil *, BOOLEAN);
 extern void SDW_shutdown_shadow(struct sdw *);
 extern void SDW_start(TEXT *, USHORT, USHORT, USHORT);
-extern void SDW_start_shadowing(struct dbb *);
+extern int SDW_start_shadowing(void *ast_object);
 
 #ifdef __cplusplus
 } /* extern "C" */

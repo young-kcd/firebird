@@ -605,7 +605,7 @@ void SDW_init(USHORT activate, USHORT delete_, SBM sbm_rec)
 	lock->lck_length = key_length;
 	lock->lck_dbb = dbb;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
-	lock->lck_ast = reinterpret_cast<int (*)()>(SDW_start_shadowing);
+	lock->lck_ast = SDW_start_shadowing;
 
 	if (activate)
 		activate_shadow();
@@ -1085,7 +1085,7 @@ void SDW_start(
 }
 
 
-void SDW_start_shadowing(DBB new_dbb)
+int SDW_start_shadowing(void *ast_object)
 {
 /**************************************
  *
@@ -1100,13 +1100,14 @@ void SDW_start_shadowing(DBB new_dbb)
  *	new shadow files before doing the next physical write.
  *
  **************************************/
+	DBB new_dbb = reinterpret_cast<DBB>(ast_object);
 	LCK lock;
 	struct tdbb thd_context, *tdbb;
 
 
 	lock = new_dbb->dbb_shadow_lock;
 	if (lock->lck_physical != LCK_SR)
-		return;
+		return 0;
 
 	ISC_ast_enter();
 
@@ -1132,6 +1133,7 @@ void SDW_start_shadowing(DBB new_dbb)
 	RESTORE_THREAD_DATA;
 
 	ISC_ast_exit();
+	return 0;
 }
 
 

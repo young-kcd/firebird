@@ -141,7 +141,7 @@ static const UCHAR compatibility[] = {
 
 #define	CONVERT(lock,level,wait) (lock->lck_compatible) ? \
 				 internal_enqueue (tdbb, lock, level, wait, TRUE) : \
-                                 LOCK_convert (lock->lck_id, level, wait, reinterpret_cast<int(*)(void*)>(lock->lck_ast), lock->lck_object, status)
+                                 LOCK_convert (lock->lck_id, level, wait, lock->lck_ast, lock->lck_object, status)
 
 #define DEQUEUE(lock)		 if (lock->lck_compatible) \
 				     internal_dequeue (tdbb, lock); \
@@ -870,13 +870,12 @@ void LCK_re_post(LCK lock)
 	assert(LCK_CHECK_LOCK(lock));
 	if (lock->lck_compatible) {
 		if (lock->lck_ast) {
-			reinterpret_cast<int (*)(blk*)>(*lock->lck_ast)(lock->lck_object);
+			(*lock->lck_ast)(lock->lck_object);
 		}
 		return;
 	}
 
-	LOCK_re_post(reinterpret_cast<int (*)(void*)>(lock->lck_ast),
-				 lock->lck_object, lock->lck_owner_handle);
+	LOCK_re_post(lock->lck_ast, lock->lck_object, lock->lck_owner_handle);
 	assert(LCK_CHECK_LOCK(lock));
 }
 
@@ -1011,7 +1010,7 @@ static void enqueue(TDBB tdbb, LCK lock, USHORT level, SSHORT wait)
 							(UCHAR *) & lock->lck_key,
 							lock->lck_length,
 							level,
-							reinterpret_cast<int (*)(void*)>(lock->lck_ast),
+							lock->lck_ast,
 							lock->lck_object, lock->lck_data, wait,
 							tdbb->tdbb_status_vector, lock->lck_owner_handle);
 	if (!lock->lck_id)
@@ -1044,7 +1043,7 @@ static void external_ast(LCK lock)
 	for (match = hash_get_lock(lock, 0, 0); match; match = next) {
 		next = match->lck_identical;
 		if (match->lck_ast)
-			reinterpret_cast<int (*)(...)>(*match->lck_ast)(match->lck_object);
+			(*match->lck_ast)(match->lck_object);
 	}
 }
 
@@ -1356,7 +1355,7 @@ static void internal_ast(LCK lock)
 			!compatible(match, lock, lock->lck_logical) &&
 			match->lck_ast)
 		{
-			reinterpret_cast<int (*)(...)>(*match->lck_ast)(match->lck_object);
+			(*match->lck_ast)(match->lck_object);
 		}
 	}
 }

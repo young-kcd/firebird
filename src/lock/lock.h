@@ -155,7 +155,7 @@ typedef struct srq {
 } *SRQ;
 
 
-#define CLASSIC_LHB_VERSION	14
+#define CLASSIC_LHB_VERSION	15 // Firebird 1.5
 #define SS_LHB_VERSION		(CLASSIC_LHB_VERSION + 100)
 
 #ifdef SUPERSERVER
@@ -285,17 +285,17 @@ typedef struct lbl
 
 typedef struct lrq {
 	UCHAR lrq_type;				/* mem tag: type_lrq=in use, type_null=free */
-	UCHAR lrq_flags;			/* Misc crud */
 	UCHAR lrq_requested;		/* Level requested  */
 	UCHAR lrq_state;			/* State of lock request */
+	USHORT lrq_flags;			/* Misc crud */
 	PTR lrq_owner;				/* Owner making request */
 	PTR lrq_lock;				/* Lock requested */
 	SLONG lrq_data;				/* Lock data requested */
 	struct srq lrq_own_requests;	/* Locks granted for owner */
 	struct srq lrq_lbl_requests;	/* Que of requests (active, pending) */
 	struct srq lrq_own_blocks;	/* Owner block que */
-	int (*lrq_ast_routine) ();	/* Block ast routine */
-	int *lrq_ast_argument;		/* Ast argument */
+	lock_ast_t lrq_ast_routine;	/* Block ast routine */
+	void *lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
 #define LRQ_blocking    1		/* Request is blocking */
@@ -341,7 +341,6 @@ typedef struct own
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
-	USHORT own_ast_prc_count;   /* Number or blocking processes having ASTs processing pending */
 } *OWN;
 
 /* Flags in own_flags */
@@ -351,9 +350,6 @@ typedef struct own
 #define OWN_signal			8		// Owner needs signal delivered
 #define OWN_wakeup			32		// Owner has been awoken
 #define OWN_starved			128		// This thread may be starved
-#define OWN_asts_processed	256     // All blocking owners processed ASTs - its time for deadlock scan.
-                                    // This is used only in CS builds because SuperServer invokes
-                                    // ASTs directly
 
 /* Flags in own_ast_flags */
 #define OWN_signaled    16		/* Signal is thought to be delivered */

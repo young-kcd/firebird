@@ -55,13 +55,6 @@ enum lck_owner_t {
 	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
 };
 
-/* Blocking AST routine type.  I've added this one so that all the 
-   reinterpret_cast messages casting functions to store in this struct
-   can use the same type. Obviously storage of function pointers wants
-   to be done in a nicer way in future so the types match.  MOD 17-7-2001 */
-
-typedef int (*lck_ast_t)();    
-
 extern void MP_GDB_print(MemoryPool*);
 
 class lck : public pool_alloc_rpt<SCHAR, type_lck>
@@ -109,7 +102,7 @@ public:
 	class blk*	lck_compatible2;	/* Sub-level for internal compatibility */
 	struct att* lck_attachment;	/* Attachment that owns lock */
 	struct btb* lck_blocked_threads;	/* Threads blocked by lock */
-	lck_ast_t	lck_ast;	        /* Blocking AST routine */
+	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
 	SLONG		lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */
 	USHORT		lck_count;			/* count of locks taken out by attachment */
