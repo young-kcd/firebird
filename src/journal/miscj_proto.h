@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Journalling Subsystem
  *	MODULE:		misc_proto.h
- *	DESCRIPTION:	Prototype header file for misc.c
+ *	DESCRIPTION:	Prototype header file for misc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,13 +25,14 @@
 #define JOURNAL_MISC_PROTO_H
 
 UCHAR*	MISC_alloc_jrnl(SLONG);
-void	MISC_down_case(UCHAR *, UCHAR *);
-void	MISC_free_jrnl(int *);
-bool	MISC_get_line(TEXT *, TEXT *, SSHORT);
-void	MISC_get_new_value(SCHAR *, SCHAR *, int);
+void	MISC_down_case(UCHAR*, UCHAR*);
+void	MISC_free_jrnl(int*);
+bool	MISC_get_line(TEXT*, TEXT*, SSHORT);
+void	MISC_get_new_value(SCHAR*, SCHAR*, int);
 void	MISC_get_time(struct timeval*);
 void	MISC_get_wal_info(struct ltjc*, SCHAR*, SCHAR*);
 void	MISC_print_journal_syntax(void);
-int		MISC_time_convert(TEXT *, USHORT, SLONG[2]);
+int		MISC_time_convert(TEXT*, USHORT, SLONG[2]);
 
 #endif // JOURNAL_MISC_PROTO_H
+
