@@ -1,3 +1,36 @@
+2004-12-22 19:34  skidder
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.12),
+	lang_helpers/gds_codes.pas (1.12), src/include/gen/codetext.h
+	(1.19), src/include/gen/iberror.h (1.18), src/include/gen/msgs.h
+	(1.24), src/include/gen/rdb_codes.h (1.19),
+	src/include/gen/sql_code.h (1.21), src/jrd/par.cpp (1.112),
+	src/msgs/facilities.sql (1.12), src/msgs/messages.sql (1.19),
+	src/msgs/system_errors.sql (1.9):
+	
+	Add check for overly long identifiers when pasing BLR. This helps
+	with savepoints problem reported by Vlad and other similar issues
+	as well
+
+2004-12-22 18:26  skidder
+
+	* firebird2/builds/win32/msvc7/Firebird2.sln (1.19):
+	
+	Fix MSVC7 build
+
+2004-12-22 09:50  robocop
+
+	* firebird2/src/: jrd/opt.cpp (1.212), utilities/gsec/gsec.cpp
+	(1.44):
+	
+	Fixing comments.
+
+2004-12-22 09:49  robocop
+
+	* firebird2/src/common/classes/: alloc.cpp (1.76), alloc.h (1.58):
+	
+	Misc.
+
 2004-12-21 20:30  dimitr
 
 	* firebird2/src/jrd/: drq.h (1.8), dyn_del.epp (1.42):
