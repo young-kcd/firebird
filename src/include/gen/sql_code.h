@@ -571,6 +571,7 @@ static const SSHORT gds__sql_code [] = {
 -204 /*  13 dsql_ambiguous_field_name        */,
 -607 /*  14 dsql_udf_return_pos_err          */,
 -104 /*  15 dsql_invalid_label               */,
+-104 /*  16 dsql_datatypes_not_comparable    */,
 -901 /* 188 dyn_role_does_not_exist          */,
 -901 /* 189 dyn_no_grant_admin_opt           */,
 -901 /* 190 dyn_user_not_role_member         */,

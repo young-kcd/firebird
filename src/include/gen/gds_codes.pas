@@ -584,6 +584,7 @@ const
 	gds_dsql_ambiguous_field_name        = 336003085;
 	gds_dsql_udf_return_pos_err          = 336003086;
 	gds_dsql_invalid_label               = 336003087;
+	gds_dsql_datatypes_not_comparable    = 336003088;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;

@@ -1156,6 +1156,8 @@ C --
       PARAMETER (GDS__dsql_udf_return_pos_err          = 336003086)
       INTEGER*4 GDS__dsql_invalid_label              
       PARAMETER (GDS__dsql_invalid_label               = 336003087)
+      INTEGER*4 GDS__dsql_datatypes_not_comparable   
+      PARAMETER (GDS__dsql_datatypes_not_comparable    = 336003088)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          

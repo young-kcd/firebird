@@ -605,6 +605,7 @@
 #define isc_dsql_ambiguous_field_name        336003085L
 #define isc_dsql_udf_return_pos_err          336003086L
 #define isc_dsql_invalid_label               336003087L
+#define isc_dsql_datatypes_not_comparable    336003088L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -765,6 +766,6 @@
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          712
+#define isc_err_max                          713
 
 #endif /* JRD_GEN_IBERROR_H */

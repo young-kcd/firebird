@@ -569,6 +569,7 @@
 {"dsql_ambiguous_field_name", 336003085},
 {"dsql_udf_return_pos_err", 336003086},
 {"dsql_invalid_label", 336003087},
+{"dsql_datatypes_not_comparable", 336003088},
 {"dyn_role_does_not_exist", 336068796},
 {"dyn_no_grant_admin_opt", 336068797},
 {"dyn_user_not_role_member", 336068798},
