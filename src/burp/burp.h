@@ -186,6 +186,8 @@ const int MAX_DIMENSION			= 16;
 
 const int SERIES				= 1;
 
+const USHORT MAX_UPDATE_DBKEY_RECURSION_DEPTH = 16;
+
 enum att_type {
 	att_end = 0,		/* end of major record */
 

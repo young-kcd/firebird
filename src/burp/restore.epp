@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.58 2003-12-27 17:59:51 fsg Exp $
+$Id: restore.epp,v 1.59 2004-01-09 22:34:09 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -144,9 +144,11 @@ void	realign(UCHAR*, const burp_rel*);
 USHORT	recompute_length (BURP_REL);
 bool	restore (const TEXT*, const TEXT*);
 void	restore_security_class (const TEXT*, const TEXT*);
+USHORT	get_view_base_relation_count(const TEXT*, USHORT);
 void	store_blr_gen_id (const TEXT*, SINT64);
 void	stuff_string(UCHAR**, const TEXT*);
 void	update_global_field();
+void	update_view_dbkey_lengths();
 void	general_on_error();
 #ifdef DEBUG
 UCHAR	debug_on = 0;   // able to turn this on in the debugger 
@@ -426,6 +428,14 @@ int RESTORE_restore (const TEXT* file_name,
 	EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
 	if (gds_status[1])
 		EXEC SQL SET TRANSACTION;
+
+	// AB: Recalculate RDB$DBKEY_LENGTH for VIEWS
+	// When VIEWs are not processed in correct dependency order
+	// then on create time it doesn't know anything from the
+	// VIEW that's referenced.
+	//
+	update_view_dbkey_lengths();
+
 	/*
 	** Change ownership of any procedures necessary
 	*/
@@ -6646,6 +6656,65 @@ void restore_security_class (const TEXT	*owner_nm,
 }
 
 
+USHORT get_view_base_relation_count (const TEXT *current_view_name,
+									 USHORT depth)
+{
+/**************************************
+ *
+ *	g e t _ v i e w _ b a s e _ r e l a t i o n _ c o u n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return the number of base relations
+ *  (tables) from a view. When a view is
+ *  referenced in the view this function
+ *  is called recursive.
+ *
+ **************************************/
+
+	depth++;
+	if (depth > MAX_UPDATE_DBKEY_RECURSION_DEPTH) {
+		return 0;
+	}
+
+	isc_req_handle  req_handle1 = NULL;
+
+	TGBL tdgbl = GET_THREAD_DATA;
+
+	USHORT result = 0;
+
+	FOR (REQUEST_HANDLE req_handle1)
+		D IN RDB$DEPENDENCIES 
+		CROSS R IN RDB$RELATIONS 
+		WITH 
+		  D.RDB$DEPENDENT_TYPE EQ obj_view AND
+		  D.RDB$FIELD_NAME MISSING AND
+		  D.RDB$DEPENDENT_NAME EQ current_view_name AND
+		  R.RDB$RELATION_NAME EQ D.RDB$DEPENDED_ON_NAME
+
+		if (R.RDB$VIEW_BLR.NULL) {
+			// This is relation is a table, so increment count
+			result++;
+		}
+		else {
+			// Call recursive for VIEWS that are referenced in VIEWS
+			result += get_view_base_relation_count(D.RDB$DEPENDED_ON_NAME, depth);
+		}
+
+	END_FOR;
+
+	ON_ERROR
+		MISC_release_request_silent(req_handle1);
+		general_on_error ();
+	END_ERROR;
+
+	MISC_release_request_silent(req_handle1);
+
+	return result;
+}
+
+
 void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 					   SINT64	value)
 {
@@ -6858,6 +6927,57 @@ void update_global_field()
 
 	tdgbl->gbl_global_fields = NULL;
 }
+
+
+void update_view_dbkey_lengths()
+{
+/**************************************
+ *
+ *	u p d a t e _ v i e w _ d b k e y _ l e n g t h s
+ *
+ **************************************
+ *
+ * Functional description
+ *	During the restore process VIEWs could 
+ *  be created that holds other VIEWs and 
+ *  which weren't restored yet.
+ *  Then the RDB$DBKEY_LENGTH for VIEWs is
+ *  calculated wrong. Therefore we need to
+ *  recalculate the DBKEY_LENGTH else we 
+ *  get our famous "arithmetic exception, 
+ *  numeric overflow, or string truncation" error.
+ *
+ **************************************/
+	isc_req_handle  req_handle2 = NULL;
+
+	TGBL tdgbl = GET_THREAD_DATA;
+
+	FOR (REQUEST_HANDLE req_handle2)
+		R IN RDB$RELATIONS 
+		WITH 
+		  R.RDB$VIEW_BLR NOT MISSING AND
+		  R.RDB$SYSTEM_FLAG NE 1
+
+		USHORT result = get_view_base_relation_count(R.RDB$RELATION_NAME, 0);
+
+		MODIFY R;
+			R.RDB$DBKEY_LENGTH = (result * 8); // is a constant for DBKEY coded somewhere?
+		END_MODIFY;
+		ON_ERROR
+			MISC_release_request_silent(req_handle2);
+			general_on_error ();
+		END_ERROR;
+
+	END_FOR;
+
+	ON_ERROR
+		MISC_release_request_silent(req_handle2);
+		general_on_error ();
+	END_ERROR;
+
+	MISC_release_request_silent(req_handle2);
+}
+
 
 } // namespace
 
