@@ -1,3 +1,29 @@
+2004-08-25 01:11  brodsom
+
+	* firebird2/src/common/classes/alloc.cpp (1.63):
+	
+	Avoid variable shadowing
+
+2004-08-25 01:00  brodsom
+
+	* firebird2/src/qli/compile.h (1.8):
+	
+	Avoid final comma
+
+2004-08-24 07:16  robocop
+
+	* firebird2/src/jrd/flu.cpp (1.47):
+	
+	Vars in context
+
+2004-08-24 07:16  robocop
+
+	* firebird2/src/common/classes/alloc.cpp (1.62):
+	
+	Renamed ptr_block to ptrToBLock and block_ptr to blockToPtr for
+	better self-documenting code as agreed privately. No functional
+	change.
+
 2004-08-23 22:44  skidder
 
 	* firebird2/src/: jrd/dmp.cpp (1.27), jrd/ods.h (1.29), jrd/pag.cpp
