@@ -1,3 +1,36 @@
+2003-08-17 23:38  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, fbclient.vcproj:
+	
+	Adjust MSVC7 makefiles
+
+2003-08-17 23:28  skidder
+
+	* firebird2/src/ipserver/ipclient.cpp:
+	
+	Backport ACL and aliases bugfixes to v.1.5 tree
+
+2003-08-17 23:16  skidder
+
+	* firebird2/src/jrd/: cmp.cpp, cmp_proto.h, db_alias.cpp,
+	db_alias.h, idx.cpp, isc_file.cpp, jrd.cpp, req.h, scl.epp,
+	scl_proto.h:
+	
+	Backport ACL and aliases bugfixes to v.1.5 tree
+
+2003-08-17 21:56  skidder
+
+	* firebird2/: builds/win32/msvc7/Firebird2.sln,
+	builds/win32/msvc7/fbclient.vcproj, src/ipserver/ipclient.cpp,
+	src/jrd/db_alias.cpp, src/jrd/isc_file.cpp, src/jrd/jrd.cpp:
+	
+	Fix up server-side database aliases - expand Windows SS local
+	connection strings on the client side unless they specify database
+	aliases (return to backward-compatible behavior) - use aliases for
+	database creation - do security checks after database file name
+	expansion - forbid usage of relative paths in aliases - do not
+	stick to 8.3 filenames on Windows as it causes problems
+
 2003-08-16 15:14  arnobrinkman
 
 	* firebird2/src/dsql/parse.y:
