@@ -197,7 +197,7 @@ typedef struct mnt {
 #endif
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-static int expand_filename2(TEXT *, USHORT, TEXT *);
+static int expand_filename2(const TEXT*, USHORT, TEXT*);
 #endif
 
 #if defined(WIN_NT)
