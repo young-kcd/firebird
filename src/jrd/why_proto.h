@@ -31,105 +31,108 @@ extern "C" {
 
 #ifndef JRD_IBASE_H
 extern STATUS API_ROUTINE isc_dsql_allocate_statement(STATUS *,
-													  struct hndl **,
-													  struct hndl **);
-extern STATUS API_ROUTINE isc_dsql_alloc_statement2(STATUS *, struct hndl **,
-													struct hndl **);
-extern STATUS API_ROUTINE isc_dsql_describe(STATUS *, struct hndl **, USHORT,
+													  struct why_hndl **,
+													  struct why_hndl **);
+extern STATUS API_ROUTINE isc_dsql_alloc_statement2(STATUS *, struct why_hndl **,
+													struct why_hndl **);
+extern STATUS API_ROUTINE isc_dsql_describe(STATUS *, struct why_hndl **, USHORT,
 											XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_describe_bind(STATUS *, struct hndl **,
+extern STATUS API_ROUTINE isc_dsql_describe_bind(STATUS *, struct why_hndl **,
 												 USHORT, XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_execute2(STATUS *, struct hndl **,
-											struct hndl **, USHORT, XSQLDA *,
+extern STATUS API_ROUTINE isc_dsql_execute2(STATUS *, struct why_hndl **,
+											struct why_hndl **, USHORT, XSQLDA *,
 											XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_execute2_m(STATUS *, struct hndl **,
-											  struct hndl **, USHORT, SCHAR *,
+extern STATUS API_ROUTINE isc_dsql_execute2_m(STATUS *, struct why_hndl **,
+											  struct why_hndl **, USHORT, SCHAR *,
 											  USHORT, USHORT, SCHAR *, USHORT,
 											  SCHAR *, USHORT, USHORT,
 											  SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_execute_immediate(STATUS *, struct hndl **,
-													 struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_execute_immediate(STATUS *, struct why_hndl **,
+													 struct why_hndl **, USHORT,
 													 SCHAR *, USHORT,
 													 XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_exec_immed2(STATUS *, struct hndl **,
-											   struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_exec_immed2(STATUS *, struct why_hndl **,
+											   struct why_hndl **, USHORT,
 											   SCHAR *, USHORT, XSQLDA *,
 											   XSQLDA *);
 extern STATUS API_ROUTINE isc_dsql_execute_immediate_m(STATUS *,
-													   struct hndl **,
-													   struct hndl **, USHORT,
+													   struct why_hndl **,
+													   struct why_hndl **, USHORT,
 													   SCHAR *, USHORT,
 													   USHORT, SCHAR *,
 													   USHORT, USHORT,
 													   SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_exec_immed2_m(STATUS *, struct hndl **,
-												 struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_exec_immed2_m(STATUS *, struct why_hndl **,
+												 struct why_hndl **, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, SCHAR *,
 												 USHORT, USHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_exec_immed3_m(STATUS *, struct hndl **,
-												 struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_exec_immed3_m(STATUS *, struct why_hndl **,
+												 struct why_hndl **, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, USHORT,
 												 SCHAR *, USHORT, SCHAR *,
 												 USHORT, USHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_fetch(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_fetch(STATUS *, struct why_hndl **, USHORT,
 										 XSQLDA *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS API_ROUTINE isc_dsql_fetch2(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_fetch2(STATUS *, struct why_hndl **, USHORT,
 										  XSQLDA *, USHORT, SLONG);
 #endif
-extern STATUS API_ROUTINE isc_dsql_fetch_m(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_fetch_m(STATUS *, struct why_hndl **, USHORT,
 										   SCHAR *, USHORT, USHORT, SCHAR *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS API_ROUTINE isc_dsql_fetch2_m(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_fetch2_m(STATUS *, struct why_hndl **, USHORT,
 											SCHAR *, USHORT, USHORT, SCHAR *,
 											USHORT, SLONG);
 #endif
-extern STATUS API_ROUTINE isc_dsql_free_statement(STATUS *, struct hndl **,
+extern STATUS API_ROUTINE isc_dsql_free_statement(STATUS *, struct why_hndl **,
 												  USHORT);
-extern STATUS API_ROUTINE isc_dsql_insert(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_insert(STATUS *, struct why_hndl **, USHORT,
 										  XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_insert_m(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_insert_m(STATUS *, struct why_hndl **, USHORT,
 											SCHAR *, USHORT, USHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_prepare(STATUS *, struct hndl **,
-										   struct hndl **, USHORT, SCHAR *,
+extern STATUS API_ROUTINE isc_dsql_prepare(STATUS *, struct why_hndl **,
+										   struct why_hndl **, USHORT, SCHAR *,
 										   USHORT, XSQLDA *);
-extern STATUS API_ROUTINE isc_dsql_prepare_m(STATUS *, struct hndl **,
-											 struct hndl **, USHORT, SCHAR *,
-											 USHORT, USHORT, SCHAR *, USHORT,
+extern STATUS API_ROUTINE isc_dsql_prepare_m(STATUS *, struct why_hndl **,
+											 struct why_hndl **, USHORT, SCHAR *,
+											 USHORT, USHORT, CONST SCHAR *, USHORT,
 											 SCHAR *);
-extern STATUS API_ROUTINE isc_dsql_set_cursor_name(STATUS *, struct hndl **,
+extern STATUS API_ROUTINE isc_dsql_set_cursor_name(STATUS *, struct why_hndl **,
 												   SCHAR *, USHORT);
-extern STATUS API_ROUTINE isc_dsql_sql_info(STATUS *, struct hndl **, SSHORT,
-											SCHAR *, SSHORT, SCHAR *);
-extern STATUS API_ROUTINE isc_prepare_transaction2(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_dsql_sql_info(STATUS *, struct why_hndl **, SSHORT,
+											CONST SCHAR *, SSHORT, SCHAR *);
+extern STATUS API_ROUTINE isc_prepare_transaction2(STATUS *, struct why_hndl **, USHORT,
 												   UCHAR *);
-extern STATUS API_ROUTINE isc_que_events(STATUS *, struct hndl **, SLONG *,
-										 USHORT, UCHAR *, FPTR_VOID, void *);
+typedef void event_ast_routine(UCHAR*, USHORT, UCHAR*);
+extern STATUS API_ROUTINE isc_que_events(STATUS *, struct why_hndl **, SLONG *,
+										 USHORT, UCHAR *, event_ast_routine *, void *);
 #ifdef SCROLLABLE_CURSORS
-extern STATUS API_ROUTINE isc_receive2(STATUS *, struct hndl **, USHORT,
+extern STATUS API_ROUTINE isc_receive2(STATUS *, struct why_hndl **, USHORT,
 									   USHORT, SCHAR *, SSHORT, USHORT,
 									   ULONG);
 #endif
-extern STATUS API_ROUTINE isc_rollback_transaction(STATUS *, struct hndl **);
+extern STATUS API_ROUTINE isc_rollback_transaction(STATUS *, struct why_hndl **);
 extern STATUS API_ROUTINE_VARARG isc_start_transaction(STATUS *,
-													   struct hndl **, SSHORT,
+													   struct why_hndl **, SSHORT,
 													   ...);
 #endif
 
 #ifdef CANCEL_OPERATION
-extern STATUS API_ROUTINE gds__cancel_operation(STATUS *, struct hndl **,
+extern STATUS API_ROUTINE gds__cancel_operation(STATUS *, struct why_hndl **,
 												USHORT);
 #endif
-extern STATUS API_ROUTINE gds__database_cleanup(STATUS *, struct hndl **,
-												void (*)(), SLONG);
+typedef void DatabaseCleanupRoutine(struct why_hndl **, SLONG);
+extern STATUS API_ROUTINE gds__database_cleanup(STATUS *, struct why_hndl **,
+												DatabaseCleanupRoutine *, SLONG);
 extern int API_ROUTINE gds__disable_subsystem(TEXT *);
 extern int API_ROUTINE gds__enable_subsystem(TEXT *);
-extern STATUS gds__handle_cleanup(STATUS *, struct hndl **);
-extern STATUS API_ROUTINE gds__transaction_cleanup(STATUS *, struct hndl **,
-												   void (*)(), SLONG);
+extern STATUS gds__handle_cleanup(STATUS *, struct why_hndl **);
+typedef void TransactionCleanupRoutine(struct why_hndl *, SLONG);
+extern STATUS API_ROUTINE gds__transaction_cleanup(STATUS *, struct why_hndl **,
+												   TransactionCleanupRoutine *, SLONG);
 
 #ifdef SERVER_SHUTDOWN
 extern BOOLEAN WHY_set_shutdown(BOOLEAN);

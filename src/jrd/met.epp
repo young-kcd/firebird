@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.41 2002-12-02 10:29:02 dimitr Exp $
+$Id: met.epp,v 1.42 2002-12-16 16:23:42 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -483,7 +483,7 @@ void MET_change_fields( TDBB tdbb, JRD_TRA transaction, DSC * field_source)
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS WITH
-			X.RDB$FIELD_SOURCE EQ field_source->dsc_address
+			X.RDB$FIELD_SOURCE EQ pSCHAR(field_source->dsc_address)
 
         if (!REQUEST(irq_m_fields)) REQUEST(irq_m_fields) = request;
 
@@ -879,8 +879,8 @@ JRD_NOD MET_get_dependencies(TDBB			tdbb,
 			RLF IN RDB$RELATION_FIELDS CROSS
 				FLD IN RDB$FIELDS WITH
 				RLF.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
-				RLF.RDB$RELATION_NAME EQ relation->rel_name AND
-				RLF.RDB$FIELD_NAME EQ object_name
+				RLF.RDB$RELATION_NAME EQ pSCHAR(relation->rel_name) AND
+				RLF.RDB$FIELD_NAME EQ pSCHAR(object_name)
             object_name = FLD.RDB$FIELD_NAME;
 		END_FOR;
 		CMP_release(tdbb, (JRD_REQ)handle);
@@ -1160,7 +1160,7 @@ void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB tdbb,
 	request = (BLK) CMP_find_request(tdbb, irq_l_cnstrt, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
-		X IN RDB$RELATION_CONSTRAINTS WITH X.RDB$INDEX_NAME EQ index_name
+		X IN RDB$RELATION_CONSTRAINTS WITH X.RDB$INDEX_NAME EQ pSCHAR(index_name)
 
         if (!REQUEST(irq_l_cnstrt))
             REQUEST(irq_l_cnstrt) = request;
@@ -1917,7 +1917,7 @@ int MET_lookup_partner(
 					IND IN RDB$INDICES WITH
 					IDX.RDB$RELATION_NAME EQ relation->rel_name AND
 					(IDX.RDB$INDEX_ID EQ idx->idx_id + 1 OR
-					 IDX.RDB$INDEX_NAME EQ index_name) AND
+					 IDX.RDB$INDEX_NAME EQ pSCHAR(index_name)) AND
 					IND.RDB$INDEX_NAME EQ IDX.RDB$FOREIGN_KEY AND
 					IND.RDB$UNIQUE_FLAG NOT MISSING
 
@@ -3843,8 +3843,8 @@ static BOOLEAN get_type( TDBB tdbb, SSHORT * id, UCHAR * name, UCHAR * field)
 	handle = NULL;
 	FOR(REQUEST_HANDLE handle)
 		FIRST 1 T IN RDB$TYPES WITH
-			T.RDB$FIELD_NAME EQ field AND
-			T.RDB$TYPE_NAME EQ buffer 
+			T.RDB$FIELD_NAME EQ pSCHAR(field) AND
+			T.RDB$TYPE_NAME EQ pSCHAR(buffer)
 
         found = TRUE;
 		*id = T.RDB$TYPE;
@@ -4194,7 +4194,7 @@ static BOOLEAN resolve_charset_and_collation(
 
 		FOR(REQUEST_HANDLE handle)
 			FIRST 1 CS IN RDB$CHARACTER_SETS
-				WITH CS.RDB$CHARACTER_SET_NAME EQ charset 
+				WITH CS.RDB$CHARACTER_SET_NAME EQ pSCHAR(charset)
 
             found = TRUE;
 			*id = CS.RDB$CHARACTER_SET_ID;
@@ -4208,7 +4208,7 @@ static BOOLEAN resolve_charset_and_collation(
 	{
 		FOR(REQUEST_HANDLE handle)
 			FIRST 1 COL IN RDB$COLLATIONS
-				WITH COL.RDB$COLLATION_NAME EQ collation 
+				WITH COL.RDB$COLLATION_NAME EQ pSCHAR(collation)
 
             found = TRUE;
 			*id = COL.RDB$CHARACTER_SET_ID;
@@ -4224,8 +4224,8 @@ static BOOLEAN resolve_charset_and_collation(
 			COL IN RDB$COLLATIONS OVER RDB$CHARACTER_SET_ID CROSS
 			AL1 IN RDB$TYPES
 			WITH AL1.RDB$FIELD_NAME EQ "RDB$CHARACTER_SET_NAME"
-			AND AL1.RDB$TYPE_NAME EQ charset
-			AND COL.RDB$COLLATION_NAME EQ collation
+			AND AL1.RDB$TYPE_NAME EQ pSCHAR(charset)
+			AND COL.RDB$COLLATION_NAME EQ pSCHAR(collation)
 			AND AL1.RDB$TYPE EQ CS.RDB$CHARACTER_SET_ID 
 
         found = TRUE;

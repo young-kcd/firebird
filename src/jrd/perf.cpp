@@ -205,7 +205,7 @@ int API_ROUTINE perf_format(
 }
 
 
-void API_ROUTINE perf_get_info(int **handle, PERF * perf)
+void API_ROUTINE perf_get_info(struct why_hndl **handle, PERF * perf)
 {
 /**************************************
  *
@@ -262,7 +262,7 @@ void API_ROUTINE perf_get_info(int **handle, PERF * perf)
 	item_length = sizeof(items);
 #pragma FB_COMPILER_MESSAGE("Fix. Bad cast.")
 	isc_database_info(jrd_status,
-					  reinterpret_cast < void **>(handle),
+					  handle,
 					  item_length, items, buffer_length, buffer);
 
 	p = buffer;

@@ -41,10 +41,10 @@ typedef struct rpb {
 	SLONG rpb_number;			/* record number in relation */
 	SLONG rpb_transaction;		/* transaction number */
 	struct jrd_rel *rpb_relation;	/* relation of record */
-	struct rec *rpb_record;		/* final record block */
-	struct rec *rpb_prior;		/* prior record block if this is a delta record */
+	class rec *rpb_record;		/* final record block */
+	class rec *rpb_prior;		/* prior record block if this is a delta record */
 	struct srpb *rpb_copy;		/* rpb copy for singleton verification */
-	struct rec *rpb_undo;		/* our first version of data if this is a second modification */
+	class rec *rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
 	SLONG rpb_page;				/* page number */

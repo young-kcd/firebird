@@ -36,6 +36,7 @@
 #include "../jrd/isc_s_proto.h"
 
 #ifndef JRD_IBASE_H
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"		/* needed for the C++ version of SVC_STATUS_ARG */
 #endif
 

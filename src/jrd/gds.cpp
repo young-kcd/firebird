@@ -71,6 +71,8 @@
 
 #if defined(WIN_NT)
 #include <io.h>
+#include <sys/types.h>
+#include <sys/timeb.h>
 #endif
 
 #ifdef VMS
@@ -1867,6 +1869,9 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	now = time((time_t *)0);
 #endif
 
+	_timeb wtm;
+	_ftime(&wtm);
+
 	gds__prefix(name, LOGFILE);
 
 	oldmask = umask(0111);
@@ -1874,7 +1879,7 @@ void API_ROUTINE gds__log(TEXT * text, ...)
 	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
 	{
 		ib_fprintf(file, "%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN),
-				   gdslogid, ctime(&now));
+ 				   gdslogid, ctime(&now));
 		VA_START(ptr, text);
 		ib_vfprintf(file, text, ptr);
 		ib_fprintf(file, "\n\n");
@@ -3511,7 +3516,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
 #endif
 
 
-SLONG API_ROUTINE gds__vax_integer(UCHAR * ptr, SSHORT length)
+SLONG API_ROUTINE gds__vax_integer(CONST UCHAR * ptr, SSHORT length)
 {
 /**************************************
  *
@@ -3568,7 +3573,7 @@ void API_ROUTINE gds__vtof(
 }
 
 
-void API_ROUTINE gds__vtov(const char* string, char* field, SSHORT length)
+void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
 {
 /**************************************
  *

@@ -42,6 +42,10 @@ struct jrd_nod;
 struct vlu;
 struct ads;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void   BLB_cancel(TDBB, blb*);
 void   BLB_close(TDBB, blb*);
 blb*   BLB_create(TDBB, jrd_tra*, bid*);
@@ -62,6 +66,9 @@ void BLB_put_segment(TDBB, blb*, UCHAR *, USHORT);
 void BLB_put_slice(TDBB, jrd_tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
 void BLB_release_array(arr*);
 void BLB_scalar(TDBB, jrd_tra*, bid*, USHORT, SLONG*, vlu*);
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM

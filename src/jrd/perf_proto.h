@@ -30,7 +30,7 @@ extern "C" {
 
 extern int API_ROUTINE perf_format(struct perf *, struct perf *, SCHAR *,
 								   SCHAR *, SSHORT *);
-extern void API_ROUTINE perf_get_info(int **, struct perf *);
+extern void API_ROUTINE perf_get_info(struct why_hndl **, struct perf *);
 extern void API_ROUTINE perf_report(struct perf *, struct perf *, SCHAR *,
 									SSHORT *);
 

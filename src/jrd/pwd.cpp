@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: pwd.cpp,v 1.8 2002-10-24 09:01:29 eku Exp $
+$Id: pwd.cpp,v 1.9 2002-12-16 16:24:02 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -221,9 +221,9 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
  **************************************/
 	BOOLEAN			notfound;		/* user found flag */
 	isc_db_handle	uinfo;			/* database handle */
-	SLONG*			lookup_trans;	/* default transaction handle */
+	isc_tr_handle	lookup_trans;	/* default transaction handle */
 	STATUS			status[ISC_STATUS_LENGTH];		/* status vector */
-	SLONG*			lookup_req;		/* request handle */
+	isc_req_handle	lookup_req;		/* request handle */
 	TEXT			uname[129];		/* user name buffer */
 	user_record		user;			/* user record */
 
@@ -253,26 +253,26 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 	lookup_trans = NULL;
 
 	if (isc_start_transaction(	status,
-								reinterpret_cast<void**>(&lookup_trans),
+								&lookup_trans,
 								(short) 1,
 								&uinfo,
 								(short)sizeof(tpb),
 								tpb))
 	{
-		isc_detach_database(status, reinterpret_cast<void**>(&uinfo));
+		isc_detach_database(status, &uinfo);
 		THREAD_ENTER;
 		ERR_post(gds_psw_start_trans, 0);
 	}
 
 	if (!isc_compile_request(	status,
-								reinterpret_cast<void**>(&uinfo),
-								reinterpret_cast<void**>(&lookup_req),
+								&uinfo,
+								&lookup_req,
 								(short)sizeof(pwd_request),
 								reinterpret_cast<char*>(const_cast<UCHAR*>(pwd_request))))
 	{
 		if (!isc_start_and_send(status,
-								reinterpret_cast<void**>(&lookup_req),
-								reinterpret_cast<void**>(&lookup_trans),
+								&lookup_req,
+								&lookup_trans,
 								(short) 0,
 								(short) sizeof(uname),
 								uname, (short) 0))
@@ -280,7 +280,7 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 			while (1)
 			{
 				isc_receive(status,
-							reinterpret_cast<void**>(&lookup_req),
+							&lookup_req,
 							(short) 1,
 							(short) sizeof(user),
 							&user,
@@ -302,8 +302,8 @@ static BOOLEAN lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
    could be postponed until all databases are closed */
 
 	isc_rollback_transaction(status,
-							 reinterpret_cast < void **>(&lookup_trans));
-	isc_detach_database(status, reinterpret_cast < void **>(&uinfo));
+							 &lookup_trans);
+	isc_detach_database(status, &uinfo);
 	THREAD_ENTER;
 
 	return notfound;
@@ -391,7 +391,7 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
 	isc_attach_database(status,
 						0,
 						user_info_name,
-						reinterpret_cast<void**>(&uinfo),
+						&uinfo,
 						dpb_len,
 						dpb_buffer);
 
@@ -404,7 +404,7 @@ static BOOLEAN open_user_db(isc_db_handle* uihandle, SLONG* status)
 		isc_attach_database(status,
 							0,
 							user_info_name,
-							reinterpret_cast<void**>(&uinfo),
+							&uinfo,
 							0,
 							0);
 	}

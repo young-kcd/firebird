@@ -63,7 +63,7 @@
 #endif
 #include "../jrd/nlm_thd.h"
 
-DATABASE DB = STATIC "yachts.gdb";
+DATABASE DB = STATIC "ODS.RDB";
 
 static CONST SCHAR gen_id_blr1[] = {
 	blr_version5,

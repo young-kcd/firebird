@@ -149,10 +149,10 @@ extern int ib_printf();
 
 extern "C" {
 
-static int dump(GDS_QUAD *, void *, void *, IB_FILE *);
-static int edit(GDS_QUAD *, void *, void *, SSHORT, SCHAR *);
-static int get_ods_version(void **, USHORT *, USHORT *);
-static int load(GDS_QUAD *, void *, void *, IB_FILE *);
+static int dump(GDS_QUAD *, FRBRD *, FRBRD *, IB_FILE *);
+static int edit(GDS_QUAD *, FRBRD *, FRBRD *, SSHORT, SCHAR *);
+static int get_ods_version(FRBRD **, USHORT *, USHORT *);
+static int load(GDS_QUAD *, FRBRD *, FRBRD *, IB_FILE *);
 
 
 #ifdef VMS
@@ -354,7 +354,7 @@ int API_ROUTINE gds__blob_size(
 #pragma FB_COMPILER_MESSAGE("Fix! Bad casts.")
 
 	if (gds__blob_info(status_vector,
-					   reinterpret_cast < void **>(GDS_VAL(b)),
+					   reinterpret_cast < FRBRD **>(GDS_VAL(b)),
 					   sizeof(blob_items),
 					   const_cast < char *>(blob_items),
 					   sizeof(buffer), buffer)) {
@@ -1217,7 +1217,7 @@ void API_ROUTINE isc_set_single_user(UCHAR ** dpb,
 
 
 int API_ROUTINE gds__version(
-							 void **handle,
+							 FRBRD **handle,
 							 FPTR_VOID routine, void *user_arg)
 {
 /**************************************
@@ -1477,8 +1477,8 @@ int API_ROUTINE BLOB_close(BSTREAM * bstream)
 
 int API_ROUTINE blob__display(
 							  SLONG blob_id[2],
-							  void **database,
-							  void **transaction,
+							  FRBRD **database,
+							  FRBRD **transaction,
 							  TEXT * field_name, SSHORT * name_length)
 {
 /**************************************
@@ -1510,8 +1510,8 @@ int API_ROUTINE blob__display(
 
 int API_ROUTINE BLOB_display(
 							 GDS_QUAD * blob_id,
-							 void *database,
-							 void *transaction, TEXT * field_name)
+							 FRBRD *database,
+							 FRBRD *transaction, TEXT * field_name)
 {
 /**************************************
  *
@@ -1541,8 +1541,8 @@ int API_ROUTINE BLOB_display(
 
 int API_ROUTINE blob__dump(
 						   SLONG blob_id[2],
-						   void **database,
-						   void **transaction,
+						   FRBRD **database,
+						   FRBRD **transaction,
 						   TEXT * file_name, SSHORT * name_length)
 {
 /**************************************
@@ -1575,8 +1575,8 @@ int API_ROUTINE blob__dump(
 
 int API_ROUTINE BLOB_text_dump(
 							   GDS_QUAD * blob_id,
-							   void *database,
-							   void *transaction, SCHAR * file_name)
+							   FRBRD *database,
+							   FRBRD *transaction, SCHAR * file_name)
 {
 /**************************************
  *
@@ -1604,8 +1604,8 @@ int API_ROUTINE BLOB_text_dump(
 
 int API_ROUTINE BLOB_dump(
 						  GDS_QUAD * blob_id,
-						  void *database,
-						  void *transaction, SCHAR * file_name)
+						  FRBRD *database,
+						  FRBRD *transaction, SCHAR * file_name)
 {
 /**************************************
  *
@@ -1632,8 +1632,8 @@ int API_ROUTINE BLOB_dump(
 
 int API_ROUTINE blob__edit(
 						   SLONG blob_id[2],
-						   void **database,
-						   void **transaction,
+						   FRBRD **database,
+						   FRBRD **transaction,
 						   TEXT * field_name, SSHORT * name_length)
 {
 /**************************************
@@ -1666,8 +1666,8 @@ int API_ROUTINE blob__edit(
 
 int API_ROUTINE BLOB_edit(
 						  GDS_QUAD * blob_id,
-						  void *database,
-						  void *transaction, SCHAR * field_name)
+						  FRBRD *database,
+						  FRBRD *transaction, SCHAR * field_name)
 {
 /**************************************
  *
@@ -1727,8 +1727,8 @@ int API_ROUTINE BLOB_get(BSTREAM * bstream)
 
 int API_ROUTINE blob__load(
 						   SLONG blob_id[2],
-						   void **database,
-						   void **transaction,
+						   FRBRD **database,
+						   FRBRD **transaction,
 						   TEXT * file_name, SSHORT * name_length)
 {
 /**************************************
@@ -1761,8 +1761,8 @@ int API_ROUTINE blob__load(
 
 int API_ROUTINE BLOB_text_load(
 							   GDS_QUAD * blob_id,
-							   void *database,
-							   void *transaction, TEXT * file_name)
+							   FRBRD *database,
+							   FRBRD *transaction, TEXT * file_name)
 {
 /**************************************
  *
@@ -1792,7 +1792,7 @@ int API_ROUTINE BLOB_text_load(
 
 int API_ROUTINE BLOB_load(
 						  GDS_QUAD * blob_id,
-						  void *database, void *transaction, TEXT * file_name)
+						  FRBRD *database, FRBRD *transaction, TEXT * file_name)
 {
 /**************************************
  *
@@ -1819,7 +1819,7 @@ int API_ROUTINE BLOB_load(
 
 
 BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
-						   void *database, void *transaction, SCHAR * mode)
+						   FRBRD *database, FRBRD *transaction, SCHAR * mode)
 {
 /**************************************
  *
@@ -1831,7 +1831,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
  *	Initialize a blob-stream block.
  *
  **************************************/
-	SLONG *blob;
+	FRBRD *blob;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	BSTREAM *bstream;
 	USHORT bpb_length;
@@ -1846,7 +1846,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 		if (gds__create_blob2(status_vector,
 							  GDS_REF(database),
 							  GDS_REF(transaction),
-							  reinterpret_cast < void **>(GDS_REF(blob)),
+							  GDS_REF(blob),
 							  GDS_VAL(blob_id),
 							  bpb_length,
 							  reinterpret_cast < char *>(bpb))) return NULL;
@@ -1855,7 +1855,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 		if (gds__open_blob2(status_vector,
 							GDS_REF(database),
 							GDS_REF(transaction),
-							reinterpret_cast < void **>(GDS_REF(blob)),
+							GDS_REF(blob),
 							GDS_VAL(blob_id),
 							bpb_length,
 							reinterpret_cast < char *>(bpb))) return NULL;
@@ -1863,7 +1863,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 	else
 		return NULL;
 
-	bstream = BLOB_open((int *) blob, (SCHAR *) 0, 0);
+	bstream = BLOB_open(blob, (SCHAR *) 0, 0);
 
 	if (*mode == 'w' || *mode == 'W') {
 		bstream->bstr_mode |= BSTR_output;
@@ -1879,7 +1879,7 @@ BSTREAM *API_ROUTINE Bopen(GDS_QUAD * blob_id,
 }
 
 
-BSTREAM *API_ROUTINE BLOB_open(void *blob, SCHAR * buffer, int length)
+BSTREAM *API_ROUTINE BLOB_open(FRBRD *blob, SCHAR * buffer, int length)
 {
 /**************************************
  *
@@ -2028,7 +2028,7 @@ static display(GDS_QUAD * blob_id, void *database, void *transaction)
 
 static int dump(
 				GDS_QUAD * blob_id,
-				void *database, void *transaction, IB_FILE * file)
+				FRBRD *database, FRBRD *transaction, IB_FILE * file)
 {
 /**************************************
  *
@@ -2043,7 +2043,7 @@ static int dump(
 	SCHAR buffer[256], *p;
 	SSHORT short_length, l;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	int *blob;
+	FRBRD *blob;
 	USHORT bpb_length;
 	UCHAR *bpb;
 
@@ -2056,7 +2056,7 @@ static int dump(
 	if (gds__open_blob2(status_vector,
 						GDS_REF(database),
 						GDS_REF(transaction),
-						reinterpret_cast < void **>(GDS_REF(blob)),
+						GDS_REF(blob),
 						GDS_VAL(blob_id),
 						bpb_length, reinterpret_cast < char *>(bpb))) {
 		gds__print_status(status_vector);
@@ -2069,7 +2069,7 @@ static int dump(
 
 	for (;;) {
 		gds__get_segment(status_vector,
-						 reinterpret_cast < void **>(GDS_REF(blob)),
+						 GDS_REF(blob),
 						 reinterpret_cast < USHORT * >(GDS_REF(l)),
 						 short_length, buffer);
 		if (status_vector[1] && status_vector[1] != gds_segment) {
@@ -2087,7 +2087,7 @@ static int dump(
 /* Close the blob */
 
 	gds__close_blob(status_vector,
-					reinterpret_cast < void **>(GDS_REF(blob)));
+					GDS_REF(blob));
 
 	return TRUE;
 }
@@ -2095,8 +2095,8 @@ static int dump(
 
 static int edit(
 				GDS_QUAD * blob_id,
-				void *database,
-				void *transaction, SSHORT type, SCHAR * field_name)
+				FRBRD *database,
+				FRBRD *transaction, SSHORT type, SCHAR * field_name)
 {
 /**************************************
  *
@@ -2185,7 +2185,7 @@ static int edit(
 
 
 static int get_ods_version(
-						   void **handle,
+						   FRBRD **handle,
 						   USHORT * ods_version, USHORT * ods_minor_version)
 {
 /**************************************
@@ -2241,7 +2241,7 @@ static int get_ods_version(
 
 static int load(
 				GDS_QUAD * blob_id,
-				void *database, void *transaction, IB_FILE * file)
+				FRBRD *database, FRBRD *transaction, IB_FILE * file)
 {
 /**************************************
  *
@@ -2256,7 +2256,7 @@ static int load(
 	TEXT buffer[512], *p, *buffer_end;
 	SSHORT l, c;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	int *blob;
+	FRBRD *blob;
 
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
@@ -2264,7 +2264,7 @@ static int load(
 	if (gds__create_blob(status_vector,
 						 GDS_REF(database),
 						 GDS_REF(transaction),
-						 reinterpret_cast < void **>(GDS_REF(blob)),
+						 GDS_REF(blob),
 						 GDS_VAL(blob_id))) {
 		gds__print_status(status_vector);
 		return FALSE;
@@ -2284,11 +2284,11 @@ static int load(
 			continue;
 		l = p - buffer;
 		if (gds__put_segment
-			(status_vector, reinterpret_cast < void **>(GDS_REF(blob)), l,
+			(status_vector, GDS_REF(blob), l,
 			 buffer)) {
 			gds__print_status(status_vector);
 			gds__close_blob(status_vector,
-							reinterpret_cast < void **>(GDS_REF(blob)));
+							GDS_REF(blob));
 			return FALSE;
 		}
 		p = buffer;
@@ -2296,16 +2296,15 @@ static int load(
 
 	if ((l = p - buffer) != NULL)
 		if (gds__put_segment
-			(status_vector, reinterpret_cast < void **>(GDS_REF(blob)), l,
+			(status_vector, GDS_REF(blob), l,
 			 buffer)) {
 			gds__print_status(status_vector);
-			gds__close_blob(status_vector,
-							reinterpret_cast < void **>(GDS_REF(blob)));
+			gds__close_blob(status_vector, GDS_REF(blob));
 			return FALSE;
 		}
 
 	gds__close_blob(status_vector,
-					reinterpret_cast < void **>(GDS_REF(blob)));
+					GDS_REF(blob));
 
 	return TRUE;
 }

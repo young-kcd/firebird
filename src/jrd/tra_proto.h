@@ -26,6 +26,10 @@
 
 #include "../jrd/req.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern BOOLEAN TRA_active_transactions(TDBB, struct dbb *);
 extern void TRA_cleanup(TDBB);
 extern void TRA_commit(TDBB, struct jrd_tra *, USHORT);
@@ -53,5 +57,9 @@ extern int TRA_state(UCHAR *, ULONG, ULONG);
 extern int TRA_sweep(TDBB, struct jrd_tra *);
 extern struct lck *TRA_transaction_lock(TDBB, struct blk *);
 extern int TRA_wait(TDBB, struct jrd_tra *, SLONG, USHORT);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* _JRD_TRA_PROTO_H_ */

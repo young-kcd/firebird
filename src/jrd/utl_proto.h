@@ -32,6 +32,10 @@
 extern "C" {
 #endif
 
+#ifndef FRBRD
+#define FRBRD void
+#endif
+
 extern int API_ROUTINE gds__blob_size(SLONG *, SLONG *, SLONG *, SLONG *);
 extern void API_ROUTINE isc_expand_dpb(SCHAR **, SSHORT *, ...);
 extern int API_ROUTINE gds__edit(TEXT *, USHORT);
@@ -46,29 +50,29 @@ extern void API_ROUTINE gds__set_debug(int);
 extern void API_ROUTINE isc_set_login(UCHAR **, SSHORT *);
 extern BOOLEAN API_ROUTINE isc_set_path(TEXT *, USHORT, TEXT *);
 extern void API_ROUTINE isc_set_single_user(UCHAR **, SSHORT *, TEXT *);
-extern int API_ROUTINE gds__version(void **, FPTR_VOID, void *);
+extern int API_ROUTINE gds__version(FRBRD **, FPTR_VOID, void *);
 extern void API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
 extern U_IPTR API_ROUTINE isc_baddress(SCHAR *);
 extern void API_ROUTINE isc_baddress_s(SCHAR *, U_IPTR *);
 extern int API_ROUTINE BLOB_close(struct bstream *);
-extern int API_ROUTINE blob__display(SLONG *, void **, void **, TEXT *,
+extern int API_ROUTINE blob__display(SLONG *, FRBRD **, FRBRD **, TEXT *,
 									 SSHORT *);
-extern int API_ROUTINE BLOB_display(GDS_QUAD *, void *, void *, TEXT *);
-extern int API_ROUTINE blob__dump(SLONG *, void **, void **, TEXT *,
+//extern int API_ROUTINE BLOB_display(GDS_QUAD *, void *, void *, TEXT *);
+extern int API_ROUTINE blob__dump(SLONG *, FRBRD **, FRBRD **, TEXT *,
 								  SSHORT *);
-extern int API_ROUTINE BLOB_dump(GDS_QUAD *, void *, void *, SCHAR *);
-extern int API_ROUTINE blob__edit(SLONG *, void **, void **, TEXT *,
+//extern int API_ROUTINE BLOB_dump(GDS_QUAD *, void *, void *, SCHAR *);
+extern int API_ROUTINE blob__edit(SLONG *, FRBRD **, FRBRD **, TEXT *,
 								  SSHORT *);
-extern int API_ROUTINE BLOB_edit(GDS_QUAD *, void *, void *, SCHAR *);
+//extern int API_ROUTINE BLOB_edit(GDS_QUAD *, void *, void *, SCHAR *);
 extern int API_ROUTINE BLOB_get(struct bstream *);
-extern int API_ROUTINE blob__load(SLONG *, void **, void **, TEXT *,
+extern int API_ROUTINE blob__load(SLONG *, FRBRD **, FRBRD **, TEXT *,
 								  SSHORT *);
-extern int API_ROUTINE BLOB_load(GDS_QUAD *, void *, void *, TEXT *);
-extern int API_ROUTINE BLOB_text_dump(GDS_QUAD *, void *, void *, SCHAR *);
-extern int API_ROUTINE BLOB_text_load(GDS_QUAD *, void *, void *, TEXT *);
-extern struct bstream *API_ROUTINE Bopen(GDS_QUAD *, void *, void *, SCHAR *);
-extern struct bstream *API_ROUTINE BLOB_open(void *, SCHAR *, int);
+//extern int API_ROUTINE BLOB_load(GDS_QUAD *, void *, void *, TEXT *);
+//extern int API_ROUTINE BLOB_text_dump(GDS_QUAD *, void *, void *, SCHAR *);
+//extern int API_ROUTINE BLOB_text_load(GDS_QUAD *, void *, void *, TEXT *);
+//extern struct bstream *API_ROUTINE Bopen(GDS_QUAD *, void *, void *, SCHAR *);
+//extern struct bstream *API_ROUTINE BLOB_open(void *, SCHAR *, int);
 extern int API_ROUTINE BLOB_put(SCHAR, struct bstream *);
 
 #ifdef VMS

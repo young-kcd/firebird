@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.21 2002-12-10 11:53:49 eku Exp $
+$Id: flu.cpp,v 1.22 2002-12-16 16:22:22 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -151,14 +151,14 @@ dirname(const char* fname)
 #endif /* HAVE_DIRNAME */
 
 
-static void terminate_at_space(char* psz)
+static void terminate_at_space(CONST char* psz)
 {
 	while (*psz && *psz != ' ')
 	{
 		++psz;
 	}
 	if (*psz) {
-		*psz = '\0';
+		*const_cast<char *>(psz) = '\0';
 	}
 }
 
@@ -198,7 +198,7 @@ extern "C" {
 static MOD FLU_modules = 0;		/* External function/filter modules */
 
 /* prototypes for private functions */
-static MOD search_for_module(TEXT *, TEXT *);
+static MOD search_for_module(TEXT *, CONST TEXT *);
 #ifdef WIN_NT
 static void adjust_loadlib_name(TEXT *, TEXT *);
 #endif
@@ -503,7 +503,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 }
 
 
-static MOD search_for_module(TEXT * module, TEXT * name)
+static MOD search_for_module(TEXT * module, CONST TEXT * name)
 {
 /**************************************
  *
@@ -736,7 +736,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 }
 
 
-static MOD search_for_module(TEXT * module, TEXT * name)
+static MOD search_for_module(TEXT * module, CONST TEXT * name)
 {
 /**************************************
  *
@@ -910,7 +910,7 @@ static MOD search_for_module(TEXT * module, TEXT * name)
 #ifdef WIN_NT
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
+							   CONST TEXT* name,
 							   TEXT* ib_path_env_var)
 {
 /**************************************
@@ -1008,7 +1008,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 }
 
 
-static MOD search_for_module(TEXT* module, TEXT* name)
+static MOD search_for_module(TEXT* module, CONST TEXT* name)
 {
 /**************************************
  *
@@ -1306,7 +1306,7 @@ return (FPTR_INT) NSAddressOfSymbol(symbol);
 }
 
 static MOD search_for_module ( TEXT *module,
-                               TEXT *name )
+                               CONST TEXT *name )
 {
 /**************************************
  *

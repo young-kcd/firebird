@@ -2906,7 +2906,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
 	gds__attach_database(status_vector,
 						 0,
 						 reinterpret_cast<char*>(GDS_VAL(database)),
-						 reinterpret_cast<void**>(GDS_REF(db_handle)),
+						 GDS_REF(db_handle),
 						 dpb_length,
 						 reinterpret_cast<char*>(GDS_VAL(sweep_dpb)));
 
@@ -2916,7 +2916,7 @@ static void THREAD_ROUTINE sweep_database(UCHAR* database)
 	if (db_handle)
 	{
 		gds__detach_database(status_vector,
-							 reinterpret_cast<void**>(GDS_REF(db_handle)));
+							 GDS_REF(db_handle));
 	}
 
 	gds__free(database);

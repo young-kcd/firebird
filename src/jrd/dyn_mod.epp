@@ -78,7 +78,7 @@
 #endif
 #include "../jrd/nlm_thd.h"
 
-DATABASE DB = STATIC "yachts.gdb";
+DATABASE DB = STATIC "ODS.RDB";
 
 #define MAX_CHARS_SHORT		6	/* 2**16  = 5 chars + sign */
 #define MAX_CHARS_LONG		11	/* 2**32  = 10 chars + sign */

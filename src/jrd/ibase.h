@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.19 2002-12-03 03:55:08 seanleyne Exp $
+$Id: ibase.h,v 1.20 2002-12-16 16:23:28 alexpeshkoff Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -186,7 +186,7 @@ typedef struct isc_blob_ctl
 
 typedef struct bstream
 {
-	void ISC_FAR*	bstr_blob;		/* Blob handle */
+	isc_blob_handle	bstr_blob;		/* Blob handle */
 	char ISC_FAR*	bstr_buffer;	/* Address of buffer */
 	char ISC_FAR*	bstr_ptr;		/* Next character */
 	short			bstr_length;	/* Length of buffer */
@@ -367,6 +367,7 @@ typedef struct
 /* InterBase Handle Definitions */
 /********************************/
 
+#ifndef __y_handle_h__
 typedef void ISC_FAR* isc_att_handle;
 typedef void ISC_FAR* isc_blob_handle;
 typedef void ISC_FAR* isc_db_handle;
@@ -376,6 +377,8 @@ typedef void ISC_FAR* isc_stmt_handle;
 typedef void ISC_FAR* isc_svc_handle;
 typedef void ISC_FAR* isc_tr_handle;
 typedef void ISC_FAR* isc_win_handle;
+#define FRBRD void
+#endif /* __y_handle_h__ */
 typedef void (ISC_FAR* isc_callback) ();
 typedef ISC_LONG isc_resv_handle;
 
@@ -616,7 +619,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_set_cursor_name(ISC_STATUS ISC_FAR*,
 ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS ISC_FAR*,
 										isc_stmt_handle ISC_FAR*,
 										short,
-										char ISC_FAR*,
+										CONST char ISC_FAR*,
 										short,
 										char ISC_FAR*);
 

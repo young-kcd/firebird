@@ -55,6 +55,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"
 #include "gen/codes.h"
 #include "../jrd/all_proto.h"

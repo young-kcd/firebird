@@ -31,8 +31,8 @@ extern "C" {
 
 extern struct mod *DLL_EXPORT FLU_lookup_module(TEXT *);
 extern void DLL_EXPORT FLU_unregister_module(struct mod *);
-extern int (*ISC_lookup_entrypoint(TEXT *, TEXT *, TEXT *)) (void);
-extern int (*FUNCTIONS_entrypoint(TEXT *, TEXT *)) (void);
+extern int (*ISC_lookup_entrypoint(TEXT *, CONST TEXT *, TEXT *)) (void);
+extern int (*FUNCTIONS_entrypoint(TEXT *, CONST TEXT *)) (void);
 extern int (*BUILTIN_entrypoint(TEXT *, TEXT *)) (void);
 
 /*

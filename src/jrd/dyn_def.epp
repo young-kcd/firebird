@@ -93,7 +93,7 @@
 #define FOR_KEY_DEL_DEFAULT  0x40
 #define FOR_KEY_DEL_NONE     0x80
 
-DATABASE DB = STATIC "yachts.gdb";
+DATABASE DB = STATIC "ODS.RDB";
 
 
 static CONST UCHAR who_blr[] =
@@ -1734,7 +1734,7 @@ void DYN_define_index(GBL		gbl,
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
 						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-						F.RDB$FIELD_NAME EQ str_->str_data AND
+						F.RDB$FIELD_NAME EQ pSCHAR(str_->str_data) AND
 						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
                     if (!DYN_REQUEST(drq_l_lfield))
 					{

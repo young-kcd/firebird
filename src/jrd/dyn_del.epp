@@ -66,7 +66,7 @@
 #endif
 #include "../jrd/nlm_thd.h"
 
-DATABASE DB = STATIC "yachts.gdb";
+DATABASE DB = STATIC "ODS.RDB";
 
 static BOOLEAN delete_constraint_records(GBL, TEXT *, TEXT *);
 static BOOLEAN delete_dimension_records(GBL, TEXT *);

@@ -82,7 +82,7 @@
 
 #define BLANK	'\040'
 
-DATABASE DB = STATIC "yachts.gdb";
+DATABASE DB = STATIC "ODS.RDB";
 
 
 

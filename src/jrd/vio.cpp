@@ -44,6 +44,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/lls.h"
 #include "../jrd/scl.h"
+#include "../jrd/y_handle.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/ods.h"
@@ -1885,6 +1886,25 @@ void VIO_init(TDBB tdbb)
 }
 #endif
 
+static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction) {
+	SLONG tid_fetch = rpb->rpb_transaction;
+	if ((!DPM_get(tdbb, rpb, LCK_read)) ||
+		  (!VIO_chase_record_version
+			(tdbb, rpb, NULL, transaction,
+			reinterpret_cast < blk * >(tdbb->tdbb_default), 
+			FALSE)))
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+	VIO_data(tdbb, rpb,
+			reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
+
+	/* If record is present, and the transaction is read committed,
+	 * make sure the record has not been updated.  Also, punt after
+	 * VIO_data () call which will release the page.
+	 */
+	if ((transaction->tra_flags & TRA_read_committed) &&
+			(tid_fetch != rpb->rpb_transaction))
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+}
 
 void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 {
@@ -1903,7 +1923,6 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 	DSC desc1, desc2;
 	LLS stack;
 	USHORT id;
-	SLONG tid_fetch;
 
 	SET_TDBB(tdbb);
 
@@ -1930,29 +1949,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
    refetch and release the record. */
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-		tid_fetch = org_rpb->rpb_transaction;
-		if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-			(!VIO_chase_record_version
-			 (tdbb, org_rpb, NULL, transaction,
-			  reinterpret_cast <
-			  blk * >(tdbb->tdbb_default), FALSE)))
-		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-		VIO_data(tdbb, org_rpb,
-				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
-
-		/* If record is present, and the transaction is read committed,
-		 * make sure the record has not been updated.  Also, punt after
-		 * VIO_data () call which will release the page.
-		 */
-
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != org_rpb->rpb_transaction))
-		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-		}
-
+		RefetchRecord(tdbb, org_rpb, transaction);
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -4464,13 +4461,23 @@ static void update_in_place(
    with an old "complete" record, update in placement, then delete the old
    delta record */
 
+	BOOLEAN refetched = FALSE;
+retry:
 	if ( (prior = org_rpb->rpb_prior) ) {
 		temp2 = *org_rpb;
 		temp2.rpb_record = VIO_gc_record(tdbb, relation);
 		temp2.rpb_page = org_rpb->rpb_b_page;
 		temp2.rpb_line = org_rpb->rpb_b_line;
-		if (!DPM_fetch(tdbb, &temp2, LCK_read))
-			BUGCHECK(291);		/* msg 291 cannot find record back version */
+		if (! DPM_fetch(tdbb, &temp2, LCK_read)) {
+			if (refetched)
+			    BUGCHECK(291);	 // msg 291 cannot find record back version
+
+            // maybe pre-trigger modified our record - refetch it
+			RefetchRecord(tdbb, org_rpb, transaction);
+			refetched = TRUE;
+			goto retry;
+        }
+        
 		VIO_data(tdbb, &temp2,
 				 reinterpret_cast < blk * >(dbb->dbb_permanent));
 		gc_rec = temp2.rpb_record;
