@@ -1,3 +1,174 @@
+2004-09-27 00:37  skidder
+
+	* firebird2/builds/posix/: Makefile.in.client.gpre (1.15),
+	Makefile.in.embed.gpre (1.15):
+	
+	Fix POSIX builds after Claudio changes
+
+2004-09-26 14:37  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.194):
+	
+	Fixed some issues with expression indices.
+
+2004-09-26 14:00  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.105):
+	
+	Fixed my today's commit.
+
+2004-09-26 13:23  robocop
+
+	* firebird2/src/: dsql/array.epp (1.32), dsql/preparse.cpp (1.31),
+	jrd/alt.cpp (1.55), jrd/filters.cpp (1.42), jrd/isc_file.cpp
+	(1.81), jrd/svc.cpp (1.127), jrd/utl.cpp (1.73),
+	utilities/gsec/gsec.cpp (1.38):
+	
+	Got rid of spurious cast.
+
+2004-09-26 13:19  robocop
+
+	* firebird2/src/burp/misc.cpp (1.15):
+	
+	Put an assertion, just in case.
+
+2004-09-26 13:18  robocop
+
+	* firebird2/src/qli/mov.cpp (1.36):
+	
+	Delete wrong comment.
+
+2004-09-26 13:17  robocop
+
+	* firebird2/src/common/: utils_proto.h (1.8), utils.cpp (1.12):
+	
+	Introducing our snprintf to avoid writing SNPRINTF(...);
+	buffer[sizeof(buffer) - 1] = 0; Makes a provision to detect
+	overruns in systems that lack the snprintf familty.  Comments
+	welcome
+
+2004-09-26 11:49  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.104), cch.h (1.24):
+	
+	1) Added AVL-binary tree implementation for the dirty page tree.
+	Notes:	 - old implementation is still in place and can be turned
+	on (see BALANCED_DIRTY_PAGE_TREE macro)   - both implementations
+	are unconditional to keep them in sync until the old one is dropped
+	completely 2) Increased MAX_PAGE_BUFFERS to 128K (2GB for 16K page
+	size)
+
+2004-09-26 09:49  robocop
+
+	* firebird2/src/remote/os/win32/cntl.cpp (1.16):
+	
+	Got rid of incredibly redundant cast.
+
+2004-09-26 09:48  robocop
+
+	* firebird2/src/qli/meta.epp (1.49):
+	
+	Replace custom routine by common logic
+
+2004-09-26 09:45  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.126), why.cpp (1.80):
+	
+	Redundant cast
+
+2004-09-26 09:42  robocop
+
+	* firebird2/src/gpre/: gpre_meta.epp (1.46), gpre_meta_boot.cpp
+	(1.44):
+	
+	The custom symbol_length is equivalent to fb_utils::name_length.
+
+2004-09-26 09:41  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.125):
+	
+	Make compiler happy... nobody wants a cursor name with length 2^31
+
+2004-09-26 09:38  robocop
+
+	* firebird2/src/common/: utils.cpp (1.11), utils_proto.h (1.7):
+	
+	Take advantage of the full range in name_length(), in case we need
+	it.  In most platforms, int <==> ptrdiff_t
+
+2004-09-26 09:37  robocop
+
+	* firebird2/src/alice/tdr.cpp (1.41):
+	
+	Minimize forced casts
+
+2004-09-26 09:33  robocop
+
+	* firebird2/builds/win32/msvc6/: common_static.dsp (1.5), gpre.dsp
+	(1.24):
+	
+	Added common/utils.cpp & h to common_static and gpre.  Please
+	update your non MSVC6 build environments accordingly
+
+2004-09-26 09:32  robocop
+
+	* firebird2/builds/win32/msvc6/codes.dsp (1.8):
+	
+	MSVC put these lines, don't know how or why, but most other
+	projects have them, too.
+
+2004-09-26 09:31  robocop
+
+	* firebird2/builds/win32/msvc6/build_msg.dsp (1.7):
+	
+	No surprise I wasn't able to get a debug build_msg if the
+	directories where overlapping with the released version (the only
+	one used in the script)
+
+2004-09-26 09:26  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.124):
+	
+	Replace custom name_length() by the general one that uses the same
+	logic
+
+2004-09-26 09:24  robocop
+
+	* firebird2/src/jrd/met.epp (1.142):
+	
+	Use exact_name instead of name_length with custom code
+
+2004-09-26 04:57  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.103):
+	
+	
+	Fix a bug with international characters in ISQL causing assertions
+	in VS2003
+
+2004-09-26 03:49  robocop
+
+	* firebird2/src/: common/utils.cpp (1.10), common/utils_proto.h
+	(1.6), dsql/metd.epp (1.69), dsql/pass1.cpp (1.160),
+	isql/extract.epp (1.42), isql/isql.epp (1.102), isql/show.epp
+	(1.57), jrd/dfw.epp (1.125), jrd/dyn.epp (1.69), jrd/dyn_def.epp
+	(1.76), jrd/dyn_del.epp (1.38), jrd/dyn_mod.epp (1.52),
+	jrd/grant.epp (1.48), jrd/met.epp (1.141), jrd/par.cpp (1.103),
+	jrd/scl.epp (1.62), qli/show.epp (1.38), utilities/gstat/dba.epp
+	(1.49):
+	
+	If we are using namespace fb_utils, it doesn't make sense to prefix
+	functions in it with fb_ again. Mechanical replacement made one by
+	one (no bulk automatic changes).
+
+2004-09-26 03:46  robocop
+
+	* firebird2/src/msgs/build_file.epp (1.25):
+	
+	Misc: an error should be returned to the operating system by the
+	program that builds the messages file only when the program
+	received wrong arguments, not when it did the job.
+
 2004-09-25 22:29  skidder
 
 	* firebird2/src/jrd/evl.cpp (1.105):
