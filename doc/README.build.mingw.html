@@ -12,7 +12,7 @@
 <H2>MINGW Notes</H2>
 <hr/>
 First version: Mar 6 2003<br>
-Last Update: Sep 26 2003<br>
+Last Update: Sep 29 2003<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
@@ -22,7 +22,6 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>1.-TODO</h3>
 <ul>
-<li>Build of fb_util.dll</li>
 <li>Support for ms SEH (superserver).</li>
 <li>Executable size problem. The executables are too great.</li>
 <li>DLL entrypoint definition. The fbclient.dll have a lot of unneeded entrypoints.</li>
@@ -65,20 +64,7 @@ Where is your mingw installation? ANSWER your mingw directory using slashes (as 
 &nbsp;&nbsp;&nbsp;using __gnu_cxx::vsnprintf;<br>
 </p>
 
-<h3>4.- PATCHES TO BUILD FILES</h3>
-
-<ul>
-<li>The lib_fbudf target in Make.in.extlib cannot be built yet, so it must be removed.<br>
-<br>
-Edit the file Makefile.in.extlib in the builds/posix directory and change the line <br>
-<br>
-all: lib_ib_udf lib_ib_util lib_fb_util<br>
-to<br>
-all: lib_ib_udf lib_ib_util <br>
-</li>
-</ul>
-
-<h3>5.- BUILD PROCESS</h3>
+<h3>4.- BUILD PROCESS</h3>
 
 <ol>
 <li>Start msys with the icon.</li>
@@ -103,7 +89,7 @@ or<br>
 warning: unknown conversion type character `I' in format<br>
 warning: too many arguments for format</p>
 
-<h3>6.- TROUBLESHOOTING</h3>
+<h3>5.- TROUBLESHOOTING</h3>
 
 <p>AUTOGEN<p>
 <p>The autogen script creates an output file in the same directory where it is executed with the name config.out. If the autogen fails look at config.out first.</p>
