@@ -148,7 +148,8 @@ void DirectoryList::initialize(bool simple_mode) {
 
 	unsigned int last = 0;
 	PathName root = Config::getRootDirectory();
-	for (int i = 0; i < val.length(); i++) {
+	int i;
+	for (i = 0; i < val.length(); i++) {
 		if (val[i] == ';') {
 			PathName dir = "";
 			if (i > last) {
@@ -233,7 +234,7 @@ void DirectoryList::expandFileName (
 	path = name;
 }
 
-TempDirectoryList::initTemp() 
+void TempDirectoryList::initTemp() 
 {
 	initialize(true);
 

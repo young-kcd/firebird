@@ -145,7 +145,6 @@ public:
 	}
 	~TempDirectoryList() {
 		items.clear();
-		DirectoryList::~DirectoryList();
 	}
 
 private:
@@ -156,7 +155,7 @@ private:
 	Items items;
 
 	// load items from DirectoryList
-	initTemp();
+	void initTemp();
 };
 
 } //namespace Firebird
