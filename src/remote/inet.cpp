@@ -41,10 +41,13 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.52 2003-02-17 19:33:53 brodsom Exp $
+$Id: inet.cpp,v 1.53 2003-02-18 12:38:26 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -78,8 +81,8 @@ $Id: inet.cpp,v 1.52 2003-02-17 19:33:53 brodsom Exp $
 #include <grp.h>
 #endif
 
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h> /* for socket() */
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -99,7 +102,6 @@ $Id: inet.cpp,v 1.52 2003-02-17 19:33:53 brodsom Exp $
 
 #if !(defined VMS || defined WIN_NT)
 #include <netdb.h>
-#include <sys/param.h>
 #endif
 
 #ifdef DARWIN

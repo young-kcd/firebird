@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.118 2003-02-18 05:24:31 aafemt Exp $
+dnl $Id: configure.in,v 1.119 2003-02-18 12:38:22 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -288,7 +288,7 @@ AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
-AC_CHECK_HEADERS(winsock2.h)
+AC_CHECK_HEADERS(socket.h  sys/socket.h sys/sockio.h winsock2.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
