@@ -82,7 +82,6 @@
 #ifdef SUPERSERVER
 #define V4_THREADING
 #endif
-#include "../jrd/nlm_thd.h"
 
 #define FOR_KEY_UPD_CASCADE  0x01
 #define FOR_KEY_UPD_NULL     0x02

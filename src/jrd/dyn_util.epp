@@ -61,7 +61,6 @@
 #ifdef SUPERSERVER
 #define V4_THREADING
 #endif
-#include "../jrd/nlm_thd.h"
 
 DATABASE DB = STATIC "ODS.RDB";
 

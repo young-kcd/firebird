@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.16 2003-02-13 13:33:56 dimitr Exp $
+$Id: fun.epp,v 1.17 2003-02-15 16:41:32 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -61,8 +61,6 @@ $Id: fun.epp,v 1.16 2003-02-13 13:33:56 dimitr Exp $
 #include "../jrd/thd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/isc_s_proto.h"
-
-#include "../jrd/nlm_thd.h"
 
 #ifdef VMS
 #define CALL_UDF(ptr, udftype)     (*(udftype (*)(SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG, SLONG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9]) 
