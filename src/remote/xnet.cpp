@@ -130,7 +130,9 @@ static bool_t xnet_initialized = FALSE;
 static bool_t xnet_shutdown = FALSE;
 static bool_t xnet_mutex_ready = FALSE;
 
+#ifdef SUPERCLIENT
 static bool_t xnet_connect_init();
+#endif
 static void xnet_connect_fini();
 static void xnet_release_all(void);
 
@@ -187,7 +189,7 @@ static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
 	char err_msg_buff[256];
 
 	if (err_code)
-		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s  Win32 error = %d\n",
+		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s  Win32 error = %"ULONGFORMAT"\n",
 			source_line_num,err_msg,err_code);
 	else
 		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s\n",
@@ -718,6 +720,7 @@ PORT XNET_connect(TEXT * name, PACKET * packet,
 }
 
 
+#ifdef SUPERCLIENT
 static bool_t xnet_connect_init()
 {
 /**************************************
@@ -780,7 +783,7 @@ static bool_t xnet_connect_init()
 	}
 
 }
-
+#endif
 
 static void xnet_connect_fini()
 {
@@ -1840,7 +1843,7 @@ static bool_t xnet_putbytes(XDR * xdrs, SCHAR * buff, u_int count)
 
 		if (xdrs->x_handy) {
 
-			if (xdrs->x_handy == xch->xch_size) {
+			if ((ULONG) xdrs->x_handy == xch->xch_size) {
 
 				THREAD_EXIT;
 				while(!xnet_shutdown) {
@@ -2244,7 +2247,7 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 		XNET_p = XNET_command_line + strlen(XNET_command_line);
 	}
 
-	sprintf(XNET_p, " -s -x -h %d", (ULONG) client_pid);
+	sprintf(XNET_p, " -s -x -h %"ULONGFORMAT, (ULONG) client_pid);
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;
 	start_crud.lpReserved2 = NULL;
