@@ -42,6 +42,7 @@
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
 #undef HAVE_READLINE_READLINE_H
+#define HAVE_SETJMP_H
 
 /* types */
 #undef socklen_t

@@ -1546,7 +1546,6 @@ static DBA_FIL db_open( UCHAR * file_name, USHORT file_length)
 
 #ifdef SUPERSERVER
 	open_files* file_list = new(*getDefaultMemoryPool()) open_files;
-	if (file_list == 0) {
 	if (!file_list) {
 		/* NOMEM: return error */
 		dba_error(31, 0, 0, 0, 0, 0);
