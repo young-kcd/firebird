@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.11 2002-07-05 15:00:19 skywalker Exp $ 
+  * $Id: evl.cpp,v 1.12 2002-07-10 14:52:41 dimitr Exp $ 
  */
 
 /*
@@ -130,6 +130,15 @@
 extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
+/* Internal info request types */
+
+enum internal_info_req
+{
+	connection_id = 1,
+	transaction_id = 2
+};
+
+
 /*  *** DANGER DANGER WILL ROBINSON ***
  *  add(), multiply(), and divide() all take the same three arguments, but
  *  they don't all take them in the same order.  Be careful out there.
@@ -178,11 +187,6 @@ static DSC *substring(TDBB, VLU, DSC *, USHORT, USHORT);
 static DSC *upcase(TDBB, DSC *, VLU);
 static DSC *internal_info(TDBB, DSC *, VLU);
 
-enum internal_info_req
-{
-	connection_id = 1,
-	transaction_id = 2
-};
 
 static CONST UCHAR special[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: gen.cpp,v 1.7 2002-07-02 12:17:44 dimitr Exp $
+$Id: gen.cpp,v 1.8 2002-07-10 14:52:42 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -79,6 +79,13 @@ static CONST SCHAR db_key_name[] = "DB_KEY";
 #define NEGATE_VALUE TRUE
 #define USE_VALUE    FALSE
 
+/* Internal info request types */
+
+enum internal_info_req
+{
+	connection_id = 1,
+	transaction_id = 2
+};
 
 
 UCHAR GEN_expand_buffer( REQ request, UCHAR byte)
@@ -2112,6 +2119,21 @@ static void gen_select( REQ request, NOD rse)
             parameter->par_name = parameter->par_alias  = "USER";
         else if (item->nod_type == nod_current_role)
             parameter->par_name = parameter->par_alias  = "ROLE";
+        else if (item->nod_type == nod_internal_info)
+		{
+			internal_info_req request =
+				*reinterpret_cast<internal_info_req*>(item->nod_arg[0]->nod_desc.dsc_address);
+
+			switch (request)
+			{
+			case connection_id:
+				parameter->par_name = parameter->par_alias  = "CONNECTION_ID";
+				break;
+			case transaction_id:
+				parameter->par_name = parameter->par_alias  = "TRANSACTION_ID";
+				break;
+			}
+		}
         else if (item->nod_type == nod_substr) {
             /* CVC: SQL starts at 1 but C starts at zero. */
             /*NOD node = item->nod_arg [e_substr_start];
