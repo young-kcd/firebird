@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.35 2004-04-28 22:05:55 brodsom Exp $
+//	$Id: pas.cpp,v 1.36 2004-04-28 23:29:25 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -575,11 +575,8 @@ static void asgn_from( const act* action, const ref* reference, int column)
 			fprintf(out_file, "gds__ftof (%s%s, %s (%s), %s%s, %d);",
 					   REF_PAR, value, SIZEOF, value, REF_PAR, variable,
 					   field->fld_length);
-		else if (!reference->ref_master
-				 || (reference->ref_flags & REF_literal)) fprintf(out_file,
-																	 "%s := %s;",
-																	 variable,
-																	 value);
+		else if (!reference->ref_master || (reference->ref_flags & REF_literal))
+			fprintf(out_file, "%s := %s;", variable, value);
 		else {
 			fprintf(out_file, "if %s < 0 then", value);
 			align(column + 4);
