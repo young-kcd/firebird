@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "DEV_BUILD" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "../../../src/include" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32_LEAN_AND_MEAN" /D "DEV_BUILD" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "DEV_BUILD" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /ML /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "NOMSG" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /ML /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32_LEAN_AND_MEAN" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
