@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 }
 
 
-static void print(const SCHAR ** table, int max, const SCHAR * fudge)
+static void print(const SCHAR ** tableL, int max, const SCHAR * fudge)
 {
 /**************************************
  *
@@ -311,9 +311,9 @@ static void print(const SCHAR ** table, int max, const SCHAR * fudge)
 	SCHAR buffer[100];
 	char* s = buffer;
 
-	for (int blr = 0; blr <= max; blr++, table++) {
-		if (*table)
-			sprintf(s, "%s%s, ", fudge, *table);
+	for (int blr = 0; blr <= max; blr++, tableL++) {
+		if (*tableL)
+			sprintf(s, "%s%s, ", fudge, *tableL);
 		else
 			sprintf(s, " 0, ");
 		while (*s)

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: tree.h,v 1.28 2004-05-03 04:24:49 skidder Exp $
+ *  $Id: tree.h,v 1.29 2004-05-12 19:17:09 brodsom Exp $
  *
  */
 
@@ -567,27 +567,27 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	} catch(const std::exception&) {
 		// Recover tree to innocent state
 		while (curLevel) {
-			NodeList *item = reinterpret_cast<NodeList*>(newNode);
+			NodeList *itemL = reinterpret_cast<NodeList*>(newNode);
 			void *lower;
 		    if (recovery_map[curLevel] < 0) {
-				lower = (*item)[0];
+				lower = (*itemL)[0];
 			} else {
-				lower = (*item->prev)[recovery_map[curLevel]];
-				item->prev->remove(recovery_map[curLevel]);
-				item->prev->insert(item->prev->getCount(), (*item)[0]);
-				NodeList::setNodeParent((*item)[0], curLevel - 1, item->prev);
+				lower = (*itemL->prev)[recovery_map[curLevel]];
+				itemL->prev->remove(recovery_map[curLevel]);
+				itemL->prev->insert(itemL->prev->getCount(), (*itemL)[0]);
+				NodeList::setNodeParent((*itemL)[0], curLevel - 1, itemL->prev);
 			}
-			item->~NodeList();
+			itemL->~NodeList();
 			this->pool->deallocate(newNode);
 			newNode = lower;
 			curLevel--;
 		}
-		ItemList *item = reinterpret_cast<ItemList*>(newNode);
+		ItemList *itemL2 = reinterpret_cast<ItemList*>(newNode);
 		if (recovery_map[0] >= 0) {
-			item->prev->remove(recovery_map[0]);
-			item->prev->insert(item->prev->getCount(), (*item)[0]);
+			itemL2->prev->remove(recovery_map[0]);
+			itemL2->prev->insert(itemL2->prev->getCount(), (*itemL2)[0]);
 		}
-		item->~ItemList();
+		itemL2->~ItemList();
 		this->pool->deallocate(newNode);
 		throw;
 	}

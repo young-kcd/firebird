@@ -67,8 +67,8 @@ namespace Firebird
 				fatal_exception::raise("Firebird::string - pos out of range");
 			}
 		}
-		static inline void checkSize(size_type size) {
-			if (size > max_size()) {
+		static inline void checkSize(size_type sizeL) {
+			if (sizeL > max_size()) {
 				fatal_exception::raise("Firebird::string - size exceeds predefined limit");
 			}
 		}
@@ -163,7 +163,7 @@ namespace Firebird
 							smallStorage : bigStorage;
 		}
 	protected:
-		AbstractString(size_type size, const_pointer data);
+		AbstractString(size_type sizeL, const_pointer datap);
 		AbstractString(const_pointer p1, size_type n1, 
 					 const_pointer p2, size_type n2);
 		AbstractString(const AbstractString& v);
@@ -172,7 +172,7 @@ namespace Firebird
 			userSize = 0;
 			smallStorage[0] = 0;
 		}
-		AbstractString(size_type size, char_type c);
+		AbstractString(size_type sizeL, char_type c);
 		inline explicit AbstractString(MemoryPool& p) : AutoStorage(p) {
 			actualSize = smallStorageSize;
 			userSize = 0;

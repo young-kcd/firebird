@@ -209,11 +209,11 @@ void CNTL_stop_service(const TEXT* service) // unused param
 		return;
 	}
 
-	SC_HANDLE service_handle =
+	SC_HANDLE service_handleL =
 		OpenService(servicemgr_handle, service_name,
 			GENERIC_READ | GENERIC_EXECUTE);
 
-	if (service_handle == NULL) {
+	if (service_handleL == NULL) {
 		// return error
 		int error = GetLastError();
 		gds__log("open services error %d", error);
@@ -222,7 +222,7 @@ void CNTL_stop_service(const TEXT* service) // unused param
 	else {
 		SERVICE_STATUS status_info;
 		if (!ControlService
-			(service_handle, SERVICE_CONTROL_STOP, &status_info))
+			(service_handleL, SERVICE_CONTROL_STOP, &status_info))
 		{
 			// return error
 			const int error = GetLastError();

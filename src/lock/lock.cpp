@@ -39,7 +39,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.94 2004-05-09 05:48:21 robocop Exp $
+$Id: lock.cpp,v 1.95 2004-05-12 19:20:43 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -4656,18 +4656,18 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
  */
 	if (owner_own_pending_request && (freed == EXPECT_inuse)) {
 		bool found_pending;
-		LRQ request;
+		LRQ request3;
 		LBL lock;
 		LRQ pending;
 		SRQ que_of_lbl_requests;
 
 		/* Make sure pending request is valid, and we own it */
-		request = (LRQ) SRQ_ABS_PTR(owner_own_pending_request);
-		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
-		CHECK(request->lrq_owner == own_ptr);
+		request3 = (LRQ) SRQ_ABS_PTR(owner_own_pending_request);
+		validate_request(SRQ_REL_PTR(request3), EXPECT_inuse, RECURSE_not);
+		CHECK(request3->lrq_owner == own_ptr);
 
 		/* Make sure the lock the request is for is valid */
-		lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+		lock = (LBL) SRQ_ABS_PTR(request3->lrq_lock);
 		validate_lock(SRQ_REL_PTR(lock), EXPECT_inuse, (SRQ_PTR) 0);
 
 		/* Make sure the pending request is on the list of requests for the lock */

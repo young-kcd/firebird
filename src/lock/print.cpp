@@ -552,9 +552,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* Print known locks */
 
 	if (sw_locks || sw_series) {
-		USHORT i = 0;
+		USHORT i2 = 0;
 		for (const srq* slot = LOCK_header->lhb_hash;
-			 i < LOCK_header->lhb_hash_slots; slot++, i++)
+			 i2 < LOCK_header->lhb_hash_slots; slot++, i2++)
 		{
 			for (const srq* que_inst = (SRQ) SRQ_ABS_PTR(slot->srq_forward); que_inst != slot;
 				 que_inst = (SRQ) SRQ_ABS_PTR(que_inst->srq_forward))

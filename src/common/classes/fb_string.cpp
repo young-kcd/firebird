@@ -81,8 +81,8 @@ namespace Firebird {
 		memcpy(createStorage(v.length()), v.c_str(), v.length());
 	}
 
-	AbstractString::AbstractString(size_type size, const_pointer data) {
-		memcpy(createStorage(size), data, size);
+	AbstractString::AbstractString(size_type sizeL, const_pointer dataL) {
+		memcpy(createStorage(sizeL), dataL, sizeL);
 	}
 
 	AbstractString::AbstractString(const_pointer p1, size_type n1, 
@@ -93,8 +93,8 @@ namespace Firebird {
 		memcpy(&s[n1], p2, n2);
 	}
 
-	AbstractString::AbstractString(size_type size, char_type c) {
-		memset(createStorage(size), c, size);
+	AbstractString::AbstractString(size_type sizeL, char_type c) {
+		memset(createStorage(sizeL), c, sizeL);
 	}
 
 	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n) {
@@ -229,12 +229,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		const_pointer end = &start[lastpos];
-		while (end >= start) {
-			if (memcmp(end, s, l) == 0) {
-				return end - start;
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
+			if (memcmp(endL, s, l) == 0) {
+				return endL - start;
 			}
-			--end;
+			--endL;
 		}
 		return npos;
 	}
@@ -248,12 +248,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		const_pointer end = &start[lastpos];
-		while (end >= start) {
-			if (*end == c) {
-				return end - start;
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
+			if (*endL == c) {
+				return endL - start;
 			}
-			--end;
+			--endL;
 		}
 		return npos;
 	}

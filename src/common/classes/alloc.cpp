@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.49 2004-04-28 21:54:48 brodsom Exp $
+ *  $Id: alloc.cpp,v 1.50 2004-05-12 19:17:09 brodsom Exp $
  *
  */
 
@@ -217,33 +217,33 @@ MemoryStats MemoryPool::default_stats_group;
 MemoryPool* MemoryPool::processMemoryPool = MemoryPool::createPool();
 
 
-void MemoryPool::setStatsGroup(MemoryStats &stats)
+void MemoryPool::setStatsGroup(MemoryStats &statsL)
 {
 	lock.enter();
 	const size_t sav_used_memory = used_memory;
 	const size_t sav_mapped_memory = mapped_memory;
 	decrement_mapping(sav_mapped_memory);
 	decrement_usage(sav_used_memory);
-	this->stats = &stats;
+	this->stats = &statsL;
 	increment_mapping(sav_mapped_memory);
 	increment_usage(sav_used_memory);	
 	lock.leave();
 }
 
-MemoryPool::MemoryPool(MemoryPool* _parent, MemoryStats &_stats,
+MemoryPool::MemoryPool(MemoryPool* parentL, MemoryStats &statsL,
 	void *first_extent, void *root_page) :
-	parent_redirect(_parent != NULL),
+	parent_redirect(parentL != NULL),
 	freeBlocks((InternalAllocator*)this, root_page),
 	extents((MemoryExtent *)first_extent), 
 	needSpare(false),
 	pendingFree(NULL),
 	mapped_memory(0),
 	used_memory(0),
-	parent(_parent),
+	parent(parentL),
 	parent_redirected(NULL),
 	os_redirected(NULL),
 	redirect_amount(0),
-	stats(&_stats)
+	stats(&statsL)
 {
 }
 

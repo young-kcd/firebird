@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: fb_atomic.h,v 1.2 2004-03-28 09:10:08 robocop Exp $
+ *  $Id: fb_atomic.h,v 1.3 2004-05-12 19:17:09 brodsom Exp $
  *
  */
  
@@ -52,19 +52,19 @@ class AtomicCounter
 public:
 	typedef LONG counter_type;
 	
-	AtomicCounter(counter_type value = 0) : counter(value) {}
+	AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
 			
-	counter_type exchangeAdd(counter_type value) {
-		return InterlockedExchangeAdd(&counter, value);
+	counter_type exchangeAdd(counter_type val) {
+		return InterlockedExchangeAdd(&counter, val);
 	}
 	
-	counter_type operator +=(counter_type value) {
-		return exchangeAdd(value) + value;
+	counter_type operator +=(counter_type val) {
+		return exchangeAdd(val) + val;
 	}
 	
-	counter_type operator -=(counter_type value) {
-		return exchangeAdd(-value) - value;
+	counter_type operator -=(counter_type val) {
+		return exchangeAdd(-val) - val;
 	}
 	
 	counter_type operator ++() {

@@ -1287,20 +1287,20 @@ ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda,
 //
 //	Helper functions for cleanup().
 //
-static void free_all_databases(dsql_dbb*& databases)
+static void free_all_databases(dsql_dbb*& databasesL)
 {
-	while (databases) {
-		dsql_dbb* database = databases;
-		databases = database->dbb_next;
+	while (databasesL) {
+		dsql_dbb* database = databasesL;
+		databasesL = database->dbb_next;
 		gds__free(database);
 	}
 }
 
-static void free_all_statements(stmt*& statements)
+static void free_all_statements(stmt*& statementsL)
 {
-	while (statements) {
-		stmt* statement = statements;
-		statements = statement->stmt_next;
+	while (statementsL) {
+		stmt* statement = statementsL;
+		statementsL = statement->stmt_next;
 		gds__free(statement);
 	}
 }

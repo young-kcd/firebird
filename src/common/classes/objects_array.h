@@ -83,17 +83,17 @@ namespace Firebird
 		};
 	public:
 		void insert(int index, const T& item) {
-			T* data = FB_NEW(this->getPool()) T(this->getPool(), item);
-			inherited::insert(index, data);
+			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
+			inherited::insert(index, dataL);
 		}
 		int add(const T& item) {
-			T* data = FB_NEW(this->getPool()) T(this->getPool(), item);
-			return inherited::add(data);
+			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
+			return inherited::add(dataL);
 		};
 		T& add() {
-			T* data = FB_NEW(this->getPool()) T(this->getPool());
-			inherited::add(data);
-			return *data;
+			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
+			inherited::add(dataL);
+			return *dataL;
 		};
 		void push(const T& item) {
 			add(item);

@@ -185,9 +185,9 @@ public:
 		return data[count];
 	}
 	// prepare array to be used as a buffer of capacity items
-	T* getBuffer(int capacity) {
-		ensureCapacity(capacity);
-		count = capacity;
+	T* getBuffer(int capacityL) {
+		ensureCapacity(capacityL);
+		count = capacityL;
 		return data;
 	}
 	// clear array and release dinamically allocated memory
