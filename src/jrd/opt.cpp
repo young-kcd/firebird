@@ -1418,14 +1418,12 @@ static void check_sorts(RecordSelExpr* rse)
 
 		if (project && (project->nod_count == group->nod_count)) {
 			jrd_nod** project_ptr = project->nod_arg;
-			for (const jrd_nod* const* const project_end = 
-				project_ptr + project->nod_count; 
-				project_ptr < project_end; project_ptr++) 
+			const jrd_nod* const* const project_end = project_ptr + project->nod_count;
+			for (; project_ptr < project_end; project_ptr++) 
 			{
 				const jrd_nod* const* group_ptr = group->nod_arg;
-				for (const jrd_nod* const* const group_end = 
-					group_ptr + group->nod_count; 
-					group_ptr < group_end; group_ptr++) 
+				const jrd_nod* const* const group_end = group_ptr + group->nod_count;
+				for (; group_ptr < group_end; group_ptr++) 
 				{
 					if (map_equal(*group_ptr, *project_ptr, sub_rse->nod_arg[e_agg_map])) {
 						break;
@@ -1448,12 +1446,13 @@ static void check_sorts(RecordSelExpr* rse)
 		// for sort, except that sort may have fewer fields than group by.
 		if (!project && sort && (sort->nod_count <= group->nod_count)) {
 			const jrd_nod* const* sort_ptr = sort->nod_arg;
-			for (const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count; 
+			const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
+			for (; 
 				sort_ptr < sort_end; sort_ptr++) 
 			{
 				const jrd_nod* const* group_ptr = group->nod_arg;
-				for (const jrd_nod* const* group_end = group_ptr + sort->nod_count; 
-					group_ptr < group_end; group_ptr++)
+				const jrd_nod* const* const group_end = group_ptr + sort->nod_count;
+				for (; group_ptr < group_end; group_ptr++)
 				{
 					if (map_equal(*group_ptr, *sort_ptr, sub_rse->nod_arg[e_agg_map])) {
 						break;
@@ -1484,13 +1483,12 @@ static void check_sorts(RecordSelExpr* rse)
 
 	if (sort && project && (sort->nod_count <= project->nod_count)) {
 		const jrd_nod* const* sort_ptr = sort->nod_arg;
-		for (const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
-			 sort_ptr < sort_end; sort_ptr++) 
+		const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
+		for (; sort_ptr < sort_end; sort_ptr++) 
 		{
 			const jrd_nod* const* project_ptr = project->nod_arg;
-			for (const jrd_nod* const* const project_end =
-				project_ptr + sort->nod_count;
-				project_ptr < project_end; project_ptr++)
+			const jrd_nod* const* const project_end = project_ptr + sort->nod_count;
+			for (; project_ptr < project_end; project_ptr++)
 			{
 				if ((*sort_ptr)->nod_type == nod_field
 					&& (*project_ptr)->nod_type == nod_field
