@@ -1,3 +1,109 @@
+2003-02-07 19:54  brodsom
+
+	* firebird2/src/dudley/: ddl.cpp, ddl.h, exe.epp, extract.epp,
+	generate.cpp, hsh.cpp, lex.cpp, parse.cpp, trn.cpp:
+	
+	Remove JPN_ defines
+
+2003-02-07 19:48  brodsom
+
+	* firebird2/src/remote/srvr_w32.cpp:
+	
+	Put var decl inside ifdef (remove unused warning)
+
+2003-02-07 19:45  brodsom
+
+	* firebird2/src/: dsql/preparse.cpp, dsql/parse.y, dsql/parse.cpp,
+	intl/kanji.h:
+	
+	Remove JPN_ defines
+
+2003-02-07 16:23  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Remove NEXT remaining ifdefs
+
+2003-02-07 16:22  brodsom
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Remove ultrix remaining ifdefs
+
+2003-02-07 16:20  brodsom
+
+	* firebird2/src/alice/exe.cpp:
+	
+	Remove PC_PLATFORM remaining ifdef
+
+2003-02-07 16:07  brodsom
+
+	* firebird2/src/intl/ld.h:
+	
+	Remove MS_DOS and __LDSYS_H
+
+2003-02-07 15:41  kkuznetsov
+
+	* firebird2/src/: jrd/ib_stdio.h, pipe/head.cpp:
+	
+	Fix compile error if without sfio
+
+2003-02-07 15:38  kkuznetsov
+
+	* firebird2/src/include/firebird.h:
+	
+	Some commits for SOLX86
+
+2003-02-07 13:58  brodsom
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Make default parameters values for non forced writes mode depend on
+	the platform
+
+2003-02-07 11:29  brodsom
+
+	* firebird2/src/: remote/ntoh.cpp, isql/isql_win.cpp:
+	
+	More mangled preprocessor directives
+
+2003-02-07 11:01  brodsom
+
+	* firebird2/src/remote/: faux.cpp, faux.h:
+	
+	Remove unused code
+
+2003-02-07 10:54  brodsom
+
+	* firebird2/src/jrd/isc_cray.cpp:
+	
+	Remove unused code
+
+2003-02-07 10:40  brodsom
+
+	* firebird2/src/qli/: compile.cpp, eval.cpp, exe.cpp, expand.cpp,
+	parse.cpp:
+	
+	Add return NULL when needed
+
+2003-02-07 10:33  brodsom
+
+	* firebird2/src/utilities/install_reg.cpp:
+	
+	Remove unused var
+
+2003-02-07 09:47  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	New config options.
+
+2003-02-07 04:43  brodsom
+
+	* firebird2/src/: utilities/analyse.cpp, remote/faux.cpp:
+	
+	Correct broken includes
+
 2003-02-06 20:47  brodsom
 
 	* firebird2/src/jrd/pio.h:
