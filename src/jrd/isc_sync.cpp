@@ -461,7 +461,7 @@ int ISC_event_wait(SSHORT	count,
    we never actually make use of it.  This implementation wont
    support it anyway as Solaris doesn't provide a "wait for one
    of a series of conditions" function */
-	fb_assert(count == 1);
+	assert(count == 1);
 
 /* If we're not blocked, the rest is a gross waste of time */
 
@@ -683,7 +683,7 @@ int ISC_event_post(EVENT event)
 #ifdef HP10
 
 	{
-		fb_assert(ret == -1);
+		assert(ret == -1);
 		gds__log
 			("ISC_event_post: pthread_cond_broadcast failed with errno = %d",
 			 errno);
@@ -729,7 +729,7 @@ int ISC_event_wait(
    we never actually make use of it.  This implementation wont
    support it anyway as Solaris doesn't provide a "wait for one
    of a series of conditions" function */
-	fb_assert(count == 1);
+	assert(count == 1);
 
 /* If we're not blocked, the rest is a gross waste of time */
 
@@ -2422,7 +2422,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 		return NULL;
 	}
 
-	fb_assert(length <= buf.shm_segsz);
+	assert(length <= buf.shm_segsz);
 	if (length < buf.shm_segsz)
 		if (length) {
 			if (shmctl(shmid, IPC_RMID, &buf) == -1) {
@@ -3197,7 +3197,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 	state = pthread_mutex_init(mutex->mtx_mutex, pthread_mutexattr_default);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #endif /* linux */
@@ -3225,7 +3225,7 @@ int ISC_mutex_lock(MTX mutex)
 	state = pthread_mutex_lock(mutex->mtx_mutex);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -3271,7 +3271,7 @@ int ISC_mutex_lock_cond(MTX mutex)
 	if (state == 1)
 		return 0;
 
-	fb_assert(state == -1);		/* if state is not 0 or 1, it should be -1 */
+	assert(state == -1);		/* if state is not 0 or 1, it should be -1 */
 	return errno;
 
 #else
@@ -3301,7 +3301,7 @@ int ISC_mutex_unlock(MTX mutex)
 	state = pthread_mutex_unlock(mutex->mtx_mutex);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
