@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.39 2003-02-15 02:05:01 hippoman Exp $
+ * $Id: ddl.cpp,v 1.40 2003-02-15 15:10:20 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -183,16 +183,6 @@ static void BLKCHK(const void* p, USHORT type)
 #define PRE_ERASE_TRIGGER	5
 #define POST_ERASE_TRIGGER	6
 
-#define HAS_OLD_CONTEXT(value) \
-	(((((value + 1) >> 1) & 3) != 1) && \
-	((((value + 1) >> 3) & 3) != 1) && \
-	((((value + 1) >> 5) & 3) != 1))
-
-#define HAS_NEW_CONTEXT(value) \
-	(((((value + 1) >> 1) & 3) != 3) && \
-	((((value + 1) >> 3) & 3) != 3) && \
-	((((value + 1) >> 5) & 3) != 3))
-
 #define OLD_CONTEXT		"OLD"
 #define NEW_CONTEXT		"NEW"
 #define TEMP_CONTEXT		"TEMP"
@@ -234,6 +224,23 @@ static const UCHAR nonnull_validation_blr[] = {
 };
 
 ASSERT_FILENAME
+
+static inline bool hasOldContext(int value)
+{
+	int val1 = ((value + 1) >> 1) & 3;
+	int val2 = ((value + 1) >> 3) & 3;
+	int val3 = ((value + 1) >> 5) & 3;
+	return (val1 && val1 != 1) || (val2 && val2 != 1) || (val3 && val3 != 1);
+}
+
+static inline bool hasNewContext(int value)
+{
+	int val1 = ((value + 1) >> 1) & 3;
+	int val2 = ((value + 1) >> 3) & 3;
+	int val3 = ((value + 1) >> 5) & 3;
+	return (val1 && val1 != 3) || (val2 && val2 != 3) || (val3 && val3 != 3);
+}
+
 
 void DDL_execute(DSQL_REQ request)
 {
@@ -2802,7 +2809,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 		}
 
 		temp = relation_node->nod_arg[e_rln_alias];
-		if (HAS_OLD_CONTEXT(trig_type))
+		if (hasOldContext(trig_type))
 		{
 			relation_node->nod_arg[e_rln_alias] =
 				(DSQL_NOD) MAKE_cstring(OLD_CONTEXT);
@@ -2813,7 +2820,7 @@ static void define_trigger( DSQL_REQ request, DSQL_NOD node)
 			request->req_context_number++;
 		}
 
-		if (HAS_NEW_CONTEXT(trig_type))
+		if (hasNewContext(trig_type))
 		{
 			relation_node->nod_arg[e_rln_alias] =
 				(DSQL_NOD) MAKE_cstring(NEW_CONTEXT);
