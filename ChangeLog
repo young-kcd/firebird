@@ -1,3 +1,126 @@
+2004-05-07 00:09  brodsom
+
+	* firebird2/src/jrd/: pag.cpp (1.73), shut.cpp (1.25), sort.cpp
+	(1.65), utl_proto.h (1.15), jrd.cpp (1.159), llio.cpp (1.21),
+	common.h (1.114), gds.cpp (1.134), gds_proto.h (1.33),
+	os/posix/unix.cpp (1.26):
+	
+	-Macro cleaning
+
+2004-05-07 00:06  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.163):
+	
+	Fix bug with slow MERGE
+	
+	Fix bug with FULL JOIN and IS NULL in where clause.    SELECT *
+	FROM TableX FULL OUTER JOIN TableY ON (...) WHERE TableY IS NULL
+
+2004-05-06 20:07  brodsom
+
+	* firebird2/src/: jrd/why.cpp (1.65), jrd/jrd.h (1.96),
+	jrd/llio.cpp (1.20), jrd/log.cpp (1.17), jrd/log.h (1.8),
+	jrd/log2.h (1.4), jrd/msg.h (1.5), jrd/msg_encode.h (1.3),
+	jrd/que.h (1.5), jrd/rng.h (1.8), jrd/sbm.h (1.8), jrd/scl.epp
+	(1.52), jrd/sort.cpp (1.64), jrd/status.cpp (1.12), jrd/status.h
+	(1.4), jrd/thd.h (1.21), jrd/tra.cpp (1.69), jrd/jrd.cpp (1.158),
+	jrd/isc_sync.cpp (1.85), jrd/align.h (1.6), jrd/btr.cpp (1.86),
+	jrd/constants.h (1.16), jrd/err.cpp (1.43), jrd/filte_proto.h
+	(1.8), jrd/filters.cpp (1.36), dsql/errd.cpp (1.30), misc/codes.epp
+	(1.13), remote/inet.cpp (1.104), remote/inet_server.cpp (1.39),
+	remote/remote.h (1.32), include/gen/msg_facs.h (1.7):
+	
+	-Replace define with const -Remove ifdef cplusplus from internal
+	code -Remove unused macros
+
+2004-05-06 17:01  brodsom
+
+	* firebird2/src/utilities/drop.cpp (1.26):
+	
+	Lost commit ("SUNOS4" was defined previously in file_params.h
+	whenever "sun" is defined)
+
+2004-05-06 14:49  eku
+
+	* firebird2/builds/posix/prefix.sinixz (1.24):
+	
+	Updated compiler flags.
+
+2004-05-06 13:40  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.9):
+	
+	mirroring all compiler options from other platforms
+
+2004-05-06 10:42  alexpeshkoff
+
+	* firebird2/src/common/classes/stack.h (1.7):
+	
+	fixed bug in split()
+
+2004-05-06 10:42  alexpeshkoff
+
+	* firebird2/src/jrd/: grant.epp (1.36), grant_proto.h (1.12),
+	scl.epp (1.51), scl_proto.h (1.18):
+	
+	use UCHAR instead of char for ACLs again
+
+2004-05-06 10:41  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.52):
+	
+	use START*/END_CHECK_FOR_EXCEPTIONS macros again
+
+2004-05-06 10:40  alexpeshkoff
+
+	* firebird2/src/jrd/file_params.h (1.19):
+	
+	minor bug fix
+
+2004-05-06 10:40  alexpeshkoff
+
+	* firebird2/src/jrd/: execute_statement.cpp (1.9),
+	execute_statement.h (1.6):
+	
+	fixed problems with diagnostics
+
+2004-05-06 10:39  alexpeshkoff
+
+	* firebird2/src/jrd/dyn_def.epp (1.68):
+	
+	use better typedef name
+
+2004-05-06 10:38  alexpeshkoff
+
+	* firebird2/src/utilities/drop.cpp (1.25):
+	
+	fixed const conversion bug
+
+2004-05-06 07:54  eku
+
+	* firebird2/src/extern/editline/editline.c (1.3):
+	
+	Fixed lots of warnings.
+
+2004-05-06 07:46  eku
+
+	* firebird2/src/dsql/parse.y (1.134):
+	
+	Fixed compiler error: cannot convert `dsql_nod**' to `dsql_nod*' in
+	initialization
+
+2004-05-06 03:29  brodsom
+
+	* firebird2/src/jrd/file_params.h (1.18):
+	
+	-Replace define with const
+
+2004-05-06 02:18  brodsom
+
+	* firebird2/src/jrd/: svc.cpp (1.117), svc.h (1.28):
+	
+	-Replace define with const
+
 2004-05-05 23:53  brodsom
 
 	* firebird2/src/: jrd/sort.cpp (1.63), jrd/svc.cpp (1.116),
