@@ -31,6 +31,8 @@
 
 #include "../jrd/os/path_utils.h"
 
+#define CONFIG_FILE "firebird.conf"
+
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
 	easy-to-use abilities to work with complex configurations, a decision
@@ -54,17 +56,57 @@ class ConfigRoot
 	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
 
+private:
+	void GetRoot() {
+#ifdef DEV_BUILD
+		if (getRootFromEnvironment("FIREBIRD_DEV")) {
+			return;
+		}
+#endif
+		if (getRootFromEnvironment("FIREBIRD"))	{
+			return;
+		}
+		osConfigRoot();
+	}
+
 public:
-	ConfigRoot();
+	ConfigRoot() {
+		GetRoot();
+		config_file = root_dir + string(CONFIG_FILE);
+	}
+
+
 	virtual ~ConfigRoot() {}
 
-	const char *getRootDirectory() const;
+	const char *getRootDirectory() const {
+		return root_dir.c_str();
+	}
+
 
 protected:
-	const char *getConfigFile() const;
+	const char *getConfigFile() const {
+		return config_file.c_str();
+	}
+
 	
 private:
-	string root_dir;
+	string root_dir, config_file;
+	void addSlash() {
+		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
+		{
+			root_dir += PathUtils::dir_sep;
+		}
+	}
+	bool getRootFromEnvironment(const char* envName) {
+		const char* envValue = getenv(envName);
+		if(! envValue) {
+			return false;
+		}
+		root_dir = envValue;
+		addSlash();
+		return true;
+	}
+	void osConfigRoot();
 
 	// copy prohibition
 	ConfigRoot(const ConfigRoot&);

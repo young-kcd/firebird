@@ -28,20 +28,17 @@
 #include "fb_string.h"
 
 #include "../jrd/os/config_root.h"
-#include "../jrd/os/path_utils.h"
 #include "../utilities/install/registry.h"
 
-// config_file works with OS case-sensitivity
 typedef Firebird::PathName string;
-
-static const char *CONFIG_FILE = "firebird.conf";
 
 /******************************************************************************
  *
  *	Platform-specific root locator
  */
+namespace {
 
-void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
+bool getRootFromRegistry(string& root)
 {
 	HKEY hkey;
 	DWORD type;
@@ -49,37 +46,41 @@ void getRootFromRegistry(TEXT *buffer, DWORD buffer_length)
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
 		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
 	{
-		return;
+		return false;
 	}
 
-	RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, NULL, &type,
-		reinterpret_cast<UCHAR*>(buffer), &buffer_length);
+	DWORD bufsize = MAXPATHLEN;
+	char buffer[MAXPATHLEN];
+	long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, 
+		NULL, &type, reinterpret_cast<UCHAR*>(buffer), &bufsize);
 	RegCloseKey(hkey);
+	if (RegRC == ERROR_SUCCESS) {
+		root = buffer;
+		return true;
+	}
+	return false;
 }
 
-ConfigRoot::ConfigRoot()
+}
+
+void ConfigRoot::osConfigRoot()
 {
-	TEXT buffer[MAXPATHLEN];
-
-	buffer[0] = 0;
-
 	// check the registry first
 #if !defined(EMBEDDED)
-	getRootFromRegistry(buffer, sizeof(buffer));
-#endif
-	if (buffer[0])
+	if (getRootFromRegistry(root_dir))
 	{
-		root_dir = buffer;
-		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
-		{
-			root_dir += PathUtils::dir_sep;
-		}
+		addSlash();
 		return;
 	}
+#endif
 
 	// get the pathname of the running executable
-	GetModuleFileName(NULL, buffer, sizeof(buffer));
-	string bin_dir = buffer;
+	string bin_dir;
+	{
+		char buffer[MAXPATHLEN];
+		GetModuleFileName(NULL, buffer, sizeof(buffer));
+		bin_dir = buffer;
+	}
 	
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);
@@ -95,15 +96,4 @@ ConfigRoot::ConfigRoot()
 	// go to the parent directory
 	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
 	root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
-}
-
-const char *ConfigRoot::getRootDirectory() const
-{
-	return root_dir.c_str();
-}
-
-const char *ConfigRoot::getConfigFile() const
-{
-	static string file = root_dir + string(CONFIG_FILE);
-	return file.c_str();
 }
