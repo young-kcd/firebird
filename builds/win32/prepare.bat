@@ -50,27 +50,13 @@ for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 @md qli 2>nul
 @%FIREBIRD%\bin\gbak -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
 @cd ..
-@echo Running SED
-@del expand.sed
-@call :SED yachts.lnk %DB_PATH% metadata.fdb
-@call :SED ODS.RDB %DB_PATH% jrd/security.fdb
-@call :SED msg.fdb %DB_PATH% msgs/msg.fdb
-@call :SED help.fdb %DB_PATH% qli/help.fdb
-@call :SED security.fdb %DB_PATH% jrd/security.fdb
-@call :SED empbuild.gdb %DB_PATH% example5/employee.fdb
 
 @echo.
 @echo Completed Preparations for build
 @echo You many now continue by running BUILD_ALL.BAT
 @echo.
 
-
 @goto :END
-
-::===========
-:SED
-@echo s?\"%1\"?\"localhost:%2/builds/win32/dbs/%3\"?g >> expand.sed
-@goto :EOF
 
 ::===========
 :HELP

@@ -14,6 +14,12 @@
 
 ::===========
 :MAIN
+::provisional, copy all fdbs to the same directory
+cp dbs\metadata.fdb %ROOT_PATH%\generated\yachts.lnk
+cp dbs\jrd\security.fdb %ROOT_PATH%\generated\security.fdb
+cp dbs\msgs\msg.fdb %ROOT_PATH%\generated\msg.fdb
+cp dbs\qli\help.fdb %ROOT_PATH%\generated\help.fdb
+
 @if "%1"=="BOOT" (set BOOTBUILD=1) else (set BOOTBUILD=0)
 @echo.
 @call :CHECKTOOLS
@@ -26,23 +32,19 @@
 :PREPROCESS
 @echo Processing %1/%2.epp
 @del ..\..\generated\%1\%2.cpp
-@sed -f expand.sed ..\..\src\%1\%2.epp > sed.tmp
-@copy sed.tmp ..\..\generated\%1\%2.epp
-@del sed.tmp
 @echo Calling GPRE for %1/%2.epp
 @if "%3"=="" (call :GPRE_M %1 %2) else (call :GPRE_GDS %1 %2)
-@del ..\..\generated\%1\%2.epp
 @echo.
 @goto :EOF
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw ..\..\generated\%1\%2.epp ..\..\generated\%1\%2.cpp
+@%GPRE% -n -m -raw ..\..\src\%1\%2.epp ..\..\generated\%1\%2.cpp -b localhost:%DB_PATH%/generated/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids ..\..\generated\%1\%2.epp ..\..\generated\%1\%2.cpp
+@%GPRE% -n -gds -raw -ids ..\..\src\%1\%2.epp ..\..\generated\%1\%2.cpp -b localhost:%DB_PATH%/generated/
 goto :EOF
 
 ::=====================================

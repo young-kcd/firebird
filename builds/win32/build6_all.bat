@@ -38,7 +38,7 @@
 @cd ..
 @move msvc6\release\build_msg\build_msg.exe .
 @move msvc6\release\codes\codes.exe .
-@build_msg
+@build_msg -D %DB_PATH%/generated/msg.fdb
 @codes ..\..\src\include\gen
 @echo Building BLR Table
 @call blrtable.bat
