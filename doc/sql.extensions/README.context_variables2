@@ -1,0 +1,16 @@
+RDB$GET_CONTEXT('<namespace>', '<variable>')
+
+<namespace> and <variable> are VARCHAR(80) here, result of the function is VARCHAR(255)
+
+Namespaces and variable names are case-sensitive. I propose the following initial namespace names 'SYS_SESSION' for built-in immutable session variables, 'SYS_TRANSACTION' for built-in immutable transaction variables, 'USER_SESSION' and 'USER_TRANSACTION' for mutable user variables. Later we can add more namespaces as necessary, such as 'SECURE_SESSION' for immutable variables defined by the login trigger. Idea is that namespace name should determine properties for all variables it contains, whether they can be set and by whom.
+
+The following variables may be added initially to 'SYS_SESSION':
+'DB_NAME' - current database ID as used for isc_info_db_id
+
+The following variables may be added in the beginning to 'SYS_TRANSACTION':
+'ISOLATION' - 'READ COMMITTED'/'SNAPSHOT'/'CONSISTENCY'. Triggers and procedures may actually need to behave differently in different isolation modes. For example, I have a lot of procedures which are not expected to work correctly when executed in READ COMMITTED isolation mode. It would be nice to be able to check for that.
+
+Another function:
+RDB$SET_CONTEXT('<namespace>', '<variable>', '<value>')
+
+This function may be used to set context variables in 'USER_SESSION' and 'USER_TRANSACTION' namespace. To prevent use of context variables for DoS attacks we need to limit number of variables in one context to something like 1000. If namespace is not known or doesn't allow variables to be set exception is thrown.
