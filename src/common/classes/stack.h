@@ -32,7 +32,7 @@
 
 namespace Firebird {
 
-	template <typename Object, int Capacity = 16>
+	template <typename Object, size_t Capacity = 16>
 		class Stack : public AutoStorage
 	{
 	private:
@@ -74,12 +74,12 @@ namespace Firebird {
 				return this->data[--this->count];
 			}
 
-			Object getObject(int pos) const
+			Object getObject(size_t pos) const
 			{
 				return this->data[pos];
 			}
 
-			void split(int elem, Entry* target) 
+			void split(size_t elem, Entry* target) 
 			{
 				fb_assert(elem > 0 && elem < this->count);
 				fb_assert(target->count == 0);
@@ -163,7 +163,7 @@ namespace Firebird {
 			// Merge/Split pair of functions
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
-			int elem;
+			size_t elem;
 
 		public:
 			explicit iterator(Stack<Object, Capacity>& s)
@@ -261,7 +261,7 @@ namespace Firebird {
 		private:
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
-			int elem;
+			size_t elem;
 
 		public:
 			explicit const_iterator(const Stack<Object, Capacity>& s)
@@ -463,8 +463,8 @@ namespace Firebird {
 			}
 		}
 
-		int getCount() const {
-			int rc = 0;
+		size_t getCount() const {
+			size_t rc = 0;
 			for (Entry* entry = stk; entry; entry = entry->next)
 			{
 				rc += entry->getCount();
