@@ -24,7 +24,3 @@ cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\dyn\dyn4.c
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\dyn\dyn5.c 
 cl %CLFLAGS% %ROOT_PATH%\lib\gds32_ms.lib %ROOT_PATH%\examples\dyn\dynfull.c 
 cd %ROOT_PATH%\examples\build_win32
-
-::cd %ROOT_PATH%\examples\dyn
-::nmake -f msvc6.mak all
-::cd %ROOT_PATH%\examples\build_win32
