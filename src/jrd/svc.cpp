@@ -368,13 +368,17 @@ static const serv services[] =
 	{ isc_action_svc_backup, "Backup Database", NULL, "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
 	{ isc_action_svc_restore, "Restore Database", NULL, "bin/gbak",	reinterpret_cast<PFN_SERV_t>(MAIN_GBAK), 0 },
 	{ isc_action_svc_repair, "Repair Database", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0 },
+#if (!defined(WIN_NT) && !defined(SUPERSERVER))
 	{ isc_action_svc_add_user, "Add User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
 	{ isc_action_svc_delete_user, "Delete User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
 	{ isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
 	{ isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	reinterpret_cast<PFN_SERV_t>(MAIN_GSEC), 0 },
+#endif
 	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	reinterpret_cast<PFN_SERV_t>(MAIN_GFIX), 0 },
+#if (!defined(WIN_NT) && !defined(SUPERSERVER))
 	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
 	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	reinterpret_cast<PFN_SERV_t>(MAIN_GSTAT), 0 },
+#endif
 	{ isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	reinterpret_cast<PFN_SERV_t>(SVC_read_ib_log), 0 },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, NULL,	reinterpret_cast<PFN_SERV_t>(TEST_THREAD), 0 },
@@ -1920,9 +1924,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 			break;
 
 	if (!serv->serv_name)
-		ERR_post(isc_svcnotdef, isc_arg_string,
-				 SVC_err_string(const_cast < char *>(serv->serv_name),
-								strlen(serv->serv_name)), 0);
+		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
