@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.9 2003-11-25 23:41:55 bellardo Exp $
+#$Id: postfix.darwin,v 1.1.2.10 2003-11-26 00:32:50 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -102,6 +102,8 @@ darwin_finish_ss_framework: extlib
 	mkdir -p $(FB_FW)/Resources/bin
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
 	cp ../gen/firebird/bin/fbserver $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fbmgr.bin $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
