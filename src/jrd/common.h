@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.68 2003-04-09 08:57:09 brodsom Exp $
+$Id: common.h,v 1.69 2003-04-10 07:06:20 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -200,6 +200,10 @@ int shutdown(int s, int how);
 typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #define __LINE__IS_INT
+#define SLONGFORMAT	"ld"
+#define ULONGFORMAT "lu"
+#define XLONGFORMAT "lX"
+#define xLONGFORMAT "lx"
 #endif /* SINIXZ */
 
 /*****************************************************
