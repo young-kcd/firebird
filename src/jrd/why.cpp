@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.7 2003-01-04 17:18:27 skidder Exp $
+$Id: why.cpp,v 1.8 2003-01-15 12:11:31 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -90,7 +90,6 @@ $Id: why.cpp,v 1.7 2003-01-04 17:18:27 skidder Exp $
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -228,11 +227,6 @@ static void check_status_vector(STATUS *, STATUS);
 static STATUS error(STATUS *, STATUS *);
 static STATUS error2(STATUS *, STATUS *);
 static void event_ast(UCHAR *, USHORT, UCHAR *);
-#ifdef EVENTS_WILDCARDING
-#if defined(PIPE_CLIENT) || defined(SUPERCLIENT)
-static void event_ast_stub(UCHAR *, USHORT, UCHAR *);
-#endif /* PIPE_CLIENT || SUPERCLIENT */
-#endif /* EVENTS_WILDCARDING */
 static void exit_handler(EVENT);
 static WHY_TRA find_transaction(WHY_DBB, WHY_TRA);
 static void free_block(void*);
@@ -3970,33 +3964,9 @@ STATUS API_ROUTINE GDS_QUE_EVENTS(STATUS * user_status,
 	STATUS local[ISC_STATUS_LENGTH], *status;
 	WHY_ATT database;
 
-	/* Simple structure that incapsulates the real arguments
-	   that should be passed to the AST stub  */
-#ifdef EVENTS_WILDCARDING
-	struct {
-    	void (*ast)();
-    	void *arg;
-	} *ast_arg = NULL;
-#endif /* EVENTS_WILDCARDING */
-
 	GET_STATUS;
 	database = *handle;
 	CHECK_HANDLE(database, HANDLE_database, isc_bad_db_handle);
-	
-
-	/* Substitute real AST and argument with the stub and the above structure */
-
-#ifdef EVENTS_WILDCARDING
-#if defined(PIPE_CLIENT) || defined(SUPERCLIENT)
-	ast_arg = gds__alloc(sizeof(void*) * 2);
-	if (ast_arg) {
-		ast_arg->arg = arg;
-		ast_arg->ast = ast;
-		ast = event_ast_stub;
-		arg = ast_arg;
-	}
-#endif /* PIPE_CLIENT || SUPERCLIENT */
-#endif /* EVENTS_WILDCARDING */
 
 	subsystem_enter();
 
@@ -5360,55 +5330,6 @@ static void event_ast(UCHAR * buffer, USHORT length, UCHAR * items)
 }
 #endif
 
-
-#ifdef EVENTS_WILDCARDING
-#if defined(PIPE_CLIENT) || defined(SUPERCLIENT)
-static void event_ast_stub(UCHAR * buffer,  USHORT length, UCHAR * items)
-{
-/**************************************
- *
- *	e v e n t _ a s t _ s t u b
- *
- **************************************
- *
- * Functional description
- *	We've got the detailed EPB passed,
- *  so we must parse it and let client
- *  think that it's the original one.
- *
- * This mechanism has been implemented
- * to support events wildcarding. The
- * stub passes 'length' argument decremented
- * by the length of the detailed part
- * of EPB. So all existing software should
- * keep living.
- *
- **************************************/
-
-	USHORT i;
-	UCHAR *p = items, *end = items + length;
-
-	struct {
-		void (*ast)();
-		void *arg;
-	} *q = buffer;
-
-	p++;
-	while (p < end && *p) {
-		i = (USHORT) *p++;
-		p += i;
-		p += sizeof (SLONG);
-	}
-	p++;
-
-	length -= *(USHORT*)(p);
-
-	(q->ast)(q->arg, length, items);
-
-	gds__free(q);
-}
-#endif /* PIPE_CLIENT || SUPERCLIENT */
-#endif /* EVENTS_WILDCARDING */
 
 #ifndef REQUESTER
 static void exit_handler(EVENT why_event)
