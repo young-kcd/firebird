@@ -129,9 +129,10 @@ public:
 
     SERVICE_STATUS service_status;
 
-	int m_LastError;		//Set this when an error is thrown and test
-							//in ShowError. Otherwise we get more error 
-							//dialogues than can be humanly coped with.
+	int m_Error_Status;		//This is set by the calls to SERVICES_
+							//and is also set by GetLastError()
+							//It is tested in ShowError to prevent
+							//the same error message being reported.
 
 	struct STATUS			//This stores the current status
 	{

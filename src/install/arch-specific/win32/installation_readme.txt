@@ -19,7 +19,7 @@ the server service from being shut down if the
 uninstaller is run from there. 
 
 This only applies to the uninstaller with RC2 from 
-Firebird on Sourceforge. The RC4 installable binaries 
+Firebird on Sourceforge. Later installable binaries 
 can be uninstalled via any available means.
 
 **       END      **
@@ -79,8 +79,8 @@ o The rules for library installation have changed
     attitude to override the above.
 
 
-o If firebird.conf exists in the installation 
-  directory it is saved as:
+o If an ameneded firebird.conf exists in the 
+  installation directory it is saved as:
     firebird.conf.saved.n
   where n is a number. The installer always installs 
   the default firebird.conf file. This is to guarantee
@@ -102,13 +102,13 @@ o Firebird 1.0 reserved a new registry key for
   However, it is preferable if you rebuild your 
   application to read the new key.
   
-o Firebird 1.5 release candidates installed the 
+o Earlier Firebird 1.5 release candidates installed 
   fbclient.dll in the <system> directory. This
-  practice is now deprecated. The installer will
-  remove the fbclient.dll during the install. Again, 
-  you can copy it back if you need it. However 
-  it is preferable if you rebuild your applications 
-  to work with the new usage of fbclient.
+  practice is now deprecated. An option to install 
+  it into the <system> directory is available at 
+  install time. However, it is preferable if you 
+  rebuild your applications to conform  to the new 
+  usage of fbclient.
   
 
 Uninstallation
@@ -241,4 +241,19 @@ following parameters may be passed:
   Don't install a copy of the client library into
   the system directory, even if installation 
   analysis concludes it is OK to do so.
+
+
+/COPYFBCLIENT
+
+  Copy the fbclient.dll to the system directory. This 
+  is recommended for client installs if you are sure 
+  that you will only ever be accessing a single 
+  server version. If your client applications are 
+  likely to take advantage of accessing different 
+  server versions this is not recommended. See
+
+    doc/README.Win32LibraryInstallation.txt
+
+  for more information.
+
 

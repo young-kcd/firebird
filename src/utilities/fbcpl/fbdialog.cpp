@@ -528,7 +528,8 @@ void CFBDialog::ApplyChanges()
 			new_settings.AutoStart = fb_status.AutoStart;
 		
 		
-/*		//Do we use Super Server or Classic
+#ifdef MANAGE_CLASSIC
+		//Do we use Super Server or Classic
 		bool ChangeServerArchitecture = false;
 		ChangeServerArchitecture = ( ( (bool) !fb_status.UseClassic && m_Classic_Server.GetCheck() ) || 
 			( (bool) fb_status.UseClassic && m_Super_Server.GetCheck() ) );
@@ -545,8 +546,8 @@ void CFBDialog::ApplyChanges()
 		{
 			new_settings.ServiceExecutable = m_SS_Server_Name;
 		}
+#endif
 
-*/
 		//Do we change Guardian Usage?
 		bool ChangeGuardianUse = false;
 		ChangeGuardianUse = ( ( (bool) !fb_status.UseGuardian && m_Use_Guardian.GetCheck() ) || 
@@ -583,6 +584,7 @@ void CFBDialog::ApplyChanges()
 			else
 				AppRemove();
 		}
+
 		
 		// b) update firebird.conf
 		if ( ChangeGuardianUse )
@@ -590,14 +592,20 @@ void CFBDialog::ApplyChanges()
 			SetGuardianUseInConf( new_settings.UseGuardian );
 		}
 
-/*		if ( ChangeServerArchitecture )
+#ifdef MANAGE_CLASSIC
+		if ( ChangeServerArchitecture )
 		{
 			SetPreferredArchitectureInConf( new_settings.UseClassic );
 		}
-*/
+#endif
 
 		// c) install the new configuration
-		if ( ChangeRunStyle || ChangeGuardianUse /* || ChangeServerArchitecture */)
+		if ( ChangeRunStyle || ChangeGuardianUse 
+#ifdef MANAGE_CLASSIC
+
+			 || ChangeServerArchitecture 
+#endif
+			)
 		{
 			
 			if ( new_settings.UseService )
@@ -607,7 +615,6 @@ void CFBDialog::ApplyChanges()
 			else
 			{
 				ConfigureRegistryForApp( new_settings.AutoStart );
-
 			}
 		}
 		else
@@ -629,8 +636,8 @@ void CFBDialog::ApplyChanges()
 		if ( m_Reset_Display_To_Existing_Values == false )
 			DisableApplyButton();
 
-		//And finally reset the m_LastError to zero;
-		m_LastError = 0;
+		//And finally reset the m_error_status to zero;
+		m_Error_Status = 0;
 
 	}
 	catch ( ... )
@@ -680,7 +687,8 @@ void CFBDialog::ResetCheckBoxes(CFBDialog::STATUS status)
 	
 	m_Use_Guardian.SetCheck(status.UseGuardian);
 
-/*	if ((status.UseClassic) )
+#ifdef MANAGE_CLASSIC
+	if ((status.UseClassic) )
 	{
 		m_Classic_Server.SetCheck(1);
 		m_Super_Server.SetCheck(0);
@@ -690,7 +698,7 @@ void CFBDialog::ResetCheckBoxes(CFBDialog::STATUS status)
 		m_Classic_Server.SetCheck(0);
 		m_Super_Server.SetCheck(1);
 	}
-*/
+#endif
 
 	// The server can now be controlled by a specific 
 	// username/password. If it is set then for now we 
@@ -791,9 +799,10 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 		{
 			try
 			{
-				if (SERVICES_start (hScManager, service, display_name, 0, svc_error)
-					==FB_SUCCESS)
+				m_Error_Status = SERVICES_start (hScManager, service, display_name, 0, svc_error);
+				if (m_Error_Status == FB_SUCCESS)
 					result = true;
+					
 			}
 			catch( ... ) 
 			{
@@ -850,15 +859,14 @@ bool CFBDialog::ServerStop()
 				BeginWaitCursor();
 #endif
 				OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
-				if (hScManager)
-					SERVICES_stop(hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME, svc_error);
 
-				// If things are out of sync there is a slight possibility 
-				// that the guardian may be running, so let's try and stop that too.
-				if (hScManager)
-					SERVICES_stop(hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME, svc_error);
+				if (fb_status.UseGuardian)
+					m_Error_Status = SERVICES_stop(hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME, svc_error);
+				else
+					m_Error_Status = SERVICES_stop(hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME, svc_error);
+
+				result = !m_Error_Status;
 		
-				result = true;
 			}
 			catch (...) 
 			{
@@ -888,6 +896,8 @@ bool CFBDialog::ServerStop()
 #endif
 		}
 	}
+
+
 	return result;
 }
 
@@ -905,7 +915,6 @@ void CFBDialog::KillApp()
 bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 							   
 {
-	USHORT	result;
 	char * ServerPath = const_cast<char *> ((LPCTSTR)m_Root_Path);
 
 	OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
@@ -914,11 +923,10 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 	{
 		if (new_settings.UseGuardian) 
 		{
-			result = FB_SUCCESS;
-			result = SERVICES_install (hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+			m_Error_Status = SERVICES_install (hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 				ISCGUARD_EXECUTABLE, ServerPath, NULL, status.AutoStart,
 				NULL, NULL, svc_error);
-			if (result != FB_SUCCESS)
+			if (m_Error_Status != FB_SUCCESS)
 			{
 				CloseServiceManager();
 				return false;
@@ -929,11 +937,11 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			
 		}
 		/* do the install of server */
-		result = SERVICES_install (hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
+		m_Error_Status = SERVICES_install (hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 			const_cast<char *> ((LPCTSTR) status.ServiceExecutable), 
 			ServerPath, NULL, status.AutoStart, 
 			NULL, NULL, svc_error);
-		if (result != FB_SUCCESS)
+		if (m_Error_Status != FB_SUCCESS)
 		{
 			CloseServiceManager();
 			try
@@ -959,23 +967,23 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 
 bool CFBDialog::ServiceRemove()
 {
-	USHORT	status;
 
 	OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 	if (hScManager)
 	{
 		
-		status = SERVICES_remove (hScManager, ISCGUARD_SERVICE, 
+		m_Error_Status = SERVICES_remove (hScManager, ISCGUARD_SERVICE, 
 			ISCGUARD_DISPLAY_NAME, svc_error);
-		if (status == IB_SERVICE_RUNNING)
+		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
 			return false;
 		}
+
 		
-		status = SERVICES_remove (hScManager, REMOTE_SERVICE, 
+		m_Error_Status = SERVICES_remove (hScManager, REMOTE_SERVICE, 
 			REMOTE_DISPLAY_NAME, svc_error);
-		if (status == IB_SERVICE_RUNNING)
+		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
 			return false;
@@ -1063,12 +1071,13 @@ bool CFBDialog::AppRemove()
 }
 
 
-static USHORT svc_error (SLONG	status, TEXT *string, SC_HANDLE	service)
+static USHORT svc_error (SLONG	error_status, TEXT *string, SC_HANDLE service)
+//This code is for use with the SERVICES_ functions
 {
 	bool RaiseError = true;
 
 	// process the kinds of errors we may be need to deal with quietly
-	switch ( status )
+	switch ( error_status )
 	{
 		case ERROR_SERVICE_CANNOT_ACCEPT_CTRL:
 			RaiseError = false;
@@ -1082,13 +1091,14 @@ static USHORT svc_error (SLONG	status, TEXT *string, SC_HANDLE	service)
 	}
 
 	if (RaiseError)
-		CFBDialog::HandleSvcError(status, string);
+		 CFBDialog::HandleSvcError(error_status, string);
 	
 	if (service != NULL)
 		CloseServiceHandle (service);
 
-	return (USHORT) status;
+	return error_status;
 }
+
 
 void CFBDialog::ProcessMessages()
 {
@@ -1108,43 +1118,48 @@ void CFBDialog::ProcessMessages()
 	return;
 }
 
-void CFBDialog::HandleSvcError(SLONG status, TEXT *string )
+
+void CFBDialog::HandleSvcError(SLONG error_status, TEXT *string )
+// This method supports the static svc_error() function
+// and essentially duplicates HandleError. Oh to be rid of the 
+// legacy code.
 {
+	if (!error_status)
+		error_status = GetLastError();
 
 	LPTSTR lpMsgBuf;
-	DWORD error_code = GetLastError();
 	DWORD Size;
 	CString error_title = "";
-
+	
 	Size = FormatMessage( 
 		FORMAT_MESSAGE_ALLOCATE_BUFFER | 
 		FORMAT_MESSAGE_FROM_SYSTEM | 
 		FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL,
-		error_code,
+		error_status,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
 		(LPTSTR) &lpMsgBuf,	0, NULL );
-
-	error_title.Format("Error Code %d raised in %s",error_code, (LPCTSTR) string );
+	
+	error_title.Format("Error Code %d raised in %s",error_status, (LPCTSTR) string );
 	::MessageBox( NULL, lpMsgBuf, (LPCTSTR) error_title, MB_OK | MB_ICONINFORMATION );
 	LocalFree( lpMsgBuf );
 
 }
 
+
 void CFBDialog::HandleError(bool silent, TEXT *string )
 {
 	
 	DWORD error_code = GetLastError();
-	if (error_code == m_LastError)
+	if (error_code == m_Error_Status)
 	{
 		//Always be silent if error has not already been thrown.
 		silent = true;
 	}
 	else
 	{
-		m_LastError = error_code;
+		m_Error_Status = error_code;
 	}
-
 
 
 	if (silent)
@@ -1177,8 +1192,6 @@ void CFBDialog::HandleError(bool silent, TEXT *string )
 
 void CFBDialog::ShowError( LPTSTR lpMsgBuf, CString error_title )
 {
-//	::MessageBox( NULL, lpMsgBuf, (LPCTSTR) error_title, MB_OK | MB_ICONINFORMATION );
-
 	CFBDialog::MessageBox( lpMsgBuf, (LPCTSTR) error_title, MB_OK | MB_ICONINFORMATION );
 }
 
@@ -1677,6 +1690,7 @@ bool CFBDialog::GetPreferredArchitecture()
 	return (bool) option;
 }
 #endif
+
 
 bool CFBDialog::UserHasSufficientRights()
 {

@@ -85,11 +85,6 @@ LINK32=link.exe
 # ADD BASE LINK32 fbclient.lib shlwapi.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /out:"c:\winnt\system32\Firebird2Control.cpl" /pdbtype:sept /libpath:"..\..\..\temp\debug\fbclient"
 # ADD LINK32 shlwapi.lib mfc42d.lib mfcs42d.lib th32.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\fb2control\Firebird2Control.cpl" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
-# Begin Special Build Tool
-TargetPath=\Firebird\firebird_15\temp\debug\fb2control\Firebird2Control.cpl
-SOURCE="$(InputPath)"
-PostBuild_Cmds=copy $(TargetPath) %windir%\system32
-# End Special Build Tool
 
 !ENDIF 
 
