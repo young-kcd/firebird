@@ -1,3 +1,29 @@
+2003-07-01 21:20  brodsom
+
+	* firebird2/builds/win32/build6_all.bat:
+	
+	New dsp's to replace nmake's
+
+2003-07-01 20:49  brodsom
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw,
+	fbclient_static.dsp:
+	
+	New dsp's to replace nmake's
+
+2003-07-01 20:45  brodsom
+
+	* firebird2/builds/win32/msvc6/: build_msg.dsp, codes.dsp:
+	
+	New dsp's to replace nmake's
+
+2003-07-01 19:09  brodsom
+
+	* firebird2/builds/win32/msvc6/: common_static.dsp,
+	fbclient_static.dsp, gpre_static.dsp, Firebird2.dsw:
+	
+	New dsp's to replace nmake's
+
 2003-06-30 20:12  brodsom
 
 	* firebird2/: builds/win32/prepare.bat, src/msgs/include.epp:
