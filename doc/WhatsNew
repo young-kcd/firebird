@@ -1,4 +1,135 @@
   **************
+  * v1.5.1
+  **************
+
+    * Fixed unregistered bug.
+        -n option of GBAK is ignored for NOT NULL contraints.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed bug SF #750659.
+        Metadata backup and generator values.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Memory leak in the Services API.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Interdependent views cannot be restored properly.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed v1.5 bug.
+        Wrong mapping of COUNT(*) in a HAVING clause when used with IN, ANY/SOME, ALL.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #919246.
+        Exception/freeze in gds32.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #918653.
+        NULLS FIRST doesn't work in unions.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Memory leak in conversion from string to blob.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #750664.
+        Problems with generators in a read-only database.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Memory leak in isc_database_info().
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        Restore performance regression.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bugs SF #627057, #922602.
+        Wrong invariant dependencies tracking logic.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Server crashes on NULL in LIKE ESCAPE.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        Solved a number of problems with the win32 lock manager.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Length of string types containing binary data (OCTETS) is determined incorrectly in UDFs.
+      Contributor(s):
+        Fred Polizo Jr. <fpolizo at users.sourceforge.net>
+
+    * New port.
+        Introduced AMD64 port.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        Memory leak in EXECUTE STATEMENT.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed v1.5 bug.
+        Problem with searching firebird.conf in $FIREBIRD on win32.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed bug QC #7449.
+        UDF arguments are prepared/optimized twice.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Generator pages are not flushed properly.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug QC #7496.
+        Memory leak in SPs when aggregation errors are handled in a WHEN block.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed SF bug #784121.
+        Expression evaluation is not supported in LEFT JOIN.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Server crashes when views and selectable procedures are intermixed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved win32 installation utilities.
+        Added a service description string to the services configuration info.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed v1.5 bug.
+        Memory corruptions in the API implementation.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+  **************
   * v1.5 Final
   **************
 
