@@ -552,6 +552,10 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 #else
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
 #endif
+	TEXT alias_buffer[MAXPATHLEN];
+	TEXT file_name_buffer[MAXPATHLEN];
+	TEXT temp_buffer[MAXPATHLEN];
+	extern bool ResolveDatabaseAlias(char*, char*);
 
 	SSHORT first;
 	STATUS temp_status[ISC_STATUS_LENGTH], *status;
@@ -573,9 +577,31 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 		return handle_error(user_status, gds_bad_db_handle, 0);
 	}
 
+/* Resolve given alias name */
+
+	if (file_length)
+	{
+		memcpy(temp_buffer, file_name, file_length);
+		temp_buffer[file_length] = '\0';
+	}
+	else
+	{
+		strcpy(temp_buffer, file_name);
+	}
+	strcpy(alias_buffer, temp_buffer);
+	strupr(alias_buffer);
+	bool is_alias = ResolveDatabaseAlias(alias_buffer, temp_buffer);
+	file_name = temp_buffer;
+	file_length = strlen(file_name);
+	if (is_alias)
+	{
+		ISC_expand_filename(temp_buffer, sizeof(temp_buffer), file_name_buffer);
+		expanded_filename = file_name_buffer;
+	}
+
 /* Get length of database file name, if not already known */
 
-	SSHORT fl = (file_length) ? file_length : strlen(file_name);
+	SSHORT fl = file_length;
 	SSHORT length_expanded = strlen(expanded_filename);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
@@ -682,6 +708,9 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 	tdbb->tdbb_attachment = attachment = new(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
+	attachment->att_filename = (is_alias) ?
+		copy_string(alias_buffer, strlen(alias_buffer)) :
+		copy_string(file_name_buffer, strlen(file_name_buffer));
 
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -1804,6 +1833,7 @@ STATUS DLL_EXPORT GDS_CREATE_DATABASE(STATUS*	user_status,
 
 	tdbb->tdbb_attachment = attachment = new(*dbb->dbb_permanent) att();
 	attachment->att_database = dbb;
+	attachment->att_filename = copy_string(expanded_name, strlen(expanded_name));
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -4642,8 +4672,8 @@ static STATUS check_database(TDBB tdbb, ATT attachment, STATUS * user_status)
 		*ptr++ = gds_arg_gds;
 		*ptr++ = gds_shutdown;
 		*ptr++ = gds_arg_cstring;
-		*ptr++ = dbb->dbb_filename->str_length;
-		string = reinterpret_cast < char *>(dbb->dbb_filename->str_data);
+		*ptr++ = attachment->att_filename->str_length;
+		string = reinterpret_cast<char*>(attachment->att_filename->str_data);
 		*ptr++ = (STATUS) string;
 		*ptr = gds_arg_end;
 		return error(user_status);

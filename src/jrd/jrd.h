@@ -188,8 +188,8 @@ public:
 
 	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
-	vec*		dbb_text_objects;	/* intl text type descriptions */
-	vec*		dbb_charsets;	/* intl character set descriptions */
+ 	vec*		dbb_text_objects;	/* intl text type descriptions */
+ 	vec*		dbb_charsets;	/* intl character set descriptions */
 	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
@@ -385,6 +385,7 @@ public:
 	vec*		att_compatibility_table;	// hash table of compatible locks
 	class vcl*	att_val_errors;
 	class str*	att_working_directory;	// Current working directory is cached
+	class str*	att_filename;			// alias used to attach the database
 };
 typedef att* ATT;
 

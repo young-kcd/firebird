@@ -57,9 +57,6 @@
 #include "../jrd/err_proto.h"
 
 
-extern "C" {
-
-
 /*
  * The variable DBSERVER_BASE_LEVEL was originally IB_MAJOR_VER but with
  * the change to Firebird this number could no longer be used.
@@ -194,7 +191,7 @@ int INF_database_info(
 	TDBB tdbb;
 	DBB dbb;
 	TRA transaction;
-	FIL file;
+	STR file;
 	SCHAR item, *end_items, *end, buffer[256], *p, *q;
 	SCHAR site[256];
 	SSHORT length, l;
@@ -496,10 +493,10 @@ int INF_database_info(
 			break;
 
 		case gds_info_db_id:
-			file = dbb->dbb_file;
+			file = tdbb->tdbb_attachment->att_filename;
 			STUFF(p, 2);
-			*p++ = l = file->fil_length;
-			for (q = file->fil_string; *q;)
+			*p++ = l = file->str_length;
+			for (q = reinterpret_cast<SCHAR*>(file->str_data); *q;)
 				*p++ = *q++;
 			ISC_get_host(site, sizeof(site));
 			*p++ = l = strlen(site);
@@ -749,6 +746,7 @@ int INF_database_info(
  *
  **************************************/
 	DBB dbb;
+	ATT att;
 	STR file;
 	SCHAR item, *end_items, *end, buffer[256], *p, *q;
 	SCHAR site[256];
@@ -758,6 +756,8 @@ int INF_database_info(
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
+	att = tdbb->tdbb_attachment;
+
 	CHECK_DBB(dbb);
 
 	end_items = items + item_length;
@@ -838,7 +838,7 @@ int INF_database_info(
 			break;
 
 		case gds_info_db_id:
-			file = dbb->dbb_filename;
+			file = att->att_filename;
 			STUFF(p, 2);
 			*p++ = l = file->str_length;
 			for (q = file->str_data; *q;)
@@ -1130,6 +1130,3 @@ static USHORT get_counts(USHORT count_id, UCHAR * buffer, USHORT length)
 	return p - buffer;
 }
 #endif
-
-
-} // extern "C"
