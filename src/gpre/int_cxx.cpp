@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.37 2004-10-03 04:43:43 robocop Exp $
+//	$Id: int_cxx.cpp,v 1.38 2004-10-03 20:18:09 skidder Exp $
 //
 
 #include "firebird.h"
@@ -650,11 +650,7 @@ static void gen_variable( const act* action, int column)
 
 static void make_port( gpre_port* port, int column)
 {
-	// CVC: C++ compliance with constructors.
-	if (isLangCpp(gpreGlob.sw_language))
-		printa(column, "struct isc_%d_t {", port->por_ident);
-	else
-		printa(column, "struct {");
+	printa(column, "struct {");
 
 	for (REF reference = port->por_references; reference;
 		 reference = reference->ref_next)

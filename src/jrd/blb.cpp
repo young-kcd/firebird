@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.90 2004-10-01 21:12:46 skidder Exp $
+$Id: blb.cpp,v 1.91 2004-10-03 20:18:11 skidder Exp $
 */
 
 #include "firebird.h"
@@ -930,7 +930,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 							ERR_post(isc_bad_segstr_id, 0);
 						}
 					}
-					source = reinterpret_cast<bid*>(&blobIndex->bli_blob_id);
+					source = &blobIndex->bli_blob_id;
 					continue;
 				}
 				else {
@@ -963,7 +963,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		// If we didn't find materialized blob in transaction blob index it 
 		// means memory structures are inconsistent and crash is appropriate 
 		blobIndex->bli_materialized = true;
-		blobIndex->bli_blob_id = *reinterpret_cast<ISC_QUAD*>(destination);
+		blobIndex->bli_blob_id = *destination;
 		// Assign temporary BLOB ownership to top-level request if it is not assigned yet
 		jrd_req* own_request;
 		if (blobIndex->bli_request) {
@@ -1010,6 +1010,7 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		UCHAR *fromstr = 0;
 		bid temp_bid;
 		DSC blob_desc;
+		temp_bid.clear();
 		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
 		blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid);
 		blob_desc.dsc_length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
