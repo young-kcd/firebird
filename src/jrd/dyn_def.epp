@@ -3861,16 +3861,14 @@ void DYN_define_trigger(GBL		gbl,
 
 		b_ending_store = true;
 
-/* the sed script dyn_def.sed adds the foll. lines of code to the
-   dyn_def.c file.
+/* the END_STORE_SPECIAL adds the foll. lines of code to the END_STORE
    if (ignore_perm)
        ((JRD_REQ)request)->req_flags |= req_ignore_perm;
    after the request is compiled and before the request is sent.
    It makes the current request (to define the trigger) go through
    without checking any permissions lower in the engine */
 
-        MARKER_FOR_SED_SCRIPT
-	END_STORE;
+	END_STORE_SPECIAL;
 
 	if (ignore_perm)
 		((JRD_REQ) request)->req_flags &= ~req_ignore_perm;

@@ -82,11 +82,6 @@ goto :EOF
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
 @for %%i in (dba, security) do @call :PREPROCESS utilities %%i
 
-@sed -f ..\..\src\jrd\dyn_def.sed ..\..\generated\jrd\dyn_def.cpp > sed.tmp
-@del ..\..\generated\jrd\dyn_def.cpp
-@copy sed.tmp ..\..\generated\jrd\dyn_def.cpp
-@del sed.tmp
-
 @goto :EOF
 
 ::=================
