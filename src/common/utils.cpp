@@ -31,7 +31,7 @@
 // Utility functions
 
 
-#if defined(LINUX) || defined(MINGW)
+#if defined(LINUX) || defined(MINGW) || defined(FREEBSD)
 #define __need_size_t
 #include <stddef.h>
 #undef __need_size_t
