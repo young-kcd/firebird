@@ -4455,6 +4455,10 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 	// AB: Pass select-items for distinct operation again, because for 
 	// sub-selects a new contextnumber should be generated
 	if (input->nod_arg[e_sel_distinct]) {
+		if (update_lock) {
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+					  gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+		}
 		if (node = input->nod_arg[e_sel_list]) {
 			++request->req_in_select_list;
 			target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(request, node);
@@ -4467,7 +4471,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 				explode_asterisk(*ptr, aggregate, &stack);
 			}
 			target_rse->nod_arg[e_rse_reduced] = MAKE_list(stack);
-		}
+		}		
 	}
 
 /* Unless there was a parent, we're done */
