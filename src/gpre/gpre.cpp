@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.31 2003-09-08 11:27:51 robocop Exp $
+//  $Id: gpre.cpp,v 1.32 2003-09-10 19:48:53 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -91,16 +91,16 @@ extern int lib$get_foreign();
 #define FOPEN_WRITE_TYPE	"w"
 #endif
 
-static BOOLEAN		all_digits(char *);
-static int			arg_is_string(SLONG, TEXT **, TEXT *);
+static bool			all_digits(char *);
+static bool			arg_is_string(SLONG, TEXT **, TEXT *);
 static SSHORT		compare_ASCII7z(char *, char *);
 static SLONG		compile_module(SLONG,TEXT*);
-static BOOLEAN		file_rename(TEXT *, TEXT *, TEXT *);
+static bool			file_rename(TEXT *, TEXT *, TEXT *);
 #ifdef GPRE_FORTRAN
 static void			finish_based(ACT);
 #endif
 static int			get_char(IB_FILE *);
-static BOOLEAN		get_switches(int, TEXT **, const in_sw_tab_t*, SW_TAB, TEXT **);
+static bool			get_switches(int, TEXT **, const in_sw_tab_t*, SW_TAB, TEXT **);
 static TOK			get_token();
 static int			nextchar();
 static SLONG		pass1(TEXT*);
@@ -254,7 +254,8 @@ int main(int argc, char* argv[])
 	TEXT*	p;
 	TEXT	spare_file_name[256];
 	TEXT	spare_out_file_name[256];
-	BOOLEAN renamed, explicit_;
+	bool renamed;
+	bool explicitt;
 	const ext_table_t* ext_tab;
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 #ifdef VMS
@@ -312,18 +313,17 @@ int main(int argc, char* argv[])
 	DBB db = NULL;
 
 	sw_language			= lang_undef;
-	sw_lines			= TRUE;
-	sw_auto				= TRUE;
-	sw_cstring			= TRUE;
-	sw_alsys			= FALSE;
-	sw_external			= FALSE;
-	sw_gen_sql			= FALSE;
-	sw_standard_out		= FALSE;
-	sw_ansi				= FALSE;
-	sw_dsql				= FALSE;
-	sw_d_float			= sw_version = FALSE;
+	sw_lines			= true;
+	sw_auto				= true;
+	sw_cstring			= true;
+	sw_alsys			= false;
+	sw_external			= false;
+	sw_standard_out		= false;
+	sw_ansi				= false;
+	sw_version			= false;
+	sw_d_float			= false;
 	sw_sql_dialect		= SQL_DIALECT_V5;
-	dialect_specified	= 0;
+	dialect_specified	= false;
 	sw_window_scope		= DBB_GLOBAL;
 	gen_routine			= C_CXX_action;
 	comment_start		= "/*";
@@ -340,12 +340,12 @@ int main(int argc, char* argv[])
 	default_lc_ctype	= NULL;
 	default_lc_messages	= NULL;
 	text_subtypes		= NULL;
-	override_case		= 0;
+	override_case		= false;
 
 	sw_know_interp = FALSE;
 	sw_interp = 0;
 //  FSG 14.Nov.2000 
-	sw_verbose = FALSE;
+	sw_verbose = false;
 	sw_sql_dialect = compiletime_db_dialect = SQL_DIALECT_V5;
 
 //  
@@ -522,7 +522,7 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_E:
-			sw_case = TRUE;
+			sw_case = true;
 			break;
 
 #ifdef GPRE_ADA
@@ -532,10 +532,10 @@ int main(int argc, char* argv[])
 #else
 			ada_null_address = "0";
 #endif
-			sw_case = TRUE;
+			sw_case = true;
 			sw_language = lang_ada;
-			sw_lines = FALSE;
-			sw_cstring = FALSE;
+			sw_lines = false;
+			sw_cstring = false;
 			gen_routine = ADA_action;
 			utility_name = "isc_utility";
 			count_name = "isc_count";
@@ -550,11 +550,11 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_ALSYS:
-			sw_alsys = TRUE;
-			sw_case = TRUE;
+			sw_alsys = true;
+			sw_case = true;
 			sw_language = lang_ada;
-			sw_lines = FALSE;
-			sw_cstring = FALSE;
+			sw_lines = false;
+			sw_cstring = false;
 			gen_routine = ADA_action;
 			utility_name = "isc_utility";
 			count_name = "isc_count";
@@ -572,10 +572,10 @@ int main(int argc, char* argv[])
 
 #ifdef GPRE_FORTRAN
 		case IN_SW_GPRE_F:
-			sw_case = TRUE;
+			sw_case = true;
 			sw_language = lang_fortran;
-			sw_lines = FALSE;
-			sw_cstring = FALSE;
+			sw_lines = false;
+			sw_cstring = false;
 			gen_routine = FTN_action;
 #ifdef sun
 			comment_start = "*      ";
@@ -595,38 +595,38 @@ int main(int argc, char* argv[])
 
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_ANSI:
-			sw_ansi = TRUE;
+			sw_ansi = true;
 			break;
 
 		case IN_SW_GPRE_COB:
-			sw_case = TRUE;
+			sw_case = true;
 			sw_language = lang_cobol;
 			comment_stop = " ";
-			sw_lines = FALSE;
-			sw_cstring = FALSE;
+			sw_lines = false;
+			sw_cstring = false;
 			gen_routine = COB_action;
 			break;
 #endif
 
 #ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
-			sw_case			= TRUE;
+			sw_case			= true;
 			sw_language		= lang_pascal;
-			sw_lines		= FALSE;
-			sw_cstring		= FALSE;
+			sw_lines		= false;
+			sw_cstring		= false;
 			gen_routine		= PAS_action;
 			comment_start	= "(*";
 			comment_stop	= "*)";
 			break;
 #endif
 		case IN_SW_GPRE_D_FLOAT:
-			sw_d_float = TRUE;
+			sw_d_float = true;
 			break;
 
 		case IN_SW_GPRE_G:
 			sw_language			= lang_internal;
 			gen_routine			= INT_action;
-			sw_cstring			= FALSE;
+			sw_cstring			= false;
 			transaction_name	= "dbb->dbb_sys_trans";
 			sw_know_interp		= TRUE;
 			sw_interp			= ttype_metadata;
@@ -649,7 +649,7 @@ int main(int argc, char* argv[])
  			**/
 			sw_language = lang_internal;
 			gen_routine = C_CXX_action;
-			sw_cstring = TRUE;
+			sw_cstring = true;
 			transaction_name = "gds_trans";
 			sw_know_interp = FALSE;
 			sw_interp = 0;
@@ -661,36 +661,36 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_I:
-			sw_ids = TRUE;
+			sw_ids = true;
 			break;
 
 		case IN_SW_GPRE_M:
-			sw_auto = FALSE;
+			sw_auto = false;
 			break;
 
 		case IN_SW_GPRE_N:
-			sw_lines = FALSE;
+			sw_lines = false;
 			break;
 
 		case IN_SW_GPRE_O:
-			sw_standard_out = TRUE;
+			sw_standard_out = true;
 			out_file = ib_stdout;
 			break;
 
 		case IN_SW_GPRE_R:
-			sw_raw = TRUE;
+			sw_raw = true;
 			break;
 
 		case IN_SW_GPRE_S:
-			sw_cstring = FALSE;
+			sw_cstring = false;
 			break;
 
 		case IN_SW_GPRE_T:
-			sw_trace = TRUE;
+			sw_trace = true;
 			break;
 //  FSG 14.Nov.2000 
 		case IN_SW_GPRE_VERBOSE:
-			sw_verbose = TRUE;
+			sw_verbose = true;
 			break;
 		default:
 			break;
@@ -819,13 +819,15 @@ int main(int argc, char* argv[])
     		}
 		}
 
-		renamed = explicit_ = TRUE;
+		renamed = explicitt = true;
 		if (!out_file_name) {
 			out_file_name = spare_out_file_name;
 			strcpy(spare_out_file_name, file_name);
-			if (renamed =
-				file_rename(spare_out_file_name, out_src_ext_tab->in,
-							out_src_ext_tab->out)) explicit_ = FALSE;
+			if (renamed = file_rename(spare_out_file_name, out_src_ext_tab->in,
+							out_src_ext_tab->out))
+			{
+				explicitt = false;
+			}
 		}
 
 		if (renamed) {
@@ -836,7 +838,7 @@ int main(int argc, char* argv[])
 			while (p != out_file_name && *p != '.' && *p != '/')
 #endif
 				p--;
-			if (!explicit_)
+			if (!explicitt)
 				*p = 0;
 
 			if (*p != '.') {
@@ -1169,10 +1171,9 @@ void CPR_raw_read()
 	SSHORT c;
 	SCHAR token_string[MAXSYMLEN];
 	SCHAR *p;
-	BOOLEAN continue_char;
+	bool continue_char = false;
 
 	p = token_string;
-	continue_char = FALSE;
 
 	while (c = get_char(input_file)) {
 		position++;
@@ -1190,12 +1191,12 @@ void CPR_raw_read()
 			line_position = 0;
 			if (!continue_char)
 				return;
-			continue_char = FALSE;
+			continue_char = false;
 		}
 		else {
 			line_position++;
 			if (classes[c] != CHR_WHITE)
-				continue_char = (KEYWORD(KW_AMPERSAND)) ? TRUE : FALSE;
+				continue_char = (KEYWORD(KW_AMPERSAND));
 		}
 	}
 }
@@ -1300,17 +1301,17 @@ TOK CPR_token()
 
 //____________________________________________________________
 //  
-//		Return TRUE if the string consists entirely of digits.
+//		Return true if the string consists entirely of digits.
 //  
 
-static BOOLEAN all_digits(char *str1)
+static bool all_digits(char *str1)
 {
 
 	for (; *str1; str1++)
 		if (!(classes[*str1] & CHR_DIGIT))
-			return FALSE;
+			return false;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1321,7 +1322,9 @@ static BOOLEAN all_digits(char *str1)
 //       If there is a problem, explain and return.
 //  
 
-static int arg_is_string( SLONG argc, TEXT ** argvstring, TEXT * errstring)
+static bool arg_is_string(SLONG argc,
+						  TEXT ** argvstring,
+						  TEXT * errstring)
 {
 	TEXT *str;
 
@@ -1330,10 +1333,10 @@ static int arg_is_string( SLONG argc, TEXT ** argvstring, TEXT * errstring)
 	if (!argc || *str == '-') {
 		ib_fprintf(ib_stderr, "%s", errstring);
 		print_switches();
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1439,9 +1442,9 @@ static SLONG compile_module( SLONG start_position, TEXT* base_directory)
 //		new extension is given, use it.
 //  
 
-static BOOLEAN file_rename(
-						   TEXT * file_name,
-						   TEXT * extension, TEXT * new_extension)
+static bool file_rename(TEXT * file_name,
+						TEXT * extension,
+						TEXT * new_extension)
 {
 	TEXT *p, *q, *terminator, *ext;
 
@@ -1470,7 +1473,7 @@ static BOOLEAN file_rename(
 
 	if (*p != '.') {
 		while (*terminator++ = *extension++);
-		return TRUE;
+		return true;
 	}
 
 //  
@@ -1484,7 +1487,7 @@ static BOOLEAN file_rename(
 		if (!*p) {
 			if (new_extension)
 				while (*ext++ = *new_extension++);
-			return FALSE;
+			return false;
 		}
 
 #ifndef VMS
@@ -1492,7 +1495,7 @@ static BOOLEAN file_rename(
 	while (*terminator++ = *extension++);
 #endif
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1666,11 +1669,11 @@ static int get_char( IB_FILE * file)
 //  later, even if specified here.
 //  
 
-static BOOLEAN get_switches(int			argc,
-							TEXT**		argv,
-							const in_sw_tab_t*	in_sw_table,
-							SW_TAB		sw_table,
-							TEXT**		file_array)
+static bool get_switches(int			argc,
+						 TEXT**		argv,
+						 const in_sw_tab_t*	in_sw_table,
+						 SW_TAB		sw_table,
+						 TEXT**		file_array)
 {
 	TEXT *p, *q, *string;
 	const in_sw_tab_t* in_sw_table_iterator;
@@ -1799,7 +1802,7 @@ static BOOLEAN get_switches(int			argc,
 			break;
 #endif
 		case IN_SW_GPRE_X:
-			sw_external = TRUE;
+			sw_external = true;
 			sw_table_iterator--;
 			break;
 #ifdef GPRE_COBOL
@@ -1816,8 +1819,10 @@ static BOOLEAN get_switches(int			argc,
 		case IN_SW_GPRE_D:
 			if (!arg_is_string
 				(--argc, argv,
-				 "Command line syntax: -d requires database name:\n ")) return
-					FALSE;
+				 "Command line syntax: -d requires database name:\n ")) 
+			{
+				return false;
+			}
 
 			file_array[2] = *++argv;
 			string = *argv;
@@ -1825,7 +1830,9 @@ static BOOLEAN get_switches(int			argc,
 				if (!arg_is_string
 					(--argc, argv,
 					 "Command line syntax: -d requires database name:\n "))
-						return FALSE;
+				{
+					return false;
+				}
 				else
 					file_array[2] = *++argv;
 			break;
@@ -1833,8 +1840,10 @@ static BOOLEAN get_switches(int			argc,
 		case IN_SW_GPRE_BASE:
 			if (!arg_is_string
 				(--argc, argv,
-				 "Command line syntax: -b requires database base directory:\n ")) return
-					FALSE;
+				 "Command line syntax: -b requires database base directory:\n ")) 
+			{
+				return false;
+			}
 
 			file_array[3] = *++argv;
 			string = *argv;
@@ -1842,7 +1851,9 @@ static BOOLEAN get_switches(int			argc,
 				if (!arg_is_string
 					(--argc, argv,
 					 "Command line syntax: -b requires database base directory:\n "))
-						return FALSE;
+				{
+					return false;
+				}
 				else
 					file_array[3] = *++argv;
 			break;
@@ -1853,7 +1864,7 @@ static BOOLEAN get_switches(int			argc,
 					argv,
 					"Command line syntax: -h requires handle package name\n"))
 			{
-					return FALSE;
+					return false;
 			}
 			strcpy(ada_package, *++argv);
 			strcat(ada_package, ".");
@@ -1865,14 +1876,14 @@ static BOOLEAN get_switches(int			argc,
 					argv,
 					"Command line syntax: -sqlda requires NEW\n "))
 			{
-				return FALSE;
+				return false;
 			}
 
 			if (**argv != 'n' || **argv != 'N') {
 				ib_fprintf(ib_stderr,
 						   "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();
-				return FALSE;
+				return false;
 			}
 			break;
 
@@ -1884,7 +1895,7 @@ static BOOLEAN get_switches(int			argc,
 						argv,
 						"Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n "))
 				{
-					return FALSE;
+					return false;
 				}
 				++argv;
 				inp = atoi(*argv);
@@ -1892,12 +1903,12 @@ static BOOLEAN get_switches(int			argc,
 					ib_fprintf(ib_stderr,
 							   "Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n ");
 					print_switches();
-					return FALSE;
+					return false;
 				}
 				else {
 					sw_sql_dialect = inp;
 				}
-				dialect_specified = 1;
+				dialect_specified = true;
 				break;
 			}
 
@@ -1905,7 +1916,7 @@ static BOOLEAN get_switches(int			argc,
 			if (!sw_version) {
 				ib_printf("gpre version %s\n", GDS_VERSION);
 			}
-			sw_version = TRUE;
+			sw_version = true;
 			break;
 
 		case IN_SW_GPRE_0:
@@ -1913,7 +1924,7 @@ static BOOLEAN get_switches(int			argc,
 				ib_fprintf(ib_stderr, "gpre: unknown switch %s\n", string);
 			}
 			print_switches();
-			return FALSE;
+			return false;
 
 		case IN_SW_GPRE_USER:
 			if (!arg_is_string(
@@ -1921,7 +1932,7 @@ static BOOLEAN get_switches(int			argc,
 					argv,
 					"Command line syntax: -user requires user name string:\n "))
 			{
-				return FALSE;
+				return false;
 			}
 			default_user = *++argv;
 			break;
@@ -1932,7 +1943,7 @@ static BOOLEAN get_switches(int			argc,
 					argv,
 					"Command line syntax: -password requires password string:\n "))
 			{
-				return FALSE;
+				return false;
 			}
 			default_password = *++argv;
 			break;
@@ -1943,7 +1954,7 @@ static BOOLEAN get_switches(int			argc,
 					argv,
 					"Command line syntax: -charset requires character set name:\n "))
 			{
-				return FALSE;
+				return false;
 			}
 			default_lc_ctype = (TEXT *) * ++argv;
 			break;
@@ -1954,7 +1965,7 @@ static BOOLEAN get_switches(int			argc,
 	sw_table_iterator++;
 	sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1966,7 +1977,8 @@ static BOOLEAN get_switches(int			argc,
 static TOK get_token()
 {
 	SSHORT c, next;
-	USHORT peek, label;
+	USHORT peek;
+	bool label = false;
 	TEXT *p, *end;
 	UCHAR class_;
 	SYM symbol;
@@ -1978,7 +1990,6 @@ static TOK get_token()
 	prior_token = token;
 	prior_token.tok_position = last_position;
 
-	label = FALSE;
 	last_position =
 		token.tok_position + token.tok_length + token.tok_white_space - 1;
 	start_line = line;
@@ -2053,7 +2064,7 @@ static TOK get_token()
 		token.tok_type = tok_introducer;
 	}
 	else if (class_ & CHR_LETTER) {
-		while (TRUE) {
+		while (true) {
 			while (classes[c = nextchar()] & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || sw_language != lang_cobol)
@@ -2069,7 +2080,7 @@ static TOK get_token()
 	else if (class_ & CHR_DIGIT) {
 #ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran && line_position < 7)
-			label = TRUE;
+			label = true;
 #endif
 		while (classes[c = nextchar()] & CHR_DIGIT)
 			*p++ = (TEXT) c;
@@ -2231,7 +2242,7 @@ static TOK get_token()
 				token.tok_keyword = (KWWORDS) symbol->sym_keyword;
 			else
 				token.tok_keyword = KW_none;
-			override_case = 0;
+			override_case = false;
 		}
 	}
 	else {
@@ -2309,14 +2320,19 @@ static int nextchar()
 
 #ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran && line_position == 6 && c != ' '
-		&& c != '0') first_position = FALSE;
+		&& c != '0')
+	{
+		first_position = FALSE;
+	}
 #endif
 
 #ifdef GPRE_COBOL
 	if (sw_language == lang_cobol &&
 		(!sw_ansi && line_position == 1 && c == '-') ||
 		(sw_ansi && line_position == 7 && c == '-'))
+	{
 		first_position = FALSE;
+	}
 #endif
 
 	if (position > traced_position) {
@@ -2433,7 +2449,10 @@ static void pass2( SLONG start_position)
 {
 	SSHORT c, d, prior, comment_start_len, to_skip;
 	SLONG column, start;
-	SLONG i, line, line_pending, current;
+	SLONG i;
+	SLONG line;
+	bool line_pending;
+	SLONG current;
 	ACT action;
 
 	c = 0;
@@ -2477,9 +2496,9 @@ static void pass2( SLONG start_position)
 
 	line = 0;
 	if (sw_lines)
-		line_pending = TRUE;
+		line_pending = true;
 	else
-		line_pending = FALSE;
+		line_pending = false;
 	current = 1 + start_position;
 	column = 0;
 
@@ -2510,7 +2529,7 @@ static void pass2( SLONG start_position)
 						ib_fprintf(out_file, "\n#line %ld \"%s\"", line,
 								   file_name);
 
-					line_pending = FALSE;
+					line_pending = false;
 				}
 				if (line == 1 && c == '\n')
 					line++;
@@ -2552,7 +2571,7 @@ static void pass2( SLONG start_position)
 			}
 			else if (sw_language == lang_cobol)
 				if (continue_flag)
-					suppress_output = TRUE;
+					suppress_output = true;
 				else {
 					ib_fputc('\n', out_file);
 					ib_fputs(comment_start, out_file);
@@ -2611,7 +2630,7 @@ static void pass2( SLONG start_position)
 				ib_fputc('\n', out_file);
 		}
 
-		suppress_output = FALSE;
+		suppress_output = false;
 		(*gen_routine) (action, start);
 		if (action->act_type == ACT_routine &&
 			!action->act_object &&
@@ -2621,7 +2640,7 @@ static void pass2( SLONG start_position)
 			return;
 
 		if (sw_lines)
-			line_pending = TRUE;
+			line_pending = true;
 		column = 0;
 		to_skip = 0;
 	}
@@ -2630,14 +2649,14 @@ static void pass2( SLONG start_position)
 
 	if (!line && line_pending) {
 		ib_fprintf(out_file, "#line 1 \"%s\"\n", file_name);
-		line_pending = FALSE;
+		line_pending = false;
 	}
 
 
 	while ((c = get_char(input_file)) != EOF) {
 		if (c == '\n' && line_pending) {
 			ib_fprintf(out_file, "\n#line %ld \"%s\"", line + 1, file_name);
-			line_pending = FALSE;
+			line_pending = false;
 		}
 		if (c == EOF) {
 			CPR_error("internal error -- unexpected EOF in tail");
@@ -2738,7 +2757,7 @@ static SSHORT skip_white()
 {
 	SSHORT c, c2, next;
 
-	while (TRUE) {
+	while (true) {
 		if ((c = nextchar()) == EOF)
 			return c;
 

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.27 2003-09-08 11:27:51 robocop Exp $
+//  $Id: par.cpp,v 1.28 2003-09-10 19:48:52 brodsom Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -67,7 +67,7 @@ static jmp_buf*	PAR_jmp_buf;
 #ifdef FTN_BLK_DATA
 static void		block_data_list(DBB);
 #endif
-static BOOLEAN	match_parentheses();
+static bool		match_parentheses();
 static ACT		par_any();
 static ACT		par_array_element();
 static ACT		par_at();
@@ -122,7 +122,7 @@ static ACT		par_modify();
 static ACT		par_on();
 static ACT		par_on_error();
 static ACT		par_open_blob(ACT_T, SYM);
-static BOOLEAN	par_options(GPRE_REQ, BOOLEAN);
+static bool		par_options(GPRE_REQ, bool);
 static ACT		par_procedure();
 #ifdef PYXIS
 static TEXT*	par_quoted_string();
@@ -147,11 +147,11 @@ static ACT		par_window_suspend();
 #endif
 static ACT		scan_routine_header();
 static void		set_external_flag();
-static BOOLEAN	terminator();
+static bool		terminator();
 
 static int		brace_count;
-static int		routine_decl;
-static BOOLEAN	bas_extern_flag;
+static bool		routine_decl;
+static bool		bas_extern_flag;
 static ACT		cur_statement;
 static ACT		cur_item;
 static LLS		cur_for;
@@ -211,7 +211,7 @@ ACT PAR_action(TEXT* base_dir)
 
 		case KW_FOR:
 		/** Get the next token as it is without upcasing **/
-			override_case = 1;
+			override_case = true;
 			CPR_token();
 			break;
 
@@ -395,9 +395,9 @@ ACT PAR_action(TEXT* base_dir)
 		case KW_EXEC:
 			if (!MATCH(KW_SQL))
 				break;
-			sw_sql = TRUE;
+			sw_sql = true;
 			action = SQL_action(base_dir);
-			sw_sql = FALSE;
+			sw_sql = false;
 			return action;
 		default:
 			break;
@@ -405,7 +405,7 @@ ACT PAR_action(TEXT* base_dir)
 
 		}	// try
 		catch (const std::exception&) {
-			sw_sql = FALSE;
+			sw_sql = false;
 			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
 			token.tok_symbol = NULL;
 			return NULL;
@@ -914,12 +914,12 @@ void PAR_init()
 	cur_error = cur_fetch = cur_for = cur_modify = cur_store = cur_form =
 		cur_menu = NULL;
 	cur_statement = cur_item = NULL;
-	bas_extern_flag = FALSE;
+	bas_extern_flag = false;
 
 	cur_routine = MAKE_ACTION(0, ACT_routine);
 	cur_routine->act_flags |= ACT_main;
 	PUSH((GPRE_NOD) cur_routine, &routine_stack);
-	routine_decl = TRUE;
+	routine_decl = true;
 
 	flag_field = NULL;
 	brace_count = 0;
@@ -931,7 +931,8 @@ void PAR_init()
 //		Parse a native expression as a string.
 //  
 
-TEXT *PAR_native_value(bool array_ref, bool handle_ref)
+TEXT *PAR_native_value(bool array_ref,
+					   bool handle_ref)
 {
 	SCHAR *s2, buffer[512];
 	SCHAR *string, *s1;
@@ -1066,8 +1067,8 @@ GPRE_FLD PAR_null_field()
 	if (flag_field)
 		return flag_field;
 
-	flag_field =
-		MET_make_field("gds__null_flag", dtype_short, sizeof(SSHORT), FALSE);
+	flag_field = MET_make_field("gds__null_flag", dtype_short, sizeof(SSHORT),
+								FALSE);
 
 	return flag_field;
 }
@@ -1273,7 +1274,7 @@ static void block_data_list( DBB db)
 //		list	
 //  
 
-static BOOLEAN match_parentheses()
+static bool match_parentheses()
 {
 	USHORT paren_count;
 
@@ -1289,10 +1290,10 @@ static BOOLEAN match_parentheses()
 			else
 				ADVANCE_TOKEN;
 		}
-		return TRUE;
+		return true;
 	}
 	else
-		return FALSE;
+		return false;
 }
 
 
@@ -1321,7 +1322,7 @@ static ACT par_any()
 
 	request = MAKE_REQUEST(REQ_any);
 
-	par_options(request, TRUE);
+	par_options(request, true);
 	rec_expr = EXP_rse(request, symbol);
 	EXP_rse_cleanup(rec_expr);
 	action = MAKE_ACTION(request, ACT_any);
@@ -1413,7 +1414,7 @@ static ACT par_based()
 	ACT action;
 	TEXT s[64];
 	TEXT t_str[NAME_SIZE + 1];
-	BOOLEAN ambiguous_flag;
+	bool ambiguous_flag;
 	LLS t1, t2, hold;
 	int notSegment = 0;			/* a COBOL specific patch */
 	char tmpChar[2];			/* a COBOL specific patch */
@@ -1478,7 +1479,7 @@ static ACT par_based()
 			based_on->bas_fld_name = (STR) ALLOC(token.tok_length + 1);
 			COPY(token.tok_string, token.tok_length,
 				 (SCHAR *) based_on->bas_fld_name);
-			ambiguous_flag = FALSE;
+			ambiguous_flag = false;
 			ADVANCE_TOKEN;
 			if (MATCH(KW_DOT)) {
 				based_on->bas_db_name = based_on->bas_rel_name;
@@ -1487,13 +1488,13 @@ static ACT par_based()
 				COPY(token.tok_string, token.tok_length,
 					 (SCHAR *) based_on->bas_fld_name);
 				if (KEYWORD(KW_SEGMENT))
-					ambiguous_flag = TRUE;
+					ambiguous_flag = true;
 				ADVANCE_TOKEN;
 				if (MATCH(KW_DOT)) {
 					if (!MATCH(KW_SEGMENT))
 						PAR_error("too many qualifiers on field name");
 					based_on->bas_flags |= BAS_segment;
-					ambiguous_flag = FALSE;
+					ambiguous_flag = false;
 				}
 			}
 			if (ambiguous_flag)
@@ -1581,7 +1582,7 @@ static ACT par_begin()
 {
 
 	if (sw_language == lang_pascal) {
-		routine_decl = FALSE;
+		routine_decl = false;
 		cur_routine->act_count++;
 	}
 	return NULL;
@@ -2130,7 +2131,7 @@ static ACT par_entree()
 {
 	GPRE_REQ request;
 	ACT action;
-	USHORT first;
+	bool first;
 
 	if (!cur_menu)
 		return NULL;
@@ -2142,11 +2143,11 @@ static ACT par_entree()
 	if (request->req_flags & REQ_menu_for)
 		return NULL;
 
-	first = TRUE;
+	first = true;
 
 	for (action = request->req_actions; action; action = action->act_next)
 		if (action->act_type == ACT_menu_entree) {
-			first = FALSE;
+			first = false;
 			break;
 		}
 
@@ -2280,20 +2281,20 @@ static ACT par_for()
 	RSE rec_expr;
 	GPRE_CTX context, *ptr, *end;
 	GPRE_REL relation;
-	TEXT s[128], dup_symbol;
+	TEXT s[128];
+	bool dup_symbol;
 #ifdef PYXIS
 	if (MATCH(KW_FORM))
 		return par_form_for();
 #endif
 	symbol = NULL;
-	dup_symbol = FALSE;
+	dup_symbol = false;
 
 	if (!KEYWORD(KW_FIRST) && !KEYWORD(KW_LEFT_PAREN)) {
 		if (token.tok_symbol)
-			dup_symbol = TRUE;
+			dup_symbol = true;
 
-		symbol =
-			MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
+		symbol = MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
 		ADVANCE_TOKEN;
 
 		if (!MATCH(KW_IN)) {
@@ -2314,7 +2315,7 @@ static ACT par_for()
 
 	request = MAKE_REQUEST(REQ_for);
 
-	if (!par_options(request, TRUE) || !(rec_expr = EXP_rse(request, symbol))) {
+	if (!par_options(request, true) || !(rec_expr = EXP_rse(request, symbol))) {
 		MSC_free_request(request);
 		return NULL;
 	}
@@ -2490,10 +2491,11 @@ static ACT par_item_for( ACT_T type)
 
 	form = parent->req_form;
 
-	if (!
-		(field =
-		 FORM_lookup_field(form, form->form_object,
-						   token.tok_string))) SYNTAX_ERROR("sub-form name");
+	if (!(field = FORM_lookup_field(form, form->form_object,
+									token.tok_string)))
+	{
+		SYNTAX_ERROR("sub-form name");
+	}
 
 	ADVANCE_TOKEN;
 
@@ -2931,7 +2933,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 	BLB blob;
 	GPRE_REQ request;
 	TEXT s[128];
-	USHORT filter_is_defined = FALSE;
+	bool filter_is_defined = false;
 
 //  If somebody hasn't already parsed up a symbol for us, parse the
 //  symbol and the mandatory IN now. 
@@ -2974,7 +2976,7 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 			if (!MATCH(KW_TO))
 				SYNTAX_ERROR("TO");
 			blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
-			filter_is_defined = TRUE;
+			filter_is_defined = true;
 		}
 		else if (MATCH(KW_STREAM))
 			blob->blb_type = gds_bpb_type_stream;
@@ -3017,19 +3019,20 @@ static ACT par_open_blob( ACT_T act_op, SYM symbol)
 
 //____________________________________________________________
 //  
-//		Parse request options.  Return TRUE if successful, otherwise
-//		FALSE.  If a flag is set, don't give an error on FALSE.
+//		Parse request options.  Return true if successful, otherwise
+//		false.  If a flag is set, don't give an error on false.
 //  
 
-static BOOLEAN par_options( GPRE_REQ request, BOOLEAN flag)
+static bool par_options(GPRE_REQ request,
+						bool flag)
 {
 
 	if (!MATCH(KW_LEFT_PAREN))
-		return TRUE;
+		return true;
 
 	while (true) {
 		if (MATCH(KW_RIGHT_PAREN))
-			return TRUE;
+			return true;
 		if (MATCH(KW_REQUEST_HANDLE)) {
 			request->req_handle = PAR_native_value(false, true);
 			request->req_flags |= REQ_exp_hand;
@@ -3041,7 +3044,7 @@ static BOOLEAN par_options( GPRE_REQ request, BOOLEAN flag)
 		else {
 			if (!flag)
 				SYNTAX_ERROR("request option");
-			return FALSE;
+			return false;
 		}
 		MATCH(KW_COMMA);
 	}
@@ -3067,7 +3070,7 @@ static ACT par_procedure()
 	ACT action;
 
 	if (sw_language == lang_pascal) {
-		routine_decl = TRUE;
+		routine_decl = true;
 		action = scan_routine_header();
 		if (!(action->act_flags & ACT_decl)) {
 			PUSH((GPRE_NOD) cur_routine, &routine_stack);
@@ -3115,12 +3118,11 @@ static ACT par_ready()
 	SYM symbol;
 	RDY ready;
 	DBB db;
-	BOOLEAN need_handle;
-	USHORT default_buffers, buffers;
+	bool need_handle = false;
+	USHORT default_buffers = 0;
+	USHORT buffers;
 
 	action = MAKE_ACTION(0, ACT_ready);
-	need_handle = FALSE;
-	default_buffers = 0;
 
 	if (KEYWORD(KW_CACHE))
 		SYNTAX_ERROR("database name or handle");
@@ -3148,18 +3150,18 @@ static ACT par_ready()
 		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
 			ready->rdy_filename = PAR_native_value(false, false);
 			if (MATCH(KW_AS))
-				need_handle = TRUE;
+				need_handle = true;
 		}
 
 		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
 			if (!isc_databases || isc_databases->dbb_next || need_handle) {
-				need_handle = FALSE;
+				need_handle = false;
 				SYNTAX_ERROR("database handle");
 			}
 			ready->rdy_database = isc_databases;
 		}
 
-		need_handle = FALSE;
+		need_handle = false;
 		if (!ready->rdy_database)
 			ready->rdy_database = (DBB) symbol->sym_object;
 		if (terminator())
@@ -3474,7 +3476,7 @@ static ACT par_store()
 	GPRE_REL relation;
 
 	request = MAKE_REQUEST(REQ_store);
-	par_options(request, FALSE);
+	par_options(request, false);
 	action = MAKE_ACTION(request, ACT_store);
 	PUSH((GPRE_NOD) action, &cur_store);
 
@@ -3509,7 +3511,7 @@ static ACT par_start_stream()
 	SYM cursor;
 
 	request = MAKE_REQUEST(REQ_cursor);
-	par_options(request, FALSE);
+	par_options(request, false);
 	action = MAKE_ACTION(request, ACT_s_start);
 
 	cursor = PAR_symbol(SYM_dummy);
@@ -3747,14 +3749,15 @@ static ACT par_variable()
 	REF reference, flag;
 	GPRE_REQ request;
 	GPRE_CTX context;
-	USHORT first, dot, is_null;
+	USHORT first;
+	USHORT dot;
+	bool is_null = false;
 
 //  
 //  Since fortran is fussy about continuations and the like,
 //  see if this variable token is the first thing in a statement.
 //  
 
-	is_null = FALSE;
 	first = token.tok_first;
 	field = EXP_field(&context);
 
@@ -3764,12 +3767,12 @@ static ACT par_variable()
 	}
 
 	if (dot && MATCH(KW_NULL)) {
-		is_null = TRUE;
+		is_null = true;
 		dot = FALSE;
 	}
 
 	request = context->ctx_request;
-	reference = EXP_post_field(field, context, is_null);
+	reference = EXP_post_field(field, context, (is_null)? TRUE : FALSE);
 
 	if (field->fld_array)
 		EXP_post_array(reference);
@@ -3935,7 +3938,7 @@ static void set_external_flag()
 //		are semi-colon, ELSE, or ON_ERROR.
 //  
 
-static BOOLEAN terminator()
+static bool terminator()
 {
 
 //  For C, changed KEYWORD (KW_SEMICOLON) to MATCH (KW_SEMICOLON) to eat a
@@ -3947,19 +3950,22 @@ static BOOLEAN terminator()
 	if (sw_language == lang_c) {
 		if (MATCH(KW_SEMI_COLON) ||
 			KEYWORD(KW_ELSE) || KEYWORD(KW_ON_ERROR) || KEYWORD(KW_R_BRACE))
-			return TRUE;
+		{
+			return true;
+		}
 	}
 	else if (sw_language == lang_ada) {
 		if (MATCH(KW_SEMI_COLON) || KEYWORD(KW_ELSE) || KEYWORD(KW_ON_ERROR))
-			return TRUE;
+			return true;
 	}
 	else {
-		if (KEYWORD(KW_SEMI_COLON) ||
-			KEYWORD(KW_ELSE) ||
-			KEYWORD(KW_ON_ERROR) ||
-			(sw_language == lang_cobol && KEYWORD(KW_DOT))) return TRUE;
+		if (KEYWORD(KW_SEMI_COLON) || KEYWORD(KW_ELSE) || KEYWORD(KW_ON_ERROR) ||
+			(sw_language == lang_cobol && KEYWORD(KW_DOT)))
+		{
+			return true;
+		}
 	}
 
-	return FALSE;
+	return false;
 }
 

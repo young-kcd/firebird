@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.15 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: cmp.cpp,v 1.16 2003-09-10 19:48:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -50,7 +50,7 @@ extern TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 
 static void cmp_any(GPRE_REQ);
 static void cmp_assignment(GPRE_NOD, GPRE_REQ);
-static void cmp_blob(BLB, BOOLEAN);
+static void cmp_blob(BLB, bool);
 static void cmp_blr(GPRE_REQ);
 static void cmp_erase(ACT, GPRE_REQ);
 static void cmp_fetch(ACT);
@@ -68,7 +68,7 @@ static void cmp_port(POR, GPRE_REQ);
 static void cmp_procedure(GPRE_REQ);
 static void cmp_ready(GPRE_REQ);
 static void cmp_sdl_fudge(GPRE_REQ, SLONG);
-static BOOLEAN cmp_sdl_loop(GPRE_REQ, USHORT, SLC, ARY);
+static bool cmp_sdl_loop(GPRE_REQ, USHORT, SLC, ARY);
 static void cmp_sdl_number(GPRE_REQ, SLONG);
 static void cmp_sdl_subscript(GPRE_REQ, USHORT, SLC, ARY);
 static void cmp_sdl_value(GPRE_REQ, GPRE_NOD);
@@ -163,7 +163,7 @@ void CMP_compile_request( GPRE_REQ request)
 
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create)) {
 		for (blob = request->req_blobs; blob; blob = blob->blb_next)
-			cmp_blob(blob, TRUE);
+			cmp_blob(blob, true);
 		return;
 	}
 
@@ -319,7 +319,7 @@ void CMP_compile_request( GPRE_REQ request)
 //  Finally, assign identifiers to any blobs that may have been referenced 
 
 	for (blob = request->req_blobs; blob; blob = blob->blb_next)
-		cmp_blob(blob, FALSE);
+		cmp_blob(blob, false);
 }
 
 #ifdef PYXIS
@@ -626,7 +626,8 @@ static void cmp_assignment( GPRE_NOD node, GPRE_REQ request)
 //		Compile a blob parameter block, if required.
 //  
 
-static void cmp_blob( BLB blob, BOOLEAN sql_flag)
+static void cmp_blob(BLB blob,
+					 bool sql_flag)
 {
 	UCHAR *p;
 	REF reference;
@@ -929,7 +930,6 @@ static void cmp_for( GPRE_REQ request)
 	POR port;
 	ACT action;
 	REF reference;
-	BOOLEAN updates;
 	GPRE_CTX context;
 
 	STUFF(blr_begin);
@@ -955,13 +955,14 @@ static void cmp_for( GPRE_REQ request)
 //  Loop thru actions looking for primary port.  While we're at it,
 //  count the number of update actions. 
 
-	updates = FALSE;
+	bool updates = false;
+
 	for (action = request->req_actions; action; action = action->act_next)
 		switch (action->act_type) {
 		case ACT_modify:
 		case ACT_update:
 		case ACT_erase:
-			updates = TRUE;
+			updates = true;
 			break;
 		}
 	if (updates)
@@ -1574,17 +1575,20 @@ static void cmp_sdl_fudge( GPRE_REQ request, SLONG lower_bound)
 //____________________________________________________________
 //  
 //		Build an SDL loop for GET_SLICE/PUT_SLICE unless the upper and
-//		lower bounds are constant.  Return TRUE if a loop has been built,
-//		otherwise FALSE.
+//		lower bounds are constant.  Return true if a loop has been built,
+//		otherwise false.
 //  
 
-static BOOLEAN cmp_sdl_loop( GPRE_REQ request, USHORT index, SLC slice, ARY array)
+static bool cmp_sdl_loop(GPRE_REQ request,
+						 USHORT index,
+						 SLC slice,
+						 ARY array)
 {
 
 	slc::slc_repeat * ranges = slice->slc_rpt + index;
 
 	if (ranges->slc_upper == ranges->slc_lower) {
-		return FALSE;
+		return false;
 	}
 
 	ary::ary_repeat * bounds = array->ary_rpt + index;
@@ -1596,7 +1600,7 @@ static BOOLEAN cmp_sdl_loop( GPRE_REQ request, USHORT index, SLC slice, ARY arra
 	cmp_sdl_fudge(request, bounds->ary_lower);
 	cmp_sdl_value(request, ranges->slc_upper);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1725,7 +1729,8 @@ static void cmp_slice( GPRE_REQ request)
 	ARY array;
 	REF reference;
 	USHORT n;
-	BOOLEAN loop_flags[16], *p;
+	bool loop_flags[16];
+	bool *p;
 
 	slice = request->req_slice;
 	field = slice->slc_field;

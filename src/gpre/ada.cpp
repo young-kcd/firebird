@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.18 2003-09-05 14:55:59 brodsom Exp $
+//	$Id: ada.cpp,v 1.19 2003-09-10 19:48:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -76,7 +76,7 @@ static void	gen_ddl (ACT, int);
 static void	gen_drop_database (ACT, int);
 static void	gen_dyn_close (ACT, int);
 static void	gen_dyn_declare (ACT, int);
-static void	gen_dyn_describe (ACT, int, BOOLEAN);
+static void	gen_dyn_describe(ACT, int, bool);
 static void	gen_dyn_execute (ACT, int);
 static void	gen_dyn_fetch (ACT, int);
 static void	gen_dyn_immediate (ACT, int);
@@ -99,7 +99,7 @@ static void	gen_form_end (ACT, int);
 static void	gen_form_for (ACT, int);
 #endif
 static void	gen_function (ACT, int);
-static void	gen_get_or_put_slice (ACT, REF, BOOLEAN, int);
+static void	gen_get_or_put_slice(ACT, REF, bool, int);
 static void	gen_get_segment (ACT, int);
 #ifdef PYXIS
 static void	gen_item_end (ACT, int);
@@ -117,7 +117,7 @@ static void	gen_menu_item_end (ACT, int);
 static void	gen_menu_item_for (ACT, int);
 static void	gen_menu_request (GPRE_REQ, int);
 #endif
-static TEXT	*gen_name (TEXT *, REF, BOOLEAN);
+static TEXT	*gen_name(TEXT *, REF, bool);
 static void	gen_on_error (ACT, USHORT);
 static void	gen_procedure (ACT, int);
 static void	gen_put_segment (ACT, int);
@@ -161,7 +161,7 @@ static void	printb (TEXT *, ...);
 #endif
 static TEXT	*request_trans (ACT, GPRE_REQ);
 static TEXT	*status_vector (ACT);
-static void	t_start_auto (ACT, GPRE_REQ, TEXT *, int, SSHORT);
+static void	t_start_auto (ACT, GPRE_REQ, TEXT *, int, bool);
 
 static TEXT output_buffer[512];
 static int first_flag;
@@ -284,10 +284,10 @@ void ADA_action( ACT action, int column)
 		gen_dyn_declare(action, column);
 		break;
 	case ACT_dyn_describe:
-		gen_dyn_describe(action, column, FALSE);
+		gen_dyn_describe(action, column, false);
 		break;
 	case ACT_dyn_describe_input:
-		gen_dyn_describe(action, column, TRUE);
+		gen_dyn_describe(action, column, true);
 		break;
 	case ACT_dyn_execute:
 		gen_dyn_execute(action, column);
@@ -514,10 +514,10 @@ void ADA_print_buffer( TEXT * output_buffer, int column)
 {
 	TEXT s[121], *p, *q;
 	int i;
-	BOOLEAN multiline;
+	bool multiline = false;
 
 	p = s;
-	multiline = FALSE;
+
 	for (q = output_buffer; *q; q++) {
 		*p++ = *q;
 		if (((p - s) + column) > 119) {
@@ -535,7 +535,7 @@ void ADA_print_buffer( TEXT * output_buffer, int column)
 			ib_fprintf(out_file, "%s\n", s);
 			s[0] = 0;
 			p = s;
-			multiline = TRUE;
+			multiline = true;
 		}
 	}
 	*p = 0;
@@ -588,16 +588,16 @@ static void asgn_from( ACT action, REF reference, int column)
 		if (field->fld_array_info)
 			if (!(reference->ref_flags & REF_array_elem)) {
 				printa(column, "%s := interbase.null_blob;",
-					   gen_name(name, reference, TRUE));
-				gen_get_or_put_slice(action, reference, FALSE, column);
+					   gen_name(name, reference, true));
+				gen_get_or_put_slice(action, reference, false, column);
 				continue;
 			}
 
 		if (!reference->ref_source && !reference->ref_value)
 			continue;
-		gen_name(variable, reference, TRUE);
+		gen_name(variable, reference, true);
 		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
+			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
 
@@ -630,25 +630,25 @@ static void asgn_to( ACT action, REF reference, int column)
 
 	if (field->fld_array_info) {
 		source->ref_value = reference->ref_value;
-		gen_get_or_put_slice(action, source, TRUE, column);
+		gen_get_or_put_slice(action, source, true, column);
 		return;
 	}
 //  
 //if (field && (field->fld_flags & FLD_text))
 //   printa (column, "interbase.isc_ftof (%s, %d, %s, sizeof (%s));", 
-// gen_name (s, source, TRUE),
+// gen_name (s, source, true),
 // field->fld_length,
 // reference->ref_value,
 // reference->ref_value);
 //else
 //  
 	printa(column, "%s := %s;", reference->ref_value,
-		   gen_name(s, source, TRUE));
+		   gen_name(s, source, true));
 
 //  Pick up NULL value if one is there 
 	if (reference = reference->ref_null)
 		printa(column, "%s := %s;", reference->ref_value,
-			   gen_name(s, reference, TRUE));
+			   gen_name(s, reference, true));
 }
 
 
@@ -666,7 +666,7 @@ static void asgn_to_proc( REF reference, int column)
 		if (!reference->ref_value)
 			continue;
 		printa(column, "%s := %s;",
-			   reference->ref_value, gen_name(s, reference, TRUE));
+			   reference->ref_value, gen_name(s, reference, true));
 	}
 }
 
@@ -709,7 +709,7 @@ static void gen_at_end( ACT action, int column)
 	SCHAR s[20];
 
 	request = action->act_request;
-	printa(column, "if %s = 0 then", gen_name(s, request->req_eof, TRUE));
+	printa(column, "if %s = 0 then", gen_name(s, request->req_eof, true));
 }
 
 
@@ -903,7 +903,7 @@ static gen_blob_open( ACT action, USHORT column)
 		column = gen_cursor_open(action, action->act_request, column);
 		blob = (BLB) action->act_request->req_blobs;
 		reference = ((OPN) action->act_object)->opn_using;
-		gen_name(s, reference, TRUE);
+		gen_name(s, reference, true);
 	}
 	else
 		blob = (BLB) action->act_object;
@@ -1064,7 +1064,7 @@ static void gen_compile( ACT action, int column)
 	symbol = db->dbb_name;
 
 	if (sw_auto)
-		t_start_auto(action, request, status_vector(action), column, TRUE);
+		t_start_auto(action, request, status_vector(action), column, true);
 
 	if ((action->act_error || (action->act_flags & ACT_sql)) && sw_auto)
 		printa(column, "if (%s = 0) and (%s%s /= 0) then",
@@ -1111,7 +1111,7 @@ static void gen_create_database( ACT action, int column)
 {
 	GPRE_REQ request;
 	DBB db;
-	USHORT save_sw_auto;
+	bool save_sw_auto;
 	TEXT s1[32], s2[32];
 
 	request = ((MDBB) action->act_object)->mdbb_dpb_request;
@@ -1189,7 +1189,7 @@ static void gen_create_database( ACT action, int column)
 	printa(column, "if %sisc_status(1) = 0 then", ada_package);
 	column += INDENT;
 	save_sw_auto = sw_auto;
-	sw_auto = (USHORT) TRUE;
+	sw_auto = true;
 	gen_ddl(action, column);
 	sw_auto = save_sw_auto;
 	column -= INDENT;
@@ -1269,7 +1269,7 @@ static void gen_database( ACT action, int column)
 	TPB tpb_val;
 	REF reference;
 	GPRE_FLD field;
-	BOOLEAN array_flag;
+	bool array_flag;
 
 	if (first_flag++ != 0)
 		return;
@@ -1340,7 +1340,7 @@ static void gen_database( ACT action, int column)
 				 reference->ref_next) if (reference->
 										  ref_flags & REF_fetch_array) {
 					make_array_declaration(reference, column);
-					array_flag = TRUE;
+					array_flag = true;
 				}
 	}
 	if (array_flag) {
@@ -1413,7 +1413,7 @@ static void gen_ddl( ACT action, int column)
 //  Generate a call to RDB$DDL to perform action 
 
 	if (sw_auto) {
-		t_start_auto(action, 0, status_vector(action), column, TRUE);
+		t_start_auto(action, 0, status_vector(action), column, true);
 		printa(column, "if %sgds_trans /= 0 then", ada_package);
 		column += INDENT;
 	}
@@ -1505,7 +1505,9 @@ static void gen_dyn_declare( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_describe( ACT action, int column, BOOLEAN input_flag)
+static void gen_dyn_describe(ACT action,
+							 int column,
+							 bool input_flag)
 {
 	DYN statement;
 	TEXT s[64];
@@ -1545,7 +1547,7 @@ static void gen_dyn_execute( ACT action, int column)
 	}
 
 	if (sw_auto) {
-		t_start_auto(action, request, status_vector(action), column, TRUE);
+		t_start_auto(action, request, status_vector(action), column, true);
 		printa(column, "if %s%s /= 0 then", ada_package, transaction);
 		column += INDENT;
 	}
@@ -1636,7 +1638,7 @@ static void gen_dyn_immediate( ACT action, int column)
 	database = statement->dyn_database;
 
 	if (sw_auto) {
-		t_start_auto(action, request, status_vector(action), column, TRUE);
+		t_start_auto(action, request, status_vector(action), column, true);
 		printa(column, "if %s%s /= 0 then", ada_package, transaction);
 		column += INDENT;
 	}
@@ -1707,7 +1709,7 @@ static void gen_dyn_open( ACT action, int column)
 	make_name(s, statement->dyn_cursor_name);
 
 	if (sw_auto) {
-		t_start_auto(action, request, status_vector(action), column, TRUE);
+		t_start_auto(action, request, status_vector(action), column, true);
 		printa(column, "if %s%s /= 0 then", ada_package, transaction);
 		column += INDENT;
 	}
@@ -1758,7 +1760,7 @@ static void gen_dyn_prepare( ACT action, int column)
 	}
 
 	if (sw_auto) {
-		t_start_auto(action, request, status_vector(action), column, TRUE);
+		t_start_auto(action, request, status_vector(action), column, true);
 		printa(column, "if %s%s /= 0 then", ada_package, transaction);
 		column += INDENT;
 	}
@@ -1806,9 +1808,9 @@ static void gen_emodify( ACT action, int column)
 			continue;
 		field = reference->ref_field;
 		printa(column, "%s := %s;",
-			   gen_name(s1, reference, TRUE), gen_name(s2, source, TRUE));
+			   gen_name(s1, reference, true), gen_name(s2, source, true));
 		if (field->fld_array_info)
-			gen_get_or_put_slice(action, reference, FALSE, column);
+			gen_get_or_put_slice(action, reference, false, column);
 	}
 
 	gen_send(action, modify->upd_port, column);
@@ -1952,7 +1954,7 @@ static void gen_event_init( ACT action, int column)
 		node = *ptr;
 		if (node->nod_type == nod_field) {
 			reference = (REF) node->nod_arg[0];
-			gen_name(variable, reference, TRUE);
+			gen_name(variable, reference, true);
 			printa(column, "isc_%dv(%d) := %s'address;",
 				   args.pat_value1, count, variable);
 		}
@@ -2115,7 +2117,7 @@ static void gen_fetch( ACT action, int column)
 	gen_receive(action, column, request->req_primary);
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
-	printa(column, "if %s /= 0 then", gen_name(s, request->req_eof, TRUE));
+	printa(column, "if %s /= 0 then", gen_name(s, request->req_eof, true));
 	column += INDENT;
 
 	if (var_list = (GPRE_NOD) action->act_object) {
@@ -2241,17 +2243,17 @@ static void gen_for( ACT action, int column)
 
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(column, "exit when (%s = 0) or (isc_status(1) /= 0);",
-			   gen_name(s, request->req_eof, TRUE));
+			   gen_name(s, request->req_eof, true));
 	else
 		printa(column, "exit when %s = 0;",
-			   gen_name(s, request->req_eof, TRUE));
+			   gen_name(s, request->req_eof, true));
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, TRUE, column);
+					gen_get_or_put_slice(action, reference, true, column);
 }
 
 
@@ -2281,7 +2283,7 @@ static void gen_form_display( ACT action, int column)
 		 reference = reference->ref_next)
 			if ((master = reference->ref_master) &&
 				(code = CMP_display_code(display, master)) >= 0)
-			printa(column, "%s := %d;", gen_name(s, reference, TRUE), code);
+			printa(column, "%s := %d;", gen_name(s, reference, true), code);
 
 	if (display->fint_flags & FINT_no_wait)
 		strcpy(out, "0");
@@ -2329,7 +2331,7 @@ static void gen_form_for( ACT action, int column)
 //  Get database attach and transaction started 
 
 	if (sw_auto)
-		t_start_auto(action, 0, status_vector(action), indent, TRUE);
+		t_start_auto(action, 0, status_vector(action), indent, true);
 
 //  Get form loaded first 
 
@@ -2387,7 +2389,7 @@ static void gen_function( ACT function, int column)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
 				ib_fprintf(out_file, ", %s",
-						   gen_name(s, reference->ref_source, TRUE));
+						   gen_name(s, reference->ref_source, true));
 	ib_fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
 
@@ -2431,7 +2433,7 @@ static void gen_function( ACT function, int column)
 				return;
 			}
 			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
-					   gen_name(s, reference->ref_source, TRUE));
+					   gen_name(s, reference->ref_source, true));
 		}
 
 	ib_fprintf(out_file, "{\n");
@@ -2447,11 +2449,11 @@ static void gen_function( ACT function, int column)
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, TRUE, column);
+					gen_get_or_put_slice(action, reference, true, column);
 
 	port = request->req_primary;
 	ib_fprintf(out_file, "\nreturn %s;\n}\n",
-			   gen_name(s, port->por_references, TRUE)
+			   gen_name(s, port->por_references, true)
 		);
 }
 
@@ -2461,9 +2463,10 @@ static void gen_function( ACT function, int column)
 //       or isc_put_slice for an array.
 //  
 
-static void gen_get_or_put_slice(
-							ACT action,
-							REF reference, BOOLEAN get, int column)
+static void gen_get_or_put_slice(ACT action,
+								 REF reference,
+								 bool get,
+								 int column)
 {
 	PAT args;
 	TEXT s1[25], s2[25], s3[25], s4[25];
@@ -2479,7 +2482,7 @@ static void gen_get_or_put_slice(
 	args.pat_database = action->act_request->req_database;	/* database handle */
 	args.pat_string1 = action->act_request->req_trans;	/* transaction handle */
 
-	gen_name(s1, reference, TRUE);	/* blob handle */
+	gen_name(s1, reference, true);	// blob handle
 	args.pat_string2 = s1;
 
 	args.pat_value1 = reference->ref_sdl_length;	/* slice descr. length */
@@ -2576,7 +2579,7 @@ static void gen_item_end( ACT action, int column)
 
 	if (action->act_pair->act_type == ACT_item_for) {
 		column += INDENT;
-		gen_name(index, request->req_index, TRUE);
+		gen_name(index, request->req_index, true);
 		printa(column, "%s := %s + 1;", index, index);
 		printa(column, "end loop");
 		return;
@@ -2589,7 +2592,7 @@ static void gen_item_end( ACT action, int column)
 
 	for (reference = port->por_references; reference;
 		 reference = reference->ref_next) if (master = reference->ref_master)
-			printa(column, "%s := %d;", gen_name(s, reference, TRUE),
+			printa(column, "%s := %d;", gen_name(s, reference, true),
 				   PYXIS_OPT_DISPLAY);
 
 	printa(column,
@@ -2638,7 +2641,7 @@ static void gen_item_for( ACT action, int column)
 
 //  Build stuff for item loop 
 
-	gen_name(index, request->req_index, TRUE);
+	gen_name(index, request->req_index, true);
 	printa(column, "%s := 1;", index);
 	printa(column, "loop");
 	column += INDENT;
@@ -2670,7 +2673,7 @@ static void gen_loop( ACT action, int column)
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
 	gen_receive(action, column, port);
-	gen_name(name, port->por_references, TRUE);
+	gen_name(name, port->por_references, true);
 	printa(column, "if (SQLCODE = 0) and (%s = 0) then", name);
 	printa(column + INDENT, "SQLCODE := 100;");
 	ENDIF;
@@ -2771,18 +2774,18 @@ static void gen_menu_entree( ACT action, int column)
 static void gen_menu_entree_att( ACT action, int column)
 {
 	MENU a_menu;
-	SSHORT ident, length;
+	SSHORT ident;
+	bool length = false;
 
 	a_menu = (MENU) action->act_object;
 
-	length = FALSE;
 	switch (action->act_type) {
 	case ACT_entree_text:
 		ident = a_menu->menu_entree_entree;
 		break;
 	case ACT_entree_length:
 		ident = a_menu->menu_entree_entree;
-		length = TRUE;
+		length = true;
 		break;
 	case ACT_entree_value:
 		ident = a_menu->menu_entree_value;
@@ -2792,7 +2795,7 @@ static void gen_menu_entree_att( ACT action, int column)
 		break;
 	case ACT_title_length:
 		ident = a_menu->menu_title;
-		length = TRUE;
+		length = true;
 		break;
 	case ACT_terminator:
 		ident = a_menu->menu_terminator;
@@ -2957,7 +2960,9 @@ static void gen_menu_request( GPRE_REQ request, int column)
 //		port and parameter idents.
 //  
 
-static TEXT *gen_name( TEXT * string, REF reference, BOOLEAN as_blob)
+static TEXT *gen_name(TEXT * string,
+					  REF reference,
+					  bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
@@ -3027,7 +3032,7 @@ static void gen_procedure( ACT action, int column)
 //  Get database attach and transaction started 
 
 	if (sw_auto)
-		t_start_auto(action, 0, status_vector(action), column, TRUE);
+		t_start_auto(action, 0, status_vector(action), column, true);
 
 //  Move in input values 
 
@@ -3610,7 +3615,7 @@ static void gen_select( ACT action, int column)
 
 	request = action->act_request;
 	port = request->req_primary;
-	gen_name(name, request->req_eof, TRUE);
+	gen_name(name, request->req_eof, true);
 
 	gen_s_start(action, column);
 	gen_receive(action, column, port);
@@ -3748,7 +3753,7 @@ static void gen_start( ACT action, POR port, int column)
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, FALSE, column);
+					gen_get_or_put_slice(action, reference, false, column);
 
 		printa(column,
 			   "interbase.START_AND_SEND (%s %s, %s%s, %d, %d, isc_%d'address, %s);",
@@ -3795,7 +3800,7 @@ static void gen_store( ACT action, int column)
 		field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
 			printa(column, "%s := interbase.null_blob;",
-				   gen_name(name, reference, TRUE));
+				   gen_name(name, reference, true));
 	}
 }
 
@@ -3818,7 +3823,7 @@ static void gen_t_start( ACT action, int column)
 //  generate something plausible. 
 
 	if (!action || !(trans = (GPRE_TRA) action->act_object)) {
-		t_start_auto(action, 0, status_vector(action), column, FALSE);
+		t_start_auto(action, 0, status_vector(action), column, false);
 		return;
 	}
 
@@ -3971,7 +3976,7 @@ static void gen_variable( ACT action, int column)
 {
 	TEXT s[20];
 
-	printa(column, gen_name(s, (REF) action->act_object, FALSE));
+	printa(column, gen_name(s, (REF) action->act_object, false));
 }
 
 
@@ -4459,9 +4464,11 @@ static TEXT *status_vector( ACT action)
 //		Generate substitution text for START_TRANSACTION.
 //  
 
-static void t_start_auto(
-					ACT action,
-					GPRE_REQ request, TEXT * vector, int column, SSHORT test)
+static void t_start_auto(ACT action,
+						 GPRE_REQ request,
+						 TEXT * vector,
+						 int column,
+						 bool test)
 {
 	DBB db;
 	int count, stat;

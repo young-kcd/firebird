@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.14 2003-09-05 14:55:58 brodsom Exp $
+//	$Id: pas.cpp,v 1.15 2003-09-10 19:48:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -72,7 +72,7 @@ static void gen_ddl(ACT, int);
 static void gen_drop_database(ACT, int);
 static void gen_dyn_close(ACT, int);
 static void gen_dyn_declare(ACT, int);
-static void gen_dyn_describe(ACT, int, BOOLEAN);
+static void gen_dyn_describe(ACT, int, bool);
 static void gen_dyn_execute(ACT, int);
 static void gen_dyn_fetch(ACT, int);
 static void gen_dyn_immediate(ACT, int);
@@ -94,7 +94,7 @@ static void gen_form_display(ACT, int);
 static void gen_form_end(ACT, int);
 static void gen_form_for(ACT, int);
 #endif
-static void gen_get_or_put_slice(ACT, REF, BOOLEAN, int);
+static void gen_get_or_put_slice(ACT, REF, bool, int);
 static void gen_get_segment(ACT, int);
 #ifdef PYXIS
 static void gen_item_end(ACT, int);
@@ -111,7 +111,7 @@ static void gen_menu_item_end(ACT, int);
 static void gen_menu_item_for(ACT, int);
 static void gen_menu_request(GPRE_REQ, int);
 #endif
-static TEXT *gen_name(TEXT *, REF, BOOLEAN);
+static TEXT *gen_name(TEXT *, REF, bool);
 static void gen_on_error(ACT, USHORT);
 static void gen_procedure(ACT, int);
 static void gen_put_segment(ACT, int);
@@ -373,10 +373,10 @@ void PAS_action( ACT action, int column)
 		gen_dyn_declare(action, column);
 		break;
 	case ACT_dyn_describe:
-		gen_dyn_describe(action, column, FALSE);
+		gen_dyn_describe(action, column, false);
 		break;
 	case ACT_dyn_describe_input:
-		gen_dyn_describe(action, column, TRUE);
+		gen_dyn_describe(action, column, true);
 		break;
 	case ACT_dyn_execute:
 		gen_dyn_execute(action, column);
@@ -632,17 +632,17 @@ static void asgn_from( ACT action, REF reference, int column)
 		if (field->fld_array_info)
 			if (!(reference->ref_flags & REF_array_elem)) {
 				printa(column, "%s := gds__blob_null;\n",
-					   gen_name(name, reference, TRUE));
-				gen_get_or_put_slice(action, reference, FALSE, column);
+					   gen_name(name, reference, true));
+				gen_get_or_put_slice(action, reference, false, column);
 				continue;
 			}
 
 		if (!reference->ref_source && !reference->ref_value)
 			continue;
 		align(column);
-		gen_name(variable, reference, TRUE);
+		gen_name(variable, reference, true);
 		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
+			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
 		if (reference->ref_value && (reference->ref_flags & REF_array_elem))
@@ -682,7 +682,7 @@ static void asgn_sqlda_from( REF reference, int number, TEXT * string, int colum
 	for (; reference; reference = reference->ref_next) {
 		align(column);
 		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
+			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
 		ib_fprintf(out_file,
@@ -709,25 +709,25 @@ static void asgn_to(ACT action, REF reference, int column)
 
 	if (field && field->fld_array_info) {
 		source->ref_value = reference->ref_value;
-		gen_get_or_put_slice(action, source, TRUE, column);
+		gen_get_or_put_slice(action, source, true, column);
 		return;
 	}
 
 	if (field && (field->fld_flags & FLD_text))
 		ib_fprintf(out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
-				   REF_PAR, gen_name(s, source, TRUE),
+				   REF_PAR, gen_name(s, source, true),
 				   field->fld_length,
 				   REF_PAR, reference->ref_value,
 				   SIZEOF, reference->ref_value);
 	else
 		ib_fprintf(out_file, "%s := %s;", reference->ref_value,
-				   gen_name(s, source, TRUE));
+				   gen_name(s, source, true));
 
 //  Pick up NULL value if one is there 
 
 	if (reference = reference->ref_null)
 		ib_fprintf(out_file, "%s := %s;", reference->ref_value,
-				   gen_name(s, reference, TRUE));
+				   gen_name(s, reference, true));
 }
 
 
@@ -746,17 +746,17 @@ static void asgn_to_proc(REF reference, int column)
 		if (!reference->ref_value)
 			continue;
 		field = reference->ref_field;
-		gen_name(s, reference, TRUE);
+		gen_name(s, reference, true);
 		align(column);
 		if (field && (field->fld_flags & FLD_text))
 			ib_fprintf(out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
-					   REF_PAR, gen_name(s, reference, TRUE),
+					   REF_PAR, gen_name(s, reference, true),
 					   field->fld_length,
 					   REF_PAR, reference->ref_value,
 					   SIZEOF, reference->ref_value);
 		else
 			ib_fprintf(out_file, "%s := %s;",
-					   reference->ref_value, gen_name(s, reference, TRUE));
+					   reference->ref_value, gen_name(s, reference, true));
 
 	}
 }
@@ -774,7 +774,7 @@ static void gen_at_end( ACT action, int column)
 
 	request = action->act_request;
 	printa(column, "if %s = 0 then begin",
-		   gen_name(s, request->req_eof, TRUE));
+		   gen_name(s, request->req_eof, true));
 }
 
 
@@ -984,7 +984,7 @@ static void gen_blob_open( ACT action, USHORT column)
 		column = gen_cursor_open(action, action->act_request, column);
 		blob = (BLB) action->act_request->req_blobs;
 		reference = ((OPN) action->act_object)->opn_using;
-		gen_name(s, reference, TRUE);
+		gen_name(s, reference, true);
 	}
 	else {
 		blob = (BLB) action->act_object;
@@ -1037,9 +1037,9 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 {
 	int indent, length;
 	TEXT *p, *q, c;
-	BOOLEAN open_quote, first_line;
+	bool open_quote;
+	bool first_line = true;
 
-	first_line = TRUE;
 	indent = 2 * INDENT;
 	p = string;
 	while (*p == ' ') {
@@ -1056,7 +1056,7 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 		/* if we did not find somewhere to break between the 200th and 256th character
 		   just print out 256 characters */
 
-		for (q = p, open_quote = FALSE; (q - p + indent) < 255; q++) {
+		for (q = p, open_quote = false; (q - p + indent) < 255; q++) {
 			if ((q - p + indent) > 220 && *q == ',' && !open_quote)
 				break;
 			if (*q == '\'' && *(q - 1) != '\\')
@@ -1070,7 +1070,7 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 		p = q;
 		if (first_line) {
 			indent = MIN(indent + INDENT, 192);
-			first_line = FALSE;
+			first_line = false;
 		}
 	}
 	printa(indent, p);
@@ -1140,7 +1140,6 @@ static void gen_create_database( ACT action, int column)
 {
 	GPRE_REQ request;
 	DBB db;
-	USHORT save_sw_auto;
 
 	request = ((MDBB) action->act_object)->mdbb_dpb_request;
 	db = (DBB) request->req_database;
@@ -1149,20 +1148,17 @@ static void gen_create_database( ACT action, int column)
 	if (request->req_length)
 		ib_fprintf(out_file,
 				   "GDS__CREATE_DATABASE (%s, %d, '%s', %s, %d, gds__%d, 0);",
-				   status_vector(action),
-				   strlen(db->dbb_filename),
-				   db->dbb_filename,
-				   db->dbb_name->sym_string,
+				   status_vector(action), strlen(db->dbb_filename),
+				   db->dbb_filename, db->dbb_name->sym_string,
 				   request->req_length, request->req_ident);
 	else
 		ib_fprintf(out_file,
 				   "GDS__CREATE_DATABASE (%s, %d, '%s', %s, 0, 0, 0);",
-				   status_vector(action),
-				   strlen(db->dbb_filename),
+				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string);
 
-	save_sw_auto = sw_auto;
-	sw_auto = TRUE;
+	bool save_sw_auto = sw_auto;
+	sw_auto = true;
 	printa(column, "if (gds__status [2] = 0) then");
 	BEGIN;
 	gen_ddl(action, column);
@@ -1279,16 +1275,15 @@ static void gen_database( ACT action, int column)
 	GPRE_REQ request;
 	POR port;
 	BLB blob;
-	USHORT count, flag;
+	USHORT count;
 	TPB tpb_val;
 #ifdef PYXIS
 	FORM form;
 #endif
-	BOOLEAN all_static, all_extern;
 	int indent;
 	REF reference;
-	BOOLEAN array_flag;
-	SSHORT event_count, max_count;
+	SSHORT event_count;
+	SSHORT max_count;
 	LLS stack_ptr;
 
 	if (first_flag++ != 0)
@@ -1302,14 +1297,14 @@ static void gen_database( ACT action, int column)
 #endif
 
 	indent = column + INDENT;
-	flag = TRUE;
+	bool flag = true;
 
 	for (request = requests; request; request = request->req_next) {
 		if (request->req_flags & REQ_local)
 			continue;
 		for (port = request->req_ports; port; port = port->por_next) {
 			if (flag) {
-				flag = FALSE;
+				flag = false;
 				ib_fprintf(out_file, "type");
 			}
 			make_port(port, indent);
@@ -1341,8 +1336,8 @@ static void gen_database( ACT action, int column)
 		}
 	}
 
-	all_static = TRUE;
-	all_extern = TRUE;
+	bool all_static = true;
+	bool all_extern = true;
 
 	for (db = isc_databases; db; db = db->dbb_next) {
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
@@ -1384,12 +1379,12 @@ static void gen_database( ACT action, int column)
 			   STATIC_STRING, PACKED_ARRAY, max_count);
 	}
 
-	array_flag = FALSE;
+	bool array_flag = false;
 	for (request = requests; request; request = request->req_next) {
 		gen_request(request, indent);
 		/*  Array declarations  */
 		if (request->req_type == REQ_slice)
-			array_flag = TRUE;
+			array_flag = true;
 
 		if (port = request->req_primary)
 			for (reference = port->por_references; reference;
@@ -1397,7 +1392,7 @@ static void gen_database( ACT action, int column)
 				 reference->ref_next) if (reference->
 										  ref_flags & REF_fetch_array) {
 					make_array_declaration(reference);
-					array_flag = TRUE;
+					array_flag = true;
 				}
 	}
 
@@ -1431,6 +1426,7 @@ static void gen_database( ACT action, int column)
 		printa(indent,
 			   "SQLCODE\t: %s integer := 0;\t\t\t(* SQL status code *)",
 			   STATIC_STRING);
+#ifdef PYXIS
 		if (sw_pyxis) {
 			printa(indent,
 				   "gds__window\t\t: [COMMON (gds__window)] gds__handle;\t\t(* window handle *)");
@@ -1441,6 +1437,7 @@ static void gen_database( ACT action, int column)
 				   "gds__height\t\t: [COMMON (gds__height)] %s;\t(* window height *)",
 				   SHORT_DCL);
 		}
+#endif
 	}
 	else if (all_extern) {
 		printa(indent,
@@ -1639,7 +1636,9 @@ static void gen_dyn_declare( ACT action, int column)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_describe( ACT action, int column, BOOLEAN bind_flag)
+static void gen_dyn_describe(ACT action,
+							 int column,
+							 bool bind_flag)
 {
 	DYN statement;
 	TEXT s[64];
@@ -1919,9 +1918,9 @@ static void gen_emodify( ACT action, int column)
 		field = reference->ref_field;
 		align(column);
 		ib_fprintf(out_file, "%s := %s;",
-				   gen_name(s1, reference, TRUE), gen_name(s2, source, TRUE));
+				   gen_name(s1, reference, true), gen_name(s2, source, true));
 		if (field->fld_array_info)
-			gen_get_or_put_slice(action, reference, FALSE, column);
+			gen_get_or_put_slice(action, reference, false, column);
 	}
 
 	gen_send(action, modify->upd_port, column);
@@ -2064,7 +2063,7 @@ static void gen_event_init( ACT action, int column)
 		node = *ptr;
 		if (node->nod_type == nod_field) {
 			reference = (REF) node->nod_arg[0];
-			gen_name(variable, reference, TRUE);
+			gen_name(variable, reference, true);
 			printa(column, "gds__event_names2[%d] := %s;", count, variable);
 		}
 		else
@@ -2230,7 +2229,7 @@ static void gen_fetch( ACT action, int column)
 	gen_receive(action, column, request->req_primary);
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
-	printa(column, "if %s <> 0 then", gen_name(s, request->req_eof, TRUE));
+	printa(column, "if %s <> 0 then", gen_name(s, request->req_eof, true));
 	column += INDENT;
 	BEGIN;
 
@@ -2322,10 +2321,10 @@ static void gen_for( ACT action, int column)
 	gen_receive(action, column, request->req_primary);
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(column, "while (%s <> 0) and (gds__status[2] = 0) do",
-			   gen_name(s, request->req_eof, TRUE));
+			   gen_name(s, request->req_eof, true));
 	else
 		printa(column, "while %s <> 0 do",
-			   gen_name(s, request->req_eof, TRUE));
+			   gen_name(s, request->req_eof, true));
 	column += INDENT;
 	BEGIN;
 
@@ -2334,7 +2333,7 @@ static void gen_for( ACT action, int column)
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, TRUE, column);
+					gen_get_or_put_slice(action, reference, true, column);
 }
 
 #ifdef PYXIS
@@ -2365,7 +2364,7 @@ static void gen_form_display( ACT action, int column)
 		 reference = reference->ref_next)
 			if ((master = reference->ref_master) &&
 				(code = CMP_display_code(display, master)) >= 0)
-			printa(column, "%s := %d;", gen_name(s, reference, TRUE), code);
+			printa(column, "%s := %d;", gen_name(s, reference, true), code);
 
 	if (display->fint_flags & FINT_no_wait)
 		strcpy(out, "0");
@@ -2450,9 +2449,10 @@ static void gen_form_for( ACT action, int column)
 //		or gds__put_slice for an array.
 //  
 
-static void gen_get_or_put_slice(
-							ACT action,
-							REF reference, BOOLEAN get, int column)
+static void gen_get_or_put_slice(ACT action,
+								 REF reference,
+								 bool get,
+								 int column)
 {
 	PAT args;
 	TEXT s1[25], s2[10], s3[10], s4[10];
@@ -2468,7 +2468,7 @@ static void gen_get_or_put_slice(
 	args.pat_database = action->act_request->req_database;	/*  database handle      */
 	args.pat_string1 = action->act_request->req_trans;	/*  transaction handle   */
 
-	gen_name(s1, reference, TRUE);	/*  blob handle          */
+	gen_name(s1, reference, true);	//  blob handle
 	args.pat_string2 = s1;
 
 	args.pat_value1 = reference->ref_sdl_length;	/*  slice descr. length  */
@@ -2574,7 +2574,7 @@ static void gen_item_end( ACT action, int column)
 	status = (action->act_error) ? "gds__status" : "gds__null^";
 	if (action->act_pair->act_type == ACT_item_for) {
 		column += INDENT;
-		gen_name(index, request->req_index, TRUE);
+		gen_name(index, request->req_index, true);
 		printa(column, "%s := %s + 1;", index, index);
 		align(column);
 		ib_fprintf(out_file,
@@ -2597,7 +2597,7 @@ static void gen_item_end( ACT action, int column)
 
 	for (reference = port->por_references; reference;
 		 reference = reference->ref_next) if (reference->ref_master)
-			printa(column, "%s := %d;", gen_name(s, reference, TRUE),
+			printa(column, "%s := %d;", gen_name(s, reference, true),
 				   PYXIS_OPT_DISPLAY);
 
 	align(column);
@@ -2645,7 +2645,7 @@ static void gen_item_for( ACT action, int column)
 
 //  Build stuff for item loop 
 
-	gen_name(index, request->req_index, TRUE);
+	gen_name(index, request->req_index, true);
 	printa(column, "%s := 1;", index);
 	align(column);
 	ib_fprintf(out_file,
@@ -2679,7 +2679,7 @@ static void gen_loop( ACT action, int column)
 	column += INDENT;
 	BEGIN;
 	gen_receive(action, column, port);
-	gen_name(name, port->por_references, TRUE);
+	gen_name(name, port->por_references, true);
 	printa(column, "if (SQLCODE = 0) and (%s = 0)", name);
 	printa(column + INDENT, "then SQLCODE := 100;");
 	END;
@@ -2755,18 +2755,18 @@ static void gen_menu_entree( ACT action, int column)
 static void gen_menu_entree_att( ACT action, int column)
 {
 	MENU menu;
-	SSHORT ident, length;
+	SSHORT ident;
+	bool length = false;
 
 	menu = (MENU) action->act_object;
 
-	length = FALSE;
 	switch (action->act_type) {
 	case ACT_entree_text:
 		ident = menu->menu_entree_entree;
 		break;
 	case ACT_entree_length:
 		ident = menu->menu_entree_entree;
-		length = TRUE;
+		length = true;
 		break;
 	case ACT_entree_value:
 		ident = menu->menu_entree_value;
@@ -2776,7 +2776,7 @@ static void gen_menu_entree_att( ACT action, int column)
 		break;
 	case ACT_title_length:
 		ident = menu->menu_title;
-		length = TRUE;
+		length = true;
 		break;
 	case ACT_terminator:
 		ident = menu->menu_terminator;
@@ -2944,7 +2944,9 @@ static void gen_menu_request( GPRE_REQ request, int column)
 //		port and parameter idents.
 //  
 
-static TEXT *gen_name( TEXT * string, REF reference, BOOLEAN as_blob)
+static TEXT *gen_name(TEXT * string,
+					  REF reference,
+					  bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
@@ -3574,7 +3576,7 @@ static void gen_select( ACT action, int column)
 
 	request = action->act_request;
 	port = request->req_primary;
-	gen_name(name, request->req_eof, TRUE);
+	gen_name(name, request->req_eof, true);
 
 	gen_s_start(action, column);
 	BEGIN;
@@ -3718,7 +3720,7 @@ static void gen_start( ACT action, POR port, int column)
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, FALSE, column);
+					gen_get_or_put_slice(action, reference, false, column);
 
 		ib_fprintf(out_file,
 				   "GDS__START_AND_SEND (%s, %s, %s, %d, %d, gds__%d, %s);",
@@ -3768,7 +3770,7 @@ static void gen_store( ACT action, int column)
 		field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
 			printa(column, "%s := gds__blob_null;\n",
-				   gen_name(name, reference, TRUE));
+				   gen_name(name, reference, true));
 	}
 }
 
@@ -3952,7 +3954,7 @@ static void gen_variable( ACT action, int column)
 {
 	TEXT s[20];
 
-	printa(column, gen_name(s, action->act_object, FALSE));
+	printa(column, gen_name(s, action->act_object, false));
 }
 
 
@@ -4153,17 +4155,17 @@ static void make_port( POR port, int column)
 	GPRE_FLD field;
 	REF reference;
 	SYM symbol;
-	SSHORT flag;
+	bool flag = false;
 	TEXT *name, s[80];
 
-	flag = FALSE;
 	printa(column, "gds__%dt = record", port->por_ident);
 
 	for (reference = port->por_references; reference;
-		 reference = reference->ref_next) {
+		 reference = reference->ref_next)
+	{
 		if (flag)
 			ib_fprintf(out_file, ";");
-		flag = TRUE;
+		flag = true;
 		align(column + INDENT);
 		field = reference->ref_field;
 		if (symbol = field->fld_symbol)

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.24 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: cob.cpp,v 1.25 2003-09-10 19:48:53 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -336,7 +336,7 @@ static void	gen_database (ACT);
 static void	gen_ddl (ACT);
 static void	gen_dyn_close (ACT);
 static void	gen_dyn_declare (ACT);
-static void	gen_dyn_describe (ACT, BOOLEAN);
+static void	gen_dyn_describe(ACT, bool);
 static void	gen_dyn_execute (ACT);
 static void	gen_dyn_fetch (ACT);
 static void	gen_dyn_immediate (ACT);
@@ -360,7 +360,7 @@ static void	gen_form_end (ACT);
 static void	gen_form_for (ACT);
 #endif
 static void	gen_function (ACT);
-static void	gen_get_or_put_slice (ACT, REF, BOOLEAN);
+static void	gen_get_or_put_slice(ACT, REF, bool);
 static void	gen_get_segment (ACT);
 #ifdef PYXIS
 static void	gen_item_end (ACT);
@@ -378,7 +378,7 @@ static void	gen_menu_item_end (ACT);
 static void	gen_menu_item_for (ACT);
 static void	gen_menu_request (GPRE_REQ);
 #endif
-static TEXT	*gen_name (TEXT *, REF, BOOLEAN);
+static TEXT	*gen_name(TEXT *, REF, bool);
 static void	gen_on_error (ACT);
 static void	gen_procedure (ACT);
 static void	gen_put_segment (ACT);
@@ -413,14 +413,14 @@ static TEXT	*make_name (TEXT *, SYM);
 static TEXT	*make_name_formatted (TEXT *, TEXT *, SYM);
 static void	make_port (POR);
 static void	make_ready (DBB, TEXT *, TEXT *, GPRE_REQ, USHORT);
-static void	printa (TEXT *, BOOLEAN, TEXT *, ...) ATTRIBUTE_FORMAT(3,4);
+static void	printa(TEXT *, bool, TEXT *, ...) ATTRIBUTE_FORMAT(3,4);
 #ifdef NOT_USED_OR_REPLACED
 static void	printb (TEXT *, ... ) ATTRIBUTE_FORMAT(1,2);
 #endif
 static TEXT	*request_trans (ACT, GPRE_REQ);
 static void	set_sqlcode (ACT);
 static TEXT	*status_vector (ACT);
-static void	t_start_auto (GPRE_REQ, TEXT *, ACT, SSHORT);
+static void	t_start_auto (GPRE_REQ, TEXT *, ACT, bool);
 
 static TEXT output_buffer[512];
 static int first_flag;
@@ -621,10 +621,10 @@ void COB_action( ACT action, int column)
 		gen_dyn_declare(action);
 		break;
 	case ACT_dyn_describe:
-		gen_dyn_describe(action, FALSE);
+		gen_dyn_describe(action, false);
 		break;
 	case ACT_dyn_describe_input:
-		gen_dyn_describe(action, TRUE);
+		gen_dyn_describe(action, true);
 		break;
 	case ACT_dyn_execute:
 		gen_dyn_execute(action);
@@ -844,7 +844,7 @@ void COB_action( ACT action, int column)
 //		ANSI has no underscores.
 //  
 
-void COB_name_init( BOOLEAN ansi)
+void COB_name_init(bool ansi)
 {
 
 	names = ansi ? anames : vnames;
@@ -860,10 +860,14 @@ void COB_name_init( BOOLEAN ansi)
 //		calls.
 //  
 
-void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
+void COB_print_buffer(TEXT * output_buffer,
+					  bool function_call)
 {
 	TEXT s[80], *p, *q, *tempq;
-	BOOLEAN open_quote, single_quote, save_open_quote, save_single_quote;
+	bool open_quote = false;
+	bool single_quote = false;
+	bool save_open_quote;
+	bool save_single_quote;
 	USHORT max_line;
 
 	if (sw_ansi)
@@ -871,8 +875,6 @@ void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
 	else
 		max_line = 79;
 
-	open_quote = FALSE;
-	single_quote = FALSE;
 	p = s;
 
 	for (q = output_buffer; *q; q++) {
@@ -881,12 +883,12 @@ void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
 		/*  If we have a single or double quote, toggle the
 		   quote switch and indicate single or double quote  */
 		if (*q == '\"') {
-			open_quote = (open_quote) ? FALSE : TRUE;
-			single_quote = FALSE;
+			open_quote = !open_quote;
+			single_quote = false;
 		}
 		else if (*q == '\'') {
-			open_quote = (open_quote) ? FALSE : TRUE;
-			single_quote = TRUE;
+			open_quote = !open_quote;
+			single_quote = true;
 		}
 
 		if ((p - s) > max_line) {
@@ -899,11 +901,11 @@ void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
 					if (*(p + 1) == '\"' || *(p + 1) == '\'') {
 						/*  If we have a single or double quote, toggle the
 						   quote switch and indicate single or double quote  */
-						open_quote = (open_quote) ? FALSE : TRUE;
+						open_quote = !open_quote;
 						if (open_quote)
-							single_quote = (*(p + 1) == '\'') ? TRUE : FALSE;
+							single_quote = (*(p + 1) == '\'');
 						else
-							single_quote = FALSE;
+							single_quote = false;
 					}
 					if (!open_quote && (*p == ','))
 						break;
@@ -918,12 +920,11 @@ void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
 						if (*(p + 1) == '\"' || *(p + 1) == '\'') {
 							/*  If we have a single or double quote, toggle the
 							   quote switch and indicate single or double quote  */
-							open_quote = (open_quote) ? FALSE : TRUE;
+							open_quote = !open_quote;
 							if (open_quote)
-								single_quote =
-									(*(p + 1) == '\'') ? TRUE : FALSE;
+								single_quote = (*(p + 1) == '\'');
 							else
-								single_quote = FALSE;
+								single_quote = false;
 						}
 						if (!open_quote && (*p == ' '))
 							break;
@@ -946,11 +947,11 @@ void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
 					if (*(p + 1) == '\"' || *(p + 1) == '\'') {
 						/* If we have a single or double quote, toggle the
 						   quote switch and indicate single or double quote  */
-						open_quote = (open_quote) ? FALSE : TRUE;
+						open_quote = !open_quote;
 						if (open_quote)
-							single_quote = (*(p + 1) == '\'') ? TRUE : FALSE;
+							single_quote = (*(p + 1) == '\'');
 						else
-							single_quote = FALSE;
+							single_quote = false;
 					}
 					if (!open_quote && (*p == ' '))
 						break;
@@ -1023,17 +1024,17 @@ static void asgn_from( ACT action, REF reference)
 		field = reference->ref_field;
 		if (field->fld_array_info)
 			if (!(reference->ref_flags & REF_array_elem)) {
-				printa(names[COLUMN], TRUE, "CALL \"isc_qtoq\" USING %s, %s",
-					   names[isc_blob_null], gen_name(name, reference, TRUE));
-				gen_get_or_put_slice(action, reference, FALSE);
+				printa(names[COLUMN], true, "CALL \"isc_qtoq\" USING %s, %s",
+					   names[isc_blob_null], gen_name(name, reference, true));
+				gen_get_or_put_slice(action, reference, false);
 				continue;
 			}
 
 		if (!reference->ref_source && !reference->ref_value)
 			continue;
-		gen_name(variable, reference, TRUE);
+		gen_name(variable, reference, true);
 		if (reference->ref_source)
-			value = gen_name(temp, reference->ref_source, TRUE);
+			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
 		if (!reference->ref_master || (reference->ref_flags & REF_literal))
@@ -1071,11 +1072,11 @@ static void asgn_to( ACT action, REF reference)
 
 	source = reference->ref_friend;
 	field = source->ref_field;
-	gen_name(s, source, TRUE);
+	gen_name(s, source, true);
 
 	if (field->fld_array_info) {
 		source->ref_value = reference->ref_value;
-		gen_get_or_put_slice(action, source, TRUE);
+		gen_get_or_put_slice(action, source, true);
 		return;
 	}
 
@@ -1088,7 +1089,7 @@ static void asgn_to( ACT action, REF reference)
 
 	if (reference = reference->ref_null) {
 		sprintf(output_buffer, "%sMOVE %s TO %s\n",
-				names[COLUMN], gen_name(s, reference, TRUE),
+				names[COLUMN], gen_name(s, reference, true),
 				reference->ref_value);
 		COB_print_buffer(output_buffer, FALSE);
 	}
@@ -1110,7 +1111,7 @@ static void asgn_to_proc( REF reference)
 		if (!reference->ref_value)
 			continue;
 		field = reference->ref_field;
-		gen_name(s, reference, TRUE);
+		gen_name(s, reference, true);
 		sprintf(output_buffer, "%sMOVE %s TO %s\n",
 				names[COLUMN], s, reference->ref_value);
 		COB_print_buffer(output_buffer, FALSE);
@@ -1155,8 +1156,8 @@ static void gen_at_end( ACT action)
 	TEXT s[20];
 
 	request = action->act_request;
-	printa(names[COLUMN], FALSE,
-		   "IF %s = 0 THEN", gen_name(s, request->req_eof, TRUE));
+	printa(names[COLUMN], false,
+		   "IF %s = 0 THEN", gen_name(s, request->req_eof, true));
 	ib_fprintf(out_file, names[COLUMN]);
 }
 
@@ -1275,7 +1276,7 @@ static void gen_blob_close( ACT action)
 	command = (action->act_type == ACT_blob_cancel) ? (TEXT*) CANCEL : (TEXT*) CLOSE;
 	sprintf(buffer, ISC_BLOB, command);
 
-	printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s, %s%s%d",
+	printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s%d",
 		   buffer,
 		   status_vector(action), BY_REF, names[ISC_], blob->blb_ident);
 
@@ -1294,16 +1295,16 @@ static void gen_blob_end( ACT action)
 
 	blob = (BLB) action->act_object;
 	gen_get_segment(action);
-	printa(names[COLUMN], FALSE, "END-PERFORM");
+	printa(names[COLUMN], false, "END-PERFORM");
 	if (action->act_error)
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], true,
 			   "%sCALL \"%s\" USING %s%s, %s%s%d",
 			   INDENT,
 			   ISC_CANCEL_BLOB,
 			   BY_REF, names[ISC_STATUS_VECTOR2],
 			   BY_REF, names[ISC_], blob->blb_ident);
 	else
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], true,
 			   "%sCALL \"%s\" USING %s, %s%s%d",
 			   INDENT, ISC_CANCEL_BLOB,
 			   status_vector(0), BY_REF, names[ISC_], blob->blb_ident);
@@ -1320,9 +1321,9 @@ static void gen_blob_for( ACT action)
 
 	gen_blob_open(action);
 	gen_get_segment(action);
-	printa(names[COLUMN], FALSE, "PERFORM UNTIL");
+	printa(names[COLUMN], false, "PERFORM UNTIL");
 
-	printa(names[COLUMN], FALSE, "%s%s(2) NOT = 0 AND %s(2) NOT = 335544366",
+	printa(names[COLUMN], false, "%s%s(2) NOT = 0 AND %s(2) NOT = 335544366",
 		   INDENT, names[ISC_STATUS], names[ISC_STATUS]);
 }
 
@@ -1352,9 +1353,8 @@ static void gen_blob_open( ACT action)
 #endif
 
 	if (sw_auto && (action->act_flags & ACT_sql)) {
-		t_start_auto(action->act_request, status_vector(action), action,
-					 TRUE);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN",
+		t_start_auto(action->act_request, status_vector(action), action, true);
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN",
 			   request_trans(action, action->act_request));
 	}
 
@@ -1362,7 +1362,7 @@ static void gen_blob_open( ACT action)
 		gen_cursor_open(action, action->act_request);
 		blob = (BLB) action->act_request->req_blobs;
 		reference = ((OPN) action->act_object)->opn_using;
-		gen_name(s, reference, TRUE);
+		gen_name(s, reference, true);
 	}
 	else {
 		blob = (BLB) action->act_object;
@@ -1379,7 +1379,7 @@ static void gen_blob_open( ACT action)
 	args.pat_ident1 = blob->blb_bpb_ident;	/* blob parameter block */
 
 	if ((action->act_flags & ACT_sql) && action->act_type == ACT_blob_open)
-		printa(names[COLUMN], FALSE, "MOVE %s TO %s",
+		printa(names[COLUMN], false, "MOVE %s TO %s",
 			   reference->ref_value, s);
 
 	if (args.pat_value1 = blob->blb_bpb_length)
@@ -1388,18 +1388,18 @@ static void gen_blob_open( ACT action)
 		PATTERN_expand(column, pattern2, &args);
 
 	if (action->act_flags & ACT_sql) {
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 		if (sw_auto)
-			printa(names[COLUMN], FALSE, "END-IF");
+			printa(names[COLUMN], false, "END-IF");
 		set_sqlcode(action);
 		if (action->act_type == ACT_blob_create) {
-			printa(names[COLUMN], FALSE, "IF SQLCODE = 0 THEN");
-			printa(names[COLUMN], FALSE, "MOVE %s TO %s",
+			printa(names[COLUMN], false, "IF SQLCODE = 0 THEN");
+			printa(names[COLUMN], false, "MOVE %s TO %s",
 				   s, reference->ref_value);
-			printa(names[COLUMN], FALSE, "END-IF");
+			printa(names[COLUMN], false, "END-IF");
 		}
 	}
 }
@@ -1414,9 +1414,9 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 {
 	int indent, length, comment, i, max_line, max_diff;
 	TEXT *p, *q, c;
-	BOOLEAN open_quote, first_line;
+	bool open_quote;
+	bool first_line = true;
 
-	first_line = TRUE;
 	if (sw_ansi) {
 		max_line = 70;
 		max_diff = 7;
@@ -1441,10 +1441,13 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 		/* if we did not find somewhere to break between the 200th and 256th
 		   character just print out 256 characters */
 
-		for (q = p, open_quote = FALSE; (q - p + indent + comment) < max_line;
+		for (q = p, open_quote = false; (q - p + indent + comment) < max_line;
 			 q++) {
 			if ((q - p + indent + comment) > max_line - max_diff && *q == ','
-				&& !open_quote) break;
+				&& !open_quote)
+			{
+				break;
+			}
 			if (*q == '\'' && *(q - 1) != '\\')
 				open_quote = !open_quote;
 		}
@@ -1458,7 +1461,7 @@ static int gen_blr( int *user_arg, int offset, TEXT * string)
 		length = length - (q - p);
 		p = q;
 		if (first_line) {
-			first_line = FALSE;
+			first_line = false;
 			indent += strlen(INDENT);
 			if (comment + indent > max_line)
 				indent = max_line - comment;
@@ -1484,11 +1487,11 @@ static void gen_clear_handles( ACT action)
 
 	for (request = requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
-			printa(names[COLUMN], TRUE, "%s = 0;", request->req_handle);
+			printa(names[COLUMN], true, "%s = 0;", request->req_handle);
 #ifdef PYXIS
 		if (request->req_form_handle &&
 			!(request->req_flags & REQ_exp_form_handle))
-				printa(names[COLUMN], (USHORT) "%s = 0;", request->req_form_handle);
+				printa(names[COLUMN], true, (USHORT) "%s = 0;", request->req_form_handle);
 #endif
 	}
 }
@@ -1513,7 +1516,7 @@ static void gen_compile( ACT action)
 //  generate automatic ready if appropriate 
 
 	if (sw_auto)
-		t_start_auto(request, status_vector(action), action, TRUE);
+		t_start_auto(request, status_vector(action), action, true);
 
 //  
 //  always generate a compile, a test for the success of the compile,
@@ -1522,10 +1525,10 @@ static void gen_compile( ACT action)
 
 //  generate an 'if not compiled' 
 
-	printa(names[COLUMN], FALSE, "IF %s = 0 THEN", request->req_handle);
+	printa(names[COLUMN], false, "IF %s = 0 THEN", request->req_handle);
 
 	if (sw_auto && action->act_error)
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN",
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN",
 			   request_trans(action, request));
 
 	sprintf(output_buffer,
@@ -1538,10 +1541,10 @@ static void gen_compile( ACT action)
 
 	COB_print_buffer(output_buffer, TRUE);
 	if (sw_auto && action->act_error)
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 	set_sqlcode(action);
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 
 //  If blobs are present, zero out all of the blob handles.  After this
 //  point, the handles are the user's responsibility 
@@ -1566,7 +1569,7 @@ static void gen_create_database( ACT action)
 	GPRE_REQ request;
 	DBB db, dbisc;
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32], db_name[128];
-	USHORT save_sw_auto;
+	bool save_sw_auto;
 
 	request = ((MDBB) action->act_object)->mdbb_dpb_request;
 	db = (DBB) request->req_database;
@@ -1705,11 +1708,11 @@ static void gen_create_database( ACT action)
 		COB_print_buffer(output_buffer, TRUE);
 	}
 	save_sw_auto = sw_auto;
-	sw_auto = TRUE;
-	printa(names[COLUMN], FALSE, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
+	sw_auto = true;
+	printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
 	gen_ddl(action);
 	sw_auto = save_sw_auto;
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 	set_sqlcode(action);
 }
 
@@ -1722,14 +1725,14 @@ static void gen_create_database( ACT action)
 static void gen_cursor_close( ACT action, GPRE_REQ request)
 {
 
-	printa(names[COLUMN], FALSE, "IF %s%dS NOT = 0 THEN",
+	printa(names[COLUMN], false, "IF %s%dS NOT = 0 THEN",
 		   names[ISC_], request->req_ident);
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s%dS, %s%d%s",
 		   ISC_DSQL_FREE,
 		   status_vector(action),
 		   BY_REF, names[ISC_], request->req_ident, BY_VALUE, 1, END_VALUE);
-	printa(names[COLUMN], FALSE, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
+	printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
 }
 
 
@@ -1746,7 +1749,7 @@ static void gen_cursor_init( ACT action)
 
 	if (action->act_request->
 		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
-			printa(names[COLUMN], FALSE, "MOVE 0 TO %s%d", names[ISC_],
+			printa(names[COLUMN], false, "MOVE 0 TO %s%d", names[ISC_],
 				   action->act_request->req_blobs->blb_ident);
 }
 
@@ -1761,27 +1764,27 @@ static void gen_cursor_open( ACT action, GPRE_REQ request)
 	TEXT s[64];
 
 	if (action->act_type != ACT_open)
-		printa(names[COLUMN], FALSE, "IF %s%dS = 0 THEN",
+		printa(names[COLUMN], false, "IF %s%dS = 0 THEN",
 			   names[ISC_], request->req_ident);
 	else
-		printa(names[COLUMN], FALSE, "IF (%s%dS = 0) AND %s NOT = 0 THEN",
+		printa(names[COLUMN], false, "IF (%s%dS = 0) AND %s NOT = 0 THEN",
 			   names[ISC_], request->req_ident, request->req_handle);
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN",
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN",
 			   request->req_database->dbb_name->sym_string);
-	printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s, %s%s, %s%s%dS",
+	printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s, %s%s%dS",
 		   ISC_DSQL_ALLOCATE,
 		   status_vector(action),
 		   BY_REF, request->req_database->dbb_name->sym_string,
 		   BY_REF, names[ISC_], request->req_ident);
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "END-IF");
-	printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 
-	printa(names[COLUMN], FALSE, "IF %s%dS NOT = 0 THEN",
+	printa(names[COLUMN], false, "IF %s%dS NOT = 0 THEN",
 		   names[ISC_], request->req_ident);
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN",
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN",
 			   request_trans(action, request));
 #ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s",
@@ -1789,14 +1792,14 @@ static void gen_cursor_open( ACT action, GPRE_REQ request)
 #else
 	make_name(s, ((OPN) action->act_object)->opn_cursor);
 #endif
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s%dS, %s%s, %s0%s",
 		   ISC_DSQL_SET_CURSOR,
 		   status_vector(action),
 		   BY_REF, names[ISC_], request->req_ident,
 		   BY_REF, s, BY_VALUE, END_VALUE);
-	printa(names[COLUMN], FALSE, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s%dS, %s0%s, %s, %s-1%s, %s0%s, %s",
 		   ISC_DSQL_EXECUTE,
 		   status_vector(action),
@@ -1804,7 +1807,7 @@ static void gen_cursor_open( ACT action, GPRE_REQ request)
 		   BY_REF, names[ISC_], request->req_ident,
 		   BY_VALUE, END_VALUE,
 		   OMITTED, BY_VALUE, END_VALUE, BY_VALUE, END_VALUE, OMITTED);
-	printa(names[COLUMN], FALSE, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
+	printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
 }
 
 
@@ -1825,7 +1828,9 @@ static void gen_database( ACT action)
 	tpb* tpb_iterator;
 	POR port;
 	BLB blob;
-	BOOLEAN all_static, all_extern, dyn_immed;
+	bool all_static;
+	bool all_extern;
+	bool dyn_immed;
 	REF reference;
 	RDY ready;
 	ACT act, chck_dups;
@@ -1840,18 +1845,18 @@ static void gen_database( ACT action)
 			names[COMMENT]);
 	COB_print_buffer(output_buffer, FALSE);
 
-	printa(names[COLUMN_0], FALSE, "01  %s PIC S9(18) USAGE COMP VALUE IS 0.",
+	printa(names[COLUMN_0], false, "01  %s PIC S9(18) USAGE COMP VALUE IS 0.",
 		   names[isc_blob_null]);
-	printa(names[COLUMN_0], FALSE, "01  %s PIC S9(9) USAGE COMP EXTERNAL.",
+	printa(names[COLUMN_0], false, "01  %s PIC S9(9) USAGE COMP EXTERNAL.",
 		   names[ISC_SQLCODE]);
 
-	all_static = TRUE;
-	all_extern = TRUE;
+	all_static = true;
+	all_extern = true;
 	for (db = isc_databases, count = 0; db; db = db->dbb_next) {
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
 		name = db->dbb_name->sym_string;
-		printa(names[COLUMN_0], FALSE, "01  %s%s PIC S9(9) USAGE COMP%s.",
+		printa(names[COLUMN_0], false, "01  %s%s PIC S9(9) USAGE COMP%s.",
 			   name,
 			   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" :
 			   " IS GLOBAL", (all_extern) ? "" : " VALUE IS 0");
@@ -1861,12 +1866,12 @@ static void gen_database( ACT action)
 #ifndef VMS
 		db->dbb_id = ++count;
 		if (db->dbb_runtime) {
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %s%ddb PIC X(%d) VALUE IS \"%s\".", names[isc_],
 				   db->dbb_id, strlen(db->dbb_runtime), db->dbb_runtime);
 		}
 		else if (db->dbb_filename) {
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %s%ddb PIC X(%d) VALUE IS \"%s\".", names[isc_],
 				   db->dbb_id, strlen(db->dbb_filename), db->dbb_filename);
 		}
@@ -1880,14 +1885,14 @@ static void gen_database( ACT action)
 		}
 #ifdef PYXIS
 		for (a_form = db->dbb_forms; a_form; a_form = a_form->form_next) {
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %s PIC S9(9) USAGE COMP VALUE IS 0.",
 				   a_form->form_handle);
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %sFL PIC S9(4) USAGE COMP VALUE IS %d.",
 				   a_form->form_handle, strlen(a_form->form_name->sym_string));
 #ifndef VMS
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %sFN PIC X(%d) VALUE IS \"%s\".", a_form->form_handle,
 				   strlen(a_form->form_name->sym_string),
 				   a_form->form_name->sym_string);
@@ -1899,7 +1904,7 @@ static void gen_database( ACT action)
 #ifndef VMS
 //  loop through actions: find readys to generate vars for quoted strings 
 
-	dyn_immed = FALSE;
+	dyn_immed = false;
 	for (act = action; act; act = act->act_rest)
 		if (act->act_type == ACT_create_database) {
 		}
@@ -1912,7 +1917,7 @@ static void gen_database( ACT action)
 					s = fname + strlen(fname) - 1;
 					*s = 0;
 					ready->rdy_id = ++count;
-					printa(names[COLUMN_0], FALSE,
+					printa(names[COLUMN_0], false,
 						   "01  %s%ddb PIC X(%d) VALUE IS \"%s\".",
 						   names[isc_], ready->rdy_id, strlen(fname), fname);
 				}
@@ -1952,18 +1957,18 @@ static void gen_database( ACT action)
 
 			if (!chck_dups) {
 				make_name(s1, cur_stmt);
-				printa(names[COLUMN_0], FALSE,
+				printa(names[COLUMN_0], false,
 					   "01  ISC-CONST-%s PIC X(%d) VALUE IS \"%s \".",
 					   s1, strlen(s1) + 1, s1);
-				printa(names[COLUMN_0], FALSE,
+				printa(names[COLUMN_0], false,
 					   "01  ISC-CONST-%sL PIC S9(4) USAGE %s.", s1,
 					   COMP_VALUE);
 			}
 		}
 		else if (act->act_type == ACT_dyn_immediate) {
 			if (!dyn_immed) {
-				dyn_immed = TRUE;
-				printa(names[COLUMN_0], FALSE,
+				dyn_immed = true;
+				printa(names[COLUMN_0], false,
 					   "01  ISC-CONST-DYN-IMMEDL PIC S9(4) USAGE %s.",
 					   COMP_VALUE);
 			}
@@ -1973,60 +1978,61 @@ static void gen_database( ACT action)
 			procedure = (GPRE_PRC) act->act_object;
 			symbol = procedure->prc_symbol;
 			name = symbol->sym_string;
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %s%dprc PIC X(%d) VALUE IS \"%s\".",
 				   names[isc_], request->req_ident, strlen(name), name);
 		}
 #endif
 
-	printa(names[COLUMN_0], FALSE, "01  %s%s PIC S9(9) USAGE COMP%s.",
+	printa(names[COLUMN_0], false, "01  %s%s PIC S9(9) USAGE COMP%s.",
 		   names[ISC_TRANS],
 		   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" : " IS GLOBAL",
 		   (all_extern) ? "" : " VALUE IS 0");
-	printa(names[COLUMN_0], FALSE, "01  %s%s.",
+	printa(names[COLUMN_0], false, "01  %s%s.",
 		   names[ISC_STATUS_VECTOR],
 		   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" : " IS GLOBAL");
-	printa(names[COLUMN], FALSE,
+	printa(names[COLUMN], false,
 		   "03  %s PIC S9(9) USAGE COMP OCCURS 20 TIMES.", names[ISC_STATUS]);
-	printa(names[COLUMN_0], FALSE, "01  %s%s.", names[ISC_STATUS_VECTOR2],
+	printa(names[COLUMN_0], false, "01  %s%s.", names[ISC_STATUS_VECTOR2],
 		   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" : " IS GLOBAL");
-	printa(names[COLUMN], FALSE,
+	printa(names[COLUMN], false,
 		   "03  %s PIC S9(9) USAGE COMP OCCURS 20 TIMES.",
 		   names[ISC_STATUS2]);
-	printa(names[COLUMN_0], FALSE, "01  %s PIC S9(9) USAGE COMP.",
+	printa(names[COLUMN_0], false, "01  %s PIC S9(9) USAGE COMP.",
 		   names[ISC_ARRAY_LENGTH]);
 
-	printa(names[COLUMN_0], FALSE, "01  SQLCODE%s PIC S9(9) USAGE %s%s.",
+	printa(names[COLUMN_0], false, "01  SQLCODE%s PIC S9(9) USAGE %s%s.",
 		   (all_static) ? "" : (all_extern) ? " IS EXTERNAL" : " IS GLOBAL",
 		   COMP_VALUE, (all_extern) ? "" : " VALUE IS 0");
 
+#ifdef PYXIS
 	if (sw_pyxis) {
-		printa(names[COLUMN_0], FALSE, "01  %s PIC S9(9) USAGE COMP%s.",
+		printa(names[COLUMN_0], false, "01  %s PIC S9(9) USAGE COMP%s.",
 			   names[ISC_WINDOW],
 			   (sw_window_scope == DBB_GLOBAL) ? " GLOBAL" :
 			   (sw_window_scope == DBB_EXTERN) ? " EXTERNAL" : "");
-		printa(names[COLUMN_0], FALSE, "01  %s PIC S9(4) USAGE COMP%s%s.",
+		printa(names[COLUMN_0], false, "01  %s PIC S9(4) USAGE COMP%s%s.",
 			   names[ISC_WIDTH],
 			   (sw_window_scope == DBB_GLOBAL) ? " GLOBAL" :
 			   (sw_window_scope == DBB_EXTERN) ? " EXTERNAL" : "",
 			   (sw_window_scope != DBB_EXTERN) ? " VALUE IS 80" : "");
-		printa(names[COLUMN_0], FALSE, "01  %s PIC S9(4) USAGE COMP%s%s.",
+		printa(names[COLUMN_0], false, "01  %s PIC S9(4) USAGE COMP%s%s.",
 			   names[ISC_HEIGHT],
 			   (sw_window_scope == DBB_GLOBAL) ? " GLOBAL" :
 			   (sw_window_scope == DBB_EXTERN) ? " EXTERNAL" : "",
 			   (sw_window_scope != DBB_EXTERN) ? " VALUE IS 24" : "");
 	}
-
+#endif
 	for (request = requests; request; request = request->req_next) {
 		gen_request(request);
 		for (port = request->req_ports; port; port = port->por_next)
 			make_port(port);
 		for (blob = request->req_blobs; blob; blob = blob->blb_next) {
-			printa(names[COLUMN_0], FALSE, "01  %s%d PIC S9(9) USAGE COMP.",
+			printa(names[COLUMN_0], false, "01  %s%d PIC S9(9) USAGE COMP.",
 				   names[ISC_], blob->blb_ident);
-			printa(names[COLUMN_0], FALSE, "01  %s%d PIC X(%d).",
+			printa(names[COLUMN_0], false, "01  %s%d PIC X(%d).",
 				   names[ISC_], blob->blb_buff_ident, blob->blb_seg_length);
-			printa(names[COLUMN_0], FALSE, "01  %s%d PIC S9(4) USAGE %s.",
+			printa(names[COLUMN_0], false, "01  %s%d PIC S9(4) USAGE %s.",
 				   names[ISC_], blob->blb_len_ident, COMP_VALUE);
 		}
 
@@ -2048,22 +2054,22 @@ static void gen_database( ACT action)
 	}
 
 	if (max_count) {
-		printa(names[COLUMN_0], FALSE, "01  %s.", names[ISC_EVENTS_VECTOR]);
-		printa(names[COLUMN], FALSE,
+		printa(names[COLUMN_0], false, "01  %s.", names[ISC_EVENTS_VECTOR]);
+		printa(names[COLUMN], false,
 			   "03  %s PIC S9(9) USAGE COMP OCCURS %d TIMES.",
 			   names[ISC_EVENTS], max_count);
-		printa(names[COLUMN_0], FALSE, "01  %s.",
+		printa(names[COLUMN_0], false, "01  %s.",
 			   names[ISC_EVENT_NAMES_VECTOR]);
-		printa(names[COLUMN], FALSE,
+		printa(names[COLUMN], false,
 			   "03  %s PIC S9(9) USAGE COMP OCCURS %d TIMES.",
 			   names[ISC_EVENT_NAMES], max_count);
-		printa(names[COLUMN_0], FALSE, "01  %s.",
+		printa(names[COLUMN_0], false, "01  %s.",
 			   names[ISC_EVENT_NAMES_VECTOR2]);
-		printa(names[COLUMN], FALSE, "03  %s PIC X(31) OCCURS %d TIMES.",
+		printa(names[COLUMN], false, "03  %s PIC X(31) OCCURS %d TIMES.",
 			   names[ISC_EVENT_NAMES2], max_count);
 	}
 
-	printa(names[COMMENT], FALSE, "**** end of GPRE definitions ****\n");
+	printa(names[COMMENT], false, "**** end of GPRE definitions ****\n");
 }
 
 
@@ -2081,8 +2087,8 @@ static void gen_ddl( ACT action)
 	request = action->act_request;
 
 	if (sw_auto) {
-		t_start_auto(0, status_vector(action), action, TRUE);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", names[ISC_TRANS]);
+		t_start_auto(0, status_vector(action), action, true);
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", names[ISC_TRANS]);
 	}
 
 
@@ -2096,18 +2102,18 @@ static void gen_ddl( ACT action)
 	COB_print_buffer(output_buffer, TRUE);
 
 	if (sw_auto) {
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
+		printa(names[COLUMN], true,
 			   "CALL \"%s\" USING %s, %s%s", ISC_COMMIT_TRANSACTION,
 			   status_vector(action), BY_REF, names[ISC_TRANS]);
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "IF %s(2) NOT = 0 THEN",
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "IF %s(2) NOT = 0 THEN",
 			   names[ISC_STATUS]);
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], true,
 			   "CALL \"%s\" USING %s, %s%s",
 			   ISC_ROLLBACK_TRANSACTION, OMITTED, BY_REF, names[ISC_TRANS]);
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 	}
 	COB_print_buffer(output_buffer, TRUE);
 	set_sqlcode(action);
@@ -2130,7 +2136,7 @@ static void gen_dyn_close( ACT action)
 #else
 	make_name(s, statement->dyn_cursor_name);
 #endif
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s",
 		   ISC_CLOSE, status_vector(action), BY_REF, s);
 	set_sqlcode(action);
@@ -2157,7 +2163,7 @@ static void gen_dyn_declare( ACT action)
 	make_name(s2, statement->dyn_cursor_name);
 #endif
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s",
 		   ISC_DECLARE, status_vector(action), BY_REF, s1, BY_REF, s2);
 	set_sqlcode(action);
@@ -2169,7 +2175,8 @@ static void gen_dyn_declare( ACT action)
 //		Generate a dynamic SQL statement.
 //  
 
-static void gen_dyn_describe( ACT action, BOOLEAN bind_flag)
+static void gen_dyn_describe(ACT action,
+							 bool bind_flag)
 {
 	DYN statement;
 	TEXT s[64];
@@ -2182,7 +2189,7 @@ static void gen_dyn_describe( ACT action, BOOLEAN bind_flag)
 	make_name(s, statement->dyn_statement_name);
 #endif
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s",
 		   bind_flag ? ISC_DESCRIBE_BIND : ISC_DESCRIBE,
 		   status_vector(action),
@@ -2216,8 +2223,8 @@ static void gen_dyn_execute( ACT action)
 	}
 
 	if (sw_auto) {
-		t_start_auto(request, status_vector(action), action, TRUE);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", transaction);
+		t_start_auto(request, status_vector(action), action, true);
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", transaction);
 	}
 
 #ifndef VMS
@@ -2226,7 +2233,7 @@ static void gen_dyn_execute( ACT action)
 	make_name(s, statement->dyn_statement_name);
 #endif
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s, %s%s" :
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s",
@@ -2241,7 +2248,7 @@ static void gen_dyn_execute( ACT action)
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : OMITTED);
 
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 	set_sqlcode(action);
 }
@@ -2271,7 +2278,7 @@ static void gen_dyn_fetch( ACT action)
 	make_name(s, statement->dyn_cursor_name);
 #endif
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   FETCH_CALL_TEMPLATE,
 		   ISC_FETCH,
 		   status_vector(action),
@@ -2280,11 +2287,11 @@ static void gen_dyn_fetch( ACT action)
 		   (statement->dyn_sqlda) ? BY_REF : "",
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : OMITTED);
 
-	printa(names[COLUMN], FALSE, "IF SQLCODE NOT = 100 THEN");
+	printa(names[COLUMN], false, "IF SQLCODE NOT = 100 THEN");
 
 	set_sqlcode(action);
 
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 }
 
 
@@ -2322,7 +2329,7 @@ static void gen_dyn_immediate( ACT action)
 
 #ifndef VMS
 	s2 = "ISC-CONST-DYN-IMMEDL";
-	printa(names[COLUMN], TRUE, GET_LEN_CALL_TEMPLATE,
+	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	sprintf(s, " %s%s%s,", BY_VALUE, s2, END_VALUE);
 #else
@@ -2330,11 +2337,11 @@ static void gen_dyn_immediate( ACT action)
 #endif
 
 	if (sw_auto) {
-		t_start_auto(request, status_vector(action), action, TRUE);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", transaction);
+		t_start_auto(request, status_vector(action), action, true);
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", transaction);
 	}
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s, %s%s" :
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s",
@@ -2348,7 +2355,7 @@ static void gen_dyn_immediate( ACT action)
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : OMITTED);
 
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 	set_sqlcode(action);
 }
@@ -2372,7 +2379,7 @@ static void gen_dyn_insert( ACT action)
 	make_name(s, statement->dyn_cursor_name);
 #endif
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s",
 		   ISC_INSERT,
 		   status_vector(action),
@@ -2415,11 +2422,11 @@ static void gen_dyn_open( ACT action)
 #endif
 
 	if (sw_auto) {
-		t_start_auto(request, status_vector(action), action, TRUE);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", transaction);
+		t_start_auto(request, status_vector(action), action, true);
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", transaction);
 	}
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s, %s%s" :
 		   (TEXT*) "CALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%s",
@@ -2434,7 +2441,7 @@ static void gen_dyn_open( ACT action)
 		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : OMITTED);
 
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 	set_sqlcode(action);
 }
@@ -2469,7 +2476,7 @@ static void gen_dyn_prepare( ACT action)
 #ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_statement_name);
 	sprintf(s2, "%sL", s);
-	printa(names[COLUMN], TRUE, GET_LEN_CALL_TEMPLATE,
+	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	sprintf(s3, " %s%s%s,", BY_VALUE, s2, END_VALUE);
 #else
@@ -2478,11 +2485,11 @@ static void gen_dyn_prepare( ACT action)
 #endif
 
 	if (sw_auto) {
-		t_start_auto(request, status_vector(action), action, TRUE);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", transaction);
+		t_start_auto(request, status_vector(action), action, true);
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", transaction);
 	}
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s,%s %s%s, %s%d%s, %s%s",
 		   ISC_PREPARE,
 		   status_vector(action),
@@ -2496,7 +2503,7 @@ static void gen_dyn_prepare( ACT action)
 		   (statement->dyn_sqlda) ? statement->dyn_sqlda : OMITTED);
 
 	if (sw_auto)
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 	set_sqlcode(action);
 }
@@ -2521,8 +2528,8 @@ static void gen_emodify( ACT action)
 		if (!(source = reference->ref_source))
 			continue;
 		field = reference->ref_field;
-		gen_name(s1, source, TRUE);
-		gen_name(s2, reference, TRUE);
+		gen_name(s1, source, true);
+		gen_name(s2, reference, true);
 		if (field->fld_dtype == dtype_blob ||
 			field->fld_dtype == dtype_quad || field->fld_dtype == dtype_date)
 			sprintf(output_buffer, "%sCALL \"isc_qtoq\" USING %s, %s\n",
@@ -2532,7 +2539,7 @@ static void gen_emodify( ACT action)
 					names[COLUMN], s1, s2);
 		COB_print_buffer(output_buffer, TRUE);
 		if (field->fld_array_info)
-			gen_get_or_put_slice(action, reference, FALSE);
+			gen_get_or_put_slice(action, reference, false);
 	}
 
 	gen_send(action, modify->upd_port);
@@ -2561,7 +2568,7 @@ static void gen_estore( ACT action)
 static void gen_end_fetch( ACT action)
 {
 
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 
 }
 
@@ -2580,7 +2587,7 @@ static void gen_endfor( ACT action)
 	if (request->req_sync)
 		gen_send(action, request->req_sync);
 	gen_receive(action, request->req_primary);
-	printa(names[COLUMN], FALSE, "END-PERFORM");
+	printa(names[COLUMN], false, "END-PERFORM");
 }
 
 
@@ -2614,11 +2621,11 @@ static SSHORT gen_event_block( ACT action)
 	ident = CMP_next_ident();
 	init->nod_arg[2] = (GPRE_NOD) ident;
 
-	printa(names[COLUMN_0], FALSE, "01  %s%dA PIC S9(9) USAGE COMP.",
+	printa(names[COLUMN_0], false, "01  %s%dA PIC S9(9) USAGE COMP.",
 		   names[ISC_], ident);
-	printa(names[COLUMN_0], FALSE, "01  %s%dB PIC S9(9) USAGE COMP.",
+	printa(names[COLUMN_0], false, "01  %s%dB PIC S9(9) USAGE COMP.",
 		   names[ISC_], ident);
-	printa(names[COLUMN_0], FALSE, "01  %s%dL PIC S9(4) USAGE COMP.",
+	printa(names[COLUMN_0], false, "01  %s%dL PIC S9(4) USAGE COMP.",
 		   names[ISC_], ident);
 
 	list = init->nod_arg[1];
@@ -2681,15 +2688,15 @@ static void gen_event_init( ACT action)
 		node = *ptr;
 		if (node->nod_type == nod_field) {
 			reference = (REF) node->nod_arg[0];
-			gen_name(variable, reference, TRUE);
-			printa(names[COLUMN], FALSE, "MOVE %s TO %s(%d)", variable,
+			gen_name(variable, reference, true);
+			printa(names[COLUMN], false, "MOVE %s TO %s(%d)", variable,
 				   names[ISC_EVENT_NAMES2], count);
 		}
 		else
-			printa(names[COLUMN], FALSE, "MOVE %s TO %s(%d)",
+			printa(names[COLUMN], false, "MOVE %s TO %s(%d)",
 				   (TEXT *) node->nod_arg[0], names[ISC_EVENT_NAMES2], count);
 
-		printa(names[COLUMN], TRUE, EVENT_MOVE_TEMPLATE, ISC_BADDRESS,
+		printa(names[COLUMN], true, EVENT_MOVE_TEMPLATE, ISC_BADDRESS,
 			   names[ISC_EVENT_NAMES2], count, names[ISC_EVENT_NAMES], count);
 	}
 
@@ -2814,7 +2821,7 @@ static void gen_fetch( ACT action)
 		   the offset is 1, then there is no need to pass the message; this prevents 
 		   extra packets and allows for batch fetches in either direction */
 
-		printa(names[COLUMN], FALSE,
+		printa(names[COLUMN], false,
 			   "IF %s%dDI MOD 2 NOT = %s || %s NOT = 1 THEN", names[ISC_],
 			   request->req_ident, direction, offset);
 
@@ -2823,11 +2830,11 @@ static void gen_fetch( ACT action)
 
 		asgn_from(action, port->por_references);
 		gen_send(action, port);
-		printa(names[COLUMN], FALSE, "MOVE %s TO %s%dDI",
+		printa(names[COLUMN], false, "MOVE %s TO %s%dDI",
 			   names[ISC_], direction, request->req_ident);
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
-		printa(names[COLUMN], FALSE, "IF SQLCODE NOT = 0 THEN");
+		printa(names[COLUMN], false, "IF SQLCODE NOT = 0 THEN");
 	}
 #endif
 
@@ -2835,20 +2842,20 @@ static void gen_fetch( ACT action)
 		gen_send(action, request->req_sync);
 
 	gen_receive(action, request->req_primary);
-	printa(names[COLUMN], FALSE,
-		   "IF %s NOT =  0 THEN", gen_name(s, request->req_eof, TRUE));
-	printa(names[COLUMN], FALSE, "MOVE 0 TO SQLCODE");
+	printa(names[COLUMN], false,
+		   "IF %s NOT =  0 THEN", gen_name(s, request->req_eof, true));
+	printa(names[COLUMN], false, "MOVE 0 TO SQLCODE");
 	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			asgn_to(action, (REF) var_list->nod_arg[i]);
 		}
-	printa(names[COLUMN], FALSE, "ELSE");
-	printa(names[COLUMN], FALSE, "MOVE 100 TO SQLCODE");
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "ELSE");
+	printa(names[COLUMN], false, "MOVE 100 TO SQLCODE");
+	printa(names[COLUMN], false, "END-IF");
 
 #ifdef SCROLLABLE_CURSORS
 	if (port)
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 #endif
 }
 
@@ -2872,14 +2879,14 @@ static void gen_finish( ACT action)
 
 	if (sw_auto || ((action->act_flags & ACT_sql) &&
 					(action->act_type != ACT_disconnect))) {
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", names[ISC_TRANS]);
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", names[ISC_TRANS]);
+		printa(names[COLUMN], true,
 			   "    CALL \"%s\" USING %s, %s%s",
 			   (action->act_type !=
 				ACT_rfinish) ? ISC_COMMIT_TRANSACTION :
 			   ISC_ROLLBACK_TRANSACTION, status_vector(action), BY_REF,
 			   names[ISC_TRANS]);
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 	}
 
 //  the user may have supplied one or more handles 
@@ -2887,26 +2894,26 @@ static void gen_finish( ACT action)
 	db = NULL;
 	for (ready = (RDY) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
-		printa(names[COLUMN], FALSE,
+		printa(names[COLUMN], false,
 			   "IF %s NOT = 0 THEN", db->dbb_name->sym_string);
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], true,
 			   "CALL \"%s\" USING %s, %s%s",
 			   ISC_DETACH_DATABASE,
 			   status_vector(action), BY_REF, db->dbb_name->sym_string);
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 	}
 
 //  no handles, so finish all known databases 
 
 	if (!db)
 		for (db = isc_databases; db; db = db->dbb_next) {
-			printa(names[COLUMN], FALSE,
+			printa(names[COLUMN], false,
 				   "IF %s NOT = 0 THEN", db->dbb_name->sym_string);
-			printa(names[COLUMN], TRUE,
+			printa(names[COLUMN], true,
 				   "CALL \"%s\" USING %s, %s%s",
 				   ISC_DETACH_DATABASE,
 				   status_vector(action), BY_REF, db->dbb_name->sym_string);
-			printa(names[COLUMN], FALSE, "END-IF");
+			printa(names[COLUMN], false, "END-IF");
 		}
 	set_sqlcode(action);
 }
@@ -2927,15 +2934,15 @@ static void gen_for( ACT action)
 	gen_s_start(action);
 	request = action->act_request;
 	gen_receive(action, request->req_primary);
-	printa(names[COLUMN], FALSE, "PERFORM UNTIL %s = 0",
-		   gen_name(s, request->req_eof, TRUE));
+	printa(names[COLUMN], false, "PERFORM UNTIL %s = 0",
+		   gen_name(s, request->req_eof, true));
 
 	if (port = action->act_request->req_primary)
 		for (reference = port->por_references; reference;
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, TRUE);
+					gen_get_or_put_slice(action, reference, true);
 }
 
 #ifdef PYXIS
@@ -2965,8 +2972,8 @@ static void gen_form_display( ACT action)
 		 reference = reference->ref_next)
 			if ((master = reference->ref_master) &&
 				(code = CMP_display_code(display, master)) >= 0)
-			printa(names[COLUMN], FALSE,
-				   "MOVE %d TO %s", code, gen_name(s, reference, TRUE));
+			printa(names[COLUMN], false,
+				   "MOVE %d TO %s", code, gen_name(s, reference, true));
 
 
 	if (display->fint_flags & FINT_no_wait)
@@ -2974,7 +2981,7 @@ static void gen_form_display( ACT action)
 	else
 		sprintf(out, "%s%d", names[isc_], port->por_ident);
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s, %s%s%d, %s%s",
 		   PYXIS_DRIVE_FORM,
 		   status_vector(action),
@@ -2994,7 +3001,7 @@ static void gen_form_display( ACT action)
 static void gen_form_end( ACT action)
 {
 
-	printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s%s",
+	printa(names[COLUMN], true, "CALL \"%s\" USING %s%s",
 		   PYXIS_POP_WINDOW, BY_REF, names[ISC_WINDOW]);
 }
 #endif
@@ -3028,7 +3035,7 @@ static void gen_function( ACT function)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
 				ib_fprintf(out_file, ", %s",
-						   gen_name(s, reference->ref_source, TRUE));
+						   gen_name(s, reference->ref_source, true));
 
 	ib_fprintf(out_file,
 			   ")\n    isc_req_handle\trequest;\n    isc_tr_handle\ttransaction;\n");
@@ -3073,7 +3080,7 @@ static void gen_function( ACT function)
 				return;
 			}
 			ib_fprintf(out_file, "    %s\t%s;\n", dtype,
-					   gen_name(s, reference->ref_source, TRUE));
+					   gen_name(s, reference->ref_source, true));
 		}
 
 	ib_fprintf(out_file, "{\n");
@@ -3089,11 +3096,11 @@ static void gen_function( ACT function)
 			 reference =
 			 reference->ref_next) if (reference->ref_field->
 									  fld_array_info)
-					gen_get_or_put_slice(action, reference, TRUE);
+					gen_get_or_put_slice(action, reference, true);
 
 	port = request->req_primary;
 	ib_fprintf(out_file, "\nreturn %s;\n}\n",
-			   gen_name(s, port->por_references, TRUE));
+			   gen_name(s, port->por_references, true));
 }
 
 #ifdef PYXIS
@@ -3116,11 +3123,11 @@ static void gen_form_for( ACT action)
 //  Get database attach and transaction started 
 
 	if (sw_auto)
-		t_start_auto(0, status_vector(action), action, TRUE);
+		t_start_auto(0, status_vector(action), action, true);
 
 //  Get form loaded first 
 
-	printa(names[COLUMN], FALSE, "IF %s = 0 THEN", request->req_form_handle);
+	printa(names[COLUMN], false, "IF %s = 0 THEN", request->req_form_handle);
 
 #ifndef VMS
 	sprintf(s, "%s%sFN", BY_REF, request->req_form_handle);
@@ -3128,7 +3135,7 @@ static void gen_form_for( ACT action)
 	sprintf(s, "\'%s\'", a_form->form_name->sym_string);
 #endif
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%sFL, %s",
 		   PYXIS_LOAD_FORM,
 		   status_vector(action),
@@ -3136,12 +3143,12 @@ static void gen_form_for( ACT action)
 		   BY_REF, request->req_trans,
 		   BY_REF, request->req_form_handle,
 		   BY_REF, request->req_form_handle, s);
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 
 //  Get map compiled 
 
-	printa(names[COLUMN], FALSE, "IF %s = 0 THEN", request->req_handle);
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], false, "IF %s = 0 THEN", request->req_handle);
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s%dL, %s%s%d",
 		   PYXIS_COMPILE_MAP,
 		   status_vector(action),
@@ -3149,11 +3156,11 @@ static void gen_form_for( ACT action)
 		   BY_REF, request->req_handle,
 		   BY_REF, names[isc_], request->req_ident,
 		   BY_REF, names[ISC_], request->req_ident);
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 
 //  Reset form to known state 
 
-	printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s, %s%s",
+	printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
 		   PYXIS_RESET_FORM,
 		   status_vector(action), BY_REF, request->req_handle);
 }
@@ -3165,7 +3172,9 @@ static void gen_form_for( ACT action)
 //		or isc_put_slice for an array.
 //  
 
-static void gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
+static void gen_get_or_put_slice(ACT action,
+								 REF reference,
+								 bool get)
 {
 	int column;
 	PAT args;
@@ -3180,12 +3189,12 @@ static void gen_get_or_put_slice( ACT action, REF reference, BOOLEAN get)
 
 	column = strlen(names[COLUMN]);
 
-	args.pat_condition = get;	/*  get or put slice */
-	args.pat_vector1 = status_vector(action);	/*  status vector  */
-	args.pat_database = action->act_request->req_database;	/* database handle */
-	args.pat_string1 = action->act_request->req_trans;	/*  transaction handle */
+	args.pat_condition = (get) ? TRUE : FALSE;	//  get or put slice
+	args.pat_vector1 = status_vector(action);	//  status vector
+	args.pat_database = action->act_request->req_database;	// database handle
+	args.pat_string1 = action->act_request->req_trans;	//  transaction handle
 
-	gen_name(s1, reference, TRUE);	/*  blob handle  */
+	gen_name(s1, reference, true);	//  blob handle
 	args.pat_string2 = s1;
 
 	args.pat_value1 = reference->ref_sdl_length;	/*  slice descr length */
@@ -3254,13 +3263,13 @@ static void gen_get_segment( ACT action)
 	if (action->act_flags & ACT_sql) {
 		into = action->act_object;
 		set_sqlcode(action);
-		printa(names[COLUMN], FALSE, "IF SQLCODE = 0 OR SQLCODE = 101 THEN ");
-		printa(names[COLUMN], FALSE, "MOVE ISC-%d TO %s",
+		printa(names[COLUMN], false, "IF SQLCODE = 0 OR SQLCODE = 101 THEN ");
+		printa(names[COLUMN], false, "MOVE ISC-%d TO %s",
 			   blob->blb_buff_ident, into->ref_value);
 		if (into->ref_null_value)
-			printa(names[COLUMN], FALSE, "MOVE ISC-%d TO %s",
+			printa(names[COLUMN], false, "MOVE ISC-%d TO %s",
 				   blob->blb_len_ident, into->ref_null_value);
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 	}
 }
 
@@ -3288,9 +3297,9 @@ static void gen_item_end( ACT action)
 	}
 
 	if (action->act_pair->act_type == ACT_item_for) {
-		gen_name(index, request->req_index, TRUE);
-		printa(names[COLUMN], FALSE, "COMPUTE %s = %s + 1", index, index);
-		printa(names[COLUMN], TRUE,
+		gen_name(index, request->req_index, true);
+		printa(names[COLUMN], false, "COMPUTE %s = %s + 1", index, index);
+		printa(names[COLUMN], true,
 			   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s%d",
 			   PYXIS_FETCH,
 			   status_vector(action),
@@ -3298,7 +3307,7 @@ static void gen_item_end( ACT action)
 			   BY_REF, request->req_trans,
 			   BY_REF, request->req_handle,
 			   BY_REF, names[ISC_], port->por_ident);
-		printa(names[COLUMN], FALSE, "END-PERFORM");
+		printa(names[COLUMN], false, "END-PERFORM");
 		return;
 	}
 
@@ -3306,11 +3315,11 @@ static void gen_item_end( ACT action)
 
 	for (reference = port->por_references; reference;
 		 reference = reference->ref_next) if (reference->ref_master)
-			printa(names[COLUMN], FALSE,
+			printa(names[COLUMN], false,
 				   "MOVE %d TO %s", PYXIS_OPT_DISPLAY,
-				   gen_name(s, reference, TRUE));
+				   gen_name(s, reference, true));
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s%d",
 		   PYXIS_INSERT,
 		   status_vector(action),
@@ -3339,8 +3348,8 @@ static void gen_item_for( ACT action)
 
 //  Get map compiled 
 
-	printa(names[COLUMN], FALSE, "IF %s = 0 THEN", request->req_handle);
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], false, "IF %s = 0 THEN", request->req_handle);
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s%dL, %s%s%d",
 		   PYXIS_COMPILE_SUB_MAP,
 		   status_vector(action),
@@ -3348,16 +3357,16 @@ static void gen_item_for( ACT action)
 		   BY_REF, request->req_handle,
 		   BY_REF, names[ISC_], request->req_ident,
 		   BY_REF, names[ISC_], request->req_ident);
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 
 	if (action->act_type != ACT_item_for)
 		return;
 
 //  Build stuff for item loop 
 
-	gen_name(index, request->req_index, TRUE);
-	printa(names[COLUMN], FALSE, "MOVE 1 TO %s", index);
-	printa(names[COLUMN], TRUE,
+	gen_name(index, request->req_index, true);
+	printa(names[COLUMN], false, "MOVE 1 TO %s", index);
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s, %s%s, %s%s%d",
 		   PYXIS_FETCH,
 		   status_vector(action),
@@ -3366,8 +3375,8 @@ static void gen_item_for( ACT action)
 		   BY_REF, request->req_handle,
 		   BY_REF, names[ISC_], request->req_ports->por_ident);
 	if (action->act_error || (action->act_flags & ACT_sql))
-		printa(names[COLUMN], FALSE, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
-	printa(names[COLUMN], FALSE, "PERFORM UNTIL %s = 0", index);
+		printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[ISC_STATUS]);
+	printa(names[COLUMN], false, "PERFORM UNTIL %s = 0", index);
 }
 #endif
 
@@ -3385,14 +3394,14 @@ static void gen_loop( ACT action)
 
 	gen_s_start(action);
 	request = action->act_request;
-	printa(names[COLUMN], FALSE, "IF SQLCODE = 0 THEN");
+	printa(names[COLUMN], false, "IF SQLCODE = 0 THEN");
 	port = request->req_primary;
 	gen_receive(action, port);
-	gen_name(name, port->por_references, TRUE);
-	printa(names[COLUMN], FALSE, "IF SQLCODE = 0 AND %s = 0 THEN ", name);
-	printa(names[COLUMN], FALSE, "MOVE 100 TO SQLCODE");
-	printa(names[COLUMN], FALSE, "END-IF");
-	printa(names[COLUMN], FALSE, "END-IF");
+	gen_name(name, port->por_references, true);
+	printa(names[COLUMN], false, "IF SQLCODE = 0 AND %s = 0 THEN ", name);
+	printa(names[COLUMN], false, "MOVE 100 TO SQLCODE");
+	printa(names[COLUMN], false, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 }
 
 #ifdef PYXIS
@@ -3414,7 +3423,7 @@ static void gen_menu( ACT action)
 
 	request = action->act_request;
 	strcpy(buffer, PYXIS_MENU_CALL_TEMPLATE);
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   buffer,
 		   PYXIS_MENU,
 		   names[ISC_WINDOW],
@@ -3443,7 +3452,7 @@ static void gen_menu_display( ACT action)
 			break;
 		}
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s%s, %s%s, %s%s%dL, %s%s%d, %s%s%dL, %s%s%d,",
 		   PYXIS_DRIVE_MENU,
 		   BY_REF, names[ISC_WINDOW],
@@ -3453,7 +3462,7 @@ static void gen_menu_display( ACT action)
 		   BY_REF, names[ISC_], a_menu->menu_title,
 		   BY_REF, names[ISC_], a_menu->menu_title);
 
-	printa(names[CONTINUE], TRUE,
+	printa(names[CONTINUE], true,
 		   "%s%s%d, %s%s%dL, %s%s%d, %s%s%d",
 		   BY_REF, names[ISC_], a_menu->menu_terminator,
 		   BY_REF, names[ISC_], a_menu->menu_entree_entree,
@@ -3476,7 +3485,7 @@ static void gen_menu_end( ACT action)
 	if (request->req_flags & REQ_menu_for)
 		return;
 
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 }
 #endif
 #ifdef PYXIS
@@ -3491,8 +3500,8 @@ static void gen_menu_entree( ACT action)
 	request = action->act_request;
 
 	if (!(action->act_flags & ACT_first_entree))
-		printa(names[COLUMN], FALSE, "END-IF");
-	printa(names[COLUMN], FALSE,
+		printa(names[COLUMN], false, "END-IF");
+	printa(names[COLUMN], false,
 		   "IF %sS = %d THEN", request->req_handle, action->act_count);
 }
 #endif
@@ -3505,16 +3514,17 @@ static void gen_menu_entree( ACT action)
 static void gen_menu_entree_att( ACT action)
 {
 	MENU a_menu = (MENU) action->act_object;
-	SSHORT ident, length;
+	SSHORT ident;
+	bool length;
 
-	length = FALSE;
+	length = false;
 	switch (action->act_type) {
 	case ACT_entree_text:
 		ident = a_menu->menu_entree_entree;
 		break;
 	case ACT_entree_length:
 		ident = a_menu->menu_entree_entree;
-		length = TRUE;
+		length = true;
 		break;
 	case ACT_entree_value:
 		ident = a_menu->menu_entree_value;
@@ -3524,7 +3534,7 @@ static void gen_menu_entree_att( ACT action)
 		break;
 	case ACT_title_length:
 		ident = a_menu->menu_title;
-		length = TRUE;
+		length = true;
 		break;
 	case ACT_terminator:
 		ident = a_menu->menu_terminator;
@@ -3555,7 +3565,7 @@ static void gen_menu_for( ACT action)
 //  Get menu created 
 
 	if (!(request->req_flags & REQ_exp_hand))
-		printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s%s",
+		printa(names[COLUMN], true, "CALL \"%s\" USING %s%s",
 			   PYXIS_INITIALIZE_MENU, BY_REF, request->req_handle);
 }
 #endif
@@ -3575,7 +3585,7 @@ static void gen_menu_item_end( ACT action)
 	request = menu_entree->entree_request;
 
 	if (action->act_pair->act_type == ACT_item_for) {
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], true,
 			   "CALL \"%s\" USING %s%s, %s%s%dL, %s%s%d, %s%s%d, %s%s%d",
 			   PYXIS_GET_ENTREE,
 			   BY_REF, request->req_handle,
@@ -3584,12 +3594,12 @@ static void gen_menu_item_end( ACT action)
 			   BY_REF, names[ISC_], menu_entree->entree_value,
 			   BY_REF, names[ISC_], menu_entree->entree_end);
 
-		printa(names[COLUMN], FALSE, "END-PERFORM");
+		printa(names[COLUMN], false, "END-PERFORM");
 		return;
 	}
 
 	printa(names[COLUMN],
-		   TRUE,
+		   true,
 		   "CALL \"%s\" USING %s%s, %s%s%dL, %s%s%d, %s%s%d",
 		   PYXIS_PUT_ENTREE,
 		   BY_REF, request->req_handle,
@@ -3618,8 +3628,7 @@ static void gen_menu_item_for( ACT action)
 	menu_entree = (ENTREE) action->act_object;
 	request = menu_entree->entree_request;
 
-	printa(names[COLUMN],
-		   TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s%s, %s%s%dL, %s%s%d, %s%s%d, %s%s%d",
 		   PYXIS_GET_ENTREE,
 		   BY_REF, request->req_handle,
@@ -3628,7 +3637,7 @@ static void gen_menu_item_for( ACT action)
 		   BY_REF, names[ISC_], menu_entree->entree_value,
 		   BY_REF, names[ISC_], menu_entree->entree_end);
 
-	printa(names[COLUMN], FALSE, "PERFORM UNTIL %s%d NOT = 0",
+	printa(names[COLUMN], false, "PERFORM UNTIL %s%d NOT = 0",
 		   names[ISC_], menu_entree->entree_end);
 
 }
@@ -3662,17 +3671,17 @@ static void gen_menu_request( GPRE_REQ request)
 		a_menu->menu_terminator = CMP_next_ident();
 		a_menu->menu_entree_value = CMP_next_ident();
 		a_menu->menu_entree_entree = CMP_next_ident();
-		printa(names[COLUMN_0], FALSE, "01  %%dL PIC S9(4) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %%dL PIC S9(4) USAGE IS COMP.",
 			   names[ISC_], a_menu->menu_title);
-		printa(names[COLUMN_0], FALSE, "01  %%d PIC X(81).",
+		printa(names[COLUMN_0], false, "01  %%d PIC X(81).",
 			   names[ISC_], a_menu->menu_title);
-		printa(names[COLUMN_0], FALSE, "01  %%d PIC S9(4) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %%d PIC S9(4) USAGE IS COMP.",
 			   names[ISC_], a_menu->menu_terminator);
-		printa(names[COLUMN_0], FALSE, "01  %%dL PIC S9(4) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %%dL PIC S9(4) USAGE IS COMP.",
 			   names[ISC_], a_menu->menu_entree_entree);
-		printa(names[COLUMN_0], FALSE, "01  %%d PIC X(81).",
+		printa(names[COLUMN_0], false, "01  %%d PIC X(81).",
 			   names[ISC_], a_menu->menu_entree_entree);
-		printa(names[COLUMN_0], FALSE, "01  %%d PIC S9(9) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %%d PIC S9(9) USAGE IS COMP.",
 			   names[ISC_], a_menu->menu_entree_value);
 	}
 
@@ -3680,13 +3689,13 @@ static void gen_menu_request( GPRE_REQ request)
 		menu_entree->entree_entree = CMP_next_ident();
 		menu_entree->entree_value = CMP_next_ident();
 		menu_entree->entree_end = CMP_next_ident();
-		printa(names[COLUMN_0], FALSE, "01  %s%dL PIC S9(4) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %s%dL PIC S9(4) USAGE IS COMP.",
 			   names[ISC_], menu_entree->entree_entree);
-		printa(names[COLUMN_0], FALSE, "01  %s%d PIC X(81).",
+		printa(names[COLUMN_0], false, "01  %s%d PIC X(81).",
 			   names[ISC_], menu_entree->entree_entree);
-		printa(names[COLUMN_0], FALSE, "01  %s%d PIC S9(9) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %s%d PIC S9(9) USAGE IS COMP.",
 			   names[ISC_], menu_entree->entree_value);
-		printa(names[COLUMN_0], FALSE, "01  %s%d PIC S9(4) USAGE IS COMP.",
+		printa(names[COLUMN_0], false, "01  %s%d PIC S9(4) USAGE IS COMP.",
 			   names[ISC_], menu_entree->entree_end);
 	}
 
@@ -3699,7 +3708,9 @@ static void gen_menu_request( GPRE_REQ request)
 //		port and parameter idents.
 //  
 
-static TEXT *gen_name( TEXT * string, REF reference, BOOLEAN as_blob)
+static TEXT *gen_name(TEXT * string,
+					  REF reference,
+					  bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
@@ -3720,7 +3731,7 @@ static TEXT *gen_name( TEXT * string, REF reference, BOOLEAN as_blob)
 static void gen_on_error( ACT action)
 {
 
-	printa(names[COLUMN], FALSE, "IF %s (2) NOT = 0 THEN", names[ISC_STATUS]);
+	printa(names[COLUMN], false, "IF %s (2) NOT = 0 THEN", names[ISC_STATUS]);
 	ib_fprintf(out_file, names[COLUMN]);
 }
 
@@ -3767,7 +3778,7 @@ static void gen_procedure( ACT action)
 //  Get database attach and transaction started 
 
 	if (sw_auto)
-		t_start_auto(0, status_vector(action), action, TRUE);
+		t_start_auto(0, status_vector(action), action, true);
 
 //  Move in input values 
 
@@ -3780,12 +3791,12 @@ static void gen_procedure( ACT action)
 
 	set_sqlcode(action);
 
-	printa(names[COLUMN], FALSE, "IF SQLCODE = 0 THEN");
+	printa(names[COLUMN], false, "IF SQLCODE = 0 THEN");
 
 //  Move out output values 
 
 	asgn_to_proc(request->req_references);
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 }
 
 
@@ -3809,9 +3820,9 @@ static void gen_put_segment( ACT action)
 	if (action->act_flags & ACT_sql) {
 		blob = (BLB) action->act_request->req_blobs;
 		from = action->act_object;
-		printa(names[COLUMN], FALSE, "MOVE %s TO ISC-%d",
+		printa(names[COLUMN], false, "MOVE %s TO ISC-%d",
 			   from->ref_value, blob->blb_buff_ident);
-		printa(names[COLUMN], FALSE, "MOVE %s TO ISC-%d",
+		printa(names[COLUMN], false, "MOVE %s TO ISC-%d",
 			   from->ref_null_value, blob->blb_len_ident);
 	}
 	else
@@ -3967,13 +3978,13 @@ static void gen_release( ACT action)
 		if (exp_db && db != exp_db)
 			continue;
 		if (!(request->req_flags & REQ_exp_hand)) {
-			printa(names[COLUMN], FALSE, "IF %s = 0 THEN",
+			printa(names[COLUMN], false, "IF %s = 0 THEN",
 				   db->dbb_name->sym_string);
-			printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s, %s%s",
+			printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
 				   ISC_RELEASE_REQUEST, status_vector(action), BY_REF,
 				   request->req_handle);
-			printa(names[COLUMN], FALSE, "END-IF");
-			printa(names[COLUMN], FALSE, "MOVE 0 to %s", request->req_handle);
+			printa(names[COLUMN], false, "END-IF");
+			printa(names[COLUMN], false, "MOVE 0 to %s", request->req_handle);
 		}
 	}
 }
@@ -4030,18 +4041,18 @@ static void gen_request( GPRE_REQ request)
 		| REQ_sql_blob_open |
 					  REQ_sql_blob_create)) && request->req_type != REQ_slice
 && request->req_type != REQ_procedure)
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  %s PIC S9(9) USAGE COMP VALUE IS 0.",
 			   request->req_handle);
 #ifdef PYXIS
 	if (request->req_type == REQ_form)
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  %s%dL PIC S9(4) USAGE %s VALUE IS %d.", names[ISC_],
 			   request->req_ident, COMP_VALUE, request->req_length);
 #endif
 
 	if (request->req_type == REQ_ready)
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  %s%dL PIC S9(4) USAGE %s VALUE IS %d.", names[ISC_],
 			   request->req_ident, COMP_VALUE, request->req_length);
 
@@ -4050,23 +4061,23 @@ static void gen_request( GPRE_REQ request)
 //  there is no static dpb defined 
 
 	if (request->req_flags & REQ_extend_dpb) {
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  ISC-%dP PIC S9(9) USAGE COMP-5 VALUE IS 0.",
 			   request->req_ident);
 	}
 
 #ifdef PYXIS
 	if (request->req_type == REQ_menu && !(request->req_flags & REQ_menu_for)) {
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  %s%dL PIC S9(4) USAGE %s VALUE IS %d.", names[ISC_],
 			   request->req_ident, COMP_VALUE, request->req_length);
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  %sS PIC S9(4) USAGE COMP VALUE IS 0.",
 			   request->req_handle);
 	}
 #endif
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
-		printa(names[COLUMN_0], FALSE,
+		printa(names[COLUMN_0], false,
 			   "01  %s%dS PIC S9(9) USAGE COMP VALUE IS 0.", names[ISC_],
 			   request->req_ident);
 
@@ -4074,22 +4085,22 @@ static void gen_request( GPRE_REQ request)
 
 	if (request->req_length) {
 		if (request->req_flags & REQ_sql_cursor)
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %s%dS PIC S9(9) USAGE COMP VALUE IS 0.", names[ISC_],
 				   request->req_ident);
 #ifdef SCROLLABLE_CURSORS
 		if (request->req_flags & REQ_scroll)
-			printa(names[COLUMN_0], FALSE,
+			printa(names[COLUMN_0], false,
 				   "01  %s%dDI PIC S9(4) USAGE COMP VALUE IS 0.", names[ISC_],
 				   request->req_ident);
 #endif
-		printa(names[COLUMN_0], FALSE, "01  %s%d.",
+		printa(names[COLUMN_0], false, "01  %s%d.",
 			   names[ISC_], request->req_ident);
 		gen_raw(request->req_blr, request->req_type, request->req_length,
 				request->req_ident);
 		if (!(sw_raw)) {
-			printa(names[COMMENT], FALSE, " ");
-			printa(names[COMMENT], FALSE, "FORMATTED REQUEST BLR FOR %s%d = ",
+			printa(names[COMMENT], false, " ");
+			printa(names[COMMENT], false, "FORMATTED REQUEST BLR FOR %s%d = ",
 				   names[ISC_], request->req_ident);
 			switch (request->req_type) {
 			case REQ_create_database:
@@ -4157,8 +4168,8 @@ static void gen_request( GPRE_REQ request)
 				string_type = "BLR";
 			}
 		}
-		printa(names[COMMENT], FALSE, " ");
-		printa(names[COMMENT], FALSE, "END OF %s STRING FOR REQUEST %s%d\n",
+		printa(names[COMMENT], false, " ");
+		printa(names[COMMENT], false, "END OF %s STRING FOR REQUEST %s%d\n",
 			   string_type, names[ISC_], request->req_ident);
 	}
 
@@ -4167,7 +4178,7 @@ static void gen_request( GPRE_REQ request)
 	for (port = request->req_ports; port; port = port->por_next)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next) if (reference->ref_sdl) {
-				printa(names[COLUMN_0], FALSE, "01  %s%d.", names[ISC_],
+				printa(names[COLUMN_0], false, "01  %s%d.", names[ISC_],
 					   reference->ref_sdl_ident);
 				gen_raw((UCHAR*) reference->ref_sdl, REQ_slice,
 						reference->ref_sdl_length, reference->ref_sdl_ident);
@@ -4175,8 +4186,8 @@ static void gen_request( GPRE_REQ request)
 					if (PRETTY_print_sdl(reference->ref_sdl, (int(*)()) gen_blr, 0, 0))
 						IBERROR("internal error during SDL generation");
 
-				printa(names[COMMENT], FALSE, " ");
-				printa(names[COMMENT], FALSE,
+				printa(names[COMMENT], false, " ");
+				printa(names[COMMENT], false,
 					   "END OF SDL STRING FOR %s%d */\n", names[ISC_],
 					   reference->ref_sdl_ident);
 			}
@@ -4184,11 +4195,11 @@ static void gen_request( GPRE_REQ request)
 //  Print out any blob parameter blocks required 
 	for (blob = request->req_blobs; blob; blob = blob->blb_next)
 		if (blob->blb_const_from_type || blob->blb_const_to_type) {
-			printa(names[COLUMN_0], FALSE, "01  %s%d.",
+			printa(names[COLUMN_0], false, "01  %s%d.",
 				   names[ISC_], blob->blb_bpb_ident);
 			gen_raw(blob->blb_bpb, request->req_type, blob->blb_bpb_length,
 					(int) request);
-			printa(names[COMMENT], FALSE, " ");
+			printa(names[COMMENT], false, " ");
 		}
 #ifdef PYXIS
 	if (request->req_type == REQ_menu)
@@ -4197,14 +4208,14 @@ static void gen_request( GPRE_REQ request)
 //  If this is a GET_SLICE/PUT_slice, allocate some variables 
 
 	if (request->req_type == REQ_slice) {
-		printa(names[COLUMN_0], FALSE, "01  %s%dv.", names[isc_],
+		printa(names[COLUMN_0], false, "01  %s%dv.", names[isc_],
 			   request->req_ident);
-		printa(names[COLUMN], FALSE,
+		printa(names[COLUMN], false,
 			   "    03 %s%dv_3 PIC S9(9) USAGE COMP OCCURS %d TIMES.",
 			   names[isc_], request->req_ident, MAX(1,
 													request->req_slice->
 													slc_parameters));
-		printa(names[COLUMN_0], FALSE, "01  %s%ds PIC S9(9) USAGE COMP.",
+		printa(names[COLUMN_0], false, "01  %s%ds PIC S9(9) USAGE COMP.",
 			   names[isc_], request->req_ident);
 	}
 }
@@ -4224,7 +4235,7 @@ static void gen_s_end( ACT action)
 	if (action->act_type == ACT_close)
 		gen_cursor_close(action, request);
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s%s",
 		   ISC_UNWIND_REQUEST,
 		   status_vector(action),
@@ -4232,8 +4243,8 @@ static void gen_s_end( ACT action)
 		   BY_VALUE, request->req_request_level, END_VALUE);
 
 	if (action->act_type == ACT_close) {
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 	}
 
 	set_sqlcode(action);
@@ -4282,24 +4293,24 @@ static void gen_s_start( ACT action)
 
 	if (action->act_error || (action->act_flags & ACT_sql)) {
 		if (sw_auto)
-			printa(names[COLUMN], FALSE, "IF %s NOT = 0 AND %s NOT = 0 THEN",
+			printa(names[COLUMN], false, "IF %s NOT = 0 AND %s NOT = 0 THEN",
 				   request_trans(action, request), request->req_handle);
 		else
-			printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN",
+			printa(names[COLUMN], false, "IF %s NOT = 0 THEN",
 				   request->req_handle);
 	}
 
 	gen_start(action, port);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 	if (action->act_type == ACT_open) {
-		printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 		if (sw_auto)
-			printa(names[COLUMN], FALSE, "END-IF");
-		printa(names[COLUMN], FALSE, "END-IF");
+			printa(names[COLUMN], false, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 		set_sqlcode(action);
 	}
 }
@@ -4377,11 +4388,12 @@ static void gen_slice( ACT action)
 //  Make assignments to variable vector 
 
 	for (reference = request->req_values; reference;
-		 reference =
-		 reference->ref_next) printa(names[COLUMN], FALSE,
-									 "MOVE %s TO %s%dv (%d)",
-									 reference->ref_value, names[ISC_],
-									 request->req_ident, reference->ref_id);
+		 reference = reference->ref_next)
+	{
+		printa(names[COLUMN], false, "MOVE %s TO %s%dv (%d)",
+			   reference->ref_value, names[ISC_],
+			   request->req_ident, reference->ref_id);
+	}
 
 	args.pat_reference = slice->slc_field_ref;
 	args.pat_request = parent_request;	/* blob id request */
@@ -4437,16 +4449,16 @@ static void gen_select( ACT action)
 
 	request = action->act_request;
 	port = request->req_primary;
-	gen_name(name, request->req_eof, TRUE);
+	gen_name(name, request->req_eof, true);
 
 	gen_s_start(action);
 
 //  BUG8321: Do not call "receive" in case if SQLCODE is not equal 0 
-	printa(names[COLUMN], FALSE, "IF SQLCODE = 0 THEN");
+	printa(names[COLUMN], false, "IF SQLCODE = 0 THEN");
 
 	gen_receive(action, port);
 
-	printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", name);
+	printa(names[COLUMN], false, "IF %s NOT = 0 THEN", name);
 	if (var_list = (GPRE_NOD) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			asgn_to(action, (REF) var_list->nod_arg[i]);
@@ -4454,17 +4466,17 @@ static void gen_select( ACT action)
 
 	if (request->req_database->dbb_flags & DBB_v3) {
 		gen_receive(action, port);
-		printa(names[COLUMN], FALSE, "IF %s NOT = 0 THEN", name);
-		printa(names[COLUMN], FALSE, "MOVE -1 TO SQLCODE");
-		printa(names[COLUMN], FALSE, "ELSE");
-		printa(names[COLUMN], FALSE, "MOVE 0 TO SQLCODE");
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", name);
+		printa(names[COLUMN], false, "MOVE -1 TO SQLCODE");
+		printa(names[COLUMN], false, "ELSE");
+		printa(names[COLUMN], false, "MOVE 0 TO SQLCODE");
+		printa(names[COLUMN], false, "END-IF");
 	}
 
-	printa(names[COLUMN], FALSE, "ELSE");
-	printa(names[COLUMN], FALSE, "MOVE 100 TO SQLCODE");
-	printa(names[COLUMN], FALSE, "END-IF");
-	printa(names[COLUMN], FALSE, "END-IF");
+	printa(names[COLUMN], false, "ELSE");
+	printa(names[COLUMN], false, "MOVE 100 TO SQLCODE");
+	printa(names[COLUMN], false, "END-IF");
+	printa(names[COLUMN], false, "END-IF");
 }
 
 
@@ -4485,10 +4497,11 @@ static void gen_start( ACT action, POR port)
 
 	if (port) {
 		for (reference = port->por_references; reference;
-			 reference =
-			 reference->ref_next) if (reference->ref_field->
-									  fld_array_info)
-					gen_get_or_put_slice(action, reference, FALSE);
+			 reference = reference->ref_next)
+		{
+			if (reference->ref_field-> fld_array_info)
+				gen_get_or_put_slice(action, reference, false);
+		}
 
 		sprintf(output_buffer,
 				"%sCALL \"%s\" USING %s, %s%s, %s%s, %s%d%s, %s%d%s, %s%s%d, %s%s%s\n",
@@ -4542,8 +4555,8 @@ static void gen_store( ACT action)
 		 reference = reference->ref_next) {
 		field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
-			printa(names[COLUMN], TRUE, "CALL \"isc_qtoq\" USING %s, %s",
-				   names[isc_blob_null], gen_name(name, reference, TRUE));
+			printa(names[COLUMN], true, "CALL \"isc_qtoq\" USING %s, %s",
+				   names[isc_blob_null], gen_name(name, reference, true));
 	}
 }
 
@@ -4564,7 +4577,7 @@ static void gen_t_start( ACT action)
 //  if this is a purely default transaction, just let it through 
 
 	if (!action || !(trans = (GPRE_TRA) action->act_object)) {
-		t_start_auto(0, status_vector(action), action, FALSE);
+		t_start_auto(0, status_vector(action), action, false);
 		return;
 	}
 
@@ -4577,7 +4590,7 @@ static void gen_t_start( ACT action)
 		{
 			db = tpb_iterator->tpb_database;
 			if ((filename = db->dbb_runtime) || !(db->dbb_flags & DBB_sqlca)) {
-				printa(names[COLUMN], FALSE, "IF %s = 0 THEN",
+				printa(names[COLUMN], false, "IF %s = 0 THEN",
 					   db->dbb_name->sym_string);
 				namelength = filename ? strlen(filename) : 0;
 #ifndef VMS
@@ -4589,11 +4602,11 @@ static void gen_t_start( ACT action)
 				make_ready(db, filename, status_vector(action), 0,
 						   namelength);
 				set_sqlcode(action);
-				printa(names[COLUMN], FALSE, "END-IF");
+				printa(names[COLUMN], false, "END-IF");
 			}
 		}
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%d%s",
 		   ISC_START_TRANSACTION,
 		   status_vector(action),
@@ -4604,7 +4617,7 @@ static void gen_t_start( ACT action)
 		 tpb_iterator;
 		 tpb_iterator = tpb_iterator->tpb_tra_next)
 	{
-		printa(names[CONTINUE], TRUE, ", %s%s, %s%d%s, %s%s%d",
+		printa(names[CONTINUE], true, ", %s%s, %s%d%s, %s%s%d",
 			   BY_REF, tpb_iterator->tpb_database->dbb_name->sym_string,
 			   BY_VALUE, tpb_iterator->tpb_length, END_VALUE,
 			   BY_REF, names[ISC_TPB_], tpb_iterator->tpb_ident);
@@ -4640,7 +4653,7 @@ static void gen_tpb(tpb* tpb_buffer)
 //  fields.
 //  
 
-	printa(names[COLUMN_0], FALSE, "01  %s%d.",
+	printa(names[COLUMN_0], false, "01  %s%d.",
 		   names[ISC_TPB_], tpb_buffer->tpb_ident);
 
 	text = tpb_buffer->tpb_string;
@@ -4655,7 +4668,7 @@ static void gen_tpb(tpb* tpb_buffer)
 				break;
 		}
 
-		printa(names[COLUMN], FALSE, RAW_TPB_TEMPLATE,
+		printa(names[COLUMN], false, RAW_TPB_TEMPLATE,
 			   names[ISC_TPB_], tpb_buffer->tpb_ident,
 			   names[UNDER], length++, tpb_hunk.longword_tpb);
 	}
@@ -4675,7 +4688,7 @@ static void gen_trans( ACT action)
 {
 
 	if (action->act_type == ACT_commit_retain_context)
-		printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s, %s%s",
+		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
 			   ISC_COMMIT_RETAINING,
 			   status_vector(action),
 			   BY_REF,
@@ -4683,7 +4696,7 @@ static void gen_trans( ACT action)
 												act_object) :
 			   names[ISC_TRANS]);
 	else
-		printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s, %s%s",
+		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
 			   (action->act_type ==
 				ACT_commit) ? ISC_COMMIT_TRANSACTION : (action->act_type ==
 														ACT_rollback) ?
@@ -4704,7 +4717,7 @@ static void gen_trans( ACT action)
 static void gen_type( ACT action)
 {
 
-	printa(names[COLUMN], TRUE, "%ld", (SLONG) action->act_object);
+	printa(names[COLUMN], true, "%ld", (SLONG) action->act_object);
 }
 
 
@@ -4737,7 +4750,7 @@ static void gen_variable( ACT action)
 
 	reference = action->act_object;
 	ib_fprintf(out_file, "\n%s%s",
-			   names[COLUMN], gen_name(s, reference, FALSE));
+			   names[COLUMN], gen_name(s, reference, false));
 }
 
 
@@ -4782,7 +4795,7 @@ static void gen_whenever( SWE label)
 static void gen_window_create( ACT action)
 {
 
-	printa(names[COLUMN], TRUE,
+	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s%s, %s, %s, %s%s, %s%s", PYXIS_CREATE_WINDOW,
 		   BY_REF, names[ISC_WINDOW],
 		   OMITTED,
@@ -4798,7 +4811,7 @@ static void gen_window_create( ACT action)
 static void gen_window_delete( ACT action)
 {
 
-	printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s%s",
+	printa(names[COLUMN], true, "CALL \"%s\" USING %s%s",
 		   PYXIS_DELETE_WINDOW, BY_REF, names[ISC_WINDOW]);
 }
 #endif
@@ -4811,7 +4824,7 @@ static void gen_window_delete( ACT action)
 static void gen_window_suspend( ACT action)
 {
 
-	printa(names[COLUMN], TRUE, "CALL \"%s\" USING %s%s",
+	printa(names[COLUMN], true, "CALL \"%s\" USING %s%s",
 		   PYXIS_SUSPEND_WINDOW, BY_REF, names[ISC_WINDOW]);
 }
 #endif
@@ -4849,10 +4862,8 @@ static void make_array_declaration( REF reference)
 	for (dimension = field->fld_array_info->ary_dimension, i = 3;
 		 dimension->dim_next; dimension = dimension->dim_next, i += 2) {
 		dimension_size = dimension->dim_upper - dimension->dim_lower + 1;
-		printa(space, FALSE, "%02d  %s%d%s%d OCCURS %d TIMES.",
-			   i,
-			   names[ISC_],
-			   field->fld_array_info->ary_ident,
+		printa(space, false, "%02d  %s%d%s%d OCCURS %d TIMES.",
+			   i, names[ISC_], field->fld_array_info->ary_ident,
 			   names[UNDER], i, dimension_size);
 		strcat(space, "   ");
 	}
@@ -4933,7 +4944,7 @@ static void make_array_declaration( REF reference)
 		return;
 	}
 
-	printa(space, FALSE, string1);
+	printa(space, false, string1);
 }
 
 
@@ -4991,7 +5002,7 @@ static void make_port( POR port)
 	TEXT *name, s[80];
 	SSHORT digits;
 
-	printa(names[COLUMN_0], FALSE, "01  %s%d.", names[ISC_], port->por_ident);
+	printa(names[COLUMN_0], false, "01  %s%d.", names[ISC_], port->por_ident);
 
 	for (reference = port->por_references; reference;
 		 reference = reference->ref_next) {
@@ -5025,7 +5036,7 @@ static void make_port( POR port)
 
 		case dtype_cstring:
 		case dtype_text:
-			printa(names[COLUMN], FALSE, "03  %s%d PIC X(%d).",
+			printa(names[COLUMN], false, "03  %s%d PIC X(%d).",
 				   names[ISC_], reference->ref_ident, field->fld_length);
 			break;
 
@@ -5043,12 +5054,12 @@ static void make_port( POR port)
 			break;
 
 		case dtype_float:
-			printa(names[COLUMN], FALSE, "03  %s%d %s.",
+			printa(names[COLUMN], false, "03  %s%d %s.",
 				   names[ISC_], reference->ref_ident, DCL_FLOAT);
 			break;
 
 		case dtype_double:
-			printa(names[COLUMN], FALSE, "03  %s%d %s.",
+			printa(names[COLUMN], false, "03  %s%d %s.",
 				   names[ISC_], reference->ref_ident, DCL_DOUBLE);
 			break;
 
@@ -5060,7 +5071,7 @@ static void make_port( POR port)
 		}
 	}
 
-	printa(names[COLUMN], FALSE, " ");
+	printa(names[COLUMN], false, " ");
 }
 
 
@@ -5245,7 +5256,10 @@ static void make_ready(
 //		Print a fixed string at a particular COLUMN.
 //  
 
-static void printa( TEXT * column, BOOLEAN call, TEXT * string, ...)
+static void printa(TEXT * column,
+				   bool call,
+				   TEXT * string,
+				   ...)
 {
 	va_list ptr;
 	TEXT s[256];
@@ -5310,7 +5324,7 @@ static void set_sqlcode( ACT action)
 
 	if (action && action->act_flags & ACT_sql) {
 		strcpy(buffer, SQLCODE_CALL_TEMPLATE);
-		printa(names[COLUMN], TRUE,
+		printa(names[COLUMN], true,
 			   buffer, ISC_SQLCODE_CALL, names[ISC_STATUS_VECTOR]);
 	}
 }
@@ -5339,7 +5353,10 @@ static TEXT *status_vector( ACT action)
 //		call.
 //  
 
-static void t_start_auto( GPRE_REQ request, TEXT * vector, ACT action, SSHORT test)
+static void t_start_auto(GPRE_REQ request,
+						 TEXT * vector,
+						 ACT action,
+						 bool test)
 {
 	DBB db;
 	int count, stat;
@@ -5371,7 +5388,7 @@ static void t_start_auto( GPRE_REQ request, TEXT * vector, ACT action, SSHORT te
 				}
 #endif
 				make_ready(db, filename, vector, 0, namelength);
-				printa(names[COLUMN], FALSE, "END-IF");
+				printa(names[COLUMN], false, "END-IF");
 				if (buffer[0])
 					strcat(buffer, ") AND (");
 				sprintf(temp, "%s NOT = 0", db->dbb_name->sym_string);
@@ -5379,29 +5396,29 @@ static void t_start_auto( GPRE_REQ request, TEXT * vector, ACT action, SSHORT te
 			}
 		if (test)
 			if (buffer[0])
-				printa(names[COLUMN], FALSE, "IF (%s) AND %s = 0 THEN",
+				printa(names[COLUMN], false, "IF (%s) AND %s = 0 THEN",
 					   buffer, trname);
 
 			else
-				printa(names[COLUMN], FALSE, "IF %s = 0 THEN", trname);
+				printa(names[COLUMN], false, "IF %s = 0 THEN", trname);
 		else if (buffer[0])
-			printa(names[COLUMN], FALSE, "IF (%s) THEN", buffer);
+			printa(names[COLUMN], false, "IF (%s) THEN", buffer);
 	}
 	else
 		for (count = 0, db = isc_databases; db; db = db->dbb_next, count++);
 
 	col = (stat) ? names[COLUMN_INDENT] : names[COLUMN];
 
-	printa(col, TRUE, "CALL \"%s\" USING %s, %s%s, %s%d%s",
+	printa(col, true, "CALL \"%s\" USING %s, %s%s, %s%d%s",
 		   ISC_START_TRANSACTION, vector, BY_REF, trname,
 		   BY_VALUE, count, END_VALUE);
 
 	for (db = isc_databases; db; db = db->dbb_next)
-		printa(names[CONTINUE], TRUE, ", %s%s, %s, %s",
+		printa(names[CONTINUE], true, ", %s%s, %s, %s",
 			   BY_REF, db->dbb_name->sym_string, OMITTED, OMITTED);
 
 	if (sw_auto && (test || buffer[0]))
-		printa(names[COLUMN], FALSE, "END-IF");
+		printa(names[COLUMN], false, "END-IF");
 
 
 	set_sqlcode(action);

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.23 2003-09-05 10:14:07 aafemt Exp $
+ *	$Id: gpre_meta.epp,v 1.24 2003-09-10 19:48:53 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -50,7 +50,7 @@
 DATABASE DB = FILENAME "yachts.lnk" RUNTIME database->dbb_filename;
 
 extern enum lang_t sw_language;
-extern USHORT sw_cstring;
+extern bool sw_cstring;
 extern DBB isc_databases;
 
 static const UCHAR blr_bpb[] = { isc_bpb_version1,
@@ -457,7 +457,7 @@ BOOLEAN MET_get_domain_default(dbb* database,
 	FRBRD *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
-	BOOLEAN has_default;
+	bool has_default = false;
 	ISC_STATUS_ARRAY status_vect;
 	isc_blob_handle blob_handle = NULL;
 	ISC_QUAD *blob_id;
@@ -466,7 +466,6 @@ BOOLEAN MET_get_domain_default(dbb* database,
 
 
 	strcpy(name, domain_name);
-	has_default = FALSE;
 
 	if (database == NULL)
 		return FALSE;
@@ -495,7 +494,7 @@ BOOLEAN MET_get_domain_default(dbb* database,
 		}
 		/* fetch segments. Assume buffer is big enough.  */
 			ptr_in_buffer = buffer;
-		while (TRUE) {
+		while (true) {
 			stat = isc_get_segment(status_vect, &blob_handle, (USHORT*) &length,
 								   buff_length, ptr_in_buffer);
 			ptr_in_buffer = ptr_in_buffer + length;
@@ -521,7 +520,7 @@ BOOLEAN MET_get_domain_default(dbb* database,
 		assert(buffer[1] == blr_literal ||
 			   buffer[1] == blr_null || buffer[1] == blr_user_name);
 
-		has_default = TRUE;
+		has_default = true;
 	}
 	else {						/* default not found */
 
@@ -532,7 +531,7 @@ BOOLEAN MET_get_domain_default(dbb* database,
 		buffer[1] = blr_eoc;
 	}
 	END_FOR COMMIT;
-	return (has_default);
+	return (has_default? TRUE : FALSE);
 }
 
 
@@ -556,7 +555,7 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 	FRBRD *DB, *gds_trans;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
-	BOOLEAN has_default;
+	bool has_default = false;
 	ISC_STATUS_ARRAY status_vect;
 	isc_blob_handle blob_handle = NULL;
 	ISC_QUAD *blob_id;
@@ -564,7 +563,6 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 	ISC_STATUS stat;
 
 	strcpy(name, column_name);
-	has_default = FALSE;
 
 	if ((database = relation->rel_database) == NULL)
 		return FALSE;
@@ -586,11 +584,11 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 		RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 		if (!RFR.RDB$DEFAULT_VALUE.NULL) {
 		blob_id = &RFR.RDB$DEFAULT_VALUE;
-		has_default = TRUE;
+		has_default = true;
 	}
 	else if (!F.RDB$DEFAULT_VALUE.NULL) {
 		blob_id = &F.RDB$DEFAULT_VALUE;
-		has_default = TRUE;
+		has_default = true;
 	}
 
 	if (has_default) {
@@ -605,7 +603,7 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 
 		/* fetch segments. Assuming here that the buffer is big enough. */
 		ptr_in_buffer = buffer;
-		while (TRUE) {
+		while (true) {
 			stat = isc_get_segment(status_vect, &blob_handle,
 								   (USHORT*)&length, buff_length, ptr_in_buffer);
 			ptr_in_buffer = ptr_in_buffer + length;
@@ -641,7 +639,7 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 
 	END_FOR;
 	COMMIT;
-	return (has_default);
+	return (has_default? TRUE : FALSE);
 }
 
 
@@ -1782,7 +1780,9 @@ void MET_load_hash_table(dbb* database)
  */  
 
 GPRE_FLD MET_make_field(SCHAR * name,
-				   SSHORT dtype, SSHORT length, BOOLEAN insert_flag)
+						SSHORT dtype,
+						SSHORT length,
+						BOOLEAN insert_flag)
 {
 	GPRE_FLD field;
 	SYM symbol;

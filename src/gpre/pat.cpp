@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.11 2003-09-08 11:27:51 robocop Exp $
+//	$Id: pat.cpp,v 1.12 2003-09-10 19:48:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -120,11 +120,14 @@ static struct ops {
 void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 {
 	TEXT buffer[512], c, *p, temp1[16], temp2[16];
-	USHORT sw_ident, sw_gen, n;
+	bool sw_ident;
+	bool sw_gen;
+	USHORT n;
 	SSHORT value;				/* value needs to be signed since some of the
 								   values printed out are signed.  */
 	SLONG long_value;
-	BOOLEAN long_flag, handle_flag;
+	bool long_flag;
+	bool handle_flag;
 	REF reference;
 	TEXT *string, *ref, *refend, *val, *valend, *q;
 
@@ -164,7 +167,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 
 	p = buffer;
 	*p++ = '\n';
-	sw_gen = TRUE;
+	sw_gen = true;
 	for (n = column; n; --n)
 		*p++ = ' ';
 
@@ -178,19 +181,21 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			}
 			continue;
 		}
-		sw_ident = FALSE;
+		sw_ident = false;
 		string = NULL;
 		reference = NULL;
-		handle_flag = long_flag = FALSE;
+		handle_flag = long_flag = false;
 		ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
 			if (oper_iter->ops_string[0] == pattern[0] &&
 				oper_iter->ops_string[1] == pattern[1])
+		{
 				break;
+		}
 		pattern += 2;
 		switch (oper_iter->ops_type) {
 		case IF:
-			sw_gen = args->pat_condition;
+			sw_gen = (args->pat_condition);
 			continue;
 
 		case EL:
@@ -198,11 +203,11 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			continue;
 
 		case EN:
-			sw_gen = TRUE;
+			sw_gen = true;
 			continue;
 
 		case RH:
-			handle_flag = TRUE;
+			handle_flag = true;
 			string = args->pat_request->req_handle;
 			break;
 
@@ -215,17 +220,17 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			break;
 
 		case RT:
-			handle_flag = TRUE;
+			handle_flag = true;
 			string = args->pat_request->req_trans;
 			break;
 
 		case RI:
 			value = args->pat_request->req_ident;
-			sw_ident = TRUE;
+			sw_ident = true;
 			break;
 
 		case DH:
-			handle_flag = TRUE;
+			handle_flag = true;
 			string = args->pat_database->dbb_name->sym_string;
 			break;
 
@@ -243,7 +248,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 
 		case PI:
 			value = args->pat_port->por_ident;
-			sw_ident = TRUE;
+			sw_ident = true;
 			break;
 
 		case QN:
@@ -256,22 +261,22 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 
 		case QI:
 			value = args->pat_port2->por_ident;
-			sw_ident = TRUE;
+			sw_ident = true;
 			break;
 
 		case BH:
 			value = args->pat_blob->blb_ident;
-			sw_ident = TRUE;
+			sw_ident = true;
 			break;
 
 		case I1:
 			value = args->pat_ident1;
-			sw_ident = TRUE;
+			sw_ident = true;
 			break;
 
 		case I2:
 			value = args->pat_ident2;
-			sw_ident = TRUE;
+			sw_ident = true;
 			break;
 
 		case S1:
@@ -328,12 +333,12 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 
 		case L1:
 			long_value = args->pat_long1;
-			long_flag = TRUE;
+			long_flag = true;
 			break;
 
 		case L2:
 			long_value = args->pat_long2;
-			long_flag = TRUE;
+			long_flag = true;
 			break;
 
 		case RF:
@@ -418,7 +423,7 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		   handles this problem and ensures that GPRE output is <= 72 characters.
 		 */
 	case lang_cobol:
-		COB_print_buffer(buffer, TRUE);
+		COB_print_buffer(buffer, true);
 		break;
 #endif
 

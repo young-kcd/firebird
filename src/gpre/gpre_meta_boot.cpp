@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.18 2003-09-06 00:52:10 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.19 2003-09-10 19:48:53 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -49,7 +49,7 @@
 #define MAX_PASSWORD_LENGTH	33
 
 extern enum lang_t sw_language;
-extern USHORT sw_cstring;
+extern bool sw_cstring;
 extern DBB isc_databases;
 
 static const UCHAR blr_bpb[] = { isc_bpb_version1,
@@ -192,12 +192,6 @@ BOOLEAN MET_get_domain_default(DBB db,
 							   TEXT * buffer,
 							   USHORT buff_length)
 {
-	SCHAR name[NAME_SIZE];
-	BOOLEAN has_default;
-
-
-	strcpy(name, domain_name);
-	has_default = FALSE;
 
 	assert(0);
 	return FALSE;
@@ -220,11 +214,6 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 							   TEXT * column_name,
 							   TEXT * buffer, USHORT buff_length)
 {
-	SCHAR name[NAME_SIZE];
-	BOOLEAN has_default;
-
-	strcpy(name, column_name);
-	has_default = FALSE;
 	assert(0);
 	return FALSE;
 }

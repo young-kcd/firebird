@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.38 2003-09-08 11:27:51 robocop Exp $
+ * $Id: gpre.h,v 1.39 2003-09-10 19:48:53 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1490,11 +1490,32 @@ typedef struct upd {
 /* Added sw_verbose
    FSG 14.Nov.2000 */
 
-EXTERN USHORT sw_verbose, sw_auto, sw_sql, sw_gen_sql, sw_raw, sw_cstring,
-	sw_dsql, sw_dyn_using, sw_ada, sw_standard_out, sw_ansi, sw_lines, sw_ids,
-	sw_trace, sw_case, sw_external, sw_pyxis, sw_version, sw_window_scope,
-	sw_alsys, sw_d_float, sw_sql_dialect, sw_know_interp, sw_server_version,
-	sw_ods_version, override_case, dialect_specified;
+EXTERN bool sw_ansi;
+EXTERN bool sw_verbose;
+EXTERN bool sw_auto;
+EXTERN bool sw_sql;
+EXTERN bool sw_raw;
+EXTERN bool sw_cstring;
+EXTERN bool sw_dyn_using;
+EXTERN bool sw_standard_out;
+EXTERN bool sw_lines;
+EXTERN bool sw_ids;
+EXTERN bool sw_trace;
+EXTERN bool sw_case;
+EXTERN bool sw_external;
+#ifdef PYXIS
+EXTERN bool sw_pyxis;
+#endif
+EXTERN bool sw_version;
+EXTERN USHORT sw_window_scope;
+EXTERN bool sw_alsys;
+EXTERN bool sw_d_float;
+EXTERN USHORT sw_sql_dialect;
+EXTERN USHORT sw_know_interp;
+EXTERN USHORT sw_server_version;
+EXTERN USHORT sw_ods_version;
+EXTERN bool override_case;
+EXTERN bool dialect_specified;
 
 EXTERN SSHORT sw_interp;
 EXTERN USHORT compiletime_db_dialect;

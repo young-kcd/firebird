@@ -28,12 +28,11 @@ extern ACT SQL_action(const TEXT*);
 extern void SQL_adjust_field_dtype(GPRE_FLD);
 extern void SQL_init(void);
 extern void SQL_par_field_collate(GPRE_REQ, GPRE_FLD);
-extern void SQL_par_field_dtype(GPRE_REQ, GPRE_FLD, BOOLEAN);
+extern void SQL_par_field_dtype(GPRE_REQ, GPRE_FLD, bool);
 extern GPRE_PRC SQL_procedure(GPRE_REQ, TEXT *, TEXT *, TEXT *, bool);
 extern GPRE_REL SQL_relation(GPRE_REQ, TEXT *, TEXT *, TEXT *, bool);
 extern void SQL_relation_name(TEXT *, TEXT *, TEXT *);
 extern void SQL_resolve_identifier(TEXT *, TEXT *);
-extern GPRE_REL SQL_view(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
 extern TEXT *SQL_var_or_string(bool);
 
 #endif /* GPRE_SQL_PROTO_H */

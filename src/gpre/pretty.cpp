@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pretty.cpp,v 1.13 2003-09-05 10:14:08 aafemt Exp $
+//	$Id: pretty.cpp,v 1.14 2003-09-10 19:48:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -75,7 +75,7 @@ typedef struct ctl {
 static int blr_format(CTL, const char *, ...);
 static int error(CTL, int, TEXT *, int);
 static int indent(CTL, SSHORT);
-static int print_blr_dtype(CTL, BOOLEAN);
+static int print_blr_dtype(CTL, bool);
 static int print_blr_line(CTL, USHORT, UCHAR *);
 static int print_byte(CTL, SSHORT);
 static int print_char(CTL, SSHORT);
@@ -286,7 +286,7 @@ PRETTY_print_form_map(SCHAR * blr,
 			for (n = PRINT_WORD; n; --n) {
 				PRINT_LINE;
 				indent(control, (SSHORT) (level + 1));
-				print_blr_dtype(control, TRUE);
+				print_blr_dtype(control, true);
 			}
 			break;
 
@@ -522,7 +522,8 @@ static int indent( CTL control, SSHORT level)
 //		data described.
 //  
 
-static int print_blr_dtype( CTL control, BOOLEAN print_object)
+static int print_blr_dtype(CTL control,
+						   bool print_object)
 {
 	unsigned short dtype;
 	SCHAR *string;
@@ -681,18 +682,17 @@ static int print_blr_dtype( CTL control, BOOLEAN print_object)
 
 static int print_blr_line( CTL control, USHORT offset, UCHAR * line)
 {
-	USHORT comma;
+	bool comma = false;
 	UCHAR c;
 
 	indent(control, control->ctl_level);
-	comma = FALSE;
 
 	while (c = *line++) {
 		PUT_BYTE(c);
 		if (c == ',')
-			comma = TRUE;
+			comma = true;
 		else if (c != ' ')
-			comma = FALSE;
+			comma = false;
 	}
 
 	if (!comma)
@@ -1004,7 +1004,7 @@ static int print_sdl_verb( CTL control, SSHORT level)
 			PRINT_LINE;
 			indent(control, (SSHORT) (level + 1));
 			offset = control->ctl_blr - control->ctl_blr_start;
-			print_blr_dtype(control, TRUE);
+			print_blr_dtype(control, true);
 		}
 		break;
 

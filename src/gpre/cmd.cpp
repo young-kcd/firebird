@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.11 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: cmd.cpp,v 1.12 2003-09-10 19:48:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -63,14 +63,14 @@ static void create_domain_constraint(GPRE_REQ, ACT, CNSTRT);
 static void create_generator(GPRE_REQ, ACT);
 static void create_index(GPRE_REQ, IND);
 static void create_matching_blr(GPRE_REQ, CNSTRT);
-static void create_set_default_trg(GPRE_REQ, ACT, CNSTRT, BOOLEAN);
-static void create_set_null_trg(GPRE_REQ, ACT, CNSTRT, BOOLEAN);
+static void create_set_default_trg(GPRE_REQ, ACT, CNSTRT, bool);
+static void create_set_null_trg(GPRE_REQ, ACT, CNSTRT, bool);
 static void create_shadow(GPRE_REQ, ACT);
 static void create_table(GPRE_REQ, ACT);
 static void create_trg_firing_cond(GPRE_REQ, CNSTRT);
 static void create_trigger(GPRE_REQ, ACT, GPRE_TRG, pfn_local_trigger_cb);
 static void create_upd_cascade_trg(GPRE_REQ, ACT, CNSTRT);
-static BOOLEAN create_view(GPRE_REQ, ACT);
+static bool create_view(GPRE_REQ, ACT);
 static void create_view_trigger(GPRE_REQ, ACT, GPRE_TRG, GPRE_NOD, GPRE_CTX *, GPRE_NOD);
 static void declare_filter(GPRE_REQ, ACT);
 static void declare_udf(GPRE_REQ, ACT);
@@ -90,7 +90,7 @@ static void put_string(GPRE_REQ, USHORT, TEXT *, USHORT);
 static void put_symbol(GPRE_REQ, int, SYM);
 static void put_trigger_blr(GPRE_REQ, USHORT, GPRE_NOD, pfn_local_trigger_cb);
 static void put_view_trigger_blr(GPRE_REQ, GPRE_REL, USHORT, GPRE_TRG, GPRE_NOD, GPRE_CTX *, GPRE_NOD);
-static void replace_field_names(GPRE_NOD, GPRE_NOD, GPRE_FLD, SSHORT, GPRE_CTX *);
+static void replace_field_names(GPRE_NOD, GPRE_NOD, GPRE_FLD, bool, GPRE_CTX *);
 static void set_statistics(GPRE_REQ, ACT);
 
 #define STUFF(blr)	*request->req_blr++ = (UCHAR)(blr)
@@ -907,16 +907,17 @@ static void create_del_cascade_trg( GPRE_REQ request, ACT action, cnstrt* constr
 //  
 //		Generate dyn for "on delete|update set default" trigger (for 
 //		referential integrity) along with the trigger blr.
-//		The non_upd_trg parameter == TRUE is an update trigger.
+//		The non_upd_trg parameter == true is an update trigger.
 //  
 
-static void create_set_default_trg(
-								   GPRE_REQ request,
+static void create_set_default_trg(GPRE_REQ request,
 								   ACT action,
-								   cnstrt* constraint, BOOLEAN on_upd_trg)
+								   cnstrt* constraint,
+								   bool on_upd_trg)
 {
 
-	BOOLEAN search_for_default, search_for_column;
+	bool search_for_default;
+	bool search_for_column;
 	TEXT *search_for_domain;
 	GPRE_FLD field, domain, fld;
 	LLS for_key_fld;
@@ -1009,8 +1010,8 @@ static void create_set_default_trg(
 		   We get the column and/or domain default value from the system
 		   tables by calling MET_get_column_default/MET_get_domain_defult */
 
-		search_for_default = TRUE;
-		search_for_column = FALSE;
+		search_for_default = true;
+		search_for_column = false;
 		search_for_domain = NULL;
 
 		/* Is the column being created in this ddl statement ? */
@@ -1026,7 +1027,7 @@ static void create_set_default_trg(
 			if (field->fld_default_value) {
 				/* (1-a) */
 				CME_expr(field->fld_default_value, request);
-				search_for_default = FALSE;
+				search_for_default = false;
 			}
 			else {
 				/* check for domain default */
@@ -1036,7 +1037,7 @@ static void create_set_default_trg(
 				}
 				else {
 					STUFF(blr_null);
-					search_for_default = FALSE;
+					search_for_default = false;
 				}
 			}
 		}
@@ -1069,17 +1070,16 @@ static void create_set_default_trg(
 						if (fld->fld_default_value) {
 							/* case (1-a): */
 							CME_expr(fld->fld_default_value, request);
-							search_for_default = FALSE;
+							search_for_default = false;
 						}
 						else {
 							if (fld->fld_global) {
-								search_for_domain =
-									fld->fld_global->sym_string;
+								search_for_domain = fld->fld_global->sym_string;
 							}
 							else {
 								/* default not found */
 								STUFF(blr_null);
-								search_for_default = FALSE;
+								search_for_default = false;
 							}
 						}
 						break;
@@ -1089,12 +1089,12 @@ static void create_set_default_trg(
 				}
 			}
 			if (!req)
-				search_for_column = TRUE;
+				search_for_column = true;
 		}
 
 		if (search_for_default && search_for_domain != NULL) {
 			/* search for domain level default */
-			assert(search_for_column == FALSE);
+			assert(search_for_column == false);
 			/* search for domain in memory */
 			for (req = requests; req; req = req->req_next) {
 				if ((req->req_type == REQ_ddl) &&
@@ -1114,7 +1114,7 @@ static void create_set_default_trg(
 						/* default not found */
 						STUFF(blr_null);
 					}
-					search_for_default = FALSE;
+					search_for_default = false;
 					break;
 				}
 			}
@@ -1130,7 +1130,7 @@ static void create_set_default_trg(
 				else {
 					STUFF(blr_null);
 				}
-				search_for_default = FALSE;
+				search_for_default = false;
 			}
 		}						/* end of search for domain level default */
 
@@ -1139,7 +1139,8 @@ static void create_set_default_trg(
 			assert(search_for_domain == NULL);
 			if (MET_get_column_default(relation, (TEXT *) for_key_fld_name,
 									   default_val,
-									   sizeof(default_val)) != FALSE) {
+									   sizeof(default_val)) != FALSE)
+			{
 				create_default_blr(request, default_val, sizeof(default_val));
 			}
 			else {
@@ -1179,12 +1180,13 @@ static void create_set_default_trg(
 //		referential integrity). The trigger blr is the same for
 //		both the delete and update cases. Only differences is its
 //		TRIGGER_TYPE (ON DELETE or ON UPDATE).
-//		The non_upd_trg parameter == TRUE is an update trigger.
+//		The non_upd_trg parameter == true is an update trigger.
 //  
 
-static void create_set_null_trg(
-								GPRE_REQ request,
-								ACT action, cnstrt* constraint, BOOLEAN on_upd_trg)
+static void create_set_null_trg(GPRE_REQ request,
+								ACT action,
+								cnstrt* constraint,
+								bool on_upd_trg)
 {
 
 	LLS for_key_fld;
@@ -1410,11 +1412,11 @@ static void create_constraint( GPRE_REQ request, ACT action, cnstrt* constraint)
 					break;
 				case REF_UPD_SET_DEFAULT:
 					STUFF(gds_dyn_foreign_key_default);
-					create_set_default_trg(request, action, constraint, TRUE);
+					create_set_default_trg(request, action, constraint, true);
 					break;
 				case REF_UPD_SET_NULL:
 					STUFF(gds_dyn_foreign_key_null);
-					create_set_null_trg(request, action, constraint, TRUE);
+					create_set_null_trg(request, action, constraint, true);
 					break;
 				default:
 					/* just in case */
@@ -1435,11 +1437,11 @@ static void create_constraint( GPRE_REQ request, ACT action, cnstrt* constraint)
 					break;
 				case REF_DEL_SET_DEFAULT:
 					STUFF(gds_dyn_foreign_key_default);
-					create_set_default_trg(request, action, constraint, FALSE);
+					create_set_default_trg(request, action, constraint, false);
 					break;
 				case REF_DEL_SET_NULL:
 					STUFF(gds_dyn_foreign_key_null);
-					create_set_null_trg(request, action, constraint, FALSE);
+					create_set_null_trg(request, action, constraint, false);
 					break;
 				default:
 					/* just in case */
@@ -1450,7 +1452,7 @@ static void create_constraint( GPRE_REQ request, ACT action, cnstrt* constraint)
 			}
 		}
 		else
-			put_numeric(request, gds_dyn_idx_unique, TRUE);
+			put_numeric(request, gds_dyn_idx_unique, 1);
 
 		for (field = constraint->cnstrt_fields; field; field = field->lls_next) {
 			string = (STR) field->lls_object;
@@ -1726,10 +1728,10 @@ static void create_index( GPRE_REQ request, IND index)
 	put_symbol(request, gds_dyn_rel_name, index->ind_relation->rel_symbol);
 
 	if (index->ind_flags & IND_dup_flag)
-		put_numeric(request, gds_dyn_idx_unique, TRUE);
+		put_numeric(request, gds_dyn_idx_unique, 1);
 
 	if (index->ind_flags & IND_descend)
-		put_numeric(request, gds_dyn_idx_type, TRUE);
+		put_numeric(request, gds_dyn_idx_type, 1);
 
 	if (index->ind_symbol)
 		for (field = index->ind_fields; field; field = field->fld_next)
@@ -1899,7 +1901,8 @@ static void create_trigger(
 //		Generate dynamic DDL for CREATE VIEW action.
 //  
 
-static BOOLEAN create_view( GPRE_REQ request, ACT action)
+static bool create_view(GPRE_REQ request,
+						ACT action)
 {
 	GPRE_FLD field, fld;
 	GPRE_NOD *ptr, *end, fields, value, view_field, and_nod, eq_nod;
@@ -1979,7 +1982,7 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 		else {
 			request->req_length = 0;
 			IBERROR("view expression requires field name");
-			return FALSE;
+			return false;
 		}
 		if (fld) {
 			put_symbol(request, gds_dyn_def_local_fld, symbol);
@@ -2005,12 +2008,12 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 		if ((select->rse_aggregate) ||
 			(non_updateable) || (select->rse_count != 1)) {
 			IBERROR("Invalid view WITH CHECK OPTION - non-updateable view");
-			return FALSE;
+			return false;
 		}
 
 		if (!(select->rse_boolean)) {
 			IBERROR("Invalid view WITH CHECK OPTION - no WHERE clause");
-			return FALSE;
+			return false;
 		}
 
 		trigger = (GPRE_TRG) ALLOC(TRG_LEN);
@@ -2096,8 +2099,7 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 		/* Modify the context of fields in boolean to be that of the
 		   sub-relation. */
 
-		replace_field_names(select->rse_boolean, 0, 0, 0, /* Don't null */
-							contexts);
+		replace_field_names(select->rse_boolean, 0, 0, false, contexts);
 
 		view_boolean = select->rse_boolean;
 		select->rse_boolean =
@@ -2127,7 +2129,7 @@ static BOOLEAN create_view( GPRE_REQ request, ACT action)
 
 	STUFF_END;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -2943,8 +2945,7 @@ GPRE_NOD view_boolean, GPRE_CTX * contexts, GPRE_NOD set_list)
 		   alone. */
 
 		replace_field_names(view_boolean, node->rse_fields,
-							relation->rel_fields, 0, /* Don't null */
-							contexts);
+							relation->rel_fields, false, contexts);
 
 		STUFF(blr_begin);
 		STUFF(blr_if);
@@ -2964,7 +2965,7 @@ GPRE_NOD view_boolean, GPRE_CTX * contexts, GPRE_NOD set_list)
 
 	if (trigger->trg_type == PRE_STORE_TRIGGER) {
 		replace_field_names(view_boolean, node->rse_fields,
-							relation->rel_fields, 1, contexts);
+							relation->rel_fields, true, contexts);
 
 		STUFF(blr_if);
 		CME_expr(view_boolean, request);
@@ -2994,16 +2995,16 @@ GPRE_NOD view_boolean, GPRE_CTX * contexts, GPRE_NOD set_list)
 //		are not changed.
 //		If search list is not specified, then only the context of the fields
 //		in the rse is chaged to contexts[2].
-//		If null_them is TRUE, then fields in rse but not in VIEW definition
+//		If null_them is true, then fields in rse but not in VIEW definition
 //		are converted to null nodes, this is used for PRE STORE trigger
 //		verification.
 //  
 
-static void replace_field_names(
-								GPRE_NOD input,
+static void replace_field_names(GPRE_NOD input,
 								GPRE_NOD search_list,
 								GPRE_FLD replace_with,
-								SSHORT null_them, GPRE_CTX * contexts)
+								bool null_them,
+								GPRE_CTX * contexts)
 {
 	GPRE_NOD *ptr, *end;
 	GPRE_NOD *ptrs, *ends;

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.7 2003-09-05 10:14:07 aafemt Exp $
+//	$Id: cme.cpp,v 1.8 2003-09-10 19:48:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -89,7 +89,7 @@ static void stuff_sdl_number(SLONG, REF);
   ((((d1)==dtype_sql_time)&&((d2)==dtype_sql_date)) || \
    (((d2)==dtype_sql_time)&&((d1)==dtype_sql_date)))
 
-static BOOLEAN debug_on;
+static bool debug_on;
 
 struct op_table
 {
@@ -1393,12 +1393,12 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 	char *string;
 	SSHORT length;
 	DSC from, to;
-	BOOLEAN negate = FALSE;
+	bool negate = false;
 
 	if (node->nod_type == nod_negate)
 	{
 		node = node->nod_arg[0];
-		negate = TRUE;
+		negate = true;
 	}
 
 	STUFF(blr_literal);
@@ -1466,9 +1466,9 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 	/** see if we can fit the value in a long or INT64.  **/
 			if ((uint64_val <= MAX_SLONG) ||
 				((uint64_val == (MAX_SLONG + (UINT64) 1))
-				 && (negate == TRUE)))
+				 && (negate == true)))
 			{
-				if (negate == TRUE)
+				if (negate == true)
 					long_val = -((long) uint64_val);
 				else
 					long_val = (long) uint64_val;
@@ -1479,9 +1479,9 @@ static GPRE_NOD cmp_literal( GPRE_NOD node, GPRE_REQ request)
 			}
 			else if ((uint64_val <= MAX_SINT64) ||
 					 ((uint64_val == ((UINT64) MAX_SINT64 + 1))
-					  && (negate == TRUE)))
+					  && (negate == true)))
 			{
-				if (negate == TRUE)
+				if (negate == true)
 					sint64_val = -((SINT64) uint64_val);
 				else
 					sint64_val = (SINT64) uint64_val;

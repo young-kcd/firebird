@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.16 2003-09-08 11:27:51 robocop Exp $
+//	$Id: exp.cpp,v 1.17 2003-09-10 19:48:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -65,7 +65,7 @@
 //#endif
 //#define MIN_SSHORT    ((SSHORT)(0x8000))
 
-static BOOLEAN check_relation(void);
+static bool check_relation(void);
 static GPRE_NOD lookup_field(GPRE_CTX);
 static GPRE_NOD make_and(GPRE_NOD, GPRE_NOD);
 static GPRE_NOD make_list(LLS);
@@ -351,22 +351,20 @@ GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 			return reference->ref_field;
 		else {
 			if (sw_cstring)
-				field =
-					MET_make_field("TERMINATING_FIELD", dtype_cstring, 32,
-								   FALSE);
+				field = MET_make_field("TERMINATING_FIELD", dtype_cstring, 32,
+									   FALSE);
 			else
-				field =
-					MET_make_field("TERMINATING_FIELD", dtype_text, 31,
-								   FALSE);
+				field = MET_make_field("TERMINATING_FIELD", dtype_text, 31,
+									   FALSE);
 			reference = EXP_post_field(field, context, FALSE);
 			reference->ref_flags |= REF_pseudo;
 			request->req_term_field = reference;
 			return field;
 		}
 
-	if (!
-		(field =
-		 FORM_lookup_field(a_form, a_form->form_object, token.tok_string))) {
+	if (!(field = FORM_lookup_field(a_form, a_form->form_object, 
+								    token.tok_string))) 
+	{
 		sprintf(s, "field \"%s\" is not defined in form %s", token.tok_string,
 				a_form->form_name->sym_string);
 		PAR_error(s);
@@ -383,9 +381,9 @@ GPRE_FLD EXP_form_field(GPRE_CTX * rcontext)
 
 	parent = NULL;
 	if (field->fld_prototype &&
-		(child =
-		 FORM_lookup_field(request->req_form, field->fld_prototype,
-						   token.tok_string))) {
+		(child = FORM_lookup_field(request->req_form, field->fld_prototype,
+								   token.tok_string))) 
+	{
 		ADVANCE_TOKEN;
 		parent = MAKE_REFERENCE(0);
 		parent->ref_field = field;
@@ -496,7 +494,7 @@ GPRE_NOD EXP_literal(void)
 
 SINT64 EXP_SINT64_ordinal(USHORT advance_flag)
 {
-	USHORT negate;
+	bool negate;
 	SINT64 n;
 	char buffer[64];
 	char format[8];
@@ -511,7 +509,7 @@ SINT64 EXP_SINT64_ordinal(USHORT advance_flag)
 	sprintf(format, "%c%sd", '%', QUADFORMAT);
 #endif
 
-	negate = (MATCH(KW_MINUS)) ? TRUE : FALSE;
+	negate = (MATCH(KW_MINUS));
 
 	if (token.tok_type != tok_number)
 		SYNTAX_ERROR("<number>");
@@ -535,11 +533,11 @@ SINT64 EXP_SINT64_ordinal(USHORT advance_flag)
 
 SLONG EXP_SLONG_ordinal(USHORT advance_flag)
 {
-	USHORT negate;
+	bool negate;
 	SLONG n;
 	char buffer[32];
 
-	negate = (MATCH(KW_MINUS)) ? TRUE : FALSE;
+	negate = (MATCH(KW_MINUS));
 
 	if (token.tok_type != tok_number)
 		SYNTAX_ERROR("<number>");
@@ -564,10 +562,10 @@ SLONG EXP_SLONG_ordinal(USHORT advance_flag)
 
 SSHORT EXP_SSHORT_ordinal(USHORT advance_flag)
 {
-	USHORT negate;
+	bool negate;
 	SLONG n;
 
-	negate = (MATCH(KW_MINUS)) ? TRUE : FALSE;
+	negate = (MATCH(KW_MINUS));
 
 	if (token.tok_type != tok_number)
 		SYNTAX_ERROR("<number>");
@@ -859,14 +857,17 @@ GPRE_REL EXP_relation(void)
 
 RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 {
-	GPRE_NOD first, item, boolean, sort, *ptr, upcase;
+	GPRE_NOD first = NULL;
+	GPRE_NOD item;
+	GPRE_NOD boolean = NULL;
+	GPRE_NOD sort;
+	GPRE_NOD *ptr;
+	GPRE_NOD upcase;
 	RSE rec_expr;
 	GPRE_CTX context;
 	LLS items;
 	LLS directions;
-	SSHORT count, direction, insensitive;
-
-	first = boolean = NULL;
+	SSHORT count;
 
 //  parse FIRST n clause, if present 
 
@@ -921,29 +922,30 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 //  Parse SORT clause, if any. 
 
-	direction = FALSE;
-	insensitive = FALSE;
+	bool direction = false;
+	bool insensitive = false;
+
 	while (true) {
 		if (MATCH(KW_SORTED)) {
 			MATCH(KW_BY);
 			items = NULL;
-			direction = 0;
+			direction = false;
 			count = 0;
 			while (true) {
 				if (MATCH(KW_ASCENDING)) {
-					direction = FALSE;
+					direction = false;
 					continue;
 				}
 				else if (MATCH(KW_DESCENDING)) {
-					direction = TRUE;
+					direction = true;
 					continue;
 				}
 				else if (MATCH(KW_EXACTCASE)) {
-					insensitive = FALSE;
+					insensitive = false;
 					continue;
 				}
 				else if (MATCH(KW_ANYCASE)) {
-					insensitive = TRUE;
+					insensitive = true;
 					continue;
 				}
 				item = par_value(request, 0);
@@ -952,7 +954,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 					upcase->nod_arg[0] = item;
 				}
 				count++;
-				PUSH((GPRE_NOD) (ULONG) direction, &directions);
+				PUSH((GPRE_NOD) (ULONG) ((direction) ? 1 : 0), &directions);
 				if (insensitive)
 					PUSH(upcase, &items);
 				else
@@ -1071,7 +1073,7 @@ GPRE_NOD EXP_subscript(GPRE_REQ request)
 //		Check current token for either a relation or database name.
 //  
 
-static BOOLEAN check_relation(void)
+static bool check_relation(void)
 {
 	SYM symbol;
 	DBB db;
@@ -1082,13 +1084,13 @@ static BOOLEAN check_relation(void)
 //  name, search all databases for the name 
 
 	if ((symbol = token.tok_symbol) && symbol->sym_type == SYM_database)
-		return TRUE;
+		return true;
 
 	for (db = isc_databases; db; db = db->dbb_next)
 		if (MET_get_relation(db, token.tok_string, ""))
-			return TRUE;
+			return true;
 
-	return FALSE;
+	return false;
 }
 
 
@@ -1174,19 +1176,18 @@ static GPRE_NOD normalize_index( DIM dimension, GPRE_NOD user_index, USHORT arra
 	GPRE_NOD index_node, adjustment_node, negate_node;
 	REF reference;
 	TEXT string[33];
-	BOOLEAN negate;
+	bool negate = false;
 
-	negate = FALSE;
 	switch (array_base) {
 	case ZERO_BASED:
 		if (dimension->dim_lower < 0)
-			negate = TRUE;
+			negate = true;
 		sprintf(string, "%d", abs(dimension->dim_lower));
 		break;
 
 	case ONE_BASED:
 		if (dimension->dim_lower - 1 < 0)
-			negate = TRUE;
+			negate = true;
 		sprintf(string, "%d", abs(dimension->dim_lower - 1));
 		break;
 
@@ -1238,30 +1239,33 @@ static GPRE_NOD par_and( GPRE_REQ request)
 static GPRE_NOD par_array(GPRE_REQ request,
 					 GPRE_FLD field, SSHORT subscript_flag, SSHORT sql_flag)
 {
-	BOOLEAN paren = FALSE, bracket = FALSE;
+	bool paren = false;
+	bool bracket = false;
 	DIM dimension;
 	GPRE_NOD node, index_node, array_node;
 	int i, fortran_adjustment;
 
 	if (MATCH(KW_LEFT_PAREN))
-		paren = TRUE;
+		paren = true;
 	else if (MATCH(KW_L_BRCKET))
-		bracket = TRUE;
+		bracket = true;
 	else if (!subscript_flag)
 		SYNTAX_ERROR("Missing parenthesis or bracket for array reference.");
 
-	array_node =
-		MSC_node(nod_array,
-				 (SSHORT) (field->fld_array_info->ary_dimension_count + 1));
+	array_node = MSC_node(nod_array,
+						  (SSHORT) (field->fld_array_info->ary_dimension_count + 1));
 
 	if (sql_flag && ((paren && MATCH(KW_RIGHT_PAREN)) ||
-					 (bracket && MATCH(KW_R_BRCKET)))) return array_node;
+					 (bracket && MATCH(KW_R_BRCKET))))
+	{
+		return array_node;
+	}
 
 	fortran_adjustment = array_node->nod_count;
 	if (paren || bracket) {
 		if (!subscript_field)
-			subscript_field =
-				MET_make_field("gds_array_subscript", dtype_long, 4, FALSE);
+			subscript_field = MET_make_field("gds_array_subscript", dtype_long,
+											 4, FALSE);
 
 		/*  Parse a commalist of subscripts and build a tree of index nodes  */
 
@@ -1270,7 +1274,7 @@ static GPRE_NOD par_array(GPRE_REQ request,
 			if (!sql_flag)
 				node = par_value(request, subscript_field);
 			else {
-				node = SQE_value(request, FALSE, 0, 0);
+				node = SQE_value(request, false, NULL, NULL);
 
 				/* For all values referenced, post the subscript field   */
 
@@ -1285,16 +1289,16 @@ static GPRE_NOD par_array(GPRE_REQ request,
 			switch (sw_language) {
 			case lang_c:
 			case lang_cxx:
-            case lang_internal:
-				index_node->nod_arg[0] =
-					normalize_index(dimension, index_node->nod_arg[0],
-									ZERO_BASED);
+			case lang_internal:
+				index_node->nod_arg[0] = normalize_index(dimension, 
+														 index_node->nod_arg[0],
+														 ZERO_BASED);
 				break;
 
 			case lang_cobol:
-				index_node->nod_arg[0] =
-					normalize_index(dimension, index_node->nod_arg[0],
-									ONE_BASED);
+				index_node->nod_arg[0] = normalize_index(dimension,
+														 index_node->nod_arg[0],
+														 ONE_BASED);
 				break;
 			}
 
@@ -1308,8 +1312,7 @@ static GPRE_NOD par_array(GPRE_REQ request,
 				array_node->nod_arg[i] = index_node;
 
 			if ((dimension->dim_next) && (!MATCH(KW_COMMA)))
-				SYNTAX_ERROR
-					("Adequate number of subscripts for this array reference.");
+				SYNTAX_ERROR("Adequate number of subscripts for this array reference.");
 		}
 
 		/*  Match the parenthesis or bracket  */
@@ -1355,16 +1358,14 @@ static GPRE_NOD par_field( GPRE_REQ request)
 	GPRE_CTX context;
 	REF reference, value_reference;
 	GPRE_NOD node, prefix_node;
-	SSHORT upcase_flag;
+	bool upcase_flag = false;
 
 	if (!(symbol = token.tok_symbol))
 		SYNTAX_ERROR("qualified field reference");
 
-	upcase_flag = FALSE;
-
 	if (MATCH(KW_UPPERCASE)) {
 		prefix_node = MAKE_NODE(nod_upcase, 1);
-		upcase_flag = TRUE;
+		upcase_flag = true;
 		if (!MATCH(KW_LEFT_PAREN))
 			SYNTAX_ERROR("left parenthesis");
 		if (!(symbol = token.tok_symbol))

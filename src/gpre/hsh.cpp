@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.12 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: hsh.cpp,v 1.13 2003-09-10 19:48:53 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -37,8 +37,8 @@
 
 
 static int hash(SCHAR *);
-static BOOLEAN scompare(SCHAR *, SCHAR *);
-static BOOLEAN scompare2(SCHAR *, SCHAR *);
+static bool scompare(SCHAR *, SCHAR *);
+static bool scompare2(SCHAR *, SCHAR *);
 
 #define HASH_SIZE 211
 
@@ -240,17 +240,18 @@ static int hash( SCHAR * string)
 //		case sensitive Compare 
 //  
 
-static BOOLEAN scompare( SCHAR * string1, SCHAR * string2)
+static bool scompare(SCHAR * string1,
+					 SCHAR * string2)
 {
 
 	while (*string1)
 		if (*string1++ != *string2++)
-			return FALSE;
+			return false;
 
 	if (*string2)
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 //____________________________________________________________
@@ -258,15 +259,16 @@ static BOOLEAN scompare( SCHAR * string1, SCHAR * string2)
 //		Compare two strings
 //  
 
-static BOOLEAN scompare2( SCHAR * string1, SCHAR * string2)
+static bool scompare2(SCHAR * string1,
+					  SCHAR * string2)
 {
 	SCHAR c1, c2;
 
 	while (c1 = *string1++)
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
-			return FALSE;
+			return false;
 	if (*string2)
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }

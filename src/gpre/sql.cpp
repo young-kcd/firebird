@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.18 2003-09-08 11:27:51 robocop Exp $
+//	$Id: sql.cpp,v 1.19 2003-09-10 19:48:52 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -164,7 +164,6 @@ ACT SQL_action(const TEXT*  base_directory)
 	ACT action;
 	enum kwwords keyword;
 
-	sw_gen_sql = TRUE;
 
 	switch (keyword = token.tok_keyword) {
 	case KW_ALTER:
@@ -511,7 +510,9 @@ void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 //		Also for CAST statement
 //  
 
-void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
+void SQL_par_field_dtype(GPRE_REQ request,
+						 GPRE_FLD field,
+						 bool udf)
 {
 	int l, p, q;
 	enum kwwords keyword;
@@ -816,10 +817,10 @@ PAR_error("CHARACTER SET applies only to character columns");
 //  
 
 GPRE_PRC SQL_procedure(GPRE_REQ request,
-				  TEXT * prc_string,
-				  TEXT * db_string, 
-				  TEXT * owner_string, 
-				  bool err_flag)
+					   TEXT * prc_string,
+					   TEXT * db_string,
+					   TEXT * owner_string,
+					   bool err_flag)
 {
 	DBB db;
 	SCHAR s[ERROR_LENGTH];
@@ -842,8 +843,7 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 	}
 
 	if (request->req_database)
-		procedure =
-			MET_get_procedure(request->req_database, prc_string,
+		procedure = MET_get_procedure(request->req_database, prc_string,
 							  owner_string);
 	else {
 		// no database was specified, check the metadata for all the databases
@@ -891,10 +891,10 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 //  
 
 GPRE_REL SQL_relation(GPRE_REQ request,
-				 TEXT * rel_string,
-				 TEXT * db_string, 
-				 TEXT * owner_string, 
-				 bool err_flag)
+					  TEXT * rel_string,
+					  TEXT * db_string,
+					  TEXT * owner_string,
+					  bool err_flag)
 {
 	DBB db;
 	SCHAR s[ERROR_LENGTH];
@@ -961,7 +961,9 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 //		Get a relation name (checking for database specifier)
 //  
 
-void SQL_relation_name( TEXT * r_name, TEXT * db_name, TEXT * owner_name)
+void SQL_relation_name(TEXT * r_name,
+					   TEXT * db_name,
+					   TEXT * owner_name)
 {
 	db_name[0] = 0;
 	owner_name[0] = 0;
@@ -1006,7 +1008,8 @@ TEXT *SQL_var_or_string(bool string_only)
 {
 
 	if ((!SINGLE_QUOTED(token.tok_type) && sw_sql_dialect == 3) ||
-		(!QUOTED(token.tok_type) && sw_sql_dialect == 1)) {
+		(!QUOTED(token.tok_type) && sw_sql_dialect == 1))
+	{
 		if (string_only)
 			SYNTAX_ERROR("<quoted string>");
 		if (!MATCH(KW_COLON))
@@ -1732,7 +1735,7 @@ static ACT act_create_domain(void)
 
 	GPRE_FLD field = make_field(0);
 	MATCH(KW_AS);
-	SQL_par_field_dtype(request, field, FALSE);
+	SQL_par_field_dtype(request, field, false);
 
 //  Check if default value was specified 
 
@@ -1825,7 +1828,8 @@ static ACT act_create_generator(void)
 //		Handle an SQL create index statement.
 //  
 
-static ACT act_create_index( bool dups, bool descending)
+static ACT act_create_index(bool dups,
+							bool descending)
 {
 //  create request block 
 
@@ -2480,7 +2484,7 @@ static ACT act_declare_udf(void)
 			else {
 				GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
 				field->fld_flags |= (FLD_meta | FLD_meta_cstring);
-				SQL_par_field_dtype(request, field, TRUE);
+				SQL_par_field_dtype(request, field, true);
 				SQL_adjust_field_dtype(field);
 				udf_declaration->decl_udf_return_type = field;
 				MATCH(KW_BY);
@@ -2494,7 +2498,7 @@ static ACT act_declare_udf(void)
 		else {
 			GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
 			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
-			SQL_par_field_dtype(request, field, TRUE);
+			SQL_par_field_dtype(request, field, true);
 			SQL_adjust_field_dtype(field);
 			*ptr = field;
 			ptr = &(field->fld_next);
@@ -2973,19 +2977,12 @@ static ACT act_fetch(void)
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
 		if (MATCH(KW_USING) || MATCH(KW_INTO)) {
-			MATCH(KW_SQL);		/* optional for backward compatibility */
+			MATCH(KW_SQL);		// optional for backward compatibility
 
-#pragma FB_COMPILER_MESSAGE("Fix! Wrong function ptr type!")
-//
-// Please search for "reinterpret_cast<pfn_SQE_list_cb>",
-// there are more in this file.
-//
 			if (MATCH(KW_DESCRIPTOR))
 				statement->dyn_sqlda = PAR_native_value(false, false);
 			else
-				statement->dyn_using =
-					(GPRE_NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
-								   (SQE_variable), 0, FALSE);
+				statement->dyn_using = (GPRE_NOD) SQE_list(SQE_variable, 0, false);
 			if (statement->dyn_using)
 				PAR_error("Using host-variable list not supported.");
 		}
@@ -3021,13 +3018,13 @@ static ACT act_fetch(void)
 		else if (MATCH(KW_RELATIVE)) {
 			direction = blr_forward;
 			direction_string = "0";
-			offset_node = SQE_value(0, FALSE, 0, 0);
+			offset_node = SQE_value(0, false, NULL, NULL);
 			ADVANCE_TOKEN;
 		}
 		else if (MATCH(KW_ABSOLUTE)) {
 			direction = blr_bof_forward;
 			direction_string = "2";
-			offset_node = SQE_value(0, FALSE, 0, 0);
+			offset_node = SQE_value(0, false, NULL, NULL);
 			ADVANCE_TOKEN;
 		}
 	}
@@ -3106,13 +3103,11 @@ static ACT act_fetch(void)
 	if (request->req_flags & REQ_sql_blob_open) {
 		if (!MATCH(KW_INTO))
 			SYNTAX_ERROR("INTO");
-		action->act_object = SQE_variable(0, FALSE);
+		action->act_object = (REF) SQE_variable(NULL, false, NULL, NULL);
 		action->act_type = ACT_get_segment;
 	}
 	else if (MATCH(KW_INTO)) {
-		action->act_object =
-			(REF) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
-						   (SQE_variable), request, FALSE);
+		action->act_object = (REF) SQE_list(SQE_variable, request, false);
 		RSE select = request->req_rse;
 		into(request, select->rse_fields, (GPRE_NOD) action->act_object);
 	}
@@ -3406,7 +3401,7 @@ static ACT act_insert(void)
 	}
 	else {
 		do {
-			GPRE_NOD node = SQE_field(request, FALSE);
+			GPRE_NOD node = SQE_field(request, false);
 			if (node->nod_type == nod_array) {
 				node->nod_type = nod_field;
 
@@ -3447,7 +3442,7 @@ static ACT act_insert(void)
 			if (MATCH(KW_NULL))
 				PUSH(MAKE_NODE(nod_null, 0), &values);
 			else
-				PUSH(SQE_value(request, FALSE, 0, 0), &values);
+				PUSH(SQE_value(request, false, NULL, NULL), &values);
 			count2++;
 			if (!(MATCH(KW_COMMA)))
 				break;
@@ -3566,7 +3561,7 @@ static ACT act_insert_blob(const TEXT* transaction)
 		SYNTAX_ERROR("VALUES");
 
 	EXP_left_paren(0);
-	action->act_object = SQE_variable(0, FALSE);
+	action->act_object = (REF) SQE_variable(NULL, false, NULL, NULL);
 	if (!action->act_object->ref_null_value)
 		PAR_error("A segment length is required.");
 	EXP_match_paren();
@@ -3644,7 +3639,7 @@ static ACT act_openclose( enum act_t type)
 			}
 			else if (!MATCH(KW_INTO))
 				SYNTAX_ERROR("INTO");
-			REF opn_using = SQE_variable(0, FALSE);
+			REF opn_using = (REF) SQE_variable(NULL, false, NULL, NULL);
 			open->opn_using = opn_using;
 			opn_using->ref_next = request->req_blobs->blb_reference;
 			request->req_blobs->blb_reference = opn_using;
@@ -3872,7 +3867,6 @@ static ACT act_prepare(void)
 	action->act_type = ACT_dyn_prepare;
 	action->act_object = (REF) statement;
 	action->act_whenever = gen_whenever();
-	sw_dsql = TRUE;
 
 	return action;
 }
@@ -3907,7 +3901,7 @@ static ACT act_procedure(void)
 			if (MATCH(KW_NULL))
 				PUSH(MAKE_NODE(nod_null, 0), &values);
 			else {
-				REF reference = SQE_parameter(request, FALSE);
+				REF reference = SQE_parameter(request, false);
 				*ref_ptr = reference;
 				reference->ref_field = field;
 				PUSH(MSC_unary(nod_value, (GPRE_NOD) reference), &values);
@@ -3929,7 +3923,7 @@ static ACT act_procedure(void)
 		GPRE_FLD field = procedure->prc_outputs;
 		REF *ref_ptr = &request->req_references;
 		do {
-			REF reference = SQE_variable(request, FALSE);
+			REF reference = (REF) SQE_variable(request, false, NULL, NULL);
 			*ref_ptr = reference;
 			if (reference->ref_field = field)
 				field = field->fld_next;
@@ -4058,7 +4052,7 @@ static ACT act_set_dialect(void)
 
 //  Needed because subsequent parsing pass1 looks at sw_Sql_dialect value 
 	sw_sql_dialect = dialect;
-	dialect_specified = 1;
+	dialect_specified = true;
 
 	ADVANCE_TOKEN;
 	return action;
@@ -4370,13 +4364,13 @@ static ACT act_update(void)
 
 	do {
 		GPRE_NOD set_item = MAKE_NODE(nod_assignment, 2);
-		set_item->nod_arg[1] = SQE_field(NULL, FALSE);
+		set_item->nod_arg[1] = SQE_field(NULL, false);
 		if (!MATCH(KW_EQUALS))
 			SYNTAX_ERROR("assignment operator");
 		if (MATCH(KW_NULL))
 			set_item->nod_arg[0] = MAKE_NODE(nod_null, 0);
 		else
-			set_item->nod_arg[0] = SQE_value(request, FALSE, 0, 0);
+			set_item->nod_arg[0] = SQE_value(request, false, NULL, NULL);
 		PUSH(set_item, &stack);
 		count++;
 	} while (MATCH(KW_COMMA));
@@ -5266,7 +5260,7 @@ static void par_computed( GPRE_REQ request, GPRE_FLD field)
 
 	CMPF cmp = (CMPF) ALLOC(CMPF_LEN);
 	cmp->cmpf_text = CPR_start_text();
-	cmp->cmpf_boolean = SQE_value(request, FALSE, 0, 0);
+	cmp->cmpf_boolean = SQE_value(request, false, NULL, NULL);
 	CPR_end_text(cmp->cmpf_text);
 
 	field->fld_computed = cmp;
@@ -5379,7 +5373,7 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 {
 	GPRE_FLD field = make_field(relation);
 
-	SQL_par_field_dtype(request, field, FALSE);
+	SQL_par_field_dtype(request, field, false);
 
 	if (MATCH(KW_COMPUTED)) {
 		if (field->fld_global)
@@ -5580,7 +5574,8 @@ static bool par_into( DYN statement)
 	if (!MATCH(KW_INTO))
 		return false;
 
-	MATCH(KW_SQL);				/* "SQL" keyword is optional for backward compatibility */
+	MATCH(KW_SQL);
+	// "SQL" keyword is optional for backward compatibility
 
 	if (!MATCH(KW_DESCRIPTOR))
 		SYNTAX_ERROR("DESCRIPTOR");
@@ -5895,7 +5890,8 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 //		Returns true if found a match else false.
 //  
 
-static bool par_transaction_modes( GPRE_TRA trans, bool expect_iso)
+static bool par_transaction_modes(GPRE_TRA trans,
+								  bool expect_iso)
 {
 
 	if (MATCH(KW_READ)) {
@@ -5959,14 +5955,13 @@ static bool par_using( DYN statement)
 	if (!MATCH(KW_USING))
 		return false;
 
-	MATCH(KW_SQL);				/* keyword "SQL" is optional for backward compatibility */
+	MATCH(KW_SQL);
+	// keyword "SQL" is optional for backward compatibility
 
 	if (MATCH(KW_DESCRIPTOR))
 		statement->dyn_sqlda = PAR_native_value(false, false);
 	else
-		statement->dyn_using =
-			(GPRE_NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
-						   (SQE_variable), 0, FALSE);
+		statement->dyn_using = (GPRE_NOD) SQE_list(SQE_variable, 0, false);
 
 	return true;
 }
@@ -5977,7 +5972,8 @@ static bool par_using( DYN statement)
 //		Figure out the correct dtypes
 //  
 
-static USHORT resolve_dtypes( KWWORDS typ, bool sql_date)
+static USHORT resolve_dtypes(KWWORDS typ,
+							 bool sql_date)
 {
 	TEXT err_mesg[128];
 
@@ -6054,7 +6050,8 @@ static USHORT resolve_dtypes( KWWORDS typ, bool sql_date)
 //		Parse the tail of a CREATE DATABASE statement.
 //  
 
-static bool tail_database( enum act_t action_type, DBB database)
+static bool tail_database(enum act_t action_type,
+						  DBB database)
 {
 	TEXT* string = NULL;
 
