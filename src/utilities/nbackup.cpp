@@ -920,23 +920,30 @@ void nbackup::restore_database(int filecount, const char* const* files)
 	}
 }
 
+enum NbOperation {nbNone, nbLock, nbUnlock, nbFixup, nbBackup, nbRestore};
+
 int main( int argc, char *argv[] )
 {
 #if defined DEV_BUILD && !defined WIN_NT
 	fprintf(stderr, "Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
 #endif
-	bool matched = false;
 	// Do not constify. GCC 3.4.0 chokes on minus below in this case
 	char **end = argv + argc, **argp;
 
-	const char *username = NULL, *password = NULL;
+	NbOperation op = nbNone;
+	char *username = NULL, *password = NULL, *database = NULL, 
+		*filename = NULL, **backup_files;
+	int level;
+	int filecount;
 	
 	try {
 		// Read global command line parameters
 		for (argp = argv + 1; argp < end; argp++) {
-			// Ignore unrecognized options for the moment
-			if (**argp != '-')
-				continue;
+			// We must recognize all parameters here
+			if (**argp != '-') {
+				fprintf(stderr, "ERROR: Unrecognized parameter %s.\n\n", *argp);
+				usage();
+			}
 
 			switch (UPPER((*argp)[1])) {
 			case 'U':
@@ -952,70 +959,74 @@ int main( int argc, char *argv[] )
 
 				password = *argp;
 				break;
-			default:
-				break;
-			}
-		}
-	
-		// Read global command line parameters
-		for (argp = argv + 1; argp < end; argp++) {
-			// We must recognize all parameters here
-			if (**argp != '-') {
-				fprintf(stderr, "ERROR: Unrecognized parameter %s.\n\n", *argp);
-				usage();
-			}
-
-			switch (UPPER((*argp)[1])) {
-			case 'U':
-			case 'P':
-				// Skip parameters recognized earlier
-				argp++;
-				break;
 
 			case 'F':
+				if (op != nbNone) 
+					usage();
+
 				if (++argp >= end)
 					missing_parameter_for_switch(argp[-1]);
 
-				nbackup(*argp, username, password).fixup_database();
-				matched = true;
+				database = *argp;
+				op = nbFixup;
 				break;
 
 			case 'L':
+				if (op != nbNone) 
+					usage();
+
 				if (++argp >= end)
 					missing_parameter_for_switch(argp[-1]);
 
-				nbackup(*argp, username, password).lock_database();
-				matched = true;
+				database = *argp;
+				op = nbLock;
 				break;
 
 			case 'N':
+				if (op != nbNone) 
+					usage();
+
 				if (++argp >= end)
 					missing_parameter_for_switch(argp[-1]);
 
-				nbackup(*argp, username, password).unlock_database();
-				matched = true;
+				database = *argp;
+				op = nbUnlock;
 				break;
 
 			case 'B': {
-					if (++argp >= end)
-						missing_parameter_for_switch(argp[-1]);
+				if (op != nbNone) 
+					usage();
 
-					int level = atoi(*argp);
-
-					if (++argp >= end)
-						missing_parameter_for_switch(argp[-1]);
-
-					nbackup(*argp, username, password).backup_database(level, argp + 1 >= end ? NULL : argp[1]);
-					matched = true;
-				}
-				break;
-
-			case 'R':
 				if (++argp >= end)
 					missing_parameter_for_switch(argp[-1]);
 
-				nbackup(*argp, username, password).restore_database(end - argp - 1, argp + 1);
-				matched = true;
+				level = atoi(*argp);
+
+				if (++argp >= end)
+					missing_parameter_for_switch(argp[-1]);
+
+				database = *argp;
+
+				if (argp + 1 < end)
+					filename = *(++argp);
+
+				op = nbBackup;
+				break;
+			}
+
+			case 'R':
+				if (op != nbNone) 
+					usage();
+
+				if (++argp >= end)
+					missing_parameter_for_switch(argp[-1]);
+
+				database = *argp;
+				filecount = end - argp - 1;
+				backup_files = argp + 1;
+				argp += filecount;
+
+				op = nbRestore;
 				break;
 
 			default:
@@ -1024,13 +1035,36 @@ int main( int argc, char *argv[] )
 				break;
 			}
 		}
+		switch (op) {
+			case nbNone:
+				usage();
+				break;
+
+			case nbLock:
+				nbackup(database, username, password).lock_database();
+				break;
+
+			case nbUnlock:
+				nbackup(database, username, password).unlock_database();
+				break;
+
+			case nbFixup:
+				nbackup(database, username, password).fixup_database();
+				break;
+
+			case nbBackup:
+				nbackup(database, username, password).backup_database(level, filename);
+				break;
+
+			case nbRestore:
+				nbackup(database, username, password).restore_database(filecount, backup_files);
+				break;
+		}
 	} catch (const std::exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}
 	
-    if (!matched)
-	    usage();
 	return EXIT_OK;
 }
 
