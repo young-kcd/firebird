@@ -1,4 +1,6 @@
-#include "fb_exception.h"
+#include "firebird.h"
+
+//#include "fb_exception.h"
 
 #include <string.h>
 
