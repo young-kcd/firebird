@@ -1744,7 +1744,11 @@ ULONG ISC_exception_post(ULONG except_code, TEXT * err_msg)
 		break; 
 	}
 
-	gds__log(log_msg);
+	if (is_critical)
+	{
+		gds__log(log_msg);
+	}
+
 	gds__free(log_msg);
 
 	if (is_critical)
