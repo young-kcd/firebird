@@ -2,8 +2,22 @@
   * v1.5 Beta 2
   **************
 
+    * Fixed bug SF #523589.
+        View is affecting the result of a query.
+      Comment:
+        Problem was that RSE's (inside a view) where not flagged as variant.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
+    * Changed behaviour of the forced writes mode.
+        Now, if FW=off (disabled), you can control how often dirty pages are flushed on disk.
+      Note:
+        It allows to use disabled FW mode with more reliablity than before (mostly it affects win32 platforms).
+      Contributor(s):
+        Blas Rodriguez Somoza <blas@puertareal.com>
+
     * Renamed ISC4.GDB.
-        The security database has been renamed to ???.
+        The security database has been renamed to security.fdb.
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
 
