@@ -1,3 +1,41 @@
+2003-10-24 12:15  aafemt
+
+	* firebird2/src/jrd/: err_proto.h, event.cpp, event_proto.h:
+	
+	'struct' cleanup
+
+2003-10-24 12:10  aafemt
+
+	* firebird2/src/jrd/dfw.epp:
+	
+	MinGW 3.0 is already released
+
+2003-10-24 09:15  robocop
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	Minor correction to error messages
+
+2003-10-24 01:18  brodsom
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	Correction
+
+2003-10-24 01:15  brodsom
+
+	* firebird2/configure.in:
+	
+	Set EDITLINE_FLG=N in Linux until the editline problem is solved.
+
+2003-10-24 01:06  brodsom
+
+	* firebird2/src/isql/isql.epp:
+	
+	Fix bugs in isql (needed by fbtcs) -Detection of redirected input. 
+	-Avoid \n\n\r output in echo mode on win32.  -Fix echo mode prompt
+	output and make it work the same on win32 and linux.
+
 2003-10-23 15:18  alexpeshkoff
 
 	*
