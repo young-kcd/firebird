@@ -34,7 +34,7 @@ void DMP_btc_errors(void);
 void DMP_btc_ordered(void);
 void DMP_dirty(void);
 void DMP_page(SLONG, USHORT);
-void DMP_fetched_page(register struct pag *, ULONG, ULONG, USHORT);
+void DMP_fetched_page(struct pag *, ULONG, ULONG, USHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */

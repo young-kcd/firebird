@@ -30,10 +30,10 @@ extern "C" {
 
 extern void HSH_fini(void);
 extern void HSH_init(void);
-extern void HSH_insert(register SYM);
-extern SYM HSH_lookup(register SCHAR *);
-extern SYM HSH_lookup2(register SCHAR *);
-extern void HSH_remove(register SYM);
+extern void HSH_insert(SYM);
+extern SYM HSH_lookup(SCHAR *);
+extern SYM HSH_lookup2(SCHAR *);
+extern void HSH_remove(SYM);
 
 #ifdef __cplusplus
 } /* extern "C" */

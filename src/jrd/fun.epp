@@ -27,7 +27,7 @@
  *
  */
 /*
-$Id: fun.epp,v 1.13 2003-01-16 17:47:04 skidder Exp $
+$Id: fun.epp,v 1.14 2003-02-10 13:28:22 eku Exp $
 */
 
 #include "firebird.h"
@@ -616,7 +616,7 @@ void DLL_EXPORT FUN_fini( TDBB tdbb)
  **************************************
  *
  * Functional description
- *	Unregister interest in external function modules.
+ *	Uninterest in external function modules.
  *
  **************************************/
 	DBB dbb;

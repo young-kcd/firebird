@@ -1583,8 +1583,8 @@ STATUS GDS_SQLCODE(user_status)
 
 STATUS GDS_START(user_status, req_handle, tra_handle, level)
 	 STATUS *user_status;
-	 register REQ *req_handle;
-	 register TRA *tra_handle;
+	 REQ *req_handle;
+	 TRA *tra_handle;
 	 SLONG GDS_VAL(level);
 {
 /**************************************
@@ -4106,8 +4106,8 @@ STATUS ISC_START_AND_SEND(user_status, req_handle, tra_handle,
 
 STATUS ISC_START(user_status, req_handle, tra_handle, level)
 	 STATUS *user_status;
-	 register REQ *req_handle;
-	 register TRA *tra_handle;
+	 REQ *req_handle;
+	 TRA *tra_handle;
 	 SLONG *level;
 {
 /**************************************

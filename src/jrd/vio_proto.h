@@ -36,7 +36,7 @@ extern int VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
 #ifdef PC_ENGINE
 extern int VIO_check_if_updated(TDBB, struct rpb *);
 #endif
-extern void VIO_data(TDBB, register struct rpb *, struct blk *);
+extern void VIO_data(TDBB, struct rpb *, struct blk *);
 extern void VIO_erase(TDBB, struct rpb *, struct jrd_tra *);
 #ifdef GARBAGE_THREAD
 extern void VIO_fini(TDBB);
@@ -55,7 +55,7 @@ extern BOOLEAN VIO_writelock(TDBB, struct rpb *, struct jrd_tra *);
 extern void VIO_modify(TDBB, struct rpb *, struct rpb *, struct jrd_tra *);
 extern BOOLEAN VIO_next_record(TDBB, struct rpb *, class Rsb *, struct jrd_tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
-extern struct rec *VIO_record(TDBB, register struct rpb *, struct fmt *,
+extern struct rec *VIO_record(TDBB, struct rpb *, struct fmt *,
 							  JrdMemoryPool *);
 extern void VIO_start_save_point(TDBB, struct jrd_tra *);
 extern void VIO_store(TDBB, struct rpb *, struct jrd_tra *);

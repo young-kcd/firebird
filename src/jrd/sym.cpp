@@ -33,10 +33,10 @@
 extern "C" {
 
 
-static SSHORT hash_func(register SCHAR *);
+static SSHORT hash_func(SCHAR *);
 
 
-void SYM_insert(register SYM symbol)
+void SYM_insert(SYM symbol)
 {
 /**************************************
  *
@@ -49,8 +49,8 @@ void SYM_insert(register SYM symbol)
  *
  **************************************/
 	DBB dbb;
-	register int h;
-	register SYM old;
+	int h;
+	SYM old;
 
 	dbb = GET_DBB;
 
@@ -68,7 +68,7 @@ void SYM_insert(register SYM symbol)
 }
 
 
-SYM SYM_lookup(register TEXT * string)
+SYM SYM_lookup(TEXT * string)
 {
 /**************************************
  *
@@ -81,7 +81,7 @@ SYM SYM_lookup(register TEXT * string)
  *
  **************************************/
 	DBB dbb;
-	register SYM symbol;
+	SYM symbol;
 
 	dbb = GET_DBB;
 
@@ -93,7 +93,7 @@ SYM SYM_lookup(register TEXT * string)
 }
 
 
-void SYM_remove(register SYM symbol)
+void SYM_remove(SYM symbol)
 {
 /**************************************
  *
@@ -107,7 +107,7 @@ void SYM_remove(register SYM symbol)
  **************************************/
 	DBB dbb;
 	int h;
-	register SYM *next, *ptr, homonym;
+	SYM *next, *ptr, homonym;
 
 	dbb = GET_DBB;
 
@@ -135,7 +135,7 @@ void SYM_remove(register SYM symbol)
 }
 
 
-static SSHORT hash_func(register SCHAR * string)
+static SSHORT hash_func(SCHAR * string)
 {
 /**************************************
  *
@@ -147,7 +147,7 @@ static SSHORT hash_func(register SCHAR * string)
  *	Returns the hash function of a string.
  *
  **************************************/
-	register int value;
+	int value;
 	SCHAR c;
 
 /* It is OK to not Internationalize this function as it is for

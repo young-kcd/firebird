@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.22 2003-01-16 17:47:03 skidder Exp $
+$Id: blb.cpp,v 1.23 2003-02-10 13:28:20 eku Exp $
 */
 
 #include "firebird.h"
@@ -437,8 +437,8 @@ USHORT BLB_get_segment(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	register BLOB_PTR *from;
-	register BLOB_PTR *to;
+	BLOB_PTR *from;
+	BLOB_PTR *to;
 	UCHAR *p;
 	WIN window;
 	BLP page;

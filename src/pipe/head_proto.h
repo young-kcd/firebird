@@ -118,8 +118,8 @@ extern "C" {
   STATUS PSI_start_and_send(STATUS *, struct rrq **, struct rtr **,
 								 SSHORT, SSHORT, UCHAR *, SSHORT);
   STATUS PSI_start_multiple(STATUS *, struct rtr **, SSHORT, int **);
-  STATUS PSI_start_request(STATUS *, register struct rrq **,
-								register struct rtr **, SSHORT);
+  STATUS PSI_start_request(STATUS *, struct rrq **,
+								struct rtr **, SSHORT);
   STATUS PSI_start_transaction(STATUS *, struct rtr **, SSHORT, ...);
   STATUS PSI_transact_request(STATUS *, struct rdb **, struct rtr **,
 								   USHORT, UCHAR *, USHORT, UCHAR *, USHORT,
@@ -216,8 +216,8 @@ extern "C" {
   STATUS PSI5_start_and_send(STATUS *, struct rrq **, struct rtr **,
 								 SSHORT, SSHORT, UCHAR *, SSHORT);
   STATUS PSI5_start_multiple(STATUS *, struct rtr **, SSHORT, int **);
-  STATUS PSI5_start_request(STATUS *, register struct rrq **,
-								register struct rtr **, SSHORT);
+  STATUS PSI5_start_request(STATUS *, struct rrq **,
+								struct rtr **, SSHORT);
   STATUS PSI5_start_transaction(STATUS *, struct rtr **, SSHORT, ...);
   STATUS PSI5_transact_request(STATUS *, struct rdb **, struct rtr **,
 								   USHORT, UCHAR *, USHORT, UCHAR *, USHORT,

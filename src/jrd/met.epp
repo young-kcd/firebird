@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.46 2003-02-05 15:13:10 dimitr Exp $
+$Id: met.epp,v 1.47 2003-02-10 13:28:22 eku Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -663,7 +663,7 @@ SCHAR *MET_exact_name( TEXT * str)
 }
 
 
-FMT MET_format(TDBB tdbb, register JRD_REL relation, USHORT number)
+FMT MET_format(TDBB tdbb, JRD_REL relation, USHORT number)
 {
 /**************************************
  *
@@ -2226,8 +2226,8 @@ JRD_REL MET_lookup_relation_id(TDBB tdbb, SLONG id, BOOLEAN return_deleted)
  *
  **************************************/
 	DBB dbb;
-	register JRD_REL relation, check_relation;
-	register VEC vector;
+	JRD_REL relation, check_relation;
+	VEC vector;
 	BLK request;
 
 	SET_TDBB(tdbb);
@@ -2837,7 +2837,7 @@ JRD_REL MET_relation(TDBB tdbb, USHORT id)
  *
  **************************************/
 
-	register JRD_REL relation;
+	JRD_REL relation;
 	LCK lock;
 	USHORT major_version, minor_original, max_sys_rel;
 

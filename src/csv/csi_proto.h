@@ -95,8 +95,8 @@ extern STATUS CSI_send(STATUS *, struct rrq **, USHORT, USHORT, UCHAR *,
 					   SSHORT);
 extern STATUS CSI_start_and_send(STATUS *, struct rrq **, struct rtr **,
 								 USHORT, USHORT, UCHAR *, SSHORT);
-extern STATUS CSI_start_request(STATUS *, register struct rrq **,
-								register struct rtr **, SSHORT);
+extern STATUS CSI_start_request(STATUS *, struct rrq **,
+								struct rtr **, SSHORT);
 extern STATUS CSI_start_transaction(STATUS *, struct rtr **, SSHORT, ...);
 extern STATUS CSI_transact_request(STATUS *, struct rdb **, struct rtr **,
 								   USHORT, UCHAR *, USHORT, UCHAR *, USHORT,

@@ -33,15 +33,15 @@
 #include "../jrd/sbm_proto.h"
 #include "../jrd/thd_proto.h"
 
-static void bucket_reset(register SBM);
-static void clear_bucket(register SBM);
-static void clear_segment(register BMS);
+static void bucket_reset(SBM);
+static void clear_bucket(SBM);
+static void clear_segment(BMS);
 
 /* Stores a constant determined during initialization */
 static ULONG SBM_max_tail;
 
 
-SBM *SBM_and(register SBM * bitmap1, register SBM * bitmap2)
+SBM *SBM_and(SBM * bitmap1, SBM * bitmap2)
 {
 /**************************************
  *
@@ -118,7 +118,7 @@ SBM *SBM_and(register SBM * bitmap1, register SBM * bitmap2)
 	else {
 		sbm::iterator segment1, segment2, end_segments;
 		JrdMemoryPool *pool;
-		register BUNCH *b1, *b2;
+		BUNCH *b1, *b2;
 		SSHORT j;
 
 		/* AND the bitmaps segment-wise.  If each bucket has a segment
@@ -148,7 +148,7 @@ SBM *SBM_and(register SBM * bitmap1, register SBM * bitmap2)
 }
 
 
-int SBM_clear(register SBM bitmap, SLONG number)
+int SBM_clear(SBM bitmap, SLONG number)
 {
 /**************************************
  *
@@ -194,7 +194,7 @@ int SBM_clear(register SBM bitmap, SLONG number)
 		return SBM_clear(bucket, relative);
 	}
 	else {
-		register BMS segment;
+		BMS segment;
 		BUNCH test;
 		SSHORT bit, bunch;
 
@@ -278,7 +278,7 @@ void SBM_dump(IB_FILE * f, SBM bitmap1)
 #endif
 
 
-BOOLEAN SBM_equal(register SBM bitmap1, register SBM bitmap2)
+BOOLEAN SBM_equal(SBM bitmap1, SBM bitmap2)
 {
 /**************************************
  *
@@ -360,7 +360,7 @@ void SBM_init(void)
 }
 
 
-int SBM_next(register SBM bitmap, SLONG * number, RSE_GET_MODE mode)
+int SBM_next(SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 {
 /**************************************
  *
@@ -479,7 +479,7 @@ int SBM_next(register SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 		return FALSE;
 	}
 	else {
-		register BMS segment;
+		BMS segment;
 		BUNCH test;
 		SSHORT bit, bunch;
 		JrdMemoryPool *pool;
@@ -588,7 +588,7 @@ int SBM_next(register SBM bitmap, SLONG * number, RSE_GET_MODE mode)
 }
 
 
-SBM *SBM_or(register SBM * bitmap1, register SBM * bitmap2)
+SBM *SBM_or(SBM * bitmap1, SBM * bitmap2)
 {
 /**************************************
  *
@@ -666,7 +666,7 @@ SBM *SBM_or(register SBM * bitmap1, register SBM * bitmap2)
 	}
 	else {
 		sbm::iterator segment1, segment2, end_segments;
-		register BUNCH *b1, *b2;
+		BUNCH *b1, *b2;
 		USHORT j;
 
 		/* Both bitmaps exist.  Form the bitwise union in the first bitmap */
@@ -730,7 +730,7 @@ void SBM_reset(SBM * bitmap)
  **************************************/
 	sbm::iterator tail;
 	SBM vector, bucket;
-	register USHORT i;
+	USHORT i;
 
 	if (!(vector = *bitmap) || vector->sbm_state == SBM_EMPTY)
 		return;
@@ -873,7 +873,7 @@ void SBM_set(TDBB tdbb, SBM * bitmap, SLONG number)
 }
 
 
-int SBM_test(register SBM bitmap, SLONG number)
+int SBM_test(SBM bitmap, SLONG number)
 {
 /**************************************
  *
@@ -913,7 +913,7 @@ int SBM_test(register SBM bitmap, SLONG number)
 		return SBM_test(bucket, relative);
 	}
 	else {
-		register BMS segment;
+		BMS segment;
 		BUNCH test;
 		SSHORT bit, bunch;
 
@@ -989,7 +989,7 @@ SLONG SBM_size(SBM * bitmap)
 }
 
 
-static void bucket_reset(register SBM bucket)
+static void bucket_reset(SBM bucket)
 {
 /**************************************
  *
@@ -1024,7 +1024,7 @@ static void bucket_reset(register SBM bucket)
 }
 
 
-static void clear_bucket(register SBM bucket)
+static void clear_bucket(SBM bucket)
 {
 /**************************************
  *
@@ -1037,7 +1037,7 @@ static void clear_bucket(register SBM bucket)
  *
  **************************************/
 	sbm::iterator p;
-	register SSHORT l;
+	SSHORT l;
 
 	bucket->sbm_next = NULL;
 	bucket->sbm_type = SBM_BUCKET;
@@ -1056,7 +1056,7 @@ static void clear_bucket(register SBM bucket)
 }
 
 
-static void clear_segment(register BMS segment)
+static void clear_segment(BMS segment)
 {
 /**************************************
  *
@@ -1068,8 +1068,8 @@ static void clear_segment(register BMS segment)
  *	Clear out a used bit map segment.
  *
  **************************************/
-	register BUNCH *p;
-	register SSHORT l;
+	BUNCH *p;
+	SSHORT l;
 
 	segment->bms_min = segment->bms_max = 0;
 	p = segment->bms_bits;

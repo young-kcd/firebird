@@ -67,7 +67,7 @@ void sleep(unsigned seconds)
 {
 	struct tm *t;
 	time_t tt;
-	register int secs;
+	int secs;
 
 	time(&tt);
 	t = localtime(&tt);

@@ -40,10 +40,10 @@
   *   that wants to make use of plugins needs to provide a "registration" function.
   *   This function can take any parameters as necessary to establish the link between
   *   the plugin and the subsystem, but it must accept the void* parameter given to
-  *   the plugin's register function.  This parameter is a Plugin pointer which allows
+  *   the plugin's function.  This parameter is a Plugin pointer which allows
   *   the subsystem to access the plugin's symbols.
   *
-  * The exact semantics of the register function the plugin needs to call varies by 
+  * The exact semantics of the function the plugin needs to call varies by 
   *    subsystem.  Please refer to the subsystem documentation for details.
   **/
 class PluginManager

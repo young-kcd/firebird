@@ -26,17 +26,17 @@
 
 #include "../jrd/intl_classes.h"
 
-extern struct dsc *DLL_EXPORT EVL_assign_to(TDBB tdbb, register struct jrd_nod *);
+extern struct dsc *DLL_EXPORT EVL_assign_to(TDBB tdbb, struct jrd_nod *);
 
-extern struct sbm **DLL_EXPORT EVL_bitmap(TDBB tdbb, register struct jrd_nod *);
+extern struct sbm **DLL_EXPORT EVL_bitmap(TDBB tdbb, struct jrd_nod *);
 
-extern BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register struct jrd_nod *);
+extern BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, struct jrd_nod *);
 
-extern struct dsc *DLL_EXPORT EVL_expr(TDBB tdbb, register struct jrd_nod *);
+extern struct dsc *DLL_EXPORT EVL_expr(TDBB tdbb, struct jrd_nod *);
 
-extern BOOLEAN DLL_EXPORT EVL_field(register struct jrd_rel *,
-									register struct rec *,
-									register USHORT, register DSC *);
+extern BOOLEAN DLL_EXPORT EVL_field(struct jrd_rel *,
+									struct rec *,
+									USHORT, DSC *);
 
 extern USHORT DLL_EXPORT EVL_group
 	(TDBB tdbb, struct blk *, struct jrd_nod *, USHORT);

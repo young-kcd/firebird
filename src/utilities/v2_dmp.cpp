@@ -40,13 +40,13 @@ extern *dbg_file;
 
 static void complement_key(UCHAR *, int);
 static double decompress(SCHAR *);
-static void dmp_blob(register BLP);
-static void dmp_header(register HDR);
-static void dmp_pip(register PIP, ULONG);
-static void dmp_transactions(register TIP, ULONG);
-static void dmp_pointer(register PPG);
-static void dmp_data(register DPG);
-static void dmp_root(register IRT);
+static void dmp_blob(BLP);
+static void dmp_header(HDR);
+static void dmp_pip(PIP, ULONG);
+static void dmp_transactions(TIP, ULONG);
+static void dmp_pointer(PPG);
+static void dmp_data(DPG);
+static void dmp_root(IRT);
 static void dmp_index(BTR);
 static void move(SCHAR *, SCHAR *, SSHORT);
 
@@ -89,9 +89,9 @@ void DMP_active(void)
  *	Dump all buffers that are active.
  *
  **************************************/
-	register BCB bcb;
-	register BDB bdb;
-	register int i;
+	BCB bcb;
+	BDB bdb;
+	int i;
 
 	bcb = dbb->dbb_bcb;
 	for (i = 0; i < bcb->bcb_count; i++) {
@@ -117,9 +117,9 @@ void DMP_dirty(void)
  *	Dump all buffers that are dirty.
  *
  **************************************/
-	register BCB bcb;
-	register BDB bdb;
-	register int i;
+	BCB bcb;
+	BDB bdb;
+	int i;
 
 	bcb = dbb->dbb_bcb;
 	for (i = 0; i < bcb->bcb_count; i++) {
@@ -147,7 +147,7 @@ void DMP_page( SLONG number)
  *
  **************************************/
 	WIN window;
-	register PAG page;
+	PAG page;
 
 	window.win_page = number;
 	page = FETCH(&window, LCK_read, 0);
@@ -156,7 +156,7 @@ void DMP_page( SLONG number)
 }
 
 
-void DMP_fetched_page( register PAG page, ULONG number, ULONG sequence)
+void DMP_fetched_page( PAG page, ULONG number, ULONG sequence)
 {
 /**************************************
  *
@@ -273,7 +273,7 @@ static double decompress( SCHAR * value)
 }
 
 
-static void dmp_blob( register BLP page)
+static void dmp_blob( BLP page)
 {
 /**************************************
  *
@@ -302,7 +302,7 @@ static void dmp_blob( register BLP page)
 }
 
 
-static void dmp_header( register HDR page)
+static void dmp_header( HDR page)
 {
 /**************************************
  *
@@ -388,7 +388,7 @@ static void dmp_header( register HDR page)
 }
 
 
-static void dmp_pip( register PIP page, ULONG sequence)
+static void dmp_pip( PIP page, ULONG sequence)
 {
 /**************************************
  *
@@ -400,8 +400,8 @@ static void dmp_pip( register PIP page, ULONG sequence)
  *	Print a page inventory page.
  *
  **************************************/
-	register PGC control;
-	register int n;
+	PGC control;
+	int n;
 
 	control = dbb->dbb_pcontrol;
 	ib_fprintf(dbg_file,
@@ -428,7 +428,7 @@ static void dmp_pip( register PIP page, ULONG sequence)
 }
 
 
-static void dmp_transactions( register TIP page, ULONG sequence)
+static void dmp_transactions( TIP page, ULONG sequence)
 {
 /**************************************
  *
@@ -480,7 +480,7 @@ ib_fprintf (dbg_file, "\tCurrent transaction %d", dbb->dbb_transaction->tra_numb
 }
 
 
-static void dmp_pointer( register PPG page)
+static void dmp_pointer( PPG page)
 {
 /**************************************
  *
@@ -514,7 +514,7 @@ static void dmp_pointer( register PPG page)
 }
 
 
-static void dmp_data( register DPG page)
+static void dmp_data( DPG page)
 {
 /**************************************
  *
@@ -607,7 +607,7 @@ static void dmp_data( register DPG page)
 }
 
 
-static void dmp_root( register IRT page)
+static void dmp_root( IRT page)
 {
 /**************************************
  *

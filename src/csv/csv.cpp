@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: csv.cpp,v 1.9 2002-11-19 12:31:52 dimitr Exp $
+$Id: csv.cpp,v 1.10 2003-02-10 13:28:10 eku Exp $
 */
 
 #include "firebird.h"
@@ -2137,7 +2137,7 @@ static void put_slice( MSG_SLICE message)
 	ARRAY array, handle;
 	USHORT length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	register UCHAR *from, *to;
+	UCHAR *from, *to;
 
 	status_vector[0] = gds_arg_gds;
 	status_vector[1] = 0;

@@ -236,7 +236,7 @@ void ALL_init(void)
 //	FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 }
 
-void JrdMemoryPool::ALL_push(BLK object, register LLS * stack)
+void JrdMemoryPool::ALL_push(BLK object, LLS * stack)
 {
 /**************************************
  *
@@ -249,7 +249,7 @@ void JrdMemoryPool::ALL_push(BLK object, register LLS * stack)
  *
  **************************************/
 	TDBB tdbb;
-	register LLS node;
+	LLS node;
 	JrdMemoryPool* pool;
 
 	tdbb = GET_THREAD_DATA;
@@ -262,7 +262,7 @@ void JrdMemoryPool::ALL_push(BLK object, register LLS * stack)
 }
 
 
-BLK JrdMemoryPool::ALL_pop(register LLS *stack)
+BLK JrdMemoryPool::ALL_pop(LLS *stack)
 {
 /**************************************
  *
@@ -275,7 +275,7 @@ BLK JrdMemoryPool::ALL_pop(register LLS *stack)
  *	further use.
  *
  **************************************/
-	register LLS node;
+	LLS node;
 	JrdMemoryPool* pool;
 	BLK object;
 

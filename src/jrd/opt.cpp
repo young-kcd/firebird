@@ -87,11 +87,11 @@ static void check_sorts(RSE);
 static void class_mask(USHORT, JRD_NOD *, ULONG *);
 static void clear_bounds(OPT, IDX *);
 static JRD_NOD compose(JRD_NOD *, JRD_NOD, NOD_T);
-static BOOLEAN computable(CSB, register JRD_NOD, SSHORT, BOOLEAN);
+static BOOLEAN computable(CSB, JRD_NOD, SSHORT, BOOLEAN);
 static void compute_dependencies(JRD_NOD, ULONG *);
 static void compute_dbkey_streams(CSB, JRD_NOD, UCHAR *);
 static void compute_rse_streams(CSB, RSE, UCHAR *);
-static SLONG decompose(TDBB, register JRD_NOD, LLS *, CSB);
+static SLONG decompose(TDBB, JRD_NOD, LLS *, CSB);
 static USHORT distribute_equalities(LLS *, CSB);
 static BOOLEAN dump_index(JRD_NOD, SCHAR **, SSHORT *);
 static BOOLEAN dump_rsb(JRD_REQ, RSB, SCHAR **, SSHORT *);
@@ -99,18 +99,18 @@ static BOOLEAN estimate_cost(TDBB, OPT, USHORT, double *, double *);
 #ifdef EXPRESSION_INDICES
 static BOOLEAN expression_equal(TDBB, JRD_NOD, JRD_NOD);
 #endif
-static void find_best(TDBB, register OPT, USHORT, USHORT, UCHAR *, JRD_NOD,
+static void find_best(TDBB, OPT, USHORT, USHORT, UCHAR *, JRD_NOD,
 					  double, double);
 static JRD_NOD find_dbkey(JRD_NOD, USHORT, SLONG *);
-static USHORT find_order(TDBB, register OPT, UCHAR *, JRD_NOD);
+static USHORT find_order(TDBB, OPT, UCHAR *, JRD_NOD);
 static void find_rsbs(RSB, LLS *, LLS *);
 static void find_used_streams(RSB , UCHAR *);
 static void form_rivers(TDBB, OPT, UCHAR *, LLS *, JRD_NOD *, JRD_NOD *, JRD_NOD);
 static BOOLEAN form_river(TDBB, OPT, USHORT, UCHAR *, UCHAR *, LLS *, JRD_NOD *,
 						  JRD_NOD *, JRD_NOD);
 static RSB gen_aggregate(TDBB, OPT, JRD_NOD);
-static RSB gen_boolean(TDBB, register OPT, RSB, JRD_NOD);
-static RSB gen_first(TDBB, register OPT, RSB, JRD_NOD);
+static RSB gen_boolean(TDBB, OPT, RSB, JRD_NOD);
+static RSB gen_first(TDBB, OPT, RSB, JRD_NOD);
 static void gen_join(TDBB, OPT, UCHAR *, LLS *, JRD_NOD *, JRD_NOD *, JRD_NOD);
 static RSB gen_navigation(TDBB, OPT, USHORT, JRD_REL, STR, IDX *, JRD_NOD *);
 #ifdef SCROLLABLE_CURSORS
@@ -120,7 +120,7 @@ static RSB gen_nav_rsb(TDBB, OPT, USHORT, JRD_REL, STR, IDX *);
 #endif
 static RSB gen_outer(TDBB, OPT, RSE, LLS, JRD_NOD *, JRD_NOD *);
 static RSB gen_procedure(TDBB, OPT, JRD_NOD);
-static RSB gen_residual_boolean(TDBB, register OPT, RSB);
+static RSB gen_residual_boolean(TDBB, OPT, RSB);
 static RSB gen_retrieval(TDBB, OPT, SSHORT, JRD_NOD *, JRD_NOD *, BOOLEAN, BOOLEAN,
 						 JRD_NOD *);
 static RSB gen_rsb(TDBB, OPT, RSB, JRD_NOD, SSHORT, JRD_REL, STR, JRD_NOD, float);
@@ -135,13 +135,13 @@ static JRD_NOD make_binary_node(NOD_T, JRD_NOD, JRD_NOD, USHORT);
 static RSB make_cross(TDBB, OPT, LLS);
 static JRD_NOD make_index_node(TDBB, JRD_REL, CSB, IDX *);
 static JRD_NOD make_inference_node(CSB, JRD_NOD, JRD_NOD, JRD_NOD);
-static JRD_NOD make_inversion(TDBB, register OPT, JRD_NOD, USHORT);
-static JRD_NOD make_missing(TDBB, register OPT, JRD_REL, JRD_NOD, USHORT, IDX *);
-static JRD_NOD make_starts(TDBB, register OPT, JRD_REL, JRD_NOD, USHORT, IDX *);
+static JRD_NOD make_inversion(TDBB, OPT, JRD_NOD, USHORT);
+static JRD_NOD make_missing(TDBB, OPT, JRD_REL, JRD_NOD, USHORT, IDX *);
+static JRD_NOD make_starts(TDBB, OPT, JRD_REL, JRD_NOD, USHORT, IDX *);
 static BOOLEAN map_equal(JRD_NOD, JRD_NOD, JRD_NOD);
 static void mark_indices(csb_repeat *, SSHORT);
-static SSHORT match_index(TDBB, register OPT, SSHORT, register JRD_NOD, IDX *);
-static BOOLEAN match_indices(TDBB, register OPT, SSHORT, register JRD_NOD, IDX *);
+static SSHORT match_index(TDBB, OPT, SSHORT, JRD_NOD, IDX *);
+static BOOLEAN match_indices(TDBB, OPT, SSHORT, JRD_NOD, IDX *);
 static USHORT nav_rsb_size(RSB, USHORT, USHORT);
 static BOOLEAN node_equality(JRD_NOD, JRD_NOD);
 static JRD_NOD optimize_like(TDBB, JRD_NOD);
@@ -278,7 +278,7 @@ BOOLEAN OPT_access_path(JRD_REQ request,
 
 
 RSB OPT_compile(TDBB tdbb,
-				register CSB csb, register RSE rse, LLS parent_stack)
+				CSB csb, RSE rse, LLS parent_stack)
 {
 /**************************************
  *
@@ -798,7 +798,7 @@ RSB OPT_compile(TDBB tdbb,
 }
 
 
-JRD_NOD OPT_make_dbkey(register OPT opt_, JRD_NOD boolean, USHORT stream)
+JRD_NOD OPT_make_dbkey(OPT opt_, JRD_NOD boolean, USHORT stream)
 {
 /**************************************
  *
@@ -982,10 +982,10 @@ int OPT_match_index(OPT opt, USHORT stream, IDX * idx)
  *
  **************************************/
 	TDBB tdbb;
-	register CSB csb;
+	CSB csb;
 	JRD_NOD node;
 	USHORT n;
-	register Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_repeat * tail, *opt_end;
 
 	tdbb = GET_THREAD_DATA;
 	DEV_BLKCHK(opt, type_opt);
@@ -1215,7 +1215,7 @@ static SLONG calculate_priority_level(OPT opt, IDX * idx)
  *	match_index function must be called first!
  *         
  **************************************/
-	register Opt::opt_repeat *idx_tail, *idx_end;
+	Opt::opt_repeat *idx_tail, *idx_end;
 	USHORT idx_field_count, idx_eql_count;
 	JRD_NOD node;
 
@@ -1534,7 +1534,7 @@ static void clear_bounds(OPT opt, IDX * idx)
  *	indices.
  *
  **************************************/
-	register Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_repeat * tail, *opt_end;
 
 	DEV_BLKCHK(opt, type_opt);
 
@@ -1577,7 +1577,7 @@ static JRD_NOD compose(JRD_NOD * node1, JRD_NOD node2, NOD_T node_type)
 
 
 static BOOLEAN computable(CSB csb,
-						  register JRD_NOD node, SSHORT stream, BOOLEAN idx_use)
+						  JRD_NOD node, SSHORT stream, BOOLEAN idx_use)
 {
 /**************************************
  *
@@ -1914,7 +1914,7 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 
 
 static SLONG decompose(TDBB tdbb,
-					   register JRD_NOD boolean_node, LLS * stack, CSB csb)
+					   JRD_NOD boolean_node, LLS * stack, CSB csb)
 {
 /**************************************
  *
@@ -2477,7 +2477,7 @@ static BOOLEAN estimate_cost(TDBB tdbb,
 	SSHORT n;
 	ULONG inactivities[OPT_BITS];
 	double s, selectivity, cardinality, index_selectivity;
-	register Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_repeat * tail, *opt_end;
 	csb_repeat *csb_tail;
 
 	DEV_BLKCHK(opt, type_opt);
@@ -2716,7 +2716,7 @@ static BOOLEAN expression_equal(TDBB tdbb, JRD_NOD node1, JRD_NOD node2)
 
 
 static void find_best(TDBB tdbb,
-					  register OPT opt,
+					  OPT opt,
 					  USHORT stream,
 					  USHORT position,
 					  UCHAR * streams,
@@ -2927,7 +2927,7 @@ static JRD_NOD find_dbkey(JRD_NOD dbkey, USHORT stream, SLONG * position)
 
 
 static USHORT find_order(TDBB tdbb,
-						 register OPT opt, UCHAR * streams, JRD_NOD plan_node)
+						 OPT opt, UCHAR * streams, JRD_NOD plan_node)
 {
 /**************************************
  *
@@ -3396,7 +3396,7 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 }
 
 
-static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
+static RSB gen_boolean(TDBB tdbb, OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3409,8 +3409,8 @@ static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	register CSB csb;
-	register RSB rsb;
+	CSB csb;
+	RSB rsb;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(node, type_nod);
 	DEV_BLKCHK(prior_rsb, type_rsb);
@@ -3426,7 +3426,7 @@ static RSB gen_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
 }
 
 
-static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
+static RSB gen_first(TDBB tdbb, OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3444,8 +3444,8 @@ static RSB gen_first(TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
  *          gen_skip.
  *
  **************************************/
-	register CSB csb;
-	register RSB rsb;
+	CSB csb;
+	RSB rsb;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	DEV_BLKCHK(node, type_nod);
@@ -3879,7 +3879,7 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, JRD_NOD node)
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	register CSB csb;
+	CSB csb;
 	JRD_PRC procedure;
 	RSB rsb;
 	DEV_BLKCHK(opt, type_opt);
@@ -3899,7 +3899,7 @@ static RSB gen_procedure(TDBB tdbb, OPT opt, JRD_NOD node)
 }
 
 
-static RSB gen_residual_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb)
+static RSB gen_residual_boolean(TDBB tdbb, OPT opt, RSB prior_rsb)
 {
 /**************************************
  *
@@ -3915,7 +3915,7 @@ static RSB gen_residual_boolean(TDBB tdbb, register OPT opt, RSB prior_rsb)
  *
  **************************************/
 	JRD_NOD node, boolean;
-	register Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_repeat * tail, *opt_end;
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
@@ -3954,7 +3954,7 @@ static RSB gen_retrieval(TDBB tdbb,
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	register CSB csb;
+	CSB csb;
 	JRD_REL relation;
 	STR alias;
 	RSB rsb;
@@ -3962,7 +3962,7 @@ static RSB gen_retrieval(TDBB tdbb,
 	JRD_NOD node, opt_boolean, inversion;
 	SSHORT i, j, count, last_idx, idx_walk_count, position, conjunct_position[MAX_INDICES];
 	SLONG idx_priority_level[MAX_INDICES], last_priority_level;
-	register Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
+	Opt::opt_repeat * tail, *opt_end, *idx_tail, *idx_end, *matching_nodes[MAX_INDICES];
 	csb_repeat *csb_tail;
 	BOOLEAN full = FALSE;
 	SET_TDBB(tdbb);
@@ -4359,7 +4359,7 @@ static RSB gen_rsb(TDBB tdbb,
 	return rsb;
 }
 
-static RSB gen_skip (TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
+static RSB gen_skip (TDBB tdbb, OPT opt, RSB prior_rsb, JRD_NOD node)
 {
 /**************************************
  *
@@ -4376,8 +4376,8 @@ static RSB gen_skip (TDBB tdbb, register OPT opt, RSB prior_rsb, JRD_NOD node)
  *          gen_first.
  *
  **************************************/
-    register CSB	csb;
-    register RSB	rsb;
+    CSB	csb;
+    RSB	rsb;
 
     DEV_BLKCHK (opt, type_opt);
     DEV_BLKCHK (prior_rsb, type_rsb);
@@ -4928,7 +4928,7 @@ static IRL indexed_relationship(TDBB tdbb, OPT opt, USHORT stream)
 	JRD_NOD node;
 	IRL relationship;
 	USHORT i;
-	register Opt::opt_repeat * tail, *opt_end;
+	Opt::opt_repeat * tail, *opt_end;
 	csb_repeat *csb_tail;
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
@@ -5222,7 +5222,7 @@ static JRD_NOD make_inference_node(CSB csb, JRD_NOD boolean, JRD_NOD arg1, JRD_N
 
 
 static JRD_NOD make_inversion(TDBB tdbb,
-						  register OPT opt, JRD_NOD boolean, USHORT stream)
+						  OPT opt, JRD_NOD boolean, USHORT stream)
 {
 /**************************************
  *
@@ -5399,7 +5399,7 @@ static JRD_NOD make_inversion(TDBB tdbb,
 
 
 static JRD_NOD make_missing(TDBB tdbb,
-						register OPT opt,
+						OPT opt,
 						JRD_REL relation, JRD_NOD boolean, USHORT stream, IDX * idx)
 {
 /**************************************
@@ -5444,7 +5444,7 @@ static JRD_NOD make_missing(TDBB tdbb,
 
 
 static JRD_NOD make_starts(TDBB tdbb,
-					   register OPT opt,
+					   OPT opt,
 					   JRD_REL relation, JRD_NOD boolean, USHORT stream, IDX * idx)
 {
 /**************************************
@@ -5606,8 +5606,8 @@ static void mark_indices(csb_repeat * csb_tail, SSHORT relation_id)
 
 
 static SSHORT match_index(TDBB tdbb,
-						  register OPT opt,
-						  SSHORT stream, register JRD_NOD boolean, IDX * idx)
+						  OPT opt,
+						  SSHORT stream, JRD_NOD boolean, IDX * idx)
 {
 /**************************************
  *
@@ -5725,8 +5725,8 @@ static SSHORT match_index(TDBB tdbb,
 
 
 static BOOLEAN match_indices(TDBB tdbb,
-							register OPT opt,
-							SSHORT stream, register JRD_NOD boolean, IDX * idx)
+							OPT opt,
+							SSHORT stream, JRD_NOD boolean, IDX * idx)
 {
 /**************************************
  *

@@ -145,7 +145,7 @@ static void pass1_source(TDBB, CSB *, RSE, JRD_NOD, JRD_NOD *, LLS *, JRD_REL, U
 static JRD_NOD pass1_store(TDBB, CSB *, JRD_NOD);
 static JRD_NOD pass1_update(TDBB, CSB *, JRD_REL, TRIG_VEC, USHORT, USHORT, USHORT, JRD_REL,
 						USHORT);
-static JRD_NOD pass2(TDBB, register CSB, register JRD_NOD, JRD_NOD);
+static JRD_NOD pass2(TDBB, CSB, JRD_NOD, JRD_NOD);
 static void pass2_rse(TDBB, CSB, RSE);
 static JRD_NOD pass2_union(TDBB, CSB, JRD_NOD);
 static void plan_check(CSB, RSE);
@@ -572,7 +572,7 @@ FMT DLL_EXPORT CMP_format(TDBB tdbb, CSB csb, USHORT stream)
 
 void DLL_EXPORT CMP_get_desc(
 							 TDBB tdbb,
-							 register CSB csb, register JRD_NOD node, DSC * desc)
+							 CSB csb, JRD_NOD node, DSC * desc)
 {
 /**************************************
  *
@@ -4192,7 +4192,7 @@ USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
 }
 
 
-static JRD_NOD pass2(TDBB tdbb, register CSB csb, register JRD_NOD node, JRD_NOD parent)
+static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 {
 /**************************************
  *

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.9 2003-02-05 01:47:08 brodsom Exp $
+$Id: all.cpp,v 1.10 2003-02-10 13:28:27 eku Exp $
 */
 
 /***************************************************
@@ -82,10 +82,10 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
  *	This is the primary block allocation routine.
  *
  **************************************/
-	register FRB block;
+	FRB block;
 	FRB free, *best, *ptr;
 	USHORT l;
-	register USHORT size;
+	USHORT size;
 	SLONG best_tail, tail;
 
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
@@ -169,7 +169,7 @@ BLK ALLQ_extend(BLK * pointer, int size)
  *
  **************************************/
 	BLK block, new_blk;
-	register int length;
+	int length;
 
 	block = *pointer;
 	new_blk = (BLK) ALLQ_alloc((PLB) pools->vec_object[block->blk_pool_id],
@@ -202,8 +202,8 @@ void ALLQ_fini(void)
  *	Get rid of everything.
  *
  **************************************/
-	register PLB pool, *vector, *until;
-	register HNK hunks, hunk;
+	PLB pool, *vector, *until;
+	HNK hunks, hunk;
 
 	for (vector = (PLB *) pools->vec_object + pools->vec_count,
 		 until = (PLB *) pools->vec_object; --vector >= until;)
@@ -270,7 +270,7 @@ SCHAR *ALLQ_malloc(SLONG size)
  *	Get memory from system.
  *
  **************************************/
-	register SCHAR *memory;
+	SCHAR *memory;
 
 	if (memory = (SCHAR *) gds__alloc(size)) {
 #ifdef DEBUG_GDS_ALLOC
@@ -299,8 +299,8 @@ PLB ALLQ_pool(void)
  *
  **************************************/
 	struct plb temp_pool;
-	register PLB pool;
-	register int pool_id;
+	PLB pool;
+	int pool_id;
 
 /* Start by assigning a pool id */
 
@@ -331,7 +331,7 @@ PLB ALLQ_pool(void)
 }
 
 
-void ALLQ_push( BLK object, register LLS * stack)
+void ALLQ_push( BLK object, LLS * stack)
 {
 /**************************************
  *
@@ -343,7 +343,7 @@ void ALLQ_push( BLK object, register LLS * stack)
  *	Push an object on an LLS stack.
  *
  **************************************/
-	register LLS node;
+	LLS node;
 	PLB pool;
 
 	pool = QLI_default_pool;
@@ -359,7 +359,7 @@ void ALLQ_push( BLK object, register LLS * stack)
 }
 
 
-BLK ALLQ_pop(register LLS * stack)
+BLK ALLQ_pop(LLS * stack)
 {
 /**************************************
  *
@@ -372,8 +372,8 @@ BLK ALLQ_pop(register LLS * stack)
  *	further use.
  *
  **************************************/
-	register LLS node;
-	register PLB pool;
+	LLS node;
+	PLB pool;
 
 	node = *stack;
 	pool = (PLB) pools->vec_object[node->lls_header.blk_pool_id];
@@ -385,7 +385,7 @@ BLK ALLQ_pop(register LLS * stack)
 }
 
 
-void ALLQ_release( register FRB block)
+void ALLQ_release( FRB block)
 {
 /**************************************
  *
@@ -400,7 +400,7 @@ void ALLQ_release( register FRB block)
  *	of addresses).
  *
  **************************************/
-	register FRB prior, free;
+	FRB prior, free;
 	FRB *ptr;
 	PLB pool;
 	int pool_id;
@@ -466,7 +466,7 @@ void ALLQ_rlpool( PLB pool)
  *	hunks to the free hunk list.
  *
  **************************************/
-	register HNK hunk, hunks;
+	HNK hunk, hunks;
 
 	pools->vec_object[pool->plb_pool_id] = NULL;
 
@@ -490,8 +490,8 @@ static void extend_pool( PLB pool, USHORT count)
  *	of given size.
  *
  **************************************/
-	register HNK hunk;
-	register BLK block;
+	HNK hunk;
+	BLK block;
 	SLONG size;
 
 	size =

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.11 2003-02-08 00:36:51 brodsom Exp $
+//  $Id: par.cpp,v 1.12 2003-02-10 13:28:18 eku Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.11 2003-02-08 00:36:51 brodsom Exp $
+//	$Id: par.cpp,v 1.12 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
@@ -163,7 +163,7 @@ static GPRE_FLD		flag_field;
 ACT PAR_action()
 {
 	ACT action;
-	register SYM symbol;
+	SYM symbol;
 	enum kwwords keyword;
 	jmp_buf env;
 
@@ -488,9 +488,9 @@ SSHORT PAR_blob_subtype(DBB dbb)
 
 ACT PAR_database(USHORT sql)
 {
-	register ACT action;
-	register SYM symbol;
-	register DBB db, *db_ptr;
+	ACT action;
+	SYM symbol;
+	DBB db, *db_ptr;
 	TEXT s[256], *string;
 
 	action = MAKE_ACTION(0, ACT_database);
@@ -889,7 +889,7 @@ void PAR_init()
 TEXT *PAR_native_value(USHORT array_ref, USHORT handle_ref)
 {
 	SCHAR *s2, buffer[512];
-	register SCHAR *string, *s1;
+	SCHAR *string, *s1;
 	enum kwwords keyword;
 	int length;
 	USHORT parens, brackets;
@@ -1260,8 +1260,8 @@ static ACT par_any()
 {
 	SYM symbol;
 	ACT action, function;
-	register GPRE_REQ request;
-	register RSE rec_expr;
+	GPRE_REQ request;
+	RSE rec_expr;
 	GPRE_CTX context;
 	GPRE_REL relation;
 
@@ -1304,9 +1304,9 @@ static ACT par_any()
 
 static ACT par_array_element()
 {
-	register GPRE_FLD field, element;
-	register ACT action;
-	register REF reference;
+	GPRE_FLD field, element;
+	ACT action;
+	REF reference;
 	GPRE_REQ request;
 	GPRE_CTX context;
 	GPRE_NOD node;
@@ -1783,7 +1783,7 @@ static ACT par_end_for()
 {
 	ACT begin_action, action;
 	BLB blob;
-	register GPRE_REQ request;
+	GPRE_REQ request;
 
 	if (!cur_for)
 		PAR_error("unmatched END_FOR");
@@ -1970,8 +1970,8 @@ static ACT par_end_modify()
 
 static ACT par_end_stream()
 {
-	register SYM symbol;
-	register GPRE_REQ request;
+	SYM symbol;
+	GPRE_REQ request;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
 		SYNTAX_ERROR("stream cursor");
@@ -1998,8 +1998,8 @@ static ACT par_end_store()
 	GPRE_REQ request;
 	GPRE_CTX context;
 	UPD return_values;
-	register REF reference, change;
-	register GPRE_NOD assignments, item;
+	REF reference, change;
+	GPRE_NOD assignments, item;
 	int count;
 	GPRE_NOD *ptr;
 	LLS stack;
@@ -2139,9 +2139,9 @@ static ACT par_entree()
 static ACT par_erase()
 {
 	GPRE_CTX source;
-	register ACT action;
-	register UPD erase;
-	register SYM symbol;
+	ACT action;
+	UPD erase;
+	SYM symbol;
 	GPRE_REQ request;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_context)
@@ -2175,8 +2175,8 @@ static ACT par_erase()
 
 static ACT par_fetch()
 {
-	register SYM symbol;
-	register GPRE_REQ request;
+	SYM symbol;
+	GPRE_REQ request;
 	ACT action;
 
 	if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_stream)
@@ -2200,7 +2200,7 @@ static ACT par_fetch()
 
 static ACT par_finish()
 {
-	register ACT action;
+	ACT action;
 	SYM symbol;
 	RDY ready;
 
@@ -2242,8 +2242,8 @@ static ACT par_for()
 {
 	SYM symbol, temp;
 	ACT action;
-	register GPRE_REQ request;
-	register RSE rec_expr;
+	GPRE_REQ request;
+	RSE rec_expr;
 	GPRE_CTX context, *ptr, *end;
 	GPRE_REL relation;
 	TEXT s[128], dup_symbol;
@@ -2718,7 +2718,7 @@ static ACT par_item_for( ACT_T type)
 
 static ACT par_left_brace()
 {
-	register ACT action;
+	ACT action;
 
 	if (brace_count++ > 0)
 		return NULL;
@@ -3005,9 +3005,9 @@ static ACT par_menu_item_for( SYM symbol, GPRE_CTX context, ACT_T type)
 
 static ACT par_modify()
 {
-	register GPRE_CTX source, update;
+	GPRE_CTX source, update;
 	ACT action;
-	register UPD modify;
+	UPD modify;
 	SYM symbol;
 	GPRE_REQ request;
 	SCHAR s[50];
@@ -3293,8 +3293,8 @@ static TEXT *par_quoted_string()
 
 static ACT par_ready()
 {
-	register ACT action;
-	register GPRE_REQ request;
+	ACT action;
+	GPRE_REQ request;
 	SYM symbol;
 	RDY ready;
 	DBB dbb;
@@ -3463,8 +3463,8 @@ static ACT par_ready()
 static ACT par_returning_values()
 {
 
-	register REF reference;
-	register GPRE_NOD assignments;
+	REF reference;
+	GPRE_NOD assignments;
 	int count;
 
 	if (!cur_store)
@@ -3553,7 +3553,7 @@ static ACT par_right_brace()
 
 static ACT par_release()
 {
-	register ACT action;
+	ACT action;
 	SYM symbol;
 
 	action = MAKE_ACTION(0, ACT_release);
@@ -3646,9 +3646,9 @@ static ACT par_slice( ACT_T type)
 
 static ACT par_store()
 {
-	register ACT action;
+	ACT action;
 	GPRE_REQ request;
-	register GPRE_CTX context;
+	GPRE_CTX context;
 	GPRE_REL relation;
 
 	request = MAKE_REQUEST(REQ_store);
@@ -3681,10 +3681,10 @@ static ACT par_start_stream()
 {
 	ACT action;
 	GPRE_REQ request;
-	register RSE rec_expr;
+	RSE rec_expr;
 	GPRE_CTX context, *ptr, *end;
 	GPRE_REL relation;
-	register SYM cursor;
+	SYM cursor;
 
 	request = MAKE_REQUEST(REQ_cursor);
 	par_options(request, FALSE);
@@ -3724,7 +3724,7 @@ static ACT par_start_stream()
 
 static ACT par_start_transaction()
 {
-	register ACT action;
+	ACT action;
 	GPRE_TRA trans;
 
 	action = MAKE_ACTION(0, ACT_start);
@@ -3808,7 +3808,7 @@ static ACT par_start_transaction()
 
 static ACT par_subroutine()
 {
-	register ACT action;
+	ACT action;
 
 	if (sw_language != lang_fortran)
 		return NULL;
@@ -3828,7 +3828,7 @@ static ACT par_subroutine()
 
 static ACT par_trans( ACT_T act_op)
 {
-	register ACT action;
+	ACT action;
 	USHORT parens;
 
 	action = MAKE_ACTION(0, act_op);
@@ -3997,9 +3997,9 @@ static void par_var_c( enum kwwords keyword)
 
 static ACT par_variable()
 {
-	register GPRE_FLD field, cast;
-	register ACT action;
-	register REF reference, flag;
+	GPRE_FLD field, cast;
+	ACT action;
+	REF reference, flag;
 	GPRE_REQ request;
 	GPRE_CTX context;
 	USHORT first, dot, is_null;

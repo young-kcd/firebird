@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.13 2002-11-30 17:34:44 hippoman Exp $
+$Id: canonical.cpp,v 1.14 2003-02-10 13:28:08 eku Exp $
 */
 
 #include "firebird.h"
@@ -67,7 +67,7 @@ static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
 #if (defined DEBUG_XDR_MEMORY) && (defined SUPERCLIENT) && (defined WIN_NT)
 extern void xdr_debug_memory(XDR*, enum xdr_op, void*, void*, ULONG);
 #endif
-static bool_t xdr_quad(register XDR*, register SLONG*);
+static bool_t xdr_quad(XDR*, SLONG*);
 static int xdr_init(XDR*, LSTRING*, enum xdr_op);
 static bool_t xdr_slice(XDR*, LSTRING*, USHORT, UCHAR*);
 
@@ -640,7 +640,7 @@ void xdr_debug_memory(	XDR* xdrs,
 #endif
 
 
-static bool_t xdr_quad(register XDR* xdrs, register SLONG* ip)
+static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 {
 /**************************************
  *
@@ -680,8 +680,8 @@ static bool_t xdr_quad(register XDR* xdrs, register SLONG* ip)
 
 #ifdef	LOC_DOUBLE
 static bool_t xdr_double(xdrs, ip)
-	 register XDR *xdrs;
-	 register double *ip;
+	 XDR *xdrs;
+	 *ip;
 {
 /**************************************
  *
@@ -760,8 +760,8 @@ static bool_t xdr_double(xdrs, ip)
 
 
 static bool_t xdr_float(xdrs, ip)
-	 register XDR *xdrs;
-	 register float *ip;
+	 XDR *xdrs;
+	 float *ip;
 {
 /**************************************
  *

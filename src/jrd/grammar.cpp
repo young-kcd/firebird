@@ -249,7 +249,7 @@ int yychar;						/* current input token number */
 */
 int yyparse()
 {
-	register YYSTYPE *yypvt;	/* top of value stack for $vars */
+	YYSTYPE *yypvt;	/* top of value stack for $vars */
 	unsigned yymaxdepth = YYMAXDEPTH;
 
 	/*
@@ -271,10 +271,10 @@ int yyparse()
 
 	goto yystack;
 	{
-		register YYSTYPE *yy_pv;	/* top of value stack */
-		register int *yy_ps;	/* top of state stack */
-		register int yy_state;	/* current state */
-		register int yy_n;		/* internal state number info */
+		YYSTYPE *yy_pv;	/* top of value stack */
+		int *yy_ps;	/* top of state stack */
+		int yy_state;	/* current state */
+		int yy_n;		/* internal state number info */
 
 		/*
 		   ** get globals into registers.
@@ -310,7 +310,7 @@ int yyparse()
 		   ** consideration while debugging.
 		 */
 		if (yydebug) {
-			register int yy_i;
+			int yy_i;
 
 			(void) ib_printf("State %d, token ", yy_state);
 			if (yychar == 0)
@@ -365,7 +365,7 @@ int yyparse()
 			yychar = 0;			/* reached EOF */
 #if YYDEBUG
 		if (yydebug && yytmp) {
-			register int yy_i;
+			int yy_i;
 
 			(void) ib_printf("Received token ");
 			if (yychar == 0)
@@ -401,7 +401,7 @@ int yyparse()
 				yychar = 0;		/* reached EOF */
 #if YYDEBUG
 			if (yydebug && yytmp) {
-				register int yy_i;
+				int yy_i;
 
 				(void) ib_printf("Received token ");
 				if (yychar == 0)
@@ -422,7 +422,7 @@ int yyparse()
 			   ** look through exception table
 			 */
 			{
-				register int *yyxi = yyexca;
+				int *yyxi = yyexca;
 
 				while ((*yyxi != -1) || (yyxi[1] != yy_state)) {
 					yyxi += 2;
@@ -498,7 +498,7 @@ int yyparse()
 				   ** tests here.
 				 */
 				if (yydebug) {
-					register int yy_i;
+					int yy_i;
 
 					(void) ib_printf("Error recovery discards ");
 					if (yychar == 0)
@@ -539,7 +539,7 @@ int yyparse()
 		/*
 		   ** Look in goto table for next state
 		   ** Sorry about using yy_state here as temporary
-		   ** register variable, but why not, if it works...
+		   ** variable, but why not, if it works...
 		   ** If yyr2[ yy_n ] doesn't have the low order bit
 		   ** set, then there is no action to be done for
 		   ** this reduction.  So, no saving & unsaving of
@@ -550,7 +550,7 @@ int yyparse()
 		 */
 		{
 			/* length of production doubled with extra bit */
-			register int yy_len = yyr2[yy_n];
+			int yy_len = yyr2[yy_n];
 
 			if (!(yy_len & 01)) {
 				yy_len >>= 1;

@@ -104,7 +104,7 @@ BLK ALL_alloc(PLB pool, UCHAR type, ULONG count_argument, ERR_T err_ret)
  *	This is the primary block allocation routine.
  *
  **************************************/
-	register BLK block;
+	BLK block;
 	FRB free, *best, *ptr;
 	ULONG size, count;
 	SLONG best_tail, tail;
@@ -370,8 +370,8 @@ void ALL_fini(void)
  **************************************/
 	DBB dbb;
 	VEC pools;
-	register PLB pool, *vector, *until;
-	register HNK hunks, hunk;
+	PLB pool, *vector, *until;
+	HNK hunks, hunk;
 
 	dbb = GET_DBB;
 
@@ -533,7 +533,7 @@ SCHAR *ALL_malloc(ULONG size, ERR_T err_ret)
  *
  **************************************/
 	DBB dbb;
-	register SCHAR *memory;
+	SCHAR *memory;
 
 	if (memory = (SCHAR *) gds__alloc((SLONG) (size))) {
 		/* FREE:  Done at attachment detach, process exit, and other misc times */
@@ -576,9 +576,9 @@ PLB ALL_pool(void)
  **************************************/
 	DBB dbb;
 	struct plb temp_pool;
-	register VEC vector;
-	register PLB pool;
-	register USHORT pool_id;
+	VEC vector;
+	PLB pool;
+	USHORT pool_id;
 
 	dbb = GET_DBB;
 
@@ -644,7 +644,7 @@ PLB ALL_pool(void)
 }
 
 
-void ALL_push(BLK object, register LLS * stack)
+void ALL_push(BLK object, LLS * stack)
 {
 /**************************************
  *
@@ -657,7 +657,7 @@ void ALL_push(BLK object, register LLS * stack)
  *
  **************************************/
 	TDBB tdbb;
-	register LLS node;
+	LLS node;
 	PLB pool;
 
 	tdbb = GET_THREAD_DATA;
@@ -681,7 +681,7 @@ void ALL_push(BLK object, register LLS * stack)
 }
 
 
-BLK ALL_pop(register LLS * stack)
+BLK ALL_pop(LLS * stack)
 {
 /**************************************
  *
@@ -694,8 +694,8 @@ BLK ALL_pop(register LLS * stack)
  *	further use.
  *
  **************************************/
-	register LLS node;
-	register PLB pool;
+	LLS node;
+	PLB pool;
 	BLK object;
 
 	node = *stack;
@@ -789,7 +789,7 @@ void ALL_print_memory_pool_info(IB_FILE * fptr, DBB databases)
 #endif
 
 
-void ALL_release(register FRB block)
+void ALL_release(FRB block)
 {
 /**************************************
  *
@@ -825,7 +825,7 @@ void ALL_rlpool(PLB pool)
  *
  **************************************/
 	DBB dbb;
-	register HNK hunks, hunk;
+	HNK hunks, hunk;
 
 	dbb = GET_DBB;
 
@@ -869,7 +869,7 @@ SCHAR *ALL_sys_alloc(ULONG size, ERR_T err_ret)
  *
  **************************************/
 	DBB dbb;
-	register SCHAR *memory;
+	SCHAR *memory;
 
 	if (memory = (SCHAR *) gds__sys_alloc((SLONG) size)) {
 		/* FREE:  Done at attachment detach, process exit, and other misc times */
@@ -1039,8 +1039,8 @@ static BOOLEAN extend_pool(PLB pool, ULONG size, ERR_T err_ret)
  *	of given size.
  *
  **************************************/
-	register HNK hunk;
-	register BLK block;
+	HNK hunk;
+	BLK block;
 	ULONG minimum_size, extend_size;
 
 	minimum_size = size + sizeof(struct hnk);
@@ -1201,7 +1201,7 @@ static void release(FRB block, PLB pool)
  *	of addresses).
  *
  **************************************/
-	register FRB prior, free;
+	FRB prior, free;
 	FRB *ptr;
 	ULONG length;
 #ifdef SUPERSERVER

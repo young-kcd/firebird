@@ -754,7 +754,7 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
  *	created for any reason.
  *
  **************************************/
-	register SCHAR *p, *q;
+	SCHAR *p, *q;
 	SCHAR *end;
 	SLONG length;
 	va_list ptr;
@@ -837,7 +837,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-	register SCHAR *p, *q;
+	SCHAR *p, *q;
 	SCHAR *end, **nb;
 	SLONG length;
 	USHORT i;
@@ -943,7 +943,7 @@ SCHAR * result_buffer)
  *	for GPRE support of events.
  *
  **************************************/
-	register SCHAR *p, *q, *end;
+	SCHAR *p, *q, *end;
 	USHORT i, length;
 	ULONG *vec;
 	ULONG initial_count, new_count;

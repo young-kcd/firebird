@@ -57,14 +57,14 @@ static void btc_printer(SLONG, BDB, SCHAR *);
 static void btc_printer_errors(SLONG, BDB, SCHAR *);
 static void complement_key(UCHAR *, int);
 static double decompress(SCHAR *);
-static void dmp_blob(register BLP);
-static void dmp_data(register DPG);
-static void dmp_header(register HDR);
+static void dmp_blob(BLP);
+static void dmp_data(DPG);
+static void dmp_header(HDR);
 static void dmp_index(BTR, USHORT);
-static void dmp_pip(register PIP, ULONG);
-static void dmp_pointer(register PPG);
-static void dmp_root(register IRT);
-static void dmp_transactions(register TIP, ULONG);
+static void dmp_pip(PIP, ULONG);
+static void dmp_pointer(PPG);
+static void dmp_root(IRT);
+static void dmp_transactions(TIP, ULONG);
 
 static int dmp_descending = 0;
 
@@ -93,9 +93,9 @@ void DMP_active(void)
  *
  **************************************/
 	DBB dbb;
-	register BCB bcb;
-	register BDB bdb;
-	register USHORT i;
+	BCB bcb;
+	BDB bdb;
+	USHORT i;
 
 	dbb = GET_DBB;
 
@@ -128,7 +128,7 @@ void DMP_btc(void)
  *
  **************************************/
 	DBB dbb;
-	register BDB bdb;
+	BDB bdb;
 	SLONG level;
 	SCHAR buffer[250];
 
@@ -159,7 +159,7 @@ void DMP_btc_errors(void)
  *
  **************************************/
 	DBB dbb;
-	register BDB bdb;
+	BDB bdb;
 	SLONG level;
 	SCHAR buffer[250];
 
@@ -185,8 +185,8 @@ void DMP_btc_ordered(void)
  *
  **************************************/
 	DBB dbb;
-	register BDB bdb, next;
-	register int i;
+	BDB bdb, next;
+	int i;
 	SLONG max_seen;
 
 	dbb = GET_DBB;
@@ -253,9 +253,9 @@ void DMP_dirty(void)
  *
  **************************************/
 	DBB dbb;
-	register BCB bcb;
-	register BDB bdb;
-	register USHORT i;
+	BCB bcb;
+	BDB bdb;
+	USHORT i;
 
 	dbb = GET_DBB;
 
@@ -275,7 +275,7 @@ void DMP_dirty(void)
 }
 
 
-void DMP_fetched_page(register PAG page,
+void DMP_fetched_page(PAG page,
 					  ULONG		number,
 					  ULONG		sequence,
 					  USHORT page_size)
@@ -361,7 +361,7 @@ void DMP_page(SLONG number, USHORT page_size)
  *
  **************************************/
 	WIN window;
-	register PAG page;
+	PAG page;
 
 	window.win_page = number;
 	window.win_flags = 0;
@@ -493,7 +493,7 @@ static double decompress(SCHAR * value)
 }
 
 
-static void dmp_blob(register BLP page)
+static void dmp_blob(BLP page)
 {
 /**************************************
  *
@@ -523,7 +523,7 @@ static void dmp_blob(register BLP page)
 }
 
 
-static void dmp_data(register DPG page)
+static void dmp_data(DPG page)
 {
 /**************************************
  *
@@ -685,7 +685,7 @@ static void dmp_data(register DPG page)
 }
 
 
-static void dmp_header(register HDR page)
+static void dmp_header(HDR page)
 {
 /**************************************
  *
@@ -913,7 +913,7 @@ static void dmp_index(BTR page, USHORT page_size)
 }
 
 
-static void dmp_pip(register PIP page, ULONG sequence)
+static void dmp_pip(PIP page, ULONG sequence)
 {
 /**************************************
  *
@@ -926,8 +926,8 @@ static void dmp_pip(register PIP page, ULONG sequence)
  *
  **************************************/
 	DBB dbb;
-	register PGC control;
-	register int n;
+	PGC control;
+	int n;
 
 	dbb = GET_DBB;
 
@@ -958,7 +958,7 @@ static void dmp_pip(register PIP page, ULONG sequence)
 }
 
 
-static void dmp_pointer(register PPG page)
+static void dmp_pointer(PPG page)
 {
 /**************************************
  *
@@ -996,7 +996,7 @@ static void dmp_pointer(register PPG page)
 }
 
 
-static void dmp_root(register IRT page)
+static void dmp_root(IRT page)
 {
 /**************************************
  *
@@ -1029,7 +1029,7 @@ static void dmp_root(register IRT page)
 }
 
 
-static void dmp_transactions(register TIP page, ULONG sequence)
+static void dmp_transactions(TIP page, ULONG sequence)
 {
 /**************************************
  *

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.10 2002-12-06 13:43:09 eku Exp $
+//	$Id: cmp.cpp,v 1.11 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
@@ -50,19 +50,19 @@ extern "C" {
 extern TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name;
 
-static void cmp_any(register GPRE_REQ);
-static void cmp_assignment(register GPRE_NOD, register GPRE_REQ);
+static void cmp_any(GPRE_REQ);
+static void cmp_assignment(GPRE_NOD, GPRE_REQ);
 static void cmp_blob(BLB, BOOLEAN);
 static void cmp_blr(GPRE_REQ);
 static void cmp_erase(ACT, GPRE_REQ);
 static void cmp_fetch(ACT);
 static void cmp_field(GPRE_REQ, GPRE_FLD, REF);
-static void cmp_for(register GPRE_REQ);
+static void cmp_for(GPRE_REQ);
 static void cmp_form(GPRE_REQ);
-static void cmp_loop(register GPRE_REQ);
+static void cmp_loop(GPRE_REQ);
 static void cmp_menu(GPRE_REQ);
-static void cmp_modify(ACT, register GPRE_REQ);
-static void cmp_port(register POR, register GPRE_REQ);
+static void cmp_modify(ACT, GPRE_REQ);
+static void cmp_port(POR, GPRE_REQ);
 static void cmp_procedure(GPRE_REQ);
 static void cmp_ready(GPRE_REQ);
 static void cmp_sdl_fudge(GPRE_REQ, SLONG);
@@ -72,12 +72,12 @@ static void cmp_sdl_subscript(GPRE_REQ, USHORT, SLC, ARY);
 static void cmp_sdl_value(GPRE_REQ, GPRE_NOD);
 static void cmp_set_generator(GPRE_REQ);
 static void cmp_slice(GPRE_REQ);
-static void cmp_store(register GPRE_REQ);
-static void expand_references(register REF);
-static POR make_port(register GPRE_REQ, register REF);
-static void make_receive(register POR, register GPRE_REQ);
-static void make_send(register POR, register GPRE_REQ);
-static void update_references(register REF);
+static void cmp_store(GPRE_REQ);
+static void expand_references(REF);
+static POR make_port(GPRE_REQ, REF);
+static void make_receive(POR, GPRE_REQ);
+static void make_send(POR, GPRE_REQ);
+static void update_references(REF);
 
 static GPRE_NOD lit0, lit1;
 static GPRE_FLD eof_field, count_field, slack_byte_field;
@@ -99,7 +99,7 @@ static USHORT next_ident;
 //		couple of hundred bytes to be safe.
 //  
 
-void CMP_check( register GPRE_REQ request, SSHORT min_reqd)
+void CMP_check( GPRE_REQ request, SSHORT min_reqd)
 {
 	UCHAR *p, *q, *old;
 	int length, n;
@@ -131,7 +131,7 @@ void CMP_check( register GPRE_REQ request, SSHORT min_reqd)
 //		numbers, and internal idents.  Compute length of request.
 //  
 
-void CMP_compile_request( register GPRE_REQ request)
+void CMP_compile_request( GPRE_REQ request)
 {
 	POR port;
 	REF reference;
@@ -462,7 +462,7 @@ void CMP_stuff_symbol( GPRE_REQ request, SYM symbol)
 //		TPB for each database referenced.
 //  
 
-void CMP_t_start( register GPRE_TRA trans)
+void CMP_t_start( GPRE_TRA trans)
 {
 	char rrl_buffer[MAX_TPB];
 	char tpb_buffer[MAX_TRA_OPTIONS + 1];
@@ -568,7 +568,7 @@ void CMP_t_start( register GPRE_TRA trans)
 //		Generate blr tree for free standing ANY expression.
 //  
 
-static void cmp_any( register GPRE_REQ request)
+static void cmp_any( GPRE_REQ request)
 {
 	GPRE_NOD value;
 	POR port;
@@ -609,7 +609,7 @@ static void cmp_any( register GPRE_REQ request)
 //		Compile a build assignment statement.
 //  
 
-static void cmp_assignment( register GPRE_NOD node, register GPRE_REQ request)
+static void cmp_assignment( GPRE_NOD node, GPRE_REQ request)
 {
 
 	CMP_check(request, 0);
@@ -920,12 +920,12 @@ static void cmp_field( GPRE_REQ request, GPRE_FLD field, REF reference)
 //		Generate blr tree for for statement
 //  
 
-static void cmp_for( register GPRE_REQ request)
+static void cmp_for( GPRE_REQ request)
 {
 	GPRE_NOD field, value;
 	POR port;
-	register ACT action;
-	register REF reference;
+	ACT action;
+	REF reference;
 	BOOLEAN updates;
 	GPRE_CTX context;
 
@@ -1134,12 +1134,12 @@ static void cmp_form( GPRE_REQ request)
 //		Compile a mass looping update statement.
 //  
 
-static void cmp_loop( register GPRE_REQ request)
+static void cmp_loop( GPRE_REQ request)
 {
 	GPRE_NOD node, list, *ptr, *end, counter;
 	POR primary;
 	GPRE_CTX for_context, update_context;
-	register RSE rse;
+	RSE rse;
 	REF reference;
 
 	node = request->req_node;
@@ -1278,7 +1278,7 @@ static void cmp_menu( GPRE_REQ request)
 //		Generate a receive and modify tree for a modify action.
 //  
 
-static void cmp_modify( ACT action, register GPRE_REQ request)
+static void cmp_modify( ACT action, GPRE_REQ request)
 {
 	UPD update;
 	GPRE_NOD list, field_node, *ptr, *end;
@@ -1317,7 +1317,7 @@ static void cmp_modify( ACT action, register GPRE_REQ request)
 //		Build a request tree for a request.
 //  
 
-static void cmp_port( register POR port, register GPRE_REQ request)
+static void cmp_port( POR port, GPRE_REQ request)
 {
 	REF reference;
 
@@ -1775,12 +1775,12 @@ static void cmp_slice( GPRE_REQ request)
 //		Generate blr for a store request.
 //  
 
-static void cmp_store( register GPRE_REQ request)
+static void cmp_store( GPRE_REQ request)
 {
-	register POR port;
-	register GPRE_NOD list, *ptr, *end;
-	register ACT action;
-	register UPD update;
+	POR port;
+	GPRE_NOD list, *ptr, *end;
+	ACT action;
+	UPD update;
 	SSHORT count;
 
 //  Make the store statement under the receive 
@@ -1833,7 +1833,7 @@ static void cmp_store( register GPRE_REQ request)
 //		block for it before we forget.
 //  
 
-static void expand_references( register REF reference)
+static void expand_references( REF reference)
 {
 	REF flag;
 
@@ -1856,9 +1856,9 @@ static void expand_references( register REF reference)
 //		of field references.
 //  
 
-static POR make_port( register GPRE_REQ request, register REF reference)
+static POR make_port( GPRE_REQ request, REF reference)
 {
-	register POR port;
+	POR port;
 	GPRE_FLD field;
 	REF misc, temp, alignments[3];
 	SSHORT i;
@@ -1932,7 +1932,7 @@ static POR make_port( register GPRE_REQ request, register REF reference)
 //		Make a receive node for a given port.
 //  
 
-static void make_receive( register POR port, register GPRE_REQ request)
+static void make_receive( POR port, GPRE_REQ request)
 {
 
 	STUFF(blr_receive);
@@ -1945,7 +1945,7 @@ static void make_receive( register POR port, register GPRE_REQ request)
 //		Make a receive node for a given port.
 //  
 
-static void make_send( register POR port, register GPRE_REQ request)
+static void make_send( POR port, GPRE_REQ request)
 {
 
 	STUFF(blr_send);
@@ -1959,9 +1959,9 @@ static void make_send( register POR port, register GPRE_REQ request)
 //		to build the port, fix request_references
 //  
 
-static void update_references( register REF references)
+static void update_references( REF references)
 {
-	register REF ref, source;
+	REF ref, source;
 
 	for (ref = references; ref; ref = ref->ref_next) {
 		source = ref->ref_source;

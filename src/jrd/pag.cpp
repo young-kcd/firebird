@@ -523,7 +523,7 @@ int PAG_add_header_entry(HDR header, USHORT type, SSHORT len, UCHAR * entry)
 }
 
 
-PAG PAG_allocate(register WIN * window)
+PAG PAG_allocate(WIN * window)
 {
 /**************************************
  *
@@ -537,11 +537,11 @@ PAG PAG_allocate(register WIN * window)
  *
  **************************************/
 	DBB dbb;
-	register PIP pip_page;
+	PIP pip_page;
 	PIP new_pip_page;
 	PAG new_page = 0;
 	WIN pip_window;
-	register PGC control;
+	PGC control;
 	USHORT i;
 	UCHAR *bytes, bit, *end;
 	SLONG sequence;
@@ -868,8 +868,8 @@ void PAG_format_pip(void)
  **************************************/
 	DBB dbb;
 	WIN window;
-	register PIP pages;
-	register UCHAR *p;
+	PIP pages;
+	UCHAR *p;
 	int i;
 	TDBB tdbb;
 
@@ -965,8 +965,8 @@ void PAG_header(TEXT * file_name, USHORT file_length)
 	TDBB tdbb;
 	DBB dbb;
 	HDR header;
-	register VCL vector;
-	register JRD_REL relation;
+	VCL vector;
+	JRD_REL relation;
 	SCHAR *temp_buffer, *temp_page;
 
 	tdbb = GET_THREAD_DATA;
@@ -1119,7 +1119,7 @@ void PAG_init(void)
  *
  **************************************/
 	DBB dbb;
-	register PGC control;
+	PGC control;
 	TDBB tdbb;
 
 	tdbb = GET_THREAD_DATA;

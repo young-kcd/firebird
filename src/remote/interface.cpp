@@ -1332,7 +1332,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 
 		rdb->rdb_sql_requests = statement;
 
-		/* register the object */
+		/* the object */
 
 		SET_OBJECT(rdb, statement, statement->rsr_id);
 	}
@@ -4301,8 +4301,8 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS GDS_START(STATUS * user_status,
-				 register RRQ * req_handle,
-				 register RTR * rtr_handle, USHORT level)
+				 RRQ * req_handle,
+				 RTR * rtr_handle, USHORT level)
 {
 /**************************************
  *

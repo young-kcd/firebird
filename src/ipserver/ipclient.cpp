@@ -3031,8 +3031,8 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 
 
 STATUS GDS_START(STATUS * user_status,
-				 register IRQ * req_handle,
-				 register ITR * itr_handle, SSHORT GDS_VAL(level))
+				 IRQ * req_handle,
+				 ITR * itr_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *

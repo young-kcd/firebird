@@ -91,18 +91,18 @@ static void expand_buffers(TDBB, ULONG);
 static BDB get_buffer(TDBB, SLONG, LATCH, SSHORT);
 static void journal_buffer(STATUS *, BDB);
 static SSHORT latch_bdb(TDBB, LATCH, BDB, SLONG, SSHORT);
-static SSHORT lock_buffer(TDBB, register BDB, SSHORT, SSHORT);
+static SSHORT lock_buffer(TDBB, BDB, SSHORT, SSHORT);
 static ULONG memory_init(TDBB, BCB, ULONG);
 static void page_validation_error(TDBB, struct win *, SSHORT);
 static void prefetch_epilogue(PRF, STATUS *);
 static void prefetch_init(PRF, TDBB);
 static void prefetch_io(PRF, STATUS *);
 static void prefetch_prologue(PRF, SLONG *);
-static SSHORT related(register BDB, register BDB, SSHORT);
+static SSHORT related(BDB, BDB, SSHORT);
 static void release_bdb(TDBB, BDB, BOOLEAN, BOOLEAN, BOOLEAN);
-static BOOLEAN writeable(register BDB);
-static int write_buffer(TDBB, register BDB, SLONG, USHORT, STATUS *, BOOLEAN);
-static BOOLEAN write_page(TDBB, register BDB, USHORT, STATUS *, BOOLEAN);
+static BOOLEAN writeable(BDB);
+static int write_buffer(TDBB, BDB, SLONG, USHORT, STATUS *, BOOLEAN);
+static BOOLEAN write_page(TDBB, BDB, USHORT, STATUS *, BOOLEAN);
 static void unmark(TDBB, WIN *);
 
 #define MIN_BUFFER_SEGMENT	65536L
@@ -684,7 +684,7 @@ PAG CCH_fake(TDBB tdbb, WIN * window, SSHORT latch_wait)
 
 
 PAG CCH_fetch(TDBB tdbb,
-			  register WIN * window,
+			  WIN * window,
 			  USHORT lock_type,
 			  SSHORT page_type,
 			  SSHORT checksum, SSHORT latch_wait, BOOLEAN read_shadow)
@@ -769,7 +769,7 @@ PAG CCH_fetch(TDBB tdbb,
 
 
 SSHORT CCH_fetch_lock(TDBB tdbb,
-					  register WIN * window,
+					  WIN * window,
 					  USHORT lock_type,
 					  SSHORT wait, SSHORT latch_wait, SSHORT page_type)
 {
@@ -807,7 +807,7 @@ SSHORT CCH_fetch_lock(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	register BDB bdb;
+	BDB bdb;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -849,7 +849,7 @@ SSHORT CCH_fetch_lock(TDBB tdbb,
 
 void CCH_fetch_page(
 					TDBB tdbb,
-					register WIN * window,
+					WIN * window,
 					SSHORT compute_checksum, BOOLEAN read_shadow)
 {
 /**************************************
@@ -866,7 +866,7 @@ void CCH_fetch_page(
  *
  **************************************/
 	DBB dbb;
-	register BDB bdb;
+	BDB bdb;
 	PAG page;
 	STATUS *status;
 	FIL file;
@@ -1114,8 +1114,8 @@ void CCH_flush(TDBB tdbb, USHORT flush_flag, SLONG tra_number)
  *
  **************************************/
 	DBB dbb;
-	register BCB bcb;
-	register BDB bdb;
+	BCB bcb;
+	BDB bdb;
 	ULONG i;
 	SLONG transaction_mask;
 	STATUS *status;
@@ -1300,7 +1300,7 @@ SLONG CCH_get_incarnation(WIN * window)
 
 
 PAG CCH_handoff(TDBB	tdbb,
-				register WIN* window,
+				WIN* window,
 				SLONG	page,
 				SSHORT	lock,
 				SSHORT	page_type,
@@ -1427,7 +1427,7 @@ void CCH_init(TDBB tdbb, ULONG number)
  *
  **************************************/
 	DBB dbb;
-	register BCB bcb_ = 0;
+	BCB bcb_ = 0;
 	SLONG count;
 #ifdef CACHE_READER
 	EVENT event;
@@ -1693,7 +1693,7 @@ void CCH_mark(TDBB tdbb, WIN * window, USHORT mark_system)
 	JRD_TRA transaction;
 	ULONG trans_bucket;
 	SLONG number;
-	register BDB bdb;
+	BDB bdb;
 	BCB bcb;
 
 	SET_TDBB(tdbb);
@@ -1791,7 +1791,7 @@ void CCH_must_write(WIN * window)
  *	Mark a window as "must write".
  *
  **************************************/
-	register BDB bdb;
+	BDB bdb;
 
 	bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -2064,7 +2064,7 @@ void CCH_release(TDBB tdbb, WIN * window, BOOLEAN release_tail)
  *
  **************************************/
 	DBB dbb;
-	register BDB bdb;
+	BDB bdb;
 	SSHORT use_count;
 	BOOLEAN marked;
 
@@ -2859,7 +2859,7 @@ static void btc_insert(DBB dbb, BDB bdb)
  *	binary tree.
  *
  **************************************/
-	register BDB node;
+	BDB node;
 	SLONG page;
 
 /* if the page is already in the tree (as in when it is
@@ -2932,7 +2932,7 @@ static void btc_remove(BDB bdb)
  *	importance.
  *
  **************************************/
-	register BDB ptr;
+	BDB ptr;
 	BDB new_child, bdb_parent;
 	DBB dbb;
 	BCB bcb;
@@ -3391,8 +3391,8 @@ static void check_precedence(TDBB tdbb, WIN * window, SLONG page)
  *
  **************************************/
 	DBB dbb;
-	register BDB high = (BDB)0, low = (BDB)0;
-	register PRE precedence;
+	BDB high = (BDB)0, low = (BDB)0;
+	PRE precedence;
 	QUE que, mod_que;
 	BCB bcb;
 	SLONG low_page, high_page;
@@ -3509,8 +3509,8 @@ static void clear_precedence(DBB dbb, BDB bdb)
  *	Clear precedence relationships to lower precedence block.
  *
  **************************************/
-	register QUE que;
-	register PRE precedence;
+	QUE que;
+	PRE precedence;
 	BDB low_bdb;
 	BCB bcb;
 
@@ -3865,9 +3865,9 @@ static BDB get_buffer(TDBB tdbb, SLONG page, LATCH latch, SSHORT latch_wait)
  **************************************/
 	DBB dbb;
 	QUE mod_que;
-	register QUE que;
-	register BDB oldest, bdb;
-	register BCB bcb;
+	QUE que;
+	BDB oldest, bdb;
+	BCB bcb;
 	PRE precedence;
 	SSHORT latch_return, walk;
 
@@ -4473,7 +4473,7 @@ static SSHORT latch_bdb(
 
 static SSHORT lock_buffer(
 						  TDBB tdbb,
-						  register BDB bdb, SSHORT wait, SSHORT page_type)
+						  BDB bdb, SSHORT wait, SSHORT page_type)
 {
 /**************************************
  *
@@ -4499,7 +4499,7 @@ static SSHORT lock_buffer(
 #ifdef PAGE_LATCHING
 	DBB dbb;
 #else
-	register LCK lock;
+	LCK lock;
 	USHORT lock_type;
 	USHORT must_read;
 	STATUS alt_status[ISC_STATUS_LENGTH];
@@ -4990,7 +4990,7 @@ static void prefetch_prologue(PRF prefetch, SLONG * start_page)
 #endif
 
 
-static SSHORT related(register BDB low, register BDB high, SSHORT limit)
+static SSHORT related(BDB low, BDB high, SSHORT limit)
 {
 /**************************************
  *
@@ -5006,7 +5006,7 @@ static SSHORT related(register BDB low, register BDB high, SSHORT limit)
  *
  **************************************/
 	QUE que, base;
-	register PRE precedence;
+	PRE precedence;
 
 	base = &low->bdb_higher;
 
@@ -5272,7 +5272,7 @@ static void release_bdb(
 #endif
 
 
-static BOOLEAN writeable(register BDB bdb)
+static BOOLEAN writeable(BDB bdb)
 {
 /**************************************
  *
@@ -5286,8 +5286,8 @@ static BOOLEAN writeable(register BDB bdb)
  *	marked for write.
  *
  **************************************/
-	register QUE que;
-	register PRE precedence;
+	QUE que;
+	PRE precedence;
 
 	if (bdb->bdb_flags & BDB_marked)
 		return FALSE;
@@ -5307,7 +5307,7 @@ static BOOLEAN writeable(register BDB bdb)
 
 static int write_buffer(
 						TDBB tdbb,
-						register BDB bdb,
+						BDB bdb,
 						SLONG page,
 						USHORT write_thru,
 						STATUS * status, BOOLEAN write_this_page)
@@ -5343,8 +5343,8 @@ static int write_buffer(
  *
  **************************************/
 	DBB dbb;
-	register QUE que;
-	register PRE precedence;
+	QUE que;
+	PRE precedence;
 	BCB bcb;
 	BOOLEAN result;
 	BDB hi_bdb;
@@ -5445,7 +5445,7 @@ static int write_buffer(
 
 static BOOLEAN write_page(
 						  TDBB tdbb,
-						  register BDB bdb,
+						  BDB bdb,
 						  USHORT write_thru, STATUS * status, BOOLEAN inAst)
 {
 /**************************************
@@ -5609,7 +5609,7 @@ static void unmark(TDBB tdbb, WIN * window)
  *	problems.
  *
  **************************************/
-	register BDB bdb;
+	BDB bdb;
 	BOOLEAN marked;
 
 	SET_TDBB(tdbb);

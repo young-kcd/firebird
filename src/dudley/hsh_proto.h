@@ -29,10 +29,10 @@ extern "C" {
 #endif
 
 extern void HSH_init(void);
-extern void HSH_insert(register SYM);
-extern SYM HSH_lookup(register SCHAR *, register USHORT);
-extern void HSH_remove(register SYM);
-extern SYM HSH_typed_lookup(register TEXT *, register USHORT, enum sym_t);
+extern void HSH_insert(SYM);
+extern SYM HSH_lookup(SCHAR *, USHORT);
+extern void HSH_remove(SYM);
+extern SYM HSH_typed_lookup(TEXT *, USHORT, enum sym_t);
 
 #ifdef __cplusplus
 } /* extern "C" */

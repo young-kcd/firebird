@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.25 2003-01-15 12:08:59 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.26 2003-02-10 13:28:21 eku Exp $ 
  */
 
 /*
@@ -207,7 +207,7 @@ static CONST UCHAR special[256] = {
 
 
 
-DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register JRD_NOD node)
+DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -220,7 +220,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register JRD_NOD node)
  *      destination node of an assignment.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 	VLU impure;
 	DSC *desc;
 	FMT format;
@@ -285,7 +285,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, register JRD_NOD node)
 }
 
 
-SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, register JRD_NOD node)
+SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -350,7 +350,7 @@ SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, register JRD_NOD node)
 }
 
 
-BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register JRD_NOD node)
+BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -712,7 +712,7 @@ BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, register JRD_NOD node)
 }
 
 
-DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register JRD_NOD node)
+DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -724,7 +724,7 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register JRD_NOD node)
  *      Evaluate a value expression.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 	VLU impure;
 
 	DEV_BLKCHK(node, type_nod);
@@ -1159,9 +1159,9 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, register JRD_NOD node)
 }
 
 
-BOOLEAN DLL_EXPORT EVL_field(register JRD_REL relation,
-							 register REC record,
-							 register USHORT id, register DSC * desc)
+BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
+							 REC record,
+							 USHORT id, DSC * desc)
 {
 /**************************************
  *
@@ -1173,7 +1173,7 @@ BOOLEAN DLL_EXPORT EVL_field(register JRD_REL relation,
  *      Evaluate a field by filling out a descriptor.
  *
  **************************************/
-	register FMT format;
+	FMT format;
 
 	DEV_BLKCHK(record, type_rec);
 
@@ -2964,7 +2964,7 @@ static DSC *binary_value(TDBB tdbb, JRD_NOD node, VLU impure)
  *      Evaluate a binary value expression.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 	DSC *desc1, *desc2;
 	double divisor;
 	ULONG flags;

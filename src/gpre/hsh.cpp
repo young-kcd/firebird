@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.9 2003-02-08 00:36:51 brodsom Exp $
+//	$Id: hsh.cpp,v 1.10 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
@@ -39,9 +39,9 @@
 extern "C" {
 
 
-static int hash(register SCHAR *);
-static BOOLEAN scompare(register SCHAR *, register SCHAR *);
-static BOOLEAN scompare2(register SCHAR *, register SCHAR *);
+static int hash(SCHAR *);
+static BOOLEAN scompare(SCHAR *, SCHAR *);
+static BOOLEAN scompare2(SCHAR *, SCHAR *);
 
 #define HASH_SIZE 211
 
@@ -63,7 +63,7 @@ static struct word {
 
 void HSH_fini(void)
 {
-	register SYM symbol;
+	SYM symbol;
 
 	while (key_symbols) {
 		symbol = key_symbols;
@@ -82,10 +82,10 @@ void HSH_fini(void)
 
 void HSH_init(void)
 {
-	register SCHAR *string;
-	register SYM symbol, *ptr;
-	register int i;
-	register struct word *word;
+	SCHAR *string;
+	SYM symbol, *ptr;
+	int i;
+	struct word *word;
 
 	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
@@ -109,10 +109,10 @@ void HSH_init(void)
 //		Insert a symbol into the hash table.
 //  
 
-void HSH_insert( register SYM symbol)
+void HSH_insert( SYM symbol)
 {
-	register int h;
-	register SYM *next;
+	int h;
+	SYM *next;
 	SYM ptr;
 
 	h = hash(symbol->sym_string);
@@ -155,9 +155,9 @@ void HSH_insert( register SYM symbol)
 //		Perform a string lookup against hash table.
 //  
 
-SYM HSH_lookup(register SCHAR * string)
+SYM HSH_lookup(SCHAR * string)
 {
-	register SYM symbol;
+	SYM symbol;
 
 	for (symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
@@ -173,9 +173,9 @@ SYM HSH_lookup(register SCHAR * string)
 //		compare.
 //  
 
-SYM HSH_lookup2(register SCHAR * string)
+SYM HSH_lookup2(SCHAR * string)
 {
-	register SYM symbol;
+	SYM symbol;
 
 	for (symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
@@ -190,10 +190,10 @@ SYM HSH_lookup2(register SCHAR * string)
 //		Remove a symbol from the hash table.
 //  
 
-void HSH_remove( register SYM symbol)
+void HSH_remove( SYM symbol)
 {
 	int h;
-	register SYM *next, *ptr, homonym;
+	SYM *next, *ptr, homonym;
 
 	h = hash(symbol->sym_string);
 
@@ -224,9 +224,9 @@ void HSH_remove( register SYM symbol)
 //		Returns the hash function of a string.
 //  
 
-static int hash( register SCHAR * string)
+static int hash( SCHAR * string)
 {
-	register SLONG value;
+	SLONG value;
 	SCHAR c;
 
 	value = 0;
@@ -243,7 +243,7 @@ static int hash( register SCHAR * string)
 //		case sensitive Compare 
 //  
 
-static BOOLEAN scompare( register SCHAR * string1, register SCHAR * string2)
+static BOOLEAN scompare( SCHAR * string1, SCHAR * string2)
 {
 
 	while (*string1)
@@ -261,7 +261,7 @@ static BOOLEAN scompare( register SCHAR * string1, register SCHAR * string2)
 //		Compare two strings
 //  
 
-static BOOLEAN scompare2( register SCHAR * string1, register SCHAR * string2)
+static BOOLEAN scompare2( SCHAR * string1, SCHAR * string2)
 {
 	SCHAR c1, c2;
 

@@ -282,7 +282,7 @@ int main( int argc, char *argv[])
 
 
 #ifdef CCH_DUMMY
-PAG CCH_fetch(register WIN * x, USHORT y, int z)
+PAG CCH_fetch(WIN * x, USHORT y, int z)
 {
 /**************************************
  *

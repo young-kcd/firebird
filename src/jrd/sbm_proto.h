@@ -32,7 +32,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void SBM_dump(IB_FILE *, register SBM);
+extern void SBM_dump(IB_FILE *, SBM);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -43,16 +43,16 @@ extern void SBM_dump(IB_FILE *, register SBM);
 extern "C" {
 #endif
 
-extern struct sbm **SBM_and(register struct sbm **, register struct sbm **);
-extern int SBM_clear(register struct sbm *, SLONG);
-extern BOOLEAN SBM_equal(register SBM, register SBM);
+extern struct sbm **SBM_and(struct sbm **, struct sbm **);
+extern int SBM_clear(struct sbm *, SLONG);
+extern BOOLEAN SBM_equal(SBM, SBM);
 extern void SBM_init(void);
-extern int SBM_next(register struct sbm *, SLONG *, enum rse_get_mode);
-extern struct sbm **SBM_or(register struct sbm **, register struct sbm **);
+extern int SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
+extern struct sbm **SBM_or(struct sbm **, struct sbm **);
 extern void SBM_release(struct sbm *);
 extern void SBM_reset(struct sbm **);
 extern void SBM_set(TDBB, struct sbm **, SLONG);
-extern int SBM_test(register struct sbm *, SLONG);
+extern int SBM_test(struct sbm *, SLONG);
 extern SLONG SBM_size(struct sbm **);
 
 #ifdef __cplusplus

@@ -72,7 +72,7 @@ static void setup_bitmaps(RSB, IRSB_NAV);
 
 
 #ifdef SCROLLABLE_CURSORS
-EXP NAV_expand_index(register WIN * window, IRSB_NAV impure)
+EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 {
 /**************************************
  *
@@ -989,7 +989,7 @@ static SSHORT compare_keys(
 
 
 #ifdef SCROLLABLE_CURSORS
-static void expand_index(register WIN * window)
+static void expand_index(WIN * window)
 {
 /**************************************
  *

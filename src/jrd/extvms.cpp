@@ -422,7 +422,7 @@ EXT_open(RSB rsb)
 }
 
 
-RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
+RSB EXT_optimize(OPT opt, SSHORT stream, NOD * sort_ptr)
 {
 /**************************************
  *
@@ -436,14 +436,14 @@ RSB EXT_optimize(register OPT opt, SSHORT stream, NOD * sort_ptr)
  *
  **************************************/
 	TDBB tdbb;
-	register CSB csb;
+	CSB csb;
 	REL relation;
 	RSB rsb;
 	NOD dbkey, inversion;
 	EXT file;
 	IDX *idx;
 	SSHORT i, size;
-	register opt::opt_repeat * tail, *opt_end;
+	opt::opt_repeat * tail, *opt_end;
 	csb_repeat *csb_tail;
 
 	tdbb = GET_THREAD_DATA;

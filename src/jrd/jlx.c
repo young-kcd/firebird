@@ -65,9 +65,9 @@ static int yylex(void)
  *
  **************************************/
 	SYMB symbol;
-	register SCHAR *p, *q;
+	SCHAR *p, *q;
 	SCHAR class_, string[31];
-	register SSHORT c;
+	SSHORT c;
 	SLONG number;
 
 	while (((class_ = classes[c = ib_getchar()]) & CHR_WHITE) && c != -1);

@@ -75,14 +75,14 @@ extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 #define MAXSTRING_FOR_WRAPSTRING	65535
 
 
-static XDR_INT mem_destroy(register XDR *);
-static bool_t mem_getbytes(register XDR *, register SCHAR *, register u_int);
-static bool_t mem_getlong(register XDR *, register SLONG *);
-static u_int mem_getpostn(register XDR *);
-static caddr_t mem_inline(register XDR *, u_int);
-static bool_t mem_putbytes(register XDR *, register SCHAR *, register u_int);
-static bool_t mem_putlong(register XDR *, register SLONG *);
-static bool_t mem_setpostn(register XDR *, u_int);
+static XDR_INT mem_destroy(XDR *);
+static bool_t mem_getbytes(XDR *, SCHAR *, u_int);
+static bool_t mem_getlong(XDR *, SLONG *);
+static u_int mem_getpostn(XDR *);
+static caddr_t mem_inline(XDR *, u_int);
+static bool_t mem_putbytes(XDR *, SCHAR *, u_int);
+static bool_t mem_putlong(XDR *, SLONG *);
+static bool_t mem_setpostn(XDR *, u_int);
 
 
 #pragma FB_COMPILER_MESSAGE("Fix! Bad, bad functioun pointer type casts!")
@@ -107,7 +107,7 @@ static const XDR::xdr_ops mem_ops =
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
 
-bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
+bool_t xdr_hyper( XDR * xdrs, SINT64 * pi64)
 {
 /**************************************
  *
@@ -168,7 +168,7 @@ bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
 	return FALSE;
 }
 
-bool_t xdr_bool( register XDR * xdrs, register bool_t * bp)
+bool_t xdr_bool( XDR * xdrs, bool_t * bp)
 {
 /**************************************
  *
@@ -202,8 +202,8 @@ bool_t xdr_bool( register XDR * xdrs, register bool_t * bp)
 }
 
 
-bool_t xdr_bytes(register XDR * xdrs,
-				 register SCHAR ** bpp, u_int * lp, register u_int maxlength)
+bool_t xdr_bytes(XDR * xdrs,
+				 SCHAR ** bpp, u_int * lp, u_int maxlength)
 {
 /**************************************
  *
@@ -259,7 +259,7 @@ bool_t xdr_bytes(register XDR * xdrs,
 }
 
 
-bool_t xdr_double(register XDR * xdrs, register double *ip)
+bool_t xdr_double(XDR * xdrs, double *ip)
 {
 /**************************************
  *
@@ -345,8 +345,8 @@ bool_t xdr_double(register XDR * xdrs, register double *ip)
 
 #ifdef VMS
 bool_t xdr_d_float(xdrs, ip)
-	 register XDR *xdrs;
-	 register double *ip;
+	 XDR *xdrs;
+	 double *ip;
 {
 /**************************************
  *
@@ -379,7 +379,7 @@ bool_t xdr_d_float(xdrs, ip)
 #endif
 
 
-bool_t xdr_enum(register XDR * xdrs, enum_t * ip)
+bool_t xdr_enum(XDR * xdrs, enum_t * ip)
 {
 /**************************************
  *
@@ -413,7 +413,7 @@ bool_t xdr_enum(register XDR * xdrs, enum_t * ip)
 }
 
 
-bool_t xdr_float(register XDR * xdrs, register float *ip)
+bool_t xdr_float(XDR * xdrs, float *ip)
 {
 /**************************************
  *
@@ -502,7 +502,7 @@ bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
 }
 
 
-bool_t xdr_int(register XDR * xdrs, register int *ip)
+bool_t xdr_int(XDR * xdrs, int *ip)
 {
 /**************************************
  *
@@ -536,7 +536,7 @@ bool_t xdr_int(register XDR * xdrs, register int *ip)
 }
 
 
-bool_t xdr_long(register XDR * xdrs, register SLONG * ip)
+bool_t xdr_long(XDR * xdrs, SLONG * ip)
 {
 /**************************************
  *
@@ -565,7 +565,7 @@ bool_t xdr_long(register XDR * xdrs, register SLONG * ip)
 }
 
 
-bool_t xdr_opaque(register XDR * xdrs, register SCHAR * p, register u_int len)
+bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
 {
 /**************************************
  *
@@ -606,7 +606,7 @@ bool_t xdr_opaque(register XDR * xdrs, register SCHAR * p, register u_int len)
 }
 
 
-bool_t xdr_short(register XDR * xdrs, register SSHORT * ip)
+bool_t xdr_short(XDR * xdrs, SSHORT * ip)
 {
 /**************************************
  *
@@ -640,8 +640,8 @@ bool_t xdr_short(register XDR * xdrs, register SSHORT * ip)
 }
 
 
-bool_t xdr_string(register XDR * xdrs,
-				  register SCHAR ** sp, register u_int maxlength)
+bool_t xdr_string(XDR * xdrs,
+				  SCHAR ** sp, u_int maxlength)
 {
 /**************************************
  *
@@ -699,7 +699,7 @@ bool_t xdr_string(register XDR * xdrs,
 }
 
 
-bool_t xdr_u_int(register XDR * xdrs, register u_int * ip)
+bool_t xdr_u_int(XDR * xdrs, u_int * ip)
 {
 /**************************************
  *
@@ -734,7 +734,7 @@ bool_t xdr_u_int(register XDR * xdrs, register u_int * ip)
 }
 
 
-bool_t xdr_u_long(register XDR * xdrs, register u_long * ip)
+bool_t xdr_u_long(XDR * xdrs, u_long * ip)
 {
 /**************************************
  *
@@ -765,7 +765,7 @@ bool_t xdr_u_long(register XDR * xdrs, register u_long * ip)
 }
 
 
-bool_t xdr_u_short(register XDR * xdrs, register u_short * ip)
+bool_t xdr_u_short(XDR * xdrs, u_short * ip)
 {
 /**************************************
  *
@@ -844,7 +844,7 @@ int xdr_union(	XDR*			xdrs,
 }
 
 
-bool_t xdr_wrapstring(register XDR * xdrs, register SCHAR ** strp)
+bool_t xdr_wrapstring(XDR * xdrs, SCHAR ** strp)
 {
 /**************************************
  *
@@ -861,7 +861,7 @@ bool_t xdr_wrapstring(register XDR * xdrs, register SCHAR ** strp)
 }
 
 
-int xdrmem_create(	register XDR*	xdrs,
+int xdrmem_create(	XDR*	xdrs,
 					SCHAR*			addr,
 					u_int			len,
 					enum xdr_op		x_op)
@@ -886,7 +886,7 @@ int xdrmem_create(	register XDR*	xdrs,
 }
 
 
-static XDR_INT mem_destroy(register XDR * xdrs)
+static XDR_INT mem_destroy(XDR * xdrs)
 {
 /**************************************
  *
@@ -902,9 +902,9 @@ static XDR_INT mem_destroy(register XDR * xdrs)
 }
 
 
-static bool_t mem_getbytes(	register XDR*	xdrs,
-							register SCHAR*	buff,
-							register u_int	count)
+static bool_t mem_getbytes(	XDR*	xdrs,
+							SCHAR*	buff,
+							u_int	count)
 {
 /**************************************
  *
@@ -934,7 +934,7 @@ static bool_t mem_getbytes(	register XDR*	xdrs,
 }
 
 
-static bool_t mem_getlong( register XDR * xdrs, register SLONG * lp)
+static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ static bool_t mem_getlong( register XDR * xdrs, register SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	register SLONG *p;
+	SLONG *p;
 
 	if ((xdrs->x_handy -= sizeof(SLONG)) < 0)
 	{
@@ -962,7 +962,7 @@ static bool_t mem_getlong( register XDR * xdrs, register SLONG * lp)
 }
 
 
-static u_int mem_getpostn( register XDR * xdrs)
+static u_int mem_getpostn( XDR * xdrs)
 {
 /**************************************
  *
@@ -979,7 +979,7 @@ static u_int mem_getpostn( register XDR * xdrs)
 }
 
 
-static caddr_t mem_inline( register XDR * xdrs, u_int bytecount)
+static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -1001,8 +1001,8 @@ static caddr_t mem_inline( register XDR * xdrs, u_int bytecount)
 
 
 static bool_t mem_putbytes(
-						   register XDR * xdrs,
-						   register SCHAR * buff, register u_int count)
+						   XDR * xdrs,
+						   SCHAR * buff, u_int count)
 {
 /**************************************
  *
@@ -1032,7 +1032,7 @@ static bool_t mem_putbytes(
 }
 
 
-static bool_t mem_putlong( register XDR * xdrs, register SLONG * lp)
+static bool_t mem_putlong( XDR * xdrs, SLONG * lp)
 {
 /**************************************
  *
@@ -1044,7 +1044,7 @@ static bool_t mem_putlong( register XDR * xdrs, register SLONG * lp)
  *	Fetch a longword into a memory stream if it fits.
  *
  **************************************/
-	register SLONG *p;
+	SLONG *p;
 
 	if ((xdrs->x_handy -= sizeof(SLONG)) < 0)
 	{
@@ -1060,7 +1060,7 @@ static bool_t mem_putlong( register XDR * xdrs, register SLONG * lp)
 }
 
 
-static bool_t mem_setpostn( register XDR * xdrs, u_int bytecount)
+static bool_t mem_setpostn( XDR * xdrs, u_int bytecount)
 {
 /**************************************
  *

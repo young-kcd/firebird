@@ -87,7 +87,7 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.6 2002-09-17 05:58:36 eku Exp $
+$Id: ib_stdio.cpp,v 1.7 2003-02-10 13:28:22 eku Exp $
 */
 
 #include "firebird.h"
@@ -212,7 +212,7 @@ static IB_FILE *ib__sfp(void);
 static void ib__sinit(void);
 static void ib__smakebuf(IB_FILE *);
 static char *ib__dtoa(double, int, int, int *, int *, char **);
-int ib__sflush(register IB_FILE * fp);
+int ib__sflush(IB_FILE * fp);
 
 /*
  * I/O descriptors for ib__sfvwrite().
@@ -251,9 +251,9 @@ void ib_clearerr(IB_FILE * fp)
 	FUNLOCKFILE(fp);
 }
 
-int ib_fclose(register IB_FILE * fp)
+int ib_fclose(IB_FILE * fp)
 {
-	register int r;
+	int r;
 
 	if (fp->_flags == 0) {		/* not open! */
 		errno = EBADF;
@@ -278,7 +278,7 @@ int ib_fclose(register IB_FILE * fp)
 
 IB_FILE *ib_fdopen(int fd, const char *mode)
 {
-	register IB_FILE *fp;
+	IB_FILE *fp;
 	static int nofile;
 	int flags, oflags, fdflags, tmp;
 
@@ -338,7 +338,7 @@ int ib_ferror(IB_FILE * fp)
 
 
 /* Flush a single file, or (if fp is NULL) all files.  */
-int ib_fflush(register IB_FILE * fp)
+int ib_fflush(IB_FILE * fp)
 {
 	int retval;
 
@@ -356,10 +356,10 @@ int ib_fflush(register IB_FILE * fp)
 	return (retval);
 }
 
-int ib__sflush(register IB_FILE * fp)
+int ib__sflush(IB_FILE * fp)
 {
-	register unsigned char *p;
-	register int n, t;
+	unsigned char *p;
+	int n, t;
 
 	t = fp->_flags;
 	if ((t & IB__SWR) == 0)
@@ -428,10 +428,10 @@ int ib__slbexpand(IB_FILE * fp, size_t newsize)
  * not necessarily end with '\0'), but does allow callers to modify
  * it if they wish.  Thus, we set __SMOD in case the caller does.
  */
-char *ib_fgetln(register IB_FILE * fp, size_t * lenp)
+char *ib_fgetln(IB_FILE * fp, size_t * lenp)
 {
-	register unsigned char *p;
-	register size_t len;
+	unsigned char *p;
+	size_t len;
 	size_t off;
 
 	/* make sure there is input */
@@ -442,7 +442,7 @@ char *ib_fgetln(register IB_FILE * fp, size_t * lenp)
 
 	/* look for a newline in the input */
 	if ((p = memchr((void *) fp->_p, '\n', (size_t) fp->_r)) != NULL) {
-		register char *ret;
+		char *ret;
 
 		/*
 		 * Found one.  Flag buffer as modified to keep fseek from
@@ -469,7 +469,7 @@ char *ib_fgetln(register IB_FILE * fp, size_t * lenp)
 #define OPTIMISTIC 80
 
 	for (len = fp->_r, off = 0;; len += fp->_r) {
-		register size_t diff;
+		size_t diff;
 
 		/*
 		 * Make sure there is room for more bytes.  Copy data from
@@ -522,11 +522,11 @@ int ib_fgetpos(IB_FILE * fp, ib_fpos_t * pos)
  * Stop when a newline has been read, or the count runs out.
  * Return first argument, or NULL if no characters were read.
  */
-char *ib_fgets(char *buf, register int n, register IB_FILE * fp)
+char *ib_fgets(char *buf, int n, IB_FILE * fp)
 {
-	register size_t len;
-	register char *s;
-	register unsigned char *p, *t;
+	size_t len;
+	char *s;
+	unsigned char *p, *t;
 
 	if (n <= 0)					/* sanity check */
 		return (NULL);
@@ -617,10 +617,10 @@ struct glue ib__sglue = { &uglue, 3, ib__sF };
 
 static struct glue *moreglue(int);
 
-static struct glue *moreglue(register int n)
+static struct glue *moreglue(int n)
 {
-	register struct glue *g;
-	register IB_FILE *p;
+	struct glue *g;
+	IB_FILE *p;
 	static IB_FILE empty;
 
 	g = (struct glue *) malloc(sizeof(*g) + ALIGNBYTES + n * sizeof(IB_FILE));
@@ -645,9 +645,9 @@ static struct glue *moreglue(register int n)
  */
 IB_FILE *ib__sfp(void)
 {
-	register IB_FILE *fp;
-	register int n;
-	register struct glue *g;
+	IB_FILE *fp;
+	int n;
+	struct glue *g;
 
 	if (!ib__sdidinit)
 		ib__sinit();
@@ -708,9 +708,9 @@ static void ib__sinit(void)
  * to be passed to an open() syscall through *optr.
  * Return 0 on error.
  */
-int ib__sflags(register const char *mode, int *optr)
+int ib__sflags(const char *mode, int *optr)
 {
-	register int ret, m, o;
+	int ret, m, o;
 
 	switch (*mode++) {
 
@@ -748,8 +748,8 @@ int ib__sflags(register const char *mode, int *optr)
 
 IB_FILE *ib_fopen(const char *file, const char *mode)
 {
-	register IB_FILE *fp;
-	register int f;
+	IB_FILE *fp;
+	int f;
 	int flags, oflags;
 
 	if ((flags = ib__sflags(mode, &oflags)) == 0)
@@ -796,7 +796,7 @@ int ib_fprintf(IB_FILE * fp, const char *fmt, ...)
  * fpurge: like fflush, but without writing anything: leave the
  * given FILE's buffer empty.
  */
-int ib_fpurge(register IB_FILE * fp)
+int ib_fpurge(IB_FILE * fp)
 {
 	int retval;
 	FLOCKFILE(fp);
@@ -815,7 +815,7 @@ int ib_fpurge(register IB_FILE * fp)
 	FUNLOCKFILE(fp);
 	return (retval);
 }
-int ib_fputc(int c, register IB_FILE * fp)
+int ib_fputc(int c, IB_FILE * fp)
 {
 	int retval;
 	FLOCKFILE(fp);
@@ -847,11 +847,11 @@ int ib_fputs(const char *s, IB_FILE * fp)
 	return (retval);
 }
 
-size_t ib_fread(void *buf, size_t size, size_t count, register IB_FILE * fp)
+size_t ib_fread(void *buf, size_t size, size_t count, IB_FILE * fp)
 {
-	register size_t resid;
-	register char *p;
-	register int r;
+	size_t resid;
+	char *p;
+	int r;
 	size_t total;
 
 	/*
@@ -890,9 +890,9 @@ size_t ib_fread(void *buf, size_t size, size_t count, register IB_FILE * fp)
  * ANSI is written such that the original file gets closed if at
  * all possible, no matter what.
  */
-IB_FILE *ib_freopen(const char *file, const char *mode, register IB_FILE * fp)
+IB_FILE *ib_freopen(const char *file, const char *mode, IB_FILE * fp)
 {
-	register int f;
+	int f;
 	int flags, isopen, oflags, sverrno, wantfd;
 
 	if ((flags = ib__sflags(mode, &oflags)) == 0) {
@@ -1005,7 +1005,7 @@ int ib_fscanf(IB_FILE * fp, char const *fmt, ...)
 
 #define	POS_ERR	(-(ib_fpos_t)1)
 
-int ib_fseek(register IB_FILE * fp, long offset, int whence)
+int ib_fseek(IB_FILE * fp, long offset, int whence)
 {
 	return (ib_fseeko(fp, offset, whence));
 }
@@ -1014,9 +1014,9 @@ int ib_fseek(register IB_FILE * fp, long offset, int whence)
  * Seek the given file to the given offset.
  * `Whence' must be one of the three SEEK_* macros.
  */
-int ib_fseeko(register IB_FILE * fp, off_t offset, int whence)
+int ib_fseeko(IB_FILE * fp, off_t offset, int whence)
 {
-	register ib_fpos_t(*seekfn) (void *, fpos_t, int);
+	ib_fpos_t(*seekfn) (void *, fpos_t, int);
 	ib_fpos_t target, curoff;
 	size_t n;
 	struct stat st;
@@ -1156,7 +1156,7 @@ int ib_fseeko(register IB_FILE * fp, off_t offset, int whence)
 	 */
 	if ((fp->_flags & IB__SMOD) == 0 &&
 		target >= curoff && target < curoff + n) {
-		register int o = target - curoff;
+		int o = target - curoff;
 
 		fp->_p = fp->_bf._base + o;
 		fp->_r = n - o;
@@ -1225,9 +1225,9 @@ int ib_fsetpos(IB_FILE * iop, const ib_fpos_t * pos)
 /*
  * standard ftell function.
  */
-long ib_ftell(register IB_FILE * fp)
+long ib_ftell(IB_FILE * fp)
 {
-	register off_t rv;
+	off_t rv;
 	rv = ib_ftello(fp);
 	if ((long) rv != rv) {
 		errno = EOVERFLOW;
@@ -1239,9 +1239,9 @@ long ib_ftell(register IB_FILE * fp)
 /*
  * ib_ftello: return current offset.
  */
-off_t ib_ftello(register IB_FILE * fp)
+off_t ib_ftello(IB_FILE * fp)
 {
-	register ib_fpos_t pos;
+	ib_fpos_t pos;
 
 	if (fp->_seek == NULL) {
 		errno = ESPIPE;			/* historic practice */
@@ -1290,7 +1290,7 @@ IB_FILE *ib_funopen(const void *cookie,
 					ib_fpos_t(*seekfn) (void *cookie, ib_fpos_t off,
 										int whence), int (*closefn) ())
 {
-	register IB_FILE *fp;
+	IB_FILE *fp;
 	int flags;
 
 	if (readfn == NULL) {
@@ -1320,11 +1320,11 @@ IB_FILE *ib_funopen(const void *cookie,
 }
 
 
-int ib_fwalk(register int (*function) (IB_FILE *))
+int ib_fwalk(int (*function) (IB_FILE *))
 {
-	register IB_FILE *fp;
-	register int n, ret;
-	register struct glue *g;
+	IB_FILE *fp;
+	int n, ret;
+	struct glue *g;
 
 	ret = 0;
 	for (g = &ib__sglue; g != NULL; g = g->next)
@@ -1367,7 +1367,7 @@ size_t ib_fwrite(const void *buf, size_t size, size_t count, IB_FILE * fp)
  */
 #undef ib_getc
 
-int ib_getc(register IB_FILE * fp)
+int ib_getc(IB_FILE * fp)
 {
 	int retval;
 	FLOCKFILE(fp);
@@ -1405,10 +1405,10 @@ int ib_getw(IB_FILE * fp)
  * As a side effect, we set IB__SOPT or IB__SNPT (en/dis-able fseek
  * optimisation) right after the fstat() that finds the buffer size.
  */
-static void ib__smakebuf(register IB_FILE * fp)
+static void ib__smakebuf(IB_FILE * fp)
 {
-	register void *p;
-	register int flags;
+	void *p;
+	int flags;
 	size_t size;
 	int couldbetty;
 
@@ -1436,7 +1436,7 @@ static void ib__smakebuf(register IB_FILE * fp)
 /*
  * Internal routine to determine `proper' buffering for a file.
  */
-int ib__swhatbuf(register IB_FILE * fp, size_t * bufsize, int *couldbetty)
+int ib__swhatbuf(IB_FILE * fp, size_t * bufsize, int *couldbetty)
 {
 	struct stat st;
 
@@ -1466,7 +1466,7 @@ int ib__swhatbuf(register IB_FILE * fp, size_t * bufsize, int *couldbetty)
 
 void ib_perror(const char *s)
 {
-	register struct iovec *v;
+	struct iovec *v;
 	struct iovec iov[4];
 
 	v = iov;
@@ -1503,7 +1503,7 @@ int ib_printf(char const *fmt, ...)
  */
 #undef ib_putc
 
-int ib_putc(int c, register IB_FILE * fp)
+int ib_putc(int c, IB_FILE * fp)
 {
 	int retval;
 	FLOCKFILE(fp);
@@ -1520,7 +1520,7 @@ int ib_putc(int c, register IB_FILE * fp)
 int ib_putchar(int c)
 {
 	int retval;
-	register IB_FILE *so = ib_stdout;
+	IB_FILE *so = ib_stdout;
 
 	FLOCKFILE(so);
 	retval = ib__sputc(c, so);
@@ -1580,7 +1580,7 @@ static int lflush(IB_FILE * fp)
  * Refill a stdio buffer.
  * Return EOF on eof or error, 0 otherwise.
  */
-int ib__srefill(register IB_FILE * fp)
+int ib__srefill(IB_FILE * fp)
 {
 
 	/* make sure stdio is set up */
@@ -1651,7 +1651,7 @@ int ib__srefill(register IB_FILE * fp)
 }
 
 
-void ib_rewind(register IB_FILE * fp)
+void ib_rewind(IB_FILE * fp)
 {
 	FLOCKFILE(fp);
 	(void) ib_fseek(fp, 0L, SEEK_SET);
@@ -1667,7 +1667,7 @@ int ib__srefill(IB_FILE *);
  * Refill, then return the first character
  * in the newly-filled buffer.
  */
-int ib__srget(register IB_FILE * fp)
+int ib__srget(IB_FILE * fp)
 {
 	if (ib__srefill(fp) == 0) {
 		fp->_r--;
@@ -1693,7 +1693,7 @@ void ib_setbuf(IB_FILE * fp, char *buf)
 	(void) ib_setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
 }
 
-void ib_setbuffer(register IB_FILE * fp, char *buf, int size)
+void ib_setbuffer(IB_FILE * fp, char *buf, int size)
 {
 
 	(void) ib_setvbuf(fp, buf, buf ? _IOFBF : _IONBF, (size_t) size);
@@ -1712,10 +1712,10 @@ int ib_setlinebuf(IB_FILE * fp)
  * Set one of the three kinds of buffering, optionally including
  * a buffer.
  */
-int ib_setvbuf(register IB_FILE * fp,
-			   char *buf, register int mode, register size_t size)
+int ib_setvbuf(IB_FILE * fp,
+			   char *buf, int mode, size_t size)
 {
-	register int ret, flags;
+	int ret, flags;
 	size_t iosize;
 	int ttyflag;
 
@@ -1834,8 +1834,8 @@ int ib_setvbuf(register IB_FILE * fp,
  */
 static int ib__sread(void *cookie, char *buf, int n)
 {
-	register IB_FILE *fp = cookie;
-	register int ret;
+	IB_FILE *fp = cookie;
+	int ret;
 
 	ret = read(fp->_file, buf, (size_t) n);
 	/* if the read succeeded, update the current offset */
@@ -1848,7 +1848,7 @@ static int ib__sread(void *cookie, char *buf, int n)
 
 static int ib__swrite(void *cookie, char const *buf, int n)
 {
-	register IB_FILE *fp = cookie;
+	IB_FILE *fp = cookie;
 
 	if (fp->_flags & IB__SAPP)
 		(void) lseek(fp->_file, (off_t) 0, SEEK_END);
@@ -1858,8 +1858,8 @@ static int ib__swrite(void *cookie, char const *buf, int n)
 
 static ib_fpos_t ib__sseek(void *cookie, ib_fpos_t offset, int whence)
 {
-	register IB_FILE *fp = cookie;
-	register off_t ret;
+	IB_FILE *fp = cookie;
+	off_t ret;
 
 	ret = lseek(fp->_file, (off_t) offset, whence);
 	if (ret == -1)
@@ -1914,10 +1914,10 @@ IB_FILE *ib_tmpfile(void)
  * and move the bytes in the buffer around as necessary so that they
  * are all at the end (stack-style).
  */
-static int ib__submore(register IB_FILE * fp)
+static int ib__submore(IB_FILE * fp)
 {
-	register int i;
-	register unsigned char *p;
+	int i;
+	unsigned char *p;
 
 	if (fp->_ub._base == fp->_ubuf) {
 		/*
@@ -1945,7 +1945,7 @@ static int ib__submore(register IB_FILE * fp)
 	return (0);
 }
 
-int ib_ungetc(int c, register IB_FILE * fp)
+int ib_ungetc(int c, IB_FILE * fp)
 {
 	if (c == EOF)
 		return (EOF);
@@ -2037,9 +2037,9 @@ static void ib__grow_type_table(int, unsigned char **, int *);
  * Flush out all the vectors defined by the given uio,
  * then reset it so that it can be reused.
  */
-static int ib__sprint(IB_FILE * fp, register struct ib__suio *uio)
+static int ib__sprint(IB_FILE * fp, struct ib__suio *uio)
 {
-	register int err;
+	int err;
 
 	if (uio->uio_resid == 0) {
 		uio->uio_iovcnt = 0;
@@ -2056,7 +2056,7 @@ static int ib__sprint(IB_FILE * fp, register struct ib__suio *uio)
  * temporary buffer.  We only work on write-only files; this avoids
  * worries about ungetc buffers and so forth.
  */
-static int ib__sbprintf(register IB_FILE * fp, const char *fmt, va_list ap)
+static int ib__sbprintf(IB_FILE * fp, const char *fmt, va_list ap)
 {
 	int ret;
 	IB_FILE fake;
@@ -2095,11 +2095,11 @@ static int ib__sbprintf(register IB_FILE * fp, const char *fmt, va_list ap)
  * Octal numbers can be forced to have a leading zero; hex numbers
  * use the given digits.
  */
-static char *ib__ultoa(register u_long val, char *endp, int base, int octzero,
+static char *ib__ultoa(u_long val, char *endp, int base, int octzero,
 					   char *xdigs)
 {
-	register char *cp = endp;
-	register long sval;
+	char *cp = endp;
+	long sval;
 
 	/*
 	 * Handle the three cases separately, in the hope of getting
@@ -2152,11 +2152,11 @@ static char *ib__ultoa(register u_long val, char *endp, int base, int octzero,
 }
 
 /* Identical to ib__ultoa, but for quads. */
-static char *ib__uqtoa(register u_quad_t val, char *endp,
+static char *ib__uqtoa(u_quad_t val, char *endp,
 					   int base, int octzero, char *xdigs)
 {
-	register char *cp = endp;
-	register quad_t sval;
+	char *cp = endp;
+	quad_t sval;
 
 	/* quick test for small values; ib__ultoa is typically much faster */
 	/* (perhaps instead we should run until small, then call ib__ultoa?) */
@@ -2243,12 +2243,12 @@ static int isinf(double x)
 #define FPT		0x100			/* Floating point number */
 int ib_vfprintf(IB_FILE * fp, const char *fmt0, va_list ap)
 {
-	register char *fmt;			/* format string */
-	register int ch;			/* character from fmt */
-	register int n, n2;			/* handy integer (short term usage) */
-	register char *cp;			/* handy char pointer (short term usage) */
-	register struct ib__siov *iovp;	/* for PRINT macro */
-	register int flags;			/* flags as above */
+	char *fmt;			/* format string */
+	int ch;			/* character from fmt */
+	int n, n2;			/* handy integer (short term usage) */
+	char *cp;			/* handy char pointer (short term usage) */
+	struct ib__siov *iovp;	/* for PRINT macro */
+	int flags;			/* flags as above */
 	int ret;					/* return value accumulator */
 	int width;					/* width from format (%8d), or 0 */
 	int prec;					/* precision from format (%.3d), or -1 */
@@ -2866,11 +2866,11 @@ int ib_vfprintf(IB_FILE * fp, const char *fmt0, va_list ap)
  */
 static void ib__find_arguments(const char *fmt0, va_list ap, void ***argtable)
 {
-	register char *fmt;			/* format string */
-	register int ch;			/* character from fmt */
-	register int n, n2;			/* handy integer (short term usage) */
-	register char *cp;			/* handy char pointer (short term usage) */
-	register int flags;			/* flags as above */
+	char *fmt;			/* format string */
+	int ch;			/* character from fmt */
+	int n, n2;			/* handy integer (short term usage) */
+	char *cp;			/* handy char pointer (short term usage) */
+	int flags;			/* flags as above */
 	int width;					/* width from format (%8d), or 0 */
 	unsigned char *typetable;	/* table of types */
 	unsigned char stattypetable[STATIC_ARG_TBL_SIZE];
@@ -3209,7 +3209,7 @@ static char *cvt(double value, int ndigits, int flags, char *sign,
 
 static int exponent(char *p0, int exp, int fmtch)
 {
-	register char *p, *t;
+	char *p, *t;
 	char expbuf[MAXEXP];
 
 	p = p0;
@@ -3280,15 +3280,15 @@ static u_char *ib__sccl(char *, u_char *);
 /*
  * vfscanf
  */
-int ib__svfscanf(register IB_FILE * fp, char const *fmt0, va_list ap)
+int ib__svfscanf(IB_FILE * fp, char const *fmt0, va_list ap)
 {
-	register u_char *fmt = (u_char *) fmt0;
-	register int c;				/* character from format, or conversion */
-	register size_t width;		/* field width, or 0 */
-	register char *p;			/* points into all kinds of strings */
-	register int n;				/* handy integer */
-	register int flags;			/* flags as defined above */
-	register char *p0;			/* saves original value of p when necessary */
+	u_char *fmt = (u_char *) fmt0;
+	int c;				/* character from format, or conversion */
+	size_t width;		/* field width, or 0 */
+	char *p;			/* points into all kinds of strings */
+	int n;				/* handy integer */
+	int flags;			/* flags as defined above */
+	char *p0;			/* saves original value of p when necessary */
 	int nassigned;				/* number of fields assigned */
 	int nconversions;			/* number of conversions */
 	int nread;					/* number of characters consumed from fp */
@@ -3884,9 +3884,9 @@ int ib__svfscanf(register IB_FILE * fp, char const *fmt0, va_list ap)
  * closing `]'.  The table has a 1 wherever characters should be
  * considered part of the scanset.
  */
-static u_char *ib__sccl(register char *tab, register u_char * fmt)
+static u_char *ib__sccl(char *tab, u_char * fmt)
 {
-	register int c, n, v, i;
+	int c, n, v, i;
 
 	/* first `clear' the whole table */
 	c = *fmt++;					/* first char hat => negated scanset */
@@ -4007,9 +4007,9 @@ int ib_vscanf(const char *fmt, va_list ap)
  * the given file.  Flush the buffer out if it is or becomes full,
  * or if c=='\n' and the file is line buffered.
  */
-int ib__swbuf(register int c, register IB_FILE * fp)
+int ib__swbuf(int c, IB_FILE * fp)
 {
-	register int n;
+	int n;
 
 	/*
 	 * In case we cannot write, or an exception takes us out early,
@@ -4052,7 +4052,7 @@ int ib__swbuf(register int c, register IB_FILE * fp)
  * because either _flags does not include IB__SWR, or _buf is NULL.
  * _wsetup returns 0 if OK to write, nonzero otherwise.
  */
-int ib__swsetup(register IB_FILE * fp)
+int ib__swsetup(IB_FILE * fp)
 {
 	/* make sure stdio is set up */
 	if (!ib__sdidinit)
@@ -4101,12 +4101,12 @@ int ib__swsetup(register IB_FILE * fp)
  * This routine is large and unsightly, but most of the ugliness due
  * to the three different kinds of output buffering is handled here.
  */
-int ib__sfvwrite(register IB_FILE * fp, register struct ib__suio *uio)
+int ib__sfvwrite(IB_FILE * fp, struct ib__suio *uio)
 {
-	register size_t len;
-	register char *p;
-	register struct ib__siov *iov;
-	register int w, s;
+	size_t len;
+	char *p;
+	struct ib__siov *iov;
+	int w, s;
 	char *nl;
 	int nlknown, nldist;
 

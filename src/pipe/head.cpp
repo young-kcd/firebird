@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.22 2003-02-07 14:41:36 kkuznetsov Exp $ */
+ /* $Id: head.cpp,v 1.23 2003-02-10 13:28:26 eku Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -2755,8 +2755,8 @@ RETURN_SUCCESS;
 
 STATUS GDS_START (
     STATUS		*user_status,
-    register RRQ	*req_handle,
-    register RTR	*rtr_handle,
+    RRQ	*req_handle,
+    RTR	*rtr_handle,
     SSHORT		GDS_VAL (level))
 {
 /**************************************

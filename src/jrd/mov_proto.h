@@ -35,9 +35,9 @@ extern "C" {
 extern int MOV_compare(struct dsc *, struct dsc *);
 extern double MOV_date_to_double(struct dsc *);
 extern void MOV_double_to_date(double, SLONG[2]);
-extern void MOV_fast(register SCHAR *, register SCHAR *, register ULONG);
-extern void MOV_faster(register SLONG *, register SLONG *, ULONG);
-extern void MOV_fill(register SLONG *, ULONG);
+extern void MOV_fast(SCHAR *, SCHAR *, ULONG);
+extern void MOV_faster(SLONG *, SLONG *, ULONG);
+extern void MOV_fill(SLONG *, ULONG);
 extern double MOV_get_double(struct dsc *);
 extern SLONG MOV_get_long(struct dsc *, SSHORT);
 extern void MOV_get_metadata_str(struct dsc *, TEXT *, USHORT);

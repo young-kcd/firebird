@@ -1062,8 +1062,8 @@ USHORT msg_length, SCHAR * msg, SSHORT level)
 
 int rdb$start_request(
 					  int *user_status,
-					  register REQ * req_handle,
-					  register TRA * tra_handle, SSHORT level)
+					  REQ * req_handle,
+					  TRA * tra_handle, SSHORT level)
 {
 /**************************************
  *

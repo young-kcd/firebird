@@ -27,7 +27,7 @@
 #include "../jrd/rse.h"
 
 #ifdef SCROLLABLE_CURSORS
-extern struct exp *NAV_expand_index(register struct win *, struct irsb_nav *);
+extern struct exp *NAV_expand_index(struct win *, struct irsb_nav *);
 #endif
 extern BOOLEAN NAV_get_record(class Rsb *, struct irsb_nav *, struct rpb *,
 							  enum rse_get_mode);

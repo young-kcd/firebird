@@ -116,8 +116,8 @@ extern STATUS DLL_EXPORT jrd8_service_start(STATUS *, struct svc **, ULONG *,
 extern STATUS DLL_EXPORT jrd8_start_and_send(STATUS *, struct jrd_req **,
 											 struct jrd_tra **, USHORT, USHORT,
 											 SCHAR *, SSHORT);
-extern STATUS DLL_EXPORT jrd8_start_request(STATUS *, register struct jrd_req **,
-											register struct jrd_tra **, SSHORT);
+extern STATUS DLL_EXPORT jrd8_start_request(STATUS *, struct jrd_req **,
+											struct jrd_tra **, SSHORT);
 extern STATUS DLL_EXPORT jrd8_start_multiple(STATUS *, struct jrd_tra **, USHORT,
 											 struct teb *);
 extern STATUS DLL_EXPORT jrd8_start_transaction(STATUS *, struct jrd_tra **,

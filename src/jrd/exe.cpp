@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.39 2003-02-10 00:09:35 brodsom Exp $
+$Id: exe.cpp,v 1.40 2003-02-10 13:28:22 eku Exp $
 */
 
 #include "firebird.h"
@@ -127,32 +127,32 @@ static void exec_sql(TDBB, JRD_REQ, DSC *);
 static void execute_procedure(TDBB, JRD_NOD);
 static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC, ENUM jrd_req::req_ta);
 static JRD_NOD looper(TDBB, JRD_REQ, JRD_NOD);
-static JRD_NOD modify(TDBB, register JRD_NOD, SSHORT);
-static JRD_NOD receive_msg(TDBB, register JRD_NOD);
+static JRD_NOD modify(TDBB, JRD_NOD, SSHORT);
+static JRD_NOD receive_msg(TDBB, JRD_NOD);
 static void release_blobs(TDBB, JRD_REQ);
 static void release_proc_save_points(JRD_REQ);
 #ifdef SCROLLABLE_CURSORS
 static JRD_NOD seek_rse(TDBB, JRD_REQ, JRD_NOD);
 static void seek_rsb(TDBB, JRD_REQ, RSB, USHORT, SLONG);
 #endif
-static JRD_NOD selct(TDBB, register JRD_NOD);
-static JRD_NOD send_msg(TDBB, register JRD_NOD);
+static JRD_NOD selct(TDBB, JRD_NOD);
+static JRD_NOD send_msg(TDBB, JRD_NOD);
 static void set_error(TDBB, XCP, JRD_NOD);
-static JRD_NOD stall(TDBB, register JRD_NOD);
-static JRD_NOD store(TDBB, register JRD_NOD, SSHORT);
+static JRD_NOD stall(TDBB, JRD_NOD);
+static JRD_NOD store(TDBB, JRD_NOD, SSHORT);
 static BOOLEAN test_and_fixup_error(TDBB, const XCP, JRD_REQ);
 static void trigger_failure(TDBB, JRD_REQ);
 static void validate(TDBB, JRD_NOD);
 
 #ifdef PC_ENGINE
 static BOOLEAN check_crack(RSB, USHORT);
-static JRD_NOD find(TDBB, register JRD_NOD);
-static JRD_NOD find_dbkey(TDBB, register JRD_NOD);
+static JRD_NOD find(TDBB, JRD_NOD);
+static JRD_NOD find_dbkey(TDBB, JRD_NOD);
 static LCK implicit_record_lock(JRD_TRA, RPB *);
 static JRD_NOD release_bookmark(TDBB, JRD_NOD);
 static JRD_NOD set_bookmark(TDBB, JRD_NOD);
-static JRD_NOD set_index(TDBB, register JRD_NOD);
-static JRD_NOD stream(TDBB, register JRD_NOD);
+static JRD_NOD set_index(TDBB, JRD_NOD);
+static JRD_NOD stream(TDBB, JRD_NOD);
 #endif
 
 #ifdef DEBUG_GDS_ALLOC
@@ -1028,7 +1028,7 @@ static void cleanup_rpb(TDBB tdbb, RPB *rpb)
 	USHORT length;
 	REC record = rpb->rpb_record;
 	FMT format = record->rec_format;
-	register UCHAR *p;
+	UCHAR *p;
 
 	SET_TDBB(tdbb); /* Is it necessary? */
 
@@ -1604,7 +1604,7 @@ static JRD_REQ execute_triggers(TDBB tdbb,
 
 
 #ifdef PC_ENGINE
-static JRD_NOD find(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD find(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -1684,7 +1684,7 @@ static JRD_NOD find(TDBB tdbb, register JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD find_dbkey(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD find_dbkey(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -2671,7 +2671,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 }
 
 
-static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
+static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -2684,7 +2684,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
  *
  **************************************/
 	DBB dbb;
-	register JRD_REQ request, trigger;
+	JRD_REQ request, trigger;
 	STA impure;
 	FMT org_format, new_format;
 	SSHORT org_stream, new_stream;
@@ -2996,7 +2996,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 	return node->nod_arg[e_mod_statement];
 }
 
-static JRD_NOD receive_msg(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD receive_msg(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3011,7 +3011,7 @@ static JRD_NOD receive_msg(TDBB tdbb, register JRD_NOD node)
  *	the statement isn't every formalled evaluated.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3357,7 +3357,7 @@ static void seek_rsb(
 #endif
 
 
-static JRD_NOD selct(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD selct(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3376,7 +3376,7 @@ static JRD_NOD selct(TDBB tdbb, register JRD_NOD node)
  *	operation "req_proceed."
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3396,7 +3396,7 @@ static JRD_NOD selct(TDBB tdbb, register JRD_NOD node)
 
 
 
-static JRD_NOD send_msg(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD send_msg(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3408,7 +3408,7 @@ static JRD_NOD send_msg(TDBB tdbb, register JRD_NOD node)
  *	Execute a SEND statement.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3507,7 +3507,7 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
  *	and jump to handle error accordingly.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 	TEXT name[32], relation_name[32], *s, *r;
 	TEXT message[XCP_MESSAGE_LENGTH + 1], temp[XCP_MESSAGE_LENGTH + 1];
 	USHORT length = 0;
@@ -3597,7 +3597,7 @@ static void set_error(TDBB tdbb, XCP condition, JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD set_index(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD set_index(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3609,7 +3609,7 @@ static JRD_NOD set_index(TDBB tdbb, register JRD_NOD node)
  *	Execute a SET INDEX statement.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 	USHORT stream, id;
 	RPB *rpb;
 	JRD_REL relation;
@@ -3648,7 +3648,7 @@ static JRD_NOD set_index(TDBB tdbb, register JRD_NOD node)
 #endif
 
 
-static JRD_NOD stall(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD stall(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3663,7 +3663,7 @@ static JRD_NOD stall(TDBB tdbb, register JRD_NOD node)
  *	A gds__receive () will unblock the user.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 
 	SET_TDBB(tdbb);
 	request = tdbb->tdbb_request;
@@ -3686,7 +3686,7 @@ static JRD_NOD stall(TDBB tdbb, register JRD_NOD node)
 }
 
 
-static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
+static JRD_NOD store(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -3703,7 +3703,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 	FMT format;
 	SSHORT n;
 	REC record;
-	register UCHAR *p;
+	UCHAR *p;
 
 	SET_TDBB(tdbb);
 	DBB dbb = tdbb->tdbb_database;
@@ -3852,7 +3852,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 
 
 #ifdef PC_ENGINE
-static JRD_NOD stream(TDBB tdbb, register JRD_NOD node)
+static JRD_NOD stream(TDBB tdbb, JRD_NOD node)
 {
 /**************************************
  *
@@ -3864,7 +3864,7 @@ static JRD_NOD stream(TDBB tdbb, register JRD_NOD node)
  *	Execute a STREAM statement.
  *
  **************************************/
-	register JRD_REQ request;
+	JRD_REQ request;
 	RSB rsb;
 
 	SET_TDBB(tdbb);

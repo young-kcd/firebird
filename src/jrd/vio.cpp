@@ -924,7 +924,7 @@ int VIO_check_if_updated(TDBB tdbb, RPB * rpb)
 #endif
 
 
-void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
+void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
 {
 /**************************************
  *
@@ -2289,7 +2289,7 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 }
 
 
-REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
+REC VIO_record(TDBB tdbb, RPB * rpb, FMT format, JrdMemoryPool *pool)
 {
 /**************************************
  *

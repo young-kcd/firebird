@@ -83,7 +83,7 @@ TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
 #define NULL		((char*) 0)
 #endif
 
-int des_setkey(register const char *key);
+int des_setkey(const char *key);
 int des_cipher(const char *in, char *out, long salt, int num_iter);
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -343,9 +343,9 @@ STATIC void init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 
 STATIC void permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
 {
-	register DCL_BLOCK(D, D0, D1);
-	register C_block *tp;
-	register int t;
+	DCL_BLOCK(D, D0, D1);
+	C_block *tp;
+	int t;
 
 	ZERO(D, D0, D1);
 	do {
@@ -522,9 +522,9 @@ static char cryptresult[1 + 4 + 4 + 11 + 1];	/* encrypted result */
 TEXT* DLL_EXPORT ENC_crypt(TEXT *key, TEXT *setting)
 {
 	unsigned long a, b, d;
-	register char *encp;
-	register long i;
-	register int t;
+	char *encp;
+	long i;
+	int t;
 	long salt;
 	int num_iter, salt_size;
 	C_block keyblock, rsltblock;
@@ -653,11 +653,11 @@ static C_block KS[KS_SIZE];
 /*
  * Set up the key schedule from the key.
  */
-int des_setkey(register const char *key)
+int des_setkey(const char *key)
 {
-	register DCL_BLOCK(K, K0, K1);
-	register C_block *ptabp;
-	register int i;
+	DCL_BLOCK(K, K0, K1);
+	C_block *ptabp;
+	int i;
 	static int des_ready = 0;
 
 	if (!des_ready) {
@@ -690,11 +690,11 @@ int des_cipher(const char *in, char *out, long salt, int num_iter)
 {
 	/* variables that we want in registers, most important first */
 #if defined(pdp11)
-	register int j;
+	int j;
 #endif
-	register long L0, L1, R0, R1, k;
-	register C_block *kp;
-	register int ks_inc, loop_count;
+	long L0, L1, R0, R1, k;
+	C_block *kp;
+	int ks_inc, loop_count;
 	C_block B;
 
 	L0 = salt;
@@ -754,7 +754,7 @@ int des_cipher(const char *in, char *out, long salt, int num_iter)
 			/* use this if your "long" int indexing is slow */
 #define	DOXOR(x,y,i)	j=B.b[i]; x^=SPTAB(SPE[0][i],j); y^=SPTAB(SPE[1][i],j);
 #else
-			/* use this if "k" is allocated to a register ... */
+			/* use this if "k" is allocated to a ... */
 #define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
 #endif
 #endif
@@ -817,9 +817,9 @@ int des_cipher(const char *in, char *out, long salt, int num_iter)
  */
 STATIC void init_des()
 {
-	register int i, j;
-	register long k;
-	register int tableno;
+	int i, j;
+	long k;
+	int tableno;
 	static unsigned char perm[64], tmp32[32];	/* "static" for speed */
 
 	/*
@@ -950,7 +950,7 @@ STATIC void
 init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		  unsigned char p[64], int chars_in, int chars_out)
 {
-	register int i, j, k, l;
+	int i, j, k, l;
 
 	for (k = 0; k < chars_out * 8; k++) {	/* each output bit position */
 		l = p[k] - 1;			/* where this bit comes from */
@@ -968,9 +968,9 @@ init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 /*
  * "setkey" routine (for backwards compatibility)
  */
-int setkey(register const char *key)
+int setkey(const char *key)
 {
-	register int i, j, k;
+	int i, j, k;
 	C_block keyblock;
 
 	for (i = 0; i < 8; i++) {
@@ -989,7 +989,7 @@ int setkey(register const char *key)
  */
 int encrypt(char *block, int flag)
 {
-	register int i, j, k;
+	int i, j, k;
 	C_block cblock;
 
 	for (i = 0; i < 8; i++) {

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.10 2003-01-22 16:37:56 alexpeshkoff Exp $
+$Id: why.cpp,v 1.11 2003-02-10 13:28:23 eku Exp $
 */
 
 #include "firebird.h"
@@ -4684,8 +4684,8 @@ STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_START(STATUS * user_status,
-							 register WHY_REQ * req_handle,
-							 register WHY_TRA * tra_handle, SSHORT GDS_VAL(level))
+							 WHY_REQ * req_handle,
+							 WHY_TRA * tra_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *

@@ -30,8 +30,8 @@
 
 #define HASH_SIZE	224
 
-static int hash(register SCHAR *, register int);
-static BOOLEAN scompare(register SCHAR *, register int, register SCHAR *,
+static int hash(SCHAR *, int);
+static BOOLEAN scompare(SCHAR *, int, SCHAR *,
 						int);
 
 static SYM hash_table[HASH_SIZE];
@@ -58,7 +58,7 @@ void HSH_fini(void)
  *	Release space used by keywords.
  *
  **************************************/
-	register SYM symbol;
+	SYM symbol;
 
 	while (key_symbols) {
 		symbol = key_symbols;
@@ -82,9 +82,9 @@ void HSH_init(void)
  *	inserting all known keywords.
  *
  **************************************/
-	register SCHAR *string;
-	register SYM symbol;
-	register int i;
+	SCHAR *string;
+	SYM symbol;
+	int i;
 	struct word *word;
 
 	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
@@ -101,7 +101,7 @@ void HSH_init(void)
 }
 
 
-void HSH_insert( register SYM symbol)
+void HSH_insert( SYM symbol)
 {
 /**************************************
  *
@@ -113,8 +113,8 @@ void HSH_insert( register SYM symbol)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	register int h;
-	register SYM old;
+	int h;
+	SYM old;
 
 	h = hash(symbol->sym_string, symbol->sym_length);
 
@@ -131,7 +131,7 @@ void HSH_insert( register SYM symbol)
 }
 
 
-SYM HSH_lookup(register SCHAR * string, register int length)
+SYM HSH_lookup(SCHAR * string, int length)
 {
 /**************************************
  *
@@ -143,7 +143,7 @@ SYM HSH_lookup(register SCHAR * string, register int length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	register SYM symbol;
+	SYM symbol;
 
 	for (symbol = hash_table[hash(string, length)]; symbol;
 		 symbol = symbol->sym_collision)
@@ -155,7 +155,7 @@ SYM HSH_lookup(register SCHAR * string, register int length)
 }
 
 
-void HSH_remove( register SYM symbol)
+void HSH_remove( SYM symbol)
 {
 /**************************************
  *
@@ -168,7 +168,7 @@ void HSH_remove( register SYM symbol)
  *
  **************************************/
 	int h;
-	register SYM *next, *ptr, homonym;
+	SYM *next, *ptr, homonym;
 
 	h = hash(symbol->sym_string, symbol->sym_length);
 
@@ -194,7 +194,7 @@ void HSH_remove( register SYM symbol)
 }
 
 
-static int hash( register SCHAR * string, register int length)
+static int hash( SCHAR * string, int length)
 {
 /**************************************
  *
@@ -206,7 +206,7 @@ static int hash( register SCHAR * string, register int length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	register int value;
+	int value;
 	SCHAR c;
 
 	value = 0;
@@ -221,9 +221,9 @@ static int hash( register SCHAR * string, register int length)
 
 
 static BOOLEAN scompare(
-						register SCHAR * string1,
-						register int length1,
-						register SCHAR * string2, int length2)
+						SCHAR * string1,
+						int length1,
+						SCHAR * string2, int length2)
 {
 /**************************************
  *

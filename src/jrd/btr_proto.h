@@ -37,8 +37,8 @@ extern USHORT BTR_all(TDBB, struct jrd_rel *, struct idx **, struct idx **,
 extern void BTR_create(TDBB, struct jrd_rel *, struct idx *, USHORT, struct scb *,
 					   float *);
 extern void BTR_delete_index(TDBB, struct win *, USHORT);
-extern BOOLEAN BTR_description(JRD_REL, register struct irt *,
-							   register struct idx *, SSHORT);
+extern BOOLEAN BTR_description(JRD_REL, struct irt *,
+							   struct idx *, SSHORT);
 extern void BTR_evaluate(struct tdbb *, struct irb *, struct sbm **);
 extern struct btn *BTR_find_leaf(struct btr *, struct key *, UCHAR *, UCHAR *,
 								 int, BOOLEAN);
@@ -46,21 +46,21 @@ extern struct btr *BTR_find_page(struct tdbb *, struct irb *, struct win *,
 								 struct idx *, struct key *, struct key *,
 								 BOOLEAN);
 extern SLONG BTR_get_quad(SCHAR *);
-extern void BTR_insert(struct tdbb *, struct win *, register struct iib *);
+extern void BTR_insert(struct tdbb *, struct win *, struct iib *);
 extern enum idx_e BTR_key(struct tdbb *, struct jrd_rel *, struct rec *,
-						  register struct idx *, struct key *);
+						  struct idx *, struct key *);
 extern USHORT BTR_key_length(struct jrd_rel *, struct idx *);
 extern struct btn *BTR_last_node(struct btr *, struct exp *, struct btx **);
 extern struct btr *BTR_left_handoff(struct tdbb *, struct win *, struct btr *,
 									SSHORT);
-extern USHORT BTR_lookup(TDBB, struct jrd_rel *, USHORT, register struct idx *);
+extern USHORT BTR_lookup(TDBB, struct jrd_rel *, USHORT, struct idx *);
 extern void BTR_make_key(struct tdbb *, USHORT, struct jrd_nod **, struct idx *,
 						 struct key *, USHORT);
 extern BOOLEAN BTR_next_index(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *,
 							  struct win *);
 extern struct btn *BTR_next_node(struct btn *, struct btx **);
 extern struct btn *BTR_previous_node(struct btn *, struct btx **);
-extern void BTR_remove(struct tdbb *, struct win *, register struct iib *);
+extern void BTR_remove(struct tdbb *, struct win *, struct iib *);
 extern void BTR_reserve_slot(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *);
 extern float BTR_selectivity(TDBB, struct jrd_rel *, USHORT);
 

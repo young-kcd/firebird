@@ -30,23 +30,23 @@
 // Lower functions need to have C++ linkage to avoid name clash with
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
-extern bool_t	xdr_bool (register XDR *, register int *);
-extern bool_t	xdr_bytes (register XDR *, register SCHAR * *, u_int *, register u_int);
-extern bool_t	xdr_double (register XDR *, register double *);
-extern bool_t	xdr_enum (register XDR *, enum xdr_op *);
-extern bool_t	xdr_float (register XDR *, register float *);
+extern bool_t	xdr_bool (XDR *, int *);
+extern bool_t	xdr_bytes (XDR *, SCHAR * *, u_int *, u_int);
+extern bool_t	xdr_double (XDR *, double *);
+extern bool_t	xdr_enum (XDR *, enum xdr_op *);
+extern bool_t	xdr_float (XDR *, float *);
 extern bool_t	xdr_free (xdrproc_t proc, SCHAR *objp);
-extern bool_t	xdr_int (register XDR *, register int *);
-extern bool_t	xdr_long (register XDR *, register SLONG *);
-extern bool_t	xdrmem_create (register XDR *, SCHAR *, u_int, enum xdr_op);
-extern bool_t	xdr_opaque (register XDR *, register SCHAR *, register u_int);
-extern bool_t	xdr_short (register XDR *, register SSHORT *);
-extern bool_t	xdr_string (register XDR *, register SCHAR * *, register u_int);
-extern bool_t	xdr_u_int (register XDR *, register u_int *);
-extern bool_t	xdr_u_long (register XDR *, register u_long *);
-extern bool_t	xdr_u_short (register XDR *, register u_short *);
+extern bool_t	xdr_int (XDR *, int *);
+extern bool_t	xdr_long (XDR *, SLONG *);
+extern bool_t	xdrmem_create (XDR *, SCHAR *, u_int, enum xdr_op);
+extern bool_t	xdr_opaque (XDR *, SCHAR *, u_int);
+extern bool_t	xdr_short (XDR *, SSHORT *);
+extern bool_t	xdr_string (XDR *, SCHAR * *, u_int);
+extern bool_t	xdr_u_int (XDR *, u_int *);
+extern bool_t	xdr_u_long (XDR *, u_long *);
+extern bool_t	xdr_u_short (XDR *, u_short *);
 extern int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
-extern bool_t	xdr_wrapstring (register XDR *, register SCHAR **);
-extern bool_t	xdr_hyper(register XDR *, SINT64 *);
+extern bool_t	xdr_wrapstring (XDR *, SCHAR **);
+extern bool_t	xdr_hyper(XDR *, SINT64 *);
 
 #endif	/* REMOTE_XDR_PROTO_H */

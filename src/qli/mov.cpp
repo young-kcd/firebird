@@ -505,8 +505,8 @@ void MOVQ_double_to_date( double real, SLONG fixed[2])
 
 
 void MOVQ_fast(
-			   register SCHAR * from,
-			   register SCHAR * to, register ULONG length)
+			   SCHAR * from,
+			   SCHAR * to, ULONG length)
 {
 /**************************************
  *
@@ -834,8 +834,8 @@ void MOVQ_move( DSC * from, DSC * to)
  *	Move (and possible convert) something to something else.
  *
  **************************************/
-	register UCHAR *p, *q;
-	register SSHORT length, fill;
+	UCHAR *p, *q;
+	SSHORT length, fill;
 	SLONG l;
 	UCHAR *ptr;
 
@@ -1040,9 +1040,9 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 
 void MOVQ_terminate(
-					register SCHAR * from,
-					register SCHAR * to,
-					register SSHORT length, SSHORT max_length)
+					SCHAR * from,
+					SCHAR * to,
+					SSHORT length, SSHORT max_length)
 {
 /**************************************
  *

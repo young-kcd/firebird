@@ -312,9 +312,9 @@ ENTRYPOINT("gds_start_request", jrd8_start_request, "jrd5_start_request",
 		   REM_start_request, "_REM_start_request", CSI_start_request,
 			   RDB_start_request, PSI_start_request, PSI5_start_request,
 			   "_jrd8_start_request", IPI_start_request, (STATUS *,
-														  register struct jrd_req
+														  struct jrd_req
 														  **,
-														  register struct jrd_tra
+														  struct jrd_tra
 														  **, SSHORT))
 
 ENTRYPOINT( "gds_start_multiple",

@@ -111,7 +111,7 @@ static void modify_relation(DUDLEY_REL);
 static void modify_trigger(DUDLEY_TRG);
 static void modify_trigger_msg(TRGMSG);
 static void modify_type(TYP);
-static void move_symbol(SYM, register SCHAR *, SSHORT);
+static void move_symbol(SYM, SCHAR *, SSHORT);
 static void set_generator(DUDLEY_NOD);
 static void store_acl(SCL, SLONG *);
 static void store_blr(DUDLEY_NOD, SLONG *, DUDLEY_REL);
@@ -3912,7 +3912,7 @@ static void modify_type( TYP fldtype)
 }
 
 
-static void move_symbol( SYM symbol, register SCHAR * field, SSHORT length)
+static void move_symbol( SYM symbol, SCHAR * field, SSHORT length)
 {
 /**************************************
  *
@@ -3924,8 +3924,8 @@ static void move_symbol( SYM symbol, register SCHAR * field, SSHORT length)
  *	Move a string from a symbol to a field.
  *
  **************************************/
-	register SCHAR *p;
-	register SSHORT l;
+	SCHAR *p;
+	SSHORT l;
 
 	if (symbol) {
 		if ((l = symbol->sym_length) > length) {

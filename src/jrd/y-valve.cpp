@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: y-valve.cpp,v 1.20 2002-12-02 09:43:49 eku Exp $
+$Id: y-valve.cpp,v 1.21 2003-02-10 13:28:23 eku Exp $
 */
 
 #include "firebird.h"
@@ -4654,8 +4654,8 @@ STATUS API_ROUTINE GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS API_ROUTINE GDS_START(STATUS * user_status,
-							 register JRD_REQ * req_handle,
-							 register JRD_TRA * tra_handle, SSHORT GDS_VAL(level))
+							 JRD_REQ * req_handle,
+							 JRD_TRA * tra_handle, SSHORT GDS_VAL(level))
 {
 /**************************************
  *

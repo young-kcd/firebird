@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.22 2003-01-18 18:01:14 dimitr Exp $
+ * $Id: rse.cpp,v 1.23 2003-02-10 13:28:23 eku Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -603,8 +603,8 @@ void RSE_open(TDBB tdbb, RSB rsb)
  *
  **************************************/
 	JRD_REQ request;
-	register IRSB_INDEX impure;
-	register RPB *rpb;
+	IRSB_INDEX impure;
+	RPB *rpb;
 	ULONG max_records = 0;
 
 	SET_TDBB(tdbb);
@@ -2105,8 +2105,8 @@ static BOOLEAN get_record(TDBB			tdbb,
  *
  **************************************/
 	JRD_REQ request;
-	register IRSB impure;
-	register RPB *rpb;
+	IRSB impure;
+	RPB *rpb;
 
 	SET_TDBB(tdbb);
 

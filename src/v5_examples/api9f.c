@@ -256,10 +256,10 @@ ARGLIST(ISC_BLOB_CTL control)
  *	values.
  *
  *************************************/
-register int	max_seg_length;
-register int	length;
-register int	num_segs;
-register int	cur_length;
+int	max_seg_length;
+int	length;
+int	num_segs;
+int	cur_length;
 FILE		*file;
 char		*p;
 char		c;

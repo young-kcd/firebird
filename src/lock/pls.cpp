@@ -54,7 +54,7 @@ static int connect(int, ipc_$socket_handle_t *);
 static int error(UCHAR *, UCHAR *, status_$t);
 static UCHAR *pls_alloc(USHORT);
 static void pls_release(UCHAR *);
-static void move(register SCHAR *, register SCHAR *, register SSHORT);
+static void move(SCHAR *, SCHAR *, SSHORT);
 
 static PLC connections;
 
@@ -428,8 +428,8 @@ static void pls_release( UCHAR * blk)
 
 
 static void move(
-				 register SCHAR * from,
-				 register SCHAR * to, register SSHORT length)
+				 SCHAR * from,
+				 SCHAR * to, SSHORT length)
 {
 /**************************************
  *

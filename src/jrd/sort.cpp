@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.24 2003-01-18 18:01:15 dimitr Exp $
+ * $Id: sort.cpp,v 1.25 2003-02-10 13:28:23 eku Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -310,14 +310,14 @@ void SORT_diddle_key(UCHAR * record, SCB scb, USHORT direction)
  *      direction - TRUE for SORT_put() and FALSE for SORT_get()
  *
  **************************************/
-	register BLOB_PTR *p;
+	BLOB_PTR *p;
 	UCHAR c1, c2, fill_char, *fill_pos;
 	USHORT complement, n, w, l, fill;
 	USHORT HUGE_PTR *wp;
 	SSHORT longs, flag;
 	SORTP *lwp;
 	ULONG lw;
-	register SKD *key, *end;
+	SKD *key, *end;
 #ifdef  VMS
 	double *dp;
 #endif
@@ -1475,14 +1475,14 @@ static void diddle_key(UCHAR * record, SCB scb, USHORT direction)
  *      direction - TRUE for SORT_put() and FALSE for SORT_get()
  *
  **************************************/
-	register BLOB_PTR *p;
+	BLOB_PTR *p;
 	UCHAR c1, fill_char, *fill_pos;
 	USHORT complement, n, l, fill;
 	USHORT HUGE_PTR *wp;
 	SSHORT longs, flag;
 	SORTP *lwp;
 	ULONG lw;
-	register SKD *key, *end;
+	SKD *key, *end;
 #ifdef  VMS
 	double *dp;
 #endif
@@ -1931,14 +1931,14 @@ static SORT_RECORD *get_merge(MRG merge, SCB scb
  *      Get next record from a merge tree and/or run.
  *
  **************************************/
-	register SORT_RECORD *record;	/* no more than 1 SORTP* to a line */
-	register SORTP *p;			/* no more than 1 SORTP* to a line */
-	register SORTP *q;			/* no more than 1 SORTP* to a line */
-	register ULONG l;
+	SORT_RECORD *record;	/* no more than 1 SORTP* to a line */
+	SORTP *p;			/* no more than 1 SORTP* to a line */
+	SORTP *q;			/* no more than 1 SORTP* to a line */
+	ULONG l;
 #ifdef SCROLLABLE_CURSORS
 	ULONG space_available, data_remaining;
 #else
-	register ULONG n;
+	ULONG n;
 #endif
 	USHORT eof;
 	RUN run;
@@ -2323,8 +2323,8 @@ static void merge_runs(SCB scb, USHORT n)
  *
  **************************************/
 	USHORT count, rec_size, buffers;
-	register SORT_RECORD *p;
-	register SORT_RECORD *q;
+	SORT_RECORD *p;
+	SORT_RECORD *q;
 	ULONG size, seek;
 	RUN run;
 	struct mrg blks[32];
@@ -2673,9 +2673,9 @@ static ULONG order(SCB scb)
  *      can be written with a single disk write.
  *
  **************************************/
-	register SR *record;
-	register SORT_RECORD *output;
-	register SORT_PTR *lower_limit;
+	SR *record;
+	SORT_RECORD *output;
+	SORT_PTR *lower_limit;
 	SORT_RECORD **ptr;
 	SORTP* buffer = 0;
 	SSHORT length;
@@ -2874,12 +2874,12 @@ static void sort(SCB scb)
  *      been requested, detect and handle them.
  *
  **************************************/
-	register SORTP **i;
-	register SORTP **j;
-	register SORTP *p;
-	register SORTP *q;
-	register SORTP *temp;
-	register ULONG n;
+	SORTP **i;
+	SORTP **j;
+	SORTP *p;
+	SORTP *q;
+	SORTP *temp;
+	ULONG n;
 	USHORT tl;
 
 /* Check out the engine */
@@ -2933,7 +2933,7 @@ static void sort(SCB scb)
 
 /* Make another pass and eliminate duplicates.  It's possible to do this
    is the same pass the final ordering, but the logic is complicated enough
-   to screw up register optimizations.  Better two fast passes than one
+   to screw up optimizations.  Better two fast passes than one
    slow pass, I suppose.  Prove me wrong and win a trip for two to
    Cleveland, Ohio. */
 

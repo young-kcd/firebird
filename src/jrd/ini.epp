@@ -598,7 +598,7 @@ void INI_init2(void)
 	USHORT			major_version;
 	USHORT			minor_original;
 	USHORT			id;
-	register VEC	vector;
+	VEC	vector;
 	DBB				dbb;
 
 	tdbb = GET_THREAD_DATA;

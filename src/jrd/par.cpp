@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.32 2003-02-04 13:31:02 dimitr Exp $
+$Id: par.cpp,v 1.33 2003-02-10 13:28:23 eku Exp $
 */
 
 #include "firebird.h"
@@ -103,7 +103,7 @@ static JRD_NOD par_exec_proc(TDBB, CSB *, SSHORT);
 static JRD_NOD par_fetch(TDBB, CSB *, JRD_NOD);
 static JRD_NOD par_field(TDBB, CSB *, SSHORT);
 static JRD_NOD par_function(TDBB, CSB *);
-static JRD_NOD par_literal(TDBB, register CSB *);
+static JRD_NOD par_literal(TDBB, CSB *);
 static JRD_NOD par_map(TDBB, CSB *, USHORT);
 static JRD_NOD par_message(TDBB, CSB *);
 static JRD_NOD par_modify(TDBB, CSB *);
@@ -117,7 +117,7 @@ static JRD_NOD par_sort(TDBB, CSB *, BOOLEAN);
 static JRD_NOD par_stream(TDBB, CSB *);
 static JRD_NOD par_union(TDBB, CSB *);
 static USHORT par_word(CSB *);
-static JRD_NOD parse(TDBB, register CSB *, USHORT);
+static JRD_NOD parse(TDBB, CSB *, USHORT);
 static void syntax_error(CSB, CONST TEXT *);
 static void warning(CSB, ...);
 
@@ -1313,7 +1313,7 @@ static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 }
 
 
-static JRD_NOD par_literal(TDBB tdbb, register CSB * csb)
+static JRD_NOD par_literal(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -1325,7 +1325,7 @@ static JRD_NOD par_literal(TDBB tdbb, register CSB * csb)
  *	Parse a literal value.
  *
  **************************************/
-	register LIT literal;
+	LIT literal;
 	JRD_NOD node;
 	DSC desc;
 	UCHAR *p, *q;
@@ -1473,7 +1473,7 @@ static JRD_NOD par_message(TDBB tdbb, CSB * csb)
 
 	SET_TDBB(tdbb);
 
-/* Get message number, register it in the compile scratch block, and
+/* Get message number, it in the compile scratch block, and
    allocate a node to represent the message */
 
 	n = (unsigned int) BLR_BYTE;
@@ -2029,9 +2029,9 @@ static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
  *	Parse a record selection expression.
  *
  **************************************/
-	register RSE rse;
+	RSE rse;
 	JRD_NOD *ptr;
-	register SSHORT count;
+	SSHORT count;
 	USHORT jointype;
 	UCHAR op;
 
@@ -2177,7 +2177,7 @@ static JRD_NOD par_stream(TDBB tdbb, CSB * csb)
  *	Parse a stream expression.
  *
  **************************************/
-	register RSE rse;
+	RSE rse;
 	UCHAR op;
 
 	SET_TDBB(tdbb);
@@ -2265,7 +2265,7 @@ static USHORT par_word(CSB * csb)
 }
 
 
-static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
+static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 {
 /**************************************
  *
@@ -2277,7 +2277,7 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
  *	Parse a BLR expression.
  *
  **************************************/
-	register JRD_NOD node, *arg;
+	JRD_NOD node, *arg;
 	SSHORT sub_type, operator_;
 	USHORT n;
 	TEXT name[32];

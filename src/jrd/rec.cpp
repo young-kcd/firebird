@@ -62,7 +62,7 @@ static void apply_transaction(TIP, JRND *);
 static void disable(void);
 static JRNP *next_clump(JRND *, JRNP *);
 static void process_page(TDBB, JRND *, SLONG, SLONG, PAG, SBM *, USHORT);
-static void quad_move(register UCHAR *, register UCHAR *);
+static void quad_move(UCHAR *, UCHAR *);
 static void rec_process_record(TDBB, JRNH *, USHORT, ULONG,
 							   ULONG, PAG, SBM *, USHORT);
 static void scan_and_apply_logs(TEXT *, TEXT *, CP *, SBM *, USHORT, SLONG *,
@@ -916,7 +916,7 @@ static void process_page(
 }
 
 
-static void quad_move(register UCHAR * a, register UCHAR * b)
+static void quad_move(UCHAR * a, UCHAR * b)
 {
 /**************************************
  *

@@ -100,8 +100,8 @@ USHORT SQZ_compress(DCC dcc, const SCHAR* input, SCHAR* output, int space)
  *	return the number of bytes that did.
  *
  **************************************/
-	register SSHORT length;
-	register SCHAR *control;
+	SSHORT length;
+	SCHAR *control;
 
 	const SCHAR* start = input;
 
@@ -165,8 +165,8 @@ USHORT SQZ_compress_length(DCC dcc, SCHAR* input, int space)
  *	return the number of bytes that did.
  *
  **************************************/
-	register SSHORT length;
-	register SCHAR *control;
+	SSHORT length;
+	SCHAR *control;
 	SCHAR *start;
 
 	start = input;
@@ -211,7 +211,7 @@ SCHAR* SQZ_decompress(const SCHAR*	input,
  *	where the output stopped.
  *
  **************************************/
-	register SSHORT l;
+	SSHORT l;
 
 	const SCHAR* last = input + length;
 
@@ -389,8 +389,8 @@ void SQZ_fast(DCC dcc, SCHAR* input, SCHAR* output)
  *	check nuttin' -- go for speed, man, raw SPEED!
  *
  **************************************/
-	register SCHAR *control;
-	register SSHORT length;
+	SCHAR *control;
+	SSHORT length;
 
 	while (TRUE)
 	{
@@ -434,7 +434,7 @@ USHORT SQZ_length(TDBB tdbb, SCHAR* data, int length, DCC dcc)
  *
  **************************************/
 	USHORT count;
-	register USHORT max;
+	USHORT max;
 	SCHAR c, *end, *start, *control, *end_control;
 
 	SET_TDBB(tdbb);

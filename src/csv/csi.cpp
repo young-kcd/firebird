@@ -2167,8 +2167,8 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS GDS_START(STATUS * user_status,
-				 register RRQ * req_handle,
-				 register RTR * rtr_handle, SSHORT level)
+				 RRQ * req_handle,
+				 RTR * rtr_handle, SSHORT level)
 {
 /**************************************
  *

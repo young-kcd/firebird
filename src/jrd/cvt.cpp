@@ -272,7 +272,7 @@ double PASCAL_ROUTINE CVT_date_to_double(DSC * desc, FPTR_VOID err)
 statement, am assigning the value to a local volatile double
 variable and returning that. This is to prevent a specific kind of
 precision error caused on Intel platforms (SCO and Linux) due
-to FPU register being 80 bits long and double being 64 bits long */
+to FPU being 80 bits long and double being 64 bits long */
 
 	retval =
 		date[0] +
@@ -1328,8 +1328,8 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	register UCHAR *p, *q;
-	register SSHORT fill;
+	UCHAR *p, *q;
+	SSHORT fill;
 	SLONG l, length;
 	UCHAR *ptr;
 	USHORT strtype;

@@ -120,7 +120,7 @@ void ALLD_init()
 	}
 }
 
-void DsqlMemoryPool::ALLD_push(BLK object, register DLLS * stack)
+void DsqlMemoryPool::ALLD_push(BLK object, DLLS * stack)
 {
 	TSQL tdsql = GET_THREAD_DATA;
 	DsqlMemoryPool* pool = tdsql->tsql_default;
@@ -132,7 +132,7 @@ void DsqlMemoryPool::ALLD_push(BLK object, register DLLS * stack)
 }
 
 
-BLK DsqlMemoryPool::ALLD_pop(register DLLS *stack)
+BLK DsqlMemoryPool::ALLD_pop(DLLS *stack)
 {
 	DLLS node = *stack;
 	*stack = node->lls_next;

@@ -71,7 +71,7 @@ extern STATUS	REM_rollback_transaction (STATUS *, struct rtr **);
 extern STATUS	REM_seek_blob (STATUS *, struct rbl **, SSHORT, SLONG, SLONG *);
 extern STATUS	REM_send (STATUS *, struct rrq **, USHORT, USHORT, UCHAR *, SSHORT);
 extern STATUS	REM_start_and_send (STATUS *, struct rrq **, struct rtr **, USHORT, USHORT, UCHAR *, SSHORT);
-extern STATUS	REM_start_request (STATUS *, register struct rrq **, register struct rtr **, USHORT);
+extern STATUS	REM_start_request (STATUS *, struct rrq **, struct rtr **, USHORT);
 extern STATUS	REM_start_transaction (STATUS *, struct rtr **, SSHORT, struct rdb **, SSHORT, UCHAR *);
 extern STATUS	REM_transact_request (STATUS *, struct rdb **, struct rtr **, USHORT, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *);
 extern STATUS	REM_transaction_info (STATUS *, struct rtr **, SSHORT, UCHAR *, SSHORT, UCHAR *);

@@ -101,7 +101,7 @@ static void		init(FRBRD**);
 static NAME		insert_name(SCHAR*, NAME *, STMT);
 static USHORT	name_length(SCHAR *);
 static void		remove_name(NAME, NAME *);
-static BOOLEAN	scompare(register SCHAR*, register USHORT, register SCHAR*, USHORT);
+static BOOLEAN	scompare(SCHAR*, USHORT, SCHAR*, USHORT);
 
 /* declare the private data */
 
@@ -1671,10 +1671,10 @@ static void remove_name(NAME name, NAME* list_ptr)
 }
 
 
-static BOOLEAN scompare(register SCHAR*	string1,
-						register USHORT	length1,
-						register SCHAR*	string2,
-						register USHORT	length2)
+static BOOLEAN scompare(SCHAR*	string1,
+						USHORT	length1,
+						SCHAR*	string2,
+						USHORT	length2)
 {
 /**************************************
  *

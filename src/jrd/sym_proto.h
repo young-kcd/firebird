@@ -28,9 +28,9 @@
 extern "C" {
 #endif
 
-extern void SYM_insert(register struct sym *);
-extern struct sym *SYM_lookup(register TEXT *);
-extern void SYM_remove(register struct sym *);
+extern void SYM_insert(struct sym *);
+extern struct sym *SYM_lookup(TEXT *);
+extern void SYM_remove(struct sym *);
 
 #ifdef __cplusplus
 } /* extern "C" */

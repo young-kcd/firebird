@@ -84,13 +84,13 @@ static void delete_tail(TDBB, RHDF, USHORT);
 static void fragment(TDBB, RPB *, SSHORT, DCC, SSHORT, JRD_TRA);
 static void extend_relation(TDBB, JRD_REL, WIN *);
 static UCHAR *find_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
-static BOOLEAN get_header(WIN *, SSHORT, register RPB *);
+static BOOLEAN get_header(WIN *, SSHORT, RPB *);
 static PPG get_pointer_page(TDBB, JRD_REL, WIN *, USHORT, USHORT);
 static void journal_segment(TDBB, WIN *, USHORT);
-static RHD locate_space(TDBB, register RPB *, SSHORT, LLS *, REC, USHORT);
-static void mark_full(TDBB, register RPB *);
+static RHD locate_space(TDBB, RPB *, SSHORT, LLS *, REC, USHORT);
+static void mark_full(TDBB, RPB *);
 static void release_dcc(DCC);
-static void store_big_record(TDBB, register RPB *, LLS *, DCC, USHORT);
+static void store_big_record(TDBB, RPB *, LLS *, DCC, USHORT);
 
 
 PAG DPM_allocate(TDBB tdbb, WIN * window)
@@ -422,7 +422,7 @@ int DPM_compress( TDBB tdbb, DPG page)
  *
  **************************************/
 	DBB dbb;
-	register SSHORT space, l;
+	SSHORT space, l;
 	UCHAR temp_page[MAX_PAGE_SIZE];
 	dpg::dpg_repeat *index, *end;
 
@@ -894,7 +894,7 @@ void DPM_delete_relation( TDBB tdbb, JRD_REL relation)
 }
 
 
-BOOLEAN DPM_fetch(TDBB tdbb, register RPB * rpb, USHORT lock)
+BOOLEAN DPM_fetch(TDBB tdbb, RPB * rpb, USHORT lock)
 {
 /**************************************
  *
@@ -945,7 +945,7 @@ BOOLEAN DPM_fetch(TDBB tdbb, register RPB * rpb, USHORT lock)
 
 
 SSHORT DPM_fetch_back(TDBB tdbb,
-					  register RPB * rpb, USHORT lock, SSHORT latch_wait)
+					  RPB * rpb, USHORT lock, SSHORT latch_wait)
 {
 /**************************************
  *
@@ -1027,7 +1027,7 @@ SSHORT DPM_fetch_back(TDBB tdbb,
 }
 
 
-void DPM_fetch_fragment( TDBB tdbb, register RPB * rpb, USHORT lock)
+void DPM_fetch_fragment( TDBB tdbb, RPB * rpb, USHORT lock)
 {
 /**************************************
  *
@@ -1206,7 +1206,7 @@ SINT64 DPM_gen_id(TDBB tdbb, SLONG generator, USHORT initialize, SINT64 val)
 }
 
 
-int DPM_get( TDBB tdbb, register RPB * rpb, SSHORT lock_type)
+int DPM_get( TDBB tdbb, RPB * rpb, SSHORT lock_type)
 {
 /**************************************
  *
@@ -1222,8 +1222,8 @@ int DPM_get( TDBB tdbb, register RPB * rpb, SSHORT lock_type)
 	DBB dbb;
 	SLONG sequence, page_number;
 	USHORT pp_sequence;
-	register WIN *window;
-	register PPG page;
+	WIN *window;
+	PPG page;
 	SSHORT slot, line;
 
 	SET_TDBB(tdbb);
@@ -1297,7 +1297,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 	ATT attachment;
 	SLONG sequence, page_number;
 	USHORT pp_sequence;
-	register DPG page;
+	DPG page;
 	PPG ppage;
 	BLH header;
 	USHORT length, slot, line;
@@ -1435,7 +1435,7 @@ ULONG DPM_get_blob(TDBB tdbb,
 
 
 BOOLEAN DPM_next(TDBB tdbb,
-				 register RPB * rpb,
+				 RPB * rpb,
 				 USHORT lock_type, BOOLEAN backwards, BOOLEAN onepage)
 {
 /**************************************
@@ -1451,9 +1451,9 @@ BOOLEAN DPM_next(TDBB tdbb,
 	DBB dbb;
 	SLONG sequence, page_number;
 	USHORT pp_sequence;
-	register WIN *window;
-	register PPG ppage;
-	register DPG dpage;
+	WIN *window;
+	PPG ppage;
+	DPG dpage;
 	SSHORT slot, line, flags;
 	VCL vector;
 
@@ -1818,7 +1818,7 @@ void DPM_scan_pages( TDBB tdbb)
 }
 
 
-void DPM_store( TDBB tdbb, register RPB * rpb, LLS * stack, USHORT type)
+void DPM_store( TDBB tdbb, RPB * rpb, LLS * stack, USHORT type)
 {
 /**************************************
  *
@@ -1832,7 +1832,7 @@ void DPM_store( TDBB tdbb, register RPB * rpb, LLS * stack, USHORT type)
  *
  **************************************/
 	DBB dbb;
-	register RHD header;
+	RHD header;
 	Dcc dcc;
 	UCHAR *p;
 	SLONG fill, length;			/* Accomodate max record size i.e. 64K */
@@ -2060,7 +2060,7 @@ void DPM_rewrite_header( TDBB tdbb, RPB * rpb)
 }
 
 
-void DPM_update( TDBB tdbb, register RPB * rpb, LLS * stack, JRD_TRA transaction)
+void DPM_update( TDBB tdbb, RPB * rpb, LLS * stack, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2490,7 +2490,7 @@ static void extend_relation( TDBB tdbb, JRD_REL relation, WIN * window)
 	USHORT pp_sequence, slot;
 	WIN pp_window, new_pp_window;
 	UCHAR *bits;
-	register PPG ppage;
+	PPG ppage;
 	DPG dpage;
 	VCL vector;
 	JRNP journal;
@@ -2739,7 +2739,7 @@ static UCHAR *find_space(TDBB	tdbb,
 }
 
 
-static BOOLEAN get_header( WIN * window, SSHORT line, register RPB * rpb)
+static BOOLEAN get_header( WIN * window, SSHORT line, RPB * rpb)
 {
 /**************************************
  *
@@ -2753,8 +2753,8 @@ static BOOLEAN get_header( WIN * window, SSHORT line, register RPB * rpb)
  *
  **************************************/
 	DPG page;
-	register RHDF header;
-	register dpg::dpg_repeat *index;
+	RHDF header;
+	dpg::dpg_repeat *index;
 
 	page = (DPG) window->win_buffer;
 	if (line >= page->dpg_count)
@@ -2876,7 +2876,7 @@ static void journal_segment( TDBB tdbb, WIN * window, USHORT slot)
 
 static RHD locate_space(
 						TDBB tdbb,
-						register RPB * rpb,
+						RPB * rpb,
 						SSHORT size, LLS * stack, REC record, USHORT type)
 {
 /**************************************
@@ -2892,9 +2892,9 @@ static RHD locate_space(
  *
  **************************************/
 	DBB dbb;
-	register WIN *window;
+	WIN *window;
 	JRD_REL relation;
-	register PPG ppage;
+	PPG ppage;
 	USHORT pp_sequence, slot, i;
 	SLONG dp_number, pp_number, sequence;
 	UCHAR *bits, flags, *space;
@@ -2975,7 +2975,7 @@ static RHD locate_space(
 }
 
 
-static void mark_full( TDBB tdbb, register RPB * rpb)
+static void mark_full( TDBB tdbb, RPB * rpb)
 {
 /**************************************
  *
@@ -2990,8 +2990,8 @@ static void mark_full( TDBB tdbb, register RPB * rpb)
  **************************************/
 	DBB dbb;
 	WIN pp_window;
-	register DPG dpage;
-	register PPG ppage;
+	DPG dpage;
+	PPG ppage;
 	UCHAR *byte, bit, flags;
 	USHORT slot, pp_sequence;
 	SLONG sequence;
@@ -3107,7 +3107,7 @@ static void release_dcc( DCC dcc)
 
 static void store_big_record(
 							 TDBB tdbb,
-							 register RPB * rpb,
+							 RPB * rpb,
 							 LLS * stack, DCC head_dcc, USHORT size)
 {
 /**************************************

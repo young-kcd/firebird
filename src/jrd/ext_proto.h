@@ -39,7 +39,7 @@ extern int EXT_open(class Rsb *);
 #else
 extern void EXT_open(class Rsb *);
 #endif
-extern class Rsb *EXT_optimize(register class Opt *, SSHORT, struct jrd_nod **);
+extern class Rsb *EXT_optimize(class Opt *, SSHORT, struct jrd_nod **);
 extern void EXT_ready(struct jrd_rel *);
 extern void EXT_store(struct rpb *, int *);
 extern void EXT_trans_commit(struct jrd_tra *);

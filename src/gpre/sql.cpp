@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.8 2003-02-08 00:36:50 brodsom Exp $
+//	$Id: sql.cpp,v 1.9 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
@@ -1433,8 +1433,8 @@ static ACT act_comment(void)
 
 static ACT act_connect(void)
 {
-	register ACT action;
-	register GPRE_REQ request;
+	ACT action;
+	GPRE_REQ request;
 	SYM symbol;
 	RDY ready;
 	DBB dbb;
@@ -2746,7 +2746,7 @@ static ACT act_describe(void)
 
 static ACT act_disconnect(void)
 {
-	register ACT action;
+	ACT action;
 	SYM symbol;
 	RDY ready;
 	USHORT all;

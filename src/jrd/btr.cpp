@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.16 2003-02-10 00:03:54 brodsom Exp $
+$Id: btr.cpp,v 1.17 2003-02-10 13:28:20 eku Exp $
 */
 
 #include "firebird.h"
@@ -156,7 +156,7 @@ typedef enum contents {
 	contents_above_threshold
 } CONTENTS;
 
-static SLONG add_node(TDBB, register WIN *, IIB *, KEY *, SLONG *, SLONG *);
+static SLONG add_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *);
 static void complement_key(KEY *);
 static void compress(TDBB, DSC *, KEY *, USHORT, USHORT, USHORT, USHORT);
 static USHORT compress_root(TDBB, IRT);
@@ -167,7 +167,7 @@ static void delete_tree(TDBB, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(TDBB, JRD_NOD, DSC *, int *);
 static SLONG fast_load(TDBB, JRD_REL, IDX *, USHORT, SCB, float *);
 static IRT fetch_root(TDBB, WIN *, JRD_REL);
-static BTN find_node(register BTR, KEY *, USHORT);
+static BTN find_node(BTR, KEY *, USHORT);
 static CONTENTS garbage_collect(TDBB, WIN *, SLONG);
 static SLONG insert_node(TDBB, WIN *, IIB *, KEY *, SLONG *, SLONG *);
 static void journal_btree_segment(TDBB, WIN *, BTR);
@@ -177,10 +177,10 @@ static INT64_KEY make_int64_key(SINT64, SSHORT);
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
 static void quad_put(SLONG, SCHAR *);
-static void quad_move(register UCHAR *, register UCHAR *);
+static void quad_move(UCHAR *, UCHAR *);
 static CONTENTS remove_node(TDBB, IIB *, WIN *);
 static CONTENTS remove_leaf_node(TDBB, IIB *, WIN *);
-static BOOLEAN scan(TDBB, register BTN, SBM *, register UCHAR, KEY *, USHORT);
+static BOOLEAN scan(TDBB, BTN, SBM *, UCHAR, KEY *, USHORT);
 
 
 
@@ -224,8 +224,8 @@ USHORT BTR_all(TDBB tdbb,
 	WIN window;
 	IRT root;
 	STR new_buffer;
-	register USHORT count, i;
-	register IDX *buffer;
+	USHORT count, i;
+	IDX *buffer;
 	SLONG size;
 
 	SET_TDBB(tdbb);
@@ -276,7 +276,7 @@ void BTR_create(TDBB tdbb,
  **************************************/
 	DBB dbb;
 	WIN window;
-	register IRT root;
+	IRT root;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -354,7 +354,7 @@ void BTR_delete_index(TDBB tdbb, WIN * window, USHORT id)
 	}
 }
 BOOLEAN BTR_description(JRD_REL relation,
-						register IRT root, register IDX * idx, SSHORT id)
+						IRT root, IDX * idx, SSHORT id)
 {
 /**************************************
  *
@@ -366,8 +366,8 @@ BOOLEAN BTR_description(JRD_REL relation,
  *	See if index exists, and if so, pick up its description.
  *
  **************************************/
-	register irt::irt_repeat * irt_desc;
-	register idx::idx_repeat * idx_desc;
+	irt::irt_repeat * irt_desc;
+	idx::idx_repeat * idx_desc;
 	struct irtd *irtd;
 	USHORT i;
 
@@ -534,9 +534,9 @@ BTN BTR_find_leaf(BTR bucket,
  *	A flag indicates the index is descending.
  *
  **************************************/
-	register BTN node;
+	BTN node;
 	UCHAR prefix, *key_end, *node_end;
-	register UCHAR *p, *q, *r;
+	UCHAR *p, *q, *r;
 	USHORT l;
 	SLONG number;
 
@@ -656,7 +656,7 @@ BTR BTR_find_page(TDBB tdbb,
  *
  **************************************/
 	IRT rpage;
-	register BTR page;
+	BTR page;
 	SLONG number;
 	BTN node;
 
@@ -773,7 +773,7 @@ SLONG BTR_get_quad(SCHAR * data)
 }
 
 
-void BTR_insert(TDBB tdbb, WIN * root_window, register IIB * insertion)
+void BTR_insert(TDBB tdbb, WIN * root_window, IIB * insertion)
 {
 /**************************************
  *
@@ -788,12 +788,12 @@ void BTR_insert(TDBB tdbb, WIN * root_window, register IIB * insertion)
 	DBB dbb;
 	IDX *idx;
 	WIN window, new_window;
-	register BTR bucket, new_bucket;
+	BTR bucket, new_bucket;
 	KEY key;
 	IRT root;
-	register BTN node;
+	BTN node;
 	UCHAR *p, *q;
-	register USHORT l;
+	USHORT l;
 	SLONG split_page;
 
 	dbb = tdbb->tdbb_database;
@@ -911,7 +911,7 @@ void BTR_insert(TDBB tdbb, WIN * root_window, register IIB * insertion)
 }
 
 
-IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, register IDX * idx, KEY * key)
+IDX_E BTR_key(TDBB tdbb, JRD_REL relation, REC record, IDX * idx, KEY * key)
 {
 /**************************************
  *
@@ -1147,7 +1147,7 @@ BTN BTR_last_node(BTR page, EXP expanded_page, BTX * expanded_node)
  *	down the right side of an index tree.  
  *
  **************************************/
-	register BTN node, prior;
+	BTN node, prior;
 	SLONG number;
 	BTX enode;
 
@@ -1254,7 +1254,7 @@ BTR BTR_left_handoff(TDBB tdbb, WIN * window, BTR page, SSHORT lock_level)
 #endif
 
 
-USHORT BTR_lookup(TDBB tdbb, JRD_REL relation, USHORT id, register IDX * buffer)
+USHORT BTR_lookup(TDBB tdbb, JRD_REL relation, USHORT id, IDX * buffer)
 {
 /**************************************
  *
@@ -1480,7 +1480,7 @@ BTN BTR_previous_node(BTN node, BTX * expanded_node)
 
 	return node;
 }
-void BTR_remove(TDBB tdbb, WIN * root_window, register IIB * insertion)
+void BTR_remove(TDBB tdbb, WIN * root_window, IIB * insertion)
 {
 /**************************************
  *
@@ -1593,8 +1593,8 @@ void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * id
  **************************************/
 	DBB dbb;
 	WIN window;
-	register IRT root;
-	register IRTD *desc;
+	IRT root;
+	IRTD *desc;
 	USHORT l, space;
 	irt::irt_repeat * root_idx, *end, *slot;
 	BOOLEAN maybe_no_room = FALSE;
@@ -1795,7 +1795,7 @@ float BTR_selectivity(TDBB tdbb, JRD_REL relation, USHORT id)
 
 
 static SLONG add_node(TDBB tdbb,
-					  register WIN * window,
+					  WIN * window,
 					  IIB * insertion,
 					  KEY * new_key,
 					  SLONG * original_page, SLONG * sibling_page)
@@ -1812,8 +1812,8 @@ static SLONG add_node(TDBB tdbb,
  *	leading string.
  *
  **************************************/
-	register BTR bucket;
-	register BTN node;
+	BTR bucket;
+	BTN node;
 	IIB propogate;
 	SLONG split, page, index;
 	SLONG original_page2, sibling_page2;
@@ -1955,8 +1955,8 @@ static void compress(TDBB tdbb,
  *
  **************************************/
 	DBB dbb;
-	register UCHAR *q, *p;
-	register USHORT length;
+	UCHAR *q, *p;
+	USHORT length;
 	UCHAR pad, *ptr, temp1[MAX_KEY];
 	union {
 		INT64_KEY temp_int64_key;
@@ -3027,7 +3027,7 @@ static IRT fetch_root(TDBB tdbb, WIN * window, JRD_REL relation)
 }
 
 
-static BTN find_node(register BTR bucket, KEY * key, USHORT descending)
+static BTN find_node(BTR bucket, KEY * key, USHORT descending)
 {
 /**************************************
  *
@@ -3043,10 +3043,10 @@ static BTN find_node(register BTR bucket, KEY * key, USHORT descending)
  *	a degenerate, zero-length node.
  *
  **************************************/
-	register BTN node;
+	BTN node;
 	BTN prior;
 	UCHAR prefix, *key_end, *node_end;
-	register UCHAR *p, *q;
+	UCHAR *p, *q;
 	SLONG number;
 
 	DEBUG;
@@ -4144,7 +4144,7 @@ static void quad_put(SLONG value, SCHAR * data)
 	data[2] = p[2];
 	data[3] = p[3];
 }
-static void quad_move(register UCHAR * a, register UCHAR * b)
+static void quad_move(UCHAR * a, UCHAR * b)
 {
 /**************************************
  *
@@ -4423,10 +4423,10 @@ static CONTENTS remove_leaf_node(TDBB tdbb, IIB * insertion, WIN * window)
 
 
 static BOOLEAN scan(TDBB tdbb,
-					register BTN
+					BTN
 					node,
 					SBM * bitmap,
-					register UCHAR prefix, KEY * key, USHORT flag)
+					UCHAR prefix, KEY * key, USHORT flag)
 {
 /**************************************
  *
@@ -4442,7 +4442,7 @@ static BOOLEAN scan(TDBB tdbb,
 	USHORT l;
 	SLONG number;
 	UCHAR *end_key;
-	register UCHAR *p = NULL, *q = NULL;
+	UCHAR *p = NULL, *q = NULL;
 	USHORT i, count;
 
 	SET_TDBB(tdbb);

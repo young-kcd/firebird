@@ -130,8 +130,8 @@ void MOV_double_to_date(double real, SLONG fixed[2])
 
 #ifndef VMS
 void MOV_fast(
-			  register SCHAR * from,
-			  register SCHAR * to, register ULONG length)
+			  SCHAR * from,
+			  SCHAR * to, ULONG length)
 {
 /**************************************
  *
@@ -172,7 +172,7 @@ void MOV_fast(
 }
 
 
-void MOV_faster(register SLONG * from, register SLONG * to, ULONG length)
+void MOV_faster(SLONG * from, SLONG * to, ULONG length)
 {
 /**************************************
  *
@@ -184,8 +184,8 @@ void MOV_faster(register SLONG * from, register SLONG * to, ULONG length)
  *	Do a long move, already aligned, as quickly as possible.
  *
  **************************************/
-	register ULONG l;
-	register UCHAR *p, *q;
+	ULONG l;
+	UCHAR *p, *q;
 
 	assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
 	assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
@@ -223,7 +223,7 @@ void MOV_faster(register SLONG * from, register SLONG * to, ULONG length)
 #endif
 
 
-void MOV_fill(register SLONG * to, ULONG length)
+void MOV_fill(SLONG * to, ULONG length)
 {
 /**************************************
  *
@@ -235,8 +235,8 @@ void MOV_fill(register SLONG * to, ULONG length)
  *	Clear out a block.
  *
  **************************************/
-	register ULONG l;
-	register UCHAR *p;
+	ULONG l;
+	UCHAR *p;
 
 /* If not longword aligned, fill bytewise until it is */
 

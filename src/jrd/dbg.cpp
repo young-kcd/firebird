@@ -96,7 +96,7 @@ static void go_column(int);
 static void prt_dsc(DSC *, int);
 static int prt_fields(SCHAR *, int *);
 static int prt_que(SCHAR *, QUE);
-static int rsb_pretty(register RSB, register int);
+static int rsb_pretty(RSB, int);
 
 /* Pick up node names */
 
@@ -336,8 +336,8 @@ int DBG_precedence(void)
 	DBB dbb;
 	BCB bcb;
 	BDB bdb;
-	register QUE que;
-	register PRE precedence;
+	QUE que;
+	PRE precedence;
 	BDB hi_bdb;
 	BDB lo_bdb;
 
@@ -408,7 +408,7 @@ int DBG_precedence(void)
 }
 
 
-int DBG_block(register BLK block)
+int DBG_block(BLK block)
 {
 /**************************************
  *
@@ -420,8 +420,8 @@ int DBG_block(register BLK block)
  *	Print a formatted block
  *
  **************************************/
-	register int *fields;
-	register int i;
+	int *fields;
+	int i;
 	SCHAR s[10], string[100], *p;
 	DSC *desc;
 
@@ -705,7 +705,7 @@ int DBG_pool(JrdMemoryPool *pool)
 }
 
 
-int DBG_pretty(register JRD_NOD node, register int column)
+int DBG_pretty(JRD_NOD node, int column)
 {
 /**************************************
  *
@@ -722,7 +722,7 @@ int DBG_pretty(register JRD_NOD node, register int column)
 	JRD_PRC procedure;
 	JRD_NOD *ptr, *end;
 	IRB retrieval;
-	register int i;
+	int i;
 
 #define NODE(struct)	((struct) node)
 
@@ -1187,7 +1187,7 @@ static int prt_que(SCHAR * string, QUE que)
 }
 
 
-static int rsb_pretty(register RSB rsb, register int column)
+static int rsb_pretty(RSB rsb, int column)
 {
 /**************************************
  *

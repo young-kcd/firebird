@@ -39,8 +39,8 @@ void DLL_EXPORT CMP_decrement_prc_use_count(TDBB, JRD_PRC);
 struct jrd_req* DLL_EXPORT CMP_find_request(TDBB, USHORT, USHORT);
 void DLL_EXPORT CMP_fini(TDBB);
 struct fmt* DLL_EXPORT CMP_format(TDBB, struct Csb*, USHORT);
-void DLL_EXPORT CMP_get_desc(TDBB, register struct Csb*,
-									register struct jrd_nod*, struct dsc*);
+void DLL_EXPORT CMP_get_desc(TDBB, struct Csb*,
+									struct jrd_nod*, struct dsc*);
 struct idl* DLL_EXPORT CMP_get_index_lock(TDBB, struct jrd_rel*, USHORT);
 SLONG DLL_EXPORT CMP_impure(struct Csb*, USHORT);
 struct jrd_req* DLL_EXPORT CMP_make_request(TDBB, struct Csb**);

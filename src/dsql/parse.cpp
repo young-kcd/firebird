@@ -5296,9 +5296,9 @@ ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code,
 int
 dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)
 {
-    register int yym, yyn, yystate;
+    int yym, yyn, yystate;
 #if YYDEBUG
-    register char *yys;
+    char *yys;
     ;
 
     if (yys = getenv("YYDEBUG"))

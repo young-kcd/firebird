@@ -73,7 +73,7 @@ static bool_t xdr_debug_packet(XDR *, enum xdr_op, PACKET *);
 
 static bool_t xdr_longs(XDR *, CSTRING *);
 static bool_t xdr_message(XDR *, REM_MSG, FMT);
-static bool_t xdr_quad(register XDR *, register struct bid *);
+static bool_t xdr_quad(XDR *, struct bid *);
 static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
 static bool_t xdr_semi_opaque(XDR *, REM_MSG, FMT);
 static bool_t xdr_semi_opaque_slice(XDR *, LSTRING *);
@@ -1225,7 +1225,7 @@ static bool_t xdr_message( XDR * xdrs, REM_MSG message, FMT format)
 }
 
 
-static bool_t xdr_quad( register XDR * xdrs, register struct bid *ip)
+static bool_t xdr_quad( XDR * xdrs, struct bid *ip)
 {
 /**************************************
  *
@@ -1872,7 +1872,7 @@ static bool_t xdr_trrq_message( XDR * xdrs, USHORT msg_type)
 
 
 #ifdef LOC_DOUBLE
-static bool_t xdr_double( register XDR * xdrs, register double *ip)
+static bool_t xdr_double( XDR * xdrs, double *ip)
 {
 /**************************************
  *
@@ -1944,7 +1944,7 @@ static bool_t xdr_double( register XDR * xdrs, register double *ip)
 }
 
 
-static bool_t xdr_float( register XDR * xdrs, register float *ip)
+static bool_t xdr_float( XDR * xdrs, float *ip)
 {
 /**************************************
  *

@@ -459,7 +459,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 #endif
 
-UCHAR *DDL_alloc(register int size)
+UCHAR *DDL_alloc(int size)
 {
 /**************************************
  *
@@ -470,7 +470,7 @@ UCHAR *DDL_alloc(register int size)
  * Functional description
  *
  **************************************/
-	register UCHAR *block, *p;
+	UCHAR *block, *p;
 
 	p = block = (UCHAR*) gds__alloc((SLONG) size);
 

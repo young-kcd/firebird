@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.8 2003-01-16 17:47:01 skidder Exp $
+//	$Id: all.cpp,v 1.9 2003-02-10 13:28:06 eku Exp $
 //
 
 #include "../alice/all.h"
@@ -111,7 +111,7 @@ void AliceMemoryPool::ALLA_push(class blk *object, class lls** stack)
 }
 
 
-BLK AliceMemoryPool::ALLA_pop(register LLS *stack)
+BLK AliceMemoryPool::ALLA_pop(LLS *stack)
 {
 /**************************************
  *
@@ -124,7 +124,7 @@ BLK AliceMemoryPool::ALLA_pop(register LLS *stack)
  *	further use.
  *
  **************************************/
-	register LLS node;
+	LLS node;
 	AliceMemoryPool* pool;
 	BLK object;
 

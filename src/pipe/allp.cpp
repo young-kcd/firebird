@@ -82,8 +82,8 @@ BLK ALLP_block (
  *	This is the primary block allocation routine.
  *
  **************************************/
-register BLK	block;
-register USHORT	size;
+BLK	block;
+USHORT	size;
 USHORT		tail;
 
 if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)

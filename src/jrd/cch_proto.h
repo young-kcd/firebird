@@ -37,16 +37,16 @@ BOOLEAN		CCH_exclusive(TDBB, USHORT, SSHORT);
 BOOLEAN		CCH_exclusive_attachment(TDBB, USHORT, SSHORT);
 void		CCH_expand(TDBB, ULONG);
 struct pag*	CCH_fake(TDBB, struct win *, SSHORT);
-struct pag*	CCH_fetch(TDBB, register struct win *, USHORT, SSHORT,
+struct pag*	CCH_fetch(TDBB, struct win *, USHORT, SSHORT,
 						 SSHORT, SSHORT, BOOLEAN);
-SSHORT		CCH_fetch_lock(TDBB, register struct win *, USHORT, SSHORT,
+SSHORT		CCH_fetch_lock(TDBB, struct win *, USHORT, SSHORT,
 						 SSHORT, SSHORT);
-void		CCH_fetch_page(TDBB, register struct win *, SSHORT, BOOLEAN);
+void		CCH_fetch_page(TDBB, struct win *, SSHORT, BOOLEAN);
 void		CCH_fini(TDBB);
 void		CCH_flush(TDBB, USHORT, SLONG);
 BOOLEAN		CCH_free_page(TDBB);
 SLONG		CCH_get_incarnation(struct win *);
-struct pag*	CCH_handoff(TDBB, register struct win *, SLONG, SSHORT,
+struct pag*	CCH_handoff(TDBB, struct win *, SLONG, SSHORT,
 							   SSHORT, SSHORT, SSHORT);
 void		CCH_init(TDBB, ULONG);
 void		CCH_journal_page(TDBB, struct win *);

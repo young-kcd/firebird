@@ -243,7 +243,7 @@ do_test_memset(dest, size)
 
 	init_time();
 	for (r = 0; r < TEST_REPEATS; r++) {
-		register char *p, *p_end;
+		char *p, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
@@ -263,7 +263,7 @@ do_test_memset(dest, size)
 
 	init_time();
 	for (r = 0; r < TEST_REPEATS; r++) {
-		register char *p, *p_end;
+		char *p, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
@@ -340,7 +340,7 @@ do_test_memcpy(src, dest, size)
 
 	init_time();
 	for (r = 0; r < TEST_REPEATS; r++) {
-		register char *p, *q, *p_end;
+		char *p, *q, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
@@ -355,7 +355,7 @@ do_test_memcpy(src, dest, size)
 
 	init_time();
 	for (r = 0; r < TEST_REPEATS; r++) {
-		register char *p, *q, *p_end;
+		char *p, *q, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)

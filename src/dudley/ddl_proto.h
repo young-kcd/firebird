@@ -24,7 +24,7 @@
 #ifndef _DUDLEY_DDL_PROTO_H_
 #define _DUDLEY_DDL_PROTO_H_
 
-extern UCHAR *DDL_alloc(register int);
+extern UCHAR *DDL_alloc(int);
 extern int DDL_db_error(STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
 						TEXT *);
 extern int DDL_err(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.7 2002-11-30 17:40:23 hippoman Exp $
+//	$Id: cmd.cpp,v 1.8 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
@@ -112,7 +112,7 @@ static void set_statistics(GPRE_REQ, ACT);
 //
 
 int
-CMD_compile_ddl(register GPRE_REQ request)
+CMD_compile_ddl(GPRE_REQ request)
 {
 	ACT action;
 	IND index;

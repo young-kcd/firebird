@@ -1379,8 +1379,8 @@ static void gds_alloc_validate(ALLOC p)
 
 
 #ifdef DEBUG_GDS_ALLOC
-static BOOLEAN gds_alloc_validate_free_pattern(register UCHAR* ptr,
-											   register ULONG len)
+static BOOLEAN gds_alloc_validate_free_pattern(UCHAR* ptr,
+											   ULONG len)
 {
 /**************************************
  *
@@ -1445,8 +1445,8 @@ static void gds_alloc_validate_freed(ALLOC p)
 /* Now look at the space, is it all the same pattern? */
 	if (!errors)
 	{
-		register UCHAR *ptr;
-		register ULONG len;
+		UCHAR *ptr;
+		ULONG len;
 		ptr = ((UCHAR *) p) + sizeof(struct free);
 		len = p->alloc_status.alloc_freed.free_length - sizeof(struct free);
 		if (!gds_alloc_validate_free_pattern(ptr, len))
@@ -2786,10 +2786,10 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 }
 
 
-SLONG API_ROUTINE gds__ftof(register SCHAR * string,
-							register USHORT GDS_VAL(length1),
-							register SCHAR * field,
-							register USHORT GDS_VAL(length2))
+SLONG API_ROUTINE gds__ftof(SCHAR * string,
+							USHORT GDS_VAL(length1),
+							SCHAR * field,
+							USHORT GDS_VAL(length2))
 {
 /**************************************
  *
@@ -3233,7 +3233,7 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  **************************************
  *
  * Functional description
- *	Unregister a cleanup handler.
+ *	Una cleanup handler.
  *
  **************************************/
 	CLEAN *clean_ptr, clean;
@@ -3400,8 +3400,8 @@ SLONG API_ROUTINE gds__vax_integer(CONST UCHAR * ptr, SSHORT length)
 
 
 void API_ROUTINE gds__vtof(
-						   register SCHAR * string,
-						   register SCHAR * field, register USHORT length)
+						   SCHAR * string,
+						   SCHAR * field, USHORT length)
 {
 /**************************************
  *
@@ -4241,7 +4241,7 @@ static ULONG free_memory(void *blk)
  *	of bytes released.
  *
  **************************************/
-	register FREE HUGE_PTR *ptr, prior, free_blk, block;
+	FREE HUGE_PTR *ptr, prior, free_blk, block;
 	SLONG length;
 
 #ifdef DEV_BUILD

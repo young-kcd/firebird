@@ -39,10 +39,9 @@ extern "C" {
 
 ASSERT_FILENAME
 #define HASH_SIZE 211
-static SSHORT hash(register SCHAR *, register USHORT);
+static SSHORT hash(SCHAR *, USHORT);
 static BOOLEAN remove_symbol(struct sym **, struct sym *);
-static BOOLEAN scompare(register TEXT *, register USHORT, register TEXT *,
-						USHORT);
+static BOOLEAN scompare(TEXT *, USHORT, TEXT *, USHORT);
 
 static SYM *hash_table;
 
@@ -219,7 +218,7 @@ void HSHD_finish( void *database)
 }
 
 
-void HSHD_insert( register SYM symbol)
+void HSHD_insert(SYM symbol)
 {
 /**************************************
  *
@@ -231,9 +230,9 @@ void HSHD_insert( register SYM symbol)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	register SSHORT h;
-	register void *database;
-	register SYM old;
+	SSHORT h;
+	void *database;
+	SYM old;
 
 	LOCK_HASH;
 	h = hash(symbol->sym_string, symbol->sym_length);
@@ -272,7 +271,7 @@ SYM HSHD_lookup(void *database,
  *	Make sure to only return a symbol of the desired type.
  *
  **************************************/
-	register SYM symbol;
+	SYM symbol;
 	SSHORT h;
 
 	LOCK_HASH;
@@ -410,7 +409,7 @@ void HSHD_set_flag(
 }
 
 
-static SSHORT hash( register SCHAR * string, register USHORT length)
+static SSHORT hash(SCHAR * string, USHORT length)
 {
 /**************************************
  *
@@ -422,7 +421,7 @@ static SSHORT hash( register SCHAR * string, register USHORT length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	register SLONG value;
+	SLONG value;
 	SCHAR c;
 
 	value = 0;
@@ -450,7 +449,7 @@ static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
  *	and homonym linked lists.
  *
  **************************************/
-	register SYM *ptr, homonym;
+	SYM *ptr, homonym;
 
 	if (symbol == *collision) {
 		if ((homonym = symbol->sym_homonym) != NULL) {
@@ -473,10 +472,9 @@ static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
 }
 
 
-static BOOLEAN scompare(
-						register TEXT * string1,
-						register USHORT length1,
-						register TEXT * string2, USHORT length2)
+static BOOLEAN scompare(TEXT * string1,
+						USHORT length1,
+						TEXT * string2, USHORT length2)
 {
 /**************************************
  *

@@ -31,9 +31,9 @@ extern void		ALLQ_free (SCHAR *);
 extern void		ALLQ_init (void);
 extern SCHAR		*ALLQ_malloc (SLONG);
 extern struct plb	*ALLQ_pool (void);
-extern void		ALLQ_push (struct blk *, register struct lls **);
-extern struct blk	*ALLQ_pop (register struct lls **);
-extern void		ALLQ_release (register struct frb *);
+extern void		ALLQ_push (struct blk *, struct lls **);
+extern struct blk	*ALLQ_pop (struct lls **);
+extern void		ALLQ_release (struct frb *);
 extern void		ALLQ_rlpool (struct plb *);
 
 #endif /* _QLI_ALL_PROTO_H_ */

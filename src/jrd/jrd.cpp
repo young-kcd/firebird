@@ -3610,8 +3610,8 @@ STATUS DLL_EXPORT GDS_START_AND_SEND(STATUS * user_status,
 
 
 STATUS DLL_EXPORT GDS_START(STATUS * user_status,
-							register JRD_REQ * req_handle,
-							register JRD_TRA * tra_handle, SSHORT level)
+							JRD_REQ * req_handle,
+							JRD_TRA * tra_handle, SSHORT level)
 {
 /**************************************
  *

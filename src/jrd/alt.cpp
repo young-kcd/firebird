@@ -82,7 +82,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
  *	Return 0 if any error occurs.
  *
  **************************************/
-	register SCHAR *p, *q;
+	SCHAR *p, *q;
 	SCHAR *end;
 	SLONG length;
 	USHORT i;
@@ -163,7 +163,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
  *
  **************************************/
 #define 	MAX_NAME_LENGTH		31
-	register SCHAR *p, *q;
+	SCHAR *p, *q;
 	SCHAR *end;
 	TEXT **nb;
 	SLONG length;

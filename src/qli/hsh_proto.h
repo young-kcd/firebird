@@ -30,9 +30,9 @@ extern "C" {
 
 extern void		HSH_fini (void);
 extern void		HSH_init (void);
-extern void		HSH_insert (register struct sym *);
-extern struct sym	*HSH_lookup (register SCHAR *, register int);
-extern void		HSH_remove (register struct sym *);
+extern void		HSH_insert (struct sym *);
+extern struct sym	*HSH_lookup (SCHAR *, int);
+extern void		HSH_remove (struct sym *);
 
 #ifdef __cplusplus
 }	/* extern "C" */
