@@ -1,3 +1,60 @@
+2003-05-25 21:24  skidder
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	Improve diagnostics
+
+2003-05-25 20:59  skidder
+
+	* firebird2/src/: jrd/isc_sync.cpp, lock/lock.cpp:
+	
+	Allow easy adjustment of LockSemCount in Posix builds. Do not fail
+	if value is adjusted in configuration file, but cannot be applied
+	because of running engine processes
+
+2003-05-25 12:44  fsg
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
+	src/install/arch-specific/linux/classic/makeInstallImage.sh.in:
+	
+	Reenabled ada, fortran, cobol and pascal for gpre Install *udf.sql
+	into the UDF-directory for linux builds
+
+2003-05-25 02:24  skidder
+
+	* firebird2/src/jrd/os/posix/config_root.cpp:
+	
+	Add comment
+
+2003-05-25 02:12  skidder
+
+	* firebird2/src/jrd/os/posix/config_root.cpp:
+	
+	Allow Kylix and other tools work with local Linux CS version
+	installed
+
+2003-05-25 02:09  skidder
+
+	* firebird2/src/: jrd/common.h, include/fb_types.h:
+	
+	Move FB_ALIGN out of platform-dependent section as some parts of
+	code depend on its implementation unconditionally
+
+2003-05-25 02:07  skidder
+
+	* firebird2/builds/posix/: make.rules, prefix.mingw:
+	
+	Allow C programs use our shared libraries on Linux and other POSIX
+	platforms
+
+2003-05-25 02:04  skidder
+
+	* firebird2/: builds/posix/Makefile.in.extlib,
+	builds/posix/make.defaults,
+	src/install/arch-specific/linux/classic/makeInstallImage.sh.in:
+	
+	Fix UDF linkage problems on linux
+
 2003-05-24 19:27  skidder
 
 	* firebird2/src/dsql/parse.sed:
