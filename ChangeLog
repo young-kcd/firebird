@@ -1,3 +1,33 @@
+2005-03-09 17:26  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.100):
+	
+	Fixed improper loopback connection via XNET.
+
+2005-03-09 11:24  hvlad
+
+	* firebird2/builds/win32/: make_boot.bat (1.27), run_all.bat (1.6):
+	
+	1. Take in account CLEAN parameter when builded build_msg and
+	codes. This decreased build time 2. run_all now produced RELEASE
+	builds
+
+2005-03-09 11:17  hvlad
+
+	* firebird2/builds/win32/msvc7/build_msg.vcproj (1.5):
+	
+	Direct DEBUG build to debug directory
+
+2005-03-09 07:53  skidder
+
+	* firebird2/src/isql/isql.epp (1.132):
+	
+	Calling clear_history like that breaks the builds. But even when
+	build is fixed, call like that causes SIGSEGV due to editline
+	history not being initalized when ISQL is used in non-interactive
+	mode. Since clear_history doesn't free all the editline memory
+	there is no big point in using it here anyways...
+
 2005-03-07 23:59  arnobrinkman
 
 	* firebird2/src/jrd/Optimizer.cpp (1.11):
