@@ -506,8 +506,8 @@ static bool start_server( ibmgr_data_t* data)
 */
 	if (!(pid = fork1())) {
 		if (execv(path, argv) == -1) {
-			ib_fprintf(OUTFILE, "Could not create child process %s with args %s\n",
-				   path, argv);
+			ib_fprintf(OUTFILE, "Could not create child process %s with args %s %s\n",
+				   path, argv[0], argv[1]);
 		}
 		_exit(FINI_ERROR);
 	}
