@@ -1,3 +1,36 @@
+2003-12-14 23:29  skidder
+
+	* firebird2/src/: journal/gjrn.cpp, jrd/sch.cpp,
+	utilities/gsec/gsec.cpp:
+	
+	Linux-related Services API fixes. All Services API work on Linux CS
+	now.
+
+2003-12-14 23:07  skywalker
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.xinetd.in:
+	
+	Changed FLAGS to include KEEPALIVE option needed apparantly for a
+	change that was introduced to the service
+
+2003-12-14 19:24  dimitr
+
+	* firebird2/src/: alice/all.cpp, dsql/alld.cpp,
+	common/classes/array.h:
+	
+	Minor cleanup
+
+2003-12-14 19:22  dimitr
+
+	* firebird2/src/jrd/: btr.cpp, btr.h, dfw.epp, ods.h:
+	
+	IMPORTANT - this commit introduces an ODS change! 1. Added
+	selectivity to idx_repeat and irtd 2. Let's make the selectivity
+	array independent from ODS 3. Cleanup TODO - use per-segment
+	selectivities in the optimizer and get rid of idx::idx_selectivity
+	for ever
+
 2003-12-14 08:00  skywalker
 
 	* firebird2/src/install/arch-specific/linux/:
