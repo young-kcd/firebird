@@ -160,7 +160,7 @@ install_super install_server:
 
 install_embedded install_classic:
 	installer -verbose -dumplog -pkg \
-			`pwd`/$(ROOT)/gen/firebird/Firebird-SS-$(FB_INST_VERS).pkg -target /
+			`pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS).pkg -target /
 
 
 darwin_installer_common: force
