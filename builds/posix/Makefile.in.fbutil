@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbutil,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#  $Id: Makefile.in.fbutil,v 1.2 2002-09-09 05:51:07 eku Exp $
 #
 ROOT=../..
 
@@ -73,8 +73,8 @@ testx: main.o
 
 testx2:
 	-rm libtestx.so testx
-	make libtestx.so.2
-	make testx
+	$(MAKE) libtestx.so.2
+	$(MAKE) testx
 
 
 clean:
