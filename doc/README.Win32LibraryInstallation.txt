@@ -66,25 +66,43 @@ which library instance the wish to load.
 
 Traditionally, applications that use InterBase or Firebird have expected
 to load the gds32.dll client library from the <system> directory. Firebird
-1.5 ships with a stub gds32.dll that is Firebird compliant. It knows to 
-look up the location of fbclient.dll via the registry and it routes all
-application calls through to the fblcient.dll specified in the default 
-instance.
-
-This new gds32.dll really is a stub. If it is carelessly copied into the
-<system> directory it will almost certainly break an existing install of 
-InterBase or Firebird 1.0.  
+1.5 ships a tool named 'instgds.exe' that can install a clone of fbclient.dll
+to the Windows System directory. This clone gets patched on the fly so that
+its file version information starts in "6.3". This is done so because some
+old applications do weird checks on the GDS32.DLL file version. Based on a
+lot of experiments, it has been determined that 6.3 is a safe "compatible"
+version number to use, much better than "1.5".
 
 During the installation process the installer checks to see if an 
 installation of InterBase or Firebird exists. If nothing is installed 
-it will write gds32.dll into the <system> directory. If it detects that 
-any possible version of Firebird or InterBase may already be installed
+it will write a patched gds32.dll into the <system> directory. If it detects
+that any possible version of Firebird or InterBase may already be installed
 it will not install the gds32.dll in the <system> directory. However
-it will copy it into the \bin directory under the name of gds32.dll.stub.
+you can always do so later by using the new 'instgds.exe' tool.
 
 It is intended that future versions of Firebird will not attempt to 
 install gds32.dll into the <system> directory and ultimately it will
 be completely removed from the distribution.
+
+instgds
+Usage:
+  instgds i[nstall] [ -f[orce] ]
+          q[uery]
+          r[emove]
+
+  This utility should be located and run from the 'bin' directory
+  of your Firebird installation.
+
+  '-z' can be used with any other option, prints version
+
+Purpose:
+  This utility installs a copy of the Firebird client library (FBCLIENT.DLL),
+  renamed GDS32.DLL, to the Windows System Directory. This configuration
+  step might be usefull for legacy application support.
+
+  Please, note that if you -f[orce] the installation, you might have
+  to reboot the machine in order to finalize the copy and you might
+  break some other Firebird or InterBase(R) version on the system.
 
 
 4/ Cleaning up release candidate installs.
