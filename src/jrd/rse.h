@@ -35,31 +35,35 @@
 
 /* Record Source Block (RSB) types */
 
-typedef ENUM rsb_t { 
-    rsb_boolean, 
-    rsb_cross, 
-    rsb_dbkey, 
-    rsb_first, 
-    rsb_skip, 
-    rsb_indexed, 
-    rsb_merge, 
-    rsb_multiple, 
-    rsb_project, 
-    rsb_sequential, 
-    rsb_sort, 
-    rsb_union, 
-    rsb_aggregate, 
-    rsb_ext_sequential,	/* External sequential access */
-	rsb_ext_indexed,			/* External indexed access */
-	rsb_ext_dbkey,				/* External dbkey access */
-	rsb_navigate,				/* Walk navigational index */
-	rsb_bit_sieve, rsb_left_cross,	/* Left outer join */
-	rsb_procedure,				/* Stored procedure */
-	rsb_select,					/* (Gateway only) */
-	rsb_sql_join,				/* (Gateway only) */
-	rsb_simulate,				/* (Gateway only) */
-	rsb_sim_cross,				/* (Gateway only) */
-rsb_once /* (Gateway only) */ } RSB_T;
+enum rsb_t
+{
+	rsb_boolean,
+	rsb_cross,
+	rsb_dbkey,
+	rsb_first,
+	rsb_skip,
+	rsb_indexed,
+	rsb_merge,
+	rsb_multiple,
+	rsb_project,
+	rsb_sequential,
+	rsb_sort,
+	rsb_union,
+	rsb_aggregate,
+	rsb_ext_sequential, // External sequential access
+	rsb_ext_indexed,    // External indexed access
+	rsb_ext_dbkey,      // External dbkey access
+	rsb_navigate,       // Walk navigational index
+	rsb_bit_sieve,
+	rsb_left_cross,     // Left outer join
+	rsb_procedure,      // Stored procedure
+	rsb_select,         // (Gateway only)
+	rsb_sql_join,       // (Gateway only)
+	rsb_simulate,       // (Gateway only)
+	rsb_sim_cross,      // (Gateway only)
+	rsb_once            // (Gateway only)
+};
+typedef rsb_t RSB_T;
 
 
 
@@ -67,23 +71,24 @@ rsb_once /* (Gateway only) */ } RSB_T;
 
 class Rsb : public pool_alloc_rpt<class Rsb*, type_rsb>
 {
-    public:
-	RSB_T rsb_type;				/* type of rsb */
-	UCHAR rsb_stream;			/* stream, if appropriate */
-	USHORT rsb_count;			/* number of sub arguments */
+public:
+	RSB_T  rsb_type;            // type of rsb
+	UCHAR  rsb_stream;          // stream, if appropriate
+	USHORT rsb_count;           // number of sub arguments
 	USHORT rsb_flags;
-	ULONG rsb_impure;			/* offset to impure area */
-	ULONG rsb_cardinality;		/* estimated cardinality of stream */
-	ULONG rsb_record_count;		/* count of records returned from rsb (not candidate records processed) */
-	struct Rsb *rsb_next;		/* next rsb, if appropriate */
-	struct jrd_rel *rsb_relation;	/* relation, if appropriate */
-	struct str *rsb_alias;		/* SQL alias for relation */
-	struct jrd_prc *rsb_procedure;	/* procedure, if appropriate */
-	struct fmt *rsb_format;		/* format, if appropriate */
-	struct jrd_nod *rsb_any_boolean;	/* any/all boolean */
-	Rsb* rsb_arg[1];
+	ULONG  rsb_impure;          // offset to impure area
+	ULONG  rsb_cardinality;     // estimated cardinality of stream
+	ULONG  rsb_record_count;    // count of records returned from rsb (not candidate records processed)
+	Rsb*   rsb_next;            // next rsb, if appropriate
+	struct jrd_rel* rsb_relation;    // relation, if appropriate
+	struct str*     rsb_alias;       // SQL alias for relation
+	struct jrd_prc* rsb_procedure;   // procedure, if appropriate
+	struct fmt*     rsb_format;      // format, if appropriate
+	struct jrd_nod* rsb_any_boolean; // any/all boolean
+	Rsb*   rsb_arg[1];
 };
 typedef Rsb *RSB;
+
 
 /* bits for the rsb_flags field */
 
