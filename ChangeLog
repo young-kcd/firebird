@@ -1,3 +1,40 @@
+2004-02-25 23:14  arnobrinkman
+
+	* firebird2/src/jrd/: btn.cpp, btn.h, btr.cpp, nav.cpp, ods.h,
+	val.cpp:
+	
+	Use compressed index-entries.  This will save 2 bytes on every
+	duplicate entry and pagenumber / recordnumber are stored by 7-bits
+	as needed.
+
+2004-02-25 12:07  aafemt
+
+	* firebird2/src/remote/os/win32/property.cpp:
+	
+	Fix after Claudio's cleanup
+
+2004-02-25 07:33  skidder
+
+	* firebird2/src/jrd/os/win32/winnt.cpp:
+	
+	Fix single-user mode on Win32. Now shutdown seems to work fine
+	everywhere
+
+2004-02-25 02:50  skidder
+
+	* firebird2/: builds/misc/msg.gbak, lang_helpers/gds_codes.ftn,
+	lang_helpers/gds_codes.pas, src/alice/alice.cpp, src/alice/alice.h,
+	src/alice/exe.cpp, src/burp/restore.epp, src/include/gen/codes.h,
+	src/include/gen/codetext.h, src/include/gen/iberror.h,
+	src/include/gen/msgs.h, src/include/gen/rdb_codes.h,
+	src/include/gen/sql_code.h, src/jrd/cch.cpp, src/jrd/ibase.h,
+	src/jrd/jrd.cpp, src/jrd/jrd.h, src/jrd/ods.h, src/jrd/pag.cpp,
+	src/jrd/shut.cpp, src/jrd/shut_proto.h, src/jrd/os/posix/unix.cpp,
+	src/utilities/gstat/ppg.cpp:
+	
+	Implement new shutdown modes (single-user and full shutdown).
+	Tested on Linux/AMD64 CS and SS
+
 2004-02-24 08:21  skidder
 
 	* firebird2/src/remote/interface.cpp:
