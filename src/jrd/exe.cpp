@@ -972,7 +972,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
  **************************************
  *
  * Functional description
- *	Unwind a request, maybe active, maybe not.  This is particlarly
+ *	Unwind a request, maybe active, maybe not.  This is particularly
  *	simple since nothing really needs to be done.
  *
  **************************************/
@@ -1097,8 +1097,8 @@ inline void PreModifyEraseTriggers(thread_db* tdbb,
 				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
 					traRpbList(*tdbb->tdbb_transaction->tra_pool);
 		}
-		const int rpblevel = tdbb->tdbb_transaction->
-						tra_rpblist->PushRpb(rpb);
+		const int rpblevel =
+			tdbb->tdbb_transaction->tra_rpblist->PushRpb(rpb);
 		jrd_req* trigger = execute_triggers(tdbb, trigs,
 					rpb->rpb_record, rec, op);
 		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
