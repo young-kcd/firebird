@@ -44,6 +44,7 @@
 
 
 #include "firebird.h"
+#include "../../jrd/common.h"
 
 //#ifdef __cplusplus
 //extern "C" {
