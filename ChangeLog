@@ -1,3 +1,22 @@
+2003-02-01 04:08  hippoman
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln, burp.vcproj,
+	burp_classic.vcproj, common.vcproj, engine.vcproj, fbguard.vcproj,
+	gdef.vcproj, gpre_boot.vcproj, gsec.vcproj, gstat.vcproj,
+	instreg.vcproj, instsvc.vcproj, intl.vcproj, ipserver.vcproj,
+	lock.vcproj, lock_classic.vcproj, remote.vcproj,
+	remote_classic.vcproj, utilities.vcproj, utilities_classic.vcproj,
+	wal.vcproj, wal_classic.vcproj:
+	
+	Sync msvc7 build with latest changes
+
+2003-02-01 01:08  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: a simple LEFT JOIN on a VIEW with only a ON clause didn't
+	use an index even if it was possible.  SF BUG # [ 508594 ]
+
 2003-01-31 13:22  dimitr
 
 	* firebird2/src/utilities/dba.epp:
