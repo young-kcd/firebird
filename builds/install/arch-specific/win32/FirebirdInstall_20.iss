@@ -141,6 +141,7 @@ Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: builds\install\arc
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: builds\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: builds\install\arch-specific\win32\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: builds\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: builds\install\arch-specific\win32\de\liesmich.txt
 Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
+Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: builds\install\arch-specific\win32\pl\instalacja_czytajto.txt; InfoAfterFile: builds\install\arch-specific\win32\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalacao_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt
 Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: builds\install\arch-specific\win32\si\instalacija_precitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
 #endif
@@ -152,6 +153,7 @@ en.BeveledLabel=English
 fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
 hu.BeveledLabel=Magyar
+pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
 si.BeveledLabel=Slovenski
 #endif
@@ -163,6 +165,7 @@ si.BeveledLabel=Slovenski
 #include "fr\custom_messages_fr.inc"
 #include "de\custom_messages_de.inc"
 #include "hu\custom_messages_hu.inc"
+#include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
 #include "si\custom_messages_si.inc"
 #endif
@@ -272,7 +275,8 @@ Source: builds\install\arch-specific\win32\hu\*.txt; DestDir: {app}\doc; Compone
 Source: builds\install\arch-specific\win32\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
 Source: builds\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
-Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: SaveFirebirdConf
+Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
+Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
 Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: output\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: output\security2.fbk; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion
@@ -298,7 +302,6 @@ Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; 
 Source: output\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
-Source: output\bin\security_database.sql; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 
 ; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
 ; NOTE: These dll's MUST never be sourced from the local system32 directory.
@@ -398,8 +401,8 @@ Var
 
 
 #include "FirebirdInstallSupportFunctions.inc"
-#include "FirebirdInstallEnvironmentChecks.inc"
 
+#include "FirebirdInstallEnvironmentChecks.inc"
 
 
 function SummarizeInstalledProducts: String;
@@ -484,22 +487,10 @@ begin
 
   //We've got all this information. What do we do with it?
 
-  if ProductsInstalledCount = 0 then
-    //There is a possibility that all our efforts to detect an
-    //install were in vain and Firebird 1.5 _is_ running...
-    if ( FirebirdDefaultServerRunning ) then begin
-      result := false;
-      MsgBox( #13+ExpandConstant('{cm:FbRunning1,1.5}')
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
-      end
-    else begin
+  if ProductsInstalledCount = 0 then begin
       result := true;
       exit;
-    end;
+  end;
 
   //If Fb15 RC or Fb15 is installed then we can install over it.
   //unless we find the server running.
@@ -586,11 +577,23 @@ begin
   //unless subsequent analysis suggests otherwise.
   InstallAndConfigure := Install + Configure;
 
+  InstallRootDir := '';
+
   InitExistingInstallRecords;
   AnalyzeEnvironment;
   result := AnalysisAssessment;
 
-  InstallRootDir := '';
+  //There is a possibility that all our efforts to detect an
+  //install were in vain and a server _is_ running...
+  if ( FirebirdDefaultServerRunning ) then begin
+    result := false;
+    MsgBox( #13+ExpandConstant('{cm:FbRunning1}')
+    +#13
+    +#13+ExpandConstant('{cm:FbRunning2}')
+    +#13+ExpandConstant('{cm:FbRunning3}')
+    +#13, mbError, MB_OK);
+    exit;
+  end;
 
 end;
 
@@ -826,41 +829,23 @@ begin
 
 end;
 
-function SaveFirebirdConf: boolean;
-// If we are installing over an existing installation we save the original
-// config file. This is so that we don't have to worry about a conflict between
-// the users configuration and the configuration expected by the installer. We
-// always use the standard configuration and let the user sort out any problems
-// later. We could do things the other way round, but then we would have to read
-// the existing config file and dynamically set install options (like use of
-// guardian). This will quickly start to get way too complicated.
-var
-  NewFileName: String;
-  i:  Integer;
+//InnoSetup has a Check Parameter that allows installtion if the function returns true.
+//For firebird.conf we want to do two things:
+// o if firebird.conf already exists then install firebird.conf.default
+// o if firebird.conf does not exist then install firebird.conf
+//
+// This double test is also needed because the uninstallation rules are different for each file.
+// We never uninstall firebird.conf. We always uninstall firebird.conf.default.
+
+function FirebirdConfExists: boolean;
 begin
-//for some reason the 3.0.6 installer wants to call this twice
-//so we need to check.
-if FirebirdConfSaved = '' then begin
-  if fileexists(GetAppPath+'\firebird.conf') then begin
-    i:=0;
-	// 999 previous installs ought to be enough :-)
-    while i < 999  do begin
-      NewFileName := GetAppPath+'\firebird.conf.saved.'+IntToStr(i);
-      if fileexists(NewFileName) then
-        i := i + 1
-      else
-        break;
-    end;
-
-    filecopy( GetAppPath+'\firebird.conf', NewFileName, false );
-    FirebirdConfSaved := NewFileName;
-  end
-end
-
-//Always return true
-result := true;
+  Result := fileexists(GetAppPath+'\firebird.conf');
 end;
 
+function NoFirebirdConfExists: boolean;
+begin
+  Result := not fileexists(GetAppPath+'\firebird.conf');
+end;
 
 begin
 end.

@@ -21,7 +21,7 @@
   This stuff _is_ firebird/interbase specific and some of it is entirely dependant
   upon parts of the InnoSetup install script.
 
-  Here is a list of functions available in this script:
+  Here is a partial list of functions available in this script:
 
     function ClassicInstallChosen: Boolean;
 
@@ -104,6 +104,17 @@ Const
   FB15RC  = $0040;
   FB15    = $0080;
   FB2     = $0100;
+
+  //  Likely gds32 version strings for installed versions of Firebird or InterBase are:
+  //  [6,0,n,n]     InterBase 6.0
+  //  [6,2,0,nnn]   Firebird 1.0.0
+  //  [6,2,2,nnn]   Firebird 1.0.2
+  //  [6,2,3,nnn]   Firebird 1.0.3
+  //  [6,5,n,n]     InterBase 6.5
+  //  [6,3,0,nnnn]  Firebird 1.5.0
+  //  [6,3,0,nnnn]  Firebird 2.0.0.10516
+  //  [7,n,n,n]     InterBase 7
+
 
 Const
   Install   = 1;
@@ -210,15 +221,15 @@ begin
       end;
 
     end; //case
+
+    ProductsInstalledArray[product].Path := GetRegistryEntry(
+        ProductsInstalledArray[product].RegKey, ProductsInstalledArray[product].RegEntry);
+
+    ProductsInstalledArray[product].RegVersion := GetRegistryEntry(
+        ProductsInstalledArray[product].RegKey, 'Version');
+
   end;  //for
 end; //function
-
-
-function GetRegistryEntry(RegKey, RegEntry: string): String;
-begin
-  result := '';
-  RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
-end;
 
 
 Procedure AnalyzeEnvironment;
@@ -228,6 +239,12 @@ var
   VerInt: Array of Integer;
   BoolOne, BoolTwo, BoolEval: Boolean;
   EvalOne, EvalTwo: Integer;
+
+  dbg_ProductPath, dbg_ClientVersion, dbg_GBAKVersion, dbg_Server: String;
+  dbg_InstallType : Integer;
+  eval_bool: boolean;
+
+
 begin
 
   ProductsInstalled := 0;
@@ -238,14 +255,15 @@ begin
     gds32VersionString := GetInstalledVersion(GetSysPath+'\gds32.dll',VerInt);
   end;
 
-  for product := 0 to MaxProdInstalled -1 do begin
+  for product := 0 to MaxProdInstalled do begin
 
-    ProductsInstalledArray[product].Path := GetRegistryEntry(
-        ProductsInstalledArray[product].RegKey, ProductsInstalledArray[product].RegEntry);
-
-    ProductsInstalledArray[product].RegVersion := GetRegistryEntry(
-        ProductsInstalledArray[product].RegKey, 'Version');
-
+    // Check if working client already installed.
+    ///////////////////////
+      dbg_ProductPath := ProductsInstalledArray[product].Path;
+      dbg_ClientVersion := ProductsInstalledArray[product].ClientVersion
+      dbg_GBAKVersion := ProductsInstalledArray[product].GBAKVersion;
+      dbg_Server := ProductsInstalledArray[product].ServerVersion;
+      dbg_InstallType := ProductsInstalledArray[product].InstallType;
 
     if FileExists(ProductsInstalledArray[product].Path + '\bin\fbclient.dll') then
       ProductsInstalledArray[product].ClientVersion := GetInstalledVersion(
@@ -260,13 +278,14 @@ begin
       //The minimum requirements for a working client don't exist, so ignore this product.
       Continue;
 
-
+    // Client version found, so see what else is there
+    ///////////
     if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
 
       GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\gbak.exe',
           ProductsInstalledArray[product].GBAKVersion);
       If ProductsInstalledArray[product].GBAKVersion <> '' then begin
-        ProductsInstalledArray[product].ActualVersion:=ProductsInstalledArray[product].GBAKVersion;
+        ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].GBAKVersion;
         ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + AdminInstall;
       end;
 
@@ -274,7 +293,7 @@ begin
         GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\fb_inet_server.exe',
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
-          ProductsInstalledArray[product].ActualVersion:=ProductsInstalledArray[product].ServerVersion;
+          ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
           ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + ClassicServerInstall;
         end;
       end;
@@ -283,7 +302,7 @@ begin
         GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\fbserver.exe',
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
-          ProductsInstalledArray[product].ActualVersion:=ProductsInstalledArray[product].ServerVersion;
+          ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
           ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + SuperServerInstall;
         end;
       end;
@@ -292,52 +311,60 @@ begin
         GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\ibserver.exe',
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
-          ProductsInstalledArray[product].ActualVersion:=ProductsInstalledArray[product].ServerVersion;
+          ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
           ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + SuperServerInstall;
         end;
       end;
 
-      //Now, resolve version numbers. If the version number
-      //  Likely values for installed versions of Firebird are:
-      //  [6,0,n,n]     InterBase 6.0
-      //  [6,2,0,nnn]   Firebird 1.0.0
-      //  [6,2,2,nnn]   Firebird 1.0.2
-      //  [6,2,3,nnn]   Firebird 1.0.3
-      //  [6,5,n,n]     InterBase 6.5
-      //  [6,3,0,nnnn]  Firebird 1.5.0
-      //  [6,3,0,nnnn]  Firebird 2.0.0
-      //  [7,n,n,n]     InterBase 7
+      if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
+        //Check that we haven't already flagged the install as broken.
+        // AND ((ProductsInstalledArray[product].InstallType AND BrokenInstall)<>BrokenInstall))
+          //Now test that the version strings match!
+          if (CompareStr(ProductsInstalledArray[product].ClientVersion, ProductsInstalledArray[product].GBAKVersion)<> 0) then
+            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall
+          else
+            if (CompareStr(ProductsInstalledArray[product].ClientVersion, ProductsInstalledArray[product].ServerVersion )<> 0) then
+              ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
+      end;
+
+
+      //Now, resolve version numbers.
+      ///////////////////////////////
 
       case product of
         IB4Install: begin
-          //If we get here we must have an install, because the message file is unique to 4.n
-          ProductsInstalled := ProductsInstalled + IB4;
-          ProductsInstalledCount := ProductsInstalledCount + 1;
           //check to see if the client library matches the server version installed.
           if CompareVersion(ProductsInstalledArray[product].ActualVersion, '4.0.0.0',1) <> 0 then
-            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
+              //Although, if we get here, we must have an install, because the message file is unique to 4.n
+              ProductsInstalled := ProductsInstalled + IB4;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
         end;
 
         IB5Install: begin
-          //If we get here we must have an install, because the registry key is unique to 5.n
-          if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-            ProductsInstalled := ProductsInstalled + IB5;
-            ProductsInstalledCount := ProductsInstalledCount + 1;
-          end;
           //check to see if the client library matches the server version installed.
           if CompareVersion(ProductsInstalledArray[product].ActualVersion, '5.0.0.0',1) <> 0 then
-            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            //Again, if we get here we must have an install, because the registry key is unique to 5.n
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + IB5;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end
         end;
 
         IB6Install: begin
           //If we get here we have ambiguity with other versions of InterBase and Firebird
           if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
             if CompareVersion(ProductsInstalledArray[product].ClientVersion, '6.0.0.0',2) <> 0 then
-              ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-            if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-              ProductsInstalled := ProductsInstalled + IB6;
-              ProductsInstalledCount := ProductsInstalledCount + 1;
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall)  then begin
+                ProductsInstalled := ProductsInstalled + IB6;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
               end;
             end
           else
@@ -348,11 +375,12 @@ begin
           //If we get here we have ambiguity with other versions of InterBase and Firebird
           if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
             if CompareVersion(ProductsInstalledArray[product].ClientVersion, '6.5.0.0',2) <> 0 then
-              ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-            if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-              ProductsInstalled := ProductsInstalled + IB65;
-              ProductsInstalledCount := ProductsInstalledCount + 1;
-              end;
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+                ProductsInstalled := ProductsInstalled + IB65;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
+                end
             end
           else
             ProductsInstalledArray[product].InstallType := NotInstalled;
@@ -362,8 +390,9 @@ begin
           //If we get here we have ambiguity with other versions of InterBase and Firebird
           if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
             if CompareVersion(ProductsInstalledArray[product].ClientVersion, '7.0.0.0',1) <> 0 then
-            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-            if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
+              ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
               ProductsInstalled := ProductsInstalled + IB7;
               ProductsInstalledCount := ProductsInstalledCount + 1;
               end;
@@ -375,12 +404,13 @@ begin
         FB1Install: begin
           if ( pos('Firebird',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
             if CompareVersion(ProductsInstalledArray[product].ClientVersion, '6.2.0.0',2) <> 0 then
-              ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-            if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-              ProductsInstalled := ProductsInstalled + FB1;
-              ProductsInstalledCount := ProductsInstalledCount + 1;
-              ProductsInstalledArray[product].ActualVersion := ConvertIBVerStrToFbVerStr(ProductsInstalledArray[product].ActualVersion);
-              end;
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+                ProductsInstalled := ProductsInstalled + FB1;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
+                ProductsInstalledArray[product].ActualVersion := ConvertIBVerStrToFbVerStr(ProductsInstalledArray[product].ActualVersion);
+                end;
             end
           else
             ProductsInstalledArray[product].InstallType := NotInstalled;
@@ -388,49 +418,35 @@ begin
 
         FB15RCInstall: begin
           if CompareVersion(ProductsInstalledArray[product].ClientVersion, '1.5.0.0',2) <> 0 then
-            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-          if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-            ProductsInstalled := ProductsInstalled + FB15RC;
-            ProductsInstalledCount := ProductsInstalledCount + 1;
-          end;
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + FB15RC;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
         end;
 
         FB15Install: begin
           if CompareVersion(ProductsInstalledArray[product].ClientVersion, '1.5.0.0',2) <> 0 then
-            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-          if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-            ProductsInstalled := ProductsInstalled + FB15;
-            ProductsInstalledCount := ProductsInstalledCount + 1;
-          end;
-
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + FB15;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
         end;
 
         FB2Install: begin
-          //We don't know (yet) what we should be comparing against here, ClientVersion
-          //should be equal or greater than 2.0.0.0
-          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.0.0.0',2) < 0) then
-            ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-          if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
-            ProductsInstalled := ProductsInstalled + FB2;
-            ProductsInstalledCount := ProductsInstalledCount + 1;
-          end;
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.0.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB2;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
         end;
 
       end;//case
-
-
-      if ((ProductsInstalledArray[product].InstallType <> NotInstalled) AND
-        //Check that we haven't already flagged the install as broken.
-        ((ProductsInstalledArray[product].InstallType AND BrokenInstall)<>BrokenInstall)) then begin
-
-        //Now test that the version strings match!
-        if (CompareStr(ProductsInstalledArray[product].ClientVersion, ProductsInstalledArray[product].GBAKVersion)<> 0) then
-          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall
-        else
-          if (CompareStr(ProductsInstalledArray[product].ClientVersion, ProductsInstalledArray[product].ServerVersion )<> 0) then
-          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
-
-      end;
 
 
     end; //if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
@@ -631,13 +647,13 @@ var
 begin
   result := False;
   //Look for a running version of Firebird 1.5 or later
-  Handle:=FindWindowByClassName('FB_Disabled');
-  if ( Handle=0 ) then
-    Handle:=FindWindowByClassName('FB_Server');
-  if ( Handle=0 ) then
-    Handle:=FindWindowByClassName('FB_Guard');
+  Handle := FindWindowByClassName('FB_Disabled');
+  if ( Handle = 0 ) then
+    Handle := FindWindowByClassName('FB_Server');
+  if ( Handle = 0 ) then
+    Handle := FindWindowByClassName('FB_Guard');
 
-  if (Handle>0) then
+  if (Handle > 0) then
      result := True
   else begin
     mutex_found := CheckForMutexes('FirebirdGuardianMutex,FirebirdServerMutex');
@@ -699,4 +715,5 @@ begin
   if ConfigureFirebird then
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
+
 

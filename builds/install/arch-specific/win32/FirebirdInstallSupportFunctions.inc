@@ -20,11 +20,11 @@
  It makes more sense if they are independant functions - ie, they don't
  call other functions in the script and they don't need to know about the
  install script itself.
- 
+
  They can call functions in the pascal script library
- 
+
 Function Prototypes
- 
+
   function UsingWin2k: boolean;
   function UsingWinXP: boolean;
   function CheckWinsock2(): Boolean;
@@ -35,10 +35,10 @@ Function Prototypes
   function CompareVersion( ver1, ver2: String ) : Integer;
   function GetInstalledVersion(BinaryFile: String): Array of Integer;
   function ConvertIBVerStrToFbVerStr( VerStr: String) : String;
+  function GetRegistryEntry(RegKey, RegEntry: string): String;
 
-  
  *)
- 
+
 (*
 InnoSetup Help Extract on Windows version strings:
 4.0.950       Windows 95
@@ -74,10 +74,10 @@ const
   sNoWinsock2 = 'Please Install Winsock 2 Update before continuing';
   sMSWinsock2Update = 'http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp';
   sWinsock2Web = 'Winsock 2 is not installed.'#13#13'Would you like to Visit the Winsock 2 Update Home Page?';
-  
+
 var
   Winsock2Failure:    Boolean;
-  
+
 function CheckWinsock2(): Boolean;
 begin
   Result := True;
@@ -234,7 +234,7 @@ begin
   else
     if VerInt[1]=3 then
       VerInt[1]:=5;
-      
+
   Result := '';
   for i:=0 to 3 do begin
     Result := Result+IntToStr(VerInt[i]);
@@ -242,6 +242,12 @@ begin
       Result:=Result+'.'
   end;
 
+end;
+
+function GetRegistryEntry(RegKey, RegEntry: string): String;
+begin
+  result := '';
+  RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
 end;
 
 
