@@ -141,6 +141,10 @@ SOURCE=..\..\..\src\intl\cv_narrow.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\cv_unicode_fss.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\lc_ascii.c
 # End Source File
 # Begin Source File
