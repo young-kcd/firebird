@@ -78,7 +78,7 @@
 #ifdef SUPERSERVER_V2
 static void release_io_event(FIL, OVERLAPPED *);
 #endif
-static ULONG	get_number_of_pages(FIL, USHORT);
+static ULONG get_number_of_pages(FIL, USHORT);
 static bool	MaybeCloseFile(SLONG *);
 static FIL seek_file(FIL, BDB, STATUS *, OVERLAPPED *, OVERLAPPED **);
 static FIL setup_file(DBB, TEXT *, USHORT, HANDLE);
@@ -105,15 +105,20 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 extern "C" {
 
 
+int PIO_add_file(DBB dbb, FIL main_file, TEXT * file_name, SLONG start)
+{
 /**************************************
  *
+ *	P I O _ a d d _ f i l e
+ *
+ **************************************
+ *
+ * Functional description
  *	Add a file to an existing database.  Return the sequence
  *	number of the new file.  If anything goes wrong, return a
  *	sequence of 0.
  *
  **************************************/
-int PIO_add_file(DBB dbb, FIL main_file, TEXT * file_name, SLONG start)
-{
 	USHORT sequence;
 	FIL file;
 
@@ -192,13 +197,18 @@ int PIO_connection(TEXT * file_name, USHORT * file_length)
 
 
 
+FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
+{
 /**************************************
  *
+ *	P I O _ c r e a t e
+ *
+ **************************************
+ *
+ * Functional description
  *	Create a new database file.
  *
  **************************************/
-FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
-{
 	HANDLE desc;
 	FIL file;
 	TEXT workspace[MAXPATHLEN];
@@ -447,14 +457,18 @@ void PIO_header(DBB dbb, SCHAR * address, int length)
 }
 
 
-
+SLONG PIO_max_alloc(DBB dbb)
+{
 /**************************************
  *
+ *	P I O _ m a x _ a l l o c
+ *
+ **************************************
+ *
+ * Functional description
  *	Compute last physically allocated page of database.
  *
  **************************************/
-SLONG PIO_max_alloc(DBB dbb)
-{
 	FIL file = dbb->dbb_file;
 
 	while (file->fil_next) {
@@ -467,13 +481,18 @@ SLONG PIO_max_alloc(DBB dbb)
 }
 
 
+SLONG PIO_act_alloc(DBB dbb)
+{
 /**************************************
  *
+ *	P I O _ a c t _ a l l o c
+ *
+ **************************************
+ *
+ * Functional description
  *  Compute actual number of physically allocated pages of database.
  *
  **************************************/
-SLONG PIO_act_alloc(DBB dbb)
-{
 	FIL file;
 	SLONG tot_pages = 0;
 
@@ -489,19 +508,24 @@ SLONG PIO_act_alloc(DBB dbb)
 }
 
 
-
-/**************************************
- *
- *	Open a database file.  If a "connection" block is provided, use
- *	the connection to communication with a page/lock server.
- *
- **************************************/
 FIL PIO_open(DBB dbb,
 			 TEXT * string,
 			 SSHORT length,
 			 SSHORT trace_flag,
 			 BLK connection, TEXT * file_name, USHORT file_length)
 {
+/**************************************
+ *
+ *	P I O _ o p e n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a database file. If a "connection"
+ *	block is provided, use the connection
+ *	to communication with a page/lock server.
+ *
+ **************************************/
 	TEXT temp[MAXPATHLEN], *ptr;
 	HANDLE desc;
 
@@ -886,13 +910,18 @@ int PIO_write(FIL file, BDB bdb, PAG page, STATUS* status_vector)
 } // extern "C"
 
 
+static ULONG get_number_of_pages(FIL file, USHORT pagesize)
+{
 /**************************************
  *
+ *	g e t _ n u m b e r _ o f _ p a g e s
+ *
+ **************************************
+ *
+ * Functional description
  *	Compute number of pages in file, based only on file size.
  *
  **************************************/
-static ULONG get_number_of_pages(FIL file, USHORT pagesize)
-{
 	HANDLE hFile = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 		file->fil_force_write_desc : file->fil_desc);
 	DWORD dwFileSizeLow;
@@ -942,7 +971,6 @@ static void release_io_event(FIL file, OVERLAPPED* overlapped)
 		CloseHandle(overlapped->hEvent);
 }
 #endif
-
 
 
 static FIL seek_file(FIL			file,
