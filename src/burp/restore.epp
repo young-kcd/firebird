@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.69 2004-02-25 01:50:12 skidder Exp $
+$Id: restore.epp,v 1.70 2004-03-01 01:29:26 skidder Exp $
 */
 
 #include "firebird.h"
@@ -692,7 +692,7 @@ void add_files (const UCHAR* file_name)
 			file->fil_length -= start - 1;
 		else
 		{
-			BURP_print (96, (void*) file->fil_length, (void*) (start - 1), NULL,
+			BURP_print (96, (void*)(IPTR) file->fil_length, (void*)(IPTR) (start - 1), NULL,
 						NULL, NULL);
 			// msg 96  length given for initial file (%ld) is less than minimum (%ld)
 			file->fil_length = 0;
@@ -761,13 +761,13 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 		{
 			skip_count = tdgbl->gbl_sw_skip_count;
 			get_skip(tdgbl, skip_count);
-			BURP_print (203, (void*) skip_count, (void*) bad_attr, NULL, NULL, NULL);
+			BURP_print (203, (void*)(IPTR) skip_count, (void*) bad_attr, NULL, NULL, NULL);
 			//msg 203: skipped %d bytes after reading a bad attribute %d 
 		}
 		else
 		{
 			++skip_count;
-			BURP_print (205, (void*) skip_count, (void*) bad_attr, NULL, NULL, NULL);
+			BURP_print (205, (void*)(IPTR) skip_count, (void*) bad_attr, NULL, NULL, NULL);
 			// msg 205: skipped %d bytes looking for next valid attribute, encountered attribute %d 
 		}
 		scan_next_attr = AFTER_SKIP;
@@ -898,8 +898,8 @@ void create_database (const TEXT* file_name)
 	if (tdgbl->gbl_sw_page_size &&
 		(tdgbl->gbl_sw_page_size < page_size))
 	{
-		BURP_print (110, (void*) page_size,
-					(void*) (ULONG) tdgbl->gbl_sw_page_size, NULL, NULL, NULL);
+		BURP_print (110, (void*)(IPTR) page_size,
+					(void*)(IPTR) tdgbl->gbl_sw_page_size, NULL, NULL, NULL);
 		// msg 110 Reducing the database page size from %ld bytes to %ld bytes 
 	}
 
@@ -1062,8 +1062,8 @@ void decompress(UCHAR* buffer,
 		{
 			if (end - p < count)
 			{
-				BURP_print (202, (void*) (SLONG) count,
-							(void*) (ULONG) (end - p), NULL, NULL, NULL);
+				BURP_print (202, (void*)(IPTR) count,
+							(void*)(IPTR) (end - p), NULL, NULL, NULL);
 				// msg 202: adjusting a decompression length error: invalid length  %d was adjusted to %d 
 				count = end - p;
 			}
@@ -1073,8 +1073,8 @@ void decompress(UCHAR* buffer,
 		{
 			if (end + count < p)
 			{
-				BURP_print(202, (void*) (SLONG) count,
-						   (void*) (ULONG) (p - end), NULL, NULL, NULL);
+				BURP_print(202, (void*)(IPTR) count,
+						   (void*)(IPTR) (p - end), NULL, NULL, NULL);
 				// msg 202: adjusting a decompression length error: invalid length %d was adjusted to %d 
 				count = p - end;
 			}
@@ -1245,7 +1245,7 @@ bool get_acl (const TEXT	*owner_nm,
 
 		default:
 			// msg 79 don't understand blob info item %ld  
-			BURP_print (79, (void*) (ULONG) item, NULL, NULL, NULL, NULL);
+			BURP_print (79, (void*)(IPTR) item, NULL, NULL, NULL, NULL);
 			// CVC: do you return, without closing the blob, dear function???
 			if (isc_close_blob (status_vector,  &blob))
 				BURP_error_redirect (status_vector, 23, NULL, NULL);

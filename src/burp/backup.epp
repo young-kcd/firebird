@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.52 2004-02-24 05:34:26 robocop Exp $
+$Id: backup.epp,v 1.53 2004-03-01 01:29:25 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1924,8 +1924,8 @@ void put_index( burp_rel* relation)
 	
 			if (count != (ULONG) X.RDB$SEGMENT_COUNT) 
 			{
-				BURP_print(180, X.RDB$INDEX_NAME, (void*) count,
-							(void*)(ULONG) X.RDB$SEGMENT_COUNT, NULL, NULL);
+				BURP_print(180, X.RDB$INDEX_NAME, (void*)(IPTR)count,
+							(void*)(IPTR)X.RDB$SEGMENT_COUNT, NULL, NULL);
 				continue;
 			}
 	
@@ -2001,8 +2001,8 @@ void put_index( burp_rel* relation)
 	
 			if (count != (ULONG) X.RDB$SEGMENT_COUNT) 
 			{
-				BURP_print(180, X.RDB$INDEX_NAME, (void*) count,
-						   (void*)(ULONG) X.RDB$SEGMENT_COUNT, NULL, NULL);
+				BURP_print(180, X.RDB$INDEX_NAME, (void*)(IPTR) count,
+						   (void*)(IPTR) X.RDB$SEGMENT_COUNT, NULL, NULL);
 				continue; 
 			}
 	
@@ -2407,7 +2407,7 @@ bool put_source_blob(SCHAR		attribute,
 			break;
 
 		default:
-			BURP_print(79, (void *) (ULONG) item, NULL, NULL, NULL, NULL);
+			BURP_print(79, (void *)(IPTR) item, NULL, NULL, NULL, NULL);
 			// msg 79 don't understand blob info item %ld  
 			return false;
 		}
