@@ -29,7 +29,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.16 2002-10-12 20:27:25 skidder Exp $
+$Id: opt.cpp,v 1.17 2002-10-26 21:16:38 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -1438,6 +1438,10 @@ static BOOLEAN computable(CSB csb,
 	case nod_field:
 		if ((n = (USHORT) node->nod_arg[e_fld_stream]) == stream)
 			return FALSE;
+		if (!(csb->csb_rpt[n].csb_relation || 
+			  csb->csb_rpt[n].csb_procedure ||
+			  csb->csb_rpt[n].csb_view))
+			return TRUE;
 		if (idx_use
 			&& !(csb->csb_rpt[n].
 				 csb_flags & (csb_made_river | csb_active))) return FALSE;
