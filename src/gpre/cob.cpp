@@ -27,7 +27,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.54 2004-11-28 03:43:42 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -2427,7 +2426,7 @@ static void gen_event_init( const act* action)
 //  generate call to dynamically generate event blocks 
 
 	TEXT variable[20];
-	const gpre_nod **ptr, **end;
+	const gpre_nod *const *ptr, *const *end;
 	SSHORT count;
 	for (ptr = event_list->nod_arg, count = 0, end =
 		 ptr + event_list->nod_count; ptr < end; ptr++)
