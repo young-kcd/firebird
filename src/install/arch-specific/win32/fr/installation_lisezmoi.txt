@@ -8,8 +8,8 @@ Firebird 1.5 en géneral.
 
 ** NOTE IMPORTANTE **
 
-Ce document est une traduction et malgré nos efforts, il
-peut ne pas correspondre exactement à la dernière
+Ce document est une traduction et malgré nos efforts,
+il peut ne pas correspondre exactement à la dernière
 version, seul le texte original en anglais
 (installation_readme.txt) est toujours à jour.
 
@@ -30,13 +30,14 @@ o Installation depuis un fichier batch
 Avant l'installation
 --------------------
 
-Il est recommandé de désinstaller toutes les précédentes
-versions de Firebird 1.0, Firebird 1.5 ou InterBase
-avant de commencer l'installation.
+Il est recommandé de désinstaller toutes les
+précédentes versions de Firebird 1.0, Firebird 1.5 ou
+InterBase avant de commencer l'installation.
 
 
-Installation sur des systèmes avec Firebird 2.0 Instable
---------------------------------------------------------
+Installation sur des systèmes avec Firebird 2.0
+Instable
+-------------------------------------------------------
 
 Le programme d'installation de Firebird 1.5.2 ne peut
 détecter une version existante en cours d'éxécution de
@@ -47,7 +48,7 @@ d'arréter ce serveur avant de commencer l'installation.
 
 Nouvelles fonctionnalités du programme d'installation
 Firebird 1.5.2
---------------------------------------------------------
+-------------------------------------------------------
 
 Le programme d'installation est maintenant traduit dans
 plusieures langues. La traduction concerne SEULEMENT le
@@ -59,9 +60,9 @@ Nouvelles fonctionnalités du programme d'installation
 
 o L'assistant d'installation permet maintenant
   d'installer soit la version classique soit la version
-  super-serveur. Vous pouvez installer l'une ou l'autre,
-  mais pas les deux. Pour changer de type de version
-  vous devez désinstaller et réinstaller.
+  super-serveur. Vous pouvez installer l'une ou
+  l'autre, mais pas les deux. Pour changer de type de
+  version vous devez désinstaller et réinstaller.
 
 o Les règles d'installation de la bibliothèque ont
   considérablement changées. Elles sont expliquées
@@ -113,16 +114,16 @@ o Firebird 1.0 réservait une clé de registre pour
   C'est maintenant obsolète et sera effacé par
   l'installation. Si vous avez une applications qui
   utilise cette clé, vous devrez la rajouter
-  manuellement. Toutefois, il est préferable de modifier
-  votre application pour lire la nouvelle clé.
+  manuellement. Toutefois, il est préferable de
+  modifier votre application pour lire la nouvelle clé.
 
-o Les premières versions de Firebird 1.5 RC installaient
-  fbclient.dll dans le répertoire <system>. Cette
-  pratique est obsolète. Une option pour l'installer
-  dans le répertoire <system> est disponible en cours
-  d'installation. Toutefois, il est préferable de
-  modifier vos applications pour être conformes à
-  l'installation actuelle de fbclient.
+o Les premières versions de Firebird 1.5 RC
+  installaient fbclient.dll dans le répertoire
+  <system>. Cette pratique est obsolète. Une option
+  pour l'installer dans le répertoire <system> est
+  disponible en cours d'installation. Toutefois, il est
+  préferable de modifier vos applications pour être
+  conformes à l'installation actuelle de fbclient.
 
 
 Désinstallation
@@ -130,8 +131,8 @@ Désinstallation
 
 o Il est préférable d'utiliser le programme de
   désinstalation fourni.
-  Il peut être appelé depuis le panneau de configuration.
-  Vous pouvez aussi utiliser directement
+  Il peut être appelé depuis le panneau de
+  configuration. Vous pouvez aussi utiliser directement
   unins000.exe depuis le répertoire d'installation.
 
 o Si Firebird est exécuté comme application (et non
@@ -150,9 +151,10 @@ Autres Notes
 
   Firebird necessite WinSock2. Toutes les plateformes
   Win32 doivent l'avoir, sauf Win95. Un test de
-  l'existence de Winsock2 est fait durant l'installation.
-  S'il n'est pas concluant l'installation echouera. Vous
-  pouvez visiter cet lien:
+  l'existence de Winsock2 est fait durant
+  l'installation. S'il n'est pas concluant
+  l'installation echouera. Vous pouvez visiter cet
+  lien:
 
     http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
@@ -204,7 +206,7 @@ fichier batch avec les paramêtres suivants:
   Décoche la case de création d'icônes.
 
 /COMPONENTS="liste de noms de composant séparés par des
-points virgule"
+  points virgule"
 
   Choisir dans - SuperServerComponent,
                  ClassicServerComponent,
@@ -240,10 +242,11 @@ points virgule"
 /NOCPL
 
   N'installe pas l'application du panneau de
-  configuration. Cela peut être utile pour deux raisons:
+  configuration. Cela peut être utile pour deux
+  raisons:
 
-  o Installer/Desinstaller une application du panneau de
-    configuration necessite souvent un redémarrage.
+  o Installer/Desinstaller une application du panneau
+    de configuration necessite souvent un redémarrage.
 
   o Vous voulez utiliser une autre application du
     panneau de configuration.
@@ -251,9 +254,9 @@ points virgule"
 
 /NOGDS32
 
-  N'installe pas de copie de la bibliothèque client dans
-  le répertoire système, même si l'analyse d'installation
-  conclue que c'est une bonne chose.
+  N'installe pas de copie de la bibliothèque client
+  dans le répertoire système, même si l'analyse
+  d'installation conclue que c'est une bonne chose.
 
 
 /COPYFBCLIENT
