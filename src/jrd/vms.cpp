@@ -304,7 +304,7 @@ int PIO_expand(TEXT * file_name, USHORT file_length, TEXT * expanded_name)
 }
 
 
-void PIO_flush(FIL file, BOOLEAN forced)
+void PIO_flush(FIL file)
 {
 /**************************************
  *
