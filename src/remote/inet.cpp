@@ -1242,7 +1242,7 @@ static int accept_connection(rem_port* port,
 /* store FULL user identity in port_user_name for security purposes */
 
 	Firebird::string temp;
-	temp.printf("%s.%ld.%ld", name, eff_gid, eff_uid);
+	temp.printf("%s.%ld.%ld", name.c_str(), eff_gid, eff_uid);
 	port->port_user_name = REMOTE_make_string(temp.c_str());
 
 	port->port_protocol_str = REMOTE_make_string("TCPv4");
