@@ -208,8 +208,7 @@ GPRE_NOD SQE_boolean( gpre_req* request, USHORT * paren_count)
 
 gpre_ctx* SQE_context(gpre_req* request)
 {
-	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
-		owner_name[NAME_SIZE + 1];
+	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 	SCHAR s[ERROR_LENGTH];
 
 	assert_IS_REQ(request);

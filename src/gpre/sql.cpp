@@ -2541,7 +2541,7 @@ static act* act_delete(void)
 //  First comes the relation.  Unfortunately, there is no way to identify
 //  its database until the cursor is known.  Sigh.  Save the token. 
 
-	TEXT r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
+	TEXT r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 	SQL_relation_name(r_name, db_name, owner_name);
 
 //  Parse the optional alias (context variable) 
@@ -3203,7 +3203,7 @@ static act* act_grant_revoke( enum act_t type)
 		CPR_s_error("ON");
 
 	STR relation_name = NULL;
-	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
+	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 
 	if (execute_priv) {
 		if (!MSC_match(KW_PROCEDURE))
@@ -3713,7 +3713,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 	request->req_flags =
 		(act_op == ACT_blob_open) ? REQ_sql_blob_open : REQ_sql_blob_create;
 
-	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
+	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 	SQL_relation_name(r_name, db_name, owner_name);
 
 
@@ -3913,8 +3913,7 @@ static act* act_procedure(void)
 	gpre_req* request = MSC_request(REQ_procedure);
 	par_options(&request->req_trans);
 
-	SCHAR p_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
-		owner_name[NAME_SIZE + 1];
+	SCHAR p_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 
 	SQL_relation_name(p_name, db_name, owner_name);
 	gpre_prc* procedure = SQL_procedure(request, p_name, db_name, owner_name, true);
@@ -4373,7 +4372,7 @@ static act* act_update(void)
 //  First comes the relation.  Unfortunately, there is no way to identify
 //  its database until the cursor is known.  Sigh.  Save the token. 
 
-	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
+	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 	SQL_relation_name(r_name, db_name, owner_name);
 
 //  Parse the optional alias (context variable) 
@@ -5657,8 +5656,7 @@ static int par_page_size(void)
 
 static gpre_rel* par_relation( gpre_req* request)
 {
-	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
-		owner_name[NAME_SIZE + 1];
+	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 
 	SQL_relation_name(r_name, db_name, owner_name);
 
