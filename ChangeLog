@@ -1,3 +1,301 @@
+2002-10-07 15:33  eku
+
+	* firebird2/src/: jrd/build_no.h (1.194), misc/writeBuildNum.sh
+	(1.895):
+	
+	increment build number
+
+2002-10-07 15:33  eku
+
+	* firebird2/src/jrd/: svc.cpp (1.21), svc.h (1.4):
+	
+	Service API:  o fixed SVC_TRMNTR parsing  o fixed -svc/-svc_thd
+	argument passing  o re-enabled API on CS (SINIX-Z)
+
+2002-10-07 03:29  skywalker
+
+	* firebird2/src/: jrd/build_no.h (1.186), jrd/build_no.h (1.185),
+	misc/writeBuildNum.sh (1.887), misc/writeBuildNum.sh (1.886),
+	jrd/build_no.h (1.188), jrd/build_no.h (1.187),
+	misc/writeBuildNum.sh (1.889), misc/writeBuildNum.sh (1.888),
+	jrd/build_no.h (1.193), jrd/build_no.h (1.192), jrd/build_no.h
+	(1.191), jrd/build_no.h (1.190), jrd/build_no.h (1.189),
+	misc/writeBuildNum.sh (1.894), misc/writeBuildNum.sh (1.893),
+	misc/writeBuildNum.sh (1.892), misc/writeBuildNum.sh (1.891),
+	misc/writeBuildNum.sh (1.890):
+	
+	increment build number
+
+2002-10-07 03:29  skywalker
+
+	* firebird2/: configure.in (1.52),
+	builds/posix/Makefile.in.boot.gpre (1.5),
+	builds/posix/Makefile.in.client.gbak (1.4),
+	builds/posix/Makefile.in.client.gdef (1.4),
+	builds/posix/Makefile.in.client.gfix (1.4),
+	builds/posix/Makefile.in.client.gpre (1.4),
+	builds/posix/Makefile.in.client.isql (1.4),
+	builds/posix/Makefile.in.client.util (1.4),
+	builds/posix/Makefile.in.embed.gbak (1.4),
+	builds/posix/Makefile.in.embed.gdef (1.4),
+	builds/posix/Makefile.in.embed.gfix (1.4),
+	builds/posix/Makefile.in.embed.gpre (1.4),
+	builds/posix/Makefile.in.embed.isql (1.4),
+	builds/posix/Makefile.in.embed.lockmgr (1.3),
+	builds/posix/Makefile.in.embed.qli (1.4),
+	builds/posix/Makefile.in.embed.util (1.4),
+	builds/posix/Makefile.in.extlib (1.4),
+	builds/posix/Makefile.in.fbserver (1.4),
+	builds/posix/Makefile.in.fbutil (1.4),
+	builds/posix/Makefile.in.firebird (1.10),
+	builds/posix/Makefile.in.inet_server (1.4),
+	builds/posix/Makefile.in.install (1.4),
+	builds/posix/Makefile.in.intl (1.5),
+	builds/posix/Makefile.in.libfbclient (1.4),
+	builds/posix/Makefile.in.libfbcommon (1.3),
+	builds/posix/Makefile.in.libfbembed (1.4),
+	builds/posix/Makefile.in.libfbserver (1.3),
+	builds/posix/Makefile.in.libfbstatic (1.4),
+	builds/posix/Makefile.in.msgs (1.6),
+	builds/posix/Makefile.in.refDatabases (1.6),
+	builds/posix/Makefile.in.static.gbak (1.3),
+	builds/posix/Makefile.in.static.gpre (1.5),
+	builds/posix/Makefile.in.static.isql (1.4),
+	builds/posix/Makefile.in.v5_examples (1.4),
+	builds/posix/make.defaults (1.4), builds/posix/make.rules (1.8),
+	builds/posix/make.shared.targets (1.1),
+	builds/posix/make.shared.variables (1.4), src/dsql/parse.cpp
+	(1.29), src/extern/editline/MANIFEST (1.1),
+	src/extern/editline/Make.os9 (1.1), src/extern/editline/Makefile
+	(1.1), src/extern/editline/README (1.1),
+	src/extern/editline/complete.c (1.1),
+	src/extern/editline/editline.3 (1.1),
+	src/extern/editline/editline.c (1.1),
+	src/extern/editline/editline.h (1.1), src/extern/editline/os9.h
+	(1.1), src/extern/editline/sysos9.c (1.1),
+	src/extern/editline/sysunix.c (1.1), src/extern/editline/testit.c
+	(1.1), src/extern/editline/unix.h (1.1), src/include/editline.h
+	(1.1), src/include/gen/autoconfig_msvc.h (1.35), src/isql/isql.epp
+	(1.15), src/make.new/config/config.h.in (1.39),
+	src/utilities/srvrmgr.cpp (1.7):
+	
+	A few makefile dependancies fixed.  Started work on upgrading rpm
+	build scripts Fix makefiles for super build Exchange editline for
+	readline in isql
+
+2002-10-06 22:05  skywalker
+
+	* firebird2/src/: jrd/build_no.h (1.183), misc/writeBuildNum.sh
+	(1.884), jrd/build_no.h (1.184), misc/writeBuildNum.sh (1.885):
+	
+	increment build number
+
+2002-10-06 15:33  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.182), misc/writeBuildNum.sh
+	(1.883):
+	
+	increment build number
+
+2002-10-06 15:33  dimitr
+
+	* firebird2/doc/WhatsNew (1.9):
+	
+	Alpha 2 changes.
+
+2002-10-06 12:59  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.181), misc/writeBuildNum.sh
+	(1.882):
+	
+	increment build number
+
+2002-10-06 12:59  dimitr
+
+	* firebird2/builds/win32/msvc6/fbserver.dsp (1.5):
+	
+	no message
+
+2002-10-06 12:55  dimitr
+
+	* firebird2/builds/win32/msvc6/isql.dsp (1.3):
+	
+	Statically link isql with the runtime libraries.
+
+2002-10-06 12:55  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.180), misc/writeBuildNum.sh
+	(1.881):
+	
+	increment build number
+
+2002-10-06 12:51  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.21):
+	
+	BLOB subtypes are no longer ignored in views (expression fields
+	only).
+
+2002-10-06 12:51  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.179), misc/writeBuildNum.sh
+	(1.880):
+	
+	increment build number
+
+2002-10-06 10:59  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.178), misc/writeBuildNum.sh
+	(1.879):
+	
+	increment build number
+
+2002-10-06 10:59  dimitr
+
+	* firebird2/src/utilities/registry.cpp (1.5):
+	
+	Added missing guardian registry entry.
+
+2002-10-05 00:08  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.177), misc/writeBuildNum.sh
+	(1.878):
+	
+	increment build number
+
+2002-10-05 00:08  skidder
+
+	* firebird2/src/jrd/: dfw.epp (1.19), jrd.h (1.19), met.epp (1.25),
+	met_proto.h (1.9):
+	
+	Fixed resource leaks in DDL recursive procedure handling which
+	caused some DDL to fail
+
+2002-10-04 23:57  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.176), misc/writeBuildNum.sh
+	(1.877):
+	
+	increment build number
+
+2002-10-04 23:57  skidder
+
+	* firebird2/builds/posix/: make.shared.variables (1.3),
+	prefix.darwin (1.3), prefix.linux (1.6), prefix.sinixz (1.7),
+	prefix.solx86 (1.6):
+	
+	Little garbage cleanup. Shouldn't break anything
+
+2002-10-04 19:53  arnobrinkman
+
+	* firebird2/src/: jrd/build_no.h (1.175), misc/writeBuildNum.sh
+	(1.876):
+	
+	increment build number
+
+2002-10-04 19:53  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.23):
+	
+	AB: Fixed bug with alias and GROUP BY clause
+
+2002-10-04 13:06  eku
+
+	* firebird2/src/: jrd/build_no.h (1.173), misc/writeBuildNum.sh
+	(1.874), jrd/build_no.h (1.174), misc/writeBuildNum.sh (1.875):
+	
+	increment build number
+
+2002-10-04 13:06  eku
+
+	* firebird2/src/: jrd/alt.cpp (1.6), utilities/gsec.cpp (1.5):
+	
+	Fixed coredump caused by 'array out of bounds' writes.
+
+2002-10-04 11:38  eku
+
+	* firebird2/src/: jrd/build_no.h (1.172), misc/writeBuildNum.sh
+	(1.873):
+	
+	increment build number
+
+2002-10-04 11:38  eku
+
+	* firebird2/src/utilities/security.epp (1.9):
+	
+	Fixed merge error FB1->FB2.
+
+2002-10-02 19:56  skidder
+
+	* firebird2/src/: jrd/build_no.h (1.171), misc/writeBuildNum.sh
+	(1.872):
+	
+	increment build number
+
+2002-10-02 19:56  skidder
+
+	* firebird2/src/jrd/: grant.gdl (1.3), trig.h (1.4):
+	
+	Field check constraints are now deleted automatically
+
+2002-10-02 16:31  dimitr
+
+	* firebird2/src/: misc/writeBuildNum.sh (1.871), jrd/build_no.h
+	(1.170):
+	
+	increment build number
+
+2002-10-02 16:31  dimitr
+
+	* firebird2/doc/WhatsNew (1.8):
+	
+	Updated.
+
+2002-10-02 15:27  dimitr
+
+	* firebird2/src/jrd/idx.h (1.4):
+	
+	Just a cosmetic change.
+
+2002-10-02 15:27  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.168), misc/writeBuildNum.sh
+	(1.869), jrd/build_no.h (1.169), misc/writeBuildNum.sh (1.870):
+	
+	increment build number
+
+2002-10-02 15:27  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.18):
+	
+	Removed problematic code related to ALTER VIEW implementation.
+
+2002-10-02 15:26  fsg
+
+	* firebird2/src/: jrd/build_no.h (1.167), misc/writeBuildNum.sh
+	(1.868):
+	
+	increment build number
+
+2002-10-02 15:24  dimitr
+
+	* firebird2/src/dsql/: parse.cpp (1.28), parse.y (1.28):
+	
+	Hide ALTER VIEW functionality until it works good.
+
+2002-10-02 15:24  dimitr
+
+	* firebird2/src/: jrd/build_no.h (1.165), misc/writeBuildNum.sh
+	(1.866), jrd/build_no.h (1.166), misc/writeBuildNum.sh (1.867):
+	
+	increment build number
+
+2002-10-02 15:24  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.20):
+	
+	Made it in-sync with the FB1 tree.
+
 2002-10-02 14:43  eku
 
 	* firebird2/src/: jrd/build_no.h (1.164), jrd/build_no.h (1.163),
