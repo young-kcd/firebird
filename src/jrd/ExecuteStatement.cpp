@@ -251,12 +251,6 @@ rec_err:
 			case dtype_int64:
 				ReScaleLike(ISC_INT64);
 				break;
-			case dtype_real:
-				ReScaleLike(float);
-				break;
-			case dtype_double:
-				ReScaleLike(double);
-				break;
 			}
 #			undef ReScaleLike
 		}
