@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.9.2.2 2003-12-30 00:16:14 skidder Exp $
+#  $Id: Makefile.in,v 1.9.2.3 2003-12-30 00:26:14 skidder Exp $
 #
 ROOT=..
 
@@ -156,7 +156,7 @@ buildImageDir:
 # Work around GDB 6.0 bug
 	mkdir -p $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug
 	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
-        ln -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug; \
+        ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)/usr/lib/.debug; \
     done
 
 
