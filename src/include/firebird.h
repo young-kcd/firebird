@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.20 2004-05-18 21:55:27 brodsom Exp $
+ *  $Id: firebird.h,v 1.21 2004-05-18 23:27:06 brodsom Exp $
  *
  */
 
@@ -43,10 +43,10 @@
 #define FB_DLL_EXPORT
 #endif
 #if defined(SOLX86)
-/* this pragmas is used only with gcc 2.95!
-#define __PRAGMA_REDEFINE_EXTNAME 
-#define __EXTENSIONS__
-*/
+// this pragmas is used only with gcc 2.95!
+//#define __PRAGMA_REDEFINE_EXTNAME 
+//#define __EXTENSIONS__
+//
 #endif
 
 //
