@@ -128,10 +128,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	SLONG debug_value;
 	jmp_buf env;
 
-#ifdef __OVERLAY__
-	_OvrInitEms(0, 0, 0);
-#endif
-
 /* Look at options, if any */
 
 	startup_file = STARTUP_FILE;
