@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.132 2003-03-21 11:53:39 aafemt Exp $
+dnl $Id: configure.in,v 1.133 2003-04-17 18:42:12 bellardo Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -608,6 +608,7 @@ mkdir -p gen/libfbcommon/common/classes
 mkdir -p gen/libfbcommon/common/config
 mkdir -p gen/libfbcommon/fbutil
 mkdir -p gen/boot.gpre/jrd/os/posix
+mkdir -p gen/boot.gpre/jrd/os/darwin
 mkdir -p gen/boot.gpre/jrd/os/win32
 mkdir -p gen/boot.gpre/gpre
 mkdir -p gen/static.gpre
@@ -638,6 +639,7 @@ mkdir -p gen/libfbstatic/alice
 mkdir -p gen/libfbstatic/utilities
 mkdir -p gen/libfbstatic/fbutil
 mkdir -p gen/libfbstatic/jrd/os/posix
+mkdir -p gen/libfbstatic/jrd/os/darwin
 mkdir -p gen/libfbstatic/jrd/os/win32
 mkdir -p gen/libfbstatic/burp
 mkdir -p gen/libfbstatic/wal
