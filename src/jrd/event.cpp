@@ -126,7 +126,9 @@ static void THREAD_ROUTINE watcher_thread(void *);
 static SSHORT acquire_count;
 static EVH EVENT_header = NULL;
 static SLONG EVENT_process_offset, EVENT_default_size;
+#ifdef SOLARIS_MT
 static PRB EVENT_process;
+#endif
 static SH_MEM_T EVENT_data;
 
 #if defined(WIN_NT)
