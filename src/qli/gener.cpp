@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.17 2003-04-16 10:18:17 aafemt Exp $
+$Id: gener.cpp,v 1.18 2003-08-30 02:11:08 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -111,8 +111,7 @@ void GEN_release(void)
 
 	for (; QLI_requests; QLI_requests = QLI_requests->req_next) {
 		if (QLI_requests->req_handle)
-			gds__release_request(status_vector,
-								 GDS_REF(QLI_requests->req_handle));
+			gds__release_request(status_vector, &QLI_requests->req_handle);
 
 		rlb = QLI_requests->req_blr;
 		RELEASE_RLB;
@@ -613,23 +612,19 @@ static void gen_compile( QLI_REQ request)
 
 	dbb = request->req_database;
 
-	if (gds__compile_request(status_vector,
-							 GDS_REF(dbb->dbb_handle),
-							 GDS_REF(request->req_handle),
-							 length, (char*) GDS_VAL(rlb->rlb_base))) {
+	if (gds__compile_request(status_vector, &dbb->dbb_handle,
+							 &request->req_handle, length, 
+							 (char*) rlb->rlb_base)) {
 		RELEASE_RLB;
 		ERRQ_database_error(dbb, status_vector);
 	}
 
 #ifdef DEV_BUILD
 	if (QLI_explain &&
-		!gds__request_info(status_vector,
-						   GDS_REF(request->req_handle),
-						   0,
-						   sizeof(explain_info),
-						   explain_info,
-						   sizeof(explain_buffer),
-						   explain_buffer)) explain((UCHAR*) explain_buffer);
+		!gds__request_info(status_vector, &request->req_handle, 0,
+						   sizeof(explain_info), explain_info,
+						   sizeof(explain_buffer), explain_buffer)) 
+			explain((UCHAR*) explain_buffer);
 #endif
 
 	RELEASE_RLB;

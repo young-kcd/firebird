@@ -985,9 +985,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
 		buffer = fixed_buffer;
 
-	while (!gds__get_segment(status_vector,
-							 GDS_REF(blob),
-							 (USHORT*) GDS_REF(l1), buffer_length, GDS_VAL(buffer)))
+	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1, buffer_length, buffer))
 		if (sleuth_check(0, (UCHAR*) buffer, (UCHAR*) (buffer + l1), (UCHAR*) control, (UCHAR*) (control + l2)))
 		{
 			result = TRUE;
@@ -997,7 +995,7 @@ static int sleuth( QLI_NOD node, DSC * desc1, DSC * desc2, DSC * desc3)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, &blob)) {
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;
@@ -1304,11 +1302,8 @@ static int string_boolean( QLI_NOD node)
 	if (!(buffer = make_blob_buffer( blob, &buffer_length)))
 		buffer = fixed_buffer;
 
-	while (!gds__get_segment(status_vector,
-							 GDS_REF(blob),
-							 (USHORT*) GDS_REF(l1),
-							 buffer_length,
-							 GDS_VAL(buffer)))
+	while (!gds__get_segment(status_vector, &blob, (USHORT*) &l1, 
+							 buffer_length, buffer))
 			if (string_function(node, l1, buffer, l2, p2)) {
 			result = TRUE;
 			break;
@@ -1317,7 +1312,7 @@ static int string_boolean( QLI_NOD node)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (gds__close_blob(status_vector, GDS_REF(blob))) {
+	if (gds__close_blob(status_vector, &blob)) {
 		context = (QLI_CTX) node->nod_arg[e_fld_context];
 		request = context->ctx_request;
 		dbb = request->req_database;

@@ -271,7 +271,7 @@ TEXT *FMT_format(LLS stack)
 	size = (max_offset + 1) * (number_segments + 1) + 2;
 
 	if (size >= 60000)
-		ERRQ_print_error(482, (TEXT *) max_offset,
+		ERRQ_print_error(482, (TEXT *)(ULONG) max_offset,
 						 (TEXT *) (number_segments + 1), NULL, NULL, NULL);
 
 	header = (STR) ALLOCDV(type_str, size);
@@ -560,7 +560,7 @@ void FMT_print( QLI_NOD list, PRT print)
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
 		item = (ITM) * ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
-			gds__close_blob(status_vector, GDS_REF(item->itm_stream));
+			gds__close_blob(status_vector, &item->itm_stream);
 	}
 }
 
@@ -1291,12 +1291,10 @@ static int print_line( ITM item, TEXT ** ptr)
 	l = item->itm_print_length;
 
 
-	if ((status = gds__get_segment(status_vector,
-								   GDS_REF(item->itm_stream),
-								   GDS_REF(length),
-								   l, GDS_VAL(p))) && status != gds_segment) {
+	if ((status = gds__get_segment(status_vector, &item->itm_stream, &length,
+								   l, p)) && status != gds_segment) {
 		long *null_status = 0;
-		gds__close_blob(null_status, GDS_REF(item->itm_stream));
+		gds__close_blob(null_status, &item->itm_stream);
 		if (status != gds_segstr_eof)
 			ERRQ_database_error(0, status_vector);
 		return EOF;

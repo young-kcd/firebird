@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.21 2003-08-28 10:33:04 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.22 2003-08-30 02:12:44 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -177,8 +177,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 	}
 
 	if (gds__attach_database
-		(gds_status, 0, GDS_VAL(dbb->dbb_filename), GDS_REF(DB), d - &dpb[0],
-		 dpb)) {
+		(gds_status, 0, dbb->dbb_filename, &DB, d - &dpb[0], dpb)) {
 		/* We failed to attach, try in read only mode just in case 
 		if (d == dpb)
 			*d++ = gds_dpb_version1;
@@ -186,8 +185,8 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 		*d++ = 1;
 		*d++ = TRUE;
 		if (gds__attach_database
-			(gds_status, 0, GDS_VAL(dbb->dbb_filename), GDS_REF(DB), d - &dpb[0],
-		 	dpb)) {*/
+			(gds_status, 0, dbb->dbb_filename, &DB, d - &dpb[0], dpb)) {
+		*/
 				gds__print_status(gds_status);
 				return FALSE;
 		//}
@@ -282,9 +281,7 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 
 /*  get the base level of the engine  */
 
-	if (gds__database_info(gds_status,
-						   GDS_REF(DB),
-						   sizeof(db_version_info),
+	if (gds__database_info(gds_status, &DB, sizeof(db_version_info),
 						   db_version_info, sizeof(buffer), buffer)) {
 		gds__print_status(gds_status);
 		return FALSE;
@@ -1491,7 +1488,7 @@ void MET_load_hash_table( DBB dbb)
 		X.RDB$SYSTEM_FLAG = 1 post_v3_flag = TRUE;
 
 	END_FOR;
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 
 	if (!post_v3_flag)
 		dbb->dbb_flags |= DBB_v3;
@@ -1544,7 +1541,7 @@ void MET_load_hash_table( DBB dbb)
 		END_FOR;
 	}
 
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 
 /*  Pick up all procedures (necessary to parse parts of the GDML grammar) */
 
@@ -1566,7 +1563,7 @@ void MET_load_hash_table( DBB dbb)
 		END_ERROR;
 
 	if (handle)
-		gds__release_request(gds_status, GDS_REF(handle));
+		gds__release_request(gds_status, &handle);
 
 /*  Pickup any user defined functions.  If the database does not support UDF's,
  *  this may fail
@@ -1619,9 +1616,9 @@ void MET_load_hash_table( DBB dbb)
 	}
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 	if (handle2)
-		gds__release_request(gds_status, GDS_REF(handle2));
+		gds__release_request(gds_status, &handle2);
 
 /*  Pick up all Collation names, might have several collations
  *  for a given character set.
@@ -1671,9 +1668,9 @@ void MET_load_hash_table( DBB dbb)
 		/* assume pre V4 database, no collations */
 		END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 	if (handle2)
-		gds__release_request(gds_status, GDS_REF(handle2));
+		gds__release_request(gds_status, &handle2);
 
 /*  Now pick up all character set names - with the subtype set to
  *  the type of the default collation for the character set.
@@ -1719,9 +1716,9 @@ void MET_load_hash_table( DBB dbb)
 		/* assume pre V4 database, no character sets */
 		END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 	if (handle2)
-		gds__release_request(gds_status, GDS_REF(handle2));
+		gds__release_request(gds_status, &handle2);
 
 /*  Pick up name of database default character set for SQL  */
 
@@ -1739,7 +1736,7 @@ void MET_load_hash_table( DBB dbb)
 		/* Assume V3 Db, no default charset */
 		END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 
 /*  Pick up all generators for the database  */
 
@@ -1751,7 +1748,7 @@ void MET_load_hash_table( DBB dbb)
 
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(handle));
+	gds__release_request(gds_status, &handle);
 
 /*  now that we have attached to the database, resolve the character set
  *  request (if any) (and if we can)
@@ -2105,7 +2102,7 @@ static int resolve_charset_and_collation(
 				/* Assume V3 DB, without default character set */
 				END_ERROR;
 
-			gds__release_request(gds_status, GDS_REF(request));
+			gds__release_request(gds_status, &request);
 
 			if (charset == NULL)
 				charset = (UCHAR *) DEFAULT_CHARACTER_SET_NAME;
@@ -2126,7 +2123,7 @@ static int resolve_charset_and_collation(
 
 		END_FOR ON_ERROR END_ERROR;
 
-		gds__release_request(gds_status, GDS_REF(request));
+		gds__release_request(gds_status, &request);
 
 		return (found);
 	}
@@ -2141,7 +2138,7 @@ static int resolve_charset_and_collation(
 		*id = MAP_CHARSET_TO_TTYPE(CS.RDB$CHARACTER_SET_ID);
 		END_FOR ON_ERROR END_ERROR;
 
-		gds__release_request(gds_status, GDS_REF(request));
+		gds__release_request(gds_status, &request);
 
 		return (found);
 	}
@@ -2159,7 +2156,7 @@ static int resolve_charset_and_collation(
 	*id = MAP_CHARSET_TO_TTYPE(CS.RDB$CHARACTER_SET_ID);
 	END_FOR ON_ERROR END_ERROR;
 
-	gds__release_request(gds_status, GDS_REF(request));
+	gds__release_request(gds_status, &request);
 
 	return (found);
 }

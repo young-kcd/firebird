@@ -770,7 +770,7 @@ void LEX_put_procedure( FRBRD *blob, SLONG start, SLONG stop)
 			}
 		}
 		if (l = p - buffer)
-			if (gds__put_segment(status_vector, GDS_REF(blob), l, buffer))
+			if (gds__put_segment(status_vector, &blob, l, buffer))
 				BUGCHECK(58);	/* Msg 58 gds__put_segment failed */
 	}
 

@@ -76,7 +76,7 @@ void PRO_close( DBB database, FRBRD *blob)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (database && gds__close_blob(status_vector, GDS_REF(blob)))
+	if (database && gds__close_blob(status_vector, &blob))
 		ERRQ_database_error(database, status_vector);
 }
 
@@ -97,8 +97,7 @@ void PRO_commit( DBB database)
 
 	if ((database->dbb_capabilities & DBB_cap_multi_trans) &&
 		!(LEX_active_procedure()))
-		if (gds__commit_transaction(status_vector,
-									GDS_REF(database->dbb_proc_trans))) {
+		if (gds__commit_transaction(status_vector, &database->dbb_proc_trans)) {
 			PRO_rollback(database);
 			ERRQ_database_error(database, status_vector);
 		}
@@ -165,21 +164,14 @@ void PRO_copy_procedure(
 		NEW IN DB1.QLI$PROCEDURES USING
 
         strcpy(NEW.QLI$PROCEDURE_NAME, new_name);
-		if (gds__create_blob2(status_vector,
-							  GDS_REF(new_database->dbb_handle),
-							  GDS_REF(new_database->dbb_proc_trans),
-							  GDS_REF(new_blob),
-							  GDS_REF(NEW.QLI$PROCEDURE),
-							  bpb_length,
-							  (char*) bpb))
+		if (gds__create_blob2(status_vector, &new_database->dbb_handle,
+							  &new_database->dbb_proc_trans, &new_blob,
+							  &NEW.QLI$PROCEDURE, bpb_length, (char*) bpb))
 				ERRQ_database_error(new_database, status_vector);
-		while (!(gds__get_segment(status_vector,
-								  GDS_REF(old_blob),
-								  (USHORT*) GDS_REF(length),
-								  sizeof(buffer), GDS_VAL(buffer)))) {
+		while (!(gds__get_segment(status_vector, &old_blob, (USHORT*) &length,
+								  sizeof(buffer), buffer))) {
 			buffer[length] = 0;
-			if (gds__put_segment(status_vector, GDS_REF(new_blob),
-								 length, buffer))
+			if (gds__put_segment(status_vector, &new_blob, length, buffer))
 					ERRQ_database_error(new_database, status_vector);
 		}
 		PRO_close(old_database, old_blob);
@@ -187,7 +179,7 @@ void PRO_copy_procedure(
 	END_STORE;
 
 /* Release the FOR and STORE requests */
-	gds__release_request(gds_status, GDS_REF(store_request));
+	gds__release_request(gds_status, &store_request);
 	PRO_commit(new_database);
 }
 
@@ -231,13 +223,8 @@ void PRO_create( DBB database, TEXT * name)
 	STORE(REQUEST_HANDLE database->dbb_store_blob) X IN DB.QLI$PROCEDURES
 		gds__vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 
-		if (gds__create_blob2(status_vector,
-							  GDS_REF(database->dbb_handle),
-							  GDS_REF(gds_trans),
-							  GDS_REF(blob),
-							  GDS_REF(X.QLI$PROCEDURE),
-							  bpb_length,
-							  (char*) bpb))
+		if (gds__create_blob2(status_vector, &database->dbb_handle, &gds_trans,
+							  &blob, &X.QLI$PROCEDURE, bpb_length, (char*) bpb))
 				ERRQ_database_error(database, status_vector);
 		while (!MATCH(KW_END_PROCEDURE)) {
 			if (QLI_token->tok_type == tok_eof)
@@ -248,7 +235,7 @@ void PRO_create( DBB database, TEXT * name)
 		}
 
 		LEX_put_procedure(blob, start, stop);
-		gds__close_blob(status_vector, GDS_REF(blob));
+		gds__close_blob(status_vector, &blob);
 	END_STORE;
 
 /* Commit the procedure transaction, if there is one */
@@ -283,7 +270,7 @@ int PRO_delete_procedure( DBB database, TEXT * name)
 		count++;
 	END_FOR;
 
-	gds__release_request(gds_status, GDS_REF(request));
+	gds__release_request(gds_status, &request);
 
 /* Commit the procedure transaction, if there is one */
 
@@ -381,7 +368,7 @@ int PRO_get_line( FRBRD *blob, TEXT * buffer, USHORT size)
 	USHORT length;
 
 	gds__get_segment(status_vector,
-					 GDS_REF(blob), GDS_REF(length), size, GDS_VAL(buffer));
+					 &blob, &length, size, buffer);
 
 	if (status_vector[1] && status_vector[1] != gds_segment)
 		return FALSE;
@@ -458,13 +445,10 @@ FRBRD *PRO_open_blob( DBB database, SLONG * blob_id)
 
 	bpb_length = p - bpb;
 
-	if (gds__open_blob2(status_vector,
-						GDS_REF(database->dbb_handle),
-						GDS_REF(database->dbb_proc_trans),
-						GDS_REF(blob),
-						(GDS__QUAD*) GDS_VAL(blob_id),
-						bpb_length,
-						(char*) bpb)) ERRQ_database_error(database, status_vector);
+	if (gds__open_blob2(status_vector, &database->dbb_handle,
+						&database->dbb_proc_trans, &blob, (GDS__QUAD*) blob_id,
+						bpb_length, (char*) bpb)) 
+		ERRQ_database_error(database, status_vector);
 
 	return blob;
 }
@@ -498,12 +482,12 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
 			gds__vtof(new_name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 		END_MODIFY
 		ON_ERROR
-			gds__release_request(gds_status, GDS_REF(request));
+			gds__release_request(gds_status, &request);
 			ERRQ_database_error(database, status_vector);
 		END_ERROR;
 	END_FOR;
 
-	gds__release_request(gds_status, GDS_REF(request));
+	gds__release_request(gds_status, &request);
 
 /* Commit the procedure transaction, if there is one */
 
@@ -529,8 +513,7 @@ void PRO_rollback( DBB database)
 	ISC_STATUS_ARRAY status_vector;
 
 	if (database->dbb_capabilities & DBB_cap_multi_trans) {
-		gds__rollback_transaction(status_vector,
-								  GDS_REF(database->dbb_proc_trans));
+		gds__rollback_transaction(status_vector, &database->dbb_proc_trans);
 
 		gds_trans = NULL;
 	}
@@ -642,12 +625,8 @@ FRBRD *PRO_transaction( DBB database, int update_flag)
 	if (!transaction &&
 		((database->dbb_capabilities & DBB_cap_multi_trans) ||
 		 !(database->dbb_capabilities & DBB_cap_single_trans)))
-		if (gds__start_transaction(status_vector,
-								   GDS_REF(transaction),
-								   1,
-								   GDS_REF(database->dbb_handle),
-								   sizeof(tpb),
-								   tpb))
+		if (gds__start_transaction(status_vector, &transaction, 1,
+								   &database->dbb_handle, sizeof(tpb), tpb))
 				database->dbb_capabilities |= DBB_cap_single_trans;
 		else
 			database->dbb_capabilities |= DBB_cap_multi_trans;
@@ -710,10 +689,10 @@ static int clear_out_qli_procedures( DBB dbb)
         count++;
 	END_FOR
 	ON_ERROR
-		gds__release_request(status_vector, GDS_REF(req));
+		gds__release_request(status_vector, &req);
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-	gds__release_request(status_vector, GDS_REF(req));
+	gds__release_request(status_vector, &req);
 
 	if (count >= 2) {
 		dbb->dbb_flags |= DBB_procedures;
@@ -727,20 +706,20 @@ static int clear_out_qli_procedures( DBB dbb)
 		count++;
 	END_FOR
 	ON_ERROR
-		gds__release_request(status_vector, GDS_REF(req));
+		gds__release_request(status_vector, &req);
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-	gds__release_request(status_vector, GDS_REF(req));
+	gds__release_request(status_vector, &req);
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$INDEX_SEGMENTS WITH X.RDB$INDEX_NAME = "QLI$PROCEDURES_IDX1"
 		ERASE X;
 		count++;
 	END_FOR
 	ON_ERROR
-		gds__release_request(status_vector, GDS_REF(req));
+		gds__release_request(status_vector, &req);
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-	gds__release_request(status_vector, GDS_REF(req));
+	gds__release_request(status_vector, &req);
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$RELATION_FIELDS
 		WITH X.RDB$FIELD_NAME = "QLI$PROCEDURE_NAME" OR
@@ -749,10 +728,10 @@ static int clear_out_qli_procedures( DBB dbb)
 		count++;
 	END_FOR
 	ON_ERROR
-		gds__release_request(status_vector, GDS_REF(req));
+		gds__release_request(status_vector, &req);
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-	gds__release_request(gds_status, GDS_REF(req));
+	gds__release_request(gds_status, &req);
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$FIELDS
 		WITH X.RDB$FIELD_NAME = "QLI$PROCEDURE_NAME" OR
@@ -761,10 +740,10 @@ static int clear_out_qli_procedures( DBB dbb)
 		count++;
 	END_FOR
 	ON_ERROR
-		gds__release_request(status_vector, GDS_REF(req));
+		gds__release_request(status_vector, &req);
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-	gds__release_request(gds_status, GDS_REF(req));
+	gds__release_request(gds_status, &req);
 
 	FOR(REQUEST_HANDLE req) X IN DB.RDB$RELATIONS
 		WITH X.RDB$RELATION_NAME = "QLI$PROCEDURES" 
@@ -772,10 +751,10 @@ static int clear_out_qli_procedures( DBB dbb)
 		count++;
 	END_FOR
 	ON_ERROR
-		gds__release_request(status_vector, GDS_REF(req));
+		gds__release_request(status_vector, &req);
 		ERRQ_database_error(dbb, gds_status);
 	END_ERROR;
-	gds__release_request(gds_status, GDS_REF(req));
+	gds__release_request(gds_status, &req);
 
 	return count;
 }
@@ -807,33 +786,29 @@ static void create_qli_procedures( DBB dbb)
 	if (dbb->dbb_flags & DBB_procedures)
 		return;
 
-	if (gds__ddl(gds_status,
-				 GDS_REF(DB),
-				 GDS_REF(gds_trans), sizeof(dyn_gdl1), (char*) dyn_gdl1)) {
+	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl1),
+				 (char*) dyn_gdl1)) {
 		PRO_rollback(dbb);
 		IBERROR(73);
 		/* Msg 73 Could not create QLI$PROCEDURE_NAME field */
 	}
 
-	if (gds__ddl(gds_status,
-				 GDS_REF(DB),
-				 GDS_REF(gds_trans), sizeof(dyn_gdl2), (char*) dyn_gdl2)) {
+	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl2),
+				 (char*) dyn_gdl2)) {
 		PRO_rollback(dbb);
 		IBERROR(74);
 		/* Msg 74 Could not create QLI$PROCEDURE field */
 	}
 
-	if (gds__ddl(gds_status,
-				 GDS_REF(DB),
-				 GDS_REF(gds_trans), sizeof(dyn_gdl3), (char*) dyn_gdl3)) {
+	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl3), 
+				 (char*) dyn_gdl3)) {
 		PRO_rollback(dbb);
 		IBERROR(75);
 		/* Msg 75 Could not create QLI$PROCEDURES relation */
 	}
 
-	if (gds__ddl(gds_status,
-				 GDS_REF(DB),
-				 GDS_REF(gds_trans), sizeof(dyn_gdl4), (char*) dyn_gdl4)) {
+	if (gds__ddl(gds_status, &DB, &gds_trans, sizeof(dyn_gdl4), 
+				 (char*) dyn_gdl4)) {
 		PRO_rollback(dbb);
 		IBERROR(409);
 		/* msg 409  Could not create QLI$PROCEDURES index */
@@ -864,7 +839,7 @@ static void probe( DBB database, TEXT * name)
 /* Probe to see if procedure is already in use */
 
 	if (blob = PRO_fetch_procedure(database, name)) {
-		gds__close_blob(status_vector, GDS_REF(blob));
+		gds__close_blob(status_vector, &blob);
 		ERRQ_print_error(76, name, database->dbb_symbol->sym_string, NULL,
 						 NULL, NULL);
 /* Msg 76 procedure name \"%s\" in use in database %s */
