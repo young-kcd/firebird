@@ -5753,14 +5753,11 @@ static void pass1_union_auto_cast(DSQL_NOD input, DSC desc, SSHORT position, boo
 				if (streams->nod_type == nod_union) {
 					// We're now in a UNION under a UNION so don't change the existing mappings.
 					// Only replace the node where the map points to, because they could be changed.
-					DSQL_NOD union_items = input->nod_arg[e_rse_items], *sub_rse_ptr;
-					MAP map_;
-					sub_rse_ptr = streams->nod_arg[0]->nod_arg[e_rse_items]->nod_arg;
-					for (ptr = union_items->nod_arg, end = ptr + union_items->nod_count; ptr < end; ptr++) {
-						map_ = (MAP) (*ptr)->nod_arg[e_map_map];
-						map_->map_node = *sub_rse_ptr++;
-						(*ptr)->nod_desc = desc;
-					}
+					DSQL_NOD union_items = input->nod_arg[e_rse_items];
+					DSQL_NOD sub_rse_items = streams->nod_arg[0]->nod_arg[e_rse_items];
+					MAP map_ = (MAP) union_items->nod_arg[position]->nod_arg[e_map_map];
+					map_->map_node = sub_rse_items->nod_arg[position];
+					union_items->nod_arg[position]->nod_desc = desc;
 				}
 				else {
 					pass1_union_auto_cast(input->nod_arg[e_rse_items], desc, position, true);
