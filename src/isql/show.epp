@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.52 2004-06-29 04:37:44 robocop Exp $
+ * $Id: show.epp,v 1.53 2004-08-27 05:03:13 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -155,6 +155,7 @@ static const SCHAR db_dialect_info[] = {
 
 // Added support to display FORCED WRITES status. - PR 27-NOV-2001
 // Added support to display transaction info when next_transaction id is fixed.
+// Added support to display ODS version. CVC 26-Aug-2004.
 static const SCHAR db_items[] = {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
@@ -165,6 +166,8 @@ static const SCHAR db_items[] = {
 	isc_info_oldest_active,
 	isc_info_oldest_snapshot,
 	isc_info_next_transaction,
+	isc_info_ods_version,
+	isc_info_ods_minor_version,
 	isc_info_end
 };
 
@@ -313,17 +316,17 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 
 		case isc_info_oldest_transaction :
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Transaction - oldest = %ld %s", value_out, NEWLINE);
+			sprintf(info, "Transaction - oldest = %ld %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_oldest_active :
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Transaction - oldest active = %ld %s", value_out, NEWLINE);
+			sprintf(info, "Transaction - oldest active = %ld %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_oldest_snapshot :
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Transaction - oldest snapshot = %ld %s", value_out, NEWLINE);
+			sprintf(info, "Transaction - oldest snapshot = %ld %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_next_transaction :
@@ -413,8 +416,16 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "Transaction in limbo = %ld %s",
 						value_out, NEWLINE);
 			break;
-		}
 
+		case isc_info_ods_version:
+			isqlGlob.major_ods = isc_vax_integer(d, length);
+			break;
+		case isc_info_ods_minor_version:
+			value_out = isc_vax_integer(d, length);
+			sprintf(info, "ODS = %ld.%ld%s", (SLONG) isqlGlob.major_ods, value_out, NEWLINE);
+			break;
+		}
+		
 		d += length;
 		info += strlen(info);
 	}
