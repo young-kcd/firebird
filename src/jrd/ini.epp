@@ -292,13 +292,13 @@ void INI_format(const TEXT* owner, TEXT* charset)
 		}
 	}
 
-/* Uppercase owner name */
+/* Uppercase charset name */
 
 	*string2 = 0;
 	if (charset && *charset)
 	{
 		p2 = string2;
-		while ( (*p++ = UPPER7(*charset)) )
+		while ( (*p2++ = UPPER7(*charset)) )
 		{
 			++charset;
 		}
