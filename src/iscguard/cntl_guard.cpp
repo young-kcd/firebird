@@ -26,6 +26,7 @@
 #include "../jrd/common.h"
 #include "../iscguard/cntlg_proto.h"
 #include "../remote/remote.h"
+#include "../utilities/install_nt.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
@@ -180,7 +181,7 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 		SC_HANDLE hScManager = 0, hService = 0;
 		hScManager =
 			OpenSCManager(NULL, NULL, GENERIC_READ | GENERIC_EXECUTE);
-		hService = OpenService(hScManager, "InterBaseServer", SERVICE_STOP);
+		hService = OpenService(hScManager, REMOTE_SERVICE, SERVICE_STOP);
 		ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
