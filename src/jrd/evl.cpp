@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.74 2004-03-30 04:10:49 robocop Exp $ 
+  * $Id: evl.cpp,v 1.75 2004-04-08 22:29:50 skidder Exp $ 
  */
 
 /*
@@ -62,6 +62,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include <math.h>
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -3463,7 +3464,21 @@ static SINT64 get_day_fraction(const dsc* d)
 
 /* There's likely some loss of precision here due to rounding of number */
 
-	return (SINT64) (result_days * ISC_TICKS_PER_DAY);
+// 08-Apr-2004, Nickolay Samofatov. Loss of precision manifested itself as bad 
+// result returned by the following query:
+//
+// select (cast('01.01.2004 10:01:00' as timestamp)
+//   -cast('01.01.2004 10:00:00' as timestamp))
+//   +cast('01.01.2004 10:00:00' as timestamp) from rdb$database
+//
+// Let's use llrint where it is supported and offset number for other platforms 
+// in hope that compiler rounding mode doesn't get in.
+
+#ifdef HAVE_LLRINT
+	return llrint(result_days * ISC_TICKS_PER_DAY);
+#else
+	return (SINT64)(result_days * ISC_TICKS_PER_DAY + 0.49999999999999);
+#endif
 }
 
 
