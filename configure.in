@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.175 2003-11-04 06:25:09 eku Exp $
+dnl $Id: configure.in,v 1.176 2003-11-04 06:45:22 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -500,6 +500,11 @@ case "$PLATFORM" in
     dnl MOD: Check for /proc/self/exe mainly used on linux systems
     dnl      this is used to determine path to executable file.
     AC_CHECK_FILES(/proc/self/exe)
+
+	dnl EKU: some Linux distributions do not provide POSIX threads
+	dnl      compatibility. Define HAVE_POSIX_THREADS anyway to get
+	dnl      thread support compiled into FIREBIRD.
+	AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
 
   SOLARIS|solx86)
