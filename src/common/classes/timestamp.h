@@ -33,7 +33,7 @@ class TimeStamp
 {
 public:
 
-	TimeStamp(bool = false);
+	explicit TimeStamp(bool empty = false);
 
 	void invalidate();
 	void validate();
