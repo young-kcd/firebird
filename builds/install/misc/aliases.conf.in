@@ -1,12 +1,13 @@
-#
+# ------------------------------
 # List of known database aliases
 # ------------------------------
+
 #
-# Example Databases:
+# Example Database:
 #
+employee.fdb = @prefix@/examples/empbuild/employee.fdb
+employee = @prefix@/examples/empbuild/employee.fdb
 
-employee.fdb = @prefix@/examples/employee.fdb
-
-
+#
 # Live Databases:
-
+#
