@@ -1387,18 +1387,27 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 					tdbb->tdbb_request)
 				{
 					if (tdbb->tdbb_request->req_timestamp)
+					{
 						clock = tdbb->tdbb_request->req_timestamp;
-					else {
-						/* All requests should have a timestamp */
-						fb_assert(FALSE);
-						clock = time(0);
+					}
+					else
+					{
+						// all requests should have a timestamp
+						fb_assert(false);
+						clock = time(NULL);
 					}
 				}
 				else
-					clock = time(0);
-				const tm times = *localtime(&clock);
+				{
+					clock = time(NULL);
+				}
+				const tm* times = localtime(&clock);
+				if (!times)
+				{
+					(*err)(isc_date_range_exceeded, 0);
+				}
 				GDS_TIMESTAMP enc_times;
-				isc_encode_timestamp(&times, &enc_times);
+				isc_encode_timestamp(times, &enc_times);
 				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date =
 					enc_times.timestamp_date;
 			}
@@ -2419,8 +2428,7 @@ static void string_to_datetime(
 	USHORT position_day = 2;
 	bool have_english_month = false;
 	bool dot_separator_seen = false;
-	time_t clock;
-	tm times, times2;
+	tm times, times2, *ptimes;
 	TEXT buffer[100];			/* arbitrarily large */
 
 	const char* string;
@@ -2508,8 +2516,13 @@ static void string_to_datetime(
 
 					/* fetch the current time */
 
-					clock = time(0);
-					times2 = *localtime(&clock);
+					const time_t clock = time(NULL);
+					ptimes = localtime(&clock);
+					if (!ptimes)
+					{
+						(err)(isc_date_range_exceeded, 0);
+					}
+					times2 = *ptimes;
 
 					if (strcmp(temp, NOW) == 0) {
 						isc_encode_timestamp(&times2, date);
@@ -2639,19 +2652,23 @@ static void string_to_datetime(
 		times.tm_mon = components[position_month];
 		times.tm_mday = components[position_day];
 
+		const time_t clock = time(NULL);
+		ptimes = localtime(&clock);
+		if (!ptimes)
+		{
+			(err)(isc_date_range_exceeded, 0);
+		}
+		times2 = *ptimes;
+
 		/* Handle defaulting of year */
 
 		if (description[position_year] == 0) {
-			clock = time(0);
-			times2 = *localtime(&clock);
 			times.tm_year = times2.tm_year + 1900;
 		}
 
 		/* Handle conversion of 2-digit years */
 
 		else if (description[position_year] <= 2) {
-			clock = time(0);
-			times2 = *localtime(&clock);
 			if (times.tm_year < (times2.tm_year - 50) % 100)
 				times.tm_year += 2000;
 			else

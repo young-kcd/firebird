@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.70 2004-03-20 14:57:29 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.71 2004-03-21 09:47:39 dimitr Exp $ 
  */
 
 /*
@@ -901,12 +901,20 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			//   fetch the current clock in order to keep running 
 
 			if (request->req_timestamp)
+			{
 				clock = request->req_timestamp;
-			else {
-				fb_assert(FALSE);
-				clock = time(0);
 			}
-			tm times = *localtime(&clock);
+			else
+			{
+				fb_assert(false);
+				clock = time(NULL);
+			}
+			const tm* ptimes = localtime(&clock);
+			if (!ptimes)
+			{
+				ERR_post(isc_date_range_exceeded, 0);
+			}
+			tm times = *ptimes;
 
 			memset(&impure->vlu_desc, 0, sizeof(impure->vlu_desc));
 			impure->vlu_desc.dsc_address =

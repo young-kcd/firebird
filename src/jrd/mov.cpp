@@ -36,7 +36,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
-
+#include "gen/iberror.h"
 
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
@@ -586,7 +586,11 @@ void MOV_time_stamp(GDS_TIMESTAMP* date)
  *
  **************************************/
 	const time_t clock = time(NULL);
-	const tm times = *localtime(&clock);
-	isc_encode_timestamp(&times, date);
+	const tm* times = localtime(&clock);
+	if (!times)
+	{
+		ERR_post(isc_date_range_exceeded, 0);
+	}
+	isc_encode_timestamp(times, date);
 }
 
