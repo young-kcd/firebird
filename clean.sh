@@ -26,6 +26,7 @@ rm src/include/gen/blrtable.h 2>/dev/null
 rm src/v5_examples/Makefile 2>/dev/null
 
 # Cpp from epp files
+rm src/alice/alice_meta.cpp 2>/dev/null
 rm src/burp/backup.cpp 2>/dev/null
 rm src/burp/restore.cpp 2>/dev/null
 rm src/dsql/array.cpp 2>/dev/null
@@ -59,3 +60,5 @@ rm src/qli/help.cpp 2>/dev/null
 rm src/qli/meta.cpp 2>/dev/null
 rm src/qli/proc.cpp 2>/dev/null
 rm src/qli/show.cpp 2>/dev/null
+rm src/utilities/dba.cpp 2>/dev/null
+rm src/utilities/security.cpp 2>/dev/null
