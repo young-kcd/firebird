@@ -37,7 +37,7 @@ USAGE RULES
 
 4) The new files contributed by people who are not members of the Firebird
    project should follow the rule #3. If an author (initial developer) doesn't
-   care about the license to be used, the person who apply the contributed code
+   care about the license to be used, the person who applies the contributed code
    to the CVS tree (a committer) becomes responsible for the license for the
    contributed code.
 
