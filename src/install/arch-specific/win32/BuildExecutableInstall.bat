@@ -23,9 +23,11 @@
 @if /I "%1"=="-?" (goto :HELP & goto :EOF)
 @if /I "%1"=="/?" (goto :HELP & goto :EOF)
 
+@call setenvvar.bat
+@if errorlevel 1 (goto :END)
+
 @goto :MAIN
 @goto :EOF
-
 
 :SET_PARAMS
 ::Assume we are preparing a production build
@@ -40,7 +42,6 @@ for %%v in ( %1 %2 )  do (
   ( if /I "%%v"=="DEBUG" (set BUILDTYPE=debug) )
   ( if /I "%%v"=="CS"  ( (set PACKAGE_TYPE=classic_server_install) & (set PACKAGE_DESC=Classic) ) )
 )
-@if not defined MSVC_VERSION (set MSVC_VERSION=6)
 @goto :EOF
 
 
@@ -51,7 +52,7 @@ for %%v in ( %1 %2 )  do (
 :: the path this will fail! Use of the cygwin tools has not
 :: been tested and may produce unexpected results. 
 ::========================================================
-sed /"#define PRODUCT_VER_STRING"/!d ..\..\..\..\src\jrd\build_no.h > %temp%.\b$1.bat
+sed /"#define PRODUCT_VER_STRING"/!d %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.bat
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.bat %temp%.\b$1.bat
 for /f "tokens=*" %%a in ('type %temp%.\b$2.bat') do set PRODUCT_VER_STRING=%%a
 @echo s/1.5.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.bat
@@ -74,43 +75,43 @@ copy %SystemRoot%\System32\msvcp%msvc_version%0.dll . >nul
 
 :: grab some missing bits'n'pieces  from different parts of the source tree
 ::=========================================================================
-copy ..\..\..\..\src\install\misc\firebird.conf ..\..\..\..\builds\win32\output\ > nul
+copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed ) & (goto :EOF))
 
-mkdir ..\..\..\..\builds\win32\output\examples 2>nul 
+mkdir %ROOT_PATH%\output\examples 2>nul 
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for examples dir failed ) & (goto :EOF))
 
-copy ..\..\..\..\src\v5_examples\*.* ..\..\..\..\builds\win32\output\examples\ > nul
+copy %ROOT_PATH%\src\v5_examples\*.* %ROOT_PATH%\output\examples\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed  ) & (goto :EOF))
 
-copy ..\..\..\..\builds\win32\msvc%msvc_version%\%BUILDTYPE%\fbclient\fbclient.lib ..\..\..\..\builds\win32\output\lib\fbclient_ms.lib > nul
+copy %ROOT_PATH%\builds\win32\msvc%msvc_version%\%BUILDTYPE%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
 
-copy ..\..\..\..\builds\win32\msvc%msvc_version%\%BUILDTYPE%\gds32\gds32.lib ..\..\..\..\builds\win32\output\lib\gds32_ms.lib > nul
+copy %ROOT_PATH%\builds\win32\msvc%msvc_version%\%BUILDTYPE%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
 
-copy ..\..\..\..\doc\*.* ..\..\..\..\builds\win32\output\doc\ > nul
+copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc failed  ) & (goto :EOF))
 
-copy ..\..\..\..\ChangeLog ..\..\..\..\builds\win32\output\doc\ChangeLog.txt > nul
+copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt > nul
 
-copy ..\..\..\..\builds\win32\output\doc\install_win32.txt ..\..\..\..\builds\win32\output\doc\InstallNotes.txt > nul
-del ..\..\..\..\builds\win32\output\doc\install_win32.txt
+copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
+del %ROOT_PATH%\output\doc\install_win32.txt
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed ) & (goto :EOF))
 
 :: This stuff doesn't make much sense to Windows users, although the troubleshooting doc 
 :: could be made more platform agnostic.
 @for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting fb2-todo.txt ) do (
-  (@del ..\..\..\..\builds\win32\output\doc\%%v 2>nul)
+  (@del %ROOT_PATH%\output\doc\%%v 2>nul)
 )
 
-copy ..\..\..\..\builds\win32\output\doc\WhatsNew ..\..\..\..\builds\win32\output\doc\WhatsNew.txt > nul
-del ..\..\..\..\builds\win32\output\doc\WhatsNew
+copy %ROOT_PATH%\output\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt > nul
+del %ROOT_PATH%\output\doc\WhatsNew
 
-mkdir ..\..\..\..\builds\win32\output\doc\sql.extensions 2>nul
+mkdir %ROOT_PATH%\output\doc\sql.extensions 2>nul
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for doc\sql.extensions dir failed ) & (goto :EOF))
 
-copy ..\..\..\..\doc\sql.extensions\*.* ..\..\..\..\builds\win32\output\doc\sql.extensions\  > nul
+copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\  > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc\sql.extensions failed  ) & (goto :EOF))
 
 @goto :EOF
@@ -119,28 +120,30 @@ copy ..\..\..\..\doc\sql.extensions\*.* ..\..\..\..\builds\win32\output\doc\sql.
 :ALIAS_CONF
 :: Generate a sample aliases file
 ::===============================
-@echo # > ..\..\..\..\builds\win32\output\aliases.conf
-@echo # List of known database aliases >> ..\..\..\..\builds\win32\output\aliases.conf
-@echo # ------------------------------ >> ..\..\..\..\builds\win32\output\aliases.conf
-@echo # >> ..\..\..\..\builds\win32\output\aliases.conf
-@echo # Examples: >> ..\..\..\..\builds\win32\output\aliases.conf
-@echo # >> ..\..\..\..\builds\win32\output\aliases.conf
-@echo #   dummy = c:\data\dummy.fdb >> ..\..\..\..\builds\win32\output\aliases.conf
-@echo #  >> ..\..\..\..\builds\win32\output\aliases.conf
+@echo # > %ROOT_PATH%\output\aliases.conf
+@echo # List of known database aliases >> %ROOT_PATH%\output\aliases.conf
+@echo # ------------------------------ >> %ROOT_PATH%\output\aliases.conf
+@echo # >> %ROOT_PATH%\output\aliases.conf
+@echo # Examples: >> %ROOT_PATH%\output\aliases.conf
+@echo # >> %ROOT_PATH%\output\aliases.conf
+@echo #   dummy = c:\data\dummy.fdb >> %ROOT_PATH%\output\aliases.conf
+@echo #  >> %ROOT_PATH%\output\aliases.conf
 @goto :EOF
 
 
 :GBAK_SEC_DB
 :: let's make sure that we have a backup of the security database handy.
 ::======================================================================
-copy ..\..\..\misc\security.gbak ..\..\..\..\builds\win32\output\security.fbk > nul
+copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security.fbk failed ) & (goto :EOF))
 
 :: Make sure that qli's help.gdb is available
 :: For now it has the .gdb. file extension
 :: Next time it will have the .fdb file extension
 ::===============================================
-if not exist ..\..\..\..\builds\win32\output\help\help.fdb (copy ..\..\..\..\builds\win32\dbs\qli\help.fdb ..\..\..\..\builds\win32\output\help\help.fdb)
+if not exist %ROOT_PATH%\output\help\help.fdb (
+	copy %ROOT_PATH%\builds\win32\dbs\qli\help.fdb %ROOT_PATH%\output\help\help.fdb
+)
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF))
 @goto :EOF
 
@@ -149,15 +152,15 @@ if not exist ..\..\..\..\builds\win32\output\help\help.fdb (copy ..\..\..\..\bui
 :: firebird.msg is generated as part of the build process
 :: in builds\win32 by build_msg.bat copying from there to output dir
 ::	To Do !!!
-::						copy %INTERBASE%\udf\fbudf.dll ..\..\..\..\builds\win32\output\udf
+::						copy %INTERBASE%\udf\fbudf.dll %ROOT_PATH%\output\udf
 ::=================================================================
-@if not exist ..\..\..\..\builds\win32\firebird.msg (( 
+@if not exist %ROOT_PATH%\builds\win32\firebird.msg (( 
 						echo Cannot locate firebird.msg file. 
 						) & ( 
 						echo You need to run the build_msg scriptfile.
 						)
 						) else (
-						copy ..\..\..\..\builds\win32\firebird.msg ..\..\..\..\builds\win32\output\firebird.msg > nul
+						copy %ROOT_PATH%\builds\win32\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
 						)
 @goto :EOF
 
@@ -167,7 +170,7 @@ if not exist ..\..\..\..\builds\win32\output\help\help.fdb (copy ..\..\..\..\bui
 ::While building and testing this feature might be annoying.
 ::We ought to test for a debug build - but what?
 ::==========================================================
-@if /I "%BUILDTYPE%"=="release" ((@echo Touching files) & (touch -s -D -t01:05:00 ..\..\..\..\builds\win32\output\*.*)) 
+@if /I "%BUILDTYPE%"=="release" ((@echo Touching files) & (touch -s -D -t01:05:00 %ROOT_PATH%\output\*.*)) 
 @goto :EOF
 
 
