@@ -156,12 +156,9 @@ MemoryPool* MemoryPool::createPool() {
 	blk->prev = hdr;
 	BlockInfo temp = {blk, blockLength};
 	pool->freeBlocks.add(temp);
-	pool->verify_pool();
 	// This code may not work if tree factor is 2 (but if MIN_EXTENT_SIZE is large enough it will)
 	pool->spareLeaf = pool->alloc(sizeof(FreeBlocksTree::ItemList));
-	pool->verify_pool();
 	pool->spareNodes.add(pool->alloc(sizeof(FreeBlocksTree::NodeList)));
-	pool->verify_pool();
 	return pool;
 }
 
@@ -302,17 +299,16 @@ void* MemoryPool::alloc(size_t size, SSHORT type) {
 		blk->used = true;
 		blk->type = type;
 		blk->prev = NULL;
-		if (alloc_size-size < ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
+		if (alloc_size-size-ALIGN(sizeof(MemoryExtent))-ALIGN(sizeof(MemoryBlock)) < ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
 			// Block is small enough to be returned AS IS
 			blk->last = true;
 			blk->length = alloc_size - ALIGN(sizeof(MemoryExtent)) - ALIGN(sizeof(MemoryBlock));
 		} else {
 			// Cut a piece at the beginning of the block
-			MemoryBlock *blk = (MemoryBlock *)((char*)extent+ALIGN(sizeof(MemoryExtent)));
 			blk->last = false;
 			blk->length = size;
 			// Put the rest to the tree of free blocks
-			MemoryBlock *rest = (MemoryBlock *)((char *)blk + size);
+			MemoryBlock *rest = (MemoryBlock *)((char *)blk + ALIGN(sizeof(MemoryBlock)) + size);
 			rest->pool = this;
 			rest->used = false;
 			rest->last = true;
