@@ -3147,8 +3147,6 @@ static ISC_STATUS execute_request(dsql_req*			request,
 								  bool				singleton)
 {
 	dsql_msg* message;
-	USHORT use_msg_length;
-	UCHAR *use_msg;
 	UCHAR buffer[20];
 	ISC_STATUS s;
 	ISC_STATUS_ARRAY local_status;
@@ -3230,65 +3228,24 @@ static ISC_STATUS execute_request(dsql_req*			request,
 						out_msg);
 		return FB_SUCCESS;
 
-	case REQ_EXEC_PROCEDURE:
-		if (message = (dsql_msg*) request->req_send) {
-			map_in_out(request, message, in_blr_length, in_blr,
-					   in_msg_length, in_msg);
-			in_msg_length = message->msg_length;
-			in_msg = message->msg_buffer;
-		}
-		else {
-			in_msg_length = 0;
-			in_msg = NULL;
-		}
-		if (out_msg_length && (message = (dsql_msg*) request->req_receive)) {
-			if (out_blr_length) {
-				parse_blr(out_blr_length, out_blr, out_msg_length,
-						  message->msg_parameters);
-			}
-			use_msg_length = message->msg_length;
-			use_msg = message->msg_buffer;
-		}
-		else {
-			use_msg_length = 0;
-			use_msg = NULL;
-		}
-		THREAD_EXIT();
-		s = isc_transact_request(tdsql->tsql_status,
-								 &request->req_dbb->dbb_database_handle,
-								 &request->req_trans,
-								 (USHORT) (request->req_blr_data.getCount()),
-								 (const char*)(request->req_blr_data.begin()),
-								 in_msg_length,
-								 reinterpret_cast<char*>(in_msg),
-								 use_msg_length,
-								 reinterpret_cast<char*>(use_msg));
-		THREAD_ENTER();
-
-		if (s)
-			punt();
-		if (out_msg_length && message)
-			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
-		return FB_SUCCESS;
-
-	default:
-		// Catch invalid request types 
-		fb_assert(false);
-		// Fall into ... 
-
 	case REQ_SELECT:
 	case REQ_SELECT_UPD:
+	case REQ_EMBED_SELECT:
 	case REQ_INSERT:
-	case REQ_DELETE:
 	case REQ_UPDATE:
 	case REQ_UPDATE_CURSOR:
+	case REQ_DELETE:
 	case REQ_DELETE_CURSOR:
-	case REQ_EMBED_SELECT:
+	case REQ_EXEC_PROCEDURE:
 	case REQ_SET_GENERATOR:
 	case REQ_SAVEPOINT:
 	case REQ_EXEC_BLOCK:
 	case REQ_SELECT_BLOCK:
 		break;
+
+	default:
+		// Catch invalid request types 
+		fb_assert(false);
 	}
 
 // If there is no data required, just start the request 
@@ -4718,12 +4675,6 @@ static dsql_req* prepare(
 			gds__trace_printer, 0, 0);
 	}
 #endif
-
-// stop here for execute procedure requests 
-
-	if (request->req_type == REQ_EXEC_PROCEDURE) {
-		return request;
-	}
 
 // check for warnings 
 	if (tdsql->tsql_status[2] == isc_arg_warning) {
