@@ -1933,7 +1933,7 @@ static SSHORT setup_log(ISC_STATUS * status_vector,
 			WAL_segment->wals_flushed_log_seqno = log_header->walfh_seqno;
 		}
 
-		const logf* logfile;
+		const LOGF* logfile;
 		if (WAL_segment->wals_max_logfiles > 0) {
 			/* Get the index of this logfile in the list of pre-allocated
 			   log files. */
