@@ -26,11 +26,13 @@
 
 #define REMOTE_SERVICE			"FirebirdServerDefaultInstance"
 #define REMOTE_DISPLAY_NAME		"Firebird Server - DefaultInstance"
+#define REMOTE_DISPLAY_DESCR	"Firebird Database Server - www.firebirdsql.org"
 #define REMOTE_SS_EXECUTABLE	"bin\\fbserver"
 #define REMOTE_CS_EXECUTABLE	"bin\\fb_inet_server"
 
 #define ISCGUARD_SERVICE		"FirebirdGuardianDefaultInstance"
 #define ISCGUARD_DISPLAY_NAME	"Firebird Guardian - DefaultInstance"
+#define ISCGUARD_DISPLAY_DESCR	"Firebird Server Guardian - www.firebirdsql.org"
 #define ISCGUARD_EXECUTABLE		"bin\\fbguard"
 #define GUARDIAN_MUTEX			"FirebirdGuardianMutex"
 /* Starting with 128 the service prams are user defined */

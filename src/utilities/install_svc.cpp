@@ -272,8 +272,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (sw_guardian)
 			{
 				status = SERVICES_install(manager, ISCGUARD_SERVICE,
-					ISCGUARD_DISPLAY_NAME, ISCGUARD_EXECUTABLE, directory,
-						NULL, sw_startup, username, password, svc_error);
+					ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
+					ISCGUARD_EXECUTABLE, directory, NULL,
+					sw_startup, username, password, svc_error);
 				status2 = FB_SUCCESS;
 				if (username != 0)
 				{
@@ -295,8 +296,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			/* do the install of the server */
 			status = SERVICES_install(manager, REMOTE_SERVICE,
-					REMOTE_DISPLAY_NAME, const_cast<char*>REMOTE_EXECUTABLE,
-						directory, NULL, sw_startup, username, password, svc_error);
+					REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR,
+					const_cast<char*>REMOTE_EXECUTABLE, directory, NULL,
+					sw_startup, username, password, svc_error);
 			status2 = FB_SUCCESS;
 			if (username != 0)
 			{

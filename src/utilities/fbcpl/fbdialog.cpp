@@ -923,7 +923,8 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 	{
 		if (new_settings.UseGuardian) 
 		{
-			m_Error_Status = SERVICES_install (hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
+			m_Error_Status = SERVICES_install (hScManager, ISCGUARD_SERVICE,
+				ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
 				ISCGUARD_EXECUTABLE, ServerPath, NULL, status.AutoStart,
 				NULL, NULL, svc_error);
 			if (m_Error_Status != FB_SUCCESS)
@@ -937,7 +938,8 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			
 		}
 		/* do the install of server */
-		m_Error_Status = SERVICES_install (hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
+		m_Error_Status = SERVICES_install (hScManager, REMOTE_SERVICE,
+			REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR,
 			const_cast<char *> ((LPCTSTR) status.ServiceExecutable), 
 			ServerPath, NULL, status.AutoStart, 
 			NULL, NULL, svc_error);

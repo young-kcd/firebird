@@ -140,6 +140,7 @@ USHORT SERVICES_delete(SC_HANDLE manager,
 USHORT SERVICES_install(SC_HANDLE manager,
 						TEXT * service_name,
 						TEXT * display_name,
+						TEXT * display_description,
 						TEXT * executable,
 						TEXT * directory,
 						TEXT * dependencies,
@@ -203,6 +204,23 @@ USHORT SERVICES_install(SC_HANDLE manager,
 			return IB_SERVICE_ALREADY_DEFINED;
 		else
 			return (*err_handler) (errnum, "CreateService", NULL);
+	}
+
+	// Now enter the description string into the service config, if this is
+	// available on the current platform.
+	HMODULE advapi32 = LoadLibrary("ADVAPI32.DLL");
+	if (advapi32 != 0)
+	{
+		typedef BOOL __stdcall proto_config2(SC_HANDLE, DWORD, LPVOID);
+		proto_config2* config2 =
+			(proto_config2*)GetProcAddress(advapi32, "ChangeServiceConfig2A");
+		if (config2 != 0)
+		{
+			// This system supports the ChangeServiceConfig2 API.
+			LPSTR descr = display_description;
+			(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &descr);
+		}
+		FreeLibrary(advapi32);
 	}
 
 	CloseServiceHandle(service);
