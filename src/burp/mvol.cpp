@@ -1270,7 +1270,7 @@ static bool write_header(DESC   handle,
 	else
 	{
 		const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(
-											&(tdgbl->mvol_volume_count)),
+											&tdgbl->mvol_volume_count),
 											sizeof(tdgbl->mvol_volume_count));
 		const UCHAR* p = (UCHAR *) &vax_value;
 		UCHAR* q = tdgbl->mvol_io_volume;

@@ -3570,10 +3570,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
  *	Send some data on it's way.
  *
  **************************************/
-#ifdef HAVE_SETITIMER
-	struct itimerval internal_timer, client_timer;
-	struct sigaction internal_handler, client_handler;
-#endif /* HAVE_SETITIMER */
 
 #ifdef SINIXZ
 // Please systems with ill-defined send() function, like SINIX-Z.
@@ -3617,6 +3613,11 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		data += n;
 		length -= n;
 	}
+
+#ifdef HAVE_SETITIMER
+	struct itimerval internal_timer, client_timer;
+	struct sigaction internal_handler, client_handler;
+#endif /* HAVE_SETITIMER */
 
 	if ((port->port_flags & PORT_async) && !(port->port_flags & PORT_no_oob))
 	{

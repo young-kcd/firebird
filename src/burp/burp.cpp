@@ -1700,7 +1700,7 @@ static gbak_action open_files(const TEXT* file1,
 				break;
 			}
 
-			if ((fil->fil_seq = ++(tdgbl->action->act_total)) >= 2)
+			if ((fil->fil_seq = ++tdgbl->action->act_total) >= 2)
 			{
 				tdgbl->action->act_action = ACT_backup_split;
 			}

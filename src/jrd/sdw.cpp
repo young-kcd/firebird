@@ -710,7 +710,7 @@ void SDW_notify(void)
 /* now get a shared lock on the incremented shadow count to ensure that
    we will get notification of the next shadow add */
 
-	lock->lck_key.lck_long = ++(header->hdr_shadow_count);
+	lock->lck_key.lck_long = ++header->hdr_shadow_count;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	CCH_RELEASE(tdbb, &window);

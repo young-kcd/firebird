@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.cpp,v 1.45 2004-12-25 09:43:50 robocop Exp $
- *
  */
 
 #include "firebird.h"

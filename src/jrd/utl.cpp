@@ -128,7 +128,7 @@ static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
 
 #ifdef VMS
-static int display(ISC_QUAD*, int*, int*);
+static int display(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE);
 #endif
 
 /* Blob info stuff */
@@ -1972,7 +1972,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 
 
 #ifdef VMS
-static display(ISC_QUAD* blob_id, void* database, void* transaction)
+static display(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction)
 {
 /**************************************
  *
@@ -1997,8 +1997,8 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
 /* Copy data from blob to scratch file */
 
 	struct dsc$descriptor_s desc;
-	const SSHORT short_length = sizeof(buffer);
 	SCHAR buffer[256];
+	const SSHORT short_length = sizeof(buffer);
 	for (;;) {
 		USHORT l = 0;
 		isc_get_segment(status_vector, &blob, &l, short_length, buffer);

@@ -154,7 +154,7 @@ namespace {
 			//Firebird::MutexLockGuard(fullAccess);
 			fullAccess.enter();
 			FailedLogin& l = get(login);
-			if (++(l.failCount) >= MAX_FAILED_ATTEMPTS)
+			if (++l.failCount >= MAX_FAILED_ATTEMPTS)
 			{
 				sleepThread();
 				l.failCount = 0;

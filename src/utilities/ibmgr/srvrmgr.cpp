@@ -550,7 +550,7 @@ static bool start_server( ibmgr_data_t* data)
 					|| WIFSIGNALED(exit_status)))
 		{
 			ib_printf("Guardian process %ld terminated with code %ld\n",
-				pid,WEXITSTATUS(exit_status)); 
+				pid, WEXITSTATUS(exit_status)); 
 			break;
 		}
 

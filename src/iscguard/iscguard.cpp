@@ -42,6 +42,7 @@
 #include "../remote/os/win32/window.h"
 #include "../remote/os/win32/chop_proto.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 #ifdef WIN_NT
 #include <process.h>			/* _beginthread */
@@ -262,7 +263,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	const unsigned long thread_id =
 		 _beginthread(reinterpret_cast <
 					  void (*)(void *) >(start_and_watch_server), 0,
-					  (char *)FBSERVER);
+					  const_cast<char*>(FBSERVER));
 					  
 	if (thread_id == (DWORD) -1) {
 		/* error starting server thread */
@@ -327,9 +328,8 @@ static LRESULT CALLBACK WindowFunc(
 	case WM_CLOSE:
 		{
 			/* Clean up memory for log_entry */
-			log_info* tmp;
 			while (log_entry->next) {
-				tmp = log_entry->next;
+				log_info* tmp = log_entry->next;
 				free(log_entry);
 				log_entry = tmp;
 			}
@@ -546,8 +546,9 @@ void start_and_watch_server(const char* server_name)
 /* get the guardian startup information */
 	const short option = Config::getGuardianOption();
 	gds__prefix(path, "");
-	sprintf(prog_name, "\"%s%s%s\" -a -n", path, "bin\\", server_name);
-	sprintf(path, "%s%s%s", path, "bin\\", FBSERVER);
+	fb_utils::snprintf(prog_name, sizeof(prog_name), "\"%s%s%s\" -a -n", path,
+		"bin\\", server_name);
+	fb_utils::snprintf(path, sizeof(path), "%s%s%s", path, "bin\\", FBSERVER);
 
 /* if the guardian is set to FOREVER then set the error mode */
 	UINT old_error_mode = 0;
@@ -755,7 +756,6 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
  *  Description: This function initializes the page(s) of the property sheet,
  *               and then calls the PropertySheet() function to display it.
  *****************************************************************************/
-	PROPSHEETHEADER PSHdr;
 	PROPSHEETPAGE PSPages[1];
 	HINSTANCE hInstance = hInst;
 
@@ -767,6 +767,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 	PSPages[0].pfnDlgProc = (DLGPROC) GeneralPage;
 	PSPages[0].pfnCallback = NULL;
 
+	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
 	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE |
 		PSH_USEICONID | PSH_MODELESS;
@@ -810,8 +811,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
-	HINSTANCE hInstance;
-	hInstance = (HINSTANCE) GetWindowLong(hDlg, GWL_HINSTANCE);
+	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hDlg, GWL_HINSTANCE);
 
 	switch (unMsg) {
 	case WM_INITDIALOG:
@@ -1059,7 +1059,7 @@ void write_log(int log_action, const char* buff)
 						  tmp_buff, 0, 0, (LPTSTR) &lpMsgBuf, 0,
 						  reinterpret_cast<va_list*>(act_buff));
 			strncpy(act_buff[0], (LPTSTR) lpMsgBuf,
-					strlen(reinterpret_cast<const char*>(lpMsgBuf)) - 1);
+					strlen(static_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
 			WORD wLogType;
 			

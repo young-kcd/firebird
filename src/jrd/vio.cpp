@@ -3828,7 +3828,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 							   transaction lock which means the transaction does not
 							   inhibit garbage collection by its very existence. */
 
-							transaction = TRA_start(tdbb, sizeof(gc_tpb), const_cast<char*>(gc_tpb));
+							transaction = TRA_start(tdbb, sizeof(gc_tpb), gc_tpb);
 							tdbb->tdbb_transaction = transaction;
 						}
 						else {
