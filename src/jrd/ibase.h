@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.85 2004-09-09 08:55:25 robocop Exp $
+$Id: ibase.h,v 1.86 2004-09-10 04:50:25 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -251,7 +251,7 @@ typedef struct paramdsc {
 /* This is a helper struct to work with varchars. */
 typedef struct paramvary {
     ISC_USHORT		vary_length;
-    ISC_UCHAR*	vary_string;
+    ISC_UCHAR		vary_string[1];
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
