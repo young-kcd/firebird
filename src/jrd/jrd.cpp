@@ -762,7 +762,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_charset = options.dpb_interp;
 
 	SLONG clock = time(NULL);
-	struct tm times = *localtime(reinterpret_cast<const time_t *>(&clock));
+	struct tm times = *localtime(reinterpret_cast<const time_t*>(&clock));
 	isc_encode_timestamp(&times, &attachment->att_timestamp);
 
 	if (options.dpb_lc_messages) {
@@ -1001,7 +1001,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				{
 					strcpy(local_role_name, options.dpb_role_name);
 					len = strlen(local_role_name);
-					p1 = reinterpret_cast < UCHAR * >(options.dpb_role_name);
+					p1 = reinterpret_cast<UCHAR*>(options.dpb_role_name);
 					for (cnt = 0; cnt < len; cnt++)
 					{
 						*p1++ = UPPER7(local_role_name[cnt]);
@@ -1701,7 +1701,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS * user_status,
 	{
 		tdbb->tdbb_status_vector = user_status;
 
-		request = CMP_compile2(tdbb, reinterpret_cast < UCHAR * >(blr), FALSE);
+		request = CMP_compile2(tdbb, reinterpret_cast<UCHAR*>(blr), FALSE);
 		request->req_attachment = attachment;
 		request->req_request = attachment->att_requests;
 		attachment->att_requests = request;
@@ -1930,7 +1930,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_charset = options.dpb_interp;
 
 	SLONG clock = time(NULL);
-	struct tm times = *localtime(reinterpret_cast<const time_t *>(&clock));
+	struct tm times = *localtime(reinterpret_cast<const time_t*>(&clock));
 	isc_encode_timestamp(&times, &attachment->att_timestamp);
 
 	if (options.dpb_lc_messages)
@@ -2710,10 +2710,10 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS * user_status,
 		else
 			*return_length = BLB_get_slice(tdbb,
 									   transaction,
-									   reinterpret_cast < BID > (array_id),
+									   reinterpret_cast<BID>(array_id),
 									   sdl,
 									   param_length,
-									   reinterpret_cast < long *>(param),
+									   reinterpret_cast<long*>(param),
 									   slice_length, slice);
 	}
 	catch (const std::exception&)
@@ -2908,10 +2908,10 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS * user_status,
 		transaction = find_transaction(tdbb, *tra_handle, gds_segstr_wrong_db);
 		BLB_put_slice(tdbb,
 				  transaction,
-				  reinterpret_cast < BID > (array_id),
+				  reinterpret_cast<BID>(array_id),
 				  sdl,
 				  param_length,
-				  reinterpret_cast < long *>(param), slice_length, slice);
+				  reinterpret_cast<long*>(param), slice_length, slice);
 	}
 	catch (const std::exception&)
 	{
@@ -3041,7 +3041,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	#endif
 	
 		EXE_receive(tdbb, request, msg_type, msg_length,
-					reinterpret_cast < UCHAR * >(msg));
+					reinterpret_cast<UCHAR*>(msg));
 	
 		check_autocommit(request, tdbb);
 	
@@ -3380,7 +3380,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 					ERR_post(gds_req_sync, 0);
 	
 		EXE_send(tdbb, request, msg_type, msg_length,
-				reinterpret_cast < UCHAR * >(msg));
+				reinterpret_cast<UCHAR*>(msg));
 	
 		check_autocommit(request, tdbb);
 	
@@ -3664,7 +3664,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 		EXE_unwind(tdbb, request);
 		EXE_start(tdbb, request, transaction);
 		EXE_send(tdbb, request, msg_type, msg_length,
-				reinterpret_cast < UCHAR * >(msg));
+				reinterpret_cast<UCHAR*>(msg));
 	
 		check_autocommit(request, tdbb);
 	
@@ -5357,7 +5357,7 @@ static void get_options(UCHAR*	dpb,
 		case isc_dpb_reserved:
 			single =
 				reinterpret_cast<UCHAR*>(get_string_parameter(&p, scratch, &buf_size));
-		    if (single && !strcmp(reinterpret_cast < char *>(single), "YES"))
+		    if (single && !strcmp(reinterpret_cast<char*>(single), "YES"))
 				  options->dpb_single_user = TRUE;
 			break;
 
@@ -6666,9 +6666,9 @@ static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 		status[0] = gds_arg_gds;
 		status[1] = gds_conf_access_denied;
 		status[2] = gds_arg_string;
-		status[3] = reinterpret_cast <ISC_STATUS> ("database");
+		status[3] = reinterpret_cast<ISC_STATUS>("database");
 		status[4] = gds_arg_string;
-		status[5] = reinterpret_cast <ISC_STATUS> (ERR_cstring(name));
+		status[5] = reinterpret_cast<ISC_STATUS>(ERR_cstring(name));
 		status[6] = gds_arg_end;
 		return false;
 	}
