@@ -283,6 +283,7 @@ const USHORT  f_trn_desc = 3  ;
 const USHORT  f_gen_name = 0  ;
 const USHORT  f_gen_id = 1  ;
 const USHORT  f_gen_sys_flag = 2  ;
+const USHORT  f_gen_desc = 3;
 const USHORT  f_dims_fname = 0  ;
 const USHORT  f_dims_dim = 1  ;
 const USHORT  f_dims_lower = 2  ;

@@ -171,6 +171,7 @@ static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 static void check_dependencies(thread_db*, const TEXT*, const TEXT*, USHORT, jrd_tra*);
 static void check_filename(const TEXT*, USHORT);
+static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, internal_array_desc*);
@@ -1360,6 +1361,23 @@ static void check_filename(const TEXT* name, USHORT l)
 }
 
 
+static void check_system_generator(const TEXT* gen_name, const dfw_t action)
+{
+	// CVC: Replace this with a call to SCL when we have ACL's for gens.
+	for (const gen* generator = generators; generator->gen_name; generator++)
+		if (!strcmp(generator->gen_name, gen_name)) // did we find a sys gen?
+			ERR_post(isc_no_meta_update,
+				isc_arg_gds, action == dfw_delete_generator ?
+					isc_no_delete // Msg353: can not delete
+					: isc_no_update, // Msg520: can not update
+				isc_arg_gds, isc_generator_name,
+				isc_arg_string, ERR_cstring(gen_name),
+				isc_arg_gds, isc_random,
+				isc_arg_string, "This is a system generator.",
+				0);
+}
+
+
 static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 {
 /**************************************
@@ -1373,15 +1391,15 @@ static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 		|| (old_format->fmt_count != new_format->fmt_count))
 	{
 		return false;
-    }
+	}
 
-    Format::fmt_desc_const_iterator old_desc = old_format->fmt_desc.begin();
-    const Format::fmt_desc_const_iterator old_end = old_format->fmt_desc.end();
+	Format::fmt_desc_const_iterator old_desc = old_format->fmt_desc.begin();
+	const Format::fmt_desc_const_iterator old_end = old_format->fmt_desc.end();
 
-    Format::fmt_desc_const_iterator new_desc = new_format->fmt_desc.begin();
+	Format::fmt_desc_const_iterator new_desc = new_format->fmt_desc.begin();
 
-    while (old_desc != old_end)
-    {
+	while (old_desc != old_end)
+	{
 		if ((old_desc->dsc_dtype != new_desc->dsc_dtype)
 			|| (old_desc->dsc_scale != new_desc->dsc_scale)
 			|| (old_desc->dsc_length != new_desc->dsc_length)
@@ -1392,9 +1410,9 @@ static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 			return false;
 		}
 
-        new_desc++;
-        old_desc++;
-    }
+		new_desc++;
+		old_desc++;
+	}
 
 	return true;
 }
@@ -1861,7 +1879,7 @@ static bool create_relation(thread_db*	tdbb,
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
-    USHORT local_min_relation_id;
+	USHORT local_min_relation_id;
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 		local_min_relation_id = MIN_RELATION_ID;
 	else
@@ -1910,8 +1928,8 @@ static bool create_relation(thread_db*	tdbb,
 		FOR(REQUEST_HANDLE request)
 			X IN RDB$DATABASE CROSS Y IN RDB$RELATIONS WITH
 				Y.RDB$RELATION_NAME EQ work->dfw_name
-            if (!REQUEST(irq_c_relation))
-                REQUEST(irq_c_relation) = request;
+			if (!REQUEST(irq_c_relation))
+				REQUEST(irq_c_relation) = request;
 
 			blob_id = Y.RDB$VIEW_BLR;
 			external_flag = Y.RDB$EXTERNAL_FILE[0];
@@ -1960,7 +1978,7 @@ static bool create_relation(thread_db*	tdbb,
 								R IN RDB$RELATIONS OVER RDB$RELATION_NAME
 								WITH Z.RDB$VIEW_NAME = work->dfw_name
 
-                            Y.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
+							Y.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
 
 						END_FOR;
 						CMP_release(tdbb, handle);
@@ -2099,30 +2117,18 @@ static bool delete_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	{
 		case 0:
 			return false;
-	    case 1:
-	    	{
-			// CVC: Replace this with a call to SCL when we have ACL's for gens.
-			for (const gen* generator = generators; generator->gen_name; generator++)
-				if (!strcmp(generator->gen_name, gen_name)) // did we find a sys gen?
-					ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_no_delete, // Msg353: can not delete
-					 isc_arg_gds, isc_generator_name,
-					 isc_arg_string, ERR_cstring(gen_name),
-					 isc_arg_gds, isc_random,
-					 isc_arg_string, "This is a system generator.",
-					 0);
-
+		case 1:
+			check_system_generator(gen_name, dfw_delete_generator);
 			check_dependencies(tdbb, gen_name, 0,
 							   obj_generator, transaction); 
 			return true;
-			}
-	    case 2:
+		case 2:
 			return true;
-	    case 3:
+		case 3:
 			return true;
-	    case 4:
+		case 4:
 			break;
-    }
+	}
 
 	return false;
 }
@@ -2152,22 +2158,24 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	{
 		case 0:
 			return false;
-	    case 1:
-			ERR_post(isc_no_meta_update,
-				 isc_arg_gds, isc_generator_name,
-				 isc_arg_string, ERR_cstring(gen_name),
-				 isc_arg_gds, isc_random,
-				 isc_arg_string, "RDB$GENERATORS cannot be modified.",
-				 0);
-
+		case 1:
+			check_system_generator(gen_name, dfw_modify_generator);
+			if (work->dfw_id)
+				ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_generator_name,
+					 isc_arg_string, ERR_cstring(gen_name),
+					 isc_arg_gds, isc_random,
+					 isc_arg_string, "Only can modify description for user generators.",
+					 0);
+					 
 			return true;
-	    case 2:
+		case 2:
 			return true;
-	    case 3:
+		case 3:
 			return true;
-	    case 4:
+		case 4:
 			break;
-    }
+	}
 
 	return false;
 
@@ -2257,7 +2265,7 @@ static bool delete_field(	thread_db*	tdbb,
 									REL.RDB$RELATION_ID,
 									transaction))
 			{
-                field_count++;
+				field_count++;
 			}
 		END_FOR;
 		CMP_release(tdbb, handle);
@@ -3499,7 +3507,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 			Firebird::Array<OdsDesc> odsDescs;
 			OdsDesc *odsDesc = odsDescs.getBuffer(format->fmt_count);
 		
-			for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
+			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
 				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
 			{
 				odsDesc->dsc_dtype = desc->dsc_dtype;
@@ -3652,7 +3660,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
 									X.RDB$RELATION_NAME EQ work->dfw_name AND
 										X.RDB$TRIGGER_TYPE EQ 1
-                                    RFR.RDB$UPDATE_FLAG = 1;
+									RFR.RDB$UPDATE_FLAG = 1;
 								END_FOR;
 								CMP_release(tdbb, temp);
 							}

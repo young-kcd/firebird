@@ -686,6 +686,12 @@ void INI_init2(void)
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
+				else if (fld[RFLD_F_NAME] == nam_description &&
+					relfld[RFLD_R_NAME] == nam_gens)
+				{
+					if (major_version >= ODS_VERSION11)
+						n = init2_helper(fld, n, relation);
+				}
 				else
 					n = init2_helper(fld, n, relation);
 			}
@@ -1356,10 +1362,27 @@ static void store_generator(thread_db* tdbb, const gen* generator, jrd_req** han
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
+	jrd_tra* trans = dbb->dbb_sys_trans;
+	
 	STORE(REQUEST_HANDLE * handle) X IN RDB$GENERATORS
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
 		X.RDB$GENERATOR_ID = generator->gen_id;
 		X.RDB$SYSTEM_FLAG = RDB_system;
+		if (generator->gen_description)
+		{
+			blb* blob = BLB_create(tdbb, trans, &X.RDB$DESCRIPTION);
+			BLB_put_segment(tdbb,
+							blob,
+							reinterpret_cast<const UCHAR*>(generator->gen_description),
+							strlen(generator->gen_description));
+			BLB_close(tdbb, blob);
+			X.RDB$DESCRIPTION.NULL = FALSE;
+		}
+		else
+		{
+			X.RDB$DESCRIPTION.NULL = TRUE;
+		}
+
 	END_STORE;
 }
 

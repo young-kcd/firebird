@@ -1288,15 +1288,15 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_delete_exception, &desc, 0);
 			break;
 
-        case rel_gens:
-            EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
-            DFW_post_work(transaction, dfw_delete_generator, &desc, 0);
-            break;
+		case rel_gens:
+			EVL_field (0, rpb->rpb_record, f_gen_name, &desc);
+			DFW_post_work(transaction, dfw_delete_generator, &desc, 0);
+			break;
 
-        case rel_funs:
-            EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
-            DFW_post_work(transaction, dfw_delete_udf, &desc, 0);
-            break;
+		case rel_funs:
+			EVL_field (0, rpb->rpb_record, f_fun_name, &desc);
+			DFW_post_work(transaction, dfw_delete_udf, &desc, 0);
+			break;
 
 		case rel_indices:
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
@@ -2205,11 +2205,28 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			} // scope
 			break;
 
-        case rel_gens:
-            EVL_field (0, org_rpb->rpb_record, f_prc_name, &desc1);
-            // We won't accept modifying generators.
-            DFW_post_work(transaction, dfw_modify_generator, &desc1, 0);
-            break;
+		case rel_gens:
+			{
+				EVL_field (0, org_rpb->rpb_record, f_gen_name, &desc1);
+				// We won't accept modifying sys generators and for user gens,
+				// only the description.
+				// This is poor man's version of a trigger discovering changed fields.
+				dsc desc3;
+				bool found_change = false;
+				for (USHORT iter = 0; iter < org_rpb->rpb_record->rec_format->fmt_count;
+					++iter)
+				{
+					if (iter != f_gen_desc)
+					{
+						const bool a = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
+						const bool b = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
+						if (a != b || MOV_compare(&desc2, &desc3))
+							found_change = true;
+					}
+				}
+				DFW_post_work(transaction, dfw_modify_generator, &desc1, (USHORT) found_change);
+			}
+			break;
 
 		case rel_rfr:
 			EVL_field(0, org_rpb->rpb_record, f_rfr_rname, &desc1);
@@ -3204,7 +3221,7 @@ static void check_class(
  *
  * Functional description
  *	A record in a system relation containing a security class is
- *	being change.  Check to see if the security class has changed,
+ *	being changed.  Check to see if the security class has changed,
  *	and if so, post the change.
  *
  **************************************/
@@ -3278,7 +3295,8 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 }
 
 
-static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, JrdMemoryPool* pool)
+static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page,
+	JrdMemoryPool* pool)
 {
 /**************************************
  *
@@ -4653,7 +4671,6 @@ static void update_in_place(
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	Record* gc_rec = NULL;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
@@ -4683,9 +4700,10 @@ static void update_in_place(
    with an old "complete" record, update in placement, then delete the old
    delta record */
 
+	Record* gc_rec = NULL;
 	record_param temp2;
-	Record* prior;
-	if ( (prior = org_rpb->rpb_prior) ) {
+	const Record* prior = org_rpb->rpb_prior;
+	if (prior) {
 		temp2 = *org_rpb;
 		temp2.rpb_record = VIO_gc_record(tdbb, relation);
 		temp2.rpb_page = org_rpb->rpb_b_page;
