@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.17 2003-12-02 16:03:43 brodsom Exp $
+#  $Id: Makefile.in.client.util,v 1.18 2003-12-17 11:05:53 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -66,7 +66,7 @@ GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources)))
 GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files))
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
-GSTAT_JRD_Files =  btn.cpp
+GSTAT_JRD_Files =  btn.cpp db_alias.cpp
 GSTAT_JRD_Sources = $(addprefix jrd/, $(GSTAT_JRD_Files))
 GSTAT_JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_JRD_Sources))))
 
