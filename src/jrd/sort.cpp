@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.71 2004-11-01 08:23:40 robocop Exp $
+ * $Id: sort.cpp,v 1.72 2004-11-02 15:42:18 hvlad Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -2120,9 +2120,11 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 #endif
 		}
 
-		l = scb->scb_key_length - scb->scb_unique_length;
-		if (l != 0)
-			DO_32_COMPARE(p, q, l);
+		if (l == 0) {
+			l = scb->scb_key_length - scb->scb_unique_length;
+			if (l != 0)
+				DO_32_COMPARE(p, q, l);
+		}
 
 #ifdef SCROLLABLE_CURSORS
 		if (mode == RSE_get_forward && p[-1] < q[-1])
