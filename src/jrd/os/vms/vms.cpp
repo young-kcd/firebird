@@ -28,7 +28,7 @@
 #include ssdef
 
 #include "../jrd/jrd.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch.h"
@@ -38,7 +38,7 @@
 #include "../jrd/err_proto.h"
 
 #include "../jrd/lck_proto.h"
-#include "../jrd/pio_proto.h"
+#include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
 
 #define DEFAULT_FILE_NAME	".fdb"
