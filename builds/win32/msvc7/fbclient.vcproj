@@ -241,9 +241,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\isc_win32.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
 			</File>
 			<File
