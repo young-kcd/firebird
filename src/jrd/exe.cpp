@@ -169,7 +169,6 @@ static void validate(TDBB, JRD_NOD);
 inline void PreModifyEraseTriggers(TDBB, trig_vec**, SSHORT, RPB*, REC, jrd_req::req_ta);
 
 #ifdef PC_ENGINE
-static BOOLEAN check_crack(RSB, USHORT);
 static JRD_NOD find(TDBB, JRD_NOD);
 static JRD_NOD find_dbkey(TDBB, JRD_NOD);
 static LCK implicit_record_lock(JRD_TRA, RPB *);
@@ -443,7 +442,7 @@ void EXE_assignment(TDBB tdbb, JRD_NOD node)
 
 
 #ifdef PC_ENGINE
-BOOLEAN EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
+bool EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
 {
 /**************************************
  *
@@ -460,7 +459,6 @@ BOOLEAN EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
 	RPB *rpb;
 	IRSB impure;
 
-
 	DEV_BLKCHK(rsb, type_rsb);
 
 	SET_TDBB(tdbb);
@@ -472,17 +470,14 @@ BOOLEAN EXE_crack(TDBB tdbb, RSB rsb, USHORT flags)
 		rsb = rsb->rsb_next;
 	impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
-/* if any of the passed flags are set, return TRUE */
+/* if any of the passed flags are set, return true */
 
-	if (impure->irsb_flags & flags)
-		return TRUE;
-	else
-		return FALSE;
+	return (impure->irsb_flags & flags);
 }
 #endif
 
 
-JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, BOOLEAN validate)
+JRD_REQ EXE_find_request(TDBB tdbb, JRD_REQ request, bool validate)
 {
 /**************************************
  *
@@ -730,7 +725,7 @@ void EXE_seek(TDBB tdbb, JRD_REQ request, USHORT direction, ULONG offset)
 
 	vector = request->req_fors;
 	if (!vector)
-		return FALSE;
+		return;
 
 /* find the top-level rsb in the request and seek it */
 
@@ -1223,7 +1218,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									   transaction,
 									   reinterpret_cast <
 									   blk *
-									   >(tdbb->tdbb_default),FALSE)))
+									   >(tdbb->tdbb_default), FALSE)))
 				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 		VIO_data(tdbb, rpb,
 				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
@@ -1504,7 +1499,7 @@ static void execute_procedure(TDBB tdbb, JRD_NOD node)
 	}
 
 	procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
-	proc_request = EXE_find_request(tdbb, procedure->prc_request, FALSE);
+	proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
 
 	if (!out_message) {
 		format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
@@ -1619,7 +1614,7 @@ static JRD_REQ execute_triggers(TDBB tdbb,
 		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
-			trigger = EXE_find_request(tdbb, ptr->request, FALSE);
+			trigger = EXE_find_request(tdbb, ptr->request, false);
 			trigger->req_rpb[0].rpb_record = old_rec;
 			trigger->req_rpb[1].rpb_record = new_rec;
 			trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
@@ -2961,7 +2956,7 @@ static JRD_NOD modify(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									   org_rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<BLK>(tdbb->tdbb_default),FALSE)))
+									   reinterpret_cast<BLK>(tdbb->tdbb_default), FALSE)))
 		{
 				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 		}

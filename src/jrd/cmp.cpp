@@ -41,7 +41,7 @@
 #include "firebird.h"
 #include "../jrd/ibsetjmp.h"
 #include <string.h>
-#include <stdlib.h>				/* abort */
+#include <stdlib.h>				// abort
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
@@ -84,7 +84,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/dbg_proto.h"	/* DBG_supervisor */
+#include "../jrd/dbg_proto.h"	// DBG_supervisor
 #include "../jrd/ExecuteStatement.h"
 
 /* Pick up relation ids */
@@ -128,14 +128,14 @@ rel_MAX} RIDS;
 
 static UCHAR* alloc_map(TDBB, CSB, USHORT);
 static JRD_NOD catenate_nodes(TDBB, LLS);
-static JRD_NOD copy(TDBB, CSB, JRD_NOD, UCHAR *, USHORT, USHORT);
+static JRD_NOD copy(TDBB, CSB, JRD_NOD, UCHAR *, USHORT, bool);
 static void expand_view_nodes(TDBB, CSB, USHORT, LLS *, NOD_T);
 static void ignore_dbkey(TDBB, CSB, RSE, JRD_REL);
 static JRD_NOD make_defaults(TDBB, CSB, USHORT, JRD_NOD);
 static JRD_NOD make_validation(TDBB, CSB, USHORT);
-static JRD_NOD pass1(TDBB, CSB, JRD_NOD, JRD_REL, USHORT, BOOLEAN);
+static JRD_NOD pass1(TDBB, CSB, JRD_NOD, JRD_REL, USHORT, bool);
 static void pass1_erase(TDBB, CSB, JRD_NOD);
-static JRD_NOD pass1_expand_view(TDBB, CSB, USHORT, USHORT, USHORT);
+static JRD_NOD pass1_expand_view(TDBB, CSB, USHORT, USHORT, bool);
 static void pass1_modify(TDBB, CSB, JRD_NOD);
 static RSE pass1_rse(TDBB, CSB, RSE, JRD_REL, USHORT);
 static void pass1_source(TDBB, CSB, RSE, JRD_NOD, JRD_NOD *, LLS *, JRD_REL, USHORT);
@@ -151,11 +151,11 @@ static void post_procedure_access(TDBB, CSB, JRD_PRC);
 static RSB post_rse(TDBB, CSB, RSE);
 static void	post_trigger_access(TDBB, CSB, JRD_REL, TRIG_VEC, JRD_REL);
 static void process_map(TDBB, CSB, JRD_NOD, FMT *);
-static BOOLEAN stream_in_rse(USHORT, RSE);
+static bool stream_in_rse(USHORT, RSE);
 static SSHORT strcmp_space(const TEXT*, const TEXT*);
 
 #ifdef PC_ENGINE
-static USHORT base_stream(CSB, JRD_NOD *, BOOLEAN);
+static USHORT base_stream(CSB, JRD_NOD *, bool);
 #endif
 
 #ifdef CMP_DEBUG
@@ -173,7 +173,7 @@ inline static char* clone_cstring(JrdMemoryPool* pool, const char* source) {
     return result;
 }
 
-int CMP_clone_active(JRD_REQ request)
+bool CMP_clone_active(JRD_REQ request)
 {
 /**************************************
  *
@@ -191,15 +191,15 @@ int CMP_clone_active(JRD_REQ request)
 	DEV_BLKCHK(request, type_req);
 
 	if (request->req_flags & req_in_use)
-		return TRUE;
+		return true;
 
 	if ( (vector = request->req_sub_requests) )
 		for (sub_req = vector->begin(), end = vector->end();
 			 sub_req < end; sub_req++)
 			if (*sub_req && ((JRD_REQ)(*sub_req))->req_flags & req_in_use)
-				return TRUE;
+				return true;
 
-	return FALSE;
+	return false;
 }
 
 
@@ -226,14 +226,14 @@ JRD_NOD CMP_clone_node(TDBB tdbb, CSB csb, JRD_NOD node)
 	if (node->nod_type == nod_argument)
 		return node;
 
-	clone = copy(tdbb, csb, node, NULL, 0, FALSE);
+	clone = copy(tdbb, csb, node, NULL, 0, false);
 	pass2(tdbb, csb, clone, 0);
 
 	return clone;
 }
 
 
-JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN validate)
+JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, bool validate)
 {
 /**************************************
  *
@@ -248,7 +248,6 @@ JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN vali
  **************************************/
 	JRD_REQ clone;
 	RPB *rpb1, *rpb2, *end;
-	USHORT n;
 	ACC access;
 	SCL class_;
 	JRD_PRC procedure;
@@ -258,7 +257,7 @@ JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN vali
 
 	SET_TDBB(tdbb);
 
-/* Find the request if we've got it. */
+	// find the request if we've got it
 
 	if (!level)
 		return request;
@@ -268,7 +267,7 @@ JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN vali
 	if (vector && level < vector->count() && (clone = (JRD_REQ) (*vector)[level]))
 		return clone;
 
-/* We need to clone the request -- find someplace to put it */
+	// validate the request
 
 	if (validate) {
 		if ( (procedure = request->req_procedure) ) {
@@ -289,14 +288,14 @@ JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN vali
 		}
 	}
 
+	// we need to clone the request - find someplace to put it
+
 	vector = request->req_sub_requests =
 		vec::newVector(*request->req_pool, request->req_sub_requests, level + 1);
 
-/* Clone the request */
+	// clone the request
 
-	n =
-		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) /
-				  REQ_TAIL);
+	USHORT n = (USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL);
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req;
 	(*vector)[level] = (BLK) clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
@@ -363,8 +362,8 @@ JRD_REQ CMP_compile2(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
 	SET_TDBB(tdbb);
 
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
-	/* 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
-	  and will be freed by CMP_release	*/
+	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
+	// and will be freed by CMP_release
 	JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 	tdbb->tdbb_default = new_pool;
 
@@ -394,9 +393,6 @@ JRD_REQ CMP_compile2(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
 		if (request) {
 			CMP_release(tdbb, request);
 		} else if (new_pool) {
-			// TMN: Are we not to release the pool, just beqause
-			// we have a request?!
-			// Nickolay Samofatv: It well be freed by CMP_release otherwise
 			JrdMemoryPool::deletePool(new_pool);
 		}
 		ERR_punt();
@@ -482,9 +478,8 @@ JRD_REQ CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-
-/* If the request hasn't been compiled or isn't active, 
-   there're nothing to do */
+	// if the request hasn't been compiled or isn't active,
+	// there're nothing to do
 
 	THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 	if ((which == IRQ_REQUESTS && !(request = (JRD_REQ) REQUEST(id))) ||
@@ -496,8 +491,8 @@ JRD_REQ CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 		return request;
 	}
 
-/* Request exists and is in use.  Look for clones until we find
-   one that is available */
+	// Request exists and is in use. Look for clones until we find
+	// one that is available.
 
 	for (n = 1;; n++) {
 		if (n > MAX_RECURSION) {
@@ -505,9 +500,9 @@ JRD_REQ CMP_find_request(TDBB tdbb, USHORT id, USHORT which)
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_req_depth_exceeded,
 					 isc_arg_number, (SLONG) MAX_RECURSION, 0);
-			/* Msg363 "request depth exceeded. (Recursive definition?)" */
+			// Msg363 "request depth exceeded. (Recursive definition?)"
 		}
-		clone = CMP_clone_request(tdbb, request, n, FALSE);
+		clone = CMP_clone_request(tdbb, request, n, false);
 		if (!(clone->req_flags & (req_active | req_reserved))) {
 			clone->req_flags |= req_reserved;
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
@@ -564,7 +559,7 @@ FMT CMP_format(TDBB tdbb, CSB csb, USHORT stream)
 	else if (tail->csb_procedure)
 		return tail->csb_format = tail->csb_procedure->prc_format;
 
-	IBERROR(222);				/* msg 222 bad blr -- invalid stream */
+	IBERROR(222);				// msg 222 bad blr - invalid stream
 	return NULL;
 }
 
@@ -649,14 +644,14 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 #endif
 
 		default:
-			fb_assert(FALSE);
-			/* FALLINTO */
+			fb_assert(false);
+			// FALLINTO
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_timestamp:
 		case dtype_blob:
 		case dtype_array:
-			/* break to error reporting code */
+			// break to error reporting code
 			break;
 		}
 		break;
@@ -711,14 +706,14 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 #endif
 
 		default:
-			fb_assert(FALSE);
-			/* FALLINTO */
+			fb_assert(false);
+			// FALLINTO
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_timestamp:
 		case dtype_blob:
 		case dtype_array:
-			/* break to error reporting code */
+			// break to error reporting code
 			break;
 		}
 		break;
@@ -784,7 +779,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			const jrd_fld* field = MET_get_field(relation, id);
 			const arr* array;
 			if (!field || !(array = field->fld_array))
-				IBERROR(223);	/* msg 223 argument of scalar operation must be an array */
+				IBERROR(223);	// msg 223 argument of scalar operation must be an array
 			*desc = array->arr_desc.ads_rpt[0].ads_desc;
 			return;
 		}
@@ -794,17 +789,17 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			DSC desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			/* For compatibility with older versions of the product, we accept
-			   text types for division in blr_version4 (dialect <= 1) only. */
+			// for compatibility with older versions of the product, we accept
+			// text types for division in blr_version4 (dialect <= 1) only
 			if (!(DTYPE_CAN_DIVIDE(desc1.dsc_dtype) ||
 				  DTYPE_IS_TEXT(desc1.dsc_dtype))) {
 				if (desc1.dsc_dtype != dtype_null)
-					break;		/* error, dtype not supported by arithmetic */
+					break;		// error, dtype not supported by arithmetic
 			}
 			if (!(DTYPE_CAN_DIVIDE(desc2.dsc_dtype) ||
 				  DTYPE_IS_TEXT(desc2.dsc_dtype))) {
 				if (desc2.dsc_dtype != dtype_null)
-					break;		/* error, dtype not supported by arithmetic */
+					break;		// error, dtype not supported by arithmetic
 			}
 		}
 		desc->dsc_dtype = DEFAULT_DOUBLE;
@@ -817,7 +812,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 	case nod_agg_average:
 	case nod_agg_average_distinct:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		/* FALL INTO */
+		// FALL INTO
 	case nod_average:
 		if (node->nod_type == nod_average)
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
@@ -832,15 +827,15 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 		desc->dsc_flags = 0;
 		return;
 
-		/* In 6.0, the AVERAGE of an exact numeric type is int64 with the
-		   same scale.  Only AVERAGE on an approximate numeric type can
-		   return a double. */
+		// In 6.0, the AVERAGE of an exact numeric type is int64 with the
+		// same scale. Only AVERAGE on an approximate numeric type can
+		// return a double.
 
 	case nod_agg_average2:
 	case nod_agg_average_distinct2:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		/* In V6, the average of an exact type is computed in SINT64,
-		   rather than double as in prior releases. */
+		// In V6, the average of an exact type is computed in SINT64,
+		// rather than double as in prior releases
 		switch (dtype = desc->dsc_dtype) {
 		case dtype_short:
 		case dtype_long:
@@ -884,10 +879,10 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			/* 92/05/29 DAVES - don't understand why this is done for ONLY
 			   dtype_text (eg: not dtype_cstring or dtype_varying) Doesn't
 			   appear to hurt. 
+
 			   94/04/04 DAVES - NOW I understand it!  QLI will pass floating
 			   point values to the engine as text.  All other numeric constants
-			   it turns into either integers or longs (with scale).
-			 */
+			   it turns into either integers or longs (with scale). */
 
 			dtype1 = desc1.dsc_dtype;
 			if (dtype_int64 == dtype1)
@@ -919,7 +914,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 					DTYPE_IS_TEXT(desc2.dsc_dtype))
 						ERR_post(isc_expression_eval_err, 0);
-				/* FALL INTO */
+				// FALL INTO
 			case dtype_timestamp:
 				node->nod_flags |= nod_date;
 
@@ -928,7 +923,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2)) {
 					if (node->nod_type == nod_subtract) {
-						/* <any date> - <any date> */
+						// <any date> - <any date>
 
 						/* Legal permutations are:
 						   <timestamp> - <timestamp>
@@ -980,8 +975,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						}
 					}
 					else if (IS_DATE_AND_TIME(desc1, desc2)) {
-						/* <date> + <time> */
-						/* <time> + <date> */
+						// <date> + <time>
+						// <time> + <date>
 						desc->dsc_dtype = dtype_timestamp;
 						desc->dsc_length = type_lengths[desc->dsc_dtype];
 						desc->dsc_scale = 0;
@@ -989,13 +984,13 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						desc->dsc_flags = 0;
 					}
 					else
-						/* <date> + <date> */
+						// <date> + <date>
 						ERR_post(isc_expression_eval_err, 0);
 				}
 				else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
-						 /* <date> +/- <non-date> */
+						 // <date> +/- <non-date>
 						 (node->nod_type == nod_add))
-					/* <non-date> + <date> */
+						 // <non-date> + <date>
 				{
 					desc->dsc_dtype = desc1.dsc_dtype;
 					if (!DTYPE_IS_DATE(desc->dsc_dtype))
@@ -1007,7 +1002,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					desc->dsc_flags = 0;
 				}
 				else
-					/* <non-date> - <date> */
+					// <non-date> - <date>
 					ERR_post(isc_expression_eval_err, 0);
 				return;
 
@@ -1051,8 +1046,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 #endif
 			default:
-				fb_assert(FALSE);
-				/* FALLINTO */
+				fb_assert(false);
+				// FALLINTO
 			case dtype_blob:
 			case dtype_array:
 				break;
@@ -1078,9 +1073,9 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			dtype1 = desc1.dsc_dtype;
 			dtype2 = desc2.dsc_dtype;
 
-			/* Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
-			   the result dtype.  The rule is that two exact numeric operands yield an int64
-			   result, while an approximate numeric and anything yield a double result. */
+			// Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
+			// the result dtype. The rule is that two exact numeric operands yield an int64
+			// result, while an approximate numeric and anything yield a double result.
 
 			if (DTYPE_IS_EXACT(desc1.dsc_dtype)
 				&& DTYPE_IS_EXACT(desc2.dsc_dtype))
@@ -1090,11 +1085,11 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					 DTYPE_IS_NUMERIC(desc2.dsc_dtype)) dtype = dtype_double;
 
 			else {
-				/* mixed numeric and non-numeric: */
+				// mixed numeric and non-numeric:
 
 				fb_assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));
 
-				/* The MAX(dtype) rule doesn't apply with dtype_int64 */
+				// the MAX(dtype) rule doesn't apply with dtype_int64
 
 				if (dtype_int64 == dtype1)
 					dtype1 = dtype_double;
@@ -1116,7 +1111,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_null)) &&
 					(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_null))) {
 					if (node->nod_type == nod_subtract2) {
-						/* <any date> - <any date> */
+						// <any date> - <any date>
 
 						/* Legal permutations are:
 						   <timestamp> - <timestamp>
@@ -1166,8 +1161,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						}
 					}
 					else if (IS_DATE_AND_TIME(desc1, desc2)) {
-						/* <date> + <time> */
-						/* <time> + <date> */
+						// <date> + <time>
+						// <time> + <date>
 						desc->dsc_dtype = dtype_timestamp;
 						desc->dsc_length = type_lengths[desc->dsc_dtype];
 						desc->dsc_scale = 0;
@@ -1175,13 +1170,13 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 						desc->dsc_flags = 0;
 					}
 					else
-						/* <date> + <date> */
+						// <date> + <date>
 						ERR_post(isc_expression_eval_err, 0);
 				}
 				else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
-						 /* <date> +/- <non-date> */
+						 // <date> +/- <non-date>
 						 (node->nod_type == nod_add2))
-					/* <non-date> + <date> */
+						 // <non-date> + <date>
 				{
 					desc->dsc_dtype = desc1.dsc_dtype;
 					if (!DTYPE_IS_DATE(desc->dsc_dtype))
@@ -1193,7 +1188,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 					desc->dsc_flags = 0;
 				}
 				else
-					/* <non-date> - <date> */
+					// <non-date> - <date>
 					ERR_post(isc_expression_eval_err, 0);
 				return;
 
@@ -1248,8 +1243,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 #endif
 			default:
-				fb_assert(FALSE);
-				/* FALLINTO */
+				fb_assert(false);
+				// FALLINTO
 			case dtype_blob:
 			case dtype_array:
 				break;
@@ -1297,10 +1292,10 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 
 			default:
-				fb_assert(FALSE);
-				/* FALLINTO */
+				fb_assert(false);
+				// FALLINTO
 			case DTYPE_CANNOT:
-				/* break to error reporting code */
+				// break to error reporting code
 				break;
 			}
 		}
@@ -1345,10 +1340,10 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				return;
 
 			default:
-				fb_assert(FALSE);
-				/* FALLINTO */
+				fb_assert(false);
+				// FALLINTO
 			case DTYPE_CANNOT:
-				/* break to error reporting code */
+				// break to error reporting code
 				break;
 			}
 		}
@@ -1373,7 +1368,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 				rc_len += DSC_string_length (&desc2);
 			else
 				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
-			/* error() is a local routine in par.c, so we use plain ERR_post. */
+			// error() is a local routine in par.c, so we use plain ERR_post
 			if (rc_len > MAX_FORMAT_SIZE)
 				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 			desc->dsc_length = static_cast<USHORT>(rc_len);
@@ -1451,7 +1446,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_extract:
 		if ((ULONG) node->nod_arg[e_extract_part] == blr_extract_second) {
-			/* QUADDATE - SECOND returns a float, or scaled! */
+			// QUADDATE - SECOND returns a float, or scaled!
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(ULONG);
 			desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
@@ -1526,7 +1521,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			{
 				const SLONG sl1 = MOV_get_long(&desc1, 0);
 				const SLONG sl2 = MOV_get_long(&desc2, 0);
-				/* error() is a local routine in par.c, so we use plain ERR_post. */
+				// error() is a local routine in par.c, so we use plain ERR_post
 				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
 					ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 				rc_len = sl2;
@@ -1541,24 +1536,22 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 	case nod_function:
 		{
 			const fun* function = (FUN) node->nod_arg[e_fun_function];
-	/** Null value for the function indicates that the function was not
-	    looked up during parsing the blr. This is true if the function 
-	    referenced in the procedure blr was dropped before dropping the
-	    procedure itself. Ignore the case because we are currently trying
-	    to drop the procedure.
-	    For normal requests, function would never be null. We would have
-	    created a valid block while parsing in par_function/par.c.
-	**/
+			// Null value for the function indicates that the function was not
+			// looked up during parsing the blr. This is true if the function 
+			// referenced in the procedure blr was dropped before dropping the
+			// procedure itself. Ignore the case because we are currently trying
+			// to drop the procedure.
+			// For normal requests, function would never be null. We would have
+			// created a valid block while parsing in par_function/par.c.
 			if (function)
 				*desc = function->fun_rpt[function->fun_return_arg].fun_desc;
 			else
-				/* Note that CMP_get_desc is always called with a pre-allocated
-				   DSC i.e 
-				   DSC desc;
-				   CMP_get_desc (.... &desc); Hence  the code
-				   *desc = NULL;  will not work. What I've done is memset the
-				   structure to zero.
-				 */
+				/* Note that CMP_get_desc is always called with a pre-allocated DSC, i.e:
+					   DSC desc;
+					   CMP_get_desc (.... &desc);
+				   Hence the code:
+					   *desc = NULL;
+				   will not work. What I've done is memset the structure to zero. */
 				MOVE_CLEAR(desc, sizeof(DSC));
 			return;
 		}
@@ -1583,14 +1576,14 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 		return;
 
 	default:
-		fb_assert(FALSE);
+		fb_assert(false);
 		break;
 	}
 
 	if (dtype == dtype_quad)
-		IBERROR(224);			/* msg 224 quad word arithmetic not supported */
+		IBERROR(224);				// msg 224 quad word arithmetic not supported
 
-	ERR_post(isc_datype_notsup, 0);	/* data type not supported for arithmetic */
+	ERR_post(isc_datype_notsup, 0);	// data type not supported for arithmetic
 }
 
 
@@ -1615,7 +1608,7 @@ IDL CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
 	if (relation->rel_id < (USHORT) rel_MAX)
 		return NULL;
 
-/* For for an existing block */
+	// for for an existing block
 
 	idl* index;
 	for (index = relation->rel_index_locks; index; index = index->idl_next)
@@ -1697,7 +1690,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	// optimizations can be performed here.
 
 	DEBUG;
-	jrd_nod* node = pass1(tdbb, csb, csb->csb_node, 0, 0, FALSE);
+	jrd_nod* node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
 	csb->csb_node = node;
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
@@ -1996,7 +1989,7 @@ void CMP_release_resource(RSC * rsc_ptr, enum rsc_s type, USHORT id)
 	if (!resource)
 		return;
 
-/* take out of the linked list and release */
+	// take out of the linked list and release
 
 	*rsc_ptr = resource->rsc_next;
 	delete resource;
@@ -2018,11 +2011,10 @@ void CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 
 	DEV_BLKCHK(procedure, type_prc);
 
-	/* Actually, it's possible for procedures to have intermixed dependencies, so
-	   this routine can be called for the procedure which is being freed itself.
-	   Hence we should just silently ignore such a situation. */
+	// Actually, it's possible for procedures to have intermixed dependencies, so
+	// this routine can be called for the procedure which is being freed itself.
+	// Hence we should just silently ignore such a situation.
 
-//	fb_assert(procedure->prc_use_count > 0); -- commented out by dimitr, 2003.01.30
 	if (!procedure->prc_use_count)
 		return;
 
@@ -2040,11 +2032,10 @@ void CMP_decrement_prc_use_count(TDBB tdbb, JRD_PRC procedure)
 	}
 #endif
 
-/* Call recursively if and only if the use count is zero AND the procedure
-   in dbb_procedures is different than this procedure. 
-   The procedure will be different than in dbb_procedures only if it is a
-   floating copy .i.e. an old copy or a deleted procedure.
-*/
+	// Call recursively if and only if the use count is zero AND the procedure
+	// in dbb_procedures is different than this procedure. 
+	// The procedure will be different than in dbb_procedures only if it is a
+	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
 		( (*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id]
 		 //!= &procedure->prc_header)) {
@@ -2078,7 +2069,7 @@ void CMP_release(TDBB tdbb, JRD_REQ request)
 
 	DEV_BLKCHK(request, type_req);
 
-/* Release existence locks on references */
+	// release existence locks on references
 
 	att* attachment = request->req_attachment;
 	if (!attachment || !(attachment->att_flags & ATT_shutdown))
@@ -2110,7 +2101,7 @@ void CMP_release(TDBB tdbb, JRD_REQ request)
 					break;
 				}
 			default:
-				BUGCHECK(220);	/* msg 220 release of unknown resource */
+				BUGCHECK(220);	// msg 220 release of unknown resource
 				break;
 			}
 		}
@@ -2172,9 +2163,9 @@ void CMP_shutdown_database(TDBB tdbb)
 	if (!vector)
 		return;
 
-/* Go through relations and indeces and release
-   all existence locks that might have been taken
-*/
+	// go through relations and indices and release
+	// all existence locks that might have been taken
+
 	vec::iterator ptr, end;
 	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
 		jrd_rel* relation = (JRD_REL) *ptr;
@@ -2197,9 +2188,8 @@ void CMP_shutdown_database(TDBB tdbb)
 	if (!(vector = dbb->dbb_procedures))
 		return;
 
-/* Release all procedure existence locks that
-   might have been taken
-*/
+	// release all procedure existence locks that might have been taken
+
 	vec::iterator pptr, pend;
 	for (pptr = vector->begin(), pend = vector->end(); pptr < pend; pptr++) {
 		jrd_prc* procedure = (JRD_PRC) *pptr;
@@ -2232,8 +2222,7 @@ static UCHAR* alloc_map(TDBB tdbb, CSB csb, USHORT stream)
 	str* string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	csb->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
-/* TMN: Here we should really have the following fb_assert */
-/* fb_assert(stream <= MAX_UCHAR); */
+	fb_assert(stream <= MAX_STREAMS);
 	string->str_data[0] = (UCHAR) stream;
 
 	return (UCHAR*) string->str_data;
@@ -2241,7 +2230,7 @@ static UCHAR* alloc_map(TDBB tdbb, CSB csb, USHORT stream)
 
 
 #ifdef PC_ENGINE
-static USHORT base_stream(CSB csb, JRD_NOD * stream_number, BOOLEAN nav_stream)
+static USHORT base_stream(CSB csb, JRD_NOD * stream_number, bool nav_stream)
 {
 /**************************************
  *
@@ -2256,17 +2245,17 @@ static USHORT base_stream(CSB csb, JRD_NOD * stream_number, BOOLEAN nav_stream)
  *
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
-/* Note: *stream_number is NOT a JRD_NOD */
 
+	// note: *stream_number is NOT a JRD_NOD
 	USHORT stream = (USHORT) *stream_number;
 
-/* If the stream references a view, follow map */
+	// if the stream references a view, follow map
 
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
 	if (map) {
 		if (map[2]) {
 			if (nav_stream)
-				/* navigational stream %ld references a view with more than one base table */
+				// navigational stream %ld references a view with more than one base table
 				ERR_post(isc_complex_view, isc_arg_number, (SLONG) stream, 0);
 		}
 		else {
@@ -2275,11 +2264,12 @@ static USHORT base_stream(CSB csb, JRD_NOD * stream_number, BOOLEAN nav_stream)
 		}
 	}
 
-/* if this is a navigational stream, fix up the stream number 
-   in the node tree to point to the base table from now on */
+	// if this is a navigational stream, fix up the stream number 
+	// in the node tree to point to the base table from now on
 
 	if (nav_stream)
 		*stream_number = (JRD_NOD) stream;
+
 	return stream;
 }
 #endif
@@ -2316,10 +2306,12 @@ static JRD_NOD catenate_nodes(TDBB tdbb, LLS stack)
 }
 
 
-static JRD_NOD copy(
-				TDBB tdbb,
-				CSB csb,
-				JRD_NOD input, UCHAR * remap, USHORT field_id, USHORT remap_fld)
+static JRD_NOD copy(TDBB tdbb,
+					CSB csb,
+					JRD_NOD input,
+					UCHAR * remap,
+					USHORT field_id,
+					bool remap_fld)
 {
 /**************************************
  *
@@ -2344,7 +2336,7 @@ static JRD_NOD copy(
 	if (!input)
 		return NULL;
 
-/* Special case interesting nodes */
+	// special case interesting nodes
 
 	USHORT args = input->nod_count;
 
@@ -2442,7 +2434,7 @@ static JRD_NOD copy(
 
 
 	case nod_gen_id:
-	case nod_gen_id2:			/* 20001013 PJPG */
+	case nod_gen_id2:			// 20001013 PJPG
 		node = PAR_make_node(tdbb, e_gen_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
@@ -2518,22 +2510,21 @@ static JRD_NOD copy(
 	case nod_relation:
 		{
 			if (!remap)
-				BUGCHECK(221);	/* msg 221 (CMP) copy: cannot remap */
+				BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
 			node = PAR_make_node(tdbb, e_rel_length);
 			node->nod_type = input->nod_type;
 			node->nod_count = 0;
 
 			stream = (USHORT)(ULONG) input->nod_arg[e_rel_stream];
-	/** 
-	    Last entry in the remap contains the the original stream number.
-	    Get that stream number so that the flags can be copied 
-	    into the newly created child stream.
-	**/
+
+			// Last entry in the remap contains the the original stream number.
+			// Get that stream number so that the flags can be copied 
+			// into the newly created child stream.
+
 			const int relative_stream = (stream) ? remap[stream - 1] : stream;
 			new_stream = csb->csb_n_stream++;
+			fb_assert(new_stream <= MAX_STREAMS);
 			node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) new_stream;
-			/* TMN: Here we should really have the following fb_assert */
-			/* fb_assert(new_stream <= MAX_UCHAR); */
 			remap[stream] = (UCHAR) new_stream;
 
 			node->nod_arg[e_rel_context] = input->nod_arg[e_rel_context];
@@ -2545,50 +2536,50 @@ static JRD_NOD copy(
 			element->csb_view = (JRD_REL) node->nod_arg[e_rel_view];
 			element->csb_view_stream = remap[0];
 
-	/** If there was a parent stream no., then copy the flags 
-	    from that stream to its children streams. (Bug 10164/10166)
-	    For e.g. 
-	    consider a view V1 with 2 streams
-	           stream #1 from table T1
-		   stream #2 from table T2
-	    consider a procedure P1 with 2 streams
-	           stream #1  from table X
-		   stream #2  from view V1
+		/** If there was a parent stream no., then copy the flags 
+			from that stream to its children streams. (Bug 10164/10166)
+			For e.g. 
+			consider a view V1 with 2 streams
+				   stream #1 from table T1
+			   stream #2 from table T2
+			consider a procedure P1 with 2 streams
+				   stream #1  from table X
+			   stream #2  from view V1
 
-	    During pass1 of procedure request, the engine tries to expand 
-	    all the views into their base tables. It creates a compilier 
-	    scratch block which initially looks like this
-	         stream 1  -------- X
-	         stream 2  -------- V1
-		 while expanding V1 the engine calls copy() with nod_relation.
-		 A new stream 3 is created. Now the CSB looks like
-	         stream 1  -------- X
-	         stream 2  -------- V1  map [2,3]
-	         stream 3  -------- T1
-		 After T1 stream has been created the flags are copied from
-		 stream #1 because V1's definition said the original stream
-		 number for T1 was 1. However since its being merged with 
-		 the procedure request, stream #1 belongs to a different table. 
-		 The flags should be copied from stream 2 i.e. V1. We can get
-		 this info from variable remap.
+			During pass1 of procedure request, the engine tries to expand 
+			all the views into their base tables. It creates a compilier 
+			scratch block which initially looks like this
+				 stream 1  -------- X
+				 stream 2  -------- V1
+			 while expanding V1 the engine calls copy() with nod_relation.
+			 A new stream 3 is created. Now the CSB looks like
+				 stream 1  -------- X
+				 stream 2  -------- V1  map [2,3]
+				 stream 3  -------- T1
+			 After T1 stream has been created the flags are copied from
+			 stream #1 because V1's definition said the original stream
+			 number for T1 was 1. However since its being merged with 
+			 the procedure request, stream #1 belongs to a different table. 
+			 The flags should be copied from stream 2 i.e. V1. We can get
+			 this info from variable remap.
 
-		 Since we didn't do this properly before, V1's children got
-		 tagged with whatever flags X possesed leading to various
-		 errors.
+			 Since we didn't do this properly before, V1's children got
+			 tagged with whatever flags X possesed leading to various
+			 errors.
 
-		 We now store the proper stream no in relative_stream and
-		 later use it to copy the flags. -Sudesh (03/05/99)
-	**/
-
+			 We now store the proper stream no in relative_stream and
+			 later use it to copy the flags. -Sudesh (03/05/99)
+		**/
 			csb->csb_rpt[new_stream].csb_flags |=
 				csb->csb_rpt[relative_stream].csb_flags & csb_no_dbkey;
+
 			return node;
 		}
 
 	case nod_procedure:
 		{
 			if (!remap)
-				BUGCHECK(221);	/* msg 221 (CMP) copy: cannot remap */
+				BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
 			node = PAR_make_node(tdbb, e_prc_length);
 			node->nod_type = input->nod_type;
 			node->nod_count = input->nod_count;
@@ -2598,15 +2589,14 @@ static JRD_NOD copy(
 			node->nod_arg[e_prc_in_msg] = input->nod_arg[e_prc_in_msg];
 			stream = (USHORT)(ULONG) input->nod_arg[e_prc_stream];
 			new_stream = csb->csb_n_stream++;
+			fb_assert(new_stream <= MAX_STREAMS);
 			node->nod_arg[e_prc_stream] = (JRD_NOD) (SLONG) new_stream;
-			/* TMN: Here we should really have the following fb_assert */
-			/* fb_assert(new_stream <= MAX_UCHAR); */
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
 			csb_repeat* element = CMP_csb_element(csb, new_stream);
-			// SKIDDER: Maybe we need to check if we really found a procedure ?
+			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
-			  (SSHORT)(SLONG) node->nod_arg[e_prc_procedure],FALSE,FALSE,0);
+			  (SSHORT)(SLONG) node->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 
 			csb->csb_rpt[new_stream].csb_flags |=
 				csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -2615,7 +2605,7 @@ static JRD_NOD copy(
 
 	case nod_aggregate:
 		if (!remap)
-			BUGCHECK(221);		/* msg 221 (CMP) copy: cannot remap */
+			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 		node = PAR_make_node(tdbb, e_agg_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
@@ -2624,8 +2614,6 @@ static JRD_NOD copy(
 		new_stream = csb->csb_n_stream++;
 		fb_assert(new_stream <= MAX_STREAMS);
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) new_stream;
-		/* TMN: Here we should really have the following fb_assert */
-		/* fb_assert(new_stream <= MAX_UCHAR); */
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
 
@@ -2644,15 +2632,15 @@ static JRD_NOD copy(
 
 	case nod_union:
 		if (!remap)
-			BUGCHECK(221);		/* msg 221 (CMP) copy: cannot remap */
+			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 		node = PAR_make_node(tdbb, e_uni_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = 2;
 		stream = (USHORT)(ULONG) input->nod_arg[e_uni_stream];
+		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->csb_n_stream++;
+		fb_assert(new_stream <= MAX_STREAMS);
 		node->nod_arg[e_uni_stream] = (JRD_NOD) (SLONG) new_stream;
-		/* TMN: Here we should really have the following fb_assert */
-		/* fb_assert(new_stream <= MAX_UCHAR); */
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
 
@@ -2671,7 +2659,7 @@ static JRD_NOD copy(
 		break;
 	}
 
-/* Fall thru on generic nodes */
+	// fall thru on generic nodes
 
 	node = PAR_make_node(tdbb, args);
 	node->nod_count = input->nod_count;
@@ -2685,7 +2673,7 @@ static JRD_NOD copy(
 		if (*arg1)
 			*arg2 = copy(tdbb, csb, *arg1, remap, field_id, remap_fld);
 
-/* Finish off sort */
+	// finish off sort
 
 	if (input->nod_type == nod_sort)
 		for (end = arg1 + input->nod_count; arg1 < end; arg1++, arg2++)
@@ -2695,9 +2683,11 @@ static JRD_NOD copy(
 }
 
 
-static void expand_view_nodes(
-							  TDBB tdbb,
-							  CSB csb, USHORT stream, LLS * stack, NOD_T type)
+static void expand_view_nodes(TDBB tdbb,
+							  CSB csb,
+							  USHORT stream,
+							  LLS * stack,
+							  NOD_T type)
 {
 /**************************************
  *
@@ -2716,12 +2706,12 @@ static void expand_view_nodes(
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(*stack, type_lls);
 
-/* If the stream's dbkey should be ignored, do so. */
+	// if the stream's dbkey should be ignored, do so
 
 	if (csb->csb_rpt[stream].csb_flags & csb_no_dbkey)
 		return;
 
-/* If the stream references a view, follow map */
+	// if the stream references a view, follow map
 
 	if ( (map = csb->csb_rpt[stream].csb_map) ) {
 		++map;
@@ -2730,7 +2720,7 @@ static void expand_view_nodes(
 		return;
 	}
 
-/* Relation is primitive -- make dbkey node */
+	// relation is primitive - make dbkey node
 
 	if (csb->csb_rpt[stream].csb_relation) {
 		jrd_nod* node = PAR_make_node(tdbb, 1);
@@ -2827,8 +2817,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 
 	if (!(map = csb->csb_rpt[stream].csb_map)) {
 		map = local_map;
-		/* TMN: Here we should really have the following fb_assert */
-		/* fb_assert(stream <= MAX_UCHAR); */
+		fb_assert(stream <= MAX_STREAMS);
 		map[0] = (UCHAR) stream;
 		map[1] = 1;
 		map[2] = 2;
@@ -2842,7 +2831,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 			node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
 			node->nod_arg[e_asgn_from] =
-				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), FALSE);
+				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), false);
 			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, field_id);
 			LLS_PUSH(node, &stack);
 		}
@@ -2850,8 +2839,8 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 	if (!stack)
 		return statement;
 
-/* We have some default -- add the original statement and make a list out of
-   the whole mess */
+	// we have some default - add the original statement and make a list out of
+	// the whole mess
 
 	LLS_PUSH(statement, &stack);
 
@@ -2891,8 +2880,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 
 	if (!(map = csb->csb_rpt[stream].csb_map)) {
 		map = local_map;
-		/* TMN: Here we should really have the following fb_assert */
-		/* fb_assert(stream <= MAX_UCHAR); */
+		fb_assert(stream <= MAX_STREAMS);
 		map[0] = (UCHAR) stream;
 	}
 
@@ -2905,7 +2893,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
 				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1),
-					 FALSE);
+					 false);
 			node->nod_arg[e_val_value] =
 				PAR_gen_field(tdbb, stream, field_id);
 			LLS_PUSH(node, &stack);
@@ -2916,7 +2904,7 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
 				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1),
-					 FALSE);
+					 false);
 			node->nod_arg[e_val_value] =
 				PAR_gen_field(tdbb, stream, field_id);
 			LLS_PUSH(node, &stack);
@@ -2930,11 +2918,12 @@ static JRD_NOD make_validation(TDBB tdbb, CSB csb, USHORT stream)
 }
 
 
-static JRD_NOD pass1(
-				 TDBB tdbb,
-				 CSB csb,
-				 JRD_NOD node,
-				 JRD_REL view, USHORT view_stream, BOOLEAN validate_expr)
+static JRD_NOD pass1(TDBB tdbb,
+					 CSB csb,
+					 JRD_NOD node,
+					 JRD_REL view,
+					 USHORT view_stream,
+					 bool validate_expr)
 {
 /**************************************
  *
@@ -2946,7 +2935,7 @@ static JRD_NOD pass1(
  *	Merge missing values, computed values, validation expressions,
  *	and views into a parsed request.
  *
- * The argument validate_expr is TRUE if an ancestor of the
+ * The argument validate_expr is true if an ancestor of the
  * current node (the one being passed in) in the parse tree has nod_type
  * == nod_validate. "ancestor" does not include the current node 
  * being passed in as an argument.
@@ -2972,7 +2961,7 @@ static JRD_NOD pass1(
 
 	validate_expr = validate_expr || (node->nod_type == nod_validate);
 
-/* If there is processing to be done before sub expressions, do it here */
+	// if there is processing to be done before sub expressions, do it here
 
 	switch (node->nod_type) {
 	case nod_field:
@@ -2984,11 +2973,11 @@ static JRD_NOD pass1(
 
 			stream = (USHORT)(ULONG) node->nod_arg[e_fld_stream];
 
-			/* Look at all rse's which are lower in scope than the rse which this field 
-			   is referencing, and mark them as varying -- the rule is that if a field 
-			   from one rse is referenced within the scope of another rse, the first rse 
-			   can't be invariant.  This won't optimize all cases, but it is the simplest 
-			   operating assumption for now. */
+			// Look at all rse's which are lower in scope than the rse which this field 
+			// is referencing, and mark them as varying - the rule is that if a field 
+			// from one rse is referenced within the scope of another rse, the first rse 
+			// can't be invariant. This won't optimize all cases, but it is the simplest 
+			// operating assumption for now.
 
 			for (stack = csb->csb_current_rses; stack;
 				 stack = stack->lls_next) {
@@ -3004,7 +2993,7 @@ static JRD_NOD pass1(
 				  MET_get_field(relation,
 								(USHORT)(ULONG) node->nod_arg[e_fld_id]))) break;
 
-			/* if this is a modify or store, check REFERENCES access to any foreign keys. */
+			// if this is a modify or store, check REFERENCES access to any foreign keys
 
 /* CVC: This is against the SQL standard. REFERENCES should be enforced only at the
 				time the FK is defined in DDL, not when a DML is going to be executed.
@@ -3016,14 +3005,14 @@ static JRD_NOD pass1(
 									 field);
 */
 
-			/* Posting the required privilege access to the current relation and field. */
+			// posting the required privilege access to the current relation and field
 
-			/* if this is in a "validate_subtree" then we must not
-			   post access checks to the table and the fields in the table. 
-			   If any node of the parse tree is a nod_validate type node,
-			   the nodes in the subtree are involved in a validation
-			   clause only, the subtree is a validate_subtree in our
-			   notation.  */
+			// If this is in a "validate_subtree" then we must not
+			// post access checks to the table and the fields in the table. 
+			// If any node of the parse tree is a nod_validate type node,
+			// the nodes in the subtree are involved in a validation
+			// clause only, the subtree is a validate_subtree in our notation.
+
 			if (tail->csb_flags & csb_modify) {
 				if (!validate_expr) {
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
@@ -3075,33 +3064,35 @@ static JRD_NOD pass1(
 				ERR_post(isc_no_field_access,
 						 isc_arg_string, ERR_cstring(field->fld_name),
 						 isc_arg_string, ERR_cstring(relation->rel_name), 0);
-				/* Msg 364 "cannot access column %s in view %s" */
+				// Msg 364 "cannot access column %s in view %s"
 			}
 
-			/* The previous test below is an apparent temporary fix
-			 * put in by Root & Harrison in Summer/Fall 1991.  
-			 * Old Code:
-			 * if (tail->csb_flags & (csb_view_update | csb_trigger))
-			 *   break;
-			 * If the field is a computed field - we'll go on and make
-			 * the substitution.
-			 * Comment 1994-August-08 David Schnepper
-			 */
+			// The previous test below is an apparent temporary fix
+			// put in by Root & Harrison in Summer/Fall 1991.  
+			// Old Code:
+			// if (tail->csb_flags & (csb_view_update | csb_trigger))
+			//   break;
+			// If the field is a computed field - we'll go on and make
+			// the substitution.
+			// Comment 1994-August-08 David Schnepper
 
 			if (tail->csb_flags & (csb_view_update | csb_trigger)) {
-				if (!(field->fld_computation))
+			// dimitr:	this code is rollbacked to its previous state
+			//			to allow computed fields in views to be updatable
+			//			via triggers
+			//												2003.11.05
+			//	if (!(field->fld_computation))
 					break;
 			}
 
 			if (!(map = tail->csb_map)) {
 				map = local_map;
-				/* TMN: Here we should really have the following fb_assert */
-				/* fb_assert(stream + 2 <= MAX_UCHAR); */
+				fb_assert(stream + 2 <= MAX_STREAMS);
 				local_map[0] = (UCHAR) stream;
 				map[1] = stream + 1;
 				map[2] = stream + 2;
 			}
-			sub = copy(tdbb, csb, sub, map, 0, FALSE);
+			sub = copy(tdbb, csb, sub, map, 0, false);
 			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);
 		}
 
@@ -3139,8 +3130,6 @@ static JRD_NOD pass1(
 		tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_modify;
 		pass1_modify(tdbb, csb, node);
-		/* TMN: Here we should really have the following fb_assert */
-		/* fb_assert(node->nod_arg [e_mod_new_stream] <= MAX_USHORT); */
 		if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb,
 							(USHORT)(ULONG) node->
 							nod_arg[e_mod_new_stream])) ) node->nod_count =
@@ -3232,9 +3221,8 @@ static JRD_NOD pass1(
 			if (stack)
 				return catenate_nodes(tdbb, stack);
 
-			/* The user is asking for the dbkey/record version of an aggregate.
-			   Humor him with a key filled with zeros.
-			 */
+			// The user is asking for the dbkey/record version of an aggregate.
+			// Humor him with a key filled with zeros.
 
 			node = PAR_make_node(tdbb, 1);
 			node->nod_count = 0;
@@ -3272,7 +3260,7 @@ static JRD_NOD pass1(
 
 	}
 
-/* Handle sub-expressions here */
+	// handle sub-expressions here
 
 	ptr = node->nod_arg;
 
@@ -3280,7 +3268,7 @@ static JRD_NOD pass1(
 		*ptr = pass1(tdbb, csb, *ptr, view, view_stream, validate_expr);
 	}
 
-/* perform any post-processing here */
+	// perform any post-processing here
 
 	if (node->nod_type == nod_assignment) {
 		sub = node->nod_arg[e_asgn_to];
@@ -3319,15 +3307,15 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-/* If updateable views with triggers are involved, there
-   maybe a recursive call to be ignored */
+	// if updateable views with triggers are involved, there
+	// maybe a recursive call to be ignored
 
 	if (node->nod_arg[e_erase_sub_erase])
 		return;
 
 	parent = view = NULL;
 
-/* To support views of views, loop until we hit a real relation */
+	// to support views of views, loop until we hit a real relation
 
 	for (;;) {
 		stream = new_stream = (USHORT)(ULONG) node->nod_arg[e_erase_stream];
@@ -3340,7 +3328,7 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 	    post_trigger_access(tdbb, csb, relation, relation->rel_pre_erase, view);
 		post_trigger_access(tdbb, csb, relation, relation->rel_post_erase, view);
 
-		/* If this is a view trigger operation, get an extra stream to play with */
+		// if this is a view trigger operation, get an extra stream to play with
 
 		trigger =
 			(relation->rel_pre_erase) ? relation->
@@ -3352,9 +3340,9 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 			CMP_csb_element(csb, new_stream)->csb_relation = relation;
 		}
 
-		/* Check out delete.  If this is a delete thru a view, verify the
-		   view by checking for read access on the base table.  If field-level select
-		   privileges are implemented, this needs to be enhanced. */
+		// Check out delete. If this is a delete thru a view, verify the
+		// view by checking for read access on the base table. If field-level select
+		// privileges are implemented, this needs to be enhanced.
 
 		priv = SCL_sql_delete;
 		if (parent)
@@ -3364,10 +3352,9 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 						 priv, parent, parent_stream);
 
 		if (csb->csb_rpt[new_stream].csb_flags & csb_view_update) {
-			/* We have a view either updateable or non-updateable */
-
+			// we have a view either updateable or non-updateable
 			node->nod_arg[e_erase_statement] =
-				pass1_expand_view(tdbb, csb, stream, new_stream, FALSE);
+				pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_erase_statement + 1);
 		}
@@ -3375,12 +3362,12 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 		if (!source)
 			return;
 
-		/* We have a updateable view.  If there is a trigger on it, create a
-		   dummy erase record. */
+		// We have a updateable view. If there is a trigger on it, create a
+		// dummy erase record.
 
 		map = csb->csb_rpt[stream].csb_map;
 		if (trigger) {
-			view_node = copy(tdbb, csb, node, map, 0, FALSE);
+			view_node = copy(tdbb, csb, node, map, 0, false);
 			node->nod_arg[e_erase_sub_erase] = view_node;
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_erase_sub_erase + 1);
@@ -3391,8 +3378,8 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 		else
 			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
 
-		/* So far, so good.  Lookup view context in instance map to get target
-		   stream */
+		// So far, so good. Lookup view context in instance map to get target
+		// stream.
 
 		parent = relation;
 		parent_stream = stream;
@@ -3402,11 +3389,11 @@ static void pass1_erase(TDBB tdbb, CSB csb, JRD_NOD node)
 }
 
 
-static JRD_NOD pass1_expand_view(
-							 TDBB tdbb,
-							 CSB csb,
-							 USHORT org_stream,
-							 USHORT new_stream, USHORT remap)
+static JRD_NOD pass1_expand_view(TDBB tdbb,
+								 CSB csb,
+								 USHORT org_stream,
+								 USHORT new_stream,
+								 bool remap)
 {
 /**************************************
  *
@@ -3437,7 +3424,9 @@ static JRD_NOD pass1_expand_view(
 
 	for (ptr = fields->begin(), end = fields->end(), id = 0;
 			ptr < end; ptr++, id++)
-		if (*ptr && !((JRD_FLD)(*ptr))->fld_computation) {
+		// dimitr: let's make computed fields updatable in views
+		// if (*ptr && !((JRD_FLD)(*ptr))->fld_computation) {
+		if (*ptr) {
 			if (remap) {
 				field = MET_get_field(relation, id);
 				if (field->fld_source)
@@ -3493,15 +3482,15 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-/* If updateable views with triggers are involved, there
-   maybe a recursive call to be ignored */
+	// if updateable views with triggers are involved, there
+	// maybe a recursive call to be ignored
 
 	if (node->nod_arg[e_mod_sub_mod])
 		return;
 
 	parent = view = NULL;
 
-/* To support views of views, loop until we hit a real relation */
+	// to support views of views, loop until we hit a real relation
 
 	for (;;) {
 		stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
@@ -3518,9 +3507,9 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 			(relation->rel_pre_modify) ? relation->
 			rel_pre_modify : relation->rel_post_modify;
 
-		/* Check out update.  If this is an update thru a view, verify the
-		   view by checking for read access on the base table.  If field-level select
-		   privileges are implemented, this needs to be enhanced. */
+		// Check out update. If this is an update thru a view, verify the
+		// view by checking for read access on the base table. If field-level select
+		// privileges are implemented, this needs to be enhanced.
 
 		priv = SCL_sql_update;
 		if (parent)
@@ -3529,7 +3518,7 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 									new_stream, priv, parent, parent_stream))) {
 			if (csb->csb_rpt[new_stream].csb_flags & csb_view_update) {
 				node->nod_arg[e_mod_map_view] =
-					pass1_expand_view(tdbb, csb, stream, new_stream, FALSE);
+					pass1_expand_view(tdbb, csb, stream, new_stream, false);
 				node->nod_count =
 					MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
 			}
@@ -3540,7 +3529,7 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 		parent_stream = stream;
 		if (trigger) {
 			node->nod_arg[e_mod_map_view] =
-				pass1_expand_view(tdbb, csb, stream, new_stream, FALSE);
+				pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
 			map = csb->csb_rpt[stream].csb_map;
@@ -3548,16 +3537,15 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 			stream = map[stream];
 			view_stream = new_stream;
 
-			/* Next, do update stream */
+			// next, do update stream
 
 			map =
 				alloc_map(tdbb, csb,
 						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
-			source = copy(tdbb, csb, source, map, 0, FALSE);
-			/* TMN: Here we should really have the following fb_assert */
-			/* fb_assert(source->nod_arg [e_rel_stream] <= MAX_UCHAR); */
+			source = copy(tdbb, csb, source, map, 0, false);
+			fb_assert((int)(IPTR) source->nod_arg[e_rel_stream] <= MAX_STREAMS);
 			map[new_stream] = (UCHAR)(ULONG) source->nod_arg[e_rel_stream];
-			view_node = copy(tdbb, csb, node, map, 0, TRUE);
+			view_node = copy(tdbb, csb, node, map, 0, true);
 			view_node->nod_arg[e_mod_org_stream] = (JRD_NOD) (SLONG) stream;
 			view_node->nod_arg[e_mod_new_stream] =
 				source->nod_arg[e_rel_stream];
@@ -3565,7 +3553,7 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 			node->nod_arg[e_mod_sub_mod] = view_node;
 			new_stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
 			view_node->nod_arg[e_mod_statement] =
-				pass1_expand_view(tdbb, csb, view_stream, new_stream, TRUE);
+				pass1_expand_view(tdbb, csb, view_stream, new_stream, true);
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_mod_sub_mod + 1);
 			node = view_node;
@@ -3573,29 +3561,29 @@ static void pass1_modify(TDBB tdbb, CSB csb, JRD_NOD node)
 		else {
 			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
 
-			/* View passes muster -- do some translation.  Start with source stream */
+			// View passes muster - do some translation. Start with source stream.
 
 			map = csb->csb_rpt[stream].csb_map;
 			stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
 			node->nod_arg[e_mod_org_stream] = (JRD_NOD) (SLONG) map[stream];
 
-			/* Next, do update stream */
+			// next, do update stream
 
 			map =
 				alloc_map(tdbb, csb,
 						  (SSHORT)(SLONG) node->nod_arg[e_mod_new_stream]);
-			source = copy(tdbb, csb, source, map, 0, FALSE);
+			source = copy(tdbb, csb, source, map, 0, false);
 			node->nod_arg[e_mod_new_stream] = source->nod_arg[e_rel_stream];
 		}
 	}
 }
 
 
-static RSE pass1_rse(TDBB    tdbb,
-					 CSB     csb,
-					 RSE     rse,
+static RSE pass1_rse(TDBB tdbb,
+					 CSB csb,
+					 RSE rse,
 					 JRD_REL view,
-					 USHORT  view_stream)
+					 USHORT view_stream)
 {
 /**************************************
  *
@@ -3623,10 +3611,10 @@ static RSE pass1_rse(TDBB    tdbb,
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(view, type_rel);
 
-/* for scoping purposes, maintain a stack of rse's which are 
-   currently being parsed; if there are none on the stack as
-   yet, mark the rse as variant to make sure that statement-
-   level aggregates are not treated as invariants--bug #6535 */
+	// for scoping purposes, maintain a stack of rse's which are 
+	// currently being parsed; if there are none on the stack as
+	// yet, mark the rse as variant to make sure that statement-
+	// level aggregates are not treated as invariants -- bug #6535
 
 	if (!csb->csb_current_rses)
 		rse->nod_flags |= rse_variant;
@@ -3644,7 +3632,7 @@ static RSE pass1_rse(TDBB    tdbb,
 	async_message = rse->rse_async_message;
 #endif
 
-/* Zip thru rse expanding views and inner joins */
+	// zip thru rse expanding views and inner joins
 
 	for (arg = rse->rse_relation, end = arg + rse->rse_count; arg < end; arg++)
 	{
@@ -3652,8 +3640,8 @@ static RSE pass1_rse(TDBB    tdbb,
 		             view_stream);
 	}
 
-/* Now, rebuild the rse block.  If possible, re-use the old block,
-   otherwise allocate a new one. */
+	// Now, rebuild the rse block. If possible, re-use the old block,
+	// otherwise allocate a new one.
 
 	for (count = 0, temp = stack; temp; temp = temp->lls_next)
 		++count;
@@ -3666,9 +3654,10 @@ static RSE pass1_rse(TDBB    tdbb,
 		new_rse->rse_count = count;
 		rse = new_rse;
 
-/* AB: Because we've build an new rse, we must put this one in the stack 
-  of current_rses else could rse's not be flagged an rse_variant.
-  See SF BUG # [ 523589 ] for an example */
+		// AB: Because we've build an new rse, we must put this one in the stack 
+		// of current_rses else could rse's not be flagged an rse_variant.
+		// See SF BUG # [ 523589 ] for an example.
+
 		LLS_POP(&csb->csb_current_rses);
 		LLS_PUSH(new_rse, &csb->csb_current_rses);
 	}
@@ -3679,12 +3668,12 @@ static RSE pass1_rse(TDBB    tdbb,
 	while (stack)
 		*--arg = (JRD_NOD) LLS_POP(&stack);
 
-/* Finish of by processing other clauses */
+	// finish of by processing other clauses
 
 	if (first)
-		rse->rse_first = pass1(tdbb, csb, first, view, view_stream, FALSE);
+		rse->rse_first = pass1(tdbb, csb, first, view, view_stream, false);
 	if (skip)
-		rse->rse_skip = pass1(tdbb, csb, skip, view, view_stream, FALSE);
+		rse->rse_skip = pass1(tdbb, csb, skip, view, view_stream, false);
 
 	if (boolean) {
 		if (rse->rse_boolean) {
@@ -3694,7 +3683,7 @@ static RSE pass1_rse(TDBB    tdbb,
 			additional->nod_type = nod_and;
 			additional->nod_arg[0] = boolean;
 			additional->nod_arg[1] =
-				pass1(tdbb, csb, rse->rse_boolean, view, view_stream, FALSE);
+				pass1(tdbb, csb, rse->rse_boolean, view, view_stream, false);
 			rse->rse_boolean = additional;
 		}
 		else
@@ -3702,14 +3691,14 @@ static RSE pass1_rse(TDBB    tdbb,
 	}
 	else
 		rse->rse_boolean =
-			pass1(tdbb, csb, rse->rse_boolean, view, view_stream, FALSE);
+			pass1(tdbb, csb, rse->rse_boolean, view, view_stream, false);
 
 	if (sort)
-		rse->rse_sorted = pass1(tdbb, csb, sort, view, view_stream, FALSE);
+		rse->rse_sorted = pass1(tdbb, csb, sort, view, view_stream, false);
 
 	if (project)
 		rse->rse_projection =
-			pass1(tdbb, csb, project, view, view_stream, FALSE);
+			pass1(tdbb, csb, project, view, view_stream, false);
 
 	if (plan)
 		rse->rse_plan = plan;
@@ -3719,12 +3708,12 @@ static RSE pass1_rse(TDBB    tdbb,
 #ifdef SCROLLABLE_CURSORS
 	if (async_message) {
 		rse->rse_async_message =
-			pass1(tdbb, csb, async_message, view, view_stream, FALSE);
+			pass1(tdbb, csb, async_message, view, view_stream, false);
 		csb->csb_async_message = rse->rse_async_message;
 	}
 #endif
 
-/* we are no longer in the scope of this rse */
+	// we are no longer in the scope of this rse
 
 	LLS_POP(&csb->csb_current_rses);
 
@@ -3772,15 +3761,15 @@ static void pass1_source(TDBB     tdbb,
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-/* in the case of an rse, it is possible that a new rse will be generated, 
-   so wait to process the source before we push it on the stack (bug 8039) */
+	// in the case of an rse, it is possible that a new rse will be generated, 
+	// so wait to process the source before we push it on the stack (bug 8039)
 
 	if (source->nod_type == nod_rse)
 	{
-		/* The addition of the JOIN syntax for specifying inner joins causes an 
-		   rse tree to be generated, which is undesirable in the simplest case 
-		   where we are just trying to inner join more than 2 streams.  If possible, 
-		   try to flatten the tree out before we go any further. */
+		// The addition of the JOIN syntax for specifying inner joins causes an 
+		// rse tree to be generated, which is undesirable in the simplest case 
+		// where we are just trying to inner join more than 2 streams. If possible, 
+		// try to flatten the tree out before we go any further.
 
 		RSE sub_rse = (RSE) source;
 		if (!rse->rse_jointype && !sub_rse->rse_jointype
@@ -3791,12 +3780,12 @@ static void pass1_source(TDBB     tdbb,
 				pass1_source(tdbb, csb, rse, *arg, boolean, stack,
 							 parent_view, view_stream);
 
-			/* fold in the boolean for this inner join with the one for the parent */
+			// fold in the boolean for this inner join with the one for the parent
 
 			if (sub_rse->rse_boolean) {
 				node =
 					pass1(tdbb, csb, sub_rse->rse_boolean, parent_view,
-						  view_stream, FALSE);
+						  view_stream, false);
 				if (*boolean) {
 					JRD_NOD additional;
 
@@ -3813,23 +3802,20 @@ static void pass1_source(TDBB     tdbb,
 			return;
 		}
 
-		source = pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
+		source = pass1(tdbb, csb, source, parent_view, view_stream, false);
 		LLS_PUSH(source, stack);
 		return;
 	}
 
-/* Assume that the source will be used.  Push it on the final
-   stream stack */
+	// Assume that the source will be used. Push it on the final stream stack.
 
 	LLS_PUSH(source, stack);
 
-/* Special case procedure */
+	// special case: procedure
 
 	if (source->nod_type == nod_procedure) {
-		JRD_PRC procedure;
-
-		pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
-		procedure = MET_lookup_procedure_id(tdbb, 
+		pass1(tdbb, csb, source, parent_view, view_stream, false);
+		JRD_PRC procedure = MET_lookup_procedure_id(tdbb, 
 		  (SSHORT)(SLONG) source->nod_arg[e_prc_procedure], FALSE, FALSE, 0);
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(tdbb, &csb->csb_resources, (BLK) procedure,
@@ -3837,25 +3823,25 @@ static void pass1_source(TDBB     tdbb,
 		return;
 	}
 
-/* Special case union */
+	// special case: union
 
 	if (source->nod_type == nod_union) {
 		pass1(tdbb, csb, source->nod_arg[e_uni_clauses], parent_view,
-			  view_stream, FALSE);
+			  view_stream, false);
 		return;
 	}
 
-/* Special case group-by/global aggregates */
+	// special case: group-by/global aggregates
 
 	if (source->nod_type == nod_aggregate) {
 		fb_assert((int)(SLONG) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
+		pass1(tdbb, csb, source, parent_view, view_stream, false);
 		return;
 	}
 
-/* All the special cases are exhausted, so we must have a view or a base table; 
-   prepare to check protection of relation when a field in the stream of the 
-   relation is accessed */
+	// All the special cases are exhausted, so we must have a view or a base table; 
+	// prepare to check protection of relation when a field in the stream of the 
+	// relation is accessed.
 
 	view = (JRD_REL) source->nod_arg[e_rel_relation];
 	CMP_post_resource(tdbb, &csb->csb_resources, (BLK) view, rsc_relation,
@@ -3865,11 +3851,10 @@ static void pass1_source(TDBB     tdbb,
 	stream = (USHORT)(ULONG) source->nod_arg[e_rel_stream];
 	element = CMP_csb_element(csb, stream);
 	element->csb_view = parent_view;
-/* TMN: Here we should really have the following fb_assert */
-/* fb_assert(view_stream <= MAX_UCHAR); */
+	fb_assert(view_stream <= MAX_STREAMS);
 	element->csb_view_stream = (UCHAR) view_stream;
 
-/* in the case where there is a parent view, find the context name */
+	// in the case where there is a parent view, find the context name
 
 	if (parent_view) {
 		VCX *vcx_ptr;
@@ -3883,89 +3868,88 @@ static void pass1_source(TDBB     tdbb,
 			}
 	}
 
-/* Check for a view -- if not, nothing more to do */
+	// check for a view - if not, nothing more to do
 
 	if (!(view_rse = view->rel_view_rse)) {
 		return;
 	}
 
-/* We've got a view, expand it */
+	// we've got a view, expand it
 
 	DEBUG;
 	LLS_POP(stack);
 	map = alloc_map(tdbb, csb, stream);
 
-/* We don't expand the view in two cases: 
-   1) If the view has a projection, and the query rse already has a projection 
-      defined; there is probably some way to merge these projections and do them 
-	  both at once, but for now we'll punt on that.
-   2) If it's part of an outer join. 
-   
-   AB: If the view has an projection we never expand it.
-   Because this can create wierd PLANs with multiple views/tables/sp joins
-*/
+	// We don't expand the view in two cases: 
+	// 1) If the view has a projection, and the query rse already has a projection 
+	//    defined; there is probably some way to merge these projections and do them 
+	//    both at once, but for now we'll punt on that.
+	// 2) If it's part of an outer join. 
+	//
+	// AB: If the view has an projection we never expand it.
+	// Because this can create wierd PLANs with multiple views/tables/sp joins.
 
 	if ((view_rse->rse_projection)
 	//if ((view_rse->rse_projection && rse->rse_projection)
 		|| rse->rse_jointype) {
-		node = copy(tdbb, csb, (JRD_NOD) view_rse, map, 0, FALSE);
+		node = copy(tdbb, csb, (JRD_NOD) view_rse, map, 0, false);
 		DEBUG;
-		LLS_PUSH(pass1(tdbb, csb, node, view, stream, FALSE), stack);
+		LLS_PUSH(pass1(tdbb, csb, node, view, stream, false), stack);
 		DEBUG;
 		return;
 	}
 
-/* if we have a projection which we can bubble up to the parent rse, set the 
-   parent rse to our projection temporarily to flag the fact that we have already 
-   seen one so that lower-level views will not try to map their projection; the 
-   projection will be copied and correctly mapped later, but we don't have all 
-   the base streams yet */
+	// if we have a projection which we can bubble up to the parent rse, set the 
+	// parent rse to our projection temporarily to flag the fact that we have already 
+	// seen one so that lower-level views will not try to map their projection; the 
+	// projection will be copied and correctly mapped later, but we don't have all 
+	// the base streams yet
 
 	if (view_rse->rse_projection)
 		rse->rse_projection = view_rse->rse_projection;
 
-/* Disect view into component relations */
+	// disect view into component relations
 
 	for (arg = view_rse->rse_relation, end = arg + view_rse->rse_count;
 		 arg < end; arg++) {
-		/* this call not only copies the node, it adds any streams it finds to the map */
+		// this call not only copies the node, it adds any streams it finds to the map
 
-		node = copy(tdbb, csb, *arg, map, 0, FALSE);
+		node = copy(tdbb, csb, *arg, map, 0, false);
 
-		/* Now go out and process the base table itself.  This table might also be a view, 
-		   in which case we will continue the process by recursion.  */
+		// Now go out and process the base table itself. This table might also be a view, 
+		// in which case we will continue the process by recursion.
 
 		pass1_source(tdbb, csb, rse, node, boolean, stack, view, stream);
 	}
 
-/* When there is a projection in the view, copy the projection up to the query rse.
-   In order to make this work properly, we must remap the stream numbers of the fields
-   in the view to the stream number of the base table.  Note that the map at this point 
-   contains the stream numbers of the referenced relations, since it was added during the call 
-   to copy() above.  After the copy() below, the fields in the projection will reference the 
-   base table(s) instead of the view's context (see bug #8822), so we are ready to context- 
-   recognize them in pass1()--that is, replace the field nodes with actual field blocks. */
+	// When there is a projection in the view, copy the projection up to the query rse.
+	// In order to make this work properly, we must remap the stream numbers of the fields
+	// in the view to the stream number of the base table. Note that the map at this point 
+	// contains the stream numbers of the referenced relations, since it was added during the call 
+	// to copy() above. After the copy() below, the fields in the projection will reference the 
+	// base table(s) instead of the view's context (see bug #8822), so we are ready to context- 
+	// recognize them in pass1() - that is, replace the field nodes with actual field blocks.
 
 	if (view_rse->rse_projection)
 		rse->rse_projection =
 			pass1(tdbb, csb,
-				  copy(tdbb, csb, view_rse->rse_projection, map, 0, FALSE),
-				  view, stream, FALSE);
+				  copy(tdbb, csb, view_rse->rse_projection, map, 0, false),
+				  view, stream, false);
 
-/* If we encounter a boolean, copy it and retain it by ANDing it in with the 
-   boolean on the parent view, if any. */
+	// if we encounter a boolean, copy it and retain it by ANDing it in with the 
+	// boolean on the parent view, if any
 
 	if (view_rse->rse_boolean) {
 		node =
 			pass1(tdbb, csb,
-				  copy(tdbb, csb, view_rse->rse_boolean, map, 0, FALSE), view,
-				  stream, FALSE);
+				  copy(tdbb, csb, view_rse->rse_boolean, map, 0, false), view,
+				  stream, false);
 		if (*boolean) {
 			JRD_NOD additional;
 
-			/* The order of the nodes here is important!  The
-			   boolean from the view must appear first so that
-			   it gets expanded first in pass1. */
+			// The order of the nodes here is important! The
+			// boolean from the view must appear first so that
+			// it gets expanded first in pass1.
 
 			additional = PAR_make_node(tdbb, 2);
 			additional->nod_type = nod_and;
@@ -3997,7 +3981,7 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 	JRD_NOD source, original, view_node, very_orig;
 	JRD_REL relation, parent, view;
 	UCHAR *map;
-	USHORT stream, new_stream, trigger_seen, parent_stream = 0;
+	USHORT stream, new_stream, parent_stream = 0;
 	TRIG_VEC trigger;
 	csb_repeat *tail;
 	USHORT priv;
@@ -4007,17 +3991,17 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-/* If updateable views with triggers are involved, there
-   maybe a recursive call to be ignored */
+	// If updateable views with triggers are involved, there
+	// maybe a recursive call to be ignored
 
 	if (node->nod_arg[e_sto_sub_store])
 		return NULL;
 
 	parent = view = NULL;
-	trigger_seen = FALSE;
+	bool trigger_seen = false;
 	very_orig = node->nod_arg[e_sto_relation];
 
-/* To support views of views, loop until we hit a real relation */
+	// to support views of views, loop until we hit a real relation
 
 	for (;;) {
 		original = node->nod_arg[e_sto_relation];
@@ -4034,9 +4018,9 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 			(relation->rel_pre_store) ? relation->
 			rel_pre_store : relation->rel_post_store;
 
-		/* Check out insert.  If this is an insert thru a view, verify the
-		   view by checking for read access on the base table.  If field-level select
-		   privileges are implemented, this needs to be enhanced. */
+		// Check out insert. If this is an insert thru a view, verify the
+		// view by checking for read access on the base table. If field-level select
+		// privileges are implemented, this needs to be enhanced.
 
 		priv = SCL_sql_insert;
 		if (parent)
@@ -4050,7 +4034,7 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 			return very_orig;
 		}
 
-		/* View passes muster -- do some translation */
+		// view passes muster - do some translation
 
 		parent = relation;
 		parent_stream = stream;
@@ -4058,32 +4042,32 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 		if (!trigger) {
 			csb->csb_rpt[stream].csb_flags &= ~csb_view_update;
 			node->nod_arg[e_sto_relation] =
-				copy(tdbb, csb, source, map, 0, FALSE);
+				copy(tdbb, csb, source, map, 0, false);
 			if (!trigger_seen)
 				very_orig = node->nod_arg[e_sto_relation];
 		}
 		else {
 			CMP_post_resource(tdbb, &csb->csb_resources, (BLK) relation,
 							  rsc_relation, relation->rel_id);
-			trigger_seen = TRUE;
-			view_node = copy(tdbb, csb, node, map, 0, FALSE);
+			trigger_seen = true;
+			view_node = copy(tdbb, csb, node, map, 0, false);
 			node->nod_arg[e_sto_sub_store] = view_node;
 			node->nod_count =
 				MAX(node->nod_count, (USHORT) e_sto_sub_store + 1);
 			view_node->nod_arg[e_sto_sub_store] = 0;
 			node = view_node;
 			node->nod_arg[e_sto_relation] =
-				copy(tdbb, csb, source, map, 0, FALSE);
+				copy(tdbb, csb, source, map, 0, false);
 			new_stream =
 				(USHORT)(ULONG) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			node->nod_arg[e_sto_statement] =
-				pass1_expand_view(tdbb, csb, stream, new_stream, TRUE);
+				pass1_expand_view(tdbb, csb, stream, new_stream, true);
 			node->nod_arg[e_sto_statement] =
 				copy(tdbb, csb, node->nod_arg[e_sto_statement],
-					 NULL, 0, FALSE);
+					 NULL, 0, false);
 
-			/* bug 8150: use of blr_store2 against a view with a trigger was causing 
-			   the second statement to be executed, which is not desirable */
+			// bug 8150: use of blr_store2 against a view with a trigger was causing 
+			// the second statement to be executed, which is not desirable
 
 			node->nod_arg[e_sto_statement2] = NULL;
 		}
@@ -4091,13 +4075,15 @@ static JRD_NOD pass1_store(TDBB tdbb, CSB csb, JRD_NOD node)
 }
 
 
-static JRD_NOD pass1_update(
-						TDBB tdbb,
-						CSB csb,
-						JRD_REL relation,
-						TRIG_VEC trigger,
-						USHORT stream,
-USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
+static JRD_NOD pass1_update(TDBB tdbb,
+							CSB csb,
+							JRD_REL relation,
+							TRIG_VEC trigger,
+							USHORT stream,
+							USHORT update_stream,
+							USHORT priv,
+							JRD_REL view,
+							USHORT view_stream)
 {
 /**************************************
  *
@@ -4119,58 +4105,49 @@ USHORT update_stream, USHORT priv, JRD_REL view, USHORT view_stream)
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(relation, type_rel);
-	//DEV_BLKCHK(trigger, type_vec);
 	DEV_BLKCHK(view, type_rel);
 
-/* Unless this is an internal request, check access permission */
+	// unless this is an internal request, check access permission
 
 	CMP_post_access(tdbb, csb, relation->rel_security_name, 
 					(view ? view->rel_id : 0), 0, 0, 
 					priv, object_table, relation->rel_name);
 
-/* ensure that the view is set for the input streams,
-   so that access to views can be checked at the field level */
+	// ensure that the view is set for the input streams,
+	// so that access to views can be checked at the field level
 
+	fb_assert(view_stream <= MAX_STREAMS);
 	CMP_csb_element(csb, stream)->csb_view = view;
-/* TMN: Here we should really have the following fb_assert */
-/* fb_assert(view_stream <= MAX_UCHAR); */
 	CMP_csb_element(csb, stream)->csb_view_stream = (UCHAR) view_stream;
 	CMP_csb_element(csb, update_stream)->csb_view = view;
-/* TMN: Here we should really have the following fb_assert */
-/* fb_assert(view_stream <= MAX_UCHAR); */
-	CMP_csb_element(csb, update_stream)->csb_view_stream =
-		(UCHAR) view_stream;
+	CMP_csb_element(csb, update_stream)->csb_view_stream = (UCHAR) view_stream;
 
-/* If we're not a view, everything's cool */
+	// if we're not a view, everything's cool
 
 	if (!(rse = relation->rel_view_rse))
 		return NULL;
 
-/* We've got a view, is it updateable? */
+	// a view with triggers is always updatable
+
+	if (trigger) {
+		csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
+		return NULL;
+	}
+
+	// we've got a view without triggers, let's check whether it's updateable
 
 	if (rse->rse_count != 1 ||
 		rse->rse_projection ||
 		rse->rse_sorted ||
-		!(node = rse->rse_relation[0]) || node->nod_type != nod_relation) {
-		/* We've got a non-updateable view.  If there's a trigger,
-		   don't expand it */
-
-		if (trigger) {
-			csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
-			return NULL;
-		}
-		else {
-			ERR_post(isc_read_only_view,
-					 isc_arg_string, relation->rel_name, 0);
-			return NULL;	/* Added to remove compiler warnings */
-		}
+		!(node = rse->rse_relation[0]) || node->nod_type != nod_relation)
+	{
+		ERR_post(isc_read_only_view, isc_arg_string, relation->rel_name, 0);
 	}
-	else {
-		/* It's an updateable view, return the view source */
 
-		csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
-		return rse->rse_relation[0];
-	}
+	// for an updateable view, return the view source
+
+	csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
+	return rse->rse_relation[0];
 }
 
 
@@ -4203,7 +4180,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	if (parent)
 		node->nod_parent = parent;
 
-/* If there is processing to be done before sub expressions, do it here */
+	// if there is processing to be done before sub expressions, do it here
 
 	DEBUG;
 	rse_node = NULL;
@@ -4241,8 +4218,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 #ifdef SCROLLABLE_CURSORS
 	case nod_seek:
 	case nod_seek_no_warn:
-		/* store the rse in whose scope we are defined */
-
+		// store the rse in whose scope we are defined
 		node->nod_arg[e_seek_rse] = (JRD_NOD) csb->csb_current_rse;
 		break;
 #endif
@@ -4292,10 +4268,9 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			value = node->nod_arg[e_fun_args];
 			function = (FUN) node->nod_arg[e_fun_function];
 			pass2(tdbb, csb, value, node);
-			/* For gbak attachments, there is no need to resolve the UDF function */
-			/* Also if we are dropping a procedure don't bother resolving the
-			   UDF that the procedure invokes.
-			 */
+			// For gbak attachments, there is no need to resolve the UDF function */
+			// Also if we are dropping a procedure don't bother resolving the
+			// UDF that the procedure invokes.
 			if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) &&
 				!(tdbb->tdbb_flags & TDBB_prc_being_dropped)) {
 				node->nod_arg[e_fun_function] =
@@ -4308,10 +4283,10 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 #ifdef PC_ENGINE
-		/* the remainder of the node types are for IDAPI support:
-		   fix up the stream to point to the base table, and preserve 
-		   the pointers to the navigational rsb for easy reference 
-		   later during execution */
+		// the remainder of the node types are for IDAPI support:
+		// fix up the stream to point to the base table, and preserve 
+		// the pointers to the navigational rsb for easy reference 
+		// later during execution
 
 	case nod_stream:
 		{
@@ -4320,18 +4295,18 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 			rse = (RSE) node;
 			rse_node = node;
-			/* setting the stream flag will allow the optimizer to  
-			   detect that a SET INDEX may be done on this stream */
+			// setting the stream flag will allow the optimizer to  
+			// detect that a SET INDEX may be done on this stream
 			rse_node->nod_flags |= rse_stream;
 			rsb_ptr = &rse->rse_rsb;
 			relation = rse->rse_relation[0];
-			stream = base_stream(csb, &relation->nod_arg[e_rel_stream], TRUE);
+			stream = base_stream(csb, &relation->nod_arg[e_rel_stream], true);
 			csb->csb_rpt[stream].csb_rsb_ptr = &rse->rse_rsb;
 		}
 		break;
 
 	case nod_find:
-		stream = base_stream(csb, &node->nod_arg[e_find_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_find_stream], true);
 		if (!(node->nod_arg[e_find_rsb] =
 			(JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4341,7 +4316,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 	case nod_find_dbkey:
 	case nod_find_dbkey_version:
-		stream = base_stream(csb, &node->nod_arg[e_find_dbkey_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_find_dbkey_stream], true);
 		if (!(node->nod_arg[e_find_dbkey_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4350,7 +4325,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	case nod_set_index:
-		stream = base_stream(csb, &node->nod_arg[e_index_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_index_stream], true);
 		if (!(node->nod_arg[e_index_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4359,7 +4334,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	case nod_get_bookmark:
-		stream = base_stream(csb, &node->nod_arg[e_getmark_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_getmark_stream], true);
 		if (!(node->nod_arg[e_getmark_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4368,7 +4343,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	case nod_set_bookmark:
-		stream = base_stream(csb, &node->nod_arg[e_setmark_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_setmark_stream], true);
 		if (!(node->nod_arg[e_setmark_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4377,7 +4352,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	case nod_lock_record:
-		stream = base_stream(csb, &node->nod_arg[e_lockrec_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_lockrec_stream], true);
 		if (!(node->nod_arg[e_lockrec_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4387,13 +4362,13 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 	case nod_crack:
 	case nod_force_crack:
-		stream = base_stream(csb, &node->nod_arg[0], TRUE);
+		stream = base_stream(csb, &node->nod_arg[0], true);
 		if (!(node->nod_arg[1] = (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 			ERR_post(isc_stream_not_defined, 0);
 		break;
 
 	case nod_reset_stream:
-		stream = base_stream(csb, &node->nod_arg[e_reset_from_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_reset_from_stream], true);
 		if (!(node->nod_arg[e_reset_from_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4402,7 +4377,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	case nod_cardinality:
-		stream = base_stream(csb, &node->nod_arg[e_card_stream], TRUE);
+		stream = base_stream(csb, &node->nod_arg[e_card_stream], true);
 		if (!(node->nod_arg[e_card_rsb] =
 			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
 		{
@@ -4410,17 +4385,17 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		}
 		break;
 
-		/* the following DML nodes need to have their rsb's stored when 
-		   they are referencing a navigational stream, so that we can
-		   follow proper IDAPI semantics in manipulating a stream */
+		// the following DML nodes need to have their rsb's stored when 
+		// they are referencing a navigational stream, so that we can
+		// follow proper IDAPI semantics in manipulating a stream
 
 	case nod_erase:
-		stream = base_stream(csb, &node->nod_arg[e_erase_stream], FALSE);
+		stream = base_stream(csb, &node->nod_arg[e_erase_stream], false);
 		node->nod_arg[e_erase_rsb] = (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr;
 		break;
 
 	case nod_modify:
-		stream = base_stream(csb, &node->nod_arg[e_mod_org_stream], FALSE);
+		stream = base_stream(csb, &node->nod_arg[e_mod_org_stream], false);
 		node->nod_arg[e_mod_rsb] = (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr;
 		break;
 #endif
@@ -4432,12 +4407,12 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	if (rse_node)
 		pass2_rse(tdbb, csb, (RSE) rse_node);
 
-/* Handle sub-expressions here */
+	// handle sub-expressions here
 
 	if (node->nod_type == nod_modify) {
-		/* AB: Mark the streams involved with an UPDATE statement
-		   active. So that the optimizer can use indices for 
-		   eventually used sub-selects. */
+		// AB: Mark the streams involved with an UPDATE statement
+		// active. So that the optimizer can use indices for 
+		// eventually used sub-selects.
 		stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 		stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
@@ -4451,14 +4426,14 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	}
 
 	if (node->nod_type == nod_modify) {
-		/* AB: Remove the previous flags */
+		// AB: Remove the previous flags
 		stream = (USHORT)(ULONG) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		stream = (USHORT)(ULONG) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
 
-/* Handle any residual work */
+	// Handle any residual work
 
 	node->nod_impure = CMP_impure(csb, 0);
 
@@ -4475,7 +4450,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 	case nod_agg_average:
 	case nod_agg_average_distinct:
 		node->nod_flags |= nod_double;
-		/* FALL INTO */
+		// FALL INTO
 
 	case nod_max:
 	case nod_min:
@@ -4569,7 +4544,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 				node->nod_type = nod_list;
 				break;
 			}
-		/* FALL INTO */
+		// FALL INTO
 
 	case nod_store:
 		csb->csb_impure += sizeof(sta);
@@ -4588,7 +4563,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			csb->csb_impure += sizeof(vlux);
 			break;
 		}
-		/* FALL INTO */
+		// FALL INTO
 
 	case nod_argument:
 		csb->csb_impure += sizeof(dsc);
@@ -4635,7 +4610,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		}
 		break;
 
-	/* Compute the target descriptor to compute computational class */
+	// compute the target descriptor to compute computational class
 
 	case nod_multiply:
 	case nod_add:
@@ -4663,7 +4638,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 					&csb->csb_rpt[stream].csb_format);
 		break;
 
-		/* Boolean Nodes taking three values as inputs */
+		// boolean nodes taking three values as inputs
 	case nod_like:
 	case nod_between:
 	case nod_sleuth:
@@ -4678,9 +4653,9 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 				node->nod_arg[1]->nod_flags |= nod_date;
 			}
 		};
-		/* FALLINTO */
+		// FALLINTO
 
-		/* Boolean Nodes taking two values as inputs */
+		// boolean nodes taking two values as inputs
 	case nod_matches:
 	case nod_contains:
 	case nod_starts:
@@ -4705,7 +4680,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		}
 		break;
 
-		/* Boolean nodes taking 1 Value as input */
+		// boolean nodes taking one value as input
 	case nod_missing:
 		{
 			DSC descriptor_a;
@@ -4713,7 +4688,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 			if (node->nod_arg[0]->nod_flags & nod_agg_dbkey)
 				ERR_post(isc_bad_dbkey, 0);
 
-			/* Check for syntax errors in the calculation */
+			// check for syntax errors in the calculation
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
 		}
 		break;
@@ -4723,11 +4698,11 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		break;
 
 	default:
-		/* Note: no fb_assert (FALSE); here as too many nodes are missing */
+		// note: no fb_assert(false); here as too many nodes are missing
 		break;
 	}
 
-/* Finish up processing of record selection expressions */
+	// finish up processing of record selection expressions
 
 	if (rse_node)
 		*rsb_ptr = post_rse(tdbb, csb, (RSE) rse_node);
@@ -4797,7 +4772,7 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 	if (rse->rse_projection)
 		pass2(tdbb, csb, rse->rse_projection, 0);
 
-/* if the user has submitted a plan for this rse, check it for correctness */
+	// if the user has submitted a plan for this rse, check it for correctness
 
 	if (rse->rse_plan) {
 		plan_set(csb, rse, rse->rse_plan);
@@ -4831,13 +4806,13 @@ static JRD_NOD pass2_union(TDBB tdbb, CSB csb, JRD_NOD node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-/* Make up a format block sufficiently large to hold instantiated record */
+	// make up a format block sufficiently large to hold instantiated record
 
 	clauses = node->nod_arg[e_uni_clauses];
 	id = (USHORT)(ULONG) node->nod_arg[e_uni_stream];
 	format = &csb->csb_rpt[id].csb_format;
 
-/* Process alternating rse and map blocks */
+	// process alternating rse and map blocks
 
 	for (ptr = clauses->nod_arg, end = ptr + clauses->nod_count; ptr < end;) {
 		pass2_rse(tdbb, csb, (RSE) * ptr++);
@@ -4872,7 +4847,7 @@ static void plan_check(CSB csb, RSE rse)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 
-/* if any streams are not marked with a plan, give an error */
+	// if any streams are not marked with a plan, give an error
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 		if ((*ptr)->nod_type == nod_relation) {
@@ -4927,13 +4902,13 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 	plan_relation = (JRD_REL) plan_relation_node->nod_arg[e_rel_relation];
 	plan_alias = (STR) plan_relation_node->nod_arg[e_rel_alias];
 
-/* find the tail for the relation specified in the rse */
+	// find the tail for the relation specified in the rse
 
 	stream = (USHORT)(ULONG) plan_relation_node->nod_arg[e_rel_stream];
 	tail = &csb->csb_rpt[stream];
 
-/* if the plan references a view, find the real base relation 
-   we are interested in by searching the view map */
+	// if the plan references a view, find the real base relation 
+	// we are interested in by searching the view map */
 
 	if (tail->csb_map) {
 		if (plan_alias)
@@ -4941,8 +4916,8 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 		else
 			p = "\0";
 
-		/* if the user has specified an alias, skip past it to find the alias 
-		   for the base table (if multiple aliases are specified) */
+		// if the user has specified an alias, skip past it to find the alias 
+		// for the base table (if multiple aliases are specified)
 
 		if (*p &&
 			(tail->csb_relation
@@ -4956,16 +4931,16 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 				p++;
 		}
 
-		/* loop through potentially a stack of views to find the appropriate base table */
+		// loop through potentially a stack of views to find the appropriate base table
 
 		while ( (map_base = tail->csb_map) ) {
 			map = map_base;
 			tail = &csb->csb_rpt[*map];
 			view_relation = tail->csb_relation;
 
-			/* if the plan references the view itself, make sure that
-			   the view is on a single table; if it is, fix up the plan
-			   to point to the base relation */
+			// if the plan references the view itself, make sure that
+			// the view is on a single table; if it is, fix up the plan
+			// to point to the base relation
 
 			if (view_relation->rel_id == plan_relation->rel_id) {
 				if (!map_base[2]) {
@@ -4973,7 +4948,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 					tail = &csb->csb_rpt[*map];
 				}
 				else
-					/* view %s has more than one base relation; use aliases to distinguish */
+					// view %s has more than one base relation; use aliases to distinguish
 					ERR_post(isc_view_alias, isc_arg_string,
 							 plan_relation->rel_name, 0);
 
@@ -4982,9 +4957,9 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 			else
 				view_relation = NULL;
 
-			/* if the user didn't specify an alias (or didn't specify one
-			   for this level), check to make sure there is one and only one 
-			   base relation in the table which matches the plan relation */
+			// if the user didn't specify an alias (or didn't specify one
+			// for this level), check to make sure there is one and only one 
+			// base relation in the table which matches the plan relation
 
 			if (!*p) {
 				duplicate_relation = NULL;
@@ -4995,7 +4970,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 					relation = duplicate_tail->csb_relation;
 					if (relation && relation->rel_id == plan_relation->rel_id) {
 						if (duplicate_relation)
-							/* table %s is referenced twice in view; use an alias to distinguish */
+							// table %s is referenced twice in view; use an alias to distinguish
 							ERR_post(isc_duplicate_base_table,
 									 isc_arg_string,
 									 duplicate_relation->rel_name, 0);
@@ -5010,7 +4985,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 				break;
 			}
 
-			/* look through all the base relations for a match */
+			// look through all the base relations for a match
 
 			map = map_base;
 			for (map++; *map; map++) {
@@ -5018,14 +4993,14 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 				relation = tail->csb_relation;
 				alias = tail->csb_alias;
 
-				/* match the user-supplied alias with the alias supplied
-				   with the view definition; failing that, try the base
-				   table name itself */
+				// match the user-supplied alias with the alias supplied
+				// with the view definition; failing that, try the base
+				// table name itself
 
-				/* CVC: I found that "relation" can be NULL, too. This may be an
-				indication of a logic flaw while parsing the user supplied SQL plan
-				and not an oversight here. It's hard to imagine a csb->csb_rpt with
-				a NULL relation. See exe.h for csb struct and its inner csb_repeat struct. */
+				// CVC: I found that "relation" can be NULL, too. This may be an
+				// indication of a logic flaw while parsing the user supplied SQL plan
+				// and not an oversight here. It's hard to imagine a csb->csb_rpt with
+				// a NULL relation. See exe.h for csb struct and its inner csb_repeat struct.
 
 				if (
 					(alias
@@ -5035,7 +5010,7 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 					  break;
 			}
 
-			/* skip past the alias */
+			// skip past the alias
 
 			while (*p && *p != ' ')
 				p++;
@@ -5043,38 +5018,38 @@ static void plan_set(CSB csb, RSE rse, JRD_NOD plan)
 				p++;
 
 			if (!*map)
-				/* table %s is referenced in the plan but not the from list */
+				// table %s is referenced in the plan but not the from list
 				ERR_post(isc_stream_not_found, isc_arg_string,
 						 plan_relation->rel_name, 0);
 		}
 
-		/* fix up the relation node to point to the base relation's stream */
+		// fix up the relation node to point to the base relation's stream
 
 		if (!map || !*map)
-			/* table %s is referenced in the plan but not the from list */
+			// table %s is referenced in the plan but not the from list
 			ERR_post(isc_stream_not_found, isc_arg_string,
 					 plan_relation->rel_name, 0);
 
 		plan_relation_node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) * map;
 	}
 
-/* make some validity checks */
+	// make some validity checks
 
 	if (!tail->csb_relation)
-		/* table %s is referenced in the plan but not the from list */
+		// table %s is referenced in the plan but not the from list
 		ERR_post(isc_stream_not_found, isc_arg_string,
 				 plan_relation->rel_name, 0);
 
 	if ((tail->csb_relation->rel_id != plan_relation->rel_id)
 		&& !view_relation)
-		/* table %s is referenced in the plan but not the from list */
+		// table %s is referenced in the plan but not the from list
 		ERR_post(isc_stream_not_found, isc_arg_string,
 				 plan_relation->rel_name, 0);
 
-/* check if we already have a plan for this stream */
+	// check if we already have a plan for this stream
 
 	if (tail->csb_plan)
-		/* table %s is referenced more than once in plan; use aliases to distinguish */
+		// table %s is referenced more than once in plan; use aliases to distinguish
 		ERR_post(isc_stream_twice, isc_arg_string,
 				 tail->csb_relation->rel_name, 0);
 
@@ -5108,28 +5083,28 @@ static void post_procedure_access(TDBB tdbb, CSB csb, JRD_PRC procedure)
 					(TEXT *) procedure->
 					prc_security_name->str_data : NULL);
 
-/* This request must have EXECUTE permission on the stored procedure */
+	// this request must have EXECUTE permission on the stored procedure
 	CMP_post_access(tdbb, csb, prc_sec_name, 0,
 					0, 0, SCL_execute,
 					object_procedure,
 					reinterpret_cast <
 					char *>(procedure->prc_name->str_data));
 
-/* This request also inherits all the access requirements that
-   the procedure has */
+	// this request also inherits all the access requirements that
+	// the procedure has
 	if (procedure->prc_request)
 		for (access = procedure->prc_request->req_access; access;
 			 access = access->acc_next) {
 			if (access->acc_trg_name ||
 				access->acc_prc_name || access->acc_view_id)
-				/* Inherited access needs from the trigger, view or SP
-				   that this SP fires off */
+				// inherited access needs from the trigger, view or SP
+				// that this SP fires off
 				CMP_post_access(tdbb, csb, access->acc_security_name,
 								access->acc_view_id, access->acc_trg_name,
 								access->acc_prc_name, access->acc_mask,
 								access->acc_type, access->acc_name);
 			else
-				/* Direct access from this SP to a resource */
+				// direct access from this SP to a resource
 				CMP_post_access(tdbb, csb, access->acc_security_name,
 								0, 0,
 								reinterpret_cast <
@@ -5166,13 +5141,12 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		rsb->rsb_flags |= rsb_singular;
 
 #ifdef PC_ENGINE
-/* this flag lets the VIO layer know to add a page to the 
-   cache range */
+	// this flag lets the VIO layer know to add a page to the cache range
 	if (rse->nod_flags & rse_stream)
 		rsb->rsb_flags |= rsb_stream_type;
 #endif
 
-/* mark all the substreams as inactive */
+	// mark all the substreams as inactive
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
 		 ptr < end; ptr++) {
@@ -5238,7 +5212,6 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
-	//DEV_BLKCHK(triggers, type_vec);
 	DEV_BLKCHK(view, type_rel);
 
 	if (!triggers)
@@ -5261,9 +5234,9 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 			}
 			*/
 
-			/* for read-only triggers, translate a READ access into a REFERENCES;
-			   we must check for read-only to make sure people don't abuse the
-			   REFERENCES privilege */
+			// for read-only triggers, translate a READ access into a REFERENCES;
+			// we must check for read-only to make sure people don't abuse the
+			// REFERENCES privilege
 
 			for (access = ptr->request->req_access; access;
 				 access = access->acc_next) {
@@ -5276,19 +5249,20 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 				if (access->acc_trg_name ||
 					access->acc_prc_name || access->acc_view_id)
 				{
-					/* If this is not a system relation, we don't post access check if:
-					- The table being checked is the owner of the trigger that's accessing it.
-					- The field being checked is owned by the same table than the trigger
-					that's accessing the field.
-					- Since the trigger name comes in the access list, we need to validate that
-					it's a trigger defined on our target table.
-					- Incidentally, access requests made through objects accessed by this trigger
-					are granted automatically. We should achieve the same propagation in
-					post_procedure_access() in the future, so the called proc/trg can use the
-					rights of the caller even if the latter is a procedure or a trigger, with
-					the difference that proc aren't bound to tables, so we need another place
-					instead of post_procedure_access() to achieve such propagation.
-					*/
+					// If this is not a system relation, we don't post access check if:
+					//
+					// - The table being checked is the owner of the trigger that's accessing it.
+					// - The field being checked is owned by the same table than the trigger
+					//   that's accessing the field.
+					// - Since the trigger name comes in the access list, we need to validate that
+					//   it's a trigger defined on our target table.
+					// - Incidentally, access requests made through objects accessed by this trigger
+					//   are granted automatically. We should achieve the same propagation in
+					//   post_procedure_access() in the future, so the called proc/trg can use the
+					//   rights of the caller even if the latter is a procedure or a trigger, with
+					//   the difference that proc aren't bound to tables, so we need another place
+					//   instead of post_procedure_access() to achieve such propagation.
+
 					if (access->acc_trg_name && !(owner_relation->rel_flags & REL_system))
 					{
 						if (!strcmp(access->acc_type, object_table)
@@ -5301,7 +5275,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 							|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
 							continue;
 					}
-					/* Inherited access needs from "object" to acc_security_name */
+					// inherited access needs from "object" to acc_security_name
 					CMP_post_access(tdbb, csb, access->acc_security_name,
 									access->acc_view_id,
 									access->acc_trg_name,
@@ -5310,14 +5284,15 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 				}
 				else
 				{
-					/* If this is not a system relation, we don't post access check if:
-					- The table being checked is the owner of the trigger that's accessing it.
-					- The field being checked is owned by the same table than the trigger
-					that's accessing the field.
-					- Since the trigger name comes in the triggers vector of the table and each
-					trigger can be owned by only one table for now, we know for sure that
-					it's a trigger defined on our target table.
-					*/
+					// If this is not a system relation, we don't post access check if:
+					//
+					// - The table being checked is the owner of the trigger that's accessing it.
+					// - The field being checked is owned by the same table than the trigger
+					//   that's accessing the field.
+					// - Since the trigger name comes in the triggers vector of the table and each
+					//   trigger can be owned by only one table for now, we know for sure that
+					//   it's a trigger defined on our target table.
+
 					if (!(owner_relation->rel_flags & REL_system))
 					{
 						if (!strcmp(access->acc_type, object_table)
@@ -5328,7 +5303,7 @@ static void post_trigger_access(TDBB tdbb, CSB csb, JRD_REL owner_relation, TRIG
 							|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
 							continue;
 					}
-					/* A direct access to an object from this trigger */
+					// a direct access to an object from this trigger
 					CMP_post_access(tdbb, csb, access->acc_security_name,
 									(access->acc_view_id) ? access->acc_view_id : 
 										(view ? view->rel_id : 0),
@@ -5370,7 +5345,7 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 		format->fmt_count = map->nod_count;
 	}
 
-/* Process alternating rse and map blocks */
+	// process alternating rse and map blocks
 
 	ptr = map->nod_arg;
 
@@ -5392,9 +5367,9 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
 		}
-		else if (!min)			/* eg: dtype_null */
+		else if (!min)			// eg: dtype_null
 			*desc = desc2;
-		else if (min <= dtype_any_text) {	/* either field a text field? */
+		else if (min <= dtype_any_text) {	// either field a text field?
 			USHORT len1, len2;
 
 			len1 = DSC_string_length(desc);
@@ -5402,8 +5377,8 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = MAX(len1, len2) + sizeof(USHORT);
 
-			/* pick the Max text type, so any transparent casts from ints are 
-			   not left in ASCII format, but converted to the richer text format. */
+			// pick the max text type, so any transparent casts from ints are 
+			// not left in ASCII format, but converted to the richer text format
 
 			INTL_ASSIGN_TTYPE(desc,
 							  MAX(INTL_TEXT_TYPE(*desc),
@@ -5420,8 +5395,8 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 			desc->dsc_flags = 0;
 		}
 		else if (max != min) {
-			/* different numeric types: if one is inexact use double,
-			   if both are exact use int64. */
+			// different numeric types: if one is inexact use double,
+			// if both are exact use int64
 			if ((!DTYPE_IS_EXACT(max)) || (!DTYPE_IS_EXACT(min))) {
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
@@ -5440,10 +5415,8 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 		}
 	}
 
-/* Flesh out the format of the record */
+	// flesh out the format of the record
 
-/* TMN: Here we should really have the following fb_assert */
-/* fb_assert(FLAG_BYTES (format->fmt_count) <= MAX_USHORT); */
 	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
 	fmt::fmt_desc_iterator desc3, end_desc;
 
@@ -5486,7 +5459,7 @@ static SSHORT strcmp_space(const TEXT* p, const TEXT* q)
 }
 
 
-static BOOLEAN stream_in_rse(USHORT stream, RSE rse)
+static bool stream_in_rse(USHORT stream, RSE rse)
 {
 /**************************************
  *
@@ -5495,7 +5468,7 @@ static BOOLEAN stream_in_rse(USHORT stream, RSE rse)
  **************************************
  *
  * Functional description
- *	Return TRUE if stream is contained in 
+ *	Return true if stream is contained in 
  *	the specified RSE.
  *
  **************************************/
@@ -5503,26 +5476,25 @@ static BOOLEAN stream_in_rse(USHORT stream, RSE rse)
 
 	DEV_BLKCHK(rse, type_nod);
 
-/* look through all relation nodes in this rse to see 
-   if the field references this instance of the relation */
+	// look through all relation nodes in this rse to see 
+	// if the field references this instance of the relation
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
 		 ptr++) {
 		sub = *ptr;
 
-		/* for aggregates, check current rse, if not found then check 
-		   the sub-rse */
+		// for aggregates, check current rse, if not found then check 
+		// the sub-rse
 		if (sub->nod_type == nod_aggregate) {
 			if ((stream == (USHORT)(ULONG) sub->nod_arg[e_rel_stream]) ||
 				(stream_in_rse(stream, (RSE) sub->nod_arg[e_agg_rse])))
-				return TRUE;	/* do not mark as variant */
+				return true;	// do not mark as variant
 		}
 
 		if ((sub->nod_type == nod_relation) &&
 			(stream == (USHORT)(ULONG) sub->nod_arg[e_rel_stream]))
-			return TRUE;		/* do not mark as variant */
+			return true;		// do not mark as variant
 	}
 
-	return FALSE;				/* mark this rse as variant */
+	return false;				// mark this rse as variant
 }
-

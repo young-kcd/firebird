@@ -3616,7 +3616,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 		JRD_TRA transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 	
 		if (level)
-			request = CMP_clone_request(tdbb, request, level, FALSE);
+			request = CMP_clone_request(tdbb, request, level, false);
 	
 		EXE_unwind(tdbb, request);
 		EXE_start(tdbb, request, transaction);
@@ -3677,7 +3677,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 			find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
 	
 		if (level)
-			request = CMP_clone_request(tdbb, request, level, FALSE);
+			request = CMP_clone_request(tdbb, request, level, false);
 	
 		EXE_unwind(tdbb, request);
 		EXE_start(tdbb, request, transaction);

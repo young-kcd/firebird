@@ -26,28 +26,27 @@
 
 #include "../jrd/req.h"
 
-int				CMP_clone_active(jrd_req*);
-jrd_nod*		CMP_clone_node(TDBB, Csb*, jrd_nod*);
-jrd_req* 		CMP_clone_request(TDBB, jrd_req*, USHORT, BOOLEAN);
-jrd_req*		CMP_compile(USHORT, const UCHAR*, USHORT);
-jrd_req*		CMP_compile2(TDBB, const UCHAR*, USHORT);
-csb_repeat*		CMP_csb_element(Csb*, USHORT);
-void			CMP_expunge_transaction(jrd_tra*);
-void			CMP_decrement_prc_use_count(TDBB, JRD_PRC);
-jrd_req*		CMP_find_request(TDBB, USHORT, USHORT);
-void			CMP_fini(TDBB);
-fmt*			CMP_format(TDBB, Csb*, USHORT);
-void			CMP_get_desc(TDBB, Csb*, jrd_nod*, dsc*);
-idl*			CMP_get_index_lock(TDBB, jrd_rel*, USHORT);
-SLONG			CMP_impure(Csb*, USHORT);
-jrd_req*		CMP_make_request(TDBB, Csb*);
-void			CMP_post_access(TDBB, Csb*, /* INOUT */ TEXT*, SLONG,
-								const TEXT*, const TEXT*, USHORT, const TEXT*,
-								const TEXT*);
-void			CMP_post_resource(TDBB, Rsc**, blk*, enum rsc_s, USHORT);
-void			CMP_release_resource(Rsc**, enum rsc_s, USHORT);
-void			CMP_release(TDBB, jrd_req*);
-void			CMP_shutdown_database(TDBB);
+bool CMP_clone_active(jrd_req*);
+jrd_nod* CMP_clone_node(TDBB, Csb*, jrd_nod*);
+jrd_req* CMP_clone_request(TDBB, jrd_req*, USHORT, bool);
+jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
+jrd_req* CMP_compile2(TDBB, const UCHAR*, USHORT);
+csb_repeat* CMP_csb_element(Csb*, USHORT);
+void CMP_expunge_transaction(jrd_tra*);
+void CMP_decrement_prc_use_count(TDBB, JRD_PRC);
+jrd_req* CMP_find_request(TDBB, USHORT, USHORT);
+void CMP_fini(TDBB);
+fmt* CMP_format(TDBB, Csb*, USHORT);
+void CMP_get_desc(TDBB, Csb*, jrd_nod*, dsc*);
+idl* CMP_get_index_lock(TDBB, jrd_rel*, USHORT);
+SLONG CMP_impure(Csb*, USHORT);
+jrd_req* CMP_make_request(TDBB, Csb*);
+void CMP_post_access(TDBB, Csb*, /* INOUT */ TEXT*, SLONG,
+					 const TEXT*, const TEXT*, USHORT, const TEXT*,
+					 const TEXT*);
+void CMP_post_resource(TDBB, Rsc**, blk*, enum rsc_s, USHORT);
+void CMP_release_resource(Rsc**, enum rsc_s, USHORT);
+void CMP_release(TDBB, jrd_req*);
+void CMP_shutdown_database(TDBB);
 
 #endif // JRD_CMP_PROTO_H
-
