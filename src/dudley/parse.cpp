@@ -1213,7 +1213,6 @@ static void define_relation(void)
  **************************************/
 	DUDLEY_REL relation;
 	DUDLEY_FLD field, global;
-	SYM symbol;
 	DSC desc;
 	SSHORT position;
 	ACT rel_actions, action;
@@ -1314,8 +1313,6 @@ static void define_security_class(void)
  **************************************/
 	SCL class_;
 	SCE element, *next;
-	USHORT score;
-	TEXT *p, c;
 
 	class_ = (SCL) DDL_alloc(sizeof(struct scl));
 	class_->scl_name = PARSE_symbol(tok_ident);
@@ -1755,7 +1752,6 @@ static void drop_index(void)
  *
  **************************************/
 	DUDLEY_IDX index;
-	DUDLEY_FLD field;
 
 	index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(0));
 	index->idx_name = PARSE_symbol(tok_ident);
@@ -1778,7 +1774,6 @@ static void drop_relation(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	DUDLEY_FLD field;
 
 	relation = PARSE_relation();
 	parse_end();
@@ -2508,8 +2503,6 @@ static void modify_index(void)
  *
  **************************************/
 	DUDLEY_IDX index;
-	SYM index_name, *ptr;
-	SSHORT active, unique;
 
 	index = (DUDLEY_IDX) DDL_alloc(IDX_LEN(0));
 	index->idx_name = PARSE_symbol(tok_ident);
@@ -2703,7 +2696,6 @@ static void modify_security_class(void)
 	SCL class_;
 	SCE element, *next;
 	USHORT score;
-	TEXT *p, c;
 
 /* return error msg for now until fully coded */
 
@@ -2893,7 +2885,7 @@ static void modify_view(void)
  *
  **************************************/
 	DUDLEY_REL relation;
-	DUDLEY_FLD field, global;
+	DUDLEY_FLD field;
 	USHORT view_modify;
 
 	relation = PARSE_relation();
@@ -3175,9 +3167,7 @@ static void parse_array( DUDLEY_FLD field)
  *	Parse the multi-dimensional array specification.
  *
  **************************************/
-	STR string;
 	SLONG n, *range, *end, *ptr, ranges[2 * MAX_DIMENSION];
-	TEXT *p;
 
 	if (!MATCH(KW_LEFT_PAREN))
 		return;
@@ -3322,7 +3312,6 @@ static void parse_field_clauses( DUDLEY_FLD field)
  *
  **************************************/
 	int n;
-	TXT valid_text;
 	LLS stack;
 
 /* Pick up purely optional clauses */
@@ -3688,7 +3677,6 @@ static SCE parse_identifier(void)
  *
  **************************************/
 	TEXT *idents[10], **s, **end, **s1, strings[256], *p, *q;
-	USHORT length, ident;
 	SCE element;
 
 	p = strings;
@@ -4075,7 +4063,6 @@ static DUDLEY_NOD set_generator(void)
  *      get the name and new value for generator
  **************************************/
 	DUDLEY_NOD node;
-	SYM symbol;
 
 	if (DDL_token.tok_type != tok_ident)
 		PARSE_error(274, DDL_token.tok_string, 0);	/* msg 274: expected generator name, encountered \"%s\" */
@@ -4198,7 +4185,6 @@ static void validate_field( DUDLEY_FLD field)
  *	together.
  *
  **************************************/
-	DUDLEY_FLD global;
 	TEXT option[128];
 
 	*option = 0;
