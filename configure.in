@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.138 2003-06-15 06:03:02 stryqx Exp $
+dnl $Id: configure.in,v 1.139 2003-07-03 14:44:44 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -530,12 +530,10 @@ AC_SUBST(NEW_FIREBIRD_DIR)
 AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
 AC_CONFIG_COMMANDS(,,[
-mkdir -p gen/csv
 mkdir -p gen/dudley
 mkdir -p gen/isql
 mkdir -p gen/lock
 mkdir -p gen/gpre
-mkdir -p gen/pipe
 mkdir -p gen/remote
 mkdir -p gen/wal
 mkdir -p gen/alice
