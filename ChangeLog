@@ -1,3 +1,157 @@
+2003-08-10 17:43  skidder
+
+	* firebird2/: builds/win32/msvc7/alice.vcproj,
+	builds/win32/msvc7/alice_classic.vcproj,
+	builds/win32/msvc7/build_msg.vcproj,
+	builds/win32/msvc7/burp.vcproj,
+	builds/win32/msvc7/burp_classic.vcproj,
+	builds/win32/msvc7/codes.vcproj, builds/win32/msvc7/engine.vcproj,
+	builds/win32/msvc7/engine_classic.vcproj,
+	builds/win32/msvc7/engine_embed.vcproj,
+	builds/win32/msvc7/fbclient_static.vcproj,
+	builds/win32/msvc7/fbudf.vcproj, builds/win32/msvc7/gfix.vcproj,
+	builds/win32/msvc7/ipserver.vcproj, builds/win32/msvc7/lock.vcproj,
+	builds/win32/msvc7/lock_classic.vcproj,
+	builds/win32/msvc7/remote.vcproj,
+	builds/win32/msvc7/remote_classic.vcproj,
+	builds/win32/msvc7/utilities.vcproj,
+	builds/win32/msvc7/utilities_classic.vcproj,
+	builds/win32/msvc7/wal.vcproj,
+	builds/win32/msvc7/wal_classic.vcproj,
+	src/common/classes/alloc.cpp, src/common/classes/alloc.h,
+	src/common/classes/locks.cpp, src/common/classes/locks.h,
+	src/common/classes/rwlock.h, src/include/firebird.h,
+	src/jrd/dfw.epp, src/jrd/err.cpp, src/jrd/lck.cpp, src/jrd/lck.h,
+	src/jrd/nbak.cpp, src/jrd/nbak.h, src/jrd/thd.h, src/lock/lock.cpp:
+	
+	1) Make NBACKUP happy on Win32 CS too.	2) Fix tracking of OWN_hung
+	in Win32 CS lock manager (lock-up debugging aid) 3) Fix possible
+	unsynchronized access to memory manager in Win32 CS builds and
+	client library. Have shown itself as a very rare crash of Win32 CS
+	manager process during its startup.  4) Reduce warnings a little
+	Points 2 and 3 need to be backported to B1_5_Release
+
+2003-08-10 17:18  arnobrinkman
+
+	* firebird2/src/dsql/: parse.y, pass1.cpp:
+	
+	Support all expressions directly in GROUP BY clause
+
+2003-08-10 13:41  brodsom
+
+	* firebird2/src/wal/walw.cpp:
+	
+	-Fix format warning
+
+2003-08-10 13:41  brodsom
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	-Fix format warning -Fix unused warning -Fix signed unsigned
+	comparison warning
+
+2003-08-10 13:08  brodsom
+
+	* firebird2/src/remote/server.cpp:
+	
+	-Fix signed/unsigned comparison warning
+
+2003-08-10 12:42  brodsom
+
+	* firebird2/src/jrd/os/vms/vms.cpp:
+	
+	-Although not used, fix header location
+
+2003-08-10 12:41  brodsom
+
+	* firebird2/src/jrd/ExecuteStatement.cpp:
+	
+	-Fix cast warnings
+
+2003-08-10 12:06  arnobrinkman
+
+	* firebird2/src/dsql/parse.y:
+	
+	Added optional AS keyword to table alias
+
+2003-08-10 03:22  brodsom
+
+	* firebird2/src/remote/inet_server.cpp:
+	
+	-Fix never defined warning
+
+2003-08-10 03:21  brodsom
+
+	* firebird2/src/jrd/isc_sync.cpp:
+	
+	-Fix format warning
+
+2003-08-10 02:48  brodsom
+
+	* firebird2/src/utilities/gstat/dba.epp:
+	
+	-Fix signed/unsigned comparison
+
+2003-08-10 02:41  brodsom
+
+	* firebird2/src/utilities/drop.cpp:
+	
+	-Fix unused warning
+
+2003-08-10 02:41  brodsom
+
+	* firebird2/src/utilities/ibmgr/: ibmgr.cpp, srvrmgr.cpp:
+	
+	-Fix format warning -Fix unused warning
+
+2003-08-10 02:40  brodsom
+
+	* firebird2/src/utilities/guard/guard.cpp:
+	
+	-Fix comparison is always false warning
+
+2003-08-10 02:39  brodsom
+
+	* firebird2/src/jrd/: isc_sync.cpp, os/posix/unix.cpp:
+	
+	-Fix signed/unsigned comparison warning
+
+2003-08-10 01:38  brodsom
+
+	* firebird2/src/isql/isql.epp:
+	
+	-Fix a format warning (due to a coding error)
+
+2003-08-10 00:52  brodsom
+
+	* firebird2/src/jrd/os/posix/config_root.cpp:
+	
+	-Fix unused warning
+
+2003-08-10 00:36  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	-Fix format warning
+
+2003-08-10 00:35  brodsom
+
+	* firebird2/src/jrd/os/posix/config_root.cpp:
+	
+	-Fix not used warning
+
+2003-08-10 00:34  brodsom
+
+	* firebird2/src/remote/interface.cpp:
+	
+	-Fix not defined warning -Remove unneeded casts
+
+2003-08-10 00:31  brodsom
+
+	* firebird2/src/: utilities/drop.cpp, jrd/event.cpp, jrd/lck.cpp:
+	
+	-Fix not defined warning
+
 2003-08-09 23:57  brodsom
 
 	* firebird2/src/dsql/parse.y:
