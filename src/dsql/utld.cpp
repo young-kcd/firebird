@@ -29,9 +29,6 @@
  *
  */
 
-/*
-$Id: utld.cpp,v 1.32 2004-12-12 01:58:43 robocop Exp $
-*/
 
 #include "firebird.h"
 #include <stdio.h>
