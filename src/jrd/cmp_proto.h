@@ -32,7 +32,7 @@ jrd_req* 		CMP_clone_request(TDBB, jrd_req*, USHORT, BOOLEAN);
 jrd_req*		CMP_compile(USHORT, UCHAR*, USHORT);
 jrd_req*		CMP_compile2(TDBB, UCHAR*, USHORT);
 csb_repeat*		CMP_csb_element(Csb*, USHORT);
-extern "C" void CMP_expunge_transaction(jrd_tra*);
+void			CMP_expunge_transaction(jrd_tra*);
 void			CMP_decrement_prc_use_count(TDBB, JRD_PRC);
 jrd_req*		CMP_find_request(TDBB, USHORT, USHORT);
 void			CMP_fini(TDBB);

@@ -26,10 +26,6 @@
 
 #include "../jrd/isc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void	ISC_ast_enter(void);
 void	ISC_ast_exit(void);
 int		ISC_check_process_existence(SLONG, SLONG, USHORT);
@@ -59,10 +55,6 @@ struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
 /* Disabled. Not found anywhere.
 TEXT*	ISC_prefix_interbase(TEXT*, TEXT*);
 */
-#endif
-
-#ifdef __cplusplus
-} /* extern "C" */
 #endif
 
 #endif // JRD_ISC_PROTO_H

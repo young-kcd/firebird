@@ -24,18 +24,10 @@
 #ifndef DSQL_PARSE_PROTO_H
 #define DSQL_PARSE_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN*);
 
 void LEX_dsql_init(void);
 void LEX_string(TEXT*, USHORT, SSHORT);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif //  DSQL_PARSE_PROTO_H
 

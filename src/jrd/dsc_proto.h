@@ -26,10 +26,6 @@
 
 #include "../jrd/dsc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int			DSC_string_length(const struct dsc*);
 const TEXT*	DSC_dtype_tostring(UCHAR);
 void		DSC_get_dtype_name(const struct dsc*, TEXT *, USHORT);
@@ -41,10 +37,6 @@ extern const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
 extern const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
 extern const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
 extern const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX];
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_DSC_PROTO_H
 

@@ -33,10 +33,6 @@
 // Forward declaration
 class SortMem;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* SORTP is used throughout sort.c as a pointer into arrays of
    longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
 
@@ -284,8 +280,4 @@ typedef struct scb
 
 #define SCB_LEN(n_k)	(sizeof (struct scb) + (SLONG)(n_k) * sizeof (SKD))
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-#endif /* JRD_SORT_H */
+#endif // JRD_SORT_H

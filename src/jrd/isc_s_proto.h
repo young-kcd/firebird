@@ -31,11 +31,6 @@
 
 #include "../jrd/isc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 BOOLEAN	ISC_check_restart(void);
 int		ISC_event_blocked(USHORT, struct event **, SLONG *);
 SLONG	ISC_event_clear(struct event *);
@@ -86,11 +81,5 @@ UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, SLONG, USHORT);
 void	ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_unmap_file(ISC_STATUS *, struct sh_mem *, USHORT);
-
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 
 #endif // JRD_ISC_S_PROTO_H

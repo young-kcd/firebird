@@ -24,17 +24,7 @@
 #ifndef DSQL_PREPA_PROTO_H
 #define DSQL_PREPA_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 int PREPARSE_execute(ISC_STATUS*, FRBRD**, FRBRD**, USHORT, SCHAR*, BOOLEAN*, USHORT);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 
 #endif //  DSQL_PREPA_PROTO_H
 

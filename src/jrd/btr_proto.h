@@ -28,10 +28,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 USHORT	BTR_all(TDBB, jrd_rel*, idx**, idx**, str**, SLONG*);
 void	BTR_create(TDBB, jrd_rel*, idx*, USHORT, scb*, float*);
 void	BTR_delete_index(TDBB, win*, USHORT);
@@ -52,10 +48,6 @@ btn*	BTR_previous_node(btn*, btx**);
 void	BTR_remove(tdbb*, win*, iib*);
 void	BTR_reserve_slot(TDBB, jrd_rel*, jrd_tra*, idx*);
 float	BTR_selectivity(TDBB, jrd_rel*, USHORT);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_BTR_PROTO_H
 

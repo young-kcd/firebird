@@ -37,11 +37,6 @@
 
 #include "../include/fb_vector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
 #endif
@@ -85,10 +80,6 @@ extern "C" {
 
 
 /* Thread data block / IPC related data blocks */
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
@@ -971,13 +962,8 @@ typedef struct ihndl
 
 #ifndef PLATFORM_GET_THREAD_DATA
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern TDBB gdbb;
-#ifdef __cplusplus
-}
-#endif
+
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
 

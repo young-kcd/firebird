@@ -24,19 +24,11 @@
 #ifndef JRD_SDL_PROTO_H
 #define JRD_SDL_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 SLONG	SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT, SLONG *);
 ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS*, const UCHAR*, struct sdl_info*, SLONG*);
 UCHAR*	SDL_prepare_slice(UCHAR*, USHORT);
 int		SDL_walk(ISC_STATUS*, const UCHAR*, USHORT, UCHAR*, struct ads*, SLONG*,
 				SDL_walk_callback, struct slice *);
-
-#ifdef __cplusplus
-}	// extern "C"
-#endif
 
 #endif // JRD_SDL_PROTO_H
 

@@ -27,18 +27,10 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, SCHAR*, XSQLDA*, USHORT*);
 ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, dasup*, USHORT*, USHORT*, USHORT*, USHORT,
 							XSQLDA*, USHORT);
 void		UTLD_save_status_strings(ISC_STATUS*);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif //  DSQL_UTLD_PROTO_H
 

@@ -28,10 +28,6 @@
 #include "../jrd/jrn.h"
 #include "../jrd/blob_filter.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void		MET_activate_shadow(TDBB);
 ULONG		MET_align(struct dsc *, USHORT);
 void		MET_change_fields(TDBB, struct jrd_tra *, struct dsc *);
@@ -87,10 +83,5 @@ const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);
 void		MET_update_shadow(TDBB, struct sdw *, USHORT);
 void		MET_update_transaction(TDBB, struct jrd_tra *, USHORT);
 void		MET_update_partners(TDBB);
-
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif // JRD_MET_PROTO_H

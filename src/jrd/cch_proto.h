@@ -24,16 +24,8 @@
 #ifndef JRD_CCH_PROTO_H
 #define JRD_CCH_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void		CCH_do_log_shutdown(TDBB, SSHORT);
 void		CCH_shutdown_database(dbb*);
-
-#ifdef __cplusplus
-} /* "C" */
-#endif
 
 USHORT		CCH_checksum(bdb*);
 int			CCH_down_grade_dbb(void *ast_argument);

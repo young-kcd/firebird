@@ -27,10 +27,6 @@
 #ifndef JRD_INTLOBJ_H
 #define JRD_INTLOBJ_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef INCLUDE_FB_TYPES_H
 typedef unsigned short USHORT;
 typedef short SSHORT;
@@ -189,10 +185,6 @@ typedef struct charset
 #define CHARSET_narrow	2
 #define CHARSET_multi	4
 #define CHARSET_wide	8
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 #endif /* JRD_INTLOBJ_H */
 
