@@ -230,8 +230,10 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 	{
 		fprintf(fptr, "\n\t dbb%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
-		for (Firebird::vector<JrdMemoryPool*>::iterator itr = dbb->dbb_pools.begin();
-			itr != dbb->dbb_pools.end(); ++itr)
+
+		Firebird::vector<JrdMemoryPool*>::iterator itr;
+
+		for (itr = dbb->dbb_pools.begin(); itr != dbb->dbb_pools.end(); ++itr)
 		{
 			JrdMemoryPool *myPool = *itr;
 			if (myPool) {
@@ -244,8 +246,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 			j++;
 		}
 		fprintf(fptr, " and %d attachment(s)", j);
-		for (Firebird::vector<JrdMemoryPool*>::iterator itr = dbb->dbb_pools.begin();
-			itr != dbb->dbb_pools.end(); ++itr)
+		for (itr = dbb->dbb_pools.begin(); itr != dbb->dbb_pools.end(); ++itr)
 		{
 			JrdMemoryPool *myPool = *itr;
 			if (!myPool) {
