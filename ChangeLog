@@ -1,3 +1,22 @@
+2003-02-06 20:47  brodsom
+
+	* firebird2/src/jrd/pio.h:
+	
+	Add flags field
+
+2003-02-06 00:32  brodsom
+
+	* firebird2/src/jrd/: cch.cpp, jrd.h:
+	
+	Change non FW mode time measure, from oldest_unflushed_write to
+	last_flushed_write.
+
+2003-02-06 00:28  brodsom
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Change non FW mode time parameter value.
+
 2003-02-05 21:42  brodsom
 
 	* firebird2/src/jrd/: winnt.cpp, unix.cpp, jrd.h, pio.h,
