@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.2 2004-03-24 21:11:20 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.34.2.3 2004-03-24 21:27:54 dimitr Exp $ 
  */
 
 /*
@@ -1406,6 +1406,8 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 	map = node->nod_arg[e_agg_map];
 	group = node->nod_arg[e_agg_group];
 
+	try {
+
 /* Initialize the aggregate record */
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
@@ -1776,6 +1778,29 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 		}
 	}
 
+	}
+	catch (const std::exception&) {
+		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		{
+			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			switch (from->nod_type)
+			{
+			case nod_agg_count_distinct:
+			case nod_agg_total_distinct:
+			case nod_agg_average_distinct:
+			case nod_agg_average_distinct2:
+			case nod_agg_total_distinct2:
+				{
+				const ASB asb = (ASB) from->nod_arg[1];
+				iasb* asb_impure = (iasb*) ((SCHAR *) request + asb->nod_impure);
+				SORT_fini(reinterpret_cast<scb*>(asb_impure->iasb_sort_handle),
+						  tdbb->tdbb_attachment);
+				asb_impure->iasb_sort_handle = NULL;
+				}
+			}
+		}
+		ERR_punt();
+	}
 	return state;
 }
 
