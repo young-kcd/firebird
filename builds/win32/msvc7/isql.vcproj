@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.0"
 	Name="isql"
 	SccProjectName=""
 	SccLocalPath="">
@@ -26,7 +26,7 @@
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\isql/"
 				ObjectFile="..\..\..\temp\debug\isql/"
@@ -64,7 +64,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -87,7 +93,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
-				RuntimeLibrary="4"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\release\isql/"
 				ObjectFile="..\..\..\temp\release\isql/"
@@ -123,9 +129,17 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="ISQL files"
