@@ -79,7 +79,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 
 #ifdef WIN_NT
 #ifdef SUPERSERVER_V2
-#define MAX_FILE_IO	32			/* Maximum "allocated" overlapped I/O events */
+const int MAX_FILE_IO	= 32;			/* Maximum "allocated" overlapped I/O events */
 #endif
 
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
@@ -105,17 +105,17 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 #endif
 
 
-#define FIL_force_write		1
-#define FIL_force_write_init	2
+const USHORT FIL_force_write		= 1;
+const USHORT FIL_force_write_init	= 2;
 
 /* Physical IO trace events */
 
-#define trace_create	1
-#define trace_open	2
-#define trace_page_size	3
-#define trace_read	4
-#define trace_write	5
-#define trace_close	6
+const SSHORT trace_create	= 1;
+const SSHORT trace_open		= 2;
+const SSHORT trace_page_size	= 3;
+const SSHORT trace_read		= 4;
+const SSHORT trace_write	= 5;
+const SSHORT trace_close	= 6;
 
 // Physical I/O status block, used only in SS v2 for Win32
 
@@ -129,9 +129,10 @@ struct phys_io_blk {
 	SLONG piob_io_event[8];		/* Event to signal I/O completion */
 };
 
-#define	PIOB_error	1			/* I/O error occurred */
-#define PIOB_success	2		/* I/O successfully completed */
-#define PIOB_pending	4		/* Asynchronous I/O not yet completed */
+// piob_flags
+const UCHAR PIOB_error		= 1;	/* I/O error occurred */
+const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
+const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
 
 } //namespace Jrd
 

@@ -1242,7 +1242,7 @@ static void add_global_field( DUDLEY_FLD field)
 			field->fld_length = desc.dsc_length;
 			if (DTYPE_IS_TEXT(make_dtype(desc.dsc_dtype))) {
 				field->fld_scale = 0;
-				field->fld_sub_type = desc.dsc_ttype;
+				field->fld_sub_type = desc.dsc_sub_type;
 				field->fld_has_sub_type = TRUE;
 			}
 			else {
@@ -3169,10 +3169,10 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 		dtype = make_dtype(desc1.dsc_dtype);
 		if (dtype > dtype_any_text) {
 			desc1.dsc_length = string_length(dtype);
-			desc->dsc_ttype = ttype_ascii;
+			desc->dsc_sub_type = ttype_ascii;
 		}
 		else
-			desc->dsc_ttype = desc1.dsc_ttype;
+			desc->dsc_sub_type = desc1.dsc_sub_type;
 		dtype = make_dtype(desc2.dsc_dtype);
 		if (dtype > dtype_any_text)
 			desc2.dsc_length = string_length(dtype);
@@ -3188,7 +3188,7 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 		desc->dsc_scale = field->fld_scale;
 		desc->dsc_sub_type = 0;
 		if (DTYPE_IS_TEXT(make_dtype(desc->dsc_dtype)))
-			desc->dsc_ttype = field->fld_sub_type;
+			desc->dsc_sub_type = field->fld_sub_type;
 		return;
 
 	case nod_literal:
@@ -3260,7 +3260,7 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 		desc->dsc_scale = arg->funcarg_scale;
 		desc->dsc_sub_type = 0;
 		if (DTYPE_IS_TEXT(make_dtype(desc->dsc_dtype)))
-			desc->dsc_ttype = arg->funcarg_sub_type;
+			desc->dsc_sub_type = arg->funcarg_sub_type;
 		return;
 
 	case nod_fid:

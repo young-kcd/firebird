@@ -119,7 +119,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_length = sizeof(double);
 		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
-		node->nod_desc.dsc_ttype = ttype_ascii;
+		node->nod_desc.dsc_sub_type = ttype_ascii;
 		node->nod_arg[0] = (dsql_nod*) constant;
 		break;
 
@@ -189,7 +189,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			tmp.dsc_dtype = dtype_text;
 			tmp.dsc_scale = 0;
 			tmp.dsc_flags = 0;
-			tmp.dsc_ttype = ttype_ascii;
+			tmp.dsc_sub_type = ttype_ascii;
 			tmp.dsc_length = static_cast<USHORT>(constant->str_length);
 			tmp.dsc_address = (UCHAR*) constant->str_data;
 
@@ -209,7 +209,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		node->nod_desc.dsc_length =
 			static_cast<USHORT>(constant->str_length);
 		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
-		node->nod_desc.dsc_ttype = ttype_dynamic;
+		node->nod_desc.dsc_sub_type = ttype_dynamic;
 		// carry a pointer to the constant to resolve character set in pass1 
 		node->nod_arg[0] = (dsql_nod*) constant;
 		break;
@@ -245,7 +245,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 	node->nod_desc.dsc_scale = 0;
 	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
 	node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
-	node->nod_desc.dsc_ttype = character_set;
+	node->nod_desc.dsc_sub_type = character_set;
 // carry a pointer to the constant to resolve character set in pass1 
 	node->nod_arg[0] = (dsql_nod*) constant;
 
@@ -383,9 +383,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			desc->dsc_scale = 0;
 			desc->dsc_dtype = dtype_varying;
 			if (desc1.dsc_dtype <= dtype_any_text)
-				desc->dsc_ttype = desc1.dsc_ttype;
+				desc->dsc_sub_type = desc1.dsc_sub_type;
 			else
-				desc->dsc_ttype = ttype_ascii;
+				desc->dsc_sub_type = ttype_ascii;
 			ULONG length = sizeof(USHORT) +
 				DSC_string_length(&desc1) + DSC_string_length(&desc2);
 			if (length > MAX_SSHORT) {
@@ -422,7 +422,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			dsql_nod* for_node = node->nod_arg[e_substr_length];
 			fb_assert (for_node->nod_desc.dsc_dtype == dtype_long);
 			// Migrate the charset from the blob to the string. 
-			desc->dsc_ttype = desc1.dsc_scale;
+			desc->dsc_sub_type = desc1.dsc_scale;
 			const SLONG len = *(SLONG *) for_node->nod_desc.dsc_address;
 			/* For now, our substring() doesn't handle MBCS blobs,
 			neither at the DSQL layer nor at the JRD layer. */
@@ -439,7 +439,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			}
 		}
 		else {
-			desc->dsc_ttype = ttype_ascii;
+			desc->dsc_sub_type = ttype_ascii;
 			desc->dsc_length = sizeof (USHORT) + DSC_string_length (&desc1);
 		}
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
@@ -912,7 +912,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_length = relation->rel_dbkey_length;
 			desc->dsc_flags = 0;
-			desc->dsc_ttype = ttype_binary;
+			desc->dsc_sub_type = ttype_binary;
 		}
 		else {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
@@ -932,10 +932,10 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			desc->dsc_flags = DSC_nullable;
 			
 			if (desc->dsc_dtype <= dtype_any_text) {		
-				desc->dsc_ttype = userFunc->udf_character_set_id;
+				desc->dsc_sub_type = userFunc->udf_character_set_id;
 			}
 			else {
-				desc->dsc_ttype = userFunc->udf_sub_type;
+				desc->dsc_sub_type = userFunc->udf_sub_type;
 			}
 			return;
 		}
@@ -982,7 +982,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
-		desc->dsc_ttype = ttype_dynamic;
+		desc->dsc_sub_type = ttype_dynamic;
 		desc->dsc_length = USERNAME_LENGTH + sizeof(USHORT);
 		return;
 
@@ -1060,7 +1060,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_length = 1;
 		desc->dsc_scale = 0;
-		desc->dsc_ttype = 0;
+		desc->dsc_sub_type = 0;
 		desc->dsc_flags = DSC_nullable;
 		return;
 
@@ -1277,11 +1277,11 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 			//
 			// At least give any first charset other then ASCII/NONE precedence
 			if (!any_text) {
-				ttype = desc1.dsc_ttype;
+				ttype = desc1.dsc_sub_type;
 			}
 			else {
 				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
-					ttype = desc1.dsc_ttype;
+					ttype = desc1.dsc_sub_type;
 				}
 			}
 			any_text = true;
@@ -1370,7 +1370,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 		else {
 			desc->dsc_dtype = dtype_text;
 		}
-		desc->dsc_ttype = ttype;  // same as dsc_subtype
+		desc->dsc_sub_type = ttype;  // same as dsc_subtype
 		desc->dsc_length = maxtextlength;
 		desc->dsc_scale = 0;
 		return;

@@ -103,12 +103,19 @@ rel_MAX} RIDS;
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value
  */
-#define COULD_BE_DATE(d)	((DTYPE_IS_DATE((d).dsc_dtype)) || ((d).dsc_dtype <= dtype_any_text))
+inline bool COULD_BE_DATE(dsc desc)	{
+	return ((DTYPE_IS_DATE(desc.dsc_dtype)) || (desc.dsc_dtype <= dtype_any_text));
+}
+//#define COULD_BE_DATE(d)	((DTYPE_IS_DATE((d).dsc_dtype)) || ((d).dsc_dtype <= dtype_any_text))
 
 /* One of d1,d2 is time, the other is date */
-#define IS_DATE_AND_TIME(d1,d2)	\
-  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) || \
-   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
+inline bool IS_DATE_AND_TIME(dsc d1, dsc d2){
+	return (((d1.dsc_dtype==dtype_sql_time)&&(d2.dsc_dtype==dtype_sql_date)) ||
+	((d2.dsc_dtype==dtype_sql_time)&&(d1.dsc_dtype==dtype_sql_date)));
+}
+//#define IS_DATE_AND_TIME(d1,d2)
+//  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) ||
+//   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
 // size of req_rpb[0]
 const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);
@@ -948,7 +955,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 #ifdef PC_ENGINE
 	case nod_begin_range:
 		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype = ttype_ascii;
+		desc->dsc_sub_type = ttype_ascii;
 		desc->dsc_scale = 0;
 		desc->dsc_length = RANGE_NAME_LENGTH;
 		desc->dsc_flags = 0;
@@ -1619,18 +1626,18 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			ULONG rc_len;
 			if (desc1.dsc_dtype <= dtype_varying) {
 			    rc_len = DSC_string_length(&desc1);
-				desc->dsc_ttype = desc1.dsc_ttype;
+				desc->dsc_sub_type = desc1.dsc_sub_type;
 			}
 			else {
 			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
-				desc->dsc_ttype = ttype_ascii;
+				desc->dsc_sub_type = ttype_ascii;
 			}
 			if (desc2.dsc_dtype <= dtype_varying) {
 				rc_len += DSC_string_length (&desc2);
-				if (((desc->dsc_ttype == CS_ASCII) || (desc->dsc_ttype == CS_NONE)) &&
-					(desc2.dsc_ttype != CS_NONE)) 
+				if (((desc->dsc_sub_type == CS_ASCII) || (desc->dsc_sub_type == CS_NONE)) &&
+					(desc2.dsc_sub_type != CS_NONE)) 
 				{
-					desc->dsc_ttype = desc2.dsc_ttype;
+					desc->dsc_sub_type = desc2.dsc_sub_type;
 				}
 			}
 			else {
@@ -1651,7 +1658,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		if (desc->dsc_dtype > dtype_varying) {
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 			desc->dsc_dtype = dtype_text;
-			desc->dsc_ttype = ttype_ascii;
+			desc->dsc_sub_type = ttype_ascii;
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}
@@ -1659,7 +1666,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_dbkey:
 		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype = ttype_binary;
+		desc->dsc_sub_type = ttype_binary;
 		desc->dsc_length = 8;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -1667,7 +1674,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_rec_version:
 		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype = ttype_binary;
+		desc->dsc_sub_type = ttype_binary;
 		desc->dsc_length = 4;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -1700,7 +1707,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_user_name:
     case nod_current_role:
 		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype = ttype_metadata;
+		desc->dsc_sub_type = ttype_metadata;
 		desc->dsc_length = USERNAME_LENGTH;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -1800,7 +1807,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				rc_len = sl2;
 			}
 			desc->dsc_dtype = dtype_varying;
-			desc->dsc_ttype = desc->dsc_scale;
+			desc->dsc_sub_type = desc->dsc_scale;
 			desc->dsc_scale = 0;
 			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
 		}
@@ -1844,7 +1851,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_bookmark:
 		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype = ttype_binary;
+		desc->dsc_sub_type = ttype_binary;
 		desc->dsc_length = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -5711,7 +5718,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length =
 				DSC_convert_to_text_length(max) + sizeof(USHORT);
-			desc->dsc_ttype = ttype_ascii;
+			desc->dsc_sub_type = ttype_ascii;
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}

@@ -1941,7 +1941,7 @@ static void compress(thread_db* tdbb,
 			to.dsc_flags = 0;
 			to.dsc_sub_type = 0;
 			to.dsc_scale = 0;
-			to.dsc_ttype = ttype_sort_key;
+			to.dsc_sub_type = ttype_sort_key;
 			to.dsc_length = sizeof(temp1);
 			ptr = to.dsc_address = temp1;
 			length = INTL_string_to_key(tdbb, itype, desc, &to, fuzzy);
@@ -2515,7 +2515,7 @@ static DSC *eval(thread_db* tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 	temp->dsc_sub_type = 0;
 	temp->dsc_scale = 0;
 	temp->dsc_length = 1;
-	temp->dsc_ttype = ttype_ascii;
+	temp->dsc_sub_type = ttype_ascii;
 	temp->dsc_address = (UCHAR*) " ";
 
 	return temp;

@@ -350,8 +350,8 @@ FBUDF_API paramdsc* sNullIf(paramdsc* v, paramdsc* v2, paramdsc* rc)
 	if (len < 0 || len2 < 0) // good luck with the result, we can't do more.
 		return v;
 	if (len == len2 && (!len || !memcmp(sv, sv2, len)) &&
-		(v->dsc_ttype == v2->dsc_ttype ||
-		!v->dsc_ttype || !v2->dsc_ttype))
+		(v->dsc_sub_type == v2->dsc_sub_type ||
+		!v->dsc_sub_type || !v2->dsc_sub_type))
 	{
 		return internal::setnull(rc);
 	}

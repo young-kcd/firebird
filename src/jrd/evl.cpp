@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.85 2004-05-09 05:47:58 robocop Exp $ 
+  * $Id: evl.cpp,v 1.86 2004-05-12 00:02:06 brodsom Exp $ 
  */
 
 /*
@@ -1371,7 +1371,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 					desc->dsc_length = 1;
 					desc->dsc_sub_type = 0;
 					desc->dsc_scale = 0;
-					desc->dsc_ttype = ttype_ascii;
+					desc->dsc_sub_type = ttype_ascii;
 					desc->dsc_address = (UCHAR *) " ";
 					return false;
 				}
@@ -1383,7 +1383,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			desc->dsc_length = 1;
 			desc->dsc_sub_type = 0;
 			desc->dsc_scale = 0;
-			desc->dsc_ttype = ttype_ascii;
+			desc->dsc_sub_type = ttype_ascii;
 			desc->dsc_address = (UCHAR *) " ";
 			return false;
 		}
@@ -2128,27 +2128,6 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 	return ret_val;
 }
 
-// 
-// Definitions and macros for evl_like
-//
-#define SLEUTH_insensitive	1
-#define COND_UPPER(obj, c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
-
-static const char GDML_MATCH_ONE	= '?';
-static const char GDML_MATCH_ANY	= '*';
-
-static const char GDML_QUOTE		= '@';
-static const char GDML_NOT			= '~';
-static const char GDML_RANGE		= '-';
-static const char GDML_CLASS_START	= '[';
-static const char GDML_CLASS_END	= ']';
-static const char GDML_SUBSTITUTE	= '=';
-static const char GDML_FLAG_SET		= '+';
-static const char GDML_FLAG_CLEAR	= '-';
-static const char GDML_COMMA		= ',';
-static const char GDML_LPAREN		= '(';
-static const char GDML_RPAREN		= ')';
-
 /**************************************
  *
  *      E V L _ n c _ m a t c h e s
@@ -2161,29 +2140,91 @@ static const char GDML_RPAREN		= ')';
  *
  **************************************
  */
-#define LIKENAME                EVL_nc_like
-#define LIKETYPE                UCHAR
-#define MATCHESNAME             EVL_nc_matches
-#define MATCHESTYPE             UCHAR
-#define SLEUTHNAME              EVL_nc_sleuth_check
-#define SLEUTH_MERGE_NAME       EVL_nc_sleuth_merge
-#define SLEUTH_AUX              nc_sleuth_check
-#define SLEUTH_CLASS_NAME       nc_sleuth_class
-#define SLEUTHTYPE              UCHAR
-
-#define EVL_LIKE_INCLUDED_BY_EVL_CPP
 #include "../jrd/evl_like.cpp"
-#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
 
-#undef LIKENAME
-#undef LIKETYPE
-#undef MATCHESNAME
-#undef MATCHESTYPE
-#undef SLEUTHNAME
-#undef SLEUTH_MERGE_NAME
-#undef SLEUTH_AUX
-#undef SLEUTH_CLASS_NAME
-#undef SLEUTHTYPE
+//#define LIKENAME                EVL_nc_like
+//#define LIKETYPE                UCHAR
+//#define MATCHESNAME             EVL_nc_matches
+//#define MATCHESTYPE             UCHAR
+//#define SLEUTHNAME              EVL_nc_sleuth_check
+//#define SLEUTH_MERGE_NAME       EVL_nc_sleuth_merge
+//#define SLEUTH_AUX              nc_sleuth_check
+//#define SLEUTH_CLASS_NAME       nc_sleuth_class
+//#define SLEUTHTYPE              UCHAR
+//
+//#define EVL_LIKE_INCLUDED_BY_EVL_CPP
+//#include "../jrd/evl_like.cpp"
+//#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
+//
+//#undef LIKENAME
+//#undef LIKETYPE
+//#undef MATCHESNAME
+//#undef MATCHESTYPE
+//#undef SLEUTHNAME
+//#undef SLEUTH_MERGE_NAME
+//#undef SLEUTH_AUX
+//#undef SLEUTH_CLASS_NAME
+//#undef SLEUTHTYPE
+
+typedef UCHAR MATCHESTYPE1;
+typedef UCHAR SLEUTHTYPE1;
+
+bool EVL_nc_matches(
+	thread_db* tdbb,
+	TextType obj,
+	const MATCHESTYPE1* p1,
+	SSHORT l1_bytes,
+	const MATCHESTYPE1* p2,
+	SSHORT l2_bytes)
+{
+	return MATCHESNAME(tdbb, obj, p1, l1_bytes, p2, l2_bytes);
+}
+
+bool EVL_nc_sleuth_check(
+	thread_db* tdbb_dummy,
+	TextType obj,
+	USHORT flags,
+	const SLEUTHTYPE1* search,
+	USHORT search_len,
+	const SLEUTHTYPE1* match,
+	USHORT match_len)
+{
+	return SLEUTHNAME(tdbb_dummy, obj, flags, search, search_len,  match, match_len);
+}
+
+USHORT EVL_nc_sleuth_merge(
+	thread_db* tdbb_dummy,
+	TextType obj,
+	const SLEUTHTYPE1* match,
+	USHORT match_bytes,
+	const SLEUTHTYPE1* control,
+	USHORT control_bytes,
+	SLEUTHTYPE1* combined,
+	USHORT combined_bytes)
+{
+	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
+}
+
+bool nc_sleuth_check(
+	TextType obj,
+	USHORT flags,
+	const SLEUTHTYPE1* search,
+	const SLEUTHTYPE1* end_search,
+	const SLEUTHTYPE1* match,
+	const SLEUTHTYPE1* end_match)
+{
+	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
+}
+
+static bool nc_sleuth_class(
+	TextType obj,
+	USHORT flags,
+	const SLEUTHTYPE1* char_class,
+	const SLEUTHTYPE1* const end_class, 
+	SLEUTHTYPE1 character)
+{
+	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
+}
 
 
 /**************************************
@@ -2198,29 +2239,91 @@ static const char GDML_RPAREN		= ')';
  *
  **************************************
  */
-#define LIKENAME                EVL_wc_like
-#define LIKETYPE                UCS2_CHAR
-#define MATCHESNAME             EVL_wc_matches
-#define MATCHESTYPE             UCS2_CHAR
-#define SLEUTHNAME              EVL_wc_sleuth_check
-#define SLEUTH_MERGE_NAME       EVL_wc_sleuth_merge
-#define SLEUTH_AUX              wc_sleuth_check
-#define SLEUTH_CLASS_NAME       wc_sleuth_class
-#define SLEUTHTYPE              UCS2_CHAR
 
-#define EVL_LIKE_INCLUDED_BY_EVL_CPP
-#include "../jrd/evl_like.cpp"
-#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
+//#define LIKENAME                EVL_wc_like
+//#define LIKETYPE                UCS2_CHAR
+//#define MATCHESNAME             EVL_wc_matches
+//#define MATCHESTYPE             UCS2_CHAR
+//#define SLEUTHNAME              EVL_wc_sleuth_check
+//#define SLEUTH_MERGE_NAME       EVL_wc_sleuth_merge
+//#define SLEUTH_AUX              wc_sleuth_check
+//#define SLEUTH_CLASS_NAME       wc_sleuth_class
+//#define SLEUTHTYPE              UCS2_CHAR
+//
+//#define EVL_LIKE_INCLUDED_BY_EVL_CPP
+//#include "../jrd/evl_like.cpp"
+//#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
+//
+//#undef LIKENAME
+//#undef LIKETYPE
+//#undef MATCHESNAME
+//#undef MATCHESTYPE
+//#undef SLEUTHNAME
+//#undef SLEUTH_MERGE_NAME
+//#undef SLEUTH_AUX
+//#undef SLEUTH_CLASS_NAME
+//#undef SLEUTHTYPE
 
-#undef LIKENAME
-#undef LIKETYPE
-#undef MATCHESNAME
-#undef MATCHESTYPE
-#undef SLEUTHNAME
-#undef SLEUTH_MERGE_NAME
-#undef SLEUTH_AUX
-#undef SLEUTH_CLASS_NAME
-#undef SLEUTHTYPE
+typedef UCS2_CHAR MATCHESTYPE2;
+typedef UCS2_CHAR SLEUTHTYPE2;
+
+bool EVL_wc_matches(
+	thread_db* tdbb,
+	TextType obj,
+	const MATCHESTYPE2* p1,
+	SSHORT l1_bytes,
+	const MATCHESTYPE2* p2,
+	SSHORT l2_bytes)
+{
+	return MATCHESNAME(tdbb, obj, p1, l1_bytes, p2, l2_bytes);
+}
+
+bool EVL_wc_sleuth_check(
+	thread_db* tdbb_dummy,
+	TextType obj,
+	USHORT flags,
+	const SLEUTHTYPE2* search,
+	USHORT search_len,
+	const SLEUTHTYPE2* match,
+	USHORT match_len)
+{
+	return SLEUTHNAME(tdbb_dummy, obj, flags, search, search_len,  match, match_len);
+}
+
+USHORT EVL_wc_sleuth_merge(
+	thread_db* tdbb_dummy,
+	TextType obj,
+	const SLEUTHTYPE2* match,
+	USHORT match_bytes,
+	const SLEUTHTYPE2* control,
+	USHORT control_bytes,
+	SLEUTHTYPE2* combined,
+	USHORT combined_bytes)
+{
+	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
+}
+
+bool wc_sleuth_check(
+	TextType obj,
+	USHORT flags,
+	const SLEUTHTYPE2* search,
+	const SLEUTHTYPE2* end_search,
+	const SLEUTHTYPE2* match,
+	const SLEUTHTYPE2* end_match)
+{
+	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
+}
+
+bool wc_sleuth_class(
+	TextType obj,
+	USHORT flags,
+	const SLEUTHTYPE2* char_class,
+	const SLEUTHTYPE2* const end_class, 
+	SLEUTHTYPE2 character)
+{
+	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
+}
+
 
 static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
@@ -3260,7 +3363,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_dbkey;
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_length = 8;
-	impure->vlu_desc.dsc_ttype = ttype_binary;
+	impure->vlu_desc.dsc_sub_type = ttype_binary;
 
 	return &impure->vlu_desc;
 }
@@ -4298,7 +4401,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	impure->vlu_desc.dsc_dtype   = dtype_text;
 	impure->vlu_desc.dsc_length  = 4;
-	impure->vlu_desc.dsc_ttype   = ttype_binary;
+	impure->vlu_desc.dsc_sub_type   = ttype_binary;
 
 	return &impure->vlu_desc;
 }
@@ -4884,9 +4987,9 @@ static dsc* substring(
 			but it's resolved by INTL_obj_lookup() to UNICODE_FSS in the cases I observed. Here I cannot
 			distinguish between user calls and system calls. Unlike the original ASCII substring(),
 			this one will get correctly the amount of UNICODE characters requested. */
-	else if (desc.dsc_ttype == ttype_ascii || desc.dsc_ttype == ttype_none
+	else if (desc.dsc_sub_type == ttype_ascii || desc.dsc_sub_type == ttype_none
 		|| ttype == ttype_binary
-		/*|| desc.dsc_ttype == ttype_metadata) */)
+		/*|| desc.dsc_sub_type == ttype_metadata) */)
 	{
 		/* Redundant.
 		if (offset >= desc.dsc_length)
@@ -4977,8 +5080,8 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 	EVL_make_value(tdbb, &desc, impure);
 
-	if ((desc.dsc_ttype == ttype_ascii) ||
-		(desc.dsc_ttype == ttype_none) || (desc.dsc_ttype == ttype_metadata))
+	if ((desc.dsc_sub_type == ttype_ascii) ||
+		(desc.dsc_sub_type == ttype_none) || (desc.dsc_sub_type == ttype_metadata))
 	{
 		UCHAR* p = impure->vlu_desc.dsc_address;
 		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;

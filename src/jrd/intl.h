@@ -84,13 +84,13 @@
 
 /* Define tests for international data */
 
-#define	INTL_TTYPE(desc)		((desc)->dsc_ttype)
-#define	INTL_ASSIGN_TTYPE(desc, value) 	((desc)->dsc_ttype = (SSHORT)(value))
+#define	INTL_TTYPE(desc)		((desc)->dsc_sub_type)
+#define	INTL_ASSIGN_TTYPE(desc, value) 	((desc)->dsc_sub_type = (SSHORT)(value))
 
-#define INTERNAL_TTYPE(d)	(((USHORT)((d)->dsc_ttype)) <= ttype_last_internal)
+#define INTERNAL_TTYPE(d)	(((USHORT)((d)->dsc_sub_type)) <= ttype_last_internal)
 
 #define IS_INTL_DATA(d)		((d)->dsc_dtype <= dtype_any_text &&    \
-				 (((USHORT)((d)->dsc_ttype)) > ttype_last_internal))
+				 (((USHORT)((d)->dsc_sub_type)) > ttype_last_internal))
 
 #define INTL_TEXT_TYPE(desc)    ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
 
@@ -104,7 +104,7 @@
  *  2) As a CHARACTER_SET_ID (when collation isn't relevent, like UDF parms)
  *  3) As an index type - (btr.h)
  *  4) As a driver ID (used to lookup the code which implements the locale)
- *     This is also known as dsc_ttype (aka text subtype).
+ *     This is also known as dsc_sub_type (aka text subtype).
  *
  * In Descriptors (DSC) the data is encoded as:
  *	dsc_charset	overloaded into dsc_scale

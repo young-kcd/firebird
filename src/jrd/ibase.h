@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.76 2004-05-07 11:07:12 brodsom Exp $
+$Id: ibase.h,v 1.77 2004-05-12 00:02:07 brodsom Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -102,8 +102,9 @@ typedef struct
 #define ISC_TIMESTAMP_DEFINED
 #endif	/* ISC_TIMESTAMP_DEFINED */
 
-#define ISC_TIME_SECONDS_PRECISION          10000L
-#define ISC_TIME_SECONDS_PRECISION_SCALE    (-4)
+//Included in dsc.h
+//#define ISC_TIME_SECONDS_PRECISION          10000L
+//#define ISC_TIME_SECONDS_PRECISION_SCALE    (-4)
 
 /*******************************************************************/
 /* Blob id structure                                               */

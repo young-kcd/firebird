@@ -181,15 +181,15 @@ const dsc::dtype_t	DTYPE_TYPE_MAX	= 20;
 // In DSC_*_result tables, DTYPE_CANNOT means that the two operands
 //   cannot participate together in the requested operation.
 
-#define DTYPE_CANNOT   127
+const UCHAR DTYPE_CANNOT	= 127;
 
 // Historical alias definition
-#define dtype_date	dtype_timestamp
+const UCHAR dtype_date		= dtype_timestamp;
 
-#define dtype_aligned	dtype_varying
-#define dtype_any_text	dtype_varying
-#define dtype_min_comp	dtype_packed
-#define dtype_max_comp	dtype_d_float
+const UCHAR dtype_aligned	= dtype_varying;
+const UCHAR dtype_any_text	= dtype_varying;
+const UCHAR dtype_min_comp	= dtype_packed;
+const UCHAR dtype_max_comp	= dtype_d_float;
 
 
 // values for dsc_flags
@@ -223,10 +223,6 @@ inline bool dsc::isEmpty() const
 // Overload text typing information into the dsc_sub_type field.
 //   See intl.h for definitions of text types 
 
-#ifndef dsc_ttype
-#define dsc_ttype	dsc_sub_type
-#endif
-
 inline dsc::sub_type_t dsc::getTextType() const
 {
 	if (isText())
@@ -237,8 +233,8 @@ inline dsc::sub_type_t dsc::getTextType() const
 }
 
 
-#define DSC_GET_CHARSET(dsc)	(((dsc)->dsc_ttype) & 0x00FF)
-#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_ttype) >> 8)
+//#define DSC_GET_CHARSET(dsc)	(((dsc)->dsc_sub_type) & 0x00FF)
+//#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_sub_type) >> 8)
 
 inline dsc::sub_type_t dsc::getCharset() const
 {
@@ -268,8 +264,8 @@ struct alt_dsc
 };
 
 
-#define DSC_EQUIV(d1,d2) ((((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type) && \
-			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
+//#define DSC_EQUIV(d1,d2) ((((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type) && 
+//			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
 
 inline bool dsc::isDscEquiv(const dsc* d2) const
 {
@@ -285,7 +281,7 @@ inline bool dsc::isDscEquiv(const dsc* d2) const
 // NOTE: For types <= dtype_any_text the dsc_sub_type field defines
 //   the text type
 
-#define TEXT_LEN(d)   ((d->dsc_dtype == dtype_text) ? d->dsc_length : (d->dsc_dtype == dtype_cstring) ? d->dsc_length - 1 : d->dsc_length - sizeof(USHORT))
+//#define TEXT_LEN(d)   ((d->dsc_dtype == dtype_text) ? d->dsc_length : (d->dsc_dtype == dtype_cstring) ? d->dsc_length - 1 : d->dsc_length - sizeof(USHORT))
 
 // Don't use validate=true if you have a cstring with MBCS because it
 // may detect prematurely a null terminator in a multi-byte character.
@@ -347,8 +343,8 @@ const dsc::sub_type_t	dsc_num_type_decimal	= 2;	// defined as DECIMAL(n,m)
 
 // Date type information
 
-#define DTYPE_IS_TEXT(d)	(((d) >= dtype_text) && ((d) <= dtype_varying))
-#define DTYPE_IS_DATE(t)	(((t) >= dtype_sql_date) && ((t) <= dtype_timestamp))
+//#define DTYPE_IS_TEXT(d)	(((d) >= dtype_text) && ((d) <= dtype_varying))
+//#define DTYPE_IS_DATE(t)	(((t) >= dtype_sql_date) && ((t) <= dtype_timestamp))
 
 inline bool dsc::isText() const
 {
@@ -362,7 +358,7 @@ inline bool dsc::isDate() const
 
 
 // DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs.
-#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
+//#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
 
 inline bool dsc::isBlob() const
 {
@@ -399,9 +395,9 @@ inline bool dsc::isUserDefinedBlob() const
 
 // Exact numeric?
 
-#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || \
-				 ((d) == dtype_long)  || \
-				 ((d) == dtype_short))
+//#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || 
+//				 ((d) == dtype_long)  || 
+//				 ((d) == dtype_short))
 
 inline bool dsc::isExact() const
 {
@@ -429,12 +425,12 @@ inline bool dsc::isSqlDecimal() const
 // Floating point types?
 
 #ifdef VMS
-#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || \
-				 ((d) == dtype_real)  || \
-				 ((d) == dtype_d_float))
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				 ((d) == dtype_real)  || 
+//				 ((d) == dtype_d_float))
 #else
-#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || \
-				  ((d) == dtype_real))
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				  ((d) == dtype_real))
 #endif
 
 inline bool dsc::isApprox() const
@@ -455,9 +451,9 @@ inline bool dsc::isApprox() const
 // Beware, this is not SQL numeric(p, s), but a test for number data types
 // Strangely, the original macro doesn't test for VMS even though
 // the dtype_d_float follows dtype_double.
-#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && \
-				  ((d) <= dtype_d_float)) || \
-				 ((d)  == dtype_int64))
+//#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && 
+//				  ((d) <= dtype_d_float)) || 
+//				 ((d)  == dtype_int64))
 
 // To avoid confusion, the new function was renamed.
 inline bool dsc::isANumber() const
@@ -473,7 +469,7 @@ inline bool dsc::isANumber() const
 
 
 // Dubious function's check.
-#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
+//#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
 
 inline dsc::scale_t numeric_scale(const dsc& desc)
 {
@@ -482,10 +478,10 @@ inline dsc::scale_t numeric_scale(const dsc& desc)
 
 
 // Macros defining what operations are legal on data types
-#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
-#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
-#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
-#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)
+//#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
+//#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
+//#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
+//#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)
 
 inline bool dsc::canNegate() const {return isANumber();}
 inline bool dsc::canAverage() const {return isANumber();}

@@ -40,13 +40,6 @@
 								   from metadata primarily to flag
 								   SQLDA (in DSQL)               */
 
-// Overload text typing information into the dsc_sub_type field.
-// See intl.h for definitions of text types
-
-#ifndef dsc_ttype
-#define dsc_ttype	dsc_sub_type
-#endif
-
 // Data types
 
 // WARNING: if you add another manifest constant to this group, then you
@@ -79,6 +72,9 @@
 #define dtype_int64     19
 #define DTYPE_TYPE_MAX	20
 
+// 
+#define ISC_TIME_SECONDS_PRECISION		10000L
+#define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
 
 #endif /* JRD_DSC_PUB_H */
 

@@ -1,9 +1,3 @@
-#ifndef EVL_LIKE_INCLUDED_BY_EVL_CPP
-
-#pragma message ("Do not compile this file stand-alone. It gets included by evl.cpp!")
-
-#else // EVL_LIKE_INCLUDED_BY_EVL_CPP
-
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		evl_like.cpp
@@ -27,7 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
+#define SLEUTH_insensitive	1
+#define COND_UPPER(obj, c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
 
+static const char GDML_MATCH_ONE	= '?';
+static const char GDML_MATCH_ANY	= '*';
+
+static const char GDML_QUOTE		= '@';
+static const char GDML_NOT			= '~';
+static const char GDML_RANGE		= '-';
+static const char GDML_CLASS_START	= '[';
+static const char GDML_CLASS_END	= ']';
+static const char GDML_SUBSTITUTE	= '=';
+static const char GDML_FLAG_SET		= '+';
+static const char GDML_FLAG_CLEAR	= '-';
+static const char GDML_COMMA		= ',';
+static const char GDML_LPAREN		= '(';
+static const char GDML_RPAREN		= ')';
+
+template <class MATCHESTYPE>
 bool MATCHESNAME(thread_db* tdbb,
 				   TextType obj,
 				   const MATCHESTYPE* p1,
@@ -93,6 +105,7 @@ bool MATCHESNAME(thread_db* tdbb,
 }
 
 
+template <class SLEUTHTYPE>
 bool SLEUTHNAME(thread_db* tdbb_dummy,
 				  TextType obj,
 				  USHORT flags,
@@ -122,6 +135,7 @@ bool SLEUTHNAME(thread_db* tdbb_dummy,
 }
 
 
+template <class SLEUTHTYPE>
 USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 						 TextType obj,
 						 const SLEUTHTYPE* match,
@@ -246,6 +260,7 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 }
 
 
+template <class SLEUTHTYPE>
 static bool SLEUTH_AUX(
 						  TextType obj,
 						  USHORT flags,
@@ -372,6 +387,7 @@ static bool SLEUTH_AUX(
 }
 
 
+template <class SLEUTHTYPE>
 static bool SLEUTH_CLASS_NAME(
 								 TextType obj,
 								 USHORT flags,
@@ -420,7 +436,3 @@ static bool SLEUTH_CLASS_NAME(
 
 	return !result;
 }
-
-
-#endif // EVL_LIKE_INCLUDED_BY_EVL_CPP
-

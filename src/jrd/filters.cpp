@@ -294,7 +294,7 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 	}
 
     TEXT temp1[64], temp2[64];
-	if ((desc.dsc_dtype <= dtype_any_text) && (desc.dsc_ttype != 0)) {
+	if ((desc.dsc_dtype <= dtype_any_text) && (desc.dsc_sub_type != 0)) {
 		sprintf(temp2, p, value);
 		sprintf(temp1, "%s, sub-type %d", temp2, INTL_TTYPE(&desc));
 	}

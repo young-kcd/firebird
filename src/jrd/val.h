@@ -35,15 +35,12 @@
 
 #include "../jrd/dsc.h"
 
-
 #define FLAG_BYTES(n)	(((n + BITS_PER_LONG) & ~((ULONG)BITS_PER_LONG - 1)) >> 3)
 
-#ifndef VMS
-#define DEFAULT_DOUBLE	dtype_double
-#else
+const UCHAR DEFAULT_DOUBLE	= dtype_double;
 
-#define DEFAULT_DOUBLE	dtype_double
-#define SPECIAL_DOUBLE	dtype_d_float
+#ifdef VMS
+const UCHAR DEFAULT_DOUBLE	= dtype_d_float;
 #define CNVT_TO_DFLT(x)	MTH$CVT_D_G (x)
 #define CNVT_FROM_DFLT(x)	MTH$CVT_G_D (x)
 

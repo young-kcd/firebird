@@ -56,8 +56,15 @@ typedef struct dsc
 } DSC;
 
 
-#define DSC_GET_CHARSET(dsc)	(((dsc)->dsc_ttype) & 0x00FF)
-#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_ttype) >> 8)
+inline SSHORT DSC_GET_CHARSET(const dsc* desc){
+	return (desc->dsc_sub_type & 0x00FF);
+}
+//#define DSC_GET_CHARSET(dsc)	(((dsc)->dsc_sub_type) & 0x00FF)
+
+inline SSHORT DSC_GET_COLLATE(const dsc* desc){
+	return (desc->dsc_sub_type >> 8);
+}
+//#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_sub_type) >> 8)
 
 typedef struct alt_dsc {
 	SLONG dsc_combined_type;
@@ -65,81 +72,126 @@ typedef struct alt_dsc {
 	USHORT dsc_flags;			/* Not currently used */
 } ALT_DSC;
 
-#define DSC_EQUIV(d1,d2) ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && \
-			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
+inline bool DSC_EQUIV(const dsc* d1, const dsc* d2){
+	return ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && 
+		((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_varying));
+}
+//#define DSC_EQUIV(d1,d2) ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && 
+//			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
 
 /* In DSC_*_result tables, DTYPE_CANNOT means that the two operands
    cannot participate together in the requested operation. */
 
-#define DTYPE_CANNOT   127
+const UCHAR DTYPE_CANNOT	= 127;
 
 /* Historical alias definition */
-#define dtype_date	dtype_timestamp
+const UCHAR dtype_date		= dtype_timestamp;
 
-#define dtype_aligned	dtype_varying
-#define dtype_any_text	dtype_varying
-#define dtype_min_comp	dtype_packed
-#define dtype_max_comp	dtype_d_float
+const UCHAR dtype_aligned	= dtype_varying;
+const UCHAR dtype_any_text	= dtype_varying;
+const UCHAR dtype_min_comp	= dtype_packed;
+const UCHAR dtype_max_comp	= dtype_d_float;
 
 /* NOTE: For types <= dtype_any_text the dsc_sub_type field defines
    the text type */
 
-#define TEXT_LEN(d)   ((d->dsc_dtype == dtype_text) ? d->dsc_length : (d->dsc_dtype == dtype_cstring) ? d->dsc_length - 1 : d->dsc_length - sizeof(USHORT))
+inline USHORT TEXT_LEN(const dsc* desc){
+	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length 
+		: (desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
+}
+//#define TEXT_LEN(d)   ((d->dsc_dtype == dtype_text) ? d->dsc_length : (d->dsc_dtype == dtype_cstring) ? d->dsc_length - 1 : d->dsc_length - sizeof(USHORT))
 
 
 /* Text Sub types, distinct from character sets & collations */
 
-#define dsc_text_type_none	0	/* Normal text */
-#define	dsc_text_type_fixed	1	/* strings can contain null bytes */
-#define dsc_text_type_metadata	3	/* string represents system metadata */
+const SSHORT dsc_text_type_none		= 0;	/* Normal text */
+const SSHORT dsc_text_type_fixed	= 1;	/* strings can contain null bytes */
+const SSHORT dsc_text_type_metadata	= 3;	/* string represents system metadata */
 
 
 /* Exact numeric subtypes: with ODS >= 10, these apply when dtype
    is short, long, or quad. */
 
-#define dsc_num_type_none       0	/* defined as SMALLINT or INTEGER */
-#define dsc_num_type_numeric    1	/* defined as NUMERIC(n,m)        */
-#define dsc_num_type_decimal    2	/* defined as DECIMAL(n,m)        */
+const SSHORT dsc_num_type_none		= 0;	/* defined as SMALLINT or INTEGER */
+const SSHORT dsc_num_type_numeric	= 1;	/* defined as NUMERIC(n,m)        */
+const SSHORT dsc_num_type_decimal	= 2;	/* defined as DECIMAL(n,m)        */
 
 
 /* Date type information */
 
-#define DTYPE_IS_TEXT(d)	(((d) >= dtype_text) && ((d) <= dtype_varying))
-#define DTYPE_IS_DATE(t)	(((t) >= dtype_sql_date) && ((t) <= dtype_timestamp))
+inline bool DTYPE_IS_TEXT(UCHAR d){
+	return (((d) >= dtype_text) && ((d) <= dtype_varying));
+}
+//#define DTYPE_IS_DATE(d)	(((d) >= dtype_text) && ((d) <= dtype_varying))
+
+inline bool DTYPE_IS_DATE(UCHAR t){
+	return (((t) >= dtype_sql_date) && ((t) <= dtype_timestamp));
+}
+//#define DTYPE_IS_DATE(t)	(((t) >= dtype_sql_date) && ((t) <= dtype_timestamp))
 
 /* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
-#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
+inline bool DTYPE_IS_BLOB(UCHAR d){
+	return (((d) == dtype_blob) || ((d) == dtype_array));
+}
+
+//#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
 
 /* Exact numeric? */
+inline bool DTYPE_IS_EXACT(UCHAR d){
+	return (((d) == dtype_int64) || ((d) == dtype_long) || ((d) == dtype_short));
+}
 
-#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || \
-				 ((d) == dtype_long)  || \
-				 ((d) == dtype_short))
+//#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || 
+//				 ((d) == dtype_long)  || 
+//				 ((d) == dtype_short))
 
 #ifdef VMS
-#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || \
-				 ((d) == dtype_real)  || \
-				 ((d) == dtype_d_float))
+inline bool DTYPE_IS_APPROX(UCHAR d){
+	return (((d) == dtype_double) || ((d) == dtype_real) || ((d) == dtype_d_float));
+}
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				 ((d) == dtype_real)  || 
+//				 ((d) == dtype_d_float))
 #else
-#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || \
-				  ((d) == dtype_real))
+inline bool DTYPE_IS_APPROX(UCHAR d){
+	return (((d) == dtype_double) || ((d) == dtype_real));
+}
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				  ((d) == dtype_real))
 #endif
 
-#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && \
-				  ((d) <= dtype_d_float)) || \
-				 ((d)  == dtype_int64))
 
-#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
+inline bool DTYPE_IS_NUMERIC(UCHAR d){
+	return ((((d) >= dtype_byte) && ((d) <= dtype_d_float)) || ((d)  == dtype_int64));
+}
+//#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && 
+//				  ((d) <= dtype_d_float)) || 
+//				 ((d)  == dtype_int64))
+
+inline SCHAR NUMERIC_SCALE(dsc desc){
+	return ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale);
+}
+
+//#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
 
 /* Macros defining what operations are legal on data types */
-#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
-#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
-#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
-#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)
+inline bool DTYPE_CAN_NEGATE(UCHAR d){
+	return DTYPE_IS_NUMERIC(d);
+}
+//#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
+inline bool DTYPE_CAN_AVERAGE(UCHAR d){
+	return DTYPE_IS_NUMERIC(d);
+}
+//#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
+inline bool DTYPE_CAN_DIVIDE(UCHAR d){
+	return DTYPE_IS_NUMERIC(d);
+}
+//#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
+inline bool DTYPE_CAN_MULTIPLY(UCHAR d){
+	return DTYPE_IS_NUMERIC(d);
+}
+//#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)
 
-
-#define ISC_TIME_SECONDS_PRECISION		10000L
-#define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
 
 #endif /* JRD_DSC_H */
 

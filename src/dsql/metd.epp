@@ -1030,7 +1030,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
                 
                 if (!X.RDB$CHARACTER_SET_ID.NULL) {
                     if (d->dsc_dtype != dtype_blob) {
-                        d->dsc_ttype = X.RDB$CHARACTER_SET_ID;
+                        d->dsc_sub_type = X.RDB$CHARACTER_SET_ID;
                     }
                     else {
                         d->dsc_scale = X.RDB$CHARACTER_SET_ID;

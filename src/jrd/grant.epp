@@ -338,7 +338,7 @@ static void define_default_class(
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_sub_type = 0;
 	desc.dsc_scale = 0;
-	desc.dsc_ttype = ttype_metadata;
+	desc.dsc_sub_type = ttype_metadata;
 	desc.dsc_address = (UCHAR *) relation_name;
 	desc.dsc_length = strlen((char*)desc.dsc_address);
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
@@ -714,7 +714,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_sub_type = 0;
 	desc.dsc_scale = 0;
-	desc.dsc_ttype = ttype_metadata;
+	desc.dsc_sub_type = ttype_metadata;
 	desc.dsc_address = (UCHAR *) object_name;
 	desc.dsc_length = strlen((char*)desc.dsc_address);
 	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
@@ -967,7 +967,7 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 		desc.dsc_dtype = dtype_text;
 		desc.dsc_sub_type = 0;
 		desc.dsc_scale = 0;
-		desc.dsc_ttype = ttype_metadata;
+		desc.dsc_sub_type = ttype_metadata;
 		desc.dsc_address = (UCHAR *) relation_name;
 		desc.dsc_length = strlen((char*)desc.dsc_address);
 		DFW_post_work(dbb->dbb_sys_trans, dfw_update_format, &desc, 0);

@@ -707,7 +707,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else
 			ttype1 = ttype_none;
 		if (arg2->dsc_dtype <= dtype_varying)
-			ttype2 = arg2->dsc_ttype;
+			ttype2 = arg2->dsc_sub_type;
 		else
 			ttype2 = ttype_none;
 
