@@ -3,6 +3,48 @@
   **************
 
     * Fixed unregistered bug.
+        Server crashes when NULL is passed to EXECUTE STATEMENT ... INTO
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Server log is polluted with sigpipe errors when running SuperServer on unix
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed unregistered bug.
+        100% CPU usage by the cache_writer thread in some rare cases
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Server crashes with complex (lots of streams used in a sort/merge) queries
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Possible server crash in op_connect handler
+      Contributor(s):
+        Aleksey Karyakin <karyakin at cmpmail.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server blocking when events are used with NAT gateways
+      Contributor(s):
+        Chris Waters <chris at waters.co.nz>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Sweeper doesn't release its lock in the case of database shutdown
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Least significant bits of value are lost when rounding floating-point value to int/int64 value
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
         Backported fixes for a few memory access problems detected when testing HEAD under Valgrind
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
