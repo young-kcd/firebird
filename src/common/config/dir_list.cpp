@@ -168,6 +168,10 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 	if (!ConfigDirs)
 		Initialize();
 
+	// Handle special case 1
+	if (ConfigDirs[0] == ROOT)					// all open
+		return true;
+
 	// Disable any up-dir(..) references - in case our path_utils
 	// and OS handle paths in slightly different ways,
 	// this is "wonderful" potential hole for hacks
@@ -177,9 +181,7 @@ bool DirectoryList::IsPathInList(const Firebird::string& path) {
 	if (path.find(PathUtils::up_dir_link) != Firebird::string::npos)
 		return false;
 
-	// Handle special cases
-	if (ConfigDirs[0] == ROOT)					// all open
-		return true;
+	// Handle special case 2
 	if (nDirs == 1 && ConfigDirs[0] == NONE)	// all closed
 		return false;
 
