@@ -4167,7 +4167,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							if (l)
 								do {
 									*p++ = *q++;
-								} while (--l);
+								} while (--l && (p < bufferEnd-1));
 							*p++ = 0;
 							continue;
 						}
