@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.1 2003-07-15 02:39:38 brodsom Exp $
+ * $Id: guard.cpp,v 1.2 2003-08-10 00:40:42 brodsom Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -71,7 +71,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT **end, *p, c;
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME */
 	TEXT user_name[256];		/* holds the user name */
-	USHORT done = TRUE, fd_guard;
+	USHORT done = TRUE;
+	int fd_guard;
 	pid_t child_pid;
 	TEXT *prog_name = argv[0];
 	TEXT *server_args[2];
