@@ -1515,7 +1515,7 @@ static void init(FRBRD** db_handle)
 		}
 	}
 
-	dbb = (DBB) gds__alloc((SLONG) sizeof(dbb));
+	dbb = (DBB) gds__alloc((SLONG) sizeof(class dbb));
 
 	// FREE: by database exit handler cleanup_database()
 	if (!dbb) {					// NOMEM
@@ -1551,7 +1551,7 @@ static NAME insert_name( TEXT * symbol, NAME* list_ptr, STMT stmt)
 	TEXT *p;
 
 	l = name_length(symbol);
-	name = (NAME) gds__alloc((SLONG) sizeof(name) + l);
+	name = (NAME) gds__alloc((SLONG) sizeof(struct name) + l);
 /* FREE: by exit handler cleanup() or database_cleanup() */
 	if (!name)					/* NOMEM: */
 		error_post(gds_virmemexh, 0);
