@@ -57,7 +57,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT sw_command, sw_version;
 	USHORT i, ret;
 	HKEY hkey_node;
-	SLONG status;
 
 	directory = NULL;
 	sw_command = COMMAND_NONE;
