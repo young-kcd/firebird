@@ -65,6 +65,8 @@
  * 2003.05.24 Nickolay Samofatov: Make SKIP and FIRST non-reserved keywords
  * 2003.06.13 Nickolay Samofatov: Make INSERTING/UPDATING/DELETING non-reserved keywords
  * 2003.07.01 Blas Rodriguez Somoza: Change DEBUG and IN to avoid conflicts in win32 build/bison
+ * 2003.08.11 Arno Brinkman: Changed GROUP BY to support all expressions and added "AS" support
+ *                           with table alias. Also removed group_by_function and ordinal.
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -2426,13 +2428,6 @@ numeric_type	: KW_NUMERIC prec_scale
 			}
 		;
 
-ordinal		: pos_short_integer
-			{ $$ = make_node (nod_position, 1, $1); }
-		;
-
-
-
-
 prec_scale	: 
 			{
 			lex.g_field->fld_dtype = dtype_long; 
@@ -3040,11 +3035,6 @@ group_by_list	: group_by_item
 		;
 
 group_by_item : value
-		;
-
-group_by_function	: numeric_value_function
-		| string_value_function
-		| case_expression
 		;
 
 having_clause	: HAVING search_condition
