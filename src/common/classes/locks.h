@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.15 2004-06-08 06:51:13 alexpeshkoff Exp $
+ *  $Id: locks.h,v 1.16 2004-06-11 14:23:24 kkuznetsov Exp $
  *
  */
 
@@ -50,8 +50,8 @@
 #ifndef SOLARIS
 #include <pthread.h>
 #else
-#include <sys/mutex.h>
 #include <thread.h>
+#include <synch.h>
 #endif
 #endif
 #endif /* MULTI_THREAD */
@@ -121,7 +121,7 @@ private:
 	mutex_t spinlock;
 public:
 	Mutex() {
-		if (mutex_init(&spinlock, MUTEX_SPIN, NULL))
+		if (mutex_init(&spinlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise("mutex_init");
 	}
 	~Mutex() {
