@@ -152,7 +152,7 @@ typedef sav *SAV;
    of work deferred to commit time.  This are usually used to perform
    meta data updates */
 
-ENUM dfw_t {
+enum dfw_t {
 	dfw_null,
 	dfw_create_relation,
 	dfw_delete_relation,
@@ -197,7 +197,7 @@ ENUM dfw_t {
 class dfw : public pool_alloc_rpt<SCHAR, type_dfw>
 {
     public:
-	ENUM dfw_t dfw_type;		/* type of work deferred */
+	enum dfw_t dfw_type;		/* type of work deferred */
 	struct dfw *dfw_next;		/* next block in transaction */
 	struct lck *dfw_lock;		/* relation creation lock */
 	struct dfw *dfw_args;		/* arguments */

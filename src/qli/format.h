@@ -69,7 +69,7 @@ typedef struct col {
     :		literal insertion
 */
 
-typedef ENUM pic_t {
+typedef enum pic_t {
     pic_alpha = 1,
     pic_numeric,
     pic_date,

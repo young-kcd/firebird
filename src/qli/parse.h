@@ -30,7 +30,7 @@
 
 /* Keywords */
 
-typedef ENUM kwwords {
+typedef enum kwwords {
     KW_none = 0,
 #include "../qli/symbols.h"
     KW_continuation
@@ -38,7 +38,7 @@ typedef ENUM kwwords {
 
 /* Token block, used to hold a lexical token. */
 
-typedef ENUM tok_t {
+typedef enum tok_t {
     tok_ident, 
     tok_number, 
     tok_quoted, 
@@ -61,7 +61,7 @@ typedef struct tok {
 
 /* Input line control */
 
-ENUM line_t {
+enum line_t {
     line_stdin,
     line_blob,
     line_file,
@@ -78,7 +78,7 @@ typedef struct line {
     TEXT	*line_ptr;
     SLONG	line_position;
     FRBRD	*line_source;			/* File or blob handle */
-    ENUM line_t	line_type;
+    enum line_t	line_type;
     TEXT	line_data [256];
     TEXT	line_source_name [2];
 } *LINE;

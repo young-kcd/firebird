@@ -134,7 +134,7 @@ static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction);
 #define FIELD(symbol, name, id, update, ods, new_id, new_ods)
 #define END_RELATION
 
-typedef ENUM rids {
+typedef enum rids {
 #include "../jrd/relations.h"
 rel_MAX} RIDS;
 

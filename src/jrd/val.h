@@ -81,7 +81,7 @@ typedef vary VARY;
 #ifndef REQUESTER
 /* Function definition block */
 
-typedef ENUM {
+typedef enum {
 		FUN_value,
 		FUN_reference,
 		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;

@@ -34,7 +34,7 @@ void DFW_merge_work(struct jrd_tra *, SLONG, SLONG);
 void DFW_perform_system_work(void);
 void DFW_perform_work(struct jrd_tra *);
 void DFW_perform_post_commit_work(struct jrd_tra *);
-class dfw * DFW_post_work(struct jrd_tra *, ENUM dfw_t, struct dsc *, USHORT);
+class dfw * DFW_post_work(struct jrd_tra *, enum dfw_t, struct dsc *, USHORT);
 void DFW_post_work_arg(struct jrd_tra *, class dfw *, struct dsc *, USHORT);
 void DFW_update_index(struct dfw *, USHORT, float);
 

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.76 2003-08-20 09:35:00 brodsom Exp $
+$Id: common.h,v 1.77 2003-08-22 10:56:53 aafemt Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -788,10 +788,6 @@ typedef struct
 #define GDS_TIME	ISC_TIME
 #define GDS_TIMESTAMP	ISC_TIMESTAMP
 
-
-#ifndef ENUM
-#define ENUM            enum
-#endif
 
 #ifndef BLOB_PTR
 #define BLOB_PTR        UCHAR

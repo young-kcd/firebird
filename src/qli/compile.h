@@ -69,7 +69,7 @@ typedef struct qfl {
 
 /* SHOW options */
 
-ENUM show_t {
+enum show_t {
     show_all,
     show_relation,
     show_relations,
@@ -102,7 +102,7 @@ ENUM show_t {
     show_db_fields
 };
 
-ENUM set_t {
+enum set_t {
     set_blr,
     set_statistics,
     set_epilog,

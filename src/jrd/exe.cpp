@@ -114,10 +114,10 @@ extern "C" {
 static void assign_xcp_message(TDBB, STR *, const TEXT *);
 static void cleanup_rpb(TDBB, RPB *);
 static JRD_NOD erase(TDBB, JRD_NOD, SSHORT);
-static void execute_looper(TDBB, JRD_REQ, JRD_TRA, ENUM jrd_req::req_s);
+static void execute_looper(TDBB, JRD_REQ, JRD_TRA, enum jrd_req::req_s);
 static void exec_sql(TDBB, JRD_REQ, DSC *);
 static void execute_procedure(TDBB, JRD_NOD);
-static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC, ENUM jrd_req::req_ta);
+static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC, enum jrd_req::req_ta);
 static JRD_NOD looper(TDBB, JRD_REQ, JRD_NOD);
 static JRD_NOD modify(TDBB, JRD_NOD, SSHORT);
 static JRD_NOD receive_msg(TDBB, JRD_NOD);
@@ -1327,7 +1327,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 static void execute_looper(
 						   TDBB tdbb,
 						   JRD_REQ request,
-						   JRD_TRA transaction, ENUM jrd_req::req_s next_state)
+						   JRD_TRA transaction, enum jrd_req::req_s next_state)
 {
 /**************************************
  *
@@ -1559,7 +1559,7 @@ static JRD_REQ execute_triggers(TDBB tdbb,
 								TRIG_VEC* triggers,
 								REC old_rec,
 								REC new_rec,
-								ENUM jrd_req::req_ta trigger_action)
+								enum jrd_req::req_ta trigger_action)
 {
 /**************************************
  *

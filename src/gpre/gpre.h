@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.33 2003-07-02 18:58:41 brodsom Exp $
+ * $Id: gpre.h,v 1.34 2003-08-22 10:56:51 aafemt Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -746,7 +746,7 @@ typedef struct decl_udf {
 
 #define DECL_UDF_LEN sizeof (struct decl_udf)
 
-typedef ENUM {
+typedef enum {
 		FUN_value,
 		FUN_reference,
 		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;

@@ -77,7 +77,7 @@ static void expand_dbname(TEXT *);
 static SSHORT find_address(TEXT *, struct sockaddr_in *, SSHORT);
 #endif
 
-static ENUM jrnr_t get_reply(SLONG);
+static enum jrnr_t get_reply(SLONG);
 static SLONG open_connection(SCHAR *, SSHORT);
 static void put_command(SLONG, UCHAR *, USHORT, UCHAR *, USHORT);
 
@@ -100,7 +100,7 @@ int CONSOLE_start_console( int argc, SCHAR ** argv)
 	TEXT **end, directory[MAXPATHLEN], buffer[2 * MAXPATHLEN];
 	SLONG channel;
 	USHORT cycle, len, length;
-	ENUM jrnr_t reply;
+	enum jrnr_t reply;
 	SSHORT single_msg = FALSE;
 	SCHAR *msg, *dir;
 	USHORT sw_d, sw_v, sw_i;
@@ -481,7 +481,7 @@ static SSHORT find_address(
 
 
 #ifdef BSD_SOCKETS
-static ENUM jrnr_t get_reply( SLONG channel)
+static enum jrnr_t get_reply( SLONG channel)
 {
 /**************************************
  *
@@ -528,7 +528,7 @@ static ENUM jrnr_t get_reply( SLONG channel)
 
 
 #ifdef WIN_NT
-static ENUM jrnr_t get_reply( SLONG channel)
+static enum jrnr_t get_reply( SLONG channel)
 {
 /**************************************
  *

@@ -79,7 +79,7 @@ static void show_proc(QPR);
 static void show_procs(DBB);
 static void show_rel(QLI_REL);
 static void show_rel_detail(QLI_REL);
-static void show_rels(DBB, ENUM show_t, SSHORT);
+static void show_rels(DBB, enum show_t, SSHORT);
 static int show_security_class_detail(DBB, TEXT *);
 static int show_security_classes_detail(DBB);
 static void show_string(USHORT, TEXT *, USHORT, TEXT *);
@@ -144,7 +144,7 @@ void SHOW_stuff( SYN node)
 	SYN *ptr, value;
 	QLI_REL relation;
 	DBB dbb;
-	ENUM show_t sw;
+	enum show_t sw;
 	USHORT i, count;
 	NAM name;
 	TEXT buffer[256];
@@ -154,7 +154,7 @@ void SHOW_stuff( SYN node)
 	ptr = node->syn_arg;
 
 	for (i = 0; i < node->syn_count; i++) {
-		sw = (ENUM show_t) (int) * ptr++;
+		sw = (enum show_t) (int) * ptr++;
 		value = *ptr++;
 		if (sw != show_matching_language &&
 			sw != show_version &&
@@ -2094,7 +2094,7 @@ static void show_rel_detail( QLI_REL relation)
 }
 
 
-static void show_rels( DBB dbb, ENUM show_t sw, SSHORT width)
+static void show_rels( DBB dbb, enum show_t sw, SSHORT width)
 {
 /**************************************
  *

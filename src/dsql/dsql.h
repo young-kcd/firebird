@@ -53,7 +53,7 @@ typedef err* ERR;
 // whether a block has a variable length tail
 #define BLKDEF(type, root, tail) type,
 
-ENUM blk_t {
+enum blk_t {
 	dsql_type_MIN = 0,
 #include "../dsql/blk.h"
 dsql_type_MAX};

@@ -37,7 +37,7 @@
 
 #define NODE(type, name, keyword) type,
 
-typedef ENUM nod_t {
+typedef enum nod_t {
 #include "../jrd/nod.h"
 	nod_MAX
 #undef NODE

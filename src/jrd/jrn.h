@@ -148,7 +148,7 @@ typedef struct ltja {
 
 #define LTJA_SIZE 	OFFSETA (LTJA*, ltja_data)
 
-ENUM jrnr_t {
+enum jrnr_t {
 	jrnr_accepted = 1,			/* Connection accepted */
 	jrnr_rejected,				/* Connection rejected */
 	jrnr_dump_database,			/* Dump the database before proceding */
@@ -169,7 +169,7 @@ ENUM jrnr_t {
 
 typedef struct jrnr {
 	JRNH jrnr_header;
-	ENUM jrnr_t jrnr_response;
+	enum jrnr_t jrnr_response;
 	SLONG jrnr_page;
 } JRNR;
 

@@ -34,7 +34,7 @@
 
 #define NAME(name, id) id,
 
-typedef ENUM nam_i { nam_MIN,
+typedef enum nam_i { nam_MIN,
 #include "../jrd/names.h"
 nam_MAX} name_ids;
 
@@ -56,7 +56,7 @@ static const TEXT* const names[] =
 
 
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
-typedef ENUM gflds {
+typedef enum gflds {
 #include "../jrd/fields.h"
 gfld_MAX} GFLDS;
 #undef FIELD
@@ -93,7 +93,7 @@ static const struct gfld gfields[] = {
 #define RELATION(name, id, ods) id,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
-typedef ENUM rids {
+typedef enum rids {
 #include "../jrd/relations.h"
 rel_MAX} RIDS;
 #undef RELATION

@@ -42,7 +42,7 @@
 #define ALLOCPV(type,repeat)	ALLQ_alloc (QLI_permanent_pool, type, repeat)
 
 #define BLKDEF(type, root, tail) type,
-ENUM blk_t
+enum blk_t
     {
     type_MIN = 0,
 #include "../qli/blk.h"
@@ -216,7 +216,7 @@ typedef struct str {
 
 /* Symbol types */
 
-typedef ENUM sym_t {
+typedef enum sym_t {
     SYM_keyword,
     SYM_context,
     SYM_database,
@@ -266,7 +266,7 @@ typedef struct plb {
     LLS		plb_lls;	/* avaiable linked list stack nodes */
 } *PLB;
 
-typedef ENUM nod_t {
+typedef enum nod_t {
 
 /* Commands, not executed. */
 

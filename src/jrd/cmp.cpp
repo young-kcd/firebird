@@ -94,7 +94,7 @@
 #define FIELD(symbol,name,id,update,ods,new_id,new_ods)
 #define END_RELATION
 
-typedef ENUM rids {
+typedef enum rids {
 #include "../jrd/relations.h"
 rel_MAX} RIDS;
 
@@ -1962,7 +1962,7 @@ int DLL_EXPORT CMP_post_access(TDBB			tdbb,
 void DLL_EXPORT CMP_post_resource(
 								  TDBB tdbb,
 								  RSC * rsc_ptr,
-								  BLK rel_or_prc, ENUM rsc_s type, USHORT id)
+								  BLK rel_or_prc, enum rsc_s type, USHORT id)
 {
 /**************************************
  *
@@ -2006,7 +2006,7 @@ void DLL_EXPORT CMP_post_resource(
 
 void DLL_EXPORT CMP_release_resource(
 									 RSC * rsc_ptr,
-									 ENUM rsc_s type, USHORT id)
+									 enum rsc_s type, USHORT id)
 {
 /**************************************
  *

@@ -39,7 +39,7 @@
 
 /* an enumeration of the possible node types in a syntax tree */
 
-typedef ENUM nod_t 
+typedef enum nod_t 
 {
 	nod_unknown_type = 0,
     nod_commit = 1,	/* Commands, not executed. */

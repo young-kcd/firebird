@@ -3866,7 +3866,7 @@ static SYN parse_set(void)
  **************************************/
 	SYN node;
 	LLS stack;
-	ENUM set_t sw;
+	enum set_t sw;
 	USHORT count;
 	U_IPTR value;
 	PAR_token();
@@ -4054,7 +4054,7 @@ static SYN parse_show(void)
 	QLI_REL relation;
 	LLS stack;
 	SYM symbol;
-	ENUM show_t sw;
+	enum show_t sw;
 	BLK value;
 	USHORT count;
 	QPR proc;

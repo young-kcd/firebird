@@ -136,7 +136,7 @@ typedef struct par {
 
 /* Print item block */
 
-typedef ENUM itm_t
+typedef enum itm_t
     {
     item_value,
     item_skip,

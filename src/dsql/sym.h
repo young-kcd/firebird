@@ -28,7 +28,7 @@
 
 /* possible symbol types */
 
-typedef ENUM sym_type {
+typedef enum sym_type {
 	SYM_statement,
 	SYM_cursor,
 	SYM_keyword,

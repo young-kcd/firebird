@@ -173,13 +173,13 @@ public:
 	struct sav *req_proc_sav_point;	/* procedure savepoint list */
 	ULONG req_timestamp;		/* Start time of request */
 
-	ENUM req_ta {
+	enum req_ta {
 		req_trigger_insert = 1,
 		req_trigger_update = 2,
 		req_trigger_delete = 3
 	} req_trigger_action;		/* action that caused trigger to fire */
 
-	ENUM req_s {
+	enum req_s {
 		req_evaluate,
 		req_return,
 		req_receive,

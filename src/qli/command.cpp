@@ -303,7 +303,7 @@ void CMD_set( SYN node)
  *
  **************************************/
 	SYN *ptr, value;
-	ENUM set_t sw;
+	enum set_t sw;
 	USHORT i, foo, length;
 	CON string;
 	TEXT *name;
@@ -312,7 +312,7 @@ void CMD_set( SYN node)
 
 	for (i = 0; i < node->syn_count; i++) {
 		foo = (USHORT)(ULONG) * ptr++;
-		sw = (ENUM set_t) foo;
+		sw = (enum set_t) foo;
 		value = *ptr++;
 		switch (sw) {
 		case set_blr:

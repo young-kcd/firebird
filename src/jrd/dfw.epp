@@ -127,7 +127,7 @@
 #define FIELD(symbol,name,id,update,ods,new_id,new_ods)
 #define END_RELATION
 
-typedef ENUM rids
+typedef enum rids
 {
 #include "../jrd/relations.h"
 	rel_MAX
@@ -199,7 +199,7 @@ static void get_trigger_dependencies(DFW);
 static void	load_trigs(TDBB, JRD_REL, TRIG_VEC *);
 static FMT	make_format(TDBB, JRD_REL, USHORT *, TFB);
 static USHORT name_length(TEXT *);
-static DFW	post_work(JRD_TRA, SLONG, DFW *, ENUM dfw_t, DSC *, USHORT);
+static DFW	post_work(JRD_TRA, SLONG, DFW *, enum dfw_t, DSC *, USHORT);
 static void put_summary_blob(BLB, enum rsr_t, SLONG[2]);
 static void put_summary_record(BLB, enum rsr_t, UCHAR *, USHORT);
 static void	setup_array(TDBB, BLB, TEXT *, USHORT, TFB);
@@ -221,7 +221,7 @@ static const UCHAR nonnull_validation_blr[] =
 
 typedef struct task
 {
-	ENUM dfw_t task_type;
+	enum dfw_t task_type;
 	bool (*task_routine) (TDBB, SSHORT, DFW, JRD_TRA);
 } TASK;
 
@@ -659,7 +659,7 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
 }
 
 
-class dfw * DFW_post_work( JRD_TRA transaction, ENUM dfw_t type, DSC * desc, USHORT id)
+class dfw * DFW_post_work( JRD_TRA transaction, enum dfw_t type, DSC * desc, USHORT id)
 {
 /**************************************
  *
@@ -3192,7 +3192,7 @@ static bool find_depend_in_dfw(	TDBB	tdbb,
  **************************************/
 
 	BLK request;
-	ENUM dfw_t dfw_type;
+	enum dfw_t dfw_type;
 	DFW work;
 
 	SET_TDBB(tdbb);
@@ -4213,7 +4213,7 @@ static USHORT name_length(TEXT* name)
 static DFW post_work(JRD_TRA transaction,
 					 SLONG sav_number,
 					 DFW *list,
-					 ENUM dfw_t type,
+					 enum dfw_t type,
 					 DSC * desc,
 					 USHORT id)
 {

@@ -790,7 +790,7 @@ typedef struct que {
 
 /* symbol definitions */
 
-typedef ENUM sym_t {
+typedef enum sym_t {
 	SYM_rel,					/* relation block */
 	SYM_fld,					/* field block */
 	SYM_fun,					/* UDF function block */
