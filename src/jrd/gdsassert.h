@@ -15,6 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * CVC: Do not override local fb_assert like the ones in gpre and dsql.
  */
 #ifndef JRD_GDSASSERT_H
 #define JRD_GDSASSERT_H
@@ -39,13 +40,17 @@
 
 #ifdef SUPERSERVER
 
+#if !defined(fb_assert)
 #define fb_assert(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
 #define fb_assert_continue(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#endif
 
 #else	// !SUPERSERVER
 
+#if !defined(fb_assert)
 #define fb_assert(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
 #define fb_assert_continue(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#endif
 
 #endif	// SUPERSERVER
 
@@ -57,3 +62,4 @@
 #endif // DEV_BUILD 
 
 #endif // JRD_GDSASSERT_H 
+
