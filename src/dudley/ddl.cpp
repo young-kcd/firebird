@@ -73,8 +73,6 @@ static TEXT DDL_message[256];
 #define	IN_SW_GDEF_P 		9	/* source is PASCAL */
 #define IN_SW_GDEF_COB 		10	/* source is (shudder) cobol */
 #define IN_SW_GDEF_ANSI 	11	/* source is (worse and worse!) ansi format */
-#define IN_SW_GDEF_BAS 		12	/* source is basic */
-#define IN_SW_GDEF_PLI 		13	/* source is pli */
 #define IN_SW_GDEF_ADA 		14	/* source is ada */
 #define IN_SW_GDEF_CXX 		15	/* source is C++ */
 #define IN_SW_GDEF_USER		17	/* user name for PC security */
@@ -94,8 +92,6 @@ static struct in_sw_tab_t gdef_in_sw_table[] = {
 	{ IN_SW_GDEF_COB, 0, "COB", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for COBOL" },
 	{ IN_SW_GDEF_ANSI, 0, "ANSI", 0, 0, 0, FALSE, 0, 0,
 		"\t\tDYN for ANSI COBOL" },
-	{ IN_SW_GDEF_BAS, 0, "BASIC", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for BASIC" },
-	{ IN_SW_GDEF_PLI, 0, "PLI", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for PLI" },
 	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for ADA" },
 	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C++" },
 	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, FALSE, 0, 0,
@@ -243,15 +239,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		case IN_SW_GDEF_ANSI:
 			language = lan_ansi_cobol;
 			break;
-
-		case IN_SW_GDEF_BAS:
-			language = lan_basic;
-			break;
-
-		case IN_SW_GDEF_PLI:
-			language = lan_pli;
-			break;
-
 		case IN_SW_GDEF_F:
 			language = lan_fortran;
 			break;

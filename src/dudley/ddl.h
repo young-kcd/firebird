@@ -598,10 +598,8 @@ typedef enum lan_t {
 	lan_undef,
 	lan_pascal,
 	lan_fortran,
-	lan_pli,
 	lan_cobol,
 	lan_ansi_cobol,
-	lan_basic,
 	lan_c,
 	lan_ada,
 	lan_cxx

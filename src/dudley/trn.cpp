@@ -75,10 +75,8 @@ static void put_query_header(STR, TEXT, DUDLEY_NOD);
 static void put_symbol(STR, TEXT, SYM);
 static void put_text(STR, UCHAR, TXT);
 static void raw_ada(STR);
-static void raw_basic(STR);
 static void raw_cobol(STR);
 static void raw_ftn(STR);
-static void raw_pli(STR);
 
 static IB_FILE *output_file;
 
@@ -294,28 +292,6 @@ void TRN_translate(void)
 				   (int) ((length + 3) / 4));
 		raw_ftn(dyn);
 		break;
-
-	case lan_pli:
-		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file,
-				   "DECLARE gds_dyn_length FIXED BINARY (15) STATIC INITIAL (%d);\n",
-				   length);
-		ib_fprintf(output_file,
-				   "DECLARE gds_dyn (%d) FIXED BINARY (7) STATIC INITIAL (\n",
-				   length);
-		raw_pli(dyn);
-		break;
-
-	case lan_basic:
-		length = dyn->str_current - dyn->str_start;
-		ib_fprintf(output_file,
-				   "       DECLARE WORD CONSTANT gds_dyn_length = %d\n",
-				   length);
-		ib_fprintf(output_file,
-				   "       DECLARE STRING CONSTANT gds_dyn =&\n", length);
-		raw_basic(dyn);
-		break;
-
 	case lan_ada:
 		length = dyn->str_current - dyn->str_start;
 		ib_fprintf(output_file,
@@ -1739,51 +1715,6 @@ static void raw_ada( STR dyn)
 	ib_fprintf(output_file, ");\n");
 }
 
-
-static void raw_basic( STR dyn)
-{
-/**************************************
- *
- *	r a w _ b a s i c
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	SCHAR *blr;
-	TEXT buffer[80], *p;
-	UCHAR c;
-	int blr_length;
-
-	blr = dyn->str_start;
-	blr_length = dyn->str_current - dyn->str_start;
-	p = buffer;
-
-	while (--blr_length) {
-		c = *blr++;
-		if (c >= ' ' && c <= 'z')
-			sprintf(p, "'%c' + ", c);
-		else
-			sprintf(p, "'%d'C + ", c);
-		while (*p)
-			p++;
-		if (p - buffer > 60) {
-			ib_fprintf(output_file, "   %s &\n", buffer);
-			p = buffer;
-			*p = 0;
-		}
-	}
-
-	c = *blr++;
-	if (c >= ' ' && c <= 'z')
-		sprintf(p, "'%c'", c);
-	else
-		sprintf(p, "'%d'C", c);
-	ib_fprintf(output_file, "   %s\n", buffer);
-}
-
-
 static void raw_cobol( STR dyn)
 {
 /**************************************
@@ -1872,41 +1803,4 @@ static void raw_ftn( STR dyn)
 
 	if (p != buffer)
 		ib_fprintf(output_file, "%s%s\n", "     +   ", buffer);
-}
-
-
-static void raw_pli( STR dyn)
-{
-/**************************************
- *
- *	r a w _ p l i
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	SCHAR *blr, c;
-	TEXT buffer[80], *p;
-	int blr_length;
-
-	blr = dyn->str_start;
-	blr_length = dyn->str_current - dyn->str_start;
-	p = buffer;
-
-	while (--blr_length) {
-		c = *blr++;
-		sprintf(p, "%d,", c);
-		while (*p)
-			p++;
-		if (p - buffer > 60) {
-			ib_fprintf(output_file, "   %s\n", buffer);
-			p = buffer;
-			*p = 0;
-		}
-	}
-
-	c = *blr++;
-	sprintf(p, "%d);", c);
-	ib_fprintf(output_file, "   %s", buffer);
 }
