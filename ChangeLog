@@ -1,3 +1,124 @@
+2003-08-28 22:29  arnobrinkman
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	missing line/column-numbers
+
+2003-08-28 16:42  brodsom
+
+	* firebird2/src/burp/: spit.cpp, spit.h:
+	
+	-Remove NULL_B_FIL macro
+
+2003-08-28 15:14  brodsom
+
+	* firebird2/src/jrd/: blb.cpp, cch.cpp, cmp.cpp, common.h, dfw.epp,
+	dls.cpp, dpm.epp, dyn.epp, dyn_def.epp, dyn_del.epp, dyn_mod.epp,
+	exe.cpp, ext.cpp, filters.cpp, gds.cpp, gdsassert.h, grammar.cpp,
+	grant.epp, ini.epp, intl_builtin.cpp, isc.cpp, isc_file.cpp,
+	isc_ipc.cpp, isc_sync.cpp, jrd.cpp, jrn.cpp, lck.cpp, met.epp,
+	opt.cpp, par.cpp, pcmet.epp, rec.cpp, rse.cpp, scl.epp, sdl.cpp,
+	sort.cpp, svc.cpp, thd.cpp, tra.cpp, utl.cpp, val.cpp, vio.cpp,
+	why.cpp:
+	
+	-Remove NULL_PTR -Remove unneeded NULL casts -Remove (void)
+	function return cast
+
+2003-08-28 15:06  brodsom
+
+	* firebird2/src/: dsql/parse.cpp, dsql/parse.y, dsql/pass1.cpp,
+	dsql/array.epp, dsql/errd_proto.h, intl/cs_jis.cpp,
+	intl/cs_narrow.cpp, intl/cs_unicode_fss.cpp,
+	intl/cs_unicode_ucs2.cpp, intl/lc_ascii.cpp, intl/lc_big5.cpp,
+	intl/lc_gb2312.cpp, intl/lc_jis.cpp, intl/lc_ksc.cpp,
+	intl/lc_unicode_ucs2.cpp, intl/ldcommon.h:
+	
+	-Remove NULL_PTR -Remove unneeded NULL casts -Remove (void)
+	function return cast
+
+2003-08-28 15:01  brodsom
+
+	* firebird2/src/: gpre/gpre.h, gpre/sqe.cpp, dudley/exe.epp,
+	dudley/extract.epp:
+	
+	-Remove NULL_PTR -Remove unneeded NULL casts -Remove (void)
+	function return cast
+
+2003-08-28 14:57  brodsom
+
+	* firebird2/src/: msgs/change_msgs.epp, lock/lock.cpp,
+	isql/isql.epp, isql/show.epp, ipserver/ipserver.cpp,
+	ipserver/ipclient.cpp:
+	
+	-Remove NULL_PTR -Remove unneeded NULL casts -Remove (void)
+	function return cast
+
+2003-08-28 14:54  brodsom
+
+	* firebird2/src/: burp/mvol.cpp, burp/restore.epp, burp/backup.epp,
+	remote/inet.cpp, remote/interface.cpp, remote/protocol.cpp,
+	remote/server.cpp, remote/os/win32/dllshell.cpp,
+	remote/os/win32/srvr_w32.cpp:
+	
+	-Remove NULL_PTR -Remove unneeded NULL casts -Remove (void)
+	function return cast
+
+2003-08-28 12:58  aafemt
+
+	* firebird2/src/dsql/: dsql.h, errd_proto.h, parse.cpp, parse.y:
+	
+	move debug and error handling stuffs away from dsql.h
+
+2003-08-28 12:55  brodsom
+
+	* firebird2/src/qli/: help.epp, meta.epp, show.epp:
+	
+	-Remove NULL_PTR -Remove unneeded casts
+
+2003-08-28 12:39  brodsom
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	-Remove NULL_PTR -Remove unneeded casts
+
+2003-08-28 12:33  brodsom
+
+	* firebird2/src/gpre/gpre_meta.epp:
+	
+	-Remove NULL_PTR -Remove unneeded casts
+
+2003-08-28 11:58  brodsom
+
+	* firebird2/src/: jrd/jrd_blks.cpp, jrd/jrd_math.h, jrd/math.cpp,
+	jrd/shrfinit.cpp, jrd/shrinit.cpp, jrd/sun_ftn.cpp,
+	misc/envelope.epp:
+	
+	Remove unused sources
+
+2003-08-28 10:21  dimitr
+
+	* firebird2/src/isql/isql.epp:
+	
+	Applied Peter's patch for ISQL.
+
+2003-08-28 01:00  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp:
+	
+	Change code-style and prepare for more info on error-message
+
+2003-08-28 00:47  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp:
+	
+	Change code-style and prepare for more info on error-message
+
+2003-08-28 00:42  arnobrinkman
+
+	* firebird2/src/dsql/: parse.y, parse.cpp:
+	
+	missing line/column-numbers
+
 2003-08-27 17:27  skidder
 
 	* firebird2/src/jrd/y-valve.cpp:
