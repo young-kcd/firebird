@@ -2469,11 +2469,11 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	str* string = FB_NEW_RPT(*tdbb->getDefaultPool(), MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
-	csb->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
+	csb->csb_rpt[stream].csb_map = string->str_data;
 	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
 	string->str_data[0] = (UCHAR) stream;
 
-	return (UCHAR*) string->str_data;
+	return string->str_data;
 }
 
 

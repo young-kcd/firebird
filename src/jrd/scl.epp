@@ -1105,7 +1105,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 		UCHAR* acl = buffer;
 		while (true)
 		{
-			acl += BLB_get_segment(tdbb, blob, (UCHAR*)acl,
+			acl += BLB_get_segment(tdbb, blob, acl,
 								   (USHORT) (length -
 											 ((acl - buffer) *
 											  (sizeof(buffer[0])))));
