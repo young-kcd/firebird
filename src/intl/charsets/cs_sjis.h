@@ -1386,9 +1386,7 @@ static const USHORT sjis_to_unicode_map[256] = {
 };
 
 
-#ifndef CANT_MAP_CHARACTER
-#define CANT_MAP_CHARACTER 0
-#endif
+static const int CANT_MAP_CHARACTER = 0;
 
 static const USHORT sjis_from_unicode_mapping_array[] = {
 										/* U+XX00 */ CANT_MAP_CHARACTER,

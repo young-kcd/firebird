@@ -26,8 +26,6 @@
 #include "lc_ascii.h"
 #include "cv_ksc.h"
 
-#define		ASCII_SPACE	32
-
 static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
 static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
 static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
@@ -35,31 +33,39 @@ static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *
 static int GetGenHanNdx(unsigned char b1, unsigned char b2);
 static int GetSpeHanNdx(unsigned char b1, unsigned char b2);
 
-#define	FAMILY_MULTIBYTE(id_number, name, charset, country) \
-	cache->texttype_version =		IB_LANGDRV_VERSION; \
-	cache->texttype_type = 			(id_number); \
-	cache->texttype_character_set = 	(charset); \
-	cache->texttype_country =		(country); \
-	cache->texttype_bytes_per_char =	2; \
-	cache->texttype_fn_init = 		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length = 	(FPTR_SHORT) famasc_key_length; \
-	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
-	cache->texttype_fn_compare = 		(FPTR_short) famasc_compare; \
-	cache->texttype_fn_to_upper = 		(FPTR_SHORT) famasc_to_upper; \
-	cache->texttype_fn_to_lower = 		(FPTR_SHORT) famasc_to_lower; \
-	cache->texttype_fn_str_to_upper = 	(FPTR_short) famasc_str_to_upper; \
-	cache->texttype_collation_table = 	NULL; \
-	cache->texttype_toupper_table = 	NULL; \
-	cache->texttype_tolower_table = 	NULL; \
-	cache->texttype_compress_table =	NULL; \
-	cache->texttype_expand_table = 		NULL; \
-	cache->texttype_name = 			POSIX;
+static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
+									TTYPE_ID id_number,
+									pfn_INTL_init name,
+									CHARSET_ID charset,
+									SSHORT country,
+									const ASCII *POSIX)
+{
+//static inline void FAMILY_MULTIBYTE(id_number, name, charset, country)
+	cache->texttype_version			= IB_LANGDRV_VERSION;
+	cache->texttype_type			= id_number;
+	cache->texttype_character_set	= charset;
+	cache->texttype_country			= country;
+	cache->texttype_bytes_per_char	= 2;
+	cache->texttype_fn_init			= (FPTR_SHORT) name;
+	cache->texttype_fn_key_length	= (FPTR_SHORT) famasc_key_length;
+	cache->texttype_fn_string_to_key= (FPTR_SHORT) famasc_string_to_key;
+	cache->texttype_fn_compare		= (FPTR_short) famasc_compare;
+	cache->texttype_fn_to_upper		= (FPTR_SHORT) famasc_to_upper;
+	cache->texttype_fn_to_lower		= (FPTR_SHORT) famasc_to_lower;
+	cache->texttype_fn_str_to_upper = (FPTR_short) famasc_str_to_upper;
+	cache->texttype_collation_table = NULL;
+	cache->texttype_toupper_table	= NULL;
+	cache->texttype_tolower_table	= NULL;
+	cache->texttype_compress_table	= NULL;
+	cache->texttype_expand_table	= NULL;
+	cache->texttype_name			= POSIX;
+}
 
 TEXTTYPE_ENTRY(KSC_5601_init)
 {
 	static const ASCII POSIX[] = "C.KSC_5601";
 
-	FAMILY_MULTIBYTE(5601, KSC_5601_init, CS_KSC5601, CC_C);
+	FAMILY_MULTIBYTE(cache, 5601, KSC_5601_init, CS_KSC5601, CC_C, POSIX);
 
 	cache->texttype_fn_to_wc = (FPTR_SHORT) CVKSC_ksc_byte2short;
 	cache->texttype_fn_mbtowc = (FPTR_short) CVKSC_ksc_mbtowc;
@@ -67,14 +73,12 @@ TEXTTYPE_ENTRY(KSC_5601_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/collations/undef.h"
-
 
 TEXTTYPE_ENTRY(ksc_5601_dict_init)
 {
 	static const ASCII POSIX[] = "HANGUL.KSC_5601";
 
-	FAMILY_MULTIBYTE(5602, ksc_5601_dict_init, CS_KSC5601, CC_KOREA);
+	FAMILY_MULTIBYTE(cache, 5602, ksc_5601_dict_init, CS_KSC5601, CC_KOREA, POSIX);
 
 	cache->texttype_fn_to_wc = (FPTR_SHORT) CVKSC_ksc_byte2short;
 	cache->texttype_fn_mbtowc = (FPTR_short) CVKSC_ksc_mbtowc;
@@ -130,6 +134,8 @@ unsigned char gen_han[18][2] = {
 	{ 0xc7, 0xce }
 };
 
+
+#define		ASCII_SPACE	32
 
 
 static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar)
@@ -283,8 +289,6 @@ static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *
 }
 
 
-#include "../intl/collations/undef.h"
-#undef		FAMILY_MULTIBYTE
 #undef		ASCII_SPACE
 #undef		LANGKSC_MAX_KEY
 #undef		ISASCII

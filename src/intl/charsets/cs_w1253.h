@@ -289,6 +289,8 @@
  * All Rights Reserved.
  * Contributor(s): Blas Rodriguez Somoza.
    -------------------------------------------- */
+static const int CANT_MAP_CHARACTER = 0;
+
 static const USHORT to_unicode_map[256] = {
 /* 00 */  0x0000 /*                                          NULL */,
 /* 01 */  0x0001 /*                              START OF HEADING */,
@@ -548,10 +550,6 @@ static const USHORT to_unicode_map[256] = {
 /* FF */     CANT_MAP_CHARACTER   ,
 };
 
-
-#ifndef CANT_MAP_CHARACTER
-#define CANT_MAP_CHARACTER 0
-#endif
 
 static const UCHAR from_unicode_mapping_array[] = {
 /* U+XX00 */	CANT_MAP_CHARACTER,	/* 0 */

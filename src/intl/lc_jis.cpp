@@ -32,30 +32,37 @@ static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
 static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
 static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
 
-#define FAMILY_MULTIBYTE(id_number, name, charset, country) \
-	cache->texttype_version =		IB_LANGDRV_VERSION; \
-	cache->texttype_type =			(id_number); \
-	cache->texttype_character_set =		(charset); \
-	cache->texttype_country =		(country); \
-	cache->texttype_bytes_per_char =	2; \
-	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length =		(FPTR_SHORT) famasc_key_length; \
-	cache->texttype_fn_string_to_key =	(FPTR_SHORT) famasc_string_to_key; \
-	cache->texttype_fn_compare =		(FPTR_short) famasc_compare; \
-	cache->texttype_collation_table =	NULL; \
-	cache->texttype_toupper_table =		NULL; \
-	cache->texttype_tolower_table =		NULL; \
-	cache->texttype_compress_table =	NULL; \
-	cache->texttype_expand_table =		NULL; \
-	cache->texttype_name =			POSIX;
-
+static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
+									TTYPE_ID id_number,
+									pfn_INTL_init name,
+									CHARSET_ID charset,
+									SSHORT country,
+									const ASCII *POSIX)
+//#define FAMILY_MULTIBYTE(id_number, name, charset, country)
+{
+	cache->texttype_version			= IB_LANGDRV_VERSION;
+	cache->texttype_type			= id_number;
+	cache->texttype_character_set	= charset;
+	cache->texttype_country			= country;
+	cache->texttype_bytes_per_char	= 2;
+	cache->texttype_fn_init			= (FPTR_SHORT) name;
+	cache->texttype_fn_key_length	= (FPTR_SHORT) famasc_key_length;
+	cache->texttype_fn_string_to_key= (FPTR_SHORT) famasc_string_to_key;
+	cache->texttype_fn_compare		= (FPTR_short) famasc_compare;
+	cache->texttype_collation_table = NULL;
+	cache->texttype_toupper_table	= NULL;
+	cache->texttype_tolower_table	= NULL;
+	cache->texttype_compress_table	= NULL;
+	cache->texttype_expand_table	= NULL;
+	cache->texttype_name			= POSIX;
+}
 
 
 TEXTTYPE_ENTRY(JIS220_init)
 {
 	static const ASCII POSIX[] = "C.SJIS";
 
-	FAMILY_MULTIBYTE(220, JIS220_init, CS_SJIS, CC_C);
+	FAMILY_MULTIBYTE(cache, 220, JIS220_init, CS_SJIS, CC_C, POSIX);
 	cache->texttype_fn_to_wc = (FPTR_SHORT) CVJIS_sjis_byte2short;
 	cache->texttype_fn_mbtowc = (FPTR_short) CVJIS_sjis_mbtowc;
 
@@ -66,14 +73,12 @@ TEXTTYPE_ENTRY(JIS220_init)
 	TEXTTYPE_RETURN;
 }
 
-#include "../intl/collations/undef.h"
-
 
 TEXTTYPE_ENTRY(JIS230_init)
 {
 	static const ASCII POSIX[] = "C.EUC_J";
 
-	FAMILY_MULTIBYTE(230, JIS230_init, CS_EUCJ, CC_C);
+	FAMILY_MULTIBYTE(cache, 230, JIS230_init, CS_EUCJ, CC_C, POSIX);
 	cache->texttype_fn_to_wc = (FPTR_SHORT) CVJIS_euc_byte2short;
 	cache->texttype_fn_mbtowc = (FPTR_short) CVJIS_euc_mbtowc;
 
@@ -83,14 +88,6 @@ TEXTTYPE_ENTRY(JIS230_init)
 
 	TEXTTYPE_RETURN;
 }
-
-#include "../intl/collations/undef.h"
-
-
-
-#undef FAMILY_MULTIBYTE
-
-
 
 
 #define ASCII_LOWER_A	'a'

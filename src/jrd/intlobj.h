@@ -69,6 +69,8 @@ typedef struct intl_blk {
     USHORT blk_length;
 } intl_blk;
 
+typedef unsigned short(*pfn_INTL_init)(struct texttype *,short,short);
+
 typedef struct texttype {
 	struct intl_blk texttype_blk;
 	USHORT texttype_version;	/* version ID of object */

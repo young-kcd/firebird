@@ -28,45 +28,56 @@ static	USHORT	fam2_to_lower (TEXTTYPE obj, BYTE ch);
 #include "lc_narrow.h"
 #include "lc_dos.h"
 
-#define FAMILY2(id_number, name, charset, country) \
-	cache->texttype_version =		IB_LANGDRV_VERSION; \
-	cache->texttype_type =			(id_number); \
-	cache->texttype_character_set =		(charset); \
-	cache->texttype_country =		(country); \
-	cache->texttype_bytes_per_char =	1; \
-	cache->texttype_fn_init =		(FPTR_SHORT) (name); \
-	cache->texttype_fn_key_length =		(FPTR_SHORT) LC_NARROW_key_length; \
-	cache->texttype_fn_string_to_key =	(FPTR_SHORT) LC_NARROW_string_to_key; \
-	cache->texttype_fn_compare =		(FPTR_short) LC_NARROW_compare; \
-	cache->texttype_fn_to_upper =		(FPTR_SHORT) fam2_to_upper; \
-	cache->texttype_fn_to_lower =		(FPTR_SHORT) fam2_to_lower; \
-	cache->texttype_fn_str_to_upper =	(FPTR_short) fam2_str_to_upper; \
-	cache->texttype_fn_mbtowc =			(FPTR_short) LC_DOS_nc_mbtowc; \
-	cache->texttype_collation_table =	(BYTE *) NoCaseOrderTbl; \
-	cache->texttype_toupper_table =		(BYTE *) ToUpperConversionTbl; \
-	cache->texttype_tolower_table =		(BYTE *) ToLowerConversionTbl; \
-	cache->texttype_compress_table =	(BYTE *) CompressTbl; \
-	cache->texttype_expand_table =		(BYTE *) ExpansionTbl; \
-	cache->texttype_name =			POSIX; \
-    cache->texttype_flags |= ((LDRV_TIEBREAK) & REVERSE) ? \
-            TEXTTYPE_reverse_secondary : 0; 
+static inline void FAMILY2(TEXTTYPE cache,
+							TTYPE_ID id_number,
+							pfn_INTL_init name,
+							CHARSET_ID charset,
+							SSHORT country,
+							USHORT flags,
+							const SortOrderTblEntry * NoCaseOrderTbl,
+							const BYTE * ToUpperConversionTbl,
+							const BYTE * ToLowerConversionTbl,
+							const CompressPair * CompressTbl,
+							const ExpandChar * ExpansionTbl,
+							const ASCII *POSIX)
+//#define FAMILY2(id_number, name, charset, country)
+{
+	cache->texttype_version			= IB_LANGDRV_VERSION;
+	cache->texttype_type			= id_number;
+	cache->texttype_character_set	= charset;
+	cache->texttype_country			= country;
+	cache->texttype_bytes_per_char	= 1;
+	cache->texttype_fn_init			= (FPTR_SHORT) name;
+	cache->texttype_fn_key_length	= (FPTR_SHORT) LC_NARROW_key_length;
+	cache->texttype_fn_string_to_key= (FPTR_SHORT) LC_NARROW_string_to_key;
+	cache->texttype_fn_compare		= (FPTR_short) LC_NARROW_compare;
+	cache->texttype_fn_to_upper		= (FPTR_SHORT) fam2_to_upper;
+	cache->texttype_fn_to_lower		= (FPTR_SHORT) fam2_to_lower;
+	cache->texttype_fn_str_to_upper	= (FPTR_short) fam2_str_to_upper;
+	cache->texttype_fn_mbtowc		= (FPTR_short) LC_DOS_nc_mbtowc;
+	cache->texttype_collation_table = (BYTE *) NoCaseOrderTbl;
+	cache->texttype_toupper_table	= (BYTE *) ToUpperConversionTbl;
+	cache->texttype_tolower_table	= (BYTE *) ToLowerConversionTbl;
+	cache->texttype_compress_table	= (BYTE *) CompressTbl;
+	cache->texttype_expand_table	= (BYTE *) ExpansionTbl;
+	cache->texttype_name			= POSIX;
+	cache->texttype_flags			|= ((flags) & REVERSE) ?
+										TEXTTYPE_reverse_secondary : 0;
+}
 
-
+
 TEXTTYPE_ENTRY (ISO88592_c1_init)
 {
 static const ASCII	POSIX[] = "cs_CZ.ISO8859_2";
 
 #include "../intl/collations/xx88592czech.h"
 
-FAMILY2 (parm1, ISO88592_c1_init, CS_ISO8859_2, CC_CZECH);
+FAMILY2(cache, parm1, ISO88592_c1_init, CS_ISO8859_2, CC_CZECH, LDRV_TIEBREAK,
+		NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+		CompressTbl, ExpansionTbl, POSIX);
 
 TEXTTYPE_RETURN;
 }
-#include "../intl/collations/undef.h"
-
-#undef FAMILY2
-#undef NULL_SECONDARY
-#undef NULL_TERTIARY
 
 /*
  * Generic base for InterBase 4.0 Language Driver
