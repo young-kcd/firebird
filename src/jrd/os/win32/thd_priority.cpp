@@ -41,6 +41,10 @@
 
 // #define DEBUG_THREAD_PSCHED
 
+#ifdef DEBUG_THREAD_PSCHED
+#include "../jrd/gds_proto.h"
+#endif
+
 MUTX_T ThreadPriorityScheduler::mutex;
 MemoryPool * ThreadPriorityScheduler::pool = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
