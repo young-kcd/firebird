@@ -4923,6 +4923,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts.getCount());
 	RecordSource* rsb = NULL;
 	bool index_used = false;
+	bool full_unique_match = false;
 
 	if (relation->rel_file)
 	{
@@ -5149,6 +5150,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				if ((idx->idx_flags & idx_unique) && !(csb_tail->csb_plan) && 
 					!(retrieval->irb_generic & irb_partial)) 
 				{
+					full_unique_match = true;
 					break; // Go out of idx_walk loop
 				}
 			}
@@ -5192,7 +5194,9 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
 			&& computable(csb, node, -1, false, false))
 		{
-			if (node->nod_type == nod_or) {
+			// Don't waste time trying to match OR to available indices
+			// if we already have an excellent match
+			if (node->nod_type == nod_or && !full_unique_match) {
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
 			}
@@ -6295,14 +6299,13 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 
 	// AB: If the boolean is a part of an earlier created index 
 	// retrieval check with the compound_selectivity if it's 
-	// really interresting to use.
+	// really interesting to use.
 	inversion = NULL;
 	bool accept_starts = true;
 	bool accept_missing = true;
 	bool used_in_compound = false;
 	float compound_selectivity = 1; // Real maximum selectivity possible is 1.
 
-	// TMN: Shouldn't this be allocated from the tdbb->getDefaultPool() pool?
 	Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> 
 		idx_walk_vector(*tdbb->getDefaultPool());
 	idx_walk_vector.grow(csb_tail->csb_indices);
@@ -6339,8 +6342,8 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 				}
 			}
 
-			/* Because indices are already sort based on their selectivity
-			   it's not needed to more then 1 index for a node */
+			// Because indices are already sort based on their selectivity
+			// it's not needed to more then 1 index for a node
 			if ((boolean->nod_type == nod_starts) && accept_starts) {
 				jrd_nod* node = make_starts(tdbb, opt, relation, boolean, stream, idx);
 				if (node) {
@@ -6361,7 +6364,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 		}
 	}
 
-	/* Sort indices based on the priority level into idx_walk */
+	// Sort indices based on the priority level into idx_walk
 
 	const SSHORT idx_walk_count =
 		sort_indices_by_priority(csb_tail, idx_walk, idx_priority_level);
