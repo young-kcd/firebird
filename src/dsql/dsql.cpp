@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.20 2002-08-27 07:48:33 dimitr Exp $
+$Id: dsql.cpp,v 1.21 2002-09-01 15:44:45 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1928,6 +1928,9 @@ void DSQL_pretty(NOD node, int column)
         break;
 	case nod_def_view:
 		verb = "define view";
+		break;
+	case nod_redef_view:
+		verb = "redefine view";
 		break;
 	case nod_mod_view:
 		verb = "modify view";

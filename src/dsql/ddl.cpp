@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.12 2002-08-27 07:48:33 dimitr Exp $
+ * $Id: ddl.cpp,v 1.13 2002-09-01 15:44:45 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -61,6 +61,8 @@
  * 2001.12.06 Claudio Valderrama: DDL_resolve_intl_type should calculate field length
  * 2002.08.04 Claudio Valderrama: allow declaring and defining variables at the same time
  * 2002.08.04 Dmitry Yemanov: ALTER VIEW
+ * 2002.08.31 Dmitry Yemanov: allowed user-defined index names for PK/FK/UK constraints
+ * 2002.09.01 Dmitry Yemanov: RECREATE VIEW
  */
 
 #include "firebird.h"
@@ -129,11 +131,11 @@ static void define_view(REQ, NOD_TYPE);
 static void define_view_trigger(REQ, NOD, NOD, NOD);
 static void delete_procedure(REQ, NOD, BOOLEAN);
 static void delete_relation_view(REQ, NOD, BOOLEAN);
-static void foreign_key(REQ, NOD);
+static void foreign_key(REQ, NOD, SCHAR *);
 static void generate_dyn(REQ, NOD);
 static void grant_revoke(REQ);
-static void make_index(REQ, NOD, NOD, NOD, SCHAR *);
-static void make_index_trg_ref_int(REQ, NOD, NOD, NOD, SCHAR *);
+static void make_index(REQ, NOD, NOD, NOD, SCHAR *, SCHAR *);
+static void make_index_trg_ref_int(REQ, NOD, NOD, NOD, SCHAR *, SCHAR *);
 static void modify_database(REQ);
 static void modify_domain(REQ);
 static void modify_field(REQ, NOD, SSHORT, STR);
@@ -281,7 +283,9 @@ void DDL_execute(REQ request)
         (request->req_ddl_node->nod_type == nod_del_relation) ||
         /* CVC: Handle nod_del_view here or we will keep obsolete metadata. */
         (request->req_ddl_node->nod_type == nod_del_view) ||
-        (request->req_ddl_node->nod_type == nod_redef_relation)) {
+        (request->req_ddl_node->nod_type == nod_redef_relation) ||
+        (request->req_ddl_node->nod_type == nod_mod_view) ||
+        (request->req_ddl_node->nod_type == nod_redef_view)) {
         if (request->req_ddl_node->nod_type == nod_mod_relation ||
             request->req_ddl_node->nod_type == nod_redef_relation) {
             if (request->req_ddl_node->nod_type == nod_mod_relation) {
@@ -1995,7 +1999,7 @@ static void define_field(
 					}
 					request->append_cstring(gds_dyn_rel_constraint,
 								reinterpret_cast<char*>((string) ? string->str_data : NULL));
-					foreign_key(request, node1);
+					foreign_key(request, node1, 0);
 				}
 				else if (node1->nod_type == nod_def_constraint) {
 					if (cnstrt_flag == FALSE) {
@@ -2484,7 +2488,7 @@ static void define_rel_constraint( REQ request, NOD element)
  **************************************
  *
  * Function
- *	Define a constraint , either as part of a create
+ *	Define a constraint, either as part of a create
  *	table or an alter table statement.
  *
  **************************************/
@@ -2492,15 +2496,14 @@ static void define_rel_constraint( REQ request, NOD element)
 	STR string;
 
 	string = (STR) element->nod_arg[e_rct_name];
-	request->append_cstring(gds_dyn_rel_constraint,
-				reinterpret_cast <
-				char *>((string) ? string->str_data : NULL));
+	SCHAR *constraint_name = reinterpret_cast<SCHAR*>(string ? string->str_data : 0);
+	request->append_cstring(gds_dyn_rel_constraint, constraint_name);
 	node = element->nod_arg[e_rct_type];
 
 	if (node->nod_type == nod_unique || node->nod_type == nod_primary)
-		make_index(request, node, node->nod_arg[0], 0, 0);
+		make_index(request, node, node->nod_arg[0], 0, 0, constraint_name);
 	else if (node->nod_type == nod_foreign)
-		foreign_key(request, node);
+		foreign_key(request, node, constraint_name);
 	else if (node->nod_type == nod_def_constraint)
 		check_constraint(request, node, FALSE /* No delete trigger */ );
 }
@@ -3338,7 +3341,7 @@ static void define_view( REQ request, NOD_TYPE op)
 		}
 		return;
 	}
-	else if (op == nod_def_view)
+	else if (op == nod_def_view || op == nod_redef_view)
 	{
 		request->append_cstring(gds_dyn_def_view,
 					reinterpret_cast<char*>(view_name->str_data));
@@ -3885,8 +3888,9 @@ static void delete_relation_view (
                        gds_arg_end);
         }
     }
-    else { /* node->nod_type == nod_del_view */
-        if (!relation || !(relation->rel_flags & REL_view)) {
+    else { /* node->nod_type == nod_del_view, nod_redef_view */
+        if (!relation && !silent_deletion ||
+			relation && !(relation->rel_flags & REL_view)) {
             ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -607,
                        /* gds_arg_gds, gds__dsql_command_err,
                           gds_arg_gds, gds__dsql_view_not_found, */
@@ -3921,7 +3925,7 @@ void req::end_blr()
 }
 
 
-static void foreign_key( REQ request, NOD element)
+static void foreign_key( REQ request, NOD element, TEXT* index_name)
 {
 /* *************************************
  *
@@ -3978,7 +3982,8 @@ static void foreign_key( REQ request, NOD element)
 
 	make_index_trg_ref_int(request, element, columns1,
 						   element->nod_arg[e_for_refcolumns],
-						   reinterpret_cast<char*>(relation2->str_data));
+						   reinterpret_cast<char*>(relation2->str_data),
+						   index_name);
 }
 
 
@@ -4017,16 +4022,23 @@ static void generate_dyn( REQ request, NOD node)
 		break;
 
     case nod_redef_relation:
-        STUFF (gds_dyn_begin);
-        delete_relation_view (request, node, TRUE); /* silent. */
-        define_relation (request);
-        STUFF (gds_dyn_end);
-        break;
+		STUFF (gds_dyn_begin);
+		delete_relation_view (request, node, TRUE); /* silent. */
+		define_relation (request);
+		STUFF (gds_dyn_end);
+		break;
 
 	case nod_def_view:
 	case nod_mod_view:
 	case nod_replace_view:
 		define_view(request, node->nod_type);
+		break;
+
+    case nod_redef_view:
+		STUFF(gds_dyn_begin);
+		delete_relation_view(request, node, TRUE); /* silent. */
+		define_view(request, node->nod_type);
+		STUFF(gds_dyn_end);
 		break;
 
 	case nod_def_exception:
@@ -4257,7 +4269,8 @@ static void make_index(	REQ		request,
 						NOD		element,
 						NOD		columns,
 						NOD		referenced_columns,
-						TEXT*	relation_name)
+						TEXT*	relation_name,
+						TEXT*	index_name)
 {
 /* *************************************
  *
@@ -4278,12 +4291,17 @@ static void make_index(	REQ		request,
 
 	assert(element->nod_type != nod_foreign);
 
-	if (element->nod_type == nod_primary) {
-		request->append_uchar(gds_dyn_def_primary_key);
-	} else if (element->nod_type == nod_unique) {
-		request->append_uchar(gds_dyn_def_unique);
+	STR string = (STR) element->nod_arg[e_pri_idx_name];
+	if (string)
+	{
+		index_name = reinterpret_cast<char*>(string->str_data);
 	}
-	request->append_ushort(0);
+
+	if (element->nod_type == nod_primary) {
+		request->append_cstring(gds_dyn_def_primary_key, index_name);
+	} else if (element->nod_type == nod_unique) {
+		request->append_cstring(gds_dyn_def_unique, index_name);
+	}
 
 	request->append_number(gds_dyn_idx_unique, 1);
 
@@ -4303,7 +4321,8 @@ static void make_index_trg_ref_int(	REQ		request,
 									NOD		element,
 									NOD		columns,
 									NOD		referenced_columns,
-									TEXT*	relation_name)
+									TEXT*	relation_name,
+									TEXT*	index_name)
 {
 /******************************************************
  *
@@ -4332,7 +4351,7 @@ static void make_index_trg_ref_int(	REQ		request,
 
 /* for_rel_name_str is the name of the relation on which the ddl operation
    is being done, in this case the foreign key table  */
-		ddl_node = request->req_ddl_node;
+	ddl_node = request->req_ddl_node;
 	for_rel_node = ddl_node->nod_arg[e_drl_name];
 	for_rel_name_str = (STR) for_rel_node->nod_arg[e_rln_name];
 
@@ -4340,8 +4359,13 @@ static void make_index_trg_ref_int(	REQ		request,
 /* stuff a zero-length name, indicating that an index
    name should be generated */
 
-	request->append_uchar(gds_dyn_def_foreign_key);
-	request->append_ushort(0);
+	STR string = (STR) element->nod_arg[e_for_idx_name];
+	if (string)
+	{
+		index_name = reinterpret_cast<char*>(string->str_data);
+	}
+
+	request->append_cstring(gds_dyn_def_foreign_key, index_name);
 
 
 	if (element->nod_arg[e_for_action])

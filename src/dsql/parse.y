@@ -756,9 +756,9 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		| TABLE rtable_clause
 			{ $$ = $2; }
-/*		| TRIGGER def_trigger_clause
-			{ $$ = $2; }
 		| VIEW rview_clause
+			{ $$ = $2; }
+/*		| TRIGGER def_trigger_clause
 			{ $$ = $2; }
 		| DOMAIN rdomain_clause
 			{ $$ = $2; }             
@@ -1259,19 +1259,25 @@ table_constraint : unique_constraint
 		 | check_constraint
 		 ;
 
-unique_constraint : UNIQUE column_parens
-                    { $$ = make_node (nod_unique, 1, $2); }
+unique_constraint : UNIQUE column_parens constraint_index_name_opt
+                    { $$ = make_node (nod_unique, 2, $2, $3); }
                   ;
 
-primary_constraint : PRIMARY KEY column_parens
-			{ $$ = make_node (nod_primary, e_pri_count, $3); }
+primary_constraint : PRIMARY KEY column_parens constraint_index_name_opt
+			{ $$ = make_node (nod_primary, e_pri_count, $3, $4); }
 		;
 
 referential_constraint 	: FOREIGN KEY column_parens REFERENCES 
 			  simple_table_name column_parens_opt 
-			  referential_trigger_action
+			  referential_trigger_action constraint_index_name_opt
 			{ $$ = make_node (nod_foreign, e_for_count, $3, $5, 
-			         $6, $7); }
+			         $6, $7, $8); }
+		;
+
+constraint_index_name_opt	: INDEX symbol_index_name
+			{ $$ = $2; }
+		|
+			{ $$ = NULL; }
 		;
 
 check_constraint : begin_trigger CHECK '(' search_condition ')' end_trigger
@@ -1587,13 +1593,13 @@ view_clause	: symbol_view_name column_parens_opt AS begin_string union_view
 					  $1, $2, $5, $6, $7); }   
 		;        
 
-/*
+
 rview_clause	: symbol_view_name column_parens_opt AS begin_string union_view 
                                                             check_opt end_string
 			{ $$ = make_node (nod_redef_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
 		;        
-*/
+
 
 replace_view_clause	: symbol_view_name column_parens_opt AS begin_string union_view 
                                                             check_opt end_string

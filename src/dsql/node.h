@@ -319,9 +319,10 @@ typedef ENUM nod_t
 	nod_simple_case, /* simple CASE function */
 	nod_coalesce, /* COALESCE function */
 	nod_mod_view, /* ALTER VIEW */
-	nod_replace_procedure, /* REPLACE PROCEDURE */
-	nod_replace_trigger, /* REPLACE TRIGGER */
-	nod_replace_view /* REPLACE VIEW */
+	nod_replace_procedure, /* CREATE OR ALTER PROCEDURE */
+	nod_replace_trigger, /* CREATE OR ALTER TRIGGER */
+	nod_replace_view, /* CREATE OR ALTER VIEW */
+	nod_redef_view /* allows silent creation/overwriting of a view */
 } NOD_TYPE;
 
 
@@ -650,13 +651,15 @@ typedef nod *NOD;
 #define e_rct_type	1
 
 #define e_pri_columns	0		/* nod_primary */
-#define e_pri_count	1
+#define e_pri_idx_name	1
+#define e_pri_count	2
 
 #define e_for_columns	0		/* nod_foreign */
 #define e_for_reftable	1
 #define e_for_refcolumns 2
 #define e_for_action    3
-#define e_for_count	4
+#define e_for_idx_name	4
+#define e_for_count	5
 
 #define e_ref_upd 0				/* nod_ref_upd_del_action */
 #define e_ref_del 1
