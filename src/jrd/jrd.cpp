@@ -664,6 +664,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 /* If database name is not alias, check it against conf file */
 	if (!is_alias && !verify_database_name(expanded_filename, user_status)) {
+		JRD_restore_context();
 		return user_status[1];
 	}
 
@@ -1981,6 +1982,7 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
 	if (!is_alias && !verify_database_name(expanded_name, user_status)) {
+		JRD_restore_context();
 		return user_status[1];
 	}
 	dbb->dbb_file =
@@ -6601,12 +6603,14 @@ static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 {
 	// Check for security.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
+	static TEXT ExpandedSecurityNameBuffer[MAXPATHLEN];
 	if (! SecurityNameBuffer[0]) {
-//		char TempBuffer[MAXPATHLEN];
 		SecurityDatabase::getPath(SecurityNameBuffer);
-//		ISC_expand_filename(TempBuffer, 0, SecurityNameBuffer);
+		ISC_expand_filename(SecurityNameBuffer, 0, ExpandedSecurityNameBuffer);
 	}
 	if (strcmp(SecurityNameBuffer, name) == 0)
+		return true;
+	if (strcmp(ExpandedSecurityNameBuffer, name) == 0)
 		return true;
 	
 	// Check for .conf
