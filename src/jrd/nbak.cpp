@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.24 2004-03-12 20:19:38 skidder Exp $
+ *  $Id: nbak.cpp,v 1.25 2004-03-13 01:57:52 skidder Exp $
  *
  */
 
@@ -925,20 +925,15 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 	diff_name[0] = 0;
 	
 	// Allocate various database page buffers needed for operation
-	temp_buffers_space = reinterpret_cast<BYTE*>(
-		FB_ALIGN( 
-			reinterpret_cast<U_IPTR>(
-				FB_NEW(*database->dbb_permanent) 
-				  char [database->dbb_page_size * 3 + MIN_PAGE_SIZE]
-			), 
-			MIN_PAGE_SIZE
-		)
-	);
-	memset(temp_buffers_space, 0, database->dbb_page_size * 3);
+	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
+	// Align it at sector boundary for faster IO
+	BYTE *temp_buffers = reinterpret_cast<BYTE*>(
+		FB_ALIGN(reinterpret_cast<U_IPTR>(temp_buffers_space),	MIN_PAGE_SIZE));
+	memset(temp_buffers, 0, database->dbb_page_size * 3);
 		
-	empty_buffer = reinterpret_cast<ULONG*>(temp_buffers_space);
-	spare_buffer = reinterpret_cast<ULONG*>(temp_buffers_space + database->dbb_page_size);
-	alloc_buffer = reinterpret_cast<ULONG*>(temp_buffers_space + database->dbb_page_size + 2);
+	empty_buffer = reinterpret_cast<ULONG*>(temp_buffers);
+	spare_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size);
+	alloc_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size + 2);
 
 	
 #ifdef SUPERSERVER
