@@ -29,13 +29,6 @@
 #define AFX_STDAFX_H__F60BDFDF_7A2D_11D5_8EEB_4854E8274D24__INCLUDED_
 
 
-#if defined (_WIN32)
-// Insert your headers here
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-//#include <windows.h>
-//#include <windef.h>
-#endif
-
 // TODO: reference additional headers your program requires here
 
 
