@@ -125,7 +125,7 @@
 				RelativePath="..\..\..\src\jrd\blb.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\generated\jrd\blob_filter.cpp">
+				RelativePath="..\..\..\src\jrd\blob_filter.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.cpp">

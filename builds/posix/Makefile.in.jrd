@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.jrd,v 1.7 2003-03-05 15:57:21 brodsom Exp $
+#  $Id: Makefile.in.jrd,v 1.8 2003-03-06 00:39:27 brodsom Exp $
 #
 ROOT=../..
 
@@ -705,9 +705,6 @@ build_alt_use_main: alt_use_sec.h.pre
 # of the original 6.0 build).
 
 
-
-#blob_filter.cpp: blob_filter.epp
-#	$(GPRE_BOOT) -lang_internal -n -manual -raw -O $< $@
 
 #$(SRC)/codes.cpp:	$(SRC)/codes.epp
 codes.cpp:	$(SRC)/codes.epp  msg.gdb

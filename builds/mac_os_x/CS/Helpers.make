@@ -45,7 +45,7 @@ FULL_FW_FLAG=	$(GEN_ROOT)/firebird/.full_framework_flag
 FB_FW=		$(PROJ_ROOT)/build/Firebird.framework
 
 
-JRD_EPP_FILES=	blob_filter.epp dyn.epp dyn_util.epp ini.epp stats.epp \
+JRD_EPP_FILES=	blob_filter.cpp dyn.epp dyn_util.epp ini.epp stats.epp \
                 dyn_def.epp met.epp dfw.epp dyn_del.epp \
 				fun.epp pcmet.epp dpm.epp dyn_mod.epp grant.epp scl.epp
 JRD_GEN_FILES= $(JRD_EPP_FILES:%.epp=$(GEN_ROOT)/jrd/%.cpp)

@@ -3901,11 +3901,6 @@
 			path = blk.h;
 			refType = 4;
 		};
-		F616C57D0200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = blob_filter.epp;
-			refType = 4;
-		};
 		F616C57E0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = blob_filter.h;

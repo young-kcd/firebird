@@ -74,7 +74,6 @@ goto :EOF
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
-@for %%i in (blob_filter) do @call :PREPROCESS jrd %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, envelope, fun, grant, ini, met, pcmet, scl, stats) do @call :PREPROCESS jrd %%i GDS
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
 @for %%i in (dba, security) do @call :PREPROCESS utilities %%i

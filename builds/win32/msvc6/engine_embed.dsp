@@ -102,7 +102,7 @@ SOURCE=..\..\..\src\jrd\blb.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\generated\jrd\blob_filter.cpp
+SOURCE=..\..\..\src\jrd\blob_filter.cpp
 # End Source File
 # Begin Source File
 
