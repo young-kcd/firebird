@@ -3640,6 +3640,15 @@ static jrd_nod* pass1(thread_db* tdbb,
 		{
 			ERR_post(isc_read_only_field, 0);
 		}
+		else if (sub->nod_type == nod_field)
+		{
+			USHORT stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
+			tail = &csb->csb_rpt[stream];
+			if (tail->csb_flags & csb_trigger && stream == 0)	// OLD context
+			{
+				ERR_post(isc_read_only_field, 0);
+			}
+		}
 	}
 
 	return node;
