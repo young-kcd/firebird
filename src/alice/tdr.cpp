@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.5 2002-02-16 04:36:03 seanleyne Exp $
+//	$Id: tdr.cpp,v 1.6 2002-02-19 01:17:23 seanleyne Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -790,11 +790,25 @@ static void reattach_database(TDR trans)
 
 	ISC_get_host(reinterpret_cast < char *>(buffer), sizeof(buffer));
 
+ //  if this is being run from the same host,
+ //  try to reconnect using the same pathname
+
+    if (!strcmp(reinterpret_cast < const char *>(buffer),
+        reinterpret_cast < const char *>(trans->tdr_host_site->str_data)))
+    {
+        if (TDR_attach_database(status_vector, trans,
+            reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
+        {
+                return;
+        }
+    }
+
+
 //  try going through the previous host with all available
 //  protocols, using chaining to try the same method of
 //  attachment originally used from that host
 
-    if (trans->tdr_host_site) {
+    else if (trans->tdr_host_site) {
 		for (p = buffer, q = trans->tdr_host_site->str_data; *q;)
 			*p++ = *q++;
 		start = p;
