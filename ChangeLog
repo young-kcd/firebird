@@ -1,3 +1,169 @@
+2003-02-15 17:41  brodsom
+
+	* firebird2/src/jrd/: dyn.epp, dyn_def.epp, dyn_del.epp,
+	dyn_mod.epp, dyn_util.epp, fun.epp, grant.epp, nlm_thd.h:
+	
+	Remove nlm_thd.h (netware nlm)
+
+2003-02-15 17:25  brodsom
+
+	* firebird2/src/jrd/: cdefs.h, ansi.h, ib_stdio.h:
+	
+	Remove ansi.h and cdefs.h and add lines needed (10) to ib_stdio.h
+
+2003-02-15 17:21  brodsom
+
+	* firebird2/builds/: win32/msvc7/engine.vcproj,
+	win32/msvc7/engine_classic.vcproj, win32/msvc6/engine_classic.dsp,
+	win32/msvc6/engine.dsp, mac_os_x/CS/CS.pbproj/project.pbxproj:
+	
+	Rename header arg.h to log2.h (included only in log.cpp) and remove
+	atom.h
+
+2003-02-15 17:17  brodsom
+
+	* firebird2/src/jrd/: arg.h, log.cpp, log2.h:
+	
+	Rename header arg.h to log2.h (included only in log.cpp)
+
+2003-02-15 17:16  brodsom
+
+	* firebird2/src/jrd/atom.h:
+	
+	Remove not used header
+
+2003-02-15 16:11  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp, req.h:
+	
+	Cleanup.
+
+2003-02-15 16:10  dimitr
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	Allowed access to both contexts in universal triggers.
+
+2003-02-15 13:51  brodsom
+
+	* firebird2/src/utilities/: scrty_apollo.gdl, scrty_xl.gdl:
+	
+	Remove apollo and mpe/xl remains
+
+2003-02-15 11:49  dimitr
+
+	* firebird2/src/remote/: wfwnp.cpp, wfwnp.h, wfwnp_proto.h:
+	
+	Removed obsolete and unused files.
+
+2003-02-15 10:25  dimitr
+
+	* firebird2/builds/win32/msvc6/: alice.dsp, alice_classic.dsp,
+	burp.dsp, burp_classic.dsp, common.dsp, common_classic.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, engine.dsp,
+	engine_classic.dsp, fb_inet_server.dsp, fb_lock_print.dsp,
+	fbclient.dsp, fbembed.dsp, fbguard.dsp, fbserver.dsp, fbudf.dsp,
+	gbak.dsp, gdef.dsp, gds32.dsp, gfix.dsp, gpre.dsp, gpre_boot.dsp,
+	gsec.dsp, gstat.dsp, ib_udf.dsp, ib_util.dsp, instreg.dsp,
+	instsvc.dsp, intl.dsp, ipserver.dsp, isql.dsp, lock.dsp,
+	lock_classic.dsp, qli.dsp, remote.dsp, remote_classic.dsp,
+	utilities.dsp, utilities_classic.dsp, wal.dsp, wal_classic.dsp:
+	
+	Updated project files. Fixed issues with exception handling.
+
+2003-02-15 04:08  brodsom
+
+	* firebird2/src/remote/wfwnp.cpp:
+	
+	Patch wrong include
+
+2003-02-15 04:01  hippoman
+
+	* firebird2/src/dsql/: dsql.cpp, errd.cpp, gen.cpp, hsh.cpp,
+	make.cpp, movd.cpp, pass1.cpp, preparse.cpp, utld.cpp:
+	
+	* Formated comments to make Doxygen Happy..
+
+2003-02-15 03:27  brodsom
+
+	* firebird2/src/remote/: lanentry.h, neterr.h:
+	
+	remove unused headers
+
+2003-02-15 03:26  brodsom
+
+	* firebird2/src/jrd/doserr.h:
+	
+	remove unused header
+
+2003-02-15 03:23  brodsom
+
+	* firebird2/src/jrd/intlobj.h:
+	
+	Solve some intl warnings
+
+2003-02-15 03:05  hippoman
+
+	* firebird2/src/dsql/: ddl.cpp, dsql.cpp, dsql.h, parse.cpp,
+	parse.y, pass1.cpp:
+	
+	* formated dsql.h comments to make Doxygen happy..  * changed
+	DSQL_debug values as follow..  /*! \var unsigned DSQL_debug    
+	\brief Debug level
+	
+	    0	    No output
+	    1	    Display output tree in PASS1_statment
+	    2	    Display input tree in PASS1_statment
+	    4	    Display ddl BLR
+	    8	    Display BLR
+	    16	    Display PASS1_rse input tree
+	    32	    Display SQL input string
+	    64	    Display BLR in dsql/prepare
+	    > 256   Display yacc parser output level = DSQL_level>>8
+	*/
+
+2003-02-15 02:35  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	More optimizer enhancements.  When an equal-node and other nodes
+	(geq, leq, between...) are available for an index retrieval, then
+	use the equal node always instead of the others.
+
+2003-02-15 02:11  brodsom
+
+	* firebird2/src/: jrd/aif.h, jrd/aif.cpp, remote/ipc.cpp,
+	remote/ipc.h, remote/ipc_proto.h, remote/ipc_server.cpp:
+	
+	Remove MPE/XL remains
+
+2003-02-15 02:03  brodsom
+
+	* firebird2/src/jrd/lan.cpp:
+	
+	Remove OS/2 remains
+
+2003-02-15 01:55  brodsom
+
+	* firebird2/src/: utilities/drop.cpp, jrd/file_params.h,
+	jrd/isc_ipc.cpp, jrd/why.cpp, jrd/y-valve.cpp:
+	
+	Remove csv and pipe directory and defines
+
+2003-02-15 00:52  brodsom
+
+	* firebird2/src/csv/: csu.cpp, csv.cpp, depends.mak, print.cpp,
+	csi.cpp, csi.h, csi_proto.h, css.cpp, css_proto.h:
+	
+	Remove csv directory
+
+2003-02-15 00:51  brodsom
+
+	* firebird2/src/pipe/: head.cpp, head5.cpp, head_proto.h, pipe.h,
+	allp.cpp, allp_proto.h, blk.h, foot.cpp:
+	
+	Remove pipe directory
+
 2003-02-14 15:55  brodsom
 
 	* firebird2/src/: gpre/form.cpp, gpre/par.cpp, jrd/common.h,
