@@ -86,7 +86,10 @@ class Config
 		KEY_EVENT_MEM_SIZE,							// 19
 		KEY_DEADLOCK_TIMEOUT,						// 20
 		KEY_SOLARIS_STALL_VALUE,					// 21
-		KEY_TRACE_MEMORY_POOLS						// 22	
+		KEY_TRACE_MEMORY_POOLS,						// 22	
+		KEY_PRIORITY_SWITCH_DELAY,					// 23
+		KEY_DEAD_THREADS_COLLECTION,				// 24
+		KEY_PRIORITY_BOOST							// 25	
 	};
 
 public:
@@ -205,6 +208,21 @@ public:
 		Trace memory pools
 	*/
 	static bool getTraceMemoryPools();
+
+	/*
+		Priority switch delay
+	*/
+	static int getPrioritySwitchDelay();
+
+	/*
+		Dead threads collection
+	*/
+	static int getDeadThreadsCollection();
+
+	/*
+		Priority boost
+	*/
+	static int getPriorityBoost();
 };
 
 #endif // CONFIG_H

@@ -23,12 +23,13 @@
 
 #include "firebird.h"
 #include "../jrd/os/thd_priority.h"
+#include "../common/config/config.h"
 
 #ifdef THREAD_PSCHED
 
 // configurable parameters
-#define THPS_TIME 100			// ms between rescheds
-#define THPS_TICKS 50			// sched loops before thread killing 
+#define THPS_TIME (Config::getPrioritySwitchDelay())	// ms between rescheds
+#define THPS_TICKS (Config::getDeadThreadsCollection())	// sched loops before thread killing
 
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
