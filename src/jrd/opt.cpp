@@ -5563,10 +5563,15 @@ static JRD_NOD make_starts(TDBB tdbb,
 	field = boolean->nod_arg[0];
 	value = boolean->nod_arg[1];
 	if (field->nod_type != nod_field) {
+		// dimitr:	any idea how we can use an index in this case?
+		//			The code below produced wrong results.
+		return NULL;
+		/*
 		if (value->nod_type != nod_field)
 			return NULL;
 		field = value;
 		value = boolean->nod_arg[0];
+		*/
 	}
 
 /* Every string starts with an empty string so
