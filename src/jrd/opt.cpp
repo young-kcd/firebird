@@ -3319,6 +3319,15 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_current_timestamp:
 			return true;
 
+		case nod_between:
+		case nod_like:
+		case nod_missing:
+		case nod_any:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_not:
+		case nod_unique:
+
 		case nod_value_if:
 		case nod_substr:
 			{
@@ -6485,8 +6494,8 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		}
 	}
 	else
-	{
 #endif
+	{
 	if (field->nod_type != nod_field)
 	{
 		// dimitr:	any idea how we can use an index in this case?
@@ -6499,9 +6508,6 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		value = boolean->nod_arg[0];
 		*/
 	}
-#ifdef EXPRESSION_INDICES
-	}
-#endif
 
 /* Every string starts with an empty string so
    don't bother using an index in that case. */
@@ -6527,6 +6533,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		|| !computable(opt->opt_csb, value, stream, false, false))
 	{
 		return NULL;
+	}
 	}
 
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
