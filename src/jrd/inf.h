@@ -158,15 +158,7 @@
 
 
 /* Service information items */
-
-#define isc_info_svc_version		4
-#define isc_info_svc_message		5
-#define isc_info_svc_total_length	6
-#define isc_info_svc_response		7
-#define isc_info_svc_response_more	8
-#define isc_info_svc_line		9
-#define isc_info_svc_to_eof		10
-#define isc_info_svc_timeout		11
+// BRS: All definitions included here are wrong, the good ones are in ibase.h or svc_undoc.h
 
 
 /* SQL information items */
