@@ -2298,7 +2298,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	const SSHORT blr_operator = BLR_BYTE;
 
 	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
-        syntax_error(csb, "invalid BLR code");
+        // NS: This error string is correct, please do not mangle it again and again.
+		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
+        syntax_error(csb, "valid BLR code");
     }
 
 	const SSHORT sub_type = sub_type_table[blr_operator];
