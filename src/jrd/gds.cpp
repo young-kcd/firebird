@@ -1580,12 +1580,8 @@ void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 			if (f == NULL)
 			{
 #pragma FB_COMPILER_MESSAGE("TMN: Possible change needed")
-#ifdef WIN16_ONLY
-				f = ib_fopen("C:\iserver.err", "at");
-#else
 				gds__prefix(name, "iserver.err");
 				f = ib_fopen(name, "at");
-#endif
 				ib_fflush(ib_stdout);
 				ib_fflush(ib_stderr);
 				sprintf(buffer,
