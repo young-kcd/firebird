@@ -378,7 +378,7 @@ STATUS GDS_ATTACH_DATABASE(STATUS*	user_status,
 
 		*handle = rdb;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -425,7 +425,7 @@ STATUS GDS_BLOB_INFO(STATUS*	user_status,
 					  item_length, items, 0, 0, buffer_length, buffer);
 		RESTORE_THREAD_DATA;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -477,7 +477,7 @@ STATUS GDS_CANCEL_BLOB(STATUS * user_status, RBL * blob_handle)
 		release_blob(blob);
 		*blob_handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -528,7 +528,7 @@ STATUS GDS_CANCEL_EVENTS(STATUS * user_status, RDB * handle, SLONG * id)
 			send_cancel_event(event);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -582,7 +582,7 @@ STATUS GDS_CLOSE_BLOB(STATUS * user_status, RBL * blob_handle)
 		release_blob(blob);
 		*blob_handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -628,7 +628,7 @@ STATUS GDS_COMMIT(STATUS * user_status, RTR * rtr_handle)
 		release_transaction(transaction);
 		*rtr_handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -675,7 +675,7 @@ STATUS GDS_COMMIT_RETAINING(STATUS * user_status, RTR * rtr_handle)
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -788,7 +788,7 @@ STATUS GDS_COMPILE(STATUS * user_status,
 			message->msg_address = NULL;
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -864,7 +864,7 @@ STATUS GDS_CREATE_BLOB2(STATUS * user_status,
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -982,7 +982,7 @@ STATUS GDS_CREATE_DATABASE(STATUS * user_status,
 
 		*handle = rdb;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1061,7 +1061,7 @@ STATUS GDS_DATABASE_INFO(STATUS*	user_status,
 
 		RESTORE_THREAD_DATA;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1123,7 +1123,7 @@ STATUS GDS_DDL(STATUS*	user_status,
 
 		status = send_and_receive(rdb, packet, user_status);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1205,7 +1205,7 @@ STATUS GDS_DETACH(STATUS* user_status, RDB* handle)
 
 		/* Can't RETURN_SUCCESS here as we've already torn down memory */
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1278,7 +1278,7 @@ STATUS GDS_DROP_DATABASE(STATUS* user_status, RDB* handle)
 		disconnect(port);
 		*handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1345,7 +1345,7 @@ STATUS GDS_DSQL_ALLOCATE(STATUS*	user_status,
 
 		SET_OBJECT(rdb, statement, statement->rsr_id);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1550,7 +1550,7 @@ STATUS GDS_DSQL_EXECUTE2(STATUS*	user_status,
 
 		statement->rsr_rtr = *rtr_handle;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -1771,7 +1771,7 @@ STATUS GDS_DSQL_EXECUTE_IMMED2(STATUS * user_status,
 		else if (!transaction && packet->p_resp.p_resp_object)
 			*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2039,7 +2039,7 @@ STATUS GDS_DSQL_FETCH(STATUS * user_status,
 
 		message->msg_address = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2111,7 +2111,7 @@ STATUS GDS_DSQL_FREE(STATUS * user_status, RSR * stmt_handle, USHORT option)
 			REMOTE_reset_statement(statement);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2212,7 +2212,7 @@ STATUS GDS_DSQL_INSERT(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2315,7 +2315,7 @@ STATUS GDS_DSQL_PREPARE(STATUS * user_status, RTR * rtr_handle, RSR * stmt_handl
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2398,7 +2398,7 @@ STATUS GDS_DSQL_SET_CURSOR(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2449,7 +2449,7 @@ STATUS GDS_DSQL_SQL_INFO(STATUS * user_status,
 		status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
 					  item_length, items, 0, 0, buffer_length, buffer);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2686,7 +2686,7 @@ STATUS GDS_GET_SEGMENT(STATUS * user_status,
 
 		response->p_resp_data = temp;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2794,7 +2794,7 @@ STATUS GDS_GET_SLICE(STATUS * user_status,
 		if (return_length)
 			*return_length = response->p_slr_length;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2865,7 +2865,7 @@ STATUS GDS_OPEN_BLOB2(STATUS * user_status,
 		blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data;
 		transaction->rtr_blobs = blob;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -2929,7 +2929,7 @@ STATUS GDS_PREPARE(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3024,7 +3024,7 @@ STATUS GDS_PUT_SEGMENT(STATUS * user_status,
 
 		blob->rbl_ptr = p + segment_length;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3117,7 +3117,7 @@ STATUS GDS_PUT_SLICE(STATUS * user_status,
 
 		*array_id = packet->p_resp.p_resp_blob_id;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3231,7 +3231,7 @@ STATUS GDS_QUE_EVENTS(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3481,7 +3481,7 @@ STATUS GDS_RECEIVE(STATUS * user_status,
 #endif
 		tail->rrq_msgs_waiting--;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3532,7 +3532,7 @@ STATUS GDS_RECONNECT(STATUS * user_status,
 
 		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3576,7 +3576,7 @@ STATUS GDS_RELEASE_REQUEST(STATUS * user_status, RRQ * req_handle)
 		release_request(request);
 		*req_handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3681,7 +3681,7 @@ punt:
 					  item_length, (SCHAR *) items, 0, 0, buffer_length,
 					  (SCHAR *) buffer);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		status = error(user_status);
 	}
@@ -3730,7 +3730,7 @@ STATUS GDS_ROLLBACK_RETAINING(STATUS * user_status, RTR * rtr_handle)
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3775,7 +3775,7 @@ STATUS GDS_ROLLBACK(STATUS * user_status, RTR * rtr_handle)
 		release_transaction(transaction);
 		*rtr_handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3841,7 +3841,7 @@ STATUS GDS_SEEK_BLOB(STATUS * user_status,
 		blob->rbl_fragment_length = 0;
 		blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -3910,7 +3910,7 @@ STATUS GDS_SEND(STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4029,7 +4029,7 @@ STATUS GDS_SERVICE_ATTACH(STATUS * user_status,
 
 		*handle = rdb;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4080,7 +4080,7 @@ STATUS GDS_SERVICE_DETACH(STATUS * user_status, RDB * handle)
 		disconnect(port);
 		*handle = NULL;
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4147,7 +4147,7 @@ STATUS GDS_SERVICE_QUERY(STATUS * user_status,
 					  item_length, items, recv_item_length, recv_items,
 					  buffer_length, buffer);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		status = error(user_status);
 	}
@@ -4203,7 +4203,7 @@ STATUS GDS_SERVICE_START(STATUS * user_status,
 			svcstart(user_status, rdb, op_service_start, rdb->rdb_id, 0,
 					 item_length, items);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		status = error(user_status);
 	}
@@ -4300,7 +4300,7 @@ STATUS GDS_START_AND_SEND(STATUS * user_status,
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4378,7 +4378,7 @@ STATUS GDS_START(STATUS * user_status,
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4431,7 +4431,7 @@ STATUS GDS_START_TRANSACTION(STATUS * user_status,
 
 		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4575,7 +4575,7 @@ STATUS GDS_TRANSACT_REQUEST(STATUS * user_status,
 			}
 		}
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		return error(user_status);
 	}
@@ -4621,7 +4621,7 @@ STATUS GDS_TRANSACTION_INFO(STATUS * user_status,
 				 item_length, (SCHAR *) items, 0, 0, buffer_length,
 				 (SCHAR *) buffer);
 	}
-	catch (const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& /*e*/)
 	{
 		status = error(user_status);
 	}
