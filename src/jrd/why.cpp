@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.6 2003-01-03 12:49:59 alexpeshkoff Exp $
+$Id: why.cpp,v 1.7 2003-01-04 17:18:27 skidder Exp $
 */
 
 #include "firebird.h"
@@ -5555,7 +5555,7 @@ static CONST PTR get_entrypoint(int proc, int implementation)
 
 	if (image && name)
 	{
-		CONST BufSize = 128;
+#define BufSize 128
 		TEXT Buffer[BufSize];
 		SLONG NameLength = strlen(name) + 1;
 		TEXT *NamePointer = NameLength > BufSize ? 
@@ -5570,7 +5570,7 @@ static CONST PTR get_entrypoint(int proc, int implementation)
 			// 1. entrypoints table is modified ONLY once for each entry
 			// 2. even when some threads try to modify it concurrently,
 			//	  they will write SAME results in that table
-			const_cast<PTR>(ent->address) = entry;
+			*const_cast<PTR*>(&ent->address) = entry;
 			return entry;
 		}
 	}
