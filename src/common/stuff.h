@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef INCLUDE_STUFF_H
-#define INCLUDE_STUFF_H
+#ifndef COMMON_STUFF_H
+#define COMMON_STUFF_H
 
 inline void add_byte(UCHAR* &blr, const int byte)
 {
@@ -59,4 +59,4 @@ inline void add_string(UCHAR* &blr, const TEXT* string)
 		add_byte(blr, *string++);
 }
 
-#endif // INCLUDE_STUFF_H
+#endif // COMMON_STUFF_H
