@@ -4347,6 +4347,13 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
 		(rse->nod_arg[e_rse_items] && aggregate_found(request, rse->nod_arg[e_rse_items])) ||
 		(rse->nod_arg[e_rse_sort] && aggregate_found(request, rse->nod_arg[e_rse_sort]))) {
 
+		// dimitr: don't allow WITH LOCK for aggregates
+
+		if (update_lock) {
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_token_err,	/* Token unknown */
+					  gds_arg_gds, gds_random, gds_arg_string, "WITH LOCK", 0);
+		}
+
 		parent_context = FB_NEW(*tdsql->tsql_default) dsql_ctx;
 		parent_context->ctx_context = request->req_context_number++;
 		parent_context->ctx_scope_level = request->req_scope_level;
