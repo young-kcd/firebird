@@ -105,10 +105,6 @@ SOURCE=..\..\..\src\intl\cs_jis.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_jis_20208_1990.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\intl\cs_ksc.c
 # End Source File
 # Begin Source File
@@ -197,139 +193,139 @@ SOURCE=..\..\..\src\intl\ld2.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ancyrr.h
+SOURCE=..\..\..\src\intl\collations\pw1251cyrr.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\anczech.h
+SOURCE=..\..\..\src\intl\collations\pw1250czech.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\angreek1.h
+SOURCE=..\..\..\src\intl\collations\pw1253greek1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\anhun.h
+SOURCE=..\..\..\src\intl\collations\pw1250hun.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\anhundc.h
+SOURCE=..\..\..\src\intl\collations\pw1250hundc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\anpolish.h
+SOURCE=..\..\..\src\intl\collations\pw1250polish.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ansii850.h
+SOURCE=..\..\..\src\intl\collations\pw1252i850.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ansiintl.h
+SOURCE=..\..\..\src\intl\collations\pw1252intl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ansinor4.h
+SOURCE=..\..\..\src\intl\collations\pw1252nor4.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ansislov.h
+SOURCE=..\..\..\src\intl\collations\pw1250slov.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ansispan.h
+SOURCE=..\..\..\src\intl\collations\pw1252span.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ansiswfn.h
+SOURCE=..\..\..\src\intl\collations\pw1252swfn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\anturk.h
+SOURCE=..\..\..\src\intl\collations\pw1253turk.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ascii.h
+SOURCE=..\..\..\src\intl\collations\ascii.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ascii2.h
+SOURCE=..\..\..\src\intl\collations\ascii2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1ca0.h
+SOURCE=..\..\..\src\intl\collations\bl88591ca0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1da0.h
+SOURCE=..\..\..\src\intl\collations\bl88591da0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1de0.h
+SOURCE=..\..\..\src\intl\collations\bl88591de0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1es0.h
+SOURCE=..\..\..\src\intl\collations\bl88591es0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1fi0.h
+SOURCE=..\..\..\src\intl\collations\bl88591fi0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1fr0.h
+SOURCE=..\..\..\src\intl\collations\bl88591fr0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1is0.h
+SOURCE=..\..\..\src\intl\collations\bl88591is0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1it0.h
+SOURCE=..\..\..\src\intl\collations\bl88591it0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1nl0.h
+SOURCE=..\..\..\src\intl\collations\bl88591nl0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1no0.h
+SOURCE=..\..\..\src\intl\collations\bl88591no0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1pt0.h
+SOURCE=..\..\..\src\intl\collations\bl88591pt0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1sv0.h
+SOURCE=..\..\..\src\intl\collations\bl88591sv0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1uk0.h
+SOURCE=..\..\..\src\intl\collations\bl88591uk0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\bllt1us0.h
+SOURCE=..\..\..\src\intl\collations\bl88591us0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\blnxtde0.h
+SOURCE=..\..\..\src\intl\collations\blNEXTde0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\blnxtes0.h
+SOURCE=..\..\..\src\intl\collations\blNEXTes0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\blnxtfr0.h
+SOURCE=..\..\..\src\intl\collations\blNEXTfr0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\blnxtit0.h
+SOURCE=..\..\..\src\intl\collations\blNEXTit0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\blnxtus0.h
+SOURCE=..\..\..\src\intl\collations\blNEXTus0.h
 # End Source File
 # Begin Source File
 
@@ -345,231 +341,227 @@ SOURCE=..\..\..\src\intl\country_codes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_437.h
+SOURCE=..\..\..\src\intl\charsets\cs_437.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_850.h
+SOURCE=..\..\..\src\intl\charsets\cs_850.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_852.h
+SOURCE=..\..\..\src\intl\charsets\cs_852.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_857.h
+SOURCE=..\..\..\src\intl\charsets\cs_857.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_860.h
+SOURCE=..\..\..\src\intl\charsets\cs_860.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_861.h
+SOURCE=..\..\..\src\intl\charsets\cs_861.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_863.h
+SOURCE=..\..\..\src\intl\charsets\cs_863.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_865.h
+SOURCE=..\..\..\src\intl\charsets\cs_865.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_big5.h
+SOURCE=..\..\..\src\intl\charsets\cs_big5.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_cyrl.h
+SOURCE=..\..\..\src\intl\charsets\cs_cyrl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_gb2312.h
+SOURCE=..\..\..\src\intl\charsets\cs_gb2312.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_jis_0208_1990.h
+SOURCE=..\..\..\src\intl\charsets\cs_jis_0208_1990.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_ksc5601.h
+SOURCE=..\..\..\src\intl\charsets\cs_ksc5601.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_latin1.h
+SOURCE=..\..\..\src\intl\charsets\cs_latin1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_latin2.h
+SOURCE=..\..\..\src\intl\charsets\cs_latin2.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_next.h
+SOURCE=..\..\..\src\intl\charsets\cs_next.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_sjis.h
+SOURCE=..\..\..\src\intl\charsets\cs_sjis.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_w1250.h
+SOURCE=..\..\..\src\intl\charsets\cs_w1250.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_w1251.h
+SOURCE=..\..\..\src\intl\charsets\cs_w1251.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_w1252.h
+SOURCE=..\..\..\src\intl\charsets\cs_w1252.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_w1253.h
+SOURCE=..\..\..\src\intl\charsets\cs_w1253.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_w1254.h
+SOURCE=..\..\..\src\intl\charsets\cs_w1254.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\csjis2_p.h
+SOURCE=..\..\..\src\intl\collations\pd866cyrr.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cyrr.h
+SOURCE=..\..\..\src\intl\collations\ps852czech.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\czech.h
+SOURCE=..\..\..\src\intl\collations\db437de0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437de0.h
+SOURCE=..\..\..\src\intl\collations\db437es1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437es1.h
+SOURCE=..\..\..\src\intl\collations\db437fi0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437fi0.h
+SOURCE=..\..\..\src\intl\collations\db437fr0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437fr0.h
+SOURCE=..\..\..\src\intl\collations\db437it0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437it0.h
+SOURCE=..\..\..\src\intl\collations\db437nl0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437nl0.h
+SOURCE=..\..\..\src\intl\collations\db437sv0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437sv0.h
+SOURCE=..\..\..\src\intl\collations\db437uk0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437uk0.h
+SOURCE=..\..\..\src\intl\collations\db437us0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db437us0.h
+SOURCE=..\..\..\src\intl\collations\db850cf0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850cf0.h
+SOURCE=..\..\..\src\intl\collations\db850de0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850de0.h
+SOURCE=..\..\..\src\intl\collations\db850es0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850es0.h
+SOURCE=..\..\..\src\intl\collations\db850fr0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850fr0.h
+SOURCE=..\..\..\src\intl\collations\db850it1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850it1.h
+SOURCE=..\..\..\src\intl\collations\db850nl0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850nl0.h
+SOURCE=..\..\..\src\intl\collations\db850pt0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850pt0.h
+SOURCE=..\..\..\src\intl\collations\db850sv1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850sv1.h
+SOURCE=..\..\..\src\intl\collations\db850uk0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850uk0.h
+SOURCE=..\..\..\src\intl\collations\db850us0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db850us0.h
+SOURCE=..\..\..\src\intl\collations\db852cz0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db852cz0.h
+SOURCE=..\..\..\src\intl\collations\db852hdc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db852hdc.h
+SOURCE=..\..\..\src\intl\collations\db852po0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db852po0.h
+SOURCE=..\..\..\src\intl\collations\db852sl0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db852sl0.h
+SOURCE=..\..\..\src\intl\collations\db857tr0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db857tr0.h
+SOURCE=..\..\..\src\intl\collations\db860pt0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db860pt0.h
+SOURCE=..\..\..\src\intl\collations\db863cf1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db863cf1.h
+SOURCE=..\..\..\src\intl\collations\db865da0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db865da0.h
+SOURCE=..\..\..\src\intl\collations\db865no0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db865no0.h
+SOURCE=..\..\..\src\intl\collations\db866ru0.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\db866ru0.h
+SOURCE=..\..\..\src\intl\collations\pd852hundc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\hun852dc.h
+SOURCE=..\..\..\src\intl\collations\pd861iceland.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\iceland.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\intl.h
+SOURCE=..\..\..\src\intl\collations\pd437intl.h
 # End Source File
 # Begin Source File
 
@@ -597,59 +589,47 @@ SOURCE=..\..\..\src\intl\ldcommon.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lt2czech.h
+SOURCE=..\..\..\src\intl\collations\xx88592czech.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\mac_437.h
+SOURCE=..\..\..\src\intl\collations\pd865nordan40.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\mac_865.h
+SOURCE=..\..\..\src\intl\collations\pd852polish.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\mac_lat1.h
+SOURCE=..\..\..\src\intl\collations\pd852slovene.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\nordan40.h
+SOURCE=..\..\..\src\intl\collations\pd437swedfin.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\polish.h
+SOURCE=..\..\..\src\intl\collations\pd857turk.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\slovene.h
+SOURCE=..\..\..\src\intl\conversions\tx437_865.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\swedfin.h
+SOURCE=..\..\..\src\intl\conversions\tx437_lat1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\turk.h
+SOURCE=..\..\..\src\intl\conversions\tx865_lat1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\tx437_865.h
+SOURCE=..\..\..\src\intl\collations\undef.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\tx437_lat1.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\tx865_lat1.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\undef.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\intl\win1251_ua.h
+SOURCE=..\..\..\src\intl\collations\win1251_ua.h
 # End Source File
 # End Group
 # Begin Group "Resource files"
