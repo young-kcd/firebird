@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.6 2001-12-29 11:41:22 tamlin Exp $
+ * $Id: ddl.cpp,v 1.7 2002-04-04 05:35:21 bellardo Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -4571,7 +4571,6 @@ static void modify_relation( REQ request)
  **************************************/
 	NOD ddl_node, ops, element, *ptr, *end, relation_node, field_node;
 	STR relation_name, field_name;
-	JMP_BUF *old_env, env;
 	TSQL tdsql;
 
 
@@ -4589,9 +4588,6 @@ static void modify_relation( REQ request)
 /* need to handle error that occur in generating dyn string.
  * If there is an error, get rid of the cached data
  */
-
-	old_env = tdsql->tsql_setjmp;
-	tdsql->tsql_setjmp = &env;
 
 	try {
 
@@ -4698,16 +4694,11 @@ static void modify_relation( REQ request)
 
 	request->append_uchar(gds_dyn_end);
 
-/* restore the setjmp pointer */
-
-	tdsql->tsql_setjmp = old_env;
-
 	}	// try
 	catch (...)
 	{
 		METD_drop_relation(request, relation_name);
 		request->req_relation = 0;
-		tdsql->tsql_setjmp = old_env;
 		Firebird::status_exception::raise(tdsql->tsql_status[1]);
 	}
 }

@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	Dynamic SQL runtime support
+*	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		movd.c
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *

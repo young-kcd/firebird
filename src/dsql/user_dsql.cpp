@@ -114,14 +114,10 @@ void set_global_private_status(STATUS* user_status, STATUS* local_status)
 	UDSQL_error->dsql_status = (user_status) ? user_status : local_status;
 }
 
-static inline BOOLEAN INIT_DSQL(STATUS* user_status, STATUS* local_status)
+static inline void INIT_DSQL(STATUS* user_status, STATUS* local_status)
 {
 	init(0);
 	set_global_private_status(user_status, local_status);
-	if (SETJMP (UDSQL_error->dsql_env)) {
-		return FALSE;
-	}
-	return TRUE;
 }
 
 
@@ -133,17 +129,22 @@ STATUS API_ROUTINE isc_embed_dsql_close(STATUS* user_status, SCHAR* name)
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		// get the symbol table entry
+
+		STMT statement = lookup_stmt(name, cursor_names, NAME_cursor);
+
+		return isc_dsql_free_statement(	user_status,
+									reinterpret_cast<hndl**>(&statement->stmt_handle),
+									DSQL_close);
+	}
+	catch(...)
+	{
 		return error();
 	}
 
-	// get the symbol table entry
-
-	STMT statement = lookup_stmt(name, cursor_names, NAME_cursor);
-
-	return isc_dsql_free_statement(	user_status,
-									reinterpret_cast<hndl**>(&statement->stmt_handle),
-									DSQL_close);
 }
 
 
@@ -157,26 +158,30 @@ STATUS API_ROUTINE isc_embed_dsql_declare(	STATUS*	user_status,
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		// get the symbol table entry
 
-	// get the symbol table entry
+		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-	STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
-
-	STATUS s =
-		isc_dsql_set_cursor_name(user_status,
+		STATUS s =
+			isc_dsql_set_cursor_name(user_status,
 								 reinterpret_cast<hndl**>(&statement->stmt_handle),
 								 cursor,
 								 0);
-	if (s) {
+		if (s) {
+			return s;
+		}
+
+		statement->stmt_cursor = insert_name(cursor, &cursor_names, statement);
+
 		return s;
 	}
-
-	statement->stmt_cursor = insert_name(cursor, &cursor_names, statement);
-
-	return s;
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -190,18 +195,23 @@ STATUS API_ROUTINE isc_embed_dsql_describe(STATUS* user_status,
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
 
-	// get the symbol table entry
+	try
+	{
+		// get the symbol table entry
 
-	STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
+		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-	return isc_dsql_describe(user_status,
+		return isc_dsql_describe(user_status,
 							 reinterpret_cast<hndl**>(&statement->stmt_handle),
 							 dialect,
 							 sqlda);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -232,18 +242,22 @@ STATUS API_ROUTINE isc_embed_dsql_describe_bind(STATUS*	user_status,
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		// get the symbol table entry
 
-	// get the symbol table entry
+		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-	STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
-
-	return isc_dsql_describe_bind(user_status,
+		return isc_dsql_describe_bind(user_status,
 								  reinterpret_cast<hndl**>(&statement->stmt_handle),
 								  dialect,
 								  sqlda);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -279,20 +293,24 @@ STATUS API_ROUTINE isc_embed_dsql_execute2(STATUS*	user_status,
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		// get the symbol table entry
 
-	// get the symbol table entry
+		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-	STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
-
-	return isc_dsql_execute2(	user_status,
+		return isc_dsql_execute2(	user_status,
 								reinterpret_cast<hndl**>(trans_handle),
 								reinterpret_cast<hndl**>(&statement->stmt_handle),
 								dialect,
 								in_sqlda,
 								out_sqlda);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -417,16 +435,20 @@ STATUS API_ROUTINE isc_embed_dsql_fetch(STATUS* user_status,
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		STMT statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
-	STMT statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
-
-	return isc_dsql_fetch(user_status,
+		return isc_dsql_fetch(user_status,
 						  reinterpret_cast<hndl**>(&statement->stmt_handle),
 						  dialect,
 						  sqlda);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -444,20 +466,24 @@ STATUS API_ROUTINE isc_embed_dsql_fetch2(	STATUS*	user_status,
 {
 	STATUS local_status[20];
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		// get the symbol table entry
 
-	// get the symbol table entry
+		STMT statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
-	STMT statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
-
-	return isc_dsql_fetch2(	user_status,
+		return isc_dsql_fetch2(	user_status,
 							&statement->stmt_handle,
 							dialect,
 							sqlda,
 							direction,
 							offset);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 #endif
 
@@ -533,18 +559,22 @@ STATUS API_ROUTINE isc_embed_dsql_insert(STATUS* user_status,
 	STATUS local_status[20];
 	STMT statement;
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		/* get the symbol table entry */
 
-/* get the symbol table entry */
+		statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
-	statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
-
-	return isc_dsql_insert(user_status,
+		return isc_dsql_insert(user_status,
 						   reinterpret_cast<hndl**>(&statement->stmt_handle),
 						   dialect,
 						   sqlda);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -613,18 +643,22 @@ STATUS API_ROUTINE isc_embed_dsql_open2(STATUS* user_status,
 	STATUS local_status[20];
 	STMT stmt;
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		/* get the symbol table entry */
 
-/* get the symbol table entry */
+		stmt = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
-	stmt = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
-
-	return isc_dsql_execute2(user_status,
+		return isc_dsql_execute2(user_status,
 							 reinterpret_cast<hndl**>(trans_handle),
 							 reinterpret_cast<hndl**>(&stmt->stmt_handle),
 							 dialect, in_sqlda, out_sqlda);
+	}
+	catch(...)
+	{
+		return error();
+	}
 }
 
 
@@ -784,40 +818,44 @@ STATUS API_ROUTINE isc_embed_dsql_release(STATUS* user_status,
 	STATUS	local_status[20];
 	STMT*	stmt_ptr, p;
 
-	if (!INIT_DSQL(user_status, local_status)) {
-		return error();
-	}
+	INIT_DSQL(user_status, local_status);
+	try
+	{
+		/* If a request already exists under that name, purge it out */
 
-/* If a request already exists under that name, purge it out */
+		STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-	STMT statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
-
-	STATUS s =
-		isc_dsql_free_statement(user_status,
+		STATUS s =
+			isc_dsql_free_statement(user_status,
 								reinterpret_cast<hndl**>(&statement->stmt_handle),
 								DSQL_drop);
-	if (s) {
+		if (s) {
+			return s;
+		}
+
+		// remove the statement from the symbol tables
+
+		if (statement->stmt_stmt)
+			remove_name(statement->stmt_stmt, &statement_names);
+		if (statement->stmt_cursor)
+			remove_name(statement->stmt_cursor, &cursor_names);
+
+		// and remove this statement from the local list
+
+		for (stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
+			if (p == statement) {
+				*stmt_ptr = statement->stmt_next;
+				gds__free(statement);
+				break;
+			}
+		}
+
 		return s;
 	}
-
-	// remove the statement from the symbol tables
-
-	if (statement->stmt_stmt)
-		remove_name(statement->stmt_stmt, &statement_names);
-	if (statement->stmt_cursor)
-		remove_name(statement->stmt_cursor, &cursor_names);
-
-	// and remove this statement from the local list
-
-	for (stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
-		if (p == statement) {
-			*stmt_ptr = statement->stmt_next;
-			gds__free(statement);
-			break;
-		}
+	catch(...)
+	{
+		return error();
 	}
-
-	return s;
 }
 
 

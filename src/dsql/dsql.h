@@ -25,7 +25,6 @@
 #ifndef _DSQL_DSQL_H_
 #define _DSQL_DSQL_H_
 
-#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
 #include "../dsql/all.h"
 #include <vector>
@@ -36,7 +35,6 @@ struct err
 {
 	STATUS* dsql_status;
 	STATUS* dsql_user_status;
-	JMP_BUF dsql_env;			// Error return environment
 };
 typedef err* ERR;
 
@@ -580,7 +578,6 @@ struct tsql
 	DsqlMemoryPool*		tsql_default;
 	STATUS*		tsql_status;
 	STATUS*		tsql_user_status;
-	jmp_buf*	tsql_setjmp;
 };
 typedef tsql* TSQL;
 

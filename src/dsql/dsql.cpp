@@ -25,7 +25,7 @@
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.8 2001-12-29 11:41:22 tamlin Exp $
+$Id: dsql.cpp,v 1.9 2002-04-04 05:35:21 bellardo Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -99,16 +99,6 @@ extern "C" {
 #ifndef PRINTF
 #define PRINTF		ib_printf
 #endif
-#define ERROR_INIT(env)		{\
-				tdsql->tsql_status = user_status;\
-				tdsql->tsql_setjmp = &env;\
-				tdsql->tsql_default = NULL;\
-				if (SETJMP (env))\
-				    {\
-				    RESTORE_THREAD_DATA;\
-				    return tdsql->tsql_status [1];\
-				    };\
-				}
 
 #define SET_THREAD_DATA         {\
 				tdsql = &thd_context;\
@@ -479,26 +469,35 @@ GDS_DSQL_ALLOCATE_CPP(	STATUS*	user_status,
 	DBB database;
 	REQ request;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
+
+		init(0);
 
 /* If we haven't been initialized yet, do it now */
 
-	database = init((SLONG **) db_handle);
+		database = init((SLONG **) db_handle);
 
-	tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
 
 /* allocate the request block */
 
-	request = new(*tdsql->tsql_default) req;
-	request->req_dbb = database;
-	request->req_pool = tdsql->tsql_default;
+		request = new(*tdsql->tsql_default) req;
+		request->req_dbb = database;
+		request->req_pool = tdsql->tsql_default;
 
-	*req_handle = request;
+		*req_handle = request;
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
+	}
 
 	return return_success();
 }
@@ -532,61 +531,64 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 	OPN open_cursor;
 	STATUS local_status[ISC_STATUS_LENGTH];
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 	USHORT singleton;
 	STATUS sing_status;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
-	sing_status = 0;
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	request = *req_handle;
-	tdsql->tsql_default = request->req_pool;
+		init(0);
+		sing_status = 0;
 
-	if ((SSHORT) in_msg_type == -1)
-		request->req_type = REQ_EMBED_SELECT;
+		request = *req_handle;
+		tdsql->tsql_default = request->req_pool;
+
+		if ((SSHORT) in_msg_type == -1)
+			request->req_type = REQ_EMBED_SELECT;
 
 /* Only allow NULL trans_handle if we're starting a transaction */
 
-	if (*trans_handle == NULL && request->req_type != REQ_START_TRANS)
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  gds_arg_gds, gds_bad_trans_handle, 0);
+		if (*trans_handle == NULL && request->req_type != REQ_START_TRANS)
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
+				  	gds_arg_gds, gds_bad_trans_handle, 0);
 
 /* If the request is a SELECT or blob statement then this is an open.
    Make sure the cursor is not already open. */
 
-	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_EMBED_SELECT ||
-		request->req_type == REQ_GET_SEGMENT ||
-		request->req_type == REQ_PUT_SEGMENT)
-			if (request->req_flags & REQ_cursor_open) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
-					  gds_arg_gds, gds_dsql_cursor_open_err, 0);
-		}
+		if (request->req_type == REQ_SELECT ||
+			request->req_type == REQ_SELECT_UPD ||
+			request->req_type == REQ_EMBED_SELECT ||
+			request->req_type == REQ_GET_SEGMENT ||
+			request->req_type == REQ_PUT_SEGMENT)
+				if (request->req_flags & REQ_cursor_open) {
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
+					  	gds_arg_gds, gds_dsql_cursor_open_err, 0);
+			}
 
 /* A select with a non zero output length is a singleton select */
 
-	if (request->req_type == REQ_SELECT && out_msg_length != 0)
-		singleton = TRUE;
-	else
-		singleton = FALSE;
+		if (request->req_type == REQ_SELECT && out_msg_length != 0)
+			singleton = TRUE;
+		else
+			singleton = FALSE;
 
-	if (request->req_type != REQ_EMBED_SELECT)
-		sing_status =
-			execute_request(request,
-							trans_handle,
-							in_blr_length,
-							in_blr,
-							in_msg_length,
-							in_msg,
-							out_blr_length,
-							out_blr,
-							out_msg_length,
-							out_msg,
-							singleton);
+		if (request->req_type != REQ_EMBED_SELECT)
+			sing_status =
+				execute_request(request,
+								trans_handle,
+								in_blr_length,
+								in_blr,
+								in_msg_length,
+								in_msg,
+								out_blr_length,
+								out_blr,
+								out_msg_length,
+								out_msg,
+								singleton);
 
 /* If the output message length is zero on a REQ_SELECT then we must
  * be doing an OPEN cursor operation.
@@ -594,31 +596,37 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
  * a singleton SELECT.  In that event, we don't add the cursor
  * to the list of open cursors (it's not really open).
  */
-	if ((request->req_type == REQ_SELECT && out_msg_length == 0) ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_EMBED_SELECT ||
-		request->req_type == REQ_GET_SEGMENT ||
-		request->req_type == REQ_PUT_SEGMENT) {
-		request->req_flags |= REQ_cursor_open |
-			((request->
-			  req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
+		if ((request->req_type == REQ_SELECT && out_msg_length == 0) ||
+			request->req_type == REQ_SELECT_UPD ||
+			request->req_type == REQ_EMBED_SELECT ||
+			request->req_type == REQ_GET_SEGMENT ||
+			request->req_type == REQ_PUT_SEGMENT) {
+			request->req_flags |= REQ_cursor_open |
+				((request->
+			  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
 
-		request->req_open_cursor = open_cursor = new(*DSQL_permanent_pool) opn;
-		open_cursor->opn_request = request;
-		open_cursor->opn_transaction = (SLONG *) * trans_handle;
-		THD_MUTEX_LOCK(&cursors_mutex);
-		open_cursor->opn_next = open_cursors;
-		open_cursors = open_cursor;
-		THD_MUTEX_UNLOCK(&cursors_mutex);
-		THREAD_EXIT;
-		gds__transaction_cleanup(local_status,
+			request->req_open_cursor = open_cursor = new(*DSQL_permanent_pool) opn;
+			open_cursor->opn_request = request;
+			open_cursor->opn_transaction = (SLONG *) * trans_handle;
+			THD_MUTEX_LOCK(&cursors_mutex);
+			open_cursor->opn_next = open_cursors;
+			open_cursors = open_cursor;
+			THD_MUTEX_UNLOCK(&cursors_mutex);
+			THREAD_EXIT;
+			gds__transaction_cleanup(local_status,
 								 reinterpret_cast < hndl ** >(trans_handle),
 								 (isc_callback) cleanup_transaction, 0);
-		THREAD_ENTER;
-	}
+			THREAD_ENTER;
+		}
 
-	if (!sing_status) {
-		return return_success();
+		if (!sing_status) {
+			return return_success();
+		}
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
 	}
 
 	RESTORE_THREAD_DATA;
@@ -658,27 +666,30 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
 	USHORT parser_version;
 	STATUS status;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	database = init(reinterpret_cast < long **>(db_handle));
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
+		database = init(reinterpret_cast < long **>(db_handle));
 
-/* allocate the request block, then prepare the request */
+		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
 
-	request = new(*tdsql->tsql_default) req;
-	request->req_dbb = database;
-	request->req_pool = tdsql->tsql_default;
-	request->req_trans = (int *) *trans_handle;
+	/* allocate the request block, then prepare the request */
 
-	try {
+		request = new(*tdsql->tsql_default) req;
+		request->req_dbb = database;
+		request->req_pool = tdsql->tsql_default;
+		request->req_trans = (int *) *trans_handle;
 
-	if (!length) {
-		length = strlen(string);
-	}
+		try {
+
+			if (!length) {
+				length = strlen(string);
+			}
 
 /* Figure out which parser version to use */
 /* Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
@@ -704,17 +715,17 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
  * connection being made is a local classic connection.
  */
 
-	if ((dialect / 10) == 0)
-		parser_version = 2;
-	else {
-		parser_version = dialect % 10;
-		dialect /= 10;
-	}
+			if ((dialect / 10) == 0)
+				parser_version = 2;
+			else {
+				parser_version = dialect % 10;
+				dialect /= 10;
+			}
 
-	request->req_client_dialect = dialect;
+			request->req_client_dialect = dialect;
 
-	request = prepare(request, length, string, dialect, parser_version);
-	execute_request(request,
+			request = prepare(request, length, string, dialect, parser_version);
+			execute_request(request,
 					reinterpret_cast<isc_tr_handle*>(trans_handle),
 					in_blr_length,
 					in_blr,
@@ -726,17 +737,22 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
 					out_msg,
 					FALSE);
 
-	release_request(request, TRUE);
+			release_request(request, TRUE);
+		}	// try
+		catch (...) {
+			status = error();
+			release_request(request, TRUE);
+			RESTORE_THREAD_DATA;
+			return status;
+		}
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
+	}
 
 	return return_success();
-
-	}	// try
-	catch (...) {
-		status = error();
-		release_request(request, TRUE);
-		RESTORE_THREAD_DATA;
-		return status;
-	}
 }
 
 
@@ -769,24 +785,27 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
 	USHORT *ret_length;
 	UCHAR *buffer;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	request = *req_handle;
-	tdsql->tsql_default = request->req_pool;
+		init(0);
+
+		request = *req_handle;
+		tdsql->tsql_default = request->req_pool;
 
 /* if the cursor isn't open, we've got a problem */
 
-	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_EMBED_SELECT ||
-		request->req_type == REQ_GET_SEGMENT)
-			if (!(request->req_flags & REQ_cursor_open))
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
+		if (request->req_type == REQ_SELECT ||
+			request->req_type == REQ_SELECT_UPD ||
+			request->req_type == REQ_EMBED_SELECT ||
+			request->req_type == REQ_GET_SEGMENT)
+				if (!(request->req_flags & REQ_cursor_open))
+					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
 						  gds_arg_gds, gds_dsql_cursor_err, 0);
 
 #ifdef SCROLLABLE_CURSORS
@@ -796,159 +815,165 @@ STATUS GDS_DSQL_FETCH_CPP(	STATUS*	user_status,
    in the same direction as before, so optimize out messages of that
    type */
 
-	if (request->req_type == REQ_SELECT &&
-		request->req_dbb->dbb_base_level >= 5) {
-		switch (direction) {
-		case isc_fetch_next:
-			if (!(request->req_flags & REQ_backwards))
-				offset = 0;
-			else {
-				direction = blr_forward;
+		if (request->req_type == REQ_SELECT &&
+			request->req_dbb->dbb_base_level >= 5) {
+			switch (direction) {
+			case isc_fetch_next:
+				if (!(request->req_flags & REQ_backwards))
+					offset = 0;
+				else {
+					direction = blr_forward;
+					offset = 1;
+					request->req_flags &= ~REQ_backwards;
+				}
+				break;
+
+			case isc_fetch_prior:
+				if (request->req_flags & REQ_backwards)
+					offset = 0;
+				else {
+					direction = blr_backward;
+					offset = 1;
+					request->req_flags |= REQ_backwards;
+				}
+				break;
+
+			case isc_fetch_first:
+				direction = blr_bof_forward;
 				offset = 1;
 				request->req_flags &= ~REQ_backwards;
-			}
-			break;
+				break;
 
-		case isc_fetch_prior:
-			if (request->req_flags & REQ_backwards)
-				offset = 0;
-			else {
-				direction = blr_backward;
+			case isc_fetch_last:
+				direction = blr_eof_backward;
 				offset = 1;
 				request->req_flags |= REQ_backwards;
-			}
-			break;
+				break;
 
-		case isc_fetch_first:
-			direction = blr_bof_forward;
-			offset = 1;
-			request->req_flags &= ~REQ_backwards;
-			break;
-
-		case isc_fetch_last:
-			direction = blr_eof_backward;
-			offset = 1;
-			request->req_flags |= REQ_backwards;
-			break;
-
-		case isc_fetch_absolute:
-			direction = blr_bof_forward;
-			request->req_flags &= ~REQ_backwards;
-			break;
-
-		case isc_fetch_relative:
-			if (offset < 0) {
-				direction = blr_backward;
-				offset = -offset;
-				request->req_flags |= REQ_backwards;
-			}
-			else {
-				direction = blr_forward;
+			case isc_fetch_absolute:
+				direction = blr_bof_forward;
 				request->req_flags &= ~REQ_backwards;
-			}
-			break;
+				break;
 
-		default:
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
+			case isc_fetch_relative:
+				if (offset < 0) {
+					direction = blr_backward;
+					offset = -offset;
+					request->req_flags |= REQ_backwards;
+				}
+				else {
+					direction = blr_forward;
+					request->req_flags &= ~REQ_backwards;
+				}
+				break;
+
+			default:
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
 					  gds_arg_gds, gds_dsql_sqlda_err, 0);
-		}
+			}
 
-		if (offset) {
-			PAR offset_parameter;
-			DSC desc;
+			if (offset) {
+				PAR offset_parameter;
+				DSC desc;
 
-			message = (MSG) request->req_async;
+				message = (MSG) request->req_async;
 
-			desc.dsc_dtype = dtype_short;
-			desc.dsc_scale = 0;
-			desc.dsc_length = sizeof(USHORT);
-			desc.dsc_flags = 0;
-			desc.dsc_address = (UCHAR *) & direction;
+				desc.dsc_dtype = dtype_short;
+				desc.dsc_scale = 0;
+				desc.dsc_length = sizeof(USHORT);
+				desc.dsc_flags = 0;
+				desc.dsc_address = (UCHAR *) & direction;
 
-			offset_parameter = message->msg_parameters;
-			parameter = offset_parameter->par_next;
-			MOVD_move(&desc, &parameter->par_desc);
+				offset_parameter = message->msg_parameters;
+				parameter = offset_parameter->par_next;
+				MOVD_move(&desc, &parameter->par_desc);
 
-			desc.dsc_dtype = dtype_long;
-			desc.dsc_scale = 0;
-			desc.dsc_length = sizeof(SLONG);
-			desc.dsc_flags = 0;
-			desc.dsc_address = (UCHAR *) & offset;
+				desc.dsc_dtype = dtype_long;
+				desc.dsc_scale = 0;
+				desc.dsc_length = sizeof(SLONG);
+				desc.dsc_flags = 0;
+				desc.dsc_address = (UCHAR *) & offset;
 
-			MOVD_move(&desc, &offset_parameter->par_desc);
+				MOVD_move(&desc, &offset_parameter->par_desc);
 
-			THREAD_EXIT;
-			s = isc_receive2(GDS_VAL(tdsql->tsql_status),
+				THREAD_EXIT;
+				s = isc_receive2(GDS_VAL(tdsql->tsql_status),
 							 GDS_REF(request->req_handle),
 							 message->msg_number,
 							 message->msg_length,
 							 GDS_VAL(message->msg_buffer),
 							 0, direction, offset);
-			THREAD_ENTER;
+				THREAD_ENTER;
 
-			if (s)
-				punt();
+				if (s)
+					punt();
+			}
 		}
-	}
 #endif
 
-	message = (MSG) request->req_receive;
+		message = (MSG) request->req_receive;
 
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
 
-	if (blr_length)
-		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+		if (blr_length)
+			parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
-	if (request->req_type == REQ_GET_SEGMENT) {
+		if (request->req_type == REQ_GET_SEGMENT) {
 		/* For get segment, use the user buffer and indicator directly. */
-
-		parameter = request->req_blob->blb_segment;
-		null = parameter->par_null;
-		ret_length =
-			(USHORT *) (msg + (SLONG) null->par_user_desc.dsc_address);
-		buffer = msg + (SLONG) parameter->par_user_desc.dsc_address;
-		THREAD_EXIT;
-		s = isc_get_segment(tdsql->tsql_status,
+	
+			parameter = request->req_blob->blb_segment;
+			null = parameter->par_null;
+			ret_length =
+				(USHORT *) (msg + (SLONG) null->par_user_desc.dsc_address);
+			buffer = msg + (SLONG) parameter->par_user_desc.dsc_address;
+			THREAD_EXIT;
+			s = isc_get_segment(tdsql->tsql_status,
 							reinterpret_cast <
 							void **>(GDS_REF(request->req_handle)),
 							GDS_VAL(ret_length),
 							parameter->par_user_desc.dsc_length,
 							reinterpret_cast < char *>(GDS_VAL(buffer)));
-		THREAD_ENTER;
-		if (!s) {
-			RESTORE_THREAD_DATA;
-			return 0;
+			THREAD_ENTER;
+			if (!s) {
+				RESTORE_THREAD_DATA;
+				return 0;
+			}
+			else if (s == gds_segment) {
+				RESTORE_THREAD_DATA;
+				return 101;
+			}
+			else if (s == gds_segstr_eof) {
+				RESTORE_THREAD_DATA;
+				return 100;
+			}
+			else
+				punt();
 		}
-		else if (s == gds_segment) {
-			RESTORE_THREAD_DATA;
-			return 101;
-		}
-		else if (s == gds_segstr_eof) {
-			RESTORE_THREAD_DATA;
-			return 100;
-		}
-		else
-			punt();
-	}
 
-	THREAD_EXIT;
-	s = isc_receive(GDS_VAL(tdsql->tsql_status),
+		THREAD_EXIT;
+		s = isc_receive(GDS_VAL(tdsql->tsql_status),
 					reinterpret_cast < void **>(GDS_REF(request->req_handle)),
 					message->msg_number,
 					message->msg_length, GDS_VAL(message->msg_buffer), 0);
-	THREAD_ENTER;
+		THREAD_ENTER;
 
-	if (s)
-		punt();
+		if (s)
+			punt();
 
-	if (eof = request->req_eof)
-		if (!*((USHORT *) eof->par_desc.dsc_address)) {
-			RESTORE_THREAD_DATA;
-			return 100;
-		}
+		if (eof = request->req_eof)
+			if (!*((USHORT *) eof->par_desc.dsc_address)) {
+				RESTORE_THREAD_DATA;
+				return 100;
+			}
 
-	map_in_out(NULL, message, 0, blr, msg_length, msg);
+		map_in_out(NULL, message, 0, blr, msg_length, msg);
+	}  // try
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
+	}
 
 	return return_success();
 }
@@ -970,30 +995,39 @@ STATUS GDS_DSQL_FREE_CPP(STATUS*	user_status,
  **************************************/
 	REQ request;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	request = *req_handle;
-	tdsql->tsql_default = request->req_pool;
+		init(0);
 
-	if (option & DSQL_drop) {
+		request = *req_handle;
+		tdsql->tsql_default = request->req_pool;
+
+		if (option & DSQL_drop) {
 		/* Release everything associate with the request. */
 
-		release_request(request, TRUE);
-		*req_handle = NULL;
-	}
-	else if (option & DSQL_close) {
+			release_request(request, TRUE);
+			*req_handle = NULL;
+		}
+		else if (option & DSQL_close) {
 		/* Just close the cursor associated with the request. */
 
-		if (!(request->req_flags & REQ_cursor_open))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 501,
+			if (!(request->req_flags & REQ_cursor_open))
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 501,
 					  gds_arg_gds, gds_dsql_cursor_close_err, 0);
 
-		close_cursor(request);
+			close_cursor(request);
+		}
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
 	}
 
 	return return_success();
@@ -1024,47 +1058,56 @@ STATUS GDS_DSQL_INSERT_CPP(	STATUS*	user_status,
 	SCHAR *buffer;
 	STATUS s;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	request = *req_handle;
-	tdsql->tsql_default = request->req_pool;
+		init(0);
+
+		request = *req_handle;
+		tdsql->tsql_default = request->req_pool;
 
 /* if the cursor isn't open, we've got a problem */
 
-	if (request->req_type == REQ_PUT_SEGMENT)
-		if (!(request->req_flags & REQ_cursor_open))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
+		if (request->req_type == REQ_PUT_SEGMENT)
+			if (!(request->req_flags & REQ_cursor_open))
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
 					  gds_arg_gds, gds_dsql_cursor_err, 0);
 
-	message = (MSG) request->req_receive;
+		message = (MSG) request->req_receive;
 
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
 
-	if (blr_length)
-		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+		if (blr_length)
+			parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
-	if (request->req_type == REQ_PUT_SEGMENT) {
+		if (request->req_type == REQ_PUT_SEGMENT) {
 		/* For put segment, use the user buffer and indicator directly. */
 
-		parameter = request->req_blob->blb_segment;
-		buffer =
-			reinterpret_cast <
-			SCHAR * >(msg + (SLONG) parameter->par_user_desc.dsc_address);
-		THREAD_EXIT;
-		s = isc_put_segment(tdsql->tsql_status,
+			parameter = request->req_blob->blb_segment;
+			buffer =
+				reinterpret_cast <
+				SCHAR * >(msg + (SLONG) parameter->par_user_desc.dsc_address);
+			THREAD_EXIT;
+			s = isc_put_segment(tdsql->tsql_status,
 							reinterpret_cast <
 							void **>(GDS_REF(request->req_handle)),
 							parameter->par_user_desc.dsc_length,
 							GDS_VAL(buffer));
-		THREAD_ENTER;
-		if (s)
-			punt();
+			THREAD_ENTER;
+			if (s)
+				punt();
+		}
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
 	}
 
 	return return_success();
@@ -1097,22 +1140,25 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 	DBB database;
 	STATUS status;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
+	try
+	{
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	old_request = *req_handle;
-	database = old_request->req_dbb;
+		init(0);
+
+		old_request = *req_handle;
+		database = old_request->req_dbb;
 
 /* check to see if old request has an open cursor */
 
-	if (old_request && (old_request->req_flags & REQ_cursor_open)) {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 519,
+		if (old_request && (old_request->req_flags & REQ_cursor_open)) {
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 519,
 				  gds_arg_gds, gds_dsql_open_cursor_request, 0);
-	}
+		}
 
 /* Allocate a new request block and then prepare the request.  We want to
    keep the old request around, as is, until we know that we are able
@@ -1120,17 +1166,17 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 /* It would be really *nice* to know *why* we want to
    keep the old request around -- 1994-October-27 David Schnepper */
 
-	tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
+		tdsql->tsql_default = new(*DSQL_permanent_pool) DsqlMemoryPool;
 
-	request = new(*tdsql->tsql_default) req;
-	request->req_dbb = database;
-	request->req_pool = tdsql->tsql_default;
-	request->req_trans = (int *) *trans_handle;
+		request = new(*tdsql->tsql_default) req;
+		request->req_dbb = database;
+		request->req_pool = tdsql->tsql_default;
+		request->req_trans = (int *) *trans_handle;
 
-	try {
+		try {
 
-	if (!length)
-		length = strlen(string);
+			if (!length)
+				length = strlen(string);
 
 /* Figure out which parser version to use */
 /* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
@@ -1156,52 +1202,58 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
  * connection being made is a local classic connection.
  */
 
-	if ((dialect / 10) == 0)
-		parser_version = 2;
-	else {
-		parser_version = dialect % 10;
-		dialect /= 10;
-	}
+			if ((dialect / 10) == 0)
+				parser_version = 2;
+			else {
+				parser_version = dialect % 10;
+				dialect /= 10;
+			}
 
-	request->req_client_dialect = dialect;
+			request->req_client_dialect = dialect;
 
-	request = prepare(request, length, string, dialect, parser_version);
+			request = prepare(request, length, string, dialect, parser_version);
 
 /* Can not prepare a CREATE DATABASE/SCHEMA statement */
 
-	if ((request->req_type == REQ_DDL) &&
-		(request->req_ddl_node->nod_type == nod_def_database))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 530,
-					  gds_arg_gds, gds_dsql_crdb_prepare_err, 0);
+			if ((request->req_type == REQ_DDL) &&
+				(request->req_ddl_node->nod_type == nod_def_database))
+					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 530,
+					  	gds_arg_gds, gds_dsql_crdb_prepare_err, 0);
 
-	request->req_flags |= REQ_prepared;
+			request->req_flags |= REQ_prepared;
 
 /* Now that we know that the new request exists, zap the old one. */
 
-	tdsql->tsql_default = old_request->req_pool;
-	release_request(old_request, TRUE);
-	tdsql->tsql_default = NULL;
+			tdsql->tsql_default = old_request->req_pool;
+			release_request(old_request, TRUE);
+			tdsql->tsql_default = NULL;
 
 /* The request was sucessfully prepared, and the old request was
  * successfully zapped, so set the client's handle to the new request */
 
-	*req_handle = request;
+			*req_handle = request;
 
-	RESTORE_THREAD_DATA;
+			RESTORE_THREAD_DATA;
 
-	return GDS_DSQL_SQL_INFO_CPP(	user_status,
+			return GDS_DSQL_SQL_INFO_CPP(	user_status,
 									req_handle,
 									item_length,
 									reinterpret_cast<char*>(items),
 									buffer_length,
 									reinterpret_cast<char*>(buffer));
 
-	}	// try
-	catch(...) {
-		status = error();
-		release_request(request, TRUE);
+		}	// try
+		catch(...) {
+			status = error();
+			release_request(request, TRUE);
+			RESTORE_THREAD_DATA;
+			return status;
+		}
+	}
+	catch(...)
+	{
 		RESTORE_THREAD_DATA;
-		return status;
+		return tdsql->tsql_status [1];
 	}
 }
 
@@ -1225,70 +1277,79 @@ STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
 	SYM symbol;
 	USHORT length;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 	TEXT cursor[132];
 
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	request = *req_handle;
-	tdsql->tsql_default = request->req_pool;
-	if (input_cursor[0] == '\"')
-	{
-		// Quoted cursor names eh? Strip'em.
-		// Note that "" will be replaced with ".
-		//
-		int index;
-		for (index = 0; *input_cursor; input_cursor++) {
-			if (*input_cursor == '\"') {
-				input_cursor++;
-			}
-			cursor[index++] = *input_cursor;
-		}
-		cursor[index] = 0;
-	}
-	else	// not quoted name
-	{
-		USHORT i;
-		for (i = 0; i < sizeof(cursor) - 1	/* PJPG 20001013 */
-			 && input_cursor[i]	/* PJPG 20001013 */
-			 && input_cursor[i] != ' '; ++i)	/* PJPG 20001013 */
+		init(0);
+
+		request = *req_handle;
+		tdsql->tsql_default = request->req_pool;
+		if (input_cursor[0] == '\"')
 		{
-			cursor[i] = UPPER7(input_cursor[i]);
+			// Quoted cursor names eh? Strip'em.
+			// Note that "" will be replaced with ".
+			//
+			int index;
+			for (index = 0; *input_cursor; input_cursor++) {
+				if (*input_cursor == '\"') {
+					input_cursor++;
+				}
+				cursor[index++] = *input_cursor;
+			}
+			cursor[index] = 0;
 		}
-		cursor[i] = '\0';
-	}
-	length = name_length(cursor);
-
-	if (length == 0) {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
+		else	// not quoted name
+		{
+			USHORT i;
+			for (i = 0; i < sizeof(cursor) - 1	/* PJPG 20001013 */
+			 	&& input_cursor[i]	/* PJPG 20001013 */
+			 	&& input_cursor[i] != ' '; ++i)	/* PJPG 20001013 */
+			{
+				cursor[i] = UPPER7(input_cursor[i]);
+			}
+			cursor[i] = '\0';
+		}
+		length = name_length(cursor);
+	
+		if (length == 0) {
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
-	}
+		}
 
 /* If there already is a different cursor by the same name, bitch */
 
-	if (symbol = HSHD_lookup(request->req_dbb, cursor, length, SYM_cursor, 0)) {
-		if (request->req_cursor == symbol) {
-			return return_success();
-		}
+		if (symbol = HSHD_lookup(request->req_dbb, cursor, length, SYM_cursor, 0)) {
+			if (request->req_cursor == symbol) {
+				return return_success();
+			}
 
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
-	}
+		}
 
 /* If there already is a cursor and its name isn't the same, ditto.
    We already know there is no cursor by this name in the hash table */
 
-	if (!request->req_cursor) {
-		request->req_cursor = MAKE_symbol(request->req_dbb, cursor,
+		if (!request->req_cursor) {
+			request->req_cursor = MAKE_symbol(request->req_dbb, cursor,
 										  length, SYM_cursor, request);
-	} else {
-		assert(request->req_cursor != symbol);
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
+		} else {
+			assert(request->req_cursor != symbol);
+			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
 				  gds_arg_gds, gds_dsql_decl_err, 0);
+		}
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
 	}
 
 	return return_success();
@@ -1318,179 +1379,188 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 		*buffer_ptr;
 	USHORT length, number, first_index;
 	struct tsql thd_context, *tdsql;
-	JMP_BUF env;
 
 	SET_THREAD_DATA;
 
-	ERROR_INIT(env);
-	init(0);
-	memset(buffer, 0, sizeof(buffer));
+    try
+    {
+		tdsql->tsql_status = user_status;
+		tdsql->tsql_default = NULL;
 
-	request = *req_handle;
+		init(0);
+		memset(buffer, 0, sizeof(buffer));
 
-	end_items = items + item_length;
-	end_info = info + info_length;
+		request = *req_handle;
+	
+		end_items = items + item_length;
+		end_info = info + info_length;
 
-	message = NULL;
-	first_index = 0;
+		message = NULL;
+		first_index = 0;
 
-	while (items < end_items && *items != gds_info_end)
-	{
-		item = *items++;
-		if (item == gds_info_sql_select || item == gds_info_sql_bind)
+		while (items < end_items && *items != gds_info_end)
 		{
-			message = (item == gds_info_sql_select) ?
-				&request->req_receive : &request->req_send;
-			if (info + 1 >= end_info) {
-				*info = gds_info_truncated;
-				return return_success();
+			item = *items++;
+			if (item == gds_info_sql_select || item == gds_info_sql_bind)
+			{
+				message = (item == gds_info_sql_select) ?
+					&request->req_receive : &request->req_send;
+				if (info + 1 >= end_info) {
+					*info = gds_info_truncated;
+					return return_success();
+				}
+				*info++ = item;
 			}
-			*info++ = item;
-		}
-		else if (item == gds_info_sql_stmt_type)
-		{
-			switch (request->req_type) {
-			case REQ_SELECT:
-			case REQ_EMBED_SELECT:
-				number = gds_info_sql_stmt_select;
-				break;
-			case REQ_SELECT_UPD:
-				number = gds_info_sql_stmt_select_for_upd;
-				break;
-			case REQ_DDL:
-				number = gds_info_sql_stmt_ddl;
-				break;
-			case REQ_GET_SEGMENT:
-				number = gds_info_sql_stmt_get_segment;
-				break;
-			case REQ_PUT_SEGMENT:
-				number = gds_info_sql_stmt_put_segment;
-				break;
-			case REQ_COMMIT:
-			case REQ_COMMIT_RETAIN:
-				number = gds_info_sql_stmt_commit;
-				break;
-			case REQ_ROLLBACK:
-				number = gds_info_sql_stmt_rollback;
-				break;
-			case REQ_START_TRANS:
-				number = gds_info_sql_stmt_start_trans;
-				break;
-			case REQ_INSERT:
-				number = gds_info_sql_stmt_insert;
-				break;
-			case REQ_UPDATE:
-			case REQ_UPDATE_CURSOR:
-				number = gds_info_sql_stmt_update;
-				break;
-			case REQ_DELETE:
-			case REQ_DELETE_CURSOR:
-				number = gds_info_sql_stmt_delete;
-				break;
-			case REQ_EXEC_PROCEDURE:
-				number = gds_info_sql_stmt_exec_procedure;
-				break;
-			case REQ_SET_GENERATOR:
-				number = isc_info_sql_stmt_set_generator;
-				break;
-			default:
-				number = 0;
-				break;
+			else if (item == gds_info_sql_stmt_type)
+			{
+				switch (request->req_type) {
+				case REQ_SELECT:
+				case REQ_EMBED_SELECT:
+					number = gds_info_sql_stmt_select;
+					break;
+				case REQ_SELECT_UPD:
+					number = gds_info_sql_stmt_select_for_upd;
+					break;
+				case REQ_DDL:
+					number = gds_info_sql_stmt_ddl;
+					break;
+				case REQ_GET_SEGMENT:
+					number = gds_info_sql_stmt_get_segment;
+					break;
+				case REQ_PUT_SEGMENT:
+					number = gds_info_sql_stmt_put_segment;
+					break;
+				case REQ_COMMIT:
+				case REQ_COMMIT_RETAIN:
+					number = gds_info_sql_stmt_commit;
+					break;
+				case REQ_ROLLBACK:
+					number = gds_info_sql_stmt_rollback;
+					break;
+				case REQ_START_TRANS:
+					number = gds_info_sql_stmt_start_trans;
+					break;
+				case REQ_INSERT:
+					number = gds_info_sql_stmt_insert;
+					break;
+				case REQ_UPDATE:
+				case REQ_UPDATE_CURSOR:
+					number = gds_info_sql_stmt_update;
+					break;
+				case REQ_DELETE:
+				case REQ_DELETE_CURSOR:
+					number = gds_info_sql_stmt_delete;
+					break;
+				case REQ_EXEC_PROCEDURE:
+					number = gds_info_sql_stmt_exec_procedure;
+					break;
+				case REQ_SET_GENERATOR:
+					number = isc_info_sql_stmt_set_generator;
+					break;
+				default:
+					number = 0;
+					break;
+				}
+				length = convert((SLONG) number, buffer);
+				info = put_item(item, length, buffer, info, end_info);
+				if (!info) {
+					return return_success();
+				}
 			}
-			length = convert((SLONG) number, buffer);
-			info = put_item(item, length, buffer, info, end_info);
-			if (!info) {
-				return return_success();
+			else if (item == gds_info_sql_sqlda_start) {
+				length = *items++;
+				first_index =
+					static_cast<USHORT>
+					(gds__vax_integer
+				 	(reinterpret_cast<UCHAR*>(items), length));
+				items += length;
 			}
-		}
-		else if (item == gds_info_sql_sqlda_start) {
-			length = *items++;
-			first_index =
-				static_cast<USHORT>
-				(gds__vax_integer
-				 (reinterpret_cast<UCHAR*>(items), length));
-			items += length;
-		}
-		else if (item == isc_info_sql_batch_fetch) {
-			if (request->req_flags & REQ_no_batch)
-				number = FALSE;
-			else
-				number = TRUE;
-			length = convert((SLONG) number, buffer);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				return return_success();
+			else if (item == isc_info_sql_batch_fetch) {
+				if (request->req_flags & REQ_no_batch)
+					number = FALSE;
+				else
+					number = TRUE;
+				length = convert((SLONG) number, buffer);
+				if (!(info = put_item(item, length, buffer, info, end_info))) {
+					return return_success();
+				}
 			}
-		}
-		else if (item == gds_info_sql_records) {
-			length =
-				get_request_info(request, (SSHORT) sizeof(buffer), buffer);
-			if (length
-				&& !(info = put_item(item, length, buffer, info, end_info))) {
-				return return_success();
+			else if (item == gds_info_sql_records) {
+				length =
+					get_request_info(request, (SSHORT) sizeof(buffer), buffer);
+				if (length
+					&& !(info = put_item(item, length, buffer, info, end_info))) {
+					return return_success();
+				}
 			}
-		}
-		else if (item == gds_info_sql_get_plan) {
+			else if (item == gds_info_sql_get_plan) {
 			/* be careful, get_plan_info() will reallocate the buffer to a
 			   larger size if it is not big enough */
 
-			buffer_ptr = buffer;
-			length =
-				get_plan_info(request, (SSHORT) sizeof(buffer), &buffer_ptr);
+				buffer_ptr = buffer;
+				length =
+					get_plan_info(request, (SSHORT) sizeof(buffer), &buffer_ptr);
 
-			if (length)
-				info = put_item(item, length, buffer_ptr, info, end_info);
+				if (length)
+					info = put_item(item, length, buffer_ptr, info, end_info);
 
-			if (length > sizeof(buffer))
-				gds__free(buffer_ptr);
+				if (length > sizeof(buffer))
+					gds__free(buffer_ptr);
 
-			if (!info)
-				return return_success();
-		}
-		else if (!message ||
-				 (item != gds_info_sql_num_variables
-				  && item != gds_info_sql_describe_vars))
-		{
-			buffer[0] = item;
-			item = gds_info_error;
-			length = 1 + convert((SLONG) gds_infunk, buffer + 1);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				return return_success();
+				if (!info)
+					return return_success();
 			}
-		}
-		else
-		{
-			number = (*message) ? (*message)->msg_index : 0;
-			length = convert((SLONG) number, buffer);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				return return_success();
+			else if (!message ||
+				 	(item != gds_info_sql_num_variables
+				  	&& item != gds_info_sql_describe_vars))
+			{
+				buffer[0] = item;
+				item = gds_info_error;
+				length = 1 + convert((SLONG) gds_infunk, buffer + 1);
+				if (!(info = put_item(item, length, buffer, info, end_info))) {
+					return return_success();
+				}
 			}
-			if (item == gds_info_sql_num_variables) {
-				continue;
-			}
+			else
+			{
+				number = (*message) ? (*message)->msg_index : 0;
+				length = convert((SLONG) number, buffer);
+				if (!(info = put_item(item, length, buffer, info, end_info))) {
+					return return_success();
+				}
+				if (item == gds_info_sql_num_variables) {
+					continue;
+				}
 
-			end_describe = items;
-			while (end_describe < end_items &&
-				   *end_describe != gds_info_end &&
-				   *end_describe != gds_info_sql_describe_end) end_describe++;
+				end_describe = items;
+				while (end_describe < end_items &&
+				   	*end_describe != gds_info_end &&
+				   	*end_describe != gds_info_sql_describe_end) end_describe++;
 
-			info = var_info(*message,
+				info = var_info(*message,
 							items,
 							end_describe,
 							info,
 							end_info,
 							first_index);
-			if (!info) {
-				return return_success();
-			}
+				if (!info) {
+					return return_success();
+				}
 
-			items = end_describe;
-			if (*items == gds_info_sql_describe_end) {
-				items++;
+				items = end_describe;
+				if (*items == gds_info_sql_describe_end) {
+					items++;
+				}
 			}
 		}
-	}
 
-	*info++ = gds_info_end;
+		*info++ = gds_info_end;
+	}
+	catch(...)
+	{
+		RESTORE_THREAD_DATA;
+		return tdsql->tsql_status [1];
+	}
 
 	return return_success();
 }
