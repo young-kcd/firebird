@@ -4,22 +4,25 @@
  *	DESCRIPTION:	Main file to provide GUI based server control functions
  *					for Firebird 1.5
  *
- * The contents of this file are subject to the Independant Developer's 
- * Public License Version 1.0 (the "License"); you may not use this
- * file except in compliance with the License. You may obtain a copy
- * of the License at http://www.ibphoenix.com/idpl.html
+ *  The contents of this file are subject to the Initial Developer's 
+ *  Public License Version 1.0 (the "License"); you may not use this 
+ *  file except in compliance with the License. You may obtain a copy 
+ *  of the License here:
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl.
  *
- * The Original Code was created by Paul Reeves
- * Copyright (C) 2003 Paul Reeves
+ *  Software distributed under the License is distributed on an "AS 
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or 
+ *  implied. See the License for the specific language governing rights
+ *  and limitations under the License.
+ *  
+ *  The Initial Developer of the Original Code is Paul Reeves.
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ *  The Original Code is (C) 2003 Paul Reeves .
  *
+ *  All Rights Reserved.
+ *  
+ *  Contributor(s): ______________________________________. 
  *
  */
 
@@ -126,6 +129,10 @@ public:
 
     SERVICE_STATUS service_status;
 
+	int m_LastError;		//Set this when an error is thrown and test
+							//in ShowError. Otherwise we get more error 
+							//dialogues than can be humanly coped with.
+
 	struct STATUS			//This stores the current status
 	{
 #ifdef MANAGE_CLASSIC
@@ -144,6 +151,7 @@ public:
 									// updated our settings.
 		bool SystemLogin;			// Are we using LocalSystem to control the 
 									// service
+		bool SufficientUserRights;	// Does user have sufficient rights to change service
 
 		CString ServerName;			// Initially set by call to ViewRegistryEntries
 		CString ServiceExecutable;	// Initially set by call to ViewRegistryEntries
@@ -192,7 +200,7 @@ public:
 	void DisableApplyButton();
 	void EnableApplyButton();
 	void KillApp();
-	void OpenServiceManager();
+	bool OpenServiceManager( DWORD DesiredAccess );
 	void ProcessMessages();
 	void ResetCheckBoxes( CFBDialog::STATUS status );
 	void ResetWarningBox( CFBDialog::STATUS status );
@@ -200,9 +208,11 @@ public:
 	bool ServerStart( CFBDialog::STATUS status );
 	bool ServiceInstall( CFBDialog::STATUS status );
 	bool ServiceRemove();
-	static void ShowError(SLONG	status, TEXT *string);
+	static void HandleSvcError(SLONG	status, TEXT *string);
+	void HandleError(bool silent, TEXT *string );
+	void ShowError( LPTSTR lpMsgBuf, CString error_title );
 	void UpdateServerStatus();
-
+	bool UserHasSufficientRights();
 };
 
 
