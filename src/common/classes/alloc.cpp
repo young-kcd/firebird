@@ -634,6 +634,8 @@ Firebird::MemoryPool* getDefaultMemoryPool() {
 	return Firebird::processMemoryPool;
 }
 
+#ifndef __GNUC__
+
 void* operator new(size_t s) THROW_BAD_ALLOC {
 #if defined(DEV_BUILD)
 // Do not complain here. It causes client tools to crash on Red Hat 8.0
@@ -667,5 +669,7 @@ void operator delete(void* mem) throw() {
 void operator delete[](void* mem) throw() {
 	Firebird::MemoryPool::globalFree(mem);
 }
+
+#endif
 
 #endif

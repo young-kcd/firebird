@@ -53,8 +53,12 @@ typedef USHORT UNICODE;
 extern void LD_assert(const SCHAR*, int);
 #endif
 
+#ifndef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+#ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
 
 
 

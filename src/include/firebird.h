@@ -30,7 +30,7 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.12.2.1 2003-08-11 21:39:19 skidder Exp $
+ *  $Id: firebird.h,v 1.12.2.2 2003-10-30 22:25:55 skidder Exp $
  *
  */
 
@@ -69,6 +69,10 @@
 #if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
 	defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
 #define MULTI_THREAD 1
+#endif
+
+#if defined __cplusplus && defined __GNUC__
+#include "../common/classes/alloc.h"
 #endif
 
 #endif /* INCLUDE_Firebird */

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.14 2003-07-04 16:45:22 brodsom Exp $
+//	$Id: sql.cpp,v 1.14.2.1 2003-10-30 22:25:53 skidder Exp $
 //
 
 #include "firebird.h"
@@ -5824,7 +5824,7 @@ static void par_fkey_extension( CNSTRT cnstrt)
 //   [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
 //  
 
-	assert(token.tok_keyword == KW_ON)
+	assert(token.tok_keyword == KW_ON);
 		assert(cnstrt != NULL);
 
 	ADVANCE_TOKEN;

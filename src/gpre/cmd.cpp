@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.9 2003-02-27 16:05:14 brodsom Exp $
+//	$Id: cmd.cpp,v 1.9.2.1 2003-10-30 22:25:53 skidder Exp $
 //
 
 #include "firebird.h"
@@ -620,7 +620,7 @@ static void create_trg_firing_cond( GPRE_REQ request, CNSTRT cnstrt)
 		field = field->lls_next;
 	}
 
-	assert(prim_key_num_flds > 0)
+	assert(prim_key_num_flds > 0);
 
 //  generate blr 
 		STUFF(blr_if);
@@ -671,7 +671,7 @@ static void create_matching_blr( GPRE_REQ request, CNSTRT cnstrt)
 		field = field->lls_next;
 	}
 
-	assert(prim_key_num_flds > 0)
+	assert(prim_key_num_flds > 0);
 
 //  count of foreign key columns 
 		field = for_key_fld = cnstrt->cnstrt_fields;
@@ -683,7 +683,7 @@ static void create_matching_blr( GPRE_REQ request, CNSTRT cnstrt)
 		field = field->lls_next;
 	}
 
-	assert(for_key_num_flds > 0)
+	assert(for_key_num_flds > 0);
 		assert(prim_key_num_flds == for_key_num_flds);
 
 	STUFF(blr_boolean);

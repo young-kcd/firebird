@@ -33,8 +33,9 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
-// FIXME: Temporary until we switch out of using STL
+#ifndef __GNUC__
 #include <new>
+#endif
 
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less
@@ -48,9 +49,6 @@
 #define LEAF_PAGE_SIZE 100
 #define NODE_PAGE_SIZE 100
 
-/* void* operator new (size_t size, void *place) {
-	return place;
-}*/
 
 namespace Firebird {
 
