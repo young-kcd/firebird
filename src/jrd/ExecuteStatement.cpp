@@ -44,31 +44,31 @@ static struct {
 	SSHORT SqlType;
 	SSHORT DataLength;
 } DscType2SqlType[] = {
-/* dtype_null		*/ -1, 0,
-/* dtype_text		*/ SQL_TEXT, 0,
-/* dtype_cstring	*/ -1, 0,
-/* dtype_varying	*/ SQL_VARYING, 0,
-/* dtype_none1		*/ -1, 0,
-/* dtype_none2		*/ -1, 0,
-/* dtype_packed		*/ -1, 0,
-/* dtype_byte		*/ -1, 0,
-/* dtype_short		*/ SQL_SHORT, sizeof(short),
-/* dtype_long		*/ SQL_LONG, sizeof(long),
-/* dtype_quad		*/ SQL_QUAD, 
+/* dtype_null		*/ {-1, 0},
+/* dtype_text		*/ {SQL_TEXT, 0},
+/* dtype_cstring	*/ {-1, 0},
+/* dtype_varying	*/ {SQL_VARYING, 0},
+/* dtype_none1		*/ {-1, 0},
+/* dtype_none2		*/ {-1, 0},
+/* dtype_packed		*/ {-1, 0},
+/* dtype_byte		*/ {-1, 0},
+/* dtype_short		*/ {SQL_SHORT, sizeof(short)},
+/* dtype_long		*/ {SQL_LONG, sizeof(long)},
+/* dtype_quad		*/ {SQL_QUAD, 
 #ifdef NATIVE_QUAD
-		sizeof(SQUAD),
+		sizeof(SQUAD)},
 #else
-		sizeof(SLONG) * 2,
+		sizeof(SLONG) * 2},
 #endif
-/* dtype_real		*/ SQL_FLOAT, sizeof(float),
-/* dtype_double		*/ SQL_DOUBLE, sizeof(double),
-/* dtype_d_float	*/ -1, 0, // Fix to use in VMS
-/* dtype_sql_date	*/ SQL_TYPE_DATE, sizeof(SLONG),
-/* dtype_sql_time	*/ SQL_TYPE_TIME, sizeof(SLONG),
-/* dtype_timestamp	*/ SQL_TIMESTAMP, sizeof(SLONG) * 2,
-/* dtype_blob		*/ SQL_BLOB, 0, 
-/* dtype_array		*/ SQL_ARRAY, -1, // Not supported for a while
-/* dtype_int64		*/ SQL_INT64, sizeof(SINT64),
+/* dtype_real		*/ {SQL_FLOAT, sizeof(float)},
+/* dtype_double		*/ {SQL_DOUBLE, sizeof(double)},
+/* dtype_d_float	*/ {-1, 0}, // Fix to use in VMS
+/* dtype_sql_date	*/ {SQL_TYPE_DATE, sizeof(SLONG)},
+/* dtype_sql_time	*/ {SQL_TYPE_TIME, sizeof(SLONG)},
+/* dtype_timestamp	*/ {SQL_TIMESTAMP, sizeof(SLONG) * 2},
+/* dtype_blob		*/ {SQL_BLOB, 0}, 
+/* dtype_array		*/ {SQL_ARRAY, -1}, // Not supported for a while
+/* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
 };
 
 static TEXT cba[] = "Callback arg";
