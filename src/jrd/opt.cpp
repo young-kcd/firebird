@@ -5629,6 +5629,12 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 /* Clone the input predicate */
 	jrd_nod* node = PAR_make_node(tdbb, boolean->nod_count);
 	node->nod_type = boolean->nod_type;
+
+	// We may safely copy invariantness flag because
+	// (1) we only distribute field equalities
+	// (2) invariantness of second argument of STARTING WITH or LIKE is solely
+	//    determined by its dependency on any of the fields
+	// If provisions above change the line below will have to be modified
 	node->nod_flags = boolean->nod_flags;
 /* But substitute new values for some of the predicate arguments */
 	node->nod_arg[0] = CMP_clone_node(tdbb, csb, arg1);
@@ -5636,6 +5642,10 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 /* Arguments after the first two are just cloned (eg: LIKE ESCAPE clause) */
 	for (USHORT n = 2; n < boolean->nod_count; n++)
 		node->nod_arg[n] = CMP_clone_node(tdbb, csb, boolean->nod_arg[n]);
+	// Assign impure area for cached invariant value if needed --
+	// used to hold pre-compiled patterns for new LIKE and CONTAINING algorithms
+	if (node->nod_flags & nod_invariant)
+		node->nod_impure = CMP_impure(csb, sizeof(impure_value));
 	return node;
 }
 
