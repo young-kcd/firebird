@@ -30,7 +30,7 @@
  *   This closes the heart of SF Bug #518282.
  */
 /*
-$Id: cmp.cpp,v 1.11 2002-09-25 17:12:09 skidder Exp $
+$Id: cmp.cpp,v 1.12 2002-09-26 18:13:02 skidder Exp $
 */
 
 #include "firebird.h"
@@ -356,6 +356,8 @@ REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 	SET_TDBB(tdbb);
 
 	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+	/* 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
+	  and will be freed by CMP_release	*/
 	JrdMemoryPool* new_pool = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
 				JrdMemoryPool;
 	tdbb->tdbb_default = new_pool;
@@ -388,6 +390,7 @@ REQ DLL_EXPORT CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 		} else if (new_pool) {
 			// TMN: Are we not to release the pool, just beqause
 			// we have a request?!
+			// Nickolay Samofatv: It well be freed by CMP_release otherwise
 			delete new_pool;
 		}
 		ERR_punt();

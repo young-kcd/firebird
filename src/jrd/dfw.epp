@@ -3194,6 +3194,7 @@ static void get_procedure_dependencies(DFW work)
 	if (procedure && !NULL_BLOB(blob_id))
 	{
 		old_pool = tdbb->tdbb_default;
+		/* Nickolay Samofatov: allocate statement memory pool... */
 		tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
 		MET_get_dependencies(tdbb,
 							(struct rel*)NULL_PTR,

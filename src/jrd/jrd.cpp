@@ -226,17 +226,28 @@ static REC_MUTX_T databases_rec_mutex;
 
 void trig::compile(tdbb* _tdbb) {
 	if (!request && !compile_in_progress) {
-		JrdMemoryPool* old_pool;
-		
 		SET_TDBB(_tdbb);
 
 		compile_in_progress = TRUE;
-		old_pool = _tdbb->tdbb_default;
-		_tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
+		JrdMemoryPool* old_pool = _tdbb->tdbb_default,
+			*new_pool = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
+		/* Allocate statement memory pool */
+		_tdbb->tdbb_default = new_pool;
 		// Trigger request is not compiled yet. Lets do it now
-		PAR_blr(_tdbb, relation, blr->str_data, 
-				(CSB)NULL_PTR, (CSB*)NULL_PTR, &request, TRUE, 
-				(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
+		try {
+			PAR_blr(_tdbb, relation, blr->str_data, 
+					(CSB)NULL_PTR, (CSB*)NULL_PTR, &request, TRUE, 
+					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
+			_tdbb->tdbb_default = old_pool;
+		}  catch (...) {			
+			_tdbb->tdbb_default = old_pool;
+			compile_in_progress = FALSE;
+			if (request)
+				CMP_release(_tdbb,request);
+			else
+				delete new_pool;
+			throw;
+		}
 		_tdbb->tdbb_default = old_pool;
 		
 		if (name)

@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.18 2002-09-25 17:12:10 skidder Exp $
+$Id: met.epp,v 1.19 2002-09-26 18:13:02 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3610,22 +3610,14 @@ static void get_trigger(
 	SET_TDBB(tdbb);
 	
  
-	JrdMemoryPool* old_pool;
-
-	SET_TDBB(tdbb);
-
 	if (!blob_id[0] && !blob_id[1])
 		return;
-
-	old_pool = tdbb->tdbb_default;
-	tdbb->tdbb_default = FB_NEW(*getDefaultMemoryPool()) JrdMemoryPool;
 
 	DBB dbb = tdbb->tdbb_database;
 	BLB blob = BLB_open(tdbb, dbb->dbb_sys_trans, (BID)blob_id);
 	SLONG length = blob->blb_length + 10;
-	STR blr = FB_NEW_RPT(*tdbb->tdbb_default,length) str();
+	STR blr = FB_NEW_RPT(*dbb->dbb_permanent,length) str();
 	BLB_get_data(tdbb, blob, blr->str_data, length);
-	tdbb->tdbb_default = old_pool;
 	  
 	save_trigger_data(tdbb, ptr, relation, NULL, blr, name, sys_trigger, flags);
 }
