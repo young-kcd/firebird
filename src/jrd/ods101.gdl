@@ -25,8 +25,10 @@
  *	Summary of ODS 10.1 modification:
  *		New System index RDB$INDEX_41
  *		New System index RDB$INDEX_42
+ *		New System index RDB$INDEX_43
  *
- *	If an ODS 10.0 DB is upgraded to ODS 10.1, indices RDB$INDEX_41 and RDB$INDEX_42 are created.
+ *	If an ODS 10.0 DB is upgraded to ODS 10.1, indices RDB$INDEX_41, RDB$INDEX_42 
+ *  and RDB$INDEX_43 are created.
  *
  *	See jrd/idx.h for description of RDB$INDEX_41 and RDB$INDEX_42 in ODS 10.1
  *
@@ -559,6 +561,9 @@ define index RDB$INDEX_12 for RDB$RELATION_CONSTRAINTS unique
 define index RDB$INDEX_42 for RDB$RELATION_CONSTRAINTS
 	RDB$RELATION_NAME,
 	RDB$CONSTRAINT_TYPE;
+
+define index RDB$INDEX_43 for RDB$RELATION_CONSTRAINTS
+	RDB$INDEX_NAME;
 
 define index RDB$INDEX_15 for RDB$RELATION_FIELDS unique
 	RDB$FIELD_NAME,

@@ -24,7 +24,6 @@
  *                                  they are not ANSI SQL compliant.
  * 23-May-2001 Claudio Valderrama - Move here DYN_delete_role.
  * 20-Jun-2001 Claudio Valderrama - Make available DYN_delete_generator.
- * 11-Sep-2002 Nickolay Samofatov - Optimize DDL GDML queries
  */
 
 #include "firebird.h"
@@ -666,12 +665,13 @@ void DYN_delete_local_field(
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES CROSS
-			IDX_SEG IN RDB$INDEX_SEGMENTS
-			OVER RDB$INDEX_NAME CROSS
+			IDX_SEG IN RDB$INDEX_SEGMENTS CROSS
 			REL_CONST IN RDB$RELATION_CONSTRAINTS
-			OVER RDB$INDEX_NAME
-			WITH REL_CONST.RDB$RELATION_NAME EQ tbl_nm
+			WITH IDX.RDB$RELATION_NAME EQ tbl_nm
+			AND REL_CONST.RDB$RELATION_NAME EQ tbl_nm
 			AND IDX_SEG.RDB$FIELD_NAME EQ col_nm
+			AND IDX.RDB$INDEX_NAME EQ IDX_SEG.RDB$INDEX_NAME
+			AND IDX.RDB$INDEX_NAME EQ REL_CONST.RDB$INDEX_NAME
 			AND REL_CONST.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY
         if (!DYN_REQUEST(drq_g_rel_constr_nm))
             DYN_REQUEST(drq_g_rel_constr_nm) = request;

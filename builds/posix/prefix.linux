@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.2 2002-09-10 06:08:56 eku Exp $
+#$Id: prefix.linux,v 1.3 2002-09-16 16:30:44 skidder Exp $
 #Revision 1.6  2000/12/01 11:20:31  fsg
 #Added SHRLIB_EXT to  prefix.linux
 #Added Platform Manager rules	PR 2002-06-22
@@ -25,7 +25,7 @@
 
 ifeq ($(IsProdTypeBuild),Y)
     DEBUG_Sources=	nodebug.cpp
-    CFLAGS:=            -O3 -m486 -DPROD_BUILD $(CFLAGS)
+    CFLAGS:=            -O3 -m486 -DPROD_BUILD -DNDEBUG $(CFLAGS)
 
 else
 # Commented out since new memory model doesn't work with it.

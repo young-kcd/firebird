@@ -31,7 +31,6 @@
  * 26-Sep-2001 Paul Beach - External File Directory Config. Parameter                                    
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  * 2002.08.10 Dmitry Yemanov: ALTER VIEW
- * 2002.09.11 Nickolay Samofatov: Optimized DDL GDML queries
  */
 
 #include "firebird.h"
@@ -260,7 +259,7 @@ void DYN_define_constraint(GBL		gbl,
 	volatile SSHORT id, old_id;
 	UCHAR verb;
 	TEXT constraint_name[32], index_name[32], referred_index_name[32];
-	TEXT referenced_relation_name[32], null_field_name[32], trigger_name[32];
+	TEXT null_field_name[32], trigger_name[32];
 	int all_count, unique_count;
 	LLS field_list = NULL, list_ptr;
 	STR str_;
@@ -329,8 +328,8 @@ void DYN_define_constraint(GBL		gbl,
 		if (verb != gds_dyn_def_trigger && verb != gds_dyn_fld_not_null) {
 			referred_index_name[0] = 0;
 			DYN_define_index(gbl, ptr, relation_name, verb, index_name,
-							 referred_index_name, referenced_relation_name, 
-							 constraint_name, &ri_action);
+							 referred_index_name, constraint_name,
+							 &ri_action);
 			strcpy(CRT.RDB$INDEX_NAME, index_name);
 			CRT.RDB$INDEX_NAME.NULL = FALSE;
 
@@ -543,7 +542,6 @@ void DYN_define_constraint(GBL		gbl,
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				CRT IN RDB$RELATION_CONSTRAINTS WITH
-				    CRT.RDB$RELATION_NAME EQ referenced_relation_name AND
 					CRT.RDB$INDEX_NAME EQ referred_index_name AND
 					(CRT.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
 					 CRT.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
@@ -1596,7 +1594,6 @@ void DYN_define_index(GBL		gbl,
 					  UCHAR		index_type,
 					  TEXT*		new_index_name,
 					  TEXT*		referred_index_name,
-					  TEXT*     referenced_relation,
 					  TEXT*		cnst_name,
 					  UCHAR*	ri_actionP)
 {
@@ -1617,6 +1614,7 @@ void DYN_define_index(GBL		gbl,
 	volatile SSHORT id, old_id;
 	const size_t field_name_size = 32;
 	TEXT index_name[32];
+	TEXT referenced_relation[32];
 	UCHAR verb;
 	UCHAR seg_count;
 	UCHAR fld_count;
@@ -1625,7 +1623,7 @@ void DYN_define_index(GBL		gbl,
 	LLS list_ptr;
 	STR str_;
 	USHORT found, key_length, length, referred_cols = 0;
-	TEXT trigger_name[32], referred_relation[32];
+	TEXT trigger_name[32];
 
 	if (ri_actionP != NULL) {
 		(*ri_actionP) = 0;
@@ -1655,7 +1653,7 @@ void DYN_define_index(GBL		gbl,
 	request = (BLK) CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
 
-	referred_relation[0] = 0;
+	referenced_relation[0] = 0;
 	key_length = 0;
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES 
@@ -1831,15 +1829,11 @@ void DYN_define_index(GBL		gbl,
 				/* for foreign keys, point to the corresponding relation */
 
 			case gds_dyn_idx_foreign_key:
-				GET_STRING(ptr, referred_relation);
-				MET_exact_name(referred_relation);
-				if (!referred_relation[0])
+				GET_STRING(ptr, referenced_relation);
+				MET_exact_name(referenced_relation);
+				if (!referenced_relation[0])
 					DYN_error_punt(FALSE, 212, NULL, NULL, NULL, NULL, NULL);
 				/* msg 212: "Zero length identifiers not allowed" */
-
-				/* return referenced relation name to the caller */
-				if (referenced_relation)
-				  strcpy(referenced_relation,referred_relation);
 				break;
 
 			case gds_dyn_idx_ref_column:
@@ -2027,7 +2021,7 @@ void DYN_define_index(GBL		gbl,
 			    X IN RDB$RELATION_CONSTRAINTS CROSS
 				Y IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
 					Z IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
-					X.RDB$RELATION_NAME EQ referred_relation AND
+					Y.RDB$RELATION_NAME EQ referenced_relation AND
 				    Y.RDB$UNIQUE_FLAG NOT MISSING AND
 					(X.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
 					X.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
@@ -2088,7 +2082,7 @@ void DYN_define_index(GBL		gbl,
 				DYN_error_punt(FALSE, 18, NULL, NULL, NULL, NULL, NULL);
 			/* msg 18: "could not find unique index with specified fields" */
 		}
-		else if (referred_relation[0]) {
+		else if (referenced_relation[0]) {
 			old_request = request;
 			old_id = id;
 			request =
@@ -2099,7 +2093,7 @@ void DYN_define_index(GBL		gbl,
 				IND IN RDB$INDICES CROSS
 					RC IN RDB$RELATION_CONSTRAINTS
 					OVER RDB$INDEX_NAME WITH
-					RC.RDB$RELATION_NAME EQ referred_relation AND
+					IND.RDB$RELATION_NAME EQ referenced_relation AND
 					RC.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY
                 if (!DYN_REQUEST(drq_l_primary))
                     DYN_REQUEST(drq_l_primary) = request;

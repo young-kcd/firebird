@@ -554,8 +554,8 @@ TEXT * function_name, TEXT * procedure_name)
 			break;
 
 		case gds_dyn_def_idx:
-			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL, 
-							 NULL, NULL);
+			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL,
+							 NULL);
 			break;
 
 		case gds_dyn_rel_constraint:

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.08.26 Dmitry Yemanov: new indices on system tables
+ * 2002.09.16 Nickolay Samofatov: one more system index
  */
 
 #ifndef _JRD_IDX_H_
@@ -266,9 +267,12 @@ static CONST struct ini_idx_t indices[] = {
 	INDEX(42, ODS_10_1, rel_rcon, 0, 2)
 		SEGMENT(f_rcon_rname, idx_metadata),	/* relation name */
 		SEGMENT(f_rcon_ctype, idx_metadata)     /* constraint type */
-	}}
+	}},
 
-	/* Last index in ODS 10.1 is RDB$INDEX_42 */
+	INDEX(43, ODS_10_1, rel_rcon, 0, 1)
+		SEGMENT(f_rcon_iname, idx_metadata),	/* index name */
+	}}
+	/* Last index in ODS 10.1 is RDB$INDEX_43 */
 
 };
 
