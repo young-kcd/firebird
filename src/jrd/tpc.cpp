@@ -79,8 +79,9 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 
 /* if the transaction is older than the oldest
    transaction in our tip cache, it must be committed */
+// hvlad: system transaction always committed too
 
-	if (number < tip_cache->tpc_base)
+	if (number < tip_cache->tpc_base || number == 0)
 		return tra_committed;
 
 /* locate the specific TIP cache block for the transaction */
