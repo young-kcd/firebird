@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.125 2004-11-17 12:33:30 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.126 2004-11-17 19:45:28 dimitr Exp $ 
  */
 
 /*
@@ -1019,7 +1019,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			impure->vlu_desc.dsc_length = 0;
 		}
 		return &impure->vlu_desc;
-/*
+
 	case nod_current_database:
 		impure->vlu_desc.dsc_dtype = dtype_text;
 		impure->vlu_desc.dsc_sub_type = 0;
@@ -1033,7 +1033,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			tdbb->tdbb_database->dbb_database_name.length();
 			
 		return &impure->vlu_desc;
-*/
+
 	case nod_extract:
 		{
 			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
