@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.21 2003-04-16 10:10:14 aafemt Exp $
+ *  $Id: fb_types.h,v 1.22 2003-05-07 13:46:28 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -130,7 +130,7 @@ typedef struct GDS_QUAD_t GDS_QUAD;
 //
 struct vary
 {
-	SSHORT vary_length;
+	USHORT vary_length;
 	char   vary_string[1];
 };
 // TMN: Currently we can't do this, since remote uses a different
