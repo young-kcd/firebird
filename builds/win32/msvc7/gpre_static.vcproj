@@ -140,6 +140,13 @@
 	</References>
 	<Files>
 		<Filter
+			Name="COMMON files"
+			Filter="cpp;c">
+			<File
+				RelativePath="..\..\..\src\common\utils.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="GPRE files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
@@ -307,6 +314,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\sql_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\utils_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\words.h">
