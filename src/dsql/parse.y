@@ -1878,8 +1878,8 @@ select_view_expr: SELECT
 			 group_clause 
 			 having_clause
 			{ $$ = make_node (nod_select_expr, (int) e_sel_count, 
-					NULL, $2, $3, $4, $5, $6, $7, NULL, NULL, NULL); }
-		;											   
+					NULL, $2, $3, $4, $5, $6, $7, NULL, NULL, NULL, NULL); }
+		;
 
 from_view_clause : FROM from_view_list
 		 	{ $$ = make_list ($2); }
