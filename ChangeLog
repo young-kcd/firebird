@@ -1,3 +1,52 @@
+2005-03-30 02:45  asfernandes
+
+	* firebird2/doc/sql.extensions/README.trim (1.1):
+	
+	file README.trim was initially added on branch B2_0_intl.
+
+2005-03-30 02:45  asfernandes
+
+	* firebird2/doc/sql.extensions/README.length (1.1):
+	
+	file README.length was initially added on branch B2_0_intl.
+
+2005-03-29 19:29  dimitr
+
+	* firebird2/src/jrd/: drq.h (1.9), dyn_del.epp (1.45):
+	
+	Fixed issue with remaining privileges for non-existing objects.
+
+2005-03-29 11:48  paul_reeves
+
+	* firebird2/builds/win32/msvc6/fb2control.dsp (1.5):
+	
+	Fix msvc6 project file for cpl applet.
+
+2005-03-29 11:43  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.19), dpm.epp (1.59),
+	dpm_proto.h (1.18):
+	
+	Moved page-level code to DPM.
+
+2005-03-29 11:07  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.18):
+	
+	Second attempt to fix "divide by zero" issues in the optimizer.
+
+2005-03-29 08:09  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.142):
+	
+	Removed short-curcuit prepare for EXEC PROC requests.
+
+2005-03-29 07:54  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.146):
+	
+	Correction.
+
 2005-03-28 23:52  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp (1.171), dfw.epp (1.145), exe.h
