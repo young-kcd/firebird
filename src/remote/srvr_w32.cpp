@@ -237,7 +237,9 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	ISC_enter();
 #endif
 
-	LoadLibrary(FBCLIENTDLL);
+	if (!ISC_is_WinNT()) {
+		LoadLibrary(FBCLIENTDLL);
+	}
 
 	if (connection_handle != INVALID_HANDLE_VALUE) {
 		THREAD_ENTER;
