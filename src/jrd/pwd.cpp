@@ -278,7 +278,7 @@ bool SecurityDatabase::prepare()
 	ihandle->ihndl_object = NULL;
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
-						reinterpret_cast<char*>(const_cast<UCHAR*>(PWD_REQUEST)));
+						reinterpret_cast<const char*>(PWD_REQUEST));
 
 	if (status[1])
 	{

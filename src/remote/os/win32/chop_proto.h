@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Misc. Function for Server and Tools
  *	MODULE:		chop_proto.h
- *	DESCRIPTION:	Prototype header file for chop.c
+ *	DESCRIPTION:	Prototype header file for chop.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

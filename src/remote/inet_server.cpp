@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.30 2003-11-06 03:03:17 brodsom Exp $
+$Id: inet_server.cpp,v 1.31 2003-11-07 08:06:29 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -170,7 +170,7 @@ int PASCAL WinMain(
 				   HINSTANCE hInstance,
 				   HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 #else /* WINDOWS_ROUTER */
-int CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char** argv)
 #endif							/* WINDOWS_ROUTER */
 {
 /**************************************
@@ -185,9 +185,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	int n, clients;
 	PORT port;
-	int child, debug, channel, standalone, multi_threaded, multi_client;
-	TEXT *p, **end, c;
-	int done = FALSE;
+	int child, channel;
+	TEXT *p, c;
 #if !(defined VMS)
 	fd_set mask;
 #endif
@@ -204,12 +203,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /*
  *	Construct an argc, argv so we can use the old parse code.
  */
-	int argc;
-	char **argv, *argv2[MAX_ARGS];
+	char* argv2[MAX_ARGS];
 
-	argv = argv2;
+	char** argv = argv2;
 	argv[0] = "IB_server";
-	argc = 1 + atov(lpszCmdLine, argv + 1, MAX_ARGS - 1);
+	int argc = 1 + atov(lpszCmdLine, argv + 1, MAX_ARGS - 1);
 
 #endif /* WINDOWS_ROUTER */
 
@@ -218,19 +216,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	end = argc + argv;
+	const TEXT* const* const end = argc + argv;
 	argv++;
-	debug = standalone = INET_SERVER_flag = FALSE;
+	bool debug = false, standalone = false;
+	INET_SERVER_flag = 0;
 	channel = 0;
 	protocol[0] = 0;
-	multi_client = multi_threaded = FALSE;
+	bool multi_client = false, multi_threaded = false;
 
 #ifdef SUPERSERVER
 	INET_SERVER_flag |= SRVR_multi_client;
-	multi_client = multi_threaded = standalone = TRUE;
+	multi_client = multi_threaded = standalone = true;
 #endif
 
 	clients = 0;
+	bool done = false;
 
 	while (argv < end) {
 		p = *argv++;
@@ -239,7 +239,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				switch (UPPER(c)) {
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
-					debug = standalone = TRUE;
+					debug = standalone = true;
 #ifdef NEVERDEF
 #ifdef SUPERSERVER
 					free_map_debug = 1;
@@ -253,24 +253,24 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					if (argv < end)
 						if (clients = atoi(*argv))
 							argv++;
-					multi_client = standalone = TRUE;
+					multi_client = standalone = true;
 					break;
 
 				case 'S':
-					standalone = TRUE;
+					standalone = true;
 					break;
 
 
 				case 'I':
-					standalone = FALSE;
+					standalone = false;
 					break;
 
 				case 'T':
-					multi_threaded = TRUE;
+					multi_threaded = true;
 					break;
 
 				case 'U':
-					multi_threaded = FALSE;
+					multi_threaded = false;
 					break;
 #endif /* SUPERSERVER */
 
@@ -280,7 +280,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					else
 						argv++;	/* donot skip next argument if this one 
 								   is invalid */
-					done = TRUE;
+					done = true;
 					break;
 
 				case 'P':
@@ -363,7 +363,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (strcmp(user_name, "root") &&
 				strcmp(user_name, FIREBIRD_USER_NAME) &&
 				strcmp(user_name, INTERBASE_USER_NAME) &&
-				strcmp(user_name, INTERBASE_USER_SHORT)) {
+				strcmp(user_name, INTERBASE_USER_SHORT))
+			{
 				/* invalid user -- bail out */
 				ib_fprintf(ib_stderr,
 						   "%s: Invalid user (must be %s, %s, %s or root).\n",
@@ -384,7 +385,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			FD_SET(2, &mask);
 			divorce_terminal((int) &mask);
 		}
-		{
+		{ // scope block
 			ISC_STATUS_ARRAY status_vector;
 			THREAD_ENTER;
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag,
@@ -394,7 +395,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				gds__print_status(status_vector);
 				exit(STARTUP_ERROR);
 			}
-		}
+		} // end scope block
 	}
 	else {
 #ifdef VMS
@@ -421,7 +422,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		gds__log(err_buf);
 	}
 
-/* Server tries to attash to security.fdb to make sure everything is OK
+/* Server tries to attach to security.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.

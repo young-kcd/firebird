@@ -454,8 +454,8 @@ int ISC_analyze_tcp(TEXT* file_name, TEXT* node_name)
 }
 
 
-BOOLEAN ISC_check_if_remote(const TEXT* file_name,
-							BOOLEAN implicit_flag)
+bool ISC_check_if_remote(const TEXT* file_name,
+							bool implicit_flag)
 {
 /**************************************
  *
@@ -465,7 +465,7 @@ BOOLEAN ISC_check_if_remote(const TEXT* file_name,
  *
  * Functional description
  *	Check to see if a path name resolves to a
- *	remote file.  If implicit_flag is TRUE, then
+ *	remote file.  If implicit_flag is true, then
  *	analyze the path to see if it resolves to a
  *	file on a remote machine.  Otherwise, simply
  *	check for an explicit node name.
@@ -474,20 +474,21 @@ BOOLEAN ISC_check_if_remote(const TEXT* file_name,
 	TEXT temp_name[MAXPATHLEN];
 	TEXT host_name[64];
 
-	strcpy(temp_name, file_name);
+	strncpy(temp_name, file_name, MAXPATHLEN);
+	temp_name[MAXPATHLEN - 1] = 0;
 
 /* Always check for an explicit TCP node name */
 
 	if (ISC_analyze_tcp(temp_name, host_name)) {
 
-		return TRUE;
+		return true;
 	}
 #ifndef NO_NFS
 	if (implicit_flag) {
 		/* Check for a file on an NFS mounted device */
 
 		if (ISC_analyze_nfs(temp_name, host_name)) {
-			return TRUE;
+			return true;
 		}
 	}
 #endif
@@ -497,7 +498,7 @@ BOOLEAN ISC_check_if_remote(const TEXT* file_name,
 
 	if (ISC_analyze_pclan(temp_name, host_name)) {
 
-		return TRUE;
+		return true;
 	}
 
 	if (implicit_flag) {
@@ -509,14 +510,15 @@ BOOLEAN ISC_check_if_remote(const TEXT* file_name,
 
 		ISC_expand_share(temp_name, temp_name2);
 		if (ISC_analyze_tcp(temp_name2, host_name) ||
-			ISC_analyze_pclan(temp_name2, host_name)) {
-			return TRUE;
+			ISC_analyze_pclan(temp_name2, host_name))
+		{
+			return true;
 		}
 
 	}
 #endif	// WIN_NT
 
-	return FALSE;
+	return false;
 }
 
 
@@ -945,37 +947,38 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
  *	information.
  *
  **************************************/
-	TEXT *p, device[4];
-	USHORT dtype;
-	USHORT i;
-	HANDLE handle;
-	LPNETRESOURCE resources = NULL, res;
 /* see NT reference for WNetEnumResource for the following constants */
-	DWORD nument = 0xffffffff, size = 16384, ret;
-	LPREMOTE_NAME_INFO res2 = NULL;
+	DWORD nument = 0xffffffff, size = 16384;
 
 	strcpy(expanded_name, file_name);
 
 /* Look for a drive letter and make sure that it corresponds
    to a remote disk. */
 
-	if (!(p = strchr(file_name, ':')) || p - file_name != 1)
+	const TEXT* p = strchr(file_name, ':');
+	if (!p || p - file_name != 1)
 		return strlen(expanded_name);
 
+	TEXT device[4];
 	device[0] = toupper(*file_name);
 	strcpy(device + 1, ":\\");
 
-	dtype = GetDriveType(device);
+	const USHORT dtype = GetDriveType(device);
 	if (dtype != DRIVE_REMOTE)
 		return strlen(expanded_name);
+		
+	HANDLE handle;
 	if (WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, &handle)
 		!= NO_ERROR)
+	{
 		return strlen(expanded_name);
-	resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
+	}
+	LPNETRESOURCE resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
 /* FREE: in this routine */
 	if (!resources)				/* NOMEM: don't expand the filename */
 		return strlen(expanded_name);
-	ret = WNetEnumResource(handle, &nument, resources, &size);
+		
+	DWORD ret = WNetEnumResource(handle, &nument, resources, &size);
 	if (ret == ERROR_MORE_DATA) {
 		gds__free((UCHAR *) resources);
 		resources = (LPNETRESOURCE) gds__alloc((SLONG) size);
@@ -985,8 +988,12 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 		ret = WNetEnumResource(handle, &nument, resources, &size);
 	}
 
-	for (i = 0, res = resources; i < nument && *device != *(res->lpLocalName);
-		 i++, res++);
+	LPNETRESOURCE res = resources;
+	DWORD i = 0;
+	while (i < nument && *device != *(res->lpLocalName)) {
+		i++;
+		res++;
+	}
 	if (i != nument)			/* i.e. we found the drive in the resources list */
 		share_name_from_resource(expanded_name, file_name, res);
 
@@ -997,7 +1004,7 @@ int ISC_expand_share(const TEXT* file_name, TEXT* expanded_name)
 
 	if (i == nument) {
 		device[2] = 0;
-		res2 = (LPREMOTE_NAME_INFO) resources;
+		LPREMOTE_NAME_INFO res2 = (LPREMOTE_NAME_INFO) resources;
 		ret =
 			WNetGetUniversalName(device, REMOTE_NAME_INFO_LEVEL, res2, &size);
 		if (ret == ERROR_MORE_DATA) {
@@ -1234,18 +1241,15 @@ static void expand_share_name(TEXT* share_name)
  *
  **************************************/
 
-	TEXT data_buf[MAXPATHLEN], workspace[MAXPATHLEN];
-	TEXT *p, *q, *data;
-	HKEY hkey;
-	DWORD ret, d_size, type_code;
-	USHORT idx;
+	TEXT workspace[MAXPATHLEN];
 
-	p = share_name;
+	const TEXT* p = share_name;
 	if (*p++ != '\\' || *p++ != '!') {
 		return;
 	}
 
 	strcpy(workspace, p);
+	TEXT *q;
 	for (q = workspace; *p && *p != '!'; p++, q++);
 
 	*q = '\0';
@@ -1253,39 +1257,41 @@ static void expand_share_name(TEXT* share_name)
 		return;
 	}
 
+	HKEY hkey;
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 					 "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
-					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS) {
+					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS) 
+	{
 		return;
 	}
 
-	d_size = MAXPATHLEN;
-	data = data_buf;
-#pragma FB_COMPILER_MESSAGE("Can/should we fix this cast?")
-	ret =
-		RegQueryValueEx(hkey, workspace, NULL, &type_code, (LPBYTE) data,
-						&d_size);
+	BYTE data_buf[MAXPATHLEN];
+	DWORD d_size = MAXPATHLEN;
+	DWORD type_code;
+	LPBYTE data = data_buf;
+
+	DWORD ret =
+		RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	if (ret == ERROR_MORE_DATA) {
 		d_size++;
-		data = (TEXT *) gds__alloc((SLONG) d_size);
+		data = (LPBYTE) gds__alloc((SLONG) d_size);
 		/* FREE: unknown */
 		if (!data) {			/* NOMEM: */
 			RegCloseKey(hkey);
 			return;				/* Error not really handled */
 		}
 		ret =
-			RegQueryValueEx(hkey, workspace, NULL, &type_code, (LPBYTE) data,
-							&d_size);
+			RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	}
 
 	if (ret == ERROR_SUCCESS) {
-		for (q = data; q && *q;
+		for (q = reinterpret_cast<TEXT*>(data); q && *q;
 			 q = (type_code == REG_MULTI_SZ) ? q + strlen(q) + 1 : NULL) {
 			if (!strnicmp(q, "path", 4)) {
 		    /* CVC: Paranoid protection against buffer overrun.
 				    MAXPATHLEN minus NULL terminator, the possible backslash and p==db_name.
 					Otherwise, it's possible to create long share plus long db_name => crash. */
-				idx = strlen(q + 5);
+				size_t idx = strlen(q + 5);
 				if (idx + 1 + (q[4 + idx] == '\\' ? 1 : 0) + strlen(p) >= MAXPATHLEN)
 					break;
 
@@ -1665,7 +1671,8 @@ static void share_name_from_resource(TEXT* expanded_name,
  *	returns new filename in expanded_name sholdn't touch filename
  *
  **************************************/
-	TEXT *p = resource->lpRemoteName, *q = expanded_name;
+	const TEXT* p = resource->lpRemoteName;
+	TEXT* q = expanded_name;
 
 /* If the shared drive is via Windows
    package it up so that resolution of the share name can
@@ -1726,11 +1733,8 @@ static void share_name_from_unc(TEXT* expanded_name,
  *      the rest of file_name after the drive into expanded_name.
  *
  **************************************/
-	TEXT *p, *q;
-
-
-	p = unc_remote->lpConnectionName;
-	q = expanded_name;
+	const TEXT* p = unc_remote->lpConnectionName;
+	TEXT* q = expanded_name;
 
 	/* copy the \\ and the node name */
 

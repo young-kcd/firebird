@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dbg.c
+ *	MODULE:		dbg.cpp
  *	DESCRIPTION:	Debugging routines
  *
  * The contents of this file are subject to the Interbase Public

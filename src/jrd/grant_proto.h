@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		grant_proto.h
- *	DESCRIPTION:	Function prototypes for file grant.e
+ *	DESCRIPTION:	Function prototypes for file grant.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

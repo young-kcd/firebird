@@ -120,7 +120,7 @@ static void warning(CSB, ...);
 
 JRD_NOD PAR_blr(TDBB	tdbb,
 			JRD_REL		relation,
-			UCHAR*	blr,
+			const UCHAR*	blr,
 			CSB		view_csb,
 			CSB*	csb_ptr,
 			JRD_REQ*	request_ptr,
@@ -384,7 +384,8 @@ JRD_NOD PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
 }
 
 
-JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
+JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context,
+	const TEXT* base_field)
 {
 /**************************************
  *
@@ -516,7 +517,7 @@ JRD_NOD PAR_make_node(TDBB tdbb, int size)
 }
 
 
-CSB PAR_parse(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
+CSB PAR_parse(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -3078,5 +3079,4 @@ static void warning(CSB csb, ...)
 		}
 	}
 }
-
 

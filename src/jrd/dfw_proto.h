@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dfw_proto.h
- *	DESCRIPTION:	Prototype header file for dfw.c
+ *	DESCRIPTION:	Prototype header file for dfw.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

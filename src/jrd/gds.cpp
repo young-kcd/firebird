@@ -283,7 +283,7 @@ static SLONG	initialized = FALSE;
 
 #ifdef DEBUG_GDS_ALLOC
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
-                                   TEXT* filename,
+                                   const TEXT* filename,
                                    ULONG lineno)
 {
 	return getDefaultMemoryPool()->allocate(size_request, 0, filename, lineno);
@@ -762,7 +762,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 
 #ifdef DEBUG_GDS_ALLOC
 
-void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
+void API_ROUTINE gds_alloc_report(ULONG flags, const char* filename, int lineno)
 {
 /**************************************
  *

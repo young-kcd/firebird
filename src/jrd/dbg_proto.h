@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dbg_proto.h
- *	DESCRIPTION:	Prototype header file for dbg.c
+ *	DESCRIPTION:	Prototype header file for dbg.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,7 +24,7 @@
 #ifndef JRD_DBG_PROTO_H
 #define JRD_DBG_PROTO_H
 
-/* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.c */
+/* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.cpp */
 
 int DBG_supervisor(int);
 

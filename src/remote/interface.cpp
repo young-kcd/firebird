@@ -100,9 +100,9 @@ static USHORT ostype = 0;
 static RVNT add_event(PORT);
 static void add_other_params(PORT, UCHAR *, USHORT *);
 static void add_working_directory(UCHAR *, USHORT *, TEXT *);
-static PORT analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, USHORT, const SCHAR*,
-					SSHORT, TEXT*);
-static PORT analyze_service(TEXT*, USHORT*, ISC_STATUS*, TEXT*, USHORT,
+static PORT analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
+					USHORT, const SCHAR*, SSHORT, TEXT*);
+static PORT analyze_service(TEXT*, USHORT*, ISC_STATUS*, const TEXT*, USHORT,
 							const SCHAR*, SSHORT);
 static bool batch_gds_receive(struct trdb *, PORT, struct rmtque *,
 								 ISC_STATUS *, USHORT);
@@ -252,7 +252,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						   RDB*		handle,
 						   SSHORT	dpb_length,
 						   const SCHAR*	dpb,
-						   UCHAR*	expanded_filename)
+						   const UCHAR*	expanded_filename)
 {
 /**************************************
  *
@@ -267,13 +267,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	RDB		rdb;
 	PORT	port;
 	USHORT	length;
-	USHORT	user_verification;
 	USHORT	new_dpb_length;
 	UCHAR	expanded_name[MAXPATHLEN];
 	UCHAR	new_dpb[MAXPATHLEN];
 	UCHAR*	new_dpb_ptr;
 	TEXT	user_string[256];
-	TEXT*	us;
 	TEXT	node_name[MAXPATHLEN];
 	struct trdb		thd_context;
 	struct trdb*	trdb;
@@ -298,7 +296,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	NULL_CHECK(handle, gds_bad_db_handle);
 
-	strcpy((char *) expanded_name, (char *) expanded_filename);
+	strcpy((char*) expanded_name, reinterpret_cast<const char*>(expanded_filename));
 	length = strlen((char *) expanded_name);
 
 	new_dpb_ptr = new_dpb;
@@ -318,11 +316,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			return error(user_status);
 		}
 	}
-	user_verification = get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
+	USHORT user_verification = get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
 					dpb_length, TRUE, new_dpb_ptr,
 					&new_dpb_length, user_string);
 
-	us = (user_string[0]) ? user_string : 0;
+	const TEXT* us = (user_string[0]) ? user_string : 0;
 
 	port = analyze((TEXT*)expanded_name, &length, user_status, us,
 					user_verification, dpb, dpb_length, node_name);
@@ -668,7 +666,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 
 ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 				   RDB* db_handle,
-				   RRQ* req_handle, USHORT blr_length, UCHAR* blr)
+				   RRQ* req_handle, USHORT blr_length, const UCHAR* blr)
 {
 /**************************************
  *
@@ -680,7 +678,6 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  *
  **************************************/
 	RDB rdb;
-	UCHAR *new_blr;
 	PACKET *packet;
 	P_CMPL *compile;
 	RRQ request;
@@ -704,6 +701,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	{
 		/* Parse the request in case blr_d_float must be converted to blr_double */
 
+		const UCHAR* new_blr;
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION5) {
 			new_blr = PARSE_prepare_messages(blr, blr_length);
 		} else {
@@ -717,11 +715,11 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		compile = &packet->p_cmpl;
 		compile->p_cmpl_database = rdb->rdb_id;
 		compile->p_cmpl_blr.cstr_length = blr_length;
-		compile->p_cmpl_blr.cstr_address = new_blr;
+		compile->p_cmpl_blr.cstr_address = const_cast<UCHAR*>(new_blr); // safe cast, I hope
 
 		send_and_receive(rdb, packet, user_status);
 		if (new_blr != blr) {
-			ALLR_free(new_blr);
+			ALLR_free((void*) new_blr);
 		}
 		if (user_status[1]) {
 			return error(user_status);
@@ -772,6 +770,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	}
 	catch (const Firebird::status_exception& /*e*/)
 	{
+	    // deallocate new_blr here???
 		return error(user_status);
 	}
 
@@ -867,7 +866,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 						   RDB* handle,
 						   SSHORT dpb_length,
 						   const SCHAR* dpb,
-						   SSHORT db_type, UCHAR* expanded_filename)
+						   SSHORT db_type,
+						   const UCHAR* expanded_filename)
 {
 /**************************************
  *
@@ -882,15 +882,14 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	RDB rdb;
 	PORT port;
 	USHORT length, user_verification, new_dpb_length, result;
-	ISC_STATUS *v;
 	UCHAR expanded_name[MAXPATHLEN], new_dpb[MAXPATHLEN], *new_dpb_ptr;
-	TEXT user_string[256], *us;
+	TEXT user_string[256];
 	TEXT node_name[MAXPATHLEN];
 	struct trdb thd_context, *trdb;
 
 	memset((void *) node_name, 0, (size_t) MAXPATHLEN);
 
-	v = user_status;
+	ISC_STATUS* v = user_status;
 	*v++ = gds_arg_gds;
 	*v++ = gds_unavailable;
 	*v = gds_arg_end;
@@ -931,10 +930,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 					dpb_length, TRUE, new_dpb_ptr,
 					&new_dpb_length, user_string);
 
-	if (user_string[0])
-		us = user_string;
-	else
-		us = 0;
+	const TEXT* us = (user_string[0]) ? user_string : 0;
 
 	if (!
 		(port =
@@ -3936,7 +3932,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 	USHORT length, user_verification, new_spb_length, result;
 	ISC_STATUS *v;
 	UCHAR expanded_name[MAXPATHLEN], new_spb[MAXPATHLEN], *new_spb_ptr;
-	TEXT user_string[256], *us;
+	TEXT user_string[256];
 	struct trdb thd_context, *trdb;
 
 	SET_THREAD_DATA;
@@ -3978,10 +3974,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS * user_status,
 					spb_length, FALSE, new_spb_ptr,
 					&new_spb_length, user_string);
 
-	if (user_string[0])
-		us = user_string;
-	else
-		us = 0;
+	const TEXT* us = (user_string[0]) ? user_string : 0;
 
 	if (!
 		(port =
@@ -4781,7 +4774,7 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 static PORT analyze(TEXT*	file_name,
 					USHORT*	file_length,
 					ISC_STATUS*	status_vector,
-					TEXT*	user_string,
+					const TEXT*	user_string,
 					USHORT	uv_flag,
 					const SCHAR*	dpb,
 					SSHORT	dpb_length,
@@ -4956,7 +4949,7 @@ static PORT analyze(TEXT*	file_name,
 static PORT analyze_service(TEXT* service_name,
 							USHORT* service_length,
 							ISC_STATUS * status_vector,
-							TEXT* user_string,
+							const TEXT* user_string,
 							USHORT uv_flag,
 							const SCHAR * dpb,
 							SSHORT dpb_length)

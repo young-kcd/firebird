@@ -3099,7 +3099,7 @@ void DYN_define_relation( GBL gbl, const UCHAR** ptr)
 
 			case gds_dyn_rel_ext_file:
 				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
-				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, FALSE))
+				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, false))
 					DYN_error_punt(true, 163, NULL, NULL, NULL, NULL, NULL);
 
 				// Check for any path, present in filename.
@@ -4300,7 +4300,7 @@ static bool get_who( TDBB tdbb, GBL gbl, SCHAR* output_name)
 	try {
 		if (!request)
 		{
-			request = (BLK) CMP_compile2(tdbb, const_cast<UCHAR*>(who_blr), TRUE);
+			request = (BLK) CMP_compile2(tdbb, who_blr, TRUE);
 		}
 		EXE_start(tdbb, (JRD_REQ) request, gbl->gbl_transaction);
 		EXE_receive(tdbb, (JRD_REQ) request, 0, MAX_SQL_IDENTIFIER_SIZE,

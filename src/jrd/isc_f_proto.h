@@ -27,11 +27,13 @@
 #ifndef JRD_ISC_FILE_PROTO_H
 #define JRD_ISC_FILE_PROTO_H
 
+#ifndef NO_NFS
 int			ISC_analyze_nfs(TEXT*, TEXT*);
+#endif
 int			ISC_analyze_pclan(TEXT*, TEXT*);
 int			ISC_analyze_tcp(TEXT*, TEXT*);
 int			ISC_analyze_xnet(TEXT*, TEXT*);
-BOOLEAN		ISC_check_if_remote(const TEXT*, BOOLEAN);
+bool		ISC_check_if_remote(const TEXT*, bool);
 int			ISC_expand_filename(const TEXT*, USHORT, TEXT*);
 int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
 int			ISC_expand_share(const TEXT*, TEXT*);

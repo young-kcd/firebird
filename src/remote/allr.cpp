@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Remote Interface/Server
- *      MODULE:         allr.c
+ *      MODULE:         allr.cpp
  *      DESCRIPTION:    Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
@@ -69,7 +69,7 @@ SLONG allr_delta_alloc = 0;
 //	Allocate a block.
 //
 #ifdef DEBUG_GDS_ALLOC
-UCHAR* ALLR_alloc_debug(ULONG size, TEXT* FileName, ULONG LineNumber)
+UCHAR* ALLR_alloc_debug(ULONG size, const TEXT* FileName, ULONG LineNumber)
 #else
 UCHAR* ALLR_alloc(ULONG size)
 #endif
@@ -112,7 +112,7 @@ UCHAR* ALLR_alloc(ULONG size)
 //	This is the primary block allocation routine.
 //
 #ifdef DEBUG_GDS_ALLOC
-BLK ALLR_block_debug(UCHAR type, ULONG count, TEXT* FileName, ULONG LineNumber)
+BLK ALLR_block_debug(UCHAR type, ULONG count, const TEXT* FileName, ULONG LineNumber)
 #else
 BLK ALLR_block(UCHAR type, ULONG count)
 #endif
@@ -153,10 +153,11 @@ BLK ALLR_block(UCHAR type, ULONG count)
 		Firebird::status_exception::raise(gds_bug_check);
 	}
 
+#pragma FB_COMPILER_MESSAGE("Warning: outdated assumption for 16-bit platforms")
 	// Compute block length, recasting count to make sure the calculation
 	// comes out right on 16-bit platforms (like MS-DOS or Win16).
 
-	USHORT ucount	= (USHORT)count;
+	const USHORT ucount	= (USHORT)count;
 	USHORT size		= REM_block_sizes[type].typ_root_length;
 	USHORT tail		= REM_block_sizes[type].typ_tail_length;
 
@@ -202,7 +203,7 @@ BLK ALLR_clone(BLK block)
 	// FREE:  caller must handle  - use ALLR_release
 
 	UCHAR* p = (UCHAR*)clone;
-	UCHAR* q = (UCHAR*)block;
+	const UCHAR* q = (UCHAR*)block;
 	do {
 		*p++ = *q++;
 	} while (--l);
@@ -243,7 +244,7 @@ VEC ALLR_vector(VEC* ptr, ULONG count)
 {
 	++count;
 
-	VEC vector = *ptr;
+	vec* vector = *ptr;
 
 	if (!vector) {
 		vector = *ptr = (VEC) ALLR_block(type_vec, count);
@@ -256,12 +257,12 @@ VEC ALLR_vector(VEC* ptr, ULONG count)
 	if (count <= vector->vec_count)
 		return vector;
 
-	VEC new_vector = *ptr = (VEC) ALLR_block(type_vec, count);
+	vec* new_vector = *ptr = (VEC) ALLR_block(type_vec, count);
 	new_vector->vec_count = count;
 
-	BLK* p = new_vector->vec_object;
-	BLK* q = vector->vec_object;
-	BLK* end = q + (int) vector->vec_count;
+	blk** p = new_vector->vec_object;
+	blk* const* q = vector->vec_object;
+	const blk* const* const end = q + (int) vector->vec_count;
 	while (q < end) {
 		*p++ = *q++;
 	}
@@ -269,5 +270,4 @@ VEC ALLR_vector(VEC* ptr, ULONG count)
 
 	return new_vector;
 }
-
 

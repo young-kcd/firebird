@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dbt.c
+ *	MODULE:		dbt.cpp
  *	DESCRIPTION:	Debugging routines
  *
  * The contents of this file are subject to the Interbase Public

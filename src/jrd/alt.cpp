@@ -341,19 +341,19 @@ ISC_STATUS API_ROUTINE gds__commit_transaction(ISC_STATUS * status_vector,
 	return isc_commit_transaction(status_vector, tra_handle);
 }
 
-ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS * status_vector,
-										FRBRD **db_handle,
-										FRBRD **req_handle,
-										SSHORT blr_length, SCHAR * blr)
+ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS* status_vector,
+										FRBRD** db_handle,
+										FRBRD** req_handle,
+										SSHORT blr_length, const SCHAR* blr)
 {
 	return isc_compile_request(status_vector, db_handle, req_handle, blr_length,
 							   blr);
 }
 
-ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS * status_vector,
-										 FRBRD **db_handle,
-										 FRBRD **req_handle,
-										 SSHORT blr_length, SCHAR * blr)
+ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS* status_vector,
+										 FRBRD** db_handle,
+										 FRBRD** req_handle,
+										 SSHORT blr_length, const SCHAR* blr)
 {
 	return isc_compile_request2(status_vector, db_handle, req_handle, blr_length,
 								blr);

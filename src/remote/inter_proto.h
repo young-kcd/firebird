@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 ISC_STATUS	REM_attach_database(ISC_STATUS*, SSHORT, const SCHAR*, struct rdb**,
-	SSHORT, const SCHAR*, UCHAR*);
+	SSHORT, const SCHAR*, const UCHAR*);
 ISC_STATUS	REM_attach_service(ISC_STATUS *, USHORT, TEXT *, struct rdb **, USHORT, SCHAR *);
 ISC_STATUS	REM_blob_info(ISC_STATUS*, struct rbl**, SSHORT, const SCHAR*,
 	SSHORT, SCHAR*);
@@ -38,11 +38,12 @@ ISC_STATUS	REM_cancel_events(ISC_STATUS *, struct rdb **, SLONG *);
 ISC_STATUS	REM_close_blob(ISC_STATUS *, struct rbl **);
 ISC_STATUS	REM_commit_transaction(ISC_STATUS *, struct rtr **);
 ISC_STATUS	REM_commit_retaining(ISC_STATUS *, struct rtr **);
-ISC_STATUS	REM_compile_request(ISC_STATUS *, struct rdb **, struct rrq **, USHORT, UCHAR *);
+ISC_STATUS	REM_compile_request(ISC_STATUS*, struct rdb**, struct rrq**,
+	USHORT, const UCHAR*);
 ISC_STATUS	REM_create_blob2(ISC_STATUS*, struct rdb**, struct rtr**,
 	struct rbl**, BID, USHORT, const UCHAR*);
 ISC_STATUS	REM_create_database(ISC_STATUS*, SSHORT, const SCHAR*, struct rdb**,
-	SSHORT, const SCHAR*, SSHORT, UCHAR*);
+	SSHORT, const SCHAR*, SSHORT, const UCHAR*);
 ISC_STATUS	REM_database_info(ISC_STATUS*, struct rdb**, SSHORT, const SCHAR*,
 	SSHORT, SCHAR*);
 ISC_STATUS	REM_ddl(ISC_STATUS*, struct rdb**, struct rtr**,

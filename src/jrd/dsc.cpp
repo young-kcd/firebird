@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dsc.c
+ *	MODULE:		dsc.cpp
  *	DESCRIPTION:	Utility routines for working with data descriptors
  *
  *	Note: This module is used by both engine & utility functions.

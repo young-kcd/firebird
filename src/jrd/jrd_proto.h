@@ -46,7 +46,7 @@ extern "C" {
 
 ISC_STATUS jrd8_attach_database(ISC_STATUS*, SSHORT, const TEXT*,
 											  struct att**, SSHORT,
-											  const UCHAR*, TEXT*);
+											  const UCHAR*, const TEXT*);
 ISC_STATUS jrd8_blob_info(ISC_STATUS*, struct blb**, SSHORT,
 										const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, struct blb **);
@@ -58,14 +58,16 @@ ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, struct att **,
 ISC_STATUS jrd8_close_blob(ISC_STATUS *, struct blb **);
 ISC_STATUS jrd8_commit_transaction(ISC_STATUS *, struct jrd_tra **);
 ISC_STATUS jrd8_commit_retaining(ISC_STATUS *, struct jrd_tra **);
-ISC_STATUS jrd8_compile_request(ISC_STATUS *, struct att **,
-											  struct jrd_req**, SSHORT, SCHAR*);
+ISC_STATUS jrd8_compile_request(ISC_STATUS*, struct att**,
+											  struct jrd_req**,
+											  SSHORT, const SCHAR*);
 ISC_STATUS jrd8_create_blob2(ISC_STATUS*, struct att**,
 										   struct jrd_tra**, struct blb**,
 										   struct bid*, USHORT, const UCHAR*);
 ISC_STATUS jrd8_create_database(ISC_STATUS*, USHORT, const TEXT*,
 											  struct att**, USHORT,
-											  const UCHAR*, USHORT, TEXT*);
+											  const UCHAR*, USHORT,
+											  const TEXT*);
 ISC_STATUS jrd8_database_info(ISC_STATUS*, struct att**, SSHORT,
 											const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_ddl(ISC_STATUS*, struct att**, struct jrd_tra**,

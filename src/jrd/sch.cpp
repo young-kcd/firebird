@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sch.c
+ *	MODULE:		sch.cpp
  *	DESCRIPTION:	Voluntary thread scheduler
  *
  * The contents of this file are subject to the Interbase Public

@@ -137,10 +137,10 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS*, FRBRD**);
 ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS*, FRBRD**);
 
 ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS*, FRBRD**, FRBRD**,
-											USHORT, SCHAR*);
+											USHORT, const SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_compile_request2(ISC_STATUS*, FRBRD**, FRBRD**,
-											USHORT, SCHAR*);
+											USHORT, const SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_create_blob(ISC_STATUS*, FRBRD**, FRBRD**,
 										FRBRD**, SLONG*);

@@ -24,7 +24,7 @@
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
  */
 /*
-$Id: restore.epp,v 1.52 2003-11-06 23:24:54 brodsom Exp $
+$Id: restore.epp,v 1.53 2003-11-07 08:05:38 robocop Exp $
 */
 
 #include "firebird.h"
@@ -2472,7 +2472,7 @@ rec_type get_data (BURP_REL	relation)
 	USHORT blr_length = blr - blr_buffer;
 
 	if (isc_compile_request (status_vector,  &DB, &request,
-							 blr_length,  reinterpret_cast<char*>(blr_buffer)))
+							 blr_length,  reinterpret_cast<const char*>(blr_buffer)))
 	{
 		isc_print_blr(reinterpret_cast<char*>(blr_buffer), NULL, NULL, 0);
 		if (!tdgbl->gbl_sw_incremental)
@@ -6753,7 +6753,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	SSHORT blr_length = blr - blr_buffer;
 
 	if (isc_compile_request (status_vector, &DB, &gen_id_reqh,
-							 blr_length, (SCHAR*) blr_buffer))
+							 blr_length, (const SCHAR*) blr_buffer))
 	{
 		isc_print_blr ((SCHAR*) blr_buffer, NULL, NULL, 0);
 		BURP_error_redirect (status_vector, 42, 0, 0);

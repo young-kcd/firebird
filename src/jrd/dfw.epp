@@ -1356,7 +1356,7 @@ static void check_filename( TEXT * name, USHORT l)
 		if (p[0] == ':' && p[1] == ':')
 			valid = FALSE;
 
-	if (!valid || ISC_check_if_remote(file_name, FALSE))
+	if (!valid || ISC_check_if_remote(file_name, false))
 		ERR_post(gds_no_meta_update, gds_arg_gds, gds_node_name_err, 0);
 	/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 

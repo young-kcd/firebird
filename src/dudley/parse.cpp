@@ -539,7 +539,7 @@ static bool check_filename(SYM name,
 				return true;
 			}
 
-	return (!ISC_check_if_remote(file_name, FALSE));
+	return (!ISC_check_if_remote(file_name, false));
 }
 
 

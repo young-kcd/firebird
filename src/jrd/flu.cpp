@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		flu.c
+ *	MODULE:		flu.cpp
  *	DESCRIPTION:	Function Lookup Code
  *
  * The contents of this file are subject to the Interbase Public
@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.37 2003-11-05 09:02:25 robocop Exp $
+$Id: flu.cpp,v 1.38 2003-11-07 08:06:10 robocop Exp $
 */
 
 #include "firebird.h"

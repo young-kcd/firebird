@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Journalling Subsystem
- *	MODULE:		console.c
+ *	MODULE:		console.cpp
  *	DESCRIPTION:	Journal server console program
  *
  * The contents of this file are subject to the Interbase Public

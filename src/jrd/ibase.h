@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.54 2003-11-05 09:02:25 robocop Exp $
+$Id: ibase.h,v 1.55 2003-11-07 08:06:11 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -783,17 +783,17 @@ int ISC_EXPORT isc_modify_user(ISC_STATUS *, USER_SEC_DATA *);
 /*  Other OSRI functions          */
 /**********************************/
 
-ISC_STATUS ISC_EXPORT isc_compile_request(ISC_STATUS *,
-										  isc_db_handle *,
-										  isc_req_handle *,
+ISC_STATUS ISC_EXPORT isc_compile_request(ISC_STATUS*,
+										  isc_db_handle*,
+										  isc_req_handle*,
 										  short,
-										  char *);
+										  const char*);
 
-ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS *,
-										   isc_db_handle *,
-										   isc_req_handle *,
+ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS*,
+										   isc_db_handle*,
+										   isc_req_handle*,
 										   short,
-										   char *);
+										   const char*);
 
 ISC_STATUS ISC_EXPORT isc_ddl(ISC_STATUS*,
 							  isc_db_handle*,

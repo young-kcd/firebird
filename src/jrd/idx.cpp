@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		idx.c
+ *	MODULE:		idx.cpp
  *	DESCRIPTION:	Index manager
  *
  * The contents of this file are subject to the Interbase Public

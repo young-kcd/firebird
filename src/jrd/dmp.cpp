@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dmp.c
+ *	MODULE:		dmp.cpp
  *	DESCRIPTION:	Logical page dumper
  *
  * The contents of this file are subject to the Interbase Public

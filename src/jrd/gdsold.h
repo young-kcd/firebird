@@ -91,17 +91,17 @@ ISC_STATUS GDS_EXPORT gds__close_blob(ISC_STATUS  *,
 ISC_STATUS GDS_EXPORT gds__commit_transaction(ISC_STATUS  *,
 											  FRBRD  **);
 
-ISC_STATUS GDS_EXPORT gds__compile_request(ISC_STATUS  *,
-										   FRBRD  **,
-										   FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__compile_request(ISC_STATUS*,
+										   FRBRD**,
+										   FRBRD**,
 										   short,
-										   char  *);
+										   const char*);
 
-ISC_STATUS GDS_EXPORT gds__compile_request2(ISC_STATUS  *,
-											FRBRD  **,
-											FRBRD  **,
+ISC_STATUS GDS_EXPORT gds__compile_request2(ISC_STATUS*,
+											FRBRD**,
+											FRBRD**,
 											short,
-											char  *);
+											const char*);
 
 ISC_STATUS GDS_EXPORT gds__create_blob(ISC_STATUS*,
 									   FRBRD**,

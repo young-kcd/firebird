@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		ini_proto.h
- *	DESCRIPTION:	Prototype header file for ini.c
+ *	DESCRIPTION:	Prototype header file for ini.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

@@ -25,6 +25,6 @@
 #define REMOTE_PARSE_PROTO_H
 
 struct message*	PARSE_messages(const UCHAR*, USHORT);
-UCHAR*			PARSE_prepare_messages(UCHAR *, USHORT);
+const UCHAR*			PARSE_prepare_messages(const UCHAR*, USHORT);
 
 #endif // REMOTE_PARSE_PROTO_H

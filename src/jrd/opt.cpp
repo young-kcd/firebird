@@ -3287,9 +3287,9 @@ static void form_rivers(TDBB tdbb,
 	// example a MERGE on two JOINs will come with no retrievals
 	// at this point.
 	if (temp[0] != 0) {
-		do
+		do {
 			count = find_order(tdbb, opt, temp, plan_node);
-		while (form_river
+		} while (form_river
 			   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
 				project_clause, 0));
 	}

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		isc_ipc.c
+ *	MODULE:		isc_ipc.cpp
  *	DESCRIPTION:	Handing and posting of signals (Windows)
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.6 2003-11-06 03:02:52 brodsom Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.7 2003-11-07 08:06:23 robocop Exp $ */
 
 #include <windows.h>
 #include <process.h>

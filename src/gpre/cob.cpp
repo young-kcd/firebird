@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.34 2003-10-29 10:53:07 robocop Exp $
+//	$Id: cob.cpp,v 1.35 2003-11-07 08:05:56 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -62,8 +62,8 @@
 static const char* const COMMIT			= "COMMIT";
 static const char* const ROLLBACK		= "ROLLBACK";
 static const char* const OMITTED 		= "OMITTED";
-static const char* const RAW_BLR_TEMPLATE= "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
-static const char* const RAW_TPB_TEMPLATE= "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
+static const char* const RAW_BLR_TEMPLATE = "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
+static const char* const RAW_TPB_TEMPLATE = "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
 static const char* const BY_VALUE		= "BY VALUE ";
 static const char* const END_VALUE		= "";
 static const char* const BY_REF			= "BY REFERENCE ";
@@ -73,7 +73,7 @@ static const char* const CLOSE			= "CLOSE";
 static const char* const CANCEL			= "CANCEL";
 static const char* const COMP_VALUE		= "COMP";
 static const char* const ISC_CANCEL_BLOB				= "ISC_CANCEL_BLOB";
-static const char* const ISC_COMPILE_REQUEST			="ISC_COMPILE_REQUEST";
+static const char* const ISC_COMPILE_REQUEST			= "ISC_COMPILE_REQUEST";
 static const char* const ISC_CREATE_DATABASE			= "ISC_CREATE_DATABASE";
 static const char* const ISC_DDL						= "ISC_DDL";
 static const char* const ISC_COMMIT_TRANSACTION		= "ISC_COMMIT_TRANSACTION";

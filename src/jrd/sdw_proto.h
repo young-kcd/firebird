@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		sdw_proto.h
- *	DESCRIPTION:	Prototype Header file for sdw.c
+ *	DESCRIPTION:	Prototype Header file for sdw.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

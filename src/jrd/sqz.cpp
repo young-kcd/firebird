@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sqz.c
+ *	MODULE:		sqz.cpp
  *	DESCRIPTION:	Record compression/decompression
  *
  * The contents of this file are subject to the Interbase Public

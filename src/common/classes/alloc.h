@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.28 2003-11-03 02:05:14 brodsom Exp $
+ *  $Id: alloc.h,v 1.29 2003-11-07 08:05:49 robocop Exp $
  *
  */
 
@@ -68,14 +68,14 @@
 namespace Firebird {
 
 struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
-	class MemoryPool *pool;
+	class MemoryPool* pool;
 	bool used;
 	bool last;
 	SSHORT type;
 	size_t length; /* Includes only actual block size, header not included */
 	MemoryBlock *prev;
 #ifdef DEBUG_GDS_ALLOC
-	char *file;
+	const char* file;
 	int line;
 #endif
 };
@@ -88,7 +88,7 @@ struct MemoryBlock /* 16 bytes of block header is not too much I think */ {
 // We store BlkInfo structures instead of BlkHeader pointers to get benefits from 
 // processor cache-hit optimizations
 struct BlockInfo {
-	MemoryBlock *block;
+	MemoryBlock* block;
 	size_t length;
 	static bool compare(const BlockInfo& i1, const BlockInfo& i2) {
 		return (i1.length > i2.length) || 
@@ -129,8 +129,8 @@ private:
 	FreeBlocksTree freeBlocks; // B+ tree ordered by (length,address)
 	MemoryExtent *extents; // Linked list of all memory extents
 
-	Vector<void*,2> spareLeafs;
-	Vector<void*,MAX_TREE_DEPTH+1> spareNodes;
+	Vector<void*, 2> spareLeafs;
+	Vector<void*, MAX_TREE_DEPTH + 1> spareNodes;
 	bool needSpare;
 	PendingFreeBlock *pendingFree;
 #ifdef MULTI_THREAD
@@ -144,7 +144,7 @@ private:
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t size);
 
-	static void external_free(void *blk);
+	static void external_free(void* blk);
 	
 	void* tree_alloc(size_t size);
 
@@ -152,30 +152,30 @@ private:
 
 	void updateSpare();
 	
-	void addFreeBlock(MemoryBlock *blk);
+	void addFreeBlock(MemoryBlock* blk);
 		
-	void removeFreeBlock(MemoryBlock *blk);
+	void removeFreeBlock(MemoryBlock* blk);
 	
-	void free_blk_extent(MemoryBlock *blk);
+	void free_blk_extent(MemoryBlock* blk);
 	
 	// does all the stuff except locking and exceptions
 	void* internal_alloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
-		, char *file = NULL, int line = 0
+		, const char* file = NULL, int line = 0
 #endif
 	);
 protected:
-	int *cur_memory;
-	int *max_memory;
+	int* cur_memory;
+	int* max_memory;
 	// Do not allow to create and destroy pool directly from outside
-	MemoryPool(void *first_extent, void *root_page, int* cur_mem = NULL, int* max_mem = NULL);
+	MemoryPool(void* first_extent, void* root_page, int* cur_mem = NULL, int* max_mem = NULL);
 
 	// This should never be called
 	~MemoryPool() {
 	}
 	
 	static MemoryPool* internal_create(size_t instance_size, 
-		int *cur_mem = NULL, int *max_mem = NULL);
+		int* cur_mem = NULL, int* max_mem = NULL);
 public:
 	static int process_max_memory;
 	static int process_current_memory;
@@ -195,24 +195,24 @@ public:
 
 	void* allocate(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
-		, char *file = NULL, int line = 0
+		, const char* file = NULL, int line = 0
 #endif
 	);
 
-	void deallocate(void *block);
+	void deallocate(void* block);
 	
 	bool verify_pool();
 
-	void print_contents(IB_FILE *, bool = false);
+	void print_contents(IB_FILE*, bool = false);
 	
-	static void globalFree(void *block) {
+	static void globalFree(void* block) {
 	    if (block)
 		  ((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->deallocate(block);
 	}
 	
 	void* calloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
-		, char *file = NULL, int line = 0
+		, const char* file = NULL, int line = 0
 #endif
 	) {
 		void* result = allocate(size, type
@@ -220,7 +220,7 @@ public:
 			, file, line
 #endif
 		);
-		memset(result,0,size);
+		memset(result, 0, size);
 		return result;	
 	}
 
@@ -340,7 +340,7 @@ static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	Since the STL is the client of this class look to its documentation
 	to determine what the individual functions and typedefs do.
 
-	In order to use the allocator class you need to instansiate the
+	In order to use the allocator class you need to instanciate the
 	C++ container template with the allocator.  For example if you
 	want to use a std::vector<int> the declaration would be:
 
@@ -377,21 +377,21 @@ namespace Firebird
 		typedef T			value_type;
 	
 		allocator(MemoryPool& p, SSHORT t = 0) : pool(&p), type(t) {}
-		allocator(MemoryPool *p = getDefaultMemoryPool(), SSHORT t = 0) : pool(p), type(t) {}
+		allocator(MemoryPool* p = getDefaultMemoryPool(), SSHORT t = 0) : pool(p), type(t) {}
 	
 		template <class DST>
 		allocator(const allocator<DST> &alloc)
-		: pool(alloc.getPool()), type(alloc.getType()) { }
+			: pool(alloc.getPool()), type(alloc.getType()) { }
 
 #ifdef DEBUG_GDS_ALLOC
-		pointer allocate(size_type s, const void * = 0)
+		pointer allocate(size_type s, const void* = 0)
 			{ return (pointer) pool->allocate(sizeof(T) * s, 0, __FILE__, __LINE__); }
-		char *_Charalloc(size_type n)
+		char* _Charalloc(size_type n)
 			{ return (char*) pool->allocate(n, 0, __FILE__, __LINE__); }
 #else
-		pointer allocate(size_type s, const void * = 0)
+		pointer allocate(size_type s, const void* = 0)
 			{ return (pointer) pool->allocate(sizeof(T) * s, 0); }
-		char *_Charalloc(size_type n)
+		char* _Charalloc(size_type n)
 			{ return (char*) pool->allocate(n, 0); }
 #endif
 /*#ifdef DEBUG_GDS_ALLOC
@@ -411,7 +411,7 @@ namespace Firebird
 		void construct(pointer p, const T& v) { new(p) T(v); }
 		void destroy(pointer p) { p->~T(); }
 	
-		size_type max_size() const { return (size_type)-1 / sizeof(T); }
+		size_type max_size() const { return (size_type) - 1 / sizeof(T); }
 	
 		pointer address(reference X) const { return &X; }
 		const_pointer address(const_reference X) const { return &X; }
@@ -425,11 +425,11 @@ namespace Firebird
 			return pool == rhs.pool && type == rhs.type;
 		}
 
-		MemoryPool *getPool() const { return pool; }
+		MemoryPool* getPool() const { return pool; }
 		SSHORT getType() const { return type; }
 
 	private:
-		MemoryPool *pool;
+		MemoryPool* pool;
 		SSHORT type;
 	};
 
@@ -438,3 +438,4 @@ namespace Firebird
 #endif /*TESTING_ONLY*/
 
 #endif
+

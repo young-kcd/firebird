@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.43 2003-11-03 01:12:14 brodsom Exp $
+$Id: backup.epp,v 1.44 2003-11-07 08:05:36 robocop Exp $
 */
 
 #include "firebird.h"
@@ -992,7 +992,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	SSHORT blr_length = blr - blr_buffer;
 
 	if (isc_compile_request(status_vector, &DB, &gen_id_reqh,
-							blr_length, (char*) blr_buffer))
+							blr_length, (const char*) blr_buffer))
 	{
 		// if there's no gen_id, never mind ... 
 		return 0;
@@ -1764,7 +1764,7 @@ void put_data(BURP_REL relation)
 	FRBRD *request = NULL;
 	SSHORT blr_length = blr - blr_buffer;
 	if (isc_compile_request(status_vector, &DB, &request,
-							blr_length, (SCHAR*) blr_buffer))
+							blr_length, (const SCHAR*) blr_buffer))
 	{
 		BURP_error_redirect(status_vector, 27, NULL, NULL);
 		// msg 27 isc_compile_request failed 

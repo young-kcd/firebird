@@ -597,8 +597,8 @@ public:
 	static Csb* newCsb(MemoryPool& p, size_t len)
 		{ return FB_NEW(p) Csb(p, len); }
 
-	UCHAR*		csb_blr;
-	UCHAR*		csb_running;
+	const UCHAR*		csb_blr;
+	const UCHAR*		csb_running;
 	jrd_nod*		csb_node;
 	struct acc*	csb_access;		/* Access items to be checked */
 	struct vec*	csb_variables;	/* Vector of variables, if any */
@@ -681,3 +681,4 @@ public:
 								// RDB$EXCEPTIONS.RDB$MESSAGE
 
 #endif /* JRD_EXE_H */
+

@@ -118,9 +118,6 @@ USHORT MERGE_database_info(const UCHAR* in,
 			break;
 		}
 }
-#if (defined __cplusplus) && (defined SOLX86)
-}
-#endif
 
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert( ULONG number, UCHAR * buffer)

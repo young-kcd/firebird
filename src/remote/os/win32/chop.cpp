@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Misc. Function for Server and Tools
- *	MODULE:		chop.c
+ *	MODULE:		chop.cpp
  *	DESCRIPTION:	Function to nicely truncate a long path/file name
  *			to a specified length.
  *

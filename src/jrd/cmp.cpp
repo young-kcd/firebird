@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		cmp.c
+ *	MODULE:		cmp.cpp
  *	DESCRIPTION:	Request compiler
  *
  * The contents of this file are subject to the Interbase Public
@@ -125,7 +125,7 @@ rel_MAX} RIDS;
 
 #define MAX_REQUEST_SIZE	10485760	// 10 MB - just to be safe
 
-static UCHAR *alloc_map(TDBB, CSB, USHORT);
+static UCHAR* alloc_map(TDBB, CSB, USHORT);
 static JRD_NOD catenate_nodes(TDBB, LLS);
 static JRD_NOD copy(TDBB, CSB, JRD_NOD, UCHAR *, USHORT, USHORT);
 static void expand_view_nodes(TDBB, CSB, USHORT, LLS *, NOD_T);
@@ -151,7 +151,7 @@ static RSB post_rse(TDBB, CSB, RSE);
 static void	post_trigger_access(TDBB, CSB, JRD_REL, TRIG_VEC, JRD_REL);
 static void process_map(TDBB, CSB, JRD_NOD, FMT *);
 static BOOLEAN stream_in_rse(USHORT, RSE);
-static SSHORT strcmp_space(TEXT *, TEXT *);
+static SSHORT strcmp_space(const TEXT*, const TEXT*);
 
 #ifdef PC_ENGINE
 static USHORT base_stream(CSB, JRD_NOD *, BOOLEAN);
@@ -320,7 +320,7 @@ JRD_REQ CMP_clone_request(TDBB tdbb, JRD_REQ request, USHORT level, BOOLEAN vali
 }
 
 
-JRD_REQ CMP_compile(USHORT blr_length, UCHAR * blr, USHORT internal_flag)
+JRD_REQ CMP_compile(USHORT blr_length, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -343,7 +343,7 @@ JRD_REQ CMP_compile(USHORT blr_length, UCHAR * blr, USHORT internal_flag)
 }
 
 
-JRD_REQ CMP_compile2(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
+JRD_REQ CMP_compile2(TDBB tdbb, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -758,11 +758,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_field:
 		{
-			FMT format;
-			USHORT id;
-
-			id = (USHORT) (ULONG) node->nod_arg[e_fld_id];
-			format =
+			const USHORT id = (USHORT) (ULONG) node->nod_arg[e_fld_id];
+			const fmt* format =
 				CMP_format(tdbb, csb, (USHORT) (ULONG) node->nod_arg[e_fld_stream]);
 			if (id >= format->fmt_count) {
 				desc->dsc_dtype = dtype_null;
@@ -778,18 +775,13 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_scalar:
 		{
-			JRD_NOD sub;
-			JRD_REL relation;
-			USHORT id;
-			JRD_FLD field;
-			ARR array;
-
-			sub = node->nod_arg[e_scl_field];
-			relation =
+			jrd_nod* sub = node->nod_arg[e_scl_field];
+			jrd_rel* relation =
 				csb->csb_rpt[(USHORT)(ULONG) sub->
 							 nod_arg[e_fld_stream]].csb_relation;
-			id = (USHORT)(ULONG) sub->nod_arg[e_fld_id];
-			field = MET_get_field(relation, id);
+			const USHORT id = (USHORT)(ULONG) sub->nod_arg[e_fld_id];
+			const jrd_fld* field = MET_get_field(relation, id);
+			const arr* array;
 			if (!field || !(array = field->fld_array))
 				IBERROR(223);	/* msg 223 argument of scalar operation must be an array */
 			*desc = array->arr_desc.ads_rpt[0].ads_desc;
@@ -1491,14 +1483,13 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_cast:
 		{
-			FMT format;
-			DSC desc1;
-
-			format = (FMT) node->nod_arg[e_cast_fmt];
+			const fmt* format = (FMT) node->nod_arg[e_cast_fmt];
 			*desc = format->fmt_desc[0];
 			if ((desc->dsc_dtype <= dtype_any_text && !desc->dsc_length) ||
 				(desc->dsc_dtype == dtype_varying
-				 && desc->dsc_length <= sizeof(USHORT))) {
+				 && desc->dsc_length <= sizeof(USHORT)))
+			{
+			    dsc desc1;
 				CMP_get_desc(tdbb, csb, node->nod_arg[e_cast_source], &desc1);
 				desc->dsc_length = DSC_string_length(&desc1);
 				if (desc->dsc_dtype == dtype_cstring)
@@ -1511,11 +1502,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_argument:
 		{
-			FMT format;
-			JRD_NOD message;
-
-			message = node->nod_arg[e_arg_message];
-			format = (FMT) message->nod_arg[e_msg_format];
+			const jrd_nod* message = node->nod_arg[e_arg_message];
+			const fmt* format = (FMT) message->nod_arg[e_msg_format];
 			*desc = format->fmt_desc[(int) node->nod_arg[e_arg_number]];
 			return;
 		}
@@ -1535,8 +1523,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 			}
 			else
 			{
-				SLONG sl1 = MOV_get_long(&desc1, 0);
-				SLONG sl2 = MOV_get_long(&desc2, 0);
+				const SLONG sl1 = MOV_get_long(&desc1, 0);
+				const SLONG sl2 = MOV_get_long(&desc2, 0);
 				/* error() is a local routine in par.c, so we use plain ERR_post. */
 				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
 					ERR_post(gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
@@ -1551,9 +1539,7 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_function:
 		{
-			FUN function;
-
-			function = (FUN) node->nod_arg[e_fun_function];
+			const fun* function = (FUN) node->nod_arg[e_fun_function];
 	/** Null value for the function indicates that the function was not
 	    looked up during parsing the blr. This is true if the function 
 	    referenced in the procedure blr was dropped before dropping the
@@ -1578,10 +1564,8 @@ void CMP_get_desc(TDBB tdbb, CSB csb, JRD_NOD node, DSC * desc)
 
 	case nod_variable:
 		{
-			JRD_NOD value;
-
-			value = node->nod_arg[e_var_variable];
-			*desc = *(DSC *) (value->nod_arg + e_dcl_desc);
+			const jrd_nod* value = node->nod_arg[e_var_variable];
+			*desc = *(DSC*) (value->nod_arg + e_dcl_desc);
 			return;
 		}
 
@@ -1622,12 +1606,8 @@ IDL CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
  *	make one.
  *
  **************************************/
-	DBB dbb;
-	IDL index;
-	LCK lock;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 	DEV_BLKCHK(relation, type_rel);
 
@@ -1636,6 +1616,7 @@ IDL CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
 
 /* For for an existing block */
 
+	idl* index;
 	for (index = relation->rel_index_locks; index; index = index->idl_next)
 		if (index->idl_id == id)
 			return index;
@@ -1647,7 +1628,8 @@ IDL CMP_get_index_lock(TDBB tdbb, JRD_REL relation, USHORT id)
 	index->idl_id = id;
 	index->idl_count = 0;
 
-	index->idl_lock = lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
+	lck* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) lck;
+	index->idl_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = relation->rel_id * 1000 + id;
@@ -1671,14 +1653,12 @@ SLONG CMP_impure(CSB csb, USHORT size)
  *	Allocate space (offset) in request.
  *
  **************************************/
-	SLONG offset;
-
 	DEV_BLKCHK(csb, type_csb);
 
 	if (!csb)
 		return 0;
 
-	offset = FB_ALIGN(csb->csb_impure, ALIGNMENT);
+	const SLONG offset = FB_ALIGN(csb->csb_impure, ALIGNMENT);
 	csb->csb_impure = offset + size;
 
 	return offset;
@@ -1716,7 +1696,7 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	// optimizations can be performed here.
 
 	DEBUG;
-	JRD_NOD node = pass1(tdbb, csb, csb->csb_node, 0, 0, FALSE);
+	jrd_nod* node = pass1(tdbb, csb, csb->csb_node, 0, 0, FALSE);
 	csb->csb_node = node;
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
@@ -1799,16 +1779,17 @@ JRD_REQ CMP_make_request(TDBB tdbb, CSB csb)
 	}
 
     csb_repeat* tail = csb->csb_rpt.begin();
-	csb_repeat* end  = tail + csb->csb_n_stream;
+	const csb_repeat* const end  = tail + csb->csb_n_stream;
 	DEBUG;
 
 	for (RPB* rpb = request->req_rpb; tail < end; rpb++, tail++)
 	{
 		// fetch input stream for update if all booleans matched against indices
 
-		if (tail->csb_flags & csb_update
-			&& !(tail->csb_flags & csb_unmatched)) rpb->rpb_stream_flags |=
-				RPB_s_update;
+		if (tail->csb_flags & csb_update && !(tail->csb_flags & csb_unmatched))
+		{
+			 rpb->rpb_stream_flags |= RPB_s_update;
+		}
 		rpb->rpb_relation = tail->csb_relation;
 		SBM_release(tail->csb_fields);
 	}
@@ -2091,7 +2072,6 @@ void CMP_release(TDBB tdbb, JRD_REQ request)
 	IDL index;
 	JRD_REL relation;
 	RSC resource;
-	ATT attachment;
 
 	SET_TDBB(tdbb);
 
@@ -2099,11 +2079,12 @@ void CMP_release(TDBB tdbb, JRD_REQ request)
 
 /* Release existence locks on references */
 
-	if (!(attachment = request->req_attachment)
-		|| !(attachment->att_flags & ATT_shutdown))
+	att* attachment = request->req_attachment;
+	if (!attachment || !(attachment->att_flags & ATT_shutdown))
 		for (resource =
 			 request->req_resources;
-			 resource; resource = resource->rsc_next) {
+			 resource; resource = resource->rsc_next)
+		{
 			switch (resource->rsc_type) {
 			case rsc_relation:
 				{
@@ -2141,7 +2122,8 @@ void CMP_release(TDBB tdbb, JRD_REQ request)
 
 	if (request->req_attachment) {
 		for (JRD_REQ *next = &request->req_attachment->att_requests; 
-		*next; next = &(*next)->req_request) {
+		*next; next = &(*next)->req_request)
+		{
 			if (*next == request) {
 				*next = request->req_request;
 #ifdef DEV_BUILD
@@ -2179,33 +2161,28 @@ void CMP_shutdown_database(TDBB tdbb)
  *	release any data structures.
  *
  **************************************/
-	JRD_REL relation;
-	vec::iterator ptr, end;
-	JRD_PRC procedure;
-	vec::iterator pptr, pend;
-	IDL index;
-	VEC vector;
-	DBB dbb;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
 
-	if (!(vector = dbb->dbb_relations))
+	vec* vector = dbb->dbb_relations;
+	if (!vector)
 		return;
 
 /* Go through relations and indeces and release
    all existence locks that might have been taken
 */
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
-		if ( (relation = (JRD_REL)*ptr) ) {
+	vec::iterator ptr, end;
+	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
+		jrd_rel* relation = (JRD_REL) *ptr;
+		if (relation) {
 			if (relation->rel_existence_lock) {
 				LCK_release(tdbb, relation->rel_existence_lock);
 				relation->rel_use_count = 0;
 			}
-			for (index = relation->rel_index_locks; index;
+			for (idl* index = relation->rel_index_locks; index;
 				 index = index->idl_next)
 			{
 				if (index->idl_lock) {
@@ -2214,6 +2191,7 @@ void CMP_shutdown_database(TDBB tdbb)
 				}
 			}
 		}
+	}
 
 	if (!(vector = dbb->dbb_procedures))
 		return;
@@ -2221,18 +2199,20 @@ void CMP_shutdown_database(TDBB tdbb)
 /* Release all procedure existence locks that
    might have been taken
 */
-	for (pptr = vector->begin(), pend = vector->end(); pptr < pend; pptr++)
-		if ( (procedure = (JRD_PRC)*pptr) ) {
+	vec::iterator pptr, pend;
+	for (pptr = vector->begin(), pend = vector->end(); pptr < pend; pptr++) {
+		jrd_prc* procedure = (JRD_PRC) *pptr;
+		if (procedure) {
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 				procedure->prc_use_count = 0;
 			}
 		}
-
+	}
 }
 
 
-static UCHAR *alloc_map(TDBB tdbb, CSB csb, USHORT stream)
+static UCHAR* alloc_map(TDBB tdbb, CSB csb, USHORT stream)
 {
 /**************************************
  *
@@ -2244,20 +2224,18 @@ static UCHAR *alloc_map(TDBB tdbb, CSB csb, USHORT stream)
  *	Allocate and initialize stream map for view processing.
  *
  **************************************/
-	STR string;
-
 	DEV_BLKCHK(csb, type_csb);
 
 	SET_TDBB(tdbb);
 
-	string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
+	str* string = FB_NEW_RPT(*tdbb->tdbb_default, MAP_LENGTH) str;
 	string->str_length = MAP_LENGTH;
 	csb->csb_rpt[stream].csb_map = (UCHAR *) string->str_data;
 /* TMN: Here we should really have the following fb_assert */
 /* fb_assert(stream <= MAX_UCHAR); */
 	string->str_data[0] = (UCHAR) stream;
 
-	return (UCHAR *) string->str_data;
+	return (UCHAR*) string->str_data;
 }
 
 
@@ -2276,17 +2254,15 @@ static USHORT base_stream(CSB csb, JRD_NOD * stream_number, BOOLEAN nav_stream)
  *	give an error.
  *
  **************************************/
-	UCHAR *map;
-	USHORT stream;
-
 	DEV_BLKCHK(csb, type_csb);
 /* Note: *stream_number is NOT a JRD_NOD */
 
-	stream = (USHORT) * stream_number;
+	USHORT stream = (USHORT) *stream_number;
 
 /* If the stream references a view, follow map */
 
-	if (map = csb->csb_rpt[stream].csb_map)
+	UCHAR* map = csb->csb_rpt[stream].csb_map;
+	if (map) {
 		if (map[2]) {
 			if (nav_stream)
 				/* navigational stream %ld references a view with more than one base table */
@@ -2296,6 +2272,7 @@ static USHORT base_stream(CSB csb, JRD_NOD * stream_number, BOOLEAN nav_stream)
 			map++;
 			stream = *map;
 		}
+	}
 
 /* if this is a navigational stream, fix up the stream number 
    in the node tree to point to the base table from now on */
@@ -2320,18 +2297,16 @@ static JRD_NOD catenate_nodes(TDBB tdbb, LLS stack)
  *	and turn them into a tree of concatenations.
  *
  **************************************/
-	JRD_NOD cat_node, node1;
-
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(stack, type_lls);
 
-	node1 = (JRD_NOD) LLS_POP(&stack);
+	jrd_nod* node1 = (JRD_NOD) LLS_POP(&stack);
 
 	if (!stack)
 		return node1;
 
-	cat_node = PAR_make_node(tdbb, 2);
+	jrd_nod* cat_node = PAR_make_node(tdbb, 2);
 	cat_node->nod_type = nod_concatenate;
 	cat_node->nod_arg[0] = node1;
 	cat_node->nod_arg[1] = catenate_nodes(tdbb, stack);
@@ -2357,7 +2332,7 @@ static JRD_NOD copy(
  *
  **************************************/
 	JRD_NOD node, *arg1, *arg2, *end;
-	USHORT stream, new_stream, args;
+	USHORT stream, new_stream;
 
 	SET_TDBB(tdbb);
 
@@ -2370,7 +2345,7 @@ static JRD_NOD copy(
 
 /* Special case interesting nodes */
 
-	args = input->nod_count;
+	USHORT args = input->nod_count;
 
 	switch (input->nod_type) {
 	case nod_ansi_all:
@@ -2509,10 +2484,8 @@ static JRD_NOD copy(
 	case nod_rse:
 	case nod_stream:
 		{
-			RSE new_rse, old_rse;
-
-			old_rse = (RSE) input;
-			new_rse =
+			RSE old_rse = (RSE) input;
+			RSE new_rse =
 				(RSE) PAR_make_node(tdbb, old_rse->rse_count + rse_delta + 2);
 			new_rse->nod_type = input->nod_type;
 			new_rse->nod_count = 0;
@@ -2543,9 +2516,6 @@ static JRD_NOD copy(
 
 	case nod_relation:
 		{
-			csb_repeat *element;
-			int relative_stream;
-
 			if (!remap)
 				BUGCHECK(221);	/* msg 221 (CMP) copy: cannot remap */
 			node = PAR_make_node(tdbb, e_rel_length);
@@ -2558,7 +2528,7 @@ static JRD_NOD copy(
 	    Get that stream number so that the flags can be copied 
 	    into the newly created child stream.
 	**/
-			relative_stream = (stream) ? remap[stream - 1] : stream;
+			const int relative_stream = (stream) ? remap[stream - 1] : stream;
 			new_stream = csb->csb_n_stream++;
 			node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) new_stream;
 			/* TMN: Here we should really have the following fb_assert */
@@ -2569,7 +2539,7 @@ static JRD_NOD copy(
 			node->nod_arg[e_rel_relation] = input->nod_arg[e_rel_relation];
 			node->nod_arg[e_rel_view] = input->nod_arg[e_rel_view];
 
-			element = CMP_csb_element(csb, new_stream);
+			csb_repeat* element = CMP_csb_element(csb, new_stream);
 			element->csb_relation = (JRD_REL) node->nod_arg[e_rel_relation];
 			element->csb_view = (JRD_REL) node->nod_arg[e_rel_view];
 			element->csb_view_stream = remap[0];
@@ -2616,8 +2586,6 @@ static JRD_NOD copy(
 
 	case nod_procedure:
 		{
-			csb_repeat *element;
-
 			if (!remap)
 				BUGCHECK(221);	/* msg 221 (CMP) copy: cannot remap */
 			node = PAR_make_node(tdbb, e_prc_length);
@@ -2634,7 +2602,7 @@ static JRD_NOD copy(
 			/* fb_assert(new_stream <= MAX_UCHAR); */
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
-			element = CMP_csb_element(csb, new_stream);
+			csb_repeat* element = CMP_csb_element(csb, new_stream);
 			// SKIDDER: Maybe we need to check if we really found a procedure ?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
 			  (SSHORT)(SLONG) node->nod_arg[e_prc_procedure],FALSE,FALSE,0);
@@ -2764,9 +2732,7 @@ static void expand_view_nodes(
 /* Relation is primitive -- make dbkey node */
 
 	if (csb->csb_rpt[stream].csb_relation) {
-		JRD_NOD node;
-
-		node = PAR_make_node(tdbb, 1);
+		jrd_nod* node = PAR_make_node(tdbb, 1);
 		node->nod_count = 0;
 		node->nod_type = type;
 		node->nod_arg[0] = (JRD_NOD) (SLONG) stream;
@@ -2818,9 +2784,9 @@ static void ignore_dbkey(TDBB tdbb, CSB csb, RSE rse, JRD_REL view)
 		else if (node->nod_type == nod_aggregate)
 			ignore_dbkey(tdbb, csb, (RSE) node->nod_arg[e_agg_rse], view);
 		else if (node->nod_type == nod_union) {
-			JRD_NOD clauses, *ptr_uni, *end_uni;
+			JRD_NOD *ptr_uni, *end_uni;
 
-			clauses = node->nod_arg[e_uni_clauses];
+			jrd_nod* clauses = node->nod_arg[e_uni_clauses];
 			for (ptr_uni = clauses->nod_arg, end_uni =
 				 ptr_uni + clauses->nod_count; ptr_uni < end_uni; ptr_uni++)
 				ignore_dbkey(tdbb, csb, (RSE) * ptr_uni++, view);
@@ -2845,7 +2811,6 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 	LLS stack;
 	VEC vector;
 	vec::iterator ptr1, end;
-	JRD_REL relation;
 	USHORT field_id;
 	UCHAR *map, local_map[MAP_LENGTH];
 
@@ -2854,7 +2819,7 @@ static JRD_NOD make_defaults(TDBB tdbb, CSB csb, USHORT stream, JRD_NOD statemen
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(statement, type_nod);
 
-	relation = csb->csb_rpt[stream].csb_relation;
+	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 
 	if (!(vector = relation->rel_fields))
 		return statement;
@@ -5492,7 +5457,7 @@ static void process_map(TDBB tdbb, CSB csb, JRD_NOD map, FMT * input_format)
 }
 
 
-static SSHORT strcmp_space(TEXT * p, TEXT * q)
+static SSHORT strcmp_space(const TEXT* p, const TEXT* q)
 {
 /**************************************
  *
@@ -5559,3 +5524,4 @@ static BOOLEAN stream_in_rse(USHORT stream, RSE rse)
 
 	return FALSE;				/* mark this rse as variant */
 }
+

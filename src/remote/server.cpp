@@ -751,8 +751,7 @@ static ISC_STATUS attach_database(
  *	Process an attach or create packet.
  *
  **************************************/
-	USHORT l, dl;
-	UCHAR new_dpb_buffer[512], *new_dpb, *p, *end;
+	UCHAR new_dpb_buffer[512];
 	FRBRD *handle;
 	ISC_STATUS_ARRAY status_vector;
 	RDB rdb;
@@ -761,32 +760,33 @@ static ISC_STATUS attach_database(
 	send->p_operation = op_accept;
 	handle = NULL;
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
-	l = attach->p_atch_file.cstr_length;
-	UCHAR* dpb = attach->p_atch_dpb.cstr_address;
-	dl = attach->p_atch_dpb.cstr_length;
+	const USHORT l = attach->p_atch_file.cstr_length;
+	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
+	USHORT dl = attach->p_atch_dpb.cstr_length;
 
 /* If we have user identification, append it to database parameter block */
 
-	new_dpb = new_dpb_buffer;
+	UCHAR* new_dpb = new_dpb_buffer;
 	if (string = port->port_user_name) {
 		if ((size_t)(dl + 3 + string->str_length) > sizeof(new_dpb_buffer))
 			new_dpb = ALLR_alloc((SLONG) (dl + 3 + string->str_length));
-		p = new_dpb;
-		if (dl)
-			for (end = dpb + dl; dpb < end;)
+		UCHAR* p = new_dpb;
+		if (dl) {
+			for (const UCHAR* const end = dpb + dl; dpb < end;)
 				*p++ = *dpb++;
+		}
 		else
 			*p++ = gds_dpb_version1;
 		*p++ = gds_dpb_sys_user_name;
 		*p++ = (UCHAR) string->str_length;
-		for (dpb = (UCHAR *) string->str_data, end = dpb + string->str_length;
-			 dpb < end;)
+		dpb = (UCHAR *) string->str_data;
+		for (const UCHAR* const end = dpb + string->str_length; dpb < end;)
 			*p++ = *dpb++;
 		dpb = new_dpb;
 		dl = p - new_dpb;
 	}
 
-/* See if user has specified parameters relevent to the connection,
+/* See if user has specified parameters relevant to the connection,
    they will be stuffed in the DPB if so. */
 	REMOTE_get_timeout_params(port, dpb, dl);
 
@@ -794,12 +794,12 @@ static ISC_STATUS attach_database(
 	if (operation == op_attach)
 	{
 		isc_attach_database(status_vector, l, file,
-							&handle, dl, reinterpret_cast<char*>(dpb));
+							&handle, dl, reinterpret_cast<const char*>(dpb));
 	}
 	else
 	{
 		isc_create_database(status_vector, l, file,
-							&handle, dl, reinterpret_cast<char*>(dpb), 0);
+							&handle, dl, reinterpret_cast<const char*>(dpb), 0);
 	}
 	THREAD_ENTER;
 
@@ -1087,12 +1087,12 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
 
 	RDB rdb = this->port_context;
 	FRBRD* handle = NULL;
-	UCHAR* blr = compile->p_cmpl_blr.cstr_address;
+	const UCHAR* blr = compile->p_cmpl_blr.cstr_address;
 	USHORT blr_length = compile->p_cmpl_blr.cstr_length;
 
 	THREAD_EXIT;
 	isc_compile_request(status_vector, &rdb->rdb_handle, &handle, blr_length,
-						reinterpret_cast<char*>(blr));
+						reinterpret_cast<const char*>(blr));
 	THREAD_ENTER;
 
 	if (status_vector[1])

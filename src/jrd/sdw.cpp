@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sdw.c
+ *	MODULE:		sdw.cpp
  *	DESCRIPTION:	Disk Shadowing Manager
  *
  * The contents of this file are subject to the Interbase Public

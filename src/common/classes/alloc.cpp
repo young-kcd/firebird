@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.35 2003-11-03 23:50:05 brodsom Exp $
+ *  $Id: alloc.cpp,v 1.36 2003-11-07 08:05:49 robocop Exp $
  *
  */
 
@@ -163,7 +163,7 @@ void MemoryPool::tree_free(void* block) {
 
 void* MemoryPool::allocate(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
-	, char* file, int line
+	, const char* file, int line
 #endif
 ) {
 	lock.enter();
@@ -350,7 +350,7 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 
 void* MemoryPool::internal_alloc(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
-	, char* file, int line
+	, const char* file, int line
 #endif
 ) {
 	// Lookup a block greater or equal than size in freeBlocks tree
@@ -360,7 +360,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 	if (freeBlocks.locate(locGreatEqual,blTemp)) {
 		// Found large enough block
 		BlockInfo* current = &freeBlocks.current();
-		if (current->length-size < MEM_ALIGN(sizeof(MemoryBlock))+ALLOC_ALIGNMENT) {
+		if (current->length-size < MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
+		{
 			blk = current->block;
 			// Block is small enough to be returned AS IS
 			blk->used = true;

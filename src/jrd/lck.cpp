@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		lck.c
+ *	MODULE:		lck.cpp
  *	DESCRIPTION:	Lock handler for JRD (not lock manager!)
  *
  * The contents of this file are subject to the Interbase Public

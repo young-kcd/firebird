@@ -286,9 +286,9 @@ int RDB_commit_transaction(int *user_status, TRA * tra_handle)
 
 
 int RDB_compile_request(
-						int *user_status,
-						DBB * db_handle,
-						REQ * req_handle, SSHORT blr_length, SCHAR * blr)
+						int* user_status,
+						DBB* db_handle,
+						REQ* req_handle, SSHORT blr_length, const SCHAR* blr)
 {
 /**************************************
  *

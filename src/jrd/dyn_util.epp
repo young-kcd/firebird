@@ -76,11 +76,14 @@ static const SCHAR gen_id_blr1[] = {
 	blr_begin,
 	blr_assignment,
 	blr_gen_id
-}, gen_id_blr2[] = {
-	blr_literal, blr_long, 0, 1, 0, 0, 0,
-		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc};
+};
 
-static const SCHAR prot_blr[] = {
+static const SCHAR gen_id_blr2[] = {
+	blr_literal, blr_long, 0, 1, 0, 0, 0,
+		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc
+};
+
+static const UCHAR prot_blr[] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 1, 1, 0,
@@ -144,7 +147,7 @@ SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
 		p += p[-1];
 		memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 		p += sizeof(gen_id_blr2);
-		req_handle = CMP_compile2(tdbb, (UCHAR*)blr, TRUE);
+		req_handle = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), TRUE);
 	}
 	*request = (BLK)req_handle;
 	EXE_start(tdbb, req_handle, dbb->dbb_sys_trans);
@@ -493,9 +496,7 @@ bool DYN_UTIL_get_prot(TDBB		tdbb,
 
 	if (!request)
 	{
-		request = CMP_compile2(tdbb,
-								(UCHAR*)prot_blr, /* const_cast */
-								TRUE);
+		request = CMP_compile2(tdbb, prot_blr, TRUE);
 	}
 	gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
 	gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));

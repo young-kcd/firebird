@@ -66,7 +66,7 @@ ENTRYPOINT( "gds_attach_database",
 		  "_jrd8_attach_database",
 		     IPI_attach_database,
 		   (ISC_STATUS*, SSHORT, const SCHAR*, struct att**, SSHORT,
-				const SCHAR*, SCHAR*))
+				const SCHAR*, const SCHAR*))
 
 ENTRYPOINT( "gds_blob_info",
 		    jrd8_blob_info,
@@ -131,7 +131,7 @@ ENTRYPOINT( "gds_compile_request",
 		    PSI5_compile_request,
 		  "_jrd8_compile_request",
 		     IPI_compile_request,
-		   (ISC_STATUS*, struct att**, struct jrd_req**, SSHORT, SCHAR*))
+		   (ISC_STATUS*, struct att**, struct jrd_req**, SSHORT, const SCHAR*))
 
 ENTRYPOINT( "gds_create_blob",
    /****    jrd8_create_blob    ***/ y_valve_no_entrypoint,
@@ -158,7 +158,7 @@ ENTRYPOINT( "gds_create_database",
 		  "_jrd8_create_database",
 		     IPI_create_database,
 			(ISC_STATUS*, USHORT, const UCHAR*, struct att**, USHORT,
-				const UCHAR*, USHORT, UCHAR*))
+				const UCHAR*, USHORT, const UCHAR*))
 
 ENTRYPOINT( "gds_database_info",
 		    jrd8_database_info,

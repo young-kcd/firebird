@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		ext.c
+ *	MODULE:		ext.cpp
  *	DESCRIPTION:	External file access
  *
  * The contents of this file are subject to the Interbase Public

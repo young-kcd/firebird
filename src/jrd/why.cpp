@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.34 2003-11-06 03:00:40 brodsom Exp $
+$Id: why.cpp,v 1.35 2003-11-07 08:06:18 robocop Exp $
 */
 
 #include "firebird.h"
@@ -1133,11 +1133,11 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS * user_status,
-								   WHY_ATT * db_handle,
-								   WHY_REQ * req_handle,
+ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
+								   WHY_ATT* db_handle,
+								   WHY_REQ* req_handle,
 								   USHORT blr_length,
-								   SCHAR * blr)
+								   const SCHAR* blr)
 {
 /**************************************
  *
@@ -1187,11 +1187,11 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS * user_status,
-									WHY_ATT * db_handle,
-									WHY_REQ * req_handle,
+ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS* user_status,
+									WHY_ATT* db_handle,
+									WHY_REQ* req_handle,
 									USHORT blr_length,
-									SCHAR * blr)
+									const SCHAR* blr)
 {
 /**************************************
  *

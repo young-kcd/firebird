@@ -46,7 +46,7 @@ typedef struct thread {
 	HANDLE thread_handle;
 } *THREAD;
 
-static void control_thread(DWORD);
+static void WINAPI control_thread(DWORD);
 static int cleanup_thread(void *lpv);
 static void parse_switch(TEXT *, int *);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
@@ -54,7 +54,7 @@ static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 static DWORD current_state;
 static void (*main_handler) ();
 static SERVICE_STATUS_HANDLE service_handle;
-static TEXT *service_name;
+static TEXT* service_name;
 static HANDLE stop_event_handle;
 static MUTX_T thread_mutex[1];
 static THREAD threads;
@@ -62,7 +62,7 @@ static HANDLE hMutex = NULL;
 static bool bGuarded = false;
 
 
-void CNTL_init( void (*handler) (), TEXT * name)
+void CNTL_init( void (*handler) (), TEXT* name)
 {
 /**************************************
  *
@@ -111,7 +111,7 @@ void *CNTL_insert_thread(void)
 }
 
 
-void CNTL_main_thread( SLONG argc, SCHAR * argv[])
+void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 {
 /**************************************
  *
@@ -133,9 +133,7 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 	DWORD cleanup_thread_id;
 #endif
 
-	service_handle = RegisterServiceCtrlHandler(service_name,
-												(LPHANDLER_FUNCTION)
-												control_thread);
+	service_handle = RegisterServiceCtrlHandler(service_name, control_thread);
 	if (!service_handle)
 		return;
 
@@ -164,7 +162,8 @@ void CNTL_main_thread( SLONG argc, SCHAR * argv[])
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
 		!gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 						   (main_handler), (void *) flag, 0, 0, 0)
-		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0)) {
+		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
+	{
 		status = 0;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
 	}
@@ -275,7 +274,7 @@ void CNTL_shutdown_service( TEXT * message)
 }
 
 
-static void control_thread( DWORD action)
+static void WINAPI control_thread( DWORD action)
 {
 /**************************************
  *

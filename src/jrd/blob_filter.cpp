@@ -72,7 +72,7 @@ static PTR filters[] = {
 
 
 static ISC_STATUS open_blob(TDBB, JRD_TRA, CTL*, SLONG*, USHORT, const UCHAR*, PTR,
-							USHORT,BLF);
+							USHORT, BLF);
 
 ISC_STATUS BLF_close_blob(TDBB tdbb, CTL * filter_handle)
 {
@@ -151,7 +151,7 @@ ISC_STATUS BLF_create_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, const_cast<UCHAR*>(bpb),
+					 blob_id, bpb_length, bpb,
 					 (ISC_STATUS (*)(USHORT, CTL)) callback, ACTION_create,
 					 filter);
 }
@@ -268,7 +268,7 @@ ISC_STATUS BLF_open_blob(TDBB tdbb,
  **************************************/
 
 	return open_blob(tdbb, tra_handle, filter_handle,
-					 blob_id, bpb_length, const_cast<UCHAR*>(bpb),
+					 blob_id, bpb_length, bpb,
 					 (ISC_STATUS (*)(USHORT, CTL)) callback,
 					 ACTION_open, filter);
 }

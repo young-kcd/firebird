@@ -200,10 +200,11 @@ static void xnet_log_error(int source_line_num, char* err_msg, ULONG err_code=0)
 
 
 PORT XNET_analyze(
-				  TEXT * file_name,
-				  USHORT * file_length,
-				  ISC_STATUS * status_vector,
-				  TEXT * node_name, TEXT * user_string, USHORT uv_flag)
+				  TEXT* file_name,
+				  USHORT* file_length,
+				  ISC_STATUS* status_vector,
+				  const TEXT* node_name, const TEXT* user_string,
+				  USHORT uv_flag)
 {
 /**************************************
  *
@@ -222,7 +223,6 @@ PORT XNET_analyze(
 	PORT port;
 	PACKET *packet;
 	P_CNCT *cnct;
-	SSHORT user_length;
 	TEXT *p, user_id[128], buffer[64];
 
 	*file_length = strlen(file_name);
@@ -258,7 +258,7 @@ PORT XNET_analyze(
 		*p++ = 0;
 	}
 
-	user_length = p - user_id;
+	const SSHORT user_length = p - user_id;
 
 /* Establish connection to server */
 
@@ -411,8 +411,8 @@ PORT XNET_analyze(
 }
 
 
-PORT XNET_connect(TEXT * name, PACKET * packet,
-                  ISC_STATUS * status_vector, USHORT flag)
+PORT XNET_connect(const TEXT* name, PACKET* packet,
+                  ISC_STATUS* status_vector, USHORT flag)
 {
 /**************************************
  *
@@ -2701,4 +2701,5 @@ PORT XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 	return port;
 }
 
-#endif // SUPERCLINET
+#endif // SUPERCLIENT
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD access method
- *	MODULE:		hsh.c
+ *	MODULE:		hsh.cpp
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public

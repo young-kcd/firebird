@@ -51,7 +51,7 @@
 #endif
 
 
-void divorce_terminal( fd_set * mask)
+void divorce_terminal( fd_set* mask)
 {
 /**************************************
  *
@@ -64,7 +64,7 @@ void divorce_terminal( fd_set * mask)
  *	process.  Close all files except for marked by the input mask.
  *
  **************************************/
-	int s, fid;
+	int fid;
 
 /* Close all files other than those explicitly requested to stay open */
 
@@ -105,3 +105,4 @@ void divorce_terminal( fd_set * mask)
 #endif /* HAVE_SETPGID */
 #endif /* HAVE_SETPGRP */
 }
+

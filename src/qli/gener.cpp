@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.25 2003-10-29 10:53:33 robocop Exp $
+$Id: gener.cpp,v 1.26 2003-11-07 08:06:25 robocop Exp $
 */
 
 #include "firebird.h"
@@ -609,7 +609,7 @@ static void gen_compile( QLI_REQ request)
 
 	if (gds__compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length,
-							 (char*) rlb->rlb_base)) {
+							 (const char*) rlb->rlb_base)) {
 		RELEASE_RLB;
 		ERRQ_database_error(dbb, status_vector);
 	}

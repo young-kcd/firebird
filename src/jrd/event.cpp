@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		event.c
+ *	MODULE:		event.cpp
  *	DESCRIPTION:	Event Manager
  *
  * The contents of this file are subject to the Interbase Public

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.11 2003-11-03 23:56:25 brodsom Exp $
+$Id: parser.cpp,v 1.12 2003-11-07 08:06:31 robocop Exp $
 */
 
 #include "firebird.h"
@@ -54,34 +54,30 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
  *	messages found.  If an error occurs, return -1;
  *
  **************************************/
-	REM_MSG message, next;
-	FMT format;
-	DSC *desc;
-	USHORT count, msg_number, offset, align, net_length;
-	SSHORT version;
+	REM_MSG next;
 
-	version = *blr++;
+	const SSHORT version = *blr++;
 	if ((version != blr_version4) && (version != blr_version5))
 		return (REM_MSG) - 1;
 
 	if (*blr++ != blr_begin)
 		return 0;
 
-	message = NULL;
-	net_length = 0;
+	REM_MSG message = NULL;
+	USHORT net_length = 0;
 
 	while (*blr++ == blr_message) {
-		msg_number = *blr++;
-		count = *blr++;
+		const USHORT msg_number = *blr++;
+		USHORT count = *blr++;
 		count += (*blr++) << 8;
-		format = (FMT) ALLOCV(type_fmt, count);
+		fmt* format = (FMT) ALLOCV(type_fmt, count);
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("PARSE_messages            allocate format  %x\n", format);
 #endif
 		format->fmt_count = count;
-		offset = 0;
-		for (desc = format->fmt_desc; count; --count, ++desc) {
-			align = 4;
+		USHORT offset = 0;
+		for (dsc* desc = format->fmt_desc; count; --count, ++desc) {
+			USHORT align = 4;
 			switch (*blr++) {
 			case blr_text:
 				desc->dsc_dtype = dtype_text;
@@ -247,7 +243,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 }
 
 
-UCHAR *PARSE_prepare_messages(UCHAR * blr, USHORT blr_length)
+const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 {
 /**************************************
  *
@@ -262,19 +258,19 @@ UCHAR *PARSE_prepare_messages(UCHAR * blr, USHORT blr_length)
  *	This function is only called for protocol version 5 and below
  *
  **************************************/
-	UCHAR *new_blr, *old_blr;
-	USHORT count;
-	SSHORT version;
+    const UCHAR* old_blr = blr;
+	const UCHAR* new_blr = blr;
 
-	new_blr = old_blr = blr;
-
-	version = *blr++;
+	const SSHORT version = *blr++;
 	if (((version != blr_version4) && (version != blr_version5)) ||
-		*blr++ != blr_begin) return old_blr;
+		*blr++ != blr_begin)
+	{
+		return old_blr;
+	}
 
 	while (*blr++ == blr_message) {
 		blr++;
-		count = *blr++;
+		USHORT count = *blr++;
 		count += (*blr++) << 8;
 		for (; count; --count)
 			switch (*blr++) {
@@ -311,11 +307,15 @@ UCHAR *PARSE_prepare_messages(UCHAR * blr, USHORT blr_length)
 						("PARSE_prepare_messages    allocate blr     %x\n",
 						 new_blr);
 #endif
-					memcpy(new_blr, old_blr, blr_length);
+					// Safe const_cast, we are allocating new space for new_blr
+					memcpy(const_cast<UCHAR*>(new_blr), old_blr, blr_length);
 					blr = new_blr + (int) (blr - old_blr);
 				}
 
-				blr[-1] = blr_double;
+				// It's safe because blr has been replaced by new space,
+				// we aren't overwriting the original const parameter.
+				fb_assert(new_blr != old_blr);
+				const_cast<UCHAR*>(blr)[-1] = blr_double;
 				break;
 
 			default:
@@ -327,3 +327,4 @@ UCHAR *PARSE_prepare_messages(UCHAR * blr, USHORT blr_length)
 
 	return new_blr;
 }
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		cmp_proto.h
- *	DESCRIPTION:	Prototype header file for cmp.c
+ *	DESCRIPTION:	Prototype header file for cmp.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,8 +29,8 @@
 int				CMP_clone_active(jrd_req*);
 jrd_nod*		CMP_clone_node(TDBB, Csb*, jrd_nod*);
 jrd_req* 		CMP_clone_request(TDBB, jrd_req*, USHORT, BOOLEAN);
-jrd_req*		CMP_compile(USHORT, UCHAR*, USHORT);
-jrd_req*		CMP_compile2(TDBB, UCHAR*, USHORT);
+jrd_req*		CMP_compile(USHORT, const UCHAR*, USHORT);
+jrd_req*		CMP_compile2(TDBB, const UCHAR*, USHORT);
 csb_repeat*		CMP_csb_element(Csb*, USHORT);
 void			CMP_expunge_transaction(jrd_tra*);
 void			CMP_decrement_prc_use_count(TDBB, JRD_PRC);

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		allr_proto.h
- *	DESCRIPTION:	Prototype header file for allr.c
+ *	DESCRIPTION:	Prototype header file for allr.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,8 +27,8 @@
 #ifdef DEBUG_GDS_ALLOC
 #define ALLR_alloc(s)	  ALLR_alloc_debug((s),(TEXT*)__FILE__,(ULONG)__LINE__)
 #define ALLR_block(s, sz) ALLR_block_debug((s), (sz), (TEXT*)__FILE__,(ULONG)__LINE__)
-UCHAR*		ALLR_alloc_debug(ULONG, TEXT*, ULONG);
-struct blk*	ALLR_block_debug(UCHAR, ULONG, TEXT*, ULONG);
+UCHAR*		ALLR_alloc_debug(ULONG, const TEXT*, ULONG);
+struct blk*	ALLR_block_debug(UCHAR, ULONG, const TEXT*, ULONG);
 #else  //DEBUG_GDS_ALLOC
 UCHAR*		ALLR_alloc(ULONG);
 struct blk*	ALLR_block(UCHAR, ULONG);

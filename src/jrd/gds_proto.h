@@ -47,9 +47,9 @@ extern "C" {
 #ifdef DEBUG_GDS_ALLOC
 
 #define gds__alloc(s)		gds__alloc_debug ((s),(TEXT*)__FILE__,(ULONG)__LINE__)
-void*	API_ROUTINE gds__alloc_debug(SLONG, TEXT*, ULONG);
+void*	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
-void	API_ROUTINE gds_alloc_report(ULONG, char*, int);
+void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
 
 #define	ALLOC_dont_report	(1L << 0)	/* Don't report this block */
 #define	ALLOC_silent		(1L << 1)	/* Don't report new leaks */

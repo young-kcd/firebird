@@ -130,7 +130,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 					USHORT*	file_length,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
-					TEXT*	user_string,
+					const TEXT*	user_string,
 					USHORT	uv_flag)
 {
 /**************************************
@@ -150,7 +150,6 @@ PORT WNET_analyze(	TEXT*	file_name,
 	RDB rdb;
 	PACKET *packet;
 	P_CNCT *cnct;
-	SSHORT user_length;
 	UCHAR *p, user_id[200];
 	TEXT buffer[64];
 
@@ -187,7 +186,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 		*p++ = 0;
 	}
 
-	user_length = p - user_id;
+	const SSHORT user_length = p - user_id;
 
 /* Establish connection to server */
 
@@ -199,7 +198,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 	cnct->p_cnct_file.cstr_length = *file_length;
 	cnct->p_cnct_file.cstr_address = (UCHAR *) file_name;
 
-/* Note: prior to V3.1E a recievers could not in truth handle more
+/* Note: prior to V3.1E a receivers could not in truth handle more
    then 5 protocol descriptions; however, this restriction does not 
    apply to Windows since it was created in 4.0 */
 
@@ -226,7 +225,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 
 /* If we can't talk to a server, punt. Let somebody else generate an error. */
 
-	PORT port = WNET_connect(node_name, packet, status_vector, FALSE);
+	PORT port = WNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
 		ALLR_release(rdb);
 		return NULL;
@@ -263,7 +262,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		port = WNET_connect(node_name, packet, status_vector, FALSE);
+		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
 			ALLR_release(rdb);
 			return NULL;
@@ -300,7 +299,7 @@ PORT WNET_analyze(	TEXT*	file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		port = WNET_connect(node_name, packet, status_vector, FALSE);
+		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
 			ALLR_release(rdb);
 			return NULL;
@@ -1757,3 +1756,4 @@ static void wnet_make_file_name( TEXT * name, DWORD number)
 	}
 	*p++ = 0;
 }
+

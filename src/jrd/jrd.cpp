@@ -132,7 +132,7 @@
 
 #ifdef SERVER_SHUTDOWN
 typedef struct dbf {
-	struct dbf *dbf_next;
+	struct dbf* dbf_next;
 	USHORT dbf_length;
 	TEXT dbf_data[2];
 } *DBF;
@@ -375,7 +375,7 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// SERVER_SHUTDOWN
 #endif	// WIN_NT
 
-static DBB		init(TDBB, ISC_STATUS*, TEXT*, USHORT);
+static DBB		init(TDBB, ISC_STATUS*, const TEXT*, USHORT);
 static void		make_jrn_data(UCHAR*, USHORT*, const TEXT*, USHORT,
 	const TEXT*, USHORT);
 static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, const UCHAR*);
@@ -580,7 +580,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 								ATT*	handle,
 								SSHORT	dpb_length,
 								const UCHAR*	dpb,
-								TEXT* expanded_filename)
+								const TEXT* expanded_filename)
 {
 /**************************************
  *
@@ -702,7 +702,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
       
-		if (ISC_check_if_remote(expanded_name, TRUE)) {
+		if (ISC_check_if_remote(expanded_name, true)) {
 			ERR_post(gds_unavailable, 0);
 		}
 	}
@@ -1652,7 +1652,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 						ATT* db_handle,
 						JRD_REQ* req_handle,
 						SSHORT blr_length,
-						SCHAR* blr)
+						const SCHAR* blr)
 {
 /**************************************
  *
@@ -1663,8 +1663,6 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	JRD_REQ request;
-	ATT attachment;
 	struct tdbb thd_context;
 
 	api_entry_point_init(user_status);
@@ -1672,7 +1670,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	struct tdbb* tdbb = set_thread_data(thd_context);
 
 	NULL_CHECK(req_handle, gds_bad_req_handle);
-	attachment = *db_handle;
+	att* attachment = *db_handle;
 
 	if (check_database(tdbb, attachment, user_status))
 		return user_status[1];
@@ -1685,7 +1683,8 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	{
 		tdbb->tdbb_status_vector = user_status;
 
-		request = CMP_compile2(tdbb, reinterpret_cast<UCHAR*>(blr), FALSE);
+		jrd_req* request =
+			CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
 		request->req_attachment = attachment;
 		request->req_request = attachment->att_requests;
 		attachment->att_requests = request;
@@ -1771,7 +1770,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 								USHORT	dpb_length,
 								const UCHAR*	dpb,
 								USHORT	db_type,
-								TEXT*	expanded_filename)
+								const TEXT*	expanded_filename)
 {
 /**************************************
  *
@@ -1864,7 +1863,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		/* Check to see if the database is truly local or if it just looks
 		   that way */
 
-		if (ISC_check_if_remote(expanded_name, TRUE)) {
+		if (ISC_check_if_remote(expanded_name, true)) {
 			ERR_post(gds_unavailable, 0);
 		}
 	}
@@ -5498,7 +5497,7 @@ static BOOLEAN handler_NT(SSHORT controlAction)
 
 static DBB init(TDBB	tdbb,
 				ISC_STATUS*	user_status,
-				TEXT*	expanded_filename,
+				const TEXT*	expanded_filename,
 				USHORT	attach_flag)
 {
 /**************************************

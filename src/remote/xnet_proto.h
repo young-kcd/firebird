@@ -30,8 +30,9 @@
 #define PORT void*
 #endif
 
-PORT	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, TEXT*, TEXT*, USHORT);
-PORT	XNET_connect(TEXT*, struct packet*, ISC_STATUS*, USHORT);
+PORT	XNET_analyze(TEXT*, USHORT*, ISC_STATUS*, const TEXT*,
+	const TEXT*, USHORT);
+PORT	XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
 
 #ifndef SUPERCLIENT
 void	XNET_srv(USHORT flag);
