@@ -1,3 +1,36 @@
+2004-01-13 14:40  eku
+
+	* firebird2/src/common/utils.cpp:
+	
+	Fixed compilation problems with size_t. It's primarily defined in
+	sys/types.h
+
+2004-01-13 14:38  eku
+
+	* firebird2/src/: remote/inet.cpp, common/config/config.cpp,
+	common/config/config.h:
+	
+	Port numbers are limited to 16 bit.
+
+2004-01-13 10:52  robocop
+
+	* firebird2/: builds/win32/make_examples.bat, src/burp/backup.epp,
+	src/burp/burp.cpp, src/burp/burp.h, src/burp/burp_proto.h,
+	src/burp/canonical.cpp, src/burp/mvol.cpp, src/burp/restore.epp,
+	src/burp/spit.cpp, src/dsql/array.epp, src/dsql/pass1.cpp,
+	src/include/fb_types.h, src/jrd/ExecuteStatement.cpp,
+	src/jrd/ExecuteStatement.h, src/jrd/blb.cpp, src/jrd/blk.h,
+	src/jrd/btr.cpp, src/jrd/cch.cpp, src/jrd/cmp.cpp, src/jrd/dbg.cpp,
+	src/jrd/dbt.cpp, src/jrd/evl.cpp, src/jrd/exe.cpp, src/jrd/exe.h,
+	src/jrd/ext.cpp, src/jrd/fun.epp, src/jrd/idx.cpp, src/jrd/inf.cpp,
+	src/jrd/jrd.cpp, src/jrd/met.epp, src/jrd/nav.cpp, src/jrd/opt.cpp,
+	src/jrd/par.cpp, src/jrd/pcmet.epp, src/jrd/rng.cpp,
+	src/jrd/rse.cpp, src/jrd/vio.cpp, src/jrd/os/vms/extvms.cpp,
+	src/qli/meta.epp, src/remote/protocol.cpp, src/remote/protocol.h,
+	src/utilities/sbc_print.cpp:
+	
+	Cleanup
+
 2004-01-12 19:56  arnobrinkman
 
 	* firebird2/src/burp/restore.epp:
