@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.87 2004-05-13 00:57:19 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.88 2004-05-13 09:22:10 brodsom Exp $ 
  */
 
 /*
@@ -2142,31 +2142,8 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
  *
  **************************************
  */
-#include "../jrd/evl_like.cpp"
 
-//#define LIKENAME                EVL_nc_like
-//#define LIKETYPE                UCHAR
-//#define MATCHESNAME             EVL_nc_matches
-//#define MATCHESTYPE             UCHAR
-//#define SLEUTHNAME              EVL_nc_sleuth_check
-//#define SLEUTH_MERGE_NAME       EVL_nc_sleuth_merge
-//#define SLEUTH_AUX              nc_sleuth_check
-//#define SLEUTH_CLASS_NAME       nc_sleuth_class
-//#define SLEUTHTYPE              UCHAR
-//
-//#define EVL_LIKE_INCLUDED_BY_EVL_CPP
-//#include "../jrd/evl_like.cpp"
-//#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
-//
-//#undef LIKENAME
-//#undef LIKETYPE
-//#undef MATCHESNAME
-//#undef MATCHESTYPE
-//#undef SLEUTHNAME
-//#undef SLEUTH_MERGE_NAME
-//#undef SLEUTH_AUX
-//#undef SLEUTH_CLASS_NAME
-//#undef SLEUTHTYPE
+#include "../jrd/evl_like.h"
 
 typedef UCHAR MATCHESTYPE1;
 typedef UCHAR SLEUTHTYPE1;
@@ -2241,30 +2218,6 @@ bool nc_sleuth_class(
  *
  **************************************
  */
-
-//#define LIKENAME                EVL_wc_like
-//#define LIKETYPE                UCS2_CHAR
-//#define MATCHESNAME             EVL_wc_matches
-//#define MATCHESTYPE             UCS2_CHAR
-//#define SLEUTHNAME              EVL_wc_sleuth_check
-//#define SLEUTH_MERGE_NAME       EVL_wc_sleuth_merge
-//#define SLEUTH_AUX              wc_sleuth_check
-//#define SLEUTH_CLASS_NAME       wc_sleuth_class
-//#define SLEUTHTYPE              UCS2_CHAR
-//
-//#define EVL_LIKE_INCLUDED_BY_EVL_CPP
-//#include "../jrd/evl_like.cpp"
-//#undef EVL_LIKE_INCLUDED_BY_EVL_CPP
-//
-//#undef LIKENAME
-//#undef LIKETYPE
-//#undef MATCHESNAME
-//#undef MATCHESTYPE
-//#undef SLEUTHNAME
-//#undef SLEUTH_MERGE_NAME
-//#undef SLEUTH_AUX
-//#undef SLEUTH_CLASS_NAME
-//#undef SLEUTHTYPE
 
 typedef UCS2_CHAR MATCHESTYPE2;
 typedef UCS2_CHAR SLEUTHTYPE2;
