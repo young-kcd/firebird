@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.29 2004-10-07 21:34:16 skidder Exp $
+dnl $Id: configure.in,v 1.141.2.30 2004-10-30 08:10:16 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -87,6 +87,14 @@ case "$target" in
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    
+    dnl These lines are necessary to make gcc 3.2 and 
+    dnl probably earlier produce correct multithreaded
+    dnl shared libraries. Normally threading flags are
+    dnl determined by ACX_PTHREAD macro
+    
+    PTHREAD_CFLAGS=-pthread
+    PTHREAD_LIBS=-lpthread
     ;;
 
   *-*-netbsd*)
