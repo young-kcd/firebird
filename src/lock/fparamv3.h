@@ -38,10 +38,6 @@
 #define EVENT_FILE		"[000000]isc_event.%s"
 #endif
 
-#ifdef MSDOS
-#define EVENT_FILE		"/sharemem/gds_evnt.m0"
-#endif
-
 #ifndef EVENT_FILE
 #define EVENT_FILE		FB_PREFIX "/isc_event.gbl.%s"
 #endif
