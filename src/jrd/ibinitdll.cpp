@@ -23,11 +23,13 @@
 
 #include "firebird.h"
 #include <windows.h>
+#include "../utilities/registry.h"
 
 HINSTANCE hIBDLLInstance;
 
 #ifdef GDS32
 HINSTANCE hFBDLLInstance;
+const char *FBDLLDIR = "bin\\";
 const char *FBDLLNAME = "fbclient.dll";
 #endif
 
@@ -54,20 +56,30 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	case DLL_PROCESS_ATTACH:
 #ifdef GDS32
 		{
-		char buffer[MAXPATHLEN], *p;
-		GetModuleFileName(hIBDLLInstance, buffer, sizeof(buffer));
-		int l = strlen(buffer);
-		p = buffer + l;
-		while (l-- && *p-- != '\\');
-		p++;
-		strcpy(++p, FBDLLNAME);
-		p += strlen(FBDLLNAME);
-		*p = 0;
-		if (!GetModuleHandle(buffer) && !GetModuleHandle(FBDLLNAME)) {
-			hFBDLLInstance = LoadLibrary(buffer);
-			if (!hFBDLLInstance) {
-				hFBDLLInstance = LoadLibrary(FBDLLNAME);
+		char buffer[MAXPATHLEN];
+		HKEY hkey_instances;
+		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+				REG_KEY_ROOT_INSTANCES, 0, KEY_READ,
+				&hkey_instances) == ERROR_SUCCESS)
+		{
+			DWORD keytype;
+			DWORD buflen = sizeof(buffer);
+			if (RegQueryValueEx(hkey_instances, FB_DEFAULT_INSTANCE, 0,
+					&keytype, reinterpret_cast<UCHAR*>(buffer),
+					&buflen) == ERROR_SUCCESS && keytype == REG_SZ)
+			{
+				lstrcat(buffer, FBDLLDIR);
+				lstrcat(buffer, FBDLLNAME);
+				if (!GetModuleHandle(buffer) && !GetModuleHandle(FBDLLNAME))
+				{
+					hFBDLLInstance = LoadLibrary(buffer);
+					if (!hFBDLLInstance)
+					{
+						hFBDLLInstance = LoadLibrary(FBDLLNAME);
+					}
+				}
 			}
+			RegCloseKey(hkey_instances);
 		}
 		}
 #endif
