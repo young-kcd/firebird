@@ -2175,7 +2175,7 @@ static dsql_nod* define_insert_action( dsql_req* request)
 
 	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		!(select_expr = select_node->nod_arg[e_sel_query_spec]->nod_arg[0]) ||
+		!(select_expr = select_node->nod_arg[e_sel_query_spec]) ||
 		!(from_list = select_expr->nod_arg[e_sel_from]) ||
 		from_list->nod_count != 1)
 		return NULL;
@@ -3296,7 +3296,7 @@ static void define_update_action(
  *
  * Function
  *	Define an action statement which, given a view
- *	definition, will map a update to a  record from
+ *	definition, will map a update to a record from
  *	a view of a single relation into the
  *	base relation.
  *
@@ -3310,7 +3310,7 @@ static void define_update_action(
 	dsql_nod* from_list = NULL;
 	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		!(select_expr = select_node->nod_arg[e_sel_query_spec]->nod_arg[0]) ||
+		!(select_expr = select_node->nod_arg[e_sel_query_spec]) ||
 		!(from_list = select_expr->nod_arg[e_qry_from]) ||
 		from_list->nod_count != 1)
 	{
@@ -3731,10 +3731,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  0);
 		}
 
-		// change this node to nod_list
 		select_expr = select_expr->nod_arg[e_sel_query_spec];
 
-		if (select_expr->nod_count != 1)
+		if (select_expr->nod_type == nod_list)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
@@ -3742,9 +3741,6 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  // Only one table allowed for VIEW WITH CHECK OPTION 
 					  0);
 		}
-
-		// change this node to nod_query_spec
-		select_expr = select_expr->nod_arg[0];
 
 		if (select_expr->nod_arg[e_qry_from]->nod_count != 1)
 		{
@@ -3816,7 +3812,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	dsql_nod* ddl_node = request->req_ddl_node;
 
 	dsql_nod* select_expr = ddl_node->nod_arg[e_view_select];
-	select_expr = select_expr->nod_arg[e_sel_query_spec]->nod_arg[0];
+	select_expr = select_expr->nod_arg[e_sel_query_spec];
 	dsql_nod* view_fields = ddl_node->nod_arg[e_view_fields];
 
 /* make the "define trigger" node the current request ddl node so

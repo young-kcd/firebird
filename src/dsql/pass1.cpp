@@ -2845,7 +2845,8 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	node->nod_arg[0] = rse;
 
 	const dsql_nod* const query_spec = select_expr->nod_arg[e_sel_query_spec];
-	if (query_spec->nod_count > 1)
+
+	if (query_spec->nod_type == nod_list)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
 				  isc_token_err, // Token unknown 
 				  isc_arg_gds, isc_random, isc_arg_string, "UNION", 0);
@@ -2854,8 +2855,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 // the fields in the select list will be properly recognized
 	request->req_scope_level++;
 	request->req_in_select_list++;
-	dsql_nod* const column =
-		query_spec->nod_arg[0]->nod_arg[e_qry_list]->nod_arg[0];
+	dsql_nod* const column = query_spec->nod_arg[e_qry_list]->nod_arg[0];
 	temp->nod_arg[1] = PASS1_node(request, column, false);
 	request->req_in_select_list--;
 	request->req_scope_level--;
@@ -3571,13 +3571,9 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	//   the worse thing is that a UNION curently can't be used in 
 	//   deciding the JOIN order.
 	dsql_nod* const select_expr = input->nod_arg[e_derived_table_rse];
+	dsql_nod* query = select_expr->nod_arg[e_sel_query_spec];
 	bool foundSubSelect = false;
-	if ((select_expr->nod_type == nod_select_expr) &&
-		(select_expr->nod_arg[e_sel_query_spec]) && 
-		(select_expr->nod_arg[e_sel_query_spec]->nod_type == nod_list) &&
-		(select_expr->nod_arg[e_sel_query_spec]->nod_count == 1))
-	{
-        dsql_nod* query = select_expr->nod_arg[e_sel_query_spec]->nod_arg[0];
+	if (query->nod_type == nod_query_spec) {
 		foundSubSelect = pass1_found_sub_select(query->nod_arg[e_qry_list]);
 	}
 
