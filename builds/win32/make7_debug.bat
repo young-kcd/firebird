@@ -32,6 +32,7 @@ rmdir /q /s output
 mkdir output
 mkdir output\bin
 mkdir output\intl
+mkdir output\intlcpp
 mkdir output\udf
 mkdir output\help
 mkdir output\doc
@@ -40,6 +41,7 @@ mkdir output\lib
 copy msvc7\debug\firebird\bin\* output\bin
 copy msvc7\debug\firebird\intl\* output\intl
 copy msvc7\debug\firebird\udf\* output\udf
+copy msvc7\debug\firebird\intlcpp\* output\intlcpp
 copy gpre.exe output\bin
 copy dbs\jrd\SECURITY.FDB output\security.fdb
 copy dbs\qli\HELP.fdb output\help\help.fdb
