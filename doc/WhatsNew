@@ -77,7 +77,7 @@
     * Fixed bug SF #1057538
         UDF output parameter not being the last crashes the server
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fixed unregistered bug
         System users "AUTHENTICATOR" and "SWEEPER" were lost, causing "SQL SERVER" to be reported instead
@@ -116,7 +116,7 @@
     * ODS change
         Added RDB$DESCRIPTION to RDB$GENERATORS
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * CURRENT_TIMESTAMP and 'NOW' improvements
         Return milliseconds when a current timestamp is asked for
@@ -183,7 +183,7 @@
     * Security improvements
         Fixed a number of known vulnerabilities in API
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
@@ -199,7 +199,7 @@
     * SGEC improvement
         Now GSEC returns the error code when used as a non-interactive utility
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fixed unregistered bug
         Server crash with DECLARE FILTER
@@ -234,12 +234,12 @@
     * ISQL improvement
         ODS version is now shown as a part of SHOW DATABASE command
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Minor BLOB improvement
         Introduced BLOB SUB_TYPE BINARY as a synonym for SUB_TYPE 0
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * ODS change
         Introduced a concept of ODS type to be able to distinguish between InterBase databases, Firebird databases, databases created by debug builds of Firebird and private forks
@@ -249,7 +249,7 @@
     * UDF improvement
         Ability to signal SQL NULL via a NULL pointer
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Expression indices
         Implemented indices based on arbitrary expressions
@@ -318,7 +318,7 @@
     * ODS change
         Added RDB$DESCRIPTION and RDB$SYSTEM_FLAG to RDB$ROLES
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fixed some BLOB issues
         1) Outrageous memory consumption when blobs are converted from strings during request processing
@@ -346,14 +346,14 @@
     * Fixed bug SF #910423
         ALTER TABLE altering to VARCHAR
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Improved ISQL
         1) Fixed bug SF #910430 - ISQL and database dialect
         2) Add SET HEADING ON/OFF option
         3) Add -M2 command-line option to send output of statistics and plans to the same file than the rest of the output
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fixed unregistered bug
         Rounding problems in date/time arithmetics
@@ -560,17 +560,17 @@
     * Fix SF #750659
         Generators values were resisting metadata-only backup
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fix SF #544132, #728839
         Problems with nulls handling in UDFs
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fix SF #784121
         Problems with some expressions in outer join conditions
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Slightly reworked synchronization logic
         1) Significantly reduce thread lock contention in lock manager and in SuperServer thread pool manager
@@ -610,4 +610,4 @@
     * Generic cleanup
         Large amount of ongoing code cleanup and style standartization. In particular, broken WAL and journalling code is fully cleaned out
       Contributor(s):
-        Claudio Varderrama <cvalde at usa.net>
+        Claudio Valderrama <cvalde at usa.net>
