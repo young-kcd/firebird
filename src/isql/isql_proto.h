@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ISQL_ISQL_PROTO_H_
-#define _ISQL_ISQL_PROTO_H_
+#ifndef ISQL_ISQL_PROTO_H
+#define ISQL_ISQL_PROTO_H
 
 extern void ISQL_array_dimensions(TEXT *);
 extern SCHAR *ISQL_blankterm(TEXT *);
@@ -55,7 +55,7 @@ extern SSHORT ISQL_main(int, char **);
 extern void ISQL_make_upper(UCHAR *);
 extern void ISQL_msg_get(USHORT,
 						 TEXT *, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void ISQL_print_validation(IB_FILE *, GDS__QUAD *, SSHORT, FRBRD *);
+extern void ISQL_print_validation(IB_FILE *, GDS__QUAD *, bool, FRBRD *);
 extern void ISQL_printf(IB_FILE *, TEXT *);
 extern void ISQL_query_database(SSHORT *, IB_FILE *, IB_FILE *, IB_FILE *);
 extern void ISQL_reset_settings(void);
@@ -64,4 +64,4 @@ extern int ISQL_sql_statement(TEXT *, IB_FILE *, IB_FILE *, IB_FILE *);
 extern void ISQL_truncate_term(TEXT *, USHORT);
 extern void ISQL_win_err(SCHAR *);
 
-#endif /* _ISQL_ISQL_PROTO_H_ */
+#endif /* ISQL_ISQL_PROTO_H */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.12 2003-09-05 11:25:53 brodsom Exp $
+ * $Id: isql.h,v 1.13 2003-09-09 11:03:37 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef _ISQL_ISQL_H_
-#define _ISQL_ISQL_H_
+#ifndef ISQL_ISQL_H
+#define ISQL_ISQL_H
 
 #include "../jrd/flags.h"
 #include <stdlib.h>
@@ -84,11 +84,6 @@
 /* Flag to decode all vs sql only objects */
 #define SQL_objects	0
 #define ALL_objects	1
-
-/* Show source for triggers or not */
-#define NO_SOURCE 	0
-#define SHOW_SOURCE	1
-
 
 #define WORDLENGTH	32
 #define DEFTERM		";"
@@ -313,4 +308,4 @@ typedef struct sqltypes {
 
 #define TAB_AS_SPACES "        "
 
-#endif /* _ISQL_ISQL_H_ */
+#endif /* ISQL_ISQL_H */

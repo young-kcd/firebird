@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.41 2003-09-08 01:43:03 brodsom Exp $
+  $Id: isql.epp,v 1.42 2003-09-09 11:03:37 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -81,11 +81,16 @@
 #define	DBL_QUOTE		'\042'
 #define	SINGLE_QUOTE		'\''
 #define	KW_FILE			"IB_FILE"
-#define	INIT_STR_FLAG		0
-#define	SINGLE_QUOTED_STRING	1
-#define	DOUBLE_QUOTED_STRING	2
-#define	NO_MORE_STRING		3
-#define INCOMPLETE_STRING	4
+
+enum literal_string_type
+{
+	INIT_STR_FLAG			= 0,
+	SINGLE_QUOTED_STRING	= 1,
+	DOUBLE_QUOTED_STRING	= 2,
+	NO_MORE_STRING			= 3,
+	INCOMPLETE_STRING		= 4,
+};
+
 #define	KW_ROLE			"ROLE"
 
 #include "../jrd/jrd_time.h"
@@ -170,7 +175,7 @@ static SSHORT escape(TEXT *);
 static SSHORT frontend(TEXT *);
 static SSHORT get_statement(TEXT **, USHORT *, TEXT *);
 static bool get_numeric(UCHAR *, USHORT, SSHORT *, SINT64 *);
-static void get_str(TEXT *, TEXT **, TEXT **, SSHORT *);
+static void get_str(TEXT*, TEXT**, TEXT**, literal_string_type*);
 static SSHORT print_sets(void);
 static SSHORT help(TEXT *);
 static SSHORT input(TEXT *);
@@ -186,7 +191,7 @@ static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT *);
 static int print_line(XSQLDA *, SLONG *, TEXT *);
 static int process_statement(TEXT *, XSQLDA **);
 static void CLIB_ROUTINE query_abort(void);
-static void strip_quotes(TEXT *, TEXT *);
+static void strip_quotes(const TEXT*, TEXT*);
 static SSHORT do_set_command(TEXT *, bool *);
 #ifdef DEV_BUILD
 static UCHAR *sqltype_to_string(USHORT);
@@ -1478,7 +1483,7 @@ void ISQL_msg_get(USHORT number,
 
 void ISQL_print_validation(IB_FILE * fp,
 						   ISC_QUAD * blobid,
-						   SSHORT flag,
+						   bool isComputedField,
 						   FRBRD * trans)
 {
 /**************************************
@@ -1522,7 +1527,7 @@ void ISQL_print_validation(IB_FILE * fp,
 							buffer) || isc_status[1] == isc_segment) {
 		buffer[length] = 0;
 		p = buffer;
-		if (flag) {
+		if (isComputedField) {
 			/* computed field SQL syntax correction */
 
 			while (isspace(*p))
@@ -1541,7 +1546,7 @@ void ISQL_print_validation(IB_FILE * fp,
 		if (firsttime) {
 			firsttime = false;
 			if (!issql) {
-				sprintf(Print_buffer, "%s ", (flag ? "/* " : "("));
+				sprintf(Print_buffer, "%s ", (isComputedField ? "/* " : "("));
 				ISQL_printf(fp, Print_buffer);
 			}
 		}
@@ -1549,7 +1554,7 @@ void ISQL_print_validation(IB_FILE * fp,
 		ISQL_printf(fp, buffer);
 	}
 	if (!issql) {
-		sprintf(Print_buffer, "%s", (flag ? " */" : ")"));
+		sprintf(Print_buffer, "%s", (isComputedField ? " */" : ")"));
 		ISQL_printf(fp, Print_buffer);
 	}
 
@@ -2296,7 +2301,7 @@ static SSHORT create_db(TEXT * statement,
 	SSHORT slen, ret, cnt = 0;
 	TEXT *usr, *psw, quote = DBL_QUOTE;
 	bool done = false;
-	SSHORT str_flag;
+	literal_string_type str_flag;
 	TEXT errbuf[MSG_LENGTH];
 
 	new_local_statement = k = l = q = p = NULL;
@@ -3586,7 +3591,7 @@ static SSHORT frontend(TEXT * statement)
 		}
 
 	if (ret == ERR) {
-		if (bad_dialect == true)
+		if (bad_dialect)
 			gds__msg_format(NULL, ISQL_MSG_FAC, CMD_ERR, MSG_LENGTH,
 							errbuf, bad_dialect_buf, NULL, NULL, NULL, NULL);
 		else
@@ -4009,10 +4014,10 @@ static SSHORT get_statement(TEXT ** statement_ref,
 }
 
 
-static void get_str(TEXT * input_str,
-					TEXT ** str_begin,
-					TEXT ** str_end,
-					SSHORT * str_flag)
+static void get_str(TEXT* input_str,
+					TEXT** str_begin,
+					TEXT** str_end,
+					literal_string_type* str_flag)
 {
 /**************************************
  *
@@ -4034,6 +4039,8 @@ static void get_str(TEXT * input_str,
  *						double quotes
  *		3. NO_MORE_STRING       --- no string constant was found
  *
+ *      4. INCOMPLETE_STRING    --- no matching ending quote
+ *
  *	Input Arguments:
  *
  *		1. input buffer
@@ -4046,11 +4053,8 @@ static void get_str(TEXT * input_str,
  *		4. address to the string flag
  *
  **************************************/
-	TEXT *b1 = NULL, *b2 = NULL, delimited_char;
-	bool done = false;
-
-	b1 = strchr(input_str, SINGLE_QUOTE);
-	b2 = strchr(input_str, DBL_QUOTE);
+	TEXT* b1 = strchr(input_str, SINGLE_QUOTE);
+	TEXT* b2 = strchr(input_str, DBL_QUOTE);
 	if (!b1 && !b2)
 		*str_flag = NO_MORE_STRING;
 	else {
@@ -4068,8 +4072,9 @@ static void get_str(TEXT * input_str,
 			*str_flag = SINGLE_QUOTED_STRING;
 
 		*str_begin = b1;
-		delimited_char = *b1;
+		TEXT delimited_char = *b1;
 		b1++;
+		bool done = false;
 		while (!done) {
 			if (*b1 == delimited_char) {
 				b1++;
@@ -4136,7 +4141,6 @@ void ISQL_get_version(bool call_by_create_db)
     //   string the above calculation does not apply.     NM 03-Oct-2001 
      
     UCHAR buffer[256];
-	UCHAR *p;
 	TEXT bad_dialect_buf[512];
 	bool print_warning = false;
 
@@ -4150,7 +4154,7 @@ void ISQL_get_version(bool call_by_create_db)
 		return;
 	}
 
-	p = buffer;
+	UCHAR* p = buffer;
 	while (*p != isc_info_end) {
 		UCHAR item;
 		USHORT length;
@@ -4248,7 +4252,7 @@ void ISQL_get_version(bool call_by_create_db)
         case isc_info_firebird_version: 
             strcpy(server_version, "Server: "); 
             strncat(server_version, (char*) &(p[2]), (length - 2)); 
-            if (Version_info == true)  { 
+            if (Version_info)  {
                 strcat(server_version, NEWLINE); 
                 ISQL_printf (Out, server_version); 
             } 
@@ -6116,9 +6120,9 @@ static void print_item_numeric(SINT64 value,
 
 /* Insert '.' decimal point, and if required, '-' and '0' */
 	buf[to--] = '.';
-	if (all_digits_used == true) {
+	if (all_digits_used) {
 		buf[to--] = '0';
-		if (neg == true)
+		if (neg)
 			buf[to--] = '-';
 	}
 }
@@ -6966,8 +6970,8 @@ static void CLIB_ROUTINE query_abort(void)
 }
 
 
-static void strip_quotes(TEXT * in,
-						 TEXT * out)
+static void strip_quotes(const TEXT* in,
+						 TEXT* out)
 {
 /**************************************
  *
@@ -6979,19 +6983,16 @@ static void strip_quotes(TEXT * in,
  *	Get rid of quotes around strings
  *
  **************************************/
-	TEXT *p;
-	TEXT quote;
-
 	if (!in || !*in) {
 		*out = 0;
 		return;
 	}
 
-	quote = 0;
+	TEXT quote = 0;
 /* Skip any initial quote */
 	if ((*in == DBL_QUOTE) || (*in == SINGLE_QUOTE))
 		quote = *in++;
-	p = in;
+	const TEXT* p = in;
 
 /* Now copy characters until we see the same quote or EOS */
 	while (*p && (*p != quote)) {
@@ -7049,3 +7050,4 @@ static UCHAR *sqltype_to_string(USHORT sqltype)
 	}
 }
 #endif
+

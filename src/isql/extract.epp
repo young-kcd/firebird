@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.13 2003-09-05 11:25:53 brodsom Exp $
+ * $Id: extract.epp,v 1.14 2003-09-09 11:03:37 robocop Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -413,7 +413,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
 		{
             ISQL_printf (Out, "COMPUTED BY ");
             if (!FLD.RDB$COMPUTED_SOURCE.NULL)
-                ISQL_print_validation (Out, &FLD.RDB$COMPUTED_SOURCE, 1, gds_trans);
+                ISQL_print_validation (Out, &FLD.RDB$COMPUTED_SOURCE, true, gds_trans);
         }
 	    else if (!((strncmp(FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) && 
                    isdigit (FLD.RDB$FIELD_NAME[4]) &&
@@ -480,7 +480,7 @@ SSHORT EXTRACT_list_table(SCHAR * relation_name,
                         }
                     }
 	
-                    if (precision_known == false)
+                    if (!precision_known)
 					{
                         
                         /* Take a stab at numerics and decimals */
@@ -834,7 +834,7 @@ static void get_procedure_args(char* proc_name)
                                 END_ERROR;
                             }
                         }
-                        if (precision_known == false)
+                        if (!precision_known)
 						{
                             /* Take a stab at numerics and decimals */
                             if ((FLD.RDB$FIELD_TYPE == SMALLINT) && 
@@ -1888,7 +1888,7 @@ static void list_domain_table(SCHAR * table_name,
                     }
                 }
                     
-                if (precision_known == false)
+                if (!precision_known)
 				{ 
                     /* Take a stab at numerics and decimals */
                     if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
@@ -1968,7 +1968,7 @@ static void list_domain_table(SCHAR * table_name,
 		{ 
             sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
-            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, gds_trans);
+            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
         }
         if (FLD.RDB$NULL_FLAG == 1)
             ISQL_printf (Out, " NOT NULL");
@@ -2081,7 +2081,7 @@ static void list_domains(SSHORT default_char_set_id)
                     }
                 }
                 
-                if (precision_known == false)
+                if (!precision_known)
 				{ 
                     /* Take a stab at numerics and decimals */
                     if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
@@ -2160,7 +2160,7 @@ static void list_domains(SSHORT default_char_set_id)
 		{ 
             sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
             ISQL_printf (Out, Print_buffer);
-            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, 0, gds_trans);
+            ISQL_print_validation (Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
         }
 	    if (FLD.RDB$NULL_FLAG == 1)
             ISQL_printf (Out, " NOT NULL");

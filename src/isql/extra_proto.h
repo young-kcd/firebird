@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _ISQL_EXTRA_PROTO_H_
-#define _ISQL_EXTRA_PROTO_H_
+#ifndef ISQL_EXTRA_PROTO_H
+#define ISQL_EXTRA_PROTO_H
 
 extern SSHORT EXTRACT_ddl(int, SCHAR *);
 extern SSHORT EXTRACT_list_table(SCHAR *, SCHAR *, bool, SSHORT);
 extern void EXTRACT_list_view(SCHAR *);
 extern int	EXTRACT_list_grants (SCHAR *);
 
-#endif /* _ISQL_EXTRA_PROTO_H_ */
+#endif /* ISQL_EXTRA_PROTO_H */
