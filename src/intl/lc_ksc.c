@@ -77,11 +77,11 @@ TEXTTYPE_ENTRY(KSC_5601_init)
 #include "../intl/collations/undef.h"
 
 
-TEXTTYPE_ENTRY(CV_ksc_5601_dict_init)
+TEXTTYPE_ENTRY(ksc_5601_dict_init)
 {
 	static const ASCII POSIX[] = "HANGUL.KSC_5601";
 
-	FAMILY_MULTIBYTE(5602, CV_ksc_5601_dict_init, CS_KSC5601, CC_KOREA);
+	FAMILY_MULTIBYTE(5602, ksc_5601_dict_init, CS_KSC5601, CC_KOREA);
 
 	cache->texttype_fn_to_wc = CVKSC_ksc_byte2short;
 	cache->texttype_fn_mbtowc = CVKSC_ksc_mbtowc;

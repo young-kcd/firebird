@@ -221,10 +221,10 @@ EXTERN_charset(CS_euc_j);
 EXTERN_charset(CS_big_5);
 EXTERN_charset(CS_gb_2312);
 EXTERN_charset(CS_ksc_5601);
-EXTERN_convert(CV_ksc_5601_dict_init);
 
 EXTERN_texttype(BIG5_init);
 EXTERN_texttype(KSC_5601_init);
+EXTERN_texttype(ksc_5601_dict_init);
 EXTERN_texttype(GB_2312_init);
 
 EXTERN_convert(CV_dos_437_x_iso8859_1);
