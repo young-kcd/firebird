@@ -1,3 +1,7 @@
+:: run prepare.bat first
+:: Then run this script.
+:: After that run makeX_debug.bat or makeX_release.bat
+:: where X is your version of MSVC - 6 or 7.
 
 @echo off
 

@@ -1,4 +1,5 @@
-
+:: this is called automatically by build_all.bat
+::
 @echo off
 
 ::===========
@@ -8,7 +9,9 @@
 
 ::===========
 :MAKE_BOOT
+@echo Calling common_boot.mak
 @call :NMAKE common_boot.mak
+@echo Calling gpre_boot.mak
 @call :NMAKE gpre_boot.mak
 @goto :EOF
 

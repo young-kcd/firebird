@@ -41,6 +41,9 @@
 @echo Only forward (POSIX-style) slashes should be used in the path.
 @echo Example:
 @echo     prepare.bat d:/work/firebird
+@echo.
+@echo.
+@echo Gbak must be available on your path
 @goto :END
 
 :END
