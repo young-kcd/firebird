@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.107 2002-12-31 18:15:14 nmcc Exp $
+dnl $Id: configure.in,v 1.108 2003-01-16 16:27:48 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -197,16 +197,22 @@ AC_SUBST(EDITLINE_FLG)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
+FB_IPC_NAME=FirebirdIPI
 AC_ARG_WITH(service-name,
   [  --with-service-name     specify inet service name (default=gds_db)],
   [FB_SERVICE_NAME=${withval}])
 AC_ARG_WITH(service-port,
   [  --with-service-port     specify inet service port (default=3050)],
   [FB_SERVICE_PORT=${withval}])
+AC_ARG_WITH(service-port,
+  [  --with-ipc-name     specify local IPC name (default=FirebirdIPI)],
+  [FB_SERVICE_PORT=${withval}])
 AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME")
 AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT)
+AC_DEFINE_UNQUOTED(FB_IPC_NAME,"$FB_IPC_NAME")
 AC_SUBST(FB_SERVICE_NAME)
 AC_SUBST(FB_SERVICE_PORT)
+AC_SUBST(FB_IPC_NAME)
 
 dnl gpre built-in language support (C/C++ are mandatory)
 GPRE_LANGUAGE_MODULES=""
@@ -527,7 +533,7 @@ mkdir -p gen/codes/jrd
 mkdir -p gen/install
 
 mkdir -p gen/common
-mkdir -p gen/common/memory
+mkdir -p gen/common/classes
 mkdir -p gen/common/config
 
 mkdir -p gen/firebird/include
@@ -547,7 +553,7 @@ mkdir -p gen/jrd/os/posix
 mkdir -p gen/jrd/os/win32
 
 mkdir -p gen/libfbcommon
-mkdir -p gen/libfbcommon/memory
+mkdir -p gen/libfbcommon/classes
 dnl mkdir -p gen/libdsqlserver
 mkdir -p gen/libfbserver
 mkdir -p gen/libfbserver/jrd
@@ -561,7 +567,7 @@ mkdir -p gen/libfbserver/burp
 mkdir -p gen/libfbserver/utilities
 mkdir -p gen/libfbserver/fbutil
 mkdir -p gen/libfbserver/wal
-mkdir -p gen/libfbserver/common/memory
+mkdir -p gen/libfbserver/common/classes
 mkdir -p gen/libfbserver/jrd/os/posix
 mkdir -p gen/fbserver/remote
 mkdir -p gen/libfbclient/jrd
@@ -571,7 +577,7 @@ mkdir -p gen/libfbclient/wal
 mkdir -p gen/libfbclient/remote
 mkdir -p gen/libfbclient/utilities
 mkdir -p gen/libfbclient/fbutil
-mkdir -p gen/libfbclient/common/memory
+mkdir -p gen/libfbclient/common/classes
 mkdir -p gen/client.gbak/burp
 mkdir -p gen/client.gfix/alice
 mkdir -p gen/client.gpre/gpre
@@ -580,7 +586,7 @@ mkdir -p gen/client.isql/isql
 mkdir -p gen/client.util/utilities
 mkdir -p gen/intl/intl
 
-mkdir -p gen/libfbcommon/common/memory
+mkdir -p gen/libfbcommon/common/classes
 mkdir -p gen/libfbcommon/common/config
 mkdir -p gen/libfbcommon/fbutil
 mkdir -p gen/boot.gpre/jrd/os/posix
@@ -642,7 +648,7 @@ mkdir -p gen/libfbembed/fbutil
 mkdir -p gen/libfbembed/jrd/os/posix
 mkdir -p gen/libfbembed/burp
 mkdir -p gen/libfbembed/wal
-mkdir -p gen/libfbembed/common/memory
+mkdir -p gen/libfbembed/common/classes
 mkdir -p gen/libfbembed/common/config
 mkdir -p gen/RPM/RPMS/i686
 mkdir -p gen/RPM/BUILD

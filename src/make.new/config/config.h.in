@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.65 2002-12-06 13:44:53 eku Exp $"
+#ident "$Id: config.h.in,v 1.66 2003-01-16 16:28:28 skidder Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -139,6 +139,7 @@
 /* Inet service name and port */
 #define FB_SERVICE_NAME "gds_db"
 #define FB_SERVICE_PORT 3050
+#define FB_IPC_NAME "FirebirdIPI"
 
 /* Wnet pipe name (Windows only) */
 #define FB_PIPE_NAME "interbas"
