@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.51 2004-01-28 07:50:32 robocop Exp $
+$Id: blb.cpp,v 1.52 2004-02-01 05:33:55 skidder Exp $
 */
 
 #include "firebird.h"
@@ -997,6 +997,7 @@ void BLB_move_from_string(TDBB tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod
 		BLB_put_segment(tdbb, blob, fromstr, blob_desc.dsc_length);
 		BLB_close(tdbb, blob);
 		BLB_move(tdbb, &blob_desc, to_desc, field);
+		release_blob(blob, true);
 	}
 }
 
