@@ -166,13 +166,13 @@ jrd_nod* PAR_blr(TDBB	tdbb,
    the target relation */
 
 	if (trigger) {
-		stream = csb->csb_n_stream++;
+		stream = csb->nextStream();
 		t1 = CMP_csb_element(csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
 
-		stream = csb->csb_n_stream++;
+		stream = csb->nextStream();
 		t1 = CMP_csb_element(csb, 1);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
@@ -180,7 +180,7 @@ jrd_nod* PAR_blr(TDBB	tdbb,
 	}
 	else if (relation) {
 		t1 = CMP_csb_element(csb, 0);
-		t1->csb_stream = csb->csb_n_stream++;
+		t1->csb_stream = csb->nextStream();
 		t1->csb_relation = relation;
 		t1->csb_flags = csb_used | csb_active;
 	}
@@ -909,15 +909,11 @@ static SSHORT par_context(Csb* csb, SSHORT* context_ptr)
  *
  **************************************/
 
-	const SSHORT stream = csb->csb_n_stream++;
-	if (stream > MAX_STREAMS) {
-		// TMN: Someone please review this to verify that
-		// isc_too_many_contexts is indeed the right error to report.
-		// "Too many streams" would probably be more correct, but we
-		/// don't have such an error (yet).
+	const SSHORT stream = csb->nextStream(false);
+	if (stream > MAX_STREAMS)
+	{
 		error(csb, isc_too_many_contexts, 0);
 	}
-	fb_assert(stream <= MAX_STREAMS);
 	const SSHORT context = (unsigned int) BLR_BYTE;
 	CMP_csb_element(csb, stream);
 	csb_repeat* tail = CMP_csb_element(csb, context);
@@ -1496,7 +1492,11 @@ static jrd_nod* par_modify(TDBB tdbb, Csb* csb)
 		error(csb, isc_ctxnotdef, 0);
 	}
 	const SSHORT org_stream = csb->csb_rpt[context].csb_stream;
-	const SSHORT new_stream = csb->csb_n_stream++;
+	const SSHORT new_stream = csb->nextStream(false);
+	if (new_stream > MAX_STREAMS)
+	{
+		error(csb, isc_too_many_contexts, 0);
+	}
 	context = (unsigned int) BLR_BYTE;
 
 /* Make sure the compiler scratch block is big enough to hold

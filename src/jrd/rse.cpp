@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.55 2004-03-07 07:58:42 robocop Exp $
+ * $Id: rse.cpp,v 1.56 2004-03-07 09:48:56 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3335,10 +3335,12 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
  *	Restore record state to saved copy.
  *
  **************************************/
-	RPB *rpb;
-	IRSB_MRG impure;
+	RPB* rpb;
+	smb* map;
+	smb_repeat *item, *end_item;
 
-	impure = (IRSB_MRG) ((UCHAR *) request + rsb->rsb_impure);
+	// temporary sparse bitmap of the used streams
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams(request->req_pool);
 
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
@@ -3352,59 +3354,59 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 	case rsb_aggregate:
 		rpb = request->req_rpb + rsb->rsb_stream;
 		restore_record(rpb);
-		return;
+		break;
 
 	case rsb_sort:
+		streams.grow(request->req_count);
+		memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
+		map = (smb*) rsb->rsb_arg[0];
+		end_item = map->smb_rpt + map->smb_count;
+		for (item = map->smb_rpt; item < end_item; item++)
 		{
-			SSHORT i, streams[128];
-			SMB map;
-			smb_repeat * item, *end_item;
-
-			map = (SMB) rsb->rsb_arg[0];
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				streams[i] = 0;
-			end_item = map->smb_rpt + map->smb_count;
-			for (item = map->smb_rpt; item < end_item; item++)
-				streams[item->smb_stream] = 1;
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				if (streams[i]) {
-					rpb = request->req_rpb + i;
-					restore_record(rpb);
-				}
-			return;
+			streams[item->smb_stream] = 1;
 		}
+		for (int i = 0; i < request->req_count; i++)
+		{
+			if (streams[i])
+			{
+				rpb = request->req_rpb + i;
+				restore_record(rpb);
+			}
+		}
+		break;
 
 	case rsb_merge:
 		{
-			SSHORT i, streams[128];
-			SMB map;
-			smb_repeat * item, *end_item;
-
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				streams[i] = 0;
+			streams.grow(request->req_count);
+			memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
 			const Rsb* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
-			impure = (IRSB_MRG) ((UCHAR *) request + rsb->rsb_impure);
+			IRSB_MRG impure = (IRSB_MRG) ((UCHAR *) request + rsb->rsb_impure);
 			for (Rsb** ptr = rsb->rsb_arg; ptr < end; ptr += 2)
 			{
 				Rsb* sort_rsb = *ptr;
-				map = (SMB) sort_rsb->rsb_arg[0];
+				map = (smb*) sort_rsb->rsb_arg[0];
 				end_item = map->smb_rpt + map->smb_count;
 				for (item = map->smb_rpt; item < end_item; item += 2)
+				{
 					streams[item->smb_stream] = 1;
+				}
 			}
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				if (streams[i]) {
+			for (int i = 0; i < request->req_count; i++)
+			{
+				if (streams[i])
+				{
 					rpb = request->req_rpb + i;
 					restore_record(rpb);
 				}
-			return;
+			}
 		}
+		break;
 
 	case rsb_first:
     case rsb_skip:
 	case rsb_boolean:
 		pop_rpbs(request, rsb->rsb_next);
-		return;
+		break;
 
 	case rsb_cross:
 		{
@@ -3418,15 +3420,16 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 			{
 				pop_rpbs(request, *ptr);
 			}
-			return;
 		}
+		break;
 
 	case rsb_left_cross:
 		pop_rpbs(request, rsb->rsb_arg[RSB_LEFT_outer]);
 		pop_rpbs(request, rsb->rsb_arg[RSB_LEFT_inner]);
-		return;
+		break;
 
-		default:BUGCHECK(166);	/* msg 166 invalid rsb type */
+	default:
+		BUGCHECK(166);	/* msg 166 invalid rsb type */
 	}
 }
 
@@ -3443,10 +3446,14 @@ static void push_rpbs(TDBB tdbb, jrd_req* request, Rsb* rsb)
  *	Save data state for current rsb
  *
  **************************************/
-	RPB *rpb;
-	IRSB_MRG impure;
+	RPB* rpb;
+	smb* map;
+	smb_repeat *item, *end_item;
 
 	SET_TDBB(tdbb);
+
+	// temporary sparse bitmap of the used streams
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams(request->req_pool);
 
 	switch (rsb->rsb_type) {
 	case rsb_indexed:
@@ -3460,59 +3467,59 @@ static void push_rpbs(TDBB tdbb, jrd_req* request, Rsb* rsb)
 	case rsb_aggregate:
 		rpb = request->req_rpb + rsb->rsb_stream;
 		save_record(tdbb, rpb);
-		return;
+		break;
 
 	case rsb_sort:
+		streams.grow(request->req_count);
+		memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
+		map = (smb*) rsb->rsb_arg[0];
+		end_item = map->smb_rpt + map->smb_count;
+		for (item = map->smb_rpt; item < end_item; item++)
 		{
-			SSHORT i, streams[128];
-			SMB map;
-			smb_repeat * item, *end_item;
-
-			map = (SMB) rsb->rsb_arg[0];
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				streams[i] = 0;
-			end_item = map->smb_rpt + map->smb_count;
-			for (item = map->smb_rpt; item < end_item; item++)
-				streams[item->smb_stream] = 1;
-			for (i = 0; i < (SSHORT) request->req_count; i++) {
-				if (streams[i]) {
-					rpb = request->req_rpb + i;
-					save_record(tdbb, rpb);
-				}
-			}
-			return;
+			streams[item->smb_stream] = 1;
 		}
+		for (int i = 0; i < request->req_count; i++)
+		{
+			if (streams[i])
+			{
+				rpb = request->req_rpb + i;
+				save_record(tdbb, rpb);
+			}
+		}
+		break;
 
 	case rsb_merge:
 		{
-			SSHORT i, streams[128];
-			smb_repeat * item, *end_item;
-
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				streams[i] = 0;
+			streams.grow(request->req_count);
+			memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
 			const Rsb* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
-			impure = (IRSB_MRG) ((UCHAR *) request + rsb->rsb_impure);
+			IRSB_MRG impure = (IRSB_MRG) ((UCHAR *) request + rsb->rsb_impure);
 			for (Rsb** ptr = rsb->rsb_arg; ptr < end; ptr += 2)
 			{
 				Rsb* sort_rsb = *ptr;
-				smb* map = (SMB) sort_rsb->rsb_arg[0];
+				map = (smb*) sort_rsb->rsb_arg[0];
 				end_item = map->smb_rpt + map->smb_count;
 				for (item = map->smb_rpt; item < end_item; item++)
+				{
 					streams[item->smb_stream] = 1;
+				}
 			}
-			for (i = 0; i < (SSHORT) request->req_count; i++)
-				if (streams[i]) {
+			for (int i = 0; i < request->req_count; i++)
+			{
+				if (streams[i])
+				{
 					rpb = request->req_rpb + i;
 					save_record(tdbb, rpb);
 				}
-			return;
+			}
 		}
+		break;
 
 	case rsb_first:
     case rsb_skip:
 	case rsb_boolean:
 		push_rpbs(tdbb, request, rsb->rsb_next);
-		return;
+		break;
 
 	case rsb_cross:
 		{
@@ -3526,17 +3533,18 @@ static void push_rpbs(TDBB tdbb, jrd_req* request, Rsb* rsb)
 			{
 				push_rpbs(tdbb, request, *ptr);
 			}
-			return;
 		}
+		break;
 
 		/* BUG #8637: left outer join gives internal gds software consistency
 		   check. Added case for rsb_left_cross. */
 	case rsb_left_cross:
 		push_rpbs(tdbb, request, rsb->rsb_arg[RSB_LEFT_outer]);
 		push_rpbs(tdbb, request, rsb->rsb_arg[RSB_LEFT_inner]);
-		return;
+		break;
 
-		default:BUGCHECK(166);	/* msg 166 invalid rsb type */
+	default:
+		BUGCHECK(166);	/* msg 166 invalid rsb type */
 	}
 }
 

@@ -34,6 +34,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../common/classes/array.h"
 
+#include "gen/iberror.h"
+
 #define NODE(type, name, keyword) type,
 
 typedef enum nod_t {
@@ -44,6 +46,8 @@ typedef enum nod_t {
 
 #include "../jrd/dsc.h"
 #include "../jrd/rse.h"
+
+#include "../jrd/err_proto.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -584,6 +588,15 @@ public:
 
 	static Csb* newCsb(MemoryPool& p, size_t len)
 		{ return FB_NEW(p) Csb(p, len); }
+
+	int nextStream(bool check = true)
+	{
+		if (csb_n_stream >= MAX_STREAMS && check)
+		{
+			ERR_post(isc_too_many_contexts, 0);
+		}
+		return csb_n_stream++;
+	}
 
 	const UCHAR*		csb_blr;
 	const UCHAR*		csb_running;

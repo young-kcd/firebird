@@ -2663,8 +2663,7 @@ static jrd_nod* copy(TDBB tdbb,
 			// into the newly created child stream.
 
 			const int relative_stream = (stream) ? remap[stream - 1] : stream;
-			new_stream = csb->csb_n_stream++;
-			fb_assert(new_stream <= MAX_STREAMS);
+			new_stream = csb->nextStream();
 			node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
 
@@ -2736,8 +2735,7 @@ static jrd_nod* copy(TDBB tdbb,
 					 node->nod_arg[e_prc_in_msg], remap_fld);
 
 			stream = (USHORT)(IPTR) input->nod_arg[e_prc_stream];
-			new_stream = csb->csb_n_stream++;
-			fb_assert(new_stream <= MAX_STREAMS);
+			new_stream = csb->nextStream();
 			node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
@@ -2760,8 +2758,7 @@ static jrd_nod* copy(TDBB tdbb,
 		node->nod_count = 0;
 		stream = (USHORT)(IPTR) input->nod_arg[e_agg_stream];
 		fb_assert(stream <= MAX_STREAMS);
-		new_stream = csb->csb_n_stream++;
-		fb_assert(new_stream <= MAX_STREAMS);
+		new_stream = csb->nextStream();
 		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) new_stream;
 		// fb_assert(new_stream <= MAX_UCHAR);
 		remap[stream] = (UCHAR) new_stream;
@@ -2788,8 +2785,7 @@ static jrd_nod* copy(TDBB tdbb,
 		node->nod_count = 2;
 		stream = (USHORT)(IPTR) input->nod_arg[e_uni_stream];
 		fb_assert(stream <= MAX_STREAMS);
-		new_stream = csb->csb_n_stream++;
-		fb_assert(new_stream <= MAX_STREAMS);
+		new_stream = csb->nextStream();
 		node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) new_stream;
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
@@ -3556,7 +3552,7 @@ static void pass1_erase(TDBB tdbb, Csb* csb, jrd_nod* node)
 			rel_pre_erase : relation->rel_post_erase;
 
 		if (relation->rel_view_rse && trigger) {
-			new_stream = csb->csb_n_stream++;
+			new_stream = csb->nextStream();
 			node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) new_stream;
 			CMP_csb_element(csb, new_stream)->csb_relation = relation;
 		}
