@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.39 2003-03-10 07:02:17 eku Exp $
+$Id: lock.cpp,v 1.40 2003-03-11 05:53:01 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -796,12 +796,16 @@ int LOCK_init(
 		/* We haven't yet mapped the shared region.  Do so now. */
 
 		start_manager = FALSE;
-		if (init_lock_table(status_vector) != FB_SUCCESS)
+		if (init_lock_table(status_vector) != FB_SUCCESS) {
 			return FB_FAILURE;
+		}
 	}
 	if (owner_flag &&
 		create_owner(status_vector, owner_id, owner_type,
-					 owner_handle) != FB_SUCCESS) return FB_FAILURE;
+					 owner_handle) != FB_SUCCESS)
+	{
+		return FB_FAILURE;
+	}
 
 #ifndef  SUPERSERVER
 #if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC) || defined(DARWIN) || defined(SINIXZ)
@@ -1446,26 +1450,32 @@ static void acquire( PTR owner_offset)
 
 	status = FB_FAILURE;
 #if (defined UNIX || defined WIN_NT)
-	for (spins = 0; spins < LOCK_acquire_spins; ++spins)
-		if ((status = ISC_mutex_lock_cond(MUTEX)) == FB_SUCCESS)
+	for (spins = 0; spins < LOCK_acquire_spins; ++spins) {
+		if ((status = ISC_mutex_lock_cond(MUTEX)) == FB_SUCCESS) {
 			break;
+		}
+	}
 #endif
 
 /* If the spin wait didn't succeed then wait forever. */
 
-	if (status != FB_SUCCESS)
-		if (ISC_mutex_lock(MUTEX))
+	if (status != FB_SUCCESS) {
+		if (ISC_mutex_lock(MUTEX)) {
 			bug(NULL, "semop failed (acquire)");
+		}
+	}
 
 	++LOCK_header->lhb_acquires;
-	if (prior_active)
+	if (prior_active) {
 		++LOCK_header->lhb_acquire_blocks;
+	}
 
 #if (defined UNIX || defined WIN_NT)
 	if (spins) {
 		++LOCK_header->lhb_acquire_retries;
-		if (spins < LOCK_acquire_spins)
+		if (spins < LOCK_acquire_spins) {
 			++LOCK_header->lhb_retry_success;
+		}
 	}
 #endif
 
@@ -2665,8 +2675,9 @@ static void exit_handler( void *arg)
  **************************************/
 	STATUS local_status[ISC_STATUS_LENGTH];
 
-	if (!LOCK_header)
+	if (!LOCK_header) {
 		return;
+	}
 
 #ifndef SUPERSERVER
 /* For a superserver (e.g. Netware), since the server is going away, 
@@ -3148,6 +3159,7 @@ static void init_owner_block(
 	if (new_block == OWN_BLOCK_new)
 	{
 #ifdef WIN_NT
+		// TMN: This Win32 EVENT is never deleted!
 		owner->own_wakeup_hndl =
 			ISC_make_signal(TRUE, TRUE, LOCK_pid, LOCK_wakeup_signal);
 #endif
@@ -3224,14 +3236,16 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	PTR *prior;
 
 #ifdef WIN_NT
-	if (ISC_mutex_init(MUTEX, LOCK_FILE))
+	if (ISC_mutex_init(MUTEX, LOCK_FILE)) {
 		bug(NULL, "mutex init failed");
+	}
 #endif
 
 	LOCK_header = (LHB) shmem_data->sh_mem_address;
 
-	if (!initialize)
+	if (!initialize) {
 		return;
+	}
 
 	start_manager = TRUE;
 
@@ -3248,8 +3262,9 @@ static void lock_initialize( void *arg, SH_MEM shmem_data, int initialize)
 	QUE_INIT(LOCK_header->lhb_free_requests);
 
 #ifndef WIN_NT
-	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
+	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg)) {
 		bug(NULL, "mutex init failed");
+	}
 #endif
 
 	LOCK_header->lhb_hash_slots = (USHORT) LOCK_hash_slots;
@@ -3747,7 +3762,7 @@ static BOOLEAN probe_owners( PTR probing_owner_offset)
 #endif /* SUPERSERVER */
 
 
-static void purge_owner( PTR purging_owner_offset, OWN owner)
+static void purge_owner(PTR purging_owner_offset, OWN owner)
 {
 /**************************************
  *
@@ -3789,8 +3804,9 @@ static void purge_owner( PTR purging_owner_offset, OWN owner)
 	}
 
 #ifdef MANAGER_PROCESS
-	if (owner->own_flags & OWN_manager)
+	if (owner->own_flags & OWN_manager) {
 		LOCK_header->lhb_manager = 0;
+	}
 #endif
 
 /* Release owner block */
