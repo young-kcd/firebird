@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.37.2.7 2003-11-11 00:26:27 bellardo Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.8 2003-11-25 22:13:25 bellardo Exp $
 #
 
 ROOT=..
@@ -374,8 +374,9 @@ embed_qli:
 .PHONY: libfbserver fbserver 
 .PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util
 
-super_targets: libfbserver fbserver libfbclient client_gfix client_gbak \
-			client_isql client_gpre client_util # client_gdef
+super_targets: $(PLAT_SUPER_PRE_TARGET) libfbserver fbserver libfbclient \
+		client_gfix client_gbak client_isql client_gpre client_util \
+		$(PLAT_SUPER_POST_TARGET) # client_gdef
 
 libfbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
