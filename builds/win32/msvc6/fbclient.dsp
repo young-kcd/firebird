@@ -146,7 +146,7 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\isc_ipc.cpp
+SOURCE=..\..\..\src\jrd\os\win32\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
