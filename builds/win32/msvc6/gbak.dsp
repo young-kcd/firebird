@@ -201,5 +201,13 @@ SOURCE=..\..\..\src\burp\resto_proto.h
 SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
+# Begin Group "GPRE"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\pretty.cpp
+# End Source File
+# End Group
 # End Target
 # End Project

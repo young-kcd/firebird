@@ -4111,7 +4111,7 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 
 	GENERATE_blr(&blr, node);
 #ifdef DEBUG
-	gds__print_blr(blr.str_start, 0, 0, 0);
+	gds__print_blr((UCHAR*)blr.str_start, 0, 0, 0);
 #endif
 	handle = create_blob(blob_id, 0,(UCHAR*)  NULL_PTR);
 	length = blr.str_current - blr.str_start;
