@@ -26,7 +26,7 @@ Firebird root directory (see note above).
 
 The Registry key is *not* required for the engine to run;  however, many 
 third-party tools expect to read it in order to work.  The key stored is 
-    HKLM\SOFTWARE\FirebirdSQL\Firebird\Instances
+    HKLM\SOFTWARE\Firebird Project\Firebird Server\Instances
 and contains one string value:  DefaultInstance.
 
 This 'DefaultInstance' string value contains the full path (backslash
