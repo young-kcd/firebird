@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.29 2004-04-30 22:40:46 brodsom Exp $
+$Id: utld.cpp,v 1.30 2004-09-24 06:48:24 robocop Exp $
 */
 
 #include "firebird.h"
@@ -672,14 +672,9 @@ ISC_STATUS	UTLD_parse_sqlda(
     @param vector
 
  **/
-void	UTLD_save_status_strings(
-			ISC_STATUS* vector
-		)
+void	UTLD_save_status_strings(ISC_STATUS* vector)
 {
-	TEXT *p;
-	USHORT l;
-
-// allocate space for failure strings if it hasn't already been allocated 
+// allocate space for failure strings if it hasn't already been allocated
 
 	if (!DSQL_failures)
 	{
@@ -697,8 +692,9 @@ void	UTLD_save_status_strings(
 
 	while (*vector)
 	{
-		ISC_STATUS status = *vector;
-		vector++;
+		const TEXT* p;
+		USHORT l;
+		const ISC_STATUS status = *vector++;
 		switch (status)
 		{
 		case isc_arg_cstring:
