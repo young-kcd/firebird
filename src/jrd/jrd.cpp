@@ -355,7 +355,7 @@ static SLONG	get_parameter(const UCHAR**);
 static TEXT*	get_string_parameter(const UCHAR**, TEXT**, ULONG*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
-static bool		verify_database_name(const TEXT*, ISC_STATUS*);
+static bool		verify_database_name(const Firebird::PathName&, ISC_STATUS*);
 
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
@@ -366,7 +366,7 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// SERVER_SHUTDOWN
 #endif	// WIN_NT
 
-static Database*	init(thread_db*, ISC_STATUS*, const TEXT*, bool);
+static Database*	init(thread_db*, ISC_STATUS*, const Firebird::PathName&, bool);
 static ISC_STATUS	prepare(thread_db*, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(ATT);
 static ISC_STATUS	return_success(thread_db*);
@@ -592,17 +592,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (!file_length) 
 		file_length = strlen(file_name);
-	TEXT expanded_name[MAXPATHLEN];
-	memcpy(expanded_name, file_name, file_length);
-	expanded_name[file_length] = '\0';
+	Firebird::PathName expanded_name(file_name, 
+		file_length ? file_length : strlen(file_name));
 
 	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
-		ISC_expand_filename(expanded_name, 0, expanded_name);
+		ISC_expand_filename(expanded_name, expanded_name);
 	else
-		strcpy(expanded_name, expanded_filename);
-
-	const USHORT length_expanded = strlen(expanded_name);
+		expanded_name = expanded_filename;
 
 	thread_db thd_context;
 	thread_db* tdbb = set_thread_data(thd_context);
@@ -686,7 +683,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (dbb->dbb_filename && (dbb->dbb_encrypt_key || options.dpb_key)) {
 			if ((dbb->dbb_encrypt_key && !options.dpb_key) ||
 				(!dbb->dbb_encrypt_key && options.dpb_key) ||
-				strcmp(options.dpb_key, reinterpret_cast<char*>(dbb->dbb_encrypt_key->str_data)))
+				(dbb->dbb_encrypt_key != options.dpb_key))
 			{
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "encryption",
@@ -697,14 +694,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			}
 		}
 		else if (options.dpb_key) {
-			dbb->dbb_encrypt_key =
-				copy_string(options.dpb_key, strlen(options.dpb_key));
+			dbb->dbb_encrypt_key = options.dpb_key;
 		}
 	}
 
-	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
-	attachment->att_database = dbb;
-	attachment->att_filename = copy_string(expanded_name, length_expanded);
+	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att(dbb);
+	attachment->att_filename = expanded_name;
 
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -724,9 +719,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	isc_encode_timestamp(&times, &attachment->att_timestamp);
 
 	if (options.dpb_lc_messages) {
-		attachment->att_lc_messages =
-			copy_string(options.dpb_lc_messages,
-						(USHORT) strlen(options.dpb_lc_messages));
+		attachment->att_lc_messages = options.dpb_lc_messages;
 	}
 
 	if (options.dpb_no_garbage)
@@ -742,9 +735,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		attachment->att_flags |= ATT_gfix_attachment;
 
 	if (options.dpb_working_directory) {
-		attachment->att_working_directory =
-			copy_string(options.dpb_working_directory,
-						(USHORT) strlen(options.dpb_working_directory));
+		attachment->att_working_directory = options.dpb_working_directory;
 	}
 
 /* If we're a not a secondary attachment, initialize some stuff */
@@ -756,7 +747,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (!dbb->dbb_filename)
 	{
 		first = true;
-		dbb->dbb_filename = copy_string(expanded_name, length_expanded);
+		dbb->dbb_filename = expanded_name;
 		/* Extra LCK_init() done to keep the lock table until the
 		   database is shutdown() after the last detach. */
 		LCK_init(tdbb, LCK_OWNER_database);
@@ -765,7 +756,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		FUN_init();
 		SBM_init();
 		dbb->dbb_file =
-			PIO_open(dbb, expanded_name, length_expanded,
+			PIO_open(dbb, expanded_name.c_str(), expanded_name.length(),
 					 options.dpb_trace != 0, NULL, file_name, file_length);
 		SHUT_init(dbb);
 		PAG_header(file_name, file_length);
@@ -1744,16 +1735,14 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 /* Get length of database file name, if not already known */
 	if (!file_length) 
 		file_length = strlen(file_name);
-	TEXT expanded_name[MAXPATHLEN];
-	memcpy(expanded_name, file_name, file_length);
-	expanded_name[file_length] = '\0';
+	Firebird::PathName expanded_name;
+	expanded_name.assign(file_name, file_length);
 
 	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
-		ISC_expand_filename(expanded_name, 0, expanded_name);
+		ISC_expand_filename(expanded_name, expanded_name);
 	else
-		strcpy(expanded_name, expanded_filename);
-	const USHORT length_expanded = strlen(expanded_name);
+		expanded_name = expanded_filename;
 
 	thread_db thd_context;
 	thread_db* tdbb = set_thread_data(thd_context);
@@ -1818,13 +1807,11 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	if (options.dpb_key) {
-		dbb->dbb_encrypt_key =
-			copy_string(options.dpb_key, strlen(options.dpb_key));
+		dbb->dbb_encrypt_key = options.dpb_key;
 	}
 
-	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att();
-	attachment->att_database = dbb;
-	attachment->att_filename = copy_string(expanded_name, length_expanded);
+	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) att(dbb);
+	attachment->att_filename = expanded_name;
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -1836,9 +1823,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	tdbb->tdbb_flags = 0;
 
 	if (options.dpb_working_directory) {
-		attachment->att_working_directory =
-			copy_string(options.dpb_working_directory,
-						(USHORT) strlen(options.dpb_working_directory));
+		attachment->att_working_directory = options.dpb_working_directory;
 	}
 
 	if (options.dpb_gbak_attach) {
@@ -1870,9 +1855,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	isc_encode_timestamp(&times, &attachment->att_timestamp);
 
 	if (options.dpb_lc_messages) {
-		attachment->att_lc_messages =
-			copy_string(options.dpb_lc_messages,
-						(USHORT) strlen(options.dpb_lc_messages));
+		attachment->att_lc_messages = options.dpb_lc_messages;
 	}
 
 	if (!options.dpb_page_size) {
@@ -1937,7 +1920,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return user_status[1];
 	}
 	dbb->dbb_file =
-		PIO_create(dbb, expanded_name, length_expanded, options.dpb_overwrite);
+		PIO_create(dbb, expanded_name.c_str(), expanded_name.length(), 
+				   options.dpb_overwrite);
 	const jrd_file* first_dbb_file = dbb->dbb_file;
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -2024,10 +2008,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	find_intl_charset(tdbb, attachment, &options);
 
 #ifdef WIN_NT
-	dbb->dbb_filename = copy_string(first_dbb_file->fil_string,
+	dbb->dbb_filename.assign(first_dbb_file->fil_string,
 									first_dbb_file->fil_length);
 #else
-	dbb->dbb_filename = copy_string(expanded_name, length_expanded);
+	dbb->dbb_filename = expanded_name;
 #endif
 
 #ifdef GOVERNOR
@@ -2413,16 +2397,16 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS * user_status, ATT * handle)
 					isc_arg_string, "drop",
 					isc_arg_string, "database",
 					isc_arg_string,
-					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
+					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
 
 		if (attachment->att_flags & ATT_shutdown)
 			ERR_post(isc_shutdown, isc_arg_string,
-					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
+					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
 
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
 			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 					isc_arg_string,
-					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename->str_data), 0);
+					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
 
 		JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -4086,7 +4070,7 @@ void JRD_blocked(ATT blocking, BTB * que)
 
 
 #ifdef SUPERSERVER
-USHORT JRD_getdir(TEXT* buf, USHORT len)
+bool JRD_getdir(Firebird::PathName& buf)
 {
 /**************************************
  *
@@ -4103,23 +4087,22 @@ USHORT JRD_getdir(TEXT* buf, USHORT len)
  *
  **************************************/
 	char* t_data = NULL;
-
-	fb_assert(buf != NULL);
-	fb_assert(len > 0);
+	char b[MAXPATHLEN];
 
 	THD_getspecific_data((void**) &t_data);
 
 	if (t_data) {
 #ifdef WIN_NT
-		GetCurrentDirectory(len, buf);
+		GetCurrentDirectory(MAXPATHLEN, b);
+		buf = b;
 #else
 		const struct passwd* pwd;
-		strcpy(buf, t_data);
-		pwd = getpwnam(buf);
+		strcpy(b, t_data);
+		pwd = getpwnam(b);
 		if (pwd)
-			strcpy(buf, pwd->pw_dir);
+			buf = pwd->pw_dir;
 		else	/* No home dir for this users here. Default to server dir */
-			fb_getcwd(buf, len);
+			return fb_getcwd(buf);
 #endif
 	}
 	else
@@ -4129,7 +4112,8 @@ USHORT JRD_getdir(TEXT* buf, USHORT len)
    /** If the server has not done a SET_THREAD_DATA prior to this call
        (which will be the case when connecting via IPC), thread_db will
        be NULL so do not attempt to get the attachment handle from
-       thread_db. Just return 0 as described below.  NOTE:  The only time
+       thread_db. Just return false as described below.  
+	   NOTE:  The only time
        this code is entered via IPC is if the database name = "".
    **/
 
@@ -4142,24 +4126,21 @@ USHORT JRD_getdir(TEXT* buf, USHORT len)
 		if (tdbb && (tdbb->tdbb_thd_data.thdd_type == THDD_TYPE_TDBB))
 			attachment = tdbb->tdbb_attachment;
 		else
-			return 0;
+			return false;
 
    /**
     An older version of client will not be sending isc_dpb_working directory
     so in all probabilities attachment->att_working_directory will be null.
-    return 0 so that ISC_expand_filename will create the file in fbserver's dir
+    return false so that ISC_expand_filename will create the file in fbserver's dir
    **/
-		if (!attachment || !attachment->att_working_directory ||
-			len - 1 < attachment->att_working_directory->str_length)
+		if (!attachment || !attachment->att_working_directory)
 		{
-			return 0;
+			return false;
 		}
-		memcpy(buf, attachment->att_working_directory->str_data,
-			   attachment->att_working_directory->str_length);
-		buf[attachment->att_working_directory->str_length] = 0;
+		buf = attachment->att_working_directory;
 	}
 
-	return strlen(buf);
+	return true;
 }
 #endif /* SUPERSERVER */
 
@@ -4613,9 +4594,8 @@ static ISC_STATUS check_database(thread_db* tdbb, ATT attachment, ISC_STATUS * u
 		*ptr++ = isc_arg_gds;
 		*ptr++ = isc_shutdown;
 		*ptr++ = isc_arg_cstring;
-		*ptr++ = attachment->att_filename->str_length;
-		string = reinterpret_cast<char*>(attachment->att_filename->str_data);
-		*ptr++ = (ISC_STATUS) string;
+		*ptr++ = attachment->att_filename.length();
+		*ptr++ = (ISC_STATUS) attachment->att_filename.c_str();
 		*ptr = isc_arg_end;
 		return error(user_status);
 	}
@@ -5438,7 +5418,7 @@ static BOOLEAN handler_NT(SSHORT controlAction)
 
 static Database* init(thread_db*	tdbb,
 				ISC_STATUS*	user_status,
-				const TEXT*	expanded_filename,
+				const Firebird::PathName& expanded_filename,
 				bool attach_flag)
 {
 /**************************************
@@ -5495,15 +5475,12 @@ static Database* init(thread_db*	tdbb,
 	Database* dbb;
 	for (dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
-		const str* string;
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
 #ifndef SUPERSERVER
 			!(dbb->dbb_ast_flags & DBB_shutdown &&
 			  dbb->dbb_ast_flags & DBB_shutdown_locks) &&
 #endif
-			(string = dbb->dbb_filename) &&
-			!strcmp(reinterpret_cast<const char*>(string->str_data),
-					expanded_filename))
+			 (dbb->dbb_filename == expanded_filename))
 		{
 			return (attach_flag) ? dbb : NULL;
 		}
@@ -5573,7 +5550,7 @@ static Database* init(thread_db*	tdbb,
 /* Lookup some external "hooks" */
 
 	PluginManager::Plugin crypt_lib =
-		PluginManager::getEnginePluginManager().findPlugin(CRYPT_IMAGE);
+		PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
 	if (crypt_lib) {
 		Firebird::string encrypt_entrypoint(ENCRYPT);
 		Firebird::string decrypt_entrypoint(DECRYPT);
@@ -5681,15 +5658,6 @@ static void release_attachment(ATT attachment)
 		if (*vector)
 			delete *vector;
 	}
-
-	if (attachment->att_filename)
-		delete attachment->att_filename;
-
-	if (attachment->att_working_directory)
-		delete attachment->att_working_directory;
-
-	if (attachment->att_lc_messages)
-		delete attachment->att_lc_messages;
 
 /* Release any validation error vector allocated */
 
@@ -6111,8 +6079,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				if (dbfp == NULL) {
 					dbfp = (DBF) gds__alloc((SLONG) (sizeof(struct dbf) +
 													 sizeof(TEXT) *
-													 dbb->
-													 dbb_filename->str_length));
+													 dbb->dbb_filename.length()));
 					if (!dbfp)
 						throw std::bad_alloc();
 					dbf = dbfp;
@@ -6122,15 +6089,15 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 						gds__alloc((SLONG)
 								   (sizeof(struct dbf) +
 									sizeof(TEXT) *
-									dbb->dbb_filename->str_length));
+									dbb->dbb_filename.length()));
 					if (!dbfp)
 						throw std::bad_alloc();
 					dbfp = dbfp->dbf_next;
 				}
 				if (dbfp) {
-					dbfp->dbf_length = dbb->dbb_filename->str_length;
+					dbfp->dbf_length = dbb->dbb_filename.length();
 					dbfp->dbf_next = NULL;
-					MOVE_FAST(dbb->dbb_filename->str_data, dbfp->dbf_data,
+					MOVE_FAST(dbb->dbb_filename.c_str(), dbfp->dbf_data,
 							  dbfp->dbf_length);
 					total += sizeof(USHORT) + dbfp->dbf_length;
 				}
@@ -6511,18 +6478,18 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
     @param status
 
  **/
-static bool verify_database_name(const TEXT* name, ISC_STATUS* status)
+static bool verify_database_name(const Firebird::PathName& name, ISC_STATUS* status)
 {
 	// Check for security.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
-	static TEXT ExpandedSecurityNameBuffer[MAXPATHLEN];
+	static Firebird::PathName ExpandedSecurityNameBuffer(*getDefaultMemoryPool()); // !!!!!!!!!
 	if (! SecurityNameBuffer[0]) {
 		SecurityDatabase::getPath(SecurityNameBuffer);
-		ISC_expand_filename(SecurityNameBuffer, 0, ExpandedSecurityNameBuffer);
+		ISC_expand_filename(SecurityNameBuffer, ExpandedSecurityNameBuffer);
 	}
-	if (strcmp(SecurityNameBuffer, name) == 0)
+	if (name == SecurityNameBuffer)
 		return true;
-	if (strcmp(ExpandedSecurityNameBuffer, name) == 0)
+	if (name == ExpandedSecurityNameBuffer)
 		return true;
 	
 	// Check for .conf
@@ -6533,7 +6500,7 @@ static bool verify_database_name(const TEXT* name, ISC_STATUS* status)
 		// CVC: Using STATUS to hold pointer to literal string!
 		status[3] = reinterpret_cast<ISC_STATUS>("database");
 		status[4] = isc_arg_string;
-		status[5] = (ISC_STATUS)(U_IPTR) ERR_cstring(name);
+		status[5] = (ISC_STATUS)(U_IPTR) ERR_cstring(name.c_str());
 		status[6] = isc_arg_end;
 		return false;
 	}

@@ -39,6 +39,7 @@
 #endif
 
 #include "../include/fb_vector.h"
+#include "fb_string.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -119,7 +120,7 @@ class jrd_nod;
 class Database : private pool_alloc<type_dbb>
 {
 public:
-	typedef int (*crypt_routine) (char*, void*, int, void*);
+	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
 	static Database* newDbb(MemoryPool& p) {
 		return FB_NEW(p) Database(p);
@@ -177,9 +178,9 @@ public:
 	USHORT dbb_refresh_ranges;	/* active count of refresh ranges */
 	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
-	class str *dbb_spare_string;	/* random buffer */
-	class str *dbb_filename;	/* filename string */
-	class str *dbb_encrypt_key;	/* encryption key */
+	Firebird::string dbb_spare_string;	/* random buffer */
+	Firebird::PathName dbb_filename;	/* filename string */
+	Firebird::string dbb_encrypt_key;	/* encryption key */
 
 	JrdMemoryPool* dbb_permanent;
 	JrdMemoryPool* dbb_bufferpool;
@@ -244,7 +245,10 @@ private:
 	Database(MemoryPool& p)
 	:	dbb_pools(1, p, type_dbb),
 		dbb_text_objects(p),
-		dbb_charsets(p)
+		dbb_charsets(p),
+		dbb_spare_string(p),
+		dbb_filename(p),
+		dbb_encrypt_key(p)
 	{
 	}
 
@@ -392,6 +396,11 @@ private:
 class att : public pool_alloc<type_att>
 {
 public:
+	att(Database* dbb) :
+		att_database(dbb), 
+		att_lc_messages(*dbb->dbb_permanent),
+		att_working_directory(*dbb->dbb_permanent), 
+		att_filename(*dbb->dbb_permanent) { }
 /*	att()
 	:	att_database(0),
 		att_next(0),
@@ -445,12 +454,12 @@ public:
 	vec*		att_lck_quick_ref;	// correspondence table of locks
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
-	class str*	att_lc_messages;	// attachment's preference for message natural language
+	Firebird::string	att_lc_messages;	// attachment's preference for message natural language
 	lck*		att_long_locks;		// outstanding two phased locks
 	vec*		att_compatibility_table;	// hash table of compatible locks
 	class vcl*	att_val_errors;
-	class str*	att_working_directory;	// Current working directory is cached
-	class str*	att_filename;			// alias used to attach the database
+	Firebird::PathName	att_working_directory;	// Current working directory is cached
+	Firebird::PathName	att_filename;			// alias used to attach the database
 	GDS_TIMESTAMP	att_timestamp;		// connection date and time
 };
 typedef att* ATT;
