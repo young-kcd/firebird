@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.62 2004-05-12 19:34:43 brodsom Exp $
+ * $Id: gpre.h,v 1.63 2004-05-18 21:54:33 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -66,18 +66,18 @@
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
-#define FTN_BLK_DATA    1
+#define FTN_BLK_DATA
 #endif
 #endif
 
 #ifdef GPRE_ADA
 #if (defined hpux && defined HP10) || defined SCO_UNIX
-#define ALSYS_ADA       1
+#define ALSYS_ADA
 #endif
 #endif
 
 #ifdef VMS
-#define EITHER_CASE	1
+#define EITHER_CASE
 #endif
 
 /* If the C compiler supports the ANSI const directive, we emit it before
@@ -91,7 +91,8 @@ static const char* const CONST_STR	= "";
 
 const int MAXSYMLEN		= 512;		// max length of symbol + terminator
 const int NAME_SIZE 	= 32;
-#define SQL_DIALECT_V5 	1		/* pre 6.0 dialect */
+
+#include "../jrd/ibase.h"
 
 /* Language options */
 
