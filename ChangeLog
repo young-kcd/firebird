@@ -1,3 +1,21 @@
+2004-08-12 02:31  skidder
+
+	* firebird2/src/jrd/: dfw.epp (1.120), ini.epp (1.53), pcmet.epp
+	(1.25):
+	
+	Do not write rubbish per-segment selectivity into the database.
+	Valgrind reported it as uninitialized value passed to write(buf)
+	syscall
+
+2004-08-11 07:34  skidder
+
+	* firebird2/src/jrd/: cmp.cpp (1.142), opt.cpp (1.179):
+	
+	Fix a couple 'invalid read' problems found by Valgrind. Both could
+	cause crashes, one could result in invalid nulls placement. Removed
+	const*const*const stuff in couple places because things like that
+	make code really hard to understand
+
 2004-08-10 15:40  hvlad
 
 	* firebird2/src/jrd/err.cpp (1.52):
