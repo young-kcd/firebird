@@ -1,6 +1,18 @@
 
 @echo off
 
+@echo.
+@echo    !!  Warning !!
+@echo    This script no longer requires the 
+@echo   path to the source. It now works it  
+@echo   out automatically.
+@echo.
+@echo   Paremeter 1 will now set the FIREBIRD variable
+@echo   This may not be what you intended 
+@echo.
+
+
+
 ::Check if on-line help is required
 @if /I "%1"=="-h" (goto :HELP & goto :EOF)
 @if /I "%1"=="/h" (goto :HELP & goto :EOF)
