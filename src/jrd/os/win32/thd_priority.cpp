@@ -245,7 +245,7 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 			UCHAR p_flags = t->flags;
 			if (p_flags & THPS_PSCHED) {
 				UCHAR gonein = t->gonein;
-				UCHAR goneout = t->goneout;
+//				UCHAR goneout = t->goneout;
 				t->gonein = 0;
 				t->goneout = 0;
 				t->flags &= ~(THPS_UP | THPS_LOW); // clean them
