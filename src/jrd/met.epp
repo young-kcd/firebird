@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.43 2002-12-22 13:08:50 alexpeshkoff Exp $
+$Id: met.epp,v 1.44 2002-12-24 18:14:49 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -281,7 +281,8 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) && !(procedure->prc_flags & PRC_obsolete)) 
+			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
+				 !(procedure->prc_flags & PRC_obsolete) ) 
 			{
 				for (RSC resource = procedure->prc_request->req_resources; resource;
 					 resource = resource->rsc_next)
@@ -296,23 +297,25 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) && !(procedure->prc_flags & PRC_obsolete) && 
-				procedure->prc_use_count != procedure->prc_int_use_count && procedure != proc )
+			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
+				 !(procedure->prc_flags & PRC_obsolete) && 
+				 procedure->prc_use_count != procedure->prc_int_use_count && procedure != proc )
 			{
 				adjust_dependencies(procedure);
 			}
 		}
 		
 		if (proc) {
-		  result = proc->prc_use_count == proc->prc_int_use_count;
-		  adjust_dependencies(proc);		  
+			result = proc->prc_use_count == proc->prc_int_use_count;
+			if (proc->prc_request)
+				adjust_dependencies(proc);
 		}
 		
 		/* Deallocate all used requests */		
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) && 
+			if ( (procedure = JRD_PRC(*ptr)) && procedure->prc_request &&
 				!(procedure->prc_flags & PRC_obsolete) && (procedure != proc) )
 			{
 				
@@ -334,7 +337,7 @@ BOOLEAN MET_clear_cache(TDBB tdbb, JRD_PRC proc)
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++) 
 		{
-			if ( (procedure = JRD_PRC(*ptr)) && 
+			if ( (procedure = JRD_PRC(*ptr)) &&
 				 (procedure->prc_flags & PRC_obsolete) && (procedure != proc) ) 
 			{
 				procedure->prc_flags &= ~PRC_being_altered; // Just a safety sake
