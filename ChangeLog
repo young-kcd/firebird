@@ -1,3 +1,217 @@
+2003-07-04 21:21  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update, not the final one.
+
+2003-07-04 21:13  brodsom
+
+	*
+	
+	-Remove unneeded messages -Replace cat (unix) with type (win)
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t:
+
+2003-07-04 20:48  brodsom
+
+	* firebird2/src/v5_examples/: empbuild.c, empbuild.e:
+	
+	-Add check for input files -Solve format warnings -Update
+	empbuild.c
+
+2003-07-04 20:46  brodsom
+
+	* firebird2/src/v5_examples/empddl.sql:
+	
+	Change DATE to TIMESTAMP
+
+2003-07-04 20:45  brodsom
+
+	* firebird2/builds/win32/make7_examples.bat:
+	
+	Add msvc7 v5_examples. To be reviewed by Ignacio J Ortega
+
+2003-07-04 19:01  brodsom
+
+	* firebird2/builds/win32/: make6_debug_examples.bat,
+	make6_examples.bat:
+	
+	Replace make6_debug_examples with a new one with DEBUG/CLEAN option
+	and not using sed
+
+2003-07-04 18:45  brodsom
+
+	* firebird2/src/gpre/sql.cpp:
+	
+	-b option for EXEC SQL SET DATABASE
+
+2003-07-04 18:39  brodsom
+
+	* firebird2/builds/win32/: make6_all.bat, make6_boot.bat,
+	make7_all.bat, make7_boot.bat:
+	
+	Beutifiying
+
+2003-07-04 18:19  brodsom
+
+	* firebird2/src/gpre/: par.cpp, sql.cpp, sql_proto.h:
+	
+	-b option for exec sql
+
+2003-07-04 17:31  brodsom
+
+	* firebird2/generated/: v5_examples/placeholder.txt,
+	utilities/makefile, utilities/placeholder.txt, qli/placeholder.txt:
+	
+	Remove unused generated directory. Builds use the temporary 'gen'
+	directory
+
+2003-07-04 17:17  dimitr
+
+	* firebird2/src/: jrd/ibase.h, jrd/isc.cpp, jrd/isc.h,
+	remote/ibconfig.cpp:
+	
+	Get rid of the old config stuff completely.
+
+2003-07-04 15:40  brodsom
+
+	* firebird2/builds/win32/: make6_all.bat, make7_all.bat:
+	
+	Beautifying
+
+2003-07-04 15:26  brodsom
+
+	* firebird2/builds/win32/: make6_debug.bat, make6_release.bat,
+	make7_debug.bat, make7_release.bat:
+	
+	Remove replaced bats make6_debug.bat replaced with make6_all.bat
+	DEBUG make6_release.bat replaced with make6_all.bat make7_debug.bat
+	replaced with make7_all.bat DEBUG make7_release.bat replaced with
+	make7_all.bat
+
+2003-07-04 15:19  brodsom
+
+	* firebird2/builds/win32/make7_boot.bat:
+	
+	Correction
+
+2003-07-04 15:08  brodsom
+
+	* firebird2/builds/win32/: make7_boot.bat, prepare.bat:
+	
+	-Replace build_all with makeX_boot.  -Add make7_boot (To be
+	reviewed by Ignacio J Ortega)
+
+2003-07-04 15:00  brodsom
+
+	* firebird2/builds/win32/make7_all.bat:
+	
+	Replace make7_debug and make7_release with make7_all (To be
+	reviewed by Ignacio J Ortega)
+
+2003-07-04 14:54  brodsom
+
+	* firebird2/builds/win32/: make6_all.bat, make6_boot.bat:
+	
+	Correction
+
+2003-07-04 14:46  brodsom
+
+	* firebird2/builds/win32/: build6_all.bat, make6_all.bat,
+	make6_boot.bat:
+	
+	-Change the file name of build6_all to a more understandable one. 
+	-Replace Make6_release and Make6_debug with make6_all valid for
+	release and debug versions
+
+2003-07-04 14:46  dimitr
+
+	* firebird2/builds/win32/prepare.bat:
+	
+	Minor changes to the preparation script.
+
+2003-07-04 14:42  brodsom
+
+	* firebird2/doc/: README.build.mingw.html, README.mingw.html:
+	
+	Change the file name to a more understandable one.
+
+2003-07-04 14:40  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	First and temporary version of msvc build readme. (The good one in
+	hours)
+
+2003-07-04 14:19  dimitr
+
+	* firebird2/src/common/classes/tree.h:
+	
+	Fixed win32 build
+
+2003-07-04 14:15  dimitr
+
+	* firebird2/src/remote/: ibconfig.cpp, ibconfig.rc:
+	
+	Temporary disallowed config management via the property sheet.
+
+2003-07-04 14:12  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Removed old config stuff remains.  Temporary disallowed config
+	management via Services API.
+
+2003-07-04 12:34  brodsom
+
+	* firebird2/doc/README.mingw.html:
+	
+	Update MinGW docs
+
+2003-07-04 12:15  dimitr
+
+	* firebird2/builds/win32/msvc6/: engine.dsp, engine_classic.dsp,
+	engine_embed.dsp:
+	
+	Fixed little optimization issue with VC6 (SP < 5)
+
+2003-07-04 05:31  brodsom
+
+	* firebird2/clean.sh:
+	
+	Add more files to clean
+
+2003-07-04 05:21  brodsom
+
+	* firebird2/: doc/README.mingw.html,
+	builds/posix/prefix.mingw.README.html:
+	
+	Move MinGW readme
+
+2003-07-04 05:12  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Patch for the MinGW build problem (CS only code)
+
+2003-07-04 04:26  brodsom
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	Use MINGW macro and mthreads
+
+2003-07-04 04:25  brodsom
+
+	* firebird2/src/jrd/ibsetjmp.h:
+	
+	Use MINGW macro.
+
+2003-07-04 01:02  brodsom
+
+	* firebird2/src/gpre/sql.cpp:
+	
+	Patch
+
 2003-07-03 17:47  brodsom
 
 	* firebird2/: builds/posix/Makefile.in.msgs, clean.sh:
