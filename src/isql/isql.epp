@@ -1105,7 +1105,8 @@ void ISQL_get_character_sets(
 			return;
 		}
 
-	if (collation) {
+	//if (collation) {
+	if (collation || collate_only) {
 		FOR FIRST 1 COL IN RDB$COLLATIONS CROSS
 			CST IN RDB$CHARACTER_SETS WITH
 			COL.RDB$CHARACTER_SET_ID EQ CST.RDB$CHARACTER_SET_ID AND
