@@ -3188,15 +3188,19 @@ static void form_rivers(TDBB tdbb,
 		temp[temp[0]] = (UCHAR) relation_node->nod_arg[e_rel_stream];
 	}
 
-/* just because the user specified a join does not mean that 
-   we are able to form a river;  thus form as many rivers out
-   of the join are as necessary to exhaust the streams */
-
-	do
-		count = find_order(tdbb, opt, temp, plan_node);
-	while (form_river
-		   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
-			project_clause, 0));
+	// just because the user specified a join does not mean that 
+	// we are able to form a river;  thus form as many rivers out
+	// of the join are as necessary to exhaust the streams 
+	// AB: Only form rivers when any retrieval node is seen, for
+	// example a MERGE on two JOINs will come with no retrievals
+	// at this point.
+	if (temp[0] != 0) {
+		do
+			count = find_order(tdbb, opt, temp, plan_node);
+		while (form_river
+			   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
+				project_clause, 0));
+	}
 }
 
 
