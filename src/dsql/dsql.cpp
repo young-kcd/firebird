@@ -875,6 +875,14 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	/* 2. Create why_trans_handle - it's new, but points to the same jrd
     	  transaction as original before callback. */
 	WHY_TRA why_trans_handle = WHY_alloc_handle(why_db_handle->implementation, HANDLE_transaction);
+	if (!why_trans_handle) {
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+    	THD_MUTEX_UNLOCK(&databases_mutex);
+        THREAD_ENTER;
+    	return status[1];
+	}
 	why_trans_handle->handle.h_tra = jrd_transaction_handle;
 	why_trans_handle->parent = why_db_handle;
 	THD_MUTEX_UNLOCK (&databases_mutex);

@@ -109,6 +109,9 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	Attachment = temp_dbb->public_handle;
 
 	WHY_TRA temp_tra = WHY_alloc_handle(temp_dbb->implementation, HANDLE_transaction);
+	if (!temp_tra)
+		ERR_post(isc_virmemexh, 0);
+	Transaction = temp_tra->public_handle;
 	temp_tra->handle.h_tra = tdbb->tdbb_transaction;
 	temp_tra->parent = temp_dbb;
 
@@ -298,7 +301,9 @@ void ExecuteStatement::Close(thread_db* tdbb)
 	char* p = reinterpret_cast<char*>(Sqlda);
 	delete[] p;
 	Sqlda = 0;
-	WHY_cleanup_transaction(WHY_translate_handle(Transaction));
+	if (Transaction) {
+		WHY_cleanup_transaction(WHY_translate_handle(Transaction));
+	}
 	WHY_free_handle(Transaction);
 	Transaction = 0;
 	delete[] Buffer;
