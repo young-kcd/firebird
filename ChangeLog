@@ -1,3 +1,29 @@
+2003-06-08 22:59  hippoman
+
+	* firebird2/builds/win32/msvc7/: fb_inet_server.vcproj,
+	fb_lock_print.vcproj, fbclient.vcproj, fbembed.vcproj,
+	fbguard.vcproj, fbserver.vcproj, gbak.vcproj, gdef.vcproj,
+	gds32.vcproj, gfix.vcproj, gpre.vcproj, gpre_boot.vcproj,
+	gsec.vcproj, gsplit.vcproj, gstat.vcproj, ib_udf.vcproj,
+	ib_util.vcproj, instreg.vcproj, instsvc.vcproj, intl.vcproj,
+	intlcpp.vcproj, isql.vcproj, qli.vcproj:
+	
+	*Synced msvc7 build *changed dir references related ro rc files to
+	relative paths.
+
+2003-06-08 20:12  dimitr
+
+	* firebird2/src/remote/protocol.h:
+	
+	Re-enable default asymmetric protocol.
+
+2003-06-08 15:13  dimitr
+
+	* firebird2/src/: jrd/inf.cpp, jrd/license.h, jrd/utl.cpp,
+	remote/merge.cpp:
+	
+	Version information cleanup.
+
 2003-06-07 14:39  dimitr
 
 	* firebird2/src/jrd/: isc_version.h, isc_version.rc, license.h:
