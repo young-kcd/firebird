@@ -25,7 +25,7 @@
 #ifndef _REGISTRY_DEFINES_
 #define _REGISTRY_DEFINES_
 
-#define REG_KEY_ROOT				"SOFTWARE\\FirebirdSQL\\Firebird"
-#define REG_KEY_ROOT_CUR_VER		"SOFTWARE\\FirebirdSQL\\Firebird\\CurrentVersion"
+//#define REG_KEY_ROOT				"SOFTWARE\\FirebirdSQL\\Firebird"
+#define REG_KEY_ROOT_INSTANCES		"SOFTWARE\\FirebirdSQL\\Firebird\\Instances"
 
 #endif /* _REGISTRY_DEFINES_ */

@@ -37,7 +37,7 @@
 
 static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT *, HKEY));
 
-USHORT REGISTRY_install(HKEY hkey_node,
+USHORT REGISTRY_install(HKEY hkey_rootnode,
 						TEXT * directory, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
@@ -50,19 +50,20 @@ USHORT REGISTRY_install(HKEY hkey_node,
  *	Install InterBase in the registry.
  *
  **************************************/
-	HKEY hkey_kit;
+	HKEY hkey_instances;
 	DWORD disp;
 	TEXT path_name[MAXPATHLEN], *p;
 	USHORT len;
 	SLONG status;
 
-	if ((status = RegCreateKeyEx(hkey_node,
-                                 REG_KEY_ROOT_CUR_VER,
-								 0,
-								 "",
-								 REG_OPTION_NON_VOLATILE,
-								 KEY_WRITE,
-								 NULL, &hkey_kit, &disp)) != ERROR_SUCCESS) {
+	if ((status = RegCreateKeyEx(hkey_rootnode,
+			REG_KEY_ROOT_INSTANCES,
+			0,
+			"",
+			REG_OPTION_NON_VOLATILE,
+			KEY_WRITE,
+			NULL, &hkey_instances, &disp)) != ERROR_SUCCESS)
+	{
 		return (*err_handler) (status, "RegCreateKeyEx", NULL);
 	}
 
@@ -72,53 +73,25 @@ USHORT REGISTRY_install(HKEY hkey_node,
 		path_name[len] = 0;
 	}
 
-	if ((status = RegSetValueEx(hkey_kit, "RootDirectory", 0,
-								REG_SZ, reinterpret_cast<UCHAR*>(path_name),
-								(DWORD) (len + 1))) != ERROR_SUCCESS
-		|| (status =
-			RegSetValueEx(hkey_kit, "Version", 0, REG_SZ,
-						  reinterpret_cast<UCHAR*>(const_cast<char*>(GDS_VERSION)),
-						  (DWORD) sizeof(GDS_VERSION))) != ERROR_SUCCESS) {
-		(*err_handler) (status, "RegSetValueEx", hkey_kit);
+	if ((status = RegSetValueEx(hkey_instances, FB_DEFAULT_INSTANCE, 0,
+			REG_SZ, reinterpret_cast<UCHAR*>(path_name),
+			(DWORD) (len + 1))) != ERROR_SUCCESS)
+	{
+		(*err_handler) (status, "RegSetValueEx", hkey_instances);
+
+		// Removes the "Instances" key if we just created it.
+		// Else, keep it, because we don't want to trash other instances.
 		if (disp == REG_CREATED_NEW_KEY)
-			REGISTRY_remove(hkey_node, true, err_handler);
+			RegDeleteKey(hkey_rootnode, REG_KEY_ROOT_INSTANCES);
+
 		return FB_FAILURE;
 	}
 
-	/* We might as well add ServerDirectory here */
-/*
-	strcat(path_name, "\\bin");
-	len = GetFullPathName(path_name, sizeof(path_name), path_name, &p);
-	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
-    	path_name[len++] = '\\';
-    	path_name[len] = 0;
-    }
-
-	if ((status = RegSetValueEx(hkey_kit, "ServerDirectory", 0,
-								REG_SZ, reinterpret_cast<UCHAR*>(path_name),
-								(DWORD)(len + 1))) != ERROR_SUCCESS) {
-	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
-    	if (disp == REG_CREATED_NEW_KEY)
-			REGISTRY_remove(hkey_node, true, err_handler);
-    	return FB_FAILURE;
-    }
-
-	if ((status = RegSetValueEx(hkey_kit, "GuardianOptions", 0,
-								REG_SZ, reinterpret_cast<UCHAR*>("1"),
-								1)) != ERROR_SUCCESS) {
-	    (*err_handler) (status, "RegSetValueEx", hkey_kit);
-    	if (disp == REG_CREATED_NEW_KEY)
-			REGISTRY_remove(hkey_node, true, err_handler);
-    	return FB_FAILURE;
-    }
-*/
-	RegCloseKey(hkey_kit);
-
+	RegCloseKey(hkey_instances);
 	return FB_SUCCESS;
 }
 
-
-USHORT REGISTRY_remove(HKEY hkey_node,
+USHORT REGISTRY_remove(HKEY hkey_rootnode,
 					   bool silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
 {
 /**************************************
@@ -131,37 +104,47 @@ USHORT REGISTRY_remove(HKEY hkey_node,
  *	Remove InterBase from the registry.
  *
  **************************************/
-	HKEY hkey_kit;
-	USHORT ret;
+	HKEY hkey_instances;
 	SLONG status;
+	DWORD subkeys_count, values_count;
 
-	if ((status = RegOpenKeyEx(hkey_node,
-                               REG_KEY_ROOT,
-							   0,
-							   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
-							   KEY_WRITE, &hkey_kit)) != ERROR_SUCCESS) {
+	if ((status = RegOpenKeyEx(hkey_rootnode,
+			REG_KEY_ROOT_INSTANCES,
+			0,
+			KEY_READ | KEY_WRITE,
+			&hkey_instances)) != ERROR_SUCCESS)
+	{
 		if (silent_flag)
 			return FB_FAILURE;
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
-	ret = remove_subkeys(hkey_kit, silent_flag, err_handler);
-
-	RegCloseKey(hkey_kit);
-
-	if (ret == FB_FAILURE)
-		return FB_FAILURE;
-
-	if (status = RegDeleteKey(hkey_node, REG_KEY_ROOT)) {
+	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE))
+			!= ERROR_SUCCESS)
+	{
+		RegCloseKey(hkey_instances);
 		if (silent_flag)
 			return FB_FAILURE;
-		return (*err_handler) (status, "RegDeleteKey", NULL);
+		return (*err_handler) (status, "RegDeleteValue", NULL);
 	}
+
+	if (RegQueryInfoKey(hkey_instances, NULL, 0, 0,
+			&subkeys_count, NULL, NULL,
+			&values_count, 0, 0, NULL, NULL) == ERROR_SUCCESS &&
+				subkeys_count == 0 && values_count == 0)
+	{
+		// Let's remove the instances key itself as we see it is now empty.
+		RegCloseKey(hkey_instances);
+		RegDeleteKey(hkey_rootnode, REG_KEY_ROOT_INSTANCES);
+	}
+	else
+		RegCloseKey(hkey_instances);
 
 	return FB_SUCCESS;
 }
 
-
+#ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
+// I keep it here for possible re-use after FB 1.5 release. OM, sept 30, 2003.
 static USHORT remove_subkeys(
 							 HKEY hkey,
 							 bool silent_flag, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
@@ -234,3 +217,4 @@ static USHORT remove_subkeys(
 
 	return FB_SUCCESS;
 }
+#endif
