@@ -24,16 +24,14 @@
 #ifndef _JRD_OS_THD_PRIORITY_H_
 #define _JRD_OS_THD_PRIORITY_H_
 
-
-#if defined(WIN32) || defined(_WIN32)
+#ifdef WIN_NT
 #ifdef SUPERSERVER
 // Comment this definition to build without priority scheduler 
 //	OR:
 // Uncomment this definition to build with priority scheduler
-//#define THREAD_PSCHED 
+#define THREAD_PSCHED
 #endif
 #endif
-
 
 #ifdef THREAD_PSCHED
 
