@@ -1,3 +1,31 @@
+2004-04-25 23:52  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.69):
+	
+	Use another approach to address memory leak when converting strings
+	to blobs. This one works for updatable views
+
+2004-04-25 12:00  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.114):
+	
+	Fixed bug in one of my previous commits.
+
+2004-04-25 05:29  skidder
+
+	* firebird2/src/common/classes/stack.h (1.5):
+	
+	Fix GCC build
+
+2004-04-25 04:30  skidder
+
+	* firebird2/src/jrd/: evl.cpp (1.79), evl_string.h (1.10), intl.cpp
+	(1.60), intl_classes.h (1.17), intlobj.h (1.21):
+	
+	Minor bugfixes related to MBCS support in new LIKE/CONTAINING
+	implementation + small cleanup.  This should fix SJIS problem in
+	FBTCS reported by Blas
+
 2004-04-24 23:43  skidder
 
 	* firebird2/src/isql/: extract.epp (1.32), isql.epp (1.75),
