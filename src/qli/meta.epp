@@ -62,7 +62,7 @@ static int clone_fields(QLI_REL, QLI_REL);
 static int clone_global_fields(QLI_REL, QLI_REL);
 static void define_global_field(DBB, QLI_FLD, SYM);
 static void delete_fields(QLI_REL);
-static STATUS detach(STATUS *, DBB);
+static ISC_STATUS detach(ISC_STATUS *, DBB);
 static int execute_dynamic_ddl(DBB, RLB);
 static int field_length(USHORT, USHORT);
 static void get_database_type(DBB);
@@ -496,7 +496,7 @@ void MET_delete_database( DBB dbb)
  *	and finish any copies we have active.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	LLS log_stack, stack;
 	STR string;
 	DBB database, next;
@@ -915,7 +915,7 @@ void MET_finish( DBB dbb)
  *	Finish a database and release all associated blocks.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	DBB *ptr;
 	QLI_REL relation;
 	FUN function;
@@ -1090,7 +1090,7 @@ void MET_meta_commit( DBB database)
  *	transaction.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (database->dbb_capabilities & DBB_cap_multi_trans)
 		if (gds__commit_transaction(status_vector,
@@ -1143,7 +1143,7 @@ FRBRD *MET_meta_transaction(DBB database, int update_flag)
  *	or rolling back, because this could affect user data.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	FRBRD *transaction;
 
 	if (!database)
@@ -1439,7 +1439,7 @@ void MET_ready( SYN node, USHORT create_flag)
  **************************************/
 	DBB temp, dbb;
 	SYN *ptr, *ptr2, *end;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SSHORT dpb_length, length;
 	UCHAR *dpb, *p;
 	TEXT *q;
@@ -1573,7 +1573,7 @@ void MET_shutdown(void)
  *	Shut down all attached databases.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	DBB dbb;
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
@@ -1735,7 +1735,7 @@ FRBRD *MET_transaction( NOD_T node_type, DBB database)
  *	by the caller.  This is a singleminded routine.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 
 	switch (node_type) {
@@ -1948,7 +1948,7 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
 	DBB source_dbb;
 	FRBRD *source_blob;
 	SLONG size, segment_count, max_segment;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT length, buffer_length;
 	TEXT *buffer, fixed_buffer[4096], *p;
 
@@ -2681,7 +2681,7 @@ static void delete_fields( QLI_REL relation)
 }
 
 
-static STATUS detach( STATUS * status_vector, DBB dbb)
+static ISC_STATUS detach( ISC_STATUS * status_vector, DBB dbb)
 {
 /**************************************
  *
@@ -2694,7 +2694,7 @@ static STATUS detach( STATUS * status_vector, DBB dbb)
  *	first failing call, if any.
  *
  **************************************/
-	STATUS *status, alt_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS *status, alt_vector[ISC_STATUS_LENGTH];
 
 	if (!dbb->dbb_handle)
 		return FB_SUCCESS;
@@ -2804,7 +2804,7 @@ static void get_database_type( DBB new_dbb)
  *	Ask what type of database this is. 
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	int count;
 	USHORT l;
 	UCHAR item, buffer[1024], *p, *q;
@@ -2984,7 +2984,7 @@ static TEXT *get_query_header( DBB database, SLONG blob_id[2])
  *
  **************************************/
 	FRBRD *blob;
-	STATUS status, status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status, status_vector[ISC_STATUS_LENGTH];
 	USHORT length;
 	TEXT header[1024], buffer[1024], *p, *q;
 	blob = NULL;
@@ -3564,7 +3564,7 @@ static SYN parse_blr_blob( SLONG * blob_id, SYM symbol)
  *
  **************************************/
 	FRBRD *handle;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SYN node;
 	USHORT length;
 	UCHAR buffer[1024], *ptr;
@@ -3691,7 +3691,7 @@ static void rollback_update( DBB database)
  *	Roll back  a meta-data update.
  *
  **************************************/
-	STATUS alt_vector[20];
+	ISC_STATUS alt_vector[ISC_STATUS_LENGTH];
 
 	if (gds_trans == database->dbb_meta_trans &&
 		(database->dbb_capabilities & DBB_cap_multi_trans))

@@ -167,7 +167,7 @@ typedef struct itm {
     USHORT	itm_column;			/* Logical column number */
     FRBRD	*itm_stream;
     USHORT	itm_kanji_fragment;		/* JPN: last kanji on line border */
-    STATUS	itm_blob_status;		/* JPN: status of the last blob fetch */
+    ISC_STATUS	itm_blob_status;		/* JPN: status of the last blob fetch */
 } *ITM;
 
 #define ITM_overlapped	1			/* Overlapped by another item */

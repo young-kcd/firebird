@@ -25,7 +25,7 @@
 #define _QLI_ERR_PROTO_H_
 
 extern void	ERRQ_bugcheck (USHORT);
-extern void	ERRQ_database_error (struct dbb *, STATUS *);
+extern void	ERRQ_database_error (struct dbb *, ISC_STATUS *);
 extern void	ERRQ_error (USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 extern void	ERRQ_error_format (USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 extern void	ERRQ_exit (int);

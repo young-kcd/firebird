@@ -62,7 +62,7 @@ void ERRQ_bugcheck( USHORT number)
 }
 
 
-void ERRQ_database_error( DBB dbb, STATUS * status_vector)
+void ERRQ_database_error( DBB dbb, ISC_STATUS * status_vector)
 {
 /**************************************
  *

@@ -66,7 +66,7 @@ extern USHORT QLI_prompt_count, QLI_reprompt;
 static DSC *assignment(QLI_NOD, DSC *, QLI_NOD, QLI_NOD, PAR);
 static void commit_retaining(QLI_NOD);
 static int copy_blob(QLI_NOD, PAR);
-static void db_error(QLI_REQ, STATUS *);
+static void db_error(QLI_REQ, ISC_STATUS *);
 static void execute_abort(QLI_NOD);
 static void execute_assignment(QLI_NOD);
 static void execute_for(QLI_NOD);
@@ -105,7 +105,7 @@ void EXEC_abort(void)
  *	requests be unwound and set flag.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	QLI_REQ request;
 
 	for (request = QLI_requests; request; request = request->req_next)
@@ -232,7 +232,7 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
 	UCHAR bpb[20], *p;
 	USHORT bpb_length;
 	FRBRD *blob;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	desc = EVAL_value(node);
 	if (!desc)
@@ -401,7 +401,7 @@ DSC *EXEC_receive(QLI_MSG message, PAR parameter)
  *
  **************************************/
 	QLI_REQ request;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = message->msg_request;
 
@@ -433,7 +433,7 @@ void EXEC_send( QLI_MSG message)
  *
  **************************************/
 	QLI_REQ request;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	request = message->msg_request;
 
@@ -460,7 +460,7 @@ void EXEC_start_request( QLI_REQ request, QLI_MSG message)
  *	a start and send.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (message) {
 		map_data(message);
@@ -667,7 +667,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	DSC *from_desc, *to_desc;
 	FRBRD *from_blob, *to_blob;
 	SLONG size, segment_count, max_segment;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	USHORT bpb_length, length, buffer_length;
 	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
 #ifdef PYXIS
@@ -774,7 +774,7 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 }
 
 
-static void db_error( QLI_REQ request, STATUS * status_vector)
+static void db_error( QLI_REQ request, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1134,7 +1134,7 @@ static void print_counts( QLI_REQ request)
 	UCHAR item;
 	int length;
 	ULONG number;
-	STATUS status_vector[ISC_STATUS_LENGTH];
+	ISC_STATUS status_vector[ISC_STATUS_LENGTH];
 	SCHAR count_buffer[COUNT_ITEMS * 7 + 1], *c;
 
 	if (gds__request_info(status_vector,
@@ -1225,7 +1225,7 @@ static void transaction_state( QLI_NOD node, DBB database)
  *	committed.
  *
  **************************************/
-	STATUS status[ISC_STATUS_LENGTH];
+	ISC_STATUS status[ISC_STATUS_LENGTH];
 
 	if (database->dbb_transaction) {
 		if (node->nod_type == nod_commit_retaining) {
