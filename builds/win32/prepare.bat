@@ -57,7 +57,7 @@
 @%MSG_ISQL%transmsgs.de_DE.sql 
 
 @"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\builds\misc\help.gbak %SERVER_NAME%:%DB_PATH%\gen\dbs\help.fdb 
-@copy metadata.fdb yachts.lnk > nul
+@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
 
 @echo.
 @echo Completed Preparations for build
