@@ -1,0 +1,79 @@
+README to instsvc.exe
+----------------------
+Author:   Alex Peshkov (pes@insi.yaroslavl.ru)
+
+Firebird provides a standard routine to manage the Firebird Service
+on WinNT/2000/XP platforms - instsvc.exe.
+
+ NOTE  Most of the instsvc switches are self-explanatory. 
+       The only obscure one - the -z switch - causes 
+       instsvc.exe to print the Firebird software version 
+       as the first line of output.
+
+To install the Firebird service on your box:
+
+instsvc {install Firebird_directory [-auto | -demand] [-superserver | -classic]} 
+  [-g[uardian]] [-l[ogin] username [password]] [-z]
+
+To remove the service:
+
+ instsvc {remove} [-g[uardian]] [-z]
+
+To set the priority of the server process next time it is installed 
+(see also the reimplemented ProcessPriorityLevel parameter in 
+firebird.conf):
+
+ instsvc {configure [-boostpriority | -regularpriority]} [-z]
+
+To start the Firebird service with altered process priority:
+
+ instsvc {start [-boostpriority | -regularpriority] } [-z]
+
+To stop the Firebird service:
+
+ instsvc {stop} [-z]
+
+    To enhance Firebird security, the service management program 
+has been modified to accept a login switch, to optionally 
+pre-empt the LocalSystem user from being, by default, the user 
+under which the Firebird service logs in. 
+
+ NOTE  Regular user login is not compatible with the local access 
+       protocol, which relies on SERVICE_INTERACTIVE_PROCESS mode 
+       ("Allow service to interact with Desktop").  For this reason, 
+       unfortunately, the local access protocol remains a source of 
+       vulnerability.
+
+    If the -[L] switch is not present, instsvc.exe proceeds as 
+before, logging in the service using the LocalSystem profile.
+
+    The switch [-Login username [password]] allows the Firebird 
+service to log in as a real user instead of the LocalSystem user.
+When instsvc.exe detects this switch, it looks for two arguments, 
+username and password.
+  
+    If a username is present, it proceeds to check the next string.
+If the first character is not a '-' (minus sign), it interprets the 
+string as a password.  Thus, the password should not begin with '-'. 
+
+    If the username and password do not resolve to a valid domain 
+user, or one or both are missing, the usual NT built-in checking takes 
+over and any error will be due to a validation failure of the 
+domain\user string that is resolved from the input.
+
+    The user username needs to have privileges to log in as a service, 
+as well as read/write access to all databases and the firebird.log file.
+For security reasons, write access to firebird.conf and Firebird 
+executables should NOT be given.
+ 
+    Use of the -L switch disables the use of local protocol, so the 
+system administrator must choose between increased security and the 
+ability to use the local database access protocol. For production servers 
+that need to run in potentially aggressive environments, the -L switch is 
+strongly recommended.
+
+ NOTE  A reworking of windows local access - a relic of its original 
+       implementation back in Windows 3.11 - is overdue and is scheduled 
+       for a release beyond Firebird 1.5.  Amongst other changes, it 
+       will be made compatible with the -l[ogin] switch in instsvc.exe.
+
