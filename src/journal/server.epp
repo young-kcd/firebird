@@ -1064,10 +1064,17 @@ static void divorce_terminal(fd_set * mask)
 	}
 
 // Finally, get out of the process group
-// BRS dirty patch to be able to build, this call should be replaced 
-//	s = setpgrp(0,0);
-//
-
+#ifdef HAVE_SETPGRP
+#ifdef SETPGRP_VOID
+	s = setpgrp();
+#else
+	s = setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
+#else
+#ifdef HAVE_SETPGID
+	s = setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
 }
 #endif
 #endif
