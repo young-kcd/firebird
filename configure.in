@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.186 2003-11-21 19:52:10 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.187 2003-11-23 16:27:09 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -28,6 +28,7 @@ dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
 dnl      SHRLIB_EXT       : suffix of shared library files
 
+RAW_DEVICES_FLG=Y
 case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
@@ -116,6 +117,7 @@ case "$target" in
     AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
+    RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
     ;;
 
@@ -156,7 +158,6 @@ AC_ARG_ENABLE(debug,
    esac])
 AC_SUBST(PROD_BUILD_FLG)
 
-RAW_DEVICES_FLG=N
 AC_ARG_ENABLE(raw-devices,
   [  --enable-raw-devices    enable databases on raw devices (default=no)],
   [case "$enableval" in
