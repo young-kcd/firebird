@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.1 2002-11-11 05:56:38 skywalker Exp $
+#   $Id: postinstall.sh.in,v 1.2 2002-11-11 13:52:53 skywalker Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -226,8 +226,22 @@ keepOrigDBAPassword() {
 generateNewDBAPassword() {
 
     DBAPasswordFile=$FBRootDir/SYSDBA.password
-    
-    NewPasswd=`/usr/bin/mkpasswd -l 8`
+
+    # openssl generates random data.
+    if [ -f /usr/bin/openssl ]
+      then
+        NewPasswd=`openssl rand -base64 10 | cut -c1-8`
+    fi
+
+    # mkpasswd is a bit of a hassle, but check to see if it's there
+    if [ -z "$NewPasswd" ]
+      then
+        if [ -f /usr/bin/mkpasswd ]
+          then
+            NewPasswd=`/usr/bin/mkpasswd -l 8`
+        fi
+    fi
+
     if [ -z "$NewPasswd" ]
       then
         keepOrigDBAPassword
@@ -237,8 +251,8 @@ generateNewDBAPassword() {
     echo "Firebird generated password " > $DBAPasswordFile
     echo "for user SYSDBA is : $NewPasswd" >> $DBAPasswordFile
     echo "generated on `hostname` at time `date`" >> $DBAPasswordFile
-    echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
-    echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
+    #echo "(For superserver you will also want to check the password in the" >> $DBAPasswordFile
+    #echo "daemon init routine in the file /etc/rc.d/init.d/firebird)" >> $DBAPasswordFile
     echo "" >> $DBAPasswordFile
     echo "Your password can be changed to a more suitable one using the" >> $DBAPasswordFile
     echo "@prefix@/bin/changeDBAPassword.sh script" >> $DBAPasswordFile
@@ -298,6 +312,9 @@ changeDBAPassword() {
         if [ -f /usr/bin/mkpasswd ]
             then
               generateNewDBAPassword
+        elif [ -f /usr/bin/openssl ]
+            then
+              generateNewDBAPassword      
         else
               keepOrigDBAPassword
         fi
@@ -354,8 +371,11 @@ fixFilePermissions() {
     # cannot run though.
     for i in fb_lock_mgr gds_drop fb_inet_server
     do
-        chmod ug=rx,o= $i
-        chmod ug+s $i
+        if [ -f $i ]
+          then
+            chmod ug=rx,o= $i
+            chmod ug+s $i
+        fi
     done
 
 
@@ -400,7 +420,10 @@ fixFilePermissions() {
     done
 
     # make examples db's writable by group
-    chmod ug=rw,o= *.gdb
+    for i in `find . -name '*.gdb' -print`
+      do
+        chmod ug=rw,o= $i
+      done
 
 }
 
@@ -450,7 +473,10 @@ fixFilePermissionsRoot() {
     # cannot run though.
     for i in fb_lock_mgr gds_drop fb_inet_server
     do
-        chmod ug+s $i
+      if [ -f $i ]
+        then
+          chmod ug+s $i
+      fi
     done
 
 
@@ -496,7 +522,11 @@ fixFilePermissionsRoot() {
     done
 
     # make examples db's writable by group
-    chmod a=rw *.gdb
+    for i in `find . -name '*.gdb' -print`
+      do
+        chmod a=rw $i
+      done
+
 
 }
 
@@ -620,11 +650,13 @@ resetInetdServer() {
     # The \n is needed, some /etc/services files are missing a trailing
     # line feed - MOD 7-Nov-2002
     FileName=/etc/services
-    newLine="\ngds_db          3050/tcp  # FirebirdSQL Database Remote Protocol\n"
+    newLine="gds_db          3050/tcp  # FirebirdSQL Database Remote Protocol"
     oldLine=`grep "^gds_db" $FileName`
     if [ -z "$oldLine" ]
       then
+        echo "" >> $FileName
         echo $newLine >> $FileName
+        echo "" >> $FileName
     #    replaceLineInFile "$FileName" "$newLine" "$oldLine"
     fi
 

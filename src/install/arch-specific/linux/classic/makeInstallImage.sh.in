@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 #  This library is part of the FirebirdSQL project
 #
 #  This library is free software; you can redistribute it and/or
@@ -30,22 +30,43 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1 2002-11-11 05:56:38 skywalker Exp $
+#   $Id: makeInstallImage.sh.in,v 1.2 2002-11-11 13:52:53 skywalker Exp $
 # 
 
 # Script to copy install files from the build/transport area
 
-BuildSrcDir=firebird/install/linux
 
-BuildDir=./firebird
+# This script builds an image of the installed system into 
+# the gen/buildroot directory.
 
 
-TargetDir=buildroot
+# Making an assumption that this program is being run in the gen directory
+BuildRootDir=..
+BuiltFBDir=./firebird  # Where the just build fb exists.
 
-RealRootDir=@prefix@
+
+TargetDir=buildroot    # Where we want to build the install image
+
+RealRootDir=@prefix@   # Where it will be installed on new machine
 FBRootDir=${RealRootDir#/}   # strip off leading / 
 DestDir=$TargetDir/$FBRootDir
 
+
+#------------------------------------------------------------------------
+# copyIfExists
+# Copy file if it exists
+#
+
+copyIfExists() {
+   OldFile=$1
+   NewFile=$2
+
+   if [ -f $OldFile ]
+     then
+       cp $OldFile $NewFile
+   fi
+
+}
 
 
 #------------------------------------------------------------------------
@@ -70,7 +91,7 @@ copyFiles() {
     mkdir $DestDir/doc 
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
-    mkdir $TargetDir/etc 
+#    mkdir $TargetDir/etc 
 #    mkdir $TargetDir/etc/init.d
 #    mkdir $TargetDir/var
 #    mkdir $TargetDir/var/adm
@@ -80,63 +101,74 @@ copyFiles() {
     mkdir -p $TargetDir/usr/lib
     mkdir -p $TargetDir/usr/include
 
-    cp -f $BuildDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
+    cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
 
-    cp $BuildDir/bin/gbak $DestDir/bin/gbak 
-    cp $BuildDir/bin/gdef $DestDir/bin/gdef 
-    cp $BuildDir/bin/gds_lock_print $DestDir/bin/gds_lock_print 
-    cp $BuildDir/bin/gds_drop $DestDir/bin/gds_drop 
-    cp $BuildDir/bin/fb_lock_mgr $DestDir/bin/fb_lock_mgr 
-    cp $BuildDir/bin/gds_pipe $DestDir/bin/gds_pipe 
-    cp $BuildDir/bin/gfix $DestDir/bin/gfix 
-    cp $BuildDir/bin/gpre $DestDir/bin/gpre 
-    cp $BuildDir/bin/gsec $DestDir/bin/gsec 
-    cp $BuildDir/bin/gsplit $DestDir/bin/gsplit 
-    cp $BuildDir/bin/gstat $DestDir/bin/gstat 
-    cp $BuildDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
-    cp $BuildDir/bin/isql $DestDir/bin/isql 
-    cp $BuildDir/bin/qli $DestDir/bin/qli 
+    cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
+    cp $BuiltFBDir/bin/gdef $DestDir/bin/gdef 
+    cp $BuiltFBDir/bin/gds_drop $DestDir/bin/gds_drop 
+    copyIfExists $BuiltFBDir/bin/fb_lock_mgr $DestDir/bin/fb_lock_mgr 
+    copyIfExists $BuiltFBDir/bin/gds_lock_print $DestDir/bin/gds_lock_print 
+    copyIfExists $BuiltFBDir/bin/gds_pipe $DestDir/bin/gds_pipe 
+    cp $BuiltFBDir/bin/gfix $DestDir/bin/gfix 
+    cp $BuiltFBDir/bin/gpre $DestDir/bin/gpre 
+    cp $BuiltFBDir/bin/gsec $DestDir/bin/gsec 
+    copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
+    cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
+    copyIfExists $BuiltFBDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
+    cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
+    cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
-    cp $BuildDir/bin/CSchangeRunUser.sh $DestDir/bin
-    cp $BuildDir/bin/CSrestoreRootRunUser.sh $DestDir/bin
-    cp $BuildDir/bin/changeDBAPassword.sh $DestDir/bin
+    cp $BuiltFBDir/bin/CSchangeRunUser.sh $DestDir/bin
+    cp $BuiltFBDir/bin/CSrestoreRootRunUser.sh $DestDir/bin
+    cp $BuiltFBDir/bin/changeDBAPassword.sh $DestDir/bin
 
-    cp $BuildDir/examples/v5/*.[ceh] $DestDir/examples 
-    cp $BuildDir/examples/v5/*.sql $DestDir/examples 
-    cp $BuildDir/examples/v5/*.gbk $DestDir/examples 
-    cp $BuildDir/examples/v5/*.gdb $DestDir/examples 
-    cp $BuildDir/examples/v5/makefile $DestDir/examples 
-    cp $BuildDir/help/help.gbak $DestDir/help 
-    cp $BuildDir/help/help.gdb $DestDir/help 
+    # Copy examples only if we have them
+
+    exampleFiles=`find $BuiltFBDir/examples/v5 -print`
+    if [ -z $exampleFiles ]
+      then
+        echo "Example files have not been built!"
+      else
+        for i in $exampleFiles
+          do
+             cp $i $DestDir/examples
+          done
+    fi
+
+    copyIfExists $BuiltFBDir/help/help.gbak $DestDir/help 
+    cp $BuiltFBDir/help/help.gdb $DestDir/help 
 
     #cp -r $BuildSrcDir/doc $DestDir 
-    #cp -r $BuildDir/doc $DestDir 
+    #cp -r $BuiltFBDir/doc $DestDir 
 
-    cp $BuildDir/firebird.msg $DestDir/firebird.msg 
-    cp $BuildDir/isc4.gdb $DestDir/isc4.gdb 
-
-
-#    cp $BuildDir/include/gds.f $DestDir/include 
-#    cp $BuildDir/include/gds.hxx $DestDir/include 
-    cp $BuildDir/include/*.h $DestDir/include 
+    cp $BuiltFBDir/firebird.msg $DestDir/firebird.msg 
+    cp $BuiltFBDir/isc4.gdb $DestDir/isc4.gdb 
 
 
-    cp -f $BuildDir/lib/@FIREBIRD_LIBGDS_SO@ $DestDir/lib/@FIREBIRD_LIBGDS_SO@
+#    cp $BuiltFBDir/include/gds.f $DestDir/include 
+#    cp $BuiltFBDir/include/gds.hxx $DestDir/include 
+    cp $BuiltFBDir/include/*.h $DestDir/include 
+
+
+    cp -f $BuiltFBDir/lib/@FIREBIRD_LIBGDS_SO@ $DestDir/lib/@FIREBIRD_LIBGDS_SO@
     ln -s @FIREBIRD_LIBGDS_SO@  $DestDir/lib/@FIREBIRD_LIBGDS_SO_LNK@
     ln -s @FIREBIRD_LIBGDS_SO@  $DestDir/lib/@FIREBIRD_LIBGDS_SO_X_LNK@
 
-#    cp -f $BuildDir/lib/gds.a /usr/lib/libgds.a 
-    cp -f $BuildDir/lib/ib_util.so $DestDir/lib/libib_util.so 
+#    cp -f $BuiltFBDir/lib/gds.a /usr/lib/libgds.a 
+    cp -f $BuiltFBDir/lib/ib_util.so $DestDir/lib/libib_util.so 
 
 
-    cp $BuildDir/intl/libfbintl.so $DestDir/intl/fbintl
-    cp $BuildDir/UDF/ib_udf.so $DestDir/UDF/
-    cp $BuildDir/UDF/fb_udf.so $DestDir/UDF/
+    cp $BuiltFBDir/intl/libfbintl.so $DestDir/intl/fbintl
+    cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
+    cp $BuiltFBDir/UDF/fb_udf.so $DestDir/UDF/
 
-#    cp $BuildDir/README $DestDir/README
 
-    cp $BuildDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
-    cp $BuildDir/misc/firebird.conf $DestDir/misc/firebird.conf
+    # Note that this copies files from outside the build tree.
+    cp $BuildRootDir/doc/README.user.* $DestDir/doc
+    cp $BuildRootDir/doc/README.user $DestDir/README
+
+    cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
+    cp $BuiltFBDir/misc/firebird.conf $DestDir/misc/firebird.conf
 
 
 # Create links from /usr/lib to install area.
@@ -162,7 +194,7 @@ copyFiles() {
 		   ln -s ../../$FBRootDir/include/$i $TargetDir/usr/include/$i
 	   done
 
-    (cd $DestDir; touch firebird.log;)
+#    (cd $DestDir; touch firebird.log;)
 
 #     chmod u=rw,go= firebird.log)
 #    (cd $DestDir; chmod uga+rw examples/*.gdb)
