@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.14 2003-02-10 13:28:08 eku Exp $
+$Id: canonical.cpp,v 1.15 2003-02-10 13:37:45 eku Exp $
 */
 
 #include "firebird.h"
@@ -679,9 +679,7 @@ static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 
 
 #ifdef	LOC_DOUBLE
-static bool_t xdr_double(xdrs, ip)
-	 XDR *xdrs;
-	 *ip;
+static bool_t xdr_double(XDR *xdrs, double *ip)
 {
 /**************************************
  *
