@@ -539,6 +539,9 @@ const GDS_LONG gds_optimizer_between_err            = 335544813L;
 const GDS_LONG gds_service_not_supported            = 335544814L;
 const GDS_LONG gds_generator_name                   = 335544815L;
 const GDS_LONG gds_udf_name                         = 335544816L;
+const GDS_LONG gds_bad_limit_param                  = 335544817L;
+const GDS_LONG gds_bad_skip_param                   = 335544818L;
+const GDS_LONG gds_io_32bit_exceeded_err            = 335544819L;
 const GDS_LONG gds_gfix_db_name                     = 335740929L;
 const GDS_LONG gds_gfix_invalid_sw                  = 335740930L;
 const GDS_LONG gds_gfix_incmp_sw                    = 335740932L;
@@ -577,6 +580,8 @@ const GDS_LONG gds_dsql_warning_number_ambiguous1   = 336003081L;
 const GDS_LONG gds_dsql_warn_precision_ambiguous    = 336003082L;
 const GDS_LONG gds_dsql_warn_precision_ambiguous1   = 336003083L;
 const GDS_LONG gds_dsql_warn_precision_ambiguous2   = 336003084L;
+const GDS_LONG gds_dsql_ambiguous_field_name        = 336003085L;
+const GDS_LONG gds_dsql_udf_return_pos_err          = 336003086L;
 const GDS_LONG gds_dyn_role_does_not_exist          = 336068796L;
 const GDS_LONG gds_dyn_no_grant_admin_opt           = 336068797L;
 const GDS_LONG gds_dyn_user_not_role_member         = 336068798L;
@@ -676,6 +681,8 @@ const GDS_LONG gds_gbak_size_lt_min                 = 336331023L;
 const GDS_LONG gds_gbak_svc_name_missing            = 336331025L;
 const GDS_LONG gds_gbak_not_ownr                    = 336331026L;
 const GDS_LONG gds_gbak_mode_req                    = 336331031L;
+const GDS_LONG gds_gbak_just_data                   = 336331033L;
+const GDS_LONG gds_gbak_data_only                   = 336331034L;
 const GDS_LONG gds_gsec_cant_open_db                = 336723983L;
 const GDS_LONG gds_gsec_switches_error              = 336723984L;
 const GDS_LONG gds_gsec_no_op_spec                  = 336723985L;
@@ -735,7 +742,7 @@ const GDS_LONG gds_gstat_unexpected_eof             = 336920580L;
 const GDS_LONG gds_gstat_open_err                   = 336920605L;
 const GDS_LONG gds_gstat_read_err                   = 336920606L;
 const GDS_LONG gds_gstat_sysmemex                   = 336920607L;
-const GDS_LONG gds_err_max                          = 692L;
+const GDS_LONG gds_err_max                          = 699L;
 
 #else /* c definitions */
 
@@ -1255,6 +1262,9 @@ const GDS_LONG gds_err_max                          = 692L;
 #define gds__service_not_supported            335544814L
 #define gds__generator_name                   335544815L
 #define gds__udf_name                         335544816L
+#define gds__bad_limit_param                  335544817L
+#define gds__bad_skip_param                   335544818L
+#define gds__io_32bit_exceeded_err            335544819L
 #define gds__gfix_db_name                     335740929L
 #define gds__gfix_invalid_sw                  335740930L
 #define gds__gfix_incmp_sw                    335740932L
@@ -1293,6 +1303,8 @@ const GDS_LONG gds_err_max                          = 692L;
 #define gds__dsql_warn_precision_ambiguous    336003082L
 #define gds__dsql_warn_precision_ambiguous1   336003083L
 #define gds__dsql_warn_precision_ambiguous2   336003084L
+#define gds__dsql_ambiguous_field_name        336003085L
+#define gds__dsql_udf_return_pos_err          336003086L
 #define gds__dyn_role_does_not_exist          336068796L
 #define gds__dyn_no_grant_admin_opt           336068797L
 #define gds__dyn_user_not_role_member         336068798L
@@ -1392,6 +1404,8 @@ const GDS_LONG gds_err_max                          = 692L;
 #define gds__gbak_svc_name_missing            336331025L
 #define gds__gbak_not_ownr                    336331026L
 #define gds__gbak_mode_req                    336331031L
+#define gds__gbak_just_data                   336331033L
+#define gds__gbak_data_only                   336331034L
 #define gds__gsec_cant_open_db                336723983L
 #define gds__gsec_switches_error              336723984L
 #define gds__gsec_no_op_spec                  336723985L
@@ -1451,7 +1465,7 @@ const GDS_LONG gds_err_max                          = 692L;
 #define gds__gstat_open_err                   336920605L
 #define gds__gstat_read_err                   336920606L
 #define gds__gstat_sysmemex                   336920607L
-#define gds_err_max                          692
+#define gds_err_max                          699
 
 #endif
 
