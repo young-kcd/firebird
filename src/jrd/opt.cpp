@@ -593,72 +593,95 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// a global nature, meaning that it needs to stick 
 	// around for the rest of the optimization process.
 
-	// first fill out the conjuncts at the end of opt
+	// Set base-point before the parent/distributed nodes begin.
 	opt->opt_base_conjuncts = (SSHORT) conjunct_count;
 
-	// Check if size of optimizer block exceeded.
-	if (conjunct_count > MAX_CONJUNCTS) {
-		ERR_post(isc_optimizer_blk_exc, 0);
-		// Msg442: size of optimizer block exceeded
-	}
-
-	// AB: Because know we're going to use both parent & conjunct_stack
-	//   try to again to make additional conjuncts for an inner join,
-	//   but be sure that opt->opt_base_conjuncts contains the real "base"
-
-	// find the end of the conjunct stack.
-	NodeStack::const_iterator stack_end;
-	if (parent_stack)
+	// AB: Add parent conjunctions to conjunct_stack, keep in mind
+	// the outer-streams! For outer streams put missing (IS NULL)
+	// conjunctions in the missingStack.
+	SLONG distributed_count = 0;
+	NodeStack missingStack;
+	if (parent_stack && parent_stack->getCount())
 	{
-		stack_end = conjunct_stack.merge(*parent_stack);
+		NodeStack::iterator iter(*parent_stack);
+		for (; iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++iter) 
+		{
+			jrd_nod* node = iter.object();
+			if ((rse->rse_jointype != blr_inner) &&
+				expression_contains(node, nod_missing))
+			{
+				// parent missing conjunctions shouldn't be 
+				// distributed to FULL OUTER JOIN streams at all
+				if (rse->rse_jointype != blr_full) 
+				{
+					missingStack.push(node);
+				}
+			}
+			else
+			{
+				conjunct_stack.push(node);
+				conjunct_count++;
+			}
+		}	
+		// We've now merged parent, try again to make more conjunctions. 
+		distributed_count = distribute_equalities(conjunct_stack, csb, conjunct_count);
+		conjunct_count += distributed_count;
 	}
-	const SLONG saved_conjunct_count = conjunct_count;
-	conjunct_count += distribute_equalities(conjunct_stack, csb, conjunct_count);
-	if (parent_stack) {
-		// Find parent_stack position and reset it to NULL
-		conjunct_stack.split(stack_end, *parent_stack);
-	}
+	// The newly created conjunctions belong to the base conjunctions. 
+	// After them are starting the parent conjunctions.
+	opt->opt_base_parent_conjuncts = opt->opt_base_conjuncts + (SSHORT) distributed_count;
 
-	if (conjunct_count > MAX_CONJUNCTS) {
+	// Set base-point before the parent IS NULL nodes begin
+	opt->opt_base_missing_conjuncts = (SSHORT) conjunct_count;
+		
+	// Check if size of optimizer block exceeded.
+	if (conjunct_count > MAX_CONJUNCTS) 
+	{
 		ERR_post(isc_optimizer_blk_exc, 0);
 		// Msg442: size of optimizer block exceeded
 	}
 
+	// Put conjunctions in opt structure. 
+	// Note that it's a stack and we get the nodes in reversed order from the stack.
 	opt->opt_conjuncts.grow(conjunct_count);
-	
-	SSHORT i;
-
-	// AB: If equality nodes could be made get them first from the stack
-	for (i = saved_conjunct_count; i < conjunct_count; i++) {
+	SSHORT i, j, nodeBase;
+	for (i = conjunct_count; i > 0; i--) 
+	{
 		jrd_nod* node = conjunct_stack.pop();
-		opt->opt_conjuncts[i].opt_conjunct_node = node;
-		compute_dependencies(node, opt->opt_conjuncts[i].opt_dependencies);
-	}
 
-	for (i = 0; i < saved_conjunct_count; i++) {
-		jrd_nod* node = conjunct_stack.pop();
-		opt->opt_conjuncts[i].opt_conjunct_node = node;
-		compute_dependencies(node, opt->opt_conjuncts[i].opt_dependencies);
-	}
-
-	// Store the conjuncts from the parent RecordSelExpr.  But don't fiddle with
-	// the parent's stack itself.
-	if (parent_stack) {
-		NodeStack::iterator iter(*parent_stack);
-		for (; iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++conjunct_count, ++iter)
+		if (i == opt->opt_base_conjuncts)
 		{
-			opt->opt_conjuncts.grow(conjunct_count + 1);
-			jrd_nod* node = iter.object();
-			opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
-			compute_dependencies(node,
-							opt->opt_conjuncts[conjunct_count].opt_dependencies);
+			// The base conjunctions.
+			j = 0;
+			nodeBase = 0;
+		}
+		else if (i == conjunct_count)
+		{
+			// The new conjunctions created by "distribution" from the stack.
+			j = 0;
+			nodeBase = opt->opt_base_conjuncts;
+		}
+		else if (i == (conjunct_count - distributed_count))
+		{
+			// The parent conjunctions.
+			j = 0;
+			nodeBase = opt->opt_base_conjuncts + distributed_count;
 		}
 
-		// Check if size of optimizer block exceeded.
-		if (iter.hasData()) {
-			ERR_post(isc_optimizer_blk_exc, 0);
-			// Msg442: size of optimizer block exceeded
-		}
+		opt->opt_conjuncts[nodeBase + j].opt_conjunct_node = node;
+		compute_dependencies(node, opt->opt_conjuncts[nodeBase + j].opt_dependencies);
+		j++;
+	}
+
+	// Put the parent missing nodes on the stack.
+	for (i = 0; (i < missingStack.getCount()) && (conjunct_count < MAX_CONJUNCTS); i++)
+	{
+		opt->opt_conjuncts.grow(conjunct_count + 1);
+		jrd_nod* node = missingStack.pop();
+		opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
+		compute_dependencies(node, 
+			opt->opt_conjuncts[conjunct_count].opt_dependencies);
+		conjunct_count++;
 	}
 
 	// attempt to optimize aggregates via an index, if possible
@@ -3083,6 +3106,9 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 
 
 #ifdef EXPRESSION_INDICES
+
+// Try to merge this function with node_equality() into 1 function.
+
 static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 {
 /**************************************
@@ -4673,7 +4699,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	jrd_nod* inversion = NULL;
 	// It's recalculated later.
 	const OptimizerBlk::opt_conjunct* opt_end =
-		opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_conjuncts : opt->opt_conjuncts.getCount());
+		opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts.getCount());
 	RecordSource* rsb = NULL;
 	bool index_used = false;
 
@@ -4721,7 +4747,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			clear_bounds(opt, idx);
 			tail = opt->opt_conjuncts.begin();
 			if (outer_flag) {
-				tail += opt->opt_base_conjuncts;
+				tail += opt->opt_base_parent_conjuncts;
 			}
 			for (; tail < opt_end; tail++)
 			{
@@ -4808,7 +4834,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			clear_bounds(opt, idx);
 			tail = opt->opt_conjuncts.begin();
 			if (outer_flag) {
-				tail += opt->opt_base_conjuncts;
+				tail += opt->opt_base_parent_conjuncts;
 			}
 			for (; tail < opt_end; tail++) {
 				// Test if this conjunction is available for this index.
@@ -4930,10 +4956,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	// it used. If a computable boolean didn't match against an index then
 	// mark the stream to denote unmatched booleans.
 	jrd_nod* opt_boolean = NULL;
-	opt_end = opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_conjuncts : opt->opt_conjuncts.getCount());
+	opt_end = opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_parent_conjuncts : opt->opt_conjuncts.getCount());
 	tail = opt->opt_conjuncts.begin();
 	if (outer_flag) {
-		tail += opt->opt_base_conjuncts;
+		tail += opt->opt_base_parent_conjuncts;
 	}
 
 	for (; tail < opt_end; tail++)

@@ -351,7 +351,9 @@ public:
 	CompilerScratch*	opt_csb;					// compiler scratch block
 	SLONG opt_combinations;					// number of partial orders considered
 	double opt_best_cost;					// cost of best join order
-	SSHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are from parent
+	SSHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are distributed parent
+	SSHORT opt_base_parent_conjuncts;		// number of conjuncts in our rse + distributed with parent, next are parent
+	SSHORT opt_base_missing_conjuncts;		// number of conjuncts in our and parent rse, but without missing
 	USHORT opt_best_count;					// longest length of indexable streams
 	USHORT opt_g_flags;						// global flags
 	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
