@@ -1,4 +1,4 @@
-# $Id: prototype.in,v 1.15 2003-04-23 06:42:23 eku Exp $
+# $Id: prototype.in,v 1.16 2003-06-10 08:19:51 eku Exp $
 #-------------------------------------------------------------------------------
 
 !SRCDIR=@NEW_FIREBIRD_DIR@
@@ -68,7 +68,7 @@ d none @prefix@/intl  0755 root root
 f none @prefix@/intl/libfbintl.so=$SRCDIR/intl/libfbintl.so  0755 root root
 
 d none @prefix@/lib  0755 root root
-f none @prefix@/lib/ib_util.so=$SRCDIR/lib/ib_util.so  0755 root root
+f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so  0755 root root
 #f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a  0644 root root
 f none @prefix@/lib/libfbembed.so.1.5.0=$SRCDIR/lib/libfbembed.so.1.5.0  0755 root root
 s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.1.5.0
