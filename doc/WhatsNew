@@ -87,7 +87,7 @@
     * Configuration change
         Added new parameter LegacyHash to firebird.conf
       Contributor(s):
-        Vlad Horsun <horsun at kdb.dp.ua>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Security improvements
         1) New (more secure) password hash calculation algorithm
@@ -169,7 +169,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed unregistered bug
-        Introduced 64-bit record numbers to avoid ~30GB table size limit
+        Introduced 40-bit (64-bit internally) record numbers to avoid ~30GB table size limit
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
