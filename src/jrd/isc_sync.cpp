@@ -1627,22 +1627,18 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		result = EXCEPTION_CONTINUE_SEARCH;
 		is_critical = false;
 		break;
-	default:
+	case 0xE06D7363: /* E == Exception. 0x6D7363 == "msc". Intel and Borland use the same code to be compatible */
 		/* If we've catched our own software exception,
 		   continue rewinding the stack to properly handle it
 		   and deliver an error information to the client side */
-		if (tdbb->tdbb_status_vector[0] == 1 && tdbb->tdbb_status_vector[1] > 0)
-		{
-			result = EXCEPTION_CONTINUE_SEARCH;
-			is_critical = false;
-		}
-		else
-		{
-			sprintf (log_msg, "%s An exception occurred that does\n"
-					"\t\tnot have a description.  Exception number %"XLONGFORMAT".\n"
-					"\tThis exception will cause the Firebird server\n"
-					"\tto terminate abnormally.", err_msg, except_code);
-		}
+		result = EXCEPTION_CONTINUE_SEARCH;
+		is_critical = false;
+		break;
+	default:
+		sprintf (log_msg, "%s An exception occurred that does\n"
+				"\t\tnot have a description.  Exception number %"XLONGFORMAT".\n"
+				"\tThis exception will cause the Firebird server\n"
+				"\tto terminate abnormally.", err_msg, except_code);
 		break; 
 	}
 

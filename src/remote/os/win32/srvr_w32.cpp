@@ -158,6 +158,10 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 
 	hInst = hThisInst;
 
+	// We want server to crash without waiting for feedback from the user
+	if (!Config::getBugcheckAbort())
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+
 #ifdef SUPERSERVER
 	server_flag = SRVR_multi_client;
 #else
