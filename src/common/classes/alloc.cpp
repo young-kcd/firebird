@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.60 2004-08-21 09:18:24 robocop Exp $
+ *  $Id: alloc.cpp,v 1.61 2004-08-22 21:28:19 skidder Exp $
  *
  */
 
@@ -297,6 +297,11 @@ void MemoryPool::updateSpare()
 				return;
 			spareNodes.add(temp);
 		}
+
+		// This check is a temporary debugging aid.
+		// bool need_check = pendingFree;
+		// if (pendingFree) verify_pool();
+
 		needSpare = false;
 
 		// Great, if we were able to restore free blocks tree operations after critically low
@@ -311,6 +316,8 @@ void MemoryPool::updateSpare()
 			if (needSpare)
 				break; // New pages were added to tree. Loop again
 		}
+
+		// if (need_check) verify_pool();
 	} while (needSpare);
 }
 
@@ -489,6 +496,7 @@ void MemoryPool::tree_free(void* block) {
 	// This method doesn't merge nearby pages
 	((PendingFreeBlock*)block)->next = pendingFree;
 	ptr_block(block)->mbk_flags &= ~MBK_USED;
+	ptr_block(block)->mbk_prev_fragment = NULL;
 	pendingFree = (PendingFreeBlock*)block;
 	needSpare = true;
 }
@@ -649,11 +657,12 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 		, file, line
 #endif
 	);
-	if (needSpare)
-		updateSpare();
 	// Update usage statistics
 	if (result)
 		increment_usage(ptr_block(result)->small.mbk_length);
+	// Update spare after we increment usage statistics - to allow verify_pool in updateSpare
+	if (needSpare)
+		updateSpare();
 	lock.leave();
 #ifdef USE_VALGRIND
 	VALGRIND_MEMPOOL_ALLOC(this, result, requested_size);
@@ -808,7 +817,7 @@ bool MemoryPool::verify_pool() {
 	// Verify memory fragments in pending free list
 	for (PendingFreeBlock* pBlock = pendingFree; pBlock; pBlock = pBlock->next) {
 		MemoryBlock *blk = ptr_block(pBlock);
-		mem_assert(blk->mbk_pool == this);
+		mem_assert(blk->mbk_prev_fragment == NULL);
 
 		// Check block flags for correctness
 		mem_assert(!(blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)));
@@ -1178,41 +1187,36 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			if (!(blk->mbk_flags & MBK_LAST))
 				next_block(blk)->small.mbk_prev_length = blk->small.mbk_length;
 
-			bool need_list_update = true;
-			
-			// This is special handling of case when we have single large fragment and
-			// cut off small pieces from it. This is common and we avoid modification 
-			// of free blocks tree in this case.
-			if (!current->bli_fragments->fbk_next_fragment) {
-				if (!freeBlocks.getPrev() || freeBlocks.current().bli_length < current_block->small.mbk_length) {
-					current->bli_length = current_block->small.mbk_length;
-					need_list_update = false; // We finished. Potentially costly tree update is not necessary
-				}
-				else {
-					// Recover tree position after failed shortcut attempt
-#ifndef DEV_BUILD
-					freeBlocks.getNext();
-#else
-					bool res = freeBlocks.getNext();
-					fb_assert(res);
-					fb_assert(&freeBlocks.current() == current);
-#endif
-				}
-			}
+			FreeMemoryBlock *next_free = current->bli_fragments->fbk_next_fragment;
 
-			if (need_list_update) {
-				// Tree may need to be modified structurally.
-				// As a bare minimum we'll need to remove fragment from one doubly
-				// linked list and put it into another.
-				FreeMemoryBlock *next_free = current->bli_fragments->fbk_next_fragment;
-				if (next_free) {
-					ptr_block(next_free)->mbk_prev_fragment = NULL;
-					current->bli_fragments = next_free;
-				}
-				else {
-					freeBlocks.fastRemove();
-				}
+			if (next_free) {
+				// Moderately cheap case. Quite possibly we only need to tweak doubly 
+				// linked lists a little
+				ptr_block(next_free)->mbk_prev_fragment = NULL;
+				current->bli_fragments = next_free;
 				addFreeBlock(current_block);
+			} else {
+				// This is special handling of case when we have single large fragment and
+				// cut off small pieces from it. This is common and we avoid modification 
+				// of free blocks tree in this case.
+				bool get_prev_succeeded = freeBlocks.getPrev();
+				if (!get_prev_succeeded || freeBlocks.current().bli_length < current_block->small.mbk_length) {
+					current->bli_length = current_block->small.mbk_length;
+				} else {
+					// Moderately expensive case. We need to modify tree for sure
+					if (get_prev_succeeded) {
+						// Recover tree position after failed shortcut attempt
+#ifndef DEV_BUILD
+						freeBlocks.getNext();
+#else
+						bool res = freeBlocks.getNext();
+						fb_assert(res);
+						fb_assert(&freeBlocks.current() == current);
+#endif
+					}
+					freeBlocks.fastRemove();
+					addFreeBlock(current_block);
+				}
 			}
 		}
 	}
@@ -1341,12 +1345,15 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 		PendingFreeBlock* temp = block_ptr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;
 		pendingFree = temp;
-		blk->mbk_pool = this; // Restore pool pointer which we set to NULL a few lines above
+		// NOTE! Items placed into pendingFree queue have mbk_prev_fragment equal to ZERO.
 	}
 }
 		
 void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 {
+	// NOTE! We signal items placed into pendingFree queue via setting their 
+	// mbk_prev_fragment to ZERO.
+
 	FreeMemoryBlock *fragmentToRemove = block_ptr<FreeMemoryBlock*>(blk);
 	FreeMemoryBlock *prev = blk->mbk_prev_fragment, *next = fragmentToRemove->fbk_next_fragment;
 	if (prev) {
@@ -1359,11 +1366,14 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 	}
 
 	// Need to locate item in tree
-	if (freeBlocks.locate(blk->small.mbk_length)) {
+	BlockInfo* current;
+	if (freeBlocks.locate(blk->small.mbk_length) && 
+		(current = &freeBlocks.current())->bli_fragments == fragmentToRemove) 
+	{
 		if (next) {
-			// Still moderately fast case. Simply replace head of fragments list
+			// Still moderately fast case. All we need is to replace the head of fragments list
 			ptr_block(next)->mbk_prev_fragment = NULL;
-			freeBlocks.current().bli_fragments = next;
+			current->bli_fragments = next;
 		}
 		else {
 			// Have to remove item from the tree
@@ -1371,8 +1381,9 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 		}
 	}
 	else {
-		// If we are in a critically-low memory condition our block could be in the
-		// pending free blocks list. Remove it from there
+		// Our block could be in the pending free blocks list if we are in a 
+		// critically-low memory condition or if tree_free placed it there. 
+		// Find and remove it from there.
 		PendingFreeBlock *itr = pendingFree, 
 			*temp = block_ptr<PendingFreeBlock*>(blk);
 		if (itr == temp)
@@ -1419,7 +1430,11 @@ void MemoryPool::internal_deallocate(void *block)
 	// These blocks are marked as unused already
 	MemoryBlock *blk = ptr_block(block);
 	
+	// Don't check flags for MBK_USED because this method may be called for blocks in
+	// pendingFree list (marked as not used already).
+
 	//fb_assert(blk->mbk_flags & MBK_USED);
+
 	fb_assert(blk->mbk_pool==this);
 
 	MemoryBlock *prev;

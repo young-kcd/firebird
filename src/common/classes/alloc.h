@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.47 2004-08-10 04:10:47 skidder Exp $
+ *  $Id: alloc.h,v 1.48 2004-08-22 21:28:19 skidder Exp $
  *
  */
 
@@ -74,8 +74,9 @@
 namespace Firebird {
 
 // Maximum number of B+ tree pages kept spare for tree allocation
-// Tree pages are allocated only from this pool thus if level of tree gets higher
-// it will cause bad (but not fatal, I hope) consequences. 100^4 free blocks in free list is a lot
+// Since we store only unique fragment lengths in our tree there 
+// shouldn't be more than 16K elements in it. This is why MAX_TREE_DEPTH 
+// equal to 4 is more than enough
 const int MAX_TREE_DEPTH = 4;
 
 // Alignment for all memory blocks. Sizes of memory blocks in headers are measured in this units
@@ -182,6 +183,7 @@ private:
 	
 	friend class MemoryPool;	
 };
+
 
 // Memory pool based on B+ tree of free memory blocks
 
