@@ -21,7 +21,7 @@
 @call :SED master_msg_db %1 msgs/msg.fdb
 @call :SED yachts.link %1 jrd/security.fdb
 @call :SED master_help_db %1 qli/help.fdb
-@call :SED help.gdb %1 qli/help.fdb
+@call :SED help.fdb %1 qli/help.fdb
 @call :SED yachts.gdb %1 jrd/security.fdb
 @call :SED isc.gdb %1 jrd/security.fdb
 @call :SED isc4.gdb %1 jrd/security.fdb

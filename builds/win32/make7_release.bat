@@ -39,7 +39,7 @@ copy msvc7\release\firebird\intl\* output\intl
 copy msvc7\release\firebird\udf\* output\udf
 copy gpre.exe output\bin
 copy dbs\jrd\SECURITY.FDB output\security.fdb
-copy dbs\qli\HELP.GDB output\help\help.gdb
+copy dbs\qli\HELP.FDB output\help\help.fdb
 copy ..\..\ChangeLog output\doc\ChangeLog.txt
 copy ..\..\doc\WhatsNew output\doc\WhatsNew.txt
 copy ..\..\src\jrd\ibase.h output\include
