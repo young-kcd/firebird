@@ -89,11 +89,16 @@ del %temp%.\b$?.bat
 for %%v in ( ib_util.h ib_util.pas ) do (
 	((copy %ROOT_PATH%\src\extlib\%%v %ROOT_PATH%\output\include\%%v > nul) || 	(@echo Copying %%v failed.)) 
 )
-	
+
+
 @echo Copying fbclient lib etc
 for %%v in (fbclient ib_util) do @(
 	((copy %ROOT_PATH%\temp\%BUILDTYPE%\%%v\%%v.lib %ROOT_PATH%\output\lib\%%v_ms.lib > nul) || (@echo Copying %%v.lib failed.))
 )
+
+@implib.exe | findstr "Borland" > nul
+@if errorlevel 0 (@echo generating fbclient_bor.lib && @implib %ROOT_PATH%\output\lib\fbclient_bor.lib %ROOT_PATH%\output\bin\fbclient.dll)
+
 
 @if "%SHIP_PDB%"=="ship_pdb" (
 (@echo Copying pdb files...)
@@ -113,8 +118,8 @@ for %%v in (fbclient ib_util) do @(
 @copy %ROOT_PATH%\src\extlib\fbudf\fbudf.txt %ROOT_PATH%\output\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY fbudf doc failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-::Commented out as it is now hopelessly out of date. It has been unmaintained since we branched.
-::@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
+::
+@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
 
 ::@copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
 ::@del %ROOT_PATH%\output\doc\install_win32.txt
@@ -225,7 +230,7 @@ endlocal
 ::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with 01:05:00 timestamp) & (touch -s -D -t01:05:00 %ROOT_PATH%\output\*.*)) 
+	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\output\*.*)) 
 @goto :EOF
 
 
