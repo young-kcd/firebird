@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.129 2004-11-24 09:17:48 robocop Exp $
+$Id: common.h,v 1.130 2004-11-29 10:14:05 alexpeshkoff Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -512,7 +512,6 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define ALIGNMENT       4
 #define NO_NFS
 #define NO_CHECKSUM
-#define ISC_EXT_LIB_PATH_ENV	"interbase_ext_lib_path:"
 #define SYS_ARG		isc_arg_vms
 #define SYS_ERR		isc_arg_vms
 
@@ -1038,10 +1037,6 @@ void GDS_breakpoint(int);
 
 #ifndef DOUBLE_DIVIDE
 #define DOUBLE_DIVIDE(a, b)      (((double) (a)) / ((double) (b)))
-#endif
-
-#ifndef ISC_EXT_LIB_PATH_ENV
-#define ISC_EXT_LIB_PATH_ENV	"INTERBASE_EXT_LIB_PATH"
 #endif
 
 /* switch name and state table.  This structure should be used in all
