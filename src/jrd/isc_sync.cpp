@@ -184,8 +184,10 @@ extern "C" {
 static void		error(ISC_STATUS *, TEXT *, ISC_STATUS);
 
 #ifdef UNIX
-static void		alarm_handler(void);
 static SLONG	find_key(ISC_STATUS *, TEXT *);
+#endif
+#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
+static void		alarm_handler(void);
 static SLONG	open_semaphores(ISC_STATUS *, SLONG, int&);
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
@@ -4095,7 +4097,7 @@ void DLL_EXPORT ISC_unmap_file(
 #endif
 
 
-#ifdef UNIX
+#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
 static void alarm_handler(void)
 {
 /**************************************
@@ -4191,7 +4193,7 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
 #endif
 
 
-#ifdef UNIX
+#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
 static SLONG open_semaphores(
 							 ISC_STATUS * status_vector,
 							 SLONG key, int& semaphores)
@@ -4364,7 +4366,7 @@ static void make_object_name(
 #endif
 
 
-#ifdef UNIX
+#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
 static BOOLEAN semaphore_wait_isc_sync(int count, int semid, int *semnums)
 {
 /**************************************
