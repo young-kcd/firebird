@@ -110,9 +110,6 @@
 #include "../intl/country_codes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/license.h"
-#ifdef INTL_BACKEND
-#include "../intl/ld_proto.h"
-#endif
 #include "../jrd/all_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/err_proto.h"
@@ -2176,10 +2173,6 @@ static void* intl_back_compat_obj_init_lookup(
 
 	function = NULL;
 
-#ifdef INTL_BACKEND
-	if (LD_lookup(type, &function, parm1, parm2) != 0)
-		function = NULL;
-#else
 	/* Look for an InterBase supplied object to implement the text type */
 	/* The flu.c uses searchpath which expects a file name not a path */
 	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE1, INTL_LOOKUP_ENTRY1));
@@ -2196,13 +2189,8 @@ static void* intl_back_compat_obj_init_lookup(
 			return (void*) function;
 		}
 	}
-#endif
 
 /* Still not found, check the set of supplimental international objects */
-#ifdef INTL_BACKEND
-	if (LD2_lookup(type, &function, parm1, parm2) != 0)
-		function = NULL;
-#else
 	/* Look for an InterBase supplied object to implement the text type */
 	/* The flu.c uses searchpath which expects a file name not a path */
 	INTL_TRACE(("INTL: trying %s %s\n", INTL_MODULE2, INTL_LOOKUP_ENTRY2));
@@ -2219,7 +2207,6 @@ static void* intl_back_compat_obj_init_lookup(
 			return (void*) function;
 		}
 	}
-#endif
 
 /* Still not found, check if there is a UDF in the database defined the right way */
 	FUN function_block;
