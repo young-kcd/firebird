@@ -29,14 +29,23 @@
 
 #ifdef __cplusplus
 namespace Jrd {
-  class LikeObject;
-  class ContainsObject;
+	class LikeObject;
+	class ContainsObject;
+	class vec;
+	class thread_db;
+	class TextType;
 }
-using Jrd::LikeObject;
-using Jrd::ContainsObject;
+typedef Jrd::LikeObject engine_LikeObject;
+typedef Jrd::ContainsObject engine_ContainsObject;
+typedef Jrd::vec engine_vec;
+typedef Jrd::thread_db engine_thread_db;
+typedef Jrd::TextType engine_TextType;
 #else
-struct LikeObject;
-struct ContainsObject;
+struct engine_LikeObject;
+struct engine_ContainsObject;
+struct engine_vec;
+struct engine_thread_db;
+struct engine_TextType;
 #endif
 
 
@@ -68,12 +77,6 @@ typedef unsigned char MBCHAR;	/* Multibyte Char */
 #define type_texttype 54
 #define type_charset 55
 #define type_csconvert 56
-
-namespace Jrd {
-	class vec;
-	class thread_db;
-	class TextType;
-}
 
 typedef struct intl_blk {
     UCHAR blk_type;
@@ -128,15 +131,15 @@ typedef struct texttype {
 	//\\ END OF DRIVER API FUNCTIONS -----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	typedef bool (*pfn_INTL_contains)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
+	typedef bool (*pfn_INTL_contains)(engine_thread_db*, engine_TextType, const UCHAR*,
 		SSHORT, const UCHAR*, SSHORT);
-	typedef bool (*pfn_INTL_like)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
+	typedef bool (*pfn_INTL_like)(engine_thread_db*, engine_TextType, const UCHAR*,
 		SSHORT, const UCHAR*, SSHORT, UCS2_CHAR);
-	typedef bool (*pfn_INTL_matches)(Jrd::thread_db*, Jrd::TextType, const UCHAR*, SSHORT, 
+	typedef bool (*pfn_INTL_matches)(engine_thread_db*, engine_TextType, const UCHAR*, SSHORT, 
 		const UCHAR*, SSHORT);
-	typedef bool (*pfn_INTL_sleuth_check)(Jrd::thread_db*, Jrd::TextType, USHORT, 
+	typedef bool (*pfn_INTL_sleuth_check)(engine_thread_db*, engine_TextType, USHORT, 
 		const UCHAR*, USHORT, const UCHAR*,USHORT);
-	typedef USHORT (*pfn_INTL_sleuth_merge)(Jrd::thread_db*, Jrd::TextType, const UCHAR*,
+	typedef USHORT (*pfn_INTL_sleuth_merge)(engine_thread_db*, engine_TextType, const UCHAR*,
 		USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
 
 	pfn_INTL_contains		texttype_fn_contains;	/* s1 contains s2? */
@@ -161,9 +164,9 @@ typedef struct texttype {
 	//\\ END OF COLLATION DRIVER DATA ----------------------------------------------
 
 	// ENGINE INTERNAL FUNCTIONS - do not implement in collation drivers -----------
-	typedef LikeObject* (*pfn_INTL_like_create)(Jrd::thread_db*, Jrd::TextType, 
+	typedef engine_LikeObject* (*pfn_INTL_like_create)(engine_thread_db*, engine_TextType, 
 		const UCHAR*, SSHORT, UCS2_CHAR);
-	typedef ContainsObject* (*pfn_INTL_contains_create)(Jrd::thread_db*, Jrd::TextType, 
+	typedef engine_ContainsObject* (*pfn_INTL_contains_create)(engine_thread_db*, engine_TextType, 
 		const UCHAR*, SSHORT);
 
 	pfn_INTL_like_create		texttype_fn_like_create;
@@ -229,8 +232,8 @@ struct charset
 	csconvert		charset_to_unicode;
 	csconvert		charset_from_unicode;
 
-	Jrd::vec* charset_converters;
-	Jrd::vec* charset_collations;
+	engine_vec* charset_converters;
+	engine_vec* charset_collations;
 	ULONG* charset_unused[2];
 };
 
