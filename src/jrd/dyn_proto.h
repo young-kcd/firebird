@@ -24,7 +24,7 @@
 #ifndef JRD_DYN_PROTO_H
 #define JRD_DYN_PROTO_H
 
-void	DYN_ddl(struct att*, struct jrd_tra*, USHORT, const UCHAR*);
+void	DYN_ddl(struct att*, class jrd_tra*, USHORT, const UCHAR*);
 void	DYN_terminate(TEXT*, int);
 
 #endif // JRD_DYN_PROTO_H

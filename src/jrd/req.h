@@ -134,7 +134,7 @@ public:
 	ULONG		req_impure_size;	// size of impure area
 	JrdMemoryPool* req_pool;
 	struct vec*	req_sub_requests;	// vector of sub-requests
-	struct jrd_tra* req_transaction;
+	class jrd_tra* req_transaction;
 	jrd_req*		req_request;	/* next request in dbb */
 	struct acc*	req_access;		/* Access items to be checked */
 	struct vec*	req_variables;	/* Vector of variables, if any */

@@ -124,7 +124,7 @@ typedef struct iib {
 	struct jrd_rel *iib_relation;	/* relation block */
 	struct key *iib_key;		/* varying string for insertion */
 	struct sbm *iib_duplicates;	/* spare bit map of duplicates */
-	struct jrd_tra *iib_transaction;	/* insertion transaction */
+	class jrd_tra *iib_transaction;	/* insertion transaction */
 } IIB;
 
 

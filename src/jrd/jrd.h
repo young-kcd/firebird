@@ -129,7 +129,7 @@ public:
 	vec*		dbb_relations;	/* relation vector */
 	vec*		dbb_procedures;	/* scanned procedures */
 	struct lck *dbb_lock;		/* granddaddy lock */
-	struct jrd_tra *dbb_sys_trans;	/* system transaction */
+	class jrd_tra *dbb_sys_trans;	/* system transaction */
 	struct fil *dbb_file;		/* files for I/O operations */
 	struct sdw *dbb_shadow;		/* shadow control block */
 	struct lck *dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
@@ -410,8 +410,8 @@ public:
 	att*		att_next;			// Next attachment to database
 	att*		att_blocking;		// Blocking attachment, if any
 	class usr*	att_user;			// User identification
-	struct jrd_tra*	att_transactions;	// Transactions belonging to attachment
-	struct jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
+	class jrd_tra*	att_transactions;	// Transactions belonging to attachment
+	class jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
 	struct jrd_req*	att_requests;		// Requests belonging to attachment
 	struct scb*	att_active_sorts;	// Active sorts
 	struct lck*	att_id_lock;		// Attachment lock (if any)
@@ -906,7 +906,7 @@ typedef struct tdbb
 	struct thdd	tdbb_thd_data;
 	dbb*	tdbb_database;
 	att*	tdbb_attachment;
-	struct jrd_tra*	tdbb_transaction;
+	class jrd_tra*	tdbb_transaction;
 	struct jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;
 	ISC_STATUS*	tdbb_status_vector;

@@ -27,17 +27,17 @@
 #ifdef PC_ENGINE
 struct lck *RLCK_lock_record(struct rpb *, USHORT, int (*)(),
 									struct blk *);
-struct lck *RLCK_lock_record_implicit(struct jrd_tra *, struct rpb *,
+struct lck *RLCK_lock_record_implicit(class jrd_tra *, struct rpb *,
 											 USHORT, int (*)(), struct blk *);
 struct lck *RLCK_lock_relation(struct jrd_rel *, USHORT, int (*)(),
 									  struct blk *);
-struct lck *RLCK_range_relation(struct jrd_tra *, struct jrd_rel *, int (*)(),
+struct lck *RLCK_range_relation(class jrd_tra *, struct jrd_rel *, int (*)(),
 									   struct blk *);
 struct lck *RLCK_record_locking(struct jrd_rel *);
 void RLCK_release_lock(struct lck *);
 void RLCK_release_locks(struct att *);
 #endif
-struct lck *RLCK_reserve_relation(struct tdbb *, struct jrd_tra *,
+struct lck *RLCK_reserve_relation(struct tdbb *, class jrd_tra *,
 										 struct jrd_rel *, USHORT, USHORT);
 
 /* TMN: This header did not match the implementation.
@@ -47,10 +47,10 @@ struct lck *RLCK_reserve_relation(struct tdbb *, struct jrd_tra *,
 void RLCK_shutdown_attachment(struct att *);
 void RLCK_shutdown_database(struct dbb *);
 #ifdef PC_ENGINE
-void RLCK_signal_refresh(struct jrd_tra *);
+void RLCK_signal_refresh(class jrd_tra *);
 #endif
 
-struct lck *RLCK_transaction_relation_lock(struct jrd_tra *, struct jrd_rel *);
+struct lck *RLCK_transaction_relation_lock(class jrd_tra *, struct jrd_rel *);
 
 #ifdef PC_ENGINE
 void RLCK_unlock_record(struct lck *, struct rpb *);

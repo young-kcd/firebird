@@ -48,8 +48,8 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	SLONG tra_oldest;			/* oldest interesting transaction */
 	SLONG tra_oldest_active;	/* record versions older than this can be
 								   gargage-collected by this tx */
-	struct jrd_tra *tra_next;		/* next transaction in database */
-	struct jrd_tra *tra_sibling;	/* next transaction in group */
+	class jrd_tra *tra_next;		/* next transaction in database */
+	class jrd_tra *tra_sibling;	/* next transaction in group */
 	JrdMemoryPool* tra_pool;		/* pool for transaction */
 	class blb *tra_blobs;		/* Linked list of active blobs */
 	struct arr *tra_arrays;		/* Linked list of active arrays */

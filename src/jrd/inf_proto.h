@@ -31,7 +31,7 @@ int		INF_database_info(const SCHAR*, const SSHORT, SCHAR*, const SSHORT);
 SCHAR*	INF_put_item(SCHAR, USHORT, const SCHAR*, SCHAR*, const SCHAR*);
 int		INF_request_info(const struct jrd_req*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
-int		INF_transaction_info(const struct jrd_tra*, const SCHAR*, const SSHORT,
+int		INF_transaction_info(const class jrd_tra*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
 
 #endif // JRD_INF_PROTO_H

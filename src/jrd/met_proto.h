@@ -30,7 +30,7 @@
 
 void		MET_activate_shadow(TDBB);
 ULONG		MET_align(struct dsc *, USHORT);
-void		MET_change_fields(TDBB, struct jrd_tra *, struct dsc *);
+void		MET_change_fields(TDBB, class jrd_tra *, struct dsc *);
 struct fmt*	MET_current(TDBB, struct jrd_rel *);
 void		MET_delete_dependencies(TDBB, TEXT *, USHORT);
 void		MET_delete_shadow(TDBB, USHORT);
@@ -64,7 +64,7 @@ struct jrd_nod*	MET_parse_blob(TDBB, struct jrd_rel *, SLONG[2], class Csb **,
 								  struct jrd_req **, BOOLEAN, BOOLEAN);
 void		MET_parse_sys_trigger(TDBB, struct jrd_rel *);
 int			MET_post_existence(TDBB, struct jrd_rel *);
-void		MET_prepare(TDBB, struct jrd_tra*, USHORT, const UCHAR*);
+void		MET_prepare(TDBB, class jrd_tra*, USHORT, const UCHAR*);
 struct jrd_prc*	MET_procedure(TDBB, int, BOOLEAN, USHORT);
 struct jrd_rel*	MET_relation(TDBB, USHORT);
 BOOLEAN		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
@@ -76,12 +76,12 @@ void		MET_verify_cache(TDBB);
 #endif
 BOOLEAN		MET_clear_cache(TDBB, JRD_PRC);
 void		MET_remove_procedure(TDBB, int, JRD_PRC);
-void		MET_revoke(TDBB, struct jrd_tra *, TEXT *, TEXT *, TEXT *);
+void		MET_revoke(TDBB, class jrd_tra *, TEXT *, TEXT *, TEXT *);
 TEXT*		MET_save_name(TDBB, const TEXT*);
 void		MET_scan_relation(TDBB, struct jrd_rel *);
 const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);
 void		MET_update_shadow(TDBB, struct sdw *, USHORT);
-void		MET_update_transaction(TDBB, struct jrd_tra *, USHORT);
+void		MET_update_transaction(TDBB, class jrd_tra *, USHORT);
 void		MET_update_partners(TDBB);
 
 #endif // JRD_MET_PROTO_H

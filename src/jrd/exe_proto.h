@@ -29,7 +29,7 @@ void EXE_assignment(TDBB, struct jrd_nod*);
 struct jrd_req* EXE_find_request(TDBB, struct jrd_req *, bool);
 void EXE_receive(TDBB, struct jrd_req*, USHORT, USHORT, UCHAR*);
 void EXE_send(TDBB, struct jrd_req *, USHORT, USHORT, UCHAR *);
-void EXE_start(TDBB, struct jrd_req *, struct jrd_tra *);
+void EXE_start(TDBB, struct jrd_req *, class jrd_tra *);
 void EXE_unwind(TDBB, struct jrd_req *);
 #ifdef SCROLLABLE_CURSORS
 void EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);

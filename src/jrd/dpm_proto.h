@@ -51,6 +51,6 @@ void	DPM_store(TDBB, struct rpb *, struct lls **, USHORT);
 SLONG	DPM_store_blob(TDBB, blb*, struct rec *);
 void	DPM_rewrite_header(TDBB, struct rpb *);
 void	DPM_update(TDBB, struct rpb *, struct lls **,
-					   struct jrd_tra *);
+					   class jrd_tra *);
 
 #endif /* JRD_DPM_PROTO_H */
