@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.31 2002-09-22 20:41:55 skidder Exp $
+$Id: common.h,v 1.32 2002-09-23 10:41:07 dimitr Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -645,7 +645,7 @@ typedef unsigned __int64 UINT64;
 #define MAXPATHLEN	260
 #endif
 
-typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
+typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) (int);
 #endif /* WIN_NT */
 
 // 23 Sep 2002, skidder, ALLOC_LIB_MEMORY moved here,
