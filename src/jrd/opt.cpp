@@ -964,9 +964,9 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 	jrd_nod** lower = retrieval->irb_value;
 	jrd_nod** upper = retrieval->irb_value + idx->idx_count;
 	const OptimizerBlk::opt_segment* const end = opt->opt_segments + idx->idx_count;
+	OptimizerBlk::opt_segment* tail;
 
 	if (idx->idx_flags & idx_descending) {
-        OptimizerBlk::opt_segment* tail;
 		for (tail = opt->opt_segments; tail->opt_lower && tail < end; tail++)
 			*upper++ = tail->opt_lower;
 		for (tail = opt->opt_segments; tail->opt_upper && tail < end; tail++)
@@ -974,7 +974,6 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 		retrieval->irb_generic |= irb_descending;
 	}
 	else {
-        OptimizerBlk::opt_segment* tail;
 		for (tail = opt->opt_segments; tail->opt_lower && tail < end; tail++)
 			*lower++ = tail->opt_lower;
 		for (tail = opt->opt_segments; tail->opt_upper && tail < end; tail++)
@@ -985,9 +984,24 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 	retrieval->irb_upper_count =
 		(upper - retrieval->irb_value) - idx->idx_count;
 
+	bool equiv = false;
+
+	for (tail = opt->opt_segments; tail->opt_match && tail < end; tail++)
+	{
+		if (tail->opt_match->nod_type == nod_equiv)
+		{
+			equiv = true;
+			break;
+		}
+	}
+
 	// This index is never used for IS NULL, thus we can ignore NULLs
-	// already at index scan
-	retrieval->irb_generic |= irb_ignore_null_value_key;
+	// already at index scan. But this rule doesn't apply to nod_equiv
+	// which requires NULLs to be found in the index.
+	if (!equiv)
+	{
+		retrieval->irb_generic |= irb_ignore_null_value_key;
+	}
 
 /* Check to see if this is really an equality retrieval */
 
@@ -2886,6 +2900,7 @@ static bool expression_contains(const jrd_nod* node, NOD_T node_type)
 			case nod_matches:
 			case nod_contains:
 			case nod_starts:
+			case nod_equiv:
 			case nod_eql:
 			case nod_neq:
 			case nod_geq:
@@ -3063,6 +3078,7 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 		case nod_matches:
 		case nod_contains:
 		case nod_starts:
+		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_geq:
@@ -3226,6 +3242,7 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_multiply:
 		case nod_add2:
 		case nod_multiply2:
+		case nod_equiv:
 	    case nod_eql:
 		case nod_neq:
 	    case nod_and:
@@ -6791,6 +6808,7 @@ static SSHORT match_index(thread_db* tdbb,
 					ptr->opt_upper = boolean->nod_arg[2];
 					ptr->opt_match = boolean;
 					break;
+				case nod_equiv:
 				case nod_eql:
 					ptr->opt_lower = ptr->opt_upper = value;
 					ptr->opt_match = boolean;
@@ -6930,6 +6948,7 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 		case nod_field:
 			return (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream]
 					&& node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]);
+		case nod_equiv:
 		case nod_eql:
 			if (node_equality(node1->nod_arg[0], node2->nod_arg[0])
 				&& node_equality(node1->nod_arg[1], node2->nod_arg[1])) 

@@ -316,6 +316,7 @@ bool NAV_find_record(RecordSource* rsb,
 		}
 	//	break;  unreachable
 
+	case blr_equiv:
 	case blr_eql:
 		if (find_record(rsb, backwards ? RSE_get_last : RSE_get_first,
 						&key_value, find_key->nod_count, search_flags))

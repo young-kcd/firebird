@@ -2447,6 +2447,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_between:
 		*arg++ = parse(tdbb, csb, sub_type);
 
+	case blr_equiv:
 	case blr_eql:
 	case blr_neq:
 	case blr_geq:

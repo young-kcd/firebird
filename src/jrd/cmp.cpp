@@ -5044,6 +5044,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_matches:
 	case nod_contains:
 	case nod_starts:
+	case nod_equiv:
 	case nod_eql:
 	case nod_neq:
 	case nod_geq:

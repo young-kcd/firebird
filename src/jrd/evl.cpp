@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.113 2004-10-11 17:18:35 hvlad Exp $ 
+  * $Id: evl.cpp,v 1.114 2004-10-14 19:08:03 dimitr Exp $ 
  */
 
 /*
@@ -405,6 +405,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	case nod_starts:
 	case nod_matches:
 	case nod_like:
+	case nod_equiv:
 	case nod_eql:
 	case nod_neq:
 	case nod_gtr:
@@ -480,7 +481,25 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			}
 			else
 				desc[1] = EVL_expr(tdbb, *ptr++);
-			
+
+			// An equivalence operator evaluates to true when both operands
+			// are NULL and behaves like an equality operator otherwise.
+			// Note that this operator never sets req_null flag
+
+			if (node->nod_type == nod_equiv)
+			{
+				if ((flags & req_null) && (request->req_flags & req_null))
+				{
+					request->req_flags &= ~req_null;
+					return true;
+				}
+				else if ((flags & req_null) || (request->req_flags & req_null))
+				{
+					request->req_flags &= ~req_null;
+					return false;
+				}
+			}
+
 			// If either of expressions above returned NULL set req_null flag 
 			// and return false
 
@@ -770,6 +789,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			return value;
 		}
 
+	case nod_equiv:
 	case nod_eql:
 		return (comparison == 0);
 	case nod_neq:

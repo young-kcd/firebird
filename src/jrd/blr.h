@@ -126,6 +126,7 @@
 #define blr_user_name   	(unsigned char)44	/* added from gds.h */
 #define blr_null		(unsigned char)45
 
+#define blr_equiv			(unsigned char)46
 #define blr_eql			(unsigned char)47
 #define blr_neq			(unsigned char)48
 #define blr_gtr			(unsigned char)49

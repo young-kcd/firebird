@@ -1614,7 +1614,8 @@ static jrd_nod* find(thread_db* tdbb, jrd_nod* node)
 		const USHORT blr_operator = (desc && !(request->req_flags & req_null)) ?
 			(USHORT) MOV_get_long(desc, 0) : MAX_USHORT;
 
-		if (blr_operator != blr_eql &&
+		if (blr_operator != blr_equiv &&
+			blr_operator != blr_eql &&
 			blr_operator != blr_leq &&
 			blr_operator != blr_lss &&
 			blr_operator != blr_geq &&

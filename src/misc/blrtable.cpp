@@ -137,6 +137,7 @@ static const VERB verbs[] =
 	PAIR2(nod_subtract, blr_subtract, 2, 2, VALUE, VALUE),
 	PAIR2(nod_total, blr_total, e_stat_length, 2, VALUE, VALUE),
 	PAIR(nod_value_if, blr_value_if, 3, 3, VALUE, OTHER),
+	PAIR(nod_equiv, blr_equiv, 2, 2, TYPE_BOOL, VALUE),
 	PAIR(nod_eql, blr_eql, 2, 2, TYPE_BOOL, VALUE),
 	PAIR(nod_neq, blr_neq, 2, 2, TYPE_BOOL, VALUE),
 	PAIR(nod_geq, blr_geq, 2, 2, TYPE_BOOL, VALUE),
