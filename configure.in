@@ -575,9 +575,14 @@ case "$PLATFORM" in
     ;;
 
   SOLARIS|solx86)
-    dnl kkuznetsov: Solaris always check for -lnsl
+    dnl kkuznetsov: Solaris always check for -lnsl and use Sun thread (!not posix)
     AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
-    AC_CHECK_LIB(thread, main) 
+    AC_CHECK_LIB(thread, thr_create, XE_PREPEND(-lthread,LIBS)) 
+  
+    if test "$EDITLINE_FLG" = "Y"; then
+  	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
+    fi
+
     AC_CHECK_TYPES([caddr_t])
 
     AC_ARG_WITH(sfio,
@@ -590,9 +595,12 @@ case "$PLATFORM" in
       SFIO_FLAGS=""
       SFIO_LDFLAGS=""
     else		
-      AC_CHECK_LIB(sfio-mt, main,, 
-      AC_MSG_ERROR([sfio library not found]),-lvthread)
-      XE_PREPEND(-lvthread,LIBS)		
+      AC_CHECK_LIB(sfio, main)		
+      dnl Kkuznetsov: using sfio-mt looks like double protecting of FILE*
+      dnl and I avoid to use vthread based on posix threading
+      #AC_CHECK_LIB(sfio-mt, main,, 
+      #AC_MSG_ERROR([sfio library not found]),-lvthread)
+      #XE_PREPEND(-lvthread,LIBS)		
 
       SFIO_DIR="$ac_cv_use_sfio"
       SFIO_FLAGS="-DSFIO -I$ac_cv_use_sfio/include"
