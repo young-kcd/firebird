@@ -1884,7 +1884,10 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					worstSel = bestSelectivity;
 					bestSel = totalSelectivity;
 				}
-				if (bestSel == 0) {
+				if (bestSel >= 1) {
+					totalSelectivity = 1;
+				}
+				else if (bestSel == 0) {
 					totalSelectivity = 0;
 				}
 				else {
