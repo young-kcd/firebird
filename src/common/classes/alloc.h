@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.45 2004-07-30 22:37:57 skidder Exp $
+ *  $Id: alloc.h,v 1.46 2004-08-09 01:24:54 skidder Exp $
  *
  */
 
@@ -57,8 +57,18 @@
 #endif
 
 #ifdef USE_VALGRIND
+
+// Size of Valgrind red zone applied before and after memory block allocated for user
 #define VALGRIND_REDZONE 8
+
+// When memory block is deallocated by user from the pool it must pass queue of this 
+// length before it is actually deallocated and access protection from it removed.
 #define DELAYED_FREE_COUNT 1024
+
+// When memory extent is deallocated when pool is destroying it must pass through
+// queue of this length before it is actually returned to system
+#define DELAYED_EXTENT_COUNT 32
+
 #endif
 
 namespace Firebird {
@@ -80,6 +90,7 @@ const USHORT MBK_LARGE = 1; // Block is large, allocated from OS directly
 const USHORT MBK_PARENT = 2; // Block is allocated from parent pool
 const USHORT MBK_USED = 4; // Block is used
 const USHORT MBK_LAST = 8; // Block is last in the extent
+const USHORT MBK_DELAYED = 16; // Block is pending in the delayed free queue
 
 // Block header.
 // Has size of 12 bytes for 32-bit targets and 16 bytes on 64-bit ones
@@ -210,10 +221,10 @@ private:
 	Mutex lock;
 	
 	// Current usage counters for pool. Used to move pool to different statistics group
-	// Note that both counters are used only for blocks not redirected to parent.
+	AtomicCounter used_memory;
+
 	size_t mapped_memory;
-	size_t used_memory;
-	
+
 	MemoryPool *parent; // Parent pool. Used to redirect small allocations there
 	MemoryBlock *parent_redirected, *os_redirected;
 	size_t redirect_amount; // Amount of memory redirected to parent
@@ -232,7 +243,7 @@ private:
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t &size);
 
-	static void external_free(void* blk, size_t &size);
+	static void external_free(void* blk, size_t &size, bool pool_destroying);
 	
 	void* tree_alloc(size_t size);
 
@@ -259,9 +270,12 @@ private:
 	// Forbid copy constructor, should never be called
 	MemoryPool(const MemoryPool& pool) : freeBlocks((InternalAllocator*)this) { }
 	
-	// Used by pools to track memory usage
+	// Used by pools to track memory usage. 
+
+	// These 2 methods are thread-safe due to usage of atomic counters only
 	inline void increment_usage(size_t size);
 	inline void decrement_usage(size_t size);
+
 	inline void increment_mapping(size_t size);
 	inline void decrement_mapping(size_t size);
 	

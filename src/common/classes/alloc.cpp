@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.56 2004-07-30 22:37:56 skidder Exp $
+ *  $Id: alloc.cpp,v 1.57 2004-08-09 01:24:54 skidder Exp $
  *
  */
 
@@ -173,12 +173,29 @@ int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 
 #if defined(WIN_NT) || defined(HAVE_MMAP)
 const size_t map_page_size = get_page_size();
-// Extents cache is not used when DEBUG_GDS_ALLOC is enabled.
+// Extents cache is not used when DEBUG_GDS_ALLOC or USE_VALGRIND is enabled.
 // This slows down things a little due to frequent syscalls mapping/unmapping 
 // memory but allows to detect more allocation errors
 Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 Mutex cache_mutex;
 #endif
+
+#ifdef USE_VALGRIND
+// Circular FIFO buffer of read/write protected extents pending free operation
+// Race protected via cache_mutex.
+struct DelayedExtent {
+	void *memory; // Extent pointer
+	size_t size;  // Size of extent
+	int handle;   // Valgrind handle of protected extent block
+};
+
+DelayedExtent delayedExtents[DELAYED_EXTENT_COUNT];
+size_t delayedExtentCount = 0;
+size_t delayedExtentsPos = 0;
+#endif
+
+
+
 
 } // namespace
 
@@ -235,8 +252,13 @@ MemoryPool* MemoryPool::processMemoryPool = MemoryPool::createPool();
 
 void MemoryPool::setStatsGroup(MemoryStats &statsL)
 {
+	// This locking pattern is necessary to ensure thread-safety of this routine.
+	// It is deadlock-free only as long other code takes locks in the same order.
+	// There are no other places which need both locks at once so this code seems
+	// to be safe
+	if (parent) parent->lock.enter();
 	lock.enter();
-	const size_t sav_used_memory = used_memory;
+	const size_t sav_used_memory = used_memory.value();
 	const size_t sav_mapped_memory = mapped_memory;
 	decrement_mapping(sav_mapped_memory);
 	decrement_usage(sav_used_memory);
@@ -244,6 +266,7 @@ void MemoryPool::setStatsGroup(MemoryStats &statsL)
 	increment_mapping(sav_mapped_memory);
 	increment_usage(sav_used_memory);	
 	lock.leave();
+	if (parent) parent->lock.leave();
 }
 
 MemoryPool::MemoryPool(MemoryPool* parentL, 
@@ -254,8 +277,8 @@ MemoryPool::MemoryPool(MemoryPool* parentL,
 	extents((MemoryExtent *)first_extent), 
 	needSpare(false),
 	pendingFree(NULL),
-	mapped_memory(0),
 	used_memory(0),
+	mapped_memory(0),
 	parent(parentL),
 	parent_redirected(NULL),
 	os_redirected(NULL),
@@ -277,7 +300,7 @@ void MemoryPool::updateSpare()
 				return;
 			spareLeafs.add(temp);
 		}
-		while (spareNodes.getCount() <= freeBlocks.level) {
+		while ( (int) spareNodes.getCount() <= freeBlocks.level ) {
 			void* temp = internal_alloc(MEM_ALIGN(sizeof(FreeBlocksTree::NodeList)), TYPE_TREEPAGE);
 			if (!temp)
 				return;
@@ -300,74 +323,119 @@ void MemoryPool::updateSpare()
 	} while (needSpare);
 }
 
+#ifdef USE_VALGRIND
+
 void* MemoryPool::external_alloc(size_t &size)
 {
 	// This method is assumed to return NULL in case it cannot alloc
-#if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
-	if (size == EXTENT_SIZE) {
-		cache_mutex.enter();
-		void *result = NULL;
-		if (extents_cache.getCount()) {
-# ifdef USE_VALGRIND
-			// Use oldest used extent to employ extents_cache as delayed free
-			// FIFO queue to detect references to blocks from destroyed pools
-			result = extents_cache[0];
-			extents_cache.remove(0);
-# else
-			// Use most recently used object to encourage caching
-			result = extents_cache[extents_cache.getCount() - 1];
-			extents_cache.shrink(extents_cache.getCount() - 1);
-# endif
-		}
-		cache_mutex.leave();
-		if (result) {
-# ifdef USE_VALGRIND
-			// Remove access protection from block
-			VALGRIND_DISCARD(
-				VALGRIND_MAKE_WRITABLE(result, size)
-			);
-# endif
-			return result;
-		}
-	}
-#endif
-	void *result;
-#if defined WIN_NT
 	size = FB_ALIGN(size, map_page_size);
-	result = VirtualAlloc(NULL, size, MEM_COMMIT, 
-						PAGE_READWRITE);
-#elif defined HAVE_MMAP
-	size = FB_ALIGN(size, map_page_size);
-# ifdef MAP_ANONYMOUS
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
 		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-# else	
-	// This code is needed for Solaris 2.6, AFAIK
-	if (dev_zero_fd < 0)
-		dev_zero_fd = open("/dev/zero", O_RDWR);
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
-		MAP_PRIVATE, dev_zero_fd, 0);
-# endif
-# ifdef USE_VALGRIND
 	// Let Valgrind forget that block was zero-initialized
 	VALGRIND_DISCARD(
 		VALGRIND_MAKE_WRITABLE(result, size)
 	);
-# endif
-#else
-	result = malloc(size);
-#endif
 	return result;
 }
 	
-void MemoryPool::external_free(void *blk, size_t &size) {
-#ifdef USE_VALGRIND
+void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 	// Set access protection for block to prevent memory from deleted pool being accessed
-	VALGRIND_DISCARD(
-		VALGRIND_MAKE_NOACCESS(blk, size)
-	);
-#endif
-#if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
+	int handle = VALGRIND_MAKE_NOACCESS(blk, size);
+
+	size = FB_ALIGN(size, map_page_size);
+
+	void* unmapBlockPtr = blk;
+	size_t unmapBlockSize = size;
+
+	// Employ extents delayed free logic only when pool is destroying.
+	// In normal case all blocks pass through queue of sufficent length by themselves
+	if (pool_destroying) {
+		// Synchronize delayed free queue using extents mutex
+		cache_mutex.enter();
+
+		// Extend circular buffer if possible
+		if (delayedExtentCount < FB_NELEM(delayedExtents)) {
+			DelayedExtent *item = &delayedExtents[delayedExtentCount];
+			item->memory = blk;
+			item->size = size;
+			item->handle = handle;
+			delayedExtentCount++;
+			cache_mutex.leave();
+			return;
+		}
+
+		DelayedExtent *item = &delayedExtents[delayedExtentsPos];
+
+		// Free message associated with old extent in Valgrind
+		VALGRIND_DISCARD(item->handle);
+
+		// Set up the block we are going to unmap
+		unmapBlockPtr = item->memory;
+		unmapBlockSize = item->size;
+
+		// Replace element in circular buffer
+		item->memory = blk;
+		item->handle = handle;
+		item->size = size;
+
+		// Move queue pointer to next element and cycle if needed
+		delayedExtentsPos++;
+		if (delayedExtentsPos >= FB_NELEM(delayedExtents))
+			delayedExtentsPos = 0;
+
+		cache_mutex.leave();
+	} else {
+		// Let Valgrind forget about unmapped block
+		VALGRIND_DISCARD(handle);
+	}
+
+	if (munmap(unmapBlockPtr, unmapBlockSize))
+		system_call_failed::raise("munmap");
+}
+
+#else
+
+void* MemoryPool::external_alloc(size_t &size)
+{
+	// This method is assumed to return NULL in case it cannot alloc
+# if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
+	if (size == EXTENT_SIZE) {
+		cache_mutex.enter();
+		void *result = NULL;
+		if (extents_cache.getCount()) {
+			// Use most recently used object to encourage caching
+			result = extents_cache[extents_cache.getCount() - 1];
+			extents_cache.shrink(extents_cache.getCount() - 1);
+		}
+		cache_mutex.leave();
+		if (result) {
+			return result;
+		}
+	}
+# endif
+# if defined WIN_NT
+	size = FB_ALIGN(size, map_page_size);
+	return VirtualAlloc(NULL, size, MEM_COMMIT, 
+						PAGE_READWRITE);
+# elif defined HAVE_MMAP
+	size = FB_ALIGN(size, map_page_size);
+#  ifdef MAP_ANONYMOUS
+	return  mmap(NULL, size, PROT_READ | PROT_WRITE, 
+		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#  else	
+	// This code is needed for Solaris 2.6, AFAIK
+	if (dev_zero_fd < 0)
+		dev_zero_fd = open("/dev/zero", O_RDWR);
+	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
+		MAP_PRIVATE, dev_zero_fd, 0);
+#  endif
+# else
+	return malloc(size);
+# endif
+}
+	
+void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
+# if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
 		cache_mutex.enter();
 		if (extents_cache.getCount() < extents_cache.getCapacity()) {
@@ -377,25 +445,27 @@ void MemoryPool::external_free(void *blk, size_t &size) {
 		}
 		cache_mutex.leave();
 	}
-#endif
-#if defined WIN_NT
+# endif
+# if defined WIN_NT
 	size = FB_ALIGN(size, map_page_size);
 	if (!VirtualFree(blk, 0, MEM_RELEASE))
 		system_call_failed::raise("VirtualFree");
-#elif defined HAVE_MMAP
+# elif defined HAVE_MMAP
 	size = FB_ALIGN(size, map_page_size);
-#if (defined SOLARIS) and (defined HAVE_CADDR_T)
+#  if (defined SOLARIS) and (defined HAVE_CADDR_T)
 	if (munmap((caddr_t) blk, size))
 		system_call_failed::raise("munmap");
 
-#else 
+#  else 
 	if (munmap(blk, size))
 		system_call_failed::raise("munmap");
-#endif /*Solaris*/
-#else
+#  endif /*Solaris*/
+# else
 	::free(blk);
-#endif
+# endif
 }
+
+#endif
 
 void* MemoryPool::tree_alloc(size_t size) {
 	if (size == sizeof(FreeBlocksTree::ItemList))
@@ -470,7 +540,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 
 			// Update usage statistics
 			const size_t blk_size = blk->small.mbk_length-MEM_ALIGN(sizeof(MemoryRedirectList));
-			parent->increment_usage(blk_size);
+			increment_usage(blk_size);
 			redirect_amount += blk_size;
 			parent->lock.leave();
 #ifdef USE_VALGRIND
@@ -634,7 +704,13 @@ bool MemoryPool::verify_pool() {
 			; 
 			blk = next_block(blk))
 		{
-			mem_assert(!(blk->mbk_flags & ~(MBK_USED | MBK_LAST | MBK_PARENT))); // No large blocks allowed here
+			// Verify block flags, large blocks are not allowed here
+			mem_assert(!(blk->mbk_flags & 
+				~(MBK_USED | MBK_LAST | MBK_PARENT | MBK_DELAYED)));
+
+			// Check that if block is marked as delayed free it is still accounted as used
+			mem_assert(!(blk->mbk_flags & MBK_DELAYED) || (blk->mbk_flags & MBK_USED));
+
 			// Check pool pointer
 			if (blk->mbk_flags & MBK_PARENT)
 				mem_assert(blk->mbk_pool->parent == this);
@@ -642,12 +718,10 @@ bool MemoryPool::verify_pool() {
 				mem_assert(blk->mbk_pool == this);
 
 			// Calculate memory usage
-			if ((blk->mbk_flags & MBK_USED) && (blk->mbk_type >= 0)) {
-				if (blk->mbk_flags & MBK_PARENT) {
-					blk_used_memory += blk->small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList));
-				} else {
-					blk_used_memory += blk->small.mbk_length;
-				}
+			if ((blk->mbk_flags & MBK_USED) && !(blk->mbk_flags & MBK_PARENT) && 
+				!(blk->mbk_flags & MBK_DELAYED) && (blk->mbk_type >= 0)) 
+			{
+				blk_used_memory += blk->small.mbk_length;
 			}
 			
 			mem_assert(blk->small.mbk_prev_length == prev_length); // Prev is correct ?
@@ -686,7 +760,10 @@ bool MemoryPool::verify_pool() {
 		mem_assert(large->mbk_flags & MBK_LARGE);
 		mem_assert(large->mbk_flags & MBK_USED);
 		mem_assert(!(large->mbk_flags & MBK_PARENT));
-		blk_used_memory += large->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+
+		if (!(large->mbk_flags & MBK_DELAYED))
+			blk_used_memory += large->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+
 #if defined(WIN_NT) || defined(HAVE_MMAP)
 		blk_mapped_memory += FB_ALIGN(large->mbk_large_length, map_page_size);
 #else
@@ -696,7 +773,6 @@ bool MemoryPool::verify_pool() {
 	
 	// Verify memory usage accounting
 	mem_assert(blk_mapped_memory == mapped_memory);
-	mem_assert(blk_used_memory == used_memory);
 	lock.leave();
 	
 	if (parent) {
@@ -717,12 +793,19 @@ bool MemoryPool::verify_pool() {
 			mem_assert(redirected->mbk_flags & MBK_PARENT);
 			mem_assert(redirected->mbk_flags & MBK_USED);
 			mem_assert(!(redirected->mbk_flags & MBK_LARGE));
-			if (redirected->mbk_type >= 0)
-				blk_redirected += redirected->small.mbk_length - sizeof(MemoryRedirectList);
+			if (redirected->mbk_type >= 0) {
+				size_t blk_size = redirected->small.mbk_length - sizeof(MemoryRedirectList);
+				blk_redirected += blk_size;
+				if (!(redirected->mbk_flags & MBK_DELAYED))
+					blk_used_memory += blk_size;
+			}
 		}
 		// Check accounting
 		mem_assert(blk_redirected == redirect_amount);
+		mem_assert(blk_used_memory == (size_t) used_memory.value());
 		parent->lock.leave();
+	} else {
+		mem_assert(blk_used_memory == (size_t) used_memory.value());
 	}
 	
 	return true;
@@ -731,7 +814,9 @@ bool MemoryPool::verify_pool() {
 static void print_block(FILE *file, const MemoryBlock *blk, bool used_only)
 {
 	const void *mem = (const char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
-	if (((blk->mbk_flags & MBK_USED) && blk->mbk_type >= 0) || !used_only) {
+	if (((blk->mbk_flags & MBK_USED) && 
+		!(blk->mbk_flags & MBK_DELAYED) && blk->mbk_type >= 0) || !used_only) 
+	{
 		char flags[100];
 		flags[0] = 0;
 		if (blk->mbk_flags & MBK_USED)
@@ -742,7 +827,9 @@ static void print_block(FILE *file, const MemoryBlock *blk, bool used_only)
 			strcat(flags, " LARGE");
 		if (blk->mbk_flags & MBK_PARENT)
 			strcat(flags, " PARENT");
-		
+		if (blk->mbk_flags & MBK_DELAYED)
+			strcat(flags, " DELAYED");
+
 		const int size =
 			blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->small.mbk_length;
 #ifdef DEBUG_GDS_ALLOC
@@ -773,7 +860,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only)
 {
 	lock.enter();
 	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
-		this, (long)used_memory, (long)mapped_memory);
+		this, (long)used_memory.value(), (long)mapped_memory);
 	// Print extents
 	for (const MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
 		if (!used_only)
@@ -922,7 +1009,7 @@ void MemoryPool::deletePool(MemoryPool* pool)
 #endif
 
 	// Adjust usage
-	pool->decrement_usage(pool->used_memory);
+	pool->decrement_usage(pool->used_memory.value());
 	pool->decrement_mapping(pool->mapped_memory);
 	
 	// Free mutex
@@ -936,7 +1023,7 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	while (large) {
 		MemoryBlock *next = block_list_large(large)->mrl_next;
 		size_t ext_size = large->mbk_large_length;
-		external_free(large, ext_size);
+		external_free(large, ext_size, true);
 		large = next;
 	}
 	
@@ -947,7 +1034,7 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	while (extent) {
 		MemoryExtent *next = extent->mxt_next;
 		size_t ext_size = EXTENT_SIZE;
-		external_free(extent, ext_size);
+		external_free(extent, ext_size, true);
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size	
 		extent = next;
 	}
@@ -956,13 +1043,15 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	// IF parent is set then pool was allocated from it and is not deleted at this point yet
 	if (parent) {		
 		parent->lock.enter();
-		parent->decrement_usage(pool->redirect_amount);
 		MemoryBlock *redirected = pool->parent_redirected;
 		while (redirected) {
 			MemoryBlock *next = block_list_small(redirected)->mrl_next;
 			redirected->mbk_pool = parent;
 			redirected->mbk_flags &= ~MBK_PARENT;
 #ifdef USE_VALGRIND
+			// Clear delayed bit which may be set here
+			redirected->mbk_flags &= ~MBK_DELAYED;
+
 			// Remove protection from red zones of memory block or block as whole if it is
 			// in delayed free queue. Since this code makes pointers to deallocated memory
 			// immediately valid we disable parent redirection in USE_VALGRIND mode. Code is 
@@ -1203,7 +1292,7 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk)
 		MEM_ALIGN(sizeof(MemoryExtent)) == EXTENT_SIZE);
 
 	size_t ext_size = EXTENT_SIZE;
-	external_free(extent, ext_size);
+	external_free(extent, ext_size, false);
 	fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size	
 	decrement_mapping(EXTENT_SIZE);
 }
@@ -1280,11 +1369,26 @@ void MemoryPool::deallocate(void *block)
 	MemoryBlock* blk = ptr_block(block);
 	
 	fb_assert(blk->mbk_flags & MBK_USED);
-	fb_assert(blk->mbk_pool==this);
-	
+	fb_assert(blk->mbk_pool == this);
+
+
 #ifdef USE_VALGRIND
 	// Synchronize delayed free queue using pool mutex
 	lock.enter();
+
+	// Memory usage accounting. Do it before Valgrind delayed queue management
+	size_t blk_size;
+	if (blk->mbk_flags & MBK_LARGE)
+		blk_size = blk->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+	else {
+		blk_size = blk->small.mbk_length;
+		if (blk->mbk_flags & MBK_PARENT)
+			blk_size -= MEM_ALIGN(sizeof(MemoryRedirectList));
+	}
+	decrement_usage(blk_size);
+
+	// Mark block as delayed free in its header
+	blk->mbk_flags |= MBK_DELAYED;
 
 	// Notify Valgrind that block is freed from the pool
 	VALGRIND_MEMPOOL_FREE(this, block);
@@ -1310,6 +1414,9 @@ void MemoryPool::deallocate(void *block)
 
 	block = delayedFree[delayedFreePos];
 	blk = ptr_block(block);
+
+	// Unmark block as delayed free in its header
+	blk->mbk_flags &= ~MBK_DELAYED;
 
 	// Free message associated with block in Valgrind
 	VALGRIND_DISCARD(delayedFreeHandles[delayedFreePos]);
@@ -1348,8 +1455,10 @@ void MemoryPool::deallocate(void *block)
 			block_list_small(list->mrl_next)->mrl_prev = list->mrl_prev;
 		// Update usage statistics
 		const size_t size = blk->small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList));
-		parent->decrement_usage(size);
 		redirect_amount -= size;
+#ifndef USE_VALGRIND
+		decrement_usage(size);
+#endif
 		// Free block from parent
 		parent->internal_deallocate(block);
 		if (parent->needSpare)
@@ -1371,18 +1480,22 @@ void MemoryPool::deallocate(void *block)
 			block_list_large(list->mrl_next)->mrl_prev = list->mrl_prev;
 		// Update usage statistics
 		const size_t size = blk->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+#ifndef USE_VALGRIND
 		decrement_usage(size);
+#endif
 		// Free the block
 		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size +
 			MEM_ALIGN(sizeof(MemoryRedirectList));
-		external_free(blk, ext_size);
+		external_free(blk, ext_size, false);
 		decrement_mapping(ext_size);
 		lock.leave();
 		return;
 	}
 	
 	// Deallocate small block from this pool
+#ifndef USE_VALGRIND
 	decrement_usage(blk->small.mbk_length);
+#endif
 	internal_deallocate(block);
 	if (needSpare)
 		updateSpare();

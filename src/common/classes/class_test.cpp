@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.18 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: class_test.cpp,v 1.19 2004-08-09 01:24:54 skidder Exp $
  *
  */
 
@@ -65,7 +65,7 @@ void testSortedVector() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-const int TEST_ITEMS = 1000000;
+const size_t TEST_ITEMS = 10000;
 
 struct Test {
 	int value;
@@ -82,7 +82,7 @@ void testBePlusTree() {
     printf("Fill array with test data (%d items)...", TEST_ITEMS);
 	Vector<int, TEST_ITEMS> v;
 	int n = 0;
-	int i;
+	size_t i;
 	for (i = 0; i < TEST_ITEMS; i++) {
 		n = n * 45578 - 17651;
 		// Fill it with quasi-random values in range 0...TEST_ITEMS-1
@@ -366,7 +366,7 @@ void testBePlusTree() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-const int ALLOC_ITEMS	= 1000000;
+const int ALLOC_ITEMS	= 10000;
 const int MAX_ITEM_SIZE	= 50;
 const int BIG_ITEMS		= ALLOC_ITEMS / 10;
 const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
