@@ -28,8 +28,11 @@
 #pragma warning(disable: 4786)
 #endif
 
+#include <algorithm>
+
 #include "../fbutil/FirebirdConfig.h"
 #include "../fbutil/FirebirdConfigFile.h"
+#include "../jrd/os/path_utils.h"
 
 extern "C" {
 
@@ -37,12 +40,21 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	static FirebirdConfigFile aliasConfig;
 	aliasConfig.setConfigFile(FirebirdConfig::getSysString("RootDirectory") + "/aliases.conf");
-	Firebird::string value = aliasConfig.getString(alias);
+
+	const char correct_dir_sep = PathUtils::dir_sep;
+	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
+	Firebird::string corrected_alias = alias;
+	std::replace(corrected_alias.begin(), corrected_alias.end(), incorrect_dir_sep, correct_dir_sep);
+	
+	Firebird::string value = aliasConfig.getString(corrected_alias);
+
 	if (!value.empty())
 	{
+		std::replace(value.begin(), value.end(), incorrect_dir_sep, correct_dir_sep);
 		strcpy(database, value.c_str());
 		return true;
 	}
+	
 	return false;
 }
 
