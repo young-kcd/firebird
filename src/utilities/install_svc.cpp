@@ -32,6 +32,9 @@
 #include "../utilities/registry.h"
 #include "../common/config/config.h"
 
+#define REMOTE_EXECUTABLE \
+	((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
+
 extern USHORT svc_error(SLONG, TEXT *, SC_HANDLE);
 static void usage(void);
 
@@ -41,9 +44,12 @@ static struct {
 	USHORT code;
 } commands[] = {
 	"CONFIGURE", 1, COMMAND_CONFIG,
-		"INSTALL", 1, COMMAND_INSTALL,
-		"REMOVE", 1, COMMAND_REMOVE,
-		"START", 3, COMMAND_START, "STOP", 3, COMMAND_STOP, NULL, 0, 0};
+	"INSTALL", 1, COMMAND_INSTALL,
+	"REMOVE", 1, COMMAND_REMOVE,
+	"START", 3, COMMAND_START,
+	"STOP", 3, COMMAND_STOP,
+	NULL, 0, 0
+};
 
 
 int CLIB_ROUTINE main( int argc, char **argv)
@@ -55,11 +61,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Install or remove an InterBase service.
+ *	Install or remove a Firebird service.
  *
  **************************************/
 	TEXT **end, *p, *q, *cmd, *directory;
-	USHORT sw_command, sw_version, sw_startup, sw_mode, sw_guardian;
+	USHORT sw_command, sw_version, sw_startup, sw_mode, sw_guardian, sw_arch;
 	USHORT i, status;
 	SC_HANDLE manager;
 
@@ -69,6 +75,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	sw_startup = STARTUP_DEMAND;
 	sw_mode = DEFAULT_CLIENT;
 	sw_guardian = NO_GUARDIAN;
+	sw_arch = ARCH_SS;
 
 	end = argv + argc;
 	while (++argv < end)
@@ -123,6 +130,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				sw_guardian = USE_GUARDIAN;
 				break;
 
+			case 'S':
+				sw_arch = ARCH_SS;
+				break;
+
+			case 'C':
+				sw_arch = ARCH_CS;
+				break;
+
 			default:
 				ib_printf("Unknown switch \"%s\"\n", p);
 				usage();
@@ -156,7 +171,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_INSTALL:
-		/* First, lets do the Guardian, if it has been specified. */
+		/* First, lets do the guardian, if it has been specified */
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 		if (sw_guardian) {
 			status =
@@ -171,12 +186,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			else
 				ib_printf("Service \"%s\" not created.\n", ISCGUARD_DISPLAY_NAME);
 
-			/* Set sw_startup to manual in preparation for install the ib_server service*/
+			/* Set sw_startup to manual in preparation for install the service */
 			sw_startup = STARTUP_DEMAND;
 		}
 #endif
 
-		/* do the install of IBServer */
+		/* do the install of the server */
 		status =
 			SERVICES_install(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 							 REMOTE_EXECUTABLE, directory, NULL, sw_startup,
@@ -242,7 +257,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_START:
-		/* Test for use of Guardian. If so, start the guardian else start ib-server */
+		/* Test for use of the guardian. If so, start the guardian else start the server */
 		if (Config::getGuardianOption() == 1) {
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
@@ -266,7 +281,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		break;
 
 	case COMMAND_STOP:
-		/* Test for use of Guardian. If so, stop the guardian else stop ib-server */
+		/* Test for use of the guardian. If so, stop the guardian else stop the server */
 		if (Config::getGuardianOption() == 1) {
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 			status = SERVICES_stop(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
@@ -347,15 +362,15 @@ static void usage(void)
 
 	ib_printf("Usage:\n");
 	ib_printf
-		("    instsvc {install Firebird_directory [-auto | -demand] } [-g] [-z]\n");
+		("    instsvc {install Firebird_directory [-auto | -demand] [-superserver | -classic] } [-g] [-z]\n");
 	ib_printf
-		("            {remove                                        } [-g] \n");
+		("            {remove                                                                 } [-g] \n");
 	ib_printf
-		("            {configure [-boostpriority | -regularpriority] }\n");
+		("            {configure [-boostpriority | -regularpriority]                          }\n");
 	ib_printf
-		("            {start     [-boostpriority | -regularpriority] }\n");
+		("            {start     [-boostpriority | -regularpriority]                          }\n");
 	ib_printf
-		("            {stop                                          }\n");
+		("            {stop                                                                   }\n");
 
 	exit(FINI_OK);
 }
