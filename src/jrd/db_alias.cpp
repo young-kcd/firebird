@@ -22,6 +22,7 @@
  *
  * 2002.06.04 Dmitry Yemanov - Server-side database alias management.
  */
+#include "firebird.h"
 
 #include <algorithm>
 
