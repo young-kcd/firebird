@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.20 2003-08-09 22:31:46 brodsom Exp $
+ * $Id: drop.cpp,v 1.21 2003-08-10 00:41:39 brodsom Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -68,7 +68,9 @@
 
 #define FTOK_KEY		15
 
+#ifndef HAVE_MMAP
 static void dummy_init(void);
+#endif
 static SLONG get_key(TEXT *);
 static void remove_resource(TEXT *, SLONG, SLONG, TEXT *);
 static int sem_exclusive(SLONG, SLONG);
@@ -159,6 +161,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 
 
+#ifndef HAVE_MMAP
 static void dummy_init(void)
 {
 /**************************************
@@ -172,7 +175,7 @@ static void dummy_init(void)
  *
  **************************************/
 }
-
+#endif
 
 static SLONG get_key( TEXT * filename)
 {
