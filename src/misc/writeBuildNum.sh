@@ -3,13 +3,13 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.645 2002-09-05 11:48:41 dimitr Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.646 2002-09-06 04:49:27 fsg Exp $"
 
 BuildType=T
 MajorVer=1
 MinorVer=5
 RevNo=0
-BuildNum=665
+BuildNum=666
 BuildSuffix="Firebird 1.5 Alpha 1"
 
 FIREBIRD_VERSION="$MajorVer.$MinorVer.$RevNo"
@@ -17,9 +17,14 @@ PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
 FILE_VER_STRING="WI-$BuildType$MajorVer.$MinorVer.$RevNo.$BuildNum"
 FILE_VER_NUMBER="$MajorVer, $MinorVer, $RevNo, $BuildNum"
 
-
-headerFile=src/jrd/build_no.h
-tempfile=gen/test.header.txt
+if [ $# -eq 3  ] 
+then
+ headerFile=$2
+ tempfile=$3;
+else
+ tempfile=gen/test.header.txt
+ headerFile=src/jrd/build_no.h;
+fi
 
 #______________________________________________________________________________
 # Routine to build a new jrd/build_no.h file. If required.
@@ -46,7 +51,8 @@ cat > $tempfile <<eof
 #define FB_BUILD_TYPE "$BuildType"
 #define FB_BUILD_SUFFIX "$BuildSuffix"
 eof
-    cmp -s $headerFile tempfile
+
+    cmp -s $headerFile $tempfile
     Result=$?
     if [ $Result -lt 0 ]
        then
