@@ -800,7 +800,7 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
  * it's DEPRECATED and we'll assume the buffer size was twice MAXPATHLEN.
  *
  **************************************/
-	return safe_interpret(s, MAXPATHLEN < 1, const_cast<const ISC_STATUS**>(vector));
+	return safe_interpret(s, MAXPATHLEN << 1, const_cast<const ISC_STATUS**>(vector));
 }
 
  
