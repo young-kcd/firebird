@@ -7249,6 +7249,9 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 	case nod_subtract:
 	case nod_subtract2:
 	case nod_upcase:
+	case nod_extract:
+	case nod_limit:
+	case nod_rows:
 		{
 			dsql_nod** ptr = par_node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + par_node->nod_count;
