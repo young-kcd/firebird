@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -86,9 +87,6 @@ extern void ftime();
 #endif
 
 #ifdef SHLIB_DEFS
-#ifdef IMP
-typedef SLONG clock_t;
-#endif
 #define times		(*_libgds_times)
 
 extern clock_t times();

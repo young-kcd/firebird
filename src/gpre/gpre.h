@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.3 2002-01-04 11:34:15 skywalker Exp $
+ * $Id: gpre.h,v 1.4 2002-02-16 03:27:31 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -41,6 +41,8 @@
  * Fixed gpre bug in handling lower case table aliases
  * in WHERE clauses for sql dialect 2 and 3.
  * (cause a core dump in a test case from C.R. Zamana)
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -196,17 +198,17 @@ typedef enum lang_t
 //___________________________________________________________________
 // Test if input language is cpp based.
 //
-// The lang_internal is used to compile some internal stuff without 
+// The lang_internal is used to compile some internal stuff without
 // reference to a database.  Previously it was based on lang_c (but even then
-// if you look carefully there are some areas where lang_c is specifically 
-// treated and lang_internal would be ignored). 
-// Now the base language used for lang_internal is cpp, so we have this 
-// inline function to tell if language is cpp. 
+// if you look carefully there are some areas where lang_c is specifically
+// treated and lang_internal would be ignored).
+// Now the base language used for lang_internal is cpp, so we have this
+// inline function to tell if language is cpp.
 // Internally the sw_language variable is set to lang_cxx for the
-// c++ source files, cxx, cpp, cplusplus, so we only need to test lang_cxx 
+// c++ source files, cxx, cpp, cplusplus, so we only need to test lang_cxx
 // and lang_internal.
 //
-inline bool isLangCpp(LANG_T lang) { 
+inline bool isLangCpp(LANG_T lang) {
     if (lang == lang_cxx || lang == lang_internal) {
         return true;
     }
@@ -386,7 +388,7 @@ typedef struct adl {
 #define ADL_LEN sizeof (struct adl)
 
 
-/* Array information block.  Used to hold info about an array field. 
+/* Array information block.  Used to hold info about an array field.
    Note: the dimension (DIM) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
 
@@ -476,11 +478,11 @@ typedef struct cnstrt {
 	struct lls *cnstrt_fields;	/* list of fields */
 	USHORT cnstrt_fkey_def_type;	/* extended foreign key definition */
 	struct str *cnstrt_referred_rel;	/* referred relation, if foreign key */
-	struct lls *cnstrt_referred_fields;	/* optional list of fields from 
+	struct lls *cnstrt_referred_fields;	/* optional list of fields from
 										   referred relation */
 	struct cnstrt *cnstrt_next;	/* next contraint for field or relation */
 	struct txt *cnstrt_text;	/* source for CHECK constraints */
-	struct nod *cnstrt_boolean;	/* boolean expression, for CHECK 
+	struct nod *cnstrt_boolean;	/* boolean expression, for CHECK
 								   constraints */
 	USHORT cnstrt_flags;		/* see below */
 } *CNSTRT;
@@ -659,7 +661,7 @@ typedef struct cmpf {
 #define CMPF_LEN sizeof (struct cmpf)
 
 
-/* Dimension block, used for arrays 
+/* Dimension block, used for arrays
  *
  * Note: this structure is being phased out.  Please use the
  * repeating tail on the ARY structure instead
@@ -1537,10 +1539,10 @@ EXTERN INTLSYM text_subtypes;
 
 /* ada_flags fields definition */
 
-#define ADA_create_database	1	/* the flag is set when there is a 
+#define ADA_create_database	1	/* the flag is set when there is a
 								   create database SQL statement in
-								   user program, and is used to 
-								   generate additional "with" and 
+								   user program, and is used to
+								   generate additional "with" and
 								   "function" declarations    */
 
 EXTERN USHORT ada_flags;
@@ -1565,20 +1567,10 @@ extern "C" {
 #endif
 #endif
 
-/* IMP does'nt allow enums to be used in conditional operations that include
->, >= , <, <= etc. It only allows == for enums, hence the typecast */
-
-#ifdef IMP
-#define assert_IS_REQ(x) assert(!(x) || ((int)((x)->req_type) >= (int)0 && (int)((x)->req_type) < (int)REQ_LASTREQUEST))
-#define assert_IS_SYM(x) assert(!(x) || ((int)((x)->sym_type) >= (int)0 && (int)((x)->sym_type) < (int)SYM_LASTSYM))
-#define assert_IS_NOD(x) assert(!(x) || ((int)((x)->nod_type) >= (int)1 && (int)((x)->nod_type) < (int)nod_LASTNOD))
-#define assert_IS_ACT(x) assert(!(x) || ((int)((x)->act_type) >= (int)0 && (int)((x)->act_type) < (int)ACT_LASTACT))
-#else
 #define assert_IS_REQ(x) assert(!(x) || ((x)->req_type >= 0 && (x)->req_type < REQ_LASTREQUEST))
 #define assert_IS_SYM(x) assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
 #define assert_IS_NOD(x) assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
 #define assert_IS_ACT(x) assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
-#endif	/** IMP **/
 
 #ifdef __cplusplus
 } /* extern "C" */

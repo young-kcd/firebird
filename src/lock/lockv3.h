@@ -22,6 +22,7 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -76,10 +77,6 @@ union semun {
 #endif
 
 #ifdef sgi
-#define SEMAPHORES	25
-#endif
-
-#ifdef IMP
 #define SEMAPHORES	25
 #endif
 

@@ -22,6 +22,7 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -58,16 +59,14 @@
 #  ifndef WIN_NT
 #    ifndef VMS
 #      include <fcntl.h>
-#      ifndef IMP
-#        include <sys/file.h>
-#      endif
+#      include <sys/file.h>
 #    else
 #      include <file.h>
 #    endif
 #  endif
 #endif
 
-#if (defined IMP || defined sparc)
+#ifdef sparc
 #include <unistd.h>
 #endif
 

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #include "firebird.h"
@@ -100,9 +103,7 @@ extern bool_t xdr_float();
 extern bool_t xdr_double();
 extern bool_t xdr_wrapstring();
 
-#  ifndef IMP
 extern bool_t xdr_free();
-#  endif
 
 #else // 0
 
@@ -136,9 +137,7 @@ static STR gfloat_buffer;
 #    define xdr_double      (*_libgds_xdr_double)
 #  endif
 #  define	xdr_wrapstring	(*_libgds_xdr_wrapstring)
-#  ifndef IMP
-#    define	xdr_free	(*_libgds_xdr_free)
-#  endif
+#   define xdr_free    (*_libgds_xdr_free)
 
 #if 0
 // TMN: Patched away this for now, it should probably be removed.
@@ -156,9 +155,7 @@ extern bool_t xdr_float();
 extern bool_t xdr_double();
 # endif	// sgi
 extern bool_t xdr_wrapstring();
-# ifndef IMP
 extern bool_t xdr_free();
-# endif	// IMP
 
 #else // 0
 
@@ -443,7 +440,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 	case op_response:
 	case op_response_piggyback:
 
-		/* Changes to this op's protocol must be mirrored 
+		/* Changes to this op's protocol must be mirrored
 		   in xdr_protocol_overhead */
 
 		response = &p->p_resp;
@@ -640,9 +637,9 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 		MAP(xdr_short,
 			reinterpret_cast < SSHORT & >(sqldata->p_sqldata_transaction));
 		if (xdrs->x_op == XDR_DECODE) {
-			/* the statement should be reset for each execution so that 
-			   all prefetched information from a prior execute is properly 
-			   cleared out.  This should be done before fetching any message 
+			/* the statement should be reset for each execution so that
+			   all prefetched information from a prior execute is properly
+			   cleared out.  This should be done before fetching any message
 			   information (for example: blr info)
 			 */
 
@@ -1156,17 +1153,17 @@ static bool_t xdr_hyper( register XDR * xdrs, SINT64 * pi64)
  **************************************
  *
  * Functional description
- *	Map a 64-bit Integer from external to internal representation 
+ *	Map a 64-bit Integer from external to internal representation
  *      (or vice versa).
- *      
+ *
  *      Enable this for all platforms except Solaris (since it is
- *      available in the XDR library on Solaris). This function (normally) 
- *      would have been implemented in REMOTE/xdr.c. Since some system 
- *      XDR libraries (HP-UX) do not implement this function, we have it 
- *      in this module. At a later date, when the function is available 
+ *      available in the XDR library on Solaris). This function (normally)
+ *      would have been implemented in REMOTE/xdr.c. Since some system
+ *      XDR libraries (HP-UX) do not implement this function, we have it
+ *      in this module. At a later date, when the function is available
  *      on all platforms, we can start using the system-provided version.
- *      
- *      Handles "swapping" of the 2 long's to be "Endian" sensitive. 
+ *
+ *      Handles "swapping" of the 2 long's to be "Endian" sensitive.
  *
  **************************************/
 	union {
@@ -1682,7 +1679,7 @@ static bool_t xdr_sql_blr(
 		}
 
 		/* If we have BLR describing a new input/output message, get ready by
-		 * setting up a format 
+		 * setting up a format
 		 */
 		if (blr->cstr_length) {
 			if (
@@ -2072,33 +2069,6 @@ static bool_t xdr_float( register XDR * xdrs, register float *ip)
 }
 #endif
 
-#ifdef IMP
-/**
-	xdr_free is not available on Motorola IMP 5.3 1.0 mc68060 as system
-	call. This routine is copied from the file remote/xdr.c.     
-**/
-
-bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
-{
-/**************************************
- *
- *	x d r _ f r e e
- *
- **************************************
- *
- * Functional description
- *	Perform XDR_FREE operation on an XDR structure
- *
- **************************************/
-	XDR xdrs;
-
-	xdrs.x_op = XDR_FREE;
-
-	return (*proc) (&xdrs, objp);
-}
-#endif
-
-
 static RSR get_statement( XDR * xdrs, SSHORT statement_id)
 {
 /**************************************
@@ -2118,7 +2088,7 @@ static RSR get_statement( XDR * xdrs, SSHORT statement_id)
 	RSR statement = NULL;
 	PORT port = (PORT) xdrs->x_public;
 
-/* if the statement ID is -1, this seems to indicate that we are 
+/* if the statement ID is -1, this seems to indicate that we are
    re-executing the previous statement.  This is not a
    well-understood area of the implementation.
 

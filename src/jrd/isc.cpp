@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc.cpp,v 1.7 2002-02-16 03:05:17 seanleyne Exp $
+$Id: isc.cpp,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -151,11 +151,6 @@ static LKSB wake_lock;
 
 #ifdef DGUX
 #include <fcntl.h>
-#endif
-
-#ifdef IMP
-typedef unsigned int mode_t;
-typedef int pid_t;
 #endif
 
 #ifdef DARWIN

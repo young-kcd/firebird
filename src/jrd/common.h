@@ -30,10 +30,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 /*
-$Id: common.h,v 1.10 2002-02-16 03:05:17 seanleyne Exp $
+$Id: common.h,v 1.11 2002-02-16 03:27:32 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -953,28 +954,6 @@ typedef unsigned long DWORD;
 
 #endif /* NCR3000 */
 
-
-
-#ifdef IMP
-#define NO_PYXIS
-#define SETPGRP         setpgrp()
-#define KILLER_SIGNALS
-#define SYSV_SIGNALS
-#define SYSV_SHMEM
-#define SMALL_FILE_NAMES
-#define vfork           fork
-#define UNIX            1
-#define CURSES_KEYPAD   1
-#define FB_ALIGN(n,b)      ((n+1) & ~1)
-#define ALIGNMENT       4
-#define DOUBLE_ALIGN    4
-#define IMPLEMENTATION  44
-#define                 IEEE
-#define SHMEM_PICKY
-#undef LINKS_EXIST
-#define INTL
-#define INTL_BACKEND
-#endif
 
 
 #ifdef UNIX

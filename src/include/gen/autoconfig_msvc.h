@@ -1,7 +1,8 @@
 /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -80,6 +81,5 @@
 #undef M88K
 #undef UNIXWARE
 #undef NCR3000
-#undef IMP
 
 #endif

@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -407,7 +408,7 @@ static const serv services[] =
 
 /* The SERVER_CAPABILITIES_FLAG is used to mark architectural
 ** differences across servers.  This allows applications like server
-** manager to disable features as necessary.  
+** manager to disable features as necessary.
 */
 
 #ifdef SUPERSERVER
@@ -437,11 +438,7 @@ static const serv services[] =
 
 #ifdef SHLIB_DEFS
 #define pipe		(*_libgds_pipe)
-#ifdef IMP
-#define wait		(*_libgds_wait)
-#else
 #define waitpid		(*_libgds_waitpid)
-#endif
 #define _exit		(*_libgds__exit)
 #define dup		(*_libgds_dup)
 #define ib_fdopen		(*_libgds_fdopen)
@@ -449,11 +446,7 @@ static const serv services[] =
 #define statistics	(*_libgds_stat)
 
 extern int pipe();
-#ifdef IMP
-extern pid_t wait();
-#else
 extern pid_t waitpid();
-#endif
 extern void _exit();
 extern int dup();
 extern IB_FILE *ib_fdopen();
@@ -644,8 +637,8 @@ SVC SVC_attach(USHORT	service_length,
 	if (options.spb_user_name)
 		strcpy(service->svc_username, options.spb_user_name);
 
-/* The password will be issued to the service threads on NT since 
- * there is no OS authentication.  If the password is not yet 
+/* The password will be issued to the service threads on NT since
+ * there is no OS authentication.  If the password is not yet
  * encrypted, then encrypt it before saving it (since there is no
  * decrypt function).
  */
@@ -661,7 +654,7 @@ SVC SVC_attach(USHORT	service_length,
 		strcpy(service->svc_enc_password, options.spb_password_enc);
 	}
 
-/* If an executable is defined for the service, try to fork a new process. 
+/* If an executable is defined for the service, try to fork a new process.
  * Only do this if we are working with a version 1 service */
 
 #ifndef SUPERSERVER
@@ -1027,7 +1020,7 @@ void SVC_putc(SVC service, UCHAR ch)
 #endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable INTERBASE, 
+			   buffer 'info' with values of environment variable INTERBASE,
 			   INTERBASE_LOCK or INTERBASE_MSG. If the environment variable
 			   is not set then default value is returned.
 			 */
@@ -1319,7 +1312,7 @@ void SVC_putc(SVC service, UCHAR ch)
 			service_get(service, info + 3, end - (info + 4), get_flags,
 						timeout, &length);
 
-			/* If the read timed out, return the data, if any, & a timeout 
+			/* If the read timed out, return the data, if any, & a timeout
 			   item.  If the input buffer was not large enough
 			   to store a read to eof, return the data that was read along
 			   with an indication that more is available. */
@@ -1495,7 +1488,7 @@ void SVC_query(SVC		service,
 #endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable INTERBASE, 
+			   buffer 'info' with values of environment variable INTERBASE,
 			   INTERBASE_LOCK or INTERBASE_MSG. If the environment variable
 			   is not set then default value is returned.
 			 */
@@ -1828,7 +1821,7 @@ void SVC_query(SVC		service,
 			service_get(service, info + 3, end - (info + 4), get_flags,
 						timeout, &length);
 
-			/* If the read timed out, return the data, if any, & a timeout 
+			/* If the read timed out, return the data, if any, & a timeout
 			   item.  If the input buffer was not large enough
 			   to store a read to eof, return the data that was read along
 			   with an indication that more is available. */
@@ -1884,7 +1877,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 /* 	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *	involved (as with any handle that goes over the
- *	network).  This parameter will be implemented at 
+ *	network).  This parameter will be implemented at
  *	a later date.
  */
 
@@ -1937,7 +1930,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 
 	try {
 
-/* Only need to add username and password information to those calls which need 
+/* Only need to add username and password information to those calls which need
  * to make a database connection
  */
 	if (*spb == isc_action_svc_backup ||
@@ -2125,7 +2118,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 	service->svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
 /* FREE: at SVC_detach() */
 	if (!service->svc_stdout)	/* NOMEM: */
-	{	
+	{
 		ERR_post(isc_virmemexh, 0);
 	}
 
@@ -2651,9 +2644,9 @@ static void service_get(
 		if (timeout) {
 		/* If a timeout period was given, check every .1 seconds to see if
 		   input is available from the pipe.  When something shows up, read
-		   what's available until all data has been read, or timeout occurs.  
+		   what's available until all data has been read, or timeout occurs.
 		   Otherwise, set the timeout flag and return.
-		   Fall out of the loop if a BROKEN_PIPE error occurs. 
+		   Fall out of the loop if a BROKEN_PIPE error occurs.
 		 */
 		iter = timeout * 10;
 		while ((iter--) && ((buf - buffer) < length)) {
@@ -3563,7 +3556,7 @@ static USHORT process_switches(
 					return 0;
 				else {
 					found = TRUE;
-					/* in case of "display all users" the spb buffer contains 
+					/* in case of "display all users" the spb buffer contains
 					   nothing but isc_action_svc_display_user */
 					if (len == 0)
 						break;
@@ -3926,7 +3919,7 @@ static BOOLEAN get_action_svc_parameter(
 
 #ifdef DEBUG
 /* The following two functions are temporary stubs and will be
- * removed as the services API takes shape.  They are used to 
+ * removed as the services API takes shape.  They are used to
  * test that the paths for starting services and parsing command-lines
  * are followed correctly.
  */
@@ -3940,4 +3933,3 @@ void test_cmd(USHORT spb_length, SCHAR * spb, TEXT ** switches)
 	gds__log("test_cmd called");
 }
 #endif
-

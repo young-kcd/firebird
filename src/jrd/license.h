@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.7 2002-02-16 03:05:17 seanleyne Exp $
+ * $Id: license.h,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -38,6 +38,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -117,10 +118,6 @@
 
 #ifdef AIX_PPC
 #define FB_PLATFORM	"PA"
-#endif
-
-#ifdef IMP
-#define FB_PLATFORM	"IM"
 #endif
 
 #ifdef sgi

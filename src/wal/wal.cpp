@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #include "firebird.h"
@@ -108,19 +111,11 @@ static SSHORT wal_put2(STATUS *, WAL, UCHAR *, USHORT, UCHAR *, USHORT,
 
 #ifdef SHLIB_DEFS
 #define execl		(*_libgds_execl)
-#ifdef IMP
-#define wait		(*_libgds_wait)
-#else
 #define waitpid		(*_libgds_waitpid)
-#endif
 #define _exit		(*_libgds__exit)
 
 extern int execl();
-#ifdef IMP
-extern int wait();
-#else
 extern int waitpid();
-#endif
 extern void _exit();
 #endif
 
@@ -134,7 +129,7 @@ SSHORT WAL_attach( STATUS * status_vector, WAL * WAL_handle, SCHAR * dbname)
  **************************************
  *
  * Functional description
- *	Attach to an already intitalized WAL segment for the given 
+ *	Attach to an already intitalized WAL segment for the given
  *	database.
  *	Return SUCCESS if attachment succeeds else return FAILURE.
  *
@@ -199,14 +194,14 @@ SSHORT WAL_checkpoint_finish(STATUS * status_vector,
 /* end of sanity check */
 
 /* Checkpoint record is a logical concept.  The higher level routines
- * do not need to 'see' this record for recovery.   We are putting a 
+ * do not need to 'see' this record for recovery.   We are putting a
  * zero length record for this purpose. */
 
 	wal_put2(status_vector, WAL_handle, chkpt_rec, 0,
 			 (UCHAR *) 0, 0, log_seqno, log_offset, TRUE);
 
 /* Now save the checkpoint record offset to be used by WAL writer later after
-   it flushes the block containing the checkpoint record.  We need to do this 
+   it flushes the block containing the checkpoint record.  We need to do this
    now because our block may be blank-padded for raw-device support and then it
    would be difficult for the WAL writer to know the location of the checkpoint
    record in the block. */
@@ -242,7 +237,7 @@ SSHORT WAL_checkpoint_force(STATUS * status_vector,
  * Functional description
  *	This procedure forces a checkpoint to happen.  It starts as
  *	well as finishes the checkpoint from WALs point of view.
- *	The caller should subsequently make a call to 
+ *	The caller should subsequently make a call to
  *	WAL_checkpoint_recorded.
  *
  ***************************************/
@@ -268,7 +263,7 @@ SSHORT WAL_checkpoint_start(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	To inform the caller if checkpoint needs to be started.  
+ *	To inform the caller if checkpoint needs to be started.
  *	Returns TRUE or FASLE through ckpt_start parameter.
  *
  *	Returns SUCCESS or FAILURE.
@@ -298,7 +293,7 @@ SSHORT WAL_checkpoint_recorded(STATUS * status_vector, WAL WAL_handle)
  *
  * Functional description
  *	To inform the WAL writer that the last checkpoint info has
- *	been recorded in the stable storage and so it can reuse 
+ *	been recorded in the stable storage and so it can reuse
  *	earlier log files if possible.
  *
  *	Returns SUCCESS or FAILURE.
@@ -333,12 +328,12 @@ SSHORT WAL_commit(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	Put the commit log record in the WAL buffer and flush the 
+ *	Put the commit log record in the WAL buffer and flush the
  *	buffer to log file before returning.
  *	If all the buffers are full and/or being flushed to disk,
- *	wait for one to become available.  
+ *	wait for one to become available.
  *	Implement group-commit protocol.
- *	Return the sequence number of the log file in the log file 
+ *	Return the sequence number of the log file in the log file
  *	series and the offset of this commit record in that file.
  *
  *	Return SUCCESS or FAILURE.
@@ -417,7 +412,7 @@ void WAL_fini( STATUS * status_vector, WAL * WAL_handle)
  **************************************
  *
  * Functional description
- *	Unmap the WAL segment.  
+ *	Unmap the WAL segment.
  *
  **************************************/
 
@@ -432,7 +427,7 @@ SSHORT WAL_flush(
 {
 /**************************************
  *
- *	W A L _ f l u s h 
+ *	W A L _ f l u s h
  *
  **************************************
  *
@@ -471,7 +466,7 @@ SSHORT WAL_flush(
 			 *log_offset <= WAL_segment->wals_flushed_offset))
 			goto flush_exit;
 
-/* Get the current status of the WAL buffers and then make sure that 
+/* Get the current status of the WAL buffers and then make sure that
    they are flushed at least upto that point. */
 
 	cur_log_seqno = WAL_segment->wals_log_seqno;
@@ -481,7 +476,7 @@ SSHORT WAL_flush(
 		goto flush_exit;
 
 /* Current buffer is non-empty, set it up for writing.  The earlier
-   buffers, if any, would already have been set for writing when we 
+   buffers, if any, would already have been set for writing when we
    switched to this buffer.  */
 
 	if (CUR_BUF != -1 && (WAL_BLOCK(CUR_BUF))->walblk_cur_offset > 0)
@@ -530,7 +525,7 @@ SSHORT WAL_init(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	Initialize Write Ahead Log segment for the database and 
+ *	Initialize Write Ahead Log segment for the database and
  *	attach to it.
  *
  *	Initialize the WAL_handle.
@@ -539,7 +534,7 @@ SSHORT WAL_init(STATUS * status_vector,
  *	as the starting sequence number for the set of new log
  *	files.
  *
- *	Start the WAL writer.  
+ *	Start the WAL writer.
  *	Return SUCCESS if initialization succeeds else return FAILURE.
  *
  **************************************/
@@ -568,13 +563,13 @@ SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
- *	W A L _ j o u r n a l _ d i s a b l e 
+ *	W A L _ j o u r n a l _ d i s a b l e
  *
  **************************************
  *
  * Functional description
  *	To inform the WAL writer that journalling should be disabled.
- *	Before returning from this procedure make sure that the WAL 
+ *	Before returning from this procedure make sure that the WAL
  *	writer has severed its ties with the journal server.
  *
  *	Returns SUCCESS or FAILURE.
@@ -594,8 +589,8 @@ SSHORT WAL_journal_disable(STATUS * status_vector, WAL WAL_handle)
 	inform_wal_writer(WAL_handle);
 
 	while (WAL_segment->wals_flags & WALS_JOURNAL_ENABLED) {
-		/* Wait for the WAL writer to severe its connection with the journal 
-		   server.  Should we get out with an error after a certain number 
+		/* Wait for the WAL writer to severe its connection with the journal
+		   server.  Should we get out with an error after a certain number
 		   of retries ? -- Damodar */
 
 		wait_for_writer(status_vector, WAL_handle);
@@ -615,13 +610,13 @@ SSHORT WAL_journal_enable(STATUS * status_vector,
 {
 /**************************************
  *
- *	W A L _ j o u r n a l _ e n a b l e 
+ *	W A L _ j o u r n a l _ e n a b l e
  *
  **************************************
  *
  * Functional description
  *	To inform the WAL writer that journalling has been enabled.
- *	Before returning from this procedure make sure that the WAL 
+ *	Before returning from this procedure make sure that the WAL
  *	writer has established a connection with the journal server.
  *
  *	Returns SUCCESS or FAILURE.
@@ -645,8 +640,8 @@ SSHORT WAL_journal_enable(STATUS * status_vector,
 	inform_wal_writer(WAL_handle);
 
 	while (!(WAL_segment->wals_flags & WALS_JOURNAL_ENABLED)) {
-		/* Wait for the WAL writer to establish connection with the journal 
-		   server.  Should we get out with an error after a certain number 
+		/* Wait for the WAL writer to establish connection with the journal
+		   server.  Should we get out with an error after a certain number
 		   of retries ? -- Damodar */
 
 		wait_for_writer(status_vector, WAL_handle);
@@ -669,14 +664,14 @@ SSHORT WAL_put(STATUS * status_vector,
 {
 /**************************************
  *
- *	W A L _ p u t  
+ *	W A L _ p u t
  *
  **************************************
  *
  * Functional description
- *	Put the given log record in a shared log buffer.  
+ *	Put the given log record in a shared log buffer.
  *	If all the buffers are full and or being flushed to disk,
- *	wait for one to become available.  
+ *	wait for one to become available.
  *
  *	If putting this buffer will make the current log file go
  *	beyond its rollover length then ask the WAL writer
@@ -687,7 +682,7 @@ SSHORT WAL_put(STATUS * status_vector,
  *	to disk.
  *
  *	The log record is put in (header+logrec) fashion.
- *	Return the sequence number of the log file in the log file 
+ *	Return the sequence number of the log file in the log file
  *	series and the offset of this logrec in that file where
  *	this log record would eventually be written.
  *
@@ -713,12 +708,12 @@ BOOLEAN WAL_rollover_happened(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	To inform the caller if rollover to a new log file has happened. 
- *	Returns TRUE or FASLE.   If TRUE then new_logname, 
+ *	To inform the caller if rollover to a new log file has happened.
+ *	Returns TRUE or FASLE.   If TRUE then new_logname,
  *	new_log_partition_offset and new_seqno parameters are initialized
- *	with the new information.  The caller should invoke 
+ *	with the new information.  The caller should invoke
  *	WAL_rollover_recorded() after recording the rollover
- *	information at a safe place (e.g. the header page). 
+ *	information at a safe place (e.g. the header page).
  *
  ***************************************/
 	WALS WAL_segment;
@@ -750,9 +745,9 @@ void WAL_rollover_recorded( WAL WAL_handle)
  **************************************
  *
  * Functional description
- *	To inform the WAL writer that the last rollover information 
+ *	To inform the WAL writer that the last rollover information
  *	has been recorded.   After this, the WAL writer can rollover
- *	to a new log file if needed. 
+ *	to a new log file if needed.
  *
  ***************************************/
 	WALS WAL_segment;
@@ -774,7 +769,7 @@ SSHORT WAL_set_checkpoint_length(
  **************************************
  *
  * Functional description
- *	Sets the checkpoint length to the passed value 
+ *	Sets the checkpoint length to the passed value
  *	(in Kbytes).
  *
  **************************************/
@@ -804,7 +799,7 @@ void WAL_set_cleanup_flag( WAL WAL_handle)
  **************************************
  *
  * Functional description
- *	Sets the cleanup flag in the WAL_handle so that 
+ *	Sets the cleanup flag in the WAL_handle so that
  *	shared resource may be cleaned up during WALC_fini().
  *
  **************************************/
@@ -825,7 +820,7 @@ SSHORT WAL_set_grpc_wait_time(
  **************************************
  *
  * Functional description
- *	Sets the group commit wait time to the passed value 
+ *	Sets the group commit wait time to the passed value
  *	(in microseconds).
  *
  **************************************/
@@ -854,7 +849,7 @@ SSHORT WAL_set_rollover_log(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	Sets the base file name to be used for rolling over to the next 
+ *	Sets the base file name to be used for rolling over to the next
  *	log file.
  *
  **************************************/
@@ -898,9 +893,9 @@ SSHORT WAL_shutdown(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	Informs the WAL writer to shut down its operations.  
+ *	Informs the WAL writer to shut down its operations.
  *	This procedure should be called when no other process (thread)
- *	is attached to the database. 
+ *	is attached to the database.
  *
  *	Returns the information about the last log file in use.
  *
@@ -929,13 +924,13 @@ SSHORT WAL_shutdown_old_writer(STATUS * status_vector, SCHAR * dbname)
  * Functional description
  *	Informs an existing WAL writer (if any) for the passed
  *	database to shut down its operations.  It's not an error
- *	if no WAL writer for the given database is running.  
+ *	if no WAL writer for the given database is running.
  *
  *	A WAL Writer may be hanging around if the 'last' process
  *	attached to the database did not or could not detach from
- *	the database.  So, this routine is used to shutdown that 
+ *	the database.  So, this routine is used to shutdown that
  *	WAL writer before starting recovery or in preparation for
- *	starting a fresh WAL writer.  
+ *	starting a fresh WAL writer.
  *
  ************************************/
 	WAL WAL_handle;
@@ -972,7 +967,7 @@ SSHORT WAL_status(STATUS * status_vector,
  **************************************
  *
  * Functional description
- *	Returns current status of the WAL activites through passed 
+ *	Returns current status of the WAL activites through passed
  *	parameters.
  *
  **************************************/
@@ -1017,8 +1012,8 @@ static SLONG copy_buffer(
  * Functional description
  *	Copies 'count' bytes from source to the specified WAL buffer.
  *	Puts a header as prefix.
- *	The sufficiency of space in wblk has already been ascertained 
- *	beforehand. 
+ *	The sufficiency of space in wblk has already been ascertained
+ *	beforehand.
  *	Returns the offset in the WAL file where these bytes would endup.
  *
  **************************************/
@@ -1075,7 +1070,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
  *	Fork the WAL writer process (thread) and give it enough time
  *	to initialize itself.
  *
- *	Returns SUCCESS if successful in forking the WAL writer. 
+ *	Returns SUCCESS if successful in forking the WAL writer.
  *
  **************************************/
 	WALS WAL_segment;
@@ -1114,7 +1109,7 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
  *	Fork the WAL writer process (thread) and give it enough time
  *	to initialize itself.
  *
- *	Returns SUCCESS if successful in forking the WAL writer. 
+ *	Returns SUCCESS if successful in forking the WAL writer.
  *
  **************************************/
 	WALS WAL_segment;
@@ -1133,14 +1128,14 @@ static SSHORT fork_writer( STATUS * status_vector, WAL WAL_handle)
 		spawnl(P_DETACH, image_name, WAL_WRITER, WAL_segment->wals_dbname,
 			   NULL);
 #else
-/* We are doing vfork() twice below to start the WAL writer process. 
+/* We are doing vfork() twice below to start the WAL writer process.
    This is to get around the problem of a <defunt> process not responding
    to kill(0) signal properly on HP-UX systems.  On HP-UX, if a child
-   (WAL writer) dies but the parent still exists then kill(0) to 
+   (WAL writer) dies but the parent still exists then kill(0) to
    the pid of the dead process (WAL writer) does not return an error
    of ESRCH and hence we cannot restart it.   Doing vfork() twice
    makes sure that the parent of WAL writer 'dies' so that WAL writer
-   would never get into a <defunt> state in case it terminates 
+   would never get into a <defunt> state in case it terminates
    prematurely. */
 
 	if (!(pid = vfork())) {
@@ -1181,8 +1176,8 @@ static SSHORT grpc_do_group_commit(
  **************************************
  *
  * Functional description
- *	This process (thread) has been chosen to be the group 
- *	coordinator.  The group-commit block to be used is passed as 
+ *	This process (thread) has been chosen to be the group
+ *	coordinator.  The group-commit block to be used is passed as
  *	a parameter.
  *	NOTE: It is assume that upon entry to this routine, shared memory
  *	is acquired.
@@ -1192,7 +1187,7 @@ static SSHORT grpc_do_group_commit(
 	SLONG dummy_offset;
 	SSHORT ret;
 
-/* Wait for more grouping and for the other group-commit_block 
+/* Wait for more grouping and for the other group-commit_block
    to be available. */
 
 	ret = grpc_wait_for_grouping(status_vector, WAL_handle, grpc_blknum);
@@ -1257,7 +1252,7 @@ static SSHORT grpc_wait_for_grouping(
  **************************************
  *
  * Functional description
- *	This function first waits for increasing the group size.  It also 
+ *	This function first waits for increasing the group size.  It also
  *	makes sure that the other group-commit block is available before
  *	this group-commit coordinator closes its door.
  *	NOTE: It is assume that upon entry to this routine, shared memory
@@ -1340,10 +1335,10 @@ GRP_COMMIT * grpc)
  **************************************
  *
  * Functional description
- *	This function waits for the group commit on the given block to 
+ *	This function waits for the group commit on the given block to
  *	finish.  All the participants call this routine.
  *	The parameter wait_id is the semaphore number to wait on.
- *	If needed, become the group_coordinator. 
+ *	If needed, become the group_coordinator.
  *	NOTE: It is assume that upon entry to this routine, shared memory
  *	is acquired.
  *
@@ -1418,7 +1413,7 @@ static SSHORT next_buffer_available( WALS WAL_segment)
  **************************************
  *
  * Functional description
- *	Return the next (to current) available buffer number modulo 
+ *	Return the next (to current) available buffer number modulo
  *	maximum allocated buffers for this WAL.
  *	If the next buffer is not available, return -1.
  *
@@ -1447,9 +1442,9 @@ static void setup_buffer_for_writing(
  **************************************
  *
  * Functional description
- *	Prepare the cuurent buffer block for writing. 
- *	Inform the WAL writer that the current buffer is ready 
- *	to be flushed to disk.  Assumes that acquire() has 
+ *	Prepare the cuurent buffer block for writing.
+ *	Inform the WAL writer that the current buffer is ready
+ *	to be flushed to disk.  Assumes that acquire() has
  *	been done, before calling this routine.
  *	If 'ckpt' flag is TRUE then this buffer finishes a checkpoint.
  ***************************************/
@@ -1479,9 +1474,9 @@ static SSHORT shutdown_writer(
  **************************************
  *
  * Functional description
- *	Informs the WAL writer to shut down its operations.  
+ *	Informs the WAL writer to shut down its operations.
  *	This procedure should be called when no other process (thread)
- *	is attached to the database. 
+ *	is attached to the database.
  *
  **************************************/
 	WALS WAL_segment;
@@ -1514,16 +1509,16 @@ static SSHORT sync_with_wal_writer( STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
- *	s y n c _ w i t h _ W A L _ w r i t e r 
+ *	s y n c _ w i t h _ W A L _ w r i t e r
  *
  **************************************
  *
  * Functional description
- *	Make sure that WAL writer has initialized itself (and parts of 
+ *	Make sure that WAL writer has initialized itself (and parts of
  *	the WAL segment).  This is to avoid some race conditions when
- *	other processes may use the info regarding the log file in 
- *	the WAL segment before the WAL writer got a chance to initialize 
- *	that.  Returns FAILURE after some number (10) of retries. 
+ *	other processes may use the info regarding the log file in
+ *	the WAL segment before the WAL writer got a chance to initialize
+ *	that.  Returns FAILURE after some number (10) of retries.
  *
  **************************************/
 	SSHORT done;
@@ -1581,7 +1576,7 @@ static SSHORT wait_for_writer( STATUS * status_vector, WAL WAL_handle)
 					   reinterpret_cast < void (*)() > (WALC_alarm_handler),
 					   ptr);
 	if (ret == FAILURE) {
-		/* We got out because of timeout.  May be our condition is 
+		/* We got out because of timeout.  May be our condition is
 		   already met.  Let the caller decide that.  In any case, make
 		   sure that the WAL_writer process is alive. */
 
@@ -1610,9 +1605,9 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
  **************************************
  *
  * Functional description
- *	Put the given log record in a shared log buffer.  
+ *	Put the given log record in a shared log buffer.
  *	If all the buffers are full and/or being flushed to disk,
- *	wait for one to become available.  
+ *	wait for one to become available.
  *
  *	If putting this buffer will make the current log file go
  *	beyond its rollover length then ask the WAL writer
@@ -1623,11 +1618,11 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
  *	to disk.
  *
  *	The log record is put in (header+logrec) fashion.
- *	Return the sequence number of the log file in the log file 
+ *	Return the sequence number of the log file in the log file
  *	series and the offset of this logrec in that file where
  *	this log record would eventually be written.
  *
- *	If 'ckpt' parameter is TRUE then steup the buffer with 
+ *	If 'ckpt' parameter is TRUE then steup the buffer with
  *	this logrec for writing and mark it as a checkpoint buffer.
  *	The WAL writer will handle this checkpointed buffer in a special
  *	way.
@@ -1700,7 +1695,7 @@ USHORT len2, SLONG * log_seqno, SLONG * log_offset, SSHORT ckpt)
 			done = TRUE;
 		}
 		else
-			/* Assumption: One empty WAL buffer is long enough to fully accommodate 
+			/* Assumption: One empty WAL buffer is long enough to fully accommodate
 			   any one log record.  Let's try the next buffer. */
 
 			setup_buffer_for_writing(WAL_handle, WAL_segment, 0);

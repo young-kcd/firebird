@@ -22,6 +22,7 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -144,13 +145,6 @@ static UCHAR *next_shared_memory;
 #define FTOK_KEY	15
 #define PRIV		0666
 #define LOCAL_SEMAPHORES 4
-
-#ifdef IMP
-typedef unsigned int mode_t;
-typedef int pid_t;
-
-#define SHMEM_DELTA	(1 << 25)
-#endif
 
 #ifdef SYSV_SIGNALS
 #define SIGVEC		FPTR_INT
@@ -324,15 +318,9 @@ static void make_object_name(TEXT *, TEXT *, TEXT *);
 #define sbrk		(*_libgds_sbrk)
 #define setitimer	(*_libgds_setitimer)
 #define alarm		(*_libgds_alarm)
-#ifndef IMP
 #define sigprocmask	(*_libgds_sigprocmask)
 #define sigsuspend	(*_libgds_sigsuspend)
 #define sigaddset	(*_libgds_sigaddset)
-#else
-#define sigsetmask	(*_libgds_sigsetmask)
-#define sigpause	(*_libgds_sigpause)
-#define sigblock	(*_libgds_sigblock)
-#endif
 
 extern int sprintf();
 extern int strlen();
@@ -362,15 +350,9 @@ extern SCHAR *sbrk();
 extern int setitimer();
 extern int alarm();
 extern SCHAR *shmat();
-#ifndef IMP
 extern int sigprocmask();
 extern int sigsuspend();
 extern int sigaddset();
-#else
-extern int sigsetmask();
-extern int sigpause();
-extern int sigblock();
-#endif
 #endif
 
 
@@ -1134,34 +1116,19 @@ int ISC_event_wait(
 
 	if ((*events)->event_semid == -1) {
 		++inhibit_restart;
-#ifdef IMP
-		oldmask =
-			sigblock(sigmask(SIGUSR1) | sigmask(SIGUSR2) | sigmask(SIGURG));
-#else
 		sigprocmask(SIG_BLOCK, NULL, &oldmask);
 		mask = oldmask;
 		sigaddset(&mask, SIGUSR1);
 		sigaddset(&mask, SIGUSR2);
 		sigaddset(&mask, SIGURG);
 		sigprocmask(SIG_BLOCK, &mask, NULL);
-#endif
 		for (;;) {
 			if (!ISC_event_blocked(count, events, values)) {
 				--inhibit_restart;
-#ifdef IMP
-				sigsetmask(oldmask);
-#else
 				sigprocmask(SIG_SETMASK, &oldmask, NULL);
-#endif
 				return SUCCESS;
 			}
-#ifdef IMP
-			mask = sigsetmask(oldmask);
-			sigpause(0);
-			oldmask = sigsetmask(mask);
-#else
 			sigsuspend(&oldmask);
-#endif
 		}
 	}
 
@@ -2818,11 +2785,7 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 #ifndef SYSV_SHMEM
 		next_shared_memory = address + length;
 #else
-#ifndef IMP
 		next_shared_memory = address + length + SHMLBA;
-#else
-		next_shared_memory = address + length + 0x100000;
-#endif
 #endif
 #else
 	address = (UCHAR *) shmat(shmid, NULL, 0);

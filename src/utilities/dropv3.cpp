@@ -19,15 +19,15 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <sys/param.h>
-#ifdef IMP
-#include <sys/types.h>
-#endif
 #include <sys/stat.h>
 #include <stdlib.h>
 
@@ -50,7 +50,7 @@ static long get_key();
 static int dummy_init();
 static int get_lock_header();
 static int sem_exclusive(long , int );
-#ifndef MMAP_SUPPORTED   
+#ifndef MMAP_SUPPORTED
 static int remove_resource(int , TEXT *, int, int , TEXT *);
 #else
 static int remove_resource(int, TEXT *,int ,int ,TEXT *);
@@ -65,10 +65,10 @@ static struct {
 #ifndef MMAP_SUPPORTED
 	{"SHMSIZE", &LOCK_shm_size},
 #else
-	{"SEMKEY", &LOCK_sem_key}, 
+	{"SEMKEY", &LOCK_sem_key},
     {"BLKSIG", &LOCK_blk_signal},
 #endif
-    {"SEMCOUNT", &LOCK_sem_count}, 
+    {"SEMCOUNT", &LOCK_sem_count},
     {NULL, NULL}
 };
 
@@ -82,7 +82,7 @@ int V3_drop(int argc, UCHAR **argv)
  **************************************
  *
  * Functional description
- *	Drop Lock Table and associated semaphores.	
+ *	Drop Lock Table and associated semaphores.
  *
  **************************************/
 	UCHAR **end, *p;

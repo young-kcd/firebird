@@ -19,9 +19,12 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 /*
-$Id: lock.cpp,v 1.5 2002-01-04 11:34:16 skywalker Exp $
+$Id: lock.cpp,v 1.6 2002-02-16 03:27:32 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -341,22 +344,14 @@ static struct ipccfg LOCK_hdrtbl[] =
 
 #ifdef SHLIB_DEFS
 #define sys_errlist	(*_libgds_sys_errlist)
-#ifdef IMP
-#define wait		(*_libgds_wait)
-#else
 #define waitpid		(*_libgds_waitpid)
-#endif
 #define execl		(*_libgds_execl)
 #define _exit		(*_libgds__exit)
 #define statistics	(*_libgds_stat)
 #define chmod		(*_libgds_chmod)
 
 extern SCHAR *sys_errlist[];
-#ifdef IMP
-extern int wait();
-#else
 extern int waitpid();
-#endif
 extern int execl();
 extern void _exit();
 extern int statistics();
@@ -431,7 +426,7 @@ int LOCK_deq( PTR request_offset)
 {
 /**************************************
  *
- *	L O C K _ d e q 
+ *	L O C K _ d e q
  *
  **************************************
  *
@@ -819,8 +814,8 @@ int LOCK_init(
 #ifndef  SUPERSERVER
 #if defined(SCO_EV) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(AIX_PPC)
 /* 5.5 SCO port: might also help other classic ports, but not sure. This
-   and a few subsequent pieces of code later, solve problem of gds_drop 
-   giving following message 
+   and a few subsequent pieces of code later, solve problem of gds_drop
+   giving following message
 Fatal lock manager error: semop failed (acquire), errno: 22
 --Invalid argument
 If this happens on another classic platform add that platform too. - Shailesh

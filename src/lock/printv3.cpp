@@ -19,14 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <sys/param.h>
-#ifdef IMP
-#include <sys/types.h>
-#endif
 #include <sys/stat.h>
 
 #include "../jrd/common.h"
@@ -162,7 +162,7 @@ int V3_lock_print(USHORT argc, UCHAR **argv)
 				break;
 
 			default:
-				/* Silently ignore invalid options - 
+				/* Silently ignore invalid options -
 				 *  the V4 option parser reported any appropriate error */
 				break;
 			}

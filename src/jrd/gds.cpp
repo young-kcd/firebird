@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #define IO_RETRY	20
@@ -114,7 +117,7 @@
 #endif
 
 #ifdef SUPERSERVER
-#define V4_THREADING			/* RFM: 9/22/2000 fix from Inprise tree, 
+#define V4_THREADING			/* RFM: 9/22/2000 fix from Inprise tree,
 								   Inprise bug 114840 */
 #endif
 
@@ -195,12 +198,6 @@ static CONST SCHAR *FAR_VARIABLE CONST messages[] = {
 #include "gen/msgs.h"
 	0							/* Null entry to terminate list */
 };
-
-#ifdef IMP
-typedef unsigned int mode_t;
-typedef int pid_t;
-#endif
-
 
 #ifdef M88K
 #define GETTIMEOFDAY(time,tz)	gettimeofday (time)

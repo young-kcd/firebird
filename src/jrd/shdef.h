@@ -19,24 +19,20 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #ifndef _JRD_SHDEF_H_
 #define _JRD_SHDEF_H_
 
 #include "../jrd/ib_stdio.h"
-#ifndef IMP
 #include <sys/times.h>
-#endif
 #include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef IMP
-typedef int pid_t;
-typedef unsigned int mode_t;
 #endif
 
 #define setjmp		(*_libgds_setjmp)
@@ -117,11 +113,7 @@ extern IB_FILE _iob[];
 extern int abort();
 extern void *memset();
 extern pid_t getpid();
-#ifndef IMP
 extern void *memcpy();
-#else
-extern SCHAR *memcpy();
-#endif
 extern int shmdt();
 extern int memcmp();
 extern int ib_fprintf();

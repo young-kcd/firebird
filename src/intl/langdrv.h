@@ -17,6 +17,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 #ifndef _INTL_LANGDRV_H_
@@ -52,9 +53,6 @@
 #define NON_DLINK_OS
 #endif
 #ifdef NXT
-#define NON_DLINK_OS
-#endif
-#ifdef IMP
 #define NON_DLINK_OS
 #endif
 #ifndef SGI

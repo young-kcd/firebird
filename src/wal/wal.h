@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -33,9 +34,6 @@
 #include <fcntl.h>
 #define FCNTL_INCLUDED
 #endif
-#endif
-#ifdef IMP
-#include <sys/types.h>
 #endif
 #include "../jrd/common.h"
 #include "../jrd/misc.h"

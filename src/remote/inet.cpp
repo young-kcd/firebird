@@ -24,10 +24,11 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 /*
-$Id: inet.cpp,v 1.7 2002-02-16 02:49:56 seanleyne Exp $
+$Id: inet.cpp,v 1.8 2002-02-16 03:27:32 seanleyne Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -117,10 +118,6 @@ NETDB_DEFINE_CONTEXT
 #include "../jrd/sch_proto.h"
 #endif /* REQUESTER */
 
-#ifdef IMP
-int h_errno;					/* In Other platforms one of the system header files declares this */
-#endif
-
 #if (defined hpux || defined SCO_UNIX || defined mips)
 extern int h_errno;
 #endif
@@ -185,9 +182,7 @@ typedef int socklen_t;
 #endif
 
 #ifdef SYSV_SIGNALS
-#ifndef IMP
 #define NO_ITIMER
-#endif
 #endif
 
 #ifndef SYS_ERR

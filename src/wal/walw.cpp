@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -59,10 +60,8 @@
 #if !(defined WIN_NT)
 #ifndef VMS
 #include <sys/types.h>
-#ifndef IMP
 #ifndef NETWARE_386
 #include <sys/file.h>
-#endif
 #endif
 #else
 #include <types.h>
@@ -72,12 +71,10 @@
 #include <signal.h>
 #endif
 
-#ifdef IMP
-#include <unistd.h>
-#endif
 #ifdef sparc
 #include <unistd.h>
 #endif
+
 #ifdef UNIX
 #include <sys/stat.h>
 #endif
@@ -344,7 +341,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
- *	W A L W _ w r i t e r 
+ *	W A L W _ w r i t e r
  *
  **************************************
  *
@@ -352,11 +349,11 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
  *	This is the main processing routine for the WAL writer.
  *	This routine simply waits on its semaphore in a loop.  If
  *	the semaphore is poked, or an alarm expires, it wakes up,
- *	looks for buffers to be written to the log file, writes 
- *	them, and wakes up everyone waiting for a free buffer 
+ *	looks for buffers to be written to the log file, writes
+ *	them, and wakes up everyone waiting for a free buffer
  *	before going back to sleep.
  *
- *	In addition to writing WAL buffers to log files, it also 
+ *	In addition to writing WAL buffers to log files, it also
  *	takes care of such functions as checkpointing, rollover,
  *	enabling and disabling journalling and WAL shutdown.
  *
@@ -493,7 +490,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 		rollover_required = WAL_segment->wals_flags & WALS_ROLLOVER_REQUIRED;
 
 		if (!buffer_full && !journal_enable_or_disable && !rollover_required) {
-			/* Nothing to do.  Prepare to wait for a timeout or a wakeup 
+			/* Nothing to do.  Prepare to wait for a timeout or a wakeup
 			   from somebody else. */
 
 			ptr = &WAL_EVENTS[WAL_WRITER_WORK_SEM];
@@ -514,7 +511,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 
 			prepare_wal_block(WAL_segment, wblk);
 
-			/* Do the write after releasing the shared segment so that 
+			/* Do the write after releasing the shared segment so that
 			   other concurrent activities may go on in the meantime. */
 
 			WALC_release(WAL_handle);
@@ -535,7 +532,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 			release_wal_block(WAL_segment, wblk);
 
 			/* If the WAL segment needs to be expanded and can be expanded
-			   try to do it now because no WAL I/O is in progress and we 
+			   try to do it now because no WAL I/O is in progress and we
 			   can move things around. */
 
 			if (!(WAL_segment->wals_flags2 & WALS2_CANT_EXPAND) &&
@@ -573,7 +570,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 			   same thread.  discard_prev_log() may open the current log file to
 			   check its header for previously linked log files.  That would change
 			   the file pointer to WALFH_LENGTH (2048) causing us to loose log records
-			   in the current log file unless we do reseeking. This action won't 
+			   in the current log file unless we do reseeking. This action won't
 			   hurt on other platforms. */
 			lseek(LOG_FD, WAL_segment->wals_flushed_offset, SEEK_SET);
 #endif
@@ -582,7 +579,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 		}
 
 		/* If it is time to rollover to the next log file then do it.  But
-		   make sure that the last rollover information, if any, has 
+		   make sure that the last rollover information, if any, has
 		   already been recorded. */
 
 		if (rollover_required) {
@@ -593,7 +590,7 @@ SSHORT WALW_writer(STATUS * status_vector, WAL WAL_handle)
 			ISC_event_clear(WAL_EVENTS + WAL_WRITER_WORK_DONE_SEM);
 		}
 
-		/* If journalling has been enabled or disabled, take care of that 
+		/* If journalling has been enabled or disabled, take care of that
 		   situation now. */
 
 		if (journal_enable_or_disable) {
@@ -732,7 +729,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
  * Functional description
  *	From the starting_logname backwards, excluding the starting
  *	one, mark all the log files as NOT needed for short-term
- *	recovery.  Delete those files if appropriate AND/OR if 
+ *	recovery.  Delete those files if appropriate AND/OR if
  *	delete_flag is TRUE.
  *
  *	If there is any error, return FAILURE else return SUCCESS.
@@ -811,7 +808,7 @@ SLONG starting_log_partition_offset, SSHORT delete_flag)
 				}
 			}
 			else {
-				/* Just update the header flag stating that we don't need this 
+				/* Just update the header flag stating that we don't need this
 				   file for short-term recovery. */
 				WALF_set_log_header_flag(status_vector, dbname, log_name,
 										 log_partition_offset,
@@ -867,7 +864,7 @@ static SSHORT flush_all_buffers( STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
- *	f l u s h _ a l l _ b u f f e r s 
+ *	f l u s h _ a l l _ b u f f e r s
  *
  **************************************
  *
@@ -875,7 +872,7 @@ static SSHORT flush_all_buffers( STATUS * status_vector, WAL WAL_handle)
  *	Flush all the non-empty buffer blocks to the current
  *	log file.  We need not worry about rollover because we
  *	have already given its log file sequence number for
- *	the records in those buffers. 
+ *	the records in those buffers.
  *
  **************************************/
 	WALS WAL_segment;
@@ -912,7 +909,7 @@ static SSHORT flush_all_buffers( STATUS * status_vector, WAL WAL_handle)
 		bufnum = (bufnum + 1) % maxbufs;
 	} while (bufnum != lastbuf);
 
-/* Since all the log buffers are flushed and empty now, we can start 
+/* Since all the log buffers are flushed and empty now, we can start
    fresh. */
 
 	WAL_segment->wals_last_flushed_buf = -1;
@@ -1012,7 +1009,7 @@ SLONG * new_offset, SLONG * log_type)
 {
 /**************************************
  *
- *	g e t _ n e x t _ l o g n a m e 
+ *	g e t _ n e x t _ l o g n a m e
  *
  **************************************
  *
@@ -1041,12 +1038,12 @@ SLONG * new_offset, SLONG * log_type)
 {
 /**************************************
  *
- *	g e t _ n e x t _ p r e a l l o c _ l o g n a m e 
+ *	g e t _ n e x t _ p r e a l l o c _ l o g n a m e
  *
  **************************************
  *
  * Functional description
- *	Get the name of the next usable log file from the list of 
+ *	Get the name of the next usable log file from the list of
  *	the preallocated log files.  If preallocated files are not
  *	available, try an overflow log file.
  *
@@ -1109,7 +1106,7 @@ SLONG * new_offset, SLONG * log_type)
 {
 /**************************************
  *
- *	g e t _ n e x t _ s e r i a l _ l o g n a m e 
+ *	g e t _ n e x t _ s e r i a l _ l o g n a m e
  *
  **************************************
  *
@@ -1186,7 +1183,7 @@ SLONG * new_offset, SLONG * log_type)
 	}
 
 #ifdef UNIX
-/* WAL writer would typically be running as root.  So give the 
+/* WAL writer would typically be running as root.  So give the
    ownership of the new log file to the database owner. */
 	if (chown(new_logname, WAL_segment->wals_owner_id,
 			  WAL_segment->wals_group_id) == -1) {
@@ -1276,7 +1273,7 @@ SLONG * new_offset, SLONG * log_type)
 {
 /**************************************
  *
- *	g e t _ o v e r f l o w _ l o g n a m e 
+ *	g e t _ o v e r f l o w _ l o g n a m e
  *
  **************************************
  *
@@ -1312,7 +1309,7 @@ SLONG * new_offset, SLONG * log_type)
 		*log_type = *log_type | WALFH_OVERFLOW;
 
 #ifdef UNIX
-		/* WAL writer would typically be running as root.  So give the 
+		/* WAL writer would typically be running as root.  So give the
 		   ownership of the new log file to the database owner. */
 		if (chown(new_logname, WAL_segment->wals_owner_id,
 				  WAL_segment->wals_group_id) == -1) {
@@ -1362,9 +1359,9 @@ static SSHORT increase_buffers(
  *
  * Functional description
  *	This function would try to increase the number of buffers in
- *	the shared WAL segment by the given number of buffers.  May 
+ *	the shared WAL segment by the given number of buffers.  May
  *	involve remapping (or reallocating) the WAL segment.
- *	Used for performance tuning.   Assumes that acquire() has been 
+ *	Used for performance tuning.   Assumes that acquire() has been
  *	done before calling this routine.
  *
  **************************************/
@@ -1539,15 +1536,15 @@ static void journal_disable(
 {
 /**************************************
  *
- *	j o u r n a l _ d i s a b l e 
+ *	j o u r n a l _ d i s a b l e
  *
  **************************************
  *
  * Functional description
- *	Disconnects from the journal server after rolling over to a new 
- *	log file so that the current log file does not get deleted by 
+ *	Disconnects from the journal server after rolling over to a new
+ *	log file so that the current log file does not get deleted by
  *	the journal server and the user can at least recover upto journal
- *	disable point. 
+ *	disable point.
  *
  **************************************/
 	WALS WAL_segment;
@@ -1571,7 +1568,7 @@ static SSHORT journal_enable( STATUS * status_vector, WAL WAL_handle)
 {
 /**************************************
  *
- *	j o u r n a l _ e n a b l e 
+ *	j o u r n a l _ e n a b l e
  *
  **************************************
  *
@@ -1646,7 +1643,7 @@ static void prepare_wal_block( WALS WAL_segment, WALBLK * wblk)
 
 	len = (USHORT) wblk->walblk_roundup_offset;	/* Already includes the block trailing bytes */
 
-/* The following way of initializing and then copying the header to 
+/* The following way of initializing and then copying the header to
    walblk_buf is used to avoid datatype misalignment problem on some machines. */
 
 	header.walblk_hdr_blklen = len;
@@ -1671,7 +1668,7 @@ static void release_wal_block( WALS WAL_segment, WALBLK * wblk)
  **************************************
  *
  * Functional description
- *	A block has just been written to disk.  Update statistics and 
+ *	A block has just been written to disk.  Update statistics and
  *	make this block available to other users.
  *
  **************************************/
@@ -1782,9 +1779,9 @@ static SSHORT rollover_log(
  **************************************
  *
  * Functional description
- *	The current log file has reached its limit length.  So move on 
+ *	The current log file has reached its limit length.  So move on
  *	to the next one.  Update WAL_segment and log_header.  WAL_segment
- *	is assumed to have already been acquired. 
+ *	is assumed to have already been acquired.
  *
  **************************************/
 	WALFH new_log_header;
@@ -1842,7 +1839,7 @@ static SSHORT rollover_log(
 		log_header->walfh_next_log_partition_offset =
 			new_log_partition_offset;
 
-		/* The previous log name of the current log file may happen to be the 
+		/* The previous log name of the current log file may happen to be the
 		   new_logname if there are 2 round-robin log files and we are re-using
 		   the new_logname.  The same could happen even if we have one partitioned
 		   log file with only 2 partitions.  In those cases, make the prev_logname
@@ -1859,9 +1856,9 @@ static SSHORT rollover_log(
 		log_header->walfh_hibsn = WAL_segment->wals_blkseqno - 1;
 		close_log(status_vector, WAL_handle, saved_logname, log_header, TRUE);
 
-		/* This is a good place to inform the long term journal server 
+		/* This is a good place to inform the long term journal server
 		   that we have rolled over to a new log file.  Note that the close
-		   info of the previous log file has already been sent during 
+		   info of the previous log file has already been sent during
 		   close_log() call made above. */
 
 		if (JOURNAL_HANDLE && !(LOCAL_FLAGS & WALW_DISABLING_JRN)) {
@@ -1914,17 +1911,17 @@ static void setup_for_checkpoint( WALS WAL_segment)
 {
 /**************************************
  *
- *	s e t u p _ f o r _ c h e c k p o i n t 
+ *	s e t u p _ f o r _ c h e c k p o i n t
  *
  **************************************
  *
  * Functional description
- *	Inform the Asynchronous Buffer writer that it is time to 
- *	start checkpointing.   Assumes that acquire() has 
+ *	Inform the Asynchronous Buffer writer that it is time to
+ *	start checkpointing.   Assumes that acquire() has
  *	been done before calling this routine.
  ***************************************/
 
-/* AB writer checks this condition by calling WAL_start_checkpoiting() 
+/* AB writer checks this condition by calling WAL_start_checkpoiting()
    in its main loop. */
 
 	WAL_segment->wals_flags |= WALS_CKPT_START;
@@ -1944,12 +1941,12 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 {
 /**************************************
  *
- *	s e t u p _ l o g 
+ *	s e t u p _ l o g
  *
  **************************************
  *
  * Functional description
- *	Initialize the log file header information and 
+ *	Initialize the log file header information and
  *	the corresponding WAL_segment information.
  *	Returns SUCCESS or an errno.
  *
@@ -1966,7 +1963,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 								log_header, rollover, prev_logname,
 								prev_log_partition_offset, &takeover);
 	if (ret == SUCCESS) {
-		/* Now updates the appropriate fields of WAL_segment from the given 
+		/* Now updates the appropriate fields of WAL_segment from the given
 		   log_header.  */
 
 		strcpy(WAL_segment->wals_logname, logname);
@@ -1974,7 +1971,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 			log_header->walfh_log_partition_offset;
 		if (!takeover) {
 			/* If a new WAL writer is taking over, we don't want to change the
-			   wals_buf_offset etc. which might reflect the uptodate WAL buffer 
+			   wals_buf_offset etc. which might reflect the uptodate WAL buffer
 			   position. */
 
 			WAL_segment->wals_log_seqno = log_header->walfh_seqno;
@@ -1985,7 +1982,7 @@ SSHORT rollover, SCHAR * prev_logname, SLONG prev_log_partition_offset)
 		}
 
 		if (WAL_segment->wals_max_logfiles > 0) {
-			/* Get the index of this logfile in the list of pre-allocated 
+			/* Get the index of this logfile in the list of pre-allocated
 			   log files. */
 
 			WAL_segment->wals_cur_logfile =
@@ -2036,18 +2033,18 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
  **************************************
  *
  * Functional description
- *	Open a given log file. 
+ *	Open a given log file.
  *	Initialize the log file header information.
  *	If 'rollover' flag is TRUE, then we are going to open a new log
- *	file.  So use the 'prev_logname' as the previous log file 
+ *	file.  So use the 'prev_logname' as the previous log file
  *	name for the new log file.
  *	If we are opening an existing log file and it has a 'next' log
  *	file, then open the 'next' log file automatically using a recursive
- *	call.  
- *   
+ *	call.
+ *
  *	If we determine that this is a takeover situation, set the takeover
  *	parameter to TRUE.
- *   
+ *
  *	Returns SUCCESS or FAILURE.
  *
  **************************************/
@@ -2067,7 +2064,7 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 	*takeover = FALSE;
 
 	if (!rollover) {
-		/* Try to read the logfile header and take appropriate steps 
+		/* Try to read the logfile header and take appropriate steps
 		   afterwards. */
 
 		if (LLIO_read(status_vector, log_fd, logname,
@@ -2158,9 +2155,9 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 			}
 		}
 		else {
-			/* This situation should not arise.   Before this, a recovery should 
+			/* This situation should not arise.   Before this, a recovery should
 			   have taken place.  However, a graceful way of handling it
-			   could be to scan the log and position at the end of the last 
+			   could be to scan the log and position at the end of the last
 			   'valid looking' block. */
 
 			LLIO_close(0, log_fd);
@@ -2177,10 +2174,10 @@ SCHAR * prev_logname, SLONG prev_log_partition_offset, SSHORT * takeover)
 		log_header->walfh_next_logname = NULL;
 		WALF_upd_log_hdr_frm_walfh_data(log_header, log_header->walfh_data);
 
-		/* In this case, walfh_next_logname should be empty.  But there is 
+		/* In this case, walfh_next_logname should be empty.  But there is
 		   a small window wherein the rollover to a new logfile occurred but
-		   that fact was not recorded at higher level (in database header page). 
-		   In that case,  walfh_next_logname would not be empty and it would be 
+		   that fact was not recorded at higher level (in database header page).
+		   In that case,  walfh_next_logname would not be empty and it would be
 		   reasonable for us to open and use the next log file. */
 
 		if (strlen(log_header->walfh_next_logname) != 0) {
@@ -2232,7 +2229,7 @@ static SSHORT write_log_header_and_reposition(
 				   (UCHAR *) log_header, WALFH_LENGTH, 0))
 		return FAILURE;
 
-/* Let's write an invalid block header at the end so that even if we 
+/* Let's write an invalid block header at the end so that even if we
    are reusing an old log file, we don't use its old data */
 
 	if (LLIO_write(status_vector, log_fd, logname,
@@ -2259,7 +2256,7 @@ static SSHORT write_wal_block(
  **************************************
  *
  * Functional description
- *	Writes the prepared wal buffer to WAL file. 
+ *	Writes the prepared wal buffer to WAL file.
  *
  **************************************/
 

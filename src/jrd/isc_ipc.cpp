@@ -21,12 +21,13 @@
  * Contributor(s): ______________________________________.
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  *
- * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.8 2002-02-16 03:05:17 seanleyne Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.9 2002-02-16 03:27:32 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -165,12 +166,6 @@ static int process_id = 0;
 #endif
 
 #define LOCAL_SEMAPHORES 4
-
-#ifdef IMP
-typedef int pid_t;
-
-#define SHMEM_DELTA	(1 << 25)
-#endif
 
 #ifdef SYSV_SIGNALS
 #define SIGVEC		FPTR_INT

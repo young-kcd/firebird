@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #include "firebird.h"
@@ -34,12 +37,6 @@
 
 #define LOCAL_SHLIB_DEFS
 #include "../jrd/common.h"
-
-#ifdef IMP
-typedef int pid_t;
-typedef unsigned int mode_t;
-typedef SLONG clock_t;
-#endif
 
 
 extern "C" {
@@ -59,11 +56,7 @@ IB_FILE(*_libgds__iob) = 0;
 int (*_libgds_abort) () = 0;
 void *(*_libgds_memset) () = 0;
 pid_t(*_libgds_getpid) () = 0;
-#ifndef IMP
 void *(*_libgds_memcpy) () = 0;
-#else
-SCHAR *(*_libgds_memcpy) () = 0;
-#endif
 int (*_libgds_shmdt) () = 0;
 int (*_libgds_memcmp) () = 0;
 int (*_libgds_fprintf) () = 0;
@@ -126,11 +119,7 @@ int (*_libgds_write) () = 0;
 mode_t(*_libgds_umask) () = 0;
 int (*_libgds_lockf) () = 0;
 int (*_libgds_shmget) () = 0;
-#ifndef IMP
 void *(*_libgds_shmat) () = 0;
-#else
-SCHAR *(*_libgds_shmat) () = 0;
-#endif
 int (*_libgds_shmctl) () = 0;
 key_t(*_libgds_ftok) () = 0;
 int (*_libgds_close) () = 0;
@@ -210,11 +199,6 @@ SCHAR **(*_libgds_environ) () = 0;
 IB_FILE *(*_libgds_fdopen) () = 0;
 int (*_libgds_dup) () = 0;
 int (*_libgds_execle) () = 0;
-#ifdef IMP
-bool_t(*_libgds_xdr_float) () = 0;
-bool_t(*_libgds_xdr_double) () = 0;
-int (*_libgds_sbrk) () = 0;
-#endif
 #ifdef SCO
 bool_t(*_libgds_xdr_float) () = 0;
 bool_t(*_libgds_xdr_double) () = 0;
@@ -224,11 +208,7 @@ SCHAR *(*_libgds_strrchr) () = 0;
 #ifndef SCO
 int (*_libgds_fsync) () = 0;
 #endif
-#ifdef IMP
-int (*_libgds_wait) () = 0;
-#else
 int (*_libgds_waitpid) () = 0;
-#endif
 void (*_libgds__exit) () = 0;
 #ifdef SCO
 IB_FILE *(*_libgds_popen) () = 0;
@@ -241,9 +221,7 @@ int (*_libgds_atol) () = 0;
 int (*_libgds_execvp) () = 0;
 int (*_libgds_nice) () = 0;
 int (*_libgds_putenv) () = 0;
-#ifndef IMP
 int (*_libgds_xdr_free) () = 0;
-#endif
 int (*_libgds_xdr_wrapstring) () = 0;
 int (*_libgds_vsprintf) () = 0;
 int (*_libgds_h_errno) = 0;
@@ -255,15 +233,9 @@ int (*_libgds_access) () = 0;
 #ifdef SCO
 int (*_libgds_fsync) () = 0;
 #endif
-#ifndef IMP
 int (*_libgds_sigsuspend) () = 0;
 int (*_libgds_sigprocmask) () = 0;
 int (*_libgds_sigaddset) () = 0;
-#else
-int (*_libgds_sigblock) () = 0;
-int (*_libgds_sigsetmask) () = 0;
-int (*_libgds_sigpause) () = 0;
-#endif
 
 /* WARNING: The definition and initialization of new imported symbol pointers
             should be added at the end of the list ABOVE.  At the same time,
@@ -274,9 +246,6 @@ int (*_libgds_sigpause) () = 0;
             modify it accordingly.  All new InterBase global data must be
             added at the end of the list BELOW. */
 
-#ifdef IMP
-int _libgds_padding[465] = 0;
-#endif
 #ifdef SCO
 int _libgds_padding[466] = { 0 };
 #endif
@@ -293,16 +262,5 @@ int		DSQL_yychar = 0;
 int*	DSQL_hash_table = 0;
 void*	gdbb = 0;
 int*	internal_db_handles = 0;
-
-#ifdef IMP
-/****    
-     NOTE: The following variable was added because of an incompatibility 
- 	   problem between the mkshlib and link utility in IMP. This is a
-	   workaround and should be eliminated whenever IMP fixes the bug in
-	   their utilities.
-****/
-char __StRet[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-#endif
-
 
 }	// extern "C"

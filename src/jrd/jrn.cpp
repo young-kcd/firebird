@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
+ *
  */
 
 #ifdef SHLIB_DEFS
@@ -119,11 +122,7 @@ extern int send();
 extern int socket();
 extern int recv();
 extern uint sleep();
-#ifndef IMP
 extern void *memcpy();
-#else
-extern SCHAR *memcpy();
-#endif
 #endif
 
 

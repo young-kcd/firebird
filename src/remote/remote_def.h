@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -59,10 +60,6 @@
 #else
 #define ARCHITECTURE		arch_hpux
 #endif
-#endif
-
-#ifdef IMP
-#define ARCHITECTURE		arch_imp
 #endif
 
 #ifdef M88K

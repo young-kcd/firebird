@@ -22,6 +22,7 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "DELTA" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  *
  */
 
@@ -163,10 +164,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef AIX_PPC
 #define CLASS		10
-#endif
-
-#ifdef IMP
-#define CLASS		2
 #endif
 
 #ifdef M88K
