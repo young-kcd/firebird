@@ -4649,9 +4649,9 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 #endif
 
 #ifdef WIN_NT
-	SCHAR* thread = NULL; // silence non initialized warning
+	void* thread = NULL; // silence non initialized warning
 	if (!((SLONG) flags & SRVR_non_service))
-		thread = reinterpret_cast<SCHAR*>(CNTL_insert_thread());
+		thread = CNTL_insert_thread();
 #endif
 
 	USHORT inactive_count = 0;
