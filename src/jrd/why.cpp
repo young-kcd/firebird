@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.75 2004-06-04 14:36:45 kkuznetsov Exp $
+$Id: why.cpp,v 1.76 2004-06-07 06:50:38 kkuznetsov Exp $
 */
 
 #include "firebird.h"
@@ -4176,7 +4176,7 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
 extern "C" 
 #endif
 
-SLONG ISC_EXPORT isc_reset_fpe(USHORT fpe_status)
+SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
 {
 /**************************************
  *

@@ -1956,6 +1956,10 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 	return TRUE;
 }
 
+#if (defined SOLARIS ) || (defined __cplusplus) 
+} //extern "C" {
+#endif
+
 
 #ifdef VMS
 static display(ISC_QUAD* blob_id, void* database, void* transaction)
@@ -2006,9 +2010,6 @@ static display(ISC_QUAD* blob_id, void* database, void* transaction)
 }
 #endif /* VMS */
 
-#if (defined SOLARIS ) || (defined __cplusplus) 
-} //extern "C" {
-#endif
 
 
 static int dump(ISC_QUAD* blob_id,
