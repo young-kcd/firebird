@@ -203,7 +203,7 @@
 				RelativePath="..\..\..\src\jrd\isc_win32.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thd_win32.cpp">
+				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 		</Filter>
 		<Filter

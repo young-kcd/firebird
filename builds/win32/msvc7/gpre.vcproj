@@ -204,6 +204,15 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\gpre\ftn.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\gpre.cpp">
 			</File>
 			<File
@@ -229,6 +238,15 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\par.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\pas.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\pat.cpp">
