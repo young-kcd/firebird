@@ -58,8 +58,8 @@
 
 #define USERNAME_LENGTH		31	/* Bytes */
 
-const int MAX_SQL_IDENTIFIER_SIZE = 32;
-const int MAX_SQL_IDENTIFIER_LEN = 31;
+const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
+const size_t MAX_SQL_IDENTIFIER_LEN = 31;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
 /* literal strings in rdb$ref_constraints to be used to identify

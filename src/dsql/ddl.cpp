@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.87 2004-02-02 11:01:00 robocop Exp $
+ * $Id: ddl.cpp,v 1.88 2004-02-13 11:15:49 aafemt Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -5873,7 +5873,7 @@ static void stuff_default_blr(	dsql_req*		request,
  *********************************************/
 	fb_assert((*default_buff == blr_version4) || (*default_buff == blr_version5));
 
-	unsigned int i;
+	USHORT i;
 
 	for (i = 1; i < buff_size - 1; ++i)
 	{
