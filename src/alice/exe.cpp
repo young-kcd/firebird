@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exe.cpp,v 1.32 2004-05-02 23:03:22 skidder Exp $
+//	$Id: exe.cpp,v 1.33 2004-05-19 18:04:41 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -84,7 +84,7 @@ static inline void stuff_dpb_long(UCHAR** d, int blr)
 int EXE_action(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = ALICE_get_thread_data;
 
 	ALLA_init();
 
@@ -143,7 +143,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
 	UCHAR dpb[128];
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = ALICE_get_thread_data;
 
 	ALLA_init();
 
@@ -188,7 +188,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 
 static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 {
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = ALICE_get_thread_data;
 
 	UCHAR* dpb2 = dpb;
 	*dpb2++ = isc_dpb_version1;
@@ -373,7 +373,7 @@ static USHORT build_dpb(UCHAR* dpb, const ULONG switches)
 
 static void extract_db_info(const UCHAR* db_info_buffer)
 {
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = ALICE_get_thread_data;
 
 	const UCHAR* p = db_info_buffer;
 

@@ -886,22 +886,19 @@ typedef struct tgbl
 // in other modules.
 void	BURP_exit_local(int code, tgbl* tdgbl);
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
-#endif
 
 #ifdef SUPERSERVER
-#define GET_THREAD_DATA			((TGBL) THD_get_specific())
-#define SET_THREAD_DATA		 THD_put_specific ((THDD) tdgbl); \
+#define BURP_get_thread_data			((TGBL) THD_get_specific())
+#define BURP_set_thread_data		 THD_put_specific ((THDD) tdgbl); \
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#define RESTORE_THREAD_DATA	 THD_restore_specific();
+#define BURP_restore_thread_data	 THD_restore_specific();
 #else
 extern tgbl* gdgbl;
 
-#define GET_THREAD_DATA			(gdgbl)
-#define SET_THREAD_DATA		 gdgbl = const_cast<tgbl*>(tdgbl); \
+#define BURP_get_thread_data			(gdgbl)
+#define BURP_set_thread_data		 gdgbl = const_cast<tgbl*>(tdgbl); \
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#define RESTORE_THREAD_DATA	 
+#define BURP_restore_thread_data	 
 
 #endif
 

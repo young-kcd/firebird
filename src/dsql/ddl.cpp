@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.101 2004-05-17 22:26:43 brodsom Exp $
+ * $Id: ddl.cpp,v 1.102 2004-05-19 18:06:44 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -263,7 +263,7 @@ void DDL_execute(dsql_req* request)
  *	metadata updates.
  *
  **************************************/
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 4) {
@@ -2227,7 +2227,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
  *	Create DYN to store a procedure
  *
  **************************************/
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	SSHORT inputs  = 0, defaults = 0;
 	SSHORT outputs = 0;
@@ -2496,7 +2496,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	SSHORT inputs = 0, outputs = 0, locals = 0;
 	request->req_blk_node = node;
 	
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 	
 	dsql_nod* parameters;
 
@@ -2856,7 +2856,7 @@ static void define_shadow(dsql_req* request)
 //
 static void define_trigger( dsql_req* request, dsql_nod* node)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	// make the "define trigger" node the current request ddl node so
 	// that generating of BLR will be appropriate for trigger
@@ -3761,7 +3761,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
  *	Create the ddl to define a trigger for a VIEW WITH CHECK OPTION.
  *
  **************************************/
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
@@ -5159,7 +5159,7 @@ static void modify_relation( dsql_req* request)
  *	global fields for the local fields.
  *
  **************************************/
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
@@ -5773,7 +5773,7 @@ static void save_field(dsql_req* request, const TEXT* field_name)
  *
  **************************************/
 
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_rel* relation = request->req_relation;
 	if (!relation) {
@@ -5803,7 +5803,7 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
  *
  **************************************/
 
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	if (request->req_flags & REQ_save_metadata) {
 		return;

@@ -357,7 +357,7 @@ static int api_gbak(int argc,
  **********************************************/
 	tgbl ldgbl;
 	tgbl* tdgbl = &ldgbl;
-	SET_THREAD_DATA;
+	BURP_set_thread_data;
 	memset((void *) tdgbl, 0, sizeof(tgbl));
 	tdgbl->output_proc = output_main;
 
@@ -572,7 +572,7 @@ int common_main(int		argc,
   	JMP_BUF					env;
 
 // TMN: This variable should probably be removed, but I left it in 
-// in case some platform should redefine the BURP SET_THREAD_DATA. 
+// in case some platform should redefine the BURP BURP_set_thread_data. 
 //tgbl	thd_context;
 
 	gbak_action action = QUIT;
@@ -585,7 +585,7 @@ int common_main(int		argc,
 		return FINI_ERROR;
 	}
 
-	SET_THREAD_DATA;
+	BURP_set_thread_data;
 	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdgbl, 0, sizeof(tgbl));
 	tdgbl->burp_env = reinterpret_cast<UCHAR*>(env);
@@ -1196,7 +1196,7 @@ int common_main(int		argc,
 			gds__free(mem);
 		}
 
-		RESTORE_THREAD_DATA;
+		BURP_restore_thread_data;
 		if (tdgbl != NULL) {
 			gds__free(tdgbl);
 		}
@@ -1224,7 +1224,7 @@ void BURP_abort(void)
  *	Abandon a failed operation.
  *
  **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = BURP_get_thread_data;
 
 	BURP_print(83, 0, 0, 0, 0, 0);
 	// msg 83 Exiting before completion due to errors 
@@ -1256,7 +1256,7 @@ void BURP_error(USHORT errcode, bool abort,
  *
  **************************************/
 #ifdef SUPERSERVER
-	TGBL tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = BURP_get_thread_data;
 
 	ISC_STATUS *status = tdgbl->service_blk->svc_status;
 
@@ -1476,7 +1476,7 @@ void BURP_print_status(const ISC_STATUS* status_vector)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		TGBL tdgbl = GET_THREAD_DATA;
+		TGBL tdgbl = BURP_get_thread_data;
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 		    int i = 0;
@@ -1555,7 +1555,7 @@ void BURP_verbose(USHORT number,
  *	user defined yieding function.
  *
  **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = BURP_get_thread_data;
 
 	if (tdgbl->gbl_sw_verbose)
 		BURP_print(number, arg1, arg2, arg3, arg4, arg5);
@@ -1655,7 +1655,7 @@ static gbak_action open_files(const TEXT* file1,
  *	and db handle.
  *
  **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = BURP_get_thread_data;
 	ISC_STATUS* status_vector = tdgbl->status;
 
 // try to attach the database using the first file_name 
@@ -2054,7 +2054,7 @@ static void burp_output( const SCHAR* format, ...)
 	UCHAR buf[1000];
 	int exit_code;
 
-	TGBL tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = BURP_get_thread_data;
 
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code =

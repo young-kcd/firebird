@@ -512,11 +512,12 @@ typedef struct trdb
 } *TRDB;
 
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
-#endif
-
-#define GET_THREAD_DATA		((TRDB) THD_get_specific())
+#define REM_get_thread_data		((TRDB) THD_get_specific())
+#define REM_set_thread_data		trdb = &thd_context;\
+				trdb->trdb_status_vector = NULL;\
+				THD_put_specific ((THDD) trdb);\
+				trdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB
+#define REM_restore_thread_data	THD_restore_specific()
 
 /* Queuing structure for Client batch fetches */
 

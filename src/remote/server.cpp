@@ -63,12 +63,6 @@
 #endif
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 
-#define SET_THREAD_DATA		trdb = &thd_context;\
-				trdb->trdb_status_vector = NULL;\
-				THD_put_specific ((THDD) trdb);\
-				trdb->trdb_thd_data.thdd_type = THDD_TYPE_TRDB
-#define RESTORE_THREAD_DATA	THD_restore_specific()
-
 /** CHECK_HANDLE checks -
     if the id passwd is within the vector bounds,
     that the port_object corresponding to the id is not null,
@@ -279,7 +273,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 	THREAD_ENTER();
 
-	SET_THREAD_DATA;
+	REM_set_thread_data;
 	trdb->trdb_status_vector = status_vector;
 
 	try {
@@ -354,7 +348,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			{
 				gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 				THREAD_EXIT();
-				RESTORE_THREAD_DATA;
+				REM_restore_thread_data;
 				return;
 			}
 
@@ -535,14 +529,14 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		 */
 		gds__log("SRVR_multi_thread: error during startup, shutting down");
 
-		RESTORE_THREAD_DATA;
+		REM_restore_thread_data;
 		THREAD_EXIT();
 		return;
 	}
 
 
 /* Why isn't this inside the #endif above? */
-	RESTORE_THREAD_DATA;
+	REM_restore_thread_data;
 #endif
 }
 

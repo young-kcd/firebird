@@ -1222,7 +1222,7 @@ static int index_block_flush(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	Lock* lock = index_block->idb_lock;
 
@@ -1249,7 +1249,7 @@ static int index_block_flush(void* ast_object)
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 
 	return 0;
 }

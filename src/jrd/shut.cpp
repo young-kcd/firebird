@@ -138,7 +138,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
  *	Schedule database for shutdown
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
@@ -307,7 +307,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 /* Only platform's user locksmith can shutdown or bring online
@@ -396,7 +396,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 
 static bool bad_mode(bool ignore) {
 	if (!ignore) {
-		thread_db* tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = JRD_get_thread_data;
 		
 		ISC_STATUS* status = tdbb->tdbb_status_vector;
 		*status++ = isc_arg_gds;
@@ -426,7 +426,7 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	shutdown_data data;
 
 	data.data_items.flag = flag;
@@ -465,7 +465,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
  *	locks if database is quiet.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 /* Mark database and all active attachments as shutdown. */
 

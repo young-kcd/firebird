@@ -72,7 +72,7 @@ static void post_error( ISC_STATUS status, ...)
 	ISC_STATUS *v, *v_end, *temp;
 	ISC_STATUS_ARRAY temp_status;
 
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 /* copy into a temporary array any other arguments which may 
  * have been handed to us, then post the error.

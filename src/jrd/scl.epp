@@ -142,7 +142,7 @@ void SCL_check_access(const SecurityClass* s_class,
  *	object in question.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
 	{
@@ -344,7 +344,7 @@ void SCL_check_procedure(const dsc* dsc_name, USHORT mask)
  **************************************/
 	SqlIdentifier name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 
@@ -401,7 +401,7 @@ void SCL_check_relation(const dsc* dsc_name, USHORT mask)
  **************************************/
 	SqlIdentifier name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 
@@ -456,7 +456,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
  *	class block.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
@@ -521,7 +521,7 @@ int SCL_get_mask(const TEXT* relation_name, const TEXT* field_name)
  *	access for database.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	// Start with database security class
@@ -874,7 +874,7 @@ void SCL_release(SecurityClass* s_class)
  *	Release an unneeded and unloved security class.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	for (SecurityClass** next = &attachment->att_security_classes; *next;
@@ -980,7 +980,7 @@ static bool check_user_group(const UCHAR* acl,
  *  If they don't match, return true.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	SLONG n = 0;

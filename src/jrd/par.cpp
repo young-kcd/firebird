@@ -603,7 +603,7 @@ static void error(CompilerScratch* csb, ...)
 	va_list args;
 
 /* Don't bother to pass tdbb for error handling */
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	VA_START(args, csb);
 
@@ -2995,7 +2995,7 @@ static void warning(CompilerScratch* csb, ...)
 	int type;
 	va_list args;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	VA_START(args, csb);
 

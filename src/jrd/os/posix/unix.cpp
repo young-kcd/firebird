@@ -1022,7 +1022,7 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
-		thread_db* tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = JRD_get_thread_data;
 		
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
 			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code

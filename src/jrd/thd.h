@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.25 2004-05-17 22:27:56 brodsom Exp $
+$Id: thd.h,v 1.26 2004-05-19 18:12:33 brodsom Exp $
 */
 
 #ifndef JRD_THD_H
@@ -119,11 +119,6 @@ struct IB_RTL_CRITICAL_SECTION
 #define THD_COND_STRUCT		SCHAR
 #endif
 
-#ifdef ANY_THREADING
-#define GET_THREAD_DATA		((THDD) THD_get_specific())
-#else
-#define GET_THREAD_DATA		gdbb
-#endif
 
 /* Thread priorities (may be ignored) */
 

@@ -961,7 +961,7 @@ static void dmp_root(const index_root_page* page)
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
 			   page->irt_relation, page->irt_count);
 	const bool ods11plus =
-		(GET_THREAD_DATA->tdbb_database->dbb_ods_version >= ODS_VERSION11);
+		(JRD_get_thread_data->tdbb_database->dbb_ods_version >= ODS_VERSION11);
 	USHORT i = 0;
 	for (const index_root_page::irt_repeat* desc = page->irt_rpt;
 		i < page->irt_count; i++, desc++)
@@ -996,7 +996,7 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
  * Functional description
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	const ULONG transactions_per_tip = dbb->dbb_pcontrol->pgc_tpt;

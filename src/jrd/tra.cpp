@@ -2231,7 +2231,7 @@ static int downgrade_lock(void* transaction_void)
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 /* Ignore the request if the transaction or lock block does not appear
    to be valid or if the lock is not a write lock. */
@@ -2255,7 +2255,7 @@ static int downgrade_lock(void* transaction_void)
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 
 	ISC_ast_exit();
 	return 0;
@@ -2276,7 +2276,7 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	/* set up the lock on the relation/view */
 

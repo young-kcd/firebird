@@ -1361,7 +1361,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			   portion to the current date */
 			{
 				time_t clock;
-				/** Cannot call GET_THREAD_DATA because that macro calls
+				/** Cannot call JRD_get_thread_data because that macro calls
 				BUGCHECK i.e. ERR_bugcheck() which is not part of
 				client library **/
 				thread_db* tdbb = PLATFORM_GET_THREAD_DATA;
@@ -1819,7 +1819,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		date.timestamp_time = 0;
 		break;
 	case dtype_timestamp:
-		/** Cannot call GET_THREAD_DATA because that macro calls 
+		/** Cannot call JRD_get_thread_data because that macro calls 
             BUGCHECK i.e. ERR_bugcheck() which is not part of 
 	    client library **/
 		tdbb = PLATFORM_GET_THREAD_DATA;

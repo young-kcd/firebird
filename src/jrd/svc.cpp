@@ -370,7 +370,7 @@ Service* SVC_attach(USHORT	service_length,
  *
  **************************************/
 /* If the service name begins with a slash, ignore it. */
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	if (*service_name == '/' || *service_name == '\\') {
 		service_name++;
@@ -403,7 +403,7 @@ Service* SVC_attach(USHORT	service_length,
 				 0);
 #endif
 
-	GET_THREAD_DATA;
+	JRD_get_thread_data;
 
 /* If anything goes wrong, we want to be able to free any memory
    that may have been allocated. */
@@ -1780,7 +1780,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	}
 	THD_MUTEX_UNLOCK(thd_mutex);
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	try {
 

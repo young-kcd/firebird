@@ -139,7 +139,7 @@ void DYN_define_cache( Global* gbl, const UCHAR** ptr)
 	jrd_req* request;
 	SSHORT id = -1;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 	request = NULL;
 
@@ -246,7 +246,7 @@ void DYN_define_constraint(Global*		gbl,
 	bool primary_flag = false, foreign_flag = false;
 	UCHAR ri_action = 0;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	constraint_name[0] = 0;
@@ -633,7 +633,7 @@ void DYN_define_dimension(Global*		gbl,
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
@@ -717,7 +717,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	SqlIdentifier exception_name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	exception_name[0] = 0;
@@ -795,7 +795,7 @@ void DYN_define_file(Global*		gbl,
 	USHORT man_auto;
 	SSHORT id;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
@@ -902,7 +902,7 @@ void DYN_define_difference(Global*		gbl,
 	jrd_req* request;
 	SSHORT id = -1;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 	request = NULL;
 
@@ -985,7 +985,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 	SqlIdentifier filter_name;
 	jrd_req* request;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	filter_name[0] = 0;
@@ -1080,7 +1080,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 	SqlIdentifier function_name;
 	jrd_req* request;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	function_name[0] = 0;
@@ -1179,7 +1179,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, TEXT* function_name
 	UCHAR verb;
 	jrd_req* request = NULL;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 	
 	const USHORT major_version  = dbb->dbb_ods_version;
@@ -1304,7 +1304,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request;
@@ -1371,7 +1371,7 @@ void DYN_define_global_field(Global*		gbl,
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
@@ -1641,7 +1641,7 @@ void DYN_define_index(Global*		gbl,
 		(*ri_actionP) = 0;
 	}
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	index_name[0] = 0;
@@ -2195,7 +2195,7 @@ void DYN_define_local_field(Global*		gbl,
 	SSHORT charset_id;
 	SLONG fld_pos;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	local_field_name[0] = 0;
@@ -2508,7 +2508,7 @@ void DYN_define_log_file(
 	jrd_req* request;
 	SSHORT id;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	request = NULL;
@@ -2646,7 +2646,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, TEXT* procedure_name)
 	const UCHAR* default_value_ptr = NULL;
 	const UCHAR* default_source_ptr = NULL;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	parameter_name[0] = 0;
@@ -2889,7 +2889,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	SqlIdentifier procedure_name;
 	SqlIdentifier owner_name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	procedure_name[0] = 0;
@@ -3046,7 +3046,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	SSHORT id;
 	SqlIdentifier relation_name, owner_name, field_name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	relation_name[0] = 0;
@@ -3269,7 +3269,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = NULL;
 	SqlIdentifier dummy_name, owner_name, role_name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 	
 	const USHORT major_version  = dbb->dbb_ods_version;
@@ -3385,7 +3385,7 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request;
@@ -3464,7 +3464,7 @@ void DYN_define_sql_field(Global*		gbl,
 	USHORT dtype;
 	SLONG fld_pos;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	sql_field_name[0] = 0;
@@ -3743,7 +3743,7 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
@@ -3821,7 +3821,7 @@ void DYN_define_trigger(Global*		gbl,
  * 
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request;
@@ -3988,7 +3988,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const TEXT* trigger_
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request;
@@ -4064,7 +4064,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const TEXT* view)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request;

@@ -1719,7 +1719,7 @@ static Lock* implicit_record_lock(jrd_tra* transaction, record_param* rpb)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	DEV_BLKCHK(transaction, type_tra);
 

@@ -974,10 +974,6 @@ typedef str *STR;
 
 /* Threading macros */
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
-#endif
-
 #ifdef V4_THREADING
 #define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
 #endif
@@ -997,7 +993,7 @@ extern Jrd::thread_db* gdbb;
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
 
-/* Define GET_THREAD_DATA off the platform specific version.
+/* Define JRD_get_thread_data off the platform specific version.
  * If we're in DEV mode, also do consistancy checks on the
  * retrieved memory structure.  This was originally done to
  * track down cases of no "PUT_THREAD_DATA" on the NLM. 
@@ -1012,7 +1008,7 @@ extern Jrd::thread_db* gdbb;
  * there is no tdbb_database set up.
  */
 #ifdef DEV_BUILD
-#define GET_THREAD_DATA (((PLATFORM_GET_THREAD_DATA) && \
+#define JRD_get_thread_data (((PLATFORM_GET_THREAD_DATA) && \
                          (((THDD)(PLATFORM_GET_THREAD_DATA))->thdd_type == THDD_TYPE_TDBB) && \
 			 (((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
 			 ? ((MemoryPool::blk_type(((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
@@ -1026,18 +1022,18 @@ extern Jrd::thread_db* gdbb;
 	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
 #else
 /* PROD_BUILD */
-#define GET_THREAD_DATA (PLATFORM_GET_THREAD_DATA)
+#define JRD_get_thread_data (PLATFORM_GET_THREAD_DATA)
 #define CHECK_TDBB(tdbb)		/* nothing */
 #define CHECK_DBB(dbb)			/* nothing */
 #endif
 
-#define GET_DBB         (((thread_db*) (GET_THREAD_DATA))->tdbb_database)
+#define GET_DBB         (((thread_db*) (JRD_get_thread_data))->tdbb_database)
 
 /*-------------------------------------------------------------------------*
  * macros used to set thread_db and Database pointers when there are not set already *
  *-------------------------------------------------------------------------*/
 
-#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = GET_THREAD_DATA; }; CHECK_TDBB (tdbb)
+#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = JRD_get_thread_data; }; CHECK_TDBB (tdbb)
 #define	SET_DBB(dbb)	if ((dbb)  == NULL)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
 
 #ifdef V4_THREADING
@@ -1079,12 +1075,12 @@ extern int debug;
    so in this case we define the macro as calling that function. */
 #ifndef JRD_MAIN
 
-#define SET_THREAD_DATA		tdbb = &thd_context;\
+#define JRD_set_thread_data		tdbb = &thd_context;\
 				MOVE_CLEAR (tdbb, sizeof (*tdbb));\
 				THD_put_specific (reinterpret_cast<struct thdd*>(tdbb));\
 				tdbb->tdbb_thd_data.thdd_type = THDD_TYPE_TDBB
 
-#define RESTORE_THREAD_DATA	THD_restore_specific()
+#define JRD_restore_thread_data	THD_restore_specific()
 
 #endif /* !JRD_MAIN */
 

@@ -258,7 +258,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
  *	stored here.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 /* Uppercase owner name */
@@ -498,7 +498,7 @@ void INI_init(void)
  *	format descriptor.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -568,7 +568,7 @@ void INI_init2(void)
  *	the database when it was created.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
@@ -731,7 +731,7 @@ void INI_update_database()
  * %% Note %% Update the switch() statement to reflect new major ODS 
  *            addition
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
@@ -832,7 +832,7 @@ static void add_generator(TEXT* generator_name, jrd_req** handle)
  **************************************/
 	const gen* generator = generators;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 /* find the new generator to be stored; assume it exists in the table */
 /* TMN: If it doesn't exist in the table, we will CRASH here! */
@@ -861,7 +861,7 @@ static void add_global_fields( USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 /* add desired global fields to system relations  */
 
@@ -902,7 +902,7 @@ static void add_index_set(Database*	dbb,
 	SqlIdentifier string;
 	index_desc idx;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	jrd_req* handle1 = NULL;
 	jrd_req* handle2 = NULL;
 
@@ -991,7 +991,7 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
  *	This routine is used to upgrade ODS versions.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	jrd_req* handle1 = NULL;
 
@@ -1040,7 +1040,7 @@ static void add_relation_fields( USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 /* add desired fields to system relations, forcing a new format version */
@@ -1238,7 +1238,7 @@ static void add_trigger(TEXT* trigger_name, jrd_req** handle1, jrd_req** handle2
  *	now, since it will be used when we go to 8.1.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 /* Find the new trigger to be stored; assume it exists in the table */
 

@@ -154,7 +154,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameters: NONE */
 		/* Close current database file & delete */
 
-		tdbb = GET_THREAD_DATA;
+		tdbb = JRD_get_thread_data;
 		if (!(file = tdbb->tdbb_attachment->att_database->dbb_file))
 			return -1;
 
@@ -183,7 +183,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameter 1: ULONG *shadow_number */
 		/* Close & delete specified shadow file */
 
-		tdbb = GET_THREAD_DATA;
+		tdbb = JRD_get_thread_data;
 		if (!(shadow = tdbb->tdbb_attachment->att_database->dbb_shadow))
 			return -1;
 		for (; shadow; shadow = shadow->sdw_next)

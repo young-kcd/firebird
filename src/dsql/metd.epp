@@ -1400,7 +1400,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	dsql_sym* symbol;
 	tsql* tdsql;
 
-	tdsql = GET_THREAD_DATA;
+	tdsql = DSQL_get_thread_data;
 
 	metd_rec_lock();
 

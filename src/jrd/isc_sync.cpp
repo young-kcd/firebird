@@ -1514,7 +1514,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		THREAD_ENTER();
 	}
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	if (!err_msg)
 	{
@@ -4116,7 +4116,7 @@ void longjmp_sig_handler(int sig_num)
    actually hang the sigsetjmp menber off of THDD, and
    make sure that it is set properly for all sub-systems. */
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	siglongjmp(tdbb->tdbb_sigsetjmp, sig_num);
 }

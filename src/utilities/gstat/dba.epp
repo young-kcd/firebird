@@ -214,23 +214,23 @@ struct tdba {
 	ISC_STATUS_ARRAY dba_status_vector;
 };
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
+#ifdef DBA_get_thread_data
+#undef DBA_get_thread_data
 #endif
 
 #ifdef SUPERSERVER
-#define GET_THREAD_DATA	        ((tdba*) THD_get_specific())
-#define SET_THREAD_DATA         {  tddba = &thd_context;           \
+#define DBA_get_thread_data	        ((tdba*) THD_get_specific())
+#define DBA_set_thread_data         {  tddba = &thd_context;           \
                 		   THD_put_specific ((THDD) tddba);\
 				   tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA; }
-#define RESTORE_THREAD_DATA     THD_restore_specific()
+#define DBA_restore_thread_data     THD_restore_specific()
 #else
 static struct tdba* gddba;
 
-#define GET_THREAD_DATA	        (gddba)
-#define SET_THREAD_DATA         gddba = tddba = &thd_context; \
+#define DBA_get_thread_data	        (gddba)
+#define DBA_set_thread_data         gddba = tddba = &thd_context; \
 				tddba->tdba_thd_data.thdd_type = THDD_TYPE_TDBA
-#define RESTORE_THREAD_DATA
+#define DBA_restore_thread_data
 #endif
 
 void inline dba_exit(int code, tdba* tddba)
@@ -290,7 +290,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	BOOL fAnsiCP;
 #endif
 
-	SET_THREAD_DATA;
+	DBA_set_thread_data;
 	SVC_PUTSPECIFIC_DATA;
 	memset(tddba, 0, sizeof(*tddba));
 	tddba->dba_env = (UCHAR *) env;
@@ -923,7 +923,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #endif
 
 		int exit_code = tddba->exit_code;
-		RESTORE_THREAD_DATA;
+		DBA_restore_thread_data;
 
 #ifdef SUPERSERVER
 		return exit_code;
@@ -949,7 +949,7 @@ static char* alloc(size_t size)
  *
  **************************************/
 #ifdef SUPERSERVER
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
 #else
 	char* const block = (char*) gds__alloc(size);
@@ -997,7 +997,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
  *	Analyze data pages associated with relation.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	pointer_page* ptr_page = (pointer_page*) tddba->buffer1;
 
@@ -1035,7 +1035,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
  *	Analyze space utilization for data page.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	if (page->pag_type != pag_data)
 		return false;
@@ -1102,7 +1102,7 @@ static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
  *	Analyze space used by a record's fragments.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	ULONG space = 0;
 
 	while (header->rhdf_flags & rhd_incomplete) {
@@ -1138,7 +1138,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
  * Functional description
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	const index_root_page* index_root = 
 		(const index_root_page*) db_read(relation->rel_index_root);
@@ -1262,7 +1262,7 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
  *	Analyze space used by a record's back versions.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	ULONG space = 0, versions = 0;
 	SLONG b_page = header->rhdf_b_page;
 	USHORT b_line = header->rhdf_b_line;
@@ -1330,7 +1330,7 @@ static void db_error( SLONG status)
  **************************************/
 	TEXT s[128];
 
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	tddba->page_number = -1;
 
 	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
@@ -1362,7 +1362,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
  *	Open a database file.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	
 	dba_fil* fil;
 
@@ -1440,7 +1440,7 @@ static const pag* db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	if (tddba->page_number == page_number)
 		return tddba->global_buffer;
@@ -1531,7 +1531,7 @@ static void db_error( int status)
  * Functional description
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	tddba->page_number = -1;
 
 	/* FIXME: The strerror() function returns the appropriate description
@@ -1571,7 +1571,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
  *      Put the file on an ordered list.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	dba_fil* fil;
 	if (tddba->files) {
@@ -1639,7 +1639,7 @@ static const pag* db_read( SLONG page_number)
  *	Read a database page.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	if (tddba->page_number == page_number)
 		return tddba->global_buffer;
@@ -1713,7 +1713,7 @@ static void dba_error(
  *	Format and print an error message, then punt.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 	tddba->page_number = -1;
 
 	dba_print(errcode, arg1, arg2, arg3, arg4, arg5);
@@ -1738,7 +1738,7 @@ static void dba_print(
  *
  **************************************/
 	TEXT buffer[256];
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	gds__msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer,
 					arg1, arg2, arg3, arg4, arg5);
@@ -1776,7 +1776,7 @@ static void print_distribution(const SCHAR* prefix, const SLONG* vector)
  *	Print distribution as percentages.
  *
  **************************************/
-	tdba* tddba = GET_THREAD_DATA;
+	tdba* tddba = DBA_get_thread_data;
 
 	for (SSHORT n = 0; n < BUCKETS; n++) {
 		FPRINTF(tddba->sw_outfile, "%s%2d - %2d%% = %ld\n",

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.33 2004-05-17 22:27:56 brodsom Exp $
+ *  $Id: nbak.cpp,v 1.34 2004-05-19 18:12:32 brodsom Exp $
  *
  */
 
@@ -99,7 +99,7 @@ bool BackupManager::get_sw_database_lock(bool enable_signals) throw()
 	return true;
 #else
 	NBAK_TRACE(("get_sw_database_lock %d", database_use_count));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	database_use_count++;
 	if (enable_signals)
 		LCK_ast_enable();
@@ -125,7 +125,7 @@ void BackupManager::release_sw_database_lock() throw()
 #else
 	NBAK_TRACE(("release_sw_database_lock %d", database_use_count));
 	fb_assert(database_use_count > 0);
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	database_use_count--;
 	if (ast_flags & NBAK_database_blocking) {
 		LCK_release(tdbb, database_lock);
@@ -144,7 +144,7 @@ void BackupManager::lock_state_write(bool thread_exit)
 		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	flags |= NBAK_state_in_use;
 	bool locked = false;
 	// Release shared lock to prevent possible deadlocks
@@ -177,7 +177,7 @@ bool BackupManager::try_lock_state_write()
 		return false;
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	flags |= NBAK_state_in_use;
 	bool result;
 	if (state_lock->lck_physical == LCK_none)
@@ -209,7 +209,7 @@ void BackupManager::unlock_state_write() throw()
 	state_lock->endWrite();
 #else
 	fb_assert(flags & NBAK_state_in_use);
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_state_blocking;
 	LCK_convert(tdbb, state_lock, LCK_SR, LCK_WAIT);
@@ -232,7 +232,7 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw()
 		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	flags |= NBAK_alloc_in_use;
 	// Release shared lock to prevent possible deadlocks
 	bool locked = false;
@@ -264,7 +264,7 @@ void BackupManager::unlock_alloc_write() throw()
 	alloc_lock->endWrite();
 #else
 	fb_assert(flags & NBAK_alloc_in_use);
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_alloc_blocking;
 	LCK_convert(tdbb, alloc_lock, LCK_SR, LCK_WAIT);
@@ -279,7 +279,7 @@ void BackupManager::unlock_alloc_write() throw()
 
 bool BackupManager::lock_state(bool thread_exit) throw()
 {
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state)
 		return true;
@@ -309,7 +309,7 @@ bool BackupManager::lock_state(bool thread_exit) throw()
 
 void BackupManager::unlock_state() throw()
 {
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state)
 		return;
@@ -335,7 +335,7 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	flags |= NBAK_alloc_in_use;
 	if (alloc_lock->lck_physical < LCK_SR) {
 		if (!LCK_lock(tdbb, alloc_lock, LCK_SR, LCK_WAIT)) {
@@ -357,7 +357,7 @@ void BackupManager::unlock_alloc() throw() {
 	alloc_lock->endRead();
 #else
 	fb_assert(flags & NBAK_alloc_in_use);
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	flags &= ~NBAK_alloc_in_use;
 	if (ast_flags & NBAK_alloc_blocking) {
 		LCK_release(tdbb, alloc_lock);
@@ -396,7 +396,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_attachment = lock->lck_attachment;
@@ -416,7 +416,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 
 	ISC_ast_exit();
 	return 0;
@@ -447,7 +447,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_attachment = lock->lck_attachment;
@@ -466,7 +466,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 
 	ISC_ast_exit();
 	return 0;
@@ -499,7 +499,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
    a thread context. */
 
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	tdbb->tdbb_database = new_dbb;
 	tdbb->tdbb_attachment = lock->lck_attachment;
@@ -520,7 +520,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 
 	ISC_ast_exit();
 	return 0;
@@ -540,7 +540,7 @@ void BackupManager::generate_filename() throw()
 void BackupManager::begin_backup()
 {
 	NBAK_TRACE(("begin_backup"));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
@@ -635,7 +635,7 @@ void BackupManager::begin_backup()
 // does nothing (so it can be used for recovery on database startup). 
 void BackupManager::end_backup(bool recover) {
 	NBAK_TRACE(("end_backup"));
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	ULONG adjusted_scn; // We use this value to prevent race conditions.
 						// They are possible because we release state lock
 						// for some instants and anything is possible at
@@ -804,7 +804,7 @@ bool BackupManager::actualize_alloc() throw()
 		&& !(ast_flags & NBAK_alloc_dirty)
 #endif
 	) return true;
-	ISC_STATUS *status_vector = GET_THREAD_DATA->tdbb_status_vector;
+	ISC_STATUS *status_vector = JRD_get_thread_data->tdbb_status_vector;
 	try {
 		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p", 
 			last_allocated_page, alloc_table));
@@ -877,7 +877,7 @@ ULONG BackupManager::get_page_index(ULONG db_page) const throw()
 ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
 	fb_assert(last_allocated_page % (database->dbb_page_size / sizeof(ULONG)) == alloc_buffer[0]);
 
-	ISC_STATUS* status_vector = GET_THREAD_DATA->tdbb_status_vector;
+	ISC_STATUS* status_vector = JRD_get_thread_data->tdbb_status_vector;
 	// Grow file first. This is done in such order to keep difference
 	// file consistent in case of write error. We should always be able 
 	// to read next alloc page when previous one is full.
@@ -944,7 +944,7 @@ bool BackupManager::read_difference(ULONG diff_page, Ods::pag* page) throw()
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
-	if (!PIO_read(diff_file, &temp_bdb, page, GET_THREAD_DATA->tdbb_status_vector))		
+	if (!PIO_read(diff_file, &temp_bdb, page, JRD_get_thread_data->tdbb_status_vector))		
 		return false;
 	return true;
 }
@@ -954,7 +954,7 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 	backup_state(ini_state), last_allocated_page(0),
 	current_scn(0), backup_pages(0), diff_pending_close(false)
 {
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	diff_name[0] = 0;
 	
 	// Allocate various database page buffers needed for operation
@@ -1013,7 +1013,7 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 void BackupManager::shutdown_locks() throw()
 {
 #ifndef SUPERSERVER
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	if (state_lock)
 		LCK_release(tdbb, state_lock);
 	if (alloc_lock)
@@ -1040,7 +1040,7 @@ BackupManager::~BackupManager()
 }
 
 void BackupManager::set_difference(const char* filename) {
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	
 	if (filename) {
 		WIN window(HEADER_PAGE);
@@ -1066,7 +1066,7 @@ bool BackupManager::actualize_state() throw() {
 	// We cannot use CCH for this because of likely recursion.
 	NBAK_TRACE(("actualize_state"));	
 	
-	ISC_STATUS *status = GET_THREAD_DATA->tdbb_status_vector;
+	ISC_STATUS *status = JRD_get_thread_data->tdbb_status_vector;
 			
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;

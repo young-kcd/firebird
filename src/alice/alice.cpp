@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.62 2004-05-15 00:52:43 brodsom Exp $
+//	$Id: alice.cpp,v 1.63 2004-05-19 18:04:41 brodsom Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -198,7 +198,7 @@ int common_main(int			argc,
 		return FINI_ERROR;
 	}
 
-	SET_THREAD_DATA;
+	ALICE_set_thread_data;
 	SVC_PUTSPECIFIC_DATA;
 	memset((void *) tdgbl, 0, sizeof(Tgbl));
 	tdgbl->output_proc = output_proc;
@@ -632,7 +632,7 @@ int common_main(int			argc,
 		// Free all unfreed memory used by Gfix itself 
 		ALLA_fini();
 
-		RESTORE_THREAD_DATA;
+		ALICE_restore_thread_data;
 
 		gds__free(tdgbl);
 
@@ -697,7 +697,7 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
 		int i = 0, j;
-		Tgbl* tdgbl = GET_THREAD_DATA;
+		Tgbl* tdgbl = ALICE_get_thread_data;
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 			while (*status && (++i < ISC_STATUS_LENGTH)) {
@@ -736,7 +736,7 @@ void ALICE_error(USHORT	number,
 				 const TEXT*	arg4,
 				 const TEXT*	arg5)
 {
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = ALICE_get_thread_data;
 	TEXT buffer[256];
 
 #ifdef SUPERSERVER
@@ -779,7 +779,7 @@ static void alice_output(const SCHAR* format, ...)
 	UCHAR buf[1000];
 	int exit_code;
 
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	Tgbl* tdgbl = ALICE_get_thread_data;
 
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
 		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));

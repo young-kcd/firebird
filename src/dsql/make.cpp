@@ -86,7 +86,7 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
  **/
 dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default,
 						(numeric_flag == CONSTANT_TIMESTAMP ||
@@ -233,7 +233,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
  **/
 dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
 	node->nod_type = nod_constant;
@@ -1526,7 +1526,7 @@ dsql_nod* MAKE_list(DsqlNodStack& stack)
  **/
 dsql_nod* MAKE_node(NOD_TYPE type, int count)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_nod* node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
 	node->nod_type = type;
@@ -1565,7 +1565,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		}
 	}
 
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_par* parameter = FB_NEW(*tdsql->tsql_default) dsql_par;
 	parameter->par_message = message;
@@ -1643,7 +1643,7 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 	fb_assert(name);
 	fb_assert(length > 0);
 
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_sym* symbol = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_sym;
 	symbol->sym_type = type;
@@ -1677,7 +1677,7 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
  **/
 dsql_str* MAKE_tagged_string(const char* str_, size_t length, const char* charset)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_str* string = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_str;
 	string->str_charset = charset;
@@ -1731,7 +1731,7 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 	dsql_var* variable = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) dsql_var;
 	dsql_nod* node = MAKE_node(nod_variable, e_var_count);

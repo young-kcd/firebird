@@ -186,23 +186,20 @@ public:
 };
 
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
-#endif
 
 #ifdef SUPERSERVER
-#define GET_THREAD_DATA		((Tgbl*) THD_get_specific())
-#define SET_THREAD_DATA		THD_put_specific ((THDD) tdgbl);	\
-				tdgbl->tgbl_thd_data.thdd_type =				\
-					THDD_TYPE_TALICE
-#define RESTORE_THREAD_DATA	THD_restore_specific();
+#define ALICE_get_thread_data		((Tgbl*) THD_get_specific())
+#define ALICE_set_thread_data		THD_put_specific ((THDD) tdgbl);	\
+									tdgbl->tgbl_thd_data.thdd_type =				\
+									THDD_TYPE_TALICE
+#define ALICE_restore_thread_data	THD_restore_specific();
 #else
 extern Tgbl* gdgbl;
 
-#define GET_THREAD_DATA		(gdgbl)
-#define SET_THREAD_DATA		gdgbl = tdgbl; \
+#define ALICE_get_thread_data		(gdgbl)
+#define ALICE_set_thread_data		gdgbl = tdgbl; \
 				tdgbl->tgbl_thd_data.thdd_type = THDD_TYPE_TGBL
-#define RESTORE_THREAD_DATA
+#define ALICE_restore_thread_data
 #endif
 
 #endif	// ALICE_ALICE_H

@@ -542,7 +542,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
  **/
 void GEN_port( dsql_req* request, dsql_msg* message)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	tsql* tdsql = DSQL_get_thread_data;
 
 //	if (request->req_blr_string) {
 		stuff(request, blr_message);

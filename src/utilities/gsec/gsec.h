@@ -57,27 +57,6 @@ const int NAME_LEN		= 33;
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
-#endif
-#ifdef SET_THREAD_DATA
-#undef SET_THREAD_DATA
-#endif
-#ifdef RESTORE_THREAD_DATA
-#undef RESTORE_THREAD_DATA
-#endif
-#ifdef SUPERSERVER
-#define GET_THREAD_DATA	        ((TSEC) THD_get_specific())
-#define SET_THREAD_DATA         THD_put_specific ((THDD) tdsec); \
-				tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC
-#define RESTORE_THREAD_DATA     THD_restore_specific();
-#else
-#define GET_THREAD_DATA	        (gdsec)
-#define SET_THREAD_DATA         gdsec = tdsec; \
-				tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC
-#define RESTORE_THREAD_DATA     
-#endif
-
 struct internal_user_data {
     int		operation;		/* what's to be done */
     TEXT	user_name [USER_NAME_LEN];	/* the user's name */
@@ -137,6 +116,21 @@ typedef struct tsec {
     FILE*				tsec_output_file;
     Jrd::Service*		tsec_service_blk;
 } *TSEC;
+
+#ifdef SUPERSERVER
+#define GSEC_get_thread_data	        ((TSEC) THD_get_specific())
+#define GSEC_set_thread_data         THD_put_specific ((THDD) tdsec); \
+				tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC
+#define GSEC_restore_thread_data     THD_restore_specific();
+#else
+extern struct tsec *gdsec;
+
+#define GSEC_get_thread_data	        (gdsec)
+#define GSEC_set_thread_data         gdsec = tdsec; \
+				tdsec->tsec_thd_data.thdd_type = THDD_TYPE_TSEC
+#define GSEC_restore_thread_data     
+#endif
+
 
 const USHORT GsecMsg0	= 0;	/* empty message */
 const USHORT GsecMsg1	= 1;	/* "GSEC> "  (the prompt) */

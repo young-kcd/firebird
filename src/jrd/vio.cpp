@@ -3552,7 +3552,7 @@ static void THREAD_ROUTINE garbage_collector(Database* dbb)
    Once we reach the end, the thread will die, thus implicitly
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 	tdbb->tdbb_database = dbb;
 	tdbb->tdbb_default = dbb->dbb_permanent;
 	tdbb->tdbb_status_vector = status_vector;
@@ -3803,7 +3803,7 @@ gc_exit:
 		ISC_event_post(dbb->dbb_gc_event_fini);	
 		ISC_event_fini(gc_event);
 
-		RESTORE_THREAD_DATA;
+		JRD_restore_thread_data;
 		THREAD_EXIT();
 
 	}	// try

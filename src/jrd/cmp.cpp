@@ -543,7 +543,7 @@ jrd_req* CMP_compile(USHORT blr_length, const UCHAR* blr, USHORT internal_flag)
  *	1997-Jan-20 David Schnepper 
  *
  **************************************/
-	return CMP_compile2(GET_THREAD_DATA, blr, internal_flag);
+	return CMP_compile2(JRD_get_thread_data, blr, internal_flag);
 }
 
 

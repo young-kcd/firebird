@@ -435,7 +435,7 @@ inline static thread_db* set_thread_data(thread_db& thd_context)
 }
 
 
-#undef GET_THREAD_DATA
+#undef JRD_get_thread_data
 #undef CHECK_DBB
 #undef GET_DBB
 #undef SET_TDBB
@@ -4098,7 +4098,7 @@ bool JRD_getdir(Firebird::PathName& buf)
 	{
 		thread_db* tdbb = get_thread_data();
 
-   /** If the server has not done a SET_THREAD_DATA prior to this call
+   /** If the server has not done a JRD_set_thread_data prior to this call
        (which will be the case when connecting via IPC), thread_db will
        be NULL so do not attempt to get the attachment handle from
        thread_db. Just return false as described below.  
@@ -4106,7 +4106,7 @@ bool JRD_getdir(Firebird::PathName& buf)
        this code is entered via IPC is if the database name = "".
    **/
 
-   /** In case of backup/restore APIs, SET_THREAD_DATA has been done but
+   /** In case of backup/restore APIs, JRD_set_thread_data has been done but
        the thread's context is a 'gbak' specific, so don't try extract
        attachment from there.
    **/

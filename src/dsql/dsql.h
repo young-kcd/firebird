@@ -625,11 +625,8 @@ struct tsql
 };
 
 
-#ifdef GET_THREAD_DATA
-#undef GET_THREAD_DATA
-#endif
 
-#define GET_THREAD_DATA	((tsql*) THD_get_specific())
+#define DSQL_get_thread_data	((tsql*) THD_get_specific())
 /*! \var unsigned DSQL_debug
     \brief Debug level 
     
@@ -643,12 +640,12 @@ struct tsql
     64      Display BLR in dsql/prepare
     > 256   Display yacc parser output level = DSQL_level>>8
 */
-#define SET_THREAD_DATA         {\
+#define DSQL_set_thread_data         {\
 				tdsql = &thd_context;\
 				THD_put_specific ((THDD) tdsql);\
 				tdsql->tsql_thd_data.thdd_type = THDD_TYPE_TSQL;\
 				}
-#define RESTORE_THREAD_DATA     THD_restore_specific()
+#define DSQL_restore_thread_data     THD_restore_specific()
 
 
 // macros for error generation

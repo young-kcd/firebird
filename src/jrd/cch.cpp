@@ -408,7 +408,7 @@ int CCH_down_grade_dbb(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	ISC_STATUS_ARRAY ast_status;
 	tdbb->tdbb_database = dbb;
@@ -424,14 +424,14 @@ int CCH_down_grade_dbb(void* ast_object)
 
 	if (SHUT_blocking_ast(dbb)) {
 		dbb->dbb_ast_flags &= ~DBB_blocking;
-		RESTORE_THREAD_DATA;
+		JRD_restore_thread_data;
 		return 0;
 	}
 
 /*
 if (dbb->dbb_use_count)
     {
-    RESTORE_THREAD_DATA;
+    JRD_restore_thread_data;
     return;
     }
 */
@@ -441,21 +441,21 @@ if (dbb->dbb_use_count)
    and we can't give it anyway */
 
 	if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
-		RESTORE_THREAD_DATA;
+		JRD_restore_thread_data;
 		return 0;
 	}
 
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
 		dbb->dbb_ast_flags &= ~DBB_blocking;
-		RESTORE_THREAD_DATA;
+		JRD_restore_thread_data;
 		return 0;
 	}
 
 /* If we are supposed to be exclusive, stay exclusive */
 
 	if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
-		RESTORE_THREAD_DATA;
+		JRD_restore_thread_data;
 		return 0;
 	}
 
@@ -492,7 +492,7 @@ if (dbb->dbb_use_count)
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 	return 0;
 }
 
@@ -1866,7 +1866,7 @@ void CCH_must_write(WIN * window)
 	}
 
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
-	update_write_direction(GET_THREAD_DATA, bdb);
+	update_write_direction(JRD_get_thread_data, bdb);
 }
 
 
@@ -2327,7 +2327,7 @@ void CCH_shutdown_database(Database* dbb)
  *	Shutdown database physical page locks.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 
 	bcb_repeat* tail;
 	BufferControl* bcb = dbb->dbb_bcb;
@@ -2707,7 +2707,7 @@ static int blocking_ast_bdb(void* ast_object)
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	BLKCHK(bdb, type_bdb);
 	
@@ -2741,7 +2741,7 @@ static int blocking_ast_bdb(void* ast_object)
 
 /* Restore the prior thread context */
 
-	RESTORE_THREAD_DATA;
+	JRD_restore_thread_data;
 
 	ISC_ast_exit();
 
@@ -3076,7 +3076,7 @@ static void THREAD_ROUTINE cache_reader(Database* dbb)
    Once we reach the end, the thread will die, thus implicitly
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
@@ -3245,7 +3245,7 @@ static void THREAD_ROUTINE cache_writer(Database* dbb)
    Once we reach the end, the thread will die, thus implicitly
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
-	SET_THREAD_DATA;
+	JRD_set_thread_data;
 
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */

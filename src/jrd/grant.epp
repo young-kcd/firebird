@@ -686,7 +686,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
  *	default security class for this relation.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	thread_db* tdbb = JRD_get_thread_data;
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);

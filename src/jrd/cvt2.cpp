@@ -858,7 +858,7 @@ USHORT CVT2_make_string2(const dsc* desc,
 			return from_len;
 		}
 
-		thread_db* tdbb = GET_THREAD_DATA;
+		thread_db* tdbb = JRD_get_thread_data;
 		const USHORT cs1 = INTL_charset(tdbb, to_interp, err);
 		const USHORT cs2 = INTL_charset(tdbb, from_interp, err);
 		if (cs1 == cs2) {

@@ -112,7 +112,7 @@ BLK ALLR_block(UCHAR type, ULONG count)
 {
 	if (type <= (UCHAR) type_MIN || type >= (UCHAR) type_MAX)
 	{
-		TRDB	trdb			= GET_THREAD_DATA;
+		TRDB	trdb			= REM_get_thread_data;
 		ISC_STATUS*	status_vector	= trdb->trdb_status_vector;
 
 		if (status_vector)
