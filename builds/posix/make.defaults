@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.19 2003-03-20 11:11:49 aafemt Exp $
+#   $Id: make.defaults,v 1.20 2003-03-21 11:53:48 aafemt Exp $
 # 
 
 
@@ -78,7 +78,7 @@ QUIET_ECHO=		@echo
 CD=			cd
 CAT=			cat
 AR=			ar crsu
-LN=    ln -s 
+LN=			@LN_S@
 RANLIB=			@RANLIB@
 YACC=			@YACC@
 
@@ -117,10 +117,14 @@ LIBGDS_A = $(LIB)/libgds.a
 # Shared library names for client side of fbserver (or super) version
 # used to link all the utilities to enable them to connect over the wire
 # to the fbserver. MOD 28-July-2002
-LIBFBCLIENT_SO = $(LIB)/libfbclient.$(SHRLIB_EXT).1.0.0
-LIBFBCLIENT_SOBASENAME=$(LIB)/libfbclient.$(SHRLIB_EXT).1
-LIBFBCLIENT_SONAME=$(LIB)/libfbclient.$(SHRLIB_EXT)
 
+ClientLibraryName = libfbclient.$(SHRLIB_EXT)
+ClientLibraryNameMajor = $(ClientLibraryName).1
+ClientLibraryNameFull = $(ClientLibraryNameMajor).0.0
+
+LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
+LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibraryNameMajor)
+LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 
 # intl will load dynamically, and having the whole soname set with version
 # confuses the dynamic load process.  So we only have the .$(SHRLIB_EXT) file

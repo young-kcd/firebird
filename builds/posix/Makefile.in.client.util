@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.6 2003-03-05 16:09:30 brodsom Exp $
+#  $Id: Makefile.in.client.util,v 1.7 2003-03-21 11:53:48 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -138,12 +138,12 @@ $(GSEC):	$(GSEC_Objects) $(LIBFBCLIENT_SO)
 fbguard: $(FBGUARD)
 
 $(FBGUARD):	$(FBGUARD_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS)
 
 ibguard: $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_A_Objects) $(IBGUARD_B_Objects) $(LIBFBCLIENT_SO)  
-	$(LD) $(LINK_OPTS) $(IBGUARD_A_Objects) $(IBGUARD_B_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $(IBGUARD_A_Objects) $(IBGUARD_B_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS) 
 
 fbmgr_bin: $(FBMGR_BIN)
 
