@@ -8,11 +8,12 @@ est un processus continu.
 Vous pouvez aujourd'hui trouver la traduction en français des 
 documents suivants :
 
-Le guide démarrage de Firebird 1.5 (quick start guide)
+Le guide de démarrage de Firebird 1.5 (quick start guide)
 à :
+en pdf  -> http://www.firebirdsql.org/pdfmanual/fr/Firebird-1.5-Demarrage.pdf
 en html -> http://www.firebirdsql.org/manual/fr/index.html
 ou
-en pdf  -> http://firebird-fr.eu.org/IMG/pdf/qsg15-fr.pdf
+en pdf  -> http://firebird-fr.eu.org/IMG/pdf/Firebird-1.5-Demarrage.pdf
 en html -> http://firebird-fr.eu.org/manuel/index.html 
 
 Les notes de versions de Firebird 1.5.1 (release notes)
