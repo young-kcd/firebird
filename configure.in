@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.111 2003-02-10 05:42:19 aafemt Exp $
+dnl $Id: configure.in,v 1.112 2003-02-10 09:39:43 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -425,24 +425,24 @@ case "$PLATFORM" in
     ;;
 
   [SOLARIS|solx86])
-
-	AC_ARG_WITH(sfio,
-		AC_HELP_STRING([--with-sfio=PATH],[use sfio (replacement stdio on Solaris) (default=no)]),
+    AC_ARG_WITH(sfio,
+      AC_HELP_STRING([--with-sfio=PATH],
+        [use sfio (replacement stdio on Solaris) (default=no)]),
 		[ac_cv_use_sfio=$withval],[ac_cv_use_sfio=no])
-		
-	if test "$ac_cv_use_sfio" = "no"; then
-		SFIO_DIR=""
-		SFIO_FLAGS=""
-		SFIO_LDFLAGS=""
-	else		
-		AC_CHECK_LIB(sfio-mt, main,, 
-		   	AC_MSG_ERROR([sfio library not found]),-lvthread)
-		XE_PREPEND(-lvthread,LIBS)		
-		
-		SFIO_DIR="$ac_cv_use_sfio"
-		SFIO_FLAGS="-DSFIO -I$ac_cv_use_sfio/include"
-		SFIO_LDFLAGS="-L$ac_cv_use_sfio/lib"
-	fi
+
+    if test "$ac_cv_use_sfio" = "no"; then
+      SFIO_DIR=""
+      SFIO_FLAGS=""
+      SFIO_LDFLAGS=""
+    else		
+      AC_CHECK_LIB(sfio-mt, main,, 
+      AC_MSG_ERROR([sfio library not found]),-lvthread)
+      XE_PREPEND(-lvthread,LIBS)		
+
+      SFIO_DIR="$ac_cv_use_sfio"
+      SFIO_FLAGS="-DSFIO -I$ac_cv_use_sfio/include"
+      SFIO_LDFLAGS="-L$ac_cv_use_sfio/lib"
+    fi
     ;;
 
   win32)

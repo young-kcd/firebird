@@ -81,6 +81,7 @@
 #undef HAVE_SYS_MNTTAB_H
 #undef HAVE_SYS_IPC_H
 #undef HAVE_SYS_FILE_H
+#undef HAVE_WINSOCK2_H
 
 
 /* Functions */

@@ -1,4 +1,4 @@
-#ident "$Id: config.h.in,v 1.67 2003-02-10 05:42:20 aafemt Exp $"
+#ident "$Id: config.h.in,v 1.68 2003-02-10 09:39:55 eku Exp $"
 
  /*
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
@@ -60,6 +60,7 @@
 #undef HAVE_SYS_MNTTAB_H
 #undef HAVE_SYS_IPC_H
 #undef HAVE_SYS_FILE_H
+#undef HAVE_WINSOCK2_H
 
 
 /* Functions */
