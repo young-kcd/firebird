@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.6 2004-11-03 16:52:41 skidder Exp $
+  $Id: isql.epp,v 1.32.2.7 2004-11-04 05:31:30 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -1670,6 +1670,7 @@ static SSHORT add_row(TEXT * tabname)
 	if (sqlda->sqld > sqlda->sqln) {
 		ISQL_FREE(sqlda);
 		sqlda = (XSQLDA *) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
+		sqlda->version = SQLDA_VERSION1;
 		sqlda->sqld = sqlda->sqln = n_cols;
 
 		/*  We must re-describe the sqlda, no need to re-prepare */
@@ -1787,7 +1788,7 @@ static SSHORT add_row(TEXT * tabname)
 			STDERROUT("", 1);
 
 
-			/* Convert first  4 chars to upper case for comparison */
+			/* Convert first 4 chars to upper case for comparison */
 			strncpy(cmd, lastInputLine, 4);
 			cmd[4] = '\0';
 			ISQL_make_upper((UCHAR*) cmd);
@@ -2398,8 +2399,11 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 				(TEXT *) ISQL_ALLOC((SLONG) (arglength + 1));
 
 			if (!new_local_statement)
+	    	{
+				ISQL_FREE(local_statement);
+				ISQL_FREE(usr);
 				return (FAIL);
-
+			}
 		}
 
 		if (new_local_statement)
@@ -2418,6 +2422,10 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 								"create database statement",
 								(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
 				STDERROUT(errbuf, 1);
+				ISQL_FREE(local_statement);
+				ISQL_FREE(usr);
+				if (new_local_statement)
+					ISQL_FREE(new_local_statement);
 				return (FAIL);
 			}
 			copy_str(&temp_str, &temp_local_stmt_str, &done,
@@ -2465,7 +2473,10 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
 		}
 
 		if (new_local_statement)
+		{
+			ISQL_FREE(local_statement);
 			local_statement = new_local_statement;
+		}
 	}
 
 	/* execute the create statement 
@@ -6179,7 +6190,7 @@ static int process_statement( TEXT * string, XSQLDA ** sqldap)
  *	than embedded dynamic statements.  The user request
  *	is placed on transaction M__trans, while all
  *	background work is on the default gds_trans.
- *	THis function now returns CONT (success) or ERR
+ *	This function now returns CONT (success) or ERR
  **************************************/
 	SLONG *buffer = NULL;
 	USHORT length, data_length;
