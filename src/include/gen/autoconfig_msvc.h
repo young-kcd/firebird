@@ -246,4 +246,8 @@
 
 #define FB_PREFIX "c:\\Program Files\\Firebird\\"
 
+#ifndef HAVE_SOCKLEN_T
+typedef int socklen_t;
+#endif
+
 #endif
