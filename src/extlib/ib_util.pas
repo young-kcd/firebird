@@ -29,7 +29,7 @@ unit ib_util;
 
 interface
 
-function IB_UTIL_malloc(l: integer): pointer; cdecl; external 'ib_util.dll';
+function ib_util_malloc(l: integer): pointer; cdecl; external 'ib_util.dll';
 
 implementation
 
