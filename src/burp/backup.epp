@@ -36,7 +36,7 @@
  */
 
 /*
-$Id: backup.epp,v 1.30 2003-08-15 10:23:42 aafemt Exp $
+$Id: backup.epp,v 1.31 2003-08-19 11:09:00 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -481,7 +481,7 @@ int BACKUP_backup(TEXT* dbb_file, TEXT* file_name)
 		/* msg 176 closing file, committing, and finishing.  %ld bytes written */
 	} else {
 		char psz[64];
-		ib_sprintf(psz, "%"QUADFORMAT, cumul_count);
+		ib_sprintf(psz, "%" QUADFORMAT "d", cumul_count);
 		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
 		/* msg 283 closing file, committing, and finishing.  %s bytes written */
 	}
