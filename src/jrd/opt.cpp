@@ -4791,27 +4791,25 @@ static RSB gen_retrieval(TDBB     tdbb,
 				compose(&inversion, make_inversion(tdbb, opt, node, stream),
 					nod_bit_and); 
 			}
-			else {
-				// If no index is used then leave other nodes alone, because they 
-				// could be used for building a SORT/MERGE.
-				if ((inversion && expression_contains_stream(node, stream)) ||
-					(!inversion && computable(csb, node, stream, false, true))) 
+			// If no index is used then leave other nodes alone, because they 
+			// could be used for building a SORT/MERGE.
+			if ((inversion && expression_contains_stream(node, stream)) ||
+				(!inversion && computable(csb, node, stream, false, true))) 
+			{
+				// Don't allow adding IS NULL conjunction to outer stream 
+				// from parent node, because a FULL OUTER JOIN could return
+				// wrong results with it.
+				if (!outer_flag ||
+					(outer_flag && !expression_contains(node, nod_missing)))
 				{
-					// Don't allow adding IS NULL conjunction to outer stream 
-					// from parent node, because a FULL OUTER JOIN could return
-					// wrong results with it.
-					if (!outer_flag ||
-						(outer_flag && !expression_contains(node, nod_missing)))
-					{
-						compose(&opt_boolean, node, nod_and);
-						tail->opt_flags |= opt_used;
-				
-						if (!outer_flag && !(tail->opt_flags & opt_matched)) {
-							csb_tail->csb_flags |= csb_unmatched;
-						}
+					compose(&opt_boolean, node, nod_and);
+					tail->opt_flags |= opt_used;
+			
+					if (!outer_flag && !(tail->opt_flags & opt_matched)) {
+						csb_tail->csb_flags |= csb_unmatched;
 					}
-				}				
-			}
+				}
+			}				
 		}
 	}
 
