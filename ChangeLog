@@ -1,3 +1,88 @@
+2003-09-21 19:49  skidder
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Make RIGHT JOIN symmetrical to LEFT JOIN at DSQL layer.  This fixes
+	a couple issues when engine rejected correct RIGHT JOINs or
+	accepted incorrect and failed subsequentally during query execution
+
+2003-09-21 18:10  dimitr
+
+	* firebird2/src/jrd/ods.h:
+	
+	no message
+
+2003-09-21 15:33  skidder
+
+	* firebird2/src/: dsql/ddl.cpp, jrd/dyn.epp, jrd/dyn_mod.epp,
+	jrd/gdsold.h, jrd/ibase.h:
+	
+	- Fix incorrect assignment of DYN constants for NBACKUP - Fix minor
+	inconsistency in drop_generator DYN constant definition Noted by
+	Dmitry Emanov
+
+2003-09-21 13:22  dimitr
+
+	* firebird2/src/jrd/scl.epp:
+	
+	One more correction
+
+2003-09-21 11:50  dimitr
+
+	* firebird2/src/jrd/scl.epp:
+	
+	Correction
+
+2003-09-21 11:15  dimitr
+
+	* firebird2/src/jrd/scl.epp:
+	
+	no message
+
+2003-09-21 09:57  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp, scl.epp, scl_proto.h:
+	
+	const correctness, bool, formatting, etc.
+
+2003-09-21 02:38  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp:
+	
+	Fix problem with MinGW build :-(
+
+2003-09-21 01:33  brodsom
+
+	* firebird2/src/intl/: cv_big5.cpp, cv_gb2312.cpp, cv_jis.cpp,
+	cv_ksc.cpp, cv_narrow.cpp, cv_unicode_fss.cpp, lc_ascii.cpp,
+	lc_big5.cpp, lc_dos.cpp, lc_iso8859_1.cpp, lc_iso8859_2.cpp,
+	lc_jis.cpp, lc_ksc.cpp, lc_narrow.cpp, lc_unicode_ucs2.cpp,
+	ldcommon.h:
+	
+	Remove duplicated function declaration
+
+2003-09-21 01:33  brodsom
+
+	* firebird2/src/intl/charsets.h:
+	
+	Cleaning extern C
+
+2003-09-21 01:28  brodsom
+
+	* firebird2/src/: dsql/parse.cpp, dsql/parse.y, dsql/pass1_proto.h,
+	dsql/preparse.cpp, dsql/user_dsql.cpp, dsql/utld.cpp, dsql/ddl.cpp,
+	dsql/dsql.cpp, dsql/errd.cpp, dsql/errd_proto.h, dsql/hsh.cpp,
+	dsql/hsh_proto.h, dsql/metd_proto.h, jrd/ExecuteStatement.cpp:
+	
+	Cleaning macros
+
+2003-09-21 01:24  brodsom
+
+	* firebird2/src/burp/: restore.epp, spit.cpp, std_desc.h, burp.cpp,
+	burp.h, mvol.cpp:
+	
+	Cleaning macros
+
 2003-09-20 16:52  brodsom
 
 	* firebird2/src/wal/wal_prnt.cpp:
