@@ -1,3 +1,109 @@
+2003-09-05 16:55  brodsom
+
+	* firebird2/src/gpre/: par.cpp, pas.cpp, sqe.cpp, sql.cpp, ada.cpp,
+	cmp.cpp, exp.cpp, gpre_meta_boot.cpp, msc.cpp, noform.cpp:
+	
+	Fix last Dmitry commit
+
+2003-09-05 15:03  alexpeshkoff
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Added additional security warning
+
+2003-09-05 13:28  brodsom
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	-Change function return to SUCCESS=true, FAILURE=false (suggested
+	by Claudio)
+
+2003-09-05 13:25  brodsom
+
+	* firebird2/src/isql/: extra_proto.h, extract.epp, isql.epp,
+	isql.h, isql_proto.h, show.epp, show_proto.h:
+	
+	-Replacing BOOLEAN, FALSE and TRUE.  -Code style cleaning
+
+2003-09-05 12:54  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	SSchangePasswd.sh, makeInstallImage.sh.in, postinstall.sh.in,
+	postuninstall.sh.in, preinstall.sh.in, preuninstall.sh.in,
+	rpmfiles.txt.in, rpmheader.txt.in:
+	
+	fix posix SS build - now rpm package appear to be successfully
+	buildable
+
+2003-09-05 12:51  brodsom
+
+	* firebird2/src/dudley/parse.cpp:
+	
+	-Correction
+
+2003-09-05 12:50  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/misc/firebird.initd.in:
+	
+	fix posix SS build - now rpm package appear to be successfully
+	buildable
+
+2003-09-05 12:39  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	SSchangePasswd.sh, makeInstallImage.sh.in, postinstall.sh.in,
+	postuninstall.sh.in, preinstall.sh.in, preuninstall.sh.in,
+	rpmfiles.txt.in, rpmheader.txt.in:
+	
+	fix posix SS build - now rpm package appear to be successfully
+	buildable
+
+2003-09-05 12:35  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/install.sh.in:
+	
+	fix posix SS build - removed old (1.0) installation script
+
+2003-09-05 12:30  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/misc/firebird.initd.in:
+	
+	file firebird.initd.in was initially added on branch B1_5_Release.
+
+2003-09-05 12:30  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/misc/firebird.initd.in:
+	
+	fix posix SS build - added script for /etc/init.d
+
+2003-09-05 12:14  aafemt
+
+	* firebird2/src/gpre/: ada.cpp, c_cxx.cpp, cmd.cpp, cme.cpp,
+	cmp.cpp, cob.cpp, dyntable.cpp, exp.cpp, form.h, ftn.cpp, gpre.cpp,
+	gpre.h, gpre_meta.epp, gpre_meta_boot.cpp, gpreswi.h, hsh.cpp,
+	jrdmet.cpp, msc.cpp, par.cpp, parse.h, pas.cpp, pat.cpp,
+	pretty.cpp, sqe.cpp, sql.cpp:
+	
+	'struct' cleanup
+
+2003-09-05 12:05  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	fix posix SS build - script files are copied for both SS and CS
+
+2003-09-05 11:33  brodsom
+
+	* firebird2/src/dudley/parse.cpp:
+	
+	-Remove unneeded if (Thanks to Claudio)
+
+2003-09-05 11:30  brodsom
+
+	* firebird2/src/journal/rebuild.epp:
+	
+	-Correction (Thanks to Claudio)
+
 2003-09-04 23:40  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp:
