@@ -1,3 +1,197 @@
+2003-09-29 21:32  skidder
+
+	* firebird2/src/dsql/: dsql.cpp, node.h:
+	
+	Remove unused DSQL node types
+
+2003-09-29 14:42  robocop
+
+	* firebird2/: builds/win32/defs/fbclient.def,
+	builds/win32/defs/fbclient_debug.def, builds/win32/defs/gds32.def,
+	builds/win32/defs/gds32_debug.def, builds/win32/defs/iutls.def,
+	src/alice/alice.cpp, src/burp/burp.cpp, src/burp/canonical.cpp,
+	src/dsql/alld_proto.h, src/dsql/array_proto.h,
+	src/dsql/blob_proto.h, src/dsql/chars.h, src/dsql/ddl_proto.h,
+	src/dsql/dsql_proto.h, src/dsql/hsh.cpp, src/dsql/make.cpp,
+	src/dsql/make_proto.h, src/dsql/metd.epp, src/dsql/metd_proto.h,
+	src/dsql/misc_func.cpp, src/dsql/misc_func.h,
+	src/dsql/movd_proto.h, src/dsql/node.h, src/dsql/parse_proto.h,
+	src/dsql/pass1.cpp, src/dsql/pass1_proto.h, src/dsql/prepa_proto.h,
+	src/dsql/sqlda.h, src/dsql/sym.h, src/dudley/trn.cpp,
+	src/gpre/ada.cpp, src/gpre/c_cxx.cpp, src/gpre/cob.cpp,
+	src/gpre/ftn.cpp, src/gpre/int.cpp, src/gpre/int_cxx.cpp,
+	src/gpre/pas.cpp, src/gpre/prett_proto.h, src/gpre/pretty.cpp,
+	src/isql/extract.epp, src/isql/isql.epp, src/isql/isql.h,
+	src/isql/isql_proto.h, src/isql/isql_win.cpp, src/isql/show.epp,
+	src/isql/show_proto.h, src/jrd/alt.cpp, src/jrd/exe.h,
+	src/jrd/filters.cpp, src/jrd/gds.cpp, src/jrd/gds.hxx,
+	src/jrd/gds_proto.h, src/jrd/ibase.h, src/qli/eval.cpp,
+	src/qli/eval_proto.h, src/qli/exe.cpp, src/qli/mov.cpp,
+	src/qli/mov_proto.h, src/remote/server.cpp,
+	src/remote/os/win32/ibconfig.cpp, src/utilities/gsec/gsec.cpp,
+	src/utilities/gstat/dba.epp:
+	
+	Cleanup.  Hopefully harmless It should fix the issue introduced
+	with constness in gds__interprete for current applications.
+
+2003-09-29 13:37  paul_reeves
+
+	* firebird2/builds/win32/msvc6/fb2control.dsp:
+	
+	file fb2control.dsp was initially added on branch B1_5_Release.
+
+2003-09-29 13:37  paul_reeves
+
+	* firebird2/builds/win32/msvc6/fb2control.dsp:
+	
+	[no log message]
+
+2003-09-29 13:00  dimitr
+
+	* firebird2/src/jrd/: rse.cpp, sort.cpp, sort_proto.h:
+	
+	Cleanup.
+
+2003-09-29 12:48  skidder
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	Fix cosmetic issue noted by Claudio
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/res/server_stop.ico:
+	
+	file server_stop.ico was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/res/fbcontrol.rc2:
+	
+	file fbcontrol.rc2 was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/res/server.ico:
+	
+	file server.ico was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/ctrlpan.h:
+	
+	file ctrlpan.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbcontrol.cpp:
+	
+	file fbcontrol.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/stdafx.cpp:
+	
+	file stdafx.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/FBControl.rc:
+	
+	file FBControl.rc was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbcontrol.clw:
+	
+	file fbcontrol.clw was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbdialog.h:
+	
+	file fbdialog.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbpanel.h:
+	
+	file fbpanel.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/resource.h:
+	
+	file resource.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbcontrol.h:
+	
+	file fbcontrol.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/: FBControl.rc, ctrlpan.cpp,
+	ctrlpan.h, fbcontrol.clw, fbcontrol.cpp, fbcontrol.def,
+	fbcontrol.h, fbdialog.cpp, fbdialog.h, fbpanel.cpp, fbpanel.h,
+	resource.h, stdafx.cpp, stdafx.h, res/fbcontrol.rc2,
+	res/server.ico, res/server_stop.ico:
+	
+	[no log message]
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/stdafx.h:
+	
+	file stdafx.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/ctrlpan.cpp:
+	
+	file ctrlpan.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbcontrol.def:
+	
+	file fbcontrol.def was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbdialog.cpp:
+	
+	file fbdialog.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbpanel.cpp:
+	
+	file fbpanel.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 11:54  paul_reeves
+
+	* firebird2/: builds/win32/make_all.bat,
+	builds/win32/make_boot.bat, builds/win32/prepare.bat,
+	builds/win32/msvc6/Firebird2.dsw, builds/win32/msvc6/fbguard.dsp,
+	builds/win32/msvc6/instreg.dsp,
+	src/install/arch-specific/win32/BuildExecutableInstall.bat,
+	src/install/arch-specific/win32/FirebirdInstall_15.iss,
+	src/install/arch-specific/win32/installation_readme.txt,
+	src/install/arch-specific/win32/setenvvar.bat,
+	src/iscguard/iscguard.cpp, src/iscguard/iscguard.h:
+	
+	Add Firebird Control Panel applet. Minor improvements to Win32
+	build process. Addition of command-line switch for Guardian to
+	start Classic server as an application. Updated InnoSetup script.
+
+2003-09-29 10:29  dimitr
+
+	* firebird2/src/jrd/rse.cpp:
+	
+	Correction.
+
 2003-09-28 23:35  skidder
 
 	* firebird2/: builds/win32/defs/fbclient.def,
