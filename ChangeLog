@@ -1,3 +1,10 @@
+2002-10-10 21:32  eku
+
+	* firebird2/: builds/posix/Makefile.in.embed.qli, src/qli/dtr.cpp,
+	src/qli/err.cpp, src/qli/exe.cpp:
+	
+	Fixed compilation of qli.
+
 2002-10-10 14:52  dimitr
 
 	* firebird2/src/dsql/preparse.cpp:
