@@ -29,10 +29,11 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
  *
  */
 /*
-$Id: flu.cpp,v 1.15 2002-10-29 03:31:18 seanleyne Exp $
+$Id: flu.cpp,v 1.16 2002-10-29 03:37:49 seanleyne Exp $
 */
 
 #include "firebird.h"
@@ -72,7 +73,7 @@ static int condition_handler(int *, int *, int *);
 
 /* HP-UX specific stuff */
 
-#if (defined HP700 || defined HP10)
+#ifdef HP10
 #include <dl.h>
 #include <shl.h>
 #include <unistd.h>
@@ -266,7 +267,7 @@ void FLU_unregister_module(MOD module)
 		}
 	}
 
-#if (defined HP700 || defined HP10)
+#ifdef HP10
 	shl_unload(module->mod_handle);
 #endif
 
@@ -407,7 +408,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #endif
 
 
-#if (defined HP700 || defined HP10)
+#ifdef HP10
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 							   TEXT * name, TEXT * ib_path_env_var)

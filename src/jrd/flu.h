@@ -19,13 +19,16 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
+ *
  */
 
 #ifndef _JRD_FLU_H_
 #define _JRD_FLU_H_
 
 /* RITTER - changed HP10 to HPUX in the line below */
-#if (defined HP700 || defined HPUX)
+#ifdef HPUX
 #define MODULE_HANDLE
 #include <dl.h>
 #include <shl.h>

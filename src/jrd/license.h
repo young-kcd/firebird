@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.23 2002-10-29 03:31:18 seanleyne Exp $
+ * $Id: license.h,v 1.24 2002-10-29 03:37:49 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -52,6 +52,7 @@
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
  *
  */
 
@@ -61,12 +62,6 @@
 #include "../jrd/build_no.h"
 
 #ifdef hpux
-#ifdef HP700
-#define FB_PLATFORM	"HP"
-#endif
-#ifdef HP800
-#define FB_PLATFORM	"HO"
-#endif
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */

@@ -27,12 +27,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.9 2002-10-29 02:45:07 seanleyne Exp $
+//	$Id: cob.cpp,v 1.10 2002-10-29 03:37:48 seanleyne Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
+// 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
 //
 //
 
@@ -146,7 +147,7 @@
 #define MICROFOCUS
 #endif
 /* RITTER - added HP11 to the line below */
-#if (defined HP700 || defined HP10 || defined HP11)
+#if (defined HP10 || defined HP11)
 #define MICROFOCUS
 #endif
 
@@ -277,7 +278,7 @@
 #endif
 
 /* RITTER - added HP11 to the line below */
-#if (defined HP700 || defined HP10 || defined HP11)
+#if (defined HP10 || defined HP11)
 #define USAGE_COMP		" USAGE IS COMP"
 #endif
 

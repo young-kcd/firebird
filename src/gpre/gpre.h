@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.13 2002-10-29 03:31:17 seanleyne Exp $
+ * $Id: gpre.h,v 1.14 2002-10-29 03:37:48 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -50,6 +50,7 @@
  *
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
  * 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
+ * 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
  *
  */
 
@@ -76,7 +77,7 @@ extern "C" {
 #endif
 
 #ifdef hpux
-#if (defined HP700 || defined HP10)
+#ifdef HP10
 #define ADA             1
 #define ALSYS_ADA       1
 #define COBOL		1
