@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.33 2003-04-06 11:40:25 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.34 2003-04-12 17:06:44 alexpeshkoff Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -428,37 +428,6 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 									("Unable to use config parameter %s : No memory ",
 									 ISCCFG_TMPDIR);
 								dls_flag = FALSE;
-							}
-						}
-#endif
-					continue;
-				}
-
-				/* The external function directory keyword can also be used
-				   more than once, so handle it separately. */
-				if (0 == strncmp(buf, ISCCFG_EXT_FUNC_DIR,
-								 sizeof(ISCCFG_EXT_FUNC_DIR) - 1))
-				{
-#ifdef SUPERSERVER
-/*  Note that this should be #ifdef SERVER once we implement that flag.
- *  We want this code to execute in classic servers as well as superserver,
- *  but not in client libraries, or in tools which link with a private
- *  copy of our object file, such as alice and dudley.
- *  This needs to be changed in time for the first Classic port of V6.0
- */
-					/* There is external function directory definition */
-					if (!fdls_init)
-						if (1 == sscanf(buf + sizeof(ISCCFG_EXT_FUNC_DIR) - 1,
-										" \"%[^\"]", dir_name))
-						{
-							if (DLS_add_func_dir(dir_name))
-								fdls_flag = TRUE;
-							else
-							{
-								gds__log
-									("Unable to use config parameter %s : No memory ",
-									 ISCCFG_EXT_FUNC_DIR);
-								fdls_flag = FALSE;
 							}
 						}
 #endif

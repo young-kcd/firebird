@@ -32,7 +32,5 @@ extern BOOLEAN DLS_get_temp_space(ULONG, SFB);
 extern void DLS_put_temp_space(SFB);
 extern BOOLEAN API_ROUTINE DLS_add_dir(ULONG, TEXT *);
 extern MDLS *DLS_get_access(void);
-extern BOOLEAN DLS_add_func_dir(TEXT *);
-extern FDLS *DLS_get_func_dirs(void);
 
 #endif /* _JRD_DLS_PROTO_H_ */
