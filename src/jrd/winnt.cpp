@@ -523,7 +523,7 @@ FIL PIO_open(DBB dbb,
  * Functional description
  *	Open a database file. If a "connection"
  *	block is provided, use the connection
- *	to communication with a page/lock server.
+ *	to communicate with a page/lock server.
  *
  **************************************/
 	TEXT temp[MAXPATHLEN], *ptr;

@@ -198,6 +198,6 @@
 #undef SCO_EV
 #undef SINIXZ
 
-#define FB_PREFIX "c:\\Program Files\\Firebird/"
+#define FB_PREFIX "c:\\Program Files\\Firebird\\"
 
 #endif
