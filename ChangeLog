@@ -1,3 +1,36 @@
+2003-07-10 17:36  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update
+
+2003-07-10 17:29  brodsom
+
+	* firebird2/builds/: win32/make_all.bat,
+	install/arch-specific/win32/BuildExecutableInstall.bat:
+	
+	Remove from BuildExecutableInstall work done in make_all.bat
+
+2003-07-10 17:19  brodsom
+
+	* firebird2/builds/win32/make_all.bat:
+	
+	Adding automatic public headers build (gds.h and ibase.h)
+
+2003-07-10 17:02  brodsom
+
+	* firebird2/src/misc/: headers.sed, ibase_header.txt:
+	
+	Adding automatic public headers build (gds.h and ibase.h)
+
+2003-07-10 15:36  fsg
+
+	* firebird2/src/jrd/ids.m:
+	
+	Fix to get it built under linux again
+	
+	fsg
+
 2003-07-09 15:07  alexpeshkoff
 
 	* firebird2/src/jrd/cmp.cpp:
