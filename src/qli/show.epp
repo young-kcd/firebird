@@ -2164,7 +2164,7 @@ static int show_security_class_detail( DBB database, TEXT * name)
 	count = 0;
 	MET_meta_transaction(database, FALSE);
 
-	if (!database->dbb_capabilities & DBB_cap_security)
+	if (!(database->dbb_capabilities & DBB_cap_security))
 		return FALSE;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur_class])
@@ -2197,7 +2197,7 @@ static int show_security_classes_detail( DBB database)
 	count = 0;
 	MET_meta_transaction(database, FALSE);
 
-	if (!database->dbb_capabilities & DBB_cap_security)
+	if (!(database->dbb_capabilities & DBB_cap_security))
 		return FALSE;
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_secur])
