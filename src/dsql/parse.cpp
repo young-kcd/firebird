@@ -81,6 +81,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 #include <windows.h>
+#include <stdio.h>
 /*#include <wincon.h>*/
 #endif
 
@@ -5495,13 +5496,16 @@ static void prepare_console_debug (int level, int *yydeb)
  *	Feel free to add your platform specific code.
  *
  *************************************/
+#if defined(DEV_BUILD)
     DSQL_debug = level;
+#endif
     if (level >> 8)
         *yydeb = level >> 8;
     /* CVC: I added this code form Mike Nordell to see the output from internal
        operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
        When n>0, the output console is activated; otherwise it's closed. */
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
+static FILE* redirected_output;
     if (level > 0) {
         /* Console debug code inside this scope */
         if (AllocConsole()) {

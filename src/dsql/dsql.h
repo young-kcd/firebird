@@ -32,10 +32,6 @@
 #ifndef _DSQL_DSQL_H_
 #define _DSQL_DSQL_H_
 
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-#include <stdio.h>
-#endif
-
 #include "../jrd/common.h"
 #include "../dsql/all.h"
 #include "../jrd/y_ref.h"
@@ -603,33 +599,13 @@ typedef tsql* TSQL;
     > 256   Display yacc parser output level = DSQL_level>>8
 */
 
-#ifndef SHLIB_DEFS
+#ifdef DEV_BUILD
 #ifdef DSQL_MAIN
 unsigned DSQL_debug;
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-FILE       *redirected_output;
-#endif
 #else
 extern unsigned DSQL_debug;
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-extern FILE    *redirected_output;
 #endif
-#endif
-#else
-extern unsigned DSQL_debug;
-#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-extern FILE    *redirected_output;
-#endif
-#endif
-
-
-
-// macros for error generation
-
-#define BUGCHECK(string)	ERRD_bugcheck(string)
-#define IBERROR(code, string)	ERRD_error(code, string)
-//#define BLKCHK(blk, type) if (blk->blk_type != (SCHAR) type) BUGCHECK ("expected type")
-#define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) BUGCHECK ("expected type")
+#endif // DEV_BUILD
 
 // macro to stuff blr
 // this is used in both ddl.cpp and gen.cpp, and is put here for commonality
@@ -637,51 +613,5 @@ extern FILE    *redirected_output;
 #define STUFF(byte)     ((BLOB_PTR*)request->req_blr < (BLOB_PTR*)request->req_blr_yellow) ?\
 			(*request->req_blr++ = (UCHAR)(byte)) : GEN_expand_buffer (request, (UCHAR)(byte))
 
-
-// Macros for DEV_BUILD internal consistancy checking
-
-#ifdef DEV_BUILD
-
-/* Verifies that a pointed to block matches the expected type.
- Useful to find coding errors & memory globbers.
-
-#define DEV_BLKCHK(blk, typ)	\
-	{ \
-	if ((blk) && (((BLK) (blk))->blk_type != (typ))) \
-	    ERRD_assert_msg (assert_blkchk_msg, assert_filename, (ULONG) __LINE__); \
-	}
-*/
-
-#define DEV_BLKCHK(blk, typ)	{						\
-		if ((blk) && MemoryPool::blk_type(blk) != (SSHORT)typ) {	\
-			ERRD_assert_msg((char*)assert_blkchk_msg,			\
-							(char*)assert_filename,			\
-							(ULONG) __LINE__);			\
-		}												\
-	}
-
-
-#define _assert(ex)	{if (!(ex)){(void) ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__);}}
-#undef assert
-#define assert(ex)	_assert(ex)
-#define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__)
-
-// Define the assert_filename as a static variable to save on codespace
-
-#define	ASSERT_FILENAME static UCHAR assert_filename[] = __FILE__; 
-#define	ASSERT_BLKCHK_MSG static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
-
-#else // PROD_BUILD
-
-#define	ASSERT_FILENAME
-#define	ASSERT_BLKCHK_MSG
-#define DEV_BLKCHK(blk, typ)
-#define _assert(ex)
-#undef assert
-#define assert(ex)
-#define ASSERT_FAIL
-#define	ASSERT_FILENAME
-
-#endif // DEV_BUILD
 
 #endif // _DSQL_DSQL_H_
