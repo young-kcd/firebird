@@ -1,3 +1,37 @@
+2004-07-10 11:26  robocop
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.32):
+	
+	Try to complete my undoing of the ods.h changes, aided by by Treeve
+	Jelbert.
+
+2004-07-10 05:20  robocop
+
+	* firebird2/src/: jrd/blb.cpp (1.83), jrd/btn.cpp (1.13),
+	jrd/btr.cpp (1.97), jrd/cch.cpp (1.99), jrd/dpm.epp (1.52),
+	jrd/nav.cpp (1.43), jrd/nbak.cpp (1.41), jrd/ods.h (1.28),
+	jrd/pag.cpp (1.78), jrd/sdw.cpp (1.51), jrd/tra.cpp (1.82),
+	jrd/val.cpp (1.54), utilities/nbackup.cpp (1.30),
+	utilities/gstat/dba.epp (1.44), utilities/gstat/ppg.cpp (1.19):
+	
+	Undo inheritance in ODS page types as requested by Nickolay. Either
+	some macros are too silly or the compiler is limited by the
+	standard here.	Notice I may have missed some file that's not
+	compiled in Win32.
+
+2004-07-10 05:17  robocop
+
+	* firebird2/src/common/: utils.cpp (1.7), utils_proto.h (1.4):
+	
+	Preach with the example and change the license to the IDPL
+
+2004-07-10 05:16  robocop
+
+	* firebird2/src/utilities/ibmgr/srvrmgr.cpp (1.16):
+	
+	Try to fix bug reported by Treeve Jelbert. Someone please try as
+	this file isn't part of the Win32 build.
+
 2004-07-09 07:22  robocop
 
 	* firebird2/src/: include/fb_string.h (1.27), jrd/cmp.cpp (1.136):
