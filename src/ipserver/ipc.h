@@ -131,10 +131,11 @@ const USHORT IPS_MAX_PAGES_PER_CLI	= 16;	/* max 1k pages space per client */
 #define	IPS_UNPACK_MAPNUM(n)	(((ULONG)(n - IP_BIAS) >> 8) & 0xFF)
 #define	IPS_UNPACK_USERNUM(n)	((n - IP_BIAS) & 0xFF)
 
-typedef struct bid {
+struct bid {
 	ULONG bid_relation_id;		/* Relation id (or null) */
 	ULONG bid_number;			/* Record number */
-} *BID;
+};
+typedef bid* BID;
 
 /* Block types */
 
@@ -146,14 +147,15 @@ struct blk;
 
 /* Block types */
 
-typedef struct cnct {
+struct cnct {
 	int *cnct_read_pipe;		/* this is really a FILE pointer */
 	int *cnct_write_pipe;		/* this is really a FILE pointer */
-} *CNCT;
+};
+typedef cnct* CNCT;
 
 /* mapped file structure */
 
-typedef struct ipm {
+struct ipm {
 	struct ipm *ipm_next;		/* pointer to next one */
 	USHORT ipm_count;			/* slots in use */
 	USHORT ipm_number;			/* mapped area number */
@@ -162,14 +164,15 @@ typedef struct ipm {
 	LPVOID ipm_address;			/* address of mapped memory */
 	UCHAR ipm_ids[IPS_MAX_NUM_CLI];
 	/* ids */
-} *IPM;
+};
+typedef ipm* IPM;
 
 /* mapped structure flags */
 const USHORT IPMF_SERVER_SHUTDOWN	= 1;	/* server has shut down */
 
 /* thread connection control block */
 
-typedef struct icc
+struct icc
 {
 	blk			icc_header;
 	struct icc*	icc_next;			/* pointer to next thread */
@@ -188,7 +191,8 @@ typedef struct icc
 	SSHORT		icc_flags;			/* status bits */
 	HANDLE		icc_waits[2];		/* wait for these handles */
 	UCHAR*		icc_mapped_addr;	/* where the thread's mapped to */
-} *ICC;
+};
+typedef icc* ICC;
 
 /* icc structure flags */
 const USHORT ICCF_SHUTDOWN			= 1;	/* shutdown in progress */
@@ -197,7 +201,7 @@ const USHORT ICCF_UNMAP_CLIENT		= 4;	/* client maps must be shut down */
 
 /* database block */
 
-typedef struct idb
+struct idb
 {
 	blk						idb_header;
 	struct icc*				idb_thread;			/* back pointer to thread */
@@ -210,7 +214,8 @@ typedef struct idb
 	int*					idb_status_vector;	/* pointer to status vector */
 	USHORT					idb_flags;			/* flags (see below) */
 	SCHAR*					idb_setjmp;
-} *IDB;
+};
+typedef idb* IDB;
 
 const USHORT IDBF_DATABASE_ATTACHMENT	= 1;
 const USHORT IDBF_SERVICE_ATTACHMENT	= 2;
@@ -218,7 +223,7 @@ const USHORT IDBF_SERVER_SHUTDOWN		= 4;
 
 /* transaction block */
 
-typedef struct itr
+struct itr
 {
 	blk			itr_header;
 	struct idb*	itr_idb;
@@ -226,7 +231,8 @@ typedef struct itr
 	struct ibl*	itr_blobs;
 	FB_API_HANDLE itr_handle;
 	USHORT		itr_flags;
-} *ITR;
+};
+typedef itr* ITR;
 
 const USHORT ITR_limbo	= 1;
 
@@ -246,7 +252,8 @@ typedef struct ibl
 	USHORT		ibl_fragment_length;
 	USHORT		ibl_buffer_length;
 	UCHAR		ibl_buffer[1];
-} *IBL;
+};
+typedef ibl* IBL;
 
 //const USHORT IBL_eof			= 1;
 //const USHORT IBL_segment		= 2;
@@ -255,18 +262,19 @@ const USHORT IBL_create			= 8;
 
 /* request block */
 
-typedef struct irq {
+struct irq {
 	blk			irq_header;
 	struct idb *irq_idb;
 	struct tra *irq_itr;
 	struct irq *irq_next;
 	struct irq **irq_user_handle;
 	FB_API_HANDLE irq_handle;
-} *IRQ;
+};
+typedef irq* IRQ;
 
 /* event structure */
 
-typedef struct ivnt {
+struct ivnt {
 	blk			ivnt_header;
 	struct ivnt *ivnt_next;
 	struct idb *ivnt_idb;
@@ -275,11 +283,12 @@ typedef struct ivnt {
 	HWND ivnt_window;
 	SLONG ivnt_id;
 	SLONG ivnt_handle;
-} *IVNT;
+};
+typedef ivnt* IVNT;
 
 /* remote SQL request */
 
-typedef struct ipserver_isr {
+struct ipserver_isr {
 	blk		isr_header;
 	struct ipserver_isr *isr_next;
 	struct idb *isr_idb;
@@ -292,7 +301,8 @@ typedef struct ipserver_isr {
 	ISC_STATUS_ARRAY isr_status;
 	UCHAR *isr_cursor;
 	UCHAR *isr_packed;
-} *IPSERVER_ISR;
+};
+typedef ipserver_isr* IPSERVER_ISR;
 
 #define BLKDEF(type, root, tail) type,
 enum blk_t {
@@ -327,7 +337,7 @@ enum blk_t {
     each of the five transfer blocks.
 */
 
-typedef struct {
+struct ips_string {
 	ULONG ips_cl_size;			/* client buffer size */
 	ULONG ips_sv_size;			/* server buffer size */
 	ULONG ips_sv_alloced;		/* server buffer size allocated */
@@ -340,7 +350,7 @@ typedef struct {
 	UCHAR *ips_cl_addr;			/* address of client buffer */
 	const UCHAR* ips_sv_addr;			/* address of server buffer */
 	UCHAR *ips_sv_buffer;		/* allocated local buffer */
-} ips_string;
+};
 
 const ULONG IPS_INPUT_BUFFER	= 1;	/* used for input from client */
 const ULONG IPS_OUTPUT_BUFFER	= 2;	/* used for output to client */
@@ -376,10 +386,10 @@ const ULONG IPS_OUTPUT_BUFFER	= 2;	/* used for output to client */
     - unwind request
 */
 
-typedef struct {
+struct ips_object {
 	UCHAR *ips_handle;			/* handle of object */
 	ULONG ips_parameter;		/* a parameter, used if needed */
-} ips_object;
+};
 
 const USHORT IPS_ATTACH_NAME	= 0;	/* use controller 0 for db name */
 const USHORT IPS_ATTACH_DPB		= 1;	/* use controller 1 for dpb */
@@ -405,33 +415,33 @@ const USHORT IPS_PREPARE_TRANS	= 0;	/* use controller 0 for string */
 
 /* structure used to compile requests */
 
-typedef struct {
+struct ips_compile_req {
 	UCHAR *ips_db_handle;		/* database handle */
 	UCHAR *ips_rq_handle;		/* returned request handle */
-} ips_compile_req;
+};
 
 const USHORT IPS_COMPILE_REQ	= 0;	/* use controller 0 for blr */
 
 
 /* structure used by create/open blob (and create/open blob2) */
 
-typedef struct {
+struct ips_blob {
 	UCHAR *ips_db_handle;		/* database handle */
 	UCHAR *ips_tr_handle;		/* transaction handle */
 	UCHAR *ips_bl_handle;		/* returned blob handle */
 	ULONG ips_rel_id;			/* returned relation ID */
 	ULONG ips_bid_number;		/* returned blob ID number */
-} ips_blob;
+};
 
 const USHORT IPS_BLOB_BPB		= 0;	/* use contorller 0 for bpb */
 
 
 /* structure used for DDL operations */
 
-typedef struct {
+struct ips_ddl {
 	UCHAR *ips_db_handle;		/* database handle */
 	UCHAR *ips_tr_handle;		/* transaction handle */
-} ips_ddl;
+};
 
 const USHORT IPS_DDL_DDL		= 0;	/* use controller 0 for ddl */
 
@@ -449,7 +459,7 @@ const USHORT IPS_DDL_DDL		= 0;	/* use controller 0 for ddl */
     - set cursor
 */
 
-typedef struct {
+struct ips_dsql {
 	UCHAR *ips_db_handle;		/* database handle */
 	UCHAR *ips_tr_handle;		/* transaction handle (in/out) */
 	UCHAR *ips_st_handle;		/* statement handle */
@@ -457,7 +467,7 @@ typedef struct {
 	USHORT ips_msg_type;		/* message type */
 	USHORT ips_msg_out;			/* output message type */
 	USHORT ips_rec_count;		/* packed records count */
-} ips_dsql;
+};
 
 const USHORT IPS_DSQL_EXEC_BLR	= 0;	/* use controller 0 for blr */
 const USHORT IPS_DSQL_EXEC_MSG	= 1;	/* use controller 1 for message */
@@ -492,23 +502,23 @@ const USHORT IPS_DSQL_SET_CURSOR	= 0;	/* use controller 0 for name */
 
 /* structure used to get/put blob segments */
 
-typedef struct {
+struct ips_segment {
 	UCHAR *ips_bl_handle;		/* blob handle */
 	USHORT ips_length;			/* returned actual length */
-} ips_segment;
+};
 
 const USHORT IPS_BLOB_SEGMENT	= 0;	/* use controller 0 for segment */
 
 
 /* structure used to get/put array slices */
 
-typedef struct {
+struct ips_slice {
 	UCHAR *ips_db_handle;		/* database handle */
 	UCHAR *ips_tr_handle;		/* transaction handle */
 	ULONG ips_rel_id;			/* array rel id */
 	ULONG ips_number;			/* array number */
 	ULONG ips_length;			/* returned actual length */
-} ips_slice;
+};
 
 const USHORT IPS_SLICE_SDL		= 0;	/* use controller 0 for sdl */
 const USHORT IPS_SLICE_PARAM	= 1;	/* use controller 1 for parameters */
@@ -517,20 +527,20 @@ const USHORT IPS_SLICE_BUFFER	= 2;	/* use controller 2 for slice */
 
 /* structure for queueing events */
 
-typedef struct {
+struct ips_que_events {
 	UCHAR *ips_db_handle;		/* database handle */
 	ULONG ips_event_id;			/* returned event id */
 	HWND ips_event_hwnd;		/* window handle to return to */
 	FPTR_EVENT_CALLBACK ips_ast;	/* ast address */
 	UCHAR* ips_arg;				/* ast arg */
-} ips_que_events;
+};
 
 const USHORT IPS_QUEUE_EVENT	= 0;	/* use controller 0 for event */
 
 
 /* structure for send/receive message */
 
-typedef struct {
+struct ips_request {
 	UCHAR *ips_tr_handle;		/* transaction handle */
 	UCHAR *ips_rq_handle;		/* request handle */
 	USHORT ips_msg_type;		/* message type */
@@ -539,7 +549,7 @@ typedef struct {
 	USHORT ips_direction;		/* direction */
 	ULONG ips_offset;			/* offset */
 #endif
-} ips_request;
+};
 
 const USHORT IPS_SEND_MESSAGE		= 0;	/* use controller 0 for message */
 const USHORT IPS_RECEIVE_MESSAGE	= 0;	/* use controller 0 for message */
@@ -547,38 +557,38 @@ const USHORT IPS_RECEIVE_MESSAGE	= 0;	/* use controller 0 for message */
 
 /* structure used to reconnect transaction */
 
-typedef struct {
+struct ips_reconnect {
 	UCHAR *ips_db_handle;		/* transaction handle */
 	UCHAR *ips_tr_handle;		/* transaction handle */
-} ips_reconnect;
+};
 
 const USHORT IPS_RECONNECT_ID	= 0;	/* use controller 0 for id */
 
 
 /* structure used to seek into a blob */
 
-typedef struct {
+struct ips_seek_blob {
 	UCHAR *ips_bl_handle;		/* blob handle */
 	ULONG ips_offset;			/* offset into blob */
 	ULONG ips_result;			/* returned result */
 	USHORT ips_mode;			/* seek mode */
-} ips_seek_blob;
+};
 
 
 /* structure used to start transactions */
 
-typedef struct {
+struct ips_start_trans {
 	UCHAR *ips_tr_handle;		/* returned transaction handle */
 	USHORT ips_db_count;		/* number of db's in transaction */
-} ips_start_trans;
+};
 
 
 /* structure used for transact request */
 
-typedef struct {
+struct ips_transact_request {
 	UCHAR *ips_db_handle;		/* database handle */
 	UCHAR *ips_tr_handle;		/* transaction handle (in/out) */
-} ips_transact_request;
+};
 
 const USHORT IPS_TRANS_REQ_BLR		= 0;	/* use controller 0 for blr */
 const USHORT IPS_TRANS_REQ_IN_MSG	= 1;	/* use controller 1 for input msg */
@@ -592,7 +602,7 @@ const USHORT IPS_TRANS_REQ_OUT_MSG	= 2;	/* use controller 2 for output msg */
 
 const USHORT MAX_IPS_STRINGS		= 5;
 
-typedef struct {
+struct ips_comm_area {
 	ULONG ips_server_protocol;	/* server's protocol level */
 	ULONG ips_client_protocol;	/* client's protocol level */
 	ISC_STATUS_ARRAY ips_status;	/* status vector */
@@ -621,7 +631,8 @@ typedef struct {
 		ips_transact_request ips_op_trans_req;
 	} ips_operations;
 	ULONG ips_data[1];			/* start of data area */
-} ips_comm_area, *IPS;
+};
+typedef ips_comm_area* IPS;
 
 /* size of mapped memory for a given client */
 
@@ -642,12 +653,13 @@ static const char* IPI_EVENT_THREAD		= "%sEventThread%d_%d";
 
 /* local event queue structure */
 
-typedef struct eventq {
+struct eventq {
 	struct eventq *evq_next;	/* next event */
 	SLONG evq_id;				/* event ID */
 	USHORT evq_length;			/* event length */
 	UCHAR evq_string[1];			/* event string */
-} *EVENTQ;
+};
+typedef eventq* EVENTQ;
 
 /* interprocess database thread structure */
 

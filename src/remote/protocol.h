@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: protocol.h,v 1.21 2004-05-21 06:16:08 robocop Exp $
+$Id: protocol.h,v 1.22 2004-06-08 18:40:01 brodsom Exp $
 */
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
@@ -271,12 +271,13 @@ typedef enum
 
 /* Count String Structure */
 
-typedef struct cstring
+struct cstring
 {
 	USHORT	cstr_length;
 	USHORT	cstr_allocated;
 	UCHAR*	cstr_address;
-} CSTRING;
+};
+typedef cstring CSTRING;
 
 // CVC: Only used in p_blob, p_sgmt & p_ddl, to validate constness.
 // We want to ensure our original bpb is not overwritten.
@@ -284,12 +285,13 @@ typedef struct cstring
 // to demand that those functions do not change the bpb.
 // We want to ensure our incoming segment to be stored isn't overwritten,
 // in the case of send/batch commands.
-typedef struct cstring_const
+struct cstring_const
 {
 	USHORT	cstr_length;
 	USHORT	cstr_allocated;
 	const UCHAR*	cstr_address;
-} CSTRING_CONST;
+};
+typedef cstring_const CSTRING_CONST;
 
 
 #ifdef DEBUG_XDR_MEMORY
@@ -298,20 +300,21 @@ typedef struct cstring_const
 
 const USHORT P_MALLOC_SIZE	= 64;	/* Xdr memory allocations per packet */
 
-typedef struct p_malloc
+struct p_malloc
 {
 	P_OP	p_operation;	/* Operation/packet type */
 	ULONG	p_allocated;	/* Memory length */
 	UCHAR*	p_address;	/* Memory address */
 /*	UCHAR*	p_xdrvar; */	/* XDR variable */
-} P_MALLOC;
+};
+typedef p_malloc P_MALLOC;
 
 #endif	/* DEBUG_XDR_MEMORY */
 
 
 /* Connect Block (Client to server) */
 
-typedef struct p_cnct
+struct p_cnct
 {
 	P_OP	p_cnct_operation;	/* OP_CREATE or OP_OPEN */
 	USHORT	p_cnct_cversion;	/* Version of connect protocol */
@@ -327,7 +330,8 @@ typedef struct p_cnct
 		USHORT	p_cnct_max_type;	/* Maximum type */
 		USHORT	p_cnct_weight;		/* Preference weight */
 	}		p_cnct_versions[10];
-} P_CNCT;
+};
+typedef p_cnct P_CNCT;
 
 #ifdef ASYMMETRIC_PROTOCOLS_ONLY
 #define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
@@ -359,70 +363,77 @@ const TEXT CNCT_user_verification	= 6;	/* Attach/create using this connection
 					   will use user verification */
 
 
-typedef struct bid	/* BLOB ID */
+struct bid	/* BLOB ID */
 {
 	ULONG	bid_relation_id;	/* Relation id (or null) */
 	ULONG	bid_number;			/* Record number */
-} *BID;
+};
+typedef bid* BID;
 
 
 /* Accept Block (Server response to connect block) */
 
-typedef struct p_acpt
+struct p_acpt
 {
 	USHORT	p_acpt_version;		/* Protocol version number */
 	P_ARCH	p_acpt_architecture;	/* Architecture for protocol */
 	USHORT	p_acpt_type;		/* Minimum type */
-} P_ACPT;
+};
+typedef p_acpt P_ACPT;
 
 /* Generic Response block */
 
-typedef struct p_resp
+struct p_resp
 {
 	OBJCT		p_resp_object;		/* Object id */
 	struct bid	p_resp_blob_id;		/* Blob id */
 	CSTRING		p_resp_data;		/* Data */
 	ISC_STATUS*	p_resp_status_vector;
 	UCHAR*		p_resp_strings[10];
-} P_RESP;
+};
+typedef p_resp P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number
 
 /* Attach and create database */
 
-typedef struct p_atch
+struct p_atch
 {
 	OBJCT	p_atch_database;	/* Database object id */
 	CSTRING	p_atch_file;		/* File name */
 	CSTRING	p_atch_dpb;		/* Database parameter block */
-} P_ATCH;
+};
+typedef p_atch P_ATCH;
 
 /* Compile request */
 
-typedef struct p_cmpl
+struct p_cmpl
 {
 	OBJCT	p_cmpl_database;	/* Database object id */
 	CSTRING	p_cmpl_blr;		/* Request blr */
-} P_CMPL;
+};
+typedef p_cmpl P_CMPL;
 
 /* Start Transaction */
 
-typedef struct p_sttr
+struct p_sttr
 {
 	OBJCT	p_sttr_database;	/* Database object id */
 	CSTRING	p_sttr_tpb;		/* Transaction parameter block */
-} P_STTR;
+};
+typedef p_sttr P_STTR;
 
 /* Generic release block */
 
-typedef struct p_rlse
+struct p_rlse
 {
 	OBJCT	p_rlse_object;		/* Object to be released */
-} P_RLSE;
+};
+typedef p_rlse P_RLSE;
 
 /* Data block (start, start and send, send, receive) */
 
-typedef struct p_data {
+struct p_data {
     OBJCT	p_data_request;		/* Request object id */
     USHORT	p_data_incarnation;	/* Incarnation of request */
     OBJCT	p_data_transaction;	/* Transaction object id */
@@ -432,108 +443,120 @@ typedef struct p_data {
     USHORT	p_data_direction;	/* direction to scroll before returning records */
     ULONG	p_data_offset;		/* offset to scroll before returning records */
 #endif
-} P_DATA;
+};
+typedef p_data P_DATA;
 
 /* Execute stored procedure block */
 
-typedef struct p_trrq {
+struct p_trrq {
     OBJCT	p_trrq_database;	/* Database object id */
     OBJCT	p_trrq_transaction;	/* Transaction object id */
     CSTRING	p_trrq_blr;		/* Message blr */
     USHORT	p_trrq_in_msg_length;
     USHORT	p_trrq_out_msg_length;
     USHORT	p_trrq_messages;	/* Number of messages */
-} P_TRRQ;
+};
+typedef p_trrq P_TRRQ;
 
 /* Blob (create/open) and segment blocks */
 
-typedef struct p_blob {
+struct p_blob {
     OBJCT	p_blob_transaction;	/* Transaction */
     struct bid	p_blob_id;		/* Blob id for open */
     CSTRING_CONST	p_blob_bpb;		/* Blob parameter block */
-} P_BLOB;
+};
+typedef p_blob P_BLOB;
 
-typedef struct p_sgmt {
+struct p_sgmt {
     OBJCT	p_sgmt_blob;		/* Blob handle id */
     USHORT	p_sgmt_length;		/* Length of segment */
     CSTRING_CONST	p_sgmt_segment;		/* Data segment */
-} P_SGMT;
+};
+typedef p_sgmt P_SGMT;
 
-typedef struct p_seek {
+struct p_seek {
     OBJCT	p_seek_blob;		/* Blob handle id */
     SSHORT	p_seek_mode;		/* mode of seek */
     SLONG	p_seek_offset;		/* Offset of seek */
-} P_SEEK;
+};
+typedef p_seek P_SEEK;
 
 /* Information request blocks */
 
-typedef struct p_info {
+struct p_info {
     OBJCT	p_info_object;		/* Object of information */
     USHORT	p_info_incarnation;	/* Incarnation of object */
     CSTRING	p_info_items;		/* Information */
     CSTRING	p_info_recv_items;	/* Receive information */
     USHORT	p_info_buffer_length;	/* Target buffer length */
-} P_INFO;
+};
+typedef p_info P_INFO;
 
 /* Event request block */
 
-typedef struct p_event {
+struct p_event {
     OBJCT	p_event_database;	/* Database object id */
     CSTRING	p_event_items;		/* Event description block */
     FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
     SLONG	p_event_arg;		/* Argument to ast routine */
     SLONG	p_event_rid;		/* Client side id of remote event */
-} P_EVENT;
+};
+typedef p_event P_EVENT;
 
 /* Prepare block */
 
-typedef struct p_prep {
+struct p_prep {
     OBJCT	p_prep_transaction;
     CSTRING	p_prep_data;
-} P_PREP;
+};
+typedef p_prep P_PREP;
 
 /* Connect request block */
 
-typedef struct p_req {
+struct p_req {
     USHORT	p_req_type;		/* Connection type */
     OBJCT	p_req_object;		/* Related object */
     ULONG	p_req_partner;		/* Partner identification */
-} P_REQ;
+};
+typedef p_req P_REQ;
 
 // p_req_type
 const USHORT P_REQ_async	= 1;	/* Auxiliary asynchronous port */
 
 /* DDL request */
 
-typedef struct p_ddl {
+struct p_ddl {
      OBJCT	p_ddl_database;		/* Database object id */
      OBJCT	p_ddl_transaction;	/* Transaction */
      CSTRING_CONST	p_ddl_blr;		/* Request blr */
-} P_DDL;
+};
+typedef p_ddl P_DDL;
 
 /* Slice Operation */
 
-typedef struct p_slc {
+struct p_slc {
     OBJCT	p_slc_transaction;	/* Transaction */
     struct bid	p_slc_id;		/* Slice id */
     CSTRING	p_slc_sdl;		/* Slice description language */
     CSTRING	p_slc_parameters;	/* Slice parameters */
     lstring	p_slc_slice;		/* Slice proper */
     ULONG	p_slc_length;		/* Number of elements */
-} P_SLC;
+};
+typedef p_slc P_SLC;
 
 /* Response to get_slice */
 
-typedef struct p_slr {
+struct p_slr {
     lstring	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
     UCHAR	*p_slr_sdl;			/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
-} P_SLR;
+};
+typedef p_slr P_SLR;
  
 /* DSQL structure definitions */
 
-typedef struct p_sqlst {
+struct p_sqlst {
     OBJCT	p_sqlst_transaction;	/* transaction object */
     OBJCT	p_sqlst_statement;	/* statement object */
     USHORT	p_sqlst_SQL_dialect;	/* the SQL dialect */
@@ -545,9 +568,10 @@ typedef struct p_sqlst {
     USHORT	p_sqlst_messages;	/* Number of messages */
     CSTRING	p_sqlst_out_blr;	/* blr describing output message */
     USHORT	p_sqlst_out_message_number;
-} P_SQLST;
+};
+typedef p_sqlst P_SQLST;
 
-typedef struct p_sqldata {
+struct p_sqldata {
     OBJCT	p_sqldata_statement;	/* statement object */
     OBJCT	p_sqldata_transaction;	/* transaction object */
     CSTRING	p_sqldata_blr;		/* blr describing message */
@@ -556,22 +580,25 @@ typedef struct p_sqldata {
     CSTRING	p_sqldata_out_blr;	/* blr describing output message */
     USHORT	p_sqldata_out_message_number;
     ULONG	p_sqldata_status;	/* final eof status */
-} P_SQLDATA;
+};
+typedef p_sqldata P_SQLDATA;
 
-typedef struct p_sqlfree {
+struct p_sqlfree {
     OBJCT	p_sqlfree_statement;	/* statement object */
     USHORT	p_sqlfree_option;	/* option */
-} P_SQLFREE;
+};
+typedef p_sqlfree P_SQLFREE;
 
-typedef struct p_sqlcur {
+struct p_sqlcur {
     OBJCT	p_sqlcur_statement;	/* statement object */
     CSTRING	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
-} P_SQLCUR;
+};
+typedef p_sqlcur P_SQLCUR;
 
 /* Generalize packet (sic!) */
 
-typedef struct packet {
+struct packet {
 #ifdef DEBUG_XDR_MEMORY
     /* When XDR memory debugging is enabled, p_malloc must be
        the first subpacket and be followed by p_operation (see
@@ -603,7 +630,8 @@ typedef struct packet {
     P_SQLCUR	p_sqlcur;	/* DSQL Set cursor name */
     P_SQLFREE	p_sqlfree;	/* DSQL Free statement */
     P_TRRQ	p_trrq;		/* Transact request packet */
-} PACKET;
+};
+typedef packet PACKET;
 
 #endif // REMOTE_PROTOCOL_H
 

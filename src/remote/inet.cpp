@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.113 2004-06-08 13:39:50 alexpeshkoff Exp $
+$Id: inet.cpp,v 1.114 2004-06-08 18:40:01 brodsom Exp $
 */
 #include "firebird.h"
 #include <stdio.h>
@@ -252,13 +252,14 @@ const int MAXHOSTLEN		= 64;
 
 const int SELECT_TIMEOUT	= 60;		/* Dispatch thread select timeout (sec) */
 
-typedef struct slct
+struct slct
 {
 	int		slct_width;
 	int		slct_count;
 	SLONG	slct_time;
 	fd_set	slct_fdset;
-} SLCT;
+};
+typedef slct SLCT;
 
 static int		accept_connection(rem_port*, P_CNCT *);
 #ifdef HAVE_SETITIMER

@@ -76,7 +76,7 @@ struct blk;
 // fwd. decl.
 struct rem_port;
 
-typedef struct rdb
+struct rdb
 {
 	blk				rdb_header;
 	USHORT			rdb_id;
@@ -89,12 +89,13 @@ typedef struct rdb
 	struct rsr*		rdb_sql_requests;	/* SQL requests */
 	ISC_STATUS*		rdb_status_vector;
 	PACKET			rdb_packet;			/* Communication structure */
-} *RDB;
+};
+typedef rdb* RDB;
 
 // rdb_flags
 const USHORT RDB_service	= 1;		/* structure relates to a service */
 
-typedef struct rtr
+struct rtr
 {
 	blk			rtr_header;
 	rdb*		rtr_rdb;
@@ -103,12 +104,13 @@ typedef struct rtr
 	FB_API_HANDLE rtr_handle;
 	USHORT		rtr_flags;
 	USHORT		rtr_id;
-} *RTR;
+};
+typedef rtr* RTR;
 
 // rtr_flags
 const USHORT RTR_limbo	= 1;
 
-typedef struct rbl
+struct rbl
 {
 	blk			rbl_header;
 	rdb*		rbl_rdb;
@@ -126,7 +128,8 @@ typedef struct rbl
 	USHORT		rbl_source_interp;	/* source interp (for writing) */
 	USHORT		rbl_target_interp;	/* destination interp (for reading) */
 	UCHAR		rbl_data[1];
-} *RBL;
+};
+typedef rbl* RBL;
 
 // rbl_flags
 const USHORT RBL_eof		= 1;
@@ -134,7 +137,7 @@ const USHORT RBL_segment	= 2;
 const USHORT RBL_eof_pending= 4;
 const USHORT RBL_create		= 8;
 
-typedef struct rvnt
+struct rvnt
 {
 	blk			rvnt_header;
 	rvnt*		rvnt_next;
@@ -146,7 +149,8 @@ typedef struct rvnt
 	rem_port*	rvnt_port;	/* used to id server from whence async came */
 	const UCHAR*		rvnt_items;
 	SSHORT		rvnt_length;
-} *RVNT;
+};
+typedef rvnt* RVNT;
 
 struct rem_vec
 {
@@ -193,7 +197,7 @@ struct rem_fmt
 /* Windows declares a msg structure, so rename the structure 
    to avoid overlap problems. */
 
-typedef struct message
+struct message
 {
 	blk			msg_header;
 	message*	msg_next;	/* Next available message */
@@ -208,11 +212,12 @@ typedef struct message
 	USHORT		msg_number;			/* Message number */
 	UCHAR*		msg_address;		/* Address of message */
 	UCHAR		msg_buffer[1];		/* Allocated message */
-} *REM_MSG;
+};
+typedef message* REM_MSG;
 
 /* remote stored procedure request */
 
-typedef struct rpr
+struct rpr
 {
 	blk			rpr_header;
 	rdb*		rpr_rdb;
@@ -223,7 +228,8 @@ typedef struct rpr
 	rem_fmt*	rpr_in_format;	/* Format of input message */
 	rem_fmt*	rpr_out_format;	/* Format of output message */
 	USHORT		rpr_flags;
-} *RPR;
+};
+typedef rpr* RPR;
 
 // rpr_flags (not used)
 //#define RPR_eof		1		/* End-of-stream encountered */
@@ -265,7 +271,7 @@ const USHORT RRQ_last_backward		= 4;	/* last time, the next level up asked for u
 
 /* remote SQL request */
 
-typedef struct rsr
+struct rsr
 {
 	blk				rsr_header;
 	rsr*			rsr_next;
@@ -287,7 +293,8 @@ typedef struct rsr
 	USHORT			rsr_msgs_waiting; 	/* count of full rsr_messages */
 	USHORT			rsr_reorder_level; 	/* Trigger pipelining at this level */
 	USHORT			rsr_batch_count; 	/* Count of batches in pipeline */
-} *RSR;
+};
+typedef rsr* RSR;
 
 // rsr_flags
 const USHORT RSR_fetched	= 1;		/* Cleared by execute, set by fetch */
@@ -529,7 +536,7 @@ inline void REM_restore_thread_data() {
 
 typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
 
-typedef struct rmtque
+struct rmtque
 {
 	blk					rmtque_header;	// Memory allocator header
 	rmtque*				rmtque_next;	// Next entry in queue
@@ -539,7 +546,8 @@ typedef struct rmtque
 
 	/* Fn that receives queued entry */
 	t_rmtque_fn			rmtque_function;
-} *RMTQUE;
+};
+typedef rmtque* RMTQUE;
 
 #endif // REMOTE_REMOTE_H
 

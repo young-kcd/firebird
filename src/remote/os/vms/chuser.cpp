@@ -43,12 +43,13 @@ static int get_major_vms_version(void);
 
 static int major_vms_version = 0;
 
-typedef struct itm {
+struct itm {
 	SSHORT itm_buflen;
 	SSHORT itm_code;
 	SCHAR *itm_bufadr;
 	SCHAR *itm_retlenadr;
-} ITM;
+};
+typedef itm ITM;
 
 //#define	LNM$M_NO_ALIAS	1
 //#define	LNM$M_CONFINE	2

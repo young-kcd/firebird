@@ -65,7 +65,7 @@ const ULONG XNET_EVENT_SPACE		= 100; /* half of space (bytes) for event handling
 
 /* mapped file structure */
 
-typedef struct xpm {
+struct xpm {
     struct xpm  *xpm_next;              /* pointer to next one */
     ULONG       xpm_count;              /* slots in use */
     ULONG       xpm_number;             /* mapped area number */
@@ -74,7 +74,8 @@ typedef struct xpm {
     CADDR_T     xpm_address;            /* address of mapped memory */
     UCHAR       xpm_ids[XPS_MAX_NUM_CLI]; /* ids */
     time_t      xpm_timestamp;          /* timestamp to avoid map name confilcts */
-} *XPM;
+};
+typedef xpm* XPM;
 
 /* mapped structure flags */
 
@@ -86,19 +87,20 @@ const USHORT XPM_BUSY				= 1;	/* xpm structure is in use */
 /* xch comm channel structure - four per connection (client to server data,
    server to client data, client to server events, server to client events) */
 
-typedef struct xch
+struct xch
 {
     ULONG		xch_length;      /* message length */
     ULONG		xch_size;        /* channel data size */
     USHORT      xch_flags;       /* flags */
     UCHAR       *xch_buffer;     /* message */
     UCHAR 	    *xch_client_ptr; /* client pointer to xch buffers */
-} *XCH;
+};
+typedef xch* XCH;
 
 
 /* thread connection control block (xcc) */
 
-typedef struct xcc {
+struct xcc {
     struct xcc  *xcc_next;              /* pointer to next thread */
     XPM         xcc_xpm;               /* pointer back to xpm */
     ULONG       xcc_map_num;            /* this thread's mapped file number */
@@ -117,7 +119,8 @@ typedef struct xcc {
     XCH         xcc_send_channel;       /* send channel structure */
     ULONG       xcc_flags;              /* status bits */
     UCHAR       *xcc_mapped_addr;       /* where the thread's mapped to */
-} *XCC;
+};
+typedef xcc* XCC;
 
 /* xcc structure flags */
 const ULONG XCCF_SERVER_SHUTDOWN		= 2;	/* server has shutdown detected */
@@ -126,7 +129,7 @@ const ULONG XCCF_SERVER_SHUTDOWN		= 2;	/* server has shutdown detected */
 /* This structure (xps) is mapped to the start of the allocated
     communications area between the client and server. */
 
-typedef struct xps
+struct xps
 {
     ULONG       xps_server_protocol;    /* server's protocol level */
     ULONG       xps_client_protocol;    /* client's protocol level */
@@ -135,7 +138,8 @@ typedef struct xps
     USHORT      xps_flags;              /* flags word */
     struct xch  xps_channels[4];        /* comm channels */
     ULONG       xps_data[1];            /* start of data area */
-} *XPS;
+};
+typedef xps* XPS;
 
 
 /* xps_channel numbers */
@@ -150,14 +154,15 @@ const ULONG XPI_CLIENT_PROTOCOL_VERSION		= 3L;
 const ULONG XPI_SERVER_PROTOCOL_VERSION		= 3L;
 
 /* XNET_RESPONSE - server response on client connect request */
-typedef struct{
+struct XNET_RESPONSE {
 	ULONG proc_id;
 	ULONG slots_per_map;
 	ULONG pages_per_slot;
 	ULONG map_num;
 	ULONG slot_num;
 	time_t timestamp;
-} XNET_RESPONSE, *PXNET_RESPONSE;
+};
+typedef XNET_RESPONSE* PXNET_RESPONSE;
 
 /* XNET_CONNECT_RESPONZE_SIZE - amount of bytes server writes on connect response */
 const size_t XNET_CONNECT_RESPONZE_SIZE	= sizeof(XNET_RESPONSE);

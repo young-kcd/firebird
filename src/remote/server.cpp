@@ -101,22 +101,24 @@ const USHORT STMT_BLOB		= 1;
 const USHORT STMT_NO_BATCH	= 2;
 const USHORT STMT_OTHER		= 0;
 
-typedef struct server_req_t
+struct server_req_t
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
 	rem_port*			req_port;
 	PACKET			req_send;
 	PACKET			req_receive;
-} *SERVER_REQ;
+};
+typedef server_req_t* SERVER_REQ;
 
-typedef struct srvr
+struct srvr
 {
 	struct srvr*	srvr_next;
 	rem_port*		srvr_parent_port;
 	enum rem_port_t	srvr_port_type;
 	USHORT			srvr_flags;
-} *SRVR;
+};
+typedef srvr* SRVR;
 
 static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
