@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_SERVE_PROTO_H_
-#define _REMOTE_SERVE_PROTO_H_
+#ifndef REMOTE_SERVE_PROTO_H
+#define REMOTE_SERVE_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,23 +30,23 @@ extern "C" {
 
 
 #ifdef WINDOWS_ROUTER
-extern void SRVR_WinMain(struct port *, USHORT, HINSTANCE, HINSTANCE, int);
+void SRVR_WinMain(struct port *, USHORT, HINSTANCE, HINSTANCE, int);
 #else	/* WINDOWS_ROUTER */
-extern void SRVR_main(struct port *, USHORT);
+void SRVR_main(struct port *, USHORT);
 #endif	/* WINDOWS_ROUTER */
 
 #ifdef NO_PORT
 #define PORT void*
 #endif
 
-extern void SRVR_multi_thread(struct port *, USHORT);
-extern bool process_packet(PORT, PACKET *, PACKET *, PORT *);
-extern void set_server(PORT, USHORT);
-extern void THREAD_ROUTINE process_connection_thread(PORT);
+void SRVR_multi_thread(struct port *, USHORT);
+bool process_packet(PORT, PACKET *, PACKET *, PORT *);
+void set_server(PORT, USHORT);
+void THREAD_ROUTINE process_connection_thread(PORT);
 
 #ifdef __cplusplus
-} 
+} // extern "C"
 #endif
 
 
-#endif	/* _REMOTE_SERVE_PROTO_H_ */
+#endif	// REMOTE_SERVE_PROTO_H

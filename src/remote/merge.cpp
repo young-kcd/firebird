@@ -42,12 +42,15 @@ static ISC_STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 extern "C" {
 #endif
 
-USHORT DLL_EXPORT MERGE_database_info(
-									  UCHAR * in,
-									  UCHAR * out,
-									  USHORT out_length,
-									  USHORT impl,
-USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
+USHORT MERGE_database_info(UCHAR * in,
+							UCHAR * out,
+							USHORT out_length,
+							USHORT impl,
+							USHORT class_,
+							USHORT base_level,
+							UCHAR * version,
+							UCHAR * id,
+							ULONG mask)
 {
 /**************************************
  *

@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_PARSE_PROTO_H_
-#define _REMOTE_PARSE_PROTO_H_
+#ifndef REMOTE_PARSE_PROTO_H
+#define REMOTE_PARSE_PROTO_H
 
-extern struct message	* DLL_EXPORT PARSE_messages (UCHAR *, USHORT);
-extern UCHAR		*PARSE_prepare_messages (UCHAR *, USHORT);
+struct message*	PARSE_messages(UCHAR *, USHORT);
+UCHAR*			PARSE_prepare_messages(UCHAR *, USHORT);
 
-#endif /* _REMOTE_PARSE_PROTO_H */ 
+#endif // REMOTE_PARSE_PROTO_H

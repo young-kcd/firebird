@@ -21,20 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_MERGE_PROTO_H_
-#define _REMOTE_MERGE_PROTO_H_
+#ifndef REMOTE_MERGE_PROTO_H
+#define REMOTE_MERGE_PROTO_H
 #if (defined __cplusplus) && (defined SOLX86)
 /* Who else got mixed c and C++ linkage error - let join me. KLK
 */
 extern "C" {
 #endif
 
-extern USHORT DLL_EXPORT MERGE_database_info (UCHAR *, UCHAR *, USHORT, USHORT,
-					      USHORT, USHORT, UCHAR *, UCHAR *,
-					      ULONG);
+USHORT MERGE_database_info(UCHAR *, UCHAR *, USHORT, USHORT,
+							USHORT, USHORT, UCHAR *, UCHAR *, ULONG);
 
 #if (defined __cplusplus) && (defined SOLX86)
-}
+} // extern "C"
 #endif
 
-#endif /* _REMOTE_MERGE_PROTO_H */ 
+#endif // REMOTE_MERGE_PROTO_H

@@ -24,9 +24,9 @@
 #ifndef QLI_PICST_PROTO_H
 #define QLI_PICST_PROTO_H
 
-extern pics*	PIC_analyze(TEXT*, const dsc*);
-extern void		PIC_edit(dsc*, pics*, TEXT**, USHORT);
-extern void		PIC_missing(con*, pics*);
+pics*	PIC_analyze(TEXT*, const dsc*);
+void		PIC_edit(dsc*, pics*, TEXT**, USHORT);
+void		PIC_missing(con*, pics*);
 
 #endif /* QLI_PICST_PROTO_H */
 

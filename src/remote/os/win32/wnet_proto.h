@@ -21,18 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_WNET_PROTO_H_
-#define _REMOTE_WNET_PROTO_H_
+#ifndef REMOTE_WNET_PROTO_H
+#define REMOTE_WNET_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-extern PORT	WNET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
-extern PORT	WNET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT);
-extern PORT	WNET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
-extern PORT	WNET_server (void *);
+PORT	WNET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
+PORT	WNET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT);
+PORT	WNET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
+PORT	WNET_server (void *);
 
 
 #ifdef __cplusplus
@@ -40,4 +40,4 @@ extern PORT	WNET_server (void *);
 #endif
 
 
-#endif /* _REMOTE_WNET_PROTO_H */ 
+#endif // REMOTE_WNET_PROTO_H

@@ -31,9 +31,9 @@
 #define SYSUAF	"SYS$SYSTEM:SYSUAF.DAT"
 
 #ifdef __ALPHA
-extern zap_process_alpha_15();
+zap_process_alpha_15();
 #else
-extern zap_process_v4(), zap_process_v5();
+zap_process_v4(), zap_process_v5();
 #endif
 
 static void define_logical(UCHAR *, UCHAR *, UCHAR *);

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.78 2003-09-25 11:49:09 robocop Exp $
+$Id: inet.cpp,v 1.79 2003-10-03 01:17:06 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -718,7 +718,7 @@ PORT INET_analyze(	TEXT*	file_name,
 	return port;
 }
 
-PORT DLL_EXPORT INET_connect(TEXT * name,
+PORT INET_connect(TEXT * name,
 							 PACKET * packet,
 							 ISC_STATUS * status_vector,
 							 USHORT flag, SCHAR * dpb, SSHORT dpb_length)
@@ -1118,7 +1118,7 @@ PORT INET_reconnect(HANDLE handle, TEXT* name, ISC_STATUS* status_vector)
 	return port;
 }
 
-PORT DLL_EXPORT INET_server(int sock)
+PORT INET_server(int sock)
 {
 /**************************************
  *

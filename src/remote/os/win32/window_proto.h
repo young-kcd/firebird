@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-extern int WINDOW_main (HINSTANCE, int, USHORT);
+int WINDOW_main(HINSTANCE, int, USHORT);
 
 #ifdef __cplusplus
 }	/* extern "C" */

@@ -21,17 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _CHOP_PATH_PROTO_H_
-#define _CHOP_PATH_PROTO_H_
+#ifndef CHOP_PATH_PROTO_H
+#define CHOP_PATH_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-char * ChopFileName	(char*, char*, ULONG);
+char* ChopFileName(char*, char*, ULONG);
 
 #ifdef __cplusplus
-};
+}; // extern "C"
 #endif
 
-#endif
+#endif // CHOP_PATH_PROTO_H

@@ -23,8 +23,8 @@
  * 2003.05.01 Victor Seryodkin, Dmitry Yemanov: Completed XNET implementation
  */
 
-#ifndef _REMOTE_XNET_PROTO_H_
-#define _REMOTE_XNET_PROTO_H_
+#ifndef REMOTE_XNET_PROTO_H
+#define REMOTE_XNET_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,16 +34,16 @@ extern "C" {
 #define PORT void*
 #endif
 
-extern PORT XNET_analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
-extern PORT XNET_connect(TEXT *, struct packet *, ISC_STATUS *, USHORT);
+PORT	XNET_analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
+PORT	XNET_connect(TEXT *, struct packet *, ISC_STATUS *, USHORT);
 
 #ifndef SUPERCLIENT
-extern void XNET_srv(USHORT flag);
-extern PORT XNET_reconnect(ULONG, TEXT *, ISC_STATUS *);
+void	XNET_srv(USHORT flag);
+PORT	XNET_reconnect(ULONG, TEXT *, ISC_STATUS *);
 #endif
 
 #ifdef __cplusplus
 }	/* extern "C" */
 #endif
 
-#endif /* _REMOTE_XNET_PROTO_H */ 
+#endif // REMOTE_XNET_PROTO_H

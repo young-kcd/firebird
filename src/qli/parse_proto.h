@@ -24,10 +24,10 @@
 #ifndef QLI_PARSE_PROTO_H
 #define QLI_PARSE_PROTO_H
 
-extern syn*		PARQ_parse(void);
-extern int		PAR_match (KWWORDS);
-extern void		PAR_real (void);
-extern void		PAR_real_token (void);
-extern void		PAR_token (void);
+syn*	PARQ_parse(void);
+int		PAR_match (KWWORDS);
+void	PAR_real (void);
+void	PAR_real_token (void);
+void	PAR_token (void);
 
 #endif /* QLI_PARSE_PROTO_H */

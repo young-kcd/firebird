@@ -24,7 +24,7 @@
 #ifndef QLI_HELP_PROTO_H
 #define QLI_HELP_PROTO_H
 
-extern void	HELP_fini (void);
-extern void	HELP_help(syn*);
+void	HELP_fini (void);
+void	HELP_help(syn*);
 
 #endif /* QLI_HELP_PROTO_H */

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.8 2003-04-08 01:06:46 brodsom Exp $
+$Id: parser.cpp,v 1.9 2003-10-03 01:17:06 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -40,7 +40,7 @@ $Id: parser.cpp,v 1.8 2003-04-08 01:06:46 brodsom Exp $
 
 
 
-REM_MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
+REM_MSG PARSE_messages(UCHAR * blr, USHORT blr_length)
 {
 /**************************************
  *

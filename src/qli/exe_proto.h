@@ -24,14 +24,14 @@
 #ifndef QLI_EXE_PROTO_H
 #define QLI_EXE_PROTO_H
 
-extern void		EXEC_abort (void);
-extern void		EXEC_execute(qli_nod*);
-extern FRBRD*	EXEC_open_blob(qli_nod*);
-extern file*	EXEC_open_output(qli_nod*);
-extern void		EXEC_poll_abort (void);
-extern dsc*		EXEC_receive(qli_msg*, par*);
-extern void		EXEC_send(qli_msg*);
-extern void		EXEC_start_request(qli_req*, qli_msg*);
-extern void		EXEC_top(qli_nod*);
+void	EXEC_abort (void);
+void	EXEC_execute(qli_nod*);
+FRBRD*	EXEC_open_blob(qli_nod*);
+file*	EXEC_open_output(qli_nod*);
+void	EXEC_poll_abort (void);
+dsc*	EXEC_receive(qli_msg*, par*);
+void	EXEC_send(qli_msg*);
+void	EXEC_start_request(qli_req*, qli_msg*);
+void	EXEC_top(qli_nod*);
 
 #endif /* QLI_EXE_PROTO_H */

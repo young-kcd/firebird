@@ -40,7 +40,7 @@
 IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE");
 #endif
 
-extern int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
+int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 
 extern "C" {
 
@@ -52,10 +52,10 @@ static TEXT *attach_failures = NULL, *attach_failures_ptr;
 static void cleanup_memory(void *);
 static SLONG get_parameter(UCHAR **);
 
-extern void DLL_EXPORT THD_init_data();
+void THD_init_data();
 
 
-void DLL_EXPORT REMOTE_cleanup_transaction( RTR transaction)
+void REMOTE_cleanup_transaction( RTR transaction)
 {
 /**************************************
  *
@@ -225,7 +225,7 @@ ULONG REMOTE_compute_batch_size(PORT port,
 }
 
 
-RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
+RRQ REMOTE_find_request(RRQ request, USHORT level)
 {
 /**************************************
  *
@@ -286,7 +286,7 @@ RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
 }
 
 
-void DLL_EXPORT REMOTE_free_packet( PORT port, PACKET * packet)
+void REMOTE_free_packet( PORT port, PACKET * packet)
 {
 /**************************************
  *
@@ -321,7 +321,7 @@ void DLL_EXPORT REMOTE_free_packet( PORT port, PACKET * packet)
 }
 
 
-void DLL_EXPORT REMOTE_get_timeout_params(
+void REMOTE_get_timeout_params(
 										  PORT port,
 										  UCHAR * dpb, USHORT dpb_length)
 {
@@ -444,7 +444,7 @@ void DLL_EXPORT REMOTE_get_timeout_params(
 }
 
 
-STR DLL_EXPORT REMOTE_make_string(SCHAR * input)
+STR REMOTE_make_string(SCHAR * input)
 {
 /**************************************
  *
@@ -469,7 +469,7 @@ STR DLL_EXPORT REMOTE_make_string(SCHAR * input)
 }
 
 
-void DLL_EXPORT REMOTE_release_messages( REM_MSG messages)
+void REMOTE_release_messages( REM_MSG messages)
 {
 /**************************************
  *
@@ -498,7 +498,7 @@ void DLL_EXPORT REMOTE_release_messages( REM_MSG messages)
 }
 
 
-void DLL_EXPORT REMOTE_release_request( RRQ request)
+void REMOTE_release_request( RRQ request)
 {
 /**************************************
  *
@@ -551,7 +551,7 @@ void DLL_EXPORT REMOTE_release_request( RRQ request)
 }
 
 
-void DLL_EXPORT REMOTE_reset_request( RRQ request, REM_MSG active_message)
+void REMOTE_reset_request( RRQ request, REM_MSG active_message)
 {
 /**************************************
  *
@@ -591,7 +591,7 @@ void DLL_EXPORT REMOTE_reset_request( RRQ request, REM_MSG active_message)
 }
 
 
-void DLL_EXPORT REMOTE_reset_statement( RSR statement)
+void REMOTE_reset_statement( RSR statement)
 {
 /**************************************
  *
@@ -708,7 +708,7 @@ void REMOTE_save_status_strings( ISC_STATUS * vector)
 }
 
 
-OBJCT DLL_EXPORT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
+OBJCT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
 {
 /**************************************
  *

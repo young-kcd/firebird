@@ -24,11 +24,11 @@
 #ifndef QLI_HSH_PROTO_H
 #define QLI_HSH_PROTO_H
 
-extern void		HSH_fini (void);
-extern void		HSH_init (void);
-extern void		HSH_insert(sym*);
-extern sym*		HSH_lookup(const SCHAR*, int);
-extern void		HSH_remove(sym*);
+void	HSH_fini (void);
+void	HSH_init (void);
+void	HSH_insert(sym*);
+sym*	HSH_lookup(const SCHAR*, int);
+void	HSH_remove(sym*);
 
 #endif /* QLI_HSH_PROTO_H */
 

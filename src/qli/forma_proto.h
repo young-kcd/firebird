@@ -24,12 +24,12 @@
 #ifndef QLI_FORMA_PROTO_H
 #define QLI_FORMA_PROTO_H
 
-extern int		FMT_expression(qli_nod*);
-extern TEXT*	FMT_format(lls*);
-extern qli_nod*	FMT_list(qli_nod*);
-extern void		FMT_print(qli_nod*, prt*);
-extern void		FMT_put(const TEXT*, prt*);
-extern void		FMT_report(rpt*);
+int			FMT_expression(qli_nod*);
+TEXT*		FMT_format(lls*);
+qli_nod*	FMT_list(qli_nod*);
+void		FMT_print(qli_nod*, prt*);
+void		FMT_put(const TEXT*, prt*);
+void		FMT_report(rpt*);
 
 #endif /* QLI_FORMA_PROTO_H */
 

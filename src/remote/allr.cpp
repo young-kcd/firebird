@@ -71,9 +71,9 @@ SLONG allr_delta_alloc = 0;
 //	Allocate a block.
 //
 #ifdef DEBUG_GDS_ALLOC
-UCHAR* DLL_EXPORT ALLR_alloc_debug(ULONG size, TEXT* FileName, ULONG LineNumber)
+UCHAR* ALLR_alloc_debug(ULONG size, TEXT* FileName, ULONG LineNumber)
 #else
-UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
+UCHAR* ALLR_alloc(ULONG size)
 #endif
 {
 	UCHAR* block = (UCHAR*)
@@ -114,9 +114,9 @@ UCHAR* DLL_EXPORT ALLR_alloc(ULONG size)
 //	This is the primary block allocation routine.
 //
 #ifdef DEBUG_GDS_ALLOC
-BLK DLL_EXPORT ALLR_block_debug(UCHAR type, ULONG count, TEXT* FileName, ULONG LineNumber)
+BLK ALLR_block_debug(UCHAR type, ULONG count, TEXT* FileName, ULONG LineNumber)
 #else
-BLK DLL_EXPORT ALLR_block(UCHAR type, ULONG count)
+BLK ALLR_block(UCHAR type, ULONG count)
 #endif
 {
 	if (type <= (UCHAR) type_MIN || type >= (UCHAR) type_MAX)
@@ -231,7 +231,7 @@ void ALLR_free( void *block)
 //
 //	Release a structured block.
 //
-void DLL_EXPORT ALLR_release( void *block)
+void ALLR_release( void *block)
 {
 	ALLR_free(block);
 }

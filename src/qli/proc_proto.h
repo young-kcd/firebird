@@ -24,20 +24,20 @@
 #ifndef QLI_PROC_PROTO_H
 #define QLI_PROC_PROTO_H
 
-extern void	PRO_close(dbb*, FRBRD*);
-extern void	PRO_commit(dbb*);
-extern void	PRO_copy_procedure(dbb*, TEXT*, dbb*, TEXT*);
-extern void	PRO_create(dbb*, TEXT*);
-extern int	PRO_delete_procedure(dbb*, TEXT*);
-extern void	PRO_edit_procedure(dbb*, TEXT*);
-extern FRBRD*	PRO_fetch_procedure(dbb*, TEXT*);
-extern bool	PRO_get_line (FRBRD *, TEXT *, USHORT);
-extern void	PRO_invoke(dbb*, TEXT*);
-extern FRBRD*	PRO_open_blob(dbb*, SLONG*);
-extern int	PRO_rename_procedure(dbb*, TEXT*, TEXT*);
-extern void	PRO_rollback(dbb*);
-extern void	PRO_scan(dbb*, void(*)(), void*);
-extern void	PRO_setup(dbb*);
-extern FRBRD*	PRO_transaction(dbb*, int);
+void	PRO_close(dbb*, FRBRD*);
+void	PRO_commit(dbb*);
+void	PRO_copy_procedure(dbb*, TEXT*, dbb*, TEXT*);
+void	PRO_create(dbb*, TEXT*);
+int		PRO_delete_procedure(dbb*, TEXT*);
+void	PRO_edit_procedure(dbb*, TEXT*);
+FRBRD*	PRO_fetch_procedure(dbb*, TEXT*);
+bool	PRO_get_line (FRBRD *, TEXT *, USHORT);
+void	PRO_invoke(dbb*, TEXT*);
+FRBRD*	PRO_open_blob(dbb*, SLONG*);
+int		PRO_rename_procedure(dbb*, TEXT*, TEXT*);
+void	PRO_rollback(dbb*);
+void	PRO_scan(dbb*, void(*)(), void*);
+void	PRO_setup(dbb*);
+FRBRD*	PRO_transaction(dbb*, int);
 
 #endif /* QLI_PROC_PROTO_H */

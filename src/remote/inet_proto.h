@@ -21,21 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_INET_PROTO_H_
-#define _REMOTE_INET_PROTO_H_
+#ifndef REMOTE_INET_PROTO_H
+#define REMOTE_INET_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern PORT	INET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT, SCHAR*, SSHORT);
-extern PORT	DLL_EXPORT INET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT, SCHAR*, SSHORT);
-extern PORT	INET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
-extern PORT	DLL_EXPORT INET_server (int);
-extern void	INET_set_clients (int);
+PORT	INET_analyze(TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT, SCHAR*, SSHORT);
+PORT	INET_connect(TEXT *, struct packet *, ISC_STATUS *, USHORT, SCHAR*, SSHORT);
+PORT	INET_reconnect(HANDLE, TEXT *, ISC_STATUS *);
+PORT	INET_server(int);
+void	INET_set_clients(int);
 
 #ifdef __cplusplus
 }	/* extern "C" */
 #endif
 
-#endif /* _REMOTE_INET_PROTO_H */ 
+#endif // REMOTE_INET_PROTO_H

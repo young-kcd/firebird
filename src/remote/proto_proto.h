@@ -21,13 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_PROTO_PROTO_H_
-#define _REMOTE_PROTO_PROTO_H_
+#ifndef REMOTE_PROTO_PROTO_H
+#define REMOTE_PROTO_PROTO_H
 
 #ifdef DEBUG_XDR_MEMORY
-extern void	xdr_debug_memory (XDR *, enum xdr_op, void *, void *, ULONG);
+void	xdr_debug_memory (XDR *, enum xdr_op, void *, void *, ULONG);
 #endif
-extern bool_t	xdr_protocol (XDR *, struct packet *);
-extern ULONG	xdr_protocol_overhead (P_OP);
+bool_t	xdr_protocol (XDR *, struct packet *);
+ULONG	xdr_protocol_overhead (P_OP);
 
-#endif	/*  _REMOTE_PROTO_PROTO_H_  */
+#endif	//  REMOTE_PROTO_PROTO_H

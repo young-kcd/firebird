@@ -24,23 +24,23 @@
 #ifndef QLI_LEX_PROTO_H
 #define QLI_LEX_PROTO_H
 
-extern bool		LEX_active_procedure (void);
-extern void		LEX_edit (SLONG, SLONG);
-extern tok*		LEX_edit_string(void);
-extern tok*		LEX_filename(void);
-extern void		LEX_fini (void);
-extern void		LEX_flush (void);
-extern bool		LEX_get_line (TEXT *, TEXT *, int);
-extern void		LEX_init (void);
-extern void		LEX_mark_statement (void);
-extern void		LEX_pop_line (void);
-extern void		LEX_procedure(dbb*, FRBRD*);
-extern bool		LEX_push_file (const TEXT*, const bool);
-extern bool		LEX_push_string (const TEXT* const);
-extern void		LEX_put_procedure (FRBRD *, SLONG, SLONG);
-extern void		LEX_real (void);
-extern lls*		LEX_statement_list(void);
-extern tok*		LEX_token(void);
+bool	LEX_active_procedure (void);
+void	LEX_edit (SLONG, SLONG);
+tok*	LEX_edit_string(void);
+tok*	LEX_filename(void);
+void	LEX_fini (void);
+void	LEX_flush (void);
+bool	LEX_get_line (TEXT *, TEXT *, int);
+void	LEX_init (void);
+void	LEX_mark_statement (void);
+void	LEX_pop_line (void);
+void	LEX_procedure(dbb*, FRBRD*);
+bool	LEX_push_file (const TEXT*, const bool);
+bool	LEX_push_string (const TEXT* const);
+void	LEX_put_procedure (FRBRD *, SLONG, SLONG);
+void	LEX_real (void);
+lls*	LEX_statement_list(void);
+tok*	LEX_token(void);
 
 #endif /* QLI_LEX_PROTO_H */
 

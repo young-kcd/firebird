@@ -92,20 +92,20 @@ static bool_t xdr_trrq_message(XDR *, USHORT);
 // Now why the ... would anyone want to define functions differently
 // in an implementation file than they  are defined in their header?!
 
-extern bool_t xdr_enum();
-extern bool_t xdr_short();
-extern bool_t xdr_u_short();
-extern bool_t xdr_long();
+bool_t xdr_enum();
+bool_t xdr_short();
+bool_t xdr_u_short();
+bool_t xdr_long();
 #  ifdef SOLARIS
-extern bool_t xdr_hyper();
+bool_t xdr_hyper();
 #  endif
-extern bool_t xdr_opaque();
-extern bool_t xdr_string();
-extern bool_t xdr_float();
-extern bool_t xdr_double();
-extern bool_t xdr_wrapstring();
+bool_t xdr_opaque();
+bool_t xdr_string();
+bool_t xdr_float();
+bool_t xdr_double();
+bool_t xdr_wrapstring();
 
-extern bool_t xdr_free();
+bool_t xdr_free();
 
 #else // NOT_USED_OR_REPLACED
 
@@ -115,7 +115,7 @@ extern bool_t xdr_free();
 
 
 #ifdef VMS
-extern double MTH$CVT_D_G(), MTH$CVT_G_D();
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static STR gfloat_buffer;
 #endif

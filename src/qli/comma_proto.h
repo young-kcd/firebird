@@ -24,16 +24,16 @@
 #ifndef QLI_COMMA_PROTO_H
 #define QLI_COMMA_PROTO_H
 
-extern int	CMD_check_ready(void);
-extern void	CMD_copy_procedure(syn*);
-extern void	CMD_define_procedure(syn*);
-extern void	CMD_delete_proc(syn*);
-extern void	CMD_edit_proc(syn*);
-extern void	CMD_extract(syn*);
-extern void	CMD_finish(syn*);
-extern void	CMD_rename_proc(syn*);
-extern void	CMD_set(syn*);
-extern void	CMD_shell(syn*);
-extern void	CMD_transaction(syn*);
+int		CMD_check_ready(void);
+void	CMD_copy_procedure(syn*);
+void	CMD_define_procedure(syn*);
+void	CMD_delete_proc(syn*);
+void	CMD_edit_proc(syn*);
+void	CMD_extract(syn*);
+void	CMD_finish(syn*);
+void	CMD_rename_proc(syn*);
+void	CMD_set(syn*);
+void	CMD_shell(syn*);
+void	CMD_transaction(syn*);
 
 #endif /* QLI_COMMA_PROTO_H */

@@ -24,6 +24,6 @@
 #ifndef QLI_EXPAN_PROTO_H
 #define QLI_EXPAN_PROTO_H
 
-extern qli_nod*	EXP_expand(syn*);
+qli_nod*	EXP_expand(syn*);
 
 #endif /* QLI_EXPAN_PROTO_H */

@@ -21,30 +21,30 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _REMOTE_REMOT_PROTO_H_
-#define _REMOTE_REMOT_PROTO_H_
+#ifndef REMOTE_REMOT_PROTO_H
+#define REMOTE_REMOT_PROTO_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-extern void DLL_EXPORT 	REMOTE_cleanup_transaction (struct rtr *);
-extern ULONG		REMOTE_compute_batch_size (struct port *, USHORT, P_OP, FMT);
-extern void DLL_EXPORT  REMOTE_get_timeout_params (struct port *, UCHAR *, USHORT);
-extern struct rrq	* DLL_EXPORT REMOTE_find_request (struct rrq *, USHORT);
-extern void DLL_EXPORT 	REMOTE_free_packet (struct port *, struct packet *);
-extern struct str	* DLL_EXPORT REMOTE_make_string (SCHAR *);
-extern void DLL_EXPORT	REMOTE_release_messages (struct message *);
-extern void DLL_EXPORT 	REMOTE_release_request (struct rrq *);
-extern void DLL_EXPORT	REMOTE_reset_request (struct rrq *, struct message *);
-extern void DLL_EXPORT	REMOTE_reset_statement (struct rsr *);
-extern void		REMOTE_save_status_strings (ISC_STATUS *);
-extern OBJCT DLL_EXPORT REMOTE_set_object (struct port *, struct blk *, OBJCT);
+void		REMOTE_cleanup_transaction (struct rtr *);
+ULONG		REMOTE_compute_batch_size (struct port *, USHORT, P_OP, FMT);
+void		REMOTE_get_timeout_params (struct port *, UCHAR *, USHORT);
+struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
+void		REMOTE_free_packet (struct port *, struct packet *);
+struct str*	REMOTE_make_string (SCHAR *);
+void		REMOTE_release_messages (struct message *);
+void		REMOTE_release_request (struct rrq *);
+void		REMOTE_reset_request (struct rrq *, struct message *);
+void		REMOTE_reset_statement (struct rsr *);
+void		REMOTE_save_status_strings (ISC_STATUS *);
+OBJCT		REMOTE_set_object (struct port *, struct blk *, OBJCT);
 
 #ifdef __cplusplus
 }	/* extern "C" */
 #endif
 
 
-#endif /* _REMOTE_REMOT_PROTO_H */ 
+#endif // REMOTE_REMOT_PROTO_H

@@ -24,24 +24,24 @@
 #ifndef QLI_ERR_PROTO_H
 #define QLI_ERR_PROTO_H
 
-extern void	ERRQ_bugcheck (USHORT);
-extern void	ERRQ_database_error(dbb*, ISC_STATUS*);
-extern void	ERRQ_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-extern void	ERRQ_error_format (USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-extern void	ERRQ_exit (int);
-extern void	ERRQ_msg_format (USHORT, USHORT, TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*, const TEXT*);
-extern int	ERRQ_msg_get (USHORT, TEXT*);
-extern void	ERRQ_msg_partial (USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-extern void	ERRQ_msg_put (USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-extern void	ERRQ_pending (void);
-extern void	ERRQ_print_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-extern void	ERRQ_syntax (USHORT);
+void	ERRQ_bugcheck(USHORT);
+void	ERRQ_database_error(dbb*, ISC_STATUS*);
+void	ERRQ_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+					const TEXT*, const TEXT*);
+void	ERRQ_error_format(USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
+void	ERRQ_exit (int);
+void	ERRQ_msg_format(USHORT, USHORT, TEXT*, const TEXT*, const TEXT*,
+						const TEXT*, const TEXT*, const TEXT*);
+int		ERRQ_msg_get (USHORT, TEXT*);
+void	ERRQ_msg_partial (USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
+void	ERRQ_msg_put (USHORT, const TEXT*, const TEXT*, const TEXT*,
+						const TEXT*, const TEXT*);
+void	ERRQ_pending (void);
+void	ERRQ_print_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
+void	ERRQ_syntax (USHORT);
 
 #endif /* QLI_ERR_PROTO_H */
 

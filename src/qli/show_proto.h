@@ -24,6 +24,6 @@
 #ifndef QLI_SHOW_PROTO_H
 #define QLI_SHOW_PROTO_H
 
-extern void	SHOW_stuff(syn*);
+void	SHOW_stuff(syn*);
 
 #endif /* QLI_SHOW_PROTO_H */

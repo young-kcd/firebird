@@ -24,17 +24,17 @@
 #ifndef QLI_ALL_PROTO_H
 #define QLI_ALL_PROTO_H
 
-extern blk*		ALLQ_alloc(plb*, UCHAR, int);
-extern blk*		ALLQ_extend(blk**, int);
-extern void		ALLQ_fini(void);
-extern void		ALLQ_free(SCHAR*);
-extern void		ALLQ_init(void);
-extern SCHAR*	ALLQ_malloc(SLONG);
-extern plb*		ALLQ_pool(void);
-extern void		ALLQ_push(blk*, lls**);
-extern blk*		ALLQ_pop(lls**);
-extern void		ALLQ_release(frb*);
-extern void		ALLQ_rlpool(plb*);
+blk*	ALLQ_alloc(plb*, UCHAR, int);
+blk*	ALLQ_extend(blk**, int);
+void	ALLQ_fini(void);
+void	ALLQ_free(SCHAR*);
+void	ALLQ_init(void);
+SCHAR*	ALLQ_malloc(SLONG);
+plb*	ALLQ_pool(void);
+void	ALLQ_push(blk*, lls**);
+blk*	ALLQ_pop(lls**);
+void	ALLQ_release(frb*);
+void	ALLQ_rlpool(plb*);
 
 #endif /* QLI_ALL_PROTO_H */
 
