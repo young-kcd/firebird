@@ -122,7 +122,6 @@ DSQL_NOD MAKE_constant(STR constant, int numeric_flag)
 		   4-byte alignment.    -- ChrisJ 1999-02-20 */
 
 		UINT64 value = 0;
-		BOOLEAN point_seen = 0;
 		UCHAR *p = constant->str_data;
 
 		node->nod_desc.dsc_dtype = dtype_int64;

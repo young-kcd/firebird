@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.28 2002-12-04 07:07:23 eku Exp $
+$Id: par.cpp,v 1.29 2002-12-10 11:53:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -1620,7 +1620,7 @@ static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 /* we have hit a stream; parse the context number and access type */
 
 	if (node_type == blr_retrieve) {
-		TEXT name[32], *p;
+		TEXT name[32];
 		SSHORT stream, n;
 		SLONG index_id, relation_id;
 		JRD_REL relation;

@@ -51,7 +51,6 @@ USHORT CVKSC_ksc_to_unicode(obj, dest_ptr, dest_len, ksc_str, ksc_len,
 	WCHAR ch;
 	WCHAR wide;
 	UCHAR c1, c2;
-	UCHAR tmp1, tmp2;
 	USHORT src_start = ksc_len;
 	USHORT this_len;
 
@@ -225,7 +224,7 @@ USHORT CVKSC_ksc_byte2short(obj, dst, dst_len, src, src_len, err_code,
 	 short *err_code;
 	 USHORT *err_position;
 {
-	USHORT l, x;
+	USHORT x;
 	USHORT *dst_start;
 	USHORT src_start = src_len;
 

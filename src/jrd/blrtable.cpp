@@ -242,8 +242,7 @@ int main(int argc, char *argv[])
  *
  **************************************/
 	CONST VERB *verb;
-	int max, *stuff, blr;
-	SCHAR buffer[100], *s;
+	int max, blr;
 
 	for (blr = 0; blr < FB_NELEM(table); blr++) {
 		table[blr] = NULL;

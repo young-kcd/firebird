@@ -923,7 +923,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
  *	Prepare an event object for use.
  *
  **************************************/
-	SLONG key, n;
+	SLONG n;
 	union semun arg;
 
 	event->event_count = 0;
@@ -2009,11 +2009,10 @@ UCHAR *ISC_map_file(STATUS * status_vector,
 									   of the init file. */
 	UCHAR *address;
 	SLONG key, semid;
-	int oldmask, fd, excl_flag;
+	int oldmask, fd;
 	int fd_init;				/* filedecr. for the init file */
 	USHORT trunc_flag;
 	struct stat file_stat;
-	union semun arg;
 #ifndef HAVE_FLOCK
 	struct flock lock;
 #endif
@@ -3856,7 +3855,10 @@ void ISC_set_timer(
  *	Set a timer for the specified amount of time.
  *
  **************************************/
-#ifndef SYSV_SIGNALS
+#ifdef SYSV_SIGNALS
+	void *d2;
+	SLONG d1;
+#else
 	struct itimerval internal_timer;
 #ifndef HAVE_SIGACTION
 	struct sigvec internal_handler;
@@ -3864,8 +3866,6 @@ void ISC_set_timer(
 	struct sigaction internal_handler;
 #endif
 #endif
-	SLONG d1;
-	void *d2;
 
 /* Start by cancelling any existing timer */
 

@@ -39,7 +39,7 @@
  *
  */
 /*
-$Id: why.c,v 1.28 2002-12-02 09:43:49 eku Exp $
+$Id: why.c,v 1.29 2002-12-10 11:53:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -5889,7 +5889,7 @@ static STATUS open_marker_file(STATUS * status,
  *	otherwise.
  *
  *************************************/
-	int fd, length, i, j;
+	int fd, i, j;
 	TEXT marker_filename[MAXPATHLEN], marker_contents[MAXPATHLEN],
 		fildes_str[5], *p;
 	TEXT *err_routine, buffer[80];

@@ -213,7 +213,6 @@ USHORT CV_wc_copy(obj, dest_ptr, dest_len, src_ptr, src_len, err_code,
 	 USHORT *err_position;
 {
 	BYTE *start;
-	UNICODE ch;
 	USHORT src_start = src_len;
 
 	assert(src_ptr != NULL || dest_ptr == NULL);

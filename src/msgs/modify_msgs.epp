@@ -48,7 +48,7 @@ int main( int argc, char **argv)
  *	Top level routine.  
  *
  **************************************/
-	SCHAR facility[20], transtext[256], newtext[256];
+	SCHAR facility[20], newtext[256];
 	SCHAR innumber[4];
 	SCHAR *p, *q;
 	SSHORT number;

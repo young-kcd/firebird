@@ -70,7 +70,6 @@ int main( int argc, char **argv)
 	SCHAR input[200], yesno[100];
 	SCHAR symbol[30];
 	SCHAR nstring[32];
-	SCHAR *p, *q;
 	SSHORT count;
 	SSHORT sql_number;
 	SSHORT msg_number;
@@ -373,8 +372,6 @@ static int get_symbol( UCHAR * symbol)
  *	return TRUE when we get one
  *
  **************************************/
-	SSHORT length;
-
 	while (TRUE) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");

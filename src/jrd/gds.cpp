@@ -3249,7 +3249,7 @@ void *gds__tmp_file2(
  **************************************/
 
 	IB_FILE *file;
-	TEXT file_name[256], *p, *q, *end, temp_dir[256];
+	TEXT file_name[256], *p, *q, *end;
 	SSHORT i;
 
 	p = file_name;
@@ -3259,13 +3259,16 @@ void *gds__tmp_file2(
 	q = WORKFILE;
 #else
 	if (!(q = dir) && !(q = getenv("INTERBASE_TMP")) && !(q = getenv("TMP")))
+	{
 #ifdef WIN_NT
+   		TEXT temp_dir[256];
 		if ((i = (SSHORT) GetTempPath(sizeof(temp_dir), temp_dir)) &&
 			i < sizeof(temp_dir))
 			q = temp_dir;
 		else
 #endif
 			q = WORKFILE;
+	}
 #endif /* VMS */
 
 	for (; p < end && *q;)

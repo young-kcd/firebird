@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.7 2002-10-24 09:01:27 eku Exp $
+ * $Id: show.epp,v 1.8 2002-12-10 11:53:48 eku Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -3265,7 +3265,6 @@ static int show_role( SCHAR * object)
 	SCHAR role_name[BUFFER_LENGTH128];
 	SCHAR user_string[44];
 	SSHORT first = TRUE;
-	SSHORT skip = FALSE;
 	SSHORT odd = 1;
 
 	if (object == NULL) {		/* show role with no parameters, show all roles */

@@ -79,9 +79,8 @@ int main( int argc, char **argv)
 	UCHAR sql_class[32], sql_sub_class[32];
 	UCHAR symbol[30], pub[1];
 	UCHAR nstring[32];
-	UCHAR *p, *q;
 	SSHORT count;
-	SSHORT sql_num, sign;
+	SSHORT sql_num;
 	BOOLEAN public_msg;
 
 /* Setup the 'strings' so that element 0 is really 0 */
@@ -413,8 +412,6 @@ static int get_symbol( UCHAR * symbol)
  *	or FALSE if user breaks out
  *
  **************************************/
-	SSHORT length;
-
 	while (1) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");
@@ -442,7 +439,6 @@ static int store_sql_msg(void)
  *
  **************************************/
 	UCHAR text[256], nstring[32];
-	UCHAR *p, *q;
 	SSHORT sql_num;
 
 	for (;;) {

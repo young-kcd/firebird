@@ -32,7 +32,7 @@
  *
  */
 
- /* $Id: head.cpp,v 1.18 2002-11-20 10:28:07 kkuznetsov Exp $ */
+ /* $Id: head.cpp,v 1.19 2002-12-10 11:53:50 eku Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -136,7 +136,6 @@ static FILE	*read_pipe = NULL,
 		*event_pipe = NULL;
 static int	event_fd = -1;
 static TEXT	error_text [1024];
-static RDB	PSI_databases = NULL;
 
 #ifdef SOLARIS
 /* NOTE: This code is cloned in foot.c */
@@ -533,8 +532,6 @@ STATUS GDS_CANCEL_BLOB (
  **************************************/
 RDB	rdb;
 RBL	blob;
-USHORT	l;
-UCHAR	*p;
 
 if (!(blob = *blob_handle))
     {
@@ -574,9 +571,6 @@ STATUS GDS_CANCEL_EVENTS (
  *
  **************************************/
 RDB	rdb;
-RBL	blob;
-USHORT	l;
-UCHAR	*p;
 
 #ifdef V2_BRIDGE
 return handle_error (user_status, gds_unavailable);
@@ -615,8 +609,6 @@ STATUS GDS_CLOSE_BLOB (
  **************************************/
 RDB	rdb;
 RBL	blob;
-USHORT	l;
-UCHAR	*p;
 
 blob = *blob_handle;
 CHECK_HANDLE (blob, type_rbl, gds_bad_segstr_handle);
@@ -660,8 +652,6 @@ STATUS GDS_COMMIT (
  **************************************/
 RDB	rdb;
 RTR	transaction;
-USHORT	l;
-UCHAR	*p;
 
 transaction = *rtr_handle;
 CHECK_HANDLE (transaction, type_rtr, gds_bad_trans_handle);
@@ -696,8 +686,6 @@ STATUS GDS_COMMIT_RETAINING (
  **************************************/
 RDB	rdb;
 RTR	transaction;
-USHORT	l;
-UCHAR	*p;
 
 #ifdef V2_BRIDGE
 return handle_error (user_status, gds_unavailable);
@@ -735,7 +723,6 @@ STATUS GDS_COMPILE (
  **************************************/
 RDB	rdb;
 RRQ	request;
-USHORT	i, count, max_msg;
 USHORT	l;
 UCHAR	*p;
 
@@ -786,8 +773,6 @@ STATUS GDS_CREATE_BLOB (
 RDB	rdb;
 RTR	transaction;
 RBL	blob;
-USHORT	l;
-UCHAR	*p;
 
 NULL_CHECK (blob_handle, gds_bad_segstr_handle);
 rdb = *db_handle;
@@ -903,7 +888,6 @@ STATUS GDS_CREATE_DATABASE (
  *
  **************************************/
 RDB	rdb;
-UCHAR	p;
 USHORT	l;
 
 NULL_CHECK (handle, gds_bad_db_handle);
@@ -1031,10 +1015,8 @@ STATUS GDS_DETACH (
  *	Close down a database.
  *
  **************************************/
-RDB	rdb, *ptr;
+RDB	rdb;
 RRQ	rrq;
-USHORT	l;
-UCHAR	*p;
 
 rdb = *handle;
 CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
@@ -1170,8 +1152,6 @@ STATUS GDS_DSQL_ALLOCATE (
  **************************************/
 RDB	rdb;
 RSR	statement;
-USHORT	l;
-UCHAR	*p;
 
 /* Check and validate handles, etc. */
 
@@ -2040,8 +2020,6 @@ STATUS GDS_OPEN_BLOB (
 RDB	rdb;
 RTR	transaction;
 RBL	blob;
-USHORT	l;
-UCHAR	*p;
 
 NULL_CHECK (blob_handle, gds_bad_segstr_handle);
 rdb = *db_handle;
@@ -2280,15 +2258,15 @@ STATUS GDS_PUT_SLICE (
  *	Insert a slice of an array.
  *
  **************************************/
-RDB	rdb;
-RTR	transaction;
-ULONG	l, length;
-UCHAR	*p;
-
 #ifdef V2_BRIDGE
 return handle_error (user_status, gds_unavailable);
 
 #else
+RDB	rdb;
+RTR	transaction;
+ULONG	l;
+UCHAR	*p;
+
 rdb = *db_handle;
 CHECK_HANDLE (rdb, type_rdb, gds_bad_db_handle);
 transaction = *tra_handle;
@@ -2459,7 +2437,6 @@ STATUS GDS_RECEIVE (
  *
  **************************************/
 RRQ	request;
-RTR	transaction;
 RDB	rdb;
 UCHAR	*p;
 USHORT	l;
@@ -2507,9 +2484,8 @@ STATUS GDS_RECONNECT (
  *
  **************************************/
 RDB	rdb;
-RTR	transaction;
-STATUS	*temp, l;
 UCHAR	*p;
+STATUS	l;
 
 NULL_CHECK (rtr_handle, gds_bad_trans_handle);
 rdb = *db_handle;
@@ -2547,8 +2523,6 @@ STATUS GDS_RELEASE_REQUEST (
  **************************************/
 RDB	rdb;
 RRQ	request;
-USHORT	l;
-UCHAR	*p;
 
 request = *req_handle;
 CHECK_HANDLE (request, type_rrq, gds_bad_req_handle);
@@ -3369,10 +3343,8 @@ static RDB init (
 USHORT	l;
 TEXT	*partner, pipe_numbers [32], gds_pipe [MAXPATHLEN], *new_env, new_env_buf [128];
 UCHAR	*p;
-int	pair1 [2], pair2 [2], pair3 [2], pid, parent_pid, fd;
+int	pair1 [2], pair2 [2], pair3 [2], pid, parent_pid;
 RDB	rdb;
-FILE	*save_pipe;
-STATUS	status;
 struct stat	stat_buf;
 
 /* Check to see if pipes are already open.  If not, fork. */
@@ -3728,7 +3700,6 @@ static void release_request (
  **************************************/
 RDB	rdb;
 RRQ	*p;
-USHORT	i;
 
 rdb = request->rrq_rdb;
 

@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.35 2002-11-30 17:43:18 hippoman Exp $
+$Id: exe.cpp,v 1.36 2002-12-10 11:53:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -3689,9 +3689,7 @@ static JRD_NOD store(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 	JRD_REQ trigger;
 	FMT format;
 	SSHORT n;
-	USHORT length;
 	REC record;
-	DSC *desc;
 	register UCHAR *p;
 
 	SET_TDBB(tdbb);

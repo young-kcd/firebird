@@ -102,7 +102,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		*pathname, pathbuffer[256], *locale;
 	USHORT sw_bad;
 	USHORT sw_warning;
-	USHORT i, locale_count;
 	SSHORT len;
 	BASED ON LOCALES.LOCALE this_locale;
 
@@ -274,10 +273,10 @@ static USHORT do_msgs( TEXT * filename, TEXT * locale, USHORT sw_warning)
  *
  **************************************/
 	ISC_MSGHDR header;
-	TEXT buffer[MAX_LEVELS * MSG_BUCKET], *p, *q, *end_leaf, msg_text[256];
+	TEXT *p, *q, *end_leaf, msg_text[256];
 	MSGREC leaf_node, leaf;
-	MSGNOD buckets[MAX_LEVELS], *ptr, *ptr2, *end, nodes[MAX_LEVELS], node;
-	USHORT l, n, levels;
+	MSGNOD buckets[MAX_LEVELS], *ptr, *ptr2, nodes[MAX_LEVELS], node;
+	USHORT l, n;
 	ULONG position, prior_code;
 	int warning_counter;
 

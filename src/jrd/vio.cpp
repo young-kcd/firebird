@@ -2107,9 +2107,7 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, JRD_TRA transaction)
  **************************************/
 	JRD_REL relation;
 	RPB temp;
-	DSC desc1, desc2;
 	LLS stack;
-	USHORT id;
 	SLONG tid_fetch;
 
 	SET_TDBB(tdbb);

@@ -944,9 +944,6 @@ static void delete_process(SLONG process_offset)
  **************************************/
 	PRB process;
 	SES session;
-	EVENT events;
-	SLONG value;
-	BOOLEAN timeout;
 
 	process = (PRB) ABS_PTR(process_offset);
 
@@ -966,6 +963,10 @@ static void delete_process(SLONG process_offset)
 
 	if (EVENT_process_offset == process_offset) {
 #ifdef MULTI_THREAD
+		EVENT events;
+		SLONG value;
+		BOOLEAN timeout;
+
 		/* Terminate the event watcher thread */
 		/* When we come through the exit handler, the event semaphore might
 		   have already been released by another exit handler.  So we cannot

@@ -425,9 +425,8 @@ static void build_codes_h(void)
 *
 *******************************************/
 	IB_FILE *c_codes;
-	int i, code = 1, last_code = code - 1;
+	int code = 1, last_code = code - 1;
 	unsigned long new_code = 0L;
-	SCHAR **pp;
 
 /* Open codes.h in the current directory. */
 
@@ -610,7 +609,7 @@ static void build_other_headers(void)
 *
 *********************************************/
 	IB_FILE *msgs, *rdbcodes, *code_text, *pas_codes, *ftn_codes, *sql_codes;
-	SCHAR **pp, *p, *q, *end, text[128];
+	SCHAR *p, *q, *end, text[128];
 	int last_code, code, i;
 	unsigned long new_code = 0L;
 

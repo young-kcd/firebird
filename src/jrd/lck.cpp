@@ -474,8 +474,6 @@ SLONG LCK_get_owner_handle(TDBB tdbb, enum lck_t lock_type)
  **************************************/
 
 	SET_TDBB(tdbb);
-	DBB dbb = tdbb->tdbb_database;
-	ATT attachment = tdbb->tdbb_attachment;
 	switch (lock_type) {
 	case LCK_database:
 	case LCK_bdb:

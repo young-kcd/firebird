@@ -117,7 +117,7 @@ TEXT* ALL_cstring(TEXT* in_string)
  **************************************/
 	TDBB tdbb;
 	JrdMemoryPool *pool;
-	TEXT *p, *q;
+	TEXT *p;
 	size_t length;
 
 	tdbb = GET_THREAD_DATA;

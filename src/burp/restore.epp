@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.13 2002-11-30 17:34:44 hippoman Exp $
+$Id: restore.epp,v 1.14 2002-12-10 11:53:44 eku Exp $
 */
 
 #include "firebird.h"
@@ -6546,7 +6546,7 @@ REC_TYPE	record;
 ATT_TYPE	attribute;
 USHORT		db_version;
 isc_req_handle  req_handle1 = NULL, req_handle2 = NULL, req_handle3 = NULL,
-                req_handle4 = NULL, req_handle5 = NULL;
+                req_handle5 = NULL;
 STATUS		req_status[ISC_STATUS_LENGTH];
 TGBL		tdgbl;
 SSHORT		flag_norel=TRUE;	/* To fix bug 10098 */

@@ -519,7 +519,6 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
  *
  **************************************/
 	TEXT *p;
-	USHORT dtype;
 
 /* Scan file name looking for separator character */
 
@@ -531,6 +530,7 @@ int DLL_EXPORT ISC_analyze_tcp(TEXT * file_name, TEXT * node_name)
    not conflict with an existing drive letter. */
 
 	if (p - file_name == 1) {
+		USHORT dtype;
 		*node_name = *file_name;
 		strcpy(node_name + 1, ":\\");
 		dtype = GetDriveType(node_name);

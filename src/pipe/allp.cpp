@@ -83,8 +83,8 @@ BLK ALLP_block (
  *
  **************************************/
 register BLK	block;
-register USHORT	size, *p;
-USHORT		best_tail, tail;
+register USHORT	size;
+USHORT		tail;
 
 if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
     abort();

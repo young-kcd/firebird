@@ -583,9 +583,6 @@ static USHORT CVJIS_check_euc(euc_str, euc_len)
  *          return 1.  
  *          else return(0);
  **************************************/
-	UCHAR c1, c2;
-
-
 	while (euc_len--) {
 		if (*euc_str & 0x80) {	/* Is it  EUC */
 			if (euc_len == 0) {	/* truncated kanji */
@@ -828,8 +825,6 @@ SSHORT CVJIS_euc_mbtowc(obj, wc, src, src_len)
  *	Grab a single character from a mb stream.
  *
  **************************************/
-	WCHAR x;
-
 	assert(src != NULL);
 	assert(obj != NULL);
 
@@ -1017,7 +1012,7 @@ USHORT CVJIS_sjis_byte2short(obj, dst, dst_len, src, src_len, err_code,
  *	Return the number of "bytes" in dst.
  *
  **************************************/
-	USHORT l, x;
+	USHORT x;
 	UCHAR *dst_start;
 	USHORT src_start = src_len;
 

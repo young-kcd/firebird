@@ -309,7 +309,7 @@ FIL PIO_create(DBB dbb, TEXT * string, SSHORT length, BOOLEAN overwrite)
  **************************************/
 	int desc, flag;
 	FIL file;
-	TEXT *address, expanded_name[256], temp[256], *file_name;
+	TEXT expanded_name[256], temp[256], *file_name;
 
 	file_name = string;
 
@@ -937,7 +937,6 @@ static FIL seek_file(FIL file, BDB bdb, UINT64 * offset, STATUS * status_vector)
 	ULONG page;
 	DBB dbb;
     UINT64 lseek_offset;
-    static int bad_off_count = 0;
 
 	dbb = bdb->bdb_dbb;
 	page = bdb->bdb_page;

@@ -4420,7 +4420,7 @@ static DSQL_NOD make_parameter (void)
  *	Any change should also be made to function below
  *
  **************************************/
-DSQL_NOD	node, *p;
+DSQL_NOD	node;
 TSQL    tdsql;
 
 tdsql = GET_THREAD_DATA;

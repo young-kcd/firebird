@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.17 2002-12-02 09:43:47 eku Exp $
+  $Id: isql.epp,v 1.18 2002-12-10 11:53:48 eku Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3118,13 +3118,12 @@ static SSHORT create_db( TEXT * statement, TEXT * d_name)
  *  
  **************************************/
 	TEXT *local_statement, *new_local_statement, *temp_str, *k, *l, *q, *p;
-	TEXT *b1 = NULL, *b2 = NULL, *temp_local_stmt_str = NULL;
+	TEXT *temp_local_stmt_str = NULL;
 	TEXT *str_begin = NULL, *str_end = NULL;
 	SSHORT arglength;
 	SSHORT slen, ret, cnt = 0;
 	TEXT *usr, *psw, quote = DBL_QUOTE;
-	BOOLEAN fl_nm_del_by_dq = FALSE;	/* file name delimited by double quote */
-	BOOLEAN done = FALSE, done1 = FALSE;
+	BOOLEAN done = FALSE;
 	SSHORT str_flag;
 	TEXT errbuf[MSG_LENGTH];
 

@@ -391,8 +391,6 @@ SSHORT WALC_init(STATUS * status_vector,
 	WALS WAL_segment;
 	WAL wal;
 	void (*wal_init_routine) ();
-	EVENT event, shared_event;
-	SSHORT i;
 
 	if (*WAL_handle != NULL) {
 		/* We are already initialized.  Just increment the use count. */
@@ -469,6 +467,8 @@ SSHORT WALC_init(STATUS * status_vector,
 	if (!wal_init_routine) {
 		/* If there wasn't an initialize routine then events haven't
 		   been initialized. */
+		EVENT event, shared_event;
+		SSHORT i;
 
 		event = wal->wal_events + 1;
 		shared_event = WAL_segment->wals_events + 1;
@@ -967,7 +967,9 @@ static void wals_initialize( WALC wal_args, SH_MEM shmem_data, int initialize)
 	LOGF *logf;
 	UCHAR *p, *q;
 	LGFILE *log_file;
+#if (defined WIN_NT)
 	EVENT event, shared_event;
+#endif
 #ifdef UNIX
 	struct stat buf;
 #endif

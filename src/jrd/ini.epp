@@ -652,7 +652,6 @@ void INI_init2(void)
 				}
 			}
 
-			VEC tmp = relation->rel_fields;
 			relation->rel_fields->resize(n);
 			format->fmt_count = n;
 			format->fmt_length = (USHORT)FLAG_BYTES(n);

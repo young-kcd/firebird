@@ -35,7 +35,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.20 2002-12-02 09:48:09 eku Exp $
+$Id: flu.cpp,v 1.21 2002-12-10 11:53:49 eku Exp $
 */
 
 #include "firebird.h"
@@ -655,7 +655,6 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
  *
  **************************************/
 	FPTR_INT function;
-	TEXT *p;
 
 	function = FUNCTIONS_entrypoint(module, name);
 	if (function)

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.45 2002-12-06 12:34:43 dimitr Exp $
+$Id: inet.cpp,v 1.46 2002-12-10 11:53:51 eku Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1635,7 +1635,7 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
     int status;
 	PORT new_port;
 	struct sockaddr_in address;
-#if !(defined VMS || defined WIN_NT)
+#ifdef SIOCSPGRP
 	int arg;
 #endif
 

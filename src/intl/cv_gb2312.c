@@ -44,7 +44,6 @@ USHORT CVGB_gb2312_to_unicode(obj, dest_ptr, dest_len, src_ptr, src_len,
 	USHORT *start;
 	WCHAR ch;
 	WCHAR wide;
-	UCHAR ch1;
 	USHORT src_start = src_len;
 	USHORT this_len;
 	UCHAR c1, c2;
@@ -294,8 +293,6 @@ SSHORT CVGB_gb2312_mbtowc(obj, wc, src, src_len)
  *	Grab a single character from a mb stream.
  *
  **************************************/
-	WCHAR x;
-
 	assert(src != NULL);
 	assert(obj != NULL);
 

@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.22 2002-11-25 16:25:30 dimitr Exp $
+$Id: isc.cpp,v 1.23 2002-12-10 11:53:49 eku Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -613,7 +613,6 @@ int DLL_EXPORT ISC_set_config(TEXT * config_file, IPCCFG config_table)
 	if ((ISC_cfg_tbl != NULL) && (!config_file || fd))
 	{
 		ULONG config_mask = 0;
-		ULONG *valptr = 0;
 
 
 		ret = 0;
@@ -658,6 +657,8 @@ int DLL_EXPORT ISC_set_config(TEXT * config_file, IPCCFG config_table)
 #ifdef SUPERSERVER
 			if (config_mask & (1 << t->cfgtbl_key))
 			{
+				ULONG *valptr = 0;
+
 				switch (t->cfgtbl_key)
 				{
 				case ISCCFG_MEMMIN_KEY:

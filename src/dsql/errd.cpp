@@ -111,7 +111,7 @@ void ERRD_error( int code, const char* text)
  *	so that strings will be handled.
  *
  **************************************/
-	TEXT s[256], *p;
+	TEXT s[256];
 	TSQL tdsql;
     STATUS	*status_vector;
 
