@@ -24,11 +24,11 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.8 2004-11-14 18:03:11 alexpeshkoff Exp $
+ *  $Id: guid.cpp,v 1.9 2004-11-16 08:34:35 robocop Exp $
  *
  */
  
-// minimum wun32 version: win95 / winnt4
+// minimum win32 version: win95 / winnt4
 #define _WIN32_WINNT 0x0400
 
 #include <windows.h>
@@ -62,7 +62,7 @@ void GenerateRandomBytes(void* buffer, size_t size)
 		}
 	}
 
-	if (! CryptGenRandom(hProv, size, reinterpret_cast<UCHAR*>(buffer)))
+	if (! CryptGenRandom(hProv, size, static_cast<UCHAR*>(buffer)))
 	{
 		Firebird::system_call_failed::raise("CryptGenRandom");
 	}
