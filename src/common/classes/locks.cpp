@@ -29,7 +29,6 @@
 
 namespace Firebird {
 
-#ifdef SUPERSERVER
 #ifdef WIN_NT
 
 #define MISS_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(-1))
@@ -60,6 +59,5 @@ Spinlock::Spinlock() {
 }
 
 #endif  // WIN_NT
-#endif	// SUPERSERVER
 
 }		// namespace Firebird

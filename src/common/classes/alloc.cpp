@@ -321,7 +321,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, int *cur_mem, int 
 void MemoryPool::deletePool(MemoryPool* pool) {
 	/* dimitr: I think we need an abstract base class or a global macro
 			   in locks.h to avoid these architecture checks. */
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 	pool->lock.~Spinlock();
 #else
 	pool->lock.~SharedSpinlock();
@@ -634,7 +634,7 @@ Firebird::MemoryPool* getDefaultMemoryPool() {
 	return Firebird::processMemoryPool;
 }
 
-void* operator new(size_t s) {
+void* operator new(size_t s) THROW_BAD_ALLOC {
 #if defined(DEV_BUILD)
 // Do not complain here. It causes client tools to crash on Red Hat 8.0
 //	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
@@ -647,7 +647,7 @@ void* operator new(size_t s) {
 	);
 }
 
-void* operator new[](size_t s) {
+void* operator new[](size_t s) THROW_BAD_ALLOC {
 #if defined(DEV_BUILD)
 // Do not complain here. It causes client tools to crash on Red Hat 8.0
 //	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");

@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.12 2003-03-24 13:35:28 brodsom Exp $
+$Id: thd.h,v 1.12.2.1 2003-08-11 21:37:26 skidder Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -35,7 +35,6 @@ $Id: thd.h,v 1.12 2003-03-24 13:35:28 brodsom Exp $
 #ifdef SOLARIS
 #ifdef SOLARIS_MT
 #include <thread.h>
-#define MULTI_THREAD		1
 #define THD_MUTEX_STRUCT	mutex_t
 #define THD_COND_STRUCT		cond_t
 #define THD_RWLOCK_STRUCT	rwlock_t
@@ -45,17 +44,14 @@ $Id: thd.h,v 1.12 2003-03-24 13:35:28 brodsom Exp $
 /* RITTER - changed HP10 to HPUX in the line below */
 #if (defined(HPUX) && defined(SUPERSERVER))
 #define POSIX_THREADS		1
-#define MULTI_THREAD		1
 #endif
 
 #if (defined(LINUX) && defined(SUPERSERVER))
 #define POSIX_THREADS           1
-#define MULTI_THREAD            1
 #endif
 
 #if (defined(FREEBSD) && defined(SUPERSERVER))
 #define POSIX_THREADS           1
-#define MULTI_THREAD            1
 #endif
 
 /* The following ifdef was added to build thread safe gds shared
@@ -67,16 +63,13 @@ $Id: thd.h,v 1.12 2003-03-24 13:35:28 brodsom Exp $
 */
 #if (defined(LINUX) && defined(SUPERCLIENT))
 #define POSIX_THREADS           1
-#define MULTI_THREAD            1
 #endif
 
 #if (defined(DARWIN) && defined(SUPERSERVER))
 #define POSIX_THREADS           1
-#define MULTI_THREAD            1
 #endif
 
 #ifdef VMS
-#define MULTI_THREAD		1
 /*
 #define POSIX_THREADS		1
 */
@@ -85,7 +78,6 @@ $Id: thd.h,v 1.12 2003-03-24 13:35:28 brodsom Exp $
 #endif
 
 #ifdef WIN_NT
-#define MULTI_THREAD		1
 #define THD_MUTEX_STRUCT	struct IB_RTL_CRITICAL_SECTION
 
 /* The following code fragment has been extracted from <winnt.h>.
