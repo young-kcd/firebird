@@ -84,7 +84,7 @@ LINK32=link.exe
 
 # Name "instsvc - Win32 Debug"
 # Name "instsvc - Win32 Release"
-# Begin Group "UTULITIES files"
+# Begin Group "UTILITIES files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
