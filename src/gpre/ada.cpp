@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.39 2004-05-02 23:04:14 skidder Exp $
+//	$Id: ada.cpp,v 1.40 2004-05-13 09:46:00 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -430,7 +430,7 @@ void ADA_action( const act* action, int column)
 //       reasonable 120 character hunks.
 //  
 
-void ADA_print_buffer( TEXT* output_buffer, const int column)
+void ADA_print_buffer( TEXT* output_bufferL, const int column)
 {
 	TEXT s[121];
 	int i;
@@ -438,7 +438,7 @@ void ADA_print_buffer( TEXT* output_buffer, const int column)
 
 	TEXT* p = s;
 
-	for (const TEXT* q = output_buffer; *q; q++) {
+	for (const TEXT* q = output_bufferL; *q; q++) {
 		*p++ = *q;
 		if (((p - s) + column) > 119) {
 			for (p--; (*p != ',') && (*p != ' '); p--)
@@ -466,7 +466,7 @@ void ADA_print_buffer( TEXT* output_buffer, const int column)
 			putc(' ', out_file);
 	}
 	fprintf(out_file, "%s", s);
-	output_buffer[0] = 0;
+	output_bufferL[0] = 0;
 }
 
 

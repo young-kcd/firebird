@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.43 2004-05-02 23:04:16 skidder Exp $
+//	$Id: ftn.cpp,v 1.44 2004-05-13 09:46:01 brodsom Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -653,12 +653,12 @@ void FTN_fini(void)
 //       reasonable 72 character hunks.
 //  
 
-void FTN_print_buffer( TEXT* output_buffer)
+void FTN_print_buffer( TEXT* output_bufferL)
 {
 	TEXT s[73];
 	TEXT* p = s;
 
-	for (const TEXT* q = output_buffer; *q; q++) {
+	for (const TEXT* q = output_bufferL; *q; q++) {
 		*p++ = *q;
 #ifdef sun
 		if (q[0] == '\n' && q[1] == '\0') {
@@ -689,7 +689,7 @@ void FTN_print_buffer( TEXT* output_buffer)
 	}
 	*p = 0;
 	fprintf(out_file, "%s", s);
-	output_buffer[0] = 0;
+	output_bufferL[0] = 0;
 }
 
 
