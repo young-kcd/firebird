@@ -25,6 +25,7 @@
  *   in the udf struct, so we can load the arguments and check for
  *   collisions between dropping and redefining the udf concurrently.
  *   This closes SF Bug# 409769.
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  *
  */
 
@@ -381,7 +382,7 @@ enum REQ_TYPE
 	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
 	REQ_COMMIT, REQ_ROLLBACK, REQ_DDL, REQ_EMBED_SELECT,
 	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
-	REQ_COMMIT_RETAIN, REQ_SET_GENERATOR
+	REQ_COMMIT_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT
 };
 
 

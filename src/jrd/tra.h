@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  * 2001.6.25 Claudio Valderrama: add dfw_delete_generator and dfw_delete_udf
  *           to the dfw_t enumeration.
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #ifndef JRD_TRA_H
@@ -131,6 +132,7 @@ class sav : public pool_alloc<type_sav>
 	SLONG sav_number;			/* save point number */
 	struct sav *sav_next;
 	USHORT sav_flags;
+	TEXT sav_name[32]; /* Savepoint name */
 };
 typedef sav *SAV;
 
@@ -138,6 +140,7 @@ typedef sav *SAV;
 
 #define SAV_trans_level		1	/* savepoint was started by TRA_start */
 #define SAV_event_post		2	/* event posted in the save point */
+#define SAV_user            4   /* named user savepoint as opposed to system ones */
 
 /* Deferred work blocks are used by the meta data handler to keep track
    of work deferred to commit time.  This are usually used to perform

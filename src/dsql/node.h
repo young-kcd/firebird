@@ -28,6 +28,8 @@
  * 2002.07.30	Added nod_searched_case, nod_simple_case, nod_coalesce
  * 2002.07.30	and constants for arguments
  * 2002.08.04 Dmitry Yemanov: ALTER VIEW
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #ifndef _DSQL_NODE_H_
@@ -323,7 +325,10 @@ typedef ENUM nod_t
 	nod_replace_procedure, /* CREATE OR ALTER PROCEDURE */
 	nod_replace_trigger, /* CREATE OR ALTER TRIGGER */
 	nod_replace_view, /* CREATE OR ALTER VIEW */
-	nod_redef_view /* allows silent creation/overwriting of a view */
+	nod_redef_view, /* allows silent creation/overwriting of a view */
+	nod_for_update, /* FOR UPDATE clause */
+	nod_user_savepoint, /* Savepoints support */
+	nod_undo_savepoint
 } NOD_TYPE;
 
 
@@ -404,6 +409,18 @@ typedef nod *NOD;
  *	& nod_collate.
  */
 
+#define e_select_expr   0       /* nod_select */
+#define e_select_order  1
+#define e_select_update 2
+#define e_select_count  4
+
+#define e_fpd_list      0       /* nod_for_update */
+#define e_fpd_lock      1
+#define e_fpd_count     2
+
+#define e_sav_name      0       /* nod_user_savepoint, nod_undo_savepoint */
+#define e_sav_count     1
+
 #define e_fld_context	0		/* nod_field */
 #define e_fld_field	1
 #define e_fld_indices	2
@@ -468,7 +485,8 @@ typedef nod *NOD;
 #define e_rse_singleton	6
 #define e_rse_plan	7
 #define e_rse_skip	8
-#define e_rse_count	9
+#define e_rse_lock  9
+#define e_rse_count	10
 
 #define e_limit_skip	0	/* nod_limit */
 #define e_limit_length	1

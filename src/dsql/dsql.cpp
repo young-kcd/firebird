@@ -26,10 +26,11 @@
  * 2001.6.3 Claudio Valderrama: fixed a bad behaved loop in get_plan_info()
  * and get_rsb_item() that caused a crash when plan info was requested.
  * 2001.6.9 Claudio Valderrama: Added nod_del_view, nod_current_role and nod_breakleave.
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  *
  */
 /*
-$Id: dsql.cpp,v 1.24 2002-09-28 14:03:39 dimitr Exp $
+$Id: dsql.cpp,v 1.25 2002-10-29 20:20:14 skidder Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -874,7 +875,8 @@ STATUS callback_execute_immediate( STATUS* status,
 
 	/* Other requests appear to be incorrect in this context */
 	long requests = (1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE)
-			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE);
+			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE) 
+				  | (1 << REQ_SAVEPOINT);
 
 	if (check_for_create_database(sql_operator, len, "createdatabase") ||
     	check_for_create_database(sql_operator, len, "createschema"))
@@ -1630,6 +1632,9 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 					break;
 				case REQ_SET_GENERATOR:
 					number = isc_info_sql_stmt_set_generator;
+					break;
+				case REQ_SAVEPOINT:
+					number = isc_info_sql_stmt_savepoint;
 					break;
 				default:
 					number = 0;
@@ -2880,6 +2885,7 @@ static STATUS execute_request(REQ				request,
 	case REQ_DELETE_CURSOR:
 	case REQ_EMBED_SELECT:
 	case REQ_SET_GENERATOR:
+	case REQ_SAVEPOINT:
 		break;
 	}
 

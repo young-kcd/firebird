@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.8 2002-09-28 14:03:39 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.9 2002-10-29 20:20:15 skidder Exp $
  *
  */
 
@@ -191,6 +191,7 @@ static CONST TOK tokens [] = {
 	{NULLIF, "NULLIF", 2},
 	{KW_NULL, "NULL", 1},
 	{NULLS, "NULLS", 2},
+	{LOCK, "LOCK", 2},
 	{KW_NUMERIC, "NUMERIC", 1},
 	{NUM_LOG_BUFS, "NUM_LOG_BUFFERS", 1},
 	{OF, "OF", 1},
@@ -233,6 +234,7 @@ static CONST TOK tokens [] = {
 	{ROLE, "ROLE", 1}, 
 	{ROLLBACK, "ROLLBACK", 1}, 
 	{ROWS_AFFECTED, "ROWS_AFFECTED", 2},
+	{SAVEPOINT, "SAVEPOINT", 2},
 	{DATABASE, "SCHEMA", 1},	/* Alias of DATABASE */
 	{SECOND, "SECOND", 2},
 	{SEGMENT, "SEGMENT", 1},

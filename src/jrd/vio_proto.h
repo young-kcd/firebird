@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #ifndef _JRD_VIO_PROTO_H_
@@ -35,7 +37,7 @@ extern int VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
 extern int VIO_check_if_updated(TDBB, struct rpb *);
 #endif
 extern void VIO_data(TDBB, register struct rpb *, struct blk *);
-extern void VIO_erase(TDBB, struct rpb *, struct tra *);
+extern BOOLEAN VIO_erase(TDBB, struct rpb *, struct tra *);
 #ifdef GARBAGE_THREAD
 extern void VIO_fini(TDBB);
 #endif
@@ -49,12 +51,12 @@ extern int VIO_get_current(TDBB, struct rpb *, struct tra *, struct blk *,
 extern void VIO_init(TDBB);
 #endif
 extern void VIO_merge_proc_sav_points(TDBB, struct tra *, struct sav **);
-extern void VIO_modify(TDBB, struct rpb *, struct rpb *, struct tra *);
+extern BOOLEAN VIO_modify(TDBB, struct rpb *, struct rpb *, struct tra *);
 extern BOOLEAN VIO_next_record(TDBB, struct rpb *, class Rsb *, struct tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
 extern struct rec *VIO_record(TDBB, register struct rpb *, struct fmt *,
 							  JrdMemoryPool *);
-extern void VIO_start_save_point(TDBB, struct tra *);
+extern void VIO_start_save_point(TDBB, struct tra *, TEXT *);
 extern void VIO_store(TDBB, struct rpb *, struct tra *);
 extern BOOLEAN VIO_sweep(TDBB, struct tra *);
 extern void VIO_verb_cleanup(TDBB, struct tra *);

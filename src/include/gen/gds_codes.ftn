@@ -1044,6 +1044,14 @@ C --
       PARAMETER (GDS__generator_name                   = 335544815)
       INTEGER*4 GDS__udf_name                        
       PARAMETER (GDS__udf_name                         = 335544816)
+      INTEGER*4 GDS__bad_limit_param                 
+      PARAMETER (GDS__bad_limit_param                  = 335544817)
+      INTEGER*4 GDS__bad_skip_param                  
+      PARAMETER (GDS__bad_skip_param                   = 335544818)
+      INTEGER*4 GDS__io_32bit_exceeded_err           
+      PARAMETER (GDS__io_32bit_exceeded_err            = 335544819)
+      INTEGER*4 GDS__invalid_savepoint               
+      PARAMETER (GDS__invalid_savepoint                = 335544820)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1120,6 +1128,10 @@ C --
       PARAMETER (GDS__dsql_warn_precision_ambiguous1   = 336003083)
       INTEGER*4 GDS__dsql_warn_precision_ambiguous2  
       PARAMETER (GDS__dsql_warn_precision_ambiguous2   = 336003084)
+      INTEGER*4 GDS__dsql_ambiguous_field_name       
+      PARAMETER (GDS__dsql_ambiguous_field_name        = 336003085)
+      INTEGER*4 GDS__dsql_udf_return_pos_err         
+      PARAMETER (GDS__dsql_udf_return_pos_err          = 336003086)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          
@@ -1318,6 +1330,10 @@ C --
       PARAMETER (GDS__gbak_not_ownr                    = 336331026)
       INTEGER*4 GDS__gbak_mode_req                   
       PARAMETER (GDS__gbak_mode_req                    = 336331031)
+      INTEGER*4 GDS__gbak_just_data                  
+      PARAMETER (GDS__gbak_just_data                   = 336331033)
+      INTEGER*4 GDS__gbak_data_only                  
+      PARAMETER (GDS__gbak_data_only                   = 336331034)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

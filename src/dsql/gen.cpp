@@ -25,9 +25,11 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.12 2002-09-28 14:03:39 dimitr Exp $
+$Id: gen.cpp,v 1.13 2002-10-29 20:20:15 skidder Exp $
 */
 
 #include "firebird.h"
@@ -700,33 +702,46 @@ void GEN_request( REQ request, NOD node)
 		STUFF(blr_version4);
 	else
 		STUFF(blr_version5);
-	STUFF(blr_begin);
-
-	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_EMBED_SELECT) {
-        gen_select(request, node);
-    }
-	else {
-		message = request->req_send;
-		if (!message->msg_parameter)
-			request->req_send = NULL;
-		else {
-			GEN_port(request, message);
-			if (request->req_type != REQ_EXEC_PROCEDURE) {
-				STUFF(blr_receive);
-				STUFF(message->msg_number);
-			}
-		}
-		message = request->req_receive;
-		if (!message->msg_parameter)
-			request->req_receive = NULL;
-		else
-			GEN_port(request, message);
+		
+	if (request->req_type == REQ_SAVEPOINT) 
+	{
+		// Do not generate BEGIN..END block around savepoint statement
+		// to avoid breaking of savepoint logic
+		request->req_send = NULL;
+		request->req_receive = NULL;
 		GEN_statement(request, node);
-	}
+	} 
+	else 
+	{	
+	
+		STUFF(blr_begin);
 
-	STUFF(blr_end);
+		if (request->req_type == REQ_SELECT ||
+			request->req_type == REQ_SELECT_UPD ||
+			request->req_type == REQ_EMBED_SELECT) {
+      	  gen_select(request, node);
+  		}
+		else {
+			message = request->req_send;
+			if (!message->msg_parameter)
+				request->req_send = NULL;
+			else {
+				GEN_port(request, message);
+				if (request->req_type != REQ_EXEC_PROCEDURE) {
+					STUFF(blr_receive);
+					STUFF(message->msg_number);
+				}
+			}
+			message = request->req_receive;
+			if (!message->msg_parameter)
+				request->req_receive = NULL;
+			else
+				GEN_port(request, message);
+			GEN_statement(request, node);
+		}		
+		STUFF(blr_end);
+	}
+	
 	STUFF(blr_eoc);
 }
 
@@ -1067,6 +1082,16 @@ void GEN_statement( REQ request, NOD node)
 
 	case nod_end_savepoint:
 		STUFF(blr_end_savepoint);
+		return;
+		
+	case nod_user_savepoint:
+		STUFF(blr_user_savepoint);
+		STUFF_CSTRING(((STR)node->nod_arg[e_sav_name])->str_data);
+		return;
+	
+	case nod_undo_savepoint:
+		STUFF(blr_undo_savepoint);
+		STUFF_CSTRING(((STR)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_exception_stmt:
@@ -1621,6 +1646,21 @@ static void gen_for_select( REQ request, NOD for_select)
 
 /* Build body of FOR loop */
 
+	/* Handle write locks */
+	NOD streams = rse->nod_arg[e_rse_streams];
+	CTX context = NULL;
+
+	if (!rse->nod_arg[e_rse_reduced] && streams->nod_count==1) {
+		NOD item = streams->nod_arg[0];
+		if (item && (item->nod_type == nod_relation))
+			context = (CTX) item->nod_arg[e_rel_context];
+	}
+	
+	if (rse->nod_arg[e_rse_lock] && context) {
+		STUFF(blr_writelock);
+		STUFF(context->ctx_context);
+	}	
+	
 	list = rse->nod_arg[e_rse_items];
 	list_to = for_select->nod_arg[e_flp_into];
 	if (list->nod_count != list_to->nod_count)
@@ -2250,7 +2290,9 @@ static void gen_select( REQ request, NOD rse)
 
 /* Save DBKEYs for possible update later */
 
+	/* these variables are used by FOR UPDATE statement handling lower */
 	list = rse->nod_arg[e_rse_streams];
+	context = NULL;
 
 	if (!rse->nod_arg[e_rse_reduced]) {
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
@@ -2340,6 +2382,13 @@ static void gen_select( REQ request, NOD rse)
 
 /* Build body of FOR loop */
 
+	/* Add invalid usage here */
+	
+	if (rse->nod_arg[e_rse_lock] && list->nod_count==1 && context) {
+		STUFF(blr_writelock);
+		STUFF(context->ctx_context);
+	}	
+	
 	STUFF(blr_assignment);
 	constant = 1;
 	gen_constant(request, &constant_desc, USE_VALUE);

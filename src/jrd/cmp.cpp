@@ -31,9 +31,11 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: cmp.cpp,v 1.14 2002-09-28 14:04:34 dimitr Exp $
+$Id: cmp.cpp,v 1.15 2002-10-29 20:20:31 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2408,6 +2410,15 @@ static NOD copy(
 		args = e_erase_length;
 		break;
 
+	case nod_writelock:
+		args = e_writelock_length;
+		break;
+
+	case nod_user_savepoint:
+	case nod_undo_savepoint:
+		args = e_sav_length;
+		break;
+
 	case nod_modify:
 		args = e_mod_length;
 		break;
@@ -3169,6 +3180,11 @@ static NOD pass1(
 		tail->csb_flags |= csb_erase;
 		pass1_erase(tdbb, csb, node);
 		break;
+
+	/* Add update privilege handling code for writelock here if needed
+	case nod_writelock:
+		break;
+	*/
 
 	case nod_exec_proc:
 		procedure = (PRC) node->nod_arg[e_esp_procedure];

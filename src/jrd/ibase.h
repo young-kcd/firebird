@@ -25,13 +25,12 @@
  * 17-Oct-2001 Mike Nordell: CPU affinity
  * 2001-04-16 Paul Beach: ISC_TIME_SECONDS_PRECISION_SCALE modified for HP10
  * Compiler Compatibility
- */
-/*
-$Id: ibase.h,v 1.14 2002-10-24 09:01:29 eku Exp $
- *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
- *
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ */
+/*
+$Id: ibase.h,v 1.15 2002-10-29 20:20:38 skidder Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -2045,6 +2044,7 @@ enum info_db_provider
 #define isc_info_sql_stmt_rollback        11
 #define isc_info_sql_stmt_select_for_upd  12
 #define isc_info_sql_stmt_set_generator   13
+#define isc_info_sql_stmt_savepoint       14
 
 
 /***********************************/

@@ -26,13 +26,13 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
- *
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.29 Mike Nordell - Fixed breakage.
- *
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: par.cpp,v 1.15 2002-10-29 16:27:45 tamlin Exp $
+$Id: par.cpp,v 1.16 2002-10-29 20:20:38 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2253,6 +2253,7 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	register NOD node, *arg;
 	SSHORT sub_type, operator_;
 	USHORT n;
+	TEXT name[32];
 
 	SET_TDBB(tdbb);
 
@@ -2260,7 +2261,7 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 
 	if (! (operator_ >= 0 && 
            operator_ < sizeof(type_table) / sizeof(type_table[0]))) {
-        syntax_error(*csb, "Invalid BLR code");
+        syntax_error(*csb, "valid BLR code");
     }
 
 	sub_type = sub_type_table[operator_];
@@ -2362,6 +2363,12 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_start_savepoint:
 	case blr_end_savepoint:
 		break;
+		
+	case blr_user_savepoint:
+	case blr_undo_savepoint:
+		par_name(csb, name);
+		*arg++ = (NOD)ALL_cstring(name);
+		break;
 
 	case blr_store:
 	case blr_store2:
@@ -2392,6 +2399,14 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 		if (n >= (*csb)->csb_count)
 			error(*csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_erase_stream] =
+			(NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		break;
+	
+	case blr_writelock:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_writelock_stream] =
 			(NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
 		break;
 

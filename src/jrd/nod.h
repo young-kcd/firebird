@@ -19,12 +19,16 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 NODE(nod_asn_list, asn_list, "")
 	NODE(nod_assignment, assignment, "")
 	NODE(nod_dcl_variable, declare, "")
 	NODE(nod_erase, erase, "")
+	NODE(nod_writelock, writelock, "WRITELOCK")	
+	NODE(nod_user_savepoint, user_savepoint, "SAVEPOINT")	
+	NODE(nod_undo_savepoint, undo_savepoint, "ROLLBACK TO SAVEPOINT")	
 	NODE(nod_fetch, fetch, "")
 	NODE(nod_for, for, "")
 	NODE(nod_handler, handler, "")

@@ -54,6 +54,8 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
@@ -411,6 +413,8 @@ static void	yyerror (TEXT *);
 %token NULLS
 %token LAST
 %token ROWS_AFFECTED
+%token LOCK
+%token SAVEPOINT
 
 /* precedence declarations for expression evaluation */
 
@@ -461,6 +465,8 @@ statement	: alter
 		| replace
 		| revoke
 		| rollback
+		| user_savepoint
+		| undo_savepoint
 		| select
 		| set
 		| update
@@ -2503,6 +2509,18 @@ set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
 
 /* transaction statements */
 
+user_savepoint : SAVEPOINT symbol_savepoint_name
+			{ $$ = make_node (nod_user_savepoint, 1, $2); }
+		;
+		
+undo_savepoint : ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
+			{ $$ = make_node (nod_undo_savepoint, 1, $5); }
+		;
+
+optional_savepoint	: SAVEPOINT
+		|
+		;
+		
 commit		: COMMIT optional_work optional_retain
 			{ $$ = make_node (nod_commit, 1, $3); }
 		;
@@ -2634,7 +2652,7 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 /* SELECT statement */
 
 select		: union_expr order_clause for_update_clause
-			{ $$ = make_node (nod_select, 3, $1, $2, $3); }
+			{ $$ = make_node (nod_select, 4, $1, $2, $3); }
 		;
 
 union_expr	: select_expr
@@ -2678,8 +2696,14 @@ nulls_placement : NULLS FIRST
 			{ $$ = 0; }
 		;
 
-for_update_clause : FOR UPDATE for_update_list
-			{ $$ = $3; }
+lock_clause : WITH LOCK
+			{ $$ = make_node (nod_flag, 0, NULL); }
+		|
+			{ $$ = 0; }
+		;
+		
+for_update_clause : FOR UPDATE for_update_list lock_clause
+			{ $$ = make_node (nod_for_update, 2, $3, $4); }
 		|
 			{ $$ = 0; }
 		;
@@ -3772,6 +3796,9 @@ symbol_variable_name			: SYMBOL
 			;
 
 symbol_view_name			: SYMBOL
+			;
+
+symbol_savepoint_name			: SYMBOL
 			;
 
 %%

@@ -27,4 +27,4 @@ define(END_RELATION, )
 
 define(FIELD_ODS8, )
 
-include(relations.h)
+include(jrd/relations.h)

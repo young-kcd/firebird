@@ -33,12 +33,13 @@
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
  *
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks 
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
- *
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: exe.cpp,v 1.23 2002-10-29 16:27:45 tamlin Exp $
+$Id: exe.cpp,v 1.24 2002-10-29 20:20:36 skidder Exp $
 */
 
 #include "firebird.h"
@@ -127,6 +128,7 @@ static void execute_procedure(TDBB, NOD);
 static REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
 static NOD looper(TDBB, REQ, NOD);
 static NOD modify(TDBB, register NOD, SSHORT);
+static void writelock(TDBB, register NOD);
 static NOD receive_msg(TDBB, register NOD);
 static void release_blobs(TDBB, REQ);
 static void release_proc_save_points(REQ);
@@ -627,7 +629,7 @@ void EXE_receive(TDBB		tdbb,
 		request->req_proc_sav_point = save_sav_point;
 
 		if (!transaction->tra_save_point) {
-			VIO_start_save_point(tdbb, transaction);
+			VIO_start_save_point(tdbb, transaction, NULL);
 		}
 	}
 	
@@ -918,9 +920,15 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 
 /* Start a save point if not in middle of one  */
 
-	if (transaction && (transaction != dbb->dbb_sys_trans)) {
-		VIO_start_save_point(tdbb, transaction);
-	}
+// 29.10.2002 - Nickolay Samofatov
+// I commented out savepoint handling logic here and below
+// because I had no idea why is it needed but it added
+// unnecessary overhead and prevented new savepoint logic from working.
+// All insert/update/delete operations are surrounded by savepoint
+// handling code at the DSQL layer.
+//	if (transaction && (transaction != dbb->dbb_sys_trans)) {
+//		VIO_start_save_point(tdbb, transaction, NULL);
+//	}
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
 #endif
@@ -931,13 +939,13 @@ void EXE_start(TDBB tdbb, REQ request, TRA transaction)
 
 /* If any requested modify/delete/insert ops have completed, forget them */
 
-	if (transaction && (transaction != dbb->dbb_sys_trans) &&
-		transaction->tra_save_point &&
-		!transaction->tra_save_point->sav_verb_count) {
+//	if (transaction && (transaction != dbb->dbb_sys_trans) &&
+//		transaction->tra_save_point &&
+//		!transaction->tra_save_point->sav_verb_count) {
 		/* Forget about any undo for this verb */
 
-		VIO_verb_cleanup(tdbb, transaction);
-	}
+//		VIO_verb_cleanup(tdbb, transaction);
+//	}
 }
 
 
@@ -1196,7 +1204,18 @@ static NOD erase(TDBB tdbb, NOD node, SSHORT which_trig)
 	if (relation->rel_file)
 		EXT_erase(rpb, reinterpret_cast < int *>(transaction));
 	else if (!relation->rel_view_rse)
-		VIO_erase(tdbb, rpb, transaction);
+		// Repeat it as many times as underlying record modifies
+		while (TRUE) {
+			if (VIO_erase(tdbb, rpb, transaction)) break;
+			if ( !(transaction->tra_flags & TRA_read_committed) ||
+			       (transaction->tra_flags & TRA_rec_version) ||
+				   (transaction->tra_flags & TRA_nowait) )
+			{
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+			}			  
+			rpb->rpb_stream_flags |= RPB_s_refetch;
+		}
+		
 
 /* Handle post operation trigger */
 
@@ -1293,7 +1312,7 @@ static void execute_looper(
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 		if (transaction && (transaction != dbb->dbb_sys_trans))
-			VIO_start_save_point(tdbb, transaction);
+			VIO_start_save_point(tdbb, transaction, NULL);
 
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
@@ -1759,6 +1778,8 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
  **************************************/
 
 	STA impure;
+	SLONG sav_number;
+	SAV savepoint;
 	SSHORT which_erase_trig = 0;
 	SSHORT which_sto_trig   = 0;
 	SSHORT which_mod_trig   = 0;
@@ -1902,6 +1923,12 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				}
 			}
 			break;
+		
+		case nod_writelock:
+			writelock(tdbb, node);
+			node = node->nod_parent;
+			request->req_operation = req::req_return;
+			break;
 
 		case nod_exec_proc:
 			if (request->req_operation == req::req_unwind) {
@@ -1977,6 +2004,42 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				node = node->nod_parent;
 			}
 			break;
+			
+		case nod_user_savepoint:
+			VIO_start_save_point(tdbb, transaction, (TEXT*)node->nod_arg[e_sav_name]);
+			node = node->nod_parent;
+			request->req_operation = req::req_return;
+			break;
+
+		case nod_undo_savepoint:
+			savepoint = transaction->tra_save_point;
+			
+			// Find savepoint to undo
+			while(TRUE) {
+				if (!savepoint || !(savepoint->sav_flags & SAV_user))
+					ERR_post(gds_invalid_savepoint,
+						gds_arg_number, (SLONG) node->nod_arg[e_sav_name], 0);
+								
+				if (!strcmp((TEXT*)node->nod_arg[e_sav_name],(TEXT*)savepoint->sav_name))
+					break;
+				
+				savepoint = savepoint->sav_next;
+			}
+			sav_number = savepoint->sav_number;
+			
+			// Actually undo the savepoint
+			while ( transaction->tra_save_point && 
+				transaction->tra_save_point->sav_number >= sav_number ) 
+			{
+				transaction->tra_save_point->sav_verb_count++;
+				VERB_CLEANUP;
+			}
+			
+			// Now set the savepoint again to allow to return to it later
+			VIO_start_save_point(tdbb, transaction, (TEXT*)node->nod_arg[e_sav_name]);
+			node = node->nod_parent;
+			request->req_operation = req::req_return;
+			break;
 
 		case nod_start_savepoint:
 			switch (request->req_operation) {
@@ -1984,7 +2047,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 				/* Start a save point */
 
 				if (transaction != dbb->dbb_sys_trans)
-					VIO_start_save_point(tdbb, transaction);
+					VIO_start_save_point(tdbb, transaction, NULL);
 
 			default:
 				node = node->nod_parent;
@@ -2036,7 +2099,7 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 			case req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
-					VIO_start_save_point(tdbb, transaction);
+					VIO_start_save_point(tdbb, transaction, NULL);
 					save_point = transaction->tra_save_point;
 					count = save_point->sav_number;
 					MOVE_FAST(&count,
@@ -2755,7 +2818,18 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 			REL bad_relation;
 			IDX_E error_code;
 
-			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
+			// Repeat it as many times as underlying record modifies
+			while (TRUE) {
+				if (VIO_modify(tdbb, org_rpb, new_rpb, transaction)) break;
+				if ( !(transaction->tra_flags & TRA_read_committed) ||
+				       (transaction->tra_flags & TRA_rec_version) ||
+					   (transaction->tra_flags & TRA_nowait) )
+				{
+					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				}			  
+				org_rpb->rpb_stream_flags |= RPB_s_refetch;
+			}
+
 			error_code = IDX_modify(tdbb,
 									org_rpb,
 									new_rpb,
@@ -2915,6 +2989,168 @@ static NOD modify(TDBB tdbb, register NOD node, SSHORT which_trig)
 	}
 
 	return node->nod_arg[e_mod_statement];
+}
+
+static void writelock(TDBB tdbb, register NOD node)
+{
+/**************************************
+ *
+ *	w r i t e l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set write lock by making record owned by this transaction.
+ *  Current implementation is absolutely not perfect.
+ *  It basically works as modify, but doesn't call triggers
+ *  better implementation would require modification in VIO code
+ *
+ **************************************/ 
+	DBB dbb;
+	register REQ request, trigger;
+//	STA impure;
+	FMT org_format, new_format;
+	SSHORT org_stream;
+	REC org_record, new_record;
+	RPB *org_rpb;
+	rpb new_rpb;
+	REL relation;
+	TRA transaction;
+
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+	BLKCHK(node, type_nod);
+
+	request = tdbb->tdbb_request;
+	transaction = request->req_transaction;
+
+//	impure = (STA) ((SCHAR *) request + node->nod_impure);
+
+	org_stream = (USHORT) node->nod_arg[e_writelock_stream];
+	org_rpb = &request->req_rpb[org_stream];
+	relation = org_rpb->rpb_relation;
+
+/* If the stream was sorted, the various fields in the rpb are
+   probably junk.  Just to make sure that everything is cool,
+   refetch and release the record. */
+
+	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
+		SLONG tid_fetch;
+
+		tid_fetch = org_rpb->rpb_transaction;
+		if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
+			(!VIO_chase_record_version(tdbb,
+									   org_rpb,
+									   NULL,
+									   transaction,
+									   reinterpret_cast<BLK>(tdbb->tdbb_default))))
+		{
+			ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+		}
+		VIO_data(tdbb, org_rpb,
+				 reinterpret_cast<BLK>(tdbb->tdbb_request->req_pool));
+
+		/* If record is present, and the transaction is read committed,
+		 * make sure the record has not been updated.  Also, punt after
+		 * VIO_data () call which will release the page.
+		 */
+
+		if ((transaction->tra_flags & TRA_read_committed) &&
+			(tid_fetch != org_rpb->rpb_transaction))
+		{
+			ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
+		}
+
+		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+	}
+	
+	memset(&new_rpb,0,sizeof(new_rpb));
+
+	new_rpb.rpb_relation = relation;
+	new_format = MET_current(tdbb, relation);
+	new_record = VIO_record(tdbb, &new_rpb, new_format, tdbb->tdbb_default);
+	new_rpb.rpb_address = new_record->rec_data;
+	new_rpb.rpb_length = new_format->fmt_length;
+	new_rpb.rpb_format_number = new_format->fmt_version;
+
+	if (!(org_record = org_rpb->rpb_record)) {
+		org_record =
+			VIO_record(tdbb, org_rpb, new_format, tdbb->tdbb_default);
+		org_format = org_record->rec_format;
+		org_rpb->rpb_address = org_record->rec_data;
+		org_rpb->rpb_length = org_format->fmt_length;
+		org_rpb->rpb_format_number = org_format->fmt_version;
+	}
+	else
+		org_format = org_record->rec_format;
+
+/* Copy the original record to the new record.  If the format hasn't changed,
+   this is a simple move.  If the format has changed, each field must be
+   fetched and moved separately, remembering to set the missing flag. */
+
+	if (new_format->fmt_version == org_format->fmt_version)
+		MOVE_FASTER(org_record->rec_data, new_rpb.rpb_address,
+					new_rpb.rpb_length);
+	else {
+		SSHORT i;
+		DSC org_desc, new_desc;
+
+		for (i = 0; i < new_format->fmt_count; i++) {
+			/* In order to "map a null to a default" value (in EVL_field()), 
+			 * the relation block is referenced. 
+			 * Reference: Bug 10116, 10424 
+			 */
+			CLEAR_NULL(new_record, i);
+			if (EVL_field(new_rpb.rpb_relation, new_record, i, &new_desc)) {
+				if (EVL_field
+					(org_rpb->rpb_relation, org_record, i,
+					 &org_desc)) MOV_move(&org_desc, &new_desc);
+				else {
+					SET_NULL(new_record, i);
+					if (new_desc.dsc_dtype) {
+						UCHAR *p;
+						USHORT n;
+
+						p = new_desc.dsc_address;
+						n = new_desc.dsc_length;
+						do
+							*p++ = 0;
+						while (--n);
+					}
+				}				/* if (org_record) */
+			}					/* if (new_record) */
+		}						/* for (fmt_count) */
+	}
+	
+	if (!relation->rel_view_rse && !relation->rel_file)
+	{
+		SSHORT bad_index;
+		REL bad_relation;
+		IDX_E error_code;
+		
+		RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
+		
+		// Repeat it as many times as underlying record modifies
+		while (TRUE) {
+			if (VIO_modify(tdbb, org_rpb, &new_rpb, transaction)) break;
+			if ( !(transaction->tra_flags & TRA_read_committed) ||
+			       (transaction->tra_flags & TRA_rec_version) ||
+				   (transaction->tra_flags & TRA_nowait) )
+			{
+				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+			}			  
+			org_rpb->rpb_stream_flags |= RPB_s_refetch;
+		}
+		error_code = IDX_modify(tdbb,
+								org_rpb,
+								&new_rpb,
+								transaction,
+								&bad_relation,
+								reinterpret_cast<USHORT*>(&bad_index));
+		if (error_code) {
+			ERR_duplicate_error(error_code, bad_relation, bad_index);
+		}
+	}
 }
 
 

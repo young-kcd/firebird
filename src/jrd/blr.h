@@ -24,6 +24,8 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #ifndef _JRD_BLR_H_
@@ -292,6 +294,12 @@
 #define blr_exec_sql		(unsigned char)176
 #define blr_internal_info	(unsigned char)177
 #define blr_nullsfirst		(unsigned char)178
+#define blr_writelock		(unsigned char)179
+
+/* This codes are for user-defined savepoints 
+  as opposed to the system ones defined earlier */
+#define blr_user_savepoint	(unsigned char)180
+#define blr_undo_savepoint	(unsigned char)181
 
 #endif /* _JRD_BLR_H_ */
 

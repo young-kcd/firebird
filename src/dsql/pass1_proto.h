@@ -26,7 +26,7 @@
 
 extern struct ctx *PASS1_make_context(struct req *, struct nod *);
 extern struct nod *PASS1_node(struct req *, struct nod *, USHORT);
-extern struct nod *PASS1_rse(struct req *, struct nod *, struct nod *);
+extern struct nod *PASS1_rse(struct req *, struct nod *, struct nod *, NOD update_lock);
 extern struct nod *PASS1_statement(struct req *, struct nod *, USHORT);
 
 #endif /* _DSQL_PASS1_PROTO_H_ */

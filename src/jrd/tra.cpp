@@ -22,6 +22,7 @@
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #include "firebird.h"
@@ -1153,9 +1154,19 @@ void TRA_rollback(TDBB tdbb, TRA transaction, USHORT retaining_flag)
 /* If there is a transaction-level savepoint, then use that to undo
    this transaction's work and mark it committed in the TIP page
    instead (avoids a need for a database sweep). */
+	BOOLEAN tran_sav = FALSE;
+	for (SAV temp = transaction->tra_save_point; temp; temp=temp->sav_next)
+		if (temp->sav_flags & SAV_trans_level)
+			tran_sav = TRUE;
 
-	if (transaction->tra_save_point)
+	if (tran_sav)
 	{
+		/* Undo all user savepoints*/
+		while (transaction->tra_save_point->sav_flags & SAV_user) {
+			++transaction->tra_save_point->sav_verb_count;	/* cause undo */
+			VIO_verb_cleanup(tdbb, transaction);
+		}
+			
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		/* Too many savepoints */
 
@@ -1703,7 +1714,7 @@ TRA TRA_start(TDBB tdbb, int tpb_length, SCHAR * tpb)
 
 	if ((trans != dbb->dbb_sys_trans) &&
 		!(trans->tra_flags & TRA_no_auto_undo)) {
-		VIO_start_save_point(tdbb, trans);
+		VIO_start_save_point(tdbb, trans, NULL);
 		trans->tra_save_point->sav_flags |= SAV_trans_level;
 	}
 
@@ -2702,11 +2713,15 @@ static void retain_context(TDBB tdbb, TRA transaction, USHORT commit)
    'transaction' control block: get rid of the transaction-level
    savepoint and possibly start a new transaction-level savepoint. */
 
+	// Close all user savepoints. This may happen only at commit time
+	while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user)
+		VIO_verb_cleanup(tdbb, transaction);
+	
 	if (transaction->tra_save_point) {
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		/* Too many savepoints */
 		VIO_verb_cleanup(tdbb, transaction);	/* get rid of savepoint */
-		VIO_start_save_point(tdbb, transaction);	/* start new savepoint */
+		VIO_start_save_point(tdbb, transaction, NULL);	/* start new savepoint */
 		transaction->tra_save_point->sav_flags |= SAV_trans_level;
 	}
 

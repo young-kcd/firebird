@@ -542,6 +542,7 @@ const GDS_LONG gds_udf_name                         = 335544816L;
 const GDS_LONG gds_bad_limit_param                  = 335544817L;
 const GDS_LONG gds_bad_skip_param                   = 335544818L;
 const GDS_LONG gds_io_32bit_exceeded_err            = 335544819L;
+const GDS_LONG gds_invalid_savepoint                = 335544820L;
 const GDS_LONG gds_gfix_db_name                     = 335740929L;
 const GDS_LONG gds_gfix_invalid_sw                  = 335740930L;
 const GDS_LONG gds_gfix_incmp_sw                    = 335740932L;
@@ -742,7 +743,7 @@ const GDS_LONG gds_gstat_unexpected_eof             = 336920580L;
 const GDS_LONG gds_gstat_open_err                   = 336920605L;
 const GDS_LONG gds_gstat_read_err                   = 336920606L;
 const GDS_LONG gds_gstat_sysmemex                   = 336920607L;
-const GDS_LONG gds_err_max                          = 699L;
+const GDS_LONG gds_err_max                          = 700L;
 
 #else /* c definitions */
 
@@ -1265,6 +1266,7 @@ const GDS_LONG gds_err_max                          = 699L;
 #define gds__bad_limit_param                  335544817L
 #define gds__bad_skip_param                   335544818L
 #define gds__io_32bit_exceeded_err            335544819L
+#define gds__invalid_savepoint                335544820L
 #define gds__gfix_db_name                     335740929L
 #define gds__gfix_invalid_sw                  335740930L
 #define gds__gfix_incmp_sw                    335740932L
@@ -1465,7 +1467,7 @@ const GDS_LONG gds_err_max                          = 699L;
 #define gds__gstat_open_err                   336920605L
 #define gds__gstat_read_err                   336920606L
 #define gds__gstat_sysmemex                   336920607L
-#define gds_err_max                          699
+#define gds_err_max                          700
 
 #endif
 

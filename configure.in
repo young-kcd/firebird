@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.54 2002-10-16 08:38:03 eku Exp $
+dnl $Id: configure.in,v 1.55 2002-10-29 20:20:05 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -317,6 +317,8 @@ mkdir -p gen/jrd
 mkdir -p gen/qli
 mkdir -p gen/utilities
 mkdir -p gen/fbutil
+mkdir -p gen/codes
+mkdir -p gen/codes/jrd
 
 mkdir -p gen/install
 mkdir -p gen/install/scripts
@@ -449,6 +451,7 @@ gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
 src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
 gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon
+gen/Makefile.codes:${MAKE_SRC_DIR}/Makefile.in.codes
 gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre
 gen/Makefile.libfbstatic:${MAKE_SRC_DIR}/Makefile.in.libfbstatic
 gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre

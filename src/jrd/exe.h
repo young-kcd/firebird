@@ -24,6 +24,8 @@
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #ifndef _JRD_EXE_H_
@@ -257,6 +259,13 @@ typedef struct iasb {
 #define	e_erase_stream		2
 #define e_erase_rsb		3
 #define	e_erase_length		4
+
+#define e_writelock_stream  0
+#define e_writelock_length  1
+
+/* used for both nod_user_savepoint and nod_undo_savepoint */
+#define e_sav_name			0
+#define e_sav_length		1
 
 #define	e_mod_statement		0
 #define e_mod_sub_mod		1

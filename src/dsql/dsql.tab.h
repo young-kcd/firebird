@@ -247,3 +247,5 @@
 #define NULLS 503
 #define LAST 504
 #define ROWS_AFFECTED 505
+#define LOCK 506
+#define SAVEPOINT 507

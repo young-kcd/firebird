@@ -528,6 +528,10 @@ CONST
 	gds_service_not_supported            = 335544814;
 	gds_generator_name                   = 335544815;
 	gds_udf_name                         = 335544816;
+	gds_bad_limit_param                  = 335544817;
+	gds_bad_skip_param                   = 335544818;
+	gds_io_32bit_exceeded_err            = 335544819;
+	gds_invalid_savepoint                = 335544820;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -566,6 +570,8 @@ CONST
 	gds_dsql_warn_precision_ambiguous    = 336003082;
 	gds_dsql_warn_precision_ambiguous1   = 336003083;
 	gds_dsql_warn_precision_ambiguous2   = 336003084;
+	gds_dsql_ambiguous_field_name        = 336003085;
+	gds_dsql_udf_return_pos_err          = 336003086;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;
@@ -665,6 +671,8 @@ CONST
 	gds_gbak_svc_name_missing            = 336331025;
 	gds_gbak_not_ownr                    = 336331026;
 	gds_gbak_mode_req                    = 336331031;
+	gds_gbak_just_data                   = 336331033;
+	gds_gbak_data_only                   = 336331034;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.11 2002-10-10 06:47:05 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.12 2002-10-29 20:20:10 skidder Exp $
 #
 
 ROOT=..
@@ -237,6 +237,7 @@ lock_mgr :
 
 
 
+
 #--------------------------------------------------------------------------
 #Phase2: We can now start build some of the static utilities needed to build
 #  an empty database (lock manager and create_db).  Then we rebuild all the
@@ -297,10 +298,14 @@ isc4.gdb: gdef isql 		# build the security database
 # earlier, then perhaps we could build the jrdlib in one step and include
 # the security bits and pieces.
 
-.PHONY: ref_databases msgs msgs_intl intl extlib includes
+.PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
 
-basic_targets: ref_databases msgs msgs_intl intl extlib includes examples \
+basic_targets: ref_databases msgs msgs_intl generated_headers intl extlib includes examples \
 		otherfiles
+
+# hack to make code regeneration work
+generated_headers :
+	$(MAKE) -f $(MAKE_ROOT)/Makefile.codes $@
 
 msgs:                  # messages file for user $(FIREBIRD)/firebird.msg
 	$(MAKE) -f $(MAKE_ROOT)/Makefile.msgs $@

@@ -106,7 +106,11 @@
  *   Modified functions pass1_field, pass1_rse, copy_field, pass1_sort.
  *   Functions pass1_found_aggregate and pass1_found_field added.
  *
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ *
  * 2002.10.25 Dmitry Yemanov: Re-allowed plans in triggers
+ *
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #include "firebird.h"
@@ -170,7 +174,7 @@ static BOOLEAN pass1_found_field(NOD, USHORT, USHORT, BOOLEAN *);
 static NOD pass1_insert(REQ, NOD);
 static void	pass1_put_args_on_stack(REQ, NOD, DLLS *, USHORT);
 static NOD pass1_relation(REQ, NOD);
-static NOD pass1_rse(REQ, NOD, NOD);
+static NOD pass1_rse(REQ, NOD, NOD, NOD);
 static NOD pass1_searched_case(REQ, NOD, USHORT);
 static NOD pass1_sel_list(REQ, NOD);
 static NOD pass1_simple_case(REQ, NOD, USHORT);
@@ -552,7 +556,7 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 
 		base = request->req_context;
 		node = MAKE_node(nod_via, e_via_count);
-		node->nod_arg[e_via_rse] = rse = PASS1_rse(request, input, NULL);
+		node->nod_arg[e_via_rse] = rse = PASS1_rse(request, input, NULL, NULL);
 		node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
 		node->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
 
@@ -566,7 +570,7 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 	case nod_singular:
 		base = request->req_context;
 		node = MAKE_node(input->nod_type, 1);
-		node->nod_arg[0] = PASS1_rse(request, input->nod_arg[0], NULL);
+		node->nod_arg[0] = PASS1_rse(request, input->nod_arg[0], NULL, NULL);
 
 		/* Finish off by cleaning up contexts */
 
@@ -671,7 +675,7 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 				node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 				node->nod_arg[1] = temp = MAKE_node(nod_via, e_via_count);
 				temp->nod_arg[e_via_rse] = rse =
-					PASS1_rse(request, sub2, NULL);
+					PASS1_rse(request, sub2, NULL, NULL);
 				temp->nod_arg[e_via_value_1] =
 					rse->nod_arg[e_rse_items]->nod_arg[0];
 				temp->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
@@ -894,7 +898,7 @@ NOD PASS1_node(REQ request, NOD input, USHORT proc_flag)
 }
 
 
-NOD PASS1_rse(REQ request, NOD input, NOD order)
+NOD PASS1_rse(REQ request, NOD input, NOD order, NOD update_lock)
 {
 /**************************************
  *
@@ -916,7 +920,7 @@ NOD PASS1_rse(REQ request, NOD input, NOD order)
 	DEV_BLKCHK(order, dsql_type_nod);
 
 	request->req_scope_level++;
-	node = pass1_rse(request, input, order);
+	node = pass1_rse(request, input, order, update_lock);
 	request->req_scope_level--;
 
 	return node;
@@ -1314,8 +1318,10 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 		return input;
 
 	case nod_select:
-		node = PASS1_rse(request, input->nod_arg[0], input->nod_arg[1]);
-		if (input->nod_arg[2]) {
+		temp = input->nod_arg[e_select_update];
+		node = PASS1_rse(request, input->nod_arg[e_select_expr], input->nod_arg[e_select_order],
+			temp ? temp->nod_arg[e_fpd_list] : NULL );
+		if (temp) {
 			request->req_type = REQ_SELECT_UPD;
 			request->req_flags |= REQ_no_batch;
 			break;
@@ -1367,6 +1373,11 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 	case nod_exception:
 	case nod_sqlcode:
 	case nod_gdscode:
+		return input;
+		
+	case nod_user_savepoint:
+	case nod_undo_savepoint:
+		request->req_type = REQ_SAVEPOINT;	
 		return input;
 
 	case nod_null:
@@ -2613,7 +2624,7 @@ static NOD pass1_any( REQ request, NOD input, NOD_TYPE ntype)
 	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], 0);
 
 	node = MAKE_node(ntype, 1);
-	node->nod_arg[0] = rse = PASS1_rse(request, select, NULL);
+	node->nod_arg[0] = rse = PASS1_rse(request, select, NULL, NULL);
 
 /* adjust the scope level back to the sub-rse, so that 
    the fields in the select list will be properly recognized */
@@ -3774,7 +3785,7 @@ static NOD pass1_insert( REQ request, NOD input)
 /* Process SELECT expression, if present */
 
 	if (rse = input->nod_arg[e_ins_select]) {
-		node->nod_arg[e_sto_rse] = rse = PASS1_rse(request, rse, 0);
+		node->nod_arg[e_sto_rse] = rse = PASS1_rse(request, rse, 0, NULL);
 		values = rse->nod_arg[e_rse_items];
 	}
 	else
@@ -4111,7 +4122,7 @@ static DSQL_REL pass1_base_table( REQ request, DSQL_REL relation, STR alias)
 }
 
 
-static NOD pass1_rse( REQ request, NOD input, NOD order)
+static NOD pass1_rse( REQ request, NOD input, NOD order, NOD update_lock)
 {
 /**************************************
  *
@@ -4145,7 +4156,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 
 	if (input->nod_type == nod_list) {
 		if (input->nod_count == 1)
-			return PASS1_rse(request, input->nod_arg[0], order);
+			return PASS1_rse(request, input->nod_arg[0], order, update_lock);
 		else
 			return pass1_union(request, input, order);
 	}
@@ -4155,6 +4166,7 @@ static NOD pass1_rse( REQ request, NOD input, NOD order)
 	parent_context = NULL;
 	parent_rse = NULL;
 	rse = target_rse = MAKE_node(nod_rse, e_rse_count);
+	rse->nod_arg[e_rse_lock] = update_lock;
 	rse->nod_arg[e_rse_streams] =
 		PASS1_node(request, input->nod_arg[e_sel_from], 0);
 
@@ -4791,7 +4803,7 @@ static NOD pass1_union( REQ request, NOD input, NOD order_list)
 	base = request->req_context;
 	for (ptr = input->nod_arg, end = ptr + input->nod_count; ptr < end;
 		 ptr++, uptr++) {
-		*uptr = PASS1_rse(request, *ptr, 0);
+		*uptr = PASS1_rse(request, *ptr, 0, NULL);
         while (request->req_context != base) {
             LLS_PUSH(request->req_context->lls_object, &request->req_union_context);
             LLS_POP(&request->req_context);

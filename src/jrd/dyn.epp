@@ -30,9 +30,9 @@
  *    2001.10.01 Claudio Valderrama: Enable explicit GRANT...to ROLE role_name.
  *			and complain if the grantee ROLE doesn't exist.
  *    2001.10.06 Claudio Valderrama: Forbid "NONE" from role-related operations.
- *				Honor explicit USER keyword in GRANTs and REVOKEs.
- *
+ *				Honor explicit USER keyword in GRANTs and REVOKEs. *
  *    2002.08.10 Dmitry Yemanov: ALTER VIEW
+ *    2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #include "firebird.h"
@@ -144,7 +144,7 @@ void DYN_ddl(ATT attachment, TRA transaction, USHORT length, UCHAR * ddl)
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 #endif
 
-		VIO_start_save_point(tdbb, transaction);
+		VIO_start_save_point(tdbb, transaction, NULL);
 		transaction->tra_save_point->sav_verb_count++;
 
 		DYN_execute(&gbl, &ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);

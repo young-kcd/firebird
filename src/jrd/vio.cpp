@@ -26,6 +26,8 @@
  * 2002.08.21 Dmitry Yemanov: fixed bug with a buffer overrun,
  *                            which at least caused invalid dependencies
  *                            to be stored (DB$xxx, for example)
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
 #include "firebird.h"
@@ -98,7 +100,7 @@ static void list_staying(TDBB, RPB *, LLS *);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(TDBB, RPB *);
 #endif
-static void prepare_update(TDBB, TRA, SLONG, RPB *, RPB *, RPB *, LLS *);
+static BOOLEAN prepare_update(TDBB, TRA, SLONG, RPB *, RPB *, RPB *, LLS *);
 static BOOLEAN purge(TDBB, RPB *);
 static REC replace_gc_record(REL, REC *, USHORT);
 static void replace_record(TDBB, RPB *, LLS *, TRA);
@@ -1004,7 +1006,7 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
 }
 
 
-void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
+BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 {
 /**************************************
  *
@@ -1017,7 +1019,8 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
  *
  *	This routine is entered with an inactive
  *	RPB and leaves having created an erased
- *	stub.
+ *	stub. Returns FALSE if record was modified by 
+ *  another user 
  *
  **************************************/
 	REL relation, r2;
@@ -1064,7 +1067,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 										reinterpret_cast<blk*>(
 											tdbb->tdbb_default))))
 		{
-			  ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
 		VIO_data(tdbb, rpb,
 				 reinterpret_cast<blk*>(tdbb->tdbb_request->req_pool));
@@ -1091,7 +1094,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 	if (transaction->tra_flags & TRA_system)
 	{
 		VIO_backout(tdbb, rpb, transaction);
-		return;
+		return TRUE;
 	}
 
 	transaction->tra_flags |= TRA_write;
@@ -1280,7 +1283,8 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 	{
 		/* Update stub didn't find one page -- do a long, hard update */
 		stack = NULL;
-		prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, &stack);
+		if (!prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, &stack))
+			return FALSE;
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
 
@@ -1326,6 +1330,8 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 	{
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
+	
+	return TRUE;
 }
 
 
@@ -1845,7 +1851,7 @@ void VIO_init(TDBB tdbb)
 #endif
 
 
-void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
+BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 {
 /**************************************
  *
@@ -1894,9 +1900,10 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 			(!VIO_chase_record_version
 			 (tdbb, org_rpb, NULL, transaction,
 			  reinterpret_cast <
-			  blk * >(tdbb->tdbb_default)))) ERR_post(isc_deadlock,
-													  isc_arg_gds,
-													  isc_update_conflict, 0);
+			  blk * >(tdbb->tdbb_default))))
+		{
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		}
 		VIO_data(tdbb, org_rpb,
 				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
 
@@ -1907,7 +1914,9 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(tid_fetch != org_rpb->rpb_transaction))
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		{
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		}
 
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
@@ -1920,7 +1929,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 
 	if (transaction->tra_flags & TRA_system) {
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
-		return;
+		return TRUE;
 	}
 
 /* If we're about to modify a system relation, check to make sure
@@ -2016,12 +2025,13 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 			(transaction->tra_save_point->sav_verb_count))
 				verb_post(tdbb, transaction, org_rpb, org_rpb->rpb_undo,
 						  new_rpb, FALSE, FALSE);
-		return;
+		return TRUE;
 	}
 
 	stack = NULL;
-	prepare_update(tdbb, transaction, org_rpb->rpb_transaction, org_rpb,
-				   &temp, new_rpb, &stack);
+	if (!prepare_update(tdbb, transaction, org_rpb->rpb_transaction, org_rpb,
+				   &temp, new_rpb, &stack))
+		return FALSE;
 
 /* Old record was restored and re-fetched for write.  Now replace it.  */
 
@@ -2045,6 +2055,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, TRA transaction)
 
 	if (transaction->tra_flags & TRA_autocommit)
 		transaction->tra_flags |= TRA_perform_autocommit;
+	return TRUE;
 }
 
 
@@ -2177,7 +2188,7 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 }
 
 
-void VIO_start_save_point(TDBB tdbb, TRA transaction)
+void VIO_start_save_point(TDBB tdbb, TRA transaction, TEXT* name)
 {
 /**************************************
  *
@@ -2198,13 +2209,18 @@ void VIO_start_save_point(TDBB tdbb, TRA transaction)
 
 	SET_TDBB(tdbb);
 
-	if ( (sav_point = transaction->tra_save_free) )
+	if ( (sav_point = transaction->tra_save_free) ) {
 		transaction->tra_save_free = sav_point->sav_next;
-	else
+		sav_point->sav_flags = 0;
+	} else
 		sav_point = FB_NEW(*transaction->tra_pool) sav();
 
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
+	if (name) {
+	  sav_point->sav_flags |= SAV_user;
+	  strcpy(sav_point->sav_name, name);
+	}
 	transaction->tra_save_point = sav_point;
 }
 
@@ -2485,7 +2501,7 @@ void VIO_verb_cleanup(TDBB tdbb, TRA transaction)
 #endif
 	if (transaction->tra_flags & TRA_system)
 		return;
-
+		
 	sav_point = transaction->tra_save_point;
 	if (!sav_point)
 		return;
@@ -3701,7 +3717,7 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
 #endif
 
 
-static void prepare_update(	TDBB	tdbb,
+static BOOLEAN prepare_update(	TDBB	tdbb,
 							TRA		transaction,
 							SLONG	commit_tid_read,
 							RPB*	rpb,
@@ -3899,7 +3915,7 @@ static void prepare_update(	TDBB	tdbb,
 				if (!DPM_fetch(tdbb, temp, LCK_write))
 					BUGCHECK(291);	/* msg 291 cannot find record back version */
 				delete_(tdbb, temp, (SLONG) 0, 0);
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				return FALSE;
 			}
 
 			/*
@@ -3953,7 +3969,7 @@ static void prepare_update(	TDBB	tdbb,
 				continue;
 			}
 			LLS_PUSH((BLK) temp->rpb_page, stack);
-			return;
+			return TRUE;
 
 		case tra_active:
 		case tra_limbo:
@@ -4013,7 +4029,7 @@ static void prepare_update(	TDBB	tdbb,
 			}
 			switch (state) {
 			case tra_committed:
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				return FALSE;
 
 			case tra_active:
 				ERR_post(isc_deadlock, 0);
@@ -4047,6 +4063,7 @@ static void prepare_update(	TDBB	tdbb,
 			VIO_backout(tdbb, rpb, transaction);
 		}
 	}
+	return TRUE;
 }
 
 
