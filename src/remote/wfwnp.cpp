@@ -43,7 +43,7 @@
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../remote/wfwnp.h"
-#include "../remote/wfwnp_pr.h"
+#include "../remote/wfwnp_proto.h"
 #include "../jrd/gds_proto.h"
 
 #define IO_READ     0
