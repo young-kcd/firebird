@@ -534,9 +534,9 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
  **************************************/
 	USHORT msg_number;
 
-#if defined(FPE_INOVF_TRAP) || defined(FPE_INTDIV_TRAP)
-	|| defined(FPE_FLTOVF_TRAP) || defined(FPE_FLTDIV_TRAP)
-	|| defined(FPE_FLTUND_TRAP) || defined(FPE_FLTOVF_FAULT)
+#if defined(FPE_INOVF_TRAP) || defined(FPE_INTDIV_TRAP) \
+	|| defined(FPE_FLTOVF_TRAP) || defined(FPE_FLTDIV_TRAP) \
+	|| defined(FPE_FLTUND_TRAP) || defined(FPE_FLTOVF_FAULT) \
 	|| defined(FPE_FLTUND_FAULT)
 
 	switch (code) {
