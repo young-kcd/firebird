@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.18 2003-07-11 02:23:58 brodsom Exp $
+#  $Id: Makefile.in.refDatabases,v 1.19 2003-11-05 16:53:12 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -84,7 +84,7 @@ yachts.lnk: empty.fdb
 
 .PHONY: ref_databases
 
-ref_databases : msg.fdb help.fdb metadata.fdb security.fdb
+ref_databases : msg.fdb help.fdb metadata.fdb security.fdb journal.fdb
 
 msg.fdb:	$(BLD_ROOT)/misc/msg.gbak
 	$(BIN)/gbak_static -MODE read_only -R $< $@
@@ -105,6 +105,15 @@ security.fdb:	$(FIREBIRD)/security.fdb
 	$(LN) -f $^ $@
 
 $(FIREBIRD)/security.fdb:	$(BLD_ROOT)/misc/security.gbak
+	$(BIN)/gbak_static  -R $< $@
+	$(TOUCH) $@
+	$(CHMOD) 666 $@
+
+journal.fdb:	$(FIREBIRD)/journal.fdb
+	$(RM) -f $@
+	$(LN) -f $^ $@
+
+$(FIREBIRD)/journal.fdb:	$(BLD_ROOT)/misc/journal.gbak
 	$(BIN)/gbak_static  -R $< $@
 	$(TOUCH) $@
 	$(CHMOD) 666 $@
