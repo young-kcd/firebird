@@ -4262,7 +4262,7 @@ UCHAR *DLL_EXPORT ISC_remap_file(STATUS * status_vector,
 
 #if (defined UNIX)
 void ISC_reset_timer(
-					 SIG_FPTR timeout_handler,
+					 FPTR_VOID timeout_handler,
 					 void *timeout_arg,
 					 SLONG * client_timer, void **client_handler)
 {

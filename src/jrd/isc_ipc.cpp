@@ -26,7 +26,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.21 2002-09-24 12:57:08 eku Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.22 2002-09-24 19:53:25 skidder Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -65,7 +65,7 @@
 typedef struct sig {
 	struct sig *sig_next;
 	int sig_signal;
-	void (*sig_routine) ();
+	SIG_FPTR sig_routine;
 	void *sig_arg;
 	SLONG sig_count;
 	IPTR sig_thread_id;
@@ -226,9 +226,9 @@ static ULONG opn_event_clock;
 
 static void cleanup(void *);
 static void error(STATUS *, TEXT *, STATUS);
-static void isc_signal2(int, FPTR_VOID, void *, ULONG);
+static void isc_signal2(int, SIG_FPTR, void *, ULONG);
 static SLONG overflow_handler(void *);
-static SIG que_signal(int, FPTR_VOID, void *, int);
+static SIG que_signal(int, SIG_FPTR, void *, int);
 
 #if !(defined HANDLER_ADDR_ARG)
 #ifdef SINIXZ
@@ -330,7 +330,7 @@ void DLL_EXPORT ISC_enter(void)
 
 #ifndef ISC_ENTER
 /* Cancel our handler for SIGFPE - in case it was already there */
-	ISC_signal_cancel(SIGFPE, (SIG_FPTR) overflow_handler, NULL);
+	ISC_signal_cancel(SIGFPE, (FPTR_VOID) overflow_handler, NULL);
 
 /* Setup overflow handler - with chaining to any user handler */
 	isc_signal2(SIGFPE, (SIG_FPTR) overflow_handler, NULL, SIG_informs);
@@ -423,7 +423,7 @@ void DLL_EXPORT ISC_exit(void)
 
 #ifndef ISC_EXIT
 /* No longer attempt to handle overflow internally */
-	ISC_signal_cancel(SIGFPE, (SIG_FPTR) overflow_handler, 0);
+	ISC_signal_cancel(SIGFPE, (FPTR_VOID) overflow_handler, 0);
 #endif
 }
 } // Extern "C"
@@ -616,7 +616,7 @@ int API_ROUTINE ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 
 
 #ifndef BRIDGE
-void API_ROUTINE ISC_signal(int signal_number, void (*handler) (), void *arg)
+void API_ROUTINE ISC_signal(int signal_number, FPTR_VOID handler, void *arg)
 {
 /**************************************
  *
@@ -628,7 +628,7 @@ void API_ROUTINE ISC_signal(int signal_number, void (*handler) (), void *arg)
  *	Multiplex multiple handers into single signal.
  *
  **************************************/
-	isc_signal2(signal_number, handler, arg, 0);
+	isc_signal2(signal_number, (SIG_FPTR)handler, arg, 0);
 }
 #endif /* BRIDGE */
 
@@ -637,7 +637,7 @@ void API_ROUTINE ISC_signal(int signal_number, void (*handler) (), void *arg)
 #ifdef SYSV_SIGNALS
 static void isc_signal2(
 						int signal_number,
-						void (*handler) (), void *arg, ULONG flags)
+						SIG_FPTR handler, void *arg, ULONG flags)
 {
 /**************************************
  *
@@ -697,7 +697,7 @@ static void isc_signal2(
 #ifndef SYSV_SIGNALS
 static void isc_signal2(
 						int signal_number,
-						void (*handler) (), void *arg, ULONG flags)
+						SIG_FPTR handler, void *arg, ULONG flags)
 {
 /**************************************
  *
@@ -776,7 +776,7 @@ static void isc_signal2(
 		if (ptr != (SIG_FPTR) SIG_DFL &&
 			ptr != (SIG_FPTR) SIG_HOLD &&
 			ptr != (SIG_FPTR) SIG_IGN && ptr != (SIG_FPTR) signal_handler) {
-			que_signal(signal_number, (FPTR_VOID) ptr, arg, SIG_client);
+			que_signal(signal_number, (SIG_FPTR) ptr, arg, SIG_client);
 		}
 	}
 
@@ -795,7 +795,7 @@ static void isc_signal2(
 #ifndef REQUESTER
 void API_ROUTINE ISC_signal_cancel(
 								   int signal_number,
-								   SIG_FPTR handler, void *arg)
+								   FPTR_VOID handler, void *arg)
 {
 /**************************************
  *
@@ -816,7 +816,7 @@ void API_ROUTINE ISC_signal_cancel(
 	for (ptr = &signals; sig = *ptr;) {
 		if (sig->sig_signal == signal_number &&
 			(handler == NULL ||
-			 (sig->sig_routine == handler && sig->sig_arg == arg))) {
+			 ((FPTR_VOID)sig->sig_routine == handler && sig->sig_arg == arg))) {
 			*ptr = sig->sig_next;
 			gds__free(sig);
 		}
@@ -1011,7 +1011,7 @@ static SLONG overflow_handler(void *arg)
 #ifndef REQUESTER
 static SIG que_signal(
 					  int signal_number,
-					  void (*handler) (), void *arg, int flags)
+					  SIG_FPTR handler, void *arg, int flags)
 {
 /**************************************
  *

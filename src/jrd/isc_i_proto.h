@@ -44,8 +44,13 @@ int API_ROUTINE ISC_kill(SLONG, SLONG, void *);
 int ISC_kill(SLONG, SLONG);
 #endif
 
-extern void API_ROUTINE ISC_signal(int, SIG_FPTR, void *);
-extern void API_ROUTINE ISC_signal_cancel(int, SIG_FPTR, void *);
+/* Signal routines have FPTR_VOID parameters instead of SIG_FPTR to
+  hide OS signal implementation details for this module users.
+  SIG_FPTR is very platform dependent. C/C++ ignores redundant function
+  parameters anyway
+*/
+extern void API_ROUTINE ISC_signal(int, FPTR_VOID, void *);
+extern void API_ROUTINE ISC_signal_cancel(int, FPTR_VOID, void *);
 extern void DLL_EXPORT ISC_signal_init(void);
 
 #endif /* _JRD_ISC_I_PROTO_H_ */
