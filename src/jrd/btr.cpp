@@ -1956,7 +1956,7 @@ void BTR_complement_key(temporary_key* key)
 {
 /**************************************
  *
- *	c o m p l e m e n t _ k e y
+ *	B T R _ c o m p l e m e n t _ k e y
  *
  **************************************
  *
