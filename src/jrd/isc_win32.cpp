@@ -24,7 +24,7 @@
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  */
 /*
-$Id: isc_win32.cpp,v 1.6 2002-11-06 07:19:01 eku Exp $
+$Id: isc_win32.cpp,v 1.7 2002-11-10 14:04:54 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -144,6 +144,8 @@ SSHORT ISC_get_registry_var(TEXT*	variable,
 							SSHORT	buffer_length,
 							void**	user_hkey)
 {
+#pragma FB_COMPILER_MESSAGE("This routine no longer used.")
+
 	HKEY hkey;
 	DWORD len, type;
 

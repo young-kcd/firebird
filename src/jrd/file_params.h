@@ -118,20 +118,18 @@
 #ifdef UNIX
 #define WORKFILE	"/tmp/"
 #ifdef DARWIN
-#undef ISC_PREFIX
-#define ISC_PREFIX		"/all/files/are/in/framework/resources"
+#undef FB_PREFIX
+#define FB_PREFIX		"/all/files/are/in/framework/resources"
 #define DARWIN_GEN_DIR		"var"
 #define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #endif
 #endif
 
-
 /* keep MSG_FILE_LANG in sync with build_file.e */
 
 #ifdef WIN_NT
 #define WORKFILE	"c:\\temp\\"
-#define ISC_PREFIX	"c:\\Program Files\\Firebird\\FBServer/"
-#define ISC_PREFIX_SUBPATH "\\Firebird\\FBServer/"
+#define FB_PREFIX	"c:\\Program Files\\Firebird/"
 #define MSG_FILE	"firebird.msg"
 #define MSG_FILE_LANG	"intl/%.8s.msg"
 #define LOCALE_MAX	6

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: pwd.h,v 1.6 2002-10-30 06:40:49 seanleyne Exp $
+$Id: pwd.h,v 1.7 2002-11-10 14:04:54 dimitr Exp $
 */
 
 #ifndef _JRD_PWD_H_
@@ -66,7 +66,7 @@ $Id: pwd.h,v 1.6 2002-10-30 06:40:49 seanleyne Exp $
 #ifdef SUPERSERVER
 #define USER_INFO_NAME   "isc4.gdb"
 #else
-#define USER_INFO_NAME   ISC_PREFIX "/isc4.gdb"
+#define USER_INFO_NAME   FB_PREFIX "/isc4.gdb"
 #endif /* SUPERSERVER */
 #endif /* USER_INFO_NAME */
 

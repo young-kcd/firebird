@@ -612,9 +612,9 @@ static const struct
 };
 
 
-#define ISC_ENV			"FIREBIRD"
-#define ISC_LOCK_ENV    "FIREBIRD_LOCK"
-#define ISC_MSG_ENV     "FIREBIRD_MSG"
+#define FB_ENV			"FIREBIRD"
+#define FB_LOCK_ENV		"FIREBIRD_LOCK"
+#define FB_MSG_ENV		"FIREBIRD_MSG"
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)
@@ -2327,7 +2327,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
+void API_ROUTINE gds__prefix(TEXT *resultString, TEXT *file)
 {
 /**************************************
  *
@@ -2336,68 +2336,39 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
  **************************************
  *
  * Functional description
- *	Find appropriate InterBase file prefix.
+ *	Find appropriate file prefix.
  *	Override conditional defines with
- *	the enviroment variable INTERBASE if it is set.
+ *	the enviroment variable FIREBIRD if it is set.
  *
  **************************************/
-	#ifdef DARWIN   /* Variables needed for Darwin specific code */
+#ifdef DARWIN   /* Variables needed for Darwin specific code */
 	CFBundleRef     ibaseBundle;
 	CFURLRef        msgFileUrl;
 	CFStringRef     msgFilePath;
-	#endif      
+#endif      
 
 	resultString[0] = 0;
 
 	if (ib_prefix == NULL) {
-		if ( !(ib_prefix = getenv(ISC_ENV)) || ib_prefix[0] == 0) {
-#if defined(WIN_NT)
-			ib_prefix = ib_prefix_val;
-			if (ISC_get_registry_var("RootDirectory", ib_prefix, MAXPATHLEN, 0) != -1) {
-				TEXT *p = ib_prefix + strlen(ib_prefix);
-				if (p != ib_prefix)
-					if (p[-1] == '\\')
-						p[-1] = '/';
-					else if (p[-1] != '/') {
-						*p++ = '/';
-						*p = 0;
-					}
-			}
-			else {
-				/* TMN: 2 Aug 2000 - No registry entry found.       */
-				/* Try to get "Program Files" from env var.         */
-				/* If that fails, fallback to the hardcoded path.   */
-                
-				ib_prefix = getenv("ProgramFiles");
-				if (ib_prefix) {
-					strcpy(ib_prefix_val, ib_prefix);
-					strcat(ib_prefix_val, ISC_PREFIX_SUBPATH);
-				}
-				else {
-					/* ISC_PREFIX currently defaults to      */
-					/* "C:\Program Files\Borland\InterBase\" */
-					strcpy(ib_prefix_val, ISC_PREFIX);
-				}
-			}
-#else	// WIN_NT
+		if (!(ib_prefix = getenv(FB_ENV)) || ib_prefix[0] == 0) {
 #ifdef DARWIN
-			if ( (ibaseBundle = CFBundleGetBundleWithIdentifier(
+			if ((ibaseBundle = CFBundleGetBundleWithIdentifier(
 				CFSTR(DARWIN_FRAMEWORK_ID)) ))
 			if ((msgFileUrl = CFBundleCopyResourceURL(ibaseBundle,
 				CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
 			if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
 					kCFURLPOSIXPathStyle)))
-			if ( (CFStringGetCString(msgFilePath, ib_prefix_val,
+			if ((CFStringGetCString(msgFilePath, ib_prefix_val,
 				MAXPATHLEN, kCFStringEncodingMacRoman ))
 			) { }
 			else
 #endif
 			{
-              // Try and get value from config file.
+              // Try and get value from config file
               const Firebird::string regPrefix = Config::getRootDirectory();
 
               size_t len = regPrefix.length();
-              if ( len > 0) {
+              if (len > 0) {
                   if (len > sizeof(ib_prefix_val)) {
                       ib_perror("ib_prefix path size too large - truncated");                      
                   }
@@ -2406,11 +2377,10 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
                   ib_prefix = ib_prefix_val;
               }
               else {
-				  ib_prefix = ISC_PREFIX;
+				  ib_prefix = FB_PREFIX;
 				  strcat(ib_prefix_val, ib_prefix);
               }
             }
-#endif
 			ib_prefix = ib_prefix_val;
 		}
 	}
@@ -2418,7 +2388,7 @@ void API_ROUTINE gds__prefix(TEXT * resultString, TEXT * root)
 
 	if (resultString[strlen(resultString) - 1] != '/')
 		strcat(resultString, "/");
-	strcat(resultString, root);
+	strcat(resultString, file);
 }
 #endif /* !defined(VMS) */
 
@@ -2491,7 +2461,7 @@ void API_ROUTINE gds__prefix_lock(TEXT * string, TEXT * root)
 	string[0] = 0;
 
 	if (ib_prefix_lock == NULL) {
-		if (!(ib_prefix_lock = getenv(ISC_LOCK_ENV))) {
+		if (!(ib_prefix_lock = getenv(FB_LOCK_ENV))) {
 			ib_prefix_lock = ib_prefix_lock_val;
 			gds__prefix(ib_prefix_lock, "");
 		}
@@ -2577,7 +2547,7 @@ void API_ROUTINE gds__prefix_msg(TEXT * string, TEXT * root)
 	string[0] = 0;
 
 	if (ib_prefix_msg == NULL) {
-		if (!(ib_prefix_msg = getenv(ISC_MSG_ENV))) {
+		if (!(ib_prefix_msg = getenv(FB_MSG_ENV))) {
 			ib_prefix_msg = ib_prefix_msg_val;
 			gds__prefix(ib_prefix_msg, "");
 		}
@@ -3430,7 +3400,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
  **************************************
  *
  * Functional description
- *	Find the InterBase external library path variable.
+ *	Find the external library path variable.
  *	Validate that the path to the library module name 
  *	in the path specified.  If the external lib path
  *	is not defined then accept any path, and return 
@@ -3444,19 +3414,11 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
 	TEXT abs_module_path[MAXPATHLEN];
 	TEXT abs_path[MAXPATHLEN];
 	TEXT path[MAXPATHLEN];
-	TEXT temp_ib_lib_path[MAXPATHLEN];
 	TEXT *ib_ext_lib_path = 0;
 
 	if (!(ib_ext_lib_path = getenv(ib_env_var))) {
-#ifdef WIN_NT
-		ib_ext_lib_path = temp_ib_lib_path;
-		if (ISC_get_registry_var(ib_env_var, ib_ext_lib_path, MAXPATHLEN, 0)
-			<= 0)
-#endif /* WIN_NT */
-		{
-			strncpy(resolved_module, module, length);
-			return TRUE;		/* The variable is not defined.  Retrun TRUE */
-		}
+		strncpy(resolved_module, module, length);
+		return TRUE;		/* The variable is not defined.  Retrun TRUE */
 	}
 
 	if (EXPAND_PATH(module, abs_module)) {

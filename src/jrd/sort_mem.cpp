@@ -194,7 +194,7 @@ void SortMem::allocate(size_t size)
 				// Allocate block in virtual memory
 				try
 				{
-					block = FB_NEW(*getDefaultMemoryPool())
+					block = FB_NEW (*getDefaultMemoryPool())
 						MemoryBlock(tail, smart_size);
 					mem_allocated = true;
 				}

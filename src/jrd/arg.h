@@ -114,7 +114,7 @@ static CONST SCHAR arg_types1[log_max][10] = {
 #endif /* WIN_NT */
 
 #ifndef LOG_FILE_NAME
-#define LOG_FILE_NAME   ISC_PREFIX "/replay.log"
+#define LOG_FILE_NAME   FB_PREFIX "/replay.log"
 #endif
 
 /* these are the modes for opening the log file */
