@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.65 2004-04-01 15:11:10 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.66 2004-04-10 17:24:43 skidder Exp $
 */
 
 #include "firebird.h"
@@ -199,10 +199,9 @@ blb* BLB_create2(thread_db* tdbb,
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
+	// FIXME! Temporary BLOBs are not supported in read only databases
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
-	if (transaction->tra_flags & TRA_readonly)
-		ERR_post(isc_read_only_trans, 0);
 
 /* Create a blob large enough to hold a single data page */
 	SSHORT from, to;
