@@ -35,7 +35,7 @@
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  */
 /*
-$Id: common.h,v 1.23 2002-08-27 11:47:12 dimitr Exp $
+$Id: common.h,v 1.24 2002-08-28 06:50:33 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -364,8 +364,6 @@ int shutdown(int s, int how);
 
 **********/
 
-#define STRICMP(s1, s2)		strcasecmp(s1, s2)
-
 #if !(defined(SOLARIS26) || defined(HP10))
 //#ifndef SOLARIS26
 
@@ -460,7 +458,6 @@ int shutdown(int s, int how);
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-#define STRICMP(s1, s2)			strcasecmp(s1, s2)
 #endif /* hpux */
 
 
@@ -513,7 +510,6 @@ int shutdown(int s, int how);
 #define MOVE_FAST(from,to,length)       memmove (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memmove (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-#define STRICMP(s1, s2)			stricmp(s1, s2)
 
 #define API_ROUTINE     __far __cdecl __loadds __export
 #define API_ROUTINE_VARARG      API_ROUTINE
@@ -642,7 +638,6 @@ typedef unsigned int64 UATOM;
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define MEMMOVE(from,to,length)         memmove ((void *)to, (void *)from, (size_t) length)
-#define STRICMP(s1, s2)			stricmp(s1, s2)
 
 #define SYS_ARG		isc_arg_win32
 
@@ -1180,10 +1175,6 @@ typedef struct
 
 #ifndef SYSCALL_INTERRUPTED
 #define SYSCALL_INTERRUPTED(err)        ((err) == EINTR)
-#endif
-
-#ifndef STRICMP
-#define STRICMP(s1, s2)			strcasecmp(s1, s2)
 #endif
 
 

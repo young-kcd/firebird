@@ -565,7 +565,16 @@ SVC SVC_attach(USHORT	service_length,
 
 /* Check that the validated user has the authority to access this service */
 
-		if (STRICMP(options.spb_user_name, SYSDBA_USER_NAME)) {
+#ifdef HAVE_STRCASECMP
+		if (strcasecmp(options.spb_user_name, SYSDBA_USER_NAME))
+#else
+#ifdef STRICMP
+		if (stricmp(options.spb_user_name, SYSDBA_USER_NAME))
+#else
+#error dont know how to compare strings case insensitive on this system
+#endif /* STRICMP */
+#endif /* HAVE_STRCASECMP */
+		{
 			user_flag = SVC_user_any;
 		} else {
 			user_flag = SVC_user_dba | SVC_user_any;
