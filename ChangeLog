@@ -1,3 +1,76 @@
+2003-04-13 21:52  skidder
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Make database stats Service work for Posix CS builds
+
+2003-04-13 19:02  skidder
+
+	* firebird2/src/jrd/codes.epp:
+	
+	Make codes compile again on Posix
+
+2003-04-13 17:18  skidder
+
+	* firebird2/doc/WhatsNew:
+	
+	Add description for my lock manager changes
+
+2003-04-13 17:05  skidder
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	[no log message]
+
+2003-04-13 16:50  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added RC1 changes.
+
+2003-04-13 16:16  dimitr
+
+	* firebird2/src/install/misc/firebird.conf:
+	
+	Updated firebird.conf.
+
+2003-04-13 15:22  dimitr
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed problem with error reporting.
+
+2003-04-13 15:07  dimitr
+
+	* firebird2/src/: msgs/msg.gbak, include/gen/msgs.h:
+	
+	Updated messages database.
+
+2003-04-13 14:14  dimitr
+
+	* firebird2/builds/win32/: build_msg.bat, build_msg.mak, codes.mak,
+	prepare.bat, preprocess.bat:
+	
+	Updated win32 build.
+
+2003-04-13 14:08  dimitr
+
+	* firebird2/src/jrd/codes.epp:
+	
+	Fixed compile problems on win32.
+
+2003-04-13 10:44  dimitr
+
+	* firebird2/src/utilities/dba.epp:
+	
+	no message
+
+2003-04-13 10:21  fsg
+
+	* firebird2/src/jrd/common.h:
+	
+	use the right conversion specifiers for linux
+
 2003-04-12 19:06  alexpeshkoff
 
 	* firebird2/src/jrd/: dls.cpp, dls_proto.h, isc.cpp:
