@@ -451,7 +451,7 @@ PORT XNET_analyze(
 
 	if (packet->p_operation != op_accept) {
 		*status_vector++ = gds_arg_gds;
-		*status_vector++ = gds__connect_reject;
+		*status_vector++ = gds_connect_reject;
 		*status_vector++ = 0;
 		disconnect(port);
 		return NULL;
@@ -519,7 +519,7 @@ PORT XNET_connect(TEXT * name,
 
 	if (!initialized) {
 		initialized = 1;
-		gds__register_cleanup(exit_handler, NULL);
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 		THD_mutex_init(&xnet_mutex);
 	}
 
@@ -722,7 +722,8 @@ for (xcc = client_threads; xcc; xcc = xcc->xcc_next)
 #ifdef WIN_NT
 		if (!server_watcher_handle) {
 			server_process_handle = xcc->xcc_server_proc;
-			gds__thread_start((FPTR_INT) server_watcher, NULL,
+			gds__thread_start(reinterpret_cast<FPTR_INT_VOID_PTR>
+							  (server_watcher), NULL,
 							  THREAD_high, 0, &server_watcher_handle);
 		}
 #else
@@ -767,7 +768,7 @@ USHORT XNET_init(HWND hwnd,
 
 	if (!initialized) {
 		initialized = 1;
-		gds__register_cleanup(exit_handler, NULL);
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 		THD_mutex_init(&xnet_mutex);
 	}
 
@@ -878,7 +879,7 @@ PORT XNET_start_thread(ULONG client_pid, ULONG * response)
 	p += XPS_MAPPED_FOR_CLI(pages_per_user, mapped_position);
 	memset(p, (char) 0, XPS_MAPPED_PER_CLI(pages_per_user));
 	xcc->xcc_next = NULL;
-	xcc->xcc_mapped_addr = (CADDR_T) p;
+	xcc->xcc_mapped_addr = p;
 	xcc->xcc_xpm = xpm;
 	xcc->xcc_slot = mapped_position;
 	xcc->xcc_flags = 0;
@@ -1041,7 +1042,8 @@ port->port_type = port_ipserver;
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect = aux_connect;
+	port->port_connect =
+		reinterpret_cast<PORT(*)(PORT, PACKET *, void (*)())>(aux_connect);
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
 	xdrxnet_create(&port->port_send, port, send_buffer, send_length,
@@ -1731,7 +1733,7 @@ static XPM make_map( USHORT map_number)
 	xpm->xpm_number = map_number;
 	xpm->xpm_count = 0;
 	for (i = 0; i < users_per_map; i++)
-		xpm->xpm_ids[i] = (FILE_ID) 0;
+		xpm->xpm_ids[i] = 0;
 	xpm->xpm_next = xpms;
 	xpm->xpm_flags = 0;
 	xpms = xpm;
@@ -1758,7 +1760,7 @@ static int packet_receive( PORT port, USHORT * length)
 	XCH xch;
 	USHORT n;
 
-	xcc = port->port_xcc;
+	xcc = reinterpret_cast<XCC>(port->port_xcc);
 	xps = (XPS) (xcc->xcc_mapped_addr);
 	xch = xcc->xcc_receive_channel;
 	THREAD_EXIT;
@@ -1821,7 +1823,7 @@ static int packet_send( PORT port, SSHORT length)
 	USHORT errres;
 
 
-	xcc = port->port_xcc;
+	xcc = reinterpret_cast<XCC>(port->port_xcc);
 	xps = (XPS) (xcc->xcc_mapped_addr);
 	xch = xcc->xcc_send_channel;
 
@@ -2213,7 +2215,7 @@ static bool_t xnet_getlong( XDR * xdrs,
 #ifndef NEW
 	SLONG l;
 
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, &l, 4))
+	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<SCHAR*>(&l), 4))
 		return FALSE;
 	*lp = ntohl(l);
 	return TRUE;
@@ -2357,7 +2359,7 @@ static bool_t xnet_putlong( XDR * xdrs,
 	SLONG l;
 
 	l = htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes) (xdrs, AOF32L(l), 4);
+	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<SCHAR*>(AOF32L(l)), 4);
 #else /* NEW */
 	if (xdrs->x_handy < 4)
 		return (*xdrs->x_ops->x_putbytes) (xdrs, lp, 4);
@@ -2454,6 +2456,7 @@ static bool_t xnet_write( XDR * xdrs, bool_t end_flag)
 }
 
 
+#ifdef XNET
 void IPC_release_all(void)
 {
 /**************************************
@@ -2531,6 +2534,7 @@ void IPC_release_all(void)
 		ALLR_free((UCHAR *) xpm);
 	}
 }
+#endif
 
 
 } // extern "C"

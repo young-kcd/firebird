@@ -284,7 +284,8 @@ ULONG SRVR_xnet_start_thread(ULONG client_pid)
 	}
 
 /* start the thread for this client */
-	gds__thread_start((FPTR_INT) process_connection_thread, port,
+	gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+					  (process_connection_thread), port,
 					  THREAD_medium, 0, 0);
 
 /* return combined mapped area and number */

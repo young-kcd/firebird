@@ -48,6 +48,12 @@
 #include "../remote/window.h"
 #include "../jrd/isc_proto.h"
 
+#define NO_PORT
+#include "../remote/protocol.h"
+#include "../remote/serve_proto.h"
+#include "../remote/xnet_proto.h"
+#undef NO_PORT
+
 
 extern "C" {
 

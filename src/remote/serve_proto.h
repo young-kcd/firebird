@@ -30,7 +30,12 @@ extern void	SRVR_WinMain (struct port *, USHORT, HINSTANCE, HINSTANCE, int);
 extern void	SRVR_main (struct port *, USHORT);
 #endif	/* WINDOWS_ROUTER */
 
+#ifdef NO_PORT
+#define PORT void*
+#endif
+
 extern void	SRVR_multi_thread (struct port *, USHORT);
+extern ULONG SRVR_xnet_start_thread(ULONG);
 extern SLONG	check_license (void);
 extern BOOLEAN	process_packet (PORT, PACKET *, PACKET *, PORT *);
 extern void	set_server (PORT, USHORT);

@@ -4569,6 +4569,7 @@ void IPC_process_event(
 }
 
 
+#ifndef XNET
 void IPC_release_all(void)
 {
 /**************************************
@@ -4714,6 +4715,7 @@ void IPC_release_all(void)
 		initialized = FALSE;
 	}
 }
+#endif
 
 
 } // extern "C"
