@@ -1,3 +1,163 @@
+2003-08-21 18:22  brodsom
+
+	* firebird2/src/intl/: lc_big5.cpp, lc_big5.h, lc_iso8859_1.cpp,
+	lc_iso8859_2.cpp, lc_jis.cpp, lc_ksc.cpp, lc_narrow.cpp,
+	lc_unicode_ucs2.cpp, ld.h, ldcommon.h:
+	
+	-Replace STATIC with static -Remove a few unused macros
+
+2003-08-21 18:20  brodsom
+
+	* firebird2/src/utilities/ibmgr/ibmgr.cpp:
+	
+	Replace LINE__IS_INT with LINEFORMAT
+
+2003-08-21 17:43  brodsom
+
+	* firebird2/src/intl/ldcommon.h:
+	
+	Fix calling convention
+
+2003-08-21 17:40  brodsom
+
+	* firebird2/src/utilities/ibmgr/ibmgr.cpp:
+	
+	Replace LINE__IS_INT with LINEFORMAT
+
+2003-08-21 13:02  robocop
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	Fix SF Bug #750659
+
+2003-08-21 03:45  brodsom
+
+	* firebird2/builds/win32/: defs/intlcpp.def, old_makes/intlcpp.mak:
+	
+	Remove intlcpp
+
+2003-08-21 03:41  brodsom
+
+	* firebird2/src/intlcpp/: charsets/cs_w1256.h, charsets/cs_w1257.h,
+	charsets/cs_next.h, charsets/cs_sjis.h, charsets/cs_w1250.h,
+	charsets/cs_w1251.h, charsets/cs_w1252.h, charsets/cs_w1253.h,
+	charsets/cs_w1254.h, charsets/cs_w1255.h, charsets/cs_iso8859_1.h,
+	charsets/cs_iso8859_13.h, charsets/cs_iso8859_2.h,
+	charsets/cs_iso8859_3.h, charsets/cs_iso8859_4.h,
+	charsets/cs_iso8859_5.h, charsets/cs_iso8859_6.h,
+	charsets/cs_iso8859_7.h, charsets/cs_iso8859_8.h,
+	charsets/cs_iso8859_9.h, charsets/cs_jis_0208_1990.h,
+	charsets/cs_ksc5601.h, charsets/cs_861.h, charsets/cs_862.h,
+	charsets/cs_863.h, charsets/cs_864.h, charsets/cs_865.h,
+	charsets/cs_866.h, charsets/cs_869.h, charsets/cs_big5.h,
+	charsets/cs_cyrl.h, charsets/cs_gb2312.h, charsets/cs_852.h,
+	charsets/cs_857.h, charsets/cs_858.h, charsets/cs_860.h,
+	charsets/cs_437.h, charsets/cs_737.h, charsets/cs_775.h,
+	charsets/cs_850.h, charsets.h, countries.h, country_codes.h,
+	cs_big5.cpp, cs_gb2312.cpp, cs_jis.cpp, cs_ksc.cpp, cs_narrow.cpp,
+	cs_unicode_fss.cpp, cs_unicode_ucs2.cpp, cv_big5.cpp, cv_big5.h,
+	cv_gb2312.cpp, cv_gb2312.h, cv_jis.cpp, cv_jis.h, cv_ksc.cpp,
+	cv_ksc.h, cv_narrow.cpp, cv_narrow.h, cv_unicode_fss.cpp,
+	cv_unicode_fss.h, kanji.cpp, kanji.h, kanji_proto.h, langdrv.h,
+	lc_ascii.cpp, lc_ascii.h, lc_big5.cpp, lc_big5.h, lc_dos.cpp,
+	lc_dos.h, lc_gb2312.cpp, lc_iso8859_1.cpp, lc_iso8859_2.cpp,
+	lc_jis.cpp, lc_ksc.cpp, lc_narrow.cpp, lc_narrow.h,
+	lc_unicode_ucs2.cpp, ld.cpp, ld.h, ld2.cpp, ld_proto.h, ldcommon.h,
+	moved_files.txt:
+	
+	Remove intlcpp
+
+2003-08-21 03:38  brodsom
+
+	* firebird2/: builds/win32/make_all.bat,
+	builds/win32/msvc6/Firebird2.dsw, builds/win32/msvc7/Firebird2.sln,
+	builds/win32/msvc6/intlcpp.dsp, builds/win32/msvc7/intlcpp.vcproj,
+	src/intlcpp/utils/dtest.c, src/intlcpp/utils/dtest2.c,
+	src/intlcpp/utils/make.maps, src/intlcpp/utils/mapdump.c,
+	src/intlcpp/utils/mapgen4.c, src/intlcpp/utils/maptest.cpp,
+	src/intlcpp/utils/maptest2.c, src/intlcpp/conversions/tx437_865.h,
+	src/intlcpp/conversions/tx437_lat1.h,
+	src/intlcpp/conversions/tx865_lat1.h,
+	src/intlcpp/collations/pw1250slov.h,
+	src/intlcpp/collations/pw1251cyrr.h,
+	src/intlcpp/collations/pw1252i850.h,
+	src/intlcpp/collations/pw1252intl.h,
+	src/intlcpp/collations/pw1252nor4.h,
+	src/intlcpp/collations/pw1252span.h,
+	src/intlcpp/collations/pw1252swfn.h,
+	src/intlcpp/collations/pw1253greek1.h,
+	src/intlcpp/collations/pw1254turk.h,
+	src/intlcpp/collations/undef.h, src/intlcpp/collations/xx1251_ua.h,
+	src/intlcpp/collations/xx88592czech.h,
+	src/intlcpp/collations/bl88591pt0.h,
+	src/intlcpp/collations/bl88591sv0.h,
+	src/intlcpp/collations/bl88591uk0.h,
+	src/intlcpp/collations/bl88591us0.h,
+	src/intlcpp/collations/blNEXTde0.h,
+	src/intlcpp/collations/blNEXTes0.h,
+	src/intlcpp/collations/blNEXTfr0.h,
+	src/intlcpp/collations/blNEXTit0.h,
+	src/intlcpp/collations/blNEXTus0.h,
+	src/intlcpp/collations/db437de0.h,
+	src/intlcpp/collations/db437es1.h,
+	src/intlcpp/collations/db437fi0.h,
+	src/intlcpp/collations/db437fr0.h,
+	src/intlcpp/collations/db437it0.h,
+	src/intlcpp/collations/db437nl0.h,
+	src/intlcpp/collations/db437sv0.h,
+	src/intlcpp/collations/db437uk0.h,
+	src/intlcpp/collations/db437us0.h,
+	src/intlcpp/collations/db850cf0.h,
+	src/intlcpp/collations/db850de0.h,
+	src/intlcpp/collations/db850es0.h,
+	src/intlcpp/collations/db850fr0.h,
+	src/intlcpp/collations/db850it1.h,
+	src/intlcpp/collations/db850nl0.h,
+	src/intlcpp/collations/db850pt0.h,
+	src/intlcpp/collations/db850sv1.h,
+	src/intlcpp/collations/db850uk0.h,
+	src/intlcpp/collations/db850us0.h,
+	src/intlcpp/collations/db852cz0.h,
+	src/intlcpp/collations/db852po0.h,
+	src/intlcpp/collations/db852sl0.h,
+	src/intlcpp/collations/db857tr0.h,
+	src/intlcpp/collations/db860pt0.h,
+	src/intlcpp/collations/db863cf1.h,
+	src/intlcpp/collations/db865da0.h,
+	src/intlcpp/collations/db865no0.h,
+	src/intlcpp/collations/db866ru0.h,
+	src/intlcpp/collations/pd437intl.h,
+	src/intlcpp/collations/pd437swedfin.h,
+	src/intlcpp/collations/pd852czech.h,
+	src/intlcpp/collations/pd852hundc.h,
+	src/intlcpp/collations/pd852polish.h,
+	src/intlcpp/collations/pd852slovene.h,
+	src/intlcpp/collations/pd861iceland.h,
+	src/intlcpp/collations/pd865nordan40.h,
+	src/intlcpp/collations/pd866cyrr.h,
+	src/intlcpp/collations/pw1250czech.h,
+	src/intlcpp/collations/pw1250hun.h,
+	src/intlcpp/collations/pw1250hundc.h,
+	src/intlcpp/collations/pw1250polish.h,
+	src/intlcpp/collations/bl88591ca0.h,
+	src/intlcpp/collations/bl88591da0.h,
+	src/intlcpp/collations/bl88591de0.h,
+	src/intlcpp/collations/bl88591es0.h,
+	src/intlcpp/collations/bl88591fi0.h,
+	src/intlcpp/collations/bl88591fr0.h,
+	src/intlcpp/collations/bl88591is0.h,
+	src/intlcpp/collations/bl88591it0.h,
+	src/intlcpp/collations/bl88591nl0.h,
+	src/intlcpp/collations/bl88591no0.h:
+	
+	Remove intlcpp
+
+2003-08-21 03:37  brodsom
+
+	* firebird2/src/intl/cv_big5.h:
+	
+	Fix wrong header
+
 2003-08-20 21:47  brodsom
 
 	* firebird2/src/isql/isql.epp:
