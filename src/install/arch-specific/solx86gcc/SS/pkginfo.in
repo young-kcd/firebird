@@ -6,4 +6,4 @@ LOAD="@FIREBIRD_PACKAGE_VERSION@"
 CATEGORY="application"
 VENDOR="WWW.FireBirdSQL.org"
 BASEDIR=/usr/local
-EMAIL=kkuznetsov@users.sf.net
+EMAIL=kkuznetsov at users.sf.net

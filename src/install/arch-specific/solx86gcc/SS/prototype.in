@@ -149,6 +149,7 @@ s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 #s none /usr/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
 s none /usr/lib/libfbclient.so=@prefix@/lib/libfbclient.so
 s none /usr/lib/libgds.so=@prefix@/lib/libfbclient.so
+s none /usr/lib/libgdsmt.so=@prefix@/lib/libfbclient.so
 
 
 d none @prefix@/UDF  0755 root root

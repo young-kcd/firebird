@@ -137,6 +137,7 @@ s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 #/usr/lib synlinks for compability with external tools
 
 s none /usr/lib/libgds.so=@prefix@/lib/libfbembed.so
+s none /usr/lib/libgdsmt.so=@prefix@/lib/libfbembed.so
 s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
 #s none /usr/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
 s none /usr/lib/libfbclient.so=@prefix@/lib/libfbclient.so
