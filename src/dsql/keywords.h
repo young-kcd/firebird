@@ -26,7 +26,7 @@
  */
 
 // TMN: Temp hack
-#if (defined(WIN32) && defined(CONST))
+#if (defined(WIN_NT) && defined(CONST))
 #undef CONST
 #define CONST
 #endif

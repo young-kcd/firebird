@@ -32,7 +32,7 @@
 #ifndef _DSQL_DSQL_H_
 #define _DSQL_DSQL_H_
 
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 #include <stdio.h>
 #endif
 
@@ -615,18 +615,18 @@ typedef tsql* TSQL;
 #ifndef SHLIB_DEFS
 #ifdef DSQL_MAIN
 int DSQL_debug;
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 FILE       *redirected_output;
 #endif
 #else
 extern int DSQL_debug;
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 extern FILE    *redirected_output;
 #endif
 #endif
 #else
 extern int DSQL_debug;
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 extern FILE    *redirected_output;
 #endif
 #endif

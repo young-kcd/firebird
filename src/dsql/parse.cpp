@@ -72,7 +72,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * 2003.01.15 Dmitry Yemanov: Added support for runtime trigger action checks.
  */
 
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
 #include <windows.h>
 /*#include <wincon.h>*/
 #endif
@@ -4633,7 +4633,7 @@ static void prepare_console_debug (int level, int *yydeb)
     /* CVC: I added this code form Mike Nordell to see the output from internal
        operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
        When n>0, the output console is activated; otherwise it's closed. */
-#if defined(DEV_BUILD) && defined(WIN32) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
     if (level > 0) {
         /* Console debug code inside this scope */
         if (AllocConsole()) {

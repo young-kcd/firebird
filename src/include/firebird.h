@@ -30,14 +30,14 @@
  *       John Bellardo  <bellardo@cs.ucsd.edu>
  *
  *
- *  $Id: firebird.h,v 1.5 2003-01-17 06:59:44 dimitr Exp $
+ *  $Id: firebird.h,v 1.6 2003-01-18 19:34:09 dimitr Exp $
  *
  */
 
 
 #include "gen/autoconfig.h"
 
-#if defined(WIN32) || defined(_WIN32)
+#if defined(WIN_NT)
 #define FB_DLL_EXPORT __declspec(dllexport)
 #else
 #define FB_DLL_EXPORT
@@ -51,6 +51,7 @@
 #endif
 
 #ifdef _MSC_VER
+#pragma warning (disable: 4251)
 #pragma warning (disable: 4786)
 #endif
 

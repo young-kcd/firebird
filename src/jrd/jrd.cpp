@@ -55,12 +55,6 @@
 #endif
 #include <errno.h>
 
-#if (defined(_WIN32) || defined(WIN32)) && defined(_MSC_VER) && _MSC_VER < 1300
-// Microsoft hard-coded identifiers to be max 255 bytes in debug info.
-// Guess how well that works using C++ and templates...
-#pragma warning(disable: 4786)
-#endif
-
 #define JRD_MAIN
 #include "../jrd/gds.h"
 #include "../jrd/jrd.h"

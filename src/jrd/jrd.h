@@ -903,7 +903,7 @@ typedef struct tdbb
 
     // ansi c want's sigsetjmp to be a different type. So I've used that
     // for unix implementations. MOD 12-July-2002
-#ifdef WIN32
+#ifdef WIN_NT
 	void*		tdbb_sigsetjmp;
 #else
     jmp_buf tdbb_sigsetjmp;
