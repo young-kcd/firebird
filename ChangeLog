@@ -1,3 +1,79 @@
+2003-03-11 20:49  brodsom
+
+	* firebird2/src/: ipserver/ipserver.cpp, remote/inet.cpp,
+	remote/xnet.cpp:
+	
+	Add two braces to make it work on mingw
+
+2003-03-11 15:55  dimitr
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	install/misc/firebird.conf:
+	
+	New config options.
+
+2003-03-11 14:36  brodsom
+
+	* firebird2/src/: gpre/pretty.cpp, gpre/prett_proto.h,
+	jrd/gdsold.h, qli/parse.cpp, qli/symbols.h, qli/words.h:
+	
+	More PYXIS remains
+
+2003-03-11 13:29  brodsom
+
+	* firebird2/src/jrd/isc_ipc.cpp:
+	
+	Remove remains of mpexl || netware386
+
+2003-03-11 12:55  dimitr
+
+	* firebird2/builds/win32/msvc6/ipserver.dsp:
+	
+	Updated project files.
+
+2003-03-11 12:49  alexpeshkoff
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Fixed HAVE_ATEXIT define - MSVC has atexit()
+
+2003-03-11 11:34  dimitr
+
+	* firebird2/src/jrd/utl.cpp:
+	
+	Cleanup.
+
+2003-03-11 08:35  eku
+
+	* firebird2/src/install/arch-specific/sinixz/prototype.in:
+	
+	Preserve configuration files.
+
+2003-03-11 06:53  tamlin
+
+	* firebird2/src/ipserver/ipserver.cpp:
+	
+	Close Win32 handles at exit.
+
+2003-03-11 06:53  tamlin
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Some code cleanup and added a comment about a problem.
+
+2003-03-11 06:50  tamlin
+
+	* firebird2/src/remote/: xnet.cpp, wnet.cpp, inet.cpp, server.cpp,
+	srvr_w32.cpp:
+	
+	Close Win32 handles at exit.
+
+2003-03-11 00:30  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	corrected mistake in previous commit.
+
 2003-03-10 22:38  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp:
