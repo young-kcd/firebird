@@ -945,8 +945,6 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = CMP_find_request(tdbb, drq_e_prms, DYN_REQUESTS);
 	USHORT id = drq_e_prms;
 
-	bool found = false;
-
 	try {
 	
     jrd_req* old_request = NULL;
@@ -991,7 +989,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	request = CMP_find_request(tdbb, drq_e_prcs, DYN_REQUESTS);
 	id = drq_e_prcs;
 
-	found = false;
+	bool found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ name
 
@@ -1110,11 +1108,10 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	else
 		GET_STRING(ptr, relation_name);
 
+	jrd_req* req2 = 0;
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	USHORT id = drq_e_rel_con2;
 	
-	bool found = false;
-
 	try {
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1227,7 +1224,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	request = CMP_find_request(tdbb, drq_e_relation, DYN_REQUESTS);
 	id = drq_e_relation;
 
-	found = false;
+	bool found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ relation_name
         if (!DYN_REQUEST(drq_e_relation))
@@ -1237,7 +1234,9 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 
 		if (!R.RDB$SECURITY_CLASS.NULL
 			&& !strncmp(R.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		{
 			delete_security_class2(gbl, R.RDB$SECURITY_CLASS);
+		}
 
 		found = true;
 	END_FOR;
@@ -1249,7 +1248,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 		goto dyn_punt_61;
 	}
 
-/* Triggers must be deleted after check constraints   */
+	// Triggers must be deleted after check constraints
 
 	SqlIdentifier trigger_name;
 
@@ -1265,21 +1264,23 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 		gds__vtov(X.RDB$TRIGGER_NAME, trigger_name, sizeof(trigger_name));
 		ERASE X;
 
-		request = CMP_find_request(tdbb, drq_e_trg_prv, DYN_REQUESTS);
+		req2 = CMP_find_request(tdbb, drq_e_trg_prv, DYN_REQUESTS);
 		id = drq_e_trg_prv;
 
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		FOR(REQUEST_HANDLE req2 TRANSACTION_HANDLE gbl->gbl_transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ trigger_name
 				AND PRIV.RDB$USER_TYPE = obj_trigger
 
 			if (!DYN_REQUEST(drq_e_trg_prv))
-				DYN_REQUEST(drq_e_trg_prv) = request;
+				DYN_REQUEST(drq_e_trg_prv) = req2;
 
 			ERASE PRIV;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_e_trg_prv))
-			DYN_REQUEST(drq_e_trg_prv) = request;
+			DYN_REQUEST(drq_e_trg_prv) = req2;
+			
+		id = drq_e_trigger2;
 
 	END_FOR;
 
@@ -1299,6 +1300,10 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 
 		ERASE PRIV;
 	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_usr_prvs)) {
+		DYN_REQUEST(drq_e_usr_prvs) = request;
+	}
 
 	request = CMP_find_request(tdbb, drq_e_view_prv, DYN_REQUESTS);
 	id = drq_e_view_prv;
@@ -1321,6 +1326,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const TEXT* relation)
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
+		DYN_rundown_request(req2, -1);
 
 		// lookup error # from id
 		// msg  57: "ERASE RDB$INDICES failed"
@@ -1611,8 +1617,6 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
 	USHORT id = drq_e_trg_msgs;
 
-	bool found = false;
-
 	try {
 
 	GET_STRING(ptr, t);
@@ -1632,7 +1636,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	request = CMP_find_request(tdbb, drq_e_trigger, DYN_REQUESTS);
 	id = drq_e_trigger;
 
-	found = false;
+	bool found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ t
 
@@ -1713,25 +1717,24 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		if (id == drq_e_trg_msgs)
+		switch (id)
 		{
+		case drq_e_trg_msgs:
 			DYN_error_punt(true, 65, NULL, NULL, NULL, NULL, NULL);
 			/* msg 65: "ERASE RDB$TRIGGER_MESSAGES failed" */
-		}
-		else if (id == drq_e_trigger)
-		{
+			break;
+		case drq_e_trigger:
 			DYN_error_punt(true, 66, NULL, NULL, NULL, NULL, NULL);
 			/* msg 66: "ERASE RDB$TRIGGERS failed" */
-		}
-		else if (id == drq_e_trg_prv)
-		{
+			break;
+		case drq_e_trg_prv:
 			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
 			/* msg 62: "ERASE RDB$USER_PRIVILEGES failed" */
-		}
-		else
-		{
+			break;
+		default:
 			DYN_error_punt(true, 68, NULL, NULL, NULL, NULL, NULL);
 			/* msg 68: "MODIFY RDB$VIEW_RELATIONS failed" */
+			break;
 		}
 	}
 
