@@ -2862,7 +2862,7 @@ static BOOLEAN start_sweeper(TDBB tdbb, DBB dbb)
 
 	/* allocate space for the string and a null at the end */
 	const char* pszFilename =
-		reinterpret_cast<const char*>(dbb->dbb_filename->str_data);
+		reinterpret_cast<const char*>(tdbb->tdbb_attachment->att_filename->str_data);
 
 	char* database = (char*)gds__alloc(strlen(pszFilename) + 1);
 

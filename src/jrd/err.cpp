@@ -279,9 +279,9 @@ void DLL_EXPORT ERR_log(int facility, int number, CONST TEXT* message)
  *	Log a message to the interbase.log    
  *
  **************************************/
-	DBB dbb;
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
-	TEXT *dbname;
+	TDBB tdbb = GET_THREAD_DATA;
+	UCHAR *dbname = 0;
 
 	DEBUG;
 	if (message)
@@ -293,15 +293,17 @@ void DLL_EXPORT ERR_log(int facility, int number, CONST TEXT* message)
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	if (dbb = GET_DBB) {
+	if (tdbb && tdbb->tdbb_attachment)
+	{
 #ifndef GATEWAY
-		dbname = ((dbb->dbb_file) ? dbb->dbb_file->fil_string : NULL);
+		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+			tdbb->tdbb_attachment->att_filename->str_data : NULL);
 #else
-		dbname = dbb->dbb_filename->str_data;
+		dbname = tdbb->tdbb_attachment->att_filename->str_data;
 #endif
 	}
 
-	gds__log("Database: %s\n\t%s", (dbname) ? dbname : "", errmsg, 0);
+	gds__log("Database: %s\n\t%s", (dbname) ? reinterpret_cast<SCHAR*>(dbname) : "", errmsg, 0);
 }
 #endif
 

@@ -19,6 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.08.21 Dmitry Yemanov: fixed bug with a buffer overrun,
+ *                            which at least caused invalid dependencies
+ *                            to be stored (DB$xxx, for example)
  */
 
 #include "firebird.h"
@@ -350,8 +354,12 @@ void MOV_get_metadata_ptr(DSC * desc, TEXT ** ptr)
  **************************************/
 	USHORT dummy_type;
 
-	CVT_get_string_ptr(desc, &dummy_type, reinterpret_cast < UCHAR ** >(ptr),
-					   NULL, 0, (FPTR_VOID) ERR_post);
+	USHORT length = CVT_get_string_ptr(desc, &dummy_type,
+									   reinterpret_cast<UCHAR**>(ptr),
+									   NULL, 0, (FPTR_VOID) ERR_post);
+	
+	// dimitr: prevent reading data located after the buffer boundary
+	(*ptr)[length] = 0;
 
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
