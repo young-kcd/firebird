@@ -1,3 +1,50 @@
+2003-01-12 23:33  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: SF BUG # [ 221921 ] ORDER BY has no effect
+
+2003-01-12 21:27  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: SF BUG # [ 213859 ] Subquery connected with 'IN' clause
+
+2003-01-12 19:16  alexpeshkoff
+
+	* firebird2/src/: alice/alice.h, alice/exe.cpp, alice/tdr.cpp,
+	alice/tdr_proto.h, dsql/dsql.cpp, dsql/dsql.h, dsql/dsql_proto.h,
+	dsql/prepa_proto.h, dsql/preparse.cpp, dsql/user__proto.h,
+	dsql/user_dsql.cpp:
+	
+	Cleanup of mixed use of macro FRBRD and struct why_hndl
+
+2003-01-12 17:29  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix on my latest commits
+
+2003-01-12 16:32  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	jrd/jrd.cpp, jrd/os/win32/thd_priority.cpp:
+	
+	Added config file parameters, controlling threads' priorities
+	scheduler
+
+2003-01-12 14:55  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Reworked the last bugfix by dmitry
+
+2003-01-12 01:41  arnobrinkman
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	bugfix on my latest commits
+
 2003-01-11 20:04  dimitr
 
 	* firebird2/src/jrd/opt.cpp:
