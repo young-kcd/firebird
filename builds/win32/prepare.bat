@@ -2,8 +2,8 @@
 @echo off
 
 @echo.
-@echo    !!  Warning !!
-@echo    This script no longer requires the 
+@echo   !!  Warning !!
+@echo   This script no longer requires the 
 @echo   path to the source. It now works it  
 @echo   out automatically.
 @echo.

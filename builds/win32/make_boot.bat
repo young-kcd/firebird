@@ -1,7 +1,8 @@
 ::
-:: This bat file don't uses cd, all the paths are full paths.
-:: with this convention this bat file is position independent 
-:: and it will be easier to move the place of somefiles.
+:: This bat file doesn't use current working directory.  
+:: All the paths are full paths. With this convention 
+:: this bat file is position independent and it will be 
+:: easier to move the place of some files.
 ::
 
 @echo off
@@ -19,29 +20,11 @@
 @echo Copy autoconfig.h
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
 @copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
-@echo Creating directories
-@rmdir /s /q %ROOT_PATH%\gen\alice 2>nul
-@mkdir %ROOT_PATH%\gen\alice 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\burp 2>nul
-@mkdir %ROOT_PATH%\gen\burp 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\dsql 2>nul
-@mkdir %ROOT_PATH%\gen\dsql 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\dudley 2>nul
-@mkdir %ROOT_PATH%\gen\dudley 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\gpre 2>nul
-@mkdir %ROOT_PATH%\gen\gpre 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\isql 2>nul
-@mkdir %ROOT_PATH%\gen\isql 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\jrd 2>nul
-@mkdir %ROOT_PATH%\gen\jrd 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\msgs 2>nul
-@mkdir %ROOT_PATH%\gen\msgs 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\qli 2>nul
-@mkdir %ROOT_PATH%\gen\qli 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\utilities 2>nul
-@mkdir %ROOT_PATH%\gen\utilities 2>nul
-@rmdir /s /q %ROOT_PATH%\gen\v5_examples 2>nul
-@mkdir %ROOT_PATH%\gen\v5_examples 2>nul
+@echo Creating directories under %ROOT_PATH%\gen
+for %%a in ( alice burp dsql dudley gpre isql jrd msgs qli utilities v5_examples) do (
+  rmdir /s /q %ROOT_PATH%\gen\%%a 2>nul
+  mkdir %ROOT_PATH%\gen\%%a 2>nul
+)
 
 ::=======
 @call :gpre_boot
@@ -72,9 +55,9 @@
 @echo.
 @echo Building gpre_boot...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  /REBUILD /OUT boot1.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  /REBUILD /OUT make_boot1_gpre_boot.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild release /OUT boot1.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild release /OUT make_boot1_gpre_boot.log
 )
 @copy %ROOT_PATH%\temp\release\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 goto :EOF
@@ -85,9 +68,9 @@ goto :EOF
 @echo.
 @echo Building gpre_static...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  /REBUILD /OUT boot2.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  /REBUILD /OUT make_boot2_gpre_static.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static /rebuild release /OUT boot2.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static /rebuild release /OUT make_boot2_gpre_static.log
 )
 @copy %ROOT_PATH%\temp\release\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
@@ -99,10 +82,10 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @echo Building build_msg and codes...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release"  /REBUILD /OUT boot3.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release"  /REBUILD /OUT make_boot3_msg_codes.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT boot3.log
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT boot4.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT make_boot3_build_msg.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT make_boot4_codes.log
 )
 @copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
 @copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul

@@ -16,10 +16,15 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define GUARDIAN_APP_NAME        "Firebird Guardian"
-#define GUARDIAN_APP_LABEL       "Firebird Guardian"
-#define GUARDIAN_CLASS_NAME      "FB_Guard"
-#define	FBSERVER	    "fbserver.exe"
+#define GUARDIAN_APP_NAME		"Firebird Guardian"
+#define GUARDIAN_APP_LABEL		"Firebird Guardian"
+#define GUARDIAN_CLASS_NAME		"FB_Guard"
+
+#define SS_EXECUTABLE			"fbserver.exe"
+#define CS_EXECUTABLE			"fb_inet_server.exe"
+#define FBSERVER \
+	((sw_arch == ARCH_SS) ? SS_EXECUTABLE : CS_EXECUTABLE)
+
 #define GUARDIAN_HELP_FILE "fbserver.hlp"
 
 /* Help Constants */

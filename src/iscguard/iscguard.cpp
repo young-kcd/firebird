@@ -97,6 +97,8 @@ static SERVICE_TABLE_ENTRY service_table[] = {
 	{NULL, NULL}
 };
 
+USHORT 	sw_arch = ARCH_SS;
+
 
 int WINAPI WinMain(
 				   HINSTANCE hInstance,
@@ -183,6 +185,16 @@ static unsigned short parse_args(LPSTR lpszArgs, unsigned short *pserver_flag)
 				case 'A':
 					return_value = FALSE;
 					break;
+
+
+				case 'c':
+				case 'C':
+					{
+					sw_arch = ARCH_CS;
+					return_value = FALSE;
+					break;
+					}
+
 
 				default:
 					return_value = TRUE;
@@ -372,8 +384,17 @@ static LRESULT CALLBACK WindowFunc(
 		case IDM_SHUTDOWN:
 			{
 				HWND hTmpWnd;
-				hTmpWnd = FindWindow(szClassName, szWindowName);
-				PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN, 0);
+				if ( sw_arch = ARCH_SS ) 
+				{
+					hTmpWnd = FindWindow(szClassName, szWindowName);
+					PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_SHUTDOWN, 0);
+				}
+				else
+				{
+					//we need to walk through every instance of fb_inet_server
+					//and kill it. But we can't use find window, because it
+					//the classic server doesn't usually use any windows handles.
+				}
 			}
 			return TRUE;
 

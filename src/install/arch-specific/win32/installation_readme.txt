@@ -1,16 +1,30 @@
-Firebird Database Server 1.5 Release Candidate 2
-================================================
+Firebird Database Server 1.5 Final Release (Draft)
+==================================================
 
 This document is a guide to installing this package of 
 Firebird 1.5 on the Win32 platform. These notes refer to the 
 installation package itself, rather than Firebird 1.5 in general.
 
+** IMPORTANT NOTE **
+
+If you used one of the installable binaries from Sourceforge
+to install RC2 it is recommended that you uninstall directly 
+from the installation directory with unins000.exe. 
+
+Do not use the Control Panel as the path to the uninstaller.
+There appears to be a bug that prevents the server service 
+from being shut down if the uninstaller is run from there. 
+
+This only applies to the uninstaller with RC2 from Firebird on 
+Sourceforge.
+
+**       END      **
 
 Contents
 --------
 
 o Before installation
-o Two Packages
+o New features of the installer
 o Uninstallation
 o Other Notes
 o Installation from a batch file
@@ -19,68 +33,45 @@ o Installation from a batch file
 Before installation
 -------------------
 
-One of the  design goals of Firebird 1.5 is to allow different 
-versions of Firebird (or InterBase) to run simultaneously. 
+It is recommended that you UNINSTALL all previous versions of 
+Firebird 1.0, Firebird 1.5 or InterBase before installing this package.
 
-Much work has been done on this installation script to support this 
-aim, but that work is NOT yet complete. 
 
-There are still some known installation problems surrounding the issue 
-of co-existence:
+New features of the installer in Firebird 1.5
+---------------------------------------------
 
-o Uninstalling Firebird 1.0 or 1.0.2 after installing this package
-  will break this installation by removing some registry keys. The 
-  next maintenance release of Firebird 1.0 will correct this.
+o This installer now combines the super server and classic server 
+  binaries into a single installation package. You can choose to 
+  install one or the other, but not both. To switch server type 
+  you need to uninstall and re-install.
   
-o Neither the Firebird 1.0 nor 1.0.2 installers handle shared 
-  library counts correctly. This will have unpredictable results 
-  when uninstalling one of these versions. For instance, gds32.dll 
-  may or may not exist if one of these earlier versions is uninstalled
-  after installing this package.
-  
-o The server will not start if an existing Firebird or InterBase 
-  server is listening on the default port 3050. A future version of
-  this installation script will likely detect this and prompt for a
-  different port during the install. Until then it is necessary to 
-  edit the firebird.conf file manually.
+o Libraries are no longer installed into the Windows system directory. This
+  applies to both Firebird's own libraries and the Microsoft C run-time
+  libraries. They are installed into the Firebird bin directory. This should
+  resolve all installation conflicts, expecially on Windows 2000 and Windows 
+  XP.
 
-To save yourself confusion while testing this release candidate it is 
-recommended that you UNINSTALL all previous versions of Firebird 1.0, 
-Firebird 1.5 or InterBase before installing this package.
-
-
-Two Packages
-------------
-
-A subsidiary design goal is to allow developers to easily switch 
-between the Super Server and Classic Architectures. Each architecture 
-is encapsulated in a single binary. All that is required at a technical 
-level is to choose which version of the server to execute. 
-
-Combining the two server architectures in a single installation package 
-is doable, at the expense of bringing complexity to the installation 
-process.
-
-  o A custom dialogue screen is required to ask the user to choose the
-    desired architecture. This is supported by the installation builder 
-    but is not an 'out of the box' option. 
-  
-  o Uninstallation needs to check whether the running architecture has 
-    changed from the one originally installed.
-  
-These issues are solvable but that takes time. While waiting for the 
-SuperInstaller to come along the existing installation script has been 
-enhanced to ensure that repeated installation and uninstallation of 
-each package works flawlessly. Switching between packages should 
-require no more effort than uninstalling one and installing the other.
+o If firebird.conf exists in the installation directory it is saved as
+    firebird.conf.saved.n
+  where n is a number. The installer always installs the default 
+  firebird.conf file. This is to guarantee consistency to the installation 
+  process. Otherwise the installer would have to parse the existing (and 
+  possibly broken) configuration file.
 
 
 Uninstallation
 --------------
 
-This package should be uninstalled via the Control Panel. Alternatively
-it can be uninstalled by running unins000.exe from the installation 
-directory.
+o It is preferred that this package be uninstalled correctly using  the 
+  uninstallation application supplied. This can be called from the Control 
+  Panel. Alternatively it can be uninstalled by running unins000.exe 
+  directly from the installation directory.
+  
+o If Firebird is running as an application (instead of as a service) it is 
+  recommended that you manually stop the server before running the uninstaller.
+  This is because the uninstaller cannot stop a running application. If a
+  server is running during the uninstall the uninstall will complete with 
+  errors. You will have to delete the remnants by hand.
 
 
 Other Notes
@@ -140,8 +131,16 @@ to install the client across a network. The following parameters may be passed:
 
 /COMPONENTS="comma separated list of component names" 
 
-  Choose from - ServerComponent, DevAdminComponent and ClientComponent
+  Choose from - SuperServerComponent, ClassicServerComponent, ServerComponent, 
+                DevAdminComponent and ClientComponent
 
   Overrides the default components settings. Using this command line parameter 
   causes Setup to automatically select a custom type. A full install requires 
-  combining components.
+  combining components. For example:
+  
+  /COMPONENTS="SuperServerComponent, ServerComponent, DevAdminComponent, ClientComponent"
+  
+  would be required for a full install.
+
+  
+  

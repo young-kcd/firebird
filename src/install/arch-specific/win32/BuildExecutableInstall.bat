@@ -22,6 +22,7 @@
 @if /I "%1"=="/h" (goto :HELP & goto :EOF)
 @if /I "%1"=="-?" (goto :HELP & goto :EOF)
 @if /I "%1"=="/?" (goto :HELP & goto :EOF)
+@if /I "%1"=="HELP" (goto :HELP & goto :EOF)
 
 @call setenvvar.bat
 @if errorlevel 1 (goto :END)
@@ -33,14 +34,9 @@
 ::Assume we are preparing a production build
 @set BUILDTYPE=release
 
-::Assume we are creating an SS package unless specified on the command-line
-@set PACKAGE_TYPE=super_server_install
-@set PACKAGE_DESC=SuperServer
-
 :: See what we have on the command line
 for %%v in ( %1 %2 )  do (
   ( if /I "%%v"=="DEBUG" (set BUILDTYPE=debug) )
-  ( if /I "%%v"=="CS"  ( (set PACKAGE_TYPE=classic_server_install) & (set PACKAGE_DESC=Classic) ) )
 )
 @goto :EOF
 
@@ -57,11 +53,11 @@ sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.bat %temp%.\b
 for /f "tokens=*" %%a in ('type %temp%.\b$2.bat') do set PRODUCT_VER_STRING=%%a
 @echo s/1.5.0/%PRODUCT_VER_STRING%/ > %temp%.\b$3.bat
 @echo s/define super_server_install/define %PACKAGE_TYPE%/ >> %temp%.\b$3.bat
-@echo s/define server_architecture \"SuperServer\"/define server_architecture \"%PACKAGE_DESC%\"/ >> %temp%.\b$3.bat
+@echo s/define release/define %BUILDTYPE%/ >> %temp%.\b$3.bat
 @echo s/define msvc_version 6/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.bat
 @echo s/PRODUCT_VER_STRING/%PRODUCT_VER_STRING%/ >> %temp%.\b$3.bat
 
-sed -f  %temp%.\b$3.bat FirebirdInstall_15.iss > FirebirdInstall_%PRODUCT_VER_STRING%_%PACKAGE_DESC%.iss
+sed -f  %temp%.\b$3.bat FirebirdInstall_15.iss > FirebirdInstall_%PRODUCT_VER_STRING%.iss
 
 del %temp%.\b$?.bat
 @goto :EOF
@@ -69,49 +65,71 @@ del %temp%.\b$?.bat
 
 :COPY_XTRA
 :: system dll's we need
+:: (You may need to download and extract the 
+:: vcredist stuff to your MSDevDir for this to work.
 ::=====================
-copy %SystemRoot%\System32\msvcrt.dll . >nul
-copy %SystemRoot%\System32\msvcp%msvc_version%0.dll . >nul
+@if %msvc_version% EQU 6 (
+ (@copy %MSDevDir%\vcredist\msvcrt.dll %ROOT_PATH%\output\bin\ > nul)
+ (@copy %MSDevDir%\vcredist\msvcp%msvc_version%0.dll %ROOT_PATH%\output\bin\ > nul)
+)
 
-:: grab some missing bits'n'pieces  from different parts of the source tree
+:: grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
-copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed ) & (goto :EOF))
+@echo Copying firebird.conf
+@copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output\ > nul
+@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-mkdir %ROOT_PATH%\output\examples 2>nul 
-@if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for examples dir failed ) & (goto :EOF))
+:: We don't neeed to do this now, as examples have already been copied when make_examples.bat was run.
+::@mkdir %ROOT_PATH%\output\examples 2>nul 
+::@if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for examples dir failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-copy %ROOT_PATH%\src\v5_examples\*.* %ROOT_PATH%\output\examples\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed  ) & (goto :EOF))
+::@echo Copying examples
+::copy %ROOT_PATH%\src\v5_examples\*.* %ROOT_PATH%\output\examples\ > nul
+::@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY examples failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-copy %ROOT_PATH%\temp\%BUILDTYPE%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
+@echo Copying ib_util etc
+for %%v in ( ib_util.h ib_util.pas ) do (
+	((copy %ROOT_PATH%\src\extlib\%%v %ROOT_PATH%\output\include\%%v > nul) || 	(@echo Copying %%v failed.)) 
+)
+	
+@echo Copying fbclient lib etc
+for %%v in (fbclient gds32 ib_util) do @(
+	((copy %ROOT_PATH%\temp\%BUILDTYPE%\%%v\%%v.lib %ROOT_PATH%\output\lib\%%v_ms.lib > nul) || (@echo Copying %%v.lib failed.))
+)
 
-copy %ROOT_PATH%\temp\%BUILDTYPE%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY *.lib failed ) & (goto :EOF))
+@echo Copying docs...
+@copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
+@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of main documentation tree failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
-copy %ROOT_PATH%\doc\*.* %ROOT_PATH%\output\doc\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc failed  ) & (goto :EOF))
+@echo Copying udf library scripts...
 
-copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt > nul
+(copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\UDF\ib_udf.sql > nul) || 	(@echo Copying %%v failed.) 
+(copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\UDF\fbudf.sql > nul) || 	(@echo Copying %%v failed.) 
 
-copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
-del %ROOT_PATH%\output\doc\install_win32.txt
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed ) & (goto :EOF))
+@copy %ROOT_PATH%\src\extlib\fbudf\fbudf.txt %ROOT_PATH%\output\doc\ > nul
+@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY fbudf doc failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
+
+@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt  > nul
+
+@copy %ROOT_PATH%\output\doc\install_win32.txt %ROOT_PATH%\output\doc\InstallNotes.txt > nul
+@del %ROOT_PATH%\output\doc\install_win32.txt 
+@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Rename install_win32.txt failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
+
+@copy %ROOT_PATH%\src\install\arch-specific\win32\installation_readme.txt %ROOT_PATH%\output\doc\InstallerReadme.txt > nul
 
 :: This stuff doesn't make much sense to Windows users, although the troubleshooting doc 
 :: could be made more platform agnostic.
-@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting fb2-todo.txt ) do (
-  (@del %ROOT_PATH%\output\doc\%%v 2>nul)
+@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.*.html fb2-todo.txt ) do (
+  (@del %ROOT_PATH%\output\doc\%%v )
 )
 
-copy %ROOT_PATH%\output\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt > nul
-del %ROOT_PATH%\output\doc\WhatsNew
+@copy %ROOT_PATH%\output\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt > nul
+@del %ROOT_PATH%\output\doc\WhatsNew
 
-mkdir %ROOT_PATH%\output\doc\sql.extensions 2>nul
+@mkdir %ROOT_PATH%\output\doc\sql.extensions 2>nul
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for doc\sql.extensions dir failed ) & (goto :EOF))
 
-copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\  > nul
+@copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY doc\sql.extensions failed  ) & (goto :EOF))
 
 @goto :EOF
@@ -120,6 +138,7 @@ copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\  
 :ALIAS_CONF
 :: Generate a sample aliases file
 ::===============================
+@echo Creating sample aliases.conf
 @echo # > %ROOT_PATH%\output\aliases.conf
 @echo # List of known database aliases >> %ROOT_PATH%\output\aliases.conf
 @echo # ------------------------------ >> %ROOT_PATH%\output\aliases.conf
@@ -134,39 +153,44 @@ copy %ROOT_PATH%\doc\sql.extensions\*.* %ROOT_PATH%\output\doc\sql.extensions\  
 :GBAK_SEC_DB
 :: let's make sure that we have a backup of the security database handy.
 ::======================================================================
-copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
+@echo Copying backup of security database
+@copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security.fbk failed ) & (goto :EOF))
 
-:: Make sure that qli's help.gdb is available
-:: For now it has the .gdb. file extension
-:: Next time it will have the .fdb file extension
+:: Make sure that qli's help.fdb is available
 ::===============================================
-if not exist %ROOT_PATH%\output\help\help.fdb (
-	copy %ROOT_PATH%\gen\dbs\help.fdb %ROOT_PATH%\output\help\help.fdb > nul
+@if not exist %ROOT_PATH%\output\help\help.fdb (
+	(@echo Copying help.fdb for qli support)
+	(@copy %ROOT_PATH%\gen\dbs\help.fdb %ROOT_PATH%\output\help\help.fdb > nul)
+	(@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF)))
 )
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF))
+
 @goto :EOF
 
 :FB_MSG
 ::=================================================================
 :: firebird.msg is generated as part of the build process
 :: in builds\win32 by build_msg.bat copying from there to output dir
-::	To Do !!!
-::						copy %INTERBASE%\udf\fbudf.dll %ROOT_PATH%\output\udf
 ::=================================================================
 @if not exist %ROOT_PATH%\output\firebird.msg ( 
-	copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul
+	(@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg > nul) 
+	(@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy firebird.msg ) & (goto :EOF)))
 )
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy firebird.msg ) & (goto :EOF))
+@goto :EOF
+
+:TOUCH_LOCAL
+::==========
+:: Create libname.local files for each locally installed library
+for %%v in ( gds32 fbclient msvcrt msvcp%MSVC_VERSION%0 )  do touch %ROOT_PATH%\output\bin\%%v.local
 @goto :EOF
 
 :TOUCH_ALL
 ::========
 ::Set file timestamp to something meaningful.
-::While building and testing this feature might be annoying.
-::We ought to test for a debug build - but what?
+::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
-@if /I "%BUILDTYPE%"=="release" ((@echo Touching files) & (touch -s -D -t01:05:00 %ROOT_PATH%\output\*.*)) 
+@if /I "%BUILDTYPE%"=="release" (
+	(@echo Touching release build files with 01:05:00 timestamp) & (touch -s -D -t01:05:00 %ROOT_PATH%\output\*.*)) 
 @goto :EOF
 
 
@@ -177,23 +201,16 @@ if not exist %ROOT_PATH%\output\help\help.fdb (
 :: Extensions is not installed.
 ::=================================================
 
-start FirebirdInstall_%PRODUCT_VER_STRING%_%PACKAGE_DESC%.iss
+start FirebirdInstall_%PRODUCT_VER_STRING%.iss
 @goto :EOF
 
 
 :HELP
 ::===
 @echo.
-@echo   If you wish to build a Classic Server package
-@echo   you can pass CS as a parameter.
-@echo.
 @echo   If you are testing a debug build you can
 @echo   pass DEBUG as a parameter to the script.
 @echo.
-@echo   Parameter order is not relevant
-@echo.
-@echo   If no parameters are passed a production build
-@echo   of the Super Server will be created.
 @echo.
 @goto :EOF
 
@@ -209,13 +226,13 @@ start FirebirdInstall_%PRODUCT_VER_STRING%_%PACKAGE_DESC%.iss
 :MAIN
 ::====
 @Echo.
-@Echo reading parameters
+@Echo Reading command-line parameters
 @(@call :SET_PARAMS %1 %2 )|| (@goto :EOF) 
 @Echo.
 @Echo Setting version number
 @(@call :SED_MAGIC ) || (@goto :EOF)
 @Echo.
-@Echo copy Xtra
+@Echo Copying additonal files needed for installation, documentation etc.
 @(@call :COPY_XTRA ) || (@goto :EOF)
 @Echo.
 @Echo alias conf
@@ -226,9 +243,13 @@ start FirebirdInstall_%PRODUCT_VER_STRING%_%PACKAGE_DESC%.iss
 @Echo.
 @Echo fb_msg
 @(@call :FB_MSG ) || (@goto :EOF)
-::@(@call :TOUCH_ALL ) || (@goto :EOF)
 @Echo.
-@Echo run isx
+@Echo Creating .local files for libraries
+@(@call :TOUCH_LOCAL ) || (@goto :EOF)
+@Echo.
+@(@call :TOUCH_ALL ) || (@goto :EOF)
+@Echo Now let's run InnoSetup extensions
+@Echo.
 @(@call :RUN_ISX ) || (@goto :EOF)
 @goto :EOF
 
