@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.10 2003-04-10 07:50:01 eku Exp $
+#  $Id: Makefile.in.embed.qli,v 1.11 2003-07-08 12:24:12 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
@@ -67,7 +67,7 @@ $(QLI): $(QLI_Objects)
 #      with it. metadata.fdb is what is needed here.
 create_yachts:
 	-$(RM) yachts.lnk
-	-$(LN) -f $(SRC_ROOT)/metadata.fdb yachts.lnk
+	-$(LN) -f metadata.fdb yachts.lnk
 
 
 # qli_help

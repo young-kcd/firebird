@@ -13,21 +13,17 @@ rm configure 2>/dev/null
 rm libtool 2>/dev/null
 rm Makefile 2>/dev/null
 
+echo Removing files in builds directory
+
+rm builds/make.new/config/config.guess 2>/dev/null
+rm builds/make.new/config/config.sub 2>/dev/null
+rm builds/make.new/config/ltmain.sh 2>/dev/null
+
 echo Removing files in src directory
 
 rm src/include/gen/autoconfig.h 2>/dev/null
 rm src/include/gen/blrtable.h 2>/dev/null
-rm src/Makefile 2>/dev/null
-rm builds/make.new/config/config.guess 2>/dev/null
-rm builds/make.new/config/config.sub 2>/dev/null
-rm builds/make.new/config/ltmain.sh 2>/dev/null
 rm src/v5_examples/Makefile 2>/dev/null
-
-# removing databases
-rm src/indicator.* 2>/dev/null
-rm -f src/*.fdb 2>/dev/null
-rm -f src/*.FDB 2>/dev/null
-rm -f src/*.lnk 2>/dev/null
 
 # Cpp from epp files
 rm src/burp/backup.cpp 2>/dev/null

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.16 2003-04-10 07:50:03 eku Exp $
+#  $Id: Makefile.in.refDatabases,v 1.17 2003-07-08 12:24:12 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -75,7 +75,7 @@ empty.fdb : $(BIN)/create_db
 
 yachts.lnk: empty.fdb
 	$(RM) -f yachts.lnk
-	$(LN) -f $(SRC_ROOT)/empty.fdb yachts.lnk
+	$(LN) -f empty.fdb yachts.lnk
 
 
 

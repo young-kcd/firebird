@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141 2003-07-08 01:04:52 brodsom Exp $
+dnl $Id: configure.in,v 1.142 2003-07-08 12:23:42 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -706,7 +706,7 @@ gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
 gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
-src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
+gen/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
 gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon
 gen/Makefile.codes:${MAKE_SRC_DIR}/Makefile.in.codes
 gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre

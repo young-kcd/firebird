@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.12 2003-07-08 10:45:47 brodsom Exp $
+#  $Id: Makefile.in.msgs,v 1.13 2003-07-08 12:24:12 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=msgs
@@ -147,7 +147,7 @@ indicator.loc:
 
 
 master_msg_db.lnk:
-	$(LN) -f $(SRC_ROOT)/msg.fdb master_msg_db.lnk
+	$(LN) -f msg.fdb master_msg_db.lnk
 
 
 
