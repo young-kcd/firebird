@@ -314,7 +314,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		if (!value_vary)
 			return att->att_context_vars.remove(name_str);
 
-		if (att->att_context_vars.count() > MAX_CONTEXT_VARS) {
+		if (att->att_context_vars.count() >= MAX_CONTEXT_VARS) {
 			// "Too many context variables"
 			ERR_post(isc_ctx_too_big, 0);
 		}
@@ -332,7 +332,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		if (!value_vary)
 			return tra->tra_context_vars.remove(name_str);
 
-		if (tra->tra_context_vars.count() > MAX_CONTEXT_VARS) {
+		if (tra->tra_context_vars.count() >= MAX_CONTEXT_VARS) {
 			// "Too many context variables"
 			ERR_post(isc_ctx_too_big, 0);
 		}
