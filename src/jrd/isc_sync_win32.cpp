@@ -45,6 +45,7 @@
 #include "../jrd/file_params.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/thd_proto.h"
 
 
 extern "C" {
@@ -269,6 +270,15 @@ ULONG ISC_exception_post(ULONG except_code, TEXT* err_msg)
 		THREAD_ENTER;
 	}
 
+	TDBB tdbb = GET_THREAD_DATA;
+	/* If we've catched our own software exception,
+	   continue rewinding the stack to properly handle it
+	   and deliver an error information to the client side */
+	if (tdbb->tdbb_status_vector[0] == 1 && tdbb->tdbb_status_vector[1] > 0)
+	{
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
 	if (!err_msg)
 	{
 		err_msg = "";
@@ -338,7 +348,7 @@ switch (except_code)
     case EXCEPTION_FLT_STACK_CHECK:
 	sprintf (log_msg, "%s Floating-point stack check.\n"
 			"\t\tThe stack overflowed or underflowed as the\n"
-			"result of a floating-point operation.\n"
+			"\t\tresult of a floating-point operation.\n"
 			"\tThis exception will cause the Firebird server\n"
 			"\tto terminate abnormally.", err_msg);
 	break;
