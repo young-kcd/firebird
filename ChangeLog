@@ -1,3 +1,11 @@
+2004-12-06 10:45  kkuznetsov
+
+	* firebird2/: configure.in (1.141.2.32), src/utilities/srvrmgr.cpp
+	(1.13.2.2), src/utilities/util.cpp (1.8.2.1):
+	
+	Some fixes to Solaris x86 super build while linking with Sun
+	threads, still unstable
+
 2004-12-03 08:59  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.52.2.18):
