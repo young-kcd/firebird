@@ -473,7 +473,7 @@ SVC SVC_attach(USHORT	service_length,
  **************************************
  *
  * Functional description
- *	Connect to an Interbase service.
+ *	Connect to a Firebird service.
  *
  **************************************/
 
@@ -1342,13 +1342,10 @@ void SVC_putc(SVC service, UCHAR ch)
 
 			if (item == isc_info_svc_line)
 				get_flags = GET_LINE;
+			else if (item == isc_info_svc_to_eof)
+				get_flags = GET_EOF;
 			else
-			{
-				if (item == isc_info_svc_to_eof)
-					get_flags = GET_EOF;
-				else
-					get_flags = GET_BINARY;
-			}
+				get_flags = GET_BINARY;
 
 			service_get(service, info + 3, end - (info + 4), get_flags,
 						timeout, &length);
@@ -1905,7 +1902,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
  **************************************
  *
  * Functional description
- *      Start an InterBase service
+ *      Start a Firebird service
  *
  **************************************/
 	TDBB tdbb;
@@ -1984,7 +1981,8 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 		*spb == isc_action_svc_delete_user ||
 		*spb == isc_action_svc_modify_user ||
 		*spb == isc_action_svc_display_user ||
-		*spb == isc_action_svc_db_stats || *spb == isc_action_svc_properties) {
+		*spb == isc_action_svc_db_stats ||
+		*spb == isc_action_svc_properties) {
 		/* the user issued a username when connecting to the service so
 		 * add the length of the username and switch to new_spb_length
 		 */
@@ -2002,9 +2000,10 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 				 sizeof(PASSWORD_SWITCH));
 
 		/* If svc_switches is not used -- call a command-line parsing utility */
-		if (!service->svc_switches)
+		if (!service->svc_switches) {
 			conv_switches(spb_length, opt_switch_len, spb,
 						  &service->svc_switches);
+		}
 		else {
 			/* Command line options (isc_spb_options) is used.
 			 * Currently the only case in which it might happen is -- gbak utility
@@ -2051,13 +2050,15 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 			}
 		}
 	}
-	else
-		/* If svc_switches is not used -- call a command-line parsing utility */
-	if (!service->svc_switches)
-		conv_switches(spb_length, opt_switch_len, spb,
-					  &service->svc_switches);
 	else {
-		assert(service->svc_switches == NULL);
+		/* If svc_switches is not used -- call a command-line parsing utility */
+		if (!service->svc_switches) {
+			conv_switches(spb_length, opt_switch_len, spb,
+						  &service->svc_switches);
+		}
+		else {
+			assert(service->svc_switches == NULL);
+		}
 	}
 /* All services except for get_ib_log require switches */
 	if (service->svc_switches == NULL && *spb != isc_action_svc_get_ib_log)
@@ -2243,7 +2244,7 @@ void SVC_read_ib_log(SVC service)
  **************************************
  *
  * Functional description
- *   Service function which reads the InterBase
+ *   Service function which reads the Firebird
  *   log file into the service buffers.
  *
  **************************************/
@@ -2608,6 +2609,11 @@ static void service_fork(TEXT * service_path, SVC service)
 			q++;
 	}
 
+	for (q = argv_data; *q; q++) {
+		if (*q == SVC_TRMNTR)
+			*q = ' ';
+	}
+
 	THREAD_EXIT;
 
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2616,17 +2622,15 @@ static void service_fork(TEXT * service_path, SVC service)
 	start_crud.cbReserved2 = 0;
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
-	start_crud.dwFlags = STARTF_USESTDHANDLES;
-	start_crud.hStdInput = my_output;
-	start_crud.hStdOutput = my_input;
-	start_crud.hStdError = my_input;
+	start_crud.dwFlags = STARTF_USESHOWWINDOW;
+	start_crud.wShowWindow = SW_HIDE;
 
 	if (!(ret = CreateProcess(NULL,
 							  argv_data,
 							  NULL,
 							  NULL,
 							  TRUE,
-							  NORMAL_PRIORITY_CLASS | DETACHED_PROCESS,
+							  NORMAL_PRIORITY_CLASS,
 							  NULL,
 							  NULL,
 							  &start_crud, &pi))) status = GetLastError();
@@ -2657,11 +2661,12 @@ static void service_fork(TEXT * service_path, SVC service)
 }
 
 
-static void service_get(
-						SVC service,
+static void service_get(SVC service,
 						SCHAR * buffer,
 						USHORT length,
-						USHORT flags, USHORT timeout, USHORT * return_length)
+						USHORT flags,
+						USHORT timeout,
+						USHORT * return_length)
 {
 /**************************************
  *
@@ -2793,9 +2798,7 @@ static void service_put(SVC service, SCHAR * buffer, USHORT length)
 }
 
 
-static USHORT service_read(
-						   SVC service,
-						   SCHAR * buffer, USHORT length, USHORT flags)
+static USHORT service_read(SVC service, SCHAR * buffer, USHORT length, USHORT flags)
 {
 /**************************************
  *
@@ -2810,10 +2813,8 @@ static USHORT service_read(
  *      special character.
  *
  **************************************/
-	SLONG len, n = 0L;
-	SCHAR *buf;
-
-	buf = buffer;
+	SLONG len, n = 0;
+	SCHAR *buf = buffer;
 
 	while (length) {
 		n = 0;
@@ -2834,6 +2835,9 @@ static USHORT service_read(
 			io_error("ReadFile", GetLastError(), "service pipe",
 					 isc_io_read_err, TRUE);
 	}
+
+	if ((flags & GET_LINE) && buf[-1] == '\n')
+		buf[-1] = ' ';
 
 	return buf - buffer;
 }
@@ -3281,7 +3285,7 @@ static void service_fork(TEXT * service_path, SVC service)
 				strcat (buf, *s);
 				s++;
 			}
-			gds__log (buf);
+			gds__log(buf);
 		}
 #endif
 		execvp(argv[0], argv);
@@ -3611,7 +3615,6 @@ static USHORT process_switches(
 	TEXT *p, *sw;
 	ISC_USHORT svc_action;
 	BOOLEAN found = FALSE;
-        //BOOLEAN lic_key = FALSE, lic_id = FALSE;
 
 	if (spb_length == 0)
 		return 0;
@@ -3909,22 +3912,33 @@ static void get_action_svc_string(
  *      when creating the argc / argv paramters for the service.
  *
  **************************************/
-	ISC_USHORT l;
+	ISC_USHORT l, l2;
 
-	l =
-		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
+	l = gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
 						 sizeof(ISC_USHORT));
+
+	const char* local_server = "localhost:";
+#if defined(WIN_NT) && !defined(SUPERSERVER)
+	// dimitr: temporary hack to make Services API available
+	// for the engine without support of local protocol.
+	// Once XNET is implemented in win32 CS, remove this ugly code.
+	TEXT * spb_item = *spb - 1;
+	l2 = (*spb_item == isc_spb_dbname) ? strlen(local_server) : 0;
+#else
+	l2 = 0;
+#endif
 
 /* Do not go beyond the bounds of the spb buffer */
 	if (l > *len)
 		ERR_post(isc_bad_spb_form, 0);
-
 
 	*spb += sizeof(ISC_USHORT);
 	if (*cmd)
 	{
 		**cmd = SVC_TRMNTR;
 		*cmd += 1;
+		MOVE_FASTER(local_server, *cmd, l2);
+		*cmd += l2;
 		MOVE_FASTER(*spb, *cmd, l);
 		*cmd += l;
 		**cmd = SVC_TRMNTR;
@@ -3933,7 +3947,7 @@ static void get_action_svc_string(
 		*cmd += 1;
 	}
 	*spb += l;
-	*total += l + 1 + 2;		/* Two SVC_TRMNTR for strings */
+	*total += l + l2 + 1 + 2;		/* Two SVC_TRMNTR for strings */
 	*len -= sizeof(ISC_USHORT) + l;
 }
 
