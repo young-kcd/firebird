@@ -4936,7 +4936,7 @@ static BOOLEAN gen_sort_merge(TDBB tdbb, OPT opt, LLS * org_rivers)
 		*org_rivers = stack1;
 
 		for (stream_nr = 0, fv = flag_vector; stream_nr < opt->opt_csb->csb_n_stream; stream_nr++) {
-			opt->opt_csb->csb_rpt[stream_nr].csb_flags &= *fv++;
+			opt->opt_csb->csb_rpt[stream_nr].csb_flags |= *fv++;
 		}
 	}
 
