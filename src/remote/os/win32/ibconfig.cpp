@@ -679,7 +679,7 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
  **************************************
  *
  * Functional description
- *      Print error message. Use isc_interprete_cpp
+ *      Print error message. Use fb_interpret
  *      to allow redirecting output.
  *
  **************************************/
@@ -690,17 +690,32 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
-		if (isc_interprete_cpp(szErrStr, &vector)) {
+		if (fb_interpret(szErrStr, sizeof(szErrStr), &vector))
+		{
 			SCHAR *ptr = szErrStr + strlen(szErrStr);
-
+			const char* const szEnd = szErrStr + sizeof(szErrStr);
 			*ptr++ = '\r';
-			*ptr++ = '\n';
-			*ptr++ = '-';
-			while (isc_interprete_cpp(ptr, &vector)) {
-				ptr += strlen(ptr);
-				*ptr++ = '\r';
+			if (ptr < szEnd - 1)
+			{
 				*ptr++ = '\n';
 				*ptr++ = '-';
+			}
+			else
+				ptr += 2;
+
+			while (ptr < szEnd && fb_interpret(ptr, szEnd - ptr, &vector))
+			{
+				ptr += strlen(ptr);
+				*ptr++ = '\r';
+				if (ptr < szEnd - 1)
+				{
+					*ptr++ = '\n';
+					*ptr++ = '-';
+				}
+				else {
+					ptr += 2;
+					break;
+				}
 			}
 			*(ptr - 3) = '\0';
 		}

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.71 2004-09-01 14:51:33 alexpeshkoff Exp $
+//	$Id: alice.cpp,v 1.72 2004-09-22 01:58:52 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -673,7 +673,7 @@ void ALICE_print(USHORT	number,
 
 //____________________________________________________________
 //
-//		Print error message. Use isc_interprete_cpp
+//		Print error message. Use fb_interpret
 //		to allow redirecting output.
 //
 
@@ -683,29 +683,31 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 	{
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		int i = 0, j;
+		int i = 0;
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 			while (*status && (++i < ISC_STATUS_LENGTH)) {
 				status++;
 			}
-			for (j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++) {
+			for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++) {
 				*status++ = status_vector[j];
 			}
 		}
 #endif
 
 		SCHAR s[1024];
-		isc_interprete_cpp(s, &vector);
-		translate_cp(s);
-		alice_output("%s\n", s);
-
-		// Continuation of error 
-		s[0] = '-';
-		while (isc_interprete_cpp(s + 1, &vector)) {
+		if (fb_interpret(s, sizeof(s), &vector))
+		{
 			translate_cp(s);
 			alice_output("%s\n", s);
+
+			// Continuation of error
+			s[0] = '-';
+			while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
+				translate_cp(s);
+				alice_output("%s\n", s);
+			}
 		}
 	}
 }

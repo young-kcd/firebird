@@ -189,7 +189,6 @@ void		API_ROUTINE isc_vtof(const SCHAR*, SCHAR*, USHORT);
 void		API_ROUTINE isc_vtov(const SCHAR*, SCHAR*, SSHORT);
 SLONG		API_ROUTINE isc_vax_integer(const SCHAR*, SSHORT);
 SLONG		API_ROUTINE isc_interprete(SCHAR*, ISC_STATUS**);
-SLONG		API_ROUTINE isc_interprete_cpp(SCHAR* const, const ISC_STATUS**);
 
 // isc_ functions with no gds_ equivalence
 //

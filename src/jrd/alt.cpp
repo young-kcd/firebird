@@ -713,13 +713,6 @@ SLONG API_ROUTINE isc_interprete(SCHAR* buffer, ISC_STATUS** status_vector_p)
 	return gds__interprete(buffer, status_vector_p);
 }
 
-/* This const params version used in the engine and other places. */
-SLONG API_ROUTINE isc_interprete_cpp(SCHAR* const buffer,
-	const ISC_STATUS** status_vector_p)
-{
-	return gds__interprete(buffer, const_cast<ISC_STATUS**>(status_vector_p));
-}
-
 int API_ROUTINE gds__version(
 							FB_API_HANDLE* db_handle,
 							FPTR_VERSION_CALLBACK callback,

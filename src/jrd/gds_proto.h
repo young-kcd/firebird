@@ -72,8 +72,9 @@ void	API_ROUTINE isc_encode_timestamp(const void*, GDS_TIMESTAMP*);
 ULONG	API_ROUTINE gds__free(void*);
 
 /* CVC: This function was created to be used inside the engine, but I don't see
-a problem if it's used from outside, too. */
-SLONG	API_ROUTINE gds_interprete_cpp(char* const, const ISC_STATUS**);
+a problem if it's used from outside, too.
+This function has been renamed and made public. */
+SLONG	API_ROUTINE fb_interpret(char* const, int, const ISC_STATUS** const);
 /* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
 SLONG	API_ROUTINE gds__interprete(char*, ISC_STATUS**);
 void	API_ROUTINE gds__interprete_a(SCHAR*, SSHORT*, ISC_STATUS*, SSHORT*);

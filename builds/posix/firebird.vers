@@ -72,7 +72,6 @@ global:
 	gds__get_segment;
 	gds__get_slice;
 	gds__interprete;
-	gds_interprete_cpp;
 	gds__log;
 	gds__log_status;
 	gds__map_blobs;
@@ -246,7 +245,7 @@ global:
 # Error-handling functions
 
 	isc_interprete;
-	isc_interprete_cpp;
+	fb_interpret;
 	isc_print_sqlerror;
 	isc_print_status;
 	isc_sqlcode;

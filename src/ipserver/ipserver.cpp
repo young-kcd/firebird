@@ -3348,7 +3348,11 @@ static void send_response( ICC icc, ISC_STATUS* status_vector)
 				break;
 
 			default:
-				length = (USHORT) isc_interprete(buffer, &status_vector);
+				{ // scope
+					const ISC_STATUS* svp = status_vector;
+					length = (USHORT) fb_interpret(buffer, sizeof(buffer), &svp);
+					status_vector = const_cast<ISC_STATUS*>(svp);
+				} // scope
 				if (!length)
 				{
 					*status_vector = 0;

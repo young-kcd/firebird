@@ -249,6 +249,10 @@ static void		sanitize(TEXT*);
 
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
+// New functions that try to be safe.
+static SLONG safe_interpret(char* const s, int bufsize, const ISC_STATUS** const vector);
+
+
 /* Generic cleanup handlers */
 
 struct clean
@@ -275,7 +279,8 @@ void* API_ROUTINE gds__alloc_debug(SLONG size_request,
 	);
 }
 
-ULONG API_ROUTINE gds__free(void* blk) {
+ULONG API_ROUTINE gds__free(void* blk)
+{
 	getDefaultMemoryPool()->deallocate(blk);
 	return 0;
 }
@@ -746,33 +751,38 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filename, int lineno)
 // Skidder: Calls to this function must be replaced with MemoryPool::print_contents
 }
 
+
 /* CVC: See comment below. Basically, it provides the needed const correctness,
 but throws away the const to make the callee happy, knowing that the callee
-indeed treats vector as it was a pointer with the const prefix.
-Maybe this function could be private and thus made inline? */
-SLONG API_ROUTINE gds_interprete_cpp(char* const s, const ISC_STATUS** vector)
+indeed treats vector as it was a pointer with the const prefix. */
+
+/**
+fb_interpret
+
+	@brief Buffer overrun-aware version of the old gds__interprete
+	without the double underscore and without the misspelling.
+	Translate a status code with arguments to a string.  Return the
+	length of the string while updating the vector address.  If the
+	message is null (end of messages) or invalid, return 0;
+	
+	@param s the output buffer where a human readable version of the error is put
+	@param bufsize the size of the output buffer
+	@param vector the input, the address of const pointer to the status vector
+	    that was filled by an API call that reported an error. The function
+	    positions the pointer on the next element of the vector.
+**/
+SLONG API_ROUTINE fb_interpret(char* const s, int bufsize, const ISC_STATUS** const vector)
 {
-/**************************************
- *
- *	g d s _ i n t e r p r e t e _ c p p
- *
- **************************************
- *
- * Functional description
- *	Translate a status code with arguments to a string.  Return the
- *	length of the string while updating the vector address.  If the
- *	message is null (end of messages) or invalid, return 0;
- *
- **************************************/
-	return gds__interprete(s, const_cast<ISC_STATUS**>(vector));
+	return safe_interpret(s, bufsize, vector);
 }
+
 
 /* CVC: This non-const signature is needed for compatibility. The reason is
 that, unlike int* that can be assigned to const int* transparently to the caller,
 int** CANNOT be assigned to const int**, so applications would have to be
 fixed to provide such const int**; while it may be more correct from the
 semantic POV, we can't estimate how much work it's for app developers.
-Therefore, we go back to the old signature and provide gds_interprete_cpp
+Therefore, we go back to the old signature and provide fb_interpret
 for compliance, to be used inside the engine, too. September, 2003. */
 
 SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
@@ -784,12 +794,32 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
  **************************************
  *
  * Functional description
- *	Translate a status code with arguments to a string.  Return the
- *	length of the string while updating the vector address.  If the
- *	message is null (end of messages) or invalid, return 0;
+ * See safe_interpret for details. Now this is a wrapper for that function.
+ * CVC: Since this routine doesn't get the size of the input buffer,
+ * it's DEPRECATED and we'll assume the buffer size was twice MAXPATHLEN.
  *
  **************************************/
-	if (!**vector)
+	return safe_interpret(s, MAXPATHLEN < 1, const_cast<const ISC_STATUS**>(vector));
+}
+
+ 
+/**
+safe_interpret
+
+	@brief Translate a status code with arguments to a string.  Return the
+	length of the string while updating the vector address.  If the
+	message is null (end of messages) or invalid, return 0;
+
+	@param s the output buffer where a human readable version of the error is put
+	@param bufsize the size of the output buffer
+	@param vector the input, the address of const pointer to the status vector
+	    that was filled by an API call that reported an error. The function
+	    positions the pointer on the next element of the vector.
+
+**/
+static SLONG safe_interpret(char* const s, int bufsize, const ISC_STATUS** const vector)
+{
+	if (!**vector || bufsize < 1)
 		return 0;
 
 	const ISC_STATUS* v;
@@ -809,15 +839,17 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 
 	/* Parse and collect any arguments that may be present */
 	
-	TEXT* p;
+	TEXT* p = 0;
 	const TEXT* q;
 	const SSHORT temp_len = (SSHORT) BUFFER_SMALL;
 	TEXT* temp = NULL;
 	SSHORT l;
 
-	for (;;) {
+	for (;;)
+	{
 		const UCHAR x = (UCHAR) *v++;
-		switch (x) {
+		switch (x)
+		{
 		case isc_arg_string:
 		case isc_arg_number:
 			*arg++ = (TEXT*) *v++;
@@ -934,15 +966,15 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 
 	default:
 		if (temp)
-			gds__free((SLONG *) temp);
+			gds__free(temp);
 		return 0;
 	}
 
 
 	if (temp)
-		gds__free((SLONG *) temp);
+		gds__free(temp);
 
-	*vector = const_cast<ISC_STATUS*>(v);
+	*vector = v;
 	const TEXT* end = s;
 	while (*end)
 		end++;
@@ -1234,10 +1266,8 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 	fb_assert(db_len < MAXPATHLEN);
 #endif
 
-	const int interpreted_line_length = 80; // raw estimation
-
 	TEXT* p = buffer;
-	const TEXT* const end = p + BUFFER_XLARGE - interpreted_line_length;
+	const TEXT* const end = p + BUFFER_XLARGE;
 	const int max_db_len = int(BUFFER_XLARGE - 12);
 	sprintf(p, "Database: %.*s", max_db_len, (database) ? database : "");
 
@@ -1247,7 +1277,7 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 			
 		*p++ = '\n';
 		*p++ = '\t';
-	} while (p < end && gds_interprete_cpp(p, &status_vector));
+	} while (p < end && safe_interpret(p, end - p, &status_vector));
 
 	p[-2] = 0;
 	gds__log(buffer, 0);
@@ -1922,7 +1952,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 
 	const ISC_STATUS* vector = vec;
 
-	if (!gds_interprete_cpp(s, &vector)) {
+	if (!safe_interpret(s, BUFFER_LARGE, &vector)) {
 		gds__free((SLONG *) s);
 		return vec[1];
 	}
@@ -1930,7 +1960,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 	gds__put_error(s);
 	s[0] = '-';
 
-	while (gds_interprete_cpp(s + 1, &vector))
+	while (safe_interpret(s + 1, BUFFER_LARGE - 1, &vector))
 		gds__put_error(s);
 
 	gds__free((void*) s);

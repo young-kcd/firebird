@@ -4087,6 +4087,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	ISC_STATUS_ARRAY new_vector;
 	ISC_STATUS* v = new_vector;
 	TEXT buffer[1024];
+	const char* const bufferEnd = buffer + sizeof(buffer);
 	TEXT* p = buffer;
 	const ISC_STATUS exit_code = status_vector[1];
 
@@ -4161,9 +4162,11 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			*v++ = *status_vector++;
 			continue;
 		}
-		const USHORT l = (USHORT) isc_interprete_cpp(p, &status_vector);
+		const USHORT l = p < bufferEnd ?
+			(USHORT) fb_interpret(p, bufferEnd - p, &status_vector) : 0;
 		if (l == 0)
 			break;
+
 		*v++ = isc_arg_interpreted;
 		TEXT** sp = (TEXT**) v;
 		*sp++ = p;

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.86 2004-09-10 04:50:25 robocop Exp $
+$Id: ibase.h,v 1.87 2004-09-22 01:59:20 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -563,8 +563,9 @@ ISC_LONG ISC_EXPORT isc_interprete(ISC_SCHAR*,
 									 ISC_STATUS**);
 									 
 /* This const params version used in the engine and other places. */
-ISC_LONG ISC_EXPORT isc_interprete_cpp(ISC_SCHAR* const,
-									 const ISC_STATUS**);
+ISC_LONG ISC_EXPORT fb_interpret(ISC_SCHAR* const,
+								 int,
+								 const ISC_STATUS** const);
 									 
 ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS*,
 									isc_db_handle*,
