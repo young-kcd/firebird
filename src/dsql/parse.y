@@ -1662,7 +1662,7 @@ select_view_expr: SELECT
 			 having_clause
 			 plan_clause
 			{ $$ = make_node (nod_select_expr, e_sel_count, 
-					NULL, $3, $4, $5, $6, $7, $8, NULL, NULL); }
+					NULL, $2, $3, $4, $5, $6, $7, NULL, NULL); }
 		;                                               
 
 from_view_clause : FROM from_view_list
