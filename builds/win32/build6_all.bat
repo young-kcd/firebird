@@ -26,7 +26,6 @@
 @cd msvc6
 @msdev Firebird2Boot.dsw /MAKE "fbclient_static - Win32 Release" "gpre_static - Win32 Release"  /REBUILD /OUT boot2.log
 @cd ..
-@echo Move gpre_static and fbclient_static 
 @move msvc6\release\firebird\bin\gpre_static.exe .
 
 @move msvc6\release\fbclient_static\fbclient_static.lib temp\fbclient_static.lib
@@ -39,7 +38,7 @@
 @move msvc6\release\build_msg\build_msg.exe .
 @move msvc6\release\codes\codes.exe .
 @build_msg -D %DB_PATH%/generated/msg.fdb
-@codes ..\..\src\include\gen
+@codes %ROOT_PATH%\src\include\gen
 @echo Building BLR Table
 @call blrtable.bat
 @goto :NEXT_STEP
