@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.3 2003-12-06 15:50:02 dimitr Exp $
+$Id: inet.cpp,v 1.70.2.4 2003-12-11 08:18:19 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -875,7 +875,13 @@ PORT DLL_EXPORT INET_connect(TEXT * name,
 	if (!protocol) {
 		const int port = Config::getRemoteServicePort();
 		const char* svc = Config::getRemoteServiceName();
-		protocol = port ? itoa(port, temp, 10) : svc;
+		if (port) {
+			snprintf(temp, sizeof(temp), "%d", port);
+			protocol = temp;
+		}
+		else {
+			protocol = svc;
+		}
 	}
 
 /* Set up Inter-Net socket address */
