@@ -231,11 +231,14 @@ void ConfigFile::loadConfig()
 		string Msg = "Missing configuration file: " + configFile;
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
+		{
 			Msg += ", exiting";
+		}
 #endif
-		Firebird::Syslog::Record(fExitOnError ? 
-				Firebird::Syslog::Error :
-				Firebird::Syslog::Warning, Msg);
+		if (fExitOnError) 
+		{
+			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
+		}
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
 			exit(1);
