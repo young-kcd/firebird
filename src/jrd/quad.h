@@ -38,6 +38,14 @@
 #ifndef JRD_QUAD_H
 #define JRD_QUAD_H
 
+#ifndef WORDS_BIGENDIAN
+const int LOW_WORD		= 0;
+const int HIGH_WORD		= 1;
+#else
+const int LOW_WORD		= 1;
+const int HIGH_WORD		= 0;
+#endif
+
 #ifdef NATIVE_QUAD
 #define QUAD_ADD(a,b,e)         ((a) + (b))
 #define QUAD_COMPARE(a,b)       ((a == b) ? 0 : (a < b) ? -1 : 1)

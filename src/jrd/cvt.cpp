@@ -124,14 +124,6 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 #define FLOAT_MAX       3.4e38	/* max float (32 bit) value  */
 
-#ifndef WORDS_BIGENDIAN
-#define LOW_WORD        0
-#define HIGH_WORD       1
-#else
-#define LOW_WORD        1
-#define HIGH_WORD       0
-#endif
-
 #define LETTER7(c)      ((c) >= 'A' && (c) <= 'Z')
 #define DIGIT(c)        ((c) >= '0' && (c) <= '9')
 #define ABSOLUT(x)      ((x) < 0 ? -(x) : (x))

@@ -23,15 +23,6 @@
 
 #include "firebird.h"
 
-#ifndef WORDS_BIGENDIAN
-#define LOW_WORD        0
-#define HIGH_WORD       1
-#else
-#define LOW_WORD        1
-#define HIGH_WORD       0
-#endif
-
-
 SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 {
 /**************************************

@@ -57,14 +57,6 @@ using namespace Jrd;
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
-#ifndef WORDS_BIGENDIAN
-#define LOW_WORD	0
-#define HIGH_WORD	1
-#else
-#define LOW_WORD	1
-#define HIGH_WORD	0
-#endif
-
 /* The original order of dsc_type values corresponded to the priority
    of conversion (that is, always convert the lesser to the greater
    type.)  Introduction of dtype_int64 breaks that assumption: its
