@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.41 2002-11-18 07:57:43 eku Exp $
+$Id: inet.cpp,v 1.42 2002-11-18 10:16:45 kkuznetsov Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -107,6 +107,19 @@ extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #endif
 
 #define INET_RETRY_CALL		5
+
+#ifdef HAVE_RPC_RPC_H
+#include <rpc/rpc.h>
+#endif
+
+#ifdef HAVE_NETCONFIG_H
+#include <netconfig.h>
+#endif
+
+#ifdef HAVE_RPC_XDR_H
+#include <rpc/xdr.h>
+#endif
+
 
 #include "../remote/remote.h"
 #include "../jrd/gds.h"
@@ -386,18 +399,30 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										size_t							nEntries);
 
 static void		inet_copy(SCHAR *, SCHAR *, int);
+
+#if (defined HAVE_STRUCT_XDR_OPS) && (defined SOLARIS)
+static void		inet_destroy(XDR *);
+#else
 static int		inet_destroy(XDR *);
+#endif
+
 static void		inet_gen_error(PORT, STATUS, ...);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
 static void		inet_handler(PORT);
-static caddr_t	inet_inline(XDR *, u_int);
+#if (defined HAVE_STRUCT_XDR_OPS) && (defined SOLARIS)
+    static long * inet_inline(XDR *, int);
+#else
+    static caddr_t	inet_inline(XDR *, u_int);
+#endif
 static int		inet_error(PORT, CONST TEXT *, STATUS, int);
 static bool_t	inet_putlong(XDR *, SLONG *);
 static bool_t	inet_putbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
+static bool_t	inet_xcontrol (XDR *, int, void *);
+
 static PORT		inet_try_connect(	PACKET*,
 									RDB,
 									USHORT,
@@ -435,17 +460,39 @@ static int		xdrinet_create(XDR *, PORT, UCHAR *, USHORT, enum xdr_op);
 static bool_t	xdrinet_endofrecord(XDR *, int);
 
 
+
+
+#ifdef HAVE_STRUCT_XDR_OPS  
+
+#ifdef SOLARIS 
+/*Becouse SUN not defined struct in a struct*/
+static xdr_ops inet_ops =
+{
+	inet_getlong,
+	inet_putlong,
+	(bool_t (*)(XDR *, char *, int))inet_getbytes,
+	(bool_t (*)(XDR *, char *, int))inet_putbytes,
+	inet_getpostn,
+	inet_setpostn,
+	inet_inline,
+	inet_destroy,
+	inet_xcontrol
+};
+#endif //Sun
+
+#else // Linux, others probably too 
 static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-	inet_getbytes,
-	inet_putbytes,
+	(bool_t (*)(XDR *, char *, int))inet_getbytes,
+	(bool_t (*)(XDR *, char *, int))inet_putbytes,
 	inet_getpostn,
 	inet_setpostn,
 	inet_inline,
 	inet_destroy
 };
+#endif
 
 
 #ifndef MAX_PTYPE
@@ -2922,7 +2969,11 @@ static int xdrinet_create(
 	xdrs->x_public = (caddr_t) port;
 	xdrs->x_base = xdrs->x_private = (SCHAR *) buffer;
 	xdrs->x_handy = length;
+#ifdef HAVE_STRUCT_XDR_OPS /*Becouse SUN not defined struct in a struct*/	
+	xdrs->x_ops = (xdr_ops *) & inet_ops;
+#else
 	xdrs->x_ops = (xdr_t::xdr_ops *) & inet_ops;
+#endif	
 	xdrs->x_op = x_op;
 
 	return TRUE;
@@ -2959,7 +3010,12 @@ static void alarm_handler( int x)
  **************************************/
 }
 
-static XDR_INT inet_destroy( XDR * xdrs)
+#if (defined HAVE_STRUCT_XDR_OPS) && (defined SOLARIS)
+static void		inet_destroy(XDR *)
+#else
+static int		inet_destroy(XDR *)
+#endif
+
 {
 /**************************************
  *
@@ -2972,7 +3028,11 @@ static XDR_INT inet_destroy( XDR * xdrs)
  *
  **************************************/
 
+#if (defined HAVE_STRUCT_XDR_OPS) && (defined SOLARIS)
+    return;
+#else
 	return NULL;
+#endif
 }
 
 static void inet_gen_error( PORT port, STATUS status, ...)
@@ -3136,7 +3196,12 @@ static void inet_handler( PORT port)
 }
 #endif
 
-static caddr_t inet_inline( XDR * xdrs, u_int bytecount)
+#if (defined HAVE_STRUCT_XDR_OPS) && (defined SOLARIS)
+    static long * inet_inline(XDR * xdrs, int bytecount)
+#else
+    static caddr_t	inet_inline(XDR * xdrs , u_int bytecount)
+#endif
+
 {
 /**************************************
  *
@@ -3152,7 +3217,13 @@ static caddr_t inet_inline( XDR * xdrs, u_int bytecount)
 	if (bytecount > (u_int) xdrs->x_handy)
 		return FALSE;
 
+
+#if (defined HAVE_STRUCT_XDR_OPS) && (defined SOLARIS)
+	return (long int *) (xdrs->x_base + bytecount);
+#else
 	return xdrs->x_base + bytecount;
+#endif
+
 }
 
 static int inet_error(
@@ -3370,6 +3441,14 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 	xdrs->x_private = xdrs->x_base + bytecount;
 
 	return TRUE;
+}
+
+static bool_t   inet_xcontrol (XDR * xdrs, int n, void * p)
+/* Suns XDR defines this function
+
+*/
+{
+ return TRUE;
 }
 
 static PORT inet_try_connect(

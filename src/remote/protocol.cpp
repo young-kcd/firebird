@@ -35,10 +35,28 @@
 #include "../jrd/sdl.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"
+
+#ifdef HAVE_RPC_RPC_H
+#include <rpc/rpc.h>
+#endif
+
+#ifdef HAVE_NETCONFIG_H
+#include <netconfig.h>
+#endif
+
+#ifdef HAVE_RPC_XDR_H
+#include <rpc/xdr.h>
+#endif
+
+
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
+
+
+
+
 
 #ifdef DEBUG_XDR_MEMORY
 #define P_TRUE			xdr_debug_packet (xdrs, XDR_FREE, p)
@@ -112,7 +130,10 @@ extern bool_t xdr_free();
 
 #else // 0
 
+#ifndef HAVE_RPC_XDR_H
+
 #  include "../remote/xdr_proto.h"
+#endif
 
 #endif // 0
 
@@ -156,7 +177,10 @@ extern bool_t xdr_free();
 
 #else // 0
 
+#ifndef HAVE_RPC_XDR_H
+
 #  include "../remote/xdr_proto.h"
+#endif
 
 #endif // 0
 
@@ -320,7 +344,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 
 	DEBUG_XDR_PACKET;
 
-	if (!xdr_enum(xdrs, reinterpret_cast < xdr_op * >(&p->p_operation)))
+	if (!xdr_enum(xdrs, reinterpret_cast < xrd_enum_type * >(&p->p_operation)))
 		return P_FALSE;
 
 	switch (p->p_operation) {
@@ -332,10 +356,10 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 	case op_connect:
 		connect = &p->p_cnct;
 		MAP(xdr_enum,
-			reinterpret_cast < xdr_op & >(connect->p_cnct_operation));
+			reinterpret_cast < xrd_enum_type & >(connect->p_cnct_operation));
 		MAP(xdr_short,
 			reinterpret_cast < SSHORT & >(connect->p_cnct_cversion));
-		MAP(xdr_enum, reinterpret_cast < xdr_op & >(connect->p_cnct_client));
+		MAP(xdr_enum, reinterpret_cast < xrd_enum_type & >(connect->p_cnct_client));
 		MAP(xdr_cstring, connect->p_cnct_file);
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(connect->p_cnct_count));
 		MAP(xdr_cstring, connect->p_cnct_user_id);
@@ -344,7 +368,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 			MAP(xdr_short,
 				reinterpret_cast < SSHORT & >(tail->p_cnct_version));
 			MAP(xdr_enum,
-				reinterpret_cast < xdr_op & >(tail->p_cnct_architecture));
+				reinterpret_cast < xrd_enum_type & >(tail->p_cnct_architecture));
 			MAP(xdr_u_short, tail->p_cnct_min_type);
 			MAP(xdr_u_short, tail->p_cnct_max_type);
 			MAP(xdr_short,
@@ -357,7 +381,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 		accept = &p->p_acpt;
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(accept->p_acpt_version));
 		MAP(xdr_enum,
-			reinterpret_cast < xdr_op & >(accept->p_acpt_architecture));
+			reinterpret_cast < xrd_enum_type & >(accept->p_acpt_architecture));
 		MAP(xdr_u_short, accept->p_acpt_type);
 		DEBUG_PRINTSIZE(p->p_operation);
 		return P_TRUE;
