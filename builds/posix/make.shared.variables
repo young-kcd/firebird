@@ -224,7 +224,7 @@ FBCONFIG_ServerFiles=
 
 FBCONFIG_Files= $(FBCONFIG_ClientFiles) $(FBCONFIG_ServerFiles)
 
-FBCONFIG_Sources = $(addprefix common/memory/, $(FBCONFIG_Files))
+FBCONFIG_Sources = $(addprefix common/config/, $(FBCONFIG_Files))
 FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_Sources))))
 
 #________________________________________________________________________
@@ -295,7 +295,8 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(INTERFACE_Objects) \
                 $(PIPE_Objects) \
                 $(WAL_Objects) \
-                $(GPRELIB_Objects) 
+                $(GPRELIB_Objects) \
+				$(FBCONFIG_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already
