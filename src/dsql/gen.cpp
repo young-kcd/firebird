@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.33.2.1 2003-08-26 06:57:37 dimitr Exp $
+$Id: gen.cpp,v 1.33.2.2 2003-10-22 07:20:59 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2318,10 +2318,26 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
               FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301. */
             parameter->par_name = parameter->par_alias  = "SUBSTRING";
         }
+        else if (item->nod_type == nod_concatenate)
+            parameter->par_name = parameter->par_alias	= "CONCATENATION";
         else if (item->nod_type == nod_cast)
             parameter->par_name = parameter->par_alias	= "CAST";
         else if (item->nod_type == nod_upcase)
             parameter->par_name = parameter->par_alias	= "UPPER";
+        else if (item->nod_type == nod_current_date)
+            parameter->par_name = parameter->par_alias	= "CURRENT_DATE";
+        else if (item->nod_type == nod_current_time)
+            parameter->par_name = parameter->par_alias	= "CURRENT_TIME";
+        else if (item->nod_type == nod_current_timestamp)
+            parameter->par_name = parameter->par_alias	= "CURRENT_TIMESTAMP";
+        else if (item->nod_type == nod_extract)
+            parameter->par_name = parameter->par_alias	= "EXTRACT";
+        else if (item->nod_type == nod_searched_case)
+            parameter->par_name = parameter->par_alias	= "CASE";
+        else if (item->nod_type == nod_simple_case)
+            parameter->par_name = parameter->par_alias	= "CASE";
+        else if (item->nod_type == nod_coalesce)
+            parameter->par_name = parameter->par_alias	= "COALESCE";
 	}
 
 /* Set up parameter to handle EOF */
