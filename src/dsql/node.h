@@ -583,6 +583,9 @@ enum node_args {
 
 	e_del_relation = 0,		// nod_delete
 	e_del_boolean,
+	e_del_plan,
+	e_del_sort,
+	e_del_rows,
 	e_del_cursor,
 	e_del_count,
 
@@ -601,6 +604,9 @@ enum node_args {
 	e_upd_relation = 0,		// nod_update
 	e_upd_statement,
 	e_upd_boolean,
+	e_upd_plan,
+	e_upd_sort,
+	e_upd_rows,
 	e_upd_cursor,
 	e_upd_count,
 

@@ -3543,14 +3543,29 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input)
 		dsql_nod* temp = MAKE_node(nod_list, 1);
 		rse->nod_arg[e_rse_streams] = temp;
 		temp->nod_arg[0] = PASS1_node(request, relation, false);
-		temp = input->nod_arg[e_del_boolean];
-		if (temp)
+
+		if ( (temp = input->nod_arg[e_del_boolean]) ) {
 			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
+		}
+
+		if ( (temp = input->nod_arg[e_del_plan]) ) {
+			rse->nod_arg[e_rse_plan] = PASS1_node(request, temp, false);
+		}
+
+		if ( (temp = input->nod_arg[e_del_sort]) ) {
+			rse->nod_arg[e_rse_sort] = pass1_sort(request, temp, NULL);
+		}
+
+		if ( (temp = input->nod_arg[e_del_rows]) ) {
+			rse->nod_arg[e_rse_first] =
+				PASS1_node(request, temp->nod_arg[e_rows_length], false);
+			rse->nod_arg[e_rse_skip] =
+				PASS1_node(request, temp->nod_arg[e_rows_skip], false);
+		}
 	}
 
 	node->nod_arg[e_era_rse] = rse;
-	dsql_nod* temp = rse->nod_arg[e_rse_streams];
-	node->nod_arg[e_era_relation] = temp->nod_arg[0];
+	node->nod_arg[e_era_relation] = rse->nod_arg[e_rse_streams]->nod_arg[0];
 
 	request->req_context->pop();
 	return node;
@@ -6492,15 +6507,31 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input)
 		rse = pass1_cursor_reference(request, cursor, relation);
 	else {
 		rse = MAKE_node(nod_rse, e_rse_count);
-		dsql_nod* temp1 = MAKE_node(nod_list, 1);
-		rse->nod_arg[e_rse_streams] = temp1;
-		temp1->nod_arg[0] = node->nod_arg[e_mod_update];
-		if (temp1 = input->nod_arg[e_upd_boolean])
-			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp1, false);
+		dsql_nod* temp = MAKE_node(nod_list, 1);
+		rse->nod_arg[e_rse_streams] = temp;
+		temp->nod_arg[0] = node->nod_arg[e_mod_update];
+
+		if ( (temp = input->nod_arg[e_upd_boolean]) ) {
+			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
+		}
+
+		if ( (temp = input->nod_arg[e_upd_plan]) ) {
+			rse->nod_arg[e_rse_plan] = PASS1_node(request, temp, false);
+		}
+
+		if ( (temp = input->nod_arg[e_upd_sort]) ) {
+			rse->nod_arg[e_rse_sort] = pass1_sort(request, temp, NULL);
+		}
+
+		if ( (temp = input->nod_arg[e_upd_rows]) ) {
+			rse->nod_arg[e_rse_first] =
+				PASS1_node(request, temp->nod_arg[e_rows_length], false);
+			rse->nod_arg[e_rse_skip] =
+				PASS1_node(request, temp->nod_arg[e_rows_skip], false);
+		}
 	}
 
-	dsql_nod* temp = rse->nod_arg[e_rse_streams];
-	node->nod_arg[e_mod_source] = temp->nod_arg[0];
+	node->nod_arg[e_mod_source] = rse->nod_arg[e_rse_streams]->nod_arg[0];
 	node->nod_arg[e_mod_rse] = rse;
 
 	request->req_context->pop();

@@ -3282,12 +3282,12 @@ delete		: delete_searched
 		| delete_positioned
 		;
 
-delete_searched	: KW_DELETE FROM table_name where_clause
-			{ $$ = make_node (nod_delete, (int) e_del_count, $3, $4, NULL); }
+delete_searched	: KW_DELETE FROM table_name where_clause plan_clause order_clause rows_clause
+			{ $$ = make_node (nod_delete, (int) e_del_count, $3, $4, $5, $6, $7, NULL); }
 		;
 
 delete_positioned : KW_DELETE FROM table_name cursor_clause
-			{ $$ = make_node (nod_delete, (int) e_del_count, $3, NULL, $4); }
+			{ $$ = make_node (nod_delete, (int) e_del_count, $3, NULL, NULL, NULL, NULL, $4); }
 		;
 
 cursor_clause	: WHERE CURRENT OF symbol_cursor_name
@@ -3301,14 +3301,14 @@ update		: update_searched
 		| update_positioned
 		;
 
-update_searched	: UPDATE table_name SET assignments where_clause
-			{ $$ = make_node (nod_update, (int) e_upd_count, 
-				$2, make_list ($4), $5, NULL); }
+update_searched	: UPDATE table_name SET assignments where_clause plan_clause order_clause rows_clause
+			{ $$ = make_node (nod_update, (int) e_upd_count,
+				$2, make_list ($4), $5, $6, $7, $8, NULL); }
 		  	;
 
 update_positioned : UPDATE table_name SET assignments cursor_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), NULL, $5); }
+				$2, make_list ($4), NULL, NULL, NULL, NULL, $5); }
 		;
 
 assignments	: assignment
