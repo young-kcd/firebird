@@ -194,7 +194,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		/* do the install of the server */
 		status =
 			SERVICES_install(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
-							 (char*)REMOTE_EXECUTABLE, directory, NULL, sw_startup,
+							 const_cast<char*>REMOTE_EXECUTABLE, directory, NULL, sw_startup,
 							 svc_error);
 		if (status == FB_SUCCESS)
 			ib_printf("Service \"%s\" successfully created.\n",
