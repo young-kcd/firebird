@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.110 2004-08-27 04:52:21 robocop Exp $
+ * $Id: ddl.cpp,v 1.111 2004-08-27 09:24:39 robocop Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3069,7 +3069,7 @@ static void define_udf( dsql_req* request)
  *	define a udf to the database.
  *
  **************************************/
-	SSHORT position, blob_position;
+	SSHORT position, blob_position = -1;
 
 	dsql_nod*  udf_node = request->req_ddl_node;
 	dsql_nod*  arguments = udf_node->nod_arg[e_udf_args];
@@ -3086,7 +3086,7 @@ static void define_udf( dsql_req* request)
 	dsql_fld* field = (dsql_fld*) ret_val_ptr[0];
 	if (field) {
 
-        // CVC: This is case of "returns <type> [by value|reference]"
+		// CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value 
 
 		if (((int) (IPTR) (ret_val_ptr[1]->nod_arg[0]) == Jrd::FUN_value) &&
@@ -3130,21 +3130,34 @@ static void define_udf( dsql_req* request)
 	}
 	else {
 
-        // CVC: This is case of "returns parameter <N>"
+		// CVC: This is case of "returns parameter <N>"
 
 		position = (SSHORT)(IPTR) (ret_val_ptr[1]->nod_arg[0]);
 		// Function modifies an argument whose value is the function return value 
 
 		if (!arguments || position > arguments->nod_count || position < 1) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-                      isc_arg_gds, isc_dsql_udf_return_pos_err, //gds__extern_func_err, 
-                      isc_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
-                      // CVC: We should devise new msg "position should be between 1 and #params";
-                      // here it is: dsql_udf_return_pos_err
+					isc_arg_gds, isc_dsql_udf_return_pos_err, //gds__extern_func_err,
+					isc_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
+					// CVC: We should devise new msg "position should be between 1 and #params";
+					// here it is: dsql_udf_return_pos_err
 
-					  // External functions can not have more than 10 parameters 
-					  // Not strictly correct -- return position error 
-					  0);
+					// External functions can not have more than 10 parameters
+					// Not strictly correct -- return position error
+					0);
+		}
+		
+		// We'll verify that SCALAR_ARRAY can't be used as a return type.
+		// The support for SCALAR_ARRAY is only for input parameters.
+		const dsql_nod* ret_arg = arguments->nod_arg[position - 1];
+		const dsql_nod* const* param_node = ret_arg->nod_arg;
+		if (param_node[e_udf_param_type]) {
+			const SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
+			if (arg_mechanism == Jrd::FUN_scalar_array)
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					isc_arg_gds, isc_random,
+					isc_arg_string, "BY SCALAR_ARRAY can't be used as a return parameter",
+					0);
 		}
 
 		request->append_number(isc_dyn_func_return_argument, position);
@@ -3154,10 +3167,10 @@ static void define_udf( dsql_req* request)
 // Now define all the arguments 
 	if (!position)
 	{
-    /* CVC: This is case of "returns <type> [by value|reference]" */
+		/* CVC: This is case of "returns <type> [by value|reference]" */
 		if (field->fld_dtype == dtype_blob)
 		{
-        /* CVC: I need to test returning blobs by descriptor before allowing the
+		/* CVC: I need to test returning blobs by descriptor before allowing the
 		change there. For now, I ignore the return type specification. */
 			const bool free_it = ((SSHORT)(IPTR) ret_val_ptr[1]->nod_arg[0] < 0);
 			request->append_number(isc_dyn_def_function_arg, blob_position);
@@ -3182,7 +3195,7 @@ static void define_udf( dsql_req* request)
 
 	fb_assert(position == 1);
 
-    /* CVC: This for all params, including the case of "returns parameter <N>" */
+	/* CVC: This for all params, including the case of "returns parameter <N>" */
 
 	if (arguments)
 	{
@@ -3199,20 +3212,20 @@ static void define_udf( dsql_req* request)
 						  0);
 			}
 
-            /*field = (dsql_fld*) *ptr; */
-            dsql_nod** param_node = (*ptr)->nod_arg;
-            field = (dsql_fld*) param_node[e_udf_param_field];
+			/*field = (dsql_fld*) *ptr; */
+			dsql_nod** param_node = (*ptr)->nod_arg;
+			field = (dsql_fld*) param_node[e_udf_param_field];
 
-			request->append_number(isc_dyn_def_function_arg, (SSHORT) position);
+			request->append_number(isc_dyn_def_function_arg, position);
 
-            if (param_node[e_udf_param_type]) {
-                SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
+			if (param_node[e_udf_param_type]) {
+				const SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
 				request->append_number(isc_dyn_func_mechanism, arg_mechanism);
-            }
-            else if (field->fld_dtype == dtype_blob) {
+			}
+			else if (field->fld_dtype == dtype_blob) {
 				request->append_number(isc_dyn_func_mechanism, 
-                                       (SSHORT) Jrd::FUN_blob_struct);
-            }
+										(SSHORT) Jrd::FUN_blob_struct);
+			}
 			else {
 				request->append_number(isc_dyn_func_mechanism,
 						   (SSHORT) Jrd::FUN_reference);
