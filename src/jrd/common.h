@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.98 2004-01-21 07:18:25 skidder Exp $
+$Id: common.h,v 1.99 2004-01-26 16:28:06 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -1027,7 +1027,7 @@ static const TEXT FB_SHORT_MONTHS[][4] =
 	"Apr", "May", "Jun",
 	"Jul", "Aug", "Sep",
 	"Oct", "Nov", "Dec",
-	0
+	"\0\0\0"
 };
 
 static const TEXT* FB_LONG_MONTHS_UPPER[] =
