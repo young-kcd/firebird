@@ -65,6 +65,7 @@
 @%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D localhost:%DB_PATH%/gen/dbs/msg.fdb
 @%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen %ROOT_PATH%\lang_helpers
 ::=======
+@echo.
 @echo Building BLR Table
 @call blrtable.bat
 @call :NEXT_STEP
