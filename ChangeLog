@@ -1,3 +1,29 @@
+2003-05-07 03:57  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	1) bugfix RC1: Aggregates from a different parent_context where not
+	allowed in the HAVING clause.
+	
+	2) Enabled aggregate-functions from different parent_context (with
+	lower scope_level) to be used inside another aggregate-function
+	
+	Example: SELECT   MAX((SELECT COUNT(*) FROM RDB$RELATIONS)) FROM  
+	RDB$RELATIONS
+
+2003-05-06 17:04  dimitr
+
+	* firebird2/src/: common/config/config.cpp,
+	install/misc/firebird.conf:
+	
+	Changed default value.
+
+2003-05-06 14:05  dimitr
+
+	* firebird2/src/jrd/dfw.epp:
+	
+	Hide metadata cache diagnostic warnings in the release builds.
+
 2003-05-05 18:11  skidder
 
 	* firebird2/builds/win32/common_boot.mak:
