@@ -42,7 +42,7 @@ struct FN {
 
 
 // FPTR_INT FUNCTIONS_entrypoint(char*, char*);
-static int test(long, char*);
+static int test(const long*, char*);
 static DSC* ni(DSC*, DSC*);
 static SLONG* byteLen(const dsc*);
 
@@ -100,7 +100,7 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 }
 
 
-static int test(long n, char *result)
+static int test(const long* n, char *result)
 {
 /**************************************
  *
@@ -113,17 +113,20 @@ static int test(long n, char *result)
  *
  *	QLI:
  *	define function test module_name "test_module" entry_point "test_function"
- *	    long by value,
+ *	    long by reference //by value,   CVC: BY VALUE is deprecated for input params
  *	    char [20] by reference return_argument;
  *	ISQL:
  *	declare external function test
- * 	int by value, -> There's no way to do that, DSQL doesn't support input params by value.
+ * 	int null, // CVC: with NULL signaling
  *	char(20) returns parameter 2
  *	entry_point 'test_function' module_name 'test_module';
  *
  **************************************/
 
-	sprintf(result, "%ld is a number", n);
+	if (n)
+		sprintf(result, "%ld is a number", *n);
+	else
+		sprintf(result, "is NULL");
 	const char* const end = result + 20;
 
 	while (*result)
