@@ -2754,8 +2754,9 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 #endif
 	if (transaction->tra_flags & TRA_system)
 		return;
-		
+
 	sav* sav_point = transaction->tra_save_point;
+
 	if (!sav_point)
 		return;
 
@@ -2924,7 +2925,7 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 			if (rpb.rpb_record)
 				delete rpb.rpb_record;
 		}
-		SBM_reset(&action->vct_records);
+		SBM_release(action->vct_records);
 		if (action->vct_undo) {
 			if (action->vct_undo->getFirst())
 				do {
