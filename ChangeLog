@@ -1,3 +1,35 @@
+2002-11-02 18:25  skidder
+
+	* firebird2/configure.in:
+	
+	Make engine compilable on systems that apply autoconf version
+	mentioned in AC_PREREQ like Mandrake 9.0
+
+2002-11-02 18:23  skidder
+
+	* firebird2/src/remote/remote.h:
+	
+	Make engine compilable again after Sean's cleanup
+
+2002-11-02 12:03  dimitr
+
+	* firebird2/src/jrd/isc.cpp:
+	
+	Disabled directory handling for the client library.
+
+2002-11-02 04:20  arnobrinkman
+
+	* firebird2/src/jrd/: btr.h, opt.cpp:
+	
+	Added better support for using indices with "OR".  Pick the best
+	available compound index from all "AND" nodes.
+
+2002-11-02 04:15  arnobrinkman
+
+	* firebird2/src/jrd/rse.h:
+	
+	no message
+
 2002-11-01 14:21  kkuznetsov
 
 	* firebird2/: builds/posix/Makefile.in.boot.gpre,
