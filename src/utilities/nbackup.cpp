@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.6 2003-09-08 20:23:43 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.7 2003-09-09 16:47:26 skidder Exp $
  *
  */
  
@@ -886,7 +886,7 @@ int main( int argc, char *argv[] )
 					usage();
 				}
 				
-	} catch (const std::exception& ex) {
+	} catch (const std::exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}

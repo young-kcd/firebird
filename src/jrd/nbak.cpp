@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.9 2003-09-08 21:44:41 skidder Exp $
+ *  $Id: nbak.cpp,v 1.10 2003-09-09 16:47:25 skidder Exp $
  *
  */
 
@@ -146,16 +146,17 @@ void BackupManager::lock_state_write(bool thread_exit) {
 		ERR_post(gds_lock_conflict, 0); 
 	}
 	NBAK_TRACE(("backup state locked for writing"));
+#endif
 	if (!actualize_state()) {
 		unlock_state_write();
 		ERR_punt();
 	}
-#endif
 }
 
 bool BackupManager::try_lock_state_write() {
 #ifdef SUPERSERVER
-	return state_lock->tryBeginWrite();
+	if (!state_lock->tryBeginWrite())
+		return false;
 #else
 	assert(!(flags & NBAK_state_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
@@ -165,14 +166,7 @@ bool BackupManager::try_lock_state_write() {
 		result = LCK_lock(tdbb, state_lock, LCK_EX, LCK_NO_WAIT);
 	else
 		result = LCK_convert(tdbb, state_lock, LCK_EX, LCK_NO_WAIT);
-	if (result) {
-		NBAK_TRACE(("backup state locked for writing"));
-		if (!actualize_state()) {
-			unlock_state_write();
-			ERR_punt();
-		}
-	} 
-	else {
+	if (!result) {
 		flags &= ~NBAK_state_in_use;
 		// This code is ok only because ASTs are delivered only once per request
 		if (ast_flags & NBAK_state_blocking) {
@@ -180,9 +174,15 @@ bool BackupManager::try_lock_state_write() {
 			ast_flags &= ~NBAK_state_blocking;
 			backup_state = nbak_state_unknown;
 		}
-	}
-	return result;
+		return false;
+	} 
+	NBAK_TRACE(("backup state locked for writing"));
 #endif
+	if (!actualize_state()) {
+		unlock_state_write();
+		ERR_punt();
+	}
+	return true;
 }
 
 void BackupManager::unlock_state_write() throw() {
@@ -208,7 +208,6 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw() {
 	if (thread_exit) THREAD_EXIT;
 	alloc_lock->beginWrite();
 	if (thread_exit) THREAD_ENTER;
-	return true;
 #else
 	assert(!(flags & NBAK_alloc_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
@@ -228,12 +227,12 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw() {
 		gds__log("Cannot lock backup allocation table for writing");
 		return false;
 	}
+#endif
 	if (!actualize_alloc()) {
 		unlock_alloc_write();
 		return false;
 	}
 	return true;
-#endif
 }
 
 void BackupManager::unlock_alloc_write() throw() {
@@ -262,7 +261,6 @@ bool BackupManager::lock_state(bool thread_exit) throw() {
 	if (thread_exit) THREAD_EXIT;
 	state_lock->beginRead();
 	if (thread_exit) THREAD_ENTER;
-	return true;
 #else
 	assert(!(flags & NBAK_state_in_use));
 	flags |= NBAK_state_in_use;
@@ -273,12 +271,12 @@ bool BackupManager::lock_state(bool thread_exit) throw() {
 			return false;
 		}
 	}
+#endif
 	if (!actualize_state()) {
 		unlock_state();
 		return false;
 	}
 	return true;
-#endif
 }
 
 void BackupManager::unlock_state() throw() {
@@ -303,7 +301,6 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 	if (thread_exit) THREAD_EXIT;
 	alloc_lock->beginRead();
 	if (thread_exit) THREAD_ENTER;
-	return true;
 #else
 	assert(!(flags & NBAK_alloc_in_use));
 	TDBB tdbb = GET_THREAD_DATA;
@@ -315,12 +312,12 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 			return false;
 		}
 	}
+#endif
 	if (!actualize_alloc()) {
 		unlock_alloc();
 		return false;
 	}
 	return true;
-#endif
 }
 
 void BackupManager::unlock_alloc() throw() {
