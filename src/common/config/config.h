@@ -103,7 +103,8 @@ class Config
 		KEY_REMOTE_BIND_ADDRESS,					// 36
 		KEY_EXTERNAL_FILE_ACCESS,					// 37
 		KEY_DATABASE_ACCESS,						// 38
-		KEY_UDF_ACCESS								// 39
+		KEY_UDF_ACCESS,								// 39
+		KEY_TEMP_DIRECTORIES						// 40
 	};
 
 public:
@@ -299,13 +300,19 @@ public:
 	static const char *getExternalFileAccess();
 
 	/*
-		Directory list for external tables
+		Directory list for databases
 	*/
 	static const char *getDatabaseAccess();
+
 	/*
-		Directory list for UDF
+		Directory list for UDF libraries
 	*/
 	static const char *getUdfAccess();
+
+	/*
+		Temporary directories list
+	*/
+	static const char *getTempDirectories();
 };
 
 #endif // CONFIG_H
