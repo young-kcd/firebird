@@ -33,14 +33,14 @@
 
 namespace Firebird
 {
-	template <typename T, int InlineCapacity = 8>
-	class ObjectsArray : private HalfStaticArray<T*, InlineCapacity>
+	template <typename T, typename A = Array<T*, InlineStorage<T*, 8> > >
+	class ObjectsArray : protected A
 	{
 	private:
-		typedef HalfStaticArray<T*, InlineCapacity> inherited;
+		typedef A inherited;
 	public:
 		class iterator {
-			friend class ObjectsArray<T, InlineCapacity>;
+			friend class ObjectsArray<T, A>;
 		private:
 			ObjectsArray *lst;
 			int pos;
@@ -60,15 +60,19 @@ namespace Firebird
 				T* pointer = lst->getPointer(pos);
 				return *pointer;
 			}
-			bool operator!=(const iterator& v) const {return pos != v.pos;}
+			bool operator!=(const iterator& v) const
+			{
+				fb_assert(lst == v.lst);
+				return pos != v.pos;
+			}
 		};
 	public:
 		void insert(int index, const T& item) {
-			T* data = FB_NEW(*pool) T(pool, item);
+			T* data = FB_NEW(getPool()) T(getPool(), item);
 			inherited::insert(index, data);
 		}
 		int add(const T& item) {
-			T* data = FB_NEW(*pool) T(pool, item);
+			T* data = FB_NEW(getPool()) T(getPool(), item);
 			return inherited::add(data);
 		};
 		void push(const T& item) {
@@ -112,8 +116,8 @@ namespace Firebird
 		T* getPointer(int index) {
   			return inherited::getElement(index);
 		}
-		inline ObjectsArray(MemoryPool* p) : 
-			HalfStaticArray<T*, InlineCapacity>(p) {}
+		explicit ObjectsArray(MemoryPool& p) : A(p) { }
+		ObjectsArray() : A() { }
 		~ObjectsArray() {
 			for (int i = 0; i < getCount(); i++) {
 				delete getPointer(i);
@@ -121,6 +125,48 @@ namespace Firebird
 		}
 		int getCount() const {return inherited::getCount();}
 		int getCapacity() const {return inherited::getCapacity();}
+		void clear() { 
+			for (int i = 0; i < getCount(); i++) {
+				delete getPointer(i);
+			}
+			inherited::clear(); 
+		}
+	};
+
+	// Template to convert object value to index directly
+	template <typename T>
+	class ObjectKeyValue {
+	public:
+		static const T& generate(void* sender, const T* Item) { return Item; }
+	};
+
+	// Template for default value comparsion
+	template <typename T>
+	class ObjectComparator {
+	public:
+		static bool greaterThan(const T& i1, const T& i2) {
+			return *i1 > *i2;
+		}
+	};
+
+	// Dynamic sorted array of simple objects
+	template <typename Value,
+		typename Storage = InlineStorage<Value*, 32>, 
+		typename Key = Value*, 
+		typename KeyOfValue = ObjectKeyValue<Value>, 
+		typename Cmp = DefaultComparator<Key> >
+	class SortedObjectsArray : public ObjectsArray<Value, 
+			SortedArray <Value*, Storage, Key, KeyOfValue, Cmp> > {
+	private:
+		typedef ObjectsArray <Value, SortedArray<Value*, 
+				Storage, Key, KeyOfValue, Cmp> > inherited;
+	public:
+		explicit SortedObjectsArray(MemoryPool& p) : 
+			ObjectsArray <Value, SortedArray<Value*, 
+				Storage, Key, KeyOfValue, Cmp> >(p) { }
+		bool find(const Key& item, int& pos) {
+			return inherited::find(item, pos);
+		}
 	};
 }
 
