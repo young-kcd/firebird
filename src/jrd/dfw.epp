@@ -3247,7 +3247,6 @@ static void get_trigger_dependencies( DFW work)
 	GDS__QUAD blob_id;
 	REQ request;
 	BLK handle;
-	JrdMemoryPool *old_pool;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
@@ -3273,6 +3272,7 @@ static void get_trigger_dependencies( DFW work)
 
 	if (relation && !NULL_BLOB(blob_id))
 	{
+		JrdMemoryPool *old_pool = tdbb->tdbb_default;
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		tdbb->tdbb_default = FB_NEW(*dbb->dbb_permanent) JrdMemoryPool;
 		MET_get_dependencies(tdbb, relation,
