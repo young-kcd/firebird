@@ -1990,7 +1990,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb, USHORT base_count)
  *	inferences.  In general, find classes of equalities,
  *	then find operations based on members of those classes.
  *	If we find any, generate additional conjunctions.  In
- *	SSHORT:
+ *	short:
  *
  *		If (a == b) and (a $ c) --> (b $ c) for any
  *		operation '$'.
@@ -2028,6 +2028,7 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb, USHORT base_count)
 			}
 		if (eq_class == classes.end()) {
 			classes.grow(classes.getCount() + 1);
+			eq_class = &classes.back();
 			LLS_PUSH(node1, eq_class);
 			LLS_PUSH(node2, eq_class);
 		}
@@ -2838,7 +2839,6 @@ static void find_best(TDBB tdbb,
 	if (plan_node && (streams[position + 1] != stream)) {
 		return;
 	}
-
 	// do some initializations.
 	csb = opt->opt_csb;
 	csb->csb_rpt[stream].csb_flags |= csb_active;
