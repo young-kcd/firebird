@@ -90,6 +90,11 @@ namespace Firebird {
 	AbstractString::AbstractString(const_pointer p1, size_type n1, 
 				 const_pointer p2, size_type n2)
 	{
+		// CVC: npos must be maximum size_type value for all platforms.
+		// fb_assert(npos - n1 > n2 && n1 + n2 <= max_length());
+		checkLength(n1);
+		checkLength(n2);
+		checkLength(n1 + n2);
 		initialize(n1 + n2);
 		memcpy(stringBuffer, p1, n1);
 		memcpy(stringBuffer + n1, p2, n2);
