@@ -125,7 +125,7 @@ static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT);
 static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 #ifndef SUPERSERVER
-BurpGlobals *gdgbl;
+BurpGlobals* gdgbl;
 static int output_main(Jrd::Service*, const UCHAR*);
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif

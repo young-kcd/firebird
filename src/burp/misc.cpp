@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		misc.c
+ *	MODULE:		misc.cpp
  *	DESCRIPTION:	Miscellaneous useful routines
  *
  * The contents of this file are subject to the Interbase Public
