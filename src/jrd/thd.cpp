@@ -56,6 +56,12 @@
 #endif
 
 
+#ifdef SOLARIS
+#include <thread.h>
+#include <signal.h>
+#endif
+
+
 extern "C" {
 
 
@@ -203,7 +209,7 @@ THDD THD_get_specific(void)
  **************************************/
 	THDD current_context;
 
-	if (thr_getspecific(specific_key, &current_context)) {
+	if (thr_getspecific(specific_key, (void **) &current_context)) {
 		ib_perror("thr_getspecific");
 		exit(1);
 	}
@@ -541,7 +547,7 @@ int THD_mutex_destroy(MUTX_T * mutex)
  *
  **************************************/
 
-	return mutex_destroy(mutex);
+	return mutex_destroy(&mutex->mutx_mutex);
 }
 
 
@@ -557,7 +563,7 @@ int THD_mutex_init(MUTX_T * mutex)
  *
  **************************************/
 
-	return mutex_init(mutex, USYNC_THREAD, NULL);
+	return mutex_init(&mutex->mutx_mutex, USYNC_THREAD, NULL);
 }
 
 
@@ -573,7 +579,7 @@ int THD_mutex_lock(MUTX_T * mutex)
  *
  **************************************/
 
-	return mutex_lock(mutex);
+	return mutex_lock(&mutex->mutx_mutex);
 }
 
 
@@ -589,7 +595,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
  *
  **************************************/
 
-	return mutex_unlock(mutex);
+	return mutex_unlock(&mutex->mutx_mutex);
 }
 #endif
 #endif
@@ -1968,10 +1974,10 @@ static int thread_start(
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		return rval;
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-	rval = thr_create(NULL, 0, routine, arg, THR_DETACHED, &thread_id);
+	rval = thr_create(NULL, 0, (void* (*)(void*) )routine, arg, THR_DETACHED, &thread_id);
 #else
 	rval =
-		thr_create(NULL, 0, routine, arg, (THR_BOUND | THR_DETACHED),
+		thr_create(NULL, 0, (void* (*)(void*) ) routine, arg, (THR_BOUND | THR_DETACHED),
 				   &thread_id);
 #endif
 	(void) thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);

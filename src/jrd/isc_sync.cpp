@@ -115,7 +115,13 @@ static UCHAR *next_shared_memory;
 #if defined(FREEBSD) || defined(NETBSD) || defined(SINIXZ)
 #include <signal.h>
 #else
+#ifdef SOLARIS
+extern "C" {
 #include <sys/signal.h>
+};
+#else
+#include <sys/signal.h>
+#endif
 #endif
 
 #include <errno.h>
@@ -142,8 +148,10 @@ static UCHAR *next_shared_memory;
 #define SIGVEC		FPTR_INT
 #endif
 
-#ifdef HAVE_SIGACTION
+#ifdef HAVE_SIGACTION 
+#ifndef SOLARIS
 #define SIGVEC		struct sigaction
+#endif
 #endif
 
 #ifndef GDS_RELAY
@@ -504,7 +512,7 @@ int ISC_event_wait(SSHORT	count,
 				   EVENT*	events,
 				   SLONG*	values,
 				   SLONG	micro_seconds,
-				   void (*timeout_handler)(),
+				   FPTR_VOID timeout_handler,
 				   void*	handler_arg)
 {
 /**************************************
