@@ -97,6 +97,10 @@ SOURCE=..\..\..\src\jrd\cvt_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\db_alias.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dls_proto.h
 # End Source File
 # Begin Source File
@@ -270,6 +274,10 @@ SOURCE=..\..\..\src\jrd\alt.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\db_alias.cpp
 # End Source File
 # Begin Source File
 
