@@ -29,13 +29,18 @@
 /* possible symbol types */
 
 typedef ENUM sym_type {
-		SYM_statement,
-		SYM_cursor,
-		SYM_keyword,
-		SYM_context,
-		SYM_relation,
-		SYM_field,
-		SYM_stream, SYM_udf, SYM_procedure, SYM_intlsym, SYM_eof} SYM_TYPE;
+	SYM_statement,
+	SYM_cursor,
+	SYM_keyword,
+	SYM_context,
+	SYM_relation,
+	SYM_field,
+	SYM_stream,
+	SYM_udf,
+	SYM_procedure,
+	SYM_intlsym,
+	SYM_eof
+} SYM_TYPE;
 
 /* symbol block */
 
