@@ -550,7 +550,7 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Enable support for databases on raw devices
-        You can now use raw devices to store database. Exceptionally usable with database aliases
+        You can now use raw devices to store database. Especially usable with database aliases
       Contributor(s):
         Erik Kunze <erik.kunze at philosys.de>
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
