@@ -718,11 +718,25 @@ static void delivery_thread(void)
 					request->req_ast = NULL;
 				}
 			}
-		if (delivery_flag)
-			gds__thread_wait(TRUE, 0);
-		else
-			gds__thread_wait(FALSE, 0);
+		gds__thread_wait(delivery_wait, 0);
 	}
+}
+
+static int delivery_wait(void)
+{
+/**************************************
+ *
+ *	d e l i v e r y _ w a i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	See if the deliver thread should wake up.
+ *
+ **************************************/
+
+
+	return delivery_flag;
 }
 
 static ISC_STATUS error(ISC_STATUS * status_vector,
