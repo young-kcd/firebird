@@ -7,6 +7,11 @@
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
 
+    * Changed aggregate tracking behavior
+		Introduce backwards compatibilty within aggregates.  Deepest field inside aggregate determine where an aggregate-context should belong to.
+      Contributor(s):
+        Arno Brinkman <firebird@abvisie.nl>
+
     * Improved optimizer.
         Better optimizations of "complex" JOIN queries (LEFT JOIN, views, SPs, etc).
       Contributor(s):
@@ -101,7 +106,7 @@
       Contributor(s):
         Arno Brinkman <firebird@abvisie.nl>
 
-    * Fixed unregistered bug.
+    * Fixed Alpha 5 bug.
         Fixed FB XDR double representation for Linux server and client.
         This fixes numerous bugs with double precision columns and UDF's when using Linux server and Jaybird or Windows client.
       Contributor(s):
@@ -121,6 +126,7 @@
         Structures within Y-valve.
       Contributor(s):
         Alexander Peshkoff <peshkoff@hotmail.ru>
+		Nickolay Samofatov <skidder@bssys.com>
 
     * Comments improvement.
         Single-line comments (--) are now allowed in any position of the SQL statement.
