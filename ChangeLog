@@ -1,3 +1,9 @@
+2004-08-11 06:53  paul_reeves
+
+	* firebird2/doc/README.user.embedded (1.1.2.3):
+	
+	Amend notes on use of embedded library for Helen.
+
 2004-08-10 16:18  kkuznetsov
 
 	* firebird2/doc/README.install.Solaris_on_Intel (1.1.2.2):
