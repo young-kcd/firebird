@@ -15,6 +15,8 @@
 
 #ifdef HAVE_UNISTD_H
 #ifdef LINUX
+// prevent compiler warning
+#undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
 #endif
 #include <unistd.h>
