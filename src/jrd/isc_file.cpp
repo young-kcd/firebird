@@ -173,11 +173,6 @@ typedef struct itm {
 #define MTAB_CLOSE(stream)	pclose (stream)
 #endif
 
-#ifdef ultrix
-#include <sys/mount.h>
-#include <sys/fs_types.h>
-#endif
-
 #if (defined AIX || defined AIX_PPC)
 #include <sys/vmount.h>
 #endif
@@ -218,11 +213,7 @@ static void share_name_from_unc(TEXT *, TEXT *, LPREMOTE_NAME_INFO);
 #if (defined AIX || defined AIX_PPC)
 static BOOLEAN get_mounts(MNT *, TEXT *, TEXT **, int *);
 #else
-#ifdef ultrix
-static BOOLEAN get_mounts(MNT *, TEXT *, int *);
-#else
 static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
-#endif
 #endif
 static BOOLEAN get_server(TEXT *, TEXT *);
 
@@ -345,9 +336,6 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 	temp = NULL;
 	context = 0;
 
-#ifdef ultrix
-	while (get_mounts(&mount, mnt_buffer, &context))
-#else
 #if (defined AIX || defined AIX_PPC)
 	while (get_mounts(&mount, mnt_buffer, &temp, &context))
 #else
@@ -358,7 +346,6 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 		return flag;
 	}
 	while (get_mounts(&mount, mnt_buffer, mtab))
-#endif
 #endif
 	{
 		/* first, expand any symbolic links in the mount point */
@@ -426,10 +413,8 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 		flag = TRUE;
 	}
 
-#ifndef ultrix
 #if (!defined AIX && !defined AIX_PPC)
 	MTAB_CLOSE(mtab);
-#endif
 #endif
 
 #ifdef hpux
