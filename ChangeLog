@@ -1,3 +1,138 @@
+2003-02-25 19:34  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	bugfix: Fix FB1.5 optimizer bug which causes the server to crash.
+
+2003-02-25 17:46  dimitr
+
+	* firebird2/src/jrd/rse.h:
+	
+	Restored MAX_STREAMS to the original value.
+
+2003-02-25 14:21  brodsom
+
+	* firebird2/src/jrd/intl.cpp:
+	
+	snprintf is defined in autoconfig_msvc.h
+
+2003-02-25 14:14  brodsom
+
+	* firebird2/builds/win32/msvc6/intl.dsp:
+	
+	Add needed file (lost when the change was committed)
+
+2003-02-25 14:11  brodsom
+
+	* firebird2/builds/win32/msvc7/: remote_classic.vcproj,
+	isql.vcproj, remote.vcproj, gsplit.vcproj, fbserver.vcproj,
+	gbak.vcproj, gpre_boot.vcproj, fb_inet_server.vcproj,
+	fb_lock_print.vcproj, fbclient.vcproj, fbembed.vcproj,
+	fbguard.vcproj, dsql_server_classic.vcproj, engine.vcproj,
+	engine_classic.vcproj, burp.vcproj, burp_classic.vcproj,
+	dsql_server.vcproj:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
+
+2003-02-25 14:10  brodsom
+
+	* firebird2/builds/win32/msvc6/isql.dsp:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h. (and clean
+	dependency)
+
+2003-02-25 14:01  brodsom
+
+	* firebird2/builds/win32/msvc6/: remote_classic.dsp, gpre_boot.dsp,
+	gsplit.dsp, remote.dsp, fbserver.dsp, gbak.dsp, fbembed.dsp,
+	fbguard.dsp:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
+
+2003-02-25 13:55  brodsom
+
+	* firebird2/builds/win32/msvc6/: fb_lock_print.dsp, fbclient.dsp,
+	fb_inet_server.dsp, engine_classic.dsp, engine.dsp,
+	dsql_server.dsp, dsql_server_classic.dsp, burp_classic.dsp,
+	burp.dsp:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
+
+2003-02-25 13:49  brodsom
+
+	* firebird2/: src/extlib/fbudf/stdafx.h, builds/win32/blrtable.bat,
+	builds/win32/fbclient_boot.mak, builds/win32/gpre_boot.mak:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
+
+2003-02-25 13:43  brodsom
+
+	* firebird2/src/jrd/: flu.cpp, winnt.cpp:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h (and remove unused
+	tagBLOB_DEFINED)
+
+2003-02-25 13:39  brodsom
+
+	* firebird2/src/include/gen/autoconfig_msvc.h:
+	
+	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h
+
+2003-02-25 12:58  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added Beta 3 changes.
+
+2003-02-25 09:22  dimitr
+
+	* firebird2/builds/win32/msvc6/fbserver.dsp:
+	
+	Cleanup.
+
+2003-02-25 04:27  brodsom
+
+	* firebird2/src/iscguard/iscguard.cpp:
+	
+	process.h must be inside WIN_NT define (not inside _MSC_VER).
+
+2003-02-25 02:12  brodsom
+
+	* firebird2/configure.in:
+	
+	Add some needed directories
+
+2003-02-25 02:11  brodsom
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h:
+	
+	Restore inlines
+
+2003-02-25 01:46  brodsom
+
+	* firebird2/src/jrd/intl.cpp:
+	
+	Restore intl_backend as intl_builtin (needed by Nickolay)
+
+2003-02-25 01:05  brodsom
+
+	* firebird2/src/jrd/: why.cpp, block_cache.h, jrd.cpp:
+	
+	Restore inlines
+
+2003-02-25 01:01  brodsom
+
+	* firebird2/src/: alice/alice.cpp, common/config/config_impl.h,
+	dsql/user_dsql.cpp, dsql/ddl.cpp, dsql/dsql.h:
+	
+	Restore inlines
+
+2003-02-25 00:55  brodsom
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp:
+	
+	Restore inlines
+
 2003-02-24 21:54  hippoman
 
 	* firebird2/src/jrd/shrinit.cpp:
