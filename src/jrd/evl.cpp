@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.30 2003-02-16 11:39:22 brodsom Exp $ 
+  * $Id: evl.cpp,v 1.31 2003-02-16 16:55:57 alexpeshkoff Exp $ 
  */
 
 /*
@@ -1234,11 +1234,11 @@ BOOLEAN DLL_EXPORT EVL_field(JRD_REL relation,
 
 			if (temp_field)
 			{
-				const NOD_T temp_nod_type =
-					temp_field->fld_default_value->nod_type;
-
 				if (temp_field->fld_default_value && temp_field->fld_not_null)
 				{
+					const NOD_T temp_nod_type =
+						temp_field->fld_default_value->nod_type;
+
 					if (temp_nod_type == nod_user_name ||
 					    temp_nod_type == nod_current_role)
 					{
