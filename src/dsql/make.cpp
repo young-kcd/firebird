@@ -1177,10 +1177,11 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 	// Initialize values.
 	UCHAR max_dtype = 0;
 	SCHAR max_scale = 0;
-	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0;
+	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0, max_significant_digits = 0;
 	SSHORT max_sub_type = 0, first_sub_type, ttype = ttype_ascii; // default type if all nodes are nod_null.
-	bool firstarg = true, all_same_sub_type = true;
-	bool all_numeric = true, any_numeric = false, any_approx = false;
+	SSHORT max_numeric_sub_type = 0;
+	bool firstarg = true, all_same_sub_type = true, all_equal = true;
+	bool all_numeric = true, any_numeric = false, any_approx = false, any_float = false;
 	bool all_text = true, any_text = false, any_varying = false;
 	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
 	bool all_blob = true, any_blob = false, any_text_blob = false;
@@ -1217,6 +1218,15 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 			max_dtype = desc1.dsc_dtype;
 			firstarg = false;
 		}
+		else {
+			if (all_equal) {
+				all_equal = 
+					(max_dtype == desc1.dsc_dtype) &&
+					(max_scale == desc1.dsc_scale) && 
+					(max_length == desc1.dsc_length) && 
+					(max_sub_type == desc1.dsc_sub_type);
+			}
+		}
 
 		// numeric datatypes :
 		if (DTYPE_IS_NUMERIC(desc1.dsc_dtype)) {
@@ -1224,6 +1234,15 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 			// Is there any approximate numeric?
 			if (DTYPE_IS_APPROX(desc1.dsc_dtype)) {
 				any_approx = true;
+				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types 
+				// 1 and 2 from float types dtype_real, dtype_double
+				if (!any_float) {
+					any_float = (desc1.dsc_sub_type == 0);
+				}
+			}
+			//
+			if (desc1.dsc_sub_type > max_numeric_sub_type) {
+				max_numeric_sub_type = desc1.dsc_sub_type;
 			}
 		}
 		else {
@@ -1237,6 +1256,10 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 		}
 		if (desc1.dsc_length > max_length) {
 			max_length = desc1.dsc_length;
+		}
+		// Get max significant bits
+		if (type_significant_bits[desc1.dsc_dtype] > max_significant_digits) {
+			max_significant_digits = type_significant_bits[desc1.dsc_dtype];
 		}
 		// Get max dtype and sub_type
 		if (desc1.dsc_dtype > max_dtype) {
@@ -1357,6 +1380,16 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 	}
 
 	desc->dsc_flags = DSC_nullable;
+
+	// If all the datatypes we've seen are exactly the same, we're done
+	if (all_equal) {
+		desc->dsc_dtype = max_dtype;
+		desc->dsc_length = max_length;
+		desc->dsc_scale = max_scale;
+		desc->dsc_sub_type = max_sub_type;
+		return;
+	}
+
 	// If all of the arguments are from type text use a text type.
 	// Firebird behaves a little bit different than standard here, because
 	// any datatype (except BLOB) can be converted to a character-type we
@@ -1378,7 +1411,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 	else if (all_numeric) {
 		// If all of the arguments are a numeric datatype.
 		if (any_approx) {
-			if (max_length <= type_lengths[dtype_real]) {
+			if (max_significant_digits <= type_significant_bits[dtype_real]) {
 				desc->dsc_dtype = dtype_real;
 				desc->dsc_length = type_lengths[desc->dsc_dtype];
 			}
@@ -1386,13 +1419,19 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 				desc->dsc_dtype = dtype_double;
 				desc->dsc_length = type_lengths[desc->dsc_dtype];
 			}
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
+			if (any_float) {
+				desc->dsc_scale = 0;
+				desc->dsc_sub_type = 0;
+			}
+			else {
+				desc->dsc_scale = max_scale;
+				desc->dsc_sub_type = max_numeric_sub_type;
+			}
 		}
 		else {
 			desc->dsc_dtype = max_dtype;
 			desc->dsc_length = max_dtype_length;
-			desc->dsc_sub_type = max_sub_type;
+			desc->dsc_sub_type = max_numeric_sub_type;
 			desc->dsc_scale = max_scale;
 		}
 		return;

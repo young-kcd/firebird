@@ -126,5 +126,30 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	sizeof(SINT64)				/* dtype_int64 */
 };
 
+
+// float, double are numbers from IEEE floating-point standard (IEEE 754)
+static const USHORT type_significant_bits[DTYPE_TYPE_MAX] = {
+	0,
+	0,							/* dtype_text */
+	0,							/* dtype_cstring */
+	0,							/* dtype_varying */
+	0,							/* unused */
+	0,							/* unused */
+	0,							/* dtype_packed */
+	sizeof(SCHAR) * 8,			/* dtype_byte */
+	sizeof(SSHORT) * 8,			/* dtype_short */
+	sizeof(SLONG) * 8,			/* dtype_long */
+	sizeof(ISC_QUAD) * 8,		/* dtype_quad */
+	23,							/* dtype_real,  23 sign. bits = 7 sign. digits */
+	52,							/* dtype_double,  52 sign. bits = 15 sign. digits */
+	52,							/* dtype_d_float,  52 sign. bits = 15 sign. digits */
+	sizeof(GDS_DATE) * 8,		/* dtype_sql_date */
+	sizeof(GDS_TIME) * 8,		/* dtype_sql_time */
+	sizeof(GDS_TIMESTAMP) * 8,	/* dtype_timestamp */
+	sizeof(ISC_QUAD) * 8,		/* dtype_blob */
+	sizeof(ISC_QUAD) * 8,		/* dtype_array */
+	sizeof(SINT64) * 8			/* dtype_int64 */
+};
+
 #endif /* JRD_ALIGN_H */
 
