@@ -32,11 +32,12 @@
  *  - fix Windows CS lock-ups (make wakeup event manual-reset)
  *  - detect deadlocks instantly in most cases (if blocking owner 
  *     dies during AST processing deadlock scan timeout still applies)
+ * 2003.04.29 Nickolay Samofatov - fix broken lock table resizing code in CS builds
  *
  */
 
 /*
-$Id: lock.cpp,v 1.48 2003-04-17 10:15:48 aafemt Exp $
+$Id: lock.cpp,v 1.49 2003-04-29 18:42:55 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1478,9 +1479,11 @@ static void acquire( PTR owner_offset)
 		) {
 
 		length = LOCK_header->lhb_length;
-/* Do not do Lock table remapping for SUPERSERVER. Specify required
-   lock table size in the configuration file */
-#if !defined SUPERSERVER && defined HAVE_MMAP
+/* We do not do Lock table remapping here for SuperServer because 
+  we have only one address space and we do not need to adjust our
+  mapping because another process has changed size of the lock table.
+*/
+#if !defined SUPERSERVER && (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY status_vector;
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
@@ -1491,6 +1494,7 @@ static void acquire( PTR owner_offset)
 			return;
 		}
 		LOCK_header = header;
+		LOCK_owner = (OWN)ABS_PTR(LOCK_owner_offset);
 	}
 
 /* If we were able to acquire the MUTEX, but there is an prior owner marked
@@ -1597,14 +1601,18 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
 
 	if (LOCK_header->lhb_used > LOCK_header->lhb_length) {
 		LOCK_header->lhb_used -= size;
-/* Do not do Lock table remapping for SUPERSERVER. Specify required
-   lock table size in the configuration file */
-#if !defined SUPERSERVER && defined HAVE_MMAP
+/* We do not do Lock table remapping for SuperServer on non-Windows platforms
+  mainly because it is not tested and is not really needed as long SS builds
+  do not use lock manager for page locks. On all other platforms we grow
+  lock table automatically.
+*/
+#if defined WIN_NT || (!defined SUPERSERVER && defined HAVE_MMAP)
 		ULONG length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
 		LHB header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
 		if (header) {
 			LOCK_header = header;
+			LOCK_owner = (OWN)ABS_PTR(LOCK_owner_offset);
 			ASSERT_ACQUIRED;
 			LOCK_header->lhb_length = LOCK_data.sh_mem_length_mapped;
 			LOCK_header->lhb_used += size;
