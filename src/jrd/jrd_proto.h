@@ -25,7 +25,7 @@
 #ifndef JRD_JRD_PROTO_H
 #define JRD_JRD_PROTO_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 namespace Jrd {
 	class Attachment;

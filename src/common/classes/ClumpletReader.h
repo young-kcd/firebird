@@ -31,13 +31,14 @@
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 namespace Firebird {
 
 // This class provides read access for clumplet structure
 // Note: it doesn't make a copy of buffer it reads
-class ClumpletReader : protected AutoStorage {
+class ClumpletReader : protected AutoStorage
+{
 public:
 	ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLen);
 

@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #include <ctype.h>
 

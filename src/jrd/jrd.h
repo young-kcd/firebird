@@ -42,7 +42,7 @@
 #endif
 
 #include "../include/fb_vector.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"

@@ -24,7 +24,7 @@
 #ifndef REMOTE_WNET_PROTO_H
 #define REMOTE_WNET_PROTO_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #ifdef __cplusplus
 extern "C" {

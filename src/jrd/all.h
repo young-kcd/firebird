@@ -28,7 +28,7 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 void ALL_fini(void);
 void ALL_init(void);

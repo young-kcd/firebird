@@ -28,7 +28,7 @@
 #ifndef JRD_OS_MOD_LOADER_H
 #define JRD_OS_MOD_LOADER_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 /***
 	The ModuleLoader class is an abstraction of the dynamic code loading

@@ -24,7 +24,7 @@
 #define CONFIG_IMPL_H
 
 #include "fb_types.h"
-#include "fb_string.h"
+#include "../../common/classes/fb_string.h"
 
 #include "../../common/config/config.h"
 #include "../../common/config/config_file.h"

@@ -32,7 +32,7 @@
 #endif
 
 #include "fb_types.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"

@@ -36,7 +36,7 @@
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 #ifndef SUPERCLIENT
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 #include "../jrd/jrd_pwd.h"
 #endif
 

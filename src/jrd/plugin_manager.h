@@ -28,7 +28,7 @@
 #define JRD_PLUGIN_MANAGER_H
 
 #include "../jrd/os/mod_loader.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"

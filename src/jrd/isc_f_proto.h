@@ -27,7 +27,7 @@
 #ifndef JRD_ISC_FILE_PROTO_H
 #define JRD_ISC_FILE_PROTO_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #ifndef NO_NFS
 bool		ISC_analyze_nfs(Firebird::PathName&, Firebird::PathName&);

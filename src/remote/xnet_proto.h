@@ -26,7 +26,7 @@
 #ifndef REMOTE_XNET_PROTO_H
 #define REMOTE_XNET_PROTO_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #ifdef NO_PORT
 #define rem_port void

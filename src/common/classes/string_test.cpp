@@ -11,7 +11,7 @@ char lbl[] = "0123456789";
 
 #ifdef FIRESTR
 #define NAME "Firebird::string"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 using namespace Firebird;
 #else

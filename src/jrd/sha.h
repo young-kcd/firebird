@@ -24,7 +24,7 @@
 #define JRD_OS_SHA_H
 
 #include "firebird.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 namespace Jrd 
 {

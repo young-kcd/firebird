@@ -37,7 +37,7 @@
 #include "../../common/classes/alloc.h"
 #include "../../common/classes/fb_pair.h"
 #include "../../common/classes/objects_array.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and

@@ -23,7 +23,7 @@
 #ifndef COMMON_CONFIG_H
 #define COMMON_CONFIG_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 #include "fb_vector.h"
 #include "../jrd/os/path_utils.h"
 

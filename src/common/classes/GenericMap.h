@@ -29,7 +29,7 @@
 #ifndef STRINGMAP_H
 #define STRINGMAP_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/tree.h"
 

@@ -28,8 +28,8 @@
 #ifndef JRD_OS_PATH_UTILS_H
 #define JRD_OS_PATH_UTILS_H
 
-#include "fb_string.h"
-#include "../common/classes/alloc.h"
+#include "../common/classes/fb_string.h"
+#include "../../common/classes/alloc.h"
 
 
 /** This is a utility class that provides a platform independent way to do some

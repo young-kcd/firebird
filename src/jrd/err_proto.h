@@ -24,7 +24,7 @@
 #ifndef JRD_ERR_PROTO_H
 #define JRD_ERR_PROTO_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #ifndef REQUESTER
 

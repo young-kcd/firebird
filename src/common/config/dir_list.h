@@ -23,7 +23,7 @@
 #define CONFIG_DIR_LIST_H
 
 #include "fb_types.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 #include "../common/config/config_file.h"
 
 namespace Firebird {

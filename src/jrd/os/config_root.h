@@ -27,7 +27,7 @@
 #define CONFIG_ROOT_H
 
 #include "fb_types.h"
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 #include "../jrd/os/path_utils.h"
 

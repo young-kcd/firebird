@@ -28,7 +28,7 @@
 #ifndef INCLUDE_UTILS_PROTO_H
 #define INCLUDE_UTILS_PROTO_H
 
-#include "fb_string.h"
+#include "../common/classes/fb_string.h"
 
 namespace fb_utils
 {
