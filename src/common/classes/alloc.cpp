@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.74 2004-11-24 09:05:10 robocop Exp $
+ *  $Id: alloc.cpp,v 1.75 2004-12-17 11:12:58 alexpeshkoff Exp $
  *
  */
 
@@ -240,8 +240,19 @@ MemoryPool* MemoryPool::getContextPool()
 // Initialize default stats group
 MemoryStats MemoryPool::default_stats_group;
 
-// Initialize process memory pool to avoid possible race conditions
-MemoryPool* MemoryPool::processMemoryPool = MemoryPool::createPool();
+// Initialize process memory pool to avoid possible race conditions.
+// At this point also set contextMemoryPool for main thread (or all
+// process in case of no threading).
+namespace {
+	MemoryPool* createProcessMemoryPool()
+	{
+		MemoryPool* p = MemoryPool::createPool();
+		fb_assert(p);
+		MemoryPool::setContextPool(p);
+		return p;
+	}
+} // anonymous namespace
+MemoryPool* MemoryPool::processMemoryPool = createProcessMemoryPool();
 
 
 void MemoryPool::setStatsGroup(MemoryStats &statsL)

@@ -29,7 +29,7 @@
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
- *  $Id: alloc.h,v 1.56 2004-11-24 09:05:11 robocop Exp $
+ *  $Id: alloc.h,v 1.57 2004-12-17 11:12:58 alexpeshkoff Exp $
  *
  */
 
@@ -432,8 +432,6 @@ using Firebird::MemoryPool;
 
 inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::processMemoryPool; }
 
-MemoryPool* getContextMemoryPool();
-
 // Global versions of operator new()
 // Implemented in alloc.cpp
 void* operator new(size_t) THROW_BAD_ALLOC;
@@ -580,7 +578,11 @@ namespace Firebird
 		void ProbeStack() const;
 #endif
 	public:
-		static MemoryPool& getAutoMemoryPool() { return *getDefaultMemoryPool(); }
+		static MemoryPool& getAutoMemoryPool() { 
+			MemoryPool* p = MemoryPool::getContextPool();
+			fb_assert(p);
+			return *p; 
+		}
 	protected:
 		AutoStorage() : PermanentStorage(getAutoMemoryPool()) {
 #if defined(DEV_BUILD)

@@ -615,19 +615,26 @@ void THD_yield(void)
 #endif /* ANY_THREADING */
 }
 
+namespace 
+{
+
 #ifdef THREAD_PSCHED
-static THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
-	ThreadPriorityScheduler* tps = 
-		reinterpret_cast<ThreadPriorityScheduler*>(arg);
-	try {
-		tps->run();
-	}
-	catch (...) {
+THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
+	fb_assert(arg);
+	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
+	{
+		ThreadPriorityScheduler* tps = 
+			reinterpret_cast<ThreadPriorityScheduler*>(arg);
+		try {
+			tps->run();
+		}
+		catch (...) {
+			tps->detach();
+			throw;
+		}
 		tps->detach();
-		throw;
+		return 0;
 	}
-	tps->detach();
-	return 0;
 }
 
 #define THREAD_ENTRYPOINT threadStart
@@ -637,10 +644,43 @@ static THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 
 // due to same names of parameters for various ThreadData::start(...),
 // we may use common macro for various platforms
-#define THREAD_ENTRYPOINT reinterpret_cast<THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *) (THREAD_ENTRY_PARAM)>(routine)
-#define THREAD_ARG reinterpret_cast<THREAD_ENTRY_PARAM>(arg)
+#define THREAD_ENTRYPOINT threadStart
+#define THREAD_ARG reinterpret_cast<THREAD_ENTRY_PARAM> (FB_NEW(*getDefaultMemoryPool()) \
+		ThreadArgs(reinterpret_cast<THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *) (THREAD_ENTRY_PARAM)>(routine), \
+		reinterpret_cast<THREAD_ENTRY_PARAM>(arg)))
+
+class ThreadArgs
+{
+public:
+	typedef THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *Routine) (THREAD_ENTRY_PARAM);
+	typedef THREAD_ENTRY_PARAM Arg;
+private:
+	Routine routine;
+	Arg arg;
+public:
+	ThreadArgs(Routine r, Arg a) : routine(r), arg(a) { }
+	ThreadArgs(const ThreadArgs* t) : routine(t->routine), arg(t->arg) { }
+	void run() {routine(arg);}
+private:
+	operator ThreadArgs();
+	ThreadArgs& operator=(const ThreadArgs&);
+};
+
+THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
+	fb_assert(arg);
+	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
+	{
+		ThreadArgs localArgs(reinterpret_cast<ThreadArgs*>(arg));
+		delete arg;
+		localArgs.run();
+		return 0;
+	}
+}
 
 #endif //THREAD_PSCHED
+
+} // anonymous namespace 
+
 
 #ifdef ANY_THREADING
 #ifdef USE_POSIX_THREADS
