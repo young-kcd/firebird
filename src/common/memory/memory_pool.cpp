@@ -33,7 +33,9 @@
 // Microsoft... sigh...
 #define for if (0) {} else for
 #endif
-
+#include "../../include/firebird.h"
+#include "../../jrd/common.h"
+ 
 #include "../../include/fb_exception.h"
 #include "../../jrd/smp_impl.h"
 #include "../../common/memory/memory_pool.h"
@@ -75,6 +77,9 @@ static const int  BEFORE_RED_ZONE_SIZE = 3;		// The size of the red zone BEFORE 
 												//  0 if red zones are disabled.
 static const int AFTER_RED_ZONE_SIZE = 3;		// The size of the red zone AFTER the memory,
 												//  in ALLOCATION UNITS!  Does NOT need to be set to
+#if (defined SOLARIS )
+ extern  UCHAR*        mmap_anon(SLONG);
+#endif
 												//  0 if red zones are disabled.
 
 // Helper function to reduce code size, since many compilers
@@ -1680,7 +1685,12 @@ SLONG FBMemoryPool::mmap_free(void* mem)
 #endif  // NETWARE
 
 #ifdef UNIX
+#if (defined SOLARIS )
+/* Fixed compile error here*/
+	if (munmap(caddr_t(mem), length) == -1) {
+#else
 	if (munmap(mem, length) == -1) {
+#endif
 		globalAllocLock.release();
 		pool_out_of_memory();
 	}
