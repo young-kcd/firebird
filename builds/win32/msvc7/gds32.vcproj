@@ -46,7 +46,7 @@
 				OutputFile="release/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\gds32.def"
+				ModuleDefinitionFile="..\gds32.def"
 				ProgramDatabaseFile=".\release\gds32/gds32.pdb"
 				ImportLibrary=".\release\gds32/gds32.lib"/>
 			<Tool
@@ -103,7 +103,7 @@
 				OutputFile="debug/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\gds32_debug.def"
+				ModuleDefinitionFile="..\gds32_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\gds32/gds32.pdb"
 				ImportLibrary=".\debug\gds32/gds32.lib"/>
@@ -161,7 +161,7 @@
 				OutputFile="debug/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\gds32_debug.def"
+				ModuleDefinitionFile="..\gds32_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\gds32/gds32.pdb"
 				ImportLibrary=".\debug\gds32/gds32.lib"/>

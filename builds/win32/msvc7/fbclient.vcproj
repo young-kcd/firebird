@@ -43,7 +43,7 @@
 				OutputFile="debug/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\fbclient_debug.def"
+				ModuleDefinitionFile="..\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\fbclient/fbclient.pdb"
 				ImportLibrary=".\debug\fbclient/fbclient.lib"/>
@@ -106,7 +106,7 @@
 				OutputFile="release/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\fbclient.def"
+				ModuleDefinitionFile="..\fbclient.def"
 				ProgramDatabaseFile=".\release\fbclient/fbclient.pdb"
 				ImportLibrary=".\release\fbclient/fbclient.lib"/>
 			<Tool
@@ -164,7 +164,7 @@
 				OutputFile="debug/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\fbclient_debug.def"
+				ModuleDefinitionFile="..\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\debug\fbclient/fbclient.pdb"
 				ImportLibrary=".\debug\fbclient/fbclient.lib"/>
@@ -228,8 +228,7 @@
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
@@ -245,9 +244,6 @@
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc_sync_win32.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_win32.cpp">

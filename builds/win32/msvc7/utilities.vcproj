@@ -161,9 +161,6 @@
 				Name="epp files"
 				Filter="epp">
 				<File
-					RelativePath="..\..\..\src\utilities\dba.epp">
-				</File>
-				<File
 					RelativePath="..\..\..\src\utilities\rmet.epp">
 				</File>
 				<File

@@ -225,6 +225,9 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\..\..\src\utilities\dba.epp">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
