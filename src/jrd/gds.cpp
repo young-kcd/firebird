@@ -390,7 +390,7 @@ static void		init(void);
 static int		yday(struct tm *);
 
 /*#if (defined SOLARIS )
-//static UCHAR*	mmap_anon(SLONG);
+static UCHAR*	mmap_anon(SLONG);
 #endif
 */
 static void		ndate(SLONG, struct tm *);
@@ -4674,7 +4674,7 @@ static int yday(struct tm *times)
 
 
 #if (defined SOLARIS )
-static UCHAR *mmap_anon(SLONG size)
+UCHAR *mmap_anon(SLONG size)
 {
 /**************************************
  *
