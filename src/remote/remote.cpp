@@ -61,16 +61,11 @@ static struct ipccfg INET_cfgtbl[] = {
 static void cleanup_memory(void *);
 static SLONG get_parameter(UCHAR **);
 
-#ifndef HAVE_RPC_XDR_H
-
 #ifdef SHLIB_DEFS
 #define xdrmem_create	(*_libgds_xdrmem_create)
 #endif
 
-
 extern int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
-#endif //have native xdr
-
 extern void DLL_EXPORT THD_init_data();
 
 

@@ -29,6 +29,9 @@
 #ifndef REMOTE_REMOTE_H
 #define REMOTE_REMOTE_H
 
+#include "../jrd/common.h"
+#include "../remote/remote_def.h"
+#include "../jrd/thd_proto.h"
 
 /* Include some apollo include files for tasking */
 
@@ -39,36 +42,6 @@
 #include <sys/ioctl.h>
 #endif /* !VMS || !WIN_NT */
 
-#ifdef HAVE_RPC_RPC_H
-#include <rpc/rpc.h>
-#endif
-
-#ifdef HAVE_NETCONFIG_H
-#include <netconfig.h>
-#endif
-
-#ifdef HAVE_RPC_XDR_H
-
-#include <rpc/xdr.h>
-
-/* moved borland types from ./xdr.h */
-#define XDR_INT     int
-typedef XDR    xdr_t;
-#ifdef SOLARIS
-typedef   enum_t xrd_enum_type; 
-#else
-typedef    xdr_op xdr_enum_type;
-#endif
-//#define enum_t  enum xdr_op
-
-#else
-#include "../remote/xdr.h"
-
-#endif //have native xdr 
-
-#include "../jrd/common.h"
-#include "../remote/remote_def.h"
-#include "../jrd/thd_proto.h"
 
 #ifdef DEV_BUILD
 /* Debug packet/XDR memory allocation */
@@ -332,6 +305,7 @@ enum blk_t
 };
 
 
+#include "../remote/xdr.h"
 
 
 /* Generalized port definition. */
