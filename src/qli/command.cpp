@@ -44,8 +44,6 @@
 static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
 static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
 
-extern USHORT QLI_lines, QLI_columns, QLI_form_mode, QLI_name_columns;
-
 #ifdef NOT_USED_OR_REPLACED
 static SCHAR db_items[] =
 	{ gds_info_page_size, gds_info_allocation, gds_info_end };

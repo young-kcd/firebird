@@ -37,8 +37,6 @@
 #include "../qli/meta_proto.h"
 #include "../qli/show_proto.h"
 
-extern USHORT QLI_columns, QLI_lines;
-
 static bool compare_names(const nam*, const qli_symbol*);
 static bool compare_symbols(const qli_symbol*, const qli_symbol*);
 static qli_symbol* copy_symbol(const qli_symbol*);

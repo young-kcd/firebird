@@ -48,8 +48,6 @@
 DATABASE DB = FILENAME "yachts.lnk";
 DATABASE DB1 = FILENAME "yachts.lnk";
 
-extern USHORT sw_buffers;
-
 static void add_field(qli_rel*, qli_fld*, USHORT);
 static void add_sql_field(qli_rel*, qli_fld*, USHORT, qli_rlb*);
 static void blob_copy(qli_rlb*, qli_rel*, ISC_QUAD*);

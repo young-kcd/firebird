@@ -65,23 +65,6 @@ const char* STARTUP_FILE	= "HOME";	// Assume its Unix
 #define SIGPIPE		SIGINT
 #endif
 
-// Program wide globals 
-
-jmp_buf QLI_env;					// Error return environment 
-
-TEXT *QLI_error;
-bool sw_verify;
-bool sw_trace;
-USHORT sw_buffers;
-USHORT QLI_lines = 60, QLI_prompt_count, QLI_reprompt, QLI_name_columns = 0;
-
-// Let's define the default number of columns on a machine by machine basis 
-
-#ifdef VMS
-USHORT QLI_columns = 80;
-#else
-USHORT QLI_columns = 80;
-#endif
 
 extern TEXT *QLI_prompt;
 
@@ -145,6 +128,14 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
+// Let's define the default number of columns on a machine by machine basis 
+#ifdef VMS
+	QLI_columns = 80;
+#else
+	QLI_columns = 80;
+#endif
+	QLI_lines = 60;
+	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
 	QLI_matching_language = 0;
 	QLI_default_user[0] = 0;

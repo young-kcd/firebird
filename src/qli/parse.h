@@ -84,17 +84,5 @@ struct qli_line {
     TEXT		line_source_name[2];
 };
 
-#ifdef PARSER_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
-
-EXTERN qli_tok*		QLI_token;
-EXTERN qli_line*	QLI_line;
-EXTERN TEXT*		QLI_prompt;
-
-#undef EXTERN
-
 #endif // QLI_PARSE_H
 

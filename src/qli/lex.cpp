@@ -66,9 +66,6 @@ static const char* SCRATCH		= "fb_query_";
 
 const char* FOPEN_INPUT_TYPE	= "r";
 
-extern bool sw_verify;
-extern bool sw_trace;
-
 static bool get_line(FILE *, TEXT *, USHORT);
 static int nextchar(const bool);
 static void next_line(const bool);

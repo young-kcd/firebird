@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#define REQUESTS_MAIN
 #include "../jrd/ibase.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
@@ -54,10 +53,6 @@
 #endif
 
 const char* FOPEN_WRITE_TYPE	= "w";
-
-extern jmp_buf QLI_env;
-
-extern USHORT QLI_prompt_count, QLI_reprompt;
 
 static DSC *assignment(qli_nod*, DSC *, qli_nod*, qli_nod*, qli_par*);
 static void commit_retaining(qli_nod*);

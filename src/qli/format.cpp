@@ -39,8 +39,6 @@
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
 
-extern USHORT QLI_columns, QLI_lines;
-
 #ifdef DEV_BUILD
 //extern bool QLI_hex_output; decl already done in dtr.h
 

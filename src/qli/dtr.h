@@ -465,6 +465,7 @@ struct qli_fun {
 };
 
 // Program wide globals 
+#include <setjmp.h>
 
 #ifdef QLI_MAIN
 #define EXTERN
@@ -473,24 +474,58 @@ struct qli_fun {
 #endif
 
 EXTERN DBB	QLI_databases;
-EXTERN PLB	QLI_permanent_pool, QLI_default_pool;
+EXTERN PLB	QLI_permanent_pool;
+EXTERN PLB	QLI_default_pool;
 EXTERN qli_fld*	QLI_variables;
-EXTERN TEXT	QLI_prompt_string [32], QLI_cont_string [32];
-EXTERN TEXT	QLI_default_user [32], QLI_default_password [32];
+EXTERN TEXT	QLI_prompt_string [32];
+EXTERN TEXT	QLI_cont_string [32];
+EXTERN TEXT	QLI_default_user [32];
+EXTERN TEXT	QLI_default_password [32];
 EXTERN TEXT	QLI_charset [32];
 EXTERN qli_const*	QLI_matching_language;
 
 //EXTERN USHORT	QLI_eof;
-EXTERN bool		QLI_blr, QLI_skip_line, QLI_statistics, QLI_semi;
-EXTERN bool		QLI_abort, QLI_echo, QLI_trace;
+EXTERN bool		QLI_blr;
+EXTERN bool		QLI_skip_line;
+EXTERN bool		QLI_statistics;
+EXTERN bool		QLI_semi;
+EXTERN bool		QLI_abort;
+EXTERN bool		QLI_echo;
+EXTERN bool		QLI_trace;
 EXTERN USHORT	QLI_count;
 #ifdef DEV_BUILD
 EXTERN bool		QLI_explain;
 EXTERN bool		QLI_hex_output;
 #endif
 
+EXTERN jmp_buf QLI_env;					// Error return environment 
+
+EXTERN TEXT *QLI_error;
+EXTERN bool sw_verify;
+EXTERN bool sw_trace;
+EXTERN USHORT sw_buffers;
+EXTERN USHORT QLI_lines;
+EXTERN USHORT QLI_prompt_count;
+EXTERN USHORT QLI_reprompt;
+EXTERN USHORT QLI_name_columns;
+EXTERN USHORT QLI_columns;
+EXTERN USHORT QLI_form_mode;
+
 //EXTERN USHORT   QLI_euc_justify;
 //EXTERN USHORT   QLI_interp;
+
+#include "parse.h"
+
+// from parse.h
+EXTERN qli_tok*		QLI_token;
+EXTERN qli_line*	QLI_line;
+EXTERN TEXT*		QLI_prompt;
+
+#include "exe.h"
+
+// from exe.h 
+EXTERN qli_req*	QLI_requests;			// Requests in statement 
+
 
 #undef EXTERN
 

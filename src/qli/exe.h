@@ -369,17 +369,5 @@ const int e_syn_statement	= 0;
 const int e_syn_send		= 1;
 const int e_syn_count		= 2;
 
-// A Program global or two 
-
-#ifdef REQUESTS_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
-
-EXTERN qli_req*	QLI_requests;			// Requests in statement 
-
-#undef EXTERN
-
 #endif // QLI_EXE_H
 

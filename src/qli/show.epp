@@ -41,8 +41,6 @@
 #include "../common/utils_proto.h"
 
 
-extern USHORT QLI_columns, QLI_name_columns;
-
 static void array_dimensions(DBB, const TEXT*);
 static void display_acl(DBB, ISC_QUAD*);
 static void display_blob(DBB, ISC_QUAD*, const TEXT*, USHORT, const UCHAR*, bool);

@@ -39,7 +39,6 @@
 #include "../jrd/utl_proto.h"
 
 
-extern USHORT QLI_prompt_count, QLI_reprompt;
 static SLONG execute_any(qli_nod*);
 static DSC* execute_concatenate(qli_nod*, const dsc*, const dsc*);
 static DSC* execute_edit(qli_nod*);

@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define PARSER_MAIN
 #include "../qli/dtr.h"
 #include "../qli/exe.h"			// This is only included to suppress a compiler warning
 #include "../qli/parse.h"

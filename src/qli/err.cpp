@@ -34,9 +34,6 @@
 #include "../qli/lex_proto.h"
 #include "../jrd/gds_proto.h"
 
-extern TEXT *QLI_error;
-extern jmp_buf QLI_env;
-
 static TEXT ERRQ_message[256];
 
 void ERRQ_bugcheck( USHORT number)
