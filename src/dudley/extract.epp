@@ -1766,7 +1766,7 @@ static int name_trunc(TEXT * in, TEXT * out)
 	TEXT *start;
 
 	if (!in || *in == ' ')
-		return NULL;
+		return 0; //return NULL
 
 	start = out;
 
