@@ -37,7 +37,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
 		jrd.cpp lck.cpp log.cpp  \
-		mov.cpp nav.cpp opt.cpp pag.cpp par.cpp \
+		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		plugin_manager.cpp pwd.cpp rlck.cpp \
 		rng.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
