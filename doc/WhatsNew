@@ -71,7 +71,7 @@
         Dmitry Yemanov <yemanov@yandex.ru>
 
     * Fixed Alpha 5 bug.
-        SAVEPOINT-related statements are allowed in PSQL via EXECUTE STATEMENT.
+        SAVEPOINT-related statements were allowed in PSQL via EXECUTE STATEMENT.
       Contributor(s):
         Dmitry Yemanov <yemanov@yandex.ru>
 
