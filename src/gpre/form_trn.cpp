@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: form_trn.cpp,v 1.4 2003-02-27 16:05:00 brodsom Exp $
+//  $Id: form_trn.cpp,v 1.5 2003-02-28 01:08:44 brodsom Exp $
 //  Revision 1.3  2000/11/29 11:11:56  fsg
 //  Added some more PYXIS datatypes to form_trn.c
 //  
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: form_trn.cpp,v 1.4 2003-02-27 16:05:00 brodsom Exp $
+//	$Id: form_trn.cpp,v 1.5 2003-02-28 01:08:44 brodsom Exp $
 //
 #ifdef PYXIS
 
