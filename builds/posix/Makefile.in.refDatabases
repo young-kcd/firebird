@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.6 2002-10-07 01:29:09 skywalker Exp $
+#  $Id: Makefile.in.refDatabases,v 1.7 2002-10-11 21:41:06 skywalker Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
@@ -102,7 +102,7 @@ isc4.gdb:	$(FIREBIRD)/isc4.gdb
 	ln -fs $^ $@
 
 $(FIREBIRD)/isc4.gdb:	$(SRC_ROOT)/misc/isc4.gbak
-	$(BIN)/gbak_static -MODE read_only -R $< $@
+	$(BIN)/gbak_static  -R $< $@
 	touch $@
 	chmod 444 $@
 
