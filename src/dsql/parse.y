@@ -2900,10 +2900,10 @@ nulls_clause : NULLS begin_first nulls_placement end_first
 		;
 
 rows_clause	: ROWS value
-			// equivalent to FIRST value
+			/* equivalent to FIRST value */
 			{ $$ = make_node (nod_rows, (int) e_rows_count, NULL, $2); }
 		| ROWS value TO value
-			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
+			/* equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1) */
 			{ $$ = make_node (nod_rows, (int) e_rows_count,
 				make_node (nod_subtract, 2, $2,
 					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)),
