@@ -32,16 +32,16 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.40 2004-03-02 08:43:33 eku Exp $
+ *  $Id: alloc.cpp,v 1.41 2004-03-02 20:23:32 skidder Exp $
  *
  */
 
 #include "../../include/firebird.h"
 #include "alloc.h"
+#ifdef HAVE_MMAP
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
 
@@ -57,7 +57,7 @@ const int MAP_CACHE_SIZE = 64;
 #define ALLOC_PATTERN 0xFEEDABED
 //#define ALLOC_PATTERN 0x0
 #ifdef DEBUG_GDS_ALLOC
-# define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size>>2;_i++) ((unsigned int*)(ptr))[_i]=(pattern)
+# define PATTERN_FILL(ptr,size,pattern) for (size_t _i=0;_i< size/sizeof(unsigned int);_i++) ((unsigned int*)(ptr))[_i]=(pattern)
 #else
 # define PATTERN_FILL(ptr,size,pattern) ((void)0)
 #endif
