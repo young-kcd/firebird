@@ -604,8 +604,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
  *
  **************************************/
 	indexNode->nodePointer = pagePointer;
-	//if ((flags & btr_large_keys) && 
-	if (flags >= btr_large_keys) {
+	if (flags & btr_large_keys) {
 
 		// Get first byte that contains internal flags and 6 bits from number
 		UCHAR* localPointer = pagePointer;
@@ -633,7 +632,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 			localPointer++;
 			tmp = *localPointer;
 			number |= (tmp & 0x7F) << 12;
-			if (tmp >= 128) {//& 0x80) {
+			if (tmp >= 128) {
 				localPointer++;
 				tmp = *localPointer;
 				number |= (tmp & 0x7F) << 19;
@@ -647,18 +646,18 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 						number |= (UINT64) (tmp & 0x7F) << 33;
 /*
 	Uncomment this if you need more bits in record number
-						if (*localPointer & 0x80) {
+						if (tmp >= 128) {
 							localPointer++;
 							tmp = *localPointer;
-							number |= (tmp & 0x7F) << 40;
-							if (*localPointer & 0x80) {
+							number |= (UINT64) (tmp & 0x7F) << 40;
+							if (tmp >= 128) {
 								localPointer++;
 								tmp = *localPointer;
-								number |= (tmp & 0x7F) << 47;
-								if (*localPointer & 0x80) {
+								number |= (UINT64) (tmp & 0x7F) << 47;
+								if (tmp >= 128) {
 									localPointer++;
 									tmp = *localPointer;
-									number |= (tmp & 0x7F) << 54; // We get 61 bits at this point!
+									number |= (UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
 								}
 							}
 						}*/
@@ -673,19 +672,19 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 			// Get page number for non-leaf pages
 			tmp = *localPointer;
 			number = (tmp & 0x7F);
-			if (*localPointer & 0x80) {
+			if (tmp >= 128) {
 				localPointer++;
 				tmp = *localPointer;
 				number |= (tmp & 0x7F) << 7;
-				if (*localPointer & 0x80) {
+				if (tmp >= 128) {
 					localPointer++;
 					tmp = *localPointer;
 					number |= (tmp & 0x7F) << 14;
-					if (*localPointer & 0x80) {
+					if (tmp >= 128) {
 						localPointer++;
 						tmp = *localPointer;
 						number |= (tmp & 0x7F) << 21;
-						if (*localPointer & 0x80) {
+						if (tmp >= 128) {
 							localPointer++;
 							tmp = *localPointer;
 							number |= (tmp & 0x0F) << 28;
@@ -693,19 +692,19 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 	Change number to 64-bit type and enable this for 64-bit support
 
 							number |= (*localPointer & 0x7F) << 28;
-							if (*localPointer & 0x80) {
+							if (tmp >= 128) {
 								tmp = *localPointer;
 								localPointer++;
 								number |= (*localPointer & 0x7F) << 35;
-								if (*localPointer & 0x80) {
+								if (tmp >= 128) {
 									tmp = *localPointer;
 									localPointer++;
 									number |= (*localPointer & 0x7F) << 42;
-									if (*localPointer & 0x80) {
+									if (tmp >= 128) {
 										tmp = *localPointer;
 										localPointer++;
 										number |= (*localPointer & 0x7F) << 49;
-										if (*localPointer & 0x80) {
+										if (tmp >= 128) {
 											tmp = *localPointer;
 											localPointer++;
 											number |= (*localPointer & 0x7F) << 56; // We get 63 bits at this point!
