@@ -2422,31 +2422,51 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 	DEV_BLKCHK(node1, dsql_type_nod);
 	DEV_BLKCHK(node2, dsql_type_nod);
 
-	if ((!node1) && (!node2))
+	if ((!node1) && (!node2)) 
 	{
 		return TRUE;
 	}
 
-	if ((!node1) || (!node2))
+	if ((!node1) || (!node2)) 
 	{
 		return FALSE;
 	}
 
-	if (ignore_cast && node1->nod_type == nod_cast)
+	if (ignore_cast && node1->nod_type == nod_cast)	
 	{
 		/* If node2 is also cast and same type continue with both sources */
 		if (node2->nod_type == nod_cast && 
 			node1->nod_desc.dsc_dtype == node2->nod_desc.dsc_dtype &&
 			node1->nod_desc.dsc_scale == node2->nod_desc.dsc_scale &&
 			node1->nod_desc.dsc_length == node2->nod_desc.dsc_length &&
-			node1->nod_desc.dsc_sub_type == node2->nod_desc.dsc_sub_type
-			)
+			node1->nod_desc.dsc_sub_type == node2->nod_desc.dsc_sub_type) 
 		{
 			return node_match(node1->nod_arg[e_cast_source], node2->nod_arg[e_cast_source], ignore_cast);
 		} 
-		else
+		else 
 		{
 			return node_match(node1->nod_arg[e_cast_source], node2, ignore_cast);
+		}
+	}
+
+	/* We don't care about the alias self only about his field */
+	if ((node1->nod_type == nod_alias) || (node2->nod_type == nod_alias)) 
+	{
+		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias))
+		{
+			return node_match(node1->nod_arg[e_alias_value],
+				node2->nod_arg[e_alias_value], ignore_cast);
+		}
+		else
+		{
+			if (node1->nod_type == nod_alias)
+			{
+				return node_match(node1->nod_arg[e_alias_value], node2, ignore_cast);
+			}
+			if (node2->nod_type == nod_alias)
+			{
+				return node_match(node1, node2->nod_arg[e_alias_value], ignore_cast);
+			}
 		}
 	}
 
@@ -2477,16 +2497,6 @@ static BOOLEAN node_match( NOD node1, NOD node2, BOOLEAN ignore_cast)
 							node2->nod_arg[e_agg_group], ignore_cast) &&
 				node_match(	node1->nod_arg[e_agg_rse],
 							node2->nod_arg[e_agg_rse], ignore_cast);
-	}
-
-	if (node1->nod_type == nod_alias)
-	{
-		return node_match(node1->nod_arg[e_alias_value], node2, ignore_cast);
-	}
-
-	if (node2->nod_type == nod_alias)
-	{
-		return node_match(node1, node2->nod_arg[e_alias_value], ignore_cast);
 	}
 
 	if (node1->nod_type == nod_relation)
