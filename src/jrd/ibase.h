@@ -27,7 +27,7 @@
  * Compiler Compatibility
  */
 /*
-$Id: ibase.h,v 1.11 2002-06-29 13:03:13 dimitr Exp $
+$Id: ibase.h,v 1.12 2002-07-02 12:20:50 dimitr Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
@@ -2395,7 +2395,11 @@ enum info_db_provider
 /* Generators again                           */
 /**********************************************/
 
-#define isc_dyn_delete_generator          217
+#ifndef __cplusplus                     /* c definitions */
+#define gds_dyn_delete_generator          217
+#else                                   /* c++ definitions */
+const unsigned char gds_dyn_delete_generator       = 217;
+#endif
 
 /****************************/
 /* Last $dyn value assigned */

@@ -39,6 +39,7 @@
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
+#include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 
@@ -117,10 +118,10 @@ void ERRD_error( int code, const char* text)
 
     if (status_vector = tdsql->tsql_status) {
         *status_vector++ = gds_arg_gds;
-        *status_vector++ = gds__random;
+        *status_vector++ = gds_random;
         *status_vector++ = gds_arg_cstring;
-        *status_vector++ = strlen (s);
-        *status_vector++ = s;
+        *status_vector++ = strlen(s);
+        *status_vector++ = reinterpret_cast<long>(s);
         *status_vector++ = gds_arg_end;
     }
 
@@ -187,20 +188,20 @@ BOOLEAN ERRD_post_warning(STATUS status, ...)
                     status_vector[(indx - 1)] = gds_arg_cstring;
                     status_vector[indx++] = MAX_ERRSTR_LEN;
                 }
-                status_vector[indx++] = ERR_cstring(pszTmp);
+                status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 				break;
 
 			case gds_arg_interpreted: 
                 pszTmp = va_arg(args, char*);
-                status_vector[indx++] = ERR_cstring(pszTmp);
+                status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 				break;
 
-			case gds_arg_cstring: 
+			case gds_arg_cstring:
                 len = va_arg(args, int);
                 status_vector[indx++] =
                     (STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-                char* pszTmp = va_arg(args, char*);
-                status_vector[indx++] = ERR_cstring(pszTmp);                
+                pszTmp = va_arg(args, char*);
+                status_vector[indx++] = reinterpret_cast<long>(ERR_cstring(pszTmp));
 				break;
 
 			case gds_arg_number:

@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: dsql.cpp,v 1.15 2002-06-29 06:56:51 skywalker Exp $
+$Id: dsql.cpp,v 1.16 2002-07-02 12:17:44 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -1312,16 +1312,16 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 
     old_request = *req_handle;
     if (!old_request) {
-        ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -901,
-                   gds_arg_gds, gds__bad_req_handle,
+        ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -901,
+                   gds_arg_gds, gds_bad_req_handle,
                    0);
     }
 
     if (old_request) {
         database = old_request->req_dbb;
-        if (!(database) {
-            ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -901,
-                       gds_arg_gds, gds__bad_req_handle,
+        if (!database) {
+            ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -901,
+                       gds_arg_gds, gds_bad_req_handle,
                        0);
         }
     }

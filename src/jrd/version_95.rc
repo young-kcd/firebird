@@ -23,7 +23,7 @@
 VS_VERSION_INFO VERSIONINFO
 FILEFLAGSMASK   VS_FF_PRERELEASE
 FILEFLAGS       VS_FF_PRERELEASE | VS_FF_SPECIALBUILD
-FILEVERSION     WIN_FILE_VER_NUMBER
+FILEVERSION     FILE_VER_NUMBER
 PRODUCTVERSION  FILE_VER_NUMBER
 FILEOS          VOS_NT_WINDOWS32
 
@@ -41,7 +41,7 @@ BEGIN
       VALUE "LegalCopyright", "All Copyright (c) retained by individual contributors - original code Copyright (c) 2000 Inprise Corporation\0"
       VALUE "ProductName", "Firebird Database Server\0"
       VALUE "ProductVersion", PRODUCT_VER_STRING
-      VALUE "SpecialBuild", FB_BUILD_SUFFIX_RC
+      VALUE "SpecialBuild", FB_BUILD_SUFFIX
     END
   END
 

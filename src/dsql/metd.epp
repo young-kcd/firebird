@@ -138,8 +138,9 @@ void METD_drop_function (REQ request, STR name)
 
     /* If the symbol wasn't defined, we've got nothing to do */
     
-    symbol = HSHD_lookup (request->req_dbb, name->str_data,
-                          name->str_length, SYM_udf, 0);
+    symbol = HSHD_lookup(request->req_dbb,
+						 reinterpret_cast<TEXT*>(name->str_data),
+                         name->str_length, SYM_udf, 0);
     for (; symbol; symbol = symbol->sym_homonym) {
         if ((symbol->sym_type == SYM_udf) &&
             ((udf = (UDF) symbol->sym_object) &&
@@ -155,8 +156,9 @@ void METD_drop_function (REQ request, STR name)
 
     /* mark other potential candidates as maybe dropped */
 
-    HSHD_set_flag( request->req_dbb, name->str_data, name->str_length,
-                   SYM_udf, UDF_dropped);
+    HSHD_set_flag(request->req_dbb,
+				  reinterpret_cast<TEXT*>(name->str_data),
+				  name->str_length, SYM_udf, UDF_dropped);
 
     METD_REC_UNLOCK;
 }
@@ -561,14 +563,14 @@ USHORT METD_get_charset_bpc (REQ request,
  **************************************/
     SLONG	*DB, *gds__trans;
     DBB	dbb;
-    BLK	*handle;
+    isc_req_handle handle;
     USHORT	bpc = 0;
     
     dbb = request->req_dbb;
     DB = dbb->dbb_database_handle;
-    gds__trans = request->req_trans;
+    gds__trans = reinterpret_cast<SLONG*>(request->req_trans);
     
-    handle = NULL_PTR;
+    handle = 0;
     
     THREAD_EXIT;
     
@@ -594,7 +596,7 @@ USHORT METD_get_charset_bpc (REQ request,
 
      THREAD_EXIT;
     *************/
-    isc_release_request (gds__status, GDS_REF (handle));
+    isc_release_request (gds_status, GDS_REF (handle));
     THREAD_ENTER;
 
     return bpc;
@@ -864,7 +866,7 @@ UDF METD_get_function(REQ request, STR name)
 	UDF udf_, temp;
 	USHORT return_arg, arg_count;
 	SYM symbol;
-    LLS	stack, stack_temp;
+    DLLS stack, stack_temp;
     NOD	udf_param_node, *ptr;
 
 
@@ -875,8 +877,8 @@ UDF METD_get_function(REQ request, STR name)
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
 						 name->str_length, SYM_udf, 0);
     if ((symbol->sym_type == SYM_udf) &&
-	    ((udf = (UDF) symbol->sym_object) &&
-         (!(udf->udf_flags & UDF_dropped)))) {
+	    ((udf_ = (UDF) symbol->sym_object) &&
+         (!(udf_->udf_flags & UDF_dropped)))) {
         METD_REC_UNLOCK;
         return (UDF) symbol->sym_object;
 	}
@@ -914,7 +916,7 @@ UDF METD_get_function(REQ request, STR name)
 
         strcpy((char*) udf_->udf_name, (char*) name->str_data);
         return_arg = X.RDB$RETURN_ARGUMENT;
-        udf->udf_arguments = 0;
+        udf_->udf_arguments = 0;
 
         THREAD_EXIT;
 
@@ -975,12 +977,12 @@ UDF METD_get_function(REQ request, STR name)
                 udf_->udf_scale = X.RDB$FIELD_SCALE;
                 
                 if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-                    udf->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
+                    udf_->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
                 }
                 else {
-                    udf->udf_sub_type = 0;
+                    udf_->udf_sub_type = 0;
                 }
-                udf->udf_length = X.RDB$FIELD_LENGTH;
+                udf_->udf_length = X.RDB$FIELD_LENGTH;
                 
                 if (!X.RDB$CHARACTER_SET_ID.NULL) {
                     udf_->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
@@ -990,7 +992,7 @@ UDF METD_get_function(REQ request, STR name)
             else {
                 DSC* d;
                 /* udf_param_node = MAKE_node (type_nod, 0); */
-                udf_param_node = (NOD) ALLOC (type_nod, dbb->dbb_pool);
+			    udf_param_node = new(*dbb->dbb_pool, 0) nod;
                 d = &udf_param_node->nod_desc;
                 d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                     gds_cvt_blr_dtype [X.RDB$FIELD_TYPE] : dtype_blob;
@@ -1051,11 +1053,11 @@ UDF METD_get_function(REQ request, STR name)
     }
 
     /* udf->udf_arguments = MAKE_node (nod_list, count); */
-    udf->udf_arguments = (NOD) ALLOCV (type_nod, dbb->dbb_pool, arg_count);
-    udf->udf_arguments->nod_type = nod_list;
-    udf->udf_arguments->nod_count = arg_count;
+    udf_->udf_arguments = new(*dbb->dbb_pool, arg_count) nod;
+    udf_->udf_arguments->nod_type = nod_list;
+    udf_->udf_arguments->nod_count = arg_count;
     
-    ptr = udf->udf_arguments->nod_arg + arg_count;
+    ptr = udf_->udf_arguments->nod_arg + arg_count;
     while (stack) {
         *--ptr = (NOD) LLS_POP (&stack);
     }
@@ -1065,8 +1067,9 @@ UDF METD_get_function(REQ request, STR name)
      * calls, another thread may have added the same udf in the mean time
      */
     
-    symbol = HSHD_lookup (request->req_dbb, name->str_data,
-                          name->str_length, SYM_udf, 0);
+    symbol = HSHD_lookup(request->req_dbb,
+						 reinterpret_cast<TEXT*>(name->str_data),
+                         name->str_length, SYM_udf, 0);
 
     for (; symbol; symbol = symbol->sym_homonym) {
         if ((symbol->sym_type == SYM_udf) &&
@@ -1074,15 +1077,15 @@ UDF METD_get_function(REQ request, STR name)
              (!(temp->udf_flags & UDF_dropped)))) {
             /* Get rid of all the stuff we just read in. Use existing one */
             
-            free_function (udf);
+            free_function (udf_);
             METD_REC_UNLOCK;
             return (UDF) symbol->sym_object;
         }
     }
     
     /* Add udf in the front of the list. */
-    udf->udf_next = dbb->dbb_functions;
-    dbb->dbb_functions = udf;
+    udf_->udf_next = dbb->dbb_functions;
+    dbb->dbb_functions = udf_;
     
 
 /* Store in the symbol table */

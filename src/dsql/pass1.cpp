@@ -2167,7 +2167,7 @@ static BOOLEAN invalid_reference( NOD node, NOD list)
                     if ((*ptr)->nod_type == nod_cast)  {
                         reference = (*ptr)->nod_arg[e_cast_source];
                     }
-                    DEV_BLKCHK(reference, type_nod);
+                    DEV_BLKCHK(reference, dsql_type_nod);
                     if (reference->nod_type == nod_udf) {
                         if (node_match (node, reference) == TRUE) {
                             /* select item exists in group by */

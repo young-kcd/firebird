@@ -400,10 +400,10 @@ void MAKE_desc( DSC * desc, NOD node)
                 desc->dsc_length = sizeof (USHORT) + len;
             }
             else {
-                ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -204,
-                           gds_arg_gds, gds__dsql_datatype_err,
-                           gds_arg_gds, gds__imp_exc, 
-                           gds_arg_gds, gds__field_name,
+                ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -204,
+                           gds_arg_gds, gds_dsql_datatype_err,
+                           gds_arg_gds, gds_imp_exc, 
+                           gds_arg_gds, gds_field_name,
                            gds_arg_string, "substring()", /* field->fld_name,*/
                            0);
             }

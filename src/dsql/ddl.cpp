@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.9 2002-06-29 06:56:51 skywalker Exp $
+ * $Id: ddl.cpp,v 1.10 2002-07-02 12:17:44 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -908,8 +908,8 @@ static void check_one_call (BOOLEAN *repetition_count,
  *
  **************************************/
     if (++repetition_count [pos] > 1) {
-        ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -637,
-                   gds_arg_gds, gds__dsql_duplicate_spec,
+        ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -637,
+                   gds_arg_gds, gds_dsql_duplicate_spec,
                    gds_arg_string, error_msg,
                    0);
     }
@@ -2884,7 +2884,7 @@ static void define_udf( REQ request)
  *	define a udf to the database.
  *
  **************************************/
-	NOD *ptr, *end, *ret_val_ptr, arguments, udf_node;
+	NOD *ptr, *end, *ret_val_ptr, arguments, udf_node, *param_node;
 	UCHAR *udf_name;
 	FLD field;
 	SSHORT position, blob_position;
@@ -3330,8 +3330,8 @@ static void define_view( REQ request)
 /* define the view source relations from the request contexts & union contexts*/
 
     while (request->req_union_context) {
-        context = LLS_POP (&request->req_union_context);
-        LLS_PUSH (context, &request->req_context);
+        context = reinterpret_cast<CTX>(LLS_POP(&request->req_union_context));
+        LLS_PUSH(context, &request->req_context);
     }
 
 
@@ -3805,7 +3805,7 @@ static void delete_relation_view (
         node->nod_type == nod_redef_relation) {
         if (!relation && !silent_deletion || 
             relation && (relation->rel_flags & REL_view)) {
-            ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -607,
+            ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -607,
                        /* gds_arg_gds, gds__dsql_command_err,
                           gds_arg_gds, gds__dsql_table_not_found, */
                        gds_arg_gds, 336068783L,
@@ -3815,7 +3815,7 @@ static void delete_relation_view (
     }
     else { /* node->nod_type == nod_del_view */
         if (!relation || !(relation->rel_flags & REL_view)) {
-            ERRD_post (gds__sqlerr, gds_arg_number, (SLONG) -607,
+            ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -607,
                        /* gds_arg_gds, gds__dsql_command_err,
                           gds_arg_gds, gds__dsql_view_not_found, */
                        gds_arg_gds, 336068783L,
@@ -3945,10 +3945,10 @@ static void generate_dyn( REQ request, NOD node)
 		break;
 
     case nod_redef_relation:
-        STUFF (gds__dyn_begin);
+        STUFF (gds_dyn_begin);
         delete_relation_view (request, node, TRUE); /* silent. */
         define_relation (request);
-        STUFF (gds__dyn_end);
+        STUFF (gds_dyn_end);
         break;
 
 	case nod_def_view:
@@ -3967,10 +3967,10 @@ static void generate_dyn( REQ request, NOD node)
 		break;
 
     case nod_redef_procedure:
-        STUFF (gds__dyn_begin);
+        STUFF (gds_dyn_begin);
         delete_procedure (request, node, TRUE); /* silent. */
         define_procedure (request, node->nod_type);
-        STUFF (gds__dyn_end);
+        STUFF (gds_dyn_end);
         break;
 
 
@@ -4044,7 +4044,8 @@ static void generate_dyn( REQ request, NOD node)
 
 	case nod_del_generator:
 		string = (STR) node->nod_arg[0];
-        request->append_cstring(gds_dyn_delete_generator, string->str_data);
+        request->append_cstring(gds_dyn_delete_generator,
+					reinterpret_cast<char*>(string->str_data));
         request->append_uchar(gds_dyn_end);
 		break;
 

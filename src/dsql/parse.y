@@ -69,7 +69,7 @@
 
 /* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
 #if !defined(_JRD_ERR_PROTO_H_)
-extern TEXT * DLL_EXPORT ERR_string (TEXT *, int);
+extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
 #endif
 
 ASSERT_FILENAME
@@ -366,7 +366,13 @@ static void	yyerror (TEXT *);
 %token CURRENT_DATE
 %token CURRENT_TIME
 %token CURRENT_TIMESTAMP
-/* CVC: Special Firebird additions. */
+
+/* special aggregate token types returned by lex in v6.0 */
+
+%token NUMBER64BIT SCALEDINT
+
+/* tokens added for Firebird 1 */
+
 %token CURRENT_USER
 %token CURRENT_ROLE
 %token KW_BREAK
@@ -374,14 +380,6 @@ static void	yyerror (TEXT *);
 %token KW_DESCRIPTOR
 %token FIRST
 %token SKIP
-
-/* special aggregate token types returned by lex in v6.0 */
-
-%token NUMBER64BIT SCALEDINT
-
-/* tokens added for Firebird 1 */
-%token LIMIT
-%token SUBSTRING
 
 /* tokens added for Firebird 1.5 */
 
@@ -2740,15 +2738,6 @@ where_clause	: WHERE search_condition
 		 	{ $$ = $2; }
 		| 
 			{ $$ = 0; }
-		;
-
-/* LIMIT clause to specify a number of records to return  */		;
-
-
-limit_clause	: LIMIT limit_range
-			{ $$ = $2; }
-		|
-			{ $$ = 0;}
 		;
 
 limit_range	: '(' long_integer ')'

@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: gen.cpp,v 1.6 2002-06-29 06:56:51 skywalker Exp $
+$Id: gen.cpp,v 1.7 2002-07-02 12:17:44 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -435,7 +435,7 @@ void GEN_expr( REQ request, NOD node)
 		operator_ = blr_upcase;
 		break;
 	case nod_substr:	
-        operator = blr_substring;		
+        operator_ = blr_substring;		
         break;
 	case nod_cast:
 		gen_cast(request, node);

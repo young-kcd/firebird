@@ -28,7 +28,7 @@ void METD_drop_function(class req*, class str*);
 void METD_drop_procedure(class req*, class str*);
 void METD_drop_relation(class req*, class str*);
 INTLSYM METD_get_charset(class req*, USHORT, UCHAR *);
-USHORT METD_get_charset_bpc(class req*, USHORT, UCHAR *);
+USHORT METD_get_charset_bpc (struct req *, SSHORT);
 INTLSYM METD_get_collation(class req*, class str*);
 void METD_get_col_default(REQ, TEXT*, TEXT*, BOOLEAN*, TEXT*, USHORT);
 STR METD_get_default_charset(class req*);

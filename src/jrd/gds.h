@@ -30,8 +30,8 @@
 */
 #include "fb_types.h"
 #include "../jrd/blr.h"
-#include "gen/iberror.h"
-#include "gen/codes.h"
+#include "../include/gen/iberror.h"
+#include "../include/gen/codes.h"
 #endif
 
 #endif /* INCLUDE_gds */
