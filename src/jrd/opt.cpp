@@ -380,8 +380,11 @@ RSB OPT_compile(TDBB tdbb,
 		/* find the stream number and place it at the end of the beds array
 		   (if this is really a stream and not another rse) */
 
-		if (node->nod_type != nod_rse) {
+		if (node->nod_type != nod_rse)
+		{
 			stream = (USHORT) node->nod_arg[STREAM_INDEX(node)];
+			assert(stream <= MAX_UCHAR);
+			assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR);
 			beds[++beds[0]] = (UCHAR) stream;
 		}
 
@@ -397,16 +400,21 @@ RSB OPT_compile(TDBB tdbb,
 			rsb =
 				gen_union(tdbb, opt_, node, key_streams + i + 1,
 						  (USHORT) (key_streams[0] - i));
+			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR) node->nod_arg[e_uni_stream];
 		}
 		else if (node->nod_type == nod_aggregate) {
+			assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+			assert((int)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 			rsb = gen_aggregate(tdbb, opt_, node);
+			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR) node->nod_arg[e_agg_stream];
 		}
 		else if (node->nod_type == nod_procedure) {
 			rsb = gen_procedure(tdbb, opt_, node);
+			assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] =
 				(UCHAR) node->nod_arg[e_prc_stream];
 		}
@@ -473,11 +481,12 @@ RSB OPT_compile(TDBB tdbb,
 		// TMN: Is the intention really to allow streams[0] to overflow?
 		// I must assume that is indeed not the intention (not to mention
 		// it would make code later on fail), so I added the following assert.
-		assert(streams[0] < MAX_UCHAR);
+		assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 
 		++streams[0];
 		*p++ = (UCHAR) stream;
 
+		assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
 		outer_streams[++outer_streams[0]] = stream;
 
 		/* if we have seen any booleans or sort fields, we may be able to
@@ -1814,6 +1823,7 @@ static void compute_dbkey_streams(CSB csb, JRD_NOD node, UCHAR * streams)
 	DEV_BLKCHK(node, type_nod);
 
 	if (node->nod_type == nod_relation) {
+		assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 		streams[++streams[0]] = (UCHAR) node->nod_arg[e_rel_stream];
 	}
 	else if (node->nod_type == nod_union) {
@@ -1853,6 +1863,7 @@ static void compute_rse_streams(CSB csb, RSE rse, UCHAR * streams)
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 		node = *ptr;
 		if (node->nod_type != nod_rse) {
+			assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 			streams[++streams[0]] = (UCHAR) node->nod_arg[STREAM_INDEX(node)];
 		}
 		else {
@@ -3280,6 +3291,8 @@ static RSB gen_aggregate(TDBB tdbb, OPT opt, JRD_NOD node)
 
 	rsb = FB_NEW_RPT(*tdbb->tdbb_default, 1) Rsb();
 	rsb->rsb_type = rsb_aggregate;
+	assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+	assert((int)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 	rsb->rsb_stream = (UCHAR) node->nod_arg[e_agg_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
 	rsb->rsb_next = OPT_compile(tdbb, csb, rse, NULL);

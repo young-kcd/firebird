@@ -2636,7 +2636,9 @@ static JRD_NOD copy(
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
 		stream = (USHORT) input->nod_arg[e_agg_stream];
+		assert(stream <= MAX_STREAMS);
 		new_stream = (*csb)->csb_n_stream++;
+		assert(new_stream <= MAX_STREAMS);
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) new_stream;
 		/* TMN: Here we should really have the following assert */
 		/* assert(new_stream <= MAX_UCHAR); */
@@ -3205,6 +3207,7 @@ static JRD_NOD pass1(
 		break;
 
 	case nod_aggregate:
+		assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		(*csb)->csb_rpt[(USHORT) node->nod_arg[e_agg_stream]].csb_flags |=
 			csb_no_dbkey;
 		ignore_dbkey(tdbb, *csb, (RSE) node->nod_arg[e_agg_rse], view);
@@ -3281,8 +3284,9 @@ static JRD_NOD pass1(
 
 	ptr = node->nod_arg;
 
-	for (end = ptr + node->nod_count; ptr < end; ptr++)
+	for (end = ptr + node->nod_count; ptr < end; ptr++) {
 		*ptr = pass1(tdbb, csb, *ptr, view, view_stream, validate_expr);
+	}
 
 /* perform any post-processing here */
 
@@ -3596,9 +3600,11 @@ static void pass1_modify(TDBB tdbb, CSB * csb, JRD_NOD node)
 }
 
 
-static RSE pass1_rse(
-					 TDBB tdbb,
-					 CSB * csb, RSE rse, JRD_REL view, USHORT view_stream)
+static RSE pass1_rse(TDBB    tdbb,
+					 CSB*    csb,
+					 RSE     rse,
+					 JRD_REL view,
+					 USHORT  view_stream)
 {
 /**************************************
  *
@@ -3649,9 +3655,11 @@ static RSE pass1_rse(
 
 /* Zip thru rse expanding views and inner joins */
 
-	for (arg = rse->rse_relation, end = arg + rse->rse_count; arg < end;
-		 arg++) pass1_source(tdbb, csb, rse, *arg, &boolean, &stack, view,
-							 view_stream);
+	for (arg = rse->rse_relation, end = arg + rse->rse_count; arg < end; arg++)
+	{
+		pass1_source(tdbb, csb, rse, *arg, &boolean, &stack, view,
+		             view_stream);
+	}
 
 /* Now, rebuild the rse block.  If possible, re-use the old block,
    otherwise allocate a new one. */
@@ -3733,13 +3741,14 @@ static RSE pass1_rse(
 }
 
 
-static void pass1_source(
-						 TDBB tdbb,
-						 CSB * csb,
-						 RSE rse,
-						 JRD_NOD source,
-						 JRD_NOD * boolean,
-						 LLS * stack, JRD_REL parent_view, USHORT view_stream)
+static void pass1_source(TDBB     tdbb,
+						 CSB*     csb,
+						 RSE      rse,
+						 JRD_NOD  source,
+						 JRD_NOD* boolean,
+						 LLS*     stack,
+						 JRD_REL  parent_view,
+						 USHORT   view_stream)
 {
 /**************************************
  *
@@ -3775,15 +3784,14 @@ static void pass1_source(
 /* in the case of an rse, it is possible that a new rse will be generated, 
    so wait to process the source before we push it on the stack (bug 8039) */
 
-	if (source->nod_type == nod_rse) {
-		RSE sub_rse;
-
+	if (source->nod_type == nod_rse)
+	{
 		/* The addition of the JOIN syntax for specifying inner joins causes an 
 		   rse tree to be generated, which is undesirable in the simplest case 
 		   where we are just trying to inner join more than 2 streams.  If possible, 
 		   try to flatten the tree out before we go any further. */
 
-		sub_rse = (RSE) source;
+		RSE sub_rse = (RSE) source;
 		if (!rse->rse_jointype && !sub_rse->rse_jointype
 			&& !sub_rse->rse_sorted && !sub_rse->rse_projection
 			&& !sub_rse->rse_first && !sub_rse->rse_plan) {
@@ -3849,6 +3857,7 @@ static void pass1_source(
 /* Special case group-by/global aggregates */
 
 	if (source->nod_type == nod_aggregate) {
+		assert((int)source->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		pass1(tdbb, csb, source, parent_view, view_stream, FALSE);
 		return;
 	}
@@ -4650,6 +4659,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		pass2(tdbb, csb, node->nod_arg[e_agg_map], node);
 		pass2(tdbb, csb, node->nod_arg[e_agg_group], node);
 		stream = (USHORT) node->nod_arg[e_agg_stream];
+		assert(stream <= MAX_STREAMS);
 		process_map(tdbb, csb, node->nod_arg[e_agg_map],
 					&csb->csb_rpt[stream].csb_format);
 		break;
@@ -4767,6 +4777,7 @@ static void pass2_rse(TDBB tdbb, CSB csb, RSE rse)
 		}
 		else if (node->nod_type == nod_aggregate) {
 			USHORT stream = (USHORT) node->nod_arg[e_agg_stream];
+			assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			pass2(tdbb, csb, node, (JRD_NOD) rse);
 		}
@@ -5173,6 +5184,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		}
 		else if (node->nod_type == nod_aggregate) {
 			USHORT stream = (USHORT) node->nod_arg[e_agg_stream];
+			assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
 	}

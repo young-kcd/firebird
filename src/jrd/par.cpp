@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.36 2003-02-19 15:25:26 dimitr Exp $
+$Id: par.cpp,v 1.37 2003-02-27 16:28:52 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -48,6 +48,7 @@ $Id: par.cpp,v 1.36 2003-02-19 15:25:26 dimitr Exp $
 #include "../jrd/align.h"
 #include "../jrd/exe.h"
 #include "../jrd/lls.h"
+#include "../jrd/rse.h"	// for MAX_STREAMS
 
 #include "../jrd/scl.h"
 #include "../jrd/all.h"
@@ -924,7 +925,7 @@ static XCP par_conditions(TDBB tdbb, CSB * csb)
 }
 
 
-static SSHORT par_context(CSB * csb, SSHORT * context_ptr)
+static SSHORT par_context(CSB* csb, SSHORT* context_ptr)
 {
 /**************************************
  *
@@ -938,13 +939,19 @@ static SSHORT par_context(CSB * csb, SSHORT * context_ptr)
  *	scratch block.
  *
  **************************************/
-	SSHORT context, stream;
-	csb_repeat *tail;
 
-	stream = (*csb)->csb_n_stream++;
-	context = (unsigned int) BLR_BYTE;
+	SSHORT stream = (*csb)->csb_n_stream++;
+	if (stream > MAX_STREAMS) {
+		// TMN: Someone please review this to verify that
+		// gds_too_many_contexts is indeed the right error to report.
+		// "Too many streams" would probably be more correct, but we
+		/// don't have such an error (yet).
+		error(*csb, gds_too_many_contexts, 0);
+	}
+	assert(stream <= MAX_STREAMS);
+	SSHORT context = (unsigned int) BLR_BYTE;
 	CMP_csb_element(csb, stream);
-	tail = CMP_csb_element(csb, context);
+	csb_repeat* tail = CMP_csb_element(csb, context);
 
 	if (tail->csb_flags & csb_used)
 		error(*csb, gds_ctxinuse, 0);
@@ -959,10 +966,11 @@ static SSHORT par_context(CSB * csb, SSHORT * context_ptr)
 }
 
 
-static void par_dependency(
-						   TDBB tdbb,
-						   CSB * csb,
-						   SSHORT stream, SSHORT id, TEXT * field_name)
+static void par_dependency(TDBB   tdbb,
+						   CSB*   csb,
+						   SSHORT stream,
+						   SSHORT id,
+						   TEXT*  field_name)
 {
 /**************************************
  *
@@ -2001,6 +2009,7 @@ static JRD_NOD par_relation(
 
 	if (parse_context) {
 		stream = par_context(csb, &context);
+		assert(stream <= MAX_STREAMS);
 		node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) stream;
 		node->nod_arg[e_rel_context] = (JRD_NOD) (SLONG) context;
 
@@ -2484,6 +2493,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) par_context(csb, 0);
+		assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
 		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =

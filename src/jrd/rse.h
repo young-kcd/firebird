@@ -309,7 +309,13 @@ typedef srl *SRL;
 #define MAX_INDICES	MAX_OPT_ITEMS
 #define	OPT_BITS	(MAX_OPT_ITEMS / 32)
 
-#define MAX_STREAMS	256
+// Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
+// Here we should really have a compile-time assert, since this hard-coded
+// limit is NOT negotiable so long as we use an array of UCHAR, where index 0
+// tells how many streams are in the array (and the streams themselves are
+// identified by a UCHAR).
+#define MAX_STREAMS	255
+
 
 /* General optimizer block */
 class Opt : public pool_alloc<type_opt>
