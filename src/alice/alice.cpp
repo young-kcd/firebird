@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.11 2002-01-04 11:34:14 skywalker Exp $
+//	$Id: alice.cpp,v 1.12 2002-04-04 05:31:13 bellardo Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -416,11 +416,13 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 
-			if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
-			{
-				ALICE_error(8);	/* msg 8: positive numeric value
-												   required */
-			}
+			// JMB: Removed because tdgbl->ALICE_data.ua_db_SQL_dialect is
+			//		an unsigned number.  Therefore this check is useless.
+			// if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
+			// {
+			//	ALICE_error(8);	/* msg 8: positive numeric value
+			//									   required */
+			// }
 		}
 
 		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase)) {

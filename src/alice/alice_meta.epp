@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.4 2001-12-29 11:41:21 tamlin Exp $
+ *	$Id: alice_meta.epp,v 1.5 2002-04-04 05:31:13 bellardo Exp $
  */
 
 #include "firebird.h"
@@ -84,8 +84,8 @@ typedef struct rfr_tab_t {
 } *RFR_TAB;
 
 static struct rfr_tab_t rfr_table[] = {
-	"RDB$TRANSACTIONS", "RDB$TRANSACTION_DESCRIPTION", CAP_transactions,
-	0, 0, 0
+	{ "RDB$TRANSACTIONS", "RDB$TRANSACTION_DESCRIPTION", CAP_transactions },
+	{ 0, 0, 0 }
 };
 
 #ifdef GUI_TOOLS
