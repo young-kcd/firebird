@@ -347,13 +347,14 @@ static SSHORT	log_defined, cache_defined;
 
 /* tokens added for Firebird 1 */
 %token LIMIT
-%token INT64
 %token SUBSTRING
 
 /* tokens added for Firebird 1.5 */
 
 %token CONNECTION_ID
 %token TRANSACTION_ID
+%token LARGEINT
+%token KW_INT64
 
 /* precedence declarations for expression evaluation */
 
@@ -1865,6 +1866,11 @@ simple_type	: non_charset_simple_type
 non_charset_simple_type	: national_character_type
 		| numeric_type
 		| float_type
+		| largeint_keyword
+			{ 
+			field->fld_dtype = dtype_int64; 
+			field->fld_length = sizeof (SINT64); 
+			}
 		| integer_keyword
 			{ 
 			field->fld_dtype = dtype_long; 
@@ -1918,6 +1924,9 @@ non_charset_simple_type	: national_character_type
 			}
 		;
 
+largeint_keyword : LARGEINT
+		| KW_INT64
+		;
 
 integer_keyword	: INTEGER	
 		| KW_INT
@@ -3030,6 +3039,7 @@ value		: column_name
 		| datetime_value_expression
 			{ $$ = $1; }
 		;
+
 
 datetime_value_expression : CURRENT_DATE
 			{ 
