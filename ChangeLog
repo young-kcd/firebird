@@ -1,3 +1,14 @@
+2004-01-02 15:32  epocman
+
+	* firebird2/src/utilities/install.cpp:
+	
+	instclient.exe : new code (commented out for now) that can patch
+	the string FileVersion (in addition to the numerical FileVersion)
+	in case this proves really usefull. There has been a report that
+	EMS IBManager had an issue with this, though I could not reproduce
+	myself. In case it proves true, the code is ready and tested. Just
+	need to uncomment it.
+
 2003-12-31 23:40  skidder
 
 	* firebird2/src/jrd/: btr.cpp, btr.h, dmp.cpp, ods.h:
