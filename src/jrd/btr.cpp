@@ -3986,11 +3986,6 @@ static SLONG find_page(BTR bucket, KEY * key, UCHAR idx_flags, SLONG find_record
 			BUGCHECK(206);	// msg 206 exceeded index level
 		}
 
-		if (key->key_length == 0) {
-			//return get_long(node->btn_number);
-			key->key_length = 0;
-		}
-
 		if (pointer == BTreeNode::getPointerFirstNode(bucket)) {
 			prefix = 0;
 			// Handle degenerating node, always generated at first
