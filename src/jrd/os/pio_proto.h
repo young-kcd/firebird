@@ -36,7 +36,7 @@ SLONG	PIO_max_alloc(struct dbb*);
 SLONG	PIO_act_alloc(struct dbb*);
 struct fil*	PIO_open(struct dbb*, const TEXT*, SSHORT, SSHORT,
 							struct blk*, const TEXT*, USHORT);
-int		PIO_read(struct fil*, struct bdb*, struct pag*, ISC_STATUS*);
+int		PIO_read(struct fil*, class bdb*, struct pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
 int		PIO_read_ahead(struct dbb*, SLONG, SCHAR*, SLONG, struct piob*,
@@ -45,7 +45,7 @@ int		PIO_status(struct piob*, ISC_STATUS*);
 #endif
 
 int		PIO_unlink(const TEXT*);
-int		PIO_write(struct fil*, struct bdb*, struct pag*, ISC_STATUS*);
+int		PIO_write(struct fil*, class bdb*, struct pag*, ISC_STATUS*);
 
 #endif // JRD_PIO_PROTO_H
 

@@ -34,7 +34,7 @@
 /* BCB -- Buffer control block -- one per system */
 	struct bcb_repeat
 	{
-		struct bdb*	bcb_bdb;		/* Buffer descriptor block */
+		class bdb*	bcb_bdb;		/* Buffer descriptor block */
 		struct que	bcb_page_mod;	/* Que of buffers with page mod n */
 	};
 
@@ -44,7 +44,7 @@ class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
 	struct lls*	bcb_memory;			/* Large block partitioned into buffers */
 	struct que	bcb_in_use;			/* Que of buffers in use */
 	struct que	bcb_empty;			/* Que of empty buffers */
-	struct bdb*	bcb_btree;			/* root of dirty page btree */
+	class bdb*	bcb_btree;			/* root of dirty page btree */
 	struct pre*	bcb_free;			/* Free precedence blocks */
 	struct que	bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
