@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preuninstall.sh.in,v 1.2 2002-12-09 01:46:26 nmcc Exp $
+#   $Id: preuninstall.sh.in,v 1.3 2003-02-10 18:23:19 skidder Exp $
 # 
 
 # The pre uninstall routines for Firebird Classic
@@ -82,10 +82,10 @@ checkIfServerRunning() {
 
     cd $FBRootDir
     
-    if [ -f isc4.gdb ] 
+    if [ -f security.fdb ] 
       then 
-        cp isc4.gdb /tmp 
-        echo "Saved a copy of isc4.gdb in /tmp" 
+        cp security.fdb /tmp 
+        echo "Saved a copy of security.fdb in /tmp" 
     fi 
     
     for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password

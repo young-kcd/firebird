@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.6 2002-12-09 01:46:26 nmcc Exp $
+#   $Id: makeInstallImage.sh.in,v 1.7 2003-02-10 18:23:17 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -142,7 +142,7 @@ copyFiles() {
     #cp -r $BuiltFBDir/doc $DestDir 
 
     cp $BuiltFBDir/firebird.msg $DestDir/firebird.msg 
-    cp $BuiltFBDir/isc4.gdb $DestDir/isc4.gdb 
+    cp $BuiltFBDir/security.fdb $DestDir/security.fdb 
 
 
 #    cp $BuiltFBDir/include/gds.f $DestDir/include 
