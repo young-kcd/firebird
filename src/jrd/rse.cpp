@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.78 2004-10-05 20:16:29 dimitr Exp $
+ * $Id: rse.cpp,v 1.79 2004-10-25 01:09:13 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -456,23 +456,29 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 			// Lock record if we were asked for it
 			jrd_tra* transaction = request->req_transaction;
 
-			RecordSource* test_rsb;
-			if (rsb->rsb_type == rsb_boolean)
-				test_rsb = rsb->rsb_next;
-			else
-				test_rsb = rsb;
-
-			record_param* org_rpb = request->req_rpb + test_rsb->rsb_stream;
+			RecordSource* table_rsb = rsb;
+			
+			// Skip nodes without streams
+			while (table_rsb->rsb_type == rsb_boolean ||
+				    table_rsb->rsb_type == rsb_first ||
+					table_rsb->rsb_type == rsb_skip)
+			{
+				table_rsb = table_rsb->rsb_next;
+			}
+			
+			record_param* org_rpb = request->req_rpb + table_rsb->rsb_stream;
 			jrd_rel* relation = org_rpb->rpb_relation;
 			
-			if (relation && !relation->rel_view_rse && !relation->rel_file) 
-			{
-				RLCK_reserve_relation(tdbb, transaction, relation, true, true);
+			// Raise error if we cannot lock this kind of stream
+			if (!relation || relation->rel_view_rse || relation->rel_file) {
+				ERR_post(isc_random, isc_arg_string, "Unsupported RSE construct for blr_writelock operation", 0);
+			}
+			
+			RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 				
-				// Fetch next record if current was deleted before being locked
-				if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
-					continue;
-				}
+			// Fetch next record if current was deleted before being locked
+			if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
+				continue;
 			}
 		}
 		
