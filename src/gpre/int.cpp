@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int.cpp,v 1.10 2003-02-27 21:34:41 brodsom Exp $
+//	$Id: int.cpp,v 1.11 2003-03-03 08:36:03 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -40,7 +40,9 @@
 
 static void align(int);
 static void asgn_from(REF, int);
+#ifdef NOT_USED_OR_REPLACED
 static void asgn_to(REF);
+#endif
 static void gen_at_end(ACT, int);
 static int gen_blr(int *, int, TEXT *);
 static void gen_compile(GPRE_REQ, int);
@@ -216,7 +218,7 @@ static void asgn_from( REF reference, int column)
 //		Build an assignment to a host language variable from
 //		a port variable.
 //  
-
+#ifdef NOT_USED_OR_REPLACED
 static void asgn_to( REF reference)
 {
 	TEXT s[20];
@@ -240,7 +242,7 @@ static void asgn_to( REF reference)
 	else
 		ib_fprintf(out_file, "%s = %s;", reference->ref_value, s);
 }
-
+#endif
 
 //____________________________________________________________
 //  

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.13 2003-03-02 01:01:25 brodsom Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.14 2003-03-03 08:36:03 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -60,14 +60,14 @@ static const UCHAR blr_bpb[] = { isc_bpb_version1,
 #ifdef SCROLLABLE_CURSORS
 static SCHAR db_version_info[] = { gds__info_base_level };
 #endif
-
+#ifdef NOT_USED_OR_REPLACED
 static SLONG array_size(GPRE_FLD);
 static void get_array(DBB, TEXT *, GPRE_FLD);
 static int get_intl_char_subtype(SSHORT *, UCHAR *, USHORT, DBB);
 static int resolve_charset_and_collation(SSHORT *, UCHAR *, UCHAR *);
 static int symbol_length(TEXT *);
 static int upcase(TEXT *, TEXT *);
-
+#endif
 
 /*____________________________________________________________
  *  
@@ -733,7 +733,7 @@ BOOLEAN MET_trigger_exists(DBB dbb, TEXT * trigger_name)
 	return FALSE;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 /*____________________________________________________________
  *  
  *		Compute and return the size of the array.
@@ -879,6 +879,7 @@ static int upcase( TEXT * from, TEXT * to)
 
 	return p - to;
 }
+#endif // NOT_USED_OR_REPLACED
 
 STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
           void (*callback) (), void *callback_argument, SSHORT language)

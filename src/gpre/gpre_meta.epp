@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.16 2003-02-13 09:58:18 dimitr Exp $
+ *	$Id: gpre_meta.epp,v 1.17 2003-03-03 08:36:04 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -67,8 +67,9 @@ static void get_array(DBB, TEXT *, GPRE_FLD);
 static int get_intl_char_subtype(SSHORT *, UCHAR *, USHORT, DBB);
 static int resolve_charset_and_collation(SSHORT *, UCHAR *, UCHAR *);
 static int symbol_length(TEXT *);
+#ifdef NOT_USED_OR_REPLACED
 static int upcase(TEXT *, TEXT *);
-
+#endif
 
 /*____________________________________________________________
  *  
@@ -2185,7 +2186,7 @@ static int symbol_length( TEXT * string)
 	return p - string;
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 /*____________________________________________________________
  *  
  *		Upcase a string into another string.  Return
@@ -2207,3 +2208,4 @@ static int upcase( TEXT * from, TEXT * to)
 
 	return p - to;
 }
+#endif

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: sqe.cpp,v 1.8 2003-02-08 00:36:50 brodsom Exp $
+//  $Id: sqe.cpp,v 1.9 2003-03-03 08:36:03 brodsom Exp $
 //  Revision 1.3  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -38,7 +38,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.8 2003-02-08 00:36:50 brodsom Exp $
+//	$Id: sqe.cpp,v 1.9 2003-03-03 08:36:03 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -144,25 +144,27 @@ static OPS rel_ops[] = {
 	{ nod_matches, KW_MATCHES, nod_any },
 	{ nod_any, KW_none, nod_any },
 	{ nod_ansi_any, KW_none, nod_ansi_any },
-	{ nod_ansi_all, KW_none, nod_ansi_all }
-}, scalar_stat_ops[] = {
+	{ nod_ansi_all, KW_none, nod_ansi_all }};
+#ifdef NOT_USED_OR_REPLACED
+static OPS scalar_stat_ops[] = {
 	{ nod_count, KW_COUNT, nod_any },
-		{ nod_max, KW_MAX, nod_any },
-		{ nod_min, KW_MIN, nod_any },
-		{ nod_total, KW_TOTAL, nod_any },
-		{ nod_total, KW_SUM, nod_any },
-		{ nod_average, KW_AVERAGE, nod_any },
-
-		{ nod_via, KW_none, nod_any} }, stat_ops[] = {
+	{ nod_max, KW_MAX, nod_any },
+	{ nod_min, KW_MIN, nod_any },
+	{ nod_total, KW_TOTAL, nod_any },
+	{ nod_total, KW_SUM, nod_any },
+	{ nod_average, KW_AVERAGE, nod_any },
+	{ nod_via, KW_none, nod_any}};
+#endif
+static OPS stat_ops[] = {
 	{ nod_agg_count, KW_COUNT, nod_any },
-		{ nod_agg_max, KW_MAX, nod_any },
-		{ nod_agg_min, KW_MIN, nod_any },
-		{ nod_agg_total, KW_TOTAL, nod_any },
-		{ nod_agg_total, KW_SUM, nod_any },
-		{ nod_agg_average, KW_AVERAGE, nod_any },
-		{ nod_any, KW_none, nod_any },
-		{ nod_ansi_any, KW_none, nod_ansi_any },
-		{ nod_ansi_all, KW_none, nod_ansi_all }};
+	{ nod_agg_max, KW_MAX, nod_any },
+	{ nod_agg_min, KW_MIN, nod_any },
+	{ nod_agg_total, KW_TOTAL, nod_any },
+	{ nod_agg_total, KW_SUM, nod_any },
+	{ nod_agg_average, KW_AVERAGE, nod_any },
+	{ nod_any, KW_none, nod_any },
+	{ nod_ansi_any, KW_none, nod_ansi_any },
+	{ nod_ansi_all, KW_none, nod_ansi_all }};
 
 static NOD_T relationals[] = {
 	nod_eq, nod_ne, nod_gt, nod_ge, nod_le, nod_lt, nod_containing,
