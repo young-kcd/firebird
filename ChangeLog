@@ -1,3 +1,73 @@
+2003-08-08 23:33  arnobrinkman
+
+	* firebird2/src/jrd/: opt.cpp, opt.cpp:
+	
+	bugfix: All flags csb_flags were cleared except csb_active. Thanks
+	to Claudio V.
+
+2003-08-08 17:54  brodsom
+
+	* firebird2/builds/win32/prepare.bat:
+	
+	Reapply Paul change in the HEAD using the HEAD sources.
+
+2003-08-08 16:01  skidder
+
+	* firebird2/builds/win32/msvc7/gpre_boot.vcproj:
+	
+	Fix tweak in MSVC7 build
+
+2003-08-08 15:17  skidder
+
+	* firebird2/src/jrd/dyn_def.epp:
+	
+	Slightly fix formatting as Claudio suggested
+
+2003-08-08 12:26  brodsom
+
+	* firebird2/builds/win32/: make_all.bat, prepare.bat:
+	
+	Rollback Paul changes, it breaks the builds in several places.
+
+2003-08-08 11:13  paulbeach
+
+	* firebird2/builds/win32/: setenvvar.bat, setenvvar.bat:
+	
+	Fix moronic spelling mistake
+
+2003-08-08 09:52  paulbeach
+
+	* firebird2/builds/win32/: make_all.bat, prepare.bat,
+	setenvvar.bat, make_all.bat, prepare.bat, setenvvar.bat:
+	
+	Fix Blas' fix for Firebird location in prepare, so it can handle
+	spaces in the path name. Echo %FIREBIRD% in setenvvar.bat. Copy
+	firebird.conf to output so the server will actually run.
+
+2003-08-08 08:29  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86:
+	
+	[no log message]
+
+2003-08-08 02:38  brodsom
+
+	* firebird2/src/common/classes/tree.h:
+	
+	Patch msvc6 after Nickolay changes
+
+2003-08-08 02:29  brodsom
+
+	* firebird2/builds/win32/msvc6/: fb_inet_server.dsp, fbserver.dsp:
+	
+	Patch msvc6 after Nickolay changes
+
+2003-08-08 01:20  brodsom
+
+	* firebird2/src/common/classes/tree.h:
+	
+	Error patch, void function should not return a value.
+
 2003-08-07 23:48  skidder
 
 	* firebird2/src/: common/classes/rwlock.h, jrd/cch.cpp,
