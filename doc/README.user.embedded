@@ -1,5 +1,5 @@
 -----------------------------------------------------------
-Firebird 1.5 Embedded Server notes (Beta and RC builds)
+Firebird 1.5 Embedded Server notes
 -----------------------------------------------------------
 
 1. GENERIC INFORMATION
@@ -19,9 +19,16 @@ Firebird 1.5 Embedded Server notes (Beta and RC builds)
 
   2.2. Database access
 
-    Only true local access is allowed. The embedded server
-    doesn't have any support for remote protocols, so even
-    access via "localhost" won't work.
+    The embedded server can act as a true local server
+    accessing databases on a local machine, and as a remote
+    gateway which redirects all network calls to another
+    hosts (i.e. works as a client library). Note that you
+    cannot connect to the local standalone Firebird server
+    using the local connection string (without a host name).
+    It applies to IPC connections only, because they use
+    the same format of the connection string; but you can
+    connect to the local standalone server via TCP/IP localhost
+    loopback or via the named pipes protocol.
 
   2.3. Authentication and security
 
@@ -60,16 +67,28 @@ Firebird 1.5 Embedded Server notes (Beta and RC builds)
   will be INTL support (fbintl.dll) or UDF libraries. To
   be able to use them, you should place them into the
   directory tree which emulates the Firebird server one,
-  i.e. has subdirectories like /intl or /udf. Then open
-  your firebird.conf and set RootDirectory to the
-  aforementioned directory tree. Example:
+  i.e. has subdirectories like /intl or /udf:
 
-  /my_app/app.exe
-  /my_app/gds32.dll
-  /my_app/firebird.conf
-  /my_app/fb/firebird.msg
-  /my_app/fb/intl/fbintl.dll
-  /my_app/fb/udf/fbudf.dll
+  c:\my_app\app.exe
+  c:\my_app\gds32.dll
+  c:\my_app\ib_util.dll
+  c:\my_app\firebird.conf
+  c:\my_app\firebird.msg
+  c:\my_app\intl\fbintl.dll
+  c:\my_app\udf\fbudf.dll
+
+  If you want to place the Firebird files (excluding the
+  renamed fbembed.dll) in another directory, you need to
+  modify your firebird.conf and set RootDirectory to the
+  Firebird directory tree. Example:
+
+  c:\my_app\app.exe
+  c:\my_app\gds32.dll
+  c:\my_app\ib_util.dll
+  c:\my_app\firebird.conf
+  d:\fb\firebird.msg
+  d:\fb\intl\fbintl.dll
+  d:\fb\udf\fbudf.dll
 
   firebird.conf:
-  RootDirectory = /my_app/fb
+  RootDirectory = d:\fb
