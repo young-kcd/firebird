@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31.2.2 2004-04-02 23:25:22 arnobrinkman Exp $
+$Id: restore.epp,v 1.31.2.3 2004-04-04 10:15:32 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -3090,8 +3090,15 @@ STORE (TRANSACTION_HANDLE local_trans
 		break;
 
 	    case att_field_null_flag:
-		X.RDB$NULL_FLAG.NULL = FALSE;
-		X.RDB$NULL_FLAG = (USHORT) get_numeric();
+		if (tdgbl->gbl_sw_novalidity)
+		{
+			get_numeric();	// skip
+		}
+		else
+		{
+			X.RDB$NULL_FLAG.NULL = FALSE;
+			X.RDB$NULL_FLAG = (USHORT) get_numeric();
+		}
 		break;
 
 	    case att_field_character_set:
@@ -3826,8 +3833,15 @@ if (tdgbl->RESTORE_format >= 6)
 		    break;
 
 		case att_field_null_flag:
-		    X.RDB$NULL_FLAG = (USHORT) get_numeric();
-		    X.RDB$NULL_FLAG.NULL = FALSE;
+			if (tdgbl->gbl_sw_novalidity)
+			{
+				get_numeric();	// skip
+			}
+			else
+			{
+			    X.RDB$NULL_FLAG = (USHORT) get_numeric();
+			    X.RDB$NULL_FLAG.NULL = FALSE;
+			}
 		    break;
 
 		case att_field_description:
@@ -4137,8 +4151,15 @@ else /* RESTORE_format < 6 */
 		    break;
 
 		case att_field_null_flag:
-		    X.RDB$NULL_FLAG = (USHORT) get_numeric();
-		    X.RDB$NULL_FLAG.NULL = FALSE;
+			if (tdgbl->gbl_sw_novalidity)
+			{
+				get_numeric();	// skip
+			}
+			else
+			{
+			    X.RDB$NULL_FLAG = (USHORT) get_numeric();
+			    X.RDB$NULL_FLAG.NULL = FALSE;
+			}
 		    break;
 
 		case att_field_description:
