@@ -1,3 +1,63 @@
+2004-01-06 11:54  robocop
+
+	* firebird2/src/utilities/sbc_print.cpp:
+	
+	Typo in comment
+
+2004-01-06 11:44  robocop
+
+	* firebird2/src/jrd/: ail.cpp, ail.h, jrn.cpp, jrn.h, jrn_proto.h,
+	old.cpp, old.h, old_proto.h, rec.cpp, rec_proto.h:
+	
+	A requiem for JOURNAL and WAL.	Instructions in the list.
+
+2004-01-06 11:39  robocop
+
+	* firebird2/src/: wal/walw_proto.h, wal/wstat_proto.h,
+	wal/wstatus.cpp, wal/walr_proto.h, wal/walw.cpp, wal/walf_proto.h,
+	wal/walr.cpp, wal/driver.cpp, wal/wal.cpp, wal/wal.h,
+	wal/wal_prnt.cpp, wal/wal_proto.h, wal/walc.cpp, wal/walc_proto.h,
+	wal/walf.cpp, journal/archive.cpp, journal/conso_proto.h,
+	journal/console.cpp, journal/gjrn.cpp, journal/gjrn_proto.h,
+	journal/journal.gdl, journal/journal.h, journal/journal_vms.e,
+	journal/journal_vms.gdl, journal/miscj.cpp, journal/miscj_proto.h,
+	journal/oldr.cpp, journal/oldr_proto.h, journal/rebui_proto.h,
+	journal/rebuild.epp, journal/serve_proto.h, journal/server.epp,
+	jrd/os/vms/jio.cpp:
+	
+	A requiem for JOURNAL and WAL.	Instructions in the list.
+
+2004-01-06 11:33  robocop
+
+	* firebird2/: builds/win32/clean_all.bat,
+	builds/win32/make_all.bat, builds/win32/make_boot.bat,
+	builds/win32/preprocess.bat, builds/win32/msvc6/Firebird2.dsw,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/engine_embed.dsp, builds/win32/msvc6/gdef.dsp,
+	src/dsql/dsql.tab.h, src/dsql/parse.cpp, src/dsql/parse.y,
+	src/dudley/exe.epp, src/dudley/extract.epp, src/dudley/parse.cpp,
+	src/gpre/cmd.cpp, src/gpre/gpre.h, src/gpre/sql.cpp,
+	src/jrd/all.cpp, src/jrd/blk.h, src/jrd/btr.cpp, src/jrd/cch.cpp,
+	src/jrd/cch.h, src/jrd/cch_proto.h, src/jrd/dbg.cpp,
+	src/jrd/dbt.cpp, src/jrd/dfw.epp, src/jrd/dpm.epp,
+	src/jrd/dyn_mod.epp, src/jrd/dyn_util.epp, src/jrd/inf.cpp,
+	src/jrd/isc_signal.h, src/jrd/jrd.cpp, src/jrd/jrd.h,
+	src/jrd/met.epp, src/jrd/met_proto.h, src/jrd/pag.cpp,
+	src/jrd/pag_proto.h, src/jrd/sdw.cpp, src/jrd/sdw_proto.h,
+	src/jrd/svc.cpp, src/jrd/svc.h, src/jrd/tra.cpp, src/jrd/tra.h,
+	src/jrd/vio.cpp, src/jrd/os/vms/jio.cpp, src/qli/meta.epp,
+	src/utilities/sbc_print.cpp,
+	src/utilities/install/install_client.cpp:
+	
+	A requiem for JOURNAL and WAL.	Instructions in the list.
+
+2004-01-06 11:27  robocop
+
+	* firebird2/src/jrd/common.h:
+	
+	Fix my stupid mistake
+
 2004-01-05 09:48  paul_reeves
 
 	* firebird2/: builds/win32/msvc6/fb2control.dsp,
