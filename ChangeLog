@@ -1,3 +1,9 @@
+2004-02-15 09:51  dimitr
+
+	* firebird2/builds/posix/Makefile.in.extlib:
+	
+	Fixed a typo. Thanks To Oleg Kraynov.
+
 2004-02-13 12:15  aafemt
 
 	* firebird2/src/dsql/ddl.cpp:
