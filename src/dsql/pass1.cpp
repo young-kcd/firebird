@@ -5360,11 +5360,13 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
 		}
 
 		// check for matching alias.
-		if (context->ctx_alias &&
-			!strcmp(context->ctx_alias,
-					reinterpret_cast<const char*>(alias->str_data)))
-		{
-			return context;
+		if (context->ctx_alias) {
+			if (!strcmp(context->ctx_alias,
+				reinterpret_cast<const char*>(alias->str_data)))
+			{		
+				return context;
+			}
+			continue;
 		}
 
 		// check for matching relation name; aliases take priority so
