@@ -1,3 +1,54 @@
+2003-10-19 09:01  stryqx
+
+	* firebird2/src/jrd/rse.h:
+	
+	Keep gcc 3.3 happy.
+
+2003-10-19 08:58  stryqx
+
+	* firebird2/: configure.in, configure.in:
+	
+	Make configure summary report match reality.
+
+2003-10-19 03:41  brodsom
+
+	* firebird2/src/jrd/ibase.h:
+	
+	Synchronize public headers with function declaration after
+	Claudio's changes (tests fails)
+
+2003-10-19 03:25  brodsom
+
+	* firebird2/builds/win32/: parse.bat, prepare.bat, run_all.bat:
+	
+	Corrections
+
+2003-10-19 03:23  brodsom
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	Allow debug or release build
+
+2003-10-19 03:22  brodsom
+
+	* firebird2/builds/win32/msvc6/fbclient_static.dsp:
+	
+	Add DEV_BUILD to the debug build
+
+2003-10-18 01:47  brodsom
+
+	* firebird2/src/dudley/: exe.epp, expand.cpp, expr.cpp,
+	generate.cpp, parse.cpp, parse.h, trn.cpp:
+	
+	-Macro cleaning -Use array access for nod_arg and idx_field
+
+2003-10-18 01:41  brodsom
+
+	* firebird2/src/gpre/: sql.cpp, cmd.cpp, gpre.h, gpre_meta.epp,
+	gpre_meta_boot.cpp:
+	
+	Macro cleaning
+
 2003-10-17 22:29  skidder
 
 	* firebird2/src/: common/classes/array.h, jrd/btr.h,
