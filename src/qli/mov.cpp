@@ -694,7 +694,7 @@ SLONG MOVQ_get_long(DSC * desc, SSHORT scale)
  **************************************/
 	SLONG value;
 	double d;
-	SSHORT fraction, sign, l, length;
+	SSHORT fraction, length;
 	TEXT *p;
 
 #if (!(defined JPN_SJIS || defined JPN_EUC))
@@ -1677,8 +1677,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
 	TEXT c, *p, temp[15], *t, *end;
 	USHORT n, i, components[7], precision;
 	SLONG clock;
-	struct tm times, times2, *today;
-
+	struct tm times, *today;
 	if (!length) {
 		date[0] = date[1] = 0;
 		return;

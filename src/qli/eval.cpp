@@ -108,8 +108,7 @@ int EVAL_boolean( QLI_NOD node)
  *	Evaluate a boolean expression.
  *
  **************************************/
-	DSC *value1, *value2, *value3;
-	TEXT *p;
+	DSC *value1, *value2;
 	int result;
 
 	switch (node->nod_type) {
@@ -215,7 +214,6 @@ void EVAL_break_compute( QLI_NOD node)
  *	break.  The only function that needs any work is average.
  *
  **************************************/
-	DSC *desc1;
 
 	if (node->nod_type == nod_rpt_average && node->nod_arg[e_stt_default])
 		if (node->nod_desc.dsc_dtype == dtype_long)
@@ -593,7 +591,6 @@ static SLONG execute_any( QLI_NOD node)
  **************************************/
 	QLI_REQ request;
 	QLI_MSG message;
-	USHORT *flag;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
@@ -714,7 +711,6 @@ static DSC *execute_function( QLI_NOD node)
  **************************************/
 	QLI_REQ request;
 	QLI_MSG message;
-	PAR parameter;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
@@ -826,7 +822,6 @@ static DSC *execute_statistical( QLI_NOD node)
  **************************************/
 	QLI_REQ request;
 	QLI_MSG message;
-	PAR parameter;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
@@ -1211,9 +1206,9 @@ static int sleuth_check(
  *
  **************************************/
 #if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT c, d, *class_, *p, *end_class;
+	USHORT c, d, *class_, *end_class;
 #else
-	UCHAR c, d, *class_, *p, *end_class;
+	UCHAR c, d, *class_, *end_class;
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 
 	while (match < end_match) {
@@ -1325,9 +1320,9 @@ static int sleuth_class( USHORT flags,
  *
  **************************************/
 #if (defined JPN_EUC || defined JPN_SJIS)
-	USHORT c, d;
+	USHORT c;
 #else
-	UCHAR c, d;
+	UCHAR c;
 #endif /* (defined JPN_EUC || defined JPN_SJIS) */
 	USHORT result;
 
@@ -1388,7 +1383,6 @@ static int sleuth_merge(
  **************************************/
 	UCHAR c, *comb, **v, *vector[128], **end_vector, *p, max_op, temp[256],
 		*t;
-	SSHORT n;
 
 	comb = combined;
 	v = vector;
@@ -1485,10 +1479,10 @@ static int string_boolean( QLI_NOD node)
  *
  **************************************/
 	DSC *desc1, *desc2, *desc3;
-	TEXT *p1, *p2, *p3, *buffer, fixed_buffer[512];
+	TEXT *p1, *p2, *buffer, fixed_buffer[512];
 	TEXT temp1[TEMP_LENGTH], temp2[TEMP_LENGTH];
 	FRBRD *blob;
-	SSHORT l1, l2, l3, l, result;
+	SSHORT l1, l2, result;
 	USHORT buffer_length;
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	QLI_CTX context;
@@ -1566,8 +1560,7 @@ static int string_function(
  *	or STARTS WITH.
  *
  **************************************/
-	DSC *desc;
-	TEXT *q1, *q2, *q3, c1, c2, c3, temp[16];
+	TEXT *q1, *q2, c1, c2, temp[16];
 	SSHORT l;
 #if (defined JPN_EUC || defined JPN_SJIS)
 	TEXT *p1_orig = p1;

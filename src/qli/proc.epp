@@ -127,7 +127,7 @@ void PRO_copy_procedure(
 	FRBRD *old_blob, *new_blob;
 	FRBRD *store_request;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	TEXT s[120], buffer[255];
+	TEXT buffer[255];
 	SSHORT length;
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
@@ -219,7 +219,6 @@ void PRO_create( DBB database, TEXT * name)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	SLONG start, stop;
 	FRBRD *blob;
-	TEXT s[64];
 	USHORT bpb_length;
 	UCHAR bpb[20], *p;
 
@@ -328,7 +327,6 @@ void PRO_edit_procedure( DBB database, TEXT * name)
  *	the procedure.
  *
  **************************************/
-	TEXT s[64];
 
 	PRO_setup(database);
 
@@ -382,7 +380,6 @@ FRBRD *PRO_fetch_procedure( DBB database, TEXT * proc)
  **************************************/
 	FRBRD *blob;
 	TEXT name[32];
-	USHORT l;
 
 	upcase_name(proc, name);
 	PRO_setup(database);
@@ -446,7 +443,6 @@ void PRO_invoke( DBB database, TEXT * name)
  *
  **************************************/
 	FRBRD *blob;
-	TEXT s[64];
 
 	blob = NULL;
 	if (database) {
@@ -529,7 +525,6 @@ int PRO_rename_procedure( DBB database, TEXT * old_name, TEXT * new_name)
  **************************************/
 	USHORT count;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	TEXT s[132];
 	FRBRD *request;
 
 	request = NULL;

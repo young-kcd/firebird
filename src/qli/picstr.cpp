@@ -102,8 +102,7 @@ PIC PIC_analyze( TEXT * string, DSC * desc)
  *
  **************************************/
 	PIC picture;
-	TEXT c, d, *p, debit;
-	USHORT length;
+	TEXT c, d, debit;
 
 	if (!string)
 		if (!desc)
@@ -552,8 +551,8 @@ static void edit_alpha(
  *	output pointer.
  *
  **************************************/
-	TEXT c, d, *p, *out, *end, temp[512], *q, date[32];
-	USHORT l, i;
+	TEXT c, *p, *out, *end, temp[512];
+	USHORT l;
 
 	l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
 	end = p + l;
@@ -674,7 +673,7 @@ static void edit_date( DSC * desc, PIC picture, TEXT ** output)
 	DSC temp_desc;
 	TEXT c, d, *p, *out, *month, *weekday, *year, *nmonth, *day,
 		*hours, temp[256], *meridian, *julians;
-	USHORT l, sig_day, blank;
+	USHORT sig_day, blank;
 	struct tm times;
 
 	temp_desc.dsc_dtype = dtype_timestamp;

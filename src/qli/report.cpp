@@ -60,7 +60,7 @@ void RPT_report( QLI_NOD loop)
  *
  **************************************/
 	RPT report;
-	QLI_NOD node, output;
+	QLI_NOD node;
 	QLI_REQ request;
 	QLI_MSG message;
 	DSC *desc;

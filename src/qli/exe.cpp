@@ -225,12 +225,11 @@ FRBRD *EXEC_open_blob( QLI_NOD node)
  *	Given a blob field node, open and return the blob.
  *
  **************************************/
-	QLI_FLD field;
 	QLI_CTX context;
 	QLI_REQ request;
 	DBB dbb;
 	DSC *desc, static_desc;
-	UCHAR segment[20], bpb[20], *p;
+	UCHAR bpb[20], *p;
 	USHORT bpb_length;
 	FRBRD *blob;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -526,7 +525,6 @@ static DSC *assignment(	QLI_NOD		from_node,
 	QLI_MSG message;
 	USHORT l, *missing_flag, trash;
 	jmp_buf old_env;
-	jmp_buf env;
 
 	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	QLI_reprompt = FALSE;
@@ -607,7 +605,6 @@ static void commit_retaining( QLI_NOD node)
  *
  **************************************/
 	DBB database;
-	STATUS status[ISC_STATUS_LENGTH];
 	QLI_NOD *ptr, *end;
 
 /* If there aren't any open databases then obviously
@@ -680,7 +677,6 @@ static int copy_blob( QLI_NOD value, PAR parameter)
 	QLI_REQ from_request, to_request;
 	DBB to_dbb, from_dbb;
 	DSC *from_desc, *to_desc;
-	QLI_NOD field;
 	FRBRD *from_blob, *to_blob;
 	SLONG size, segment_count, max_segment;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -1237,7 +1233,6 @@ static void set_null( QLI_MSG message)
 	PAR parameter;
 	QLI_NOD from;
 	DSC *desc;
-	UCHAR *p;
 
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next) {

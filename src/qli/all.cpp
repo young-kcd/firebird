@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.8 2002-10-24 09:01:30 eku Exp $
+$Id: all.cpp,v 1.9 2003-02-05 01:47:08 brodsom Exp $
 */
 
 /***************************************************
@@ -84,9 +84,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
  **************************************/
 	register FRB block;
 	FRB free, *best, *ptr;
-	HNK hunk;
 	USHORT l;
-	register USHORT size, *p;
+	register USHORT size;
 	SLONG best_tail, tail;
 
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
@@ -491,7 +490,7 @@ static void extend_pool( PLB pool, USHORT count)
  *	of given size.
  *
  **************************************/
-	register HNK hunk, *ptr;
+	register HNK hunk;
 	register BLK block;
 	SLONG size;
 

@@ -74,7 +74,6 @@ void ERRQ_database_error( DBB dbb, STATUS * status_vector)
  *	Print message from database error and unwind.
  *
  **************************************/
-	DBB *ptr;
 
 	if (dbb) {
 		ERRQ_msg_put(10, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg10 ** QLI error from database %s ** */

@@ -213,7 +213,7 @@ static QLI_NOD compile_any( QLI_NOD node, QLI_REQ old_request, int internal_flag
  *	Compile either an ANY or UNIQUE boolean expression.
  *
  **************************************/
-	QLI_MSG send, receive, old_send = NULL, old_receive = NULL, next;
+	QLI_MSG send, receive, old_send = NULL, old_receive = NULL;
 	QLI_REQ request;
 	PAR parameter;
 
@@ -416,7 +416,6 @@ static QLI_NOD compile_edit( QLI_NOD node, QLI_REQ request)
  **************************************/
 	QLI_NOD value;
 	QLI_FLD field;
-	PAR parm;
 
 /* Make sure there is a message.  If there isn't a message, we
    can't find the target database. */
@@ -704,7 +703,6 @@ static QLI_NOD compile_field( QLI_NOD node, QLI_REQ request, int internal_flag)
  *	Compile a field reference.
  *
  **************************************/
-	QLI_NOD reference;
 	QLI_CTX context;
 	PAR parm;
 	QLI_MSG message;
@@ -832,7 +830,7 @@ static QLI_NOD compile_function( QLI_NOD node, QLI_REQ old_request, int internal
  *	Compile a database function reference.
  *
  **************************************/
-	QLI_NOD value, *ptr, *end, list;
+	QLI_NOD *ptr, *end, list;
 	FUN function;
 	QLI_MSG send, receive, old_send = NULL, old_receive = NULL;
 	QLI_REQ request;
@@ -910,7 +908,6 @@ static QLI_NOD compile_if( QLI_NOD node, QLI_REQ request, int internal_flag)
  *
  **************************************/
 	QLI_NOD sub;
-	QLI_REQ sub_req;
 
 /* If the statement can't be executed in database context,
    make sure it gets executed locally */
@@ -1092,8 +1089,7 @@ static QLI_NOD compile_prompt( QLI_NOD node)
  **************************************/
 	STR string;
 	QLI_FLD field;
-	USHORT l, prompt_length;
-	UCHAR *p, *prompt;
+	USHORT prompt_length;
 
 /* Make up a plausible prompt length */
 
@@ -1229,12 +1225,11 @@ static QLI_REQ compile_rse(
  *	up for a receive message as well.
  *
  **************************************/
-	QLI_NOD list, *ptr, *end, *ptr2, rse;
+	QLI_NOD list, *ptr, *end;
 	QLI_REQ request, original_request;
-	QLI_CTX context, parent, *ctx_ptr, *ctx_end;
+	QLI_CTX context, *ctx_ptr, *ctx_end;
 	QLI_REL relation;
 	DBB local_dbb;
-	USHORT l;
 
 	original_request = old_request;
 
@@ -1331,7 +1326,7 @@ static QLI_NOD compile_statement( QLI_NOD node, QLI_REQ request, int internal_fl
  *	the parent request.
  *
  **************************************/
-	QLI_NOD result, *ptr, *end, sub;
+	QLI_NOD result, *ptr, *end;
 
 	switch (node->nod_type) {
 	case nod_assign:
@@ -1490,8 +1485,6 @@ static QLI_NOD compile_store( QLI_NOD node, QLI_REQ request, int internal_flag)
 	QLI_CTX context;
 	QLI_REL relation;
 	QLI_MSG send;
-	QLI_REQ new_request;
-	PAR parameter;
 
 /* Find or make up request for statement */
 

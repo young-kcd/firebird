@@ -201,7 +201,6 @@ void MET_define_field( DBB database, QLI_FLD field)
  *	Define a new global field.
  *
  **************************************/
-	SYM symbol;
 
 	database = setup_update(database);
 
@@ -235,7 +234,6 @@ void MET_define_index( SYN node)
 	NAM *ptr;
 	SYM symbol;
 	int position, present;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	symbol = (SYM) node->syn_arg[s_dfi_name];
 	relation = (QLI_REL) node->syn_arg[s_dfi_relation];
@@ -347,7 +345,6 @@ void MET_define_relation( QLI_REL relation, QLI_REL source)
 	SYM symbol;
 	QLI_FLD field;
 	USHORT position;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	symbol = relation->rel_symbol;
 
@@ -426,7 +423,6 @@ void MET_define_sql_relation( QLI_REL relation)
 	SYM symbol;
 	QLI_FLD field;
 	USHORT position;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 	RLB rlb;
 
 	symbol = relation->rel_symbol;
@@ -506,7 +502,6 @@ void MET_delete_database( DBB dbb)
 	STATUS status_vector[ISC_STATUS_LENGTH];
 	LLS log_stack, stack;
 	STR string;
-	TEXT s[126];
 	DBB database, next;
 	UCHAR *dpb = NULL, *p;
 	TEXT *user, *password;
@@ -1122,7 +1117,6 @@ void MET_meta_rollback( DBB database)
  *	if there is one.
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	if (database->dbb_capabilities & DBB_cap_multi_trans)
 		rollback_update(database);
@@ -1334,11 +1328,8 @@ void MET_modify_index( SYN node)
  *
  **************************************/
 	DBB database;
-	QLI_REL relation;
-	SYN fields;
-	NAM *ptr, name;
+	NAM name;
 	USHORT count;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	name = (NAM) node->syn_arg[s_mfi_name];
 	database = (DBB) node->syn_arg[s_mfi_database];
@@ -1452,7 +1443,7 @@ void MET_ready( SYN node, USHORT create_flag)
 	DBB temp, dbb;
 	SYN *ptr, *ptr2, *end;
 	STATUS status_vector[ISC_STATUS_LENGTH];
-	SSHORT i, dpb_length, length;
+	SSHORT dpb_length, length;
 	UCHAR *dpb, *p;
 	TEXT *q;
 	TEXT *lc_ctype;
@@ -1622,7 +1613,6 @@ void MET_sql_alter_table( QLI_REL relation, QLI_FLD fields)
 	DBB database;
 	SYM symbol;
 	QLI_FLD field;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 	RLB rlb;
 	USHORT count;
 
@@ -1684,7 +1674,6 @@ void MET_sql_cr_view( SYN node)
  *	Create a view from a SQL metadata request
  *
  **************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
 	QLI_REL relation;
 	DBB database;
 	SYM symbol;
@@ -1892,9 +1881,8 @@ static void add_sql_field( QLI_REL relation, QLI_FLD field, USHORT position, RLB
  *
  **************************************/
 	DBB database;
-	SYM relation_name, field_name, symbol, global_field;
+	SYM relation_name, field_name;
 	USHORT l;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 
 	rlb = CHECK_RLB(rlb);
 	database = relation->rel_database;
@@ -1974,7 +1962,6 @@ static int blob_copy( RLB rlb, QLI_REL source, SLONG * source_blob_id)
  *
  **************************************/
 	DBB source_dbb;
-	FRBRD *source_trans;
 	FRBRD *source_blob;
 	SLONG size, segment_count, max_segment;
 	STATUS status_vector[ISC_STATUS_LENGTH];
@@ -2248,7 +2235,6 @@ static int clone_fields( QLI_REL target, QLI_REL source)
 	FRBRD *req1, *req2;
 	FRBRD *t_trans, *s_trans;
 	RLB rlb;
-	SSHORT count;
 
 	req1 = req2 = NULL;
 	s_trans = t_trans = gds_trans;
@@ -3388,7 +3374,7 @@ static SYM make_symbol( TEXT * string, SSHORT length)
  *
  **************************************/
 	SYM symbol;
-	TEXT *p, *end;;
+	TEXT *p;
 
 	if (!(length = truncate_string(string)))
 		return NULL;
@@ -3938,7 +3924,6 @@ static void set_capabilities( DBB database)
  *
  **************************************/
 	FRBRD *req;
-	STATUS status_vector[ISC_STATUS_LENGTH];
 	RFR_TAB rel_field_table;
 
 	req = NULL;
@@ -4000,15 +3985,12 @@ static void sql_grant_revoke( SYN node, USHORT type)
  *	Build a DYN string for a SQL GRANT or REVOKE statement
  *
  *****************************************************/
-	STATUS status_vector[ISC_STATUS_LENGTH];
 	DBB database;
-	SYM symbol;
 	QLI_REL relation;
 	NAM *name, *end, *field, *end_field;
 	SYN names, fields;
 	USHORT privileges;
 	TEXT *relation_name;
-	USHORT fld_count;
 	RLB rlb;
 
 

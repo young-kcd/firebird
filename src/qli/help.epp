@@ -90,7 +90,7 @@ void HELP_help( SYN node)
  *	Give the poor sucker help.
  *
  **************************************/
-	NAM *ptr, *end, name;
+	NAM *ptr, *end;
 	USHORT max_level;
 	TEXT target[128], **topic, *topics[16];
 
