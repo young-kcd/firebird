@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.31 2002-11-12 05:05:01 skywalker Exp $
+$Id: met.epp,v 1.32 2002-11-14 09:17:35 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -303,33 +303,37 @@ void MET_clear_cache(TDBB tdbb, PRC proc)
 		}
 		
 		/* Deallocate all used requests */		
-		Firebird::vector<PRC> temp(0);
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++) 
 		{
 			if ( (procedure = PRC(*ptr)) && 
-				!(procedure->prc_flags & PRC_obsolete))
+				!(procedure->prc_flags & PRC_obsolete) && (procedure != proc) )
 			{
 				
-				if ( procedure->prc_use_count == procedure->prc_int_use_count ) 
+				if ( procedure->prc_int_use_count >= 0 && 
+				     procedure->prc_use_count <= procedure->prc_int_use_count ) 
 				{
 					CMP_release(tdbb, procedure->prc_request);
 					procedure->prc_request = NULL;
-					temp.insert(temp.end(),procedure);
+					LCK_release(tdbb, procedure->prc_existence_lock);
+					procedure->prc_existence_lock = NULL;
+					procedure->prc_flags |= PRC_obsolete;
 				} else
 					// Leave it in state 0 to avoid extra pass next time to clear it
 					procedure->prc_int_use_count = 0;
 			}
 		}
 		
-		/* Remove all affected procedures from the cache */
-		Firebird::vector<PRC>::iterator cur, fin;
-		for (cur = temp.begin(), fin = temp.end(); cur < fin; cur++) {
-			procedure = *cur;
-			if (procedure==proc) 
-				continue;
-			procedure->prc_flags &= ~PRC_being_altered; // Just a safety sake
-			MET_remove_procedure(tdbb, procedure->prc_id, procedure);
+		/* Remove deallocated procedures from cache */
+		for (ptr = procedures->begin(), end = procedures->end();
+				ptr < end; ptr++) 
+		{
+			if ( (procedure = PRC(*ptr)) && 
+				 (procedure->prc_flags & PRC_obsolete) && (procedure != proc) ) 
+			{
+				procedure->prc_flags &= ~PRC_being_altered; // Just a safety sake
+				MET_remove_procedure(tdbb, procedure->prc_id, procedure);			  
+			}
 		}
 	}
 }
