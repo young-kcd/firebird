@@ -34,7 +34,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.h,v 1.35 2004-03-09 00:16:55 skidder Exp $
+ *  $Id: alloc.h,v 1.36 2004-03-14 13:05:02 alexpeshkoff Exp $
  *
  */
 
@@ -436,6 +436,22 @@ namespace Firebird
 		SSHORT type;
 	};
 
+	class PermanentStorage {
+	private:
+		MemoryPool& pool;
+	protected:
+		explicit PermanentStorage(MemoryPool& p) : pool(p) { }
+		MemoryPool& getPool() const { return pool; }
+	};
+
+	class AutoStorage : public PermanentStorage {
+	public:
+		static MemoryPool& getAutoMemoryPool() { return *getDefaultMemoryPool(); }
+	protected:
+		AutoStorage() : PermanentStorage(getAutoMemoryPool()) { }
+		explicit AutoStorage(MemoryPool& p) : PermanentStorage(p) { }
+	};
+	
 };
 
 #endif /*TESTING_ONLY*/
