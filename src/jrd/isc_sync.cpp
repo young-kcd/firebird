@@ -2681,21 +2681,17 @@ UCHAR *DLL_EXPORT ISC_map_file(
    initialized shared memory. */
 
 	make_object_name(expanded_filename, filename, "_event");
-#ifndef CHICAGO_FIXED
 	if (!ISC_is_WinNT())
 		event_handle =
 			CreateMutex(ISC_get_security_desc(), TRUE, expanded_filename);
 	else
-#endif
 		event_handle =
 			CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
 						expanded_filename);
 	if (!event_handle) {
-#ifndef CHICAGO_FIXED
 		if (!ISC_is_WinNT())
 			error(status_vector, "CreateMutex", GetLastError());
 		else
-#endif
 			error(status_vector, "CreateEvent", GetLastError());
 		CloseHandle(file_handle);
 		return NULL;
@@ -2734,13 +2730,11 @@ UCHAR *DLL_EXPORT ISC_map_file(
 	if (!init_flag) {
 		/* Wait for 10 seconds.  Then retry */
 
-#ifndef CHICAGO_FIXED
 		if (!ISC_is_WinNT()) {
 			ret_event = WaitForSingleObject(event_handle, 10000);
 			ReleaseMutex(event_handle);
 		}
 		else
-#endif
 			ret_event = WaitForSingleObject(event_handle, 10000);
 
 		/* If we timed out, just retry.  It is possible that the
@@ -2867,11 +2861,9 @@ UCHAR *DLL_EXPORT ISC_map_file(
 
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
-#ifndef CHICAGO_FIXED
 		if (!ISC_is_WinNT())
 			ReleaseMutex(event_handle);
 		else
-#endif
 			SetEvent(event_handle);
 		if (SetFilePointer
 			(shmem_data->sh_mem_handle, length, NULL,
