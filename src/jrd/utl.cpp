@@ -2442,11 +2442,10 @@ static int load(ISC_QUAD* blob_id,
 // new utl
 inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 {
-	if (dpb.find(tag))
+	if (! dpb.find(tag))
 	{
-		return;
+		dpb.insertString(tag, value, strlen(value));
 	}
-	dpb.insertString(tag, value, strlen(value));
 }
 
 #ifdef UNIX
