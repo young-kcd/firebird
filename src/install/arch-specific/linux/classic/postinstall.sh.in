@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.10.2.3 2003-10-31 12:23:33 skidder Exp $
+#   $Id: postinstall.sh.in,v 1.10.2.4 2003-10-31 16:40:47 skidder Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -104,7 +104,7 @@ addFirebirdUser() {
     testStr=`grep firebird /etc/passwd`
     if [ -z "$testDir" ]
       then
-        useradd -m -d $FBRootDir -s /bin/bash \
+        useradd -M -d $FBRootDir -s /bin/bash \
             -c "Firebird Database Administrator" -g firebird firebird 
 
         # >/dev/null 2>&1 
