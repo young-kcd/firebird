@@ -238,7 +238,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size) {
 		ALLOC_ALIGNMENT,
 		// ******************************************************************* //
 		MIN_EXTENT_SIZE);
-			
+
 	char* mem = (char *)external_alloc(alloc_size);
 	if (!mem) pool_out_of_memory();
 	((MemoryExtent *)mem)->next = NULL;
@@ -295,6 +295,16 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size) {
 }
 
 void MemoryPool::deletePool(MemoryPool* pool) {
+	/* dimitr: 1. I think we need an abstract base class or a global macro
+				  in locks.h to avoid these architecture checks.
+			   2. The lock is copied before the extent that contains the pool
+				  itself is freed, because otherwise it contains garbage. The
+				  lock will be destroyed automatically at exit. */
+#ifdef SUPERSERVER
+	Spinlock lock = pool->lock;
+#else
+	SharedSpinlock lock = pool->lock;
+#endif
 	// Delete all extents now
 	MemoryExtent *temp = pool->extents;
 	while (temp) {
@@ -302,11 +312,6 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 		external_free(temp);
 		temp = next;
 	}
-#ifdef SUPERSERVER
-	pool->lock.~Spinlock();
-#else
-	pool->lock.~SharedSpinlock();
-#endif
 }
 
 void* MemoryPool::internal_alloc(size_t size, SSHORT type
@@ -501,6 +506,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 }
 
 void MemoryPool::deallocate(void *block) {
+	if (!block) return;
 	lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
 	assert(blk->used);
