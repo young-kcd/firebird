@@ -2129,7 +2129,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const char* name)
 
 	vec* relations = dbb->dbb_relations;
 	jrd_rel* check_relation = NULL;
-	const UCHAR length = strlen(name);
+	const UCHAR length = fb_utils::name_length(name);
 
 	vec::iterator ptr = relations->begin();
 	for (const vec::const_iterator end = relations->end(); ptr < end; ptr++)
