@@ -49,6 +49,10 @@
 #include <vfork.h>
 #endif
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 #ifndef FOPEN_WRITE_TYPE
 #define FOPEN_WRITE_TYPE	"w"
 #endif
