@@ -13,6 +13,6 @@
 @echo.
 @echo Preprocessing the entire source tree...
 @call preprocess.bat
-@goto :EOF
+@goto :END
 
 :END

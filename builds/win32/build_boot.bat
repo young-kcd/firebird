@@ -4,7 +4,7 @@
 ::===========
 :MAIN
 @if "%1"=="BOOT" (@call :MAKE_BOOT) else (@call :MAKE)
-@goto :EOF
+@goto :END
 
 ::===========
 :MAKE_BOOT

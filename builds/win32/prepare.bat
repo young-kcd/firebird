@@ -1,4 +1,6 @@
+
 @echo off
+
 ::===========
 :MAIN
 @if "%1"=="" (@goto :ERROR_PARAM_EXPECTED)
@@ -25,7 +27,7 @@
 @call :SED isc4.gdb %1 jrd/isc.gdb
 @call :SED empbuild.gdb %1 example5/employee.gdb
 @call :SED source/msgs/msg.gdb %1 msgs/msg.gdb
-@goto :EOF
+@goto :END
 
 ::===========
 :SED
@@ -38,6 +40,6 @@
 @echo Only forward (POSIX-style) slashes should be used in the path.
 @echo Example:
 @echo     prepare.bat d:/work/firebird
-@goto :EOF
+@goto :END
 
 :END

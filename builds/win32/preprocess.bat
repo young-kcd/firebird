@@ -22,7 +22,7 @@
 @set GPRE=
 @del ..\..\src\include\gen\autoconfig.h
 @copy ..\..\src\include\gen\autoconfig_msvc.h ..\..\src\include\gen\autoconfig.h
-@goto :EOF
+@goto :END
 
 ::===========
 :PREPROCESS
@@ -103,7 +103,6 @@ goto :EOF
 @echo:
 @echo   filename:  Firebird_Unix_Tools_for_Win32.zip
 @echo:
-@goto :EOF
-
+@goto :END
 
 :END
