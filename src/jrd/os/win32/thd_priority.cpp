@@ -26,11 +26,11 @@
 #ifdef THREAD_PSCHED
 
 #include "../jrd/common.h"
+#include "../jrd/os/thd_priority.h"
 #include "../jrd/thd.h"
 #ifdef WIN_NT
 #include <windows.h> // HANDLE
 #endif
-#include "../jrd/os/thd_priority.h"
 #include "../common/config/config.h"
 #include "../jrd/gds_proto.h"
 #include "../common/classes/fb_tls.h"
@@ -60,7 +60,7 @@ TLS_DECLARE (ThreadPriorityScheduler*, currentScheduler);
 }
 
 // Get instance for current thread
-ThreadPriorityScheduler::ThreadPriorityScheduler *get()
+ThreadPriorityScheduler* ThreadPriorityScheduler::get()
 {
 	return TLS_GET(currentScheduler);
 }
@@ -135,6 +135,7 @@ void ThreadPriorityScheduler::run() {
 void ThreadPriorityScheduler::detach() 
 {
 	mutex.enter();
+	TLS_SET(currentScheduler, 0);
 	if (opMode == ShutdownComplete)
 	{
 		for (ThreadPriorityScheduler** pt = &chain; *pt; pt = &(*pt)->next) 
@@ -254,12 +255,13 @@ void ThreadPriorityScheduler::doDetach()
 	for (ThreadPriorityScheduler ** pt = &chain; *pt; pt = &(*pt)->next) 
 	{
 start_label:
-		int pos;
+		size_t pos;
 		ThreadPriorityScheduler *m = *pt;
 		if (! toDetach->find(m, pos))
 		{
 			continue;
 		}
+		toDetach->remove(pos);
 		*pt = m->next;
 #ifdef DEBUG_THREAD_PSCHED
 		gds__log("~ handle=%p", m->handle);

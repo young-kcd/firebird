@@ -24,13 +24,17 @@
 #ifndef JRD_OS_THD_PRIORITY_H
 #define JRD_OS_THD_PRIORITY_H
 
+#include "firebird.h"
+
 #ifdef THREAD_PSCHED
 
-#include "firebird.h"
+
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
 #include "../jrd/thd.h"
+
+#include <windows.h>
 #include <process.h>
 
 // thps_flags values
@@ -102,6 +106,7 @@ public:
 	static void enter()
 	{
 		ThreadPriorityScheduler *t = get();
+		fb_assert(t);
 		t->inside = 1;
 		t->gonein = 1;
 	}
@@ -110,6 +115,7 @@ public:
 	static void exit()
 	{
 		ThreadPriorityScheduler *t = get();
+		fb_assert(t);
 		t->inside = 0;
 	}
 	
