@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.24 2004-09-16 22:32:30 skidder Exp $
+#  $Id: Makefile.in.libfbclient,v 1.25 2004-10-04 05:23:56 skidder Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS:=-DSUPERCLIENT
+CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -115,7 +115,8 @@ endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
-$(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
+$(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
+-o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 AllObjects = $(FBCLIENT_Objects)

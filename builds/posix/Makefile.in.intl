@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.18 2004-04-30 23:02:06 brodsom Exp $
+#  $Id: Makefile.in.intl,v 1.19 2004-10-04 05:23:56 skidder Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS:=-DSUPERCLIENT
+CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -78,7 +78,7 @@ libfbintl : $(LIBFBINTL_SO)
 
 $(LIBFBINTL_SO):	$(INTL_Objects)
 	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libintl.$(SHRLIB_EXT).1 \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS)
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 include $(ROOT)/gen/make.shared.targets

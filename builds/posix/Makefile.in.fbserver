@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.15 2004-08-17 22:34:26 skidder Exp $
+#  $Id: Makefile.in.fbserver,v 1.16 2004-10-04 05:23:56 skidder Exp $
 #
 ROOT=..
 ObjModuleType=superserver
-CFLAGS:=-DSUPERSERVER
+CFLAGS:=-DSUPERSERVER @PTHREAD_CFLAGS@
 ArchType=super
 
 include     $(ROOT)/gen/make.defaults
@@ -51,7 +51,7 @@ SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Source
 fbserver : $(FB_SUPER_SERVER)
 
 $(FB_SUPER_SERVER):	$(SERVER_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 AllObjects = $(SERVER_Objects)
 

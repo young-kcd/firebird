@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.23 2004-07-30 22:37:44 skidder Exp $
+#   $Id: make.rules,v 1.24 2004-10-04 05:23:56 skidder Exp $
 #
 
 #____________________________________________________________________________
@@ -43,9 +43,9 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
 CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include
 
 ifeq ($(IsProdTypeBuild),Y)
-  CFLAGS:= $(CFLAGS) $(PROD_FLAGS) $(SUPER_FLAG) -DPROD_BUILD
+  CFLAGS:= $(CFLAGS) $(PROD_FLAGS) -DPROD_BUILD
 else
-  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) $(SUPER_FLAG) -DDEV_BUILD
+  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
